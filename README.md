@@ -15,7 +15,7 @@ theoretical ones.
 
 | Area            | Choice                                   |
 | --------------- | ---------------------------------------- |
-| Engine          | Godot 4.3 (.NET / Mono)                  |
+| Engine          | Godot 4.7 (.NET / Mono)                  |
 | Language        | C# (`net8.0`)                            |
 | Architecture    | Component-based entities, event-driven   |
 | Data            | Resource-driven (`.tres` content)        |
@@ -23,7 +23,7 @@ theoretical ones.
 
 ## Getting started
 
-1. Install the **.NET / Mono build** of Godot 4.3+ and the .NET 8 SDK.
+1. Install the **.NET / Mono build** of Godot 4.7+ and the .NET 8 SDK.
 2. Open the project: `godot --path . --editor` (or open `project.godot` in the editor).
 3. Build the C# solution (Godot does this automatically on first run, or
    `dotnet build Embervale.sln`).

@@ -6,7 +6,7 @@ system that exists today, the gotchas that will bite you, and step-by-step
 recipes for adding new content without breaking things.
 
 > **One-line summary:** Embervale is an original first-person, open-world fantasy
-> action RPG built in **Godot 4.3** with **C# (.NET 8)**, using a component-based,
+> action RPG built in **Godot 4.7** with **C# (.NET 8)**, using a component-based,
 > event-driven, resource-driven architecture. The repo is kept **buildable and
 > playable at every commit**.
 
@@ -34,15 +34,15 @@ You are the lead engineer building this game incrementally. The non-negotiables:
 
 | Thing            | Value                                                           |
 | ---------------- | --------------------------------------------------------------- |
-| Engine           | Godot 4.3 (.NET / Mono build)                                   |
+| Engine           | Godot 4.7 (.NET / Mono build)                                   |
 | Language         | C# targeting `net8.0`, `Nullable` enabled, `ImplicitUsings` off |
-| SDK              | `Godot.NET.Sdk/4.3.0` (see `Embervale.csproj`)                  |
+| SDK              | `Godot.NET.Sdk/4.7.0` (see `Embervale.csproj`)                  |
 | Assembly / root ns | `Embervale`                                                   |
 | Entry scene      | `scenes/Main.tscn` → `GameBootstrap` (`src/Bootstrap`)          |
 | Target platforms | Windows, Linux, Steam Deck (Forward+ renderer)                  |
 
 **This container cannot build or run the game** — there is no Godot/.NET
-toolchain installed here. Write code carefully against the Godot 4.3 C# API; the
+toolchain installed here. Write code carefully against the Godot 4.7 C# API; the
 human builds/runs in the Godot editor. Do **not** claim something was
 "tested/verified running" — say it was reviewed against the API.
 
@@ -55,7 +55,7 @@ build signal.
 
 ## 3. Build & run (for the human)
 
-1. Install Godot 4.3+ **.NET build** and the .NET 8 SDK.
+1. Install Godot 4.7+ **.NET build** and the .NET 8 SDK.
 2. Open `project.godot` in the editor (it builds C# automatically), or
    `dotnet build Embervale.sln`.
 3. Press Play. `scenes/Main.tscn` boots the sandbox.
@@ -72,7 +72,7 @@ Goblins roam to the north (−Z) and drop loot.
 ```
 .
 ├── project.godot            # Engine config + autoload registration + window/render
-├── Embervale.sln / .csproj  # C# solution (net8.0, Godot.NET.Sdk 4.3.0)
+├── Embervale.sln / .csproj  # C# solution (net8.0, Godot.NET.Sdk 4.7.0)
 ├── icon.svg
 ├── CLAUDE.md                # You are here
 ├── README.md                # Public overview + roadmap table
