@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="AttributeSet" load_steps=2 format=3 uid="uid://cmbrvldummyatt"]
+
+[ext_resource type="Script" path="res://src/Stats/AttributeSet.cs" id="1_attrset"]
+
+[resource]
+script = ExtResource("1_attrset")
+Health = 100.0
+Stamina = 100.0
+Mana = 50.0
+Strength = 14.0
+Dexterity = 8.0
+Intelligence = 6.0
+Vitality = 12.0
+Endurance = 10.0
+Armor = 5.0
+PhysicalPower = 12.0
+SpellPower = 4.0
+MoveSpeed = 4.5
+AttackSpeed = 1.0
+CritChance = 0.05
+CritDamage = 1.5

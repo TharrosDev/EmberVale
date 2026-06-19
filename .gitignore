@@ -1,0 +1,31 @@
+# Godot 4 (.NET) ignore rules
+
+# Godot per-project cache / imported assets
+.godot/
+.import/
+*.translation
+
+# Mono / .NET build output
+.mono/
+bin/
+obj/
+*.user
+
+# Export artifacts
+export.cfg
+export_presets.cfg
+build/
+dist/
+
+# Crash & log dumps
+mono_crash.*.json
+logs/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vs/
+.vscode/

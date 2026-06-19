@@ -1,0 +1,43 @@
+; Engine configuration file.
+; Embervale — an original first-person open-world fantasy action RPG.
+;
+; Autoloads define the core service singletons. Order matters: low-level
+; services (events, locator) come before the systems that depend on them.
+
+config_version=5
+
+[application]
+
+config/name="Embervale"
+config/description="An original first-person open-world fantasy action RPG."
+config/version="0.1.0"
+run/main_scene="res://scenes/Main.tscn"
+config/features=PackedStringArray("4.3", "C#", "Forward Plus")
+config/icon="res://icon.svg"
+
+[autoload]
+
+EventBus="*res://src/Core/Events/EventBus.cs"
+ServiceLocator="*res://src/Core/Services/ServiceLocator.cs"
+GameManager="*res://src/Core/GameManager.cs"
+SaveManager="*res://src/Save/SaveManager.cs"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[dotnet]
+
+project/assembly_name="Embervale"
+
+[physics]
+
+3d/physics_engine="GodotPhysics3D"
+
+[rendering]
+
+renderer/rendering_method="forward_plus"
+textures/vram_compression/import_etc2_astc=true
