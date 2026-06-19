@@ -5,19 +5,19 @@ using Godot;
 namespace Embervale.Entities;
 
 /// <summary>
-/// Root node for a static (non-physics) in-world actor: chests, props,
-/// interactables, training targets. Behaviour comes entirely from
-/// <see cref="EntityComponent"/> children. For actors that move under physics,
-/// use <see cref="CharacterEntity"/> instead — both satisfy <see cref="IEntity"/>.
+/// Root node for a kinematic actor that moves under physics: the player and,
+/// later, enemies and NPCs. It is a <see cref="CharacterBody3D"/> so a
+/// locomotion component can drive it with <c>MoveAndSlide</c>, while still being
+/// a full <see cref="IEntity"/> component host (stats, AI, etc.).
 ///
-/// Identity is assigned in <c>_EnterTree</c> (top-down) so component
-/// <c>_Ready</c> (bottom-up) can rely on it.
+/// Mirrors <see cref="Entity"/>'s identity/component behaviour via the shared
+/// <see cref="EntityNode"/> helpers.
 /// </summary>
 [GlobalClass]
-public partial class Entity : Node3D, IEntity
+public partial class CharacterEntity : CharacterBody3D, IEntity
 {
     [Export]
-    public string DisplayName { get; set; } = "Entity";
+    public string DisplayName { get; set; } = "Character";
 
     [Export]
     public string TemplateId { get; set; } = string.Empty;

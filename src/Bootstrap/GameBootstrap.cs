@@ -3,6 +3,7 @@ using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Core.Services;
 using Embervale.Entities;
+using Embervale.Player;
 using Embervale.Save;
 using Embervale.Stats;
 using Embervale.UI;
@@ -11,16 +12,17 @@ using Godot;
 namespace Embervale.Bootstrap;
 
 /// <summary>
-/// Entry point attached to the root of <c>Main.tscn</c>. It assembles a tiny
-/// sandbox that exercises every Phase 1 core system end to end:
-///   * builds a minimal 3D scene (camera, light, floor),
-///   * spawns a component-based <see cref="Entity"/> with a <see cref="StatsComponent"/>,
-///   * applies a stat <see cref="StatModifier"/> (the "+20% max health" blessing),
-///   * routes runtime damage/heal/death through the <see cref="EventBus"/>,
+/// Entry point attached to the root of <c>Main.tscn</c>. It assembles a small
+/// playable sandbox that exercises the core systems end to end:
+///   * builds a minimal 3D world (light, sky, collidable floor),
+///   * spawns a first-person <see cref="PlayerFactory">player</see> that walks,
+///     looks and melee-attacks,
+///   * spawns a component-based training dummy whose health/death/respawn flow
+///     through the <see cref="EventBus"/>,
 ///   * persists and restores state through the <see cref="SaveManager"/>.
 ///
-/// This is the "playable ugly prototype" that proves the architecture runs,
-/// and the seam that Phase 2 (the player controller) will plug into.
+/// This is the "playable ugly prototype" that proves the architecture runs and
+/// the seam later phases (combat, AI, loot) plug into.
 /// </summary>
 public partial class GameBootstrap : Node3D
 {
@@ -29,12 +31,18 @@ public partial class GameBootstrap : Node3D
 
     private DebugHud _hud = null!;
     private Entity? _dummy;
+    private CharacterEntity? _player;
     private double _respawnCountdown = -1d;
 
     public override void _Ready()
     {
-        Log.Info("=== Embervale bootstrapping (Phase 1: Core Architecture) ===");
+        Log.Info("=== Embervale bootstrapping (Phase 2: Player Controller) ===");
 
+        // The bootstrap is the flow manager for the sandbox, so it must keep
+        // processing input even while the tree is paused (to unpause).
+        ProcessMode = ProcessModeEnum.Always;
+
+        GameInput.EnsureActions();
         BuildEnvironment();
 
         _hud = new DebugHud();
@@ -42,9 +50,10 @@ public partial class GameBootstrap : Node3D
 
         SubscribeEvents();
         SpawnDummy();
+        SpawnPlayer();
 
         GameManager.Instance?.ChangeState(GameState.Playing);
-        Log.Info("Sandbox ready. [Space] damage  [H] heal  [R] respawn  [F5] save  [F9] load.");
+        Log.Info("Sandbox ready. WASD move, mouse look, LMB melee. [H] heal  [R] respawn  [F5/F9] save/load  [Esc] pause.");
     }
 
     public override void _ExitTree()
@@ -74,9 +83,6 @@ public partial class GameBootstrap : Node3D
 
         switch (key.Keycode)
         {
-            case Key.Space:
-                DamageTarget(15f);
-                break;
             case Key.H:
                 HealTarget(20f);
                 break;
@@ -99,13 +105,7 @@ public partial class GameBootstrap : Node3D
 
     private void BuildEnvironment()
     {
-        var camera = new Camera3D
-        {
-            Position = new Vector3(0f, 2.5f, 6f),
-            RotationDegrees = new Vector3(-18f, 0f, 0f),
-        };
-        AddChild(camera);
-
+        // No camera here — the player provides the active first-person camera.
         var light = new DirectionalLight3D
         {
             RotationDegrees = new Vector3(-55f, -40f, 0f),
@@ -130,6 +130,11 @@ public partial class GameBootstrap : Node3D
             MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.18f, 0.22f, 0.20f) },
         };
         AddChild(floor);
+
+        // Physics collider for the ground so the player can stand on it.
+        var floorBody = new StaticBody3D { Name = "FloorBody" };
+        floorBody.AddChild(new CollisionShape3D { Shape = new WorldBoundaryShape3D() });
+        AddChild(floorBody);
     }
 
     private void SpawnDummy()
@@ -156,6 +161,14 @@ public partial class GameBootstrap : Node3D
         };
         dummy.AddChild(mesh);
 
+        // Collider so the player's melee raycast can hit the dummy.
+        var collider = new StaticBody3D { Name = "Collider" };
+        collider.AddChild(new CollisionShape3D
+        {
+            Shape = new CapsuleShape3D { Radius = 0.4f, Height = 1.8f },
+        });
+        dummy.AddChild(collider);
+
         AddChild(dummy);
 
         // Demonstrate the modifier pipeline: a "blessing" raises max health 20%.
@@ -170,15 +183,15 @@ public partial class GameBootstrap : Node3D
         Log.Info($"Spawned '{dummy.DisplayName}' — max health {stats.GetValue(StatType.Health):0} (base 100 +20% blessing).");
     }
 
-    // --- Interaction --------------------------------------------------------
-
-    private void DamageTarget(float amount)
+    private void SpawnPlayer()
     {
-        if (TryGetStats(out StatsComponent stats) && stats.IsAlive)
-        {
-            stats.ApplyDamage(amount);
-        }
+        _player = PlayerFactory.Create(new Vector3(0f, 1.2f, 5f));
+        AddChild(_player);
+        ServiceLocator.Instance?.Register(_player);
+        Log.Info($"Spawned player at {_player.Position}. Facing the training dummy.");
     }
+
+    // --- Interaction --------------------------------------------------------
 
     private void HealTarget(float amount)
     {

@@ -7,8 +7,8 @@ through save/load.
 | #  | Phase                | Status      | Notes                                                        |
 | -- | -------------------- | ----------- | ------------------------------------------------------------ |
 | 1  | Core Architecture    | ✅ Done      | EventBus, ServiceLocator, GameManager, Entity/Component, Stats, Save, sandbox |
-| 2  | Player Controller    | ⏳ Next      | First-person CharacterBody3D, camera, input map, movement    |
-| 3  | Combat Framework     | ⬜ Planned   | Melee/ranged hitboxes, damage pipeline, stagger, crits       |
+| 2  | Player Controller    | ✅ Done      | First-person CharacterEntity, camera look, code-defined input, locomotion, melee |
+| 3  | Combat Framework     | ⏳ Next      | Melee/ranged hitboxes, damage pipeline, stagger, crits       |
 | 4  | Enemy AI             | ⬜ Planned   | Patrol/investigate/combat/retreat state machine              |
 | 5  | Inventory System     | ⬜ Planned   | Item resources, stacks, container component                  |
 | 6  | Equipment System     | ⬜ Planned   | Slots, stat modifiers from gear                              |
@@ -39,11 +39,25 @@ Core architecture foundation that everything else builds on:
 - **Sandbox** — `GameBootstrap` + `DebugHud`: a runnable scene that damages,
   heals, kills, respawns, saves, and loads a component-based entity.
 
-## Phase 2 — next steps (Player Controller)
+## Phase 2 — delivered (Player Controller)
 
-1. `PlayerController` as an `Entity` with a `CharacterBody3D` root and a
-   first-person `Camera3D`.
-2. Input map (`move_*`, `jump`, `sprint`, `interact`, `attack`, `cast`).
-3. `MovementComponent` driven by `MoveSpeed`/`Stamina` stats.
-4. Mouse-look with sensitivity + Steam Deck gamepad support.
-5. Replace the bootstrap camera with the player; keep the dummy as a target.
+- Generalized the actor framework: `IEntity` interface + shared `EntityNode`
+  helpers, so kinematic `CharacterEntity` (CharacterBody3D) and static `Entity`
+  (Node3D) are both first-class component hosts. Events now carry `IEntity`.
+- `GameInput`: input actions defined in code (WASD, jump, sprint, interact,
+  attack, cast, pause) — type-checked, no fragile `project.godot` input block.
+- `LocomotionComponent`: reusable ground motor (gravity, accel, jump,
+  `MoveAndSlide`) driven by the `MoveSpeed` stat; AI will reuse it.
+- `PlayerController`: first-person mouse-look (body yaw + camera pitch), drives
+  locomotion, and a melee raycast that feeds the Phase 1 damage pipeline.
+- `PlayerFactory`: assembles the player (collision, stats, camera, components).
+- Sandbox: player walks the world and can melee the dummy to death; floor and
+  dummy now have physics colliders.
+
+## Phase 3 — next steps (Combat Framework)
+
+1. `WeaponResource` (damage, speed, range, type) — resource-driven.
+2. Damage pipeline: armor mitigation, crit roll, damage types/resistances.
+3. Attack states: wind-up, active hitbox, recovery; combos and heavy attacks.
+4. Blocking, parrying, stagger/poise on `StatsComponent`.
+5. Hitbox/hurtbox `Area3D` components replacing the demo melee raycast.

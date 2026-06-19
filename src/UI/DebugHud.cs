@@ -15,7 +15,7 @@ namespace Embervale.UI;
 public partial class DebugHud : CanvasLayer
 {
     private Label _label = null!;
-    private Entity? _target;
+    private IEntity? _target;
 
     public override void _Ready()
     {
@@ -37,7 +37,7 @@ public partial class DebugHud : CanvasLayer
         margin.AddChild(_label);
     }
 
-    public void SetTarget(Entity? target)
+    public void SetTarget(IEntity? target)
     {
         _target = target;
     }
@@ -49,7 +49,7 @@ public partial class DebugHud : CanvasLayer
         sb.Append($"FPS: {Engine.GetFramesPerSecond()}\n");
         sb.Append($"State: {GameManager.Instance?.State.ToString() ?? "?"}\n");
 
-        if (_target != null && IsInstanceValid(_target) &&
+        if (_target is Node targetNode && IsInstanceValid(targetNode) &&
             _target.TryGetComponent(out StatsComponent stats))
         {
             sb.Append('\n');
@@ -63,7 +63,7 @@ public partial class DebugHud : CanvasLayer
             sb.Append(stats.IsAlive ? "Status: ALIVE" : "Status: DEAD");
         }
 
-        sb.Append("\n\n[Space] Damage  [H] Heal  [R] Respawn\n[F5] Save  [F9] Load");
+        sb.Append("\n\nWASD move | Mouse look | LMB attack\n[H] heal  [R] respawn  [F5/F9] save/load  [Esc] pause");
         _label.Text = sb.ToString();
     }
 

@@ -29,16 +29,19 @@ theoretical ones.
    `dotnet build Embervale.sln`).
 4. Press **Play**. The bootstrap sandbox loads `scenes/Main.tscn`.
 
-### Sandbox controls (Phase 1)
+### Sandbox controls
 
-| Key      | Action                              |
-| -------- | ----------------------------------- |
-| `Space`  | Damage the training dummy           |
-| `H`      | Heal the training dummy             |
-| `R`      | Respawn the dummy immediately       |
-| `F5`     | Quick-save                          |
-| `F9`     | Quick-load                          |
-| `Esc`    | Toggle pause                        |
+| Input        | Action                              |
+| ------------ | ----------------------------------- |
+| `W/A/S/D`    | Move                                |
+| Mouse        | Look                                |
+| `Shift`      | Sprint                              |
+| `Space`      | Jump                                |
+| Left mouse   | Melee attack (damages the dummy)    |
+| `H`          | Heal the training dummy             |
+| `R`          | Respawn the dummy immediately       |
+| `F5` / `F9`  | Quick-save / quick-load             |
+| `Esc`        | Toggle pause (frees the mouse)      |
 
 The on-screen overlay shows live game state, FPS, and the target's resources —
 proof that the core systems are wired together.

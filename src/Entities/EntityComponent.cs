@@ -18,11 +18,11 @@ namespace Embervale.Entities;
 public abstract partial class EntityComponent : Node
 {
     /// <summary>The entity this component belongs to, or null if unparented.</summary>
-    public Entity? Entity { get; private set; }
+    public IEntity? Entity { get; private set; }
 
     public override void _Ready()
     {
-        Entity = ResolveOwningEntity();
+        Entity = EntityNode.FindOwner(GetParent());
         if (Entity == null)
         {
             Log.Warn($"{GetType().Name} '{Name}' has no owning Entity ancestor; it will be inert.");
@@ -48,21 +48,5 @@ public abstract partial class EntityComponent : Node
     /// <summary>Cleanup hook invoked when the component leaves the tree.</summary>
     protected virtual void OnTeardown()
     {
-    }
-
-    private Entity? ResolveOwningEntity()
-    {
-        Node? node = GetParent();
-        while (node != null)
-        {
-            if (node is Entity entity)
-            {
-                return entity;
-            }
-
-            node = node.GetParent();
-        }
-
-        return null;
     }
 }
