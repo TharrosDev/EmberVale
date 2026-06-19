@@ -3,6 +3,7 @@ using Embervale.Core;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Core.Services;
+using Embervale.Enemies;
 using Embervale.Entities;
 using Embervale.Player;
 using Embervale.Save;
@@ -29,10 +30,11 @@ public partial class GameBootstrap : Node3D
 {
     private const string DummyAttributesPath = "res://data/attributes/DummyAttributes.tres";
     private const float RespawnDelaySeconds = 3f;
+    private static readonly Vector3 PlayerSpawn = new(0f, 1.2f, 5f);
 
     private DebugHud _hud = null!;
     private Entity? _dummy;
-    private CharacterEntity? _player;
+    private PlayerCharacter? _player;
     private double _respawnCountdown = -1d;
 
     public override void _Ready()
@@ -52,9 +54,10 @@ public partial class GameBootstrap : Node3D
         SubscribeEvents();
         SpawnDummy();
         SpawnPlayer();
+        SpawnEnemyCamp();
 
         GameManager.Instance?.ChangeState(GameState.Playing);
-        Log.Info("Sandbox ready. WASD move, mouse look, LMB melee. [H] heal  [R] respawn  [F5/F9] save/load  [Esc] pause.");
+        Log.Info("Sandbox ready. WASD move, mouse look, LMB attack, RMB block. Goblins roam to the north.");
     }
 
     public override void _ExitTree()
@@ -153,7 +156,9 @@ public partial class GameBootstrap : Node3D
 
         var stats = new StatsComponent { Name = "Stats", Attributes = attributes };
         dummy.AddChild(stats);
-        dummy.AddChild(new CombatComponent { Name = "Combat" });
+
+        // Team 2: an independent target both the player and enemies can strike.
+        dummy.AddChild(new CombatComponent { Name = "Combat", Team = 2 });
 
         var mesh = new MeshInstance3D
         {
@@ -197,11 +202,37 @@ public partial class GameBootstrap : Node3D
 
     private void SpawnPlayer()
     {
-        _player = PlayerFactory.Create(new Vector3(0f, 1.2f, 5f));
+        _player = PlayerFactory.Create(PlayerSpawn);
         AddChild(_player);
         ServiceLocator.Instance?.Register(_player);
         _hud.SetPlayer(_player);
         Log.Info($"Spawned player at {_player.Position}. Facing the training dummy.");
+    }
+
+    private void SpawnEnemyCamp()
+    {
+        var director = new EnemySpawnDirector
+        {
+            Name = "GoblinCamp",
+            Position = new Vector3(0f, 0f, -8f),
+            MaxAlive = 3,
+            SpawnRadius = 6f,
+        };
+        AddChild(director);
+        Log.Info("A goblin camp stirs to the north (−Z).");
+    }
+
+    private void RespawnPlayer()
+    {
+        if (_player == null || !IsInstanceValid(_player))
+        {
+            return;
+        }
+
+        _player.Velocity = Vector3.Zero;
+        _player.GlobalPosition = PlayerSpawn;
+        _player.GetComponent<StatsComponent>()?.RefillResources();
+        Log.Info("You were slain — respawning at the start.");
     }
 
     // --- Interaction --------------------------------------------------------
@@ -274,8 +305,20 @@ public partial class GameBootstrap : Node3D
 
     private void OnEntityDied(EntityDiedEvent e)
     {
-        Log.Info($"{e.Entity.DisplayName} died. Respawning in {RespawnDelaySeconds:0}s...");
-        _respawnCountdown = RespawnDelaySeconds;
+        if (ReferenceEquals(e.Entity, _player))
+        {
+            RespawnPlayer();
+        }
+        else if (ReferenceEquals(e.Entity, _dummy))
+        {
+            Log.Info($"{e.Entity.DisplayName} destroyed. Respawning in {RespawnDelaySeconds:0}s...");
+            _respawnCountdown = RespawnDelaySeconds;
+        }
+        else
+        {
+            // Enemies handle their own death/despawn via the spawn director.
+            Log.Info($"{e.Entity.DisplayName} was defeated.");
+        }
     }
 
     private void OnGameSaved(GameSavedEvent e)

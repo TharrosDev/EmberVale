@@ -16,13 +16,14 @@ public static class PlayerFactory
 {
     private const string PlayerAttributesPath = "res://data/attributes/PlayerAttributes.tres";
     private const string StartingWeaponPath = "res://data/weapons/IronSword.tres";
+    private const int PlayerTeam = 0;
     private const float CapsuleRadius = 0.4f;
     private const float CapsuleHeight = 1.8f;
     private const float EyeHeight = 1.62f;
 
-    public static CharacterEntity Create(Vector3 position)
+    public static PlayerCharacter Create(Vector3 position)
     {
-        var player = new CharacterEntity
+        var player = new PlayerCharacter
         {
             Name = "Player",
             DisplayName = "Player",
@@ -40,7 +41,7 @@ public static class PlayerFactory
         AttributeSet attributes = GD.Load<AttributeSet>(PlayerAttributesPath) ?? AttributeSet.CreateDefault();
         player.AddChild(new StatsComponent { Name = "Stats", Attributes = attributes });
         player.AddChild(new LocomotionComponent { Name = "Locomotion" });
-        player.AddChild(new CombatComponent { Name = "Combat" });
+        player.AddChild(new CombatComponent { Name = "Combat", Team = PlayerTeam });
         player.AddChild(BuildHurtbox());
 
         var cameraPivot = new Node3D

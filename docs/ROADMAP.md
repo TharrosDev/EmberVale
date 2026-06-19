@@ -9,8 +9,8 @@ through save/load.
 | 1  | Core Architecture    | ✅ Done      | EventBus, ServiceLocator, GameManager, Entity/Component, Stats, Save, sandbox |
 | 2  | Player Controller    | ✅ Done      | First-person CharacterEntity, camera look, code-defined input, locomotion, melee |
 | 3  | Combat Framework     | ✅ Done      | Hitbox/hurtbox, damage pipeline (armor/crit), weapons, combos, stamina, stagger |
-| 4  | Enemy AI             | ⏳ Next      | Patrol/investigate/combat/retreat state machine              |
-| 5  | Inventory System     | ⬜ Planned   | Item resources, stacks, container component                  |
+| 4  | Enemy AI             | ✅ Done      | Perception FSM (idle/patrol/investigate/combat/retreat), coordination, spawner |
+| 5  | Inventory System     | ⏳ Next      | Item resources, stacks, container component                  |
 | 6  | Equipment System     | ⬜ Planned   | Slots, stat modifiers from gear                              |
 | 7  | Loot Generation      | ⬜ Planned   | Rarity tiers, procedural affixes, drop tables                |
 | 8  | Progression System   | ⬜ Planned   | XP, levels, skills, perks                                    |
@@ -69,10 +69,26 @@ Core architecture foundation that everything else builds on:
 - Player wields an Iron Sword (LMB attack, RMB block); the dummy has a hurtbox
   and combat component. `StatsComponent` gained passive stamina/mana regen.
 
-## Phase 4 — next steps (Enemy AI)
+## Phase 4 — delivered (Enemy AI)
 
-1. `EnemyEntity` (CharacterEntity) reusing `LocomotionComponent` + combat.
-2. AI state machine component: Idle → Patrol → Investigate → Combat → Retreat.
-3. Perception (vision cone + last-known-position) driving transitions.
-4. Navigation via `NavigationAgent3D`; chase and strafe behaviours.
-5. Enemies attack the player through the existing hitbox/hurtbox pipeline.
+- `EnemyEntity` (CharacterEntity) + `PlayerCharacter` marker type so enemies can
+  resolve the player distinctly via the `ServiceLocator`.
+- `EnemyAIComponent`: an Idle → Patrol → Investigate → Combat → Retreat → Dead
+  state machine that reuses `LocomotionComponent` to move and
+  `MeleeWeaponComponent` to attack — the same systems the player uses.
+- Perception: vision range + FOV cone gated by a line-of-sight raycast, plus a
+  short-range proximity sense; tracks a last-known position for investigation.
+- Group coordination: spotting the player broadcasts `EnemyAlertedEvent`, pulling
+  nearby idle/patrolling allies to investigate.
+- Friendly fire prevented via a `Team` on `CombatComponent` honored by hitboxes.
+- `EnemyFactory` + `EnemySpawnDirector` maintain a goblin camp population; dead
+  enemies despawn and are replaced.
+- Player can now be killed by enemies and respawns at the start.
+
+## Phase 5 — next steps (Inventory System)
+
+1. `ItemResource` (id, name, icon, stack size, type) — resource-driven.
+2. `InventoryComponent`: slots, stacking, add/remove/query, weight/capacity.
+3. Item pickups in the world (interactable entities) using the interact action.
+4. Inventory UI panel; save/load of inventory contents.
+5. Foundation for equipment (Phase 6) and loot (Phase 7).

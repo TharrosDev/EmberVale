@@ -69,6 +69,7 @@ public partial class DebugHud : CanvasLayer
             _player.TryGetComponent(out StatsComponent playerStats))
         {
             sb.Append('\n');
+            AppendResource(sb, "Player HP ", playerStats, StatType.Health);
             AppendResource(sb, "Player STA", playerStats, StatType.Stamina);
         }
 

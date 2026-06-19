@@ -17,6 +17,7 @@ public partial class Hitbox : Area3D
 {
     private readonly HashSet<Hurtbox> _alreadyHit = new();
     private IEntity? _ownerEntity;
+    private int _ownerTeam;
     private DamagePacket _packet;
     private bool _active;
 
@@ -28,6 +29,7 @@ public partial class Hitbox : Area3D
         Monitoring = false;
 
         _ownerEntity = EntityNode.FindOwner(this);
+        _ownerTeam = _ownerEntity?.GetComponent<CombatComponent>()?.Team ?? 0;
     }
 
     /// <summary>Opens the damage window with the given packet, clearing prior hits.</summary>
@@ -63,6 +65,12 @@ public partial class Hitbox : Area3D
 
             // Never hit our own hurtbox.
             if (hurtbox.OwnerEntity != null && ReferenceEquals(hurtbox.OwnerEntity, _ownerEntity))
+            {
+                continue;
+            }
+
+            // Skip allies on the same team (friendly fire off).
+            if (hurtbox.Combat != null && hurtbox.Combat.Team == _ownerTeam)
             {
                 continue;
             }

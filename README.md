@@ -67,6 +67,7 @@ proof that the core systems are wired together.
     ├── Movement/            # LocomotionComponent (reusable motor)
     ├── Combat/              # Damage pipeline, hitbox/hurtbox, weapons
     ├── Player/              # First-person controller + factory
+    ├── Enemies/             # Enemy AI state machine + spawner
     ├── Save/                # ISaveable + SaveManager
     ├── UI/                  # DebugHud (and future gameplay UI)
     └── Bootstrap/           # GameBootstrap entry point
@@ -86,8 +87,8 @@ save/load.
 | 1  | Core Architecture    | ✅ Done     |
 | 2  | Player Controller    | ✅ Done     |
 | 3  | Combat Framework     | ✅ Done     |
-| 4  | Enemy AI             | ⏳ Next     |
-| 5  | Inventory System     | ⬜ Planned  |
+| 4  | Enemy AI             | ✅ Done     |
+| 5  | Inventory System     | ⏳ Next     |
 | 6  | Equipment System     | ⬜ Planned  |
 | 7  | Loot Generation      | ⬜ Planned  |
 | 8  | Progression System   | ⬜ Planned  |

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="WeaponResource" load_steps=2 format=3 uid="uid://cmbrvlgobclaw"]
+
+[ext_resource type="Script" path="res://src/Combat/WeaponResource.cs" id="1_weapon"]
+
+[resource]
+script = ExtResource("1_weapon")
+DisplayName = "Goblin Claw"
+DamageType = 0
+BaseDamage = 7.0
+PoiseDamage = 14.0
+StaminaCost = 10.0
+WindupTime = 0.25
+ActiveTime = 0.14
+RecoveryTime = 0.45
+AttackSpeed = 1.0
+ComboLength = 2
+FinisherMultiplier = 1.4

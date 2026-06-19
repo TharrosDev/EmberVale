@@ -14,6 +14,14 @@ namespace Embervale.Combat;
 [GlobalClass]
 public partial class CombatComponent : EntityComponent
 {
+    /// <summary>
+    /// Faction id used to prevent friendly fire. A <see cref="Hitbox"/> ignores
+    /// hurtboxes whose owner shares its team. 0 = player, 1 = hostile, others are
+    /// independent (e.g. neutral training targets).
+    /// </summary>
+    [Export]
+    public int Team { get; set; }
+
     [Export]
     public float MaxPoise { get; set; } = 50f;
 
