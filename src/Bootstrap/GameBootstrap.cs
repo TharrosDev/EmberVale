@@ -1,3 +1,4 @@
+using Embervale.Combat;
 using Embervale.Core;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
@@ -152,6 +153,7 @@ public partial class GameBootstrap : Node3D
 
         var stats = new StatsComponent { Name = "Stats", Attributes = attributes };
         dummy.AddChild(stats);
+        dummy.AddChild(new CombatComponent { Name = "Combat" });
 
         var mesh = new MeshInstance3D
         {
@@ -161,13 +163,23 @@ public partial class GameBootstrap : Node3D
         };
         dummy.AddChild(mesh);
 
-        // Collider so the player's melee raycast can hit the dummy.
+        // Solid collider so the player cannot walk through the dummy. The dummy's
+        // origin is at its capsule centre (it is spawned at y=1), so shapes are
+        // centred at the local origin to line up with the mesh.
         var collider = new StaticBody3D { Name = "Collider" };
         collider.AddChild(new CollisionShape3D
         {
             Shape = new CapsuleShape3D { Radius = 0.4f, Height = 1.8f },
         });
         dummy.AddChild(collider);
+
+        // Hurtbox so melee hitboxes can deliver damage to the dummy.
+        var hurtbox = new Hurtbox { Name = "Hurtbox" };
+        hurtbox.AddChild(new CollisionShape3D
+        {
+            Shape = new CapsuleShape3D { Radius = 0.4f, Height = 1.8f },
+        });
+        dummy.AddChild(hurtbox);
 
         AddChild(dummy);
 
@@ -188,6 +200,7 @@ public partial class GameBootstrap : Node3D
         _player = PlayerFactory.Create(new Vector3(0f, 1.2f, 5f));
         AddChild(_player);
         ServiceLocator.Instance?.Register(_player);
+        _hud.SetPlayer(_player);
         Log.Info($"Spawned player at {_player.Position}. Facing the training dummy.");
     }
 

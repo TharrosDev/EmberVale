@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="WeaponResource" load_steps=2 format=3 uid="uid://cmbrvlironswd"]
+
+[ext_resource type="Script" path="res://src/Combat/WeaponResource.cs" id="1_weapon"]
+
+[resource]
+script = ExtResource("1_weapon")
+DisplayName = "Iron Sword"
+DamageType = 0
+BaseDamage = 14.0
+PoiseDamage = 22.0
+StaminaCost = 12.0
+WindupTime = 0.15
+ActiveTime = 0.12
+RecoveryTime = 0.28
+AttackSpeed = 1.0
+ComboLength = 3
+FinisherMultiplier = 1.6

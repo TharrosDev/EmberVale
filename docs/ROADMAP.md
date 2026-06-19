@@ -8,8 +8,8 @@ through save/load.
 | -- | -------------------- | ----------- | ------------------------------------------------------------ |
 | 1  | Core Architecture    | ✅ Done      | EventBus, ServiceLocator, GameManager, Entity/Component, Stats, Save, sandbox |
 | 2  | Player Controller    | ✅ Done      | First-person CharacterEntity, camera look, code-defined input, locomotion, melee |
-| 3  | Combat Framework     | ⏳ Next      | Melee/ranged hitboxes, damage pipeline, stagger, crits       |
-| 4  | Enemy AI             | ⬜ Planned   | Patrol/investigate/combat/retreat state machine              |
+| 3  | Combat Framework     | ✅ Done      | Hitbox/hurtbox, damage pipeline (armor/crit), weapons, combos, stamina, stagger |
+| 4  | Enemy AI             | ⏳ Next      | Patrol/investigate/combat/retreat state machine              |
 | 5  | Inventory System     | ⬜ Planned   | Item resources, stacks, container component                  |
 | 6  | Equipment System     | ⬜ Planned   | Slots, stat modifiers from gear                              |
 | 7  | Loot Generation      | ⬜ Planned   | Rarity tiers, procedural affixes, drop tables                |
@@ -54,10 +54,25 @@ Core architecture foundation that everything else builds on:
 - Sandbox: player walks the world and can melee the dummy to death; floor and
   dummy now have physics colliders.
 
-## Phase 3 — next steps (Combat Framework)
+## Phase 3 — delivered (Combat Framework)
 
-1. `WeaponResource` (damage, speed, range, type) — resource-driven.
-2. Damage pipeline: armor mitigation, crit roll, damage types/resistances.
-3. Attack states: wind-up, active hitbox, recovery; combos and heavy attacks.
-4. Blocking, parrying, stagger/poise on `StatsComponent`.
-5. Hitbox/hurtbox `Area3D` components replacing the demo melee raycast.
+- `DamageType` + `DamagePacket`/`DamageResult` value types and `CombatMath`
+  (attacker-side crit roll & power scaling; defender-side armor mitigation).
+- `Hitbox`/`Hurtbox` `Area3D` components on dedicated collision layers
+  (`CombatLayers`); hitboxes poll overlaps during their active window and hit
+  each target once.
+- `CombatComponent`: poise/stagger, blocking, and the defender damage pipeline
+  feeding `StatsComponent`; raises `DamageDealtEvent`/`EntityStaggeredEvent`.
+- `WeaponResource` (resource-driven) + `MeleeWeaponComponent`: wind-up/active/
+  recovery state machine with combos, finishers, stamina cost and attack-speed
+  scaling.
+- Player wields an Iron Sword (LMB attack, RMB block); the dummy has a hurtbox
+  and combat component. `StatsComponent` gained passive stamina/mana regen.
+
+## Phase 4 — next steps (Enemy AI)
+
+1. `EnemyEntity` (CharacterEntity) reusing `LocomotionComponent` + combat.
+2. AI state machine component: Idle → Patrol → Investigate → Combat → Retreat.
+3. Perception (vision cone + last-known-position) driving transitions.
+4. Navigation via `NavigationAgent3D`; chase and strafe behaviours.
+5. Enemies attack the player through the existing hitbox/hurtbox pipeline.

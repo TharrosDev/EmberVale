@@ -1,3 +1,4 @@
+using Embervale.Combat;
 using Embervale.Entities;
 using Embervale.Movement;
 using Embervale.Stats;
@@ -14,6 +15,7 @@ namespace Embervale.Player;
 public static class PlayerFactory
 {
     private const string PlayerAttributesPath = "res://data/attributes/PlayerAttributes.tres";
+    private const string StartingWeaponPath = "res://data/weapons/IronSword.tres";
     private const float CapsuleRadius = 0.4f;
     private const float CapsuleHeight = 1.8f;
     private const float EyeHeight = 1.62f;
@@ -28,17 +30,18 @@ public static class PlayerFactory
             Position = position,
         };
 
-        var collision = new CollisionShape3D
+        player.AddChild(new CollisionShape3D
         {
             Name = "Collision",
             Shape = new CapsuleShape3D { Radius = CapsuleRadius, Height = CapsuleHeight },
             Position = new Vector3(0f, CapsuleHeight * 0.5f, 0f),
-        };
-        player.AddChild(collision);
+        });
 
         AttributeSet attributes = GD.Load<AttributeSet>(PlayerAttributesPath) ?? AttributeSet.CreateDefault();
         player.AddChild(new StatsComponent { Name = "Stats", Attributes = attributes });
         player.AddChild(new LocomotionComponent { Name = "Locomotion" });
+        player.AddChild(new CombatComponent { Name = "Combat" });
+        player.AddChild(BuildHurtbox());
 
         var cameraPivot = new Node3D
         {
@@ -46,17 +49,45 @@ public static class PlayerFactory
             Position = new Vector3(0f, EyeHeight, 0f),
         };
         player.AddChild(cameraPivot);
+        cameraPivot.AddChild(new Camera3D { Name = "Camera", Current = true });
 
-        var camera = new Camera3D { Name = "Camera", Current = true };
-        cameraPivot.AddChild(camera);
+        // Melee swing volume in front of the body; opened by the weapon component.
+        var hitbox = new Hitbox
+        {
+            Name = "MeleeHitbox",
+            Position = new Vector3(0f, 1.0f, -1.1f),
+        };
+        hitbox.AddChild(new CollisionShape3D
+        {
+            Shape = new BoxShape3D { Size = new Vector3(1.0f, 1.4f, 1.6f) },
+        });
+        player.AddChild(hitbox);
+
+        WeaponResource? weapon = GD.Load<WeaponResource>(StartingWeaponPath);
+        player.AddChild(new MeleeWeaponComponent
+        {
+            Name = "Weapon",
+            Weapon = weapon,
+            Hitbox = hitbox,
+        });
 
         player.AddChild(new PlayerController
         {
             Name = "Controller",
             CameraPivot = cameraPivot,
-            Camera = camera,
         });
 
         return player;
+    }
+
+    private static Hurtbox BuildHurtbox()
+    {
+        var hurtbox = new Hurtbox { Name = "Hurtbox" };
+        hurtbox.AddChild(new CollisionShape3D
+        {
+            Shape = new CapsuleShape3D { Radius = CapsuleRadius, Height = CapsuleHeight },
+            Position = new Vector3(0f, CapsuleHeight * 0.5f, 0f),
+        });
+        return hurtbox;
     }
 }

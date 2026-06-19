@@ -19,6 +19,7 @@ public static class GameInput
     public const string Sprint = "sprint";
     public const string Interact = "interact";
     public const string Attack = "attack";
+    public const string Block = "block";
     public const string Cast = "cast";
     public const string Pause = "pause";
 
@@ -33,7 +34,8 @@ public static class GameInput
         Bind(Interact, new InputEventKey { PhysicalKeycode = Key.E });
         Bind(Pause, new InputEventKey { PhysicalKeycode = Key.Escape });
         Bind(Attack, new InputEventMouseButton { ButtonIndex = MouseButton.Left });
-        Bind(Cast, new InputEventMouseButton { ButtonIndex = MouseButton.Right });
+        Bind(Block, new InputEventMouseButton { ButtonIndex = MouseButton.Right });
+        Bind(Cast, new InputEventKey { PhysicalKeycode = Key.Q });
     }
 
     private static void Bind(string action, InputEvent trigger)

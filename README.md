@@ -62,12 +62,42 @@ proof that the core systems are wired together.
     │   ├── Diagnostics/     # Logging
     │   ├── GameManager.cs   # Top-level state machine
     │   └── GameState.cs
-    ├── Entities/            # Entity + EntityComponent framework
+    ├── Entities/            # Entity / CharacterEntity / EntityComponent framework
     ├── Stats/               # Stats, modifiers, attribute resources
+    ├── Movement/            # LocomotionComponent (reusable motor)
+    ├── Combat/              # Damage pipeline, hitbox/hurtbox, weapons
+    ├── Player/              # First-person controller + factory
     ├── Save/                # ISaveable + SaveManager
     ├── UI/                  # DebugHud (and future gameplay UI)
     └── Bootstrap/           # GameBootstrap entry point
 ```
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for how the pieces fit
-together and [`docs/ROADMAP.md`](docs/ROADMAP.md) for the development plan.
+together and [`docs/ROADMAP.md`](docs/ROADMAP.md) for the full development plan.
+
+## Roadmap
+
+Phases are built in order; the repo stays buildable and playable at every step.
+A phase is "done" when its systems work in-game **and** round-trip through
+save/load.
+
+| #  | Phase                | Status     |
+| -- | -------------------- | ---------- |
+| 1  | Core Architecture    | ✅ Done     |
+| 2  | Player Controller    | ✅ Done     |
+| 3  | Combat Framework     | ✅ Done     |
+| 4  | Enemy AI             | ⏳ Next     |
+| 5  | Inventory System     | ⬜ Planned  |
+| 6  | Equipment System     | ⬜ Planned  |
+| 7  | Loot Generation      | ⬜ Planned  |
+| 8  | Progression System   | ⬜ Planned  |
+| 9  | Quest Framework      | ⬜ Planned  |
+| 10 | Dialogue System      | ⬜ Planned  |
+| 11 | NPC Schedules        | ⬜ Planned  |
+| 12 | Magic System         | ⬜ Planned  |
+| 13 | World Systems        | ⬜ Planned  |
+| 14 | Crafting             | ⬜ Planned  |
+| 15 | Faction Systems      | ⬜ Planned  |
+| 16 | Procedural Events    | ⬜ Planned  |
+| 17 | Optimization         | ⬜ Ongoing  |
+| 18 | Content Expansion    | ⬜ Ongoing  |

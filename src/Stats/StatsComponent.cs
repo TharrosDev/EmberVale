@@ -28,6 +28,11 @@ public partial class StatsComponent : EntityComponent, ISaveable
     [Export]
     public AttributeSet? Attributes { get; set; }
 
+    [ExportGroup("Passive Regen (per second)")]
+    [Export] public float HealthRegen { get; set; } = 0f;
+    [Export] public float StaminaRegen { get; set; } = 15f;
+    [Export] public float ManaRegen { get; set; } = 4f;
+
     public string SaveId => $"stats:{Entity?.RuntimeId ?? 0}";
 
     public bool IsAlive => GetCurrent(StatType.Health) > 0f;
@@ -42,6 +47,35 @@ public partial class StatsComponent : EntityComponent, ISaveable
     protected override void OnTeardown()
     {
         SaveManager.Instance?.Unregister(this);
+    }
+
+    public override void _Process(double delta)
+    {
+        Regenerate(StatType.Health, HealthRegen, delta);
+        Regenerate(StatType.Stamina, StaminaRegen, delta);
+        Regenerate(StatType.Mana, ManaRegen, delta);
+    }
+
+    private void Regenerate(StatType type, float rate, double delta)
+    {
+        if (rate <= 0f)
+        {
+            return;
+        }
+
+        // Never regenerate a corpse back to life; other resources may refill from 0.
+        if (type == StatType.Health && !IsAlive)
+        {
+            return;
+        }
+
+        float current = GetCurrent(type);
+        if (current >= GetMax(type))
+        {
+            return;
+        }
+
+        SetCurrent(type, current + (rate * (float)delta));
     }
 
     private void BuildStats(AttributeSet source)
