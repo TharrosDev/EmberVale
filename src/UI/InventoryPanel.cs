@@ -1,4 +1,3 @@
-using System.Text;
 using Embervale.Core;
 using Embervale.Core.Events;
 using Embervale.Items;
@@ -7,24 +6,28 @@ using Godot;
 namespace Embervale.UI;
 
 /// <summary>
-/// A toggleable (the <c>inventory</c> action) read-out of the player's inventory:
-/// slot usage, total weight, and each stack with its rarity. Display-only for now
-/// — drag/drop, use and equip come with the equipment UI in later phases. Built
-/// in code; refreshes live while open via <see cref="InventoryChangedEvent"/>.
+/// The character screen: toggled with the <c>inventory</c> action, it shows the
+/// equipment slots (with Unequip buttons) and the backpack contents (with Equip
+/// buttons on equippable stacks). While open it frees the mouse and sets
+/// <see cref="UiState.MenuOpen"/> so the player controller stops driving the
+/// character. Rebuilt from a dirty flag in <c>_Process</c> (never during a button
+/// signal) to avoid freeing a control mid-callback.
 /// </summary>
 public partial class InventoryPanel : CanvasLayer
 {
     private InventoryComponent? _inventory;
+    private EquipmentComponent? _equipment;
     private PanelContainer _panel = null!;
-    private Label _label = null!;
+    private VBoxContainer _list = null!;
+    private bool _dirty = true;
 
     public override void _Ready()
     {
         _panel = new PanelContainer
         {
             Visible = false,
-            Position = new Vector2(940, 16),
-            CustomMinimumSize = new Vector2(320, 0),
+            Position = new Vector2(900, 16),
+            CustomMinimumSize = new Vector2(360, 0),
         };
         AddChild(_panel);
 
@@ -35,77 +38,173 @@ public partial class InventoryPanel : CanvasLayer
         margin.AddThemeConstantOverride("margin_bottom", 10);
         _panel.AddChild(margin);
 
-        _label = new Label();
-        _label.AddThemeFontSizeOverride("font_size", 15);
-        margin.AddChild(_label);
+        _list = new VBoxContainer();
+        margin.AddChild(_list);
 
-        EventBus.Instance?.Subscribe<InventoryChangedEvent>(OnInventoryChanged);
+        EventBus.Instance?.Subscribe<InventoryChangedEvent>(OnChanged);
+        EventBus.Instance?.Subscribe<EquipmentChangedEvent>(OnEquipmentChanged);
     }
 
     public override void _ExitTree()
     {
-        EventBus.Instance?.Unsubscribe<InventoryChangedEvent>(OnInventoryChanged);
+        EventBus.Instance?.Unsubscribe<InventoryChangedEvent>(OnChanged);
+        EventBus.Instance?.Unsubscribe<EquipmentChangedEvent>(OnEquipmentChanged);
     }
 
     public void SetInventory(InventoryComponent? inventory)
     {
         _inventory = inventory;
-        Refresh();
+        _dirty = true;
+    }
+
+    public void SetEquipment(EquipmentComponent? equipment)
+    {
+        _equipment = equipment;
+        _dirty = true;
     }
 
     public override void _Process(double delta)
     {
         if (Godot.Input.IsActionJustPressed(GameInput.Inventory))
         {
-            _panel.Visible = !_panel.Visible;
-            if (_panel.Visible)
-            {
-                Refresh();
-            }
+            Toggle();
+        }
+
+        if (_panel.Visible && _dirty)
+        {
+            Rebuild();
         }
     }
 
-    private void OnInventoryChanged(InventoryChangedEvent e)
+    private void Toggle()
     {
-        if (_panel.Visible)
+        bool open = !_panel.Visible;
+        _panel.Visible = open;
+        UiState.MenuOpen = open;
+
+        bool playing = GameManager.Instance is { IsPlaying: true };
+        Godot.Input.MouseMode = open || !playing
+            ? Godot.Input.MouseModeEnum.Visible
+            : Godot.Input.MouseModeEnum.Captured;
+
+        if (open)
         {
-            Refresh();
+            _dirty = true;
         }
     }
 
-    private void Refresh()
-    {
-        var sb = new StringBuilder();
-        sb.Append("INVENTORY   (I to close)\n");
+    private void OnChanged(InventoryChangedEvent e) => _dirty = true;
 
-        if (_inventory == null)
+    private void OnEquipmentChanged(EquipmentChangedEvent e) => _dirty = true;
+
+    private void Rebuild()
+    {
+        _dirty = false;
+
+        foreach (Node child in _list.GetChildren())
         {
-            sb.Append("—");
-            _label.Text = sb.ToString();
+            _list.RemoveChild(child);
+            child.QueueFree();
+        }
+
+        AddHeader("CHARACTER   (I to close)");
+        BuildEquipment();
+        AddHeader(BackpackHeader());
+        BuildBackpack();
+    }
+
+    private void BuildEquipment()
+    {
+        if (_equipment == null)
+        {
             return;
         }
 
-        sb.Append($"Slots {_inventory.UsedSlots}/{_inventory.Capacity}   ");
-        sb.Append($"Weight {_inventory.TotalWeight:0.0}/{_inventory.MaxWeight:0}\n\n");
+        foreach (EquipmentSlot slot in EquipmentSlots.DisplayOrder)
+        {
+            EquippableItemResource? item = _equipment.GetEquipped(slot);
+            string text = $"{EquipmentSlots.Label(slot)}: {item?.DisplayName ?? "—"}";
+
+            if (item == null)
+            {
+                AddLine(text);
+                continue;
+            }
+
+            EquipmentSlot captured = slot;
+            AddRow(text, "Unequip", () => _equipment.Unequip(captured));
+        }
+    }
+
+    private void BuildBackpack()
+    {
+        if (_inventory == null)
+        {
+            return;
+        }
 
         if (_inventory.Stacks.Count == 0)
         {
-            sb.Append("(empty)");
+            AddLine("(empty)");
+            return;
         }
-        else
-        {
-            foreach (ItemStack stack in _inventory.Stacks)
-            {
-                sb.Append($"• {stack.Item.DisplayName}  x{stack.Quantity}");
-                if (stack.Item.Rarity != ItemRarity.Common)
-                {
-                    sb.Append($"  [{stack.Item.Rarity}]");
-                }
 
-                sb.Append('\n');
+        foreach (ItemStack stack in _inventory.Stacks)
+        {
+            string rarity = stack.Item.Rarity != ItemRarity.Common ? $"  [{stack.Item.Rarity}]" : string.Empty;
+            string text = $"{stack.Item.DisplayName}  x{stack.Quantity}{rarity}";
+
+            if (stack.Item is EquippableItemResource equippable && _equipment != null)
+            {
+                AddRow(text, "Equip", () => _equipment.Equip(equippable));
+            }
+            else
+            {
+                AddLine($"• {text}");
             }
         }
+    }
 
-        _label.Text = sb.ToString();
+    private string BackpackHeader()
+    {
+        if (_inventory == null)
+        {
+            return "BACKPACK";
+        }
+
+        return $"BACKPACK   {_inventory.UsedSlots}/{_inventory.Capacity}   wt {_inventory.TotalWeight:0.0}";
+    }
+
+    private void AddHeader(string text)
+    {
+        var label = new Label { Text = text };
+        label.AddThemeFontSizeOverride("font_size", 16);
+        _list.AddChild(label);
+    }
+
+    private void AddLine(string text)
+    {
+        var label = new Label { Text = text };
+        label.AddThemeFontSizeOverride("font_size", 14);
+        _list.AddChild(label);
+    }
+
+    private void AddRow(string text, string action, System.Action onPressed)
+    {
+        var row = new HBoxContainer();
+
+        var label = new Label
+        {
+            Text = text,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+        };
+        label.AddThemeFontSizeOverride("font_size", 14);
+        row.AddChild(label);
+
+        var button = new Button { Text = action };
+        button.Pressed += () => onPressed();
+        row.AddChild(button);
+
+        _list.AddChild(row);
     }
 }

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EquippableItemResource" load_steps=2 format=3 uid="uid://cmbrvleqiring"]
+
+[ext_resource type="Script" path="res://src/Items/EquippableItemResource.cs" id="1_eq"]
+
+[resource]
+script = ExtResource("1_eq")
+Id = "item.ring.iron"
+DisplayName = "Ring of the Hunter"
+Description = "A plain iron band that sharpens the wearer's killing instinct."
+Type = 0
+Rarity = 2
+MaxStack = 1
+Weight = 0.1
+Value = 150
+Slot = 8
+BonusPhysicalPower = 2.0
+BonusCritChance = 0.05

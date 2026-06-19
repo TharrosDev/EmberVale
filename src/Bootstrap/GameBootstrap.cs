@@ -213,6 +213,7 @@ public partial class GameBootstrap : Node3D
         ServiceLocator.Instance?.Register(_player);
         _hud.SetPlayer(_player);
         _inventoryPanel.SetInventory(_player.GetComponent<InventoryComponent>());
+        _inventoryPanel.SetEquipment(_player.GetComponent<EquipmentComponent>());
         Log.Info($"Spawned player at {_player.Position}. Facing the training dummy.");
     }
 
@@ -223,6 +224,12 @@ public partial class GameBootstrap : Node3D
         TryDropPickup("item.material.iron_ore", 3, new Vector3(-2f, 0f, 0f));
         TryDropPickup("item.gem.ruby", 1, new Vector3(0f, 0f, -3f));
         TryDropPickup("item.currency.gold", 25, new Vector3(2.5f, 0f, -1f));
+
+        // Equippable gear to try out the equipment screen.
+        TryDropPickup("item.armor.leather_cap", 1, new Vector3(-1.2f, 0f, 3f));
+        TryDropPickup("item.armor.leather_vest", 1, new Vector3(-3f, 0f, 2.5f));
+        TryDropPickup("item.weapon.steel_sword", 1, new Vector3(1.5f, 0f, -2.5f));
+        TryDropPickup("item.ring.iron", 1, new Vector3(3f, 0f, -3.5f));
     }
 
     private void TryDropPickup(string itemId, int quantity, Vector3 position)

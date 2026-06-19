@@ -74,6 +74,10 @@ public static class PlayerFactory
             Hitbox = hitbox,
         });
 
+        // Equipment sits after inventory + weapon so it can resolve both; the
+        // starting weapon above becomes the baseline restored on unequip.
+        player.AddChild(new EquipmentComponent { Name = "Equipment" });
+
         player.AddChild(new PlayerController
         {
             Name = "Controller",

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="WeaponResource" load_steps=2 format=3 uid="uid://cmbrvlsteelswd"]
+
+[ext_resource type="Script" path="res://src/Combat/WeaponResource.cs" id="1_weapon"]
+
+[resource]
+script = ExtResource("1_weapon")
+DisplayName = "Steel Sword"
+DamageType = 0
+BaseDamage = 20.0
+PoiseDamage = 28.0
+StaminaCost = 15.0
+WindupTime = 0.18
+ActiveTime = 0.12
+RecoveryTime = 0.30
+AttackSpeed = 0.95
+ComboLength = 3
+FinisherMultiplier = 1.7

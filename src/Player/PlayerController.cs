@@ -60,6 +60,14 @@ public partial class PlayerController : EntityComponent
             return;
         }
 
+        // A blocking menu (inventory) is open: hold position, ignore combat/look
+        // so UI clicks don't also drive the character.
+        if (UiState.MenuOpen)
+        {
+            _locomotion?.Move(delta, Vector3.Zero, sprint: false, jump: false);
+            return;
+        }
+
         Vector2 input = Godot.Input.GetVector(
             GameInput.MoveLeft, GameInput.MoveRight, GameInput.MoveForward, GameInput.MoveBack);
 

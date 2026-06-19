@@ -94,8 +94,8 @@ save/load.
 | 3  | Combat Framework     | ✅ Done     |
 | 4  | Enemy AI             | ✅ Done     |
 | 5  | Inventory System     | ✅ Done     |
-| 6  | Equipment System     | ⏳ Next     |
-| 7  | Loot Generation      | ⬜ Planned  |
+| 6  | Equipment System     | ✅ Done     |
+| 7  | Loot Generation      | ⏳ Next     |
 | 8  | Progression System   | ⬜ Planned  |
 | 9  | Quest Framework      | ⬜ Planned  |
 | 10 | Dialogue System      | ⬜ Planned  |

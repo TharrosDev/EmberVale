@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EquippableItemResource" load_steps=2 format=3 uid="uid://cmbrvleqlcap"]
+
+[ext_resource type="Script" path="res://src/Items/EquippableItemResource.cs" id="1_eq"]
+
+[resource]
+script = ExtResource("1_eq")
+Id = "item.armor.leather_cap"
+DisplayName = "Leather Cap"
+Description = "Boiled leather that turns a glancing blow."
+Type = 3
+Rarity = 0
+MaxStack = 1
+Weight = 0.8
+Value = 15
+Slot = 3
+BonusArmor = 4.0

@@ -305,7 +305,16 @@ direct children of the host. `Hitbox`/`Hurtbox` are `Area3D` (not
   `interact` action and calls `Interact(player)`.
 - **`ItemPickupComponent`** (an interactable) + **`ItemPickupFactory`** — world
   pickups (rarity-tinted cube + collider). Goblins drop hide/gold on death.
-- **`InventoryPanel`** (`src/UI`) — toggle with `I`; lists stacks/weight.
+- **`InventoryPanel`** (`src/UI`) — the character screen (toggle `I`): equipment
+  slots + backpack with Equip/Unequip buttons. Opening it frees the mouse and sets
+  `Core.UiState.MenuOpen` (which suspends player look/move/attack). Rebuilt from a
+  dirty flag in `_Process`, never during a button signal.
+- **Equipment:** `EquipmentSlot` enum + `EquippableItemResource : ItemResource`
+  (slot, flat stat bonuses, optional `WeaponResource`). **`EquipmentComponent`**
+  (`ISaveable`, `equipment:{RuntimeId}`) equips/unequips between the inventory and
+  slots, applies bonuses as `StatModifier`s sourced to the item (removed cleanly on
+  unequip), and swaps the `MeleeWeaponComponent.Weapon` (restoring the factory
+  baseline). Raises `EquipmentChangedEvent`.
 
 ### 6.7 Save (`src/Save`)
 
@@ -466,6 +475,13 @@ Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
 3. New interactable kinds: subclass `InteractableComponent` (override `Prompt`
    and `Interact`) and add a collider so the player's raycast can hit it.
 
+**A new piece of equipment**
+1. Author `data/items/Xxx.tres` (`script_class="EquippableItemResource"`,
+   `MaxStack = 1`): set `Slot`, the `Bonus*` fields, and (for weapons) a `Weapon`
+   `ext_resource` pointing at a `WeaponResource`.
+2. It's indexed by `ItemDatabase` like any item; equip it via the character screen.
+   Bonuses apply automatically through `EquipmentComponent` → `StatsComponent`.
+
 **A new stat**
 1. Add to the `StatType` enum; if it's a depleting resource, update
    `StatTypes.IsResource`.
@@ -507,11 +523,11 @@ Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
 ## 13. Roadmap status
 
 Done: **1 Core Architecture · 2 Player Controller · 3 Combat Framework ·
-4 Enemy AI · 5 Inventory System**. Next: **6 Equipment System**.
+4 Enemy AI · 5 Inventory System · 6 Equipment System**. Next: **7 Loot Generation**.
 
-Then (in order): 7 Loot Generation · 8 Progression · 9 Quests · 10 Dialogue ·
-11 NPC Schedules · 12 Magic · 13 World Systems · 14 Crafting · 15 Factions ·
-16 Procedural Events · 17 Optimization · 18 Content Expansion.
+Then (in order): 8 Progression · 9 Quests · 10 Dialogue · 11 NPC Schedules ·
+12 Magic · 13 World Systems · 14 Crafting · 15 Factions · 16 Procedural Events ·
+17 Optimization · 18 Content Expansion.
 
 See `docs/ROADMAP.md` for per-phase delivery notes and the next-steps checklist.
 

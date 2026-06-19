@@ -11,8 +11,8 @@ through save/load.
 | 3  | Combat Framework     | ✅ Done      | Hitbox/hurtbox, damage pipeline (armor/crit), weapons, combos, stamina, stagger |
 | 4  | Enemy AI             | ✅ Done      | Perception FSM (idle/patrol/investigate/combat/retreat), coordination, spawner |
 | 5  | Inventory System     | ✅ Done      | Item resources + database, stacking inventory, pickups, UI, save |
-| 6  | Equipment System     | ⏳ Next      | Slots, stat modifiers from gear                              |
-| 7  | Loot Generation      | ⬜ Planned   | Rarity tiers, procedural affixes, drop tables                |
+| 6  | Equipment System     | ✅ Done      | Slots, equippable items, stat bonuses, weapon swap, character UI |
+| 7  | Loot Generation      | ⏳ Next      | Rarity tiers, procedural affixes, drop tables                |
 | 8  | Progression System   | ⬜ Planned   | XP, levels, skills, perks                                    |
 | 9  | Quest Framework      | ⬜ Planned   | Objectives, branching, consequences                         |
 | 10 | Dialogue System      | ⬜ Planned   | Node-graph conversations, choices                           |
@@ -95,11 +95,24 @@ Core architecture foundation that everything else builds on:
   controller; `ItemPickupComponent`/`ItemPickupFactory` for world pickups.
 - `InventoryPanel` UI (toggle with `I`); goblins drop hide/gold on death.
 
-## Phase 6 — next steps (Equipment System)
+## Phase 6 — delivered (Equipment System)
 
-1. `EquipmentSlot` enum (MainHand, OffHand, Head, Chest, ...) + `EquippableItem`
-   data (slot, stat modifiers, weapon/armor link) layered over `ItemResource`.
-2. `EquipmentComponent`: equip/unequip applying `StatModifier`s (source = item)
-   to the `StatsComponent`; swap the active `WeaponResource` on the weapon.
-3. Equip from the inventory UI; reflect equipped gear in stats/combat.
-4. Save/load equipped items; foundation for loot affixes (Phase 7).
+- `EquipmentSlot` enum + `EquippableItemResource` (slot, flat stat bonuses, optional
+  `WeaponResource`) layered over `ItemResource`.
+- `EquipmentComponent`: equip/unequip moves items to/from the `InventoryComponent`,
+  applies stat bonuses as `StatModifier`s sourced to the item, and swaps the active
+  weapon on the `MeleeWeaponComponent` (restoring the baseline on unequip).
+  Implements `ISaveable`.
+- The character screen (`InventoryPanel`) now shows equipment slots and the backpack
+  with Equip/Unequip buttons; opening it frees the mouse (`UiState.MenuOpen`).
+- Gear pickups in the sandbox: steel sword, leather cap/vest, hunter's ring.
+
+## Phase 7 — next steps (Loot Generation)
+
+1. An item-*instance* layer over `ItemResource` carrying rolled affixes
+   (`StatModifier`s) and a generated name/rarity.
+2. `LootTable` resources + a generator: pick base item, roll rarity, roll affixes
+   scaled by rarity/level.
+3. `LootComponent` on enemies → drop generated instances on death (replacing the
+   fixed goblin-hide drop).
+4. Inventory/equipment carry instance affixes through stats and save/load.

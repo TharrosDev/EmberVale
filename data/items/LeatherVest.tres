@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EquippableItemResource" load_steps=2 format=3 uid="uid://cmbrvleqlvest"]
+
+[ext_resource type="Script" path="res://src/Items/EquippableItemResource.cs" id="1_eq"]
+
+[resource]
+script = ExtResource("1_eq")
+Id = "item.armor.leather_vest"
+DisplayName = "Leather Vest"
+Description = "Layered hide that guards the vitals."
+Type = 3
+Rarity = 1
+MaxStack = 1
+Weight = 4.0
+Value = 40
+Slot = 4
+BonusArmor = 10.0
+BonusMaxHealth = 15.0
