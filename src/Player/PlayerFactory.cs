@@ -1,4 +1,5 @@
 using Embervale.Combat;
+using Embervale.Dialogue;
 using Embervale.Entities;
 using Embervale.Items;
 using Embervale.Movement;
@@ -87,6 +88,9 @@ public static class PlayerFactory
 
         // Quest log after progression + inventory so it resolves both for rewards.
         player.AddChild(new QuestLogComponent { Name = "QuestLog" });
+
+        // Story flags: persistent conversation/world memory read & written by dialogue.
+        player.AddChild(new StoryFlagsComponent { Name = "StoryFlags" });
 
         player.AddChild(new PlayerController
         {

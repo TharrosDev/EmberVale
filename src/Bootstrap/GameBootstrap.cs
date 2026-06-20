@@ -3,6 +3,7 @@ using Embervale.Core;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Core.Services;
+using Embervale.Dialogue;
 using Embervale.Enemies;
 using Embervale.Entities;
 using Embervale.Items;
@@ -39,6 +40,7 @@ public partial class GameBootstrap : Node3D
     private DebugHud _hud = null!;
     private InventoryPanel _inventoryPanel = null!;
     private QuestLogPanel _questLogPanel = null!;
+    private DialoguePanel _dialoguePanel = null!;
     private Entity? _dummy;
     private PlayerCharacter? _player;
     private double _respawnCountdown = -1d;
@@ -56,6 +58,7 @@ public partial class GameBootstrap : Node3D
         AffixDatabase.Initialize();
         PerkDatabase.Initialize();
         QuestDatabase.Initialize();
+        DialogueDatabase.Initialize();
         BuildEnvironment();
 
         _hud = new DebugHud();
@@ -64,6 +67,8 @@ public partial class GameBootstrap : Node3D
         AddChild(_inventoryPanel);
         _questLogPanel = new QuestLogPanel();
         AddChild(_questLogPanel);
+        _dialoguePanel = new DialoguePanel();
+        AddChild(_dialoguePanel);
 
         SubscribeEvents();
         SpawnDummy();
@@ -300,9 +305,11 @@ public partial class GameBootstrap : Node3D
         });
         giver.AddChild(collider);
 
-        giver.AddChild(new QuestGiverComponent { Name = "QuestGiver", QuestId = "quest.gather_iron" });
+        // The elder now offers his task in conversation: the dialogue's choices start
+        // the quest and remember you via a story flag (see data/dialogue/Elder.tres).
+        giver.AddChild(new DialogueComponent { Name = "Dialogue", DialogueId = "dialogue.elder" });
         AddChild(giver);
-        Log.Info("The Village Elder waits near the spawn with a task.");
+        Log.Info("The Village Elder waits near the spawn, ready to talk.");
     }
 
     private void SpawnEnemyCamp()

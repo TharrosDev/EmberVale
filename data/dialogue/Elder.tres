@@ -1,0 +1,109 @@
+[gd_resource type="Resource" script_class="DialogueResource" load_steps=21 format=3 uid="uid://cmbrvldlgeldr"]
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+[sub_resource type="Resource" id="ch_root_friend"]
+script = ExtResource("3_choice")
+Text = "(Greet the elder like an old friend.)"
+Goto = "friend"
+Condition = 5
+ConditionArg = "flag.elder_thanked"
+
+[sub_resource type="Resource" id="ch_root_thanks"]
+script = ExtResource("3_choice")
+Text = "About that iron I gathered..."
+Goto = "thanks"
+Condition = 3
+ConditionArg = "quest.gather_iron"
+
+[sub_resource type="Resource" id="ch_root_offer"]
+script = ExtResource("3_choice")
+Text = "What do you need?"
+Goto = "offer"
+Condition = 1
+ConditionArg = "quest.gather_iron"
+
+[sub_resource type="Resource" id="ch_root_active"]
+script = ExtResource("3_choice")
+Text = "I'm still searching for that iron."
+Goto = "inprogress"
+Condition = 2
+ConditionArg = "quest.gather_iron"
+
+[sub_resource type="Resource" id="ch_root_bye"]
+script = ExtResource("3_choice")
+Text = "Farewell."
+
+[sub_resource type="Resource" id="ch_offer_accept"]
+script = ExtResource("3_choice")
+Text = "I'll fetch your iron."
+Goto = "accepted"
+Effect = 1
+EffectArg = "quest.gather_iron"
+
+[sub_resource type="Resource" id="ch_offer_decline"]
+script = ExtResource("3_choice")
+Text = "Not just now."
+
+[sub_resource type="Resource" id="ch_accepted_bye"]
+script = ExtResource("3_choice")
+Text = "I'll head north."
+
+[sub_resource type="Resource" id="ch_inprogress_bye"]
+script = ExtResource("3_choice")
+Text = "I'll keep looking."
+
+[sub_resource type="Resource" id="ch_thanks_done"]
+script = ExtResource("3_choice")
+Text = "Glad to help."
+Effect = 2
+EffectArg = "flag.elder_thanked"
+
+[sub_resource type="Resource" id="ch_friend_bye"]
+script = ExtResource("3_choice")
+Text = "Be well, elder."
+
+[sub_resource type="Resource" id="node_root"]
+script = ExtResource("2_node")
+Id = "root"
+Text = "Well met, traveller. Our smith's forge runs cold — we've no iron to feed it."
+Choices = Array[Resource]([SubResource("ch_root_friend"), SubResource("ch_root_thanks"), SubResource("ch_root_offer"), SubResource("ch_root_active"), SubResource("ch_root_bye")])
+
+[sub_resource type="Resource" id="node_offer"]
+script = ExtResource("2_node")
+Id = "offer"
+Text = "Three lumps of iron ore from the northern hills would set us right. Will you help?"
+Choices = Array[Resource]([SubResource("ch_offer_accept"), SubResource("ch_offer_decline")])
+
+[sub_resource type="Resource" id="node_accepted"]
+script = ExtResource("2_node")
+Id = "accepted"
+Text = "Bless you. The hills lie to the north — mind the goblins along the way."
+Choices = Array[Resource]([SubResource("ch_accepted_bye")])
+
+[sub_resource type="Resource" id="node_inprogress"]
+script = ExtResource("2_node")
+Id = "inprogress"
+Text = "The forge still waits. Three lumps of ore — you'll find them in the hills to the north."
+Choices = Array[Resource]([SubResource("ch_inprogress_bye")])
+
+[sub_resource type="Resource" id="node_thanks"]
+script = ExtResource("2_node")
+Id = "thanks"
+Text = "You brought the iron — the forge burns bright again. The village won't forget it."
+Choices = Array[Resource]([SubResource("ch_thanks_done")])
+
+[sub_resource type="Resource" id="node_friend"]
+script = ExtResource("2_node")
+Id = "friend"
+Text = "Good to see you again, friend. The forge runs hot, thanks to you."
+Choices = Array[Resource]([SubResource("ch_friend_bye")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "dialogue.elder"
+SpeakerName = "Village Elder"
+StartNodeId = "root"
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_offer"), SubResource("node_accepted"), SubResource("node_inprogress"), SubResource("node_thanks"), SubResource("node_friend")])
