@@ -4,6 +4,7 @@ using Embervale.Core;
 using Embervale.Core.Events;
 using Embervale.Entities;
 using Embervale.Progression;
+using Embervale.Quests;
 using Embervale.Stats;
 using Godot;
 
@@ -78,6 +79,11 @@ public partial class DebugHud : CanvasLayer
                 string xp = prog.IsMaxLevel ? "MAX" : $"{prog.CurrentXp}/{prog.XpToNext}";
                 sb.Append($"Level {prog.Level}  XP {xp}  SP {prog.SkillPoints}\n");
             }
+
+            if (_player.TryGetComponent(out QuestLogComponent quests))
+            {
+                AppendQuestTracker(sb, quests);
+            }
         }
 
         if (_target is Node targetNode && IsInstanceValid(targetNode) &&
@@ -93,7 +99,7 @@ public partial class DebugHud : CanvasLayer
         }
 
         sb.Append($"\nLast hit: {_lastHit}\n");
-        sb.Append("\nWASD move | Mouse look | LMB attack | RMB block\nE interact | I character | [H] heal | [R] respawn | [X] +XP\n[F5/F9] save/load | [Esc] pause");
+        sb.Append("\nWASD move | Mouse look | LMB attack | RMB block\nE interact | I character | J journal | [H] heal | [R] respawn | [X] +XP\n[F5/F9] save/load | [Esc] pause");
         _label.Text = sb.ToString();
     }
 
@@ -101,6 +107,26 @@ public partial class DebugHud : CanvasLayer
     {
         string tags = e.IsCrit ? " CRIT!" : e.IsBlocked ? " (blocked)" : string.Empty;
         _lastHit = $"{e.Amount:0} {e.Type} to {e.Target.DisplayName}{tags}";
+    }
+
+    private static void AppendQuestTracker(StringBuilder sb, QuestLogComponent log)
+    {
+        foreach (QuestProgress progress in log.Quests)
+        {
+            if (progress.Status != QuestStatus.Active)
+            {
+                continue;
+            }
+
+            sb.Append($"Quest: {progress.Quest.Title}\n");
+            var objectives = progress.Quest.ObjectiveList();
+            for (int i = 0; i < objectives.Count; i++)
+            {
+                sb.Append($"  {objectives[i].ShortLabel()} {progress.Counts[i]}/{objectives[i].RequiredCount}\n");
+            }
+
+            return; // Track only the first active quest in the HUD.
+        }
     }
 
     private static void AppendResource(StringBuilder sb, string label, StatsComponent stats, StatType type)

@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="QuestResource" load_steps=6 format=3 uid="uid://cmbrvlqstcull"]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+[ext_resource type="Script" path="res://src/Quests/QuestItemReward.cs" id="3_reward"]
+
+[sub_resource type="Resource" id="Obj_kill_goblins"]
+script = ExtResource("2_obj")
+Type = 0
+TargetId = "enemy.goblin"
+RequiredCount = 3
+Description = "Slay goblins"
+
+[sub_resource type="Resource" id="Reward_potion"]
+script = ExtResource("3_reward")
+ItemId = "item.potion.health"
+Quantity = 1
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.cull_goblins"
+Title = "Cull the Goblins"
+Summary = "The goblin camp to the north grows bold. Thin their numbers before they raid the road."
+Objectives = Array[Resource]([SubResource("Obj_kill_goblins")])
+XpReward = 75
+GoldReward = 20
+GoldItemId = "item.currency.gold"
+RewardItems = Array[Resource]([SubResource("Reward_potion")])
+PrerequisiteQuestId = ""

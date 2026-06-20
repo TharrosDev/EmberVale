@@ -47,8 +47,8 @@ through save/load.
 | 6  | Equipment System     | ✅ Done      | Slots, equippable items, stat bonuses, weapon swap, character UI |
 | 7  | Loot Generation      | ✅ Done      | Item instances, procedural affixes, drop tables, loot component |
 | 8  | Progression System   | ✅ Done      | XP, levels, per-level stat growth, skill points, perks      |
-| 9  | Quest Framework      | ⏳ Next      | Objectives, branching, consequences                         |
-| 10 | Dialogue System      | ⬜ Planned   | Node-graph conversations, choices                           |
+| 9  | Quest Framework      | ✅ Done      | Event-driven objectives, quest log, rewards, givers, save   |
+| 10 | Dialogue System      | ⏳ Next      | Node-graph conversations, choices                           |
 | 11 | NPC Schedules        | ⬜ Planned   | Daily routines, reactions                                   |
 | 12 | Magic System         | ⬜ Planned   | Schools, projectiles, AoE, status effects                   |
 | 13 | World Systems        | ⬜ Planned   | Day/night, weather, encounters                              |
@@ -189,11 +189,36 @@ Core architecture foundation that everything else builds on:
   progression and a PERKS section with Learn buttons. Raises `XpGainedEvent` /
   `LeveledUpEvent` / `PerkChangedEvent`. Debug key **`X`** grants 50 XP.
 
-## Phase 9 — next steps (Quest Framework)
+## Phase 9 — delivered (Quest Framework)
 
-1. Quest/objective resources (`[GlobalClass]` `.tres`) + a `QuestLog` (`ISaveable`)
-   tracking active/completed state.
-2. Objectives that subscribe to events (kills via `EntityDiedEvent`, pickups via
-   `ItemPickedUpEvent`, etc.) and advance/complete automatically.
-3. Rewards on completion (XP via `ProgressionComponent.AddXp`, items, gold) and a
-   quest-log UI panel.
+- **`IEntity.TemplateId`** — lifted onto the interface so quests can match a slain
+  actor to its archetype id (`Entity`/`CharacterEntity` already exposed it).
+- **Quest content** — `QuestResource` (`[GlobalClass]`, `data/quests/*.tres`) with
+  `ObjectiveResource` (Kill / Collect, target id, required count) and
+  `QuestItemReward` sub-resources, XP/gold rewards and an optional
+  `PrerequisiteQuestId` for chaining. `QuestDatabase` indexes them (the standard
+  static-database pattern). Objective/reward arrays are authored untyped and read back
+  by element cast (as `LootTable.Entries`).
+- **`QuestLogComponent`** (`ISaveable`, on the player) — holds `QuestProgress` per
+  quest, advances objectives from `EntityDiedEvent` (kills it caused) and
+  `ItemPickedUpEvent`, and on completion grants rewards through the sibling
+  `ProgressionComponent` (XP) and `InventoryComponent` (gold + items). Raises
+  `QuestStartedEvent` / `QuestObjectiveAdvancedEvent` / `QuestCompletedEvent`; persists
+  the full log.
+- **`QuestGiverComponent`** (`InteractableComponent`) — an NPC offers a quest via the
+  existing `E` raycast interact, honouring prerequisites and in-progress/completed state.
+- **UI** — `QuestLogPanel`, a non-modal read-only overlay toggled with `J`, lists
+  active quests with per-objective progress and a completed section; the HUD shows a
+  compact active-quest tracker.
+- **Sandbox** — "Cull the Goblins" (kill 3 goblins) auto-starts on Play; a Village
+  Elder near spawn offers "Gather Iron" (collect 3 iron ore). Both round-trip
+  through save/load.
+
+## Phase 10 — next steps (Dialogue System)
+
+1. Node-graph dialogue resources (`[GlobalClass]` `.tres`): lines, speakers, branching
+   choices, and conditions/effects (e.g. start a quest, set a flag).
+2. A `DialogueComponent` / runner driving conversations through an interactable NPC,
+   reusing the `InteractableComponent` + EventBus patterns.
+3. A dialogue UI panel; hook quest-givers into dialogue so quests are offered in
+   conversation rather than on a bare interact.

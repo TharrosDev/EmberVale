@@ -88,7 +88,8 @@ Goblins roam to the north (−Z) and drop loot.
 │   ├── affixes/             # AffixDefinition presets (loot prefixes/suffixes)
 │   ├── loot/                # LootTable presets (e.g. GoblinLoot)
 │   ├── progression/         # ProgressionResource presets (XP curve + per-level gains)
-│   └── perks/               # PerkResource presets (rankable passives)
+│   ├── perks/               # PerkResource presets (rankable passives)
+│   └── quests/              # QuestResource presets (objectives + rewards)
 └── src/
     ├── Core/
     │   ├── Events/          # IGameEvent, EventBus (autoload), CoreEvents
@@ -104,6 +105,7 @@ Goblins roam to the north (−Z) and drop loot.
     ├── Items/               # ItemResource, ItemInstance, affixes, inventory, equipment, pickups
     ├── Loot/                # LootTable/LootEntry, LootGenerator, LootRarity, LootComponent
     ├── Progression/         # XP/levels (ProgressionComponent), perks, ExperienceComponent
+    ├── Quests/              # QuestResource/objectives, QuestLogComponent, quest givers
     ├── Interaction/         # InteractableComponent (raycast interact)
     ├── Player/              # PlayerCharacter, PlayerController, PlayerFactory
     ├── Enemies/             # EnemyEntity, EnemyAIComponent, EnemyFactory, EnemySpawnDirector
@@ -378,6 +380,30 @@ direct children of the host. `Hitbox`/`Hurtbox` are `Area3D` (not
   screen) shows progression + a PERKS section with Learn buttons. Debug key `X`
   grants 50 XP. Events live in `src/Progression/ProgressionEvents.cs`.
 
+### 6.6d Quests (`src/Quests`)
+
+- **Content:** `QuestResource` (`[GlobalClass]`, `data/quests/*.tres`) holds
+  `ObjectiveResource` sub-resources (`ObjectiveType` Kill/Collect, `TargetId`,
+  `RequiredCount`), `QuestItemReward`s, XP/gold rewards and an optional
+  `PrerequisiteQuestId`. `QuestDatabase` indexes them. Objective/reward arrays are
+  authored untyped and read via `ObjectiveList()` / element cast (same as
+  `LootTable.Entries`). `QuestProgress` is the runtime per-quest tracker (counts +
+  `QuestStatus`).
+- **`QuestLogComponent`** (`EntityComponent`, `ISaveable`, on the player) — subscribes
+  to `EntityDiedEvent` (Kill objectives, credited via `e.Killer` ↔ `e.Entity.TemplateId`)
+  and `ItemPickedUpEvent` (Collect, by `Item.Id`); on completion grants rewards through
+  the sibling `ProgressionComponent.AddXp` and `InventoryComponent.AddItem`. Raises
+  `QuestStarted`/`QuestObjectiveAdvanced`/`QuestCompleted` events; persists the log.
+  `StartQuest`/`CanStart`/`IsActive`/`IsCompleted`.
+- **`QuestGiverComponent`** (`InteractableComponent`) — an NPC that offers a quest on
+  the player's `E` interact (honours prerequisites + already-active/completed).
+- **UI:** `QuestLogPanel` is a non-modal read-only overlay toggled with `J`
+  (it does **not** set `UiState.MenuOpen`); the HUD shows a compact active-quest
+  tracker. Sandbox auto-starts "Cull the Goblins" and a Village Elder offers
+  "Gather Iron".
+- **Note:** kills are credited because melee sets `DamagePacket.Source = attacker`,
+  which `StatsComponent.ApplyDamage` threads into `EntityDiedEvent.Killer`.
+
 ### 6.7 Save (`src/Save`)
 
 - **`ISaveable`** — `SaveId`, `Godot.Collections.Dictionary Save()`,
@@ -572,6 +598,17 @@ Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
    new `ProgressionResource` and point a `ProgressionComponent.CurvePath`/`Curve` at
    it).
 
+**A new quest**
+1. Author `data/quests/Xxx.tres` (`script_class="QuestResource"`) with a unique `Id`,
+   `Title`/`Summary`, `Objectives` (an array of `ObjectiveResource` sub-resources:
+   `Type` 0=Kill / 1=Collect, `TargetId` = entity `TemplateId` or item id,
+   `RequiredCount`), and rewards (`XpReward`, `GoldReward`, `RewardItems` of
+   `QuestItemReward`). Optional `PrerequisiteQuestId` chains it after another.
+2. Auto-indexed by `QuestDatabase`. Start it via a `QuestGiverComponent` (set its
+   `QuestId`) on a world `Entity`, or directly with
+   `player.GetComponent<QuestLogComponent>().StartQuest(...)`. Objectives advance and
+   rewards apply automatically. No code change for new Kill/Collect quests.
+
 **A new stat**
 1. Add to the `StatType` enum; if it's a depleting resource, update
    `StatTypes.IsResource`.
@@ -620,9 +657,9 @@ Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
 
 Done: **1 Core Architecture · 2 Player Controller · 3 Combat Framework ·
 4 Enemy AI · 5 Inventory System · 6 Equipment System · 7 Loot Generation ·
-8 Progression**. Next: **9 Quests**.
+8 Progression · 9 Quests**. Next: **10 Dialogue**.
 
-Then (in order): 10 Dialogue · 11 NPC Schedules ·
+Then (in order): 11 NPC Schedules ·
 12 Magic · 13 World Systems · 14 Crafting · 15 Factions · 16 Procedural Events ·
 17 Optimization · 18 Content Expansion.
 
