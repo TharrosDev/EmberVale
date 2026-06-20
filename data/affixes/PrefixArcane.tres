@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="AffixDefinition" load_steps=2 format=3 uid="uid://cmbrvlafxarcane"]
+
+[ext_resource type="Script" path="res://src/Items/AffixDefinition.cs" id="1_affix"]
+
+[resource]
+script = ExtResource("1_affix")
+Id = "affix.prefix.arcane"
+Label = "Arcane"
+Kind = 0
+Stat = 10
+ModifierType = 0
+MinValue = 2.0
+MaxValue = 6.0
+MinRarity = 1
+Weight = 0.8
+ForWeapons = true
+ForArmor = false
+ForAccessories = true

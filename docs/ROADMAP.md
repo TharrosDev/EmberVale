@@ -12,8 +12,8 @@ through save/load.
 | 4  | Enemy AI             | ✅ Done      | Perception FSM (idle/patrol/investigate/combat/retreat), coordination, spawner |
 | 5  | Inventory System     | ✅ Done      | Item resources + database, stacking inventory, pickups, UI, save |
 | 6  | Equipment System     | ✅ Done      | Slots, equippable items, stat bonuses, weapon swap, character UI |
-| 7  | Loot Generation      | ⏳ Next      | Rarity tiers, procedural affixes, drop tables                |
-| 8  | Progression System   | ⬜ Planned   | XP, levels, skills, perks                                    |
+| 7  | Loot Generation      | ✅ Done      | Item instances, procedural affixes, drop tables, loot component |
+| 8  | Progression System   | ⏳ Next      | XP, levels, skills, perks                                    |
 | 9  | Quest Framework      | ⬜ Planned   | Objectives, branching, consequences                         |
 | 10 | Dialogue System      | ⬜ Planned   | Node-graph conversations, choices                           |
 | 11 | NPC Schedules        | ⬜ Planned   | Daily routines, reactions                                   |
@@ -107,12 +107,36 @@ Core architecture foundation that everything else builds on:
   with Equip/Unequip buttons; opening it frees the mouse (`UiState.MenuOpen`).
 - Gear pickups in the sandbox: steel sword, leather cap/vest, hunter's ring.
 
-## Phase 7 — next steps (Loot Generation)
+## Phase 7 — delivered (Loot Generation)
 
-1. An item-*instance* layer over `ItemResource` carrying rolled affixes
-   (`StatModifier`s) and a generated name/rarity.
-2. `LootTable` resources + a generator: pick base item, roll rarity, roll affixes
-   scaled by rarity/level.
-3. `LootComponent` on enemies → drop generated instances on death (replacing the
-   fixed goblin-hide drop).
-4. Inventory/equipment carry instance affixes through stats and save/load.
+- **`ItemInstance`** — an item-instance layer over `ItemResource` carrying a rolled
+  `ItemRarity`, a generated display name (prefix + base + suffix), and a frozen list
+  of `ItemAffix`es. Mundane items are plain instances (`ItemInstance.Plain`); only
+  affix-less instances stack, so rolled gear is unique. `ItemStack` now holds an
+  instance; inventory, equipment, pickups, UI and save/load all flow instances.
+- **Affixes** — `AffixDefinition` (`[GlobalClass]` `.tres` under `data/affixes/`)
+  declares a stat, value range, minimum rarity, gear-family applicability and weight.
+  `AffixDatabase` indexes them and queries the eligible pool per equippable+rarity;
+  a rolled `ItemAffix` maps onto a `StatModifier` sourced to its instance.
+- **Drop tables** — `LootTable` + `LootEntry` (`[GlobalClass]` `.tres` under
+  `data/loot/`) describe independent per-entry drop chances, quantities, an
+  optional gold roll and a quality bias. `LootGenerator` rolls a table into
+  `LootDrop`s: it picks rarity (`LootRarity`, quality-weighted), draws distinct
+  affixes by weight, and rolls each value scaled by rarity/quality.
+- **`LootComponent`** — on death, an actor rolls its `LootTable` and spawns a world
+  pickup per drop, scattered around the corpse. Goblins now loot from
+  `data/loot/GoblinLoot.tres` (hide/ore/potion/affixed sword + gold), replacing the
+  hard-coded goblin-hide drop.
+- Equipped instances apply template flats **and** rolled affixes to stats; the
+  inventory/equipment screens show rarity colours and per-affix bonus lines; all of
+  it round-trips through save/load (instances persist id + rarity + name + affixes).
+- The sandbox seeds one procedurally-rolled Rare blade so the pipeline is visible
+  the moment you press Play.
+
+## Phase 8 — next steps (Progression System)
+
+1. An XP/level model (likely a `ProgressionComponent`, `ISaveable`) fed by
+   `EntityDiedEvent` kills.
+2. Level-ups that raise `AttributeSet`-derived stats (or apply modifiers) and
+   refill resources.
+3. Skill/perk hooks layering modifiers onto `StatsComponent`, plus HUD/UI surfacing.

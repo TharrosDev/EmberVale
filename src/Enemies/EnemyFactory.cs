@@ -1,4 +1,5 @@
 using Embervale.Combat;
+using Embervale.Loot;
 using Embervale.Movement;
 using Embervale.Stats;
 using Godot;
@@ -15,6 +16,7 @@ public static class EnemyFactory
 {
     private const string AttributesPath = "res://data/attributes/GoblinAttributes.tres";
     private const string WeaponPath = "res://data/weapons/GoblinClaw.tres";
+    private const string LootTablePath = "res://data/loot/GoblinLoot.tres";
     private const float CapsuleRadius = 0.4f;
     private const float CapsuleHeight = 1.7f;
     private const int HostileTeam = 1;
@@ -70,6 +72,7 @@ public static class EnemyFactory
         });
 
         enemy.AddChild(new EnemyAIComponent { Name = "AI" });
+        enemy.AddChild(new LootComponent { Name = "Loot", TablePath = LootTablePath });
         return enemy;
     }
 

@@ -14,17 +14,37 @@ namespace Embervale.Items;
 [GlobalClass]
 public partial class ItemPickupComponent : InteractableComponent
 {
+    /// <summary>Template for an editor/mundane pickup; wrapped as a plain instance
+    /// on first use. Ignored once <see cref="Instance"/> is set directly (loot).</summary>
     [Export] public ItemResource? Item { get; set; }
     [Export] public int Quantity { get; set; } = 1;
 
-    public override string Prompt =>
-        Item == null
-            ? "Pick up"
-            : Quantity > 1 ? $"Pick up {Item.DisplayName} x{Quantity}" : $"Pick up {Item.DisplayName}";
+    /// <summary>The concrete instance carried by this pickup (rolled loot sets this
+    /// directly; mundane pickups derive it from <see cref="Item"/>).</summary>
+    public ItemInstance? Instance { get; set; }
+
+    private ItemInstance? Resolved => Instance ??= Item != null ? ItemInstance.Plain(Item) : null;
+
+    public override string Prompt
+    {
+        get
+        {
+            ItemInstance? instance = Resolved;
+            if (instance == null)
+            {
+                return "Pick up";
+            }
+
+            return Quantity > 1
+                ? $"Pick up {instance.DisplayName} x{Quantity}"
+                : $"Pick up {instance.DisplayName}";
+        }
+    }
 
     public override void Interact(IEntity instigator)
     {
-        if (Item == null)
+        ItemInstance? instance = Resolved;
+        if (instance == null)
         {
             return;
         }
@@ -35,15 +55,15 @@ public partial class ItemPickupComponent : InteractableComponent
             return;
         }
 
-        int added = inventory.AddItem(Item, Quantity);
+        int added = inventory.AddInstance(instance, Quantity);
         if (added <= 0)
         {
             Log.Info($"{instigator.DisplayName}'s inventory is full.");
             return;
         }
 
-        EventBus.Instance?.Publish(new ItemPickedUpEvent(instigator, Item, added));
-        Log.Info($"{instigator.DisplayName} picked up {Item.DisplayName} x{added}.");
+        EventBus.Instance?.Publish(new ItemPickedUpEvent(instigator, instance.Template, added));
+        Log.Info($"{instigator.DisplayName} picked up {instance.DisplayName} x{added}.");
 
         Quantity -= added;
         if (Quantity <= 0 && Entity != null)

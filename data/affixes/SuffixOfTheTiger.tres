@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="AffixDefinition" load_steps=2 format=3 uid="uid://cmbrvlafxtiger"]
+
+[ext_resource type="Script" path="res://src/Items/AffixDefinition.cs" id="1_affix"]
+
+[resource]
+script = ExtResource("1_affix")
+Id = "affix.suffix.tiger"
+Label = "of the Tiger"
+Kind = 1
+Stat = 13
+ModifierType = 0
+MinValue = 0.03
+MaxValue = 0.08
+MinRarity = 1
+Weight = 0.8
+ForWeapons = true
+ForArmor = false
+ForAccessories = true

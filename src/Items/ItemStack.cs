@@ -3,25 +3,29 @@ using Godot;
 namespace Embervale.Items;
 
 /// <summary>
-/// A runtime quantity of one <see cref="ItemResource"/> occupying a single
+/// A runtime quantity of one <see cref="ItemInstance"/> occupying a single
 /// inventory slot. Mutable quantity; the owning <see cref="InventoryComponent"/>
-/// enforces stacking rules against <see cref="ItemResource.MaxStack"/>.
+/// enforces stacking rules against <see cref="ItemInstance.MaxStack"/> (only
+/// affix-less instances stack — rolled loot is unique).
 /// </summary>
 public sealed class ItemStack
 {
-    public ItemStack(ItemResource item, int quantity)
+    public ItemStack(ItemInstance instance, int quantity)
     {
-        Item = item;
+        Instance = instance;
         Quantity = quantity;
     }
 
-    public ItemResource Item { get; }
+    public ItemInstance Instance { get; }
+
+    /// <summary>Convenience access to the underlying template.</summary>
+    public ItemResource Item => Instance.Template;
 
     public int Quantity { get; set; }
 
-    public bool IsFull => Quantity >= Item.MaxStack;
+    public bool IsFull => Quantity >= Instance.MaxStack;
 
-    public int SpaceLeft => Mathf.Max(0, Item.MaxStack - Quantity);
+    public int SpaceLeft => Mathf.Max(0, Instance.MaxStack - Quantity);
 
-    public float Weight => Quantity * Item.Weight;
+    public float Weight => Quantity * Instance.Weight;
 }

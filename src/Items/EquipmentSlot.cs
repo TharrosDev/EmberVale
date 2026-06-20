@@ -18,9 +18,35 @@ public enum EquipmentSlot
     Amulet,
 }
 
+/// <summary>
+/// Broad gear family of an <see cref="EquipmentSlot"/>, used to decide which
+/// procedural affixes can roll on an item (weapons take offensive affixes, armor
+/// defensive ones, accessories a bit of everything).
+/// </summary>
+public enum GearFamily
+{
+    None,
+    Weapon,
+    Armor,
+    Accessory,
+}
+
 /// <summary>Display helpers for <see cref="EquipmentSlot"/>.</summary>
 public static class EquipmentSlots
 {
+    /// <summary>Maps a slot onto its <see cref="GearFamily"/>.</summary>
+    public static GearFamily FamilyOf(EquipmentSlot slot)
+    {
+        return slot switch
+        {
+            EquipmentSlot.MainHand or EquipmentSlot.OffHand => GearFamily.Weapon,
+            EquipmentSlot.Head or EquipmentSlot.Chest or EquipmentSlot.Hands
+                or EquipmentSlot.Legs or EquipmentSlot.Feet => GearFamily.Armor,
+            EquipmentSlot.Ring or EquipmentSlot.Amulet => GearFamily.Accessory,
+            _ => GearFamily.None,
+        };
+    }
+
     /// <summary>The slots shown in the equipment UI, in order.</summary>
     public static readonly EquipmentSlot[] DisplayOrder =
     {

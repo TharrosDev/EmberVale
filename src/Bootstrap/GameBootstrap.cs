@@ -6,6 +6,7 @@ using Embervale.Core.Services;
 using Embervale.Enemies;
 using Embervale.Entities;
 using Embervale.Items;
+using Embervale.Loot;
 using Embervale.Player;
 using Embervale.Save;
 using Embervale.Stats;
@@ -49,6 +50,7 @@ public partial class GameBootstrap : Node3D
 
         GameInput.EnsureActions();
         ItemDatabase.Initialize();
+        AffixDatabase.Initialize();
         BuildEnvironment();
 
         _hud = new DebugHud();
@@ -230,6 +232,14 @@ public partial class GameBootstrap : Node3D
         TryDropPickup("item.armor.leather_vest", 1, new Vector3(-3f, 0f, 2.5f));
         TryDropPickup("item.weapon.steel_sword", 1, new Vector3(1.5f, 0f, -2.5f));
         TryDropPickup("item.ring.iron", 1, new Vector3(3f, 0f, -3.5f));
+
+        // A procedurally-rolled Rare blade to show off the affix pipeline.
+        if (ItemDatabase.Get("item.weapon.steel_sword") is EquippableItemResource sword)
+        {
+            ItemInstance rolled = LootGenerator.RollAffixed(sword, ItemRarity.Rare);
+            AddChild(ItemPickupFactory.Create(rolled, 1, new Vector3(-1.5f, 0f, -1.5f)));
+            Log.Info($"Seeded a rolled drop: {rolled.DisplayName}.");
+        }
     }
 
     private void TryDropPickup(string itemId, int quantity, Vector3 position)
@@ -348,15 +358,9 @@ public partial class GameBootstrap : Node3D
         }
         else if (e.Entity is EnemyEntity)
         {
-            // Enemies despawn via the spawn director; drop a little loot on death.
+            // Enemies despawn via the spawn director; their LootComponent rolls and
+            // spawns drops from a loot table (see EnemyFactory).
             Log.Info($"{e.Entity.DisplayName} was defeated.");
-            Vector3 pos = e.Entity.Body.GlobalPosition;
-            TryDropPickup("item.material.goblin_hide", 1, new Vector3(pos.X, 0f, pos.Z));
-            if (GD.Randf() < 0.5f)
-            {
-                int gold = (int)(GD.Randi() % 10) + 3;
-                TryDropPickup("item.currency.gold", gold, new Vector3(pos.X + 0.6f, 0f, pos.Z));
-            }
         }
     }
 

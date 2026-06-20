@@ -95,8 +95,8 @@ save/load.
 | 4  | Enemy AI             | ✅ Done     |
 | 5  | Inventory System     | ✅ Done     |
 | 6  | Equipment System     | ✅ Done     |
-| 7  | Loot Generation      | ⏳ Next     |
-| 8  | Progression System   | ⬜ Planned  |
+| 7  | Loot Generation      | ✅ Done     |
+| 8  | Progression System   | ⏳ Next     |
 | 9  | Quest Framework      | ⬜ Planned  |
 | 10 | Dialogue System      | ⬜ Planned  |
 | 11 | NPC Schedules        | ⬜ Planned  |

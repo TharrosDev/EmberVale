@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="AffixDefinition" load_steps=2 format=3 uid="uid://cmbrvlafxward"]
+
+[ext_resource type="Script" path="res://src/Items/AffixDefinition.cs" id="1_affix"]
+
+[resource]
+script = ExtResource("1_affix")
+Id = "affix.suffix.warding"
+Label = "of Warding"
+Kind = 1
+Stat = 8
+ModifierType = 0
+MinValue = 3.0
+MaxValue = 10.0
+MinRarity = 1
+Weight = 1.0
+ForWeapons = true
+ForArmor = true
+ForAccessories = true

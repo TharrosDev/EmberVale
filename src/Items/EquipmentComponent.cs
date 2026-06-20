@@ -9,19 +9,21 @@ using Godot;
 namespace Embervale.Items;
 
 /// <summary>
-/// Manages what an entity has equipped. Equipping pulls the item from the
-/// <see cref="InventoryComponent"/>, applies its flat stat bonuses to the
-/// <see cref="StatsComponent"/> as <see cref="StatModifier"/>s sourced to the item
-/// (so they're removed cleanly on unequip), and — for weapon slots — swaps the
-/// active <see cref="WeaponResource"/> on the <see cref="MeleeWeaponComponent"/>.
-/// Unequipping reverses all of that and returns the item to the inventory.
+/// Manages what an entity has equipped. Equipping pulls a specific
+/// <see cref="ItemInstance"/> from the <see cref="InventoryComponent"/>, applies its
+/// combined stat bonuses (template flats + rolled affixes) to the
+/// <see cref="StatsComponent"/> as <see cref="StatModifier"/>s sourced to the
+/// instance (so they're removed cleanly on unequip), and — for weapon slots —
+/// swaps the active <see cref="WeaponResource"/> on the
+/// <see cref="MeleeWeaponComponent"/>. Unequipping reverses all of that and returns
+/// the instance (with its affixes intact) to the inventory.
 ///
-/// Persists equipped item ids per slot via <see cref="ISaveable"/>.
+/// Persists the full equipped instance per slot via <see cref="ISaveable"/>.
 /// </summary>
 [GlobalClass]
 public partial class EquipmentComponent : EntityComponent, ISaveable
 {
-    private readonly Dictionary<EquipmentSlot, EquippableItemResource> _equipped = new();
+    private readonly Dictionary<EquipmentSlot, ItemInstance> _equipped = new();
 
     private StatsComponent? _stats;
     private InventoryComponent? _inventory;
@@ -44,100 +46,101 @@ public partial class EquipmentComponent : EntityComponent, ISaveable
         SaveManager.Instance?.Unregister(this);
     }
 
-    public EquippableItemResource? GetEquipped(EquipmentSlot slot)
+    public ItemInstance? GetEquipped(EquipmentSlot slot)
     {
-        return _equipped.TryGetValue(slot, out EquippableItemResource? item) ? item : null;
+        return _equipped.TryGetValue(slot, out ItemInstance? item) ? item : null;
     }
 
     public bool IsEquipped(EquipmentSlot slot) => _equipped.ContainsKey(slot);
 
-    /// <summary>Equips an item taken from the inventory. Returns false if it isn't there.</summary>
-    public bool Equip(EquippableItemResource item)
+    /// <summary>Equips a specific instance taken from the inventory. Returns false
+    /// if it isn't equippable or isn't present in the inventory.</summary>
+    public bool Equip(ItemInstance instance)
     {
-        if (item == null || item.Slot == EquipmentSlot.None)
+        if (instance?.Equippable is not { } equippable || equippable.Slot == EquipmentSlot.None)
         {
             return false;
         }
 
-        if (_inventory == null || !_inventory.RemoveItem(item, 1))
+        if (_inventory == null || _inventory.RemoveOneInstance(instance) == null)
         {
             return false;
         }
 
-        EquipInternal(item, returnOldToInventory: true);
+        EquipInternal(instance, equippable.Slot, returnOldToInventory: true);
         return true;
     }
 
     /// <summary>Unequips the item in a slot, returning it to the inventory.</summary>
     public bool Unequip(EquipmentSlot slot)
     {
-        if (!_equipped.Remove(slot, out EquippableItemResource? item))
+        if (!_equipped.Remove(slot, out ItemInstance? instance))
         {
             return false;
         }
 
-        RemoveBonuses(item);
-        RestoreWeapon(item);
-        _inventory?.AddItem(item, 1);
+        RemoveBonuses(instance);
+        RestoreWeapon(instance);
+        _inventory?.AddInstance(instance, 1);
         NotifyChanged();
         return true;
     }
 
-    private void EquipInternal(EquippableItemResource item, bool returnOldToInventory)
+    private void EquipInternal(ItemInstance instance, EquipmentSlot slot, bool returnOldToInventory)
     {
-        if (_equipped.TryGetValue(item.Slot, out EquippableItemResource? old))
+        if (_equipped.TryGetValue(slot, out ItemInstance? old))
         {
             RemoveBonuses(old);
             RestoreWeapon(old);
             if (returnOldToInventory)
             {
-                _inventory?.AddItem(old, 1);
+                _inventory?.AddInstance(old, 1);
             }
         }
 
-        ApplyBonuses(item);
-        ApplyWeapon(item);
-        _equipped[item.Slot] = item;
+        ApplyBonuses(instance);
+        ApplyWeapon(instance);
+        _equipped[slot] = instance;
         NotifyChanged();
     }
 
-    private void ApplyBonuses(EquippableItemResource item)
+    private void ApplyBonuses(ItemInstance instance)
     {
         if (_stats == null)
         {
             return;
         }
 
-        foreach ((StatType stat, float value) in item.StatBonuses())
+        foreach ((StatType stat, float value, ModifierType type) in instance.StatBonuses())
         {
-            _stats.GetStat(stat).AddModifier(new StatModifier(value, ModifierType.Flat, item));
+            _stats.GetStat(stat).AddModifier(new StatModifier(value, type, instance));
         }
     }
 
-    private void RemoveBonuses(EquippableItemResource item)
+    private void RemoveBonuses(ItemInstance instance)
     {
         if (_stats == null)
         {
             return;
         }
 
-        foreach ((StatType stat, float _) in item.StatBonuses())
+        foreach ((StatType stat, float _, ModifierType _) in instance.StatBonuses())
         {
-            _stats.GetStat(stat).RemoveModifiersFromSource(item);
+            _stats.GetStat(stat).RemoveModifiersFromSource(instance);
         }
     }
 
-    private void ApplyWeapon(EquippableItemResource item)
+    private void ApplyWeapon(ItemInstance instance)
     {
-        if (item.Weapon != null && _weapon != null)
+        if (instance.Equippable?.Weapon is { } weapon && _weapon != null)
         {
-            _weapon.Weapon = item.Weapon;
+            _weapon.Weapon = weapon;
         }
     }
 
-    private void RestoreWeapon(EquippableItemResource item)
+    private void RestoreWeapon(ItemInstance instance)
     {
-        if (item.Weapon != null && _weapon != null)
+        if (instance.Equippable?.Weapon != null && _weapon != null)
         {
             _weapon.Weapon = _defaultWeapon;
         }
@@ -156,9 +159,9 @@ public partial class EquipmentComponent : EntityComponent, ISaveable
     public Godot.Collections.Dictionary Save()
     {
         var slots = new Godot.Collections.Dictionary();
-        foreach (KeyValuePair<EquipmentSlot, EquippableItemResource> pair in _equipped)
+        foreach (KeyValuePair<EquipmentSlot, ItemInstance> pair in _equipped)
         {
-            slots[(int)pair.Key] = pair.Value.Id;
+            slots[(int)pair.Key] = pair.Value.Save();
         }
 
         return new Godot.Collections.Dictionary { ["slots"] = slots };
@@ -166,10 +169,10 @@ public partial class EquipmentComponent : EntityComponent, ISaveable
 
     public void Load(Godot.Collections.Dictionary data)
     {
-        foreach (EquippableItemResource item in _equipped.Values)
+        foreach (ItemInstance instance in _equipped.Values)
         {
-            RemoveBonuses(item);
-            RestoreWeapon(item);
+            RemoveBonuses(instance);
+            RestoreWeapon(instance);
         }
 
         _equipped.Clear();
@@ -179,10 +182,10 @@ public partial class EquipmentComponent : EntityComponent, ISaveable
             var slots = slotsVariant.AsGodotDictionary();
             foreach (Variant key in slots.Keys)
             {
-                string id = slots[key].AsString();
-                if (ItemDatabase.Get(id) is EquippableItemResource item)
+                ItemInstance? instance = ItemInstance.FromSave(slots[key].AsGodotDictionary());
+                if (instance?.Equippable is { } equippable)
                 {
-                    EquipInternal(item, returnOldToInventory: false);
+                    EquipInternal(instance, equippable.Slot, returnOldToInventory: false);
                 }
             }
         }
