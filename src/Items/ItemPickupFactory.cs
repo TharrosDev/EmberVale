@@ -13,15 +13,20 @@ public static class ItemPickupFactory
 {
     public static Entity Create(ItemResource item, int quantity, Vector3 position)
     {
+        return Create(ItemInstance.Plain(item), quantity, position);
+    }
+
+    public static Entity Create(ItemInstance instance, int quantity, Vector3 position)
+    {
         var pickup = new Entity
         {
-            Name = $"Pickup_{item.Id}",
-            DisplayName = item.DisplayName,
-            TemplateId = $"pickup.{item.Id}",
+            Name = $"Pickup_{instance.TemplateId}",
+            DisplayName = instance.DisplayName,
+            TemplateId = $"pickup.{instance.TemplateId}",
             Position = position,
         };
 
-        Color tint = ItemRarities.Color(item.Rarity);
+        Color tint = ItemRarities.Color(instance.Rarity);
         pickup.AddChild(new MeshInstance3D
         {
             Name = "Mesh",
@@ -44,7 +49,13 @@ public static class ItemPickupFactory
         });
         pickup.AddChild(body);
 
-        pickup.AddChild(new ItemPickupComponent { Name = "Pickup", Item = item, Quantity = quantity });
+        pickup.AddChild(new ItemPickupComponent
+        {
+            Name = "Pickup",
+            Item = instance.Template,
+            Instance = instance,
+            Quantity = quantity,
+        });
         return pickup;
     }
 }

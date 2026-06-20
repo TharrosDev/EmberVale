@@ -59,9 +59,8 @@ public partial class InventoryComponent : EntityComponent, ISaveable
     }
 
     /// <summary>
-    /// Adds up to <paramref name="quantity"/> of an item, stacking then filling
-    /// empty slots. Returns the amount actually stored (less than requested if the
-    /// inventory ran out of room).
+    /// Adds up to <paramref name="quantity"/> of a plain (affix-less) item template,
+    /// stacking then filling empty slots. Returns the amount actually stored.
     /// </summary>
     public int AddItem(ItemResource item, int quantity)
     {
@@ -70,31 +69,50 @@ public partial class InventoryComponent : EntityComponent, ISaveable
             return 0;
         }
 
+        return AddInstance(ItemInstance.Plain(item), quantity);
+    }
+
+    /// <summary>
+    /// Adds up to <paramref name="quantity"/> of an item instance. Affix-less
+    /// instances merge into matching stackable stacks before consuming new slots;
+    /// rolled (unique) instances each take their own slot. Returns the amount
+    /// actually stored (less than requested if the inventory ran out of room).
+    /// </summary>
+    public int AddInstance(ItemInstance instance, int quantity)
+    {
+        if (instance == null || quantity <= 0)
+        {
+            return 0;
+        }
+
         int remaining = quantity;
 
-        // 1) Top up existing stacks of the same item.
-        foreach (ItemStack stack in _stacks)
+        // 1) Top up existing compatible stacks (only affix-less instances stack).
+        if (instance.IsStackable)
         {
-            if (remaining <= 0)
+            foreach (ItemStack stack in _stacks)
             {
-                break;
-            }
+                if (remaining <= 0)
+                {
+                    break;
+                }
 
-            if (stack.Item.Id != item.Id || stack.SpaceLeft <= 0)
-            {
-                continue;
-            }
+                if (stack.SpaceLeft <= 0 || !stack.Instance.CanStackWith(instance))
+                {
+                    continue;
+                }
 
-            int put = Mathf.Min(stack.SpaceLeft, remaining);
-            stack.Quantity += put;
-            remaining -= put;
+                int put = Mathf.Min(stack.SpaceLeft, remaining);
+                stack.Quantity += put;
+                remaining -= put;
+            }
         }
 
         // 2) Consume new slots while there is room.
         while (remaining > 0 && _stacks.Count < Capacity)
         {
-            int put = Mathf.Min(remaining, item.MaxStack);
-            _stacks.Add(new ItemStack(item, put));
+            int put = Mathf.Min(remaining, instance.MaxStack);
+            _stacks.Add(new ItemStack(instance, put));
             remaining -= put;
         }
 
@@ -161,6 +179,34 @@ public partial class InventoryComponent : EntityComponent, ISaveable
 
     public bool Contains(string itemId, int quantity = 1) => CountOf(itemId) >= quantity;
 
+    /// <summary>
+    /// Removes exactly one unit of a specific instance (by reference), used to pull
+    /// a rolled item out for equipping. Returns the stack's instance on success so
+    /// the caller keeps its affixes; null if the instance wasn't found.
+    /// </summary>
+    public ItemInstance? RemoveOneInstance(ItemInstance instance)
+    {
+        for (int i = 0; i < _stacks.Count; i++)
+        {
+            if (!ReferenceEquals(_stacks[i].Instance, instance))
+            {
+                continue;
+            }
+
+            ItemInstance held = _stacks[i].Instance;
+            _stacks[i].Quantity--;
+            if (_stacks[i].Quantity <= 0)
+            {
+                _stacks.RemoveAt(i);
+            }
+
+            NotifyChanged();
+            return held;
+        }
+
+        return null;
+    }
+
     public void Clear()
     {
         if (_stacks.Count == 0)
@@ -189,7 +235,7 @@ public partial class InventoryComponent : EntityComponent, ISaveable
         {
             stacks.Add(new Godot.Collections.Dictionary
             {
-                ["id"] = stack.Item.Id,
+                ["instance"] = stack.Instance.Save(),
                 ["qty"] = stack.Quantity,
             });
         }
@@ -206,12 +252,11 @@ public partial class InventoryComponent : EntityComponent, ISaveable
             foreach (Variant entry in stacksVariant.AsGodotArray())
             {
                 var dict = entry.AsGodotDictionary();
-                string id = dict["id"].AsString();
                 int qty = dict["qty"].AsInt32();
-                ItemResource? item = ItemDatabase.Get(id);
-                if (item != null)
+                ItemInstance? instance = ItemInstance.FromSave(dict["instance"].AsGodotDictionary());
+                if (instance != null)
                 {
-                    AddItem(item, qty);
+                    AddInstance(instance, qty);
                 }
             }
         }

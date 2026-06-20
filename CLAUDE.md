@@ -83,7 +83,10 @@ Goblins roam to the north (−Z) and drop loot.
 │   └── Main.tscn            # Entry scene (root has GameBootstrap script)
 ├── data/                    # Resource-driven content (.tres)
 │   ├── attributes/          # AttributeSet presets (player, dummy, goblin)
-│   └── weapons/             # WeaponResource presets (iron sword, goblin claw)
+│   ├── weapons/             # WeaponResource presets (iron sword, goblin claw)
+│   ├── items/               # ItemResource / EquippableItemResource templates
+│   ├── affixes/             # AffixDefinition presets (loot prefixes/suffixes)
+│   └── loot/                # LootTable presets (e.g. GoblinLoot)
 └── src/
     ├── Core/
     │   ├── Events/          # IGameEvent, EventBus (autoload), CoreEvents
@@ -96,7 +99,8 @@ Goblins roam to the north (−Z) and drop loot.
     ├── Stats/               # StatType, Stat, StatModifier, AttributeSet, StatsComponent
     ├── Movement/            # LocomotionComponent (reusable kinematic motor)
     ├── Combat/              # Damage pipeline, hitbox/hurtbox, weapons, CombatComponent
-    ├── Items/               # ItemResource, ItemDatabase, InventoryComponent, pickups
+    ├── Items/               # ItemResource, ItemInstance, affixes, inventory, equipment, pickups
+    ├── Loot/                # LootTable/LootEntry, LootGenerator, LootRarity, LootComponent
     ├── Interaction/         # InteractableComponent (raycast interact)
     ├── Player/              # PlayerCharacter, PlayerController, PlayerFactory
     ├── Enemies/             # EnemyEntity, EnemyAIComponent, EnemyFactory, EnemySpawnDirector
@@ -316,6 +320,35 @@ direct children of the host. `Hitbox`/`Hurtbox` are `Area3D` (not
   unequip), and swaps the `MeleeWeaponComponent.Weapon` (restoring the factory
   baseline). Raises `EquipmentChangedEvent`.
 
+### 6.6b Loot generation (`src/Loot`, `src/Items`)
+
+- **`ItemInstance`** (`src/Items`) — the per-item runtime layer over an
+  `ItemResource` template: a rolled `Rarity`, a generated `DisplayName`
+  (prefix + base + suffix), and a frozen `ItemAffix` list. Mundane items are plain
+  instances (`ItemInstance.Plain`); only affix-less instances stack (`CanStackWith`),
+  so rolled gear is unique. `StatBonuses()` merges the equippable template's flats
+  with affix bonuses. Serializes to/from a dict (`Save`/`FromSave`). **`ItemStack`
+  now holds an `ItemInstance`**, and inventory/equipment/pickups/UI/save all flow
+  instances (the `InventoryComponent.AddInstance`/`RemoveOneInstance`,
+  `EquipmentComponent` keyed by instance).
+- **`ItemAffix`** + **`AffixDefinition`** (`[GlobalClass]`, `data/affixes/*.tres`) +
+  **`AffixDatabase`** — a definition declares a `StatType`, value range,
+  `ModifierType`, `MinRarity`, gear-family flags (`ForWeapons/Armor/Accessories`)
+  and a selection `Weight`; `AffixDatabase.ApplicableTo(item, rarity)` returns the
+  eligible pool. A rolled `ItemAffix` becomes a `StatModifier` sourced to its
+  instance when equipped.
+- **`LootTable`** + **`LootEntry`** (`[GlobalClass]`, `data/loot/*.tres`) — a table
+  is independent per-entry rolls (`DropChance`, `Min/MaxQuantity`, `RollAffixes`)
+  plus an optional gold roll and a `QualityBonus`. **`LootGenerator`** rolls it into
+  `LootDrop`s: `LootRarity.Roll` (quality-weighted tiers) → distinct weighted affixes
+  → values scaled by rarity/quality. `RollAffixed(...)` forces a rarity for demos.
+- **`LootComponent`** (`EntityComponent`) — on its owner's `EntityDiedEvent`, rolls
+  its `LootTable` and spawns a pickup per drop (deferred add, scattered around the
+  corpse). `EnemyFactory` attaches it (`data/loot/GoblinLoot.tres`), replacing the
+  bootstrap's hard-coded goblin-hide drop.
+- **`StatLabels`** (`src/Stats`) — short display names for `StatType`, used by affix
+  tooltips.
+
 ### 6.7 Save (`src/Save`)
 
 - **`ISaveable`** — `SaveId`, `Godot.Collections.Dictionary Save()`,
@@ -482,6 +515,20 @@ Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
 2. It's indexed by `ItemDatabase` like any item; equip it via the character screen.
    Bonuses apply automatically through `EquipmentComponent` → `StatsComponent`.
 
+**A new loot affix**
+1. Author `data/affixes/Xxx.tres` (`script_class="AffixDefinition"`): unique `Id`,
+   a `Label` fragment, `Kind` (0 Prefix / 1 Suffix), target `Stat`, `MinValue`/
+   `MaxValue`, `MinRarity`, `Weight`, and the `For{Weapons,Armor,Accessories}` flags.
+2. Auto-indexed by `AffixDatabase`; it enters the eligible pool for any equippable
+   whose gear family + rolled rarity match. No code change.
+
+**A new loot table / dropper**
+1. Author `data/loot/Xxx.tres` (`script_class="LootTable"`) with `LootEntry`
+   sub-resources (item id, `DropChance`, `Min/MaxQuantity`, `RollAffixes`), plus
+   optional gold (`GoldChance`/`GoldMin`/`GoldMax`) and `QualityBonus`.
+2. Add a `LootComponent` to the actor (set `Table` or `TablePath`); it rolls and
+   spawns pickups on death. See `EnemyFactory` for the wiring.
+
 **A new stat**
 1. Add to the `StatType` enum; if it's a depleting resource, update
    `StatTypes.IsResource`.
@@ -523,9 +570,10 @@ Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
 ## 13. Roadmap status
 
 Done: **1 Core Architecture · 2 Player Controller · 3 Combat Framework ·
-4 Enemy AI · 5 Inventory System · 6 Equipment System**. Next: **7 Loot Generation**.
+4 Enemy AI · 5 Inventory System · 6 Equipment System · 7 Loot Generation**.
+Next: **8 Progression**.
 
-Then (in order): 8 Progression · 9 Quests · 10 Dialogue · 11 NPC Schedules ·
+Then (in order): 9 Quests · 10 Dialogue · 11 NPC Schedules ·
 12 Magic · 13 World Systems · 14 Crafting · 15 Factions · 16 Procedural Events ·
 17 Optimization · 18 Content Expansion.
 

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="AffixDefinition" load_steps=2 format=3 uid="uid://cmbrvlafxkeen"]
+
+[ext_resource type="Script" path="res://src/Items/AffixDefinition.cs" id="1_affix"]
+
+[resource]
+script = ExtResource("1_affix")
+Id = "affix.prefix.keen"
+Label = "Keen"
+Kind = 0
+Stat = 13
+ModifierType = 0
+MinValue = 0.02
+MaxValue = 0.06
+MinRarity = 2
+Weight = 0.6
+ForWeapons = true
+ForArmor = false
+ForAccessories = true

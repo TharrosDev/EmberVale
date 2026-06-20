@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="LootTable" load_steps=7 format=3 uid="uid://cmbrvllootgoblin"]
+
+[ext_resource type="Script" path="res://src/Loot/LootTable.cs" id="1_table"]
+[ext_resource type="Script" path="res://src/Loot/LootEntry.cs" id="2_entry"]
+
+[sub_resource type="Resource" id="Entry_hide"]
+script = ExtResource("2_entry")
+ItemId = "item.material.goblin_hide"
+DropChance = 0.8
+MinQuantity = 1
+MaxQuantity = 2
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_ore"]
+script = ExtResource("2_entry")
+ItemId = "item.material.iron_ore"
+DropChance = 0.3
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_potion"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.health"
+DropChance = 0.25
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_sword"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.steel_sword"
+DropChance = 0.15
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[resource]
+script = ExtResource("1_table")
+Entries = Array[Resource]([SubResource("Entry_hide"), SubResource("Entry_ore"), SubResource("Entry_potion"), SubResource("Entry_sword")])
+GoldItemId = "item.currency.gold"
+GoldChance = 0.6
+GoldMin = 3
+GoldMax = 12
+QualityBonus = 0.0

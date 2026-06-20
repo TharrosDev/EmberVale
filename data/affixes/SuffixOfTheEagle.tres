@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="AffixDefinition" load_steps=2 format=3 uid="uid://cmbrvlafxeagle"]
+
+[ext_resource type="Script" path="res://src/Items/AffixDefinition.cs" id="1_affix"]
+
+[resource]
+script = ExtResource("1_affix")
+Id = "affix.suffix.eagle"
+Label = "of the Eagle"
+Kind = 1
+Stat = 14
+ModifierType = 0
+MinValue = 0.1
+MaxValue = 0.4
+MinRarity = 2
+Weight = 0.6
+ForWeapons = true
+ForArmor = false
+ForAccessories = true

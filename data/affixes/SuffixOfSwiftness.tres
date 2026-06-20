@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="AffixDefinition" load_steps=2 format=3 uid="uid://cmbrvlafxswift"]
+
+[ext_resource type="Script" path="res://src/Items/AffixDefinition.cs" id="1_affix"]
+
+[resource]
+script = ExtResource("1_affix")
+Id = "affix.suffix.swiftness"
+Label = "of Swiftness"
+Kind = 1
+Stat = 11
+ModifierType = 0
+MinValue = 0.3
+MaxValue = 1.0
+MinRarity = 1
+Weight = 0.7
+ForWeapons = true
+ForArmor = true
+ForAccessories = true

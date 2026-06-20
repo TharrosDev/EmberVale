@@ -122,7 +122,7 @@ public partial class InventoryPanel : CanvasLayer
 
         foreach (EquipmentSlot slot in EquipmentSlots.DisplayOrder)
         {
-            EquippableItemResource? item = _equipment.GetEquipped(slot);
+            ItemInstance? item = _equipment.GetEquipped(slot);
             string text = $"{EquipmentSlots.Label(slot)}: {item?.DisplayName ?? "—"}";
 
             if (item == null)
@@ -132,7 +132,8 @@ public partial class InventoryPanel : CanvasLayer
             }
 
             EquipmentSlot captured = slot;
-            AddRow(text, "Unequip", () => _equipment.Unequip(captured));
+            AddRow(text, "Unequip", () => _equipment.Unequip(captured), ItemRarities.Color(item.Rarity));
+            AddAffixLines(item);
         }
     }
 
@@ -151,17 +152,30 @@ public partial class InventoryPanel : CanvasLayer
 
         foreach (ItemStack stack in _inventory.Stacks)
         {
-            string rarity = stack.Item.Rarity != ItemRarity.Common ? $"  [{stack.Item.Rarity}]" : string.Empty;
-            string text = $"{stack.Item.DisplayName}  x{stack.Quantity}{rarity}";
+            ItemInstance instance = stack.Instance;
+            string rarity = instance.Rarity != ItemRarity.Common ? $"  [{instance.Rarity}]" : string.Empty;
+            string count = stack.Quantity > 1 ? $"  x{stack.Quantity}" : string.Empty;
+            string text = $"{instance.DisplayName}{count}{rarity}";
+            Color color = ItemRarities.Color(instance.Rarity);
 
-            if (stack.Item is EquippableItemResource equippable && _equipment != null)
+            if (instance.IsEquippable && _equipment != null)
             {
-                AddRow(text, "Equip", () => _equipment.Equip(equippable));
+                AddRow(text, "Equip", () => _equipment.Equip(instance), color);
             }
             else
             {
-                AddLine($"• {text}");
+                AddLine($"• {text}", color);
             }
+
+            AddAffixLines(instance);
+        }
+    }
+
+    private void AddAffixLines(ItemInstance instance)
+    {
+        foreach (ItemAffix affix in instance.Affixes)
+        {
+            AddLine($"      {affix.DisplayValue}", new Color(0.65f, 0.75f, 0.65f));
         }
     }
 
@@ -182,14 +196,19 @@ public partial class InventoryPanel : CanvasLayer
         _list.AddChild(label);
     }
 
-    private void AddLine(string text)
+    private void AddLine(string text, Color? color = null)
     {
         var label = new Label { Text = text };
         label.AddThemeFontSizeOverride("font_size", 14);
+        if (color is { } c)
+        {
+            label.AddThemeColorOverride("font_color", c);
+        }
+
         _list.AddChild(label);
     }
 
-    private void AddRow(string text, string action, System.Action onPressed)
+    private void AddRow(string text, string action, System.Action onPressed, Color? color = null)
     {
         var row = new HBoxContainer();
 
@@ -199,6 +218,11 @@ public partial class InventoryPanel : CanvasLayer
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
         label.AddThemeFontSizeOverride("font_size", 14);
+        if (color is { } c)
+        {
+            label.AddThemeColorOverride("font_color", c);
+        }
+
         row.AddChild(label);
 
         var button = new Button { Text = action };
