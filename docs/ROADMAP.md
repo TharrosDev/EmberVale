@@ -46,8 +46,8 @@ through save/load.
 | 5  | Inventory System     | ✅ Done      | Item resources + database, stacking inventory, pickups, UI, save |
 | 6  | Equipment System     | ✅ Done      | Slots, equippable items, stat bonuses, weapon swap, character UI |
 | 7  | Loot Generation      | ✅ Done      | Item instances, procedural affixes, drop tables, loot component |
-| 8  | Progression System   | ⏳ Next      | XP, levels, skills, perks                                    |
-| 9  | Quest Framework      | ⬜ Planned   | Objectives, branching, consequences                         |
+| 8  | Progression System   | ✅ Done      | XP, levels, per-level stat growth, skill points, perks      |
+| 9  | Quest Framework      | ⏳ Next      | Objectives, branching, consequences                         |
 | 10 | Dialogue System      | ⬜ Planned   | Node-graph conversations, choices                           |
 | 11 | NPC Schedules        | ⬜ Planned   | Daily routines, reactions                                   |
 | 12 | Magic System         | ⬜ Planned   | Schools, projectiles, AoE, status effects                   |
@@ -166,10 +166,34 @@ Core architecture foundation that everything else builds on:
 - The sandbox seeds one procedurally-rolled Rare blade so the pipeline is visible
   the moment you press Play.
 
-## Phase 8 — next steps (Progression System)
+## Phase 8 — delivered (Progression System)
 
-1. An XP/level model (likely a `ProgressionComponent`, `ISaveable`) fed by
-   `EntityDiedEvent` kills.
-2. Level-ups that raise `AttributeSet`-derived stats (or apply modifiers) and
-   refill resources.
-3. Skill/perk hooks layering modifiers onto `StatsComponent`, plus HUD/UI surfacing.
+- **Kill attribution** — `EntityDiedEvent` now carries the optional `Killer`;
+  `StatsComponent.ApplyDamage(amount, source)` threads the attacker (from
+  `DamagePacket.Source`) into the death event so kills can be credited.
+- **`ProgressionResource`** (`[GlobalClass]`, `data/progression/*.tres`) — the XP
+  curve (`BaseXpToLevel × level^exponent`), level cap, per-level flat stat gains and
+  skill points per level. **`ExperienceComponent`** — a passive XP bounty on
+  enemies (goblins grant 25).
+- **`ProgressionComponent`** (`ISaveable`) — listens for `EntityDiedEvent`s it
+  caused, awards the dead entity's XP, resolves multi-level-ups against the curve,
+  re-derives cumulative per-level stat growth as `StatModifier`s sourced to itself,
+  refills resources on level-up, and banks skill points. Persists level / XP /
+  unspent points (growth is recomputed from level, never stored).
+- **Perks** — `PerkResource` (`[GlobalClass]`, `data/perks/*.tres`) + `PerkDatabase`
+  + **`PerksComponent`** (`ISaveable`): rankable passives that spend skill points and
+  apply a stat bonus as a `StatModifier` sourced to the perk; ranks persist and
+  re-apply on load. Five starter perks (Toughness, Might, Precision, Endurance
+  Training, Warding).
+- **UI** — the HUD shows `Level / XP / SP`; the character screen (`I`) shows
+  progression and a PERKS section with Learn buttons. Raises `XpGainedEvent` /
+  `LeveledUpEvent` / `PerkChangedEvent`. Debug key **`X`** grants 50 XP.
+
+## Phase 9 — next steps (Quest Framework)
+
+1. Quest/objective resources (`[GlobalClass]` `.tres`) + a `QuestLog` (`ISaveable`)
+   tracking active/completed state.
+2. Objectives that subscribe to events (kills via `EntityDiedEvent`, pickups via
+   `ItemPickedUpEvent`, etc.) and advance/complete automatically.
+3. Rewards on completion (XP via `ProgressionComponent.AddXp`, items, gold) and a
+   quest-log UI panel.

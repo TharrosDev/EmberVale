@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="PerkResource" load_steps=2 format=3 uid="uid://cmbrvlperktough"]
+
+[ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
+
+[resource]
+script = ExtResource("1_perk")
+Id = "perk.toughness"
+DisplayName = "Toughness"
+Description = "Hardened against harm. +15 maximum Health per rank."
+MaxRank = 5
+Cost = 1
+Stat = 0
+ModifierType = 0
+ValuePerRank = 15.0

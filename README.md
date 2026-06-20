@@ -102,8 +102,8 @@ save/load.
 | 5  | Inventory System     | ✅ Done     |
 | 6  | Equipment System     | ✅ Done     |
 | 7  | Loot Generation      | ✅ Done     |
-| 8  | Progression System   | ⏳ Next     |
-| 9  | Quest Framework      | ⬜ Planned  |
+| 8  | Progression System   | ✅ Done     |
+| 9  | Quest Framework      | ⏳ Next     |
 | 10 | Dialogue System      | ⬜ Planned  |
 | 11 | NPC Schedules        | ⬜ Planned  |
 | 12 | Magic System         | ⬜ Planned  |

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ProgressionResource" load_steps=2 format=3 uid="uid://cmbrvlprogplayer"]
+
+[ext_resource type="Script" path="res://src/Progression/ProgressionResource.cs" id="1_prog"]
+
+[resource]
+script = ExtResource("1_prog")
+MaxLevel = 30
+BaseXpToLevel = 100
+XpCurveExponent = 1.5
+SkillPointsPerLevel = 1
+HealthPerLevel = 8.0
+StaminaPerLevel = 4.0
+ManaPerLevel = 0.0
+PhysicalPowerPerLevel = 1.5
+SpellPowerPerLevel = 0.0
+ArmorPerLevel = 0.5

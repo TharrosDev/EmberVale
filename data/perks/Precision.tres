@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="PerkResource" load_steps=2 format=3 uid="uid://cmbrvlperkprec"]
+
+[ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
+
+[resource]
+script = ExtResource("1_perk")
+Id = "perk.precision"
+DisplayName = "Precision"
+Description = "A keener eye for weak points. +2% Crit Chance per rank."
+MaxRank = 3
+Cost = 1
+Stat = 13
+ModifierType = 0
+ValuePerRank = 0.02

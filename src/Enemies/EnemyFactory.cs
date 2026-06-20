@@ -1,6 +1,7 @@
 using Embervale.Combat;
 using Embervale.Loot;
 using Embervale.Movement;
+using Embervale.Progression;
 using Embervale.Stats;
 using Godot;
 
@@ -73,6 +74,7 @@ public static class EnemyFactory
 
         enemy.AddChild(new EnemyAIComponent { Name = "AI" });
         enemy.AddChild(new LootComponent { Name = "Loot", TablePath = LootTablePath });
+        enemy.AddChild(new ExperienceComponent { Name = "Experience", XpValue = 25 });
         return enemy;
     }
 

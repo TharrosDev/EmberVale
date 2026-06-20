@@ -179,8 +179,10 @@ public partial class StatsComponent : EntityComponent, ISaveable
 
     // --- Combat-facing convenience helpers ---------------------------------
 
-    /// <summary>Applies raw damage to health and raises damage/death events.</summary>
-    public void ApplyDamage(float amount)
+    /// <summary>Applies raw damage to health and raises damage/death events.
+    /// <paramref name="source"/> is the attacker, threaded into the death event so
+    /// progression can attribute the kill.</summary>
+    public void ApplyDamage(float amount, IEntity? source = null)
     {
         if (Entity == null || amount <= 0f)
         {
@@ -200,7 +202,7 @@ public partial class StatsComponent : EntityComponent, ISaveable
 
         if (after <= 0f)
         {
-            EventBus.Instance?.Publish(new EntityDiedEvent(Entity));
+            EventBus.Instance?.Publish(new EntityDiedEvent(Entity, source));
         }
     }
 
