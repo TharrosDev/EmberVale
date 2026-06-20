@@ -39,8 +39,9 @@ theoretical ones.
 | `Space`      | Jump                                |
 | Left mouse   | Melee attack                        |
 | Right mouse  | Block                               |
-| `E`          | Interact (pick up items)            |
+| `E`          | Interact (pick up items, talk to NPCs) |
 | `I`          | Toggle inventory                    |
+| `J`          | Toggle quest journal                |
 | `H`          | Heal the training dummy             |
 | `R`          | Respawn the dummy immediately       |
 | `F5` / `F9`  | Quick-save / quick-load             |
@@ -71,6 +72,8 @@ proof that the core systems are wired together.
     ├── Combat/              # Damage pipeline, hitbox/hurtbox, weapons
     ├── Items/               # Item resources, inventory, pickups, database
     ├── Interaction/         # InteractableComponent (interact action)
+    ├── Quests/              # Quest resources, objectives, log, givers
+    ├── Dialogue/            # Node-graph conversations, choices, story flags
     ├── Player/              # First-person controller + factory
     ├── Enemies/             # Enemy AI state machine + spawner
     ├── Save/                # ISaveable + SaveManager
@@ -104,8 +107,8 @@ save/load.
 | 7  | Loot Generation      | ✅ Done     |
 | 8  | Progression System   | ✅ Done     |
 | 9  | Quest Framework      | ✅ Done     |
-| 10 | Dialogue System      | ⏳ Next     |
-| 11 | NPC Schedules        | ⬜ Planned  |
+| 10 | Dialogue System      | ✅ Done     |
+| 11 | NPC Schedules        | ⏳ Next     |
 | 12 | Magic System         | ⬜ Planned  |
 | 13 | World Systems        | ⬜ Planned  |
 | 14 | Crafting             | ⬜ Planned  |

@@ -89,7 +89,8 @@ Goblins roam to the north (−Z) and drop loot.
 │   ├── loot/                # LootTable presets (e.g. GoblinLoot)
 │   ├── progression/         # ProgressionResource presets (XP curve + per-level gains)
 │   ├── perks/               # PerkResource presets (rankable passives)
-│   └── quests/              # QuestResource presets (objectives + rewards)
+│   ├── quests/              # QuestResource presets (objectives + rewards)
+│   └── dialogue/            # DialogueResource presets (node-graph conversations)
 └── src/
     ├── Core/
     │   ├── Events/          # IGameEvent, EventBus (autoload), CoreEvents
@@ -106,6 +107,7 @@ Goblins roam to the north (−Z) and drop loot.
     ├── Loot/                # LootTable/LootEntry, LootGenerator, LootRarity, LootComponent
     ├── Progression/         # XP/levels (ProgressionComponent), perks, ExperienceComponent
     ├── Quests/              # QuestResource/objectives, QuestLogComponent, quest givers
+    ├── Dialogue/            # Dialogue graph resources, session runner, story flags
     ├── Interaction/         # InteractableComponent (raycast interact)
     ├── Player/              # PlayerCharacter, PlayerController, PlayerFactory
     ├── Enemies/             # EnemyEntity, EnemyAIComponent, EnemyFactory, EnemySpawnDirector
@@ -404,6 +406,33 @@ direct children of the host. `Hitbox`/`Hurtbox` are `Area3D` (not
 - **Note:** kills are credited because melee sets `DamagePacket.Source = attacker`,
   which `StatsComponent.ApplyDamage` threads into `EntityDiedEvent.Killer`.
 
+### 6.6e Dialogue (`src/Dialogue`)
+
+- **Content:** `DialogueResource` (`[GlobalClass]`, `data/dialogue/*.tres`) is a node
+  graph — `Id`, `SpeakerName`, `StartNodeId`, and `Nodes` (untyped array of
+  `DialogueNode`: `Id`, optional `Speaker`, multiline `Text`, `Choices`). Each
+  `DialogueChoice` has reply `Text`, a `Goto` node id (empty = end), a gating
+  `DialogueCondition` + `ConditionArg`, and a fired `DialogueEffect` + `EffectArg`.
+  Arrays are authored untyped and read via `NodeList()`/`ChoiceList()` (same pattern as
+  `LootTable.Entries`/`QuestResource.Objectives`). `DialogueDatabase` indexes by id.
+- **Conditions/effects are declarative — no scripting in `.tres`.** `DialogueCondition`:
+  `Always`/`QuestAvailable`/`QuestActive`/`QuestCompleted`/`QuestNotStarted`/`HasFlag`/
+  `MissingFlag`. `DialogueEffect`: `None`/`StartQuest`/`SetFlag`/`ClearFlag`.
+- **`DialogueSession`** (plain runtime object, not a node) — walks one conversation:
+  tracks the current node, `VisibleChoices()` filters by condition against the player's
+  `QuestLogComponent` + `StoryFlagsComponent`, and `Choose(choice)` applies the effect
+  then advances to `Goto` (or ends). Keeps the UI a thin view.
+- **`StoryFlagsComponent`** (`EntityComponent`, `ISaveable`, `flags:{RuntimeId}`, on the
+  player) — persistent named boolean flags giving conversations memory; `Set`/`Clear`/
+  `Has`, raises `StoryFlagChangedEvent`. Deliberately general for later systems.
+- **`DialogueComponent`** (`InteractableComponent`) — an NPC that, on `E` interact,
+  resolves its `DialogueResource` and publishes `DialogueStartedEvent`. Replaces bare
+  quest-givers: offering a quest is a choice effect.
+- **UI:** `DialoguePanel` is a **modal** window driven by `DialogueStartedEvent` (builds
+  the session, renders the line + choice buttons, sets `UiState.MenuOpen` + frees the
+  mouse, rebuilds from a dirty flag). Raises `DialogueEndedEvent`. Sandbox: the Village
+  Elder talks — offers "Gather Iron", branches on quest state, sets `flag.elder_thanked`.
+
 ### 6.7 Save (`src/Save`)
 
 - **`ISaveable`** — `SaveId`, `Godot.Collections.Dictionary Save()`,
@@ -605,9 +634,20 @@ Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
    `RequiredCount`), and rewards (`XpReward`, `GoldReward`, `RewardItems` of
    `QuestItemReward`). Optional `PrerequisiteQuestId` chains it after another.
 2. Auto-indexed by `QuestDatabase`. Start it via a `QuestGiverComponent` (set its
-   `QuestId`) on a world `Entity`, or directly with
-   `player.GetComponent<QuestLogComponent>().StartQuest(...)`. Objectives advance and
-   rewards apply automatically. No code change for new Kill/Collect quests.
+   `QuestId`) on a world `Entity`, in a `DialogueChoice` (`Effect` StartQuest), or
+   directly with `player.GetComponent<QuestLogComponent>().StartQuest(...)`. Objectives
+   advance and rewards apply automatically. No code change for new Kill/Collect quests.
+
+**A new conversation**
+1. Author `data/dialogue/Xxx.tres` (`script_class="DialogueResource"`): unique `Id`,
+   `SpeakerName`, `StartNodeId`, and `Nodes` — an array of `DialogueNode` sub-resources
+   (`Id`, optional `Speaker`, `Text`, `Choices`). Each `DialogueChoice` sub-resource has
+   `Text`, a `Goto` node id (empty = end), an optional `Condition`+`ConditionArg` (gates
+   visibility) and an optional `Effect`+`EffectArg` (`1`=StartQuest, `2`=SetFlag,
+   `3`=ClearFlag). Enums export as ints (see `DialogueEnums.cs`).
+2. Auto-indexed by `DialogueDatabase`. Attach a `DialogueComponent` (set its
+   `DialogueId`) to a world `Entity` with a collider; the player's `E` interact opens it
+   in `DialoguePanel`. No code change for new conversations.
 
 **A new stat**
 1. Add to the `StatType` enum; if it's a depleting resource, update
@@ -657,11 +697,10 @@ Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
 
 Done: **1 Core Architecture · 2 Player Controller · 3 Combat Framework ·
 4 Enemy AI · 5 Inventory System · 6 Equipment System · 7 Loot Generation ·
-8 Progression · 9 Quests**. Next: **10 Dialogue**.
+8 Progression · 9 Quests · 10 Dialogue**. Next: **11 NPC Schedules**.
 
-Then (in order): 11 NPC Schedules ·
-12 Magic · 13 World Systems · 14 Crafting · 15 Factions · 16 Procedural Events ·
-17 Optimization · 18 Content Expansion.
+Then (in order): 12 Magic · 13 World Systems · 14 Crafting · 15 Factions ·
+16 Procedural Events · 17 Optimization · 18 Content Expansion.
 
 See `docs/ROADMAP.md` for per-phase delivery notes and the next-steps checklist.
 

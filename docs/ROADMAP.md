@@ -48,8 +48,8 @@ through save/load.
 | 7  | Loot Generation      | ✅ Done      | Item instances, procedural affixes, drop tables, loot component |
 | 8  | Progression System   | ✅ Done      | XP, levels, per-level stat growth, skill points, perks      |
 | 9  | Quest Framework      | ✅ Done      | Event-driven objectives, quest log, rewards, givers, save   |
-| 10 | Dialogue System      | ⏳ Next      | Node-graph conversations, choices                           |
-| 11 | NPC Schedules        | ⬜ Planned   | Daily routines, reactions                                   |
+| 10 | Dialogue System      | ✅ Done      | Node-graph conversations, choices, conditions/effects, story flags |
+| 11 | NPC Schedules        | ⏳ Next      | Daily routines, reactions                                   |
 | 12 | Magic System         | ⬜ Planned   | Schools, projectiles, AoE, status effects                   |
 | 13 | World Systems        | ⬜ Planned   | Day/night, weather, encounters                              |
 | 14 | Crafting             | ⬜ Planned   | Recipes, stations, materials                                |
@@ -214,11 +214,36 @@ Core architecture foundation that everything else builds on:
   Elder near spawn offers "Gather Iron" (collect 3 iron ore). Both round-trip
   through save/load.
 
-## Phase 10 — next steps (Dialogue System)
+## Phase 10 — delivered (Dialogue System)
 
-1. Node-graph dialogue resources (`[GlobalClass]` `.tres`): lines, speakers, branching
-   choices, and conditions/effects (e.g. start a quest, set a flag).
-2. A `DialogueComponent` / runner driving conversations through an interactable NPC,
-   reusing the `InteractableComponent` + EventBus patterns.
-3. A dialogue UI panel; hook quest-givers into dialogue so quests are offered in
-   conversation rather than on a bare interact.
+- **Dialogue content** — a node-graph conversation as `.tres` under `data/dialogue/`:
+  `DialogueResource` (`[GlobalClass]`: id, speaker, start node, nodes) holds
+  `DialogueNode` sub-resources (id, speaker override, line text, choices), each with
+  `DialogueChoice` sub-resources (reply text, `Goto` target node, a gating
+  `DialogueCondition` and a fired `DialogueEffect`). Node/choice arrays are authored
+  untyped and read back by element cast (the same pattern as quests/loot).
+  `DialogueDatabase` indexes them by id (the standard static-database pattern). New
+  conversation = a `.tres`, no code change.
+- **Conditions & effects (declarative, no scripting)** — a choice is hidden unless its
+  `DialogueCondition` passes (`QuestAvailable` / `QuestActive` / `QuestCompleted` /
+  `QuestNotStarted` / `HasFlag` / `MissingFlag`), and picking it fires a
+  `DialogueEffect` (`StartQuest`, `SetFlag`, `ClearFlag`). `DialogueSession` — a plain
+  runtime walk of a conversation — evaluates conditions and applies effects against the
+  player's `QuestLogComponent` and `StoryFlagsComponent`, keeping the UI a thin view.
+- **`StoryFlagsComponent`** (`ISaveable`, on the player) — a persistent set of named
+  boolean flags giving conversations memory ("you've met the elder"). Deliberately
+  general so later systems (NPC schedules, world events) can read/write the same flags;
+  raises `StoryFlagChangedEvent` and round-trips through save/load.
+- **`DialogueComponent`** (`InteractableComponent`) — an NPC that opens a conversation
+  on the player's `E` interact by publishing a `DialogueStartedEvent`. This replaces the
+  bare quest-giver: offering a quest is now just a choice effect inside a conversation.
+- **UI** — `DialoguePanel`, a modal window driven entirely by `DialogueStartedEvent`:
+  it builds a session, renders the speaker line and condition-filtered choice buttons,
+  applies effects on click and advances, and (like the character screen) frees the mouse
+  and sets `UiState.MenuOpen` while open. Rebuilds from a dirty flag so a choice never
+  frees its own button mid-signal.
+- **Sandbox** — the Village Elder near spawn now *talks*: his conversation offers
+  "Gather Iron" (a `StartQuest` choice gated on `QuestAvailable`), branches on the
+  quest's state while it's active/completed, and on a thank-you sets the
+  `flag.elder_thanked` story flag — which unlocks a friendlier greeting on later visits.
+  Flags persist across save/load.
