@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="ScheduleResource" load_steps=8 format=3 uid="uid://cmbrvlschdeldr"]
+
+[ext_resource type="Script" path="res://src/Npc/ScheduleResource.cs" id="1_sched"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleEntry.cs" id="2_entry"]
+
+[sub_resource type="Resource" id="e_well"]
+script = ExtResource("2_entry")
+StartHour = 6
+Activity = "Drawing water at the well"
+Destination = Vector3(4, 0, 5)
+
+[sub_resource type="Resource" id="e_forge"]
+script = ExtResource("2_entry")
+StartHour = 9
+Activity = "Working at the forge"
+Destination = Vector3(1.5, 0, -2.5)
+
+[sub_resource type="Resource" id="e_square"]
+script = ExtResource("2_entry")
+StartHour = 13
+Activity = "Resting in the square"
+Destination = Vector3(-2, 0, 6)
+
+[sub_resource type="Resource" id="e_home"]
+script = ExtResource("2_entry")
+StartHour = 18
+Activity = "Heading home for supper"
+Destination = Vector3(6, 0, 6)
+
+[sub_resource type="Resource" id="e_sleep"]
+script = ExtResource("2_entry")
+StartHour = 21
+Activity = "Asleep"
+Destination = Vector3(7, 0, 6.5)
+
+[resource]
+script = ExtResource("1_sched")
+Id = "schedule.elder"
+Entries = Array[Resource]([SubResource("e_well"), SubResource("e_forge"), SubResource("e_square"), SubResource("e_home"), SubResource("e_sleep")])

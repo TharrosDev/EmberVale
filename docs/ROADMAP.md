@@ -49,8 +49,8 @@ through save/load.
 | 8  | Progression System   | ✅ Done      | XP, levels, per-level stat growth, skill points, perks      |
 | 9  | Quest Framework      | ✅ Done      | Event-driven objectives, quest log, rewards, givers, save   |
 | 10 | Dialogue System      | ✅ Done      | Node-graph conversations, choices, conditions/effects, story flags |
-| 11 | NPC Schedules        | ⏳ Next      | Daily routines, reactions                                   |
-| 12 | Magic System         | ⬜ Planned   | Schools, projectiles, AoE, status effects                   |
+| 11 | NPC Schedules        | ✅ Done      | World clock, data-driven daily routines, event-driven reactions |
+| 12 | Magic System         | ⏳ Next      | Schools, projectiles, AoE, status effects                   |
 | 13 | World Systems        | ⬜ Planned   | Day/night, weather, encounters                              |
 | 14 | Crafting             | ⬜ Planned   | Recipes, stations, materials                                |
 | 15 | Faction Systems      | ⬜ Planned   | Reputation, consequences                                    |
@@ -247,3 +247,28 @@ Core architecture foundation that everything else builds on:
   quest's state while it's active/completed, and on a thank-you sets the
   `flag.elder_thanked` story flag — which unlocks a friendlier greeting on later visits.
   Flags persist across save/load.
+
+## Phase 11 — delivered (NPC Schedules)
+
+- **World clock** — `WorldClock` (`Node`, `ISaveable`, `ServiceLocator`-registered) advances
+  a 24-hour day at a configurable real-time rate and announces each new hour via
+  `TimeOfDayChangedEvent(Hour, DayPhase)`. It is the minimal time source schedules need;
+  **Phase 13 (World Systems)** will build the fuller day/night + weather model on top. The
+  time of day persists through save/load, so routines resume where they left off. A
+  `DayPhase` (Night/Dawn/Day/Dusk) is derived from the hour; the HUD shows the clock.
+- **Schedule content** — `ScheduleResource` (`[GlobalClass]`, `data/schedules/*.tres`) holds
+  `ScheduleEntry` sub-resources (`StartHour`, `Activity` label, `Destination`). Entries are
+  authored untyped and read by element cast (the established pattern); `EntryForHour(hour)`
+  resolves the active block (wrapping pre-dawn hours to the last block). `ScheduleDatabase`
+  indexes them. New routine = a `.tres`, no code change.
+- **`ScheduleComponent`** (`EntityComponent`, on a static NPC `Entity`) — reads the clock,
+  walks the host toward the current block's destination with a simple kinematic step
+  (villagers need no physics), facing where it goes, and reports its `Activity` via
+  `NpcActivityChangedEvent`. **Reactions** are event-driven: a nearby `EnemyAlertedEvent`
+  triggers a timed flee away from the threat (overriding the routine), and a
+  `DialogueStartedEvent` where it is the speaker freezes it to face the player until the
+  `DialogueEndedEvent`.
+- **Sandbox** — the Village Elder now keeps a daily routine: the well at dawn, the forge by
+  day, the square at midday, home by dusk, asleep at night — visibly walking between them as
+  the (fast) clock turns. Lure goblins near and he flees; talk to him and he stops to face
+  you. The clock's time of day round-trips through save/load.

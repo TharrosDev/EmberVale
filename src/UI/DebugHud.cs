@@ -6,6 +6,7 @@ using Embervale.Entities;
 using Embervale.Progression;
 using Embervale.Quests;
 using Embervale.Stats;
+using Embervale.World;
 using Godot;
 
 namespace Embervale.UI;
@@ -21,6 +22,7 @@ public partial class DebugHud : CanvasLayer
     private Label _label = null!;
     private IEntity? _target;
     private IEntity? _player;
+    private WorldClock? _clock;
     private string _lastHit = "—";
 
     public override void _Ready()
@@ -60,12 +62,22 @@ public partial class DebugHud : CanvasLayer
         _player = player;
     }
 
+    public void SetClock(WorldClock? clock)
+    {
+        _clock = clock;
+    }
+
     public override void _Process(double delta)
     {
         var sb = new StringBuilder();
         sb.Append("EMBERVALE — Combat Sandbox\n");
         sb.Append($"FPS: {Engine.GetFramesPerSecond()}\n");
         sb.Append($"State: {GameManager.Instance?.State.ToString() ?? "?"}\n");
+
+        if (_clock is { } clock && IsInstanceValid(clock))
+        {
+            sb.Append($"Time: {clock.Clock()}  ({DayPhases.Label(clock.Phase)})\n");
+        }
 
         if (_player is Node playerNode && IsInstanceValid(playerNode) &&
             _player.TryGetComponent(out StatsComponent playerStats))

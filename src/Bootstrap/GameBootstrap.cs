@@ -8,12 +8,14 @@ using Embervale.Enemies;
 using Embervale.Entities;
 using Embervale.Items;
 using Embervale.Loot;
+using Embervale.Npc;
 using Embervale.Player;
 using Embervale.Progression;
 using Embervale.Quests;
 using Embervale.Save;
 using Embervale.Stats;
 using Embervale.UI;
+using Embervale.World;
 using Godot;
 
 namespace Embervale.Bootstrap;
@@ -41,6 +43,7 @@ public partial class GameBootstrap : Node3D
     private InventoryPanel _inventoryPanel = null!;
     private QuestLogPanel _questLogPanel = null!;
     private DialoguePanel _dialoguePanel = null!;
+    private WorldClock _clock = null!;
     private Entity? _dummy;
     private PlayerCharacter? _player;
     private double _respawnCountdown = -1d;
@@ -59,6 +62,7 @@ public partial class GameBootstrap : Node3D
         PerkDatabase.Initialize();
         QuestDatabase.Initialize();
         DialogueDatabase.Initialize();
+        ScheduleDatabase.Initialize();
         BuildEnvironment();
 
         _hud = new DebugHud();
@@ -69,6 +73,12 @@ public partial class GameBootstrap : Node3D
         AddChild(_questLogPanel);
         _dialoguePanel = new DialoguePanel();
         AddChild(_dialoguePanel);
+
+        // The world clock drives NPC routines; create it before the NPCs below so it is
+        // registered in the ServiceLocator when their schedules first read the time.
+        _clock = new WorldClock { Name = "WorldClock" };
+        AddChild(_clock);
+        _hud.SetClock(_clock);
 
         SubscribeEvents();
         SpawnDummy();
@@ -308,8 +318,12 @@ public partial class GameBootstrap : Node3D
         // The elder now offers his task in conversation: the dialogue's choices start
         // the quest and remember you via a story flag (see data/dialogue/Elder.tres).
         giver.AddChild(new DialogueComponent { Name = "Dialogue", DialogueId = "dialogue.elder" });
+
+        // A daily routine: the elder walks between the well, the forge and home as the
+        // world clock turns, and flees if goblins raise the alarm nearby.
+        giver.AddChild(new ScheduleComponent { Name = "Schedule", ScheduleId = "schedule.elder" });
         AddChild(giver);
-        Log.Info("The Village Elder waits near the spawn, ready to talk.");
+        Log.Info("The Village Elder keeps a daily routine near the spawn — talk to him for a task.");
     }
 
     private void SpawnEnemyCamp()

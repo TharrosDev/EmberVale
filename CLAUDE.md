@@ -90,7 +90,8 @@ Goblins roam to the north (−Z) and drop loot.
 │   ├── progression/         # ProgressionResource presets (XP curve + per-level gains)
 │   ├── perks/               # PerkResource presets (rankable passives)
 │   ├── quests/              # QuestResource presets (objectives + rewards)
-│   └── dialogue/            # DialogueResource presets (node-graph conversations)
+│   ├── dialogue/            # DialogueResource presets (node-graph conversations)
+│   └── schedules/           # ScheduleResource presets (NPC daily routines)
 └── src/
     ├── Core/
     │   ├── Events/          # IGameEvent, EventBus (autoload), CoreEvents
@@ -108,6 +109,8 @@ Goblins roam to the north (−Z) and drop loot.
     ├── Progression/         # XP/levels (ProgressionComponent), perks, ExperienceComponent
     ├── Quests/              # QuestResource/objectives, QuestLogComponent, quest givers
     ├── Dialogue/            # Dialogue graph resources, session runner, story flags
+    ├── World/               # WorldClock (time-of-day) + world events
+    ├── Npc/                 # NPC schedule resources, ScheduleComponent (routines)
     ├── Interaction/         # InteractableComponent (raycast interact)
     ├── Player/              # PlayerCharacter, PlayerController, PlayerFactory
     ├── Enemies/             # EnemyEntity, EnemyAIComponent, EnemyFactory, EnemySpawnDirector
@@ -433,6 +436,27 @@ direct children of the host. `Hitbox`/`Hurtbox` are `Area3D` (not
   mouse, rebuilds from a dirty flag). Raises `DialogueEndedEvent`. Sandbox: the Village
   Elder talks — offers "Gather Iron", branches on quest state, sets `flag.elder_thanked`.
 
+### 6.6f World clock & NPC schedules (`src/World`, `src/Npc`)
+
+- **`WorldClock`** (`src/World`, `Node`, `ISaveable` `worldclock`, `ServiceLocator`-
+  registered, `ProcessMode.Pausable`) — advances a 24h day at `DayLengthSeconds` real
+  seconds/day and publishes `TimeOfDayChangedEvent(Hour, DayPhase)` on each new hour (and
+  on start/load). Exposes `TimeOfDay`/`Hour`/`Phase`/`Clock()`. The minimal time source
+  for schedules; **Phase 13** builds the full day/night + weather model on top. Persists
+  the time of day. `DayPhase` (Night/Dawn/Day/Dusk) is derived via `DayPhases.Of(hour)`.
+  Created by the bootstrap; `DebugHud` shows the clock.
+- **Schedule content** — `ScheduleResource` (`[GlobalClass]`, `data/schedules/*.tres`) holds
+  `ScheduleEntry` sub-resources (`StartHour`, `Activity`, `Destination`), authored untyped
+  and read via `EntryList()`. `EntryForHour(hour)` picks the active block (pre-dawn hours
+  wrap to the last block). `ScheduleDatabase` indexes by id.
+- **`ScheduleComponent`** (`src/Npc`, `EntityComponent`, on a static NPC `Entity`) — reads
+  the clock (`ServiceLocator` → `WorldClock`), walks the host toward the current block's
+  `Destination` with a simple kinematic step + `LookAt` (villagers need no physics), and
+  raises `NpcActivityChangedEvent`. **Reactions:** a nearby `EnemyAlertedEvent` starts a
+  timed flee away from the threat (overrides the schedule); a `DialogueStartedEvent` where
+  it is the speaker freezes it to face the player until `DialogueEndedEvent`. Sandbox: the
+  Elder walks well→forge→square→home→sleep as the clock turns, flees goblins, stops to talk.
+
 ### 6.7 Save (`src/Save`)
 
 - **`ISaveable`** — `SaveId`, `Godot.Collections.Dictionary Save()`,
@@ -649,6 +673,14 @@ Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
    `DialogueId`) to a world `Entity` with a collider; the player's `E` interact opens it
    in `DialoguePanel`. No code change for new conversations.
 
+**A new NPC routine**
+1. Author `data/schedules/Xxx.tres` (`script_class="ScheduleResource"`): unique `Id` and
+   `Entries` — an array of `ScheduleEntry` sub-resources (`StartHour` 0–23, `Activity`
+   label, `Destination` world `Vector3`). Hours before the first block wrap to the last.
+2. Auto-indexed by `ScheduleDatabase`. Add a `ScheduleComponent` (set its `ScheduleId`) to
+   a static NPC `Entity`; it walks the routine off the `WorldClock` and reacts to alerts /
+   dialogue. No code change for new routines.
+
 **A new stat**
 1. Add to the `StatType` enum; if it's a depleting resource, update
    `StatTypes.IsResource`.
@@ -697,9 +729,9 @@ Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
 
 Done: **1 Core Architecture · 2 Player Controller · 3 Combat Framework ·
 4 Enemy AI · 5 Inventory System · 6 Equipment System · 7 Loot Generation ·
-8 Progression · 9 Quests · 10 Dialogue**. Next: **11 NPC Schedules**.
+8 Progression · 9 Quests · 10 Dialogue · 11 NPC Schedules**. Next: **12 Magic**.
 
-Then (in order): 12 Magic · 13 World Systems · 14 Crafting · 15 Factions ·
+Then (in order): 13 World Systems · 14 Crafting · 15 Factions ·
 16 Procedural Events · 17 Optimization · 18 Content Expansion.
 
 See `docs/ROADMAP.md` for per-phase delivery notes and the next-steps checklist.
