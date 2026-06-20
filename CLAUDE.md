@@ -569,6 +569,12 @@ Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
 
 ## 13. Roadmap status
 
+> **Scope:** these 18 phases build *systems/infrastructure*, not the game's
+> content. Finishing them yields a data-driven sandbox that can express the game,
+> not a finished game — the world, narrative, art, audio, balance and ship polish
+> are a **separate content/production roadmap** introduced once the systems are
+> done. See the scope note at the top of `docs/ROADMAP.md`.
+
 Done: **1 Core Architecture · 2 Player Controller · 3 Combat Framework ·
 4 Enemy AI · 5 Inventory System · 6 Equipment System · 7 Loot Generation**.
 Next: **8 Progression**.

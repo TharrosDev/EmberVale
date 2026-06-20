@@ -1,5 +1,38 @@
 # Development Roadmap
 
+## Scope: this is the *systems* roadmap, not the game
+
+These 18 phases build **base-game infrastructure** — the reusable systems and
+engine-on-top-of-Godot that the game runs on (architecture, player, combat, AI,
+items/loot, progression, quests, dialogue, magic, world systems, crafting,
+factions, events, optimization). They are *capabilities*, not content.
+
+**Completing all 18 phases does not mean the game is finished.** When this roadmap
+is done we will have a powerful, well-factored, data-driven sandbox that *can
+express* the game — but it will still be a near-empty playground. The actual game
+is authored on top of these systems and is explicitly **out of scope here**:
+
+- World: regions, level geometry, points of interest, the map.
+- Narrative: story, characters, and the actual quest/dialogue *content*.
+- Specific enemies, bosses, items, spells, recipes (beyond sandbox test data).
+- Balance, economy, difficulty curves.
+- Art, models, animation, audio, music, VFX, UI polish.
+- Meta/shell: main menu, settings, new-game and save-slot flow, onboarding.
+
+The architecture is deliberately resource-driven so most of that content lands as
+authored `.tres` data against these systems, not new code (item/affix/loot/
+attribute resources today; quest/dialogue graphs, spells, recipes later).
+
+A **separate content/production roadmap** (world, story, art, audio, balance, ship
+polish) will be introduced once this systems roadmap is complete — that is the
+larger body of work that turns the toolkit into a shippable game.
+
+> Caveat: a few phases blur the line — Magic (12) and Crafting (14) need some
+> content to be meaningful, and Content Expansion (18) is the seam where systems
+> and content begin to overlap (hence ⬜ Ongoing rather than a finite deliverable).
+
+## Phases
+
 Phases are tackled in order. Each must leave the repository buildable and
 playable. A phase is "done" when its systems function in-game **and** round-trip
 through save/load.
