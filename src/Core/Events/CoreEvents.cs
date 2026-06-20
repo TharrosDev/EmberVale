@@ -18,8 +18,10 @@ public readonly record struct EntitySpawnedEvent(IEntity Entity) : IGameEvent;
 /// <summary>Raised when an <see cref="IEntity"/> is about to leave the world.</summary>
 public readonly record struct EntityDespawnedEvent(IEntity Entity) : IGameEvent;
 
-/// <summary>Raised when an entity's health reaches zero.</summary>
-public readonly record struct EntityDiedEvent(IEntity Entity) : IGameEvent;
+/// <summary>Raised when an entity's health reaches zero. <paramref name="Killer"/>
+/// is the entity that dealt the lethal blow, when known (null for environmental or
+/// self-inflicted deaths) — progression uses it to attribute kills.</summary>
+public readonly record struct EntityDiedEvent(IEntity Entity, IEntity? Killer = null) : IGameEvent;
 
 /// <summary>Raised when an entity takes damage. <paramref name="RemainingHealth"/> is post-damage.</summary>
 public readonly record struct EntityDamagedEvent(IEntity Entity, float Amount, float RemainingHealth) : IGameEvent;

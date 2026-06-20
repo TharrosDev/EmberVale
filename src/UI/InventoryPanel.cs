@@ -1,6 +1,7 @@
 using Embervale.Core;
 using Embervale.Core.Events;
 using Embervale.Items;
+using Embervale.Progression;
 using Godot;
 
 namespace Embervale.UI;
@@ -17,6 +18,8 @@ public partial class InventoryPanel : CanvasLayer
 {
     private InventoryComponent? _inventory;
     private EquipmentComponent? _equipment;
+    private ProgressionComponent? _progression;
+    private PerksComponent? _perks;
     private PanelContainer _panel = null!;
     private VBoxContainer _list = null!;
     private bool _dirty = true;
@@ -43,12 +46,18 @@ public partial class InventoryPanel : CanvasLayer
 
         EventBus.Instance?.Subscribe<InventoryChangedEvent>(OnChanged);
         EventBus.Instance?.Subscribe<EquipmentChangedEvent>(OnEquipmentChanged);
+        EventBus.Instance?.Subscribe<XpGainedEvent>(OnXpGained);
+        EventBus.Instance?.Subscribe<LeveledUpEvent>(OnLeveledUp);
+        EventBus.Instance?.Subscribe<PerkChangedEvent>(OnPerkChanged);
     }
 
     public override void _ExitTree()
     {
         EventBus.Instance?.Unsubscribe<InventoryChangedEvent>(OnChanged);
         EventBus.Instance?.Unsubscribe<EquipmentChangedEvent>(OnEquipmentChanged);
+        EventBus.Instance?.Unsubscribe<XpGainedEvent>(OnXpGained);
+        EventBus.Instance?.Unsubscribe<LeveledUpEvent>(OnLeveledUp);
+        EventBus.Instance?.Unsubscribe<PerkChangedEvent>(OnPerkChanged);
     }
 
     public void SetInventory(InventoryComponent? inventory)
@@ -60,6 +69,18 @@ public partial class InventoryPanel : CanvasLayer
     public void SetEquipment(EquipmentComponent? equipment)
     {
         _equipment = equipment;
+        _dirty = true;
+    }
+
+    public void SetProgression(ProgressionComponent? progression)
+    {
+        _progression = progression;
+        _dirty = true;
+    }
+
+    public void SetPerks(PerksComponent? perks)
+    {
+        _perks = perks;
         _dirty = true;
     }
 
@@ -97,6 +118,12 @@ public partial class InventoryPanel : CanvasLayer
 
     private void OnEquipmentChanged(EquipmentChangedEvent e) => _dirty = true;
 
+    private void OnXpGained(XpGainedEvent e) => _dirty = true;
+
+    private void OnLeveledUp(LeveledUpEvent e) => _dirty = true;
+
+    private void OnPerkChanged(PerkChangedEvent e) => _dirty = true;
+
     private void Rebuild()
     {
         _dirty = false;
@@ -108,9 +135,49 @@ public partial class InventoryPanel : CanvasLayer
         }
 
         AddHeader("CHARACTER   (I to close)");
+        BuildProgression();
         BuildEquipment();
         AddHeader(BackpackHeader());
         BuildBackpack();
+        BuildPerks();
+    }
+
+    private void BuildProgression()
+    {
+        if (_progression == null)
+        {
+            return;
+        }
+
+        string xp = _progression.IsMaxLevel ? "MAX" : $"{_progression.CurrentXp} / {_progression.XpToNext}";
+        AddLine($"Level {_progression.Level}    XP {xp}");
+        AddLine($"Skill points: {_progression.SkillPoints}");
+    }
+
+    private void BuildPerks()
+    {
+        if (_perks == null || PerkDatabase.All.Count == 0)
+        {
+            return;
+        }
+
+        AddHeader("PERKS");
+        foreach (PerkResource perk in PerkDatabase.All)
+        {
+            int rank = _perks.RankOf(perk.Id);
+            string text = $"{perk.DisplayName}  ({rank}/{perk.MaxRank})";
+
+            if (_perks.CanLearn(perk))
+            {
+                PerkResource captured = perk;
+                AddRow(text, $"Learn ({perk.Cost})", () => _perks.Learn(captured));
+            }
+            else
+            {
+                bool maxed = rank >= perk.MaxRank;
+                AddLine(maxed ? $"• {text}  [maxed]" : $"• {text}");
+            }
+        }
     }
 
     private void BuildEquipment()

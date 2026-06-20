@@ -86,7 +86,9 @@ Goblins roam to the north (−Z) and drop loot.
 │   ├── weapons/             # WeaponResource presets (iron sword, goblin claw)
 │   ├── items/               # ItemResource / EquippableItemResource templates
 │   ├── affixes/             # AffixDefinition presets (loot prefixes/suffixes)
-│   └── loot/                # LootTable presets (e.g. GoblinLoot)
+│   ├── loot/                # LootTable presets (e.g. GoblinLoot)
+│   ├── progression/         # ProgressionResource presets (XP curve + per-level gains)
+│   └── perks/               # PerkResource presets (rankable passives)
 └── src/
     ├── Core/
     │   ├── Events/          # IGameEvent, EventBus (autoload), CoreEvents
@@ -101,6 +103,7 @@ Goblins roam to the north (−Z) and drop loot.
     ├── Combat/              # Damage pipeline, hitbox/hurtbox, weapons, CombatComponent
     ├── Items/               # ItemResource, ItemInstance, affixes, inventory, equipment, pickups
     ├── Loot/                # LootTable/LootEntry, LootGenerator, LootRarity, LootComponent
+    ├── Progression/         # XP/levels (ProgressionComponent), perks, ExperienceComponent
     ├── Interaction/         # InteractableComponent (raycast interact)
     ├── Player/              # PlayerCharacter, PlayerController, PlayerFactory
     ├── Enemies/             # EnemyEntity, EnemyAIComponent, EnemyFactory, EnemySpawnDirector
@@ -349,6 +352,32 @@ direct children of the host. `Hitbox`/`Hurtbox` are `Area3D` (not
 - **`StatLabels`** (`src/Stats`) — short display names for `StatType`, used by affix
   tooltips.
 
+### 6.6c Progression (`src/Progression`)
+
+- **Kill attribution:** `EntityDiedEvent` carries an optional `Killer`;
+  `StatsComponent.ApplyDamage(amount, source)` threads `DamagePacket.Source` into it
+  so kills can be credited. (Old single-arg `new EntityDiedEvent(entity)` still
+  compiles — the killer defaults to null.)
+- **`ProgressionResource`** (`[GlobalClass]`, `data/progression/*.tres`) — XP curve
+  (`BaseXpToLevel × level^XpCurveExponent`), `MaxLevel`, `SkillPointsPerLevel`, and
+  per-level flat stat gains. **`ExperienceComponent`** — passive XP bounty granted to
+  the killer (enemies carry it).
+- **`ProgressionComponent`** (`EntityComponent`, `ISaveable`) — subscribes to
+  `EntityDiedEvent`, awards the dead entity's `ExperienceComponent.XpValue` when it
+  was the killer, resolves multi-level-ups, re-derives cumulative per-level stat
+  growth as `StatModifier`s sourced to itself (`ApplyGrowth`), refills resources and
+  banks skill points on level-up. `AddXp` / `SpendSkillPoints`; raises
+  `XpGainedEvent` / `LeveledUpEvent`. Persists level / XP / unspent points (growth
+  recomputed from level, never stored).
+- **Perks:** `PerkResource` (`[GlobalClass]`, `data/perks/*.tres`, a rankable
+  single-stat passive) + `PerkDatabase` + **`PerksComponent`** (`ISaveable`):
+  `Learn` spends `ProgressionComponent` skill points and applies the perk bonus as a
+  `StatModifier` sourced to the perk (recomputed per rank, re-applied on load).
+  Raises `PerkChangedEvent`.
+- **UI:** `DebugHud` shows `Level / XP / SP`; `InventoryPanel` (the character
+  screen) shows progression + a PERKS section with Learn buttons. Debug key `X`
+  grants 50 XP. Events live in `src/Progression/ProgressionEvents.cs`.
+
 ### 6.7 Save (`src/Save`)
 
 - **`ISaveable`** — `SaveId`, `Godot.Collections.Dictionary Save()`,
@@ -529,6 +558,20 @@ Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
 2. Add a `LootComponent` to the actor (set `Table` or `TablePath`); it rolls and
    spawns pickups on death. See `EnemyFactory` for the wiring.
 
+**A new perk**
+1. Author `data/perks/Xxx.tres` (`script_class="PerkResource"`): unique `Id`,
+   `DisplayName`, `Description`, `MaxRank`, `Cost`, target `Stat`, `ModifierType`
+   and `ValuePerRank`.
+2. Auto-indexed by `PerkDatabase`; it appears in the character screen's PERKS list
+   and is learnable once the player has skill points. No code change.
+
+**A new XP-bearing enemy (or tuning the curve)**
+1. Add an `ExperienceComponent { XpValue = N }` to the actor's factory (see
+   `EnemyFactory`) to grant XP on death.
+2. Tune levelling by editing `data/progression/PlayerProgression.tres` (or author a
+   new `ProgressionResource` and point a `ProgressionComponent.CurvePath`/`Curve` at
+   it).
+
 **A new stat**
 1. Add to the `StatType` enum; if it's a depleting resource, update
    `StatTypes.IsResource`.
@@ -576,10 +619,10 @@ Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
 > done. See the scope note at the top of `docs/ROADMAP.md`.
 
 Done: **1 Core Architecture · 2 Player Controller · 3 Combat Framework ·
-4 Enemy AI · 5 Inventory System · 6 Equipment System · 7 Loot Generation**.
-Next: **8 Progression**.
+4 Enemy AI · 5 Inventory System · 6 Equipment System · 7 Loot Generation ·
+8 Progression**. Next: **9 Quests**.
 
-Then (in order): 9 Quests · 10 Dialogue · 11 NPC Schedules ·
+Then (in order): 10 Dialogue · 11 NPC Schedules ·
 12 Magic · 13 World Systems · 14 Crafting · 15 Factions · 16 Procedural Events ·
 17 Optimization · 18 Content Expansion.
 

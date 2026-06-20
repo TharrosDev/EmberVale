@@ -8,6 +8,7 @@ using Embervale.Entities;
 using Embervale.Items;
 using Embervale.Loot;
 using Embervale.Player;
+using Embervale.Progression;
 using Embervale.Save;
 using Embervale.Stats;
 using Embervale.UI;
@@ -51,6 +52,7 @@ public partial class GameBootstrap : Node3D
         GameInput.EnsureActions();
         ItemDatabase.Initialize();
         AffixDatabase.Initialize();
+        PerkDatabase.Initialize();
         BuildEnvironment();
 
         _hud = new DebugHud();
@@ -100,6 +102,9 @@ public partial class GameBootstrap : Node3D
                 break;
             case Key.R:
                 ForceRespawn();
+                break;
+            case Key.X:
+                _player?.GetComponent<ProgressionComponent>()?.AddXp(50);
                 break;
             case Key.F5:
                 SaveManager.Instance?.SaveGame("quick");
@@ -216,6 +221,8 @@ public partial class GameBootstrap : Node3D
         _hud.SetPlayer(_player);
         _inventoryPanel.SetInventory(_player.GetComponent<InventoryComponent>());
         _inventoryPanel.SetEquipment(_player.GetComponent<EquipmentComponent>());
+        _inventoryPanel.SetProgression(_player.GetComponent<ProgressionComponent>());
+        _inventoryPanel.SetPerks(_player.GetComponent<PerksComponent>());
         Log.Info($"Spawned player at {_player.Position}. Facing the training dummy.");
     }
 

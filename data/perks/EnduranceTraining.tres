@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="PerkResource" load_steps=2 format=3 uid="uid://cmbrvlperkendur"]
+
+[ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
+
+[resource]
+script = ExtResource("1_perk")
+Id = "perk.endurance_training"
+DisplayName = "Endurance Training"
+Description = "Lungs and legs that last. +10 maximum Stamina per rank."
+MaxRank = 5
+Cost = 1
+Stat = 1
+ModifierType = 0
+ValuePerRank = 10.0

@@ -87,7 +87,7 @@ public partial class CombatComponent : EntityComponent
         }
 
         float final = CombatMath.Mitigate(amount, packet.Type, _stats);
-        _stats.ApplyDamage(final);
+        _stats.ApplyDamage(final, packet.Source);
 
         if (!blocked)
         {

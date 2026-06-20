@@ -3,6 +3,7 @@ using Embervale.Combat;
 using Embervale.Core;
 using Embervale.Core.Events;
 using Embervale.Entities;
+using Embervale.Progression;
 using Embervale.Stats;
 using Godot;
 
@@ -71,6 +72,12 @@ public partial class DebugHud : CanvasLayer
             sb.Append('\n');
             AppendResource(sb, "Player HP ", playerStats, StatType.Health);
             AppendResource(sb, "Player STA", playerStats, StatType.Stamina);
+
+            if (_player.TryGetComponent(out ProgressionComponent prog))
+            {
+                string xp = prog.IsMaxLevel ? "MAX" : $"{prog.CurrentXp}/{prog.XpToNext}";
+                sb.Append($"Level {prog.Level}  XP {xp}  SP {prog.SkillPoints}\n");
+            }
         }
 
         if (_target is Node targetNode && IsInstanceValid(targetNode) &&
@@ -86,7 +93,7 @@ public partial class DebugHud : CanvasLayer
         }
 
         sb.Append($"\nLast hit: {_lastHit}\n");
-        sb.Append("\nWASD move | Mouse look | LMB attack | RMB block\nE interact | I inventory | [H] heal | [R] respawn\n[F5/F9] save/load | [Esc] pause");
+        sb.Append("\nWASD move | Mouse look | LMB attack | RMB block\nE interact | I character | [H] heal | [R] respawn | [X] +XP\n[F5/F9] save/load | [Esc] pause");
         _label.Text = sb.ToString();
     }
 

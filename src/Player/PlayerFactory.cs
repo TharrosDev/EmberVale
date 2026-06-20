@@ -2,6 +2,7 @@ using Embervale.Combat;
 using Embervale.Entities;
 using Embervale.Items;
 using Embervale.Movement;
+using Embervale.Progression;
 using Embervale.Stats;
 using Godot;
 
@@ -17,6 +18,7 @@ public static class PlayerFactory
 {
     private const string PlayerAttributesPath = "res://data/attributes/PlayerAttributes.tres";
     private const string StartingWeaponPath = "res://data/weapons/IronSword.tres";
+    private const string ProgressionPath = "res://data/progression/PlayerProgression.tres";
     private const int PlayerTeam = 0;
     private const float CapsuleRadius = 0.4f;
     private const float CapsuleHeight = 1.8f;
@@ -77,6 +79,10 @@ public static class PlayerFactory
         // Equipment sits after inventory + weapon so it can resolve both; the
         // starting weapon above becomes the baseline restored on unequip.
         player.AddChild(new EquipmentComponent { Name = "Equipment" });
+
+        // Progression before perks: perks spend the skill points progression awards.
+        player.AddChild(new ProgressionComponent { Name = "Progression", CurvePath = ProgressionPath });
+        player.AddChild(new PerksComponent { Name = "Perks" });
 
         player.AddChild(new PlayerController
         {

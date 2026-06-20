@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="PerkResource" load_steps=2 format=3 uid="uid://cmbrvlperkward"]
+
+[ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
+
+[resource]
+script = ExtResource("1_perk")
+Id = "perk.warding"
+DisplayName = "Warding"
+Description = "Thicker hide, sturdier guard. +3 Armor per rank."
+MaxRank = 5
+Cost = 1
+Stat = 8
+ModifierType = 0
+ValuePerRank = 3.0
