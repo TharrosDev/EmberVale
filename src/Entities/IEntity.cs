@@ -15,6 +15,10 @@ public interface IEntity
     /// <summary>Human-readable name for UI, dialogue and debugging.</summary>
     string DisplayName { get; }
 
+    /// <summary>Stable content/type id (e.g. "enemy.goblin", "player"); used by
+    /// quests and systems that match an actor to its archetype. May be empty.</summary>
+    string TemplateId { get; }
+
     /// <summary>Process-unique id assigned on spawn; used by targeting and save.</summary>
     ulong RuntimeId { get; }
 

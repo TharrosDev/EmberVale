@@ -9,6 +9,7 @@ using Embervale.Items;
 using Embervale.Loot;
 using Embervale.Player;
 using Embervale.Progression;
+using Embervale.Quests;
 using Embervale.Save;
 using Embervale.Stats;
 using Embervale.UI;
@@ -37,6 +38,7 @@ public partial class GameBootstrap : Node3D
 
     private DebugHud _hud = null!;
     private InventoryPanel _inventoryPanel = null!;
+    private QuestLogPanel _questLogPanel = null!;
     private Entity? _dummy;
     private PlayerCharacter? _player;
     private double _respawnCountdown = -1d;
@@ -53,18 +55,22 @@ public partial class GameBootstrap : Node3D
         ItemDatabase.Initialize();
         AffixDatabase.Initialize();
         PerkDatabase.Initialize();
+        QuestDatabase.Initialize();
         BuildEnvironment();
 
         _hud = new DebugHud();
         AddChild(_hud);
         _inventoryPanel = new InventoryPanel();
         AddChild(_inventoryPanel);
+        _questLogPanel = new QuestLogPanel();
+        AddChild(_questLogPanel);
 
         SubscribeEvents();
         SpawnDummy();
         SpawnPlayer();
         SpawnEnemyCamp();
         SpawnLoot();
+        SpawnQuestGiver();
 
         GameManager.Instance?.ChangeState(GameState.Playing);
         Log.Info("Sandbox ready. WASD move, mouse look, LMB attack, RMB block, E interact, I inventory. Goblins roam to the north.");
@@ -223,6 +229,16 @@ public partial class GameBootstrap : Node3D
         _inventoryPanel.SetEquipment(_player.GetComponent<EquipmentComponent>());
         _inventoryPanel.SetProgression(_player.GetComponent<ProgressionComponent>());
         _inventoryPanel.SetPerks(_player.GetComponent<PerksComponent>());
+
+        QuestLogComponent? questLog = _player.GetComponent<QuestLogComponent>();
+        _questLogPanel.SetQuestLog(questLog);
+
+        // Seed a starter quest so the journal has content the moment you press Play.
+        if (questLog != null && QuestDatabase.Get("quest.cull_goblins") is { } starter)
+        {
+            questLog.StartQuest(starter);
+        }
+
         Log.Info($"Spawned player at {_player.Position}. Facing the training dummy.");
     }
 
@@ -256,6 +272,37 @@ public partial class GameBootstrap : Node3D
         {
             AddChild(ItemPickupFactory.Create(item, quantity, position));
         }
+    }
+
+    private void SpawnQuestGiver()
+    {
+        var giver = new Entity
+        {
+            Name = "QuestGiver",
+            DisplayName = "Village Elder",
+            TemplateId = "npc.elder",
+            Position = new Vector3(3f, 0f, 4f),
+        };
+
+        giver.AddChild(new MeshInstance3D
+        {
+            Name = "Mesh",
+            Mesh = new CapsuleMesh { Radius = 0.4f, Height = 1.8f },
+            Position = new Vector3(0f, 0.9f, 0f),
+            MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.85f, 0.78f, 0.45f) },
+        });
+
+        var collider = new StaticBody3D { Name = "Collider" };
+        collider.AddChild(new CollisionShape3D
+        {
+            Shape = new CapsuleShape3D { Radius = 0.4f, Height = 1.8f },
+            Position = new Vector3(0f, 0.9f, 0f),
+        });
+        giver.AddChild(collider);
+
+        giver.AddChild(new QuestGiverComponent { Name = "QuestGiver", QuestId = "quest.gather_iron" });
+        AddChild(giver);
+        Log.Info("The Village Elder waits near the spawn with a task.");
     }
 
     private void SpawnEnemyCamp()

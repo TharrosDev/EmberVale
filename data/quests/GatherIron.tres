@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="QuestResource" load_steps=4 format=3 uid="uid://cmbrvlqstiron"]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+
+[sub_resource type="Resource" id="Obj_collect_iron"]
+script = ExtResource("2_obj")
+Type = 1
+TargetId = "item.material.iron_ore"
+RequiredCount = 3
+Description = "Gather iron ore"
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.gather_iron"
+Title = "Gather Iron"
+Summary = "The smith needs raw iron. Bring back ore from the surrounding hills."
+Objectives = Array[Resource]([SubResource("Obj_collect_iron")])
+XpReward = 50
+GoldReward = 15
+GoldItemId = "item.currency.gold"
+RewardItems = []
+PrerequisiteQuestId = ""
