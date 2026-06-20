@@ -83,6 +83,12 @@ together and [`docs/ROADMAP.md`](docs/ROADMAP.md) for the full development plan.
 
 ## Roadmap
 
+These 18 phases build the game's **systems and infrastructure** — not the game's
+content. Completing them yields a powerful, data-driven sandbox that *can express*
+the game; the actual world, narrative, art, audio, balance and ship polish are a
+**separate content/production roadmap** introduced once these systems are done.
+See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the full scope note.
+
 Phases are built in order; the repo stays buildable and playable at every step.
 A phase is "done" when its systems work in-game **and** round-trip through
 save/load.
