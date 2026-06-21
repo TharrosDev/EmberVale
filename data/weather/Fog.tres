@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="WeatherResource" load_steps=2 format=3 uid="uid://cmbrvlwxfog"]
+
+[ext_resource type="Script" path="res://src/World/WeatherResource.cs" id="1_weather"]
+
+[resource]
+script = ExtResource("1_weather")
+Id = "weather.fog"
+DisplayName = "Fog"
+Type = 4
+SelectionWeight = 1.0
+MinHours = 3.0
+MaxHours = 5.0
+LightEnergyScale = 0.7
+SkyEnergyScale = 0.7
+FogDensity = 0.04
+FogColor = Color(0.78, 0.8, 0.83, 1)
+Precipitation = 0.0

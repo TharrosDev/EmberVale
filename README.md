@@ -76,7 +76,7 @@ proof that the core systems are wired together.
     ├── Interaction/         # InteractableComponent (interact action)
     ├── Quests/              # Quest resources, objectives, log, givers
     ├── Dialogue/            # Node-graph conversations, choices, story flags
-    ├── World/               # World clock / time-of-day
+    ├── World/               # World clock, day/night, weather, encounters
     ├── Npc/                 # NPC daily schedules + reactions
     ├── Magic/               # Spells, projectiles, AoE, status effects
     ├── Player/              # First-person controller + factory
@@ -115,8 +115,8 @@ save/load.
 | 10 | Dialogue System      | ✅ Done     |
 | 11 | NPC Schedules        | ✅ Done     |
 | 12 | Magic System         | ✅ Done     |
-| 13 | World Systems        | ⏳ Next     |
-| 14 | Crafting             | ⬜ Planned  |
+| 13 | World Systems        | ✅ Done     |
+| 14 | Crafting             | ⏳ Next     |
 | 15 | Faction Systems      | ⬜ Planned  |
 | 16 | Procedural Events    | ⬜ Planned  |
 | 17 | Optimization         | ⬜ Ongoing  |

@@ -51,8 +51,8 @@ through save/load.
 | 10 | Dialogue System      | ✅ Done      | Node-graph conversations, choices, conditions/effects, story flags |
 | 11 | NPC Schedules        | ✅ Done      | World clock, data-driven daily routines, event-driven reactions |
 | 12 | Magic System         | ✅ Done      | Schools, projectiles, AoE, status effects                   |
-| 13 | World Systems        | ⏳ Next      | Day/night, weather, encounters                              |
-| 14 | Crafting             | ⬜ Planned   | Recipes, stations, materials                                |
+| 13 | World Systems        | ✅ Done      | Day/night, weather, encounters                              |
+| 14 | Crafting             | ⏳ Next      | Recipes, stations, materials                                |
 | 15 | Faction Systems      | ⬜ Planned   | Reputation, consequences                                    |
 | 16 | Procedural Events    | ⬜ Planned   | World events, dynamic spawns                                |
 | 17 | Optimization         | ⬜ Ongoing   | Pooling, LOD, streaming                                     |
@@ -308,3 +308,35 @@ Core architecture foundation that everything else builds on:
   burst around the caster that chills/slows), **Lesser Heal** (self heal) and **Arcane Shield**
   (a self buff warding +Armor). Goblins and the training dummy carry a `StatusEffectsComponent`
   so the burns and slows visibly land. The spellbook round-trips through save/load.
+
+## Phase 13 — delivered (World Systems)
+
+Builds the fuller day/night + weather + dynamic-spawn model on top of the Phase 11
+`WorldClock`, all reacting through the `EventBus` and persisting the world's state.
+
+- **Day/night atmosphere** — `SkyController` (`Node3D`) animates the scene's directional
+  "sun" light and `Environment` from the clock's *continuous* `TimeOfDay`: it sweeps the
+  sun east→west, dips it toward the horizon and warms its colour at dawn/dusk, scales its
+  energy by a day factor, and darkens the sky/ambient at night (via
+  `BackgroundEnergyMultiplier`). The sun + environment are built by the bootstrap and
+  injected, so the controller only animates what already exists.
+- **Weather** — `WeatherResource` (`[GlobalClass]`, `data/weather/*.tres`) authors each
+  state's duration, selection weight, light/sky dimming, fog and precipitation;
+  `WeatherDatabase` indexes them. **`WeatherDirector`** (`Node`, `ISaveable`,
+  `ServiceLocator`-registered) holds the active state and a countdown measured in in-game
+  hours off the clock, rolls a new weighted state (never the same twice) when it expires,
+  and publishes `WeatherChangedEvent`. The `SkyController` blends the atmosphere toward the
+  active state (light/sky/fog) and drives a rain `GpuParticles3D` that follows the player;
+  the weather (and time-to-change) round-trips through save/load. Five states ship: Clear,
+  Cloudy, Rain, Storm, Fog.
+- **Encounters** — `EncounterResource` (`[GlobalClass]`, `data/encounters/*.tres`) authors a
+  weighted, day-phase-gated enemy group; `EncounterDatabase` indexes them.
+  **`EncounterDirector`** (`Node3D`) spawns them around the player on a cadence the world
+  bends — more often at night and during storms — capped by a concurrent budget and tracked
+  via `TreeExited`, reusing `EnemyFactory` and the existing death/loot/XP flow. It publishes
+  `EncounterTriggeredEvent`. Emergent and transient (not persisted), like the static camp.
+  This is deliberately lightweight; the richer named-**world-event** framework (objectives,
+  rewards) is Phase 16.
+- **UI** — the HUD now shows the current weather alongside the clock; the sandbox visibly
+  cycles dawn→day→dusk→night with shifting light while weather rolls over and patrols/warbands
+  wander in. Time and weather both survive save/load.

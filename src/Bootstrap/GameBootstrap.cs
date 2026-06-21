@@ -45,13 +45,17 @@ public partial class GameBootstrap : Node3D
     private QuestLogPanel _questLogPanel = null!;
     private DialoguePanel _dialoguePanel = null!;
     private WorldClock _clock = null!;
+    private WeatherDirector _weather = null!;
+    private SkyController _sky = null!;
+    private DirectionalLight3D _sun = null!;
+    private Godot.Environment _environment = null!;
     private Entity? _dummy;
     private PlayerCharacter? _player;
     private double _respawnCountdown = -1d;
 
     public override void _Ready()
     {
-        Log.Info("=== Embervale bootstrapping (Phase 12: Magic System) ===");
+        Log.Info("=== Embervale bootstrapping (Phase 13: World Systems) ===");
 
         // The bootstrap is the flow manager for the sandbox, so it must keep
         // processing input even while the tree is paused (to unpause).
@@ -66,6 +70,8 @@ public partial class GameBootstrap : Node3D
         ScheduleDatabase.Initialize();
         StatusEffectDatabase.Initialize();
         SpellDatabase.Initialize();
+        WeatherDatabase.Initialize();
+        EncounterDatabase.Initialize();
         BuildEnvironment();
 
         _hud = new DebugHud();
@@ -83,15 +89,25 @@ public partial class GameBootstrap : Node3D
         AddChild(_clock);
         _hud.SetClock(_clock);
 
+        // Weather before the sky so the SkyController can read the active state on its
+        // first frame; the sky drives the (already-built) sun + environment.
+        _weather = new WeatherDirector { Name = "Weather" };
+        AddChild(_weather);
+        _hud.SetWeather(_weather);
+
+        _sky = new SkyController { Name = "Sky", Sun = _sun, Environment = _environment };
+        AddChild(_sky);
+
         SubscribeEvents();
         SpawnDummy();
         SpawnPlayer();
         SpawnEnemyCamp();
         SpawnLoot();
         SpawnQuestGiver();
+        SpawnEncounterDirector();
 
         GameManager.Instance?.ChangeState(GameState.Playing);
-        Log.Info("Sandbox ready. WASD move, mouse look, LMB attack, RMB block, Q cast, F cycle spell, E interact, I inventory. Goblins roam to the north.");
+        Log.Info("Sandbox ready. WASD move, mouse look, LMB attack, RMB block, Q cast, F cycle spell, E interact, I inventory. Day/night and weather turn; encounters roam.");
     }
 
     public override void _ExitTree()
@@ -146,28 +162,33 @@ public partial class GameBootstrap : Node3D
 
     private void BuildEnvironment()
     {
-        // No camera here — the player provides the active first-person camera.
-        var light = new DirectionalLight3D
+        // No camera here — the player provides the active first-person camera. The sun's
+        // orientation/energy/colour are animated by the SkyController off the world clock.
+        _sun = new DirectionalLight3D
         {
+            Name = "Sun",
             RotationDegrees = new Vector3(-55f, -40f, 0f),
             ShadowEnabled = true,
         };
-        AddChild(light);
+        AddChild(_sun);
 
         // Sky background; with the default ambient source (background) this also
-        // provides soft ambient light, so unlit faces are not pure black.
+        // provides soft ambient light, so unlit faces are not pure black. The
+        // SkyController dims the sky at night and applies weather fog to this env.
         var worldEnv = new WorldEnvironment();
-        var env = new Godot.Environment
+        _environment = new Godot.Environment
         {
             BackgroundMode = Godot.Environment.BGMode.Sky,
         };
-        env.Sky = new Sky { SkyMaterial = new ProceduralSkyMaterial() };
-        worldEnv.Environment = env;
+        _environment.Sky = new Sky { SkyMaterial = new ProceduralSkyMaterial() };
+        worldEnv.Environment = _environment;
         AddChild(worldEnv);
 
+        // A generous ground plane so dynamic encounters (spawned ~14–20m out) land on
+        // visible terrain; the collider below is an infinite plane regardless.
         var floor = new MeshInstance3D
         {
-            Mesh = new PlaneMesh { Size = new Vector2(24f, 24f) },
+            Mesh = new PlaneMesh { Size = new Vector2(80f, 80f) },
             MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.18f, 0.22f, 0.20f) },
         };
         AddChild(floor);
@@ -176,6 +197,12 @@ public partial class GameBootstrap : Node3D
         var floorBody = new StaticBody3D { Name = "FloorBody" };
         floorBody.AddChild(new CollisionShape3D { Shape = new WorldBoundaryShape3D() });
         AddChild(floorBody);
+    }
+
+    private void SpawnEncounterDirector()
+    {
+        AddChild(new EncounterDirector { Name = "Encounters" });
+        Log.Info("Encounter director online — patrols by day, warbands by night, more in storms.");
     }
 
     private void SpawnDummy()

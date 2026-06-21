@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="WeatherResource" load_steps=2 format=3 uid="uid://cmbrvlwxstorm"]
+
+[ext_resource type="Script" path="res://src/World/WeatherResource.cs" id="1_weather"]
+
+[resource]
+script = ExtResource("1_weather")
+Id = "weather.storm"
+DisplayName = "Storm"
+Type = 3
+SelectionWeight = 1.0
+MinHours = 2.0
+MaxHours = 4.0
+LightEnergyScale = 0.35
+SkyEnergyScale = 0.45
+FogDensity = 0.02
+FogColor = Color(0.5, 0.52, 0.58, 1)
+Precipitation = 1.0
