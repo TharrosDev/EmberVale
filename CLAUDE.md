@@ -93,7 +93,9 @@ Goblins roam to the north (−Z) and drop loot.
 │   ├── dialogue/            # DialogueResource presets (node-graph conversations)
 │   ├── schedules/           # ScheduleResource presets (NPC daily routines)
 │   ├── spells/             # SpellResource presets (firebolt, fireball, …)
-│   └── status_effects/     # StatusEffectResource presets (burning, chill, ward)
+│   ├── status_effects/     # StatusEffectResource presets (burning, chill, ward)
+│   ├── weather/            # WeatherResource presets (clear, rain, storm, fog, …)
+│   └── encounters/         # EncounterResource presets (patrols, warbands)
 └── src/
     ├── Core/
     │   ├── Events/          # IGameEvent, EventBus (autoload), CoreEvents
@@ -111,7 +113,7 @@ Goblins roam to the north (−Z) and drop loot.
     ├── Progression/         # XP/levels (ProgressionComponent), perks, ExperienceComponent
     ├── Quests/              # QuestResource/objectives, QuestLogComponent, quest givers
     ├── Dialogue/            # Dialogue graph resources, session runner, story flags
-    ├── World/               # WorldClock (time-of-day) + world events
+    ├── World/               # WorldClock, day/night sky, weather, encounters
     ├── Npc/                 # NPC schedule resources, ScheduleComponent (routines)
     ├── Magic/               # Spells, projectiles, AoE bursts, status effects
     ├── Interaction/         # InteractableComponent (raycast interact)
@@ -494,6 +496,34 @@ direct children of the host. `Hitbox`/`Hurtbox` are `Area3D` (not
   (`src/Magic/MagicEvents.cs`). Sandbox spells: Firebolt, Fireball (AoE), Frost Nova (Area
   slow), Lesser Heal (Self), Arcane Shield (Self buff).
 
+### 6.6h World systems (`src/World`)
+
+Layered on the Phase 11 `WorldClock` (which already supplies time-of-day + `DayPhase` and
+persists). Three pieces:
+
+- **Day/night atmosphere** — **`SkyController`** (`Node3D`, `Pausable`) animates a
+  `DirectionalLight3D` "sun" and the scene `Godot.Environment` from the clock's *continuous*
+  `TimeOfDay` each frame: sun sweep/pitch, warm→white colour, energy by day factor, and sky/
+  ambient darkening at night via `Environment.BackgroundEnergyMultiplier`. The sun + env are
+  built by the bootstrap and **injected** (`Sun`/`Environment` properties). It also blends in
+  the active weather and drives a rain `GpuParticles3D` that follows the player.
+- **Weather** — `WeatherResource` (`[GlobalClass]`, `data/weather/*.tres`): duration range,
+  `SelectionWeight`, `LightEnergyScale`/`SkyEnergyScale`, `FogDensity`/`FogColor`,
+  `Precipitation`. `WeatherDatabase` indexes them. **`WeatherDirector`** (`Node`, `ISaveable`
+  `weather`, `ServiceLocator`-registered, `Pausable`) holds the active state + a countdown in
+  in-game hours (off the clock), rolls a new weighted state on expiry (never the same twice),
+  publishes `WeatherChangedEvent`, and persists current id + remaining time. `SkyController`
+  reads `WeatherDirector.Current` each frame and `MoveToward`-blends the atmosphere.
+- **Encounters** — `EncounterResource` (`[GlobalClass]`, `data/encounters/*.tres`): enemy
+  template, count range, weight, and per-`DayPhase` allow flags. `EncounterDatabase` indexes
+  them. **`EncounterDirector`** (`Node3D`, `Pausable`) spawns groups around the player on a
+  cadence scaled by phase (night) and weather (storm), capped by `MaxConcurrent` and tracked
+  via `TreeExited`, reusing `EnemyFactory`. Publishes `EncounterTriggeredEvent`. **Not
+  persisted** (emergent/transient, like `EnemySpawnDirector`). The richer *named world-event*
+  framework is Phase 16 — keep these lightweight.
+- Events live in `src/World/WorldEvents.cs` (`TimeOfDayChangedEvent` + the two above). The HUD
+  shows the current weather beside the clock.
+
 ### 6.7 Save (`src/Save`)
 
 - **`ISaveable`** — `SaveId`, `Godot.Collections.Dictionary Save()`,
@@ -718,6 +748,21 @@ Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
    a static NPC `Entity`; it walks the routine off the `WorldClock` and reacts to alerts /
    dialogue. No code change for new routines.
 
+**A new weather state**
+1. Author `data/weather/Xxx.tres` (`script_class="WeatherResource"`): unique `Id`, `Type`,
+   `SelectionWeight`, `MinHours`/`MaxHours`, and the atmosphere fields (`LightEnergyScale`,
+   `SkyEnergyScale`, `FogDensity`/`FogColor`, `Precipitation`).
+2. Auto-indexed by `WeatherDatabase`; the `WeatherDirector` can roll it and the
+   `SkyController` renders it (light/fog/rain). No code change.
+
+**A new encounter**
+1. Author `data/encounters/Xxx.tres` (`script_class="EncounterResource"`): unique `Id`,
+   `EnemyTemplateId`, `MinCount`/`MaxCount`, `SelectionWeight`, and the `At{Dawn,Day,Dusk,
+   Night}` allow flags.
+2. Auto-indexed by `EncounterDatabase`; the `EncounterDirector` spawns it around the player
+   when its day phase is active. (Spawning currently routes through `EnemyFactory`, i.e. the
+   goblin archetype, until more enemy factories exist.) No code change.
+
 **A new spell**
 1. Author `data/spells/Xxx.tres` (`script_class="SpellResource"`): unique `Id`, `School`
    (a `DamageType`), `Delivery` (`0`=Projectile / `1`=Area / `2`=Self), `ManaCost`,
@@ -784,11 +829,11 @@ Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
 
 Done: **1 Core Architecture · 2 Player Controller · 3 Combat Framework ·
 4 Enemy AI · 5 Inventory System · 6 Equipment System · 7 Loot Generation ·
-8 Progression · 9 Quests · 10 Dialogue · 11 NPC Schedules · 12 Magic**.
-Next: **13 World Systems**.
+8 Progression · 9 Quests · 10 Dialogue · 11 NPC Schedules · 12 Magic ·
+13 World Systems**. Next: **14 Crafting**.
 
-Then (in order): 14 Crafting · 15 Factions · 16 Procedural Events ·
-17 Optimization · 18 Content Expansion.
+Then (in order): 15 Factions · 16 Procedural Events · 17 Optimization ·
+18 Content Expansion.
 
 See `docs/ROADMAP.md` for per-phase delivery notes and the next-steps checklist.
 

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EncounterResource" load_steps=2 format=3 uid="uid://cmbrvlencscout"]
+
+[ext_resource type="Script" path="res://src/World/EncounterResource.cs" id="1_encounter"]
+
+[resource]
+script = ExtResource("1_encounter")
+Id = "encounter.lone_scout"
+DisplayName = "Lone Scout"
+EnemyTemplateId = "enemy.goblin"
+MinCount = 1
+MaxCount = 1
+SelectionWeight = 1.5
+AtDawn = true
+AtDay = true
+AtDusk = true
+AtNight = true

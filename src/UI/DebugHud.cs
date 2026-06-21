@@ -24,6 +24,7 @@ public partial class DebugHud : CanvasLayer
     private IEntity? _target;
     private IEntity? _player;
     private WorldClock? _clock;
+    private WeatherDirector? _weather;
     private string _lastHit = "—";
 
     public override void _Ready()
@@ -68,6 +69,11 @@ public partial class DebugHud : CanvasLayer
         _clock = clock;
     }
 
+    public void SetWeather(WeatherDirector? weather)
+    {
+        _weather = weather;
+    }
+
     public override void _Process(double delta)
     {
         var sb = new StringBuilder();
@@ -78,6 +84,11 @@ public partial class DebugHud : CanvasLayer
         if (_clock is { } clock && IsInstanceValid(clock))
         {
             sb.Append($"Time: {clock.Clock()}  ({DayPhases.Label(clock.Phase)})\n");
+        }
+
+        if (_weather is { } weather && IsInstanceValid(weather) && weather.Current is { } w)
+        {
+            sb.Append($"Weather: {w.DisplayName}\n");
         }
 
         if (_player is Node playerNode && IsInstanceValid(playerNode) &&

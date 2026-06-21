@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="WeatherResource" load_steps=2 format=3 uid="uid://cmbrvlwxcloudy"]
+
+[ext_resource type="Script" path="res://src/World/WeatherResource.cs" id="1_weather"]
+
+[resource]
+script = ExtResource("1_weather")
+Id = "weather.cloudy"
+DisplayName = "Cloudy"
+Type = 1
+SelectionWeight = 2.0
+MinHours = 4.0
+MaxHours = 8.0
+LightEnergyScale = 0.7
+SkyEnergyScale = 0.8
+FogDensity = 0.0
+FogColor = Color(0.72, 0.74, 0.78, 1)
+Precipitation = 0.0

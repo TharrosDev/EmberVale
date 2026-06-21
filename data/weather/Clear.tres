@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="WeatherResource" load_steps=2 format=3 uid="uid://cmbrvlwxclear"]
+
+[ext_resource type="Script" path="res://src/World/WeatherResource.cs" id="1_weather"]
+
+[resource]
+script = ExtResource("1_weather")
+Id = "weather.clear"
+DisplayName = "Clear"
+Type = 0
+SelectionWeight = 3.0
+MinHours = 5.0
+MaxHours = 10.0
+LightEnergyScale = 1.0
+SkyEnergyScale = 1.0
+FogDensity = 0.0
+FogColor = Color(0.72, 0.74, 0.78, 1)
+Precipitation = 0.0
