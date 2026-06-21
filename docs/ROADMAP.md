@@ -24,8 +24,11 @@ authored `.tres` data against these systems, not new code (item/affix/loot/
 attribute resources today; quest/dialogue graphs, spells, recipes later).
 
 A **separate content/production roadmap** (world, story, art, audio, balance, ship
-polish) will be introduced once this systems roadmap is complete — that is the
-larger body of work that turns the toolkit into a shippable game.
+polish) turns the toolkit into a shippable game. It now exists:
+**[`PRODUCTION_ROADMAP.md`](PRODUCTION_ROADMAP.md)** — Phases 22+ taking Embervale
+from this sandbox through Alpha → Beta → Launch (and beyond), gated by five
+milestone gates (First Playable → Vertical Slice → Alpha/Feature-Complete →
+Beta/Content-Complete → Release Candidate → Launch).
 
 > Caveat: a few phases blur the line — Magic (12) and Crafting (14) need some
 > content to be meaningful, and Content Expansion (18) is the seam where systems
