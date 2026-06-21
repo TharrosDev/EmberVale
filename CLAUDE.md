@@ -80,6 +80,7 @@ Goblins roam to the north (−Z) and drop loot.
 ├── README.md                # Public overview + roadmap table
 ├── docs/
 │   ├── ARCHITECTURE.md      # Full architecture + systems reference (see §5)
+│   ├── LORE.md              # World/story bible (setting, factions, characters, plot)
 │   └── ROADMAP.md           # Phase plan + per-phase delivery notes
 ├── scenes/
 │   └── Main.tscn            # Entry scene (root has GameBootstrap script)
