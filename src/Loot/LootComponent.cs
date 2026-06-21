@@ -33,6 +33,10 @@ public partial class LootComponent : EntityComponent
         if (Table == null && !string.IsNullOrEmpty(TablePath))
         {
             Table = GD.Load<LootTable>(TablePath);
+            if (Table == null)
+            {
+                Log.Warn($"LootComponent on '{Entity?.DisplayName}' could not load loot table '{TablePath}'; it will drop nothing.");
+            }
         }
 
         EventBus.Instance?.Subscribe<EntityDiedEvent>(OnEntityDied);

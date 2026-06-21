@@ -95,16 +95,16 @@ public partial class EncounterDirector : Node3D
         for (int i = 0; i < count; i++)
         {
             Vector3 jitter = new(GD.Randf() * 2f - 1f, 0f, GD.Randf() * 2f - 1f);
-            SpawnEnemy(origin + jitter);
+            SpawnEnemy(encounter.EnemyTemplateId, origin + jitter);
         }
 
         EventBus.Instance?.Publish(new EncounterTriggeredEvent(encounter.Id, origin, count));
         Log.Info($"Encounter: {encounter.DisplayName} ({count}) appeared near the player.");
     }
 
-    private void SpawnEnemy(Vector3 position)
+    private void SpawnEnemy(string templateId, Vector3 position)
     {
-        EnemyEntity enemy = EnemyFactory.Create(position);
+        EnemyEntity enemy = EnemyTemplateRegistry.Create(templateId, position);
         GetParent().AddChild(enemy);
         _alive++;
         enemy.TreeExited += OnEnemyRemoved;

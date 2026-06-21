@@ -160,7 +160,7 @@ public partial class WorldEventDirector : Node3D
         for (int i = 0; i < count; i++)
         {
             Vector3 jitter = new(GD.Randf() * 2f - 1f, 0f, GD.Randf() * 2f - 1f);
-            EnemyEntity enemy = EnemyFactory.Create(worldEvent.Origin + jitter);
+            EnemyEntity enemy = EnemyTemplateRegistry.Create(worldEvent.Resource.EnemyTemplateId, worldEvent.Origin + jitter);
             GetParent().AddChild(enemy);
 
             ApplyHealthMultiplier(enemy, worldEvent.Resource.HealthMultiplier);

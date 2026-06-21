@@ -36,6 +36,9 @@ public static class PlayerFactory
             Name = "Player",
             DisplayName = "Player",
             TemplateId = "player",
+            // Stable id so every player component persists under "<prefix>:player"
+            // and reconnects to its saved state across sessions (see EntityComponent.SaveKey).
+            PersistentId = "player",
             Position = position,
         };
 

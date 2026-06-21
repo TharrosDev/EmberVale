@@ -37,6 +37,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("seed", "seed <n>", "Seed the global RNG (for repro).", Seed));
         console.Register(new ConsoleCommand("repro", "repro [name]", "Run a repro scenario.", Repro));
         console.Register(new ConsoleCommand("invariants", "invariants", "Run the world integrity check.", (_, _) => WorldIntegrityChecker.Run()));
+        console.Register(new ConsoleCommand("validate", "validate", "Validate authored content cross-references.", (_, _) => ContentValidator.Run()));
         console.Register(new ConsoleCommand("stats", "stats", "Frame/object counts.", StatsCmd));
     }
 

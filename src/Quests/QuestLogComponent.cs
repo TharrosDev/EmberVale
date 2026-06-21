@@ -25,7 +25,7 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
     private ProgressionComponent? _progression;
     private InventoryComponent? _inventory;
 
-    public string SaveId => $"questlog:{Entity?.RuntimeId ?? 0}";
+    public string SaveId => SaveKey("questlog");
 
     public IReadOnlyCollection<QuestProgress> Quests => _quests.Values;
 

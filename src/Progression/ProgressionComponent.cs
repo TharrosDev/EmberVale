@@ -34,7 +34,7 @@ public partial class ProgressionComponent : EntityComponent, ISaveable
     public int CurrentXp { get; private set; }
     public int SkillPoints { get; private set; }
 
-    public string SaveId => $"progression:{Entity?.RuntimeId ?? 0}";
+    public string SaveId => SaveKey("progression");
 
     /// <summary>XP needed to advance from the current level; 0 at the cap.</summary>
     public int XpToNext => Curve?.XpToReach(Level) ?? 0;
@@ -46,6 +46,10 @@ public partial class ProgressionComponent : EntityComponent, ISaveable
         if (Curve == null && !string.IsNullOrEmpty(CurvePath))
         {
             Curve = GD.Load<ProgressionResource>(CurvePath);
+            if (Curve == null)
+            {
+                Log.Warn($"ProgressionComponent could not load curve '{CurvePath}'; using the default progression.");
+            }
         }
 
         Curve ??= ProgressionResource.CreateDefault();

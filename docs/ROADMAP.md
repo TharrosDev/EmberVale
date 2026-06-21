@@ -61,6 +61,30 @@ through save/load.
 | 20 | Deep Debugging       | ✅ Done      | Dev console, profiler overlay, invariant checks, repro harness |
 | 21 | Content Expansion    | ⏳ Ongoing   | Regions, enemies, quests via data                           |
 
+## Pre–Phase 21 hardening (foundations) — delivered
+
+Before scaling up content, a critical-tier hardening pass strengthened the load-bearing
+foundations so a large, growing content set can't silently corrupt saves or ship broken
+references:
+
+- **Stable identity** — `IEntity.PersistentId` + `EntityComponent.SaveKey(prefix)`; the
+  player persists under `…:player` keys instead of a volatile runtime id, and a runtime-id
+  fallback now warns instead of silently colliding on `…:0`.
+- **Save robustness** — atomic writes (temp + rename), per-`Save()`/`Load()` exception
+  isolation, a `version` check + `TryMigrate` seam, and orphaned/unclaimed-entry warnings.
+- **Lifecycle safety** — `EventBus` subscriber introspection (`SubscriberCount<T>`,
+  `TotalSubscriberCount`) and a scene-teardown `Clear()` safety net; a guarded
+  `ServiceLocator.Unregister<T>(instance)`.
+- **Content validation** — `ContentValidator` resolves every authored cross-reference at
+  boot and via the `validate` console command; enemy spawning routes through a data-driven
+  `EnemyTemplateRegistry`.
+- **Fail-safe loads** — removed a force-deref in crafting; unguarded `GD.Load` sites now log.
+- **Tests** — a headless `Embervale.Tests` (xUnit) project covering the pure stat formula
+  and loot-rarity mapping; the seam for in-engine (GUT) tests is documented.
+
+Remaining hardening (perf passes, spawned-actor persistence, enum-stability, id constants)
+is tracked as follow-up work, not part of this critical tier.
+
 ## Phase 1 — delivered
 
 Core architecture foundation that everything else builds on:

@@ -17,5 +17,11 @@
   -->
   <ItemGroup>
     <Compile Remove="ShooterGame/**/*.cs" />
+    <!--
+      The headless xUnit project lives under tests/ and is a separate
+      Microsoft.NET.Sdk project. Exclude it from this project's recursive *.cs glob
+      so the game assembly never compiles the test sources (which pull in xUnit).
+    -->
+    <Compile Remove="tests/**/*.cs" />
   </ItemGroup>
 </Project>

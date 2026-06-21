@@ -22,6 +22,16 @@ public interface IEntity
     /// <summary>Process-unique id assigned on spawn; used by targeting and save.</summary>
     ulong RuntimeId { get; }
 
+    /// <summary>
+    /// Stable, session-independent identity for actors whose state must survive
+    /// save/load (the player, named NPCs, persistent world objects). When set,
+    /// <see cref="EntityComponent"/>s derive their <c>SaveId</c> from this rather
+    /// than the volatile <see cref="RuntimeId"/>, so reloads reconnect state to the
+    /// same logical actor. Null/empty marks a transient actor (loot, spawned mobs)
+    /// whose components are not expected to persist across sessions.
+    /// </summary>
+    string? PersistentId { get; }
+
     /// <summary>The spatial node carrying this actor's world transform.</summary>
     Node3D Body { get; }
 

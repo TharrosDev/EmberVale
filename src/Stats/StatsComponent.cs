@@ -33,7 +33,7 @@ public partial class StatsComponent : EntityComponent, ISaveable
     [Export] public float StaminaRegen { get; set; } = 15f;
     [Export] public float ManaRegen { get; set; } = 4f;
 
-    public string SaveId => $"stats:{Entity?.RuntimeId ?? 0}";
+    public string SaveId => SaveKey("stats");
 
     public bool IsAlive => GetCurrent(StatType.Health) > 0f;
 

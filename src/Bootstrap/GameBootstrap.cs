@@ -82,6 +82,13 @@ public partial class GameBootstrap : Node3D
         RecipeDatabase.Initialize();
         FactionDatabase.Initialize();
         WorldEventDatabase.Initialize();
+        EnemyTemplateRegistry.Initialize();
+
+        // With every database + the enemy registry populated, validate that the authored
+        // content cross-references resolve (item/enemy/quest/spell ids). Broken references
+        // surface here at boot rather than silently failing mid-playthrough.
+        Log.Info(ContentValidator.Run());
+
         BuildEnvironment();
 
         // The purpose-built game HUD is the default overlay; the DebugHud is now a
@@ -142,6 +149,18 @@ public partial class GameBootstrap : Node3D
     public override void _ExitTree()
     {
         UnsubscribeEvents();
+
+        // Safety net for scene reloads: every gameplay node unsubscribes in its own
+        // OnTeardown, but if any leaked a handler it would keep the freed object alive and
+        // fire with stale state on the next load. The autoloads (EventBus/ServiceLocator/
+        // GameManager/SaveManager) never subscribe, so clearing here is safe.
+        int leaked = EventBus.Instance?.TotalSubscriberCount() ?? 0;
+        if (leaked > 0)
+        {
+            Log.Warn($"{leaked} event handler(s) survived scene teardown; clearing as a safety net (check OnTeardown unsubscribes).");
+        }
+
+        EventBus.Instance?.Clear();
     }
 
     public override void _Process(double delta)
