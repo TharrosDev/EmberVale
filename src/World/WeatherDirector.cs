@@ -66,6 +66,21 @@ public partial class WeatherDirector : Node, ISaveable
         }
     }
 
+    /// <summary>Forces a specific weather state (dev console). Returns false if the id is unknown.</summary>
+    public bool Force(string weatherId)
+    {
+        if (WeatherDatabase.Get(weatherId) is not { } weather)
+        {
+            return false;
+        }
+
+        WeatherType previous = CurrentType;
+        _current = weather;
+        _hoursRemaining = weather.RollDuration();
+        Announce(previous);
+        return true;
+    }
+
     private void RollNext()
     {
         WeatherType previous = CurrentType;

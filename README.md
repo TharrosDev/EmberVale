@@ -47,7 +47,9 @@ theoretical ones.
 | `H`          | Heal the training dummy             |
 | `R`          | Respawn the dummy immediately       |
 | `F5` / `F9`  | Quick-save / quick-load             |
+| `F1`         | Toggle the developer console        |
 | `F3`         | Toggle the developer debug overlay  |
+| `F4`         | Toggle the profiler overlay         |
 | `Esc`        | Open the pause menu                 |
 
 The game HUD shows vitals, the prepared spell, active effects, a quest tracker,
@@ -88,6 +90,7 @@ developer debug overlay (FPS, raw stats, the active world event).
     ├── Player/              # First-person controller + factory
     ├── Enemies/             # Enemy AI state machine + spawner
     ├── Save/                # ISaveable + SaveManager
+    ├── Debugging/           # Dev console, profiler, invariants, repro harness
     ├── UI/                  # Game HUD, pause menu, toasts, panels, shared theme
     └── Bootstrap/           # GameBootstrap entry point
 ```
@@ -128,5 +131,5 @@ save/load.
 | 17 | Procedural Events    | ✅ Done     |
 | 18 | Game UI Overhaul     | ✅ Done     |
 | 19 | Optimization         | ✅ Done     |
-| 20 | Deep Debugging       | ⏳ Next     |
-| 21 | Content Expansion    | ⬜ Ongoing  |
+| 20 | Deep Debugging       | ✅ Done     |
+| 21 | Content Expansion    | ⏳ Ongoing  |

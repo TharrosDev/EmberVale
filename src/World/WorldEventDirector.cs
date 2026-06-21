@@ -45,14 +45,36 @@ public partial class WorldEventDirector : Node3D
         ProcessMode = ProcessModeEnum.Pausable;
         _timer = NextInterval();
 
+        ServiceLocator.Instance?.Register(this);
         EventBus.Instance?.Subscribe<EntityDiedEvent>(OnEntityDied);
         EventBus.Instance?.Subscribe<ItemPickedUpEvent>(OnItemPickedUp);
     }
 
     public override void _ExitTree()
     {
+        ServiceLocator.Instance?.Unregister<WorldEventDirector>();
         EventBus.Instance?.Unsubscribe<EntityDiedEvent>(OnEntityDied);
         EventBus.Instance?.Unsubscribe<ItemPickedUpEvent>(OnItemPickedUp);
+    }
+
+    /// <summary>Forces a specific event to start now (dev console). False if one is already
+    /// active, the id is unknown, or there is no player to centre it on.</summary>
+    public bool ForceStart(string eventId)
+    {
+        if (_active != null || WorldEventDatabase.Get(eventId) is not { } resource)
+        {
+            return false;
+        }
+
+        if (ServiceLocator.Instance == null ||
+            !ServiceLocator.Instance.TryGet(out PlayerCharacter player) ||
+            !IsInstanceValid(player))
+        {
+            return false;
+        }
+
+        Begin(resource, player);
+        return true;
     }
 
     public override void _Process(double delta)
@@ -104,11 +126,14 @@ public partial class WorldEventDirector : Node3D
         }
 
         WorldEventResource? resource = PickEligible(CurrentPhase());
-        if (resource == null)
+        if (resource != null)
         {
-            return;
+            Begin(resource, player);
         }
+    }
 
+    private void Begin(WorldEventResource resource, PlayerCharacter player)
+    {
         Vector3 origin = RingPointAround(player.GlobalPosition, resource);
         double limit = resource.TimeLimitSeconds > 0f ? resource.TimeLimitSeconds : double.PositiveInfinity;
 

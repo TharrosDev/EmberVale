@@ -126,6 +126,7 @@ Goblins roam to the north (−Z) and drop loot.
     ├── Player/              # PlayerCharacter, PlayerController, PlayerFactory
     ├── Enemies/             # EnemyEntity, EnemyAIComponent, EnemyFactory, EnemySpawnDirector
     ├── Save/                # ISaveable, SaveManager (autoload)
+    ├── Debugging/           # DevConsole, ProfilerOverlay, Invariant, WorldIntegrityChecker, ReproHarness
     ├── UI/                  # DebugHud
     └── Bootstrap/           # GameBootstrap (assembles the sandbox)
 ```
@@ -652,6 +653,28 @@ announced events with an objective, time limit and rewards.
 > controls. The meta/shell (title screen, settings, save-slot flow) is the separate
 > content/production roadmap.
 
+### 6.10 Debugging tools (`src/Debugging`)
+
+Developer tooling behind function keys (Phase 20); all run `ProcessMode.Always`.
+
+- **`DevConsole`** (`F1`) — an in-game command line: scrollback (`RichTextLabel`) + `LineEdit`
+  that dispatches to a `Dictionary<string, ConsoleCommand>`. `DevCommands.RegisterAll` ships the
+  built-ins (`spawn`/`give`/`xp`/`heal`/`rep`/`time`/`weather`/`event`/`seed`/`repro`/
+  `invariants`/`stats`/`help`/`clear`); they reach systems via the `ServiceLocator` (player +
+  the registered world directors). Opening it frees the mouse + sets `UiState.MenuOpen`.
+  `Execute(line)` runs a command and returns its output (reused by the repro harness).
+- **`Invariant`** — `Check(cond, msg)` logs + counts violations (never throws).
+  **`WorldIntegrityChecker`** (a `Node`) runs a sanity pass on a timer and on demand
+  (`WorldIntegrityChecker.Run()` — the `invariants` command): player registered + core
+  components, finite position, resources in range, no orphan nodes.
+- **`ProfilerOverlay`** (`F4`) — reads Godot `Performance` monitors (FPS, frame/physics ms, draw
+  calls, node/orphan counts, static memory). Idle when hidden.
+- **`ReproHarness`** — named scenarios that `GD.Seed` the global RNG then replay a fixed command
+  list (`repro <name>`) for deterministic bug repro. New scenario = a one-line entry.
+- Wired in the bootstrap; `F1`/`F4` toggles sit alongside the `F3` `DebugHud`. Console commands
+  rely on `WorldClock.SetTimeOfDay`, `WeatherDirector.Force`, `WorldEventDirector.ForceStart`
+  (registered in the `ServiceLocator`).
+
 ---
 
 ## 7. Collision layers & teams
@@ -924,6 +947,13 @@ Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
 1. Add a constant + `Bind(...)` in `GameInput`.
 2. Read it via `Godot.Input.IsActionPressed/JustPressed/GetVector`.
 
+**A new dev-console command**
+1. In `DevCommands.RegisterAll`, `console.Register(new ConsoleCommand(name, usage, summary,
+   (console, args) => ...))`. Resolve the player / a world director via the `ServiceLocator`
+   (register the director there if it isn't yet), parse `args`, and return a result line.
+2. It appears in `help` automatically; reach it in-game with `F1`. For determinism, add a
+   scenario to `ReproHarness` (seed + the command sequence) and run it with `repro <name>`.
+
 **Pooling a high-churn node** (perf)
 1. Hold a `NodePool<T>` (`src/Core/Pooling`) on the owner; build it in `OnInitialize`
    (`new NodePool<T>(factory, prewarm)`) and `Clear()` it in `OnTeardown`.
@@ -971,10 +1001,9 @@ Done: **1 Core Architecture · 2 Player Controller · 3 Combat Framework ·
 4 Enemy AI · 5 Inventory System · 6 Equipment System · 7 Loot Generation ·
 8 Progression · 9 Quests · 10 Dialogue · 11 NPC Schedules · 12 Magic ·
 13 World Systems · 14 HUD & Panels Polish · 15 Crafting · 16 Factions ·
-17 Procedural Events · 18 Game UI Overhaul · 19 Optimization**.
-Next: **20 Deep Debugging**.
-
-Then (in order): 21 Content Expansion.
+17 Procedural Events · 18 Game UI Overhaul · 19 Optimization ·
+20 Deep Debugging**. Next (ongoing): **21 Content Expansion** — the seam where
+the systems roadmap hands off to the separate content/production roadmap.
 
 > **Two UI phases, both done:** Phase 14 *polished the debug-grade overlay* (shared
 > `UiTheme`, vitals bars, crosshair, framed panels). Phase 18 built the *real game UI*

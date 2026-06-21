@@ -4,6 +4,7 @@ using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Core.Services;
 using Embervale.Crafting;
+using Embervale.Debugging;
 using Embervale.Dialogue;
 using Embervale.Enemies;
 using Embervale.Entities;
@@ -44,6 +45,8 @@ public partial class GameBootstrap : Node3D
 
     private GameHud _gameHud = null!;
     private DebugHud _hud = null!;
+    private DevConsole _console = null!;
+    private ProfilerOverlay _profiler = null!;
     private InventoryPanel _inventoryPanel = null!;
     private QuestLogPanel _questLogPanel = null!;
     private DialoguePanel _dialoguePanel = null!;
@@ -59,7 +62,7 @@ public partial class GameBootstrap : Node3D
 
     public override void _Ready()
     {
-        Log.Info("=== Embervale bootstrapping (Phase 19: Optimization) ===");
+        Log.Info("=== Embervale bootstrapping (Phase 20: Deep Debugging) ===");
 
         // The bootstrap is the flow manager for the sandbox, so it must keep
         // processing input even while the tree is paused (to unpause).
@@ -89,6 +92,14 @@ public partial class GameBootstrap : Node3D
         AddChild(_hud);
         AddChild(new Notifications());
         AddChild(new PauseMenu());
+
+        // Deep-debugging tools (Phase 20): dev console (F1), profiler (F4), and a standing
+        // world-integrity checker that periodically validates runtime invariants.
+        _console = new DevConsole();
+        AddChild(_console);
+        _profiler = new ProfilerOverlay();
+        AddChild(_profiler);
+        AddChild(new WorldIntegrityChecker());
         _inventoryPanel = new InventoryPanel();
         AddChild(_inventoryPanel);
         _questLogPanel = new QuestLogPanel();
@@ -173,8 +184,14 @@ public partial class GameBootstrap : Node3D
             case Key.F9:
                 SaveManager.Instance?.LoadGame("quick");
                 break;
+            case Key.F1:
+                _console.Toggle();
+                break;
             case Key.F3:
                 _hud.Toggle();
+                break;
+            case Key.F4:
+                _profiler.Toggle();
                 break;
             // Esc is owned by the PauseMenu (it opens the pause menu and pauses the game).
         }

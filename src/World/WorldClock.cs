@@ -74,6 +74,13 @@ public partial class WorldClock : Node, ISaveable
     /// <summary>"HH:00" string for UI.</summary>
     public string Clock() => $"{Hour:00}:00";
 
+    /// <summary>Jumps the clock to a given hour (0–24); used by the dev console / repro harness.</summary>
+    public void SetTimeOfDay(float hour)
+    {
+        TimeOfDay = Mathf.PosMod(hour, 24f);
+        Announce();
+    }
+
     private void Announce()
     {
         _lastHour = Hour;

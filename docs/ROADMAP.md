@@ -58,8 +58,8 @@ through save/load.
 | 17 | Procedural Events    | ✅ Done      | Named world events: raids, caches, hunts with objectives + rewards |
 | 18 | Game UI Overhaul     | ✅ Done      | Purpose-built HUD, pause menu, toasts, tooltips, interaction prompts |
 | 19 | Optimization         | ✅ Done      | Object pool, enemy AI LOD (throttle/sleep), shadow LOD       |
-| 20 | Deep Debugging       | ⏳ Next      | Dev console, profiling/diagnostics overlays, invariant checks, repro harness |
-| 21 | Content Expansion    | ⬜ Ongoing   | Regions, enemies, quests via data                           |
+| 20 | Deep Debugging       | ✅ Done      | Dev console, profiler overlay, invariant checks, repro harness |
+| 21 | Content Expansion    | ⏳ Ongoing   | Regions, enemies, quests via data                           |
 
 ## Phase 1 — delivered
 
@@ -505,3 +505,26 @@ single flat sandbox (true region streaming belongs to the later content roadmap)
   beyond `ActiveDistance`), trimming the shadow pass for distant/offscreen actors.
 - All knobs are `[Export]` on the AI component, tunable per archetype. Reviewed against the
   Godot 4.7 C# API.
+
+## Phase 20 — delivered (Deep Debugging)
+
+Developer tooling for inspecting, steering and reproducing the running game — all in
+`src/Debugging`, hidden behind function keys so it never touches normal play.
+
+- **Dev console** (`F1`) — `DevConsole` is an in-game command line (scrollback + input) that
+  dispatches to a registry. `DevCommands` ships the built-ins: `spawn [n]`, `give <id> [qty]`,
+  `xp <n>`, `heal`, `rep <faction> <delta>`, `time <hour>`, `weather <id>`, `event <id>`,
+  `seed <n>`, `repro [name]`, `invariants`, `stats`, `help`/`clear`. Commands reach the systems
+  through the `ServiceLocator` (the player + the world directors registered there), so adding
+  one is a one-liner. While open it frees the mouse and suspends player input.
+- **Invariant checks** — `Invariant.Check(cond, msg)` logs + counts violations without throwing
+  (a bad state surfaces, it doesn't crash a session). `WorldIntegrityChecker` runs a standing
+  sanity pass on a timer (and on demand via `invariants`): player registered + has its core
+  components, finite position, resources within `[0, max]`, and no leaked orphan nodes.
+- **Profiler overlay** (`F4`) — `ProfilerOverlay` reads Godot's `Performance` monitors: FPS,
+  frame/physics ms, draw calls, node/orphan counts and static memory. Hidden + idle when off.
+- **Repro harness** — `ReproHarness` runs named scenarios that **seed the global RNG** to a fixed
+  value then replay a fixed list of console commands (`repro swarm|rich|duskstorm|raid`), so a
+  random-world bug can be reproduced deterministically. New scenarios are a one-line entry.
+- The console, profiler and integrity checker are wired in the bootstrap alongside the existing
+  `F3` debug overlay; the dev tools all run with `ProcessMode.Always` so they work while paused.
