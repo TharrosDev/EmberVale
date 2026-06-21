@@ -10,6 +10,7 @@ namespace Embervale.Stats;
 /// appended freely; designers tune *values* via <see cref="AttributeSet"/>
 /// resources rather than code.
 /// </summary>
+// APPEND ONLY: ordinals persist in .tres/saves — never reorder/insert/remove (EnumStabilityTests).
 public enum StatType
 {
     // --- Resources (current/max) ---

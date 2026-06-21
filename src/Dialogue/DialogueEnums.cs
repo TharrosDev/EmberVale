@@ -6,6 +6,7 @@ namespace Embervale.Dialogue;
 /// the <c>.tres</c>. <see cref="DialogueSession"/> applies the effect against the
 /// speaking actor's components.
 /// </summary>
+// APPEND ONLY: ordinals persist in .tres/saves — never reorder/insert/remove (EnumStabilityTests).
 public enum DialogueEffect
 {
     /// <summary>Nothing happens beyond navigating to the next node.</summary>
@@ -26,6 +27,7 @@ public enum DialogueEffect
 /// <see cref="DialogueSession"/> against the player's quest log and story flags;
 /// a choice whose condition fails is hidden from the conversation.
 /// </summary>
+// APPEND ONLY: ordinals persist in .tres/saves — never reorder/insert/remove (EnumStabilityTests).
 public enum DialogueCondition
 {
     /// <summary>Always shown.</summary>

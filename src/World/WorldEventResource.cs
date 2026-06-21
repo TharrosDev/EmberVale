@@ -42,7 +42,7 @@ public partial class WorldEventResource : Resource
     [Export] public float SpawnDistanceMax { get; set; } = 18f;
 
     /// <summary>Enemy archetype for Raid/Hunt (currently routed through the goblin factory).</summary>
-    [Export] public string EnemyTemplateId { get; set; } = "enemy.goblin";
+    [Export] public string EnemyTemplateId { get; set; } = "enemy.goblin"; // mirrors GameIds.Enemies.Goblin
 
     [Export] public int MinCount { get; set; } = 3;
     [Export] public int MaxCount { get; set; } = 5;

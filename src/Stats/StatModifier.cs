@@ -1,6 +1,7 @@
 namespace Embervale.Stats;
 
 /// <summary>How a <see cref="StatModifier"/> combines into a stat's final value.</summary>
+// APPEND ONLY: ordinals persist in .tres/saves — never reorder/insert/remove (EnumStabilityTests).
 public enum ModifierType
 {
     /// <summary>Added to the base before any percentages. e.g. +10 Strength.</summary>

@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using Embervale.Core;
 using Embervale.Core.Services;
 using Embervale.Enemies;
 using Embervale.Factions;
@@ -215,7 +216,7 @@ public static class DevCommands
             return "no player";
         }
 
-        string template = args.Length > 0 ? args[0] : "prop.cache";
+        string template = args.Length > 0 ? args[0] : GameIds.Templates.Cache;
         Embervale.Entities.IEntity? actor = director.Spawn(template, string.Empty, player.GlobalPosition + new Vector3(2f, 0f, 0f));
         return actor == null ? $"could not spawn '{template}'" : $"spawned {actor.PersistentId} ({template})";
     }

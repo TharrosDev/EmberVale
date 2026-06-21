@@ -8,6 +8,7 @@ namespace Embervale.Factions;
 /// (whether a faction's members are hostile) and the reputation UI. Ordered low→high
 /// so tier comparisons (e.g. "at or below the hostile threshold") work directly.
 /// </summary>
+// APPEND ONLY: ordinals persist in .tres/saves — never reorder/insert/remove (EnumStabilityTests).
 public enum ReputationTier
 {
     Hated,

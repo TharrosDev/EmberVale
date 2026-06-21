@@ -20,7 +20,7 @@ public partial class EncounterResource : Resource
     [Export] public string DisplayName { get; set; } = "Encounter";
 
     /// <summary>Archetype id of the enemy to spawn (currently the goblin factory).</summary>
-    [Export] public string EnemyTemplateId { get; set; } = "enemy.goblin";
+    [Export] public string EnemyTemplateId { get; set; } = "enemy.goblin"; // mirrors GameIds.Enemies.Goblin
 
     [Export] public int MinCount { get; set; } = 1;
     [Export] public int MaxCount { get; set; } = 2;
