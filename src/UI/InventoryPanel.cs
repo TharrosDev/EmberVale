@@ -1,5 +1,6 @@
 using Embervale.Core;
 using Embervale.Core.Events;
+using Embervale.Factions;
 using Embervale.Items;
 using Embervale.Progression;
 using Godot;
@@ -20,6 +21,7 @@ public partial class InventoryPanel : CanvasLayer
     private EquipmentComponent? _equipment;
     private ProgressionComponent? _progression;
     private PerksComponent? _perks;
+    private ReputationComponent? _reputation;
     private PanelContainer _panel = null!;
     private VBoxContainer _list = null!;
     private bool _dirty = true;
@@ -52,6 +54,7 @@ public partial class InventoryPanel : CanvasLayer
         EventBus.Instance?.Subscribe<XpGainedEvent>(OnXpGained);
         EventBus.Instance?.Subscribe<LeveledUpEvent>(OnLeveledUp);
         EventBus.Instance?.Subscribe<PerkChangedEvent>(OnPerkChanged);
+        EventBus.Instance?.Subscribe<ReputationChangedEvent>(OnReputationChanged);
     }
 
     public override void _ExitTree()
@@ -61,6 +64,7 @@ public partial class InventoryPanel : CanvasLayer
         EventBus.Instance?.Unsubscribe<XpGainedEvent>(OnXpGained);
         EventBus.Instance?.Unsubscribe<LeveledUpEvent>(OnLeveledUp);
         EventBus.Instance?.Unsubscribe<PerkChangedEvent>(OnPerkChanged);
+        EventBus.Instance?.Unsubscribe<ReputationChangedEvent>(OnReputationChanged);
     }
 
     public void SetInventory(InventoryComponent? inventory)
@@ -84,6 +88,12 @@ public partial class InventoryPanel : CanvasLayer
     public void SetPerks(PerksComponent? perks)
     {
         _perks = perks;
+        _dirty = true;
+    }
+
+    public void SetReputation(ReputationComponent? reputation)
+    {
+        _reputation = reputation;
         _dirty = true;
     }
 
@@ -127,6 +137,8 @@ public partial class InventoryPanel : CanvasLayer
 
     private void OnPerkChanged(PerkChangedEvent e) => _dirty = true;
 
+    private void OnReputationChanged(ReputationChangedEvent e) => _dirty = true;
+
     private void Rebuild()
     {
         _dirty = false;
@@ -143,6 +155,24 @@ public partial class InventoryPanel : CanvasLayer
         AddHeader(BackpackHeader());
         BuildBackpack();
         BuildPerks();
+        BuildFactions();
+    }
+
+    private void BuildFactions()
+    {
+        if (_reputation == null || FactionDatabase.All.Count == 0)
+        {
+            return;
+        }
+
+        AddHeader("REPUTATION");
+        foreach (FactionResource faction in FactionDatabase.All)
+        {
+            int value = _reputation.Get(faction.Id);
+            ReputationTier tier = ReputationTiers.Of(value);
+            AddLine($"{faction.DisplayName}: {ReputationTiers.Label(tier)} ({value:+0;-0;0})",
+                ReputationTiers.Color(tier));
+        }
     }
 
     private void BuildProgression()

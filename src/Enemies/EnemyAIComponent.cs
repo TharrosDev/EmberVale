@@ -3,6 +3,7 @@ using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Core.Services;
 using Embervale.Entities;
+using Embervale.Factions;
 using Embervale.Movement;
 using Embervale.Player;
 using Embervale.Stats;
@@ -41,6 +42,8 @@ public partial class EnemyAIComponent : EntityComponent
     private StatsComponent? _stats;
     private MeleeWeaponComponent? _weapon;
     private PlayerCharacter? _player;
+    private string _factionId = string.Empty;
+    private bool _provoked;
 
     private EnemyState _state = EnemyState.Idle;
     private double _stateTimer;
@@ -63,16 +66,19 @@ public partial class EnemyAIComponent : EntityComponent
         _body = body;
         _stats = Entity.GetComponent<StatsComponent>();
         _weapon = Entity.GetComponent<MeleeWeaponComponent>();
+        _factionId = Entity.GetComponent<FactionComponent>()?.FactionId ?? string.Empty;
         _home = _body.GlobalPosition;
         _lastKnownPos = _home;
 
         EventBus.Instance?.Subscribe<EnemyAlertedEvent>(OnEnemyAlerted);
+        EventBus.Instance?.Subscribe<DamageDealtEvent>(OnDamaged);
         EnterState(EnemyState.Idle);
     }
 
     protected override void OnTeardown()
     {
         EventBus.Instance?.Unsubscribe<EnemyAlertedEvent>(OnEnemyAlerted);
+        EventBus.Instance?.Unsubscribe<DamageDealtEvent>(OnDamaged);
     }
 
     public override void _PhysicsProcess(double delta)
@@ -176,6 +182,13 @@ public partial class EnemyAIComponent : EntityComponent
             return;
         }
 
+        // Standing down (e.g. reputation rose to neutral) ends the fight unless provoked.
+        if (!PlayerIsTarget())
+        {
+            EnterState(EnemyState.Idle);
+            return;
+        }
+
         if (!CanSeePlayer(player, out Vector3 pos))
         {
             EnterState(EnemyState.Investigate);
@@ -243,6 +256,11 @@ public partial class EnemyAIComponent : EntityComponent
 
     private bool DetectAndEngage()
     {
+        if (!PlayerIsTarget())
+        {
+            return false;
+        }
+
         PlayerCharacter? player = GetLivePlayer();
         if (player != null && CanSeePlayer(player, out Vector3 pos))
         {
@@ -307,6 +325,38 @@ public partial class EnemyAIComponent : EntityComponent
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Whether this actor currently treats the player as a target. A faction member
+    /// engages only while the player's standing with its faction is hostile (or it has
+    /// been provoked by a direct attack); an unfactioned actor is hostile by default.
+    /// </summary>
+    private bool PlayerIsTarget()
+    {
+        if (_provoked || string.IsNullOrEmpty(_factionId))
+        {
+            return true;
+        }
+
+        ReputationComponent? reputation = GetPlayer()?.GetComponent<ReputationComponent>();
+        return reputation == null || reputation.IsHostile(_factionId);
+    }
+
+    private void OnDamaged(DamageDealtEvent e)
+    {
+        // Being struck by the player is self-defence grounds regardless of standing.
+        if (Entity == null || !ReferenceEquals(e.Target, Entity) || e.Source is not PlayerCharacter attacker)
+        {
+            return;
+        }
+
+        _provoked = true;
+        if (_state is EnemyState.Idle or EnemyState.Patrol or EnemyState.Investigate)
+        {
+            _lastKnownPos = attacker.GlobalPosition;
+            EnterState(EnemyState.Combat);
+        }
     }
 
     private void OnEnemyAlerted(EnemyAlertedEvent e)

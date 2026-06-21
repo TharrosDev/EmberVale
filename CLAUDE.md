@@ -96,7 +96,8 @@ Goblins roam to the north (−Z) and drop loot.
 │   ├── status_effects/     # StatusEffectResource presets (burning, chill, ward)
 │   ├── weather/            # WeatherResource presets (clear, rain, storm, fog, …)
 │   ├── encounters/         # EncounterResource presets (patrols, warbands)
-│   └── recipes/            # CraftingRecipeResource presets (ingot, sword, potion, …)
+│   ├── recipes/            # CraftingRecipeResource presets (ingot, sword, potion, …)
+│   └── factions/           # FactionResource presets (goblins, villagers)
 └── src/
     ├── Core/
     │   ├── Events/          # IGameEvent, EventBus (autoload), CoreEvents
@@ -118,6 +119,7 @@ Goblins roam to the north (−Z) and drop loot.
     ├── Npc/                 # NPC schedule resources, ScheduleComponent (routines)
     ├── Magic/               # Spells, projectiles, AoE bursts, status effects
     ├── Crafting/            # Recipes, stations, CraftingComponent
+    ├── Factions/            # Faction resources, ReputationComponent, FactionComponent
     ├── Interaction/         # InteractableComponent (raycast interact)
     ├── Player/              # PlayerCharacter, PlayerController, PlayerFactory
     ├── Enemies/             # EnemyEntity, EnemyAIComponent, EnemyFactory, EnemySpawnDirector
@@ -546,6 +548,29 @@ persists). Three pieces:
   `src/Crafting/CraftingEvents.cs`. Sandbox: a forge/workbench/alchemy yard west of spawn; the
   player knows six recipes forming an ore→ingot→sword chain.
 
+### 6.6j Factions (`src/Factions`)
+
+- **Faction content** — `FactionResource` (`[GlobalClass]`, `data/factions/*.tres`): `Id`,
+  `DisplayName`, the player's `DefaultReputation` (≈ -100..100), a `HostileThreshold`
+  (`ReputationTier`), a `KillReputationPenalty`, and `Enemies`/`Allies` faction-id lists.
+  `FactionDatabase` indexes them. `ReputationTier` (Hated→Allied, low→high so comparisons
+  work) is derived from a numeric value by `ReputationTiers.Of` (also `Label`/`Color`).
+- **`FactionComponent`** (`EntityComponent`) tags an actor with a `FactionId` (goblins, the
+  elder). Static archetype tag — read by the AI + reputation, **not persisted**.
+- **`ReputationComponent`** (`EntityComponent`, `ISaveable`, `reputation:{RuntimeId}`, on the
+  player) — seeds standings from faction defaults; on an `EntityDiedEvent` the player caused,
+  shifts standing with the slain faction (down) and propagates through its web (enemies up,
+  allies down). `Get`/`TierOf`/`IsHostile`/`Add`; raises `ReputationChangedEvent`; persists
+  per-faction values.
+- **Consequence** — `EnemyAIComponent` engages the player only while
+  `ReputationComponent.IsHostile(factionId)` (standing at/below the faction's hostile tier);
+  an unfactioned actor defaults hostile, and a direct hit sets a transient `_provoked` flag
+  for self-defence regardless of standing. So reputation actually changes who fights you.
+- **UI/debug** — the character screen has a **REPUTATION** section; debug key `K` raises goblin
+  standing. Sandbox factions: `faction.goblins` (hostile, enemy of villagers) and
+  `faction.villagers` (the elder). Dialogue/quest hooks keyed to standing are a future add-on
+  over `ReputationComponent`.
+
 ### 6.7 Save (`src/Save`)
 
 - **`ISaveable`** — `SaveId`, `Godot.Collections.Dictionary Save()`,
@@ -827,6 +852,15 @@ Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
    applies to whoever the spell hits (or the caster, for a Self cast) via the target's
    `StatusEffectsComponent`. No code change.
 
+**A new faction**
+1. Author `data/factions/Xxx.tres` (`script_class="FactionResource"`): unique `Id`,
+   `DefaultReputation`, `HostileThreshold` (a `ReputationTier` int, `2`=Unfriendly),
+   `KillReputationPenalty`, and `Enemies`/`Allies` (`Array[String]([...])` of faction ids).
+2. Auto-indexed by `FactionDatabase`; the player's `ReputationComponent` seeds a standing for
+   it automatically. Tag actors with a `FactionComponent { FactionId = "..." }` (see
+   `EnemyFactory` / the elder in the bootstrap) — enemy AI then keys aggression off the
+   player's standing with that faction. No code change.
+
 **A new stat**
 1. Add to the `StatType` enum; if it's a depleting resource, update
    `StatTypes.IsResource`.
@@ -885,10 +919,11 @@ Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
 Done: **1 Core Architecture · 2 Player Controller · 3 Combat Framework ·
 4 Enemy AI · 5 Inventory System · 6 Equipment System · 7 Loot Generation ·
 8 Progression · 9 Quests · 10 Dialogue · 11 NPC Schedules · 12 Magic ·
-13 World Systems · 14 HUD & Panels Polish · 15 Crafting**. Next: **16 Factions**.
+13 World Systems · 14 HUD & Panels Polish · 15 Crafting · 16 Factions**.
+Next: **17 Procedural Events**.
 
-Then (in order): 17 Procedural Events · 18 Game UI Overhaul ·
-19 Optimization · 20 Deep Debugging · 21 Content Expansion.
+Then (in order): 18 Game UI Overhaul · 19 Optimization ·
+20 Deep Debugging · 21 Content Expansion.
 
 > **Two UI phases, deliberately:** Phase 14 (done) *polished the existing
 > debug-grade overlay* (shared `UiTheme`, vitals bars, crosshair, framed panels).

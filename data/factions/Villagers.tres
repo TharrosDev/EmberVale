@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="FactionResource" load_steps=2 format=3 uid="uid://cmbrvlfacvillage"]
+
+[ext_resource type="Script" path="res://src/Factions/FactionResource.cs" id="1_faction"]
+
+[resource]
+script = ExtResource("1_faction")
+Id = "faction.villagers"
+DisplayName = "Embervale Villagers"
+Description = "The folk of the valley. They warm to those who cull the goblin raiders."
+DefaultReputation = 10
+HostileThreshold = 2
+KillReputationPenalty = 15
+Enemies = Array[String](["faction.goblins"])
+Allies = Array[String]([])

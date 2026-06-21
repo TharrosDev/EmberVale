@@ -54,8 +54,8 @@ through save/load.
 | 13 | World Systems        | ✅ Done      | Day/night, weather, encounters                              |
 | 14 | HUD & Panels Polish  | ✅ Done      | Shared UI theme, vitals bars, crosshair, framed panels      |
 | 15 | Crafting             | ✅ Done      | Recipes, stations, materials                                |
-| 16 | Faction Systems      | ⏳ Next      | Reputation, consequences                                    |
-| 17 | Procedural Events    | ⬜ Planned   | World events, dynamic spawns                                |
+| 16 | Faction Systems      | ✅ Done      | Reputation, faction tags, standing-driven hostility         |
+| 17 | Procedural Events    | ⏳ Next      | World events, dynamic spawns                                |
 | 18 | Game UI Overhaul     | ⬜ Planned   | Real game UI: HUD, menus, tooltips, scenes over the debug overlay |
 | 19 | Optimization         | ⬜ Ongoing   | Pooling, LOD, streaming                                     |
 | 20 | Deep Debugging       | ⬜ Planned   | Dev console, profiling/diagnostics overlays, invariant checks, repro harness |
@@ -395,3 +395,34 @@ reusing the item/inventory/loot systems rather than inventing a parallel economy
   Sword**, and cast a (rolled Uncommon) **Iron Ring** — a full ore→ingot→sword chain. New
   materials added: iron ingot, leather strips, healing herb. Known recipes round-trip through
   save/load.
+
+## Phase 16 — delivered (Faction Systems)
+
+Gives the world sides: the player holds standing with data-driven factions, and that
+standing has a real consequence — whether a faction's members fight you.
+
+- **Faction content** — `FactionResource` (`[GlobalClass]`, `data/factions/*.tres`): id,
+  display name, the player's `DefaultReputation`, a `HostileThreshold` tier, a
+  `KillReputationPenalty`, and `Enemies`/`Allies` faction-id lists forming a relationship
+  web. `FactionDatabase` indexes them. `ReputationTier` (Hated→Allied) is derived from a
+  numeric standing and drives consequences + UI colour.
+- **`FactionComponent`** tags an actor with a faction (goblins, the village elder). It is a
+  static archetype tag — read by the AI and the reputation system, not persisted.
+- **`ReputationComponent`** (`EntityComponent`, `ISaveable`, on the player) — seeds each
+  faction's standing from its default, and on any `EntityDiedEvent` the player caused, shifts
+  standing: down with the slain actor's faction, **up with that faction's enemies, down with
+  its allies** (the web propagates). Standing maps to a tier; raises `ReputationChangedEvent`;
+  persists per-faction values. `Add`/`Get`/`TierOf`/`IsHostile` are the API other systems use.
+- **Consequence (the point of the phase)** — `EnemyAIComponent` now engages the player only
+  while the player's standing with its faction is at/below the faction's hostile threshold (an
+  unfactioned actor stays hostile by default). A direct hit still **provokes** self-defence
+  regardless of standing. So culling goblins keeps them hostile *and* warms the villagers,
+  while raising goblin standing to Neutral makes them leave you be.
+- **UI & debug** — the character screen gained a **REPUTATION** section (faction · tier ·
+  value, tier-coloured); debug key **`K`** nudges goblin standing up so you can watch them
+  stand down. Events: `src/Factions/FactionEvents.cs`.
+- **Sandbox** — two factions ship: **Goblin Marauders** (hostile by default, enemies of the
+  villagers) and **Embervale Villagers** (the elder's faction, who warm to you for culling
+  goblins). Standing round-trips through save/load. (Dialogue/quest reputation hooks —
+  conditions and rewards keyed to standing — are a straightforward future extension on top of
+  `ReputationComponent.Add`/`IsHostile`.)

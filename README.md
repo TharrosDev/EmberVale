@@ -80,6 +80,7 @@ proof that the core systems are wired together.
     ├── Npc/                 # NPC daily schedules + reactions
     ├── Magic/               # Spells, projectiles, AoE, status effects
     ├── Crafting/            # Recipes, stations, the crafting component
+    ├── Factions/            # Reputation, faction tags, standing-driven hostility
     ├── Player/              # First-person controller + factory
     ├── Enemies/             # Enemy AI state machine + spawner
     ├── Save/                # ISaveable + SaveManager
@@ -119,8 +120,8 @@ save/load.
 | 13 | World Systems        | ✅ Done     |
 | 14 | HUD & Panels Polish  | ✅ Done     |
 | 15 | Crafting             | ✅ Done     |
-| 16 | Faction Systems      | ⏳ Next     |
-| 17 | Procedural Events    | ⬜ Planned  |
+| 16 | Faction Systems      | ✅ Done     |
+| 17 | Procedural Events    | ⏳ Next     |
 | 18 | Game UI Overhaul     | ⬜ Planned  |
 | 19 | Optimization         | ⬜ Ongoing  |
 | 20 | Deep Debugging       | ⬜ Planned  |
