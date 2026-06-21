@@ -137,7 +137,7 @@ public partial class GameBootstrap : Node3D
         // Persistent spawned actors: a director that recreates saved named actors/containers on
         // load (the SaveManager alone only restores components of actors already in the scene).
         PersistentActorRegistry.Clear();
-        PersistentActorRegistry.Register("prop.cache", BuildPersistentCache);
+        PersistentActorRegistry.Register(GameIds.Templates.Cache, BuildPersistentCache);
         _persistentSpawns = new PersistentSpawnDirector { Name = "PersistentSpawns" };
         AddChild(_persistentSpawns);
 
@@ -357,7 +357,7 @@ public partial class GameBootstrap : Node3D
         _questLogPanel.SetQuestLog(questLog);
 
         // Seed a starter quest so the journal has content the moment you press Play.
-        if (questLog != null && QuestDatabase.Get("quest.cull_goblins") is { } starter)
+        if (questLog != null && QuestDatabase.Get(GameIds.Quests.CullGoblins) is { } starter)
         {
             questLog.StartQuest(starter);
         }
@@ -368,24 +368,24 @@ public partial class GameBootstrap : Node3D
     private void SpawnLoot()
     {
         // A few collectables strewn between the player and the goblin camp.
-        TryDropPickup("item.potion.health", 2, new Vector3(1.5f, 0f, 2f));
-        TryDropPickup("item.material.iron_ore", 3, new Vector3(-2f, 0f, 0f));
-        TryDropPickup("item.gem.ruby", 1, new Vector3(0f, 0f, -3f));
-        TryDropPickup("item.currency.gold", 25, new Vector3(2.5f, 0f, -1f));
+        TryDropPickup(GameIds.Items.HealthPotion, 2, new Vector3(1.5f, 0f, 2f));
+        TryDropPickup(GameIds.Items.IronOre, 3, new Vector3(-2f, 0f, 0f));
+        TryDropPickup(GameIds.Items.Ruby, 1, new Vector3(0f, 0f, -3f));
+        TryDropPickup(GameIds.Currency.Gold, 25, new Vector3(2.5f, 0f, -1f));
 
         // Crafting materials so the stations to the west have something to work with.
-        TryDropPickup("item.material.iron_ore", 4, new Vector3(-4.5f, 0f, 6f));
-        TryDropPickup("item.material.goblin_hide", 4, new Vector3(-4f, 0f, 6.8f));
-        TryDropPickup("item.material.healing_herb", 5, new Vector3(-3.2f, 0f, 6.6f));
+        TryDropPickup(GameIds.Items.IronOre, 4, new Vector3(-4.5f, 0f, 6f));
+        TryDropPickup(GameIds.Items.GoblinHide, 4, new Vector3(-4f, 0f, 6.8f));
+        TryDropPickup(GameIds.Items.HealingHerb, 5, new Vector3(-3.2f, 0f, 6.6f));
 
         // Equippable gear to try out the equipment screen.
-        TryDropPickup("item.armor.leather_cap", 1, new Vector3(-1.2f, 0f, 3f));
-        TryDropPickup("item.armor.leather_vest", 1, new Vector3(-3f, 0f, 2.5f));
-        TryDropPickup("item.weapon.steel_sword", 1, new Vector3(1.5f, 0f, -2.5f));
-        TryDropPickup("item.ring.iron", 1, new Vector3(3f, 0f, -3.5f));
+        TryDropPickup(GameIds.Items.LeatherCap, 1, new Vector3(-1.2f, 0f, 3f));
+        TryDropPickup(GameIds.Items.LeatherVest, 1, new Vector3(-3f, 0f, 2.5f));
+        TryDropPickup(GameIds.Items.SteelSword, 1, new Vector3(1.5f, 0f, -2.5f));
+        TryDropPickup(GameIds.Items.IronRing, 1, new Vector3(3f, 0f, -3.5f));
 
         // A procedurally-rolled Rare blade to show off the affix pipeline.
-        if (ItemDatabase.Get("item.weapon.steel_sword") is EquippableItemResource sword)
+        if (ItemDatabase.Get(GameIds.Items.SteelSword) is EquippableItemResource sword)
         {
             ItemInstance rolled = LootGenerator.RollAffixed(sword, ItemRarity.Rare);
             AddChild(ItemPickupFactory.Create(rolled, 1, new Vector3(-1.5f, 0f, -1.5f)));
@@ -408,7 +408,7 @@ public partial class GameBootstrap : Node3D
         {
             Name = "QuestGiver",
             DisplayName = "Village Elder",
-            TemplateId = "npc.elder",
+            TemplateId = GameIds.Npcs.Elder,
             Position = new Vector3(3f, 0f, 4f),
         };
 
@@ -429,15 +429,15 @@ public partial class GameBootstrap : Node3D
         giver.AddChild(collider);
 
         // The elder is a villager: killing him would tank reputation with his faction.
-        giver.AddChild(new FactionComponent { Name = "Faction", FactionId = "faction.villagers" });
+        giver.AddChild(new FactionComponent { Name = "Faction", FactionId = GameIds.Factions.Villagers });
 
         // The elder now offers his task in conversation: the dialogue's choices start
         // the quest and remember you via a story flag (see data/dialogue/Elder.tres).
-        giver.AddChild(new DialogueComponent { Name = "Dialogue", DialogueId = "dialogue.elder" });
+        giver.AddChild(new DialogueComponent { Name = "Dialogue", DialogueId = GameIds.Dialogues.Elder });
 
         // A daily routine: the elder walks between the well, the forge and home as the
         // world clock turns, and flees if goblins raise the alarm nearby.
-        giver.AddChild(new ScheduleComponent { Name = "Schedule", ScheduleId = "schedule.elder" });
+        giver.AddChild(new ScheduleComponent { Name = "Schedule", ScheduleId = GameIds.Schedules.Elder });
         AddChild(giver);
         Log.Info("The Village Elder keeps a daily routine near the spawn — talk to him for a task.");
     }
@@ -446,7 +446,7 @@ public partial class GameBootstrap : Node3D
     {
         // A persistent supply cache: it is recreated on load (existence + transform) and its
         // InventoryComponent restores its contents — proving the spawned-actor persistence path.
-        _persistentSpawns.Spawn("prop.cache", "cache.world.start", new Vector3(5f, 0f, 0f));
+        _persistentSpawns.Spawn(GameIds.Templates.Cache, "cache.world.start", new Vector3(5f, 0f, 0f));
         Log.Info("A persistent supply cache sits east of spawn; it survives save/load (try F5, despawn it, F9).");
     }
 
@@ -540,10 +540,10 @@ public partial class GameBootstrap : Node3D
             return;
         }
 
-        reputation.Add("faction.goblins", 20);
-        ReputationTier tier = reputation.TierOf("faction.goblins");
-        bool hostile = reputation.IsHostile("faction.goblins");
-        Log.Info($"Goblin standing: {ReputationTiers.Label(tier)} ({reputation.Get("faction.goblins")}) — " +
+        reputation.Add(GameIds.Factions.Goblins, 20);
+        ReputationTier tier = reputation.TierOf(GameIds.Factions.Goblins);
+        bool hostile = reputation.IsHostile(GameIds.Factions.Goblins);
+        Log.Info($"Goblin standing: {ReputationTiers.Label(tier)} ({reputation.Get(GameIds.Factions.Goblins)}) — " +
                  $"{(hostile ? "still hostile" : "they now leave you be")}.");
     }
 

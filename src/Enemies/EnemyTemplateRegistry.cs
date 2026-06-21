@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Embervale.Core;
 using Embervale.Core.Diagnostics;
 using Godot;
 
@@ -22,7 +23,7 @@ public static class EnemyTemplateRegistry
     private static readonly Dictionary<string, Func<Vector3, EnemyEntity>> Builders = new();
 
     /// <summary>The default archetype used when a requested template id is unknown.</summary>
-    public const string FallbackTemplateId = "enemy.goblin";
+    public const string FallbackTemplateId = GameIds.Enemies.Goblin;
 
     /// <summary>All registered template ids (the validator's source of truth).</summary>
     public static IReadOnlyCollection<string> TemplateIds => Builders.Keys;

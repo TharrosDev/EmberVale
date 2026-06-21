@@ -19,6 +19,8 @@ public partial class LootTable : Resource
     [Export] public Godot.Collections.Array Entries { get; set; } = new();
 
     [ExportGroup("Gold")]
+    // Authored default; overridable per .tres. Mirrors GameIds.Currency.Gold (kept literal so the
+    // Godot [Export] default-value generator — which doesn't see file usings — compiles cleanly).
     [Export] public string GoldItemId { get; set; } = "item.currency.gold";
     [Export(PropertyHint.Range, "0,1,0.01")]
     public float GoldChance { get; set; }

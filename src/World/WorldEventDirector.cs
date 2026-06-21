@@ -287,7 +287,7 @@ public partial class WorldEventDirector : Node3D
         InventoryComponent? inventory = player.GetComponent<InventoryComponent>();
         if (inventory != null)
         {
-            if (r.GoldReward > 0 && ItemDatabase.Get("item.currency.gold") is { } gold)
+            if (r.GoldReward > 0 && ItemDatabase.Get(GameIds.Currency.Gold) is { } gold)
             {
                 inventory.AddItem(gold, r.GoldReward);
             }

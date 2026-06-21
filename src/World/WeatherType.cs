@@ -6,6 +6,7 @@ namespace Embervale.World;
 /// drives lighting/fog/precipitation via the <see cref="SkyController"/> and biases
 /// how often the <see cref="EncounterDirector"/> spawns encounters.
 /// </summary>
+// APPEND ONLY: ordinals persist in .tres/saves — never reorder/insert/remove (EnumStabilityTests).
 public enum WeatherType
 {
     Clear,

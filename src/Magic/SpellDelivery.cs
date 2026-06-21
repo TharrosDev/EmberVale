@@ -6,6 +6,7 @@ namespace Embervale.Magic;
 /// the caster, and a self-cast buff/heal) and richer shapes can be appended later
 /// without touching the cast flow.
 /// </summary>
+// APPEND ONLY: ordinals persist in .tres/saves — never reorder/insert/remove (EnumStabilityTests).
 public enum SpellDelivery
 {
     /// <summary>A bolt that travels forward and resolves on impact (single-target,

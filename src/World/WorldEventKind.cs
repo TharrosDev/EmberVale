@@ -6,6 +6,7 @@ namespace Embervale.World;
 /// the <see cref="WorldEventDirector"/> runs. New kinds slot in here + the director's
 /// start/tracking switch.
 /// </summary>
+// APPEND ONLY: ordinals persist in .tres/saves — never reorder/insert/remove (EnumStabilityTests).
 public enum WorldEventKind
 {
     /// <summary>A band of hostiles attacks near the player; objective: defeat them all.</summary>

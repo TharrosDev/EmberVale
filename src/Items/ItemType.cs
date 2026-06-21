@@ -3,6 +3,7 @@ using Godot;
 namespace Embervale.Items;
 
 /// <summary>Broad category of an item, used for filtering, equipping and UI.</summary>
+// APPEND ONLY: ordinals persist in .tres/saves — never reorder/insert/remove (EnumStabilityTests).
 public enum ItemType
 {
     Misc,
@@ -17,6 +18,7 @@ public enum ItemType
 /// Rarity tier. Drives UI colour now and the procedural loot tiers of Phase 7
 /// (higher rarity = more/stronger affixes).
 /// </summary>
+// APPEND ONLY: ordinals persist in .tres/saves — never reorder/insert/remove (EnumStabilityTests).
 public enum ItemRarity
 {
     Common,

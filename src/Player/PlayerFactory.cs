@@ -1,4 +1,5 @@
 using Embervale.Combat;
+using Embervale.Core;
 using Embervale.Crafting;
 using Embervale.Dialogue;
 using Embervale.Entities;
@@ -101,12 +102,12 @@ public static class PlayerFactory
             Name = "Crafting",
             StartingRecipeIds = new Godot.Collections.Array<string>
             {
-                "recipe.iron_ingot",
-                "recipe.leather_strips",
-                "recipe.health_potion",
-                "recipe.leather_cap",
-                "recipe.steel_sword",
-                "recipe.iron_ring",
+                GameIds.Recipes.IronIngot,
+                GameIds.Recipes.LeatherStrips,
+                GameIds.Recipes.HealthPotion,
+                GameIds.Recipes.LeatherCap,
+                GameIds.Recipes.SteelSword,
+                GameIds.Recipes.IronRing,
             },
         });
 
@@ -125,11 +126,11 @@ public static class PlayerFactory
             AimNode = cameraPivot,
             KnownSpellIds = new Godot.Collections.Array<string>
             {
-                "spell.firebolt",
-                "spell.fireball",
-                "spell.frost_nova",
-                "spell.lesser_heal",
-                "spell.arcane_shield",
+                GameIds.Spells.Firebolt,
+                GameIds.Spells.Fireball,
+                GameIds.Spells.FrostNova,
+                GameIds.Spells.LesserHeal,
+                GameIds.Spells.ArcaneShield,
             },
         });
 

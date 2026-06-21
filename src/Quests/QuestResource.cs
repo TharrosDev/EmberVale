@@ -28,6 +28,7 @@ public partial class QuestResource : Resource
     [ExportGroup("Rewards")]
     [Export] public int XpReward { get; set; }
     [Export] public int GoldReward { get; set; }
+    // Authored default (mirrors GameIds.Currency.Gold); kept literal for the Godot [Export] generator.
     [Export] public string GoldItemId { get; set; } = "item.currency.gold";
     /// <summary>Item grants on completion (elements are <see cref="QuestItemReward"/>).</summary>
     [Export] public Godot.Collections.Array RewardItems { get; set; } = new();

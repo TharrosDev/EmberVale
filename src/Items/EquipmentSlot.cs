@@ -4,6 +4,7 @@ namespace Embervale.Items;
 /// The body/gear slots an <see cref="EquippableItemResource"/> can occupy. One
 /// item per slot. <see cref="None"/> marks an item that is not equippable.
 /// </summary>
+// APPEND ONLY: ordinals persist in .tres/saves — never reorder/insert/remove (EnumStabilityTests).
 public enum EquipmentSlot
 {
     None,
@@ -23,6 +24,7 @@ public enum EquipmentSlot
 /// procedural affixes can roll on an item (weapons take offensive affixes, armor
 /// defensive ones, accessories a bit of everything).
 /// </summary>
+// APPEND ONLY: ordinals persist in .tres/saves — never reorder/insert/remove (EnumStabilityTests).
 public enum GearFamily
 {
     None,

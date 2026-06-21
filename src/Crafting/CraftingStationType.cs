@@ -6,6 +6,7 @@ namespace Embervale.Crafting;
 /// crafting UI shows the recipes that match (plus <see cref="Hand"/> recipes, which can
 /// be made anywhere). New station = a new enum value + a station in the scene.
 /// </summary>
+// APPEND ONLY: ordinals persist in .tres/saves — never reorder/insert/remove (EnumStabilityTests).
 public enum CraftingStationType
 {
     /// <summary>No station needed — craftable at any station.</summary>

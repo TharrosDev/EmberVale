@@ -2,6 +2,7 @@ namespace Embervale.Quests;
 
 /// <summary>What an objective measures. Each kind binds to a gameplay event the
 /// <see cref="QuestLogComponent"/> listens for.</summary>
+// APPEND ONLY: ordinals persist in .tres/saves — never reorder/insert/remove (EnumStabilityTests).
 public enum ObjectiveType
 {
     /// <summary>Slay N actors whose <c>TemplateId</c> matches the objective target.</summary>
@@ -12,6 +13,7 @@ public enum ObjectiveType
 }
 
 /// <summary>Lifecycle state of a quest in the player's log.</summary>
+// APPEND ONLY: ordinals persist in .tres/saves — never reorder/insert/remove (EnumStabilityTests).
 public enum QuestStatus
 {
     Active,

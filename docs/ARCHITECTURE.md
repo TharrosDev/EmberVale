@@ -614,7 +614,20 @@ Health = 100.0
 
 Load at runtime with `GD.Load<T>("res://...")` and **always provide a fallback**
 (`?? SomeType.CreateDefault()` or null-guard) so a missing/broken resource never
-crashes the boot. Enums export as ints (`DamageType = 0` == `Physical`).
+crashes the boot.
+
+**Enums export as ints** (`DamageType = 0` == `Physical`) in both `.tres` and save
+files. Treat every persisted/authored enum as **append-only** — reordering or
+inserting a member silently re-maps existing data. `EnumStabilityTests` (in
+`tests/Embervale.Tests`) pins their ordinals and fails the build if they change;
+each guarded enum carries an `// APPEND ONLY` marker.
+
+**Content ids referenced from code** (currency, seeded items, factions,
+enemy/actor templates, the player's starting spells/recipes, sandbox quest/NPC
+ids) are centralized in `GameIds` (`src/Core/GameIds.cs`) so a rename happens in
+one place. Their values must match the ids authored in `.tres`; `ContentValidator`
+flags any drift at boot. (Authored `.tres` ids and placeholder defaults like
+`"item.unknown"` stay as literals — they are data, not code references.)
 
 Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
 `data/weapons/{IronSword,GoblinClaw}.tres`.
