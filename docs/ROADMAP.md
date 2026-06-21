@@ -55,8 +55,8 @@ through save/load.
 | 14 | HUD & Panels Polish  | ✅ Done      | Shared UI theme, vitals bars, crosshair, framed panels      |
 | 15 | Crafting             | ✅ Done      | Recipes, stations, materials                                |
 | 16 | Faction Systems      | ✅ Done      | Reputation, faction tags, standing-driven hostility         |
-| 17 | Procedural Events    | ⏳ Next      | World events, dynamic spawns                                |
-| 18 | Game UI Overhaul     | ⬜ Planned   | Real game UI: HUD, menus, tooltips, scenes over the debug overlay |
+| 17 | Procedural Events    | ✅ Done      | Named world events: raids, caches, hunts with objectives + rewards |
+| 18 | Game UI Overhaul     | ⏳ Next      | Real game UI: HUD, menus, tooltips, scenes over the debug overlay |
 | 19 | Optimization         | ⬜ Ongoing   | Pooling, LOD, streaming                                     |
 | 20 | Deep Debugging       | ⬜ Planned   | Dev console, profiling/diagnostics overlays, invariant checks, repro harness |
 | 21 | Content Expansion    | ⬜ Ongoing   | Regions, enemies, quests via data                           |
@@ -426,3 +426,32 @@ standing has a real consequence — whether a faction's members fight you.
   goblins). Standing round-trips through save/load. (Dialogue/quest reputation hooks —
   conditions and rewards keyed to standing — are a straightforward future extension on top of
   `ReputationComponent.Add`/`IsHostile`.)
+
+## Phase 17 — delivered (Procedural Events)
+
+The richer *named world-event* layer above the Phase 13 ambient encounters: discrete,
+announced happenings with an objective, a time limit and rewards.
+
+- **Event content** — `WorldEventResource` (`[GlobalClass]`, `data/world_events/*.tres`): a
+  `WorldEventKind` (Raid / Cache / Hunt), selection weight, per-event cooldown, time limit,
+  per-`DayPhase` allow flags, spawn knobs (enemy template, counts, a champion health
+  multiplier, or a cache item + quantity), and authored rewards (XP, gold, an item, and a
+  faction-standing change). `WorldEventDatabase` indexes them.
+- **`WorldEventDirector`** (`Node3D`) — on a cadence it rolls one eligible event (phase +
+  weight + off cooldown) and starts it near the player: a **Raid** (a band of goblins to
+  defeat), a **Cache** (a loot pickup to reach), or a **Hunt** (one tougher champion, its
+  max health scaled up, to slay). It runs one at a time, tracks the objective off
+  `EntityDiedEvent`/`ItemPickedUpEvent`, enforces the time limit (failing + cleaning up
+  raiders on expiry), and on success grants the rewards through the player's existing
+  `ProgressionComponent` (XP), `InventoryComponent` (gold + item) and `ReputationComponent`
+  (faction standing). It reuses `EnemyFactory` and `ItemPickupFactory`, so event foes drop
+  loot, grant XP and shift reputation like any other.
+- **`WorldEvent`** is the runtime tracker (origin, spawned actors, progress, countdown,
+  status); `WorldEventStartedEvent`/`WorldEventProgressEvent`/`WorldEventEndedEvent` announce
+  the lifecycle. The HUD shows the active event, its objective and time remaining.
+- **Persistence** — like encounters, in-flight events are emergent/transient and **not**
+  persisted (re-instantiating live spawns across a reload isn't worth the cost); the rewards
+  they grant persist through the already-saved components.
+- **Sandbox** — three events ship: **Goblin Raid** (defeat the warband → XP/gold + villager
+  standing), **Lost Cache** (collect the cache → XP/gold + the loot), and **Goblin Champion**
+  (slay a 3× health champion → XP/gold + a steel sword + villager standing).

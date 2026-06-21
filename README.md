@@ -76,7 +76,7 @@ proof that the core systems are wired together.
     ├── Interaction/         # InteractableComponent (interact action)
     ├── Quests/              # Quest resources, objectives, log, givers
     ├── Dialogue/            # Node-graph conversations, choices, story flags
-    ├── World/               # World clock, day/night, weather, encounters
+    ├── World/               # Clock, day/night, weather, encounters, world events
     ├── Npc/                 # NPC daily schedules + reactions
     ├── Magic/               # Spells, projectiles, AoE, status effects
     ├── Crafting/            # Recipes, stations, the crafting component
@@ -121,8 +121,8 @@ save/load.
 | 14 | HUD & Panels Polish  | ✅ Done     |
 | 15 | Crafting             | ✅ Done     |
 | 16 | Faction Systems      | ✅ Done     |
-| 17 | Procedural Events    | ⏳ Next     |
-| 18 | Game UI Overhaul     | ⬜ Planned  |
+| 17 | Procedural Events    | ✅ Done     |
+| 18 | Game UI Overhaul     | ⏳ Next     |
 | 19 | Optimization         | ⬜ Ongoing  |
 | 20 | Deep Debugging       | ⬜ Planned  |
 | 21 | Content Expansion    | ⬜ Ongoing  |

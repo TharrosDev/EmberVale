@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="WorldEventResource" load_steps=2 format=3 uid="uid://cmbrvlwehunt"]
+
+[ext_resource type="Script" path="res://src/World/WorldEventResource.cs" id="1_event"]
+
+[resource]
+script = ExtResource("1_event")
+Id = "event.goblin_champion"
+DisplayName = "Goblin Champion"
+Description = "A hulking goblin champion stalks the valley. Hunt it down."
+Kind = 2
+SelectionWeight = 1.0
+CooldownSeconds = 150.0
+TimeLimitSeconds = 120.0
+AtDawn = false
+AtDay = true
+AtDusk = true
+AtNight = true
+SpawnDistanceMin = 14.0
+SpawnDistanceMax = 20.0
+EnemyTemplateId = "enemy.goblin"
+MinCount = 1
+MaxCount = 1
+HealthMultiplier = 3.0
+XpReward = 100
+GoldReward = 40
+RewardItemId = "item.weapon.steel_sword"
+RewardItemQuantity = 1
+FactionRewardId = "faction.villagers"
+FactionRewardAmount = 12

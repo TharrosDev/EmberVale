@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="WorldEventResource" load_steps=2 format=3 uid="uid://cmbrvlwecache"]
+
+[ext_resource type="Script" path="res://src/World/WorldEventResource.cs" id="1_event"]
+
+[resource]
+script = ExtResource("1_event")
+Id = "event.supply_cache"
+DisplayName = "Lost Cache"
+Description = "A cache of goods was spotted nearby. Reach it before it's gone."
+Kind = 1
+SelectionWeight = 1.5
+CooldownSeconds = 120.0
+TimeLimitSeconds = 60.0
+AtDawn = true
+AtDay = true
+AtDusk = true
+AtNight = true
+SpawnDistanceMin = 14.0
+SpawnDistanceMax = 22.0
+CacheItemId = "item.gem.ruby"
+CacheQuantity = 1
+XpReward = 30
+GoldReward = 15

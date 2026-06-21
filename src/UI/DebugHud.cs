@@ -26,6 +26,7 @@ public partial class DebugHud : CanvasLayer
     private IEntity? _player;
     private WorldClock? _clock;
     private WeatherDirector? _weather;
+    private WorldEventDirector? _worldEvents;
     private string _lastHit = "—";
 
     private Label _diag = null!;
@@ -64,6 +65,8 @@ public partial class DebugHud : CanvasLayer
     public void SetClock(WorldClock? clock) => _clock = clock;
 
     public void SetWeather(WeatherDirector? weather) => _weather = weather;
+
+    public void SetWorldEvents(WorldEventDirector? worldEvents) => _worldEvents = worldEvents;
 
     // --- Construction -------------------------------------------------------
 
@@ -169,6 +172,15 @@ public partial class DebugHud : CanvasLayer
             if (_weather is { } weather && IsInstanceValid(weather) && weather.Current is { } w)
             {
                 sb.Append($"   ·   {w.DisplayName}");
+            }
+        }
+
+        if (_worldEvents is { } director && IsInstanceValid(director) && director.Active is { } worldEvent)
+        {
+            sb.Append($"\n★ {worldEvent.Resource.DisplayName} — {worldEvent.ObjectiveLabel()}");
+            if (worldEvent.IsTimed)
+            {
+                sb.Append($"  [{worldEvent.TimeLeft:0}s]");
             }
         }
 
