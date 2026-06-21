@@ -60,6 +60,22 @@ public sealed partial class ServiceLocator : Node
         _services.Remove(typeof(T));
     }
 
+    /// <summary>
+    /// Removes the registration for <typeparamref name="T"/> only if it still points at
+    /// <paramref name="instance"/>. A replaced/respawned actor tearing down must not evict
+    /// a newer instance that already took its slot.
+    /// </summary>
+    public void Unregister<T>(T instance)
+        where T : class
+    {
+        ArgumentNullException.ThrowIfNull(instance);
+
+        if (_services.TryGetValue(typeof(T), out object? current) && ReferenceEquals(current, instance))
+        {
+            _services.Remove(typeof(T));
+        }
+    }
+
     public T Get<T>()
         where T : class
     {

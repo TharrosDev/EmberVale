@@ -602,11 +602,28 @@ announced events with an objective, time limit and rewards.
 - **`SaveManager`** (autoload) — `Register/Unregister`, `SaveGame(slot)` /
   `LoadGame(slot)` to `user://saves/<slot>.json` in a versioned envelope
   (`{version, timestamp, objects: {SaveId: state}}`). On load, each live
-  saveable pulls its own entry by `SaveId`.
+  saveable pulls its own entry by `SaveId`. **Robustness guarantees:** writes are
+  **atomic** (staged to `<slot>.json.tmp` then renamed, so a crash mid-write never
+  truncates a good save); each `Save()`/`Load()` is wrapped so one throwing component
+  is logged and skipped rather than corrupting/aborting the whole file; the envelope
+  `version` is checked through a `TryMigrate` seam (a *newer*-than-known file is
+  refused, an older one is upgraded step-by-step — no steps exist yet at v1); and load
+  warns about both entries with **no live claimant** (orphaned state) and live
+  saveables with **no saved entry**.
 
-> Caveat: `SaveId` currently uses runtime id, so save/load round-trips within a
-> session. Cross-session entity identity (stable ids for spawned actors) is a
-> later concern — design new persistence with that in mind.
+- **Stable identity (`PersistentId`):** an `ISaveable` component's `SaveId` comes from
+  `EntityComponent.SaveKey(prefix)`, which prefers the owner's stable
+  `IEntity.PersistentId` (e.g. the player is `PersistentId = "player"`, so its
+  components save as `stats:player`, `inventory:player`, …) and only falls back to the
+  volatile `RuntimeId` for transient actors — logging a warning when it does, because
+  that state will not survive a reload. World singletons keep fixed keys (`worldclock`,
+  `weather`).
+
+> Caveat: only actors with a `PersistentId` survive cross-session. The player and
+> authored world actors set one; spawned/dynamic actors (loot, ambient mobs) are
+> deliberately transient. A general stable-id scheme for **named spawned NPCs and
+> world containers** (registry + spawn-time id assignment) is the next persistence
+> step — `PersistentId` is the groundwork it will build on.
 
 ### 6.8 Flow & input
 
@@ -716,6 +733,39 @@ crashes the boot. Enums export as ints (`DamageType = 0` == `Physical`).
 
 Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
 `data/weapons/{IronSword,GoblinClaw}.tres`.
+
+### 8.1 Content cross-reference validation
+
+Many `.tres` fields are **cross-references** — a string id that must resolve in another
+database. Historically a typo (`item.iron_ot`) failed *silently* (no drop, no reward, a
+dead quest). `ContentValidator` (`src/Debugging/ContentValidator.cs`) now resolves them
+all at boot (logged after the databases load) and on demand via the `validate` dev-console
+command (`F1`). It feeds the shared `Invariant` counter, so the `invariants` check sees
+content breakage too. Enforced references:
+
+| Authored in | Field(s) | Must resolve in |
+| ----------- | -------- | --------------- |
+| `LootTable` / `LootEntry` | `ItemId`, `GoldItemId` (when gold rolls) | `ItemDatabase` |
+| `CraftingRecipeResource` | ingredient `ItemId`s, `OutputItemId` | `ItemDatabase` |
+| `QuestResource` | reward `ItemId`s, `GoldItemId`, Collect `TargetId` | `ItemDatabase` |
+| `QuestResource` | Kill `TargetId` | `EnemyTemplateRegistry` |
+| `QuestResource` | `PrerequisiteQuestId` | `QuestDatabase` |
+| `DialogueResource` | choice `Goto`, quest condition/`StartQuest` args | nodes / `QuestDatabase` |
+| `SpellResource` | `StatusEffectId` | `StatusEffectDatabase` |
+| `FactionResource` | `Enemies` / `Allies` | `FactionDatabase` |
+| `EncounterResource` / `WorldEventResource` | `EnemyTemplateId` | `EnemyTemplateRegistry` |
+| `WorldEventResource` | `CacheItemId`, `RewardItemId`, `FactionRewardId` | `ItemDatabase` / `FactionDatabase` |
+
+**Enemy archetypes are now data-resolved:** spawners (encounters, world events) build foes
+through `EnemyTemplateRegistry.Create(templateId, pos)`, not a hard-coded factory. A new
+enemy type is a new factory + one `EnemyTemplateRegistry.Register(...)` line in the
+bootstrap; until then unknown ids fall back to the goblin (and the validator flags them).
+
+> **Enum-as-int fragility:** enums serialize to `.tres`/saves as their ordinal
+> (`DamageType = 0` == `Physical`). **Do not reorder or remove enum members** that are
+> persisted or authored — append only. Reordering silently re-maps existing data
+> (a `Rare` item becomes `Epic`). Pinning save-critical enums to string keys is a tracked
+> follow-up.
 
 ---
 

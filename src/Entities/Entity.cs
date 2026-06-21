@@ -24,6 +24,13 @@ public partial class Entity : Node3D, IEntity
 
     public ulong RuntimeId { get; private set; }
 
+    /// <summary>
+    /// Stable id for persistence (see <see cref="IEntity.PersistentId"/>). Authored
+    /// in the editor for fixed world actors, or assigned by a factory at spawn.
+    /// </summary>
+    [Export]
+    public string PersistentId { get; set; } = string.Empty;
+
     public Node3D Body => this;
 
     public override void _EnterTree()

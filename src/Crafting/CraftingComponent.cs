@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Entities;
 using Embervale.Items;
@@ -30,7 +31,7 @@ public partial class CraftingComponent : EntityComponent, ISaveable
 
     private InventoryComponent? _inventory;
 
-    public string SaveId => $"crafting:{Entity?.RuntimeId ?? 0}";
+    public string SaveId => SaveKey("crafting");
 
     public IReadOnlyCollection<string> KnownRecipes => _known;
 
@@ -116,7 +117,15 @@ public partial class CraftingComponent : EntityComponent, ISaveable
             _inventory.RemoveItem(ingredient.ItemId, ingredient.Quantity);
         }
 
-        ItemResource template = ItemDatabase.Get(recipe.OutputItemId)!;
+        ItemResource? template = ItemDatabase.Get(recipe.OutputItemId);
+        if (template == null)
+        {
+            // CanCraft already guards this, but never force-deref a content lookup: a
+            // recipe whose output item was deleted must fail cleanly, not crash mid-craft.
+            Log.Warn($"Recipe '{recipe.Id}' output item '{recipe.OutputItemId}' is missing; craft aborted.");
+            return false;
+        }
+
         int quantity = Mathf.Max(1, recipe.OutputQuantity);
 
         if (template is EquippableItemResource equippable && recipe.OutputRarity != ItemRarity.Common)

@@ -19,7 +19,7 @@ public partial class StoryFlagsComponent : EntityComponent, ISaveable
 {
     private readonly HashSet<string> _flags = new();
 
-    public string SaveId => $"flags:{Entity?.RuntimeId ?? 0}";
+    public string SaveId => SaveKey("flags");
 
     public IReadOnlyCollection<string> Flags => _flags;
 

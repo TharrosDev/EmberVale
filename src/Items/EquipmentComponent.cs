@@ -30,7 +30,7 @@ public partial class EquipmentComponent : EntityComponent, ISaveable
     private MeleeWeaponComponent? _weapon;
     private WeaponResource? _defaultWeapon;
 
-    public string SaveId => $"equipment:{Entity?.RuntimeId ?? 0}";
+    public string SaveId => SaveKey("equipment");
 
     protected override void OnInitialize()
     {

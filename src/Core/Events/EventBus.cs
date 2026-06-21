@@ -108,4 +108,24 @@ public sealed partial class EventBus : Node
     {
         _handlers.Clear();
     }
+
+    /// <summary>Number of live handlers for an event type. For leak diagnostics/tests.</summary>
+    public int SubscriberCount<T>()
+        where T : IGameEvent
+    {
+        return _handlers.TryGetValue(typeof(T), out List<Delegate>? list) ? list.Count : 0;
+    }
+
+    /// <summary>Total handlers across all event types. A non-zero baseline after a scene
+    /// reset points at subscriptions that were never paired with an unsubscribe.</summary>
+    public int TotalSubscriberCount()
+    {
+        int total = 0;
+        foreach (List<Delegate> list in _handlers.Values)
+        {
+            total += list.Count;
+        }
+
+        return total;
+    }
 }

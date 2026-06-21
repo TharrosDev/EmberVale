@@ -20,6 +20,8 @@ public abstract partial class EntityComponent : Node
     /// <summary>The entity this component belongs to, or null if unparented.</summary>
     public IEntity? Entity { get; private set; }
 
+    private bool _saveKeyFallbackWarned;
+
     public override void _Ready()
     {
         Entity = EntityNode.FindOwner(GetParent());
@@ -38,6 +40,43 @@ public abstract partial class EntityComponent : Node
         {
             OnTeardown();
         }
+    }
+
+    /// <summary>
+    /// Builds a save key for an <see cref="Save.ISaveable"/> component, preferring the
+    /// owner's stable <see cref="IEntity.PersistentId"/> and falling back to the volatile
+    /// <see cref="IEntity.RuntimeId"/> only for transient actors. A warning is logged when a
+    /// component that is meant to persist falls back to a runtime id (these do not survive
+    /// reload and the legacy "<c>prefix:0</c>" form collides across unresolved owners).
+    /// </summary>
+    protected string SaveKey(string prefix)
+    {
+        if (Entity == null)
+        {
+            if (!_saveKeyFallbackWarned)
+            {
+                _saveKeyFallbackWarned = true;
+                Log.Warn($"{GetType().Name} '{Name}' built save key '{prefix}:0' with no owner; state will not persist correctly.");
+            }
+
+            return $"{prefix}:0";
+        }
+
+        if (!string.IsNullOrEmpty(Entity.PersistentId))
+        {
+            return $"{prefix}:{Entity.PersistentId}";
+        }
+
+        // Transient actors (spawned mobs, the dummy) legitimately have no PersistentId and
+        // round-trip only within a session. Warn once per component so a forgotten id on a
+        // would-be-persistent actor is visible without spamming the log every save.
+        if (!_saveKeyFallbackWarned)
+        {
+            _saveKeyFallbackWarned = true;
+            Log.Warn($"{GetType().Name} on '{Entity.DisplayName}' has no PersistentId; using a session-only runtime id ('{prefix}:{Entity.RuntimeId}'). Its state will not survive a reload.");
+        }
+
+        return $"{prefix}:{Entity.RuntimeId}";
     }
 
     /// <summary>Setup hook invoked once the owning <see cref="Entity"/> is known.</summary>

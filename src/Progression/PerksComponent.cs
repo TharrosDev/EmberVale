@@ -22,7 +22,7 @@ public partial class PerksComponent : EntityComponent, ISaveable
     private ProgressionComponent? _progression;
     private StatsComponent? _stats;
 
-    public string SaveId => $"perks:{Entity?.RuntimeId ?? 0}";
+    public string SaveId => SaveKey("perks");
 
     protected override void OnInitialize()
     {

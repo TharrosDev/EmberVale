@@ -19,7 +19,7 @@ public partial class ReputationComponent : EntityComponent, ISaveable
 {
     private readonly Dictionary<string, int> _reputation = new();
 
-    public string SaveId => $"reputation:{Entity?.RuntimeId ?? 0}";
+    public string SaveId => SaveKey("reputation");
 
     protected override void OnInitialize()
     {

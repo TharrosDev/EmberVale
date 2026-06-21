@@ -30,7 +30,7 @@ public partial class InventoryComponent : EntityComponent, ISaveable
 
     public int UsedSlots => _stacks.Count;
 
-    public string SaveId => $"inventory:{Entity?.RuntimeId ?? 0}";
+    public string SaveId => SaveKey("inventory");
 
     public float TotalWeight
     {

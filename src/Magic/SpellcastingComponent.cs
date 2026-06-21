@@ -46,7 +46,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     // Pooled projectiles: rapid casting reuses bolts instead of churning the scene tree.
     private NodePool<SpellProjectile>? _projectilePool;
 
-    public string SaveId => $"spells:{Entity?.RuntimeId ?? 0}";
+    public string SaveId => SaveKey("spells");
 
     public IReadOnlyList<SpellResource> Spells => _spells;
 
