@@ -11,6 +11,12 @@
 > It is deliberately exhaustive. There is no cap on phases; each is sized to leave
 > the repo **buildable and playable at every commit** (CLAUDE.md §1) and to
 > round-trip through save/load before it is called done.
+>
+> **Working session by session?** The phases below are *milestones*, too large for
+> a single Claude Code session. [`SESSION_PLAYBOOK.md`](SESSION_PLAYBOOK.md) breaks
+> every phase (22–66) into lettered **sub-phases** (22A, 22B, …), each sized to fit
+> one session with its own task list and "Done when" bar. Use the playbook as the
+> day-to-day tracker; use this document for the milestone/gate view.
 
 ---
 
