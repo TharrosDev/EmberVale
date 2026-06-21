@@ -97,7 +97,8 @@ Goblins roam to the north (−Z) and drop loot.
 │   ├── weather/            # WeatherResource presets (clear, rain, storm, fog, …)
 │   ├── encounters/         # EncounterResource presets (patrols, warbands)
 │   ├── recipes/            # CraftingRecipeResource presets (ingot, sword, potion, …)
-│   └── factions/           # FactionResource presets (goblins, villagers)
+│   ├── factions/           # FactionResource presets (goblins, villagers)
+│   └── world_events/       # WorldEventResource presets (raid, cache, champion hunt)
 └── src/
     ├── Core/
     │   ├── Events/          # IGameEvent, EventBus (autoload), CoreEvents
@@ -115,7 +116,7 @@ Goblins roam to the north (−Z) and drop loot.
     ├── Progression/         # XP/levels (ProgressionComponent), perks, ExperienceComponent
     ├── Quests/              # QuestResource/objectives, QuestLogComponent, quest givers
     ├── Dialogue/            # Dialogue graph resources, session runner, story flags
-    ├── World/               # WorldClock, day/night sky, weather, encounters
+    ├── World/               # WorldClock, day/night sky, weather, encounters, world events
     ├── Npc/                 # NPC schedule resources, ScheduleComponent (routines)
     ├── Magic/               # Spells, projectiles, AoE bursts, status effects
     ├── Crafting/            # Recipes, stations, CraftingComponent
@@ -571,6 +572,26 @@ persists). Three pieces:
   `faction.villagers` (the elder). Dialogue/quest hooks keyed to standing are a future add-on
   over `ReputationComponent`.
 
+### 6.6k World events (`src/World`)
+
+The richer *named-event* layer over the ambient `EncounterDirector` (§6.6h): discrete,
+announced events with an objective, time limit and rewards.
+
+- **Event content** — `WorldEventResource` (`[GlobalClass]`, `data/world_events/*.tres`): a
+  `WorldEventKind` (`0` Raid / `1` Cache / `2` Hunt), `SelectionWeight`, `CooldownSeconds`,
+  `TimeLimitSeconds`, per-`DayPhase` allow flags, spawn knobs (`EnemyTemplateId`, `MinCount`/
+  `MaxCount`, `HealthMultiplier` for a champion, or `CacheItemId`/`CacheQuantity`), and rewards
+  (`XpReward`, `GoldReward`, `RewardItemId`/`Quantity`, `FactionRewardId`/`Amount`).
+  `WorldEventDatabase` indexes them.
+- **`WorldEventDirector`** (`Node3D`, `Pausable`) — rolls one eligible event on a cadence
+  (phase + weight + per-event cooldown), runs **one at a time**, spawns via `EnemyFactory` /
+  `ItemPickupFactory` near the player, tracks the objective off `EntityDiedEvent` (by tracked
+  runtime id) / `ItemPickedUpEvent`, enforces the time limit (fail + despawn raiders on
+  expiry), and on success grants rewards through the player's `ProgressionComponent` /
+  `InventoryComponent` / `ReputationComponent`. **Not persisted** (emergent, like encounters);
+  the rewards persist via the saved components. `WorldEvent` is the runtime tracker; `Active`
+  feeds the HUD. Events: `WorldEventStartedEvent`/`WorldEventProgressEvent`/`WorldEventEndedEvent`.
+
 ### 6.7 Save (`src/Save`)
 
 - **`ISaveable`** — `SaveId`, `Godot.Collections.Dictionary Save()`,
@@ -823,6 +844,17 @@ Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
    when its day phase is active. (Spawning currently routes through `EnemyFactory`, i.e. the
    goblin archetype, until more enemy factories exist.) No code change.
 
+**A new world event**
+1. Author `data/world_events/Xxx.tres` (`script_class="WorldEventResource"`): unique `Id`,
+   `Kind` (`0`=Raid / `1`=Cache / `2`=Hunt), `SelectionWeight`, `CooldownSeconds`,
+   `TimeLimitSeconds`, the `At{Dawn,Day,Dusk,Night}` flags, spawn knobs (enemy `MinCount`/
+   `MaxCount` + `HealthMultiplier`, or `CacheItemId`/`CacheQuantity`), and rewards
+   (`XpReward`, `GoldReward`, `RewardItemId`/`RewardItemQuantity`, `FactionRewardId`/
+   `FactionRewardAmount`).
+2. Auto-indexed by `WorldEventDatabase`; the `WorldEventDirector` rolls and runs it (announce →
+   track → reward). New Raid/Cache/Hunt events need no code; a genuinely new behaviour is a new
+   `WorldEventKind` + a branch in the director's start/track switch.
+
 **A new crafting recipe**
 1. Author `data/recipes/Xxx.tres` (`script_class="CraftingRecipeResource"`): unique `Id`,
    `Station` (`0`=Hand / `1`=Forge / `2`=Workbench / `3`=Alchemy / `4`=Cooking), an
@@ -919,11 +951,10 @@ Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
 Done: **1 Core Architecture · 2 Player Controller · 3 Combat Framework ·
 4 Enemy AI · 5 Inventory System · 6 Equipment System · 7 Loot Generation ·
 8 Progression · 9 Quests · 10 Dialogue · 11 NPC Schedules · 12 Magic ·
-13 World Systems · 14 HUD & Panels Polish · 15 Crafting · 16 Factions**.
-Next: **17 Procedural Events**.
+13 World Systems · 14 HUD & Panels Polish · 15 Crafting · 16 Factions ·
+17 Procedural Events**. Next: **18 Game UI Overhaul**.
 
-Then (in order): 18 Game UI Overhaul · 19 Optimization ·
-20 Deep Debugging · 21 Content Expansion.
+Then (in order): 19 Optimization · 20 Deep Debugging · 21 Content Expansion.
 
 > **Two UI phases, deliberately:** Phase 14 (done) *polished the existing
 > debug-grade overlay* (shared `UiTheme`, vitals bars, crosshair, framed panels).

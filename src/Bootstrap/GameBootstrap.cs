@@ -58,7 +58,7 @@ public partial class GameBootstrap : Node3D
 
     public override void _Ready()
     {
-        Log.Info("=== Embervale bootstrapping (Phase 16: Faction Systems) ===");
+        Log.Info("=== Embervale bootstrapping (Phase 17: Procedural Events) ===");
 
         // The bootstrap is the flow manager for the sandbox, so it must keep
         // processing input even while the tree is paused (to unpause).
@@ -77,6 +77,7 @@ public partial class GameBootstrap : Node3D
         EncounterDatabase.Initialize();
         RecipeDatabase.Initialize();
         FactionDatabase.Initialize();
+        WorldEventDatabase.Initialize();
         BuildEnvironment();
 
         _hud = new DebugHud();
@@ -214,6 +215,11 @@ public partial class GameBootstrap : Node3D
     {
         AddChild(new EncounterDirector { Name = "Encounters" });
         Log.Info("Encounter director online — patrols by day, warbands by night, more in storms.");
+
+        var events = new WorldEventDirector { Name = "WorldEvents" };
+        AddChild(events);
+        _hud.SetWorldEvents(events);
+        Log.Info("World-event director online — raids, caches and champion hunts with rewards.");
     }
 
     private void SpawnDummy()
