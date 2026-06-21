@@ -37,7 +37,7 @@ public partial class DebugHud : CanvasLayer
     private Label _staText = null!;
     private Label _mpText = null!;
 
-    private PanelContainer _targetPanel = null!;
+    private VBoxContainer _targetSection = null!;
     private Label _targetTitle = null!;
     private ProgressBar _targetHpBar = null!;
     private Label _targetHpText = null!;
@@ -47,7 +47,6 @@ public partial class DebugHud : CanvasLayer
     {
         AddChild(new Crosshair());
         BuildVitalsPanel();
-        BuildTargetPanel();
         BuildControlsHint();
 
         EventBus.Instance?.Subscribe<DamageDealtEvent>(OnDamageDealt);
@@ -94,28 +93,19 @@ public partial class DebugHud : CanvasLayer
 
         _info = UiTheme.Body("");
         col.AddChild(_info);
-    }
 
-    private void BuildTargetPanel()
-    {
-        _targetPanel = Ignore(UiTheme.Panel());
-        _targetPanel.Visible = false;
-        _targetPanel.Position = new Vector2(16, 250);
-        _targetPanel.CustomMinimumSize = new Vector2(320, 0);
-        AddChild(_targetPanel);
+        // Target/dummy stats live in the *same* panel (a collapsible section below the
+        // player's) so the two readouts stack and can never overlap on screen.
+        _targetSection = new VBoxContainer { Visible = false };
+        _targetSection.AddThemeConstantOverride("separation", 5);
+        col.AddChild(_targetSection);
 
-        MarginContainer pad = UiTheme.Padding();
-        _targetPanel.AddChild(pad);
-
-        var col = new VBoxContainer();
-        col.AddThemeConstantOverride("separation", 5);
-        pad.AddChild(col);
-
+        _targetSection.AddChild(new HSeparator());
         _targetTitle = UiTheme.Header("Target");
-        col.AddChild(_targetTitle);
-        (_targetHpBar, _targetHpText) = AddVital(col, "HP", UiTheme.Health);
+        _targetSection.AddChild(_targetTitle);
+        (_targetHpBar, _targetHpText) = AddVital(_targetSection, "HP", UiTheme.Health);
         _targetInfo = UiTheme.Body("", UiTheme.Dim);
-        col.AddChild(_targetInfo);
+        _targetSection.AddChild(_targetInfo);
     }
 
     private void BuildControlsHint()
@@ -228,11 +218,11 @@ public partial class DebugHud : CanvasLayer
         if (_target is not Node node || !IsInstanceValid(node) ||
             !_target.TryGetComponent(out StatsComponent stats))
         {
-            _targetPanel.Visible = false;
+            _targetSection.Visible = false;
             return;
         }
 
-        _targetPanel.Visible = true;
+        _targetSection.Visible = true;
         _targetTitle.Text = $"{_target.DisplayName}  (#{_target.RuntimeId})";
         SetVital(_targetHpBar, _targetHpText, stats, StatType.Health);
 
