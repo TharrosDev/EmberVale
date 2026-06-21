@@ -68,6 +68,7 @@ developer debug overlay (FPS, raw stats, the active world event).
     ├── Core/                # Engine-level services (autoloads)
     │   ├── Events/          # EventBus + core event types
     │   ├── Services/        # ServiceLocator
+    │   ├── Pooling/         # Generic NodePool (object reuse)
     │   ├── Diagnostics/     # Logging
     │   ├── GameManager.cs   # Top-level state machine
     │   └── GameState.cs
@@ -126,6 +127,6 @@ save/load.
 | 16 | Faction Systems      | ✅ Done     |
 | 17 | Procedural Events    | ✅ Done     |
 | 18 | Game UI Overhaul     | ✅ Done     |
-| 19 | Optimization         | ⏳ Next     |
-| 20 | Deep Debugging       | ⬜ Planned  |
+| 19 | Optimization         | ✅ Done     |
+| 20 | Deep Debugging       | ⏳ Next     |
 | 21 | Content Expansion    | ⬜ Ongoing  |

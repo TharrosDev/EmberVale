@@ -57,8 +57,8 @@ through save/load.
 | 16 | Faction Systems      | ✅ Done      | Reputation, faction tags, standing-driven hostility         |
 | 17 | Procedural Events    | ✅ Done      | Named world events: raids, caches, hunts with objectives + rewards |
 | 18 | Game UI Overhaul     | ✅ Done      | Purpose-built HUD, pause menu, toasts, tooltips, interaction prompts |
-| 19 | Optimization         | ⏳ Next      | Pooling, LOD, streaming                                     |
-| 20 | Deep Debugging       | ⬜ Planned   | Dev console, profiling/diagnostics overlays, invariant checks, repro harness |
+| 19 | Optimization         | ✅ Done      | Object pool, enemy AI LOD (throttle/sleep), shadow LOD       |
+| 20 | Deep Debugging       | ⏳ Next      | Dev console, profiling/diagnostics overlays, invariant checks, repro harness |
 | 21 | Content Expansion    | ⬜ Ongoing   | Regions, enemies, quests via data                           |
 
 ## Phase 1 — delivered
@@ -484,3 +484,24 @@ slot flow) is explicitly the separate content/production roadmap, not this syste
 - **Debug overlay demoted** — the old `DebugHud` is now a developer panel hidden by default
   and toggled with **`F3`** (FPS, raw stats, target internals, the active world event); it no
   longer owns the crosshair. Everything still flows through `UiTheme`.
+
+## Phase 19 — delivered (Optimization)
+
+Performance infrastructure for the systems built so far — the three pillars that fit a
+single flat sandbox (true region streaming belongs to the later content roadmap).
+
+- **Object pooling** — `NodePool<T>` (`src/Core/Pooling`) is a generic reuse pool: a returned
+  node is detached from the tree (so it stops processing) and retained for reuse, capped so a
+  burst doesn't pin memory. **Spell projectiles** now pool through it: `SpellProjectile` builds
+  its visual/collision children once, each shot reconfigures via `Launch`, and on resolution it
+  invokes a release callback (the pool reclaims it) instead of freeing — so rapid casting no
+  longer churns the scene tree. The pool is reusable by future high-churn nodes (pickups, FX).
+- **Enemy AI level-of-detail** — `EnemyAIComponent` now scales its cost with distance to the
+  player: perception (the FOV + line-of-sight **raycast**) is throttled to `PerceptionInterval`
+  and cached between, so a crowd doesn't raycast every physics frame; and a live enemy beyond
+  `ActiveDistance` **sleeps**, ticking only every `SleepInterval` instead of 60 Hz. The dead
+  state always runs so corpses still despawn on time.
+- **Shadow LOD** — a far enemy stops casting a shadow (`MeshInstance3D.CastShadow` toggled off
+  beyond `ActiveDistance`), trimming the shadow pass for distant/offscreen actors.
+- All knobs are `[Export]` on the AI component, tunable per archetype. Reviewed against the
+  Godot 4.7 C# API.

@@ -38,10 +38,21 @@ public partial class EnemyAIComponent : EntityComponent
     [Export] public float InvestigateDuration { get; set; } = 6f;
     [Export] public float DespawnDelay { get; set; } = 4f;
 
+    [ExportGroup("Level of Detail")]
+    /// <summary>Beyond this distance from the player the AI ticks rarely (and casts no shadow).</summary>
+    [Export] public float ActiveDistance { get; set; } = 45f;
+
+    /// <summary>Seconds between ticks while sleeping (far from the player).</summary>
+    [Export] public float SleepInterval { get; set; } = 0.5f;
+
+    /// <summary>Seconds between line-of-sight raycasts; perception is cached in between.</summary>
+    [Export] public float PerceptionInterval { get; set; } = 0.15f;
+
     private CharacterBody3D _body = null!;
     private StatsComponent? _stats;
     private MeleeWeaponComponent? _weapon;
     private PlayerCharacter? _player;
+    private MeshInstance3D? _mesh;
     private string _factionId = string.Empty;
     private bool _provoked;
 
@@ -52,6 +63,13 @@ public partial class EnemyAIComponent : EntityComponent
     private Vector3 _home;
     private Vector3 _lastKnownPos;
     private Vector3 _patrolTarget;
+
+    // LOD bookkeeping.
+    private double _sleepTimer;
+    private double _perceptionTimer;
+    private bool _cachedCanSee;
+    private Vector3 _cachedSeenPos;
+    private bool _shadowOn = true;
 
     public EnemyState State => _state;
 
@@ -66,6 +84,7 @@ public partial class EnemyAIComponent : EntityComponent
         _body = body;
         _stats = Entity.GetComponent<StatsComponent>();
         _weapon = Entity.GetComponent<MeleeWeaponComponent>();
+        _mesh = _body.GetNodeOrNull<MeshInstance3D>("Mesh");
         _factionId = Entity.GetComponent<FactionComponent>()?.FactionId ?? string.Empty;
         _home = _body.GlobalPosition;
         _lastKnownPos = _home;
@@ -86,6 +105,23 @@ public partial class EnemyAIComponent : EntityComponent
         if (_body == null)
         {
             return;
+        }
+
+        _perceptionTimer -= delta;
+
+        // Level of detail: a live enemy far from the player ticks rarely and stops casting a
+        // shadow. The dead state always runs so corpses still despawn on schedule.
+        bool far = IsFarFromPlayer();
+        SetShadow(!far);
+        if (far && _state != EnemyState.Dead)
+        {
+            _sleepTimer -= delta;
+            if (_sleepTimer > 0d)
+            {
+                return;
+            }
+
+            _sleepTimer = SleepInterval;
         }
 
         _stateTimer += delta;
@@ -273,7 +309,22 @@ public partial class EnemyAIComponent : EntityComponent
         return false;
     }
 
+    /// <summary>Perception, throttled: the (relatively costly) sight check — FOV + line-of-sight
+    /// raycast — runs at most once per <see cref="PerceptionInterval"/> and is cached between,
+    /// so a crowd of enemies doesn't raycast every physics frame.</summary>
     private bool CanSeePlayer(PlayerCharacter player, out Vector3 seenPosition)
+    {
+        if (_perceptionTimer <= 0d)
+        {
+            _cachedCanSee = ComputeCanSeePlayer(player, out _cachedSeenPos);
+            _perceptionTimer = PerceptionInterval;
+        }
+
+        seenPosition = _cachedSeenPos;
+        return _cachedCanSee;
+    }
+
+    private bool ComputeCanSeePlayer(PlayerCharacter player, out Vector3 seenPosition)
     {
         Vector3 selfPos = _body.GlobalPosition;
         Vector3 playerPos = player.GlobalPosition;
@@ -440,6 +491,31 @@ public partial class EnemyAIComponent : EntityComponent
     private bool LowHealth()
     {
         return _stats != null && _stats.GetNormalized(StatType.Health) < RetreatHealthFraction;
+    }
+
+    /// <summary>True when no player exists or the player is beyond <see cref="ActiveDistance"/>.</summary>
+    private bool IsFarFromPlayer()
+    {
+        PlayerCharacter? player = GetPlayer();
+        if (player == null)
+        {
+            return true;
+        }
+
+        return _body.GlobalPosition.DistanceSquaredTo(player.GlobalPosition) > ActiveDistance * ActiveDistance;
+    }
+
+    private void SetShadow(bool on)
+    {
+        if (_mesh == null || on == _shadowOn)
+        {
+            return;
+        }
+
+        _shadowOn = on;
+        _mesh.CastShadow = on
+            ? GeometryInstance3D.ShadowCastingSetting.On
+            : GeometryInstance3D.ShadowCastingSetting.Off;
     }
 
     private PlayerCharacter? GetLivePlayer()
