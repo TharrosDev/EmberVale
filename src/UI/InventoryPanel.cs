@@ -232,7 +232,8 @@ public partial class InventoryPanel : CanvasLayer
             }
 
             EquipmentSlot captured = slot;
-            AddRow(text, "Unequip", () => _equipment.Unequip(captured), ItemRarities.Color(item.Rarity));
+            AddRow(text, "Unequip", () => _equipment.Unequip(captured), ItemRarities.Color(item.Rarity),
+                item.Template.Description);
             AddAffixLines(item);
         }
     }
@@ -260,11 +261,11 @@ public partial class InventoryPanel : CanvasLayer
 
             if (instance.IsEquippable && _equipment != null)
             {
-                AddRow(text, "Equip", () => _equipment.Equip(instance), color);
+                AddRow(text, "Equip", () => _equipment.Equip(instance), color, instance.Template.Description);
             }
             else
             {
-                AddLine($"• {text}", color);
+                AddLine($"• {text}", color, instance.Template.Description);
             }
 
             AddAffixLines(instance);
@@ -296,12 +297,18 @@ public partial class InventoryPanel : CanvasLayer
         _list.AddChild(header);
     }
 
-    private void AddLine(string text, Color? color = null)
+    private void AddLine(string text, Color? color = null, string? tooltip = null)
     {
-        _list.AddChild(UiTheme.Body(text, color));
+        Label label = UiTheme.Body(text, color);
+        if (!string.IsNullOrEmpty(tooltip))
+        {
+            label.TooltipText = tooltip;
+        }
+
+        _list.AddChild(label);
     }
 
-    private void AddRow(string text, string action, System.Action onPressed, Color? color = null)
+    private void AddRow(string text, string action, System.Action onPressed, Color? color = null, string? tooltip = null)
     {
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", 8);
@@ -309,6 +316,11 @@ public partial class InventoryPanel : CanvasLayer
         Label label = UiTheme.Body(text, color);
         label.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         label.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        if (!string.IsNullOrEmpty(tooltip))
+        {
+            label.TooltipText = tooltip;
+        }
+
         row.AddChild(label);
 
         Button button = UiTheme.Action(action);

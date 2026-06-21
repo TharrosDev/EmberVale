@@ -38,6 +38,16 @@ public partial class PlayerController : EntityComponent
     private SpellcastingComponent? _spellcasting;
     private float _pitch;
 
+    /// <summary>The entity the player is currently looking at within interact range, if any.
+    /// Updated each frame; read by the game HUD for a nameplate / interaction prompt.</summary>
+    public IEntity? FocusedEntity { get; private set; }
+
+    /// <summary>The interactable on the focused entity (null if it can't be interacted with).</summary>
+    public InteractableComponent? FocusedInteractable { get; private set; }
+
+    /// <summary>The prompt to show for the focused interactable, or null.</summary>
+    public string? FocusPrompt => FocusedInteractable?.Prompt;
+
     protected override void OnInitialize()
     {
         IEntity owner = Entity!;
@@ -67,9 +77,12 @@ public partial class PlayerController : EntityComponent
         // so UI clicks don't also drive the character.
         if (UiState.MenuOpen)
         {
+            ClearFocus();
             _locomotion?.Move(delta, Vector3.Zero, sprint: false, jump: false);
             return;
         }
+
+        UpdateFocus();
 
         Vector2 input = Godot.Input.GetVector(
             GameInput.MoveLeft, GameInput.MoveRight, GameInput.MoveForward, GameInput.MoveBack);
@@ -103,14 +116,17 @@ public partial class PlayerController : EntityComponent
 
         if (Godot.Input.IsActionJustPressed(GameInput.Interact))
         {
-            TryInteract();
+            FocusedInteractable?.Interact(Entity!);
         }
     }
 
-    private void TryInteract()
+    /// <summary>Raycasts from the camera and records what the player is looking at, so the HUD
+    /// can show a nameplate / interaction prompt and <c>E</c> acts on the same target.</summary>
+    private void UpdateFocus()
     {
         if (CameraPivot == null || Entity?.Body is not CharacterBody3D body)
         {
+            ClearFocus();
             return;
         }
 
@@ -124,11 +140,18 @@ public partial class PlayerController : EntityComponent
         Godot.Collections.Dictionary hit = space.IntersectRay(query);
         if (hit.Count == 0 || hit["collider"].AsGodotObject() is not Node collider)
         {
+            ClearFocus();
             return;
         }
 
-        IEntity? target = EntityNode.FindOwner(collider);
-        target?.GetComponent<InteractableComponent>()?.Interact(Entity!);
+        FocusedEntity = EntityNode.FindOwner(collider);
+        FocusedInteractable = FocusedEntity?.GetComponent<InteractableComponent>();
+    }
+
+    private void ClearFocus()
+    {
+        FocusedEntity = null;
+        FocusedInteractable = null;
     }
 
     public override void _Input(InputEvent @event)

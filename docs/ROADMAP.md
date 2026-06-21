@@ -56,8 +56,8 @@ through save/load.
 | 15 | Crafting             | ✅ Done      | Recipes, stations, materials                                |
 | 16 | Faction Systems      | ✅ Done      | Reputation, faction tags, standing-driven hostility         |
 | 17 | Procedural Events    | ✅ Done      | Named world events: raids, caches, hunts with objectives + rewards |
-| 18 | Game UI Overhaul     | ⏳ Next      | Real game UI: HUD, menus, tooltips, scenes over the debug overlay |
-| 19 | Optimization         | ⬜ Ongoing   | Pooling, LOD, streaming                                     |
+| 18 | Game UI Overhaul     | ✅ Done      | Purpose-built HUD, pause menu, toasts, tooltips, interaction prompts |
+| 19 | Optimization         | ⏳ Next      | Pooling, LOD, streaming                                     |
 | 20 | Deep Debugging       | ⬜ Planned   | Dev console, profiling/diagnostics overlays, invariant checks, repro harness |
 | 21 | Content Expansion    | ⬜ Ongoing   | Regions, enemies, quests via data                           |
 
@@ -455,3 +455,32 @@ announced happenings with an objective, a time limit and rewards.
 - **Sandbox** — three events ship: **Goblin Raid** (defeat the warband → XP/gold + villager
   standing), **Lost Cache** (collect the cache → XP/gold + the loot), and **Goblin Champion**
   (slay a 3× health champion → XP/gold + a steel sword + villager standing).
+
+## Phase 18 — delivered (Game UI Overhaul)
+
+The purpose-built in-game UI that replaces the debug read-out as the default overlay — the
+second of the two UI phases (Phase 14 polished the debug-grade panels; this builds the real
+game UI on top of the same `UiTheme`). Note: the *meta/shell* (title screen, settings, save-
+slot flow) is explicitly the separate content/production roadmap, not this systems phase.
+
+- **`GameHud`** — the new always-on HUD: vitals bars (bottom-left), the prepared spell +
+  cooldown and an active-status line, a quest tracker (top-right), time/weather (top-left), a
+  world-event banner and an aimed-target **nameplate** (top-centre), an **interaction prompt**
+  (bottom-centre), and the crosshair. Anchored purpose-built widgets updated each frame from
+  the player and the world directors — not a text dump.
+- **Interaction prompts / soft target** — `PlayerController` now raycasts every frame and
+  exposes `FocusedEntity` / `FocusPrompt`, so the HUD shows "[E] Use Forge" for the thing
+  you're looking at and a name + health nameplate for a damageable in front of you; `E` acts
+  on that same focus.
+- **`PauseMenu`** — a real modal menu on `Esc` (Resume / Quick Save / Quick Load / Quit) with
+  a dimmed backdrop, running `ProcessMode.Always` so it works while the tree is paused and
+  driving the `GameManager` pause state (which frees/recaptures the mouse). Replaces the bare
+  pause toggle.
+- **`Notifications` + `Toast`** — a top-centre toast feed that announces discrete moments
+  (level-ups, quest start/completion, world events beginning/ending), event-driven so any
+  system surfaces to the player without coupling. Toasts fade and free themselves.
+- **Tooltips** — item rows on the character screen carry hover tooltips (descriptions) via
+  Godot's built-in `TooltipText`.
+- **Debug overlay demoted** — the old `DebugHud` is now a developer panel hidden by default
+  and toggled with **`F3`** (FPS, raw stats, target internals, the active world event); it no
+  longer owns the crosshair. Everything still flows through `UiTheme`.

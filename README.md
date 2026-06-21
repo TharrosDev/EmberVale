@@ -47,10 +47,13 @@ theoretical ones.
 | `H`          | Heal the training dummy             |
 | `R`          | Respawn the dummy immediately       |
 | `F5` / `F9`  | Quick-save / quick-load             |
-| `Esc`        | Toggle pause (frees the mouse)      |
+| `F3`         | Toggle the developer debug overlay  |
+| `Esc`        | Open the pause menu                 |
 
-The on-screen overlay shows live game state, FPS, and the target's resources —
-proof that the core systems are wired together.
+The game HUD shows vitals, the prepared spell, active effects, a quest tracker,
+time/weather, world-event banners, an aimed-target nameplate, and interaction
+prompts. `Esc` opens a pause menu (Resume / Save / Load / Quit); `F3` reveals the
+developer debug overlay (FPS, raw stats, the active world event).
 
 ## Project layout
 
@@ -84,7 +87,7 @@ proof that the core systems are wired together.
     ├── Player/              # First-person controller + factory
     ├── Enemies/             # Enemy AI state machine + spawner
     ├── Save/                # ISaveable + SaveManager
-    ├── UI/                  # DebugHud (and future gameplay UI)
+    ├── UI/                  # Game HUD, pause menu, toasts, panels, shared theme
     └── Bootstrap/           # GameBootstrap entry point
 ```
 
@@ -122,7 +125,7 @@ save/load.
 | 15 | Crafting             | ✅ Done     |
 | 16 | Faction Systems      | ✅ Done     |
 | 17 | Procedural Events    | ✅ Done     |
-| 18 | Game UI Overhaul     | ⏳ Next     |
-| 19 | Optimization         | ⬜ Ongoing  |
+| 18 | Game UI Overhaul     | ✅ Done     |
+| 19 | Optimization         | ⏳ Next     |
 | 20 | Deep Debugging       | ⬜ Planned  |
 | 21 | Content Expansion    | ⬜ Ongoing  |

@@ -94,7 +94,8 @@ public static class UiTheme
 
     // --- Style boxes --------------------------------------------------------
 
-    private static StyleBoxFlat PanelStyle()
+    /// <summary>The framed-panel stylebox (also used by transient widgets like toasts).</summary>
+    public static StyleBoxFlat PanelStyle()
     {
         var box = new StyleBoxFlat { BgColor = PanelBg, BorderColor = PanelBorder };
         box.SetBorderWidthAll(1);

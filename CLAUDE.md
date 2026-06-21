@@ -619,28 +619,37 @@ announced events with an objective, time limit and rewards.
 ### 6.9 Bootstrap & UI
 
 - **`GameBootstrap : Node3D`** (`scenes/Main.tscn` root) — assembles the sandbox:
-  registers input, initializes the `ItemDatabase`, builds the world (directional
-  light, sky, floor mesh + `WorldBoundaryShape3D` collider), the `DebugHud` and
-  `InventoryPanel`, the training dummy (team 2), the player, the goblin camp, and
-  scattered item pickups. Runs with `ProcessMode.Always` so it can unpause and
-  read debug keys while paused. Routes player/dummy/enemy deaths (enemies drop
-  loot).
-- **`InventoryPanel : CanvasLayer`** — toggleable inventory read-out (key `I`).
-- **`DebugHud : CanvasLayer`** — on-screen overlay: framed vitals panel with live
-  coloured HP/Stamina/Mana `ProgressBar`s + level/spell/effects/quest text, a target
-  panel (own HP bar) that toggles with the target, a bottom controls hint, and a
-  screen-centre `Crosshair`. Built in code; panels ignore the mouse.
-- **`UiTheme`** (`src/UI/UiTheme.cs`) — the shared look for all overlay UI: palette +
-  builders for framed panels, padded containers, accent headers, body lines, styled
-  buttons and coloured resource bars. **Build new UI through it** so panels stay
-  consistent (and the Phase 18 game-UI overhaul stays a one-file change). `Crosshair`
-  (`src/UI/Crosshair.cs`) is the code-drawn aim marker. The character screen, quest
-  journal (`J`) and dialogue window all route through `UiTheme`; the character screen
-  scrolls when long.
+  registers input, initializes the databases, builds the world (sun, sky, floor), the
+  UI (`GameHud`, `DebugHud`, `Notifications`, `PauseMenu`, the modal panels), the
+  directors (clock, weather, sky, encounters, world events), the training dummy, the
+  player, the goblin camp, the crafting yard and scattered pickups. Runs with
+  `ProcessMode.Always` so debug keys work while paused (`F3` toggles `DebugHud`; `Esc` is
+  the `PauseMenu`). Routes player/dummy/enemy deaths.
+- **`GameHud : CanvasLayer`** — the **default in-game HUD** (Phase 18): anchored widgets —
+  vitals bars (bottom-left), prepared spell + cooldown + status line, quest tracker
+  (top-right), time/weather (top-left), a world-event banner + aimed-target nameplate
+  (top-centre), an interaction prompt (bottom-centre), and the `Crosshair`. Persistent nodes
+  updated each frame from the player (`SetPlayer`) + the world directors (`Set*`). The
+  nameplate/prompt read `PlayerController.FocusedEntity`/`FocusPrompt` (a per-frame raycast).
+- **`PauseMenu : CanvasLayer`** — modal pause menu on `Esc` (Resume / Quick Save / Quick Load /
+  Quit), `ProcessMode.Always` so it works while paused; drives `GameManager` pause + dims the
+  scene. Owns `Esc` (the bootstrap no longer toggles pause directly).
+- **`Notifications` + `Toast`** — top-centre toast feed: subscribes to discrete events
+  (level-up, quest start/complete, world-event start/end) and spawns self-fading `Toast`s.
+- **`InventoryPanel`/`QuestLogPanel`/`DialoguePanel`/`CraftingPanel`** — the modal/overlay
+  panels (character screen `I`, journal `J`, dialogue, crafting). Item rows carry hover
+  tooltips (`TooltipText`).
+- **`DebugHud : CanvasLayer`** — now a **developer overlay hidden by default, toggled with
+  `F3`** (FPS, raw stats, target internals, active world event). No longer the primary HUD.
+- **`UiTheme`** (`src/UI/UiTheme.cs`) — the shared look for all UI: palette + builders for
+  framed panels (`PanelStyle` is public for transient widgets like toasts), padded containers,
+  accent headers, body lines, styled buttons and coloured resource bars. **Build new UI through
+  it.** `Crosshair` (`src/UI/Crosshair.cs`) is the code-drawn aim marker (owned by `GameHud`).
 
-> **UI altitude:** today's panels are *debug-grade* (code-built, functional, now
-> themed). Phase 14 polished them; the full purpose-built game UI is **Phase 18**.
-> Keep new gameplay UI flowing through `UiTheme` rather than hand-styling controls.
+> **UI altitude:** the game HUD (`GameHud`), pause menu and toasts are the real in-game UI;
+> `DebugHud` is the F3 dev overlay. Build new gameplay UI through `UiTheme`, not hand-styled
+> controls. The meta/shell (title screen, settings, save-slot flow) is the separate
+> content/production roadmap.
 
 ---
 
@@ -952,15 +961,16 @@ Done: **1 Core Architecture · 2 Player Controller · 3 Combat Framework ·
 4 Enemy AI · 5 Inventory System · 6 Equipment System · 7 Loot Generation ·
 8 Progression · 9 Quests · 10 Dialogue · 11 NPC Schedules · 12 Magic ·
 13 World Systems · 14 HUD & Panels Polish · 15 Crafting · 16 Factions ·
-17 Procedural Events**. Next: **18 Game UI Overhaul**.
+17 Procedural Events · 18 Game UI Overhaul**. Next: **19 Optimization**.
 
-Then (in order): 19 Optimization · 20 Deep Debugging · 21 Content Expansion.
+Then (in order): 20 Deep Debugging · 21 Content Expansion.
 
-> **Two UI phases, deliberately:** Phase 14 (done) *polished the existing
-> debug-grade overlay* (shared `UiTheme`, vitals bars, crosshair, framed panels).
-> Phase 18 is the *full game-UI overhaul* — purpose-built HUD/menus/tooltips/scenes
-> that replace the debug overlay — slotted after the gameplay systems and before
-> optimization.
+> **Two UI phases, both done:** Phase 14 *polished the debug-grade overlay* (shared
+> `UiTheme`, vitals bars, crosshair, framed panels). Phase 18 built the *real game UI*
+> on top of it — `GameHud` (anchored widgets, nameplate, interaction prompt), a
+> `PauseMenu`, a `Notifications`/`Toast` feed, item tooltips — and demoted the old
+> `DebugHud` to an F3 developer overlay. The *meta/shell* (title screen, settings,
+> save-slot flow) remains the separate content/production roadmap.
 
 See `docs/ROADMAP.md` for per-phase delivery notes and the next-steps checklist.
 
