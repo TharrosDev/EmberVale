@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using Embervale.Core.Diagnostics;
 using Godot;
@@ -88,18 +89,32 @@ public sealed partial class EventBus : Node
             return;
         }
 
-        // Snapshot so handlers may subscribe/unsubscribe during dispatch safely.
-        Delegate[] snapshot = list.ToArray();
-        foreach (Delegate del in snapshot)
+        // Snapshot so handlers may subscribe/unsubscribe during dispatch safely. This is the
+        // hottest path in the game (resource/combat/status events fire constantly), so the
+        // snapshot buffer is rented from a shared pool to avoid per-publish GC churn. The copy
+        // (not the live list) is iterated, so reentrant sub/unsubscribe stays safe.
+        int count = list.Count;
+        Delegate[] snapshot = ArrayPool<Delegate>.Shared.Rent(count);
+        try
         {
-            try
+            list.CopyTo(snapshot, 0);
+            for (int i = 0; i < count; i++)
             {
-                ((Action<T>)del).Invoke(gameEvent);
+                try
+                {
+                    ((Action<T>)snapshot[i]).Invoke(gameEvent);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"Handler for {typeof(T).Name} threw: {ex}");
+                }
             }
-            catch (Exception ex)
-            {
-                Log.Error($"Handler for {typeof(T).Name} threw: {ex}");
-            }
+        }
+        finally
+        {
+            // Clear only the used slots before returning so the pool doesn't pin freed handlers.
+            Array.Clear(snapshot, 0, count);
+            ArrayPool<Delegate>.Shared.Return(snapshot);
         }
     }
 

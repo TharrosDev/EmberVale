@@ -4,6 +4,7 @@ using Embervale.Core.Services;
 using Embervale.Dialogue;
 using Embervale.Enemies;
 using Embervale.Entities;
+using Embervale.Player;
 using Embervale.World;
 using Godot;
 
@@ -38,12 +39,21 @@ public partial class ScheduleComponent : EntityComponent
 
     [Export] public float PanicSeconds { get; set; } = 8f;
 
+    [ExportGroup("Level of Detail")]
+    /// <summary>Beyond this distance from the player the NPC integrates movement on a coarse
+    /// cadence instead of every frame (event reactions stay instant). Mirrors the enemy AI LOD.</summary>
+    [Export] public float ActiveDistance { get; set; } = 40f;
+
+    /// <summary>Seconds between movement steps while far from the player.</summary>
+    [Export] public float SleepInterval { get; set; } = 0.5f;
+
     private ScheduleResource? _schedule;
     private Node3D _body = null!;
     private Vector3 _target;
     private string _activity = string.Empty;
     private double _panicTimer;
     private bool _talking;
+    private double _sleepTimer;
 
     private bool Panicking => _panicTimer > 0d;
 
@@ -76,6 +86,21 @@ public partial class ScheduleComponent : EntityComponent
         if (GameManager.Instance is { IsPlaying: false })
         {
             return;
+        }
+
+        // LOD: far from the player, integrate on a coarse cadence with the accumulated time, so a
+        // crowd of distant villagers doesn't tick movement every frame. Reactions (panic/dialogue)
+        // are event-driven and stay instant; only this per-frame movement step is throttled.
+        if (IsFarFromPlayer())
+        {
+            _sleepTimer += delta;
+            if (_sleepTimer < SleepInterval)
+            {
+                return;
+            }
+
+            delta = _sleepTimer;
+            _sleepTimer = 0d;
         }
 
         if (_panicTimer > 0d)
@@ -226,5 +251,19 @@ public partial class ScheduleComponent : EntityComponent
         return ServiceLocator.Instance != null && ServiceLocator.Instance.TryGet(out WorldClock clock)
             ? clock.Hour
             : 8;
+    }
+
+    /// <summary>True when the player is registered and beyond <see cref="ActiveDistance"/>. With no
+    /// player resolvable, returns false so the NPC ticks every frame exactly as before.</summary>
+    private bool IsFarFromPlayer()
+    {
+        if (ServiceLocator.Instance == null ||
+            !ServiceLocator.Instance.TryGet(out PlayerCharacter player) ||
+            !IsInstanceValid(player))
+        {
+            return false;
+        }
+
+        return _body.GlobalPosition.DistanceSquaredTo(player.GlobalPosition) > ActiveDistance * ActiveDistance;
     }
 }

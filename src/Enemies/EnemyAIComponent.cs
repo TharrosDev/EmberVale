@@ -71,6 +71,11 @@ public partial class EnemyAIComponent : EntityComponent
     private Vector3 _cachedSeenPos;
     private bool _shadowOn = true;
 
+    // Reused line-of-sight query: perception fires every PerceptionInterval per enemy, so the
+    // ray params + single-element exclude list are built once and only From/To change per cast.
+    private PhysicsRayQueryParameters3D? _losQuery;
+    private Godot.Collections.Array<Rid>? _losExclude;
+
     public EnemyState State => _state;
 
     protected override void OnInitialize()
@@ -360,10 +365,19 @@ public partial class EnemyAIComponent : EntityComponent
     private bool HasLineOfSight(PlayerCharacter player, Vector3 from, Vector3 to)
     {
         PhysicsDirectSpaceState3D space = _body.GetWorld3D().DirectSpaceState;
-        var query = PhysicsRayQueryParameters3D.Create(from, to);
-        query.Exclude = new Godot.Collections.Array<Rid> { _body.GetRid() };
 
-        Godot.Collections.Dictionary hit = space.IntersectRay(query);
+        // Build the query + exclude list once; the excluded RID (this body) never changes.
+        if (_losQuery == null)
+        {
+            _losExclude = new Godot.Collections.Array<Rid> { _body.GetRid() };
+            _losQuery = PhysicsRayQueryParameters3D.Create(from, to);
+            _losQuery.Exclude = _losExclude;
+        }
+
+        _losQuery.From = from;
+        _losQuery.To = to;
+
+        Godot.Collections.Dictionary hit = space.IntersectRay(_losQuery);
         if (hit.Count == 0)
         {
             return true; // nothing in the way
