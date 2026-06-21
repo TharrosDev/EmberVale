@@ -42,6 +42,7 @@ public partial class GameBootstrap : Node3D
     private const float RespawnDelaySeconds = 3f;
     private static readonly Vector3 PlayerSpawn = new(0f, 1.2f, 5f);
 
+    private GameHud _gameHud = null!;
     private DebugHud _hud = null!;
     private InventoryPanel _inventoryPanel = null!;
     private QuestLogPanel _questLogPanel = null!;
@@ -58,7 +59,7 @@ public partial class GameBootstrap : Node3D
 
     public override void _Ready()
     {
-        Log.Info("=== Embervale bootstrapping (Phase 17: Procedural Events) ===");
+        Log.Info("=== Embervale bootstrapping (Phase 18: Game UI Overhaul) ===");
 
         // The bootstrap is the flow manager for the sandbox, so it must keep
         // processing input even while the tree is paused (to unpause).
@@ -80,8 +81,14 @@ public partial class GameBootstrap : Node3D
         WorldEventDatabase.Initialize();
         BuildEnvironment();
 
+        // The purpose-built game HUD is the default overlay; the DebugHud is now a
+        // developer panel toggled with F3. Toasts and the pause menu round out the game UI.
+        _gameHud = new GameHud();
+        AddChild(_gameHud);
         _hud = new DebugHud();
         AddChild(_hud);
+        AddChild(new Notifications());
+        AddChild(new PauseMenu());
         _inventoryPanel = new InventoryPanel();
         AddChild(_inventoryPanel);
         _questLogPanel = new QuestLogPanel();
@@ -96,12 +103,14 @@ public partial class GameBootstrap : Node3D
         _clock = new WorldClock { Name = "WorldClock" };
         AddChild(_clock);
         _hud.SetClock(_clock);
+        _gameHud.SetClock(_clock);
 
         // Weather before the sky so the SkyController can read the active state on its
         // first frame; the sky drives the (already-built) sun + environment.
         _weather = new WeatherDirector { Name = "Weather" };
         AddChild(_weather);
         _hud.SetWeather(_weather);
+        _gameHud.SetWeather(_weather);
 
         _sky = new SkyController { Name = "Sky", Sun = _sun, Environment = _environment };
         AddChild(_sky);
@@ -164,9 +173,10 @@ public partial class GameBootstrap : Node3D
             case Key.F9:
                 SaveManager.Instance?.LoadGame("quick");
                 break;
-            case Key.Escape:
-                GameManager.Instance?.TogglePause();
+            case Key.F3:
+                _hud.Toggle();
                 break;
+            // Esc is owned by the PauseMenu (it opens the pause menu and pauses the game).
         }
     }
 
@@ -219,6 +229,7 @@ public partial class GameBootstrap : Node3D
         var events = new WorldEventDirector { Name = "WorldEvents" };
         AddChild(events);
         _hud.SetWorldEvents(events);
+        _gameHud.SetWorldEvents(events);
         Log.Info("World-event director online — raids, caches and champion hunts with rewards.");
     }
 
@@ -290,6 +301,7 @@ public partial class GameBootstrap : Node3D
         AddChild(_player);
         ServiceLocator.Instance?.Register(_player);
         _hud.SetPlayer(_player);
+        _gameHud.SetPlayer(_player);
         _inventoryPanel.SetInventory(_player.GetComponent<InventoryComponent>());
         _inventoryPanel.SetEquipment(_player.GetComponent<EquipmentComponent>());
         _inventoryPanel.SetProgression(_player.GetComponent<ProgressionComponent>());

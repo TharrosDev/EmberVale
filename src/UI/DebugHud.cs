@@ -13,12 +13,10 @@ using Godot;
 namespace Embervale.UI;
 
 /// <summary>
-/// On-screen diagnostics overlay. It keeps the otherwise-invisible core systems (game
-/// state, stats, combat, time/weather) observable while running — a stand-in until the
-/// full game UI arrives. Built entirely in code through <see cref="UiTheme"/> so it
-/// stays consistent with the other panels: a framed vitals panel (with live coloured
-/// resource bars) top-left, a target panel beneath it, a controls hint bottom-left, and
-/// a screen-centre crosshair.
+/// Developer diagnostics overlay, hidden by default and toggled with <c>F3</c>. Since the
+/// Phase 18 game-UI overhaul, the on-screen game HUD is <see cref="GameHud"/>; this panel is
+/// the deeper debug read-out (FPS, raw stats, target internals, the active world event) kept
+/// for development. Built through <see cref="UiTheme"/> like the rest of the UI.
 /// </summary>
 public partial class DebugHud : CanvasLayer
 {
@@ -28,6 +26,10 @@ public partial class DebugHud : CanvasLayer
     private WeatherDirector? _weather;
     private WorldEventDirector? _worldEvents;
     private string _lastHit = "—";
+
+    private PanelContainer _vitalsPanel = null!;
+    private PanelContainer _controlsPanel = null!;
+    private bool _shown;
 
     private Label _diag = null!;
     private Label _info = null!;
@@ -46,11 +48,21 @@ public partial class DebugHud : CanvasLayer
 
     public override void _Ready()
     {
-        AddChild(new Crosshair());
         BuildVitalsPanel();
         BuildControlsHint();
+        SetShown(false); // hidden until F3
 
         EventBus.Instance?.Subscribe<DamageDealtEvent>(OnDamageDealt);
+    }
+
+    /// <summary>Shows/hides the whole debug overlay (bound to F3 by the bootstrap).</summary>
+    public void Toggle() => SetShown(!_shown);
+
+    private void SetShown(bool shown)
+    {
+        _shown = shown;
+        _vitalsPanel.Visible = shown;
+        _controlsPanel.Visible = shown;
     }
 
     public override void _ExitTree()
@@ -72,19 +84,19 @@ public partial class DebugHud : CanvasLayer
 
     private void BuildVitalsPanel()
     {
-        PanelContainer panel = Ignore(UiTheme.Panel());
-        panel.Position = new Vector2(16, 16);
-        panel.CustomMinimumSize = new Vector2(320, 0);
-        AddChild(panel);
+        _vitalsPanel = Ignore(UiTheme.Panel());
+        _vitalsPanel.Position = new Vector2(16, 16);
+        _vitalsPanel.CustomMinimumSize = new Vector2(320, 0);
+        AddChild(_vitalsPanel);
 
         MarginContainer pad = UiTheme.Padding();
-        panel.AddChild(pad);
+        _vitalsPanel.AddChild(pad);
 
         var col = new VBoxContainer();
         col.AddThemeConstantOverride("separation", 5);
         pad.AddChild(col);
 
-        col.AddChild(UiTheme.Header("EMBERVALE — Sandbox"));
+        col.AddChild(UiTheme.Header("DEBUG  (F3)"));
         _diag = UiTheme.Body("", UiTheme.Dim);
         col.AddChild(_diag);
 
@@ -113,14 +125,14 @@ public partial class DebugHud : CanvasLayer
 
     private void BuildControlsHint()
     {
-        PanelContainer panel = Ignore(UiTheme.Panel());
-        panel.SetAnchorsPreset(Control.LayoutPreset.BottomLeft);
-        panel.Position = new Vector2(16, -96);
-        panel.GrowVertical = Control.GrowDirection.Begin;
-        AddChild(panel);
+        _controlsPanel = Ignore(UiTheme.Panel());
+        _controlsPanel.SetAnchorsPreset(Control.LayoutPreset.BottomLeft);
+        _controlsPanel.Position = new Vector2(16, -96);
+        _controlsPanel.GrowVertical = Control.GrowDirection.Begin;
+        AddChild(_controlsPanel);
 
         MarginContainer pad = UiTheme.Padding(8);
-        panel.AddChild(pad);
+        _controlsPanel.AddChild(pad);
 
         Label hint = UiTheme.Body(
             "WASD move · Mouse look · LMB attack · RMB block · Q cast · F cycle spell\n" +
@@ -156,6 +168,11 @@ public partial class DebugHud : CanvasLayer
 
     public override void _Process(double delta)
     {
+        if (!_shown)
+        {
+            return;
+        }
+
         UpdateDiagnostics();
         UpdatePlayer();
         UpdateTarget();
