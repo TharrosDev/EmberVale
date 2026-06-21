@@ -1,9 +1,10 @@
 # Embervale — Production Roadmap (Alpha → Beta → Launch)
 
-> **What this is.** The systems roadmap ([`ROADMAP.md`](ROADMAP.md)) built the
-> *engine-on-top-of-Godot* — 21 phases of reusable, data-driven systems. That work
-> is **done**, and it explicitly deferred "the actual game" (world, story, art,
-> audio, balance, shell, ship polish) to a *separate content/production roadmap*.
+> **What this is.** A prior **systems roadmap** built the *engine-on-top-of-Godot*
+> — 21 phases of reusable, data-driven systems (Phases 1–21; see §0.5 for the
+> list). That work is **done**, and it explicitly deferred "the actual game"
+> (world, story, art, audio, balance, shell, ship polish) to a *separate
+> content/production roadmap*.
 > **This is that roadmap.** It takes Embervale from a near-empty sandbox that
 > *can express* the game to a **launch-ready, shippable product**, then beyond.
 >
@@ -19,7 +20,7 @@
 
 | Roadmap | Scope | Status |
 | ------- | ----- | ------ |
-| [`ROADMAP.md`](ROADMAP.md) (Phases 1–21) | **Systems**: capabilities the game runs on | ✅ Done (21 ⏳ ongoing seam) |
+| Systems roadmap (Phases 1–21, §0.5) | **Systems**: capabilities the game runs on | ✅ Done (21 ⏳ ongoing seam) |
 | **This document (Phases 22+)** | **Production**: the game itself, made shippable | ⏳ Active |
 
 Phase numbering **continues** from the systems roadmap (next new phase is **22**)
@@ -80,6 +81,22 @@ Collect), dialogue graphs, NPC schedules, weather, encounters, world events,
 recipes, spells, status effects, factions. The production roadmap leans on this
 hard: most *content* phases are data + a content pipeline, and only call out new
 code where the LORE needs a mechanic the sandbox lacks.
+
+### 0.5 The systems already built (Phases 1–21, ✅ done)
+
+This roadmap stands on a completed systems foundation. Those 21 phases are
+**done** (they round-trip through save/load and are live in the sandbox); the
+production phases below assume them:
+
+1 Core Architecture · 2 Player Controller · 3 Combat Framework · 4 Enemy AI ·
+5 Inventory · 6 Equipment · 7 Loot Generation · 8 Progression · 9 Quest Framework ·
+10 Dialogue · 11 NPC Schedules · 12 Magic · 13 World Systems (day/night, weather,
+encounters) · 14 HUD & Panels Polish · 15 Crafting · 16 Faction Systems ·
+17 Procedural Events · 18 Game UI Overhaul · 19 Optimization · 20 Deep Debugging ·
+21 Content Expansion (⏳ the ongoing seam this roadmap structures).
+
+For *how* those systems work, see [`ARCHITECTURE.md`](ARCHITECTURE.md); for the
+authoring recipes that turn them into content with no new code, see CLAUDE.md §8.
 
 ---
 

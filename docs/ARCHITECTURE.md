@@ -4,7 +4,8 @@ The deep reference for how Embervale is built: the core architecture, every
 gameplay system that exists today, the collision/team model, and the
 content/data pipeline. For the working agreement, coding conventions, gotchas,
 step-by-step recipes and the development workflow, see
-[`../CLAUDE.md`](../CLAUDE.md); for the phase plan see [`ROADMAP.md`](ROADMAP.md).
+[`../CLAUDE.md`](../CLAUDE.md); for the phase plan see
+[`PRODUCTION_ROADMAP.md`](PRODUCTION_ROADMAP.md).
 
 > **One-line summary:** an original first-person, open-world fantasy action RPG in
 > **Godot 4.7** with **C# (.NET 8)**, built on a component-based, event-driven,

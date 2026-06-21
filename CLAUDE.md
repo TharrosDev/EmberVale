@@ -81,7 +81,7 @@ Goblins roam to the north (−Z) and drop loot.
 ├── docs/
 │   ├── ARCHITECTURE.md      # Full architecture + systems reference (see §5)
 │   ├── LORE.md              # World/story bible (setting, factions, characters, plot)
-│   └── ROADMAP.md           # Phase plan + per-phase delivery notes
+│   └── PRODUCTION_ROADMAP.md # Production plan (Alpha → Beta → Launch, Phases 22+)
 ├── scenes/
 │   └── Main.tscn            # Entry scene (root has GameBootstrap script)
 ├── data/                    # Resource-driven content (.tres)
@@ -428,7 +428,7 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 - **Branch:** develop on `claude/happy-maxwell-19hx51`. **`main` is the trunk.**
   Never push directly to `main`; open PRs into it.
 - **Per phase:** implement → keep buildable/playable → update `README.md` +
-  `docs/ROADMAP.md` (mark phase done, queue next) → commit → push →
+  `docs/PRODUCTION_ROADMAP.md` (mark phase done, queue next) → commit → push →
   open a **draft PR** into `main`. The maintainer reviews/merges.
 - **After a merge:** the head branch may be auto-deleted; locally
   `git fetch origin main && git reset --hard origin/main` to resync, then carry on.
@@ -440,11 +440,11 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 
 ## 10. Roadmap status
 
-> **Scope:** these 21 phases build *systems/infrastructure*, not the game's
-> content. Finishing them yields a data-driven sandbox that can express the game,
-> not a finished game — the world, narrative, art, audio, balance and ship polish
-> are a **separate content/production roadmap** introduced once the systems are
-> done. See the scope note at the top of `docs/ROADMAP.md`.
+> **Scope:** Phases 1–21 built *systems/infrastructure*, not the game's content.
+> They yielded a data-driven sandbox that can express the game, not a finished
+> game — the world, narrative, art, audio, balance and ship polish are the
+> **production roadmap** (Phases 22+) that carries Embervale from that sandbox
+> through Alpha → Beta → Launch. See `docs/PRODUCTION_ROADMAP.md`.
 
 Done: **1 Core Architecture · 2 Player Controller · 3 Combat Framework ·
 4 Enemy AI · 5 Inventory System · 6 Equipment System · 7 Loot Generation ·
@@ -461,7 +461,9 @@ the systems roadmap hands off to the separate content/production roadmap.
 > `DebugHud` to an F3 developer overlay. The *meta/shell* (title screen, settings,
 > save-slot flow) remains the separate content/production roadmap.
 
-See `docs/ROADMAP.md` for per-phase delivery notes and the next-steps checklist.
+See `docs/PRODUCTION_ROADMAP.md` for the production plan (Phases 22+) that takes
+the finished systems sandbox to launch, gated First Playable → Vertical Slice →
+Alpha → Beta → Release Candidate → Launch.
 
 ---
 

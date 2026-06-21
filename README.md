@@ -96,42 +96,23 @@ developer debug overlay (FPS, raw stats, the active world event).
 ```
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for how the pieces fit
-together and [`docs/ROADMAP.md`](docs/ROADMAP.md) for the full development plan.
+together and [`docs/PRODUCTION_ROADMAP.md`](docs/PRODUCTION_ROADMAP.md) for the
+full development plan.
 
-## Roadmap
+## Status
 
-These 21 phases build the game's **systems and infrastructure** — not the game's
-content. Completing them yields a powerful, data-driven sandbox that *can express*
-the game; the actual world, narrative, art, audio, balance and ship polish live in
-the **production roadmap** that takes it from here to launch:
-[`docs/PRODUCTION_ROADMAP.md`](docs/PRODUCTION_ROADMAP.md) (Phases 22+, gated
-First Playable → Vertical Slice → Alpha → Beta → Release Candidate → Launch).
-See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the systems scope note.
+The 21-phase **systems roadmap is complete** — Embervale is a powerful,
+data-driven sandbox that *can express* the game. The
+[**production roadmap**](docs/PRODUCTION_ROADMAP.md) (Phases 22+) now carries it
+from that sandbox to launch, gated First Playable → Vertical Slice → Alpha →
+Beta → Release Candidate → Launch.
 
-Phases are built in order; the repo stays buildable and playable at every step.
-A phase is "done" when its systems work in-game **and** round-trip through
-save/load.
+|              | Phase                                      |
+| ------------ | ------------------------------------------ |
+| ▶ **Current** | 21 — Content Expansion *(systems complete; production begins)* |
+| ⏭ **Next**    | 22 — Production Bible & Content Pipeline    |
 
-| #  | Phase                | Status     |
-| -- | -------------------- | ---------- |
-| 1  | Core Architecture    | ✅ Done     |
-| 2  | Player Controller    | ✅ Done     |
-| 3  | Combat Framework     | ✅ Done     |
-| 4  | Enemy AI             | ✅ Done     |
-| 5  | Inventory System     | ✅ Done     |
-| 6  | Equipment System     | ✅ Done     |
-| 7  | Loot Generation      | ✅ Done     |
-| 8  | Progression System   | ✅ Done     |
-| 9  | Quest Framework      | ✅ Done     |
-| 10 | Dialogue System      | ✅ Done     |
-| 11 | NPC Schedules        | ✅ Done     |
-| 12 | Magic System         | ✅ Done     |
-| 13 | World Systems        | ✅ Done     |
-| 14 | HUD & Panels Polish  | ✅ Done     |
-| 15 | Crafting             | ✅ Done     |
-| 16 | Faction Systems      | ✅ Done     |
-| 17 | Procedural Events    | ✅ Done     |
-| 18 | Game UI Overhaul     | ✅ Done     |
-| 19 | Optimization         | ✅ Done     |
-| 20 | Deep Debugging       | ✅ Done     |
-| 21 | Content Expansion    | ⏳ Ongoing  |
+> Updated as each phase lands. The repo stays buildable and playable at every
+> step; a phase is "done" when it works in-game **and** round-trips through
+> save/load. See [`docs/PRODUCTION_ROADMAP.md`](docs/PRODUCTION_ROADMAP.md) for
+> the full phase list and gates.
