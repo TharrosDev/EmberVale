@@ -26,23 +26,26 @@ public partial class InventoryPanel : CanvasLayer
 
     public override void _Ready()
     {
-        _panel = new PanelContainer
-        {
-            Visible = false,
-            Position = new Vector2(900, 16),
-            CustomMinimumSize = new Vector2(360, 0),
-        };
+        _panel = UiTheme.Panel();
+        _panel.Visible = false;
+        _panel.Position = new Vector2(900, 16);
+        _panel.CustomMinimumSize = new Vector2(360, 0);
         AddChild(_panel);
 
-        var margin = new MarginContainer();
-        margin.AddThemeConstantOverride("margin_left", 12);
-        margin.AddThemeConstantOverride("margin_right", 12);
-        margin.AddThemeConstantOverride("margin_top", 10);
-        margin.AddThemeConstantOverride("margin_bottom", 10);
+        MarginContainer margin = UiTheme.Padding(12);
         _panel.AddChild(margin);
 
-        _list = new VBoxContainer();
-        margin.AddChild(_list);
+        // A bounded scroll area so a full backpack + perk list never runs off-screen.
+        var scroll = new ScrollContainer
+        {
+            CustomMinimumSize = new Vector2(336, 520),
+            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
+        };
+        margin.AddChild(scroll);
+
+        _list = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        _list.AddThemeConstantOverride("separation", 3);
+        scroll.AddChild(_list);
 
         EventBus.Instance?.Subscribe<InventoryChangedEvent>(OnChanged);
         EventBus.Instance?.Subscribe<EquipmentChangedEvent>(OnEquipmentChanged);
@@ -258,41 +261,27 @@ public partial class InventoryPanel : CanvasLayer
 
     private void AddHeader(string text)
     {
-        var label = new Label { Text = text };
-        label.AddThemeFontSizeOverride("font_size", 16);
-        _list.AddChild(label);
+        var header = UiTheme.Header(text);
+        header.AddThemeConstantOverride("line_spacing", 2);
+        _list.AddChild(header);
     }
 
     private void AddLine(string text, Color? color = null)
     {
-        var label = new Label { Text = text };
-        label.AddThemeFontSizeOverride("font_size", 14);
-        if (color is { } c)
-        {
-            label.AddThemeColorOverride("font_color", c);
-        }
-
-        _list.AddChild(label);
+        _list.AddChild(UiTheme.Body(text, color));
     }
 
     private void AddRow(string text, string action, System.Action onPressed, Color? color = null)
     {
         var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 8);
 
-        var label = new Label
-        {
-            Text = text,
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-        };
-        label.AddThemeFontSizeOverride("font_size", 14);
-        if (color is { } c)
-        {
-            label.AddThemeColorOverride("font_color", c);
-        }
-
+        Label label = UiTheme.Body(text, color);
+        label.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        label.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         row.AddChild(label);
 
-        var button = new Button { Text = action };
+        Button button = UiTheme.Action(action);
         button.Pressed += () => onPressed();
         row.AddChild(button);
 

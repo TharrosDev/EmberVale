@@ -91,7 +91,7 @@ together and [`docs/ROADMAP.md`](docs/ROADMAP.md) for the full development plan.
 
 ## Roadmap
 
-These 18 phases build the game's **systems and infrastructure** — not the game's
+These 20 phases build the game's **systems and infrastructure** — not the game's
 content. Completing them yields a powerful, data-driven sandbox that *can express*
 the game; the actual world, narrative, art, audio, balance and ship polish are a
 **separate content/production roadmap** introduced once these systems are done.
@@ -116,8 +116,10 @@ save/load.
 | 11 | NPC Schedules        | ✅ Done     |
 | 12 | Magic System         | ✅ Done     |
 | 13 | World Systems        | ✅ Done     |
-| 14 | Crafting             | ⏳ Next     |
-| 15 | Faction Systems      | ⬜ Planned  |
-| 16 | Procedural Events    | ⬜ Planned  |
-| 17 | Optimization         | ⬜ Ongoing  |
-| 18 | Content Expansion    | ⬜ Ongoing  |
+| 14 | HUD & Panels Polish  | ✅ Done     |
+| 15 | Crafting             | ⏳ Next     |
+| 16 | Faction Systems      | ⬜ Planned  |
+| 17 | Procedural Events    | ⬜ Planned  |
+| 18 | Game UI Overhaul     | ⬜ Planned  |
+| 19 | Optimization         | ⬜ Ongoing  |
+| 20 | Content Expansion    | ⬜ Ongoing  |

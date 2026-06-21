@@ -31,27 +31,21 @@ public partial class DialoguePanel : CanvasLayer
 
     public override void _Ready()
     {
-        _panel = new PanelContainer
-        {
-            Visible = false,
-            AnchorLeft = 0.5f,
-            AnchorRight = 0.5f,
-            AnchorTop = 1f,
-            AnchorBottom = 1f,
-            OffsetLeft = -300,
-            OffsetRight = 300,
-            OffsetTop = -260,
-            OffsetBottom = -24,
-            GrowHorizontal = Control.GrowDirection.Both,
-            GrowVertical = Control.GrowDirection.Begin,
-        };
+        _panel = UiTheme.Panel();
+        _panel.Visible = false;
+        _panel.AnchorLeft = 0.5f;
+        _panel.AnchorRight = 0.5f;
+        _panel.AnchorTop = 1f;
+        _panel.AnchorBottom = 1f;
+        _panel.OffsetLeft = -300;
+        _panel.OffsetRight = 300;
+        _panel.OffsetTop = -260;
+        _panel.OffsetBottom = -24;
+        _panel.GrowHorizontal = Control.GrowDirection.Both;
+        _panel.GrowVertical = Control.GrowDirection.Begin;
         AddChild(_panel);
 
-        var margin = new MarginContainer();
-        margin.AddThemeConstantOverride("margin_left", 14);
-        margin.AddThemeConstantOverride("margin_right", 14);
-        margin.AddThemeConstantOverride("margin_top", 12);
-        margin.AddThemeConstantOverride("margin_bottom", 12);
+        MarginContainer margin = UiTheme.Padding(14);
         _panel.AddChild(margin);
 
         _list = new VBoxContainer();
@@ -156,16 +150,10 @@ public partial class DialoguePanel : CanvasLayer
             return;
         }
 
-        var speaker = new Label { Text = _session.CurrentSpeaker() };
-        speaker.AddThemeFontSizeOverride("font_size", 16);
-        speaker.AddThemeColorOverride("font_color", new Color(0.95f, 0.85f, 0.45f));
-        _list.AddChild(speaker);
+        _list.AddChild(UiTheme.Header(_session.CurrentSpeaker()));
 
-        var line = new Label
-        {
-            Text = node.Text,
-            AutowrapMode = TextServer.AutowrapMode.WordSmart,
-        };
+        Label line = UiTheme.Body(node.Text);
+        line.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         line.AddThemeFontSizeOverride("font_size", 15);
         _list.AddChild(line);
 
@@ -175,7 +163,8 @@ public partial class DialoguePanel : CanvasLayer
         if (choices.Count == 0)
         {
             // Dead-end node: offer a single way out so the player is never stuck.
-            var leave = new Button { Text = "(Leave)", Alignment = HorizontalAlignment.Left };
+            Button leave = UiTheme.Action("(Leave)");
+            leave.Alignment = HorizontalAlignment.Left;
             leave.Pressed += Close;
             _list.AddChild(leave);
             return;
@@ -184,7 +173,8 @@ public partial class DialoguePanel : CanvasLayer
         foreach (DialogueChoice choice in choices)
         {
             DialogueChoice captured = choice;
-            var button = new Button { Text = choice.Text, Alignment = HorizontalAlignment.Left };
+            Button button = UiTheme.Action(choice.Text);
+            button.Alignment = HorizontalAlignment.Left;
             button.Pressed += () => Choose(captured);
             _list.AddChild(button);
         }

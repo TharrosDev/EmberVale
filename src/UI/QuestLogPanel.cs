@@ -22,22 +22,17 @@ public partial class QuestLogPanel : CanvasLayer
 
     public override void _Ready()
     {
-        _panel = new PanelContainer
-        {
-            Visible = false,
-            Position = new Vector2(520, 16),
-            CustomMinimumSize = new Vector2(360, 0),
-        };
+        _panel = UiTheme.Panel();
+        _panel.Visible = false;
+        _panel.Position = new Vector2(520, 16);
+        _panel.CustomMinimumSize = new Vector2(360, 0);
         AddChild(_panel);
 
-        var margin = new MarginContainer();
-        margin.AddThemeConstantOverride("margin_left", 12);
-        margin.AddThemeConstantOverride("margin_right", 12);
-        margin.AddThemeConstantOverride("margin_top", 10);
-        margin.AddThemeConstantOverride("margin_bottom", 10);
+        MarginContainer margin = UiTheme.Padding(12);
         _panel.AddChild(margin);
 
         _list = new VBoxContainer();
+        _list.AddThemeConstantOverride("separation", 3);
         margin.AddChild(_list);
 
         EventBus.Instance?.Subscribe<QuestStartedEvent>(OnQuestStarted);
@@ -153,20 +148,11 @@ public partial class QuestLogPanel : CanvasLayer
 
     private void AddHeader(string text)
     {
-        var label = new Label { Text = text };
-        label.AddThemeFontSizeOverride("font_size", 16);
-        _list.AddChild(label);
+        _list.AddChild(UiTheme.Header(text));
     }
 
     private void AddLine(string text, Color? color = null)
     {
-        var label = new Label { Text = text };
-        label.AddThemeFontSizeOverride("font_size", 14);
-        if (color is { } c)
-        {
-            label.AddThemeColorOverride("font_color", c);
-        }
-
-        _list.AddChild(label);
+        _list.AddChild(UiTheme.Body(text, color));
     }
 }

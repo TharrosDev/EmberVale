@@ -2,12 +2,12 @@
 
 ## Scope: this is the *systems* roadmap, not the game
 
-These 18 phases build **base-game infrastructure** — the reusable systems and
+These 20 phases build **base-game infrastructure** — the reusable systems and
 engine-on-top-of-Godot that the game runs on (architecture, player, combat, AI,
-items/loot, progression, quests, dialogue, magic, world systems, crafting,
+items/loot, progression, quests, dialogue, magic, world systems, UI, crafting,
 factions, events, optimization). They are *capabilities*, not content.
 
-**Completing all 18 phases does not mean the game is finished.** When this roadmap
+**Completing all 20 phases does not mean the game is finished.** When this roadmap
 is done we will have a powerful, well-factored, data-driven sandbox that *can
 express* the game — but it will still be a near-empty playground. The actual game
 is authored on top of these systems and is explicitly **out of scope here**:
@@ -52,11 +52,13 @@ through save/load.
 | 11 | NPC Schedules        | ✅ Done      | World clock, data-driven daily routines, event-driven reactions |
 | 12 | Magic System         | ✅ Done      | Schools, projectiles, AoE, status effects                   |
 | 13 | World Systems        | ✅ Done      | Day/night, weather, encounters                              |
-| 14 | Crafting             | ⏳ Next      | Recipes, stations, materials                                |
-| 15 | Faction Systems      | ⬜ Planned   | Reputation, consequences                                    |
-| 16 | Procedural Events    | ⬜ Planned   | World events, dynamic spawns                                |
-| 17 | Optimization         | ⬜ Ongoing   | Pooling, LOD, streaming                                     |
-| 18 | Content Expansion    | ⬜ Ongoing   | Regions, enemies, quests via data                           |
+| 14 | HUD & Panels Polish  | ✅ Done      | Shared UI theme, vitals bars, crosshair, framed panels      |
+| 15 | Crafting             | ⏳ Next      | Recipes, stations, materials                                |
+| 16 | Faction Systems      | ⬜ Planned   | Reputation, consequences                                    |
+| 17 | Procedural Events    | ⬜ Planned   | World events, dynamic spawns                                |
+| 18 | Game UI Overhaul     | ⬜ Planned   | Real game UI: HUD, menus, tooltips, scenes over the debug overlay |
+| 19 | Optimization         | ⬜ Ongoing   | Pooling, LOD, streaming                                     |
+| 20 | Content Expansion    | ⬜ Ongoing   | Regions, enemies, quests via data                           |
 
 ## Phase 1 — delivered
 
@@ -340,3 +342,24 @@ Builds the fuller day/night + weather + dynamic-spawn model on top of the Phase 
 - **UI** — the HUD now shows the current weather alongside the clock; the sandbox visibly
   cycles dawn→day→dusk→night with shifting light while weather rolls over and patrols/warbands
   wander in. Time and weather both survive save/load.
+
+## Phase 14 — delivered (HUD & Panels Polish)
+
+A focused pass over the existing debug-grade overlay UI — not the full game UI (that is
+Phase 18), but a real, consistent improvement to what's on screen today.
+
+- **Shared theme** — `UiTheme` (`src/UI/UiTheme.cs`) centralises the overlay's look: a
+  palette (panel bg/border, gold accent, body/dim text, good/bad, per-resource fills) plus
+  builders for a framed rounded `PanelContainer`, padded containers, accent headers, body
+  lines, styled action buttons and coloured resource `ProgressBar`s. Every panel now routes
+  its controls through it, so the HUD, character screen, journal and dialogue window share
+  one style and a later full UI pass is a single-file change.
+- **HUD rebuild** — `DebugHud` is reorganised into framed panels: a vitals panel with live
+  **coloured HP/Stamina/Mana bars** (replacing the old ASCII bars) plus level/spell/effects/
+  quest text, a target panel (with its own HP bar) that shows/hides with the current target,
+  and a bottom controls hint. A screen-centre **crosshair** (`Crosshair`) marks the aim point;
+  HUD panels ignore the mouse so they never eat menu clicks.
+- **Panel polish** — the character screen, quest journal and dialogue window adopt the framed
+  theme, accent headers and styled buttons; the character screen gained a **scroll area** so a
+  full backpack + perk list never runs off-screen. All existing behaviour (toggles, dirty-flag
+  rebuilds, equip/learn/choice wiring, modality) is unchanged.

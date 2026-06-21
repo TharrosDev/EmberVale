@@ -558,8 +558,21 @@ persists). Three pieces:
   read debug keys while paused. Routes player/dummy/enemy deaths (enemies drop
   loot).
 - **`InventoryPanel : CanvasLayer`** — toggleable inventory read-out (key `I`).
-- **`DebugHud : CanvasLayer`** — on-screen overlay (FPS, game state, player
-  HP/stamina, target, last hit with CRIT/blocked). Built in code.
+- **`DebugHud : CanvasLayer`** — on-screen overlay: framed vitals panel with live
+  coloured HP/Stamina/Mana `ProgressBar`s + level/spell/effects/quest text, a target
+  panel (own HP bar) that toggles with the target, a bottom controls hint, and a
+  screen-centre `Crosshair`. Built in code; panels ignore the mouse.
+- **`UiTheme`** (`src/UI/UiTheme.cs`) — the shared look for all overlay UI: palette +
+  builders for framed panels, padded containers, accent headers, body lines, styled
+  buttons and coloured resource bars. **Build new UI through it** so panels stay
+  consistent (and the Phase 18 game-UI overhaul stays a one-file change). `Crosshair`
+  (`src/UI/Crosshair.cs`) is the code-drawn aim marker. The character screen, quest
+  journal (`J`) and dialogue window all route through `UiTheme`; the character screen
+  scrolls when long.
+
+> **UI altitude:** today's panels are *debug-grade* (code-built, functional, now
+> themed). Phase 14 polished them; the full purpose-built game UI is **Phase 18**.
+> Keep new gameplay UI flowing through `UiTheme` rather than hand-styling controls.
 
 ---
 
@@ -802,6 +815,15 @@ Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
 1. Add a constant + `Bind(...)` in `GameInput`.
 2. Read it via `Godot.Input.IsActionPressed/JustPressed/GetVector`.
 
+**A new UI panel / HUD widget**
+1. Build it through `UiTheme` (`src/UI/UiTheme.cs`): `UiTheme.Panel()` for the frame,
+   `UiTheme.Padding()` inside it, then `UiTheme.Header`/`Body`/`Action`/`Bar` for content —
+   don't hand-roll styleboxes/fonts. A modal panel sets `UiState.MenuOpen` + frees the mouse;
+   a non-modal overlay (like the journal) does not.
+2. Rebuild from a dirty flag in `_Process` (never during a button signal). Add new palette
+   colours/builders to `UiTheme` rather than per-panel so the look stays consistent (and the
+   Phase 18 overhaul stays a one-file change).
+
 ---
 
 ## 12. Development workflow
@@ -821,7 +843,7 @@ Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
 
 ## 13. Roadmap status
 
-> **Scope:** these 18 phases build *systems/infrastructure*, not the game's
+> **Scope:** these 20 phases build *systems/infrastructure*, not the game's
 > content. Finishing them yields a data-driven sandbox that can express the game,
 > not a finished game — the world, narrative, art, audio, balance and ship polish
 > are a **separate content/production roadmap** introduced once the systems are
@@ -830,10 +852,16 @@ Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
 Done: **1 Core Architecture · 2 Player Controller · 3 Combat Framework ·
 4 Enemy AI · 5 Inventory System · 6 Equipment System · 7 Loot Generation ·
 8 Progression · 9 Quests · 10 Dialogue · 11 NPC Schedules · 12 Magic ·
-13 World Systems**. Next: **14 Crafting**.
+13 World Systems · 14 HUD & Panels Polish**. Next: **15 Crafting**.
 
-Then (in order): 15 Factions · 16 Procedural Events · 17 Optimization ·
-18 Content Expansion.
+Then (in order): 16 Factions · 17 Procedural Events · 18 Game UI Overhaul ·
+19 Optimization · 20 Content Expansion.
+
+> **Two UI phases, deliberately:** Phase 14 (done) *polished the existing
+> debug-grade overlay* (shared `UiTheme`, vitals bars, crosshair, framed panels).
+> Phase 18 is the *full game-UI overhaul* — purpose-built HUD/menus/tooltips/scenes
+> that replace the debug overlay — slotted after the gameplay systems and before
+> optimization.
 
 See `docs/ROADMAP.md` for per-phase delivery notes and the next-steps checklist.
 
