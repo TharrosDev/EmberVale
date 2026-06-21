@@ -2,6 +2,7 @@ using Embervale.Combat;
 using Embervale.Crafting;
 using Embervale.Dialogue;
 using Embervale.Entities;
+using Embervale.Factions;
 using Embervale.Items;
 using Embervale.Magic;
 using Embervale.Movement;
@@ -108,6 +109,9 @@ public static class PlayerFactory
 
         // Story flags: persistent conversation/world memory read & written by dialogue.
         player.AddChild(new StoryFlagsComponent { Name = "StoryFlags" });
+
+        // Reputation: tracks standing with every faction and reacts to kills the player lands.
+        player.AddChild(new ReputationComponent { Name = "Reputation" });
 
         // Magic: status effects can afflict/buff the player, and the spellbook aims
         // through the camera pivot so bolts fire where the player looks.

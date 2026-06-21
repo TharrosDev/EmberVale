@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="FactionResource" load_steps=2 format=3 uid="uid://cmbrvlfacgoblin"]
+
+[ext_resource type="Script" path="res://src/Factions/FactionResource.cs" id="1_faction"]
+
+[resource]
+script = ExtResource("1_faction")
+Id = "faction.goblins"
+DisplayName = "Goblin Marauders"
+Description = "Raiders that harry the valley. Hostile to outsiders by default."
+DefaultReputation = -40
+HostileThreshold = 2
+KillReputationPenalty = 6
+Enemies = Array[String](["faction.villagers"])
+Allies = Array[String]([])

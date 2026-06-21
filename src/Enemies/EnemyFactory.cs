@@ -1,4 +1,5 @@
 using Embervale.Combat;
+using Embervale.Factions;
 using Embervale.Loot;
 using Embervale.Magic;
 using Embervale.Movement;
@@ -75,6 +76,8 @@ public static class EnemyFactory
 
         // Lets the player's spells burn/chill the goblin (DoT + slows apply here).
         enemy.AddChild(new StatusEffectsComponent { Name = "StatusEffects" });
+        // Faction membership: AI aggression keys off the player's standing with this faction.
+        enemy.AddChild(new FactionComponent { Name = "Faction", FactionId = "faction.goblins" });
         enemy.AddChild(new EnemyAIComponent { Name = "AI" });
         enemy.AddChild(new LootComponent { Name = "Loot", TablePath = LootTablePath });
         enemy.AddChild(new ExperienceComponent { Name = "Experience", XpValue = 25 });

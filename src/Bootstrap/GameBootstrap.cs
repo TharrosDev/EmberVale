@@ -7,6 +7,7 @@ using Embervale.Crafting;
 using Embervale.Dialogue;
 using Embervale.Enemies;
 using Embervale.Entities;
+using Embervale.Factions;
 using Embervale.Items;
 using Embervale.Loot;
 using Embervale.Magic;
@@ -57,7 +58,7 @@ public partial class GameBootstrap : Node3D
 
     public override void _Ready()
     {
-        Log.Info("=== Embervale bootstrapping (Phase 15: Crafting) ===");
+        Log.Info("=== Embervale bootstrapping (Phase 16: Faction Systems) ===");
 
         // The bootstrap is the flow manager for the sandbox, so it must keep
         // processing input even while the tree is paused (to unpause).
@@ -75,6 +76,7 @@ public partial class GameBootstrap : Node3D
         WeatherDatabase.Initialize();
         EncounterDatabase.Initialize();
         RecipeDatabase.Initialize();
+        FactionDatabase.Initialize();
         BuildEnvironment();
 
         _hud = new DebugHud();
@@ -151,6 +153,9 @@ public partial class GameBootstrap : Node3D
                 break;
             case Key.X:
                 _player?.GetComponent<ProgressionComponent>()?.AddXp(50);
+                break;
+            case Key.K:
+                AdjustGoblinReputation();
                 break;
             case Key.F5:
                 SaveManager.Instance?.SaveGame("quick");
@@ -283,6 +288,7 @@ public partial class GameBootstrap : Node3D
         _inventoryPanel.SetEquipment(_player.GetComponent<EquipmentComponent>());
         _inventoryPanel.SetProgression(_player.GetComponent<ProgressionComponent>());
         _inventoryPanel.SetPerks(_player.GetComponent<PerksComponent>());
+        _inventoryPanel.SetReputation(_player.GetComponent<ReputationComponent>());
 
         QuestLogComponent? questLog = _player.GetComponent<QuestLogComponent>();
         _questLogPanel.SetQuestLog(questLog);
@@ -359,6 +365,9 @@ public partial class GameBootstrap : Node3D
         });
         giver.AddChild(collider);
 
+        // The elder is a villager: killing him would tank reputation with his faction.
+        giver.AddChild(new FactionComponent { Name = "Faction", FactionId = "faction.villagers" });
+
         // The elder now offers his task in conversation: the dialogue's choices start
         // the quest and remember you via a story flag (see data/dialogue/Elder.tres).
         giver.AddChild(new DialogueComponent { Name = "Dialogue", DialogueId = "dialogue.elder" });
@@ -417,6 +426,23 @@ public partial class GameBootstrap : Node3D
         {
             stats.Heal(amount);
         }
+    }
+
+    /// <summary>Debug: nudge goblin reputation up so they eventually stand down — proof
+    /// that faction standing drives AI aggression.</summary>
+    private void AdjustGoblinReputation()
+    {
+        ReputationComponent? reputation = _player?.GetComponent<ReputationComponent>();
+        if (reputation == null)
+        {
+            return;
+        }
+
+        reputation.Add("faction.goblins", 20);
+        ReputationTier tier = reputation.TierOf("faction.goblins");
+        bool hostile = reputation.IsHostile("faction.goblins");
+        Log.Info($"Goblin standing: {ReputationTiers.Label(tier)} ({reputation.Get("faction.goblins")}) — " +
+                 $"{(hostile ? "still hostile" : "they now leave you be")}.");
     }
 
     private void ForceRespawn()

@@ -121,7 +121,7 @@ public partial class DebugHud : CanvasLayer
 
         Label hint = UiTheme.Body(
             "WASD move · Mouse look · LMB attack · RMB block · Q cast · F cycle spell\n" +
-            "E interact · I character · J journal · [H] heal · [R] respawn · [X] +XP\n" +
+            "E interact · I character · J journal · [H] heal · [R] respawn · [X] +XP · [K] +rep\n" +
             "[F5/F9] save/load · [Esc] pause",
             UiTheme.Dim);
         pad.AddChild(hint);
