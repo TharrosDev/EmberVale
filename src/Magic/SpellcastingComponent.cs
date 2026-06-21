@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Embervale.Combat;
 using Embervale.Core.Events;
+using Embervale.Core.Pooling;
 using Embervale.Entities;
 using Embervale.Save;
 using Embervale.Stats;
@@ -42,6 +43,9 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     private CombatComponent? _combat;
     private int _selected;
 
+    // Pooled projectiles: rapid casting reuses bolts instead of churning the scene tree.
+    private NodePool<SpellProjectile>? _projectilePool;
+
     public string SaveId => $"spells:{Entity?.RuntimeId ?? 0}";
 
     public IReadOnlyList<SpellResource> Spells => _spells;
@@ -55,14 +59,19 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     {
         _stats = Entity!.GetComponent<StatsComponent>();
         _combat = Entity.GetComponent<CombatComponent>();
+        _projectilePool = new NodePool<SpellProjectile>(
+            () => new SpellProjectile { Released = ReturnProjectile }, prewarm: 4);
         RebuildSpells();
         SaveManager.Instance?.Register(this);
     }
 
     protected override void OnTeardown()
     {
+        _projectilePool?.Clear();
         SaveManager.Instance?.Unregister(this);
     }
+
+    private void ReturnProjectile(SpellProjectile projectile) => _projectilePool?.Return(projectile);
 
     public override void _Process(double delta)
     {
@@ -178,9 +187,12 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     private void CastProjectile(SpellResource spell, int team)
     {
         (Vector3 origin, Vector3 direction) = Aim();
-        SpellProjectile projectile = SpellProjectile.Create(spell, BuildPacket(spell), Entity, team, direction);
+        SpellProjectile projectile = _projectilePool?.Get() ?? new SpellProjectile { Released = ReturnProjectile };
+
+        // Add to the tree (so its visual children build on first use) then position + arm it.
         GetTree().CurrentScene.AddChild(projectile);
         projectile.GlobalPosition = origin;
+        projectile.Launch(spell, BuildPacket(spell), Entity, team, direction);
     }
 
     private void CastArea(SpellResource spell, int team)

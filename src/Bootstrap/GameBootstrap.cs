@@ -59,7 +59,7 @@ public partial class GameBootstrap : Node3D
 
     public override void _Ready()
     {
-        Log.Info("=== Embervale bootstrapping (Phase 18: Game UI Overhaul) ===");
+        Log.Info("=== Embervale bootstrapping (Phase 19: Optimization) ===");
 
         // The bootstrap is the flow manager for the sandbox, so it must keep
         // processing input even while the tree is paused (to unpause).

@@ -103,6 +103,7 @@ Goblins roam to the north (−Z) and drop loot.
     ├── Core/
     │   ├── Events/          # IGameEvent, EventBus (autoload), CoreEvents
     │   ├── Services/        # ServiceLocator (autoload)
+    │   ├── Pooling/         # NodePool<T> generic object-reuse pool
     │   ├── Diagnostics/     # Log (static facade over GD.Print)
     │   ├── GameManager.cs   # Top-level GameState machine (autoload)
     │   ├── GameState.cs     # enum Boot/MainMenu/Loading/Playing/Paused/GameOver
@@ -923,6 +924,15 @@ Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
 1. Add a constant + `Bind(...)` in `GameInput`.
 2. Read it via `Godot.Input.IsActionPressed/JustPressed/GetVector`.
 
+**Pooling a high-churn node** (perf)
+1. Hold a `NodePool<T>` (`src/Core/Pooling`) on the owner; build it in `OnInitialize`
+   (`new NodePool<T>(factory, prewarm)`) and `Clear()` it in `OnTeardown`.
+2. Make the node reusable: build its children once in `_Ready`, expose a `Launch/Configure`
+   to re-arm per use, and on "death" invoke a release callback (the pool's `Return`) instead
+   of `QueueFree`. To spawn: `pool.Get()` → `AddChild` → position → `Launch(...)`. See
+   `SpellProjectile` + `SpellcastingComponent`. (Throttle/sleep expensive per-frame work by
+   distance to the player the way `EnemyAIComponent` does — perception cache + far-sleep.)
+
 **A new UI panel / HUD widget**
 1. Build it through `UiTheme` (`src/UI/UiTheme.cs`): `UiTheme.Panel()` for the frame,
    `UiTheme.Padding()` inside it, then `UiTheme.Header`/`Body`/`Action`/`Bar` for content —
@@ -961,9 +971,10 @@ Done: **1 Core Architecture · 2 Player Controller · 3 Combat Framework ·
 4 Enemy AI · 5 Inventory System · 6 Equipment System · 7 Loot Generation ·
 8 Progression · 9 Quests · 10 Dialogue · 11 NPC Schedules · 12 Magic ·
 13 World Systems · 14 HUD & Panels Polish · 15 Crafting · 16 Factions ·
-17 Procedural Events · 18 Game UI Overhaul**. Next: **19 Optimization**.
+17 Procedural Events · 18 Game UI Overhaul · 19 Optimization**.
+Next: **20 Deep Debugging**.
 
-Then (in order): 20 Deep Debugging · 21 Content Expansion.
+Then (in order): 21 Content Expansion.
 
 > **Two UI phases, both done:** Phase 14 *polished the debug-grade overlay* (shared
 > `UiTheme`, vitals bars, crosshair, framed panels). Phase 18 built the *real game UI*
