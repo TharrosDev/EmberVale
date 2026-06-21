@@ -92,7 +92,7 @@ together and [`docs/ROADMAP.md`](docs/ROADMAP.md) for the full development plan.
 
 ## Roadmap
 
-These 20 phases build the game's **systems and infrastructure** — not the game's
+These 21 phases build the game's **systems and infrastructure** — not the game's
 content. Completing them yields a powerful, data-driven sandbox that *can express*
 the game; the actual world, narrative, art, audio, balance and ship polish are a
 **separate content/production roadmap** introduced once these systems are done.
@@ -123,4 +123,5 @@ save/load.
 | 17 | Procedural Events    | ⬜ Planned  |
 | 18 | Game UI Overhaul     | ⬜ Planned  |
 | 19 | Optimization         | ⬜ Ongoing  |
-| 20 | Content Expansion    | ⬜ Ongoing  |
+| 20 | Deep Debugging       | ⬜ Planned  |
+| 21 | Content Expansion    | ⬜ Ongoing  |

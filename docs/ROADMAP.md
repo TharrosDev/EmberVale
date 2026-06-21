@@ -2,12 +2,12 @@
 
 ## Scope: this is the *systems* roadmap, not the game
 
-These 20 phases build **base-game infrastructure** — the reusable systems and
+These 21 phases build **base-game infrastructure** — the reusable systems and
 engine-on-top-of-Godot that the game runs on (architecture, player, combat, AI,
 items/loot, progression, quests, dialogue, magic, world systems, UI, crafting,
-factions, events, optimization). They are *capabilities*, not content.
+factions, events, optimization, debugging). They are *capabilities*, not content.
 
-**Completing all 20 phases does not mean the game is finished.** When this roadmap
+**Completing all 21 phases does not mean the game is finished.** When this roadmap
 is done we will have a powerful, well-factored, data-driven sandbox that *can
 express* the game — but it will still be a near-empty playground. The actual game
 is authored on top of these systems and is explicitly **out of scope here**:
@@ -58,7 +58,8 @@ through save/load.
 | 17 | Procedural Events    | ⬜ Planned   | World events, dynamic spawns                                |
 | 18 | Game UI Overhaul     | ⬜ Planned   | Real game UI: HUD, menus, tooltips, scenes over the debug overlay |
 | 19 | Optimization         | ⬜ Ongoing   | Pooling, LOD, streaming                                     |
-| 20 | Content Expansion    | ⬜ Ongoing   | Regions, enemies, quests via data                           |
+| 20 | Deep Debugging       | ⬜ Planned   | Dev console, profiling/diagnostics overlays, invariant checks, repro harness |
+| 21 | Content Expansion    | ⬜ Ongoing   | Regions, enemies, quests via data                           |
 
 ## Phase 1 — delivered
 

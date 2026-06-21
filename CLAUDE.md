@@ -876,7 +876,7 @@ Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
 
 ## 13. Roadmap status
 
-> **Scope:** these 20 phases build *systems/infrastructure*, not the game's
+> **Scope:** these 21 phases build *systems/infrastructure*, not the game's
 > content. Finishing them yields a data-driven sandbox that can express the game,
 > not a finished game — the world, narrative, art, audio, balance and ship polish
 > are a **separate content/production roadmap** introduced once the systems are
@@ -888,7 +888,7 @@ Done: **1 Core Architecture · 2 Player Controller · 3 Combat Framework ·
 13 World Systems · 14 HUD & Panels Polish · 15 Crafting**. Next: **16 Factions**.
 
 Then (in order): 17 Procedural Events · 18 Game UI Overhaul ·
-19 Optimization · 20 Content Expansion.
+19 Optimization · 20 Deep Debugging · 21 Content Expansion.
 
 > **Two UI phases, deliberately:** Phase 14 (done) *polished the existing
 > debug-grade overlay* (shared `UiTheme`, vitals bars, crosshair, framed panels).
