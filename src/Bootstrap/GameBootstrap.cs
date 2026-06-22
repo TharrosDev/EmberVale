@@ -63,6 +63,15 @@ public partial class GameBootstrap : Node3D
 
     public override void _Ready()
     {
+        // Headless content check: `godot --headless --path . -- --validate` runs the full
+        // validator and quits (non-zero on failure) without building the sandbox. Handle it
+        // before anything else so the tool path is fast and side-effect free.
+        if (HeadlessValidation.Requested())
+        {
+            HeadlessValidation.Run(GetTree());
+            return;
+        }
+
         Log.Info("=== Embervale bootstrapping (Phase 20: Deep Debugging) ===");
 
         // The bootstrap is the flow manager for the sandbox, so it must keep
@@ -70,20 +79,7 @@ public partial class GameBootstrap : Node3D
         ProcessMode = ProcessModeEnum.Always;
 
         GameInput.EnsureActions();
-        ItemDatabase.Initialize();
-        AffixDatabase.Initialize();
-        PerkDatabase.Initialize();
-        QuestDatabase.Initialize();
-        DialogueDatabase.Initialize();
-        ScheduleDatabase.Initialize();
-        StatusEffectDatabase.Initialize();
-        SpellDatabase.Initialize();
-        WeatherDatabase.Initialize();
-        EncounterDatabase.Initialize();
-        RecipeDatabase.Initialize();
-        FactionDatabase.Initialize();
-        WorldEventDatabase.Initialize();
-        EnemyTemplateRegistry.Initialize();
+        ContentDatabases.InitializeAll();
 
         // With every database + the enemy registry populated, validate that the authored
         // content cross-references resolve (item/enemy/quest/spell ids). Broken references
