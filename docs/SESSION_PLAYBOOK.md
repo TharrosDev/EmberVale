@@ -116,7 +116,7 @@ no code) — batch them when momentum is good.
   - **Done when:** new rules implemented and surfaced; running `validate` reports
     the new classes of error.
 
-- [ ] **22E — `ContentValidator`: graph reachability (quests + dialogue)** `[F]`
+- [x] **22E — `ContentValidator`: graph reachability (quests + dialogue)** `[F]`
   - **Goal:** catch unreachable content, the subtle content-scale bug.
   - **Tasks:** add reachability analysis — dialogue graphs have no orphan nodes
     and no dead ends that aren't intentional terminals; quest objective chains are

@@ -31,17 +31,41 @@ namespace Embervale.Debugging;
 /// Beyond "references resolve", it also checks that content is <em>well-formed</em>: ids are
 /// unique within their domain (the databases dedupe duplicates to a single last-write-wins
 /// entry, so a duplicate id silently drops content — only a direct directory scan catches it)
-/// and loot tables are non-empty. Graph reachability is a later pass (Phase 22E).
+/// and loot tables are non-empty. <see cref="RunAll"/> adds a graph-reachability battery —
+/// dialogue orphans/dead-ends (via <see cref="DialogueGraphAnalysis"/>), quest completability,
+/// and prerequisite cycles — surfaced through the <c>validate-all</c> console command.
 /// </summary>
 public static class ContentValidator
 {
     private const string LootDirectory = "res://data/loot";
 
-    /// <summary>Runs every cross-reference and structural check; returns a human-readable summary.</summary>
+    /// <summary>
+    /// Runs the cross-reference + structural checks (the boot/quick pass) and returns a
+    /// human-readable summary. The bootstrap calls this; the <c>validate</c> console command
+    /// mirrors it. For the heavier graph-reachability battery too, use <see cref="RunAll"/>.
+    /// </summary>
     public static string Run()
     {
         var issues = new List<string>();
+        CollectCoreIssues(issues);
+        return Report(issues, "all content references resolve and content is well-formed");
+    }
 
+    /// <summary>
+    /// Runs the full battery — the <see cref="Run"/> checks <em>plus</em> graph reachability
+    /// (dialogue orphans/dead-ends, quest completability, prerequisite cycles). Surfaced via the
+    /// <c>validate-all</c> console command and the headless validation path (Phase 22F).
+    /// </summary>
+    public static string RunAll()
+    {
+        var issues = new List<string>();
+        CollectCoreIssues(issues);
+        CollectGraphIssues(issues);
+        return Report(issues, "all references resolve, content is well-formed, and graphs are reachable");
+    }
+
+    private static void CollectCoreIssues(List<string> issues)
+    {
         ValidateDuplicateIds(issues);
         ValidateLootTables(issues);
         ValidateRecipes(issues);
@@ -51,7 +75,17 @@ public static class ContentValidator
         ValidateFactions(issues);
         ValidateEncounters(issues);
         ValidateWorldEvents(issues);
+    }
 
+    private static void CollectGraphIssues(List<string> issues)
+    {
+        ValidateDialogueReachability(issues);
+        ValidateQuestCompletability(issues);
+        ValidatePrerequisiteCycles(issues);
+    }
+
+    private static string Report(List<string> issues, string okSummary)
+    {
         foreach (string issue in issues)
         {
             Invariant.Check(false, $"content: {issue}");
@@ -59,7 +93,7 @@ public static class ContentValidator
 
         if (issues.Count == 0)
         {
-            return "ContentValidator: OK (all content references resolve and content is well-formed).";
+            return $"ContentValidator: OK ({okSummary}).";
         }
 
         var sb = new StringBuilder($"ContentValidator: {issues.Count} issue(s):\n");
@@ -363,6 +397,107 @@ public static class ContentValidator
                 FactionDatabase.Get(worldEvent.FactionRewardId) == null)
             {
                 issues.Add($"event '{worldEvent.Id}' rewards unknown faction '{worldEvent.FactionRewardId}'");
+            }
+        }
+    }
+
+    // --- Graph reachability (RunAll only) -----------------------------------
+
+    /// <summary>
+    /// Projects each dialogue graph onto <see cref="DialogueGraphAnalysis"/> and reports orphan
+    /// nodes (unreachable from the start) and dead-ends (reachable nodes that can never reach a
+    /// conversation end). Dangling gotos / a missing start node are reported by
+    /// <see cref="ValidateDialogue"/>, so a graph with no resolvable start is skipped here.
+    /// </summary>
+    private static void ValidateDialogueReachability(List<string> issues)
+    {
+        foreach (DialogueResource dialogue in DialogueDatabase.All)
+        {
+            DialogueNode? start = dialogue.StartNode();
+            if (start == null)
+            {
+                continue;
+            }
+
+            var nodes = new List<DialogueGraphAnalysis.Node>();
+            foreach (DialogueNode node in dialogue.NodeList())
+            {
+                var gotos = new List<string>();
+                bool terminal = false;
+                List<DialogueChoice> choices = node.ChoiceList();
+                if (choices.Count == 0)
+                {
+                    terminal = true;
+                }
+
+                foreach (DialogueChoice choice in choices)
+                {
+                    if (string.IsNullOrEmpty(choice.Goto))
+                    {
+                        terminal = true;
+                    }
+                    else
+                    {
+                        gotos.Add(choice.Goto);
+                    }
+                }
+
+                nodes.Add(new DialogueGraphAnalysis.Node(node.Id, gotos, terminal));
+            }
+
+            DialogueGraphAnalysis.Result result = DialogueGraphAnalysis.Analyze(start.Id, nodes);
+            foreach (string id in result.Unreachable)
+            {
+                issues.Add($"dialogue '{dialogue.Id}' node '{id}' is unreachable from start '{start.Id}'");
+            }
+
+            foreach (string id in result.DeadEnds)
+            {
+                issues.Add($"dialogue '{dialogue.Id}' node '{id}' cannot reach a conversation end (dead-end loop)");
+            }
+        }
+    }
+
+    /// <summary>Flags quests that can never be completed: no objectives, or an objective whose
+    /// <c>RequiredCount</c> is non-positive (it would never tick to done).</summary>
+    private static void ValidateQuestCompletability(List<string> issues)
+    {
+        foreach (QuestResource quest in QuestDatabase.All)
+        {
+            List<ObjectiveResource> objectives = quest.ObjectiveList();
+            if (objectives.Count == 0)
+            {
+                issues.Add($"quest '{quest.Id}' has no objectives (can never be completed)");
+                continue;
+            }
+
+            foreach (ObjectiveResource objective in objectives)
+            {
+                if (objective.RequiredCount <= 0)
+                {
+                    issues.Add($"quest '{quest.Id}' objective '{objective.TargetId}' has a non-positive RequiredCount");
+                }
+            }
+        }
+    }
+
+    /// <summary>Walks each quest's prerequisite chain and flags a cycle (a chain that revisits a
+    /// quest), which would make every quest in the loop permanently unstartable. Unknown
+    /// prerequisites are reported by <see cref="ValidateQuests"/>.</summary>
+    private static void ValidatePrerequisiteCycles(List<string> issues)
+    {
+        foreach (QuestResource quest in QuestDatabase.All)
+        {
+            var visited = new HashSet<string>();
+            string current = quest.Id;
+            while (!string.IsNullOrEmpty(current) && visited.Add(current))
+            {
+                current = QuestDatabase.Get(current)?.PrerequisiteQuestId ?? string.Empty;
+            }
+
+            if (!string.IsNullOrEmpty(current))
+            {
+                issues.Add($"quest '{quest.Id}' has a prerequisite cycle (revisits '{current}')");
             }
         }
     }

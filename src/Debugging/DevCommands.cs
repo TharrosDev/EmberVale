@@ -40,6 +40,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("repro", "repro [name]", "Run a repro scenario.", Repro));
         console.Register(new ConsoleCommand("invariants", "invariants", "Run the world integrity check.", (_, _) => WorldIntegrityChecker.Run()));
         console.Register(new ConsoleCommand("validate", "validate", "Validate authored content cross-references.", (_, _) => ContentValidator.Run()));
+        console.Register(new ConsoleCommand("validate-all", "validate-all", "Full content battery (cross-refs + graph reachability).", (_, _) => ContentValidator.RunAll()));
 
         console.Register(new ConsoleCommand("pspawn", "pspawn [templateId]", "Spawn a persistent actor at the player.", PSpawn));
         console.Register(new ConsoleCommand("pdespawn", "pdespawn <persistentId>", "Free a persistent actor (recreated on load).", PDespawn));
