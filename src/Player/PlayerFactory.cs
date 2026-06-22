@@ -1,5 +1,6 @@
 using Embervale.Combat;
 using Embervale.Core;
+using Embervale.Corruption;
 using Embervale.Crafting;
 using Embervale.Dialogue;
 using Embervale.Entities;
@@ -116,6 +117,10 @@ public static class PlayerFactory
 
         // Reputation: tracks standing with every faction and reacts to kills the player lands.
         player.AddChild(new ReputationComponent { Name = "Reputation" });
+
+        // Corruption: the LORE's defining mechanic; a 0-100 meter feeding dialogue/factions/
+        // abilities/appearance and the Dawnfire vs Lord of Embers endings (Phase 23).
+        player.AddChild(new CorruptionComponent { Name = "Corruption" });
 
         // Magic: status effects can afflict/buff the player, and the spellbook aims
         // through the camera pivot so bolts fire where the player looks.

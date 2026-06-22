@@ -93,7 +93,7 @@ build signal.
 **For you (Claude), via the Godot MCP** (see §2): after any `.cs` change, first
 `dotnet build Embervale.sln` (the shell has dotnet 8.0) — `run_project` does **not**
 recompile and will otherwise launch a stale binary. Then `run_project` (projectPath
-`C:\Users\magnu\ShooterGame`) launches the sandbox, `get_debug_output` captures the
+`C:\Users\magnu\Embervale`) launches the sandbox, `get_debug_output` captures the
 log/errors, `stop_project` stops it. Verify pure logic with
 `dotnet test tests/Embervale.Tests`. Close the game (`stop_project`) when finished.
 

@@ -162,7 +162,7 @@ no code) — batch them when momentum is good.
 > whole production roadmap; the slice and all narrative gate on it. Build the core
 > first, then wire one consequence per session.
 
-- [ ] **23A — `CorruptionComponent` core + events + save** `[F]`
+- [x] **23A — `CorruptionComponent` core + events + save** `[F]`
   - **Goal:** the 0–100 meter and tier state, persistent.
   - **Tasks:** add `src/Corruption/CorruptionComponent.cs` (`EntityComponent`,
     `[GlobalClass]`, on the player). 0–100 value; `Add/Set` API; a `CorruptionTier`

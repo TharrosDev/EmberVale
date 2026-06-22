@@ -14,91 +14,91 @@ namespace Embervale.UI;
 /// </summary>
 public partial class PauseMenu : CanvasLayer
 {
-    private ColorRect _backdrop = null!;
-    private PanelContainer _panel = null!;
-    private bool _open;
+	private ColorRect _backdrop = null!;
+	private PanelContainer _panel = null!;
+	private bool _open;
 
-    public override void _Ready()
-    {
-        ProcessMode = ProcessModeEnum.Always;
-        Layer = 10; // above the rest of the UI
-        Build();
-        SetVisible(false);
-    }
+	public override void _Ready()
+	{
+		ProcessMode = ProcessModeEnum.Always;
+		Layer = 10; // above the rest of the UI
+		Build();
+		SetPanelVisible(false);
+	}
 
-    public override void _Process(double delta)
-    {
-        if (!Godot.Input.IsActionJustPressed(GameInput.Pause))
-        {
-            return;
-        }
+	public override void _Process(double delta)
+	{
+		if (!Godot.Input.IsActionJustPressed(GameInput.Pause))
+		{
+			return;
+		}
 
-        if (_open)
-        {
-            Resume();
-        }
-        else if (GameManager.Instance is { IsPlaying: true } && !UiState.MenuOpen)
-        {
-            Open();
-        }
-    }
+		if (_open)
+		{
+			Resume();
+		}
+		else if (GameManager.Instance is { IsPlaying: true } && !UiState.MenuOpen)
+		{
+			Open();
+		}
+	}
 
-    private void Build()
-    {
-        _backdrop = new ColorRect { Color = new Color(0f, 0f, 0f, 0.55f) };
-        _backdrop.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-        _backdrop.MouseFilter = Control.MouseFilterEnum.Stop;
-        AddChild(_backdrop);
+	private void Build()
+	{
+		_backdrop = new ColorRect { Color = new Color(0f, 0f, 0f, 0.55f) };
+		_backdrop.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+		_backdrop.MouseFilter = Control.MouseFilterEnum.Stop;
+		AddChild(_backdrop);
 
-        _panel = UiTheme.Panel();
-        _panel.SetAnchorsPreset(Control.LayoutPreset.Center);
-        _panel.CustomMinimumSize = new Vector2(280, 0);
-        AddChild(_panel);
+		_panel = UiTheme.Panel();
+		_panel.SetAnchorsPreset(Control.LayoutPreset.Center);
+		_panel.CustomMinimumSize = new Vector2(280, 0);
+		AddChild(_panel);
 
-        MarginContainer pad = UiTheme.Padding(16);
-        _panel.AddChild(pad);
+		MarginContainer pad = UiTheme.Padding(16);
+		_panel.AddChild(pad);
 
-        var col = new VBoxContainer();
-        col.AddThemeConstantOverride("separation", 8);
-        pad.AddChild(col);
+		var col = new VBoxContainer();
+		col.AddThemeConstantOverride("separation", 8);
+		pad.AddChild(col);
 
-        Label header = UiTheme.Header("PAUSED");
-        header.HorizontalAlignment = HorizontalAlignment.Center;
-        col.AddChild(header);
-        col.AddChild(new HSeparator());
+		Label header = UiTheme.Header("PAUSED");
+		header.HorizontalAlignment = HorizontalAlignment.Center;
+		col.AddChild(header);
+		col.AddChild(new HSeparator());
 
-        col.AddChild(MenuButton("Resume", Resume));
-        col.AddChild(MenuButton("Quick Save", () => SaveManager.Instance?.SaveGame("quick")));
-        col.AddChild(MenuButton("Quick Load", () => SaveManager.Instance?.LoadGame("quick")));
-        col.AddChild(MenuButton("Quit to Desktop", () => GetTree().Quit()));
-    }
+		col.AddChild(MenuButton("Resume", Resume));
+		col.AddChild(MenuButton("Quick Save", () => SaveManager.Instance?.SaveGame("quick")));
+		col.AddChild(MenuButton("Quick Load", () => SaveManager.Instance?.LoadGame("quick")));
+		col.AddChild(MenuButton("Quit to Desktop", () => GetTree().Quit()));
+	}
 
-    private static Button MenuButton(string text, System.Action onPressed)
-    {
-        Button button = UiTheme.Action(text);
-        button.CustomMinimumSize = new Vector2(0, 34);
-        button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        button.Pressed += () => onPressed();
-        return button;
-    }
+	private static Button MenuButton(string text, System.Action onPressed)
+	{
+		Button button = UiTheme.Action(text);
+		button.CustomMinimumSize = new Vector2(0, 34);
+		button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+		button.Pressed += () => onPressed();
+		return button;
+	}
 
-    private void Open()
-    {
-        _open = true;
-        SetVisible(true);
-        GameManager.Instance?.ChangeState(GameState.Paused);
-    }
+	private void Open()
+	{
+		_open = true;
+		SetPanelVisible(true);
+		GameManager.Instance?.ChangeState(GameState.Paused);
+	}
 
-    private void Resume()
-    {
-        _open = false;
-        SetVisible(false);
-        GameManager.Instance?.ChangeState(GameState.Playing);
-    }
+	private void Resume()
+	{
+		_open = false;
+		SetPanelVisible(false);
+		GameManager.Instance?.ChangeState(GameState.Playing);
+	}
 
-    private void SetVisible(bool visible)
-    {
-        _backdrop.Visible = visible;
-        _panel.Visible = visible;
-    }
+	private void SetPanelVisible(bool visible)
+	{
+		_backdrop.Visible = visible;
+		_panel.Visible = visible;
+	}
 }

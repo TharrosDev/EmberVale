@@ -1,8 +1,10 @@
 ; Engine configuration file.
-; Embervale — an original first-person open-world fantasy action RPG.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
 ;
-; Autoloads define the core service singletons. Order matters: low-level
-; services (events, locator) come before the systems that depend on them.
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
 
 config_version=5
 
@@ -39,5 +41,4 @@ project/assembly_name="Embervale"
 
 [rendering]
 
-renderer/rendering_method="forward_plus"
 textures/vram_compression/import_etc2_astc=true

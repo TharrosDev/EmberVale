@@ -17,7 +17,10 @@ public sealed class NodePool<T>
     where T : Node
 {
     private readonly Func<T> _factory;
-    private readonly Stack<T> _free = new();
+    // Each parked node is held with the census count it was parked under (its detached subtree
+    // size), so unparking always reverses exactly what parking added — even if the node was
+    // freed externally in the meantime and can no longer be measured.
+    private readonly Stack<(T Node, int Count)> _free = new();
     private readonly int _maxRetained;
 
     public NodePool(Func<T> factory, int prewarm = 0, int maxRetained = 64)
@@ -27,8 +30,7 @@ public sealed class NodePool<T>
 
         for (int i = 0; i < prewarm; i++)
         {
-            _free.Push(_factory());
-            NodePoolCensus.OnParked();
+            Park(_factory());
         }
     }
 
@@ -40,8 +42,8 @@ public sealed class NodePool<T>
     {
         while (_free.Count > 0)
         {
-            T candidate = _free.Pop();
-            NodePoolCensus.OnUnparked();
+            (T candidate, int count) = _free.Pop();
+            NodePoolCensus.OnUnparked(count);
             if (GodotObject.IsInstanceValid(candidate))
             {
                 return candidate;
@@ -64,8 +66,7 @@ public sealed class NodePool<T>
 
         if (_free.Count < _maxRetained)
         {
-            _free.Push(node);
-            NodePoolCensus.OnParked();
+            Park(node);
         }
         else
         {
@@ -78,12 +79,33 @@ public sealed class NodePool<T>
     {
         while (_free.Count > 0)
         {
-            T node = _free.Pop();
-            NodePoolCensus.OnUnparked();
+            (T node, int count) = _free.Pop();
+            NodePoolCensus.OnUnparked(count);
             if (GodotObject.IsInstanceValid(node))
             {
                 node.QueueFree();
             }
         }
+    }
+
+    /// <summary>Parks a (detached) node and records its subtree size with the census.</summary>
+    private void Park(T node)
+    {
+        int count = SubtreeCount(node);
+        _free.Push((node, count));
+        NodePoolCensus.OnParked(count);
+    }
+
+    /// <summary>Total nodes in <paramref name="node"/>'s subtree (itself + all descendants) —
+    /// what Godot counts as orphan nodes while the subtree is detached.</summary>
+    private static int SubtreeCount(Node node)
+    {
+        int count = 1;
+        foreach (Node child in node.GetChildren())
+        {
+            count += SubtreeCount(child);
+        }
+
+        return count;
     }
 }

@@ -1,4 +1,5 @@
 using Embervale.Combat;
+using Embervale.Corruption;
 using Embervale.Crafting;
 using Embervale.Dialogue;
 using Embervale.Factions;
@@ -168,6 +169,16 @@ public class EnumStabilityTests
         Assert.Equal(4, (int)ReputationTier.Friendly);
         Assert.Equal(5, (int)ReputationTier.Honored);
         Assert.Equal(6, (int)ReputationTier.Allied);
+    }
+
+    [Fact]
+    public void CorruptionTier_Ordinals()
+    {
+        Assert.Equal(0, (int)CorruptionTier.Untainted);
+        Assert.Equal(1, (int)CorruptionTier.Touched);
+        Assert.Equal(2, (int)CorruptionTier.Marked);
+        Assert.Equal(3, (int)CorruptionTier.Ashbound);
+        Assert.Equal(4, (int)CorruptionTier.Embers);
     }
 
     [Fact]

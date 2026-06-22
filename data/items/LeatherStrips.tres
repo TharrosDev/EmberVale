@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="ItemResource" load_steps=2 format=3 uid="uid://cmbrvlitmstrips"]
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://uov73jg8fc8g"]
 
 [ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
 

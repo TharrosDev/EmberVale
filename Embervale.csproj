@@ -12,11 +12,11 @@
   <!--
     Safety guard: the Godot .NET SDK globs every *.cs file recursively under the
     project directory. A stray nested copy of the source tree (e.g. an accidental
-    ShooterGame/ subfolder) would compile every class twice, producing hundreds of
+    Embervale/ subfolder) would compile every class twice, producing hundreds of
     duplicate-definition errors. Exclude any such nested copies from compilation.
   -->
   <ItemGroup>
-    <Compile Remove="ShooterGame/**/*.cs" />
+    <Compile Remove="Embervale/**/*.cs" />
     <!--
       The headless xUnit project lives under tests/ and is a separate
       Microsoft.NET.Sdk project. Exclude it from this project's recursive *.cs glob

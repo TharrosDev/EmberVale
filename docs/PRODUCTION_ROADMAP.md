@@ -795,7 +795,7 @@ The ordering is driven by hard dependencies, not preference:
 
 | Stage | Gate | Phases | Status |
 | ----- | ---- | ------ | ------ |
-| A — Pre-production & First Playable | G0 | 22–28 | ⏳ In progress (Phase 22 ✅; 23 next) |
+| A — Pre-production & First Playable | G0 | 22–28 | ⏳ In progress (Phase 22 ✅; 23 underway — 23A ✅) |
 | B — Vertical Slice | G1 | 29–33 | ⬜ Planned |
 | C — Alpha / Feature Complete | G2 | 34–45 | ⬜ Planned |
 | D — Beta / Content Complete | G3 | 46–55 | ⬜ Planned |
@@ -805,8 +805,11 @@ The ordering is driven by hard dependencies, not preference:
 
 **Immediate next step:** Phase 22 (Production Bible & Content Pipeline) is **complete**
 (22A–22H: design bible, ID registry, validator well-formedness + reachability + headless
-gate, content templates, analytics spine). Next is **Phase 23 (Corruption)** — the LORE's
-defining mechanic, which everything narrative depends on.
+gate, content templates, analytics spine). **Phase 23 (Corruption)** — the LORE's
+defining mechanic — is underway: **23A is done** (the `CorruptionComponent` core: 0–100
+meter, `CorruptionTier` bands, `CorruptionChanged`/`CorruptionTierChanged` events, save/load,
+wired onto the player). Next is **23B** — the `corruption` dev console + F3 readout that makes
+the meter drivable and the save round-trip observable.
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —
 > a first-person open-world fantasy RPG where you battle fallen heroes across four
