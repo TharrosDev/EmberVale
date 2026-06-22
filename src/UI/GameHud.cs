@@ -1,4 +1,6 @@
 using System.Text;
+using Embervale.Core.Events;
+using Embervale.Corruption;
 using Embervale.Entities;
 using Embervale.Magic;
 using Embervale.Player;
@@ -49,6 +51,12 @@ public partial class GameHud : CanvasLayer
     private PanelContainer _promptPanel = null!;
     private Label _promptText = null!;
 
+    // Corruption dread: an ash-violet edge vignette that fades in at high tiers (23E).
+    private TextureRect _vignette = null!;
+    private float _vignetteAlpha;
+    private float _targetVignetteAlpha;
+    private const float VignetteFadeSpeed = 0.5f; // alpha units per second
+
     public void SetPlayer(IEntity? player) => _player = player;
 
     public void SetClock(WorldClock? clock) => _clock = clock;
@@ -59,6 +67,7 @@ public partial class GameHud : CanvasLayer
 
     public override void _Ready()
     {
+        BuildVignette(); // backmost — built first so the HUD widgets draw over it
         AddChild(new Crosshair());
         BuildVitals();
         BuildContext();
@@ -66,6 +75,13 @@ public partial class GameHud : CanvasLayer
         BuildBanner();
         BuildNameplate();
         BuildPrompt();
+
+        EventBus.Instance?.Subscribe<CorruptionTierChangedEvent>(OnCorruptionTierChanged);
+    }
+
+    public override void _ExitTree()
+    {
+        EventBus.Instance?.Unsubscribe<CorruptionTierChangedEvent>(OnCorruptionTierChanged);
     }
 
     // --- Construction -------------------------------------------------------
@@ -169,6 +185,40 @@ public partial class GameHud : CanvasLayer
         WrapPadded(_promptPanel, col);
     }
 
+    /// <summary>A full-screen radial vignette (clear centre, ash-violet edges) whose opacity
+    /// rises with the corruption tier. Built once; only its modulate alpha animates.</summary>
+    private void BuildVignette()
+    {
+        Color edge = UiTheme.Corruption;
+        var gradient = new Gradient
+        {
+            // Inner ~55% stays clear, then ramps to the corruption colour at the rim.
+            Offsets = new float[] { 0.55f, 1.0f },
+            Colors = new Color[] { new Color(edge.R, edge.G, edge.B, 0f), edge },
+        };
+
+        var texture = new GradientTexture2D
+        {
+            Gradient = gradient,
+            Fill = GradientTexture2D.FillEnum.Radial,
+            FillFrom = new Vector2(0.5f, 0.5f),
+            FillTo = new Vector2(0.5f, 0.0f),
+            Width = 256,
+            Height = 256,
+        };
+
+        _vignette = new TextureRect
+        {
+            Texture = texture,
+            StretchMode = TextureRect.StretchModeEnum.Scale,
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+            SelfModulate = new Color(1f, 1f, 1f, 0f),
+        };
+        _vignette.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        AddChild(_vignette);
+    }
+
     // --- Per-frame update ---------------------------------------------------
 
     public override void _Process(double delta)
@@ -178,7 +228,30 @@ public partial class GameHud : CanvasLayer
         UpdateQuest();
         UpdateBanner();
         UpdateFocus();
+        UpdateVignette(delta);
     }
+
+    private void UpdateVignette(double delta)
+    {
+        if (Mathf.IsEqualApprox(_vignetteAlpha, _targetVignetteAlpha))
+        {
+            return;
+        }
+
+        _vignetteAlpha = Mathf.MoveToward(_vignetteAlpha, _targetVignetteAlpha, (float)delta * VignetteFadeSpeed);
+        _vignette.SelfModulate = new Color(1f, 1f, 1f, _vignetteAlpha);
+    }
+
+    private void OnCorruptionTierChanged(CorruptionTierChangedEvent e) =>
+        _targetVignetteAlpha = VignetteTargetFor(e.Current);
+
+    /// <summary>Per-tier vignette opacity — silent below Ashbound, rising into Embers.</summary>
+    private static float VignetteTargetFor(CorruptionTier tier) => tier switch
+    {
+        CorruptionTier.Ashbound => 0.22f,
+        CorruptionTier.Embers => 0.40f,
+        _ => 0f,
+    };
 
     private void UpdateVitals()
     {

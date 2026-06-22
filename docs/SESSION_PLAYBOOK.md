@@ -198,7 +198,7 @@ no code) — batch them when momentum is good.
     flag in `_Process`, never in a signal handler.
   - **Done when:** the gauge reflects live corruption + tier through `UiTheme`.
 
-- [ ] **23E — Corruption HUD vignette at high tiers** `[F/P]`
+- [x] **23E — Corruption HUD vignette at high tiers** `[F/P]`
   - **Goal:** ambient dread at Ashbound/Embers.
   - **Tasks:** add a subtle screen vignette/desaturation overlay in `GameHud` that
     fades in by tier (subscribe to `CorruptionTierChangedEvent`). Keep it through

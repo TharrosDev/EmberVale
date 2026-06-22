@@ -795,7 +795,7 @@ The ordering is driven by hard dependencies, not preference:
 
 | Stage | Gate | Phases | Status |
 | ----- | ---- | ------ | ------ |
-| A — Pre-production & First Playable | G0 | 22–28 | ⏳ In progress (Phase 22 ✅; 23 underway — 23A–23D ✅) |
+| A — Pre-production & First Playable | G0 | 22–28 | ⏳ In progress (Phase 22 ✅; 23 underway — 23A–23E ✅) |
 | B — Vertical Slice | G1 | 29–33 | ⬜ Planned |
 | C — Alpha / Feature Complete | G2 | 34–45 | ⬜ Planned |
 | D — Beta / Content Complete | G3 | 46–55 | ⬜ Planned |
@@ -811,9 +811,10 @@ defining mechanic — is underway: **23A–23C are done** — the `CorruptionCom
 its debug surface (a `corruption get/set/add/tier` dev-console command + F3-overlay readout),
 dialogue integration (`CorruptionAtLeast`/`CorruptionBelow` conditions + an `AddCorruption`
 effect, exercised by the Village Elder, who now reacts to a corrupted player), and the
-character-screen corruption gauge (a `UiTheme.Bar` with the ash-violet corruption identity +
-tier label, the first player-facing visual). Next is **23E** — the HUD vignette/desaturation
-that fades in at high corruption tiers.
+character-screen corruption gauge, and the HUD dread vignette (an ash-violet edge vignette in
+`GameHud` that fades in at Ashbound/Embers off `CorruptionTierChangedEvent`). Next is **23F** —
+the `CorruptionAppearanceController` stub (per-tier placeholder material/emissive on the player,
+the seam Phase 30's real models/VFX plug into).
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —
 > a first-person open-world fantasy RPG where you battle fallen heroes across four
