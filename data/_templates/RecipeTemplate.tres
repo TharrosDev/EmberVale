@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="CraftingRecipeResource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/Crafting/CraftingRecipeResource.cs" id="1_recipe"]
+[ext_resource type="Script" path="res://src/Crafting/RecipeIngredient.cs" id="2_ing"]
+
+[sub_resource type="Resource" id="Ing_example"]
+script = ExtResource("2_ing")
+ItemId = "item.material.iron_ore"
+Quantity = 2
+
+[resource]
+script = ExtResource("1_recipe")
+Id = "recipe.example"
+DisplayName = "Example Recipe"
+Description = "What the recipe produces and at which station."
+Station = 1
+Ingredients = Array[Resource]([SubResource("Ing_example")])
+OutputItemId = "item.material.iron_ingot"
+OutputQuantity = 1
+OutputRarity = 0

@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="ScheduleResource" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/Npc/ScheduleResource.cs" id="1_sched"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleEntry.cs" id="2_entry"]
+
+[sub_resource type="Resource" id="e_day"]
+script = ExtResource("2_entry")
+StartHour = 8
+Activity = "Working"
+Destination = Vector3(0, 0, 0)
+
+[sub_resource type="Resource" id="e_night"]
+script = ExtResource("2_entry")
+StartHour = 21
+Activity = "Asleep"
+Destination = Vector3(6, 0, 6)
+
+[resource]
+script = ExtResource("1_sched")
+Id = "schedule.example"
+Entries = Array[Resource]([SubResource("e_day"), SubResource("e_night")])

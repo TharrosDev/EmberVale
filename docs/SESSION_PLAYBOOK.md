@@ -134,7 +134,7 @@ no code) — batch them when momentum is good.
   - **Done when:** a documented one-command content check exists (reviewed against
     the API; the human runs it).
 
-- [ ] **22G — `data/_templates/` canonical starting `.tres`** `[P]`
+- [x] **22G — `data/_templates/` canonical starting `.tres`** `[P]`
   - **Goal:** copy-paste starting points for every content type.
   - **Tasks:** create `data/_templates/` with one minimal, commented `.tres`
     exemplar per content domain already in CLAUDE.md §8 (item, equippable, affix,

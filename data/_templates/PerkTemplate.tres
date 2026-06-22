@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="PerkResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/Progression/PerkResource.cs" id="1_perk"]
+
+[resource]
+script = ExtResource("1_perk")
+Id = "perk.example"
+DisplayName = "Example Perk"
+Description = "What the perk does, per rank (e.g. +2 Physical Power per rank)."
+MaxRank = 5
+Cost = 1
+Stat = 9
+ModifierType = 0
+ValuePerRank = 2.0

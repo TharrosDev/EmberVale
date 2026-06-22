@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="WeatherResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/WeatherResource.cs" id="1_weather"]
+
+[resource]
+script = ExtResource("1_weather")
+Id = "weather.example"
+DisplayName = "Example Weather"
+Type = 0
+SelectionWeight = 2.0
+MinHours = 4.0
+MaxHours = 8.0
+LightEnergyScale = 1.0
+SkyEnergyScale = 1.0
+FogDensity = 0.0
+FogColor = Color(0.72, 0.74, 0.78, 1)
+Precipitation = 0.0

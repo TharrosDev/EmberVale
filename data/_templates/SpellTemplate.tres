@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="SpellResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/Magic/SpellResource.cs" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+Id = "spell.example"
+DisplayName = "Example Spell"
+Description = "What the spell does when cast."
+School = 1
+Delivery = 0
+ManaCost = 8.0
+Cooldown = 0.6
+BaseDamage = 14.0
+Healing = 0.0
+StatusEffectId = "status.burning"
+Range = 30.0
+ProjectileSpeed = 22.0
+ImpactRadius = 0.0

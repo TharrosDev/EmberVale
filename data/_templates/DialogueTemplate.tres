@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="DialogueResource" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+[sub_resource type="Resource" id="ch_continue"]
+script = ExtResource("3_choice")
+Text = "Tell me more."
+Goto = "more"
+
+[sub_resource type="Resource" id="ch_bye"]
+script = ExtResource("3_choice")
+Text = "Farewell."
+
+[sub_resource type="Resource" id="node_root"]
+script = ExtResource("2_node")
+Id = "root"
+Text = "The opening line the speaker greets the player with."
+Choices = Array[Resource]([SubResource("ch_continue"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_more"]
+script = ExtResource("2_node")
+Id = "more"
+Text = "A follow-up line. An empty Goto on its only choice ends the conversation."
+Choices = Array[Resource]([SubResource("ch_bye")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "dialogue.example"
+SpeakerName = "Example Speaker"
+StartNodeId = "root"
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_more")])

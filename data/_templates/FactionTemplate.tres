@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="FactionResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/Factions/FactionResource.cs" id="1_faction"]
+
+[resource]
+script = ExtResource("1_faction")
+Id = "faction.example"
+DisplayName = "Example Faction"
+Description = "Who they are and how they regard the player by default."
+DefaultReputation = 0
+HostileThreshold = 2
+KillReputationPenalty = 6
+Enemies = Array[String]([])
+Allies = Array[String]([])

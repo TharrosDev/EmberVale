@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="LootTable" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/Loot/LootTable.cs" id="1_table"]
+[ext_resource type="Script" path="res://src/Loot/LootEntry.cs" id="2_entry"]
+
+[sub_resource type="Resource" id="Entry_example"]
+script = ExtResource("2_entry")
+ItemId = "item.material.iron_ore"
+DropChance = 0.5
+MinQuantity = 1
+MaxQuantity = 2
+RollAffixes = false
+
+[resource]
+script = ExtResource("1_table")
+Entries = Array[Resource]([SubResource("Entry_example")])
+GoldItemId = "item.currency.gold"
+GoldChance = 0.5
+GoldMin = 3
+GoldMax = 12
+QualityBonus = 0.0

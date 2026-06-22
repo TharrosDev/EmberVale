@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EquippableItemResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/Items/EquippableItemResource.cs" id="1_eq"]
+
+[resource]
+script = ExtResource("1_eq")
+Id = "item.armor.example"
+DisplayName = "Example Armor"
+Description = "Equippable gear; the Bonus* fields apply while it is worn."
+Type = 3
+Rarity = 1
+MaxStack = 1
+Weight = 4.0
+Value = 60
+Slot = 4
+BonusArmor = 10.0
+BonusMaxHealth = 15.0

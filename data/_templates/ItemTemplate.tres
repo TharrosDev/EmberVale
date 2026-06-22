@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.category.example"
+DisplayName = "Example Item"
+Description = "One line on what this item is and why it matters."
+Type = 4
+Rarity = 0
+MaxStack = 50
+Weight = 1.0
+Value = 5
