@@ -79,6 +79,19 @@ build signal.
 captures the log/errors, `stop_project` stops it. Use it to verify changes; close the
 game (`stop_project`) when finished.
 
+**Headless content check (no gameplay):** run the full content validator and exit —
+
+```
+godot --headless --path . -- --validate
+```
+
+The `--` forwards `--validate` as a user argument; `GameBootstrap` detects it
+(`HeadlessValidation`), loads every database, runs `ContentValidator.RunAll()` (cross-
+references + well-formedness + graph reachability), prints the report, and exits **0** on
+pass / **1** on any issue. This is the one-command content gate for the maintainer (and
+later CI). The same battery is also reachable in-game via the `validate-all` dev console
+command (`F1`).
+
 **Sandbox controls:** `WASD` move · mouse look · `Shift` sprint · `Space` jump ·
 `LMB` attack · `RMB` block · `E` interact · `I` inventory · `H` heal dummy ·
 `R` respawn dummy · `F5`/`F9` quick save/load · `Esc` pause (frees the cursor).

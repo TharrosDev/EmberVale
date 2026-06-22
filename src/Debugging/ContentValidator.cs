@@ -58,10 +58,22 @@ public static class ContentValidator
     /// </summary>
     public static string RunAll()
     {
+        RunAll(out string report);
+        return report;
+    }
+
+    /// <summary>
+    /// Full battery, exposing a clean pass/fail in addition to the summary — for the headless
+    /// validation path, which exits non-zero when content is broken. Returns <c>true</c> when no
+    /// issues were found.
+    /// </summary>
+    public static bool RunAll(out string report)
+    {
         var issues = new List<string>();
         CollectCoreIssues(issues);
         CollectGraphIssues(issues);
-        return Report(issues, "all references resolve, content is well-formed, and graphs are reachable");
+        report = Report(issues, "all references resolve, content is well-formed, and graphs are reachable");
+        return issues.Count == 0;
     }
 
     private static void CollectCoreIssues(List<string> issues)

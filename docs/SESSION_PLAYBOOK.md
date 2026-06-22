@@ -125,7 +125,7 @@ no code) — batch them when momentum is good.
   - **Done when:** `validate-all` exists and flags an intentionally-broken test
     graph; no false positives on current content.
 
-- [ ] **22F — Headless validation entry point** `[F]`
+- [x] **22F — Headless validation entry point** `[F]`
   - **Goal:** let the maintainer run validation without launching into gameplay.
   - **Tasks:** add a headless/`--validate` path (a Godot `--headless` script or a
     `GameState` boot branch) that loads the databases, runs `validate-all`, prints

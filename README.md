@@ -29,6 +29,19 @@ theoretical ones.
    `dotnet build Embervale.sln`).
 4. Press **Play**. The bootstrap sandbox loads `scenes/Main.tscn`.
 
+### Validate content (headless)
+
+Check that all authored content is well-formed without entering gameplay:
+
+```
+godot --headless --path . -- --validate
+```
+
+This runs the full content validator (cross-references, well-formedness, and dialogue/
+quest graph reachability) and exits **0** on pass or **1** on any issue — a one-command
+content gate for scripts and CI. The same battery is available in-game via the
+`validate-all` developer-console command.
+
 ### Sandbox controls
 
 | Input        | Action                              |
