@@ -475,11 +475,14 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 
 ## 9. Development workflow
 
-- **Branch:** develop on `claude/happy-maxwell-19hx51`. **`main` is the trunk.**
-  Never push directly to `main`; open PRs into it.
+- **Branch:** develop on a per-phase branch (e.g. `claude/phase-23d-…`) off `main`.
+  **`main` is the trunk.** Never push directly to `main`; always go through a PR.
 - **Per phase:** implement → keep buildable/playable → update `README.md` +
   `docs/PRODUCTION_ROADMAP.md` (mark phase done, queue next) → commit → push →
-  open a **draft PR** into `main`. The maintainer reviews/merges.
+  open a PR into `main` and **merge it immediately** (`gh pr merge --merge --admin`).
+  The maintainer wants each push landed on `main`, **not** parked in a draft PR for
+  review — do not leave PRs open as drafts. (The PR still exists for history; it's
+  just merged right away.)
 - **After a merge:** the head branch may be auto-deleted; locally
   `git fetch origin main && git reset --hard origin/main` to resync, then carry on.
 - **Commits:** clear, descriptive messages. Co-author/session trailers are added
