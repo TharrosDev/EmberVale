@@ -52,6 +52,10 @@ public partial class PauseMenu : CanvasLayer
 
 		_panel = UiTheme.Panel();
 		_panel.SetAnchorsPreset(Control.LayoutPreset.Center);
+		// Grow from the centre anchor in both directions so the panel is truly centred
+		// (the default End grow would push it toward the bottom-right of centre).
+		_panel.GrowHorizontal = Control.GrowDirection.Both;
+		_panel.GrowVertical = Control.GrowDirection.Both;
 		_panel.CustomMinimumSize = new Vector2(280, 0);
 		AddChild(_panel);
 
