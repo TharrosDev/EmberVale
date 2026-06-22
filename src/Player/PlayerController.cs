@@ -10,7 +10,7 @@ using Godot;
 namespace Embervale.Player;
 
 /// <summary>
-/// First-person player input + camera component. It reads the <see cref="GameInput"/>
+/// Third-person player input + camera component. It reads the <see cref="GameInput"/>
 /// actions, drives the sibling <see cref="LocomotionComponent"/>, applies
 /// mouse-look (yaw on the body, pitch on the camera pivot), and routes attack and
 /// block input into the combat components (<see cref="MeleeWeaponComponent"/> and

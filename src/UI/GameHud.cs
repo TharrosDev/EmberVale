@@ -51,7 +51,7 @@ public partial class GameHud : CanvasLayer
     private PanelContainer _promptPanel = null!;
     private Label _promptText = null!;
 
-    // Corruption dread: an ash-violet edge vignette that fades in at high tiers (23E).
+    // Corruption dread: a dark blood-red edge vignette that fades in at high tiers (23E).
     private TextureRect _vignette = null!;
     private float _vignetteAlpha;
     private float _targetVignetteAlpha;
@@ -185,7 +185,7 @@ public partial class GameHud : CanvasLayer
         WrapPadded(_promptPanel, col);
     }
 
-    /// <summary>A full-screen radial vignette (clear centre, ash-violet edges) whose opacity
+    /// <summary>A full-screen radial vignette (clear centre, dark blood-red edges) whose opacity
     /// rises with the corruption tier. Built once; only its modulate alpha animates.</summary>
     private void BuildVignette()
     {

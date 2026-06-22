@@ -3,7 +3,7 @@ using Godot;
 namespace Embervale.UI;
 
 /// <summary>
-/// A screen-centre crosshair so the first-person aim point (where melee raycasts,
+/// A screen-centre crosshair so the third-person aim point (where melee raycasts,
 /// interaction and spells are directed) is visible. Drawn in code as four short arms
 /// around a small centre dot, with a soft dark outline so it reads on any background.
 /// It ignores mouse input so it never blocks menu clicks.

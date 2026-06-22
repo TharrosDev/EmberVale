@@ -10,7 +10,7 @@
 
 **Genre:** Open World Fantasy Action RPG
 
-**Perspective:** First Person
+**Perspective:** Third Person
 
 **Setting:** High Fantasy World in Decline
 
@@ -740,4 +740,4 @@ The Age of Embers begins.
 
 # Core Vision Statement
 
-Embervale is a first-person open-world fantasy RPG where players explore a beautiful but dying world, battle fallen heroes, forge powerful alliances, uncover the secrets of dead gods, and decide whether they will become the savior of creation or the next Ash King.
+Embervale is a third-person open-world fantasy RPG where players explore a beautiful but dying world, battle fallen heroes, forge powerful alliances, uncover the secrets of dead gods, and decide whether they will become the savior of creation or the next Ash King.

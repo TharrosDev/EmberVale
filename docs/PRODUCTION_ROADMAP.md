@@ -358,9 +358,9 @@ this gives it **feel**.
 The art direction made real for the slice cast (player, core enemies, key NPCs,
 the boss).
 
-- Rigged/animated first-person arms + weapons + spell casting; third-person body
-  for cutscenes/reflections; enemy animation sets (locomotion, attacks, hit,
-  death) driving the existing AI/combat states.
+- Rigged/animated third-person player character (locomotion, attacks, block, hit,
+  death) + weapons + spell casting, framed by the over-the-shoulder camera; enemy
+  animation sets driving the existing AI/combat states.
 - Spell/status VFX matched to `SpellSchools` tints; the dying-world material
   language (ash, faded color, embers) established as a style guide.
 - Asset import/LOD conventions feeding the optimization work (Phase 19/57).
@@ -818,7 +818,7 @@ ember glow — the seam Phase 30's real models/VFX plug into). Next is **23G** �
 global "dread" standing, so the world fears a corrupted player (reusing the reputation math).
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —
-> a first-person open-world fantasy RPG where you battle fallen heroes across four
+> a third-person open-world fantasy RPG where you battle fallen heroes across four
 > dying realms and choose whether to save creation or become its next Ash King.
 </content>
 </invoke>

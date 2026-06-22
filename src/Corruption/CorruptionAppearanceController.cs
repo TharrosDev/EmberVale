@@ -54,14 +54,14 @@ public partial class CorruptionAppearanceController : EntityComponent
 
         float t = (int)tier / 4f; // 0 Untainted … 4 Embers
 
-        // Healthy skin fades toward ash-grey as corruption deepens.
+        // Healthy skin fades toward a dark ashen tone as corruption deepens.
         Color baseSkin = new(0.62f, 0.60f, 0.58f);
-        Color ash = new(0.20f, 0.18f, 0.22f);
+        Color ash = new(0.22f, 0.16f, 0.16f);
         _material.AlbedoColor = baseSkin.Lerp(ash, t);
 
-        // Ember/ash-violet emissive stand-in for eye-glow / ash veins; off while Untainted.
+        // Dark blood-red emissive stand-in for eye-glow / blood veins; off while Untainted.
         _material.EmissionEnabled = tier != CorruptionTier.Untainted;
-        _material.Emission = new Color(0.58f, 0.20f, 0.30f);
+        _material.Emission = new Color(0.50f, 0.04f, 0.06f);
         _material.EmissionEnergyMultiplier = t * 2.0f;
     }
 }
