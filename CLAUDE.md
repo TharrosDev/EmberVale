@@ -43,10 +43,21 @@ You are the lead engineer building this game incrementally. The non-negotiables:
 | Entry scene      | `scenes/Main.tscn` → `GameBootstrap` (`src/Bootstrap`)          |
 | Target platforms | Windows, Linux, Steam Deck (Forward+ renderer)                  |
 
-**This container cannot build or run the game** — there is no Godot/.NET
-toolchain installed here. Write code carefully against the Godot 4.7 C# API; the
-human builds/runs in the Godot editor. Do **not** claim something was
-"tested/verified running" — say it was reviewed against the API.
+**A Godot MCP server (`mcp__godot__*`) is connected**, running
+**Godot 4.7.stable.mono** — the same engine and version this project targets. Through
+it you can actually build and run the game: `run_project` + `get_debug_output` to
+launch and capture errors/logs, `stop_project` to stop, `launch_editor`,
+`get_project_info`, and scene edits (`create_scene`/`add_node`/`load_sprite`/
+`save_scene`). **Prefer running the project to verify non-trivial changes** rather than
+only reasoning about them.
+
+Caveats: `run_project` launches the **real game window** on the maintainer's machine —
+use it deliberately and `stop_project` when done; it is not a silent headless check.
+There is still **no `dotnet`/CLI build in the shell here** (building goes through the
+editor/MCP), and pure-logic tests run via `dotnet test` on the maintainer's machine
+(`tests/Embervale.Tests`). When you have **not** run something, say it was *reviewed
+against the Godot 4.7 C# API* — reserve "verified/tested running" for output you
+actually captured through the MCP.
 
 There is **no CI** (the maintainer declined to add GitHub Actions). The green
 **Vercel** check that appears on every PR is a meaningless no-op — Vercel is
@@ -55,12 +66,18 @@ build signal.
 
 ---
 
-## 3. Build & run (for the human)
+## 3. Build & run
 
+**For the human:**
 1. Install Godot 4.7+ **.NET build** and the .NET 8 SDK.
 2. Open `project.godot` in the editor (it builds C# automatically), or
    `dotnet build Embervale.sln`.
 3. Press Play. `scenes/Main.tscn` boots the sandbox.
+
+**For you (Claude), via the Godot MCP** (see §2): `run_project` (projectPath
+`C:\Users\magnu\ShooterGame`) builds + launches the sandbox, `get_debug_output`
+captures the log/errors, `stop_project` stops it. Use it to verify changes; close the
+game (`stop_project`) when finished.
 
 **Sandbox controls:** `WASD` move · mouse look · `Shift` sprint · `Space` jump ·
 `LMB` attack · `RMB` block · `E` interact · `I` inventory · `H` heal dummy ·
@@ -213,7 +230,8 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 - **`GD.Load<T>` can return null** — always fall back.
 - **`ServiceLocator` holds one instance per type.** The player is registered as
   `PlayerCharacter`; the dummy as `Entity`; enemies are **not** registered.
-- This container can't compile — there is no substitute for careful API use.
+- Prefer running via the Godot MCP (`run_project` + `get_debug_output`, §2) to verify;
+  when you don't run it, there's no substitute for careful Godot 4.7 C# API use.
 
 ---
 
