@@ -2,6 +2,7 @@ using System.Text;
 using Embervale.Combat;
 using Embervale.Core;
 using Embervale.Core.Events;
+using Embervale.Corruption;
 using Embervale.Entities;
 using Embervale.Magic;
 using Embervale.Progression;
@@ -236,6 +237,11 @@ public partial class DebugHud : CanvasLayer
         if (_player.TryGetComponent(out QuestLogComponent quests))
         {
             AppendQuestTracker(sb, quests);
+        }
+
+        if (_player.TryGetComponent(out CorruptionComponent corruption))
+        {
+            sb.Append($"Corruption {corruption.Value}/{CorruptionTiers.Max}   ({CorruptionTiers.Label(corruption.Tier)})\n");
         }
 
         sb.Append($"Last hit: {_lastHit}");
