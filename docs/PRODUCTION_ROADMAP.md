@@ -130,6 +130,7 @@ authoring recipes that turn them into content with no new code, see CLAUDE.md §
 | -- | ----- | --- | --------- |
 | 29 | Combat Feel & Game Juice | F/P | Hit-stop, camera shake, animation canceling, i-frames, lock-on, feedback layers |
 | 30 | Animation, Models & Visual Identity | P | Rigged characters, weapon/spell VFX, the art direction made real |
+| 30.5 | UI & HUD Overhaul | P/F | Unify + rebuild every UI surface to ship quality: design tokens, HUD, panels, motion, gamepad nav |
 | 31 | Audio Foundations | F/P | Audio bus/mixer, music director, SFX, ambience, the `AudioDirector` |
 | 32 | Companion System | F | Recruitable allies: follow/command AI, loyalty, abilities, party persistence |
 | 33 | Vertical Slice Assembly & Onboarding | C/P | Stitch 22–32 into a ship-quality 30–60 min slice + the opening tutorial |
@@ -363,6 +364,34 @@ the boss).
 - Spell/status VFX matched to `SpellSchools` tints; the dying-world material
   language (ash, faded color, embers) established as a style guide.
 - Asset import/LOD conventions feeding the optimization work (Phase 19/57).
+
+### Phase 30.5 — UI & HUD Overhaul `[P/F]`
+
+The systems roadmap built a *functional* UI (Phase 14 polish, Phase 18 the "real game
+UI") on a one-file `UiTheme`. Across Stage A–B the game grows many *individual* surfaces —
+the corruption gauge/vignette (23), the meta-shell + settings (24), the world map + compass
+(25), character creation (26), the boss healthbar (28), combat feedback + lock-on (29). This
+phase, landing right after the **art direction** is set (30), takes all of them from
+"functional and inconsistent" to **one cohesive, beautiful, ship-quality UI** — the UI half
+of the G1 "looks shipped" bar. It is craft + a little new framework code, not new mechanics.
+
+- **Design system, not a theme file** — grow `UiTheme` into real **design tokens** (palette,
+  type scale, spacing, radius, elevation, motion durations/easing) with a `docs/UI_STYLE.md`
+  the whole game answers to; the dying-world identity (ash, faded color, ember accents) made
+  the UI language, matched to Phase 30.
+- **HUD rebuilt** — a responsive, **scalable**, safe-area-aware HUD architecture; core widgets
+  (vitals, prepared spell + cooldown, status effects, crosshair), wayfinding (compass, quest
+  tracker, interaction prompt, nameplate, world-event banners, toasts), and the combat/boss
+  HUD (boss healthbar, lock-on reticle, crit/stagger/block/parry feedback, the corruption
+  vignette hook) — all unified on the tokens, with juice.
+- **Menus rebuilt on one framework** — a screen/route manager + a reusable panel shell
+  (modal/non-modal), tabs, list/grid, and a tooltip system; inventory, character/equipment,
+  perks, crafting, dialogue, journal/quests and map panels rebuilt on it.
+- **Feel & input** — motion/microinteractions (transitions, hover/press, value-change
+  animations) with a reduced-motion guard; a **gamepad/keyboard focus-navigation** system with
+  input-device-aware glyphs; a UI-scale + legibility pass verified at min-spec / Steam Deck.
+- **Localized from the start** — every string goes through the Phase 24 `Loc` layer (no
+  hard-coded UI text). Accessibility is *advanced* here and *completed* in Phase 54.
 
 ### Phase 31 — Audio Foundations `[F/P]`
 
@@ -749,7 +778,10 @@ The ordering is driven by hard dependencies, not preference:
    opening/onboarding (33, 46).
 5. **The vertical slice (27–33)** proves the pipeline and quality bar before
    scaling content — the classic "one of everything, perfect" before "all of
-   everything."
+   everything." The **UI/HUD overhaul (30.5)** sits late in the slice on purpose:
+   it lands *after* the art direction (30) and after the individual UI surfaces
+   (23–29) exist, so it unifies and beautifies them in one pass rather than
+   polishing a moving target — and *before* the slice is assembled (33).
 6. **Feature-complete (34–45)** front-loads *all* remaining mechanics so the
    content stages (46–55) never block on a missing system. **This is the schedule's
    keystone:** G2 is the promise that nothing left is unknown engineering.

@@ -581,6 +581,54 @@ no code) — batch them when momentum is good.
 
 ---
 
+## Phase 30.5 — UI & HUD Overhaul `[P/F]`
+
+> Take the functional UI (Phase 14/18) and the individual surfaces grown across 23–30 to
+> **one cohesive, ship-quality** look. Build the design system first (30.5A), then HUD, then
+> menus, then feel/input. All strings go through the Phase 24 `Loc` layer. Each sub-phase
+> leaves the game buildable/playable; verify in-engine (build → `run_project`, CLAUDE.md §3).
+
+- [ ] **30.5A — Design tokens + `docs/UI_STYLE.md`** `[P]`
+  - **Goal:** the foundation every other surface answers to.
+  - **Tasks:** grow `UiTheme` (`src/UI/UiTheme.cs`) from palette+builders into real **tokens**
+    — palette, type scale, spacing, radius, elevation, motion (durations/easing). Write
+    `docs/UI_STYLE.md` pinning the dying-world UI identity (ash/faded/ember), matched to
+    `docs/ART_STYLE.md` (30A).
+  - **Done when:** tokens exist and one widget is rebuilt on them as proof; the style guide is
+    the documented source of truth.
+- [ ] **30.5B — HUD architecture & layout system** `[F]`
+  - **Done when:** a responsive, **UI-scalable**, safe-area-aware HUD container with anchored
+    widget slots exists; `GameHud` is refactored onto it with no regressions.
+- [ ] **30.5C — Core HUD widgets rebuilt** `[F/P]`
+  - **Done when:** vitals (health/stamina/mana), prepared spell + cooldown, status effects,
+    and the crosshair are rebuilt on the tokens with value-change juice.
+- [ ] **30.5D — Wayfinding HUD** `[F/P]`
+  - **Done when:** compass, quest tracker, interaction prompt, nameplate, world-event banners,
+    and toasts/notifications are unified on the new system.
+- [ ] **30.5E — Combat & boss HUD** `[F/P]`
+  - **Done when:** boss healthbar, lock-on reticle, crit/stagger/block/parry screen feedback,
+    and the corruption vignette hook (23E) are unified (ties Phase 28/29/23).
+- [ ] **30.5F — Panel & screen framework** `[F]`
+  - **Done when:** a screen/route manager + a reusable modal/non-modal panel shell, tab system,
+    list/grid, and tooltip system exist; one panel is ported to prove the framework.
+- [ ] **30.5G — Inventory / character / equipment / perks panels rebuilt** `[F/P]`
+  - **Done when:** all four are rebuilt on the 30.5F framework + tokens, feature-parity, no
+    regressions.
+- [ ] **30.5H — Crafting / dialogue / journal / map panels rebuilt** `[F/P]`
+  - **Done when:** the remaining panels are rebuilt on the framework; `DialoguePanel` keeps its
+    modal behaviour, the journal/map stay non-modal.
+- [ ] **30.5I — Motion & microinteractions** `[F/P]`
+  - **Done when:** screen/panel transitions, hover/press feedback, and value-change animations
+    (damage, XP, level-up) are in, behind a reduced-motion guard.
+- [ ] **30.5J — Gamepad & focus navigation** `[F]`
+  - **Done when:** a controller/keyboard **focus-navigation** system drives HUD-adjacent menus,
+    with input-device-aware glyphs; no menu is mouse-only.
+- [ ] **30.5K — UI scale & legibility pass** `[F/P]`
+  - **Done when:** a global UI-scale option + font sizing + a contrast/legibility audit land,
+    verified readable at min-spec and Steam Deck resolutions (a precursor to Phase 54).
+
+---
+
 ## Phase 31 — Audio Foundations `[F/P]`
 
 - [ ] **31A — `AudioDirector` + Godot audio buses** `[F]`
