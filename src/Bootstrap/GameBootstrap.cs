@@ -117,6 +117,14 @@ public partial class GameBootstrap : Node3D
         _mainMenu?.QueueFree();
         _mainMenu = null;
 
+        // Fresh game → fresh playtime, and teach the SaveManager how to stamp save headers
+        // (Phase 24B) from live gameplay state without coupling it to gameplay types.
+        SaveManager.Instance?.ResetPlaytime();
+        if (SaveManager.Instance != null)
+        {
+            SaveManager.Instance.HeaderProvider = BuildSaveHeader;
+        }
+
         BuildEnvironment();
 
         // The purpose-built game HUD is the default overlay; the DebugHud is now a
@@ -675,5 +683,26 @@ public partial class GameBootstrap : Node3D
     private void OnGameLoaded(GameLoadedEvent e)
     {
         Log.Info($"Game loaded from slot '{e.Slot}'.");
+    }
+
+    /// <summary>Supplies the gameplay fields of a save header (Phase 24B). Read lazily by the
+    /// <see cref="SaveManager"/> at save time; region is a placeholder until Phase 25 adds regions.</summary>
+    private static Godot.Collections.Dictionary BuildSaveHeader()
+    {
+        var header = new Godot.Collections.Dictionary { ["region"] = "Ember Crown" };
+        if (ServiceLocator.Instance != null && ServiceLocator.Instance.TryGet(out PlayerCharacter player))
+        {
+            if (player.GetComponent<ProgressionComponent>() is { } progression)
+            {
+                header["level"] = progression.Level;
+            }
+
+            if (player.GetComponent<CorruptionComponent>() is { } corruption)
+            {
+                header["corruption_tier"] = CorruptionTiers.Label(corruption.Tier);
+            }
+        }
+
+        return header;
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Embervale.Core;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Godot;
@@ -7,15 +8,17 @@ using Godot;
 namespace Embervale.Save;
 
 /// <summary>
-/// Collects every active <see cref="ISaveable"/> and serializes them into a
-/// single JSON document under <c>user://saves/</c>. Registered as the
-/// <c>SaveManager</c> autoload.
+/// Collects every active <see cref="ISaveable"/> and serializes them into a versioned JSON
+/// document per save slot. Registered as the <c>SaveManager</c> autoload.
 ///
-/// The format is intentionally simple and forward-compatible: a versioned
-/// envelope wrapping a map of <c>SaveId -&gt; state</c>. On load, each currently
-/// registered saveable pulls its own entry, so the set of live objects drives
-/// restoration. This scales to hundreds of persistent actors without bespoke
-/// per-system save code.
+/// As of Phase 24B each slot is a <b>directory</b> under <c>user://saves/&lt;slot&gt;/</c> holding
+/// <c>save.json</c> (the full envelope) and <c>header.json</c> (lightweight metadata the slot
+/// browser reads without deserializing the whole save). The envelope is a versioned map of
+/// <c>SaveId -&gt; state</c>, so on load each registered saveable pulls its own entry — the set of
+/// live objects drives restoration, scaling to hundreds of actors without bespoke save code.
+///
+/// Legacy single-file saves (<c>user://saves/&lt;slot&gt;.json</c>) are still readable and are
+/// migrated to the directory layout on the next save.
 /// </summary>
 public sealed partial class SaveManager : Node
 {
@@ -25,6 +28,17 @@ public sealed partial class SaveManager : Node
     public static SaveManager Instance { get; private set; } = null!;
 
     private readonly List<ISaveable> _saveables = new();
+
+    /// <summary>
+    /// Optional source of gameplay header fields (<c>region</c>, <c>level</c>,
+    /// <c>corruption_tier</c>) stamped into each save, set by the bootstrap so this manager stays
+    /// decoupled from gameplay types. Null while no world is built (e.g. the bare main menu).
+    /// </summary>
+    public Func<Godot.Collections.Dictionary>? HeaderProvider { get; set; }
+
+    // Accumulated in-world play time for the active save; ticked while Playing, persisted in the
+    // header and restored on load so it continues per-slot.
+    private double _playtimeSeconds;
 
     // While a load is in flight these hold the loaded snapshot so a saveable that comes online
     // mid-load (an actor recreated by the PersistentSpawnDirector) can restore itself immediately.
@@ -50,6 +64,18 @@ public sealed partial class SaveManager : Node
             Instance = null!;
         }
     }
+
+    public override void _Process(double delta)
+    {
+        // Only the active session's wall-time counts toward this save's playtime.
+        if (GameManager.Instance is { IsPlaying: true })
+        {
+            _playtimeSeconds += delta;
+        }
+    }
+
+    /// <summary>Resets the playtime counter; the bootstrap calls this when starting a New Game.</summary>
+    public void ResetPlaytime() => _playtimeSeconds = 0d;
 
     public void Register(ISaveable saveable)
     {
@@ -83,14 +109,26 @@ public sealed partial class SaveManager : Node
         _saveables.Remove(saveable);
     }
 
-    public string SlotPath(string slot) => $"{SaveDirectory}/{slot}.json";
+    // --- Slot paths ---------------------------------------------------------
 
-    public bool SaveExists(string slot) => FileAccess.FileExists(SlotPath(slot));
+    private static string SlotDir(string slot) => $"{SaveDirectory}/{slot}";
+    private static string SlotSavePath(string slot) => $"{SlotDir(slot)}/save.json";
+    private static string SlotHeaderPath(string slot) => $"{SlotDir(slot)}/header.json";
+    private static string LegacySlotPath(string slot) => $"{SaveDirectory}/{slot}.json";
+
+    /// <summary>The full-save file path for a slot (the new directory layout).</summary>
+    public string SlotPath(string slot) => SlotSavePath(slot);
+
+    /// <summary>Whether a slot has a save in either the new or the legacy layout.</summary>
+    public bool SaveExists(string slot) =>
+        FileAccess.FileExists(SlotSavePath(slot)) || FileAccess.FileExists(LegacySlotPath(slot));
+
+    // --- Save ---------------------------------------------------------------
 
     /// <summary>Serializes all registered saveables to the given slot. Returns success.</summary>
     public bool SaveGame(string slot)
     {
-        DirAccess.MakeDirRecursiveAbsolute(SaveDirectory);
+        DirAccess.MakeDirRecursiveAbsolute(SlotDir(slot));
 
         // Collect state defensively: a single component throwing in Save() must not
         // abort the whole save or corrupt the file — log it and persist the rest.
@@ -115,35 +153,33 @@ public sealed partial class SaveManager : Node
             }
         }
 
+        Godot.Collections.Dictionary header = BuildHeader(slot).ToDictionary();
+
         var root = new Godot.Collections.Dictionary
         {
             ["version"] = SaveFormatVersion,
             ["timestamp"] = Time.GetUnixTimeFromSystem(),
+            ["header"] = header,
             ["objects"] = objects,
         };
 
-        string json = Json.Stringify(root, "\t");
-
-        // Atomic write: stage to a temp file, then rename over the target so a crash
-        // mid-write can never truncate a previously-good save.
-        string target = SlotPath(slot);
-        string temp = $"{target}.tmp";
-        using (FileAccess? file = FileAccess.Open(temp, FileAccess.ModeFlags.Write))
+        if (!AtomicWrite(SlotSavePath(slot), Json.Stringify(root, "\t")))
         {
-            if (file == null)
-            {
-                Log.Error($"Could not open temp save '{temp}': {FileAccess.GetOpenError()}");
-                return false;
-            }
-
-            file.StoreString(json);
+            return false;
         }
 
-        Error renamed = DirAccess.RenameAbsolute(temp, target);
-        if (renamed != Error.Ok)
+        // The header mirror is a read optimization for the slot browser; if it fails the save is
+        // still valid (the header also lives inside the envelope), so warn rather than fail.
+        if (!AtomicWrite(SlotHeaderPath(slot), Json.Stringify(header, "\t")))
         {
-            Log.Error($"Could not commit save slot '{slot}' (rename failed: {renamed}); previous save preserved.");
-            return false;
+            Log.Warn($"Saved slot '{slot}' but could not write its header.json mirror.");
+        }
+
+        // One-time migration: once the directory layout holds the save, drop the legacy flat file.
+        string legacy = LegacySlotPath(slot);
+        if (FileAccess.FileExists(legacy))
+        {
+            DirAccess.RemoveAbsolute(legacy);
         }
 
         Log.Info($"Saved {objects.Count} object(s) to slot '{slot}'" + (failures > 0 ? $" ({failures} skipped)." : "."));
@@ -151,16 +187,173 @@ public sealed partial class SaveManager : Node
         return true;
     }
 
+    /// <summary>Atomic write: stage to a temp file, then rename over the target so a crash
+    /// mid-write can never truncate a previously-good file.</summary>
+    private static bool AtomicWrite(string target, string contents)
+    {
+        string temp = $"{target}.tmp";
+        using (FileAccess? file = FileAccess.Open(temp, FileAccess.ModeFlags.Write))
+        {
+            if (file == null)
+            {
+                Log.Error($"Could not open temp file '{temp}': {FileAccess.GetOpenError()}");
+                return false;
+            }
+
+            file.StoreString(contents);
+        }
+
+        Error renamed = DirAccess.RenameAbsolute(temp, target);
+        if (renamed != Error.Ok)
+        {
+            Log.Error($"Could not commit '{target}' (rename failed: {renamed}); previous file preserved.");
+            return false;
+        }
+
+        return true;
+    }
+
+    private SaveSlotInfo BuildHeader(string slot)
+    {
+        var info = new SaveSlotInfo
+        {
+            Slot = slot,
+            TimestampUnix = Time.GetUnixTimeFromSystem(),
+            PlaytimeSeconds = _playtimeSeconds,
+        };
+
+        if (HeaderProvider?.Invoke() is { } fields)
+        {
+            if (fields.TryGetValue("region", out Variant region)) { info.Region = region.AsString(); }
+            if (fields.TryGetValue("level", out Variant level)) { info.Level = level.AsInt32(); }
+            if (fields.TryGetValue("corruption_tier", out Variant tier)) { info.CorruptionTier = tier.AsString(); }
+        }
+
+        return info;
+    }
+
+    // --- Slot management ----------------------------------------------------
+
+    /// <summary>Reads a slot's lightweight header (from <c>header.json</c>, falling back to the
+    /// header embedded in <c>save.json</c>). Null if the slot has no readable header.</summary>
+    public SaveSlotInfo? ReadHeader(string slot)
+    {
+        if (ReadJsonObject(SlotHeaderPath(slot)) is { } headerDoc)
+        {
+            SaveSlotInfo info = SaveSlotInfo.FromDictionary(headerDoc);
+            info.Slot = slot;
+            return info;
+        }
+
+        // Fall back to the header inside the full save (or a bare header for a legacy save).
+        string fullPath = FileAccess.FileExists(SlotSavePath(slot)) ? SlotSavePath(slot) : LegacySlotPath(slot);
+        if (ReadJsonObject(fullPath) is { } root)
+        {
+            SaveSlotInfo info = root.TryGetValue("header", out Variant h) && h.VariantType == Variant.Type.Dictionary
+                ? SaveSlotInfo.FromDictionary(h.AsGodotDictionary())
+                : new SaveSlotInfo();
+            info.Slot = slot;
+            if (info.TimestampUnix == 0d && root.TryGetValue("timestamp", out Variant ts))
+            {
+                info.TimestampUnix = ts.AsDouble();
+            }
+
+            return info;
+        }
+
+        return null;
+    }
+
+    /// <summary>Every save slot's header, for the load/continue browser.</summary>
+    public IReadOnlyList<SaveSlotInfo> ListSlots()
+    {
+        var slots = new List<SaveSlotInfo>();
+        using DirAccess? dir = DirAccess.Open(SaveDirectory);
+        if (dir == null)
+        {
+            return slots;
+        }
+
+        foreach (string name in dir.GetDirectories())
+        {
+            if (ReadHeader(name) is { } info)
+            {
+                slots.Add(info);
+            }
+        }
+
+        return slots;
+    }
+
+    /// <summary>Deletes a slot's directory (and any legacy flat file). Returns success.</summary>
+    public bool DeleteSlot(string slot)
+    {
+        bool removedAnything = false;
+
+        using (DirAccess? dir = DirAccess.Open(SlotDir(slot)))
+        {
+            if (dir != null)
+            {
+                foreach (string file in dir.GetFiles())
+                {
+                    dir.Remove(file);
+                }
+
+                removedAnything = true;
+            }
+        }
+
+        if (removedAnything)
+        {
+            DirAccess.RemoveAbsolute(SlotDir(slot));
+        }
+
+        string legacy = LegacySlotPath(slot);
+        if (FileAccess.FileExists(legacy))
+        {
+            DirAccess.RemoveAbsolute(legacy);
+            removedAnything = true;
+        }
+
+        if (removedAnything)
+        {
+            Log.Info($"Deleted save slot '{slot}'.");
+        }
+
+        return removedAnything;
+    }
+
+    private static Godot.Collections.Dictionary? ReadJsonObject(string path)
+    {
+        if (!FileAccess.FileExists(path))
+        {
+            return null;
+        }
+
+        using FileAccess? file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
+        if (file == null)
+        {
+            return null;
+        }
+
+        Variant parsed = Json.ParseString(file.GetAsText());
+        return parsed.VariantType == Variant.Type.Dictionary ? parsed.AsGodotDictionary() : null;
+    }
+
+    // --- Load ---------------------------------------------------------------
+
     /// <summary>Loads the given slot and dispatches state to registered saveables.</summary>
     public bool LoadGame(string slot)
     {
-        if (!SaveExists(slot))
+        // Prefer the new directory layout; fall back to a legacy flat file.
+        string path = FileAccess.FileExists(SlotSavePath(slot)) ? SlotSavePath(slot) : LegacySlotPath(slot);
+        if (!FileAccess.FileExists(path))
         {
             Log.Warn($"Save slot '{slot}' does not exist.");
             return false;
         }
 
-        using FileAccess? file = FileAccess.Open(SlotPath(slot), FileAccess.ModeFlags.Read);
+        using FileAccess? file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
         if (file == null)
         {
             Log.Error($"Could not read save slot '{slot}': {FileAccess.GetOpenError()}");
@@ -188,6 +381,12 @@ public sealed partial class SaveManager : Node
         {
             Log.Error($"Save slot '{slot}' has no 'objects' section.");
             return false;
+        }
+
+        // Continue this save's playtime from where it was last written.
+        if (root.TryGetValue("header", out Variant headerVariant) && headerVariant.VariantType == Variant.Type.Dictionary)
+        {
+            _playtimeSeconds = SaveSlotInfo.FromDictionary(headerVariant.AsGodotDictionary()).PlaytimeSeconds;
         }
 
         var objects = objectsVariant.AsGodotDictionary();

@@ -278,7 +278,7 @@ no code) — batch them when momentum is good.
     `Boot -> MainMenu` and stops before "Sandbox ready", no errors; build + 58 tests +
     `--validate` green.
 
-- [ ] **24B — `SaveManager`: single-file → slot directories** `[F]`
+- [x] **24B — `SaveManager`: single-file → slot directories** `[F]` ✅
   - **Goal:** multiple independent saves.
   - **Tasks:** refactor `SaveManager` from one file to `user://saves/<slot>/`.
     Add slot create/list/delete and a save *header* (region, level, playtime,
@@ -286,6 +286,19 @@ no code) — batch them when momentum is good.
     Read `src/Save/` first; preserve back-compat or write a one-time migration.
   - **Done when:** multiple slots coexist; F5/F9 still work against the active
     slot; headers populate.
+  - **Done:** each slot is now a directory `user://saves/<slot>/` holding `save.json`
+    (the unchanged versioned envelope + an embedded `header`) and `header.json` (a
+    lightweight mirror the 24C browser reads without parsing the full save). New
+    `SaveSlotInfo` (slot/timestamp/playtime/region/level/corruption tier) +
+    `ListSlots`/`ReadHeader`/`DeleteSlot`. `SaveManager` accumulates playtime while
+    Playing and restores it per-slot on load; header gameplay fields come from a
+    `HeaderProvider` delegate the bootstrap sets (so `SaveManager` stays decoupled).
+    Legacy `<slot>.json` is still read and migrated away on the next save. `ISaveable`
+    API and `SaveGame`/`LoadGame` signatures unchanged; F5/F9 still target `quick`.
+    Verified in-engine: New Game → quick-save wrote `saves/quick/{save,header}.json`
+    (header populated: Ember Crown / level 1 / Untainted / playtime), legacy
+    `quick.json` removed, and quick-load restored 19 objects. Build + 58 tests +
+    `--validate` green.
 
 - [ ] **24C — Save-slot UI (New/Load/Continue + metadata)** `[F]`
   - **Goal:** the player manages saves from the shell.
