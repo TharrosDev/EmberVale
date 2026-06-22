@@ -182,7 +182,7 @@ no code) — batch them when momentum is good.
   - **Done when:** the maintainer can drive corruption from `F1` and watch it on
     F3.
 
-- [ ] **23C — Dialogue conditions/effects for corruption** `[F]`
+- [x] **23C — Dialogue conditions/effects for corruption** `[F]`
   - **Goal:** let conversations gate and modify corruption.
   - **Tasks:** extend `DialogueEnums.cs` with `Condition` `CorruptionAtLeast` /
     `CorruptionBelow` and `Effect` `AddCorruption`. Wire evaluation in the dialogue

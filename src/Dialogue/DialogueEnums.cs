@@ -20,11 +20,15 @@ public enum DialogueEffect
 
     /// <summary>Clear the story flag named by the choice's <c>EffectArg</c>.</summary>
     ClearFlag,
+
+    /// <summary>Add the choice's <c>EffectArg</c> (an integer, may be negative) to the player's
+    /// corruption. Dark dialogue choices raise it; atonement beats can lower it.</summary>
+    AddCorruption,
 }
 
 /// <summary>
 /// Gate controlling whether a <see cref="DialogueChoice"/> is offered. Evaluated by
-/// <see cref="DialogueSession"/> against the player's quest log and story flags;
+/// <see cref="DialogueSession"/> against the player's quest log, story flags and corruption;
 /// a choice whose condition fails is hidden from the conversation.
 /// </summary>
 // APPEND ONLY: ordinals persist in .tres/saves — never reorder/insert/remove (EnumStabilityTests).
@@ -50,4 +54,12 @@ public enum DialogueCondition
 
     /// <summary>Shown only when the story flag is not set.</summary>
     MissingFlag,
+
+    /// <summary>Shown only while the player's corruption is at or above the threshold
+    /// (<c>ConditionArg</c>, an integer 0–100).</summary>
+    CorruptionAtLeast,
+
+    /// <summary>Shown only while the player's corruption is below the threshold
+    /// (<c>ConditionArg</c>, an integer 0–100).</summary>
+    CorruptionBelow,
 }

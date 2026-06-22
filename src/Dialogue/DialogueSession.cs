@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Embervale.Core.Diagnostics;
+using Embervale.Corruption;
 using Embervale.Entities;
 using Embervale.Quests;
 
@@ -18,6 +19,7 @@ public sealed class DialogueSession
 {
     private readonly QuestLogComponent? _questLog;
     private readonly StoryFlagsComponent? _flags;
+    private readonly CorruptionComponent? _corruption;
 
     public DialogueResource Dialogue { get; }
 
@@ -30,6 +32,7 @@ public sealed class DialogueSession
         Dialogue = dialogue;
         _questLog = player.GetComponent<QuestLogComponent>();
         _flags = player.GetComponent<StoryFlagsComponent>();
+        _corruption = player.GetComponent<CorruptionComponent>();
         CurrentNode = dialogue.StartNode();
     }
 
@@ -96,10 +99,18 @@ public sealed class DialogueSession
                 return _flags?.Has(arg) ?? false;
             case DialogueCondition.MissingFlag:
                 return !(_flags?.Has(arg) ?? false);
+            case DialogueCondition.CorruptionAtLeast:
+                return _corruption != null && _corruption.Value >= ParseAmount(arg);
+            case DialogueCondition.CorruptionBelow:
+                return _corruption != null && _corruption.Value < ParseAmount(arg);
             default:
                 return true;
         }
     }
+
+    /// <summary>Parses a numeric dialogue argument (corruption threshold/amount); 0 if malformed
+    /// (the content validator flags non-numeric corruption args at author time).</summary>
+    private static int ParseAmount(string arg) => int.TryParse(arg, out int value) ? value : 0;
 
     private void ApplyEffect(DialogueEffect effect, string arg)
     {
@@ -123,6 +134,9 @@ public sealed class DialogueSession
                 break;
             case DialogueEffect.ClearFlag:
                 _flags?.Clear(arg);
+                break;
+            case DialogueEffect.AddCorruption:
+                _corruption?.Add(ParseAmount(arg));
                 break;
         }
     }
