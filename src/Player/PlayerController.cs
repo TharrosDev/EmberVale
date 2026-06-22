@@ -70,6 +70,10 @@ public partial class PlayerController : EntityComponent
     {
         if (GameManager.Instance is { IsPlaying: false })
         {
+            // Not playing (paused, loading, game over): drop the focus so a target freed
+            // during this window (e.g. a save/load world rebuild) can't be dereferenced as a
+            // disposed node by the HUD before the raycast next refreshes it.
+            ClearFocus();
             return;
         }
 

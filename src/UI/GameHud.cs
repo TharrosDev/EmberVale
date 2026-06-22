@@ -285,8 +285,10 @@ public partial class GameHud : CanvasLayer
         PlayerController? controller = _player?.GetComponent<PlayerController>();
         IEntity? focus = controller?.FocusedEntity;
 
-        // Nameplate for an aimed-at damageable that isn't the player.
-        if (focus != null && !ReferenceEquals(focus, _player) &&
+        // Nameplate for an aimed-at damageable that isn't the player. Guard instance validity
+        // first: a focused target can be freed (despawn, save/load rebuild) while its reference
+        // lingers, and dereferencing the disposed node would throw every frame.
+        if (focus is Node focusNode && IsInstanceValid(focusNode) && !ReferenceEquals(focus, _player) &&
             focus.GetComponent<StatsComponent>() is { } stats)
         {
             _nameText.Text = focus.DisplayName;
