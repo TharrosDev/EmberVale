@@ -51,6 +51,17 @@ public static class PlayerFactory
             Position = new Vector3(0f, CapsuleHeight * 0.5f, 0f),
         });
 
+        // Placeholder body the CorruptionAppearanceController tints per tier (Phase 23F). Kept
+        // below eye height so it never blocks the first-person view — the player sees it by
+        // looking down. Phase 30 replaces this stand-in with the real rigged model.
+        player.AddChild(new MeshInstance3D
+        {
+            Name = "BodyMesh",
+            Mesh = new CapsuleMesh { Radius = 0.32f, Height = 1.2f },
+            Position = new Vector3(0f, 0.6f, 0f),
+            MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.62f, 0.60f, 0.58f) },
+        });
+
         AttributeSet attributes = GD.Load<AttributeSet>(PlayerAttributesPath) ?? AttributeSet.CreateDefault();
         player.AddChild(new StatsComponent { Name = "Stats", Attributes = attributes });
         player.AddChild(new LocomotionComponent { Name = "Locomotion" });
@@ -121,6 +132,10 @@ public static class PlayerFactory
         // Corruption: the LORE's defining mechanic; a 0-100 meter feeding dialogue/factions/
         // abilities/appearance and the Dawnfire vs Lord of Embers endings (Phase 23).
         player.AddChild(new CorruptionComponent { Name = "Corruption" });
+
+        // Corruption appearance: tints the placeholder body mesh per tier (Phase 23F stub; the
+        // seam Phase 30's real models/VFX plug into).
+        player.AddChild(new CorruptionAppearanceController { Name = "CorruptionAppearance" });
 
         // Magic: status effects can afflict/buff the player, and the spellbook aims
         // through the camera pivot so bolts fire where the player looks.

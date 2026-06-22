@@ -206,7 +206,7 @@ no code) — batch them when momentum is good.
   - **Done when:** crossing into high tiers visibly shifts the screen; reverting
     lowers it.
 
-- [ ] **23F — `CorruptionAppearanceController` (hook stub)** `[F]`
+- [x] **23F — `CorruptionAppearanceController` (hook stub)** `[F]`
   - **Goal:** the seam the future model/VFX work plugs into.
   - **Tasks:** add a `CorruptionAppearanceController` on the player that, per tier,
     swaps a placeholder material/emissive (eye glow, ash-vein tint) on whatever
