@@ -330,6 +330,17 @@ public static class ContentValidator
                     {
                         issues.Add($"dialogue '{dialogue.Id}' StartQuest effect references unknown quest '{choice.EffectArg}'");
                     }
+
+                    // Corruption-typed conditions/effects take an integer threshold/amount.
+                    if (IsCorruptionCondition(choice.Condition) && !int.TryParse(choice.ConditionArg, out _))
+                    {
+                        issues.Add($"dialogue '{dialogue.Id}' corruption condition has non-numeric threshold '{choice.ConditionArg}'");
+                    }
+
+                    if (choice.Effect == DialogueEffect.AddCorruption && !int.TryParse(choice.EffectArg, out _))
+                    {
+                        issues.Add($"dialogue '{dialogue.Id}' AddCorruption effect has non-numeric amount '{choice.EffectArg}'");
+                    }
                 }
             }
         }
@@ -341,6 +352,13 @@ public static class ContentValidator
         DialogueCondition.QuestActive => true,
         DialogueCondition.QuestCompleted => true,
         DialogueCondition.QuestNotStarted => true,
+        _ => false,
+    };
+
+    private static bool IsCorruptionCondition(DialogueCondition condition) => condition switch
+    {
+        DialogueCondition.CorruptionAtLeast => true,
+        DialogueCondition.CorruptionBelow => true,
         _ => false,
     };
 

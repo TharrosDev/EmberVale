@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="DialogueResource" load_steps=21 format=3 uid="uid://cmbrvldlgeldr"]
+[gd_resource type="Resource" script_class="DialogueResource" load_steps=28 format=3 uid="uid://cmbrvldlgeldr"]
 
 [ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
@@ -65,11 +65,39 @@ EffectArg = "flag.elder_thanked"
 script = ExtResource("3_choice")
 Text = "Be well, elder."
 
+[sub_resource type="Resource" id="ch_root_pure"]
+script = ExtResource("3_choice")
+Text = "(Clasp his hand — your heart is still your own.)"
+Goto = "pure"
+Condition = 8
+ConditionArg = "30"
+
+[sub_resource type="Resource" id="ch_root_marked"]
+script = ExtResource("3_choice")
+Text = "(He flinches at your gaze. Ask what troubles him.)"
+Goto = "marked"
+Condition = 7
+ConditionArg = "30"
+
+[sub_resource type="Resource" id="ch_pure_bye"]
+script = ExtResource("3_choice")
+Text = "The Flame keeps us both, elder."
+
+[sub_resource type="Resource" id="ch_marked_embrace"]
+script = ExtResource("3_choice")
+Text = "(Say nothing. Let the ember within stir.)"
+Effect = 4
+EffectArg = "10"
+
+[sub_resource type="Resource" id="ch_marked_deny"]
+script = ExtResource("3_choice")
+Text = "It is nothing, elder. Farewell."
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
 Text = "Well met, traveller. Our smith's forge runs cold — we've no iron to feed it."
-Choices = Array[Resource]([SubResource("ch_root_friend"), SubResource("ch_root_thanks"), SubResource("ch_root_offer"), SubResource("ch_root_active"), SubResource("ch_root_bye")])
+Choices = Array[Resource]([SubResource("ch_root_friend"), SubResource("ch_root_pure"), SubResource("ch_root_marked"), SubResource("ch_root_thanks"), SubResource("ch_root_offer"), SubResource("ch_root_active"), SubResource("ch_root_bye")])
 
 [sub_resource type="Resource" id="node_offer"]
 script = ExtResource("2_node")
@@ -101,9 +129,21 @@ Id = "friend"
 Text = "Good to see you again, friend. The forge runs hot, thanks to you."
 Choices = Array[Resource]([SubResource("ch_friend_bye")])
 
+[sub_resource type="Resource" id="node_pure"]
+script = ExtResource("2_node")
+Id = "pure"
+Text = "The elder meets your eyes and nods slowly. 'A steady soul — rarer than iron, these days. The Flame keeps you, traveller.'"
+Choices = Array[Resource]([SubResource("ch_pure_bye")])
+
+[sub_resource type="Resource" id="node_marked"]
+script = ExtResource("2_node")
+Id = "marked"
+Text = "'There is an ember in your gaze I do not trust — ash where the light should be. I have seen it before, and it does not end gently. Tread carefully, traveller.'"
+Choices = Array[Resource]([SubResource("ch_marked_embrace"), SubResource("ch_marked_deny")])
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.elder"
 SpeakerName = "Village Elder"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_offer"), SubResource("node_accepted"), SubResource("node_inprogress"), SubResource("node_thanks"), SubResource("node_friend")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_offer"), SubResource("node_accepted"), SubResource("node_inprogress"), SubResource("node_thanks"), SubResource("node_friend"), SubResource("node_pure"), SubResource("node_marked")])

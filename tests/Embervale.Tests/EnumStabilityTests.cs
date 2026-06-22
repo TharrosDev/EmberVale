@@ -188,6 +188,7 @@ public class EnumStabilityTests
         Assert.Equal(1, (int)DialogueEffect.StartQuest);
         Assert.Equal(2, (int)DialogueEffect.SetFlag);
         Assert.Equal(3, (int)DialogueEffect.ClearFlag);
+        Assert.Equal(4, (int)DialogueEffect.AddCorruption);
     }
 
     [Fact]
@@ -200,6 +201,8 @@ public class EnumStabilityTests
         Assert.Equal(4, (int)DialogueCondition.QuestNotStarted);
         Assert.Equal(5, (int)DialogueCondition.HasFlag);
         Assert.Equal(6, (int)DialogueCondition.MissingFlag);
+        Assert.Equal(7, (int)DialogueCondition.CorruptionAtLeast);
+        Assert.Equal(8, (int)DialogueCondition.CorruptionBelow);
     }
 
     [Fact]

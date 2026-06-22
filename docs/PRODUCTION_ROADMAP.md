@@ -795,7 +795,7 @@ The ordering is driven by hard dependencies, not preference:
 
 | Stage | Gate | Phases | Status |
 | ----- | ---- | ------ | ------ |
-| A — Pre-production & First Playable | G0 | 22–28 | ⏳ In progress (Phase 22 ✅; 23 underway — 23A, 23B ✅) |
+| A — Pre-production & First Playable | G0 | 22–28 | ⏳ In progress (Phase 22 ✅; 23 underway — 23A–23C ✅) |
 | B — Vertical Slice | G1 | 29–33 | ⬜ Planned |
 | C — Alpha / Feature Complete | G2 | 34–45 | ⬜ Planned |
 | D — Beta / Content Complete | G3 | 46–55 | ⬜ Planned |
@@ -806,12 +806,13 @@ The ordering is driven by hard dependencies, not preference:
 **Immediate next step:** Phase 22 (Production Bible & Content Pipeline) is **complete**
 (22A–22H: design bible, ID registry, validator well-formedness + reachability + headless
 gate, content templates, analytics spine). **Phase 23 (Corruption)** — the LORE's
-defining mechanic — is underway: **23A and 23B are done** — the `CorruptionComponent` core
-(0–100 meter, `CorruptionTier` bands, `CorruptionChanged`/`CorruptionTierChanged` events,
-save/load, wired onto the player) plus its debug surface (a `corruption get/set/add/tier`
-dev-console command and an F3-overlay readout, making the meter drivable and the save
-round-trip observable). Next is **23C** — dialogue conditions/effects that gate and modify
-corruption (`CorruptionAtLeast`/`CorruptionBelow` conditions, `AddCorruption` effect).
+defining mechanic — is underway: **23A–23C are done** — the `CorruptionComponent` core
+(0–100 meter, `CorruptionTier` bands, change/tier events, save/load, wired onto the player),
+its debug surface (a `corruption get/set/add/tier` dev-console command + F3-overlay readout),
+and dialogue integration (`CorruptionAtLeast`/`CorruptionBelow` conditions + an `AddCorruption`
+effect, wired into the session runner and exercised by the Village Elder, who now reacts to a
+corrupted player). Next is **23D** — the character-screen corruption gauge (the first
+player-facing visual).
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —
 > a first-person open-world fantasy RPG where you battle fallen heroes across four
