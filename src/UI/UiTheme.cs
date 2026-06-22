@@ -25,6 +25,9 @@ public static class UiTheme
     public static readonly Color Stamina = new(0.78f, 0.66f, 0.28f);
     public static readonly Color Mana = new(0.34f, 0.55f, 0.86f);
 
+    // The corruption identity (ash-violet); the gauge fill and, later, the HUD vignette.
+    public static readonly Color Corruption = new(0.58f, 0.32f, 0.66f);
+
     public const int HeaderFontSize = 16;
     public const int BodyFontSize = 14;
 

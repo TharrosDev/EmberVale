@@ -1,5 +1,6 @@
 using Embervale.Core;
 using Embervale.Core.Events;
+using Embervale.Corruption;
 using Embervale.Factions;
 using Embervale.Items;
 using Embervale.Progression;
@@ -22,6 +23,7 @@ public partial class InventoryPanel : CanvasLayer
     private ProgressionComponent? _progression;
     private PerksComponent? _perks;
     private ReputationComponent? _reputation;
+    private CorruptionComponent? _corruption;
     private PanelContainer _panel = null!;
     private VBoxContainer _list = null!;
     private bool _dirty = true;
@@ -55,6 +57,7 @@ public partial class InventoryPanel : CanvasLayer
         EventBus.Instance?.Subscribe<LeveledUpEvent>(OnLeveledUp);
         EventBus.Instance?.Subscribe<PerkChangedEvent>(OnPerkChanged);
         EventBus.Instance?.Subscribe<ReputationChangedEvent>(OnReputationChanged);
+        EventBus.Instance?.Subscribe<CorruptionChangedEvent>(OnCorruptionChanged);
     }
 
     public override void _ExitTree()
@@ -65,6 +68,7 @@ public partial class InventoryPanel : CanvasLayer
         EventBus.Instance?.Unsubscribe<LeveledUpEvent>(OnLeveledUp);
         EventBus.Instance?.Unsubscribe<PerkChangedEvent>(OnPerkChanged);
         EventBus.Instance?.Unsubscribe<ReputationChangedEvent>(OnReputationChanged);
+        EventBus.Instance?.Unsubscribe<CorruptionChangedEvent>(OnCorruptionChanged);
     }
 
     public void SetInventory(InventoryComponent? inventory)
@@ -94,6 +98,12 @@ public partial class InventoryPanel : CanvasLayer
     public void SetReputation(ReputationComponent? reputation)
     {
         _reputation = reputation;
+        _dirty = true;
+    }
+
+    public void SetCorruption(CorruptionComponent? corruption)
+    {
+        _corruption = corruption;
         _dirty = true;
     }
 
@@ -139,6 +149,8 @@ public partial class InventoryPanel : CanvasLayer
 
     private void OnReputationChanged(ReputationChangedEvent e) => _dirty = true;
 
+    private void OnCorruptionChanged(CorruptionChangedEvent e) => _dirty = true;
+
     private void Rebuild()
     {
         _dirty = false;
@@ -151,6 +163,7 @@ public partial class InventoryPanel : CanvasLayer
 
         AddHeader("CHARACTER   (I to close)");
         BuildProgression();
+        BuildCorruption();
         BuildEquipment();
         AddHeader(BackpackHeader());
         BuildBackpack();
@@ -185,6 +198,22 @@ public partial class InventoryPanel : CanvasLayer
         string xp = _progression.IsMaxLevel ? "MAX" : $"{_progression.CurrentXp} / {_progression.XpToNext}";
         AddLine($"Level {_progression.Level}    XP {xp}");
         AddLine($"Skill points: {_progression.SkillPoints}");
+    }
+
+    private void BuildCorruption()
+    {
+        if (_corruption == null)
+        {
+            return;
+        }
+
+        AddHeader("CORRUPTION");
+        AddLine($"{CorruptionTiers.Label(_corruption.Tier)}   ({_corruption.Value}/{CorruptionTiers.Max})", UiTheme.Corruption);
+
+        ProgressBar bar = UiTheme.Bar(UiTheme.Corruption);
+        bar.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        bar.Value = _corruption.Value / (double)CorruptionTiers.Max;
+        _list.AddChild(bar);
     }
 
     private void BuildPerks()
