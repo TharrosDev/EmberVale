@@ -174,7 +174,7 @@ no code) — batch them when momentum is good.
     thresholds, and round-trips save/load. (CLAUDE.md §8 "new component" + "new
     persistent system" + "new event".)
 
-- [ ] **23B — Corruption dev console + debug surface** `[F]`
+- [x] **23B — Corruption dev console + debug surface** `[F]`
   - **Goal:** make it testable before it has any visual.
   - **Tasks:** register a `corruption` console command (`get` / `set N` / `add N`
     / `tier`) per CLAUDE.md §8 "new dev-console command," resolving the player via

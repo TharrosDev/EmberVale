@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using Embervale.Core;
 using Embervale.Core.Services;
+using Embervale.Corruption;
 using Embervale.Enemies;
 using Embervale.Factions;
 using Embervale.Items;
@@ -31,6 +32,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("xp", "xp <n>", "Grant the player XP.", Xp));
         console.Register(new ConsoleCommand("heal", "heal", "Refill the player's resources.", Heal));
         console.Register(new ConsoleCommand("rep", "rep <factionId> <delta>", "Shift faction standing.", Rep));
+        console.Register(new ConsoleCommand("corruption", "corruption <get|set N|add N|tier>", "Inspect or drive the player's corruption.", Corruption));
 
         console.Register(new ConsoleCommand("time", "time <hour>", "Set the time of day (0–24).", Time));
         console.Register(new ConsoleCommand("weather", "weather <id>", "Force a weather state.", Weather));
@@ -137,6 +139,33 @@ public static class DevCommands
         int delta = ParseInt(args, 1, 0);
         rep.Add(args[0], delta);
         return $"{args[0]}: {rep.Get(args[0])} ({ReputationTiers.Label(rep.TierOf(args[0]))})";
+    }
+
+    private static string Corruption(DevConsole console, string[] args)
+    {
+        if (!TryPlayer(out PlayerCharacter player) || player.GetComponent<CorruptionComponent>() is not { } corruption)
+        {
+            return "no corruption component";
+        }
+
+        string verb = args.Length > 0 ? args[0].ToLowerInvariant() : "get";
+        switch (verb)
+        {
+            case "get":
+                break;
+            case "set":
+                corruption.Set(ParseInt(args, 1, 0));
+                break;
+            case "add":
+                corruption.Add(ParseInt(args, 1, 10));
+                break;
+            case "tier":
+                return CorruptionTiers.Label(corruption.Tier);
+            default:
+                return "usage: corruption <get|set N|add N|tier>";
+        }
+
+        return $"{corruption.Value}/{CorruptionTiers.Max} ({CorruptionTiers.Label(corruption.Tier)})";
     }
 
     private static string Time(DevConsole console, string[] args)
