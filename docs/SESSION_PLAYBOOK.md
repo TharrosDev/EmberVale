@@ -88,7 +88,7 @@ no code) — batch them when momentum is good.
   - **Done when:** `docs/DESIGN.md` exists with the Combat + Core Loop sections
     filled; no code touched.
 
-- [ ] **22B — `docs/DESIGN.md`: progression, difficulty & economy intent** `[P]`
+- [x] **22B — `docs/DESIGN.md`: progression, difficulty & economy intent** `[P]`
   - **Goal:** finish the design bible's remaining pillars.
   - **Tasks:** add *Progression* (no class lock, player-authored builds, perk
     intent), *Difficulty philosophy* (easy to learn / hard to master, options not

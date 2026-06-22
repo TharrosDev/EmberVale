@@ -13,9 +13,9 @@
 > concrete feel values are Phase 29's to set, balance values are Phase 56's. Design sets
 > *intent and direction*; those phases set the digits.
 >
-> **Status.** This is **Phase 22A** — the Combat and Core-Loop pillars. The remaining
-> pillars (Progression, Difficulty, Corruption fantasy, Economy) are **Phase 22B**; see
-> §3. Built as part of the Production Bible (`PRODUCTION_ROADMAP.md` Phase 22).
+> **Status.** All five pillars are pinned: Combat (§1) and the Core Loop (§2) from
+> Phase 22A; Progression (§3), Difficulty (§4), Corruption fantasy (§5), and Economy (§6)
+> from Phase 22B. Built as part of the Production Bible (`PRODUCTION_ROADMAP.md` Phase 22).
 
 ---
 
@@ -257,19 +257,133 @@ as *what the player's hands and eyes must experience*, so Phase 29's sub-phases
 
 ---
 
-## 3. Queued for Phase 22B (stub)
+## 3. Progression
 
-The remaining design pillars are **not** in scope for 22A and are intentionally left as
-headers here so the document's shape is visible. They are authored in **Phase 22B**
-(`SESSION_PLAYBOOK.md` 22B):
+> **Intent:** the player *authors* their character through play, never picks a class.
+> Growth is a stream of small build *decisions*, not a rising number — and power has a
+> second axis (corruption, §5) that the safe one (levels/perks) does not.
 
-- **Progression intent** — no class lock, player-authored builds, the perk philosophy
-  (expands §1.5 and §2.2-Grow into the full build contract).
-- **Difficulty philosophy** — "easy to learn, hard to master" as *options, not class
-  locks*; what scales and what never does.
-- **Corruption fantasy** — the design framing of the defining mechanic (Phase 23) that
-  bends the §2.1 macro-loop: temptation, the cost of power, both endings as a *dial*.
-- **Economy intent** — gold sinks, scarcity in a dying world, what money is *for*.
+LORE: *"No traditional class lock. Players create their own build."* This is already true
+in code, and the design holds it there:
+
+- **No classes — perks + gear are the build.** There is no class system; the character is
+  the sum of `PerkResource` passives learned (`PerksComponent`) and equipment bonuses
+  (`EquipmentComponent` → stats). **Decision:** it stays that way. Race (Phase 26) *nudges*
+  a starting lean (Valari → magic, Grondar → strength, Umbral → stealth) but never locks a
+  path — exactly the breadth pillar (§1.5) expressed in progression.
+- **Perks shape, they don't gate.** `PerkResource` is a *rankable single-stat passive*
+  bought with skill points (`ProgressionResource.SkillPointsPerLevel`, banked by
+  `ProgressionComponent`). **Decision:** perks make a playstyle *better*, never make
+  another playstyle *impossible*; no perk is a prerequisite-wall that forecloses a build.
+  A player who respecs or branches mid-game is never bricked.
+- **Every level is a decision, not just a stat bump.** The XP curve
+  (`BaseXpToLevel × level^XpCurveExponent`) and per-level flat gains give baseline growth;
+  the *interesting* growth is the skill point the player spends. **Decision:** level-up
+  hands the player a choice (a perk, a rank) — the §2.2 "Grow" beat must always pose a
+  build question, or progression has gone flat.
+- **Two power axes.** Levels/perks/gear are the *clean* axis. Divine relics and
+  corruption (§5, Phase 23) are a *parallel, riskier* axis — power that costs something.
+  **Decision:** the clean axis must be a complete path to victory on its own, so embracing
+  corruption is always a *temptation* (§5), never a *requirement*.
+
+> Concrete curve/skill-point/cap values are a Phase 56 balance call; this section fixes the
+> *shape*, not the digits. Cross-links: `ARCHITECTURE.md` §2.6c; `src/Progression/*`;
+> CLAUDE.md §8 "a new perk".
+
+---
+
+## 4. Difficulty philosophy
+
+> **Intent:** *easy to learn, hard to master* (LORE) — and the two halves are served by
+> *different* design levers, neither of which is a class lock or a content gate.
+
+- **Mastery is the combat read, not bigger numbers.** The "hard to master" ceiling already
+  exists in the §1 pillars: timing windows (§1.3), the stamina/poise economy (§1.6), the
+  no-mash rule (§1.4). **Decision:** depth comes from *the player getting better at the
+  fight*, not from the game inflating health bars. A skilled player beats a hard encounter
+  by reading it; that is the skill expression we protect.
+- **"Easy to learn" is legibility, not weakness.** **Decision:** every threat is
+  *readable* — telegraphed wind-ups, clear feedback (§2.4), honest tells. A new player
+  loses because they misread, understands why, and improves. An unreadable hit is a bug
+  (§1.3), never "difficulty."
+- **Difficulty is options, never locks.** LORE forbids class locks; this extends it.
+  **Decision:** difficulty is *scalable, opt-in settings* — damage-taken/dealt dials,
+  aim/lock-on assists, encounter aggression — surfaced in Settings (the toggles are
+  Phase 54; tuning is Phase 56). No difficulty setting gates content, changes the story, or
+  locks a build.
+- **What scales vs. what never does.** *May scale:* enemy damage/health/aggression, assist
+  toggles, the corruption pacing's pressure. *Never scales:* readability, the §1.1
+  one-sentence test (reward reading over out-pressing), or access to any quest/region/
+  ending. **Decision:** if a "harder" mode would make mashing or rote pattern-memorization
+  the dominant strategy, it has violated §1 and is wrong.
+
+> Cross-links: §1 (the mastery ceiling these options sit on top of); Phase 54 (the option
+> system), Phase 56 (the numbers).
+
+---
+
+## 5. Corruption fantasy
+
+> **Intent:** corruption is the defining mechanic (LORE) and the *dial behind both
+> endings* — earned power you pay for, a temptation the player feels themselves losing to,
+> not a punishment the game inflicts. This section is the **design contract Phase 23
+> implements**; corruption does not exist in code yet.
+
+The central question (LORE): *can the Seventh Flamebearer resist the fate that consumed the
+other six?* The design must make that question *felt*, not narrated:
+
+- **Power and corruption are the same transaction.** Every defeated Flamebearer grants new
+  power *and* raises corruption (LORE). **Decision:** there is no corruption-free way to
+  take that power — the player chooses how much to drink, and the cost is always real and
+  visible. This is the §3 "second power axis" made concrete.
+- **Temptation, not punishment.** **Decision:** the corrupt path must be genuinely
+  *attractive* — stronger, darker abilities, options the pure path lacks — or the choice is
+  fake. Both endings (Dawnfire / Lord of Embers) must be earnable and appealing; corruption
+  is a seduction the player has to actively resist, not a debuff to avoid.
+- **The world must react — this is the §2.1 "return changed" arrow.** **Decision:**
+  corruption visibly bends the moment-to-moment loop: NPCs fear a corrupted player
+  (a global "dread" standing), dialogue options shift, the player's *appearance* changes.
+  The macro-loop's whole point is that the world you re-enter responds to who you are
+  becoming.
+- **The player should feel themselves *becoming* a fallen Flamebearer.** **Decision:** the
+  fiction (LORE: *"increasingly resembles previous fallen heroes"*) is a design requirement
+  — the tiers should evoke the six who failed, so reaching the highest tier feels like
+  joining them.
+
+**The seams Phase 23 must build (intent, not implementation):** a tiered 0–100 meter; an
+*appearance* shift per tier; *dialogue* gates/branches on corruption; *NPC dread*
+reactions via the faction/reputation system; *darker ability* variants unlocked by tier;
+and an *ending-eligibility* read that Act IV (Phase 49) consumes for the Dawnfire vs Lord
+of Embers choice. Cross-links: LORE "The Corruption System" + both endings; Phase 23
+(build), Phase 49 (endings consume it), §2.1 (the loop it bends).
+
+---
+
+## 6. Economy intent
+
+> **Intent:** a *dying* world means *scarcity* — money is tight, meaningful, and spent on
+> things that matter. Gold is a sink-driven economy, not a number that only climbs.
+
+Gold today is a **stackable inventory item** (`QuestLogComponent` grants a `GoldItemId`
+through `InventoryComponent`; loot tables roll gold). There is no vendor, wallet, or sink
+yet — those are **Phase 38**; balance is **Phase 56**. This section fixes what money is
+*for* so Phase 38 builds the right machinery:
+
+- **Scarcity is the setting expressed economically.** **Decision:** the player should
+  rarely feel rich; gold is a constrained resource in a world that is running down, not a
+  trivially-overflowing counter. Income sources are deliberate, not a faucet.
+- **Sinks, not just sources.** **Decision:** gold drains into things the player *wants* —
+  housing (Phase 37), training/perks-for-pay and repair (services, Phase 38),
+  fast-travel/inn costs (Phase 25/38). A healthy economy is defined by its sinks; design
+  every income beat alongside what it can be spent on.
+- **Money buys convenience and gear — not the soul of the build.** **Decision:** gold can
+  buy equipment, services, and property, but the *defining* power — divine relics, perks
+  (bought with skill points, not gold), corrupted abilities — is earned through effort,
+  exploration, and choice (§3, §5), never purchased. This keeps the build player-authored
+  and the world's rewards meaningful.
+
+> Cross-links: `src/Items/*`, `src/Loot/*` (gold as item today); Phase 37 (housing sink),
+> Phase 38 (vendors/services/sinks), Phase 56 (the numbers).
 
 ---
 
