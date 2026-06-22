@@ -1,5 +1,6 @@
 using System.Text;
 using Embervale.Core.Diagnostics;
+using Embervale.Core.Pooling;
 using Embervale.Core.Services;
 using Embervale.Items;
 using Embervale.Player;
@@ -102,10 +103,15 @@ public partial class WorldIntegrityChecker : Node
 
     private static void CheckOrphans(StringBuilder sb)
     {
+        // Nodes parked in a NodePool are detached from the tree on purpose (the pool's working
+        // set) and so register as Godot "orphan nodes" without being leaks. Subtract them so the
+        // invariant flags only the excess — a genuine leak — not the pool.
         var orphans = (int)Performance.GetMonitor(Performance.Monitor.ObjectOrphanNodeCount);
-        if (!Invariant.Check(orphans == 0, $"{orphans} orphan node(s) leaked"))
+        int pooled = NodePoolCensus.Parked;
+        int leaked = orphans - pooled;
+        if (!Invariant.Check(leaked <= 0, $"{leaked} orphan node(s) leaked (orphans={orphans}, pooled={pooled})"))
         {
-            sb.Append($"• {orphans} orphan node(s)\n");
+            sb.Append($"• {leaked} orphan node(s) leaked\n");
         }
     }
 }

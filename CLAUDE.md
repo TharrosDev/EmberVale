@@ -51,13 +51,19 @@ launch and capture errors/logs, `stop_project` to stop, `launch_editor`,
 `save_scene`). **Prefer running the project to verify non-trivial changes** rather than
 only reasoning about them.
 
-Caveats: `run_project` launches the **real game window** on the maintainer's machine —
-use it deliberately and `stop_project` when done; it is not a silent headless check.
-There is still **no `dotnet`/CLI build in the shell here** (building goes through the
-editor/MCP), and pure-logic tests run via `dotnet test` on the maintainer's machine
-(`tests/Embervale.Tests`). When you have **not** run something, say it was *reviewed
-against the Godot 4.7 C# API* — reserve "verified/tested running" for output you
-actually captured through the MCP.
+⚠️ **`run_project` does NOT recompile C#.** It launches whatever `Embervale.dll` was
+last built, so after editing any `.cs` you MUST rebuild first or the MCP runs a **stale
+binary** (a silent trap — a behaviour-preserving change looks "verified" while your edit
+never ran). The shell here **has `dotnet` 8.0**: rebuild with
+`dotnet build Embervale.sln` (output goes to `.godot/mono/temp/bin/Debug/Embervale.dll`,
+where the game loads it), *then* `run_project`. Run the pure-logic unit suite with
+`dotnet test tests/Embervale.Tests`.
+
+Other caveats: `run_project` launches the **real game window** — use it deliberately and
+`stop_project` when done; it is not a headless check. The `WorldIntegrityChecker` (5s)
+stays silent unless an invariant breaks, so give a run several seconds before trusting a
+clean log. When you have **not** built+run something, say it was *reviewed against the
+Godot 4.7 C# API* — reserve "verified/tested running" for output you actually captured.
 
 There is **no CI** (the maintainer declined to add GitHub Actions). The green
 **Vercel** check that appears on every PR is a meaningless no-op — Vercel is
@@ -74,10 +80,12 @@ build signal.
    `dotnet build Embervale.sln`.
 3. Press Play. `scenes/Main.tscn` boots the sandbox.
 
-**For you (Claude), via the Godot MCP** (see §2): `run_project` (projectPath
-`C:\Users\magnu\ShooterGame`) builds + launches the sandbox, `get_debug_output`
-captures the log/errors, `stop_project` stops it. Use it to verify changes; close the
-game (`stop_project`) when finished.
+**For you (Claude), via the Godot MCP** (see §2): after any `.cs` change, first
+`dotnet build Embervale.sln` (the shell has dotnet 8.0) — `run_project` does **not**
+recompile and will otherwise launch a stale binary. Then `run_project` (projectPath
+`C:\Users\magnu\ShooterGame`) launches the sandbox, `get_debug_output` captures the
+log/errors, `stop_project` stops it. Verify pure logic with
+`dotnet test tests/Embervale.Tests`. Close the game (`stop_project`) when finished.
 
 **Headless content check (no gameplay):** run the full content validator and exit —
 
