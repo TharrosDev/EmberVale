@@ -97,7 +97,7 @@ no code) — batch them when momentum is good.
   - **Done when:** all five pillar sections complete; this is the document
     balancers/authors answer to.
 
-- [ ] **22C — ID & naming registry doc + audit** `[F/P]`
+- [x] **22C — ID & naming registry doc + audit** `[F/P]`
   - **Goal:** one documented namespace scheme for every content domain.
   - **Tasks:** locate the existing central id constants (PR #31). Write
     `docs/IDS.md` (or a section in DESIGN) documenting the scheme for `item.*`,
