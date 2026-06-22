@@ -2,8 +2,8 @@
 
 > An original third-person, open-world fantasy action RPG built in **Godot 4**
 > with **C#**. Exploration, visceral melee and magic combat, deep character
-> progression, and Diablo-style loot in a hand-crafted world with its own
-> identity.
+> progression, Diablo-style loot, and a corruption system that reshapes how a
+> dying world reacts to you — all in a hand-crafted world with its own identity.
 
 This repository is developed incrementally and is kept **buildable and
 playable at every commit**. Working systems are always preferred over
@@ -47,7 +47,7 @@ content gate for scripts and CI. The same battery is available in-game via the
 | Input        | Action                              |
 | ------------ | ----------------------------------- |
 | `W/A/S/D`    | Move                                |
-| Mouse        | Look                                |
+| Mouse        | Look / orbit the third-person camera |
 | `Shift`      | Sprint                              |
 | `Space`      | Jump                                |
 | Left mouse   | Melee attack                        |
@@ -59,6 +59,8 @@ content gate for scripts and CI. The same battery is available in-game via the
 | `J`          | Toggle quest journal                |
 | `H`          | Heal the training dummy             |
 | `R`          | Respawn the dummy immediately       |
+| `X`          | Grant XP (debug)                    |
+| `P`          | Add corruption (debug)              |
 | `F5` / `F9`  | Quick-save / quick-load             |
 | `F1`         | Toggle the developer console        |
 | `F3`         | Toggle the developer debug overlay  |
@@ -67,8 +69,11 @@ content gate for scripts and CI. The same battery is available in-game via the
 
 The game HUD shows vitals, the prepared spell, active effects, a quest tracker,
 time/weather, world-event banners, an aimed-target nameplate, and interaction
-prompts. `Esc` opens a pause menu (Resume / Save / Load / Quit); `F3` reveals the
-developer debug overlay (FPS, raw stats, the active world event).
+prompts; a dark blood-red vignette bleeds in at high corruption. The character
+screen (`I`) carries a corruption gauge alongside progression, equipment, perks
+and reputation. `Esc` opens a pause menu (Resume / Save / Load / Quit); `F3`
+reveals the developer debug overlay (FPS, raw stats, corruption, the active
+world event).
 
 ## Project layout
 
@@ -100,6 +105,7 @@ developer debug overlay (FPS, raw stats, the active world event).
     ├── Magic/               # Spells, projectiles, AoE, status effects
     ├── Crafting/            # Recipes, stations, the crafting component
     ├── Factions/            # Reputation, faction tags, standing-driven hostility
+    ├── Corruption/          # Corruption meter, tiers, appearance + dialogue hooks
     ├── Player/              # Third-person controller + factory
     ├── Enemies/             # Enemy AI state machine + spawner
     ├── Save/                # ISaveable + SaveManager
@@ -120,10 +126,16 @@ data-driven sandbox that *can express* the game. The
 from that sandbox to launch, gated First Playable → Vertical Slice → Alpha →
 Beta → Release Candidate → Launch.
 
+**Phase 22** (Production Bible & Content Pipeline) is complete. **Phase 23 — The
+Corruption System**, the LORE's defining mechanic, is underway: the 0–100 meter
+with tier thresholds, save/load, a dev console + F3 readout, dialogue
+conditions/effects, a character-screen gauge, the dread vignette, and the
+per-tier appearance hook are all in (23A–23F).
+
 |              | Phase                                      |
 | ------------ | ------------------------------------------ |
-| ▶ **Current** | 21 — Content Expansion *(systems complete; production begins)* |
-| ⏭ **Next**    | 22 — Production Bible & Content Pipeline    |
+| ▶ **Current** | 23 — The Corruption System *(23A–23F done)* |
+| ⏭ **Next**    | 23G — NPC "dread" standing, then 24 — Meta-Shell & Localization |
 
 > Updated as each phase lands. The repo stays buildable and playable at every
 > step; a phase is "done" when it works in-game **and** round-trips through
