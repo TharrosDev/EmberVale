@@ -191,7 +191,7 @@ no code) — batch them when momentum is good.
   - **Done when:** a conversation visibly branches on corruption and a choice can
     raise it; `validate` understands the new enum values.
 
-- [ ] **23D — Corruption UI: character-screen gauge** `[F]`
+- [x] **23D — Corruption UI: character-screen gauge** `[F]`
   - **Goal:** the player can see their corruption.
   - **Tasks:** add a corruption gauge to the character screen via `UiTheme.Bar`
     (CLAUDE.md §8 "new UI panel"). Label the current tier. Rebuild from a dirty

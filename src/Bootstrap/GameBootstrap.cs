@@ -4,6 +4,7 @@ using Embervale.Core;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Core.Services;
+using Embervale.Corruption;
 using Embervale.Crafting;
 using Embervale.Debugging;
 using Embervale.Dialogue;
@@ -354,6 +355,7 @@ public partial class GameBootstrap : Node3D
         _inventoryPanel.SetProgression(_player.GetComponent<ProgressionComponent>());
         _inventoryPanel.SetPerks(_player.GetComponent<PerksComponent>());
         _inventoryPanel.SetReputation(_player.GetComponent<ReputationComponent>());
+        _inventoryPanel.SetCorruption(_player.GetComponent<CorruptionComponent>());
 
         QuestLogComponent? questLog = _player.GetComponent<QuestLogComponent>();
         _questLogPanel.SetQuestLog(questLog);
