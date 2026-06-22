@@ -129,13 +129,15 @@ Beta → Release Candidate → Launch.
 **Phase 22** (Production Bible & Content Pipeline) is complete. **Phase 23 — The
 Corruption System**, the LORE's defining mechanic, is underway: the 0–100 meter
 with tier thresholds, save/load, a dev console + F3 readout, dialogue
-conditions/effects, a character-screen gauge, the dread vignette, and the
-per-tier appearance hook are all in (23A–23F).
+conditions/effects, a character-screen gauge, the dread vignette, the per-tier
+appearance hook, and global NPC "dread" standing — corruption lowers the player's
+effective faction standing so the world turns hostile as you corrupt — are all in
+(23A–23G).
 
 |              | Phase                                      |
 | ------------ | ------------------------------------------ |
-| ▶ **Current** | 23 — The Corruption System *(23A–23F done)* |
-| ⏭ **Next**    | 23G — NPC "dread" standing, then 24 — Meta-Shell & Localization |
+| ▶ **Current** | 23 — The Corruption System *(23A–23G done)* |
+| ⏭ **Next**    | 23H — corrupted abilities + endings hook, then 24 — Meta-Shell & Localization |
 
 > Updated as each phase lands. The repo stays buildable and playable at every
 > step; a phase is "done" when it works in-game **and** round-trips through

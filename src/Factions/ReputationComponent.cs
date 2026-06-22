@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Embervale.Core.Events;
+using Embervale.Corruption;
 using Embervale.Entities;
 using Embervale.Save;
 using Godot;
@@ -13,13 +14,43 @@ namespace Embervale.Factions;
 /// the web — pleasing its enemies and angering its allies. Standing maps to a
 /// <see cref="ReputationTier"/>, which other systems (enemy AI, dialogue, UI) read to
 /// decide hostility. Persists the per-faction values via <see cref="ISaveable"/>.
+///
+/// On top of the earned per-faction values it layers <see cref="Dread"/> — a global
+/// negative standing modifier derived from the player's corruption (Phase 23G). High
+/// corruption makes the whole world read the player as a lower tier ("the world fears a
+/// corrupted player"), so the <em>effective</em> standing — and therefore hostility —
+/// drops as corruption rises, without touching the earned base (which still persists).
 /// </summary>
 [GlobalClass]
 public partial class ReputationComponent : EntityComponent, ISaveable
 {
     private readonly Dictionary<string, int> _reputation = new();
+    private CorruptionComponent? _corruption;
 
     public string SaveId => SaveKey("reputation");
+
+    /// <summary>
+    /// The global standing penalty the player's current corruption inflicts on every
+    /// faction (0 when uncorrupted). Subtracted from the earned base to get the
+    /// <see cref="Effective"/> standing the world reacts to. Resolved from the sibling
+    /// <see cref="CorruptionComponent"/> on demand, so it is always current and is never
+    /// persisted here (corruption owns its own save).
+    /// </summary>
+    public int Dread => DreadPenalty(Corruption?.Tier ?? CorruptionTier.Untainted);
+
+    private CorruptionComponent? Corruption => _corruption ?? ResolveCorruption();
+
+    private CorruptionComponent? ResolveCorruption() => _corruption ??= Entity?.GetComponent<CorruptionComponent>();
+
+    /// <summary>The dread penalty each corruption tier inflicts on standing (tunable).</summary>
+    private static int DreadPenalty(CorruptionTier tier) => tier switch
+    {
+        CorruptionTier.Untainted => 0,
+        CorruptionTier.Touched => 5,
+        CorruptionTier.Marked => 15,
+        CorruptionTier.Ashbound => 30,
+        _ => 50,
+    };
 
     protected override void OnInitialize()
     {
@@ -38,7 +69,9 @@ public partial class ReputationComponent : EntityComponent, ISaveable
         SaveManager.Instance?.Unregister(this);
     }
 
-    /// <summary>Current standing with a faction (its default if never adjusted).</summary>
+    /// <summary>The earned standing with a faction (its default if never adjusted), before
+    /// the corruption-driven <see cref="Dread"/> penalty. This is the value persisted and
+    /// shown as the player's raw reputation; the world reacts to <see cref="Effective"/>.</summary>
     public int Get(string factionId)
     {
         if (_reputation.TryGetValue(factionId, out int value))
@@ -49,7 +82,12 @@ public partial class ReputationComponent : EntityComponent, ISaveable
         return FactionDatabase.Get(factionId)?.DefaultReputation ?? 0;
     }
 
-    public ReputationTier TierOf(string factionId) => ReputationTiers.Of(Get(factionId));
+    /// <summary>The standing the world actually reacts to: the earned <see cref="Get"/> value
+    /// lowered by the global <see cref="Dread"/> penalty and re-clamped to range.</summary>
+    public int Effective(string factionId) =>
+        Mathf.Clamp(Get(factionId) - Dread, ReputationTiers.Min, ReputationTiers.Max);
+
+    public ReputationTier TierOf(string factionId) => ReputationTiers.Of(Effective(factionId));
 
     /// <summary>Whether a faction's members currently treat the player as an enemy.</summary>
     public bool IsHostile(string factionId)

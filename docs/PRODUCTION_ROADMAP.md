@@ -795,7 +795,7 @@ The ordering is driven by hard dependencies, not preference:
 
 | Stage | Gate | Phases | Status |
 | ----- | ---- | ------ | ------ |
-| A — Pre-production & First Playable | G0 | 22–28 | ⏳ In progress (Phase 22 ✅; 23 underway — 23A–23F ✅) |
+| A — Pre-production & First Playable | G0 | 22–28 | ⏳ In progress (Phase 22 ✅; 23 underway — 23A–23G ✅) |
 | B — Vertical Slice | G1 | 29–33 | ⬜ Planned |
 | C — Alpha / Feature Complete | G2 | 34–45 | ⬜ Planned |
 | D — Beta / Content Complete | G3 | 46–55 | ⬜ Planned |
@@ -806,16 +806,19 @@ The ordering is driven by hard dependencies, not preference:
 **Immediate next step:** Phase 22 (Production Bible & Content Pipeline) is **complete**
 (22A–22H: design bible, ID registry, validator well-formedness + reachability + headless
 gate, content templates, analytics spine). **Phase 23 (Corruption)** — the LORE's
-defining mechanic — is underway: **23A–23C are done** — the `CorruptionComponent` core
+defining mechanic — is underway: **23A–23G are done** — the `CorruptionComponent` core
 (0–100 meter, `CorruptionTier` bands, change/tier events, save/load, wired onto the player),
 its debug surface (a `corruption get/set/add/tier` dev-console command + F3-overlay readout),
 dialogue integration (`CorruptionAtLeast`/`CorruptionBelow` conditions + an `AddCorruption`
-effect, exercised by the Village Elder, who now reacts to a corrupted player), and the
+effect, exercised by the Village Elder, who now reacts to a corrupted player), the
 character-screen corruption gauge, the HUD dread vignette (an ash-violet edge vignette in
-`GameHud` that fades in at Ashbound/Embers off `CorruptionTierChangedEvent`), and the
+`GameHud` that fades in at Ashbound/Embers off `CorruptionTierChangedEvent`), the
 `CorruptionAppearanceController` stub (tints a placeholder player body mesh per tier — ash skin +
-ember glow — the seam Phase 30's real models/VFX plug into). Next is **23G** — NPC reaction /
-global "dread" standing, so the world fears a corrupted player (reusing the reputation math).
+ember glow — the seam Phase 30's real models/VFX plug into), and **23G NPC dread** — corruption
+derives a global negative standing "dread" in `ReputationComponent` (`Effective` = earned − dread),
+so factions read a corrupted player as a lower tier and the existing enemy AI turns on them live
+(reusing the reputation math, no parallel system). Next is **23H** — corrupted ability gating +
+the both-endings eligibility hook.
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —
 > a third-person open-world fantasy RPG where you battle fallen heroes across four

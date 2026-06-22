@@ -165,7 +165,13 @@ public static class DevCommands
                 return "usage: corruption <get|set N|add N|tier>";
         }
 
-        return $"{corruption.Value}/{CorruptionTiers.Max} ({CorruptionTiers.Label(corruption.Tier)})";
+        string line = $"{corruption.Value}/{CorruptionTiers.Max} ({CorruptionTiers.Label(corruption.Tier)})";
+        if (player.GetComponent<ReputationComponent>() is { Dread: > 0 } rep)
+        {
+            line += $" — dread -{rep.Dread}";
+        }
+
+        return line;
     }
 
     private static string Time(DevConsole console, string[] args)

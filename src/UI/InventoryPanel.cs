@@ -179,10 +179,20 @@ public partial class InventoryPanel : CanvasLayer
         }
 
         AddHeader("REPUTATION");
+
+        // Corruption inflicts a global "dread" penalty (Phase 23G): the world reacts to the
+        // earned standing lowered by dread, so show the world's effective tier and call out
+        // why it dropped.
+        int dread = _reputation.Dread;
+        if (dread > 0)
+        {
+            AddLine($"Dread: -{dread} (corruption)", new Color(0.74f, 0.45f, 0.62f));
+        }
+
         foreach (FactionResource faction in FactionDatabase.All)
         {
             int value = _reputation.Get(faction.Id);
-            ReputationTier tier = ReputationTiers.Of(value);
+            ReputationTier tier = ReputationTiers.Of(_reputation.Effective(faction.Id));
             AddLine($"{faction.DisplayName}: {ReputationTiers.Label(tier)} ({value:+0;-0;0})",
                 ReputationTiers.Color(tier));
         }

@@ -215,7 +215,7 @@ no code) — batch them when momentum is good.
   - **Done when:** each tier shows a *distinct* placeholder appearance change;
     documented as the hook for Phase 30.
 
-- [ ] **23G — NPC reaction / global "dread" standing** `[F]`
+- [x] **23G — NPC reaction / global "dread" standing** `[F]` ✅
   - **Goal:** the world fears a corrupted player.
   - **Tasks:** have `ReputationComponent`/faction AI read corruption as a global
     standing modifier ("dread") so high corruption nudges NPC hostility/dialogue.
@@ -223,6 +223,16 @@ no code) — batch them when momentum is good.
     `src/Factions/`.)
   - **Done when:** raising corruption measurably shifts at least one faction's
     standing/AI reaction; round-trips through save.
+  - **Done:** `ReputationComponent` now derives a global `Dread` penalty from the
+    sibling `CorruptionComponent`'s tier (Touched 5 · Marked 15 · Ashbound 30 ·
+    Embers 50) and exposes `Effective(faction)` = earned `Get` − `Dread`, clamped.
+    `TierOf`/`IsHostile` route through `Effective`, so the existing enemy-AI
+    `PlayerIsTarget` gate makes factions turn on a corrupted player **live** (and
+    stand down as corruption falls) with no new system. Earned standing and its
+    persistence are untouched (dread is derived from the already-saved corruption,
+    so it round-trips for free). Surfaced in the character-screen reputation panel
+    (a "Dread −N" line + effective tiers), the F3 debug HUD, and the `corruption`
+    dev-console command.
 
 - [ ] **23H — Corrupted ability gating + both-endings eligibility hook** `[F/C]`
   - **Goal:** corruption unlocks corrupted variants and feeds the endings dial.

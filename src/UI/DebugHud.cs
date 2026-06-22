@@ -4,6 +4,7 @@ using Embervale.Core;
 using Embervale.Core.Events;
 using Embervale.Corruption;
 using Embervale.Entities;
+using Embervale.Factions;
 using Embervale.Magic;
 using Embervale.Progression;
 using Embervale.Quests;
@@ -241,7 +242,12 @@ public partial class DebugHud : CanvasLayer
 
         if (_player.TryGetComponent(out CorruptionComponent corruption))
         {
-            sb.Append($"Corruption {corruption.Value}/{CorruptionTiers.Max}   ({CorruptionTiers.Label(corruption.Tier)})\n");
+            sb.Append($"Corruption {corruption.Value}/{CorruptionTiers.Max}   ({CorruptionTiers.Label(corruption.Tier)})");
+            if (_player.TryGetComponent(out ReputationComponent reputation) && reputation.Dread > 0)
+            {
+                sb.Append($"   dread -{reputation.Dread}");
+            }
+            sb.Append('\n');
         }
 
         sb.Append($"Last hit: {_lastHit}");
