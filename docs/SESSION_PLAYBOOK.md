@@ -107,7 +107,7 @@ no code) — batch them when momentum is good.
   - **Done when:** the scheme is documented and current ids are audited against it
     (a short conformance list in the doc).
 
-- [ ] **22D — `ContentValidator`: structural rules (no dead refs → well-formed)** `[F]`
+- [x] **22D — `ContentValidator`: structural rules (no dead refs → well-formed)** `[F]`
   - **Goal:** grow validation from "references resolve" to "content is well-formed."
   - **Tasks:** in the `ContentValidator`, add checks: no duplicate ids per domain;
     loot tables non-empty; every quest objective `TargetId` resolves; every

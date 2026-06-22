@@ -8,6 +8,8 @@ using Embervale.Factions;
 using Embervale.Items;
 using Embervale.Loot;
 using Embervale.Magic;
+using Embervale.Npc;
+using Embervale.Progression;
 using Embervale.Quests;
 using Embervale.World;
 using Godot;
@@ -25,16 +27,22 @@ namespace Embervale.Debugging;
 /// <see cref="EnemyTemplateRegistry"/> and reports the breakages in one place, feeding the
 /// shared <see cref="Invariant"/> counter. Run once from the bootstrap after the databases
 /// load, and on demand via the <c>validate</c> dev-console command.
+///
+/// Beyond "references resolve", it also checks that content is <em>well-formed</em>: ids are
+/// unique within their domain (the databases dedupe duplicates to a single last-write-wins
+/// entry, so a duplicate id silently drops content — only a direct directory scan catches it)
+/// and loot tables are non-empty. Graph reachability is a later pass (Phase 22E).
 /// </summary>
 public static class ContentValidator
 {
     private const string LootDirectory = "res://data/loot";
 
-    /// <summary>Runs every cross-reference check and returns a human-readable summary.</summary>
+    /// <summary>Runs every cross-reference and structural check; returns a human-readable summary.</summary>
     public static string Run()
     {
         var issues = new List<string>();
 
+        ValidateDuplicateIds(issues);
         ValidateLootTables(issues);
         ValidateRecipes(issues);
         ValidateQuests(issues);
@@ -51,7 +59,7 @@ public static class ContentValidator
 
         if (issues.Count == 0)
         {
-            return "ContentValidator: OK (all content references resolve).";
+            return "ContentValidator: OK (all content references resolve and content is well-formed).";
         }
 
         var sb = new StringBuilder($"ContentValidator: {issues.Count} issue(s):\n");
@@ -61,6 +69,72 @@ public static class ContentValidator
         }
 
         return sb.ToString().TrimEnd();
+    }
+
+    /// <summary>
+    /// Scans every id-bearing content directory and flags duplicate ids within a domain. The
+    /// databases dedupe on load (last-write-wins), so a duplicate would silently disable one of
+    /// the colliding resources — invisible to a <c>.All</c> walk. We scan the files directly,
+    /// mirroring <see cref="ValidateLootTables"/>. Per the ID registry (docs/IDS.md), ids are
+    /// unique <em>within</em> a domain, so each directory is checked independently.
+    /// </summary>
+    private static void ValidateDuplicateIds(List<string> issues)
+    {
+        CheckDuplicateIds<ItemResource>("res://data/items", "item", r => r.Id, issues);
+        CheckDuplicateIds<AffixDefinition>("res://data/affixes", "affix", r => r.Id, issues);
+        CheckDuplicateIds<PerkResource>("res://data/perks", "perk", r => r.Id, issues);
+        CheckDuplicateIds<QuestResource>("res://data/quests", "quest", r => r.Id, issues);
+        CheckDuplicateIds<DialogueResource>("res://data/dialogue", "dialogue", r => r.Id, issues);
+        CheckDuplicateIds<ScheduleResource>("res://data/schedules", "schedule", r => r.Id, issues);
+        CheckDuplicateIds<SpellResource>("res://data/spells", "spell", r => r.Id, issues);
+        CheckDuplicateIds<StatusEffectResource>("res://data/status_effects", "status", r => r.Id, issues);
+        CheckDuplicateIds<WeatherResource>("res://data/weather", "weather", r => r.Id, issues);
+        CheckDuplicateIds<EncounterResource>("res://data/encounters", "encounter", r => r.Id, issues);
+        CheckDuplicateIds<CraftingRecipeResource>("res://data/recipes", "recipe", r => r.Id, issues);
+        CheckDuplicateIds<FactionResource>("res://data/factions", "faction", r => r.Id, issues);
+        CheckDuplicateIds<WorldEventResource>("res://data/world_events", "event", r => r.Id, issues);
+    }
+
+    /// <summary>Loads every <c>.tres</c> in <paramref name="directory"/> and reports empty or
+    /// duplicate ids for the <paramref name="domain"/>.</summary>
+    private static void CheckDuplicateIds<T>(
+        string directory, string domain, System.Func<T, string> idOf, List<string> issues)
+        where T : Resource
+    {
+        if (!DirAccess.DirExistsAbsolute(directory))
+        {
+            return;
+        }
+
+        var seen = new Dictionary<string, string>();
+        foreach (string file in DirAccess.GetFilesAt(directory))
+        {
+            string name = file.EndsWith(".remap") ? file[..^6] : file;
+            if (!name.EndsWith(".tres"))
+            {
+                continue;
+            }
+
+            var resource = GD.Load<T>($"{directory}/{name}");
+            if (resource == null)
+            {
+                continue;
+            }
+
+            string id = idOf(resource);
+            if (string.IsNullOrEmpty(id))
+            {
+                issues.Add($"{domain} '{name}' has an empty id");
+            }
+            else if (seen.TryGetValue(id, out string? firstFile))
+            {
+                issues.Add($"{domain} id '{id}' is duplicated (in {firstFile} and {name})");
+            }
+            else
+            {
+                seen[id] = name;
+            }
+        }
     }
 
     private static void RequireItem(string id, string context, List<string> issues)
@@ -107,6 +181,11 @@ public static class ContentValidator
             {
                 issues.Add($"loot table '{name}' failed to load");
                 continue;
+            }
+
+            if (table.Entries.Count == 0 && table.GoldChance <= 0f)
+            {
+                issues.Add($"loot table '{name}' is empty (no entries and no gold)");
             }
 
             foreach (Variant element in table.Entries)
