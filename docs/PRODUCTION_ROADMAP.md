@@ -763,7 +763,7 @@ The ordering is driven by hard dependencies, not preference:
 
 | Stage | Gate | Phases | Status |
 | ----- | ---- | ------ | ------ |
-| A — Pre-production & First Playable | G0 | 22–28 | ⏳ Next |
+| A — Pre-production & First Playable | G0 | 22–28 | ⏳ In progress (Phase 22 ✅; 23 next) |
 | B — Vertical Slice | G1 | 29–33 | ⬜ Planned |
 | C — Alpha / Feature Complete | G2 | 34–45 | ⬜ Planned |
 | D — Beta / Content Complete | G3 | 46–55 | ⬜ Planned |
@@ -771,8 +771,9 @@ The ordering is driven by hard dependencies, not preference:
 | F — Launch | G5 | 63 | ⬜ Planned |
 | G — Live / Post-launch | G6 | 64–66 | ⬜ Planned |
 
-**Immediate next step:** Phase 22 (Production Bible & Content Pipeline) — lay the
-authoring/validation/ID groundwork, then Phase 23 (Corruption), the LORE's
+**Immediate next step:** Phase 22 (Production Bible & Content Pipeline) is **complete**
+(22A–22H: design bible, ID registry, validator well-formedness + reachability + headless
+gate, content templates, analytics spine). Next is **Phase 23 (Corruption)** — the LORE's
 defining mechanic, which everything narrative depends on.
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —

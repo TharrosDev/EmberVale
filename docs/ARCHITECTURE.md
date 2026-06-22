@@ -569,11 +569,21 @@ Developer tooling behind function keys (Phase 20); all run `ProcessMode.Always`.
 - **`Invariant`** — `Check(cond, msg)` logs + counts violations (never throws).
   **`WorldIntegrityChecker`** (a `Node`) runs a sanity pass on a timer and on demand
   (`WorldIntegrityChecker.Run()` — the `invariants` command): player registered + core
-  components, finite position, resources in range, no orphan nodes.
+  components, finite position, resources in range, no leaked orphan nodes (it subtracts the
+  `NodePoolCensus.Parked` count so a pool's intentionally-detached working set is not flagged).
+- **`ContentValidator`** — boot + on-demand content checks: `validate` (cross-references +
+  well-formedness — no dangling ids, unique ids per domain, non-empty loot) and `validate-all`
+  (adds graph reachability — dialogue orphans/dead-ends, quest completability, prerequisite
+  cycles). Also runnable headless: `godot --headless --path . -- --validate` (exit 0/1).
 - **`ProfilerOverlay`** (`F4`) — reads Godot `Performance` monitors (FPS, frame/physics ms, draw
   calls, node/orphan counts, static memory). Idle when hidden.
 - **`ReproHarness`** — named scenarios that `GD.Seed` the global RNG then replay a fixed command
   list (`repro <name>`) for deterministic bug repro. New scenario = a one-line entry.
+- **Analytics spine** (`src/Analytics`, dev-only) — `AnalyticsSink` (a `Node` wired in the
+  bootstrap) subscribes to the EventBus and appends a JSON-lines log to `user://analytics/`
+  (deaths by location, quest start/complete, level-ups), plus any `AnalyticsEvent` a system
+  publishes for ad-hoc instrumentation. One file per session. Gated on `OS.IsDebugBuild()` — a
+  complete no-op in retail builds — and deliberately not `ISaveable` (it is a log, not state).
 - Wired in the bootstrap; `F1`/`F4` toggles sit alongside the `F3` `DebugHud`. Console commands
   rely on `WorldClock.SetTimeOfDay`, `WeatherDirector.Force`, `WorldEventDirector.ForceStart`
   (registered in the `ServiceLocator`).

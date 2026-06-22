@@ -1,3 +1,4 @@
+using Embervale.Analytics;
 using Embervale.Combat;
 using Embervale.Core;
 using Embervale.Core.Diagnostics;
@@ -104,6 +105,11 @@ public partial class GameBootstrap : Node3D
         _profiler = new ProfilerOverlay();
         AddChild(_profiler);
         AddChild(new WorldIntegrityChecker());
+
+        // Dev-only telemetry: logs deaths/quests/level-ups to user://analytics/ for later
+        // balance/QA. A no-op in retail builds (gated on OS.IsDebugBuild). Added before the
+        // player/quest spawn below so it captures the seeded starter quest.
+        AddChild(new AnalyticsSink());
         _inventoryPanel = new InventoryPanel();
         AddChild(_inventoryPanel);
         _questLogPanel = new QuestLogPanel();

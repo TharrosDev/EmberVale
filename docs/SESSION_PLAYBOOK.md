@@ -144,7 +144,7 @@ no code) — batch them when momentum is good.
   - **Done when:** every §8 domain has a template; `validate` stays green
     (templates either valid or excluded by an `_` convention).
 
-- [ ] **22H — Telemetry/analytics spine (dev-only)** `[F]`
+- [x] **22H — Telemetry/analytics spine (dev-only)** `[F]`
   - **Goal:** lightweight event logging so balance/QA later have data.
   - **Tasks:** add `AnalyticsEvent : IGameEvent` and a dev-only `AnalyticsSink`
     that subscribes to the EventBus and logs to `user://analytics/` (deaths by
