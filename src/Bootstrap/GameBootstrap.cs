@@ -206,6 +206,9 @@ public partial class GameBootstrap : Node3D
             case Key.X:
                 _player?.GetComponent<ProgressionComponent>()?.AddXp(50);
                 break;
+            case Key.P:
+                _player?.GetComponent<CorruptionComponent>()?.Add(10);
+                break;
             case Key.K:
                 AdjustGoblinReputation();
                 break;
