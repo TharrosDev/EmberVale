@@ -1,6 +1,6 @@
 # Embervale
 
-> An original first-person, open-world fantasy action RPG built in **Godot 4**
+> An original third-person, open-world fantasy action RPG built in **Godot 4**
 > with **C#**. Exploration, visceral melee and magic combat, deep character
 > progression, and Diablo-style loot in a hand-crafted world with its own
 > identity.
@@ -100,7 +100,7 @@ developer debug overlay (FPS, raw stats, the active world event).
     ├── Magic/               # Spells, projectiles, AoE, status effects
     ├── Crafting/            # Recipes, stations, the crafting component
     ├── Factions/            # Reputation, faction tags, standing-driven hostility
-    ├── Player/              # First-person controller + factory
+    ├── Player/              # Third-person controller + factory
     ├── Enemies/             # Enemy AI state machine + spawner
     ├── Save/                # ISaveable + SaveManager
     ├── Debugging/           # Dev console, profiler, invariants, repro harness

@@ -16,7 +16,7 @@ using Godot;
 namespace Embervale.Player;
 
 /// <summary>
-/// Builds a fully-assembled first-person player actor in code. Constructing it
+/// Builds a fully-assembled third-person player actor in code. Constructing it
 /// here (rather than a hand-authored <c>.tscn</c>) keeps the node graph, its
 /// collision shape and its components in one reviewable place while the project
 /// is young; it can be promoted to a packed scene later without changing callers.
@@ -29,7 +29,12 @@ public static class PlayerFactory
     private const int PlayerTeam = 0;
     private const float CapsuleRadius = 0.4f;
     private const float CapsuleHeight = 1.8f;
-    private const float EyeHeight = 1.62f;
+
+    // Third-person camera rig: the pivot sits at head height and the camera orbits it from
+    // behind and slightly above, framing the player's body in the lower third of the view.
+    private const float CameraPivotHeight = 1.55f;
+    private const float CameraBackDistance = 3.8f;
+    private const float CameraRise = 0.4f;
 
     public static PlayerCharacter Create(Vector3 position)
     {
@@ -51,14 +56,14 @@ public static class PlayerFactory
             Position = new Vector3(0f, CapsuleHeight * 0.5f, 0f),
         });
 
-        // Placeholder body the CorruptionAppearanceController tints per tier (Phase 23F). Kept
-        // below eye height so it never blocks the first-person view — the player sees it by
-        // looking down. Phase 30 replaces this stand-in with the real rigged model.
+        // The player's visible body, framed by the third-person camera and tinted per corruption
+        // tier by the CorruptionAppearanceController (Phase 23F). Phase 30 replaces this stand-in
+        // capsule with the real rigged model.
         player.AddChild(new MeshInstance3D
         {
             Name = "BodyMesh",
-            Mesh = new CapsuleMesh { Radius = 0.32f, Height = 1.2f },
-            Position = new Vector3(0f, 0.6f, 0f),
+            Mesh = new CapsuleMesh { Radius = 0.36f, Height = 1.75f },
+            Position = new Vector3(0f, CapsuleHeight * 0.5f, 0f),
             MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.62f, 0.60f, 0.58f) },
         });
 
@@ -69,13 +74,20 @@ public static class PlayerFactory
         player.AddChild(new InventoryComponent { Name = "Inventory" });
         player.AddChild(BuildHurtbox());
 
+        // Pitch pivot at head height; the camera hangs behind and above it so mouse-look orbits
+        // the third-person camera around the player (yaw turns the body, pitch tilts the pivot).
         var cameraPivot = new Node3D
         {
             Name = "CameraPivot",
-            Position = new Vector3(0f, EyeHeight, 0f),
+            Position = new Vector3(0f, CameraPivotHeight, 0f),
         };
         player.AddChild(cameraPivot);
-        cameraPivot.AddChild(new Camera3D { Name = "Camera", Current = true });
+        cameraPivot.AddChild(new Camera3D
+        {
+            Name = "Camera",
+            Current = true,
+            Position = new Vector3(0f, CameraRise, CameraBackDistance),
+        });
 
         // Melee swing volume in front of the body; opened by the weapon component.
         var hitbox = new Hitbox

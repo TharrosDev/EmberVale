@@ -7,7 +7,7 @@ step-by-step recipes and the development workflow, see
 [`../CLAUDE.md`](../CLAUDE.md); for the phase plan see
 [`PRODUCTION_ROADMAP.md`](PRODUCTION_ROADMAP.md).
 
-> **One-line summary:** an original first-person, open-world fantasy action RPG in
+> **One-line summary:** an original third-person, open-world fantasy action RPG in
 > **Godot 4.7** with **C# (.NET 8)**, built on a component-based, event-driven,
 > resource-driven architecture, and kept buildable and playable at every commit.
 
@@ -164,7 +164,7 @@ direct children of the host. `Hitbox`/`Hurtbox` are `Area3D` (not
 
 - **`PlayerCharacter : CharacterEntity`** — marker type registered in the
   `ServiceLocator`, so enemies resolve the player by a distinct type.
-- **`PlayerController : EntityComponent`** — first-person input + camera. Reads
+- **`PlayerController : EntityComponent`** — third-person input + camera. Reads
   `GameInput` actions, drives `LocomotionComponent`, mouse-look (body yaw +
   camera-pivot pitch), routes `attack`→`MeleeWeaponComponent.TryAttack()` and
   `block`→`CombatComponent.IsBlocking`. Subscribes to `GameStateChangedEvent` to

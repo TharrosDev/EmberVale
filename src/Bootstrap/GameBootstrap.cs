@@ -30,7 +30,7 @@ namespace Embervale.Bootstrap;
 /// Entry point attached to the root of <c>Main.tscn</c>. It assembles a small
 /// playable sandbox that exercises the core systems end to end:
 ///   * builds a minimal 3D world (light, sky, collidable floor),
-///   * spawns a first-person <see cref="PlayerFactory">player</see> that walks,
+///   * spawns a third-person <see cref="PlayerFactory">player</see> that walks,
 ///     looks and melee-attacks,
 ///   * spawns a component-based training dummy whose health/death/respawn flow
 ///     through the <see cref="EventBus"/>,
@@ -235,7 +235,7 @@ public partial class GameBootstrap : Node3D
 
     private void BuildEnvironment()
     {
-        // No camera here — the player provides the active first-person camera. The sun's
+        // No camera here — the player provides the active third-person camera. The sun's
         // orientation/energy/colour are animated by the SkyController off the world clock.
         _sun = new DirectionalLight3D
         {

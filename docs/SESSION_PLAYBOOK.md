@@ -563,9 +563,9 @@ no code) — batch them when momentum is good.
 - [ ] **30A — Art-direction style guide** `[P]`
   - **Done when:** `docs/ART_STYLE.md` pins the dying-world language (ash, faded
     colour, embers) + import/LOD conventions feeding Phase 19/57.
-- [ ] **30B — First-person arms + weapon rig integration** `[P]`
-  - **Done when:** rigged FP arms + a weapon play attack/block/idle driven by
-    combat states.
+- [ ] **30B — Third-person character + weapon rig integration** `[P]`
+  - **Done when:** the rigged player character + a weapon play attack/block/idle
+    driven by combat states.
 - [ ] **30C — Spell-casting animations + cast VFX by school** `[P]`
   - **Done when:** casting plays animations and school-tinted VFX matched to
     `SpellSchools`.

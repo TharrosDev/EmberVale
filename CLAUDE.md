@@ -7,7 +7,7 @@ you, and step-by-step recipes for adding new content without breaking things. Th
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)** (see §5) — read the relevant
 section there before changing a system.
 
-> **One-line summary:** Embervale is an original first-person, open-world fantasy
+> **One-line summary:** Embervale is an original third-person, open-world fantasy
 > action RPG built in **Godot 4.7** with **C# (.NET 8)**, using a component-based,
 > event-driven, resource-driven architecture. The repo is kept **buildable and
 > playable at every commit**.
@@ -207,7 +207,7 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 | `src/Entities` | `IEntity` / `Entity` / `CharacterEntity` / `EntityComponent` composition model |
 | `src/Stats` | `StatType` / `Stat` / `StatModifier` / `AttributeSet` / `StatsComponent` |
 | `src/Combat` `src/Movement` | Damage pipeline, hit/hurtboxes, weapons, `CombatComponent`; reusable locomotion |
-| `src/Player` `src/Enemies` | First-person controller; perception-FSM AI + `EnemyTemplateRegistry` |
+| `src/Player` `src/Enemies` | Third-person controller; perception-FSM AI + `EnemyTemplateRegistry` |
 | `src/Items` `src/Loot` | Inventory, equipment, item instances, affixes, loot tables |
 | `src/Progression` `src/Quests` `src/Dialogue` | XP/perks, quests, conversation graphs + story flags |
 | `src/Magic` `src/World` `src/Npc` | Spells/status effects; clock/weather/encounters/events; schedules |
