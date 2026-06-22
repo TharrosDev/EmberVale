@@ -28,6 +28,7 @@ public sealed class NodePool<T>
         for (int i = 0; i < prewarm; i++)
         {
             _free.Push(_factory());
+            NodePoolCensus.OnParked();
         }
     }
 
@@ -40,6 +41,7 @@ public sealed class NodePool<T>
         while (_free.Count > 0)
         {
             T candidate = _free.Pop();
+            NodePoolCensus.OnUnparked();
             if (GodotObject.IsInstanceValid(candidate))
             {
                 return candidate;
@@ -63,6 +65,7 @@ public sealed class NodePool<T>
         if (_free.Count < _maxRetained)
         {
             _free.Push(node);
+            NodePoolCensus.OnParked();
         }
         else
         {
@@ -76,6 +79,7 @@ public sealed class NodePool<T>
         while (_free.Count > 0)
         {
             T node = _free.Pop();
+            NodePoolCensus.OnUnparked();
             if (GodotObject.IsInstanceValid(node))
             {
                 node.QueueFree();
