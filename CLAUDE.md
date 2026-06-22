@@ -28,6 +28,16 @@ You are the lead engineer building this game incrementally. The non-negotiables:
   resources, not new inheritance chains or hard-coded values.
 - **Respect existing architecture.** Inspect before adding; don't duplicate
   systems; refactor when it lowers long-term cost.
+- **Check the Godot Asset Library before building from scratch.** When adding a
+  new feature/system (or art/shader/tool), first check whether the Godot Asset
+  Library already has something that fits, and reuse it instead of reinventing —
+  fetch it from the asset's linked GitHub repo (the connected Godot MCP has no
+  one-click install) and adapt it to our architecture. **Only** reuse when it fits
+  our needs *exactly* and its license is compatible (this build is **private/
+  personal — never sold or published —** so prefer MIT/CC0/open; avoid paid or
+  closed assets). A near-miss you have to fight is worse than building clean — in
+  that case, **build from scratch** against our patterns. Note what you pulled and
+  its license where it lands.
 - **Work in phases** (see §9). Determine the next highest-priority task and do it.
 
 ---
