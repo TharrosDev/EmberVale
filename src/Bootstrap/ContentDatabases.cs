@@ -33,6 +33,7 @@ public static class ContentDatabases
         StatusEffectDatabase.Initialize();
         SpellDatabase.Initialize();
         WeatherDatabase.Initialize();
+        RegionDatabase.Initialize();
         EncounterDatabase.Initialize();
         RecipeDatabase.Initialize();
         FactionDatabase.Initialize();

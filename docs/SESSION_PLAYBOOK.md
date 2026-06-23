@@ -450,7 +450,7 @@ no code) — batch them when momentum is good.
 > Replace the single flat sandbox with streamed authored regions, a map, and
 > fast travel — before authoring four realms.
 
-- [ ] **25A — `RegionResource` + region scene convention** `[F]`
+- [x] **25A — `RegionResource` + region scene convention** `[F]` ✅
   - **Goal:** regions are authorable data + scenes.
   - **Tasks:** add `RegionResource` (`.tres`: id, display name, realm, sub-cell
     list, bounds, default weather/day-phase bias, neighbour links) + a
@@ -459,6 +459,21 @@ no code) — batch them when momentum is good.
     for the current sandbox.
   - **Done when:** the sandbox is described by a `RegionResource`; the convention
     is documented for Phases 27/44.
+  - **Done:** new `src/World/RegionResource.cs` (`[GlobalClass]`, mirrors `WeatherResource`):
+    `Id`/`DisplayName`/`Realm` (a new fixed `Realm` enum — the four realms + Celestial)/`SubCells`/
+    `Bounds` (`Aabb`)/`DefaultWeatherId`+`DayPhaseBias`/`Neighbours`, indexed by a
+    `RegionDatabase` (copy of `WeatherDatabase`, registered in `ContentDatabases.InitializeAll`).
+    The sandbox is authored as `data/regions/EmberCrown.tres` (`region.ember_crown`, realm
+    EmberCrown, one `ember_crown.hub` sub-cell, clear/Day bias); `GameBootstrap.BuildSaveHeader`
+    now reads the region name from `RegionDatabase` (via a `_currentRegionId`) instead of the old
+    hard-coded literal, and `GameIds.Regions.EmberCrown` registers the id. `ContentValidator` gains
+    region dup-id + neighbour/default-weather cross-ref checks (in `CollectCoreIssues`, so the boot
+    and `--validate` gates both run them). The region/sub-cell scene convention
+    (`scenes/regions/<region>/<cell>.tscn`, world-partition discipline) is documented in
+    `ARCHITECTURE.md` §2.6h-2 + a "A new region" recipe in CLAUDE.md §8. Verified: build + 79 tests
+    + `--validate` green (region checks pass); in-engine boot logs *"RegionDatabase loaded 1
+    region(s)"* and the save header now reports "The Ember Crown" from the resource. No streaming
+    yet — that is 25B.
 
 - [ ] **25B — `RegionStreamer`: load/unload by distance** `[F]`
   - **Goal:** stream sub-cells around the player with a budget.

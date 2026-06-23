@@ -56,6 +56,12 @@ public static class GameIds
         public const string Cache = "prop.cache";
     }
 
+    /// <summary>Region ids (see RegionDatabase / data/regions).</summary>
+    public static class Regions
+    {
+        public const string EmberCrown = "region.ember_crown";
+    }
+
     public static class Spells
     {
         public const string Firebolt = "spell.firebolt";

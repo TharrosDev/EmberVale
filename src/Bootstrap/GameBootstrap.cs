@@ -67,6 +67,10 @@ public partial class GameBootstrap : Node3D
     private bool _sandboxBuilt;
     private double _respawnCountdown = -1d;
 
+    // The region the sandbox represents (Phase 25A). Until streaming (25B) the world is this one
+    // region; the save header reads its display name from the RegionDatabase.
+    private string _currentRegionId = GameIds.Regions.EmberCrown;
+
     public override void _Ready()
     {
         // Headless content check: `godot --headless --path . -- --validate` runs the full
@@ -746,10 +750,12 @@ public partial class GameBootstrap : Node3D
     }
 
     /// <summary>Supplies the gameplay fields of a save header (Phase 24B). Read lazily by the
-    /// <see cref="SaveManager"/> at save time; region is a placeholder until Phase 25 adds regions.</summary>
-    private static Godot.Collections.Dictionary BuildSaveHeader()
+    /// <see cref="SaveManager"/> at save time; the region name comes from the active region's
+    /// <see cref="RegionResource"/> (Phase 25A).</summary>
+    private Godot.Collections.Dictionary BuildSaveHeader()
     {
-        var header = new Godot.Collections.Dictionary { ["region"] = "Ember Crown" };
+        string region = RegionDatabase.Get(_currentRegionId)?.DisplayName ?? "Unknown Region";
+        var header = new Godot.Collections.Dictionary { ["region"] = region };
         if (ServiceLocator.Instance != null && ServiceLocator.Instance.TryGet(out PlayerCharacter player))
         {
             if (player.GetComponent<ProgressionComponent>() is { } progression)

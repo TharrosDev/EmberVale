@@ -884,7 +884,7 @@ The ordering is driven by hard dependencies, not preference:
 
 | Stage | Gate | Phases | Status |
 | ----- | ---- | ------ | ------ |
-| A — Pre-production & First Playable | G0 | 22–28 | ⏳ In progress (Phases 22 ✅, 23 ✅, 24 ✅; 25 next) |
+| A — Pre-production & First Playable | G0 | 22–28 | ⏳ In progress (Phases 22 ✅, 23 ✅, 24 ✅; 25 underway — 25A ✅) |
 | B — Vertical Slice | G1 | 29–33 | ⬜ Planned |
 | C — Alpha / Feature Complete | G2 | 34–45 | ⬜ Planned |
 | D — Beta / Content Complete | G3 | 46–55 | ⬜ Planned |
@@ -936,9 +936,12 @@ and selecting `en`; the "no hard-coded player-facing strings" rule is now in for
 the catalogue is now the single source of shell text, with a `locale` dev command to switch and a CSV
 column the only cost of a new language.
 
-**Phase 24 is complete. Immediate next step: Phase 25 (Region Streaming & World Map)** — replace the
-single flat sandbox with streamed authored regions, a world map/compass, and a fast-travel graph
-before the four realms are authored.
+**Phase 24 is complete. Phase 25 (Region Streaming & World Map) is underway** — replace the single
+flat sandbox with streamed authored regions, a world map/compass, and a fast-travel graph before the
+four realms are authored. **25A is done**: a `RegionResource` + `RegionDatabase` data layer, the
+sandbox authored as `region.ember_crown` (the save header now reads its name from the resource), region
+cross-ref validation, and the region/sub-cell scene convention documented (ARCHITECTURE §2.6h-2,
+CLAUDE §8). **Next: 25B** — the `RegionStreamer` that loads/unloads sub-cells by distance.
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —
 > a third-person open-world fantasy RPG where you battle fallen heroes across four

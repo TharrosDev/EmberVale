@@ -150,7 +150,8 @@ Goblins roam to the north (−Z) and drop loot.
 │   ├── encounters/         # EncounterResource presets (patrols, warbands)
 │   ├── recipes/            # CraftingRecipeResource presets (ingot, sword, potion, …)
 │   ├── factions/           # FactionResource presets (goblins, villagers)
-│   └── world_events/       # WorldEventResource presets (raid, cache, champion hunt)
+│   ├── world_events/       # WorldEventResource presets (raid, cache, champion hunt)
+│   └── regions/            # RegionResource presets (the Ember Crown sandbox region)
 └── src/
     ├── Core/
     │   ├── Events/          # IGameEvent, EventBus (autoload), CoreEvents
@@ -371,6 +372,16 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    `SkyEnergyScale`, `FogDensity`/`FogColor`, `Precipitation`).
 2. Auto-indexed by `WeatherDatabase`; the `WeatherDirector` can roll it and the
    `SkyController` renders it (light/fog/rain). No code change.
+
+**A new region** (Phase 25)
+1. Author `data/regions/Xxx.tres` (`script_class="RegionResource"`): unique `Id` (`region.*`),
+   `DisplayName`, `Realm` (the `Realm` enum int), `SubCells` (`Array[String]` of cell scene ids),
+   `Bounds` (`AABB`), `DefaultWeatherId` + `DayPhaseBias`, and `Neighbours` (`Array[String]` of
+   region ids). Place its sub-cell scenes under `scenes/regions/<region>/<cell>.tscn` (see
+   `docs/ARCHITECTURE.md` §2.6h-2).
+2. Auto-indexed by `RegionDatabase`; the save header resolves the active region's name, and the
+   25B `RegionStreamer` will stream its `SubCells`. Cross-refs (neighbours, default weather) are
+   checked by the `ContentValidator`. No code change for a new region.
 
 **A new encounter**
 1. Author `data/encounters/Xxx.tres` (`script_class="EncounterResource"`): unique `Id`,

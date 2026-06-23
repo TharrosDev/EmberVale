@@ -87,6 +87,7 @@ public static class ContentValidator
         ValidateFactions(issues);
         ValidateEncounters(issues);
         ValidateWorldEvents(issues);
+        ValidateRegions(issues);
     }
 
     private static void CollectGraphIssues(List<string> issues)
@@ -135,6 +136,7 @@ public static class ContentValidator
         CheckDuplicateIds<SpellResource>("res://data/spells", "spell", r => r.Id, issues);
         CheckDuplicateIds<StatusEffectResource>("res://data/status_effects", "status", r => r.Id, issues);
         CheckDuplicateIds<WeatherResource>("res://data/weather", "weather", r => r.Id, issues);
+        CheckDuplicateIds<RegionResource>("res://data/regions", "region", r => r.Id, issues);
         CheckDuplicateIds<EncounterResource>("res://data/encounters", "encounter", r => r.Id, issues);
         CheckDuplicateIds<CraftingRecipeResource>("res://data/recipes", "recipe", r => r.Id, issues);
         CheckDuplicateIds<FactionResource>("res://data/factions", "faction", r => r.Id, issues);
@@ -427,6 +429,25 @@ public static class ContentValidator
                 FactionDatabase.Get(worldEvent.FactionRewardId) == null)
             {
                 issues.Add($"event '{worldEvent.Id}' rewards unknown faction '{worldEvent.FactionRewardId}'");
+            }
+        }
+    }
+
+    private static void ValidateRegions(List<string> issues)
+    {
+        foreach (RegionResource region in RegionDatabase.All)
+        {
+            if (!string.IsNullOrEmpty(region.DefaultWeatherId) && WeatherDatabase.Get(region.DefaultWeatherId) == null)
+            {
+                issues.Add($"region '{region.Id}' has unknown default weather '{region.DefaultWeatherId}'");
+            }
+
+            foreach (string neighbour in region.Neighbours)
+            {
+                if (RegionDatabase.Get(neighbour) == null)
+                {
+                    issues.Add($"region '{region.Id}' links to unknown neighbour '{neighbour}'");
+                }
             }
         }
     }

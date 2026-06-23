@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RegionResource" load_steps=2 format=3 uid="uid://crgnembrcrown0"]
+
+[ext_resource type="Script" path="res://src/World/RegionResource.cs" id="1_region"]
+
+[resource]
+script = ExtResource("1_region")
+Id = "region.ember_crown"
+DisplayName = "The Ember Crown"
+Realm = 0
+SubCells = Array[String](["ember_crown.hub"])
+Bounds = AABB(-256, -16, -256, 512, 64, 512)
+DefaultWeatherId = "weather.clear"
+DayPhaseBias = 2
+Neighbours = Array[String]([])

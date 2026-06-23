@@ -408,6 +408,26 @@ persists). Three pieces:
 - Events live in `src/World/WorldEvents.cs` (`TimeOfDayChangedEvent` + the two above). The HUD
   shows the current weather beside the clock.
 
+### 2.6h-2 Regions & streaming (`src/World`, Phase 25)
+
+The world is divided into authored **regions** (one per area; many per `Realm`). Phase 25A
+establishes the data + convention; the streamer, map, and fast-travel land in 25B–25G.
+
+- **`RegionResource`** (`[GlobalClass]`, `data/regions/*.tres`): `Id` (`region.*`),
+  `DisplayName`, `Realm` (the fixed `Realm` enum — the four LORE realms + the Celestial),
+  `SubCells` (the streamable cell scene ids), `Bounds` (`Aabb`), an atmosphere bias
+  (`DefaultWeatherId` + `DayPhaseBias`), and `Neighbours` (region ids — the map/fast-travel
+  adjacency). `RegionDatabase` indexes them (mirrors `WeatherDatabase`); the save header reads
+  the active region's `DisplayName` by id. New region = a `.tres`, no code.
+- **Scene/world-partition convention** (for Phases 27/44 authoring): a region's sub-cell scenes
+  live under `scenes/regions/<region>/<cell>.tscn`, where `<region>` is the id minus its
+  `region.` prefix (e.g. `scenes/regions/ember_crown/hub.tscn` for sub-cell `ember_crown.hub`).
+  Keep each cell self-contained (its own static geometry, navmesh, props, spawn markers) and
+  positioned in world space within the region's `Bounds`, so the 25B **`RegionStreamer`** can
+  load/unload it by distance with no bespoke wiring. Persistent actors in a cell carry a
+  `PersistentId` so they restore via the `PersistentSpawnDirector` when the cell reloads (25D).
+  The current flat sandbox is the single region `region.ember_crown` (one always-loaded cell).
+
 ### 2.6i Crafting (`src/Crafting`)
 
 - **Recipe content** — `CraftingRecipeResource` (`[GlobalClass]`, `data/recipes/*.tres`): a
