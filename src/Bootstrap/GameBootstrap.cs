@@ -12,6 +12,7 @@ using Embervale.Enemies;
 using Embervale.Entities;
 using Embervale.Factions;
 using Embervale.Items;
+using Embervale.Localization;
 using Embervale.Loot;
 using Embervale.Magic;
 using Embervale.Npc;
@@ -84,6 +85,11 @@ public partial class GameBootstrap : Node3D
         ProcessMode = ProcessModeEnum.Always;
 
         GameInput.EnsureActions();
+
+        // Localization spine (Phase 24G): load the string catalogue and select the locale before any
+        // UI is built, so every player-facing string resolves through Loc.T from the first frame.
+        Loc.Initialize();
+
         ContentDatabases.InitializeAll();
 
         // Player options (Phase 24E): load user://settings.tres (or defaults) and apply graphics +

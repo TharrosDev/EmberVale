@@ -75,8 +75,8 @@ A production phase is done when **all** hold:
    command) — no dangling item/quest/dialogue/template ids.
 5. `README.md` + this file are updated (mark phase, queue next); a **draft PR**
    into `main` is opened (CLAUDE.md §9).
-6. New player-facing strings go through the **localization layer** (once Phase 24
-   lands) — no hard-coded UI text after that point.
+6. New player-facing strings go through the **localization layer** — `Loc.T("key")`
+   against `data/locale/strings.csv` (live as of Phase 24G) — **no hard-coded UI text**.
 
 ### 0.4 Content the systems already make free
 
@@ -884,7 +884,7 @@ The ordering is driven by hard dependencies, not preference:
 
 | Stage | Gate | Phases | Status |
 | ----- | ---- | ------ | ------ |
-| A — Pre-production & First Playable | G0 | 22–28 | ⏳ In progress (Phases 22 ✅, 23 ✅; 24 underway — 24A–24F ✅) |
+| A — Pre-production & First Playable | G0 | 22–28 | ⏳ In progress (Phases 22 ✅, 23 ✅; 24 underway — 24A–24G ✅) |
 | B — Vertical Slice | G1 | 29–33 | ⬜ Planned |
 | C — Alpha / Feature Complete | G2 | 34–45 | ⬜ Planned |
 | D — Beta / Content Complete | G3 | 46–55 | ⬜ Planned |
@@ -929,7 +929,11 @@ menu; the audio fields are paired to bus names ready for the Phase 31 mixer to c
 the **settings panel** on top — a modal `UiTheme` screen (Graphics / Audio / Controls / Gameplay /
 Accessibility) bound to the live `SettingsService`, applying changes instantly and persisting them,
 reachable from both the title menu and the in-game pause menu (with new `UiTheme.Toggle`/`Slider`/
-`Dropdown` builders). Next is the localization spine (24G–24H).
+`Dropdown` builders). **24G** lands the **localization spine** — a `Loc.T("key")` facade over Godot's
+`TranslationServer`, loading a `data/locale/strings.csv` catalogue (key + per-locale columns) at boot
+and selecting `en`; the "no hard-coded player-facing strings" rule is now in force (CLAUDE.md §6, DoD
+#6). Next is **24H** — retrofitting the shell strings (MainMenu/Settings/PauseMenu/save-slot) through
+`Loc`.
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —
 > a third-person open-world fantasy RPG where you battle fallen heroes across four

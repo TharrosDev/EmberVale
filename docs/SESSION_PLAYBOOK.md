@@ -394,7 +394,7 @@ no code) — batch them when momentum is good.
     errors. (Interactive open/drag/persist round-trip wasn't driven — the Godot MCP can't inject
     clicks; the controls are stock Godot widgets on the proven `SettingsService`.)
 
-- [ ] **24G — Localization spine: `Loc` facade + translation pipeline** `[F]`
+- [x] **24G — Localization spine: `Loc` facade + translation pipeline** `[F]` ✅
   - **Goal:** every string goes through a key from here on.
   - **Tasks:** add a `Loc` static facade over Godot's `TranslationServer`; set up
     the `.po`/CSV pipeline and an `en` base catalogue. Document the rule in
@@ -402,6 +402,20 @@ no code) — batch them when momentum is good.
     player-facing strings after this lands.**
   - **Done when:** `Loc.T("key")` resolves from the catalogue; the convention is
     documented.
+  - **Done:** new `src/Localization/Loc.cs` — a static facade over `TranslationServer`:
+    `Initialize()` (called from `GameBootstrap._Ready` before any UI) reads the
+    `data/locale/strings.csv` catalogue, builds a Godot `Translation` per locale column, registers
+    them, and selects `en`; `T("key")` resolves in the active locale (an unknown key returns the key
+    itself — a visible fallback), `TF("key", args)` formats, and `SetLocale` switches (guarded to
+    loaded locales). The catalogue (`data/locale/strings.csv`, `keys,en` + comment lines) is seeded
+    with ~55 shell strings (menu/pause/settings/save-slot) ready for the 24H retrofit; new locales are
+    just a new column. The CSV is loaded at **runtime** via `FileAccess` (not the editor's CSV import)
+    so the repo stays buildable/playable without an editor round-trip and the catalogue lives as plain
+    data alongside the rest of `data/`. The pure `LocCatalog.Parse` (RFC-4180 quoting, comment/blank
+    skip, multi-locale, empty-cell fallback) is unit-tested. The **no-hard-coded-strings rule** is now
+    documented in CLAUDE.md §6 and PRODUCTION_ROADMAP DoD #6. Verified: build + 79 tests (8 new
+    `LocCatalogTests`) + `--validate` green; in-engine boot logs *"Localization: loaded 55 string(s)
+    across 1 locale(s); locale 'en'"* with no errors — the catalogue parses and registers live.
 
 - [ ] **24H — Retrofit shell strings through `Loc`** `[F]`
   - **Goal:** prove the layer end-to-end on real UI.

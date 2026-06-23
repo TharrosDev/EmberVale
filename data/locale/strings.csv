@@ -1,0 +1,59 @@
+keys,en
+# Embervale string catalogue (Phase 24G). First column is the stable key; one column per locale.
+# Author UI/dialogue strings here and reference them via Loc.T("key") — no hard-coded player strings.
+# Add a new locale by adding a column (e.g. "fr") and translating each row.
+menu.title,EMBERVALE
+menu.subtitle,"Choose whether to save creation — or become its next Ash King."
+menu.new_game,New Game
+menu.continue,Continue
+menu.load_game,Load Game
+menu.settings,Settings
+menu.quit,Quit
+menu.coming_soon,Coming soon
+pause.title,PAUSED
+pause.resume,Resume
+pause.save,Save
+pause.load,Load
+pause.settings,Settings
+pause.quit,Quit to Desktop
+settings.title,SETTINGS
+settings.section.graphics,GRAPHICS
+settings.section.audio,AUDIO
+settings.section.controls,CONTROLS
+settings.section.gameplay,GAMEPLAY
+settings.section.accessibility,ACCESSIBILITY
+settings.window_mode,Window Mode
+settings.window_mode.windowed,Windowed
+settings.window_mode.fullscreen,Fullscreen
+settings.window_mode.borderless,Borderless
+settings.vsync,V-Sync
+settings.max_fps,Max FPS
+settings.max_fps.uncapped,Uncapped
+settings.master_volume,Master
+settings.music_volume,Music
+settings.sfx_volume,Effects
+settings.ambience_volume,Ambience
+settings.ui_volume,Interface
+settings.voice_volume,Voice
+settings.mouse_sensitivity,Mouse Sensitivity
+settings.invert_y,Invert Look Y
+settings.difficulty,Difficulty
+settings.difficulty.story,Story
+settings.difficulty.normal,Normal
+settings.difficulty.hard,Hard
+settings.reduced_motion,Reduced Motion
+settings.subtitles,Subtitles
+settings.ui_scale,UI Scale
+slots.new_title,NEW GAME — CHOOSE A SLOT
+slots.load_title,LOAD GAME
+slots.empty,— Empty —
+slots.slot,Slot
+slots.autosave,Autosave
+common.back,Back
+common.cancel,Cancel
+common.new_game,New Game
+common.overwrite,Overwrite
+common.load,Load
+common.delete,Delete
+common.confirm_delete,Confirm delete
+common.confirm_new,Confirm new

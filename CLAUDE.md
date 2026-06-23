@@ -227,6 +227,10 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 - **Components** end in `Component`; **events** are past-tense and end in `Event`;
   **resources** end in `Resource`/`Set`.
 - **Use `Log`** (not `GD.Print`) for diagnostics.
+- **No hard-coded player-facing strings** (Phase 24G). Every UI/dialogue string the
+  player can read goes through `Loc.T("key")` (`src/Localization/Loc.cs`) with a key
+  authored in `data/locale/strings.csv` — never a string literal in a `Label`/`Button`/
+  toast. Diagnostics via `Log` and dev-console/debug text are exempt.
 - **React to events** rather than polling singletons where practical.
 - **Factories build detached, then add to tree.** Set component properties
   before `AddChild` where they're needed in `OnInitialize`; properties only used
