@@ -133,7 +133,12 @@ public sealed partial class SaveManager : Node
     // --- Save ---------------------------------------------------------------
 
     /// <summary>Serializes all registered saveables to the given slot. Returns success.</summary>
-    public bool SaveGame(string slot)
+    public bool SaveGame(string slot) => SaveGame(slot, isAutosave: false);
+
+    /// <summary>Serializes all registered saveables to the given slot. <paramref name="isAutosave"/>
+    /// only flavours the published <see cref="GameSavedEvent"/> (Phase 24D) — the autosave cadence
+    /// lives in <see cref="AutosaveService"/>; this stays the low-level writer. Returns success.</summary>
+    public bool SaveGame(string slot, bool isAutosave)
     {
         DirAccess.MakeDirRecursiveAbsolute(SlotDir(slot));
 
@@ -192,7 +197,7 @@ public sealed partial class SaveManager : Node
         }
 
         Log.Info($"Saved {objects.Count} object(s) to slot '{slot}'" + (failures > 0 ? $" ({failures} skipped)." : "."));
-        EventBus.Instance?.Publish(new GameSavedEvent(slot));
+        EventBus.Instance?.Publish(new GameSavedEvent(slot, isAutosave));
         return true;
     }
 

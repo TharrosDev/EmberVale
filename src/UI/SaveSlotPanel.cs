@@ -98,6 +98,20 @@ public partial class SaveSlotPanel : CanvasLayer
             SaveSlotInfo? info = SaveManager.Instance?.ReadHeader(slot);
             _list.AddChild(BuildRow(slot, $"Slot {i + 1}", info));
         }
+
+        // Phase 24D: in Load mode, surface existing autosaves as read-only rows (Load + Delete, no
+        // Overwrite — a New game can never clobber them since they're absent from the New roster).
+        if (_mode == Intent.Load && SaveManager.Instance is { } manager)
+        {
+            for (int i = 0; i < AutosaveService.RingSlots.Length; i++)
+            {
+                string slot = AutosaveService.RingSlots[i];
+                if (manager.ReadHeader(slot) is { } autoInfo)
+                {
+                    _list.AddChild(BuildRow(slot, $"Autosave {i + 1}", autoInfo));
+                }
+            }
+        }
     }
 
     private Control BuildRow(string slot, string label, SaveSlotInfo? info)

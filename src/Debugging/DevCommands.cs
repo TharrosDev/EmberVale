@@ -46,6 +46,8 @@ public static class DevCommands
         console.Register(new ConsoleCommand("validate", "validate", "Validate authored content cross-references.", (_, _) => ContentValidator.Run()));
         console.Register(new ConsoleCommand("validate-all", "validate-all", "Full content battery (cross-refs + graph reachability).", (_, _) => ContentValidator.RunAll()));
 
+        console.Register(new ConsoleCommand("autosave", "autosave [status]", "Force an autosave now, or show the ring status.", Autosave));
+
         console.Register(new ConsoleCommand("pspawn", "pspawn [templateId]", "Spawn a persistent actor at the player.", PSpawn));
         console.Register(new ConsoleCommand("pdespawn", "pdespawn <persistentId>", "Free a persistent actor (recreated on load).", PDespawn));
         console.Register(new ConsoleCommand("plist", "plist", "List tracked persistent actors.", PList));
@@ -175,6 +177,25 @@ public static class DevCommands
 
         line += $" — ending: {corruption.EndingEligibility}";
         return line;
+    }
+
+    private static string Autosave(DevConsole console, string[] args)
+    {
+        if (ServiceLocator.Instance is not { } locator || !locator.TryGet(out AutosaveService autosave))
+        {
+            return "no autosave service (start a game first)";
+        }
+
+        if (args.Length > 0 && args[0].ToLowerInvariant() == "status")
+        {
+            string next = SaveManager.Instance is { } sm
+                ? AutosaveService.NextAutosaveSlot(sm.ListSlots())
+                : AutosaveService.RingSlots[0];
+            return $"ring: {string.Join(", ", AutosaveService.RingSlots)} — next overwrite: {next}";
+        }
+
+        string? slot = autosave.ForceAutosave();
+        return slot != null ? $"autosaved to '{slot}'" : "skipped (not in active play)";
     }
 
     private static string Learn(DevConsole console, string[] args)

@@ -36,6 +36,7 @@ public partial class Notifications : CanvasLayer
         bus?.Subscribe<QuestCompletedEvent>(OnQuestCompleted);
         bus?.Subscribe<WorldEventStartedEvent>(OnWorldEventStarted);
         bus?.Subscribe<WorldEventEndedEvent>(OnWorldEventEnded);
+        bus?.Subscribe<GameSavedEvent>(OnGameSaved);
     }
 
     public override void _ExitTree()
@@ -51,6 +52,7 @@ public partial class Notifications : CanvasLayer
         bus.Unsubscribe<QuestCompletedEvent>(OnQuestCompleted);
         bus.Unsubscribe<WorldEventStartedEvent>(OnWorldEventStarted);
         bus.Unsubscribe<WorldEventEndedEvent>(OnWorldEventEnded);
+        bus.Unsubscribe<GameSavedEvent>(OnGameSaved);
     }
 
     private void OnLeveledUp(LeveledUpEvent e) => Push($"Level up!  You are now level {e.NewLevel}", UiTheme.Accent);
@@ -63,6 +65,15 @@ public partial class Notifications : CanvasLayer
 
     private void OnWorldEventEnded(WorldEventEndedEvent e) =>
         Push(e.Completed ? $"{e.DisplayName} — resolved!" : $"{e.DisplayName} — failed", e.Completed ? UiTheme.Good : UiTheme.Bad);
+
+    // Only the autosave cadence (Phase 24D) toasts; manual quicksaves (F5) stay quiet.
+    private void OnGameSaved(GameSavedEvent e)
+    {
+        if (e.IsAutosave)
+        {
+            Push("Autosaved", UiTheme.Dim);
+        }
+    }
 
     private void Push(string text, Color color)
     {

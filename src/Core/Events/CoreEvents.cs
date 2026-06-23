@@ -32,8 +32,10 @@ public readonly record struct EntityHealedEvent(IEntity Entity, float Amount, fl
 /// <summary>Raised when a current/max resource (health, stamina, mana) changes value.</summary>
 public readonly record struct ResourceChangedEvent(IEntity Entity, StatType Stat, float Current, float Max) : IGameEvent;
 
-/// <summary>Raised after a save slot is written to disk.</summary>
-public readonly record struct GameSavedEvent(string Slot) : IGameEvent;
+/// <summary>Raised after a save slot is written to disk. <paramref name="IsAutosave"/> is
+/// true for the rotating autosave cadence (Phase 24D) so UI can react differently (e.g. a
+/// toast) without firing on every manual quicksave.</summary>
+public readonly record struct GameSavedEvent(string Slot, bool IsAutosave = false) : IGameEvent;
 
 /// <summary>Raised after a save slot is successfully loaded.</summary>
 public readonly record struct GameLoadedEvent(string Slot) : IGameEvent;

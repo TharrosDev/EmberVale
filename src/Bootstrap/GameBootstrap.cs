@@ -186,6 +186,13 @@ public partial class GameBootstrap : Node3D
         AddChild(_profiler);
         AddChild(new WorldIntegrityChecker());
 
+        // Autosave cadence (Phase 24D) on top of the slot system: rotates through auto1..auto3 on a
+        // timer / quest-completion / level-up, never touching the player's manual slot. Registered so
+        // the `autosave` dev command can reach it.
+        var autosave = new AutosaveService { Name = "Autosave" };
+        AddChild(autosave);
+        ServiceLocator.Instance?.Register(autosave);
+
         // Dev-only telemetry: logs deaths/quests/level-ups to user://analytics/ for later
         // balance/QA. A no-op in retail builds (gated on OS.IsDebugBuild). Added before the
         // player/quest spawn below so it captures the seeded starter quest.

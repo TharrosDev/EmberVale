@@ -884,7 +884,7 @@ The ordering is driven by hard dependencies, not preference:
 
 | Stage | Gate | Phases | Status |
 | ----- | ---- | ------ | ------ |
-| A — Pre-production & First Playable | G0 | 22–28 | ⏳ In progress (Phases 22 ✅, 23 ✅; 24 underway — 24A–24C ✅) |
+| A — Pre-production & First Playable | G0 | 22–28 | ⏳ In progress (Phases 22 ✅, 23 ✅; 24 underway — 24A–24D ✅) |
 | B — Vertical Slice | G1 | 29–33 | ⬜ Planned |
 | C — Alpha / Feature Complete | G2 | 34–45 | ⬜ Planned |
 | D — Beta / Content Complete | G3 | 46–55 | ⬜ Planned |
@@ -915,11 +915,14 @@ boots to a `MainMenu` (`GameState.MainMenu`) instead of straight into the sandbo
 `SaveManager` was refactored from one file per slot to per-slot directories
 (`user://saves/<slot>/{save,header}.json`) with a lightweight header (region/level/playtime/
 corruption tier/timestamp), `ListSlots`/`ReadHeader`/`DeleteSlot`, per-slot playtime, and legacy
-single-file migration (24B); and the **save-slot UI** (24C) is a `UiTheme` slot browser
+single-file migration (24B); the **save-slot UI** (24C) is a `UiTheme` slot browser
 (thumbnail + metadata, New/Load/Delete-with-confirm) wired into the title menu with
 Continue=most-recent, an `ActiveSlot` that quick/manual saves target, and screenshot capture on
-save. Next is **24D** — autosave/quicksave cadence on the slot system — then settings (24E–24F)
-and the localization spine (24G–24H).
+save; and **24D** adds the **autosave cadence** — an `AutosaveService` that rotates `auto1..auto3`
+on a 5-min active-play interval / quest-completion / level-up (plus a Phase 25 region-change seam),
+guarded to `IsPlaying` and debounced ≥60s so it never double-writes or clobbers the player's manual
+slot, with the Load browser surfacing autosaves read-only and an "Autosaved" toast. Next is settings
+(24E–24F) and the localization spine (24G–24H).
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —
 > a third-person open-world fantasy RPG where you battle fallen heroes across four

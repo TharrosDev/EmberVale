@@ -319,13 +319,31 @@ no code) — batch them when momentum is good.
     (19 objects), pause Save/Load round-tripped, and `saves/quick/screenshot.png` was
     written. Build + 58 tests + `--validate` green.
 
-- [ ] **24D — Autosave + quicksave + manual cadence** `[F]`
+- [x] **24D — Autosave + quicksave + manual cadence** `[F]` ✅
   - **Goal:** robust save cadence on top of slots.
   - **Tasks:** add autosave triggers (region change, major quest beat, time
     interval) writing to a rotating autosave slot; keep quicksave (F5/F9) and
     manual save-from-pause. Guard against saving mid-cutscene/load.
   - **Done when:** autosave/quicksave/manual all target the slot system safely; no
     double-save races.
+  - **Done:** new `src/Save/AutosaveService.cs` — a bootstrap-created, `ServiceLocator`
+    -registered node that owns the cadence while `SaveManager` stays the low-level writer
+    (mirrors the Encounter/WorldEvent director pattern). Autosaves rotate through a 3-slot
+    ring (`auto1..auto3`); the next slot is chosen empty-or-oldest from the on-disk headers
+    (pure `NextAutosaveSlot`, unit-tested), so rotation survives restarts with no extra
+    persistence, and they never touch `ActiveSlot` (F5/F9 + pause Save/Load still target the
+    player's slot). Triggers: a 5-min active-play interval, `QuestCompletedEvent`,
+    `LeveledUpEvent`, plus a documented `RequestRegionChangeAutosave()` seam (uncalled until
+    Phase 25 streaming). Guards: fires only while `GameManager.IsPlaying` (covers
+    loading/paused/menu; cutscene is the Phase 43 seam) and is debounced to ≥60s between any
+    two autosaves, so two triggers in quick succession can't double-write. `SaveGame` gained a
+    `(slot, isAutosave)` overload that flavours `GameSavedEvent` (now `IsAutosave`); the
+    `Notifications` feed toasts "Autosaved" on autosave only (manual F5 stays quiet). The Load
+    browser surfaces existing autosaves as read-only rows (Load + Delete, never overwritten by
+    New); Continue already picks the most recent of all slots via `ListSlots`. An `autosave`
+    dev command forces one / prints ring status. Verified: build + 62 tests (4 new
+    `AutosaveServiceTests`) + `--validate` green; in-engine New Game builds the world with the
+    service wired and no errors.
 
 - [ ] **24E — `Settings` resource + `SettingsService`** `[F]`
   - **Goal:** persisted options applied at runtime.
