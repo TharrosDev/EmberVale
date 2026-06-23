@@ -1,4 +1,5 @@
 using Embervale.Core;
+using Embervale.Localization;
 using Embervale.Save;
 using Godot;
 
@@ -73,16 +74,16 @@ public partial class PauseMenu : CanvasLayer
 		col.AddThemeConstantOverride("separation", 8);
 		pad.AddChild(col);
 
-		Label header = UiTheme.Header("PAUSED");
+		Label header = UiTheme.Header(Loc.T("pause.title"));
 		header.HorizontalAlignment = HorizontalAlignment.Center;
 		col.AddChild(header);
 		col.AddChild(new HSeparator());
 
-		col.AddChild(MenuButton("Resume", Resume));
-		col.AddChild(MenuButton("Save", () => { if (SaveManager.Instance is { } s) { s.SaveGame(s.ActiveSlot); } }));
-		col.AddChild(MenuButton("Load", () => { if (SaveManager.Instance is { } s) { s.LoadGame(s.ActiveSlot); } }));
-		col.AddChild(MenuButton("Settings", OpenSettings));
-		col.AddChild(MenuButton("Quit to Desktop", () => GetTree().Quit()));
+		col.AddChild(MenuButton(Loc.T("pause.resume"), Resume));
+		col.AddChild(MenuButton(Loc.T("pause.save"), () => { if (SaveManager.Instance is { } s) { s.SaveGame(s.ActiveSlot); } }));
+		col.AddChild(MenuButton(Loc.T("pause.load"), () => { if (SaveManager.Instance is { } s) { s.LoadGame(s.ActiveSlot); } }));
+		col.AddChild(MenuButton(Loc.T("pause.settings"), OpenSettings));
+		col.AddChild(MenuButton(Loc.T("pause.quit"), () => GetTree().Quit()));
 	}
 
 	private static Button MenuButton(string text, System.Action onPressed)

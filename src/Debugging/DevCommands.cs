@@ -6,6 +6,7 @@ using Embervale.Corruption;
 using Embervale.Enemies;
 using Embervale.Factions;
 using Embervale.Items;
+using Embervale.Localization;
 using Embervale.Magic;
 using Embervale.Player;
 using Embervale.Progression;
@@ -49,6 +50,7 @@ public static class DevCommands
 
         console.Register(new ConsoleCommand("autosave", "autosave [status]", "Force an autosave now, or show the ring status.", Autosave));
         console.Register(new ConsoleCommand("settings", "settings [set <field> <value>|reset]", "Show, change, or reset player settings (persists + applies).", SettingsCmd));
+        console.Register(new ConsoleCommand("locale", "locale [code]", "Show loaded locales, or switch the active one.", LocaleCmd));
 
         console.Register(new ConsoleCommand("pspawn", "pspawn [templateId]", "Spawn a persistent actor at the player.", PSpawn));
         console.Register(new ConsoleCommand("pdespawn", "pdespawn <persistentId>", "Free a persistent actor (recreated on load).", PDespawn));
@@ -255,6 +257,21 @@ public static class DevCommands
 
     private static float ParseFloat(string raw, float fallback) =>
         float.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out float v) ? v : fallback;
+
+    private static string LocaleCmd(DevConsole console, string[] args)
+    {
+        if (args.Length == 0)
+        {
+            string loaded = string.Join(", ", TranslationServer.GetLoadedLocales());
+            return $"active: {TranslationServer.GetLocale()} | loaded: {loaded}";
+        }
+
+        // Re-open menus to see the change: strings are resolved at build time via Loc.T, so already-
+        // built panels keep their text until rebuilt.
+        return Loc.SetLocale(args[0])
+            ? $"locale set to '{args[0]}' (re-open menus to see the change)"
+            : $"locale '{args[0]}' is not loaded";
+    }
 
     private static string Learn(DevConsole console, string[] args)
     {

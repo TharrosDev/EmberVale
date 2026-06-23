@@ -884,7 +884,7 @@ The ordering is driven by hard dependencies, not preference:
 
 | Stage | Gate | Phases | Status |
 | ----- | ---- | ------ | ------ |
-| A — Pre-production & First Playable | G0 | 22–28 | ⏳ In progress (Phases 22 ✅, 23 ✅; 24 underway — 24A–24G ✅) |
+| A — Pre-production & First Playable | G0 | 22–28 | ⏳ In progress (Phases 22 ✅, 23 ✅, 24 ✅; 25 next) |
 | B — Vertical Slice | G1 | 29–33 | ⬜ Planned |
 | C — Alpha / Feature Complete | G2 | 34–45 | ⬜ Planned |
 | D — Beta / Content Complete | G3 | 46–55 | ⬜ Planned |
@@ -910,7 +910,7 @@ on them live), and **23H corrupted abilities + endings hook** (a `MinCorruptionT
 `CorruptionComponent.EndingEligibility` — `EndingPath` Undecided/Dawnfire/LordOfEmbers,
 pure-derived from the saved meter — the dial Phase 49's endings will read).
 
-**Phase 24 (Meta-Shell & Localization Spine)** is now underway: **24A–24C are done** — the game
+**Phase 24 (Meta-Shell & Localization Spine)** is **complete (24A–24H)** — the game
 boots to a `MainMenu` (`GameState.MainMenu`) instead of straight into the sandbox (24A); the
 `SaveManager` was refactored from one file per slot to per-slot directories
 (`user://saves/<slot>/{save,header}.json`) with a lightweight header (region/level/playtime/
@@ -932,8 +932,13 @@ reachable from both the title menu and the in-game pause menu (with new `UiTheme
 `Dropdown` builders). **24G** lands the **localization spine** — a `Loc.T("key")` facade over Godot's
 `TranslationServer`, loading a `data/locale/strings.csv` catalogue (key + per-locale columns) at boot
 and selecting `en`; the "no hard-coded player-facing strings" rule is now in force (CLAUDE.md §6, DoD
-#6). Next is **24H** — retrofitting the shell strings (MainMenu/Settings/PauseMenu/save-slot) through
-`Loc`.
+#6). **24H** retrofits the whole shell (MainMenu/Settings/PauseMenu/save-slot) onto `Loc.T` keys —
+the catalogue is now the single source of shell text, with a `locale` dev command to switch and a CSV
+column the only cost of a new language.
+
+**Phase 24 is complete. Immediate next step: Phase 25 (Region Streaming & World Map)** — replace the
+single flat sandbox with streamed authored regions, a world map/compass, and a fast-travel graph
+before the four realms are authored.
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —
 > a third-person open-world fantasy RPG where you battle fallen heroes across four

@@ -134,10 +134,18 @@ appearance hook, global NPC "dread" standing (the world turns hostile as you
 corrupt), tier-gated corrupted abilities, and the `EndingEligibility` dial behind
 the two endings (23A–23H).
 
+**Phase 24 — Meta-Shell & Localization Spine** is complete (24A–24H): the game boots
+to a title `MainMenu` with multi-slot saves (per-slot directories + metadata + screenshot
+thumbnails), a rotating autosave cadence, a full settings menu (graphics/audio/controls/
+gameplay/accessibility, persisted to `user://settings.tres` and applied on boot), and a
+`Loc` localization spine — every shell string resolves from `data/locale/strings.csv`, so
+no player-facing text is hard-coded.
+
 |              | Phase                                      |
 | ------------ | ------------------------------------------ |
-| ▶ **Current** | 24 — Meta-Shell & Localization Spine        |
-| ⏭ **Next**    | 25 — Region Streaming & World Map           |
+| ✅ **Done**    | 24 — Meta-Shell & Localization Spine        |
+| ▶ **Current** | 25 — Region Streaming & World Map           |
+| ⏭ **Next**    | 26 — Playable Races & Character Creation    |
 
 > Updated as each phase lands. The repo stays buildable and playable at every
 > step; a phase is "done" when it works in-game **and** round-trips through

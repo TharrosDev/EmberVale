@@ -1,6 +1,7 @@
 using Embervale.Core;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Services;
+using Embervale.Localization;
 using Embervale.Settings;
 using Godot;
 
@@ -82,7 +83,7 @@ public partial class SettingsPanel : CanvasLayer
         col.AddThemeConstantOverride("separation", 8);
         pad.AddChild(col);
 
-        Label header = UiTheme.Header("SETTINGS");
+        Label header = UiTheme.Header(Loc.T("settings.title"));
         col.AddChild(header);
         col.AddChild(new HSeparator());
 
@@ -100,39 +101,42 @@ public partial class SettingsPanel : CanvasLayer
 
         var s = _settings.Current;
 
-        Section(body, "GRAPHICS");
-        body.AddChild(DropdownRow("Window Mode", new[] { "Windowed", "Fullscreen", "Borderless" }, s.WindowMode,
-            i => { s.WindowMode = i; Persist(); }));
-        body.AddChild(ToggleRow("V-Sync", s.VSync, v => { s.VSync = v; Persist(); }));
+        Section(body, Loc.T("settings.section.graphics"));
+        body.AddChild(DropdownRow(Loc.T("settings.window_mode"),
+            new[] { Loc.T("settings.window_mode.windowed"), Loc.T("settings.window_mode.fullscreen"), Loc.T("settings.window_mode.borderless") },
+            s.WindowMode, i => { s.WindowMode = i; Persist(); }));
+        body.AddChild(ToggleRow(Loc.T("settings.vsync"), s.VSync, v => { s.VSync = v; Persist(); }));
         int[] fpsPresets = { 0, 30, 60, 120, 144 };
-        body.AddChild(DropdownRow("Max FPS", new[] { "Uncapped", "30", "60", "120", "144" },
+        body.AddChild(DropdownRow(Loc.T("settings.max_fps"),
+            new[] { Loc.T("settings.max_fps.uncapped"), "30", "60", "120", "144" },
             System.Array.IndexOf(fpsPresets, s.MaxFps) is var fi && fi >= 0 ? fi : 0,
             i => { s.MaxFps = fpsPresets[i]; Persist(); }));
 
-        Section(body, "AUDIO");
-        body.AddChild(VolumeRow("Master", s.MasterVolume, v => s.MasterVolume = v));
-        body.AddChild(VolumeRow("Music", s.MusicVolume, v => s.MusicVolume = v));
-        body.AddChild(VolumeRow("Effects", s.SfxVolume, v => s.SfxVolume = v));
-        body.AddChild(VolumeRow("Ambience", s.AmbienceVolume, v => s.AmbienceVolume = v));
-        body.AddChild(VolumeRow("Interface", s.UiVolume, v => s.UiVolume = v));
-        body.AddChild(VolumeRow("Voice", s.VoiceVolume, v => s.VoiceVolume = v));
+        Section(body, Loc.T("settings.section.audio"));
+        body.AddChild(VolumeRow(Loc.T("settings.master_volume"), s.MasterVolume, v => s.MasterVolume = v));
+        body.AddChild(VolumeRow(Loc.T("settings.music_volume"), s.MusicVolume, v => s.MusicVolume = v));
+        body.AddChild(VolumeRow(Loc.T("settings.sfx_volume"), s.SfxVolume, v => s.SfxVolume = v));
+        body.AddChild(VolumeRow(Loc.T("settings.ambience_volume"), s.AmbienceVolume, v => s.AmbienceVolume = v));
+        body.AddChild(VolumeRow(Loc.T("settings.ui_volume"), s.UiVolume, v => s.UiVolume = v));
+        body.AddChild(VolumeRow(Loc.T("settings.voice_volume"), s.VoiceVolume, v => s.VoiceVolume = v));
 
-        Section(body, "CONTROLS");
-        body.AddChild(SliderRow("Mouse Sensitivity", 0.05, 2.0, 0.05, s.MouseSensitivity,
+        Section(body, Loc.T("settings.section.controls"));
+        body.AddChild(SliderRow(Loc.T("settings.mouse_sensitivity"), 0.05, 2.0, 0.05, s.MouseSensitivity,
             v => s.MouseSensitivity = (float)v));
-        body.AddChild(ToggleRow("Invert Look Y", s.InvertY, v => { s.InvertY = v; Persist(); }));
+        body.AddChild(ToggleRow(Loc.T("settings.invert_y"), s.InvertY, v => { s.InvertY = v; Persist(); }));
 
-        Section(body, "GAMEPLAY");
-        body.AddChild(DropdownRow("Difficulty", new[] { "Story", "Normal", "Hard" }, s.Difficulty,
-            i => { s.Difficulty = i; Persist(); }));
+        Section(body, Loc.T("settings.section.gameplay"));
+        body.AddChild(DropdownRow(Loc.T("settings.difficulty"),
+            new[] { Loc.T("settings.difficulty.story"), Loc.T("settings.difficulty.normal"), Loc.T("settings.difficulty.hard") },
+            s.Difficulty, i => { s.Difficulty = i; Persist(); }));
 
-        Section(body, "ACCESSIBILITY");
-        body.AddChild(ToggleRow("Reduced Motion", s.ReducedMotion, v => { s.ReducedMotion = v; Persist(); }));
-        body.AddChild(ToggleRow("Subtitles", s.SubtitlesEnabled, v => { s.SubtitlesEnabled = v; Persist(); }));
-        body.AddChild(SliderRow("UI Scale", 0.75, 1.5, 0.05, s.UiScale, v => s.UiScale = (float)v));
+        Section(body, Loc.T("settings.section.accessibility"));
+        body.AddChild(ToggleRow(Loc.T("settings.reduced_motion"), s.ReducedMotion, v => { s.ReducedMotion = v; Persist(); }));
+        body.AddChild(ToggleRow(Loc.T("settings.subtitles"), s.SubtitlesEnabled, v => { s.SubtitlesEnabled = v; Persist(); }));
+        body.AddChild(SliderRow(Loc.T("settings.ui_scale"), 0.75, 1.5, 0.05, s.UiScale, v => s.UiScale = (float)v));
 
         col.AddChild(new HSeparator());
-        Button back = UiTheme.Action("Back");
+        Button back = UiTheme.Action(Loc.T("common.back"));
         back.CustomMinimumSize = new Vector2(0, 34);
         back.Pressed += Back;
         col.AddChild(back);

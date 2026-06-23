@@ -417,13 +417,31 @@ no code) — batch them when momentum is good.
     `LocCatalogTests`) + `--validate` green; in-engine boot logs *"Localization: loaded 55 string(s)
     across 1 locale(s); locale 'en'"* with no errors — the catalogue parses and registers live.
 
-- [ ] **24H — Retrofit shell strings through `Loc`** `[F]`
+- [x] **24H — Retrofit shell strings through `Loc`** `[F]` ✅
   - **Goal:** prove the layer end-to-end on real UI.
   - **Tasks:** route all MainMenu/Settings/PauseMenu/save-slot strings through
     `Loc` keys; add them to the `en` catalogue. This is the template every later
     UI follows.
   - **Done when:** the shell has zero hard-coded display strings; switching the
     catalogue language visibly changes them.
+  - **Done:** every player-facing string in the four shell surfaces —
+    `MainMenu`, `PauseMenu`, `SaveSlotPanel`, `SettingsPanel` — now resolves through
+    `Loc.T`/`Loc.TF` against `data/locale/strings.csv` (title/subtitle, all menu + pause
+    buttons, every settings section header / row label / dropdown option, the slot headers,
+    `Slot {0}`/`Autosave {0}`, the `— Empty —` placeholder, the composed slot metadata line
+    via `slots.entry`/`slots.playtime`, and all confirm/cancel/overwrite/load/delete actions).
+    Only `Log`/dev-console diagnostics and bare numerics (FPS presets) remain literal. The
+    catalogue grew the two format strings (`slots.entry`, `slots.playtime`) to 57 entries. A
+    `locale [code]` dev command lists loaded locales and switches the active one (re-open a
+    menu to see the change — strings resolve at build time via `Loc.T`); adding a second
+    language is now a CSV column. Verified: build + 79 tests + `--validate` green; in-engine
+    boot logs *"loaded 57 string(s)"*, the localized title menu builds, and Continue→load
+    works — no errors from the retrofit (the save-system `PersistentId` warnings are
+    pre-existing and unrelated).
+
+> **Phase 24 (Meta-Shell & Localization Spine) is complete (24A–24H).** The game boots to a
+> localized title shell with multi-slot saves, autosave, settings, and an i18n spine; from here
+> no player-facing string is hard-coded. **Next: Phase 25 — Region Streaming & World Map.**
 
 ---
 

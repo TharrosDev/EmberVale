@@ -1,4 +1,5 @@
 using Embervale.Core;
+using Embervale.Localization;
 using Embervale.Save;
 using Godot;
 
@@ -49,12 +50,12 @@ public partial class MainMenu : CanvasLayer
         col.AddThemeConstantOverride("separation", 8);
         pad.AddChild(col);
 
-        Label title = UiTheme.Header("EMBERVALE");
+        Label title = UiTheme.Header(Loc.T("menu.title"));
         title.HorizontalAlignment = HorizontalAlignment.Center;
         title.AddThemeFontSizeOverride("font_size", 28);
         col.AddChild(title);
 
-        Label subtitle = UiTheme.Body("Choose whether to save creation — or become its next Ash King.", UiTheme.Dim);
+        Label subtitle = UiTheme.Body(Loc.T("menu.subtitle"), UiTheme.Dim);
         subtitle.HorizontalAlignment = HorizontalAlignment.Center;
         subtitle.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         col.AddChild(subtitle);
@@ -63,11 +64,11 @@ public partial class MainMenu : CanvasLayer
 
         bool hasSaves = (SaveManager.Instance?.ListSlots().Count ?? 0) > 0;
 
-        col.AddChild(MenuButton("New Game", () => OpenSlotPanel(SaveSlotPanel.Intent.New)));
-        col.AddChild(MenuButton("Continue", hasSaves ? ContinueMostRecent : null));
-        col.AddChild(MenuButton("Load Game", hasSaves ? () => OpenSlotPanel(SaveSlotPanel.Intent.Load) : null));
-        col.AddChild(MenuButton("Settings", OpenSettings));
-        col.AddChild(MenuButton("Quit", () => GetTree().Quit()));
+        col.AddChild(MenuButton(Loc.T("menu.new_game"), () => OpenSlotPanel(SaveSlotPanel.Intent.New)));
+        col.AddChild(MenuButton(Loc.T("menu.continue"), hasSaves ? ContinueMostRecent : null));
+        col.AddChild(MenuButton(Loc.T("menu.load_game"), hasSaves ? () => OpenSlotPanel(SaveSlotPanel.Intent.Load) : null));
+        col.AddChild(MenuButton(Loc.T("menu.settings"), OpenSettings));
+        col.AddChild(MenuButton(Loc.T("menu.quit"), () => GetTree().Quit()));
     }
 
     private void OpenSlotPanel(SaveSlotPanel.Intent mode)
@@ -120,7 +121,7 @@ public partial class MainMenu : CanvasLayer
         if (onPressed == null)
         {
             button.Disabled = true;
-            button.TooltipText = "Coming soon";
+            button.TooltipText = Loc.T("menu.coming_soon");
         }
         else
         {

@@ -1,4 +1,5 @@
 using System;
+using Embervale.Localization;
 using Embervale.Save;
 using Godot;
 
@@ -68,7 +69,7 @@ public partial class SaveSlotPanel : CanvasLayer
         col.AddThemeConstantOverride("separation", 10);
         pad.AddChild(col);
 
-        Label header = UiTheme.Header(_mode == Intent.New ? "NEW GAME — CHOOSE A SLOT" : "LOAD GAME");
+        Label header = UiTheme.Header(Loc.T(_mode == Intent.New ? "slots.new_title" : "slots.load_title"));
         col.AddChild(header);
         col.AddChild(new HSeparator());
 
@@ -77,7 +78,7 @@ public partial class SaveSlotPanel : CanvasLayer
         col.AddChild(_list);
 
         col.AddChild(new HSeparator());
-        Button back = UiTheme.Action("Back");
+        Button back = UiTheme.Action(Loc.T("common.back"));
         back.CustomMinimumSize = new Vector2(0, 32);
         back.Pressed += () => { _onBack?.Invoke(); QueueFree(); };
         col.AddChild(back);
@@ -96,7 +97,7 @@ public partial class SaveSlotPanel : CanvasLayer
         {
             string slot = Roster[i];
             SaveSlotInfo? info = SaveManager.Instance?.ReadHeader(slot);
-            _list.AddChild(BuildRow(slot, $"Slot {i + 1}", info));
+            _list.AddChild(BuildRow(slot, Loc.TF("slots.slot", i + 1), info));
         }
 
         // Phase 24D: in Load mode, surface existing autosaves as read-only rows (Load + Delete, no
@@ -108,7 +109,7 @@ public partial class SaveSlotPanel : CanvasLayer
                 string slot = AutosaveService.RingSlots[i];
                 if (manager.ReadHeader(slot) is { } autoInfo)
                 {
-                    _list.AddChild(BuildRow(slot, $"Autosave {i + 1}", autoInfo));
+                    _list.AddChild(BuildRow(slot, Loc.TF("slots.autosave", i + 1), autoInfo));
                 }
             }
         }
@@ -127,7 +128,7 @@ public partial class SaveSlotPanel : CanvasLayer
 
         var text = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         text.AddChild(UiTheme.Header(label));
-        text.AddChild(UiTheme.Body(info != null ? DescribeSave(info) : "— Empty —",
+        text.AddChild(UiTheme.Body(info != null ? DescribeSave(info) : Loc.T("slots.empty"),
             info != null ? UiTheme.Text : UiTheme.Dim));
         row.AddChild(text);
 
@@ -165,12 +166,12 @@ public partial class SaveSlotPanel : CanvasLayer
 
         if (awaitingThisSlot)
         {
-            Button confirm = UiTheme.Action(_pendingIsDelete ? "Confirm delete" : "Confirm new");
+            Button confirm = UiTheme.Action(Loc.T(_pendingIsDelete ? "common.confirm_delete" : "common.confirm_new"));
             confirm.AddThemeColorOverride("font_color", UiTheme.Bad);
             confirm.Pressed += () => CommitPending(slot);
             box.AddChild(confirm);
 
-            Button cancel = UiTheme.Action("Cancel");
+            Button cancel = UiTheme.Action(Loc.T("common.cancel"));
             cancel.Pressed += () => { _pendingActionSlot = null; RefreshList(); };
             box.AddChild(cancel);
             return box;
@@ -179,7 +180,7 @@ public partial class SaveSlotPanel : CanvasLayer
         if (_mode == Intent.New)
         {
             // Empty → start directly; filled → overwriting an existing save needs a confirm.
-            Button start = UiTheme.Action(filled ? "Overwrite" : "New Game");
+            Button start = UiTheme.Action(Loc.T(filled ? "common.overwrite" : "common.new_game"));
             start.Pressed += () =>
             {
                 if (filled)
@@ -197,7 +198,7 @@ public partial class SaveSlotPanel : CanvasLayer
         }
         else
         {
-            Button load = UiTheme.Action("Load");
+            Button load = UiTheme.Action(Loc.T("common.load"));
             load.Disabled = !filled;
             load.Pressed += () => Choose(slot);
             box.AddChild(load);
@@ -205,7 +206,7 @@ public partial class SaveSlotPanel : CanvasLayer
 
         if (filled)
         {
-            Button delete = UiTheme.Action("Delete");
+            Button delete = UiTheme.Action(Loc.T("common.delete"));
             delete.Pressed += () =>
             {
                 _pendingActionSlot = slot;
@@ -242,8 +243,8 @@ public partial class SaveSlotPanel : CanvasLayer
     private static string DescribeSave(SaveSlotInfo info)
     {
         int total = (int)info.PlaytimeSeconds;
-        string played = $"{total / 3600}h {(total % 3600) / 60:00}m";
+        string played = Loc.TF("slots.playtime", total / 3600, $"{(total % 3600) / 60:00}");
         string date = Time.GetDatetimeStringFromUnixTime((long)info.TimestampUnix, true);
-        return $"{info.Region} · Lv {info.Level} · {info.CorruptionTier} · {played} · {date}";
+        return Loc.TF("slots.entry", info.Region, info.Level, info.CorruptionTier, played, date);
     }
 }
