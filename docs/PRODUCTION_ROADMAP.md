@@ -884,7 +884,7 @@ The ordering is driven by hard dependencies, not preference:
 
 | Stage | Gate | Phases | Status |
 | ----- | ---- | ------ | ------ |
-| A — Pre-production & First Playable | G0 | 22–28 | ⏳ In progress (Phases 22 ✅, 23 ✅; 24 underway — 24A–24D ✅) |
+| A — Pre-production & First Playable | G0 | 22–28 | ⏳ In progress (Phases 22 ✅, 23 ✅; 24 underway — 24A–24E ✅) |
 | B — Vertical Slice | G1 | 29–33 | ⬜ Planned |
 | C — Alpha / Feature Complete | G2 | 34–45 | ⬜ Planned |
 | D — Beta / Content Complete | G3 | 46–55 | ⬜ Planned |
@@ -921,8 +921,12 @@ Continue=most-recent, an `ActiveSlot` that quick/manual saves target, and screen
 save; and **24D** adds the **autosave cadence** — an `AutosaveService` that rotates `auto1..auto3`
 on a 5-min active-play interval / quest-completion / level-up (plus a Phase 25 region-change seam),
 guarded to `IsPlaying` and debounced ≥60s so it never double-writes or clobbers the player's manual
-slot, with the Load browser surfacing autosaves read-only and an "Autosaved" toast. Next is settings
-(24E–24F) and the localization spine (24G–24H).
+slot, with the Load browser surfacing autosaves read-only and an "Autosaved" toast. **24E** adds the
+**settings spine** — a `[GlobalClass]` `Settings` resource (graphics, six audio-bus volumes, controls/
+gameplay, accessibility placeholders) persisted to `user://settings.tres` via a `ServiceLocator`
+-registered `SettingsService` that `LoadAndApply`s graphics + audio to the engine on boot, before the
+menu; the audio fields are paired to bus names ready for the Phase 31 mixer to consume. Next is the
+settings **panel** (24F) and the localization spine (24G–24H).
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —
 > a third-person open-world fantasy RPG where you battle fallen heroes across four

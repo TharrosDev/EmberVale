@@ -10,6 +10,7 @@ using Embervale.Magic;
 using Embervale.Player;
 using Embervale.Progression;
 using Embervale.Save;
+using Embervale.Settings;
 using Embervale.Stats;
 using Embervale.World;
 using Godot;
@@ -47,6 +48,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("validate-all", "validate-all", "Full content battery (cross-refs + graph reachability).", (_, _) => ContentValidator.RunAll()));
 
         console.Register(new ConsoleCommand("autosave", "autosave [status]", "Force an autosave now, or show the ring status.", Autosave));
+        console.Register(new ConsoleCommand("settings", "settings [set <field> <value>|reset]", "Show, change, or reset player settings (persists + applies).", SettingsCmd));
 
         console.Register(new ConsoleCommand("pspawn", "pspawn [templateId]", "Spawn a persistent actor at the player.", PSpawn));
         console.Register(new ConsoleCommand("pdespawn", "pdespawn <persistentId>", "Free a persistent actor (recreated on load).", PDespawn));
@@ -197,6 +199,62 @@ public static class DevCommands
         string? slot = autosave.ForceAutosave();
         return slot != null ? $"autosaved to '{slot}'" : "skipped (not in active play)";
     }
+
+    private static string SettingsCmd(DevConsole console, string[] args)
+    {
+        if (ServiceLocator.Instance is not { } locator || !locator.TryGet(out SettingsService settings))
+        {
+            return "no settings service";
+        }
+
+        var s = settings.Current;
+
+        if (args.Length > 0 && args[0].ToLowerInvariant() == "reset")
+        {
+            settings.ResetToDefaults();
+            settings.Save();
+            settings.Apply();
+            return "settings reset to defaults (saved + applied)";
+        }
+
+        if (args.Length >= 3 && args[0].ToLowerInvariant() == "set")
+        {
+            string field = args[1].ToLowerInvariant();
+            string raw = args[2];
+            bool ok = field switch
+            {
+                "windowmode" => Set(v => s.WindowMode = v, ParseInt(args, 2, s.WindowMode)),
+                "vsync" => Set(v => s.VSync = v, raw == "1" || raw.ToLowerInvariant() == "true"),
+                "maxfps" => Set(v => s.MaxFps = v, ParseInt(args, 2, s.MaxFps)),
+                "master" => Set(v => s.MasterVolume = v, ParseFloat(raw, s.MasterVolume)),
+                "music" => Set(v => s.MusicVolume = v, ParseFloat(raw, s.MusicVolume)),
+                "sfx" => Set(v => s.SfxVolume = v, ParseFloat(raw, s.SfxVolume)),
+                "sensitivity" => Set(v => s.MouseSensitivity = v, ParseFloat(raw, s.MouseSensitivity)),
+                _ => false,
+            };
+
+            if (!ok)
+            {
+                return "usage: settings set <windowmode|vsync|maxfps|master|music|sfx|sensitivity> <value>";
+            }
+
+            settings.Save();
+            settings.Apply();
+            return $"{field} = {raw} (saved + applied)";
+        }
+
+        return $"window:{s.WindowMode} vsync:{s.VSync} maxfps:{s.MaxFps} | master:{s.MasterVolume:0.00} " +
+               $"music:{s.MusicVolume:0.00} sfx:{s.SfxVolume:0.00} | sens:{s.MouseSensitivity:0.00} diff:{s.Difficulty}";
+    }
+
+    private static bool Set<T>(System.Action<T> assign, T value)
+    {
+        assign(value);
+        return true;
+    }
+
+    private static float ParseFloat(string raw, float fallback) =>
+        float.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out float v) ? v : fallback;
 
     private static string Learn(DevConsole console, string[] args)
     {

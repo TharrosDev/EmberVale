@@ -345,13 +345,30 @@ no code) — batch them when momentum is good.
     `AutosaveServiceTests`) + `--validate` green; in-engine New Game builds the world with the
     service wired and no errors.
 
-- [ ] **24E — `Settings` resource + `SettingsService`** `[F]`
+- [x] **24E — `Settings` resource + `SettingsService`** `[F]` ✅
   - **Goal:** persisted options applied at runtime.
   - **Tasks:** add a `Settings` resource (graphics, audio bus volumes, controls,
     gameplay, accessibility placeholders) persisted to `user://settings.tres` via
     a `SettingsService` (`ServiceLocator`-registered). Apply on boot.
   - **Done when:** settings persist across launches and apply on load; audio-bus
     fields are ready for Phase 31 to consume.
+  - **Done:** new `src/Settings/Settings.cs` — a `[GlobalClass]` data `Resource` with graphics
+    (`WindowMode`/`VSync`/`MaxFps`), six linear audio-bus volumes (Master/Music/SFX/Ambience/UI/
+    Voice, paired to bus names via a shared `AudioBuses` constants class so the Phase 31 mixer and
+    these fields can't drift), controls/gameplay (`MouseSensitivity`/`InvertY`/`Difficulty`), and
+    accessibility placeholders (`ReducedMotion`/`SubtitlesEnabled`/`UiScale`). `SettingsService`
+    (a plain class, `ServiceLocator`-registered) loads `user://settings.tres` via
+    `ResourceLoader`/`ResourceSaver` (cache-ignored; missing/unreadable → defaults), `Apply()`s
+    graphics to `DisplayServer`/`Engine.MaxFps` and each volume to whatever buses exist (Master now,
+    the rest once Phase 31 creates them), and exposes `Save`/`ResetToDefaults`. The bootstrap creates
+    it and calls `LoadAndApply()` in `_Ready` **before** the title menu so the first frame honours
+    saved options; the menu's Settings button stays a stub until the 24F panel. Pure
+    `SettingsMath.LinearToDb`/`ClampVolume` (fader→dB with a -80 dB silence floor) back the audio
+    apply and are unit-tested. A `settings` dev command shows/sets/resets (persists + applies) for
+    verification ahead of the 24F UI. Verified: build + 71 tests (9 new `SettingsMathTests`) +
+    `--validate` green; in-engine boot runs `LoadAndApply` with no errors. (The `.tres` save uses the
+    same `[GlobalClass]` resource mechanism as the whole content pipeline; the explicit save path is
+    reachable via the `settings set` console command pending the 24F panel.)
 
 - [ ] **24F — Settings UI panel** `[F]`
   - **Goal:** the options menu.

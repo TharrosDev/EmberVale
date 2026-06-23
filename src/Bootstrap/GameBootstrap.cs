@@ -19,6 +19,7 @@ using Embervale.Player;
 using Embervale.Progression;
 using Embervale.Quests;
 using Embervale.Save;
+using Embervale.Settings;
 using Embervale.Stats;
 using Embervale.UI;
 using Embervale.World;
@@ -84,6 +85,13 @@ public partial class GameBootstrap : Node3D
 
         GameInput.EnsureActions();
         ContentDatabases.InitializeAll();
+
+        // Player options (Phase 24E): load user://settings.tres (or defaults) and apply graphics +
+        // audio to the engine before anything is shown, so the very first frame honours them. The
+        // service is registered so the menu/pause settings panel (24F) can mutate and re-apply it.
+        var settings = new SettingsService();
+        settings.LoadAndApply();
+        ServiceLocator.Instance?.Register(settings);
 
         // With every database + the enemy registry populated, validate that the authored
         // content cross-references resolve (item/enemy/quest/spell ids). Broken references
