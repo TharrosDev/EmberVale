@@ -375,13 +375,16 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 
 **A new region** (Phase 25)
 1. Author `data/regions/Xxx.tres` (`script_class="RegionResource"`): unique `Id` (`region.*`),
-   `DisplayName`, `Realm` (the `Realm` enum int), `SubCells` (`Array[String]` of cell scene ids),
-   `Bounds` (`AABB`), `DefaultWeatherId` + `DayPhaseBias`, and `Neighbours` (`Array[String]` of
-   region ids). Place its sub-cell scenes under `scenes/regions/<region>/<cell>.tscn` (see
-   `docs/ARCHITECTURE.md` §2.6h-2).
+   `DisplayName`, `Realm` (the `Realm` enum int), `Bounds` (`AABB`), `DefaultWeatherId` +
+   `DayPhaseBias`, `Neighbours` (`Array[String]` of region ids), and `Cells` — an array of
+   `RegionCellResource` sub-resources (each: `Id` `<region>.<cell>`, `ScenePath`, `Center`
+   `Vector3`, `LoadRadius`). Place each cell scene at `scenes/regions/<region>/<cell>.tscn`, built
+   at local origin (the streamer positions the instance at `Center`); see `docs/ARCHITECTURE.md`
+   §2.6h-2.
 2. Auto-indexed by `RegionDatabase`; the save header resolves the active region's name, and the
-   25B `RegionStreamer` will stream its `SubCells`. Cross-refs (neighbours, default weather) are
-   checked by the `ContentValidator`. No code change for a new region.
+   `RegionStreamer` loads/unloads the `Cells` by distance (hysteresis + a per-frame budget). The
+   `ContentValidator` checks neighbours, default weather, and that each cell `ScenePath` resolves.
+   No code change for a new region.
 
 **A new encounter**
 1. Author `data/encounters/Xxx.tres` (`script_class="EncounterResource"`): unique `Id`,

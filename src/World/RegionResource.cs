@@ -9,9 +9,9 @@ namespace Embervale.World;
 /// under <c>data/regions/</c> and indexed by <see cref="RegionDatabase"/> — a new region is a new
 /// resource, no code.
 ///
-/// 25A only defines and indexes regions (the sandbox is one); the <c>RegionStreamer</c> (25B) reads
-/// <see cref="SubCells"/> to load/unload scenes by distance, and the map/fast-travel work (25E–25G)
-/// reads <see cref="Neighbours"/> and the discovery graph.
+/// The <see cref="RegionStreamer"/> (25B) reads <see cref="Cells"/> to load/unload scenes by
+/// distance, and the map/fast-travel work (25E–25G) reads <see cref="Neighbours"/> and the
+/// discovery graph.
 /// </summary>
 [GlobalClass]
 public partial class RegionResource : Resource
@@ -24,9 +24,10 @@ public partial class RegionResource : Resource
     /// <summary>The realm this region belongs to (the lore taxonomy it rolls up under).</summary>
     [Export] public Realm Realm { get; set; } = Realm.EmberCrown;
 
-    /// <summary>Ids of the streamable sub-cell scenes that make up this region. The 25B streamer
-    /// loads/unloads these by distance; a small region may have just one (the sandbox does).</summary>
-    [Export] public Godot.Collections.Array<string> SubCells { get; set; } = new();
+    /// <summary>The streamable sub-cells that make up this region. The <see cref="RegionStreamer"/>
+    /// loads/unloads these by distance (Phase 25B). The procedural sandbox keeps an always-loaded
+    /// base and lists its peripheral cells here.</summary>
+    [Export] public Godot.Collections.Array<RegionCellResource> Cells { get; set; } = new();
 
     /// <summary>Nominal world-space extents of the region, for the streamer's distance budget and the
     /// map. The flat sandbox uses a generous box (its floor is an infinite plane).</summary>

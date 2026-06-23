@@ -257,6 +257,17 @@ public partial class GameBootstrap : Node3D
         SpawnCraftingStations();
         SpawnEncounterDirector();
         SpawnPersistentActors();
+        SpawnRegionStreamer();
+    }
+
+    /// <summary>Streams the active region's sub-cells around the player (Phase 25B). The procedural
+    /// sandbox stays the always-loaded base; the streamer manages the region's authored cells.</summary>
+    private void SpawnRegionStreamer()
+    {
+        var streamer = new RegionStreamer { Name = "RegionStreamer" };
+        streamer.Configure(RegionDatabase.Get(_currentRegionId));
+        AddChild(streamer);
+        ServiceLocator.Instance?.Register(streamer);
     }
 
     public override void _ExitTree()

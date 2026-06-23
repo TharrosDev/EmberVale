@@ -475,7 +475,7 @@ no code) — batch them when momentum is good.
     region(s)"* and the save header now reports "The Ember Crown" from the resource. No streaming
     yet — that is 25B.
 
-- [ ] **25B — `RegionStreamer`: load/unload by distance** `[F]`
+- [x] **25B — `RegionStreamer`: load/unload by distance** `[F]` ✅
   - **Goal:** stream sub-cells around the player with a budget.
   - **Tasks:** add `RegionStreamer` that loads/unloads sub-cell scenes by distance
     with hysteresis and a per-frame instancing budget (don't hitch). Reuse the
@@ -483,6 +483,21 @@ no code) — batch them when momentum is good.
     single always-loaded cell.
   - **Done when:** moving across cell boundaries loads/unloads without a visible
     hitch (reviewed against the API); the sandbox still boots.
+  - **Done:** new `RegionCellResource` (`[GlobalClass]`: `Id`/`ScenePath`/`Center`/`LoadRadius`);
+    `RegionResource.SubCells` evolved into `Cells: Array[RegionCellResource]`. New `RegionStreamer`
+    (`Node3D`, pausable, built in `BuildWorld` + `ServiceLocator`-registered) resolves the player
+    each frame, computes planar distance to each cell, and applies the pure
+    `StreamDecision.Decide(distance, loadRadius, unloadMargin, isLoaded)` — load inside `LoadRadius`,
+    keep out to `+UnloadMargin` (~10 m hysteresis), then unload; loads are budgeted to **one instance
+    per frame** (a drain queue, the `PackedScene` `ResourceLoader`-cached) so a wave never hitches,
+    and `RegionCellLoaded`/`UnloadedEvent` publish for the 25D persistence seam. The sandbox is
+    authored with two demo cells (`data/regions/EmberCrown.tres` + `scenes/regions/ember_crown/
+    {waystone,north_ruin}.tscn`): a spawn-adjacent waystone and a far north ruin. `ContentValidator`
+    now checks each cell `ScenePath` resolves. The procedural sandbox stays the always-loaded base.
+    Verified: build + 85 tests (6 new `StreamDecisionTests`) + `--validate` green; **in-engine the
+    waystone streamed in near spawn and streamed out (with hysteresis) as the player walked away**,
+    while the out-of-range north_ruin never loaded — both load + unload paths confirmed live, no
+    errors. Convention updated in ARCHITECTURE §2.6h-2 + CLAUDE §8.
 
 - [ ] **25C — Hard transitions + loading screen (realm-to-realm)** `[F]`
   - **Goal:** discrete loads between realms.

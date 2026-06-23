@@ -23,3 +23,11 @@ public readonly record struct WorldEventProgressEvent(string EventId, int Progre
 
 /// <summary>Raised when a world event ends, either resolved (<paramref name="Completed"/>) or expired.</summary>
 public readonly record struct WorldEventEndedEvent(string EventId, string DisplayName, bool Completed) : IGameEvent;
+
+/// <summary>Raised by the <see cref="RegionStreamer"/> when a sub-cell scene is streamed in
+/// (Phase 25B). <paramref name="Root"/> is the instanced cell node — the seam Phase 25D's
+/// persistent-actor restore hooks.</summary>
+public readonly record struct RegionCellLoadedEvent(string CellId, Node3D Root) : IGameEvent;
+
+/// <summary>Raised by the <see cref="RegionStreamer"/> just before a sub-cell is freed (Phase 25B).</summary>
+public readonly record struct RegionCellUnloadedEvent(string CellId) : IGameEvent;

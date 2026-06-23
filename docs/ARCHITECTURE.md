@@ -411,22 +411,33 @@ persists). Three pieces:
 ### 2.6h-2 Regions & streaming (`src/World`, Phase 25)
 
 The world is divided into authored **regions** (one per area; many per `Realm`). Phase 25A
-establishes the data + convention; the streamer, map, and fast-travel land in 25B–25G.
+established the data + convention; 25B adds the streamer; the map and fast-travel land in 25E–25G.
 
 - **`RegionResource`** (`[GlobalClass]`, `data/regions/*.tres`): `Id` (`region.*`),
   `DisplayName`, `Realm` (the fixed `Realm` enum — the four LORE realms + the Celestial),
-  `SubCells` (the streamable cell scene ids), `Bounds` (`Aabb`), an atmosphere bias
-  (`DefaultWeatherId` + `DayPhaseBias`), and `Neighbours` (region ids — the map/fast-travel
-  adjacency). `RegionDatabase` indexes them (mirrors `WeatherDatabase`); the save header reads
-  the active region's `DisplayName` by id. New region = a `.tres`, no code.
+  `Cells` (an array of `RegionCellResource` — the streamable sub-cells), `Bounds` (`Aabb`), an
+  atmosphere bias (`DefaultWeatherId` + `DayPhaseBias`), and `Neighbours` (region ids — the
+  map/fast-travel adjacency). `RegionDatabase` indexes them (mirrors `WeatherDatabase`); the save
+  header reads the active region's `DisplayName` by id. New region = a `.tres`, no code.
+- **`RegionCellResource`** (`[GlobalClass]`, a sub-resource of the region): `Id` (`<region>.<cell>`),
+  `ScenePath`, `Center` (world position), `LoadRadius`. The lightweight metadata the streamer reads
+  to decide whether to load, without instancing the scene.
+- **`RegionStreamer`** (`Node3D`, `Pausable`, built by the bootstrap): each frame it computes the
+  player's planar distance to every cell `Center` and applies the pure
+  `StreamDecision.Decide(distance, loadRadius, unloadMargin, isLoaded)` — load inside `LoadRadius`,
+  keep out to `LoadRadius + UnloadMargin` (hysteresis, ~10 m), then unload. Loads are instanced at
+  most **one per frame** (a queue drains over frames so a wave never hitches; the `PackedScene` is
+  `ResourceLoader`-cached so re-load is cheap). It publishes `RegionCellLoadedEvent`/
+  `RegionCellUnloadedEvent` — the seam Phase 25D's persistence hooks. The procedural sandbox is the
+  always-loaded base; the streamer manages only the region's authored `Cells`.
 - **Scene/world-partition convention** (for Phases 27/44 authoring): a region's sub-cell scenes
   live under `scenes/regions/<region>/<cell>.tscn`, where `<region>` is the id minus its
-  `region.` prefix (e.g. `scenes/regions/ember_crown/hub.tscn` for sub-cell `ember_crown.hub`).
-  Keep each cell self-contained (its own static geometry, navmesh, props, spawn markers) and
-  positioned in world space within the region's `Bounds`, so the 25B **`RegionStreamer`** can
-  load/unload it by distance with no bespoke wiring. Persistent actors in a cell carry a
-  `PersistentId` so they restore via the `PersistentSpawnDirector` when the cell reloads (25D).
-  The current flat sandbox is the single region `region.ember_crown` (one always-loaded cell).
+  `region.` prefix (e.g. `scenes/regions/ember_crown/waystone.tscn` for cell `ember_crown.waystone`).
+  Keep each cell self-contained (its own static geometry, navmesh, props, spawn markers) at local
+  origin (the streamer places the instance at the cell `Center`), positioned within the region's
+  `Bounds`. Persistent actors in a cell carry a `PersistentId` so they restore via the
+  `PersistentSpawnDirector` when the cell reloads (25D). The current sandbox is `region.ember_crown`
+  with two demo streamed cells around the always-loaded base.
 
 ### 2.6i Crafting (`src/Crafting`)
 

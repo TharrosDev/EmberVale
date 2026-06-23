@@ -449,6 +449,14 @@ public static class ContentValidator
                     issues.Add($"region '{region.Id}' links to unknown neighbour '{neighbour}'");
                 }
             }
+
+            foreach (RegionCellResource cell in region.Cells)
+            {
+                if (cell == null || string.IsNullOrEmpty(cell.ScenePath) || !ResourceLoader.Exists(cell.ScenePath))
+                {
+                    issues.Add($"region '{region.Id}' cell '{cell?.Id ?? "?"}' has a missing scene '{cell?.ScenePath}'");
+                }
+            }
         }
     }
 

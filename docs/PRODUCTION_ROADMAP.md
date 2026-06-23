@@ -884,7 +884,7 @@ The ordering is driven by hard dependencies, not preference:
 
 | Stage | Gate | Phases | Status |
 | ----- | ---- | ------ | ------ |
-| A — Pre-production & First Playable | G0 | 22–28 | ⏳ In progress (Phases 22 ✅, 23 ✅, 24 ✅; 25 underway — 25A ✅) |
+| A — Pre-production & First Playable | G0 | 22–28 | ⏳ In progress (Phases 22 ✅, 23 ✅, 24 ✅; 25 underway — 25A–25B ✅) |
 | B — Vertical Slice | G1 | 29–33 | ⬜ Planned |
 | C — Alpha / Feature Complete | G2 | 34–45 | ⬜ Planned |
 | D — Beta / Content Complete | G3 | 46–55 | ⬜ Planned |
@@ -941,7 +941,10 @@ flat sandbox with streamed authored regions, a world map/compass, and a fast-tra
 four realms are authored. **25A is done**: a `RegionResource` + `RegionDatabase` data layer, the
 sandbox authored as `region.ember_crown` (the save header now reads its name from the resource), region
 cross-ref validation, and the region/sub-cell scene convention documented (ARCHITECTURE §2.6h-2,
-CLAUDE §8). **Next: 25B** — the `RegionStreamer` that loads/unloads sub-cells by distance.
+CLAUDE §8). **25B is done**: a `RegionStreamer` that loads/unloads a region's sub-cell scenes by
+distance with hysteresis and a one-instance-per-frame budget (verified in-engine — a demo cell streams
+in/out as the player moves), driven by `RegionCellResource` cell data and gated by the pure
+`StreamDecision`. **Next: 25C** — hard transitions + a loading screen for realm-to-realm loads.
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —
 > a third-person open-world fantasy RPG where you battle fallen heroes across four
