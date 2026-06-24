@@ -416,6 +416,8 @@ Embervale's, not generic elemental fare, and binds it to the defining mechanic.
 The art direction made real for the slice cast (player, core enemies, key NPCs,
 the boss).
 
+- Player, core-enemy, key-NPC, and world/prop models authored for the slice cast
+  and the Ember Crown dressing (Phase 27), ahead of rig/animation integration.
 - Rigged/animated third-person player character (locomotion, attacks, block, hit,
   death) + weapons + spell casting, framed by the over-the-shoulder camera; enemy
   animation sets driving the existing AI/combat states.
