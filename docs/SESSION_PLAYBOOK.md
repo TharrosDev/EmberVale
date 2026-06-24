@@ -791,19 +791,38 @@ no code) — batch them when momentum is good.
 - [ ] **30A — Art-direction style guide** `[P]`
   - **Done when:** `docs/ART_STYLE.md` pins the dying-world language (ash, faded
     colour, embers) + import/LOD conventions feeding Phase 19/57.
-- [ ] **30B — Third-person character + weapon rig integration** `[P]`
-  - **Done when:** the rigged player character + a weapon play attack/block/idle
-    driven by combat states.
-- [ ] **30C — Spell-casting animations + cast VFX by school** `[P]`
+- [ ] **30B — Player character model** `[P]`
+  - **Goal:** the player has a real mesh to rig, not a placeholder capsule.
+  - **Tasks:** base mesh + texture set matched to `ART_STYLE.md` (30A); modular
+    gear/weapon attach points for the equipment the player can visibly wear/wield.
+  - **Done when:** a static, importable player mesh with equip sockets exists in-engine.
+- [ ] **30C — Third-person character + weapon rig integration** `[P]`
+  - **Done when:** the rigged player character (30B's mesh) + a weapon play
+    attack/block/idle driven by combat states.
+- [ ] **30D — Core enemy + key-NPC model set** `[P]`
+  - **Goal:** the slice cast named in the Phase 30 header (core enemies, key NPCs,
+    the boss) has real meshes, not the goblin-only placeholder.
+  - **Tasks:** goblin model (+ one variant), the Iron King boss model, and the key
+    Ember Crown NPCs from Phase 27 (vendor, innkeeper, guild rep) — each matched to
+    `ART_STYLE.md` (30A).
+  - **Done when:** each listed actor has a distinct, importable mesh/texture set.
+- [ ] **30E — Spell-casting animations + cast VFX by school** `[P]`
   - **Done when:** casting plays animations and school-tinted VFX matched to
     `SpellSchools`.
-- [ ] **30D — Core enemy animation set (goblin + Iron King)** `[P]`
-  - **Done when:** locomotion/attack/hit/death sets drive the existing AI/combat
-    states for the slice cast.
-- [ ] **30E — Third-person body for cutscenes/reflections** `[P]`
+- [ ] **30F — Core enemy animation set (goblin + Iron King)** `[P]`
+  - **Done when:** locomotion/attack/hit/death sets (driving 30D's meshes) drive
+    the existing AI/combat states for the slice cast.
+- [ ] **30G — Third-person body for cutscenes/reflections** `[P]`
   - **Done when:** a TP body exists for the Phase 43 cutscenes and corruption
     appearance (23F) hangs off it.
-- [ ] **30F — Status/impact VFX library + corruption materials** `[P]`
+- [ ] **30H — World/environment model set for the Ember Crown slice** `[P]`
+  - **Goal:** the Phase 27 Ember Crown slice has real dressing, not greybox.
+  - **Tasks:** town-hub building kit (inn, guild presence, vendor stalls, crafting
+    stations, a housing-plot exterior) + wilds POI dressing (rocks, ruins, foliage),
+    matched to `ART_STYLE.md` (30A).
+  - **Done when:** the Ember Crown walkable slice can be dressed with real meshes
+    instead of placeholder primitives.
+- [ ] **30I — Status/impact VFX library + corruption materials** `[P]`
   - **Done when:** status effects + corruption tiers (replacing 23F placeholders)
     use real materials/VFX.
 
