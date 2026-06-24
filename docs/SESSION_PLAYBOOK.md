@@ -785,16 +785,20 @@ no code) — batch them when momentum is good.
 
 ## Phase 30 — Animation, Models & Visual Identity `[P]`
 
-> Art-heavy; the human supplies assets. Each sub-phase integrates one asset class
-> against existing states.
+> Art-heavy. Model authoring (30B, 30D, 30H) is built in Blender via the Blender MCP
+> (`mcp__blender__*`, CLAUDE.md §2) and exported to glTF under the Phase 19/57 import/LOD
+> conventions; the human still supplies whatever the MCP doesn't cover (rig finishing,
+> hand-painted texture passes, audio). Each sub-phase integrates one asset class against
+> existing states.
 
 - [ ] **30A — Art-direction style guide** `[P]`
   - **Done when:** `docs/ART_STYLE.md` pins the dying-world language (ash, faded
     colour, embers) + import/LOD conventions feeding Phase 19/57.
 - [ ] **30B — Player character model** `[P]`
   - **Goal:** the player has a real mesh to rig, not a placeholder capsule.
-  - **Tasks:** base mesh + texture set matched to `ART_STYLE.md` (30A); modular
-    gear/weapon attach points for the equipment the player can visibly wear/wield.
+  - **Tasks:** built in Blender via the Blender MCP — base mesh + texture set matched
+    to `ART_STYLE.md` (30A); modular gear/weapon attach points for the equipment the
+    player can visibly wear/wield; export to glTF.
   - **Done when:** a static, importable player mesh with equip sockets exists in-engine.
 - [ ] **30C — Third-person character + weapon rig integration** `[P]`
   - **Done when:** the rigged player character (30B's mesh) + a weapon play
@@ -802,9 +806,9 @@ no code) — batch them when momentum is good.
 - [ ] **30D — Core enemy + key-NPC model set** `[P]`
   - **Goal:** the slice cast named in the Phase 30 header (core enemies, key NPCs,
     the boss) has real meshes, not the goblin-only placeholder.
-  - **Tasks:** goblin model (+ one variant), the Iron King boss model, and the key
-    Ember Crown NPCs from Phase 27 (vendor, innkeeper, guild rep) — each matched to
-    `ART_STYLE.md` (30A).
+  - **Tasks:** built in Blender via the Blender MCP — goblin model (+ one variant),
+    the Iron King boss model, and the key Ember Crown NPCs from Phase 27 (vendor,
+    innkeeper, guild rep) — each matched to `ART_STYLE.md` (30A); export to glTF.
   - **Done when:** each listed actor has a distinct, importable mesh/texture set.
 - [ ] **30E — Spell-casting animations + cast VFX by school** `[P]`
   - **Done when:** casting plays animations and school-tinted VFX matched to
@@ -817,9 +821,10 @@ no code) — batch them when momentum is good.
     appearance (23F) hangs off it.
 - [ ] **30H — World/environment model set for the Ember Crown slice** `[P]`
   - **Goal:** the Phase 27 Ember Crown slice has real dressing, not greybox.
-  - **Tasks:** town-hub building kit (inn, guild presence, vendor stalls, crafting
-    stations, a housing-plot exterior) + wilds POI dressing (rocks, ruins, foliage),
-    matched to `ART_STYLE.md` (30A).
+  - **Tasks:** built in Blender via the Blender MCP — town-hub building kit (inn,
+    guild presence, vendor stalls, crafting stations, a housing-plot exterior) +
+    wilds POI dressing (rocks, ruins, foliage), matched to `ART_STYLE.md` (30A);
+    export to glTF.
   - **Done when:** the Ember Crown walkable slice can be dressed with real meshes
     instead of placeholder primitives.
 - [ ] **30I — Status/impact VFX library + corruption materials** `[P]`
@@ -965,6 +970,23 @@ no code) — batch them when momentum is good.
 
 ---
 
+## Phase 34.5 — Frostfang Clans & Beast-Race Factions `[F/C]`
+
+> LORE names Frostfang's warrior clans/beast races as a culture, not generic
+> wildlife. Give them a faction identity before they dissolve into the bestiary.
+
+- [ ] **34.5A — Frostfang Clans `FactionResource` + hub presence** `[F/C]`
+  - **Done when:** the clan faction exists with a hub/outpost; reputation/dread
+    (23G) applies to it like any faction.
+- [ ] **34.5B — Clan archetypes (raider, beast-tamer, shaman)** `[C]`
+  - **Done when:** three clan archetypes exist on the Phase 34 matrix with
+    distinct loot/AI profiles.
+- [ ] **34.5C — Clan questline + rank chain** `[C]`
+  - **Done when:** a short multi-quest arc with rank-up flags is completable;
+    `validate-all` green.
+
+---
+
 ## Phase 35 — Dragons `[F/C]`
 
 - [ ] **35A — Dragon body: multi-hit-zone scalable boss actor** `[F]`
@@ -1061,6 +1083,28 @@ no code) — batch them when momentum is good.
 
 ---
 
+## Phase 40.5 — Dungeon & Puzzle Framework `[F]`
+
+> Ruins/temples/dragon-nests imply puzzles and traps; no phase before this builds the
+> tooling. Lands before Phase 50 authors dungeons against it.
+
+- [ ] **40.5A — `PuzzleComponent` + lever/pressure-plate primitive** `[F]`
+  - **Done when:** a lever/plate puzzle gates a door/reward and is solvable + reset
+    -safe.
+- [ ] **40.5B — Sequence + light/shadow puzzle primitives** `[F]`
+  - **Done when:** two more puzzle types exist on the same component family.
+- [ ] **40.5C — Trap primitives (spikes/darts/collapsing floor)** `[F]`
+  - **Done when:** trap hazards deal damage through the existing `DamagePacket`
+    pipeline and are placeable as data.
+- [ ] **40.5D — Relic-trial vault convention + one authored example** `[F/C]`
+  - **Done when:** one vault (puzzle + guardian encounter) is authored end-to-end
+    as the template Phase 51E's relics reuse.
+- [ ] **40.5E — CLAUDE.md §8 recipe + `ContentValidator` checks** `[F/P]`
+  - **Done when:** "a new puzzle/trap" is documented and content is checked for
+    solvability/dangling triggers.
+
+---
+
 ## Phase 41 — Quest Authoring at Scale & Branching `[F/C]`
 
 - [ ] **41A — Reach/Explore + Talk objective types** `[F]`
@@ -1082,6 +1126,23 @@ no code) — batch them when momentum is good.
 
 ---
 
+## Phase 41.5 — Divine Shrines & Blessings `[F/C]`
+
+> The Seven Gods get a full LORE section and zero in-game presence beyond Morthul.
+> This mechanizes the other six as shrine blessings.
+
+- [ ] **41.5A — `ShrineResource` + `BlessingComponent` core** `[F]`
+  - **Done when:** a shrine interactable grants a persistent passive bonus on
+    first visit; `ISaveable`.
+- [ ] **41.5B — Author the six gods' shrines (one per realm + placement)** `[C]`
+  - **Done when:** six shrines exist, each with a distinct domain-flavored
+    blessing; `validate` green.
+- [ ] **41.5C — Corruption-gated blessing refusal/curse** `[F/C]`
+  - **Done when:** a high-corruption visit to at least one shrine triggers a
+    refusal/curse variant instead of the blessing.
+
+---
+
 ## Phase 42 — Guild & Faction Questlines `[C]`
 
 - [ ] **42A — Membership/rank flag framework + small rank UI** `[F]`
@@ -1097,6 +1158,22 @@ no code) — batch them when momentum is good.
 
 ---
 
+## Phase 42.5 — The Crimson Cult `[F/C]`
+
+> The Crimson Prophet "built an empire of worshippers" (LORE) — give it a real
+> in-world faction, not just a boss fight at the end of Sunspire.
+
+- [ ] **42.5A — Crimson Cult `FactionResource` + hub/outpost presence** `[F/C]`
+  - **Done when:** the cult exists as a hostile faction with an outpost in
+    Sunspire; reputation/dread applies.
+- [ ] **42.5B — Cult zealot/inquisitor archetypes** `[C]`
+  - **Done when:** two cult archetypes exist on the Phase 34 matrix.
+- [ ] **42.5C — Infiltration questline (branching, feeds into 47E)** `[C]`
+  - **Done when:** a branching infiltration arc is completable and feeds into
+    the Crimson Prophet arc's flags.
+
+---
+
 ## Phase 43 — Cinematics & Scripted Sequences `[F]`
 
 - [ ] **43A — `CutsceneResource` + `SequenceDirector` timeline core** `[F]`
@@ -1109,6 +1186,23 @@ no code) — batch them when momentum is good.
   - **Done when:** cutscenes trigger VFX/SFX/music through the `AudioDirector`.
 - [ ] **43D — Author 2 set-pieces (boss intro + a story beat)** `[C]`
   - **Done when:** two real cutscenes prove the tooling end-to-end.
+
+---
+
+## Phase 43.5 — Flamebearer Vision Sequences `[F/C]`
+
+> DESIGN §5 demands the corruption theme be *felt*. A flashback per fallen
+> Flamebearer (built on Phase 43's tooling) makes "becoming them" experiential.
+
+- [ ] **43.5A — `VisionSequence` cutscene variant (desaturated/ash playback mode)** `[F]`
+  - **Done when:** a vision plays through the Phase 43 timeline system with the
+    distinct visual treatment, skippable.
+- [ ] **43.5B — Wire vision trigger to the boss-defeat hook (28D/36E)** `[F]`
+  - **Done when:** defeating a framework boss can trigger its vision
+    automatically.
+- [ ] **43.5C — Author the six Flamebearer visions** `[C]`
+  - **Done when:** all six visions exist and play at the correct story beat;
+    `validate-all` green.
 
 ---
 
@@ -1129,6 +1223,26 @@ no code) — batch them when momentum is good.
 - [ ] **44E — Crimson Prophet lair stub + main-quest spine connecting all realms** `[C]`
   - **Done when:** every realm + boss + guild is reachable and the main-quest spine
     threads them (rough but complete in extent).
+
+---
+
+## Phase 44.5 — World State: Realm Decay & Restoration `[F]`
+
+> Dawnfire's "the lands heal" needs a world-scale state to pay off, mirroring
+> `CorruptionTier`'s shape but realm-scoped (DESIGN §2.1's "return changed" arrow).
+
+- [ ] **44.5A — `RealmStateComponent` + per-region decay tier** `[F]`
+  - **Done when:** a region's tier can be set/read, persists, and is queryable
+    by other systems.
+- [ ] **44.5B — Story-flag-driven tier transitions (one realm wired as proof)** `[F/C]`
+  - **Done when:** defeating that realm's Flamebearer measurably shifts its
+    tier.
+- [ ] **44.5C — Visual hooks (lighting/fog/weather-bias per tier)** `[F/P]`
+  - **Done when:** the tier change is visible in the proof realm, ready for the
+    Phase 53 art pass to build on.
+- [ ] **44.5D — Ending-state write (Dawnfire heals / Lord of Embers ashen, all realms)** `[F]`
+  - **Done when:** Phase 49's ending choice writes a final tier across all four
+    realms.
 
 ---
 
@@ -1187,6 +1301,20 @@ no code) — batch them when momentum is good.
 
 ---
 
+## Phase 47.5 — The Ashen Knight: Rival Duels `[C]`
+
+> "The player's greatest rival" (LORE) needs a rival *arc*. 47F seeded it; this
+> phase pays it off with content.
+
+- [ ] **47.5A — Mid-Act-II duel (escape-clause encounter)** `[C]`
+  - **Done when:** the duel is fightable, ends in a scripted escape/draw, and
+    sets a story flag.
+- [ ] **47.5B — Act III duel (escalated, second encounter)** `[C]`
+  - **Done when:** the second duel plays harder/different and feeds the Act IV
+    flag set (49B).
+
+---
+
 ## Phase 48 — Main Story, Act III: Truth of the Gods `[C]`
 
 - [ ] **48A — Divine Cataclysm history reveal (Veiled Archive beats)** `[C]`
@@ -1227,6 +1355,23 @@ no code) — batch them when momentum is good.
 
 ---
 
+## Phase 50.5 — Lore Codex & Compendium `[F/C]`
+
+> Phase 50G authors lore-book collectibles; nothing reads them back. A compendium
+> distinct from the combat bestiary (34G).
+
+- [ ] **50.5A — `CodexEntryResource` + `CodexDatabase`** `[F]`
+  - **Done when:** codex entries are data, unlock on a flag/collectible pickup,
+    and persist.
+- [ ] **50.5B — Codex UI panel (on the 30.5F framework)** `[F]`
+  - **Done when:** unlocked entries are browsable in a panel; locked entries
+    show as teasers.
+- [ ] **50.5C — Seed entries for every god/Flamebearer/realm/guild** `[C]`
+  - **Done when:** every named LORE entity has a codex entry, wired to its
+    existing unlock trigger (a 50G book or a story flag).
+
+---
+
 ## Phase 51 — Itemization, Loot & Reward Economy Pass `[C]`
 
 - [ ] **51A — Weapon catalogue per tier/realm** `[C]`
@@ -1237,6 +1382,20 @@ no code) — batch them when momentum is good.
 - [ ] **51F — Reward placement + loot-table curation across the game** `[C]`
   - **Done when (each):** the catalogue slice is authored, balanced for *placement*
     (numeric balance is Phase 56), and `validate-all` green.
+
+---
+
+## Phase 51.5 — Enchanting & Relic Socketing `[F/C]`
+
+> Not LORE-mandated — an optional itemization deepener. Cut cleanly if it doesn't
+> clear playtest.
+
+- [ ] **51.5A — `SocketComponent` + socket count by rarity** `[F]`
+  - **Done when:** rare+ gear can have empty sockets that round-trip through
+    save/load.
+- [ ] **51.5B — `EnchantResource` + socket/unsocket flow** `[F/C]`
+  - **Done when:** an enchant item can be socketed/removed and visibly changes
+    stats.
 
 ---
 
@@ -1262,6 +1421,19 @@ no code) — batch them when momentum is good.
 - [ ] **53F — Dying-world VFX polish + visual cohesion pass** `[P]`
   - **Done when (each):** no greybox remains in that slice; the dying-world art
     direction is fully realized; LOD discipline (Phase 19) maintained.
+
+---
+
+## Phase 53.5 — Photo Mode `[P]`
+
+> Not LORE-mandated — a polish-tier nicety pairing with the Phase 53 art pass.
+
+- [ ] **53.5A — Free camera + hide-HUD toggle in pause state** `[P]`
+  - **Done when:** the player can detach the camera and hide UI for a
+    screenshot, then resume cleanly.
+- [ ] **53.5B — A few dying-world filters/vignettes** `[P]`
+  - **Done when:** at least 2 filters are selectable and match the Phase 53 art
+    direction.
 
 ---
 
