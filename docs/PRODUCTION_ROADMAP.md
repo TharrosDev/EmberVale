@@ -141,16 +141,22 @@ authoring recipes that turn them into content with no new code, see CLAUDE.md §
 | #  | Phase | Tag | One-liner |
 | -- | ----- | --- | --------- |
 | 34 | Enemy & Creature Roster (bestiary framework) | F/C | The full archetype matrix: humanoids, beasts, undead, constructs, behaviors |
+| 34.5 | Frostfang Clans & Beast-Race Factions | F/C | The LORE warrior clans/beast races as their own culture — a faction + questline, not just bestiary entries |
 | 35 | Dragons | F/C | Aerial/ground dragon AI, breath attacks, Ancient/Wild/Ash variants — a tentpole feature |
 | 36 | Boss Framework & Encounter Design | F | Phases, arenas, telegraphs, gimmicks — the reusable boss kit for all 6+1 |
 | 37 | Housing & Player Property | F | Purchasable homes, storage, station placement, trophies, customization (LORE Housing) |
 | 38 | Economy, Vendors & Services | F/C | Merchants, buy/sell, repair, training, banks, dynamic pricing, gold sinks |
 | 39 | Mounts & Traversal | F | Mounts, stamina/sprint traversal, climbing/swimming as the world demands |
 | 40 | Survival & Needs (scoped) | F | Only the systems LORE/design require (e.g. carry weight already exists) — keep or cut deliberately |
+| 40.5 | Dungeon & Puzzle Framework | F | Reusable lever/trap/puzzle tooling for ruins/temples/vaults, plus the relic-trial vault convention |
 | 41 | Quest Authoring at Scale & Branching | F/C | Beyond Kill/Collect: escort, defend, choice/branch, timed, faction-gated objective types |
+| 41.5 | Divine Shrines & Blessings | F/C | The Seven Gods, mechanized — shrine blessings tied to each god's domain |
 | 42 | Guild & Faction Questlines | C | The five LORE guilds as joinable factions with multi-quest arcs and ranks |
+| 42.5 | The Crimson Cult | F/C | The Crimson Prophet's "empire of worshippers" as a real hostile/infiltrable faction |
 | 43 | Cinematics & Scripted Sequences | F | In-engine cutscene tooling, camera tracks, scripted set-pieces, dialogue staging |
+| 43.5 | Flamebearer Vision Sequences | F/C | A flashback-cutscene type showing how each fallen Flamebearer fell, triggered on their defeat |
 | 44 | Alpha Content Pass — all four realms blocked out | C | Greybox + first-pass content for every realm, every fallen Flamebearer |
+| 44.5 | World State: Realm Decay & Restoration | F | A per-realm decay/restoration tier so the world visibly reflects story progress and the ending choice |
 | 45 | Alpha Hardening & Feature Freeze | F/P | Stabilize, profile, integration test the whole feature set; declare feature complete |
 
 ### Stage D — Beta / Content Complete → **G3**
@@ -159,12 +165,16 @@ authoring recipes that turn them into content with no new code, see CLAUDE.md §
 | -- | ----- | --- | --------- |
 | 46 | The Main Story — Act I: Awakening | C | Full narrative content for Act I |
 | 47 | The Main Story — Act II: Gathering the Flame | C | All four realms' main arcs + the six fallen Flamebearers |
+| 47.5 | The Ashen Knight: Rival Duels | C | Recurring non-final duels across Acts II–III so the "greatest rival" has a real arc, not one Act IV reveal |
 | 48 | The Main Story — Act III: Truth of the Gods | C | The mid-game turn, lore reveals, the Ash Throne |
 | 49 | The Main Story — Act IV: The Celestial War + Endings | C | The Ashen Knight, Morthul, both endings (Dawnfire / Lord of Embers) |
 | 50 | Side Content, Activities & World Density | C | Side quests, POIs, dungeons, world events, collectibles, ambient life |
+| 50.5 | Lore Codex & Compendium | F/C | An in-game compendium of gods/Flamebearers/realms/guilds, populated by the Phase 50 lore-book collectibles |
 | 51 | Itemization, Loot & Reward Economy Pass | C | The full item/affix/set/relic catalogue; the divine relics; reward curves |
+| 51.5 | Enchanting & Relic Socketing | F/C | Optional itemization deepener — sockets + enchant consumables on rare+ gear |
 | 52 | Full Audio & Music Production | P | The complete score, VO direction, full SFX/ambience coverage |
 | 53 | Art Complete & World Beautification | P | Final art pass across all regions; lighting; set dressing; the dying-world identity |
+| 53.5 | Photo Mode | P | Optional polish-tier feature — free camera, hide-HUD, dying-world filters |
 | 54 | Accessibility & Input | F/P | Remapping, subtitles, colorblind, difficulty options, controller, Steam Deck |
 | 55 | Content-Complete Integration & First Full Playthrough | C/P | The whole game start→finish, both endings, no placeholders |
 
@@ -416,8 +426,9 @@ Embervale's, not generic elemental fare, and binds it to the defining mechanic.
 The art direction made real for the slice cast (player, core enemies, key NPCs,
 the boss).
 
-- Player, core-enemy, key-NPC, and world/prop models authored for the slice cast
-  and the Ember Crown dressing (Phase 27), ahead of rig/animation integration.
+- Player, core-enemy, key-NPC, and world/prop models authored in Blender via the
+  Blender MCP for the slice cast and the Ember Crown dressing (Phase 27), ahead of
+  rig/animation integration.
 - Rigged/animated third-person player character (locomotion, attacks, block, hit,
   death) + weapons + spell casting, framed by the over-the-shoulder camera; enemy
   animation sets driving the existing AI/combat states.
@@ -517,6 +528,19 @@ de-risks the schedule.
 - A `BestiaryDatabase` + an in-game bestiary (Ash Hunters fantasy) tracking kills/
   lore — content, via existing UI patterns.
 
+### Phase 34.5 — Frostfang Clans & Beast-Race Factions `[F/C]`
+
+LORE names Frostfang Reach's "warrior clans and beast races" as a distinct culture, not
+generic wildlife. Without this they'd dissolve into Phase 34's bestiary as just more
+enemies.
+
+- A `FactionResource` for the Frostfang clans (distinct from the five guilds) with hub/
+  outpost presence, reputation/dread (23G) applying to it like any faction.
+- Clan archetypes (raiders, beast-tamers, shamans) authored on the Phase 34 archetype
+  matrix — data, no new AI code.
+- A short questline + rank chain (mirrors Phase 42's pattern, scoped to one realm) so
+  the clans are a real culture to ally with or fight, not set dressing.
+
 ### Phase 35 — Dragons `[F/C]`
 
 A LORE tentpole (Ancient/Wild/Ash dragons) and a marquee feature.
@@ -579,6 +603,23 @@ Decide — and record in `docs/DESIGN.md` — whether to add durability, food/re
 or temperature (Frostfang fiction supports it), or to **explicitly cut** them.
 Build only what survives the design call; an empty/cut phase is a valid outcome.
 
+### Phase 40.5 — Dungeon & Puzzle Framework `[F]`
+
+LORE's ruins, buried temples, and dragon nests imply environmental puzzles and traps —
+no phase 1–40 builds that tooling; `EncounterResource`/`WorldEventResource` are combat
+-only. This lands before dungeon content (Phase 50E) authors against it, and gives
+divine-relic acquisition (Phase 51E) a real seam.
+
+- **Puzzle primitives** — a `PuzzleResource`/`PuzzleComponent` family (lever/pressure
+  -plate, sequence, light-and-shadow) wired through `InteractableComponent` + the
+  EventBus, gating a door/reward on solve.
+- **Trap primitives** — hazard triggers (spikes, dart volleys, collapsing floors)
+  dealing damage through the existing `DamagePacket` pipeline, authored as data.
+- **Relic-trial vault convention** — one puzzle + one guardian encounter per vault, the
+  template every realm's divine relic (51E) reuses for its acquisition.
+- A CLAUDE.md §8 "a new puzzle/trap" recipe, and `ContentValidator` checks for
+  solvability/dangling triggers.
+
 ### Phase 41 — Quest Authoring at Scale & Branching `[F/C]`
 
 The systems quest framework does Kill/Collect (Phase 9). The main story needs
@@ -591,6 +632,20 @@ more **objective types and branching**.
 - Quest **state graphs** (a quest with multiple endings/paths), failure states,
   and quest-driven world changes (an NPC dies, a region opens).
 - A quest-debugging console (`quest start/advance/complete/reset`) for content QA.
+
+### Phase 41.5 — Divine Shrines & Blessings `[F/C]`
+
+LORE devotes a full section to the Seven Gods, but no phase ever gives them an in-game
+presence beyond Morthul-as-villain. This mechanizes the other six.
+
+- **`ShrineResource` + `BlessingComponent`** — a shrine interactable per god (Solaryn,
+  Veyra, Tharos, Nyth, Drakar, Elyndra) granting a persistent passive on first visit,
+  reusing the perk/stat pipeline (no new system, just a god-flavored content wrapper).
+- **One shrine per realm, placed to fiction** — e.g. Drakar (war/strength) in
+  Frostfang, Nyth (knowledge/magic) in Sunspire's libraries; placement is content.
+- **Corruption interplay** — a high-corruption visit can trigger a refusal/curse
+  variant instead of the blessing (a `CorruptionComponent` condition check), tying the
+  gods back into the defining mechanic.
 
 ### Phase 42 — Guild & Faction Questlines `[C]`
 
@@ -605,6 +660,19 @@ Emberbound) as joinable factions with rank progression and multi-quest arcs.
   knowledge to restore spellcraft, rewarding recovered spells + mastery. Pure content on
   the 29.5 systems (quest + dialogue + tome rewards).
 
+### Phase 42.5 — The Crimson Cult `[F/C]`
+
+The Crimson Prophet "built an empire of worshippers" (LORE) — currently that's only a
+boss fight at the end of Sunspire Dominion, with no in-world presence backing it.
+
+- **A hostile `FactionResource` for the Crimson Cult** with outpost/hub presence
+  seeded in Sunspire Dominion (ties to Phase 44D).
+- **Cult archetypes** (zealots, inquisitors) authored on the Phase 34 matrix — data,
+  no new AI code.
+- **An infiltration questline** (a Phase 41D choice/branch arc) letting the player
+  pose as a convert ahead of the Crimson Prophet confrontation (47E), rewarding
+  cult-specific lore/items.
+
 ### Phase 43 — Cinematics & Scripted Sequences `[F]`
 
 - **In-engine cutscene tooling** — a `CutsceneResource`/`SequenceDirector`
@@ -614,6 +682,20 @@ Emberbound) as joinable factions with rank progression and multi-quest arcs.
 - Scripted set-pieces (a city under attack, a boss intro, a betrayal) become
   authorable for the story acts.
 
+### Phase 43.5 — Flamebearer Vision Sequences `[F/C]`
+
+DESIGN §5 demands the player *feel* themselves becoming a fallen Flamebearer; today
+defeating one is just a stat/loot beat. A short flashback per Flamebearer makes the
+corruption theme experiential, not narrated.
+
+- **A `VisionSequence` cutscene variant** on the Phase 43 `CutsceneResource`/
+  `SequenceDirector` (a desaturated/ash-tinted playback mode — no new timeline system),
+  triggered from the boss-defeat hook already wired in 28D/36E.
+- **One vision per fallen Flamebearer** (Iron King, Hollow Queen, Storm Tyrant, Beast
+  Lord, Crimson Prophet, Ashen Knight) showing how they fell.
+- Ties into the corruption appearance shift (23F/30I) — the player's reflection in the
+  vision can hint at their own rising tier.
+
 ### Phase 44 — Alpha Content Pass: all four realms blocked out `[C]`
 
 Greybox + first-pass content for the **whole game's shape**: Ember Crown,
@@ -621,6 +703,20 @@ Frostfang Reach, Ashen Wilds, Sunspire Dominion — each with its hub(s), key PO
 encounter sets, the resident fallen Flamebearer's lair/boss stub, and the
 main-quest spine connecting them. Rough but **complete in extent** — every realm,
 every boss, every guild reachable.
+
+### Phase 44.5 — World State: Realm Decay & Restoration `[F]`
+
+Dawnfire's "the lands heal, dragons return" (LORE) implies the *world* should reflect
+story progress, not just the player's corruption tier (Phase 23 is player-only). This
+gives the macro "return changed" arrow (DESIGN §2.1) a world-scale half.
+
+- **`RealmStateComponent`/`WorldStateService`** — a per-region decay tier (mirrors
+  `CorruptionTier`'s shape, realm-scoped) driven by story flags (a Flamebearer
+  defeated, a relic claimed); `ISaveable`.
+- **Visual hooks** — lighting/fog/weather-bias read the tier now; the Phase 53 art
+  pass builds the final look on top.
+- **Ending payoff seam** — Phase 49's endings write a final realm-wide state (healed
+  for Dawnfire, ashen for Lord of Embers) that Phase 53/65 content reads.
 
 ### Phase 45 — Alpha Hardening & Feature Freeze `[F/P]`
 
@@ -656,6 +752,18 @@ alliances, defeat the fallen Flamebearers — the Iron King, the Hollow Queen, t
 Storm Tyrant, the Beast Lord, the Crimson Prophet (and seeds of the Ashen Knight
 rivalry). Each realm = its questline + boss + relic + corruption beat + guild ties.
 
+### Phase 47.5 — The Ashen Knight: Rival Duels `[C]`
+
+LORE calls the Ashen Knight "the player's greatest rival" — that fiction calls for a
+rival *arc*, not one reveal in Act IV. Phase 47F only seeds the rivalry; this phase
+pays it off with content.
+
+- **Two scripted duels** (mid Act II, then Act III) using the Phase 36 Boss Framework +
+  Phase 43 cinematics — non-lethal/escape-clause encounters that escalate the Ashen
+  Knight's hostility and banter.
+- **A flag thread** — each duel sets story flags the Act IV final confrontation (49B)
+  reads, so the rivalry has visible build-up rather than appearing cold.
+
 ### Phase 48 — Main Story, Act III: Truth of the Gods `[C]`
 
 The mid-game turn (LORE): the history of the Divine Cataclysm, the true nature of
@@ -688,6 +796,19 @@ tables, collectibles (lore books for the Veiled Archive fantasy), bounties (Iron
 Syndicate / Ash Hunters), companion loyalty quests, ambient NPC life, and the
 density that makes an open world feel alive.
 
+### Phase 50.5 — Lore Codex & Compendium `[F/C]`
+
+Phase 50G authors lore-book collectibles, but nothing builds the UI to read or track
+them against the gods/Flamebearers/realms/guilds they reference — distinct from the
+combat bestiary (34G).
+
+- **`CodexEntryResource` + `CodexDatabase`** — entries unlock on a flag/collectible
+  pickup, `ISaveable`.
+- **A Codex panel** built on the Phase 30.5F panel framework; locked entries show as
+  teasers, unlocked ones are fully readable.
+- **Seed entries for every god, fallen Flamebearer, realm, and guild** so the
+  compendium is complete in *shape* even before every collectible is placed.
+
 ### Phase 51 — Itemization, Loot & Reward Economy Pass `[C]`
 
 The full item catalogue: weapons/armor/accessories per tier and realm, the affix/
@@ -701,6 +822,16 @@ quests/bosses/dungeons; the loot tables of the whole game authored and curated.
   **relic spells** (divine-relic-tier). This is the magic content *bulk*, and it lives here
   because it is data on frozen systems (G2-safe) — no new mechanics, only authoring.
 
+### Phase 51.5 — Enchanting & Relic Socketing `[F/C]`
+
+Not LORE-mandated — an optional itemization deepener beyond the existing affix system.
+Cut cleanly if it doesn't clear playtest; flagged here so it isn't lost.
+
+- **`SocketComponent`** on rare+ equippables + an `EnchantResource` consumable that
+  slots in for a stat bonus, extending `EquipmentComponent` rather than replacing
+  affixes.
+- Authored as a content tail on top of Phase 51's catalogue.
+
 ### Phase 52 — Full Audio & Music Production `[P]`
 
 The complete adaptive score (per realm/boss/theme), full SFX coverage, ambience
@@ -712,6 +843,14 @@ beats) recorded and integrated through the `AudioDirector`.
 Final environment art across all four realms, character/creature/boss final
 models, the dying-world art direction fully realized (light fading, ash, ember
 glow), VFX polish, set dressing, and the visual cohesion pass. No greybox remains.
+
+### Phase 53.5 — Photo Mode `[P]`
+
+Not LORE-mandated — a polish-tier nicety, not a gap. Pairs naturally with the Phase 53
+art pass.
+
+- A pause-state free camera (reuses `GameState.Paused`), hide-HUD toggle, and a few
+  dying-world-themed filters matched to Phase 53's art direction.
 
 ### Phase 54 — Accessibility & Input `[F/P]`
 
