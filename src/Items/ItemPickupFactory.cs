@@ -56,6 +56,8 @@ public static class ItemPickupFactory
             Instance = instance,
             Quantity = quantity,
         });
+        // Lets the Phase 25F compass / quest markers find this as a Collect-objective target.
+        pickup.AddToGroup(Embervale.Quests.ObjectiveLocator.PickupGroup);
         return pickup;
     }
 }

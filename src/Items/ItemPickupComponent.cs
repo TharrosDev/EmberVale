@@ -25,6 +25,9 @@ public partial class ItemPickupComponent : InteractableComponent
 
     private ItemInstance? Resolved => Instance ??= Item != null ? ItemInstance.Plain(Item) : null;
 
+    /// <summary>The id of the item this pickup carries (for Collect-objective targeting), or empty.</summary>
+    public string ItemId => Resolved?.TemplateId ?? string.Empty;
+
     public override string Prompt
     {
         get
