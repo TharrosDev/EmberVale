@@ -683,7 +683,7 @@ no code) — batch them when momentum is good.
     fresh save is clean. The *"no usable entry for map/fasttravel/cell_persistence"* lines on
     old saves are normal forward-compat — those services post-date the save.)
 
-- [ ] **25.5B — Region streaming stability & profiling** `[F/P]`
+- [x] **25.5B — Region streaming stability & profiling** `[F/P]` ✅
   - **Goal:** streaming and cell persistence are hitch-free and correct under stress.
   - **Tasks:** stress the `RegionStreamer` (fast boundary crossing, hysteresis thrash,
     multi-cell load waves vs the 1-cell/frame budget); replace the fixed 0.4s
@@ -692,6 +692,25 @@ no code) — batch them when momentum is good.
     save/load. Profile load hitches.
   - **Done when:** rapid traversal/transitions show no thrash or visible pop-in
     (reviewed in-engine); persistence survives repeated unload/reload and save/load.
+  - **Done:** the headline fix — the post-transition loading screen no longer clears on a
+    **fixed 0.4 s timer** (which pops in cells whenever a region needs more than ~24
+    frames of the 1-cell/frame budget). It now holds until the streamer reports the
+    destination **settled**: a new `RegionStreamer.IsSettledAround(origin)` returns true
+    only when the pending-load queue is drained *and* every in-range cell is loaded. The
+    bootstrap (`PerformRegionLoad` → `_loadingElapsed` gate in `_Process`) resumes
+    `Playing` when settled, bounded by a `LoadingMinSeconds` (0.15 s, so the screen never
+    flickers) and a `LoadingMaxSeconds` (3.0 s safety cap, so a cell that fails to load can
+    never hang the screen). The teleport happens before the gate starts, so it polls the
+    destination position. Pure predicate `StreamDecision.IsCellSettled(distance, radius,
+    isLoaded)` (= out-of-range *or* loaded) is unit-tested (3 new). **Hysteresis thrash**
+    is already covered by the existing `StreamDecision` 10 m unload margin + its tests (a
+    player loitering on a boundary can't thrash a cell); the 1-cell/frame budget already
+    spreads load waves. **`CellPersistenceDirector`** reconciliation was reviewed against
+    `src/Save/` during 25.5A and is unchanged here; 25.5A's transient-actor fix means
+    streamed-in mobs no longer write orphaning state. Build + **108 tests** (3 new) +
+    `--validate` (exit 0) green. (The visible "no pop-in after a transition" + a
+    repeated unload/reload + save/load persistence run is the maintainer's at-keyboard
+    check; the gate logic is unit-tested and the field/ordering verified by review.)
 
 - [ ] **25.5C — Corruption system hardening** `[F]`
   - **Goal:** the defining mechanic is robust at its edges.

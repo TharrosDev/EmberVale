@@ -30,4 +30,10 @@ public static class StreamDecision
 
         return distance <= loadRadius ? StreamAction.Load : StreamAction.Keep;
     }
+
+    /// <summary>True when a single cell is "settled" for the post-transition gate (Phase 25.5B):
+    /// either out of load range, or already loaded. The streamer is settled — and the loading screen
+    /// can clear — when this holds for every cell and nothing is queued to load.</summary>
+    public static bool IsCellSettled(float distance, float loadRadius, bool isLoaded) =>
+        distance > loadRadius || isLoaded;
 }
