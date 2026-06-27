@@ -307,8 +307,11 @@ localization, region streaming, cell persistence, the map/compass, fast travel.
 Before Phase 26+ stacks races, a real region and a boss on top, this phase
 **debugs, optimizes and hardens what already exists** so the foundation is solid.
 It is the Stage-A analogue of Phase 45 (Alpha Hardening), scoped to the work built
-so far. (Systems 1–21 already had their own Phase 19 optimization and Phase 20 deep-
-debugging passes; 25.5 only re-touches them where Stage A leans on their seams.)
+so far. It covers **two bands**: the Stage A production work (Phases 22–25) *and* a
+fresh regression/hardening pass over the foundational **systems 1–21** — building on,
+not repeating, their earlier Phase 19 (optimization) and Phase 20 (deep-debugging)
+passes, now that Stage A leans on them and the codebase has grown. (Phase 21 Content
+Expansion stays the ongoing content seam, not hardened here.)
 
 Concrete signal to chase: the sandbox boot/load logs already surface recurring
 **save warnings** — transient actors emitting *"no PersistentId"*, and *"orphaned
@@ -327,8 +330,12 @@ rough edge this phase resolves.
 - **Gates & coverage** — grow `ContentValidator`/analytics to cover the Stage A
   content + id domains; finish with a full integration regression sweep and a
   recorded known-issues/perf-baseline ledger.
+- **Foundation (systems 1–21)** — a clustered hardening pass over the core/entity/
+  stats spine, player/combat, enemy AI, items/loot, progression/quests/dialogue,
+  magic/status, world/schedules/events, crafting/factions, and the legacy UI panels.
 
-The session-by-session breakdown (25.5A–G) lives in `SESSION_PLAYBOOK.md`.
+The session-by-session breakdown — **25.5A–G** (Stage A work) and **25.5H–P**
+(systems 1–21) — lives in `SESSION_PLAYBOOK.md`.
 
 ### Phase 26 — Playable Races & Character Creation `[F]`
 

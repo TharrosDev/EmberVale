@@ -635,12 +635,19 @@ no code) — batch them when momentum is good.
 
 ## Phase 25.5 — Stage A Hardening & Stabilization `[F/P]`
 
-> A consolidation pass on everything built in Phases 22–25 — **debug, optimize and
-> harden, no new features** — before races/region/boss stack on top. Every sub-phase
-> is a focused pass on *existing* code. Keep the repo buildable/playable at every
-> commit; each sub-phase ends with the relevant subsystem re-verified (build + tests +
-> `--validate` + an in-engine or harness run). Scope is the Stage A production work;
-> systems 1–21 already had Phase 19 (optimization) + 20 (deep debugging).
+> A consolidation pass on **everything built so far** — **debug, optimize and harden,
+> no new features** — before races/region/boss stack on top. Every sub-phase is a
+> focused pass on *existing* code. Keep the repo buildable/playable at every commit;
+> each sub-phase ends with the relevant subsystem re-verified (build + tests +
+> `--validate` + an in-engine or harness run).
+>
+> Two bands, do them in any order (foundation-first is reasonable): **25.5A–G** harden
+> the Stage A production work (Phases 22–25 — corruption, shell, streaming, map/compass,
+> fast travel); **25.5H–P** are a fresh regression/hardening pass over the foundational
+> **systems 1–21**, building on (not repeating) the earlier Phase 19 (optimization) and
+> Phase 20 (deep debugging) passes — now that Stage A leans on them and the codebase has
+> grown. (Phase 21 Content Expansion is the ongoing content seam, not hardened here; the
+> 19/20 *re-runs* fold into 25.5B profiling + 25.5G's integration sweep.)
 
 - [ ] **25.5A — Save/load integrity sweep** `[F]`
   - **Goal:** clean, warning-free persistence across every system built so far.
@@ -706,6 +713,96 @@ no code) — batch them when momentum is good.
     ledger (e.g. `docs/STAGE_A_STATUS.md`).
   - **Done when:** the integrated Stage A loop runs end to end with no known
     regressions; the ledger captures what remains.
+
+> **Systems 1–21 hardening (25.5H–P).** A fresh pass over the foundational systems the
+> whole game stands on. Each sub-phase clusters a few related systems; the bar is the
+> same — root-cause bugs, tighten edge cases, profile hot paths, leave the subsystem
+> re-verified (build + tests + `--validate` + an in-engine/harness run), **no new
+> features.** Reference `docs/ARCHITECTURE.md` for each system before touching it.
+
+- [ ] **25.5H — Core, entity/component, events, stats & pooling** `[F]` (systems 1)
+  - **Goal:** the architectural spine is leak-free and correct.
+  - **Tasks:** audit `EventBus` subscribe/unsubscribe symmetry (the bootstrap already
+    warns on handlers that survive teardown — drive that to zero), `ServiceLocator`
+    registration lifetimes, autoload order assumptions, the `EntityComponent`
+    `OnInitialize`/`OnTeardown` lifecycle (never `_Ready`), `StatModifier` stack/unstack
+    correctness, and `NodePool` reset-on-reuse. Read `src/Core`, `src/Entities`,
+    `src/Stats` first.
+  - **Done when:** no leaked handlers on scene teardown; stat modifiers apply/remove
+    cleanly; pooled nodes re-arm with no stale state (covered by a unit/harness check).
+
+- [ ] **25.5I — Player controller, locomotion & combat framework** `[F]` (systems 2, 3)
+  - **Goal:** movement and the damage pipeline are tight and predictable.
+  - **Tasks:** input handling under pause/menu (mouse-mode + `UiState`), locomotion edge
+    cases (slopes, ledges, sprint/jump), and the combat pipeline — `DamagePacket`,
+    hit/hurtbox `Area3D` overlap timing (the known gotcha: `Hitbox` polls per physics
+    frame), team/friendly-fire, poise/stagger/block. Read `src/Player`, `src/Movement`,
+    `src/Combat`.
+  - **Done when:** no missed/double hits across the i-frame and overlap-timing cases;
+    movement has no stuck/clip states in a review pass.
+
+- [ ] **25.5J — Enemy AI, perception & spawning** `[F/P]` (system 4)
+  - **Goal:** AI is correct and cheap, including across streaming.
+  - **Tasks:** perception-FSM transitions (aggro/leash/search/return), the far-sleep /
+    perception-cache throttle (`EnemyAIComponent`), `EnemySpawnDirector` density + clean
+    despawn, and AI behaviour for enemies inside *streamed* cells (load/unload while
+    engaged). Read `src/Enemies`.
+  - **Done when:** AI transitions are correct with no thrash; far enemies sleep; no
+    orphaned/duplicated enemies across cell load/unload; profiled cost is flat.
+
+- [ ] **25.5K — Inventory, equipment & loot generation** `[F]` (systems 5, 6, 7)
+  - **Goal:** items move and roll correctly.
+  - **Tasks:** stack merge/split, capacity/carry-weight, equip/unequip stat application
+    through `EquipmentComponent` → `StatsComponent`, affix-roll distribution/rarity
+    gating, loot-table edge cases (empty/zero-weight/over-quantity), pickup despawn +
+    persistence. Read `src/Items`, `src/Loot`.
+  - **Done when:** equip bonuses apply/remove exactly; loot rolls stay in-bounds; a
+    fuzz/harness check over rolls passes.
+
+- [ ] **25.5L — Progression, quests & dialogue** `[F]` (systems 8, 9, 10)
+  - **Goal:** progression and narrative plumbing are robust.
+  - **Tasks:** XP curve/level-up boundaries, perk apply/respec, quest objective
+    advance/complete/prereq chains and reward grant, dialogue graph traversal +
+    condition/effect resolution (extend the existing `DialogueGraphAnalysis`), and
+    story-flag persistence. Read `src/Progression`, `src/Quests`, `src/Dialogue`.
+  - **Done when:** quests advance/complete with no stuck objectives; dialogue branches
+    resolve conditions/effects correctly; flags round-trip (harness/unit covered).
+
+- [ ] **25.5M — Magic, status effects & combat math** `[F]` (system 12)
+  - **Goal:** spellcasting and effects resolve consistently.
+  - **Tasks:** cooldown/mana gating, projectile pooling reuse (`SpellProjectile`), AoE
+    resolution, status-effect stacking/refresh/expiry and DoT tick cadence, and
+    `CombatMath` roll/scaling correctness. Read `src/Magic`, `src/Combat/CombatMath`.
+  - **Done when:** effects stack/expire correctly with no leaked pooled projectiles;
+    damage/heal math is pinned by a unit check.
+
+- [ ] **25.5N — World clock/weather/encounters, NPC schedules & procedural events** `[F]` (systems 11, 13, 17)
+  - **Goal:** the living-world directors are stable, including across streaming.
+  - **Tasks:** `WorldClock` day/phase transitions, weather selection/transition, the
+    encounter director's day-phase gating + spawn cleanup, NPC `ScheduleComponent`
+    routines off the clock, and the world-event director lifecycle (announce → track →
+    reward → cooldown). Verify all behave across region transitions. Read `src/World`,
+    `src/Npc`.
+  - **Done when:** clock/weather/encounter/event/schedule cycles run for a long session
+    with no stuck states, leaked spawns, or double-fires across transitions.
+
+- [ ] **25.5O — Crafting & faction/reputation systems** `[F]` (systems 15, 16)
+  - **Goal:** crafting and standing behave at their edges.
+  - **Tasks:** recipe learn/station-gating/ingredient consumption/output rolling, and
+    faction reputation thresholds → hostility, `FactionComponent` tags driving enemy AI
+    aggression, kill/standing penalties. Read `src/Crafting`, `src/Factions`.
+  - **Done when:** crafting consumes/produces exactly; reputation tiers flip
+    hostility correctly and persist.
+
+- [ ] **25.5P — Legacy UI panels & HUD** `[P/F]` (systems 14, 18)
+  - **Goal:** the older UI surfaces are consistent and warning-free.
+  - **Tasks:** the pre-25 panels (inventory, equipment, crafting, dialogue, quest log,
+    pause) on `UiTheme` — dirty-flag rebuild correctness (never rebuild during a button
+    signal), tooltip system, nameplate/interaction-prompt/toast feed, and fold these
+    into the 25.5E mouse-mode/`UiState` audit so old + new menus compose. Confirm no
+    hard-coded strings remain (route through `Loc`). Read `src/UI`.
+  - **Done when:** every panel opens/closes/rebuilds cleanly with correct mouse-mode and
+    no console errors; no untranslated legacy strings.
 
 ---
 
