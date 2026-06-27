@@ -442,6 +442,16 @@ fast-travel land in 25E–25G.
   short settle (so the destination cells stream in) before returning to `Playing`. Portals are spawned
   by the bootstrap per `RegionResource.Neighbours`, so a reciprocal link is a two-way door with no
   per-scene authoring. Drive it from F1 with `region goto <id>`.
+- **Cell persistence (25D)** — `CellPersistenceDirector` (`Node`, `ISaveable`, built before the
+  streamer) keeps streamed-in actors that carry a `PersistentId` remembering themselves across cell
+  unload/reload. On `RegionCellLoadedEvent` it walks the cell for persistent `IEntity` actors and
+  reconciles them against a session ledger: ids in its `_removed` set are culled (dead enemies stay
+  dead, looted pickups stay gone), survivors get snapshotted `ISaveable`-component state re-applied.
+  Removal is detected uniformly via the body's `TreeExiting` (suppressed while the cell is
+  unloading, so the streamer's own frees don't count). It snapshots survivors on
+  `RegionCellUnloadedEvent` and is itself `ISaveable` (`cell_persistence`: a removed-id list + a
+  component-state map), so the ledger round-trips through a full save/load. Authored actors stay in
+  the cell `.tscn`; nothing about the authoring model changes.
 - **Scene/world-partition convention** (for Phases 27/44 authoring): a region's sub-cell scenes
   live under `scenes/regions/<region>/<cell>.tscn`, where `<region>` is the id minus its
   `region.` prefix (e.g. `scenes/regions/ember_crown/waystone.tscn` for cell `ember_crown.waystone`).

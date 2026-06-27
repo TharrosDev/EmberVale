@@ -524,13 +524,31 @@ no code) — batch them when momentum is good.
     no new errors (the `PersistentId`/orphan warnings are pre-existing). Build + 85 tests +
     `--validate` (2 regions, neighbour + cell-path checks) green.
 
-- [ ] **25D — Persistent actors across streaming (PersistentSpawnDirector)** `[F]`
+- [x] **25D — Persistent actors across streaming (PersistentSpawnDirector)** `[F]` ✅
   - **Goal:** the world remembers itself across load/unload.
   - **Tasks:** ensure streamed-in actors with `PersistentId` restore their state
     via the existing `PersistentSpawnDirector` (PR #29) when their cell reloads
     (dead enemies stay dead, looted chests stay looted). Read `src/Save/` first.
   - **Done when:** kill/loot an actor, leave the cell, return — state persists;
     round-trips through a full save/load too.
+  - **Done:** new `src/Save/CellPersistenceDirector.cs` — a `Node`/`ISaveable` (ServiceLocator +
+    SaveManager registered, built in `BuildWorld` before the streamer) bridges streamed cells to
+    per-actor persistence without changing the authoring model (actors stay in the cell `.tscn`).
+    On `RegionCellLoadedEvent` it walks the cell subtree for `IEntity` actors with a `PersistentId`
+    and reconciles: an id in its `_removed` ledger is culled (`QueueFree`), survivors get any
+    snapshotted `ISaveable`-component state re-applied (health/inventory). Removal is detected
+    uniformly via the actor body's `TreeExiting` (enemy death *and* pickup despawn both count),
+    suppressed while the cell is unloading (an `_unloading` cell-id guard, since the streamer's own
+    frees fire the same signal). On `RegionCellUnloadedEvent` it snapshots survivors. It is itself
+    `ISaveable` (`SaveId "cell_persistence"`: a `removed` id list + a `state` map keyed by component
+    `SaveId`), snapshotting live cells in `Save()` and re-reconciling them in `Load()`, so the
+    ledger round-trips through a full save/load. Demo: a persistent "Waystone Relic" pickup
+    (`HealthPotion`) authored into `scenes/regions/ember_crown/waystone.tscn`
+    (`PersistentId = "ember_crown.waystone.relic"`, mirrors `ItemPickupFactory`'s node shape) — take
+    it, leave the cell, return → it stays gone, and `_removed` survives save/load. Build + 85 tests
+    + `--validate` + clean boot green. (The interactive pick-up→leave→return and save/load
+    round-trip is the maintainer's at-keyboard check — the Godot MCP can't inject New Game / movement
+    / `E`; logic reviewed against the Godot 4.7 C# API.)
 
 - [ ] **25E — World map data + screen** `[F]`
   - **Goal:** a data-driven map.
