@@ -24,6 +24,10 @@ public partial class RegionResource : Resource
     /// <summary>The realm this region belongs to (the lore taxonomy it rolls up under).</summary>
     [Export] public Realm Realm { get; set; } = Realm.EmberCrown;
 
+    /// <summary>Where the player appears when entering this region via a hard transition (Phase 25C).
+    /// The transition handler teleports the player here; neighbour portals are placed relative to it.</summary>
+    [Export] public Vector3 SpawnPoint { get; set; } = Vector3.Zero;
+
     /// <summary>The streamable sub-cells that make up this region. The <see cref="RegionStreamer"/>
     /// loads/unloads these by distance (Phase 25B). The procedural sandbox keeps an always-loaded
     /// base and lists its peripheral cells here.</summary>
