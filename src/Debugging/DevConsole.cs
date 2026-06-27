@@ -133,7 +133,7 @@ public partial class DevConsole : CanvasLayer
     {
         _open = open;
         _panel.Visible = open;
-        UiState.MenuOpen = open;
+        if (open) UiState.Open(this); else UiState.Close(this);
 
         if (open)
         {
@@ -143,8 +143,10 @@ public partial class DevConsole : CanvasLayer
         else
         {
             _input.ReleaseFocus();
+            // Only recapture if no other menu still owns the mouse (e.g. the console was opened
+            // over the inventory) — otherwise the player would look around behind that open menu.
             bool playing = GameManager.Instance is { IsPlaying: true };
-            Godot.Input.MouseMode = playing
+            Godot.Input.MouseMode = playing && !UiState.MenuOpen
                 ? Godot.Input.MouseModeEnum.Captured
                 : Godot.Input.MouseModeEnum.Visible;
         }

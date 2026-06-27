@@ -124,10 +124,10 @@ public partial class InventoryPanel : CanvasLayer
     {
         bool open = !_panel.Visible;
         _panel.Visible = open;
-        UiState.MenuOpen = open;
+        if (open) UiState.Open(this); else UiState.Close(this);
 
         bool playing = GameManager.Instance is { IsPlaying: true };
-        Godot.Input.MouseMode = open || !playing
+        Godot.Input.MouseMode = UiState.MenuOpen || !playing
             ? Godot.Input.MouseModeEnum.Visible
             : Godot.Input.MouseModeEnum.Captured;
 

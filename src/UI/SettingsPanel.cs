@@ -42,14 +42,14 @@ public partial class SettingsPanel : CanvasLayer
     {
         ProcessMode = ProcessModeEnum.Always;
         Layer = 13; // above the main menu (11), pause menu (10), and slot panel (12)
-        UiState.MenuOpen = true;
+        UiState.Open(this);
         Godot.Input.MouseMode = Godot.Input.MouseModeEnum.Visible;
         Build();
     }
 
     public override void _ExitTree()
     {
-        UiState.MenuOpen = false;
+        UiState.Close(this);
     }
 
     public override void _Process(double delta)

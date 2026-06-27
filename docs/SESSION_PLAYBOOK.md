@@ -768,7 +768,7 @@ no code) — batch them when momentum is good.
     and the `SettingsService` wiring verified against the boot order — registered at line 118
     before the player is built.)
 
-- [ ] **25.5E — UI/HUD interaction & input hardening** `[F/P]`
+- [x] **25.5E — UI/HUD interaction & input hardening** `[F/P]` ✅
   - **Goal:** the new UI surfaces compose cleanly.
   - **Tasks:** audit mouse-mode/`UiState.MenuOpen` correctness across overlapping
     menus (modal map vs pause vs inventory vs dialogue vs dev console), focus
@@ -776,6 +776,25 @@ no code) — batch them when momentum is good.
     and a localization sweep (no hard-coded player strings slipped through since 24G).
   - **Done when:** opening/closing any combination of menus leaves the mouse + player
     control in the right state; no untranslated UI strings remain.
+  - **Done:** fixed a real **overlapping-menu mouse bug**. `UiState.MenuOpen` was a single
+    `bool` that six surfaces (Inventory/Crafting/Dialogue/Map panels, SettingsPanel, DevConsole)
+    each set independently, *and* each drove the OS mouse mode off its own local `open` flag.
+    Opening two at once — e.g. the **F1 dev console over an open inventory**, or settings over a
+    modal — then closing the inner one flipped `MenuOpen` to false and **recaptured the mouse
+    while the outer menu was still visible**, so the player looked around behind it. Root cause:
+    a bool can't represent "two menus open", and each close read its *local* state, not the
+    aggregate. Fix: `UiState` is now an **owner set** (`HashSet<object>`, `Open(this)`/
+    `Close(this)`, `MenuOpen => count > 0`) and every mouse decision reads the aggregate
+    `UiState.MenuOpen`, so the mouse only recaptures when the *last* menu closes. Pure and
+    Godot-free → 4 new `UiStateTests` pinning the exact overlap case. No `PlayerController`/
+    `PauseMenu` change — both already consume `UiState.MenuOpen`, which now means the right
+    thing. **Audits (no change):** localization sweep of `src/UI` is clean — the only literal is
+    the dev console's `PlaceholderText`, exempt per CLAUDE.md §6; `Settings.ReducedMotion` is a
+    documented Phase-54 placeholder (nothing consumes it yet, by design, not a regression);
+    overlay `Layer` ordering + `MouseFilter = Ignore` on non-interactive overlays read correct.
+    Build + **121 tests** (4 new) + `--validate` (exit 0) green. (Opening the inventory, pressing
+    F1 over it, and closing the console to confirm the mouse stays free until the inventory also
+    closes is the maintainer's at-keyboard check; the count logic is unit-tested.)
 
 - [ ] **25.5F — Validator & analytics coverage** `[F]`
   - **Goal:** `--validate` is a real gate for the new content/id domains.
