@@ -120,6 +120,7 @@ authoring recipes that turn them into content with no new code, see CLAUDE.md §
 | 23 | The Corruption System | F | The LORE's defining mechanic: corruption meter, thresholds, appearance/dialogue/ability shifts |
 | 24 | Meta-Shell & Localization Spine | F | Title screen, settings, save-slot/new-game flow, options, the i18n string layer |
 | 25 | Region Streaming & World Map | F | Stream large authored regions, fast-travel graph, the in-game map/compass |
+| 25.5 | Stage A Hardening & Stabilization | F/P | Debug, optimize and harden everything built in 22–25 before new features stack on it |
 | 26 | Playable Races & Character Creation | F | The six LORE races as data-driven trait sets + a creator |
 | 27 | First Playable Region — Ember Crown (vertical core) | C/P | One real region authored end-to-end to prove the pipeline |
 | 28 | First Boss — a Fallen Flamebearer (vertical core) | F/C | One full boss encounter (the Iron King slice) proving boss tooling |
@@ -297,6 +298,37 @@ streaming out of scope (Phase 19 note). The four-realm world needs it.
   (later) safety; respects the day/night clock and weather on arrival.
 - **World partition discipline** — naming/placement conventions so authored
   regions (Phase 27, 44) drop into streaming cells without bespoke wiring.
+
+### Phase 25.5 — Stage A Hardening & Stabilization `[F/P]`
+
+A consolidation pass, **not new features.** Phases 22–25 added a lot of load-bearing
+*systems* fast — the corruption system, the meta-shell/save-slots/settings,
+localization, region streaming, cell persistence, the map/compass, fast travel.
+Before Phase 26+ stacks races, a real region and a boss on top, this phase
+**debugs, optimizes and hardens what already exists** so the foundation is solid.
+It is the Stage-A analogue of Phase 45 (Alpha Hardening), scoped to the work built
+so far. (Systems 1–21 already had their own Phase 19 optimization and Phase 20 deep-
+debugging passes; 25.5 only re-touches them where Stage A leans on their seams.)
+
+Concrete signal to chase: the sandbox boot/load logs already surface recurring
+**save warnings** — transient actors emitting *"no PersistentId"*, and *"orphaned
+state on load"* entries for stale component keys — exactly the kind of latent
+rough edge this phase resolves.
+
+- **Save/load integrity** — root-cause the recurring `PersistentId`/orphaned-state
+  warnings; guarantee every new `ISaveable` (corruption, settings, map, fasttravel,
+  cell-persistence, save slots) round-trips cleanly with zero spurious warnings.
+- **Streaming & perf** — stress the `RegionStreamer`/`CellPersistenceDirector` under
+  fast traversal and repeated load/unload + save/load; replace the fixed transition
+  settle with a streamer-idle gate; profile load hitches.
+- **System hardening** — edge-case passes on the corruption system, the meta-shell/
+  settings/save-slot lifecycle, and the new UI surfaces (modal map, compass,
+  vignette) including mouse-mode/`UiState` correctness across overlapping menus.
+- **Gates & coverage** — grow `ContentValidator`/analytics to cover the Stage A
+  content + id domains; finish with a full integration regression sweep and a
+  recorded known-issues/perf-baseline ledger.
+
+The session-by-session breakdown (25.5A–G) lives in `SESSION_PLAYBOOK.md`.
 
 ### Phase 26 — Playable Races & Character Creation `[F]`
 

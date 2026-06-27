@@ -633,6 +633,82 @@ no code) — batch them when momentum is good.
 
 ---
 
+## Phase 25.5 — Stage A Hardening & Stabilization `[F/P]`
+
+> A consolidation pass on everything built in Phases 22–25 — **debug, optimize and
+> harden, no new features** — before races/region/boss stack on top. Every sub-phase
+> is a focused pass on *existing* code. Keep the repo buildable/playable at every
+> commit; each sub-phase ends with the relevant subsystem re-verified (build + tests +
+> `--validate` + an in-engine or harness run). Scope is the Stage A production work;
+> systems 1–21 already had Phase 19 (optimization) + 20 (deep debugging).
+
+- [ ] **25.5A — Save/load integrity sweep** `[F]`
+  - **Goal:** clean, warning-free persistence across every system built so far.
+  - **Tasks:** root-cause the recurring boot/load warnings (transient actors logging
+    *"no PersistentId"*; *"orphaned state on load"* for stale `stats:*` keys) — give
+    intentionally-transient actors a clear policy (stable id, or suppress the warning)
+    and prune orphaned entries on load. Confirm every new `ISaveable` (corruption,
+    settings, map, fasttravel, cell-persistence, save slots) round-trips with zero
+    spurious warnings. Read `src/Save/` first.
+  - **Done when:** a New-Game → play → F5/F9 cycle and a Continue produce **no**
+    spurious save warnings; a save/load self-check (dev command or `ReproHarness`
+    scenario) passes.
+
+- [ ] **25.5B — Region streaming stability & profiling** `[F/P]`
+  - **Goal:** streaming and cell persistence are hitch-free and correct under stress.
+  - **Tasks:** stress the `RegionStreamer` (fast boundary crossing, hysteresis thrash,
+    multi-cell load waves vs the 1-cell/frame budget); replace the fixed 0.4s
+    transition settle (`_loadingCountdown`) with a streamer-idle gate to kill pop-in;
+    verify `CellPersistenceDirector` reconciliation under repeated load/unload + a full
+    save/load. Profile load hitches.
+  - **Done when:** rapid traversal/transitions show no thrash or visible pop-in
+    (reviewed in-engine); persistence survives repeated unload/reload and save/load.
+
+- [ ] **25.5C — Corruption system hardening** `[F]`
+  - **Goal:** the defining mechanic is robust at its edges.
+  - **Tasks:** edge-case tier thresholds/transitions, appearance/dialogue/ability
+    gating, the both-endings eligibility dial; confirm `CorruptionTierChangedEvent`
+    fires correctly under rapid changes and the HUD gauge/vignette stay in sync; verify
+    the save round-trip.
+  - **Done when:** corruption drives its consequences with no missed/duplicated tier
+    events and round-trips through save/load; covered by a unit or harness check.
+
+- [ ] **25.5D — Meta-shell, settings & state-machine robustness** `[F]`
+  - **Goal:** the shell never wedges or corrupts a slot.
+  - **Tasks:** exercise the save-slot lifecycle (new/continue/load/delete, autosave
+    ring rotation, quick/manual save), slot-metadata integrity, settings apply-on-boot
+    across every category, and the MainMenu↔Loading↔Playing↔Paused machine under odd
+    sequences (load while paused, delete the active slot, etc.).
+  - **Done when:** every shell path is exercised with no soft-locks, lost slots, or
+    unapplied settings.
+
+- [ ] **25.5E — UI/HUD interaction & input hardening** `[F/P]`
+  - **Goal:** the new UI surfaces compose cleanly.
+  - **Tasks:** audit mouse-mode/`UiState.MenuOpen` correctness across overlapping
+    menus (modal map vs pause vs inventory vs dialogue vs dev console), focus
+    navigation, the compass/vignette/loading-screen overlays, reduced-motion guards,
+    and a localization sweep (no hard-coded player strings slipped through since 24G).
+  - **Done when:** opening/closing any combination of menus leaves the mouse + player
+    control in the right state; no untranslated UI strings remain.
+
+- [ ] **25.5F — Validator & analytics coverage** `[F]`
+  - **Goal:** `--validate` is a real gate for the new content/id domains.
+  - **Tasks:** grow `ContentValidator` to cover the Stage A domains added since 22
+    (regions, cells, travel nodes, corruption-gated content, locale-key presence) and
+    confirm the analytics spine logs the new events; close validator gaps.
+  - **Done when:** `--validate` catches a deliberately-broken region/cell/travel/locale
+    reference; analytics records the Stage A events.
+
+- [ ] **25.5G — Integration regression sweep & known-issues ledger** `[C/P]`
+  - **Goal:** declare the Stage-A-so-far foundation stable.
+  - **Tasks:** a full play-through touching every system 22–25 together; fix
+    interaction bugs found; record residual issues + perf baselines in a `docs/`
+    ledger (e.g. `docs/STAGE_A_STATUS.md`).
+  - **Done when:** the integrated Stage A loop runs end to end with no known
+    regressions; the ledger captures what remains.
+
+---
+
 ## Phase 26 — Playable Races & Character Creation `[F]`
 
 > Six LORE races as data-driven trait sets + a creator that writes them into the
