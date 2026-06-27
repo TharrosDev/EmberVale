@@ -739,7 +739,7 @@ no code) — batch them when momentum is good.
     appearance reset on an F9 that lowers corruption is the maintainer's at-keyboard check via the
     23B `corrupt` dev command; the transition logic is unit-tested and `Load`/`Apply` now share it.)
 
-- [ ] **25.5D — Meta-shell, settings & state-machine robustness** `[F]`
+- [x] **25.5D — Meta-shell, settings & state-machine robustness** `[F]` ✅
   - **Goal:** the shell never wedges or corrupts a slot.
   - **Tasks:** exercise the save-slot lifecycle (new/continue/load/delete, autosave
     ring rotation, quick/manual save), slot-metadata integrity, settings apply-on-boot
@@ -747,6 +747,26 @@ no code) — batch them when momentum is good.
     sequences (load while paused, delete the active slot, etc.).
   - **Done when:** every shell path is exercised with no soft-locks, lost slots, or
     unapplied settings.
+  - **Done:** audited the three shell surfaces and fixed the one real defect — **unapplied
+    settings**. The 24F settings panel exposes a Mouse-Sensitivity slider (0.05–2.0) and an
+    Invert-Y toggle, but `PlayerController` used a *hardcoded* `MouseSensitivity = 0.0028f`,
+    never read `SettingsService`, and never honoured Invert-Y — so both controls did nothing.
+    Fix: the controller now resolves `SettingsService` from the `ServiceLocator` in
+    `OnInitialize` and scales its base sensitivity by the live multiplier each frame, with
+    Invert-Y flipping the pitch axis; the maths is a pure `SettingsMath.LookStep` /
+    `ApplyPitch` pair (5 new tests; the default 1.0 multiplier reproduces the old feel
+    exactly, so no behaviour change at defaults). Reading live each frame means a mid-game
+    change in the pause→settings panel applies immediately, no re-apply plumbing needed.
+    **State machine** (audited, sound): `GameManager.TogglePause` only acts in Playing/Paused,
+    so Esc during Loading/MainMenu can't wedge a transition; only `Paused` pauses the tree, so
+    `Loading`/`Playing` always unpause (a load *while* paused correctly resumes). **Slot
+    lifecycle** (audited, sound): `DeleteSlot` removes files+dir and leaves `ActiveSlot`
+    dangling, but the next F5 just recreates that slot (no soft-lock), and Continue is disabled
+    when no saves exist; autosave-ring rotation and slot headers are already unit-pinned. Build +
+    **117 tests** (5 new) + `--validate` (exit 0) green. (Feeling the sensitivity slider/Invert-Y
+    actually move the camera is the maintainer's at-keyboard check; the look maths is unit-tested
+    and the `SettingsService` wiring verified against the boot order — registered at line 118
+    before the player is built.)
 
 - [ ] **25.5E — UI/HUD interaction & input hardening** `[F/P]`
   - **Goal:** the new UI surfaces compose cleanly.
