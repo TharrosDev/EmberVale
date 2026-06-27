@@ -1,10 +1,12 @@
 using Embervale.Combat;
 using Embervale.Core;
 using Embervale.Core.Events;
+using Embervale.Core.Services;
 using Embervale.Entities;
 using Embervale.Interaction;
 using Embervale.Magic;
 using Embervale.Movement;
+using Embervale.Settings;
 using Godot;
 
 namespace Embervale.Player;
@@ -22,11 +24,16 @@ namespace Embervale.Player;
 [GlobalClass]
 public partial class PlayerController : EntityComponent
 {
+    /// <summary>Base radians-per-pixel look sensitivity; the player's settings multiplier (24F slider)
+    /// scales this at runtime (Phase 25.5D).</summary>
     [Export]
     public float MouseSensitivity { get; set; } = 0.0028f;
 
     [Export]
     public float InteractRange { get; set; } = 3f;
+
+    /// <summary>Pitch clamp (radians) so the camera can't flip over the top/bottom.</summary>
+    private const float PitchLimit = 1.45f;
 
     /// <summary>Pitch node (rotated up/down). The camera is its child.</summary>
     public Node3D? CameraPivot { get; set; }
@@ -36,6 +43,7 @@ public partial class PlayerController : EntityComponent
     private MeleeWeaponComponent? _weapon;
     private CombatComponent? _combat;
     private SpellcastingComponent? _spellcasting;
+    private SettingsService? _settings;
     private float _pitch;
 
     /// <summary>The entity the player is currently looking at within interact range, if any.
@@ -56,6 +64,9 @@ public partial class PlayerController : EntityComponent
         _weapon = owner.GetComponent<MeleeWeaponComponent>();
         _combat = owner.GetComponent<CombatComponent>();
         _spellcasting = owner.GetComponent<SpellcastingComponent>();
+        _settings = ServiceLocator.Instance is { } locator && locator.TryGet(out SettingsService settings)
+            ? settings
+            : null;
 
         EventBus.Instance?.Subscribe<GameStateChangedEvent>(OnGameStateChanged);
         CaptureMouse(true);
@@ -163,9 +174,12 @@ public partial class PlayerController : EntityComponent
         if (@event is InputEventMouseMotion motion &&
             Godot.Input.MouseMode == Godot.Input.MouseModeEnum.Captured)
         {
-            _yaw.RotateY(-motion.Relative.X * MouseSensitivity);
+            float multiplier = _settings?.Current.MouseSensitivity ?? 1f;
+            bool invertY = _settings?.Current.InvertY ?? false;
 
-            _pitch = Mathf.Clamp(_pitch - (motion.Relative.Y * MouseSensitivity), -1.45f, 1.45f);
+            _yaw.RotateY(-SettingsMath.LookStep(motion.Relative.X, MouseSensitivity, multiplier));
+            _pitch = SettingsMath.ApplyPitch(
+                _pitch, SettingsMath.LookStep(motion.Relative.Y, MouseSensitivity, multiplier), invertY, PitchLimit);
             if (CameraPivot != null)
             {
                 CameraPivot.Rotation = new Vector3(_pitch, 0f, 0f);

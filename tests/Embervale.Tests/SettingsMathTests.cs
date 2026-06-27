@@ -51,4 +51,38 @@ public class SettingsMathTests
     {
         Assert.Equal(expected, SettingsMath.ClampVolume(input));
     }
+
+    // --- Look (Phase 25.5D: wire the 24F mouse settings into the controller) ----
+
+    [Fact]
+    public void LookStep_DefaultMultiplierLeavesBaseUnchanged()
+    {
+        // multiplier 1.0 (the Settings default) must reproduce the old hardcoded feel exactly.
+        Assert.Equal(100f * 0.0028f, SettingsMath.LookStep(100f, 0.0028f, 1f), 6);
+    }
+
+    [Fact]
+    public void LookStep_ScalesWithMultiplier()
+    {
+        Assert.Equal(2f * (10f * 0.0028f), SettingsMath.LookStep(10f, 0.0028f, 2f), 6);
+    }
+
+    [Fact]
+    public void ApplyPitch_NormalSubtractsStep()
+    {
+        Assert.Equal(0.4f, SettingsMath.ApplyPitch(0.5f, 0.1f, invertY: false, 1.45f), 5);
+    }
+
+    [Fact]
+    public void ApplyPitch_InvertYAddsStep()
+    {
+        Assert.Equal(0.6f, SettingsMath.ApplyPitch(0.5f, 0.1f, invertY: true, 1.45f), 5);
+    }
+
+    [Fact]
+    public void ApplyPitch_ClampsToLimit()
+    {
+        Assert.Equal(1.45f, SettingsMath.ApplyPitch(1.4f, -1f, invertY: false, 1.45f), 5);  // looking far up
+        Assert.Equal(-1.45f, SettingsMath.ApplyPitch(-1.4f, 1f, invertY: false, 1.45f), 5); // far down
+    }
 }

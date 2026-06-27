@@ -31,4 +31,18 @@ public static class SettingsMath
 
     /// <summary>Clamps a linear volume into the valid 0..1 fader range.</summary>
     public static float ClampVolume(float linear) => Math.Clamp(linear, 0f, 1f);
+
+    /// <summary>Per-frame look step from a raw mouse delta: the controller's base sensitivity scaled by
+    /// the player's sensitivity multiplier setting (Phase 25.5D wires the 24F slider into the
+    /// controller, which previously ignored it).</summary>
+    public static float LookStep(float rawDelta, float baseSensitivity, float multiplier) =>
+        rawDelta * baseSensitivity * multiplier;
+
+    /// <summary>New pitch after a vertical look step, honouring Invert-Y and the look limit. Up is
+    /// negative pitch (subtract the step); Invert-Y adds instead, flipping the vertical axis.</summary>
+    public static float ApplyPitch(float pitch, float verticalStep, bool invertY, float limit)
+    {
+        float next = invertY ? pitch + verticalStep : pitch - verticalStep;
+        return Math.Clamp(next, -limit, limit);
+    }
 }
