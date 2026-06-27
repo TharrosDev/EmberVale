@@ -1,8 +1,13 @@
-[gd_scene load_steps=9 format=3 uid="uid://crgnwaystone01"]
+[gd_scene load_steps=11 format=3 uid="uid://crgnwaystone01"]
 
 [ext_resource type="Script" path="res://src/Entities/Entity.cs" id="1_entity"]
 [ext_resource type="Script" path="res://src/Items/ItemPickupComponent.cs" id="2_pickup"]
 [ext_resource type="Resource" path="res://data/items/HealthPotion.tres" id="3_item"]
+[ext_resource type="Script" path="res://src/World/TravelNodeComponent.cs" id="4_travel"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_waystone"]
+radius = 0.7
+height = 3.0
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_waystone"]
 top_radius = 0.35
@@ -52,3 +57,19 @@ shape = SubResource("BoxShape3D_relic")
 script = ExtResource("2_pickup")
 Item = ExtResource("3_item")
 Quantity = 1
+
+[node name="Waystone" type="Node3D" parent="."]
+script = ExtResource("1_entity")
+DisplayName = "Ember Crown Waystone"
+
+[node name="Collider" type="StaticBody3D" parent="Waystone"]
+
+[node name="Shape" type="CollisionShape3D" parent="Waystone/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+shape = SubResource("CylinderShape3D_waystone")
+
+[node name="Travel" type="Node" parent="Waystone"]
+script = ExtResource("4_travel")
+Id = "travel.ember_crown.waystone"
+TravelName = "Ember Crown Waystone"
+RegionId = "region.ember_crown"

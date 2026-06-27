@@ -71,3 +71,8 @@ hud.compass.s,S
 hud.compass.sw,SW
 hud.compass.w,W
 hud.compass.nw,NW
+travel.prompt_attune,Attune to {0}
+travel.prompt_attuned,{0} (attuned)
+travel.button,Travel to {0}
+map.travel_header,FAST TRAVEL
+map.travel_empty,No waystones attuned yet.

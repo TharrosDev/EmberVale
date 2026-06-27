@@ -600,13 +600,36 @@ no code) — batch them when momentum is good.
     where expected (flip the `-Z` knob if reversed), the POI tick and goblin marker tracking — is the
     maintainer's at-keyboard check; the draw + resolve paths ran live without throwing.
 
-- [ ] **25G — Fast-travel graph** `[F]`
+- [x] **25G — Fast-travel graph** `[F]` ✅
   - **Goal:** travel between discovered nodes.
   - **Tasks:** add discoverable travel nodes (interactables that register on the
     map), a fast-travel action from the map screen (gated by discovery), and
     arrival that respects clock/weather. Reuse the hard-transition load path (25C).
   - **Done when:** discovering and selecting a travel node moves the player there
     via a clean load; discovery + node list persist.
+  - **Done:** new `src/World/FastTravelService.cs` — a `Node`/`ISaveable` (`SaveId
+    "fasttravel"`, ServiceLocator + SaveManager registered, built next to `MapService`) tracking the
+    set of attuned travel nodes (id + label + region + landing position), with a `Revision` counter
+    for the UI; the full node is persisted (it carries its own position, not a database lookup), so the
+    network round-trips save/load. A `TravelNodeComponent` (`src/World/TravelNodeComponent.cs`, an
+    `InteractableComponent`, mirrors `RegionTransitionComponent`) is the world interactable: on `E` it
+    `Discover`s itself (records its world position) and is revealed on the map. The map screen
+    (`src/UI/MapScreen.cs`) gained a **FAST TRAVEL** section listing a button per attuned node, and is
+    now **modal** (frees the mouse + suspends player control via `UiState.MenuOpen`, mirroring the
+    inventory) so the buttons are clickable; a button publishes a new `FastTravelRequestedEvent` and
+    closes the map. The bootstrap's 25C handler was refactored into a shared
+    `PerformRegionLoad(destination, landing, message)` — the neighbour-portal path passes the region
+    `SpawnPoint`, the new `OnFastTravelRequested` passes the node's position and allows same-region
+    jumps; the streamer only swaps when the region actually changes, and the world clock/weather are
+    left untouched so arrival respects current time/weather. A `travel <list|goto <id>>` dev command
+    (mirrors `region`) drives jumps from F1 — the runnable check. A demo waystone (the
+    `travel.ember_crown.waystone` node + a cylinder collider) is authored into
+    `scenes/regions/ember_crown/waystone.tscn`. Build + **91 tests** + `--validate` (exit 0) green;
+    **ran the game** — the waystone cell streamed in with the new node + collider, and the refactored
+    portal path still travelled EmberCrown ⇄ Frostfang both ways, all with no new errors (the
+    `fasttravel` save key is recognized; only the pre-existing `PersistentId`/orphan save warnings
+    remain). The interactive attune → open map → click → warp + save/load-persistence run is the
+    maintainer's at-keyboard check (the Godot MCP can't inject `E`/`M`/a mouse click).
 
 ---
 

@@ -43,6 +43,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("weather", "weather <id>", "Force a weather state.", Weather));
         console.Register(new ConsoleCommand("event", "event <id>", "Force a world event.", Event));
         console.Register(new ConsoleCommand("region", "region <list|goto <id>>", "List regions or hard-load into one (Phase 25C).", Region));
+        console.Register(new ConsoleCommand("travel", "travel <list|goto <id>>", "List attuned travel nodes or fast-travel to one (Phase 25G).", Travel));
 
         console.Register(new ConsoleCommand("seed", "seed <n>", "Seed the global RNG (for repro).", Seed));
         console.Register(new ConsoleCommand("repro", "repro [name]", "Run a repro scenario.", Repro));
@@ -394,6 +395,40 @@ public static class DevCommands
         }
 
         return "usage: region <list|goto <id>>";
+    }
+
+    private static string Travel(DevConsole console, string[] args)
+    {
+        if (ServiceLocator.Instance is not { } locator || !locator.TryGet(out FastTravelService travel))
+        {
+            return "fast-travel service unavailable";
+        }
+
+        if (args.Length >= 1 && args[0] == "list")
+        {
+            var sb = new StringBuilder("travel nodes:");
+            bool any = false;
+            foreach (TravelNode node in travel.Nodes)
+            {
+                any = true;
+                sb.Append($"\n  {node.Id} — {node.Label} ({node.RegionId})");
+            }
+
+            return any ? sb.ToString() : "no travel nodes attuned yet";
+        }
+
+        if (args.Length >= 2 && args[0] == "goto")
+        {
+            if (!travel.HasNode(args[1]))
+            {
+                return $"unknown/undiscovered travel node '{args[1]}'";
+            }
+
+            EventBus.Instance?.Publish(new FastTravelRequestedEvent(args[1]));
+            return $"fast travelling to {args[1]}";
+        }
+
+        return "usage: travel <list|goto <id>>";
     }
 
     private static string Seed(DevConsole console, string[] args)

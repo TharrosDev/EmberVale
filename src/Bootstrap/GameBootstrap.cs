@@ -72,6 +72,7 @@ public partial class GameBootstrap : Node3D
     // cells stream in before play resumes.
     private RegionStreamer? _streamer;
     private MapService? _mapService;
+    private FastTravelService? _fastTravel;
     private readonly System.Collections.Generic.List<Entity> _portals = new();
     private double _loadingCountdown = -1d;
 
@@ -277,9 +278,15 @@ public partial class GameBootstrap : Node3D
         _mapService = new MapService { Name = "MapService" };
         AddChild(_mapService);
         _mapService.DiscoverRegion(_currentRegionId); // the starting region is known immediately
+
+        // Fast-travel network (Phase 25G): the set of attuned travel nodes; persists, read by the map.
+        _fastTravel = new FastTravelService { Name = "FastTravel" };
+        AddChild(_fastTravel);
+
         var mapScreen = new MapScreen();
         AddChild(mapScreen);
         mapScreen.SetMapService(_mapService);
+        mapScreen.SetFastTravel(_fastTravel);
 
         SpawnRegionStreamer();
     }
@@ -377,17 +384,50 @@ public partial class GameBootstrap : Node3D
             return;
         }
 
+        PerformRegionLoad(destination, destination.SpawnPoint, $"Entering {destination.DisplayName}...");
+    }
+
+    /// <summary>Fast-travels to a discovered <see cref="FastTravelService"/> node (Phase 25G): resolves
+    /// the node and reuses the 25C hard-load path, but lands the player at the node's exact position
+    /// (and allows same-region jumps, unlike a neighbour portal).</summary>
+    private void OnFastTravelRequested(FastTravelRequestedEvent e)
+    {
+        if (ServiceLocator.Instance is not { } locator || !locator.TryGet(out FastTravelService travel) ||
+            !travel.TryGetNode(e.NodeId, out TravelNode node))
+        {
+            Log.Warn($"Fast travel to '{e.NodeId}' aborted (unknown node).");
+            return;
+        }
+
+        RegionResource? destination = RegionDatabase.Get(node.RegionId);
+        if (destination == null || _player == null || _streamer == null)
+        {
+            Log.Warn($"Fast travel to '{e.NodeId}' aborted (unknown region or world not built).");
+            return;
+        }
+
+        PerformRegionLoad(destination, node.Position, $"Fast travelling to {node.Label}...");
+    }
+
+    /// <summary>The shared hard-load (Phase 25C/25G): show the loading screen, swap the streamer to the
+    /// destination region (only when it actually changes), teleport the player to <paramref name="landing"/>,
+    /// autosave the boundary, then settle for a few frames so the new cells stream in before play resumes.
+    /// The world clock and weather are untouched, so arrival respects the current time/weather.</summary>
+    private void PerformRegionLoad(RegionResource destination, Vector3 landing, string message)
+    {
         GameManager.Instance?.ChangeState(GameState.Loading);
 
-        _streamer.UnloadAll();
-        _currentRegionId = e.RegionId;
-        _streamer.Configure(destination);
-        _mapService?.DiscoverRegion(e.RegionId); // entering reveals it on the map (Phase 25E)
+        if (destination.Id != _currentRegionId)
+        {
+            _streamer!.UnloadAll();
+            _currentRegionId = destination.Id;
+            _streamer.Configure(destination);
+            _mapService?.DiscoverRegion(destination.Id); // entering reveals it on the map (Phase 25E)
+            SpawnRegionPortals(destination);
+        }
 
-        _player.Velocity = Vector3.Zero;
-        _player.GlobalPosition = destination.SpawnPoint;
-
-        SpawnRegionPortals(destination);
+        _player!.Velocity = Vector3.Zero;
+        _player.GlobalPosition = landing;
 
         if (ServiceLocator.Instance != null && ServiceLocator.Instance.TryGet(out AutosaveService autosave))
         {
@@ -397,7 +437,7 @@ public partial class GameBootstrap : Node3D
         // ponytail: fixed settle delay covers the streamer's 1-cell/frame budget; gate on streamer-idle
         // if pop-in shows. Play resumes in _Process when this elapses.
         _loadingCountdown = 0.4d;
-        Log.Info($"Entering {destination.DisplayName}...");
+        Log.Info(message);
     }
 
     public override void _ExitTree()
@@ -853,6 +893,7 @@ public partial class GameBootstrap : Node3D
         bus.Subscribe<GameSavedEvent>(OnGameSaved);
         bus.Subscribe<GameLoadedEvent>(OnGameLoaded);
         bus.Subscribe<RegionTransitionRequestedEvent>(OnRegionTransitionRequested);
+        bus.Subscribe<FastTravelRequestedEvent>(OnFastTravelRequested);
     }
 
     private void UnsubscribeEvents()
@@ -868,6 +909,7 @@ public partial class GameBootstrap : Node3D
         bus.Unsubscribe<GameSavedEvent>(OnGameSaved);
         bus.Unsubscribe<GameLoadedEvent>(OnGameLoaded);
         bus.Unsubscribe<RegionTransitionRequestedEvent>(OnRegionTransitionRequested);
+        bus.Unsubscribe<FastTravelRequestedEvent>(OnFastTravelRequested);
     }
 
     private void OnEntityDamaged(EntityDamagedEvent e)

@@ -467,6 +467,14 @@ fast-travel land in 25E–25G.
   resolved to a live world target by `ObjectiveLocator` per objective type — Kill → nearest enemy in
   the `objective.enemy` group, Collect → nearest pickup in `objective.pickup` (the seam extends to
   Talk/Reach). Cardinal letters go through the `Loc` layer.
+- **Fast travel (25G)** — `FastTravelService` (`Node`, `ISaveable`, `fasttravel`) is the network of
+  attuned travel nodes; a `TravelNodeComponent` (a placed `InteractableComponent`) records itself
+  (id + label + region + landing position) on interact. The (now modal) `MapScreen` lists a button per
+  node; selecting one publishes a `FastTravelRequestedEvent`. The bootstrap reuses the 25C hard-load
+  via a shared `PerformRegionLoad(destination, landing, message)` — the neighbour portals land at the
+  region `SpawnPoint`, fast travel lands at the node position (same-region jumps allowed); the streamer
+  only swaps regions when the destination differs, and clock/weather are untouched so arrival respects
+  the current time. The `travel` dev command drives jumps headlessly.
 - **Scene/world-partition convention** (for Phases 27/44 authoring): a region's sub-cell scenes
   live under `scenes/regions/<region>/<cell>.tscn`, where `<region>` is the id minus its
   `region.` prefix (e.g. `scenes/regions/ember_crown/waystone.tscn` for cell `ember_crown.waystone`).

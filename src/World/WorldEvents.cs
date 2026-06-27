@@ -37,3 +37,8 @@ public readonly record struct RegionCellUnloadedEvent(string CellId) : IGameEven
 /// the current region's cells, re-targets the streamer, teleports the player to the new region's
 /// spawn, and shows the loading screen for the transition.</summary>
 public readonly record struct RegionTransitionRequestedEvent(string RegionId) : IGameEvent;
+
+/// <summary>Raised from the map screen (or the <c>travel goto</c> dev command) to fast-travel to a
+/// discovered <see cref="FastTravelService"/> node (Phase 25G). The bootstrap reuses the 25C hard-load
+/// path, landing the player at the node's position within its region.</summary>
+public readonly record struct FastTravelRequestedEvent(string NodeId) : IGameEvent;
