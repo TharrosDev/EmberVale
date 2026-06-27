@@ -36,6 +36,18 @@ public static class CorruptionTiers
         };
     }
 
+    /// <summary>The tier transition between two corruption values: the old tier, the new tier, and
+    /// whether the band changed (so a <c>CorruptionTierChangedEvent</c> should fire). Both the
+    /// <c>Add</c>/<c>Set</c> path and <c>Load</c> use this, so loading re-syncs consequence systems
+    /// (appearance, vignette, dread, abilities) in the correct direction — including *down*, e.g. an
+    /// in-session quickload from a high tier to a low one (Phase 25.5C).</summary>
+    public static (CorruptionTier Old, CorruptionTier New, bool Changed) Transition(int oldValue, int newValue)
+    {
+        CorruptionTier oldTier = Of(oldValue);
+        CorruptionTier newTier = Of(newValue);
+        return (oldTier, newTier, newTier != oldTier);
+    }
+
     public static string Label(CorruptionTier tier) => tier switch
     {
         CorruptionTier.Untainted => "Untainted",

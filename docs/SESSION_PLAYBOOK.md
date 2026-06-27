@@ -712,7 +712,7 @@ no code) — batch them when momentum is good.
     repeated unload/reload + save/load persistence run is the maintainer's at-keyboard
     check; the gate logic is unit-tested and the field/ordering verified by review.)
 
-- [ ] **25.5C — Corruption system hardening** `[F]`
+- [x] **25.5C — Corruption system hardening** `[F]` ✅
   - **Goal:** the defining mechanic is robust at its edges.
   - **Tasks:** edge-case tier thresholds/transitions, appearance/dialogue/ability
     gating, the both-endings eligibility dial; confirm `CorruptionTierChangedEvent`
@@ -720,6 +720,24 @@ no code) — batch them when momentum is good.
     the save round-trip.
   - **Done when:** corruption drives its consequences with no missed/duplicated tier
     events and round-trips through save/load; covered by a unit or harness check.
+  - **Done:** found and fixed a real **load-desync bug**. `CorruptionComponent.Load()` re-synced
+    consequence systems *"from a clean Untainted baseline"* — it only fired a
+    `CorruptionTierChangedEvent` when the loaded tier was non-Untainted, hardcoding the old tier as
+    `Untainted`. Correct for a fresh Continue (the component starts at 0), but **wrong for an
+    in-session quickload (F9)**: loading a low-corruption save while at a high tier (or shifting
+    between two non-Untainted tiers) fired *no* tier event, so the HUD vignette, the
+    `CorruptionAppearanceController` (ash veins/eye-glow), NPC dread and ability gates — all of which
+    set absolute state off the tier event — stayed stuck at the old tier. Fix: a pure
+    `CorruptionTiers.Transition(oldValue, newValue)` → `(old, new, changed)` now drives **both**
+    `Apply()` (Add/Set) and `Load()`, so loading emits the same event the live path would, re-syncing
+    every consumer in the correct direction (including *down*). Tier mapping, monotonicity and the
+    endings-eligibility dial were already pinned; added 4 `Transition` tests covering the
+    upward/downward/same-band/between-non-Untainted cases (the downward case is the bug). Rapid
+    changes already fire exactly one tier event per band-crossing `Apply` (no-op when unchanged), and
+    a multi-band jump emits one event carrying the true old+new — consumers set absolute state, so no
+    miss/dup. Build + **112 tests** (4 new) + `--validate` (exit 0) green. (The visible vignette/
+    appearance reset on an F9 that lowers corruption is the maintainer's at-keyboard check via the
+    23B `corrupt` dev command; the transition logic is unit-tested and `Load`/`Apply` now share it.)
 
 - [ ] **25.5D — Meta-shell, settings & state-machine robustness** `[F]`
   - **Goal:** the shell never wedges or corrupts a slot.

@@ -52,4 +52,44 @@ public class CorruptionTierTests
         // Lord of Embers, the band between is Undecided. Phase 49 consumes this.
         Assert.Equal(expected, CorruptionTiers.EligibilityOf(value));
     }
+
+    // --- Transition (Phase 25.5C: load/apply tier-event sync) ---------------
+
+    [Fact]
+    public void Transition_UpwardAcrossBand_Changes()
+    {
+        var (old, @new, changed) = CorruptionTiers.Transition(10, 50);
+        Assert.Equal(CorruptionTier.Untainted, old);
+        Assert.Equal(CorruptionTier.Marked, @new);
+        Assert.True(changed);
+    }
+
+    [Fact]
+    public void Transition_DownwardAcrossBand_Changes()
+    {
+        // The 25.5C bug: an in-session load that lowers corruption must still report a change so
+        // appearance/vignette/dread reset. The old Load() assumed an Untainted baseline and missed this.
+        var (old, @new, changed) = CorruptionTiers.Transition(85, 10);
+        Assert.Equal(CorruptionTier.Embers, old);
+        Assert.Equal(CorruptionTier.Untainted, @new);
+        Assert.True(changed);
+    }
+
+    [Fact]
+    public void Transition_WithinSameBand_DoesNotChange()
+    {
+        var (old, @new, changed) = CorruptionTiers.Transition(40, 55); // both Marked
+        Assert.Equal(CorruptionTier.Marked, old);
+        Assert.Equal(CorruptionTier.Marked, @new);
+        Assert.False(changed);
+    }
+
+    [Fact]
+    public void Transition_BetweenTwoNonUntaintedTiers_Changes()
+    {
+        var (old, @new, changed) = CorruptionTiers.Transition(85, 50); // Embers -> Marked
+        Assert.Equal(CorruptionTier.Embers, old);
+        Assert.Equal(CorruptionTier.Marked, @new);
+        Assert.True(changed);
+    }
 }

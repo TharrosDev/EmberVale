@@ -68,12 +68,11 @@ public partial class CorruptionComponent : EntityComponent, ISaveable
             return;
         }
 
-        CorruptionTier oldTier = CorruptionTiers.Of(_value);
+        (CorruptionTier oldTier, CorruptionTier newTier, bool changed) = CorruptionTiers.Transition(_value, updated);
         _value = updated;
-        CorruptionTier newTier = CorruptionTiers.Of(_value);
 
         EventBus.Instance?.Publish(new CorruptionChangedEvent(_value, newTier));
-        if (newTier != oldTier)
+        if (changed)
         {
             EventBus.Instance?.Publish(new CorruptionTierChangedEvent(oldTier, newTier));
         }
@@ -93,14 +92,18 @@ public partial class CorruptionComponent : EntityComponent, ISaveable
             return;
         }
 
-        _value = Mathf.Clamp(valueVar.AsInt32(), CorruptionTiers.Min, CorruptionTiers.Max);
+        int loaded = Mathf.Clamp(valueVar.AsInt32(), CorruptionTiers.Min, CorruptionTiers.Max);
 
-        // Re-sync any already-subscribed consequence systems from a clean Untainted baseline.
-        CorruptionTier tier = CorruptionTiers.Of(_value);
-        EventBus.Instance?.Publish(new CorruptionChangedEvent(_value, tier));
-        if (tier != CorruptionTier.Untainted)
+        // Re-sync consequence systems from the component's ACTUAL current tier — not an assumed
+        // Untainted baseline — so an in-session quickload that *lowers* corruption (or shifts between
+        // two non-Untainted tiers) still fires the tier event and resets appearance/vignette/dread.
+        (CorruptionTier oldTier, CorruptionTier newTier, bool changed) = CorruptionTiers.Transition(_value, loaded);
+        _value = loaded;
+
+        EventBus.Instance?.Publish(new CorruptionChangedEvent(_value, newTier));
+        if (changed)
         {
-            EventBus.Instance?.Publish(new CorruptionTierChangedEvent(CorruptionTier.Untainted, tier));
+            EventBus.Instance?.Publish(new CorruptionTierChangedEvent(oldTier, newTier));
         }
     }
 }
