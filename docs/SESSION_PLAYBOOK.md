@@ -573,12 +573,32 @@ no code) — batch them when momentum is good.
     maintainer's at-keyboard check — the MCP can't inject New Game / `M`; logic reviewed against the
     Godot 4.7 C# API.)
 
-- [ ] **25F — HUD compass + quest markers** `[F]`
+- [x] **25F — HUD compass + quest markers** `[F]` ✅
   - **Goal:** on-screen wayfinding.
   - **Tasks:** add a compass strip to `GameHud` showing cardinal headings, nearby
     discovered POIs, and the active quest objective marker (read the quest log).
     Through `UiTheme`/`GameHud`.
   - **Done when:** the compass tracks heading and points at the active objective.
+  - **Done:** new `src/UI/CompassStrip.cs` — a self-drawn `Control` owned by `GameHud`
+    (built center-top in `_Ready`, fed the player via `SetPlayer`). Each frame it reads the
+    player's facing (`Body` forward = `-GlobalBasis.Z`), then `_Draw`s a ±90°-FOV strip:
+    cardinal letters (N highlighted), dim ticks for every discovered POI from 25E's
+    `MapService.PoiMarkers()` (reached via `ServiceLocator`), and a bright marker for the active
+    quest objective. The pure heading/strip arithmetic is `src/UI/CompassMath.cs` (wrap, heading,
+    bearing, relative-angle, strip-offset, FOV cull), pinned by 6 new `CompassMathTests`
+    (convention: North = `-Z`, angle clockwise to `+X`). The objective is resolved by a new
+    `src/Quests/ObjectiveLocator.cs` *per type* — Kill → nearest live enemy whose `TemplateId`
+    matches (enemies join an `objective.enemy` group in `EnemyFactory`), Collect → nearest world
+    pickup whose item id matches (pickups join `objective.pickup` in `ItemPickupFactory`; a new
+    `ItemPickupComponent.ItemId` exposes it); the `switch` is the seam for future Talk/Reach types.
+    Resolution is throttled (~0.4 s, cached) — a `ponytail:` note marks the linear group scan as the
+    ceiling. Cardinal letters go through the `Loc` layer (`hud.compass.*` keys in `strings.csv`, +8).
+    Build + **91 tests** (was 85) + `--validate` (exit 0) green; **ran the game in-engine** — entered
+    Playing with the HUD/compass live, the goblin Kill quest active and the waystone POI streaming
+    in/out as the player moved, with **no compass errors** (only pre-existing save-`PersistentId`
+    warnings + an unrelated WASAPI audio device error). The visual heading/marker confirmation — N
+    where expected (flip the `-Z` knob if reversed), the POI tick and goblin marker tracking — is the
+    maintainer's at-keyboard check; the draw + resolve paths ran live without throwing.
 
 - [ ] **25G — Fast-travel graph** `[F]`
   - **Goal:** travel between discovered nodes.

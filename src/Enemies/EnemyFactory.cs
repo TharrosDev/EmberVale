@@ -82,6 +82,8 @@ public static class EnemyFactory
         enemy.AddChild(new EnemyAIComponent { Name = "AI" });
         enemy.AddChild(new LootComponent { Name = "Loot", TablePath = LootTablePath });
         enemy.AddChild(new ExperienceComponent { Name = "Experience", XpValue = 25 });
+        // Lets the Phase 25F compass / quest markers find this as a Kill-objective target.
+        enemy.AddToGroup(Quests.ObjectiveLocator.EnemyGroup);
         return enemy;
     }
 

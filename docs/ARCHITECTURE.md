@@ -460,6 +460,13 @@ fast-travel land in 25E–25G.
   tells the UI when to rebuild. `MapScreen` (a non-modal `UiTheme` overlay toggled with `M`) plots
   discovered regions/POIs/player on a top-down `MapView` (pure-shape `_Draw`, north = −Z up) with a
   name legend; undiscovered regions are not drawn (fog).
+- **HUD compass (25F)** — `CompassStrip` (a self-drawn `Control` owned by `GameHud`) is the live
+  wayfinding strip: it reads the player's facing and `_Draw`s cardinal headings, dim ticks for the
+  `MapService` POIs, and a bright marker for the active quest objective within a ±90° window. The
+  pure angle maths is `CompassMath` (north = −Z, clockwise to +X; unit-tested); the objective is
+  resolved to a live world target by `ObjectiveLocator` per objective type — Kill → nearest enemy in
+  the `objective.enemy` group, Collect → nearest pickup in `objective.pickup` (the seam extends to
+  Talk/Reach). Cardinal letters go through the `Loc` layer.
 - **Scene/world-partition convention** (for Phases 27/44 authoring): a region's sub-cell scenes
   live under `scenes/regions/<region>/<cell>.tscn`, where `<region>` is the id minus its
   `region.` prefix (e.g. `scenes/regions/ember_crown/waystone.tscn` for cell `ember_crown.waystone`).

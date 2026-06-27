@@ -51,13 +51,19 @@ public partial class GameHud : CanvasLayer
     private PanelContainer _promptPanel = null!;
     private Label _promptText = null!;
 
+    private CompassStrip _compass = null!;
+
     // Corruption dread: a dark blood-red edge vignette that fades in at high tiers (23E).
     private TextureRect _vignette = null!;
     private float _vignetteAlpha;
     private float _targetVignetteAlpha;
     private const float VignetteFadeSpeed = 0.5f; // alpha units per second
 
-    public void SetPlayer(IEntity? player) => _player = player;
+    public void SetPlayer(IEntity? player)
+    {
+        _player = player;
+        _compass?.SetPlayer(player);
+    }
 
     public void SetClock(WorldClock? clock) => _clock = clock;
 
@@ -71,6 +77,7 @@ public partial class GameHud : CanvasLayer
         AddChild(new Crosshair());
         BuildVitals();
         BuildContext();
+        BuildCompass();
         BuildQuestTracker();
         BuildBanner();
         BuildNameplate();
@@ -141,11 +148,19 @@ public partial class GameHud : CanvasLayer
         WrapPadded(_questPanel, col);
     }
 
+    private void BuildCompass()
+    {
+        _compass = new CompassStrip();
+        CenterTop(_compass, 6);
+        _compass.SetPlayer(_player);
+        AddChild(_compass);
+    }
+
     private void BuildBanner()
     {
         _bannerPanel = Ignore(UiTheme.Panel());
         _bannerPanel.Visible = false;
-        CenterTop(_bannerPanel, 18);
+        CenterTop(_bannerPanel, 40);
         AddChild(_bannerPanel);
 
         _bannerText = UiTheme.Body("", UiTheme.Accent);

@@ -63,3 +63,11 @@ loading.title,Loading…
 region.travel_prompt,Travel to {0}
 map.title,WORLD MAP
 map.empty,Nothing discovered yet — explore to fill the map.
+hud.compass.n,N
+hud.compass.ne,NE
+hud.compass.e,E
+hud.compass.se,SE
+hud.compass.s,S
+hud.compass.sw,SW
+hud.compass.w,W
+hud.compass.nw,NW
