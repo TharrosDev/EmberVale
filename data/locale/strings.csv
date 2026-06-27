@@ -59,3 +59,5 @@ common.load,Load
 common.delete,Delete
 common.confirm_delete,Confirm delete
 common.confirm_new,Confirm new
+loading.title,Loading…
+region.travel_prompt,Travel to {0}

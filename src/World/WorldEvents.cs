@@ -31,3 +31,9 @@ public readonly record struct RegionCellLoadedEvent(string CellId, Node3D Root) 
 
 /// <summary>Raised by the <see cref="RegionStreamer"/> just before a sub-cell is freed (Phase 25B).</summary>
 public readonly record struct RegionCellUnloadedEvent(string CellId) : IGameEvent;
+
+/// <summary>Raised by a <see cref="RegionTransitionComponent"/> (or the <c>region goto</c> dev command)
+/// to request a hard region-to-region load (Phase 25C). The bootstrap performs the swap: it unloads
+/// the current region's cells, re-targets the streamer, teleports the player to the new region's
+/// spawn, and shows the loading screen for the transition.</summary>
+public readonly record struct RegionTransitionRequestedEvent(string RegionId) : IGameEvent;

@@ -67,6 +67,13 @@ public partial class GameBootstrap : Node3D
     private bool _sandboxBuilt;
     private double _respawnCountdown = -1d;
 
+    // Phase 25C hard transitions: the active streamer, the neighbour portals spawned for the current
+    // region (cleared/rebuilt on transition), and a short loading-screen settle so the destination
+    // cells stream in before play resumes.
+    private RegionStreamer? _streamer;
+    private readonly System.Collections.Generic.List<Entity> _portals = new();
+    private double _loadingCountdown = -1d;
+
     // The region the sandbox represents (Phase 25A). Until streaming (25B) the world is this one
     // region; the save header reads its display name from the RegionDatabase.
     private string _currentRegionId = GameIds.Regions.EmberCrown;
@@ -195,6 +202,7 @@ public partial class GameBootstrap : Node3D
         AddChild(_hud);
         AddChild(new Notifications());
         AddChild(new PauseMenu());
+        AddChild(new LoadingScreen());
 
         // Deep-debugging tools (Phase 20): dev console (F1), profiler (F4), and a standing
         // world-integrity checker that periodically validates runtime invariants.
@@ -264,10 +272,115 @@ public partial class GameBootstrap : Node3D
     /// sandbox stays the always-loaded base; the streamer manages the region's authored cells.</summary>
     private void SpawnRegionStreamer()
     {
-        var streamer = new RegionStreamer { Name = "RegionStreamer" };
-        streamer.Configure(RegionDatabase.Get(_currentRegionId));
-        AddChild(streamer);
-        ServiceLocator.Instance?.Register(streamer);
+        _streamer = new RegionStreamer { Name = "RegionStreamer" };
+        _streamer.Configure(RegionDatabase.Get(_currentRegionId));
+        AddChild(_streamer);
+        ServiceLocator.Instance?.Register(_streamer);
+        SpawnRegionPortals(RegionDatabase.Get(_currentRegionId));
+    }
+
+    /// <summary>Places a hard-transition portal for each of the region's neighbours (Phase 25C), a
+    /// few metres in front of where the player enters. Clears any prior region's portals first so a
+    /// transition swaps them out. Mirrors <see cref="SpawnQuestGiver"/>: an Entity + mesh + collider +
+    /// a <see cref="RegionTransitionComponent"/>.</summary>
+    private void SpawnRegionPortals(RegionResource? region)
+    {
+        foreach (Entity portal in _portals)
+        {
+            if (IsInstanceValid(portal))
+            {
+                portal.QueueFree();
+            }
+        }
+
+        _portals.Clear();
+
+        if (region == null)
+        {
+            return;
+        }
+
+        foreach (string neighbourId in region.Neighbours)
+        {
+            RegionResource? neighbour = RegionDatabase.Get(neighbourId);
+            if (neighbour == null)
+            {
+                Log.Warn($"SpawnRegionPortals: region '{region.Id}' lists unknown neighbour '{neighbourId}'.");
+                continue;
+            }
+
+            var portal = new Entity
+            {
+                Name = $"Portal_{neighbourId}",
+                DisplayName = neighbour.DisplayName,
+                Position = region.SpawnPoint + new Vector3(0f, -1.2f, -4f),
+            };
+
+            portal.AddChild(new MeshInstance3D
+            {
+                Name = "Mesh",
+                Mesh = new TorusMesh { InnerRadius = 0.9f, OuterRadius = 1.3f },
+                Position = new Vector3(0f, 1.6f, 0f),
+                MaterialOverride = new StandardMaterial3D
+                {
+                    AlbedoColor = new Color(0.5f, 0.75f, 1f),
+                    EmissionEnabled = true,
+                    Emission = new Color(0.35f, 0.6f, 1f),
+                },
+            });
+
+            var collider = new StaticBody3D { Name = "Collider" };
+            collider.AddChild(new CollisionShape3D
+            {
+                Shape = new CylinderShape3D { Radius = 1.3f, Height = 3.2f },
+                Position = new Vector3(0f, 1.6f, 0f),
+            });
+            portal.AddChild(collider);
+
+            portal.AddChild(new RegionTransitionComponent { Name = "Transition", TargetRegionId = neighbourId });
+            AddChild(portal);
+            _portals.Add(portal);
+        }
+    }
+
+    /// <summary>Performs a hard region-to-region load (Phase 25C): show the loading screen, unload the
+    /// current region's cells, re-target the streamer, teleport the player to the destination spawn,
+    /// rebuild its portals, autosave the boundary, then settle for a few frames so the new cells stream
+    /// in before play resumes.</summary>
+    private void OnRegionTransitionRequested(RegionTransitionRequestedEvent e)
+    {
+        RegionResource? destination = RegionDatabase.Get(e.RegionId);
+        if (destination == null || _player == null || _streamer == null)
+        {
+            Log.Warn($"Region transition to '{e.RegionId}' aborted (unknown region or world not built).");
+            return;
+        }
+
+        if (e.RegionId == _currentRegionId)
+        {
+            return;
+        }
+
+        GameManager.Instance?.ChangeState(GameState.Loading);
+
+        _streamer.UnloadAll();
+        _currentRegionId = e.RegionId;
+        _streamer.Configure(destination);
+
+        _player.Velocity = Vector3.Zero;
+        _player.GlobalPosition = destination.SpawnPoint;
+
+        SpawnRegionPortals(destination);
+
+        if (ServiceLocator.Instance != null && ServiceLocator.Instance.TryGet(out AutosaveService autosave))
+        {
+            autosave.RequestRegionChangeAutosave();
+        }
+
+        // ponytail: fixed settle delay covers the streamer's 1-cell/frame budget; gate on streamer-idle
+        // if pop-in shows. Play resumes in _Process when this elapses.
+        _loadingCountdown = 0.4d;
+        Log.Info($"Entering {destination.DisplayName}...");
     }
 
     public override void _ExitTree()
@@ -296,6 +409,18 @@ public partial class GameBootstrap : Node3D
             {
                 _respawnCountdown = -1d;
                 SpawnDummy();
+            }
+        }
+
+        // Hard region transition (Phase 25C): hold GameState.Loading for a short settle so the
+        // destination cells stream in (1/frame) behind the loading screen, then resume play.
+        if (_loadingCountdown > 0d)
+        {
+            _loadingCountdown -= delta;
+            if (_loadingCountdown <= 0d)
+            {
+                _loadingCountdown = -1d;
+                GameManager.Instance?.ChangeState(GameState.Playing);
             }
         }
     }
@@ -710,6 +835,7 @@ public partial class GameBootstrap : Node3D
         bus.Subscribe<EntityDiedEvent>(OnEntityDied);
         bus.Subscribe<GameSavedEvent>(OnGameSaved);
         bus.Subscribe<GameLoadedEvent>(OnGameLoaded);
+        bus.Subscribe<RegionTransitionRequestedEvent>(OnRegionTransitionRequested);
     }
 
     private void UnsubscribeEvents()
@@ -724,6 +850,7 @@ public partial class GameBootstrap : Node3D
         bus.Unsubscribe<EntityDiedEvent>(OnEntityDied);
         bus.Unsubscribe<GameSavedEvent>(OnGameSaved);
         bus.Unsubscribe<GameLoadedEvent>(OnGameLoaded);
+        bus.Unsubscribe<RegionTransitionRequestedEvent>(OnRegionTransitionRequested);
     }
 
     private void OnEntityDamaged(EntityDamagedEvent e)

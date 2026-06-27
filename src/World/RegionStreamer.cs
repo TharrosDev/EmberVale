@@ -50,6 +50,20 @@ public sealed partial class RegionStreamer : Node3D
         }
     }
 
+    /// <summary>Frees every loaded cell and clears the pending queue (Phase 25C hard transitions).
+    /// Call before <see cref="Configure"/> when re-targeting to a new region, or the old region's
+    /// loaded cells orphan in the loaded set and never unload.</summary>
+    public void UnloadAll()
+    {
+        foreach (string cellId in new List<string>(_loaded.Keys))
+        {
+            Unload(cellId);
+        }
+
+        _pending.Clear();
+        _pendingIds.Clear();
+    }
+
     public override void _Process(double delta)
     {
         if (_cells.Count == 0 || ServiceLocator.Instance is not { } locator ||

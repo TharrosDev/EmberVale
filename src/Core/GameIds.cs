@@ -60,6 +60,7 @@ public static class GameIds
     public static class Regions
     {
         public const string EmberCrown = "region.ember_crown";
+        public const string FrostfangReach = "region.frostfang_reach";
     }
 
     public static class Spells

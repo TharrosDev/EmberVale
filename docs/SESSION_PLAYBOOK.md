@@ -499,13 +499,30 @@ no code) — batch them when momentum is good.
     while the out-of-range north_ruin never loaded — both load + unload paths confirmed live, no
     errors. Convention updated in ARCHITECTURE §2.6h-2 + CLAUDE §8.
 
-- [ ] **25C — Hard transitions + loading screen (realm-to-realm)** `[F]`
+- [x] **25C — Hard transitions + loading screen (realm-to-realm)** `[F]` ✅
   - **Goal:** discrete loads between realms.
   - **Tasks:** add a loading-screen state (`GameState.Loading` already exists) for
     hard transitions; tear down the old region, load the new, restore the player.
     Trigger via a transition volume/door interactable.
   - **Done when:** stepping through a transition runs a clean load and spawns the
     player correctly in the new region.
+  - **Done:** a `RegionTransitionComponent` (an `InteractableComponent`) publishes a new
+    `RegionTransitionRequestedEvent`; `GameBootstrap` performs the swap on the event (same
+    shape as `DialogueComponent`): `ChangeState(Loading)` → `RegionStreamer.UnloadAll()` (new)
+    + `Configure(destination)` re-targets the streamer → teleport the player to the
+    destination's new `RegionResource.SpawnPoint` (new export) → rebuild neighbour portals →
+    `RequestRegionChangeAutosave()` (the pre-built 24D seam) → a short `_loadingCountdown`
+    settle (reusing the `_respawnCountdown` idiom) lets the new cells stream in behind a new
+    `LoadingScreen` overlay before `ChangeState(Playing)`. Portals are spawned per
+    `RegionResource.Neighbours` (a glowing torus + collider, in front of each region's spawn)
+    and swapped on transition. A second region — `data/regions/FrostfangReach.tres` (Realm 1) +
+    `scenes/regions/frostfang_reach/glacier.tscn` — gives EmberCrown a neighbour to travel to;
+    `EmberCrown.tres` gained `SpawnPoint` + the neighbour link. A `region <list|goto <id>>` dev
+    command drives transitions from F1. Verified in-engine: the maintainer walked the portals
+    EmberCrown ⇄ Frostfang repeatedly — log shows `Playing -> Loading`, old cell unloads,
+    `Entering <region>`, the destination cell streams in, `Loading -> Playing`, both ways with
+    no new errors (the `PersistentId`/orphan warnings are pre-existing). Build + 85 tests +
+    `--validate` (2 regions, neighbour + cell-path checks) green.
 
 - [ ] **25D — Persistent actors across streaming (PersistentSpawnDirector)** `[F]`
   - **Goal:** the world remembers itself across load/unload.

@@ -1,0 +1,16 @@
+[gd_scene load_steps=3 format=3 uid="uid://crgnfrostcell0"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_glacier"]
+size = Vector3(3.0, 2.4, 3.0)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_glacier"]
+albedo_color = Color(0.68, 0.82, 0.95, 1)
+metallic = 0.1
+roughness = 0.2
+
+[node name="GlacierCell" type="Node3D"]
+
+[node name="IceBlock" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+mesh = SubResource("BoxMesh_glacier")
+surface_material_override/0 = SubResource("StandardMaterial3D_glacier")

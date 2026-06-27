@@ -411,14 +411,16 @@ persists). Three pieces:
 ### 2.6h-2 Regions & streaming (`src/World`, Phase 25)
 
 The world is divided into authored **regions** (one per area; many per `Realm`). Phase 25A
-established the data + convention; 25B adds the streamer; the map and fast-travel land in 25E–25G.
+established the data + convention; 25B adds the streamer; 25C adds hard transitions; the map and
+fast-travel land in 25E–25G.
 
 - **`RegionResource`** (`[GlobalClass]`, `data/regions/*.tres`): `Id` (`region.*`),
   `DisplayName`, `Realm` (the fixed `Realm` enum — the four LORE realms + the Celestial),
-  `Cells` (an array of `RegionCellResource` — the streamable sub-cells), `Bounds` (`Aabb`), an
-  atmosphere bias (`DefaultWeatherId` + `DayPhaseBias`), and `Neighbours` (region ids — the
-  map/fast-travel adjacency). `RegionDatabase` indexes them (mirrors `WeatherDatabase`); the save
-  header reads the active region's `DisplayName` by id. New region = a `.tres`, no code.
+  `SpawnPoint` (where the player appears on entry, 25C), `Cells` (an array of `RegionCellResource`
+  — the streamable sub-cells), `Bounds` (`Aabb`), an atmosphere bias (`DefaultWeatherId` +
+  `DayPhaseBias`), and `Neighbours` (region ids — the map/fast-travel adjacency). `RegionDatabase`
+  indexes them (mirrors `WeatherDatabase`); the save header reads the active region's `DisplayName`
+  by id. New region = a `.tres`, no code.
 - **`RegionCellResource`** (`[GlobalClass]`, a sub-resource of the region): `Id` (`<region>.<cell>`),
   `ScenePath`, `Center` (world position), `LoadRadius`. The lightweight metadata the streamer reads
   to decide whether to load, without instancing the scene.
@@ -429,7 +431,17 @@ established the data + convention; 25B adds the streamer; the map and fast-trave
   most **one per frame** (a queue drains over frames so a wave never hitches; the `PackedScene` is
   `ResourceLoader`-cached so re-load is cheap). It publishes `RegionCellLoadedEvent`/
   `RegionCellUnloadedEvent` — the seam Phase 25D's persistence hooks. The procedural sandbox is the
-  always-loaded base; the streamer manages only the region's authored `Cells`.
+  always-loaded base; the streamer manages only the region's authored `Cells`. For a hard transition
+  (25C) the bootstrap calls `UnloadAll()` (free every loaded cell + clear the queue) then
+  `Configure(destination)` to re-target it without orphaning the old region's cells.
+- **Hard transitions (25C)** — a `RegionTransitionComponent` (an `InteractableComponent` carrying a
+  `TargetRegionId`) publishes a `RegionTransitionRequestedEvent`; `GameBootstrap` handles it: enter
+  `GameState.Loading` (the `LoadingScreen` overlay shows on that state), re-target the streamer,
+  teleport the player to the destination `SpawnPoint`, rebuild the neighbour portals, request a
+  region-boundary autosave (`AutosaveService.RequestRegionChangeAutosave`), then hold Loading for a
+  short settle (so the destination cells stream in) before returning to `Playing`. Portals are spawned
+  by the bootstrap per `RegionResource.Neighbours`, so a reciprocal link is a two-way door with no
+  per-scene authoring. Drive it from F1 with `region goto <id>`.
 - **Scene/world-partition convention** (for Phases 27/44 authoring): a region's sub-cell scenes
   live under `scenes/regions/<region>/<cell>.tscn`, where `<region>` is the id minus its
   `region.` prefix (e.g. `scenes/regions/ember_crown/waystone.tscn` for cell `ember_crown.waystone`).

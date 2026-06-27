@@ -375,16 +375,22 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 
 **A new region** (Phase 25)
 1. Author `data/regions/Xxx.tres` (`script_class="RegionResource"`): unique `Id` (`region.*`),
-   `DisplayName`, `Realm` (the `Realm` enum int), `Bounds` (`AABB`), `DefaultWeatherId` +
-   `DayPhaseBias`, `Neighbours` (`Array[String]` of region ids), and `Cells` — an array of
-   `RegionCellResource` sub-resources (each: `Id` `<region>.<cell>`, `ScenePath`, `Center`
-   `Vector3`, `LoadRadius`). Place each cell scene at `scenes/regions/<region>/<cell>.tscn`, built
-   at local origin (the streamer positions the instance at `Center`); see `docs/ARCHITECTURE.md`
-   §2.6h-2.
+   `DisplayName`, `Realm` (the `Realm` enum int), `SpawnPoint` (`Vector3` — where the player
+   appears on entry, Phase 25C), `Bounds` (`AABB`), `DefaultWeatherId` + `DayPhaseBias`,
+   `Neighbours` (`Array[String]` of region ids), and `Cells` — an array of `RegionCellResource`
+   sub-resources (each: `Id` `<region>.<cell>`, `ScenePath`, `Center` `Vector3`, `LoadRadius`).
+   Place each cell scene at `scenes/regions/<region>/<cell>.tscn`, built at local origin (the
+   streamer positions the instance at `Center`); see `docs/ARCHITECTURE.md` §2.6h-2.
 2. Auto-indexed by `RegionDatabase`; the save header resolves the active region's name, and the
    `RegionStreamer` loads/unloads the `Cells` by distance (hysteresis + a per-frame budget). The
    `ContentValidator` checks neighbours, default weather, and that each cell `ScenePath` resolves.
    No code change for a new region.
+3. **Hard transitions (Phase 25C):** declaring a region in another's `Neighbours` makes the
+   bootstrap spawn a travel portal between them automatically (a `RegionTransitionComponent` at the
+   region's `SpawnPoint`). Stepping through (or `region goto <id>` in F1) publishes a
+   `RegionTransitionRequestedEvent`; the bootstrap shows the `LoadingScreen`, re-targets the
+   streamer (`UnloadAll` + `Configure`), teleports the player to the destination's `SpawnPoint`, and
+   autosaves the boundary. Reciprocal links give a two-way door. No code change for a new transition.
 
 **A new encounter**
 1. Author `data/encounters/Xxx.tres` (`script_class="EncounterResource"`): unique `Id`,

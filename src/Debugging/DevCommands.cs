@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using Embervale.Core;
+using Embervale.Core.Events;
 using Embervale.Core.Services;
 using Embervale.Corruption;
 using Embervale.Enemies;
@@ -41,6 +42,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("time", "time <hour>", "Set the time of day (0–24).", Time));
         console.Register(new ConsoleCommand("weather", "weather <id>", "Force a weather state.", Weather));
         console.Register(new ConsoleCommand("event", "event <id>", "Force a world event.", Event));
+        console.Register(new ConsoleCommand("region", "region <list|goto <id>>", "List regions or hard-load into one (Phase 25C).", Region));
 
         console.Register(new ConsoleCommand("seed", "seed <n>", "Seed the global RNG (for repro).", Seed));
         console.Register(new ConsoleCommand("repro", "repro [name]", "Run a repro scenario.", Repro));
@@ -365,6 +367,33 @@ public static class DevCommands
         }
 
         return director.ForceStart(args[0]) ? $"started {args[0]}" : $"could not start '{args[0]}' (already active / unknown)";
+    }
+
+    private static string Region(DevConsole console, string[] args)
+    {
+        if (args.Length >= 1 && args[0] == "list")
+        {
+            var sb = new StringBuilder("regions:");
+            foreach (RegionResource region in RegionDatabase.All)
+            {
+                sb.Append($"\n  {region.Id} — {region.DisplayName}");
+            }
+
+            return sb.ToString();
+        }
+
+        if (args.Length >= 2 && args[0] == "goto")
+        {
+            if (RegionDatabase.Get(args[1]) == null)
+            {
+                return $"unknown region '{args[1]}'";
+            }
+
+            EventBus.Instance?.Publish(new RegionTransitionRequestedEvent(args[1]));
+            return $"transitioning to {args[1]}";
+        }
+
+        return "usage: region <list|goto <id>>";
     }
 
     private static string Seed(DevConsole console, string[] args)
