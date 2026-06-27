@@ -60,7 +60,7 @@ public partial class ReputationComponent : EntityComponent, ISaveable
         }
 
         EventBus.Instance?.Subscribe<EntityDiedEvent>(OnEntityDied);
-        SaveManager.Instance?.Register(this);
+        RegisterSaveable();
     }
 
     protected override void OnTeardown()

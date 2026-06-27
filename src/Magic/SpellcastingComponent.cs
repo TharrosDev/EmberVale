@@ -64,7 +64,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         _projectilePool = new NodePool<SpellProjectile>(
             () => new SpellProjectile { Released = ReturnProjectile }, prewarm: 4);
         RebuildSpells();
-        SaveManager.Instance?.Register(this);
+        RegisterSaveable();
     }
 
     protected override void OnTeardown()

@@ -50,7 +50,7 @@ public partial class InventoryComponent : EntityComponent, ISaveable
 
     protected override void OnInitialize()
     {
-        SaveManager.Instance?.Register(this);
+        RegisterSaveable();
     }
 
     protected override void OnTeardown()

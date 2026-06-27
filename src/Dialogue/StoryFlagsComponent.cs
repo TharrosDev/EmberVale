@@ -25,7 +25,7 @@ public partial class StoryFlagsComponent : EntityComponent, ISaveable
 
     protected override void OnInitialize()
     {
-        SaveManager.Instance?.Register(this);
+        RegisterSaveable();
     }
 
     protected override void OnTeardown()

@@ -47,7 +47,7 @@ public partial class CraftingComponent : EntityComponent, ISaveable
             }
         }
 
-        SaveManager.Instance?.Register(this);
+        RegisterSaveable();
     }
 
     protected override void OnTeardown()

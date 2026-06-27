@@ -649,7 +649,7 @@ no code) — batch them when momentum is good.
 > grown. (Phase 21 Content Expansion is the ongoing content seam, not hardened here; the
 > 19/20 *re-runs* fold into 25.5B profiling + 25.5G's integration sweep.)
 
-- [ ] **25.5A — Save/load integrity sweep** `[F]`
+- [x] **25.5A — Save/load integrity sweep** `[F]` ✅
   - **Goal:** clean, warning-free persistence across every system built so far.
   - **Tasks:** root-cause the recurring boot/load warnings (transient actors logging
     *"no PersistentId"*; *"orphaned state on load"* for stale `stats:*` keys) — give
@@ -660,6 +660,28 @@ no code) — batch them when momentum is good.
   - **Done when:** a New-Game → play → F5/F9 cycle and a Continue produce **no**
     spurious save warnings; a save/load self-check (dev command or `ReproHarness`
     scenario) passes.
+  - **Done:** root cause — every `ISaveable` `EntityComponent` registered with the
+    `SaveManager` *unconditionally*, so **transient actors** (the training dummy, spawned
+    goblins — no `PersistentId`) wrote volatile `stats:<runtimeId>` keys. Those can never
+    be reclaimed after a world rebuild (the reload spawns fresh actors with new runtime
+    ids), producing all three warning classes at once: *"no PersistentId"* (key build),
+    *"no usable entry"* (live key absent from the save) and *"orphaned state"* (saved key
+    with no live claimant). Fix: a new pure `src/Save/SaveKeyPolicy.cs`
+    (`ShouldPersist`/`Key`/`IsVolatile`, Godot-free) + a `EntityComponent.RegisterSaveable()`
+    gate that registers a component **only when its owner has a stable `PersistentId`** —
+    transient actors now persist *nothing*, so no volatile keys are ever written. Verified
+    the ordering holds: `PlayerFactory` sets `PersistentId="player"` in the initializer and
+    `PersistentSpawnDirector.AssignIdentity` sets it before the actor enters the tree, both
+    *before* `OnInitialize`, so every would-be-persistent actor still registers. All 11
+    `ISaveable` components updated; `OnTeardown` `Unregister` stays (safe no-op when skipped).
+    A `savecheck` dev command (F1) audits `SaveManager.RegisteredSaveIds` and reports any
+    volatile (would-orphan) key — the runnable check; after the fix it reports **0**. Build +
+    **105 tests** (14 new `SaveKeyPolicyTests`) + `--validate` (exit 0) green. (A New Game →
+    F5/F9 producing a fully warning-free log is the maintainer's at-keyboard confirmation;
+    the policy is proven by unit tests and the `savecheck` audit. Note: loading a *pre-fix*
+    save still warns on its legacy `stats:*` keys — that's stale data, not a code bug; a
+    fresh save is clean. The *"no usable entry for map/fasttravel/cell_persistence"* lines on
+    old saves are normal forward-compat — those services post-date the save.)
 
 - [ ] **25.5B — Region streaming stability & profiling** `[F/P]`
   - **Goal:** streaming and cell persistence are hitch-free and correct under stress.

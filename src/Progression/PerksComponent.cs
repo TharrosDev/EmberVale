@@ -30,7 +30,7 @@ public partial class PerksComponent : EntityComponent, ISaveable
     {
         _progression = Entity!.GetComponent<ProgressionComponent>();
         _stats = Entity.GetComponent<StatsComponent>();
-        SaveManager.Instance?.Register(this);
+        RegisterSaveable();
     }
 
     protected override void OnTeardown()
