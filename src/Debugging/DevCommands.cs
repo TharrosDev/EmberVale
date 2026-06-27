@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using Embervale.Core;
@@ -44,6 +45,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("event", "event <id>", "Force a world event.", Event));
         console.Register(new ConsoleCommand("region", "region <list|goto <id>>", "List regions or hard-load into one (Phase 25C).", Region));
         console.Register(new ConsoleCommand("travel", "travel <list|goto <id>>", "List attuned travel nodes or fast-travel to one (Phase 25G).", Travel));
+        console.Register(new ConsoleCommand("savecheck", "savecheck", "Audit registered saveables for volatile (would-orphan) keys (Phase 25.5A).", SaveCheck));
 
         console.Register(new ConsoleCommand("seed", "seed <n>", "Seed the global RNG (for repro).", Seed));
         console.Register(new ConsoleCommand("repro", "repro [name]", "Run a repro scenario.", Repro));
@@ -429,6 +431,38 @@ public static class DevCommands
         }
 
         return "usage: travel <list|goto <id>>";
+    }
+
+    private static string SaveCheck(DevConsole console, string[] args)
+    {
+        if (SaveManager.Instance is not { } manager)
+        {
+            return "save manager unavailable";
+        }
+
+        var volatileKeys = new List<string>();
+        int total = 0;
+        foreach (string id in manager.RegisteredSaveIds)
+        {
+            total++;
+            if (SaveKeyPolicy.IsVolatile(id))
+            {
+                volatileKeys.Add(id);
+            }
+        }
+
+        if (volatileKeys.Count == 0)
+        {
+            return $"savecheck OK: {total} registered saveable(s), 0 volatile/would-orphan keys.";
+        }
+
+        var sb = new StringBuilder($"savecheck FOUND {volatileKeys.Count} volatile key(s) of {total} (these orphan on reload):");
+        foreach (string id in volatileKeys)
+        {
+            sb.Append($"\n  {id}");
+        }
+
+        return sb.ToString();
     }
 
     private static string Seed(DevConsole console, string[] args)

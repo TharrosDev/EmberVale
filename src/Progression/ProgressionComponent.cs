@@ -57,7 +57,7 @@ public partial class ProgressionComponent : EntityComponent, ISaveable
         ApplyGrowth();
 
         EventBus.Instance?.Subscribe<EntityDiedEvent>(OnEntityDied);
-        SaveManager.Instance?.Register(this);
+        RegisterSaveable();
     }
 
     protected override void OnTeardown()

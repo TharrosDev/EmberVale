@@ -41,7 +41,7 @@ public partial class StatsComponent : EntityComponent, ISaveable
     {
         BuildStats(Attributes ?? AttributeSet.CreateDefault());
         RefillResources();
-        SaveManager.Instance?.Register(this);
+        RegisterSaveable();
     }
 
     protected override void OnTeardown()

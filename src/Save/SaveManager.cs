@@ -29,6 +29,19 @@ public sealed partial class SaveManager : Node
 
     private readonly List<ISaveable> _saveables = new();
 
+    /// <summary>The save ids currently registered — the <c>savecheck</c> dev command audits these for
+    /// volatile (would-orphan) keys (Phase 25.5A).</summary>
+    public IEnumerable<string> RegisteredSaveIds
+    {
+        get
+        {
+            foreach (ISaveable saveable in _saveables)
+            {
+                yield return saveable.SaveId;
+            }
+        }
+    }
+
     /// <summary>
     /// Optional source of gameplay header fields (<c>region</c>, <c>level</c>,
     /// <c>corruption_tier</c>) stamped into each save, set by the bootstrap so this manager stays

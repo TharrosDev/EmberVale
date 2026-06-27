@@ -38,7 +38,7 @@ public partial class EquipmentComponent : EntityComponent, ISaveable
         _inventory = Entity.GetComponent<InventoryComponent>();
         _weapon = Entity.GetComponent<MeleeWeaponComponent>();
         _defaultWeapon = _weapon?.Weapon;
-        SaveManager.Instance?.Register(this);
+        RegisterSaveable();
     }
 
     protected override void OnTeardown()
