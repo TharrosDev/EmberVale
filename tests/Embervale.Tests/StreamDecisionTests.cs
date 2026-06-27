@@ -50,4 +50,26 @@ public class StreamDecisionTests
     {
         Assert.Equal(StreamAction.Load, StreamDecision.Decide(LoadRadius, LoadRadius, Margin, isLoaded: false));
     }
+
+    // --- IsCellSettled (Phase 25.5B post-transition gate) -------------------
+
+    [Fact]
+    public void Settled_InRangeAndLoaded_IsSettled()
+    {
+        Assert.True(StreamDecision.IsCellSettled(10f, LoadRadius, isLoaded: true));
+    }
+
+    [Fact]
+    public void Settled_InRangeNotLoaded_IsNotSettled()
+    {
+        // A cell the player is standing in but that hasn't streamed yet must hold the loading screen.
+        Assert.False(StreamDecision.IsCellSettled(10f, LoadRadius, isLoaded: false));
+    }
+
+    [Fact]
+    public void Settled_OutOfRange_IsSettledRegardlessOfLoad()
+    {
+        Assert.True(StreamDecision.IsCellSettled(100f, LoadRadius, isLoaded: false));
+        Assert.True(StreamDecision.IsCellSettled(100f, LoadRadius, isLoaded: true));
+    }
 }

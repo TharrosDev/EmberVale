@@ -64,6 +64,28 @@ public sealed partial class RegionStreamer : Node3D
         _pendingIds.Clear();
     }
 
+    /// <summary>True when nothing is queued to load and every cell within load range of
+    /// <paramref name="origin"/> is already loaded — the world around that point has finished
+    /// streaming in. The bootstrap gates the post-transition loading screen on this (Phase 25.5B)
+    /// instead of a fixed delay, so the screen holds exactly as long as the cells need and no longer.</summary>
+    public bool IsSettledAround(Vector3 origin)
+    {
+        if (_pending.Count > 0)
+        {
+            return false;
+        }
+
+        foreach (RegionCellResource cell in _cells)
+        {
+            if (!StreamDecision.IsCellSettled(PlanarDistance(origin, cell.Center), cell.LoadRadius, _loaded.ContainsKey(cell.Id)))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public override void _Process(double delta)
     {
         if (_cells.Count == 0 || ServiceLocator.Instance is not { } locator ||

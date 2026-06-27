@@ -74,7 +74,12 @@ public partial class GameBootstrap : Node3D
     private MapService? _mapService;
     private FastTravelService? _fastTravel;
     private readonly System.Collections.Generic.List<Entity> _portals = new();
-    private double _loadingCountdown = -1d;
+    // Post-transition settle (Phase 25.5B): time spent on the loading screen since a region load
+    // began (-1 = not loading). Play resumes when the streamer reports the destination has finished
+    // streaming in (no pop-in), bounded by a min show time and a safety cap so a failed cell can't hang.
+    private double _loadingElapsed = -1d;
+    private const double LoadingMinSeconds = 0.15d;
+    private const double LoadingMaxSeconds = 3.0d;
 
     // The region the sandbox represents (Phase 25A). Until streaming (25B) the world is this one
     // region; the save header reads its display name from the RegionDatabase.
@@ -434,9 +439,10 @@ public partial class GameBootstrap : Node3D
             autosave.RequestRegionChangeAutosave();
         }
 
-        // ponytail: fixed settle delay covers the streamer's 1-cell/frame budget; gate on streamer-idle
-        // if pop-in shows. Play resumes in _Process when this elapses.
-        _loadingCountdown = 0.4d;
+        // Hold the loading screen until the streamer reports the destination settled (Phase 25.5B);
+        // resumes in _Process. Replaces the old fixed delay so big regions don't pop in after the
+        // screen clears, and small ones don't wait needlessly.
+        _loadingElapsed = 0d;
         Log.Info(message);
     }
 
@@ -469,14 +475,17 @@ public partial class GameBootstrap : Node3D
             }
         }
 
-        // Hard region transition (Phase 25C): hold GameState.Loading for a short settle so the
-        // destination cells stream in (1/frame) behind the loading screen, then resume play.
-        if (_loadingCountdown > 0d)
+        // Hard region transition (Phase 25C/25.5B): hold GameState.Loading until the streamer has
+        // finished streaming the destination in around the player (no pop-in), bounded by a minimum
+        // show time and a safety cap so a cell that fails to load can never hang the loading screen.
+        if (_loadingElapsed >= 0d)
         {
-            _loadingCountdown -= delta;
-            if (_loadingCountdown <= 0d)
+            _loadingElapsed += delta;
+            bool settled = _streamer == null || _player == null ||
+                _streamer.IsSettledAround(_player.GlobalPosition);
+            if ((settled && _loadingElapsed >= LoadingMinSeconds) || _loadingElapsed >= LoadingMaxSeconds)
             {
-                _loadingCountdown = -1d;
+                _loadingElapsed = -1d;
                 GameManager.Instance?.ChangeState(GameState.Playing);
             }
         }
