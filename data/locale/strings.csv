@@ -61,3 +61,5 @@ common.confirm_delete,Confirm delete
 common.confirm_new,Confirm new
 loading.title,Loading…
 region.travel_prompt,Travel to {0}
+map.title,WORLD MAP
+map.empty,Nothing discovered yet — explore to fill the map.

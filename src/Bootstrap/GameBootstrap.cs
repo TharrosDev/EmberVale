@@ -71,6 +71,7 @@ public partial class GameBootstrap : Node3D
     // region (cleared/rebuilt on transition), and a short loading-screen settle so the destination
     // cells stream in before play resumes.
     private RegionStreamer? _streamer;
+    private MapService? _mapService;
     private readonly System.Collections.Generic.List<Entity> _portals = new();
     private double _loadingCountdown = -1d;
 
@@ -270,6 +271,16 @@ public partial class GameBootstrap : Node3D
         // (dead enemies stay dead, looted pickups stay gone). Added before the streamer so it is
         // subscribed to the cell load/unload events before the first cell streams in.
         AddChild(new CellPersistenceDirector { Name = "CellPersistence" });
+
+        // World-map discovery (Phase 25E): tracks visited regions/POIs and persists them. Created
+        // before the streamer so it catches the first cell-load POIs; the map screen reads it.
+        _mapService = new MapService { Name = "MapService" };
+        AddChild(_mapService);
+        _mapService.DiscoverRegion(_currentRegionId); // the starting region is known immediately
+        var mapScreen = new MapScreen();
+        AddChild(mapScreen);
+        mapScreen.SetMapService(_mapService);
+
         SpawnRegionStreamer();
     }
 
@@ -371,6 +382,7 @@ public partial class GameBootstrap : Node3D
         _streamer.UnloadAll();
         _currentRegionId = e.RegionId;
         _streamer.Configure(destination);
+        _mapService?.DiscoverRegion(e.RegionId); // entering reveals it on the map (Phase 25E)
 
         _player.Velocity = Vector3.Zero;
         _player.GlobalPosition = destination.SpawnPoint;

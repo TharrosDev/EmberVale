@@ -550,12 +550,28 @@ no code) — batch them when momentum is good.
     round-trip is the maintainer's at-keyboard check — the Godot MCP can't inject New Game / movement
     / `E`; logic reviewed against the Godot 4.7 C# API.)
 
-- [ ] **25E — World map data + screen** `[F]`
+- [x] **25E — World map data + screen** `[F]` ✅
   - **Goal:** a data-driven map.
   - **Tasks:** build a map screen from region metadata + discovered POIs (a
     `MapMarker` data list), rendered through `UiTheme`. Fog/undiscovered regions
     hidden until visited. `ISaveable` discovery state.
   - **Done when:** the map shows visited regions/POIs and persists discovery.
+  - **Done:** new `src/World/MapService.cs` — a `Node`/`ISaveable` (ServiceLocator + SaveManager
+    registered, `SaveId "map"`) that tracks discovery as two id sets: regions (revealed on entry —
+    the bootstrap calls `DiscoverRegion` for the starting region in `BuildWorld` and for the
+    destination on each 25C transition) and POIs (revealed when a cell first streams in — it
+    subscribes to `RegionCellLoadedEvent`, which also reveals the owning region). Marker geometry is
+    re-resolved from `RegionDatabase` at read time (region pos = `SpawnPoint`, POI pos = cell
+    `Center`), so only the id sets persist; a `Revision` counter signals the UI to rebuild. New
+    `MapMarker` record `(Id, Label, X, Z)` is the plot datum. New `src/UI/MapScreen.cs` — a non-modal
+    overlay toggled with a new `M` input (`GameInput.Map`), like the journal: a `UiTheme` panel with
+    a `MapView : Control` that `_Draw`s discovered regions (gold discs), POIs (dim dots) and the
+    player (blue marker) fitted to the rect (north = −Z up; pure shapes, no font dep), plus a name
+    legend; undiscovered regions are simply not drawn (fog). Strings (`map.title`, `map.empty`) go
+    through `Loc` (catalogue now 61). Build + 85 tests + `--validate` + clean boot (61 strings) green.
+    (Opening the map with `M` and watching discovery fill in / persist across save-load is the
+    maintainer's at-keyboard check — the MCP can't inject New Game / `M`; logic reviewed against the
+    Godot 4.7 C# API.)
 
 - [ ] **25F — HUD compass + quest markers** `[F]`
   - **Goal:** on-screen wayfinding.

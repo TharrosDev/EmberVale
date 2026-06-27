@@ -24,6 +24,7 @@ public static class GameInput
     public const string CycleSpell = "cycle_spell";
     public const string Inventory = "inventory";
     public const string Journal = "journal";
+    public const string Map = "map";
     public const string Pause = "pause";
 
     public static void EnsureActions()
@@ -37,6 +38,7 @@ public static class GameInput
         Bind(Interact, new InputEventKey { PhysicalKeycode = Key.E });
         Bind(Inventory, new InputEventKey { PhysicalKeycode = Key.I });
         Bind(Journal, new InputEventKey { PhysicalKeycode = Key.J });
+        Bind(Map, new InputEventKey { PhysicalKeycode = Key.M });
         Bind(Pause, new InputEventKey { PhysicalKeycode = Key.Escape });
         Bind(Attack, new InputEventMouseButton { ButtonIndex = MouseButton.Left });
         Bind(Block, new InputEventMouseButton { ButtonIndex = MouseButton.Right });

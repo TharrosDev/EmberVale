@@ -452,6 +452,14 @@ fast-travel land in 25E–25G.
   `RegionCellUnloadedEvent` and is itself `ISaveable` (`cell_persistence`: a removed-id list + a
   component-state map), so the ledger round-trips through a full save/load. Authored actors stay in
   the cell `.tscn`; nothing about the authoring model changes.
+- **World map (25E)** — `MapService` (`Node`, `ISaveable`, `map`) tracks discovery as two id sets:
+  regions (revealed on entry — the bootstrap calls `DiscoverRegion` for the start region and each
+  transition destination) and POIs (revealed when a cell first streams in, via
+  `RegionCellLoadedEvent`). Marker positions are re-resolved from `RegionDatabase` at read time
+  (region = `SpawnPoint`, POI = cell `Center`), so only the id sets persist; a `Revision` counter
+  tells the UI when to rebuild. `MapScreen` (a non-modal `UiTheme` overlay toggled with `M`) plots
+  discovered regions/POIs/player on a top-down `MapView` (pure-shape `_Draw`, north = −Z up) with a
+  name legend; undiscovered regions are not drawn (fog).
 - **Scene/world-partition convention** (for Phases 27/44 authoring): a region's sub-cell scenes
   live under `scenes/regions/<region>/<cell>.tscn`, where `<region>` is the id minus its
   `region.` prefix (e.g. `scenes/regions/ember_crown/waystone.tscn` for cell `ember_crown.waystone`).
