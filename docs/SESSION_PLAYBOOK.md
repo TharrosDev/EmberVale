@@ -1387,13 +1387,24 @@ no code) — batch them when momentum is good.
     defeat persistence (so he re-summons on cell reload and drops nothing yet). Walking east to the
     arena and fighting him is the maintainer's at-keyboard check (MCP can't drive movement/`E`/combat).
 
-- [ ] **28B — Multi-phase behaviour + telegraphed attacks** `[F]`
+- [x] **28B — Multi-phase behaviour + telegraphed attacks** `[F]` ✅
   - **Goal:** phases and readable wind-ups.
   - **Tasks:** add HP-threshold phase transitions (e.g. 66%/33%) that change the
     ability set, and telegraphed wind-up timing on heavy attacks (the "no
     button-mashing" feel). Keep it data-light but real; this becomes the seed for
     `BossController` in Phase 36 — note the generalizable bits.
   - **Done when:** the fight has ≥2 distinct phases with telegraphed attacks.
+  - **Done:** a new `BossController` (`src/Enemies/BossController.cs`, added in `BossFactory`) rides on
+    top of the shared `EnemyAIComponent`/`MeleeWeaponComponent` — no AI rewrite. **3 phases:** it
+    watches `DamageDealtEvent` for hits on the boss and, crossing 66% / 33% HP, stacks attack-speed +
+    move-speed `StatModifier`s (`boss.phase2/3`) so the later thirds are visibly more relentless;
+    publishes `BossPhaseChangedEvent(boss, phase, total)` (the 28C bar / Phase-36 generalisation hook).
+    **Telegraphs:** every swing (`AttackPerformedEvent` from the boss) flares the body's emissive glow
+    during the maul's 0.55 s wind-up and fades it over the swing — readable heavy hits, brighter/redder
+    each phase. **Generalizable bits for Phase 36** (noted in the class doc): the HP-threshold→profile
+    table + publish-on-transition event, and the telegraph as a presentation hook any wind-up can drive.
+    Build clean + 251 tests + `--validate` 0; boots clean (`errors: []`). Seeing the phase flares +
+    speed-up mid-fight is the maintainer's at-keyboard check.
 
 - [ ] **28C — Boss healthbar + intro/defeat sequencing** `[F]`
   - **Goal:** the boss UI/flow beats.

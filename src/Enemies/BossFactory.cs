@@ -105,6 +105,8 @@ public static class BossFactory
             PatrolRadius = 3f,
             ActiveDistance = 90f,
         });
+        // Phase escalation (66%/33%) + attack telegraphs (Phase 28B) on top of the shared AI/weapon.
+        boss.AddChild(new BossController { Name = "BossController" });
         boss.AddChild(new ExperienceComponent { Name = "Experience", XpValue = 500 });
         return boss;
     }
