@@ -239,7 +239,7 @@ public partial class CraftingPanel : CanvasLayer
 
         if (!any)
         {
-            _list.AddChild(UiTheme.Body("(no recipes for this station)", UiTheme.Dim));
+            _list.AddChild(UiTheme.Body(Loc.T("craft.recipes_none"), UiTheme.Dim));
         }
     }
 
@@ -342,7 +342,7 @@ public partial class CraftingPanel : CanvasLayer
         title.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         titleRow.AddChild(title);
 
-        Button craft = UiTheme.Action("Craft");
+        Button craft = UiTheme.Action(Loc.T("craft.craft"));
         craft.Disabled = !canCraft;
         CraftingRecipeResource captured = recipe;
         craft.Pressed += () => Craft(captured);

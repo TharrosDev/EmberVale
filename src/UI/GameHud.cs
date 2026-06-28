@@ -2,6 +2,7 @@ using System.Text;
 using Embervale.Core.Events;
 using Embervale.Corruption;
 using Embervale.Entities;
+using Embervale.Localization;
 using Embervale.Magic;
 using Embervale.Player;
 using Embervale.Progression;
@@ -107,9 +108,9 @@ public partial class GameHud : CanvasLayer
         col.AddThemeConstantOverride("separation", 4);
         WrapPadded(panel, col);
 
-        (_hpBar, _hpText) = AddVital(col, "HP", UiTheme.Health);
-        (_staBar, _staText) = AddVital(col, "STA", UiTheme.Stamina);
-        (_mpBar, _mpText) = AddVital(col, "MP", UiTheme.Mana);
+        (_hpBar, _hpText) = AddVital(col, Loc.T("hud.hp"), UiTheme.Health);
+        (_staBar, _staText) = AddVital(col, Loc.T("hud.sta"), UiTheme.Stamina);
+        (_mpBar, _mpText) = AddVital(col, Loc.T("hud.mp"), UiTheme.Mana);
 
         _footer = UiTheme.Body("", UiTheme.Dim);
         col.AddChild(_footer);
@@ -142,7 +143,7 @@ public partial class GameHud : CanvasLayer
 
         var col = new VBoxContainer();
         col.AddThemeConstantOverride("separation", 2);
-        col.AddChild(UiTheme.Header("QUEST"));
+        col.AddChild(UiTheme.Header(Loc.T("hud.quest")));
         _questText = UiTheme.Body("");
         col.AddChild(_questText);
         WrapPadded(_questPanel, col);
@@ -283,15 +284,15 @@ public partial class GameHud : CanvasLayer
         var footer = new StringBuilder();
         if (_player.TryGetComponent(out ProgressionComponent prog))
         {
-            footer.Append($"Lv {prog.Level}");
+            footer.Append(Loc.TF("hud.level", prog.Level));
         }
 
         if (_player.TryGetComponent(out SpellcastingComponent spells) && spells.Selected is { } spell)
         {
             float cd = spells.CooldownOf(spell);
-            string state = cd > 0f ? $"{cd:0.0}s" : "ready";
+            string state = cd > 0f ? $"{cd:0.0}s" : Loc.T("hud.ready");
             footer.Append(footer.Length > 0 ? "    " : string.Empty);
-            footer.Append($"Q: {spell.DisplayName} ({state})");
+            footer.Append(Loc.TF("hud.spell", spell.DisplayName, state));
         }
 
         _footer.Text = footer.ToString();

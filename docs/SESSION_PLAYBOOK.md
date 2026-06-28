@@ -1051,7 +1051,7 @@ no code) — batch them when momentum is good.
     station). Build + **242 tests** (25 new) + `--validate` (exit 0) + clean headless boot into Playing
     (`errors: []`) green.
 
-- [ ] **25.5P — Legacy UI panels & HUD** `[P/F]` (systems 14, 18)
+- [x] **25.5P — Legacy UI panels & HUD** `[P/F]` (systems 14, 18) ✅
   - **Goal:** the older UI surfaces are consistent and warning-free.
   - **Tasks:** the pre-25 panels (inventory, equipment, crafting, dialogue, quest log,
     pause) on `UiTheme` — dirty-flag rebuild correctness (never rebuild during a button
@@ -1060,6 +1060,26 @@ no code) — batch them when momentum is good.
     hard-coded strings remain (route through `Loc`). Read `src/UI`.
   - **Done when:** every panel opens/closes/rebuilds cleanly with correct mouse-mode and
     no console errors; no untranslated legacy strings.
+  - **Done:** the mechanics were already solid; the real gap was **localization**, now closed.
+    *Audit:* the post-25 panels (Settings, SaveSlot, MainMenu, Pause, Crafting, Map) already route
+    through `Loc`, build on `UiTheme`, and use `UiState.Open/Close` + dirty-flag rebuild (verified 25.5E);
+    re-reading the four pre-25 surfaces confirmed each modal frees the mouse via `UiState` and rebuilds
+    from a `_dirty` flag in `_Process`, never mutating the tree inside a button signal (`QuestLogPanel`/
+    `GameHud` are intentionally non-modal HUD overlays). *Fix:* routed ~30 hard-coded player-facing
+    strings through `Loc.T`/`Loc.TF` across `InventoryPanel` (the CHARACTER screen — `char.*`),
+    `QuestLogPanel` (`questlog.*`), `DialoguePanel` (`dialogue.leave`), `GameHud` (`hud.*`) and two
+    `CraftingPanel` stragglers (`craft.recipes_none`/`craft.craft`), with 33 new keys in
+    `data/locale/strings.csv` (80 → **113** strings); interpolated lines use `Loc.TF` with `{0}`
+    placeholders (sign/precision formats pre-formatted to args). `DebugHud` left exempt (F3 dev overlay,
+    CLAUDE.md §6). Pure glyphs/number-unit fragments (`✓`/`•`/counters/separators) carry no language and
+    stay. Build + **242 tests** (unchanged) + `--validate` exit 0 (locale audit green: every key resolves,
+    no dupes/missing) + clean headless boot into Playing (`errors: []`); a residual-literal grep over the
+    four panels is empty. On-screen rendering is the maintainer's at-keyboard check.
+
+> **Stage A Hardening (Phase 25.5A–P) complete.** Every Stage-A subsystem audited; real bugs fixed
+> (save-key collisions, corruption load desync, mouse recapture, fast-travel trap, lifecycle guard,
+> respawn cadence, block-strand, cross-transition spawn leak) and the load-bearing pure kernels pinned
+> by **242 unit tests**. The whole game stays buildable, `--validate`-clean, and boots `errors: []`.
 
 ---
 
