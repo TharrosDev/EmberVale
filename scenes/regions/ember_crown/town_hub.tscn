@@ -5,6 +5,10 @@
 [ext_resource type="Resource" path="res://data/items/HealthPotion.tres" id="3_item"]
 [ext_resource type="Script" path="res://src/World/TravelNodeComponent.cs" id="4_travel"]
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="5_navbaker"]
+[ext_resource type="Script" path="res://src/Factions/FactionComponent.cs" id="6_faction"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="7_dialogue"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleComponent.cs" id="8_schedule"]
+[ext_resource type="Script" path="res://src/Crafting/CraftingStationComponent.cs" id="9_station"]
 
 [sub_resource type="NavigationMesh" id="NavMesh_hub"]
 geometry_parsed_geometry_type = 1
@@ -61,6 +65,65 @@ emission_energy_multiplier = 0.6
 
 [sub_resource type="BoxShape3D" id="Shape_relic"]
 size = Vector3(0.5, 0.5, 0.5)
+
+[sub_resource type="CapsuleMesh" id="Mesh_npc"]
+radius = 0.4
+height = 1.8
+
+[sub_resource type="CapsuleShape3D" id="Shape_npc"]
+radius = 0.4
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="Mat_elder"]
+albedo_color = Color(0.85, 0.78, 0.45, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_vendor_goods"]
+albedo_color = Color(0.45, 0.55, 0.7, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_vendor_smith"]
+albedo_color = Color(0.6, 0.4, 0.35, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_vendor_alch"]
+albedo_color = Color(0.4, 0.6, 0.5, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_innkeeper"]
+albedo_color = Color(0.7, 0.6, 0.45, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_station"]
+size = Vector3(0.9, 1, 0.9)
+
+[sub_resource type="BoxShape3D" id="Shape_station"]
+size = Vector3(0.9, 1, 0.9)
+
+[sub_resource type="StandardMaterial3D" id="Mat_forge"]
+albedo_color = Color(0.45, 0.2, 0.16, 1)
+emission_enabled = true
+emission = Color(0.45, 0.2, 0.16, 1)
+emission_energy_multiplier = 0.25
+
+[sub_resource type="StandardMaterial3D" id="Mat_workbench"]
+albedo_color = Color(0.45, 0.32, 0.18, 1)
+emission_enabled = true
+emission = Color(0.45, 0.32, 0.18, 1)
+emission_energy_multiplier = 0.25
+
+[sub_resource type="StandardMaterial3D" id="Mat_alchemy"]
+albedo_color = Color(0.2, 0.42, 0.4, 1)
+emission_enabled = true
+emission = Color(0.2, 0.42, 0.4, 1)
+emission_energy_multiplier = 0.25
+
+[sub_resource type="BoxMesh" id="Mesh_banner"]
+size = Vector3(0.5, 3, 0.12)
+
+[sub_resource type="BoxShape3D" id="Shape_banner"]
+size = Vector3(0.5, 3, 0.12)
+
+[sub_resource type="StandardMaterial3D" id="Mat_banner"]
+albedo_color = Color(0.35, 0.12, 0.16, 1)
+emission_enabled = true
+emission = Color(0.35, 0.12, 0.16, 1)
+emission_energy_multiplier = 0.2
 
 [node name="TownHubCell" type="Node3D"]
 
@@ -164,3 +227,223 @@ shape = SubResource("Shape_relic")
 script = ExtResource("2_pickup")
 Item = ExtResource("3_item")
 Quantity = 1
+
+[node name="Elder" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 0, -2)
+script = ExtResource("1_entity")
+DisplayName = "Village Elder"
+TemplateId = "npc.elder"
+
+[node name="Mesh" type="MeshInstance3D" parent="Elder"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("Mesh_npc")
+material_override = SubResource("Mat_elder")
+
+[node name="Collider" type="StaticBody3D" parent="Elder"]
+
+[node name="Shape" type="CollisionShape3D" parent="Elder/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="Elder"]
+script = ExtResource("6_faction")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="Elder"]
+script = ExtResource("7_dialogue")
+DialogueId = "dialogue.elder"
+
+[node name="Schedule" type="Node" parent="Elder"]
+script = ExtResource("8_schedule")
+ScheduleId = "schedule.elder"
+
+[node name="VendorGoods" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, -8)
+script = ExtResource("1_entity")
+DisplayName = "Aldreth, General Goods"
+TemplateId = "npc.vendor_goods"
+
+[node name="Mesh" type="MeshInstance3D" parent="VendorGoods"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("Mesh_npc")
+material_override = SubResource("Mat_vendor_goods")
+
+[node name="Collider" type="StaticBody3D" parent="VendorGoods"]
+
+[node name="Shape" type="CollisionShape3D" parent="VendorGoods/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="VendorGoods"]
+script = ExtResource("6_faction")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="VendorGoods"]
+script = ExtResource("7_dialogue")
+DialogueId = "dialogue.vendor_stub"
+SpeakerName = "Aldreth, General Goods"
+
+[node name="VendorSmith" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, -5)
+script = ExtResource("1_entity")
+DisplayName = "Bryn the Smith"
+TemplateId = "npc.vendor_smith"
+
+[node name="Mesh" type="MeshInstance3D" parent="VendorSmith"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("Mesh_npc")
+material_override = SubResource("Mat_vendor_smith")
+
+[node name="Collider" type="StaticBody3D" parent="VendorSmith"]
+
+[node name="Shape" type="CollisionShape3D" parent="VendorSmith/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="VendorSmith"]
+script = ExtResource("6_faction")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="VendorSmith"]
+script = ExtResource("7_dialogue")
+DialogueId = "dialogue.vendor_stub"
+SpeakerName = "Bryn the Smith"
+
+[node name="VendorAlch" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, -14)
+script = ExtResource("1_entity")
+DisplayName = "Mirela, Apothecary"
+TemplateId = "npc.vendor_alch"
+
+[node name="Mesh" type="MeshInstance3D" parent="VendorAlch"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("Mesh_npc")
+material_override = SubResource("Mat_vendor_alch")
+
+[node name="Collider" type="StaticBody3D" parent="VendorAlch"]
+
+[node name="Shape" type="CollisionShape3D" parent="VendorAlch/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="VendorAlch"]
+script = ExtResource("6_faction")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="VendorAlch"]
+script = ExtResource("7_dialogue")
+DialogueId = "dialogue.vendor_stub"
+SpeakerName = "Mirela, Apothecary"
+
+[node name="Innkeeper" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, -6)
+script = ExtResource("1_entity")
+DisplayName = "Innkeeper Holt"
+TemplateId = "npc.innkeeper"
+
+[node name="Mesh" type="MeshInstance3D" parent="Innkeeper"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("Mesh_npc")
+material_override = SubResource("Mat_innkeeper")
+
+[node name="Collider" type="StaticBody3D" parent="Innkeeper"]
+
+[node name="Shape" type="CollisionShape3D" parent="Innkeeper/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="Innkeeper"]
+script = ExtResource("6_faction")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="Innkeeper"]
+script = ExtResource("7_dialogue")
+DialogueId = "dialogue.vendor_stub"
+SpeakerName = "Innkeeper Holt"
+
+[node name="GuildMarker" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, -20)
+script = ExtResource("1_entity")
+DisplayName = "Adventurers' Guild Notice"
+
+[node name="Mesh" type="MeshInstance3D" parent="GuildMarker"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+mesh = SubResource("Mesh_banner")
+material_override = SubResource("Mat_banner")
+
+[node name="Collider" type="StaticBody3D" parent="GuildMarker"]
+
+[node name="Shape" type="CollisionShape3D" parent="GuildMarker/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+shape = SubResource("Shape_banner")
+
+[node name="Dialogue" type="Node" parent="GuildMarker"]
+script = ExtResource("7_dialogue")
+DialogueId = "dialogue.vendor_stub"
+SpeakerName = "Adventurers' Guild Notice"
+
+[node name="StationForge" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, -1)
+script = ExtResource("1_entity")
+DisplayName = "Forge"
+TemplateId = "station.forge"
+
+[node name="Mesh" type="MeshInstance3D" parent="StationForge"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+mesh = SubResource("Mesh_station")
+material_override = SubResource("Mat_forge")
+
+[node name="Collider" type="StaticBody3D" parent="StationForge"]
+
+[node name="Shape" type="CollisionShape3D" parent="StationForge/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("Shape_station")
+
+[node name="Station" type="Node" parent="StationForge"]
+script = ExtResource("9_station")
+Station = 1
+StationName = "Forge"
+
+[node name="StationWorkbench" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.3, 0, -0.6)
+script = ExtResource("1_entity")
+DisplayName = "Workbench"
+TemplateId = "station.workbench"
+
+[node name="Mesh" type="MeshInstance3D" parent="StationWorkbench"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+mesh = SubResource("Mesh_station")
+material_override = SubResource("Mat_workbench")
+
+[node name="Collider" type="StaticBody3D" parent="StationWorkbench"]
+
+[node name="Shape" type="CollisionShape3D" parent="StationWorkbench/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("Shape_station")
+
+[node name="Station" type="Node" parent="StationWorkbench"]
+script = ExtResource("9_station")
+Station = 2
+StationName = "Workbench"
+
+[node name="StationAlchemy" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, -2.6)
+script = ExtResource("1_entity")
+DisplayName = "Alchemy Table"
+TemplateId = "station.alchemy"
+
+[node name="Mesh" type="MeshInstance3D" parent="StationAlchemy"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+mesh = SubResource("Mesh_station")
+material_override = SubResource("Mat_alchemy")
+
+[node name="Collider" type="StaticBody3D" parent="StationAlchemy"]
+
+[node name="Shape" type="CollisionShape3D" parent="StationAlchemy/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("Shape_station")
+
+[node name="Station" type="Node" parent="StationAlchemy"]
+script = ExtResource("9_station")
+Station = 3
+StationName = "Alchemy Table"
