@@ -1151,7 +1151,7 @@ no code) — batch them when momentum is good.
     + `--validate` exit 0 + boot through the load path logs `Loaded game … as Wanderer (race.human)`
     (`errors: []`). `AppearanceOptionIds`/`Background` carried + persisted but not yet consumed (26D).
 
-- [ ] **26D — `CharacterCreator` screen** `[F]`
+- [x] **26D — `CharacterCreator` screen** `[F]` ✅
   - **Goal:** the new-game creation flow.
   - **Tasks:** build the creator (race pick with trait summary, appearance options,
     name, optional background) through `UiTheme`, fed by `RaceDatabase`, writing a
@@ -1159,6 +1159,18 @@ no code) — batch them when momentum is good.
     via `Loc`.
   - **Done when:** New Game → create a character → spawn into the world with the
     chosen race applied; flow round-trips through the save header.
+  - **Done:** `CharacterCreator` (`CanvasLayer`, mirrors `SaveSlotPanel`, built via `UiTheme`): a
+    `UiTheme.Dropdown` race picker over `RaceDatabase.All` with a live **trait summary** (the race's
+    `Description`, each stat delta as signed amount + localized stat name, innate perk/spell `DisplayName`s,
+    reputation tweaks by faction `DisplayName`), a name `LineEdit`, and an optional background `LineEdit`;
+    Begin builds a `CharacterProfile` and Back returns to the title. `MainMenu` New Game → slot pick →
+    creator → `NewCharacterRequested(slot, profile)`; `GameBootstrap.StartNewGame(slot, profile)` spawns
+    from it (the 26C plumbing applies the race). New `StatNames` helper (localized `StatType` names) +
+    15 `stat.*` and ~11 `create.*` keys (`strings.csv` 113→139). All strings via `Loc` (no literals).
+    Build clean + **247 tests** (+1 `StatNamesTests`: every `StatType` → distinct non-fallback key) +
+    `--validate` exit 0 + boot logs `loaded 139 string(s)`, `errors: []`. UI reviewed against the Godot 4.7
+    C# API (the New Game → creator → spawn click-path is a windowed interaction, not headless-drivable).
+    Appearance deferred (no catalogue/renderer until Phase 30 models). **Phase 26 complete.**
 
 ---
 

@@ -140,7 +140,7 @@ public partial class GameBootstrap : Node3D
     {
         _mainMenu = new MainMenu
         {
-            NewGameRequested = StartNewGame,
+            NewCharacterRequested = StartNewGame,
             LoadGameRequested = StartLoadedGame,
         };
         AddChild(_mainMenu);
@@ -150,16 +150,16 @@ public partial class GameBootstrap : Node3D
 
     /// <summary>Starts a fresh game into <paramref name="slot"/> (Phase 24C): builds the world and
     /// enters <see cref="GameState.Playing"/> with a clean playtime. Invoked by the slot browser.</summary>
-    private void StartNewGame(string slot)
+    private void StartNewGame(string slot, CharacterProfile profile)
     {
         if (!BeginSession(slot))
         {
             return;
         }
 
-        // New character: spawn from the chosen profile (Human until 26D's creator sets it) and grant
-        // the race's innate perks/spells/reputation.
-        _activeProfile = CharacterProfile.Human;
+        // New character (Phase 26D): spawn from the creator's chosen profile and grant the race's
+        // innate perks/spells/reputation.
+        _activeProfile = profile;
         _applyStartingGrants = true;
 
         SaveManager.Instance?.ResetPlaytime();
