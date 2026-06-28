@@ -39,12 +39,15 @@ public partial class TravelNodeComponent : InteractableComponent
 
     public override void Interact(IEntity instigator)
     {
-        if (Resolve() is not { } svc || Entity?.Body is not { } body)
+        if (Resolve() is not { } svc || instigator.Body is not { } playerBody)
         {
             return;
         }
 
-        if (svc.Discover(Id, TravelName, RegionId, body.GlobalPosition))
+        // Record where the PLAYER stands to attune — a known-walkable spot beside the post — not the
+        // post's own position. Fast travel lands the player at this point; landing on the post's own
+        // collider trapped them inside it.
+        if (svc.Discover(Id, TravelName, RegionId, playerBody.GlobalPosition))
         {
             Log.Info($"Attuned to {TravelName}.");
         }
