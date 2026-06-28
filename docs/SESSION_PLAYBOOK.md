@@ -1329,13 +1329,29 @@ no code) — batch them when momentum is good.
     stay hidden until done → complete to the Elder's finale, text shown localized) is the maintainer's
     at-keyboard check (MCP can't drive `E`/movement).
 
-- [ ] **27F — First-pass ambience, lighting & audio bed** `[P]`
+- [x] **27F — First-pass ambience, lighting & audio bed** `[P]` ✅
   - **Goal:** the quality bar, first pass.
   - **Tasks:** set day/night lighting mood, weather bias, and a first-pass ambience
     bed (placeholder audio is fine pre-Phase 31). Establish the dying-world palette
     in this region as the reference for all later regions.
   - **Done when:** the region reads as a *place* with mood, not greybox; documented
     as the bar.
+  - **Done:** established the **dying-world palette** (user chose Moderate intensity) as the shared
+    reference bar — the whole game is the dying world, so one base palette, not per-region data
+    (per-realm variation is Phase 44). `GameBootstrap.BuildEnvironment` now sets an ACES tonemap +
+    muted exposure, an overcast-leaning desaturated `ProceduralSkyMaterial` (no more bright blue),
+    warm-grey ambient fill, soft glow, and softer sun shadows. `SkyController` gained a labelled
+    *Dying-world palette* constants block: ashier dawn/dusk + muted warm-grey noon sun, a dimmer noon
+    energy ceiling (1.15→0.9), and a **haze floor** (`max(weatherFog, 0.006)` + ash-tinted fog) so the
+    air is never perfectly clear even in clear weather. Weather `FogColor`s re-tinted cool-blue→ashen
+    warm-grey across all 5 states; the heartland default biased `weather.clear`→`weather.cloudy` (and
+    Clear's weight dropped) so it leans overcast. Documented as the bar in `ARCHITECTURE.md` §2.6h.
+    **Audio bed deferred to Phase 31** (no audio system/asset exists; not in 27F's done-when — no
+    half-built scaffolding). Build clean + 251 tests + `--validate` 0 (`weather.cloudy` resolves);
+    boots clean (`errors: []`). **The visual judgement is the maintainer's at-keyboard check** — the
+    MCP can't screenshot the running game; the palette constants are left as labelled knobs to nudge
+    if Moderate lands too strong/weak (scrub with F1 `time 6/12/18/22` + `weather …`).
+  - **→ Phase 27 (First Real Region — Ember Crown) complete.** Next: Phase 28 (first boss).
 
 ---
 

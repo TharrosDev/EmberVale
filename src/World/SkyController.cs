@@ -27,8 +27,16 @@ public partial class SkyController : Node3D
     /// <summary>How fast weather atmosphere blends in/out (units per second).</summary>
     [Export] public float WeatherBlendRate { get; set; } = 0.5f;
 
-    private static readonly Color WarmLight = new(1.0f, 0.62f, 0.36f);
-    private static readonly Color NoonLight = new(1.0f, 0.96f, 0.88f);
+    // --- Dying-world palette (Phase 27F) -----------------------------------
+    // The reference mood bar for every region: an ashen, dimmed, ever-hazy world. "Moderate"
+    // intensity — clearly melancholy but readable, night dim-not-black. These are the tunable
+    // knobs; per-realm variation gets lifted into data at Phase 44. The Environment base (sky
+    // colours, tonemap, glow) lives in GameBootstrap.BuildEnvironment.
+    private static readonly Color WarmLight = new(0.95f, 0.58f, 0.38f); // dawn/dusk sun — ashier warm
+    private static readonly Color NoonLight = new(0.92f, 0.86f, 0.76f); // noon sun — muted warm-grey, not white
+    private const float NoonSunEnergy = 0.9f;                            // dimmer sun ceiling (was 1.15)
+    private const float HazeFloor = 0.006f;                              // air is never perfectly clear
+    private static readonly Color AshFog = new(0.70f, 0.66f, 0.60f);     // ever-present haze tint
 
     private WorldClock? _clock;
     private WeatherDirector? _weather;
@@ -39,7 +47,7 @@ public partial class SkyController : Node3D
     private float _skyScale = 1f;
     private float _fogDensity;
     private float _precipitation;
-    private Color _fogColor = new(0.72f, 0.74f, 0.78f);
+    private Color _fogColor = AshFog;
 
     public override void _Ready()
     {
@@ -81,7 +89,7 @@ public partial class SkyController : Node3D
         Sun.RotationDegrees = new Vector3(pitch, azimuth, 0f);
 
         Sun.Visible = dayFactor > 0.01f;
-        Sun.LightEnergy = Mathf.Lerp(0f, 1.15f, dayFactor) * _lightScale;
+        Sun.LightEnergy = Mathf.Lerp(0f, NoonSunEnergy, dayFactor) * _lightScale;
         Sun.LightColor = WarmLight.Lerp(NoonLight, dayFactor);
     }
 
@@ -99,13 +107,13 @@ public partial class SkyController : Node3D
         float skyEnergy = Mathf.Lerp(0.12f, 1f, dayFactor) * _skyScale;
         Environment.BackgroundEnergyMultiplier = skyEnergy;
 
-        bool fog = _fogDensity > 0.0005f;
-        Environment.FogEnabled = fog;
-        if (fog)
-        {
-            Environment.FogDensity = _fogDensity;
-            Environment.FogLightColor = _fogColor;
-        }
+        // A dying-world haze floor: the air is never perfectly clear, so even "clear" weather keeps a
+        // faint ashen veil. Weather fog blends above this floor.
+        float density = Mathf.Max(_fogDensity, HazeFloor);
+        Environment.FogEnabled = true;
+        Environment.FogDensity = density;
+        // Bias the (weather-blended) fog colour toward ash so the veil reads as dust, not rain-mist.
+        Environment.FogLightColor = _fogColor.Lerp(AshFog, 0.5f);
     }
 
     // --- Weather blending ---------------------------------------------------

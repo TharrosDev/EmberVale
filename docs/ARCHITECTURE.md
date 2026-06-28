@@ -391,6 +391,16 @@ persists). Three pieces:
   ambient darkening at night via `Environment.BackgroundEnergyMultiplier`. The sun + env are
   built by the bootstrap and **injected** (`Sun`/`Environment` properties). It also blends in
   the active weather and drives a rain `GpuParticles3D` that follows the player.
+  - **Dying-world palette (Phase 27F) — the reference bar for every region.** The base mood is a
+    shared, ashen, ever-hazy "dying world": `GameBootstrap.BuildEnvironment` sets the Environment
+    base (ACES tonemap + muted exposure, an overcast-leaning desaturated `ProceduralSkyMaterial`,
+    warm-grey ambient fill, soft glow), and `SkyController`'s labelled *Dying-world palette*
+    constants set the day/night tuning (ashier sun tints, a dimmer noon ceiling, and a **haze
+    floor** so the air is never perfectly clear even in clear weather). Weather `FogColor`s are
+    ashen warm-grey, and the heartland defaults to `weather.cloudy`. The whole game is the dying
+    world, so this is one shared palette; **per-realm variation is lifted into data at Phase 44**,
+    and final art is Phase 53. Tune the look via those two clearly-marked spots — no per-region
+    palette fields exist yet. (Ambient *audio* is deferred to **Phase 31**.)
 - **Weather** — `WeatherResource` (`[GlobalClass]`, `data/weather/*.tres`): duration range,
   `SelectionWeight`, `LightEnergyScale`/`SkyEnergyScale`, `FogDensity`/`FogColor`,
   `Precipitation`. `WeatherDatabase` indexes them. **`WeatherDirector`** (`Node`, `ISaveable`
