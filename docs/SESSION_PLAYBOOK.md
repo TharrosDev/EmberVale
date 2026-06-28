@@ -953,7 +953,7 @@ no code) — batch them when momentum is good.
     `ItemInstance` across the stacks it makes for a **unique** item added with `quantity>1` — not
     reachable today (loot emits one-per-unit; equippable recipes output qty 1).
 
-- [ ] **25.5L — Progression, quests & dialogue** `[F]` (systems 8, 9, 10)
+- [x] **25.5L — Progression, quests & dialogue** `[F]` (systems 8, 9, 10) ✅
   - **Goal:** progression and narrative plumbing are robust.
   - **Tasks:** XP curve/level-up boundaries, perk apply/respec, quest objective
     advance/complete/prereq chains and reward grant, dialogue graph traversal +
@@ -961,6 +961,23 @@ no code) — batch them when momentum is good.
     story-flag persistence. Read `src/Progression`, `src/Quests`, `src/Dialogue`.
   - **Done when:** quests advance/complete with no stuck objectives; dialogue branches
     resolve conditions/effects correctly; flags round-trip (harness/unit covered).
+  - **Done:** audited the three systems — **solid** — and pinned the two boundary kernels.
+    *Audit:* `QuestLogComponent.Advance` clamps each count to `RequiredCount` and skips complete
+    objectives, `TryComplete` flips to `Completed` and grants rewards exactly once, `CanStart` gates on
+    `PrerequisiteQuestId` via `IsCompleted`, and `StartQuest` runs `TryComplete` immediately so a
+    0-objective / 0-required quest can't stick — no stuck path. `StoryFlagsComponent` is a guarded
+    `HashSet` with a HashSet↔array `Save`/`Load` (round-trips by construction). Dialogue graph structure
+    is already pinned by `DialogueGraphAnalysis` + tests; `DialogueSession.Evaluate`/`ApplyEffect` are a
+    plain switch over quest-log/flag/corruption state. *Coverage:* extracted the pure
+    `ProgressionMath.XpToReach(level, baseXp, exponent, maxLevel)` + `Resolve(level, xp, maxLevel,
+    addedXp, xpToReach)` out of `ProgressionResource`/`ProgressionComponent.AddXp` (no behaviour change),
+    and `ObjectiveProgress.IsComplete`/`AllMet` out of `QuestProgress`. New `ProgressionMathTests` pin
+    the curve (positive, strictly increasing, 0 at/after cap) and the level-up boundaries (one-short =
+    no level, **exact threshold = level with 0 remainder**, multi-level overflow, excess discarded at
+    cap, `need<=0` guard against an infinite loop, non-positive grant no-op); `ObjectiveProgressTests`
+    pin the completion boundary (0/negative requirement met immediately = no stuck, exact, over-count,
+    mixed `AllMet`). Build + **186 tests** (20 new) + `--validate` (exit 0) + clean headless boot that
+    auto-loaded into Playing and ran the quest/XP path (`errors: []`) green.
 
 - [ ] **25.5M — Magic, status effects & combat math** `[F]` (system 12)
   - **Goal:** spellcasting and effects resolve consistently.

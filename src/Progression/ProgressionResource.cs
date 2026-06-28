@@ -37,12 +37,7 @@ public partial class ProgressionResource : Resource
     /// Returns 0 at or beyond <see cref="MaxLevel"/>.</summary>
     public int XpToReach(int level)
     {
-        if (level >= MaxLevel)
-        {
-            return 0;
-        }
-
-        return Mathf.RoundToInt(BaseXpToLevel * Mathf.Pow(level, XpCurveExponent));
+        return ProgressionMath.XpToReach(level, BaseXpToLevel, XpCurveExponent, MaxLevel);
     }
 
     /// <summary>The non-zero per-level stat gains as (stat, amount) pairs.</summary>

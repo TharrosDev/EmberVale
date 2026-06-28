@@ -102,36 +102,19 @@ public partial class ProgressionComponent : EntityComponent, ISaveable
             return;
         }
 
-        CurrentXp += amount;
-
-        int levelsGained = 0;
-        int skillPointsGained = 0;
-        while (!IsMaxLevel)
-        {
-            int need = Curve.XpToReach(Level);
-            if (need <= 0 || CurrentXp < need)
-            {
-                break;
-            }
-
-            CurrentXp -= need;
-            Level++;
-            levelsGained++;
-            skillPointsGained += Curve.SkillPointsPerLevel;
-        }
+        (int newLevel, int newXp, int levelsGained) = ProgressionMath.Resolve(
+            Level, CurrentXp, Curve.MaxLevel, amount, Curve.XpToReach);
+        Level = newLevel;
+        CurrentXp = newXp;
 
         if (levelsGained > 0)
         {
+            int skillPointsGained = levelsGained * Curve.SkillPointsPerLevel;
             SkillPoints += skillPointsGained;
             ApplyGrowth();
             _stats?.RefillResources();
             EventBus.Instance?.Publish(new LeveledUpEvent(Entity, Level, skillPointsGained));
             Log.Info($"{Entity.DisplayName} reached level {Level} (+{skillPointsGained} skill point(s)).");
-        }
-
-        if (IsMaxLevel)
-        {
-            CurrentXp = 0;
         }
 
         EventBus.Instance?.Publish(new XpGainedEvent(Entity, amount, CurrentXp, XpToNext));

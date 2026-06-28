@@ -27,7 +27,8 @@ public sealed class QuestProgress
     public bool IsObjectiveComplete(int index)
     {
         List<ObjectiveResource> objectives = Quest.ObjectiveList();
-        return index >= 0 && index < objectives.Count && Counts[index] >= objectives[index].RequiredCount;
+        return index >= 0 && index < objectives.Count
+            && ObjectiveProgress.IsComplete(Counts[index], objectives[index].RequiredCount);
     }
 
     /// <summary>True when every objective has met its required count.</summary>
@@ -36,7 +37,7 @@ public sealed class QuestProgress
         List<ObjectiveResource> objectives = Quest.ObjectiveList();
         for (int i = 0; i < objectives.Count; i++)
         {
-            if (Counts[i] < objectives[i].RequiredCount)
+            if (!ObjectiveProgress.IsComplete(Counts[i], objectives[i].RequiredCount))
             {
                 return false;
             }
