@@ -1290,6 +1290,19 @@ no code) — batch them when momentum is good.
     enemy archetype (code) so 27D uses goblins; POI loot is pickups (no openable-container UI yet).
     Walking the wilds to fight encounters + collect/persist POI loot is the maintainer's at-keyboard
     check (the MCP can't drive movement/`E`/combat); the data + wiring loaded live without errors.
+  - **27D follow-up (player request, code):** two of the deferred items above are now closed.
+    (1) **Hub safe zone** — `RegionResource` gained `SafeZoneCenter`/`SafeZoneRadius` (EmberCrown:
+    centre `(0,0,-10)`, r 34, covering the town); a static `SafeZones` (`src/World/SafeZones.cs`) holds
+    the active region's bubble, populated by `GameBootstrap` at world build + each region transition.
+    The `EncounterDirector` and hostile (non-cache) `WorldEventDirector` events now reject ring points
+    inside it (`SafeZones.TryRingPointOutside`), so ambient enemies/raids spawn only in the wilds; the
+    static goblin camp moved from the town edge `(0,0,-8)` out to `(0,0,-58)` (wilds_north). Loot caches
+    and **scripted** spawns (quest/event enemies via `EnemyFactory`) bypass the gate, so a mission
+    thief/assassin in town still works. (2) **Hold-`E` auto-pickup** — `PlayerController` sweeps a 3.5 m
+    sphere for `ItemPickupComponent`s while `E` is held (every 0.12 s, non-just-pressed frames), so a
+    pile of drops is vacuumed instead of tapped one-by-one (player-confirmed working). Build clean + 251
+    tests + `--validate` 0; the maintainer's automated continue scenario ran clean (goblin fought in
+    wilds_north, loot collected, saved, `errors: []`).
 
 - [ ] **27E — Starter quest chain in the Ember Crown** `[C]`
   - **Goal:** a real questline to play.

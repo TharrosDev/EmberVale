@@ -44,6 +44,14 @@ public partial class RegionResource : Resource
     /// <summary>The day phase that best characterises the region (a mood hint; not a hard lock).</summary>
     [Export] public DayPhase DayPhaseBias { get; set; } = DayPhase.Day;
 
+    [ExportGroup("Safe zone")]
+    /// <summary>Centre (world space) of the region's single safe bubble — its town — where the ambient
+    /// spawners keep enemies and hostile events out (Phase 27D follow-up). <see cref="SafeZoneRadius"/>
+    /// 0 = no safe zone. Scripted spawns bypass it; see <see cref="SafeZones"/>.</summary>
+    [Export] public Vector3 SafeZoneCenter { get; set; } = Vector3.Zero;
+
+    [Export] public float SafeZoneRadius { get; set; }
+
     [ExportGroup("Graph")]
     /// <summary>Ids of directly-reachable neighbouring regions (the map + fast-travel adjacency).</summary>
     [Export] public Godot.Collections.Array<string> Neighbours { get; set; } = new();

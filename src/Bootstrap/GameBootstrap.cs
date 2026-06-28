@@ -326,10 +326,12 @@ public partial class GameBootstrap : Node3D
     private void SpawnRegionStreamer()
     {
         _streamer = new RegionStreamer { Name = "RegionStreamer" };
-        _streamer.Configure(RegionDatabase.Get(_currentRegionId));
+        RegionResource? region = RegionDatabase.Get(_currentRegionId);
+        _streamer.Configure(region);
         AddChild(_streamer);
         ServiceLocator.Instance?.Register(_streamer);
-        SpawnRegionPortals(RegionDatabase.Get(_currentRegionId));
+        SpawnRegionPortals(region);
+        SafeZones.Set(region?.SafeZoneCenter ?? Vector3.Zero, region?.SafeZoneRadius ?? 0f);
     }
 
     /// <summary>Places a hard-transition portal for each of the region's neighbours (Phase 25C), a
@@ -454,6 +456,7 @@ public partial class GameBootstrap : Node3D
             _streamer.Configure(destination);
             _mapService?.DiscoverRegion(destination.Id); // entering reveals it on the map (Phase 25E)
             SpawnRegionPortals(destination);
+            SafeZones.Set(destination.SafeZoneCenter, destination.SafeZoneRadius);
         }
 
         _player!.Velocity = Vector3.Zero;
@@ -791,12 +794,13 @@ public partial class GameBootstrap : Node3D
         var director = new EnemySpawnDirector
         {
             Name = "GoblinCamp",
-            Position = new Vector3(0f, 0f, -8f),
+            // Out in the northern wilds (wilds_north cell), clear of the town's safe zone.
+            Position = new Vector3(0f, 0f, -58f),
             MaxAlive = 3,
             SpawnRadius = 6f,
         };
         AddChild(director);
-        Log.Info("A goblin camp stirs to the north (−Z).");
+        Log.Info("A goblin camp stirs in the northern wilds (−Z).");
     }
 
     private void RespawnPlayer()

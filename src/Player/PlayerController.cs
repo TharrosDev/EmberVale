@@ -4,6 +4,7 @@ using Embervale.Core.Events;
 using Embervale.Core.Services;
 using Embervale.Entities;
 using Embervale.Interaction;
+using Embervale.Items;
 using Embervale.Magic;
 using Embervale.Movement;
 using Embervale.Settings;
@@ -31,6 +32,11 @@ public partial class PlayerController : EntityComponent
 
     [Export]
     public float InteractRange { get; set; } = 3f;
+
+    /// <summary>Radius of the hold-E auto-pickup sweep, and how often it runs while E is held.</summary>
+    private const float AutoPickupRadius = 3.5f;
+    private const double AutoPickupInterval = 0.12;
+    private double _autoPickupTimer;
 
     /// <summary>Pitch clamp (radians) so the camera can't flip over the top/bottom.</summary>
     private const float PitchLimit = 1.45f;
@@ -134,6 +140,48 @@ public partial class PlayerController : EntityComponent
         if (Godot.Input.IsActionJustPressed(GameInput.Interact))
         {
             FocusedInteractable?.Interact(Entity!);
+            _autoPickupTimer = AutoPickupInterval; // brief grace before the held sweep kicks in
+        }
+        else if (Godot.Input.IsActionPressed(GameInput.Interact))
+        {
+            // Hold E to vacuum nearby loot — saves tapping E per item when a kill drops a pile.
+            // Runs only on non-just-pressed frames so it never double-collects the focused item.
+            _autoPickupTimer -= delta;
+            if (_autoPickupTimer <= 0d)
+            {
+                _autoPickupTimer = AutoPickupInterval;
+                AutoPickupNearby();
+            }
+        }
+    }
+
+    /// <summary>Collects every <see cref="ItemPickupComponent"/> within <see cref="AutoPickupRadius"/>
+    /// of the player (a physics sphere sweep). Pickups free themselves when emptied, so each is taken
+    /// once per sweep and gone by the next.</summary>
+    private void AutoPickupNearby()
+    {
+        if (Entity?.Body is not CharacterBody3D body)
+        {
+            return;
+        }
+
+        PhysicsDirectSpaceState3D space = body.GetWorld3D().DirectSpaceState;
+        var query = new PhysicsShapeQueryParameters3D
+        {
+            Shape = new SphereShape3D { Radius = AutoPickupRadius },
+            Transform = new Transform3D(Basis.Identity, body.GlobalPosition),
+            CollideWithAreas = false,
+            CollideWithBodies = true,
+            Exclude = new Godot.Collections.Array<Rid> { body.GetRid() },
+        };
+
+        foreach (Godot.Collections.Dictionary hit in space.IntersectShape(query, maxResults: 24))
+        {
+            if (hit["collider"].AsGodotObject() is Node collider &&
+                EntityNode.FindOwner(collider)?.GetComponent<ItemPickupComponent>() is { } pickup)
+            {
+                pickup.Interact(Entity!);
+            }
         }
     }
 

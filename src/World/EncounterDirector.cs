@@ -112,7 +112,12 @@ public partial class EncounterDirector : Node3D
             return;
         }
 
-        Vector3 origin = RingPointAround(player.GlobalPosition);
+        // Keep ambient encounters out of the town's safe zone (they only spawn in the wilds).
+        if (!SafeZones.TryRingPointOutside(player.GlobalPosition, SpawnDistanceMin, SpawnDistanceMax, out Vector3 origin))
+        {
+            return;
+        }
+
         for (int i = 0; i < count; i++)
         {
             Vector3 jitter = new(GD.Randf() * 2f - 1f, 0f, GD.Randf() * 2f - 1f);
@@ -169,16 +174,6 @@ public partial class EncounterDirector : Node3D
         }
 
         return pool[pool.Count - 1];
-    }
-
-    private Vector3 RingPointAround(Vector3 center)
-    {
-        float angle = GD.Randf() * Mathf.Tau;
-        float distance = Mathf.Lerp(SpawnDistanceMin, SpawnDistanceMax, GD.Randf());
-        return new Vector3(
-            center.X + (Mathf.Cos(angle) * distance),
-            0.5f,
-            center.Z + (Mathf.Sin(angle) * distance));
     }
 
     private double NextInterval()

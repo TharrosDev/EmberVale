@@ -147,10 +147,21 @@ public partial class WorldEventDirector : Node3D
 
     private void Begin(WorldEventResource resource, PlayerCharacter player)
     {
-        Vector3 origin = RingPointAround(player.GlobalPosition, resource);
-        double limit = resource.TimeLimitSeconds > 0f ? resource.TimeLimitSeconds : double.PositiveInfinity;
-
         bool isCache = resource.Kind == WorldEventKind.Cache;
+
+        // A loot cache is harmless and may appear anywhere; a hostile event must land outside the
+        // town's safe zone. If it can't (player deep in town), skip and re-roll next interval.
+        Vector3 origin;
+        if (isCache)
+        {
+            origin = RingPointAround(player.GlobalPosition, resource);
+        }
+        else if (!SafeZones.TryRingPointOutside(player.GlobalPosition, resource.SpawnDistanceMin, resource.SpawnDistanceMax, out origin))
+        {
+            return;
+        }
+
+        double limit = resource.TimeLimitSeconds > 0f ? resource.TimeLimitSeconds : double.PositiveInfinity;
         int required = isCache ? Mathf.Max(1, resource.CacheQuantity) : Mathf.Max(1, resource.RollCount());
 
         var worldEvent = new WorldEvent(resource, origin, required, limit);
