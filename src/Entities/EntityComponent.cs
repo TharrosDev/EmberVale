@@ -20,6 +20,11 @@ public abstract partial class EntityComponent : Node
     /// <summary>The entity this component belongs to, or null if unparented.</summary>
     public IEntity? Entity { get; private set; }
 
+    // Pairs OnInitialize/OnTeardown exactly once. _Ready fires once, but Godot fires _ExitTree on
+    // EVERY removal from the tree, so without this a detach/re-attach (or any double _ExitTree) would
+    // run OnTeardown twice — double-unsubscribe/unregister, and a component left dead.
+    private bool _initialized;
+
     public override void _Ready()
     {
         Entity = EntityNode.FindOwner(GetParent());
@@ -30,12 +35,14 @@ public abstract partial class EntityComponent : Node
         }
 
         OnInitialize();
+        _initialized = true;
     }
 
     public override void _ExitTree()
     {
-        if (Entity != null)
+        if (_initialized)
         {
+            _initialized = false;
             OnTeardown();
         }
     }

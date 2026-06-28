@@ -851,7 +851,7 @@ no code) — batch them when momentum is good.
 > re-verified (build + tests + `--validate` + an in-engine/harness run), **no new
 > features.** Reference `docs/ARCHITECTURE.md` for each system before touching it.
 
-- [ ] **25.5H — Core, entity/component, events, stats & pooling** `[F]` (systems 1)
+- [x] **25.5H — Core, entity/component, events, stats & pooling** `[F]` (systems 1) ✅
   - **Goal:** the architectural spine is leak-free and correct.
   - **Tasks:** audit `EventBus` subscribe/unsubscribe symmetry (the bootstrap already
     warns on handlers that survive teardown — drive that to zero), `ServiceLocator`
@@ -861,6 +861,24 @@ no code) — batch them when momentum is good.
     `src/Stats` first.
   - **Done when:** no leaked handlers on scene teardown; stat modifiers apply/remove
     cleanly; pooled nodes re-arm with no stale state (covered by a unit/harness check).
+  - **Done:** audited the spine — **largely clean**, with one latent fragility fixed.
+    *Audit:* **EventBus** subscribe/unsubscribe is symmetric per-type across every subscriber
+    (components unsubscribe in `OnTeardown`, UI/directors in `_ExitTree`; both fire on
+    `QueueFree`). **NodePool** is sound — reset-on-reuse is the caller's job by design, and
+    `SpellProjectile.Launch` re-arms every field per shot (`_resolved`/`_life`/direction/packet/
+    material/`Monitoring`), no stale carry-over. **Stat modifiers** are correct and now fully
+    pinned (`EquipmentComponent` sources each modifier to the item instance and removes by
+    source). **ServiceLocator** stale refs (player/dummy/streamer never `Unregister`ed) are
+    *quit-only* — `BeginSession` guards `_sandboxBuilt`, so the sandbox is never rebuilt
+    in-session; a fix would be dead code, so left as-is. *Fix:* `EntityComponent` ran
+    `OnTeardown` on **every** `_ExitTree` (Godot fires it on each tree removal) while
+    `OnInitialize` runs once in `_Ready` — a detach/re-attach or double `_ExitTree` would
+    double-unsubscribe/unregister and leave the component dead. Added an `_initialized` guard so
+    init/teardown pair **exactly once**; identical on the normal path, safe against a double exit.
+    *Tests:* completed the stat-unstack coverage `StatTests` lacked — `RemoveModifier`,
+    `ClearModifiers`, `Changed`-on-remove, and `RemoveModifiersFromSource` stripping all of a
+    source's stacked modifiers. Build + **130 tests** (4 new) + `--validate` (exit 0) + a clean
+    headless boot capture (all databases → `MainMenu`, `errors: []`) green.
 
 - [ ] **25.5I — Player controller, locomotion & combat framework** `[F]` (systems 2, 3)
   - **Goal:** movement and the damage pipeline are tight and predictable.

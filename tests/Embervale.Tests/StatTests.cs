@@ -78,6 +78,62 @@ public class StatTests
     }
 
     [Fact]
+    public void RemoveModifier_DropsOneAndRecomputes()
+    {
+        var stat = new Stat(StatType.Armor, 10f);
+        var keep = new StatModifier(5f, ModifierType.Flat);
+        var drop = new StatModifier(3f, ModifierType.Flat);
+        stat.AddModifier(keep);
+        stat.AddModifier(drop);
+        Assert.Equal(18f, stat.Value, Tolerance);
+
+        Assert.True(stat.RemoveModifier(drop));
+        Assert.Equal(15f, stat.Value, Tolerance);
+        Assert.False(stat.RemoveModifier(drop)); // already gone
+    }
+
+    [Fact]
+    public void ClearModifiers_ReturnsToBase()
+    {
+        var stat = new Stat(StatType.PhysicalPower, 100f);
+        stat.AddModifier(new StatModifier(50f, ModifierType.Flat));
+        stat.AddModifier(new StatModifier(0.20f, ModifierType.PercentMult));
+        Assert.NotEqual(100f, stat.Value, Tolerance);
+
+        stat.ClearModifiers();
+        Assert.Equal(100f, stat.Value, Tolerance);
+    }
+
+    [Fact]
+    public void Changed_FiresWhenModifierRemoved()
+    {
+        var stat = new Stat(StatType.Mana, 50f);
+        var mod = new StatModifier(10f, ModifierType.Flat);
+        stat.AddModifier(mod);
+
+        int fired = 0;
+        stat.Changed += _ => fired++;
+        stat.RemoveModifier(mod);
+
+        Assert.True(fired > 0);
+    }
+
+    [Fact]
+    public void RemoveModifiersFromSource_StripsAllStackedFromThatSource()
+    {
+        var gear = new object();
+        var stat = new Stat(StatType.PhysicalPower, 0f);
+        stat.AddModifier(new StatModifier(5f, ModifierType.Flat, gear));
+        stat.AddModifier(new StatModifier(0.10f, ModifierType.PercentMult, gear));
+        stat.AddModifier(new StatModifier(3f, ModifierType.Flat, new object())); // a different source
+
+        int removed = stat.RemoveModifiersFromSource(gear);
+
+        Assert.Equal(2, removed);
+        Assert.Equal(3f, stat.Value, Tolerance); // only the other source's flat remains
+    }
+
+    [Fact]
     public void ChangingBaseValue_RecomputesCachedValue()
     {
         var stat = new Stat(StatType.Health, 100f);
