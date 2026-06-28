@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="RaceResource" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://src/Races/RaceResource.cs" id="1_race"]
+[ext_resource type="Script" path="res://src/Races/RaceStatDelta.cs" id="2_delta"]
+[ext_resource type="Script" path="res://src/Races/RaceReputationTweak.cs" id="3_rep"]
+
+[sub_resource type="Resource" id="Delta_dex"]
+script = ExtResource("2_delta")
+Stat = 4
+Amount = 4.0
+
+[sub_resource type="Resource" id="Delta_move"]
+script = ExtResource("2_delta")
+Stat = 11
+Amount = 0.4
+
+[sub_resource type="Resource" id="Delta_crit"]
+script = ExtResource("2_delta")
+Stat = 13
+Amount = 0.03
+
+[sub_resource type="Resource" id="Rep_villagers"]
+script = ExtResource("3_rep")
+FactionId = "faction.villagers"
+Amount = -15
+
+[resource]
+script = ExtResource("1_race")
+Id = "race.umbral"
+DisplayName = "Umbral"
+Description = "Touched by the Cataclysm and shrouded in shadow, the Umbral are unmatched masters of stealth — and, for the mark the corruption left on them, often distrusted by the folk of the realm."
+StatDeltas = Array[Resource]([SubResource("Delta_dex"), SubResource("Delta_move"), SubResource("Delta_crit")])
+InnatePerkIds = Array[String](["perk.precision"])
+InnateSpellIds = Array[String]([])
+ReputationTweaks = Array[Resource]([SubResource("Rep_villagers")])
+AppearanceOptionIds = Array[String]([])

@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="RaceResource" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/Races/RaceResource.cs" id="1_race"]
+[ext_resource type="Script" path="res://src/Races/RaceStatDelta.cs" id="2_delta"]
+
+[sub_resource type="Resource" id="Delta_dex"]
+script = ExtResource("2_delta")
+Stat = 4
+Amount = 3.0
+
+[sub_resource type="Resource" id="Delta_vit"]
+script = ExtResource("2_delta")
+Stat = 6
+Amount = 2.0
+
+[sub_resource type="Resource" id="Delta_move"]
+script = ExtResource("2_delta")
+Stat = 11
+Amount = 0.4
+
+[resource]
+script = ExtResource("1_race")
+Id = "race.sylthari"
+DisplayName = "Sylthari"
+Description = "A nature-bound people who commune with wildlife and master the wilds. Sylthari are nimble survivalists, at home in forests where others would starve."
+StatDeltas = Array[Resource]([SubResource("Delta_dex"), SubResource("Delta_vit"), SubResource("Delta_move")])
+InnatePerkIds = Array[String](["perk.endurance_training"])
+InnateSpellIds = Array[String]([])
+ReputationTweaks = Array[Resource]([])
+AppearanceOptionIds = Array[String]([])

@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="RaceResource" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://src/Races/RaceResource.cs" id="1_race"]
+[ext_resource type="Script" path="res://src/Races/RaceStatDelta.cs" id="2_delta"]
+[ext_resource type="Script" path="res://src/Races/RaceReputationTweak.cs" id="3_rep"]
+
+[sub_resource type="Resource" id="Delta_str"]
+script = ExtResource("2_delta")
+Stat = 3
+Amount = 2.0
+
+[sub_resource type="Resource" id="Delta_sp"]
+script = ExtResource("2_delta")
+Stat = 10
+Amount = 2.0
+
+[sub_resource type="Resource" id="Delta_critdmg"]
+script = ExtResource("2_delta")
+Stat = 14
+Amount = 0.2
+
+[sub_resource type="Resource" id="Rep_villagers"]
+script = ExtResource("3_rep")
+FactionId = "faction.villagers"
+Amount = -10
+
+[resource]
+script = ExtResource("1_race")
+Id = "race.draekyn"
+DisplayName = "Draekyn"
+Description = "Dragon-blooded descendants, rare and feared. The Draekyn carry the breath of dragons in their veins — a power that draws wary eyes wherever they walk."
+StatDeltas = Array[Resource]([SubResource("Delta_str"), SubResource("Delta_sp"), SubResource("Delta_critdmg")])
+InnatePerkIds = Array[String]([])
+InnateSpellIds = Array[String](["spell.fireball"])
+ReputationTweaks = Array[Resource]([SubResource("Rep_villagers")])
+AppearanceOptionIds = Array[String]([])

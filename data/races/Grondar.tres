@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="RaceResource" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://src/Races/RaceResource.cs" id="1_race"]
+[ext_resource type="Script" path="res://src/Races/RaceStatDelta.cs" id="2_delta"]
+
+[sub_resource type="Resource" id="Delta_str"]
+script = ExtResource("2_delta")
+Stat = 3
+Amount = 5.0
+
+[sub_resource type="Resource" id="Delta_end"]
+script = ExtResource("2_delta")
+Stat = 7
+Amount = 4.0
+
+[sub_resource type="Resource" id="Delta_vit"]
+script = ExtResource("2_delta")
+Stat = 6
+Amount = 3.0
+
+[sub_resource type="Resource" id="Delta_hp"]
+script = ExtResource("2_delta")
+Stat = 0
+Amount = 20.0
+
+[sub_resource type="Resource" id="Delta_move"]
+script = ExtResource("2_delta")
+Stat = 11
+Amount = -0.4
+
+[resource]
+script = ExtResource("1_race")
+Id = "race.grondar"
+DisplayName = "Grondar"
+Description = "An ancient titan-blooded race of massive strength and unmatched endurance. Grondar move slower than most, but little can move them — they endure where others fall."
+StatDeltas = Array[Resource]([SubResource("Delta_str"), SubResource("Delta_end"), SubResource("Delta_vit"), SubResource("Delta_hp"), SubResource("Delta_move")])
+InnatePerkIds = Array[String](["perk.toughness"])
+InnateSpellIds = Array[String]([])
+ReputationTweaks = Array[Resource]([])
+AppearanceOptionIds = Array[String]([])
