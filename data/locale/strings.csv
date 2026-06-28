@@ -76,3 +76,8 @@ travel.prompt_attuned,{0} (attuned)
 travel.button,Travel to {0}
 map.travel_header,FAST TRAVEL
 map.travel_empty,No waystones attuned yet.
+craft.mode_craft,Craft
+craft.mode_salvage,Salvage
+craft.deconstruct,Deconstruct
+craft.salvage_none,Nothing here can be salvaged at this station.
+craft.yield_xp,+{0} XP
