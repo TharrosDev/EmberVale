@@ -1,8 +1,10 @@
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
+using Embervale.Corruption;
 using Embervale.Entities;
 using Embervale.Progression;
 using Embervale.Quests;
+using Embervale.World;
 using Godot;
 
 namespace Embervale.Analytics;
@@ -40,6 +42,11 @@ public partial class AnalyticsSink : Node
         bus.Subscribe<QuestStartedEvent>(OnQuestStarted);
         bus.Subscribe<QuestCompletedEvent>(OnQuestCompleted);
         bus.Subscribe<LeveledUpEvent>(OnLevelUp);
+        // Stage-A actions (Phase 25.5F): region travel, fast travel, corruption-tier shifts, saves.
+        bus.Subscribe<RegionTransitionRequestedEvent>(OnRegionTransition);
+        bus.Subscribe<FastTravelRequestedEvent>(OnFastTravel);
+        bus.Subscribe<CorruptionTierChangedEvent>(OnCorruptionTier);
+        bus.Subscribe<GameSavedEvent>(OnGameSaved);
     }
 
     public override void _ExitTree()
@@ -56,6 +63,10 @@ public partial class AnalyticsSink : Node
             bus.Unsubscribe<QuestStartedEvent>(OnQuestStarted);
             bus.Unsubscribe<QuestCompletedEvent>(OnQuestCompleted);
             bus.Unsubscribe<LeveledUpEvent>(OnLevelUp);
+            bus.Unsubscribe<RegionTransitionRequestedEvent>(OnRegionTransition);
+            bus.Unsubscribe<FastTravelRequestedEvent>(OnFastTravel);
+            bus.Unsubscribe<CorruptionTierChangedEvent>(OnCorruptionTier);
+            bus.Unsubscribe<GameSavedEvent>(OnGameSaved);
         }
 
         _file?.Close();
@@ -109,6 +120,22 @@ public partial class AnalyticsSink : Node
 
     private void OnLevelUp(LeveledUpEvent e) =>
         Record("level_up", new Godot.Collections.Dictionary { { "level", e.NewLevel } });
+
+    private void OnRegionTransition(RegionTransitionRequestedEvent e) =>
+        Record("region_transition", new Godot.Collections.Dictionary { { "region", e.RegionId } });
+
+    private void OnFastTravel(FastTravelRequestedEvent e) =>
+        Record("fast_travel", new Godot.Collections.Dictionary { { "node", e.NodeId } });
+
+    private void OnCorruptionTier(CorruptionTierChangedEvent e) =>
+        Record("corruption_tier", new Godot.Collections.Dictionary
+        {
+            { "from", e.Previous.ToString() },
+            { "to", e.Current.ToString() },
+        });
+
+    private void OnGameSaved(GameSavedEvent e) =>
+        Record("save", new Godot.Collections.Dictionary { { "slot", e.Slot }, { "autosave", e.IsAutosave } });
 
     private static string Label(IEntity entity) =>
         string.IsNullOrEmpty(entity.TemplateId) ? entity.DisplayName : entity.TemplateId;

@@ -796,13 +796,31 @@ no code) — batch them when momentum is good.
     F1 over it, and closing the console to confirm the mouse stays free until the inventory also
     closes is the maintainer's at-keyboard check; the count logic is unit-tested.)
 
-- [ ] **25.5F — Validator & analytics coverage** `[F]`
+- [x] **25.5F — Validator & analytics coverage** `[F]` ✅
   - **Goal:** `--validate` is a real gate for the new content/id domains.
   - **Tasks:** grow `ContentValidator` to cover the Stage A domains added since 22
     (regions, cells, travel nodes, corruption-gated content, locale-key presence) and
     confirm the analytics spine logs the new events; close validator gaps.
   - **Done when:** `--validate` catches a deliberately-broken region/cell/travel/locale
     reference; analytics records the Stage A events.
+  - **Done:** closed two real validator gaps and the analytics gap. **Locale** had *no*
+    validation: a new pure `LocaleAudit.Audit(csv, "en")` (Godot-free, unit-tested) flags
+    duplicate keys (`LocCatalog.Parse` dedupes last-wins, silently dropping a string) and keys
+    with no default-locale value (the UI falls back to the raw key, e.g. `menu.settings`); a new
+    `ContentValidator.ValidateLocale` reads `data/locale/strings.csv` and runs it. **Region/cell
+    geometry** was unchecked: `ValidateRegions` now also asserts the region `SpawnPoint` and each
+    cell `Center` sit inside `Bounds` (`Aabb.HasPoint`) — `SpawnPoint` is where every portal *and*
+    fast-travel node lands, so an out-of-bounds spawn (the scannable "travel" reference) drops the
+    player in the void. **Analytics:** `AnalyticsSink` now subscribes to the four Stage-A events
+    that already fire — `RegionTransitionRequested` → `region_transition`, `FastTravelRequested` →
+    `fast_travel`, `CorruptionTierChanged` → `corruption_tier{from,to}`, `GameSaved` →
+    `save{slot,autosave}` — each a one-line `Record` to the session `.jsonl`. **Proven**, not just
+    reasoned: temporarily duplicating a `strings.csv` key *and* moving the EmberCrown `SpawnPoint`
+    to `(9999,…)` each made `--validate` exit **1** naming the exact issue; both reverted, exit 0
+    again. Build + **126 tests** (5 new `LocaleAuditTests`) + `--validate` (exit 0) green.
+    (ponytail: travel-node *components* live in cell `.tscn`s, validated at runtime on discovery —
+    the geometry gate covers the authored `SpawnPoint`, not every scene. The analytics lines firing
+    in a real session log is the maintainer's at-keyboard check.)
 
 - [ ] **25.5G — Integration regression sweep & known-issues ledger** `[C/P]`
   - **Goal:** declare the Stage-A-so-far foundation stable.

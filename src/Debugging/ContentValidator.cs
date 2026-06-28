@@ -6,6 +6,7 @@ using Embervale.Dialogue;
 using Embervale.Enemies;
 using Embervale.Factions;
 using Embervale.Items;
+using Embervale.Localization;
 using Embervale.Loot;
 using Embervale.Magic;
 using Embervale.Npc;
@@ -88,6 +89,7 @@ public static class ContentValidator
         ValidateEncounters(issues);
         ValidateWorldEvents(issues);
         ValidateRegions(issues);
+        ValidateLocale(issues);
     }
 
     private static void CollectGraphIssues(List<string> issues)
@@ -450,13 +452,54 @@ public static class ContentValidator
                 }
             }
 
+            // SpawnPoint is where every portal AND fast-travel node lands the player; outside the
+            // region bounds drops them in the void (Phase 25.5F).
+            if (!region.Bounds.HasPoint(region.SpawnPoint))
+            {
+                issues.Add($"region '{region.Id}' spawn point {region.SpawnPoint} is outside its bounds {region.Bounds}");
+            }
+
             foreach (RegionCellResource cell in region.Cells)
             {
                 if (cell == null || string.IsNullOrEmpty(cell.ScenePath) || !ResourceLoader.Exists(cell.ScenePath))
                 {
                     issues.Add($"region '{region.Id}' cell '{cell?.Id ?? "?"}' has a missing scene '{cell?.ScenePath}'");
+                    continue;
+                }
+
+                if (!region.Bounds.HasPoint(cell.Center))
+                {
+                    issues.Add($"region '{region.Id}' cell '{cell.Id}' center {cell.Center} is outside region bounds");
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Audits the localization catalogue (Phase 25.5F): duplicate keys (the parser keeps the last,
+    /// silently dropping a string) and keys with no default-locale value (the UI shows the raw key).
+    /// ponytail: travel-node components live in cell <c>.tscn</c> scenes, not authored <c>.tres</c>,
+    /// so their <c>RegionId</c> is validated at runtime on discovery — the scannable travel reference
+    /// is the region <see cref="RegionResource.SpawnPoint"/>, gated above.
+    /// </summary>
+    private static void ValidateLocale(List<string> issues)
+    {
+        const string path = "res://data/locale/strings.csv";
+        if (!FileAccess.FileExists(path))
+        {
+            return;
+        }
+
+        using FileAccess? file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
+        if (file == null)
+        {
+            issues.Add($"locale catalogue '{path}' could not be read ({FileAccess.GetOpenError()})");
+            return;
+        }
+
+        foreach (string issue in LocaleAudit.Audit(file.GetAsText(), Loc.DefaultLocale))
+        {
+            issues.Add($"locale: {issue}");
         }
     }
 
