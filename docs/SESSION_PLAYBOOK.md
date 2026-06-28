@@ -822,13 +822,28 @@ no code) — batch them when momentum is good.
     the geometry gate covers the authored `SpawnPoint`, not every scene. The analytics lines firing
     in a real session log is the maintainer's at-keyboard check.)
 
-- [ ] **25.5G — Integration regression sweep & known-issues ledger** `[C/P]`
+- [x] **25.5G — Integration regression sweep & known-issues ledger** `[C/P]` ✅
   - **Goal:** declare the Stage-A-so-far foundation stable.
   - **Tasks:** a full play-through touching every system 22–25 together; fix
     interaction bugs found; record residual issues + perf baselines in a `docs/`
     ledger (e.g. `docs/STAGE_A_STATUS.md`).
   - **Done when:** the integrated Stage A loop runs end to end with no known
     regressions; the ledger captures what remains.
+  - **Done:** ran the full automated regression battery — `dotnet build` clean,
+    **126 tests** pass, `--validate` (`ContentValidator.RunAll`) exit 0, and a headless
+    boot capture (`run_project`→`get_debug_output`→`stop_project`) that loads all 14
+    databases, seeds the enemy registry, passes `ContentValidator`, and reaches
+    `Boot → MainMenu` with **`errors: []`**. The sweep surfaced and fixed the
+    fast-travel-traps-player bug the maintainer reported (recorded the post's own position
+    as the landing point → now records the attuning player's walkable spot, PR #85).
+    Authored **`docs/STAGE_A_STATUS.md`** — the Stage-A ledger: the green automated battery,
+    the 22–25 integration loop (automated vs at-keyboard per surface), the known-issues table
+    (1 fixed, 3 documented expected-behaviours, 0 open defects), perf baselines (streaming
+    budget, loading-gate min/max, suite runtime) with a live-profile TODO, and the ordered
+    play-through checklist. **Honest `[C/P]` boundary:** the automated loop is green and the
+    ledger captures what remains; the full human play-through (every 22–25 system exercised
+    *together* in a live game — undrivable via MCP) is the maintainer's remaining sign-off,
+    itemized as the at-keyboard checklist in §4/§6 of the ledger.
 
 > **Systems 1–21 hardening (25.5H–P).** A fresh pass over the foundational systems the
 > whole game stands on. Each sub-phase clusters a few related systems; the bar is the
