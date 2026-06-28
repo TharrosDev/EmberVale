@@ -53,6 +53,38 @@ public partial class EquipmentComponent : EntityComponent, ISaveable
 
     public bool IsEquipped(EquipmentSlot slot) => _equipped.ContainsKey(slot);
 
+    /// <summary>Every currently-equipped instance — for UIs that list equipped gear (e.g. salvage).</summary>
+    public IEnumerable<ItemInstance> EquippedInstances => _equipped.Values;
+
+    /// <summary>True if <paramref name="instance"/> is the exact item equipped in some slot.</summary>
+    public bool IsInstanceEquipped(ItemInstance instance)
+    {
+        foreach (ItemInstance equipped in _equipped.Values)
+        {
+            if (ReferenceEquals(equipped, instance))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Unequips a specific instance (whichever slot holds it), returning it to the inventory.
+    /// Returns true if it was equipped.</summary>
+    public bool UnequipInstance(ItemInstance instance)
+    {
+        foreach (KeyValuePair<EquipmentSlot, ItemInstance> pair in _equipped)
+        {
+            if (ReferenceEquals(pair.Value, instance))
+            {
+                return Unequip(pair.Key);
+            }
+        }
+
+        return false;
+    }
+
     /// <summary>Equips a specific instance taken from the inventory. Returns false
     /// if it isn't equippable or isn't present in the inventory.</summary>
     public bool Equip(ItemInstance instance)

@@ -31,6 +31,7 @@ public partial class CraftingComponent : EntityComponent, ISaveable
     private readonly HashSet<string> _known = new();
 
     private InventoryComponent? _inventory;
+    private EquipmentComponent? _equipment;
 
     public string SaveId => SaveKey("crafting");
 
@@ -39,6 +40,7 @@ public partial class CraftingComponent : EntityComponent, ISaveable
     protected override void OnInitialize()
     {
         _inventory = Entity!.GetComponent<InventoryComponent>();
+        _equipment = Entity.GetComponent<EquipmentComponent>();
 
         foreach (string id in StartingRecipeIds)
         {
@@ -179,13 +181,17 @@ public partial class CraftingComponent : EntityComponent, ISaveable
         return null;
     }
 
-    /// <summary>Whether <paramref name="instance"/> can be salvaged right now at the given station.</summary>
+    /// <summary>Whether <paramref name="instance"/> can be salvaged right now at the given station —
+    /// true for a loose inventory item or an equipped one (which is taken off first).</summary>
     public bool CanDeconstruct(ItemInstance? instance, CraftingStationType station)
     {
-        return instance != null
-            && _inventory != null
-            && _inventory.CountOf(instance.TemplateId) > 0
-            && DeconstructionRecipe(instance.TemplateId, station) != null;
+        if (instance == null || DeconstructionRecipe(instance.TemplateId, station) == null)
+        {
+            return false;
+        }
+
+        return (_inventory != null && _inventory.CountOf(instance.TemplateId) > 0)
+            || (_equipment != null && _equipment.IsInstanceEquipped(instance));
     }
 
     /// <summary>Deconstructs one of <paramref name="instance"/>: consumes it and returns a floored
@@ -198,9 +204,20 @@ public partial class CraftingComponent : EntityComponent, ISaveable
         }
 
         CraftingRecipeResource? recipe = DeconstructionRecipe(instance.TemplateId, station);
-        if (recipe == null || _inventory.RemoveOneInstance(instance) == null)
+        if (recipe == null)
         {
             return false;
+        }
+
+        // Salvaging equipped gear takes it off first (back into the inventory) so the consume below
+        // is uniform — and its stat bonuses are cleanly removed by the unequip.
+        if (_inventory.RemoveOneInstance(instance) == null)
+        {
+            if (_equipment == null || !_equipment.UnequipInstance(instance) ||
+                _inventory.RemoveOneInstance(instance) == null)
+            {
+                return false;
+            }
         }
 
         foreach (RecipeIngredient ingredient in recipe.IngredientList())

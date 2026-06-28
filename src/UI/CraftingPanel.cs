@@ -248,6 +248,8 @@ public partial class CraftingPanel : CanvasLayer
     private void RebuildSalvage()
     {
         bool any = false;
+
+        // Loose inventory items first, then the gear the player is wearing (badged) — both salvageable.
         if (_inventory != null)
         {
             foreach (ItemStack stack in _inventory.Stacks)
@@ -255,7 +257,20 @@ public partial class CraftingPanel : CanvasLayer
                 if (_crafting!.DeconstructionRecipe(stack.Instance.TemplateId, _station) is { } recipe)
                 {
                     any = true;
-                    AddSalvage(stack, recipe);
+                    AddSalvage(stack.Instance, stack.Quantity, equipped: false, recipe);
+                }
+            }
+        }
+
+        EquipmentComponent? equipment = _player?.GetComponent<EquipmentComponent>();
+        if (equipment != null)
+        {
+            foreach (ItemInstance instance in equipment.EquippedInstances)
+            {
+                if (_crafting!.DeconstructionRecipe(instance.TemplateId, _station) is { } recipe)
+                {
+                    any = true;
+                    AddSalvage(instance, 1, equipped: true, recipe);
                 }
             }
         }
@@ -266,17 +281,24 @@ public partial class CraftingPanel : CanvasLayer
         }
     }
 
-    private void AddSalvage(ItemStack stack, CraftingRecipeResource recipe)
+    private void AddSalvage(ItemInstance instance, int quantity, bool equipped, CraftingRecipeResource recipe)
     {
-        ItemInstance instance = stack.Instance;
-
         var titleRow = new HBoxContainer();
         titleRow.AddThemeConstantOverride("separation", 8);
 
-        Label title = UiTheme.Body($"{instance.DisplayName} x{stack.Quantity}", UiTheme.Text);
+        Label title = UiTheme.Body($"{instance.DisplayName} x{quantity}", UiTheme.Text);
         title.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         title.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         titleRow.AddChild(title);
+
+        // The "small visual": worn gear gets an accent [Equipped] badge so it reads apart from loose
+        // copies before the player salvages it (salvaging an equipped item takes it off first).
+        if (equipped)
+        {
+            Label badge = UiTheme.Body($"[{Loc.T("craft.equipped")}]", UiTheme.Accent);
+            badge.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+            titleRow.AddChild(badge);
+        }
 
         Button button = UiTheme.Action(Loc.T("craft.deconstruct"));
         ItemInstance captured = instance;
