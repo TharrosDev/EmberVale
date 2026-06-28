@@ -928,7 +928,7 @@ no code) — batch them when momentum is good.
     headless boot (`errors: []`) green. (A live profile of a crowd's flat cost is the maintainer's
     F4 check; the throttle/LOD logic is verified by review.)
 
-- [ ] **25.5K — Inventory, equipment & loot generation** `[F]` (systems 5, 6, 7)
+- [x] **25.5K — Inventory, equipment & loot generation** `[F]` (systems 5, 6, 7) ✅
   - **Goal:** items move and roll correctly.
   - **Tasks:** stack merge/split, capacity/carry-weight, equip/unequip stat application
     through `EquipmentComponent` → `StatsComponent`, affix-roll distribution/rarity
@@ -936,6 +936,22 @@ no code) — batch them when momentum is good.
     persistence. Read `src/Items`, `src/Loot`.
   - **Done when:** equip bonuses apply/remove exactly; loot rolls stay in-bounds; a
     fuzz/harness check over rolls passes.
+  - **Done:** audited the three systems — **solid** — and closed the phase's named fuzz gap.
+    *Audit:* `InventoryComponent.AddInstance` tops up compatible stacks then fills slots to `MaxStack`,
+    respects `Capacity`, and returns the amount stored (merge/split correct); `EquipmentComponent`
+    applies bonuses as `StatModifier`s **sourced to the instance** and removes them by source on
+    unequip, so equip/unequip apply and remove **exactly** (weapon swap restores the default; `Load`
+    clears before re-applying); `LootGenerator.Generate` guards null table, empty id, missed
+    drop-chance, missing template, `min>=max`/`<=0` quantity, and an all-zero-weight pool. *Coverage:*
+    the roll math was Godot-RNG-bound and untested — extracted the pure kernels `LootRarity.Select(
+    quality, roll01)` and `AffixDefinition.BlendValue(min, max, quality, roll01)` (no behaviour change;
+    `Roll` now just feeds `rng.Randf()`), then added `LootRollFuzzTests` sweeping the full `[0,1)`
+    sample space: rarities always valid + monotonic in the sample + higher quality biases upward;
+    affix values always in `[min,max]` (incl. equal/inverted/thin bounds), non-decreasing in sample
+    and quality, endpoints reachable. Build + **166 tests** (16 new) + `--validate` (exit 0) + clean
+    headless boot (`errors: []`) green. *Latent (not fixed, ponytail):* `AddInstance` shares one
+    `ItemInstance` across the stacks it makes for a **unique** item added with `quantity>1` — not
+    reachable today (loot emits one-per-unit; equippable recipes output qty 1).
 
 - [ ] **25.5L — Progression, quests & dialogue** `[F]` (systems 8, 9, 10)
   - **Goal:** progression and narrative plumbing are robust.

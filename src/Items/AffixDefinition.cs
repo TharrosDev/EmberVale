@@ -64,11 +64,25 @@ public partial class AffixDefinition : Resource
     /// </summary>
     public ItemAffix Roll(RandomNumberGenerator rng, float quality)
     {
-        quality = Mathf.Clamp(quality, 0f, 1f);
-        // Blend a random share with a quality-driven share so even high-quality
-        // rolls keep some spread.
-        float t = Mathf.Clamp((rng.Randf() * 0.6f) + (quality * 0.4f), 0f, 1f);
-        float value = Mathf.Lerp(MinValue, MaxValue, t);
+        float value = BlendValue(MinValue, MaxValue, quality, rng.Randf());
         return new ItemAffix(Id, Label, Kind, Stat, value, ModifierType);
+    }
+
+    /// <summary>
+    /// Pure value blend: combines a random share with a quality-driven share so even high-quality
+    /// rolls keep some spread, then lerps between <paramref name="min"/> and <paramref name="max"/>.
+    /// Split out of <see cref="Roll"/> (which feeds it <c>rng.Randf()</c>) so the in-bounds /
+    /// monotonic behaviour is unit-testable without Godot's RNG. Result is always within
+    /// <c>[min, max]</c> (a degenerate <c>min &gt; max</c> clamps to <paramref name="min"/>).
+    /// </summary>
+    public static float BlendValue(float min, float max, float quality, float roll01)
+    {
+        quality = System.Math.Clamp(quality, 0f, 1f);
+        roll01 = System.Math.Clamp(roll01, 0f, 1f);
+        float t = System.Math.Clamp((roll01 * 0.6f) + (quality * 0.4f), 0f, 1f);
+        float value = min + ((max - min) * t);
+        return max >= min
+            ? System.Math.Clamp(value, min, max)
+            : min;
     }
 }
