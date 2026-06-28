@@ -3,6 +3,7 @@ using Embervale.Core.Events;
 using Embervale.Crafting;
 using Embervale.Entities;
 using Embervale.Items;
+using Embervale.Localization;
 using Godot;
 
 namespace Embervale.UI;
@@ -29,6 +30,7 @@ public partial class CraftingPanel : CanvasLayer
     private string _stationName = "Crafting";
     private bool _dirty;
     private bool _justOpened;
+    private bool _salvageMode;
 
     public override void _Ready()
     {
@@ -59,6 +61,7 @@ public partial class CraftingPanel : CanvasLayer
         EventBus.Instance?.Subscribe<CraftingStationOpenedEvent>(OnStationOpened);
         EventBus.Instance?.Subscribe<InventoryChangedEvent>(OnInventoryChanged);
         EventBus.Instance?.Subscribe<ItemCraftedEvent>(OnItemCrafted);
+        EventBus.Instance?.Subscribe<ItemDeconstructedEvent>(OnItemDeconstructed);
     }
 
     public override void _ExitTree()
@@ -66,6 +69,7 @@ public partial class CraftingPanel : CanvasLayer
         EventBus.Instance?.Unsubscribe<CraftingStationOpenedEvent>(OnStationOpened);
         EventBus.Instance?.Unsubscribe<InventoryChangedEvent>(OnInventoryChanged);
         EventBus.Instance?.Unsubscribe<ItemCraftedEvent>(OnItemCrafted);
+        EventBus.Instance?.Unsubscribe<ItemDeconstructedEvent>(OnItemDeconstructed);
     }
 
     private void OnStationOpened(CraftingStationOpenedEvent e)
@@ -87,6 +91,7 @@ public partial class CraftingPanel : CanvasLayer
             return;
         }
 
+        _salvageMode = false;
         SetOpen(true);
         _dirty = true;
 
@@ -98,6 +103,8 @@ public partial class CraftingPanel : CanvasLayer
     private void OnInventoryChanged(InventoryChangedEvent e) => _dirty = true;
 
     private void OnItemCrafted(ItemCraftedEvent e) => _dirty = true;
+
+    private void OnItemDeconstructed(ItemDeconstructedEvent e) => _dirty = true;
 
     public override void _Process(double delta)
     {
@@ -128,6 +135,18 @@ public partial class CraftingPanel : CanvasLayer
     {
         _crafting?.Craft(recipe, _station);
         _dirty = true; // rebuild next frame (events also flag it)
+    }
+
+    private void Deconstruct(ItemInstance instance)
+    {
+        _crafting?.Deconstruct(instance, _station);
+        _dirty = true; // rebuild next frame (events also flag it)
+    }
+
+    private void SetMode(bool salvage)
+    {
+        _salvageMode = salvage;
+        _dirty = true;
     }
 
     private void Close()
@@ -172,10 +191,44 @@ public partial class CraftingPanel : CanvasLayer
             return;
         }
 
+        AddModeTabs();
+
+        if (_salvageMode)
+        {
+            RebuildSalvage();
+        }
+        else
+        {
+            RebuildCraft();
+        }
+    }
+
+    /// <summary>Craft / Salvage switch at the top of the panel; the active mode reads as the accent.</summary>
+    private void AddModeTabs()
+    {
+        var tabs = new HBoxContainer();
+        tabs.AddThemeConstantOverride("separation", 8);
+
+        Button craftTab = UiTheme.Action(Loc.T("craft.mode_craft"));
+        craftTab.Disabled = !_salvageMode; // the active tab is the disabled (highlighted) one
+        craftTab.Pressed += () => SetMode(false);
+        tabs.AddChild(craftTab);
+
+        Button salvageTab = UiTheme.Action(Loc.T("craft.mode_salvage"));
+        salvageTab.Disabled = _salvageMode;
+        salvageTab.Pressed += () => SetMode(true);
+        tabs.AddChild(salvageTab);
+
+        _list.AddChild(tabs);
+        _list.AddChild(new HSeparator());
+    }
+
+    private void RebuildCraft()
+    {
         bool any = false;
         foreach (CraftingRecipeResource recipe in RecipeDatabase.All)
         {
-            if (!_crafting.Knows(recipe.Id) || !StationShows(recipe.Station))
+            if (!_crafting!.Knows(recipe.Id) || !StationShows(recipe.Station))
             {
                 continue;
             }
@@ -188,6 +241,66 @@ public partial class CraftingPanel : CanvasLayer
         {
             _list.AddChild(UiTheme.Body("(no recipes for this station)", UiTheme.Dim));
         }
+    }
+
+    /// <summary>Lists inventory stacks that have a station recipe to reverse, each with its salvage
+    /// yield preview and a Deconstruct button.</summary>
+    private void RebuildSalvage()
+    {
+        bool any = false;
+        if (_inventory != null)
+        {
+            foreach (ItemStack stack in _inventory.Stacks)
+            {
+                if (_crafting!.DeconstructionRecipe(stack.Instance.TemplateId, _station) is { } recipe)
+                {
+                    any = true;
+                    AddSalvage(stack, recipe);
+                }
+            }
+        }
+
+        if (!any)
+        {
+            _list.AddChild(UiTheme.Body(Loc.T("craft.salvage_none"), UiTheme.Dim));
+        }
+    }
+
+    private void AddSalvage(ItemStack stack, CraftingRecipeResource recipe)
+    {
+        ItemInstance instance = stack.Instance;
+
+        var titleRow = new HBoxContainer();
+        titleRow.AddThemeConstantOverride("separation", 8);
+
+        Label title = UiTheme.Body($"{instance.DisplayName} x{stack.Quantity}", UiTheme.Text);
+        title.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        title.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        titleRow.AddChild(title);
+
+        Button button = UiTheme.Action(Loc.T("craft.deconstruct"));
+        ItemInstance captured = instance;
+        button.Pressed += () => Deconstruct(captured);
+        titleRow.AddChild(button);
+
+        _list.AddChild(titleRow);
+
+        foreach (RecipeIngredient ingredient in recipe.IngredientList())
+        {
+            int recovered = Deconstruction.RecoveredQuantity(ingredient.Quantity);
+            if (recovered <= 0)
+            {
+                continue;
+            }
+
+            ItemResource? material = ItemDatabase.Get(ingredient.ItemId);
+            string name = material?.DisplayName ?? ingredient.ItemId;
+            _list.AddChild(UiTheme.Body($"   → {recovered}x {name}", UiTheme.Accent));
+        }
+
+        int xp = Deconstruction.Xp(instance.Template.Value, instance.Rarity);
+        _list.AddChild(UiTheme.Body($"   {Loc.TF("craft.yield_xp", xp)}", UiTheme.Good));
+        _list.AddChild(new HSeparator());
     }
 
     private bool StationShows(CraftingStationType required)

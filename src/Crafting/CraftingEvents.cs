@@ -12,5 +12,8 @@ public readonly record struct CraftingStationClosedEvent(IEntity Player) : IGame
 /// <summary>Raised after an item is successfully crafted (ingredients consumed, output added).</summary>
 public readonly record struct ItemCraftedEvent(IEntity Crafter, string RecipeId, string OutputItemId, int Quantity) : IGameEvent;
 
+/// <summary>Raised after an item is deconstructed/salvaged (item consumed, materials + XP returned).</summary>
+public readonly record struct ItemDeconstructedEvent(IEntity Crafter, string ItemId, int XpAwarded) : IGameEvent;
+
 /// <summary>Raised when a new recipe is learned.</summary>
 public readonly record struct RecipeLearnedEvent(IEntity Crafter, string RecipeId) : IGameEvent;

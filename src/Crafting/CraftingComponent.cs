@@ -4,6 +4,7 @@ using Embervale.Core.Events;
 using Embervale.Entities;
 using Embervale.Items;
 using Embervale.Loot;
+using Embervale.Progression;
 using Embervale.Save;
 using Godot;
 
@@ -152,6 +153,81 @@ public partial class CraftingComponent : EntityComponent, ISaveable
     private static bool StationAccepts(CraftingStationType required, CraftingStationType open)
     {
         return required == CraftingStationType.Hand || required == open;
+    }
+
+    // --- Deconstruction (the inverse of crafting) ---------------------------
+
+    /// <summary>The station recipe whose output is <paramref name="itemId"/>, if one exists at the
+    /// open station — the "blueprint" deconstruction reverses to salvage the item. <c>Hand</c> recipes
+    /// don't deconstruct (there's no station to do it at).</summary>
+    public CraftingRecipeResource? DeconstructionRecipe(string itemId, CraftingStationType station)
+    {
+        if (string.IsNullOrEmpty(itemId))
+        {
+            return null;
+        }
+
+        foreach (CraftingRecipeResource recipe in RecipeDatabase.All)
+        {
+            if (recipe.OutputItemId == itemId && recipe.Station != CraftingStationType.Hand &&
+                StationAccepts(recipe.Station, station))
+            {
+                return recipe;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>Whether <paramref name="instance"/> can be salvaged right now at the given station.</summary>
+    public bool CanDeconstruct(ItemInstance? instance, CraftingStationType station)
+    {
+        return instance != null
+            && _inventory != null
+            && _inventory.CountOf(instance.TemplateId) > 0
+            && DeconstructionRecipe(instance.TemplateId, station) != null;
+    }
+
+    /// <summary>Deconstructs one of <paramref name="instance"/>: consumes it and returns a floored
+    /// fraction of its recipe's materials plus XP. Returns false if it isn't currently salvageable.</summary>
+    public bool Deconstruct(ItemInstance? instance, CraftingStationType station)
+    {
+        if (instance == null || _inventory == null)
+        {
+            return false;
+        }
+
+        CraftingRecipeResource? recipe = DeconstructionRecipe(instance.TemplateId, station);
+        if (recipe == null || _inventory.RemoveOneInstance(instance) == null)
+        {
+            return false;
+        }
+
+        foreach (RecipeIngredient ingredient in recipe.IngredientList())
+        {
+            int recovered = Deconstruction.RecoveredQuantity(ingredient.Quantity);
+            if (recovered <= 0)
+            {
+                continue;
+            }
+
+            // Never force-deref a content lookup: a recipe whose ingredient item was deleted skips
+            // that material rather than crashing the salvage.
+            if (ItemDatabase.Get(ingredient.ItemId) is { } material)
+            {
+                _inventory.AddItem(material, recovered);
+            }
+        }
+
+        int xp = Deconstruction.Xp(instance.Template.Value, instance.Rarity);
+        Entity?.GetComponent<ProgressionComponent>()?.AddXp(xp);
+
+        if (Entity != null)
+        {
+            EventBus.Instance?.Publish(new ItemDeconstructedEvent(Entity, instance.TemplateId, xp));
+        }
+
+        return true;
     }
 
     // --- ISaveable ----------------------------------------------------------

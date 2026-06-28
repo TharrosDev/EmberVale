@@ -496,11 +496,18 @@ fast-travel land in 25E–25G.
   station + ingredients, consumes inputs from the sibling `InventoryComponent`, adds the output.
   Equippable output with `OutputRarity` > Common rolls affixes via `LootGenerator.RollAffixed`
   (crafting feeds the same gear pipeline as loot). Known recipes persist (`crafting:{RuntimeId}`).
+  **Deconstruction** is the inverse: `CanDeconstruct`/`Deconstruct` reverse the station's recipe for
+  an item (`DeconstructionRecipe`), consuming it for a floored fraction of its materials
+  (`Deconstruction.RecoveredQuantity`, < craft cost so it can't duplicate) plus XP
+  (`Deconstruction.Xp`, by item value + rarity) via the player's `ProgressionComponent`. No new
+  content — it reuses the recipe graph; fires `ItemDeconstructedEvent`.
 - **Stations & UI** — `CraftingStationComponent` (`InteractableComponent`) publishes
   `CraftingStationOpenedEvent` on `E`; `CraftingStationFactory` builds the world block.
   `CraftingPanel` (`src/UI`, modal, built through `UiTheme`) lists known recipes matching the
   station (+ `Hand`), with live have/need ingredient lines and a Craft button; `E` closes it
-  (a `_justOpened` guard stops the opening press from also closing it). Events:
+  (a `_justOpened` guard stops the opening press from also closing it). A **Craft / Salvage** tab
+  toggle switches to the deconstruction list (inventory items with a station recipe, each showing
+  its material + XP yield and a Deconstruct button). Events:
   `src/Crafting/CraftingEvents.cs`. Sandbox: a forge/workbench/alchemy yard west of spawn; the
   player knows six recipes forming an ore→ingot→sword chain.
 
