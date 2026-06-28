@@ -44,22 +44,14 @@ public partial class ScheduleResource : Resource
     /// </summary>
     public ScheduleEntry? EntryForHour(int hour)
     {
-        ScheduleEntry? chosen = null;
-        ScheduleEntry? latest = null;
-
-        foreach (ScheduleEntry entry in EntryList())
+        List<ScheduleEntry> entries = EntryList();
+        var startHours = new int[entries.Count];
+        for (int i = 0; i < entries.Count; i++)
         {
-            if (entry.StartHour <= hour && (chosen == null || entry.StartHour > chosen.StartHour))
-            {
-                chosen = entry;
-            }
-
-            if (latest == null || entry.StartHour > latest.StartHour)
-            {
-                latest = entry;
-            }
+            startHours[i] = entries[i].StartHour;
         }
 
-        return chosen ?? latest;
+        int index = ScheduleMath.ActiveEntryIndex(startHours, hour);
+        return index >= 0 ? entries[index] : null;
     }
 }

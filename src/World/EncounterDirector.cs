@@ -40,11 +40,32 @@ public partial class EncounterDirector : Node3D
 
     private double _timer;
     private int _alive;
+    private readonly List<Node3D> _spawns = new();
 
     public override void _Ready()
     {
         ProcessMode = ProcessModeEnum.Pausable;
         _timer = NextInterval();
+        EventBus.Instance?.Subscribe<RegionTransitionRequestedEvent>(OnRegionTransition);
+    }
+
+    public override void _ExitTree()
+    {
+        EventBus.Instance?.Unsubscribe<RegionTransitionRequestedEvent>(OnRegionTransition);
+    }
+
+    /// <summary>Encounter spawns are parented to the persistent world root, not the streamed cells, so a
+    /// region transition would orphan them in the new region. Free them on the boundary; <c>_alive</c>
+    /// self-heals through the same <c>TreeExited</c> path each free fires.</summary>
+    private void OnRegionTransition(RegionTransitionRequestedEvent e)
+    {
+        foreach (Node3D spawn in _spawns.ToArray())
+        {
+            if (IsInstanceValid(spawn))
+            {
+                spawn.QueueFree();
+            }
+        }
     }
 
     public override void _Process(double delta)
@@ -107,11 +128,13 @@ public partial class EncounterDirector : Node3D
         EnemyEntity enemy = EnemyTemplateRegistry.Create(templateId, position);
         GetParent().AddChild(enemy);
         _alive++;
-        enemy.TreeExited += OnEnemyRemoved;
+        _spawns.Add(enemy);
+        enemy.TreeExited += () => OnEnemyRemoved(enemy);
     }
 
-    private void OnEnemyRemoved()
+    private void OnEnemyRemoved(Node3D enemy)
     {
+        _spawns.Remove(enemy);
         _alive = Mathf.Max(0, _alive - 1);
     }
 

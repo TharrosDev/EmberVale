@@ -1003,7 +1003,7 @@ no code) — batch them when momentum is good.
     guard). Build + **197 tests** (11 new) + `--validate` (exit 0) + clean headless boot into Playing
     with combat damage flowing through the pipeline (`errors: []`) green.
 
-- [ ] **25.5N — World clock/weather/encounters, NPC schedules & procedural events** `[F]` (systems 11, 13, 17)
+- [x] **25.5N — World clock/weather/encounters, NPC schedules & procedural events** `[F]` (systems 11, 13, 17) ✅
   - **Goal:** the living-world directors are stable, including across streaming.
   - **Tasks:** `WorldClock` day/phase transitions, weather selection/transition, the
     encounter director's day-phase gating + spawn cleanup, NPC `ScheduleComponent`
@@ -1012,6 +1012,23 @@ no code) — batch them when momentum is good.
     `src/Npc`.
   - **Done when:** clock/weather/encounter/event/schedule cycles run for a long session
     with no stuck states, leaked spawns, or double-fires across transitions.
+  - **Done:** found and fixed a real **spawn leak across region transitions**, and pinned the two pure
+    time kernels. *Fix:* `EncounterDirector` and `WorldEventDirector` spawn enemies as children of the
+    **persistent** bootstrap root (`GetParent().AddChild`), but `PerformRegionLoad` only unloads the
+    streamed cells — so on a transition their spawns orphaned into the new region and kept ticking. Both
+    now subscribe to `RegionTransitionRequestedEvent`: the event director aborts an in-progress event
+    through its existing `Fail` path (despawn raiders + stamp cooldown, no stuck `_active`), and the
+    encounter director tracks its spawns and frees them (`_alive` self-heals via `TreeExited`).
+    *Audit (no change):* `WorldClock` wraps via `Mathf.PosMod` and fires the hour/phase change once per
+    hour; `WeatherDirector` rolls weighted selection on a timer; `WorldEventDirector` allows one
+    `_active`, stamps the cooldown on `End`; `ScheduleComponent` yields to panic/dialogue and re-picks
+    its block on resume. *Coverage:* pinned `DayPhases.Of` (phase boundaries + negative/>24 wrap) and
+    extracted the schedule wrap-lookup into pure `ScheduleMath.ActiveEntryIndex(startHours, hour)` (from
+    `ScheduleResource.EntryForHour`) with tests (exact start, mid-block, before-first wrap-to-last,
+    single, empty, unordered). Build + **217 tests** (20 new) + `--validate` (exit 0) + clean headless
+    boot into Playing with both directors online (`errors: []`) green. *Latent (not fixed, ponytail):*
+    the legacy EmberCrown goblin camp (`EnemySpawnDirector`) is persistent and not region-scoped, so it
+    keeps spawning at its fixed point after a transition — early-sandbox content, a separate concern.
 
 - [ ] **25.5O — Crafting & faction/reputation systems** `[F]` (systems 15, 16)
   - **Goal:** crafting and standing behave at their edges.

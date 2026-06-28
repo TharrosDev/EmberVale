@@ -48,6 +48,7 @@ public partial class WorldEventDirector : Node3D
         ServiceLocator.Instance?.Register(this);
         EventBus.Instance?.Subscribe<EntityDiedEvent>(OnEntityDied);
         EventBus.Instance?.Subscribe<ItemPickedUpEvent>(OnItemPickedUp);
+        EventBus.Instance?.Subscribe<RegionTransitionRequestedEvent>(OnRegionTransition);
     }
 
     public override void _ExitTree()
@@ -55,6 +56,18 @@ public partial class WorldEventDirector : Node3D
         ServiceLocator.Instance?.Unregister<WorldEventDirector>();
         EventBus.Instance?.Unsubscribe<EntityDiedEvent>(OnEntityDied);
         EventBus.Instance?.Unsubscribe<ItemPickedUpEvent>(OnItemPickedUp);
+        EventBus.Instance?.Unsubscribe<RegionTransitionRequestedEvent>(OnRegionTransition);
+    }
+
+    /// <summary>A region transition leaves an in-progress event's raiders behind in the old region.
+    /// Abort it through the existing <see cref="Fail"/> path so they're despawned and the cooldown is
+    /// stamped — no orphaned spawns or stuck <c>_active</c> carried across the boundary.</summary>
+    private void OnRegionTransition(RegionTransitionRequestedEvent e)
+    {
+        if (_active != null)
+        {
+            Fail(_active);
+        }
     }
 
     /// <summary>Forces a specific event to start now (dev console). False if one is already
