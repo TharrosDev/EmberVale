@@ -1,0 +1,120 @@
+[gd_scene format=3 uid="uid://b8kqarena0001"]
+
+[ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="1_navbaker"]
+[ext_resource type="Script" path="res://src/Entities/Entity.cs" id="2_entity"]
+[ext_resource type="Script" path="res://src/Enemies/BossSummonComponent.cs" id="3_summon"]
+
+[sub_resource type="NavigationMesh" id="NavMesh_ar"]
+geometry_parsed_geometry_type = 1
+cell_size = 0.25
+cell_height = 0.25
+agent_height = 1.75
+agent_radius = 0.5
+agent_max_climb = 0.5
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+size = Vector3(36, 0.5, 36)
+
+[sub_resource type="BoxShape3D" id="Shape_floor"]
+size = Vector3(36, 0.5, 36)
+
+[sub_resource type="StandardMaterial3D" id="Mat_floor"]
+albedo_color = Color(0.22, 0.2, 0.19, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_wall_x"]
+size = Vector3(1, 4, 36)
+
+[sub_resource type="BoxShape3D" id="Shape_wall_x"]
+size = Vector3(1, 4, 36)
+
+[sub_resource type="BoxMesh" id="BoxMesh_wall_z"]
+size = Vector3(36, 4, 1)
+
+[sub_resource type="BoxShape3D" id="Shape_wall_z"]
+size = Vector3(36, 4, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_wall"]
+albedo_color = Color(0.18, 0.17, 0.18, 1)
+
+[sub_resource type="CylinderMesh" id="Mesh_brazier"]
+top_radius = 0.45
+bottom_radius = 0.55
+height = 1.4
+
+[sub_resource type="StandardMaterial3D" id="Mat_brazier"]
+albedo_color = Color(0.25, 0.22, 0.2, 1)
+emission_enabled = true
+emission = Color(0.95, 0.4, 0.12, 1)
+emission_energy_multiplier = 1.8
+
+[sub_resource type="BoxShape3D" id="Shape_brazier"]
+size = Vector3(1, 1.4, 1)
+
+[node name="ArenaCell" type="Node3D"]
+
+[node name="Nav" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("NavMesh_ar")
+
+[node name="NavBaker" type="Node" parent="Nav"]
+script = ExtResource("1_navbaker")
+
+[node name="Floor" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+mesh = SubResource("BoxMesh_floor")
+surface_material_override/0 = SubResource("Mat_floor")
+
+[node name="FloorCol" type="StaticBody3D" parent="Nav"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FloorCol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+shape = SubResource("Shape_floor")
+
+[node name="WallE" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 2, 0)
+mesh = SubResource("BoxMesh_wall_x")
+surface_material_override/0 = SubResource("Mat_wall")
+
+[node name="WallECol" type="StaticBody3D" parent="Nav/WallE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/WallE/WallECol"]
+shape = SubResource("Shape_wall_x")
+
+[node name="WallN" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -18)
+mesh = SubResource("BoxMesh_wall_z")
+surface_material_override/0 = SubResource("Mat_wall")
+
+[node name="WallNCol" type="StaticBody3D" parent="Nav/WallN"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/WallN/WallNCol"]
+shape = SubResource("Shape_wall_z")
+
+[node name="WallS" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 18)
+mesh = SubResource("BoxMesh_wall_z")
+surface_material_override/0 = SubResource("Mat_wall")
+
+[node name="WallSCol" type="StaticBody3D" parent="Nav/WallS"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/WallS/WallSCol"]
+shape = SubResource("Shape_wall_z")
+
+[node name="Brazier" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 0, 0)
+script = ExtResource("2_entity")
+DisplayName = "Challenge Brazier"
+
+[node name="Mesh" type="MeshInstance3D" parent="Brazier"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+mesh = SubResource("Mesh_brazier")
+material_override = SubResource("Mat_brazier")
+
+[node name="Collider" type="StaticBody3D" parent="Brazier"]
+
+[node name="Shape" type="CollisionShape3D" parent="Brazier/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("Shape_brazier")
+
+[node name="Summon" type="Node" parent="Brazier"]
+script = ExtResource("3_summon")
+SpawnOffset = Vector3(14, 0, 0)

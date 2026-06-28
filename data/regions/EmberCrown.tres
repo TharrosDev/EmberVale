@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="RegionResource" load_steps=5 format=3 uid="uid://crgnembrcrown0"]
+[gd_resource type="Resource" script_class="RegionResource" load_steps=6 format=3 uid="uid://crgnembrcrown0"]
 
 [ext_resource type="Script" path="res://src/World/RegionResource.cs" id="1_region"]
 [ext_resource type="Script" path="res://src/World/RegionCellResource.cs" id="2_cell"]
@@ -24,13 +24,20 @@ ScenePath = "res://scenes/regions/ember_crown/wilds_west.tscn"
 Center = Vector3(-55, 0, -10)
 LoadRadius = 45.0
 
+[sub_resource type="Resource" id="Cell_arena"]
+script = ExtResource("2_cell")
+Id = "ember_crown.arena"
+ScenePath = "res://scenes/regions/ember_crown/arena.tscn"
+Center = Vector3(55, 0, -10)
+LoadRadius = 45.0
+
 [resource]
 script = ExtResource("1_region")
 Id = "region.ember_crown"
 DisplayName = "The Ember Crown"
 Realm = 0
 SpawnPoint = Vector3(0, 1.2, 5)
-Cells = Array[ExtResource("2_cell")]([SubResource("Cell_town_hub"), SubResource("Cell_wilds_north"), SubResource("Cell_wilds_west")])
+Cells = Array[ExtResource("2_cell")]([SubResource("Cell_town_hub"), SubResource("Cell_wilds_north"), SubResource("Cell_wilds_west"), SubResource("Cell_arena")])
 Bounds = AABB(-256, -16, -256, 512, 64, 512)
 SafeZoneCenter = Vector3(0, 0, -10)
 SafeZoneRadius = 34.0

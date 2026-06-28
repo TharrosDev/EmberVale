@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="FactionResource" load_steps=2 format=3 uid="uid://cmbrvlfacfallen"]
+
+[ext_resource type="Script" path="res://src/Factions/FactionResource.cs" id="1_faction"]
+
+[resource]
+script = ExtResource("1_faction")
+Id = "faction.fallen"
+DisplayName = "The Fallen"
+Description = "Flamebearers consumed by their own ember — hollow champions that turn on the living. Hostile on sight."
+DefaultReputation = -60
+HostileThreshold = 2
+KillReputationPenalty = 0
+Enemies = Array[String](["faction.villagers"])
+Allies = Array[String]([])

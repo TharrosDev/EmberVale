@@ -50,6 +50,7 @@ public static class EnemyTemplateRegistry
     {
         Builders.Clear();
         Register(FallbackTemplateId, EnemyFactory.Create);
+        Register(GameIds.Enemies.IronKing, BossFactory.Create);
         Log.Info($"EnemyTemplateRegistry seeded {Builders.Count} archetype(s).");
     }
 

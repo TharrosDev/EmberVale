@@ -37,12 +37,14 @@ public static class GameIds
     public static class Enemies
     {
         public const string Goblin = "enemy.goblin";
+        public const string IronKing = "enemy.iron_king";
     }
 
     public static class Factions
     {
         public const string Goblins = "faction.goblins";
         public const string Villagers = "faction.villagers";
+        public const string Fallen = "faction.fallen";
     }
 
     public static class Npcs

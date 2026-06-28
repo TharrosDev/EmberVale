@@ -217,3 +217,5 @@ dlg.elder.heart.inprogress,"The warband still gathers. Five of them, traveller â
 dlg.elder.heart.c_inprogress_bye,"I'll see it through."
 dlg.elder.heart.thanks,"You broke the warband. The Ember Crown will sing your name by the hearth tonight â€” take the smith's finest steel, you have more than earned it."
 dlg.elder.heart.c_thanks_bye,"The honour was mine, elder."
+# --- Phase 28A: Iron King ---
+boss.challenge_prompt,"Challenge the Iron King"

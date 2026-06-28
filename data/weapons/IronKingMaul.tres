@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="WeaponResource" load_steps=2 format=3 uid="uid://cmbrvlironmaul"]
+
+[ext_resource type="Script" path="res://src/Combat/WeaponResource.cs" id="1_weapon"]
+
+[resource]
+script = ExtResource("1_weapon")
+DisplayName = "Iron King's Maul"
+DamageType = 0
+BaseDamage = 26.0
+PoiseDamage = 40.0
+StaminaCost = 18.0
+WindupTime = 0.55
+ActiveTime = 0.2
+RecoveryTime = 0.7
+AttackSpeed = 0.7
+ComboLength = 2
+FinisherMultiplier = 1.6

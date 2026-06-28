@@ -1360,7 +1360,7 @@ no code) — batch them when momentum is good.
 > One full multi-phase boss to build and prove boss tooling ahead of Phase 36, and
 > to wire the defeat → reward → corruption-gain loop.
 
-- [ ] **28A — Iron King actor + arena** `[F/C]`
+- [x] **28A — Iron King actor + arena** `[F/C]` ✅
   - **Goal:** the boss exists in a space.
   - **Tasks:** build the Iron King as a `CharacterEntity` via a boss factory
     (mirror `EnemyFactory`): stats `AttributeSet`, `CombatComponent` (Team), a
@@ -1368,6 +1368,24 @@ no code) — batch them when momentum is good.
     trigger. Register in `ServiceLocator` if the boss bar needs it.
   - **Done when:** you can enter the arena and fight a functional (single-phase)
     Iron King.
+  - **Done:** `BossFactory` (`src/Enemies/BossFactory.cs`) mirrors `EnemyFactory` to build a
+    `BossEntity` "Iron King" — bigger capsule + dark-iron/ember material, `IronKingAttributes.tres`
+    (650 HP, Armor 15, slow heavy hits), `CombatComponent` Team 1 with `MaxPoise 150` (shrugs off chip
+    stagger), `IronKingMaul.tres` weapon, and the **reused** `EnemyAIComponent` tuned for a boss
+    (`RetreatHealthFraction=0`, `VisionRange 40`, `AttackRange 3.5`). Hostile via a new
+    `faction.fallen` (`data/factions/Fallen.tres`, default-hostile). `BossEntity : EnemyEntity`
+    marker (`src/Enemies/BossEntity.cs`) is its own `ServiceLocator` type (the 28C bar / 28D corruption
+    hook). Registered as `enemy.iron_king` in `EnemyTemplateRegistry` (seeded 1→2). The **arena**
+    (`scenes/regions/ember_crown/arena.tscn`) is a streamed sub-cell (nav + floor + a U of walls open
+    toward town) added to `EmberCrown.tres` `Cells` at `(55,0,-10)`; its **entry trigger** is an
+    E-interact **challenge brazier** (`BossSummonComponent` — mirrors `RegionTransitionComponent`) that
+    spawns the Iron King once, registers him, and re-arms on his death (the seed for the Phase 36
+    `BossController` — intro lock/phases graft here). Build clean + 251 tests + `--validate` 0
+    (`faction.fallen`/`IronKingAttributes`/`IronKingMaul`/arena cell resolve, registry reports
+    `enemy.iron_king`); arena instances + bakes navmesh clean; boots clean (`errors: []`).
+    **Deferred to 28B–D:** multi-phase + telegraphs, healthbar + intro/defeat, loot + corruption-gain +
+    defeat persistence (so he re-summons on cell reload and drops nothing yet). Walking east to the
+    arena and fighting him is the maintainer's at-keyboard check (MCP can't drive movement/`E`/combat).
 
 - [ ] **28B — Multi-phase behaviour + telegraphed attacks** `[F]`
   - **Goal:** phases and readable wind-ups.
