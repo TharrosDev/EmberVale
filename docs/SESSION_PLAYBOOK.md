@@ -1179,12 +1179,36 @@ no code) — batch them when momentum is good.
 > Author **one real region** end-to-end to prove the pipeline produces
 > ship-quality space. Mostly content + first-pass art, on top of streaming (25).
 
-- [ ] **27A — Ember Crown layout greybox + region/cell setup** `[C/P]`
+- [x] **27A — Ember Crown layout greybox + region/cell setup** `[C/P]` ✅
   - **Goal:** the spatial shell, streamed.
   - **Tasks:** lay out a walkable Ember Crown slice as `RegionResource` + sub-cell
     scenes (town hub footprint, surrounding wilds), navmesh baked, transitions to
     neighbours stubbed. Greybox geometry only.
   - **Done when:** you can walk the whole region with streaming + navmesh working.
+  - **Done:** Ember Crown is now three streamed greybox cells — `town_hub.tscn` (a 60×60
+    plaza floor + four greybox buildings, with the 25G waystone/travel node + the 25D
+    persistent relic folded in), `wilds_north.tscn` (the old ruin wall + rocks) and
+    `wilds_west.tscn` (rocks) — replacing the two old stub cells (`waystone.tscn`/
+    `north_ruin.tscn`, deleted). `EmberCrown.tres` indexes all three with overlapping
+    `LoadRadius`/`Center`s so the floors adjoin and their navmesh patches edge-connect;
+    the Frostfang neighbour link (25C) gives the stubbed realm-to-realm transition. **The
+    navmesh is real and the AI paths on it:** a new full nav layer — every cell wraps its
+    geometry in a `NavigationRegion3D` baked at stream-in by a new `CellNavBaker`
+    (`src/World/`), sourcing **static colliders** (not visual meshes — the engine flags a
+    GPU→CPU readback stall for runtime mesh parsing, the 25.5B anti-hitch concern), so each
+    cell gets a floor collider feeding the bake. Enemies gained a `NavigationAgent3D`
+    (`EnemyFactory`, radius/height matched to the capsule) and `EnemyAIComponent.MoveTowards`
+    now steers toward the agent's next path corner around obstacles, judging arrival by the
+    **final** target via the pure `PathSteering.ShouldSteer` (4 new tests), and **falls back
+    to straight-line** steering when no navmesh is under the actor (`IsTargetReachable()`
+    false) — so the navmesh-less procedural sandbox is unchanged. Region/navmesh convention
+    documented in ARCHITECTURE §2.6h-2 + CLAUDE §8 "A new region". Build clean + **251 tests**
+    (+4 `PathSteeringTests`) + `--validate` exit 0; **ran each cell scene in-engine** — the
+    runtime bake completes with **zero warnings** (collider-sourced, agent dims aligned to the
+    0.25 voxel grid) and the boot path is clean (`errors: []`). Walking the whole region and
+    watching goblins path around the greybox buildings is the maintainer's at-keyboard check
+    (the Godot MCP can't inject New Game / movement); the bake + agent wiring ran live without
+    errors and the steering rule is unit-pinned.
 
 - [ ] **27B — Town hub: vendors, inn, guild presence, crafting stations** `[C]`
   - **Goal:** a living hub.

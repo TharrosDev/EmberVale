@@ -1,21 +1,28 @@
-[gd_resource type="Resource" script_class="RegionResource" load_steps=4 format=3 uid="uid://crgnembrcrown0"]
+[gd_resource type="Resource" script_class="RegionResource" load_steps=5 format=3 uid="uid://crgnembrcrown0"]
 
 [ext_resource type="Script" path="res://src/World/RegionResource.cs" id="1_region"]
 [ext_resource type="Script" path="res://src/World/RegionCellResource.cs" id="2_cell"]
 
-[sub_resource type="Resource" id="Cell_waystone"]
+[sub_resource type="Resource" id="Cell_town_hub"]
 script = ExtResource("2_cell")
-Id = "ember_crown.waystone"
-ScenePath = "res://scenes/regions/ember_crown/waystone.tscn"
-Center = Vector3(0, 0, -14)
-LoadRadius = 24.0
+Id = "ember_crown.town_hub"
+ScenePath = "res://scenes/regions/ember_crown/town_hub.tscn"
+Center = Vector3(0, 0, -10)
+LoadRadius = 50.0
 
-[sub_resource type="Resource" id="Cell_north_ruin"]
+[sub_resource type="Resource" id="Cell_wilds_north"]
 script = ExtResource("2_cell")
-Id = "ember_crown.north_ruin"
-ScenePath = "res://scenes/regions/ember_crown/north_ruin.tscn"
-Center = Vector3(0, 0, -55)
-LoadRadius = 28.0
+Id = "ember_crown.wilds_north"
+ScenePath = "res://scenes/regions/ember_crown/wilds_north.tscn"
+Center = Vector3(0, 0, -65)
+LoadRadius = 45.0
+
+[sub_resource type="Resource" id="Cell_wilds_west"]
+script = ExtResource("2_cell")
+Id = "ember_crown.wilds_west"
+ScenePath = "res://scenes/regions/ember_crown/wilds_west.tscn"
+Center = Vector3(-55, 0, -10)
+LoadRadius = 45.0
 
 [resource]
 script = ExtResource("1_region")
@@ -23,7 +30,7 @@ Id = "region.ember_crown"
 DisplayName = "The Ember Crown"
 Realm = 0
 SpawnPoint = Vector3(0, 1.2, 5)
-Cells = Array[ExtResource("2_cell")]([SubResource("Cell_waystone"), SubResource("Cell_north_ruin")])
+Cells = Array[ExtResource("2_cell")]([SubResource("Cell_town_hub"), SubResource("Cell_wilds_north"), SubResource("Cell_wilds_west")])
 Bounds = AABB(-256, -16, -256, 512, 64, 512)
 DefaultWeatherId = "weather.clear"
 DayPhaseBias = 2

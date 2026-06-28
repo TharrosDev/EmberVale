@@ -1,0 +1,68 @@
+[gd_scene format=3 uid="uid://forjc5ahxj57"]
+
+[ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="1_navbaker"]
+
+[sub_resource type="NavigationMesh" id="NavMesh_ww"]
+geometry_parsed_geometry_type = 1
+cell_size = 0.25
+cell_height = 0.25
+agent_height = 1.75
+agent_radius = 0.5
+agent_max_climb = 0.5
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+size = Vector3(50, 0.5, 40)
+
+[sub_resource type="BoxShape3D" id="Shape_floor"]
+size = Vector3(50, 0.5, 40)
+
+[sub_resource type="StandardMaterial3D" id="Mat_floor"]
+albedo_color = Color(0.31, 0.3, 0.28, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_rock"]
+size = Vector3(3.5, 3, 3.5)
+
+[sub_resource type="StandardMaterial3D" id="Mat_rock"]
+albedo_color = Color(0.27, 0.26, 0.25, 1)
+
+[sub_resource type="BoxShape3D" id="Shape_rock"]
+size = Vector3(3.5, 3, 3.5)
+
+[node name="WildsWestCell" type="Node3D"]
+
+[node name="Nav" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("NavMesh_ww")
+
+[node name="NavBaker" type="Node" parent="Nav"]
+script = ExtResource("1_navbaker")
+
+[node name="Floor" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+mesh = SubResource("BoxMesh_floor")
+surface_material_override/0 = SubResource("Mat_floor")
+
+[node name="FloorCol" type="StaticBody3D" parent="Nav"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FloorCol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+shape = SubResource("Shape_floor")
+
+[node name="RockN" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 1.5, -8)
+mesh = SubResource("BoxMesh_rock")
+surface_material_override/0 = SubResource("Mat_rock")
+
+[node name="RockNCol" type="StaticBody3D" parent="Nav/RockN"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RockN/RockNCol"]
+shape = SubResource("Shape_rock")
+
+[node name="RockS" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 1.5, 6)
+mesh = SubResource("BoxMesh_rock")
+surface_material_override/0 = SubResource("Mat_rock")
+
+[node name="RockSCol" type="StaticBody3D" parent="Nav/RockS"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RockS/RockSCol"]
+shape = SubResource("Shape_rock")

@@ -1,0 +1,166 @@
+[gd_scene format=3 uid="uid://crgntownhub01"]
+
+[ext_resource type="Script" path="res://src/Entities/Entity.cs" id="1_entity"]
+[ext_resource type="Script" path="res://src/Items/ItemPickupComponent.cs" id="2_pickup"]
+[ext_resource type="Resource" path="res://data/items/HealthPotion.tres" id="3_item"]
+[ext_resource type="Script" path="res://src/World/TravelNodeComponent.cs" id="4_travel"]
+[ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="5_navbaker"]
+
+[sub_resource type="NavigationMesh" id="NavMesh_hub"]
+geometry_parsed_geometry_type = 1
+cell_size = 0.25
+cell_height = 0.25
+agent_height = 1.75
+agent_radius = 0.5
+agent_max_climb = 0.5
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+size = Vector3(60, 0.5, 60)
+
+[sub_resource type="BoxShape3D" id="Shape_floor"]
+size = Vector3(60, 0.5, 60)
+
+[sub_resource type="StandardMaterial3D" id="Mat_floor"]
+albedo_color = Color(0.34, 0.33, 0.3, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_bldgA"]
+size = Vector3(6, 5, 8)
+
+[sub_resource type="BoxMesh" id="BoxMesh_bldgB"]
+size = Vector3(8, 6, 6)
+
+[sub_resource type="StandardMaterial3D" id="Mat_bldg"]
+albedo_color = Color(0.4, 0.38, 0.36, 1)
+
+[sub_resource type="BoxShape3D" id="Shape_bldgA"]
+size = Vector3(6, 5, 8)
+
+[sub_resource type="BoxShape3D" id="Shape_bldgB"]
+size = Vector3(8, 6, 6)
+
+[sub_resource type="CylinderShape3D" id="Shape_waystone"]
+radius = 0.7
+height = 3.0
+
+[sub_resource type="CylinderMesh" id="Mesh_waystone"]
+top_radius = 0.35
+bottom_radius = 0.55
+height = 3.0
+
+[sub_resource type="StandardMaterial3D" id="Mat_waystone"]
+albedo_color = Color(0.55, 0.5, 0.42, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_relic"]
+size = Vector3(0.35, 0.35, 0.35)
+
+[sub_resource type="StandardMaterial3D" id="Mat_relic"]
+albedo_color = Color(0.9, 0.75, 0.3, 1)
+emission_enabled = true
+emission = Color(0.8, 0.6, 0.2, 1)
+emission_energy_multiplier = 0.6
+
+[sub_resource type="BoxShape3D" id="Shape_relic"]
+size = Vector3(0.5, 0.5, 0.5)
+
+[node name="TownHubCell" type="Node3D"]
+
+[node name="Nav" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("NavMesh_hub")
+
+[node name="NavBaker" type="Node" parent="Nav"]
+script = ExtResource("5_navbaker")
+
+[node name="Floor" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+mesh = SubResource("BoxMesh_floor")
+surface_material_override/0 = SubResource("Mat_floor")
+
+[node name="FloorCol" type="StaticBody3D" parent="Nav"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FloorCol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+shape = SubResource("Shape_floor")
+
+[node name="BuildingNW" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 2.5, -6)
+mesh = SubResource("BoxMesh_bldgA")
+surface_material_override/0 = SubResource("Mat_bldg")
+
+[node name="BuildingNWCol" type="StaticBody3D" parent="Nav/BuildingNW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BuildingNW/BuildingNWCol"]
+shape = SubResource("Shape_bldgA")
+
+[node name="BuildingNE" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 2.5, -6)
+mesh = SubResource("BoxMesh_bldgA")
+surface_material_override/0 = SubResource("Mat_bldg")
+
+[node name="BuildingNECol" type="StaticBody3D" parent="Nav/BuildingNE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BuildingNE/BuildingNECol"]
+shape = SubResource("Shape_bldgA")
+
+[node name="BuildingSW" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 3, -22)
+mesh = SubResource("BoxMesh_bldgB")
+surface_material_override/0 = SubResource("Mat_bldg")
+
+[node name="BuildingSWCol" type="StaticBody3D" parent="Nav/BuildingSW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BuildingSW/BuildingSWCol"]
+shape = SubResource("Shape_bldgB")
+
+[node name="BuildingSE" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 3, -22)
+mesh = SubResource("BoxMesh_bldgB")
+surface_material_override/0 = SubResource("Mat_bldg")
+
+[node name="BuildingSECol" type="StaticBody3D" parent="Nav/BuildingSE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BuildingSE/BuildingSECol"]
+shape = SubResource("Shape_bldgB")
+
+[node name="Waystone" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -4)
+script = ExtResource("1_entity")
+DisplayName = "Ember Crown Waystone"
+
+[node name="Pillar" type="MeshInstance3D" parent="Waystone"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+mesh = SubResource("Mesh_waystone")
+surface_material_override/0 = SubResource("Mat_waystone")
+
+[node name="Collider" type="StaticBody3D" parent="Waystone"]
+
+[node name="Shape" type="CollisionShape3D" parent="Waystone/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+shape = SubResource("Shape_waystone")
+
+[node name="Travel" type="Node" parent="Waystone"]
+script = ExtResource("4_travel")
+Id = "travel.ember_crown.waystone"
+TravelName = "Ember Crown Waystone"
+RegionId = "region.ember_crown"
+
+[node name="Relic" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, -4)
+script = ExtResource("1_entity")
+DisplayName = "Waystone Relic"
+PersistentId = "ember_crown.waystone.relic"
+
+[node name="Mesh" type="MeshInstance3D" parent="Relic"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.35, 0)
+mesh = SubResource("Mesh_relic")
+surface_material_override/0 = SubResource("Mat_relic")
+
+[node name="Collider" type="StaticBody3D" parent="Relic"]
+
+[node name="Shape" type="CollisionShape3D" parent="Relic/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.35, 0)
+shape = SubResource("Shape_relic")
+
+[node name="Pickup" type="Node" parent="Relic"]
+script = ExtResource("2_pickup")
+Item = ExtResource("3_item")
+Quantity = 1

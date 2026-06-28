@@ -1,0 +1,87 @@
+[gd_scene format=3 uid="uid://forjc488cks7"]
+
+[ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="1_navbaker"]
+
+[sub_resource type="NavigationMesh" id="NavMesh_wn"]
+geometry_parsed_geometry_type = 1
+cell_size = 0.25
+cell_height = 0.25
+agent_height = 1.75
+agent_radius = 0.5
+agent_max_climb = 0.5
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+size = Vector3(50, 0.5, 50)
+
+[sub_resource type="BoxShape3D" id="Shape_floor"]
+size = Vector3(50, 0.5, 50)
+
+[sub_resource type="StandardMaterial3D" id="Mat_floor"]
+albedo_color = Color(0.3, 0.31, 0.27, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_ruin"]
+size = Vector3(4, 5, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_ruin"]
+albedo_color = Color(0.32, 0.3, 0.28, 1)
+
+[sub_resource type="BoxShape3D" id="Shape_ruin"]
+size = Vector3(4, 5, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_rock"]
+size = Vector3(3, 2.5, 3)
+
+[sub_resource type="StandardMaterial3D" id="Mat_rock"]
+albedo_color = Color(0.27, 0.26, 0.25, 1)
+
+[sub_resource type="BoxShape3D" id="Shape_rock"]
+size = Vector3(3, 2.5, 3)
+
+[node name="WildsNorthCell" type="Node3D"]
+
+[node name="Nav" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("NavMesh_wn")
+
+[node name="NavBaker" type="Node" parent="Nav"]
+script = ExtResource("1_navbaker")
+
+[node name="Floor" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+mesh = SubResource("BoxMesh_floor")
+surface_material_override/0 = SubResource("Mat_floor")
+
+[node name="FloorCol" type="StaticBody3D" parent="Nav"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FloorCol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+shape = SubResource("Shape_floor")
+
+[node name="RuinWall" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, -6)
+mesh = SubResource("BoxMesh_ruin")
+surface_material_override/0 = SubResource("Mat_ruin")
+
+[node name="RuinCol" type="StaticBody3D" parent="Nav/RuinWall"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RuinWall/RuinCol"]
+shape = SubResource("Shape_ruin")
+
+[node name="RockE" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 1.25, 4)
+mesh = SubResource("BoxMesh_rock")
+surface_material_override/0 = SubResource("Mat_rock")
+
+[node name="RockECol" type="StaticBody3D" parent="Nav/RockE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RockE/RockECol"]
+shape = SubResource("Shape_rock")
+
+[node name="RockW" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 1.25, 2)
+mesh = SubResource("BoxMesh_rock")
+surface_material_override/0 = SubResource("Mat_rock")
+
+[node name="RockWCol" type="StaticBody3D" parent="Nav/RockW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RockW/RockWCol"]
+shape = SubResource("Shape_rock")

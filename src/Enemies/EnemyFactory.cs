@@ -50,6 +50,20 @@ public static class EnemyFactory
             MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.30f, 0.55f, 0.32f) },
         });
 
+        // Pathfinding agent (Phase 27A): the AI steers toward this agent's path corners when a
+        // baked navmesh exists under the actor, and falls back to straight-line steering otherwise
+        // (the procedural sandbox has no navmesh). Radius/height match the capsule so paths keep the
+        // body clear of greybox walls. Avoidance is off — pathing only, for now.
+        enemy.AddChild(new NavigationAgent3D
+        {
+            Name = "NavAgent",
+            Radius = CapsuleRadius,
+            Height = CapsuleHeight,
+            PathDesiredDistance = 0.6f,
+            TargetDesiredDistance = 0.6f,
+            AvoidanceEnabled = false,
+        });
+
         AttributeSet attributes = GD.Load<AttributeSet>(AttributesPath) ?? AttributeSet.CreateDefault();
         enemy.AddChild(new StatsComponent { Name = "Stats", Attributes = attributes, StaminaRegen = 12f });
         enemy.AddChild(new CombatComponent { Name = "Combat", Team = HostileTeam, MaxPoise = 40f });

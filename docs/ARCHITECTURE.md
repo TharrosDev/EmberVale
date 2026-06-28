@@ -481,8 +481,20 @@ fast-travel land in 25E–25G.
   Keep each cell self-contained (its own static geometry, navmesh, props, spawn markers) at local
   origin (the streamer places the instance at the cell `Center`), positioned within the region's
   `Bounds`. Persistent actors in a cell carry a `PersistentId` so they restore via the
-  `PersistentSpawnDirector` when the cell reloads (25D). The current sandbox is `region.ember_crown`
-  with two demo streamed cells around the always-loaded base.
+  `PersistentSpawnDirector` when the cell reloads (25D). The sandbox region `region.ember_crown` is
+  now a three-cell greybox (27A): `town_hub` (plaza floor + greybox buildings + the waystone/relic),
+  `wilds_north` (ruin + rocks), `wilds_west` (rocks), with overlapping floors so navmesh patches
+  edge-connect, around the always-loaded base.
+- **Navmesh & enemy pathing** (Phase 27A): each cell wraps its walkable geometry in a
+  `NavigationRegion3D` with a `CellNavBaker` (`src/World`) child that **bakes at stream-in** from the
+  cell's **static colliders** (`NavigationMesh.geometry_parsed_geometry_type = StaticColliders` —
+  runtime *mesh* parsing is avoided; it forces a GPU→CPU readback hitch, the 25.5B anti-hitch
+  concern), so every cell needs a floor collider plus a collider on each obstacle. Enemies carry a
+  `NavigationAgent3D` (`EnemyFactory`); `EnemyAIComponent.MoveTowards` steers toward the agent's next
+  path corner (arrival judged against the final target via the pure `Movement.PathSteering`), and
+  **falls back to straight-line steering** when no navmesh is reachable, so the navmesh-less
+  procedural sandbox and any cell without a Nav region still work. Bake is async (`bake_finished`);
+  until it lands, agents simply straight-line, so there is no hard ordering dependency.
 
 ### 2.6i Crafting (`src/Crafting`)
 

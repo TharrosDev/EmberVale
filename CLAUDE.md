@@ -381,6 +381,15 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    sub-resources (each: `Id` `<region>.<cell>`, `ScenePath`, `Center` `Vector3`, `LoadRadius`).
    Place each cell scene at `scenes/regions/<region>/<cell>.tscn`, built at local origin (the
    streamer positions the instance at `Center`); see `docs/ARCHITECTURE.md` §2.6h-2.
+   **Navmesh (Phase 27A):** wrap the cell's walkable geometry in a `NavigationRegion3D` "Nav" with a
+   `NavigationMesh` whose `geometry_parsed_geometry_type = 1` (**static colliders** — never visual
+   meshes; runtime mesh parsing forces a GPU→CPU readback hitch), and add a `CellNavBaker`
+   (`src/World/CellNavBaker.cs`) as its child so the navmesh **bakes at stream-in**. Give the cell a
+   floor `StaticBody3D`+`CollisionShape3D` (the bake's walkable surface) and a collider on every
+   obstacle (they carve the mesh). Keep `agent_*` dims on the 0.25 voxel grid (`agent_height = 1.75`,
+   `agent_max_climb = 0.5`) to avoid precision warnings. Enemy `NavigationAgent3D`s path on it
+   automatically; with no Nav region they fall back to straight-line steering, so a navmesh is
+   optional per cell but expected for any space enemies fight in.
 2. Auto-indexed by `RegionDatabase`; the save header resolves the active region's name, and the
    `RegionStreamer` loads/unloads the `Cells` by distance (hysteresis + a per-frame budget). The
    `ContentValidator` checks neighbours, default weather, and that each cell `ScenePath` resolves.

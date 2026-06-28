@@ -53,6 +53,7 @@ public partial class EnemyAIComponent : EntityComponent
     private MeleeWeaponComponent? _weapon;
     private PlayerCharacter? _player;
     private MeshInstance3D? _mesh;
+    private NavigationAgent3D? _agent;
     private string _factionId = string.Empty;
     private bool _provoked;
 
@@ -90,6 +91,7 @@ public partial class EnemyAIComponent : EntityComponent
         _stats = Entity.GetComponent<StatsComponent>();
         _weapon = Entity.GetComponent<MeleeWeaponComponent>();
         _mesh = _body.GetNodeOrNull<MeshInstance3D>("Mesh");
+        _agent = _body.GetNodeOrNull<NavigationAgent3D>("NavAgent");
         _factionId = Entity.GetComponent<FactionComponent>()?.FactionId ?? string.Empty;
         _home = _body.GlobalPosition;
         _lastKnownPos = _home;
@@ -438,11 +440,38 @@ public partial class EnemyAIComponent : EntityComponent
 
     private void MoveTowards(Vector3 target, double delta, bool sprint, float stopDistance)
     {
-        Vector3 toTarget = target - _body.GlobalPosition;
-        toTarget.Y = 0f;
-        float dist = toTarget.Length();
-        Vector3 wish = dist > stopDistance && dist > 0.01f ? toTarget.Normalized() : Vector3.Zero;
+        // Steer toward the next navmesh path corner (Phase 27A) when one is available; arrival is
+        // judged against the FINAL target, never the corner, so the actor doesn't stop short at bends.
+        Vector3 corner = NextPathPoint(target);
+        Vector3 toCorner = corner - _body.GlobalPosition;
+        toCorner.Y = 0f;
+        float cornerDist = toCorner.Length();
+        float finalDist = HorizontalDistance(_body.GlobalPosition, target);
+        Vector3 wish = PathSteering.ShouldSteer(cornerDist, finalDist, stopDistance)
+            ? toCorner.Normalized()
+            : Vector3.Zero;
         GetLocomotion()?.Move(delta, wish, sprint, jump: false);
+    }
+
+    /// <summary>
+    /// The next waypoint to steer toward. With a baked navmesh under the agent this is the next path
+    /// corner around obstacles; with no navmesh (the procedural sandbox) or an unreachable target the
+    /// path query yields nothing, so we fall back to steering straight at the target — the pre-27A
+    /// behaviour. Re-targets the agent only when the goal actually moves, to avoid needless repaths.
+    /// </summary>
+    private Vector3 NextPathPoint(Vector3 target)
+    {
+        if (_agent == null)
+        {
+            return target;
+        }
+
+        if (_agent.TargetPosition.DistanceSquaredTo(target) > 0.01f)
+        {
+            _agent.TargetPosition = target;
+        }
+
+        return _agent.IsTargetReachable() ? _agent.GetNextPathPosition() : target;
     }
 
     private void Stand(double delta)

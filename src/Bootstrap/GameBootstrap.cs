@@ -595,11 +595,14 @@ public partial class GameBootstrap : Node3D
         AddChild(worldEnv);
 
         // A generous ground plane so dynamic encounters (spawned ~14–20m out) land on
-        // visible terrain; the collider below is an infinite plane regardless.
+        // visible terrain; the collider below is an infinite plane regardless. Sits 5 cm below
+        // y=0 so authored region greybox floors (top at y=0, Phase 27A) render cleanly on top of
+        // it instead of z-fighting; the WorldBoundary collider stays at y=0 so standing is unchanged.
         var floor = new MeshInstance3D
         {
             Mesh = new PlaneMesh { Size = new Vector2(80f, 80f) },
             MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.18f, 0.22f, 0.20f) },
+            Position = new Vector3(0f, -0.05f, 0f),
         };
         AddChild(floor);
 
