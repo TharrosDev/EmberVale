@@ -15,8 +15,8 @@ namespace Embervale.UI;
 /// </summary>
 public partial class MainMenu : CanvasLayer
 {
-    /// <summary>Invoked with the chosen slot when the player starts a new game.</summary>
-    public System.Action<string>? NewGameRequested { get; set; }
+    /// <summary>Invoked with the chosen slot and the created character when the player starts a new game.</summary>
+    public System.Action<string, Races.CharacterProfile>? NewCharacterRequested { get; set; }
 
     /// <summary>Invoked with the chosen slot when the player loads/continues a save.</summary>
     public System.Action<string>? LoadGameRequested { get; set; }
@@ -75,13 +75,24 @@ public partial class MainMenu : CanvasLayer
     {
         var panel = new SaveSlotPanel();
         System.Action<string> chosen = mode == SaveSlotPanel.Intent.New
-            ? slot => NewGameRequested?.Invoke(slot)
+            ? OpenCreator
             : slot => LoadGameRequested?.Invoke(slot);
 
         // Hide the menu behind the panel; restore it if the player backs out.
         Visible = false;
         panel.Configure(mode, chosen, () => Visible = true);
         AddChild(panel);
+    }
+
+    /// <summary>After a New-Game slot is picked, run the character creator (Phase 26D); confirm starts
+    /// the game with the created profile, back returns to the title screen.</summary>
+    private void OpenCreator(string slot)
+    {
+        var creator = new CharacterCreator();
+        creator.Configure(
+            profile => NewCharacterRequested?.Invoke(slot, profile),
+            () => Visible = true);
+        AddChild(creator);
     }
 
     private void OpenSettings()

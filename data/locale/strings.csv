@@ -119,3 +119,31 @@ hud.quest,QUEST
 hud.level,Lv {0}
 hud.ready,ready
 hud.spell,Q: {0} ({1})
+# Stat names (StatNames / character creator)
+stat.health,Health
+stat.stamina,Stamina
+stat.mana,Mana
+stat.strength,Strength
+stat.dexterity,Dexterity
+stat.intelligence,Intelligence
+stat.vitality,Vitality
+stat.endurance,Endurance
+stat.armor,Armor
+stat.physical_power,Physical Power
+stat.spell_power,Spell Power
+stat.move_speed,Move Speed
+stat.attack_speed,Attack Speed
+stat.crit_chance,Crit Chance
+stat.crit_damage,Crit Damage
+# Character creator (CharacterCreator)
+create.title,CREATE CHARACTER
+create.race,Race
+create.innate,Innate
+create.stat_line,{0} {1}
+create.rep_line,{0} {1}
+create.name,Name
+create.name_hint,Enter a name
+create.background,Background (optional)
+create.background_hint,A line about who you are
+create.confirm,Begin
+create.back,Back
