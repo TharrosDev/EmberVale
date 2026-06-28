@@ -1108,7 +1108,7 @@ no code) — batch them when momentum is good.
     `.tres`, no code. Build + **242 tests** + `--validate` exit 0 + boot logs `RaceDatabase loaded 1
     race(s)` (`errors: []`).
 
-- [ ] **26B — Author the six race `.tres`** `[C]`
+- [x] **26B — Author the six race `.tres`** `[C]` ✅
   - **Goal:** Human, Valari, Grondar, Sylthari, Draekyn, Umbral exist as data.
   - **Tasks:** author all six `data/races/*.tres` per LORE traits (Valari magic
     affinity, Grondar strength/endurance, Sylthari wildlife communion, Draekyn
@@ -1117,6 +1117,16 @@ no code) — batch them when momentum is good.
     perk"). Pure content.
   - **Done when:** six valid race `.tres`; `validate` green; traits reference real
     ids.
+  - **Done:** authored the five remaining races (Human shipped in 26A) — **Valari** (+3 Int/+4 SpellPower/
+    +20 Mana, innate `spell.firebolt`), **Grondar** (+5 Str/+4 End/+3 Vit/+20 HP/−0.4 Move, innate
+    `perk.toughness`), **Sylthari** (+3 Dex/+2 Vit/+0.4 Move, innate `perk.endurance_training`),
+    **Draekyn** (+2 Str/+2 SpellPower/+0.2 CritDmg, innate `spell.fireball` dragon-breath seed,
+    `faction.villagers −10` feared), **Umbral** (+4 Dex/+0.4 Move/+0.03 Crit, innate `perk.precision`,
+    `faction.villagers −15` distrusted). **No new perks needed** — innate spells + stat deltas + the three
+    ungated perks (toughness/endurance_training/precision) cover every trait, so this stayed pure content.
+    `AppearanceOptionIds` left empty (the catalogue lands in 26D). All traits reference real ids;
+    `--validate` exit 0 (`ValidateRaces` green) + boot logs `RaceDatabase loaded 6 race(s)` (`errors: []`).
+    242 tests unaffected (content-only).
 
 - [ ] **26C — `PlayerFactory` consumes a creation profile** `[F]`
   - **Goal:** the chosen race actually shapes the player.

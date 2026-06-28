@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="RaceResource" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/Races/RaceResource.cs" id="1_race"]
+[ext_resource type="Script" path="res://src/Races/RaceStatDelta.cs" id="2_delta"]
+
+[sub_resource type="Resource" id="Delta_int"]
+script = ExtResource("2_delta")
+Stat = 5
+Amount = 3.0
+
+[sub_resource type="Resource" id="Delta_sp"]
+script = ExtResource("2_delta")
+Stat = 10
+Amount = 4.0
+
+[sub_resource type="Resource" id="Delta_mana"]
+script = ExtResource("2_delta")
+Stat = 2
+Amount = 20.0
+
+[resource]
+script = ExtResource("1_race")
+Id = "race.valari"
+DisplayName = "Valari"
+Description = "Descendants of celestial servants, gifted with keen intellect and a natural affinity for magic. The Valari are born to the arcane — their minds are sharp and their spells potent."
+StatDeltas = Array[Resource]([SubResource("Delta_int"), SubResource("Delta_sp"), SubResource("Delta_mana")])
+InnatePerkIds = Array[String]([])
+InnateSpellIds = Array[String](["spell.firebolt"])
+ReputationTweaks = Array[Resource]([])
+AppearanceOptionIds = Array[String]([])
