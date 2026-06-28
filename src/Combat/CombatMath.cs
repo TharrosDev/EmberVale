@@ -75,10 +75,18 @@ public static class CombatMath
 
         if (type == DamageType.Physical)
         {
-            float armor = Mathf.Max(0f, defender.GetValue(StatType.Armor));
-            amount *= 100f / (100f + armor);
+            amount *= ArmorMultiplier(defender.GetValue(StatType.Armor));
         }
 
         return amount;
+    }
+
+    /// <summary>The physical-damage multiplier from armor: the classic <c>100 / (100 + armor)</c>
+    /// curve — diminishing returns, always in (0, 1], never full immunity. Negative armor clamps to
+    /// no reduction (×1). Pure (Godot-free) so the load-bearing defence formula is unit-testable.</summary>
+    public static float ArmorMultiplier(float armor)
+    {
+        float clamped = armor < 0f ? 0f : armor;
+        return 100f / (100f + clamped);
     }
 }

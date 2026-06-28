@@ -880,7 +880,7 @@ no code) — batch them when momentum is good.
     source's stacked modifiers. Build + **130 tests** (4 new) + `--validate` (exit 0) + a clean
     headless boot capture (all databases → `MainMenu`, `errors: []`) green.
 
-- [ ] **25.5I — Player controller, locomotion & combat framework** `[F]` (systems 2, 3)
+- [x] **25.5I — Player controller, locomotion & combat framework** `[F]` (systems 2, 3) ✅
   - **Goal:** movement and the damage pipeline are tight and predictable.
   - **Tasks:** input handling under pause/menu (mouse-mode + `UiState`), locomotion edge
     cases (slopes, ledges, sprint/jump), and the combat pipeline — `DamagePacket`,
@@ -889,6 +889,20 @@ no code) — batch them when momentum is good.
     `src/Combat`.
   - **Done when:** no missed/double hits across the i-frame and overlap-timing cases;
     movement has no stuck/clip states in a review pass.
+  - **Done:** audited the pipeline — **solid**, with one input fix + the missing combat-formula
+    coverage closed. *Audit:* the `Hitbox` polls overlaps each physics frame across the active
+    window and dedupes per target via `_alreadyHit` (cleared per swing) — no missed/double hits
+    from the Monitoring-next-frame gotcha; owner-skip and same-`Team` friendly-fire skip both hold;
+    `MeleeWeaponComponent` gates re-attack on phase + stamina + stagger and rolls a fresh
+    `DamagePacket` per swing; `CombatComponent` block→stamina, poise→stagger and block-prevents-poise
+    are correct. Locomotion's grounded `velocity.Y` isn't zeroed, but `MoveAndSlide` clamps it and
+    jump sets absolute velocity, so no stuck/clip state. *Fix:* the player set `_combat.IsBlocking`
+    only on the live path, so raising the guard then opening a menu could **strand "blocking" true**;
+    the not-playing and menu early-returns now call `DropHeldInput()` to release it (live input is
+    re-read on the first frame back in control). *Coverage:* `CombatMath` had **no tests** despite
+    running on every hit — extracted the pure `ArmorMultiplier(armor)` kernel (the `100/(100+armor)`
+    curve) and pinned it (curve points, negative-armor clamp, monotonic-and-bounded). Build +
+    **144 tests** (6 new) + `--validate` (exit 0) + clean headless boot (`errors: []`) green.
 
 - [ ] **25.5J — Enemy AI, perception & spawning** `[F/P]` (system 4)
   - **Goal:** AI is correct and cheap, including across streaming.

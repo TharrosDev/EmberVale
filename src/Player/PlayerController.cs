@@ -85,6 +85,7 @@ public partial class PlayerController : EntityComponent
             // during this window (e.g. a save/load world rebuild) can't be dereferenced as a
             // disposed node by the HUD before the raycast next refreshes it.
             ClearFocus();
+            DropHeldInput();
             return;
         }
 
@@ -93,6 +94,7 @@ public partial class PlayerController : EntityComponent
         if (UiState.MenuOpen)
         {
             ClearFocus();
+            DropHeldInput();
             _locomotion?.Move(delta, Vector3.Zero, sprint: false, jump: false);
             return;
         }
@@ -161,6 +163,17 @@ public partial class PlayerController : EntityComponent
 
         FocusedEntity = EntityNode.FindOwner(collider);
         FocusedInteractable = FocusedEntity?.GetComponent<InteractableComponent>();
+    }
+
+    /// <summary>Releases continuous input state when control is suspended (menu open / not playing),
+    /// so a guard held when the menu opened can't strand as "blocking" — the live input is re-read on
+    /// the first frame back in control.</summary>
+    private void DropHeldInput()
+    {
+        if (_combat != null)
+        {
+            _combat.IsBlocking = false;
+        }
     }
 
     private void ClearFocus()
