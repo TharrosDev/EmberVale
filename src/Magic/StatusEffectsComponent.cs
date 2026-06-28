@@ -104,11 +104,11 @@ public partial class StatusEffectsComponent : EntityComponent
             return;
         }
 
-        effect.TickTimer -= delta;
-        while (effect.TickTimer <= 0d)
+        (int ticks, double newTimer) = StatusMath.AdvanceDot(effect.TickTimer, delta, def.TickInterval);
+        effect.TickTimer = newTimer;
+        for (int i = 0; i < ticks; i++)
         {
             _stats?.ApplyDamage(def.DamagePerTick, effect.Source);
-            effect.TickTimer += def.TickInterval;
 
             // Stop ticking a victim the DoT just killed.
             if (_stats is { IsAlive: false })

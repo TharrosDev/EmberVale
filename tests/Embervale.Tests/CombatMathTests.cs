@@ -42,4 +42,25 @@ public class CombatMathTests
             previous = m;
         }
     }
+
+    // --- ScaleDamage (offensive base + power scaling) -----------------------
+
+    [Theory]
+    [InlineData(10f, 0f, 0.5f, 10f)]    // no power → just the base
+    [InlineData(10f, 40f, 0.5f, 30f)]   // melee: 10 + 40×0.5
+    [InlineData(10f, 40f, 0.6f, 34f)]   // spell: 10 + 40×0.6
+    [InlineData(0f, 20f, 0.5f, 10f)]    // zero base, power only
+    public void ScaleDamage_AddsPowerShareToBase(float baseDamage, float power, float scaling, float expected)
+    {
+        Assert.Equal(expected, CombatMath.ScaleDamage(baseDamage, power, scaling), Tolerance);
+    }
+
+    [Fact]
+    public void DamagePipeline_ScaleThenMitigate_PinsTheNumber()
+    {
+        // 10 base + 30 power × 0.5 = 25 raw physical; through 100 armor (×0.5) = 12.5 mitigated.
+        float raw = CombatMath.ScaleDamage(10f, 30f, 0.5f);
+        Assert.Equal(25f, raw, Tolerance);
+        Assert.Equal(12.5f, raw * CombatMath.ArmorMultiplier(100f), Tolerance);
+    }
 }

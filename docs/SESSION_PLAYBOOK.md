@@ -979,13 +979,29 @@ no code) — batch them when momentum is good.
     mixed `AllMet`). Build + **186 tests** (20 new) + `--validate` (exit 0) + clean headless boot that
     auto-loaded into Playing and ran the quest/XP path (`errors: []`) green.
 
-- [ ] **25.5M — Magic, status effects & combat math** `[F]` (system 12)
+- [x] **25.5M — Magic, status effects & combat math** `[F]` (system 12) ✅
   - **Goal:** spellcasting and effects resolve consistently.
   - **Tasks:** cooldown/mana gating, projectile pooling reuse (`SpellProjectile`), AoE
     resolution, status-effect stacking/refresh/expiry and DoT tick cadence, and
     `CombatMath` roll/scaling correctness. Read `src/Magic`, `src/Combat/CombatMath`.
   - **Done when:** effects stack/expire correctly with no leaked pooled projectiles;
     damage/heal math is pinned by a unit check.
+  - **Done:** audited magic/effects — **solid** — and pinned the damage + DoT-cadence kernels.
+    *Audit:* `SpellcastingComponent.CanCast` requires cooldown ≤ 0 **and** mana ≥ `ManaCost`; `TryCast`
+    deducts mana + stamps the cooldown. `SpellProjectile` is inert until `Launch` arms it and resolves on
+    a hostile hit **or** `_life<=0` timeout → `_resolved=true` then a deferred `Release` → the pool
+    reclaims it (a projectile that hits nothing still times out and returns — **no leak**); `_resolved`
+    guards double-resolve. `StatusEffectsComponent` **refreshes** (never unbounded-stacks) on re-apply,
+    sources stat modifiers to the effect and strips them on expiry/`ClearAll`/death, and its DoT loop is
+    guarded by `HasDamageOverTime => DamagePerTick>0 && TickInterval>0`; heal is a flat `_stats.Heal`.
+    *Coverage:* extracted the pure `CombatMath.ScaleDamage(base, power, scaling)` (the offensive base +
+    power share behind every hit/cast; `RollAttack`/`RollSpell` route through it) and
+    `StatusMath.AdvanceDot(tickTimer, delta, interval)` (the DoT catch-up loop, extracted from `Tick`) —
+    both no behaviour change. Extended `CombatMathTests` (ScaleDamage for both 0.5/0.6 constants + a
+    scale→`ArmorMultiplier` pipeline pin) and added `StatusMathTests` (no tick pre-interval, exact
+    boundary, multi-tick catch-up across a large delta, carry-over remainder, `interval<=0` no-loop
+    guard). Build + **197 tests** (11 new) + `--validate` (exit 0) + clean headless boot into Playing
+    with combat damage flowing through the pipeline (`errors: []`) green.
 
 - [ ] **25.5N — World clock/weather/encounters, NPC schedules & procedural events** `[F]` (systems 11, 13, 17)
   - **Goal:** the living-world directors are stable, including across streaming.

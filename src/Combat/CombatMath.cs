@@ -20,13 +20,17 @@ public static class CombatMath
     /// <summary>Builds the outgoing damage amount and rolls for a critical hit.</summary>
     public static (float Amount, bool IsCrit) RollAttack(float baseDamage, StatsComponent? attacker)
     {
-        float amount = baseDamage;
-        if (attacker != null)
-        {
-            amount += attacker.GetValue(StatType.PhysicalPower) * PowerScaling;
-        }
-
+        float amount = ScaleDamage(baseDamage, attacker?.GetValue(StatType.PhysicalPower) ?? 0f, PowerScaling);
         return RollCrit(amount, attacker);
+    }
+
+    /// <summary>The offensive scaling behind every hit and cast: a flat base plus a share of the
+    /// source's power stat (<c>base + power × scaling</c>). Pure (Godot-free) so the damage formula is
+    /// unit-testable apart from the crit roll. Both <see cref="RollAttack"/> (PhysicalPower) and
+    /// <see cref="RollSpell"/> (SpellPower) route through it.</summary>
+    public static float ScaleDamage(float baseDamage, float power, float scaling)
+    {
+        return baseDamage + (power * scaling);
     }
 
     /// <summary>
@@ -36,12 +40,7 @@ public static class CombatMath
     /// </summary>
     public static (float Amount, bool IsCrit) RollSpell(float baseDamage, StatsComponent? caster)
     {
-        float amount = baseDamage;
-        if (caster != null)
-        {
-            amount += caster.GetValue(StatType.SpellPower) * SpellScaling;
-        }
-
+        float amount = ScaleDamage(baseDamage, caster?.GetValue(StatType.SpellPower) ?? 0f, SpellScaling);
         return RollCrit(amount, caster);
     }
 
