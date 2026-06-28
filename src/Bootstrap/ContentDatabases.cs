@@ -7,6 +7,7 @@ using Embervale.Magic;
 using Embervale.Npc;
 using Embervale.Progression;
 using Embervale.Quests;
+using Embervale.Races;
 using Embervale.World;
 
 namespace Embervale.Bootstrap;
@@ -38,6 +39,7 @@ public static class ContentDatabases
         RecipeDatabase.Initialize();
         FactionDatabase.Initialize();
         WorldEventDatabase.Initialize();
+        RaceDatabase.Initialize();
         EnemyTemplateRegistry.Initialize();
     }
 }

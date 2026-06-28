@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="RaceResource" format=3]
+
+[ext_resource type="Script" path="res://src/Races/RaceResource.cs" id="1_race"]
+
+[resource]
+script = ExtResource("1_race")
+Id = "race.human"
+DisplayName = "Human"
+Description = "Adaptable and ambitious, the most common folk of the realm. Humans carry no innate gifts and no weaknesses — a blank slate shaped entirely by the path the player chooses."

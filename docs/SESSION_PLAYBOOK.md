@@ -1088,13 +1088,25 @@ no code) — batch them when momentum is good.
 > Six LORE races as data-driven trait sets + a creator that writes them into the
 > player at spawn.
 
-- [ ] **26A — `RaceResource` + `RaceDatabase`** `[F]`
+- [x] **26A — `RaceResource` + `RaceDatabase`** `[F]` ✅
   - **Goal:** races are data.
   - **Tasks:** add `RaceResource` (`.tres`: id, name, `AttributeSet` deltas, innate
     perk/ability ids, starting reputation tweaks, appearance option ids) +
     auto-indexed `RaceDatabase` (mirror `ItemDatabase`). No new inheritance.
   - **Done when:** a `RaceResource` loads and indexes; the schema covers all six
     LORE races' needs.
+  - **Done:** new `src/Races/` system — `RaceResource` (`[GlobalClass] : Resource`: `Id`, `DisplayName`,
+    multiline `Description`, sparse `StatDeltas` [`RaceStatDelta` sub-resource = `StatType` + signed flat
+    `Amount`], `InnatePerkIds`/`InnateSpellIds`/`AppearanceOptionIds` string arrays, `ReputationTweaks`
+    [`RaceReputationTweak` = faction id + amount], with typed `StatDeltaList()`/`ReputationTweakList()`
+    read-backs mirroring `ScheduleResource`). `RaceDatabase` copies `PerkDatabase` (auto-scans
+    `res://data/races`, `Get`/`All`, dup-id warn) and registers in `ContentDatabases.InitializeAll`.
+    `ContentValidator.ValidateRaces` gates innate perk→`PerkDatabase`, spell→`SpellDatabase`, and
+    reputation faction→`FactionDatabase` refs (+ duplicate race ids). Schema covers all six LORE races'
+    needs (Valari magic, Grondar strength, Sylthari survival, Draekyn dragon-ability seed, Umbral stealth
+    + distrust, Human flexible). Proof `data/races/Human.tres` loads. Composition only — a new race is a
+    `.tres`, no code. Build + **242 tests** + `--validate` exit 0 + boot logs `RaceDatabase loaded 1
+    race(s)` (`errors: []`).
 
 - [ ] **26B — Author the six race `.tres`** `[C]`
   - **Goal:** Human, Valari, Grondar, Sylthari, Draekyn, Umbral exist as data.

@@ -12,6 +12,7 @@ using Embervale.Magic;
 using Embervale.Npc;
 using Embervale.Progression;
 using Embervale.Quests;
+using Embervale.Races;
 using Embervale.World;
 using Godot;
 
@@ -89,6 +90,7 @@ public static class ContentValidator
         ValidateEncounters(issues);
         ValidateWorldEvents(issues);
         ValidateRegions(issues);
+        ValidateRaces(issues);
         ValidateLocale(issues);
     }
 
@@ -143,6 +145,7 @@ public static class ContentValidator
         CheckDuplicateIds<CraftingRecipeResource>("res://data/recipes", "recipe", r => r.Id, issues);
         CheckDuplicateIds<FactionResource>("res://data/factions", "faction", r => r.Id, issues);
         CheckDuplicateIds<WorldEventResource>("res://data/world_events", "event", r => r.Id, issues);
+        CheckDuplicateIds<RaceResource>("res://data/races", "race", r => r.Id, issues);
     }
 
     /// <summary>Loads every <c>.tres</c> in <paramref name="directory"/> and reports empty or
@@ -263,6 +266,36 @@ public static class ContentValidator
             }
 
             RequireItem(recipe.OutputItemId, $"recipe '{recipe.Id}' output", issues);
+        }
+    }
+
+    private static void ValidateRaces(List<string> issues)
+    {
+        foreach (RaceResource race in RaceDatabase.All)
+        {
+            foreach (string perkId in race.InnatePerkIds)
+            {
+                if (PerkDatabase.Get(perkId) == null)
+                {
+                    issues.Add($"race '{race.Id}' references unknown innate perk '{perkId}'");
+                }
+            }
+
+            foreach (string spellId in race.InnateSpellIds)
+            {
+                if (SpellDatabase.Get(spellId) == null)
+                {
+                    issues.Add($"race '{race.Id}' references unknown innate spell '{spellId}'");
+                }
+            }
+
+            foreach (RaceReputationTweak tweak in race.ReputationTweakList())
+            {
+                if (FactionDatabase.Get(tweak.FactionId) == null)
+                {
+                    issues.Add($"race '{race.Id}' reputation tweak references unknown faction '{tweak.FactionId}'");
+                }
+            }
         }
     }
 
