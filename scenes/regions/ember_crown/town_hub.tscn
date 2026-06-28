@@ -283,6 +283,10 @@ script = ExtResource("7_dialogue")
 DialogueId = "dialogue.vendor_stub"
 SpeakerName = "Aldreth, General Goods"
 
+[node name="Schedule" type="Node" parent="VendorGoods"]
+script = ExtResource("8_schedule")
+ScheduleId = "schedule.vendor_goods"
+
 [node name="VendorSmith" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, -5)
 script = ExtResource("1_entity")
@@ -308,6 +312,10 @@ FactionId = "faction.villagers"
 script = ExtResource("7_dialogue")
 DialogueId = "dialogue.vendor_stub"
 SpeakerName = "Bryn the Smith"
+
+[node name="Schedule" type="Node" parent="VendorSmith"]
+script = ExtResource("8_schedule")
+ScheduleId = "schedule.vendor_smith"
 
 [node name="VendorAlch" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, -14)
@@ -335,6 +343,10 @@ script = ExtResource("7_dialogue")
 DialogueId = "dialogue.vendor_stub"
 SpeakerName = "Mirela, Apothecary"
 
+[node name="Schedule" type="Node" parent="VendorAlch"]
+script = ExtResource("8_schedule")
+ScheduleId = "schedule.vendor_alch"
+
 [node name="Innkeeper" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, -6)
 script = ExtResource("1_entity")
@@ -360,6 +372,10 @@ FactionId = "faction.villagers"
 script = ExtResource("7_dialogue")
 DialogueId = "dialogue.vendor_stub"
 SpeakerName = "Innkeeper Holt"
+
+[node name="Schedule" type="Node" parent="Innkeeper"]
+script = ExtResource("8_schedule")
+ScheduleId = "schedule.innkeeper"
 
 [node name="GuildMarker" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, -20)

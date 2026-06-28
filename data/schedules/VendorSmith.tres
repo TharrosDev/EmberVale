@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="ScheduleResource" load_steps=7 format=3 uid="uid://cmbrvlschdvsmt"]
+
+[ext_resource type="Script" path="res://src/Npc/ScheduleResource.cs" id="1_sched"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleEntry.cs" id="2_entry"]
+
+[sub_resource type="Resource" id="e_stoke"]
+script = ExtResource("2_entry")
+StartHour = 6
+Activity = "Stoking the forge"
+Destination = Vector3(-7, 0, -13)
+
+[sub_resource type="Resource" id="e_work"]
+script = ExtResource("2_entry")
+StartHour = 9
+Activity = "At the forge"
+Destination = Vector3(-7, 0, -13)
+
+[sub_resource type="Resource" id="e_tavern"]
+script = ExtResource("2_entry")
+StartHour = 18
+Activity = "At the tavern"
+Destination = Vector3(9, 0, -13)
+
+[sub_resource type="Resource" id="e_sleep"]
+script = ExtResource("2_entry")
+StartHour = 21
+Activity = "Asleep"
+Destination = Vector3(-11, 0, -31)
+
+[resource]
+script = ExtResource("1_sched")
+Id = "schedule.vendor_smith"
+Entries = Array[Resource]([SubResource("e_stoke"), SubResource("e_work"), SubResource("e_tavern"), SubResource("e_sleep")])

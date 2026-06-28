@@ -96,5 +96,9 @@ public static class GameIds
     public static class Schedules
     {
         public const string Elder = "schedule.elder";
+        public const string VendorGoods = "schedule.vendor_goods";
+        public const string VendorSmith = "schedule.vendor_smith";
+        public const string VendorAlch = "schedule.vendor_alch";
+        public const string Innkeeper = "schedule.innkeeper";
     }
 }

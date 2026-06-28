@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="ScheduleResource" load_steps=7 format=3 uid="uid://cmbrvlschdvalc"]
+
+[ext_resource type="Script" path="res://src/Npc/ScheduleResource.cs" id="1_sched"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleEntry.cs" id="2_entry"]
+
+[sub_resource type="Resource" id="e_herbs"]
+script = ExtResource("2_entry")
+StartHour = 7
+Activity = "Gathering herbs"
+Destination = Vector3(0, 0, -26)
+
+[sub_resource type="Resource" id="e_mix"]
+script = ExtResource("2_entry")
+StartHour = 9
+Activity = "Mixing remedies"
+Destination = Vector3(6, 0, -24)
+
+[sub_resource type="Resource" id="e_tavern"]
+script = ExtResource("2_entry")
+StartHour = 18
+Activity = "At the tavern"
+Destination = Vector3(9, 0, -13)
+
+[sub_resource type="Resource" id="e_sleep"]
+script = ExtResource("2_entry")
+StartHour = 21
+Activity = "Asleep"
+Destination = Vector3(13, 0, -31)
+
+[resource]
+script = ExtResource("1_sched")
+Id = "schedule.vendor_alch"
+Entries = Array[Resource]([SubResource("e_herbs"), SubResource("e_mix"), SubResource("e_tavern"), SubResource("e_sleep")])

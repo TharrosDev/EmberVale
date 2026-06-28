@@ -1242,12 +1242,27 @@ no code) — batch them when momentum is good.
     at-keyboard check — the MCP can't inject `E`; the dialogue/station systems are unchanged
     and proven, and the wiring loaded live without errors.)
 
-- [ ] **27C — Scheduled NPC population** `[C]`
+- [x] **27C — Scheduled NPC population** `[C]` ✅
   - **Goal:** the hub feels inhabited.
   - **Tasks:** author `ScheduleResource`s and attach `ScheduleComponent`s to hub
     NPCs (home → work → tavern → sleep routines) per CLAUDE.md §8 "new NPC
     routine." Give 3–5 named NPCs full day routines.
   - **Done when:** NPCs walk believable daily routines off the `WorldClock`.
+  - **Done:** all **five** hub NPCs now run full day routines off the `WorldClock` (work by day
+    → tavern at 18h → home to sleep at night; pre-dawn wraps to the night block). Authored four new
+    `ScheduleResource`s — `data/schedules/{VendorGoods,VendorSmith,VendorAlch,Innkeeper}.tres`
+    (`schedule.vendor_goods` / `_smith` / `_alch` / `innkeeper`, + `GameIds.Schedules` constants) —
+    and re-aimed the Elder's existing `schedule.elder` blocks (old-sandbox coords) at the new hub
+    features (plaza/forge/square/tavern/SW-house, in world coords = cell `Center (0,0,-10)` + local).
+    Each routine is attached by adding a `ScheduleComponent {ScheduleId}` node to the NPC in
+    `town_hub.tscn` (the Elder already had one). **No code** — `ScheduleComponent` already drives a
+    plain `Entity` kinematically off the clock (the 27B-proven path); this is pure data + component
+    wiring. Build clean + **251 tests** + `--validate` exit 0 (`ScheduleDatabase` 1→**5**, all
+    `ScheduleComponent` refs resolve); in-engine the cell bakes navmesh with zero warnings and the
+    hub boots clean (`errors: []`). NPCs move kinematically (straight-line, clipping greybox walls —
+    navmesh-pathed NPC movement is a later refinement, not 27C). Watching the routines over a day via
+    F1 `time <hour>` (8 = stalls, 18 = tavern, 22 = houses) is the maintainer's at-keyboard check —
+    the MCP can't drive time/movement; the schedule data + wiring loaded live without errors.
 
 - [ ] **27D — Wilds: encounters, POIs, loot** `[C]`
   - **Goal:** the explorable surround.
