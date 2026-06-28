@@ -1,6 +1,7 @@
 using Embervale.Core.Diagnostics;
 using Embervale.Entities;
 using Embervale.Interaction;
+using Embervale.Localization;
 using Godot;
 
 namespace Embervale.Quests;
@@ -29,7 +30,7 @@ public partial class QuestGiverComponent : InteractableComponent
                 return "Talk";
             }
 
-            return $"Accept: {quest.Title}";
+            return $"Accept: {Loc.T(quest.Title)}";
         }
     }
 

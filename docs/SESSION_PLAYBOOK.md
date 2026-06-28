@@ -1304,13 +1304,30 @@ no code) — batch them when momentum is good.
     tests + `--validate` 0; the maintainer's automated continue scenario ran clean (goblin fought in
     wilds_north, loot collected, saved, `errors: []`).
 
-- [ ] **27E — Starter quest chain in the Ember Crown** `[C]`
+- [x] **27E — Starter quest chain in the Ember Crown** `[C]` ✅
   - **Goal:** a real questline to play.
   - **Tasks:** author a 3–4 quest chain (Kill/Collect for now; richer types come in
     Phase 41) with `QuestGiverComponent`/`DialogueComponent` givers, prerequisite
     chaining, and rewards. All dialogue/quest strings via `Loc`.
   - **Done when:** the chain is startable, advanceable, and completable end-to-end;
     `validate-all` green.
+  - **Done:** a 4-quest prereq-chained arc — **The Warband** — each given by a town NPC through a full
+    branching dialogue graph (the user chose full-dialogue-per-NPC + Loc-now). (1) Guild Notice board
+    `quest.warband.bounty` (kill 3 goblins) → (2) Bryn the Smith `quest.warband.forge` (collect 3 iron
+    ore) → (3) Mirela the Apothecary `quest.warband.remedies` (collect 4 healing herb) → (4) Village
+    Elder `quest.warband.heart` (kill 5 goblins → Steel Sword). Chaining is automatic: each giver's
+    "offer" choice uses `DialogueCondition.QuestAvailable` → `QuestLogComponent.CanStart`, which gates on
+    the prior quest's completion; `Effect=StartQuest` on accept; objectives advance + rewards apply
+    automatically (no turn-in). New dialogues `data/dialogue/{GuildBoard,Smith,Apothecary}.tres` +
+    finale branch grafted into `Elder.tres`; the Smith/Apothecary/Guild NPCs in `town_hub.tscn`
+    repointed off the vendor stub. **Loc routing** added: the quest/dialogue *content* render sites
+    (GameHud tracker, QuestLogPanel, DialoguePanel speaker/text/choice, QuestGiver prompt) now wrap in
+    `Loc.T` — `Loc.T` passes unknown keys through, so existing literal content is unaffected while the
+    ~69 new keys in `data/locale/strings.csv` resolve (catalogue 139→208). Build clean + 251 tests +
+    `--validate` 0 (`QuestDatabase` 2→6, `DialogueDatabase` 2→5, every `StartQuest`/`Condition`/prereq
+    arg resolves); boots clean (`errors: []`). Walking the chain (accept → see the next giver's offer
+    stay hidden until done → complete to the Elder's finale, text shown localized) is the maintainer's
+    at-keyboard check (MCP can't drive `E`/movement).
 
 - [ ] **27F — First-pass ambience, lighting & audio bed** `[P]`
   - **Goal:** the quality bar, first pass.

@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="QuestResource" format=3 uid="uid://c0mhsmfsmfrmj"]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+[ext_resource type="Script" path="res://src/Quests/QuestItemReward.cs" id="3_reward"]
+
+[sub_resource type="Resource" id="Obj_kill"]
+script = ExtResource("2_obj")
+Type = 0
+TargetId = "enemy.goblin"
+RequiredCount = 5
+Description = "quest.warband.heart.obj"
+
+[sub_resource type="Resource" id="Reward_sword"]
+script = ExtResource("3_reward")
+ItemId = "item.weapon.steel_sword"
+Quantity = 1
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.warband.heart"
+Title = "quest.warband.heart.title"
+Summary = "quest.warband.heart.summary"
+Objectives = Array[Resource]([SubResource("Obj_kill")])
+XpReward = 150
+GoldReward = 50
+GoldItemId = "item.currency.gold"
+RewardItems = Array[Resource]([SubResource("Reward_sword")])
+PrerequisiteQuestId = "quest.warband.remedies"

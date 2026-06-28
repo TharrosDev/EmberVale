@@ -151,9 +151,9 @@ public partial class DialoguePanel : CanvasLayer
             return;
         }
 
-        _list.AddChild(UiTheme.Header(_session.CurrentSpeaker()));
+        _list.AddChild(UiTheme.Header(Loc.T(_session.CurrentSpeaker())));
 
-        Label line = UiTheme.Body(node.Text);
+        Label line = UiTheme.Body(Loc.T(node.Text));
         line.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         line.AddThemeFontSizeOverride("font_size", 15);
         _list.AddChild(line);
@@ -174,7 +174,7 @@ public partial class DialoguePanel : CanvasLayer
         foreach (DialogueChoice choice in choices)
         {
             DialogueChoice captured = choice;
-            Button button = UiTheme.Action(choice.Text);
+            Button button = UiTheme.Action(Loc.T(choice.Text));
             button.Alignment = HorizontalAlignment.Left;
             button.Pressed += () => Choose(captured);
             _list.AddChild(button);

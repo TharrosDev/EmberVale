@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="QuestResource" format=3 uid="uid://c0mhsmfsl85oo"]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+
+[sub_resource type="Resource" id="Obj_kill"]
+script = ExtResource("2_obj")
+Type = 0
+TargetId = "enemy.goblin"
+RequiredCount = 3
+Description = "quest.warband.bounty.obj"
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.warband.bounty"
+Title = "quest.warband.bounty.title"
+Summary = "quest.warband.bounty.summary"
+Objectives = Array[Resource]([SubResource("Obj_kill")])
+XpReward = 60
+GoldReward = 20
+GoldItemId = "item.currency.gold"
+RewardItems = []
+PrerequisiteQuestId = ""

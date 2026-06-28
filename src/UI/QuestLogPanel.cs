@@ -128,13 +128,13 @@ public partial class QuestLogPanel : CanvasLayer
                 completedHeader = true;
             }
 
-            AddLine($"✓ {progress.Quest.Title}", new Color(0.55f, 0.75f, 0.55f));
+            AddLine($"✓ {Loc.T(progress.Quest.Title)}", new Color(0.55f, 0.75f, 0.55f));
         }
     }
 
     private void BuildQuest(QuestProgress progress)
     {
-        AddLine(progress.Quest.Title, new Color(0.95f, 0.85f, 0.45f));
+        AddLine(Loc.T(progress.Quest.Title), new Color(0.95f, 0.85f, 0.45f));
 
         List<ObjectiveResource> objectives = progress.Quest.ObjectiveList();
         for (int i = 0; i < objectives.Count; i++)
@@ -142,7 +142,7 @@ public partial class QuestLogPanel : CanvasLayer
             ObjectiveResource objective = objectives[i];
             bool done = progress.IsObjectiveComplete(i);
             string mark = done ? "✓" : "•";
-            AddLine($"   {mark} {objective.ShortLabel()}  {progress.Counts[i]}/{objective.RequiredCount}",
+            AddLine($"   {mark} {Loc.T(objective.ShortLabel())}  {progress.Counts[i]}/{objective.RequiredCount}",
                 done ? new Color(0.55f, 0.75f, 0.55f) : Colors.White);
         }
     }

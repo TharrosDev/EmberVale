@@ -334,11 +334,11 @@ public partial class GameHud : CanvasLayer
             }
 
             var sb = new StringBuilder();
-            sb.Append(progress.Quest.Title);
+            sb.Append(Loc.T(progress.Quest.Title));
             var objectives = progress.Quest.ObjectiveList();
             for (int i = 0; i < objectives.Count; i++)
             {
-                sb.Append($"\n  {objectives[i].ShortLabel()}  {progress.Counts[i]}/{objectives[i].RequiredCount}");
+                sb.Append($"\n  {Loc.T(objectives[i].ShortLabel())}  {progress.Counts[i]}/{objectives[i].RequiredCount}");
             }
 
             _questText.Text = sb.ToString();

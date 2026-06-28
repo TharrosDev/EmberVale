@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="QuestResource" format=3 uid="uid://c0mhsmfsmp37o"]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+[ext_resource type="Script" path="res://src/Quests/QuestItemReward.cs" id="3_reward"]
+
+[sub_resource type="Resource" id="Obj_collect"]
+script = ExtResource("2_obj")
+Type = 1
+TargetId = "item.material.healing_herb"
+RequiredCount = 4
+Description = "quest.warband.remedies.obj"
+
+[sub_resource type="Resource" id="Reward_potion"]
+script = ExtResource("3_reward")
+ItemId = "item.potion.health"
+Quantity = 2
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.warband.remedies"
+Title = "quest.warband.remedies.title"
+Summary = "quest.warband.remedies.summary"
+Objectives = Array[Resource]([SubResource("Obj_collect")])
+XpReward = 80
+GoldReward = 30
+GoldItemId = "item.currency.gold"
+RewardItems = Array[Resource]([SubResource("Reward_potion")])
+PrerequisiteQuestId = "quest.warband.forge"

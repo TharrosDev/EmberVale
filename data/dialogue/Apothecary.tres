@@ -1,0 +1,90 @@
+[gd_resource type="Resource" script_class="DialogueResource" format=3 uid="uid://c0mhr77eyn6n6"]
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+[sub_resource type="Resource" id="ch_offer"]
+script = ExtResource("3_choice")
+Text = "dlg.apothecary.c_offer"
+Goto = "offer"
+Condition = 1
+ConditionArg = "quest.warband.remedies"
+
+[sub_resource type="Resource" id="ch_active"]
+script = ExtResource("3_choice")
+Text = "dlg.apothecary.c_active"
+Goto = "inprogress"
+Condition = 2
+ConditionArg = "quest.warband.remedies"
+
+[sub_resource type="Resource" id="ch_thanks"]
+script = ExtResource("3_choice")
+Text = "dlg.apothecary.c_thanks"
+Goto = "thanks"
+Condition = 3
+ConditionArg = "quest.warband.remedies"
+
+[sub_resource type="Resource" id="ch_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.apothecary.c_bye"
+
+[sub_resource type="Resource" id="ch_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.apothecary.c_accept"
+Goto = "accepted"
+Effect = 1
+EffectArg = "quest.warband.remedies"
+
+[sub_resource type="Resource" id="ch_decline"]
+script = ExtResource("3_choice")
+Text = "dlg.apothecary.c_decline"
+
+[sub_resource type="Resource" id="ch_accepted_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.apothecary.c_accepted_bye"
+
+[sub_resource type="Resource" id="ch_inprogress_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.apothecary.c_inprogress_bye"
+
+[sub_resource type="Resource" id="ch_thanks_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.apothecary.c_thanks_bye"
+
+[sub_resource type="Resource" id="node_root"]
+script = ExtResource("2_node")
+Id = "root"
+Text = "dlg.apothecary.root"
+Choices = Array[Resource]([SubResource("ch_offer"), SubResource("ch_active"), SubResource("ch_thanks"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_offer"]
+script = ExtResource("2_node")
+Id = "offer"
+Text = "dlg.apothecary.offer"
+Choices = Array[Resource]([SubResource("ch_accept"), SubResource("ch_decline")])
+
+[sub_resource type="Resource" id="node_accepted"]
+script = ExtResource("2_node")
+Id = "accepted"
+Text = "dlg.apothecary.accepted"
+Choices = Array[Resource]([SubResource("ch_accepted_bye")])
+
+[sub_resource type="Resource" id="node_inprogress"]
+script = ExtResource("2_node")
+Id = "inprogress"
+Text = "dlg.apothecary.inprogress"
+Choices = Array[Resource]([SubResource("ch_inprogress_bye")])
+
+[sub_resource type="Resource" id="node_thanks"]
+script = ExtResource("2_node")
+Id = "thanks"
+Text = "dlg.apothecary.thanks"
+Choices = Array[Resource]([SubResource("ch_thanks_bye")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "dialogue.apothecary"
+SpeakerName = "dlg.apothecary.speaker"
+StartNodeId = "root"
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_offer"), SubResource("node_accepted"), SubResource("node_inprogress"), SubResource("node_thanks")])

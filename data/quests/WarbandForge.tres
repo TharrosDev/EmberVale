@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="QuestResource" format=3 uid="uid://c0mhsmfsmd6l5"]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+[ext_resource type="Script" path="res://src/Quests/QuestItemReward.cs" id="3_reward"]
+
+[sub_resource type="Resource" id="Obj_collect"]
+script = ExtResource("2_obj")
+Type = 1
+TargetId = "item.material.iron_ore"
+RequiredCount = 3
+Description = "quest.warband.forge.obj"
+
+[sub_resource type="Resource" id="Reward_potion"]
+script = ExtResource("3_reward")
+ItemId = "item.potion.health"
+Quantity = 1
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.warband.forge"
+Title = "quest.warband.forge.title"
+Summary = "quest.warband.forge.summary"
+Objectives = Array[Resource]([SubResource("Obj_collect")])
+XpReward = 70
+GoldReward = 25
+GoldItemId = "item.currency.gold"
+RewardItems = Array[Resource]([SubResource("Reward_potion")])
+PrerequisiteQuestId = "quest.warband.bounty"
