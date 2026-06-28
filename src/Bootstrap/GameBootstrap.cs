@@ -295,8 +295,6 @@ public partial class GameBootstrap : Node3D
         SpawnPlayer();
         SpawnEnemyCamp();
         SpawnLoot();
-        SpawnQuestGiver();
-        SpawnCraftingStations();
         SpawnEncounterDirector();
         SpawnPersistentActors();
 
@@ -336,7 +334,7 @@ public partial class GameBootstrap : Node3D
 
     /// <summary>Places a hard-transition portal for each of the region's neighbours (Phase 25C), a
     /// few metres in front of where the player enters. Clears any prior region's portals first so a
-    /// transition swaps them out. Mirrors <see cref="SpawnQuestGiver"/>: an Entity + mesh + collider +
+    /// transition swaps them out. Mirrors the other code-built actors: an Entity + mesh + collider +
     /// a <see cref="RegionTransitionComponent"/>.</summary>
     private void SpawnRegionPortals(RegionResource? region)
     {
@@ -749,46 +747,6 @@ public partial class GameBootstrap : Node3D
         }
     }
 
-    private void SpawnQuestGiver()
-    {
-        var giver = new Entity
-        {
-            Name = "QuestGiver",
-            DisplayName = "Village Elder",
-            TemplateId = GameIds.Npcs.Elder,
-            Position = new Vector3(3f, 0f, 4f),
-        };
-
-        giver.AddChild(new MeshInstance3D
-        {
-            Name = "Mesh",
-            Mesh = new CapsuleMesh { Radius = 0.4f, Height = 1.8f },
-            Position = new Vector3(0f, 0.9f, 0f),
-            MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.85f, 0.78f, 0.45f) },
-        });
-
-        var collider = new StaticBody3D { Name = "Collider" };
-        collider.AddChild(new CollisionShape3D
-        {
-            Shape = new CapsuleShape3D { Radius = 0.4f, Height = 1.8f },
-            Position = new Vector3(0f, 0.9f, 0f),
-        });
-        giver.AddChild(collider);
-
-        // The elder is a villager: killing him would tank reputation with his faction.
-        giver.AddChild(new FactionComponent { Name = "Faction", FactionId = GameIds.Factions.Villagers });
-
-        // The elder now offers his task in conversation: the dialogue's choices start
-        // the quest and remember you via a story flag (see data/dialogue/Elder.tres).
-        giver.AddChild(new DialogueComponent { Name = "Dialogue", DialogueId = GameIds.Dialogues.Elder });
-
-        // A daily routine: the elder walks between the well, the forge and home as the
-        // world clock turns, and flees if goblins raise the alarm nearby.
-        giver.AddChild(new ScheduleComponent { Name = "Schedule", ScheduleId = GameIds.Schedules.Elder });
-        AddChild(giver);
-        Log.Info("The Village Elder keeps a daily routine near the spawn — talk to him for a task.");
-    }
-
     private void SpawnPersistentActors()
     {
         // A persistent supply cache: it is recreated on load (existence + transform) and its
@@ -826,19 +784,6 @@ public partial class GameBootstrap : Node3D
         // A persistent container's contents round-trip through the inventory save path.
         cache.AddChild(new InventoryComponent { Name = "Inventory", Capacity = 12 });
         return cache;
-    }
-
-    private void SpawnCraftingStations()
-    {
-        // A little crafting yard west of the spawn: smelt/forge at the forge, tan/stitch at
-        // the workbench, brew at the alchemy table. Walk up and press E to use one.
-        AddChild(CraftingStationFactory.Create(
-            CraftingStationType.Forge, "Forge", new Vector3(-4.5f, 0f, 4.5f), new Color(0.45f, 0.20f, 0.16f)));
-        AddChild(CraftingStationFactory.Create(
-            CraftingStationType.Workbench, "Workbench", new Vector3(-3f, 0f, 5f), new Color(0.45f, 0.32f, 0.18f)));
-        AddChild(CraftingStationFactory.Create(
-            CraftingStationType.Alchemy, "Alchemy Table", new Vector3(-3.5f, 0f, 6.2f), new Color(0.20f, 0.42f, 0.40f)));
-        Log.Info("A crafting yard sits west of spawn — forge, workbench and alchemy table.");
     }
 
     private void SpawnEnemyCamp()

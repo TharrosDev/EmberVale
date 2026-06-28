@@ -1210,7 +1210,7 @@ no code) — batch them when momentum is good.
     (the Godot MCP can't inject New Game / movement); the bake + agent wiring ran live without
     errors and the steering rule is unit-pinned.
 
-- [ ] **27B — Town hub: vendors, inn, guild presence, crafting stations** `[C]`
+- [x] **27B — Town hub: vendors, inn, guild presence, crafting stations** `[C]` ✅
   - **Goal:** a living hub.
   - **Tasks:** place vendor NPCs (stub shops until Phase 38), an inn, a guild
     presence marker, and `CraftingStationFactory` stations (forge/workbench/
@@ -1218,6 +1218,29 @@ no code) — batch them when momentum is good.
     colliders + interactables.
   - **Done when:** the hub has functioning crafting stations and interactable NPCs;
     `validate` green.
+  - **Done:** the hub population is now **authored as nodes inside `town_hub.tscn`**
+    (the 27A self-contained-cell convention — no bootstrap code), all children of the
+    cell root (not the `NavigationRegion3D`, so their colliders don't carve the navmesh,
+    matching the waystone/relic). Added: the **Village Elder** (migrated out of the
+    bootstrap's old `SpawnQuestGiver` — same `Entity` + capsule + collider +
+    `FactionComponent`/`DialogueComponent`/`ScheduleComponent` shape, `dialogue.elder` +
+    `schedule.elder`); **three vendor NPCs** (general goods / smith / apothecary) + an
+    **innkeeper** (inn = the NE building) + an **Adventurers' Guild notice** banner, each
+    an interactable `DialogueComponent` pointed at a new shared stub `data/dialogue/
+    VendorStub.tres` (`dialogue.vendor_stub`, + `GameIds.Dialogues.VendorStub`) with a
+    per-NPC `SpeakerName` override (one dialogue resource, distinct names/tints); and the
+    **three crafting stations** (Forge/Workbench/Alchemy as `CraftingStationComponent`
+    nodes — the factory's component, authored in-scene). The now-duplicate code-built
+    crafting yard and quest-giver were removed from `GameBootstrap` (`SpawnCraftingStations`
+    + `SpawnQuestGiver` and their `BuildWorld` calls; the `SpawnRegionPortals` cref updated).
+    Build clean + **251 tests** + `--validate` exit 0 (DialogueDatabase now 2 conversations,
+    all `DialogueComponent` refs resolve). **Ran in-engine** — the cell bakes its navmesh with
+    zero warnings, and on New Game the hub streamed into the live world (`loaded cell
+    'ember_crown.town_hub'`) with the NPCs + stations and **no errors**. Vendor shops are
+    dialogue stubs until Phase 38; NPC schedules/pathing and routine alignment to the new
+    buildings are 27C. (Talking to an NPC and pressing `E` at a station is the maintainer's
+    at-keyboard check — the MCP can't inject `E`; the dialogue/station systems are unchanged
+    and proven, and the wiring loaded live without errors.)
 
 - [ ] **27C — Scheduled NPC population** `[C]`
   - **Goal:** the hub feels inhabited.

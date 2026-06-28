@@ -90,6 +90,7 @@ public static class GameIds
     public static class Dialogues
     {
         public const string Elder = "dialogue.elder";
+        public const string VendorStub = "dialogue.vendor_stub";
     }
 
     public static class Schedules
