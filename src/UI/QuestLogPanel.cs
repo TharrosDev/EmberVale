@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Embervale.Core;
 using Embervale.Core.Events;
+using Embervale.Localization;
 using Embervale.Quests;
 using Godot;
 
@@ -90,11 +91,11 @@ public partial class QuestLogPanel : CanvasLayer
             child.QueueFree();
         }
 
-        AddHeader("QUEST JOURNAL   (J to close)");
+        AddHeader(Loc.T("questlog.title"));
 
         if (_log == null || _log.Quests.Count == 0)
         {
-            AddLine("(no quests)");
+            AddLine(Loc.T("questlog.none"));
             return;
         }
 
@@ -110,7 +111,7 @@ public partial class QuestLogPanel : CanvasLayer
 
         if (!anyActive)
         {
-            AddLine("(no active quests)");
+            AddLine(Loc.T("questlog.no_active"));
         }
 
         bool completedHeader = false;
@@ -123,7 +124,7 @@ public partial class QuestLogPanel : CanvasLayer
 
             if (!completedHeader)
             {
-                AddHeader("COMPLETED");
+                AddHeader(Loc.T("questlog.completed"));
                 completedHeader = true;
             }
 

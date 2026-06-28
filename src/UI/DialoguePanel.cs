@@ -3,6 +3,7 @@ using Embervale.Core;
 using Embervale.Core.Events;
 using Embervale.Dialogue;
 using Embervale.Entities;
+using Embervale.Localization;
 using Godot;
 
 namespace Embervale.UI;
@@ -163,7 +164,7 @@ public partial class DialoguePanel : CanvasLayer
         if (choices.Count == 0)
         {
             // Dead-end node: offer a single way out so the player is never stuck.
-            Button leave = UiTheme.Action("(Leave)");
+            Button leave = UiTheme.Action(Loc.T("dialogue.leave"));
             leave.Alignment = HorizontalAlignment.Left;
             leave.Pressed += Close;
             _list.AddChild(leave);

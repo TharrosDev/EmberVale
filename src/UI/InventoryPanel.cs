@@ -3,6 +3,7 @@ using Embervale.Core.Events;
 using Embervale.Corruption;
 using Embervale.Factions;
 using Embervale.Items;
+using Embervale.Localization;
 using Embervale.Progression;
 using Godot;
 
@@ -161,7 +162,7 @@ public partial class InventoryPanel : CanvasLayer
             child.QueueFree();
         }
 
-        AddHeader("CHARACTER   (I to close)");
+        AddHeader(Loc.T("char.title"));
         BuildProgression();
         BuildCorruption();
         BuildEquipment();
@@ -178,7 +179,7 @@ public partial class InventoryPanel : CanvasLayer
             return;
         }
 
-        AddHeader("REPUTATION");
+        AddHeader(Loc.T("char.reputation"));
 
         // Corruption inflicts a global "dread" penalty (Phase 23G): the world reacts to the
         // earned standing lowered by dread, so show the world's effective tier and call out
@@ -186,14 +187,14 @@ public partial class InventoryPanel : CanvasLayer
         int dread = _reputation.Dread;
         if (dread > 0)
         {
-            AddLine($"Dread: -{dread} (corruption)", new Color(0.74f, 0.45f, 0.62f));
+            AddLine(Loc.TF("char.dread", dread), new Color(0.74f, 0.45f, 0.62f));
         }
 
         foreach (FactionResource faction in FactionDatabase.All)
         {
             int value = _reputation.Get(faction.Id);
             ReputationTier tier = ReputationTiers.Of(_reputation.Effective(faction.Id));
-            AddLine($"{faction.DisplayName}: {ReputationTiers.Label(tier)} ({value:+0;-0;0})",
+            AddLine(Loc.TF("char.rep_line", faction.DisplayName, ReputationTiers.Label(tier), value.ToString("+0;-0;0")),
                 ReputationTiers.Color(tier));
         }
     }
@@ -205,9 +206,9 @@ public partial class InventoryPanel : CanvasLayer
             return;
         }
 
-        string xp = _progression.IsMaxLevel ? "MAX" : $"{_progression.CurrentXp} / {_progression.XpToNext}";
-        AddLine($"Level {_progression.Level}    XP {xp}");
-        AddLine($"Skill points: {_progression.SkillPoints}");
+        string xp = _progression.IsMaxLevel ? Loc.T("char.xp_max") : $"{_progression.CurrentXp} / {_progression.XpToNext}";
+        AddLine(Loc.TF("char.level_line", _progression.Level, xp));
+        AddLine(Loc.TF("char.skill_points", _progression.SkillPoints));
     }
 
     private void BuildCorruption()
@@ -217,8 +218,8 @@ public partial class InventoryPanel : CanvasLayer
             return;
         }
 
-        AddHeader("CORRUPTION");
-        AddLine($"{CorruptionTiers.Label(_corruption.Tier)}   ({_corruption.Value}/{CorruptionTiers.Max})", UiTheme.Corruption);
+        AddHeader(Loc.T("char.corruption"));
+        AddLine(Loc.TF("char.corruption_line", CorruptionTiers.Label(_corruption.Tier), _corruption.Value, CorruptionTiers.Max), UiTheme.Corruption);
 
         ProgressBar bar = UiTheme.Bar(UiTheme.Corruption);
         bar.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
@@ -233,22 +234,22 @@ public partial class InventoryPanel : CanvasLayer
             return;
         }
 
-        AddHeader("PERKS");
+        AddHeader(Loc.T("char.perks"));
         foreach (PerkResource perk in PerkDatabase.All)
         {
             int rank = _perks.RankOf(perk.Id);
-            string text = $"{perk.DisplayName}  ({rank}/{perk.MaxRank})";
+            string text = Loc.TF("char.perk_rank", perk.DisplayName, rank, perk.MaxRank);
 
             if (_perks.CanLearn(perk))
             {
                 PerkResource captured = perk;
-                AddRow(text, $"Learn ({perk.Cost})", () => _perks.Learn(captured));
+                AddRow(text, Loc.TF("char.perk_learn", perk.Cost), () => _perks.Learn(captured));
             }
             else
             {
                 bool maxed = rank >= perk.MaxRank;
-                string suffix = maxed ? "  [maxed]"
-                    : !_perks.MeetsCorruption(perk) ? $"  [needs {CorruptionTiers.Label(perk.MinCorruptionTier)}]"
+                string suffix = maxed ? $"  {Loc.T("char.perk_maxed")}"
+                    : !_perks.MeetsCorruption(perk) ? $"  {Loc.TF("char.perk_needs", CorruptionTiers.Label(perk.MinCorruptionTier))}"
                     : string.Empty;
                 AddLine($"• {text}{suffix}");
             }
@@ -274,7 +275,7 @@ public partial class InventoryPanel : CanvasLayer
             }
 
             EquipmentSlot captured = slot;
-            AddRow(text, "Unequip", () => _equipment.Unequip(captured), ItemRarities.Color(item.Rarity),
+            AddRow(text, Loc.T("char.unequip"), () => _equipment.Unequip(captured), ItemRarities.Color(item.Rarity),
                 item.Template.Description);
             AddAffixLines(item);
         }
@@ -289,7 +290,7 @@ public partial class InventoryPanel : CanvasLayer
 
         if (_inventory.Stacks.Count == 0)
         {
-            AddLine("(empty)");
+            AddLine(Loc.T("char.empty"));
             return;
         }
 
@@ -303,7 +304,7 @@ public partial class InventoryPanel : CanvasLayer
 
             if (instance.IsEquippable && _equipment != null)
             {
-                AddRow(text, "Equip", () => _equipment.Equip(instance), color, instance.Template.Description);
+                AddRow(text, Loc.T("char.equip"), () => _equipment.Equip(instance), color, instance.Template.Description);
             }
             else
             {
@@ -326,10 +327,11 @@ public partial class InventoryPanel : CanvasLayer
     {
         if (_inventory == null)
         {
-            return "BACKPACK";
+            return Loc.T("char.backpack");
         }
 
-        return $"BACKPACK   {_inventory.UsedSlots}/{_inventory.Capacity}   wt {_inventory.TotalWeight:0.0}";
+        return Loc.TF("char.backpack_full", _inventory.UsedSlots, _inventory.Capacity,
+            _inventory.TotalWeight.ToString("0.0"));
     }
 
     private void AddHeader(string text)

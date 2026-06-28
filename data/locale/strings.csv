@@ -82,3 +82,40 @@ craft.deconstruct,Deconstruct
 craft.salvage_none,Nothing here can be salvaged at this station.
 craft.yield_xp,+{0} XP
 craft.equipped,Equipped
+craft.recipes_none,No recipes for this station.
+craft.craft,Craft
+# Character screen (InventoryPanel)
+char.title,CHARACTER   (I to close)
+char.reputation,REPUTATION
+char.dread,Dread: -{0} (corruption)
+char.rep_line,{0}: {1} ({2})
+char.xp_max,MAX
+char.level_line,Level {0}    XP {1}
+char.skill_points,Skill points: {0}
+char.corruption,CORRUPTION
+char.corruption_line,{0}   ({1}/{2})
+char.perks,PERKS
+char.perk_rank,{0}  ({1}/{2})
+char.perk_learn,Learn ({0})
+char.perk_maxed,[maxed]
+char.perk_needs,[needs {0}]
+char.unequip,Unequip
+char.empty,(empty)
+char.equip,Equip
+char.backpack,BACKPACK
+char.backpack_full,BACKPACK   {0}/{1}   wt {2}
+# Quest journal (QuestLogPanel)
+questlog.title,QUEST JOURNAL   (J to close)
+questlog.none,(no quests)
+questlog.no_active,(no active quests)
+questlog.completed,COMPLETED
+# Dialogue window (DialoguePanel)
+dialogue.leave,(Leave)
+# Game HUD (GameHud)
+hud.hp,HP
+hud.sta,STA
+hud.mp,MP
+hud.quest,QUEST
+hud.level,Lv {0}
+hud.ready,ready
+hud.spell,Q: {0} ({1})
