@@ -1030,13 +1030,26 @@ no code) — batch them when momentum is good.
     the legacy EmberCrown goblin camp (`EnemySpawnDirector`) is persistent and not region-scoped, so it
     keeps spawning at its fixed point after a transition — early-sandbox content, a separate concern.
 
-- [ ] **25.5O — Crafting & faction/reputation systems** `[F]` (systems 15, 16)
+- [x] **25.5O — Crafting & faction/reputation systems** `[F]` (systems 15, 16) ✅
   - **Goal:** crafting and standing behave at their edges.
   - **Tasks:** recipe learn/station-gating/ingredient consumption/output rolling, and
     faction reputation thresholds → hostility, `FactionComponent` tags driving enemy AI
     aggression, kill/standing penalties. Read `src/Crafting`, `src/Factions`.
   - **Done when:** crafting consumes/produces exactly; reputation tiers flip
     hostility correctly and persist.
+  - **Done:** audited both systems — **solid** — and pinned the two load-bearing predicates.
+    *Audit:* `CraftingComponent.Craft` is `CanCraft`-gated (knows recipe + `StationAccepts` + output
+    exists + has ingredients) then removes each ingredient and adds the output — **consumes then produces
+    exactly**; non-Common equippable output rolls a fresh affixed instance per unit (no shared-instance
+    aliasing), plain output stacks, a deleted output fails cleanly; `Learn` de-dupes. `ReputationComponent.Add`
+    clamps to `[Min,Max]` and only fires on an actual change; `Effective` subtracts the corruption `Dread`
+    and re-clamps; `IsHostile` is `TierOf <= HostileThreshold`; a player kill applies `KillReputationPenalty`
+    and echoes ± through the faction's enemy/ally web; `Save`/`Load` clamp + re-publish (round-trips by
+    construction). *Coverage:* pinned `ReputationTiers.Of` (all seven band edges -100→Hated … 90→Allied +
+    monotonic-non-decreasing across `[Min,Max]`) and exposed `CraftingComponent.StationAccepts`
+    (private→public, pure predicate) with tests (Hand crafts anywhere; a station recipe only at its exact
+    station). Build + **242 tests** (25 new) + `--validate` (exit 0) + clean headless boot into Playing
+    (`errors: []`) green.
 
 - [ ] **25.5P — Legacy UI panels & HUD** `[P/F]` (systems 14, 18)
   - **Goal:** the older UI surfaces are consistent and warning-free.

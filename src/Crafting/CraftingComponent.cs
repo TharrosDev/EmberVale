@@ -152,7 +152,10 @@ public partial class CraftingComponent : EntityComponent, ISaveable
         return true;
     }
 
-    private static bool StationAccepts(CraftingStationType required, CraftingStationType open)
+    /// <summary>Whether a recipe authored for the <paramref name="required"/> station can be crafted at
+    /// the currently <paramref name="open"/> station: hand recipes craft anywhere, otherwise the station
+    /// must match exactly. Pure and side-effect-free (exposed for unit coverage of the station gate).</summary>
+    public static bool StationAccepts(CraftingStationType required, CraftingStationType open)
     {
         return required == CraftingStationType.Hand || required == open;
     }
