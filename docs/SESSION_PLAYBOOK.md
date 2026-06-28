@@ -1128,7 +1128,7 @@ no code) — batch them when momentum is good.
     `--validate` exit 0 (`ValidateRaces` green) + boot logs `RaceDatabase loaded 6 race(s)` (`errors: []`).
     242 tests unaffected (content-only).
 
-- [ ] **26C — `PlayerFactory` consumes a creation profile** `[F]`
+- [x] **26C — `PlayerFactory` consumes a creation profile** `[F]` ✅
   - **Goal:** the chosen race actually shapes the player.
   - **Tasks:** add a `CharacterProfile` (race id, name, appearance, background) and
     have `PlayerFactory` apply race deltas as `StatModifier`s, seed innate perks,
@@ -1136,6 +1136,20 @@ no code) — batch them when momentum is good.
     before `AddChild`). Persist the profile in the save header.
   - **Done when:** spawning with different races yields different starting stats/
     perks/standing; the profile saves/loads.
+  - **Done:** `CharacterProfile` (pure C# — `RaceId`/`CharacterName`/`AppearanceOptionIds`/`Background`,
+    `Human` default, `ToHeaderFields`/`FromHeaderFields` round-trip). New `RaceComponent` added **last**
+    in `PlayerFactory` (so Stats/Perks/Spellcasting/Reputation are initialized) applies the race in
+    `OnInitialize`: stat deltas → flat `StatModifier`s sourced to itself (remove-then-add → idempotent,
+    `RefillResources`), and on New Game grants innate perks (new free `PerksComponent.GrantFree`), `Learn`s
+    innate spells, and `Add`s reputation tweaks. `PlayerFactory.Create(pos, profile, applyStartingGrants)`
+    (parameterless overload keeps Human default). Bootstrap holds `_activeProfile` — New Game uses Human
+    (26D's creator wires the chosen one here), Load reads the slot header → rebuilds the profile and spawns
+    with `applyStartingGrants:false` (the save overlay restores the granted perks/spells/rep). Profile
+    persists via `BuildSaveHeader` + `SaveSlotInfo` (`race_id`/`char_name`). Dev `race [id]` command
+    live-applies a race for at-keyboard verification (stat swap + idempotent perk/spell re-grant; skips
+    reputation to avoid accumulation). Build clean + **246 tests** (+4 `CharacterProfileTests` round-trip)
+    + `--validate` exit 0 + boot through the load path logs `Loaded game … as Wanderer (race.human)`
+    (`errors: []`). `AppearanceOptionIds`/`Background` carried + persisted but not yet consumed (26D).
 
 - [ ] **26D — `CharacterCreator` screen** `[F]`
   - **Goal:** the new-game creation flow.

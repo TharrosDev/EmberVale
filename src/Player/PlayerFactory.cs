@@ -36,7 +36,13 @@ public static class PlayerFactory
     private const float CameraBackDistance = 3.8f;
     private const float CameraRise = 0.4f;
 
-    public static PlayerCharacter Create(Vector3 position)
+    public static PlayerCharacter Create(Vector3 position) =>
+        Create(position, Races.CharacterProfile.Human, applyStartingGrants: true);
+
+    /// <summary>Builds the player and applies the chosen creation <paramref name="profile"/>'s race
+    /// (Phase 26C). <paramref name="applyStartingGrants"/> is true on New Game (grant the race's innate
+    /// perks/spells/reputation) and false on load (the saved overlay restores them).</summary>
+    public static PlayerCharacter Create(Vector3 position, Races.CharacterProfile profile, bool applyStartingGrants)
     {
         var player = new PlayerCharacter
         {
@@ -170,6 +176,16 @@ public static class PlayerFactory
         {
             Name = "Controller",
             CameraPivot = cameraPivot,
+        });
+
+        // Race applies LAST so Stats/Perks/Spellcasting/Reputation have initialized when its
+        // OnInitialize runs: the chosen race's stat deltas become modifiers and (on New Game) its
+        // innate perks/spells/reputation are granted (Phase 26C).
+        player.AddChild(new Races.RaceComponent
+        {
+            Name = "Race",
+            Profile = profile,
+            ApplyStartingGrants = applyStartingGrants,
         });
 
         return player;

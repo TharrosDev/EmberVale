@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Embervale.Analytics;
 using Embervale.Combat;
 using Embervale.Core;
@@ -19,6 +20,7 @@ using Embervale.Npc;
 using Embervale.Player;
 using Embervale.Progression;
 using Embervale.Quests;
+using Embervale.Races;
 using Embervale.Save;
 using Embervale.Settings;
 using Embervale.Stats;
@@ -66,6 +68,12 @@ public partial class GameBootstrap : Node3D
     private MainMenu? _mainMenu;
     private bool _sandboxBuilt;
     private double _respawnCountdown = -1d;
+
+    // Phase 26C: the active creation profile (race + identity) the player spawns from. New Game uses
+    // the Human default (26D's creator will set the chosen one here); Load rebuilds it from the slot
+    // header and spawns without re-granting innate perks/spells/reputation (the overlay restores them).
+    private CharacterProfile _activeProfile = CharacterProfile.Human;
+    private bool _applyStartingGrants = true;
 
     // Phase 25C hard transitions: the active streamer, the neighbour portals spawned for the current
     // region (cleared/rebuilt on transition), and a short loading-screen settle so the destination
@@ -149,6 +157,11 @@ public partial class GameBootstrap : Node3D
             return;
         }
 
+        // New character: spawn from the chosen profile (Human until 26D's creator sets it) and grant
+        // the race's innate perks/spells/reputation.
+        _activeProfile = CharacterProfile.Human;
+        _applyStartingGrants = true;
+
         SaveManager.Instance?.ResetPlaytime();
         BuildWorld();
         GameManager.Instance?.ChangeState(GameState.Playing);
@@ -165,10 +178,24 @@ public partial class GameBootstrap : Node3D
             return;
         }
 
+        // Restore the saved character before building: the race must be known at spawn (BuildWorld →
+        // PlayerFactory.Create) so its stat deltas apply; the innate perks/spells/reputation come back
+        // via the LoadGame overlay below, so don't re-grant them here (Phase 26C).
+        if (SaveManager.Instance?.ReadHeader(slot) is { } header)
+        {
+            _activeProfile = CharacterProfile.FromHeaderFields(new Dictionary<string, string>
+            {
+                ["race_id"] = header.RaceId,
+                ["char_name"] = header.CharacterName,
+            });
+        }
+
+        _applyStartingGrants = false;
+
         BuildWorld();
         SaveManager.Instance?.LoadGame(slot);
         GameManager.Instance?.ChangeState(GameState.Playing);
-        Log.Info($"Loaded game from slot '{slot}'. Sandbox ready.");
+        Log.Info($"Loaded game from slot '{slot}' as {_activeProfile.CharacterName} ({_activeProfile.RaceId}). Sandbox ready.");
     }
 
     /// <summary>Common entry for the New/Load paths: guards single-build, tears down the menu, makes
@@ -658,7 +685,7 @@ public partial class GameBootstrap : Node3D
 
     private void SpawnPlayer()
     {
-        _player = PlayerFactory.Create(PlayerSpawn);
+        _player = PlayerFactory.Create(PlayerSpawn, _activeProfile, _applyStartingGrants);
         AddChild(_player);
         ServiceLocator.Instance?.Register(_player);
         _hud.SetPlayer(_player);
@@ -962,6 +989,12 @@ public partial class GameBootstrap : Node3D
     {
         string region = RegionDatabase.Get(_currentRegionId)?.DisplayName ?? "Unknown Region";
         var header = new Godot.Collections.Dictionary { ["region"] = region };
+
+        // The chosen race + identity (Phase 26C) so a reload rebuilds the right character.
+        foreach (KeyValuePair<string, string> field in _activeProfile.ToHeaderFields())
+        {
+            header[field.Key] = field.Value;
+        }
         if (ServiceLocator.Instance != null && ServiceLocator.Instance.TryGet(out PlayerCharacter player))
         {
             if (player.GetComponent<ProgressionComponent>() is { } progression)

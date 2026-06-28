@@ -12,6 +12,7 @@ using Embervale.Localization;
 using Embervale.Magic;
 using Embervale.Player;
 using Embervale.Progression;
+using Embervale.Races;
 using Embervale.Save;
 using Embervale.Settings;
 using Embervale.Stats;
@@ -39,6 +40,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("rep", "rep <factionId> <delta>", "Shift faction standing.", Rep));
         console.Register(new ConsoleCommand("corruption", "corruption <get|set N|add N|tier>", "Inspect or drive the player's corruption.", Corruption));
         console.Register(new ConsoleCommand("learn", "learn <spellId|perkId>", "Learn a spell or perk (respects corruption gating).", Learn));
+        console.Register(new ConsoleCommand("race", "race [id]", "Show races, or live-apply one to the player (Phase 26C).", RaceCmd));
 
         console.Register(new ConsoleCommand("time", "time <hour>", "Set the time of day (0–24).", Time));
         console.Register(new ConsoleCommand("weather", "weather <id>", "Force a weather state.", Weather));
@@ -328,6 +330,27 @@ public static class DevCommands
         }
 
         return $"unknown spell/perk id: {id}";
+    }
+
+    private static string RaceCmd(DevConsole console, string[] args)
+    {
+        if (args.Length < 1)
+        {
+            var ids = new List<string>();
+            foreach (RaceResource race in RaceDatabase.All)
+            {
+                ids.Add(race.Id);
+            }
+
+            return ids.Count > 0 ? $"races: {string.Join(", ", ids)}" : "no races loaded";
+        }
+
+        if (!TryPlayer(out PlayerCharacter player) || player.GetComponent<RaceComponent>() is not { } raceComponent)
+        {
+            return "no race component";
+        }
+
+        return raceComponent.SwapRaceForDebug(args[0]);
     }
 
     private static string Time(DevConsole console, string[] args)

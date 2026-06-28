@@ -29,6 +29,12 @@ public sealed class SaveSlotInfo
     /// <summary>The player's corruption tier label at save time (e.g. "Marked").</summary>
     public string CorruptionTier { get; set; } = "Untainted";
 
+    /// <summary>The chosen race id (Phase 26C), e.g. "race.umbral" — drives the spawned player's traits.</summary>
+    public string RaceId { get; set; } = "race.human";
+
+    /// <summary>The character's chosen name (Phase 26C).</summary>
+    public string CharacterName { get; set; } = "Wanderer";
+
     public Godot.Collections.Dictionary ToDictionary() => new()
     {
         ["slot"] = Slot,
@@ -37,6 +43,8 @@ public sealed class SaveSlotInfo
         ["region"] = Region,
         ["level"] = Level,
         ["corruption_tier"] = CorruptionTier,
+        ["race_id"] = RaceId,
+        ["char_name"] = CharacterName,
     };
 
     public static SaveSlotInfo FromDictionary(Godot.Collections.Dictionary data)
@@ -48,6 +56,8 @@ public sealed class SaveSlotInfo
         if (data.TryGetValue("region", out Variant region)) { info.Region = region.AsString(); }
         if (data.TryGetValue("level", out Variant level)) { info.Level = level.AsInt32(); }
         if (data.TryGetValue("corruption_tier", out Variant tier)) { info.CorruptionTier = tier.AsString(); }
+        if (data.TryGetValue("race_id", out Variant race)) { info.RaceId = race.AsString(); }
+        if (data.TryGetValue("char_name", out Variant name)) { info.CharacterName = name.AsString(); }
         return info;
     }
 }

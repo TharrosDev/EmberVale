@@ -89,6 +89,28 @@ public partial class PerksComponent : EntityComponent, ISaveable
         return true;
     }
 
+    /// <summary>Grants one rank of a perk for free — no skill-point cost — used for innate race
+    /// perks (Phase 26C). Still respects <see cref="PerkResource.MaxRank"/> and corruption gating.</summary>
+    public bool GrantFree(PerkResource perk)
+    {
+        if (perk == null)
+        {
+            return false;
+        }
+
+        int rank = RankOf(perk.Id);
+        if (rank >= perk.MaxRank || !MeetsCorruption(perk))
+        {
+            return false;
+        }
+
+        rank++;
+        _ranks[perk.Id] = rank;
+        ApplyPerk(perk, rank);
+        NotifyChanged(perk.Id, rank);
+        return true;
+    }
+
     private void ApplyPerk(PerkResource perk, int rank)
     {
         if (_stats == null)
