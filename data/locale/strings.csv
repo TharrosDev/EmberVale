@@ -81,3 +81,4 @@ craft.mode_salvage,Salvage
 craft.deconstruct,Deconstruct
 craft.salvage_none,Nothing here can be salvaged at this station.
 craft.yield_xp,+{0} XP
+craft.equipped,Equipped
