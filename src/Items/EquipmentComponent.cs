@@ -118,6 +118,22 @@ public partial class EquipmentComponent : EntityComponent, ISaveable
         return true;
     }
 
+    /// <summary>Makes an <b>already-equipped</b> weapon the active one (swaps the
+    /// <see cref="MeleeWeaponComponent"/>'s weapon) without unequipping anything — lets the hotbar
+    /// switch between two equipped weapons (e.g. sword ↔ off-hand bow). Returns false if the instance
+    /// isn't equipped or carries no weapon.</summary>
+    public bool ActivateWeapon(ItemInstance instance)
+    {
+        if (!IsInstanceEquipped(instance) || instance.Equippable?.Weapon is not { } weapon || _weapon == null)
+        {
+            return false;
+        }
+
+        _weapon.Weapon = weapon;
+        NotifyChanged();
+        return true;
+    }
+
     /// <summary>Unequips the item in a slot, returning it to the inventory.</summary>
     public bool Unequip(EquipmentSlot slot)
     {

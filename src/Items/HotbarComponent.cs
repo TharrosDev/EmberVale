@@ -91,9 +91,18 @@ public partial class HotbarComponent : EntityComponent, ISaveable
         {
             _inventory?.Consume(instance);
         }
-        else if (instance.IsEquippable)
+        else if (instance.IsEquippable && _equipment != null)
         {
-            _equipment?.Equip(instance);
+            // Already worn (e.g. switching to the off-hand bow) → just make it the active weapon;
+            // Equip() can't, since it requires the item to be in the bag. Otherwise equip from the bag.
+            if (_equipment.IsInstanceEquipped(instance))
+            {
+                _equipment.ActivateWeapon(instance);
+            }
+            else
+            {
+                _equipment.Equip(instance);
+            }
         }
     }
 
