@@ -1424,7 +1424,7 @@ no code) — batch them when momentum is good.
     `--validate` 0; full play boot clean (`errors: []`, arena streamed). The bar/intro/defeat *feel* is
     the maintainer's at-keyboard check (MCP can't drive `E`/combat).
 
-- [ ] **28D — Defeat → reward → corruption-gain loop** `[F/C]`
+- [x] **28D — Defeat → reward → corruption-gain loop** `[F/C]` ✅
   - **Goal:** wire the boss to corruption + loot.
   - **Tasks:** on defeat, grant a guaranteed reward (a placeholder divine-relic
     item `.tres`) and raise corruption via `CorruptionComponent` (absorbing his
@@ -1432,6 +1432,19 @@ no code) — batch them when momentum is good.
     Add a placeholder music cue hook for Phase 31.
   - **Done when:** defeating the Iron King grants the relic and visibly raises
     corruption; the whole beat round-trips through save/load.
+  - **Done:** `BossEncounterDirector` (the persistent boss coordinator) now, on the boss's death,
+    grants `item.relic.iron_heart` ("Heart of the Iron King", new `data/items/IronHeartRelic.tres`,
+    Legendary) to the player's inventory, sets the persisted story flag `flag.iron_king_defeated`,
+    publishes a placeholder `MusicCueRequestedEvent("music.boss_defeat")` (the Phase 31 audio hook), and
+    — after the slow-mo beat settles — opens the **"absorb the flame?"** dialogue
+    (`data/dialogue/IronKingAbsorb.tres`) via `DialogueStartedEvent`. The *Absorb* choice uses the
+    existing `DialogueEffect.AddCorruption` (+25 → crosses Untainted→Touched, firing
+    `CorruptionTierChangedEvent` that the vignette/appearance react to); *Leave it* declines. The brazier
+    (`BossSummonComponent`) now reads the flag and goes cold (empty prompt, `Interact` no-ops) so his
+    defeat persists — no re-fight, no re-grant. **No save code added** — corruption, inventory and story
+    flags are all existing `ISaveable`s, so the beat round-trips for free. 8 `Loc` strings (→221), 13
+    items / 6 dialogues. Build clean + 251 tests + `--validate` 0 (dialogue graph reachable); boot clean.
+    The defeat→relic→absorb→corruption→save/load chain is the maintainer's at-keyboard **Gate G0** pass.
 
 > **🚩 Gate G0 — First Playable.** New game → creation → Ember Crown → core loop →
 > defeat the Iron King slice → gain corruption → save/load intact, with corruption

@@ -1,0 +1,50 @@
+[gd_resource type="Resource" script_class="DialogueResource" format=3 uid="uid://c0mhr77ironkabs"]
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+[sub_resource type="Resource" id="ch_absorb"]
+script = ExtResource("3_choice")
+Text = "dlg.ironking.absorb.c_absorb"
+Goto = "absorbed"
+Effect = 4
+EffectArg = "25"
+
+[sub_resource type="Resource" id="ch_decline"]
+script = ExtResource("3_choice")
+Text = "dlg.ironking.absorb.c_decline"
+Goto = "declined"
+
+[sub_resource type="Resource" id="ch_absorbed_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.ironking.absorb.c_absorbed_bye"
+
+[sub_resource type="Resource" id="ch_declined_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.ironking.absorb.c_declined_bye"
+
+[sub_resource type="Resource" id="node_offer"]
+script = ExtResource("2_node")
+Id = "offer"
+Text = "dlg.ironking.absorb.offer"
+Choices = Array[Resource]([SubResource("ch_absorb"), SubResource("ch_decline")])
+
+[sub_resource type="Resource" id="node_absorbed"]
+script = ExtResource("2_node")
+Id = "absorbed"
+Text = "dlg.ironking.absorb.absorbed"
+Choices = Array[Resource]([SubResource("ch_absorbed_bye")])
+
+[sub_resource type="Resource" id="node_declined"]
+script = ExtResource("2_node")
+Id = "declined"
+Text = "dlg.ironking.absorb.declined"
+Choices = Array[Resource]([SubResource("ch_declined_bye")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "dialogue.iron_king_absorb"
+SpeakerName = "dlg.ironking.absorb.speaker"
+StartNodeId = "offer"
+Nodes = Array[Resource]([SubResource("node_offer"), SubResource("node_absorbed"), SubResource("node_declined")])

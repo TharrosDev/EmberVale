@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemResource" load_steps=2 format=3 uid="uid://cmbrvlitironheart"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.relic.iron_heart"
+DisplayName = "Heart of the Iron King"
+Description = "A fragment of fallen divinity, still smouldering. It pulses against your palm like a second heartbeat — and something in it wants to be let in."
+Type = 0
+Rarity = 4
+MaxStack = 1
+Weight = 1.0
+Value = 500

@@ -1,5 +1,10 @@
 using Embervale.Core;
+using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
+using Embervale.Core.Services;
+using Embervale.Dialogue;
+using Embervale.Items;
+using Embervale.Player;
 using Godot;
 
 namespace Embervale.Enemies;
@@ -19,10 +24,18 @@ public partial class BossEncounterDirector : Node
     private const ulong DefeatSlowMs = 1000;
     private const float DefeatTimeScale = 0.35f;
 
+    /// <summary>Story flag set on the player when the Iron King dies — persists his defeat across
+    /// save/load (the brazier reads it to stay cold). Shared with <see cref="BossSummonComponent"/>.</summary>
+    public const string DefeatedFlag = "flag.iron_king_defeated";
+    private const string RelicItemId = "item.relic.iron_heart";
+    private const string AbsorbDialogueId = "dialogue.iron_king_absorb";
+    private const string DefeatMusicCue = "music.boss_defeat";
+
     private ulong _introUntil;
     private ulong _defeatUntil;
     private bool _locked;
     private bool _slowed;
+    private bool _absorbPending;
 
     public override void _Ready()
     {
@@ -56,6 +69,10 @@ public partial class BossEncounterDirector : Node
         Engine.TimeScale = DefeatTimeScale;
         _slowed = true;
         _defeatUntil = Time.GetTicksMsec() + DefeatSlowMs;
+
+        // Guaranteed reward + persist his defeat now; the "absorb the flame?" choice opens after the beat.
+        GrantDefeatRewards();
+        _absorbPending = true;
     }
 
     public override void _Process(double delta)
@@ -70,6 +87,45 @@ public partial class BossEncounterDirector : Node
         if (_slowed && now >= _defeatUntil)
         {
             RestoreTime();
+            if (_absorbPending)
+            {
+                _absorbPending = false;
+                OpenAbsorbDialogue();
+            }
+        }
+    }
+
+    // --- Defeat reward + corruption beat (Phase 28D) ------------------------
+
+    private void GrantDefeatRewards()
+    {
+        if (ServiceLocator.Instance is not { } sl || !sl.TryGet(out PlayerCharacter player))
+        {
+            return;
+        }
+
+        StoryFlagsComponent? flags = player.GetComponent<StoryFlagsComponent>();
+        if (flags != null && flags.Has(DefeatedFlag))
+        {
+            return; // already rewarded — never double-grant
+        }
+
+        if (player.GetComponent<InventoryComponent>() is { } inventory && ItemDatabase.Get(RelicItemId) is { } relic)
+        {
+            inventory.AddItem(relic, 1);
+            Log.Info($"The Iron King's heart is yours: {relic.DisplayName}.");
+        }
+
+        flags?.Set(DefeatedFlag);
+        EventBus.Instance?.Publish(new MusicCueRequestedEvent(DefeatMusicCue));
+    }
+
+    private static void OpenAbsorbDialogue()
+    {
+        if (ServiceLocator.Instance is { } sl && sl.TryGet(out PlayerCharacter player)
+            && DialogueDatabase.Get(AbsorbDialogueId) is { } dialogue)
+        {
+            EventBus.Instance?.Publish(new DialogueStartedEvent(player, player, dialogue));
         }
     }
 
