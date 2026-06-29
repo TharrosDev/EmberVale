@@ -48,6 +48,7 @@ public partial class PlayerController : EntityComponent
     private LocomotionComponent? _locomotion;
     private MeleeWeaponComponent? _weapon;
     private CombatComponent? _combat;
+    private DodgeComponent? _dodge;
     private SpellcastingComponent? _spellcasting;
     private SettingsService? _settings;
     private float _pitch;
@@ -69,6 +70,7 @@ public partial class PlayerController : EntityComponent
         _locomotion = owner.GetComponent<LocomotionComponent>();
         _weapon = owner.GetComponent<MeleeWeaponComponent>();
         _combat = owner.GetComponent<CombatComponent>();
+        _dodge = owner.GetComponent<DodgeComponent>();
         _spellcasting = owner.GetComponent<SpellcastingComponent>();
         _settings = ServiceLocator.Instance is { } locator && locator.TryGet(out SettingsService settings)
             ? settings
@@ -116,6 +118,11 @@ public partial class PlayerController : EntityComponent
         bool sprint = Godot.Input.IsActionPressed(GameInput.Sprint);
         bool jump = Godot.Input.IsActionJustPressed(GameInput.Jump);
         _locomotion?.Move(delta, wishDir, sprint, jump);
+
+        if (Godot.Input.IsActionJustPressed(GameInput.Dodge))
+        {
+            _dodge?.TryDodge(wishDir);
+        }
 
         if (_combat != null)
         {

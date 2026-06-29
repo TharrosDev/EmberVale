@@ -46,6 +46,9 @@ public partial class CombatComponent : EntityComponent
     /// <summary>Set by a controller (player input / AI) to raise the guard.</summary>
     public bool IsBlocking { get; set; }
 
+    /// <summary>While true the entity ignores all incoming damage — the dodge i-frame window (Phase 29E).</summary>
+    public bool IsInvulnerable { get; set; }
+
     public bool IsStaggered => _staggerTimer > 0d;
 
     public float PoiseNormalized => MaxPoise <= 0f ? 0f : Mathf.Clamp(_poise / MaxPoise, 0f, 1f);
@@ -72,6 +75,12 @@ public partial class CombatComponent : EntityComponent
     public DamageResult ReceiveDamage(DamagePacket packet)
     {
         if (_stats == null || !_stats.IsAlive || Entity == null)
+        {
+            return default;
+        }
+
+        // Dodge i-frames (Phase 29E): the hit whiffs entirely — no damage, no poise, no events.
+        if (IsInvulnerable)
         {
             return default;
         }

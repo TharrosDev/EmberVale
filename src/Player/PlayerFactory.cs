@@ -118,6 +118,7 @@ public static class PlayerFactory
         });
         player.AddChild(new HitReactionComponent { Name = "HitReaction" });
         player.AddChild(new WeaponTrailComponent { Name = "WeaponTrail" });
+        player.AddChild(new DodgeComponent { Name = "Dodge" });
 
         // Equipment sits after inventory + weapon so it can resolve both; the
         // starting weapon above becomes the baseline restored on unequip.

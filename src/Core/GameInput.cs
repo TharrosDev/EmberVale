@@ -17,6 +17,7 @@ public static class GameInput
     public const string MoveRight = "move_right";
     public const string Jump = "jump";
     public const string Sprint = "sprint";
+    public const string Dodge = "dodge";
     public const string Interact = "interact";
     public const string Attack = "attack";
     public const string Block = "block";
@@ -38,6 +39,7 @@ public static class GameInput
         Bind(MoveRight, new InputEventKey { PhysicalKeycode = Key.D });
         Bind(Jump, new InputEventKey { PhysicalKeycode = Key.Space });
         Bind(Sprint, new InputEventKey { PhysicalKeycode = Key.Shift });
+        Bind(Dodge, new InputEventKey { PhysicalKeycode = Key.Ctrl });
         Bind(Interact, new InputEventKey { PhysicalKeycode = Key.E });
         Bind(Inventory, new InputEventKey { PhysicalKeycode = Key.I });
         Bind(Journal, new InputEventKey { PhysicalKeycode = Key.J });

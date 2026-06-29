@@ -34,7 +34,31 @@ public partial class LocomotionComponent : EntityComponent
     private StatsComponent? _stats;
     private float _gravity = 9.8f;
 
+    private bool _dashing;
+    private double _dashTimer;
+    private Vector3 _dashDir;
+    private float _dashSpeed;
+
     public bool IsGrounded => _body != null && _body.IsOnFloor();
+
+    public bool IsDashing => _dashing;
+
+    /// <summary>Begins a fixed-velocity burst (a dodge roll, Phase 29E): <see cref="Move"/> drives the body
+    /// along <paramref name="dir"/> at <paramref name="speed"/> for <paramref name="duration"/> seconds,
+    /// ignoring movement input (gravity still applies).</summary>
+    public void StartDash(Vector3 dir, float speed, float duration)
+    {
+        Vector3 flat = new(dir.X, 0f, dir.Z);
+        if (flat.LengthSquared() < 0.0001f)
+        {
+            return;
+        }
+
+        _dashDir = flat.Normalized();
+        _dashSpeed = speed;
+        _dashTimer = duration;
+        _dashing = true;
+    }
 
     protected override void OnInitialize()
     {
@@ -68,9 +92,25 @@ public partial class LocomotionComponent : EntityComponent
         {
             velocity.Y -= _gravity * dt;
         }
-        else if (jump)
+        else if (jump && !_dashing)
         {
             velocity.Y = JumpVelocity;
+        }
+
+        // A dodge roll overrides input: fixed-velocity burst for its duration (gravity still applies).
+        if (_dashing)
+        {
+            _dashTimer -= delta;
+            velocity.X = _dashDir.X * _dashSpeed;
+            velocity.Z = _dashDir.Z * _dashSpeed;
+            _body.Velocity = velocity;
+            _body.MoveAndSlide();
+            if (_dashTimer <= 0d)
+            {
+                _dashing = false;
+            }
+
+            return;
         }
 
         Vector3 horizontal = new(wishDir.X, 0f, wishDir.Z);
