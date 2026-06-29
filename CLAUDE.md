@@ -352,8 +352,9 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    `SpeakerName`, `StartNodeId`, and `Nodes` — an array of `DialogueNode` sub-resources
    (`Id`, optional `Speaker`, `Text`, `Choices`). Each `DialogueChoice` sub-resource has
    `Text`, a `Goto` node id (empty = end), an optional `Condition`+`ConditionArg` (gates
-   visibility) and an optional `Effect`+`EffectArg` (`1`=StartQuest, `2`=SetFlag,
-   `3`=ClearFlag). Enums export as ints (see `DialogueEnums.cs`).
+   visibility — incl. `QuestAvailable`, `HasFlag`, and `CorruptionAtLeast`/`CorruptionBelow`)
+   and an optional `Effect`+`EffectArg` (`1`=StartQuest, `2`=SetFlag, `3`=ClearFlag,
+   `4`=AddCorruption). Enums export as ints (see `DialogueEnums.cs`).
 2. Auto-indexed by `DialogueDatabase`. Attach a `DialogueComponent` (set its
    `DialogueId`) to a world `Entity` with a collider; the player's `E` interact opens it
    in `DialoguePanel`. No code change for new conversations.

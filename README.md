@@ -134,18 +134,20 @@ appearance hook, global NPC "dread" standing (the world turns hostile as you
 corrupt), tier-gated corrupted abilities, and the `EndingEligibility` dial behind
 the two endings (23A–23H).
 
-**Phase 24 — Meta-Shell & Localization Spine** is complete (24A–24H): the game boots
-to a title `MainMenu` with multi-slot saves (per-slot directories + metadata + screenshot
-thumbnails), a rotating autosave cadence, a full settings menu (graphics/audio/controls/
-gameplay/accessibility, persisted to `user://settings.tres` and applied on boot), and a
-`Loc` localization spine — every shell string resolves from `data/locale/strings.csv`, so
-no player-facing text is hard-coded.
+**Phases 24–29 are complete**, carrying the sandbox to **Gate G0 — First Playable**:
+the meta-shell & localization spine (24), region streaming + world map + fast travel (25),
+playable races & character creation (26), the Ember Crown greybox + navmesh + the Warband
+quest arc (27), the Iron King boss with the defeat→relic→absorb→corruption beat (28), and
+the full **Combat Feel** pass (29A–29I: hit-stop, camera shake, weapon trails, crit/block/
+stagger/parry screen feedback, dodge i-frames, parry/riposte, lock-on, input buffering, and
+the anti-mash stamina pacing). **Phase 29.5 — Spellcraft & the Fading Weave** is in progress
+(29.5A: charged & channeled cast archetypes).
 
 |              | Phase                                      |
 | ------------ | ------------------------------------------ |
-| ✅ **Done**    | 24 — Meta-Shell & Localization Spine        |
-| ▶ **Current** | 25 — Region Streaming & World Map           |
-| ⏭ **Next**    | 26 — Playable Races & Character Creation    |
+| ✅ **Done**    | 22–29 + G0 First Playable; 29.5A           |
+| ▶ **Current** | 29.5 — Spellcraft & the Fading Weave        |
+| ⏭ **Next**    | 29.5B — School identities + status effects |
 
 > Updated as each phase lands. The repo stays buildable and playable at every
 > step; a phase is "done" when it works in-game **and** round-trips through

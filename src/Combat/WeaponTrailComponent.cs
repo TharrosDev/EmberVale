@@ -7,8 +7,7 @@ namespace Embervale.Combat;
 /// <summary>
 /// A brief slash trail on a melee swing (Phase 29C). Holds one translucent "slash" quad in front of the
 /// body and flashes it on <see cref="AttackPerformedEvent"/>, fading its alpha to zero over a short window.
-/// A single per-attacker node toggled by alpha — no churn, so no pool. A ranged swing (the bow) shows no
-/// slash; it publishes a bow-release sound cue instead. Visual-only.
+/// A single per-attacker node toggled by alpha — no churn, so no pool. Visual-only.
 /// </summary>
 [GlobalClass]
 public partial class WeaponTrailComponent : EntityComponent
