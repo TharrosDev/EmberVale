@@ -39,9 +39,23 @@ public partial class CombatComponent : EntityComponent
     [Export]
     public float BlockStaminaCost { get; set; } = 10f;
 
+    /// <summary>A hit landing within this many seconds of raising the guard is parried (Phase 29F).</summary>
+    [Export]
+    public float ParryWindow { get; set; } = 0.2f;
+
+    /// <summary>How long a parried attacker is staggered — the riposte opening.</summary>
+    [Export]
+    public float ParryStaggerDuration { get; set; } = 1.1f;
+
+    /// <summary>Fraction of poise damage a (mistimed) block still takes, so a held guard can be broken.</summary>
+    [Export]
+    public float BlockPoiseFactor { get; set; } = 0.5f;
+
     private StatsComponent? _stats;
     private float _poise;
     private double _staggerTimer;
+    private float _blockElapsed;
+    private bool _wasBlocking;
 
     /// <summary>Set by a controller (player input / AI) to raise the guard.</summary>
     public bool IsBlocking { get; set; }
@@ -69,6 +83,22 @@ public partial class CombatComponent : EntityComponent
         {
             _poise = Mathf.Min(MaxPoise, _poise + (PoiseRegen * (float)delta));
         }
+
+        // Track time since the guard was raised — the parry window measures from that moment.
+        _blockElapsed = IsBlocking ? (_wasBlocking ? _blockElapsed + (float)delta : 0f) : 0f;
+        _wasBlocking = IsBlocking;
+    }
+
+    /// <summary>Forces a stagger of at least <paramref name="duration"/> seconds (e.g. an attacker that was
+    /// parried), resetting poise and raising the stagger event.</summary>
+    public void Stagger(float duration)
+    {
+        _staggerTimer = Mathf.Max(_staggerTimer, duration);
+        _poise = MaxPoise;
+        if (Entity != null)
+        {
+            EventBus.Instance?.Publish(new EntityStaggeredEvent(Entity));
+        }
     }
 
     /// <summary>Resolves an incoming hit and applies it. Returns the resolved result.</summary>
@@ -88,25 +118,35 @@ public partial class CombatComponent : EntityComponent
         float amount = packet.Amount;
         bool blocked = false;
 
-        if (IsBlocking && _stats.GetCurrent(StatType.Stamina) >= BlockStaminaCost)
+        if (IsBlocking)
         {
-            _stats.ModifyCurrent(StatType.Stamina, -BlockStaminaCost);
-            amount *= 1f - BlockMitigation;
-            blocked = true;
+            // Timed block within the parry window: negate the hit and stagger the attacker (riposte opening).
+            if (Parry.IsParry(_blockElapsed, ParryWindow))
+            {
+                packet.Source?.GetComponent<CombatComponent>()?.Stagger(ParryStaggerDuration);
+                EventBus.Instance?.Publish(new EntityParriedEvent(Entity, packet.Source));
+                return new DamageResult(0f, false, true, packet.Type);
+            }
+
+            // Mistimed/held block: chip through, costs stamina (no stamina → guard broken, full hit).
+            if (_stats.GetCurrent(StatType.Stamina) >= BlockStaminaCost)
+            {
+                _stats.ModifyCurrent(StatType.Stamina, -BlockStaminaCost);
+                amount *= 1f - BlockMitigation;
+                blocked = true;
+            }
         }
 
         float final = CombatMath.Mitigate(amount, packet.Type, _stats);
         _stats.ApplyDamage(final, packet.Source);
 
-        if (!blocked)
+        // A block still chips poise (BlockPoiseFactor) so a held guard can be broken into a stagger.
+        _poise -= blocked ? packet.PoiseDamage * BlockPoiseFactor : packet.PoiseDamage;
+        if (_poise <= 0f)
         {
-            _poise -= packet.PoiseDamage;
-            if (_poise <= 0f)
-            {
-                _poise = MaxPoise;
-                _staggerTimer = StaggerDuration;
-                EventBus.Instance?.Publish(new EntityStaggeredEvent(Entity));
-            }
+            _poise = MaxPoise;
+            _staggerTimer = StaggerDuration;
+            EventBus.Instance?.Publish(new EntityStaggeredEvent(Entity));
         }
 
         EventBus.Instance?.Publish(
