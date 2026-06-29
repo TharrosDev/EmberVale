@@ -99,6 +99,18 @@ char.perk_rank,{0}  ({1}/{2})
 char.perk_learn,Learn ({0})
 char.perk_maxed,[maxed]
 char.perk_needs,[needs {0}]
+char.tab_gear,Gear
+char.tab_spells,Spells
+char.tab_progression,Progression
+char.tab_perks,Perks
+char.equipment,EQUIPMENT
+char.spells,SPELLS
+char.spell_rank,{0}  ({1}/{2})
+char.spell_buy,Buy ({0})
+char.spell_upgrade,Upgrade ({0})
+char.spell_maxed,[maxed]
+char.spell_needs,[needs {0}]
+char.spell_cost,[{0} sp]
 char.unequip,Unequip
 char.empty,(empty)
 char.equip,Equip

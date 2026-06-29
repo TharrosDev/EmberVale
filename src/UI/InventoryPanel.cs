@@ -1,9 +1,11 @@
+using System.Collections.Generic;
 using Embervale.Core;
 using Embervale.Core.Events;
 using Embervale.Corruption;
 using Embervale.Factions;
 using Embervale.Items;
 using Embervale.Localization;
+using Embervale.Magic;
 using Embervale.Progression;
 using Godot;
 
@@ -24,11 +26,27 @@ public partial class InventoryPanel : CanvasLayer
     private HotbarComponent? _hotbar;
     private ProgressionComponent? _progression;
     private PerksComponent? _perks;
+    private SpellcastingComponent? _spellcasting;
     private ReputationComponent? _reputation;
     private CorruptionComponent? _corruption;
     private PanelContainer _panel = null!;
+    private HBoxContainer _tabBar = null!;
     private VBoxContainer _list = null!;
     private bool _dirty = true;
+
+    /// <summary>The character screen's tabs (Phase 29.5 spell tab + split progression/perks).</summary>
+    private enum CharTab { Gear, Spells, Progression, Perks }
+
+    private CharTab _activeTab = CharTab.Gear;
+    private readonly Dictionary<CharTab, Button> _tabButtons = new();
+
+    private static readonly (CharTab Tab, string Key)[] TabDefs =
+    {
+        (CharTab.Gear, "char.tab_gear"),
+        (CharTab.Spells, "char.tab_spells"),
+        (CharTab.Progression, "char.tab_progression"),
+        (CharTab.Perks, "char.tab_perks"),
+    };
 
     private const float PanelWidth = 440f;
 
@@ -50,19 +68,30 @@ public partial class InventoryPanel : CanvasLayer
         MarginContainer margin = UiTheme.Padding(12);
         _panel.AddChild(margin);
 
-        // A bounded scroll area so a full backpack + perk list never runs off-screen.
+        var column = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        column.AddThemeConstantOverride("separation", 6);
+        margin.AddChild(column);
+
+        // Tab row (Gear · Spells · Progression · Perks) — built once; only _list is rebuilt per tab.
+        _tabBar = new HBoxContainer();
+        _tabBar.AddThemeConstantOverride("separation", 4);
+        column.AddChild(_tabBar);
+        BuildTabBar();
+
+        // A bounded scroll area so a full backpack / spell list never runs off-screen.
         var scroll = new ScrollContainer
         {
             CustomMinimumSize = new Vector2(PanelWidth - 28, 520),
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
         };
-        margin.AddChild(scroll);
+        column.AddChild(scroll);
 
         _list = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         _list.AddThemeConstantOverride("separation", 3);
         scroll.AddChild(_list);
 
         EventBus.Instance?.Subscribe<InventoryChangedEvent>(OnChanged);
+        EventBus.Instance?.Subscribe<SpellsChangedEvent>(OnSpellsChanged);
         EventBus.Instance?.Subscribe<EquipmentChangedEvent>(OnEquipmentChanged);
         EventBus.Instance?.Subscribe<XpGainedEvent>(OnXpGained);
         EventBus.Instance?.Subscribe<LeveledUpEvent>(OnLeveledUp);
@@ -74,6 +103,7 @@ public partial class InventoryPanel : CanvasLayer
     public override void _ExitTree()
     {
         EventBus.Instance?.Unsubscribe<InventoryChangedEvent>(OnChanged);
+        EventBus.Instance?.Unsubscribe<SpellsChangedEvent>(OnSpellsChanged);
         EventBus.Instance?.Unsubscribe<EquipmentChangedEvent>(OnEquipmentChanged);
         EventBus.Instance?.Unsubscribe<XpGainedEvent>(OnXpGained);
         EventBus.Instance?.Unsubscribe<LeveledUpEvent>(OnLeveledUp);
@@ -103,6 +133,12 @@ public partial class InventoryPanel : CanvasLayer
     public void SetProgression(ProgressionComponent? progression)
     {
         _progression = progression;
+        _dirty = true;
+    }
+
+    public void SetSpellcasting(SpellcastingComponent? spellcasting)
+    {
+        _spellcasting = spellcasting;
         _dirty = true;
     }
 
@@ -164,9 +200,27 @@ public partial class InventoryPanel : CanvasLayer
 
     private void OnPerkChanged(PerkChangedEvent e) => _dirty = true;
 
+    private void OnSpellsChanged(SpellsChangedEvent e) => _dirty = true;
+
     private void OnReputationChanged(ReputationChangedEvent e) => _dirty = true;
 
     private void OnCorruptionChanged(CorruptionChangedEvent e) => _dirty = true;
+
+    private void BuildTabBar()
+    {
+        foreach ((CharTab tab, string key) in TabDefs)
+        {
+            Button button = UiTheme.Action(Loc.T(key));
+            CharTab captured = tab;
+            button.Pressed += () =>
+            {
+                _activeTab = captured;
+                _dirty = true;
+            };
+            _tabBar.AddChild(button);
+            _tabButtons[tab] = button;
+        }
+    }
 
     private void Rebuild()
     {
@@ -178,14 +232,31 @@ public partial class InventoryPanel : CanvasLayer
             child.QueueFree();
         }
 
-        AddHeader(Loc.T("char.title"));
-        BuildProgression();
-        BuildCorruption();
-        BuildEquipment();
-        AddHeader(BackpackHeader());
-        BuildBackpack();
-        BuildPerks();
-        BuildFactions();
+        // Highlight the active tab.
+        foreach ((CharTab tab, Button button) in _tabButtons)
+        {
+            button.Modulate = tab == _activeTab ? UiTheme.Accent : UiTheme.Dim;
+        }
+
+        switch (_activeTab)
+        {
+            case CharTab.Spells:
+                BuildSpells();
+                break;
+            case CharTab.Progression:
+                BuildProgression();
+                BuildCorruption();
+                BuildFactions();
+                break;
+            case CharTab.Perks:
+                BuildPerks();
+                break;
+            default:
+                BuildEquipment();
+                AddHeader(BackpackHeader());
+                BuildBackpack();
+                break;
+        }
     }
 
     private void BuildFactions()
@@ -222,6 +293,7 @@ public partial class InventoryPanel : CanvasLayer
             return;
         }
 
+        AddHeader(Loc.T("char.tab_progression"));
         string xp = _progression.IsMaxLevel ? Loc.T("char.xp_max") : $"{_progression.CurrentXp} / {_progression.XpToNext}";
         AddLine(Loc.TF("char.level_line", _progression.Level, xp));
         AddLine(Loc.TF("char.skill_points", _progression.SkillPoints));
@@ -241,6 +313,50 @@ public partial class InventoryPanel : CanvasLayer
         bar.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         bar.Value = _corruption.Value / (double)CorruptionTiers.Max;
         _list.AddChild(bar);
+    }
+
+    private void BuildSpells()
+    {
+        if (_spellcasting == null || SpellDatabase.All.Count == 0)
+        {
+            AddLine(Loc.T("char.empty"));
+            return;
+        }
+
+        AddHeader(Loc.T("char.spells"));
+        if (_progression != null)
+        {
+            AddLine(Loc.TF("char.skill_points", _progression.SkillPoints), UiTheme.Dim);
+        }
+
+        foreach (SpellResource spell in SpellDatabase.All)
+        {
+            bool known = _spellcasting.IsKnown(spell);
+            int rank = _spellcasting.RankOf(spell);
+            Color tint = SpellSchools.Color(spell.School);
+            string text = known
+                ? Loc.TF("char.spell_rank", spell.DisplayName, rank, spell.MaxRank)
+                : spell.DisplayName;
+
+            if (!known && _spellcasting.CanBuy(spell))
+            {
+                SpellResource captured = spell;
+                AddRow(text, Loc.TF("char.spell_buy", spell.LearnCost), () => _spellcasting!.Buy(captured), tint, spell.Description);
+            }
+            else if (known && _spellcasting.CanUpgrade(spell))
+            {
+                SpellResource captured = spell;
+                AddRow(text, Loc.TF("char.spell_upgrade", spell.UpgradeCost), () => _spellcasting!.Upgrade(captured), tint, spell.Description);
+            }
+            else
+            {
+                string suffix = known && rank >= spell.MaxRank ? $"  {Loc.T("char.spell_maxed")}"
+                    : !known && !_spellcasting.MeetsCorruption(spell) ? $"  {Loc.TF("char.spell_needs", CorruptionTiers.Label(spell.MinCorruptionTier))}"
+                    : !known ? $"  {Loc.TF("char.spell_cost", spell.LearnCost)}"
+                    : string.Empty;
+                AddLine($"• {text}{suffix}", known ? tint : UiTheme.Dim, spell.Description);
+            }
+        }
     }
 
     private void BuildPerks()
@@ -279,6 +395,7 @@ public partial class InventoryPanel : CanvasLayer
             return;
         }
 
+        AddHeader(Loc.T("char.equipment"));
         foreach (EquipmentSlot slot in EquipmentSlots.DisplayOrder)
         {
             ItemInstance? item = _equipment.GetEquipped(slot);

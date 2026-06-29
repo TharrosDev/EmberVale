@@ -744,6 +744,7 @@ public partial class GameBootstrap : Node3D
         _hotbarPanel.SetInventory(_player.GetComponent<InventoryComponent>());
         _inventoryPanel.SetProgression(_player.GetComponent<ProgressionComponent>());
         _inventoryPanel.SetPerks(_player.GetComponent<PerksComponent>());
+        _inventoryPanel.SetSpellcasting(_player.GetComponent<SpellcastingComponent>());
         _inventoryPanel.SetReputation(_player.GetComponent<ReputationComponent>());
         _inventoryPanel.SetCorruption(_player.GetComponent<CorruptionComponent>());
 

@@ -9,6 +9,9 @@ public readonly record struct SpellCastEvent(IEntity Caster, string SpellId) : I
 /// <summary>Raised when a caster changes its selected/prepared spell.</summary>
 public readonly record struct SpellSelectedEvent(IEntity Caster, string SpellId) : IGameEvent;
 
+/// <summary>Raised when a caster's known spells or ranks change (bought/upgraded), so UI can refresh.</summary>
+public readonly record struct SpellsChangedEvent(IEntity Caster) : IGameEvent;
+
 /// <summary>Raised when a status effect is first applied to an entity (not on refresh).</summary>
 public readonly record struct StatusEffectAppliedEvent(IEntity Target, string EffectId, IEntity? Source) : IGameEvent;
 

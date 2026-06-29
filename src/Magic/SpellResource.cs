@@ -69,6 +69,19 @@ public partial class SpellResource : Resource
     /// </summary>
     [Export] public float ImpactRadius { get; set; } = 0f;
 
+    [ExportGroup("Mastery (skill-point buy/upgrade)")]
+    /// <summary>Skill points to learn (buy) this spell from the character screen.</summary>
+    [Export] public int LearnCost { get; set; } = 1;
+
+    /// <summary>Skill points per rank-up.</summary>
+    [Export] public int UpgradeCost { get; set; } = 1;
+
+    /// <summary>Highest rank the spell can be upgraded to (1 = no upgrades).</summary>
+    [Export] public int MaxRank { get; set; } = 3;
+
+    /// <summary>Added damage/healing fraction per rank above the first (rank 2 = +1×this, etc.).</summary>
+    [Export] public float DamagePerRank { get; set; } = 0.3f;
+
     [ExportGroup("Cast timing (Phase 29.5A)")]
     /// <summary>Seconds of holding to reach full charge (Charged casts).</summary>
     [Export] public float ChargeTime { get; set; } = 1.2f;

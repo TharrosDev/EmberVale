@@ -39,10 +39,12 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
 
     private readonly List<SpellResource> _spells = new();
     private readonly Dictionary<string, double> _cooldowns = new();
+    private readonly Dictionary<string, int> _ranks = new();
 
     private StatsComponent? _stats;
     private CombatComponent? _combat;
     private CorruptionComponent? _corruption;
+    private Progression.ProgressionComponent? _progression;
     private int _selected;
 
     // Active charged/channeled cast (Phase 29.5A); null for instant casts and when idle.
@@ -72,6 +74,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     {
         _stats = Entity!.GetComponent<StatsComponent>();
         _combat = Entity.GetComponent<CombatComponent>();
+        _progression = Entity.GetComponent<Progression.ProgressionComponent>();
         _projectilePool = new NodePool<SpellProjectile>(
             () => new SpellProjectile { Released = ReturnProjectile }, prewarm: 4);
         RebuildSpells();
@@ -160,6 +163,61 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         {
             KnownSpellIds.Add(spellId);
         }
+    }
+
+    /// <summary>Whether the spell is already in this caster's spellbook.</summary>
+    public bool IsKnown(SpellResource spell) => _spells.Exists(s => s.Id == spell.Id);
+
+    /// <summary>The spell's current rank (1 once known, 0 if unknown).</summary>
+    public int RankOf(SpellResource spell) =>
+        _ranks.TryGetValue(spell.Id, out int rank) ? rank : (IsKnown(spell) ? 1 : 0);
+
+    /// <summary>Can the caster buy (learn) this unknown spell now — corruption met and skill points spare?</summary>
+    public bool CanBuy(SpellResource spell) =>
+        !IsKnown(spell) && MeetsCorruption(spell) && (_progression?.SkillPoints ?? 0) >= spell.LearnCost;
+
+    /// <summary>Buys an unknown spell with skill points (Phase 29.5C-lite). Returns false if not affordable.</summary>
+    public bool Buy(SpellResource spell)
+    {
+        if (!CanBuy(spell) || _progression?.SpendSkillPoints(spell.LearnCost) != true)
+        {
+            return false;
+        }
+
+        _spells.Add(spell);
+        if (!KnownSpellIds.Contains(spell.Id))
+        {
+            KnownSpellIds.Add(spell.Id);
+        }
+
+        _ranks[spell.Id] = 1;
+        if (Entity != null)
+        {
+            EventBus.Instance?.Publish(new SpellsChangedEvent(Entity));
+        }
+
+        return true;
+    }
+
+    /// <summary>Can the caster rank up this known spell — below max and enough skill points?</summary>
+    public bool CanUpgrade(SpellResource spell) =>
+        IsKnown(spell) && RankOf(spell) < spell.MaxRank && (_progression?.SkillPoints ?? 0) >= spell.UpgradeCost;
+
+    /// <summary>Spends skill points to raise a known spell's rank, empowering its damage/healing.</summary>
+    public bool Upgrade(SpellResource spell)
+    {
+        if (!CanUpgrade(spell) || _progression?.SpendSkillPoints(spell.UpgradeCost) != true)
+        {
+            return false;
+        }
+
+        _ranks[spell.Id] = RankOf(spell) + 1;
+        if (Entity != null)
+        {
+            EventBus.Instance?.Publish(new SpellsChangedEvent(Entity));
+        }
+
+        return true;
     }
 
     public bool CanCast(SpellResource? spell)
@@ -312,7 +370,8 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     private DamagePacket BuildPacket(SpellResource spell, float power)
     {
         (float amount, bool isCrit) = CombatMath.RollSpell(spell.BaseDamage, _stats);
-        return new DamagePacket(amount * power, spell.School, Entity, isCrit, SpellPoiseDamage);
+        float ranked = power * SpellMastery.DamageMultiplier(RankOf(spell), spell.DamagePerRank);
+        return new DamagePacket(amount * ranked, spell.School, Entity, isCrit, SpellPoiseDamage);
     }
 
     private void CastProjectile(SpellResource spell, int team, float power)
@@ -342,7 +401,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     {
         if (spell.Healing > 0f)
         {
-            _stats?.Heal(spell.Healing * power);
+            _stats?.Heal(spell.Healing * power * SpellMastery.DamageMultiplier(RankOf(spell), spell.DamagePerRank));
         }
 
         if (spell.HasStatusEffect)
@@ -391,10 +450,17 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             ids.Add(spell.Id);
         }
 
+        var ranks = new Godot.Collections.Dictionary();
+        foreach (KeyValuePair<string, int> pair in _ranks)
+        {
+            ranks[pair.Key] = pair.Value;
+        }
+
         return new Godot.Collections.Dictionary
         {
             ["spells"] = ids,
             ["selected"] = _selected,
+            ["ranks"] = ranks,
         };
     }
 
@@ -409,6 +475,16 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             }
 
             RebuildSpells();
+        }
+
+        _ranks.Clear();
+        if (data.TryGetValue("ranks", out Variant ranksVar))
+        {
+            Godot.Collections.Dictionary ranks = ranksVar.AsGodotDictionary();
+            foreach (Variant key in ranks.Keys)
+            {
+                _ranks[key.AsString()] = ranks[key].AsInt32();
+            }
         }
 
         if (data.TryGetValue("selected", out Variant selectedVar))
