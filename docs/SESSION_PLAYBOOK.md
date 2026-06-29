@@ -1551,7 +1551,7 @@ no code) — batch them when momentum is good.
 > Theme: magic is the fading **Weave** of a dying world — recover lost spellcraft, and
 > corruption is the darker shortcut (extends 23H). Read `src/Magic/` first.
 
-- [ ] **29.5A — Cast archetypes: Charged + Channeled** `[F]`
+- [x] **29.5A — Cast archetypes: Charged + Channeled** `[F]` ✅
   - **Goal:** casts have feel beyond fire-and-forget.
   - **Tasks:** add a `CastMode` (Instant · Charged · Channeled) to `SpellResource`
     (append-only enum), layered on the existing Projectile/Area/Self *shape*; give
@@ -1560,6 +1560,12 @@ no code) — batch them when momentum is good.
     controller. Persists nothing new (transient cast state).
   - **Done when:** one charged and one channeled spell cast and feel distinct from instant;
     mana drains correctly; round-trips (known spells already save).
+  - **Done:** `CastMode` enum on `SpellResource` + `SpellcastingComponent` cast state machine
+    (`BeginCast`/`UpdateCast`/`EndCast`/`CancelCast`): charged scales damage by hold time via pure
+    `SpellCharge.PowerMultiplier`; channeled ticks every `ChannelTickInterval` at `ChannelManaPerSecond`,
+    interrupted on key-up/out-of-mana/death. `PlayerController` drives press/hold/release off the Cast key.
+    Slice spells **Flame Lance** (charged Fire) + **Storm Conduit** (channeled Lightning). Damage-only power
+    scaling for now (projectile impact-radius scaling deferred).
 - [ ] **29.5B — School identities + status effects** `[F/C]`
   - **Goal:** each `DamageType` school plays differently, not just tint+resist.
   - **Tasks:** author the signature mechanic + status effects per school — Fire ignite/DoT
