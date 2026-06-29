@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Embervale.Core;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Entities;
@@ -184,11 +185,11 @@ public partial class CraftingComponent : EntityComponent, ISaveable
         return null;
     }
 
-    /// <summary>Whether <paramref name="instance"/> can be salvaged right now at the given station —
-    /// true for a loose inventory item or an equipped one (which is taken off first).</summary>
+    /// <summary>Whether <paramref name="instance"/> can be salvaged — any held or worn item except
+    /// currency. A recipe is no longer required: recipe-less items salvage into generic scrap.</summary>
     public bool CanDeconstruct(ItemInstance? instance, CraftingStationType station)
     {
-        if (instance == null || DeconstructionRecipe(instance.TemplateId, station) == null)
+        if (instance == null || IsCurrency(instance))
         {
             return false;
         }
@@ -197,20 +198,19 @@ public partial class CraftingComponent : EntityComponent, ISaveable
             || (_equipment != null && _equipment.IsInstanceEquipped(instance));
     }
 
-    /// <summary>Deconstructs one of <paramref name="instance"/>: consumes it and returns a floored
-    /// fraction of its recipe's materials plus XP. Returns false if it isn't currently salvageable.</summary>
+    private static bool IsCurrency(ItemInstance instance) => instance.TemplateId == GameIds.Currency.Gold;
+
+    /// <summary>Deconstructs one of <paramref name="instance"/>: consumes it and returns its recipe's
+    /// materials (a floored fraction) — or, for a recipe-less item, generic scrap — plus XP. Returns
+    /// false only for currency or an item the player doesn't actually hold.</summary>
     public bool Deconstruct(ItemInstance? instance, CraftingStationType station)
     {
-        if (instance == null || _inventory == null)
+        if (instance == null || _inventory == null || IsCurrency(instance))
         {
             return false;
         }
 
         CraftingRecipeResource? recipe = DeconstructionRecipe(instance.TemplateId, station);
-        if (recipe == null)
-        {
-            return false;
-        }
 
         // Salvaging equipped gear takes it off first (back into the inventory) so the consume below
         // is uniform — and its stat bonuses are cleanly removed by the unequip.
@@ -223,19 +223,31 @@ public partial class CraftingComponent : EntityComponent, ISaveable
             }
         }
 
-        foreach (RecipeIngredient ingredient in recipe.IngredientList())
+        if (recipe != null)
         {
-            int recovered = Deconstruction.RecoveredQuantity(ingredient.Quantity);
-            if (recovered <= 0)
+            foreach (RecipeIngredient ingredient in recipe.IngredientList())
             {
-                continue;
-            }
+                int recovered = Deconstruction.RecoveredQuantity(ingredient.Quantity);
+                if (recovered <= 0)
+                {
+                    continue;
+                }
 
-            // Never force-deref a content lookup: a recipe whose ingredient item was deleted skips
-            // that material rather than crashing the salvage.
-            if (ItemDatabase.Get(ingredient.ItemId) is { } material)
+                // Never force-deref a content lookup: a recipe whose ingredient item was deleted skips
+                // that material rather than crashing the salvage.
+                if (ItemDatabase.Get(ingredient.ItemId) is { } material)
+                {
+                    _inventory.AddItem(material, recovered);
+                }
+            }
+        }
+        else
+        {
+            // No recipe to reverse — return generic scrap so any item is still worth salvaging.
+            int scrap = Deconstruction.ScrapYield(instance.Rarity);
+            if (scrap > 0 && ItemDatabase.Get(GameIds.Items.Scrap) is { } scrapItem)
             {
-                _inventory.AddItem(material, recovered);
+                _inventory.AddItem(scrapItem, scrap);
             }
         }
 

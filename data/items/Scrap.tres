@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://cmbrvlitscrap"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.material.scrap"
+DisplayName = "Scrap"
+Description = "Salvaged oddments — bent metal, frayed cord, splintered wood. Worth keeping; worth little."
+Type = 4
+Rarity = 0
+MaxStack = 99
+Weight = 0.1
+Value = 1

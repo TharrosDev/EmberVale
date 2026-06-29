@@ -243,8 +243,8 @@ public partial class CraftingPanel : CanvasLayer
         }
     }
 
-    /// <summary>Lists inventory stacks that have a station recipe to reverse, each with its salvage
-    /// yield preview and a Deconstruct button.</summary>
+    /// <summary>Lists every salvageable inventory stack and worn item — recipe-backed (returns
+    /// materials) or not (returns generic scrap) — each with its yield preview and a Deconstruct button.</summary>
     private void RebuildSalvage()
     {
         bool any = false;
@@ -254,10 +254,11 @@ public partial class CraftingPanel : CanvasLayer
         {
             foreach (ItemStack stack in _inventory.Stacks)
             {
-                if (_crafting!.DeconstructionRecipe(stack.Instance.TemplateId, _station) is { } recipe)
+                if (_crafting!.CanDeconstruct(stack.Instance, _station))
                 {
                     any = true;
-                    AddSalvage(stack.Instance, stack.Quantity, equipped: false, recipe);
+                    AddSalvage(stack.Instance, stack.Quantity, equipped: false,
+                        _crafting.DeconstructionRecipe(stack.Instance.TemplateId, _station));
                 }
             }
         }
@@ -267,10 +268,11 @@ public partial class CraftingPanel : CanvasLayer
         {
             foreach (ItemInstance instance in equipment.EquippedInstances)
             {
-                if (_crafting!.DeconstructionRecipe(instance.TemplateId, _station) is { } recipe)
+                if (_crafting!.CanDeconstruct(instance, _station))
                 {
                     any = true;
-                    AddSalvage(instance, 1, equipped: true, recipe);
+                    AddSalvage(instance, 1, equipped: true,
+                        _crafting.DeconstructionRecipe(instance.TemplateId, _station));
                 }
             }
         }
@@ -281,7 +283,7 @@ public partial class CraftingPanel : CanvasLayer
         }
     }
 
-    private void AddSalvage(ItemInstance instance, int quantity, bool equipped, CraftingRecipeResource recipe)
+    private void AddSalvage(ItemInstance instance, int quantity, bool equipped, CraftingRecipeResource? recipe)
     {
         var titleRow = new HBoxContainer();
         titleRow.AddThemeConstantOverride("separation", 8);
@@ -307,17 +309,27 @@ public partial class CraftingPanel : CanvasLayer
 
         _list.AddChild(titleRow);
 
-        foreach (RecipeIngredient ingredient in recipe.IngredientList())
+        if (recipe != null)
         {
-            int recovered = Deconstruction.RecoveredQuantity(ingredient.Quantity);
-            if (recovered <= 0)
+            foreach (RecipeIngredient ingredient in recipe.IngredientList())
             {
-                continue;
-            }
+                int recovered = Deconstruction.RecoveredQuantity(ingredient.Quantity);
+                if (recovered <= 0)
+                {
+                    continue;
+                }
 
-            ItemResource? material = ItemDatabase.Get(ingredient.ItemId);
-            string name = material?.DisplayName ?? ingredient.ItemId;
-            _list.AddChild(UiTheme.Body($"   → {recovered}x {name}", UiTheme.Accent));
+                ItemResource? material = ItemDatabase.Get(ingredient.ItemId);
+                string name = material?.DisplayName ?? ingredient.ItemId;
+                _list.AddChild(UiTheme.Body($"   → {recovered}x {name}", UiTheme.Accent));
+            }
+        }
+        else
+        {
+            // Recipe-less: generic scrap, scaled by rarity.
+            int scrap = Deconstruction.ScrapYield(instance.Rarity);
+            string scrapName = ItemDatabase.Get(GameIds.Items.Scrap)?.DisplayName ?? "Scrap";
+            _list.AddChild(UiTheme.Body($"   → {scrap}x {scrapName}", UiTheme.Accent));
         }
 
         int xp = Deconstruction.Xp(instance.Template.Value, instance.Rarity);

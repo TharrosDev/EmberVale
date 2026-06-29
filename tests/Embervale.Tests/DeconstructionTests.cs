@@ -46,4 +46,13 @@ public class DeconstructionTests
         int pricey = Deconstruction.Xp(100, ItemRarity.Common);
         Assert.True(pricey > cheap);
     }
+
+    [Theory]
+    [InlineData(ItemRarity.Common, 1)]      // recipe-less salvage always yields at least one scrap
+    [InlineData(ItemRarity.Uncommon, 2)]
+    [InlineData(ItemRarity.Legendary, 5)]
+    public void ScrapYield_ScalesWithRarity(ItemRarity rarity, int expected)
+    {
+        Assert.Equal(expected, Deconstruction.ScrapYield(rarity));
+    }
 }

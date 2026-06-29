@@ -31,7 +31,9 @@ public static class GameIds
         public const string LeatherCap = "item.armor.leather_cap";
         public const string LeatherVest = "item.armor.leather_vest";
         public const string SteelSword = "item.weapon.steel_sword";
+        public const string Bow = "item.weapon.bow";
         public const string IronRing = "item.ring.iron";
+        public const string Scrap = "item.material.scrap";
     }
 
     public static class Enemies

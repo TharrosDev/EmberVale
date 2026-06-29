@@ -54,6 +54,7 @@ public partial class GameBootstrap : Node3D
     private DevConsole _console = null!;
     private ProfilerOverlay _profiler = null!;
     private InventoryPanel _inventoryPanel = null!;
+    private HotbarPanel _hotbarPanel = null!;
     private QuestLogPanel _questLogPanel = null!;
     private DialoguePanel _dialoguePanel = null!;
     private CraftingPanel _craftingPanel = null!;
@@ -259,6 +260,8 @@ public partial class GameBootstrap : Node3D
         AddChild(new AnalyticsSink());
         _inventoryPanel = new InventoryPanel();
         AddChild(_inventoryPanel);
+        _hotbarPanel = new HotbarPanel();
+        AddChild(_hotbarPanel);
         _questLogPanel = new QuestLogPanel();
         AddChild(_questLogPanel);
         _dialoguePanel = new DialoguePanel();
@@ -729,6 +732,9 @@ public partial class GameBootstrap : Node3D
         _gameHud.SetPlayer(_player);
         _inventoryPanel.SetInventory(_player.GetComponent<InventoryComponent>());
         _inventoryPanel.SetEquipment(_player.GetComponent<EquipmentComponent>());
+        _inventoryPanel.SetHotbar(_player.GetComponent<HotbarComponent>());
+        _hotbarPanel.SetHotbar(_player.GetComponent<HotbarComponent>());
+        _hotbarPanel.SetInventory(_player.GetComponent<InventoryComponent>());
         _inventoryPanel.SetProgression(_player.GetComponent<ProgressionComponent>());
         _inventoryPanel.SetPerks(_player.GetComponent<PerksComponent>());
         _inventoryPanel.SetReputation(_player.GetComponent<ReputationComponent>());
@@ -763,6 +769,7 @@ public partial class GameBootstrap : Node3D
         TryDropPickup(GameIds.Items.LeatherCap, 1, new Vector3(-1.2f, 0f, 3f));
         TryDropPickup(GameIds.Items.LeatherVest, 1, new Vector3(-3f, 0f, 2.5f));
         TryDropPickup(GameIds.Items.SteelSword, 1, new Vector3(1.5f, 0f, -2.5f));
+        TryDropPickup(GameIds.Items.Bow, 1, new Vector3(2.2f, 0f, -2.5f));
         TryDropPickup(GameIds.Items.IronRing, 1, new Vector3(3f, 0f, -3.5f));
 
         // A procedurally-rolled Rare blade to show off the affix pipeline.

@@ -70,6 +70,21 @@ public partial class EquipmentComponent : EntityComponent, ISaveable
         return false;
     }
 
+    /// <summary>The first equipped instance of <paramref name="itemId"/>, or null — lets the hotbar
+    /// re-activate a weapon that's already worn (not in the bag).</summary>
+    public ItemInstance? FirstEquippedInstanceOf(string itemId)
+    {
+        foreach (ItemInstance equipped in _equipped.Values)
+        {
+            if (equipped.TemplateId == itemId)
+            {
+                return equipped;
+            }
+        }
+
+        return null;
+    }
+
     /// <summary>Unequips a specific instance (whichever slot holds it), returning it to the inventory.
     /// Returns true if it was equipped.</summary>
     public bool UnequipInstance(ItemInstance instance)

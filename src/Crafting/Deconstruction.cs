@@ -31,4 +31,8 @@ public static class Deconstruction
         int xp = BaseXp + (itemValue / 2) + ((int)rarity * XpPerRarityTier);
         return xp < 1 ? 1 : xp;
     }
+
+    /// <summary>Generic <c>Scrap</c> returned when an item has no crafting recipe to reverse — so any
+    /// item is still worth salvaging. Scales with rarity (Common 1 … Legendary 5).</summary>
+    public static int ScrapYield(ItemRarity rarity) => 1 + (int)rarity;
 }

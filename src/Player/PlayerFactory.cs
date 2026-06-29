@@ -144,6 +144,9 @@ public static class PlayerFactory
         // Story flags: persistent conversation/world memory read & written by dialogue.
         player.AddChild(new StoryFlagsComponent { Name = "StoryFlags" });
 
+        // Hotbar: quick-use bar (1-5) the player assigns from the inventory; resolves bag + equipment.
+        player.AddChild(new HotbarComponent { Name = "Hotbar" });
+
         // Reputation: tracks standing with every faction and reacts to kills the player lands.
         player.AddChild(new ReputationComponent { Name = "Reputation" });
 

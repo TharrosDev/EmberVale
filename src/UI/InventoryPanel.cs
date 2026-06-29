@@ -21,6 +21,7 @@ public partial class InventoryPanel : CanvasLayer
 {
     private InventoryComponent? _inventory;
     private EquipmentComponent? _equipment;
+    private HotbarComponent? _hotbar;
     private ProgressionComponent? _progression;
     private PerksComponent? _perks;
     private ReputationComponent? _reputation;
@@ -81,6 +82,12 @@ public partial class InventoryPanel : CanvasLayer
     public void SetEquipment(EquipmentComponent? equipment)
     {
         _equipment = equipment;
+        _dirty = true;
+    }
+
+    public void SetHotbar(HotbarComponent? hotbar)
+    {
+        _hotbar = hotbar;
         _dirty = true;
     }
 
@@ -304,11 +311,11 @@ public partial class InventoryPanel : CanvasLayer
 
             if (instance.IsEquippable && _equipment != null)
             {
-                AddRow(text, Loc.T("char.equip"), () => _equipment.Equip(instance), color, instance.Template.Description);
+                AddRow(text, Loc.T("char.equip"), () => _equipment.Equip(instance), color, instance.Template.Description, instance.TemplateId);
             }
             else if (instance.Template is ConsumableItemResource && _inventory != null)
             {
-                AddRow(text, Loc.T("char.use"), () => _inventory.Consume(instance), color, instance.Template.Description);
+                AddRow(text, Loc.T("char.use"), () => _inventory.Consume(instance), color, instance.Template.Description, instance.TemplateId);
             }
             else
             {
@@ -356,7 +363,7 @@ public partial class InventoryPanel : CanvasLayer
         _list.AddChild(label);
     }
 
-    private void AddRow(string text, string action, System.Action onPressed, Color? color = null, string? tooltip = null)
+    private void AddRow(string text, string action, System.Action onPressed, Color? color = null, string? tooltip = null, string? hotbarAssignId = null)
     {
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", 8);
@@ -370,6 +377,19 @@ public partial class InventoryPanel : CanvasLayer
         }
 
         row.AddChild(label);
+
+        // Hotbar assign: tiny 1-5 buttons that bind this item to a quick-use slot.
+        if (hotbarAssignId != null && _hotbar != null)
+        {
+            for (int n = 0; n < HotbarComponent.SlotCount; n++)
+            {
+                int slot = n;
+                Button assign = UiTheme.Action((n + 1).ToString());
+                assign.TooltipText = Loc.TF("char.assign_hotbar", n + 1);
+                assign.Pressed += () => _hotbar!.Assign(slot, hotbarAssignId);
+                row.AddChild(assign);
+            }
+        }
 
         Button button = UiTheme.Action(action);
         button.Pressed += () => onPressed();

@@ -163,6 +163,21 @@ public partial class InventoryComponent : EntityComponent, ISaveable
         return true;
     }
 
+    /// <summary>The first held instance of <paramref name="itemId"/>, or null if none — used by the
+    /// hotbar to resolve an assigned id back to a usable instance.</summary>
+    public ItemInstance? FirstInstanceOf(string itemId)
+    {
+        foreach (ItemStack stack in _stacks)
+        {
+            if (stack.Item.Id == itemId)
+            {
+                return stack.Instance;
+            }
+        }
+
+        return null;
+    }
+
     public int CountOf(ItemResource item) => CountOf(item.Id);
 
     public int CountOf(string itemId)

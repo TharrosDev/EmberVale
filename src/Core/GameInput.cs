@@ -27,6 +27,9 @@ public static class GameInput
     public const string Map = "map";
     public const string Pause = "pause";
 
+    /// <summary>Hotbar slots 1-5 (number-row keys) — quick-use/equip an assigned item.</summary>
+    public static readonly string[] Hotbar = { "hotbar_1", "hotbar_2", "hotbar_3", "hotbar_4", "hotbar_5" };
+
     public static void EnsureActions()
     {
         Bind(MoveForward, new InputEventKey { PhysicalKeycode = Key.W });
@@ -44,6 +47,12 @@ public static class GameInput
         Bind(Block, new InputEventMouseButton { ButtonIndex = MouseButton.Right });
         Bind(Cast, new InputEventKey { PhysicalKeycode = Key.Q });
         Bind(CycleSpell, new InputEventKey { PhysicalKeycode = Key.F });
+
+        Key[] digits = { Key.Key1, Key.Key2, Key.Key3, Key.Key4, Key.Key5 };
+        for (int i = 0; i < Hotbar.Length; i++)
+        {
+            Bind(Hotbar[i], new InputEventKey { PhysicalKeycode = digits[i] });
+        }
     }
 
     private static void Bind(string action, InputEvent trigger)
