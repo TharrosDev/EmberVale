@@ -236,6 +236,7 @@ public partial class GameBootstrap : Node3D
         _hud = new DebugHud();
         AddChild(_hud);
         AddChild(new Notifications());
+        AddChild(new CombatFeedbackOverlay()); // Phase 29D: crit/block/stagger/parry screen flash
         AddChild(new PauseMenu());
         AddChild(new LoadingScreen());
 

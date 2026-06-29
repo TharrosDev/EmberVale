@@ -106,6 +106,10 @@ char.use,Use
 char.assign_hotbar,"Assign to hotbar slot {0}"
 hud.hotbar_hint,"Press 1-5 to use · click to clear"
 hud.consumables,Consumables
+feedback.crit,CRITICAL!
+feedback.block,BLOCKED
+feedback.stagger,STAGGERED!
+feedback.parry,PARRY!
 char.backpack,BACKPACK
 char.backpack_full,BACKPACK   {0}/{1}   wt {2}
 # Quest journal (QuestLogPanel)
