@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="ItemResource" load_steps=2 format=3 uid="uid://cmbrvlitmhpot"]
+[gd_resource type="Resource" script_class="ConsumableItemResource" load_steps=2 format=3 uid="uid://cmbrvlitmhpot"]
 
-[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+[ext_resource type="Script" path="res://src/Items/ConsumableItemResource.cs" id="1_item"]
 
 [resource]
 script = ExtResource("1_item")
@@ -12,3 +12,4 @@ Rarity = 0
 MaxStack = 10
 Weight = 0.5
 Value = 25
+HealAmount = 40.0

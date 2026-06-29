@@ -102,6 +102,7 @@ char.perk_needs,[needs {0}]
 char.unequip,Unequip
 char.empty,(empty)
 char.equip,Equip
+char.use,Use
 char.backpack,BACKPACK
 char.backpack_full,BACKPACK   {0}/{1}   wt {2}
 # Quest journal (QuestLogPanel)

@@ -306,6 +306,10 @@ public partial class InventoryPanel : CanvasLayer
             {
                 AddRow(text, Loc.T("char.equip"), () => _equipment.Equip(instance), color, instance.Template.Description);
             }
+            else if (instance.Template is ConsumableItemResource && _inventory != null)
+            {
+                AddRow(text, Loc.T("char.use"), () => _inventory.Consume(instance), color, instance.Template.Description);
+            }
             else
             {
                 AddLine($"• {text}", color, instance.Template.Description);

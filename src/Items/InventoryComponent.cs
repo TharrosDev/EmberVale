@@ -1,7 +1,9 @@
 using System.Collections.Generic;
+using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Entities;
 using Embervale.Save;
+using Embervale.Stats;
 using Godot;
 
 namespace Embervale.Items;
@@ -205,6 +207,31 @@ public partial class InventoryComponent : EntityComponent, ISaveable
         }
 
         return null;
+    }
+
+    /// <summary>Uses one <paramref name="instance"/> of a consumable: applies its effect to the owner
+    /// and removes it from the bag. Returns false if it isn't a held consumable.</summary>
+    public bool Consume(ItemInstance? instance)
+    {
+        if (instance?.Template is not ConsumableItemResource consumable || CountOf(instance.TemplateId) <= 0)
+        {
+            return false;
+        }
+
+        StatsComponent? stats = Entity?.GetComponent<StatsComponent>();
+        if (stats == null)
+        {
+            return false;
+        }
+
+        if (consumable.HealAmount > 0f)
+        {
+            stats.Heal(consumable.HealAmount);
+        }
+
+        RemoveOneInstance(instance);
+        Log.Info($"Consumed {consumable.DisplayName}.");
+        return true;
     }
 
     public void Clear()

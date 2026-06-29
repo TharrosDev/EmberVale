@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="CraftingRecipeResource" format=3 uid="uid://cmbrvlrcpvest"]
+
+[ext_resource type="Script" path="res://src/Crafting/CraftingRecipeResource.cs" id="1_recipe"]
+[ext_resource type="Script" path="res://src/Crafting/RecipeIngredient.cs" id="2_ing"]
+
+[sub_resource type="Resource" id="Ing_strips"]
+script = ExtResource("2_ing")
+ItemId = "item.material.leather_strips"
+Quantity = 4
+
+[resource]
+script = ExtResource("1_recipe")
+Id = "recipe.leather_vest"
+DisplayName = "Stitch Leather Vest"
+Description = "Stitch leather strips into a protective vest."
+Station = 2
+Ingredients = Array[Resource]([SubResource("Ing_strips")])
+OutputItemId = "item.armor.leather_vest"
+OutputQuantity = 1
+OutputRarity = 0
