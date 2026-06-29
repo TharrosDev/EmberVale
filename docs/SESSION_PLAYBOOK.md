@@ -1500,15 +1500,27 @@ no code) — batch them when momentum is good.
     orphans the node; deferred via `CallDeferred(Node.MethodName.AddChild, …)`. Build clean + 266 tests
     (+3 CombatFx) + `--validate` 0; **combat-tested run, no orphan leak**. VFX polish is the maintainer's
     eye; real audio is Phase 31.
-- [ ] **29D — Screen feedback on crit/stagger/block/parry** `[F/P]`
+- [x] **29D — Screen feedback on crit/stagger/block/parry** `[F/P]` ✅
   - **Done when:** each combat state has a distinct screen/HUD feedback through
     `UiTheme`.
-- [ ] **29E — Dodge i-frames + roll** `[F]`
+  - **Done:** `CombatFeedbackOverlay` (CanvasLayer) flashes a full-screen colour tint + a short word per
+    player combat state — crit (gold), block (steel), stagger (red), parry (bright) — keyed off the combat
+    events from the player's perspective (`ServiceLocator`). Pure `CombatFeedbackFx` (tint/alpha). New
+    `EntityParriedEvent`.
+- [x] **29E — Dodge i-frames + roll** `[F]` ✅
   - **Done when:** a dodge with invulnerability frames exists and is tunable;
     integrates with stamina.
-- [ ] **29F — Parry / riposte windows** `[F]`
+  - **Done:** `Dodge` input (Ctrl) → `DodgeComponent.TryDodge` gates on grounded + stamina + not
+    rolling/staggered, spends stamina, drives a burst roll via `LocomotionComponent.StartDash`, and opens an
+    i-frame window (`CombatComponent.IsInvulnerable`, which whiffs the hit in `ReceiveDamage`). All
+    timings/cost are export knobs; pure `Dodge` helper unit-tested.
+- [x] **29F — Parry / riposte windows** `[F]` ✅
   - **Done when:** a timed block parries and opens a riposte; mistimed block takes
     chip/stagger.
+  - **Done:** `CombatComponent` measures time since the guard rose; a hit within `ParryWindow` parries
+    (full negate, attacker staggered = the riposte opening, `EntityParriedEvent` → 29D flash). A
+    mistimed/held block chips damage **and** chip poise (`BlockPoiseFactor`) so a held guard can break into a
+    stagger. New `Stagger()` helper; pure `Parry` helper unit-tested.
 - [ ] **29G — Animation-cancel windows + input buffering** `[F]`
   - **Done when:** attacks have commit + cancel windows and buffered inputs feel
     responsive, not mashy.
