@@ -69,6 +69,7 @@ public static class EnemyFactory
         enemy.AddChild(new CombatComponent { Name = "Combat", Team = HostileTeam, MaxPoise = 40f });
         enemy.AddChild(new LocomotionComponent { Name = "Locomotion" });
         enemy.AddChild(new HitReactionComponent { Name = "HitReaction" });
+        enemy.AddChild(new WeaponTrailComponent { Name = "WeaponTrail" });
         enemy.AddChild(BuildHurtbox());
 
         var hitbox = new Hitbox

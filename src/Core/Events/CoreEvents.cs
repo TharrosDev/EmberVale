@@ -1,5 +1,6 @@
 using Embervale.Entities;
 using Embervale.Stats;
+using Godot;
 
 namespace Embervale.Core.Events;
 
@@ -43,3 +44,7 @@ public readonly record struct GameLoadedEvent(string Slot) : IGameEvent;
 /// <summary>Requests a music cue by id — the placeholder hook the Phase 31 audio system will consume.
 /// Published at narrative beats (e.g. a boss defeat); no consumer exists yet.</summary>
 public readonly record struct MusicCueRequestedEvent(string CueId) : IGameEvent;
+
+/// <summary>Requests a positional sound cue by id — the placeholder hook the Phase 31 audio system will
+/// consume. Published on combat swings/impacts; no consumer exists yet.</summary>
+public readonly record struct SoundCueRequestedEvent(string CueId, Vector3 Position) : IGameEvent;

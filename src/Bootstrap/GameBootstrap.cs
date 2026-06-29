@@ -308,6 +308,9 @@ public partial class GameBootstrap : Node3D
         // Hit-stop (Phase 29A): a brief freeze-frame on landed hits so blows read with weight.
         AddChild(new Embervale.Combat.HitStopDirector { Name = "HitStop" });
 
+        // Combat feedback (Phase 29C): pooled impact sparks + sound-cue hooks on every hit.
+        AddChild(new Embervale.Combat.CombatFeedbackDirector { Name = "CombatFeedback" });
+
         // Streamed-cell persistence (Phase 25D): remembers per-actor state across cell unload/reload
         // (dead enemies stay dead, looted pickups stay gone). Added before the streamer so it is
         // subscribed to the cell load/unload events before the first cell streams in.

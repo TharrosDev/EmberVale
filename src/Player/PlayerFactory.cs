@@ -118,6 +118,7 @@ public static class PlayerFactory
             AimNode = cameraPivot, // ranged weapons (the bow) fire where the player looks
         });
         player.AddChild(new HitReactionComponent { Name = "HitReaction" });
+        player.AddChild(new WeaponTrailComponent { Name = "WeaponTrail" });
 
         // Equipment sits after inventory + weapon so it can resolve both; the
         // starting weapon above becomes the baseline restored on unequip.

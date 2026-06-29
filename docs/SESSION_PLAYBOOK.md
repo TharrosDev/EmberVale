@@ -1487,9 +1487,19 @@ no code) — batch them when momentum is good.
     direction (`Source`→`Target`, works for melee and arrows) and eases it back — visual-only, never the
     `CharacterBody3D`. Pure `ShakeMath` knobs are unit-tested. Build clean + 263 tests (+4) +
     `--validate` 0; boot clean. Feel/tuning is the maintainer's at-keyboard pass.
-- [ ] **29C — Weapon trails, impact VFX/SFX hooks** `[F/P]`
+- [x] **29C — Weapon trails, impact VFX/SFX hooks** `[F/P]` ✅
   - **Done when:** swings show trails and impacts spawn placeholder VFX/SFX through
     a poolable effect (CLAUDE.md §8 pooling).
+  - **Done:** `CombatFeedbackDirector` (bootstrap `Node`) owns a `NodePool<ImpactEffect>` and on every
+    `DamageDealtEvent` spawns a pooled expand-and-fade spark at the target (tinted gold/grey/white by
+    crit/block/hit) + publishes a positional `SoundCueRequestedEvent` (the Phase 31 audio hook). The
+    cue id + tint come from a pure, unit-tested `CombatFx`. `WeaponTrailComponent` (player + goblin)
+    flashes a translucent slash quad in front of the body on `AttackPerformedEvent` and fades it out —
+    skipped for a ranged swing (bow fires an "sfx.combat.bow" cue instead). Gotcha fixed: a component
+    can't `AddChild` to its own entity body during `_Ready` ("parent busy setting up children") — it
+    orphans the node; deferred via `CallDeferred(Node.MethodName.AddChild, …)`. Build clean + 266 tests
+    (+3 CombatFx) + `--validate` 0; **combat-tested run, no orphan leak**. VFX polish is the maintainer's
+    eye; real audio is Phase 31.
 - [ ] **29D — Screen feedback on crit/stagger/block/parry** `[F/P]`
   - **Done when:** each combat state has a distinct screen/HUD feedback through
     `UiTheme`.
