@@ -88,12 +88,14 @@ public static class PlayerFactory
             Position = new Vector3(0f, CameraPivotHeight, 0f),
         };
         player.AddChild(cameraPivot);
-        cameraPivot.AddChild(new Camera3D
+        var camera = new Camera3D
         {
             Name = "Camera",
             Current = true,
             Position = new Vector3(0f, CameraRise, CameraBackDistance),
-        });
+        };
+        cameraPivot.AddChild(camera);
+        camera.AddChild(new Embervale.Combat.CameraShake { Name = "Shake" });
 
         // Melee swing volume in front of the body; opened by the weapon component.
         var hitbox = new Hitbox
@@ -115,6 +117,7 @@ public static class PlayerFactory
             Hitbox = hitbox,
             AimNode = cameraPivot, // ranged weapons (the bow) fire where the player looks
         });
+        player.AddChild(new HitReactionComponent { Name = "HitReaction" });
 
         // Equipment sits after inventory + weapon so it can resolve both; the
         // starting weapon above becomes the baseline restored on unequip.

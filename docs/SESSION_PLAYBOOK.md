@@ -1476,9 +1476,17 @@ no code) — batch them when momentum is good.
     overlap live combat. All knobs are `HitStop` consts. Also centered the inventory panel on-screen.
     Build clean + 259 tests (+5 HitStop) + `--validate` 0; boot clean. Feel/tuning is the maintainer's
     at-keyboard pass.
-- [ ] **29B — Camera shake + directional hit reactions** `[F/P]`
+- [x] **29B — Camera shake + directional hit reactions** `[F/P]` ✅
   - **Done when:** crits/blocks/stagger shake the camera; hits push reactions in
     the hit direction.
+  - **Done:** `CameraShake` (a `Node` under the player's `Camera3D`) runs a trauma model —
+    `DamageDealtEvent` adds crit/block trauma, `EntityStaggeredEvent` adds stagger trauma — and offsets
+    the camera around its rest pose by `ShakeMath.Amplitude(trauma)` (quadratic) × noise each frame,
+    decaying to rest. The camera leaf is otherwise untouched by mouse-look, so the shake doesn't fight
+    the controls. `HitReactionComponent` (on player + goblin) lurches the actor's mesh in the hit
+    direction (`Source`→`Target`, works for melee and arrows) and eases it back — visual-only, never the
+    `CharacterBody3D`. Pure `ShakeMath` knobs are unit-tested. Build clean + 263 tests (+4) +
+    `--validate` 0; boot clean. Feel/tuning is the maintainer's at-keyboard pass.
 - [ ] **29C — Weapon trails, impact VFX/SFX hooks** `[F/P]`
   - **Done when:** swings show trails and impacts spawn placeholder VFX/SFX through
     a poolable effect (CLAUDE.md §8 pooling).
