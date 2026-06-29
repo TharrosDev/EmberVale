@@ -36,6 +36,10 @@ public partial class EnemyAIComponent : EntityComponent
     [Export] public float PatrolRadius { get; set; } = 6f;
     [Export] public float IdleDuration { get; set; } = 2.5f;
     [Export] public float InvestigateDuration { get; set; } = 6f;
+
+    /// <summary>Seconds an enemy keeps hunting after being struck before it forgets (so it stands down
+    /// once it's no longer hostile by reputation). Refreshed while actually in combat.</summary>
+    [Export] public float ProvokeMemory { get; set; } = 12f;
     [Export] public float DespawnDelay { get; set; } = 4f;
 
     [ExportGroup("Level of Detail")]
@@ -56,6 +60,7 @@ public partial class EnemyAIComponent : EntityComponent
     private NavigationAgent3D? _agent;
     private string _factionId = string.Empty;
     private bool _provoked;
+    private double _provokeTimer;
 
     private EnemyState _state = EnemyState.Idle;
     private double _stateTimer;
@@ -132,6 +137,24 @@ public partial class EnemyAIComponent : EntityComponent
         }
 
         _stateTimer += delta;
+
+        // Provoke memory: a struck enemy hunts the player, but forgets after a calm spell so it stands
+        // down once reputation is no longer hostile (it never forgets mid-fight).
+        if (_provoked)
+        {
+            if (_state == EnemyState.Combat)
+            {
+                _provokeTimer = ProvokeMemory;
+            }
+            else
+            {
+                _provokeTimer -= delta;
+                if (_provokeTimer <= 0d)
+                {
+                    _provoked = false;
+                }
+            }
+        }
 
         if (_state != EnemyState.Dead && (_stats == null || !_stats.IsAlive))
         {
@@ -414,6 +437,7 @@ public partial class EnemyAIComponent : EntityComponent
         }
 
         _provoked = true;
+        _provokeTimer = ProvokeMemory;
         if (_state is EnemyState.Idle or EnemyState.Patrol or EnemyState.Investigate)
         {
             _lastKnownPos = attacker.GlobalPosition;

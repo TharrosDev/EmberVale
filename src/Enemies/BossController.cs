@@ -106,8 +106,14 @@ public partial class BossController : EntityComponent
         };
         if (_stats != null && atk > 0f)
         {
-            _stats.GetStat(StatType.AttackSpeed).AddModifier(new StatModifier(atk, ModifierType.PercentMult, $"boss.phase{phase}"));
-            _stats.GetStat(StatType.MoveSpeed).AddModifier(new StatModifier(move, ModifierType.PercentMult, $"boss.phase{phase}"));
+            // Remove-then-add so re-entering a phase (encounter restart / reload) can't stack the modifier.
+            string source = $"boss.phase{phase}";
+            Stat attackSpeed = _stats.GetStat(StatType.AttackSpeed);
+            Stat moveSpeed = _stats.GetStat(StatType.MoveSpeed);
+            attackSpeed.RemoveModifiersFromSource(source);
+            attackSpeed.AddModifier(new StatModifier(atk, ModifierType.PercentMult, source));
+            moveSpeed.RemoveModifiersFromSource(source);
+            moveSpeed.AddModifier(new StatModifier(move, ModifierType.PercentMult, source));
         }
 
         EventBus.Instance?.Publish(new BossPhaseChangedEvent(Entity!, phase, TotalPhases));
