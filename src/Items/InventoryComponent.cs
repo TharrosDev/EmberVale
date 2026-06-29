@@ -41,6 +41,12 @@ public partial class InventoryComponent : EntityComponent, ISaveable
             float total = 0f;
             foreach (ItemStack stack in _stacks)
             {
+                // Crafting materials are weightless — they never count against carry capacity.
+                if (stack.Item.Type == ItemType.Material)
+                {
+                    continue;
+                }
+
                 total += stack.Weight;
             }
 

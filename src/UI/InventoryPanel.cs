@@ -30,12 +30,18 @@ public partial class InventoryPanel : CanvasLayer
     private VBoxContainer _list = null!;
     private bool _dirty = true;
 
+    private const float PanelWidth = 440f;
+
     public override void _Ready()
     {
         _panel = UiTheme.Panel();
         _panel.Visible = false;
-        _panel.Position = new Vector2(900, 16);
-        _panel.CustomMinimumSize = new Vector2(360, 0);
+        // Anchor to the screen's top-right with a margin so it never spills off-screen at any resolution
+        // (the viewport stretches via canvas_items/expand; absolute positions would overflow).
+        _panel.SetAnchorsPreset(Control.LayoutPreset.TopRight);
+        _panel.OffsetTop = 16;
+        _panel.OffsetRight = -16;
+        _panel.OffsetLeft = -(PanelWidth + 16);
         AddChild(_panel);
 
         MarginContainer margin = UiTheme.Padding(12);
@@ -44,7 +50,7 @@ public partial class InventoryPanel : CanvasLayer
         // A bounded scroll area so a full backpack + perk list never runs off-screen.
         var scroll = new ScrollContainer
         {
-            CustomMinimumSize = new Vector2(336, 520),
+            CustomMinimumSize = new Vector2(PanelWidth - 28, 520),
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
         };
         margin.AddChild(scroll);
