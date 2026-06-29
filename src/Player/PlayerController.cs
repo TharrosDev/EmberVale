@@ -158,9 +158,19 @@ public partial class PlayerController : EntityComponent
             _weapon?.TryAttack();
         }
 
+        // Cast (Phase 29.5A): press begins (instant fires now; charged/channeled hold), release ends.
         if (Godot.Input.IsActionJustPressed(GameInput.Cast))
         {
-            _spellcasting?.TryCast();
+            _spellcasting?.BeginCast();
+        }
+        else if (Godot.Input.IsActionPressed(GameInput.Cast))
+        {
+            _spellcasting?.UpdateCast(delta);
+        }
+
+        if (Godot.Input.IsActionJustReleased(GameInput.Cast))
+        {
+            _spellcasting?.EndCast();
         }
 
         if (Godot.Input.IsActionJustPressed(GameInput.CycleSpell))
@@ -273,6 +283,8 @@ public partial class PlayerController : EntityComponent
         {
             _combat.IsBlocking = false;
         }
+
+        _spellcasting?.CancelCast(); // drop any charge/channel so it doesn't fire after a menu/pause
     }
 
     private void ClearFocus()

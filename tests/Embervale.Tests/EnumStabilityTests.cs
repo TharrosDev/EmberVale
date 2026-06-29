@@ -128,6 +128,14 @@ public class EnumStabilityTests
     }
 
     [Fact]
+    public void CastMode_Ordinals()
+    {
+        Assert.Equal(0, (int)CastMode.Instant);
+        Assert.Equal(1, (int)CastMode.Charged);
+        Assert.Equal(2, (int)CastMode.Channeled);
+    }
+
+    [Fact]
     public void ObjectiveType_Ordinals()
     {
         Assert.Equal(0, (int)ObjectiveType.Kill);

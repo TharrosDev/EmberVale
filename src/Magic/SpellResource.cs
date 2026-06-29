@@ -30,6 +30,9 @@ public partial class SpellResource : Resource
 
     [Export] public SpellDelivery Delivery { get; set; } = SpellDelivery.Projectile;
 
+    /// <summary>How the cast plays out over time (Phase 29.5A): Instant, Charged or Channeled.</summary>
+    [Export] public CastMode CastMode { get; set; } = CastMode.Instant;
+
     /// <summary>Minimum corruption tier the caster must have reached to learn this spell
     /// (Phase 23H). <see cref="CorruptionTier.Untainted"/> (the default) leaves a spell
     /// ungated; a higher value marks it a corrupted variant unlocked only by corruption.</summary>
@@ -65,6 +68,19 @@ public partial class SpellResource : Resource
     /// detonate as an area-of-effect on impact instead of hitting a single target.
     /// </summary>
     [Export] public float ImpactRadius { get; set; } = 0f;
+
+    [ExportGroup("Cast timing (Phase 29.5A)")]
+    /// <summary>Seconds of holding to reach full charge (Charged casts).</summary>
+    [Export] public float ChargeTime { get; set; } = 1.2f;
+
+    /// <summary>Damage/healing multiplier at full charge; a min-charge release deals 1x (Charged casts).</summary>
+    [Export] public float MaxChargeMultiplier { get; set; } = 2.5f;
+
+    /// <summary>Seconds between channel ticks (Channeled casts).</summary>
+    [Export] public float ChannelTickInterval { get; set; } = 0.2f;
+
+    /// <summary>Mana drained per second while channeling (Channeled casts).</summary>
+    [Export] public float ChannelManaPerSecond { get; set; } = 14f;
 
     public bool HasStatusEffect => !string.IsNullOrEmpty(StatusEffectId);
 }

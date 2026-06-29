@@ -178,6 +178,8 @@ public static class PlayerFactory
                 GameIds.Spells.FrostNova,
                 GameIds.Spells.LesserHeal,
                 GameIds.Spells.ArcaneShield,
+                GameIds.Spells.FlameLance,
+                GameIds.Spells.StormConduit,
             },
         });
 

@@ -73,6 +73,8 @@ public static class GameIds
         public const string FrostNova = "spell.frost_nova";
         public const string LesserHeal = "spell.lesser_heal";
         public const string ArcaneShield = "spell.arcane_shield";
+        public const string FlameLance = "spell.flame_lance";
+        public const string StormConduit = "spell.storm_conduit";
     }
 
     public static class Recipes

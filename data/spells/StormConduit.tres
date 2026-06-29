@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SpellResource" format=3 uid="uid://bdu51fvtlgg70"]
+
+[ext_resource type="Script" path="res://src/Magic/SpellResource.cs" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+Id = "spell.storm_conduit"
+DisplayName = "Storm Conduit"
+Description = "Hold to pour a stream of arcing bolts into your foe, draining mana for as long as it lasts."
+School = 3
+Delivery = 0
+CastMode = 2
+ManaCost = 0.0
+Cooldown = 0.6
+BaseDamage = 6.0
+Healing = 0.0
+StatusEffectId = ""
+ChannelTickInterval = 0.2
+ChannelManaPerSecond = 14.0
+Range = 18.0
+ProjectileSpeed = 26.0
+ImpactRadius = 0.0

@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SpellResource" format=3 uid="uid://bdu501nff7qii"]
+
+[ext_resource type="Script" path="res://src/Magic/SpellResource.cs" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+Id = "spell.flame_lance"
+DisplayName = "Flame Lance"
+Description = "Hold to gather fire into a lance, then loose it. The longer the draw, the deeper it burns."
+School = 1
+Delivery = 0
+CastMode = 1
+ManaCost = 18.0
+Cooldown = 1.5
+BaseDamage = 14.0
+Healing = 0.0
+StatusEffectId = "status.burning"
+ChargeTime = 1.2
+MaxChargeMultiplier = 2.5
+Range = 32.0
+ProjectileSpeed = 22.0
+ImpactRadius = 0.0

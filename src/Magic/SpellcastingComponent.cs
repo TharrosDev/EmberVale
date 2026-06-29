@@ -45,6 +45,17 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     private CorruptionComponent? _corruption;
     private int _selected;
 
+    // Active charged/channeled cast (Phase 29.5A); null for instant casts and when idle.
+    private SpellResource? _activeCast;
+    private float _chargeElapsed;
+    private double _channelTickTimer;
+
+    /// <summary>True while a charged cast is being held (drives charge-meter UI later).</summary>
+    public bool IsCharging => _activeCast is { CastMode: CastMode.Charged };
+
+    /// <summary>True while a channeled cast is sustaining.</summary>
+    public bool IsChanneling => _activeCast is { CastMode: CastMode.Channeled };
+
     // Pooled projectiles: rapid casting reuses bolts instead of churning the scene tree.
     private NodePool<SpellProjectile>? _projectilePool;
 
@@ -161,7 +172,8 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         return CooldownOf(spell) <= 0f && _stats.GetCurrent(StatType.Mana) >= spell.ManaCost;
     }
 
-    /// <summary>Casts the prepared spell. Returns false if none is ready/affordable.</summary>
+    /// <summary>Casts the prepared spell instantly. Returns false if none is ready/affordable. Charged and
+    /// channeled spells route through <see cref="BeginCast"/> instead.</summary>
     public bool TryCast()
     {
         SpellResource? spell = Selected;
@@ -172,7 +184,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
 
         _stats!.ModifyCurrent(StatType.Mana, -spell!.ManaCost);
         _cooldowns[spell.Id] = spell.Cooldown;
-        Deliver(spell);
+        Deliver(spell, 1f);
 
         if (Entity != null)
         {
@@ -182,30 +194,128 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         return true;
     }
 
-    private void Deliver(SpellResource spell)
+    /// <summary>Begins a cast on key-down (Phase 29.5A): Instant fires now; Charged starts charging;
+    /// Channeled starts sustaining. No-op if a cast is already active or the spell isn't ready.</summary>
+    public void BeginCast()
+    {
+        if (_activeCast != null)
+        {
+            return;
+        }
+
+        SpellResource? spell = Selected;
+        switch (spell?.CastMode)
+        {
+            case CastMode.Charged when CanCast(spell):
+                _activeCast = spell;
+                _chargeElapsed = 0f;
+                break;
+            case CastMode.Channeled when CanCast(spell):
+                _activeCast = spell;
+                _channelTickTimer = 0d; // fire the first tick immediately
+                break;
+            default:
+                TryCast();
+                break;
+        }
+    }
+
+    /// <summary>Advances an active charged/channeled cast each frame while the key is held.</summary>
+    public void UpdateCast(double delta)
+    {
+        switch (_activeCast?.CastMode)
+        {
+            case CastMode.Charged:
+                _chargeElapsed += (float)delta;
+                break;
+            case CastMode.Channeled:
+                TickChannel(delta);
+                break;
+        }
+    }
+
+    /// <summary>Ends a cast on key-up (Phase 29.5A): a charged cast fires scaled by how long it was held;
+    /// a channeled cast simply stops (and goes on cooldown). No-op for instant casts.</summary>
+    public void EndCast()
+    {
+        SpellResource? spell = _activeCast;
+        if (spell == null)
+        {
+            return;
+        }
+
+        _activeCast = null;
+
+        if (spell.CastMode == CastMode.Charged && CanCast(spell))
+        {
+            float power = SpellCharge.PowerMultiplier(_chargeElapsed, spell.ChargeTime, spell.MaxChargeMultiplier);
+            _stats!.ModifyCurrent(StatType.Mana, -spell.ManaCost);
+            _cooldowns[spell.Id] = spell.Cooldown;
+            Deliver(spell, power);
+            if (Entity != null)
+            {
+                EventBus.Instance?.Publish(new SpellCastEvent(Entity, spell.Id));
+            }
+        }
+        else if (spell.CastMode == CastMode.Channeled)
+        {
+            _cooldowns[spell.Id] = spell.Cooldown;
+        }
+    }
+
+    /// <summary>Abandons an in-progress charged/channeled cast without firing (e.g. a menu opens or the
+    /// game pauses) — no damage, no mana spent on release, no cooldown.</summary>
+    public void CancelCast() => _activeCast = null;
+
+    private void TickChannel(double delta)
+    {
+        SpellResource spell = _activeCast!;
+        _channelTickTimer -= delta;
+        if (_channelTickTimer > 0d)
+        {
+            return;
+        }
+
+        float tickCost = spell.ChannelManaPerSecond * spell.ChannelTickInterval;
+        if (_stats == null || !_stats.IsAlive || _stats.GetCurrent(StatType.Mana) < tickCost)
+        {
+            EndCast(); // out of mana / dead — the channel is interrupted
+            return;
+        }
+
+        _stats.ModifyCurrent(StatType.Mana, -tickCost);
+        _channelTickTimer = spell.ChannelTickInterval;
+        Deliver(spell, 1f);
+        if (Entity != null)
+        {
+            EventBus.Instance?.Publish(new SpellCastEvent(Entity, spell.Id));
+        }
+    }
+
+    private void Deliver(SpellResource spell, float power)
     {
         int team = _combat?.Team ?? 0;
         switch (spell.Delivery)
         {
             case SpellDelivery.Self:
-                CastSelf(spell);
+                CastSelf(spell, power);
                 break;
             case SpellDelivery.Area:
-                CastArea(spell, team);
+                CastArea(spell, team, power);
                 break;
             default:
-                CastProjectile(spell, team);
+                CastProjectile(spell, team, power);
                 break;
         }
     }
 
-    private DamagePacket BuildPacket(SpellResource spell)
+    private DamagePacket BuildPacket(SpellResource spell, float power)
     {
         (float amount, bool isCrit) = CombatMath.RollSpell(spell.BaseDamage, _stats);
-        return new DamagePacket(amount, spell.School, Entity, isCrit, SpellPoiseDamage);
+        return new DamagePacket(amount * power, spell.School, Entity, isCrit, SpellPoiseDamage);
     }
 
-    private void CastProjectile(SpellResource spell, int team)
+    private void CastProjectile(SpellResource spell, int team, float power)
     {
         (Vector3 origin, Vector3 direction) = Aim();
         SpellProjectile projectile = _projectilePool?.Get() ?? new SpellProjectile { Released = ReturnProjectile };
@@ -213,10 +323,10 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         // Add to the tree (so its visual children build on first use) then position + arm it.
         GetTree().CurrentScene.AddChild(projectile);
         projectile.GlobalPosition = origin;
-        projectile.Launch(spell, BuildPacket(spell), Entity, team, direction);
+        projectile.Launch(spell, BuildPacket(spell, power), Entity, team, direction);
     }
 
-    private void CastArea(SpellResource spell, int team)
+    private void CastArea(SpellResource spell, int team, float power)
     {
         if (Entity?.Body is not Node3D body)
         {
@@ -225,14 +335,14 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
 
         Vector3 center = body.GlobalPosition + (Vector3.Up * 1f);
         float radius = spell.ImpactRadius > 0f ? spell.ImpactRadius : DefaultNovaRadius;
-        SpellResolver.Detonate(body, spell, BuildPacket(spell), Entity, team, center, radius);
+        SpellResolver.Detonate(body, spell, BuildPacket(spell, power), Entity, team, center, radius);
     }
 
-    private void CastSelf(SpellResource spell)
+    private void CastSelf(SpellResource spell, float power)
     {
         if (spell.Healing > 0f)
         {
-            _stats?.Heal(spell.Healing);
+            _stats?.Heal(spell.Healing * power);
         }
 
         if (spell.HasStatusEffect)
