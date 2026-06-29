@@ -26,6 +26,10 @@ public partial class MeleeWeaponComponent : EntityComponent
     [Export]
     public WeaponResource? Weapon { get; set; }
 
+    /// <summary>How long an attack press stays buffered while committed (Phase 29G), in seconds.</summary>
+    [Export]
+    public float BufferWindow { get; set; } = 0.18f;
+
     /// <summary>The swing volume, injected by the actor's factory/scene.</summary>
     public Hitbox? Hitbox { get; set; }
 
@@ -35,6 +39,7 @@ public partial class MeleeWeaponComponent : EntityComponent
     private CombatComponent? _combat;
     private Phase _phase = Phase.Idle;
     private double _timer;
+    private double _buffer;
 
     protected override void OnInitialize()
     {
@@ -42,15 +47,32 @@ public partial class MeleeWeaponComponent : EntityComponent
         _combat = Entity.GetComponent<CombatComponent>();
     }
 
-    /// <summary>Requests a swing. Returns true if one was started.</summary>
+    /// <summary>True during the committed window (wind-up + active) — no new swing or dodge can start
+    /// (Phase 29G); a press here is buffered instead of dropped.</summary>
+    public bool IsCommitted => _phase is Phase.Windup or Phase.Active;
+
+    /// <summary>Requests a swing. Starts one if able; if pressed mid-commit it's <b>buffered</b> and
+    /// auto-released the instant the swing reaches its cancel window (Phase 29G). Returns true if a swing
+    /// started now.</summary>
     public bool TryAttack()
     {
-        if (Weapon == null || _phase is Phase.Windup or Phase.Active)
+        if (Weapon == null)
         {
             return false;
         }
 
-        if (_combat is { IsStaggered: true })
+        if (IsCommitted)
+        {
+            _buffer = BufferWindow; // queue it — released when the commit ends, so an early press still lands
+            return false;
+        }
+
+        return StartSwing();
+    }
+
+    private bool StartSwing()
+    {
+        if (Weapon == null || _combat is { IsStaggered: true })
         {
             return false;
         }
@@ -73,6 +95,19 @@ public partial class MeleeWeaponComponent : EntityComponent
 
     public override void _PhysicsProcess(double delta)
     {
+        if (_buffer > 0d)
+        {
+            _buffer -= delta;
+        }
+
+        // Release a buffered swing as soon as we leave the commit window (cancelling recovery into the
+        // next combo hit, or starting fresh from idle).
+        if (AttackBuffer.ShouldRelease(_buffer, IsCommitted) && StartSwing())
+        {
+            _buffer = 0d;
+            return;
+        }
+
         if (_phase == Phase.Idle)
         {
             return;

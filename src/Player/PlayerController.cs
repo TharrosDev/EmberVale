@@ -119,7 +119,8 @@ public partial class PlayerController : EntityComponent
         bool jump = Godot.Input.IsActionJustPressed(GameInput.Jump);
         _locomotion?.Move(delta, wishDir, sprint, jump);
 
-        if (Godot.Input.IsActionJustPressed(GameInput.Dodge))
+        // Dodge can't interrupt a committed swing (Phase 29G commit window); it cancels recovery/idle.
+        if (Godot.Input.IsActionJustPressed(GameInput.Dodge) && !(_weapon?.IsCommitted ?? false))
         {
             _dodge?.TryDodge(wishDir);
         }
