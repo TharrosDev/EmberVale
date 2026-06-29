@@ -25,7 +25,11 @@ public partial class QuestLogPanel : CanvasLayer
     {
         _panel = UiTheme.Panel();
         _panel.Visible = false;
-        _panel.Position = new Vector2(520, 16);
+        // Anchor to the top-left with a margin so it stays on-screen at any resolution (was an absolute
+        // position that drifted off-screen when the viewport stretched).
+        _panel.SetAnchorsPreset(Control.LayoutPreset.TopLeft);
+        _panel.OffsetLeft = 16;
+        _panel.OffsetTop = 16;
         _panel.CustomMinimumSize = new Vector2(360, 0);
         AddChild(_panel);
 

@@ -185,11 +185,12 @@ public partial class CraftingComponent : EntityComponent, ISaveable
         return null;
     }
 
-    /// <summary>Whether <paramref name="instance"/> can be salvaged — any held or worn item except
-    /// currency. A recipe is no longer required: recipe-less items salvage into generic scrap.</summary>
+    /// <summary>Whether <paramref name="instance"/> can be salvaged — only gear/equipment (weapons,
+    /// armor, accessories). Materials, consumables and the like aren't salvageable. A recipe isn't
+    /// required: recipe-less gear salvages into generic scrap.</summary>
     public bool CanDeconstruct(ItemInstance? instance, CraftingStationType station)
     {
-        if (instance == null || IsCurrency(instance))
+        if (instance is not { IsEquippable: true })
         {
             return false;
         }
@@ -198,14 +199,12 @@ public partial class CraftingComponent : EntityComponent, ISaveable
             || (_equipment != null && _equipment.IsInstanceEquipped(instance));
     }
 
-    private static bool IsCurrency(ItemInstance instance) => instance.TemplateId == GameIds.Currency.Gold;
-
     /// <summary>Deconstructs one of <paramref name="instance"/>: consumes it and returns its recipe's
     /// materials (a floored fraction) — or, for a recipe-less item, generic scrap — plus XP. Returns
     /// false only for currency or an item the player doesn't actually hold.</summary>
     public bool Deconstruct(ItemInstance? instance, CraftingStationType station)
     {
-        if (instance == null || _inventory == null || IsCurrency(instance))
+        if (instance is not { IsEquippable: true } || _inventory == null)
         {
             return false;
         }
