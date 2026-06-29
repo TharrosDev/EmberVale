@@ -49,6 +49,7 @@ public partial class PlayerController : EntityComponent
     private MeleeWeaponComponent? _weapon;
     private CombatComponent? _combat;
     private DodgeComponent? _dodge;
+    private LockOnComponent? _lockOn;
     private SpellcastingComponent? _spellcasting;
     private SettingsService? _settings;
     private float _pitch;
@@ -63,6 +64,9 @@ public partial class PlayerController : EntityComponent
     /// <summary>The prompt to show for the focused interactable, or null.</summary>
     public string? FocusPrompt => FocusedInteractable?.Prompt;
 
+    /// <summary>The locked-on target (Phase 29H), or null. Read by the HUD for the reticle/nameplate.</summary>
+    public IEntity? LockedTarget => _lockOn?.Target;
+
     protected override void OnInitialize()
     {
         IEntity owner = Entity!;
@@ -71,6 +75,7 @@ public partial class PlayerController : EntityComponent
         _weapon = owner.GetComponent<MeleeWeaponComponent>();
         _combat = owner.GetComponent<CombatComponent>();
         _dodge = owner.GetComponent<DodgeComponent>();
+        _lockOn = owner.GetComponent<LockOnComponent>();
         _spellcasting = owner.GetComponent<SpellcastingComponent>();
         _settings = ServiceLocator.Instance is { } locator && locator.TryGet(out SettingsService settings)
             ? settings
@@ -119,10 +124,29 @@ public partial class PlayerController : EntityComponent
         bool jump = Godot.Input.IsActionJustPressed(GameInput.Jump);
         _locomotion?.Move(delta, wishDir, sprint, jump);
 
-        if (Godot.Input.IsActionJustPressed(GameInput.Dodge))
+        // Dodge can't interrupt a committed swing (Phase 29G commit window); it cancels recovery/idle.
+        if (Godot.Input.IsActionJustPressed(GameInput.Dodge) && !(_weapon?.IsCommitted ?? false))
         {
             _dodge?.TryDodge(wishDir);
         }
+
+        // Lock-on (Phase 29H): toggle/cycle the target, drop it if dead/out of range, and face it.
+        _lockOn?.Tick();
+        if (Godot.Input.IsActionJustPressed(GameInput.LockOn))
+        {
+            _lockOn?.Toggle(FocusedEntity);
+        }
+
+        if (Godot.Input.IsActionJustPressed(GameInput.LockCycleNext))
+        {
+            _lockOn?.Cycle(1);
+        }
+        else if (Godot.Input.IsActionJustPressed(GameInput.LockCyclePrev))
+        {
+            _lockOn?.Cycle(-1);
+        }
+
+        FaceLockTarget();
 
         if (_combat != null)
         {
@@ -160,6 +184,26 @@ public partial class PlayerController : EntityComponent
                 AutoPickupNearby();
             }
         }
+    }
+
+    /// <summary>While locked on, yaws the body to face the target (mouse-look only pitches). The level
+    /// look (target sampled at the body's height) keeps it a pure yaw, so attacks/strafe orient at the foe.</summary>
+    private void FaceLockTarget()
+    {
+        if (_lockOn?.Target is not { } target || target.Body is not Node3D targetBody ||
+            Entity?.Body is not Node3D body)
+        {
+            return;
+        }
+
+        Vector3 to = targetBody.GlobalPosition - body.GlobalPosition;
+        to.Y = 0f;
+        if (to.LengthSquared() < 0.01f)
+        {
+            return;
+        }
+
+        _yaw.LookAt(new Vector3(targetBody.GlobalPosition.X, body.GlobalPosition.Y, targetBody.GlobalPosition.Z), Vector3.Up);
     }
 
     /// <summary>Collects every <see cref="ItemPickupComponent"/> within <see cref="AutoPickupRadius"/>
@@ -245,7 +289,12 @@ public partial class PlayerController : EntityComponent
             float multiplier = _settings?.Current.MouseSensitivity ?? 1f;
             bool invertY = _settings?.Current.InvertY ?? false;
 
-            _yaw.RotateY(-SettingsMath.LookStep(motion.Relative.X, MouseSensitivity, multiplier));
+            // While locked on, the body auto-faces the target (FaceLockTarget) — mouse only pitches.
+            if (_lockOn?.Target == null)
+            {
+                _yaw.RotateY(-SettingsMath.LookStep(motion.Relative.X, MouseSensitivity, multiplier));
+            }
+
             _pitch = SettingsMath.ApplyPitch(
                 _pitch, SettingsMath.LookStep(motion.Relative.Y, MouseSensitivity, multiplier), invertY, PitchLimit);
             if (CameraPivot != null)

@@ -33,6 +33,12 @@ public partial class StatsComponent : EntityComponent, ISaveable
     [Export] public float StaminaRegen { get; set; } = 15f;
     [Export] public float ManaRegen { get; set; } = 4f;
 
+    /// <summary>Seconds stamina regen is paused after any spend (Phase 29I anti-mash lever, DESIGN §1.4):
+    /// mashing keeps resetting this, so a flurry drains to empty while spaced reads sustain.</summary>
+    [Export] public float StaminaRegenDelay { get; set; } = 0.9f;
+
+    private double _staminaIdle;
+
     public string SaveId => SaveKey("stats");
 
     public bool IsAlive => GetCurrent(StatType.Health) > 0f;
@@ -52,7 +58,14 @@ public partial class StatsComponent : EntityComponent, ISaveable
     public override void _Process(double delta)
     {
         Regenerate(StatType.Health, HealthRegen, delta);
-        Regenerate(StatType.Stamina, StaminaRegen, delta);
+
+        // Stamina regen is paused for StaminaRegenDelay after each spend (Phase 29I anti-mash).
+        _staminaIdle += delta;
+        if (StaminaPacing.CanRegen(_staminaIdle, StaminaRegenDelay))
+        {
+            Regenerate(StatType.Stamina, StaminaRegen, delta);
+        }
+
         Regenerate(StatType.Mana, ManaRegen, delta);
     }
 
@@ -162,6 +175,12 @@ public partial class StatsComponent : EntityComponent, ISaveable
 
     public void ModifyCurrent(StatType type, float delta)
     {
+        // Any stamina spend resets the regen-delay clock (Phase 29I): the load that pauses regen.
+        if (type == StatType.Stamina && delta < 0f)
+        {
+            _staminaIdle = 0d;
+        }
+
         SetCurrent(type, GetCurrent(type) + delta);
     }
 

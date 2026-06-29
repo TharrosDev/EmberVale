@@ -1521,15 +1521,25 @@ no code) — batch them when momentum is good.
     (full negate, attacker staggered = the riposte opening, `EntityParriedEvent` → 29D flash). A
     mistimed/held block chips damage **and** chip poise (`BlockPoiseFactor`) so a held guard can break into a
     stagger. New `Stagger()` helper; pure `Parry` helper unit-tested.
-- [ ] **29G — Animation-cancel windows + input buffering** `[F]`
+- [x] **29G — Animation-cancel windows + input buffering** `[F]` ✅
   - **Done when:** attacks have commit + cancel windows and buffered inputs feel
     responsive, not mashy.
-- [ ] **29H — Lock-on / soft target from `FocusedEntity`** `[F]`
+  - **Done:** `MeleeWeaponComponent` buffers an attack pressed mid-commit (Windup/Active) and
+    auto-releases it at the cancel window (Recovery/Idle) — cancelling recovery into the next combo hit, so
+    an early press lands. Exposes `IsCommitted`; dodge is gated on it. Pure `AttackBuffer.ShouldRelease`.
+- [x] **29H — Lock-on / soft target from `FocusedEntity`** `[F]` ✅
   - **Done when:** a real target-lock with switching, built out from the Phase 18
     `FocusedEntity`.
-- [ ] **29I — Stamina/poise pacing tune (anti-mash)** `[F/P]`
+  - **Done:** `LockOnComponent` locks the aimed-at/nearest hostile on middle-mouse, cycles nearby hostiles
+    on the wheel, drops dead/out-of-range targets (sphere sweep, input-only). `PlayerController` auto-yaws
+    the body to the target (mouse pitches only) → strafe; `GameHud` reticles it + nameplate priority. Pure
+    `LockOn` cycle/range maths.
+- [x] **29I — Stamina/poise pacing tune (anti-mash)** `[F/P]` ✅
   - **Done when:** stamina/poise costs discourage mashing per the `docs/DESIGN.md`
     combat pillar; documented values.
+  - **Done:** `StatsComponent.StaminaRegenDelay` (0.9s) pauses stamina regen after every spend, so a mash
+    starves the bar (empties in ~10 swings, locks out attack/dodge/block) while spaced reads sustain. Pure
+    `StaminaPacing.CanRegen`; tuned shape documented in DESIGN §1.6.
 
 ---
 

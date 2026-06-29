@@ -150,6 +150,24 @@ One resource model carries all four pillars, so it is stated once, here, as the 
   `CombatComponent` — a chip-damage flurry can't stagger a heavy foe, but a committed
   heavy hit can. That asymmetry *is* the weight fantasy.
 
+**Phase 29I tuned values (the *shape*; Phase 56 sets the final numbers).** The anti-mash
+lever is a **stamina regen delay**: every spend pauses stamina regen, so mashing keeps
+the bar starved while spaced reads let it refill (`StatsComponent.StaminaRegenDelay`,
+applied via the pure `StaminaPacing`). Current player shape:
+
+| Knob | Value | Where |
+| ---- | ----- | ----- |
+| Stamina pool | 120 | `PlayerAttributes.tres` |
+| Stamina regen | 15 / s | `StatsComponent.StaminaRegen` |
+| **Regen delay after a spend** | **0.9 s** | `StatsComponent.StaminaRegenDelay` |
+| Light attack cost | 12 | `IronSword.tres` `StaminaCost` |
+| Dodge-roll cost | 22 | `DodgeComponent.StaminaCost` |
+| Block cost (per hit) | 10 | `CombatComponent.BlockStaminaCost` |
+
+The result: a sustained mash empties the 120 bar in ~10 swings (~5.5 s) because regen
+never gets its 0.9 s of quiet, then locks out attack/dodge/block until the player backs
+off — while "swing, read, recover" spends inside the regen and sustains indefinitely.
+
 ### 1.7 What exists vs. what Phase 29 owns
 
 The combat **framework** (Phase 3) is built and live in the sandbox; it has the *math and

@@ -23,6 +23,9 @@ public static class GameInput
     public const string Block = "block";
     public const string Cast = "cast";
     public const string CycleSpell = "cycle_spell";
+    public const string LockOn = "lock_on";
+    public const string LockCycleNext = "lock_cycle_next";
+    public const string LockCyclePrev = "lock_cycle_prev";
     public const string Inventory = "inventory";
     public const string Journal = "journal";
     public const string Map = "map";
@@ -49,6 +52,9 @@ public static class GameInput
         Bind(Block, new InputEventMouseButton { ButtonIndex = MouseButton.Right });
         Bind(Cast, new InputEventKey { PhysicalKeycode = Key.Q });
         Bind(CycleSpell, new InputEventKey { PhysicalKeycode = Key.F });
+        Bind(LockOn, new InputEventMouseButton { ButtonIndex = MouseButton.Middle });
+        Bind(LockCycleNext, new InputEventMouseButton { ButtonIndex = MouseButton.WheelDown });
+        Bind(LockCyclePrev, new InputEventMouseButton { ButtonIndex = MouseButton.WheelUp });
 
         Key[] digits = { Key.Key1, Key.Key2, Key.Key3, Key.Key4, Key.Key5 };
         for (int i = 0; i < Hotbar.Length; i++)

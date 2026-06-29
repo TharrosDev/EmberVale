@@ -53,6 +53,8 @@ public partial class GameHud : CanvasLayer
     private PanelContainer _promptPanel = null!;
     private Label _promptText = null!;
 
+    private Label _lockReticle = null!;
+
     private CompassStrip _compass = null!;
 
     // Corruption dread: a dark blood-red edge vignette that fades in at high tiers (23E).
@@ -97,6 +99,7 @@ public partial class GameHud : CanvasLayer
         BuildBanner();
         BuildNameplate();
         BuildPrompt();
+        BuildLockReticle();
         BuildBossBar();
 
         EventBus.Instance?.Subscribe<CorruptionTierChangedEvent>(OnCorruptionTierChanged);
@@ -207,6 +210,23 @@ public partial class GameHud : CanvasLayer
         _nameBar = UiTheme.Bar(UiTheme.Health, 200f);
         col.AddChild(_nameBar);
         WrapPadded(_namePanel, col);
+    }
+
+    /// <summary>A diamond marker (Phase 29H) tracked onto the locked-on target's screen position.</summary>
+    private void BuildLockReticle()
+    {
+        _lockReticle = new Label
+        {
+            Text = "◆",
+            Visible = false,
+            Size = new Vector2(28, 28),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+        };
+        _lockReticle.AddThemeFontSizeOverride("font_size", 22);
+        _lockReticle.AddThemeColorOverride("font_color", UiTheme.Accent);
+        AddChild(_lockReticle);
     }
 
     private void BuildPrompt()
@@ -394,7 +414,12 @@ public partial class GameHud : CanvasLayer
     private void UpdateFocus()
     {
         PlayerController? controller = _player?.GetComponent<PlayerController>();
-        IEntity? focus = controller?.FocusedEntity;
+
+        // The locked-on target (Phase 29H) takes nameplate priority over the aimed-at focus, and is
+        // reticled at its projected screen position.
+        IEntity? locked = controller?.LockedTarget;
+        UpdateLockReticle(locked);
+        IEntity? focus = (locked is Node lockNode && IsInstanceValid(lockNode)) ? locked : controller?.FocusedEntity;
 
         // Nameplate for an aimed-at damageable that isn't the player. Guard instance validity
         // first: a focused target can be freed (despawn, save/load rebuild) while its reference
@@ -422,6 +447,25 @@ public partial class GameHud : CanvasLayer
         {
             _promptPanel.Visible = false;
         }
+    }
+
+    /// <summary>Tracks the lock-on reticle onto the target's body, hiding it when there's no lock, the
+    /// target is gone, or it's behind the camera.</summary>
+    private void UpdateLockReticle(IEntity? locked)
+    {
+        if (locked is Node node && IsInstanceValid(node) && locked.Body is Node3D body &&
+            GetViewport().GetCamera3D() is { } camera)
+        {
+            Vector3 head = body.GlobalPosition + Vector3.Up;
+            if (!camera.IsPositionBehind(head))
+            {
+                _lockReticle.Position = camera.UnprojectPosition(head) - (_lockReticle.Size / 2f);
+                _lockReticle.Visible = true;
+                return;
+            }
+        }
+
+        _lockReticle.Visible = false;
     }
 
     // --- Helpers ------------------------------------------------------------
