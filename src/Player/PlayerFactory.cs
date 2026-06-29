@@ -23,9 +23,9 @@ namespace Embervale.Player;
 /// </summary>
 public static class PlayerFactory
 {
-    private const string PlayerAttributesPath = "res://data/attributes/PlayerAttributes.tres";
-    private const string StartingWeaponPath = "res://data/weapons/IronSword.tres";
-    private const string ProgressionPath = "res://data/progression/PlayerProgression.tres";
+    internal const string PlayerAttributesPath = "res://data/attributes/PlayerAttributes.tres";
+    internal const string StartingWeaponPath = "res://data/weapons/IronSword.tres";
+    internal const string ProgressionPath = "res://data/progression/PlayerProgression.tres";
     private const int PlayerTeam = 0;
     private const float CapsuleRadius = 0.4f;
     private const float CapsuleHeight = 1.8f;

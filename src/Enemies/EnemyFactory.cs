@@ -18,9 +18,9 @@ namespace Embervale.Enemies;
 /// </summary>
 public static class EnemyFactory
 {
-    private const string AttributesPath = "res://data/attributes/GoblinAttributes.tres";
-    private const string WeaponPath = "res://data/weapons/GoblinClaw.tres";
-    private const string LootTablePath = "res://data/loot/GoblinLoot.tres";
+    internal const string AttributesPath = "res://data/attributes/GoblinAttributes.tres";
+    internal const string WeaponPath = "res://data/weapons/GoblinClaw.tres";
+    internal const string LootTablePath = "res://data/loot/GoblinLoot.tres";
     private const float CapsuleRadius = 0.4f;
     private const float CapsuleHeight = 1.7f;
     private const int HostileTeam = 1;

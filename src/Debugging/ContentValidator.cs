@@ -10,6 +10,7 @@ using Embervale.Localization;
 using Embervale.Loot;
 using Embervale.Magic;
 using Embervale.Npc;
+using Embervale.Player;
 using Embervale.Progression;
 using Embervale.Quests;
 using Embervale.Races;
@@ -92,6 +93,32 @@ public static class ContentValidator
         ValidateRegions(issues);
         ValidateRaces(issues);
         ValidateLocale(issues);
+        ValidateResourcePaths(issues);
+    }
+
+    /// <summary>Stat blocks and weapons have no database (the factories load them by literal path), so a
+    /// missing/typo'd path silently degrades to defaults at runtime. Assert the critical ones resolve.</summary>
+    private static void ValidateResourcePaths(List<string> issues)
+    {
+        (string Label, string Path)[] critical =
+        {
+            ("player attributes", PlayerFactory.PlayerAttributesPath),
+            ("player weapon", PlayerFactory.StartingWeaponPath),
+            ("player progression", PlayerFactory.ProgressionPath),
+            ("goblin attributes", EnemyFactory.AttributesPath),
+            ("goblin weapon", EnemyFactory.WeaponPath),
+            ("goblin loot", EnemyFactory.LootTablePath),
+            ("iron king attributes", BossFactory.AttributesPath),
+            ("iron king weapon", BossFactory.WeaponPath),
+        };
+
+        foreach ((string label, string path) in critical)
+        {
+            if (!ResourceLoader.Exists(path))
+            {
+                issues.Add($"{label} resource missing: {path}");
+            }
+        }
     }
 
     private static void CollectGraphIssues(List<string> issues)

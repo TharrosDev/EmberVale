@@ -18,8 +18,8 @@ namespace Embervale.Enemies;
 /// </summary>
 public static class BossFactory
 {
-    private const string AttributesPath = "res://data/attributes/IronKingAttributes.tres";
-    private const string WeaponPath = "res://data/weapons/IronKingMaul.tres";
+    internal const string AttributesPath = "res://data/attributes/IronKingAttributes.tres";
+    internal const string WeaponPath = "res://data/weapons/IronKingMaul.tres";
     private const float CapsuleRadius = 0.7f;
     private const float CapsuleHeight = 2.6f;
     private const int HostileTeam = 1;
