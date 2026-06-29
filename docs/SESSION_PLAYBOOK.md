@@ -1406,12 +1406,23 @@ no code) — batch them when momentum is good.
     Build clean + 251 tests + `--validate` 0; boots clean (`errors: []`). Seeing the phase flares +
     speed-up mid-fight is the maintainer's at-keyboard check.
 
-- [ ] **28C — Boss healthbar + intro/defeat sequencing** `[F]`
+- [x] **28C — Boss healthbar + intro/defeat sequencing** `[F]` ✅
   - **Goal:** the boss UI/flow beats.
   - **Tasks:** add a boss healthbar to `GameHud` (through `UiTheme`), a short intro
     lock and a defeat sequence (slow-mo/fade hook for Phase 43 cinematics later).
     All strings via `Loc`.
   - **Done when:** the bar tracks the boss; intro and defeat beats play cleanly.
+  - **Done:** `BossSummonComponent` now publishes a new `BossEncounterStartedEvent(boss, "boss.name")`.
+    Two consumers, cleanly split: **(UI)** `GameHud.BuildBossBar()` — a top-centre panel (name + wide
+    `UiTheme.Bar` + "Phase n/3" + a transient message line) that shows on start, polls
+    `stats.GetNormalized(Health)` each frame, updates the phase label off `BossPhaseChangedEvent` (28B),
+    and on the boss's `EntityDiedEvent` hides the bar + plays a defeat message + a manual `ColorRect`
+    fade pulse (wall-clock timed, so `TimeScale` can't slow it). **(Flow)** `BossEncounterDirector`
+    (`ProcessMode.Always`, created in `GameBootstrap`) — intro lock via `UiState.Open/Close` (~2.5 s)
+    and a slow-mo defeat (`Engine.TimeScale = 0.35` for ~1 s), both timed off `Time.GetTicksMsec` and
+    safety-restored on teardown. 4 `Loc` strings added (catalogue → 213). Build clean + 251 tests +
+    `--validate` 0; full play boot clean (`errors: []`, arena streamed). The bar/intro/defeat *feel* is
+    the maintainer's at-keyboard check (MCP can't drive `E`/combat).
 
 - [ ] **28D — Defeat → reward → corruption-gain loop** `[F/C]`
   - **Goal:** wire the boss to corruption + loot.

@@ -1,4 +1,5 @@
 using Embervale.Core.Diagnostics;
+using Embervale.Core.Events;
 using Embervale.Core.Services;
 using Embervale.Entities;
 using Embervale.Interaction;
@@ -46,6 +47,7 @@ public partial class BossSummonComponent : InteractableComponent
         _boss = boss;
         ServiceLocator.Instance?.Register(boss);
         boss.TreeExited += OnBossGone;
+        EventBus.Instance?.Publish(new BossEncounterStartedEvent(boss, "boss.name"));
         Log.Info("The Iron King rises to meet your challenge.");
     }
 

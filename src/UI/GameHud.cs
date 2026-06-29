@@ -1,6 +1,7 @@
 using System.Text;
 using Embervale.Core.Events;
 using Embervale.Corruption;
+using Embervale.Enemies;
 using Embervale.Entities;
 using Embervale.Localization;
 using Embervale.Magic;
@@ -60,6 +61,19 @@ public partial class GameHud : CanvasLayer
     private float _targetVignetteAlpha;
     private const float VignetteFadeSpeed = 0.5f; // alpha units per second
 
+    // Boss fight UI (Phase 28C): a top-centre healthbar + a transient title/defeat message, plus a
+    // screen fade for the defeat beat. Driven by the boss encounter events; HP polled each frame.
+    private PanelContainer _bossPanel = null!;
+    private Label _bossName = null!;
+    private ProgressBar _bossBar = null!;
+    private Label _bossPhase = null!;
+    private Label _bossMsg = null!;
+    private ColorRect _bossFade = null!;
+    private IEntity? _boss;
+    private ulong _bossMsgUntil;
+    private ulong _bossFadeUntil;
+    private const ulong BossFadeMs = 1400;
+
     public void SetPlayer(IEntity? player)
     {
         _player = player;
@@ -83,13 +97,20 @@ public partial class GameHud : CanvasLayer
         BuildBanner();
         BuildNameplate();
         BuildPrompt();
+        BuildBossBar();
 
         EventBus.Instance?.Subscribe<CorruptionTierChangedEvent>(OnCorruptionTierChanged);
+        EventBus.Instance?.Subscribe<BossEncounterStartedEvent>(OnBossStarted);
+        EventBus.Instance?.Subscribe<BossPhaseChangedEvent>(OnBossPhase);
+        EventBus.Instance?.Subscribe<EntityDiedEvent>(OnBossDied);
     }
 
     public override void _ExitTree()
     {
         EventBus.Instance?.Unsubscribe<CorruptionTierChangedEvent>(OnCorruptionTierChanged);
+        EventBus.Instance?.Unsubscribe<BossEncounterStartedEvent>(OnBossStarted);
+        EventBus.Instance?.Unsubscribe<BossPhaseChangedEvent>(OnBossPhase);
+        EventBus.Instance?.Unsubscribe<EntityDiedEvent>(OnBossDied);
     }
 
     // --- Construction -------------------------------------------------------
@@ -245,6 +266,7 @@ public partial class GameHud : CanvasLayer
         UpdateBanner();
         UpdateFocus();
         UpdateVignette(delta);
+        UpdateBoss();
     }
 
     private void UpdateVignette(double delta)
@@ -451,6 +473,111 @@ public partial class GameHud : CanvasLayer
     {
         bar.Value = stats.GetNormalized(type);
         value.Text = $"{stats.GetCurrent(type):0}/{stats.GetMax(type):0}";
+    }
+
+    // --- Boss fight UI (Phase 28C) ------------------------------------------
+
+    private void BuildBossBar()
+    {
+        // Full-screen black fade for the defeat beat — built before the panel so the boss text draws
+        // over it; alpha-pulsed manually (a Tween would be slowed by the defeat's Engine.TimeScale dip).
+        _bossFade = Ignore(new ColorRect { Color = new Color(0f, 0f, 0f), SelfModulate = new Color(1f, 1f, 1f, 0f) });
+        _bossFade.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        _bossFade.Visible = false;
+        AddChild(_bossFade);
+
+        _bossPanel = Ignore(UiTheme.Panel());
+        _bossPanel.Visible = false;
+        CenterTop(_bossPanel, 14);
+        AddChild(_bossPanel);
+
+        var col = new VBoxContainer();
+        _bossName = UiTheme.Header(Loc.T("boss.name"));
+        _bossName.HorizontalAlignment = HorizontalAlignment.Center;
+        col.AddChild(_bossName);
+
+        _bossBar = UiTheme.Bar(UiTheme.Health, 360f);
+        col.AddChild(_bossBar);
+
+        _bossPhase = UiTheme.Body("", UiTheme.Dim);
+        _bossPhase.HorizontalAlignment = HorizontalAlignment.Center;
+        col.AddChild(_bossPhase);
+
+        _bossMsg = UiTheme.Body("", UiTheme.Accent);
+        _bossMsg.HorizontalAlignment = HorizontalAlignment.Center;
+        _bossMsg.Visible = false;
+        col.AddChild(_bossMsg);
+
+        WrapPadded(_bossPanel, col);
+    }
+
+    private void OnBossStarted(BossEncounterStartedEvent e)
+    {
+        _boss = e.Boss;
+        _bossName.Text = Loc.T(e.NameKey);
+        _bossPhase.Text = Loc.TF("boss.phase", 1, 3);
+        _bossName.Visible = true;
+        _bossBar.Visible = true;
+        _bossPhase.Visible = true;
+        _bossPanel.Visible = true;
+        ShowBossMessage(Loc.T("boss.intro"), 2500);
+    }
+
+    private void OnBossPhase(BossPhaseChangedEvent e) =>
+        _bossPhase.Text = Loc.TF("boss.phase", e.Phase, e.TotalPhases);
+
+    private void OnBossDied(EntityDiedEvent e)
+    {
+        if (!ReferenceEquals(e.Entity, _boss))
+        {
+            return;
+        }
+
+        _boss = null;
+        _bossBar.Visible = false;
+        _bossName.Visible = false;
+        _bossPhase.Visible = false;
+        ShowBossMessage(Loc.T("boss.defeat"), 3000);
+        _bossFade.Visible = true;
+        _bossFadeUntil = Time.GetTicksMsec() + BossFadeMs;
+    }
+
+    private void ShowBossMessage(string text, ulong durationMs)
+    {
+        _bossMsg.Text = text;
+        _bossMsg.Visible = true;
+        _bossMsgUntil = Time.GetTicksMsec() + durationMs;
+    }
+
+    private void UpdateBoss()
+    {
+        ulong now = Time.GetTicksMsec();
+
+        if (_boss is Node node && IsInstanceValid(node) && _boss.TryGetComponent(out StatsComponent stats))
+        {
+            _bossBar.Value = stats.GetNormalized(StatType.Health);
+        }
+
+        if (_bossMsg.Visible && now >= _bossMsgUntil)
+        {
+            _bossMsg.Visible = false;
+        }
+
+        // Defeat fade: ramp to black and back over the window (sin curve), then clear.
+        if (_bossFade.Visible)
+        {
+            float t = Mathf.Clamp(1f - (float)(_bossFadeUntil - now) / BossFadeMs, 0f, 1f);
+            _bossFade.SelfModulate = new Color(1f, 1f, 1f, Mathf.Sin(t * Mathf.Pi) * 0.7f);
+            if (now >= _bossFadeUntil)
+            {
+                _bossFade.Visible = false;
+            }
+        }
+
+        if (_boss == null && !_bossMsg.Visible && !_bossFade.Visible)
+        {
+            _bossPanel.Visible = false;
+        }
     }
 
     /// <summary>Wraps <paramref name="content"/> in the theme's padding and parents it under

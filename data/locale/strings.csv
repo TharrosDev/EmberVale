@@ -219,3 +219,8 @@ dlg.elder.heart.thanks,"You broke the warband. The Ember Crown will sing your na
 dlg.elder.heart.c_thanks_bye,"The honour was mine, elder."
 # --- Phase 28A: Iron King ---
 boss.challenge_prompt,"Challenge the Iron King"
+# --- Phase 28C: boss UI ---
+boss.name,"The Iron King"
+boss.intro,"The Iron King bars your path."
+boss.defeat,"The Iron King falls."
+boss.phase,"Phase {0}/{1}"
