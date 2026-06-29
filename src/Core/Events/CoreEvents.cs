@@ -39,3 +39,7 @@ public readonly record struct GameSavedEvent(string Slot, bool IsAutosave = fals
 
 /// <summary>Raised after a save slot is successfully loaded.</summary>
 public readonly record struct GameLoadedEvent(string Slot) : IGameEvent;
+
+/// <summary>Requests a music cue by id — the placeholder hook the Phase 31 audio system will consume.
+/// Published at narrative beats (e.g. a boss defeat); no consumer exists yet.</summary>
+public readonly record struct MusicCueRequestedEvent(string CueId) : IGameEvent;

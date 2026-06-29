@@ -1,9 +1,11 @@
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Core.Services;
+using Embervale.Dialogue;
 using Embervale.Entities;
 using Embervale.Interaction;
 using Embervale.Localization;
+using Embervale.Player;
 using Godot;
 
 namespace Embervale.Enemies;
@@ -25,10 +27,15 @@ public partial class BossSummonComponent : InteractableComponent
 
     private BossEntity? _boss;
 
-    public override string Prompt => Loc.T("boss.challenge_prompt");
+    public override string Prompt => AlreadyDefeated() ? string.Empty : Loc.T("boss.challenge_prompt");
 
     public override void Interact(IEntity instigator)
     {
+        if (AlreadyDefeated())
+        {
+            return; // his defeat persists — the brazier is cold
+        }
+
         if (_boss != null && IsInstanceValid(_boss))
         {
             return; // already fighting him
@@ -56,4 +63,10 @@ public partial class BossSummonComponent : InteractableComponent
         _boss = null;
         ServiceLocator.Instance?.Unregister<BossEntity>();
     }
+
+    private static bool AlreadyDefeated() =>
+        ServiceLocator.Instance is { } sl
+        && sl.TryGet(out PlayerCharacter player)
+        && player.GetComponent<StoryFlagsComponent>() is { } flags
+        && flags.Has(BossEncounterDirector.DefeatedFlag);
 }
