@@ -48,7 +48,7 @@ public partial class StatusEffectsComponent : EntityComponent
 
         if (_active.TryGetValue(definition.Id, out StatusEffect? existing))
         {
-            existing.Refresh();
+            existing.AddStack();
             return;
         }
 
@@ -59,6 +59,10 @@ public partial class StatusEffectsComponent : EntityComponent
     }
 
     public bool Has(string effectId) => _active.ContainsKey(effectId);
+
+    /// <summary>Strips an effect outright (Phase 29.5D combos "consume" the status they trigger off, e.g.
+    /// a shatter eating the chill). A no-op if the effect isn't present.</summary>
+    public void Consume(string effectId) => Remove(effectId);
 
     public override void _Process(double delta)
     {
@@ -99,7 +103,7 @@ public partial class StatusEffectsComponent : EntityComponent
         effect.Remaining -= delta;
 
         StatusEffectResource def = effect.Definition;
-        if (!def.HasDamageOverTime)
+        if (!def.HasTickEffect)
         {
             return;
         }
@@ -108,7 +112,15 @@ public partial class StatusEffectsComponent : EntityComponent
         effect.TickTimer = newTimer;
         for (int i = 0; i < ticks; i++)
         {
-            _stats?.ApplyDamage(def.DamagePerTick, effect.Source);
+            if (def.HasDamageOverTime)
+            {
+                _stats?.ApplyDamage(def.DamagePerTick * effect.Stacks, effect.Source);
+            }
+
+            if (def.HasHealOverTime)
+            {
+                _stats?.Heal(def.HealPerTick);
+            }
 
             // Stop ticking a victim the DoT just killed.
             if (_stats is { IsAlive: false })

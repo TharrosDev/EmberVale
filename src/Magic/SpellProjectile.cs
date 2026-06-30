@@ -129,7 +129,7 @@ public partial class SpellProjectile : Area3D
         }
         else if (primary != null)
         {
-            SpellResolver.HitOne(primary, _packet, _spell, _caster);
+            SpellResolver.HitOne(this, primary, _packet, _spell, _caster, _casterTeam);
         }
 
         // Defer the detach/free: we're inside this node's own physics step, and _resolved keeps

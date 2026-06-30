@@ -38,8 +38,16 @@ public partial class StatusEffectResource : Resource
     /// <summary>Damage dealt each tick (0 = no DoT). Credited to the effect's source.</summary>
     [Export] public float DamagePerTick { get; set; } = 0f;
 
-    /// <summary>Seconds between DoT ticks.</summary>
+    /// <summary>Health restored to the bearer each tick (0 = no HoT) — Nature regrowth (Phase 29.5B).</summary>
+    [Export] public float HealPerTick { get; set; } = 0f;
+
+    /// <summary>Seconds between DoT/HoT ticks.</summary>
     [Export] public float TickInterval { get; set; } = 1f;
+
+    /// <summary>How many times the effect can stack on one bearer (Fire ignite, Phase 29.5B). 1 = no
+    /// stacking (re-applying only refreshes duration); higher multiplies the per-tick DoT by the
+    /// current stack count.</summary>
+    [Export] public int MaxStacks { get; set; } = 1;
 
     [ExportGroup("Stat Modifier")]
     [Export] public StatType ModStat { get; set; } = StatType.MoveSpeed;
@@ -49,6 +57,11 @@ public partial class StatusEffectResource : Resource
     [Export] public float ModValue { get; set; } = 0f;
 
     public bool HasDamageOverTime => DamagePerTick > 0f && TickInterval > 0f;
+
+    public bool HasHealOverTime => HealPerTick > 0f && TickInterval > 0f;
+
+    /// <summary>Any per-tick effect (damage or healing) that needs the tick timer advanced.</summary>
+    public bool HasTickEffect => HasDamageOverTime || HasHealOverTime;
 
     public bool HasStatModifier => ModValue != 0f;
 }

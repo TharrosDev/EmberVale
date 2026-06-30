@@ -4,6 +4,7 @@ using System.Text;
 using Embervale.Core;
 using Embervale.Core.Events;
 using Embervale.Core.Services;
+using Embervale.Combat;
 using Embervale.Corruption;
 using Embervale.Enemies;
 using Embervale.Factions;
@@ -41,6 +42,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("corruption", "corruption <get|set N|add N|tier>", "Inspect or drive the player's corruption.", Corruption));
         console.Register(new ConsoleCommand("learn", "learn <spellId|perkId>", "Learn a spell or perk (respects corruption gating).", Learn));
         console.Register(new ConsoleCommand("race", "race [id]", "Show races, or live-apply one to the player (Phase 26C).", RaceCmd));
+        console.Register(new ConsoleCommand("mastery", "mastery", "Show the player's per-school spell mastery (Phase 29.5C).", Mastery));
 
         console.Register(new ConsoleCommand("time", "time <hour>", "Set the time of day (0–24).", Time));
         console.Register(new ConsoleCommand("weather", "weather <id>", "Force a weather state.", Weather));
@@ -278,6 +280,34 @@ public static class DevCommands
         return Loc.SetLocale(args[0])
             ? $"locale set to '{args[0]}' (re-open menus to see the change)"
             : $"locale '{args[0]}' is not loaded";
+    }
+
+    private static string Mastery(DevConsole console, string[] args)
+    {
+        if (!TryPlayer(out PlayerCharacter player))
+        {
+            return "no player";
+        }
+
+        if (player.GetComponent<SchoolMasteryComponent>() is not { } mastery)
+        {
+            return "no school-mastery component";
+        }
+
+        DamageType[] schools =
+        {
+            DamageType.Fire, DamageType.Frost, DamageType.Lightning,
+            DamageType.Arcane, DamageType.Nature, DamageType.Necrotic,
+        };
+
+        var lines = new List<string>();
+        foreach (DamageType school in schools)
+        {
+            lines.Add($"{school}: rank {mastery.RankOf(school)}/{SchoolMasteryMath.MaxRank} " +
+                $"({mastery.PointsIn(school)} casts, ×{mastery.PowerMultiplier(school):0.00})");
+        }
+
+        return string.Join("\n", lines);
     }
 
     private static string Learn(DevConsole console, string[] args)

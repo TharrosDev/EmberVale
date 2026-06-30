@@ -45,6 +45,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     private CombatComponent? _combat;
     private CorruptionComponent? _corruption;
     private Progression.ProgressionComponent? _progression;
+    private SchoolMasteryComponent? _mastery;
     private int _selected;
 
     // Active charged/channeled cast (Phase 29.5A); null for instant casts and when idle.
@@ -75,6 +76,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         _stats = Entity!.GetComponent<StatsComponent>();
         _combat = Entity.GetComponent<CombatComponent>();
         _progression = Entity.GetComponent<Progression.ProgressionComponent>();
+        _mastery = Entity.GetComponent<SchoolMasteryComponent>();
         _projectilePool = new NodePool<SpellProjectile>(
             () => new SpellProjectile { Released = ReturnProjectile }, prewarm: 4);
         RebuildSpells();
@@ -367,11 +369,17 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         }
     }
 
+    /// <summary>Combined cast power: the charge multiplier × the spell's own rank × the caster's
+    /// school mastery (Phase 29.5C).</summary>
+    private float Empower(SpellResource spell, float power) =>
+        power
+        * SpellMastery.DamageMultiplier(RankOf(spell), spell.DamagePerRank)
+        * (_mastery?.PowerMultiplier(spell.School) ?? 1f);
+
     private DamagePacket BuildPacket(SpellResource spell, float power)
     {
         (float amount, bool isCrit) = CombatMath.RollSpell(spell.BaseDamage, _stats);
-        float ranked = power * SpellMastery.DamageMultiplier(RankOf(spell), spell.DamagePerRank);
-        return new DamagePacket(amount * ranked, spell.School, Entity, isCrit, SpellPoiseDamage);
+        return new DamagePacket(amount * Empower(spell, power), spell.School, Entity, isCrit, SpellPoiseDamage);
     }
 
     private void CastProjectile(SpellResource spell, int team, float power)
@@ -401,7 +409,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     {
         if (spell.Healing > 0f)
         {
-            _stats?.Heal(spell.Healing * power * SpellMastery.DamageMultiplier(RankOf(spell), spell.DamagePerRank));
+            _stats?.Heal(spell.Healing * Empower(spell, power));
         }
 
         if (spell.HasStatusEffect)

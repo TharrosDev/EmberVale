@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="StatusEffectResource" format=3 uid="uid://cmbrvlstfro0"]
+
+[ext_resource type="Script" path="res://src/Magic/StatusEffectResource.cs" id="1_status"]
+
+[resource]
+script = ExtResource("1_status")
+Id = "status.frozen"
+DisplayName = "Frozen"
+School = 2
+IsBeneficial = false
+Duration = 2.0
+DamagePerTick = 0.0
+HealPerTick = 0.0
+TickInterval = 1.0
+MaxStacks = 1
+ModStat = 11
+ModType = 2
+ModValue = -0.95

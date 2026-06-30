@@ -167,6 +167,7 @@ public static class PlayerFactory
         // Magic: status effects can afflict/buff the player, and the spellbook aims
         // through the camera pivot so bolts fire where the player looks.
         player.AddChild(new StatusEffectsComponent { Name = "StatusEffects" });
+        player.AddChild(new SchoolMasteryComponent { Name = "SchoolMastery" });
         player.AddChild(new SpellcastingComponent
         {
             Name = "Spellcasting",

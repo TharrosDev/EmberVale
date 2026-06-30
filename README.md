@@ -141,13 +141,13 @@ quest arc (27), the Iron King boss with the defeat→relic→absorb→corruption
 the full **Combat Feel** pass (29A–29I: hit-stop, camera shake, weapon trails, crit/block/
 stagger/parry screen feedback, dodge i-frames, parry/riposte, lock-on, input buffering, and
 the anti-mash stamina pacing). **Phase 29.5 — Spellcraft & the Fading Weave** is in progress
-(29.5A: charged & channeled cast archetypes).
+(29.5A charged/channeled casts; 29.5B school identities; 29.5C school mastery; 29.5D spell combos).
 
-|              | Phase                                      |
-| ------------ | ------------------------------------------ |
-| ✅ **Done**    | 22–29 + G0 First Playable; 29.5A           |
-| ▶ **Current** | 29.5 — Spellcraft & the Fading Weave        |
-| ⏭ **Next**    | 29.5B — School identities + status effects |
+|              | Phase                                          |
+| ------------ | ---------------------------------------------- |
+| ✅ **Done**    | 22–29 + G0 First Playable; 29.5A–29.5D          |
+| ▶ **Current** | 29.5 — Spellcraft & the Fading Weave            |
+| ⏭ **Next**    | 29.5E — The fading Weave (region potency)       |
 
 > Updated as each phase lands. The repo stays buildable and playable at every
 > step; a phase is "done" when it works in-game **and** round-trips through

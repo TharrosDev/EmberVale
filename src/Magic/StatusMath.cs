@@ -31,4 +31,13 @@ public static class StatusMath
 
         return (ticks, timer);
     }
+
+    /// <summary>The stack count after one more application: <paramref name="current"/> + 1, capped at
+    /// <paramref name="max"/> (and never below 1). Drives Fire's stacking ignite (Phase 29.5B).</summary>
+    public static int NextStack(int current, int max)
+    {
+        int cap = max < 1 ? 1 : max;
+        int next = current + 1;
+        return next > cap ? cap : next;
+    }
 }

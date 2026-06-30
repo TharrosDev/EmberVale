@@ -14,10 +14,13 @@ namespace Embervale.Magic;
 /// </summary>
 public static class SpellResolver
 {
-    /// <summary>Delivers a single-target hit (damage + status) to one hurtbox.</summary>
-    public static void HitOne(Hurtbox hurtbox, DamagePacket packet, SpellResource spell, IEntity? caster)
+    /// <summary>Delivers a single-target hit (damage + school identity + status) to one hurtbox.</summary>
+    public static void HitOne(
+        Node3D context, Hurtbox hurtbox, DamagePacket packet, SpellResource spell, IEntity? caster, int casterTeam)
     {
         hurtbox.Receive(packet);
+        SchoolIdentity.OnSpellHit(context, spell, packet, caster, casterTeam, hurtbox);
+        SpellCombo.OnHit(spell, caster, hurtbox);
         ApplyStatus(hurtbox.OwnerEntity, spell, caster);
     }
 
@@ -63,6 +66,8 @@ public static class SpellResolver
             }
 
             hurtbox.Receive(packet);
+            SchoolIdentity.OnSpellHit(context, spell, packet, caster, casterTeam, hurtbox);
+            SpellCombo.OnHit(spell, caster, hurtbox);
             ApplyStatus(hurtbox.OwnerEntity, spell, caster);
         }
     }

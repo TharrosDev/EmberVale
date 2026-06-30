@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="StatusEffectResource" format=3 uid="uid://cmbrvlstregr"]
+
+[ext_resource type="Script" path="res://src/Magic/StatusEffectResource.cs" id="1_status"]
+
+[resource]
+script = ExtResource("1_status")
+Id = "status.regrowth"
+DisplayName = "Regrowth"
+School = 5
+IsBeneficial = true
+Duration = 6.0
+DamagePerTick = 0.0
+HealPerTick = 5.0
+TickInterval = 1.0
+MaxStacks = 1
+ModStat = 11
+ModType = 2
+ModValue = 0.0

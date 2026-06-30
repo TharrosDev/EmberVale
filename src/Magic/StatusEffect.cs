@@ -27,10 +27,21 @@ public sealed class StatusEffect
 
     public double TickTimer { get; set; }
 
+    /// <summary>Current stack count (Fire ignite, Phase 29.5B). 1 for non-stacking effects; the per-tick
+    /// DoT is multiplied by this.</summary>
+    public int Stacks { get; private set; } = 1;
+
     /// <summary>Resets the lifetime (and tick) when the same effect is re-applied.</summary>
     public void Refresh()
     {
         Remaining = Definition.Duration;
         TickTimer = Definition.TickInterval;
+    }
+
+    /// <summary>Re-application: refreshes the duration and adds one stack up to the definition's cap.</summary>
+    public void AddStack()
+    {
+        Refresh();
+        Stacks = StatusMath.NextStack(Stacks, Definition.MaxStacks);
     }
 }

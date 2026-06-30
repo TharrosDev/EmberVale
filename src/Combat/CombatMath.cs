@@ -17,6 +17,10 @@ public static class CombatMath
     /// <summary>How much of the caster's SpellPower is added per spell cast.</summary>
     private const float SpellScaling = 0.6f;
 
+    /// <summary>How much of the caster's Intelligence is added per spell cast (Phase 29.5C) — magic's
+    /// secondary scaling attribute alongside the gear-driven SpellPower.</summary>
+    private const float IntelligenceScaling = 0.2f;
+
     /// <summary>Builds the outgoing damage amount and rolls for a critical hit.</summary>
     public static (float Amount, bool IsCrit) RollAttack(float baseDamage, StatsComponent? attacker)
     {
@@ -34,13 +38,14 @@ public static class CombatMath
     }
 
     /// <summary>
-    /// Attacker-side spell roll: base + SpellPower scaling + crit. The mirror of
-    /// <see cref="RollAttack"/> for magic, so spells scale off SpellPower the way
-    /// melee scales off PhysicalPower.
+    /// Attacker-side spell roll: base + SpellPower scaling + an Intelligence share + crit. The mirror
+    /// of <see cref="RollAttack"/> for magic — spells scale off SpellPower (gear) the way melee scales
+    /// off PhysicalPower, plus off Intelligence (the caster's magic attribute, Phase 29.5C).
     /// </summary>
     public static (float Amount, bool IsCrit) RollSpell(float baseDamage, StatsComponent? caster)
     {
-        float amount = ScaleDamage(baseDamage, caster?.GetValue(StatType.SpellPower) ?? 0f, SpellScaling);
+        float amount = ScaleDamage(baseDamage, caster?.GetValue(StatType.SpellPower) ?? 0f, SpellScaling)
+            + ((caster?.GetValue(StatType.Intelligence) ?? 0f) * IntelligenceScaling);
         return RollCrit(amount, caster);
     }
 

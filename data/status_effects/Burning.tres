@@ -11,6 +11,7 @@ IsBeneficial = false
 Duration = 5.0
 DamagePerTick = 6.0
 TickInterval = 1.0
+MaxStacks = 5
 ModStat = 11
 ModType = 2
 ModValue = 0.0

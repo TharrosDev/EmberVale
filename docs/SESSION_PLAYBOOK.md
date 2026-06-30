@@ -1566,14 +1566,23 @@ no code) — batch them when momentum is good.
     interrupted on key-up/out-of-mana/death. `PlayerController` drives press/hold/release off the Cast key.
     Slice spells **Flame Lance** (charged Fire) + **Storm Conduit** (channeled Lightning). Damage-only power
     scaling for now (projectile impact-radius scaling deferred).
-- [ ] **29.5B — School identities + status effects** `[F/C]`
+- [x] **29.5B — School identities + status effects** `[F/C]` ✅
   - **Goal:** each `DamageType` school plays differently, not just tint+resist.
   - **Tasks:** author the signature mechanic + status effects per school — Fire ignite/DoT
     stacks, Frost chill→freeze, Lightning chain-to-nearby, Arcane ward/dispel, Nature
     heal-over-time/totem, Necrotic lifesteal/decay (corruption-gated per 23H). Mostly new
     `StatusEffectResource` `.tres` + small resolver hooks (CLAUDE.md §8).
   - **Done when:** every school has a distinct on-hit behavior provable in the sandbox.
-- [ ] **29.5C — Spell scaling + school mastery track** `[F]`
+  - **Done:** one shared on-hit seam (`SchoolIdentity.OnSpellHit`, invoked by `SpellResolver`
+    after damage, before the spell's own status). **Fire** = stacking ignite (`StatusEffectResource.MaxStacks`,
+    DoT × stacks; Burning stacks to 5). **Frost** = chill→freeze (`Frozen.tres` hard-root, applied when
+    hitting an already-chilled target). **Lightning** = single chain to the nearest other hostile for ½
+    damage (`StormConduit`). **Nature** = heal-over-time (`HealPerTick` on the status resource +
+    `Regrowth.tres`; `LesserHeal` now leaves a regrowth). **Necrotic** = caster lifesteals 35% of the hit
+    (corruption-gated by the spell, e.g. `EmberSiphon`). **Arcane** = the ward (`ArcaneShield`) stays its
+    identity; on-hit dispel deferred until an offensive Arcane spell exists (29.5G). Pure bits unit-tested
+    (`SchoolIdentityTests`).
+- [x] **29.5C — Spell scaling + school mastery track** `[F]` ✅
   - **Goal:** "hard to master" magic ceiling that isn't just bigger numbers.
   - **Tasks:** extend `CombatMath.RollSpell` scaling off SpellPower/Intelligence; add a
     per-school **mastery** that ranks by casting that school and empowers/unlocks its
@@ -1581,12 +1590,23 @@ no code) — batch them when momentum is good.
     into progression.
   - **Done when:** casting a school raises its mastery, which measurably empowers it;
     mastery round-trips through save/load.
-- [ ] **29.5D — Reactive spell combos** `[F]`
+  - **Done:** `RollSpell` now also scales off Intelligence (alongside gear's SpellPower). New
+    `SchoolMasteryComponent` (`ISaveable`) banks a point per cast of a school (off `SpellCastEvent`),
+    converts points→rank via pure `SchoolMasteryMath` (10 casts/rank, cap 5, +8%/rank), and
+    `SpellcastingComponent` folds the school's mastery multiplier into every cast's damage **and** heal.
+    Points persist; rank is derived. `mastery` dev command inspects it. Curve unit-tested
+    (`SchoolMasteryMathTests`). Mastery-gated *unlocks* deferred (no spell needs one yet).
+- [x] **29.5D — Reactive spell combos** `[F]` ✅
   - **Goal:** cross-school reads, the magic analogue of the combat read.
   - **Tasks:** a small `SpellCombo` resolver that inspects the target's
     `StatusEffectsComponent` on hit and fires a bonus effect (Chill + Lightning = shatter,
     etc.), data-described where possible.
   - **Done when:** at least two combos trigger and are documented; no hard-coded one-offs.
+  - **Done:** `SpellCombo` reads the target's pre-hit afflictions on the same on-hit seam (before the
+    spell's own status applies) and resolves the first matching rule from a declarative `ComboRule[]` table:
+    **Shatter** (Lightning into Chill) and **Thermal Shock** (Fire into Chill) — each a burst plus consuming
+    the chill. `StatusEffectsComponent.Consume` strips the spent status. Pure matcher unit-tested
+    (`SpellComboTests`); table promotes to `.tres` only if the catalogue grows (Phase 51).
 - [ ] **29.5E — The fading Weave (region potency + spell recovery)** `[F]`
   - **Goal:** the dying-world magic identity, mechanical.
   - **Tasks:** a light, dev-tunable per-region **magic-potency** dial (ties to Phase 25

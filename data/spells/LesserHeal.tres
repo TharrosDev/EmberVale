@@ -6,14 +6,14 @@
 script = ExtResource("1_spell")
 Id = "spell.lesser_heal"
 DisplayName = "Lesser Heal"
-Description = "Knits flesh with restorative magic, mending the caster's wounds."
+Description = "Knits flesh with restorative magic, mending the caster's wounds — and leaving a Nature regrowth that keeps healing for a time."
 School = 5
 Delivery = 2
 ManaCost = 20.0
 Cooldown = 5.0
 BaseDamage = 0.0
 Healing = 45.0
-StatusEffectId = ""
+StatusEffectId = "status.regrowth"
 Range = 0.0
 ProjectileSpeed = 0.0
 ImpactRadius = 0.0
