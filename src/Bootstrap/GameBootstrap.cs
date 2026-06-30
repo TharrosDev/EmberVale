@@ -319,6 +319,7 @@ public partial class GameBootstrap : Node3D
         SpawnLoot();
         SpawnEncounterDirector();
         SpawnPersistentActors();
+        SpawnSpellTome();
 
         // Boss fight flow beats (Phase 28C): intro lock on summon, slow-mo on the boss's defeat. The
         // GameHud reacts to the same events for the healthbar/title/defeat banner.
@@ -364,6 +365,7 @@ public partial class GameBootstrap : Node3D
         ServiceLocator.Instance?.Register(_streamer);
         SpawnRegionPortals(region);
         SafeZones.Set(region?.SafeZoneCenter ?? Vector3.Zero, region?.SafeZoneRadius ?? 0f);
+        Weave.Set(region?.WeavePotency ?? Weave.DefaultPotency);
     }
 
     /// <summary>Places a hard-transition portal for each of the region's neighbours (Phase 25C), a
@@ -489,6 +491,7 @@ public partial class GameBootstrap : Node3D
             _mapService?.DiscoverRegion(destination.Id); // entering reveals it on the map (Phase 25E)
             SpawnRegionPortals(destination);
             SafeZones.Set(destination.SafeZoneCenter, destination.SafeZoneRadius);
+            Weave.Set(destination.WeavePotency);
         }
 
         _player!.Velocity = Vector3.Zero;
@@ -852,6 +855,46 @@ public partial class GameBootstrap : Node3D
         // A persistent container's contents round-trip through the inventory save path.
         cache.AddChild(new InventoryComponent { Name = "Inventory", Capacity = 12 });
         return cache;
+    }
+
+    /// <summary>Places a recovered-spellcraft tome near spawn (Phase 29.5E): the fading-Weave rule that
+    /// lost spells are found, not bought. This one holds the corrupted <c>Ember Siphon</c>, so it yields
+    /// only to a sufficiently corrupted reader (the 23H gate) — and that necrotic line grows cheaper/
+    /// stronger as the Weave fades. Try: <c>corruption set N</c> then interact.</summary>
+    private void SpawnSpellTome()
+    {
+        var tome = new Entity
+        {
+            Name = "SpellTome",
+            DisplayName = "Ashen Tome",
+            Position = new Vector3(-5f, 0f, 0f),
+        };
+
+        tome.AddChild(new MeshInstance3D
+        {
+            Name = "Mesh",
+            Mesh = new BoxMesh { Size = new Vector3(0.4f, 0.5f, 0.12f) },
+            Position = new Vector3(0f, 0.7f, 0f),
+            MaterialOverride = new StandardMaterial3D
+            {
+                AlbedoColor = new Color(0.35f, 0.18f, 0.40f),
+                EmissionEnabled = true,
+                Emission = new Color(0.45f, 0.20f, 0.50f),
+                EmissionEnergyMultiplier = 0.6f,
+            },
+        });
+
+        var collider = new StaticBody3D { Name = "Collider" };
+        collider.AddChild(new CollisionShape3D
+        {
+            Shape = new BoxShape3D { Size = new Vector3(0.5f, 0.7f, 0.4f) },
+            Position = new Vector3(0f, 0.5f, 0f),
+        });
+        tome.AddChild(collider);
+
+        tome.AddChild(new Embervale.Magic.SpellTomeComponent { Name = "Tome", SpellId = GameIds.Spells.EmberSiphon });
+        AddChild(tome);
+        Log.Info("An Ashen Tome rests west of spawn — recover its lost spellcraft (corruption-gated).");
     }
 
     private void SpawnEnemyCamp()

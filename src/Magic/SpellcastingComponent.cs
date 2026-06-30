@@ -6,6 +6,7 @@ using Embervale.Corruption;
 using Embervale.Entities;
 using Embervale.Save;
 using Embervale.Stats;
+using Embervale.World;
 using Godot;
 
 namespace Embervale.Magic;
@@ -229,7 +230,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             return false;
         }
 
-        return CooldownOf(spell) <= 0f && _stats.GetCurrent(StatType.Mana) >= spell.ManaCost;
+        return CooldownOf(spell) <= 0f && _stats.GetCurrent(StatType.Mana) >= EffectiveManaCost(spell);
     }
 
     /// <summary>Casts the prepared spell instantly. Returns false if none is ready/affordable. Charged and
@@ -242,7 +243,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             return false;
         }
 
-        _stats!.ModifyCurrent(StatType.Mana, -spell!.ManaCost);
+        _stats!.ModifyCurrent(StatType.Mana, -EffectiveManaCost(spell!));
         _cooldowns[spell.Id] = spell.Cooldown;
         Deliver(spell, 1f);
 
@@ -309,7 +310,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         if (spell.CastMode == CastMode.Charged && CanCast(spell))
         {
             float power = SpellCharge.PowerMultiplier(_chargeElapsed, spell.ChargeTime, spell.MaxChargeMultiplier);
-            _stats!.ModifyCurrent(StatType.Mana, -spell.ManaCost);
+            _stats!.ModifyCurrent(StatType.Mana, -EffectiveManaCost(spell));
             _cooldowns[spell.Id] = spell.Cooldown;
             Deliver(spell, power);
             if (Entity != null)
@@ -336,7 +337,8 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             return;
         }
 
-        float tickCost = spell.ChannelManaPerSecond * spell.ChannelTickInterval;
+        float tickCost = spell.ChannelManaPerSecond * spell.ChannelTickInterval
+            * Weave.CostMultiplier(IsCorrupted(spell));
         if (_stats == null || !_stats.IsAlive || _stats.GetCurrent(StatType.Mana) < tickCost)
         {
             EndCast(); // out of mana / dead — the channel is interrupted
@@ -369,12 +371,21 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         }
     }
 
+    /// <summary>Whether the spell is a corrupted variant (gated above Untainted, Phase 23H) — the
+    /// Weave (29.5E) empowers and cheapens these as the world dies.</summary>
+    private static bool IsCorrupted(SpellResource spell) => spell.MinCorruptionTier > CorruptionTier.Untainted;
+
+    /// <summary>The spell's mana cost after the region's Weave potency (Phase 29.5E).</summary>
+    private static float EffectiveManaCost(SpellResource spell) =>
+        spell.ManaCost * Weave.CostMultiplier(IsCorrupted(spell));
+
     /// <summary>Combined cast power: the charge multiplier × the spell's own rank × the caster's
-    /// school mastery (Phase 29.5C).</summary>
+    /// school mastery (Phase 29.5C) × the region's Weave potency (Phase 29.5E).</summary>
     private float Empower(SpellResource spell, float power) =>
         power
         * SpellMastery.DamageMultiplier(RankOf(spell), spell.DamagePerRank)
-        * (_mastery?.PowerMultiplier(spell.School) ?? 1f);
+        * (_mastery?.PowerMultiplier(spell.School) ?? 1f)
+        * Weave.PowerMultiplier(IsCorrupted(spell));
 
     private DamagePacket BuildPacket(SpellResource spell, float power)
     {
@@ -405,18 +416,63 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         SpellResolver.Detonate(body, spell, BuildPacket(spell, power), Entity, team, center, radius);
     }
 
-    private void CastSelf(SpellResource spell, float power)
+    private void CastSelf(SpellResource spell, float power) => ApplySupport(Entity, spell, power);
+
+    /// <summary>Applies a Self-delivery spell's heal and/or beneficial status to <paramref name="target"/>
+    /// (the caster for a normal Self cast; an ally for an enemy support caster, Phase 29.5F).</summary>
+    private void ApplySupport(IEntity? target, SpellResource spell, float power)
     {
+        if (target == null)
+        {
+            return;
+        }
+
         if (spell.Healing > 0f)
         {
-            _stats?.Heal(spell.Healing * Empower(spell, power));
+            target.GetComponent<StatsComponent>()?.Heal(spell.Healing * Empower(spell, power));
         }
 
         if (spell.HasStatusEffect)
         {
-            Entity?.GetComponent<StatusEffectsComponent>()?
+            target.GetComponent<StatusEffectsComponent>()?
                 .Apply(StatusEffectDatabase.Get(spell.StatusEffectId), Entity);
         }
+    }
+
+    /// <summary>Selects a known spell by id and casts it instantly. The lever enemy AI uses to choose a
+    /// spell (the player cycles + casts); a no-op if the spell isn't known or isn't ready. Reuses the
+    /// full <see cref="TryCast"/> path — no parallel casting logic (Phase 29.5F).</summary>
+    public bool TryCastById(string spellId)
+    {
+        int idx = _spells.FindIndex(s => s.Id == spellId);
+        if (idx < 0)
+        {
+            return false;
+        }
+
+        _selected = idx;
+        return TryCast();
+    }
+
+    /// <summary>Casts a Self-delivery support spell (heal/ward) onto an <em>ally</em> rather than the
+    /// caster — the enemy support caster's "heal/buff allies" (Phase 29.5F). Spends mana + cooldown
+    /// through the same gate as any cast.</summary>
+    public bool TryCastSupportOn(IEntity ally, SpellResource spell)
+    {
+        if (!_spells.Contains(spell) || spell.Delivery != SpellDelivery.Self || !CanCast(spell))
+        {
+            return false;
+        }
+
+        _stats!.ModifyCurrent(StatType.Mana, -EffectiveManaCost(spell));
+        _cooldowns[spell.Id] = spell.Cooldown;
+        ApplySupport(ally, spell, 1f);
+        if (Entity != null)
+        {
+            EventBus.Instance?.Publish(new SpellCastEvent(Entity, spell.Id));
+        }
+
+        return true;
     }
 
     private (Vector3 Origin, Vector3 Direction) Aim()

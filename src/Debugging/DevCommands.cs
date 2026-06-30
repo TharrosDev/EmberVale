@@ -15,6 +15,7 @@ using Embervale.Player;
 using Embervale.Progression;
 using Embervale.Races;
 using Embervale.Save;
+using Embervale.World;
 using Embervale.Settings;
 using Embervale.Stats;
 using Embervale.World;
@@ -43,6 +44,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("learn", "learn <spellId|perkId>", "Learn a spell or perk (respects corruption gating).", Learn));
         console.Register(new ConsoleCommand("race", "race [id]", "Show races, or live-apply one to the player (Phase 26C).", RaceCmd));
         console.Register(new ConsoleCommand("mastery", "mastery", "Show the player's per-school spell mastery (Phase 29.5C).", Mastery));
+        console.Register(new ConsoleCommand("weave", "weave [set <0..1>|restore]", "Inspect or tune the region's magic potency — the fading Weave (Phase 29.5E).", WeaveCmd));
 
         console.Register(new ConsoleCommand("time", "time <hour>", "Set the time of day (0–24).", Time));
         console.Register(new ConsoleCommand("weather", "weather <id>", "Force a weather state.", Weather));
@@ -86,14 +88,16 @@ public static class DevCommands
         }
 
         int count = ParseInt(args, 0, 1);
+        // Optional template id (e.g. `spawn 2 enemy.ashen_acolyte`); defaults to the goblin archetype.
+        string templateId = args.Length >= 2 ? args[1] : EnemyTemplateRegistry.FallbackTemplateId;
         for (int i = 0; i < count; i++)
         {
             Vector3 offset = new((GD.Randf() * 2f - 1f) * 4f, 0.5f, (GD.Randf() * 2f - 1f) * 4f);
-            EnemyEntity enemy = EnemyFactory.Create(player.GlobalPosition + offset);
+            EnemyEntity enemy = EnemyTemplateRegistry.Create(templateId, player.GlobalPosition + offset);
             player.GetParent()?.AddChild(enemy);
         }
 
-        return $"spawned {count} goblin(s)";
+        return $"spawned {count} x {templateId}";
     }
 
     private static string Give(DevConsole console, string[] args)
@@ -280,6 +284,31 @@ public static class DevCommands
         return Loc.SetLocale(args[0])
             ? $"locale set to '{args[0]}' (re-open menus to see the change)"
             : $"locale '{args[0]}' is not loaded";
+    }
+
+    private static string WeaveCmd(DevConsole console, string[] args)
+    {
+        if (args.Length >= 1)
+        {
+            string verb = args[0].ToLowerInvariant();
+            if (verb == "restore")
+            {
+                Weave.Reset();
+            }
+            else if (verb == "set" && args.Length >= 2 &&
+                float.TryParse(args[1], NumberStyles.Float, CultureInfo.InvariantCulture, out float p))
+            {
+                Weave.Set(p);
+            }
+            else
+            {
+                return "usage: weave [set <0..1>|restore]";
+            }
+        }
+
+        return $"Weave potency {Weave.Potency:0.00} | ordinary cast ×{Weave.PowerMultiplier(false):0.00} pow, " +
+            $"×{Weave.CostMultiplier(false):0.00} cost | corrupted ×{Weave.PowerMultiplier(true):0.00} pow, " +
+            $"×{Weave.CostMultiplier(true):0.00} cost";
     }
 
     private static string Mastery(DevConsole console, string[] args)

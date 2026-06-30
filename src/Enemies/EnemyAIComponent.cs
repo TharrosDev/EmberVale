@@ -4,6 +4,7 @@ using Embervale.Core.Events;
 using Embervale.Core.Services;
 using Embervale.Entities;
 using Embervale.Factions;
+using Embervale.Magic;
 using Embervale.Movement;
 using Embervale.Player;
 using Embervale.Stats;
@@ -42,6 +43,19 @@ public partial class EnemyAIComponent : EntityComponent
     [Export] public float ProvokeMemory { get; set; } = 12f;
     [Export] public float DespawnDelay { get; set; } = 4f;
 
+    [ExportGroup("Caster")]
+    /// <summary>Max range a caster will cast from; it closes the gap when the target is farther (29.5F).</summary>
+    [Export] public float CastRange { get; set; } = 14f;
+
+    /// <summary>If the target comes inside this, the caster kites — backs away while still casting.</summary>
+    [Export] public float KiteDistance { get; set; } = 6f;
+
+    /// <summary>Radius a support caster scans for a wounded ally to heal/buff.</summary>
+    [Export] public float AllySupportRange { get; set; } = 12f;
+
+    /// <summary>Heal an ally (or itself) whose health falls below this fraction.</summary>
+    [Export] public float AllyHealThreshold { get; set; } = 0.6f;
+
     [ExportGroup("Level of Detail")]
     /// <summary>Beyond this distance from the player the AI ticks rarely (and casts no shadow).</summary>
     [Export] public float ActiveDistance { get; set; } = 45f;
@@ -55,6 +69,8 @@ public partial class EnemyAIComponent : EntityComponent
     private CharacterBody3D _body = null!;
     private StatsComponent? _stats;
     private MeleeWeaponComponent? _weapon;
+    private SpellcastingComponent? _casting;
+    private CombatComponent? _combat;
     private PlayerCharacter? _player;
     private MeshInstance3D? _mesh;
     private NavigationAgent3D? _agent;
@@ -95,6 +111,8 @@ public partial class EnemyAIComponent : EntityComponent
         _body = body;
         _stats = Entity.GetComponent<StatsComponent>();
         _weapon = Entity.GetComponent<MeleeWeaponComponent>();
+        _casting = Entity.GetComponent<SpellcastingComponent>();
+        _combat = Entity.GetComponent<CombatComponent>();
         _mesh = _body.GetNodeOrNull<MeshInstance3D>("Mesh");
         _agent = _body.GetNodeOrNull<NavigationAgent3D>("NavAgent");
         _factionId = Entity.GetComponent<FactionComponent>()?.FactionId ?? string.Empty;
@@ -269,6 +287,13 @@ public partial class EnemyAIComponent : EntityComponent
             return;
         }
 
+        // A caster holds the cast band and kites instead of charging into melee (Phase 29.5F).
+        if (_casting != null)
+        {
+            TickCasterCombat(pos, delta);
+            return;
+        }
+
         FaceTowards(pos);
         float dist = HorizontalDistance(_body.GlobalPosition, pos);
         if (dist > AttackRange)
@@ -296,11 +321,149 @@ public partial class EnemyAIComponent : EntityComponent
         MoveTowards(fleeTarget, delta, sprint: true, stopDistance: 0.1f);
         FaceTowards(threat);
 
+        // A wounded caster heals/wards itself (and lobs spells) as it falls back (Phase 29.5F).
+        if (_casting != null)
+        {
+            TryCasterCast();
+        }
+
         if (_stateTimer >= MaxRetreatTime)
         {
             EnterState(player != null ? EnemyState.Combat : EnemyState.Investigate);
         }
     }
+
+    // --- Caster behaviour (Phase 29.5F) -------------------------------------
+
+    /// <summary>Caster combat: hold the cast band (approach when too far, kite when too close), face the
+    /// target so the cast aims true, and fire whatever's ready. Reuses the player's
+    /// <see cref="SpellcastingComponent"/> — no parallel casting system.</summary>
+    private void TickCasterCombat(Vector3 targetPos, double delta)
+    {
+        FaceTowards(targetPos);
+        float dist = HorizontalDistance(_body.GlobalPosition, targetPos);
+        switch (CasterDecision.Move(dist, KiteDistance, CastRange))
+        {
+            case CasterMove.Kite:
+                Vector3 away = _body.GlobalPosition - targetPos;
+                away.Y = 0f;
+                Vector3 flee = away.LengthSquared() > 0.01f
+                    ? _body.GlobalPosition + (away.Normalized() * 5f)
+                    : _home;
+                MoveTowards(flee, delta, sprint: true, stopDistance: 0.1f);
+                break;
+            case CasterMove.Approach:
+                MoveTowards(targetPos, delta, sprint: false, stopDistance: CastRange * 0.9f);
+                break;
+            default:
+                Stand(delta);
+                break;
+        }
+
+        TryCasterCast();
+    }
+
+    /// <summary>One cast action per tick, by priority: heal/buff a wounded ally, else attack, else ward
+    /// itself. Per-spell cooldowns naturally pace it. Returns once something is cast.</summary>
+    private void TryCasterCast()
+    {
+        if (_casting == null)
+        {
+            return;
+        }
+
+        // 1. Support: heal the most-wounded ally (or itself) that has fallen below the heal threshold.
+        SpellResource? heal = ReadySupport(healing: true);
+        if (heal != null && FindWoundedAlly() is { } ally && _casting.TryCastSupportOn(ally, heal))
+        {
+            return;
+        }
+
+        // 2. Offensive: the hardest-hitting ready damage spell, aimed down the body's facing.
+        SpellResource? attack = ReadyOffensive();
+        if (attack != null && _casting.TryCastById(attack.Id))
+        {
+            return;
+        }
+
+        // 3. Ward itself when nothing better to do and the buff isn't already up.
+        SpellResource? ward = ReadySupport(healing: false);
+        if (ward != null && Entity != null && !HasStatus(Entity, ward.StatusEffectId))
+        {
+            _casting.TryCastSupportOn(Entity, ward);
+        }
+    }
+
+    /// <summary>The strongest ready offensive (non-Self, damaging) spell the caster knows, or null.</summary>
+    private SpellResource? ReadyOffensive()
+    {
+        SpellResource? best = null;
+        foreach (SpellResource spell in _casting!.Spells)
+        {
+            if (spell.Delivery != SpellDelivery.Self && spell.BaseDamage > 0f && _casting.CanCast(spell) &&
+                (best == null || spell.BaseDamage > best.BaseDamage))
+            {
+                best = spell;
+            }
+        }
+
+        return best;
+    }
+
+    /// <summary>A ready Self-delivery support spell: a heal (<paramref name="healing"/> true) or a
+    /// beneficial ward (false), or null when none is castable.</summary>
+    private SpellResource? ReadySupport(bool healing)
+    {
+        foreach (SpellResource spell in _casting!.Spells)
+        {
+            bool isHeal = spell.Healing > 0f;
+            if (spell.Delivery == SpellDelivery.Self && isHeal == healing && _casting.CanCast(spell) &&
+                (healing || spell.HasStatusEffect))
+            {
+                return spell;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>The most-wounded ally (or itself) within <see cref="AllySupportRange"/> on the caster's
+    /// team whose health is below <see cref="AllyHealThreshold"/>, or null when none needs healing.</summary>
+    private IEntity? FindWoundedAlly()
+    {
+        int team = _combat?.Team ?? 0;
+        IEntity? best = null;
+        float lowest = AllyHealThreshold;
+
+        foreach (Node node in GetTree().GetNodesInGroup(Quests.ObjectiveLocator.EnemyGroup))
+        {
+            if (node is not Node3D body ||
+                HorizontalDistance(_body.GlobalPosition, body.GlobalPosition) > AllySupportRange ||
+                EntityNode.FindOwner(node) is not { } ally ||
+                ally.GetComponent<CombatComponent>()?.Team != team)
+            {
+                continue;
+            }
+
+            StatsComponent? stats = ally.GetComponent<StatsComponent>();
+            if (stats is not { IsAlive: true })
+            {
+                continue;
+            }
+
+            float fraction = stats.GetNormalized(StatType.Health);
+            if (fraction < lowest)
+            {
+                lowest = fraction;
+                best = ally;
+            }
+        }
+
+        return best;
+    }
+
+    private static bool HasStatus(IEntity entity, string statusId) =>
+        !string.IsNullOrEmpty(statusId) && entity.GetComponent<StatusEffectsComponent>()?.Has(statusId) == true;
 
     private void TickDead(double delta)
     {

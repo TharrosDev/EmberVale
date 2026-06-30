@@ -1607,7 +1607,7 @@ no code) — batch them when momentum is good.
     **Shatter** (Lightning into Chill) and **Thermal Shock** (Fire into Chill) — each a burst plus consuming
     the chill. `StatusEffectsComponent.Consume` strips the spent status. Pure matcher unit-tested
     (`SpellComboTests`); table promotes to `.tres` only if the catalogue grows (Phase 51).
-- [ ] **29.5E — The fading Weave (region potency + spell recovery)** `[F]`
+- [x] **29.5E — The fading Weave (region potency + spell recovery)** `[F]` ✅
   - **Goal:** the dying-world magic identity, mechanical.
   - **Tasks:** a light, dev-tunable per-region **magic-potency** dial (ties to Phase 25
     streaming) feeding cast cost/power; spells are *recovered* (tome/teacher), not vendored
@@ -1615,13 +1615,33 @@ no code) — batch them when momentum is good.
     falls. A `weave` dev-console command to inspect/tune.
   - **Done when:** potency visibly shifts cast power in two regions; a recovered spell is
     learnable via the recovery path; saved.
-- [ ] **29.5F — Enemy & NPC caster AI** `[F]`
+  - **Done:** `RegionResource.WeavePotency` (0..1, dev-tunable) feeds a global `Weave` static (mirrors
+    `SafeZones`), set on world build + every region transition. Pure `WeaveMath` bends a cast by potency:
+    as the Weave fades, **ordinary** magic weakens + costs more (×0.5 pow / ×1.5 cost at zero), **corrupted**
+    magic (gated above Untainted) strengthens + cheapens (×1.4 / ×0.6) — the 23H temptation made mechanical.
+    `SpellcastingComponent` folds it into both damage and mana cost. Two regions contrast (Ember Crown 1.0,
+    Frostfang Reach 0.5). Recovery seam: `SpellTomeComponent` (an interactable) teaches a spell through the
+    same corruption-gated `Learn` — an Ashen Tome near spawn holds the corrupted Ember Siphon. `weave`
+    dev command inspects/tunes. Potency is region data, so it restores on load with the region (no new save
+    state); learned spells already persist. Math unit-tested (`WeaveMathTests`).
+- [x] **29.5F — Enemy & NPC caster AI** `[F]` ✅
   - **Goal:** the world casts back (the sandbox has zero enemy magic today).
   - **Tasks:** a casting behavior in `EnemyAIComponent` (cast at range, kite to keep
     distance, heal/buff allies) reusing `SpellcastingComponent` on enemies; one caster
     archetype factory (a Valari mage / cultist) with a `.tres` spell loadout.
   - **Done when:** an enemy caster engages with spells, kites, and is beatable; reuses the
     player casting path, no parallel system.
+  - **Done:** the `EnemyAIComponent` Combat state gains a **caster branch** (taken when the actor has a
+    `SpellcastingComponent` — the very component the player uses, no parallel system): hold the cast band
+    via pure `CasterDecision` (approach when far, **kite** when crowded, hold otherwise), face the target so
+    the cast aims true, and pick one cast per tick by priority — **heal a wounded ally** (`FindWoundedAlly`
+    over the enemy group, on the caster's team, incl. itself), else the hardest-hitting ready **offensive**
+    spell, else **ward itself**. New `SpellcastingComponent` levers reused by the AI: `TryCastById`,
+    `TryCastSupportOn(ally)`. First archetype: the **Ashen Acolyte** (`AshenAcolyteFactory` +
+    `CultistAttributes.tres`), a squishy Fallen fire-caster (Firebolt/Fireball/ArcaneShield/LesserHeal) that
+    aims from a chest `CastOrigin` marker; registered in `EnemyTemplateRegistry`, spawnable via
+    `spawn <n> enemy.ashen_acolyte`. Wounded casters also cast while retreating. Positioning unit-tested
+    (`CasterDecisionTests`). The school-themed caster *roster* is Phase 34 (data, no new code).
 - [ ] **29.5G — Magic UI + one signature spell per school (slice content)** `[F/C]`
   - **Goal:** the slice shows magic as a real, legible spine.
   - **Tasks:** a spellbook/school view with charge/channel/mastery feedback through

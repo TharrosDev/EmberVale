@@ -52,6 +52,12 @@ public partial class RegionResource : Resource
 
     [Export] public float SafeZoneRadius { get; set; }
 
+    [ExportGroup("Magic")]
+    /// <summary>The strength of the fading <b>Weave</b> in this region (Phase 29.5E), in [0,1]:
+    /// 1 = magic flows full, lower = the Weave is failing here (ordinary casts weaken and cost more,
+    /// corrupted casts grow stronger and cheaper). Dev-tunable mood dial; see <see cref="Weave"/>.</summary>
+    [Export(PropertyHint.Range, "0,1,0.05")] public float WeavePotency { get; set; } = 1f;
+
     [ExportGroup("Graph")]
     /// <summary>Ids of directly-reachable neighbouring regions (the map + fast-travel adjacency).</summary>
     [Export] public Godot.Collections.Array<string> Neighbours { get; set; } = new();

@@ -18,6 +18,7 @@ Realm = 1
 SpawnPoint = Vector3(100, 1.2, 0)
 Cells = Array[ExtResource("2_cell")]([SubResource("Cell_glacier")])
 Bounds = AABB(-256, -16, -256, 512, 64, 512)
+WeavePotency = 0.5
 DefaultWeatherId = "weather.clear"
 DayPhaseBias = 2
 Neighbours = Array[String](["region.ember_crown"])

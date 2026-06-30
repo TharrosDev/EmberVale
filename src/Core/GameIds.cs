@@ -39,6 +39,7 @@ public static class GameIds
     {
         public const string Goblin = "enemy.goblin";
         public const string IronKing = "enemy.iron_king";
+        public const string AshenAcolyte = "enemy.ashen_acolyte";
     }
 
     public static class Factions
@@ -75,6 +76,7 @@ public static class GameIds
         public const string ArcaneShield = "spell.arcane_shield";
         public const string FlameLance = "spell.flame_lance";
         public const string StormConduit = "spell.storm_conduit";
+        public const string EmberSiphon = "spell.ember_siphon";
     }
 
     public static class Recipes

@@ -41,6 +41,7 @@ Cells = Array[ExtResource("2_cell")]([SubResource("Cell_town_hub"), SubResource(
 Bounds = AABB(-256, -16, -256, 512, 64, 512)
 SafeZoneCenter = Vector3(0, 0, -10)
 SafeZoneRadius = 34.0
+WeavePotency = 1.0
 DefaultWeatherId = "weather.cloudy"
 DayPhaseBias = 2
 Neighbours = Array[String](["region.frostfang_reach"])
