@@ -184,9 +184,20 @@ direct children of the host. `Hitbox`/`Hurtbox` are `Area3D` (not
   nearby idle/patrolling allies `Investigate` (group coordination). Wounded
   (< `RetreatHealthFraction`) → `Retreat`. On death → `Dead` → despawn after a
   delay.
+- **Caster branch (Phase 29.5F)** — when an actor carries a `SpellcastingComponent`,
+  `EnemyAIComponent`'s Combat state routes to a caster behaviour instead of melee: it holds
+  a cast band via pure `CasterDecision` (approach when far, **kite** when crowded, hold
+  otherwise), faces the target so the cast aims true, and casts one spell per tick by
+  priority — heal a wounded ally (`FindWoundedAlly`, same team, incl. itself), else the
+  hardest-hitting ready offensive, else ward itself. It reuses the *player's*
+  `SpellcastingComponent` (`TryCastById`, `TryCastSupportOn`) — no parallel casting system.
 - **`EnemyFactory.Create(pos)`** — builds a visible goblin (mesh, collision,
   stats from `GoblinAttributes.tres`, combat `Team 1`, hurtbox, weapon from
   `GoblinClaw.tres` + hitbox, AI).
+- **`AshenAcolyteFactory.Create(pos)`** — the first caster archetype (Phase 29.5F): a squishy
+  Fallen fire-caster (Firebolt/Fireball/Arcane Shield/Lesser Heal) that aims from a chest
+  `CastOrigin` marker. Registered alongside the goblin and the Iron King boss in
+  **`EnemyTemplateRegistry`** (3 archetypes; `spawn <n> enemy.ashen_acolyte`).
 - **`EnemySpawnDirector : Node3D`** — keeps a population alive within a radius;
   seeds the camp on ready, respawns the dead (tracks via `TreeExited`).
 
@@ -376,9 +387,40 @@ direct children of the host. `Hitbox`/`Hurtbox` are `Area3D` (not
   short-lived cosmetic burst sphere.
 - **UI & input** — `Q` casts the prepared spell, `F` cycles it; `DebugHud` shows mana, the
   prepared spell + cooldown, and active status effects on player/target. Events:
-  `SpellCastEvent`/`SpellSelectedEvent`/`StatusEffectAppliedEvent`/`StatusEffectRemovedEvent`
-  (`src/Magic/MagicEvents.cs`). Sandbox spells: Firebolt, Fireball (AoE), Frost Nova (Area
-  slow), Lesser Heal (Self), Arcane Shield (Self buff).
+  `SpellCastEvent`/`SpellSelectedEvent`/`SpellsChangedEvent`/`StatusEffectAppliedEvent`/
+  `StatusEffectRemovedEvent` (`src/Magic/MagicEvents.cs`). Sandbox spells (8): Firebolt,
+  Fireball (AoE), Flame Lance (charged), Frost Nova (Area), Storm Conduit (channeled), Lesser
+  Heal (Self HoT), Arcane Shield (Self ward), Ember Siphon (corrupted, Necrotic).
+
+#### Spellcraft depth (Phase 29.5 — "Spellcraft & the Fading Weave")
+
+The baseline above is Phase 12. Phase 29.5 turns magic into a build spine without a parallel
+system — the same `SpellcastingComponent` still drives everything:
+
+- **Cast archetypes** — `CastMode` (Instant / **Charged** / **Channeled**) on `SpellResource`,
+  layered on the Projectile/Area/Self *shape*. `SpellcastingComponent` grows a cast state
+  machine (`BeginCast`/`UpdateCast`/`EndCast`/`CancelCast`): charged scales power by hold time
+  (pure `SpellCharge.PowerMultiplier`), channeled ticks at `ChannelTickInterval` for
+  `ChannelManaPerSecond`. `PlayerController` drives press/hold/release.
+- **School identities (29.5B)** — a shared on-hit seam, `SchoolIdentity.OnSpellHit`, invoked by
+  `SpellResolver` after damage and *before* the spell's own status: **Fire** stacking ignite
+  (`StatusEffectResource.MaxStacks`, DoT × stacks), **Frost** chill→freeze (`Frozen.tres` when
+  the target is already chilled), **Lightning** one chain to the nearest other hostile,
+  **Necrotic** caster lifesteal, **Nature** heal-over-time (`HealPerTick` + `Regrowth.tres`),
+  **Arcane** the ward. New statuses bring the set to 5 (Burning, Chill, Frozen, Regrowth,
+  Arcane Ward).
+- **School mastery (29.5C)** — `SchoolMasteryComponent` (`ISaveable`) banks a point per cast of a
+  school and converts points→rank via pure `SchoolMasteryMath`; `SpellcastingComponent` folds the
+  rank's multiplier into damage and heals. `CombatMath.RollSpell` now also scales off Intelligence
+  (alongside SpellPower).
+- **Reactive combos (29.5D)** — `SpellCombo` reads the target's pre-hit afflictions on the same
+  seam and resolves a `ComboRule` (Shatter = Lightning into Chill; Thermal Shock = Fire into
+  Chill), bursting and consuming the status.
+- **The fading Weave (29.5E)** — see §2.6h.
+- **Enemy casters (29.5F)** — see §2.5.
+- **Recovery, not vendoring (29.5E)** — `SpellTomeComponent` (an `InteractableComponent`) teaches a
+  spell through the corruption-gated `SpellcastingComponent.Learn`; the sandbox seeds an Ashen
+  Tome holding the corrupted Ember Siphon.
 
 ### 2.6h World systems (`src/World`)
 
@@ -428,9 +470,16 @@ fast-travel land in 25E–25G.
   `DisplayName`, `Realm` (the fixed `Realm` enum — the four LORE realms + the Celestial),
   `SpawnPoint` (where the player appears on entry, 25C), `Cells` (an array of `RegionCellResource`
   — the streamable sub-cells), `Bounds` (`Aabb`), an atmosphere bias (`DefaultWeatherId` +
-  `DayPhaseBias`), and `Neighbours` (region ids — the map/fast-travel adjacency). `RegionDatabase`
-  indexes them (mirrors `WeatherDatabase`); the save header reads the active region's `DisplayName`
-  by id. New region = a `.tres`, no code.
+  `DayPhaseBias`), a `WeavePotency` (the fading-Weave dial, below), and `Neighbours` (region ids —
+  the map/fast-travel adjacency). `RegionDatabase` indexes them (mirrors `WeatherDatabase`); the
+  save header reads the active region's `DisplayName` by id. New region = a `.tres`, no code.
+- **The fading Weave (Phase 29.5E)** — `RegionResource.WeavePotency` (0..1, dev-tunable) feeds a
+  global `Weave` static (mirrors `SafeZones`), set on world build and on every region transition
+  alongside the safe-zone. Pure `WeaveMath` bends a cast by potency: as the Weave fails, **ordinary**
+  magic weakens and costs more while **corrupted** magic (gated above `Untainted`) strengthens and
+  cheapens — read by `SpellcastingComponent` into both damage and mana cost. Potency is region data,
+  so it restores with the region on load (no extra save state). The `weave` console command
+  inspects/tunes it; the two sandbox regions contrast (Ember Crown 1.0, Frostfang Reach 0.5).
 - **`RegionCellResource`** (`[GlobalClass]`, a sub-resource of the region): `Id` (`<region>.<cell>`),
   `ScenePath`, `Center` (world position), `LoadRadius`. The lightweight metadata the streamer reads
   to decide whether to load, without instancing the scene.

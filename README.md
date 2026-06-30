@@ -1,147 +1,227 @@
 # Embervale
 
-> An original third-person, open-world fantasy action RPG built in **Godot 4**
-> with **C#**. Exploration, visceral melee and magic combat, deep character
-> progression, Diablo-style loot, and a corruption system that reshapes how a
-> dying world reacts to you — all in a hand-crafted world with its own identity.
+> An original third-person, open-world fantasy action-RPG built in **Godot 4.7**
+> with **C# (.NET 8)**. A dying world whose magic is failing — explore it, fight
+> with weight, master a deep spell system, and let a **corruption** system reshape
+> how that world reacts to you, all the way to one of two endings.
 
-This repository is developed incrementally and is kept **buildable and
-playable at every commit**. Working systems are always preferred over
-theoretical ones.
+Embervale is a solo-built, component-driven game developed **incrementally** and
+kept **buildable and playable at every commit**. A working ugly prototype always
+beats a beautiful broken feature — every system here is real and usable in-game the
+moment it lands, never theoretical scaffolding.
+
+> **Private / personal project** — not for sale or public release.
 
 ---
 
-## Tech stack
+## What is Embervale?
 
-| Area            | Choice                                   |
-| --------------- | ---------------------------------------- |
-| Engine          | Godot 4.7 (.NET / Mono)                  |
-| Language        | C# (`net8.0`)                            |
-| Architecture    | Component-based entities, event-driven   |
-| Data            | Resource-driven (`.tres` content)        |
-| Target platforms| Windows, Linux, Steam Deck               |
+Nyth, the goddess of magic, is dead, and the **Weave** that carries all magic is
+fading. Into that failing world comes corruption — an easier, darker path to power
+that the world can feel. Embervale is the game built on that premise: a hand-crafted
+realm with its own lore, factions and history, where your choices (and how corrupt
+you let yourself become) bend the world's reactions, the spells you can claim, and
+how your story ends.
 
-## Getting started
+Under the hood it is a **data-driven sandbox**: actors are composed from components,
+systems talk over an event bus, and nearly all content (spells, enemies, quests,
+loot, regions, dialogue…) is authored as Godot `.tres` resources — so new content is
+new data, not new code.
 
-1. Install the **.NET / Mono build** of Godot 4.7+ and the .NET 8 SDK.
-2. Open the project: `godot --path . --editor` (or open `project.godot` in the editor).
-3. Build the C# solution (Godot does this automatically on first run, or
-   `dotnet build Embervale.sln`).
-4. Press **Play**. The bootstrap sandbox loads `scenes/Main.tscn`.
+## Design pillars
 
-### Validate content (headless)
+Drawn from [`docs/DESIGN.md`](docs/DESIGN.md):
 
-Check that all authored content is well-formed without entering gameplay:
+- **Combat with weight.** Poise & stagger are real and per-actor; hits land with
+  freeze-frames, shake and feedback; commitment and timing matter. *No button
+  mashing* — stamina gates offense and recovery punishes over-commitment.
+- **Magic as the fading Weave.** Every school is meant to be a viable build spine,
+  none a trap. Magic isn't bought — lost spellcraft is *recovered*, and the dying
+  Weave makes ordinary magic weaker while the corrupted path grows stronger.
+- **Breadth without a class lock.** Melee, ranged and magic share one stat spine;
+  the build is authored by the player over time, not chosen at creation.
+- **A corruption spine.** A single 0–100 meter threads combat, dialogue, the world's
+  hostility toward you, gated abilities, and the two endings.
+- **A hand-crafted, reactive world.** Streamed regions, a day/night clock, weather,
+  NPC routines, factions and emergent events — not a procedural wallpaper.
 
-```
+## Feature tour
+
+Everything below is implemented and playable today.
+
+### Combat feel
+Hit-stop / freeze-frames, camera shake, weapon trails, directional hit reactions,
+crit / block / stagger / parry screen feedback, **dodge i-frames**, **parry & riposte**
+windows, **lock-on** with soft targeting and target cycling, input buffering, and an
+anti-mash **stamina & poise economy**. Damage flows through one pipeline
+(`CombatMath`) with armor mitigation, crits and poise damage.
+
+### Magic — Spellcraft & the fading Weave *(the marquee system)*
+- **Cast archetypes** — every spell is **Instant**, **Charged** (hold to empower) or
+  **Channeled** (a sustained beam at a mana-per-second cost).
+- **Six school identities**, each playing differently rather than just re-tinting:
+  **Fire** stacking ignite · **Frost** chill→freeze · **Lightning** chain-to-nearby ·
+  **Nature** regrowth heal-over-time · **Necrotic** lifesteal (corrupted) · **Arcane**
+  wards.
+- **School mastery** — casting a school ranks a persistent mastery track that
+  empowers it; a "hard to master" ceiling, not just bigger numbers.
+- **Reactive combos** — cross-school reads: *Shatter* (Lightning into a Chilled foe),
+  *Thermal Shock* (Fire into Chilled), each consuming the status it triggers on.
+- **The fading Weave** — a per-region magic-potency dial: as the Weave fails,
+  ordinary casts weaken and cost more while **corrupted** casts strengthen and
+  cheapen. Lost spells are **recovered** from tomes/teachers, not vendored.
+- **Enemy casters** — foes cast back: they hold range, **kite** when crowded, lob
+  spells, ward themselves and heal wounded allies — reusing the *same* casting system
+  the player does.
+
+### The world
+Distance-based **region streaming** (with a settle-gated loading screen), hard region
+transitions + **fast travel**, a **world map** and HUD **compass**, a day/night
+**world clock**, **weather** (clear/rain/storm/fog…), ambient **encounters** by time
+of day, and announced **world events** (raids, supply caches, champion hunts).
+
+### Character & loot
+Six playable **races** + character creation, XP / levels with a **perk** tree,
+**Diablo-style loot** (rarities + prefix/suffix **affixes** rolled on drop),
+**equipment** with stat bonuses, and **crafting** at typed stations (forge, workbench,
+alchemy, cooking).
+
+### A living world
+NPCs walk daily **schedules** and react to threats and conversation; **factions** with
+reputation drive who's hostile; **quests** with kill/collect objectives and
+prerequisite chains; node-graph **dialogue** with conditional choices and side
+effects (start quest, set flag, add corruption); and the **corruption** meter with its
+tier-gated abilities, the dread vignette, a per-tier appearance hook, and **two
+endings**.
+
+### Meta-shell & save
+Main menu (New Game / Continue / Load / Settings), **multi-slot saves** with rich
+headers, a full UI suite (HUD, inventory, character screen, crafting, dialogue, map,
+quest log, settings), and a **localization** layer — every player-facing string goes
+through `Loc.T(...)`.
+
+## Content at a glance
+
+| Content | Count | Examples |
+| ------- | ----: | -------- |
+| Spells | 8 | Firebolt, Fireball, Flame Lance (charged), Frost Nova, Storm Conduit (channeled), Lesser Heal, Arcane Shield, Ember Siphon (corrupted) |
+| Status effects | 5 | Burning (stacking), Chill, Frozen, Regrowth (HoT), Arcane Ward |
+| Enemy archetypes | 3 | Goblin, Iron King (boss), Ashen Acolyte (caster) |
+| Regions | 2 | The Ember Crown, Frostfang Reach |
+| Factions | 3 | Goblin Marauders, Villagers, The Fallen |
+| Races | 6 | Human, Draekyn, Grondar, Sylthari, Umbral, Valari |
+| Items / weapons | 14 / 4 | potions, materials, leather/steel gear, relics |
+| Quests / dialogues | 6 / 6 | the Warband arc, the Elder, vendors |
+| Recipes / perks | 7 / 6 | iron ingot, steel sword, health potion · Might, Warding |
+| Weather / encounters / events | 5 / 5 / 3 | storm, fog · goblin patrols · raid, cache, hunt |
+| Affixes | 11 | Keen, Sturdy, Of the Tiger, Of Warding |
+
+## Build & run
+
+**Prerequisites:** the **.NET / Mono build** of Godot 4.7+ and the .NET 8 SDK.
+
+```bash
+# Build the C# solution (Godot also builds it on first run)
+dotnet build Embervale.sln
+
+# Open in the editor and press Play (boots scenes/Main.tscn → the sandbox)
+godot --path . --editor
+
+# Headless content gate — validates all authored content, exits 0/1, enters no gameplay
 godot --headless --path . -- --validate
+
+# Pure-logic unit tests (~300 across 43 files)
+dotnet test tests/Embervale.Tests
 ```
 
-This runs the full content validator (cross-references, well-formedness, and dialogue/
-quest graph reachability) and exits **0** on pass or **1** on any issue — a one-command
-content gate for scripts and CI. The same battery is available in-game via the
-`validate-all` developer-console command.
+> Editing C#? Run `dotnet build` **before** launching — running the project does not
+> recompile and will otherwise load a stale binary.
 
 ### Sandbox controls
 
-| Input        | Action                              |
-| ------------ | ----------------------------------- |
-| `W/A/S/D`    | Move                                |
-| Mouse        | Look / orbit the third-person camera |
-| `Shift`      | Sprint                              |
-| `Space`      | Jump                                |
-| Left mouse   | Melee attack                        |
-| Right mouse  | Block                               |
-| `Q`          | Cast the prepared spell             |
-| `F`          | Cycle the prepared spell            |
-| `E`          | Interact (pick up items, talk to NPCs) |
-| `I`          | Toggle inventory                    |
-| `J`          | Toggle quest journal                |
-| `H`          | Heal the training dummy             |
-| `R`          | Respawn the dummy immediately       |
-| `X`          | Grant XP (debug)                    |
-| `P`          | Add corruption (debug)              |
-| `F5` / `F9`  | Quick-save / quick-load             |
-| `F1`         | Toggle the developer console        |
-| `F3`         | Toggle the developer debug overlay  |
-| `F4`         | Toggle the profiler overlay         |
-| `Esc`        | Open the pause menu                 |
+| Input | Action | | Input | Action |
+| ----- | ------ |-| ----- | ------ |
+| `W/A/S/D` | Move | | `Q` | Cast prepared spell |
+| Mouse | Look / orbit camera | | `F` | Cycle prepared spell |
+| `Shift` | Sprint | | Middle mouse | Lock-on (wheel cycles target) |
+| `Space` | Jump | | `E` | Interact (pick up, talk) |
+| `Ctrl` | Dodge roll (i-frames) | | `I` / `J` / `M` | Inventory / Journal / Map |
+| Left mouse | Melee attack | | `1`–`9` | Hotbar |
+| Right mouse | Block | | `Esc` | Pause menu |
 
-The game HUD shows vitals, the prepared spell, active effects, a quest tracker,
-time/weather, world-event banners, an aimed-target nameplate, and interaction
-prompts; a dark blood-red vignette bleeds in at high corruption. The character
-screen (`I`) carries a corruption gauge alongside progression, equipment, perks
-and reputation. `Esc` opens a pause menu (Resume / Save / Load / Quit); `F3`
-reveals the developer debug overlay (FPS, raw stats, corruption, the active
-world event).
+**Debug shortcuts** (sandbox only): `H` heal dummy · `R` respawn dummy · `X` +50 XP ·
+`P` +10 corruption · `K` shift goblin reputation · `F5`/`F9` quick save/load ·
+`F1` dev console · `F3` debug overlay · `F4` profiler.
 
-## Project layout
+## Developer tooling
+
+- **Dev console (`F1`)** — 40+ commands: `corruption`, `learn`, `mastery`, `weave`,
+  `spawn <n> <templateId>`, `region`, `travel`, `quest`, `validate-all`, `repro`, …
+- **Content validator** — cross-references, well-formedness, and dialogue/quest graph
+  reachability; runs on boot, via `validate-all`, or headless with `--validate`.
+- **Overlays** — `F3` debug HUD (FPS, raw stats, corruption, active event), `F4`
+  profiler.
+- **World integrity checker** — silently watches runtime invariants (every 5s).
+- **Repro harness** — record a seed + command sequence, replay deterministically.
+- **Unit suite** — pure-logic xUnit tests for the load-bearing math (combat, mastery,
+  the Weave, status cadence, save-key policy, dialogue-graph analysis, …).
+
+## Architecture in brief
+
+Component-based entities (`IEntity` / `Entity` / `CharacterEntity` + `EntityComponent`),
+an **event-driven** core (a synchronous `EventBus`), and **resource-driven** content
+(`.tres` indexed by auto-loading databases). Four autoloads form the spine: `EventBus`,
+`ServiceLocator`, `GameManager`, `SaveManager`. Any system that holds gameplay state
+implements `ISaveable`. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full
+systems reference.
 
 ```
 .
 ├── project.godot            # Engine config + autoload registration
-├── Embervale.sln/.csproj    # C# solution
+├── Embervale.sln/.csproj    # C# solution (net8.0, Godot.NET.Sdk 4.7.0)
 ├── scenes/                  # Godot scenes (Main.tscn is the entry point)
-├── data/                    # Resource-driven content (.tres) — attributes, etc.
-├── docs/                    # Architecture & roadmap
+├── data/                    # Resource-driven content (.tres), one folder per domain
+├── docs/                    # Architecture, design, lore, roadmap
 └── src/
-    ├── Core/                # Engine-level services (autoloads)
-    │   ├── Events/          # EventBus + core event types
-    │   ├── Services/        # ServiceLocator
-    │   ├── Pooling/         # Generic NodePool (object reuse)
-    │   ├── Diagnostics/     # Logging
-    │   ├── GameManager.cs   # Top-level state machine
-    │   └── GameState.cs
+    ├── Core/                # Autoloads (EventBus, ServiceLocator, GameManager, SaveManager), pooling, input
     ├── Entities/            # Entity / CharacterEntity / EntityComponent framework
     ├── Stats/               # Stats, modifiers, attribute resources
-    ├── Movement/            # LocomotionComponent (reusable motor)
-    ├── Combat/              # Damage pipeline, hitbox/hurtbox, weapons
-    ├── Items/               # Item resources, inventory, pickups, database
-    ├── Interaction/         # InteractableComponent (interact action)
-    ├── Quests/              # Quest resources, objectives, log, givers
-    ├── Dialogue/            # Node-graph conversations, choices, story flags
-    ├── World/               # Clock, day/night, weather, encounters, world events
-    ├── Npc/                 # NPC daily schedules + reactions
-    ├── Magic/               # Spells, projectiles, AoE, status effects
-    ├── Crafting/            # Recipes, stations, the crafting component
-    ├── Factions/            # Reputation, faction tags, standing-driven hostility
-    ├── Corruption/          # Corruption meter, tiers, appearance + dialogue hooks
-    ├── Player/              # Third-person controller + factory
-    ├── Enemies/             # Enemy AI state machine + spawner
-    ├── Save/                # ISaveable + SaveManager
-    ├── Debugging/           # Dev console, profiler, invariants, repro harness
-    ├── UI/                  # Game HUD, pause menu, toasts, panels, shared theme
-    └── Bootstrap/           # GameBootstrap entry point
+    ├── Movement/  Combat/    # Locomotion motor; damage pipeline, hit/hurtbox, combat feel
+    ├── Magic/               # Spells, cast archetypes, schools, mastery, combos, the Weave, status effects
+    ├── Items/  Loot/         # Inventory, equipment, pickups; loot tables + affixes
+    ├── Progression/         # XP, levels, perks
+    ├── Quests/  Dialogue/    # Objectives + log; node-graph conversations + story flags
+    ├── World/  Npc/          # Clock, weather, encounters, events, regions/streaming, fast travel; schedules
+    ├── Crafting/  Factions/  # Recipes + stations; reputation + standing-driven hostility
+    ├── Corruption/          # The corruption meter, tiers, appearance + dialogue hooks, endings
+    ├── Races/               # Playable races + character creation
+    ├── Player/  Enemies/     # Third-person controller; perception-FSM AI (+ caster branch), spawning
+    ├── Interaction/         # InteractableComponent (raycast interact)
+    ├── Save/                # ISaveable, SaveManager, persistence directors
+    ├── Localization/        # Loc string layer
+    ├── UI/  Debugging/  Analytics/   # HUD/menus/theme; console, validators, overlays; event logging
+    └── Bootstrap/           # GameBootstrap (assembles the sandbox)
 ```
 
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for how the pieces fit
-together and [`docs/PRODUCTION_ROADMAP.md`](docs/PRODUCTION_ROADMAP.md) for the
-full development plan.
+## Status & roadmap
 
-## Status
+The 21-phase **systems roadmap is complete** — Embervale is a data-driven sandbox
+that *can express* the game. The [**production roadmap**](docs/PRODUCTION_ROADMAP.md)
+(Phases 22+) now carries it to launch through six hard gates:
 
-The 21-phase **systems roadmap is complete** — Embervale is a powerful,
-data-driven sandbox that *can express* the game. The
-[**production roadmap**](docs/PRODUCTION_ROADMAP.md) (Phases 22+) now carries it
-from that sandbox to launch, gated First Playable → Vertical Slice → Alpha →
-Beta → Release Candidate → Launch.
+| Gate | Bar | Status |
+| ---- | --- | ------ |
+| **G0 — First Playable** | one region, a boss, the corruption hook | ✅ Done (Phases 22–29) |
+| **G1 — Vertical Slice** | a 30–60 min slice that looks & plays shipped | 🟢 In progress |
+| **G2 — Alpha** | every system/mechanic exists | ⏭ Queued |
+| **G3 — Beta** | all content in | ⏭ |
+| **G4 — Release Candidate** | zero blocker bugs | ⏭ |
+| **G5/G6 — Launch / Live** | shipped; then patches & content | ⏭ |
 
-**Phase 22** (Production Bible & Content Pipeline) and **Phase 23 — The Corruption
-System** (the LORE's defining mechanic) are complete. Corruption ships the 0–100
-meter with tier thresholds, save/load, a dev console + F3 readout, dialogue
-conditions/effects, a character-screen gauge, the dread vignette, the per-tier
-appearance hook, global NPC "dread" standing (the world turns hostile as you
-corrupt), tier-gated corrupted abilities, and the `EndingEligibility` dial behind
-the two endings (23A–23H).
-
-**Phases 24–29 are complete**, carrying the sandbox to **Gate G0 — First Playable**:
-the meta-shell & localization spine (24), region streaming + world map + fast travel (25),
-playable races & character creation (26), the Ember Crown greybox + navmesh + the Warband
-quest arc (27), the Iron King boss with the defeat→relic→absorb→corruption beat (28), and
-the full **Combat Feel** pass (29A–29I: hit-stop, camera shake, weapon trails, crit/block/
-stagger/parry screen feedback, dodge i-frames, parry/riposte, lock-on, input buffering, and
-the anti-mash stamina pacing). **Phase 29.5 — Spellcraft & the Fading Weave** is in progress
-(29.5A casts; 29.5B school identities; 29.5C mastery; 29.5D combos; 29.5E the fading Weave; 29.5F enemy casters).
+**Now:** closing **G0 → G1**. Phases 22–29 are done (corruption, meta-shell &
+localization, region streaming + map + fast travel, races & creation, the Ember Crown
+greybox, the Iron King boss, and the full combat-feel pass). **Phase 29.5 — Spellcraft
+& the Fading Weave** is in progress.
 
 |              | Phase                                          |
 | ------------ | ---------------------------------------------- |
@@ -149,7 +229,17 @@ the anti-mash stamina pacing). **Phase 29.5 — Spellcraft & the Fading Weave** 
 | ▶ **Current** | 29.5 — Spellcraft & the Fading Weave            |
 | ⏭ **Next**    | 29.5G — Magic UI + signature spell per school   |
 
-> Updated as each phase lands. The repo stays buildable and playable at every
-> step; a phase is "done" when it works in-game **and** round-trips through
-> save/load. See [`docs/PRODUCTION_ROADMAP.md`](docs/PRODUCTION_ROADMAP.md) for
-> the full phase list and gates.
+> A phase is "done" when it works in-game **and** round-trips through save/load.
+
+## Documentation
+
+| Doc | What it covers |
+| --- | -------------- |
+| [`CLAUDE.md`](CLAUDE.md) | Working agreement, conventions, gotchas, and content recipes |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Full systems reference |
+| [`docs/DESIGN.md`](docs/DESIGN.md) | Design bible — pillars and intent |
+| [`docs/LORE.md`](docs/LORE.md) | World/story bible |
+| [`docs/PRODUCTION_ROADMAP.md`](docs/PRODUCTION_ROADMAP.md) | The Phase 22+ plan and gates |
+| [`docs/SESSION_PLAYBOOK.md`](docs/SESSION_PLAYBOOK.md) | Per-phase sub-task breakdown |
+| [`docs/IDS.md`](docs/IDS.md) | Content id naming scheme + audit |
+| [`docs/STAGE_A_STATUS.md`](docs/STAGE_A_STATUS.md) | Stage-A (Phases 22–25) integration sign-off |

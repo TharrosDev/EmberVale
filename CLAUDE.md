@@ -151,7 +151,9 @@ Goblins roam to the north (−Z) and drop loot.
 │   ├── recipes/            # CraftingRecipeResource presets (ingot, sword, potion, …)
 │   ├── factions/           # FactionResource presets (goblins, villagers)
 │   ├── world_events/       # WorldEventResource presets (raid, cache, champion hunt)
-│   └── regions/            # RegionResource presets (the Ember Crown sandbox region)
+│   ├── regions/            # RegionResource presets (Ember Crown, Frostfang Reach)
+│   ├── races/              # RaceResource presets (Human, Draekyn, Grondar, Sylthari, Umbral, Valari)
+│   └── locale/             # strings.csv — the Loc localization catalogue
 └── src/
     ├── Core/
     │   ├── Events/          # IGameEvent, EventBus (autoload), CoreEvents
@@ -170,17 +172,21 @@ Goblins roam to the north (−Z) and drop loot.
     ├── Progression/         # XP/levels (ProgressionComponent), perks, ExperienceComponent
     ├── Quests/              # QuestResource/objectives, QuestLogComponent, quest givers
     ├── Dialogue/            # Dialogue graph resources, session runner, story flags
-    ├── World/               # WorldClock, day/night sky, weather, encounters, world events
+    ├── World/               # WorldClock, sky/weather, encounters, world events, regions/streaming, fast travel, the Weave
     ├── Npc/                 # NPC schedule resources, ScheduleComponent (routines)
-    ├── Magic/               # Spells, projectiles, AoE bursts, status effects
+    ├── Magic/               # Spells, cast archetypes, school identities/mastery/combos, the Weave, status effects
     ├── Crafting/            # Recipes, stations, CraftingComponent
     ├── Factions/            # Faction resources, ReputationComponent, FactionComponent
+    ├── Corruption/          # CorruptionComponent, tiers, appearance + dialogue hooks, endings
+    ├── Races/               # RaceResource, RaceComponent, character creation (Phase 26)
     ├── Interaction/         # InteractableComponent (raycast interact)
     ├── Player/              # PlayerCharacter, PlayerController, PlayerFactory
-    ├── Enemies/             # EnemyEntity, EnemyAIComponent, EnemyFactory, EnemySpawnDirector
-    ├── Save/                # ISaveable, SaveManager (autoload)
+    ├── Enemies/             # EnemyEntity, EnemyAIComponent (+caster branch), EnemyFactory, AshenAcolyteFactory, EnemyTemplateRegistry
+    ├── Save/                # ISaveable, SaveManager (autoload), persistence directors
+    ├── Localization/        # Loc string layer (Loc.T)
+    ├── Analytics/           # AnalyticsSink (EventBus → user://analytics, dev-gated)
     ├── Debugging/           # DevConsole, ProfilerOverlay, Invariant, WorldIntegrityChecker, ReproHarness
-    ├── UI/                  # DebugHud
+    ├── UI/                  # GameHud, PauseMenu, panels/screens, UiTheme; DebugHud (F3 dev overlay)
     └── Bootstrap/           # GameBootstrap (assembles the sandbox)
 ```
 

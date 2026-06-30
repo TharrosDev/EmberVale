@@ -1,5 +1,10 @@
 # Stage A — Status & Known-Issues Ledger
 
+> **Scope:** the Stage-A (Phases 22–25) integration sign-off. It is a point-in-time
+> snapshot, not a live status of the whole project — later phases (26+, 29.5, …) are
+> tracked in [`SESSION_PLAYBOOK.md`](SESSION_PLAYBOOK.md) and
+> [`PRODUCTION_ROADMAP.md`](PRODUCTION_ROADMAP.md).
+
 Status of the **Stage-A foundation (production systems 22–25)** after the Phase 25.5
 hardening pass. This is the integration sign-off for Phase **25.5G**: it records what
 the automated battery verifies, what remains a maintainer at-keyboard check, the known
