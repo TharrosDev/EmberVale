@@ -30,13 +30,19 @@ expressed in fewer, more deliberate planes.
 
 ### 1.1 What "low-poly but detailed" means in practice
 
+- **Realistic-ish, never blocky.** (Maintainer-pinned, 2026-07-01.) Organic
+  subjects — bodies, faces, creatures, foliage — are **connected, smooth-shaded
+  low-poly meshes with continuous silhouettes** (think PS2-era realism), *never*
+  assemblies of separate boxes/capsules per limb. If a character reads as
+  Roblox/Minecraft, it fails the style. Build organic forms as one mesh (skin
+  modifier / sculpt-and-decimate), then decimate to budget.
 - **Silhouette first.** Spend triangles where the outline reads (a sword's
   fuller, a tower's broken crenellation, a goblin's hunched spine); starve flat
   interiors. A good asset reads at 50 m from its silhouette alone.
-- **Facets are a feature.** Hard edges and visible planes are welcome on rock,
-  cloth folds, armor plates. Do **not** smooth everything to blobs; do not
-  subdivide to hide facets. Use smooth shading per material region (skin, metal)
-  and hard edges between regions.
+- **Facets are a feature — on hard surfaces only.** Hard edges and visible
+  planes are welcome on rock, armor plates, blades, architecture. Organic
+  surfaces shade smooth with angle-based sharp edges (~60°) so the low-poly
+  structure shows in the silhouette, not as flat-shaded tiling.
 - **Detail lives in the material pass**, not the mesh: layered albedo wear
   (edge-worn metal, ash-dusted shoulders, damp hem), simple roughness variation,
   sparse emissive accents. Normal maps are allowed but subtle — bake the big

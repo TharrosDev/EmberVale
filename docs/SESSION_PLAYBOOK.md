@@ -1664,7 +1664,7 @@ no code) — batch them when momentum is good.
     compete with perks for skill points. **Charge/channel feedback**: `GameHud` gained a school-tinted
     cast meter under the vitals (fills with `SpellcastingComponent.ChargeProgress`, pinned full while
     channeling) and the prepared-spell footer states `charging…`/`channeling`. All strings through
-    `Loc` (catalogue 260). Build + **318 tests** (5 new `SpellHomingTests`) + `--validate` (12 spells,
+    `Loc` (catalogue 260). Build + **313 tests** (5 new `SpellHomingTests`) + `--validate` (12 spells,
     exit 0) green; in-engine boot clean. **Phase 29.5 (Spellcraft & the Fading Weave) is complete.**
 
 ---
@@ -1693,12 +1693,30 @@ no code) — batch them when momentum is good.
     `.glb` → `assets/models/<class>/` pipeline incl. collision suffixes, rig limits, and
     an `assets/CREDITS.md` licensing rule for sourced assets. Ends with a 7-point
     per-asset review checklist. Doc-only; no code touched.
-- [ ] **30B — Player character model** `[P]`
+- [x] **30B — Player character model** `[P]` ✅
   - **Goal:** the player has a real mesh to rig, not a placeholder capsule.
   - **Tasks:** built in Blender via the Blender MCP — base mesh + texture set matched
     to `ART_STYLE.md` (30A); modular gear/weapon attach points for the equipment the
     player can visibly wear/wield; export to glTF.
   - **Done when:** a static, importable player mesh with equip sockets exists in-engine.
+  - **Done:** `assets/models/characters/chr_player_base.glb` (~1.6k tris, 1.8 m, origin at feet),
+    built in Blender via the MCP as an **organic connected low-poly body** (skin-modifier over a
+    stick skeleton → subsurf → decimate, smooth-shaded with ~60° sharp edges) after the first
+    boxy draft was rejected as too Roblox — the maintainer's "low-poly but realistic-ish, never
+    blocky" call is now pinned in `ART_STYLE.md` §1.1. Palette materials per region (skin, tunic,
+    trousers, leather boots/belt/pads, steel bracers, gold buckle — flat colours, no textures) with
+    slim faceted hard-surface gear; **five equip sockets** (`socket_hand_r/l`, `socket_back`,
+    `socket_hip_l`, `socket_head`) as empties inside the glb. `PlayerFactory` now instantiates the
+    model as `BodyMesh` (turned 180° for glTF→Godot forward, capsule fallback kept if the asset is
+    missing), and `CorruptionAppearanceController` was generalized from one-material tinting to
+    claiming **every surface material** under the body root (uniquely duplicated, per-material base
+    albedo remembered) so each palette colour ashes toward the same dark tone per tier — the 23F
+    contract unchanged. Two live-playtest fixes from the maintainer: the corruption emissive made
+    the whole model glow red on a corrupted save → the ember-vein emissive now applies to **skin
+    materials only** (names survive glTF import), dimmer and ember-toned per ART_STYLE §2.2, with
+    clothes only ashing; and the belt buckle floated off the body → embedded into the waist mesh.
+    Build + 313 tests green; headless `--import` + in-engine runs clean (the maintainer drove the
+    world live during verification). Rigging/animation is 30C.
 - [ ] **30C — Third-person character + weapon rig integration** `[P]`
   - **Done when:** the rigged player character (30B's mesh) + a weapon play
     attack/block/idle driven by combat states.

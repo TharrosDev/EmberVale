@@ -26,6 +26,7 @@ public static class PlayerFactory
     internal const string PlayerAttributesPath = "res://data/attributes/PlayerAttributes.tres";
     internal const string StartingWeaponPath = "res://data/weapons/IronSword.tres";
     internal const string ProgressionPath = "res://data/progression/PlayerProgression.tres";
+    internal const string PlayerModelPath = "res://assets/models/characters/chr_player_base.glb";
     private const int PlayerTeam = 0;
     private const float CapsuleRadius = 0.4f;
     private const float CapsuleHeight = 1.8f;
@@ -62,16 +63,27 @@ public static class PlayerFactory
             Position = new Vector3(0f, CapsuleHeight * 0.5f, 0f),
         });
 
-        // The player's visible body, framed by the third-person camera and tinted per corruption
-        // tier by the CorruptionAppearanceController (Phase 23F). Phase 30 replaces this stand-in
-        // capsule with the real rigged model.
-        player.AddChild(new MeshInstance3D
+        // The player's visible body (Phase 30B: the low-poly authored mesh, origin at the feet,
+        // with socket_* equip attach points inside), framed by the third-person camera and ash-tinted
+        // per corruption tier by the CorruptionAppearanceController. Rigging/animation is 30C.
+        // glTF forward is +Z while Godot's is -Z, so the instance turns 180°.
+        if (GD.Load<PackedScene>(PlayerModelPath)?.Instantiate() is Node3D bodyVisual)
         {
-            Name = "BodyMesh",
-            Mesh = new CapsuleMesh { Radius = 0.36f, Height = 1.75f },
-            Position = new Vector3(0f, CapsuleHeight * 0.5f, 0f),
-            MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.62f, 0.60f, 0.58f) },
-        });
+            bodyVisual.Name = "BodyMesh";
+            bodyVisual.RotateY(Mathf.Pi);
+            player.AddChild(bodyVisual);
+        }
+        else
+        {
+            // Model missing/unimported — keep the old stand-in capsule so the game stays playable.
+            player.AddChild(new MeshInstance3D
+            {
+                Name = "BodyMesh",
+                Mesh = new CapsuleMesh { Radius = 0.36f, Height = 1.75f },
+                Position = new Vector3(0f, CapsuleHeight * 0.5f, 0f),
+                MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.62f, 0.60f, 0.58f) },
+            });
+        }
 
         AttributeSet attributes = GD.Load<AttributeSet>(PlayerAttributesPath) ?? AttributeSet.CreateDefault();
         player.AddChild(new StatsComponent { Name = "Stats", Attributes = attributes, HealthRegen = 3f });
