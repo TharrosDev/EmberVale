@@ -95,5 +95,28 @@ public partial class SpellResource : Resource
     /// <summary>Mana drained per second while channeling (Channeled casts).</summary>
     [Export] public float ChannelManaPerSecond { get; set; } = 14f;
 
+    [ExportGroup("Signature mechanics (Phase 29.5G)")]
+    /// <summary>If &gt; 0, a projectile steers toward the nearest hostile within this radius each frame
+    /// (Ball Lightning). 0 = flies straight.</summary>
+    [Export] public float HomingRange { get; set; } = 0f;
+
+    /// <summary>If &gt; 0, a Self cast teleports the caster this many metres along their aim (Blink).</summary>
+    [Export] public float BlinkDistance { get; set; } = 0f;
+
+    /// <summary>If &gt; 0, the cast spawns a lingering zone that re-detonates the spell at the caster
+    /// every <see cref="ZoneTickInterval"/> for this many seconds (Blizzard). Uses <see cref="ImpactRadius"/>
+    /// as its radius.</summary>
+    [Export] public float ZoneDuration { get; set; } = 0f;
+
+    /// <summary>Seconds between a lingering zone's pulses (defaults to 1 when unset).</summary>
+    [Export] public float ZoneTickInterval { get; set; } = 1f;
+
+    /// <summary>If &gt; 0, the cast summons a totem that heals the caster by <see cref="Healing"/> every
+    /// <see cref="SummonTickInterval"/> for this many seconds (Lifebloom Totem).</summary>
+    [Export] public float SummonDuration { get; set; } = 0f;
+
+    /// <summary>Seconds between a summoned totem's pulses (defaults to 1 when unset).</summary>
+    [Export] public float SummonTickInterval { get; set; } = 1f;
+
     public bool HasStatusEffect => !string.IsNullOrEmpty(StatusEffectId);
 }

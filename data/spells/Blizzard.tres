@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="SpellResource" format=3 uid="uid://cmbrvlspbli00"]
+
+[ext_resource type="Script" path="res://src/Magic/SpellResource.cs" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+Id = "spell.blizzard"
+DisplayName = "Blizzard"
+Description = "Call a killing frost down around you. It lingers, chilling everything caught inside with every pulse — the chilled freeze solid."
+School = 2
+Delivery = 1
+CastMode = 0
+ManaCost = 32.0
+Cooldown = 12.0
+BaseDamage = 7.0
+Healing = 0.0
+StatusEffectId = "status.chill"
+ImpactRadius = 5.0
+ZoneDuration = 5.0
+ZoneTickInterval = 1.0
+LearnCost = 1
+UpgradeCost = 1
+MaxRank = 3

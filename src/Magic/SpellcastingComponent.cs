@@ -60,6 +60,12 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     /// <summary>True while a channeled cast is sustaining.</summary>
     public bool IsChanneling => _activeCast is { CastMode: CastMode.Channeled };
 
+    /// <summary>How full the active charged cast is (0..1) — drives the HUD charge meter (29.5G).</summary>
+    public float ChargeProgress =>
+        _activeCast is { CastMode: CastMode.Charged } spell && spell.ChargeTime > 0f
+            ? Mathf.Clamp(_chargeElapsed / spell.ChargeTime, 0f, 1f)
+            : 0f;
+
     // Pooled projectiles: rapid casting reuses bolts instead of churning the scene tree.
     private NodePool<SpellProjectile>? _projectilePool;
 
@@ -175,14 +181,14 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     public int RankOf(SpellResource spell) =>
         _ranks.TryGetValue(spell.Id, out int rank) ? rank : (IsKnown(spell) ? 1 : 0);
 
-    /// <summary>Can the caster buy (learn) this unknown spell now — corruption met and skill points spare?</summary>
+    /// <summary>Can the caster buy (learn) this unknown spell now — corruption met and spell points spare?</summary>
     public bool CanBuy(SpellResource spell) =>
-        !IsKnown(spell) && MeetsCorruption(spell) && (_progression?.SkillPoints ?? 0) >= spell.LearnCost;
+        !IsKnown(spell) && MeetsCorruption(spell) && (_progression?.SpellPoints ?? 0) >= spell.LearnCost;
 
-    /// <summary>Buys an unknown spell with skill points (Phase 29.5C-lite). Returns false if not affordable.</summary>
+    /// <summary>Buys an unknown spell with spell-book points (Phase 29.5G). Returns false if not affordable.</summary>
     public bool Buy(SpellResource spell)
     {
-        if (!CanBuy(spell) || _progression?.SpendSkillPoints(spell.LearnCost) != true)
+        if (!CanBuy(spell) || _progression?.SpendSpellPoints(spell.LearnCost) != true)
         {
             return false;
         }
@@ -202,14 +208,14 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         return true;
     }
 
-    /// <summary>Can the caster rank up this known spell — below max and enough skill points?</summary>
+    /// <summary>Can the caster rank up this known spell — below max and enough spell points?</summary>
     public bool CanUpgrade(SpellResource spell) =>
-        IsKnown(spell) && RankOf(spell) < spell.MaxRank && (_progression?.SkillPoints ?? 0) >= spell.UpgradeCost;
+        IsKnown(spell) && RankOf(spell) < spell.MaxRank && (_progression?.SpellPoints ?? 0) >= spell.UpgradeCost;
 
-    /// <summary>Spends skill points to raise a known spell's rank, empowering its damage/healing.</summary>
+    /// <summary>Spends spell-book points to raise a known spell's rank, empowering its damage/healing.</summary>
     public bool Upgrade(SpellResource spell)
     {
-        if (!CanUpgrade(spell) || _progression?.SpendSkillPoints(spell.UpgradeCost) != true)
+        if (!CanUpgrade(spell) || _progression?.SpendSpellPoints(spell.UpgradeCost) != true)
         {
             return false;
         }
@@ -357,6 +363,21 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     private void Deliver(SpellResource spell, float power)
     {
         int team = _combat?.Team ?? 0;
+
+        // Signature mechanics (Phase 29.5G) layer on top of the base shape: a zone/totem field
+        // replaces the instant delivery with a lingering spawn; blink rides along a Self cast.
+        if (spell.ZoneDuration > 0f)
+        {
+            CastZone(spell, team, power);
+            return;
+        }
+
+        if (spell.SummonDuration > 0f)
+        {
+            CastTotem(spell, power);
+            return;
+        }
+
         switch (spell.Delivery)
         {
             case SpellDelivery.Self:
@@ -369,6 +390,46 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
                 CastProjectile(spell, team, power);
                 break;
         }
+    }
+
+    private void CastZone(SpellResource spell, int team, float power)
+    {
+        if (Entity?.Body is not Node3D body)
+        {
+            return;
+        }
+
+        var zone = new SpellZone
+        {
+            Spell = spell,
+            Packet = BuildPacket(spell, power),
+            Caster = Entity,
+            CasterTeam = team,
+            Radius = spell.ImpactRadius > 0f ? spell.ImpactRadius : DefaultNovaRadius,
+            Duration = spell.ZoneDuration,
+            TickInterval = spell.ZoneTickInterval,
+        };
+        GetTree().CurrentScene.AddChild(zone);
+        zone.GlobalPosition = body.GlobalPosition + (Vector3.Up * 0.1f);
+    }
+
+    private void CastTotem(SpellResource spell, float power)
+    {
+        if (Entity?.Body is not Node3D body)
+        {
+            return;
+        }
+
+        var totem = new SpellTotem
+        {
+            Target = _stats,
+            HealPerTick = spell.Healing * Empower(spell, power),
+            Duration = spell.SummonDuration,
+            TickInterval = spell.SummonTickInterval,
+            Tint = SpellSchools.Color(spell.School),
+        };
+        GetTree().CurrentScene.AddChild(totem);
+        totem.GlobalPosition = body.GlobalPosition;
     }
 
     /// <summary>Whether the spell is a corrupted variant (gated above Untainted, Phase 23H) — the
@@ -416,7 +477,38 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         SpellResolver.Detonate(body, spell, BuildPacket(spell, power), Entity, team, center, radius);
     }
 
-    private void CastSelf(SpellResource spell, float power) => ApplySupport(Entity, spell, power);
+    private void CastSelf(SpellResource spell, float power)
+    {
+        if (spell.BlinkDistance > 0f)
+        {
+            Blink(spell.BlinkDistance);
+        }
+
+        ApplySupport(Entity, spell, power);
+    }
+
+    /// <summary>Teleports the caster up to <paramref name="distance"/> metres along their aim (Phase 29.5G —
+    /// Blink), stopping short of world geometry. ponytail: straight ray, horizontal hop (keeps feet height);
+    /// no ledge/step handling — fine for a flat-ish dodge, revisit if vertical blinks are wanted.</summary>
+    private void Blink(float distance)
+    {
+        if (Entity?.Body is not CharacterBody3D body)
+        {
+            return;
+        }
+
+        (_, Vector3 forward) = Aim();
+        Vector3 from = body.GlobalPosition + (Vector3.Up * 1f);
+        Vector3 to = from + (forward * distance);
+
+        var query = PhysicsRayQueryParameters3D.Create(from, to, CombatLayers.World);
+        query.Exclude = new Godot.Collections.Array<Rid> { body.GetRid() };
+        Godot.Collections.Dictionary hit = body.GetWorld3D().DirectSpaceState.IntersectRay(query);
+
+        Vector3 dest = hit.Count > 0 ? (Vector3)hit["position"] - (forward * 0.5f) : to;
+        body.GlobalPosition = new Vector3(dest.X, body.GlobalPosition.Y, dest.Z);
+        body.Velocity = Vector3.Zero;
+    }
 
     /// <summary>Applies a Self-delivery spell's heal and/or beneficial status to <paramref name="target"/>
     /// (the caster for a normal Self cast; an ally for an enemy support caster, Phase 29.5F).</summary>

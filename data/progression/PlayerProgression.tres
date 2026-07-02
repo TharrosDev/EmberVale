@@ -4,7 +4,7 @@
 
 [resource]
 script = ExtResource("1_prog")
-MaxLevel = 30
+MaxLevel = 50
 BaseXpToLevel = 100
 XpCurveExponent = 1.5
 SkillPointsPerLevel = 1

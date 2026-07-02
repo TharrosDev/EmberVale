@@ -92,6 +92,7 @@ char.rep_line,{0}: {1} ({2})
 char.xp_max,MAX
 char.level_line,Level {0}    XP {1}
 char.skill_points,Skill points: {0}
+char.spell_points,Spell points: {0}
 char.corruption,CORRUPTION
 char.corruption_line,{0}   ({1}/{2})
 char.perks,PERKS
@@ -111,6 +112,15 @@ char.spell_upgrade,Upgrade ({0})
 char.spell_maxed,[maxed]
 char.spell_needs,[needs {0}]
 char.spell_cost,[{0} sp]
+char.school_mastery,{0}   ·   Mastery {1}/{2}  (+{3}%)
+char.mode_charged,[charged]
+char.mode_channeled,[channeled]
+school.fire,Fire
+school.frost,Frost
+school.lightning,Lightning
+school.arcane,Arcane
+school.nature,Nature
+school.necrotic,Necrotic
 char.unequip,Unequip
 char.empty,(empty)
 char.equip,Equip
@@ -138,6 +148,8 @@ hud.mp,MP
 hud.quest,QUEST
 hud.level,Lv {0}
 hud.ready,ready
+hud.charging,charging…
+hud.channeling,channeling
 hud.spell,Q: {0} ({1})
 # Stat names (StatNames / character creator)
 stat.health,Health

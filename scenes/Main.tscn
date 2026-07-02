@@ -1,6 +1,6 @@
-[gd_scene load_steps=2 format=3 uid="uid://cmbrvlmain01"]
+[gd_scene format=3 uid="uid://cmbrvlmain01"]
 
-[ext_resource type="Script" path="res://src/Bootstrap/GameBootstrap.cs" id="1_bootstrap"]
+[ext_resource type="Script" uid="uid://1e2oy6jtg5gk" path="res://src/Bootstrap/GameBootstrap.cs" id="1_bootstrap"]
 
-[node name="Main" type="Node3D"]
+[node name="Main" type="Node3D" unique_id=1111969342]
 script = ExtResource("1_bootstrap")

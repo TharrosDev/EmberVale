@@ -32,7 +32,13 @@ public partial class ProgressionComponent : EntityComponent, ISaveable
 
     public int Level { get; private set; } = 1;
     public int CurrentXp { get; private set; }
+
+    /// <summary>Points spent on character perks.</summary>
     public int SkillPoints { get; private set; }
+
+    /// <summary>Points spent buying/upgrading spells in the grimoire (Phase 29.5G) — a pool separate from
+    /// <see cref="SkillPoints"/> so perks and spells don't compete for the same currency.</summary>
+    public int SpellPoints { get; private set; }
 
     public string SaveId => SaveKey("progression");
 
@@ -111,6 +117,7 @@ public partial class ProgressionComponent : EntityComponent, ISaveable
         {
             int skillPointsGained = levelsGained * Curve.SkillPointsPerLevel;
             SkillPoints += skillPointsGained;
+            SpellPoints += skillPointsGained; // one spell point per level too (Phase 29.5G)
             ApplyGrowth();
             _stats?.RefillResources();
             EventBus.Instance?.Publish(new LeveledUpEvent(Entity, Level, skillPointsGained));
@@ -129,6 +136,18 @@ public partial class ProgressionComponent : EntityComponent, ISaveable
         }
 
         SkillPoints -= cost;
+        return true;
+    }
+
+    /// <summary>Spends spell-book points (buying/upgrading spells). Returns false if too few are available.</summary>
+    public bool SpendSpellPoints(int cost)
+    {
+        if (cost <= 0 || SpellPoints < cost)
+        {
+            return cost <= 0;
+        }
+
+        SpellPoints -= cost;
         return true;
     }
 
@@ -162,6 +181,7 @@ public partial class ProgressionComponent : EntityComponent, ISaveable
             ["level"] = Level,
             ["xp"] = CurrentXp,
             ["sp"] = SkillPoints,
+            ["spell_sp"] = SpellPoints,
         };
     }
 
@@ -170,6 +190,7 @@ public partial class ProgressionComponent : EntityComponent, ISaveable
         Level = data.TryGetValue("level", out Variant levelVar) ? Mathf.Max(1, levelVar.AsInt32()) : 1;
         CurrentXp = data.TryGetValue("xp", out Variant xpVar) ? Mathf.Max(0, xpVar.AsInt32()) : 0;
         SkillPoints = data.TryGetValue("sp", out Variant spVar) ? Mathf.Max(0, spVar.AsInt32()) : 0;
+        SpellPoints = data.TryGetValue("spell_sp", out Variant sspVar) ? Mathf.Max(0, sspVar.AsInt32()) : 0;
 
         ApplyGrowth();
 

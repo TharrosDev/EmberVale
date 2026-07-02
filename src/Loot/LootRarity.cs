@@ -11,8 +11,9 @@ namespace Embervale.Loot;
 /// </summary>
 public static class LootRarity
 {
-    // Relative base weights, Common → Legendary.
-    private static readonly float[] BaseWeights = { 64f, 24f, 9f, 2.5f, 0.5f };
+    // Relative base weights, Common → Legendary (each flat +5 from the original 64/24/9/2.5/0.5 to
+    // bump the rarer tiers: Common ~55%, Legendary ~4.4% at quality 0).
+    private static readonly float[] BaseWeights = { 69f, 29f, 14f, 7.5f, 5.5f };
 
     /// <summary>How many affixes an item of each rarity rolls.</summary>
     public static int AffixCount(ItemRarity rarity)

@@ -37,6 +37,7 @@ public partial class GameHud : CanvasLayer
     private Label _mpText = null!;
     private Label _footer = null!;
     private Label _statusLine = null!;
+    private ProgressBar _castBar = null!;
 
     private Label _context = null!;
 
@@ -138,6 +139,13 @@ public partial class GameHud : CanvasLayer
 
         _footer = UiTheme.Body("", UiTheme.Dim);
         col.AddChild(_footer);
+
+        // Charge/channel meter (29.5G): fills while a charged cast is held, pinned full while
+        // channeling, hidden otherwise. Modulated to the active spell's school colour.
+        _castBar = UiTheme.Bar(new Color(0.9f, 0.9f, 0.9f));
+        _castBar.Visible = false;
+        col.AddChild(_castBar);
+
         _statusLine = UiTheme.Body("", UiTheme.Good);
         col.AddChild(_statusLine);
     }
@@ -329,13 +337,26 @@ public partial class GameHud : CanvasLayer
             footer.Append(Loc.TF("hud.level", prog.Level));
         }
 
+        bool casting = false;
         if (_player.TryGetComponent(out SpellcastingComponent spells) && spells.Selected is { } spell)
         {
             float cd = spells.CooldownOf(spell);
-            string state = cd > 0f ? $"{cd:0.0}s" : Loc.T("hud.ready");
+            string state = spells.IsCharging ? Loc.T("hud.charging")
+                : spells.IsChanneling ? Loc.T("hud.channeling")
+                : cd > 0f ? $"{cd:0.0}s"
+                : Loc.T("hud.ready");
             footer.Append(footer.Length > 0 ? "    " : string.Empty);
             footer.Append(Loc.TF("hud.spell", spell.DisplayName, state));
+
+            casting = spells.IsCharging || spells.IsChanneling;
+            if (casting)
+            {
+                _castBar.Value = spells.IsCharging ? spells.ChargeProgress : 1d;
+                _castBar.Modulate = SpellSchools.Color(spell.School);
+            }
         }
+
+        _castBar.Visible = casting;
 
         _footer.Text = footer.ToString();
         _statusLine.Text = StatusText(_player);

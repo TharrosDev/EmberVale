@@ -19,6 +19,9 @@ namespace Embervale.Magic;
 /// </summary>
 public partial class SpellProjectile : Area3D
 {
+    /// <summary>Fraction-per-second a homing bolt turns toward its target (Phase 29.5G).</summary>
+    private const float HomingTurnRate = 3.5f;
+
     private SpellResource _spell = null!;
     private DamagePacket _packet;
     private IEntity? _caster;
@@ -86,6 +89,12 @@ public partial class SpellProjectile : Area3D
             return;
         }
 
+        // Homing (Phase 29.5G — Ball Lightning): bend toward the nearest hostile each frame.
+        if (_spell.HomingRange > 0f && NearestHostile(_spell.HomingRange) is { } target)
+        {
+            _direction = SpellHoming.Steer(_direction, target.GlobalPosition - GlobalPosition, HomingTurnRate, (float)delta);
+        }
+
         GlobalPosition += _direction * _spell.ProjectileSpeed * (float)delta;
         _life -= delta;
 
@@ -115,6 +124,40 @@ public partial class SpellProjectile : Area3D
         {
             Resolve(null);
         }
+    }
+
+    /// <summary>The nearest valid hostile hurtbox within <paramref name="radius"/> of the bolt (Phase
+    /// 29.5G homing), or null. A sphere query on the Hurtbox layer, mirroring <see cref="SpellResolver.Detonate"/>.</summary>
+    private Hurtbox? NearestHostile(float radius)
+    {
+        PhysicsDirectSpaceState3D space = GetWorld3D().DirectSpaceState;
+        var query = new PhysicsShapeQueryParameters3D
+        {
+            Shape = new SphereShape3D { Radius = radius },
+            Transform = new Transform3D(Basis.Identity, GlobalPosition),
+            CollideWithAreas = true,
+            CollideWithBodies = false,
+            CollisionMask = CombatLayers.Hurtbox,
+        };
+
+        Hurtbox? best = null;
+        float bestDist = float.MaxValue;
+        foreach (Godot.Collections.Dictionary hit in space.IntersectShape(query, 16))
+        {
+            if (hit.TryGetValue("collider", out Variant colliderVar) &&
+                colliderVar.AsGodotObject() is Hurtbox hurtbox &&
+                SpellResolver.IsHostileTarget(hurtbox, _caster, _casterTeam))
+            {
+                float dist = hurtbox.GlobalPosition.DistanceSquaredTo(GlobalPosition);
+                if (dist < bestDist)
+                {
+                    bestDist = dist;
+                    best = hurtbox;
+                }
+            }
+        }
+
+        return best;
     }
 
     private void Resolve(Hurtbox? primary)

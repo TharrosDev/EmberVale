@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="SpellResource" format=3 uid="uid://cmbrvlspblink"]
+
+[ext_resource type="Script" path="res://src/Magic/SpellResource.cs" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+Id = "spell.blink"
+DisplayName = "Blink"
+Description = "Step through the Weave itself, reappearing a dozen paces along your gaze. Walls end the step short."
+School = 4
+Delivery = 2
+CastMode = 0
+ManaCost = 12.0
+Cooldown = 6.0
+BaseDamage = 0.0
+Healing = 0.0
+StatusEffectId = ""
+BlinkDistance = 10.0
+LearnCost = 1
+UpgradeCost = 1
+MaxRank = 1

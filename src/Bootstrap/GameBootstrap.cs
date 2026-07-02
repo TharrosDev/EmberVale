@@ -577,7 +577,11 @@ public partial class GameBootstrap : Node3D
                 ForceRespawn();
                 break;
             case Key.X:
-                _player?.GetComponent<ProgressionComponent>()?.AddXp(50);
+                if (_player?.GetComponent<ProgressionComponent>() is { } prog)
+                {
+                    prog.AddXp(prog.XpToNext - prog.CurrentXp); // debug: one full level
+                }
+
                 break;
             case Key.P:
                 _player?.GetComponent<CorruptionComponent>()?.Add(10);

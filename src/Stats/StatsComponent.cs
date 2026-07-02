@@ -37,7 +37,13 @@ public partial class StatsComponent : EntityComponent, ISaveable
     /// mashing keeps resetting this, so a flurry drains to empty while spaced reads sustain.</summary>
     [Export] public float StaminaRegenDelay { get; set; } = 0.9f;
 
+    /// <summary>Seconds health regen is paused after taking damage. Each hit resets the clock, so sustained
+    /// combat keeps regen suppressed; it only resumes once the entity has gone this long unharmed (i.e. left
+    /// combat).</summary>
+    [Export] public float HealthRegenDelay { get; set; } = 3f;
+
     private double _staminaIdle;
+    private double _healthIdle = double.MaxValue; // start un-paused (full delay already elapsed)
 
     public string SaveId => SaveKey("stats");
 
@@ -57,7 +63,13 @@ public partial class StatsComponent : EntityComponent, ISaveable
 
     public override void _Process(double delta)
     {
-        Regenerate(StatType.Health, HealthRegen, delta);
+        // Health regen is paused for HealthRegenDelay after each hit; repeated damage keeps it suppressed
+        // until the entity has been unharmed that long (out of combat).
+        _healthIdle += delta;
+        if (StaminaPacing.CanRegen(_healthIdle, HealthRegenDelay))
+        {
+            Regenerate(StatType.Health, HealthRegen, delta);
+        }
 
         // Stamina regen is paused for StaminaRegenDelay after each spend (Phase 29I anti-mash).
         _staminaIdle += delta;
@@ -214,6 +226,7 @@ public partial class StatsComponent : EntityComponent, ISaveable
             return;
         }
 
+        _healthIdle = 0d; // taking damage pauses health regen for HealthRegenDelay
         SetCurrent(StatType.Health, before - amount);
         float after = GetCurrent(StatType.Health);
 

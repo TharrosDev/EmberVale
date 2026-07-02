@@ -77,6 +77,10 @@ public static class GameIds
         public const string FlameLance = "spell.flame_lance";
         public const string StormConduit = "spell.storm_conduit";
         public const string EmberSiphon = "spell.ember_siphon";
+        public const string BallLightning = "spell.ball_lightning";
+        public const string Blizzard = "spell.blizzard";
+        public const string Blink = "spell.blink";
+        public const string LifebloomTotem = "spell.lifebloom_totem";
     }
 
     public static class Recipes

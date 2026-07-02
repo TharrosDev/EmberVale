@@ -220,14 +220,16 @@ that *can express* the game. The [**production roadmap**](docs/PRODUCTION_ROADMA
 
 **Now:** closing **G0 → G1**. Phases 22–29 are done (corruption, meta-shell &
 localization, region streaming + map + fast travel, races & creation, the Ember Crown
-greybox, the Iron King boss, and the full combat-feel pass). **Phase 29.5 — Spellcraft
-& the Fading Weave** is in progress.
+greybox, the Iron King boss, and the full combat-feel pass), and **Phase 29.5 —
+Spellcraft & the Fading Weave — is complete**: cast archetypes, school identities,
+mastery, combos, the Weave, enemy casters, and a school-grouped spellbook with one
+signature spell per school.
 
 |              | Phase                                          |
 | ------------ | ---------------------------------------------- |
-| ✅ **Done**    | 22–29 + G0 First Playable; 29.5A–29.5F          |
-| ▶ **Current** | 29.5 — Spellcraft & the Fading Weave            |
-| ⏭ **Next**    | 29.5G — Magic UI + signature spell per school   |
+| ✅ **Done**    | 22–29 + G0 First Playable; 29.5 Spellcraft      |
+| ▶ **Current** | 30 — Animation, Models & Visual Identity        |
+| ⏭ **Next**    | 30.5 — UI & HUD Overhaul                        |
 
 > A phase is "done" when it works in-game **and** round-trips through save/load.
 

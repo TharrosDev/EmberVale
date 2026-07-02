@@ -1642,13 +1642,30 @@ no code) — batch them when momentum is good.
     aims from a chest `CastOrigin` marker; registered in `EnemyTemplateRegistry`, spawnable via
     `spawn <n> enemy.ashen_acolyte`. Wounded casters also cast while retreating. Positioning unit-tested
     (`CasterDecisionTests`). The school-themed caster *roster* is Phase 34 (data, no new code).
-- [ ] **29.5G — Magic UI + one signature spell per school (slice content)** `[F/C]`
+- [x] **29.5G — Magic UI + one signature spell per school (slice content)** `[F/C]` ✅
   - **Goal:** the slice shows magic as a real, legible spine.
   - **Tasks:** a spellbook/school view with charge/channel/mastery feedback through
     `UiTheme` (functional; beautified in 30.5); author one signature spell per school for
     the slice (full catalogue is Phase 51).
   - **Done when:** the player can browse schools, see mastery/charge, and cast a signature
     spell from each school; content validates.
+  - **Done:** every school now has a **signature spell with its own delivery mechanic**: Fire =
+    **Flame Lance** (29.5A charged) · Lightning = **Ball Lightning** (a slow orb that *homes* on the
+    nearest hostile — new `SpellResource.HomingRange` + pure `SpellHoming.Steer`, applied per-frame in
+    `SpellProjectile`) · Frost = **Blizzard** (a lingering *zone* — `ZoneDuration`/`ZoneTickInterval`
+    spawn a `SpellZone` that re-`Detonate`s the spell on a cadence, chilling everything inside) ·
+    Arcane = **Blink** (`BlinkDistance` teleports the caster along their aim, ray-stopped by world
+    geometry) · Nature = **Lifebloom Totem** (`SummonDuration` spawns a `SpellTotem` that heals its
+    owner per tick) · Necrotic = **Ember Siphon** (23H corrupted lifesteal). The **spellbook** (the
+    character screen's Spells tab) is now a school view: spells grouped under a per-school header
+    showing **mastery rank/cap + power bonus** with a progress bar toward the next rank (29.5C data),
+    cast-mode tags (`[charged]`/`[channeled]`), and the existing Buy/Upgrade rows — funded by a new
+    **SpellPoints** pool on `ProgressionComponent` (1/level, saved as `spell_sp`) so spells no longer
+    compete with perks for skill points. **Charge/channel feedback**: `GameHud` gained a school-tinted
+    cast meter under the vitals (fills with `SpellcastingComponent.ChargeProgress`, pinned full while
+    channeling) and the prepared-spell footer states `charging…`/`channeling`. All strings through
+    `Loc` (catalogue 260). Build + **318 tests** (5 new `SpellHomingTests`) + `--validate` (12 spells,
+    exit 0) green; in-engine boot clean. **Phase 29.5 (Spellcraft & the Fading Weave) is complete.**
 
 ---
 

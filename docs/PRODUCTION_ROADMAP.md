@@ -1064,70 +1064,30 @@ The ordering is driven by hard dependencies, not preference:
 
 | Stage | Gate | Phases | Status |
 | ----- | ---- | ------ | ------ |
-| A — Pre-production & First Playable | G0 | 22–28 | ⏳ In progress (Phases 22 ✅, 23 ✅, 24 ✅; 25 underway — 25A–25B ✅) |
-| B — Vertical Slice | G1 | 29–33 | ⬜ Planned |
+| A — Pre-production & First Playable | G0 | 22–28 | ✅ Complete (22–28 + 25.5 hardening; G0 First Playable reached) |
+| B — Vertical Slice | G1 | 29–33 | ⏳ In progress (29 ✅, 29.5 ✅; next: 30 Animation, Models & Visual Identity) |
 | C — Alpha / Feature Complete | G2 | 34–45 | ⬜ Planned |
 | D — Beta / Content Complete | G3 | 46–55 | ⬜ Planned |
 | E — Release Candidate | G4 | 56–62 | ⬜ Planned |
 | F — Launch | G5 | 63 | ⬜ Planned |
 | G — Live / Post-launch | G6 | 64–66 | ⬜ Planned |
 
-**Immediate next step:** Phase 22 (Production Bible & Content Pipeline) is **complete**
-(22A–22H: design bible, ID registry, validator well-formedness + reachability + headless
-gate, content templates, analytics spine). **Phase 23 (Corruption)** — the LORE's
-defining mechanic — is **complete (23A–23H)**: the `CorruptionComponent` core (0–100 meter,
-`CorruptionTier` bands, change/tier events, save/load, wired onto the player), its debug
-surface (a `corruption` dev-console command + F3-overlay readout), dialogue integration
-(`CorruptionAtLeast`/`CorruptionBelow` conditions + an `AddCorruption` effect, exercised by
-the Village Elder), the character-screen corruption gauge, the HUD dread vignette (an
-ash-violet edge vignette in `GameHud` that fades in at Ashbound/Embers off
-`CorruptionTierChangedEvent`), the `CorruptionAppearanceController` stub (tints a placeholder
-player body mesh per tier — the seam Phase 30's real models/VFX plug into), **23G NPC dread**
-(corruption derives a global negative standing "dread" in `ReputationComponent`, `Effective`
-= earned − dread, so factions read a corrupted player as a lower tier and the enemy AI turns
-on them live), and **23H corrupted abilities + endings hook** (a `MinCorruptionTier` gate on
-`SpellResource`/`PerkResource` learning with one corrupted spell + perk authored, plus
-`CorruptionComponent.EndingEligibility` — `EndingPath` Undecided/Dawnfire/LordOfEmbers,
-pure-derived from the saved meter — the dial Phase 49's endings will read).
+**Where we are:** **Stage A is complete** — Phases 22 (production bible/pipeline), 23 (Corruption),
+24 (meta-shell + localization), 25 (region streaming, world map/compass, fast travel), the 25.5
+hardening pass, 26 (races & character creation), 27 (the Ember Crown vertical core) and 28 (the Iron
+King boss slice) are all done and **Gate G0 (First Playable) is reached**. Stage B is underway:
+**Phase 29 (Combat Feel & Game Juice) is complete** (hit-stop, shake, directional reactions,
+parry/riposte, dodge i-frames, lock-on, stamina pacing), and **Phase 29.5 (Spellcraft & the Fading
+Weave) is complete (29.5A–G)** — cast archetypes (charged/channeled), school identities +
+status-effect mechanics, spell scaling + per-school mastery, reactive combos, the fading-Weave
+region-potency dial + spell recovery, enemy/NPC caster AI, and the 29.5G magic UI (a school-grouped
+spellbook with mastery/charge/channel feedback, a SpellPoints economy, and one signature spell per
+school: Flame Lance, Ball Lightning, Blizzard, Blink, Lifebloom Totem, Ember Siphon).
 
-**Phase 24 (Meta-Shell & Localization Spine)** is **complete (24A–24H)** — the game
-boots to a `MainMenu` (`GameState.MainMenu`) instead of straight into the sandbox (24A); the
-`SaveManager` was refactored from one file per slot to per-slot directories
-(`user://saves/<slot>/{save,header}.json`) with a lightweight header (region/level/playtime/
-corruption tier/timestamp), `ListSlots`/`ReadHeader`/`DeleteSlot`, per-slot playtime, and legacy
-single-file migration (24B); the **save-slot UI** (24C) is a `UiTheme` slot browser
-(thumbnail + metadata, New/Load/Delete-with-confirm) wired into the title menu with
-Continue=most-recent, an `ActiveSlot` that quick/manual saves target, and screenshot capture on
-save; and **24D** adds the **autosave cadence** — an `AutosaveService` that rotates `auto1..auto3`
-on a 5-min active-play interval / quest-completion / level-up (plus a Phase 25 region-change seam),
-guarded to `IsPlaying` and debounced ≥60s so it never double-writes or clobbers the player's manual
-slot, with the Load browser surfacing autosaves read-only and an "Autosaved" toast. **24E** adds the
-**settings spine** — a `[GlobalClass]` `Settings` resource (graphics, six audio-bus volumes, controls/
-gameplay, accessibility placeholders) persisted to `user://settings.tres` via a `ServiceLocator`
--registered `SettingsService` that `LoadAndApply`s graphics + audio to the engine on boot, before the
-menu; the audio fields are paired to bus names ready for the Phase 31 mixer to consume. **24F** builds
-the **settings panel** on top — a modal `UiTheme` screen (Graphics / Audio / Controls / Gameplay /
-Accessibility) bound to the live `SettingsService`, applying changes instantly and persisting them,
-reachable from both the title menu and the in-game pause menu (with new `UiTheme.Toggle`/`Slider`/
-`Dropdown` builders). **24G** lands the **localization spine** — a `Loc.T("key")` facade over Godot's
-`TranslationServer`, loading a `data/locale/strings.csv` catalogue (key + per-locale columns) at boot
-and selecting `en`; the "no hard-coded player-facing strings" rule is now in force (CLAUDE.md §6, DoD
-#6). **24H** retrofits the whole shell (MainMenu/Settings/PauseMenu/save-slot) onto `Loc.T` keys —
-the catalogue is now the single source of shell text, with a `locale` dev command to switch and a CSV
-column the only cost of a new language.
-
-**Phase 24 is complete. Phase 25 (Region Streaming & World Map) is underway** — replace the single
-flat sandbox with streamed authored regions, a world map/compass, and a fast-travel graph before the
-four realms are authored. **25A is done**: a `RegionResource` + `RegionDatabase` data layer, the
-sandbox authored as `region.ember_crown` (the save header now reads its name from the resource), region
-cross-ref validation, and the region/sub-cell scene convention documented (ARCHITECTURE §2.6h-2,
-CLAUDE §8). **25B is done**: a `RegionStreamer` that loads/unloads a region's sub-cell scenes by
-distance with hysteresis and a one-instance-per-frame budget (verified in-engine — a demo cell streams
-in/out as the player moves), driven by `RegionCellResource` cell data and gated by the pure
-`StreamDecision`. **Next: 25C** — hard transitions + a loading screen for realm-to-realm loads.
+**Immediate next step: Phase 30 — Animation, Models & Visual Identity** (the art direction made
+real for the slice cast; sub-phases 30A–30I in `SESSION_PLAYBOOK.md`), then 30.5 (UI overhaul),
+31 (audio), 32 (companions), 33 (slice assembly) toward **Gate G1 — Vertical Slice**.
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —
 > a third-person open-world fantasy RPG where you battle fallen heroes across four
 > dying realms and choose whether to save creation or become its next Ash King.
-</content>
-</invoke>

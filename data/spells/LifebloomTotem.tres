@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SpellResource" format=3 uid="uid://cmbrvlsptotem"]
+
+[ext_resource type="Script" path="res://src/Magic/SpellResource.cs" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+Id = "spell.lifebloom_totem"
+DisplayName = "Lifebloom Totem"
+Description = "Plant a sliver of living wood that remembers the green world, mending your wounds with every heartbeat until it fades."
+School = 5
+Delivery = 2
+CastMode = 0
+ManaCost = 28.0
+Cooldown = 14.0
+BaseDamage = 0.0
+Healing = 6.0
+StatusEffectId = ""
+SummonDuration = 8.0
+SummonTickInterval = 1.0
+LearnCost = 1
+UpgradeCost = 1
+MaxRank = 3

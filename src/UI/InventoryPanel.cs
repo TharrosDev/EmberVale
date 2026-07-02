@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Embervale.Combat;
 using Embervale.Core;
 using Embervale.Core.Events;
 using Embervale.Corruption;
@@ -315,6 +316,26 @@ public partial class InventoryPanel : CanvasLayer
         _list.AddChild(bar);
     }
 
+    /// <summary>The spellbook's school display order (the six magic schools; Physical/True are not schools).</summary>
+    private static readonly DamageType[] SchoolOrder =
+    {
+        DamageType.Fire, DamageType.Frost, DamageType.Lightning,
+        DamageType.Arcane, DamageType.Nature, DamageType.Necrotic,
+    };
+
+    private static string SchoolKey(DamageType school) => school switch
+    {
+        DamageType.Fire => "school.fire",
+        DamageType.Frost => "school.frost",
+        DamageType.Lightning => "school.lightning",
+        DamageType.Arcane => "school.arcane",
+        DamageType.Nature => "school.nature",
+        DamageType.Necrotic => "school.necrotic",
+        _ => "school.fire",
+    };
+
+    /// <summary>The spellbook (29.5G): spells grouped by school, each school headed by its mastery
+    /// rank + progress toward the next (the 29.5C track), tinted the school's colour.</summary>
     private void BuildSpells()
     {
         if (_spellcasting == null || SpellDatabase.All.Count == 0)
@@ -323,39 +344,83 @@ public partial class InventoryPanel : CanvasLayer
             return;
         }
 
-        AddHeader(Loc.T("char.spells"));
         if (_progression != null)
         {
-            AddLine(Loc.TF("char.skill_points", _progression.SkillPoints), UiTheme.Dim);
+            AddLine(Loc.TF("char.spell_points", _progression.SpellPoints), UiTheme.Dim);
         }
 
-        foreach (SpellResource spell in SpellDatabase.All)
+        SchoolMasteryComponent? mastery = _spellcasting.Entity?.GetComponent<SchoolMasteryComponent>();
+        foreach (DamageType school in SchoolOrder)
         {
-            bool known = _spellcasting.IsKnown(spell);
-            int rank = _spellcasting.RankOf(spell);
-            Color tint = SpellSchools.Color(spell.School);
-            string text = known
-                ? Loc.TF("char.spell_rank", spell.DisplayName, rank, spell.MaxRank)
-                : spell.DisplayName;
+            var spells = new List<SpellResource>();
+            foreach (SpellResource s in SpellDatabase.All)
+            {
+                if (s.School == school)
+                {
+                    spells.Add(s);
+                }
+            }
 
-            if (!known && _spellcasting.CanBuy(spell))
+            if (spells.Count == 0)
             {
-                SpellResource captured = spell;
-                AddRow(text, Loc.TF("char.spell_buy", spell.LearnCost), () => _spellcasting!.Buy(captured), tint, spell.Description);
+                continue;
             }
-            else if (known && _spellcasting.CanUpgrade(spell))
+
+            Color tint = SpellSchools.Color(school);
+            int schoolRank = mastery?.RankOf(school) ?? 0;
+            int bonus = (int)Mathf.Round((SchoolMasteryMath.PowerMultiplier(schoolRank) - 1f) * 100f);
+
+            Label header = UiTheme.Header(Loc.TF("char.school_mastery",
+                Loc.T(SchoolKey(school)), schoolRank, SchoolMasteryMath.MaxRank, bonus));
+            header.Modulate = tint;
+            _list.AddChild(header);
+
+            // Progress toward the next mastery rank (hidden once the school is capped).
+            if (mastery != null && schoolRank < SchoolMasteryMath.MaxRank)
             {
-                SpellResource captured = spell;
-                AddRow(text, Loc.TF("char.spell_upgrade", spell.UpgradeCost), () => _spellcasting!.Upgrade(captured), tint, spell.Description);
+                ProgressBar bar = UiTheme.Bar(tint);
+                bar.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+                bar.Value = (mastery.PointsIn(school) % SchoolMasteryMath.PointsPerRank)
+                    / (double)SchoolMasteryMath.PointsPerRank;
+                _list.AddChild(bar);
             }
-            else
+
+            foreach (SpellResource spell in spells)
             {
-                string suffix = known && rank >= spell.MaxRank ? $"  {Loc.T("char.spell_maxed")}"
-                    : !known && !_spellcasting.MeetsCorruption(spell) ? $"  {Loc.TF("char.spell_needs", CorruptionTiers.Label(spell.MinCorruptionTier))}"
-                    : !known ? $"  {Loc.TF("char.spell_cost", spell.LearnCost)}"
-                    : string.Empty;
-                AddLine($"• {text}{suffix}", known ? tint : UiTheme.Dim, spell.Description);
+                BuildSpellRow(spell, tint);
             }
+        }
+    }
+
+    private void BuildSpellRow(SpellResource spell, Color tint)
+    {
+        bool known = _spellcasting!.IsKnown(spell);
+        int rank = _spellcasting.RankOf(spell);
+        string mode = spell.CastMode switch
+        {
+            CastMode.Charged => $"  {Loc.T("char.mode_charged")}",
+            CastMode.Channeled => $"  {Loc.T("char.mode_channeled")}",
+            _ => string.Empty,
+        };
+        string text = (known
+            ? Loc.TF("char.spell_rank", spell.DisplayName, rank, spell.MaxRank)
+            : spell.DisplayName) + mode;
+
+        if (!known && _spellcasting.CanBuy(spell))
+        {
+            AddRow(text, Loc.TF("char.spell_buy", spell.LearnCost), () => _spellcasting!.Buy(spell), tint, spell.Description);
+        }
+        else if (known && _spellcasting.CanUpgrade(spell))
+        {
+            AddRow(text, Loc.TF("char.spell_upgrade", spell.UpgradeCost), () => _spellcasting!.Upgrade(spell), tint, spell.Description);
+        }
+        else
+        {
+            string suffix = known && rank >= spell.MaxRank ? $"  {Loc.T("char.spell_maxed")}"
+                : !known && !_spellcasting.MeetsCorruption(spell) ? $"  {Loc.TF("char.spell_needs", CorruptionTiers.Label(spell.MinCorruptionTier))}"
+                : !known ? $"  {Loc.TF("char.spell_cost", spell.LearnCost)}"
+                : string.Empty;
+            AddLine($"• {text}{suffix}", known ? tint : UiTheme.Dim, spell.Description);
         }
     }
 

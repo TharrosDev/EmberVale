@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="SpellResource" format=3 uid="uid://cmbrvlspball1"]
+
+[ext_resource type="Script" path="res://src/Magic/SpellResource.cs" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+Id = "spell.ball_lightning"
+DisplayName = "Ball Lightning"
+Description = "A slow, crackling orb that hunts the nearest foe, bending its path to strike them — and arcs to whoever stands too close."
+School = 3
+Delivery = 0
+CastMode = 0
+ManaCost = 16.0
+Cooldown = 3.0
+BaseDamage = 18.0
+Healing = 0.0
+StatusEffectId = ""
+Range = 30.0
+ProjectileSpeed = 9.0
+ImpactRadius = 0.0
+HomingRange = 8.0
+LearnCost = 1
+UpgradeCost = 1
+MaxRank = 3
