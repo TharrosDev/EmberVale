@@ -32,11 +32,13 @@ public static class PlayerFactory
     private const float CapsuleRadius = 0.4f;
     private const float CapsuleHeight = 1.8f;
 
-    // Third-person camera rig: the pivot sits at head height and the camera orbits it from
-    // behind and slightly above, framing the player's body in the lower third of the view.
-    private const float CameraPivotHeight = 1.55f;
-    private const float CameraBackDistance = 3.8f;
-    private const float CameraRise = 0.4f;
+    // First-person camera (maintainer direction, 2026-07-02): the pitch pivot sits at eye
+    // height and the camera rides it directly. The third-person offsets are kept for the
+    // Phase 43 cutscene seam — PlayerController.SetFirstPerson(false) swings the camera back
+    // out and re-shows the body, so cutscenes can frame the retained third-person rig.
+    private const float EyeHeight = 1.62f;
+    internal const float ThirdPersonBackDistance = 3.8f;
+    internal const float ThirdPersonRise = 0.4f;
 
     public static PlayerCharacter Create(Vector3 position) =>
         Create(position, Races.CharacterProfile.Human, applyStartingGrants: true);
@@ -94,19 +96,20 @@ public static class PlayerFactory
         player.AddChild(new InventoryComponent { Name = "Inventory" });
         player.AddChild(BuildHurtbox());
 
-        // Pitch pivot at head height; the camera hangs behind and above it so mouse-look orbits
-        // the third-person camera around the player (yaw turns the body, pitch tilts the pivot).
+        // Pitch pivot at eye height; the first-person camera rides the pivot directly
+        // (yaw turns the body, pitch tilts the pivot — same mechanics as the old orbit).
         var cameraPivot = new Node3D
         {
             Name = "CameraPivot",
-            Position = new Vector3(0f, CameraPivotHeight, 0f),
+            Position = new Vector3(0f, EyeHeight, 0f),
         };
         player.AddChild(cameraPivot);
         var camera = new Camera3D
         {
             Name = "Camera",
             Current = true,
-            Position = new Vector3(0f, CameraRise, CameraBackDistance),
+            Position = Vector3.Zero,
+            Near = 0.08f, // tight near plane so world geometry hugs the eye without clipping weirdness
         };
         cameraPivot.AddChild(camera);
         camera.AddChild(new Embervale.Combat.CameraShake { Name = "Shake" });
@@ -205,6 +208,7 @@ public static class PlayerFactory
         {
             Name = "Controller",
             CameraPivot = cameraPivot,
+            Camera = camera,
         });
 
         // Race applies LAST so Stats/Perks/Spellcasting/Reputation have initialized when its

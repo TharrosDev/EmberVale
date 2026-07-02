@@ -1101,5 +1101,5 @@ first, sub-phases 30.5A–K in `SESSION_PLAYBOOK.md`), then 31 (audio), 32 (comp
 33 (slice assembly) toward **Gate G1 — Vertical Slice**.
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —
-> a third-person open-world fantasy RPG where you battle fallen heroes across four
+> a first-person open-world fantasy RPG where you battle fallen heroes across four
 > dying realms and choose whether to save creation or become its next Ash King.

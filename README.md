@@ -1,6 +1,6 @@
 # Embervale
 
-> An original third-person, open-world fantasy action-RPG built in **Godot 4.7**
+> An original first-person, open-world fantasy action-RPG (third-person body retained for cutscenes) built in **Godot 4.7**
 > with **C# (.NET 8)**. A dying world whose magic is failing — explore it, fight
 > with weight, master a deep spell system, and let a **corruption** system reshape
 > how that world reacts to you, all the way to one of two endings.
@@ -195,7 +195,7 @@ systems reference.
     ├── Crafting/  Factions/  # Recipes + stations; reputation + standing-driven hostility
     ├── Corruption/          # The corruption meter, tiers, appearance + dialogue hooks, endings
     ├── Races/               # Playable races + character creation
-    ├── Player/  Enemies/     # Third-person controller; perception-FSM AI (+ caster branch), spawning
+    ├── Player/  Enemies/     # First-person controller; perception-FSM AI (+ caster branch), spawning
     ├── Interaction/         # InteractableComponent (raycast interact)
     ├── Save/                # ISaveable, SaveManager, persistence directors
     ├── Localization/        # Loc string layer
