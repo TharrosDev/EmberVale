@@ -1870,6 +1870,20 @@ no code) — batch them when momentum is good.
     pickups remain glowing markers). Build + 313 tests + `--import` + `--validate` (exit 0)
     green; in-engine live run clean — the maintainer fought the new creature goblins and
     walked the dressed camps during verification.
+- [x] **30K — Maintainer design pivot: first-person gameplay** `[P/F]` ✅
+  - **Goal (maintainer-directed, 2026-07-02):** main gameplay is **first-person**; the
+    third-person body/rig/clips are retained for cutscenes.
+  - **Done:** the camera pivot moved to eye height (1.62 m) with the camera riding it
+    directly (near plane 0.08); mouse-look mechanics unchanged (yaw on body, pitch on
+    pivot), so aim/interact/lock-on all work as before. The player's own body renders
+    **shadows-only** in first person — except the held-weapon subtree, so sword swings
+    still sweep through view — and the full third-person rig + 8 clips stay intact.
+    The seam is `PlayerController.SetFirstPerson(bool)`: `false` swings the camera back
+    to the old orbit (offsets kept as `PlayerFactory.ThirdPerson*`) and re-shows the
+    body — the Phase 43 cutscene director's hook. Identity docs updated (CLAUDE.md,
+    README, ARCHITECTURE, LORE, ROADMAP: "first-person … third-person body retained for
+    cutscenes"). Build + 313 tests green; verified live in-engine — the maintainer
+    played first-person combat during the run, no errors.
 
 ---
 
