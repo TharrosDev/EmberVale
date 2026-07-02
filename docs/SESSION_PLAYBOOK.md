@@ -1759,9 +1759,21 @@ no code) — batch them when momentum is good.
     broke when 30B nested meshes under a skeleton. NPC meshes get placed when the town actors
     exist (30H dressing); goblin/boss animation sets are 30F. Build + 313 tests + `--import` +
     boot-to-menu run green.
-- [ ] **30E — Spell-casting animations + cast VFX by school** `[P]`
+- [x] **30E — Spell-casting animations + cast VFX by school** `[P]` ✅
   - **Done when:** casting plays animations and school-tinted VFX matched to
     `SpellSchools`.
+  - **Done:** the player rig gained two clips (re-imported into Blender via the MCP, authored,
+    re-exported — the glb now ships 8): **`cast`** (a left-palm thrust with chest turn, 12f
+    one-shot) and **`channel-loop`** (a sustained two-hand reach with tremble). A stray
+    `Icosphere` that had slipped into the 30C export was removed. `CharacterAnimationComponent`
+    now subscribes to `SpellCastEvent`: an instant/charged release plays the cast one-shot **and
+    pops a `SpellFlash` at the casting hand** (left-hand bone world pose via the skeleton, chest
+    fallback) tinted `SpellSchools.Color(spell.School)` — the existing detonate flash reused as
+    cast VFX, so every school's cast reads in its colour with no new VFX system. While
+    `IsCharging`/`IsChanneling` the channel-loop pose wins the state pick (above block), and a
+    channel's per-tick cast events skip the one-shot/flash spam. Build + 313 tests + `--import`
+    green; in-engine run clean with the maintainer playing live. Real per-school particle VFX
+    remain 30I's status/impact library pass.
 - [ ] **30F — Core enemy animation set (goblin + Iron King)** `[P]`
   - **Done when:** locomotion/attack/hit/death sets (driving 30D's meshes) drive
     the existing AI/combat states for the slice cast.

@@ -1,6 +1,7 @@
 using Embervale.Combat;
 using Embervale.Core.Events;
 using Embervale.Entities;
+using Embervale.Magic;
 using Embervale.Stats;
 using Godot;
 
@@ -29,7 +30,10 @@ public partial class CharacterAnimationComponent : EntityComponent
     private AnimationPlayer? _player;
     private CombatComponent? _combat;
     private StatsComponent? _stats;
+    private SpellcastingComponent? _spellcasting;
+    private Skeleton3D? _skeleton;
     private string _idle = "", _run = "", _block = "", _attack = "", _hit = "", _death = "";
+    private string _cast = "", _channel = "";
     private bool _deathPlayed;
 
     protected override void OnInitialize()
@@ -50,16 +54,87 @@ public partial class CharacterAnimationComponent : EntityComponent
             _attack = ResolveClip("attack");
             _hit = ResolveClip("hit");
             _death = ResolveClip("death");
+            _cast = ResolveClip("cast");
+            _channel = ResolveClip("channel");
+        }
+
+        _spellcasting = Entity.GetComponent<SpellcastingComponent>();
+        if (Entity.Body.GetNodeOrNull<Node3D>(BodyMeshPath) is { } root)
+        {
+            _skeleton = FindSkeleton(root);
         }
 
         EventBus.Instance?.Subscribe<AttackPerformedEvent>(OnAttack);
         EventBus.Instance?.Subscribe<EntityDamagedEvent>(OnDamaged);
+        EventBus.Instance?.Subscribe<SpellCastEvent>(OnSpellCast);
     }
 
     protected override void OnTeardown()
     {
         EventBus.Instance?.Unsubscribe<AttackPerformedEvent>(OnAttack);
         EventBus.Instance?.Unsubscribe<EntityDamagedEvent>(OnDamaged);
+        EventBus.Instance?.Unsubscribe<SpellCastEvent>(OnSpellCast);
+    }
+
+    private static Skeleton3D? FindSkeleton(Node node)
+    {
+        if (node is Skeleton3D skeleton)
+        {
+            return skeleton;
+        }
+
+        foreach (Node child in node.GetChildren())
+        {
+            if (FindSkeleton(child) is { } found)
+            {
+                return found;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>The 30E cast beat: play the cast thrust and pop a school-tinted flash at the
+    /// casting hand. A channeled spell publishes a cast event per tick — the sustained
+    /// channel-loop pose covers those, so per-tick one-shots/flashes are skipped.</summary>
+    private void OnSpellCast(SpellCastEvent e)
+    {
+        if (!ReferenceEquals(e.Caster, Entity) || _spellcasting is { IsChanneling: true })
+        {
+            return;
+        }
+
+        PlayOneShot(_cast);
+
+        if (SpellDatabase.Get(e.SpellId) is { } spell)
+        {
+            var flash = new SpellFlash
+            {
+                Radius = 0.5f,
+                FlashColor = SpellSchools.Color(spell.School),
+            };
+            Entity!.Body.GetTree().CurrentScene.AddChild(flash);
+            flash.GlobalPosition = CastingHandPosition();
+        }
+    }
+
+    /// <summary>World position of the left (casting) hand bone, falling back to chest height.</summary>
+    private Vector3 CastingHandPosition()
+    {
+        if (_skeleton != null)
+        {
+            for (int i = 0; i < _skeleton.GetBoneCount(); i++)
+            {
+                string name = _skeleton.GetBoneName(i);
+                if (name.Contains("hand", System.StringComparison.OrdinalIgnoreCase) &&
+                    name.EndsWith("L", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return (_skeleton.GlobalTransform * _skeleton.GetBoneGlobalPose(i)).Origin;
+                }
+            }
+        }
+
+        return Entity!.Body.GlobalPosition + (Vector3.Up * 1.3f);
     }
 
     private static AnimationPlayer? FindAnimationPlayer(Node node)
@@ -141,14 +216,17 @@ public partial class CharacterAnimationComponent : EntityComponent
 
         _deathPlayed = false;
 
-        // Let one-shots (attack/hit) finish before locomotion reclaims the player.
-        if (_player.IsPlaying() && (_player.CurrentAnimation == _attack || _player.CurrentAnimation == _hit))
+        // Let one-shots (attack/hit/cast) finish before locomotion reclaims the player.
+        if (_player.IsPlaying() &&
+            (_player.CurrentAnimation == _attack || _player.CurrentAnimation == _hit ||
+             _player.CurrentAnimation == _cast))
         {
             return;
         }
 
         string next =
-            _combat is { IsBlocking: true } && _block.Length > 0 ? _block
+            _spellcasting is { IsCharging: true } or { IsChanneling: true } && _channel.Length > 0 ? _channel
+            : _combat is { IsBlocking: true } && _block.Length > 0 ? _block
             : HorizontalSpeed() > RunSpeedThreshold && _run.Length > 0 ? _run
             : _idle;
 
