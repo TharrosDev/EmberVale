@@ -1838,6 +1838,38 @@ no code) — batch them when momentum is good.
     they're reviewable in the viewport). Build + 313 tests + `--validate` (exit 0) green;
     in-engine run clean with the maintainer playing. Final particle/material art is Phase 53.
     **Phase 30 (Animation, Models & Visual Identity) is complete (30A–30I).**
+- [x] **30J — Maintainer art revision: poly bands, creature redesign, full greybox sweep** `[P]` ✅
+  - **Goal (maintainer-directed, 2026-07-02):** (1) new triangle bands — player/key bosses
+    ~1500, enemies/NPCs ~800, buildings/hero props 550–800, heavily instanced world props
+    exempt ("looks good" is the bar); (2) enemies must read as **fantasy creatures, not
+    humanoids**, goblins at ~2/3 player height; (3) **zero greyboxes** left anywhere in the
+    world; (4) all existing models deep-upgraded to the bands.
+  - **Done:** `ART_STYLE.md` §3 rewritten to the new bands. **Creatures** — goblin (1.12 m)
+    and brute (1.4 m, horned) rebuilt as hunched, long-armed, knuckle-dragging creatures with
+    snouts, ears/horns, tails, bone-pale back spikes, claws and digitigrade legs (~730–750
+    tris), rigged (18 bones incl. tail) with creature clips (tail-wag idle, scamper, lunging
+    double-claw attack, flinch, sideways-crumple death). **Player** rebuilt at exactly 1500
+    tris and re-rigged with all 8 clips; **Iron King** rebuilt at 1500 with extra armor
+    (knee plates, chimney-capped crown) and re-rigged. A mid-session player-deform bug the
+    maintainer caught ("glitched and stretched") was root-caused to Blender's bone-heat
+    solve silently producing garbage weights — all rigs now use **deterministic
+    nearest-two-bone inverse-distance binding** (rigid snap when one bone clearly owns a
+    vert), pose-verified in the viewport before export. **NPCs** rebuilt at 800 tris each.
+    **New: Ashen Acolyte model** (752 tris, hooded robe, ember face-void/belt, rigged with
+    cast clip) wired into its factory + `CharacterAnimationComponent` — no capsule enemies
+    remain. **Env kit upgraded** into band (houses gain porches/ridge beams/side windows/
+    chimney caps, waystone 12-facet + base stones + second rune ring, stations gain bellows/
+    tools/stools/vials/shelves, banner gains finial/fray). **Greybox sweep** — new models
+    (`prp_ruin_wall`, `prp_arena_wall` crenellated, `prp_brazier`, `prp_glacier`,
+    `prp_training_dummy`, `prp_cache_chest`, `prp_tome_stand`, `prp_crate`, `prp_tent`,
+    `prp_campfire`, `prp_relic`) replace every remaining primitive visual: wilds_north
+    (ruin wall, rocks, fallen pillar, crate), wilds_west (rocks, tents, campfire + pines),
+    arena (3 crenellated walls + challenge brazier), frostfang glacier cell (two faceted ice
+    masses), town relic, and the bootstrap's training dummy/supply cache/Ashen Tome (all
+    with fallbacks; colliders and gameplay untouched; ground planes remain terrain, item
+    pickups remain glowing markers). Build + 313 tests + `--import` + `--validate` (exit 0)
+    green; in-engine live run clean — the maintainer fought the new creature goblins and
+    walked the dressed camps during verification.
 
 ---
 
