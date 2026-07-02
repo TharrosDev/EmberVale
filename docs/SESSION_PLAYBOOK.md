@@ -1736,13 +1736,29 @@ no code) — batch them when momentum is good.
     break it, and any humanoid shipping those clip names (the 30F enemy sets) reuses the
     component unchanged. Build + 313 tests + `--import` green; verified in-engine live — the
     maintainer fought goblins with the rigged character during the run, no errors.
-- [ ] **30D — Core enemy + key-NPC model set** `[P]`
+- [x] **30D — Core enemy + key-NPC model set** `[P]` ✅
   - **Goal:** the slice cast named in the Phase 30 header (core enemies, key NPCs,
     the boss) has real meshes, not the goblin-only placeholder.
   - **Tasks:** built in Blender via the Blender MCP — goblin model (+ one variant),
     the Iron King boss model, and the key Ember Crown NPCs from Phase 27 (vendor,
     innkeeper, guild rep) — each matched to `ART_STYLE.md` (30A); export to glTF.
   - **Done when:** each listed actor has a distinct, importable mesh/texture set.
+  - **Done:** six organic low-poly models (the 30B skin-modifier technique, parameterized by
+    height/bulk/head-scale/hunch) authored via the Blender MCP and exported: **goblin** (1.1 m,
+    hunched, big-headed, mossy skin + loincloth, ~1.3k tris) and **goblin brute** variant (1.45 m,
+    bulky) under `assets/models/creatures/`, the **Iron King** (2.4 m armored colossus — painted
+    sabatons/faulds/gauntlets plus fitted pauldrons-with-spikes, a crown band sunk onto the skull,
+    inset ember eyes, an embedded chest ember-core and girdle gem, ~1.5k tris; rebuilt once after
+    the maintainer flagged hovering pieces — armor is now placed against measured mesh landmarks),
+    and **vendor / innkeeper / guild rep** NPCs (distinct tunic/apron/robe palettes + hair) under
+    `assets/models/characters/`. In-engine wiring where placeholders lived: `EnemyFactory` and
+    `BossFactory` instantiate their models as "Mesh" (capsule fallbacks kept); `BossController`'s
+    phase/telegraph glow generalized to claim the model's first **emissive surface** (the ember
+    core) instead of requiring a capsule MaterialOverride; and `HitReactionComponent.FindMesh` now
+    prefers the conventional `BodyMesh`/`Mesh` root — fixing the player hit-recoil that silently
+    broke when 30B nested meshes under a skeleton. NPC meshes get placed when the town actors
+    exist (30H dressing); goblin/boss animation sets are 30F. Build + 313 tests + `--import` +
+    boot-to-menu run green.
 - [ ] **30E — Spell-casting animations + cast VFX by school** `[P]`
   - **Done when:** casting plays animations and school-tinted VFX matched to
     `SpellSchools`.

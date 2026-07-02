@@ -42,11 +42,20 @@ public partial class BossController : EntityComponent
         ProcessMode = ProcessModeEnum.Pausable;
         _stats = Entity!.GetComponent<StatsComponent>();
 
-        if (Entity!.Body.GetNodeOrNull<MeshInstance3D>("Mesh")?.MaterialOverride is StandardMaterial3D mat)
+        // The phase/telegraph glow drives the boss's emissive material: the stand-in capsule's
+        // MaterialOverride, or (30D model) the first emissive surface under the "Mesh" scene root
+        // (the Iron King's ember core/eyes), claimed as a unique copy.
+        if (Entity!.Body.GetNodeOrNull<Node3D>("Mesh") is { } visual)
         {
-            _mat = mat;
-            _baseColor = mat.Emission;
-            _baseEmission = mat.EmissionEnergyMultiplier;
+            _mat = visual is MeshInstance3D { MaterialOverride: StandardMaterial3D overrideMat }
+                ? overrideMat
+                : ClaimEmissiveSurface(visual);
+        }
+
+        if (_mat != null)
+        {
+            _baseColor = _mat.Emission;
+            _baseEmission = _mat.EmissionEnergyMultiplier;
         }
 
         EventBus.Instance?.Subscribe<DamageDealtEvent>(OnDamage);
@@ -57,6 +66,34 @@ public partial class BossController : EntityComponent
     {
         EventBus.Instance?.Unsubscribe<DamageDealtEvent>(OnDamage);
         EventBus.Instance?.Unsubscribe<AttackPerformedEvent>(OnAttack);
+    }
+
+    /// <summary>The first emission-enabled surface material under <paramref name="node"/>, replaced
+    /// with a uniquely-owned duplicate this controller may animate freely.</summary>
+    private static StandardMaterial3D? ClaimEmissiveSurface(Node node)
+    {
+        if (node is MeshInstance3D mesh && mesh.Mesh is { } res)
+        {
+            for (int i = 0; i < res.GetSurfaceCount(); i++)
+            {
+                if (mesh.GetActiveMaterial(i) is StandardMaterial3D { EmissionEnabled: true } m)
+                {
+                    var owned = (StandardMaterial3D)m.Duplicate();
+                    mesh.SetSurfaceOverrideMaterial(i, owned);
+                    return owned;
+                }
+            }
+        }
+
+        foreach (Node child in node.GetChildren())
+        {
+            if (ClaimEmissiveSurface(child) is { } found)
+            {
+                return found;
+            }
+        }
+
+        return null;
     }
 
     public override void _Process(double delta)
