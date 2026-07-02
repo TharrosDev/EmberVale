@@ -18,22 +18,52 @@ namespace Embervale.Corruption;
 [GlobalClass]
 public partial class CorruptionAppearanceController : EntityComponent
 {
-    /// <summary>Node name of the player body mesh this tints (added by <c>PlayerFactory</c>).</summary>
+    /// <summary>Node name of the player body visual this tints (added by <c>PlayerFactory</c>) —
+    /// either a single stand-in <see cref="MeshInstance3D"/> or the 30B model scene root, whose
+    /// mesh surfaces are all tinted.</summary>
     [Export] public string BodyMeshPath { get; set; } = "BodyMesh";
 
-    private StandardMaterial3D? _material;
+    // Every surface material on the body (uniquely owned so tinting never bleeds into a shared
+    // resource) paired with its authored base albedo, so ashing lerps FROM the real colour, and
+    // whether it is a skin material (only skin gets the ember-vein emissive — glowing the whole
+    // outfit red reads as a rendering bug, not corruption).
+    private readonly System.Collections.Generic.List<(StandardMaterial3D Material, Color BaseAlbedo, bool IsSkin)> _surfaces = new();
 
     protected override void OnInitialize()
     {
-        if (Entity is { } owner && owner.Body.GetNodeOrNull<MeshInstance3D>(BodyMeshPath) is { } mesh)
+        if (Entity is { } owner && owner.Body.GetNodeOrNull<Node3D>(BodyMeshPath) is { } bodyRoot)
         {
-            // Own a unique material so tinting never bleeds into a shared resource.
-            _material = mesh.MaterialOverride as StandardMaterial3D ?? new StandardMaterial3D();
-            mesh.MaterialOverride = _material;
+            CollectSurfaces(bodyRoot);
         }
 
         EventBus.Instance?.Subscribe<CorruptionTierChangedEvent>(OnTierChanged);
         Apply(CorruptionTier.Untainted);
+    }
+
+    /// <summary>Claims a uniquely-owned copy of every mesh surface material under
+    /// <paramref name="node"/> (the 30B model has one per palette colour; the stand-in capsule
+    /// has one override).</summary>
+    private void CollectSurfaces(Node node)
+    {
+        if (node is MeshInstance3D mesh && mesh.Mesh is { } res)
+        {
+            for (int i = 0; i < res.GetSurfaceCount(); i++)
+            {
+                StandardMaterial3D owned = mesh.GetActiveMaterial(i) is StandardMaterial3D m
+                    ? (StandardMaterial3D)m.Duplicate()
+                    : new StandardMaterial3D { AlbedoColor = new Color(0.62f, 0.60f, 0.58f) };
+                // The 30B model's material names survive glTF import ("chr_skin", …); the
+                // stand-in capsule has no name and counts as skin so it still shows the tier.
+                bool isSkin = owned.ResourceName is not { Length: > 0 } n || n.Contains("skin");
+                mesh.SetSurfaceOverrideMaterial(i, owned);
+                _surfaces.Add((owned, owned.AlbedoColor, isSkin));
+            }
+        }
+
+        foreach (Node child in node.GetChildren())
+        {
+            CollectSurfaces(child);
+        }
     }
 
     protected override void OnTeardown()
@@ -47,21 +77,19 @@ public partial class CorruptionAppearanceController : EntityComponent
     /// replaces these stand-ins with authored materials/VFX (see the class hook note).</summary>
     private void Apply(CorruptionTier tier)
     {
-        if (_material == null)
-        {
-            return;
-        }
-
         float t = (int)tier / 4f; // 0 Untainted … 4 Embers
+        Color ash = new(0.20f, 0.17f, 0.17f);
 
-        // Healthy skin fades toward a dark ashen tone as corruption deepens.
-        Color baseSkin = new(0.62f, 0.60f, 0.58f);
-        Color ash = new(0.22f, 0.16f, 0.16f);
-        _material.AlbedoColor = baseSkin.Lerp(ash, t);
+        foreach ((StandardMaterial3D material, Color baseAlbedo, bool isSkin) in _surfaces)
+        {
+            // Each authored colour fades toward the same dark ash as corruption deepens.
+            material.AlbedoColor = baseAlbedo.Lerp(ash, t * 0.7f);
 
-        // Dark blood-red emissive stand-in for eye-glow / blood veins; off while Untainted.
-        _material.EmissionEnabled = tier != CorruptionTier.Untainted;
-        _material.Emission = new Color(0.50f, 0.04f, 0.06f);
-        _material.EmissionEnergyMultiplier = t * 2.0f;
+            // A dim ember-vein emissive on SKIN only (eye-glow / banked-coal veins per
+            // ART_STYLE §2.2); off while Untainted. Real per-tier materials/VFX are 30I.
+            material.EmissionEnabled = isSkin && tier != CorruptionTier.Untainted;
+            material.Emission = new Color(0.55f, 0.16f, 0.04f);
+            material.EmissionEnergyMultiplier = isSkin ? t * 0.35f : 0f;
+        }
     }
 }
