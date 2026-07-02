@@ -36,14 +36,26 @@ public partial class HitReactionComponent : EntityComponent
 
     protected override void OnTeardown() => EventBus.Instance?.Unsubscribe<DamageDealtEvent>(OnDamage);
 
-    /// <summary>The body's first <see cref="MeshInstance3D"/> child (the actor's visual), or null.</summary>
+    /// <summary>The actor's visual root: the conventional "BodyMesh"/"Mesh" child (a plain
+    /// <see cref="Node3D"/> since the 30B/30D glTF models — their meshes nest under a scene root),
+    /// else the first <see cref="MeshInstance3D"/> child (legacy stand-in capsules).</summary>
     private static Node3D? FindMesh(Node body)
     {
+        if (body.GetNodeOrNull<Node3D>("BodyMesh") is { } bodyMesh)
+        {
+            return bodyMesh;
+        }
+
+        if (body.GetNodeOrNull<Node3D>("Mesh") is { } mesh)
+        {
+            return mesh;
+        }
+
         foreach (Node child in body.GetChildren())
         {
-            if (child is MeshInstance3D mesh)
+            if (child is MeshInstance3D meshChild)
             {
-                return mesh;
+                return meshChild;
             }
         }
 

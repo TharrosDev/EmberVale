@@ -21,6 +21,7 @@ public static class EnemyFactory
     internal const string AttributesPath = "res://data/attributes/GoblinAttributes.tres";
     internal const string WeaponPath = "res://data/weapons/GoblinClaw.tres";
     internal const string LootTablePath = "res://data/loot/GoblinLoot.tres";
+    internal const string ModelPath = "res://assets/models/creatures/enm_goblin.glb";
     private const float CapsuleRadius = 0.4f;
     private const float CapsuleHeight = 1.7f;
     private const int HostileTeam = 1;
@@ -42,13 +43,24 @@ public static class EnemyFactory
             Position = new Vector3(0f, CapsuleHeight * 0.5f, 0f),
         });
 
-        enemy.AddChild(new MeshInstance3D
+        // The goblin's visual (30D model; origin at feet, turned for glTF→Godot forward), with the
+        // old capsule kept as a fallback when the asset is missing/unimported.
+        if (GD.Load<PackedScene>(ModelPath)?.Instantiate() is Node3D goblinVisual)
         {
-            Name = "Mesh",
-            Mesh = new CapsuleMesh { Radius = CapsuleRadius, Height = CapsuleHeight },
-            Position = new Vector3(0f, CapsuleHeight * 0.5f, 0f),
-            MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.30f, 0.55f, 0.32f) },
-        });
+            goblinVisual.Name = "Mesh";
+            goblinVisual.RotateY(Mathf.Pi);
+            enemy.AddChild(goblinVisual);
+        }
+        else
+        {
+            enemy.AddChild(new MeshInstance3D
+            {
+                Name = "Mesh",
+                Mesh = new CapsuleMesh { Radius = CapsuleRadius, Height = CapsuleHeight },
+                Position = new Vector3(0f, CapsuleHeight * 0.5f, 0f),
+                MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.30f, 0.55f, 0.32f) },
+            });
+        }
 
         // Pathfinding agent (Phase 27A): the AI steers toward this agent's path corners when a
         // baked navmesh exists under the actor, and falls back to straight-line steering otherwise

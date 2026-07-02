@@ -20,6 +20,7 @@ public static class BossFactory
 {
     internal const string AttributesPath = "res://data/attributes/IronKingAttributes.tres";
     internal const string WeaponPath = "res://data/weapons/IronKingMaul.tres";
+    internal const string ModelPath = "res://assets/models/creatures/boss_iron_king.glb";
     private const float CapsuleRadius = 0.7f;
     private const float CapsuleHeight = 2.6f;
     private const int HostileTeam = 1;
@@ -41,20 +42,32 @@ public static class BossFactory
             Position = new Vector3(0f, CapsuleHeight * 0.5f, 0f),
         });
 
-        boss.AddChild(new MeshInstance3D
+        // The Iron King's visual (30D model — armored colossus, ember core/eyes; origin at feet,
+        // turned for glTF→Godot forward). BossController claims its emissive surface for phase/
+        // telegraph glow. The stand-in capsule remains as a fallback.
+        if (GD.Load<PackedScene>(ModelPath)?.Instantiate() is Node3D bossVisual)
         {
-            Name = "Mesh",
-            Mesh = new CapsuleMesh { Radius = CapsuleRadius, Height = CapsuleHeight },
-            Position = new Vector3(0f, CapsuleHeight * 0.5f, 0f),
-            MaterialOverride = new StandardMaterial3D
+            bossVisual.Name = "Mesh";
+            bossVisual.RotateY(Mathf.Pi);
+            boss.AddChild(bossVisual);
+        }
+        else
+        {
+            boss.AddChild(new MeshInstance3D
             {
-                // Dark iron with a smouldering ember glow — a Fallen Flamebearer.
-                AlbedoColor = new Color(0.22f, 0.20f, 0.21f),
-                EmissionEnabled = true,
-                Emission = new Color(0.85f, 0.32f, 0.10f),
-                EmissionEnergyMultiplier = 0.5f,
-            },
-        });
+                Name = "Mesh",
+                Mesh = new CapsuleMesh { Radius = CapsuleRadius, Height = CapsuleHeight },
+                Position = new Vector3(0f, CapsuleHeight * 0.5f, 0f),
+                MaterialOverride = new StandardMaterial3D
+                {
+                    // Dark iron with a smouldering ember glow — a Fallen Flamebearer.
+                    AlbedoColor = new Color(0.22f, 0.20f, 0.21f),
+                    EmissionEnabled = true,
+                    Emission = new Color(0.85f, 0.32f, 0.10f),
+                    EmissionEnergyMultiplier = 0.5f,
+                },
+            });
+        }
 
         boss.AddChild(new NavigationAgent3D
         {
