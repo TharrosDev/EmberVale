@@ -44,6 +44,13 @@ public partial class PlayerController : EntityComponent
     /// <summary>Pitch node (rotated up/down). The camera is its child.</summary>
     public Node3D? CameraPivot { get; set; }
 
+    /// <summary>The player camera (injected by <see cref="PlayerFactory"/>) so
+    /// <see cref="SetFirstPerson"/> can move it between the eye and the cutscene orbit.</summary>
+    public Camera3D? Camera { get; set; }
+
+    /// <summary>Whether gameplay is currently first-person (the shipping default).</summary>
+    public bool IsFirstPerson { get; private set; } = true;
+
     private Node3D _yaw = null!;
     private LocomotionComponent? _locomotion;
     private MeleeWeaponComponent? _weapon;
@@ -83,6 +90,50 @@ public partial class PlayerController : EntityComponent
 
         EventBus.Instance?.Subscribe<GameStateChangedEvent>(OnGameStateChanged);
         CaptureMouse(true);
+        SetFirstPerson(true);
+    }
+
+    /// <summary>Switches between first-person gameplay (camera at the eye, own body casting
+    /// shadows only — the held weapon stays visible so swings read) and the retained
+    /// third-person view (camera orbits behind, full body shown). Gameplay ships first-person;
+    /// the Phase 43 cutscene director calls <c>SetFirstPerson(false)</c> to frame the
+    /// third-person rig and restores on cutscene end.</summary>
+    public void SetFirstPerson(bool firstPerson)
+    {
+        IsFirstPerson = firstPerson;
+        if (Camera != null)
+        {
+            Camera.Position = firstPerson
+                ? Vector3.Zero
+                : new Vector3(0f, PlayerFactory.ThirdPersonRise, PlayerFactory.ThirdPersonBackDistance);
+        }
+
+        if (Entity?.Body.GetNodeOrNull<Node3D>("BodyMesh") is { } bodyVisual)
+        {
+            SetShadowOnly(bodyVisual, firstPerson);
+        }
+    }
+
+    /// <summary>Sets every mesh under <paramref name="node"/> to shadows-only (or restores it),
+    /// skipping the held-weapon subtree so the sword stays visible in first person.</summary>
+    private static void SetShadowOnly(Node node, bool shadowOnly)
+    {
+        if (node.Name == "WeaponSocket")
+        {
+            return;
+        }
+
+        if (node is GeometryInstance3D geometry)
+        {
+            geometry.CastShadow = shadowOnly
+                ? GeometryInstance3D.ShadowCastingSetting.ShadowsOnly
+                : GeometryInstance3D.ShadowCastingSetting.On;
+        }
+
+        foreach (Node child in node.GetChildren())
+        {
+            SetShadowOnly(child, shadowOnly);
+        }
     }
 
     protected override void OnTeardown()
