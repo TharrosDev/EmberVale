@@ -115,20 +115,23 @@ Arcane geometric glyphs, Nature growth curls, Necrotic sinks/drips).
 
 ## 3. Geometry budgets (triangles, per asset, LOD0)
 
-Budgets serve the Steam-Deck/min-spec target (Phase 19/57). Facet-styled meshes
-make these comfortable.
+**Maintainer-pinned bands (2026-07-02): character-class models land between a
+strict minimum of 550 and a ceiling of 1500 triangles**, positioned by the
+model's importance and how much time the player spends looking at it. **Heavily
+instanced world props — rocks, trees, foliage, crates and the like — are exempt
+from the floor**: because of how many populate the world, they may go far lower
+so long as they still look good and don't throw off the vibe. Everything stays
+comfortably inside the Steam-Deck/min-spec target (Phase 19/57).
 
 | Class | LOD0 budget | Notes |
 | ----- | ----------- | ----- |
-| Player character | 10–16k | + up to 4k per visible gear piece |
-| Boss (Iron King class) | 15–25k | one per arena, earns the headroom |
-| Humanoid enemy / NPC | 4–9k | goblin nearer 4k, key NPC nearer 9k |
-| Creature (wolf → dragon) | 5–20k | scale with screen size |
-| Weapon / handheld | 0.5–2k | silhouette detail (fuller, guard, wrap) |
-| Hero prop (forge, waystone, portal) | 1–4k | landmark silhouettes |
-| Common prop (crate, fence, rock) | 60–800 | instanced heavily |
-| Building exterior (kit piece) | 1–6k | modular kit, §5.2 |
-| Foliage card/cluster | 20–200 | alpha-cut cards, faceted trunks |
+| Player character | ~1500 | the most-seen model in the game |
+| Key boss (Iron King class) | ~1500 | one per arena, earns the ceiling |
+| Enemy / NPC | ~800 | includes creature enemies and town NPCs |
+| Weapon / handheld | 550–800 | silhouette detail (fuller, guard, wrap) |
+| Building exterior (kit piece) | 550–800 | modular kit, §5.2 |
+| Hero prop (forge, waystone, portal) | 550–800 | landmark/interactive silhouettes |
+| Common instanced prop (rock, tree, foliage, crate) | no floor — "looks good" | scale demands cheapness; typically 50–650 |
 
 **LOD rule of thumb:** LOD1 ≈ 45% of LOD0 at ~25 m; LOD2 ≈ 15% at ~60 m;
 imposter/cull by 120 m (props) / 300 m (buildings). Author LOD0 clean and let

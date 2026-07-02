@@ -25,6 +25,7 @@ public static class AshenAcolyteFactory
     private const string AttributesPath = "res://data/attributes/CultistAttributes.tres";
     // ponytail: reuses the goblin loot table until a Fallen/cultist table is authored (content, Phase 35).
     private const string LootTablePath = "res://data/loot/GoblinLoot.tres";
+    private const string ModelPath = "res://assets/models/creatures/enm_ashen_acolyte.glb";
     private const float CapsuleRadius = 0.36f;
     private const float CapsuleHeight = 1.75f;
     private const int HostileTeam = 1;
@@ -46,20 +47,31 @@ public static class AshenAcolyteFactory
             Position = new Vector3(0f, CapsuleHeight * 0.5f, 0f),
         });
 
-        enemy.AddChild(new MeshInstance3D
+        // The acolyte's visual (30J model — hooded ashen robe, ember face-void and belt; origin
+        // at feet, turned for glTF→Godot forward). Capsule fallback if the asset is missing.
+        if (GD.Load<PackedScene>(ModelPath)?.Instantiate() is Node3D acolyteVisual)
         {
-            Name = "Mesh",
-            Mesh = new CapsuleMesh { Radius = CapsuleRadius, Height = CapsuleHeight },
-            Position = new Vector3(0f, CapsuleHeight * 0.5f, 0f),
-            // Ashen robes lit by a smouldering ember — a lesser Fallen.
-            MaterialOverride = new StandardMaterial3D
+            acolyteVisual.Name = "Mesh";
+            acolyteVisual.RotateY(Mathf.Pi);
+            enemy.AddChild(acolyteVisual);
+        }
+        else
+        {
+            enemy.AddChild(new MeshInstance3D
             {
-                AlbedoColor = new Color(0.30f, 0.10f, 0.12f),
-                EmissionEnabled = true,
-                Emission = new Color(0.85f, 0.35f, 0.12f),
-                EmissionEnergyMultiplier = 0.5f,
-            },
-        });
+                Name = "Mesh",
+                Mesh = new CapsuleMesh { Radius = CapsuleRadius, Height = CapsuleHeight },
+                Position = new Vector3(0f, CapsuleHeight * 0.5f, 0f),
+                // Ashen robes lit by a smouldering ember — a lesser Fallen.
+                MaterialOverride = new StandardMaterial3D
+                {
+                    AlbedoColor = new Color(0.30f, 0.10f, 0.12f),
+                    EmissionEnabled = true,
+                    Emission = new Color(0.85f, 0.35f, 0.12f),
+                    EmissionEnergyMultiplier = 0.5f,
+                },
+            });
+        }
 
         enemy.AddChild(new NavigationAgent3D
         {
@@ -76,6 +88,8 @@ public static class AshenAcolyteFactory
         enemy.AddChild(new CombatComponent { Name = "Combat", Team = HostileTeam, MaxPoise = 26f });
         enemy.AddChild(new LocomotionComponent { Name = "Locomotion" });
         enemy.AddChild(new HitReactionComponent { Name = "HitReaction" });
+        // 30J: plays the acolyte rig's idle/run/cast/hit/death clips off combat/locomotion state.
+        enemy.AddChild(new Embervale.Animation.CharacterAnimationComponent { Name = "Animation", BodyMeshPath = "Mesh" });
         enemy.AddChild(BuildHurtbox());
 
         // The player's spells can burn/chill/freeze it; its own casts also push statuses onto it.

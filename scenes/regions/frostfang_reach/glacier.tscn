@@ -1,16 +1,10 @@
-[gd_scene load_steps=3 format=3 uid="uid://crgnfrostcell0"]
+[gd_scene load_steps=2 format=3 uid="uid://crgnfrostcell0"]
 
-[sub_resource type="BoxMesh" id="BoxMesh_glacier"]
-size = Vector3(3.0, 2.4, 3.0)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_glacier"]
-albedo_color = Color(0.68, 0.82, 0.95, 1)
-metallic = 0.1
-roughness = 0.2
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_glacier.glb" id="1_glacier"]
 
 [node name="GlacierCell" type="Node3D"]
 
-[node name="IceBlock" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
-mesh = SubResource("BoxMesh_glacier")
-surface_material_override/0 = SubResource("StandardMaterial3D_glacier")
+[node name="Ice" parent="." instance=ExtResource("1_glacier")]
+
+[node name="Ice2" parent="." instance=ExtResource("1_glacier")]
+transform = Transform3D(-0.6, 0, 0.5, 0, 0.7, 0, -0.5, 0, -0.6, 9, 0, -6)

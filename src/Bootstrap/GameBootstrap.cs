@@ -716,13 +716,23 @@ public partial class GameBootstrap : Node3D
         dummy.AddChild(new StatusEffectsComponent { Name = "StatusEffects" });
         dummy.AddChild(new Magic.StatusEffectVfxComponent { Name = "StatusVfx" });
 
-        var mesh = new MeshInstance3D
+        // 30J: the wooden training-dummy model (origin at feet; the dummy entity's origin is
+        // its capsule CENTRE, so the visual sits 1 m down). Capsule fallback if unimported.
+        if (GD.Load<PackedScene>("res://assets/models/props/prp_training_dummy.glb")?.Instantiate() is Node3D dummyVisual)
         {
-            Name = "Mesh",
-            Mesh = new CapsuleMesh { Radius = 0.4f, Height = 1.8f },
-            MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.70f, 0.30f, 0.28f) },
-        };
-        dummy.AddChild(mesh);
+            dummyVisual.Name = "Mesh";
+            dummyVisual.Position = new Vector3(0f, -1f, 0f);
+            dummy.AddChild(dummyVisual);
+        }
+        else
+        {
+            dummy.AddChild(new MeshInstance3D
+            {
+                Name = "Mesh",
+                Mesh = new CapsuleMesh { Radius = 0.4f, Height = 1.8f },
+                MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.70f, 0.30f, 0.28f) },
+            });
+        }
 
         // Solid collider so the player cannot walk through the dummy. The dummy's
         // origin is at its capsule centre (it is spawned at y=1), so shapes are
@@ -841,13 +851,22 @@ public partial class GameBootstrap : Node3D
             Position = position,
         };
 
-        cache.AddChild(new MeshInstance3D
+        // 30J: the banded cache-chest model (origin at feet), box fallback if unimported.
+        if (GD.Load<PackedScene>("res://assets/models/props/prp_cache_chest.glb")?.Instantiate() is Node3D chestVisual)
         {
-            Name = "Mesh",
-            Mesh = new BoxMesh { Size = new Vector3(0.8f, 0.8f, 0.8f) },
-            Position = new Vector3(0f, 0.4f, 0f),
-            MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.55f, 0.43f, 0.20f) },
-        });
+            chestVisual.Name = "Mesh";
+            cache.AddChild(chestVisual);
+        }
+        else
+        {
+            cache.AddChild(new MeshInstance3D
+            {
+                Name = "Mesh",
+                Mesh = new BoxMesh { Size = new Vector3(0.8f, 0.8f, 0.8f) },
+                Position = new Vector3(0f, 0.4f, 0f),
+                MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.55f, 0.43f, 0.20f) },
+            });
+        }
 
         var collider = new StaticBody3D { Name = "Collider" };
         collider.AddChild(new CollisionShape3D
@@ -875,19 +894,29 @@ public partial class GameBootstrap : Node3D
             Position = new Vector3(-5f, 0f, 0f),
         };
 
-        tome.AddChild(new MeshInstance3D
+        // 30J: the tome-stand model (lectern + open book with ember glyphs, origin at feet);
+        // glowing box fallback if unimported.
+        if (GD.Load<PackedScene>("res://assets/models/props/prp_tome_stand.glb")?.Instantiate() is Node3D tomeVisual)
         {
-            Name = "Mesh",
-            Mesh = new BoxMesh { Size = new Vector3(0.4f, 0.5f, 0.12f) },
-            Position = new Vector3(0f, 0.7f, 0f),
-            MaterialOverride = new StandardMaterial3D
+            tomeVisual.Name = "Mesh";
+            tome.AddChild(tomeVisual);
+        }
+        else
+        {
+            tome.AddChild(new MeshInstance3D
             {
-                AlbedoColor = new Color(0.35f, 0.18f, 0.40f),
-                EmissionEnabled = true,
-                Emission = new Color(0.45f, 0.20f, 0.50f),
-                EmissionEnergyMultiplier = 0.6f,
-            },
-        });
+                Name = "Mesh",
+                Mesh = new BoxMesh { Size = new Vector3(0.4f, 0.5f, 0.12f) },
+                Position = new Vector3(0f, 0.7f, 0f),
+                MaterialOverride = new StandardMaterial3D
+                {
+                    AlbedoColor = new Color(0.35f, 0.18f, 0.40f),
+                    EmissionEnabled = true,
+                    Emission = new Color(0.45f, 0.20f, 0.50f),
+                    EmissionEnergyMultiplier = 0.6f,
+                },
+            });
+        }
 
         var collider = new StaticBody3D { Name = "Collider" };
         collider.AddChild(new CollisionShape3D

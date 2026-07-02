@@ -19,6 +19,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_guild_rep.glb" id="17_npc_elder"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_vendor.glb" id="18_npc_vendor"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_innkeeper.glb" id="19_npc_inn"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_relic.glb" id="20_relic"]
 
 [sub_resource type="NavigationMesh" id="NavMesh_hub"]
 geometry_parsed_geometry_type = 1
@@ -214,8 +215,6 @@ PersistentId = "ember_crown.waystone.relic"
 
 [node name="Mesh" type="MeshInstance3D" parent="Relic"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.35, 0)
-mesh = SubResource("Mesh_relic")
-surface_material_override/0 = SubResource("Mat_relic")
 
 [node name="Collider" type="StaticBody3D" parent="Relic"]
 
@@ -474,3 +473,5 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3, 0)
 [node name="Model" parent="StationWorkbench" instance=ExtResource("14_workbench")]
 
 [node name="Model" parent="StationAlchemy" instance=ExtResource("15_alchemy")]
+
+[node name="Model" parent="Relic" instance=ExtResource("20_relic")]
