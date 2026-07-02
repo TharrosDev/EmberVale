@@ -27,6 +27,7 @@ public static class PlayerFactory
     internal const string StartingWeaponPath = "res://data/weapons/IronSword.tres";
     internal const string ProgressionPath = "res://data/progression/PlayerProgression.tres";
     internal const string PlayerModelPath = "res://assets/models/characters/chr_player_base.glb";
+    internal const string WeaponModelPath = "res://assets/models/weapons/wpn_sword_iron.glb";
     private const int PlayerTeam = 0;
     private const float CapsuleRadius = 0.4f;
     private const float CapsuleHeight = 1.8f;
@@ -72,6 +73,7 @@ public static class PlayerFactory
             bodyVisual.Name = "BodyMesh";
             bodyVisual.RotateY(Mathf.Pi);
             player.AddChild(bodyVisual);
+            AttachWeaponVisual(bodyVisual);
         }
         else
         {
@@ -129,6 +131,8 @@ public static class PlayerFactory
             Hitbox = hitbox,
         });
         player.AddChild(new HitReactionComponent { Name = "HitReaction" });
+        // 30C: plays the rig's idle/run/block/attack/hit/death clips off combat/locomotion state.
+        player.AddChild(new Embervale.Animation.CharacterAnimationComponent { Name = "Animation" });
         player.AddChild(new WeaponTrailComponent { Name = "WeaponTrail" });
         player.AddChild(new DodgeComponent { Name = "Dodge" });
         player.AddChild(new LockOnComponent { Name = "LockOn" });
@@ -213,6 +217,58 @@ public static class PlayerFactory
         });
 
         return player;
+    }
+
+    /// <summary>Hangs the visual sword (30C) off the rig's right-hand bone via a
+    /// <see cref="BoneAttachment3D"/>, so it follows every animation clip. Purely cosmetic —
+    /// hit timing/damage stay with <see cref="MeleeWeaponComponent"/> and its hitbox.</summary>
+    private static void AttachWeaponVisual(Node bodyVisual)
+    {
+        if (FindSkeleton(bodyVisual) is not { } skeleton ||
+            GD.Load<PackedScene>(WeaponModelPath)?.Instantiate() is not Node3D sword)
+        {
+            return;
+        }
+
+        string? handBone = null;
+        for (int i = 0; i < skeleton.GetBoneCount(); i++)
+        {
+            string name = skeleton.GetBoneName(i);
+            if (name.Contains("hand", System.StringComparison.OrdinalIgnoreCase) &&
+                name.EndsWith("R", System.StringComparison.OrdinalIgnoreCase))
+            {
+                handBone = name;
+                break;
+            }
+        }
+
+        if (handBone == null)
+        {
+            sword.QueueFree();
+            return;
+        }
+
+        var attachment = new BoneAttachment3D { Name = "WeaponSocket", BoneName = handBone };
+        skeleton.AddChild(attachment);
+        attachment.AddChild(sword);
+    }
+
+    private static Skeleton3D? FindSkeleton(Node node)
+    {
+        if (node is Skeleton3D skeleton)
+        {
+            return skeleton;
+        }
+
+        foreach (Node child in node.GetChildren())
+        {
+            if (FindSkeleton(child) is { } found)
+            {
+                return found;
+            }
+        }
+
+        return null;
     }
 
     private static Hurtbox BuildHurtbox()

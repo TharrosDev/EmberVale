@@ -1717,9 +1717,25 @@ no code) — batch them when momentum is good.
     clothes only ashing; and the belt buckle floated off the body → embedded into the waist mesh.
     Build + 313 tests green; headless `--import` + in-engine runs clean (the maintainer drove the
     world live during verification). Rigging/animation is 30C.
-- [ ] **30C — Third-person character + weapon rig integration** `[P]`
+- [x] **30C — Third-person character + weapon rig integration** `[P]` ✅
   - **Done when:** the rigged player character (30B's mesh) + a weapon play
     attack/block/idle driven by combat states.
+  - **Done:** the 30B body is now **rigged and animated**: a 17-bone humanoid armature
+    (pelvis/spine/chest/neck/head + arm/leg chains) skinned with automatic weights in Blender
+    (via the MCP) and six authored clips baked into the same glb through NLA tracks —
+    `idle-loop`, `run-loop`, `block-loop`, `attack` (overhead right swing), `hit` (flinch),
+    `death` (crumple). New `assets/models/weapons/wpn_sword_iron.glb` (~176 tris) hangs off the
+    right-hand bone via a `BoneAttachment3D` (`PlayerFactory.AttachWeaponVisual`, bone found by
+    name scan) so it follows every clip — purely cosmetic, hit timing stays with
+    `MeleeWeaponComponent`. New `src/Animation/CharacterAnimationComponent.cs` drives the
+    `AnimationPlayer` from existing state with **no new gameplay wiring**: `AttackPerformedEvent`
+    → attack one-shot, `EntityDamagedEvent` → hit flinch (suppressed while blocking),
+    `StatsComponent.IsAlive` false → latched death (unlatches on respawn),
+    `CombatComponent.IsBlocking` → block loop, else horizontal velocity picks run/idle with a
+    0.15 s crossblend. Clip names resolve by prefix so the importer's `-loop` handling can't
+    break it, and any humanoid shipping those clip names (the 30F enemy sets) reuses the
+    component unchanged. Build + 313 tests + `--import` green; verified in-engine live — the
+    maintainer fought goblins with the rigged character during the run, no errors.
 - [ ] **30D — Core enemy + key-NPC model set** `[P]`
   - **Goal:** the slice cast named in the Phase 30 header (core enemies, key NPCs,
     the boss) has real meshes, not the goblin-only placeholder.
