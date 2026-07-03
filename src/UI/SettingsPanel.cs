@@ -54,9 +54,10 @@ public partial class SettingsPanel : CanvasLayer
 
     public override void _Process(double delta)
     {
-        // Esc backs out (matches the pause menu's feel); the PauseMenu suppresses its own Esc while
-        // UiState.MenuOpen is set, so this can't also resume the game on the same press.
-        if (Godot.Input.IsActionJustPressed(GameInput.Pause))
+        // Esc or gamepad B backs out (matches the pause menu's feel); the PauseMenu suppresses its
+        // own Esc while UiState.MenuOpen is set, so this can't also resume the game on the same press.
+        if (Godot.Input.IsActionJustPressed(GameInput.Pause) ||
+            Godot.Input.IsActionJustPressed("ui_cancel"))
         {
             Back();
         }
@@ -92,6 +93,7 @@ public partial class SettingsPanel : CanvasLayer
         {
             CustomMinimumSize = new Vector2(440, 420),
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
+            FollowFocus = true, // keep the focused row in view under gamepad/keyboard nav (30.5J)
         };
         col.AddChild(scroll);
 
@@ -140,6 +142,8 @@ public partial class SettingsPanel : CanvasLayer
         back.CustomMinimumSize = new Vector2(0, 34);
         back.Pressed += Back;
         col.AddChild(back);
+
+        UiFocus.GrabFirst(panel); // gamepad/keyboard land on the first setting (30.5J)
     }
 
     // --- Row builders -------------------------------------------------------

@@ -46,6 +46,10 @@ public sealed partial class GameManager : Node
         Log.Info("GameManager online.");
     }
 
+    // Feed the device tracker (30.5J) from the one node guaranteed alive in every state
+    // (ProcessMode Always, exists from boot) so prompt glyphs stay device-correct everywhere.
+    public override void _Input(InputEvent @event) => InputDevice.Observe(@event);
+
     /// <summary>Transitions to a new state, pausing the tree as appropriate.</summary>
     public void ChangeState(GameState next)
     {

@@ -21,6 +21,10 @@ namespace Embervale.UI;
 /// </summary>
 public partial class DialoguePanel : UiPanel
 {
+    // A conversation ends through its choices (or "Leave"), never a cancel press — closing on
+    // B/Esc would strand the session and skip the DialogueEndedEvent (30.5J).
+    protected override bool CloseOnCancel => false;
+
     private VBoxContainer _list = null!;
 
     private DialogueSession? _session;

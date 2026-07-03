@@ -2051,9 +2051,26 @@ no code) — batch them when momentum is good.
     fade out with a slight rise; ember gold). Build + 317 tests green; verified in a live
     maintainer session (pause/settings cycles, two region transitions with the loading fade,
     pickups; no errors).
-- [ ] **30.5J — Gamepad & focus navigation** `[F]`
-  - **Done when:** a controller/keyboard **focus-navigation** system drives HUD-adjacent menus,
-    with input-device-aware glyphs; no menu is mouse-only.
+- [x] **30.5J — Gamepad & focus navigation** `[F]` ✅
+  - **Done:** controller/keyboard drive every menu; no menu is mouse-only. **Input layer:**
+    `GameInput.BindGamepad` — Start=pause, Y=inventory, Select=journal, D-Up=map, X=interact,
+    and the left stick mapped onto the built-in `ui_*` focus actions (D-pad/A/B are engine
+    defaults); full gameplay-on-controller stays Phase 54. **Focus system:** `UiFocus`
+    (`src/UI/UiFocus.cs`) — grab-first-focusable on open, and a child-index **path
+    record/restore across the dirty-flag rebuild** so a rebuild never strands focus; wired
+    into `UiPanel` (grab on open, restore on every rebuild), the pause menu, settings, main
+    menu (re-grabs whenever a sub-screen restores it), save slots (deferred re-grab after
+    refresh) and the character creator. `ScrollList`/settings scrolls set `FollowFocus`.
+    **Cancel routing:** ui_cancel (Esc/B) closes modal `UiPanel`s (dialogue opts out — it ends
+    via choices), backs out of settings/slots/creator (creator ignores it while a text field
+    has focus), resumes from the pause menu; a `LastCancelCloseFrame` stamp keeps one Esc
+    press from both closing a panel and opening the pause menu. **Device-aware glyphs:**
+    `InputDevice` (fed by `GameManager._Input`) tracks the active device and publishes
+    `InputDeviceChangedEvent` (mouse *motion* deliberately ignored); `GameInput.PromptLabel`
+    resolves key vs pad glyphs live from the InputMap and the HUD keycap swaps "E" ↔ "X" on
+    device flip. The pad-button label map is pure and pinned by tests (317 → 327). Build +
+    tests green; booted in-engine to the token-rendered main menu with the focus grab live,
+    no errors. Full-loop gamepad play verified next maintainer session.
 - [ ] **30.5K — UI scale & legibility pass** `[F/P]`
   - **Done when:** a global UI-scale option + font sizing + a contrast/legibility audit land,
     verified readable at min-spec and Steam Deck resolutions (a precursor to Phase 54).

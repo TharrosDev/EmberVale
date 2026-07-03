@@ -85,8 +85,16 @@ The 30.5I building blocks (use these, don't hand-roll):
 - `Header/Body/Caption` — the three text levels; colour via token parameters.
 - `Action()` / `Dropdown()` — interactive controls share one style (normal/
   hover/pressed/**focus**); the ember focus border is the visibility layer the
-  gamepad navigation pass (30.5J) relies on. Never ship a control without a
-  visible focus state.
+  gamepad navigation (30.5J) rides. Never ship a control without a visible
+  focus state.
+- **Focus navigation (30.5J):** menus must work without a mouse. `UiPanel`
+  grabs/restores focus for you (open + across rebuilds via `UiFocus`); a new
+  standalone screen calls `UiFocus.GrabFirst` when it shows. Lists live in
+  `ScrollList()` (sets `FollowFocus`). ui_cancel (Esc/B) closes a modal —
+  opt out via `CloseOnCancel` only for panels with their own lifecycle.
+- **Prompt glyphs:** any on-HUD key hint uses `GameInput.PromptLabel` (device-
+  aware) and refreshes on `InputDeviceChangedEvent` — never a hard-coded key
+  name.
 - `Bar(fill)` — thin resource bar on the shared `Trough`.
 - Rebuild-from-dirty-flag in `_Process`, never inside a button signal
   (CLAUDE.md §8).

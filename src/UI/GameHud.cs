@@ -90,6 +90,7 @@ public partial class GameHud : CanvasLayer
 
     private PanelContainer _promptPanel = null!;
     private Label _promptText = null!;
+    private Label _promptCap = null!;
 
     private Label _lockReticle = null!;
 
@@ -146,6 +147,7 @@ public partial class GameHud : CanvasLayer
 
         EventBus.Instance?.Subscribe<XpGainedEvent>(OnXpGained);
         EventBus.Instance?.Subscribe<LeveledUpEvent>(OnLeveledUp);
+        EventBus.Instance?.Subscribe<InputDeviceChangedEvent>(OnInputDeviceChanged);
         EventBus.Instance?.Subscribe<CorruptionTierChangedEvent>(OnCorruptionTierChanged);
         EventBus.Instance?.Subscribe<BossEncounterStartedEvent>(OnBossStarted);
         EventBus.Instance?.Subscribe<BossPhaseChangedEvent>(OnBossPhase);
@@ -156,6 +158,7 @@ public partial class GameHud : CanvasLayer
     {
         EventBus.Instance?.Unsubscribe<XpGainedEvent>(OnXpGained);
         EventBus.Instance?.Unsubscribe<LeveledUpEvent>(OnLeveledUp);
+        EventBus.Instance?.Unsubscribe<InputDeviceChangedEvent>(OnInputDeviceChanged);
         EventBus.Instance?.Unsubscribe<CorruptionTierChangedEvent>(OnCorruptionTierChanged);
         EventBus.Instance?.Unsubscribe<BossEncounterStartedEvent>(OnBossStarted);
         EventBus.Instance?.Unsubscribe<BossPhaseChangedEvent>(OnBossPhase);
@@ -315,6 +318,11 @@ public partial class GameHud : CanvasLayer
         _layout.Overlay.AddChild(_levelUp);
     }
 
+    /// <summary>Swap the interaction keycap glyph when the player switches between keyboard
+    /// and gamepad (30.5J) — "E" ↔ "X" live, no rebuild.</summary>
+    private void OnInputDeviceChanged(InputDeviceChangedEvent e) =>
+        _promptCap.Text = GameInput.PromptLabel(GameInput.Interact);
+
     private void OnXpGained(XpGainedEvent e)
     {
         if (!ReferenceEquals(e.Entity, _player))
@@ -401,7 +409,7 @@ public partial class GameHud : CanvasLayer
         // The cap's label resolves from the InputMap so a future rebind stays correct.
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        PanelContainer cap = UiTheme.KeyCap(GameInput.KeyLabel(GameInput.Interact));
+        PanelContainer cap = UiTheme.KeyCap(GameInput.PromptLabel(GameInput.Interact), out _promptCap);
         cap.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         row.AddChild(cap);
         _promptText = UiTheme.Body("", UiTheme.Accent);

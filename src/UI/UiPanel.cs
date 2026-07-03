@@ -27,10 +27,21 @@ public abstract partial class UiPanel : CanvasLayer
     /// <summary>Input action that toggles the panel (null = opened only via code).</summary>
     protected virtual string? ToggleAction => null;
 
+    /// <summary>Whether ui_cancel (Esc / gamepad B) closes the panel (30.5J). Defaults to the
+    /// modal contract; panels with their own lifecycle (dialogue) opt out.</summary>
+    protected virtual bool CloseOnCancel => Modal;
+
+    /// <summary>The process frame a panel last closed on cancel — the pause menu skips its Esc
+    /// on this frame so one press never both closes a panel and opens the pause menu.</summary>
+    internal static ulong LastCancelCloseFrame { get; private set; }
+
     private bool _dirty = true;
 
     // Open-transition fade (30.5I): elapsed time since the panel opened, reset per open.
     private float _openElapsed;
+
+    // Grab focus on the first rebuild after opening (30.5J) so gamepad/keyboard can navigate.
+    private bool _focusPending;
 
     public bool IsOpen => Shell.Visible;
 
@@ -94,6 +105,7 @@ public abstract partial class UiPanel : CanvasLayer
         if (open)
         {
             MarkDirty();
+            _focusPending = true;
 
             // Fade the shell in (ease-out, DurationBase); closing stays instant so dismissal
             // never lags input. Reduced motion collapses the duration to 0 (snaps opaque).
@@ -111,10 +123,29 @@ public abstract partial class UiPanel : CanvasLayer
             Toggle();
         }
 
+        if (IsOpen && CloseOnCancel && Godot.Input.IsActionJustPressed("ui_cancel"))
+        {
+            LastCancelCloseFrame = Engine.GetProcessFrames();
+            SetOpen(false);
+        }
+
         if (Shell.Visible && _dirty)
         {
             _dirty = false;
+
+            // A rebuild frees every dynamic row; if focus was on one (controller/keyboard
+            // navigation), restore it to the same spot in the new tree (30.5J).
+            int[]? focusPath = UiFocus.PathOf(Shell);
             Rebuild();
+            if (_focusPending)
+            {
+                _focusPending = false;
+                UiFocus.GrabFirst(Shell);
+            }
+            else
+            {
+                UiFocus.Restore(Shell, focusPath);
+            }
         }
 
         if (Shell.Visible && Shell.Modulate.A < 1f)
