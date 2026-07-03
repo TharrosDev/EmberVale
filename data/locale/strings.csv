@@ -153,6 +153,8 @@ hud.ready,ready
 hud.charging,charging…
 hud.channeling,channeling
 hud.spell,Q: {0} ({1})
+hud.xp_gain,+{0} XP
+hud.levelup,Level {0}
 # Stat names (StatNames / character creator)
 stat.health,Health
 stat.stamina,Stamina

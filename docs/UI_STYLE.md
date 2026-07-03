@@ -67,6 +67,18 @@ Durations: `DurationFast` 0.12 s (hover/press feedback), `DurationBase` 0.20 s
 has reduced motion enabled, collapsing animation to instant. Easing: prefer
 ease-out for entrances, ease-in for exits; no bounces (this world is tired).
 
+The 30.5I building blocks (use these, don't hand-roll):
+
+- `UiMotion.EaseOut/EaseIn/Progress` — the pure curves (unit-tested); drive
+  `_Process` timers with them.
+- `UiTheme.AnimateModulate(control, target, seconds)` — a kill-previous,
+  pause-proof modulate ease; the hover/press/focus feedback on every
+  `Action`/`Dropdown` rides it.
+- `UiPanel` fades its shell in on open for free; opening motion belongs there,
+  not in subclasses. Closing is always instant — dismissal never lags input.
+- Exits that reveal (the loading screen) fade out; entrances that cover are
+  instant.
+
 ## 6. Widgets
 
 - `Panel()` + `Padding()` — every framed surface; modals set `UiState.MenuOpen`.

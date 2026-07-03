@@ -29,6 +29,9 @@ public abstract partial class UiPanel : CanvasLayer
 
     private bool _dirty = true;
 
+    // Open-transition fade (30.5I): elapsed time since the panel opened, reset per open.
+    private float _openElapsed;
+
     public bool IsOpen => Shell.Visible;
 
     public sealed override void _Ready()
@@ -91,6 +94,11 @@ public abstract partial class UiPanel : CanvasLayer
         if (open)
         {
             MarkDirty();
+
+            // Fade the shell in (ease-out, DurationBase); closing stays instant so dismissal
+            // never lags input. Reduced motion collapses the duration to 0 (snaps opaque).
+            _openElapsed = 0f;
+            Shell.Modulate = new Color(1f, 1f, 1f, UiTheme.Duration(UiTheme.DurationBase) > 0f ? 0f : 1f);
         }
 
         OnOpenChanged(open);
@@ -107,6 +115,14 @@ public abstract partial class UiPanel : CanvasLayer
         {
             _dirty = false;
             Rebuild();
+        }
+
+        if (Shell.Visible && Shell.Modulate.A < 1f)
+        {
+            // Settles opaque even if reduced motion flips mid-fade (Duration collapses to 0).
+            _openElapsed += (float)delta;
+            float alpha = UiMotion.EaseOut(UiMotion.Progress(_openElapsed, UiTheme.Duration(UiTheme.DurationBase)));
+            Shell.Modulate = new Color(1f, 1f, 1f, alpha);
         }
     }
 }

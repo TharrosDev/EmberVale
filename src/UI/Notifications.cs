@@ -92,7 +92,7 @@ public partial class Notifications : CanvasLayer
         Label label = UiTheme.Body(text, color);
         label.HorizontalAlignment = HorizontalAlignment.Center;
         pad.AddChild(label);
-        toast.AddChild(pad);
+        toast.AddContent(pad);
 
         _stack.AddChild(toast);
     }
