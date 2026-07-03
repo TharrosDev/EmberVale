@@ -45,6 +45,21 @@ public partial class GameHud : CanvasLayer
     private Label _footer = null!;
     private ProgressBar _castBar = null!;
 
+    // XP-gain pop (30.5I): a transient "+N XP" caption under the level footer that accumulates
+    // rapid gains, holds, then fades. Driven by XpGainedEvent; timings via the motion tokens.
+    private Label _xpPop = null!;
+    private double _xpPopAge = double.MaxValue;
+    private int _xpPopAmount;
+    private const double XpPopHold = 1.0;
+
+    // Level-up flourish (30.5I): a centred Display-size "Level N" that fades in, holds, and
+    // fades out with a slight rise — the type scale's "big moment" (UI_STYLE §3).
+    private Label _levelUp = null!;
+    private double _levelUpAge = double.MaxValue;
+    private const float LevelUpHold = 1.4f;
+    private const float LevelUpBaseLift = 100f;
+    private const float LevelUpRise = 16f;
+
     // Prepared spell + cooldown widget (30.5C): name tinted by school, a recovery bar that
     // fills while the spell cools down, and a READY/charging/channeling state readout.
     private HBoxContainer _spellRow = null!;
@@ -127,7 +142,10 @@ public partial class GameHud : CanvasLayer
         BuildQuestTracker();
         BuildPrompt();
         BuildLockReticle();
+        BuildLevelUp();
 
+        EventBus.Instance?.Subscribe<XpGainedEvent>(OnXpGained);
+        EventBus.Instance?.Subscribe<LeveledUpEvent>(OnLeveledUp);
         EventBus.Instance?.Subscribe<CorruptionTierChangedEvent>(OnCorruptionTierChanged);
         EventBus.Instance?.Subscribe<BossEncounterStartedEvent>(OnBossStarted);
         EventBus.Instance?.Subscribe<BossPhaseChangedEvent>(OnBossPhase);
@@ -136,6 +154,8 @@ public partial class GameHud : CanvasLayer
 
     public override void _ExitTree()
     {
+        EventBus.Instance?.Unsubscribe<XpGainedEvent>(OnXpGained);
+        EventBus.Instance?.Unsubscribe<LeveledUpEvent>(OnLeveledUp);
         EventBus.Instance?.Unsubscribe<CorruptionTierChangedEvent>(OnCorruptionTierChanged);
         EventBus.Instance?.Unsubscribe<BossEncounterStartedEvent>(OnBossStarted);
         EventBus.Instance?.Unsubscribe<BossPhaseChangedEvent>(OnBossPhase);
@@ -160,6 +180,10 @@ public partial class GameHud : CanvasLayer
 
         _footer = UiTheme.Body("", UiTheme.Dim);
         col.AddChild(_footer);
+
+        _xpPop = UiTheme.Caption("", UiTheme.Accent);
+        _xpPop.Visible = false;
+        col.AddChild(_xpPop);
 
         // Prepared spell: name in the school's colour, state readout, and a thin recovery bar
         // that fills while the spell cools down (hidden when ready).
@@ -274,6 +298,98 @@ public partial class GameHud : CanvasLayer
         _layout.Overlay.AddChild(_lockReticle);
     }
 
+    /// <summary>The level-up flourish label: full-rect, text centred, lifted above the
+    /// crosshair; only its modulate alpha and vertical offset animate.</summary>
+    private void BuildLevelUp()
+    {
+        _levelUp = new Label
+        {
+            Visible = false,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+        };
+        _levelUp.AddThemeFontSizeOverride("font_size", UiTheme.DisplayFontSize);
+        _levelUp.AddThemeColorOverride("font_color", UiTheme.Accent);
+        _levelUp.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        _layout.Overlay.AddChild(_levelUp);
+    }
+
+    private void OnXpGained(XpGainedEvent e)
+    {
+        if (!ReferenceEquals(e.Entity, _player))
+        {
+            return;
+        }
+
+        // Rapid gains (a pack of kills) accumulate into one pop and restart the hold.
+        _xpPopAmount = _xpPopAge <= XpPopHold + UiTheme.DurationBase ? _xpPopAmount + e.Amount : e.Amount;
+        _xpPopAge = 0d;
+        _xpPop.Text = Loc.TF("hud.xp_gain", _xpPopAmount);
+        _xpPop.Visible = true;
+    }
+
+    private void OnLeveledUp(LeveledUpEvent e)
+    {
+        if (!ReferenceEquals(e.Entity, _player))
+        {
+            return;
+        }
+
+        _levelUpAge = 0d;
+        _levelUp.Text = Loc.TF("hud.levelup", e.NewLevel);
+        _levelUp.Visible = true;
+    }
+
+    /// <summary>Drives the XP pop and level-up flourish timelines: ease in, hold, ease out.
+    /// Under reduced motion both snap on/off (durations collapse to 0).</summary>
+    private void UpdateProgressionPops(double delta)
+    {
+        if (_xpPop.Visible)
+        {
+            _xpPopAge += delta;
+            float fadeOut = UiTheme.Duration(UiTheme.DurationBase);
+            if (_xpPopAge >= XpPopHold + fadeOut)
+            {
+                _xpPop.Visible = false;
+            }
+            else
+            {
+                float alpha = _xpPopAge < XpPopHold
+                    ? 1f
+                    : 1f - UiMotion.EaseIn(UiMotion.Progress((float)(_xpPopAge - XpPopHold), fadeOut));
+                _xpPop.Modulate = new Color(1f, 1f, 1f, alpha);
+            }
+        }
+
+        if (_levelUp.Visible)
+        {
+            _levelUpAge += delta;
+            float fadeIn = UiTheme.Duration(UiTheme.DurationBase);
+            float fadeOut = UiTheme.Duration(UiTheme.DurationSlow);
+            if (_levelUpAge >= fadeIn + LevelUpHold + fadeOut)
+            {
+                _levelUp.Visible = false;
+            }
+            else
+            {
+                float alpha = _levelUpAge < fadeIn + LevelUpHold
+                    ? UiMotion.EaseOut(UiMotion.Progress((float)_levelUpAge, fadeIn))
+                    : 1f - UiMotion.EaseIn(UiMotion.Progress((float)(_levelUpAge - fadeIn - LevelUpHold), fadeOut));
+                _levelUp.Modulate = new Color(1f, 1f, 1f, alpha);
+
+                // A slight upward drift across the whole beat (0 under reduced motion).
+                float rise = UiTheme.MotionEnabled
+                    ? LevelUpRise * UiMotion.EaseOut(UiMotion.Progress(
+                        (float)_levelUpAge, fadeIn + LevelUpHold + fadeOut))
+                    : 0f;
+                float lift = LevelUpBaseLift + rise;
+                _levelUp.OffsetTop = -lift;
+                _levelUp.OffsetBottom = -lift;
+            }
+        }
+    }
+
     private void BuildPrompt()
     {
         _promptPanel = Ignore(UiTheme.Panel());
@@ -337,6 +453,7 @@ public partial class GameHud : CanvasLayer
         UpdateBanner();
         UpdateFocus();
         UpdateVignette(delta);
+        UpdateProgressionPops(delta);
         UpdateBoss();
     }
 

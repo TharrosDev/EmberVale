@@ -2032,9 +2032,25 @@ no code) — batch them when momentum is good.
     "non-modal" predates 25G), M-toggle via the base; revision-diff refresh kept as a
     `_Process` override that `MarkDirty()`s. Build + 313 tests green; booted in-engine to
     the world with all panels constructed, no errors.
-- [ ] **30.5I — Motion & microinteractions** `[F/P]`
-  - **Done when:** screen/panel transitions, hover/press feedback, and value-change animations
-    (damage, XP, level-up) are in, behind a reduced-motion guard.
+- [x] **30.5I — Motion & microinteractions** `[F/P]` ✅
+  - **Done:** the motion pass on the 30.5A tokens, all of it behind the reduced-motion guard
+    (`UiTheme.Duration`/`MotionEnabled` collapse everything to instant/static). **`UiMotion`**
+    (`src/UI/UiMotion.cs`) — the pure ease-out/ease-in/progress curves, unit-tested like
+    `CompassMath`. **Panel transitions:** `UiPanel.SetOpen` fades the shell in (ease-out,
+    `DurationBase`) for every panel on the framework — closing stays instant so dismissal never
+    lags input; the pause menu fades in the same way, and the loading screen now fades *out*
+    (`DurationSlow` ease-in exit) to reveal the arrival while still covering instantly on entry.
+    **Toasts:** the slide-in deferred from 30.5B — `Toast` became a margin wrapper around the
+    chip (+s/−s margins shift it without fighting the stack container) sliding 24 px in from
+    the right while fading up. **Hover/press:** `UiTheme.ApplyInteractiveStyle` layers a
+    modulate ease (`AnimateModulate`, kill-previous, pause-proof) over the stylebox swap —
+    brighten on hover/focus (the 30.5J seam), sink on press, on every `Action`/`Dropdown`.
+    **Value changes:** damage juice already landed in 30.5C/E (drain lag, pulse, hit-marker);
+    this pass added the XP/level beats — a "+N XP" pop under the level footer that accumulates
+    rapid gains then fades, and a centred Display-size "Level N" flourish (fade in → hold →
+    fade out with a slight rise; ember gold). Build + 317 tests green; verified in a live
+    maintainer session (pause/settings cycles, two region transitions with the loading fade,
+    pickups; no errors).
 - [ ] **30.5J — Gamepad & focus navigation** `[F]`
   - **Done when:** a controller/keyboard **focus-navigation** system drives HUD-adjacent menus,
     with input-device-aware glyphs; no menu is mouse-only.

@@ -261,6 +261,47 @@ public static class UiTheme
         focus.BorderColor = Accent;
         focus.SetBorderWidthAll(1);
         button.AddThemeStyleboxOverride("focus", focus);
+
+        // Hover/press/focus microinteraction (30.5I): a brief modulate ease layered over the
+        // stylebox swap so interaction reads as a glow, not a hard state flip.
+        button.MouseEntered += () => AnimateModulate(button, HoverModulate);
+        button.MouseExited += () => AnimateModulate(button, Colors.White);
+        button.FocusEntered += () => AnimateModulate(button, HoverModulate);
+        button.FocusExited += () => AnimateModulate(button, Colors.White);
+        button.ButtonDown += () => AnimateModulate(button, PressModulate);
+        button.ButtonUp += () => AnimateModulate(button, button.IsHovered() ? HoverModulate : Colors.White);
+    }
+
+    // Slight brighten on hover/focus, slight sink on press (modulate may exceed 1 in 2D).
+    private static readonly Color HoverModulate = new(1.10f, 1.09f, 1.06f);
+    private static readonly Color PressModulate = new(0.90f, 0.90f, 0.90f);
+    private const string ModulateTweenMeta = "ui_modulate_tween";
+
+    /// <summary>Eases a control's modulate toward <paramref name="target"/> over
+    /// <paramref name="seconds"/> (default <c>DurationFast</c>; instant under reduced motion).
+    /// Kills any in-flight ease so rapid hover flicks never stack. Runs while the tree is
+    /// paused (pause-menu buttons).</summary>
+    public static void AnimateModulate(Control control, Color target, float seconds = DurationFast)
+    {
+        if (control.HasMeta(ModulateTweenMeta) &&
+            control.GetMeta(ModulateTweenMeta).As<Tween>() is { } previous && previous.IsValid())
+        {
+            previous.Kill();
+        }
+
+        float duration = Duration(seconds);
+        if (duration <= 0f || !control.IsInsideTree())
+        {
+            control.Modulate = target;
+            return;
+        }
+
+        Tween tween = control.CreateTween();
+        tween.SetPauseMode(Tween.TweenPauseMode.Process);
+        tween.TweenProperty(control, "modulate", target, duration)
+            .SetTrans(Tween.TransitionType.Cubic)
+            .SetEase(Tween.EaseType.Out);
+        control.SetMeta(ModulateTweenMeta, tween);
     }
 
     private static StyleBoxFlat ButtonStyle(Color color)

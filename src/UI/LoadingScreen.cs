@@ -55,9 +55,43 @@ public partial class LoadingScreen : CanvasLayer
 
 	private void OnGameStateChanged(GameStateChangedEvent e) => SetShown(e.Current == GameState.Loading);
 
+	// Dismissal fade (30.5I): elapsed fade-out time; <0 while idle.
+	private float _fadeAge = -1f;
+
 	private void SetShown(bool visible)
 	{
+		if (!visible && _backdrop.Visible && _fadeAge < 0f &&
+			UiTheme.Duration(UiTheme.DurationSlow) > 0f)
+		{
+			// Fade the cover away to reveal the arrival (ease-in exit); showing stays instant
+			// so the screen is covered the moment a transition starts.
+			_fadeAge = 0f;
+			return;
+		}
+
+		_fadeAge = -1f;
+		_backdrop.Modulate = Colors.White;
+		_panel.Modulate = Colors.White;
 		_backdrop.Visible = visible;
 		_panel.Visible = visible;
+	}
+
+	public override void _Process(double delta)
+	{
+		if (_fadeAge < 0f)
+		{
+			return;
+		}
+
+		_fadeAge += (float)delta;
+		float alpha = 1f - UiMotion.EaseIn(UiMotion.Progress(_fadeAge, UiTheme.Duration(UiTheme.DurationSlow)));
+		var faded = new Color(1f, 1f, 1f, alpha);
+		_backdrop.Modulate = faded;
+		_panel.Modulate = faded;
+
+		if (alpha <= 0f)
+		{
+			SetShown(false);
+		}
 	}
 }

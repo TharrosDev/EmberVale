@@ -122,5 +122,16 @@ public partial class PauseMenu : CanvasLayer
 	{
 		_backdrop.Visible = visible;
 		_panel.Visible = visible;
+
+		// Fade in on show (30.5I; instant under reduced motion — Duration collapses to 0);
+		// hiding stays instant so resume never lags input. Tween pause mode Process because
+		// the tree is paused while this menu is up.
+		if (visible)
+		{
+			_backdrop.Modulate = new Color(1f, 1f, 1f, 0f);
+			_panel.Modulate = new Color(1f, 1f, 1f, 0f);
+			UiTheme.AnimateModulate(_backdrop, Colors.White, UiTheme.DurationBase);
+			UiTheme.AnimateModulate(_panel, Colors.White, UiTheme.DurationBase);
+		}
 	}
 }
