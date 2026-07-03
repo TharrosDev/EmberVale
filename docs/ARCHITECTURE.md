@@ -706,6 +706,11 @@ settings that drive it:
   Ambience bus. The pure selector resolves `weather > town > day/night`; the director feeds it from
   `WeatherChangedEvent`/`TimeOfDayChangedEvent` and a polled `SafeZones` "in town" signal, crossfading
   (~2 s). Beds are `amb.{day,night,rain,town}` (real CC0 field recording or procedural noise wash).
+- **`FootstepComponent` + `FootstepGait` + `Surfaces`** (Phase 31E) — footstep SFX on the player. The
+  pure `FootstepGait` fires a footfall every stride (cadence tracks speed); a downward ray reads the
+  floor collider's `surface` node-metadata, mapped by `Surfaces.CueFromTag` to `step.{grass,wood,stone,
+  snow}` (stone default). Emitted as a positional `SoundCueRequestedEvent`. Tag a floor `StaticBody3D`
+  with a `surface` string to vary it; untagged floors play stone.
 
 ### 2.9 Bootstrap & UI
 

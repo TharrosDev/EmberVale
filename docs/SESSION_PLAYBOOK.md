@@ -2132,8 +2132,19 @@ no code) — batch them when momentum is good.
     filtered-noise wash). Also added a **`--play` dev arg** (parallels `--validate`) that boots straight
     into the most recent save so gameplay/directors launch deterministically for verification. Verified
     in-engine via `godot --path . -- --play`: `AmbienceDirector ready`, world built, zero errors.
-- [ ] **31E — Footsteps by surface** `[F/P]`
+- [x] **31E — Footsteps by surface** `[F/P]`
   - **Done when:** footstep SFX vary by surface material under the player.
+  - **Done:** `FootstepComponent` on the player emits a positional step cue every stride while grounded
+    and moving; the pure `FootstepGait` paces footfalls (cadence tracks speed) and a short downward ray
+    reads the floor collider's `surface` node-metadata, mapped by `Surfaces.CueFromTag` to
+    `step.{grass,wood,stone,snow}` (real Kenney footstep files, CP1.5) with a stone default when untagged.
+    Both pure helpers unit-tested (12 cases). Verified in-engine via `--play`: component live, no inert
+    warning, zero errors. *(Calibration knob: region floor colliders aren't tagged yet, so footsteps
+    default to stone until a floor sets `surface` metadata — a content pass.)*
+
+> **Phase 31 — Audio Foundations complete.** Mixer + `AudioDirector`, real CC0 SFX, adaptive music,
+> interaction/UI SFX, environmental ambience, and surface footsteps all landed. Remaining audio polish
+> (real CC0 music tracks + ambience field recordings, surface tagging) is production work toward Phase 52.
 
 ---
 
