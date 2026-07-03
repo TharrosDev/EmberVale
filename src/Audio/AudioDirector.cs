@@ -31,7 +31,7 @@ public partial class AudioDirector : Node
 
         EventBus.Instance?.Subscribe<SoundCueRequestedEvent>(OnSoundCue);
         EventBus.Instance?.Subscribe<MusicCueRequestedEvent>(OnMusicCue);
-        Log.Info($"AudioDirector ready ({_library.Count} cues, buses={AudioServer.BusCount}).");
+        Log.Info($"AudioDirector ready ({_library.Count} cues, {_library.RealCount} from real assets, buses={AudioServer.BusCount}).");
     }
 
     public override void _ExitTree()
