@@ -227,9 +227,9 @@ signature spell per school.
 
 |              | Phase                                          |
 | ------------ | ---------------------------------------------- |
-| ✅ **Done**    | 22–30.5 + G0 First Playable (30 Models & Animation, 30.5 UI & HUD Overhaul) |
-| ▶ **Current** | 31 — Audio Foundations                          |
-| ⏭ **Next**    | 32 — Companion System                           |
+| ✅ **Done**    | 22–31 + G0 First Playable (30 Models & Animation, 30.5 UI & HUD Overhaul, 31 Audio Foundations) |
+| ▶ **Current** | 32 — Companion System                           |
+| ⏭ **Next**    | 33 — Vertical Slice Assembly                     |
 
 > A phase is "done" when it works in-game **and** round-trips through save/load.
 

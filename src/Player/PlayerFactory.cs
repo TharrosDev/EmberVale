@@ -92,6 +92,7 @@ public static class PlayerFactory
         AttributeSet attributes = GD.Load<AttributeSet>(PlayerAttributesPath) ?? AttributeSet.CreateDefault();
         player.AddChild(new StatsComponent { Name = "Stats", Attributes = attributes, HealthRegen = 3f });
         player.AddChild(new LocomotionComponent { Name = "Locomotion" });
+        player.AddChild(new FootstepComponent { Name = "Footsteps" });
         player.AddChild(new CombatComponent { Name = "Combat", Team = PlayerTeam });
         player.AddChild(new InventoryComponent { Name = "Inventory" });
         player.AddChild(BuildHurtbox());
