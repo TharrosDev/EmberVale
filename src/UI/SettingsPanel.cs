@@ -131,6 +131,8 @@ public partial class SettingsPanel : CanvasLayer
         body.AddChild(DropdownRow(Loc.T("settings.difficulty"),
             new[] { Loc.T("settings.difficulty.story"), Loc.T("settings.difficulty.normal"), Loc.T("settings.difficulty.hard") },
             s.Difficulty, i => { s.Difficulty = i; Persist(); }));
+        body.AddChild(ToggleRow(Loc.T("settings.third_person"), s.ThirdPersonCamera,
+            v => { s.ThirdPersonCamera = v; Persist(); }));
 
         Section(body, Loc.T("settings.section.accessibility"));
         body.AddChild(ToggleRow(Loc.T("settings.reduced_motion"), s.ReducedMotion, v => { s.ReducedMotion = v; Persist(); }));

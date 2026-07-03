@@ -89,15 +89,19 @@ public partial class PlayerController : EntityComponent
             : null;
 
         EventBus.Instance?.Subscribe<GameStateChangedEvent>(OnGameStateChanged);
+        EventBus.Instance?.Subscribe<SettingsAppliedEvent>(OnSettingsApplied);
         CaptureMouse(true);
-        SetFirstPerson(true);
+        SetFirstPerson(!(_settings?.Current.ThirdPersonCamera ?? false));
     }
 
-    /// <summary>Switches between first-person gameplay (camera at the eye, own body casting
-    /// shadows only — the viewmodel arms carry the visible weapon) and the retained
-    /// third-person view (camera orbits behind, full body shown). Gameplay ships first-person;
-    /// the Phase 43 cutscene director calls <c>SetFirstPerson(false)</c> to frame the
-    /// third-person rig and restores on cutscene end.</summary>
+    /// <summary>Follow the camera-mode setting live (the settings panel applies on toggle).</summary>
+    private void OnSettingsApplied(SettingsAppliedEvent e) => SetFirstPerson(!e.Current.ThirdPersonCamera);
+
+    /// <summary>Switches between first-person (camera at the eye, own body casting shadows
+    /// only — the viewmodel arms carry the visible weapon) and the third-person view (camera
+    /// orbits behind, full body shown). Player-selectable via the ThirdPersonCamera setting;
+    /// the Phase 43 cutscene director will also drive it, restoring to the setting (not a
+    /// hard-coded mode) on cutscene end. The orbit has no wall-collision spring yet.</summary>
     public void SetFirstPerson(bool firstPerson)
     {
         IsFirstPerson = firstPerson;
@@ -135,6 +139,7 @@ public partial class PlayerController : EntityComponent
     protected override void OnTeardown()
     {
         EventBus.Instance?.Unsubscribe<GameStateChangedEvent>(OnGameStateChanged);
+        EventBus.Instance?.Unsubscribe<SettingsAppliedEvent>(OnSettingsApplied);
     }
 
     public override void _PhysicsProcess(double delta)
