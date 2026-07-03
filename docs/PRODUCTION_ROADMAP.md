@@ -1065,7 +1065,7 @@ The ordering is driven by hard dependencies, not preference:
 | Stage | Gate | Phases | Status |
 | ----- | ---- | ------ | ------ |
 | A — Pre-production & First Playable | G0 | 22–28 | ✅ Complete (22–28 + 25.5 hardening; G0 First Playable reached) |
-| B — Vertical Slice | G1 | 29–33 | ⏳ In progress (29 ✅, 29.5 ✅, 30 ✅; next: 30.5 UI & HUD Overhaul) |
+| B — Vertical Slice | G1 | 29–33 | ⏳ In progress (29 ✅, 29.5 ✅, 30 ✅, 30.5 ✅; next: 31 Audio Foundations) |
 | C — Alpha / Feature Complete | G2 | 34–45 | ⬜ Planned |
 | D — Beta / Content Complete | G3 | 46–55 | ⬜ Planned |
 | E — Release Candidate | G4 | 56–62 | ⬜ Planned |

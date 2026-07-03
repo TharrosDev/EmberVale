@@ -2071,9 +2071,20 @@ no code) — batch them when momentum is good.
     device flip. The pad-button label map is pure and pinned by tests (317 → 327). Build +
     tests green; booted in-engine to the token-rendered main menu with the focus grab live,
     no errors. Full-loop gamepad play verified next maintainer session.
-- [ ] **30.5K — UI scale & legibility pass** `[F/P]`
-  - **Done when:** a global UI-scale option + font sizing + a contrast/legibility audit land,
-    verified readable at min-spec and Steam Deck resolutions (a precursor to Phase 54).
+- [x] **30.5K — UI scale & legibility pass** `[F/P]` ✅
+  - **Done:** the global UI-scale option already landed real in 30.5B (`Settings.UiScale`
+    0.75–1.5 → `ContentScaleFactor`), and the 1280×720 `canvas_items`/expand base means Steam
+    Deck (1280×800) renders at reference scale — so this pass was the **audit**, made
+    executable. **`UiContrast`** (`src/UI/UiContrast.cs`) — pure WCAG luminance/ratio math;
+    **`UiContrastTests`** pins every text-bearing token pair ≥4.5:1 (AA) and bar fills ≥3:1,
+    so a palette retune can never silently regress readability. The audit caught and fixed:
+    `Dim` below AA on button faces (retuned 0.55/0.53/0.47 → 0.58/0.56/0.50); the deep
+    corruption violet used as *text* at 2.8:1 (new `CorruptionText` token for text, the
+    bible's fill violet untouched for gauge/vignette); and two **double-dim modulate bugs**
+    (`UiTabs` inactive tabs and the HUD spell-state caption multiplied `Dim` onto already-dim
+    fonts, ~2.9:1) — both now swap font colour, and the style guide bans whole-control
+    modulate for text. Font sizing: `CaptionFontSize` 11 → 12, the pinned legibility floor.
+    Build + 344 tests green (17 new); booted in-engine clean. **Phase 30.5 complete.**
 
 ---
 

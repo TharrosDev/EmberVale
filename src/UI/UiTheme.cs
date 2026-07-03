@@ -19,9 +19,10 @@ public static class UiTheme
     public static readonly Color PanelBorder = new(0.42f, 0.40f, 0.35f, 0.80f);
     public static readonly Color Trough = new(0.13f, 0.125f, 0.115f, 0.95f);
 
-    // Text: bone pale primary, ash-grey secondary.
+    // Text: bone pale primary, ash-grey secondary. Dim is tuned to hold WCAG AA (≥4.5:1)
+    // on every surface it labels, including button faces (30.5K; pinned by UiContrastTests).
     public static readonly Color Text = new(0.79f, 0.75f, 0.68f);
-    public static readonly Color Dim = new(0.55f, 0.53f, 0.47f);
+    public static readonly Color Dim = new(0.58f, 0.56f, 0.50f);
 
     // Accents: ember gold is THE accent (headers, highlights, focus); ember orange is
     // reserved for the hottest emphasis (crits, warnings, the Flamebearer thread).
@@ -38,11 +39,15 @@ public static class UiTheme
     public static readonly Color Mana = new(0.42f, 0.56f, 0.76f);
 
     // The corruption identity — the art bible's corruption violet (ART_STYLE §2), used by
-    // the gauge fill and the HUD vignette.
+    // the gauge fill and the HUD vignette. The deep fill violet fails text contrast (2.8:1),
+    // so corruption-tinted *text* uses the brighter CorruptionText instead (30.5K).
     public static readonly Color Corruption = new(0.48f, 0.30f, 0.55f);
+    public static readonly Color CorruptionText = new(0.68f, 0.48f, 0.76f);
 
     // --- Type scale ----------------------------------------------------------
-    public const int CaptionFontSize = 11;
+    // Caption is the legibility floor — 12 px at reference scale (30.5K; was 11, raised in
+    // the min-spec/Steam Deck readability audit). Nothing renders smaller.
+    public const int CaptionFontSize = 12;
     public const int BodyFontSize = 14;
     public const int HeaderFontSize = 16;
     public const int TitleFontSize = 20;
