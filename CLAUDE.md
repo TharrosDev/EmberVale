@@ -494,6 +494,17 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 1. Add a constant + `Bind(...)` in `GameInput`.
 2. Read it via `Godot.Input.IsActionPressed/JustPressed/GetVector`.
 
+**A new sound cue / audio asset** (Phase 31)
+1. Pick a cue id by convention: `sfx.*` / `step.*` (positional, SFX bus), `music.*`,
+   `amb.*`, `ui.*`, `voice.*` (2D). The prefix alone determines the bus + positional flag via
+   the pure `AudioCueRouting` — no per-cue wiring.
+2. Register its sound in `AudioLibrary.Build()`: a real asset (`GD.Load<AudioStream>(...)` of a
+   CC0/open `.ogg`/`.wav` under `assets/audio/`) if one exists, else a `ProceduralAudio`
+   placeholder. An unregistered id plays silence and warns once — never throws.
+3. Request it: publish `SoundCueRequestedEvent(id, pos)` / `MusicCueRequestedEvent(id)`, or call
+   `ServiceLocator.Get<AudioDirector>().PlayCue(id[, pos])`. No code change to add a cue whose
+   prefix already routes.
+
 **A new dev-console command**
 1. In `DevCommands.RegisterAll`, `console.Register(new ConsoleCommand(name, usage, summary,
    (console, args) => ...))`. Resolve the player / a world director via the `ServiceLocator`

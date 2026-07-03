@@ -675,6 +675,27 @@ announced events with an objective, time limit and rewards.
   `sprint` (Shift), `interact` (E), `attack` (LMB), `block` (RMB), `cast` (Q),
   `cycle_spell` (F), `inventory` (I), `journal` (J), `pause` (Esc).
 
+### 2.8 Audio (`src/Audio`, Phase 31)
+
+Event-driven, bus-based audio. The mixer graph is created in code so it never drifts from the
+settings that drive it:
+
+- **`AudioBuses`** (`src/Settings`) — the canonical bus names (Master/Music/SFX/Ambience/UI/
+  Voice), shared by the `Settings` volume fields and the mixer. **`AudioBusLayout.Ensure()`**
+  creates those buses at boot (routing each to Master) *before* the first `SettingsService.Apply()`,
+  so every volume slider takes effect immediately. Bus volumes stay owned by
+  `SettingsService.ApplyAudio()` (straight to `AudioServer`) — the director never touches volume.
+- **`AudioCueRouting`** — pure (Godot-free, unit-tested) mapping of a cue id to its bus and
+  positional flag by prefix (`sfx.`/`step.` → SFX, positional; `music.`/`amb.`/`ui.`/`voice.` → 2D).
+  The one naming convention the whole game answers to when requesting a sound.
+- **`ProceduralAudio`** + **`AudioLibrary`** — the cue id → `AudioStream` registry. Real CC0/open
+  assets (`assets/audio/*.ogg`) are preferred per cue; `ProceduralAudio` synthesizes a placeholder
+  fallback so no cue is ever silent. An unknown id resolves to silence + a one-time warning.
+- **`AudioDirector : Node`** (ServiceLocator-registered, `ProcessMode.Always` so pause/UI cues
+  sound) — consumes `SoundCueRequestedEvent` (combat swings/impacts) and `MusicCueRequestedEvent`
+  (narrative beats) and exposes `PlayCue(id[, pos])` for direct callers (UI, footsteps). Plays
+  through pooled `PositionalSfxPlayer` (3D) / `OneShotAudioPlayer` (2D) via `NodePool<T>`.
+
 ### 2.9 Bootstrap & UI
 
 - **`GameBootstrap : Node3D`** (`scenes/Main.tscn` root) — assembles the sandbox:

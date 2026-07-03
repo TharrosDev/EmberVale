@@ -1096,9 +1096,10 @@ effects show school-tinted particle swirls, and the corruption appearance now fo
 ART_STYLE per-tier arc (violet veining → ash → char → banked coals). All assets self-authored in
 Blender via the MCP (no external/licensed assets pulled yet).
 
-**Immediate next step: Phase 30.5 — UI & HUD Overhaul** (design tokens + `docs/UI_STYLE.md`
-first, sub-phases 30.5A–K in `SESSION_PLAYBOOK.md`), then 31 (audio), 32 (companions),
-33 (slice assembly) toward **Gate G1 — Vertical Slice**.
+**Immediate next step: Phase 31 — Audio Foundations** (31A `AudioDirector` + buses **done**;
+31B adaptive music, 31C SFX/UI hooks, 31D ambience, 31E footsteps next — sub-phases in
+`SESSION_PLAYBOOK.md`), then 32 (companions), 33 (slice assembly) toward **Gate G1 — Vertical
+Slice**. (Phase 30.5 UI & HUD Overhaul complete.)
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —
 > a first-person open-world fantasy RPG where you battle fallen heroes across four
