@@ -57,6 +57,35 @@ public static class ProceduralAudio
         return buffer;
     }
 
+    /// <summary>A steady, loop-friendly chord pad (no attack/release envelope) with optional slow
+    /// amplitude tremolo — the placeholder music-bed generator (Phase 31B). Sum of equal-weight sines
+    /// over <paramref name="freqs"/>, normalized and soft-clipped. Intended for <c>ToStream(..., loop: true)</c>.</summary>
+    public static float[] Pad(float[] freqs, float durSeconds, float gain, float tremoloHz = 0f, float tremoloDepth = 0f)
+    {
+        int n = Samples(durSeconds);
+        var buffer = new float[n];
+        foreach (float freq in freqs)
+        {
+            double phase = 0d;
+            double inc = 2d * Math.PI * freq / MixRate;
+            for (int i = 0; i < n; i++)
+            {
+                buffer[i] += (float)Math.Sin(phase);
+                phase += inc;
+            }
+        }
+
+        float norm = freqs.Length > 0 ? 1f / freqs.Length : 1f;
+        double tremInc = 2d * Math.PI * tremoloHz / MixRate;
+        for (int i = 0; i < n; i++)
+        {
+            float trem = 1f - tremoloDepth * (0.5f - 0.5f * (float)Math.Cos(tremInc * i));
+            buffer[i] = (float)Math.Tanh(buffer[i] * norm * gain * trem);
+        }
+
+        return buffer;
+    }
+
     /// <summary>Sums layers (length = longest), then soft-clips to avoid summed overshoot clipping hard.</summary>
     public static float[] Mix(params float[][] layers)
     {

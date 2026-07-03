@@ -2101,9 +2101,19 @@ no code) — batch them when momentum is good.
     is the cue-id→stream registry (unknown id → silent + warn-once); routing (bus + positional by
     id prefix) is the pure, unit-tested `AudioCueRouting`. Verified in-engine: `buses=6`, combat
     SFX live through a goblin fight, zero errors.
-- [ ] **31B — Adaptive music state machine** `[F]`
+- [x] **31B — Adaptive music state machine** `[F]`
   - **Done when:** exploration/combat/boss/safe states crossfade, driven by
     EventBus (combat start/end, boss start, region/day-phase change).
+  - **Done:** `MusicDirector` + pure `MusicStateMachine` (boss > combat > safe > explore, unit-tested).
+    Combat tracks enemies in Combat/Retreat via `EnemyStateChangedEvent` (cleared on state change,
+    `EntityDiedEvent`, or a freed-body prune); boss from `BossEncounterStartedEvent` until the boss
+    dies; safe polls `SafeZones`. Two looping players crossfade 1.5s on the Music bus; beds come from
+    the shared `AudioLibrary` (real CC0 track per state when present, else a distinct procedural pad).
+    Verified in-engine: `MusicDirector ready`, combat state entered/left through a goblin fight, zero
+    errors. *(Real CC0 music tracks per state are a follow-up; procedural pads hold until then.)*
+  - Also in this checkpoint: **fixed the world map rendering off-screen** (top-right corner) — `MapScreen`
+    used `SetAnchorsPreset(Center)`, which reseated its offsets against the shell's zero build-time size;
+    now uses the explicit centre-anchor + offset pattern the other panels use.
 - [ ] **31C — Combat & interaction SFX hooks** `[F/P]`
   - **Done when:** hit/cast/pickup/level-up/UI events fire SFX through the director.
 - [ ] **31D — 3D ambience per region/weather/time** `[F/P]`

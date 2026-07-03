@@ -1,6 +1,7 @@
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Core.Pooling;
+using Embervale.Core.Services;
 using Godot;
 
 namespace Embervale.Audio;
@@ -29,6 +30,7 @@ public partial class AudioDirector : Node
         _sfxPool = new NodePool<PositionalSfxPlayer>(() => new PositionalSfxPlayer { Released = p => _sfxPool.Return(p) }, prewarm: 6);
         _flatPool = new NodePool<OneShotAudioPlayer>(() => new OneShotAudioPlayer { Released = p => _flatPool.Return(p) }, prewarm: 2);
 
+        ServiceLocator.Instance?.Register(_library); // shared so MusicDirector reuses the built streams
         EventBus.Instance?.Subscribe<SoundCueRequestedEvent>(OnSoundCue);
         EventBus.Instance?.Subscribe<MusicCueRequestedEvent>(OnMusicCue);
         Log.Info($"AudioDirector ready ({_library.Count} cues, {_library.RealCount} from real assets, buses={AudioServer.BusCount}).");
@@ -38,6 +40,7 @@ public partial class AudioDirector : Node
     {
         EventBus.Instance?.Unsubscribe<SoundCueRequestedEvent>(OnSoundCue);
         EventBus.Instance?.Unsubscribe<MusicCueRequestedEvent>(OnMusicCue);
+        ServiceLocator.Instance?.Unregister(_library);
         _sfxPool?.Clear();
         _flatPool?.Clear();
     }
