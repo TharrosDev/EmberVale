@@ -2,6 +2,9 @@ using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Core.Pooling;
 using Embervale.Core.Services;
+using Embervale.Items;
+using Embervale.Magic;
+using Embervale.Progression;
 using Godot;
 
 namespace Embervale.Audio;
@@ -33,6 +36,9 @@ public partial class AudioDirector : Node
         ServiceLocator.Instance?.Register(_library); // shared so MusicDirector reuses the built streams
         EventBus.Instance?.Subscribe<SoundCueRequestedEvent>(OnSoundCue);
         EventBus.Instance?.Subscribe<MusicCueRequestedEvent>(OnMusicCue);
+        EventBus.Instance?.Subscribe<ItemPickedUpEvent>(OnItemPickedUp);
+        EventBus.Instance?.Subscribe<SpellCastEvent>(OnSpellCast);
+        EventBus.Instance?.Subscribe<LeveledUpEvent>(OnLeveledUp);
         Log.Info($"AudioDirector ready ({_library.Count} cues, {_library.RealCount} from real assets, buses={AudioServer.BusCount}).");
     }
 
@@ -40,6 +46,9 @@ public partial class AudioDirector : Node
     {
         EventBus.Instance?.Unsubscribe<SoundCueRequestedEvent>(OnSoundCue);
         EventBus.Instance?.Unsubscribe<MusicCueRequestedEvent>(OnMusicCue);
+        EventBus.Instance?.Unsubscribe<ItemPickedUpEvent>(OnItemPickedUp);
+        EventBus.Instance?.Unsubscribe<SpellCastEvent>(OnSpellCast);
+        EventBus.Instance?.Unsubscribe<LeveledUpEvent>(OnLeveledUp);
         ServiceLocator.Instance?.Unregister(_library);
         _sfxPool?.Clear();
         _flatPool?.Clear();
@@ -83,4 +92,11 @@ public partial class AudioDirector : Node
     private void OnSoundCue(SoundCueRequestedEvent e) => PlayCue(e.CueId, e.Position);
 
     private void OnMusicCue(MusicCueRequestedEvent e) => PlayCue(e.CueId);
+
+    private void OnItemPickedUp(ItemPickedUpEvent e) => PlayCue("sfx.pickup", e.Owner.Body.GlobalPosition);
+
+    private void OnSpellCast(SpellCastEvent e) => PlayCue("sfx.cast", e.Caster.Body.GlobalPosition);
+
+    // Level-up is a player-centric flourish — play it 2D (always centred/audible), not positional.
+    private void OnLeveledUp(LeveledUpEvent e) => PlayCue("sfx.levelup");
 }

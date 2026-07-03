@@ -155,7 +155,19 @@ public static class UiTheme
     {
         var button = new Button { Text = text };
         ApplyInteractiveStyle(button);
+        button.Pressed += PlayUiClick; // Phase 31C: one seam gives every menu button its click
         return button;
+    }
+
+    /// <summary>Plays the shared UI click cue via the <c>AudioDirector</c> (Phase 31C). Safe before the
+    /// director exists (title boot) — resolves each press, no-ops if unavailable.</summary>
+    private static void PlayUiClick()
+    {
+        if (Core.Services.ServiceLocator.Instance is { } locator
+            && locator.TryGet(out Audio.AudioDirector audio))
+        {
+            audio.PlayCue("ui.click");
+        }
     }
 
     /// <summary>A thin coloured resource bar (0..1) with a dark trough.</summary>
