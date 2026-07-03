@@ -341,6 +341,10 @@ public partial class GameBootstrap : Node3D
         AddChild(audio);
         ServiceLocator.Instance?.Register(audio);
 
+        // Adaptive music (Phase 31B): explore/safe/combat/boss music state machine, crossfading on the
+        // Music bus. Added after Audio so it reuses the shared AudioLibrary the AudioDirector registers.
+        AddChild(new Embervale.Audio.MusicDirector { Name = "Music" });
+
         // Streamed-cell persistence (Phase 25D): remembers per-actor state across cell unload/reload
         // (dead enemies stay dead, looted pickups stay gone). Added before the streamer so it is
         // subscribed to the cell load/unload events before the first cell streams in.

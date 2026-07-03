@@ -694,7 +694,14 @@ settings that drive it:
 - **`AudioDirector : Node`** (ServiceLocator-registered, `ProcessMode.Always` so pause/UI cues
   sound) — consumes `SoundCueRequestedEvent` (combat swings/impacts) and `MusicCueRequestedEvent`
   (narrative beats) and exposes `PlayCue(id[, pos])` for direct callers (UI, footsteps). Plays
-  through pooled `PositionalSfxPlayer` (3D) / `OneShotAudioPlayer` (2D) via `NodePool<T>`.
+  through pooled `PositionalSfxPlayer` (3D) / `OneShotAudioPlayer` (2D) via `NodePool<T>`. Registers
+  the shared `AudioLibrary` in the ServiceLocator so the `MusicDirector` reuses the built streams.
+- **`MusicDirector : Node` + `MusicStateMachine`** (Phase 31B) — adaptive music. The pure machine
+  resolves `Boss > Combat > Safe > Explore`; the director feeds it from EventBus (enemies in
+  Combat/Retreat via `EnemyStateChangedEvent`, cleared on `EntityDiedEvent`/freed-body prune; boss
+  from `BossEncounterStartedEvent`; safe polled from `SafeZones`) and crossfades two looping players
+  (~1.5 s) on the Music bus. Beds are `music.{explore,safe,combat,boss}` cues (real CC0 track or
+  procedural pad).
 
 ### 2.9 Bootstrap & UI
 
