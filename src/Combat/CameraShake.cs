@@ -13,16 +13,23 @@ namespace Embervale.Combat;
 /// </summary>
 public partial class CameraShake : Node
 {
+    /// <summary>Live source of the camera's rest position (the mode-aware pose owned by
+    /// <c>PlayerController.CameraRestPosition</c>). Without it the shake snaps back to a rest
+    /// captured at ready time — wrong the moment the player toggles third person.</summary>
+    public System.Func<Vector3>? RestPosition { get; set; }
+
     private Camera3D _camera = null!;
-    private Vector3 _restPosition;
+    private Vector3 _fallbackRestPosition;
     private Vector3 _restRotation;
     private float _trauma;
     private readonly RandomNumberGenerator _rng = new();
 
+    private Vector3 Rest => RestPosition?.Invoke() ?? _fallbackRestPosition;
+
     public override void _Ready()
     {
         _camera = GetParent<Camera3D>();
-        _restPosition = _camera.Position;
+        _fallbackRestPosition = _camera.Position;
         _restRotation = _camera.Rotation;
         _rng.Randomize();
 
@@ -59,7 +66,7 @@ public partial class CameraShake : Node
         }
 
         float amplitude = ShakeMath.Amplitude(_trauma);
-        _camera.Position = _restPosition + new Vector3(
+        _camera.Position = Rest + new Vector3(
             _rng.RandfRange(-1f, 1f) * amplitude * ShakeMath.MaxOffset,
             _rng.RandfRange(-1f, 1f) * amplitude * ShakeMath.MaxOffset,
             0f);
@@ -68,7 +75,7 @@ public partial class CameraShake : Node
         _trauma = ShakeMath.Decay(_trauma, (float)delta);
         if (_trauma <= 0f)
         {
-            _camera.Position = _restPosition;
+            _camera.Position = Rest;
             _camera.Rotation = _restRotation;
         }
     }

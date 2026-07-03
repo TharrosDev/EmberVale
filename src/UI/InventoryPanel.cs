@@ -217,7 +217,7 @@ public partial class InventoryPanel : UiPanel
         int dread = _reputation.Dread;
         if (dread > 0)
         {
-            AddLine(Loc.TF("char.dread", dread), UiTheme.Corruption);
+            AddLine(Loc.TF("char.dread", dread), UiTheme.CorruptionText);
         }
 
         foreach (FactionResource faction in FactionDatabase.All)
@@ -260,7 +260,7 @@ public partial class InventoryPanel : UiPanel
         }
 
         AddHeader(Loc.T("char.corruption"));
-        AddLine(Loc.TF("char.corruption_line", CorruptionTiers.Label(_corruption.Tier), _corruption.Value, CorruptionTiers.Max), UiTheme.Corruption);
+        AddLine(Loc.TF("char.corruption_line", CorruptionTiers.Label(_corruption.Tier), _corruption.Value, CorruptionTiers.Max), UiTheme.CorruptionText);
 
         ProgressBar bar = UiTheme.Bar(UiTheme.Corruption);
         bar.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;

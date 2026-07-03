@@ -523,7 +523,9 @@ public partial class GameHud : CanvasLayer
                 : spells.IsChanneling ? Loc.T("hud.channeling")
                 : cd > 0f ? $"{cd:0.0}s"
                 : Loc.T("hud.ready");
-            _spellState.Modulate = cd > 0f ? UiTheme.Dim : UiTheme.Accent;
+            // Font colour, not Modulate — modulating multiplies the caption's own Dim down
+            // below readable contrast (30.5K audit).
+            _spellState.AddThemeColorOverride("font_color", cd > 0f ? UiTheme.Dim : UiTheme.Accent);
             _spellRow.Visible = true;
 
             bool coolingDown = cd > 0f && spell.Cooldown > 0f;

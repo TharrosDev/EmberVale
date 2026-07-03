@@ -41,6 +41,7 @@ settings.difficulty,Difficulty
 settings.difficulty.story,Story
 settings.difficulty.normal,Normal
 settings.difficulty.hard,Hard
+settings.third_person,Third-Person Camera
 settings.reduced_motion,Reduced Motion
 settings.subtitles,Subtitles
 settings.ui_scale,UI Scale

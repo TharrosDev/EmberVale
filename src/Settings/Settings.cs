@@ -40,6 +40,11 @@ public partial class Settings : Resource
     /// <summary>0 = Story, 1 = Normal, 2 = Hard. A placeholder dial; difficulty curves land in Phase 56.</summary>
     [Export] public int Difficulty { get; set; } = 1;
 
+    /// <summary>Play with the camera orbiting behind the third-person rig instead of at the eye.
+    /// Reuses the retained cutscene view (<c>PlayerController.SetFirstPerson</c>); the orbit has
+    /// no wall-collision spring yet — that polish lands with the Phase 43 camera work.</summary>
+    [Export] public bool ThirdPersonCamera { get; set; } = false;
+
     // --- Accessibility (placeholders completed in Phase 54) -----------------
 
     [Export] public bool ReducedMotion { get; set; } = false;

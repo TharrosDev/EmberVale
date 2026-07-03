@@ -1,7 +1,12 @@
 using Embervale.Core.Diagnostics;
+using Embervale.Core.Events;
 using Godot;
 
 namespace Embervale.Settings;
+
+/// <summary>Raised after <see cref="SettingsService.Apply"/> pushes the current settings, so
+/// gameplay systems that read a setting (the camera-mode toggle, future ones) refresh live.</summary>
+public readonly record struct SettingsAppliedEvent(Settings Current) : IGameEvent;
 
 /// <summary>
 /// Loads, persists, and applies the player <see cref="Settings"/> (Phase 24E). Created by the
@@ -66,6 +71,7 @@ public sealed class SettingsService
     {
         ApplyGraphics();
         ApplyAudio();
+        EventBus.Instance?.Publish(new SettingsAppliedEvent(Current));
     }
 
     private void ApplyGraphics()

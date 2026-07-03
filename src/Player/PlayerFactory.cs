@@ -112,7 +112,8 @@ public static class PlayerFactory
             Near = 0.08f, // tight near plane so world geometry hugs the eye without clipping weirdness
         };
         cameraPivot.AddChild(camera);
-        camera.AddChild(new Embervale.Combat.CameraShake { Name = "Shake" });
+        var shake = new Embervale.Combat.CameraShake { Name = "Shake" };
+        camera.AddChild(shake);
 
         // Melee swing volume in front of the body; opened by the weapon component.
         var hitbox = new Hitbox
@@ -204,12 +205,17 @@ public static class PlayerFactory
             },
         });
 
-        player.AddChild(new PlayerController
+        var controller = new PlayerController
         {
             Name = "Controller",
             CameraPivot = cameraPivot,
             Camera = camera,
-        });
+        };
+        player.AddChild(controller);
+
+        // The shake offsets around the controller's mode-aware rest pose — a fixed rest would
+        // snap the camera back into the head after a crit while playing third-person.
+        shake.RestPosition = () => controller.CameraRestPosition;
 
         // First-person viewmodel arms (30L): ride the camera, swing with attacks, guard on block.
         player.AddChild(new FirstPersonArmsComponent { Name = "FpArms", Camera = camera });

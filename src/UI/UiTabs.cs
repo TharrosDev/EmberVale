@@ -49,9 +49,11 @@ public partial class UiTabs : HBoxContainer
 
     private void Highlight()
     {
+        // Swap the font colour, not Modulate — modulating the whole button multiplies the
+        // already-dim font down below readable contrast (the 30.5K audit caught ~2.9:1).
         for (int i = 0; i < _buttons.Count; i++)
         {
-            _buttons[i].Modulate = i == Current ? UiTheme.Accent : UiTheme.Dim;
+            _buttons[i].AddThemeColorOverride("font_color", i == Current ? UiTheme.Accent : UiTheme.Dim);
         }
     }
 }

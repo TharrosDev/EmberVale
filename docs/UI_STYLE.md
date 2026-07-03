@@ -30,22 +30,29 @@ parchment, cooled iron, a candle held up to both. Three rules follow:
 | `PanelBorder` | `0.42, 0.40, 0.35 @ 0.80` | 1 px panel frames |
 | `Trough` | `0.13, 0.125, 0.115 @ 0.95` | bar backgrounds, wells |
 | `Text` | `0.79, 0.75, 0.68` | primary text (bone pale) |
-| `Dim` | `0.55, 0.53, 0.47` | secondary text, disabled |
+| `Dim` | `0.58, 0.56, 0.50` | secondary text, disabled |
 | `Accent` | `0.85, 0.64, 0.25` | headers, highlight, focus (ember gold) |
 | `AccentHot` | `0.91, 0.45, 0.17` | crits/warnings only (ember orange) |
 | `Good` / `Bad` | dead green / ashen red | semantic feedback |
 | `Health` / `Stamina` / `Mana` | warm red / gold / desaturated blue | vitals fills |
-| `Corruption` | `0.48, 0.30, 0.55` | corruption gauge + vignette (violet) |
+| `Corruption` | `0.48, 0.30, 0.55` | corruption gauge + vignette (violet, fills only) |
+| `CorruptionText` | `0.68, 0.48, 0.76` | corruption-tinted **text** (the fill violet fails AA) |
 
 Rules: no colour literals in panels — new needs become new tokens here first.
 Environment-style saturation discipline applies: only accents may exceed ~40%
 saturation.
 
+**Contrast is audited in code (30.5K):** `UiContrastTests` pins every text-on-
+surface token pair to WCAG AA (≥4.5:1) and bar fills to ≥3:1 — retune a token
+and the suite fails before the player squints. Text colour goes through font
+colour overrides, **never whole-control `Modulate`** (modulate multiplies onto
+already-dim fonts and sinks below readable — the audit caught two).
+
 ## 3. Type scale
 
 | Token | px | Use |
 | ----- | -- | --- |
-| `CaptionFontSize` | 11 | slot numbers, hints, metadata |
+| `CaptionFontSize` | 12 | slot numbers, hints, metadata — the legibility **floor** (30.5K) |
 | `BodyFontSize` | 14 | default text |
 | `HeaderFontSize` | 16 | section headers (ember gold) |
 | `TitleFontSize` | 20 | screen/panel titles |
