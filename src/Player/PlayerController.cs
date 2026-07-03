@@ -97,6 +97,14 @@ public partial class PlayerController : EntityComponent
     /// <summary>Follow the camera-mode setting live (the settings panel applies on toggle).</summary>
     private void OnSettingsApplied(SettingsAppliedEvent e) => SetFirstPerson(!e.Current.ThirdPersonCamera);
 
+    /// <summary>The camera's rest position for the current mode — the single source of truth
+    /// shared with <see cref="Combat.CameraShake"/>, which offsets around it per frame. Without
+    /// this the shake would snap the camera back to a stale rest captured in the other mode
+    /// (the "camera glitches into the head on a crit while third-person" bug).</summary>
+    public Vector3 CameraRestPosition => IsFirstPerson
+        ? Vector3.Zero
+        : new Vector3(0f, PlayerFactory.ThirdPersonRise, PlayerFactory.ThirdPersonBackDistance);
+
     /// <summary>Switches between first-person (camera at the eye, own body casting shadows
     /// only — the viewmodel arms carry the visible weapon) and the third-person view (camera
     /// orbits behind, full body shown). Player-selectable via the ThirdPersonCamera setting;
@@ -107,9 +115,7 @@ public partial class PlayerController : EntityComponent
         IsFirstPerson = firstPerson;
         if (Camera != null)
         {
-            Camera.Position = firstPerson
-                ? Vector3.Zero
-                : new Vector3(0f, PlayerFactory.ThirdPersonRise, PlayerFactory.ThirdPersonBackDistance);
+            Camera.Position = CameraRestPosition;
         }
 
         if (Entity?.Body.GetNodeOrNull<Node3D>("BodyMesh") is { } bodyVisual)
