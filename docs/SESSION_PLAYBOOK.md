@@ -2090,9 +2090,17 @@ no code) — batch them when momentum is good.
 
 ## Phase 31 — Audio Foundations `[F/P]`
 
-- [ ] **31A — `AudioDirector` + Godot audio buses** `[F]`
+- [x] **31A — `AudioDirector` + Godot audio buses** `[F]`
   - **Done when:** master/music/SFX/ambience/UI/voice buses exist, registered in
     `ServiceLocator`, volumes wired to `SettingsService` (24E).
+  - **Done:** `src/Audio/` — `AudioBusLayout.Ensure()` creates the six buses at boot (before the
+    first settings apply, so every volume slider takes effect); `AudioDirector` (ServiceLocator-
+    registered, `ProcessMode.Always`) consumes the already-published `SoundCueRequestedEvent` /
+    `MusicCueRequestedEvent`, playing pooled 3D/2D one-shots. `ProceduralAudio` synthesizes
+    placeholder PCM streams (no binary assets; swap for recordings at Phase 52); `AudioLibrary`
+    is the cue-id→stream registry (unknown id → silent + warn-once); routing (bus + positional by
+    id prefix) is the pure, unit-tested `AudioCueRouting`. Verified in-engine: `buses=6`, combat
+    SFX live through a goblin fight, zero errors.
 - [ ] **31B — Adaptive music state machine** `[F]`
   - **Done when:** exploration/combat/boss/safe states crossfade, driven by
     EventBus (combat start/end, boss start, region/day-phase change).

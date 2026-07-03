@@ -119,6 +119,10 @@ public partial class GameBootstrap : Node3D
 
         ContentDatabases.InitializeAll();
 
+        // Audio buses (Phase 31A): create the master/music/SFX/ambience/UI/voice mixer buses before the
+        // settings apply below, so that first apply sets every bus volume (it skips buses not yet made).
+        Embervale.Audio.AudioBusLayout.Ensure();
+
         // Player options (Phase 24E): load user://settings.tres (or defaults) and apply graphics +
         // audio to the engine before anything is shown, so the very first frame honours them. The
         // service is registered so the menu/pause settings panel (24F) can mutate and re-apply it.
@@ -330,6 +334,12 @@ public partial class GameBootstrap : Node3D
 
         // Combat feedback (Phase 29C): pooled impact sparks + sound-cue hooks on every hit.
         AddChild(new Embervale.Combat.CombatFeedbackDirector { Name = "CombatFeedback" });
+
+        // Audio (Phase 31A): the AudioDirector consumes the sound/music cue events combat & bosses
+        // already publish, playing them on the mixer buses. Registered so any system can request cues.
+        var audio = new Embervale.Audio.AudioDirector { Name = "Audio" };
+        AddChild(audio);
+        ServiceLocator.Instance?.Register(audio);
 
         // Streamed-cell persistence (Phase 25D): remembers per-actor state across cell unload/reload
         // (dead enemies stay dead, looted pickups stay gone). Added before the streamer so it is
