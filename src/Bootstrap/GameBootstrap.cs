@@ -151,6 +151,50 @@ public partial class GameBootstrap : Node3D
         AddChild(_mainMenu);
         GameManager.Instance?.ChangeState(GameState.MainMenu);
         Log.Info("Main menu ready. New Game to enter the world.");
+
+        // Dev convenience (parallels --validate): launching with `-- --play` boots straight into the
+        // most recent save, so gameplay — and the systems that only init on world build (audio
+        // directors, spawners) — can be launched deterministically from the command line / MCP:
+        //   godot --path . -- --play
+        if (HasCmdFlag("--play") && MostRecentSlot() is { } slot)
+        {
+            Log.Info($"--play: continuing most recent save '{slot}'.");
+            StartLoadedGame(slot);
+        }
+    }
+
+    /// <summary>True if <paramref name="flag"/> was passed after <c>--</c> or as a raw engine arg.</summary>
+    private static bool HasCmdFlag(string flag)
+    {
+        foreach (string arg in OS.GetCmdlineUserArgs())
+        {
+            if (arg == flag)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>The slot of the most recently saved game, or null if there are no saves.</summary>
+    private static string? MostRecentSlot()
+    {
+        if (SaveManager.Instance is not { } manager)
+        {
+            return null;
+        }
+
+        SaveSlotInfo? latest = null;
+        foreach (SaveSlotInfo info in manager.ListSlots())
+        {
+            if (latest == null || info.TimestampUnix > latest.TimestampUnix)
+            {
+                latest = info;
+            }
+        }
+
+        return latest?.Slot;
     }
 
     /// <summary>Starts a fresh game into <paramref name="slot"/> (Phase 24C): builds the world and
@@ -344,6 +388,9 @@ public partial class GameBootstrap : Node3D
         // Adaptive music (Phase 31B): explore/safe/combat/boss music state machine, crossfading on the
         // Music bus. Added after Audio so it reuses the shared AudioLibrary the AudioDirector registers.
         AddChild(new Embervale.Audio.MusicDirector { Name = "Music" });
+
+        // Environmental ambience (Phase 31D): weather/locale/time looping bed on the Ambience bus.
+        AddChild(new Embervale.Audio.AmbienceDirector { Name = "Ambience" });
 
         // Streamed-cell persistence (Phase 25D): remembers per-actor state across cell unload/reload
         // (dead enemies stay dead, looted pickups stay gone). Added before the streamer so it is

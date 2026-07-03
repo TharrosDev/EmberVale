@@ -2123,8 +2123,15 @@ no code) — batch them when momentum is good.
     Kenney pickup/UI files; level-up stays procedural until sourced. The `AudioLibrary` load helper
     was unified so procedural-until-sourced cues log at info (not warning) — the error channel stays
     clean. Verified in-engine: `19 cues, 13 real`, combat/pickups through a fight, zero errors.
-- [ ] **31D — 3D ambience per region/weather/time** `[F/P]`
+- [x] **31D — 3D ambience per region/weather/time** `[F/P]`
   - **Done when:** regions/weather/day-phase drive looping 3D ambience beds.
+  - **Done:** `AmbienceDirector` + pure `AmbienceSelection` (weather > town > day/night, unit-tested)
+    crossfade a looping bed on the Ambience bus, driven by `WeatherChangedEvent` /
+    `TimeOfDayChangedEvent` and a polled `SafeZones` "in town" signal. Beds `amb.{day,night,rain,town}`
+    come from the shared `AudioLibrary` (real CC0 field recording per bed when present, else a procedural
+    filtered-noise wash). Also added a **`--play` dev arg** (parallels `--validate`) that boots straight
+    into the most recent save so gameplay/directors launch deterministically for verification. Verified
+    in-engine via `godot --path . -- --play`: `AmbienceDirector ready`, world built, zero errors.
 - [ ] **31E — Footsteps by surface** `[F/P]`
   - **Done when:** footstep SFX vary by surface material under the player.
 

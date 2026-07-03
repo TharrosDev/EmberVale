@@ -105,6 +105,17 @@ public sealed class AudioLibrary
             ["music.boss"] = Load("res://assets/audio/music/boss.ogg",
                 () => ProceduralAudio.Pad(new[] { 98.0f, 130.8f, 138.6f, 196.0f }, 3f, gain: 0.26f, tremoloHz: 0.4f, tremoloDepth: 0.45f), loop: true, shipped: false),
 
+            // Ambience beds (2D, looping) — Phase 31D. Real CC0 field recordings swap in per bed; the
+            // procedural fallbacks are filtered-noise washes (soft wind, night hush, rain, town murmur).
+            ["amb.day"] = Load("res://assets/audio/ambience/day.ogg",
+                () => ProceduralAudio.NoiseBed(4f, lowpass: 0.06f, gain: 0.10f, seed: 71), loop: true, shipped: false),
+            ["amb.night"] = Load("res://assets/audio/ambience/night.ogg",
+                () => ProceduralAudio.NoiseBed(4f, lowpass: 0.04f, gain: 0.08f, seed: 72), loop: true, shipped: false),
+            ["amb.rain"] = Load("res://assets/audio/ambience/rain.ogg",
+                () => ProceduralAudio.NoiseBed(4f, lowpass: 0.5f, gain: 0.14f, seed: 73), loop: true, shipped: false),
+            ["amb.town"] = Load("res://assets/audio/ambience/town.ogg",
+                () => ProceduralAudio.NoiseBed(4f, lowpass: 0.12f, gain: 0.09f, seed: 74), loop: true, shipped: false),
+
             // Music sting (2D). Procedural chord — CC0 music is sourced per bed in Phase 31B/31D.
             ["music.boss_defeat"] = ProceduralAudio.ToStream(ProceduralAudio.Mix(
                 ProceduralAudio.Sine(262f, 1.3f, gain: 0.32f, attackSeconds: 0.01f, releaseSeconds: 0.6f),

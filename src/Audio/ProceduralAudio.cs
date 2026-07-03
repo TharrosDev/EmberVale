@@ -86,6 +86,25 @@ public static class ProceduralAudio
         return buffer;
     }
 
+    /// <summary>A steady, loop-friendly filtered-noise bed (no envelope) — the placeholder ambience
+    /// generator (Phase 31D): wind/rain washes. Intended for <c>ToStream(..., loop: true)</c>.</summary>
+    public static float[] NoiseBed(float durSeconds, float lowpass, float gain, int seed = 1)
+    {
+        int n = Samples(durSeconds);
+        var buffer = new float[n];
+        var rng = new Random(seed);
+        float k = Mathf.Clamp(lowpass, 0.01f, 1f);
+        float prev = 0f;
+        for (int i = 0; i < n; i++)
+        {
+            float white = (float)(rng.NextDouble() * 2d - 1d);
+            prev += k * (white - prev);
+            buffer[i] = (float)Math.Tanh(prev * gain);
+        }
+
+        return buffer;
+    }
+
     /// <summary>Sums layers (length = longest), then soft-clips to avoid summed overshoot clipping hard.</summary>
     public static float[] Mix(params float[][] layers)
     {

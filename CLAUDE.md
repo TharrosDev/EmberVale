@@ -114,7 +114,13 @@ godot --headless --path . -- --validate
 The `--` forwards `--validate` as a user argument; `GameBootstrap` detects it
 (`HeadlessValidation`), loads every database, runs `ContentValidator.RunAll()` (cross-
 references + well-formedness + graph reachability), prints the report, and exits **0** on
-pass / **1** on any issue. This is the one-command content gate for the maintainer (and
+pass / **1** on any issue.
+
+**Launch straight into gameplay (dev):** `godot --path . -- --play` boots past the menu into
+the most recent save, so systems that only init on world build (the audio directors, spawners)
+can be launched deterministically — useful for capturing runtime logs without driving the menu
+(the menu's *Continue* needs input the MCP can't inject). It continues the newest save slot; with
+no saves it stays on the menu. This is the one-command content gate for the maintainer (and
 later CI). The same battery is also reachable in-game via the `validate-all` dev console
 command (`F1`).
 

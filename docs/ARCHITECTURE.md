@@ -702,6 +702,10 @@ settings that drive it:
   from `BossEncounterStartedEvent`; safe polled from `SafeZones`) and crossfades two looping players
   (~1.5 s) on the Music bus. Beds are `music.{explore,safe,combat,boss}` cues (real CC0 track or
   procedural pad).
+- **`AmbienceDirector` + `AmbienceSelection`** (Phase 31D) — a looping environmental bed on the
+  Ambience bus. The pure selector resolves `weather > town > day/night`; the director feeds it from
+  `WeatherChangedEvent`/`TimeOfDayChangedEvent` and a polled `SafeZones` "in town" signal, crossfading
+  (~2 s). Beds are `amb.{day,night,rain,town}` (real CC0 field recording or procedural noise wash).
 
 ### 2.9 Bootstrap & UI
 

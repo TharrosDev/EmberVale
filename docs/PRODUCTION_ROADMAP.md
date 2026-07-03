@@ -1097,7 +1097,7 @@ ART_STYLE per-tier arc (violet veining → ash → char → banked coals). All a
 Blender via the MCP (no external/licensed assets pulled yet).
 
 **Immediate next step: Phase 31 — Audio Foundations** (31A `AudioDirector` + buses **done**, real CC0
-SFX **done**, 31B adaptive music **done**, 31C SFX/UI hooks **done**; 31D ambience, 31E footsteps next —
+SFX **done**, 31B adaptive music **done**, 31C SFX/UI hooks **done**, 31D ambience **done**; 31E footsteps next —
 sub-phases in `SESSION_PLAYBOOK.md`), then 32 (companions), 33 (slice assembly) toward **Gate G1 —
 Vertical Slice**. (Phase 30.5 UI & HUD Overhaul complete.)
 
