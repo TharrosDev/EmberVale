@@ -30,10 +30,16 @@ public partial class MapScreen : UiPanel
 
     protected override void BuildShell(PanelContainer shell)
     {
-        shell.SetAnchorsPreset(Control.LayoutPreset.Center);
+        // Centred horizontally, anchored near the top — the same explicit anchor+offset pattern the
+        // other panels use (e.g. CraftingPanel). The old SetAnchorsPreset(Center) reset the shell's
+        // offsets against its zero size at build time, which seated the whole map off-screen toward
+        // the top-right corner.
+        shell.AnchorLeft = 0.5f;
+        shell.AnchorRight = 0.5f;
+        shell.OffsetLeft = -290;
+        shell.OffsetRight = 290;
+        shell.OffsetTop = 40;
         shell.GrowHorizontal = Control.GrowDirection.Both;
-        shell.GrowVertical = Control.GrowDirection.Both;
-        shell.CustomMinimumSize = new Vector2(560, 0);
 
         MarginContainer pad = UiTheme.Padding(14);
         shell.AddChild(pad);
