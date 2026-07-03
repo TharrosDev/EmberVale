@@ -51,6 +51,47 @@ public static class GameInput
         return "?";
     }
 
+    /// <summary>The display label for <paramref name="action"/>'s first bound gamepad button
+    /// (e.g. "X", "Start"), resolved live from the InputMap. Falls back to <see cref="KeyLabel"/>
+    /// when the action has no gamepad binding.</summary>
+    public static string PadLabel(string action)
+    {
+        foreach (InputEvent bound in InputMap.ActionGetEvents(action))
+        {
+            if (bound is InputEventJoypadButton pad)
+            {
+                return ButtonLabel(pad.ButtonIndex);
+            }
+        }
+
+        return KeyLabel(action);
+    }
+
+    /// <summary>The device-aware prompt label (30.5J): the gamepad glyph while the player is
+    /// driving with a controller (<see cref="InputDevice.GamepadActive"/>), the key otherwise.</summary>
+    public static string PromptLabel(string action) =>
+        InputDevice.GamepadActive ? PadLabel(action) : KeyLabel(action);
+
+    /// <summary>Xbox-style display labels for gamepad buttons (pure; pinned by tests).</summary>
+    public static string ButtonLabel(JoyButton button) => button switch
+    {
+        JoyButton.A => "A",
+        JoyButton.B => "B",
+        JoyButton.X => "X",
+        JoyButton.Y => "Y",
+        JoyButton.Back => "Select",
+        JoyButton.Start => "Start",
+        JoyButton.LeftShoulder => "LB",
+        JoyButton.RightShoulder => "RB",
+        JoyButton.LeftStick => "LS",
+        JoyButton.RightStick => "RS",
+        JoyButton.DpadUp => "D-Up",
+        JoyButton.DpadDown => "D-Down",
+        JoyButton.DpadLeft => "D-Left",
+        JoyButton.DpadRight => "D-Right",
+        _ => "?",
+    };
+
     public static void EnsureActions()
     {
         Bind(MoveForward, new InputEventKey { PhysicalKeycode = Key.W });
@@ -78,6 +119,26 @@ public static class GameInput
         {
             Bind(Hotbar[i], new InputEventKey { PhysicalKeycode = digits[i] });
         }
+
+        BindGamepad();
+    }
+
+    /// <summary>The gamepad layer (30.5J): buttons for the menu-facing actions so no menu is
+    /// mouse-only, and the left stick mapped onto Godot's built-in <c>ui_*</c> focus-navigation
+    /// actions (the D-pad and A/B are already bound to them by the engine defaults). Full
+    /// gameplay-on-controller (movement, combat, remapping) is the Phase 54 pass.</summary>
+    private static void BindGamepad()
+    {
+        Bind(Pause, new InputEventJoypadButton { ButtonIndex = JoyButton.Start });
+        Bind(Inventory, new InputEventJoypadButton { ButtonIndex = JoyButton.Y });
+        Bind(Journal, new InputEventJoypadButton { ButtonIndex = JoyButton.Back });
+        Bind(Map, new InputEventJoypadButton { ButtonIndex = JoyButton.DpadUp });
+        Bind(Interact, new InputEventJoypadButton { ButtonIndex = JoyButton.X });
+
+        Bind("ui_up", new InputEventJoypadMotion { Axis = JoyAxis.LeftY, AxisValue = -1f });
+        Bind("ui_down", new InputEventJoypadMotion { Axis = JoyAxis.LeftY, AxisValue = 1f });
+        Bind("ui_left", new InputEventJoypadMotion { Axis = JoyAxis.LeftX, AxisValue = -1f });
+        Bind("ui_right", new InputEventJoypadMotion { Axis = JoyAxis.LeftX, AxisValue = 1f });
     }
 
     private static void Bind(string action, InputEvent trigger)

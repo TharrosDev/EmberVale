@@ -29,6 +29,7 @@ public partial class CharacterCreator : CanvasLayer
     private Label _summary = null!;
     private LineEdit _name = null!;
     private LineEdit _background = null!;
+    private PanelContainer _panel = null!;
 
     public void Configure(Action<CharacterProfile> onConfirm, Action onBack)
     {
@@ -41,6 +42,19 @@ public partial class CharacterCreator : CanvasLayer
         Layer = 12; // above the main menu
         Godot.Input.MouseMode = Godot.Input.MouseModeEnum.Visible;
         Build();
+        UiFocus.GrabFirst(_panel); // land on the race picker (30.5J)
+    }
+
+    public override void _Process(double delta)
+    {
+        // Esc / gamepad B backs out (30.5J) — unless a text field has focus, where Esc means
+        // "stop typing", not "leave the creator".
+        if (Godot.Input.IsActionJustPressed("ui_cancel") &&
+            GetViewport().GuiGetFocusOwner() is not LineEdit)
+        {
+            _onBack?.Invoke();
+            QueueFree();
+        }
     }
 
     private void Build()
@@ -56,6 +70,7 @@ public partial class CharacterCreator : CanvasLayer
         panel.GrowVertical = Control.GrowDirection.Both;
         panel.CustomMinimumSize = new Vector2(560, 0);
         AddChild(panel);
+        _panel = panel;
 
         MarginContainer pad = UiTheme.Padding(18);
         panel.AddChild(pad);

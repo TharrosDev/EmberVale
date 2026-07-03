@@ -124,7 +124,11 @@ public static class UiTheme
 
     /// <summary>A small keycap chip (e.g. the "E" in the interaction prompt): the key's label
     /// in a bordered well, sized to its content.</summary>
-    public static PanelContainer KeyCap(string key)
+    public static PanelContainer KeyCap(string key) => KeyCap(key, out _);
+
+    /// <summary>As <see cref="KeyCap(string)"/>, also handing back the glyph label so callers
+    /// can refresh it live (device flips, rebinds — 30.5J).</summary>
+    public static PanelContainer KeyCap(string key, out Label label)
     {
         var box = new StyleBoxFlat { BgColor = Trough, BorderColor = Dim };
         box.SetBorderWidthAll(1);
@@ -136,7 +140,7 @@ public static class UiTheme
         var cap = new PanelContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
         cap.AddThemeStyleboxOverride("panel", box);
 
-        Label label = Caption(key, Text);
+        label = Caption(key, Text);
         label.HorizontalAlignment = HorizontalAlignment.Center;
         cap.AddChild(label);
         return cap;
@@ -218,6 +222,7 @@ public static class UiTheme
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             SizeFlagsVertical = Control.SizeFlags.ExpandFill,
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
+            FollowFocus = true, // keep the focused row in view under gamepad/keyboard nav (30.5J)
         };
 
         var list = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };

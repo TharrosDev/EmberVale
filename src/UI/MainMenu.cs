@@ -21,12 +21,25 @@ public partial class MainMenu : CanvasLayer
     /// <summary>Invoked with the chosen slot when the player loads/continues a save.</summary>
     public System.Action<string>? LoadGameRequested { get; set; }
 
+    private PanelContainer _panel = null!;
+
     public override void _Ready()
     {
         Layer = 11; // above the (not-yet-built) HUD and the pause menu
         // No world/player yet on the title screen, so make sure the cursor is free.
         Godot.Input.MouseMode = Godot.Input.MouseModeEnum.Visible;
         Build();
+
+        // Gamepad/keyboard start on the first button, and re-land there whenever a sub-screen
+        // (slots, creator, settings) restores the menu (30.5J).
+        UiFocus.GrabFirst(_panel);
+        VisibilityChanged += () =>
+        {
+            if (Visible)
+            {
+                UiFocus.GrabFirst(_panel);
+            }
+        };
     }
 
     private void Build()
@@ -42,6 +55,7 @@ public partial class MainMenu : CanvasLayer
         panel.GrowVertical = Control.GrowDirection.Both;
         panel.CustomMinimumSize = new Vector2(320, 0);
         AddChild(panel);
+        _panel = panel;
 
         MarginContainer pad = UiTheme.Padding(20);
         panel.AddChild(pad);

@@ -86,6 +86,16 @@ public partial class SaveSlotPanel : CanvasLayer
         RefreshList();
     }
 
+    public override void _Process(double delta)
+    {
+        // Esc / gamepad B backs out (30.5J), matching the settings panel.
+        if (Godot.Input.IsActionJustPressed("ui_cancel"))
+        {
+            _onBack?.Invoke();
+            QueueFree();
+        }
+    }
+
     private void RefreshList()
     {
         foreach (Node child in _list.GetChildren())
@@ -113,6 +123,10 @@ public partial class SaveSlotPanel : CanvasLayer
                 }
             }
         }
+
+        // Refresh frees the row the gamepad/keyboard focus sat on (confirm/delete flows) —
+        // re-land on the first row once the new tree exists (30.5J).
+        Callable.From(() => UiFocus.GrabFirst(_list)).CallDeferred();
     }
 
     private Control BuildRow(string slot, string label, SaveSlotInfo? info)

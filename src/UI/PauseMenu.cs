@@ -29,14 +29,19 @@ public partial class PauseMenu : CanvasLayer
 
 	public override void _Process(double delta)
 	{
-		if (!Godot.Input.IsActionJustPressed(GameInput.Pause))
+		// Gamepad B (ui_cancel) resumes like Esc while open (30.5J). Esc raises both actions
+		// on one press; the OR evaluates once, so it still toggles exactly once.
+		bool pressed = Godot.Input.IsActionJustPressed(GameInput.Pause) ||
+			(_open && Godot.Input.IsActionJustPressed("ui_cancel"));
+		if (!pressed)
 		{
 			return;
 		}
 
 		// While a higher modal (the settings panel) owns the screen it sets UiState.MenuOpen and
-		// consumes Esc to close itself — don't also resume the game on that same press.
-		if (UiState.MenuOpen)
+		// consumes Esc to close itself — don't also resume the game on that same press. A UiPanel
+		// closing on this same frame's cancel press already consumed it too (30.5J).
+		if (UiState.MenuOpen || UiPanel.LastCancelCloseFrame == Engine.GetProcessFrames())
 		{
 			return;
 		}
@@ -132,6 +137,7 @@ public partial class PauseMenu : CanvasLayer
 			_panel.Modulate = new Color(1f, 1f, 1f, 0f);
 			UiTheme.AnimateModulate(_backdrop, Colors.White, UiTheme.DurationBase);
 			UiTheme.AnimateModulate(_panel, Colors.White, UiTheme.DurationBase);
+			UiFocus.GrabFirst(_panel); // gamepad/keyboard start on Resume (30.5J)
 		}
 	}
 }
