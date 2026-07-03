@@ -2114,8 +2114,15 @@ no code) — batch them when momentum is good.
   - Also in this checkpoint: **fixed the world map rendering off-screen** (top-right corner) — `MapScreen`
     used `SetAnchorsPreset(Center)`, which reseated its offsets against the shell's zero build-time size;
     now uses the explicit centre-anchor + offset pattern the other panels use.
-- [ ] **31C — Combat & interaction SFX hooks** `[F/P]`
+- [x] **31C — Combat & interaction SFX hooks** `[F/P]`
   - **Done when:** hit/cast/pickup/level-up/UI events fire SFX through the director.
+  - **Done:** `AudioDirector` now also consumes `ItemPickedUpEvent` (positional `sfx.pickup`),
+    `SpellCastEvent` (positional `sfx.cast`), and `LeveledUpEvent` (2D `sfx.levelup`); combat hit
+    SFX already landed in 31A. UI clicks route through one seam — `UiTheme.Action` plays `ui.click`
+    on every menu button's press. Real CC0 for cast (`spell_01`, rubberduck, OpenGameArt) + the
+    Kenney pickup/UI files; level-up stays procedural until sourced. The `AudioLibrary` load helper
+    was unified so procedural-until-sourced cues log at info (not warning) — the error channel stays
+    clean. Verified in-engine: `19 cues, 13 real`, combat/pickups through a fight, zero errors.
 - [ ] **31D — 3D ambience per region/weather/time** `[F/P]`
   - **Done when:** regions/weather/day-phase drive looping 3D ambience beds.
 - [ ] **31E — Footsteps by surface** `[F/P]`

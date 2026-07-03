@@ -66,9 +66,19 @@ public sealed class AudioLibrary
                 ProceduralAudio.Sine(620f, 0.10f, gain: 0.4f, releaseSeconds: 0.08f),
                 ProceduralAudio.NoiseBurst(0.08f, lowpass: 0.85f, gain: 0.28f, seed: 44))),
 
-            // Interaction SFX (positional). Used by the Phase 31C hooks; registered here now.
+            // Interaction SFX. Pickup is a real Kenney one-shot; cast/level-up are procedural for now
+            // (a shimmer and a triumphant chord) with real paths ready to swap in.
             ["sfx.pickup"] = Load("res://assets/audio/sfx/pickup.ogg",
                 () => ProceduralAudio.Sine(880f, 0.10f, gain: 0.4f, releaseSeconds: 0.07f)),
+            ["sfx.cast"] = Load("res://assets/audio/sfx/cast.ogg", () => ProceduralAudio.Mix(
+                ProceduralAudio.Sine(660f, 0.28f, gain: 0.28f, attackSeconds: 0.01f, releaseSeconds: 0.2f),
+                ProceduralAudio.Sine(990f, 0.24f, gain: 0.20f, releaseSeconds: 0.18f),
+                ProceduralAudio.NoiseBurst(0.12f, lowpass: 0.9f, gain: 0.14f, seed: 55))),
+            ["sfx.levelup"] = Load("res://assets/audio/sfx/levelup.ogg", () => ProceduralAudio.Mix(
+                ProceduralAudio.Sine(523.3f, 0.55f, gain: 0.24f, attackSeconds: 0.04f, releaseSeconds: 0.25f),
+                ProceduralAudio.Sine(659.3f, 0.55f, gain: 0.22f, attackSeconds: 0.06f, releaseSeconds: 0.25f),
+                ProceduralAudio.Sine(784.0f, 0.55f, gain: 0.20f, attackSeconds: 0.08f, releaseSeconds: 0.25f),
+                ProceduralAudio.Sine(1046.5f, 0.5f, gain: 0.18f, attackSeconds: 0.10f, releaseSeconds: 0.2f)), shipped: false),
 
             // Footsteps by surface (positional). Used by the Phase 31E FootstepComponent.
             ["step.grass"] = Load("res://assets/audio/sfx/steps/grass.ogg", () => Footstep(0.35f, 7)),
@@ -86,14 +96,14 @@ public sealed class AudioLibrary
 
             // Adaptive music beds (2D, looping) — Phase 31B. Real CC0 tracks swap in per state; the
             // procedural fallbacks are distinct chord pads (calm minor / warm major / tense / dark heavy).
-            ["music.explore"] = LoadLooping("res://assets/audio/music/explore.ogg",
-                () => ProceduralAudio.Pad(new[] { 220f, 261.6f, 329.6f }, 4f, gain: 0.16f, tremoloHz: 0.2f, tremoloDepth: 0.30f)),
-            ["music.safe"] = LoadLooping("res://assets/audio/music/safe.ogg",
-                () => ProceduralAudio.Pad(new[] { 261.6f, 329.6f, 392.0f }, 4f, gain: 0.14f, tremoloHz: 0.15f, tremoloDepth: 0.25f)),
-            ["music.combat"] = LoadLooping("res://assets/audio/music/combat.ogg",
-                () => ProceduralAudio.Pad(new[] { 146.8f, 220f, 233.1f, 293.7f }, 3f, gain: 0.22f, tremoloHz: 0.6f, tremoloDepth: 0.40f)),
-            ["music.boss"] = LoadLooping("res://assets/audio/music/boss.ogg",
-                () => ProceduralAudio.Pad(new[] { 98.0f, 130.8f, 138.6f, 196.0f }, 3f, gain: 0.26f, tremoloHz: 0.4f, tremoloDepth: 0.45f)),
+            ["music.explore"] = Load("res://assets/audio/music/explore.ogg",
+                () => ProceduralAudio.Pad(new[] { 220f, 261.6f, 329.6f }, 4f, gain: 0.16f, tremoloHz: 0.2f, tremoloDepth: 0.30f), loop: true, shipped: false),
+            ["music.safe"] = Load("res://assets/audio/music/safe.ogg",
+                () => ProceduralAudio.Pad(new[] { 261.6f, 329.6f, 392.0f }, 4f, gain: 0.14f, tremoloHz: 0.15f, tremoloDepth: 0.25f), loop: true, shipped: false),
+            ["music.combat"] = Load("res://assets/audio/music/combat.ogg",
+                () => ProceduralAudio.Pad(new[] { 146.8f, 220f, 233.1f, 293.7f }, 3f, gain: 0.22f, tremoloHz: 0.6f, tremoloDepth: 0.40f), loop: true, shipped: false),
+            ["music.boss"] = Load("res://assets/audio/music/boss.ogg",
+                () => ProceduralAudio.Pad(new[] { 98.0f, 130.8f, 138.6f, 196.0f }, 3f, gain: 0.26f, tremoloHz: 0.4f, tremoloDepth: 0.45f), loop: true, shipped: false),
 
             // Music sting (2D). Procedural chord — CC0 music is sourced per bed in Phase 31B/31D.
             ["music.boss_defeat"] = ProceduralAudio.ToStream(ProceduralAudio.Mix(
@@ -104,9 +114,11 @@ public sealed class AudioLibrary
         };
     }
 
-    /// <summary>Loads a real asset if it exists; otherwise builds a procedural placeholder from
-    /// <paramref name="fallback"/>. Counts real hits for boot diagnostics.</summary>
-    private AudioStream Load(string resPath, Func<float[]> fallback)
+    /// <summary>Loads a real asset if present, else a procedural placeholder from <paramref name="fallback"/>.
+    /// <paramref name="loop"/> makes the placeholder a seamless loop (beds/ambience). <paramref name="shipped"/>
+    /// distinguishes an asset we ship (missing = a real problem → warn) from one that is procedural-until-
+    /// sourced (missing = an expected, designed state → info, keeps the error channel clean).</summary>
+    private AudioStream Load(string resPath, Func<float[]> fallback, bool loop = false, bool shipped = true)
     {
         if (ResourceLoader.Exists(resPath) && GD.Load<AudioStream>(resPath) is { } real)
         {
@@ -114,24 +126,17 @@ public sealed class AudioLibrary
             return real;
         }
 
-        Log.Warn($"Audio asset '{resPath}' missing — using procedural placeholder.");
-        return ProceduralAudio.ToStream(fallback());
-    }
-
-    /// <summary>Like <see cref="Load"/> but the procedural fallback is a seamless loop (music beds,
-    /// ambience). A real asset's own loop flag governs when it is present.</summary>
-    private AudioStream LoadLooping(string resPath, Func<float[]> fallback)
-    {
-        if (ResourceLoader.Exists(resPath) && GD.Load<AudioStream>(resPath) is { } real)
+        string message = $"No audio asset at '{resPath}' — using procedural placeholder.";
+        if (shipped)
         {
-            _realCount++;
-            return real;
+            Log.Warn(message);
+        }
+        else
+        {
+            Log.Info(message);
         }
 
-        // Beds are a real-track-or-procedural design (unlike shipped SFX), so a missing file is an
-        // expected state, not a warning — info-level keeps the error channel clean until tracks land.
-        Log.Info($"No music track at '{resPath}' yet — using procedural bed.");
-        return ProceduralAudio.ToStream(fallback(), loop: true);
+        return ProceduralAudio.ToStream(fallback(), loop);
     }
 
     /// <summary>A soft placeholder footstep: a short low-passed noise thud (<paramref name="tone"/>

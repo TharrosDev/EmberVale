@@ -10,6 +10,7 @@ no attribution required. Credits are recorded here anyway, as good practice.
 | `sfx/combat/hit.ogg`, `crit.ogg`, `block.ogg`, `sfx/steps/*.ogg` | Impact Sounds | Kenney (kenney.nl) | CC0 1.0 | [Boyquotes/kenney-impact-sounds-for-godot](https://github.com/Boyquotes/kenney-impact-sounds-for-godot) |
 | `sfx/combat/swing.ogg`, `sfx/pickup.ogg` | RPG Audio | Kenney (kenney.nl) | CC0 1.0 | [Boyquotes/kenney-rpg-audio-for-godot](https://github.com/Boyquotes/kenney-rpg-audio-for-godot) |
 | `ui/click.wav`, `confirm.wav`, `back.wav` | UI Audio | Kenney (kenney.nl) | CC0 1.0 | [Calinou/kenney-ui-audio](https://github.com/Calinou/kenney-ui-audio) |
+| `sfx/cast.ogg` | 80 CC0 RPG SFX (`spell_01`) | rubberduck | CC0 1.0 | [OpenGameArt](https://opengameart.org/content/80-cc0-rpg-sfx) |
 
 Original packs: <https://kenney.nl/assets/impact-sounds>, <https://kenney.nl/assets/rpg-audio>,
 <https://kenney.nl/assets/ui-audio>.
