@@ -52,6 +52,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("event", "event <id>", "Force a world event.", Event));
         console.Register(new ConsoleCommand("region", "region <list|goto <id>>", "List regions or hard-load into one (Phase 25C).", Region));
         console.Register(new ConsoleCommand("travel", "travel <list|goto <id>>", "List attuned travel nodes or fast-travel to one (Phase 25G).", Travel));
+        console.Register(new ConsoleCommand("tutorial", "tutorial <status|skip|restart>", "Inspect or drive the onboarding hints (Phase 33B).", Tutorial));
         console.Register(new ConsoleCommand("opening", "opening", "Replay the new-game prologue (Phase 33A).", Opening));
         console.Register(new ConsoleCommand("companion", "companion <list|recruit <id>|dismiss <id>|stance <id> <follow|hold|engage>|order|loyalty <id> [delta]>", "Inspect and drive the companion party (Phase 32A).", Companion));
         console.Register(new ConsoleCommand("savecheck", "savecheck", "Audit registered saveables for volatile (would-orphan) keys (Phase 25.5A).", SaveCheck));
@@ -516,6 +517,31 @@ public static class DevCommands
         }
 
         return "usage: travel <list|goto <id>>";
+    }
+
+    /// <summary>Inspects or drives the onboarding, so its hints can be checked without replaying a
+    /// new game to reach them.</summary>
+    private static string Tutorial(DevConsole console, string[] args)
+    {
+        if (ServiceLocator.Instance is not { } locator ||
+            !locator.TryGet(out Onboarding.TutorialDirector tutorial))
+        {
+            return "tutorial director unavailable";
+        }
+
+        switch (args.Length >= 1 ? args[0] : "status")
+        {
+            case "skip":
+                tutorial.Skip();
+                return "tutorial skipped";
+            case "restart":
+                tutorial.Restart();
+                return "tutorial restarted";
+            default:
+                return tutorial.IsFinished
+                    ? "tutorial: finished"
+                    : $"tutorial: teaching {tutorial.Step}";
+        }
     }
 
     /// <summary>Replays the prologue, so its pacing and copy can be checked without starting a new

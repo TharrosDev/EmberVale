@@ -194,6 +194,7 @@ Goblins roam to the north (−Z) and drop loot.
     ├── Corruption/          # CorruptionComponent, tiers, appearance + dialogue hooks, endings
     ├── Races/               # RaceResource, RaceComponent, character creation (Phase 26)
     ├── Companions/          # Party roster, follower AI, formation/leash cores (Phase 32)
+    ├── Onboarding/          # TutorialDirector + script (diegetic hints, Phase 33)
     ├── Interaction/         # InteractableComponent (raycast interact)
     ├── Player/              # PlayerCharacter, PlayerController, PlayerFactory
     ├── Enemies/             # EnemyEntity, EnemyAIComponent (+caster branch), EnemyFactory, AshenAcolyteFactory, EnemyTemplateRegistry

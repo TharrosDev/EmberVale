@@ -45,6 +45,10 @@ public partial class Settings : Resource
     /// no wall-collision spring yet — that polish lands with the Phase 43 camera work.</summary>
     [Export] public bool ThirdPersonCamera { get; set; } = false;
 
+    /// <summary>Whether the onboarding hints appear (Phase 33B). Off means a returning player is
+    /// never taught a verb they already know.</summary>
+    [Export] public bool ShowTutorials { get; set; } = true;
+
     // --- Accessibility (placeholders completed in Phase 54) -----------------
 
     [Export] public bool ReducedMotion { get; set; } = false;

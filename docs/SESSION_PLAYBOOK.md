@@ -2219,9 +2219,18 @@ no code) — batch them when momentum is good.
     interact/attack skip it (Esc deliberately doesn't, so one press can't also
     open the pause menu); it never plays on a load. Pacing lives in the pure
     `OpeningTimeline` (9 tests). `opening` dev command replays it.
-- [ ] **33B — Diegetic tutorial: movement/look/combat** `[C/P]`
+- [x] **33B — Diegetic tutorial: movement/look/combat** `[C/P]` ✅
   - **Done when:** move/look/attack/block/dodge are taught via prompts/toasts,
     skippable.
+  - **Landed:** `TutorialDirector` teaches look → move → sprint → attack → block →
+    dodge by *watching the player play them* — nothing blocks input, gates a door,
+    or waits on a modal. Completion reads real game state (a swing is
+    `MeleeWeaponComponent.IsCommitted`, a dodge is `Locomotion.IsDashing`), so a
+    keypress that did nothing teaches nothing. One self-hiding `TutorialHint` line
+    above the hotbar is the whole visible footprint, with live key/gamepad glyphs.
+    A **Show Tutorial Hints** setting switches it off live; progress persists so a
+    reload never re-teaches. Pure `TutorialScript` (9 tests + ordinal pin);
+    `tutorial <status|skip|restart>` dev command.
 - [ ] **33C — Diegetic tutorial: magic/interact/inventory/quests** `[C/P]`
   - **Done when:** the remaining verbs are taught the same way; nothing blocks a
     veteran from skipping.

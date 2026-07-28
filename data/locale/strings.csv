@@ -345,3 +345,11 @@ opening.card4,"Six fell — to corruption, to power, to the enemy itself."
 opening.card5,"You are the seventh, {0}. The last hope of Embervale, or its last ruin."
 opening.skip,"{0} — skip"
 opening.nameless,"Flamebearer"
+# --- Phase 33B: onboarding hints ---
+settings.show_tutorials,Show Tutorial Hints
+tutorial.look,Move the mouse to look around
+tutorial.move,"Press {0} and the surrounding keys to walk"
+tutorial.sprint,"Hold {0} while moving to sprint"
+tutorial.attack,"Press {0} to swing your weapon"
+tutorial.block,"Hold {0} to raise your guard"
+tutorial.dodge,"Press {0} to dodge"

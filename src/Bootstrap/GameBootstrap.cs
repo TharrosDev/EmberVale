@@ -381,6 +381,11 @@ public partial class GameBootstrap : Node3D
         SpawnPersistentActors();
         SpawnSpellTome();
 
+        // Onboarding (Phase 33B): watches the player perform the basic verbs and shows one hint at a
+        // time. Never blocks input; honours the Settings toggle; persists so a reload doesn't
+        // re-teach. Added after the player spawn so its first hint has someone to watch.
+        AddChild(new Embervale.Onboarding.TutorialDirector { Name = "Tutorial" });
+
         // Companions (Phase 32A): the party roster. Added after the player spawn so a recruit can be
         // placed in formation immediately, and before the load overlay lands so a saved party
         // reconciles itself back into the world. (The archetypes are seeded in ContentDatabases.)

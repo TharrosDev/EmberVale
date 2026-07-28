@@ -135,6 +135,7 @@ public partial class GameHud : CanvasLayer
         _layout.Overlay.AddChild(new Crosshair());
         BuildParty();
         BuildVitals();
+        BuildTutorialHint();
         BuildContext();
         // Top-centre stack order (top to bottom): compass strip, boss bar, event banner, nameplate.
         BuildCompass();
@@ -215,6 +216,13 @@ public partial class GameHud : CanvasLayer
         _statusRow = new HBoxContainer();
         _statusRow.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
         col.AddChild(_statusRow);
+    }
+
+    /// <summary>The onboarding hint (33B): one line above the hotbar naming the verb being taught.
+    /// Self-hiding — it is absent whenever nothing is being taught.</summary>
+    private void BuildTutorialHint()
+    {
+        _layout.BottomCenter.AddChild(new TutorialHint { Name = "TutorialHint" });
     }
 
     /// <summary>The party strip (32B): companion health + standing order, above the vitals panel.

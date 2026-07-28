@@ -5,6 +5,7 @@ using Embervale.Dialogue;
 using Embervale.Factions;
 using Embervale.Items;
 using Embervale.Magic;
+using Embervale.Onboarding;
 using Embervale.Quests;
 using Embervale.Stats;
 using Embervale.World;
@@ -221,5 +222,19 @@ public class EnumStabilityTests
         Assert.Equal(2, (int)WeatherType.Rain);
         Assert.Equal(3, (int)WeatherType.Storm);
         Assert.Equal(4, (int)WeatherType.Fog);
+    }
+
+    [Fact]
+    public void TutorialStep_Ordinals()
+    {
+        // Persisted by TutorialDirector (Phase 33B): a re-map would resume onboarding on the wrong
+        // verb, or re-teach one the player has already been shown.
+        Assert.Equal(0, (int)TutorialStep.None);
+        Assert.Equal(1, (int)TutorialStep.Look);
+        Assert.Equal(2, (int)TutorialStep.Move);
+        Assert.Equal(3, (int)TutorialStep.Sprint);
+        Assert.Equal(4, (int)TutorialStep.Attack);
+        Assert.Equal(5, (int)TutorialStep.Block);
+        Assert.Equal(6, (int)TutorialStep.Dodge);
     }
 }
