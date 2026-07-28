@@ -62,6 +62,7 @@ public partial class GameBootstrap : Node3D
     private WeatherDirector _weather = null!;
     private SkyController _sky = null!;
     private PersistentSpawnDirector _persistentSpawns = null!;
+    private OpeningSequence? _opening;
     private DirectionalLight3D _sun = null!;
     private Godot.Environment _environment = null!;
     private Entity? _dummy;
@@ -214,7 +215,12 @@ public partial class GameBootstrap : Node3D
         SaveManager.Instance?.ResetPlaytime();
         BuildWorld();
         GameManager.Instance?.ChangeState(GameState.Playing);
-        Log.Info($"New game started in slot '{slot}'. Sandbox ready (WASD move, LMB attack, E interact, I inventory).");
+
+        // The prologue (Phase 33A) plays over the already-built world, so creation flows into the
+        // narration and the narration lifts on the Ember Crown with nothing left to load. It holds
+        // player input until it ends; a load skips it entirely.
+        _opening?.Play(_activeProfile);
+        Log.Info($"New game started in slot '{slot}'. Prologue playing; the Ember Crown is built behind it.");
     }
 
     /// <summary>Loads an existing save into a freshly-built world (Phase 24C): builds the sandbox,
@@ -305,6 +311,12 @@ public partial class GameBootstrap : Node3D
         AddChild(new CombatFeedbackOverlay()); // Phase 29D: crit/block/stagger/parry screen flash
         AddChild(new PauseMenu());
         AddChild(new LoadingScreen());
+
+        // The new-game prologue (33A). Built with the rest of the shell so it can play the moment
+        // the world is assembled; it stays hidden unless StartNewGame asks for it.
+        _opening = new OpeningSequence();
+        AddChild(_opening);
+        ServiceLocator.Instance?.Register(_opening);
 
         // Deep-debugging tools (Phase 20): dev console (F1), profiler (F4), and a standing
         // world-integrity checker that periodically validates runtime invariants.
