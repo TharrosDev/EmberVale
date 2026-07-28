@@ -2244,6 +2244,10 @@ no code) — batch them when momentum is good.
     toggle / `tutorial skip` end the whole thing at any point.
 - [ ] **33D — Slice stitch: quest chain → guild taste → Iron King → corruption beat → cliffhanger** `[C/P]`
   - **Done when:** 30–60 min plays as one continuous, polished arc.
+  - **Plan:** see [`VERTICAL_SLICE_PLAN.md`](VERTICAL_SLICE_PLAN.md) — the locked design decisions
+    (warband chain as spine with Kael woven through, hard-gated boss, closing card + Frostfang
+    portal), the eight beats, the seven gaps to close, and a task-by-task build order with
+    acceptance criteria.
 - [ ] **33E — Slice polish + external-build capture pass** `[P]`
   - **Done when:** a capture-ready external build candidate exists; rough edges in
     the slice path are gone.

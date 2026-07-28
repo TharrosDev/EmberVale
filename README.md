@@ -243,5 +243,6 @@ signature spell per school.
 | [`docs/LORE.md`](docs/LORE.md) | World/story bible |
 | [`docs/PRODUCTION_ROADMAP.md`](docs/PRODUCTION_ROADMAP.md) | The Phase 22+ plan and gates |
 | [`docs/SESSION_PLAYBOOK.md`](docs/SESSION_PLAYBOOK.md) | Per-phase sub-task breakdown |
+| [`docs/VERTICAL_SLICE_PLAN.md`](docs/VERTICAL_SLICE_PLAN.md) | Phase 33D build plan — the slice arc, gaps, task order |
 | [`docs/IDS.md`](docs/IDS.md) | Content id naming scheme + audit |
 | [`docs/STAGE_A_STATUS.md`](docs/STAGE_A_STATUS.md) | Stage-A (Phases 22–25) integration sign-off |
