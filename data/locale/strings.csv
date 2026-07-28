@@ -282,3 +282,9 @@ notify.companion_left,{0} parts ways
 notify.companion_downed,{0} is down!
 notify.companion_recovered,{0} is back on their feet
 companion.kael.name,Kael
+companion.order.follow,Following
+companion.order.hold,Holding
+companion.order.engage,Engaging
+companion.order.downed,Down
+notify.companion_order,"Order: {0}"
+hud.party_hint,{0} · order

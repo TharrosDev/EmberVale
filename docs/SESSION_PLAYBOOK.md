@@ -2160,9 +2160,14 @@ no code) — batch them when momentum is good.
     (team 0) + `CompanionRegistry`, and an `ISaveable` `CompanionRoster` with
     recruit/dismiss/stance + a save-reconciling party. Kael is recruitable via the
     `companion` dev command; toasts on join/leave/down.
-- [ ] **32B — Command states (follow / hold / engage)** `[F]`
+- [x] **32B — Command states (follow / hold / engage)** `[F]` ✅
   - **Done when:** the player can command stance via a quick command; combat assist
     works.
+  - **Landed:** an `Engage` order alongside follow/hold; `C` (D-pad right) cycles the
+    party's standing order with a toast; the pure `CompanionOrders` sets each order's
+    leash/scan envelope (6 tests); assist focus makes companions prioritise the
+    player's lock-on target; an engage order stands itself down once the fighting
+    stops; a self-hiding `PartyWidget` shows each companion's health + current order.
 - [ ] **32C — `CompanionResource` + loyalty standing** `[F]`
   - **Done when:** companions are data (`CompanionResource`) with a per-companion
     loyalty standing (reuse `ReputationComponent` patterns), persistent.

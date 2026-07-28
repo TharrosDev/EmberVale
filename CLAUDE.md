@@ -125,7 +125,7 @@ later CI). The same battery is also reachable in-game via the `validate-all` dev
 command (`F1`).
 
 **Sandbox controls:** `WASD` move · mouse look · `Shift` sprint · `Space` jump ·
-`LMB` attack · `RMB` block · `E` interact · `I` inventory · `H` heal dummy ·
+`LMB` attack · `RMB` block · `E` interact · `I` inventory · `C` party order · `H` heal dummy ·
 `R` respawn dummy · `F5`/`F9` quick save/load · `Esc` pause (frees the cursor).
 Goblins roam to the north (−Z) and drop loot.
 

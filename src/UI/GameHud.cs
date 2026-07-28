@@ -133,6 +133,7 @@ public partial class GameHud : CanvasLayer
 
         BuildVignette(); // backmost overlay — built first so the HUD widgets draw over it
         _layout.Overlay.AddChild(new Crosshair());
+        BuildParty();
         BuildVitals();
         BuildContext();
         // Top-centre stack order (top to bottom): compass strip, boss bar, event banner, nameplate.
@@ -214,6 +215,13 @@ public partial class GameHud : CanvasLayer
         _statusRow = new HBoxContainer();
         _statusRow.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
         col.AddChild(_statusRow);
+    }
+
+    /// <summary>The party strip (32B): companion health + standing order, above the vitals panel.
+    /// Self-hiding while the party is empty, so a solo run's HUD is untouched.</summary>
+    private void BuildParty()
+    {
+        _layout.BottomLeft.AddChild(new PartyWidget { Name = "Party" });
     }
 
     private void BuildContext()

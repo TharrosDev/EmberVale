@@ -12,4 +12,9 @@ public enum CompanionStance
 
     /// <summary>Hold the spot the order was given at, guarding it instead of trailing the player.</summary>
     Hold,
+
+    /// <summary>Press the attack: prioritise whatever the player is locked onto, hunt further from
+    /// formation, and don't break off as early. Reverts to <see cref="Follow"/> once the ordered
+    /// target is dead, so "sic 'em" is an order, not a permanent state.</summary>
+    Engage,
 }

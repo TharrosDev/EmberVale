@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Embervale.Core;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Core.Services;
@@ -62,6 +63,14 @@ public partial class CompanionRoster : Node, ISaveable
 
     public override void _Process(double delta)
     {
+        // The quick command (32B): one key cycles the whole band's standing order. Guarded on menus
+        // so cycling orders never fires from under an open panel.
+        if (!UiState.MenuOpen && GameManager.Instance is { IsPlaying: true } &&
+            Godot.Input.IsActionJustPressed(GameInput.CompanionCommand) && _active.Count > 0)
+        {
+            CycleOrder();
+        }
+
         _catchUpTimer -= delta;
         if (_catchUpTimer > 0d)
         {
@@ -69,7 +78,50 @@ public partial class CompanionRoster : Node, ISaveable
         }
 
         _catchUpTimer = CatchUpInterval;
+        StandDownSpentOrders();
         CatchUpStragglers();
+    }
+
+    /// <summary>
+    /// Advances the party's standing order one step (follow → hold → engage → follow) and applies it
+    /// to every companion, so the band acts as one under a single key. Returns the new order.
+    /// </summary>
+    public CompanionStance CycleOrder()
+    {
+        CompanionStance next = CompanionOrders.Next(PartyOrder());
+        foreach (string id in new List<string>(_active.Keys))
+        {
+            SetStance(id, next);
+        }
+
+        EventBus.Instance?.Publish(new CompanionOrderIssuedEvent(next));
+        return next;
+    }
+
+    /// <summary>The order the party is under — the first companion's, since the quick command moves
+    /// them together (per-companion orders are a later pass).</summary>
+    public CompanionStance PartyOrder()
+    {
+        foreach (string id in _active.Keys)
+        {
+            return StanceOf(id);
+        }
+
+        return CompanionStance.Follow;
+    }
+
+    /// <summary>Returns companions to formation once their engage order has nothing left to fight,
+    /// so an "attack" command is a burst of aggression rather than a permanent posture.</summary>
+    private void StandDownSpentOrders()
+    {
+        foreach (string id in new List<string>(_active.Keys))
+        {
+            if (StanceOf(id) == CompanionStance.Engage && TryGet(id, out CompanionEntity companion) &&
+                companion.GetComponent<CompanionAIComponent>()?.EngageOrderSpent == true)
+            {
+                SetStance(id, CompanionStance.Follow);
+            }
+        }
     }
 
     public bool IsRecruited(string companionId) => _active.ContainsKey(companionId);

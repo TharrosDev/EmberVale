@@ -1096,13 +1096,15 @@ effects show school-tinted particle swirls, and the corruption appearance now fo
 ART_STYLE per-tier arc (violet veining → ash → char → banked coals). All assets self-authored in
 Blender via the MCP (no external/licensed assets pulled yet).
 
-**Immediate next step: Phase 32B — companion command states.** Phase 31 (Audio Foundations) is
+**Immediate next step: Phase 32C — `CompanionResource` + loyalty.** Phase 31 (Audio Foundations) is
 **complete** — mixer + `AudioDirector`, real CC0 SFX, adaptive music, interaction/UI SFX, environmental
 ambience, and surface footsteps (31A–31E, `SESSION_PLAYBOOK.md`). **Phase 32A** landed the companion
 follower core: an anchor/leash `CompanionAIComponent` driving the same locomotion/steering/melee
 components every other character uses, a team-0 `CompanionFactory` + `CompanionRegistry`, and an
-`ISaveable` `CompanionRoster` (recruit/dismiss/stance, party reconciled on load). Then 32C–32E and 33
-(slice assembly) toward **Gate G1 — Vertical Slice**. (Phase 30.5 UI & HUD Overhaul complete.) Remaining audio *production* (real CC0 music/ambience
+`ISaveable` `CompanionRoster` (recruit/dismiss/stance, party reconciled on load), and **32B** the
+command layer: a follow/hold/engage order cycled with one key, assist focus on the player's lock-on
+target, and a party HUD strip. Then 32C–32E and 33 (slice assembly) toward **Gate G1 — Vertical
+Slice**. (Phase 30.5 UI & HUD Overhaul complete.) Remaining audio *production* (real CC0 music/ambience
 tracks, surface tagging) carries into Phase 52.
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —
