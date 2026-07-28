@@ -83,7 +83,7 @@ public partial class CompanionRoster : Node, ISaveable
 
         _catchUpTimer = CatchUpInterval;
         StandDownSpentOrders();
-        CatchUpStragglers();
+        CatchUpStragglers(CatchUpDistance);
     }
 
     /// <summary>
@@ -160,11 +160,36 @@ public partial class CompanionRoster : Node, ISaveable
             return false;
         }
 
-        int slot = _active.Count;
-        CompanionEntity? companion = CompanionRegistry.Create(companionId, SlotPosition(slot));
+        return RecruitAt(companionId, SlotPosition(_active.Count), yawDegrees: null);
+    }
+
+    /// <summary>
+    /// Recruits a companion directly into a world position — the load path (Phase 32D), which must
+    /// put them back exactly where they were standing rather than teleporting the whole band to the
+    /// player's heels on every reload. <paramref name="yawDegrees"/> null keeps the built facing.
+    /// </summary>
+    public bool RecruitAt(string companionId, Vector3 position, float? yawDegrees)
+    {
+        if (string.IsNullOrEmpty(companionId) || _active.ContainsKey(companionId))
+        {
+            return false;
+        }
+
+        if (_active.Count >= MaxPartySize)
+        {
+            Log.Warn($"Cannot recruit '{companionId}': the party is full ({MaxPartySize}).");
+            return false;
+        }
+
+        CompanionEntity? companion = CompanionRegistry.Create(companionId, position);
         if (companion == null)
         {
             return false;
+        }
+
+        if (yawDegrees is { } yaw)
+        {
+            companion.RotationDegrees = new Vector3(companion.RotationDegrees.X, yaw, companion.RotationDegrees.Z);
         }
 
         GetParent().AddChild(companion);
@@ -297,10 +322,17 @@ public partial class CompanionRoster : Node, ISaveable
                 continue;
             }
 
+            // Position travels with the entry: a party that respawns at the player's heels every load
+            // silently undoes a Hold order and teleports companions across whatever they were doing.
+            Vector3 p = kv.Value.GlobalPosition;
             party.Add(new Godot.Collections.Dictionary
             {
                 ["id"] = kv.Key,
                 ["stance"] = (int)StanceOf(kv.Key),
+                ["x"] = p.X,
+                ["y"] = p.Y,
+                ["z"] = p.Z,
+                ["yaw"] = kv.Value.RotationDegrees.Y,
             });
         }
 
@@ -335,7 +367,7 @@ public partial class CompanionRoster : Node, ISaveable
         }
 
         // The desired party, from the save.
-        var desired = new Dictionary<string, CompanionStance>();
+        var desired = new Dictionary<string, (CompanionStance Stance, Vector3 Position, float Yaw)>();
         foreach (Variant element in partyVariant.AsGodotArray())
         {
             if (element.VariantType != Variant.Type.Dictionary)
@@ -350,34 +382,55 @@ public partial class CompanionRoster : Node, ISaveable
                 continue;
             }
 
-            desired[id] = entry.TryGetValue("stance", out Variant stanceV)
+            CompanionStance stance = entry.TryGetValue("stance", out Variant stanceV)
                 ? (CompanionStance)stanceV.AsInt32()
                 : CompanionStance.Follow;
+            var position = new Vector3(
+                entry.TryGetValue("x", out Variant x) ? x.AsSingle() : 0f,
+                entry.TryGetValue("y", out Variant y) ? y.AsSingle() : 0f,
+                entry.TryGetValue("z", out Variant z) ? z.AsSingle() : 0f);
+            float yaw = entry.TryGetValue("yaw", out Variant yawV) ? yawV.AsSingle() : 0f;
+            desired[id] = (stance, position, yaw);
         }
 
-        // Dismiss anyone the save doesn't have (snapshot the keys first — Dismiss mutates the map).
-        foreach (string id in new List<string>(_active.Keys))
+        // A load is a reconcile, not a rebuild: a companion already standing in the world keeps its
+        // actor (and its live component state) and is simply moved.
+        CompanionReconcilePlan plan = CompanionPartyReconcile.Plan(_active.Keys, desired.Keys);
+
+        foreach (string id in plan.Dismiss)
         {
-            if (!desired.ContainsKey(id))
+            Dismiss(id);
+        }
+
+        foreach (string id in plan.Recruit)
+        {
+            (CompanionStance _, Vector3 position, float yaw) = desired[id];
+            RecruitAt(id, position, yaw);
+        }
+
+        foreach (string id in plan.Keep)
+        {
+            (CompanionStance _, Vector3 position, float yaw) = desired[id];
+            if (TryGet(id, out CompanionEntity survivor))
             {
-                Dismiss(id);
+                survivor.GlobalPosition = position;
+                survivor.RotationDegrees = new Vector3(survivor.RotationDegrees.X, yaw, survivor.RotationDegrees.Z);
+                survivor.Velocity = Vector3.Zero;
             }
         }
 
-        // Recruit anyone missing, then restore every stance.
-        foreach (KeyValuePair<string, CompanionStance> kv in desired)
+        // Stances last, so a restored Hold anchors at the restored position rather than the old one.
+        foreach (KeyValuePair<string, (CompanionStance Stance, Vector3 Position, float Yaw)> kv in desired)
         {
-            if (!_active.ContainsKey(kv.Key))
+            if (_active.ContainsKey(kv.Key))
             {
-                Recruit(kv.Key);
+                _stances[kv.Key] = kv.Value.Stance;
+                ApplyStance(kv.Key);
             }
-
-            _stances[kv.Key] = kv.Value;
-            ApplyStance(kv.Key);
         }
 
-        // The player is repositioned to their saved transform after the load overlay lands, so pull
-        // the party in on the next catch-up tick rather than leaving it at the world's start tile.
+        // Only followers are pulled to the player after the load overlay repositions them; a
+        // companion left holding a spot stays where the player told it to stand.
         _catchUpTimer = 0d;
     }
 
@@ -408,9 +461,19 @@ public partial class CompanionRoster : Node, ISaveable
         }
     }
 
+    /// <summary>
+    /// Pulls the whole following party into formation immediately, regardless of distance — the hard
+    /// cut after the world moves under them (a region transition, a fast travel). The bootstrap calls
+    /// this once the player has been placed at the destination.
+    /// </summary>
+    public void RegroupNow()
+    {
+        CatchUpStragglers(minimumDistance: 0f);
+    }
+
     /// <summary>Teleports following companions that the world moved away from (load, fast travel,
     /// region transition) back into formation. A downed companion is left where it fell.</summary>
-    private void CatchUpStragglers()
+    private void CatchUpStragglers(float minimumDistance)
     {
         if (_active.Count == 0 || GetPlayer() is not { } player)
         {
@@ -431,7 +494,7 @@ public partial class CompanionRoster : Node, ISaveable
                 continue;
             }
 
-            if (companion.GlobalPosition.DistanceTo(player.GlobalPosition) > CatchUpDistance)
+            if (companion.GlobalPosition.DistanceTo(player.GlobalPosition) > minimumDistance)
             {
                 companion.GlobalPosition = CompanionFormation.Slot(
                     player.GlobalPosition, -player.GlobalTransform.Basis.Z, slot, FollowDistanceOf(companion));

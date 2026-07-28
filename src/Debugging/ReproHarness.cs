@@ -24,6 +24,8 @@ public static class ReproHarness
         ["rich"] = new Scenario(2uL, new[] { "give item.currency.gold 500", "give item.weapon.steel_sword 1", "xp 300" }),
         ["duskstorm"] = new Scenario(3uL, new[] { "time 19", "weather weather.storm" }),
         ["raid"] = new Scenario(4uL, new[] { "event event.goblin_raid" }),
+        // Phase 32D: a party in the field — recruit, order them to engage, then give them a fight.
+        ["party"] = new Scenario(5uL, new[] { "companion recruit companion.kael", "companion order", "companion order", "spawn 3" }),
     };
 
     public static IEnumerable<string> Names => Scenarios.Keys;
