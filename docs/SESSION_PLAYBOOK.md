@@ -2179,9 +2179,16 @@ no code) — batch them when momentum is good.
     Dialogue gained `RecruitCompanion`/`DismissCompanion`/`AddCompanionLoyalty`
     effects and `CompanionRecruited`/`CompanionNotRecruited`/`CompanionLoyaltyAtLeast`
     conditions, so 32E is authorable content. Validator + 24 new tests.
-- [ ] **32D — Party persistence + save round-trip** `[F]`
+- [x] **32D — Party persistence + save round-trip** `[F]` ✅
   - **Done when:** roster, positions, and loyalty survive save/load and region
     streaming.
+  - **Landed:** the party save now carries each companion's transform, and loading
+    is a *reconcile* (pure `CompanionPartyReconcile` + 7 tests) — survivors keep
+    their actor and move, only genuine newcomers are built. `CompanionAIComponent`
+    became `ISaveable` for the state the roster can't see (hold anchor, downed +
+    recovery countdown). Region hard-loads call `RegroupNow()` so the band cuts to
+    formation the moment the player lands, while held companions stay put. A
+    `party` repro scenario pins a deterministic party-in-the-field run.
 - [ ] **32E — Kael authored fully (recruit + loyalty quest + dialogue)** `[C]`
   - **Done when:** one complete companion (Kael) is recruitable with a dialogue
     graph + recruit quest + loyalty quest; the rest deferred to Beta.

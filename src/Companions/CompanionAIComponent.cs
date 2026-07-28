@@ -6,6 +6,7 @@ using Embervale.Entities;
 using Embervale.Movement;
 using Embervale.Player;
 using Embervale.Quests;
+using Embervale.Save;
 using Embervale.Stats;
 using Godot;
 
@@ -27,9 +28,13 @@ namespace Embervale.Companions;
 ///
 /// A companion that runs out of health is <em>downed</em>, never lost — it drops out of the fight and
 /// stands back up on a timer with a fraction of its health.
+///
+/// It persists the state the roster cannot see (Phase 32D): the hold anchor — a Hold order means
+/// nothing if the spot is forgotten on load — and the downed/recovery countdown, so quitting while a
+/// companion is on the ground doesn't quietly reset their fight.
 /// </summary>
 [GlobalClass]
-public partial class CompanionAIComponent : EntityComponent
+public partial class CompanionAIComponent : EntityComponent, ISaveable
 {
     [ExportGroup("Formation")]
     /// <summary>Metres behind the player the formation slot sits.</summary>
@@ -129,11 +134,45 @@ public partial class CompanionAIComponent : EntityComponent
         _holdAnchor = _body.GlobalPosition;
 
         EventBus.Instance?.Subscribe<DamageDealtEvent>(OnDamageDealt);
+        RegisterSaveable();
     }
 
     protected override void OnTeardown()
     {
         EventBus.Instance?.Unsubscribe<DamageDealtEvent>(OnDamageDealt);
+        SaveManager.Instance?.Unregister(this);
+    }
+
+    // --- Persistence (32D) ---------------------------------------------------
+
+    public string SaveId => SaveKey("companion_ai");
+
+    public Godot.Collections.Dictionary Save() => new()
+    {
+        ["hold_x"] = _holdAnchor.X,
+        ["hold_y"] = _holdAnchor.Y,
+        ["hold_z"] = _holdAnchor.Z,
+        ["downed"] = _state == CompanionState.Downed,
+        ["recovery"] = _recoveryTimer,
+    };
+
+    public void Load(Godot.Collections.Dictionary data)
+    {
+        _holdAnchor = new Vector3(
+            data.TryGetValue("hold_x", out Variant hx) ? hx.AsSingle() : _holdAnchor.X,
+            data.TryGetValue("hold_y", out Variant hy) ? hy.AsSingle() : _holdAnchor.Y,
+            data.TryGetValue("hold_z", out Variant hz) ? hz.AsSingle() : _holdAnchor.Z);
+
+        if (data.TryGetValue("downed", out Variant downed) && downed.AsBool())
+        {
+            // Resume the countdown where it stopped, but never below a beat of it — a companion that
+            // loads in on the ground should visibly get back up, not pop upright on the first frame.
+            _recoveryTimer = System.Math.Max(
+                data.TryGetValue("recovery", out Variant left) ? left.AsDouble() : RecoverySeconds,
+                1d);
+            _target = null;
+            _state = CompanionState.Downed;
+        }
     }
 
     public override void _PhysicsProcess(double delta)

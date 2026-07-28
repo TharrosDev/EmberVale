@@ -563,6 +563,14 @@ public partial class GameBootstrap : Node3D
         _player!.Velocity = Vector3.Zero;
         _player.GlobalPosition = landing;
 
+        // The band comes with you (Phase 32D). Walking companions across a region boundary is not a
+        // thing they can do, so they are cut to formation the moment the player lands.
+        if (ServiceLocator.Instance != null &&
+            ServiceLocator.Instance.TryGet(out Embervale.Companions.CompanionRoster party))
+        {
+            party.RegroupNow();
+        }
+
         if (ServiceLocator.Instance != null && ServiceLocator.Instance.TryGet(out AutosaveService autosave))
         {
             autosave.RequestRegionChangeAutosave();
