@@ -625,6 +625,69 @@ announced events with an objective, time limit and rewards.
   the rewards persist via the saved components. `WorldEvent` is the runtime tracker; `Active`
   feeds the HUD. Events: `WorldEventStartedEvent`/`WorldEventProgressEvent`/`WorldEventEndedEvent`.
 
+### 2.6l Companions (`src/Companions`, Phase 32)
+
+The party: recruitable allies that fight on the player's team, take orders, hold a loyalty
+standing, and persist. Built entirely on the existing character stack — a companion is the
+*same* kind of actor as the player and the enemies, with a different brain.
+
+- **Companion content** — `CompanionResource` (`[GlobalClass]`, `data/companions/*.tres`):
+  `Id` (`companion.*`), `NameKey`/`TitleKey` (`Loc` keys), the build paths
+  (`AttributesPath`/`WeaponPath`/`ModelPath`), `FactionId`, `KnownSpellIds` (non-empty ⇒ the
+  actor gets a `SpellcastingComponent`, i.e. a caster companion), the follower envelope
+  (`FollowDistance`/`EngageRadius`/`AttackRange`/`LeashRadius`), and the loyalty/content ids
+  (`StartingLoyalty`, `LoyaltyQuestReward`, `RecruitQuestId`, `LoyaltyQuestId`, `DialogueId`).
+  `CompanionDatabase` indexes them; `CompanionRegistry` seeds its id→builder archetypes straight
+  from the database (mirroring `EnemyTemplateRegistry`), so **a new companion is a `.tres`**.
+- **`CompanionFactory`** builds the actor from the resource: collision, model, `NavigationAgent3D`,
+  `StatsComponent`, `CombatComponent` (**team 0** — the player's team, which is what makes the
+  shared `Hitbox` friendly-fire rule protect it), `LocomotionComponent`, hurt/hitbox +
+  `MeleeWeaponComponent`, status effects, animation, faction, its own `DialogueComponent`, and
+  the two companion components below. `PersistentId` = the companion id, so every component's
+  state persists under a stable key.
+- **`CompanionAIComponent`** (`EntityComponent`, `ISaveable`) — the follower brain, an
+  *anchor/leash* loop rather than a patrol FSM. Each tick it resolves its anchor (its
+  `CompanionFormation` slot behind the player, or the spot it was told to hold), picks a hostile,
+  and hands both distances to the pure `CompanionDecision` → `Hold`/`Regroup`/`Chase`/`Attack`.
+  The **leash beats the fight**: dragged past it, the companion breaks off and regroups, so a
+  running enemy can never kite the party away from the player. Movement reuses the same
+  `PathSteering` navmesh rule as `EnemyAIComponent`. **Assist focus:** whatever the player is
+  locked onto (`LockOnComponent`) wins target selection outright. Out of health it goes
+  **Downed, never lost** — it drops out and stands back up on a timer at a fraction of max HP,
+  because companions carry quests. It persists its hold anchor and downed/recovery countdown
+  (the roster can't see either).
+- **Orders** — `CompanionStance` (Follow/Hold/Engage) with the pure `CompanionOrders` supplying
+  the cycle and each order's leash/scan envelope (engage stretches both; hold tightens the scan).
+  One key (`C` / D-pad right) cycles the whole band; an engage order **stands itself down** once
+  the fighting stops.
+- **`CompanionRoster`** (`Node`, `ISaveable` `"companions"`, `ServiceLocator`-registered) — the
+  single entry point: `Recruit`/`RecruitAt`/`Dismiss`/`SetStance`/`CycleOrder`, plus the loyalty
+  ledger (`LoyaltyOf`/`TierOf`/`AddLoyalty`/`SetLoyalty`). It persists the party (ids, stances,
+  **transforms**) and loyalty **for every companion it has recorded, recruited or not** —
+  dismissing someone must not wipe the history between you. Loading is a **reconcile**, not a
+  rebuild (pure `CompanionPartyReconcile`): survivors keep their actor and are moved; only
+  genuine newcomers are built. `RegroupNow()` cuts the following band to formation after a region
+  hard-load, and a periodic catch-up teleport covers anything else that moves the world.
+- **Loyalty** — pure `CompanionLoyalty`: 0–100 clamped, `LoyaltyTier` Wary→Sworn (append-only),
+  a `Loc` name key per tier, and a `CombatBonus` per tier. `CompanionLoyaltyComponent` is a
+  *projection*: it applies the current tier's bonus to the companion's power/health as stat
+  modifiers and re-applies on `CompanionLoyaltyTierChangedEvent`. It stores nothing — the roster
+  stays the source of truth.
+- **Dialogue integration** — effects `RecruitCompanion` / `DismissCompanion` /
+  `AddCompanionLoyalty` and conditions `CompanionRecruited` / `CompanionNotRecruited` /
+  `CompanionLoyaltyAtLeast`, with `CompanionArg` parsing the `<companionId>:<amount>` form. So a
+  companion's whole arc is authored content. `CompanionRecruiterComponent` sits on the world NPC
+  and hides it (visibility **and** collision layer) while its companion travels with the player,
+  restoring it on dismissal so the same conversation can recruit them again.
+- **Events** — `CompanionRecruited`/`Dismissed`/`StanceChanged`/`OrderIssued`/`StateChanged`/
+  `Downed`/`LoyaltyChanged`/`LoyaltyTierChanged`. The HUD's `PartyWidget` (self-hiding while the
+  party is empty) and the toast feed react to these; nothing polls the roster.
+- **Content today** — Kael (`companion.kael`): recruit quest `quest.kael.oath`, loyalty quest
+  `quest.kael.brother`, conversation `dialogue.kael`, and an NPC in the Ember Crown hub. The
+  other four LORE companions are Beta content. *No romance* — friendship/brotherhood (LORE).
+- **Dev console** — `companion <list|recruit|dismiss|stance|order|loyalty>`; the `party` repro
+  scenario runs a deterministic party-in-the-field.
+
 ### 2.7 Save (`src/Save`)
 
 - **`ISaveable`** — `SaveId`, `Godot.Collections.Dictionary Save()`,
@@ -831,8 +894,8 @@ one place. Their values must match the ids authored in `.tres`; `ContentValidato
 flags any drift at boot. (Authored `.tres` ids and placeholder defaults like
 `"item.unknown"` stay as literals — they are data, not code references.)
 
-Existing presets: `data/attributes/{Player,Dummy,Goblin}Attributes.tres`,
-`data/weapons/{IronSword,GoblinClaw}.tres`.
+Existing presets: `data/attributes/{Player,Dummy,Goblin,Companion}Attributes.tres`,
+`data/weapons/{IronSword,GoblinClaw}.tres`, `data/companions/Kael.tres`.
 
 ### 4.1 Content cross-reference validation
 
