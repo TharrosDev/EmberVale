@@ -2150,10 +2150,16 @@ no code) — batch them when momentum is good.
 
 ## Phase 32 — Companion System `[F]`
 
-- [ ] **32A — `CompanionComponent` + follower AI core** `[F]`
+- [x] **32A — `CompanionComponent` + follower AI core** `[F]` ✅
   - **Done when:** a companion follows/holds on the player's team, reusing
     `EnemyAIComponent`/`Locomotion`/`Combat`; recruit/dismiss API; `ISaveable`
     roster.
+  - **Landed:** `CompanionAIComponent` (anchor/leash follower FSM on the shared
+    `LocomotionComponent` + `PathSteering` + `MeleeWeaponComponent`), the pure
+    `CompanionDecision`/`CompanionFormation` cores (15 unit tests), `CompanionFactory`
+    (team 0) + `CompanionRegistry`, and an `ISaveable` `CompanionRoster` with
+    recruit/dismiss/stance + a save-reconciling party. Kael is recruitable via the
+    `companion` dev command; toasts on join/leave/down.
 - [ ] **32B — Command states (follow / hold / engage)** `[F]`
   - **Done when:** the player can command stance via a quick command; combat assist
     works.

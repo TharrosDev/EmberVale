@@ -1,0 +1,337 @@
+using System.Collections.Generic;
+using Embervale.Core.Diagnostics;
+using Embervale.Core.Events;
+using Embervale.Core.Services;
+using Embervale.Player;
+using Embervale.Save;
+using Godot;
+
+namespace Embervale.Companions;
+
+/// <summary>
+/// The party: who has been recruited, what order each companion is under, and the live actors that
+/// realise them (Phase 32A). It is the single entry point for recruiting — dialogue, quests and the
+/// dev console all call <see cref="Recruit"/> with an id and never build an actor themselves.
+///
+/// It persists (<see cref="ISaveable"/>) the way <see cref="PersistentSpawnDirector"/> does, and for
+/// the same reason: the <see cref="SaveManager"/> alone restores the components of actors that are
+/// already in the scene, and a freshly-built world contains no companions at all. <see cref="Load"/>
+/// therefore reconciles — despawning companions the save doesn't have and re-spawning the ones it
+/// does, whose own components (stats, status effects) then restore themselves through the manager's
+/// in-flight-load hook because each actor carries a stable <c>PersistentId</c>.
+///
+/// It also keeps the party from being left behind: a companion that ends up absurdly far from the
+/// player (a load, a fast travel, a region transition) is snapped to its formation slot rather than
+/// asked to walk back across the world.
+/// </summary>
+[GlobalClass]
+public partial class CompanionRoster : Node, ISaveable
+{
+    public string SaveId => "companions";
+
+    /// <summary>How many companions may be in the party at once (LORE: a small band, not an army).</summary>
+    [Export] public int MaxPartySize { get; set; } = 3;
+
+    /// <summary>Distance from the player past which a following companion is teleported to its slot
+    /// instead of walking — the world moved under it, it didn't wander off.</summary>
+    [Export] public float CatchUpDistance { get; set; } = 35f;
+
+    /// <summary>Seconds between catch-up checks.</summary>
+    [Export] public float CatchUpInterval { get; set; } = 1f;
+
+    private readonly Dictionary<string, CompanionEntity> _active = new();
+    private readonly Dictionary<string, CompanionStance> _stances = new();
+    private double _catchUpTimer;
+
+    /// <summary>The ids of every companion currently in the party.</summary>
+    public IReadOnlyCollection<string> RecruitedIds => _active.Keys;
+
+    public int Count => _active.Count;
+
+    public override void _EnterTree()
+    {
+        ServiceLocator.Instance?.Register(this);
+        SaveManager.Instance?.Register(this);
+    }
+
+    public override void _ExitTree()
+    {
+        SaveManager.Instance?.Unregister(this);
+        ServiceLocator.Instance?.Unregister(this);
+    }
+
+    public override void _Process(double delta)
+    {
+        _catchUpTimer -= delta;
+        if (_catchUpTimer > 0d)
+        {
+            return;
+        }
+
+        _catchUpTimer = CatchUpInterval;
+        CatchUpStragglers();
+    }
+
+    public bool IsRecruited(string companionId) => _active.ContainsKey(companionId);
+
+    public bool TryGet(string companionId, out CompanionEntity companion)
+    {
+        bool found = _active.TryGetValue(companionId, out CompanionEntity? entity) &&
+            IsInstanceValid(entity);
+        companion = entity!;
+        return found;
+    }
+
+    /// <summary>The order a companion is under (defaults to <see cref="CompanionStance.Follow"/>).</summary>
+    public CompanionStance StanceOf(string companionId) =>
+        _stances.TryGetValue(companionId, out CompanionStance stance) ? stance : CompanionStance.Follow;
+
+    /// <summary>
+    /// Recruits a companion by id: builds the actor, drops it into its formation slot behind the
+    /// player and announces it. A no-op (false) when the id is unknown, it is already in the party, or
+    /// the party is full.
+    /// </summary>
+    public bool Recruit(string companionId)
+    {
+        if (string.IsNullOrEmpty(companionId) || _active.ContainsKey(companionId))
+        {
+            return false;
+        }
+
+        if (_active.Count >= MaxPartySize)
+        {
+            Log.Warn($"Cannot recruit '{companionId}': the party is full ({MaxPartySize}).");
+            return false;
+        }
+
+        int slot = _active.Count;
+        CompanionEntity? companion = CompanionRegistry.Create(companionId, SlotPosition(slot));
+        if (companion == null)
+        {
+            return false;
+        }
+
+        GetParent().AddChild(companion);
+        _active[companionId] = companion;
+        _stances.TryAdd(companionId, CompanionStance.Follow);
+        ApplyStance(companionId);
+        AssignSlots();
+
+        // Losing the actor (a cell unload, an errant free) must not leave a ghost in the party — but
+        // only drop the key if THIS actor is still the tracked one, so a re-recruit isn't undone by
+        // the previous instance's deferred TreeExited.
+        companion.TreeExited += () =>
+        {
+            if (_active.TryGetValue(companionId, out CompanionEntity? current) && ReferenceEquals(current, companion))
+            {
+                _active.Remove(companionId);
+            }
+        };
+
+        EventBus.Instance?.Publish(new CompanionRecruitedEvent(companionId, companion.NameKey, companion));
+        Log.Info($"Companion '{companionId}' joined the party.");
+        return true;
+    }
+
+    /// <summary>Dismisses a companion: frees the actor and drops it from the party. Its stance is
+    /// forgotten, so re-recruiting starts it following again.</summary>
+    public bool Dismiss(string companionId)
+    {
+        if (!_active.TryGetValue(companionId, out CompanionEntity? companion))
+        {
+            return false;
+        }
+
+        string nameKey = IsInstanceValid(companion) ? companion.NameKey : string.Empty;
+        _active.Remove(companionId);
+        _stances.Remove(companionId);
+        if (IsInstanceValid(companion))
+        {
+            companion.QueueFree();
+        }
+
+        AssignSlots();
+        EventBus.Instance?.Publish(new CompanionDismissedEvent(companionId, nameKey));
+        Log.Info($"Companion '{companionId}' left the party.");
+        return true;
+    }
+
+    /// <summary>
+    /// Puts a companion under a new standing order. Holding anchors it where it currently stands;
+    /// following returns it to formation. Returns false when the companion isn't in the party.
+    /// </summary>
+    public bool SetStance(string companionId, CompanionStance stance)
+    {
+        if (!_active.ContainsKey(companionId))
+        {
+            return false;
+        }
+
+        _stances[companionId] = stance;
+        ApplyStance(companionId);
+        EventBus.Instance?.Publish(new CompanionStanceChangedEvent(companionId, stance));
+        return true;
+    }
+
+    // --- Persistence ---------------------------------------------------------
+
+    public Godot.Collections.Dictionary Save()
+    {
+        var party = new Godot.Collections.Array();
+        foreach (KeyValuePair<string, CompanionEntity> kv in _active)
+        {
+            if (!IsInstanceValid(kv.Value))
+            {
+                continue;
+            }
+
+            party.Add(new Godot.Collections.Dictionary
+            {
+                ["id"] = kv.Key,
+                ["stance"] = (int)StanceOf(kv.Key),
+            });
+        }
+
+        return new Godot.Collections.Dictionary { ["party"] = party };
+    }
+
+    public void Load(Godot.Collections.Dictionary data)
+    {
+        if (!data.TryGetValue("party", out Variant partyVariant) ||
+            partyVariant.VariantType != Variant.Type.Array)
+        {
+            return;
+        }
+
+        // The desired party, from the save.
+        var desired = new Dictionary<string, CompanionStance>();
+        foreach (Variant element in partyVariant.AsGodotArray())
+        {
+            if (element.VariantType != Variant.Type.Dictionary)
+            {
+                continue;
+            }
+
+            var entry = element.AsGodotDictionary();
+            string id = entry.TryGetValue("id", out Variant idV) ? idV.AsString() : string.Empty;
+            if (string.IsNullOrEmpty(id))
+            {
+                continue;
+            }
+
+            desired[id] = entry.TryGetValue("stance", out Variant stanceV)
+                ? (CompanionStance)stanceV.AsInt32()
+                : CompanionStance.Follow;
+        }
+
+        // Dismiss anyone the save doesn't have (snapshot the keys first — Dismiss mutates the map).
+        foreach (string id in new List<string>(_active.Keys))
+        {
+            if (!desired.ContainsKey(id))
+            {
+                Dismiss(id);
+            }
+        }
+
+        // Recruit anyone missing, then restore every stance.
+        foreach (KeyValuePair<string, CompanionStance> kv in desired)
+        {
+            if (!_active.ContainsKey(kv.Key))
+            {
+                Recruit(kv.Key);
+            }
+
+            _stances[kv.Key] = kv.Value;
+            ApplyStance(kv.Key);
+        }
+
+        // The player is repositioned to their saved transform after the load overlay lands, so pull
+        // the party in on the next catch-up tick rather than leaving it at the world's start tile.
+        _catchUpTimer = 0d;
+    }
+
+    // --- Internals -----------------------------------------------------------
+
+    /// <summary>Hands each companion its formation index, in recruitment order, so party members keep
+    /// distinct slots and don't pile onto one shoulder.</summary>
+    private void AssignSlots()
+    {
+        int index = 0;
+        foreach (CompanionEntity companion in _active.Values)
+        {
+            if (IsInstanceValid(companion) && companion.GetComponent<CompanionAIComponent>() is { } ai)
+            {
+                ai.SlotIndex = index;
+            }
+
+            index++;
+        }
+    }
+
+    private void ApplyStance(string companionId)
+    {
+        if (TryGet(companionId, out CompanionEntity companion) &&
+            companion.GetComponent<CompanionAIComponent>() is { } ai)
+        {
+            ai.SetStance(StanceOf(companionId));
+        }
+    }
+
+    /// <summary>Teleports following companions that the world moved away from (load, fast travel,
+    /// region transition) back into formation. A downed companion is left where it fell.</summary>
+    private void CatchUpStragglers()
+    {
+        if (_active.Count == 0 || GetPlayer() is not { } player)
+        {
+            return;
+        }
+
+        int index = 0;
+        foreach (CompanionEntity companion in _active.Values)
+        {
+            int slot = index++;
+            if (!IsInstanceValid(companion) || StanceOf(companion.CompanionId) != CompanionStance.Follow)
+            {
+                continue;
+            }
+
+            if (companion.GetComponent<CompanionAIComponent>()?.State == CompanionState.Downed)
+            {
+                continue;
+            }
+
+            if (companion.GlobalPosition.DistanceTo(player.GlobalPosition) > CatchUpDistance)
+            {
+                companion.GlobalPosition = CompanionFormation.Slot(
+                    player.GlobalPosition, -player.GlobalTransform.Basis.Z, slot, FollowDistanceOf(companion));
+                companion.Velocity = Vector3.Zero;
+            }
+        }
+    }
+
+    private static float FollowDistanceOf(CompanionEntity companion) =>
+        companion.GetComponent<CompanionAIComponent>()?.FollowDistance ?? 3f;
+
+    /// <summary>The formation slot a newly-recruited companion appears in — beside the player, or the
+    /// world origin when there is somehow no player yet.</summary>
+    private Vector3 SlotPosition(int index)
+    {
+        if (GetPlayer() is not { } player)
+        {
+            return Vector3.Zero;
+        }
+
+        return CompanionFormation.Slot(player.GlobalPosition, -player.GlobalTransform.Basis.Z, index, 3f);
+    }
+
+    private static PlayerCharacter? GetPlayer()
+    {
+        if (ServiceLocator.Instance != null && ServiceLocator.Instance.TryGet(out PlayerCharacter player) &&
+            IsInstanceValid(player))
+        {
+            return player;
+        }
+
+        return null;
+    }
+}

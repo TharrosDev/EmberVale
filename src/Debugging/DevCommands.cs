@@ -5,6 +5,7 @@ using Embervale.Core;
 using Embervale.Core.Events;
 using Embervale.Core.Services;
 using Embervale.Combat;
+using Embervale.Companions;
 using Embervale.Corruption;
 using Embervale.Enemies;
 using Embervale.Factions;
@@ -51,6 +52,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("event", "event <id>", "Force a world event.", Event));
         console.Register(new ConsoleCommand("region", "region <list|goto <id>>", "List regions or hard-load into one (Phase 25C).", Region));
         console.Register(new ConsoleCommand("travel", "travel <list|goto <id>>", "List attuned travel nodes or fast-travel to one (Phase 25G).", Travel));
+        console.Register(new ConsoleCommand("companion", "companion <list|recruit <id>|dismiss <id>|stance <id> <follow|hold>>", "Inspect and drive the companion party (Phase 32A).", Companion));
         console.Register(new ConsoleCommand("savecheck", "savecheck", "Audit registered saveables for volatile (would-orphan) keys (Phase 25.5A).", SaveCheck));
 
         console.Register(new ConsoleCommand("seed", "seed <n>", "Seed the global RNG (for repro).", Seed));
@@ -513,6 +515,67 @@ public static class DevCommands
         }
 
         return "usage: travel <list|goto <id>>";
+    }
+
+    /// <summary>Drives the Phase 32A party from the console: who is recruitable, who is in the band,
+    /// what each is doing, and the recruit/dismiss/stance verbs the dialogue hooks will call.</summary>
+    private static string Companion(DevConsole console, string[] args)
+    {
+        if (ServiceLocator.Instance is not { } locator || !locator.TryGet(out CompanionRoster roster))
+        {
+            return "companion roster unavailable";
+        }
+
+        if (args.Length == 0 || args[0] == "list")
+        {
+            var sb = new StringBuilder($"party {roster.Count}/{roster.MaxPartySize}:");
+            foreach (string id in CompanionRegistry.Ids)
+            {
+                if (!roster.IsRecruited(id))
+                {
+                    sb.Append($"\n  {id} — not recruited");
+                    continue;
+                }
+
+                string state = roster.TryGet(id, out CompanionEntity companion)
+                    ? companion.GetComponent<CompanionAIComponent>()?.State.ToString() ?? "?"
+                    : "no actor";
+                sb.Append($"\n  {id} — {roster.StanceOf(id)} / {state}");
+            }
+
+            return sb.ToString();
+        }
+
+        if (args.Length >= 2 && args[0] == "recruit")
+        {
+            if (!CompanionRegistry.IsRegistered(args[1]))
+            {
+                return $"unknown companion '{args[1]}'";
+            }
+
+            return roster.Recruit(args[1]) ? $"recruited {args[1]}" : $"could not recruit {args[1]}";
+        }
+
+        if (args.Length >= 2 && args[0] == "dismiss")
+        {
+            return roster.Dismiss(args[1]) ? $"dismissed {args[1]}" : $"{args[1]} is not in the party";
+        }
+
+        if (args.Length >= 3 && args[0] == "stance")
+        {
+            CompanionStance stance = args[2].ToLowerInvariant() switch
+            {
+                "hold" => CompanionStance.Hold,
+                "follow" => CompanionStance.Follow,
+                _ => CompanionStance.Follow,
+            };
+
+            return roster.SetStance(args[1], stance)
+                ? $"{args[1]} is now {stance}"
+                : $"{args[1]} is not in the party";
+        }
+
+        return "usage: companion <list|recruit <id>|dismiss <id>|stance <id> <follow|hold>>";
     }
 
     private static string SaveCheck(DevConsole console, string[] args)

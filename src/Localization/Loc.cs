@@ -61,6 +61,11 @@ public static class Loc
     /// <summary>Resolves a key to text in the active locale. An unknown key returns the key itself.</summary>
     public static string T(string key) => TranslationServer.Translate(key).ToString();
 
+    /// <summary>Whether the catalogue actually carries <paramref name="key"/>. An unresolved key
+    /// translates to itself, which is exactly what leaks a raw <c>some.key</c> into the UI — the
+    /// content validator uses this to catch that before the player does.</summary>
+    public static bool Has(string key) => !string.IsNullOrEmpty(key) && T(key) != key;
+
     /// <summary>Resolves a key then <c>string.Format</c>s it with <paramref name="args"/> (for strings
     /// with <c>{0}</c> placeholders, e.g. "Level {0}").</summary>
     public static string TF(string key, params object[] args) => string.Format(T(key), args);

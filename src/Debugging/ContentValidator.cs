@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Text;
+using Embervale.Companions;
 using Embervale.Core.Diagnostics;
 using Embervale.Crafting;
 using Embervale.Dialogue;
@@ -93,7 +94,27 @@ public static class ContentValidator
         ValidateRegions(issues);
         ValidateRaces(issues);
         ValidateLocale(issues);
+        ValidateCompanions(issues);
         ValidateResourcePaths(issues);
+    }
+
+    /// <summary>Every registered companion (Phase 32A) must have a name the UI can actually show —
+    /// a recruit toast reading back the raw loc key is the failure this catches.</summary>
+    private static void ValidateCompanions(List<string> issues)
+    {
+        foreach (string id in CompanionRegistry.Ids)
+        {
+            CompanionArchetype? archetype = CompanionRegistry.Get(id);
+            if (archetype == null)
+            {
+                continue;
+            }
+
+            if (string.IsNullOrEmpty(archetype.NameKey) || !Loc.Has(archetype.NameKey))
+            {
+                issues.Add($"companion '{id}' name key '{archetype.NameKey}' is missing from the locale catalogue");
+            }
+        }
     }
 
     /// <summary>Stat blocks and weapons have no database (the factories load them by literal path), so a

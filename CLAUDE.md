@@ -193,6 +193,7 @@ Goblins roam to the north (−Z) and drop loot.
     ├── Factions/            # Faction resources, ReputationComponent, FactionComponent
     ├── Corruption/          # CorruptionComponent, tiers, appearance + dialogue hooks, endings
     ├── Races/               # RaceResource, RaceComponent, character creation (Phase 26)
+    ├── Companions/          # Party roster, follower AI, formation/leash cores (Phase 32)
     ├── Interaction/         # InteractableComponent (raycast interact)
     ├── Player/              # PlayerCharacter, PlayerController, PlayerFactory
     ├── Enemies/             # EnemyEntity, EnemyAIComponent (+caster branch), EnemyFactory, AshenAcolyteFactory, EnemyTemplateRegistry
@@ -233,6 +234,7 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 | `src/Progression` `src/Quests` `src/Dialogue` | XP/perks, quests, conversation graphs + story flags |
 | `src/Magic` `src/World` `src/Npc` | Spells/status effects; clock/weather/encounters/events; schedules |
 | `src/Crafting` `src/Factions` | Recipes/stations; reputation/faction tags |
+| `src/Companions` | `CompanionRoster` (party + persistence), `CompanionAIComponent`, formation/leash cores |
 | `src/Save` | `ISaveable`, `SaveManager`, `PersistentId`, `PersistentSpawnDirector` |
 | `src/UI` `src/Debugging` | `GameHud`/panels/`UiTheme`; dev console, profiler, integrity + content validators |
 
@@ -510,6 +512,15 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 3. Request it: publish `SoundCueRequestedEvent(id, pos)` / `MusicCueRequestedEvent(id)`, or call
    `ServiceLocator.Get<AudioDirector>().PlayCue(id[, pos])`. No code change to add a cue whose
    prefix already routes.
+
+**A new companion** (Phase 32)
+1. Register a `CompanionArchetype` (id, name `Loc` key, builder) in `CompanionRegistry.Initialize`;
+   the builder is normally `CompanionFactory.CreateWarrior(...)` with its own `AttributeSet` `.tres`.
+   Add the name key to `data/locale/strings.csv` (the `ContentValidator` fails the build gate if it
+   is missing) and its id to `GameIds.Companions`.
+2. Recruit it *by id* — `ServiceLocator.Get<CompanionRoster>().Recruit("companion.x")`, a dialogue
+   effect, or `companion recruit <id>` in the F1 console. The roster spawns the actor into a
+   formation slot, persists the party, and reconciles it back on load. No spawner or save code.
 
 **A new dev-console command**
 1. In `DevCommands.RegisterAll`, `console.Register(new ConsoleCommand(name, usage, summary,
