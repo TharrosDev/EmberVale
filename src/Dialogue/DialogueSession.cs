@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using Embervale.Companions;
 using Embervale.Core.Diagnostics;
+using Embervale.Core.Services;
 using Embervale.Corruption;
 using Embervale.Entities;
 using Embervale.Quests;
@@ -103,10 +105,25 @@ public sealed class DialogueSession
                 return _corruption != null && _corruption.Value >= ParseAmount(arg);
             case DialogueCondition.CorruptionBelow:
                 return _corruption != null && _corruption.Value < ParseAmount(arg);
+            case DialogueCondition.CompanionRecruited:
+                return Roster()?.IsRecruited(arg) ?? false;
+            case DialogueCondition.CompanionNotRecruited:
+                return !(Roster()?.IsRecruited(arg) ?? false);
+            case DialogueCondition.CompanionLoyaltyAtLeast:
+                return CompanionArg.TryParse(arg, out string loyaltyId, out int threshold) &&
+                    Roster() is { } loyaltyRoster && loyaltyRoster.LoyaltyOf(loyaltyId) >= threshold;
             default:
                 return true;
         }
     }
+
+    /// <summary>The party roster, resolved live from the <see cref="ServiceLocator"/> — a
+    /// conversation may outlive any particular world build, and the roster is a world service rather
+    /// than something the speaking actor owns.</summary>
+    private static CompanionRoster? Roster() =>
+        ServiceLocator.Instance != null && ServiceLocator.Instance.TryGet(out CompanionRoster roster)
+            ? roster
+            : null;
 
     /// <summary>Parses a numeric dialogue argument (corruption threshold/amount); 0 if malformed
     /// (the content validator flags non-numeric corruption args at author time).</summary>
@@ -137,6 +154,27 @@ public sealed class DialogueSession
                 break;
             case DialogueEffect.AddCorruption:
                 _corruption?.Add(ParseAmount(arg));
+                break;
+            case DialogueEffect.RecruitCompanion:
+                if (Roster() is { } recruiting && !recruiting.Recruit(arg))
+                {
+                    Log.Warn($"Dialogue effect RecruitCompanion: '{arg}' was not recruited (unknown id, already in the party, or the party is full).");
+                }
+
+                break;
+            case DialogueEffect.DismissCompanion:
+                Roster()?.Dismiss(arg);
+                break;
+            case DialogueEffect.AddCompanionLoyalty:
+                if (CompanionArg.TryParse(arg, out string loyaltyTarget, out int delta))
+                {
+                    Roster()?.AddLoyalty(loyaltyTarget, delta);
+                }
+                else
+                {
+                    Log.Warn($"Dialogue effect AddCompanionLoyalty: malformed argument '{arg}' (expected <companionId>:<delta>).");
+                }
+
                 break;
         }
     }

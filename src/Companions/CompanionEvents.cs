@@ -17,6 +17,14 @@ public readonly record struct CompanionStanceChangedEvent(string CompanionId, Co
 /// <see cref="CompanionStanceChangedEvent"/>.</summary>
 public readonly record struct CompanionOrderIssuedEvent(CompanionStance Stance) : IGameEvent;
 
+/// <summary>Raised whenever a companion's loyalty value moves (Phase 32C).</summary>
+public readonly record struct CompanionLoyaltyChangedEvent(string CompanionId, int Value, LoyaltyTier Tier) : IGameEvent;
+
+/// <summary>Raised when a companion's loyalty crosses into a new band. <paramref name="Improved"/>
+/// distinguishes earning their trust from losing it — the combat bonus, tier-gated banter and the
+/// ending flags all key off this rather than polling.</summary>
+public readonly record struct CompanionLoyaltyTierChangedEvent(string CompanionId, LoyaltyTier Tier, bool Improved) : IGameEvent;
+
 /// <summary>Raised when a companion's AI transitions between behaviour states.</summary>
 public readonly record struct CompanionStateChangedEvent(IEntity Companion, CompanionState State) : IGameEvent;
 

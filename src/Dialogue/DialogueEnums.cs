@@ -24,6 +24,17 @@ public enum DialogueEffect
     /// <summary>Add the choice's <c>EffectArg</c> (an integer, may be negative) to the player's
     /// corruption. Dark dialogue choices raise it; atonement beats can lower it.</summary>
     AddCorruption,
+
+    /// <summary>Recruit the companion whose id is the <c>EffectArg</c> into the party (Phase 32C).
+    /// This is how a conversation turns into a party member with no bespoke code.</summary>
+    RecruitCompanion,
+
+    /// <summary>Dismiss the companion whose id is the <c>EffectArg</c>.</summary>
+    DismissCompanion,
+
+    /// <summary>Shift a companion's loyalty: <c>EffectArg</c> is <c>&lt;companionId&gt;:&lt;delta&gt;</c>
+    /// (e.g. <c>companion.kael:10</c>; the delta may be negative).</summary>
+    AddCompanionLoyalty,
 }
 
 /// <summary>
@@ -62,4 +73,15 @@ public enum DialogueCondition
     /// <summary>Shown only while the player's corruption is below the threshold
     /// (<c>ConditionArg</c>, an integer 0–100).</summary>
     CorruptionBelow,
+
+    /// <summary>Shown only while the companion (<c>ConditionArg</c>, an id) is in the party.</summary>
+    CompanionRecruited,
+
+    /// <summary>Shown only while the companion (<c>ConditionArg</c>, an id) is NOT in the party.</summary>
+    CompanionNotRecruited,
+
+    /// <summary>Shown only while a companion's loyalty is at or above a threshold:
+    /// <c>ConditionArg</c> is <c>&lt;companionId&gt;:&lt;value&gt;</c> (e.g. <c>companion.kael:65</c>).
+    /// This is the gate personal/loyalty content hangs off.</summary>
+    CompanionLoyaltyAtLeast,
 }

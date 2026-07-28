@@ -52,7 +52,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("event", "event <id>", "Force a world event.", Event));
         console.Register(new ConsoleCommand("region", "region <list|goto <id>>", "List regions or hard-load into one (Phase 25C).", Region));
         console.Register(new ConsoleCommand("travel", "travel <list|goto <id>>", "List attuned travel nodes or fast-travel to one (Phase 25G).", Travel));
-        console.Register(new ConsoleCommand("companion", "companion <list|recruit <id>|dismiss <id>|stance <id> <follow|hold|engage>|order>", "Inspect and drive the companion party (Phase 32A).", Companion));
+        console.Register(new ConsoleCommand("companion", "companion <list|recruit <id>|dismiss <id>|stance <id> <follow|hold|engage>|order|loyalty <id> [delta]>", "Inspect and drive the companion party (Phase 32A).", Companion));
         console.Register(new ConsoleCommand("savecheck", "savecheck", "Audit registered saveables for volatile (would-orphan) keys (Phase 25.5A).", SaveCheck));
 
         console.Register(new ConsoleCommand("seed", "seed <n>", "Seed the global RNG (for repro).", Seed));
@@ -533,14 +533,14 @@ public static class DevCommands
             {
                 if (!roster.IsRecruited(id))
                 {
-                    sb.Append($"\n  {id} — not recruited");
+                    sb.Append($"\n  {id} — not recruited (loyalty {roster.LoyaltyOf(id)}, {roster.TierOf(id)})");
                     continue;
                 }
 
                 string state = roster.TryGet(id, out CompanionEntity companion)
                     ? companion.GetComponent<CompanionAIComponent>()?.State.ToString() ?? "?"
                     : "no actor";
-                sb.Append($"\n  {id} — {roster.StanceOf(id)} / {state}");
+                sb.Append($"\n  {id} — {roster.StanceOf(id)} / {state} / loyalty {roster.LoyaltyOf(id)} ({roster.TierOf(id)})");
             }
 
             return sb.ToString();
@@ -575,12 +575,27 @@ public static class DevCommands
                 : $"{args[1]} is not in the party";
         }
 
+        if (args.Length >= 2 && args[0] == "loyalty")
+        {
+            if (!CompanionRegistry.IsRegistered(args[1]))
+            {
+                return $"unknown companion '{args[1]}'";
+            }
+
+            if (args.Length >= 3 && int.TryParse(args[2], out int delta))
+            {
+                roster.AddLoyalty(args[1], delta);
+            }
+
+            return $"{args[1]} loyalty {roster.LoyaltyOf(args[1])} ({roster.TierOf(args[1])})";
+        }
+
         if (args[0] == "order")
         {
             return roster.Count == 0 ? "party is empty" : $"party order is now {roster.CycleOrder()}";
         }
 
-        return "usage: companion <list|recruit <id>|dismiss <id>|stance <id> <follow|hold|engage>|order>";
+        return "usage: companion <list|recruit <id>|dismiss <id>|stance <id> <follow|hold|engage>|order|loyalty <id> [delta]>";
     }
 
     private static string SaveCheck(DevConsole console, string[] args)

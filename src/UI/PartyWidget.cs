@@ -29,6 +29,8 @@ public partial class PartyWidget : VBoxContainer
         public required ProgressBar Health { get; init; }
 
         public required Label Order { get; init; }
+
+        public required Label Loyalty { get; init; }
     }
 
     private readonly List<Row> _rows = new();
@@ -58,6 +60,7 @@ public partial class PartyWidget : VBoxContainer
         bus?.Subscribe<CompanionRecruitedEvent>(OnPartyChanged);
         bus?.Subscribe<CompanionDismissedEvent>(OnPartyChanged);
         bus?.Subscribe<CompanionStanceChangedEvent>(OnStanceChanged);
+        bus?.Subscribe<CompanionLoyaltyTierChangedEvent>(OnLoyaltyTierChanged);
         bus?.Subscribe<GameLoadedEvent>(OnGameLoaded);
     }
 
@@ -72,6 +75,7 @@ public partial class PartyWidget : VBoxContainer
         bus.Unsubscribe<CompanionRecruitedEvent>(OnPartyChanged);
         bus.Unsubscribe<CompanionDismissedEvent>(OnPartyChanged);
         bus.Unsubscribe<CompanionStanceChangedEvent>(OnStanceChanged);
+        bus.Unsubscribe<CompanionLoyaltyTierChangedEvent>(OnLoyaltyTierChanged);
         bus.Unsubscribe<GameLoadedEvent>(OnGameLoaded);
     }
 
@@ -108,6 +112,7 @@ public partial class PartyWidget : VBoxContainer
                 ? "companion.order.downed"
                 : CompanionOrders.NameKey(roster.StanceOf(row.CompanionId)));
             row.Order.AddThemeColorOverride("font_color", downed ? UiTheme.Bad : UiTheme.Dim);
+            row.Loyalty.Text = Loc.T(CompanionLoyalty.NameKey(roster.TierOf(row.CompanionId)));
             row.Name.AddThemeColorOverride("font_color", downed ? UiTheme.Bad : UiTheme.Text);
         }
     }
@@ -135,6 +140,10 @@ public partial class PartyWidget : VBoxContainer
             name.SizeFlagsHorizontal = SizeFlags.ExpandFill;
             line.AddChild(name);
 
+            Label loyalty = UiTheme.Caption(string.Empty, UiTheme.Accent);
+            loyalty.SizeFlagsVertical = SizeFlags.ShrinkCenter;
+            line.AddChild(loyalty);
+
             Label order = UiTheme.Caption(string.Empty, UiTheme.Dim);
             order.SizeFlagsVertical = SizeFlags.ShrinkCenter;
             line.AddChild(order);
@@ -144,7 +153,7 @@ public partial class PartyWidget : VBoxContainer
             health.CustomMinimumSize = new Vector2(168f, 6f);
             _list.AddChild(health);
 
-            _rows.Add(new Row { CompanionId = id, Name = name, Health = health, Order = order });
+            _rows.Add(new Row { CompanionId = id, Name = name, Health = health, Order = order, Loyalty = loyalty });
         }
 
         // The command hint only earns its space once there is someone to command.
@@ -176,6 +185,8 @@ public partial class PartyWidget : VBoxContainer
     private void OnPartyChanged(CompanionDismissedEvent e) => _dirty = true;
 
     private void OnStanceChanged(CompanionStanceChangedEvent e) => _dirty = true;
+
+    private void OnLoyaltyTierChanged(CompanionLoyaltyTierChangedEvent e) => _dirty = true;
 
     private void OnGameLoaded(GameLoadedEvent e) => _dirty = true;
 }

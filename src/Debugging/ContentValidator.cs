@@ -98,22 +98,74 @@ public static class ContentValidator
         ValidateResourcePaths(issues);
     }
 
-    /// <summary>Every registered companion (Phase 32A) must have a name the UI can actually show —
-    /// a recruit toast reading back the raw loc key is the failure this catches.</summary>
+    /// <summary>Companions became authored content in Phase 32C, so they get the same treatment as
+    /// every other database: a name the UI can actually show, build paths that resolve (a missing
+    /// attribute set silently degrades a companion to default stats), a sane loyalty range, and
+    /// quest/dialogue cross-references that exist.</summary>
     private static void ValidateCompanions(List<string> issues)
     {
-        foreach (string id in CompanionRegistry.Ids)
+        foreach (CompanionResource companion in CompanionDatabase.All)
         {
-            CompanionArchetype? archetype = CompanionRegistry.Get(id);
-            if (archetype == null)
+            string id = companion.Id;
+            if (string.IsNullOrEmpty(companion.NameKey) || !Loc.Has(companion.NameKey))
             {
-                continue;
+                issues.Add($"companion '{id}' name key '{companion.NameKey}' is missing from the locale catalogue");
             }
 
-            if (string.IsNullOrEmpty(archetype.NameKey) || !Loc.Has(archetype.NameKey))
+            if (!string.IsNullOrEmpty(companion.TitleKey) && !Loc.Has(companion.TitleKey))
             {
-                issues.Add($"companion '{id}' name key '{archetype.NameKey}' is missing from the locale catalogue");
+                issues.Add($"companion '{id}' title key '{companion.TitleKey}' is missing from the locale catalogue");
             }
+
+            RequirePath(companion.AttributesPath, $"companion '{id}' attributes", issues);
+            RequirePath(companion.WeaponPath, $"companion '{id}' weapon", issues);
+
+            if (!string.IsNullOrEmpty(companion.FactionId) && FactionDatabase.Get(companion.FactionId) == null)
+            {
+                issues.Add($"companion '{id}' references unknown faction '{companion.FactionId}'");
+            }
+
+            foreach (string spellId in companion.KnownSpellIds)
+            {
+                if (SpellDatabase.Get(spellId) == null)
+                {
+                    issues.Add($"companion '{id}' knows unknown spell '{spellId}'");
+                }
+            }
+
+            if (companion.StartingLoyalty < CompanionLoyalty.Min || companion.StartingLoyalty > CompanionLoyalty.Max)
+            {
+                issues.Add($"companion '{id}' StartingLoyalty {companion.StartingLoyalty} is outside 0-100");
+            }
+
+            RequireQuestIfSet(companion.RecruitQuestId, $"companion '{id}' recruit quest", issues);
+            RequireQuestIfSet(companion.LoyaltyQuestId, $"companion '{id}' loyalty quest", issues);
+
+            if (!string.IsNullOrEmpty(companion.DialogueId) && DialogueDatabase.Get(companion.DialogueId) == null)
+            {
+                issues.Add($"companion '{id}' references unknown dialogue '{companion.DialogueId}'");
+            }
+
+            if (!CompanionRegistry.IsRegistered(id))
+            {
+                issues.Add($"companion '{id}' is authored but not registered (the registry seeds from the database)");
+            }
+        }
+    }
+
+    private static void RequirePath(string path, string context, List<string> issues)
+    {
+        if (string.IsNullOrEmpty(path) || !ResourceLoader.Exists(path))
+        {
+            issues.Add($"{context} resource missing: {path}");
+        }
+    }
+
+    private static void RequireQuestIfSet(string questId, string context, List<string> issues)
+    {
+        if (!string.IsNullOrEmpty(questId) && QuestDatabase.Get(questId) == null)
+        {
+            issues.Add($"{context} references unknown quest '{questId}'");
         }
     }
 
