@@ -234,7 +234,7 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 | `src/Progression` `src/Quests` `src/Dialogue` | XP/perks, quests, conversation graphs + story flags |
 | `src/Magic` `src/World` `src/Npc` | Spells/status effects; clock/weather/encounters/events; schedules |
 | `src/Crafting` `src/Factions` | Recipes/stations; reputation/faction tags |
-| `src/Companions` | `CompanionRoster` (party + persistence), `CompanionAIComponent`, formation/leash cores |
+| `src/Companions` | `CompanionRoster` (party, loyalty + persistence), `CompanionAIComponent`, `CompanionResource`, formation/leash/order cores |
 | `src/Save` | `ISaveable`, `SaveManager`, `PersistentId`, `PersistentSpawnDirector` |
 | `src/UI` `src/Debugging` | `GameHud`/panels/`UiTheme`; dev console, profiler, integrity + content validators |
 

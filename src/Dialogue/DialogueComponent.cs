@@ -2,6 +2,7 @@ using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Entities;
 using Embervale.Interaction;
+using Embervale.Localization;
 using Godot;
 
 namespace Embervale.Dialogue;
@@ -31,8 +32,11 @@ public partial class DialogueComponent : InteractableComponent
         {
             string who = !string.IsNullOrEmpty(SpeakerName)
                 ? SpeakerName
-                : Dialogue?.SpeakerName ?? Entity?.DisplayName ?? "someone";
-            return $"Talk to {who}";
+                : Dialogue?.SpeakerName ?? Entity?.DisplayName ?? string.Empty;
+
+            // Speaker names may be authored as Loc keys (companions are) or as plain text (the older
+            // NPCs); Loc.T returns the key unchanged when it isn't in the catalogue, so both work.
+            return Loc.TF("interact.talk_to", Loc.T(who));
         }
     }
 
