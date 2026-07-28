@@ -1,3 +1,4 @@
+using Embervale.Companions;
 using Embervale.Core.Events;
 using Embervale.Localization;
 using Embervale.Progression;
@@ -42,6 +43,9 @@ public partial class Notifications : CanvasLayer
         bus?.Subscribe<WorldEventStartedEvent>(OnWorldEventStarted);
         bus?.Subscribe<WorldEventEndedEvent>(OnWorldEventEnded);
         bus?.Subscribe<GameSavedEvent>(OnGameSaved);
+        bus?.Subscribe<CompanionRecruitedEvent>(OnCompanionRecruited);
+        bus?.Subscribe<CompanionDismissedEvent>(OnCompanionDismissed);
+        bus?.Subscribe<CompanionDownedEvent>(OnCompanionDowned);
     }
 
     public override void _ExitTree()
@@ -58,6 +62,9 @@ public partial class Notifications : CanvasLayer
         bus.Unsubscribe<WorldEventStartedEvent>(OnWorldEventStarted);
         bus.Unsubscribe<WorldEventEndedEvent>(OnWorldEventEnded);
         bus.Unsubscribe<GameSavedEvent>(OnGameSaved);
+        bus.Unsubscribe<CompanionRecruitedEvent>(OnCompanionRecruited);
+        bus.Unsubscribe<CompanionDismissedEvent>(OnCompanionDismissed);
+        bus.Unsubscribe<CompanionDownedEvent>(OnCompanionDowned);
     }
 
     private void OnLeveledUp(LeveledUpEvent e) => Push(Loc.TF("notify.levelup", e.NewLevel), UiTheme.Accent);
@@ -83,6 +90,17 @@ public partial class Notifications : CanvasLayer
             Push(Loc.T("notify.autosaved"), UiTheme.Dim);
         }
     }
+
+    // Companion name keys are Loc keys (like quest titles), so they resolve at display time.
+    private void OnCompanionRecruited(CompanionRecruitedEvent e) =>
+        Push(Loc.TF("notify.companion_joined", Loc.T(e.NameKey)), UiTheme.Good);
+
+    private void OnCompanionDismissed(CompanionDismissedEvent e) =>
+        Push(Loc.TF("notify.companion_left", Loc.T(e.NameKey)), UiTheme.Dim);
+
+    private void OnCompanionDowned(CompanionDownedEvent e) =>
+        Push(Loc.TF(e.Downed ? "notify.companion_downed" : "notify.companion_recovered", Loc.T(e.NameKey)),
+            e.Downed ? UiTheme.Bad : UiTheme.Good);
 
     private void Push(string text, Color color)
     {

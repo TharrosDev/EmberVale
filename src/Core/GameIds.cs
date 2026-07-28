@@ -104,6 +104,12 @@ public static class GameIds
         public const string VendorStub = "dialogue.vendor_stub";
     }
 
+    /// <summary>Recruitable companion ids (see <c>CompanionRegistry</c>, Phase 32).</summary>
+    public static class Companions
+    {
+        public const string Kael = "companion.kael";
+    }
+
     public static class Schedules
     {
         public const string Elder = "schedule.elder";

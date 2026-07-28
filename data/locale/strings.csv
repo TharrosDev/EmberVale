@@ -277,3 +277,8 @@ notify.event_started,★ {0}
 notify.event_resolved,{0} resolved!
 notify.event_failed,{0} failed
 notify.autosaved,Autosaved
+notify.companion_joined,{0} joins you
+notify.companion_left,{0} parts ways
+notify.companion_downed,{0} is down!
+notify.companion_recovered,{0} is back on their feet
+companion.kael.name,Kael

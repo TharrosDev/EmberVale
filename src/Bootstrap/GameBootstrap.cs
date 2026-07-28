@@ -369,6 +369,11 @@ public partial class GameBootstrap : Node3D
         SpawnPersistentActors();
         SpawnSpellTome();
 
+        // Companions (Phase 32A): the party roster. Added after the player spawn so a recruit can be
+        // placed in formation immediately, and before the load overlay lands so a saved party
+        // reconciles itself back into the world. (The archetypes are seeded in ContentDatabases.)
+        AddChild(new Embervale.Companions.CompanionRoster { Name = "Companions" });
+
         // Boss fight flow beats (Phase 28C): intro lock on summon, slow-mo on the boss's defeat. The
         // GameHud reacts to the same events for the healthbar/title/defeat banner.
         AddChild(new Embervale.Enemies.BossEncounterDirector { Name = "BossEncounter" });

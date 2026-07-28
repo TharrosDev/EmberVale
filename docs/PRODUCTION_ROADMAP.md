@@ -1065,7 +1065,7 @@ The ordering is driven by hard dependencies, not preference:
 | Stage | Gate | Phases | Status |
 | ----- | ---- | ------ | ------ |
 | A — Pre-production & First Playable | G0 | 22–28 | ✅ Complete (22–28 + 25.5 hardening; G0 First Playable reached) |
-| B — Vertical Slice | G1 | 29–33 | ⏳ In progress (29 ✅, 29.5 ✅, 30 ✅, 30.5 ✅; next: 31 Audio Foundations) |
+| B — Vertical Slice | G1 | 29–33 | ⏳ In progress (29 ✅, 29.5 ✅, 30 ✅, 30.5 ✅, 31 ✅; next: 32 Companion System) |
 | C — Alpha / Feature Complete | G2 | 34–45 | ⬜ Planned |
 | D — Beta / Content Complete | G3 | 46–55 | ⬜ Planned |
 | E — Release Candidate | G4 | 56–62 | ⬜ Planned |
@@ -1096,10 +1096,13 @@ effects show school-tinted particle swirls, and the corruption appearance now fo
 ART_STYLE per-tier arc (violet veining → ash → char → banked coals). All assets self-authored in
 Blender via the MCP (no external/licensed assets pulled yet).
 
-**Immediate next step: Phase 32 — Companion System.** Phase 31 (Audio Foundations) is **complete** —
-mixer + `AudioDirector`, real CC0 SFX, adaptive music, interaction/UI SFX, environmental ambience, and
-surface footsteps (31A–31E, `SESSION_PLAYBOOK.md`). Then 33 (slice assembly) toward **Gate G1 — Vertical
-Slice**. (Phase 30.5 UI & HUD Overhaul complete.) Remaining audio *production* (real CC0 music/ambience
+**Immediate next step: Phase 32B — companion command states.** Phase 31 (Audio Foundations) is
+**complete** — mixer + `AudioDirector`, real CC0 SFX, adaptive music, interaction/UI SFX, environmental
+ambience, and surface footsteps (31A–31E, `SESSION_PLAYBOOK.md`). **Phase 32A** landed the companion
+follower core: an anchor/leash `CompanionAIComponent` driving the same locomotion/steering/melee
+components every other character uses, a team-0 `CompanionFactory` + `CompanionRegistry`, and an
+`ISaveable` `CompanionRoster` (recruit/dismiss/stance, party reconciled on load). Then 32C–32E and 33
+(slice assembly) toward **Gate G1 — Vertical Slice**. (Phase 30.5 UI & HUD Overhaul complete.) Remaining audio *production* (real CC0 music/ambience
 tracks, surface tagging) carries into Phase 52.
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —

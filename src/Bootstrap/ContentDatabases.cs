@@ -1,3 +1,4 @@
+using Embervale.Companions;
 using Embervale.Crafting;
 using Embervale.Dialogue;
 using Embervale.Enemies;
@@ -13,7 +14,7 @@ using Embervale.World;
 namespace Embervale.Bootstrap;
 
 /// <summary>
-/// Loads every authored-content database (and the enemy template registry) in one place, so the
+/// Loads every authored-content database (and the enemy/companion registries) in one place, so the
 /// sandbox bootstrap and the headless validation path stay in lockstep — neither can validate or
 /// run against a different set of initialized content than the other. Order matches the original
 /// <see cref="GameBootstrap"/> sequence; the databases are independent, so the order is not
@@ -21,8 +22,8 @@ namespace Embervale.Bootstrap;
 /// </summary>
 public static class ContentDatabases
 {
-    /// <summary>Scans <c>res://data/**</c> and (re)builds every content database + the enemy
-    /// template registry. Safe to call more than once (each database clears and rebuilds).</summary>
+    /// <summary>Scans <c>res://data/**</c> and (re)builds every content database + the enemy and
+    /// companion registries. Safe to call more than once (each database clears and rebuilds).</summary>
     public static void InitializeAll()
     {
         ItemDatabase.Initialize();
@@ -41,5 +42,6 @@ public static class ContentDatabases
         WorldEventDatabase.Initialize();
         RaceDatabase.Initialize();
         EnemyTemplateRegistry.Initialize();
+        CompanionRegistry.Initialize();
     }
 }
