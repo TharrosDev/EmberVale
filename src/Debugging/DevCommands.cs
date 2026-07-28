@@ -52,6 +52,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("event", "event <id>", "Force a world event.", Event));
         console.Register(new ConsoleCommand("region", "region <list|goto <id>>", "List regions or hard-load into one (Phase 25C).", Region));
         console.Register(new ConsoleCommand("travel", "travel <list|goto <id>>", "List attuned travel nodes or fast-travel to one (Phase 25G).", Travel));
+        console.Register(new ConsoleCommand("opening", "opening", "Replay the new-game prologue (Phase 33A).", Opening));
         console.Register(new ConsoleCommand("companion", "companion <list|recruit <id>|dismiss <id>|stance <id> <follow|hold|engage>|order|loyalty <id> [delta]>", "Inspect and drive the companion party (Phase 32A).", Companion));
         console.Register(new ConsoleCommand("savecheck", "savecheck", "Audit registered saveables for volatile (would-orphan) keys (Phase 25.5A).", SaveCheck));
 
@@ -515,6 +516,21 @@ public static class DevCommands
         }
 
         return "usage: travel <list|goto <id>>";
+    }
+
+    /// <summary>Replays the prologue, so its pacing and copy can be checked without starting a new
+    /// game each time.</summary>
+    private static string Opening(DevConsole console, string[] args)
+    {
+        if (ServiceLocator.Instance is not { } locator || !locator.TryGet(out UI.OpeningSequence opening))
+        {
+            return "opening sequence unavailable";
+        }
+
+        opening.Play(TryPlayer(out PlayerCharacter player)
+            ? player.GetComponent<RaceComponent>()?.Profile ?? CharacterProfile.Human
+            : CharacterProfile.Human);
+        return "replaying the prologue";
     }
 
     /// <summary>Drives the Phase 32A party from the console: who is recruitable, who is in the band,

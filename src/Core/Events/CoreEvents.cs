@@ -13,6 +13,11 @@ namespace Embervale.Core.Events;
 /// <summary>Raised by <see cref="GameManager"/> whenever the top-level state changes.</summary>
 public readonly record struct GameStateChangedEvent(GameState Previous, GameState Current) : IGameEvent;
 
+/// <summary>Raised when the new-game prologue ends — played out or skipped (Phase 33A). The
+/// bootstrap hands control to the player on this, so the opening is the only thing standing between
+/// character creation and the world.</summary>
+public readonly record struct OpeningFinishedEvent : IGameEvent;
+
 /// <summary>Raised when an <see cref="IEntity"/> enters the world.</summary>
 public readonly record struct EntitySpawnedEvent(IEntity Entity) : IGameEvent;
 

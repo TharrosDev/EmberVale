@@ -2209,9 +2209,16 @@ no code) — batch them when momentum is good.
 
 ## Phase 33 — Vertical Slice Assembly & Onboarding `[C/P]`
 
-- [ ] **33A — Opening sequence + new-game → creation → world flow** `[C/P]`
+- [x] **33A — Opening sequence + new-game → creation → world flow** `[C/P]` ✅
   - **Done when:** new game runs creation → opening → Ember Crown as one seamless
     flow.
+  - **Landed:** `OpeningSequence` — five narration cards over black carrying the
+    LORE premise and closing on the player's own name, played *over the
+    already-built world* so the last card lifts on the Ember Crown with nothing
+    left to load. Input is held through `UiState` with the mouse still captured;
+    interact/attack skip it (Esc deliberately doesn't, so one press can't also
+    open the pause menu); it never plays on a load. Pacing lives in the pure
+    `OpeningTimeline` (9 tests). `opening` dev command replays it.
 - [ ] **33B — Diegetic tutorial: movement/look/combat** `[C/P]`
   - **Done when:** move/look/attack/block/dodge are taught via prompts/toasts,
     skippable.
