@@ -42,6 +42,7 @@ public static class ContentDatabases
         WorldEventDatabase.Initialize();
         RaceDatabase.Initialize();
         EnemyTemplateRegistry.Initialize();
+        CompanionDatabase.Initialize();
         CompanionRegistry.Initialize();
     }
 }

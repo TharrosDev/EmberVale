@@ -376,7 +376,10 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    `Text`, a `Goto` node id (empty = end), an optional `Condition`+`ConditionArg` (gates
    visibility — incl. `QuestAvailable`, `HasFlag`, and `CorruptionAtLeast`/`CorruptionBelow`)
    and an optional `Effect`+`EffectArg` (`1`=StartQuest, `2`=SetFlag, `3`=ClearFlag,
-   `4`=AddCorruption). Enums export as ints (see `DialogueEnums.cs`).
+   `4`=AddCorruption, `5`=RecruitCompanion, `6`=DismissCompanion, `7`=AddCompanionLoyalty
+   (`<companionId>:<delta>`)). Companion gates come as conditions too (`CompanionRecruited`,
+   `CompanionNotRecruited`, `CompanionLoyaltyAtLeast` = `<companionId>:<value>`).
+   Enums export as ints (see `DialogueEnums.cs`).
 2. Auto-indexed by `DialogueDatabase`. Attach a `DialogueComponent` (set its
    `DialogueId`) to a world `Entity` with a collider; the player's `E` interact opens it
    in `DialoguePanel`. No code change for new conversations.
@@ -514,13 +517,18 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    prefix already routes.
 
 **A new companion** (Phase 32)
-1. Register a `CompanionArchetype` (id, name `Loc` key, builder) in `CompanionRegistry.Initialize`;
-   the builder is normally `CompanionFactory.CreateWarrior(...)` with its own `AttributeSet` `.tres`.
-   Add the name key to `data/locale/strings.csv` (the `ContentValidator` fails the build gate if it
-   is missing) and its id to `GameIds.Companions`.
-2. Recruit it *by id* — `ServiceLocator.Get<CompanionRoster>().Recruit("companion.x")`, a dialogue
-   effect, or `companion recruit <id>` in the F1 console. The roster spawns the actor into a
-   formation slot, persists the party, and reconciles it back on load. No spawner or save code.
+1. Author `data/companions/Xxx.tres` (`script_class="CompanionResource"`): unique `Id`
+   (`companion.*`), `NameKey`/`TitleKey` (`Loc` keys — add them to `data/locale/strings.csv`, the
+   validator fails without them), the build paths (`AttributesPath`/`WeaponPath`/`ModelPath`),
+   `FactionId`, optional `KnownSpellIds` (non-empty ⇒ it gets a `SpellcastingComponent`, i.e. a
+   caster companion), the follower envelope (`FollowDistance`/`EngageRadius`/`AttackRange`/
+   `LeashRadius`), and the loyalty knobs (`StartingLoyalty`, `LoyaltyQuestReward`,
+   `RecruitQuestId`/`LoyaltyQuestId`/`DialogueId`).
+2. It is auto-indexed by `CompanionDatabase` and auto-registered in `CompanionRegistry` — **no code
+   change**. Recruit it *by id*: a `DialogueChoice` (`Effect` `5`=RecruitCompanion), a quest hook,
+   `ServiceLocator.Get<CompanionRoster>().Recruit("companion.x")`, or `companion recruit <id>` in the
+   F1 console. The roster spawns the actor into a formation slot, tracks loyalty, persists the party,
+   and reconciles it back on load.
 
 **A new dev-console command**
 1. In `DevCommands.RegisterAll`, `console.Register(new ConsoleCommand(name, usage, summary,

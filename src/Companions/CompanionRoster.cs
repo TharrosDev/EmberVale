@@ -42,6 +42,10 @@ public partial class CompanionRoster : Node, ISaveable
 
     private readonly Dictionary<string, CompanionEntity> _active = new();
     private readonly Dictionary<string, CompanionStance> _stances = new();
+
+    // Loyalty is tracked for every companion the player has ever affected, recruited or not — a
+    // companion you dismissed has not forgotten how you treated them.
+    private readonly Dictionary<string, int> _loyalty = new();
     private double _catchUpTimer;
 
     /// <summary>The ids of every companion currently in the party.</summary>
@@ -225,6 +229,62 @@ public partial class CompanionRoster : Node, ISaveable
         return true;
     }
 
+    // --- Loyalty (32C) -------------------------------------------------------
+
+    /// <summary>
+    /// A companion's loyalty (0-100). A companion never met answers with their authored
+    /// <see cref="CompanionResource.StartingLoyalty"/>, so a first meeting starts where the writer
+    /// said it does rather than at zero.
+    /// </summary>
+    public int LoyaltyOf(string companionId)
+    {
+        if (_loyalty.TryGetValue(companionId, out int value))
+        {
+            return value;
+        }
+
+        return CompanionLoyalty.Clamp(CompanionDatabase.Get(companionId)?.StartingLoyalty ?? 0);
+    }
+
+    /// <summary>The band a companion's loyalty falls into - what banter, abilities and (Phase 44)
+    /// ending flags key off.</summary>
+    public LoyaltyTier TierOf(string companionId) => CompanionLoyalty.Of(LoyaltyOf(companionId));
+
+    /// <summary>Shifts a companion's loyalty and announces it; returns the new value. Crossing a tier
+    /// boundary also raises <see cref="CompanionLoyaltyTierChangedEvent"/>, which is what the combat
+    /// bonus and the tier-gated dialogue react to.</summary>
+    public int AddLoyalty(string companionId, int delta)
+    {
+        if (string.IsNullOrEmpty(companionId) || delta == 0)
+        {
+            return LoyaltyOf(companionId);
+        }
+
+        return SetLoyalty(companionId, LoyaltyOf(companionId) + delta);
+    }
+
+    /// <summary>Sets a companion's loyalty outright (clamped). Returns the stored value.</summary>
+    public int SetLoyalty(string companionId, int value)
+    {
+        if (string.IsNullOrEmpty(companionId))
+        {
+            return 0;
+        }
+
+        LoyaltyTier before = TierOf(companionId);
+        int clamped = CompanionLoyalty.Clamp(value);
+        _loyalty[companionId] = clamped;
+
+        LoyaltyTier after = CompanionLoyalty.Of(clamped);
+        EventBus.Instance?.Publish(new CompanionLoyaltyChangedEvent(companionId, clamped, after));
+        if (after != before)
+        {
+            EventBus.Instance?.Publish(new CompanionLoyaltyTierChangedEvent(companionId, after, after > before));
+        }
+
+        return clamped;
+    }
+
     // --- Persistence ---------------------------------------------------------
 
     public Godot.Collections.Dictionary Save()
@@ -244,11 +304,30 @@ public partial class CompanionRoster : Node, ISaveable
             });
         }
 
-        return new Godot.Collections.Dictionary { ["party"] = party };
+        // Loyalty persists for everyone it has been recorded for, including companions not currently
+        // travelling with the player - dismissing someone must not wipe the history between you.
+        var loyalty = new Godot.Collections.Dictionary();
+        foreach (KeyValuePair<string, int> kv in _loyalty)
+        {
+            loyalty[kv.Key] = kv.Value;
+        }
+
+        return new Godot.Collections.Dictionary { ["party"] = party, ["loyalty"] = loyalty };
     }
 
     public void Load(Godot.Collections.Dictionary data)
     {
+        _loyalty.Clear();
+        if (data.TryGetValue("loyalty", out Variant loyaltyVariant) &&
+            loyaltyVariant.VariantType == Variant.Type.Dictionary)
+        {
+            Godot.Collections.Dictionary saved = loyaltyVariant.AsGodotDictionary();
+            foreach (Variant key in saved.Keys)
+            {
+                _loyalty[key.AsString()] = CompanionLoyalty.Clamp(saved[key].AsInt32());
+            }
+        }
+
         if (!data.TryGetValue("party", out Variant partyVariant) ||
             partyVariant.VariantType != Variant.Type.Array)
         {

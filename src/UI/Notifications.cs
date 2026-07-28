@@ -47,6 +47,7 @@ public partial class Notifications : CanvasLayer
         bus?.Subscribe<CompanionDismissedEvent>(OnCompanionDismissed);
         bus?.Subscribe<CompanionDownedEvent>(OnCompanionDowned);
         bus?.Subscribe<CompanionOrderIssuedEvent>(OnCompanionOrder);
+        bus?.Subscribe<CompanionLoyaltyTierChangedEvent>(OnCompanionLoyalty);
     }
 
     public override void _ExitTree()
@@ -67,6 +68,7 @@ public partial class Notifications : CanvasLayer
         bus.Unsubscribe<CompanionDismissedEvent>(OnCompanionDismissed);
         bus.Unsubscribe<CompanionDownedEvent>(OnCompanionDowned);
         bus.Unsubscribe<CompanionOrderIssuedEvent>(OnCompanionOrder);
+        bus.Unsubscribe<CompanionLoyaltyTierChangedEvent>(OnCompanionLoyalty);
     }
 
     private void OnLeveledUp(LeveledUpEvent e) => Push(Loc.TF("notify.levelup", e.NewLevel), UiTheme.Accent);
@@ -106,6 +108,15 @@ public partial class Notifications : CanvasLayer
 
     private void OnCompanionOrder(CompanionOrderIssuedEvent e) =>
         Push(Loc.TF("notify.companion_order", Loc.T(CompanionOrders.NameKey(e.Stance))), UiTheme.Accent);
+
+    // Only a *tier* crossing toasts — every point of loyalty would be noise.
+    private void OnCompanionLoyalty(CompanionLoyaltyTierChangedEvent e) =>
+        Push(
+            Loc.TF(
+                e.Improved ? "notify.companion_loyalty_up" : "notify.companion_loyalty_down",
+                Loc.T(CompanionDatabase.Get(e.CompanionId)?.NameKey ?? e.CompanionId),
+                Loc.T(CompanionLoyalty.NameKey(e.Tier))),
+            e.Improved ? UiTheme.Good : UiTheme.Bad);
 
     private void Push(string text, Color color)
     {

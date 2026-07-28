@@ -288,3 +288,10 @@ companion.order.engage,Engaging
 companion.order.downed,Down
 notify.companion_order,"Order: {0}"
 hud.party_hint,{0} · order
+companion.kael.title,Shieldsworn of the Ember Crown
+companion.loyalty.wary,Wary
+companion.loyalty.steady,Steady
+companion.loyalty.trusted,Trusted
+companion.loyalty.sworn,Sworn
+notify.companion_loyalty_up,"{0} trusts you more — {1}"
+notify.companion_loyalty_down,"{0} trusts you less — {1}"

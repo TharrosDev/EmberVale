@@ -2168,9 +2168,17 @@ no code) — batch them when momentum is good.
     leash/scan envelope (6 tests); assist focus makes companions prioritise the
     player's lock-on target; an engage order stands itself down once the fighting
     stops; a self-hiding `PartyWidget` shows each companion's health + current order.
-- [ ] **32C — `CompanionResource` + loyalty standing** `[F]`
+- [x] **32C — `CompanionResource` + loyalty standing** `[F]` ✅
   - **Done when:** companions are data (`CompanionResource`) with a per-companion
     loyalty standing (reuse `ReputationComponent` patterns), persistent.
+  - **Landed:** `CompanionResource` + `CompanionDatabase` (`data/companions/Kael.tres`);
+    the registry and factory now build entirely from the resource (stats, weapon,
+    model, faction, spells, follower envelope). Loyalty is a 0–100 standing with
+    Wary/Steady/Trusted/Sworn tiers held and persisted by the roster (kept even for
+    dismissed companions), projected onto stats by `CompanionLoyaltyComponent`.
+    Dialogue gained `RecruitCompanion`/`DismissCompanion`/`AddCompanionLoyalty`
+    effects and `CompanionRecruited`/`CompanionNotRecruited`/`CompanionLoyaltyAtLeast`
+    conditions, so 32E is authorable content. Validator + 24 new tests.
 - [ ] **32D — Party persistence + save round-trip** `[F]`
   - **Done when:** roster, positions, and loyalty survive save/load and region
     streaming.

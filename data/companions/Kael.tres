@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="CompanionResource" load_steps=2 format=3 uid="uid://cmbrvlcompkael"]
+
+[ext_resource type="Script" path="res://src/Companions/CompanionResource.cs" id="1_companion"]
+
+[resource]
+script = ExtResource("1_companion")
+Id = "companion.kael"
+NameKey = "companion.kael.name"
+TitleKey = "companion.kael.title"
+AttributesPath = "res://data/attributes/CompanionAttributes.tres"
+WeaponPath = "res://data/weapons/IronSword.tres"
+ModelPath = "res://assets/models/characters/chr_player_base.glb"
+FactionId = "faction.villagers"
+KnownSpellIds = Array[String]([])
+FollowDistance = 3.0
+EngageRadius = 14.0
+AttackRange = 2.1
+LeashRadius = 18.0
+StartingLoyalty = 40
+LoyaltyQuestReward = 30
+RecruitQuestId = ""
+LoyaltyQuestId = ""
+DialogueId = ""
