@@ -3,6 +3,8 @@ using Embervale.Core;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Core.Services;
+using Embervale.Interaction;
+using Embervale.Magic;
 using Embervale.Movement;
 using Embervale.Player;
 using Embervale.Save;
@@ -13,7 +15,8 @@ using Godot;
 namespace Embervale.Onboarding;
 
 /// <summary>
-/// Teaches the basic verbs by watching the player play them (Phase 33B). It is deliberately
+/// Teaches the game's verbs by watching the player play them (Phase 33B basics, 33C town verbs). It
+/// is deliberately
 /// <em>observational</em>: it never blocks input, freezes the world, or gates progress on a hint
 /// being obeyed. A hint asks for a verb; when the player performs it — for real, through the same
 /// components and events combat already raises — the hint clears and the next one appears. A veteran
@@ -21,7 +24,9 @@ namespace Embervale.Onboarding;
 ///
 /// Completion is detected from actual game state rather than raw keypresses wherever the distinction
 /// matters: an attack counts when the weapon component reports a swing, a dodge when locomotion is
-/// genuinely dashing. Pressing a key with no stamina teaches nothing, so it doesn't count.
+/// genuinely dashing. Pressing a key with no stamina teaches nothing, so it doesn't count. The held
+/// verbs (moving, guarding) are polled; the discrete ones (interacting, opening a panel, casting)
+/// arrive as events, which are themselves proof the verb happened.
 ///
 /// Progress persists (<see cref="ISaveable"/>), so reloading never re-teaches a verb the player has
 /// already shown they know.
@@ -68,12 +73,26 @@ public partial class TutorialDirector : Node, ISaveable
 
     public override void _ExitTree()
     {
+        EventBus? bus = EventBus.Instance;
+        if (bus != null)
+        {
+            bus.Unsubscribe<InteractionPerformedEvent>(OnInteracted);
+            bus.Unsubscribe<UiPanelToggledEvent>(OnPanelToggled);
+            bus.Unsubscribe<SpellCastEvent>(OnSpellCast);
+        }
+
         SaveManager.Instance?.Unregister(this);
         ServiceLocator.Instance?.Unregister(this);
     }
 
     public override void _Ready()
     {
+        // The town verbs are discrete moments rather than held inputs, so they arrive as events.
+        EventBus bus = EventBus.Instance;
+        bus?.Subscribe<InteractionPerformedEvent>(OnInteracted);
+        bus?.Subscribe<UiPanelToggledEvent>(OnPanelToggled);
+        bus?.Subscribe<SpellCastEvent>(OnSpellCast);
+
         // Settings win outright: a player who turned tutorials off gets none, and no saved progress
         // can turn them back on.
         if (!TutorialsEnabled())
@@ -183,6 +202,46 @@ public partial class TutorialDirector : Node, ISaveable
         }
     }
 
+    // --- Event-driven verbs (33C) --------------------------------------------
+
+    // These deliberately do NOT go through CanObserve: opening the inventory sets UiState.MenuOpen
+    // by definition, so requiring "no menu open" would make the inventory hint impossible to clear.
+    // They are already proof the verb happened, which is the whole point of listening for them.
+
+    private void OnInteracted(InteractionPerformedEvent e)
+    {
+        if (e.Instigator is PlayerCharacter)
+        {
+            Complete(TutorialStep.Interact);
+        }
+    }
+
+    private void OnPanelToggled(UiPanelToggledEvent e)
+    {
+        if (!e.Open)
+        {
+            return;
+        }
+
+        switch (e.Panel)
+        {
+            case InventoryPanel:
+                Complete(TutorialStep.Inventory);
+                break;
+            case QuestLogPanel:
+                Complete(TutorialStep.Journal);
+                break;
+        }
+    }
+
+    private void OnSpellCast(SpellCastEvent e)
+    {
+        if (e.Caster is PlayerCharacter)
+        {
+            Complete(TutorialStep.Cast);
+        }
+    }
+
     // --- Sequencing ----------------------------------------------------------
 
     private TutorialStep _lastCompleted = TutorialStep.None;
@@ -205,7 +264,10 @@ public partial class TutorialDirector : Node, ISaveable
 
     private void Complete(TutorialStep step)
     {
-        if (_step != step)
+        // An event can arrive for a verb that isn't currently being taught (a player who casts
+        // before the magic hint). That is not a completion — the hint is still owed — so only the
+        // step on screen can be completed.
+        if (_step != step || _finished)
         {
             return;
         }

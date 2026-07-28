@@ -353,3 +353,8 @@ tutorial.sprint,"Hold {0} while moving to sprint"
 tutorial.attack,"Press {0} to swing your weapon"
 tutorial.block,"Hold {0} to raise your guard"
 tutorial.dodge,"Press {0} to dodge"
+# --- Phase 33C: the remaining verbs ---
+tutorial.interact,"Look at someone and press {0} to speak or use"
+tutorial.inventory,"Press {0} to open your character screen"
+tutorial.journal,"Press {0} to read your quest journal"
+tutorial.cast,"Press {0} to cast your prepared spell"

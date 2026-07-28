@@ -236,5 +236,9 @@ public class EnumStabilityTests
         Assert.Equal(4, (int)TutorialStep.Attack);
         Assert.Equal(5, (int)TutorialStep.Block);
         Assert.Equal(6, (int)TutorialStep.Dodge);
+        Assert.Equal(7, (int)TutorialStep.Interact);
+        Assert.Equal(8, (int)TutorialStep.Inventory);
+        Assert.Equal(9, (int)TutorialStep.Journal);
+        Assert.Equal(10, (int)TutorialStep.Cast);
     }
 }

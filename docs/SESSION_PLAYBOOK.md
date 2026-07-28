@@ -2231,9 +2231,17 @@ no code) — batch them when momentum is good.
     A **Show Tutorial Hints** setting switches it off live; progress persists so a
     reload never re-teaches. Pure `TutorialScript` (9 tests + ordinal pin);
     `tutorial <status|skip|restart>` dev command.
-- [ ] **33C — Diegetic tutorial: magic/interact/inventory/quests** `[C/P]`
+- [x] **33C — Diegetic tutorial: magic/interact/inventory/quests** `[C/P]` ✅
   - **Done when:** the remaining verbs are taught the same way; nothing blocks a
     veteran from skipping.
+  - **Landed:** interact → inventory → journal → cast appended to the same script
+    (interact first because it is the verb that makes anything happen; magic last
+    because it is the only optional one). These are discrete moments rather than
+    held inputs, so they arrive as events — two new ones, `InteractionPerformedEvent`
+    (published where the interaction actually fires, not on the keypress) and
+    `UiPanelToggledEvent` (any `UiPanel` open/close, reusable beyond onboarding) —
+    plus the existing `SpellCastEvent`. Still nothing blocks input, and the Settings
+    toggle / `tutorial skip` end the whole thing at any point.
 - [ ] **33D — Slice stitch: quest chain → guild taste → Iron King → corruption beat → cliffhanger** `[C/P]`
   - **Done when:** 30–60 min plays as one continuous, polished arc.
 - [ ] **33E — Slice polish + external-build capture pass** `[P]`
