@@ -133,6 +133,19 @@ public partial class SettingsPanel : CanvasLayer
             s.Difficulty, i => { s.Difficulty = i; Persist(); }));
         body.AddChild(ToggleRow(Loc.T("settings.third_person"), s.ThirdPersonCamera,
             v => { s.ThirdPersonCamera = v; Persist(); }));
+        body.AddChild(ToggleRow(Loc.T("settings.show_tutorials"), s.ShowTutorials, v =>
+        {
+            s.ShowTutorials = v;
+            Persist();
+
+            // Applies live: switching tutorials off mid-game clears the hint on screen rather than
+            // waiting for a restart to take effect.
+            if (!v && ServiceLocator.Instance is { } locator &&
+                locator.TryGet(out Onboarding.TutorialDirector tutorial))
+            {
+                tutorial.Skip();
+            }
+        }));
 
         Section(body, Loc.T("settings.section.accessibility"));
         body.AddChild(ToggleRow(Loc.T("settings.reduced_motion"), s.ReducedMotion, v => { s.ReducedMotion = v; Persist(); }));
