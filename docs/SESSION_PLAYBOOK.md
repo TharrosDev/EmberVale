@@ -2189,9 +2189,21 @@ no code) — batch them when momentum is good.
     recovery countdown). Region hard-loads call `RegroupNow()` so the band cuts to
     formation the moment the player lands, while held companions stay put. A
     `party` repro scenario pins a deterministic party-in-the-field run.
-- [ ] **32E — Kael authored fully (recruit + loyalty quest + dialogue)** `[C]`
+- [x] **32E — Kael authored fully (recruit + loyalty quest + dialogue)** `[C]` ✅
   - **Done when:** one complete companion (Kael) is recruitable with a dialogue
     graph + recruit quest + loyalty quest; the rest deferred to Beta.
+  - **Landed:** Kael Aldemar, last shield of the Emberguard, stands in the Ember
+    Crown hub. A 14-node conversation carries the whole arc: the recruit quest
+    *The Oathkeeper's Debt*, the recruit itself, the loyalty quest *What the Ash
+    Took* (his sword-brother Toren's plunder), a one-time loyalty payoff sealed
+    behind a story flag, a trust-gated personal line, and an amicable parting.
+    `CompanionRecruiterComponent` swaps the town NPC out while he travels with you
+    and back when dismissed; the recruited actor carries his own dialogue so
+    personal content is reachable from the party member. `KaelContentTests` checks
+    the authored graph (reachability, string keys, ordinals, prerequisites) without
+    needing Godot.
+
+**Phase 32 complete** — 32A–32E all landed.
 
 ---
 

@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="QuestResource" format=3 uid="uid://cmbrvlqkaelbrot"]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+[ext_resource type="Script" path="res://src/Quests/QuestItemReward.cs" id="3_reward"]
+
+[sub_resource type="Resource" id="Obj_collect"]
+script = ExtResource("2_obj")
+Type = 1
+TargetId = "item.material.goblin_hide"
+RequiredCount = 4
+Description = "quest.kael.brother.obj"
+
+[sub_resource type="Resource" id="Reward_potion"]
+script = ExtResource("3_reward")
+ItemId = "item.potion.health"
+Quantity = 2
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.kael.brother"
+Title = "quest.kael.brother.title"
+Summary = "quest.kael.brother.summary"
+Objectives = Array[Resource]([SubResource("Obj_collect")])
+XpReward = 140
+GoldReward = 40
+GoldItemId = "item.currency.gold"
+RewardItems = Array[Resource]([SubResource("Reward_potion")])
+PrerequisiteQuestId = "quest.kael.oath"

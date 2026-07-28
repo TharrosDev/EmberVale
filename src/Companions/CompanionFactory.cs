@@ -122,6 +122,19 @@ public static class CompanionFactory
             });
         }
 
+        // A recruited companion carries their own conversation (Phase 32E), so personal/loyalty
+        // content is reachable from the party member walking behind you — not only from the world
+        // NPC they were recruited from, who is hidden while they travel with you.
+        if (!string.IsNullOrEmpty(resource.DialogueId))
+        {
+            companion.AddChild(new Embervale.Dialogue.DialogueComponent
+            {
+                Name = "Dialogue",
+                DialogueId = resource.DialogueId,
+                SpeakerName = resource.NameKey,
+            });
+        }
+
         string factionId = string.IsNullOrEmpty(resource.FactionId) ? GameIds.Factions.Villagers : resource.FactionId;
         companion.AddChild(new FactionComponent { Name = "Faction", FactionId = factionId });
         companion.AddChild(new CompanionAIComponent

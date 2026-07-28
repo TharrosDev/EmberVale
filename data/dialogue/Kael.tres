@@ -1,0 +1,226 @@
+[gd_resource type="Resource" script_class="DialogueResource" format=3 uid="uid://cmbrvldlgkael"]
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+[sub_resource type="Resource" id="ch_who"]
+script = ExtResource("3_choice")
+Text = "dlg.kael.c_who"
+Goto = "intro"
+
+[sub_resource type="Resource" id="ch_oath_offer"]
+script = ExtResource("3_choice")
+Text = "dlg.kael.c_oath_offer"
+Goto = "oath_offer"
+Condition = 4
+ConditionArg = "quest.kael.oath"
+
+[sub_resource type="Resource" id="ch_oath_active"]
+script = ExtResource("3_choice")
+Text = "dlg.kael.c_oath_active"
+Goto = "oath_active"
+Condition = 2
+ConditionArg = "quest.kael.oath"
+
+[sub_resource type="Resource" id="ch_oath_done"]
+script = ExtResource("3_choice")
+Text = "dlg.kael.c_oath_done"
+Goto = "oath_done"
+Condition = 3
+ConditionArg = "quest.kael.oath"
+
+[sub_resource type="Resource" id="ch_brother_ask"]
+script = ExtResource("3_choice")
+Text = "dlg.kael.c_brother_ask"
+Goto = "brother_offer"
+Condition = 9
+ConditionArg = "companion.kael"
+
+[sub_resource type="Resource" id="ch_brother_turnin"]
+script = ExtResource("3_choice")
+Text = "dlg.kael.c_brother_turnin"
+Goto = "brother_turnin"
+Condition = 3
+ConditionArg = "quest.kael.brother"
+
+[sub_resource type="Resource" id="ch_sworn"]
+script = ExtResource("3_choice")
+Text = "dlg.kael.c_sworn"
+Goto = "sworn"
+Condition = 11
+ConditionArg = "companion.kael:65"
+
+[sub_resource type="Resource" id="ch_part"]
+script = ExtResource("3_choice")
+Text = "dlg.kael.c_part"
+Goto = "parted"
+Condition = 9
+ConditionArg = "companion.kael"
+
+[sub_resource type="Resource" id="ch_part_confirm"]
+script = ExtResource("3_choice")
+Text = "dlg.kael.c_part_confirm"
+Effect = 6
+EffectArg = "companion.kael"
+
+[sub_resource type="Resource" id="ch_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.kael.c_bye"
+
+[sub_resource type="Resource" id="ch_intro_back"]
+script = ExtResource("3_choice")
+Text = "dlg.kael.c_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_oath_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.kael.c_oath_accept"
+Goto = "oath_accepted"
+Effect = 1
+EffectArg = "quest.kael.oath"
+
+[sub_resource type="Resource" id="ch_oath_decline"]
+script = ExtResource("3_choice")
+Text = "dlg.kael.c_oath_decline"
+
+[sub_resource type="Resource" id="ch_recruit"]
+script = ExtResource("3_choice")
+Text = "dlg.kael.c_recruit"
+Goto = "recruited"
+Condition = 10
+ConditionArg = "companion.kael"
+Effect = 5
+EffectArg = "companion.kael"
+
+[sub_resource type="Resource" id="ch_already"]
+script = ExtResource("3_choice")
+Text = "dlg.kael.c_already"
+Goto = "root"
+Condition = 9
+ConditionArg = "companion.kael"
+
+[sub_resource type="Resource" id="ch_brother_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.kael.c_brother_accept"
+Goto = "brother_accepted"
+Effect = 1
+EffectArg = "quest.kael.brother"
+
+[sub_resource type="Resource" id="ch_brother_later"]
+script = ExtResource("3_choice")
+Text = "dlg.kael.c_brother_later"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_brother_reward"]
+script = ExtResource("3_choice")
+Text = "dlg.kael.c_brother_reward"
+Goto = "brother_reward"
+Condition = 6
+ConditionArg = "flag.kael.brother_repaid"
+Effect = 7
+EffectArg = "companion.kael:30"
+
+[sub_resource type="Resource" id="ch_brother_after"]
+script = ExtResource("3_choice")
+Text = "dlg.kael.c_brother_after"
+Goto = "brother_after"
+Condition = 5
+ConditionArg = "flag.kael.brother_repaid"
+
+[sub_resource type="Resource" id="ch_brother_seal"]
+script = ExtResource("3_choice")
+Text = "dlg.kael.c_brother_seal"
+Effect = 2
+EffectArg = "flag.kael.brother_repaid"
+
+[sub_resource type="Resource" id="node_root"]
+script = ExtResource("2_node")
+Id = "root"
+Text = "dlg.kael.root"
+Choices = Array[Resource]([SubResource("ch_who"), SubResource("ch_oath_offer"), SubResource("ch_oath_active"), SubResource("ch_oath_done"), SubResource("ch_brother_ask"), SubResource("ch_brother_turnin"), SubResource("ch_sworn"), SubResource("ch_part"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_intro"]
+script = ExtResource("2_node")
+Id = "intro"
+Text = "dlg.kael.intro"
+Choices = Array[Resource]([SubResource("ch_intro_back")])
+
+[sub_resource type="Resource" id="node_oath_offer"]
+script = ExtResource("2_node")
+Id = "oath_offer"
+Text = "dlg.kael.oath_offer"
+Choices = Array[Resource]([SubResource("ch_oath_accept"), SubResource("ch_oath_decline")])
+
+[sub_resource type="Resource" id="node_oath_accepted"]
+script = ExtResource("2_node")
+Id = "oath_accepted"
+Text = "dlg.kael.oath_accepted"
+Choices = Array[Resource]([SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_oath_active"]
+script = ExtResource("2_node")
+Id = "oath_active"
+Text = "dlg.kael.oath_active"
+Choices = Array[Resource]([SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_oath_done"]
+script = ExtResource("2_node")
+Id = "oath_done"
+Text = "dlg.kael.oath_done"
+Choices = Array[Resource]([SubResource("ch_recruit"), SubResource("ch_already"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_recruited"]
+script = ExtResource("2_node")
+Id = "recruited"
+Text = "dlg.kael.recruited"
+Choices = Array[Resource]([SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_brother_offer"]
+script = ExtResource("2_node")
+Id = "brother_offer"
+Text = "dlg.kael.brother_offer"
+Choices = Array[Resource]([SubResource("ch_brother_accept"), SubResource("ch_brother_later")])
+
+[sub_resource type="Resource" id="node_brother_accepted"]
+script = ExtResource("2_node")
+Id = "brother_accepted"
+Text = "dlg.kael.brother_accepted"
+Choices = Array[Resource]([SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_brother_turnin"]
+script = ExtResource("2_node")
+Id = "brother_turnin"
+Text = "dlg.kael.brother_turnin"
+Choices = Array[Resource]([SubResource("ch_brother_reward"), SubResource("ch_brother_after"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_brother_reward"]
+script = ExtResource("2_node")
+Id = "brother_reward"
+Text = "dlg.kael.brother_reward"
+Choices = Array[Resource]([SubResource("ch_brother_seal")])
+
+[sub_resource type="Resource" id="node_brother_after"]
+script = ExtResource("2_node")
+Id = "brother_after"
+Text = "dlg.kael.brother_after"
+Choices = Array[Resource]([SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_sworn"]
+script = ExtResource("2_node")
+Id = "sworn"
+Text = "dlg.kael.sworn"
+Choices = Array[Resource]([SubResource("ch_intro_back")])
+
+[sub_resource type="Resource" id="node_parted"]
+script = ExtResource("2_node")
+Id = "parted"
+Text = "dlg.kael.parted"
+Choices = Array[Resource]([SubResource("ch_part_confirm")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "dialogue.kael"
+SpeakerName = "companion.kael.name"
+StartNodeId = "root"
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_intro"), SubResource("node_oath_offer"), SubResource("node_oath_accepted"), SubResource("node_oath_active"), SubResource("node_oath_done"), SubResource("node_recruited"), SubResource("node_brother_offer"), SubResource("node_brother_accepted"), SubResource("node_brother_turnin"), SubResource("node_brother_reward"), SubResource("node_brother_after"), SubResource("node_sworn"), SubResource("node_parted")])

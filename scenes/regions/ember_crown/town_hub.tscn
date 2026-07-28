@@ -21,6 +21,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_innkeeper.glb" id="19_npc_inn"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_relic.glb" id="20_relic"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_lamp_post.glb" id="21_lamp"]
+[ext_resource type="Script" path="res://src/Companions/CompanionRecruiterComponent.cs" id="22_recruiter"]
 
 [sub_resource type="NavigationMesh" id="NavMesh_hub"]
 geometry_parsed_geometry_type = 1
@@ -349,6 +350,33 @@ DialogueId = "dialogue.elder"
 script = ExtResource("8_schedule")
 ScheduleId = "schedule.elder"
 
+[node name="Kael" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, 3)
+script = ExtResource("1_entity")
+DisplayName = "Kael Aldemar"
+TemplateId = "npc.kael"
+
+[node name="Mesh" type="MeshInstance3D" parent="Kael"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+
+[node name="Collider" type="StaticBody3D" parent="Kael"]
+
+[node name="Shape" type="CollisionShape3D" parent="Kael/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="Kael"]
+script = ExtResource("6_faction")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="Kael"]
+script = ExtResource("7_dialogue")
+DialogueId = "dialogue.kael"
+
+[node name="Recruiter" type="Node" parent="Kael"]
+script = ExtResource("22_recruiter")
+CompanionId = "companion.kael"
+
 [node name="VendorGoods" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, -8)
 script = ExtResource("1_entity")
@@ -552,6 +580,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3, 0)
 [node name="Model" parent="Waystone" instance=ExtResource("12_waystone")]
 
 [node name="Model" parent="Elder" instance=ExtResource("17_npc_elder")]
+
+[node name="Model" parent="Kael" instance=ExtResource("17_npc_elder")]
 
 [node name="Model" parent="VendorGoods" instance=ExtResource("18_npc_vendor")]
 

@@ -52,6 +52,7 @@ public static class GameIds
     public static class Npcs
     {
         public const string Elder = "npc.elder";
+        public const string Kael = "npc.kael";
     }
 
     /// <summary>Persistent-actor template ids (see PersistentActorRegistry).</summary>
@@ -96,12 +97,15 @@ public static class GameIds
     public static class Quests
     {
         public const string CullGoblins = "quest.cull_goblins";
+        public const string KaelOath = "quest.kael.oath";
+        public const string KaelBrother = "quest.kael.brother";
     }
 
     public static class Dialogues
     {
         public const string Elder = "dialogue.elder";
         public const string VendorStub = "dialogue.vendor_stub";
+        public const string Kael = "dialogue.kael";
     }
 
     /// <summary>Recruitable companion ids (see <c>CompanionRegistry</c>, Phase 32).</summary>
