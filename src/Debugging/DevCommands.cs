@@ -52,7 +52,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("event", "event <id>", "Force a world event.", Event));
         console.Register(new ConsoleCommand("region", "region <list|goto <id>>", "List regions or hard-load into one (Phase 25C).", Region));
         console.Register(new ConsoleCommand("travel", "travel <list|goto <id>>", "List attuned travel nodes or fast-travel to one (Phase 25G).", Travel));
-        console.Register(new ConsoleCommand("companion", "companion <list|recruit <id>|dismiss <id>|stance <id> <follow|hold>>", "Inspect and drive the companion party (Phase 32A).", Companion));
+        console.Register(new ConsoleCommand("companion", "companion <list|recruit <id>|dismiss <id>|stance <id> <follow|hold|engage>|order>", "Inspect and drive the companion party (Phase 32A).", Companion));
         console.Register(new ConsoleCommand("savecheck", "savecheck", "Audit registered saveables for volatile (would-orphan) keys (Phase 25.5A).", SaveCheck));
 
         console.Register(new ConsoleCommand("seed", "seed <n>", "Seed the global RNG (for repro).", Seed));
@@ -566,7 +566,7 @@ public static class DevCommands
             CompanionStance stance = args[2].ToLowerInvariant() switch
             {
                 "hold" => CompanionStance.Hold,
-                "follow" => CompanionStance.Follow,
+                "engage" => CompanionStance.Engage,
                 _ => CompanionStance.Follow,
             };
 
@@ -575,7 +575,12 @@ public static class DevCommands
                 : $"{args[1]} is not in the party";
         }
 
-        return "usage: companion <list|recruit <id>|dismiss <id>|stance <id> <follow|hold>>";
+        if (args[0] == "order")
+        {
+            return roster.Count == 0 ? "party is empty" : $"party order is now {roster.CycleOrder()}";
+        }
+
+        return "usage: companion <list|recruit <id>|dismiss <id>|stance <id> <follow|hold|engage>|order>";
     }
 
     private static string SaveCheck(DevConsole console, string[] args)

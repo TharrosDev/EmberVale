@@ -57,6 +57,9 @@ public partial class CompanionAIComponent : EntityComponent
     /// <summary>Seconds between hostile scans; the chosen target is cached in between.</summary>
     [Export] public float ScanInterval { get; set; } = 0.3f;
 
+    /// <summary>Seconds with nothing to fight before an engage order is considered spent.</summary>
+    [Export] public float EngageStandDownSeconds { get; set; } = 4f;
+
     [ExportGroup("Downed")]
     /// <summary>Seconds a downed companion stays out before standing back up.</summary>
     [Export] public float RecoverySeconds { get; set; } = 12f;
@@ -77,10 +80,17 @@ public partial class CompanionAIComponent : EntityComponent
     private IEntity? _target;
     private double _scanTimer;
     private double _recoveryTimer;
+    private double _idleSinceOrder;
 
     public CompanionState State => _state;
 
     public CompanionStance Stance => _stance;
+
+    /// <summary>Whether an <see cref="CompanionStance.Engage"/> order has run its course — nothing
+    /// hostile left within reach for <see cref="EngageStandDownSeconds"/>. The roster polls this and
+    /// returns the companion to <see cref="CompanionStance.Follow"/>.</summary>
+    public bool EngageOrderSpent =>
+        _stance == CompanionStance.Engage && _idleSinceOrder >= EngageStandDownSeconds;
 
     /// <summary>The companion id of the owning actor (empty when the owner isn't a companion).</summary>
     public string CompanionId => (Entity as CompanionEntity)?.CompanionId ?? string.Empty;
@@ -96,6 +106,7 @@ public partial class CompanionAIComponent : EntityComponent
     public void SetStance(CompanionStance stance, Vector3? holdAnchor = null)
     {
         _stance = stance;
+        _idleSinceOrder = 0d;
         if (stance == CompanionStance.Hold)
         {
             _holdAnchor = holdAnchor ?? (_body != null ? _body.GlobalPosition : Vector3.Zero);
@@ -155,14 +166,22 @@ public partial class CompanionAIComponent : EntityComponent
             _target = null;
         }
 
+        // The standing order stretches the engagement envelope (32B) — the decision rule itself is
+        // the same for every order, only its distances differ.
+        float leash = CompanionOrders.Leash(_stance, LeashRadius);
+
         Vector3 anchor = CurrentAnchor();
         float anchorDistance = HorizontalDistance(_body.GlobalPosition, anchor);
         bool hasTarget = _target != null;
         Vector3 targetPos = hasTarget ? _target!.Body.GlobalPosition : Vector3.Zero;
         float targetDistance = hasTarget ? HorizontalDistance(_body.GlobalPosition, targetPos) : 0f;
 
+        // An engage order is finished when there is nothing left to fight; the roster then returns
+        // the companion to formation, so "sic 'em" doesn't strand it in attack posture forever.
+        _idleSinceOrder = hasTarget ? 0d : _idleSinceOrder + delta;
+
         switch (CompanionDecision.Decide(
-            anchorDistance, hasTarget, targetDistance, LeashRadius, SlotTolerance, AttackRange))
+            anchorDistance, hasTarget, targetDistance, leash, SlotTolerance, AttackRange))
         {
             case CompanionAction.Attack:
                 EnterState(CompanionState.Combat);
@@ -180,7 +199,7 @@ public partial class CompanionAIComponent : EntityComponent
             case CompanionAction.Regroup:
                 // Out past the leash is a break-off (the target is dropped so it doesn't immediately
                 // re-engage on arrival); merely out of formation is an ordinary catch-up.
-                bool leashed = anchorDistance > LeashRadius;
+                bool leashed = anchorDistance > leash;
                 if (leashed)
                 {
                     _target = null;
@@ -237,24 +256,33 @@ public partial class CompanionAIComponent : EntityComponent
     // --- Targeting -----------------------------------------------------------
 
     /// <summary>
-    /// The nearest live hostile within <see cref="EngageRadius"/>. Candidates come from the shared
-    /// targetable-enemy group every hostile joins on spawn, filtered by team — so the companion picks
-    /// fights by the same friendly-fire rule the hitboxes enforce, and never targets the player or
-    /// another companion.
+    /// The hostile to fight this scan. <b>Assist focus first (32B):</b> whatever the player is locked
+    /// onto wins outright — a companion that ignores the thing you are visibly fighting reads as
+    /// broken — and only when the player is not locked on does it fall back to the nearest hostile
+    /// inside its order's scan radius.
+    ///
+    /// Candidates come from the shared targetable-enemy group every hostile joins on spawn, filtered
+    /// by team, so the companion picks fights by the same friendly-fire rule the hitboxes enforce and
+    /// never targets the player or another companion.
     /// </summary>
     private IEntity? PickTarget()
     {
         int team = _combat?.Team ?? 0;
+        float radius = CompanionOrders.EngageRadius(_stance, EngageRadius);
+
+        if (PlayerFocus() is { } focus && IsHostileTo(focus, team) &&
+            HorizontalDistance(_body.GlobalPosition, focus.Body.GlobalPosition) <= radius)
+        {
+            return focus;
+        }
+
         IEntity? best = null;
-        float bestDistance = EngageRadius;
+        float bestDistance = radius;
 
         foreach (Node node in GetTree().GetNodesInGroup(ObjectiveLocator.EnemyGroup))
         {
             if (node is not Node3D candidateBody || !IsInstanceValid(candidateBody) ||
-                EntityNode.FindOwner(node) is not { } candidate ||
-                candidate.GetComponent<CombatComponent>() is not { } candidateCombat ||
-                candidateCombat.Team == team ||
-                candidate.GetComponent<StatsComponent>() is not { IsAlive: true })
+                EntityNode.FindOwner(node) is not { } candidate || !IsHostileTo(candidate, team))
             {
                 continue;
             }
@@ -269,6 +297,15 @@ public partial class CompanionAIComponent : EntityComponent
 
         return best;
     }
+
+    /// <summary>The entity the player is locked onto, if any — the companion's assist focus.</summary>
+    private IEntity? PlayerFocus() => GetPlayer()?.GetComponent<LockOnComponent>()?.Target;
+
+    /// <summary>Whether <paramref name="candidate"/> is a live actor on an opposing team.</summary>
+    private static bool IsHostileTo(IEntity? candidate, int team) =>
+        candidate != null && IsInstanceValid(candidate.Body) &&
+        candidate.GetComponent<CombatComponent>() is { } combat && combat.Team != team &&
+        candidate.GetComponent<StatsComponent>() is { IsAlive: true };
 
     private bool IsLiveHostile(IEntity? entity)
     {

@@ -12,6 +12,11 @@ public readonly record struct CompanionDismissedEvent(string CompanionId, string
 /// <summary>Raised when a companion's standing order changes (follow ⇄ hold).</summary>
 public readonly record struct CompanionStanceChangedEvent(string CompanionId, CompanionStance Stance) : IGameEvent;
 
+/// <summary>Raised when the player issues a party-wide order with the quick command (Phase 32B).
+/// The HUD and the toast feed announce it; per-companion changes still raise
+/// <see cref="CompanionStanceChangedEvent"/>.</summary>
+public readonly record struct CompanionOrderIssuedEvent(CompanionStance Stance) : IGameEvent;
+
 /// <summary>Raised when a companion's AI transitions between behaviour states.</summary>
 public readonly record struct CompanionStateChangedEvent(IEntity Companion, CompanionState State) : IGameEvent;
 

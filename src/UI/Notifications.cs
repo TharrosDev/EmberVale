@@ -46,6 +46,7 @@ public partial class Notifications : CanvasLayer
         bus?.Subscribe<CompanionRecruitedEvent>(OnCompanionRecruited);
         bus?.Subscribe<CompanionDismissedEvent>(OnCompanionDismissed);
         bus?.Subscribe<CompanionDownedEvent>(OnCompanionDowned);
+        bus?.Subscribe<CompanionOrderIssuedEvent>(OnCompanionOrder);
     }
 
     public override void _ExitTree()
@@ -65,6 +66,7 @@ public partial class Notifications : CanvasLayer
         bus.Unsubscribe<CompanionRecruitedEvent>(OnCompanionRecruited);
         bus.Unsubscribe<CompanionDismissedEvent>(OnCompanionDismissed);
         bus.Unsubscribe<CompanionDownedEvent>(OnCompanionDowned);
+        bus.Unsubscribe<CompanionOrderIssuedEvent>(OnCompanionOrder);
     }
 
     private void OnLeveledUp(LeveledUpEvent e) => Push(Loc.TF("notify.levelup", e.NewLevel), UiTheme.Accent);
@@ -101,6 +103,9 @@ public partial class Notifications : CanvasLayer
     private void OnCompanionDowned(CompanionDownedEvent e) =>
         Push(Loc.TF(e.Downed ? "notify.companion_downed" : "notify.companion_recovered", Loc.T(e.NameKey)),
             e.Downed ? UiTheme.Bad : UiTheme.Good);
+
+    private void OnCompanionOrder(CompanionOrderIssuedEvent e) =>
+        Push(Loc.TF("notify.companion_order", Loc.T(CompanionOrders.NameKey(e.Stance))), UiTheme.Accent);
 
     private void Push(string text, Color color)
     {

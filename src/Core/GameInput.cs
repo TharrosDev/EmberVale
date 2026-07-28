@@ -29,6 +29,9 @@ public static class GameInput
     public const string Inventory = "inventory";
     public const string Journal = "journal";
     public const string Map = "map";
+
+    /// <summary>Cycles the party's standing order (follow → hold → engage), Phase 32B.</summary>
+    public const string CompanionCommand = "companion_command";
     public const string Pause = "pause";
 
     /// <summary>Hotbar slots 1-5 (number-row keys) — quick-use/equip an assigned item.</summary>
@@ -105,6 +108,7 @@ public static class GameInput
         Bind(Inventory, new InputEventKey { PhysicalKeycode = Key.I });
         Bind(Journal, new InputEventKey { PhysicalKeycode = Key.J });
         Bind(Map, new InputEventKey { PhysicalKeycode = Key.M });
+        Bind(CompanionCommand, new InputEventKey { PhysicalKeycode = Key.C });
         Bind(Pause, new InputEventKey { PhysicalKeycode = Key.Escape });
         Bind(Attack, new InputEventMouseButton { ButtonIndex = MouseButton.Left });
         Bind(Block, new InputEventMouseButton { ButtonIndex = MouseButton.Right });
@@ -134,6 +138,7 @@ public static class GameInput
         Bind(Journal, new InputEventJoypadButton { ButtonIndex = JoyButton.Back });
         Bind(Map, new InputEventJoypadButton { ButtonIndex = JoyButton.DpadUp });
         Bind(Interact, new InputEventJoypadButton { ButtonIndex = JoyButton.X });
+        Bind(CompanionCommand, new InputEventJoypadButton { ButtonIndex = JoyButton.DpadRight });
 
         Bind("ui_up", new InputEventJoypadMotion { Axis = JoyAxis.LeftY, AxisValue = -1f });
         Bind("ui_down", new InputEventJoypadMotion { Axis = JoyAxis.LeftY, AxisValue = 1f });
