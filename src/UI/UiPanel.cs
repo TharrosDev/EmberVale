@@ -1,7 +1,13 @@
 using Embervale.Core;
+using Embervale.Core.Events;
 using Godot;
 
 namespace Embervale.UI;
+
+/// <summary>Raised whenever a <see cref="UiPanel"/> opens or closes. Lets systems react to the
+/// player's use of the UI (the onboarding teaches the inventory and journal this way) without
+/// polling panels or guessing from raw keypresses.</summary>
+public readonly record struct UiPanelToggledEvent(UiPanel Panel, bool Open) : IGameEvent;
 
 /// <summary>
 /// The reusable panel shell (Phase 30.5F) every UI panel/screen builds on. It owns the
@@ -84,6 +90,7 @@ public abstract partial class UiPanel : CanvasLayer
         }
 
         Shell.Visible = open;
+        EventBus.Instance?.Publish(new UiPanelToggledEvent(this, open));
         if (Modal)
         {
             if (open)

@@ -27,4 +27,16 @@ public enum TutorialStep
 
     /// <summary>Dodge roll.</summary>
     Dodge,
+
+    /// <summary>Talk to someone / use something in the world.</summary>
+    Interact,
+
+    /// <summary>Open the character screen.</summary>
+    Inventory,
+
+    /// <summary>Open the quest journal.</summary>
+    Journal,
+
+    /// <summary>Cast the prepared spell.</summary>
+    Cast,
 }

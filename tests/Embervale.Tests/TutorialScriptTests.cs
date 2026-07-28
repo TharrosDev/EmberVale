@@ -43,13 +43,13 @@ public class TutorialScriptTests
             Assert.True(++guard <= 64, "the script did not terminate");
         }
 
-        Assert.Equal(TutorialScript.Basics.Length, seen.Count);
+        Assert.Equal(TutorialScript.Steps.Length, seen.Count);
     }
 
     [Fact]
     public void LastStepEndsTheSequence()
     {
-        TutorialStep last = TutorialScript.Basics[^1];
+        TutorialStep last = TutorialScript.Steps[^1];
         Assert.Equal(TutorialStep.None, TutorialScript.Next(last));
     }
 
@@ -65,7 +65,7 @@ public class TutorialScriptTests
     [Fact]
     public void EveryTaughtStepHasCopy()
     {
-        foreach (TutorialStep step in TutorialScript.Basics)
+        foreach (TutorialStep step in TutorialScript.Steps)
         {
             Assert.False(string.IsNullOrEmpty(TutorialScript.HintKey(step)), $"{step} has no hint key");
         }
@@ -74,7 +74,7 @@ public class TutorialScriptTests
     [Fact]
     public void EveryStepButLookNamesAnInputAction()
     {
-        foreach (TutorialStep step in TutorialScript.Basics)
+        foreach (TutorialStep step in TutorialScript.Steps)
         {
             string action = TutorialScript.ActionFor(step);
             if (step == TutorialStep.Look)
@@ -91,12 +91,12 @@ public class TutorialScriptTests
     [Fact]
     public void NoStepAppearsTwiceInTheRunningOrder()
     {
-        Assert.Equal(TutorialScript.Basics.Length, new HashSet<TutorialStep>(TutorialScript.Basics).Count);
+        Assert.Equal(TutorialScript.Steps.Length, new HashSet<TutorialStep>(TutorialScript.Steps).Count);
     }
 
     [Fact]
     public void NoneIsNeverTaught()
     {
-        Assert.DoesNotContain(TutorialStep.None, TutorialScript.Basics);
+        Assert.DoesNotContain(TutorialStep.None, TutorialScript.Steps);
     }
 }

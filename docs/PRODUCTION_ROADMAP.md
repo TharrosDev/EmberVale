@@ -1096,7 +1096,7 @@ effects show school-tinted particle swirls, and the corruption appearance now fo
 ART_STYLE per-tier arc (violet veining → ash → char → banked coals). All assets self-authored in
 Blender via the MCP (no external/licensed assets pulled yet).
 
-**Immediate next step: Phase 33C — the rest of the diegetic tutorial (magic/interact/inventory/quests).** Phase 31 (Audio Foundations) is
+**Immediate next step: Phase 33D — the slice stitch (quest chain → guild → Iron King → corruption beat → cliffhanger).** Phase 31 (Audio Foundations) is
 **complete** — mixer + `AudioDirector`, real CC0 SFX, adaptive music, interaction/UI SFX, environmental
 ambience, and surface footsteps (31A–31E, `SESSION_PLAYBOOK.md`). **Phase 32A** landed the companion
 follower core: an anchor/leash `CompanionAIComponent` driving the same locomotion/steering/melee
@@ -1113,8 +1113,8 @@ authored Kael in full — he stands in the Ember Crown with a recruit quest, a l
 new-game seam: creation flows into a narration prologue that plays over the already-built world and
 lifts on the Ember Crown. **33B** added the basics onboarding — look/move/sprint/attack/block/dodge
 taught by watching the player perform them, one self-hiding hint at a time, switchable off in
-Settings. Only the rest of 33 (remaining verbs, slice stitch, polish) now stands between the build
-and **Gate G1 — Vertical Slice**. (Phase 30.5 UI & HUD Overhaul complete.) Remaining audio *production* (real CC0 music/ambience
+Settings, and **33C** completed the set with interact/inventory/journal/cast. Only the slice stitch
+and its polish pass (33D–33E) now stand between the build and **Gate G1 — Vertical Slice**. (Phase 30.5 UI & HUD Overhaul complete.) Remaining audio *production* (real CC0 music/ambience
 tracks, surface tagging) carries into Phase 52.
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —

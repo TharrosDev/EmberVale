@@ -13,9 +13,13 @@ namespace Embervale.Onboarding;
 /// </summary>
 public static class TutorialScript
 {
-    /// <summary>The basics, in teaching order (Phase 33B). The remaining verbs — magic, interact,
-    /// inventory, quests — are appended by 33C.</summary>
-    public static readonly TutorialStep[] Basics =
+    /// <summary>
+    /// Every verb, in teaching order: the basics of moving and fighting (33B), then the verbs a
+    /// player needs the moment they reach a town (33C). Interact comes first of those because it is
+    /// the one a new player needs to make anything happen at all; magic comes last because it is the
+    /// only optional verb in the list.
+    /// </summary>
+    public static readonly TutorialStep[] Steps =
     {
         TutorialStep.Look,
         TutorialStep.Move,
@@ -23,10 +27,14 @@ public static class TutorialScript
         TutorialStep.Attack,
         TutorialStep.Block,
         TutorialStep.Dodge,
+        TutorialStep.Interact,
+        TutorialStep.Inventory,
+        TutorialStep.Journal,
+        TutorialStep.Cast,
     };
 
     /// <summary>The first step of a fresh game.</summary>
-    public static TutorialStep First => Basics.Length > 0 ? Basics[0] : TutorialStep.None;
+    public static TutorialStep First => Steps.Length > 0 ? Steps[0] : TutorialStep.None;
 
     /// <summary>The step after <paramref name="step"/>, or <see cref="TutorialStep.None"/> when the
     /// sequence is finished. An unknown step also ends it, so bad saved state can never strand the
@@ -34,20 +42,20 @@ public static class TutorialScript
     public static TutorialStep Next(TutorialStep step)
     {
         int index = IndexOf(step);
-        if (index < 0 || index + 1 >= Basics.Length)
+        if (index < 0 || index + 1 >= Steps.Length)
         {
             return TutorialStep.None;
         }
 
-        return Basics[index + 1];
+        return Steps[index + 1];
     }
 
     /// <summary>Position of <paramref name="step"/> in the running order, or -1.</summary>
     public static int IndexOf(TutorialStep step)
     {
-        for (int i = 0; i < Basics.Length; i++)
+        for (int i = 0; i < Steps.Length; i++)
         {
-            if (Basics[i] == step)
+            if (Steps[i] == step)
             {
                 return i;
             }
@@ -66,6 +74,10 @@ public static class TutorialScript
         TutorialStep.Attack => "tutorial.attack",
         TutorialStep.Block => "tutorial.block",
         TutorialStep.Dodge => "tutorial.dodge",
+        TutorialStep.Interact => "tutorial.interact",
+        TutorialStep.Inventory => "tutorial.inventory",
+        TutorialStep.Journal => "tutorial.journal",
+        TutorialStep.Cast => "tutorial.cast",
         _ => string.Empty,
     };
 
@@ -78,6 +90,10 @@ public static class TutorialScript
         TutorialStep.Attack => GameInput.Attack,
         TutorialStep.Block => GameInput.Block,
         TutorialStep.Dodge => GameInput.Dodge,
+        TutorialStep.Interact => GameInput.Interact,
+        TutorialStep.Inventory => GameInput.Inventory,
+        TutorialStep.Journal => GameInput.Journal,
+        TutorialStep.Cast => GameInput.Cast,
         _ => string.Empty,
     };
 }

@@ -238,7 +238,12 @@ public partial class PlayerController : EntityComponent
 
         if (Godot.Input.IsActionJustPressed(GameInput.Interact))
         {
-            FocusedInteractable?.Interact(Entity!);
+            if (FocusedInteractable is { } focused)
+            {
+                focused.Interact(Entity!);
+                EventBus.Instance?.Publish(new InteractionPerformedEvent(Entity!, focused));
+            }
+
             _autoPickupTimer = AutoPickupInterval; // brief grace before the held sweep kicks in
         }
         else if (Godot.Input.IsActionPressed(GameInput.Interact))
