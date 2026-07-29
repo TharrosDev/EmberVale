@@ -2288,9 +2288,27 @@ no code) — batch them when momentum is good.
 
 ## Phase 34 — Enemy & Creature Roster `[F/C]`
 
-- [ ] **34A — AI behaviour profiles: data-fy `EnemyAIComponent`** `[F]`
+- [x] **34A — AI behaviour profiles: data-fy `EnemyAIComponent`** `[F]`
   - **Done when:** ranged/caster/shielded/pack-flank/fleeing/ambush are *tunable
     profiles/data*, not one-off subclasses.
+  - **Built:** `AIProfileResource` + `AIProfileDatabase` (`data/ai_profiles/`, ids
+    `ai.*`). Every knob `EnemyAIComponent` used to export moved onto the resource;
+    the component now takes a `ProfileId` and stayed **one class** — each behaviour
+    is a branch gated on a profile number, so they compose (a shielded flanking
+    ambusher is authorable) instead of forking the brain. Seven profiles ship:
+    `brute`, `pack_flanker`, `shielded`, `caster`, `skirmisher`, `ambusher`, `boss`.
+  - **Behaviour knobs:** `StandoffRange`/`KiteDistance` (ranged + caster, generalized
+    from 29.5F's caster branch) · `BlockDuration`/`BlockRecovery` (shielded — a
+    deterministic guard rhythm, since a random block is unlearnable) ·
+    `FlankSpreadDegrees` (pack — members fan alternately off the approach line so a
+    warband surrounds instead of queueing) · `FleeOnSight` (coward) ·
+    `AmbushRange` (lies in wait, never patrols, ignores allies' alerts).
+  - **Deliberately unchanged:** the goblin stays on `ai.brute`, whose values equal the
+    pre-34A defaults, so the vertical slice's combat feel is untouched ahead of the
+    capture. The exotic profiles are authored and driven, awaiting the 34B archetypes.
+  - **Verified:** build clean, 540 tests (19 new pinning `PackFlank` + `GuardCycle`),
+    `--validate` exit 0 with a new profile-coherence check, and a live run confirming
+    all 7 profiles resolve with no fallback warnings.
 - [ ] **34B — Humanoid archetypes (bandit, cultist, soldier, Iron Syndicate)** `[F/C]`
   - **Done when:** each is a factory archetype + `.tres` (attributes/loot/XP/
     profile); all four playable.

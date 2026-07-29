@@ -95,7 +95,49 @@ public static class ContentValidator
         ValidateRaces(issues);
         ValidateLocale(issues);
         ValidateCompanions(issues);
+        ValidateAIProfiles(issues);
         ValidateResourcePaths(issues);
+    }
+
+    /// <summary>AI profiles became authored content in Phase 34A. A profile with an incoherent band
+    /// (kite distance past the standoff range, standoff inside weapon reach) doesn't crash — it just
+    /// produces an enemy that jitters or refuses to close, which is far harder to spot in play than
+    /// in a report.</summary>
+    private static void ValidateAIProfiles(List<string> issues)
+    {
+        foreach (AIProfileResource profile in AIProfileDatabase.All)
+        {
+            string id = profile.Id;
+            if (profile.VisionRange <= 0f)
+            {
+                issues.Add($"ai profile '{id}' has a non-positive vision range; it would never notice the player");
+            }
+
+            if (profile.AttackRange <= 0f)
+            {
+                issues.Add($"ai profile '{id}' has a non-positive attack range");
+            }
+
+            if (profile.IsStandoff && profile.KiteDistance >= profile.StandoffRange)
+            {
+                issues.Add($"ai profile '{id}' kites at {profile.KiteDistance} but only reaches {profile.StandoffRange}; the band is inverted");
+            }
+
+            if (profile.StandoffRange > 0f && !profile.IsStandoff)
+            {
+                issues.Add($"ai profile '{id}' has a standoff range inside its attack range; it will close to melee anyway");
+            }
+
+            if (profile.IsShielded && profile.BlockRecovery <= 0f)
+            {
+                issues.Add($"ai profile '{id}' blocks with no recovery window; it would never lower its guard to attack");
+            }
+
+            if (profile.RetreatHealthFraction is < 0f or > 1f)
+            {
+                issues.Add($"ai profile '{id}' retreat fraction {profile.RetreatHealthFraction} is outside 0..1");
+            }
+        }
     }
 
     /// <summary>Companions became authored content in Phase 32C, so they get the same treatment as
@@ -246,6 +288,7 @@ public static class ContentValidator
         CheckDuplicateIds<FactionResource>("res://data/factions", "faction", r => r.Id, issues);
         CheckDuplicateIds<WorldEventResource>("res://data/world_events", "event", r => r.Id, issues);
         CheckDuplicateIds<RaceResource>("res://data/races", "race", r => r.Id, issues);
+        CheckDuplicateIds<AIProfileResource>("res://data/ai_profiles", "ai profile", r => r.Id, issues);
     }
 
     /// <summary>Loads every <c>.tres</c> in <paramref name="directory"/> and reports empty or

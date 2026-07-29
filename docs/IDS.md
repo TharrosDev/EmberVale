@@ -74,6 +74,7 @@ Pattern column shows the canonical shape; examples are real ids from `data/**`.
 | `relic.*` | `relic.<name>` | — | ⏳ Phase 23/51 (divine relics; likely an `item.*` subcat too — decide at Phase 51) |
 | `race.*` | `race.<name>` | — | ⏳ Phase 26 (`RaceResource`) |
 | `companion.*` | `companion.<name>` | — | ⏳ Phase 32 (`CompanionResource`) |
+| `ai.*` | `ai.<name>` | `ai.pack_flanker` | ✅ enemy AI personality (`AIProfileDatabase`) — Phase 34A |
 
 ### `item.*` subcategories (in use)
 

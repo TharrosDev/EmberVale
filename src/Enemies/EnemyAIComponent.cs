@@ -20,51 +20,35 @@ namespace Embervale.Enemies;
 /// uses. Sight is a range + field-of-view cone gated by a line-of-sight raycast,
 /// with a short-range proximity sense. Spotting the target broadcasts an
 /// <see cref="EnemyAlertedEvent"/> so nearby allies converge (group coordination).
+///
+/// <b>Phase 34A:</b> every tuning knob moved out to an <see cref="AIProfileResource"/> resolved by
+/// <see cref="ProfileId"/>. The brain stayed one class — "ranged", "shielded", "pack-flanker",
+/// "coward" and "ambusher" are branches gated on profile numbers, not subclasses, so an archetype
+/// can combine them freely and a designer retunes any of it without a rebuild.
 /// </summary>
 [GlobalClass]
 public partial class EnemyAIComponent : EntityComponent
 {
-    [ExportGroup("Perception")]
-    [Export] public float VisionRange { get; set; } = 18f;
-    [Export] public float FovDegrees { get; set; } = 110f;
-    [Export] public float ProximityRange { get; set; } = 3f;
-    [Export] public float AlertRadius { get; set; } = 14f;
+    /// <summary>The default personality: straight-ahead melee, i.e. the pre-34A behaviour.</summary>
+    public const string DefaultProfileId = "ai.brute";
 
-    [ExportGroup("Behaviour")]
-    [Export] public float AttackRange { get; set; } = 2.1f;
-    [Export] public float RetreatHealthFraction { get; set; } = 0.25f;
-    [Export] public float MaxRetreatTime { get; set; } = 3.5f;
-    [Export] public float PatrolRadius { get; set; } = 6f;
-    [Export] public float IdleDuration { get; set; } = 2.5f;
-    [Export] public float InvestigateDuration { get; set; } = 6f;
+    /// <summary>Band a caster falls back to when its profile authors no standoff range — the
+    /// pre-34A <c>CastRange</c> default, so an unconverted caster fights exactly as it used to.</summary>
+    private const float DefaultCastRange = 14f;
 
-    /// <summary>Seconds an enemy keeps hunting after being struck before it forgets (so it stands down
-    /// once it's no longer hostile by reputation). Refreshed while actually in combat.</summary>
-    [Export] public float ProvokeMemory { get; set; } = 12f;
-    [Export] public float DespawnDelay { get; set; } = 4f;
+    /// <summary>Which <see cref="AIProfileResource"/> drives this actor (see <c>data/ai_profiles/</c>).
+    /// An unknown id falls back to a default brute profile with a warning, so a content typo degrades
+    /// to "fights plainly" rather than a dead brain.</summary>
+    [Export] public string ProfileId { get; set; } = DefaultProfileId;
 
-    [ExportGroup("Caster")]
-    /// <summary>Max range a caster will cast from; it closes the gap when the target is farther (29.5F).</summary>
-    [Export] public float CastRange { get; set; } = 14f;
+    /// <summary>Directly-assigned profile, for tests and for scenes that would rather inline it than
+    /// go through the database. Wins over <see cref="ProfileId"/> when set.</summary>
+    [Export] public AIProfileResource? Profile { get; set; }
 
-    /// <summary>If the target comes inside this, the caster kites — backs away while still casting.</summary>
-    [Export] public float KiteDistance { get; set; } = 6f;
+    private AIProfileResource _profile = AIProfileResource.CreateDefault();
 
-    /// <summary>Radius a support caster scans for a wounded ally to heal/buff.</summary>
-    [Export] public float AllySupportRange { get; set; } = 12f;
-
-    /// <summary>Heal an ally (or itself) whose health falls below this fraction.</summary>
-    [Export] public float AllyHealThreshold { get; set; } = 0.6f;
-
-    [ExportGroup("Level of Detail")]
-    /// <summary>Beyond this distance from the player the AI ticks rarely (and casts no shadow).</summary>
-    [Export] public float ActiveDistance { get; set; } = 45f;
-
-    /// <summary>Seconds between ticks while sleeping (far from the player).</summary>
-    [Export] public float SleepInterval { get; set; } = 0.5f;
-
-    /// <summary>Seconds between line-of-sight raycasts; perception is cached in between.</summary>
-    [Export] public float PerceptionInterval { get; set; } = 0.15f;
+    /// <summary>The resolved profile driving this actor.</summary>
+    public AIProfileResource ActiveProfile => _profile;
 
     private CharacterBody3D _body = null!;
     private StatsComponent? _stats;
@@ -85,6 +69,10 @@ public partial class EnemyAIComponent : EntityComponent
     private Vector3 _home;
     private Vector3 _lastKnownPos;
     private Vector3 _patrolTarget;
+
+    // Guard rhythm (shielded profiles) + this actor's slot in the pack fan-out.
+    private double _combatElapsed;
+    private int _packSlot;
 
     // LOD bookkeeping.
     private double _sleepTimer;
@@ -108,6 +96,12 @@ public partial class EnemyAIComponent : EntityComponent
             return;
         }
 
+        _profile = ResolveProfile();
+
+        // A stable per-instance slot, so members of a pack fan to different sides of the target and
+        // keep that side for their whole life rather than jittering between approaches each tick.
+        _packSlot = (int)(body.GetInstanceId() % 5UL);
+
         _body = body;
         _stats = Entity.GetComponent<StatsComponent>();
         _weapon = Entity.GetComponent<MeleeWeaponComponent>();
@@ -128,6 +122,24 @@ public partial class EnemyAIComponent : EntityComponent
     {
         EventBus.Instance?.Unsubscribe<EnemyAlertedEvent>(OnEnemyAlerted);
         EventBus.Instance?.Unsubscribe<DamageDealtEvent>(OnDamaged);
+    }
+
+    /// <summary>An inline <see cref="Profile"/> wins; otherwise the id is looked up in the database.
+    /// A miss warns once and falls back to a brute so the actor still fights.</summary>
+    private AIProfileResource ResolveProfile()
+    {
+        if (Profile != null)
+        {
+            return Profile;
+        }
+
+        if (AIProfileDatabase.Get(ProfileId) is { } found)
+        {
+            return found;
+        }
+
+        Log.Warn($"AI profile '{ProfileId}' is not registered; falling back to '{DefaultProfileId}'.");
+        return AIProfileResource.CreateDefault();
     }
 
     public override void _PhysicsProcess(double delta)
@@ -151,7 +163,7 @@ public partial class EnemyAIComponent : EntityComponent
                 return;
             }
 
-            _sleepTimer = SleepInterval;
+            _sleepTimer = _profile.SleepInterval;
         }
 
         _stateTimer += delta;
@@ -162,7 +174,7 @@ public partial class EnemyAIComponent : EntityComponent
         {
             if (_state == EnemyState.Combat)
             {
-                _provokeTimer = ProvokeMemory;
+                _provokeTimer = _profile.ProvokeMemory;
             }
             else
             {
@@ -212,7 +224,8 @@ public partial class EnemyAIComponent : EntityComponent
             return;
         }
 
-        if (_stateTimer >= IdleDuration)
+        // An ambusher holds its spot indefinitely — patrolling would walk it out of its own trap.
+        if (!_profile.IsAmbusher && _stateTimer >= _profile.IdleDuration)
         {
             EnterState(EnemyState.Patrol);
         }
@@ -250,9 +263,9 @@ public partial class EnemyAIComponent : EntityComponent
         else
         {
             Stand(delta);
-            if (_stateTimer >= InvestigateDuration)
+            if (_stateTimer >= _profile.InvestigateDuration)
             {
-                EnterState(EnemyState.Patrol);
+                EnterState(_profile.IsAmbusher ? EnemyState.Idle : EnemyState.Patrol);
             }
         }
     }
@@ -280,6 +293,7 @@ public partial class EnemyAIComponent : EntityComponent
         }
 
         _lastKnownPos = pos;
+        _combatElapsed += delta;
 
         if (LowHealth())
         {
@@ -287,23 +301,65 @@ public partial class EnemyAIComponent : EntityComponent
             return;
         }
 
-        // A caster holds the cast band and kites instead of charging into melee (Phase 29.5F).
-        if (_casting != null)
+        // A standoff fighter (caster now, archer later) holds a band and kites instead of charging
+        // into melee (Phase 29.5F, generalized in 34A).
+        if (_casting != null || _profile.IsStandoff)
         {
-            TickCasterCombat(pos, delta);
+            TickStandoffCombat(pos, delta);
             return;
         }
 
         FaceTowards(pos);
         float dist = HorizontalDistance(_body.GlobalPosition, pos);
-        if (dist > AttackRange)
+        if (dist > _profile.AttackRange)
         {
-            MoveTowards(pos, delta, sprint: true, stopDistance: AttackRange * 0.85f);
+            SetGuard(false);
+            // Pack-flankers approach off-axis so a warband surrounds rather than queues (34A).
+            MoveTowards(FlankApproach(pos), delta, sprint: true, stopDistance: _profile.AttackRange * 0.85f);
         }
         else
         {
             Stand(delta);
-            _weapon?.TryAttack();
+
+            // Shielded profiles alternate guard-up / swing on a readable rhythm; everyone else
+            // just swings (IsUp is always false with no block duration authored).
+            bool guard = GuardCycle.IsUp(_combatElapsed, _profile.BlockDuration, _profile.BlockRecovery);
+            SetGuard(guard);
+            if (!guard)
+            {
+                _weapon?.TryAttack();
+            }
+        }
+    }
+
+    /// <summary>The point this actor should close on: the target itself for a lone brute, or a spot
+    /// swung off the approach line by its pack slot so the group arrives from several sides.</summary>
+    private Vector3 FlankApproach(Vector3 targetPos)
+    {
+        float angle = PackFlank.ApproachAngle(_packSlot, _profile.FlankSpreadDegrees);
+        if (angle == 0f)
+        {
+            return targetPos;
+        }
+
+        Vector3 fromTarget = _body.GlobalPosition - targetPos;
+        fromTarget.Y = 0f;
+        if (fromTarget.LengthSquared() < 0.01f)
+        {
+            return targetPos;
+        }
+
+        // Swing our own bearing around the target, then stand off at weapon reach on that bearing.
+        Vector3 bearing = fromTarget.Normalized().Rotated(Vector3.Up, Mathf.DegToRad(angle));
+        return targetPos + (bearing * _profile.AttackRange * 0.9f);
+    }
+
+    /// <summary>Raises or drops the guard, guarding against writing to a missing combat component.</summary>
+    private void SetGuard(bool up)
+    {
+        if (_combat != null && _combat.IsBlocking != up)
+        {
+            _combat.IsBlocking = up;
         }
     }
 
@@ -327,22 +383,32 @@ public partial class EnemyAIComponent : EntityComponent
             TryCasterCast();
         }
 
-        if (_stateTimer >= MaxRetreatTime)
+        if (_stateTimer >= _profile.MaxRetreatTime)
         {
+            // A coward never rallies: it goes back to its business and flees again on the next
+            // sighting. Everyone else re-engages once the panic passes.
+            if (_profile.FleeOnSight)
+            {
+                EnterState(_profile.IsAmbusher ? EnemyState.Idle : EnemyState.Patrol);
+                return;
+            }
+
             EnterState(player != null ? EnemyState.Combat : EnemyState.Investigate);
         }
     }
 
-    // --- Caster behaviour (Phase 29.5F) -------------------------------------
+    // --- Standoff behaviour (Phase 29.5F, generalized 34A) ------------------
 
-    /// <summary>Caster combat: hold the cast band (approach when too far, kite when too close), face the
-    /// target so the cast aims true, and fire whatever's ready. Reuses the player's
+    /// <summary>Standoff combat: hold the band (approach when too far, kite when too close), face the
+    /// target so the attack aims true, and fire whatever's ready. Reuses the player's
     /// <see cref="SpellcastingComponent"/> — no parallel casting system.</summary>
-    private void TickCasterCombat(Vector3 targetPos, double delta)
+    private void TickStandoffCombat(Vector3 targetPos, double delta)
     {
+        SetGuard(false);
         FaceTowards(targetPos);
         float dist = HorizontalDistance(_body.GlobalPosition, targetPos);
-        switch (CasterDecision.Move(dist, KiteDistance, CastRange))
+        float band = _profile.StandoffRange > 0f ? _profile.StandoffRange : DefaultCastRange;
+        switch (CasterDecision.Move(dist, _profile.KiteDistance, band))
         {
             case CasterMove.Kite:
                 Vector3 away = _body.GlobalPosition - targetPos;
@@ -353,7 +419,7 @@ public partial class EnemyAIComponent : EntityComponent
                 MoveTowards(flee, delta, sprint: true, stopDistance: 0.1f);
                 break;
             case CasterMove.Approach:
-                MoveTowards(targetPos, delta, sprint: false, stopDistance: CastRange * 0.9f);
+                MoveTowards(targetPos, delta, sprint: false, stopDistance: band * 0.9f);
                 break;
             default:
                 Stand(delta);
@@ -433,12 +499,12 @@ public partial class EnemyAIComponent : EntityComponent
     {
         int team = _combat?.Team ?? 0;
         IEntity? best = null;
-        float lowest = AllyHealThreshold;
+        float lowest = _profile.AllyHealThreshold;
 
         foreach (Node node in GetTree().GetNodesInGroup(Quests.ObjectiveLocator.EnemyGroup))
         {
             if (node is not Node3D body ||
-                HorizontalDistance(_body.GlobalPosition, body.GlobalPosition) > AllySupportRange ||
+                HorizontalDistance(_body.GlobalPosition, body.GlobalPosition) > _profile.AllySupportRange ||
                 EntityNode.FindOwner(node) is not { } ally ||
                 ally.GetComponent<CombatComponent>()?.Team != team)
             {
@@ -491,15 +557,29 @@ public partial class EnemyAIComponent : EntityComponent
         }
 
         PlayerCharacter? player = GetLivePlayer();
-        if (player != null && CanSeePlayer(player, out Vector3 pos))
+        if (player == null || !CanSeePlayer(player, out Vector3 pos))
         {
-            _lastKnownPos = pos;
-            EventBus.Instance?.Publish(new EnemyAlertedEvent(Entity!, pos));
-            EnterState(EnemyState.Combat);
-            return true;
+            return false;
         }
 
-        return false;
+        // An ambusher sees the target long before it springs: it holds until they walk into the trap.
+        if (_profile.IsAmbusher &&
+            HorizontalDistance(_body.GlobalPosition, pos) > _profile.AmbushRange)
+        {
+            return false;
+        }
+
+        _lastKnownPos = pos;
+
+        // A silent profile (AlertRadius 0 — the ambusher's default) doesn't give the pack away.
+        if (_profile.AlertRadius > 0f)
+        {
+            EventBus.Instance?.Publish(new EnemyAlertedEvent(Entity!, pos));
+        }
+
+        // A coward's answer to being seen is to run, not to fight.
+        EnterState(_profile.FleeOnSight ? EnemyState.Retreat : EnemyState.Combat);
+        return true;
     }
 
     /// <summary>Perception, throttled: the (relatively costly) sight check — FOV + line-of-sight
@@ -510,7 +590,7 @@ public partial class EnemyAIComponent : EntityComponent
         if (_perceptionTimer <= 0d)
         {
             _cachedCanSee = ComputeCanSeePlayer(player, out _cachedSeenPos);
-            _perceptionTimer = PerceptionInterval;
+            _perceptionTimer = _profile.PerceptionInterval;
         }
 
         seenPosition = _cachedSeenPos;
@@ -526,17 +606,17 @@ public partial class EnemyAIComponent : EntityComponent
         Vector3 flat = playerPos - selfPos;
         flat.Y = 0f;
         float dist = flat.Length();
-        if (dist > VisionRange || dist < 0.001f)
+        if (dist > _profile.VisionRange || dist < 0.001f)
         {
-            return dist <= VisionRange; // standing on the player still counts as seen
+            return dist <= _profile.VisionRange; // standing on the player still counts as seen
         }
 
         // Outside the proximity bubble the target must be within the view cone.
-        if (dist > ProximityRange)
+        if (dist > _profile.ProximityRange)
         {
             Vector3 forward = -_body.GlobalTransform.Basis.Z;
             forward.Y = 0f;
-            if (!EnemyPerception.InViewCone(forward, flat, FovDegrees))
+            if (!EnemyPerception.InViewCone(forward, flat, _profile.FovDegrees))
             {
                 return false;
             }
@@ -600,7 +680,7 @@ public partial class EnemyAIComponent : EntityComponent
         }
 
         _provoked = true;
-        _provokeTimer = ProvokeMemory;
+        _provokeTimer = _profile.ProvokeMemory;
         if (_state is EnemyState.Idle or EnemyState.Patrol or EnemyState.Investigate)
         {
             _lastKnownPos = attacker.GlobalPosition;
@@ -615,8 +695,15 @@ public partial class EnemyAIComponent : EntityComponent
             return;
         }
 
+        // An ambusher holds its trap even when the pack starts shouting — walking to the noise is
+        // exactly what would give the ambush away.
+        if (_profile.IsAmbusher)
+        {
+            return;
+        }
+
         if (_state is EnemyState.Idle or EnemyState.Patrol &&
-            HorizontalDistance(_body.GlobalPosition, e.Position) <= AlertRadius)
+            HorizontalDistance(_body.GlobalPosition, e.Position) <= _profile.AlertRadius)
         {
             _lastKnownPos = e.Position;
             EnterState(EnemyState.Investigate);
@@ -693,13 +780,23 @@ public partial class EnemyAIComponent : EntityComponent
         _state = next;
         _stateTimer = 0d;
 
+        // The guard only belongs up in melee — leaving combat (or dying) must never strand a corpse
+        // or a patrolling enemy in a permanent block.
+        if (next != EnemyState.Combat)
+        {
+            SetGuard(false);
+        }
+
         switch (next)
         {
+            case EnemyState.Combat:
+                _combatElapsed = 0d;   // every fight starts on the same beat of the guard rhythm
+                break;
             case EnemyState.Patrol:
                 PickPatrolTarget();
                 break;
             case EnemyState.Dead:
-                _deathTimer = DespawnDelay;
+                _deathTimer = _profile.DespawnDelay;
                 break;
         }
 
@@ -709,13 +806,13 @@ public partial class EnemyAIComponent : EntityComponent
     private void PickPatrolTarget()
     {
         float angle = GD.Randf() * Mathf.Tau;
-        float radius = Mathf.Sqrt(GD.Randf()) * PatrolRadius;
+        float radius = Mathf.Sqrt(GD.Randf()) * _profile.PatrolRadius;
         _patrolTarget = _home + new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius);
     }
 
     private bool LowHealth()
     {
-        return _stats != null && _stats.GetNormalized(StatType.Health) < RetreatHealthFraction;
+        return _stats != null && _stats.GetNormalized(StatType.Health) < _profile.RetreatHealthFraction;
     }
 
     /// <summary>True when no player exists or the player is beyond <see cref="ActiveDistance"/>.</summary>
@@ -727,7 +824,7 @@ public partial class EnemyAIComponent : EntityComponent
             return true;
         }
 
-        return _body.GlobalPosition.DistanceSquaredTo(player.GlobalPosition) > ActiveDistance * ActiveDistance;
+        return _body.GlobalPosition.DistanceSquaredTo(player.GlobalPosition) > _profile.ActiveDistance * _profile.ActiveDistance;
     }
 
     private void SetShadow(bool on)

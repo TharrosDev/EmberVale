@@ -42,6 +42,18 @@ public static class GameIds
         public const string AshenAcolyte = "enemy.ashen_acolyte";
     }
 
+    /// <summary>Enemy AI personality ids (see <c>AIProfileDatabase</c> / data/ai_profiles, Phase 34A).</summary>
+    public static class AiProfiles
+    {
+        public const string Brute = "ai.brute";
+        public const string PackFlanker = "ai.pack_flanker";
+        public const string Shielded = "ai.shielded";
+        public const string Caster = "ai.caster";
+        public const string Skirmisher = "ai.skirmisher";
+        public const string Ambusher = "ai.ambusher";
+        public const string Boss = "ai.boss";
+    }
+
     public static class Factions
     {
         public const string Goblins = "faction.goblins";

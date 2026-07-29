@@ -532,6 +532,18 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    F1 console. The roster spawns the actor into a formation slot, tracks loyalty, persists the party,
    and reconciles it back on load.
 
+**A new enemy AI personality** (Phase 34A)
+1. Author `data/ai_profiles/Xxx.tres` (`script_class="AIProfileResource"`): unique `Id`
+   (`ai.*`) plus the knobs you want off the defaults — perception (`VisionRange`,
+   `FovDegrees`, `AlertRadius`), melee (`AttackRange`, `FlankSpreadDegrees`), standoff
+   (`StandoffRange`, `KiteDistance`), guard (`BlockDuration`, `BlockRecovery`), nerve
+   (`RetreatHealthFraction`, `FleeOnSight`), and `AmbushRange`.
+2. Auto-indexed by `AIProfileDatabase`. Point a factory's
+   `EnemyAIComponent { ProfileId = "ai.xxx" }` at it. No code change — the behaviours are
+   branches in the one brain, gated on these numbers, so they combine freely (a shielded
+   flanking ambusher is just three knobs). A zeroed knob turns its behaviour off; an
+   unknown id warns and falls back to `ai.brute`.
+
 **A new dev-console command**
 1. In `DevCommands.RegisterAll`, `console.Register(new ConsoleCommand(name, usage, summary,
    (console, args) => ...))`. Resolve the player / a world director via the `ServiceLocator`
