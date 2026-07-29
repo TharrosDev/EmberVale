@@ -2242,8 +2242,15 @@ no code) — batch them when momentum is good.
     `UiPanelToggledEvent` (any `UiPanel` open/close, reusable beyond onboarding) —
     plus the existing `SpellCastEvent`. Still nothing blocks input, and the Settings
     toggle / `tutorial skip` end the whole thing at any point.
-- [ ] **33D — Slice stitch: quest chain → guild taste → Iron King → corruption beat → cliffhanger** `[C/P]`
+- [~] **33D — Slice stitch: quest chain → guild taste → Iron King → corruption beat → cliffhanger** `[C/P]`
   - **Done when:** 30–60 min plays as one continuous, polished arc.
+  - **Built:** the brazier is quest-gated with a prompt that says why; the elder names Kael once the
+    bounty is done and carries a corruption warning before the arena; regions declare an
+    `UnlockFlagId` so the Frostfang door stays out of the starting square until the Iron King falls;
+    `SliceDirector` + `ClosingSequence` end the arc on a card that branches on whether the ember was
+    taken; the auto-seeded sandbox quest is gone so the journal starts empty; the elder's
+    conversation moved off literal strings. `DialogueContentTests` now validates **every** graph.
+  - **Outstanding:** the arc has never been played — see `VERTICAL_SLICE_PLAN.md` §5.2.
   - **Plan:** see [`VERTICAL_SLICE_PLAN.md`](VERTICAL_SLICE_PLAN.md) — the locked design decisions
     (warband chain as spine with Kael woven through, hard-gated boss, closing card + Frostfang
     portal), the eight beats, the seven gaps to close, and a task-by-task build order with

@@ -318,6 +318,11 @@ public partial class GameBootstrap : Node3D
         AddChild(_opening);
         ServiceLocator.Instance?.Register(_opening);
 
+        // The slice's ending (33D): the director watches for the player leaving through the
+        // Frostfang door after the Iron King has fallen, and the closing card answers it.
+        AddChild(new Embervale.Narrative.SliceDirector { Name = "Slice" });
+        AddChild(new ClosingSequence());
+
         // Deep-debugging tools (Phase 20): dev console (F1), profiler (F4), and a standing
         // world-integrity checker that periodically validates runtime invariants.
         _console = new DevConsole();
@@ -509,7 +514,15 @@ public partial class GameBootstrap : Node3D
             });
             portal.AddChild(collider);
 
-            portal.AddChild(new RegionTransitionComponent { Name = "Transition", TargetRegionId = neighbourId });
+            portal.AddChild(new RegionTransitionComponent
+            {
+                Name = "Transition",
+                TargetRegionId = neighbourId,
+
+                // The destination decides what unlocks it (33D). Frostfang carries the Iron King's
+                // defeat flag, which keeps the slice's cliffhanger door out of the starting square.
+                RequiredFlagId = neighbour.UnlockFlagId,
+            });
             AddChild(portal);
             _portals.Add(portal);
         }
@@ -878,11 +891,10 @@ public partial class GameBootstrap : Node3D
         QuestLogComponent? questLog = _player.GetComponent<QuestLogComponent>();
         _questLogPanel.SetQuestLog(questLog);
 
-        // Seed a starter quest so the journal has content the moment you press Play.
-        if (questLog != null && QuestDatabase.Get(GameIds.Quests.CullGoblins) is { } starter)
-        {
-            questLog.StartQuest(starter);
-        }
+        // No seeded quest (Phase 33D). The sandbox used to auto-start `quest.cull_goblins` so the
+        // journal had content on Play; in the slice the first quest is the guild board's bounty,
+        // earned by walking into town and talking to someone. A journal that is already full before
+        // the player has done anything undercuts the whole opening.
 
         Log.Info($"Spawned player at {_player.Position}. Facing the training dummy.");
     }
