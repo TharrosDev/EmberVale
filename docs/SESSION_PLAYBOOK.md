@@ -2255,9 +2255,18 @@ no code) — batch them when momentum is good.
     (warband chain as spine with Kael woven through, hard-gated boss, closing card + Frostfang
     portal), the eight beats, the seven gaps to close, and a task-by-task build order with
     acceptance criteria.
-- [ ] **33E — Slice polish + external-build capture pass** `[P]`
+- [~] **33E — Slice polish + external-build capture pass** `[P]`
   - **Done when:** a capture-ready external build candidate exists; rough edges in
     the slice path are gone.
+  - **Built:** `BuildProfile` gates every piece of sandbox scaffolding — the training
+    dummy, debug camp, loose loot, spell tome, F1/F3/F4 overlays and the single-key
+    cheats — so an **exported build is the slice automatically**, with `--capture`
+    giving the same experience from the editor. `export_presets.cfg` adds Windows and
+    Linux presets. Capture checklist and the known cosmetic gaps are documented in
+    `VERTICAL_SLICE_PLAN.md` §8.
+  - **Outstanding:** the presets have never been opened in Godot's export dialog; the
+    polish half needs the §5.2 play-through; Kael still wears the player's body
+    (§8.5 — needs a local session with the Blender MCP).
 
 > **🚩 Gate G1 — Vertical Slice.** A stranger plays 30–60 min that looks and feels
 > shipped: real art/audio, weighty combat, a companion, a boss, the corruption

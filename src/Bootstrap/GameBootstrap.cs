@@ -50,9 +50,10 @@ public partial class GameBootstrap : Node3D
     private static readonly Vector3 PlayerSpawn = new(0f, 1.2f, 5f);
 
     private GameHud _gameHud = null!;
-    private DebugHud _hud = null!;
-    private DevConsole _console = null!;
-    private ProfilerOverlay _profiler = null!;
+    // Developer overlays: null in a capture build (Phase 33E), so every use is null-conditional.
+    private DebugHud? _hud;
+    private DevConsole? _console;
+    private ProfilerOverlay? _profiler;
     private InventoryPanel _inventoryPanel = null!;
     private HotbarPanel _hotbarPanel = null!;
     private QuestLogPanel _questLogPanel = null!;
@@ -305,8 +306,14 @@ public partial class GameBootstrap : Node3D
         // developer panel toggled with F3. Toasts and the pause menu round out the game UI.
         _gameHud = new GameHud();
         AddChild(_gameHud);
-        _hud = new DebugHud();
-        AddChild(_hud);
+
+        // The DebugHud is a developer overlay (F3), not part of the game's UI — a capture build
+        // never builds it (Phase 33E).
+        if (BuildProfile.ShowDeveloperTools)
+        {
+            _hud = new DebugHud();
+            AddChild(_hud);
+        }
         AddChild(new Notifications());
         AddChild(new CombatFeedbackOverlay()); // Phase 29D: crit/block/stagger/parry screen flash
         AddChild(new PauseMenu());
@@ -324,12 +331,17 @@ public partial class GameBootstrap : Node3D
         AddChild(new ClosingSequence());
 
         // Deep-debugging tools (Phase 20): dev console (F1), profiler (F4), and a standing
-        // world-integrity checker that periodically validates runtime invariants.
-        _console = new DevConsole();
-        AddChild(_console);
-        _profiler = new ProfilerOverlay();
-        AddChild(_profiler);
-        AddChild(new WorldIntegrityChecker());
+        // world-integrity checker that periodically validates runtime invariants. All three are
+        // developer surfaces; a capture build ships without them (Phase 33E). The integrity checker
+        // goes too — it exists to shout at the developer, and it costs a scan every five seconds.
+        if (BuildProfile.ShowDeveloperTools)
+        {
+            _console = new DevConsole();
+            AddChild(_console);
+            _profiler = new ProfilerOverlay();
+            AddChild(_profiler);
+            AddChild(new WorldIntegrityChecker());
+        }
 
         // Autosave cadence (Phase 24D) on top of the slot system: rotates through auto1..auto3 on a
         // timer / quest-completion / level-up, never touching the player's manual slot. Registered so
@@ -357,14 +369,14 @@ public partial class GameBootstrap : Node3D
         // registered in the ServiceLocator when their schedules first read the time.
         _clock = new WorldClock { Name = "WorldClock" };
         AddChild(_clock);
-        _hud.SetClock(_clock);
+        _hud?.SetClock(_clock);
         _gameHud.SetClock(_clock);
 
         // Weather before the sky so the SkyController can read the active state on its
         // first frame; the sky drives the (already-built) sun + environment.
         _weather = new WeatherDirector { Name = "Weather" };
         AddChild(_weather);
-        _hud.SetWeather(_weather);
+        _hud?.SetWeather(_weather);
         _gameHud.SetWeather(_weather);
 
         _sky = new SkyController { Name = "Sky", Sun = _sun, Environment = _environment };
@@ -378,13 +390,27 @@ public partial class GameBootstrap : Node3D
         AddChild(_persistentSpawns);
 
         SubscribeEvents();
-        SpawnDummy();
+
+        // Sandbox test props (Phase 33E): the training dummy, the debug goblin camp, the loose loot
+        // pile and the spell tome on its plinth were how the systems got exercised before there was
+        // content. They are still the fastest way to do that — but a stranger playing the slice must
+        // never see a training dummy in the town square, so a capture build places none of them.
+        if (BuildProfile.SpawnSandboxContent)
+        {
+            SpawnDummy();
+        }
+
         SpawnPlayer();
-        SpawnEnemyCamp();
-        SpawnLoot();
+
+        if (BuildProfile.SpawnSandboxContent)
+        {
+            SpawnEnemyCamp();
+            SpawnLoot();
+            SpawnSpellTome();
+        }
+
         SpawnEncounterDirector();
         SpawnPersistentActors();
-        SpawnSpellTome();
 
         // Onboarding (Phase 33B): watches the player perform the basic verbs and shows one hint at a
         // time. Never blocks input; honours the Settings toggle; persists so a reload doesn't
@@ -672,6 +698,14 @@ public partial class GameBootstrap : Node3D
             return;
         }
 
+        // Quick save/load stay in every build — they are player conveniences. The cheats below them
+        // are developer affordances and a capture build must not respond to a stray H or X (33E).
+        if (!BuildProfile.ShowDeveloperTools &&
+            key.Keycode is not (Key.F5 or Key.F9 or Key.Escape))
+        {
+            return;
+        }
+
         switch (key.Keycode)
         {
             case Key.H:
@@ -700,13 +734,13 @@ public partial class GameBootstrap : Node3D
                 if (SaveManager.Instance is { } loader) { loader.LoadGame(loader.ActiveSlot); }
                 break;
             case Key.F1:
-                _console.Toggle();
+                _console?.Toggle();
                 break;
             case Key.F3:
-                _hud.Toggle();
+                _hud?.Toggle();
                 break;
             case Key.F4:
-                _profiler.Toggle();
+                _profiler?.Toggle();
                 break;
             // Esc is owned by the PauseMenu (it opens the pause menu and pauses the game).
         }
@@ -792,7 +826,7 @@ public partial class GameBootstrap : Node3D
 
         var events = new WorldEventDirector { Name = "WorldEvents" };
         AddChild(events);
-        _hud.SetWorldEvents(events);
+        _hud?.SetWorldEvents(events);
         _gameHud.SetWorldEvents(events);
         Log.Info("World-event director online — raids, caches and champion hunts with rewards.");
     }
@@ -865,7 +899,7 @@ public partial class GameBootstrap : Node3D
 
         _dummy = dummy;
         ServiceLocator.Instance?.Register(dummy);
-        _hud.SetTarget(dummy);
+        _hud?.SetTarget(dummy);
 
         Log.Info($"Spawned '{dummy.DisplayName}' — max health {stats.GetValue(StatType.Health):0} (base 100 +20% blessing).");
     }
@@ -875,7 +909,7 @@ public partial class GameBootstrap : Node3D
         _player = PlayerFactory.Create(PlayerSpawn, _activeProfile, _applyStartingGrants);
         AddChild(_player);
         ServiceLocator.Instance?.Register(_player);
-        _hud.SetPlayer(_player);
+        _hud?.SetPlayer(_player);
         _gameHud.SetPlayer(_player);
         _inventoryPanel.SetInventory(_player.GetComponent<InventoryComponent>());
         _inventoryPanel.SetEquipment(_player.GetComponent<EquipmentComponent>());

@@ -404,3 +404,91 @@ ones need the engine.
 
 Then 33E: polish, art/audio gaps (§6.6), the sandbox cleanup (§6.1), and the external-build capture
 pass — and 🚩 **Gate G1**.
+
+---
+
+## 8. Phase 33E — polish & the capture build
+
+### 8.1 The build profile (built)
+
+The project grew up as a sandbox, and that scaffolding was still in the slice path: a training dummy
+in the square, a debug goblin camp, a loose loot pile, a spell tome on a plinth, the F1 console, the
+F3 debug HUD, the F4 profiler, and single-key cheats (`H` heal, `R` respawn, `X` level, `P`
+corruption, `K` reputation). None of it belongs in front of a stranger.
+
+`BuildProfile` (`src/Core/BuildProfile.cs`) gates all of it on one question:
+
+| Run | Sandbox props | Developer tools | Cheat keys |
+| --- | ------------- | --------------- | ---------- |
+| Editor / `dotnet` debug run | ✅ present | ✅ present | ✅ active |
+| **Exported build** | ❌ | ❌ | ❌ |
+| Dev run with `--capture` | ❌ | ❌ | ❌ |
+
+An exported build is therefore the slice **automatically**, with no flag to remember and no risk of
+shipping a capture with a training dummy in shot. `--capture` gives the same experience from the
+editor, so the capture build can be checked without exporting first:
+
+```
+godot --path . -- --capture
+```
+
+`F5`/`F9` quick save/load stay in every build — they are player conveniences, not developer ones.
+The `WorldIntegrityChecker` goes with the developer tools: it exists to shout at the developer, and
+it costs a scan every five seconds.
+
+### 8.2 Export presets (authored, unverified)
+
+`export_presets.cfg` defines **Windows Desktop** and **Linux** x86_64 presets writing to `build/`
+(already git-ignored), excluding `tests/`, `docs/` and markdown from the pack.
+
+> ⚠️ **These were authored without Godot.** They follow the standard 4.x preset format but have not
+> been opened in the export dialog. Before trusting them: install the **.NET export templates** for
+> 4.7 (`Editor → Manage Export Templates`), open `Project → Export`, confirm both presets load
+> without complaint, and export once. Expect to adjust `application/icon` — no `.ico` exists yet.
+
+### 8.3 The capture checklist
+
+Run the game with `--capture` (or from an exported build) and confirm:
+
+- [ ] No training dummy, debug camp, loose loot pile or spell-tome plinth anywhere in the hub.
+- [ ] `F1`, `F3`, `F4` do nothing; `H`/`R`/`X`/`P`/`K` do nothing.
+- [ ] The journal is empty on a new game until the guild board bounty is taken.
+- [ ] No Frostfang portal in the starting square.
+- [ ] The prologue plays, is skippable, and lifts on the town.
+- [ ] Tutorial hints appear and clear; they can be switched off in Settings.
+- [ ] Frame time is stable in the hub and the arena (check on the min-spec target, not the dev box).
+- [ ] Audio: music transitions between explore/combat/boss; no missing-cue warnings in the log.
+
+### 8.4 Known cosmetic gaps at capture time
+
+These are **known and deliberate**, not oversights. Decide which are acceptable in a capture rather
+than discovering them in the footage:
+
+| Gap | Detail |
+| --- | ------ |
+| **Kael wears the player's body** | `data/companions/Kael.tres` points `ModelPath` at `chr_player_base.glb`. In the slice you walk beside your own double. Needs an authored model — see §8.5. |
+| Placeholder NPC models | The elder, vendors and innkeeper share three authored meshes; Kael currently reuses the guild-rep mesh in `town_hub.tscn`. |
+| No app icon | `application/icon` is unset in both presets. |
+| Music/ambience are procedural | Phase 31 shipped real CC0 SFX but the music and ambience beds are still generated placeholders (carried to Phase 52). |
+
+### 8.5 Kael's model — outstanding
+
+The maintainer's Blender MCP runs on their own machine; the remote sessions that built Phases 32–33
+cannot reach it (a container has no route to the host's port, and no Blender tools are configured in
+those sessions). So Kael's model is **not** something a remote session can produce.
+
+It needs a local session with the Blender MCP connected. When that happens, per CLAUDE.md's Blender
+hygiene rule: lay the asset out beside existing models with 2–3 m spacing rather than stacking it at
+the world origin, and only zero the transform transiently at glTF export.
+
+Target: a knight silhouette distinct from the player at a glance — heavier shoulders, a tabard, a
+visored helm — exported to `assets/models/characters/npc_kael.glb`, then point `ModelPath` at it and
+swap the `Model` instance in `scenes/regions/ember_crown/town_hub.tscn`. Nothing else changes: the
+factory already drives whatever mesh it is handed, and falls back to a capsule if the load fails.
+
+### 8.6 What 33E does *not* cover
+
+The polish half of 33E — "rough edges in the slice path are gone" — **cannot be done without playing
+the arc**. Pacing, difficulty, dialogue that lands wrong, a beat that drags, a fight that is trivial
+with a companion: all of that comes out of §5.2 and none of it is visible from the code. Treat 33E as
+half-built until the play-through has happened and its findings have been fixed.
