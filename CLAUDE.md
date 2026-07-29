@@ -145,7 +145,7 @@ Goblins roam to the north (−Z) and drop loot.
 │   ├── LORE.md              # World/story bible (setting, factions, characters, plot)
 │   ├── PRODUCTION_ROADMAP.md # Production plan (Alpha → Beta → Launch, Phases 22+)
 │   ├── SESSION_PLAYBOOK.md  # Per-session sub-phase breakdown of every roadmap phase
-│   └── VERTICAL_SLICE_PLAN.md # Phase 33D build plan (the slice arc, gaps, task order)
+│   └── VERTICAL_SLICE_PLAN.md # Phase 33D/E build plan (slice arc, capture pass, gaps)
 ├── scenes/
 │   └── Main.tscn            # Entry scene (root has GameBootstrap script)
 ├── data/                    # Resource-driven content (.tres)

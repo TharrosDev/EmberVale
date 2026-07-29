@@ -1096,7 +1096,7 @@ effects show school-tinted particle swirls, and the corruption appearance now fo
 ART_STYLE per-tier arc (violet veining → ash → char → banked coals). All assets self-authored in
 Blender via the MCP (no external/licensed assets pulled yet).
 
-**Immediate next step: play the 33D arc end to end** (`VERTICAL_SLICE_PLAN.md` §5.2), then Phase 33E — slice polish + the external-build capture pass. Phase 31 (Audio Foundations) is
+**Immediate next step: play the slice end to end** (`VERTICAL_SLICE_PLAN.md` §5.2) and export once (§8.2). Those two passes are what close Phases 33D/33E and open **Gate G1**. Phase 31 (Audio Foundations) is
 **complete** — mixer + `AudioDirector`, real CC0 SFX, adaptive music, interaction/UI SFX, environmental
 ambience, and surface footsteps (31A–31E, `SESSION_PLAYBOOK.md`). **Phase 32A** landed the companion
 follower core: an anchor/leash `CompanionAIComponent` driving the same locomotion/steering/melee
@@ -1117,7 +1117,10 @@ Settings, and **33C** completed the set with interact/inventory/journal/cast. **
 arc: a quest-gated boss, Kael named by the elder, a corruption warning before the arena, the
 Frostfang door held shut until the Iron King falls, and a closing card that branches on whether the
 player took his ember — built against the plan in `VERTICAL_SLICE_PLAN.md`, but **not yet played**.
-The play-through and 33E's polish are what remain before **Gate G1 — Vertical Slice**. (Phase 30.5 UI & HUD Overhaul complete.) Remaining audio *production* (real CC0 music/ambience
+**33E** then made an exported build *be* the slice: `BuildProfile` strips the sandbox props, developer
+overlays and cheat keys from any non-development run, and export presets exist for Windows and Linux.
+What remains before **Gate G1 — Vertical Slice** is engine work no remote session can do: play the arc
+(§5.2), export once (§8.2), and give Kael a model of his own (§8.5). (Phase 30.5 UI & HUD Overhaul complete.) Remaining audio *production* (real CC0 music/ambience
 tracks, surface tagging) carries into Phase 52.
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —
