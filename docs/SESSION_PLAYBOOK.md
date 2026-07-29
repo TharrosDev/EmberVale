@@ -2264,9 +2264,15 @@ no code) — batch them when momentum is good.
     giving the same experience from the editor. `export_presets.cfg` adds Windows and
     Linux presets. Capture checklist and the known cosmetic gaps are documented in
     `VERTICAL_SLICE_PLAN.md` §8.
+  - **Built (local session, Blender MCP):** Kael has his own model —
+    `assets/models/characters/npc_kael.glb`, 785 tris, built on the player's rig so he
+    inherits the whole clip set and actually animates in combat. `Kael.tres` and the
+    `town_hub.tscn` `Model` instance both point at it, closing §6.6 / §8.4 / §8.5.
+    Also fixed: `--validate` never called `Loc.Initialize()`, so headless runs reported
+    Kael's authored display keys as missing and the gate was red on `main`.
   - **Outstanding:** the presets have never been opened in Godot's export dialog; the
-    polish half needs the §5.2 play-through; Kael still wears the player's body
-    (§8.5 — needs a local session with the Blender MCP).
+    polish half still needs the §5.2 play-through (it needs a human at the controls —
+    the arc cannot be driven from a tool session).
 
 > **🚩 Gate G1 — Vertical Slice.** A stranger plays 30–60 min that looks and feels
 > shipped: real art/audio, weighty combat, a companion, a boss, the corruption
