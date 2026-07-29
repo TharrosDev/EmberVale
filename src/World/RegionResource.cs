@@ -28,6 +28,13 @@ public partial class RegionResource : Resource
     /// The transition handler teleports the player here; neighbour portals are placed relative to it.</summary>
     [Export] public Vector3 SpawnPoint { get; set; } = Vector3.Zero;
 
+    /// <summary>
+    /// Story flag the player must carry before portals <em>into</em> this region appear (Phase 33D).
+    /// Empty = always open. Declared on the destination rather than per-link, so a region that is
+    /// meant to be earned is earned from every direction, and the bootstrap needs no special cases.
+    /// </summary>
+    [Export] public string UnlockFlagId { get; set; } = string.Empty;
+
     /// <summary>The streamable sub-cells that make up this region. The <see cref="RegionStreamer"/>
     /// loads/unloads these by distance (Phase 25B). The procedural sandbox keeps an always-loaded
     /// base and lists its peripheral cells here.</summary>

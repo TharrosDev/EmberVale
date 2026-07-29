@@ -19,6 +19,8 @@ Goto = "declined"
 [sub_resource type="Resource" id="ch_absorbed_bye"]
 script = ExtResource("3_choice")
 Text = "dlg.ironking.absorb.c_absorbed_bye"
+Effect = 2
+EffectArg = "flag.iron_king_absorbed"
 
 [sub_resource type="Resource" id="ch_declined_bye"]
 script = ExtResource("3_choice")

@@ -10,6 +10,11 @@ continuous, polished 30–60 minute arc, ending at 🚩 **Gate G1 — Vertical S
 >
 > Companion documents: `SESSION_PLAYBOOK.md` (the sub-phase checklist), `PRODUCTION_ROADMAP.md`
 > (§Phase 33 and Gate G1), `ARCHITECTURE.md` (the systems this leans on), `LORE.md` (canon).
+>
+> **Status: tasks 1–7 are built** (see §4 — each is marked). What remains is **§5.2, the manual
+> play-through**, which could not be run in the session that built this: that environment had
+> `dotnet` but no Godot binary, so every runtime claim below is *reviewed against the Godot 4.7 C#
+> API*, not observed. **The arc has never been played.** Treat §5.2 as the outstanding work.
 
 ---
 
@@ -169,7 +174,7 @@ Everything above except these points already works. **This section is the real s
 Each task is independently committable and leaves the repo playable. Do them in order — later tasks
 assume earlier ones.
 
-### 4.1 Task 1 — Gate the brazier (G1)
+### 4.1 Task 1 — Gate the brazier (G1) ✅
 
 **Files:** `src/Enemies/BossSummonComponent.cs`, `data/locale/strings.csv`
 
@@ -188,7 +193,7 @@ Phase 34+ bosses.
 after `quest.warband.heart` completes, it summons normally. `companion recruit` + `quest` console
 commands make this checkable in under a minute.
 
-### 4.2 Task 2 — Weave Kael into the spine (G2)
+### 4.2 Task 2 — Weave Kael into the spine (G2) ✅
 
 **Files:** `data/dialogue/Elder.tres`, `data/dialogue/GuildBoard.tres`, `data/locale/strings.csv`
 
@@ -204,7 +209,7 @@ carries his arc.
 **Acceptance:** a player who finishes the bounty and talks to the elder is told where Kael is,
 without having to stumble on him.
 
-### 4.3 Task 3 — Gate the Frostfang portal (G3)
+### 4.3 Task 3 — Gate the Frostfang portal (G3) ✅
 
 **Files:** `src/Bootstrap/GameBootstrap.cs` (`SpawnRegionPortals`), plus a new small component or an
 exported flag on `RegionTransitionComponent`
@@ -225,7 +230,7 @@ authored collision layer rather than assuming layer 1.**
 **Acceptance:** on a new game there is no glowing torus in front of the player. After the Iron King
 dies it is there.
 
-### 4.4 Task 4 — Seed the corruption warning (G5)
+### 4.4 Task 4 — Seed the corruption warning (G5) ✅
 
 **Files:** `data/dialogue/Elder.tres` or `data/dialogue/Smith.tres`, `data/locale/strings.csv`
 
@@ -236,7 +241,7 @@ on a player who has been warned rather than surprised.
 Keep it to three or four lines. **Do not gate it on corruption** — the point is that a clean player
 sees it.
 
-### 4.5 Task 5 — Slice completion state (G4)
+### 4.5 Task 5 — Slice completion state (G4) ✅
 
 **Files:** new `src/Narrative/SliceDirector.cs` (or extend `BossEncounterDirector`),
 `src/Core/Events/CoreEvents.cs`
@@ -248,7 +253,7 @@ Set a `flag.slice_complete` so it fires once.
 Keep this small. It exists to give the closing card something to hang off and to give a capture build
 a clean stopping point — it is **not** an ending system (that is Phase 44).
 
-### 4.6 Task 6 — The closing card (G4/C)
+### 4.6 Task 6 — The closing card (G4/C) ✅
 
 **Files:** `src/UI/OpeningSequence.cs` (generalise) or a sibling `ClosingSequence`,
 `data/locale/strings.csv`
@@ -269,7 +274,7 @@ absorb dialogue. That single branch is what makes the slice feel like it noticed
 
 **Acceptance:** the card plays once, is skippable, and does not fire on a reload.
 
-### 4.7 Task 7 — Journal hygiene (G6) and string hygiene (G7)
+### 4.7 Task 7 — Journal hygiene (G6) and string hygiene (G7) ✅
 
 - Remove `quest.cull_goblins` (`data/quests/CullTheGoblins.tres`) and `quest.gather_iron`
   (`data/quests/GatherIron.tres`) from the seeded/startable set, or repoint the elder's old nodes at
@@ -280,7 +285,7 @@ absorb dialogue. That single branch is what makes the slice feel like it noticed
 - Convert the remaining literal strings in `dialogue.elder` to `Loc` keys. Mechanical but touches
   many lines; keep it as its own commit so it does not obscure the design work.
 
-### 4.8 Task 8 — Full-arc verification pass
+### 4.8 Task 8 — Full-arc verification pass ⬜ **outstanding — needs Godot**
 
 See §5. This is a task, not an afterthought — budget real time for it.
 
@@ -383,16 +388,19 @@ not here.
 
 ## 7. Definition of done
 
+Ticked items were verified by build + the 521-test suite + the textual content tests; the unticked
+ones need the engine.
+
 33D is complete when:
 
-- [ ] The eight beats play in order, start to finish, without console commands.
-- [ ] The brazier is gated and says why.
-- [ ] Kael is discoverable through the spine and fights in beats 4–6.
-- [ ] The Frostfang portal is absent until the Iron King falls.
-- [ ] Both absorb and decline reach a closing card that reflects the choice.
-- [ ] `--validate` is green; `dotnet test` is green.
-- [ ] A save/load at three points in the arc restores party, loyalty, flags and quests.
-- [ ] A skipping veteran's run still takes 20+ minutes.
+- [ ] The eight beats play in order, start to finish, without console commands. *(needs a play-through)*
+- [x] The brazier is gated and says why (`boss.challenge_locked`).
+- [x] Kael is discoverable through the spine — the elder names him once the bounty is done.
+- [x] The Frostfang portal is absent until the Iron King falls (`RegionResource.UnlockFlagId`).
+- [x] Both absorb and decline reach a closing card that reflects the choice.
+- [x] `dotnet test` is green (521). ⬜ `--validate` still needs Godot.
+- [ ] A save/load at three points in the arc restores party, loyalty, flags and quests. *(needs a play-through)*
+- [ ] A skipping veteran's run still takes 20+ minutes. *(needs timing)*
 
 Then 33E: polish, art/audio gaps (§6.6), the sandbox cleanup (§6.1), and the external-build capture
 pass — and 🚩 **Gate G1**.

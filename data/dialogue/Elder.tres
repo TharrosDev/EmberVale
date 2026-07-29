@@ -6,92 +6,92 @@
 
 [sub_resource type="Resource" id="ch_root_friend"]
 script = ExtResource("3_choice")
-Text = "(Greet the elder like an old friend.)"
+Text = "dlg.elder.c_friend"
 Goto = "friend"
 Condition = 5
 ConditionArg = "flag.elder_thanked"
 
 [sub_resource type="Resource" id="ch_root_thanks"]
 script = ExtResource("3_choice")
-Text = "About that iron I gathered..."
+Text = "dlg.elder.c_thanks"
 Goto = "thanks"
 Condition = 3
 ConditionArg = "quest.gather_iron"
 
 [sub_resource type="Resource" id="ch_root_offer"]
 script = ExtResource("3_choice")
-Text = "What do you need?"
+Text = "dlg.elder.c_offer"
 Goto = "offer"
 Condition = 1
 ConditionArg = "quest.gather_iron"
 
 [sub_resource type="Resource" id="ch_root_active"]
 script = ExtResource("3_choice")
-Text = "I'm still searching for that iron."
+Text = "dlg.elder.c_active"
 Goto = "inprogress"
 Condition = 2
 ConditionArg = "quest.gather_iron"
 
 [sub_resource type="Resource" id="ch_root_bye"]
 script = ExtResource("3_choice")
-Text = "Farewell."
+Text = "dlg.elder.c_bye"
 
 [sub_resource type="Resource" id="ch_offer_accept"]
 script = ExtResource("3_choice")
-Text = "I'll fetch your iron."
+Text = "dlg.elder.c_accept"
 Goto = "accepted"
 Effect = 1
 EffectArg = "quest.gather_iron"
 
 [sub_resource type="Resource" id="ch_offer_decline"]
 script = ExtResource("3_choice")
-Text = "Not just now."
+Text = "dlg.elder.c_decline"
 
 [sub_resource type="Resource" id="ch_accepted_bye"]
 script = ExtResource("3_choice")
-Text = "I'll head north."
+Text = "dlg.elder.c_accepted_bye"
 
 [sub_resource type="Resource" id="ch_inprogress_bye"]
 script = ExtResource("3_choice")
-Text = "I'll keep looking."
+Text = "dlg.elder.c_inprogress_bye"
 
 [sub_resource type="Resource" id="ch_thanks_done"]
 script = ExtResource("3_choice")
-Text = "Glad to help."
+Text = "dlg.elder.c_thanks_bye"
 Effect = 2
 EffectArg = "flag.elder_thanked"
 
 [sub_resource type="Resource" id="ch_friend_bye"]
 script = ExtResource("3_choice")
-Text = "Be well, elder."
+Text = "dlg.elder.c_friend_bye"
 
 [sub_resource type="Resource" id="ch_root_pure"]
 script = ExtResource("3_choice")
-Text = "(Clasp his hand — your heart is still your own.)"
+Text = "dlg.elder.c_pure"
 Goto = "pure"
 Condition = 8
 ConditionArg = "30"
 
 [sub_resource type="Resource" id="ch_root_marked"]
 script = ExtResource("3_choice")
-Text = "(He flinches at your gaze. Ask what troubles him.)"
+Text = "dlg.elder.c_marked"
 Goto = "marked"
 Condition = 7
 ConditionArg = "30"
 
 [sub_resource type="Resource" id="ch_pure_bye"]
 script = ExtResource("3_choice")
-Text = "The Flame keeps us both, elder."
+Text = "dlg.elder.c_pure_bye"
 
 [sub_resource type="Resource" id="ch_marked_embrace"]
 script = ExtResource("3_choice")
-Text = "(Say nothing. Let the ember within stir.)"
+Text = "dlg.elder.c_stir"
 Effect = 4
 EffectArg = "10"
 
 [sub_resource type="Resource" id="ch_marked_deny"]
 script = ExtResource("3_choice")
-Text = "It is nothing, elder. Farewell."
+Text = "dlg.elder.c_marked_bye"
 
 [sub_resource type="Resource" id="ch_heart_offer"]
 script = ExtResource("3_choice")
@@ -137,52 +137,88 @@ Text = "dlg.elder.heart.c_inprogress_bye"
 script = ExtResource("3_choice")
 Text = "dlg.elder.heart.c_thanks_bye"
 
+[sub_resource type="Resource" id="ch_root_kael"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.kael.c_ask"
+Goto = "kael_ask"
+Condition = 3
+ConditionArg = "quest.warband.bounty"
+
+[sub_resource type="Resource" id="ch_kael_where"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.kael.c_where"
+Goto = "kael_where"
+Condition = 10
+ConditionArg = "companion.kael"
+
+[sub_resource type="Resource" id="ch_kael_already"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.kael.c_already"
+Goto = "kael_already"
+Condition = 9
+ConditionArg = "companion.kael"
+
+[sub_resource type="Resource" id="ch_kael_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.kael.c_bye"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_root_dread"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.dread.c_ask"
+Goto = "dread"
+
+[sub_resource type="Resource" id="ch_dread_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.elder.dread.c_bye"
+Goto = "root"
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
-Text = "Well met, traveller. Our smith's forge runs cold — we've no iron to feed it."
-Choices = Array[Resource]([SubResource("ch_root_friend"), SubResource("ch_root_pure"), SubResource("ch_root_marked"), SubResource("ch_heart_thanks"), SubResource("ch_heart_offer"), SubResource("ch_heart_active"), SubResource("ch_root_thanks"), SubResource("ch_root_offer"), SubResource("ch_root_active"), SubResource("ch_root_bye")])
+Text = "dlg.elder.root"
+Choices = Array[Resource]([SubResource("ch_root_friend"), SubResource("ch_root_pure"), SubResource("ch_root_marked"), SubResource("ch_heart_thanks"), SubResource("ch_heart_offer"), SubResource("ch_heart_active"), SubResource("ch_root_thanks"), SubResource("ch_root_offer"), SubResource("ch_root_active"), SubResource("ch_root_kael"), SubResource("ch_root_dread"), SubResource("ch_root_bye")])
 
 [sub_resource type="Resource" id="node_offer"]
 script = ExtResource("2_node")
 Id = "offer"
-Text = "Three lumps of iron ore from the northern hills would set us right. Will you help?"
+Text = "dlg.elder.offer"
 Choices = Array[Resource]([SubResource("ch_offer_accept"), SubResource("ch_offer_decline")])
 
 [sub_resource type="Resource" id="node_accepted"]
 script = ExtResource("2_node")
 Id = "accepted"
-Text = "Bless you. The hills lie to the north — mind the goblins along the way."
+Text = "dlg.elder.accepted"
 Choices = Array[Resource]([SubResource("ch_accepted_bye")])
 
 [sub_resource type="Resource" id="node_inprogress"]
 script = ExtResource("2_node")
 Id = "inprogress"
-Text = "The forge still waits. Three lumps of ore — you'll find them in the hills to the north."
+Text = "dlg.elder.inprogress"
 Choices = Array[Resource]([SubResource("ch_inprogress_bye")])
 
 [sub_resource type="Resource" id="node_thanks"]
 script = ExtResource("2_node")
 Id = "thanks"
-Text = "You brought the iron — the forge burns bright again. The village won't forget it."
+Text = "dlg.elder.thanks"
 Choices = Array[Resource]([SubResource("ch_thanks_done")])
 
 [sub_resource type="Resource" id="node_friend"]
 script = ExtResource("2_node")
 Id = "friend"
-Text = "Good to see you again, friend. The forge runs hot, thanks to you."
+Text = "dlg.elder.friend"
 Choices = Array[Resource]([SubResource("ch_friend_bye")])
 
 [sub_resource type="Resource" id="node_pure"]
 script = ExtResource("2_node")
 Id = "pure"
-Text = "The elder meets your eyes and nods slowly. 'A steady soul — rarer than iron, these days. The Flame keeps you, traveller.'"
+Text = "dlg.elder.pure"
 Choices = Array[Resource]([SubResource("ch_pure_bye")])
 
 [sub_resource type="Resource" id="node_marked"]
 script = ExtResource("2_node")
 Id = "marked"
-Text = "'There is an ember in your gaze I do not trust — ash where the light should be. I have seen it before, and it does not end gently. Tread carefully, traveller.'"
+Text = "dlg.elder.marked"
 Choices = Array[Resource]([SubResource("ch_marked_embrace"), SubResource("ch_marked_deny")])
 
 [sub_resource type="Resource" id="node_heart_offer"]
@@ -209,9 +245,33 @@ Id = "heart_thanks"
 Text = "dlg.elder.heart.thanks"
 Choices = Array[Resource]([SubResource("ch_heart_thanks_bye")])
 
+[sub_resource type="Resource" id="node_kael_ask"]
+script = ExtResource("2_node")
+Id = "kael_ask"
+Text = "dlg.elder.kael.ask"
+Choices = Array[Resource]([SubResource("ch_kael_where"), SubResource("ch_kael_already"), SubResource("ch_kael_bye")])
+
+[sub_resource type="Resource" id="node_kael_where"]
+script = ExtResource("2_node")
+Id = "kael_where"
+Text = "dlg.elder.kael.where"
+Choices = Array[Resource]([SubResource("ch_kael_bye")])
+
+[sub_resource type="Resource" id="node_kael_already"]
+script = ExtResource("2_node")
+Id = "kael_already"
+Text = "dlg.elder.kael.already"
+Choices = Array[Resource]([SubResource("ch_kael_bye")])
+
+[sub_resource type="Resource" id="node_dread"]
+script = ExtResource("2_node")
+Id = "dread"
+Text = "dlg.elder.dread.line"
+Choices = Array[Resource]([SubResource("ch_dread_bye")])
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.elder"
-SpeakerName = "Village Elder"
+SpeakerName = "dlg.elder.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_offer"), SubResource("node_accepted"), SubResource("node_inprogress"), SubResource("node_thanks"), SubResource("node_friend"), SubResource("node_pure"), SubResource("node_marked"), SubResource("node_heart_offer"), SubResource("node_heart_accepted"), SubResource("node_heart_inprogress"), SubResource("node_heart_thanks")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_offer"), SubResource("node_accepted"), SubResource("node_inprogress"), SubResource("node_thanks"), SubResource("node_friend"), SubResource("node_pure"), SubResource("node_marked"), SubResource("node_heart_offer"), SubResource("node_heart_accepted"), SubResource("node_heart_inprogress"), SubResource("node_heart_thanks"), SubResource("node_kael_ask"), SubResource("node_kael_where"), SubResource("node_kael_already"), SubResource("node_dread")])
