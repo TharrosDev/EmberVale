@@ -18,6 +18,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_banner_guild.glb" id="16_banner"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_guild_rep.glb" id="17_npc_elder"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_vendor.glb" id="18_npc_vendor"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_kael.glb" id="23_npc_kael"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_innkeeper.glb" id="19_npc_inn"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_relic.glb" id="20_relic"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_lamp_post.glb" id="21_lamp"]
@@ -581,7 +582,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3, 0)
 
 [node name="Model" parent="Elder" instance=ExtResource("17_npc_elder")]
 
-[node name="Model" parent="Kael" instance=ExtResource("17_npc_elder")]
+[node name="Model" parent="Kael" instance=ExtResource("23_npc_kael")]
 
 [node name="Model" parent="VendorGoods" instance=ExtResource("18_npc_vendor")]
 

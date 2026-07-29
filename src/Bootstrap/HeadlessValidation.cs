@@ -1,5 +1,6 @@
 using Embervale.Core.Diagnostics;
 using Embervale.Debugging;
+using Embervale.Localization;
 using Godot;
 
 namespace Embervale.Bootstrap;
@@ -48,6 +49,11 @@ public static class HeadlessValidation
     {
         Log.Info("=== Embervale content validation (--validate) ===");
         ContentDatabases.InitializeAll();
+
+        // The validator's companion checks resolve display keys through Loc, which only the gameplay
+        // bootstrap used to initialize — headless runs saw an empty catalogue and reported every
+        // authored key as missing. Idempotent, so this is a no-op when the bootstrap got there first.
+        Loc.Initialize();
 
         bool ok = ContentValidator.RunAll(out string report);
         GD.Print(report);

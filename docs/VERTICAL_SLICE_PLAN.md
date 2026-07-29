@@ -372,11 +372,10 @@ A `;` comment line will fail the resource parser. Keep authoring notes in this d
 wants pressure near town, that radius is the knob — but shrinking it makes the tutorial beats
 hostile, so change it last, if at all.
 
-### 6.6 Kael's model is the player's
+### 6.6 Kael's model is the player's — ✅ closed
 
-`data/companions/Kael.tres` points `ModelPath` at `chr_player_base.glb`. In the slice the player will
-be walking beside their own body double. **This is a 33E art task, not a 33D blocker**, but it will
-be the first thing anyone notices in a capture. Flag it early.
+~~`data/companions/Kael.tres` points `ModelPath` at `chr_player_base.glb`.~~ Closed: Kael has an
+authored model, `assets/models/characters/npc_kael.glb`. See §8.5.
 
 ### 6.7 Scope discipline
 
@@ -466,25 +465,50 @@ than discovering them in the footage:
 
 | Gap | Detail |
 | --- | ------ |
-| **Kael wears the player's body** | `data/companions/Kael.tres` points `ModelPath` at `chr_player_base.glb`. In the slice you walk beside your own double. Needs an authored model — see §8.5. |
-| Placeholder NPC models | The elder, vendors and innkeeper share three authored meshes; Kael currently reuses the guild-rep mesh in `town_hub.tscn`. |
+| ~~**Kael wears the player's body**~~ | ✅ **Closed.** Kael has his own model (`npc_kael.glb`); both `Kael.tres` `ModelPath` and the `town_hub.tscn` `Model` instance point at it. See §8.5. |
+| Placeholder NPC models | The elder, vendors and innkeeper share three authored meshes. (Kael no longer reuses the guild-rep mesh.) |
 | No app icon | `application/icon` is unset in both presets. |
 | Music/ambience are procedural | Phase 31 shipped real CC0 SFX but the music and ambience beds are still generated placeholders (carried to Phase 52). |
 
-### 8.5 Kael's model — outstanding
+### 8.5 Kael's model — ✅ done
 
-The maintainer's Blender MCP runs on their own machine; the remote sessions that built Phases 32–33
-cannot reach it (a container has no route to the host's port, and no Blender tools are configured in
-those sessions). So Kael's model is **not** something a remote session can produce.
+Authored in a local session with the Blender MCP connected and exported to
+`assets/models/characters/npc_kael.glb`. `Kael.tres` `ModelPath` and the `Model` instance in
+`scenes/regions/ember_crown/town_hub.tscn` both point at it; nothing else changed, as predicted.
 
-It needs a local session with the Blender MCP connected. When that happens, per CLAUDE.md's Blender
-hygiene rule: lay the asset out beside existing models with 2–3 m spacing rather than stacking it at
-the world origin, and only zero the transform transiently at glTF export.
+**How it was built.** Kael is derived from `chr_player_base`'s rig, not modelled from zero. The head
+was removed (a helm replaces it), the shoulders and chest widened by bone weight, and the body
+decimated to ~455 tris; the armour was then built on top. Reusing the rig is what makes him *animate*
+— he inherits the player's clip set verbatim, so `CharacterAnimationComponent` resolves every prefix
+it looks for. A static Kael would have T-posed and slid, which is worse than the placeholder was.
 
-Target: a knight silhouette distinct from the player at a glance — heavier shoulders, a tabard, a
-visored helm — exported to `assets/models/characters/npc_kael.glb`, then point `ModelPath` at it and
-swap the `Model` instance in `scenes/regions/ember_crown/town_hub.tscn`. Nothing else changes: the
-factory already drives whatever mesh it is handed, and falls back to a capsule if the load fails.
+| Property | Value |
+| --- | --- |
+| Triangles (LOD0) | 785 — inside the ~800 NPC band (ART_STYLE §3) |
+| Height / origin / facing | 1.73 m · origin at the feet · +Z (the factory's `RotateY(PI)` handles Godot) |
+| Skeleton | the player's 17 bones, so retargeting stays free |
+| Clips imported | `attack, block, cast, channel, death, hit, idle, run` (Godot strips the `-loop` suffix) |
+| Materials | 6, all ART_STYLE §2 palette; one ember accent, nothing emissive |
+
+**The silhouette** does the work, since the player spends hours behind him: crested visored helm,
+heavy pauldrons, ash-grey surcoat, half-cape off the right shoulder, and a shield slung on his back
+carrying the single ember-orange Emberguard device. Dark leather legs read against the player's olive.
+
+### 8.5a A note for whoever rebuilds him
+
+The Blender part of this is fiddly in ways worth writing down:
+
+- Parts authored as separate objects are created at the **world origin**, so joining them into a body
+  parked at +3 m along X silently welds the armour 3 m off the character. Set each part object's
+  location to the parking offset *before* the join.
+- Iterate with the armature in **rest position** (`pose_position = 'REST'`, `use_nla = False`). The
+  imported NLA tracks otherwise evaluate a pose, and every proportion judgement is made against a
+  distorted body.
+- Remap material slots by capturing each face's target index **before** `materials.clear()` — clearing
+  resets every polygon to index 0, so a remap written afterwards silently paints the whole mesh in one
+  material.
+- Flat panels for cloth read as floating slabs from the side. The surcoat is a closed revolved skirt
+  for that reason — continuous silhouette is a style rule (ART_STYLE §1.1), not a preference.
 
 ### 8.6 What 33E does *not* cover
 
