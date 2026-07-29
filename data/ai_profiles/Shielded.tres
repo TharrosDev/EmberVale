@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="AIProfileResource" load_steps=2 format=3 uid="uid://cmbrvlaishield"]
+
+[ext_resource type="Script" path="res://src/Enemies/AIProfileResource.cs" id="1_profile"]
+
+[resource]
+script = ExtResource("1_profile")
+Id = "ai.shielded"
+VisionRange = 16.0
+AttackRange = 2.3
+BlockDuration = 1.4
+BlockRecovery = 1.5
+RetreatHealthFraction = 0.15

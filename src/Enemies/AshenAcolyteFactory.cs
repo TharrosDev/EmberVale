@@ -114,7 +114,7 @@ public static class AshenAcolyteFactory
         });
 
         enemy.AddChild(new FactionComponent { Name = "Faction", FactionId = GameIds.Factions.Fallen });
-        enemy.AddChild(new EnemyAIComponent { Name = "AI" });
+        enemy.AddChild(new EnemyAIComponent { Name = "AI", ProfileId = GameIds.AiProfiles.Caster });
         enemy.AddChild(new LootComponent { Name = "Loot", TablePath = LootTablePath });
         enemy.AddChild(new ExperienceComponent { Name = "Experience", XpValue = 35 });
         enemy.AddToGroup(Quests.ObjectiveLocator.EnemyGroup);

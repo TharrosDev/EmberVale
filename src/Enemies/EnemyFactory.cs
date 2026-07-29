@@ -110,7 +110,10 @@ public static class EnemyFactory
         enemy.AddChild(new StatusEffectVfxComponent { Name = "StatusVfx" });
         // Faction membership: AI aggression keys off the player's standing with this faction.
         enemy.AddChild(new FactionComponent { Name = "Faction", FactionId = GameIds.Factions.Goblins });
-        enemy.AddChild(new EnemyAIComponent { Name = "AI" });
+        // 34A: goblins keep the plain brute personality they had before profiles existed, so the
+        // vertical slice's combat feel is unchanged. The pack/shield/ambush profiles are authored
+        // and driven by the same brain, ready for the 34B archetypes.
+        enemy.AddChild(new EnemyAIComponent { Name = "AI", ProfileId = GameIds.AiProfiles.Brute });
         enemy.AddChild(new LootComponent { Name = "Loot", TablePath = LootTablePath });
         enemy.AddChild(new ExperienceComponent { Name = "Experience", XpValue = 25 });
         // Lets the Phase 25F compass / quest markers find this as a Kill-objective target.

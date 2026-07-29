@@ -41,6 +41,7 @@ public static class ContentDatabases
         FactionDatabase.Initialize();
         WorldEventDatabase.Initialize();
         RaceDatabase.Initialize();
+        AIProfileDatabase.Initialize();   // before the enemy registry: factories resolve profiles by id
         EnemyTemplateRegistry.Initialize();
         CompanionDatabase.Initialize();
         CompanionRegistry.Initialize();

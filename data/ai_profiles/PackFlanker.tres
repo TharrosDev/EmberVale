@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="AIProfileResource" load_steps=2 format=3 uid="uid://cmbrvlaiflank"]
+
+[ext_resource type="Script" path="res://src/Enemies/AIProfileResource.cs" id="1_profile"]
+
+[resource]
+script = ExtResource("1_profile")
+Id = "ai.pack_flanker"
+VisionRange = 20.0
+AlertRadius = 18.0
+FlankSpreadDegrees = 40.0
+RetreatHealthFraction = 0.2

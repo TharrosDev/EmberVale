@@ -110,17 +110,9 @@ public static class BossFactory
         boss.AddChild(new StatusEffectsComponent { Name = "StatusEffects" });
         boss.AddChild(new StatusEffectVfxComponent { Name = "StatusVfx" });
         boss.AddChild(new FactionComponent { Name = "Faction", FactionId = GameIds.Factions.Fallen });
-        // Reuse the standard AI, tuned for a boss: long sight, bigger reach, never flees.
-        boss.AddChild(new EnemyAIComponent
-        {
-            Name = "AI",
-            VisionRange = 40f,
-            FovDegrees = 140f,
-            AttackRange = 3.5f,
-            RetreatHealthFraction = 0f,
-            PatrolRadius = 3f,
-            ActiveDistance = 90f,
-        });
+        // Reuse the standard AI on the boss profile: long sight, bigger reach, never flees (34A —
+        // the tuning that used to be inlined here now lives in data/ai_profiles/Boss.tres).
+        boss.AddChild(new EnemyAIComponent { Name = "AI", ProfileId = GameIds.AiProfiles.Boss });
         // Phase escalation (66%/33%) + attack telegraphs (Phase 28B) on top of the shared AI/weapon.
         boss.AddChild(new BossController { Name = "BossController" });
         boss.AddChild(new ExperienceComponent { Name = "Experience", XpValue = 500 });
