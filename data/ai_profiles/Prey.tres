@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="AIProfileResource" load_steps=2 format=3 uid="uid://cmbrvlaiprey"]
+
+[ext_resource type="Script" path="res://src/Enemies/AIProfileResource.cs" id="1_profile"]
+
+[resource]
+script = ExtResource("1_profile")
+Id = "ai.prey"
+VisionRange = 26.0
+FovDegrees = 200.0
+AlertRadius = 0.0
+PatrolRadius = 12.0
+IdleDuration = 6.0
+FleeOnSight = true
+RetreatHealthFraction = 0.0
+MaxRetreatTime = 6.0

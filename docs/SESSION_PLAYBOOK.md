@@ -2315,7 +2315,8 @@ no code) — batch them when momentum is good.
   - **Done when:** each is a factory archetype + `.tres` (attributes/loot/XP/
     profile); all four playable.
   - **Built:** `EnemyArchetypeResource` + `EnemyArchetypeDatabase` (`data/enemies/`),
-    driven by one shared `HumanoidEnemyFactory`. The database registers a builder per
+    driven by one shared `EnemyArchetypeFactory` (named `HumanoidEnemyFactory` until 34C
+    generalized it). The database registers a builder per
     archetype with `EnemyTemplateRegistry`, so a new `.tres` is spawnable by id with no
     code change. Four archetypes ship, each with its own attributes, loot table, faction,
     AI profile and XP:
@@ -2342,8 +2343,71 @@ no code) — batch them when momentum is good.
   - **Art gap:** only the cultist has a mesh (it reuses `enm_ashen_acolyte.glb`). The other
     three run on tinted capsules — the same capsule-then-model path the goblin took before
     30D. Models are a Phase 53 art task, tracked there, not a blocker for "playable".
-- [ ] **34C — Beast archetypes (wolves, Sylthari wildlife)** `[F/C]`
+- [x] **34C — Beast archetypes (wolves, Sylthari wildlife)** `[F/C]`
   - **Done when:** beast archetypes exist with appropriate AI profiles.
+  - **Built:** five beasts as pure content on the 34A/34B pipeline, plus one small
+    generalization of the factory. `HumanoidEnemyFactory` → **`EnemyArchetypeFactory`**: it
+    now builds quadrupeds too, so the old name lied. The melee hitbox, previously a
+    hard-coded `0.9 × 1.4 × 1.4` box at `z = -1.0`, **scales with the body**
+    (`height / 1.8f`, the humanoid reference) — a 0.9 m wolf was otherwise biting a metre
+    past its own nose. No new exported fields, so the four 34B `.tres` files are untouched.
+    | Archetype | Profile | Body (r/h) | Identity |
+    | --- | --- | --- | --- |
+    | `enemy.wolf` | `ai.pack_flanker` | 0.35 / 0.9 | fast, fragile, surrounds you |
+    | `enemy.dire_wolf` | `ai.pack_flanker` | 0.5 / 1.3 | alpha: tanky, heavy bite, 55 poise |
+    | `enemy.frost_stalker` | `ai.ambusher` | 0.4 / 1.0 | glass assassin, 25% crit at 2.2× |
+    | `enemy.thornback_boar` | `ai.territorial` (new) | 0.55 / 1.0 | ignores you until provoked, then never stops |
+    | `enemy.ashfall_elk` | `ai.prey` (new) | 0.5 / 1.6 | skittish grazer, flees on sight, the pelt source |
+  - **Two new AI profiles, no new code:** `ai.territorial` (short `VisionRange 9`, `FovDegrees
+    200`, `AlertRadius 0`, `RetreatHealthFraction 0`, `ProvokeMemory 40`) is an animal that
+    doesn't hunt you — it senses all round, aggros only close, calls no one, and never breaks
+    off once provoked. `ai.prey` (`FleeOnSight`, `AlertRadius 0`) exists rather than reusing
+    `ai.skirmisher` because that profile's `AlertRadius 20` would have an elk broadcasting
+    alerts that rally bandits — wrong fiction. Both compose out of knobs 34A already shipped;
+    `EnemyAIComponent` gained no branch.
+  - **Wildlife is a faction:** `faction.beasts` ("Wildlife", `DefaultReputation -25` ⇒ hostile
+    on sight, `KillReputationPenalty 0` — animals hold no grudges). LORE gives the Sylthari
+    "can commune with wildlife" (LORE.md:433) and this is the standing such a perk flips;
+    without a faction it would have to special-case the AI later.
+  - **Beasts carry no coin:** `BeastLoot`/`BeastHideLoot` set `GoldChance = 0` and drop the new
+    `item.material.beast_pelt` (+ leather strips, healing herb). One pelt item, not a
+    fang/hide/sinew set — add those when a recipe actually asks.
+  - **Named for the first time:** LORE.md names *no* beast species (only dragons — Phase 35 —
+    and the Beast Lord, who is a corrupted person). Frostfang's "warrior clans and beast
+    races" (LORE.md:112) are sapient culture, fenced off to Phase 34.5, so nothing here
+    trespasses on it.
+  - **Playable:** five encounters seed them by day phase — `WolfPack` (2–4, dusk/night),
+    `DireWolf` (1, night, weight 0.3), `BoarTerritory` (1–2, dawn/day), `ElkHerd` (2–3,
+    dawn/day/dusk), `FrostStalker` (1, night, weight 0.25). `EncounterDirector` already
+    resolved through the registry, so no spawner changed. `spawn <n> <id>` in F1 reaches them
+    directly.
+  - **Known limits, deliberately not fixed here:** `EncounterResource` has no region filter,
+    so the frost stalker can roll in the Ember Crown (34B's Fallen patrols have the same
+    problem — region-scoped tables are their own sub-phase). One encounter = one template id,
+    so an alpha-plus-pack spawn isn't authorable; the dire wolf rolls solo. The elk's
+    `WeaponPath` points at `BeastFangs` it will never swing, since `ai.prey` never engages.
+  - **Verified:** `dotnet build` clean, **540 tests** still green (no new ones — the only new
+    logic is one `height / 1.8f` multiply; the behaviour knobs are authored values, which is
+    the validator's job under the no-`GodotObject` rule), `--validate` **exit 0** with all 9
+    archetypes / 10 profiles / 14 encounters / 6 factions cross-checked, and a **150 s live
+    `--play` session** with zero warnings — no `AIProfileDatabase` fallback, no unknown-template
+    warning, no `GD.Load` null.
+  - **Verification gap:** a live spawn of the five was **not** observed. The F1 console needs
+    keyboard input this harness can't inject, and `--play` lands the player inside the Ember
+    Crown's 34 m safe-zone where the director won't spawn. Worth two minutes with
+    `spawn 3 enemy.wolf` (the pack should fan out, not queue), `spawn 1 enemy.thornback_boar`
+    (ignores you at range, mauls you up close), `spawn 1 enemy.ashfall_elk` (runs and never
+    rallies — kill it with `Q` and confirm a pelt and **no gold**),
+    `spawn 1 enemy.frost_stalker` (springs only inside `AmbushRange`),
+    `spawn 1 enemy.soldier` (confirm the humanoid arc still lands after the hitbox change),
+    and `rep faction.beasts 40` (standing crosses out of hostile and they stand down).
+  - **Behaviour delta to existing content:** exactly one. `enemy.soldier` is 1.85 m, so its
+    melee box grew 2.8%. That is the hitbox becoming body-relative rather than a fixed number
+    — a correction, not a regression.
+  - **Art gap:** all five run on tinted capsules, and a *vertical* capsule reads poorly for a
+    quadruped — worse than the humanoid placeholders did. Beast models are a Phase 53 art
+    task, the same capsule-then-model path the goblin took before 30D, and not a blocker for
+    "playable".
 - [ ] **34D — Undead archetypes (Hollow Queen's legions)** `[F/C]`
   - **Done when:** undead archetypes exist and fight.
 - [ ] **34E — Construct + elemental archetypes** `[F/C]`

@@ -53,12 +53,12 @@ public static class EnemyTemplateRegistry
         Register(GameIds.Enemies.IronKing, BossFactory.Create);
         Register(GameIds.Enemies.AshenAcolyte, AshenAcolyteFactory.Create);
 
-        // Phase 34B: every authored humanoid archetype registers itself through the one shared
-        // factory, so a new `.tres` under data/enemies is spawnable with no code change here.
+        // Phase 34B/34C: every authored archetype — humanoid or beast — registers itself through the
+        // one shared factory, so a new `.tres` under data/enemies is spawnable with no code change here.
         foreach (EnemyArchetypeResource archetype in EnemyArchetypeDatabase.All)
         {
             EnemyArchetypeResource captured = archetype;
-            Register(captured.Id, position => HumanoidEnemyFactory.Create(captured, position));
+            Register(captured.Id, position => EnemyArchetypeFactory.Create(captured, position));
         }
 
         Log.Info($"EnemyTemplateRegistry seeded {Builders.Count} archetype(s).");

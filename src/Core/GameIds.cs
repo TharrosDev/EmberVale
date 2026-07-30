@@ -33,6 +33,7 @@ public static class GameIds
         public const string SteelSword = "item.weapon.steel_sword";
         public const string IronRing = "item.ring.iron";
         public const string Scrap = "item.material.scrap";
+        public const string BeastPelt = "item.material.beast_pelt";
     }
 
     public static class Enemies
@@ -41,11 +42,18 @@ public static class GameIds
         public const string IronKing = "enemy.iron_king";
         public const string AshenAcolyte = "enemy.ashen_acolyte";
 
-        // Phase 34B humanoids — authored under data/enemies, built by HumanoidEnemyFactory.
+        // Phase 34B humanoids — authored under data/enemies, built by EnemyArchetypeFactory.
         public const string Bandit = "enemy.bandit";
         public const string Cultist = "enemy.cultist";
         public const string Soldier = "enemy.soldier";
         public const string SyndicateEnforcer = "enemy.syndicate_enforcer";
+
+        // Phase 34C beasts — same pipeline, quadruped bodies.
+        public const string Wolf = "enemy.wolf";
+        public const string DireWolf = "enemy.dire_wolf";
+        public const string FrostStalker = "enemy.frost_stalker";
+        public const string ThornbackBoar = "enemy.thornback_boar";
+        public const string AshfallElk = "enemy.ashfall_elk";
     }
 
     /// <summary>Enemy AI personality ids (see <c>AIProfileDatabase</c> / data/ai_profiles, Phase 34A).</summary>
@@ -58,6 +66,10 @@ public static class GameIds
         public const string Skirmisher = "ai.skirmisher";
         public const string Ambusher = "ai.ambusher";
         public const string Boss = "ai.boss";
+
+        // Phase 34C beast personalities.
+        public const string Territorial = "ai.territorial";
+        public const string Prey = "ai.prey";
     }
 
     public static class Factions
@@ -67,6 +79,7 @@ public static class GameIds
         public const string Fallen = "faction.fallen";
         public const string Outlaws = "faction.outlaws";
         public const string IronSyndicate = "faction.iron_syndicate";
+        public const string Beasts = "faction.beasts";
     }
 
     public static class Npcs

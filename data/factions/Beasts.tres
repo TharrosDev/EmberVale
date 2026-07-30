@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="FactionResource" load_steps=2 format=3 uid="uid://cmbrvlfacbeasts"]
+
+[ext_resource type="Script" path="res://src/Factions/FactionResource.cs" id="1_faction"]
+
+[resource]
+script = ExtResource("1_faction")
+Id = "faction.beasts"
+DisplayName = "Wildlife"
+Description = "The valley's beasts. They hold no grudge and keep no bargains — only territory. The Sylthari say they can be spoken with."
+DefaultReputation = -25
+HostileThreshold = 2
+KillReputationPenalty = 0
+Enemies = Array[String]([])
+Allies = Array[String]([])

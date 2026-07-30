@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EncounterResource" load_steps=2 format=3 uid="uid://cmbrvlencboar"]
+
+[ext_resource type="Script" path="res://src/World/EncounterResource.cs" id="1_encounter"]
+
+[resource]
+script = ExtResource("1_encounter")
+Id = "encounter.boar_territory"
+DisplayName = "Boar Territory"
+EnemyTemplateId = "enemy.thornback_boar"
+MinCount = 1
+MaxCount = 2
+SelectionWeight = 0.7
+AtDawn = true
+AtDay = true
+AtDusk = false
+AtNight = false

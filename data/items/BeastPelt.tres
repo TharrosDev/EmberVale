@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemResource" load_steps=2 format=3 uid="uid://cmbrvlitmbpelt"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.material.beast_pelt"
+DisplayName = "Beast Pelt"
+Description = "Thick fur, still warm. Worth more whole than the meat it came off."
+Type = 4
+Rarity = 0
+MaxStack = 50
+Weight = 0.4
+Value = 5

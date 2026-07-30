@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="AIProfileResource" load_steps=2 format=3 uid="uid://cmbrvlaiterrit"]
+
+[ext_resource type="Script" path="res://src/Enemies/AIProfileResource.cs" id="1_profile"]
+
+[resource]
+script = ExtResource("1_profile")
+Id = "ai.territorial"
+VisionRange = 9.0
+FovDegrees = 200.0
+ProximityRange = 4.0
+AlertRadius = 0.0
+PatrolRadius = 4.0
+IdleDuration = 5.0
+RetreatHealthFraction = 0.0
+ProvokeMemory = 40.0

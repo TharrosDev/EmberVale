@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" load_steps=2 format=3 uid="uid://cmbrvlenmboar"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.thornback_boar"
+NameKey = "enemy.thornback_boar.name"
+AttributesPath = "res://data/attributes/BoarAttributes.tres"
+WeaponPath = "res://data/weapons/BoarTusks.tres"
+LootTablePath = "res://data/loot/BeastLoot.tres"
+ModelPath = ""
+PlaceholderTint = Color(0.3, 0.24, 0.2, 1)
+AiProfileId = "ai.territorial"
+FactionId = "faction.beasts"
+KnownSpellIds = Array[String]([])
+CapsuleRadius = 0.55
+CapsuleHeight = 1.0
+MaxPoise = 80.0
+StaminaRegen = 10.0
+XpValue = 50

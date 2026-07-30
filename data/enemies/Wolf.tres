@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" load_steps=2 format=3 uid="uid://cmbrvlenmwolf"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.wolf"
+NameKey = "enemy.wolf.name"
+AttributesPath = "res://data/attributes/WolfAttributes.tres"
+WeaponPath = "res://data/weapons/BeastFangs.tres"
+LootTablePath = "res://data/loot/BeastLoot.tres"
+ModelPath = ""
+PlaceholderTint = Color(0.38, 0.36, 0.34, 1)
+AiProfileId = "ai.pack_flanker"
+FactionId = "faction.beasts"
+KnownSpellIds = Array[String]([])
+CapsuleRadius = 0.35
+CapsuleHeight = 0.9
+MaxPoise = 20.0
+StaminaRegen = 18.0
+XpValue = 22

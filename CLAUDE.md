@@ -532,14 +532,17 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    F1 console. The roster spawns the actor into a formation slot, tracks loyalty, persists the party,
    and reconciles it back on load.
 
-**A new humanoid enemy** (Phase 34B)
+**A new enemy archetype — humanoid or beast** (Phase 34B/34C)
 1. Author `data/enemies/Xxx.tres` (`script_class="EnemyArchetypeResource"`): unique `Id`
    (`enemy.*`), a `NameKey` authored in `strings.csv`, the build paths (`AttributesPath`,
    `WeaponPath`, `LootTablePath`, optional `ModelPath` — empty falls back to a capsule in
    `PlaceholderTint`), an `AiProfileId` (see above), `FactionId`, and `XpValue`. A non-empty
    `KnownSpellIds` adds a `SpellcastingComponent`, which with a standoff profile makes a caster.
+   `CapsuleRadius`/`CapsuleHeight` size the body *and* the melee reach — the hitbox scales off
+   height against a 1.8 m humanoid reference, so a short quadruped bites at its own scale
+   (Phase 34C) with no extra knob to set.
 2. Auto-indexed by `EnemyArchetypeDatabase`, which registers a builder with
-   `EnemyTemplateRegistry`, so `HumanoidEnemyFactory` builds it and encounters/world events/quest
+   `EnemyTemplateRegistry`, so `EnemyArchetypeFactory` builds it and encounters/world events/quest
    kill-targets can reference the id immediately. Add a `data/encounters/*.tres` pointing at it to
    make it actually appear in the wilds. No code change — reach for a bespoke factory only when the
    actor is *structurally* different (the boss's phase controller, the acolyte's cast origin), not
