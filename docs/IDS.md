@@ -68,7 +68,8 @@ Pattern column shows the canonical shape; examples are real ids from `data/**`.
 | `enemy.*` | `enemy.<name>` | `enemy.goblin` | ✅ hostile actor template (`EnemyTemplateRegistry`) — §3 |
 | `npc.*` | `npc.<name>` | `npc.elder` | ✅ friendly/neutral actor template — §3 |
 | `prop.*` | `prop.<name>` | `prop.cache` | ✅ persistent-actor template (`PersistentActorRegistry`) — §3 |
-| `flag.*` | `flag.<name>` | `flag.elder_thanked` | ✅ story flag (`StoryFlagsComponent`); not a `.tres` — set/read in dialogue/code |
+| `flag.*` | `flag.<name>` or `flag.<arc>.<name>` | `flag.elder_thanked`, `flag.clan.named` | ✅ story flag (`StoryFlagsComponent`); not a `.tres` — set/read in dialogue/code. Arc-scoped chains (Kael's, the clan rank chain) take the middle segment |
+| `travel.*` | `travel.<region>.<node>` | `travel.frostfang_reach.clan_hold` | ✅ fast-travel node (`TravelNodeComponent` in a cell scene, discovered at runtime by `FastTravelService`); **not validated** — a typo in its `RegionId` fails silently |
 | `region.*` | `region.<name>` | `region.ember_crown` | ✅ `RegionDatabase` — Phase 25 |
 | `race.*` | `race.<name>` | `race.human` | ✅ `RaceDatabase` — Phase 26 |
 | `companion.*` | `companion.<name>` | `companion.kael` | ✅ `CompanionDatabase` — Phase 32 |
@@ -128,7 +129,11 @@ ids (and `ContentValidator` would flag any). Conventions that were *implicit* an
 *codified* here:
 
 - **`event.*`** is the canonical world-event prefix (not `world_event.*`).
-- **`item.*` / `affix.*` require a subcategory**; every other domain is flat.
+- **`item.*` / `affix.*` require a subcategory**; every other domain is flat *by default*.
+  Since Phase 27E, multi-quest arcs also namespace their links (`quest.<arc>.<link>`,
+  `flag.<arc>.<name>` — `quest.warband.bounty`, `quest.clan.exile.proof`,
+  `flag.kael.brother_repaid`). The §1 regex allows any depth; the rule is that the extra
+  segment must mean *arc membership*, not decoration.
 - **Actor templates split `enemy.*` / `npc.*` / `prop.*`** by role (§3).
 - **Dialogue node ids are graph-local and prefix-free** (§4).
 

@@ -104,17 +104,18 @@ through `Loc.T(...)`.
 
 | Content | Count | Examples |
 | ------- | ----: | -------- |
-| Spells | 8 | Firebolt, Fireball, Flame Lance (charged), Frost Nova, Storm Conduit (channeled), Lesser Heal, Arcane Shield, Ember Siphon (corrupted) |
-| Status effects | 5 | Burning (stacking), Chill, Frozen, Regrowth (HoT), Arcane Ward |
-| Enemy archetypes | 3 | Goblin, Iron King (boss), Ashen Acolyte (caster) |
+| Spells | 15 | Firebolt, Fireball, Flame Lance (charged), Frost Nova, Blizzard, Storm Conduit (channeled), Lesser Heal, Arcane Shield, Ember Siphon (corrupted) |
+| Status effects | 6 | Burning (stacking), Chill, Frozen, Decay, Regrowth (HoT), Arcane Ward |
+| Creatures | 29 | 26 authored as data + 3 with bespoke factories: wolves, husks, golems, elementals, clan warriors, the Iron King |
+| Bestiary entries / AI profiles | 29 / 13 | one page per creature · brute, pack-flanker, shielded, caster, ambusher, prey… |
 | Regions | 2 | The Ember Crown, Frostfang Reach |
-| Factions | 3 | Goblin Marauders, Villagers, The Fallen |
+| Factions | 8 | Villagers, Goblins, Outlaws, The Fallen, The Hollow, Iron Syndicate, Wildlife, Frostfang Clans |
 | Races | 6 | Human, Draekyn, Grondar, Sylthari, Umbral, Valari |
-| Items / weapons | 14 / 4 | potions, materials, leather/steel gear, relics |
-| Quests / dialogues | 6 / 6 | the Warband arc, the Elder, vendors |
+| Items / weapons | 17 / 11 | potions, materials, leather/steel gear, relics |
+| Quests / dialogues | 13 / 12 | the Warband arc, the Frostfang clan rank chain, the Elder, Kael |
 | Recipes / perks | 7 / 6 | iron ingot, steel sword, health potion · Might, Warding |
-| Weather / encounters / events | 5 / 5 / 3 | storm, fog · goblin patrols · raid, cache, hunt |
-| Affixes | 11 | Keen, Sturdy, Of the Tiger, Of Warding |
+| Weather / encounters / events | 5 / 31 / 3 | storm, fog · goblin patrols, clan patrols · raid, cache, hunt |
+| Affixes / loot tables | 11 / 13 | Keen, Sturdy, Of the Tiger, Of Warding |
 
 ## Build & run
 
@@ -213,20 +214,20 @@ that *can express* the game. The [**production roadmap**](docs/PRODUCTION_ROADMA
 | ---- | --- | ------ |
 | **G0 — First Playable** | one region, a boss, the corruption hook | ✅ Done (Phases 22–28) |
 | **G1 — Vertical Slice** | a 30–60 min slice that looks & plays shipped | 🟢 Built — needs a play-through + export |
-| **G2 — Alpha** | every system/mechanic exists | 🟢 Started (Phase 34 ✅) |
+| **G2 — Alpha** | every system/mechanic exists | 🟢 Started (Phases 34 + 34.5 ✅) |
 | **G3 — Beta** | all content in | ⏭ |
 | **G4 — Release Candidate** | zero blocker bugs | ⏭ |
 | **G5/G6 — Launch / Live** | shipped; then patches & content | ⏭ |
 
-**Now:** everything through Phase 34 is built. **G1 is one play-through and one export away** —
+**Now:** everything through Phase 34.5 is built. **G1 is one play-through and one export away** —
 both need a human at the keyboard, which is the only reason the gate is still open.
 
 |              | Phase                                          |
 | ------------ | ---------------------------------------------- |
 | ✅ **Done**    | 22–32 + G0 First Playable — corruption, meta-shell & localization, region streaming/map/fast travel, races & creation, the Ember Crown, the Iron King, combat feel, spellcraft & the Weave, models, the UI/HUD overhaul, audio, companions |
 | ✅ **Done**    | 34 — Enemy & Creature Roster, complete (34A–34G): AI profiles, 26 creatures as data, per-school damage resistances, every magic school's on-hit identity, Ashen corruption variants, and the Ash Hunters' bestiary |
+| ✅ **Done**    | 34.5 — the Frostfang Clans, complete (34.5A–34.5C): their faction and clan hold (Frostfang Reach's first settlement), raider/beast-tamer/shaman archetypes who ignore you until you give them a reason, and a rank chain you can earn your way up — or sell out |
 | ▶ **Current** | 33 — Vertical Slice Assembly: 33A–33C ✅, **33D/33E built but never played**. Play it and export it and G1 closes |
-| ✅ **Done**    | 34.5 — the Frostfang Clans, complete: their faction and clan hold (Frostfang Reach's first settlement), raider/beast-tamer/shaman archetypes who ignore you until you give them a reason, and a rank chain you can earn your way up — or sell out |
 | ⏭ **Next**    | 35 — dragons |
 
 > A phase is "done" when it works in-game **and** round-trips through save/load.
