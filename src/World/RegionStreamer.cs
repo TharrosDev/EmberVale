@@ -32,10 +32,17 @@ public sealed partial class RegionStreamer : Node3D
     private readonly List<RegionCellResource> _pending = new();
     private readonly HashSet<string> _pendingIds = new();
 
+    /// <summary>The region currently being streamed, or empty before the first <see cref="Configure"/>.
+    /// The streamer is re-configured at both places the active region changes (world build and each
+    /// hard transition), so this is the cheapest honest answer to "where is the player" for systems
+    /// that need it — the <see cref="EncounterDirector"/>'s region gate reads it.</summary>
+    public string ActiveRegionId { get; private set; } = string.Empty;
+
     /// <summary>Caches the region's cells; the streamer manages exactly these.</summary>
     public void Configure(RegionResource? region)
     {
         _cells.Clear();
+        ActiveRegionId = region?.Id ?? string.Empty;
         if (region == null)
         {
             return;

@@ -3,6 +3,7 @@ using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Core.Services;
 using Embervale.Entities;
+using Embervale.Factions;
 using Embervale.Movement;
 using Embervale.Player;
 using Embervale.Quests;
@@ -321,7 +322,8 @@ public partial class CompanionAIComponent : EntityComponent, ISaveable
         foreach (Node node in GetTree().GetNodesInGroup(ObjectiveLocator.EnemyGroup))
         {
             if (node is not Node3D candidateBody || !IsInstanceValid(candidateBody) ||
-                EntityNode.FindOwner(node) is not { } candidate || !IsHostileTo(candidate, team))
+                EntityNode.FindOwner(node) is not { } candidate || !IsHostileTo(candidate, team) ||
+                !PlayerWouldFight(candidate))
             {
                 continue;
             }
@@ -339,6 +341,29 @@ public partial class CompanionAIComponent : EntityComponent, ISaveable
 
     /// <summary>The entity the player is locked onto, if any — the companion's assist focus.</summary>
     private IEntity? PlayerFocus() => GetPlayer()?.GetComponent<LockOnComponent>()?.Target;
+
+    /// <summary>
+    /// Whether the player's standing makes <paramref name="candidate"/> a fight worth starting
+    /// (Phase 34.5B). Every archetype is built on the hostile team, so team alone would have a
+    /// companion open fire on a *neutral* faction — a Frostfang clansman the player is at peace with —
+    /// and start a war nobody chose. Mirrors <c>EnemyAIComponent.PlayerIsTarget</c>: an unfactioned
+    /// actor stays hostile, and so does one the player has actually angered.
+    ///
+    /// Only gates the proximity scan. A locked-on focus and anyone who has already landed a blow
+    /// (<see cref="OnDamageDealt"/>) remain valid targets, so assisting a fight the player starts and
+    /// defending against one they didn't both still work.
+    /// </summary>
+    private bool PlayerWouldFight(IEntity candidate)
+    {
+        if (candidate.GetComponent<Factions.FactionComponent>() is not { } faction ||
+            string.IsNullOrEmpty(faction.FactionId))
+        {
+            return true;
+        }
+
+        ReputationComponent? reputation = GetPlayer()?.GetComponent<ReputationComponent>();
+        return reputation == null || reputation.IsHostile(faction.FactionId);
+    }
 
     /// <summary>Whether <paramref name="candidate"/> is a live actor on an opposing team.</summary>
     private static bool IsHostileTo(IEntity? candidate, int team) =>

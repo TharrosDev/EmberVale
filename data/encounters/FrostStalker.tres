@@ -11,6 +11,7 @@ MinCount = 1
 MaxCount = 1
 SelectionWeight = 0.25
 CorruptionChance = 0.15
+RegionIds = Array[String](["region.frostfang_reach"])
 AtDawn = false
 AtDay = false
 AtDusk = false

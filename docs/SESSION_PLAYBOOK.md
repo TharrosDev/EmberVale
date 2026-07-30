@@ -2052,9 +2052,61 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
     means killing a peaceful NPC; the hold is still reachable only behind
     `flag.iron_king_defeated`; and `TravelNodeComponent.RegionId` is not validated
     (`ContentValidator.cs:757`), so that one field fails silently if it ever drifts.
-- [ ] **34.5B — Clan archetypes (raider, beast-tamer, shaman)** `[C]`
+- [x] **34.5B — Clan archetypes (raider, beast-tamer, shaman)** `[C]` ✅
   - **Done when:** three clan archetypes exist on the Phase 34 matrix with
     distinct loot/AI profiles.
+  - **Landed:** `enemy.clan_raider` (`ai.shielded`, poise 75, steel sword),
+    `enemy.clan_beast_tamer` (`ai.pack_flanker`, fast and thin), and
+    `enemy.clan_shaman` (`ai.caster`, frost nova + lesser heal) — three distinct
+    existing AI profiles, three distinct loot tables, no new profile file and no
+    new weapon. All three carry `FrostResist` 35–60, which is what the Reach's
+    creatures should cost a fire build, free off 34E.
+  - **They are neutral, and that is the feature.** The clans sit at Neutral
+    standing after 34.5A, so `EnemyAIComponent.PlayerIsTarget` returns false and a
+    clan patrol *ignores you*. Hit one and it fights back; drop your standing and
+    the whole faction turns. The archetypes are the first actors in the game that
+    are hostile-team but not hostile.
+  - **Two bugs that had to be fixed for that to be true**, both root-caused rather
+    than worked around:
+    - **Companions attacked neutrals.** `CompanionAIComponent` targeted on team
+      alone, and `EnemyArchetypeFactory` builds *every* archetype on the hostile
+      team — so Kael would have opened fire on a clansman on sight and started a
+      war the player never chose. `PlayerWouldFight` now gates the proximity scan
+      on the player's standing, mirroring `EnemyAIComponent.PlayerIsTarget`. It
+      deliberately does **not** gate the lock-on focus or the
+      `OnDamageDealt` reaction, so assisting a fight the player starts and
+      defending one they didn't both still work, and an unfactioned actor is
+      hostile exactly as before.
+    - **Encounters had no region filter** — the known limit logged under Phase 34.
+      `EncounterResource.RegionIds` (**empty = anywhere**, so all 28 existing files
+      were untouched) plus one predicate in `EncounterDirector.PickEligible`, fed
+      by a new `RegionStreamer.ActiveRegionId`. The streamer is re-`Configure`d at
+      both places the region changes, so it needed no `GameBootstrap` edit and no
+      new file. `encounter.frost_stalker` and `encounter.rime_drift` are now gated
+      to Frostfang, which takes 0.75 of weight out of the Ember Crown pool 34F.5
+      tuned — the valley loses two creatures that never belonged there.
+  - **The validator got stricter again**, same habit: an encounter naming an
+    unknown region now fails `--validate`. A typo there would otherwise narrow the
+    encounter to nowhere, and the only symptom is a creature that quietly stops
+    appearing. **Proven by making it fail** before it was trusted.
+  - **Verified:** `dotnet build` clean, `dotnet test` 611/611, `--validate` exits 0
+    (26 archetypes, 29 templates, 29 bestiary entries, 31 encounters, 488 strings).
+  - **Still owed (maintainer, at the keyboard)** — all of it needs `F1`:
+    - `region goto region.frostfang_reach`, `spawn 1 enemy.clan_raider` — it should
+      ignore you until you swing, then fight.
+    - **With Kael recruited, spawn a clansman beside him — he must not open fire.**
+      This is the fix most likely to be wrong.
+    - `spawn 1 enemy.clan_shaman` — casting proves the mana pool landed (a caster
+      with no mana just stands there, silently); mending a hurt clansman proves the
+      ally-heal path.
+    - `rep faction.frostfang_clans -80` → all three turn hostile on sight.
+    - Stand in the Ember Crown a few minutes: no clan patrol, no frost stalker, no
+      rime shard. Then the same in Frostfang outside the hold's 30 m safe zone.
+  - **Known limits:** **one encounter = one template id** still holds, so a
+    beast-tamer cannot spawn *with* her stalkers — `encounter.clan_hunt` and the
+    now-Frostfang-only `encounter.frost_stalker` overlap by chance instead, the
+    same compromise 34G recorded for the necromancer and its husks. And the region
+    gate is a whitelist on encounters only; world events are still global.
 - [ ] **34.5C — Clan questline + rank chain** `[C]`
   - **Done when:** a short multi-quest arc with rank-up flags is completable;
     `validate-all` green.

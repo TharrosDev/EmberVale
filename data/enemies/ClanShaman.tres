@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" load_steps=2 format=3 uid="uid://cmbrvlenmclansh"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.clan_shaman"
+NameKey = "enemy.clan_shaman.name"
+AttributesPath = "res://data/attributes/ClanShamanAttributes.tres"
+WeaponPath = "res://data/weapons/ElementalTouch.tres"
+LootTablePath = "res://data/loot/ClanShamanLoot.tres"
+ModelPath = ""
+PlaceholderTint = Color(0.56, 0.66, 0.74, 1)
+AiProfileId = "ai.caster"
+FactionId = "faction.frostfang_clans"
+KnownSpellIds = Array[String](["spell.frost_nova", "spell.lesser_heal"])
+CapsuleRadius = 0.4
+CapsuleHeight = 1.8
+MaxPoise = 25.0
+StaminaRegen = 10.0
+ManaRegen = 7.0
+XpValue = 80

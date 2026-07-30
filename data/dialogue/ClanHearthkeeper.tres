@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="DialogueResource" format=3 uid="uid://cmbrvldlgclhrt"]
+[gd_resource type="Resource" script_class="DialogueResource" format=3 uid="uid://c0mhr77e1jymj"]
 
 [ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]

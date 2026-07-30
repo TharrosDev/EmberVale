@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EncounterResource" format=3 uid="uid://cmbrvlencclanpt"]
+
+[ext_resource type="Script" path="res://src/World/EncounterResource.cs" id="1_encounter"]
+
+[resource]
+script = ExtResource("1_encounter")
+Id = "encounter.clan_patrol"
+DisplayName = "Clan Patrol"
+EnemyTemplateId = "enemy.clan_raider"
+MinCount = 2
+MaxCount = 3
+SelectionWeight = 1.0
+CorruptionChance = 0.05
+RegionIds = Array[String](["region.frostfang_reach"])
+AtDawn = true
+AtDay = true
+AtDusk = true
+AtNight = false

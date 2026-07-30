@@ -458,7 +458,11 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 **A new encounter**
 1. Author `data/encounters/Xxx.tres` (`script_class="EncounterResource"`): unique `Id`,
    `EnemyTemplateId`, `MinCount`/`MaxCount`, `SelectionWeight`, the `At{Dawn,Day,Dusk,
-   Night}` allow flags, and `CorruptionChance` (0..1, Phase 34F — see below).
+   Night}` allow flags, `CorruptionChance` (0..1, Phase 34F — see below), and `RegionIds`
+   (Phase 34.5B — `Array[String]` of `region.*` ids; **empty means anywhere**). Author
+   `RegionIds` whenever the creature belongs to one realm, or it rolls in every region: that
+   is how frost stalkers ended up prowling the Ember Crown for two phases. A misspelled id
+   narrows the encounter to *nowhere* and `--validate` is the only thing that catches it.
 2. Auto-indexed by `EncounterDatabase`; the `EncounterDirector` spawns it around the player
    when its day phase is active, resolving `EnemyTemplateId` through `EnemyTemplateRegistry`
    — so any registered archetype works, not just the goblin (Phase 34B). No code change.
@@ -697,9 +701,10 @@ reached) · Stage B ⏳ (29–33 built; **Gate G1 needs a maintainer play-throug
 export** — that is the only thing between here and G1) · Stage C ⏳ **in progress**:
 **Phase 34 is complete (34A–34G)** — AI profiles, humanoid/beast/undead/construct/
 elemental archetypes, per-school damage resistances, every magic school's on-hit
-identity, Ashen corruption variants, and the bestiary. **34.5A is complete** — the
-Frostfang Clans faction and their clan hold, Frostfang Reach's first settlement.
-Next: 34.5B/C (clan archetypes, then the clan questline), then 35 dragons. `docs/SESSION_PLAYBOOK.md` is the live per-sub-phase tracker;
+identity, Ashen corruption variants, and the bestiary. **34.5A/B are complete** — the
+Frostfang Clans faction, their clan hold (Frostfang Reach's first settlement), and
+three clan archetypes that stay neutral until provoked. Next: 34.5C (the clan
+questline), then 35 dragons. `docs/SESSION_PLAYBOOK.md` is the live per-sub-phase tracker;
 `docs/PRODUCTION_ROADMAP.md` §11 mirrors phase-level status only.
 
 > **Two UI phases, both done:** Phase 14 *polished the debug-grade overlay* (shared
