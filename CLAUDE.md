@@ -78,10 +78,22 @@ where the game loads it), *then* `run_project`. Run the pure-logic unit suite wi
 `dotnet test tests/Embervale.Tests`.
 
 Other caveats: `run_project` launches the **real game window** — use it deliberately and
-`stop_project` when done; it is not a headless check. The `WorldIntegrityChecker` (5s)
-stays silent unless an invariant breaks, so give a run several seconds before trusting a
-clean log. When you have **not** built+run something, say it was *reviewed against the
-Godot 4.7 C# API* — reserve "verified/tested running" for output you actually captured.
+`stop_project` when done; it is not a headless check. It also lands on the **main menu**, not
+in the world (Phase 24's meta-shell), and the menu's buttons need input the MCP can't inject —
+so a bare `run_project` verifies boot and database loading, nothing in-world. Use `--play`
+(§3) when you need an actual session. The `WorldIntegrityChecker` (5s) stays silent unless an
+invariant breaks, so give a run several seconds before trusting a clean log. When you have
+**not** built+run something, say it was *reviewed against the Godot 4.7 C# API* — reserve
+"verified/tested running" for output you actually captured.
+
+⚠️ **`godot` is not on `PATH`.** The `godot …` invocations below are shorthand; the binary is
+
+```
+C:\Users\magnu\Downloads\Godot_v4.7-stable_mono_win64\Godot_v4.7-stable_mono_win64\Godot_v4.7-stable_mono_win64_console.exe
+```
+
+Use the `_console.exe` variant from a shell — the plain `.exe` detaches and prints nothing to
+stdout, so you lose the log you ran it for.
 
 There is **no CI** (the maintainer declined to add GitHub Actions). The green
 **Vercel** check that appears on every PR is a meaningless no-op — Vercel is
@@ -96,14 +108,16 @@ build signal.
 1. Install Godot 4.7+ **.NET build** and the .NET 8 SDK.
 2. Open `project.godot` in the editor (it builds C# automatically), or
    `dotnet build Embervale.sln`.
-3. Press Play. `scenes/Main.tscn` boots the sandbox.
+3. Press Play. `scenes/Main.tscn` boots to the main menu; *New Game* / *Continue* enters the
+   sandbox world.
 
 **For you (Claude), via the Godot MCP** (see §2): after any `.cs` change, first
 `dotnet build Embervale.sln` (the shell has dotnet 8.0) — `run_project` does **not**
 recompile and will otherwise launch a stale binary. Then `run_project` (projectPath
-`C:\Users\magnu\Embervale`) launches the sandbox, `get_debug_output` captures the
-log/errors, `stop_project` stops it. Verify pure logic with
-`dotnet test tests/Embervale.Tests`. Close the game (`stop_project`) when finished.
+`C:\Users\magnu\Embervale`) launches the game **on the main menu**, `get_debug_output` captures
+the log/errors, `stop_project` stops it. To reach the world instead, launch with `--play` (below)
+from a shell. Verify pure logic with `dotnet test tests/Embervale.Tests`. Close the game
+(`stop_project`) when finished.
 
 **Headless content check (no gameplay):** run the full content validator and exit —
 
@@ -123,6 +137,13 @@ can be launched deterministically — useful for capturing runtime logs without 
 no saves it stays on the menu. This is the one-command content gate for the maintainer (and
 later CI). The same battery is also reachable in-game via the `validate-all` dev console
 command (`F1`).
+
+**What `--play` still can't verify:** the **`F1` dev console needs keyboard input**, and there is
+no CLI equivalent — so no `spawn`/`time`/`rep` from a remote session. `--play` also resumes where
+the save left off, which for the Ember Crown is usually the town hub *inside* the region's 34 m
+`SafeZoneRadius`, where the `EncounterDirector` deliberately won't spawn. A quiet log after a
+`--play` run therefore proves boot, database loading and save restore — **not** that new enemies
+spawn or fight. Say which of the two you got; don't let one stand in for the other.
 
 **Sandbox controls:** `WASD` move · mouse look · `Shift` sprint · `Space` jump ·
 `LMB` attack · `RMB` block · `E` interact · `I` inventory · `C` party order · `H` heal dummy ·
