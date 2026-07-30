@@ -26,10 +26,13 @@
 3. **Do** only that sub-phase. If you discover it's two sessions of work, split
    it: do the first half, append a new lettered sub-phase for the remainder, and
    stop.
-4. **Verify** the *Done when* bar. Run `validate` (and any new validators) in the
-   dev console mentally/against the API — this container can't build (CLAUDE.md
-   §2), so "verified" means *reviewed against the Godot 4.7 C# API*, never "ran
-   it."
+4. **Verify** the *Done when* bar for real. This environment **can** build and run
+   (CLAUDE.md §2): `dotnet build Embervale.sln`, `dotnet test tests/Embervale.Tests`,
+   and `godot --headless --path . -- --validate`. Run all three; a phase that
+   changes content is not done until `--validate` exits 0. Two things still need a
+   human at the keyboard — the `F1` dev console (no CLI equivalent) and anything
+   behind `F5`/`F9` — so say plainly which checks you *ran* and which you are
+   handing over. Reserve "verified" for output you actually captured.
 5. **Persist** — if the sub-phase added stateful data, it implements `ISaveable`
    and round-trips *before* you call it done (CLAUDE.md §1).
 6. **Commit** with a clear message; tick the box here and update the phase's row
@@ -633,453 +636,53 @@ no code) — batch them when momentum is good.
 
 ---
 
-## Phase 25.5 — Stage A Hardening & Stabilization `[F/P]`
+## Phase 25.5 — Stage A Hardening & Stabilization `[F/P]` ✅ **complete (A–P)**
 
-> A consolidation pass on **everything built so far** — **debug, optimize and harden,
-> no new features** — before races/region/boss stack on top. Every sub-phase is a
-> focused pass on *existing* code. Keep the repo buildable/playable at every commit;
-> each sub-phase ends with the relevant subsystem re-verified (build + tests +
-> `--validate` + an in-engine or harness run).
->
-> Two bands, do them in any order (foundation-first is reasonable): **25.5A–G** harden
-> the Stage A production work (Phases 22–25 — corruption, shell, streaming, map/compass,
-> fast travel); **25.5H–P** are a fresh regression/hardening pass over the foundational
-> **systems 1–21**, building on (not repeating) the earlier Phase 19 (optimization) and
-> Phase 20 (deep debugging) passes — now that Stage A leans on them and the codebase has
-> grown. (Phase 21 Content Expansion is the ongoing content seam, not hardened here; the
-> 19/20 *re-runs* fold into 25.5B profiling + 25.5G's integration sweep.)
+> A consolidation pass over **everything built to that point** — debug, optimize, harden, no new
+> features — before races/boss/slice stacked on top. **25.5A–G** hardened the Stage A production
+> work (22–25); **25.5H–P** were a fresh regression pass over the foundational systems 1–21.
+> The integration sign-off, perf baselines and known-issues ledger live in
+> [`STAGE_A_STATUS.md`](STAGE_A_STATUS.md); the durable engineering rules that came out of it are
+> in `ARCHITECTURE.md` (§2.7 Save especially) and CLAUDE.md §7. This block is the log.
 
-- [x] **25.5A — Save/load integrity sweep** `[F]` ✅
-  - **Goal:** clean, warning-free persistence across every system built so far.
-  - **Tasks:** root-cause the recurring boot/load warnings (transient actors logging
-    *"no PersistentId"*; *"orphaned state on load"* for stale `stats:*` keys) — give
-    intentionally-transient actors a clear policy (stable id, or suppress the warning)
-    and prune orphaned entries on load. Confirm every new `ISaveable` (corruption,
-    settings, map, fasttravel, cell-persistence, save slots) round-trips with zero
-    spurious warnings. Read `src/Save/` first.
-  - **Done when:** a New-Game → play → F5/F9 cycle and a Continue produce **no**
-    spurious save warnings; a save/load self-check (dev command or `ReproHarness`
-    scenario) passes.
-  - **Done:** root cause — every `ISaveable` `EntityComponent` registered with the
-    `SaveManager` *unconditionally*, so **transient actors** (the training dummy, spawned
-    goblins — no `PersistentId`) wrote volatile `stats:<runtimeId>` keys. Those can never
-    be reclaimed after a world rebuild (the reload spawns fresh actors with new runtime
-    ids), producing all three warning classes at once: *"no PersistentId"* (key build),
-    *"no usable entry"* (live key absent from the save) and *"orphaned state"* (saved key
-    with no live claimant). Fix: a new pure `src/Save/SaveKeyPolicy.cs`
-    (`ShouldPersist`/`Key`/`IsVolatile`, Godot-free) + a `EntityComponent.RegisterSaveable()`
-    gate that registers a component **only when its owner has a stable `PersistentId`** —
-    transient actors now persist *nothing*, so no volatile keys are ever written. Verified
-    the ordering holds: `PlayerFactory` sets `PersistentId="player"` in the initializer and
-    `PersistentSpawnDirector.AssignIdentity` sets it before the actor enters the tree, both
-    *before* `OnInitialize`, so every would-be-persistent actor still registers. All 11
-    `ISaveable` components updated; `OnTeardown` `Unregister` stays (safe no-op when skipped).
-    A `savecheck` dev command (F1) audits `SaveManager.RegisteredSaveIds` and reports any
-    volatile (would-orphan) key — the runnable check; after the fix it reports **0**. Build +
-    **105 tests** (14 new `SaveKeyPolicyTests`) + `--validate` (exit 0) green. (A New Game →
-    F5/F9 producing a fully warning-free log is the maintainer's at-keyboard confirmation;
-    the policy is proven by unit tests and the `savecheck` audit. Note: loading a *pre-fix*
-    save still warns on its legacy `stats:*` keys — that's stale data, not a code bug; a
-    fresh save is clean. The *"no usable entry for map/fasttravel/cell_persistence"* lines on
-    old saves are normal forward-compat — those services post-date the save.)
+**Stage A band (22–25 hardening)**
 
-- [x] **25.5B — Region streaming stability & profiling** `[F/P]` ✅
-  - **Goal:** streaming and cell persistence are hitch-free and correct under stress.
-  - **Tasks:** stress the `RegionStreamer` (fast boundary crossing, hysteresis thrash,
-    multi-cell load waves vs the 1-cell/frame budget); replace the fixed 0.4s
-    transition settle (`_loadingCountdown`) with a streamer-idle gate to kill pop-in;
-    verify `CellPersistenceDirector` reconciliation under repeated load/unload + a full
-    save/load. Profile load hitches.
-  - **Done when:** rapid traversal/transitions show no thrash or visible pop-in
-    (reviewed in-engine); persistence survives repeated unload/reload and save/load.
-  - **Done:** the headline fix — the post-transition loading screen no longer clears on a
-    **fixed 0.4 s timer** (which pops in cells whenever a region needs more than ~24
-    frames of the 1-cell/frame budget). It now holds until the streamer reports the
-    destination **settled**: a new `RegionStreamer.IsSettledAround(origin)` returns true
-    only when the pending-load queue is drained *and* every in-range cell is loaded. The
-    bootstrap (`PerformRegionLoad` → `_loadingElapsed` gate in `_Process`) resumes
-    `Playing` when settled, bounded by a `LoadingMinSeconds` (0.15 s, so the screen never
-    flickers) and a `LoadingMaxSeconds` (3.0 s safety cap, so a cell that fails to load can
-    never hang the screen). The teleport happens before the gate starts, so it polls the
-    destination position. Pure predicate `StreamDecision.IsCellSettled(distance, radius,
-    isLoaded)` (= out-of-range *or* loaded) is unit-tested (3 new). **Hysteresis thrash**
-    is already covered by the existing `StreamDecision` 10 m unload margin + its tests (a
-    player loitering on a boundary can't thrash a cell); the 1-cell/frame budget already
-    spreads load waves. **`CellPersistenceDirector`** reconciliation was reviewed against
-    `src/Save/` during 25.5A and is unchanged here; 25.5A's transient-actor fix means
-    streamed-in mobs no longer write orphaning state. Build + **108 tests** (3 new) +
-    `--validate` (exit 0) green. (The visible "no pop-in after a transition" + a
-    repeated unload/reload + save/load persistence run is the maintainer's at-keyboard
-    check; the gate logic is unit-tested and the field/ordering verified by review.)
+- [x] **25.5A — Save/load integrity sweep** `[F]` — root-caused the recurring save warnings:
+  components registered with the `SaveManager` unconditionally, so transient actors wrote volatile
+  `stats:<runtimeId>` keys that could never be reclaimed. Fixed with the pure `SaveKeyPolicy` +
+  `EntityComponent.RegisterSaveable()`, so **transient actors persist nothing**. Added the
+  `savecheck` dev command. → `ARCHITECTURE.md` §2.7.
+- [x] **25.5B — Region streaming stability & profiling** `[F/P]` — the post-transition loading
+  screen no longer clears on a fixed 0.4 s timer (which popped cells in whenever a region needed
+  more than the 1-cell/frame budget); it holds until the streamer reports idle.
+- [x] **25.5C — Corruption system hardening** `[F]` — fixed a load desync where the tier event
+  didn't re-fire after `Load`, leaving appearance/UI on the pre-load tier.
+- [x] **25.5D — Meta-shell, settings & state-machine robustness** `[F]` — state-machine edges,
+  settings round-trip, mouse recapture on resume.
+- [x] **25.5E — UI/HUD interaction & input hardening** `[F/P]` — input/focus edges; the fast-travel
+  trap and block-strand bugs.
+- [x] **25.5F — Validator & analytics coverage** `[F]` — widened `ContentValidator` and the
+  analytics sink over the Stage A systems.
+- [x] **25.5G — Integration regression sweep & known-issues ledger** `[C/P]` — the sign-off pass;
+  its output is `STAGE_A_STATUS.md`.
 
-- [x] **25.5C — Corruption system hardening** `[F]` ✅
-  - **Goal:** the defining mechanic is robust at its edges.
-  - **Tasks:** edge-case tier thresholds/transitions, appearance/dialogue/ability
-    gating, the both-endings eligibility dial; confirm `CorruptionTierChangedEvent`
-    fires correctly under rapid changes and the HUD gauge/vignette stay in sync; verify
-    the save round-trip.
-  - **Done when:** corruption drives its consequences with no missed/duplicated tier
-    events and round-trips through save/load; covered by a unit or harness check.
-  - **Done:** found and fixed a real **load-desync bug**. `CorruptionComponent.Load()` re-synced
-    consequence systems *"from a clean Untainted baseline"* — it only fired a
-    `CorruptionTierChangedEvent` when the loaded tier was non-Untainted, hardcoding the old tier as
-    `Untainted`. Correct for a fresh Continue (the component starts at 0), but **wrong for an
-    in-session quickload (F9)**: loading a low-corruption save while at a high tier (or shifting
-    between two non-Untainted tiers) fired *no* tier event, so the HUD vignette, the
-    `CorruptionAppearanceController` (ash veins/eye-glow), NPC dread and ability gates — all of which
-    set absolute state off the tier event — stayed stuck at the old tier. Fix: a pure
-    `CorruptionTiers.Transition(oldValue, newValue)` → `(old, new, changed)` now drives **both**
-    `Apply()` (Add/Set) and `Load()`, so loading emits the same event the live path would, re-syncing
-    every consumer in the correct direction (including *down*). Tier mapping, monotonicity and the
-    endings-eligibility dial were already pinned; added 4 `Transition` tests covering the
-    upward/downward/same-band/between-non-Untainted cases (the downward case is the bug). Rapid
-    changes already fire exactly one tier event per band-crossing `Apply` (no-op when unchanged), and
-    a multi-band jump emits one event carrying the true old+new — consumers set absolute state, so no
-    miss/dup. Build + **112 tests** (4 new) + `--validate` (exit 0) green. (The visible vignette/
-    appearance reset on an F9 that lowers corruption is the maintainer's at-keyboard check via the
-    23B `corrupt` dev command; the transition logic is unit-tested and `Load`/`Apply` now share it.)
+**Systems band (1–21 regression pass)**
 
-- [x] **25.5D — Meta-shell, settings & state-machine robustness** `[F]` ✅
-  - **Goal:** the shell never wedges or corrupts a slot.
-  - **Tasks:** exercise the save-slot lifecycle (new/continue/load/delete, autosave
-    ring rotation, quick/manual save), slot-metadata integrity, settings apply-on-boot
-    across every category, and the MainMenu↔Loading↔Playing↔Paused machine under odd
-    sequences (load while paused, delete the active slot, etc.).
-  - **Done when:** every shell path is exercised with no soft-locks, lost slots, or
-    unapplied settings.
-  - **Done:** audited the three shell surfaces and fixed the one real defect — **unapplied
-    settings**. The 24F settings panel exposes a Mouse-Sensitivity slider (0.05–2.0) and an
-    Invert-Y toggle, but `PlayerController` used a *hardcoded* `MouseSensitivity = 0.0028f`,
-    never read `SettingsService`, and never honoured Invert-Y — so both controls did nothing.
-    Fix: the controller now resolves `SettingsService` from the `ServiceLocator` in
-    `OnInitialize` and scales its base sensitivity by the live multiplier each frame, with
-    Invert-Y flipping the pitch axis; the maths is a pure `SettingsMath.LookStep` /
-    `ApplyPitch` pair (5 new tests; the default 1.0 multiplier reproduces the old feel
-    exactly, so no behaviour change at defaults). Reading live each frame means a mid-game
-    change in the pause→settings panel applies immediately, no re-apply plumbing needed.
-    **State machine** (audited, sound): `GameManager.TogglePause` only acts in Playing/Paused,
-    so Esc during Loading/MainMenu can't wedge a transition; only `Paused` pauses the tree, so
-    `Loading`/`Playing` always unpause (a load *while* paused correctly resumes). **Slot
-    lifecycle** (audited, sound): `DeleteSlot` removes files+dir and leaves `ActiveSlot`
-    dangling, but the next F5 just recreates that slot (no soft-lock), and Continue is disabled
-    when no saves exist; autosave-ring rotation and slot headers are already unit-pinned. Build +
-    **117 tests** (5 new) + `--validate` (exit 0) green. (Feeling the sensitivity slider/Invert-Y
-    actually move the camera is the maintainer's at-keyboard check; the look maths is unit-tested
-    and the `SettingsService` wiring verified against the boot order — registered at line 118
-    before the player is built.)
+- [x] **25.5H — Core, entity/component, events, stats & pooling** `[F]`
+- [x] **25.5I — Player controller, locomotion & combat framework** `[F]`
+- [x] **25.5J — Enemy AI, perception & spawning** `[F/P]`
+- [x] **25.5K — Inventory, equipment & loot generation** `[F]`
+- [x] **25.5L — Progression, quests & dialogue** `[F]`
+- [x] **25.5M — Magic, status effects & combat math** `[F]`
+- [x] **25.5N — World clock/weather/encounters, NPC schedules & procedural events** `[F]`
+- [x] **25.5O — Crafting & faction/reputation systems** `[F]`
+- [x] **25.5P — Legacy UI panels & HUD** `[P/F]` — also completed the `Loc` sweep over the four
+  legacy panels (80 → 113 strings), leaving `DebugHud` exempt per CLAUDE.md §6.
 
-- [x] **25.5E — UI/HUD interaction & input hardening** `[F/P]` ✅
-  - **Goal:** the new UI surfaces compose cleanly.
-  - **Tasks:** audit mouse-mode/`UiState.MenuOpen` correctness across overlapping
-    menus (modal map vs pause vs inventory vs dialogue vs dev console), focus
-    navigation, the compass/vignette/loading-screen overlays, reduced-motion guards,
-    and a localization sweep (no hard-coded player strings slipped through since 24G).
-  - **Done when:** opening/closing any combination of menus leaves the mouse + player
-    control in the right state; no untranslated UI strings remain.
-  - **Done:** fixed a real **overlapping-menu mouse bug**. `UiState.MenuOpen` was a single
-    `bool` that six surfaces (Inventory/Crafting/Dialogue/Map panels, SettingsPanel, DevConsole)
-    each set independently, *and* each drove the OS mouse mode off its own local `open` flag.
-    Opening two at once — e.g. the **F1 dev console over an open inventory**, or settings over a
-    modal — then closing the inner one flipped `MenuOpen` to false and **recaptured the mouse
-    while the outer menu was still visible**, so the player looked around behind it. Root cause:
-    a bool can't represent "two menus open", and each close read its *local* state, not the
-    aggregate. Fix: `UiState` is now an **owner set** (`HashSet<object>`, `Open(this)`/
-    `Close(this)`, `MenuOpen => count > 0`) and every mouse decision reads the aggregate
-    `UiState.MenuOpen`, so the mouse only recaptures when the *last* menu closes. Pure and
-    Godot-free → 4 new `UiStateTests` pinning the exact overlap case. No `PlayerController`/
-    `PauseMenu` change — both already consume `UiState.MenuOpen`, which now means the right
-    thing. **Audits (no change):** localization sweep of `src/UI` is clean — the only literal is
-    the dev console's `PlaceholderText`, exempt per CLAUDE.md §6; `Settings.ReducedMotion` is a
-    documented Phase-54 placeholder (nothing consumes it yet, by design, not a regression);
-    overlay `Layer` ordering + `MouseFilter = Ignore` on non-interactive overlays read correct.
-    Build + **121 tests** (4 new) + `--validate` (exit 0) green. (Opening the inventory, pressing
-    F1 over it, and closing the console to confirm the mouse stays free until the inventory also
-    closes is the maintainer's at-keyboard check; the count logic is unit-tested.)
-
-- [x] **25.5F — Validator & analytics coverage** `[F]` ✅
-  - **Goal:** `--validate` is a real gate for the new content/id domains.
-  - **Tasks:** grow `ContentValidator` to cover the Stage A domains added since 22
-    (regions, cells, travel nodes, corruption-gated content, locale-key presence) and
-    confirm the analytics spine logs the new events; close validator gaps.
-  - **Done when:** `--validate` catches a deliberately-broken region/cell/travel/locale
-    reference; analytics records the Stage A events.
-  - **Done:** closed two real validator gaps and the analytics gap. **Locale** had *no*
-    validation: a new pure `LocaleAudit.Audit(csv, "en")` (Godot-free, unit-tested) flags
-    duplicate keys (`LocCatalog.Parse` dedupes last-wins, silently dropping a string) and keys
-    with no default-locale value (the UI falls back to the raw key, e.g. `menu.settings`); a new
-    `ContentValidator.ValidateLocale` reads `data/locale/strings.csv` and runs it. **Region/cell
-    geometry** was unchecked: `ValidateRegions` now also asserts the region `SpawnPoint` and each
-    cell `Center` sit inside `Bounds` (`Aabb.HasPoint`) — `SpawnPoint` is where every portal *and*
-    fast-travel node lands, so an out-of-bounds spawn (the scannable "travel" reference) drops the
-    player in the void. **Analytics:** `AnalyticsSink` now subscribes to the four Stage-A events
-    that already fire — `RegionTransitionRequested` → `region_transition`, `FastTravelRequested` →
-    `fast_travel`, `CorruptionTierChanged` → `corruption_tier{from,to}`, `GameSaved` →
-    `save{slot,autosave}` — each a one-line `Record` to the session `.jsonl`. **Proven**, not just
-    reasoned: temporarily duplicating a `strings.csv` key *and* moving the EmberCrown `SpawnPoint`
-    to `(9999,…)` each made `--validate` exit **1** naming the exact issue; both reverted, exit 0
-    again. Build + **126 tests** (5 new `LocaleAuditTests`) + `--validate` (exit 0) green.
-    (ponytail: travel-node *components* live in cell `.tscn`s, validated at runtime on discovery —
-    the geometry gate covers the authored `SpawnPoint`, not every scene. The analytics lines firing
-    in a real session log is the maintainer's at-keyboard check.)
-
-- [x] **25.5G — Integration regression sweep & known-issues ledger** `[C/P]` ✅
-  - **Goal:** declare the Stage-A-so-far foundation stable.
-  - **Tasks:** a full play-through touching every system 22–25 together; fix
-    interaction bugs found; record residual issues + perf baselines in a `docs/`
-    ledger (e.g. `docs/STAGE_A_STATUS.md`).
-  - **Done when:** the integrated Stage A loop runs end to end with no known
-    regressions; the ledger captures what remains.
-  - **Done:** ran the full automated regression battery — `dotnet build` clean,
-    **126 tests** pass, `--validate` (`ContentValidator.RunAll`) exit 0, and a headless
-    boot capture (`run_project`→`get_debug_output`→`stop_project`) that loads all 14
-    databases, seeds the enemy registry, passes `ContentValidator`, and reaches
-    `Boot → MainMenu` with **`errors: []`**. The sweep surfaced and fixed the
-    fast-travel-traps-player bug the maintainer reported (recorded the post's own position
-    as the landing point → now records the attuning player's walkable spot, PR #85).
-    Authored **`docs/STAGE_A_STATUS.md`** — the Stage-A ledger: the green automated battery,
-    the 22–25 integration loop (automated vs at-keyboard per surface), the known-issues table
-    (1 fixed, 3 documented expected-behaviours, 0 open defects), perf baselines (streaming
-    budget, loading-gate min/max, suite runtime) with a live-profile TODO, and the ordered
-    play-through checklist. **Honest `[C/P]` boundary:** the automated loop is green and the
-    ledger captures what remains; the full human play-through (every 22–25 system exercised
-    *together* in a live game — undrivable via MCP) is the maintainer's remaining sign-off,
-    itemized as the at-keyboard checklist in §4/§6 of the ledger.
-
-> **Systems 1–21 hardening (25.5H–P).** A fresh pass over the foundational systems the
-> whole game stands on. Each sub-phase clusters a few related systems; the bar is the
-> same — root-cause bugs, tighten edge cases, profile hot paths, leave the subsystem
-> re-verified (build + tests + `--validate` + an in-engine/harness run), **no new
-> features.** Reference `docs/ARCHITECTURE.md` for each system before touching it.
-
-- [x] **25.5H — Core, entity/component, events, stats & pooling** `[F]` (systems 1) ✅
-  - **Goal:** the architectural spine is leak-free and correct.
-  - **Tasks:** audit `EventBus` subscribe/unsubscribe symmetry (the bootstrap already
-    warns on handlers that survive teardown — drive that to zero), `ServiceLocator`
-    registration lifetimes, autoload order assumptions, the `EntityComponent`
-    `OnInitialize`/`OnTeardown` lifecycle (never `_Ready`), `StatModifier` stack/unstack
-    correctness, and `NodePool` reset-on-reuse. Read `src/Core`, `src/Entities`,
-    `src/Stats` first.
-  - **Done when:** no leaked handlers on scene teardown; stat modifiers apply/remove
-    cleanly; pooled nodes re-arm with no stale state (covered by a unit/harness check).
-  - **Done:** audited the spine — **largely clean**, with one latent fragility fixed.
-    *Audit:* **EventBus** subscribe/unsubscribe is symmetric per-type across every subscriber
-    (components unsubscribe in `OnTeardown`, UI/directors in `_ExitTree`; both fire on
-    `QueueFree`). **NodePool** is sound — reset-on-reuse is the caller's job by design, and
-    `SpellProjectile.Launch` re-arms every field per shot (`_resolved`/`_life`/direction/packet/
-    material/`Monitoring`), no stale carry-over. **Stat modifiers** are correct and now fully
-    pinned (`EquipmentComponent` sources each modifier to the item instance and removes by
-    source). **ServiceLocator** stale refs (player/dummy/streamer never `Unregister`ed) are
-    *quit-only* — `BeginSession` guards `_sandboxBuilt`, so the sandbox is never rebuilt
-    in-session; a fix would be dead code, so left as-is. *Fix:* `EntityComponent` ran
-    `OnTeardown` on **every** `_ExitTree` (Godot fires it on each tree removal) while
-    `OnInitialize` runs once in `_Ready` — a detach/re-attach or double `_ExitTree` would
-    double-unsubscribe/unregister and leave the component dead. Added an `_initialized` guard so
-    init/teardown pair **exactly once**; identical on the normal path, safe against a double exit.
-    *Tests:* completed the stat-unstack coverage `StatTests` lacked — `RemoveModifier`,
-    `ClearModifiers`, `Changed`-on-remove, and `RemoveModifiersFromSource` stripping all of a
-    source's stacked modifiers. Build + **130 tests** (4 new) + `--validate` (exit 0) + a clean
-    headless boot capture (all databases → `MainMenu`, `errors: []`) green.
-
-- [x] **25.5I — Player controller, locomotion & combat framework** `[F]` (systems 2, 3) ✅
-  - **Goal:** movement and the damage pipeline are tight and predictable.
-  - **Tasks:** input handling under pause/menu (mouse-mode + `UiState`), locomotion edge
-    cases (slopes, ledges, sprint/jump), and the combat pipeline — `DamagePacket`,
-    hit/hurtbox `Area3D` overlap timing (the known gotcha: `Hitbox` polls per physics
-    frame), team/friendly-fire, poise/stagger/block. Read `src/Player`, `src/Movement`,
-    `src/Combat`.
-  - **Done when:** no missed/double hits across the i-frame and overlap-timing cases;
-    movement has no stuck/clip states in a review pass.
-  - **Done:** audited the pipeline — **solid**, with one input fix + the missing combat-formula
-    coverage closed. *Audit:* the `Hitbox` polls overlaps each physics frame across the active
-    window and dedupes per target via `_alreadyHit` (cleared per swing) — no missed/double hits
-    from the Monitoring-next-frame gotcha; owner-skip and same-`Team` friendly-fire skip both hold;
-    `MeleeWeaponComponent` gates re-attack on phase + stamina + stagger and rolls a fresh
-    `DamagePacket` per swing; `CombatComponent` block→stamina, poise→stagger and block-prevents-poise
-    are correct. Locomotion's grounded `velocity.Y` isn't zeroed, but `MoveAndSlide` clamps it and
-    jump sets absolute velocity, so no stuck/clip state. *Fix:* the player set `_combat.IsBlocking`
-    only on the live path, so raising the guard then opening a menu could **strand "blocking" true**;
-    the not-playing and menu early-returns now call `DropHeldInput()` to release it (live input is
-    re-read on the first frame back in control). *Coverage:* `CombatMath` had **no tests** despite
-    running on every hit — extracted the pure `ArmorMultiplier(armor)` kernel (the `100/(100+armor)`
-    curve) and pinned it (curve points, negative-armor clamp, monotonic-and-bounded). Build +
-    **144 tests** (6 new) + `--validate` (exit 0) + clean headless boot (`errors: []`) green.
-
-- [x] **25.5J — Enemy AI, perception & spawning** `[F/P]` (system 4) ✅
-  - **Goal:** AI is correct and cheap, including across streaming.
-  - **Tasks:** perception-FSM transitions (aggro/leash/search/return), the far-sleep /
-    perception-cache throttle (`EnemyAIComponent`), `EnemySpawnDirector` density + clean
-    despawn, and AI behaviour for enemies inside *streamed* cells (load/unload while
-    engaged). Read `src/Enemies`.
-  - **Done when:** AI transitions are correct with no thrash; far enemies sleep; no
-    orphaned/duplicated enemies across cell load/unload; profiled cost is flat.
-  - **Done:** audited the AI — **solid**, with one spawn fix + the perception kernel pinned.
-    *Audit:* the perception FSM transitions cleanly (Idle/Patrol→Combat on sight or provoke,
-    Combat→Investigate on lost LoS, Investigate→Patrol on timeout, Retreat at low health, stand-down
-    when no longer hostile) with no thrash; the far-sleep LOD (`ActiveDistance` 45 m → tick every
-    `SleepInterval`, shadow off) and the perception cache (`PerceptionInterval`-throttled LoS raycast)
-    both work; `OnTeardown` unsubscribes (verified in 25.5H), so an enemy freed by a cell unload or
-    death leaves no orphaned handler — and there's no in-session world rebuild to duplicate it. *Fix:*
-    `EnemySpawnDirector._respawnTimer` started at 0 and was only reset after a spawn, so the **first
-    replacement after a kill popped instantly**; `OnEnemyRemoved` now restarts the respawn clock, so
-    every refill waits the full `RespawnInterval` (consistent density cadence). *Coverage:* extracted
-    the pure `EnemyPerception.InViewCone(forward, toTarget, fov)` kernel (the FOV cone run on every
-    sight tick) from `EnemyAIComponent` and pinned it (dead-ahead/behind/90°, the ±half-FOV boundary,
-    degenerate-vector default-visible). Build + **150 tests** (6 new) + `--validate` (exit 0) + clean
-    headless boot (`errors: []`) green. (A live profile of a crowd's flat cost is the maintainer's
-    F4 check; the throttle/LOD logic is verified by review.)
-
-- [x] **25.5K — Inventory, equipment & loot generation** `[F]` (systems 5, 6, 7) ✅
-  - **Goal:** items move and roll correctly.
-  - **Tasks:** stack merge/split, capacity/carry-weight, equip/unequip stat application
-    through `EquipmentComponent` → `StatsComponent`, affix-roll distribution/rarity
-    gating, loot-table edge cases (empty/zero-weight/over-quantity), pickup despawn +
-    persistence. Read `src/Items`, `src/Loot`.
-  - **Done when:** equip bonuses apply/remove exactly; loot rolls stay in-bounds; a
-    fuzz/harness check over rolls passes.
-  - **Done:** audited the three systems — **solid** — and closed the phase's named fuzz gap.
-    *Audit:* `InventoryComponent.AddInstance` tops up compatible stacks then fills slots to `MaxStack`,
-    respects `Capacity`, and returns the amount stored (merge/split correct); `EquipmentComponent`
-    applies bonuses as `StatModifier`s **sourced to the instance** and removes them by source on
-    unequip, so equip/unequip apply and remove **exactly** (weapon swap restores the default; `Load`
-    clears before re-applying); `LootGenerator.Generate` guards null table, empty id, missed
-    drop-chance, missing template, `min>=max`/`<=0` quantity, and an all-zero-weight pool. *Coverage:*
-    the roll math was Godot-RNG-bound and untested — extracted the pure kernels `LootRarity.Select(
-    quality, roll01)` and `AffixDefinition.BlendValue(min, max, quality, roll01)` (no behaviour change;
-    `Roll` now just feeds `rng.Randf()`), then added `LootRollFuzzTests` sweeping the full `[0,1)`
-    sample space: rarities always valid + monotonic in the sample + higher quality biases upward;
-    affix values always in `[min,max]` (incl. equal/inverted/thin bounds), non-decreasing in sample
-    and quality, endpoints reachable. Build + **166 tests** (16 new) + `--validate` (exit 0) + clean
-    headless boot (`errors: []`) green. *Latent (not fixed, ponytail):* `AddInstance` shares one
-    `ItemInstance` across the stacks it makes for a **unique** item added with `quantity>1` — not
-    reachable today (loot emits one-per-unit; equippable recipes output qty 1).
-
-- [x] **25.5L — Progression, quests & dialogue** `[F]` (systems 8, 9, 10) ✅
-  - **Goal:** progression and narrative plumbing are robust.
-  - **Tasks:** XP curve/level-up boundaries, perk apply/respec, quest objective
-    advance/complete/prereq chains and reward grant, dialogue graph traversal +
-    condition/effect resolution (extend the existing `DialogueGraphAnalysis`), and
-    story-flag persistence. Read `src/Progression`, `src/Quests`, `src/Dialogue`.
-  - **Done when:** quests advance/complete with no stuck objectives; dialogue branches
-    resolve conditions/effects correctly; flags round-trip (harness/unit covered).
-  - **Done:** audited the three systems — **solid** — and pinned the two boundary kernels.
-    *Audit:* `QuestLogComponent.Advance` clamps each count to `RequiredCount` and skips complete
-    objectives, `TryComplete` flips to `Completed` and grants rewards exactly once, `CanStart` gates on
-    `PrerequisiteQuestId` via `IsCompleted`, and `StartQuest` runs `TryComplete` immediately so a
-    0-objective / 0-required quest can't stick — no stuck path. `StoryFlagsComponent` is a guarded
-    `HashSet` with a HashSet↔array `Save`/`Load` (round-trips by construction). Dialogue graph structure
-    is already pinned by `DialogueGraphAnalysis` + tests; `DialogueSession.Evaluate`/`ApplyEffect` are a
-    plain switch over quest-log/flag/corruption state. *Coverage:* extracted the pure
-    `ProgressionMath.XpToReach(level, baseXp, exponent, maxLevel)` + `Resolve(level, xp, maxLevel,
-    addedXp, xpToReach)` out of `ProgressionResource`/`ProgressionComponent.AddXp` (no behaviour change),
-    and `ObjectiveProgress.IsComplete`/`AllMet` out of `QuestProgress`. New `ProgressionMathTests` pin
-    the curve (positive, strictly increasing, 0 at/after cap) and the level-up boundaries (one-short =
-    no level, **exact threshold = level with 0 remainder**, multi-level overflow, excess discarded at
-    cap, `need<=0` guard against an infinite loop, non-positive grant no-op); `ObjectiveProgressTests`
-    pin the completion boundary (0/negative requirement met immediately = no stuck, exact, over-count,
-    mixed `AllMet`). Build + **186 tests** (20 new) + `--validate` (exit 0) + clean headless boot that
-    auto-loaded into Playing and ran the quest/XP path (`errors: []`) green.
-
-- [x] **25.5M — Magic, status effects & combat math** `[F]` (system 12) ✅
-  - **Goal:** spellcasting and effects resolve consistently.
-  - **Tasks:** cooldown/mana gating, projectile pooling reuse (`SpellProjectile`), AoE
-    resolution, status-effect stacking/refresh/expiry and DoT tick cadence, and
-    `CombatMath` roll/scaling correctness. Read `src/Magic`, `src/Combat/CombatMath`.
-  - **Done when:** effects stack/expire correctly with no leaked pooled projectiles;
-    damage/heal math is pinned by a unit check.
-  - **Done:** audited magic/effects — **solid** — and pinned the damage + DoT-cadence kernels.
-    *Audit:* `SpellcastingComponent.CanCast` requires cooldown ≤ 0 **and** mana ≥ `ManaCost`; `TryCast`
-    deducts mana + stamps the cooldown. `SpellProjectile` is inert until `Launch` arms it and resolves on
-    a hostile hit **or** `_life<=0` timeout → `_resolved=true` then a deferred `Release` → the pool
-    reclaims it (a projectile that hits nothing still times out and returns — **no leak**); `_resolved`
-    guards double-resolve. `StatusEffectsComponent` **refreshes** (never unbounded-stacks) on re-apply,
-    sources stat modifiers to the effect and strips them on expiry/`ClearAll`/death, and its DoT loop is
-    guarded by `HasDamageOverTime => DamagePerTick>0 && TickInterval>0`; heal is a flat `_stats.Heal`.
-    *Coverage:* extracted the pure `CombatMath.ScaleDamage(base, power, scaling)` (the offensive base +
-    power share behind every hit/cast; `RollAttack`/`RollSpell` route through it) and
-    `StatusMath.AdvanceDot(tickTimer, delta, interval)` (the DoT catch-up loop, extracted from `Tick`) —
-    both no behaviour change. Extended `CombatMathTests` (ScaleDamage for both 0.5/0.6 constants + a
-    scale→`ArmorMultiplier` pipeline pin) and added `StatusMathTests` (no tick pre-interval, exact
-    boundary, multi-tick catch-up across a large delta, carry-over remainder, `interval<=0` no-loop
-    guard). Build + **197 tests** (11 new) + `--validate` (exit 0) + clean headless boot into Playing
-    with combat damage flowing through the pipeline (`errors: []`) green.
-
-- [x] **25.5N — World clock/weather/encounters, NPC schedules & procedural events** `[F]` (systems 11, 13, 17) ✅
-  - **Goal:** the living-world directors are stable, including across streaming.
-  - **Tasks:** `WorldClock` day/phase transitions, weather selection/transition, the
-    encounter director's day-phase gating + spawn cleanup, NPC `ScheduleComponent`
-    routines off the clock, and the world-event director lifecycle (announce → track →
-    reward → cooldown). Verify all behave across region transitions. Read `src/World`,
-    `src/Npc`.
-  - **Done when:** clock/weather/encounter/event/schedule cycles run for a long session
-    with no stuck states, leaked spawns, or double-fires across transitions.
-  - **Done:** found and fixed a real **spawn leak across region transitions**, and pinned the two pure
-    time kernels. *Fix:* `EncounterDirector` and `WorldEventDirector` spawn enemies as children of the
-    **persistent** bootstrap root (`GetParent().AddChild`), but `PerformRegionLoad` only unloads the
-    streamed cells — so on a transition their spawns orphaned into the new region and kept ticking. Both
-    now subscribe to `RegionTransitionRequestedEvent`: the event director aborts an in-progress event
-    through its existing `Fail` path (despawn raiders + stamp cooldown, no stuck `_active`), and the
-    encounter director tracks its spawns and frees them (`_alive` self-heals via `TreeExited`).
-    *Audit (no change):* `WorldClock` wraps via `Mathf.PosMod` and fires the hour/phase change once per
-    hour; `WeatherDirector` rolls weighted selection on a timer; `WorldEventDirector` allows one
-    `_active`, stamps the cooldown on `End`; `ScheduleComponent` yields to panic/dialogue and re-picks
-    its block on resume. *Coverage:* pinned `DayPhases.Of` (phase boundaries + negative/>24 wrap) and
-    extracted the schedule wrap-lookup into pure `ScheduleMath.ActiveEntryIndex(startHours, hour)` (from
-    `ScheduleResource.EntryForHour`) with tests (exact start, mid-block, before-first wrap-to-last,
-    single, empty, unordered). Build + **217 tests** (20 new) + `--validate` (exit 0) + clean headless
-    boot into Playing with both directors online (`errors: []`) green. *Latent (not fixed, ponytail):*
-    the legacy EmberCrown goblin camp (`EnemySpawnDirector`) is persistent and not region-scoped, so it
-    keeps spawning at its fixed point after a transition — early-sandbox content, a separate concern.
-
-- [x] **25.5O — Crafting & faction/reputation systems** `[F]` (systems 15, 16) ✅
-  - **Goal:** crafting and standing behave at their edges.
-  - **Tasks:** recipe learn/station-gating/ingredient consumption/output rolling, and
-    faction reputation thresholds → hostility, `FactionComponent` tags driving enemy AI
-    aggression, kill/standing penalties. Read `src/Crafting`, `src/Factions`.
-  - **Done when:** crafting consumes/produces exactly; reputation tiers flip
-    hostility correctly and persist.
-  - **Done:** audited both systems — **solid** — and pinned the two load-bearing predicates.
-    *Audit:* `CraftingComponent.Craft` is `CanCraft`-gated (knows recipe + `StationAccepts` + output
-    exists + has ingredients) then removes each ingredient and adds the output — **consumes then produces
-    exactly**; non-Common equippable output rolls a fresh affixed instance per unit (no shared-instance
-    aliasing), plain output stacks, a deleted output fails cleanly; `Learn` de-dupes. `ReputationComponent.Add`
-    clamps to `[Min,Max]` and only fires on an actual change; `Effective` subtracts the corruption `Dread`
-    and re-clamps; `IsHostile` is `TierOf <= HostileThreshold`; a player kill applies `KillReputationPenalty`
-    and echoes ± through the faction's enemy/ally web; `Save`/`Load` clamp + re-publish (round-trips by
-    construction). *Coverage:* pinned `ReputationTiers.Of` (all seven band edges -100→Hated … 90→Allied +
-    monotonic-non-decreasing across `[Min,Max]`) and exposed `CraftingComponent.StationAccepts`
-    (private→public, pure predicate) with tests (Hand crafts anywhere; a station recipe only at its exact
-    station). Build + **242 tests** (25 new) + `--validate` (exit 0) + clean headless boot into Playing
-    (`errors: []`) green.
-
-- [x] **25.5P — Legacy UI panels & HUD** `[P/F]` (systems 14, 18) ✅
-  - **Goal:** the older UI surfaces are consistent and warning-free.
-  - **Tasks:** the pre-25 panels (inventory, equipment, crafting, dialogue, quest log,
-    pause) on `UiTheme` — dirty-flag rebuild correctness (never rebuild during a button
-    signal), tooltip system, nameplate/interaction-prompt/toast feed, and fold these
-    into the 25.5E mouse-mode/`UiState` audit so old + new menus compose. Confirm no
-    hard-coded strings remain (route through `Loc`). Read `src/UI`.
-  - **Done when:** every panel opens/closes/rebuilds cleanly with correct mouse-mode and
-    no console errors; no untranslated legacy strings.
-  - **Done:** the mechanics were already solid; the real gap was **localization**, now closed.
-    *Audit:* the post-25 panels (Settings, SaveSlot, MainMenu, Pause, Crafting, Map) already route
-    through `Loc`, build on `UiTheme`, and use `UiState.Open/Close` + dirty-flag rebuild (verified 25.5E);
-    re-reading the four pre-25 surfaces confirmed each modal frees the mouse via `UiState` and rebuilds
-    from a `_dirty` flag in `_Process`, never mutating the tree inside a button signal (`QuestLogPanel`/
-    `GameHud` are intentionally non-modal HUD overlays). *Fix:* routed ~30 hard-coded player-facing
-    strings through `Loc.T`/`Loc.TF` across `InventoryPanel` (the CHARACTER screen — `char.*`),
-    `QuestLogPanel` (`questlog.*`), `DialoguePanel` (`dialogue.leave`), `GameHud` (`hud.*`) and two
-    `CraftingPanel` stragglers (`craft.recipes_none`/`craft.craft`), with 33 new keys in
-    `data/locale/strings.csv` (80 → **113** strings); interpolated lines use `Loc.TF` with `{0}`
-    placeholders (sign/precision formats pre-formatted to args). `DebugHud` left exempt (F3 dev overlay,
-    CLAUDE.md §6). Pure glyphs/number-unit fragments (`✓`/`•`/counters/separators) carry no language and
-    stay. Build + **242 tests** (unchanged) + `--validate` exit 0 (locale audit green: every key resolves,
-    no dupes/missing) + clean headless boot into Playing (`errors: []`); a residual-literal grep over the
-    four panels is empty. On-screen rendering is the maintainer's at-keyboard check.
-
-> **Stage A Hardening (Phase 25.5A–P) complete.** Every Stage-A subsystem audited; real bugs fixed
-> (save-key collisions, corruption load desync, mouse recapture, fast-travel trap, lifecycle guard,
-> respawn cadence, block-strand, cross-transition spawn leak) and the load-bearing pure kernels pinned
-> by **242 unit tests**. The whole game stays buildable, `--validate`-clean, and boots `errors: []`.
+> **Outcome.** Real bugs fixed — save-key collisions, corruption load desync, mouse recapture,
+> a fast-travel trap, a lifecycle guard, respawn cadence, block-strand, a cross-transition spawn
+> leak — and the load-bearing pure kernels pinned by **242 unit tests** (the suite that has since
+> grown to 579). The repo stayed buildable, `--validate`-clean and booting `errors: []` throughout.
 
 ---
 
@@ -2288,481 +1891,110 @@ no code) — batch them when momentum is good.
 
 ---
 
-## Phase 34 — Enemy & Creature Roster `[F/C]`
+## Phase 34 — Enemy & Creature Roster `[F/C]` ✅ **complete**
+
+> Turned the enemy roster from code into content. **26 creatures are spawnable by id and only
+> three have a factory** — the rest are `.tres`. The systems reference is
+> `ARCHITECTURE.md` §2.5; the authoring recipes are CLAUDE.md §8. This block is the log.
 
 - [x] **34A — AI behaviour profiles: data-fy `EnemyAIComponent`** `[F]`
-  - **Done when:** ranged/caster/shielded/pack-flank/fleeing/ambush are *tunable
-    profiles/data*, not one-off subclasses.
-  - **Built:** `AIProfileResource` + `AIProfileDatabase` (`data/ai_profiles/`, ids
-    `ai.*`). Every knob `EnemyAIComponent` used to export moved onto the resource;
-    the component now takes a `ProfileId` and stayed **one class** — each behaviour
-    is a branch gated on a profile number, so they compose (a shielded flanking
-    ambusher is authorable) instead of forking the brain. Seven profiles ship:
-    `brute`, `pack_flanker`, `shielded`, `caster`, `skirmisher`, `ambusher`, `boss`.
-  - **Behaviour knobs:** `StandoffRange`/`KiteDistance` (ranged + caster, generalized
-    from 29.5F's caster branch) · `BlockDuration`/`BlockRecovery` (shielded — a
-    deterministic guard rhythm, since a random block is unlearnable) ·
-    `FlankSpreadDegrees` (pack — members fan alternately off the approach line so a
-    warband surrounds instead of queueing) · `FleeOnSight` (coward) ·
-    `AmbushRange` (lies in wait, never patrols, ignores allies' alerts).
-  - **Deliberately unchanged:** the goblin stays on `ai.brute`, whose values equal the
-    pre-34A defaults, so the vertical slice's combat feel is untouched ahead of the
-    capture. The exotic profiles are authored and driven, awaiting the 34B archetypes.
-  - **Verified:** build clean, 540 tests (19 new pinning `PackFlank` + `GuardCycle`),
-    `--validate` exit 0 with a new profile-coherence check, and a live run confirming
-    all 7 profiles resolve with no fallback warnings.
+  - `AIProfileResource` + `AIProfileDatabase` (`data/ai_profiles/`, ids `ai.*`). Every knob the
+    component exported moved onto the resource, and **the component stayed one class** — each
+    behaviour is a branch gated on a profile number, so they compose (a shielded flanking ambusher
+    is authorable) instead of forking the brain. Pure `GuardCycle` + `PackFlank` hold the testable
+    arithmetic. The goblin kept `ai.brute` at the old defaults, so slice feel was untouched.
 - [x] **34B — Humanoid archetypes (bandit, cultist, soldier, Iron Syndicate)** `[F/C]`
-  - **Done when:** each is a factory archetype + `.tres` (attributes/loot/XP/
-    profile); all four playable.
-  - **Built:** `EnemyArchetypeResource` + `EnemyArchetypeDatabase` (`data/enemies/`),
-    driven by one shared `EnemyArchetypeFactory` (named `HumanoidEnemyFactory` until 34C
-    generalized it). The database registers a builder per
-    archetype with `EnemyTemplateRegistry`, so a new `.tres` is spawnable by id with no
-    code change. Four archetypes ship, each with its own attributes, loot table, faction,
-    AI profile and XP:
-    | Archetype | Profile | Faction | Identity |
-    | --- | --- | --- | --- |
-    | `enemy.bandit` | `ai.pack_flanker` | `faction.outlaws` (new) | fast, fragile, mobs you |
-    | `enemy.cultist` | `ai.zealot` (new) | `faction.fallen` | fearless, never retreats |
-    | `enemy.soldier` | `ai.shielded` | `faction.fallen` | armoured wall, guard rhythm |
-    | `enemy.syndicate_enforcer` | `ai.ambusher` | `faction.iron_syndicate` (new) | assassin: lies in wait, glass, hits hard |
-  - **Why one factory:** four hand-written factories would be four places to fix the next
-    time enemy assembly changes. The bespoke factories that remain (goblin, acolyte, Iron
-    King) earn it by being *structurally* different; a bandit and a soldier differ only in
-    numbers, and numbers belong in data. This is also the first real consumer of the 34A
-    profiles — pack-flank, shield rhythm and ambush are now live on actual enemies.
-  - **Playable:** four encounters (`BanditAmbush`, `FallenPatrol`, `AshenRite`,
-    `SyndicateContract`) put them in the wilds by day phase; `spawn <id>` in F1 reaches
-    them directly. `EncounterDirector` already resolved through the registry, so no
-    spawner changed.
-  - **Verification level:** build, 540 tests and `--validate` are green, and the validator
-    now cross-checks every archetype's paths, profile, faction, spells and name key. A live
-    spawn of each of the four was **not** observed — worth a minute with `spawn enemy.bandit
-    3` / `enemy.soldier` / `enemy.cultist` / `enemy.syndicate_enforcer` in the F1 console to
-    confirm the guard rhythm, the flank fan-out and the ambush spring read right in play.
-  - **Art gap:** only the cultist has a mesh (it reuses `enm_ashen_acolyte.glb`). The other
-    three run on tinted capsules — the same capsule-then-model path the goblin took before
-    30D. Models are a Phase 53 art task, tracked there, not a blocker for "playable".
-- [x] **34C — Beast archetypes (wolves, Sylthari wildlife)** `[F/C]`
-  - **Done when:** beast archetypes exist with appropriate AI profiles.
-  - **Built:** five beasts as pure content on the 34A/34B pipeline, plus one small
-    generalization of the factory. `HumanoidEnemyFactory` → **`EnemyArchetypeFactory`**: it
-    now builds quadrupeds too, so the old name lied. The melee hitbox, previously a
-    hard-coded `0.9 × 1.4 × 1.4` box at `z = -1.0`, **scales with the body**
-    (`height / 1.8f`, the humanoid reference) — a 0.9 m wolf was otherwise biting a metre
-    past its own nose. No new exported fields, so the four 34B `.tres` files are untouched.
-    | Archetype | Profile | Body (r/h) | Identity |
-    | --- | --- | --- | --- |
-    | `enemy.wolf` | `ai.pack_flanker` | 0.35 / 0.9 | fast, fragile, surrounds you |
-    | `enemy.dire_wolf` | `ai.pack_flanker` | 0.5 / 1.3 | alpha: tanky, heavy bite, 55 poise |
-    | `enemy.frost_stalker` | `ai.ambusher` | 0.4 / 1.0 | glass assassin, 25% crit at 2.2× |
-    | `enemy.thornback_boar` | `ai.territorial` (new) | 0.55 / 1.0 | ignores you until provoked, then never stops |
-    | `enemy.ashfall_elk` | `ai.prey` (new) | 0.5 / 1.6 | skittish grazer, flees on sight, the pelt source |
-  - **Two new AI profiles, no new code:** `ai.territorial` (short `VisionRange 9`, `FovDegrees
-    200`, `AlertRadius 0`, `RetreatHealthFraction 0`, `ProvokeMemory 40`) is an animal that
-    doesn't hunt you — it senses all round, aggros only close, calls no one, and never breaks
-    off once provoked. `ai.prey` (`FleeOnSight`, `AlertRadius 0`) exists rather than reusing
-    `ai.skirmisher` because that profile's `AlertRadius 20` would have an elk broadcasting
-    alerts that rally bandits — wrong fiction. Both compose out of knobs 34A already shipped;
-    `EnemyAIComponent` gained no branch.
-  - **Wildlife is a faction:** `faction.beasts` ("Wildlife", `DefaultReputation -25` ⇒ hostile
-    on sight, `KillReputationPenalty 0` — animals hold no grudges). LORE gives the Sylthari
-    "can commune with wildlife" (LORE.md:433) and this is the standing such a perk flips;
-    without a faction it would have to special-case the AI later.
-  - **Beasts carry no coin:** `BeastLoot`/`BeastHideLoot` set `GoldChance = 0` and drop the new
-    `item.material.beast_pelt` (+ leather strips, healing herb). One pelt item, not a
-    fang/hide/sinew set — add those when a recipe actually asks.
-  - **Named for the first time:** LORE.md names *no* beast species (only dragons — Phase 35 —
-    and the Beast Lord, who is a corrupted person). Frostfang's "warrior clans and beast
-    races" (LORE.md:112) are sapient culture, fenced off to Phase 34.5, so nothing here
-    trespasses on it.
-  - **Playable:** five encounters seed them by day phase — `WolfPack` (2–4, dusk/night),
-    `DireWolf` (1, night, weight 0.3), `BoarTerritory` (1–2, dawn/day), `ElkHerd` (2–3,
-    dawn/day/dusk), `FrostStalker` (1, night, weight 0.25). `EncounterDirector` already
-    resolved through the registry, so no spawner changed. `spawn <n> <id>` in F1 reaches them
-    directly.
-  - **Known limits, deliberately not fixed here:** `EncounterResource` has no region filter,
-    so the frost stalker can roll in the Ember Crown (34B's Fallen patrols have the same
-    problem — region-scoped tables are their own sub-phase). One encounter = one template id,
-    so an alpha-plus-pack spawn isn't authorable; the dire wolf rolls solo. The elk's
-    `WeaponPath` points at `BeastFangs` it will never swing, since `ai.prey` never engages.
-  - **Verified:** `dotnet build` clean, **540 tests** still green (no new ones — the only new
-    logic is one `height / 1.8f` multiply; the behaviour knobs are authored values, which is
-    the validator's job under the no-`GodotObject` rule), `--validate` **exit 0** with all 9
-    archetypes / 10 profiles / 14 encounters / 6 factions cross-checked, and a **150 s live
-    `--play` session** with zero warnings — no `AIProfileDatabase` fallback, no unknown-template
-    warning, no `GD.Load` null.
-  - **Verification gap:** a live spawn of the five was **not** observed. The F1 console needs
-    keyboard input this harness can't inject, and `--play` lands the player inside the Ember
-    Crown's 34 m safe-zone where the director won't spawn. Worth two minutes with
-    `spawn 3 enemy.wolf` (the pack should fan out, not queue), `spawn 1 enemy.thornback_boar`
-    (ignores you at range, mauls you up close), `spawn 1 enemy.ashfall_elk` (runs and never
-    rallies — kill it with `Q` and confirm a pelt and **no gold**),
-    `spawn 1 enemy.frost_stalker` (springs only inside `AmbushRange`),
-    `spawn 1 enemy.soldier` (confirm the humanoid arc still lands after the hitbox change),
-    and `rep faction.beasts 40` (standing crosses out of hostile and they stand down).
-  - **Behaviour delta to existing content:** exactly one. `enemy.soldier` is 1.85 m, so its
-    melee box grew 2.8%. That is the hitbox becoming body-relative rather than a fixed number
-    — a correction, not a regression.
-  - **Art gap:** all five run on tinted capsules, and a *vertical* capsule reads poorly for a
-    quadruped — worse than the humanoid placeholders did. Beast models are a Phase 53 art
-    task, the same capsule-then-model path the goblin took before 30D, and not a blocker for
-    "playable".
-- [x] **34D — Undead archetypes (Hollow Queen's legions)** `[F/C]`
-  - **Done when:** undead archetypes exist and fight.
-  - **Built:** five undead on the 34A/34B pipeline, and the **first caster archetype ever
-    authored as data** — before this every one of the nine archetypes had
-    `KnownSpellIds = []`, so the caster path 34B built had never actually been used. The only
-    enemy caster in the game was the hand-written `AshenAcolyteFactory`.
-    | Archetype | Profile | Body (r/h) | Identity |
-    | --- | --- | --- | --- |
-    | `enemy.hollow_husk` | `ai.mindless` (new) | 0.4 / 1.75 | slow, 65 poise, notices you late, never stops |
-    | `enemy.bone_knight` | `ai.deathless_guard` (new) | 0.45 / 1.8 | 15 armour, guard rhythm, dies on its feet |
-    | `enemy.barrow_wight` | `ai.ambusher` | 0.4 / 1.7 | lies in wait, glass, 22% crit at 2.1× |
-    | `enemy.hollow_necromancer` | `ai.caster` | 0.4 / 1.8 | withers you, **mends its husks** |
-    | `enemy.grave_shade` | `ai.pack_flanker` | 0.35 / 1.7 | 40 HP, fast, flanks in threes |
-  - **Two new profiles, no new code — because the dead don't flee.** Every existing melee
-    profile retreats on wounds (`ai.brute` at 25%, `ai.shielded` at 15%), and a husk breaking
-    off to run is wrong fiction. `ai.mindless` = dim senses (`VisionRange 11`, `FovDegrees 90`)
-    that notice you late, then `RetreatHealthFraction 0` and `ProvokeMemory 60`.
-    `ai.deathless_guard` = `ai.shielded`'s guard rhythm with the retreat removed. The wight
-    reuses `ai.ambusher` (already zero-retreat), the shade `ai.pack_flanker`, and the
-    necromancer `ai.caster` — whose `RetreatHealthFraction 0.35` is *correct* here: a
-    necromancer kiting away is the behaviour, not cowardice.
-  - **`spell.knit_bone` buys a behaviour for free.** `EnemyAIComponent.TryCasterCast` already
-    prioritises healing the most-wounded ally under `AllyHealThreshold` within
-    `AllySupportRange`, picking any `Self` spell with `Healing > 0`. So the necromancer knits
-    its husks back together with **zero new code** — the closest thing to "commands the dead"
-    (LORE.md:333) the existing systems can express.
-  - **The Necrotic school's first enemy-facing content:** `status.decay` is the game's **first
-    Necrotic status effect** (6 s, 4/tick DoT, and `Armor` −6 Flat — flesh sloughs, so the next
-    hit lands harder), and `spell.wither` delivers it. Before this the school held exactly one
-    spell, `spell.ember_siphon`, which is the *player's* corruption-gated lifesteal and oddly
-    applies `status.burning`, a Fire effect.
-  - **Bug caught and fixed at the root:** the spellbook renders **every** spell in
-    `SpellDatabase` grouped by school (`InventoryPanel.cs:308`), so the necromancer's loadout
-    would have appeared in the player's Necrotic section as purchasable. Rather than hack the
-    two spells' costs or corruption gates, `SpellResource` gained
-    **`PlayerLearnable`** (default `true`, so nothing authored before this changes) and the
-    panel filters on it — one condition at the single seam every future faction caster in the
-    Phase 34 roster brief will route through.
-  - **`ManaRegen` is now authorable** on `EnemyArchetypeResource` (default `4f` = the
-    `StatsComponent` default, so the nine existing `.tres` are untouched). The one hand-written
-    caster in the repo explicitly wanted `6f`, so a data caster stuck at the default was a real
-    gap, not a speculative one; the necromancer runs at `7f`.
-  - **The trap worth naming:** a caster archetype needs a **`Mana` pool in its `AttributeSet`**.
-    Every beast from 34C is `Mana = 0`, and an archetype with spells but no mana silently never
-    casts — no warning, no error, it just stands there. `NecromancerAttributes.tres` carries
-    140 Mana, 18 Intelligence and 20 SpellPower.
-  - **Undead do drop coin,** unlike 34C's beasts — they were buried with it. `UndeadLoot` /
-    `NecromancerLoot` drop the new `item.material.grave_dust` plus gold, scrap and grave goods
-    (a rare affixed `item.ring.iron`, ruby off the necromancer).
-  - **Playable:** five night encounters — `HollowPatrol` (2–4 husks), `BoneWatch` (1–2, also
-    dusk), `ShadeFlock` (2–3), `BarrowRising` and `HollowRite` (1 each, low weight).
-    `spawn <n> <id>` in F1 reaches them directly.
-  - **Scope fence:** the Hollow Queen herself is **not** here — her arc is 47E and her lair
-    stub 44E, both in the Pale Concord. 34D owns her legions. Also **deliberately not built:** raising/summoning minions.
-    There is no minion system (`SpellTotem.cs:11` carries a `ponytail:` note saying so) and
-    adds/summon waves are 36D's brief; a raise ability would be new code in three systems,
-    which the sizing rule above calls a phase, not a sub-phase.
-  - **Lore discrepancy this surfaced — since resolved:** `LORE.md` gave the Hollow Queen **no
-    realm** (all four were taken, and Frostfang's canon threat is the Storm Tyrant,
-    LORE.md:115) while the roadmap and 47B placed her in Frostfang, shifting the whole
-    realm↔Flamebearer mapping by one slot and leaving the Crimson Prophet homeless. 34D didn't
-    depend on the answer and deliberately didn't pick a side. It was fixed straight after by
-    adding **the Pale Concord** as a fifth realm (LORE §The Fifth Realm), which let 44B–44E and
-    47B–47E be realigned to LORE. Her legions authored here are that realm's natives.
-  - **Verified:** `dotnet build` clean, **540 tests** green, `--validate` **exit 0** (14
-    archetypes / 12 profiles / 14 spells / 6 status effects / 19 encounters / 7 factions / 16
-    items all cross-referenced — including that both of the necromancer's `KnownSpellIds`
-    resolve in `SpellDatabase`), and a **120 s live `--play` session with zero warnings or
-    errors**.
-  - **Verification gap:** no live spawn, same wall as 34B/34C — the F1 console needs keyboard
-    input this harness can't inject and `--play` resumes inside the Ember Crown's 34 m
-    safe zone (both now documented in CLAUDE.md §2/§3). The one behaviour with **no automated
-    coverage at all** is the necromancer's mending, and it is the payoff of the sub-phase:
-    `spawn 2 enemy.hollow_husk`, then `spawn 1 enemy.hollow_necromancer`, hurt a husk, and
-    watch it get knitted back up. Also worth a minute: `spawn 3 enemy.hollow_husk` (slow, late
-    to notice, never breaks off), `spawn 1 enemy.bone_knight` (guard cycles, no retreat),
-    `spawn 1 enemy.hollow_necromancer` alone (kites at `StandoffRange`, `status.decay` shows in
-    the status UI with the armour debuff), and open the character screen to confirm `Wither`
-    and `Knit Bone` are **absent** from the Necrotic spellbook section.
-  - **Art gap:** all five on tinted capsules, models are Phase 53. These read better than
-    34C's quadrupeds did — a hunched humanoid husk is close to what a capsule already suggests.
+  - `EnemyArchetypeResource` + `EnemyArchetypeDatabase` (`data/enemies/`) driven by one shared
+    factory, which registers a builder per archetype with `EnemyTemplateRegistry` — a new `.tres`
+    is spawnable with no code change. Four archetypes, four encounters, two new factions
+    (`faction.outlaws`, `faction.iron_syndicate`).
+- [x] **34C — Beast archetypes** `[F/C]`
+  - Grey wolf, dire wolf, frost stalker, thornback boar, ashfall elk on two new profiles
+    (`ai.territorial`, `ai.prey`), plus `faction.beasts` — hostile by default with **zero kill
+    penalty**, the standing a Sylthari communion perk can later flip. Beasts carry no coin.
+  - `HumanoidEnemyFactory` → **`EnemyArchetypeFactory`**: it builds quadrupeds now, so the name had
+    to stop lying. Melee reach became body-relative (`height / 1.8`), since a 0.9 m wolf was
+    otherwise biting a metre past its own nose. Only behaviour delta: the 1.85 m soldier's box grew
+    2.8%.
+- [x] **34D — Undead archetypes (the Hollow Queen's legions)** `[F/C]`
+  - Hollow husk, bone knight, barrow wight, grave shade and a necromancer on two fearless profiles
+    (`ai.mindless`, `ai.deathless_guard` — every prior melee profile retreats on wounds, and the
+    dead shouldn't), plus `faction.hollow` and the Necrotic school's first enemy content
+    (`spell.wither` + `status.decay`).
+  - **The first caster archetype authored as data** — all nine prior archetypes had empty
+    `KnownSpellIds`, so the path 34B built had never run. `spell.knit_bone` bought ally-mending for
+    free from 34A's caster-support branch: the necromancer repairs its own husks with no new code.
+  - Bug fixed at the root: the spellbook renders *every* spell in `SpellDatabase`, so monster
+    loadouts leaked in as purchasable. `SpellResource.PlayerLearnable` + one filter at the single
+    seam every future faction caster routes through.
 - [x] **34E — Construct + elemental archetypes** `[F/C]`
-  - **Done when:** constructs and elementals exist with distinct profiles.
-  - **The mechanic this phase had to land first:** an elemental had no way to *be* elemental.
-    `CombatMath.Mitigate` mitigated **only** Physical, via `Armor`; every other school was
-    returned unmodified for every actor in the game, so a fire elemental took full damage from a
-    firebolt and no data could change it. Three comments promised the fix
-    (`CombatMath.cs`, `DamageType.cs`, `StatusEffectResource.cs`) and `SpellSchools.cs` already
-    *claimed* it worked. Now it does: six `StatType` resistances (ordinals 15–20) and one
-    `DamageType → StatType` lookup in `Mitigate` that **reuses `ArmorMultiplier` verbatim** —
-    one defence curve to balance, not two.
-  - **Resistance, never immunity.** `ArmorMultiplier` stays in `(0, 1]`, which `DESIGN.md:129`
-    requires: "every magic school must be a viable spine to build around, none a trap." An
-    immune enemy would make a school unplayable for a specced player. A `ponytail:` note marks
-    the missing half — negatives clamp to ×1 rather than amplifying, so there is no vulnerability
-    side until an encounter needs one.
-  - **It also closed a live bug.** `Mitigate` skipped the armour branch entirely for non-Physical
-    damage, so a school-typed melee weapon ignored **all** armour — 34D shipped one
-    (`SpectralTouch`, Necrotic). That silent bypass is now a real lookup.
-  - **Inert for everything that existed.** Every resist defaults to `0` and
-    `ArmorMultiplier(0) == 1.0`, and `StatsComponent.BuildStats` defaults any stat missing from an
-    `AttributeSet` to zero — so all 15 prior attribute sets fight exactly as before. No rebalance.
-  - **What the test suite caught that a grep didn't:** the plan asserted six new stats would
-    surface in no UI. Wrong — `StatNames.Key` maps every `StatType` to a `Loc` key and
-    `StatNamesTests.EveryStatType_MapsToADistinctNonFallbackKey` fails the moment one is missed.
-    Six `stat.*_resist` keys added to `strings.csv`. The guard did its job; the survey didn't.
-  - **Built (roster):**
-    | Archetype | Profile | Resists | Identity |
-    | --- | --- | --- | --- |
-    | `enemy.stone_sentinel` | `ai.sentry` (new) | Fire 60, Frost 60 | 150 poise, 2.4 m, 0.62 s wind-up |
-    | `enemy.ward_golem` | `ai.deathless_guard` | Arcane 90 | animate ward, guard rhythm, no retreat |
-    | `enemy.ruin_crawler` | `ai.ambusher` | Fire 20, Frost 20 | 50 HP scuttler, the swarm counterpoint |
-    | `enemy.cinder_wisp` | `ai.caster` | Fire 120 | `spell.firebolt` |
-    | `enemy.rime_shard` | `ai.caster` | Frost 120 | `frost_nova` + `blizzard`; chill→freeze via `SchoolIdentity` |
-    | `enemy.storm_mote` | `ai.caster` | Lightning 120 | `ball_lightning` chains for free |
-    | `enemy.arcane_echo` | `ai.caster` | Arcane 120 | `arcane_lance` + **self-wards unprompted** |
-  - **One new profile, `ai.sentry`** — the constructs genuinely needed it: `ai.mindless` patrols
-    and `ai.ambusher` hides, but a guardian does neither. `PatrolRadius 0`, effectively infinite
-    `IdleDuration`, `AlertRadius 0` (machines don't shout for help), zero retreat,
-    `ProvokeMemory 120`. Composed from 34A knobs; `EnemyAIComponent` gained no branch.
-  - **Arcane finally has an offensive spell.** `spell.arcane_lance` — the school shipped with only
-    `arcane_shield` and `blink`, both Self, which `SchoolIdentity.cs:16-18` names as what blocks
-    Arcane's on-hit identity. Unlike 34D's monster spells this one is deliberately
-    `PlayerLearnable` (the default): it filled a real gap in the *player's* spellbook too.
-  - **A second free behaviour, same trick as 34D's `knit_bone`:** `TryCasterCast` step 3 casts any
-    ready `Self` spell with a status when the buff isn't up, and `spell.arcane_shield` qualifies —
-    so `enemy.arcane_echo` wards itself with zero new code.
-  - **Constructs and elementals get no faction** (`FactionId = ""`, which skips
-    `FactionComponent` and makes them unconditionally hostile). That is the right fiction — you
-    cannot negotiate with a golem or hold standing with a fire — and a deliberate contrast with
-    34C's `faction.beasts`, which exists precisely so wildlife *can* be reasoned with later.
-  - **Deliberate simplification:** one shared `ElementalTouch` weapon, and it stays **Physical**.
-    Elementals kite and rarely melee, and a school-typed touch would route through a resistance
-    the player has none of — quietly bypassing their armour. Per-school touches become authorable
-    the moment player resistance gear exists (Phase 39).
-  - **Playable:** five encounters, all day-phase-agnostic — machines don't sleep and elementals
-    keep no hours, a readable contrast with 34D's night-only undead. `RuinGuardians`,
-    `WardedVault`, `CrawlerNest`, `EmberFlux`, `ArcaneAnomaly`. **`enemy.rime_shard` and
-    `enemy.storm_mote` have no encounter this pass** — reachable via `spawn` only, said plainly
-    rather than left to be discovered.
-    - **This was the wrong call, and a playthrough proved it.** An archetype with no encounter is
-      *invisible* in normal play, not merely inconvenient — documenting a gap does not make the
-      content reachable. Both were given encounters in **34F.5** below. Author the encounter in the
-      same session as the archetype: a roster entry nothing can spawn is not content.
-  - **Verified:** `dotnet build` clean, **553 tests** (541 + 12 new: the resistance mapping, a
-    regression guard written over the `DamageType` enum so a school added later can't silently
-    inherit armour mitigation, the never-immune property, and the six pinned ordinals),
-    `--validate` **exit 0** (21 archetypes / 13 profiles / 15 spells / 24 encounters / 17 items /
-    7 factions unchanged), and a **120 s live `--play` session with zero warnings or errors** —
-    which for this phase specifically means no existing enemy started fighting differently.
-  - **Verification gap:** no live spawn — same wall as 34B–34D (F1 needs keyboard input this
-    harness can't inject; `--play` resumes inside the 34 m safe zone). The check that matters most
-    here is the mechanic being *visible*: `spawn 1 enemy.cinder_wisp`, then burn it with
-    `spell.firebolt` — it should take roughly **half** damage (120 resist ⇒ ×0.45). Then
-    `spawn 1 enemy.stone_sentinel` (a light flurry cannot stagger 150 poise, one committed heavy
-    hit can — `DESIGN.md:149`), `spawn 1 enemy.arcane_echo` (wards itself unprompted),
-    `spawn 1 enemy.rime_shard` (chill escalates to freeze), and check the character screen shows
-    **Arcane Lance as buyable**, unlike 34D's monster spells.
-  - **Art gap:** seven more tinted capsules. A 2.4 m stone golem reads worse as a capsule than
-    34D's husks did — this is the roster where the placeholder starts actively lying. Phase 53.
-- [x] **34E.5 — Arcane on-hit dispel (completes the school identity table)** `[F]`
-  - **Why it existed:** `SchoolIdentity` gives Frost (chill→freeze), Lightning (chain) and Necrotic
-    (lifesteal) a signature on-hit behaviour. Arcane had none, and its doc comment said why —
-    "on-hit dispel waits for an offensive Arcane spell." 34E authored that spell, so the blocker
-    was gone.
-  - **Done when:** an Arcane spell hit strips one beneficial status from the target. ✅
-  - **Built:** `StatusMath.PickDispel` (pure) + a `DamageType.Arcane` case in
-    `SchoolIdentity.OnSpellHit` calling a `Dispel` helper that mirrors `EscalateFreeze`. **No new
-    data at all** — no spell, status, archetype or locale key. The behaviour attaches to the
-    *school*, which is how the other three already work, so `spell.arcane_lance` needed no edit.
-    Every school now has an identity; the table is closed.
-  - **The rule, and why:** strip the **longest-remaining** beneficial effect, never a harmful one,
-    one per hit. Longest-remaining rather than first-found because the source is a dictionary's
-    values and enumeration order is not a contract — "the first one" would have been silently
-    arbitrary. Ties break on the ordinal id so the same fight resolves the same way twice, which is
-    the determinism `ReproHarness` depends on.
-  - **Never a harmful effect:** stripping a target's own burning would be a gift, not a dispel.
-    That is the one case with a dedicated test.
-  - **The trap that wasn't:** the obvious hazard is a self-ward cast triggering the hook on its own
-    caster — `spell.arcane_shield` dispelling the ward it just applied. It cannot happen:
-    `OnSpellHit` is only reached from `SpellResolver.HitOne`/`Detonate` (the Projectile and Area
-    paths) while a Self cast runs through `SpellcastingComponent.CastSelf`/`ApplySupport`. Verified
-    before writing a line, and restated in the code comment so nobody re-derives it.
-  - **Nothing needed wiring for feedback:** `StatusEffectsComponent.Remove` already strips the stat
-    modifier and publishes `StatusEffectRemovedEvent`, so the status UI and VFX react to a dispel
-    exactly as they do to an expiry.
-  - **Deliberate restraint:** one buff per hit, not a cleanse — the same shape as Lightning's
-    single jump. A full cleanse would make Arcane a hard counter to every buff at once rather than
-    a trade. Marked with a `ponytail:` note beside Lightning's.
-  - **Verified:** `dotnet build` clean, **559 tests** (553 + 6 pinning the selection rule),
-    `--validate` **exit 0 with every count unchanged** — this phase added no content — and a 90 s
-    live `--play` with zero warnings.
-  - **Verification gap:** the in-world half, same console wall as 34B–34E.
-    `learn spell.arcane_shield` + `learn spell.arcane_lance`, ward yourself and confirm the ward
-    **survives** the self-cast, then `spawn 1 enemy.arcane_echo` and let it hit you — the ward
-    should vanish on impact. `spawn 1 enemy.ward_golem` has no buff to strip, so Arcane should
-    behave normally against it.
-- [x] **34F — Corrupted/Ashen creature archetypes** `[F/C]`
-  - **Done when:** corrupted variants exist (tie to the corruption fiction).
-  - **The spec contradicted itself, and resolving it decided the build.** This entry said
-    *variants*; the Phase 34 brief (`PRODUCTION_ROADMAP.md:557`) lists "corrupted/Ashen creatures"
-    as another matrix row beside humanoids and beasts. 34C–34E had already proved the roster
-    pipeline 21 times; what the game had no concept of was *the same creature, corrupted*. An
-    "Ashen Wolf" authored as its own archetype is a copy of `Wolf.tres` that drifts the moment
-    either is tuned. So: **build the variant layer**, plus the two creatures a modifier can't
-    produce. `35E — Ash dragon variant (corrupted elite)` now inherits a mechanism instead of
-    inventing one.
-  - **Built:** `AshenAffliction.Afflict(enemy)` — the same archetype, taken by Morthul. +60%
-    health, +25% physical power as named `"ashen"` `StatModifier`s, ×1.5 XP, an `Ashen {0}`
-    nameplate, and a charred, ember-lit body. Modelled on
-    `WorldEventDirector.ApplyHealthMultiplier`, the codebase's only prior spawn-time enemy
-    variation — including its `RefillResources()`, without which the enemy keeps its old current
-    health against the new max.
-  - **The look reuses the player's corruption language rather than inventing one:** the ash
-    `Color(0.20, 0.17, 0.17)` and ember `Color(0.82, 0.34, 0.10)` are
-    `CorruptionAppearanceController`'s own Embers-tier values, so a corrupted enemy and a corrupted
-    player read as the same affliction. ART_STYLE §2.2's rule — "Materials, not new meshes" — holds.
-  - **Two details that would each have been a silent bug:**
-    - `TemplateId` is deliberately **not** renamed. Quest kill objectives match on it
-      (`ObjectiveLocator`), so an "Ashen Wolf" template id would quietly break every quest that
-      counts wolves. Only `DisplayName` changes.
-    - The material is **duplicated** before tinting. `GetActiveMaterial` returns the shared
-      imported resource for a model-backed enemy, so writing to it directly would turn *every
-      uncorrupted instance* ashen too. `CorruptionAppearanceController.CollectSurfaces` duplicates
-      for the same reason. Only `enemy.cultist` has a model today, but Phase 53 gives everything
-      one — the walk handles both branches now rather than going silently invisible later.
-  - **Corruption is authored per encounter, not driven by the player.** `EncounterResource` gained
-    `CorruptionChance` (0..1), rolled **per enemy** so a warband can come up part-corrupted. That
-    is the fiction: LORE attributes creature corruption to Morthul and the realm — "Corrupted by
-    Morthul", "Corrupted forests" — and **never** to the player. It is also forward-compatible with
-    Phase 44.5's `RealmStateComponent`, already designated as the owner of world-side corruption
-    state precisely because Phase 23 is player-only; it can drive this field with no rework.
-  - **The field is authored across all 26 encounters**, not left at zero — a field nothing sets is
-    a field that doesn't exist. `encounter.ashen_rite` 1.0 · `fallen_patrol` 0.3 · the Hollow
-    Queen's dead 0.2–0.25 · beasts and goblins 0.05–0.15 · **constructs 0.0, because stone does not
-    rot**. The two new Ashen encounters are 0.0 as well: their creatures are already corrupted, and
-    afflicting them again would double-dip into "Ashen Ash Maw".
-  - **One line of LORE added** (under Morthul): "His decay takes the living as readily as the land:
-    beasts and men alike rise Ashen where it reaches." The sentence the mechanic rests on — canon
-    implied it via Ash Dragons and corrupted forests but never stated it.
-  - **The two flagships:**
-    | Archetype | Profile | Faction | Why a modifier can't produce it |
-    | --- | --- | --- | --- |
-    | `enemy.ash_maw` | `ai.zealot` | `""` | a beast corruption ate the fear out of — zero retreat, unlike every 34C beast; 90 Necrotic / 70 Fire resist |
-    | `enemy.cinder_thrall` | `ai.caster` | `faction.fallen` | wields **`spell.ember_siphon`**, the player's own corruption-gated lifesteal, turned back on them |
-  - **A gate worth knowing about:** `spell.ember_siphon` is `MinCorruptionTier = 2` and
-    `SpellcastingComponent.Learn` enforces that — but authored `KnownSpellIds` **bypass** it, since
-    `RebuildSpells` loads ids straight from the database (verified in 34D). So the thrall wields it
-    while the player still cannot, which is exactly the fiction.
-  - **Not wired this pass, deliberately:** `WorldEventDirector` and `EnemySpawnDirector` also spawn
-    enemies and could afflict. One call site proves the mechanism, and the raid path already has
-    its own champion health multiplier that would compound confusingly with this one.
-  - **Verified:** `dotnet build` clean, **569 tests** (559 + 10 pinning the XP curve and the
-    only-ever-strengthen invariant — a negative bonus would quietly make "corrupted" a downgrade),
-    `--validate` **exit 0** (23 archetypes / 26 encounters / 412 strings), and a **130 s live
-    `--play` that actually triggered an encounter** — so the roll path executed, not just the boot
-    path — with zero warnings or errors.
-  - **The new validator guard was tested by making it fail**, not by trusting it: an encounter
-    temporarily authored at `5.0` produced
-    `encounter 'encounter.wolf_pack' has a corruption chance outside 0..1: 5` and `validate: FAIL`,
-    exit 1. Reverted after. Nothing else in the game would have caught that value.
-  - **Verification gap:** an Ashen spawn was never *seen*. `time 22` and wait out a `wolf_pack`
-    roll (0.15), or temporarily set a chance to 1.0, and confirm the nameplate reads **Ashen Wolf**,
-    the body looks charred with an ember glow, and it dies harder. Then kill a plain wolf and
-    confirm it is **not** tinted — the material-duplication bug would show up exactly there. Also
-    `spawn 1 enemy.cinder_thrall`: it should open with `ember_siphon` and visibly heal off the hit.
-  - **Art gap:** two more tinted capsules, and the affliction's char pass is a material tint over a
-    placeholder. Phase 53.
+  - Three constructs (new `ai.sentry` — holds its post, never patrols, never calls for help) and one
+    elemental per offensive school, each resistant to its own.
+  - **Had to land a mechanic first:** `CombatMath.Mitigate` mitigated only Physical, so nothing could
+    resist a magic school and an elemental had no way to be elemental. Six resistance stats through
+    the *same* `ArmorMultiplier` curve — resistance, never immunity. It also closed a live bug where
+    a school-typed melee weapon bypassed armour entirely.
+  - `spell.arcane_lance` — Arcane's first offensive spell; it had only Self casts.
+- [x] **34E.5 — Arcane on-hit dispel** `[F]`
+  - An Arcane hit strips the target's longest-lasting buff, never a harmful one, one per hit.
+    **Every magic school now has an on-hit identity** — the table 29.5B opened is closed. A Self cast
+    can't trigger it (`OnSpellHit` is only reached from the projectile/area paths).
+- [x] **34F — Corrupted / Ashen creatures** `[F/C]`
+  - Built as a **variant layer**, not another roster row: `AshenAffliction` takes any spawned enemy
+    and makes it Morthul's — tougher, charred, ember-lit, worth more — rolled per enemy off
+    `EncounterResource.CorruptionChance`. Corruption is authored per *place*, since LORE puts it on
+    the realm and never on the player. 35E's "Ash dragon (corrupted elite)" inherits this.
+  - Two flagships a modifier can't produce: `enemy.ash_maw` and `enemy.cinder_thrall`, which wields
+    the player's own corruption-gated lifesteal.
+  - One line of LORE added under Morthul — the sentence the mechanic rests on.
 - [x] **34F.5 — Encounter table balance pass** `[C]`
-  - **Why it exists:** a full playthrough reported seeing "far fewer of the new enemies than are
-    now in the game." The roster was fine — the *table* wasn't. Three findings, all measured
-    rather than guessed:
-    1. **`enemy.rime_shard` and `enemy.storm_mote` had no encounter at all** — 34E shipped them
-       `spawn`-only and wrote the gap down, which does not make content reachable. Both now have
-       one (`encounter.rime_drift`, `encounter.storm_cell`).
-    2. **The goblin took 44% of every daylight roll.** Its five encounters still carried their
-       Phase-4 weights (1.0–2.0), authored when the goblin was the only enemy in the game, while
-       everything from 34B on sits at 0.25–1.0. Cut to 0.5–0.8.
-    3. **Dawn was an exact duplicate of day** and equally barren, while over half the roster is
-       dusk/night. Widened four: wolves and the ash maw hunt the half-light (`AtDawn`), the hollow
-       husks and grave shades walk as it fails (`AtDusk`). The rare and elite spawns —
-       `dire_wolf`, `frost_stalker`, `barrow_rising`, `hollow_rite` — stay night-exclusive, so
-       night keeps its identity.
-  - **Measured before → after** (eligible pool per phase, by weight):
-    | Phase | Distinct types | Goblin share |
-    | --- | --- | --- |
-    | Dawn | 10 → **14** | 44% → **19%** |
-    | Day | 10 → **12** | 44% → **22%** |
-    | Dusk | 15 → **19** | 41% → **19%** |
-    | Night | 19 → **21** | 30% → **15%** |
-  - **Every authored archetype now has an ambient encounter** — the coverage sweep that found the
-    two orphans comes back empty.
-  - **Deliberately not touched:** the goblin camp (`SpawnEnemyCamp`, 3 alive, 5 s respawn). It
-    contributed 22 of 32 kills in the reported session, but it is gated on
-    `BuildProfile.SpawnSandboxContent` and so does not exist in an exported build — tuning it
-    would fix a symptom the real game never has.
-  - **Verified:** pure data, no code — build clean and **569 tests** unchanged, `--validate` exit 0
-    with 28 encounters, and the before/after pool measured with a script rather than eyeballed.
-- [x] **34G — `BestiaryDatabase` + in-game bestiary UI** `[F/C]`
-  - **Done when:** kills/lore track in a bestiary screen (Ash Hunters fantasy)
-    through existing UI patterns; `ISaveable`. ✅ **Phase 34 is complete.**
-  - **Built:** press `B` for the Ash Hunters' field journal — 26 creatures across seven category
-    tabs, kill counts, Ashen counts, and lore that opens as you hunt. `BestiaryEntryResource` +
-    `BestiaryDatabase` (mirroring `AIProfileDatabase` exactly), a `BestiaryService` and a
-    `BestiaryPanel`. 34A–34F built 26 spawnable creatures and **nothing in the game named them**;
-    this is the screen that makes the roster content rather than spawn fodder.
-  - **Almost none of it is new machinery**, which is the point of "through existing UI patterns":
-    `UiPanel` (30.5F) already owns the modal contract, the toggle input, the dirty-flag rebuild and
-    focus restoration; `MapService`/`MapScreen` is an exact template for an `ISaveable` service
-    feeding a panel; and `EntityDiedEvent` already carries `TemplateId`, so **no new event was
-    needed** — the kill hook mirrors `QuestLogComponent.OnEntityDied` in four lines.
-  - **Keyed by template id, not archetype** — because three creatures have no archetype at all.
-    `enemy.goblin`, `enemy.iron_king` and `enemy.ashen_acolyte` come from bespoke factories and live
-    only in `EnemyTemplateRegistry` (26 ids) not `EnemyArchetypeDatabase` (23). A bestiary missing
-    the game's first enemy and its first boss would be absurd, so entries cover all 26 and
-    `NameKey` exists purely to give those three a name to render.
-  - **Counts party kills, not just the player's — deliberately divergent from quests.** Quest
-    objectives are killer-attributed because a quest is a contract; a field journal records what the
-    party brought down. A session where Kael lands the last blow should not leave the page blank.
-  - **Ashen kills are tracked separately**, which is the Ash Hunters' literal brief in LORE —
-    "track dragons and **corrupted beasts**". `AshenAffliction` tags the spawn into a group and the
-    service reads it at death; `TemplateId` still never changes, so quests stay safe. Two lines.
-  - **Staged reveal:** Unseen renders `??? — unrecorded` with no name and no lore leak; Sighted
-    gives the name, the count, and how many more kills fill the page; Known gives the lore. The
-    threshold is per entry, so a boss you fight once is authored `KillsToKnow = 1` and skips
-    Sighted entirely. `BestiaryStages.Of` is pure and is where the tests are.
-  - **Fixed three Loc violations this surfaced:** `EnemyFactory`, `BossFactory` and
-    `AshenAcolyteFactory` set `DisplayName` to English literals ("Goblin", "The Iron King",
-    "Ashen Acolyte") — a CLAUDE.md §6 breach predating the rule's enforcement that the bestiary
-    would have put on screen. All three now route through `Loc.T`.
-  - **The validator checks the bestiary in both directions, which no other domain does.** Forwards
-    is routine: entries name real creatures, keys resolve, `KillsToKnow >= 1`. Backwards is the one
-    that earns its keep — **every registered template must have an entry.** That is exactly the bug
-    class that let 34E ship two archetypes with no encounter, unnoticed until a full playthrough.
-    Now it is a build-time failure.
-  - **Proven by making it fail**, not by trusting it: deleting `Wolf.tres` produced
-    `enemy template 'enemy.wolf' has no bestiary entry — it would be uncatalogued in-game` and
-    `validate: FAIL`, exit 1. Restored after.
-  - **Verified:** `dotnet build` clean, **579 tests** (569 + 10 pinning the reveal rule — the
-    boundaries, the boss's one-kill threshold collapsing Sighted, and that no-kills is *always*
-    Unseen whatever the threshold), `--validate` **exit 0** with 26 entries and 454 strings, and a
-    120 s live `--play` with **no `SaveId` collision warning** (the specific risk when adding a
-    saveable — `SaveManager` warns at write time if two share an id).
-  - **One expected warning, worth not hiding:** loading a save made before this phase logs
-    `Save slot 'auto2' has no usable entry for 'bestiary'; it keeps its current state.` That is the
-    save framework's normal behaviour for any newly-added saveable meeting an older save, and it
-    self-heals on the next save.
-  - **Verification gap:** the `ISaveable` round trip is in the Done-when and is the one thing this
-    harness cannot drive — `F5`/`F9` need keys. Kill a few creatures, quick-save, quick-load, and
-    confirm the counts survive. Also worth two minutes: press `B`, tab through, confirm unseen
-    creatures read `???`, then kill something and watch it flip to Sighted. `savecheck` in the F1
-    console should not list `bestiary` (it is a colon-free service key, so it cannot be volatile).
-  - **Scope fence:** creatures only. Gods, Flamebearers, realms and guilds are Phase 50.5's codex,
-    which the roadmap already calls "distinct from the combat bestiary (34G)" — same UI framework,
-    no shared data.
+  - A playthrough reported seeing far fewer new enemies than the roster held. The roster was fine;
+    the table wasn't. Two archetypes had **no encounter at all** (34E shipped them `spawn`-only);
+    the goblin still carried its Phase-4 weights and took **44% of every daylight roll**; and dawn
+    was a duplicate of day. After: dawn 10→14 types, day 10→12, goblin share 44%→~20%.
+- [x] **34G — `BestiaryDatabase` + bestiary UI** `[F/C]`
+  - `B` opens the Ash Hunters' field journal: 26 creatures, seven tabs, kill counts, Ashen counts,
+    and lore staged Unseen → Sighted → Known. Built on `UiPanel` + the `MapService` persistence
+    shape; `EntityDiedEvent` already carried `TemplateId`, so no new event was needed.
+  - Entries key off the **template id**, not the archetype — the goblin, Iron King and Ashen Acolyte
+    have no archetype at all. Counts party kills, not just the player's (a quest is a contract; a
+    journal is a record). Also fixed three hard-coded English `DisplayName`s.
+
+### What outlived the session
+
+- **Durable rules moved into the permanent docs**, which are the ones to trust: CLAUDE.md §8 has
+  the recipes (new archetype, AI profile, bestiary entry, corrupted variant, new stat) and the
+  traps — a caster needs spells *and* a standoff profile *and* a Mana pool or it silently never
+  casts; never change `TemplateId`; always `Duplicate()` a material before tinting.
+  `ARCHITECTURE.md` §2.5 and §2.2 describe the systems.
+- **The validator got stricter twice, both times from a real bug.** `CorruptionChance` is range-
+  checked (34F), and the bestiary is checked **in both directions** — every registered creature must
+  have an entry (34G). That second one is the guard against the exact failure 34F.5 had to fix by
+  hand: content that exists but nothing can reach.
+- **Both guards were proven by making them fail**, not by trusting them.
+
+### Still owed to Phase 34 (maintainer, at the keyboard)
+
+Everything below needs the `F1` console or `F5`/`F9`, which no remote session can drive:
+
+- **The bestiary's `ISaveable` round trip** — kill a few creatures, quick-save, quick-load, confirm
+  the counts survive. This is a Done-when clause that has only been read, not run.
+- **An Ashen spawn, seen.** `time 22`, wait out a wolf pack, confirm the nameplate reads *Ashen
+  Wolf* — then kill a plain wolf and confirm it is **not** tinted (that is where a material-sharing
+  bug would surface).
+- **Resistance visibly landing:** `spawn 1 enemy.cinder_wisp`, hit it with `firebolt`, expect about
+  half damage.
+- **The necromancer mending its husks** — `spawn 2 enemy.hollow_husk`, then
+  `spawn 1 enemy.hollow_necromancer`, hurt a husk. No automated coverage at all.
+- Spot-check the read of `spawn 1 enemy.stone_sentinel` (150 poise: a flurry can't stagger it, one
+  committed heavy hit can) and `spawn 3 enemy.wolf` (the pack fans out rather than queueing).
+
+### Known limits, deliberately not fixed
+
+- `EncounterResource` has **no region filter**, so a Frostfang creature can roll in the Ember Crown.
+- **One encounter = one template id**, so mixed warbands (an alpha with its pack, a necromancer with
+  husks) aren't authorable. The necromancer's mending is only observable when groups overlap.
+- **Art:** every 34-series creature is a tinted capsule. A 2.4 m stone golem reads worst. Phase 53.
 
 ---
 
@@ -3424,8 +2656,9 @@ no code) — batch them when momentum is good.
 - **This file is the live tracker.** Tick boxes here per session; mirror only the
   *phase-level* status into `PRODUCTION_ROADMAP.md` §11 so the two don't drift.
 - **The gates are real.** Don't open a stage's first sub-phase until the prior
-  gate's criteria are maintainer-verified in a build (CLAUDE.md §2 — this
-  container can't build; "verified" = the human confirmed it).
+  gate's criteria are verified in a build. The automated battery (build, tests,
+  `--validate`, a live `--play`) is runnable here; the gate's *play-it-through*
+  criteria are the maintainer's, and only they can close a gate.
 - **Every sub-phase still owes the full DoD** (`PRODUCTION_ROADMAP.md` §0.3):
   builds, playable, `ISaveable` round-trips, `validate-all` green, docs updated,
   draft PR. The **Done when** line is *extra*, not instead.

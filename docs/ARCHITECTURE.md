@@ -124,14 +124,22 @@ direct children of the host. `Hitbox`/`Hurtbox` are `Area3D` (not
 
 ### 2.2 Combat (`src/Combat`)
 
-- **`DamageType`** — `Physical` (armor-mitigated), `Fire/Frost/Lightning/Arcane/
-  Nature/Necrotic` (resist later), `True` (bypasses mitigation).
+- **`DamageType`** — `Physical` (mitigated by `Armor`), `Fire/Frost/Lightning/Arcane/
+  Nature/Necrotic` (each mitigated by its own resistance stat, Phase 34E), `True`
+  (bypasses mitigation entirely).
 - **`DamagePacket`** (attacker-built) and **`DamageResult`** (resolved) —
   `readonly record struct`s.
 - **`CombatMath`** — `RollAttack(baseDamage, attackerStats)` → `(amount, isCrit)`
   (adds `PhysicalPower × 0.5`, rolls crit from `CritChance`/`CritDamage`);
-  `Mitigate(amount, type, defenderStats)` → armor curve `100/(100+armor)` for
-  physical.
+  `Mitigate(amount, type, defenderStats)` maps the school to a stat via
+  `ResistanceStat` and runs **one curve for all of them** — `100/(100+x)`, the same
+  `ArmorMultiplier` physical uses.
+- **Mitigation is resistance, never immunity** (Phase 34E). `ArmorMultiplier` stays in
+  `(0, 1]`, so an enemy can be resistant enough to make a magic school the wrong first
+  choice but never immune enough to make it a dead one — DESIGN's "no school a trap"
+  rule. There is deliberately **no vulnerability side**: a negative resist clamps to ×1
+  rather than amplifying. Every resist defaults to `0`, so an `AttributeSet` that
+  doesn't mention them behaves exactly as it did before the system existed.
 - **`CombatLayers`** — collision-layer masks: `World=1`, `Body=2`, `Hurtbox=4`,
   `Hitbox=8`.
 - **`Hurtbox : Area3D`** — passive damageable region; layer `Hurtbox`, mask 0;
@@ -191,15 +199,47 @@ direct children of the host. `Hitbox`/`Hurtbox` are `Area3D` (not
   priority — heal a wounded ally (`FindWoundedAlly`, same team, incl. itself), else the
   hardest-hitting ready offensive, else ward itself. It reuses the *player's*
   `SpellcastingComponent` (`TryCastById`, `TryCastSupportOn`) — no parallel casting system.
-- **`EnemyFactory.Create(pos)`** — builds a visible goblin (mesh, collision,
-  stats from `GoblinAttributes.tres`, combat `Team 1`, hurtbox, weapon from
-  `GoblinClaw.tres` + hitbox, AI).
-- **`AshenAcolyteFactory.Create(pos)`** — the first caster archetype (Phase 29.5F): a squishy
-  Fallen fire-caster (Firebolt/Fireball/Arcane Shield/Lesser Heal) that aims from a chest
-  `CastOrigin` marker. Registered alongside the goblin and the Iron King boss in
-  **`EnemyTemplateRegistry`** (3 archetypes; `spawn <n> enemy.ashen_acolyte`).
 - **`EnemySpawnDirector : Node3D`** — keeps a population alive within a radius;
   seeds the camp on ready, respawns the dead (tracks via `TreeExited`).
+
+#### The roster is data (Phase 34)
+
+Phase 34 turned the enemy roster from code into content. **26 creatures are spawnable by id and
+only three of them have a factory**; the rest are `.tres` files.
+
+- **`AIProfileResource` / `AIProfileDatabase`** (`data/ai_profiles`, ids `ai.*`, Phase 34A) — every
+  knob `EnemyAIComponent` used to export lives on a profile: perception (`VisionRange`,
+  `FovDegrees`, `AlertRadius`), melee (`AttackRange`, `FlankSpreadDegrees`), standoff
+  (`StandoffRange`, `KiteDistance`, `AllySupportRange`), guard (`BlockDuration`/`BlockRecovery`),
+  ambush (`AmbushRange`), nerve (`RetreatHealthFraction`, `FleeOnSight`, `ProvokeMemory`) and LOD.
+  **The component stayed one class** — each behaviour is a branch gated on a profile number, so they
+  compose (a shielded flanking ambusher is authorable) instead of forking the brain. Pure helpers
+  `GuardCycle`, `PackFlank` and `CasterDecision` hold the testable arithmetic.
+- **`EnemyArchetypeResource` / `EnemyArchetypeDatabase`** (`data/enemies`, ids `enemy.*`, 34B–34F) —
+  a creature as data: name key, build paths (attributes/weapon/loot/model), tint, AI profile,
+  faction, `KnownSpellIds`, capsule dims, poise, regen, XP. The database registers a builder per
+  archetype with `EnemyTemplateRegistry`, so **a new `.tres` is spawnable with no code change**.
+- **`EnemyArchetypeFactory`** — the single shared builder for all of them (named
+  `HumanoidEnemyFactory` until 34C generalized it). Melee reach scales with body height against a
+  1.8 m humanoid reference, so a short quadruped bites at its own scale. The three bespoke factories
+  that remain — `EnemyFactory` (goblin), `AshenAcolyteFactory` (a pure caster with no melee hitbox),
+  `BossFactory` (Iron King, phase controller) — earn it by being *structurally* different, not by
+  having different numbers.
+- **A caster archetype** needs three things aligned and fails **silently** if any is missing: a
+  non-empty `KnownSpellIds`, a standoff profile, and a real `Mana` pool in its `AttributeSet`.
+  Authored `KnownSpellIds` bypass the `MinCorruptionTier` gate that `Learn` enforces, which is how
+  `enemy.cinder_thrall` wields the player's corruption-gated lifesteal.
+- **`AshenAffliction`** (Phase 34F) — the corruption *variant* layer: the same archetype, taken by
+  Morthul. Applied **after** `AddChild` (stat modifiers need `StatsComponent` initialized) from
+  `EncounterDirector`, rolled per enemy off `EncounterResource.CorruptionChance`. It never changes
+  `TemplateId` (quest kill objectives match on it) and always `Duplicate()`s a material before
+  tinting (otherwise the tint writes through to every other instance sharing that imported mesh).
+- **`BestiaryEntryResource` / `BestiaryDatabase` / `BestiaryService`** (`data/bestiary`, 34G) — the
+  Ash Hunters' journal: kills and Ashen kills per template id, `ISaveable` (`SaveId = "bestiary"`),
+  fed by `EntityDiedEvent` and read by `BestiaryPanel` (`B`). Entries key off the **template id**,
+  not the archetype, so the three bespoke creatures are catalogued too. Reveal staging is the pure
+  `BestiaryStages.Of`. The validator checks this domain **in both directions** — every entry names a
+  real creature *and* every registered creature has an entry.
 
 ### 2.6 Items & inventory (`src/Items`, `src/Interaction`)
 
@@ -407,8 +447,12 @@ system — the same `SpellcastingComponent` still drives everything:
   (`StatusEffectResource.MaxStacks`, DoT × stacks), **Frost** chill→freeze (`Frozen.tres` when
   the target is already chilled), **Lightning** one chain to the nearest other hostile,
   **Necrotic** caster lifesteal, **Nature** heal-over-time (`HealPerTick` + `Regrowth.tres`),
-  **Arcane** the ward. New statuses bring the set to 5 (Burning, Chill, Frozen, Regrowth,
-  Arcane Ward).
+  **Arcane** the self-ward plus — since Phase 34E.5 — an **on-hit dispel**: the hit strips the
+  target's longest-lasting beneficial status, never a harmful one, one per hit
+  (`StatusMath.PickDispel`). That closed the table: **every school now has an on-hit identity.**
+  A Self cast can never trigger it, since `OnSpellHit` is only reached from `SpellResolver`'s
+  projectile/area paths while Self casts run through `SpellcastingComponent.CastSelf`. Statuses
+  now number 6 (Burning, Chill, Frozen, Regrowth, Arcane Ward, Decay).
 - **School mastery (29.5C)** — `SchoolMasteryComponent` (`ISaveable`) banks a point per cast of a
   school and converts points→rank via pure `SchoolMasteryMath`; `SpellcastingComponent` folds the
   rank's multiplier into damage and heals. `CombatMath.RollSpell` now also scales off Intelligence
@@ -709,9 +753,27 @@ standing, and persist. Built entirely on the existing character stack — a comp
   `EntityComponent.SaveKey(prefix)`, which prefers the owner's stable
   `IEntity.PersistentId` (e.g. the player is `PersistentId = "player"`, so its
   components save as `stats:player`, `inventory:player`, …) and only falls back to the
-  volatile `RuntimeId` for transient actors — logging a warning when it does, because
-  that state will not survive a reload. World singletons keep fixed keys (`worldclock`,
-  `weather`).
+  volatile `RuntimeId` for transient actors. World singletons keep fixed, colon-free
+  keys (`worldclock`, `weather`, `map`, `fasttravel`, `spawns`, `companions`, `tutorial`,
+  `cell_persistence`, `bestiary`).
+
+- **`SaveKeyPolicy` — why transient actors persist nothing** (Phase 25.5A). Components used to
+  register with the `SaveManager` *unconditionally*, so transient actors (the training dummy,
+  spawned goblins — no `PersistentId`) wrote volatile `stats:<runtimeId>` keys that could never be
+  reclaimed after a world rebuild, producing three warning classes at once: *no PersistentId*,
+  *no usable entry*, and *orphaned state*. The fix is a pure, Godot-free
+  `SaveKeyPolicy` (`ShouldPersist` / `Key` / `IsVolatile`) plus
+  `EntityComponent.RegisterSaveable()`, which registers a component **only when its owner has a
+  stable `PersistentId`**. So: **components call `RegisterSaveable()` from `OnInitialize`, never
+  `SaveManager.Register` directly**; a component-less world service registers itself in
+  `_EnterTree` instead. The `savecheck` dev command (`F1`) audits every registered id through
+  `IsVolatile` and should always report **0**.
+
+- **Two benign warnings you will still see.** Loading a save made *before* a saveable existed logs
+  *"no usable entry for `<id>`; it keeps its current state"* — that is forward-compat, not a bug,
+  and it self-heals on the next save. Loading a save made *before* the 25.5A fix warns about its
+  legacy `stats:*` keys — stale data, also not a bug. `SaveManager` also warns at write time if two
+  saveables share a `SaveId`, which is the one to actually chase.
 
 - **Spawned-actor persistence** — `SaveManager` only restores components of actors **already
   alive**; it can't recreate one missing from a freshly-loaded scene. `PersistentSpawnDirector`

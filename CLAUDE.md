@@ -189,6 +189,11 @@ Goblins roam to the north (−Z) and drop loot.
 │   ├── world_events/       # WorldEventResource presets (raid, cache, champion hunt)
 │   ├── regions/            # RegionResource presets (Ember Crown, Frostfang Reach)
 │   ├── races/              # RaceResource presets (Human, Draekyn, Grondar, Sylthari, Umbral, Valari)
+│   ├── companions/         # CompanionResource presets (Kael) — Phase 32
+│   ├── ai_profiles/        # AIProfileResource presets (ai.*) — enemy personalities, Phase 34A
+│   ├── enemies/            # EnemyArchetypeResource presets (enemy.*) — the roster, Phase 34B–34F
+│   ├── bestiary/           # BestiaryEntryResource presets — creature lore/reveal, Phase 34G
+│   ├── _templates/         # blank authoring templates to copy from
 │   └── locale/             # strings.csv — the Loc localization catalogue
 └── src/
     ├── Core/
@@ -219,7 +224,7 @@ Goblins roam to the north (−Z) and drop loot.
     ├── Onboarding/          # TutorialDirector + script (diegetic hints, Phase 33)
     ├── Interaction/         # InteractableComponent (raycast interact)
     ├── Player/              # PlayerCharacter, PlayerController, PlayerFactory
-    ├── Enemies/             # EnemyEntity, EnemyAIComponent (+caster branch), EnemyFactory, AshenAcolyteFactory, EnemyTemplateRegistry
+    ├── Enemies/             # EnemyEntity, EnemyAIComponent, AIProfile/EnemyArchetype/Bestiary resources+databases, EnemyArchetypeFactory (+3 bespoke), AshenAffliction, EnemyTemplateRegistry
     ├── Save/                # ISaveable, SaveManager (autoload), persistence directors
     ├── Localization/        # Loc string layer (Loc.T)
     ├── Analytics/           # AnalyticsSink (EventBus → user://analytics, dev-gated)
@@ -251,8 +256,8 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 | `src/Core` | Autoloads (`EventBus`, `ServiceLocator`, `GameManager`, `SaveManager`), pooling, diagnostics, input |
 | `src/Entities` | `IEntity` / `Entity` / `CharacterEntity` / `EntityComponent` composition model |
 | `src/Stats` | `StatType` / `Stat` / `StatModifier` / `AttributeSet` / `StatsComponent` |
-| `src/Combat` `src/Movement` | Damage pipeline, hit/hurtboxes, weapons, `CombatComponent`; reusable locomotion |
-| `src/Player` `src/Enemies` | First-person controller (TP retained for cutscenes); perception-FSM AI + `EnemyTemplateRegistry` |
+| `src/Combat` `src/Movement` | Damage pipeline (armour **and** per-school resistances on one curve), hit/hurtboxes, weapons, `CombatComponent`; reusable locomotion |
+| `src/Player` `src/Enemies` | First-person controller (TP retained for cutscenes); one profile-driven AI brain, the data roster (`ai.*`/`enemy.*`/bestiary) behind `EnemyTemplateRegistry`, and the Ashen variant layer |
 | `src/Items` `src/Loot` | Inventory, equipment, item instances, affixes, loot tables |
 | `src/Progression` `src/Quests` `src/Dialogue` | XP/perks, quests, conversation graphs + story flags |
 | `src/Magic` `src/World` `src/Npc` | Spells/status effects; clock/weather/encounters/events; schedules |
@@ -684,8 +689,17 @@ Done: **1 Core Architecture · 2 Player Controller · 3 Combat Framework ·
 8 Progression · 9 Quests · 10 Dialogue · 11 NPC Schedules · 12 Magic ·
 13 World Systems · 14 HUD & Panels Polish · 15 Crafting · 16 Factions ·
 17 Procedural Events · 18 Game UI Overhaul · 19 Optimization ·
-20 Deep Debugging**. Next (ongoing): **21 Content Expansion** — the seam where
-the systems roadmap hands off to the separate content/production roadmap.
+20 Deep Debugging · 21 Content Expansion** — the seam where the systems roadmap
+handed off to the production roadmap, which is now the live one.
+
+**Production roadmap, where it actually stands:** Stage A ✅ (22–28 + 25.5, Gate G0
+reached) · Stage B ⏳ (29–33 built; **Gate G1 needs a maintainer play-through and one
+export** — that is the only thing between here and G1) · Stage C ⏳ **in progress**:
+**Phase 34 is complete (34A–34G)** — AI profiles, humanoid/beast/undead/construct/
+elemental archetypes, per-school damage resistances, every magic school's on-hit
+identity, Ashen corruption variants, and the bestiary. Next: 34.5 Frostfang clans,
+then 35 dragons. `docs/SESSION_PLAYBOOK.md` is the live per-sub-phase tracker;
+`docs/PRODUCTION_ROADMAP.md` §11 mirrors phase-level status only.
 
 > **Two UI phases, both done:** Phase 14 *polished the debug-grade overlay* (shared
 > `UiTheme`, vitals bars, crosshair, framed panels). Phase 18 built the *real game UI*
