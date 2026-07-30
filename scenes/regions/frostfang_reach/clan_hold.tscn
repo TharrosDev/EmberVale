@@ -1,0 +1,501 @@
+[gd_scene format=3 uid="uid://crgnclanhold1"]
+
+[ext_resource type="Script" path="res://src/Entities/Entity.cs" id="1_entity"]
+[ext_resource type="Script" path="res://src/World/TravelNodeComponent.cs" id="2_travel"]
+[ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="3_navbaker"]
+[ext_resource type="Script" path="res://src/Factions/FactionComponent.cs" id="4_faction"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="5_dialogue"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleComponent.cs" id="6_schedule"]
+[ext_resource type="Script" path="res://src/Crafting/CraftingStationComponent.cs" id="7_station"]
+[ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_a.glb" id="10_house_a"]
+[ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_b.glb" id="11_house_b"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_waystone.glb" id="12_waystone"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_station_forge.glb" id="13_forge"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_station_workbench.glb" id="14_workbench"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_station_alchemy.glb" id="15_alchemy"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_tent.glb" id="16_tent"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="17_brazier"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_pine_dead.glb" id="18_pine"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="19_rock"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_glacier.glb" id="20_glacier"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_guild_rep.glb" id="21_npc_chief"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_vendor.glb" id="22_npc_vendor"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_innkeeper.glb" id="23_npc_inn"]
+
+[sub_resource type="NavigationMesh" id="NavMesh_hold"]
+geometry_parsed_geometry_type = 1
+cell_size = 0.25
+cell_height = 0.25
+agent_height = 1.75
+agent_radius = 0.5
+agent_max_climb = 0.5
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+size = Vector3(60, 0.5, 60)
+
+[sub_resource type="BoxShape3D" id="Shape_floor"]
+size = Vector3(60, 0.5, 60)
+
+[sub_resource type="StandardMaterial3D" id="Mat_floor"]
+albedo_color = Color(0.62, 0.66, 0.7, 1)
+roughness = 0.85
+
+[sub_resource type="BoxShape3D" id="Shape_bldgA"]
+size = Vector3(6, 5, 8)
+
+[sub_resource type="BoxShape3D" id="Shape_bldgB"]
+size = Vector3(8, 6, 6)
+
+[sub_resource type="CapsuleShape3D" id="Shape_npc"]
+radius = 0.4
+height = 1.8
+
+[sub_resource type="CylinderShape3D" id="Shape_waystone"]
+radius = 0.7
+height = 3.0
+
+[sub_resource type="BoxShape3D" id="Shape_station"]
+size = Vector3(0.9, 1, 0.9)
+
+[sub_resource type="CylinderShape3D" id="Shape_tent"]
+radius = 1.4
+height = 2.4
+
+[sub_resource type="CylinderShape3D" id="Shape_pine"]
+radius = 0.4
+height = 5.0
+
+[sub_resource type="CylinderShape3D" id="Shape_rock"]
+radius = 1.5
+height = 1.6
+
+[sub_resource type="CylinderShape3D" id="Shape_brazier"]
+radius = 0.5
+height = 1.2
+
+[node name="ClanHoldCell" type="Node3D"]
+
+[node name="Nav" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("NavMesh_hold")
+
+[node name="NavBaker" type="Node" parent="Nav"]
+script = ExtResource("3_navbaker")
+
+[node name="Floor" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+mesh = SubResource("BoxMesh_floor")
+surface_material_override/0 = SubResource("Mat_floor")
+
+[node name="FloorCol" type="StaticBody3D" parent="Nav"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FloorCol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+shape = SubResource("Shape_floor")
+
+[node name="LonghouseW" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 2.5, -6)
+
+[node name="LonghouseWCol" type="StaticBody3D" parent="Nav/LonghouseW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/LonghouseW/LonghouseWCol"]
+shape = SubResource("Shape_bldgA")
+
+[node name="LonghouseE" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 2.5, -6)
+
+[node name="LonghouseECol" type="StaticBody3D" parent="Nav/LonghouseE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/LonghouseE/LonghouseECol"]
+shape = SubResource("Shape_bldgA")
+
+[node name="MootHall" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, -18)
+
+[node name="MootHallCol" type="StaticBody3D" parent="Nav/MootHall"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/MootHall/MootHallCol"]
+shape = SubResource("Shape_bldgB")
+
+[node name="TentSW" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 0, 6)
+
+[node name="TentSWCol" type="StaticBody3D" parent="Nav/TentSW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/TentSW/TentSWCol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+shape = SubResource("Shape_tent")
+
+[node name="TentSE" type="Node3D" parent="Nav"]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 16, 0, 6)
+
+[node name="TentSECol" type="StaticBody3D" parent="Nav/TentSE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/TentSE/TentSECol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+shape = SubResource("Shape_tent")
+
+[node name="TentNW" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -18, 0, -16)
+
+[node name="TentNWCol" type="StaticBody3D" parent="Nav/TentNW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/TentNW/TentNWCol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+shape = SubResource("Shape_tent")
+
+[node name="BrazierSW" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, 8)
+
+[node name="BrazierSWCol" type="StaticBody3D" parent="Nav/BrazierSW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BrazierSW/BrazierSWCol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_brazier")
+
+[node name="Light" type="OmniLight3D" parent="Nav/BrazierSW"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+light_color = Color(0.74, 0.86, 1, 1)
+light_energy = 2.2
+omni_range = 10.0
+
+[node name="BrazierSE" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 8)
+
+[node name="BrazierSECol" type="StaticBody3D" parent="Nav/BrazierSE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BrazierSE/BrazierSECol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_brazier")
+
+[node name="Light" type="OmniLight3D" parent="Nav/BrazierSE"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+light_color = Color(0.74, 0.86, 1, 1)
+light_energy = 2.2
+omni_range = 10.0
+
+[node name="BrazierNW" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, -8)
+
+[node name="BrazierNWCol" type="StaticBody3D" parent="Nav/BrazierNW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BrazierNW/BrazierNWCol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_brazier")
+
+[node name="Light" type="OmniLight3D" parent="Nav/BrazierNW"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+light_color = Color(0.74, 0.86, 1, 1)
+light_energy = 2.2
+omni_range = 10.0
+
+[node name="BrazierNE" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, -8)
+
+[node name="BrazierNECol" type="StaticBody3D" parent="Nav/BrazierNE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BrazierNE/BrazierNECol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_brazier")
+
+[node name="Light" type="OmniLight3D" parent="Nav/BrazierNE"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+light_color = Color(0.74, 0.86, 1, 1)
+light_energy = 2.2
+omni_range = 10.0
+
+[node name="PineSW" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -24, 0, 20)
+
+[node name="PineSWCol" type="StaticBody3D" parent="Nav/PineSW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineSW/PineSWCol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("Shape_pine")
+
+[node name="PineSE" type="Node3D" parent="Nav"]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 24, 0, 18)
+
+[node name="PineSECol" type="StaticBody3D" parent="Nav/PineSE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineSE/PineSECol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("Shape_pine")
+
+[node name="PineW" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -26, 0, -4)
+
+[node name="PineWCol" type="StaticBody3D" parent="Nav/PineW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineW/PineWCol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("Shape_pine")
+
+[node name="PineE" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 26, 0, -10)
+
+[node name="PineECol" type="StaticBody3D" parent="Nav/PineE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineE/PineECol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("Shape_pine")
+
+[node name="PineN" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -22, 0, -24)
+
+[node name="PineNCol" type="StaticBody3D" parent="Nav/PineN"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineN/PineNCol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("Shape_pine")
+
+[node name="RockS" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, 24)
+
+[node name="RockSCol" type="StaticBody3D" parent="Nav/RockS"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RockS/RockSCol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("Shape_rock")
+
+[node name="RockNW" type="Node3D" parent="Nav"]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -20, 0, -28)
+
+[node name="RockNWCol" type="StaticBody3D" parent="Nav/RockNW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RockNW/RockNWCol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("Shape_rock")
+
+[node name="RockNE" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 0, -24)
+
+[node name="RockNECol" type="StaticBody3D" parent="Nav/RockNE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RockNE/RockNECol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("Shape_rock")
+
+[node name="GlacierW" parent="Nav" instance=ExtResource("20_glacier")]
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, -27, 0, 10)
+
+[node name="GlacierE" parent="Nav" instance=ExtResource("20_glacier")]
+transform = Transform3D(-0.9, 0, 0.6, 0, 1, 0, -0.6, 0, -0.9, 27, 0, -2)
+
+[node name="Waystone" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 14)
+script = ExtResource("1_entity")
+DisplayName = "Clan Hold Waystone"
+
+[node name="Collider" type="StaticBody3D" parent="Waystone"]
+
+[node name="Shape" type="CollisionShape3D" parent="Waystone/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+shape = SubResource("Shape_waystone")
+
+[node name="Travel" type="Node" parent="Waystone"]
+script = ExtResource("2_travel")
+Id = "travel.frostfang_reach.clan_hold"
+TravelName = "Frostfang Clan Hold"
+RegionId = "region.frostfang_reach"
+
+[node name="ClanChief" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -10)
+script = ExtResource("1_entity")
+DisplayName = "Hjalvar Stormbound"
+TemplateId = "npc.clan_chief"
+
+[node name="Collider" type="StaticBody3D" parent="ClanChief"]
+
+[node name="Shape" type="CollisionShape3D" parent="ClanChief/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="ClanChief"]
+script = ExtResource("4_faction")
+FactionId = "faction.frostfang_clans"
+
+[node name="Dialogue" type="Node" parent="ClanChief"]
+script = ExtResource("5_dialogue")
+DialogueId = "dialogue.clan_chief"
+
+[node name="Schedule" type="Node" parent="ClanChief"]
+script = ExtResource("6_schedule")
+ScheduleId = "schedule.clan_chief"
+
+[node name="Quartermaster" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, -2)
+script = ExtResource("1_entity")
+DisplayName = "Sigrun Ironhand"
+TemplateId = "npc.clan_quartermaster"
+
+[node name="Collider" type="StaticBody3D" parent="Quartermaster"]
+
+[node name="Shape" type="CollisionShape3D" parent="Quartermaster/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="Quartermaster"]
+script = ExtResource("4_faction")
+FactionId = "faction.frostfang_clans"
+
+[node name="Dialogue" type="Node" parent="Quartermaster"]
+script = ExtResource("5_dialogue")
+DialogueId = "dialogue.clan_quartermaster"
+
+[node name="Schedule" type="Node" parent="Quartermaster"]
+script = ExtResource("6_schedule")
+ScheduleId = "schedule.clan_quartermaster"
+
+[node name="BeastTamer" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0, 4)
+script = ExtResource("1_entity")
+DisplayName = "Yrsa Houndmother"
+TemplateId = "npc.clan_beast_tamer"
+
+[node name="Collider" type="StaticBody3D" parent="BeastTamer"]
+
+[node name="Shape" type="CollisionShape3D" parent="BeastTamer/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="BeastTamer"]
+script = ExtResource("4_faction")
+FactionId = "faction.frostfang_clans"
+
+[node name="Dialogue" type="Node" parent="BeastTamer"]
+script = ExtResource("5_dialogue")
+DialogueId = "dialogue.clan_beast_tamer"
+
+[node name="Schedule" type="Node" parent="BeastTamer"]
+script = ExtResource("6_schedule")
+ScheduleId = "schedule.clan_beast_tamer"
+
+[node name="Hearthkeeper" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 6)
+script = ExtResource("1_entity")
+DisplayName = "Old Vetle"
+TemplateId = "npc.clan_hearthkeeper"
+
+[node name="Collider" type="StaticBody3D" parent="Hearthkeeper"]
+
+[node name="Shape" type="CollisionShape3D" parent="Hearthkeeper/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="Hearthkeeper"]
+script = ExtResource("4_faction")
+FactionId = "faction.frostfang_clans"
+
+[node name="Dialogue" type="Node" parent="Hearthkeeper"]
+script = ExtResource("5_dialogue")
+DialogueId = "dialogue.clan_hearthkeeper"
+
+[node name="Schedule" type="Node" parent="Hearthkeeper"]
+script = ExtResource("6_schedule")
+ScheduleId = "schedule.clan_hearthkeeper"
+
+[node name="StationForge" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0, 0)
+script = ExtResource("1_entity")
+DisplayName = "Clan Forge"
+TemplateId = "station.forge"
+
+[node name="Collider" type="StaticBody3D" parent="StationForge"]
+
+[node name="Shape" type="CollisionShape3D" parent="StationForge/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("Shape_station")
+
+[node name="Station" type="Node" parent="StationForge"]
+script = ExtResource("7_station")
+Station = 1
+StationName = "Forge"
+
+[node name="StationWorkbench" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.4, 0, 0.6)
+script = ExtResource("1_entity")
+DisplayName = "Bone Workbench"
+TemplateId = "station.workbench"
+
+[node name="Collider" type="StaticBody3D" parent="StationWorkbench"]
+
+[node name="Shape" type="CollisionShape3D" parent="StationWorkbench/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("Shape_station")
+
+[node name="Station" type="Node" parent="StationWorkbench"]
+script = ExtResource("7_station")
+Station = 2
+StationName = "Workbench"
+
+[node name="StationAlchemy" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, 2.4)
+script = ExtResource("1_entity")
+DisplayName = "Shaman's Table"
+TemplateId = "station.alchemy"
+
+[node name="Collider" type="StaticBody3D" parent="StationAlchemy"]
+
+[node name="Shape" type="CollisionShape3D" parent="StationAlchemy/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("Shape_station")
+
+[node name="Station" type="Node" parent="StationAlchemy"]
+script = ExtResource("7_station")
+Station = 3
+StationName = "Alchemy Table"
+
+[node name="Model" parent="Nav/LonghouseW" instance=ExtResource("10_house_a")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.5, 0)
+
+[node name="Model" parent="Nav/LonghouseE" instance=ExtResource("10_house_a")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.5, 0)
+
+[node name="Model" parent="Nav/MootHall" instance=ExtResource("11_house_b")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3, 0)
+
+[node name="Model" parent="Nav/TentSW" instance=ExtResource("16_tent")]
+
+[node name="Model" parent="Nav/TentSE" instance=ExtResource("16_tent")]
+
+[node name="Model" parent="Nav/TentNW" instance=ExtResource("16_tent")]
+
+[node name="Model" parent="Nav/BrazierSW" instance=ExtResource("17_brazier")]
+
+[node name="Model" parent="Nav/BrazierSE" instance=ExtResource("17_brazier")]
+
+[node name="Model" parent="Nav/BrazierNW" instance=ExtResource("17_brazier")]
+
+[node name="Model" parent="Nav/BrazierNE" instance=ExtResource("17_brazier")]
+
+[node name="Model" parent="Nav/PineSW" instance=ExtResource("18_pine")]
+
+[node name="Model" parent="Nav/PineSE" instance=ExtResource("18_pine")]
+
+[node name="Model" parent="Nav/PineW" instance=ExtResource("18_pine")]
+
+[node name="Model" parent="Nav/PineE" instance=ExtResource("18_pine")]
+
+[node name="Model" parent="Nav/PineN" instance=ExtResource("18_pine")]
+
+[node name="Model" parent="Nav/RockS" instance=ExtResource("19_rock")]
+
+[node name="Model" parent="Nav/RockNW" instance=ExtResource("19_rock")]
+
+[node name="Model" parent="Nav/RockNE" instance=ExtResource("19_rock")]
+
+[node name="Model" parent="Waystone" instance=ExtResource("12_waystone")]
+
+[node name="Model" parent="ClanChief" instance=ExtResource("21_npc_chief")]
+
+[node name="Model" parent="Quartermaster" instance=ExtResource("22_npc_vendor")]
+
+[node name="Model" parent="BeastTamer" instance=ExtResource("22_npc_vendor")]
+
+[node name="Model" parent="Hearthkeeper" instance=ExtResource("23_npc_inn")]
+
+[node name="Model" parent="StationForge" instance=ExtResource("13_forge")]
+
+[node name="Model" parent="StationWorkbench" instance=ExtResource("14_workbench")]
+
+[node name="Model" parent="StationAlchemy" instance=ExtResource("15_alchemy")]

@@ -697,8 +697,9 @@ reached) · Stage B ⏳ (29–33 built; **Gate G1 needs a maintainer play-throug
 export** — that is the only thing between here and G1) · Stage C ⏳ **in progress**:
 **Phase 34 is complete (34A–34G)** — AI profiles, humanoid/beast/undead/construct/
 elemental archetypes, per-school damage resistances, every magic school's on-hit
-identity, Ashen corruption variants, and the bestiary. Next: 34.5 Frostfang clans,
-then 35 dragons. `docs/SESSION_PLAYBOOK.md` is the live per-sub-phase tracker;
+identity, Ashen corruption variants, and the bestiary. **34.5A is complete** — the
+Frostfang Clans faction and their clan hold, Frostfang Reach's first settlement.
+Next: 34.5B/C (clan archetypes, then the clan questline), then 35 dragons. `docs/SESSION_PLAYBOOK.md` is the live per-sub-phase tracker;
 `docs/PRODUCTION_ROADMAP.md` §11 mirrors phase-level status only.
 
 > **Two UI phases, both done:** Phase 14 *polished the debug-grade overlay* (shared

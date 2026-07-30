@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="FactionResource" load_steps=2 format=3 uid="uid://cmbrvlfacfrost"]
+
+[ext_resource type="Script" path="res://src/Factions/FactionResource.cs" id="1_faction"]
+
+[resource]
+script = ExtResource("1_faction")
+Id = "faction.frostfang_clans"
+DisplayName = "Frostfang Clans"
+Description = "The warrior clans and beast-kin of the northern reach. They weigh an outsider by what they can carry, not what they claim. Slow to trust, slower to forget."
+DefaultReputation = 10
+HostileThreshold = 1
+KillReputationPenalty = 12
+Enemies = Array[String](["faction.hollow"])
+Allies = Array[String](["faction.beasts"])

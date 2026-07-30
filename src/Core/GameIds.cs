@@ -113,6 +113,9 @@ public static class GameIds
         public const string IronSyndicate = "faction.iron_syndicate";
         public const string Beasts = "faction.beasts";
         public const string Hollow = "faction.hollow";
+
+        // Phase 34.5A — the warrior clans and beast-kin of Frostfang Reach.
+        public const string FrostfangClans = "faction.frostfang_clans";
     }
 
     public static class Npcs

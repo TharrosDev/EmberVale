@@ -407,6 +407,36 @@ dlg.elder.friend,"Good to see you again, friend. The forge runs hot, thanks to y
 dlg.elder.pure,"The elder meets your eyes and nods slowly. 'A steady soul — rarer than iron, these days. The Flame keeps you, traveller.'"
 dlg.elder.marked,"'There is an ember in your gaze I do not trust — ash where the light should be. I have seen it before, and it does not end gently. Tread carefully, traveller.'"
 
+# Phase 34.5A — the Frostfang clan hold
+dlg.clan_chief.speaker,"Hjalvar Stormbound"
+dlg.clan_chief.root,"A broad man in wolf-hide watches you cross his hold without rising. 'Southerner. You walked in through the cold, so you are either useful or lost.'"
+dlg.clan_chief.c_who,"Who holds this place?"
+dlg.clan_chief.c_tyrant,"What do the clans fear?"
+dlg.clan_chief.c_bye,"I'll leave you to it."
+dlg.clan_chief.c_back,"Something else."
+dlg.clan_chief.who,"'The Stormbound hold it, and eight clans besides — hunters, tamers, shamans. We do not answer to your guilds and we do not sit in your councils. Out here a name is what you carry, not what you are given.'"
+dlg.clan_chief.tyrant,"'Fear is a soft word. The Storm Tyrant took the high passes and calls it grief. He was a Flamebearer once, same as your Iron King. They all end the same way — certain.'"
+dlg.clan_quartermaster.speaker,"Sigrun Ironhand"
+dlg.clan_quartermaster.root,"She looks you over the way she'd look over a sled dog — teeth first. 'Stores are counted. Twice.'"
+dlg.clan_quartermaster.c_trade,"Do the clans trade with outsiders?"
+dlg.clan_quartermaster.c_bye,"Another time."
+dlg.clan_quartermaster.trade,"'With outsiders who have stood a winter here, yes. You have stood an afternoon. Come back when the hold knows your name and we will talk about what is mine to give.'"
+dlg.clan_quartermaster.c_trade_bye,"Fair enough."
+dlg.clan_beast_tamer.speaker,"Yrsa Houndmother"
+dlg.clan_beast_tamer.root,"Something large shifts in the dark behind her and settles again at a word you don't catch. 'Stand still. They judge quickly.'"
+dlg.clan_beast_tamer.c_hounds,"Those aren't hounds."
+dlg.clan_beast_tamer.c_beasts,"You speak to them?"
+dlg.clan_beast_tamer.c_bye,"I'll keep my distance."
+dlg.clan_beast_tamer.c_back,"Something else."
+dlg.clan_beast_tamer.hounds,"'No. Frost-stalkers, whelped and raised. A hound obeys. These agree, for a while, and the day they stop agreeing is a day you want to be elsewhere.'"
+dlg.clan_beast_tamer.beasts,"'Not the way you mean. The Sylthari sing at them and call it conversation. I feed them, I bleed for them, and I do not lie to them. That is the whole of it.'"
+dlg.clan_hearthkeeper.speaker,"Old Vetle"
+dlg.clan_hearthkeeper.root,"The old man feeds the fire without looking up. 'Sit or don't. The cold has no opinion either way.'"
+dlg.clan_hearthkeeper.c_hold,"How old is this hold?"
+dlg.clan_hearthkeeper.c_bye,"Keep warm."
+dlg.clan_hearthkeeper.hold,"'Older than the Ember Crown's walls, and it was never besieged, because there was never anything here worth the march. Ask me again when your south has burned down twice.'"
+dlg.clan_hearthkeeper.c_hold_bye,"I'll remember that."
+
 enemy.bandit.name,Ashfall Bandit
 enemy.cultist.name,Ashen Zealot
 enemy.soldier.name,Fallen Soldier

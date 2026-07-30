@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="ScheduleResource" load_steps=6 format=3 uid="uid://cmbrvlschdclqrt"]
+
+[ext_resource type="Script" path="res://src/Npc/ScheduleResource.cs" id="1_sched"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleEntry.cs" id="2_entry"]
+
+[sub_resource type="Resource" id="e_count"]
+script = ExtResource("2_entry")
+StartHour = 6
+Activity = "Counting the stores"
+Destination = Vector3(110, 0, -22)
+
+[sub_resource type="Resource" id="e_trade"]
+script = ExtResource("2_entry")
+StartHour = 9
+Activity = "Weighing trade"
+Destination = Vector3(110, 0, -22)
+
+[sub_resource type="Resource" id="e_fires"]
+script = ExtResource("2_entry")
+StartHour = 18
+Activity = "At the fires"
+Destination = Vector3(105, 0, -12)
+
+[sub_resource type="Resource" id="e_sleep"]
+script = ExtResource("2_entry")
+StartHour = 21
+Activity = "Asleep"
+Destination = Vector3(112, 0, -26)
+
+[resource]
+script = ExtResource("1_sched")
+Id = "schedule.clan_quartermaster"
+Entries = Array[Resource]([SubResource("e_count"), SubResource("e_trade"), SubResource("e_fires"), SubResource("e_sleep")])

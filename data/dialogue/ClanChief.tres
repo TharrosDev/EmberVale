@@ -1,0 +1,54 @@
+[gd_resource type="Resource" script_class="DialogueResource" format=3 uid="uid://cmbrvldlgclchf"]
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+[sub_resource type="Resource" id="ch_who"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.c_who"
+Goto = "who"
+
+[sub_resource type="Resource" id="ch_tyrant"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.c_tyrant"
+Goto = "tyrant"
+
+[sub_resource type="Resource" id="ch_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.c_bye"
+
+[sub_resource type="Resource" id="ch_who_back"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.c_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_tyrant_back"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.c_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="node_root"]
+script = ExtResource("2_node")
+Id = "root"
+Text = "dlg.clan_chief.root"
+Choices = Array[Resource]([SubResource("ch_who"), SubResource("ch_tyrant"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_who"]
+script = ExtResource("2_node")
+Id = "who"
+Text = "dlg.clan_chief.who"
+Choices = Array[Resource]([SubResource("ch_who_back")])
+
+[sub_resource type="Resource" id="node_tyrant"]
+script = ExtResource("2_node")
+Id = "tyrant"
+Text = "dlg.clan_chief.tyrant"
+Choices = Array[Resource]([SubResource("ch_tyrant_back")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "dialogue.clan_chief"
+SpeakerName = "dlg.clan_chief.speaker"
+StartNodeId = "root"
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_who"), SubResource("node_tyrant")])

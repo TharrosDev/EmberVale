@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="ScheduleResource" load_steps=6 format=3 uid="uid://cmbrvlschdclhrt"]
+
+[ext_resource type="Script" path="res://src/Npc/ScheduleResource.cs" id="1_sched"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleEntry.cs" id="2_entry"]
+
+[sub_resource type="Resource" id="e_bank"]
+script = ExtResource("2_entry")
+StartHour = 6
+Activity = "Banking the fires"
+Destination = Vector3(106, 0, -14)
+
+[sub_resource type="Resource" id="e_hearth"]
+script = ExtResource("2_entry")
+StartHour = 8
+Activity = "Tending the hearth"
+Destination = Vector3(105, 0, -12)
+
+[sub_resource type="Resource" id="e_hall"]
+script = ExtResource("2_entry")
+StartHour = 20
+Activity = "Serving the hall"
+Destination = Vector3(100, 0, -30)
+
+[sub_resource type="Resource" id="e_sleep"]
+script = ExtResource("2_entry")
+StartHour = 23
+Activity = "Asleep"
+Destination = Vector3(88, 0, -26)
+
+[resource]
+script = ExtResource("1_sched")
+Id = "schedule.clan_hearthkeeper"
+Entries = Array[Resource]([SubResource("e_bank"), SubResource("e_hearth"), SubResource("e_hall"), SubResource("e_sleep")])
