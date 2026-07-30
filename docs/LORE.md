@@ -158,6 +158,45 @@ A Flamebearer who created a religion dedicated to the Ash King.
 
 ---
 
+# The Fifth Realm
+
+The maps show four.
+
+There were five.
+
+---
+
+## The Pale Concord
+
+A sky stalled at dusk.
+
+Time does not pass here.
+
+Fields that never ripen and never rot.
+
+Cities kept in perfect repair by hands that no longer remember why.
+
+The Concord was a bargain.
+
+A dying world on one side.
+
+A kingdom's signature on the other.
+
+None of them can die now.
+
+Most no longer want the exemption.
+
+Struck from every map and every history.
+
+The last thing she preserved was the secret.
+
+Major Threat:
+The Hollow Queen
+
+The Flamebearer who sought immortality and found this instead.
+
+---
+
 # The Gods
 
 The Seven Gods once maintained balance throughout creation.
@@ -331,6 +370,8 @@ Sought immortality.
 Lost her soul.
 
 Commands the dead.
+
+Rules the Pale Concord, the realm she hid from death and from history.
 
 ---
 
@@ -663,6 +704,8 @@ The journey begins.
 ## Act II – Gathering the Flame
 
 Travel across all four realms.
+
+Find the fifth, which is on no map.
 
 Acquire divine relics.
 

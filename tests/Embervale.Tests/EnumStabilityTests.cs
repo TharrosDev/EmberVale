@@ -38,6 +38,20 @@ public class EnumStabilityTests
         Assert.Equal(5, (int)ItemType.Quest);
     }
 
+    /// <summary>Authored into every <c>data/regions/*.tres</c> as <c>RegionResource.Realm</c>, so
+    /// the ordinals are load-bearing. The Pale Concord was appended last on purpose — it is a
+    /// mortal realm sitting after the Celestial Realm because stability beats tidiness.</summary>
+    [Fact]
+    public void Realm_Ordinals()
+    {
+        Assert.Equal(0, (int)Realm.EmberCrown);
+        Assert.Equal(1, (int)Realm.FrostfangReach);
+        Assert.Equal(2, (int)Realm.AshenWilds);
+        Assert.Equal(3, (int)Realm.SunspireDominion);
+        Assert.Equal(4, (int)Realm.CelestialRealm);
+        Assert.Equal(5, (int)Realm.PaleConcord);
+    }
+
     [Fact]
     public void ItemRarity_Ordinals()
     {

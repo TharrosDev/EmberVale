@@ -156,7 +156,7 @@ authoring recipes that turn them into content with no new code, see CLAUDE.md §
 | 42.5 | The Crimson Cult | F/C | The Crimson Prophet's "empire of worshippers" as a real hostile/infiltrable faction |
 | 43 | Cinematics & Scripted Sequences | F | In-engine cutscene tooling, camera tracks, scripted set-pieces, dialogue staging |
 | 43.5 | Flamebearer Vision Sequences | F/C | A flashback-cutscene type showing how each fallen Flamebearer fell, triggered on their defeat |
-| 44 | Alpha Content Pass — all four realms blocked out | C | Greybox + first-pass content for every realm, every fallen Flamebearer |
+| 44 | Alpha Content Pass — all five realms blocked out | C | Greybox + first-pass content for every realm (incl. the hidden Pale Concord), every fallen Flamebearer |
 | 44.5 | World State: Realm Decay & Restoration | F | A per-realm decay/restoration tier so the world visibly reflects story progress and the ending choice |
 | 45 | Alpha Hardening & Feature Freeze | F/P | Stabilize, profile, integration test the whole feature set; declare feature complete |
 
@@ -165,7 +165,7 @@ authoring recipes that turn them into content with no new code, see CLAUDE.md §
 | #  | Phase | Tag | One-liner |
 | -- | ----- | --- | --------- |
 | 46 | The Main Story — Act I: Awakening | C | Full narrative content for Act I |
-| 47 | The Main Story — Act II: Gathering the Flame | C | All four realms' main arcs + the six fallen Flamebearers |
+| 47 | The Main Story — Act II: Gathering the Flame | C | All five realms' main arcs + the six fallen Flamebearers |
 | 47.5 | The Ashen Knight: Rival Duels | C | Recurring non-final duels across Acts II–III so the "greatest rival" has a real arc, not one Act IV reveal |
 | 48 | The Main Story — Act III: Truth of the Gods | C | The mid-game turn, lore reveals, the Ash Throne |
 | 49 | The Main Story — Act IV: The Celestial War + Endings | C | The Ashen Knight, Morthul, both endings (Dawnfire / Lord of Embers) |
@@ -709,7 +709,7 @@ boss fight at the end of Sunspire Dominion, with no in-world presence backing it
 - **Cult archetypes** (zealots, inquisitors) authored on the Phase 34 matrix — data,
   no new AI code.
 - **An infiltration questline** (a Phase 41D choice/branch arc) letting the player
-  pose as a convert ahead of the Crimson Prophet confrontation (47E), rewarding
+  pose as a convert ahead of the Crimson Prophet confrontation (47D), rewarding
   cult-specific lore/items.
 
 ### Phase 43 — Cinematics & Scripted Sequences `[F]`
@@ -735,13 +735,24 @@ corruption theme experiential, not narrated.
 - Ties into the corruption appearance shift (23F/30I) — the player's reflection in the
   vision can hint at their own rising tier.
 
-### Phase 44 — Alpha Content Pass: all four realms blocked out `[C]`
+### Phase 44 — Alpha Content Pass: all five realms blocked out `[C]`
 
-Greybox + first-pass content for the **whole game's shape**: Ember Crown,
-Frostfang Reach, Ashen Wilds, Sunspire Dominion — each with its hub(s), key POIs,
+Greybox + first-pass content for the **whole game's shape**: Ember Crown (Iron King),
+Frostfang Reach (Storm Tyrant), Ashen Wilds (Beast Lord), Sunspire Dominion (Crimson
+Prophet) and the **Pale Concord** (Hollow Queen) — each with its hub(s), key POIs,
 encounter sets, the resident fallen Flamebearer's lair/boss stub, and the
 main-quest spine connecting them. Rough but **complete in extent** — every realm,
 every boss, every guild reachable.
+
+**The Pale Concord is the odd one out and is built last.** LORE keeps it off every map: the
+Hollow Queen hid a kingdom from death and from history, so the realm is *found*, not travelled
+to — there is no fast-travel node or neighbour link advertising it until Act II's discovery beat
+(47E) opens the way. Its fiction is a stalled realm: a sky fixed at dusk, nothing ripening,
+nothing rotting, nobody able to die. That hands 44E/44.5 a concrete brief rather than a blank
+region — **candidate rules, none of them built yet:** no natural health regeneration inside its
+bounds, a `WorldClock` that does not advance, corpses that never despawn, and NPCs whose only
+request is to be released. Each is a real system change (`StatsComponent`, `WorldClock`, the
+despawn path), so they are scoped decisions for 44E, not assumptions.
 
 ### Phase 44.5 — World State: Realm Decay & Restoration `[F]`
 
@@ -766,7 +777,7 @@ gives the macro "return changed" arrow (DESIGN §2.1) a world-scale half.
 
 > **🚩 Gate G2 — Alpha / Feature Complete.** Every mechanic in the shipped game
 > exists and works together: corruption, races, companions, dragons, bosses,
-> housing, economy, mounts, cutscenes, all quest types, all four realms reachable.
+> housing, economy, mounts, cutscenes, all quest types, all five realms reachable.
 > A determined player can traverse the entire game's *shape* even if content is
 > rough. **The schedule is now de-risked.**
 
@@ -786,10 +797,12 @@ inciting incident, first companion, the corruption seed, the hook into Act II.
 
 ### Phase 47 — Main Story, Act II: Gathering the Flame `[C]`
 
-The bulk of the game (LORE): travel all four realms, acquire divine relics, build
-alliances, defeat the fallen Flamebearers — the Iron King, the Hollow Queen, the
-Storm Tyrant, the Beast Lord, the Crimson Prophet (and seeds of the Ashen Knight
-rivalry). Each realm = its questline + boss + relic + corruption beat + guild ties.
+The bulk of the game (LORE): travel the four known realms and **find the fifth**, acquire
+divine relics, build alliances, defeat the fallen Flamebearers — the Iron King (Ember Crown),
+the Storm Tyrant (Frostfang Reach), the Beast Lord (Ashen Wilds), the Crimson Prophet
+(Sunspire Dominion) and the Hollow Queen (the Pale Concord), plus seeds of the Ashen Knight
+rivalry. Each realm = its questline + boss + relic + corruption beat + guild ties; the Pale
+Concord adds a discovery beat, since nothing in the world admits it exists.
 
 ### Phase 47.5 — The Ashen Knight: Rival Duels `[C]`
 
@@ -879,7 +892,7 @@ beats) recorded and integrated through the `AudioDirector`.
 
 ### Phase 53 — Art Complete & World Beautification `[P]`
 
-Final environment art across all four realms, character/creature/boss final
+Final environment art across all five realms, character/creature/boss final
 models, the dying-world art direction fully realized (light fading, ash, ember
 glow), VFX polish, set dressing, and the visual cohesion pass. No greybox remains.
 
@@ -1135,7 +1148,7 @@ communion fantasy can later flip, and a coinless pelt loot economy. The factory 
 past humanoids in the process (`EnemyArchetypeFactory`, melee reach now body-relative). **34D**
 then added the Hollow Queen's legions — hollow husk, bone knight, barrow wight, grave shade and
 a necromancer — on two fearless profiles (`ai.mindless`, `ai.deathless_guard`), a
-`faction.hollow` standing for 47B to attach her arc to, and the Necrotic school's first
+`faction.hollow` standing for 47E to attach her arc to, and the Necrotic school's first
 enemy-facing content (`spell.wither` + `status.decay`, the game's first Necrotic effect). The
 necromancer is the **first caster archetype authored as data**, which finally exercises the
 `KnownSpellIds` path 34B built and nothing used; its `spell.knit_bone` gets ally-mending free
