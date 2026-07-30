@@ -4,6 +4,13 @@
 [ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
 
+[sub_resource type="Resource" id="ch_work"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_quartermaster.c_work"
+Goto = "work"
+Condition = 5
+ConditionArg = "flag.clan.named"
+
 [sub_resource type="Resource" id="ch_trade"]
 script = ExtResource("3_choice")
 Text = "dlg.clan_quartermaster.c_trade"
@@ -17,11 +24,62 @@ Text = "dlg.clan_quartermaster.c_bye"
 script = ExtResource("3_choice")
 Text = "dlg.clan_quartermaster.c_trade_bye"
 
+[sub_resource type="Resource" id="ch_work_back"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_quartermaster.c_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_str_thanks"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_quartermaster.stores.c_thanks"
+Goto = "str_thanks"
+Condition = 3
+ConditionArg = "quest.clan.stores"
+
+[sub_resource type="Resource" id="ch_str_offer"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_quartermaster.stores.c_offer"
+Goto = "str_offer"
+Condition = 1
+ConditionArg = "quest.clan.stores"
+
+[sub_resource type="Resource" id="ch_str_active"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_quartermaster.stores.c_active"
+Goto = "str_inprogress"
+Condition = 2
+ConditionArg = "quest.clan.stores"
+
+[sub_resource type="Resource" id="ch_str_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_quartermaster.stores.c_accept"
+Goto = "str_accepted"
+Effect = 1
+EffectArg = "quest.clan.stores"
+
+[sub_resource type="Resource" id="ch_str_decline"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_quartermaster.stores.c_decline"
+
+[sub_resource type="Resource" id="ch_str_accepted_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_quartermaster.stores.c_accepted_bye"
+
+[sub_resource type="Resource" id="ch_str_inprogress_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_quartermaster.stores.c_inprogress_bye"
+
+[sub_resource type="Resource" id="ch_str_thanks_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_quartermaster.stores.c_thanks_bye"
+Effect = 2
+EffectArg = "flag.clan.sworn"
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.clan_quartermaster.root"
-Choices = Array[Resource]([SubResource("ch_trade"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_work"), SubResource("ch_trade"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_trade"]
 script = ExtResource("2_node")
@@ -29,9 +87,39 @@ Id = "trade"
 Text = "dlg.clan_quartermaster.trade"
 Choices = Array[Resource]([SubResource("ch_trade_bye")])
 
+[sub_resource type="Resource" id="node_work"]
+script = ExtResource("2_node")
+Id = "work"
+Text = "dlg.clan_quartermaster.work"
+Choices = Array[Resource]([SubResource("ch_str_thanks"), SubResource("ch_str_offer"), SubResource("ch_str_active"), SubResource("ch_work_back")])
+
+[sub_resource type="Resource" id="node_str_offer"]
+script = ExtResource("2_node")
+Id = "str_offer"
+Text = "dlg.clan_quartermaster.stores.offer"
+Choices = Array[Resource]([SubResource("ch_str_accept"), SubResource("ch_str_decline")])
+
+[sub_resource type="Resource" id="node_str_accepted"]
+script = ExtResource("2_node")
+Id = "str_accepted"
+Text = "dlg.clan_quartermaster.stores.accepted"
+Choices = Array[Resource]([SubResource("ch_str_accepted_bye")])
+
+[sub_resource type="Resource" id="node_str_inprogress"]
+script = ExtResource("2_node")
+Id = "str_inprogress"
+Text = "dlg.clan_quartermaster.stores.inprogress"
+Choices = Array[Resource]([SubResource("ch_str_inprogress_bye")])
+
+[sub_resource type="Resource" id="node_str_thanks"]
+script = ExtResource("2_node")
+Id = "str_thanks"
+Text = "dlg.clan_quartermaster.stores.thanks"
+Choices = Array[Resource]([SubResource("ch_str_thanks_bye")])
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.clan_quartermaster"
 SpeakerName = "dlg.clan_quartermaster.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_trade")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_trade"), SubResource("node_work"), SubResource("node_str_offer"), SubResource("node_str_accepted"), SubResource("node_str_inprogress"), SubResource("node_str_thanks")])

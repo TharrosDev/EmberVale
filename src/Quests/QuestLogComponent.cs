@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Entities;
+using Embervale.Factions;
 using Embervale.Items;
 using Embervale.Progression;
 using Embervale.Save;
@@ -175,6 +176,13 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
         if (quest.XpReward > 0)
         {
             _progression?.AddXp(quest.XpReward);
+        }
+
+        // Before the no-inventory bail below: standing is owed whether or not the actor can carry
+        // anything. Resolved lazily rather than cached, since only the player has one.
+        if (!string.IsNullOrEmpty(quest.FactionRewardId) && quest.FactionRewardAmount != 0)
+        {
+            Entity?.GetComponent<ReputationComponent>()?.Add(quest.FactionRewardId, quest.FactionRewardAmount);
         }
 
         if (quest.GoldReward > 0 && _inventory != null && ItemDatabase.Get(quest.GoldItemId) is { } gold)

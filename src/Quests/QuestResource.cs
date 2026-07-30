@@ -33,6 +33,14 @@ public partial class QuestResource : Resource
     /// <summary>Item grants on completion (elements are <see cref="QuestItemReward"/>).</summary>
     [Export] public Godot.Collections.Array RewardItems { get; set; } = new();
 
+    /// <summary>Faction whose standing this quest moves on completion; empty = none (Phase 34.5C).
+    /// Mirrors <c>WorldEventResource.FactionRewardId</c> — doing a faction's work is the counterpart
+    /// to killing its members, which already costs standing automatically.</summary>
+    [Export] public string FactionRewardId { get; set; } = string.Empty;
+
+    /// <summary>Standing granted with <see cref="FactionRewardId"/>. May be negative.</summary>
+    [Export] public int FactionRewardAmount { get; set; }
+
     [ExportGroup("Availability")]
     /// <summary>Optional quest id that must be completed first; empty = always available.</summary>
     [Export] public string PrerequisiteQuestId { get; set; } = string.Empty;

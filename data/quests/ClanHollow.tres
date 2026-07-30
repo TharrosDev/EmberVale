@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="QuestResource" format=3 uid="uid://cmbrvlqclanhlw"]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+[ext_resource type="Script" path="res://src/Quests/QuestItemReward.cs" id="3_reward"]
+
+[sub_resource type="Resource" id="Obj_kill"]
+script = ExtResource("2_obj")
+Type = 0
+TargetId = "enemy.hollow_husk"
+RequiredCount = 5
+Description = "quest.clan.hollow.obj"
+
+[sub_resource type="Resource" id="Reward_vest"]
+script = ExtResource("3_reward")
+ItemId = "item.armor.leather_vest"
+Quantity = 1
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.clan.hollow"
+Title = "quest.clan.hollow.title"
+Summary = "quest.clan.hollow.summary"
+Objectives = Array[Resource]([SubResource("Obj_kill")])
+XpReward = 160
+GoldReward = 60
+GoldItemId = "item.currency.gold"
+RewardItems = Array[Resource]([SubResource("Reward_vest")])
+FactionRewardId = "faction.frostfang_clans"
+FactionRewardAmount = 15
+PrerequisiteQuestId = "quest.clan.stores"

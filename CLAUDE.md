@@ -391,7 +391,16 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    `Title`/`Summary`, `Objectives` (an array of `ObjectiveResource` sub-resources:
    `Type` 0=Kill / 1=Collect, `TargetId` = entity `TemplateId` or item id,
    `RequiredCount`), and rewards (`XpReward`, `GoldReward`, `RewardItems` of
-   `QuestItemReward`). Optional `PrerequisiteQuestId` chains it after another.
+   `QuestItemReward`, and `FactionRewardId`/`FactionRewardAmount` — Phase 34.5C, the same
+   pair `WorldEventResource` has; the amount may be negative). Optional
+   `PrerequisiteQuestId` chains it after another. **Objectives are Kill/Collect only** —
+   "go and talk to X" is not expressible, so a turn-in is a conversation the player has to
+   remember to have.
+   **Story flags** (`Effect` SetFlag / `Condition` HasFlag) are the only way to mark
+   *state* a quest can't: membership, a rank, a favour owed. They have no database, so
+   `--validate` can only catch a flag that **nothing ever sets** — a `SetFlag` typo still
+   fails silently. A choice carries **one** `Effect`, so a choice that starts a quest cannot
+   also set a flag: hang the flag on the next node's farewell choice (see `Elder.tres`).
 2. Auto-indexed by `QuestDatabase`. Start it via a `QuestGiverComponent` (set its
    `QuestId`) on a world `Entity`, in a `DialogueChoice` (`Effect` StartQuest), or
    directly with `player.GetComponent<QuestLogComponent>().StartQuest(...)`. Objectives
@@ -701,10 +710,10 @@ reached) · Stage B ⏳ (29–33 built; **Gate G1 needs a maintainer play-throug
 export** — that is the only thing between here and G1) · Stage C ⏳ **in progress**:
 **Phase 34 is complete (34A–34G)** — AI profiles, humanoid/beast/undead/construct/
 elemental archetypes, per-school damage resistances, every magic school's on-hit
-identity, Ashen corruption variants, and the bestiary. **34.5A/B are complete** — the
-Frostfang Clans faction, their clan hold (Frostfang Reach's first settlement), and
-three clan archetypes that stay neutral until provoked. Next: 34.5C (the clan
-questline), then 35 dragons. `docs/SESSION_PLAYBOOK.md` is the live per-sub-phase tracker;
+identity, Ashen corruption variants, and the bestiary. **Phase 34.5 is complete
+(34.5A–34.5C)** — the Frostfang Clans faction, their clan hold (Frostfang Reach's
+first settlement), three clan archetypes that stay neutral until provoked, and a
+rank chain with a betrayal branch. Next: 35 dragons. `docs/SESSION_PLAYBOOK.md` is the live per-sub-phase tracker;
 `docs/PRODUCTION_ROADMAP.md` §11 mirrors phase-level status only.
 
 > **Two UI phases, both done:** Phase 14 *polished the debug-grade overlay* (shared

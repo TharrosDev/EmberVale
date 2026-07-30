@@ -21,6 +21,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_guild_rep.glb" id="21_npc_chief"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_vendor.glb" id="22_npc_vendor"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_innkeeper.glb" id="23_npc_inn"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_campfire.glb" id="24_campfire"]
 
 [sub_resource type="NavigationMesh" id="NavMesh_hold"]
 geometry_parsed_geometry_type = 1
@@ -394,6 +395,22 @@ DialogueId = "dialogue.clan_hearthkeeper"
 script = ExtResource("6_schedule")
 ScheduleId = "schedule.clan_hearthkeeper"
 
+[node name="Exile" type="Node3D" parent="."]
+transform = Transform3D(0.71, 0, 0.71, 0, 1, 0, -0.71, 0, 0.71, -24, 0, 22)
+script = ExtResource("1_entity")
+DisplayName = "Halvar One-Hand"
+TemplateId = "npc.clan_exile"
+
+[node name="Collider" type="StaticBody3D" parent="Exile"]
+
+[node name="Shape" type="CollisionShape3D" parent="Exile/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Dialogue" type="Node" parent="Exile"]
+script = ExtResource("5_dialogue")
+DialogueId = "dialogue.clan_exile"
+
 [node name="StationForge" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0, 0)
 script = ExtResource("1_entity")
@@ -493,6 +510,17 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3, 0)
 [node name="Model" parent="BeastTamer" instance=ExtResource("22_npc_vendor")]
 
 [node name="Model" parent="Hearthkeeper" instance=ExtResource("23_npc_inn")]
+
+[node name="Model" parent="Exile" instance=ExtResource("23_npc_inn")]
+
+[node name="ExileFire" parent="." instance=ExtResource("24_campfire")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -22, 0, 23.5)
+
+[node name="ExileFireLight" type="OmniLight3D" parent="ExileFire"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+light_color = Color(1, 0.62, 0.32, 1)
+light_energy = 1.6
+omni_range = 6.0
 
 [node name="Model" parent="StationForge" instance=ExtResource("13_forge")]
 

@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="QuestResource" format=3 uid="uid://cmbrvlqclanexr"]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+[ext_resource type="Script" path="res://src/Quests/QuestItemReward.cs" id="3_reward"]
+
+[sub_resource type="Resource" id="Obj_kill"]
+script = ExtResource("2_obj")
+Type = 0
+TargetId = "enemy.clan_shaman"
+RequiredCount = 2
+Description = "quest.clan.exile.rite.obj"
+
+[sub_resource type="Resource" id="Reward_ruby"]
+script = ExtResource("3_reward")
+ItemId = "item.gem.ruby"
+Quantity = 1
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.clan.exile.rite"
+Title = "quest.clan.exile.rite.title"
+Summary = "quest.clan.exile.rite.summary"
+Objectives = Array[Resource]([SubResource("Obj_kill")])
+XpReward = 150
+GoldReward = 90
+GoldItemId = "item.currency.gold"
+RewardItems = Array[Resource]([SubResource("Reward_ruby")])
+FactionRewardId = "faction.iron_syndicate"
+FactionRewardAmount = 12
+PrerequisiteQuestId = "quest.clan.exile.proof"

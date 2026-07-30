@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="BestiaryEntryResource" load_steps=2 format=3 uid="uid://cmbrvlbstclansh"]
+[gd_resource type="Resource" script_class="BestiaryEntryResource" format=3 uid="uid://uov02pyywib4"]
 
 [ext_resource type="Script" path="res://src/Enemies/BestiaryEntryResource.cs" id="1_entry"]
 

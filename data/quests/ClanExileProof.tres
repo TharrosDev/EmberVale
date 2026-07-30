@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="QuestResource" format=3 uid="uid://cmbrvlqclanexp"]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+
+[sub_resource type="Resource" id="Obj_kill"]
+script = ExtResource("2_obj")
+Type = 0
+TargetId = "enemy.clan_raider"
+RequiredCount = 3
+Description = "quest.clan.exile.proof.obj"
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.clan.exile.proof"
+Title = "quest.clan.exile.proof.title"
+Summary = "quest.clan.exile.proof.summary"
+Objectives = Array[Resource]([SubResource("Obj_kill")])
+XpReward = 90
+GoldReward = 60
+GoldItemId = "item.currency.gold"
+RewardItems = Array[Resource]([])
+FactionRewardId = "faction.iron_syndicate"
+FactionRewardAmount = 10
+PrerequisiteQuestId = ""

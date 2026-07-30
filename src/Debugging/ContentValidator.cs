@@ -329,6 +329,7 @@ public static class ContentValidator
     private static void CollectGraphIssues(List<string> issues)
     {
         ValidateDialogueReachability(issues);
+        ValidateStoryFlags(issues);
         ValidateQuestCompletability(issues);
         ValidatePrerequisiteCycles(issues);
     }
@@ -562,6 +563,12 @@ public static class ContentValidator
             if (quest.GoldReward > 0)
             {
                 RequireItem(quest.GoldItemId, $"quest '{quest.Id}' gold reward", issues);
+            }
+
+            if (!string.IsNullOrEmpty(quest.FactionRewardId) &&
+                FactionDatabase.Get(quest.FactionRewardId) == null)
+            {
+                issues.Add($"quest '{quest.Id}' rewards unknown faction '{quest.FactionRewardId}'");
             }
 
             if (!string.IsNullOrEmpty(quest.PrerequisiteQuestId) &&
@@ -885,6 +892,62 @@ public static class ContentValidator
             if (!string.IsNullOrEmpty(current))
             {
                 issues.Add($"quest '{quest.Id}' has a prerequisite cycle (revisits '{current}')");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Story flags are the one id family with no database behind them, so nothing has ever checked
+    /// them: a mistyped <c>HasFlag</c> arg is a gate that never opens, silently and permanently, and
+    /// a mistyped <c>SetFlag</c> is a rank the hold never grants. Phase 34.5C's rank chain rests on
+    /// them, so this closes the hole the only way a registry-less id can be closed — cross-reference
+    /// the readers against the writers. A flag nothing writes is the typo that matters; the reverse
+    /// (a flag set but never read) is legitimate, since flags are also a record of what happened.
+    /// </summary>
+    private static void ValidateStoryFlags(List<string> issues)
+    {
+        var written = new HashSet<string>
+        {
+            Enemies.BossEncounterDirector.DefeatedFlag,
+            Narrative.SliceDirector.CompletedFlag,
+            Narrative.SliceDirector.AbsorbedFlag,
+        };
+
+        foreach (DialogueResource dialogue in DialogueDatabase.All)
+        {
+            foreach (DialogueNode node in dialogue.NodeList())
+            {
+                foreach (DialogueChoice choice in node.ChoiceList())
+                {
+                    if (choice.Effect is DialogueEffect.SetFlag or DialogueEffect.ClearFlag &&
+                        !string.IsNullOrEmpty(choice.EffectArg))
+                    {
+                        written.Add(choice.EffectArg);
+                    }
+                }
+            }
+        }
+
+        foreach (DialogueResource dialogue in DialogueDatabase.All)
+        {
+            foreach (DialogueNode node in dialogue.NodeList())
+            {
+                foreach (DialogueChoice choice in node.ChoiceList())
+                {
+                    if (choice.Condition is DialogueCondition.HasFlag or DialogueCondition.MissingFlag &&
+                        !string.IsNullOrEmpty(choice.ConditionArg) && !written.Contains(choice.ConditionArg))
+                    {
+                        issues.Add($"dialogue '{dialogue.Id}' reads flag '{choice.ConditionArg}', which nothing ever sets");
+                    }
+                }
+            }
+        }
+
+        foreach (RegionResource region in RegionDatabase.All)
+        {
+            if (!string.IsNullOrEmpty(region.UnlockFlagId) && !written.Contains(region.UnlockFlagId))
+            {
+                issues.Add($"region '{region.Id}' unlocks on flag '{region.UnlockFlagId}', which nothing ever sets");
             }
         }
     }

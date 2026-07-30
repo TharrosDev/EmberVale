@@ -4,6 +4,18 @@
 [ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
 
+[sub_resource type="Resource" id="ch_kin"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_beast_tamer.c_kin"
+Goto = "kin"
+Condition = 5
+ConditionArg = "flag.clan.hearth_kin"
+
+[sub_resource type="Resource" id="ch_kin_back"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_beast_tamer.c_back"
+Goto = "root"
+
 [sub_resource type="Resource" id="ch_hounds"]
 script = ExtResource("3_choice")
 Text = "dlg.clan_beast_tamer.c_hounds"
@@ -32,7 +44,13 @@ Goto = "root"
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.clan_beast_tamer.root"
-Choices = Array[Resource]([SubResource("ch_hounds"), SubResource("ch_beasts"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_kin"), SubResource("ch_hounds"), SubResource("ch_beasts"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_kin"]
+script = ExtResource("2_node")
+Id = "kin"
+Text = "dlg.clan_beast_tamer.kin"
+Choices = Array[Resource]([SubResource("ch_kin_back")])
 
 [sub_resource type="Resource" id="node_hounds"]
 script = ExtResource("2_node")
@@ -51,4 +69,4 @@ script = ExtResource("1_dlg")
 Id = "dialogue.clan_beast_tamer"
 SpeakerName = "dlg.clan_beast_tamer.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_hounds"), SubResource("node_beasts")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_hounds"), SubResource("node_beasts"), SubResource("node_kin")])
