@@ -1,6 +1,7 @@
 using Embervale.Combat;
 using Embervale.Core;
 using Embervale.Factions;
+using Embervale.Localization;
 using Embervale.Loot;
 using Embervale.Magic;
 using Embervale.Movement;
@@ -31,7 +32,7 @@ public static class EnemyFactory
         var enemy = new EnemyEntity
         {
             Name = "Goblin",
-            DisplayName = "Goblin",
+            DisplayName = Loc.T("enemy.goblin.name"),
             TemplateId = GameIds.Enemies.Goblin,
             Position = position,
         };

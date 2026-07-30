@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="BestiaryEntryResource" load_steps=2 format=3 uid="uid://cmbrvlbstashmaw"]
+
+[ext_resource type="Script" path="res://src/Enemies/BestiaryEntryResource.cs" id="1_entry"]
+
+[resource]
+script = ExtResource("1_entry")
+Id = "enemy.ash_maw"
+NameKey = ""
+LoreKey = "enemy.ash_maw.lore"
+Category = 5
+KillsToKnow = 3

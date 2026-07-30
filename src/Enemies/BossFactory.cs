@@ -1,6 +1,7 @@
 using Embervale.Combat;
 using Embervale.Core;
 using Embervale.Factions;
+using Embervale.Localization;
 using Embervale.Magic;
 using Embervale.Movement;
 using Embervale.Progression;
@@ -30,7 +31,7 @@ public static class BossFactory
         var boss = new BossEntity
         {
             Name = "IronKing",
-            DisplayName = "The Iron King",
+            DisplayName = Loc.T("enemy.iron_king.name"),
             TemplateId = GameIds.Enemies.IronKing,
             Position = position,
         };

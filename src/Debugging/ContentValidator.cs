@@ -97,7 +97,52 @@ public static class ContentValidator
         ValidateCompanions(issues);
         ValidateAIProfiles(issues);
         ValidateEnemyArchetypes(issues);
+        ValidateBestiary(issues);
         ValidateResourcePaths(issues);
+    }
+
+    /// <summary>The bestiary (Phase 34G) is checked in <b>both directions</b>, which no other domain
+    /// does. Forwards is the usual thing: an entry must name a real creature and its keys must
+    /// resolve. Backwards is the check that earns its keep — every registered enemy template must
+    /// <em>have</em> an entry. That is exactly the class of bug that let 34E ship two archetypes with
+    /// no encounter and nobody notice until a full playthrough: content that exists but nothing can
+    /// reach. Here it is a build-time failure instead.</summary>
+    private static void ValidateBestiary(List<string> issues)
+    {
+        foreach (BestiaryEntryResource entry in BestiaryDatabase.All)
+        {
+            string id = entry.Id;
+            RequireEnemy(id, $"bestiary entry '{id}'", issues);
+
+            if (string.IsNullOrEmpty(entry.LoreKey) || !Loc.Has(entry.LoreKey))
+            {
+                issues.Add($"bestiary entry '{id}' lore key '{entry.LoreKey}' is missing from the locale catalogue");
+            }
+
+            // The name key is optional — it overrides the archetype's, and only the bespoke
+            // creatures (goblin, Iron King, Ashen Acolyte) have no archetype to fall back on.
+            if (!string.IsNullOrEmpty(entry.NameKey) && !Loc.Has(entry.NameKey))
+            {
+                issues.Add($"bestiary entry '{id}' name key '{entry.NameKey}' is missing from the locale catalogue");
+            }
+            else if (string.IsNullOrEmpty(entry.NameKey) && EnemyArchetypeDatabase.Get(id) == null)
+            {
+                issues.Add($"bestiary entry '{id}' has no name key and no archetype to take one from");
+            }
+
+            if (entry.KillsToKnow < 1)
+            {
+                issues.Add($"bestiary entry '{id}' needs at least one kill to reveal ({entry.KillsToKnow})");
+            }
+        }
+
+        foreach (string templateId in EnemyTemplateRegistry.TemplateIds)
+        {
+            if (!BestiaryDatabase.IsRegistered(templateId))
+            {
+                issues.Add($"enemy template '{templateId}' has no bestiary entry — it would be uncatalogued in-game");
+            }
+        }
     }
 
     /// <summary>Humanoid archetypes became authored content in Phase 34B. They are entirely data, so
@@ -335,6 +380,7 @@ public static class ContentValidator
         CheckDuplicateIds<RaceResource>("res://data/races", "race", r => r.Id, issues);
         CheckDuplicateIds<AIProfileResource>("res://data/ai_profiles", "ai profile", r => r.Id, issues);
         CheckDuplicateIds<EnemyArchetypeResource>("res://data/enemies", "enemy archetype", r => r.Id, issues);
+        CheckDuplicateIds<BestiaryEntryResource>("res://data/bestiary", "bestiary entry", r => r.Id, issues);
     }
 
     /// <summary>Loads every <c>.tres</c> in <paramref name="directory"/> and reports empty or

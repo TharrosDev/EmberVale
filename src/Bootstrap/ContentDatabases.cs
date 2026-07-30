@@ -44,6 +44,7 @@ public static class ContentDatabases
         AIProfileDatabase.Initialize();        // before the enemy registry: factories resolve profiles by id
         EnemyArchetypeDatabase.Initialize();   // and before it too: the registry builds from these
         EnemyTemplateRegistry.Initialize();
+        BestiaryDatabase.Initialize();         // after the registry: the validator cross-checks entries against it
         CompanionDatabase.Initialize();
         CompanionRegistry.Initialize();
     }

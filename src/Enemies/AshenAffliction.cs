@@ -79,6 +79,10 @@ public static class AshenAffliction
         }
 
         enemy.DisplayName = Loc.TF(NameKey, enemy.DisplayName);
+
+        // The only durable marker that this one was corrupted: TemplateId stays the base creature's
+        // (quests match on it), so the bestiary tells an Ashen kill apart by group (Phase 34G).
+        enemy.AddToGroup(BestiaryService.AshenGroup);
         Char(enemy);
     }
 

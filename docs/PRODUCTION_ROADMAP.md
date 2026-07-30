@@ -1079,7 +1079,7 @@ The ordering is driven by hard dependencies, not preference:
 | ----- | ---- | ------ | ------ |
 | A — Pre-production & First Playable | G0 | 22–28 | ✅ Complete (22–28 + 25.5 hardening; G0 First Playable reached) |
 | B — Vertical Slice | G1 | 29–33 | ⏳ In progress (29 ✅, 29.5 ✅, 30 ✅, 30.5 ✅, 31 ✅, 32 ✅; next: 33 Vertical Slice Assembly) |
-| C — Alpha / Feature Complete | G2 | 34–45 | ⏳ In progress (34 underway: 34A–34F ✅; next: 34G bestiary, which closes Phase 34) |
+| C — Alpha / Feature Complete | G2 | 34–45 | ⏳ In progress (**34 complete**, 34A–34G ✅; next: 34.5 Frostfang clans, then 35 dragons) |
 | D — Beta / Content Complete | G3 | 46–55 | ⬜ Planned |
 | E — Release Candidate | G4 | 56–62 | ⬜ Planned |
 | F — Launch | G5 | 63 | ⬜ Planned |
@@ -1168,8 +1168,15 @@ creature corruption on the realm and never on the player. Phase 44.5's realm dec
 that field later with no rework, and **35E's "Ash dragon (corrupted elite)" now inherits a
 mechanism instead of inventing one**. Two flagship Ashen creatures a modifier can't express ship
 alongside it — including a Cinder Thrall wielding the player's own corruption-gated lifesteal.
-Twenty-three archetypes are spawnable by id with no code per enemy; **34G (the bestiary)** is next
-and closes Phase 34.
+**34G closed the phase** with the payoff the roster had been missing: 34A–34F built 26 spawnable
+creatures and nothing in the game named them. The Ash Hunters' field journal (`B`) catalogues all
+26 — kill counts, Ashen counts, and lore that opens in stages as you hunt — built entirely on the
+30.5F panel framework and the `MapService` persistence shape, with no new event needed since
+`EntityDiedEvent` already carries the template id. Its validator is the first to check a domain in
+**both** directions: every entry names a real creature *and* every registered creature has an
+entry, which is the guard against the "content exists but nothing can reach it" bug that 34E shipped
+and a playthrough had to find. **Phase 34 is complete (34A–34G).** Next: **34.5 (Frostfang clans)**,
+then **35 (dragons)**.
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —
 > a first-person open-world fantasy RPG where you battle fallen heroes across four

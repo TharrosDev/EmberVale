@@ -1,6 +1,7 @@
 using Embervale.Combat;
 using Embervale.Core;
 using Embervale.Factions;
+using Embervale.Localization;
 using Embervale.Loot;
 using Embervale.Magic;
 using Embervale.Movement;
@@ -35,7 +36,7 @@ public static class AshenAcolyteFactory
         var enemy = new EnemyEntity
         {
             Name = "AshenAcolyte",
-            DisplayName = "Ashen Acolyte",
+            DisplayName = Loc.T("enemy.ashen_acolyte.name"),
             TemplateId = GameIds.Enemies.AshenAcolyte,
             Position = position,
         };

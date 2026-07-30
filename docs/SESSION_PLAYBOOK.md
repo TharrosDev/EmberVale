@@ -2706,9 +2706,63 @@ no code) — batch them when momentum is good.
     would fix a symptom the real game never has.
   - **Verified:** pure data, no code — build clean and **569 tests** unchanged, `--validate` exit 0
     with 28 encounters, and the before/after pool measured with a script rather than eyeballed.
-- [ ] **34G — `BestiaryDatabase` + in-game bestiary UI** `[F/C]`
+- [x] **34G — `BestiaryDatabase` + in-game bestiary UI** `[F/C]`
   - **Done when:** kills/lore track in a bestiary screen (Ash Hunters fantasy)
-    through existing UI patterns; `ISaveable`.
+    through existing UI patterns; `ISaveable`. ✅ **Phase 34 is complete.**
+  - **Built:** press `B` for the Ash Hunters' field journal — 26 creatures across seven category
+    tabs, kill counts, Ashen counts, and lore that opens as you hunt. `BestiaryEntryResource` +
+    `BestiaryDatabase` (mirroring `AIProfileDatabase` exactly), a `BestiaryService` and a
+    `BestiaryPanel`. 34A–34F built 26 spawnable creatures and **nothing in the game named them**;
+    this is the screen that makes the roster content rather than spawn fodder.
+  - **Almost none of it is new machinery**, which is the point of "through existing UI patterns":
+    `UiPanel` (30.5F) already owns the modal contract, the toggle input, the dirty-flag rebuild and
+    focus restoration; `MapService`/`MapScreen` is an exact template for an `ISaveable` service
+    feeding a panel; and `EntityDiedEvent` already carries `TemplateId`, so **no new event was
+    needed** — the kill hook mirrors `QuestLogComponent.OnEntityDied` in four lines.
+  - **Keyed by template id, not archetype** — because three creatures have no archetype at all.
+    `enemy.goblin`, `enemy.iron_king` and `enemy.ashen_acolyte` come from bespoke factories and live
+    only in `EnemyTemplateRegistry` (26 ids) not `EnemyArchetypeDatabase` (23). A bestiary missing
+    the game's first enemy and its first boss would be absurd, so entries cover all 26 and
+    `NameKey` exists purely to give those three a name to render.
+  - **Counts party kills, not just the player's — deliberately divergent from quests.** Quest
+    objectives are killer-attributed because a quest is a contract; a field journal records what the
+    party brought down. A session where Kael lands the last blow should not leave the page blank.
+  - **Ashen kills are tracked separately**, which is the Ash Hunters' literal brief in LORE —
+    "track dragons and **corrupted beasts**". `AshenAffliction` tags the spawn into a group and the
+    service reads it at death; `TemplateId` still never changes, so quests stay safe. Two lines.
+  - **Staged reveal:** Unseen renders `??? — unrecorded` with no name and no lore leak; Sighted
+    gives the name, the count, and how many more kills fill the page; Known gives the lore. The
+    threshold is per entry, so a boss you fight once is authored `KillsToKnow = 1` and skips
+    Sighted entirely. `BestiaryStages.Of` is pure and is where the tests are.
+  - **Fixed three Loc violations this surfaced:** `EnemyFactory`, `BossFactory` and
+    `AshenAcolyteFactory` set `DisplayName` to English literals ("Goblin", "The Iron King",
+    "Ashen Acolyte") — a CLAUDE.md §6 breach predating the rule's enforcement that the bestiary
+    would have put on screen. All three now route through `Loc.T`.
+  - **The validator checks the bestiary in both directions, which no other domain does.** Forwards
+    is routine: entries name real creatures, keys resolve, `KillsToKnow >= 1`. Backwards is the one
+    that earns its keep — **every registered template must have an entry.** That is exactly the bug
+    class that let 34E ship two archetypes with no encounter, unnoticed until a full playthrough.
+    Now it is a build-time failure.
+  - **Proven by making it fail**, not by trusting it: deleting `Wolf.tres` produced
+    `enemy template 'enemy.wolf' has no bestiary entry — it would be uncatalogued in-game` and
+    `validate: FAIL`, exit 1. Restored after.
+  - **Verified:** `dotnet build` clean, **579 tests** (569 + 10 pinning the reveal rule — the
+    boundaries, the boss's one-kill threshold collapsing Sighted, and that no-kills is *always*
+    Unseen whatever the threshold), `--validate` **exit 0** with 26 entries and 454 strings, and a
+    120 s live `--play` with **no `SaveId` collision warning** (the specific risk when adding a
+    saveable — `SaveManager` warns at write time if two share an id).
+  - **One expected warning, worth not hiding:** loading a save made before this phase logs
+    `Save slot 'auto2' has no usable entry for 'bestiary'; it keeps its current state.` That is the
+    save framework's normal behaviour for any newly-added saveable meeting an older save, and it
+    self-heals on the next save.
+  - **Verification gap:** the `ISaveable` round trip is in the Done-when and is the one thing this
+    harness cannot drive — `F5`/`F9` need keys. Kill a few creatures, quick-save, quick-load, and
+    confirm the counts survive. Also worth two minutes: press `B`, tab through, confirm unseen
+    creatures read `???`, then kill something and watch it flip to Sighted. `savecheck` in the F1
+    console should not list `bestiary` (it is a colon-free service key, so it cannot be volatile).
+  - **Scope fence:** creatures only. Gods, Flamebearers, realms and guilds are Phase 50.5's codex,
+    which the roadmap already calls "distinct from the combat bestiary (34G)" — same UI framework,
+    no shared data.
 
 ---
 

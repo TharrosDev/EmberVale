@@ -146,8 +146,8 @@ the save left off, which for the Ember Crown is usually the town hub *inside* th
 spawn or fight. Say which of the two you got; don't let one stand in for the other.
 
 **Sandbox controls:** `WASD` move · mouse look · `Shift` sprint · `Space` jump ·
-`LMB` attack · `RMB` block · `E` interact · `I` inventory · `C` party order · `H` heal dummy ·
-`R` respawn dummy · `F5`/`F9` quick save/load · `Esc` pause (frees the cursor).
+`LMB` attack · `RMB` block · `E` interact · `I` inventory · `B` bestiary · `C` party order ·
+`H` heal dummy · `R` respawn dummy · `F5`/`F9` quick save/load · `Esc` pause (frees the cursor).
 Goblins roam to the north (−Z) and drop loot.
 
 ---
@@ -600,6 +600,19 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    make it actually appear in the wilds. No code change — reach for a bespoke factory only when the
    actor is *structurally* different (the boss's phase controller, the acolyte's cast origin), not
    when it just has different numbers.
+
+**A new bestiary entry** (Phase 34G)
+1. Author `data/bestiary/Xxx.tres` (`script_class="BestiaryEntryResource"`): `Id` = the **enemy
+   template id** it documents, `LoreKey` (authored in `strings.csv` as `enemy.<name>.lore`),
+   `Category` (`0` Humanoid / `1` Beast / `2` Undead / `3` Construct / `4` Elemental / `5` Ashen /
+   `6` Boss), and `KillsToKnow` — kills before the full page opens (`1` for a boss you fight once,
+   so it skips the Sighted stage). Leave `NameKey` empty unless the creature has no
+   `EnemyArchetypeResource` to take one from.
+2. Auto-indexed by `BestiaryDatabase`; the `B` screen picks it up with no code change.
+3. ⚠️ **`--validate` checks this domain in both directions.** An entry must name a registered
+   template, *and* every registered template must have an entry — so adding an enemy without a
+   bestiary page fails the build. That is intentional: it is the guard against content that exists
+   but nothing can reach.
 
 **A new enemy AI personality** (Phase 34A)
 1. Author `data/ai_profiles/Xxx.tres` (`script_class="AIProfileResource"`): unique `Id`
