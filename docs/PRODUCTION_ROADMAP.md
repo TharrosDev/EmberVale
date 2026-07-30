@@ -1079,7 +1079,7 @@ The ordering is driven by hard dependencies, not preference:
 | ----- | ---- | ------ | ------ |
 | A — Pre-production & First Playable | G0 | 22–28 | ✅ Complete (22–28 + 25.5 hardening; G0 First Playable reached) |
 | B — Vertical Slice | G1 | 29–33 | ⏳ In progress (29 ✅, 29.5 ✅, 30 ✅, 30.5 ✅, 31 ✅, 32 ✅; next: 33 Vertical Slice Assembly) |
-| C — Alpha / Feature Complete | G2 | 34–45 | ⏳ In progress (34 underway: 34A–34E ✅; next: 34E.5 Arcane dispel, then 34F corrupted/Ashen) |
+| C — Alpha / Feature Complete | G2 | 34–45 | ⏳ In progress (34 underway: 34A–34E.5 ✅; next: 34F corrupted/Ashen) |
 | D — Beta / Content Complete | G3 | 46–55 | ⬜ Planned |
 | E — Release Candidate | G4 | 56–62 | ⬜ Planned |
 | F — Launch | G5 | 63 | ⬜ Planned |
@@ -1158,9 +1158,10 @@ mitigated only Physical damage, so nothing in the game could resist a magic scho
 elemental had no way to be elemental. Six per-school resistance stats now run through the same
 `ArmorMultiplier` curve armour uses, which also closed a live bug where a school-typed melee
 weapon bypassed armour entirely. Resistance never becomes immunity, per DESIGN's "no school a
-trap" rule. 34E also authored `spell.arcane_lance`, the school's first offensive spell, unblocking
-Arcane's on-hit identity — split out as **34E.5**, which is next, before **34F
-(corrupted/Ashen)**. Twenty-one archetypes are spawnable by id with no code per enemy.
+trap" rule. 34E also authored `spell.arcane_lance`, the school's first offensive spell, which
+unblocked **34E.5**: an Arcane hit now strips the target's longest-lasting buff, so **every magic
+school has a signature on-hit behaviour** and the identity table Phase 29.5B opened is closed.
+Twenty-one archetypes are spawnable by id with no code per enemy; **34F (corrupted/Ashen)** is next.
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —
 > a first-person open-world fantasy RPG where you battle fallen heroes across four

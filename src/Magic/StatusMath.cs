@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Embervale.Magic;
 
 /// <summary>
@@ -39,5 +41,41 @@ public static class StatusMath
         int cap = max < 1 ? 1 : max;
         int next = current + 1;
         return next > cap ? cap : next;
+    }
+
+    /// <summary>
+    /// Which beneficial effect an Arcane hit strips (Phase 34E.5): the one with the most time left,
+    /// or <c>null</c> when the target has no buff to lose. Harmful effects are never eligible —
+    /// stripping a target's own burning would be a gift, not a dispel.
+    ///
+    /// Longest-remaining rather than first-found because the caller's source is a dictionary's
+    /// values, whose order is not a contract; "the first one" would be silently arbitrary. Ties
+    /// break on the ordinal id so the same fight resolves the same way twice (the determinism
+    /// <c>ReproHarness</c> depends on).
+    ///
+    /// Takes plain tuples so it stays Godot-free: a <see cref="StatusEffect"/> carries a
+    /// <see cref="StatusEffectResource"/>, and neither can be built in the unit-test project.
+    /// </summary>
+    public static string? PickDispel(IEnumerable<(string Id, bool IsBeneficial, double Remaining)> effects)
+    {
+        string? best = null;
+        double bestRemaining = double.NegativeInfinity;
+
+        foreach ((string id, bool beneficial, double remaining) in effects)
+        {
+            if (!beneficial)
+            {
+                continue;
+            }
+
+            if (remaining > bestRemaining ||
+                (remaining == bestRemaining && best != null && string.CompareOrdinal(id, best) < 0))
+            {
+                best = id;
+                bestRemaining = remaining;
+            }
+        }
+
+        return best;
     }
 }

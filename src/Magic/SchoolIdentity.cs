@@ -13,9 +13,12 @@ namespace Embervale.Magic;
 ///   * <b>Lightning</b> — the bolt chains to one nearby foe for a fraction of its damage.
 ///   * <b>Necrotic</b> — the caster lifesteals a fraction of the damage dealt (the corrupted line,
 ///     gated by the spell's <see cref="SpellResource.MinCorruptionTier"/> per Phase 23H).
+///   * <b>Arcane</b> — the hit strips one beneficial status from the target (Phase 34E.5). The ward
+///     is still the school's self-side identity; this is its offensive half, unblocked once 34E
+///     authored <c>spell.arcane_lance</c> (Arcane had only Self casts before, so there was no hit
+///     to hang it on).
 ///   * <b>Fire</b> — handled in <see cref="StatusEffectsComponent"/> (stacking ignite), so it needs
-///     no hook here. <b>Nature</b> — heal-over-time, authored as data (a HoT status). <b>Arcane</b> —
-///     the ward (a self buff) is its identity; on-hit dispel waits for an offensive Arcane spell.
+///     no hook here. <b>Nature</b> — heal-over-time, authored as data (a HoT status).
 ///
 /// Invoked by <see cref="SpellResolver"/> once per struck target, <em>after</em> damage lands but
 /// <em>before</em> the spell's own status is applied (so Frost can read the pre-hit chill).
@@ -54,6 +57,9 @@ public static class SchoolIdentity
             case DamageType.Necrotic:
                 Lifesteal(caster, packet.Amount);
                 break;
+            case DamageType.Arcane:
+                Dispel(primary);
+                break;
         }
     }
 
@@ -71,6 +77,36 @@ public static class SchoolIdentity
     private static void Lifesteal(IEntity? caster, float damage)
     {
         caster?.GetComponent<StatsComponent>()?.Heal(LifestealAmount(damage));
+    }
+
+    /// <summary>An Arcane hit tears one buff off the target — the longest-lasting one
+    /// (<see cref="StatusMath.PickDispel"/>), never a harmful effect.
+    ///
+    /// This cannot fire on a self-ward: <c>OnSpellHit</c> is only reached from
+    /// <see cref="SpellResolver"/>'s <c>HitOne</c>/<c>Detonate</c> — the Projectile and Area paths —
+    /// while a Self cast runs through <c>SpellcastingComponent.CastSelf</c>/<c>ApplySupport</c>. So
+    /// casting <c>spell.arcane_shield</c> never dispels the ward it just applied.
+    // ponytail: one buff per hit, like Lightning's single jump — a full cleanse would make Arcane a
+    // hard counter to every buff at once rather than a trade. Widen only if it plays weak.</summary>
+    private static void Dispel(Hurtbox primary)
+    {
+        StatusEffectsComponent? status = primary.OwnerEntity?.GetComponent<StatusEffectsComponent>();
+        if (status == null)
+        {
+            return;
+        }
+
+        // Materialize before consuming: Consume mutates the dictionary ActiveEffects views.
+        var candidates = new List<(string Id, bool IsBeneficial, double Remaining)>();
+        foreach (StatusEffect effect in status.ActiveEffects)
+        {
+            candidates.Add((effect.Definition.Id, effect.Definition.IsBeneficial, effect.Remaining));
+        }
+
+        if (StatusMath.PickDispel(candidates) is { } stripped)
+        {
+            status.Consume(stripped);
+        }
     }
 
     /// <summary>Arcs the bolt to the nearest other hostile within <see cref="ChainRadius"/> for a

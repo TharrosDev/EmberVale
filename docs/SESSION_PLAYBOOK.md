@@ -2564,16 +2564,43 @@ no code) — batch them when momentum is good.
     **Arcane Lance as buyable**, unlike 34D's monster spells.
   - **Art gap:** seven more tinted capsules. A 2.4 m stone golem reads worse as a capsule than
     34D's husks did — this is the roster where the placeholder starts actively lying. Phase 53.
-- [ ] **34E.5 — Arcane on-hit dispel (completes the school identity table)** `[F]`
-  - **Why it exists:** `SchoolIdentity` gives Frost (chill→freeze), Lightning (chain) and Necrotic
-    (lifesteal) a signature on-hit behaviour. Arcane has none, and its doc comment says why —
-    "on-hit dispel waits for an offensive Arcane spell." **34E authored that spell**, so the
-    blocker is gone.
-  - **Done when:** an Arcane spell hit strips one beneficial status from the target. The
-    primitives already exist (`StatusEffectsComponent.ActiveEffects` + `Consume`), so this is
-    roughly eight lines in `SchoolIdentity.OnSpellHit` plus a pure test.
-  - **Split out of 34E on purpose:** resistances already put that session at two systems, and a
-    third would have breached the sizing rule above.
+- [x] **34E.5 — Arcane on-hit dispel (completes the school identity table)** `[F]`
+  - **Why it existed:** `SchoolIdentity` gives Frost (chill→freeze), Lightning (chain) and Necrotic
+    (lifesteal) a signature on-hit behaviour. Arcane had none, and its doc comment said why —
+    "on-hit dispel waits for an offensive Arcane spell." 34E authored that spell, so the blocker
+    was gone.
+  - **Done when:** an Arcane spell hit strips one beneficial status from the target. ✅
+  - **Built:** `StatusMath.PickDispel` (pure) + a `DamageType.Arcane` case in
+    `SchoolIdentity.OnSpellHit` calling a `Dispel` helper that mirrors `EscalateFreeze`. **No new
+    data at all** — no spell, status, archetype or locale key. The behaviour attaches to the
+    *school*, which is how the other three already work, so `spell.arcane_lance` needed no edit.
+    Every school now has an identity; the table is closed.
+  - **The rule, and why:** strip the **longest-remaining** beneficial effect, never a harmful one,
+    one per hit. Longest-remaining rather than first-found because the source is a dictionary's
+    values and enumeration order is not a contract — "the first one" would have been silently
+    arbitrary. Ties break on the ordinal id so the same fight resolves the same way twice, which is
+    the determinism `ReproHarness` depends on.
+  - **Never a harmful effect:** stripping a target's own burning would be a gift, not a dispel.
+    That is the one case with a dedicated test.
+  - **The trap that wasn't:** the obvious hazard is a self-ward cast triggering the hook on its own
+    caster — `spell.arcane_shield` dispelling the ward it just applied. It cannot happen:
+    `OnSpellHit` is only reached from `SpellResolver.HitOne`/`Detonate` (the Projectile and Area
+    paths) while a Self cast runs through `SpellcastingComponent.CastSelf`/`ApplySupport`. Verified
+    before writing a line, and restated in the code comment so nobody re-derives it.
+  - **Nothing needed wiring for feedback:** `StatusEffectsComponent.Remove` already strips the stat
+    modifier and publishes `StatusEffectRemovedEvent`, so the status UI and VFX react to a dispel
+    exactly as they do to an expiry.
+  - **Deliberate restraint:** one buff per hit, not a cleanse — the same shape as Lightning's
+    single jump. A full cleanse would make Arcane a hard counter to every buff at once rather than
+    a trade. Marked with a `ponytail:` note beside Lightning's.
+  - **Verified:** `dotnet build` clean, **559 tests** (553 + 6 pinning the selection rule),
+    `--validate` **exit 0 with every count unchanged** — this phase added no content — and a 90 s
+    live `--play` with zero warnings.
+  - **Verification gap:** the in-world half, same console wall as 34B–34E.
+    `learn spell.arcane_shield` + `learn spell.arcane_lance`, ward yourself and confirm the ward
+    **survives** the self-cast, then `spawn 1 enemy.arcane_echo` and let it hit you — the ward
+    should vanish on impact. `spawn 1 enemy.ward_golem` has no buff to strip, so Arcane should
+    behave normally against it.
 - [ ] **34F — Corrupted/Ashen creature archetypes** `[F/C]`
   - **Done when:** corrupted variants exist (tie to the corruption fiction).
 - [ ] **34G — `BestiaryDatabase` + in-game bestiary UI** `[F/C]`
