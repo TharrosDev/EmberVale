@@ -1685,7 +1685,7 @@ no code) — batch them when momentum is good.
     ("carved, not sculpted"): silhouette-first, facets-as-feature, detail via material
     layering/painted wear (no photo textures — sourced PBR must be repainted/posterized).
     Pins the three-layer dying-world language (faded base / ash / ember accents) with a
-    hex master palette + saturation discipline, per-realm grading for all four realms,
+    hex master palette + saturation discipline, per-realm grading for all five realms,
     the corruption-tier body arc (23F/30I hook), and the school VFX tint law off
     `SpellSchools.Color`. Conventions: per-class triangle + texel budgets and LOD
     thresholds (Steam-Deck-aware, the Phase 19/57 seam), material/vertex-color rules,
@@ -2460,15 +2460,18 @@ no code) — batch them when momentum is good.
   - **Playable:** five night encounters — `HollowPatrol` (2–4 husks), `BoneWatch` (1–2, also
     dusk), `ShadeFlock` (2–3), `BarrowRising` and `HollowRite` (1 each, low weight).
     `spawn <n> <id>` in F1 reaches them directly.
-  - **Scope fence:** the Hollow Queen herself is **not** here — her arc is 47B and her lair
-    stub 44B. 34D owns her legions. Also **deliberately not built:** raising/summoning minions.
+  - **Scope fence:** the Hollow Queen herself is **not** here — her arc is 47E and her lair
+    stub 44E, both in the Pale Concord. 34D owns her legions. Also **deliberately not built:** raising/summoning minions.
     There is no minion system (`SpellTotem.cs:11` carries a `ponytail:` note saying so) and
     adds/summon waves are 36D's brief; a raise ability would be new code in three systems,
     which the sizing rule above calls a phase, not a sub-phase.
-  - **Lore discrepancy, flagged for 44B/47B not resolved here:** `LORE.md` gives the Hollow
-    Queen **no realm** — all four are taken and Frostfang's canon threat is the Storm Tyrant
-    (LORE.md:115) — while `PRODUCTION_ROADMAP.md:790` and 47B place her in Frostfang. 34D
-    doesn't depend on the answer, so it doesn't pick a side.
+  - **Lore discrepancy this surfaced — since resolved:** `LORE.md` gave the Hollow Queen **no
+    realm** (all four were taken, and Frostfang's canon threat is the Storm Tyrant,
+    LORE.md:115) while the roadmap and 47B placed her in Frostfang, shifting the whole
+    realm↔Flamebearer mapping by one slot and leaving the Crimson Prophet homeless. 34D didn't
+    depend on the answer and deliberately didn't pick a side. It was fixed straight after by
+    adding **the Pale Concord** as a fifth realm (LORE §The Fifth Realm), which let 44B–44E and
+    47B–47E be realigned to LORE. Her legions authored here are that realm's natives.
   - **Verified:** `dotnet build` clean, **540 tests** green, `--validate` **exit 0** (14
     archetypes / 12 profiles / 14 spells / 6 status effects / 19 encounters / 7 factions / 16
     items all cross-referenced — including that both of the necromancer's `KnownSpellIds`
@@ -2694,7 +2697,7 @@ no code) — batch them when momentum is good.
     Sunspire; reputation/dread applies.
 - [ ] **42.5B — Cult zealot/inquisitor archetypes** `[C]`
   - **Done when:** two cult archetypes exist on the Phase 34 matrix.
-- [ ] **42.5C — Infiltration questline (branching, feeds into 47E)** `[C]`
+- [ ] **42.5C — Infiltration questline (branching, feeds into 47D)** `[C]`
   - **Done when:** a branching infiltration arc is completable and feeds into
     the Crimson Prophet arc's flags.
 
@@ -2732,21 +2735,35 @@ no code) — batch them when momentum is good.
 
 ---
 
-## Phase 44 — Alpha Content Pass: all four realms blocked out `[C]`
+## Phase 44 — Alpha Content Pass: all five realms blocked out `[C]`
 
 > One sub-phase per realm = a big-but-bounded content session each; the spine ties
-> them together.
+> them together. **The realm↔Flamebearer pairing below is LORE's** (LORE.md §The Four
+> Realms + §The Fifth Realm) — it was off by one slot here until the Pale Concord gave
+> the Hollow Queen a home.
 
 - [ ] **44A — Ember Crown: extend to full first-pass extent** `[C]`
   - **Done when:** the realm beyond the slice region is greyboxed with hubs/POIs/
     encounters + the Iron King lair finalized as a framework boss.
-- [ ] **44B — Frostfang Reach: hub, POIs, encounters, Hollow Queen lair stub** `[C]`
-- [ ] **44C — Ashen Wilds: hub, POIs, encounters, Storm Tyrant lair stub** `[C]`
-- [ ] **44D — Sunspire Dominion: hub, POIs, encounters, Beast Lord lair stub** `[C]`
+- [ ] **44B — Frostfang Reach: hub, POIs, encounters, Storm Tyrant lair stub** `[C]`
+- [ ] **44C — Ashen Wilds: hub, POIs, encounters, Beast Lord lair stub** `[C]`
+- [ ] **44D — Sunspire Dominion: hub, POIs, encounters, Crimson Prophet lair stub** `[C]`
   - **Done when (each A–D):** the realm is reachable via streaming/fast-travel with
     a hub, key POIs, encounter sets, and the resident fallen-Flamebearer boss stub;
     `validate-all` green.
-- [ ] **44E — Crimson Prophet lair stub + main-quest spine connecting all realms** `[C]`
+- [ ] **44E — The Pale Concord: the lost realm + Hollow Queen lair stub** `[C]`
+  - **Done when:** the fifth realm exists as a region with a hub, POIs, encounters
+    (the 34D undead are its natives) and the Hollow Queen's lair stub — but is
+    **not** reachable by fast travel or a neighbour link, since LORE keeps it off
+    every map until 47E's discovery beat opens the way. `Realm.PaleConcord` already
+    exists for its `RegionResource`; nothing else is authored yet.
+  - **The fiction wants rules, and this is where they get decided** — a sky stalled
+    at dusk, nothing ripening, nothing rotting, nobody able to die. Candidates: no
+    natural health regen inside its bounds, a `WorldClock` that doesn't advance,
+    corpses that never despawn, NPCs who ask only to be released. Each is a real
+    system change (`StatsComponent`, `WorldClock`, the despawn path), so pick
+    deliberately or explicitly cut — don't let the realm ship as a reskinned field.
+- [ ] **44F — Main-quest spine connecting all realms** `[C]`
   - **Done when:** every realm + boss + guild is reachable and the main-quest spine
     threads them (rough but complete in extent).
 
@@ -2767,8 +2784,9 @@ no code) — batch them when momentum is good.
   - **Done when:** the tier change is visible in the proof realm, ready for the
     Phase 53 art pass to build on.
 - [ ] **44.5D — Ending-state write (Dawnfire heals / Lord of Embers ashen, all realms)** `[F]`
-  - **Done when:** Phase 49's ending choice writes a final tier across all four
-    realms.
+  - **Done when:** Phase 49's ending choice writes a final tier across all five
+    realms — including the Pale Concord, where "the lands heal" has to mean something
+    different, since its problem was never decay.
 
 ---
 
@@ -2816,10 +2834,14 @@ no code) — batch them when momentum is good.
 > The bulk of the game — one realm arc per sub-phase.
 
 - [ ] **47A — Iron King arc (Ember Crown): questline + boss + relic + corruption beat + guild ties** `[C]`
-- [ ] **47B — Hollow Queen arc (Frostfang Reach)** `[C]`
-- [ ] **47C — Storm Tyrant arc (Ashen Wilds)** `[C]`
-- [ ] **47D — Beast Lord arc (Sunspire Dominion)** `[C]`
-- [ ] **47E — Crimson Prophet arc** `[C]`
+- [ ] **47B — Storm Tyrant arc (Frostfang Reach)** `[C]`
+- [ ] **47C — Beast Lord arc (The Ashen Wilds)** `[C]`
+- [ ] **47D — Crimson Prophet arc (Sunspire Dominion)** `[C]`
+- [ ] **47E — Hollow Queen arc (The Pale Concord)** `[C]`
+  - **Extra bar:** this arc opens with a **discovery beat** — the realm is on no map
+    (LORE §The Fifth Realm), so the questline has to establish that it exists before
+    it can be entered. The other four arcs travel to a known place; this one finds a
+    hidden one, and the 44E region stays unreachable until this beat fires.
 - [ ] **47F — Ashen Knight rivalry seeds across the arcs** `[C]`
   - **Done when (each):** the arc's questline + boss (framework) + relic reward +
     corruption beat + guild hooks are authored and completable; `validate-all`
