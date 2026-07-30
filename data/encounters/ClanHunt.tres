@@ -1,18 +1,18 @@
-[gd_resource type="Resource" script_class="EncounterResource" format=3 uid="uid://dccq50324vudh"]
+[gd_resource type="Resource" script_class="EncounterResource" format=3 uid="uid://cmbrvlencclanhn"]
 
 [ext_resource type="Script" path="res://src/World/EncounterResource.cs" id="1_encounter"]
 
 [resource]
 script = ExtResource("1_encounter")
-Id = "encounter.rime_drift"
-DisplayName = "Rime Drift"
-EnemyTemplateId = "enemy.rime_shard"
+Id = "encounter.clan_hunt"
+DisplayName = "Clan Hunting Party"
+EnemyTemplateId = "enemy.clan_beast_tamer"
 MinCount = 1
 MaxCount = 2
 SelectionWeight = 0.5
-CorruptionChance = 0.1
+CorruptionChance = 0.05
 RegionIds = Array[String](["region.frostfang_reach"])
-AtDawn = true
-AtDay = true
+AtDawn = false
+AtDay = false
 AtDusk = true
 AtNight = true

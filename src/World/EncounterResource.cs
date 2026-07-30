@@ -34,6 +34,11 @@ public partial class EncounterResource : Resource
     /// Morthul". Phase 44.5's realm decay tier can drive this later without changing the field.</summary>
     [Export(PropertyHint.Range, "0,1,0.05")] public float CorruptionChance { get; set; } = 0f;
 
+    /// <summary>Regions this encounter may roll in (Phase 34.5B). <b>Empty means anywhere</b>, which is
+    /// how every pre-34.5B encounter keeps its old behaviour. Author it when a creature belongs to one
+    /// realm — a Frostfang raider has no business patrolling the Ember Crown valley.</summary>
+    [Export] public Godot.Collections.Array<string> RegionIds { get; set; } = new();
+
     [ExportGroup("Allowed Time of Day")]
     [Export] public bool AtDawn { get; set; } = true;
     [Export] public bool AtDay { get; set; } = true;
@@ -48,6 +53,10 @@ public partial class EncounterResource : Resource
         DayPhase.Dusk => AtDusk,
         _ => AtNight,
     };
+
+    /// <summary>Whether this encounter may trigger in the given region (empty <see cref="RegionIds"/>
+    /// = anywhere).</summary>
+    public bool AllowedIn(string regionId) => RegionIds.Count == 0 || RegionIds.Contains(regionId);
 
     /// <summary>A randomised group size within the authored range.</summary>
     public int RollCount()

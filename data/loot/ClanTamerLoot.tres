@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="LootTable" format=3 uid="uid://cmbrvllootclantm"]
+
+[ext_resource type="Script" path="res://src/Loot/LootTable.cs" id="1_table"]
+[ext_resource type="Script" path="res://src/Loot/LootEntry.cs" id="2_entry"]
+
+[sub_resource type="Resource" id="Entry_pelt"]
+script = ExtResource("2_entry")
+ItemId = "item.material.beast_pelt"
+DropChance = 0.8
+MinQuantity = 1
+MaxQuantity = 3
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_herb"]
+script = ExtResource("2_entry")
+ItemId = "item.material.healing_herb"
+DropChance = 0.4
+MinQuantity = 1
+MaxQuantity = 2
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_cap"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.leather_cap"
+DropChance = 0.18
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[resource]
+script = ExtResource("1_table")
+Entries = Array[Resource]([SubResource("Entry_pelt"), SubResource("Entry_herb"), SubResource("Entry_cap")])
+GoldItemId = "item.currency.gold"
+GoldChance = 0.5
+GoldMin = 6
+GoldMax = 18
+QualityBonus = 0.05

@@ -466,6 +466,11 @@ enemy.ash_maw.name,Ash Maw
 enemy.cinder_thrall.name,Cinder Thrall
 enemy.ashen_prefix,Ashen {0}
 
+# Phase 34.5B — the Frostfang clan archetypes
+enemy.clan_raider.name,Frostfang Raider
+enemy.clan_beast_tamer.name,Frostfang Beast-Tamer
+enemy.clan_shaman.name,Frostfang Shaman
+
 # Names for the three bespoke-factory creatures (Phase 34G — were hard-coded English)
 enemy.goblin.name,Goblin
 enemy.ashen_acolyte.name,Ashen Acolyte
@@ -513,3 +518,7 @@ enemy.ash_maw.lore,"A beast the corruption took whole. Whatever it used to be kn
 enemy.cinder_thrall.lore,"A Fallen who kept enough of themselves to cast and lost everything else. The lifedrain it works on you is the same rite the Marked are offered — it simply accepted first."
 enemy.ashen_acolyte.lore,"The lesser Fallen: robed, smouldering, and convinced. It throws fire because fire is all it has left to say."
 enemy.iron_king.lore,"The First Flamebearer. He was given the ember to save the world and concluded that a world worth saving would have to be held still to do it. He is not wrong about the danger. He is wrong about everything after."
+
+enemy.clan_raider.lore,"Shield, axe, and a patience the south mistakes for slowness. A raider will let you walk past a dozen times; the clans count a stranger's crossings before they count his coin. Start something and you learn what the shield was for."
+enemy.clan_beast_tamer.lore,"She hunts the way her stalkers do — wide, quiet, and never quite where you looked. The beasts are not commanded so much as agreed with, which is worse: cross her and there is no order to countermand."
+enemy.clan_shaman.lore,"The clans do not pray to Nyth. They listen to the weather and answer it, and what answers back is cold enough to stop a heart mid-beat. She mends her own before she ever turns the storm on you."

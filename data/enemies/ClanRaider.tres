@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" load_steps=2 format=3 uid="uid://cmbrvlenmclanrd"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.clan_raider"
+NameKey = "enemy.clan_raider.name"
+AttributesPath = "res://data/attributes/ClanRaiderAttributes.tres"
+WeaponPath = "res://data/weapons/SteelSword.tres"
+LootTablePath = "res://data/loot/ClanRaiderLoot.tres"
+ModelPath = ""
+PlaceholderTint = Color(0.46, 0.5, 0.56, 1)
+AiProfileId = "ai.shielded"
+FactionId = "faction.frostfang_clans"
+KnownSpellIds = Array[String]([])
+CapsuleRadius = 0.45
+CapsuleHeight = 1.9
+MaxPoise = 75.0
+StaminaRegen = 12.0
+XpValue = 55

@@ -1079,7 +1079,7 @@ The ordering is driven by hard dependencies, not preference:
 | ----- | ---- | ------ | ------ |
 | A — Pre-production & First Playable | G0 | 22–28 | ✅ Complete (22–28 + 25.5 hardening; G0 First Playable reached) |
 | B — Vertical Slice | G1 | 29–33 | ⏳ All phases built (29–32 ✅, 33A–33E ✅); **G1 needs a maintainer play-through + one export** |
-| C — Alpha / Feature Complete | G2 | 34–45 | ⏳ In progress (**34 complete**, 34A–34G ✅; **34.5A ✅**; next: 34.5B clan archetypes, then 35 dragons) |
+| C — Alpha / Feature Complete | G2 | 34–45 | ⏳ In progress (**34 complete**, 34A–34G ✅; **34.5A/B ✅**; next: 34.5C clan questline, then 35 dragons) |
 | D — Beta / Content Complete | G3 | 46–55 | ⬜ Planned |
 | E — Release Candidate | G4 | 56–62 | ⬜ Planned |
 | F — Launch | G5 | 63 | ⬜ Planned |
@@ -1096,7 +1096,7 @@ that doesn't touch the slice.
 | 30 · 30.5 · 31 · 32 | ✅ | Models & visual identity (`ART_STYLE.md`); the UI/HUD overhaul and the `UiPanel` framework; audio foundations; the companion system, with Kael authored in full |
 | 33 | ⏳ | Vertical slice assembly — 33A–33C ✅, 33D/33E **built but never played** |
 | 34 | ✅ | The enemy & creature roster (34A–34G): AI profiles, 26 creatures as data, per-school resistances, every magic school's on-hit identity, Ashen corruption variants, the bestiary |
-| 34.5 | ⏳ | Frostfang clans — 34.5A ✅ (`faction.frostfang_clans` + the clan hold, Frostfang's first settlement and safe zone); 34.5B/C queued |
+| 34.5 | ⏳ | Frostfang clans — 34.5A ✅ (`faction.frostfang_clans` + the clan hold, Frostfang's first settlement and safe zone), 34.5B ✅ (raider/beast-tamer/shaman archetypes, neutral until provoked; encounters gained a region filter); 34.5C queued |
 
 > ### 🚩 What actually stands between here and Gate G1
 >
@@ -1113,7 +1113,7 @@ that doesn't touch the slice.
 > Phase 34's own at-keyboard leftovers are listed at the end of its block in
 > `SESSION_PLAYBOOK.md` — the bestiary's save round-trip is the notable one.
 
-**Next up:** 34.5B (clan archetypes) and 34.5C (the clan questline), then 35 (dragons). Remaining audio *production* — real CC0
+**Next up:** 34.5C (the clan questline), then 35 (dragons). Remaining audio *production* — real CC0
 music/ambience, surface tagging — carries into Phase 52; final art across all five realms is Phase 53.
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —

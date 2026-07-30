@@ -99,8 +99,13 @@ public partial class EncounterDirector : Node3D
             return;
         }
 
+        // The active region gates the pool (Phase 34.5B) — the streamer is re-configured on every
+        // region change, so it is the one thing that always knows where the player is standing.
+        string regionId = ServiceLocator.Instance != null &&
+            ServiceLocator.Instance.TryGet(out RegionStreamer streamer) ? streamer.ActiveRegionId : string.Empty;
+
         DayPhase phase = CurrentPhase();
-        EncounterResource? encounter = PickEligible(phase);
+        EncounterResource? encounter = PickEligible(phase, regionId);
         if (encounter == null)
         {
             return;
@@ -151,13 +156,13 @@ public partial class EncounterDirector : Node3D
         _alive = Mathf.Max(0, _alive - 1);
     }
 
-    private static EncounterResource? PickEligible(DayPhase phase)
+    private static EncounterResource? PickEligible(DayPhase phase, string regionId)
     {
         var pool = new List<EncounterResource>();
         float total = 0f;
         foreach (EncounterResource e in EncounterDatabase.All)
         {
-            if (!e.AllowedIn(phase))
+            if (!e.AllowedIn(phase) || !e.AllowedIn(regionId))
             {
                 continue;
             }

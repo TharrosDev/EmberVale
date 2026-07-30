@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="ScheduleResource" load_steps=6 format=3 uid="uid://cmbrvlschdclqrt"]
+[gd_resource type="Resource" script_class="ScheduleResource" format=3 uid="uid://uowild0p8lbh"]
 
 [ext_resource type="Script" path="res://src/Npc/ScheduleResource.cs" id="1_sched"]
 [ext_resource type="Script" path="res://src/Npc/ScheduleEntry.cs" id="2_entry"]

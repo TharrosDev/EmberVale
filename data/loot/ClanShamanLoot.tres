@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="LootTable" format=3 uid="uid://cmbrvllootclansh"]
+
+[ext_resource type="Script" path="res://src/Loot/LootTable.cs" id="1_table"]
+[ext_resource type="Script" path="res://src/Loot/LootEntry.cs" id="2_entry"]
+
+[sub_resource type="Resource" id="Entry_mote"]
+script = ExtResource("2_entry")
+ItemId = "item.material.elemental_mote"
+DropChance = 0.6
+MinQuantity = 1
+MaxQuantity = 2
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_herb"]
+script = ExtResource("2_entry")
+ItemId = "item.material.healing_herb"
+DropChance = 0.45
+MinQuantity = 1
+MaxQuantity = 2
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_ruby"]
+script = ExtResource("2_entry")
+ItemId = "item.gem.ruby"
+DropChance = 0.12
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_ring"]
+script = ExtResource("2_entry")
+ItemId = "item.ring.iron"
+DropChance = 0.14
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[resource]
+script = ExtResource("1_table")
+Entries = Array[Resource]([SubResource("Entry_mote"), SubResource("Entry_herb"), SubResource("Entry_ruby"), SubResource("Entry_ring")])
+GoldItemId = "item.currency.gold"
+GoldChance = 0.55
+GoldMin = 8
+GoldMax = 22
+QualityBonus = 0.1

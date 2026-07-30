@@ -680,6 +680,16 @@ public static class ContentValidator
             {
                 issues.Add($"encounter '{encounter.Id}' has a corruption chance outside 0..1: {encounter.CorruptionChance}");
             }
+
+            // A misspelled region id (Phase 34.5B) silently narrows the encounter to nowhere: it is
+            // never eligible, and the only symptom is a creature that stops appearing.
+            foreach (string regionId in encounter.RegionIds)
+            {
+                if (RegionDatabase.Get(regionId) == null)
+                {
+                    issues.Add($"encounter '{encounter.Id}' references unknown region '{regionId}'");
+                }
+            }
         }
     }
 

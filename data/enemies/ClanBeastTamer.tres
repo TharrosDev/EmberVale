@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" load_steps=2 format=3 uid="uid://cmbrvlenmclantm"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.clan_beast_tamer"
+NameKey = "enemy.clan_beast_tamer.name"
+AttributesPath = "res://data/attributes/ClanBeastTamerAttributes.tres"
+WeaponPath = "res://data/weapons/IronSword.tres"
+LootTablePath = "res://data/loot/ClanTamerLoot.tres"
+ModelPath = ""
+PlaceholderTint = Color(0.38, 0.44, 0.42, 1)
+AiProfileId = "ai.pack_flanker"
+FactionId = "faction.frostfang_clans"
+KnownSpellIds = Array[String]([])
+CapsuleRadius = 0.4
+CapsuleHeight = 1.8
+MaxPoise = 40.0
+StaminaRegen = 16.0
+XpValue = 60
