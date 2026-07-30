@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" load_steps=2 format=3 uid="uid://cmbrvlenmsynd"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.syndicate_enforcer"
+NameKey = "enemy.syndicate_enforcer.name"
+AttributesPath = "res://data/attributes/SyndicateAttributes.tres"
+WeaponPath = "res://data/weapons/SteelSword.tres"
+LootTablePath = "res://data/loot/SyndicateLoot.tres"
+ModelPath = ""
+PlaceholderTint = Color(0.22, 0.24, 0.29, 1)
+AiProfileId = "ai.ambusher"
+FactionId = "faction.iron_syndicate"
+KnownSpellIds = Array[String]([])
+CapsuleRadius = 0.4
+CapsuleHeight = 1.8
+MaxPoise = 45.0
+StaminaRegen = 16.0
+XpValue = 70

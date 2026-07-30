@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EncounterResource" format=3 uid="uid://bduqxxu4g6hjt"]
+
+[ext_resource type="Script" path="res://src/World/EncounterResource.cs" id="1_encounter"]
+
+[resource]
+script = ExtResource("1_encounter")
+Id = "encounter.syndicate_contract"
+DisplayName = "Syndicate Contract"
+EnemyTemplateId = "enemy.syndicate_enforcer"
+MinCount = 1
+MaxCount = 1
+SelectionWeight = 0.35
+AtDawn = false
+AtDay = false
+AtDusk = true
+AtNight = true

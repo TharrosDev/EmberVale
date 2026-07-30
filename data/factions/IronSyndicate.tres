@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="FactionResource" format=3 uid="uid://cmbrvlfacsynd"]
+
+[ext_resource type="Script" path="res://src/Factions/FactionResource.cs" id="1_faction"]
+
+[resource]
+script = ExtResource("1_faction")
+Id = "faction.iron_syndicate"
+DisplayName = "Iron Syndicate"
+Description = "Mercenaries, assassins and bounty hunters. Loyal to the contract, never to the cause."
+DefaultReputation = -20
+HostileThreshold = 2
+KillReputationPenalty = 8
+Enemies = Array[String]([])
+Allies = Array[String]([])

@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" load_steps=2 format=3 uid="uid://cmbrvlenmbandit"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.bandit"
+NameKey = "enemy.bandit.name"
+AttributesPath = "res://data/attributes/BanditAttributes.tres"
+WeaponPath = "res://data/weapons/IronSword.tres"
+LootTablePath = "res://data/loot/BanditLoot.tres"
+ModelPath = ""
+PlaceholderTint = Color(0.42, 0.33, 0.24, 1)
+AiProfileId = "ai.pack_flanker"
+FactionId = "faction.outlaws"
+KnownSpellIds = Array[String]([])
+CapsuleRadius = 0.4
+CapsuleHeight = 1.8
+MaxPoise = 35.0
+StaminaRegen = 14.0
+XpValue = 30

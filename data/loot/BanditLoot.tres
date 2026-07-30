@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="LootTable" format=3 uid="uid://bdux0bvf3hid0"]
+
+[ext_resource type="Script" path="res://src/Loot/LootTable.cs" id="1_table"]
+[ext_resource type="Script" path="res://src/Loot/LootEntry.cs" id="2_entry"]
+
+[sub_resource type="Resource" id="Entry_scrap"]
+script = ExtResource("2_entry")
+ItemId = "item.material.scrap"
+DropChance = 0.7
+MinQuantity = 1
+MaxQuantity = 3
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_potion"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.health"
+DropChance = 0.3
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_cap"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.leather_cap"
+DropChance = 0.18
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[resource]
+script = ExtResource("1_table")
+Entries = Array[Resource]([SubResource("Entry_scrap"), SubResource("Entry_potion"), SubResource("Entry_cap")])
+GoldItemId = "item.currency.gold"
+GoldChance = 0.8
+GoldMin = 6
+GoldMax = 20
+QualityBonus = 0.0

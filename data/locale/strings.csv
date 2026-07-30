@@ -400,3 +400,8 @@ dlg.elder.thanks,"You brought the iron — the forge burns bright again. The vil
 dlg.elder.friend,"Good to see you again, friend. The forge runs hot, thanks to you."
 dlg.elder.pure,"The elder meets your eyes and nods slowly. 'A steady soul — rarer than iron, these days. The Flame keeps you, traveller.'"
 dlg.elder.marked,"'There is an ember in your gaze I do not trust — ash where the light should be. I have seen it before, and it does not end gently. Tread carefully, traveller.'"
+
+enemy.bandit.name,Ashfall Bandit
+enemy.cultist.name,Ashen Zealot
+enemy.soldier.name,Fallen Soldier
+enemy.syndicate_enforcer.name,Syndicate Enforcer

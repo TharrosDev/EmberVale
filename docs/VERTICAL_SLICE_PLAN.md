@@ -285,9 +285,10 @@ absorb dialogue. That single branch is what makes the slice feel like it noticed
 - Convert the remaining literal strings in `dialogue.elder` to `Loc` keys. Mechanical but touches
   many lines; keep it as its own commit so it does not obscure the design work.
 
-### 4.8 Task 8 — Full-arc verification pass ⬜ **outstanding — needs Godot**
+### 4.8 Task 8 — Full-arc verification pass ✅ **done (maintainer, 2026-07-30)**
 
-See §5. This is a task, not an afterthought — budget real time for it.
+Played by the maintainer on a local build; no blocking findings reported. See §5. This was a task,
+not an afterthought — and it is the one gate no tool session can close on its own.
 
 ---
 
@@ -314,7 +315,10 @@ slice-content test: it parses `.tres` files textually and checks node reachabili
 locale keys and enum ordinals **without Godot**, which is exactly the safety net a content-heavy
 phase wants.
 
-### 5.2 Manual — the full arc, start to finish
+### 5.2 Manual — the full arc, start to finish ✅ **done (maintainer, 2026-07-30)**
+
+Played through locally; the arc holds and no blocking findings came back. The checklist stays below
+as the script to re-run whenever the slice path changes.
 
 Play it as a stranger would, in one sitting, with tutorials **on**:
 
@@ -510,9 +514,12 @@ The Blender part of this is fiddly in ways worth writing down:
 - Flat panels for cloth read as floating slabs from the side. The surcoat is a closed revolved skirt
   for that reason — continuous silhouette is a style rule (ART_STYLE §1.1), not a preference.
 
-### 8.6 What 33E does *not* cover
+### 8.6 What 33E does *not* cover — ✅ resolved
 
-The polish half of 33E — "rough edges in the slice path are gone" — **cannot be done without playing
-the arc**. Pacing, difficulty, dialogue that lands wrong, a beat that drags, a fight that is trivial
-with a companion: all of that comes out of §5.2 and none of it is visible from the code. Treat 33E as
-half-built until the play-through has happened and its findings have been fixed.
+The polish half of 33E — "rough edges in the slice path are gone" — **could not be done without
+playing the arc**. Pacing, difficulty, dialogue that lands wrong, a beat that drags, a fight that is
+trivial with a companion: none of that is visible from the code.
+
+The maintainer played it on 2026-07-30 and reported no blocking findings, so 33E is no longer
+half-built. The remaining Gate G1 item is §8.2 — opening the export presets in Godot's export dialog,
+which likewise needs a human in the editor.
