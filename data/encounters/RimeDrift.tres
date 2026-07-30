@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="EncounterResource" load_steps=2 format=3 uid="uid://cmbrvlencrimedrift"]
+[gd_resource type="Resource" script_class="EncounterResource" format=3 uid="uid://dccq50324vudh"]
 
 [ext_resource type="Script" path="res://src/World/EncounterResource.cs" id="1_encounter"]
 

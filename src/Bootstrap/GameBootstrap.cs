@@ -465,6 +465,15 @@ public partial class GameBootstrap : Node3D
         mapScreen.SetMapService(_mapService);
         mapScreen.SetFastTravel(_fastTravel);
 
+        // The Ash Hunters' field journal (Phase 34G): counts every creature the party puts down and
+        // persists it. Service-backed like the map — it documents the world, not the player.
+        var bestiary = new BestiaryService { Name = "Bestiary" };
+        AddChild(bestiary);
+
+        var bestiaryPanel = new BestiaryPanel();
+        AddChild(bestiaryPanel);
+        bestiaryPanel.SetBestiary(bestiary);
+
         SpawnRegionStreamer();
     }
 

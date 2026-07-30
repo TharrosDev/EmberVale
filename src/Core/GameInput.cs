@@ -30,6 +30,9 @@ public static class GameInput
     public const string Journal = "journal";
     public const string Map = "map";
 
+    /// <summary>Opens the bestiary — the Ash Hunters' field journal (Phase 34G).</summary>
+    public const string Bestiary = "bestiary";
+
     /// <summary>Cycles the party's standing order (follow → hold → engage), Phase 32B.</summary>
     public const string CompanionCommand = "companion_command";
     public const string Pause = "pause";
@@ -108,6 +111,7 @@ public static class GameInput
         Bind(Inventory, new InputEventKey { PhysicalKeycode = Key.I });
         Bind(Journal, new InputEventKey { PhysicalKeycode = Key.J });
         Bind(Map, new InputEventKey { PhysicalKeycode = Key.M });
+        Bind(Bestiary, new InputEventKey { PhysicalKeycode = Key.B });
         Bind(CompanionCommand, new InputEventKey { PhysicalKeycode = Key.C });
         Bind(Pause, new InputEventKey { PhysicalKeycode = Key.Escape });
         Bind(Attack, new InputEventMouseButton { ButtonIndex = MouseButton.Left });
@@ -137,6 +141,7 @@ public static class GameInput
         Bind(Inventory, new InputEventJoypadButton { ButtonIndex = JoyButton.Y });
         Bind(Journal, new InputEventJoypadButton { ButtonIndex = JoyButton.Back });
         Bind(Map, new InputEventJoypadButton { ButtonIndex = JoyButton.DpadUp });
+        Bind(Bestiary, new InputEventJoypadButton { ButtonIndex = JoyButton.DpadDown });
         Bind(Interact, new InputEventJoypadButton { ButtonIndex = JoyButton.X });
         Bind(CompanionCommand, new InputEventJoypadButton { ButtonIndex = JoyButton.DpadRight });
 

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="BestiaryEntryResource" load_steps=2 format=3 uid="uid://cmbrvlbstruincrawl"]
+
+[ext_resource type="Script" path="res://src/Enemies/BestiaryEntryResource.cs" id="1_entry"]
+
+[resource]
+script = ExtResource("1_entry")
+Id = "enemy.ruin_crawler"
+NameKey = ""
+LoreKey = "enemy.ruin_crawler.lore"
+Category = 3
+KillsToKnow = 5

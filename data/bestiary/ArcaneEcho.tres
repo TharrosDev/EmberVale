@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="BestiaryEntryResource" load_steps=2 format=3 uid="uid://cmbrvlbstarcaneech"]
+
+[ext_resource type="Script" path="res://src/Enemies/BestiaryEntryResource.cs" id="1_entry"]
+
+[resource]
+script = ExtResource("1_entry")
+Id = "enemy.arcane_echo"
+NameKey = ""
+LoreKey = "enemy.arcane_echo.lore"
+Category = 4
+KillsToKnow = 2

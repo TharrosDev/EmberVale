@@ -435,3 +435,51 @@ enemy.arcane_echo.name,Arcane Echo
 enemy.ash_maw.name,Ash Maw
 enemy.cinder_thrall.name,Cinder Thrall
 enemy.ashen_prefix,Ashen {0}
+
+# Names for the three bespoke-factory creatures (Phase 34G — were hard-coded English)
+enemy.goblin.name,Goblin
+enemy.ashen_acolyte.name,Ashen Acolyte
+enemy.iron_king.name,The Iron King
+
+# Bestiary (BestiaryPanel) — the Ash Hunters' field journal
+bestiary.tab_beasts,Beasts
+bestiary.tab_humanoids,Humanoids
+bestiary.tab_undead,Undead
+bestiary.tab_constructs,Constructs
+bestiary.tab_elementals,Elementals
+bestiary.tab_ashen,Ashen
+bestiary.tab_bosses,Flamebearers
+bestiary.progress,Field Journal — {0} of {1} catalogued
+bestiary.entry,{0}  ·  slain {1}
+bestiary.unknown,??? — unrecorded
+bestiary.sighted,"Seen, not yet understood. {0} more to fill the page."
+bestiary.corrupted,{0} of them ashen
+bestiary.empty,Nothing catalogued here yet.
+
+# Bestiary lore (Phase 34G)
+enemy.goblin.lore,"Scavengers of the valley's edge, bold in numbers and cowardly alone. They have no forges of their own; every blade they carry was somebody else's first."
+enemy.bandit.lore,"Ashfall's roads emptied of soldiers long before they emptied of travellers. These are the people who noticed. Fast, poorly armoured, and never encountered singly."
+enemy.cultist.lore,"They call the burning a mercy. Zealots of the Fallen do not retreat, do not bargain, and do not appear to feel the fire they carry."
+enemy.soldier.lore,"Armour still bearing a dead lord's colours, worn by something that no longer answers to him. They hold a shield line out of habit — the habit outlasted the man."
+enemy.syndicate_enforcer.lore,"The Iron Syndicate does not send warnings. An enforcer waits without moving for as long as the contract requires, and the first sign of one is usually the last."
+enemy.wolf.lore,"They do not charge. They fan wide, take the flanks, and wait for the pack-mate you turned your back on. Killing the first one teaches you nothing about the other three."
+enemy.dire_wolf.lore,"Twice the mass of the pack it leads and slower for it, which matters less than you would hope. Ash Hunters price a dire wolf pelt at four ordinary ones and still consider it cheap."
+enemy.frost_stalker.lore,"Frostfang's cats do not stalk so much as wait, buried to the eyes, for a week if need be. Struck first it dies easily. It is rarely struck first."
+enemy.thornback_boar.lore,"Blind past ten paces and entirely uninterested in you until you are inside that ten. Then it does not stop, does not tire, and does not recognise a wound as an argument."
+enemy.ashfall_elk.lore,"Grazes the grey meadows where nothing else will. It runs long before it is threatened and cannot be caught on foot — the hide is worth the arrow it costs."
+enemy.hollow_husk.lore,"What the Hollow Queen leaves when she is finished. It notices you late, and then it simply does not stop coming. There is no fear left in it to work with."
+enemy.bone_knight.lore,"It still keeps the guard rhythm it was drilled in — up, down, up — long after the flesh that learned it went. Wait out the cycle. It cannot break the habit and it will not retreat."
+enemy.barrow_wight.lore,"Lies in the ground where it was laid and does not stir for the passing. It stirs for the digging. Whatever it was buried with, it still counts as its own."
+enemy.hollow_necromancer.lore,"Kill the husks and she knits them back together; kill her and they stay down. Every Ash Hunter learns this in the same order, and most learn it the wrong way round first."
+enemy.grave_shade.lore,"Cold, quick and barely there — three of them will surround you before one of them touches you. Steel finds them, which is the only mercy in it."
+enemy.stone_sentinel.lore,"Set to guard something by a civilisation that has been dust for an age. It has not been relieved, so it is still on duty. The wind-up before it swings is long enough to read, and that is the whole fight."
+enemy.ward_golem.lore,"Bound to a doorway rather than a master. Arcane force slides off it — a fact worth knowing before you commit to a spell — and it will come apart before it will step aside."
+enemy.ruin_crawler.lore,"Small, fast, and never alone. Best understood as the ruin's immune response: individually trivial, collectively how expeditions end."
+enemy.cinder_wisp.lore,"A knot of live fire that answers to nothing. Fighting one with flame is a lesson most only need once — it drinks what it is made of."
+enemy.rime_shard.lore,"It does not chase. It freezes the ground you were going to stand on and waits for you to arrive there anyway."
+enemy.storm_mote.lore,"Its lightning does not stop at the first target. Fight one at a distance from your companions, or fight it twice."
+enemy.arcane_echo.lore,"Not a creature so much as a spell that outlived its caster and kept the intent. It wards itself unprompted, and it strips whatever ward you were relying on."
+enemy.ash_maw.lore,"A beast the corruption took whole. Whatever it used to be knew when to run; this does not. The Ash Hunters count it as game, but only just."
+enemy.cinder_thrall.lore,"A Fallen who kept enough of themselves to cast and lost everything else. The lifedrain it works on you is the same rite the Marked are offered — it simply accepted first."
+enemy.ashen_acolyte.lore,"The lesser Fallen: robed, smouldering, and convinced. It throws fire because fire is all it has left to say."
+enemy.iron_king.lore,"The First Flamebearer. He was given the ember to save the world and concluded that a world worth saving would have to be held still to do it. He is not wrong about the danger. He is wrong about everything after."
