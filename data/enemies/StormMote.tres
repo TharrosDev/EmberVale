@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" format=3 uid="uid://c0mhsaalir6mc"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.storm_mote"
+NameKey = "enemy.storm_mote.name"
+AttributesPath = "res://data/attributes/StormMoteAttributes.tres"
+WeaponPath = "res://data/weapons/ElementalTouch.tres"
+LootTablePath = "res://data/loot/ElementalLoot.tres"
+ModelPath = ""
+PlaceholderTint = Color(0.85, 0.8, 0.3, 1)
+AiProfileId = "ai.caster"
+FactionId = ""
+KnownSpellIds = Array[String](["spell.ball_lightning"])
+CapsuleRadius = 0.3
+CapsuleHeight = 1.1
+MaxPoise = 14.0
+StaminaRegen = 16.0
+ManaRegen = 9.0
+XpValue = 55

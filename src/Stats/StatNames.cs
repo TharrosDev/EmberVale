@@ -30,6 +30,12 @@ public static class StatNames
         StatType.AttackSpeed => "stat.attack_speed",
         StatType.CritChance => "stat.crit_chance",
         StatType.CritDamage => "stat.crit_damage",
+        StatType.FireResist => "stat.fire_resist",
+        StatType.FrostResist => "stat.frost_resist",
+        StatType.LightningResist => "stat.lightning_resist",
+        StatType.ArcaneResist => "stat.arcane_resist",
+        StatType.NatureResist => "stat.nature_resist",
+        StatType.NecroticResist => "stat.necrotic_resist",
         _ => "stat.unknown",
     };
 }

@@ -35,6 +35,7 @@ public static class GameIds
         public const string Scrap = "item.material.scrap";
         public const string BeastPelt = "item.material.beast_pelt";
         public const string GraveDust = "item.material.grave_dust";
+        public const string ElementalMote = "item.material.elemental_mote";
     }
 
     public static class Enemies
@@ -63,6 +64,16 @@ public static class GameIds
         public const string BarrowWight = "enemy.barrow_wight";
         public const string HollowNecromancer = "enemy.hollow_necromancer";
         public const string GraveShade = "enemy.grave_shade";
+
+        // Phase 34E — constructs (the guardians the forgotten civilizations left behind) and
+        // elementals (one per offensive school, each resistant to its own).
+        public const string StoneSentinel = "enemy.stone_sentinel";
+        public const string WardGolem = "enemy.ward_golem";
+        public const string RuinCrawler = "enemy.ruin_crawler";
+        public const string CinderWisp = "enemy.cinder_wisp";
+        public const string RimeShard = "enemy.rime_shard";
+        public const string StormMote = "enemy.storm_mote";
+        public const string ArcaneEcho = "enemy.arcane_echo";
     }
 
     /// <summary>Enemy AI personality ids (see <c>AIProfileDatabase</c> / data/ai_profiles, Phase 34A).</summary>
@@ -83,6 +94,9 @@ public static class GameIds
         // Phase 34D undead nerve — the dead never break off.
         public const string Mindless = "ai.mindless";
         public const string DeathlessGuard = "ai.deathless_guard";
+
+        // Phase 34E — a construct holds its post: never patrols, never calls for help, never leaves.
+        public const string Sentry = "ai.sentry";
     }
 
     public static class Factions
@@ -133,6 +147,9 @@ public static class GameIds
         // Phase 34D — the Necrotic school's first enemy-facing spells.
         public const string Wither = "spell.wither";
         public const string KnitBone = "spell.knit_bone";
+
+        // Phase 34E — Arcane's first offensive spell; the school had only Self casts before.
+        public const string ArcaneLance = "spell.arcane_lance";
     }
 
     public static class Recipes

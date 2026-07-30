@@ -35,6 +35,17 @@ public partial class AttributeSet : Resource
     [Export] public float CritChance { get; set; } = 0.05f;
     [Export] public float CritDamage { get; set; } = 1.5f;
 
+    /// <summary>Per-school resistances (Phase 34E) — each mitigates its damage school on the same
+    /// curve <see cref="Armor"/> uses. Zero (the default) is no mitigation, which is what every
+    /// actor authored before 34E gets, so adding these changed no existing fight.</summary>
+    [ExportGroup("Resistances")]
+    [Export] public float FireResist { get; set; } = 0f;
+    [Export] public float FrostResist { get; set; } = 0f;
+    [Export] public float LightningResist { get; set; } = 0f;
+    [Export] public float ArcaneResist { get; set; } = 0f;
+    [Export] public float NatureResist { get; set; } = 0f;
+    [Export] public float NecroticResist { get; set; } = 0f;
+
     /// <summary>Materializes the exported fields into a stat-keyed lookup.</summary>
     public IReadOnlyDictionary<StatType, float> ToBaseValues()
     {
@@ -55,6 +66,12 @@ public partial class AttributeSet : Resource
             [StatType.AttackSpeed] = AttackSpeed,
             [StatType.CritChance] = CritChance,
             [StatType.CritDamage] = CritDamage,
+            [StatType.FireResist] = FireResist,
+            [StatType.FrostResist] = FrostResist,
+            [StatType.LightningResist] = LightningResist,
+            [StatType.ArcaneResist] = ArcaneResist,
+            [StatType.NatureResist] = NatureResist,
+            [StatType.NecroticResist] = NecroticResist,
         };
     }
 

@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" format=3 uid="uid://c224xc87ktmqp"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.stone_sentinel"
+NameKey = "enemy.stone_sentinel.name"
+AttributesPath = "res://data/attributes/StoneSentinelAttributes.tres"
+WeaponPath = "res://data/weapons/StoneFist.tres"
+LootTablePath = "res://data/loot/ConstructLoot.tres"
+ModelPath = ""
+PlaceholderTint = Color(0.5, 0.48, 0.44, 1)
+AiProfileId = "ai.sentry"
+FactionId = ""
+KnownSpellIds = Array[String]([])
+CapsuleRadius = 0.6
+CapsuleHeight = 2.4
+MaxPoise = 150.0
+StaminaRegen = 8.0
+XpValue = 80

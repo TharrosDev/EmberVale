@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="AttributeSet" format=3 uid="uid://bdum5gthchh8x"]
+
+[ext_resource type="Script" path="res://src/Stats/AttributeSet.cs" id="1_attrset"]
+
+[resource]
+script = ExtResource("1_attrset")
+Health = 55.0
+Stamina = 80.0
+Mana = 100.0
+Strength = 4.0
+Dexterity = 12.0
+Intelligence = 14.0
+Vitality = 5.0
+Endurance = 8.0
+Armor = 2.0
+PhysicalPower = 4.0
+SpellPower = 16.0
+MoveSpeed = 5.0
+AttackSpeed = 1.0
+CritChance = 0.1
+CritDamage = 1.6
+FireResist = 120.0
+FrostResist = 0.0
+LightningResist = 0.0
+ArcaneResist = 0.0
+NatureResist = 0.0
+NecroticResist = 0.0

@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" format=3 uid="uid://dcc2br817sxca"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.ward_golem"
+NameKey = "enemy.ward_golem.name"
+AttributesPath = "res://data/attributes/WardGolemAttributes.tres"
+WeaponPath = "res://data/weapons/StoneFist.tres"
+LootTablePath = "res://data/loot/ConstructLoot.tres"
+ModelPath = ""
+PlaceholderTint = Color(0.46, 0.38, 0.62, 1)
+AiProfileId = "ai.deathless_guard"
+FactionId = ""
+KnownSpellIds = Array[String]([])
+CapsuleRadius = 0.5
+CapsuleHeight = 2.1
+MaxPoise = 110.0
+StaminaRegen = 12.0
+XpValue = 75

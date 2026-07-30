@@ -65,10 +65,11 @@ public static class CombatMath
     }
 
     /// <summary>
-    /// Reduces incoming damage by the defender's mitigation. Physical damage uses
-    /// the classic armor curve <c>100 / (100 + armor)</c> (diminishing returns,
-    /// never reaching full immunity). Elemental types are unmitigated until
-    /// per-type resistances arrive; <see cref="DamageType.True"/> always bypasses.
+    /// Reduces incoming damage by the defender's mitigation. Physical damage uses the classic armor
+    /// curve <c>100 / (100 + armor)</c> (diminishing returns, never reaching full immunity); every
+    /// other school runs its own resistance stat through the same curve (Phase 34E), so a fire
+    /// elemental shrugs off fire exactly the way armour shrugs off steel.
+    /// <see cref="DamageType.True"/> always bypasses.
     /// </summary>
     public static float Mitigate(float amount, DamageType type, StatsComponent? defender)
     {
@@ -77,13 +78,28 @@ public static class CombatMath
             return amount;
         }
 
-        if (type == DamageType.Physical)
-        {
-            amount *= ArmorMultiplier(defender.GetValue(StatType.Armor));
-        }
-
-        return amount;
+        // One curve for both, so there is only ever one defence formula to balance. Resistance
+        // only, never immunity: ArmorMultiplier stays in (0, 1], which keeps every magic school a
+        // viable spine to build around (DESIGN §"none a trap").
+        // ponytail: no vulnerability side — ArmorMultiplier clamps a negative resist to ×1 rather
+        // than amplifying. Add a signed curve if an encounter ever needs a real weakness.
+        StatType mitigator = ResistanceStat(type);
+        return amount * ArmorMultiplier(defender.GetValue(mitigator));
     }
+
+    /// <summary>The stat that mitigates a damage school. Physical answers to <c>Armor</c>; the magic
+    /// schools each answer to their own resistance (Phase 34E). <see cref="DamageType.True"/> never
+    /// reaches here — <see cref="Mitigate"/> returns before the lookup.</summary>
+    public static StatType ResistanceStat(DamageType type) => type switch
+    {
+        DamageType.Fire => StatType.FireResist,
+        DamageType.Frost => StatType.FrostResist,
+        DamageType.Lightning => StatType.LightningResist,
+        DamageType.Arcane => StatType.ArcaneResist,
+        DamageType.Nature => StatType.NatureResist,
+        DamageType.Necrotic => StatType.NecroticResist,
+        _ => StatType.Armor,
+    };
 
     /// <summary>The physical-damage multiplier from armor: the classic <c>100 / (100 + armor)</c>
     /// curve — diminishing returns, always in (0, 1], never full immunity. Negative armor clamps to

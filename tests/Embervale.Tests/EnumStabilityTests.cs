@@ -119,6 +119,12 @@ public class EnumStabilityTests
         Assert.Equal(12, (int)StatType.AttackSpeed);
         Assert.Equal(13, (int)StatType.CritChance);
         Assert.Equal(14, (int)StatType.CritDamage);
+        Assert.Equal(15, (int)StatType.FireResist);
+        Assert.Equal(16, (int)StatType.FrostResist);
+        Assert.Equal(17, (int)StatType.LightningResist);
+        Assert.Equal(18, (int)StatType.ArcaneResist);
+        Assert.Equal(19, (int)StatType.NatureResist);
+        Assert.Equal(20, (int)StatType.NecroticResist);
     }
 
     [Fact]

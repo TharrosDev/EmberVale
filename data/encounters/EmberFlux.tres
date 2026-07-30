@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EncounterResource" format=3 uid="uid://dccqr4r3jjxsl"]
+
+[ext_resource type="Script" path="res://src/World/EncounterResource.cs" id="1_encounter"]
+
+[resource]
+script = ExtResource("1_encounter")
+Id = "encounter.ember_flux"
+DisplayName = "Ember Flux"
+EnemyTemplateId = "enemy.cinder_wisp"
+MinCount = 2
+MaxCount = 3
+SelectionWeight = 0.6
+AtDawn = true
+AtDay = true
+AtDusk = true
+AtNight = true

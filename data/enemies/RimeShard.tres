@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" format=3 uid="uid://cmbrvlenmrime"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.rime_shard"
+NameKey = "enemy.rime_shard.name"
+AttributesPath = "res://data/attributes/RimeShardAttributes.tres"
+WeaponPath = "res://data/weapons/ElementalTouch.tres"
+LootTablePath = "res://data/loot/ElementalLoot.tres"
+ModelPath = ""
+PlaceholderTint = Color(0.45, 0.78, 1.0, 1)
+AiProfileId = "ai.caster"
+FactionId = ""
+KnownSpellIds = Array[String](["spell.frost_nova", "spell.blizzard"])
+CapsuleRadius = 0.4
+CapsuleHeight = 1.6
+MaxPoise = 35.0
+StaminaRegen = 10.0
+ManaRegen = 8.0
+XpValue = 70

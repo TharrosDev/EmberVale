@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="AIProfileResource" format=3 uid="uid://c0mhr44q3mcmo"]
+
+[ext_resource type="Script" path="res://src/Enemies/AIProfileResource.cs" id="1_profile"]
+
+[resource]
+script = ExtResource("1_profile")
+Id = "ai.sentry"
+VisionRange = 13.0
+FovDegrees = 120.0
+AlertRadius = 0.0
+PatrolRadius = 0.0
+IdleDuration = 9999.0
+InvestigateDuration = 3.0
+RetreatHealthFraction = 0.0
+ProvokeMemory = 120.0

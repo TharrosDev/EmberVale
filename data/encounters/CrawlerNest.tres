@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EncounterResource" format=3 uid="uid://bduqxxev3qp8x"]
+
+[ext_resource type="Script" path="res://src/World/EncounterResource.cs" id="1_encounter"]
+
+[resource]
+script = ExtResource("1_encounter")
+Id = "encounter.crawler_nest"
+DisplayName = "Crawler Nest"
+EnemyTemplateId = "enemy.ruin_crawler"
+MinCount = 2
+MaxCount = 4
+SelectionWeight = 0.8
+AtDawn = true
+AtDay = true
+AtDusk = true
+AtNight = true

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="WeaponResource" format=3 uid="uid://bdu454phonx8x"]
+
+[ext_resource type="Script" path="res://src/Combat/WeaponResource.cs" id="1_weapon"]
+
+[resource]
+script = ExtResource("1_weapon")
+DisplayName = "Ruin Cutter"
+DamageType = 0
+BaseDamage = 9.0
+PoiseDamage = 8.0
+StaminaCost = 7.0
+WindupTime = 0.2
+ActiveTime = 0.1
+RecoveryTime = 0.32
+AttackSpeed = 1.25
+ComboLength = 3
+FinisherMultiplier = 1.3

@@ -1079,7 +1079,7 @@ The ordering is driven by hard dependencies, not preference:
 | ----- | ---- | ------ | ------ |
 | A — Pre-production & First Playable | G0 | 22–28 | ✅ Complete (22–28 + 25.5 hardening; G0 First Playable reached) |
 | B — Vertical Slice | G1 | 29–33 | ⏳ In progress (29 ✅, 29.5 ✅, 30 ✅, 30.5 ✅, 31 ✅, 32 ✅; next: 33 Vertical Slice Assembly) |
-| C — Alpha / Feature Complete | G2 | 34–45 | ⏳ In progress (34 underway: 34A ✅, 34B ✅, 34C ✅, 34D ✅; next: 34E constructs + elementals) |
+| C — Alpha / Feature Complete | G2 | 34–45 | ⏳ In progress (34 underway: 34A–34E ✅; next: 34E.5 Arcane dispel, then 34F corrupted/Ashen) |
 | D — Beta / Content Complete | G3 | 46–55 | ⬜ Planned |
 | E — Release Candidate | G4 | 56–62 | ⬜ Planned |
 | F — Launch | G5 | 63 | ⬜ Planned |
@@ -1152,8 +1152,15 @@ a necromancer — on two fearless profiles (`ai.mindless`, `ai.deathless_guard`)
 enemy-facing content (`spell.wither` + `status.decay`, the game's first Necrotic effect). The
 necromancer is the **first caster archetype authored as data**, which finally exercises the
 `KnownSpellIds` path 34B built and nothing used; its `spell.knit_bone` gets ally-mending free
-from the 34A caster-support branch, so it repairs its own husks with no new code. Fourteen
-archetypes are spawnable by id with no code per enemy; **34E (constructs + elementals)** is next.
+from the 34A caster-support branch, so it repairs its own husks with no new code. **34E** then
+added three constructs and four elementals — but had to land a *mechanic* first: `CombatMath`
+mitigated only Physical damage, so nothing in the game could resist a magic school and an
+elemental had no way to be elemental. Six per-school resistance stats now run through the same
+`ArmorMultiplier` curve armour uses, which also closed a live bug where a school-typed melee
+weapon bypassed armour entirely. Resistance never becomes immunity, per DESIGN's "no school a
+trap" rule. 34E also authored `spell.arcane_lance`, the school's first offensive spell, unblocking
+Arcane's on-hit identity — split out as **34E.5**, which is next, before **34F
+(corrupted/Ashen)**. Twenty-one archetypes are spawnable by id with no code per enemy.
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —
 > a first-person open-world fantasy RPG where you battle fallen heroes across four

@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" format=3 uid="uid://uov3wiywa6wf"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.cinder_wisp"
+NameKey = "enemy.cinder_wisp.name"
+AttributesPath = "res://data/attributes/CinderWispAttributes.tres"
+WeaponPath = "res://data/weapons/ElementalTouch.tres"
+LootTablePath = "res://data/loot/ElementalLoot.tres"
+ModelPath = ""
+PlaceholderTint = Color(1.0, 0.45, 0.12, 1)
+AiProfileId = "ai.caster"
+FactionId = ""
+KnownSpellIds = Array[String](["spell.firebolt"])
+CapsuleRadius = 0.3
+CapsuleHeight = 1.0
+MaxPoise = 12.0
+StaminaRegen = 14.0
+ManaRegen = 9.0
+XpValue = 45

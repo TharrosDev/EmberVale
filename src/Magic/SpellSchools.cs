@@ -5,9 +5,10 @@ namespace Embervale.Magic;
 
 /// <summary>
 /// Presentation helpers for magic schools. A spell's school is simply its
-/// <see cref="DamageType"/> (Fire/Frost/Lightning/Arcane/Nature/Necrotic), so the
-/// same value drives mitigation in <see cref="CombatMath"/> and the colour used to
-/// tint projectiles and UI here. Centralised so every school looks consistent.
+/// <see cref="DamageType"/> (Fire/Frost/Lightning/Arcane/Nature/Necrotic), so the same value drives
+/// mitigation in <see cref="CombatMath"/> — via <see cref="CombatMath.ResistanceStat"/>, which maps
+/// it to the matching resistance since Phase 34E — and the colour used to tint projectiles and UI
+/// here. Centralised so every school looks consistent.
 /// </summary>
 public static class SpellSchools
 {

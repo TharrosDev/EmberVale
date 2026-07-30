@@ -33,6 +33,17 @@ public enum StatType
     AttackSpeed,
     CritChance,
     CritDamage,
+
+    // --- Per-school resistances (Phase 34E) ---
+    // Mitigate non-Physical damage on the same 100/(100+x) curve Armor uses, so a fire elemental
+    // shrugs off fire the way an armoured knight shrugs off steel. Resistance only, never immunity
+    // — DESIGN §"none a trap" requires every magic school to stay a viable spine.
+    FireResist,
+    FrostResist,
+    LightningResist,
+    ArcaneResist,
+    NatureResist,
+    NecroticResist,
 }
 
 /// <summary>Helpers for classifying <see cref="StatType"/> values.</summary>

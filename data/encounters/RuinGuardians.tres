@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EncounterResource" format=3 uid="uid://dccq6d0c7ymo0"]
+
+[ext_resource type="Script" path="res://src/World/EncounterResource.cs" id="1_encounter"]
+
+[resource]
+script = ExtResource("1_encounter")
+Id = "encounter.ruin_guardians"
+DisplayName = "Ruin Guardians"
+EnemyTemplateId = "enemy.stone_sentinel"
+MinCount = 1
+MaxCount = 2
+SelectionWeight = 0.5
+AtDawn = true
+AtDay = true
+AtDusk = true
+AtNight = true
