@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="QuestResource" format=3 uid="uid://cmbrvlqclanexp"]
+[gd_resource type="Resource" script_class="QuestResource" format=3 uid="uid://c0mhslxjylvsf"]
 
 [ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
 [ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]

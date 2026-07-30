@@ -1998,10 +1998,14 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
 
 ---
 
-## Phase 34.5 — Frostfang Clans & Beast-Race Factions `[F/C]`
+## Phase 34.5 — Frostfang Clans & Beast-Race Factions `[F/C]` ✅ **complete**
 
 > LORE names Frostfang's warrior clans/beast races as a culture, not generic
 > wildlife. Give them a faction identity before they dissolve into the bestiary.
+>
+> It landed as one: a hold you can walk into, warriors who ignore you until you
+> give them a reason, and a rank chain that moves your standing both ways. The
+> authoring recipes are CLAUDE.md §8; this block is the log.
 
 - [x] **34.5A — Frostfang Clans `FactionResource` + hub presence** `[F/C]` ✅
   - **Done when:** the clan faction exists with a hub/outpost; reputation/dread

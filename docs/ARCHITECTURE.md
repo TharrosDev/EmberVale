@@ -329,7 +329,10 @@ only three of them have a factory**; the rest are `.tres` files.
 
 - **Content:** `QuestResource` (`[GlobalClass]`, `data/quests/*.tres`) holds
   `ObjectiveResource` sub-resources (`ObjectiveType` Kill/Collect, `TargetId`,
-  `RequiredCount`), `QuestItemReward`s, XP/gold rewards and an optional
+  `RequiredCount`), `QuestItemReward`s, XP/gold rewards, an optional
+  `FactionRewardId`/`FactionRewardAmount` pair (Phase 34.5C — the same shape
+  `WorldEventResource` carries, applied through the player's `ReputationComponent`, and the
+  only way authored content moves standing *upward*), and an optional
   `PrerequisiteQuestId`. `QuestDatabase` indexes them. Objective/reward arrays are
   authored untyped and read via `ObjectiveList()` / element cast (same as
   `LootTable.Entries`). `QuestProgress` is the runtime per-quest tracker (counts +
@@ -495,9 +498,12 @@ persists). Three pieces:
   publishes `WeatherChangedEvent`, and persists current id + remaining time. `SkyController`
   reads `WeatherDirector.Current` each frame and `MoveToward`-blends the atmosphere.
 - **Encounters** — `EncounterResource` (`[GlobalClass]`, `data/encounters/*.tres`): enemy
-  template, count range, weight, and per-`DayPhase` allow flags. `EncounterDatabase` indexes
-  them. **`EncounterDirector`** (`Node3D`, `Pausable`) spawns groups around the player on a
-  cadence scaled by phase (night) and weather (storm), capped by `MaxConcurrent` and tracked
+  template, count range, weight, per-`DayPhase` allow flags, and `RegionIds` (Phase 34.5B —
+  **empty means anywhere**, which is why the pre-34.5B table needed no edits; authored when a
+  creature belongs to one realm). `EncounterDatabase` indexes them.
+  **`EncounterDirector`** (`Node3D`, `Pausable`) spawns groups around the player on a
+  cadence scaled by phase (night) and weather (storm), filtered by day phase *and* the
+  `RegionStreamer`'s `ActiveRegionId`, capped by `MaxConcurrent` and tracked
   via `TreeExited`, reusing `EnemyFactory`. Publishes `EncounterTriggeredEvent`. **Not
   persisted** (emergent/transient, like `EnemySpawnDirector`). The richer *named world-event*
   framework is Phase 17 — keep these lightweight.
@@ -536,7 +542,10 @@ fast-travel land in 25E–25G.
   `RegionCellUnloadedEvent` — the seam Phase 25D's persistence hooks. The procedural sandbox is the
   always-loaded base; the streamer manages only the region's authored `Cells`. For a hard transition
   (25C) the bootstrap calls `UnloadAll()` (free every loaded cell + clear the queue) then
-  `Configure(destination)` to re-target it without orphaning the old region's cells.
+  `Configure(destination)` to re-target it without orphaning the old region's cells. Because
+  `Configure` is called at **both** places the active region changes, it also records
+  `ActiveRegionId` — the cheapest honest answer to "where is the player standing" for systems
+  that need it, and what the encounter region gate reads (Phase 34.5B).
 - **Hard transitions (25C)** — a `RegionTransitionComponent` (an `InteractableComponent` carrying a
   `TargetRegionId`) publishes a `RegionTransitionRequestedEvent`; `GameBootstrap` handles it: enter
   `GameState.Loading` (the `LoadingScreen` overlay shows on that state), re-target the streamer,
@@ -696,7 +705,13 @@ standing, and persist. Built entirely on the existing character stack — a comp
   The **leash beats the fight**: dragged past it, the companion breaks off and regroups, so a
   running enemy can never kite the party away from the player. Movement reuses the same
   `PathSteering` navmesh rule as `EnemyAIComponent`. **Assist focus:** whatever the player is
-  locked onto (`LockOnComponent`) wins target selection outright. Out of health it goes
+  locked onto (`LockOnComponent`) wins target selection outright. **Standing gates the
+  proximity scan** (Phase 34.5B): every archetype is built on the hostile team, so team alone
+  would have a companion open fire on a faction the player is at peace with. A candidate with a
+  `FactionComponent` is only picked up when the player's `ReputationComponent.IsHostile` agrees —
+  the same rule `EnemyAIComponent.PlayerIsTarget` uses. The lock-on focus and the
+  damage-reaction path are deliberately **not** gated, so assisting a fight the player starts
+  and defending one they didn't both still work. Out of health it goes
   **Downed, never lost** — it drops out and stands back up on a timer at a fraction of max HP,
   because companions carry quests. It persists its hold anchor and downed/recovery countdown
   (the roster can't see either).
@@ -975,11 +990,19 @@ content breakage too. Enforced references:
 | `QuestResource` | reward `ItemId`s, `GoldItemId`, Collect `TargetId` | `ItemDatabase` |
 | `QuestResource` | Kill `TargetId` | `EnemyTemplateRegistry` |
 | `QuestResource` | `PrerequisiteQuestId` | `QuestDatabase` |
+| `QuestResource` | `FactionRewardId` | `FactionDatabase` |
 | `DialogueResource` | choice `Goto`, quest condition/`StartQuest` args | nodes / `QuestDatabase` |
+| `DialogueResource` / `RegionResource` | `HasFlag`/`MissingFlag` args, `UnlockFlagId` | any `SetFlag`/`ClearFlag` effect or code constant |
 | `SpellResource` | `StatusEffectId` | `StatusEffectDatabase` |
 | `FactionResource` | `Enemies` / `Allies` | `FactionDatabase` |
 | `EncounterResource` / `WorldEventResource` | `EnemyTemplateId` | `EnemyTemplateRegistry` |
+| `EncounterResource` | `RegionIds` | `RegionDatabase` |
 | `WorldEventResource` | `CacheItemId`, `RewardItemId`, `FactionRewardId` | `ItemDatabase` / `FactionDatabase` |
+
+> **Story flags have no database**, so they are checked the only way a registry-less id can be:
+> readers against writers (Phase 34.5C). A flag nothing ever `SetFlag`s is an error — that is the
+> gate that never opens. The reverse is legal: a flag set and never read is a record of what
+> happened. A typo in the `SetFlag` itself therefore still slips through.
 
 **Enemy archetypes are now data-resolved:** spawners (encounters, world events) build foes
 through `EnemyTemplateRegistry.Create(templateId, pos)`, not a hard-coded factory. A new
