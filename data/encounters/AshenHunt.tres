@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="EncounterResource" load_steps=2 format=3 uid="uid://cmbrvlencashhunt"]
+[gd_resource type="Resource" script_class="EncounterResource" format=3 uid="uid://bduqxxcxbb0i0"]
 
 [ext_resource type="Script" path="res://src/World/EncounterResource.cs" id="1_encounter"]
 
@@ -11,7 +11,7 @@ MinCount = 1
 MaxCount = 3
 SelectionWeight = 0.5
 CorruptionChance = 0.0
-AtDawn = false
+AtDawn = true
 AtDay = false
 AtDusk = true
 AtNight = true

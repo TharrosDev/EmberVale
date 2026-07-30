@@ -2548,6 +2548,10 @@ no code) — batch them when momentum is good.
     `WardedVault`, `CrawlerNest`, `EmberFlux`, `ArcaneAnomaly`. **`enemy.rime_shard` and
     `enemy.storm_mote` have no encounter this pass** — reachable via `spawn` only, said plainly
     rather than left to be discovered.
+    - **This was the wrong call, and a playthrough proved it.** An archetype with no encounter is
+      *invisible* in normal play, not merely inconvenient — documenting a gap does not make the
+      content reachable. Both were given encounters in **34F.5** below. Author the encounter in the
+      same session as the archetype: a roster entry nothing can spawn is not content.
   - **Verified:** `dotnet build` clean, **553 tests** (541 + 12 new: the resistance mapping, a
     regression guard written over the `DamageType` enum so a school added later can't silently
     inherit armour mitigation, the never-immune property, and the six pinned ordinals),
@@ -2672,6 +2676,36 @@ no code) — batch them when momentum is good.
     `spawn 1 enemy.cinder_thrall`: it should open with `ember_siphon` and visibly heal off the hit.
   - **Art gap:** two more tinted capsules, and the affliction's char pass is a material tint over a
     placeholder. Phase 53.
+- [x] **34F.5 — Encounter table balance pass** `[C]`
+  - **Why it exists:** a full playthrough reported seeing "far fewer of the new enemies than are
+    now in the game." The roster was fine — the *table* wasn't. Three findings, all measured
+    rather than guessed:
+    1. **`enemy.rime_shard` and `enemy.storm_mote` had no encounter at all** — 34E shipped them
+       `spawn`-only and wrote the gap down, which does not make content reachable. Both now have
+       one (`encounter.rime_drift`, `encounter.storm_cell`).
+    2. **The goblin took 44% of every daylight roll.** Its five encounters still carried their
+       Phase-4 weights (1.0–2.0), authored when the goblin was the only enemy in the game, while
+       everything from 34B on sits at 0.25–1.0. Cut to 0.5–0.8.
+    3. **Dawn was an exact duplicate of day** and equally barren, while over half the roster is
+       dusk/night. Widened four: wolves and the ash maw hunt the half-light (`AtDawn`), the hollow
+       husks and grave shades walk as it fails (`AtDusk`). The rare and elite spawns —
+       `dire_wolf`, `frost_stalker`, `barrow_rising`, `hollow_rite` — stay night-exclusive, so
+       night keeps its identity.
+  - **Measured before → after** (eligible pool per phase, by weight):
+    | Phase | Distinct types | Goblin share |
+    | --- | --- | --- |
+    | Dawn | 10 → **14** | 44% → **19%** |
+    | Day | 10 → **12** | 44% → **22%** |
+    | Dusk | 15 → **19** | 41% → **19%** |
+    | Night | 19 → **21** | 30% → **15%** |
+  - **Every authored archetype now has an ambient encounter** — the coverage sweep that found the
+    two orphans comes back empty.
+  - **Deliberately not touched:** the goblin camp (`SpawnEnemyCamp`, 3 alive, 5 s respawn). It
+    contributed 22 of 32 kills in the reported session, but it is gated on
+    `BuildProfile.SpawnSandboxContent` and so does not exist in an exported build — tuning it
+    would fix a symptom the real game never has.
+  - **Verified:** pure data, no code — build clean and **569 tests** unchanged, `--validate` exit 0
+    with 28 encounters, and the before/after pool measured with a script rather than eyeballed.
 - [ ] **34G — `BestiaryDatabase` + in-game bestiary UI** `[F/C]`
   - **Done when:** kills/lore track in a bestiary screen (Ash Hunters fantasy)
     through existing UI patterns; `ISaveable`.

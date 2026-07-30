@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="AttributeSet" load_steps=2 format=3 uid="uid://cmbrvlattrashmaw"]
+[gd_resource type="Resource" script_class="AttributeSet" format=3 uid="uid://bdum5gtfmbq43"]
 
 [ext_resource type="Script" path="res://src/Stats/AttributeSet.cs" id="1_attrset"]
 
