@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="ScheduleResource" load_steps=6 format=3 uid="uid://cmbrvlschdclbst"]
+
+[ext_resource type="Script" path="res://src/Npc/ScheduleResource.cs" id="1_sched"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleEntry.cs" id="2_entry"]
+
+[sub_resource type="Resource" id="e_feed"]
+script = ExtResource("2_entry")
+StartHour = 5
+Activity = "Feeding the hounds"
+Destination = Vector3(88, 0, -16)
+
+[sub_resource type="Resource" id="e_kennels"]
+script = ExtResource("2_entry")
+StartHour = 10
+Activity = "Working the kennels"
+Destination = Vector3(84, 0, -14)
+
+[sub_resource type="Resource" id="e_fires"]
+script = ExtResource("2_entry")
+StartHour = 19
+Activity = "At the fires"
+Destination = Vector3(95, 0, -12)
+
+[sub_resource type="Resource" id="e_sleep"]
+script = ExtResource("2_entry")
+StartHour = 22
+Activity = "Asleep"
+Destination = Vector3(84, 0, -14)
+
+[resource]
+script = ExtResource("1_sched")
+Id = "schedule.clan_beast_tamer"
+Entries = Array[Resource]([SubResource("e_feed"), SubResource("e_kennels"), SubResource("e_fires"), SubResource("e_sleep")])

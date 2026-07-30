@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="ScheduleResource" load_steps=6 format=3 uid="uid://cmbrvlschdclchf"]
+
+[ext_resource type="Script" path="res://src/Npc/ScheduleResource.cs" id="1_sched"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleEntry.cs" id="2_entry"]
+
+[sub_resource type="Resource" id="e_walk"]
+script = ExtResource("2_entry")
+StartHour = 6
+Activity = "Walking the hold"
+Destination = Vector3(105, 0, -24)
+
+[sub_resource type="Resource" id="e_council"]
+script = ExtResource("2_entry")
+StartHour = 9
+Activity = "Holding council"
+Destination = Vector3(100, 0, -30)
+
+[sub_resource type="Resource" id="e_fires"]
+script = ExtResource("2_entry")
+StartHour = 19
+Activity = "At the fires"
+Destination = Vector3(105, 0, -12)
+
+[sub_resource type="Resource" id="e_sleep"]
+script = ExtResource("2_entry")
+StartHour = 22
+Activity = "Asleep"
+Destination = Vector3(100, 0, -38)
+
+[resource]
+script = ExtResource("1_sched")
+Id = "schedule.clan_chief"
+Entries = Array[Resource]([SubResource("e_walk"), SubResource("e_council"), SubResource("e_fires"), SubResource("e_sleep")])

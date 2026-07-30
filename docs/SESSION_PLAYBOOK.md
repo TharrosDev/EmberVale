@@ -2003,9 +2003,55 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
 > LORE names Frostfang's warrior clans/beast races as a culture, not generic
 > wildlife. Give them a faction identity before they dissolve into the bestiary.
 
-- [ ] **34.5A — Frostfang Clans `FactionResource` + hub presence** `[F/C]`
+- [x] **34.5A — Frostfang Clans `FactionResource` + hub presence** `[F/C]` ✅
   - **Done when:** the clan faction exists with a hub/outpost; reputation/dread
     (23G) applies to it like any faction.
+  - **Landed:** `faction.frostfang_clans` (`data/factions/FrostfangClans.tres`) —
+    `DefaultReputation 10`, `Enemies` the Hollow, `Allies` the beasts. Its
+    `HostileThreshold` is **`1` (Hostile), not the usual `2`** — at `2` a merely
+    *Touched* player (dread −5) would arrive at a hostile hub, which makes the
+    whole hold unenterable for a corruption the game treats as minor. Reputation
+    and dread need no wiring: `ReputationComponent` seeds every faction in the
+    database, so the clans appear in the character screen the moment the `.tres`
+    lands.
+  - **Landed:** the clan hold —
+    `scenes/regions/frostfang_reach/clan_hold.tscn`, a new `frostfang_reach.clan_hold`
+    cell at `(100, 0, −20)`. Town-hub parity: navmesh + baker, three longhouses,
+    three tents, four braziers (white-blue, per `ART_STYLE.md`'s Frostfang light),
+    dead pines/rocks/glaciers, all three crafting stations, a waystone, and four
+    NPCs tagged `faction.frostfang_clans` — Hjalvar Stormbound (chief), Sigrun
+    Ironhand (quartermaster), Yrsa Houndmother (beast-tamer, seeding 34.5B) and
+    Old Vetle (hearthkeeper). Each has a `Loc`-keyed conversation and a schedule.
+  - **The cell carries its own floor, and has to.** `GameBootstrap.BuildEnvironment`
+    builds one 80 × 80 ground plane at the world origin; Frostfang sits at x ≈ 100,
+    so outside a cell's own greybox there is nothing under you but the infinite
+    `WorldBoundaryShape3D`. The hold's 60 m floor is sized to cover the region
+    `SpawnPoint (100, 1.2, 0)` as well, so you arrive standing on it.
+  - **Two region edits with teeth:** the glacier cell moved from `(100, 0, −14)` to
+    `(100, 0, −60)` (its ice props sat inside the new floor), and Frostfang finally
+    has a safe zone — `SafeZoneCenter (100, 0, −20)`, radius 30 — without which the
+    `EncounterDirector` spawns wolves in the middle of the hold.
+  - **Schedule destinations are absolute world space**, not cell-local, so every
+    entry in the four `data/schedules/Clan*.tres` is authored around x ≈ 100. This
+    is the trap to remember when 34.5B/C add more clan NPCs.
+  - **Verified:** `dotnet build` clean, `dotnet test` 611/611, and
+    `--validate` exits 0. The cell scene was additionally load-checked headless
+    (`load(…).instantiate()` → 9 children) because `ContentValidator` only proves a
+    cell's `ScenePath` *exists*, never that it parses.
+  - **Still owed (maintainer, at the keyboard)** — the `F1` console and `M`/`I`
+    screens no remote session can drive:
+    - Walk the hold: ground renders, the four NPCs stand on it, `E` opens each
+      conversation, the waystone registers a fast-travel node, `M` shows a
+      **Clan Hold** POI.
+    - The Done-when itself: character screen reads *Frostfang Clans — Neutral*;
+      `rep faction.frostfang_clans -80` turns the hold hostile; raising corruption
+      subtracts the Dread line from it like any other faction.
+    - Stand in the hold at night for a minute — the safe zone should keep the
+      ambient spawner out.
+  - **Known limits:** no clan combatants exist yet (34.5B), so killing a clansman
+    means killing a peaceful NPC; the hold is still reachable only behind
+    `flag.iron_king_defeated`; and `TravelNodeComponent.RegionId` is not validated
+    (`ContentValidator.cs:757`), so that one field fails silently if it ever drifts.
 - [ ] **34.5B — Clan archetypes (raider, beast-tamer, shaman)** `[C]`
   - **Done when:** three clan archetypes exist on the Phase 34 matrix with
     distinct loot/AI profiles.

@@ -226,7 +226,8 @@ both need a human at the keyboard, which is the only reason the gate is still op
 | ✅ **Done**    | 22–32 + G0 First Playable — corruption, meta-shell & localization, region streaming/map/fast travel, races & creation, the Ember Crown, the Iron King, combat feel, spellcraft & the Weave, models, the UI/HUD overhaul, audio, companions |
 | ✅ **Done**    | 34 — Enemy & Creature Roster, complete (34A–34G): AI profiles, 26 creatures as data, per-school damage resistances, every magic school's on-hit identity, Ashen corruption variants, and the Ash Hunters' bestiary |
 | ▶ **Current** | 33 — Vertical Slice Assembly: 33A–33C ✅, **33D/33E built but never played**. Play it and export it and G1 closes |
-| ⏭ **Next**    | 34.5 — Frostfang clans, then 35 — dragons |
+| ✅ **Done**    | 34.5A — the Frostfang Clans faction and their clan hold: Frostfang Reach's first settlement, safe zone and waystone |
+| ⏭ **Next**    | 34.5B/C — clan archetypes and questline, then 35 — dragons |
 
 > A phase is "done" when it works in-game **and** round-trips through save/load.
 
