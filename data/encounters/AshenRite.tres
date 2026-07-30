@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EncounterResource" format=3 uid="uid://dccqobx3fvuq1"]
+
+[ext_resource type="Script" path="res://src/World/EncounterResource.cs" id="1_encounter"]
+
+[resource]
+script = ExtResource("1_encounter")
+Id = "encounter.ashen_rite"
+DisplayName = "Ashen Rite"
+EnemyTemplateId = "enemy.cultist"
+MinCount = 2
+MaxCount = 3
+SelectionWeight = 0.8
+AtDawn = false
+AtDay = false
+AtDusk = true
+AtNight = true

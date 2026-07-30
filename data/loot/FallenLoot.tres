@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="LootTable" format=3 uid="uid://bdux0bvj3fp8t"]
+
+[ext_resource type="Script" path="res://src/Loot/LootTable.cs" id="1_table"]
+[ext_resource type="Script" path="res://src/Loot/LootEntry.cs" id="2_entry"]
+
+[sub_resource type="Resource" id="Entry_herb"]
+script = ExtResource("2_entry")
+ItemId = "item.material.healing_herb"
+DropChance = 0.5
+MinQuantity = 1
+MaxQuantity = 2
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_ingot"]
+script = ExtResource("2_entry")
+ItemId = "item.material.iron_ingot"
+DropChance = 0.35
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_vest"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.leather_vest"
+DropChance = 0.15
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[resource]
+script = ExtResource("1_table")
+Entries = Array[Resource]([SubResource("Entry_herb"), SubResource("Entry_ingot"), SubResource("Entry_vest")])
+GoldItemId = "item.currency.gold"
+GoldChance = 0.5
+GoldMin = 4
+GoldMax = 14
+QualityBonus = 0.05

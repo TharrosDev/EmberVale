@@ -40,6 +40,12 @@ public static class GameIds
         public const string Goblin = "enemy.goblin";
         public const string IronKing = "enemy.iron_king";
         public const string AshenAcolyte = "enemy.ashen_acolyte";
+
+        // Phase 34B humanoids — authored under data/enemies, built by HumanoidEnemyFactory.
+        public const string Bandit = "enemy.bandit";
+        public const string Cultist = "enemy.cultist";
+        public const string Soldier = "enemy.soldier";
+        public const string SyndicateEnforcer = "enemy.syndicate_enforcer";
     }
 
     /// <summary>Enemy AI personality ids (see <c>AIProfileDatabase</c> / data/ai_profiles, Phase 34A).</summary>
@@ -59,6 +65,8 @@ public static class GameIds
         public const string Goblins = "faction.goblins";
         public const string Villagers = "faction.villagers";
         public const string Fallen = "faction.fallen";
+        public const string Outlaws = "faction.outlaws";
+        public const string IronSyndicate = "faction.iron_syndicate";
     }
 
     public static class Npcs

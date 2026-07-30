@@ -2270,9 +2270,11 @@ no code) — batch them when momentum is good.
     `town_hub.tscn` `Model` instance both point at it, closing §6.6 / §8.4 / §8.5.
     Also fixed: `--validate` never called `Loc.Initialize()`, so headless runs reported
     Kael's authored display keys as missing and the gate was red on `main`.
-  - **Outstanding:** the presets have never been opened in Godot's export dialog; the
-    polish half still needs the §5.2 play-through (it needs a human at the controls —
-    the arc cannot be driven from a tool session).
+  - **Play-through (maintainer, 2026-07-30):** the §5.2 full arc was played locally and
+    came back clean — no blocking findings. That closes `VERTICAL_SLICE_PLAN.md` §4.8
+    Task 8 and the polish half of 33E.
+  - **Outstanding:** the export presets have never been opened in Godot's export dialog
+    (§8.2) — the last Gate G1 item, and one that needs a human in the editor.
 
 > **🚩 Gate G1 — Vertical Slice.** A stranger plays 30–60 min that looks and feels
 > shipped: real art/audio, weighty combat, a companion, a boss, the corruption
@@ -2309,9 +2311,37 @@ no code) — batch them when momentum is good.
   - **Verified:** build clean, 540 tests (19 new pinning `PackFlank` + `GuardCycle`),
     `--validate` exit 0 with a new profile-coherence check, and a live run confirming
     all 7 profiles resolve with no fallback warnings.
-- [ ] **34B — Humanoid archetypes (bandit, cultist, soldier, Iron Syndicate)** `[F/C]`
+- [x] **34B — Humanoid archetypes (bandit, cultist, soldier, Iron Syndicate)** `[F/C]`
   - **Done when:** each is a factory archetype + `.tres` (attributes/loot/XP/
     profile); all four playable.
+  - **Built:** `EnemyArchetypeResource` + `EnemyArchetypeDatabase` (`data/enemies/`),
+    driven by one shared `HumanoidEnemyFactory`. The database registers a builder per
+    archetype with `EnemyTemplateRegistry`, so a new `.tres` is spawnable by id with no
+    code change. Four archetypes ship, each with its own attributes, loot table, faction,
+    AI profile and XP:
+    | Archetype | Profile | Faction | Identity |
+    | --- | --- | --- | --- |
+    | `enemy.bandit` | `ai.pack_flanker` | `faction.outlaws` (new) | fast, fragile, mobs you |
+    | `enemy.cultist` | `ai.zealot` (new) | `faction.fallen` | fearless, never retreats |
+    | `enemy.soldier` | `ai.shielded` | `faction.fallen` | armoured wall, guard rhythm |
+    | `enemy.syndicate_enforcer` | `ai.ambusher` | `faction.iron_syndicate` (new) | assassin: lies in wait, glass, hits hard |
+  - **Why one factory:** four hand-written factories would be four places to fix the next
+    time enemy assembly changes. The bespoke factories that remain (goblin, acolyte, Iron
+    King) earn it by being *structurally* different; a bandit and a soldier differ only in
+    numbers, and numbers belong in data. This is also the first real consumer of the 34A
+    profiles — pack-flank, shield rhythm and ambush are now live on actual enemies.
+  - **Playable:** four encounters (`BanditAmbush`, `FallenPatrol`, `AshenRite`,
+    `SyndicateContract`) put them in the wilds by day phase; `spawn <id>` in F1 reaches
+    them directly. `EncounterDirector` already resolved through the registry, so no
+    spawner changed.
+  - **Verification level:** build, 540 tests and `--validate` are green, and the validator
+    now cross-checks every archetype's paths, profile, faction, spells and name key. A live
+    spawn of each of the four was **not** observed — worth a minute with `spawn enemy.bandit
+    3` / `enemy.soldier` / `enemy.cultist` / `enemy.syndicate_enforcer` in the F1 console to
+    confirm the guard rhythm, the flank fan-out and the ambush spring read right in play.
+  - **Art gap:** only the cultist has a mesh (it reuses `enm_ashen_acolyte.glb`). The other
+    three run on tinted capsules — the same capsule-then-model path the goblin took before
+    30D. Models are a Phase 53 art task, tracked there, not a blocker for "playable".
 - [ ] **34C — Beast archetypes (wolves, Sylthari wildlife)** `[F/C]`
   - **Done when:** beast archetypes exist with appropriate AI profiles.
 - [ ] **34D — Undead archetypes (Hollow Queen's legions)** `[F/C]`

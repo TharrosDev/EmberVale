@@ -96,7 +96,52 @@ public static class ContentValidator
         ValidateLocale(issues);
         ValidateCompanions(issues);
         ValidateAIProfiles(issues);
+        ValidateEnemyArchetypes(issues);
         ValidateResourcePaths(issues);
+    }
+
+    /// <summary>Humanoid archetypes became authored content in Phase 34B. They are entirely data, so
+    /// every cross-reference here is one a typo would silently degrade: a missing attribute set makes
+    /// a soldier fight with default stats, an unknown AI profile drops it to a plain brute, and a
+    /// missing name key leaks a raw <c>enemy.x.name</c> onto the nameplate.</summary>
+    private static void ValidateEnemyArchetypes(List<string> issues)
+    {
+        foreach (EnemyArchetypeResource archetype in EnemyArchetypeDatabase.All)
+        {
+            string id = archetype.Id;
+
+            if (string.IsNullOrEmpty(archetype.NameKey) || !Loc.Has(archetype.NameKey))
+            {
+                issues.Add($"enemy archetype '{id}' name key '{archetype.NameKey}' is missing from the locale catalogue");
+            }
+
+            RequirePath(archetype.AttributesPath, $"enemy archetype '{id}' attributes", issues);
+            RequirePath(archetype.WeaponPath, $"enemy archetype '{id}' weapon", issues);
+            RequirePath(archetype.LootTablePath, $"enemy archetype '{id}' loot table", issues);
+
+            if (!AIProfileDatabase.IsRegistered(archetype.AiProfileId))
+            {
+                issues.Add($"enemy archetype '{id}' references unknown AI profile '{archetype.AiProfileId}'");
+            }
+
+            if (!string.IsNullOrEmpty(archetype.FactionId) && FactionDatabase.Get(archetype.FactionId) == null)
+            {
+                issues.Add($"enemy archetype '{id}' references unknown faction '{archetype.FactionId}'");
+            }
+
+            foreach (string spellId in archetype.KnownSpellIds)
+            {
+                if (SpellDatabase.Get(spellId) == null)
+                {
+                    issues.Add($"enemy archetype '{id}' knows unknown spell '{spellId}'");
+                }
+            }
+
+            if (archetype.XpValue < 0)
+            {
+                issues.Add($"enemy archetype '{id}' has a negative XP value");
+            }
+        }
     }
 
     /// <summary>AI profiles became authored content in Phase 34A. A profile with an incoherent band
@@ -289,6 +334,7 @@ public static class ContentValidator
         CheckDuplicateIds<WorldEventResource>("res://data/world_events", "event", r => r.Id, issues);
         CheckDuplicateIds<RaceResource>("res://data/races", "race", r => r.Id, issues);
         CheckDuplicateIds<AIProfileResource>("res://data/ai_profiles", "ai profile", r => r.Id, issues);
+        CheckDuplicateIds<EnemyArchetypeResource>("res://data/enemies", "enemy archetype", r => r.Id, issues);
     }
 
     /// <summary>Loads every <c>.tres</c> in <paramref name="directory"/> and reports empty or

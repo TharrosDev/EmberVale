@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="LootTable" format=3 uid="uid://c0mhshbnjrhh2"]
+
+[ext_resource type="Script" path="res://src/Loot/LootTable.cs" id="1_table"]
+[ext_resource type="Script" path="res://src/Loot/LootEntry.cs" id="2_entry"]
+
+[sub_resource type="Resource" id="Entry_ruby"]
+script = ExtResource("2_entry")
+ItemId = "item.gem.ruby"
+DropChance = 0.3
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_ring"]
+script = ExtResource("2_entry")
+ItemId = "item.ring.iron"
+DropChance = 0.25
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_sword"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.steel_sword"
+DropChance = 0.22
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[resource]
+script = ExtResource("1_table")
+Entries = Array[Resource]([SubResource("Entry_ruby"), SubResource("Entry_ring"), SubResource("Entry_sword")])
+GoldItemId = "item.currency.gold"
+GoldChance = 0.9
+GoldMin = 15
+GoldMax = 40
+QualityBonus = 0.15

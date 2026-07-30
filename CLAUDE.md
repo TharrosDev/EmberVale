@@ -434,8 +434,8 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    `EnemyTemplateId`, `MinCount`/`MaxCount`, `SelectionWeight`, and the `At{Dawn,Day,Dusk,
    Night}` allow flags.
 2. Auto-indexed by `EncounterDatabase`; the `EncounterDirector` spawns it around the player
-   when its day phase is active. (Spawning currently routes through `EnemyFactory`, i.e. the
-   goblin archetype, until more enemy factories exist.) No code change.
+   when its day phase is active, resolving `EnemyTemplateId` through `EnemyTemplateRegistry`
+   — so any registered archetype works, not just the goblin (Phase 34B). No code change.
 
 **A new world event**
 1. Author `data/world_events/Xxx.tres` (`script_class="WorldEventResource"`): unique `Id`,
@@ -531,6 +531,19 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    `ServiceLocator.Get<CompanionRoster>().Recruit("companion.x")`, or `companion recruit <id>` in the
    F1 console. The roster spawns the actor into a formation slot, tracks loyalty, persists the party,
    and reconciles it back on load.
+
+**A new humanoid enemy** (Phase 34B)
+1. Author `data/enemies/Xxx.tres` (`script_class="EnemyArchetypeResource"`): unique `Id`
+   (`enemy.*`), a `NameKey` authored in `strings.csv`, the build paths (`AttributesPath`,
+   `WeaponPath`, `LootTablePath`, optional `ModelPath` — empty falls back to a capsule in
+   `PlaceholderTint`), an `AiProfileId` (see above), `FactionId`, and `XpValue`. A non-empty
+   `KnownSpellIds` adds a `SpellcastingComponent`, which with a standoff profile makes a caster.
+2. Auto-indexed by `EnemyArchetypeDatabase`, which registers a builder with
+   `EnemyTemplateRegistry`, so `HumanoidEnemyFactory` builds it and encounters/world events/quest
+   kill-targets can reference the id immediately. Add a `data/encounters/*.tres` pointing at it to
+   make it actually appear in the wilds. No code change — reach for a bespoke factory only when the
+   actor is *structurally* different (the boss's phase controller, the acolyte's cast origin), not
+   when it just has different numbers.
 
 **A new enemy AI personality** (Phase 34A)
 1. Author `data/ai_profiles/Xxx.tres` (`script_class="AIProfileResource"`): unique `Id`

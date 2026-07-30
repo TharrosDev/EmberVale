@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" load_steps=2 format=3 uid="uid://cmbrvlenmsoldier"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.soldier"
+NameKey = "enemy.soldier.name"
+AttributesPath = "res://data/attributes/SoldierAttributes.tres"
+WeaponPath = "res://data/weapons/SteelSword.tres"
+LootTablePath = "res://data/loot/FallenLoot.tres"
+ModelPath = ""
+PlaceholderTint = Color(0.4, 0.43, 0.48, 1)
+AiProfileId = "ai.shielded"
+FactionId = "faction.fallen"
+KnownSpellIds = Array[String]([])
+CapsuleRadius = 0.45
+CapsuleHeight = 1.85
+MaxPoise = 70.0
+StaminaRegen = 10.0
+XpValue = 55
