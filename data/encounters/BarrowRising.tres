@@ -10,6 +10,7 @@ EnemyTemplateId = "enemy.barrow_wight"
 MinCount = 1
 MaxCount = 1
 SelectionWeight = 0.3
+CorruptionChance = 0.2
 AtDawn = false
 AtDay = false
 AtDusk = false

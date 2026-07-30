@@ -10,6 +10,7 @@ EnemyTemplateId = "enemy.soldier"
 MinCount = 1
 MaxCount = 2
 SelectionWeight = 0.7
+CorruptionChance = 0.3
 AtDawn = true
 AtDay = true
 AtDusk = true

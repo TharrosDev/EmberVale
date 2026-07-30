@@ -10,6 +10,7 @@ EnemyTemplateId = "enemy.frost_stalker"
 MinCount = 1
 MaxCount = 1
 SelectionWeight = 0.25
+CorruptionChance = 0.15
 AtDawn = false
 AtDay = false
 AtDusk = false

@@ -627,6 +627,13 @@ public static class ContentValidator
         foreach (EncounterResource encounter in EncounterDatabase.All)
         {
             RequireEnemy(encounter.EnemyTemplateId, $"encounter '{encounter.Id}'", issues);
+
+            // A chance authored outside 0..1 has no other symptom: 50 silently makes every spawn
+            // Ashen forever, and a negative one silently disables the encounter's corruption.
+            if (encounter.CorruptionChance is < 0f or > 1f)
+            {
+                issues.Add($"encounter '{encounter.Id}' has a corruption chance outside 0..1: {encounter.CorruptionChance}");
+            }
         }
     }
 

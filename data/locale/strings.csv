@@ -431,3 +431,7 @@ enemy.cinder_wisp.name,Cinder Wisp
 enemy.rime_shard.name,Rime Shard
 enemy.storm_mote.name,Storm Mote
 enemy.arcane_echo.name,Arcane Echo
+
+enemy.ash_maw.name,Ash Maw
+enemy.cinder_thrall.name,Cinder Thrall
+enemy.ashen_prefix,Ashen {0}

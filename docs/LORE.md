@@ -285,6 +285,8 @@ Decay
 
 Endings
 
+His decay takes the living as readily as the land: beasts and men alike rise Ashen where it reaches.
+
 Originally part of the divine balance.
 
 Eventually betrayed the others.

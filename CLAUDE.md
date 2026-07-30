@@ -452,11 +452,25 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 
 **A new encounter**
 1. Author `data/encounters/Xxx.tres` (`script_class="EncounterResource"`): unique `Id`,
-   `EnemyTemplateId`, `MinCount`/`MaxCount`, `SelectionWeight`, and the `At{Dawn,Day,Dusk,
-   Night}` allow flags.
+   `EnemyTemplateId`, `MinCount`/`MaxCount`, `SelectionWeight`, the `At{Dawn,Day,Dusk,
+   Night}` allow flags, and `CorruptionChance` (0..1, Phase 34F — see below).
 2. Auto-indexed by `EncounterDatabase`; the `EncounterDirector` spawns it around the player
    when its day phase is active, resolving `EnemyTemplateId` through `EnemyTemplateRegistry`
    — so any registered archetype works, not just the goblin (Phase 34B). No code change.
+
+**A corrupted (Ashen) variant of an existing creature** (Phase 34F)
+1. **Don't author a new archetype for it.** Set `CorruptionChance` on an encounter and each enemy
+   it spawns rolls to rise Ashen: `AshenAffliction.Afflict` adds named `"ashen"` stat modifiers,
+   scales XP, prefixes the nameplate via `enemy.ashen_prefix`, and chars the body with the same
+   ash/ember colours `CorruptionAppearanceController` uses on the player. An "Ashen Wolf" authored
+   as its own `.tres` is a copy of `Wolf.tres` that drifts the moment either is tuned.
+2. Corruption is a property of the **place**, not the player — LORE attributes it to Morthul and
+   the realm. Author the chance per encounter; Phase 44.5's realm decay tier can drive it later.
+3. Reach for a real archetype only when the creature is more than a tinted, tougher base — a
+   different AI profile, spell loadout or faction (see `enemy.ash_maw`, `enemy.cinder_thrall`).
+4. If you extend the affliction: never change `TemplateId` (quest kill objectives match on it), and
+   always `Duplicate()` a material before tinting it or the change writes through to every other
+   instance sharing that imported resource.
 
 **A new world event**
 1. Author `data/world_events/Xxx.tres` (`script_class="WorldEventResource"`): unique `Id`,

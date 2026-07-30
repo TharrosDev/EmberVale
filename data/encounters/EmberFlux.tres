@@ -10,6 +10,7 @@ EnemyTemplateId = "enemy.cinder_wisp"
 MinCount = 2
 MaxCount = 3
 SelectionWeight = 0.6
+CorruptionChance = 0.1
 AtDawn = true
 AtDay = true
 AtDusk = true

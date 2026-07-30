@@ -10,6 +10,7 @@ EnemyTemplateId = "enemy.stone_sentinel"
 MinCount = 1
 MaxCount = 2
 SelectionWeight = 0.5
+CorruptionChance = 0.0
 AtDawn = true
 AtDay = true
 AtDusk = true

@@ -10,6 +10,7 @@ EnemyTemplateId = "enemy.arcane_echo"
 MinCount = 1
 MaxCount = 1
 SelectionWeight = 0.25
+CorruptionChance = 0.1
 AtDawn = true
 AtDay = true
 AtDusk = true
