@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" format=3 uid="uid://bduqx8ev3qp8x"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.ruin_crawler"
+NameKey = "enemy.ruin_crawler.name"
+AttributesPath = "res://data/attributes/RuinCrawlerAttributes.tres"
+WeaponPath = "res://data/weapons/RuinCutter.tres"
+LootTablePath = "res://data/loot/ConstructLoot.tres"
+ModelPath = ""
+PlaceholderTint = Color(0.35, 0.36, 0.33, 1)
+AiProfileId = "ai.ambusher"
+FactionId = ""
+KnownSpellIds = Array[String]([])
+CapsuleRadius = 0.35
+CapsuleHeight = 0.8
+MaxPoise = 18.0
+StaminaRegen = 20.0
+XpValue = 30

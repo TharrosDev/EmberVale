@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="WeaponResource" format=3 uid="uid://uowi3lbr2dch"]
+
+[ext_resource type="Script" path="res://src/Combat/WeaponResource.cs" id="1_weapon"]
+
+[resource]
+script = ExtResource("1_weapon")
+DisplayName = "Stone Fist"
+DamageType = 0
+BaseDamage = 22.0
+PoiseDamage = 45.0
+StaminaCost = 18.0
+WindupTime = 0.62
+ActiveTime = 0.18
+RecoveryTime = 0.8
+AttackSpeed = 0.6
+ComboLength = 1
+FinisherMultiplier = 1.6

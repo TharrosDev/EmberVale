@@ -1,4 +1,5 @@
 using Embervale.Combat;
+using Embervale.Stats;
 using Xunit;
 
 namespace Embervale.Tests;
@@ -62,5 +63,59 @@ public class CombatMathTests
         float raw = CombatMath.ScaleDamage(10f, 30f, 0.5f);
         Assert.Equal(25f, raw, Tolerance);
         Assert.Equal(12.5f, raw * CombatMath.ArmorMultiplier(100f), Tolerance);
+    }
+
+    // --- Per-school resistance mapping (Phase 34E) --------------------------
+    // Mitigate itself reads a live StatsComponent (a GodotObject, so out of this project by the
+    // csproj rule), but the part that can silently break is the school → stat lookup: a school that
+    // fell through to Armor would be mitigated by the wrong stat, and before 34E every non-Physical
+    // school was mitigated by nothing at all. The curve is already pinned above.
+
+    [Theory]
+    [InlineData(DamageType.Fire, StatType.FireResist)]
+    [InlineData(DamageType.Frost, StatType.FrostResist)]
+    [InlineData(DamageType.Lightning, StatType.LightningResist)]
+    [InlineData(DamageType.Arcane, StatType.ArcaneResist)]
+    [InlineData(DamageType.Nature, StatType.NatureResist)]
+    [InlineData(DamageType.Necrotic, StatType.NecroticResist)]
+    public void ResistanceStat_MapsEachSchoolToItsOwnResistance(DamageType school, StatType expected)
+    {
+        Assert.Equal(expected, CombatMath.ResistanceStat(school));
+    }
+
+    [Fact]
+    public void ResistanceStat_PhysicalAnswersToArmor()
+    {
+        Assert.Equal(StatType.Armor, CombatMath.ResistanceStat(DamageType.Physical));
+    }
+
+    /// <summary>The regression guard: no magic school may share Armor's stat. Written over the enum
+    /// rather than a fixed list so a school added later fails here instead of silently inheriting
+    /// armour mitigation. (True is excluded — Mitigate returns before the lookup.)</summary>
+    [Fact]
+    public void ResistanceStat_NoMagicSchoolFallsThroughToArmor()
+    {
+        foreach (DamageType school in System.Enum.GetValues<DamageType>())
+        {
+            if (school is DamageType.Physical or DamageType.True)
+            {
+                continue;
+            }
+
+            Assert.NotEqual(StatType.Armor, CombatMath.ResistanceStat(school));
+        }
+    }
+
+    /// <summary>Resistance is never immunity: whatever the value, some damage lands. DESIGN's
+    /// "none a trap" rule depends on this — a fully immune enemy would make a school unplayable.</summary>
+    [Theory]
+    [InlineData(0f)]
+    [InlineData(100f)]
+    [InlineData(10000f)]
+    [InlineData(-50f)]
+    public void Resistance_NeverReachesImmunity(float resist)
+    {
+        float m = CombatMath.ArmorMultiplier(resist);
+        Assert.True(m > 0f && m <= 1f, $"resist {resist} produced multiplier {m}");
     }
 }

@@ -2489,8 +2489,91 @@ no code) — batch them when momentum is good.
     and `Knit Bone` are **absent** from the Necrotic spellbook section.
   - **Art gap:** all five on tinted capsules, models are Phase 53. These read better than
     34C's quadrupeds did — a hunched humanoid husk is close to what a capsule already suggests.
-- [ ] **34E — Construct + elemental archetypes** `[F/C]`
+- [x] **34E — Construct + elemental archetypes** `[F/C]`
   - **Done when:** constructs and elementals exist with distinct profiles.
+  - **The mechanic this phase had to land first:** an elemental had no way to *be* elemental.
+    `CombatMath.Mitigate` mitigated **only** Physical, via `Armor`; every other school was
+    returned unmodified for every actor in the game, so a fire elemental took full damage from a
+    firebolt and no data could change it. Three comments promised the fix
+    (`CombatMath.cs`, `DamageType.cs`, `StatusEffectResource.cs`) and `SpellSchools.cs` already
+    *claimed* it worked. Now it does: six `StatType` resistances (ordinals 15–20) and one
+    `DamageType → StatType` lookup in `Mitigate` that **reuses `ArmorMultiplier` verbatim** —
+    one defence curve to balance, not two.
+  - **Resistance, never immunity.** `ArmorMultiplier` stays in `(0, 1]`, which `DESIGN.md:129`
+    requires: "every magic school must be a viable spine to build around, none a trap." An
+    immune enemy would make a school unplayable for a specced player. A `ponytail:` note marks
+    the missing half — negatives clamp to ×1 rather than amplifying, so there is no vulnerability
+    side until an encounter needs one.
+  - **It also closed a live bug.** `Mitigate` skipped the armour branch entirely for non-Physical
+    damage, so a school-typed melee weapon ignored **all** armour — 34D shipped one
+    (`SpectralTouch`, Necrotic). That silent bypass is now a real lookup.
+  - **Inert for everything that existed.** Every resist defaults to `0` and
+    `ArmorMultiplier(0) == 1.0`, and `StatsComponent.BuildStats` defaults any stat missing from an
+    `AttributeSet` to zero — so all 15 prior attribute sets fight exactly as before. No rebalance.
+  - **What the test suite caught that a grep didn't:** the plan asserted six new stats would
+    surface in no UI. Wrong — `StatNames.Key` maps every `StatType` to a `Loc` key and
+    `StatNamesTests.EveryStatType_MapsToADistinctNonFallbackKey` fails the moment one is missed.
+    Six `stat.*_resist` keys added to `strings.csv`. The guard did its job; the survey didn't.
+  - **Built (roster):**
+    | Archetype | Profile | Resists | Identity |
+    | --- | --- | --- | --- |
+    | `enemy.stone_sentinel` | `ai.sentry` (new) | Fire 60, Frost 60 | 150 poise, 2.4 m, 0.62 s wind-up |
+    | `enemy.ward_golem` | `ai.deathless_guard` | Arcane 90 | animate ward, guard rhythm, no retreat |
+    | `enemy.ruin_crawler` | `ai.ambusher` | Fire 20, Frost 20 | 50 HP scuttler, the swarm counterpoint |
+    | `enemy.cinder_wisp` | `ai.caster` | Fire 120 | `spell.firebolt` |
+    | `enemy.rime_shard` | `ai.caster` | Frost 120 | `frost_nova` + `blizzard`; chill→freeze via `SchoolIdentity` |
+    | `enemy.storm_mote` | `ai.caster` | Lightning 120 | `ball_lightning` chains for free |
+    | `enemy.arcane_echo` | `ai.caster` | Arcane 120 | `arcane_lance` + **self-wards unprompted** |
+  - **One new profile, `ai.sentry`** — the constructs genuinely needed it: `ai.mindless` patrols
+    and `ai.ambusher` hides, but a guardian does neither. `PatrolRadius 0`, effectively infinite
+    `IdleDuration`, `AlertRadius 0` (machines don't shout for help), zero retreat,
+    `ProvokeMemory 120`. Composed from 34A knobs; `EnemyAIComponent` gained no branch.
+  - **Arcane finally has an offensive spell.** `spell.arcane_lance` — the school shipped with only
+    `arcane_shield` and `blink`, both Self, which `SchoolIdentity.cs:16-18` names as what blocks
+    Arcane's on-hit identity. Unlike 34D's monster spells this one is deliberately
+    `PlayerLearnable` (the default): it filled a real gap in the *player's* spellbook too.
+  - **A second free behaviour, same trick as 34D's `knit_bone`:** `TryCasterCast` step 3 casts any
+    ready `Self` spell with a status when the buff isn't up, and `spell.arcane_shield` qualifies —
+    so `enemy.arcane_echo` wards itself with zero new code.
+  - **Constructs and elementals get no faction** (`FactionId = ""`, which skips
+    `FactionComponent` and makes them unconditionally hostile). That is the right fiction — you
+    cannot negotiate with a golem or hold standing with a fire — and a deliberate contrast with
+    34C's `faction.beasts`, which exists precisely so wildlife *can* be reasoned with later.
+  - **Deliberate simplification:** one shared `ElementalTouch` weapon, and it stays **Physical**.
+    Elementals kite and rarely melee, and a school-typed touch would route through a resistance
+    the player has none of — quietly bypassing their armour. Per-school touches become authorable
+    the moment player resistance gear exists (Phase 39).
+  - **Playable:** five encounters, all day-phase-agnostic — machines don't sleep and elementals
+    keep no hours, a readable contrast with 34D's night-only undead. `RuinGuardians`,
+    `WardedVault`, `CrawlerNest`, `EmberFlux`, `ArcaneAnomaly`. **`enemy.rime_shard` and
+    `enemy.storm_mote` have no encounter this pass** — reachable via `spawn` only, said plainly
+    rather than left to be discovered.
+  - **Verified:** `dotnet build` clean, **553 tests** (541 + 12 new: the resistance mapping, a
+    regression guard written over the `DamageType` enum so a school added later can't silently
+    inherit armour mitigation, the never-immune property, and the six pinned ordinals),
+    `--validate` **exit 0** (21 archetypes / 13 profiles / 15 spells / 24 encounters / 17 items /
+    7 factions unchanged), and a **120 s live `--play` session with zero warnings or errors** —
+    which for this phase specifically means no existing enemy started fighting differently.
+  - **Verification gap:** no live spawn — same wall as 34B–34D (F1 needs keyboard input this
+    harness can't inject; `--play` resumes inside the 34 m safe zone). The check that matters most
+    here is the mechanic being *visible*: `spawn 1 enemy.cinder_wisp`, then burn it with
+    `spell.firebolt` — it should take roughly **half** damage (120 resist ⇒ ×0.45). Then
+    `spawn 1 enemy.stone_sentinel` (a light flurry cannot stagger 150 poise, one committed heavy
+    hit can — `DESIGN.md:149`), `spawn 1 enemy.arcane_echo` (wards itself unprompted),
+    `spawn 1 enemy.rime_shard` (chill escalates to freeze), and check the character screen shows
+    **Arcane Lance as buyable**, unlike 34D's monster spells.
+  - **Art gap:** seven more tinted capsules. A 2.4 m stone golem reads worse as a capsule than
+    34D's husks did — this is the roster where the placeholder starts actively lying. Phase 53.
+- [ ] **34E.5 — Arcane on-hit dispel (completes the school identity table)** `[F]`
+  - **Why it exists:** `SchoolIdentity` gives Frost (chill→freeze), Lightning (chain) and Necrotic
+    (lifesteal) a signature on-hit behaviour. Arcane has none, and its doc comment says why —
+    "on-hit dispel waits for an offensive Arcane spell." **34E authored that spell**, so the
+    blocker is gone.
+  - **Done when:** an Arcane spell hit strips one beneficial status from the target. The
+    primitives already exist (`StatusEffectsComponent.ActiveEffects` + `Consume`), so this is
+    roughly eight lines in `SchoolIdentity.OnSpellHit` plus a pure test.
+  - **Split out of 34E on purpose:** resistances already put that session at two systems, and a
+    third would have breached the sizing rule above.
 - [ ] **34F — Corrupted/Ashen creature archetypes** `[F/C]`
   - **Done when:** corrupted variants exist (tie to the corruption fiction).
 - [ ] **34G — `BestiaryDatabase` + in-game bestiary UI** `[F/C]`

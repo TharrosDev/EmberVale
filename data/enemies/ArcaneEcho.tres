@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" format=3 uid="uid://cmbrvlenmecho"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.arcane_echo"
+NameKey = "enemy.arcane_echo.name"
+AttributesPath = "res://data/attributes/ArcaneEchoAttributes.tres"
+WeaponPath = "res://data/weapons/ElementalTouch.tres"
+LootTablePath = "res://data/loot/ElementalLoot.tres"
+ModelPath = ""
+PlaceholderTint = Color(0.7, 0.4, 0.95, 1)
+AiProfileId = "ai.caster"
+FactionId = ""
+KnownSpellIds = Array[String](["spell.arcane_lance", "spell.arcane_shield"])
+CapsuleRadius = 0.4
+CapsuleHeight = 1.8
+MaxPoise = 28.0
+StaminaRegen = 10.0
+ManaRegen = 10.0
+XpValue = 95

@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="LootTable" format=3 uid="uid://uowbxlhqcich"]
+
+[ext_resource type="Script" path="res://src/Loot/LootTable.cs" id="1_table"]
+[ext_resource type="Script" path="res://src/Loot/LootEntry.cs" id="2_entry"]
+
+[sub_resource type="Resource" id="Entry_scrap"]
+script = ExtResource("2_entry")
+ItemId = "item.material.scrap"
+DropChance = 0.85
+MinQuantity = 2
+MaxQuantity = 4
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_ingot"]
+script = ExtResource("2_entry")
+ItemId = "item.material.iron_ingot"
+DropChance = 0.3
+MinQuantity = 1
+MaxQuantity = 2
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_mote"]
+script = ExtResource("2_entry")
+ItemId = "item.material.elemental_mote"
+DropChance = 0.2
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+
+[resource]
+script = ExtResource("1_table")
+Entries = Array[Resource]([SubResource("Entry_scrap"), SubResource("Entry_ingot"), SubResource("Entry_mote")])
+GoldItemId = "item.currency.gold"
+GoldChance = 0.0
+GoldMin = 0
+GoldMax = 0
+QualityBonus = 0.0

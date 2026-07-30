@@ -173,6 +173,12 @@ stat.move_speed,Move Speed
 stat.attack_speed,Attack Speed
 stat.crit_chance,Crit Chance
 stat.crit_damage,Crit Damage
+stat.fire_resist,Fire Resistance
+stat.frost_resist,Frost Resistance
+stat.lightning_resist,Lightning Resistance
+stat.arcane_resist,Arcane Resistance
+stat.nature_resist,Nature Resistance
+stat.necrotic_resist,Necrotic Resistance
 # Character creator (CharacterCreator)
 create.title,CREATE CHARACTER
 create.race,Race
@@ -417,3 +423,11 @@ enemy.bone_knight.name,Bone Knight
 enemy.barrow_wight.name,Barrow Wight
 enemy.hollow_necromancer.name,Hollow Necromancer
 enemy.grave_shade.name,Grave Shade
+
+enemy.stone_sentinel.name,Stone Sentinel
+enemy.ward_golem.name,Ward Golem
+enemy.ruin_crawler.name,Ruin Crawler
+enemy.cinder_wisp.name,Cinder Wisp
+enemy.rime_shard.name,Rime Shard
+enemy.storm_mote.name,Storm Mote
+enemy.arcane_echo.name,Arcane Echo

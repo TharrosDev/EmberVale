@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="WeaponResource" format=3 uid="uid://uov3uba8cot4"]
+
+[ext_resource type="Script" path="res://src/Combat/WeaponResource.cs" id="1_weapon"]
+
+[resource]
+script = ExtResource("1_weapon")
+DisplayName = "Elemental Touch"
+DamageType = 0
+BaseDamage = 8.0
+PoiseDamage = 6.0
+StaminaCost = 6.0
+WindupTime = 0.24
+ActiveTime = 0.1
+RecoveryTime = 0.36
+AttackSpeed = 1.0
+ComboLength = 2
+FinisherMultiplier = 1.3

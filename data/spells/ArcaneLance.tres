@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="SpellResource" format=3 uid="uid://bdu50vthe3r6k"]
+
+[ext_resource type="Script" path="res://src/Magic/SpellResource.cs" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+Id = "spell.arcane_lance"
+DisplayName = "Arcane Lance"
+Description = "A spear of raw force, unconcerned with flesh or armour. Arcane does not burn or freeze — it simply arrives."
+School = 4
+Delivery = 0
+ManaCost = 14.0
+Cooldown = 1.0
+BaseDamage = 20.0
+Healing = 0.0
+StatusEffectId = ""
+Range = 30.0
+ProjectileSpeed = 26.0
+ImpactRadius = 0.0

@@ -511,10 +511,20 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    player's standing with that faction. No code change.
 
 **A new stat**
-1. Add to the `StatType` enum; if it's a depleting resource, update
-   `StatTypes.IsResource`.
+1. Add to the `StatType` enum (**append only** — ordinals persist in `.tres`/saves); if it's a
+   depleting resource, update `StatTypes.IsResource`.
 2. Add an exported field + mapping in `AttributeSet` (`ToBaseValues`).
-3. Use via `StatsComponent.GetValue(StatType.Xxx)`.
+3. Add a `Loc` key in `StatNames.Key` + `strings.csv`. **Not optional** —
+   `StatNamesTests.EveryStatType_MapsToADistinctNonFallbackKey` fails on any stat without one.
+4. Extend `EnumStabilityTests.StatType_Ordinals` to pin the new ordinal.
+5. Use via `StatsComponent.GetValue(StatType.Xxx)`. A stat missing from an `AttributeSet` reads
+   `0`, so a new stat is inert for existing content until something authors it.
+
+> Worked example — the Phase 34E resistance family (`FireResist` … `NecroticResist`).
+> `CombatMath.Mitigate` routes each `DamageType` through `CombatMath.ResistanceStat` and reuses
+> `ArmorMultiplier`, so there is **one** defence curve, and resistance never becomes immunity
+> (DESIGN's "no school a trap" rule). Authoring an enemy that shrugs off a school is now pure
+> data: set the matching `*Resist` on its `AttributeSet`.
 
 **A new event**
 1. Add a `readonly record struct XxxEvent(...) : IGameEvent` in the relevant

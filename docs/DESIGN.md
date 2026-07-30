@@ -122,6 +122,13 @@ mandatory sword.
   (positioning, the Umbral fantasy, ambush damage) all route through the same stats,
   damage pipeline, and poise/stagger model. **Design intent:** an encounter author must
   assume the player might answer with *any* of the three and design openings for each.
+- **Mitigation is one curve, and it never reaches immunity** (Phase 34E). Physical answers to
+  `Armor`; each magic school answers to its own resistance stat; both run through
+  `CombatMath.ArmorMultiplier`'s `100 / (100 + x)`, which stays in `(0, 1]`. **Design intent:**
+  an enemy may be *resistant* enough to make a school the wrong first choice, never immune enough
+  to make it a dead one — a specced player must always have a way in. A real vulnerability
+  (damage *amplified* by a negative resist) is deliberately absent; add it only if an encounter
+  needs it, and only alongside a resisted-school answer.
 - **The build is authored by the player, not chosen at creation.** Race (Phase 26) nudges
   a starting lean (Valari → magic, Grondar → strength, Umbral → stealth) but never *locks*
   one out. Perks and gear (Phases 6–8) do the shaping. **Full progression intent is

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://cmbrvlitmmote"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.material.elemental_mote"
+DisplayName = "Elemental Mote"
+Description = "A knot of raw school-stuff that outlived the thing it animated. Warm, or cold, or humming, depending."
+Type = 4
+Rarity = 1
+MaxStack = 50
+Weight = 0.1
+Value = 14

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EncounterResource" format=3 uid="uid://bduqxxcsigfg5"]
+
+[ext_resource type="Script" path="res://src/World/EncounterResource.cs" id="1_encounter"]
+
+[resource]
+script = ExtResource("1_encounter")
+Id = "encounter.arcane_anomaly"
+DisplayName = "Arcane Anomaly"
+EnemyTemplateId = "enemy.arcane_echo"
+MinCount = 1
+MaxCount = 1
+SelectionWeight = 0.25
+AtDawn = true
+AtDay = true
+AtDusk = true
+AtNight = true
