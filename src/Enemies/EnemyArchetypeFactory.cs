@@ -11,15 +11,18 @@ using Godot;
 namespace Embervale.Enemies;
 
 /// <summary>
-/// Builds any humanoid enemy from an <see cref="EnemyArchetypeResource"/> (Phase 34B). Mirrors
-/// <see cref="EnemyFactory"/>'s assembly — collision, mesh, stats, combat, locomotion, hurt/hitbox,
-/// weapon, status effects, faction, AI, loot, XP — but takes every number from the resource, so
-/// bandits, cultists, soldiers and Syndicate enforcers are content rather than four copies of this
-/// file.
+/// Builds any enemy from an <see cref="EnemyArchetypeResource"/> (Phase 34B; generalized past
+/// humanoids in 34C). Mirrors <see cref="EnemyFactory"/>'s assembly — collision, mesh, stats, combat,
+/// locomotion, hurt/hitbox, weapon, status effects, faction, AI, loot, XP — but takes every number
+/// from the resource, so bandits, cultists, soldiers, Syndicate enforcers and the beast roster are
+/// content rather than nine copies of this file.
 /// </summary>
-public static class HumanoidEnemyFactory
+public static class EnemyArchetypeFactory
 {
     private const int HostileTeam = 1;
+
+    /// <summary>Body height the melee hitbox offsets below were authored against.</summary>
+    private const float HumanoidReferenceHeight = 1.8f;
 
     public static EnemyEntity Create(EnemyArchetypeResource archetype, Vector3 position)
     {
@@ -67,14 +70,18 @@ public static class HumanoidEnemyFactory
         enemy.AddChild(new WeaponTrailComponent { Name = "WeaponTrail" });
         enemy.AddChild(BuildHurtbox(radius, height));
 
+        // The reach and the box scale with the body: these numbers were authored against a 1.8 m
+        // humanoid's sword arc, and bolting that arc onto a 0.9 m wolf would have it biting a metre
+        // past its own nose (Phase 34C).
+        float bodyScale = height / HumanoidReferenceHeight;
         var hitbox = new Hitbox
         {
             Name = "MeleeHitbox",
-            Position = new Vector3(0f, height * 0.6f, -1.0f),
+            Position = new Vector3(0f, height * 0.6f, -1.0f * bodyScale),
         };
         hitbox.AddChild(new CollisionShape3D
         {
-            Shape = new BoxShape3D { Size = new Vector3(0.9f, 1.4f, 1.4f) },
+            Shape = new BoxShape3D { Size = new Vector3(0.9f, 1.4f, 1.4f) * bodyScale },
         });
         enemy.AddChild(hitbox);
 

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EncounterResource" load_steps=2 format=3 uid="uid://cmbrvlencstalker"]
+
+[ext_resource type="Script" path="res://src/World/EncounterResource.cs" id="1_encounter"]
+
+[resource]
+script = ExtResource("1_encounter")
+Id = "encounter.frost_stalker"
+DisplayName = "Frost Stalker"
+EnemyTemplateId = "enemy.frost_stalker"
+MinCount = 1
+MaxCount = 1
+SelectionWeight = 0.25
+AtDawn = false
+AtDay = false
+AtDusk = false
+AtNight = true

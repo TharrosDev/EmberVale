@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EncounterResource" load_steps=2 format=3 uid="uid://cmbrvlencdwolf"]
+
+[ext_resource type="Script" path="res://src/World/EncounterResource.cs" id="1_encounter"]
+
+[resource]
+script = ExtResource("1_encounter")
+Id = "encounter.dire_wolf"
+DisplayName = "Dire Wolf"
+EnemyTemplateId = "enemy.dire_wolf"
+MinCount = 1
+MaxCount = 1
+SelectionWeight = 0.3
+AtDawn = false
+AtDay = false
+AtDusk = false
+AtNight = true

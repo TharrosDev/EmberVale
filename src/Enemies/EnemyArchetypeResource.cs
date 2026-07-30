@@ -3,15 +3,15 @@ using Godot;
 namespace Embervale.Enemies;
 
 /// <summary>
-/// A humanoid enemy as authored data (Phase 34B): who they are, what they're made of, what they
-/// fight with, how they behave and what they drop. Authored as a <c>.tres</c> under
+/// An enemy as authored data (Phase 34B, humanoids; 34C, beasts): who they are, what they're made
+/// of, what they fight with, how they behave and what they drop. Authored as a <c>.tres</c> under
 /// <c>data/enemies/</c> and indexed by <see cref="EnemyArchetypeDatabase"/>, which registers each one
 /// with <see cref="EnemyTemplateRegistry"/> at boot.
 ///
-/// One <see cref="HumanoidEnemyFactory"/> builds all of them. Four near-identical hand-written
-/// factories would have been four places to fix the next time the enemy assembly changes — the
+/// One <see cref="EnemyArchetypeFactory"/> builds all of them. Nine near-identical hand-written
+/// factories would have been nine places to fix the next time the enemy assembly changes — the
 /// bespoke factories that remain (goblin, acolyte, Iron King) earn it by doing something structurally
-/// different; a bandit and a soldier differ only in numbers, and numbers belong in data.
+/// different; a bandit, a soldier and a wolf differ only in numbers, and numbers belong in data.
 /// </summary>
 [GlobalClass]
 public partial class EnemyArchetypeResource : Resource

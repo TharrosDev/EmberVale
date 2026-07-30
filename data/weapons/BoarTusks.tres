@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="WeaponResource" load_steps=2 format=3 uid="uid://cmbrvlboartusk"]
+
+[ext_resource type="Script" path="res://src/Combat/WeaponResource.cs" id="1_weapon"]
+
+[resource]
+script = ExtResource("1_weapon")
+DisplayName = "Tusks"
+DamageType = 0
+BaseDamage = 16.0
+PoiseDamage = 28.0
+StaminaCost = 14.0
+WindupTime = 0.45
+ActiveTime = 0.16
+RecoveryTime = 0.6
+AttackSpeed = 0.8
+ComboLength = 1
+FinisherMultiplier = 1.5

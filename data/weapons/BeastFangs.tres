@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="WeaponResource" load_steps=2 format=3 uid="uid://cmbrvlbstfangs"]
+
+[ext_resource type="Script" path="res://src/Combat/WeaponResource.cs" id="1_weapon"]
+
+[resource]
+script = ExtResource("1_weapon")
+DisplayName = "Fangs"
+DamageType = 0
+BaseDamage = 9.0
+PoiseDamage = 10.0
+StaminaCost = 8.0
+WindupTime = 0.22
+ActiveTime = 0.12
+RecoveryTime = 0.38
+AttackSpeed = 1.1
+ComboLength = 2
+FinisherMultiplier = 1.4

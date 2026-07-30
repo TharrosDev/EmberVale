@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" load_steps=2 format=3 uid="uid://cmbrvlenmdwolf"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.dire_wolf"
+NameKey = "enemy.dire_wolf.name"
+AttributesPath = "res://data/attributes/DireWolfAttributes.tres"
+WeaponPath = "res://data/weapons/BeastFangs.tres"
+LootTablePath = "res://data/loot/BeastLoot.tres"
+ModelPath = ""
+PlaceholderTint = Color(0.24, 0.22, 0.22, 1)
+AiProfileId = "ai.pack_flanker"
+FactionId = "faction.beasts"
+KnownSpellIds = Array[String]([])
+CapsuleRadius = 0.5
+CapsuleHeight = 1.3
+MaxPoise = 55.0
+StaminaRegen = 14.0
+XpValue = 60

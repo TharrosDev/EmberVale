@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" load_steps=2 format=3 uid="uid://cmbrvlenmelk"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.ashfall_elk"
+NameKey = "enemy.ashfall_elk.name"
+AttributesPath = "res://data/attributes/ElkAttributes.tres"
+WeaponPath = "res://data/weapons/BeastFangs.tres"
+LootTablePath = "res://data/loot/BeastHideLoot.tres"
+ModelPath = ""
+PlaceholderTint = Color(0.62, 0.54, 0.42, 1)
+AiProfileId = "ai.prey"
+FactionId = "faction.beasts"
+KnownSpellIds = Array[String]([])
+CapsuleRadius = 0.5
+CapsuleHeight = 1.6
+MaxPoise = 30.0
+StaminaRegen = 22.0
+XpValue = 15

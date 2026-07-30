@@ -405,3 +405,9 @@ enemy.bandit.name,Ashfall Bandit
 enemy.cultist.name,Ashen Zealot
 enemy.soldier.name,Fallen Soldier
 enemy.syndicate_enforcer.name,Syndicate Enforcer
+
+enemy.wolf.name,Grey Wolf
+enemy.dire_wolf.name,Dire Wolf
+enemy.frost_stalker.name,Frost Stalker
+enemy.thornback_boar.name,Thornback Boar
+enemy.ashfall_elk.name,Ashfall Elk

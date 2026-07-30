@@ -1066,7 +1066,7 @@ The ordering is driven by hard dependencies, not preference:
 | ----- | ---- | ------ | ------ |
 | A — Pre-production & First Playable | G0 | 22–28 | ✅ Complete (22–28 + 25.5 hardening; G0 First Playable reached) |
 | B — Vertical Slice | G1 | 29–33 | ⏳ In progress (29 ✅, 29.5 ✅, 30 ✅, 30.5 ✅, 31 ✅, 32 ✅; next: 33 Vertical Slice Assembly) |
-| C — Alpha / Feature Complete | G2 | 34–45 | ⬜ Planned |
+| C — Alpha / Feature Complete | G2 | 34–45 | ⏳ In progress (34 underway: 34A ✅, 34B ✅, 34C ✅; next: 34D undead) |
 | D — Beta / Content Complete | G3 | 46–55 | ⬜ Planned |
 | E — Release Candidate | G4 | 56–62 | ⬜ Planned |
 | F — Launch | G5 | 63 | ⬜ Planned |
@@ -1122,6 +1122,18 @@ overlays and cheat keys from any non-development run, and export presets exist f
 What remains before **Gate G1 — Vertical Slice** is engine work no remote session can do: play the arc
 (§5.2), export once (§8.2), and give Kael a model of his own (§8.5). (Phase 30.5 UI & HUD Overhaul complete.) Remaining audio *production* (real CC0 music/ambience
 tracks, surface tagging) carries into Phase 52.
+
+**Stage C has begun in parallel with those two hands-on passes**, since the enemy roster is
+front-loadable content that doesn't touch the slice. **Phase 34 is underway (34A–34C)**: 34A
+data-fied enemy AI into tunable `AIProfileResource` profiles (`ai.*`) driving one brain rather
+than a subclass per behaviour; 34B data-fied enemy assembly into `EnemyArchetypeResource` +
+one shared factory and authored the four humanoids (bandit, cultist, soldier, Syndicate
+enforcer) with the outlaw and Syndicate factions; and **34C** added the beast roster — grey
+wolf, dire wolf, frost stalker, thornback boar and ashfall elk — on two new profiles
+(`ai.territorial`, `ai.prey`), a `faction.beasts` wildlife standing that the Sylthari
+communion fantasy can later flip, and a coinless pelt loot economy. The factory generalized
+past humanoids in the process (`EnemyArchetypeFactory`, melee reach now body-relative). Nine
+archetypes are spawnable by id with no code per enemy; **34D (undead)** is next.
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —
 > a first-person open-world fantasy RPG where you battle fallen heroes across four
