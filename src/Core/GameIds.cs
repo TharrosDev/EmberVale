@@ -74,6 +74,11 @@ public static class GameIds
         public const string RimeShard = "enemy.rime_shard";
         public const string StormMote = "enemy.storm_mote";
         public const string ArcaneEcho = "enemy.arcane_echo";
+
+        // Phase 34F — the Ashen. Most corrupted foes are variants of an existing archetype
+        // (see AshenAffliction); these two are what a tint-and-scale modifier cannot produce.
+        public const string AshMaw = "enemy.ash_maw";
+        public const string CinderThrall = "enemy.cinder_thrall";
     }
 
     /// <summary>Enemy AI personality ids (see <c>AIProfileDatabase</c> / data/ai_profiles, Phase 34A).</summary>

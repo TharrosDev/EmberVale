@@ -1079,7 +1079,7 @@ The ordering is driven by hard dependencies, not preference:
 | ----- | ---- | ------ | ------ |
 | A — Pre-production & First Playable | G0 | 22–28 | ✅ Complete (22–28 + 25.5 hardening; G0 First Playable reached) |
 | B — Vertical Slice | G1 | 29–33 | ⏳ In progress (29 ✅, 29.5 ✅, 30 ✅, 30.5 ✅, 31 ✅, 32 ✅; next: 33 Vertical Slice Assembly) |
-| C — Alpha / Feature Complete | G2 | 34–45 | ⏳ In progress (34 underway: 34A–34E.5 ✅; next: 34F corrupted/Ashen) |
+| C — Alpha / Feature Complete | G2 | 34–45 | ⏳ In progress (34 underway: 34A–34F ✅; next: 34G bestiary, which closes Phase 34) |
 | D — Beta / Content Complete | G3 | 46–55 | ⬜ Planned |
 | E — Release Candidate | G4 | 56–62 | ⬜ Planned |
 | F — Launch | G5 | 63 | ⬜ Planned |
@@ -1161,7 +1161,15 @@ weapon bypassed armour entirely. Resistance never becomes immunity, per DESIGN's
 trap" rule. 34E also authored `spell.arcane_lance`, the school's first offensive spell, which
 unblocked **34E.5**: an Arcane hit now strips the target's longest-lasting buff, so **every magic
 school has a signature on-hit behaviour** and the identity table Phase 29.5B opened is closed.
-Twenty-one archetypes are spawnable by id with no code per enemy; **34F (corrupted/Ashen)** is next.
+**34F** then gave the roster its corrupted half — but as a *variant layer* rather than another row:
+`AshenAffliction` takes any spawned enemy and makes it Morthul's (tougher, charred, ember-lit,
+worth more), rolled per enemy off a `CorruptionChance` authored on each encounter, since LORE puts
+creature corruption on the realm and never on the player. Phase 44.5's realm decay tier can drive
+that field later with no rework, and **35E's "Ash dragon (corrupted elite)" now inherits a
+mechanism instead of inventing one**. Two flagship Ashen creatures a modifier can't express ship
+alongside it — including a Cinder Thrall wielding the player's own corruption-gated lifesteal.
+Twenty-three archetypes are spawnable by id with no code per enemy; **34G (the bestiary)** is next
+and closes Phase 34.
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —
 > a first-person open-world fantasy RPG where you battle fallen heroes across four

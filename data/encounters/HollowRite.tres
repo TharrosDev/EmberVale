@@ -10,6 +10,7 @@ EnemyTemplateId = "enemy.hollow_necromancer"
 MinCount = 1
 MaxCount = 1
 SelectionWeight = 0.25
+CorruptionChance = 0.25
 AtDawn = false
 AtDay = false
 AtDusk = false

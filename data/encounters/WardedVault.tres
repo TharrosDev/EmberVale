@@ -10,6 +10,7 @@ EnemyTemplateId = "enemy.ward_golem"
 MinCount = 1
 MaxCount = 1
 SelectionWeight = 0.35
+CorruptionChance = 0.0
 AtDawn = true
 AtDay = true
 AtDusk = true

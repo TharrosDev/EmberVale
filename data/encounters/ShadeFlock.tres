@@ -10,6 +10,7 @@ EnemyTemplateId = "enemy.grave_shade"
 MinCount = 2
 MaxCount = 3
 SelectionWeight = 0.7
+CorruptionChance = 0.2
 AtDawn = false
 AtDay = false
 AtDusk = false

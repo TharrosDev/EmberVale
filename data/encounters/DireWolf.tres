@@ -10,6 +10,7 @@ EnemyTemplateId = "enemy.dire_wolf"
 MinCount = 1
 MaxCount = 1
 SelectionWeight = 0.3
+CorruptionChance = 0.15
 AtDawn = false
 AtDay = false
 AtDusk = false

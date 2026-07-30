@@ -10,6 +10,7 @@ EnemyTemplateId = "enemy.thornback_boar"
 MinCount = 1
 MaxCount = 2
 SelectionWeight = 0.7
+CorruptionChance = 0.1
 AtDawn = true
 AtDay = true
 AtDusk = false

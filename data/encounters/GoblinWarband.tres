@@ -10,6 +10,7 @@ EnemyTemplateId = "enemy.goblin"
 MinCount = 2
 MaxCount = 3
 SelectionWeight = 1.0
+CorruptionChance = 0.1
 AtDawn = false
 AtDay = false
 AtDusk = true

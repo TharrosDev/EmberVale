@@ -121,17 +121,25 @@ public partial class EncounterDirector : Node3D
         for (int i = 0; i < count; i++)
         {
             Vector3 jitter = new(GD.Randf() * 2f - 1f, 0f, GD.Randf() * 2f - 1f);
-            SpawnEnemy(encounter.EnemyTemplateId, origin + jitter);
+            SpawnEnemy(encounter.EnemyTemplateId, origin + jitter, encounter.CorruptionChance);
         }
 
         EventBus.Instance?.Publish(new EncounterTriggeredEvent(encounter.Id, origin, count));
         Log.Info($"Encounter: {encounter.DisplayName} ({count}) appeared near the player.");
     }
 
-    private void SpawnEnemy(string templateId, Vector3 position)
+    private void SpawnEnemy(string templateId, Vector3 position, float corruptionChance)
     {
         EnemyEntity enemy = EnemyTemplateRegistry.Create(templateId, position);
         GetParent().AddChild(enemy);
+
+        // Rolled per enemy, not per encounter, so a warband can come up part-corrupted. Afflict only
+        // after AddChild — the stat modifiers need StatsComponent to have built its base values.
+        if (corruptionChance > 0f && GD.Randf() < corruptionChance)
+        {
+            AshenAffliction.Afflict(enemy);
+        }
+
         _alive++;
         _spawns.Add(enemy);
         enemy.TreeExited += () => OnEnemyRemoved(enemy);

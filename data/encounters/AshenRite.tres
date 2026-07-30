@@ -10,6 +10,7 @@ EnemyTemplateId = "enemy.cultist"
 MinCount = 2
 MaxCount = 3
 SelectionWeight = 0.8
+CorruptionChance = 1.0
 AtDawn = false
 AtDay = false
 AtDusk = true

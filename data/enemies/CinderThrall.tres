@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" load_steps=2 format=3 uid="uid://cmbrvlenmthrall"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.cinder_thrall"
+NameKey = "enemy.cinder_thrall.name"
+AttributesPath = "res://data/attributes/CinderThrallAttributes.tres"
+WeaponPath = "res://data/weapons/ElementalTouch.tres"
+LootTablePath = "res://data/loot/FallenLoot.tres"
+ModelPath = ""
+PlaceholderTint = Color(0.34, 0.14, 0.16, 1)
+AiProfileId = "ai.caster"
+FactionId = "faction.fallen"
+KnownSpellIds = Array[String](["spell.ember_siphon"])
+CapsuleRadius = 0.4
+CapsuleHeight = 1.8
+MaxPoise = 30.0
+StaminaRegen = 10.0
+ManaRegen = 8.0
+XpValue = 85

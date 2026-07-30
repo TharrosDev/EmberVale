@@ -10,6 +10,7 @@ EnemyTemplateId = "enemy.syndicate_enforcer"
 MinCount = 1
 MaxCount = 1
 SelectionWeight = 0.35
+CorruptionChance = 0.0
 AtDawn = false
 AtDay = false
 AtDusk = true

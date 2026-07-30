@@ -28,6 +28,12 @@ public partial class EncounterResource : Resource
     /// <summary>Relative likelihood of being chosen among the currently-eligible encounters.</summary>
     [Export] public float SelectionWeight { get; set; } = 1f;
 
+    /// <summary>Chance in 0..1 that each enemy in this encounter rises Ashen (Phase 34F) — the same
+    /// archetype, taken by Morthul's corruption. Authored per encounter because in LORE corruption
+    /// belongs to the *place*, not the player: "Corrupted forests" in the Ashen Wilds, "Corrupted by
+    /// Morthul". Phase 44.5's realm decay tier can drive this later without changing the field.</summary>
+    [Export(PropertyHint.Range, "0,1,0.05")] public float CorruptionChance { get; set; } = 0f;
+
     [ExportGroup("Allowed Time of Day")]
     [Export] public bool AtDawn { get; set; } = true;
     [Export] public bool AtDay { get; set; } = true;

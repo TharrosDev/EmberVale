@@ -10,6 +10,7 @@ EnemyTemplateId = "enemy.hollow_husk"
 MinCount = 2
 MaxCount = 4
 SelectionWeight = 0.9
+CorruptionChance = 0.2
 AtDawn = false
 AtDay = false
 AtDusk = false

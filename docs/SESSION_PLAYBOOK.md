@@ -2601,8 +2601,77 @@ no code) — batch them when momentum is good.
     **survives** the self-cast, then `spawn 1 enemy.arcane_echo` and let it hit you — the ward
     should vanish on impact. `spawn 1 enemy.ward_golem` has no buff to strip, so Arcane should
     behave normally against it.
-- [ ] **34F — Corrupted/Ashen creature archetypes** `[F/C]`
+- [x] **34F — Corrupted/Ashen creature archetypes** `[F/C]`
   - **Done when:** corrupted variants exist (tie to the corruption fiction).
+  - **The spec contradicted itself, and resolving it decided the build.** This entry said
+    *variants*; the Phase 34 brief (`PRODUCTION_ROADMAP.md:557`) lists "corrupted/Ashen creatures"
+    as another matrix row beside humanoids and beasts. 34C–34E had already proved the roster
+    pipeline 21 times; what the game had no concept of was *the same creature, corrupted*. An
+    "Ashen Wolf" authored as its own archetype is a copy of `Wolf.tres` that drifts the moment
+    either is tuned. So: **build the variant layer**, plus the two creatures a modifier can't
+    produce. `35E — Ash dragon variant (corrupted elite)` now inherits a mechanism instead of
+    inventing one.
+  - **Built:** `AshenAffliction.Afflict(enemy)` — the same archetype, taken by Morthul. +60%
+    health, +25% physical power as named `"ashen"` `StatModifier`s, ×1.5 XP, an `Ashen {0}`
+    nameplate, and a charred, ember-lit body. Modelled on
+    `WorldEventDirector.ApplyHealthMultiplier`, the codebase's only prior spawn-time enemy
+    variation — including its `RefillResources()`, without which the enemy keeps its old current
+    health against the new max.
+  - **The look reuses the player's corruption language rather than inventing one:** the ash
+    `Color(0.20, 0.17, 0.17)` and ember `Color(0.82, 0.34, 0.10)` are
+    `CorruptionAppearanceController`'s own Embers-tier values, so a corrupted enemy and a corrupted
+    player read as the same affliction. ART_STYLE §2.2's rule — "Materials, not new meshes" — holds.
+  - **Two details that would each have been a silent bug:**
+    - `TemplateId` is deliberately **not** renamed. Quest kill objectives match on it
+      (`ObjectiveLocator`), so an "Ashen Wolf" template id would quietly break every quest that
+      counts wolves. Only `DisplayName` changes.
+    - The material is **duplicated** before tinting. `GetActiveMaterial` returns the shared
+      imported resource for a model-backed enemy, so writing to it directly would turn *every
+      uncorrupted instance* ashen too. `CorruptionAppearanceController.CollectSurfaces` duplicates
+      for the same reason. Only `enemy.cultist` has a model today, but Phase 53 gives everything
+      one — the walk handles both branches now rather than going silently invisible later.
+  - **Corruption is authored per encounter, not driven by the player.** `EncounterResource` gained
+    `CorruptionChance` (0..1), rolled **per enemy** so a warband can come up part-corrupted. That
+    is the fiction: LORE attributes creature corruption to Morthul and the realm — "Corrupted by
+    Morthul", "Corrupted forests" — and **never** to the player. It is also forward-compatible with
+    Phase 44.5's `RealmStateComponent`, already designated as the owner of world-side corruption
+    state precisely because Phase 23 is player-only; it can drive this field with no rework.
+  - **The field is authored across all 26 encounters**, not left at zero — a field nothing sets is
+    a field that doesn't exist. `encounter.ashen_rite` 1.0 · `fallen_patrol` 0.3 · the Hollow
+    Queen's dead 0.2–0.25 · beasts and goblins 0.05–0.15 · **constructs 0.0, because stone does not
+    rot**. The two new Ashen encounters are 0.0 as well: their creatures are already corrupted, and
+    afflicting them again would double-dip into "Ashen Ash Maw".
+  - **One line of LORE added** (under Morthul): "His decay takes the living as readily as the land:
+    beasts and men alike rise Ashen where it reaches." The sentence the mechanic rests on — canon
+    implied it via Ash Dragons and corrupted forests but never stated it.
+  - **The two flagships:**
+    | Archetype | Profile | Faction | Why a modifier can't produce it |
+    | --- | --- | --- | --- |
+    | `enemy.ash_maw` | `ai.zealot` | `""` | a beast corruption ate the fear out of — zero retreat, unlike every 34C beast; 90 Necrotic / 70 Fire resist |
+    | `enemy.cinder_thrall` | `ai.caster` | `faction.fallen` | wields **`spell.ember_siphon`**, the player's own corruption-gated lifesteal, turned back on them |
+  - **A gate worth knowing about:** `spell.ember_siphon` is `MinCorruptionTier = 2` and
+    `SpellcastingComponent.Learn` enforces that — but authored `KnownSpellIds` **bypass** it, since
+    `RebuildSpells` loads ids straight from the database (verified in 34D). So the thrall wields it
+    while the player still cannot, which is exactly the fiction.
+  - **Not wired this pass, deliberately:** `WorldEventDirector` and `EnemySpawnDirector` also spawn
+    enemies and could afflict. One call site proves the mechanism, and the raid path already has
+    its own champion health multiplier that would compound confusingly with this one.
+  - **Verified:** `dotnet build` clean, **569 tests** (559 + 10 pinning the XP curve and the
+    only-ever-strengthen invariant — a negative bonus would quietly make "corrupted" a downgrade),
+    `--validate` **exit 0** (23 archetypes / 26 encounters / 412 strings), and a **130 s live
+    `--play` that actually triggered an encounter** — so the roll path executed, not just the boot
+    path — with zero warnings or errors.
+  - **The new validator guard was tested by making it fail**, not by trusting it: an encounter
+    temporarily authored at `5.0` produced
+    `encounter 'encounter.wolf_pack' has a corruption chance outside 0..1: 5` and `validate: FAIL`,
+    exit 1. Reverted after. Nothing else in the game would have caught that value.
+  - **Verification gap:** an Ashen spawn was never *seen*. `time 22` and wait out a `wolf_pack`
+    roll (0.15), or temporarily set a chance to 1.0, and confirm the nameplate reads **Ashen Wolf**,
+    the body looks charred with an ember glow, and it dies harder. Then kill a plain wolf and
+    confirm it is **not** tinted — the material-duplication bug would show up exactly there. Also
+    `spawn 1 enemy.cinder_thrall`: it should open with `ember_siphon` and visibly heal off the hit.
+  - **Art gap:** two more tinted capsules, and the affliction's char pass is a material tint over a
+    placeholder. Phase 53.
 - [ ] **34G — `BestiaryDatabase` + in-game bestiary UI** `[F/C]`
   - **Done when:** kills/lore track in a bestiary screen (Ash Hunters fantasy)
     through existing UI patterns; `ISaveable`.

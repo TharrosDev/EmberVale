@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" load_steps=2 format=3 uid="uid://cmbrvlenmashmaw"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.ash_maw"
+NameKey = "enemy.ash_maw.name"
+AttributesPath = "res://data/attributes/AshMawAttributes.tres"
+WeaponPath = "res://data/weapons/BeastFangs.tres"
+LootTablePath = "res://data/loot/BeastLoot.tres"
+ModelPath = ""
+PlaceholderTint = Color(0.26, 0.18, 0.17, 1)
+AiProfileId = "ai.zealot"
+FactionId = ""
+KnownSpellIds = Array[String]([])
+CapsuleRadius = 0.45
+CapsuleHeight = 1.1
+MaxPoise = 45.0
+StaminaRegen = 16.0
+XpValue = 60
