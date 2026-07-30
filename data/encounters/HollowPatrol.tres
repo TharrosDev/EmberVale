@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EncounterResource" format=3 uid="uid://c0mhsaaa6tbfi"]
+
+[ext_resource type="Script" path="res://src/World/EncounterResource.cs" id="1_encounter"]
+
+[resource]
+script = ExtResource("1_encounter")
+Id = "encounter.hollow_patrol"
+DisplayName = "Hollow Patrol"
+EnemyTemplateId = "enemy.hollow_husk"
+MinCount = 2
+MaxCount = 4
+SelectionWeight = 0.9
+AtDawn = false
+AtDay = false
+AtDusk = false
+AtNight = true

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="WeaponResource" format=3 uid="uid://uowh4pho73u1"]
+
+[ext_resource type="Script" path="res://src/Combat/WeaponResource.cs" id="1_weapon"]
+
+[resource]
+script = ExtResource("1_weapon")
+DisplayName = "Rusted Blade"
+DamageType = 0
+BaseDamage = 12.0
+PoiseDamage = 20.0
+StaminaCost = 12.0
+WindupTime = 0.38
+ActiveTime = 0.14
+RecoveryTime = 0.52
+AttackSpeed = 0.85
+ComboLength = 2
+FinisherMultiplier = 1.4

@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="SpellResource" format=3 uid="uid://c0mhsocu7rx8h"]
+
+[ext_resource type="Script" path="res://src/Magic/SpellResource.cs" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+Id = "spell.wither"
+DisplayName = "Wither"
+Description = "A grasping pull of entropy. What it touches begins to come apart, and armour rots off the bone."
+School = 6
+Delivery = 0
+PlayerLearnable = false
+ManaCost = 12.0
+Cooldown = 1.4
+BaseDamage = 16.0
+Healing = 0.0
+StatusEffectId = "status.decay"
+Range = 26.0
+ProjectileSpeed = 16.0
+ImpactRadius = 0.0

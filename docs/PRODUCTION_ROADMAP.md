@@ -1066,7 +1066,7 @@ The ordering is driven by hard dependencies, not preference:
 | ----- | ---- | ------ | ------ |
 | A — Pre-production & First Playable | G0 | 22–28 | ✅ Complete (22–28 + 25.5 hardening; G0 First Playable reached) |
 | B — Vertical Slice | G1 | 29–33 | ⏳ In progress (29 ✅, 29.5 ✅, 30 ✅, 30.5 ✅, 31 ✅, 32 ✅; next: 33 Vertical Slice Assembly) |
-| C — Alpha / Feature Complete | G2 | 34–45 | ⏳ In progress (34 underway: 34A ✅, 34B ✅, 34C ✅; next: 34D undead) |
+| C — Alpha / Feature Complete | G2 | 34–45 | ⏳ In progress (34 underway: 34A ✅, 34B ✅, 34C ✅, 34D ✅; next: 34E constructs + elementals) |
 | D — Beta / Content Complete | G3 | 46–55 | ⬜ Planned |
 | E — Release Candidate | G4 | 56–62 | ⬜ Planned |
 | F — Launch | G5 | 63 | ⬜ Planned |
@@ -1132,8 +1132,15 @@ enforcer) with the outlaw and Syndicate factions; and **34C** added the beast ro
 wolf, dire wolf, frost stalker, thornback boar and ashfall elk — on two new profiles
 (`ai.territorial`, `ai.prey`), a `faction.beasts` wildlife standing that the Sylthari
 communion fantasy can later flip, and a coinless pelt loot economy. The factory generalized
-past humanoids in the process (`EnemyArchetypeFactory`, melee reach now body-relative). Nine
-archetypes are spawnable by id with no code per enemy; **34D (undead)** is next.
+past humanoids in the process (`EnemyArchetypeFactory`, melee reach now body-relative). **34D**
+then added the Hollow Queen's legions — hollow husk, bone knight, barrow wight, grave shade and
+a necromancer — on two fearless profiles (`ai.mindless`, `ai.deathless_guard`), a
+`faction.hollow` standing for 47B to attach her arc to, and the Necrotic school's first
+enemy-facing content (`spell.wither` + `status.decay`, the game's first Necrotic effect). The
+necromancer is the **first caster archetype authored as data**, which finally exercises the
+`KnownSpellIds` path 34B built and nothing used; its `spell.knit_bone` gets ally-mending free
+from the 34A caster-support branch, so it repairs its own husks with no new code. Fourteen
+archetypes are spawnable by id with no code per enemy; **34E (constructs + elementals)** is next.
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —
 > a first-person open-world fantasy RPG where you battle fallen heroes across four

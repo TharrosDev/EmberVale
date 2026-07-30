@@ -488,6 +488,9 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    burst — a Projectile with `ImpactRadius > 0` detonates as an area on impact).
 2. Auto-indexed by `SpellDatabase`. Add the id to a `SpellcastingComponent.KnownSpellIds`
    (the player's is set in `PlayerFactory`); cast with `Q`, cycle with `F`. No code change.
+3. ⚠️ **The spellbook lists every spell in the database**, so an enemy's spell appears in the
+   player's character screen as purchasable unless you set `PlayerLearnable = false`
+   (Phase 34D). Set it on any spell authored for a monster loadout.
 
 **A new status effect**
 1. Author `data/status_effects/Xxx.tres` (`script_class="StatusEffectResource"`): unique
@@ -553,15 +556,20 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    F1 console. The roster spawns the actor into a formation slot, tracks loyalty, persists the party,
    and reconciles it back on load.
 
-**A new enemy archetype — humanoid or beast** (Phase 34B/34C)
+**A new enemy archetype — humanoid, beast or undead** (Phase 34B/34C/34D)
 1. Author `data/enemies/Xxx.tres` (`script_class="EnemyArchetypeResource"`): unique `Id`
    (`enemy.*`), a `NameKey` authored in `strings.csv`, the build paths (`AttributesPath`,
    `WeaponPath`, `LootTablePath`, optional `ModelPath` — empty falls back to a capsule in
-   `PlaceholderTint`), an `AiProfileId` (see above), `FactionId`, and `XpValue`. A non-empty
-   `KnownSpellIds` adds a `SpellcastingComponent`, which with a standoff profile makes a caster.
+   `PlaceholderTint`), an `AiProfileId` (see above), `FactionId`, and `XpValue`.
    `CapsuleRadius`/`CapsuleHeight` size the body *and* the melee reach — the hitbox scales off
    height against a 1.8 m humanoid reference, so a short quadruped bites at its own scale
    (Phase 34C) with no extra knob to set.
+   **To make it a caster** (Phase 34D) three things must line up, and the failure is silent:
+   a non-empty `KnownSpellIds` (adds the `SpellcastingComponent`), a standoff `AiProfileId`
+   like `ai.caster` (so it kites instead of closing), **and a real `Mana` pool in its
+   `AttributeSet`** — spells with no mana means it just stands there, with no warning. Tune
+   `ManaRegen` on the archetype for cast pacing. Mark enemy-only spells
+   `PlayerLearnable = false` or they show up in the player's spellbook.
 2. Auto-indexed by `EnemyArchetypeDatabase`, which registers a builder with
    `EnemyTemplateRegistry`, so `EnemyArchetypeFactory` builds it and encounters/world events/quest
    kill-targets can reference the id immediately. Add a `data/encounters/*.tres` pointing at it to

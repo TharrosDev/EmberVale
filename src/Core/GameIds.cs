@@ -34,6 +34,7 @@ public static class GameIds
         public const string IronRing = "item.ring.iron";
         public const string Scrap = "item.material.scrap";
         public const string BeastPelt = "item.material.beast_pelt";
+        public const string GraveDust = "item.material.grave_dust";
     }
 
     public static class Enemies
@@ -54,6 +55,14 @@ public static class GameIds
         public const string FrostStalker = "enemy.frost_stalker";
         public const string ThornbackBoar = "enemy.thornback_boar";
         public const string AshfallElk = "enemy.ashfall_elk";
+
+        // Phase 34D — the Hollow Queen's legions. The necromancer is the first archetype
+        // authored as a caster (a non-empty KnownSpellIds + a standoff profile).
+        public const string HollowHusk = "enemy.hollow_husk";
+        public const string BoneKnight = "enemy.bone_knight";
+        public const string BarrowWight = "enemy.barrow_wight";
+        public const string HollowNecromancer = "enemy.hollow_necromancer";
+        public const string GraveShade = "enemy.grave_shade";
     }
 
     /// <summary>Enemy AI personality ids (see <c>AIProfileDatabase</c> / data/ai_profiles, Phase 34A).</summary>
@@ -70,6 +79,10 @@ public static class GameIds
         // Phase 34C beast personalities.
         public const string Territorial = "ai.territorial";
         public const string Prey = "ai.prey";
+
+        // Phase 34D undead nerve — the dead never break off.
+        public const string Mindless = "ai.mindless";
+        public const string DeathlessGuard = "ai.deathless_guard";
     }
 
     public static class Factions
@@ -80,6 +93,7 @@ public static class GameIds
         public const string Outlaws = "faction.outlaws";
         public const string IronSyndicate = "faction.iron_syndicate";
         public const string Beasts = "faction.beasts";
+        public const string Hollow = "faction.hollow";
     }
 
     public static class Npcs
@@ -115,6 +129,10 @@ public static class GameIds
         public const string Blizzard = "spell.blizzard";
         public const string Blink = "spell.blink";
         public const string LifebloomTotem = "spell.lifebloom_totem";
+
+        // Phase 34D — the Necrotic school's first enemy-facing spells.
+        public const string Wither = "spell.wither";
+        public const string KnitBone = "spell.knit_bone";
     }
 
     public static class Recipes

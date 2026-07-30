@@ -38,6 +38,12 @@ public partial class SpellResource : Resource
     /// ungated; a higher value marks it a corrupted variant unlocked only by corruption.</summary>
     [Export] public CorruptionTier MinCorruptionTier { get; set; } = CorruptionTier.Untainted;
 
+    /// <summary>Whether this spell belongs in the player's spellbook at all (Phase 34D). The
+    /// spellbook lists every spell in the database, so a monster's loadout would otherwise appear
+    /// as purchasable — set false for enemy-only spells. Default true: every spell authored before
+    /// the caster roster is a player spell.</summary>
+    [Export] public bool PlayerLearnable { get; set; } = true;
+
     [ExportGroup("Costs")]
     [Export] public float ManaCost { get; set; } = 10f;
 

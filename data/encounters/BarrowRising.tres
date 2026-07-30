@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EncounterResource" format=3 uid="uid://uov3v7xofl7k"]
+
+[ext_resource type="Script" path="res://src/World/EncounterResource.cs" id="1_encounter"]
+
+[resource]
+script = ExtResource("1_encounter")
+Id = "encounter.barrow_rising"
+DisplayName = "Barrow Rising"
+EnemyTemplateId = "enemy.barrow_wight"
+MinCount = 1
+MaxCount = 1
+SelectionWeight = 0.3
+AtDawn = false
+AtDay = false
+AtDusk = false
+AtNight = true

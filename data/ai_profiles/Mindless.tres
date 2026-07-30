@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="AIProfileResource" format=3 uid="uid://bdums8kr6fjny"]
+
+[ext_resource type="Script" path="res://src/Enemies/AIProfileResource.cs" id="1_profile"]
+
+[resource]
+script = ExtResource("1_profile")
+Id = "ai.mindless"
+VisionRange = 11.0
+FovDegrees = 90.0
+AlertRadius = 10.0
+PatrolRadius = 5.0
+IdleDuration = 4.0
+InvestigateDuration = 10.0
+RetreatHealthFraction = 0.0
+ProvokeMemory = 60.0
