@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="LootTable" format=3 uid="uid://cmbrvllootclansh"]
+[gd_resource type="Resource" script_class="LootTable" format=3 uid="uid://bdux0bvhe3snn"]
 
 [ext_resource type="Script" path="res://src/Loot/LootTable.cs" id="1_table"]
 [ext_resource type="Script" path="res://src/Loot/LootEntry.cs" id="2_entry"]

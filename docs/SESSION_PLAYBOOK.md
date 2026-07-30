@@ -2107,9 +2107,89 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
     now-Frostfang-only `encounter.frost_stalker` overlap by chance instead, the
     same compromise 34G recorded for the necromancer and its husks. And the region
     gate is a whitelist on encounters only; world events are still global.
-- [ ] **34.5C — Clan questline + rank chain** `[C]`
+- [x] **34.5C — Clan questline + rank chain** `[C]` ✅
   - **Done when:** a short multi-quest arc with rank-up flags is completable;
     `validate-all` green.
+  - **Landed — the rank chain:** three links on `PrerequisiteQuestId`, one rank
+    each. `quest.clan.proving` (Hjalvar; break 4 `enemy.rime_shard`, the one
+    creature that is both Frostfang-only and hostile) → **`flag.clan.named`** ·
+    `quest.clan.stores` (Sigrun; 5 beast pelts) → **`flag.clan.sworn`** ·
+    `quest.clan.hollow` (Hjalvar; 5 `enemy.hollow_husk`, the faction's declared
+    `Enemies`) → **`flag.clan.hearth_kin`**. Nothing in the arc asks you to kill a
+    frost stalker or a clansman: the tamer's own 34.5A line makes stalkers
+    clan-raised, and `faction.beasts` is a clan ally.
+  - **The fiction was already written and unfired.** Hjalvar: *"a name is what you
+    carry, not what you are given."* Sigrun: *"come back when the hold knows your
+    name."* Her line is now a literal `HasFlag flag.clan.named` gate — she refuses
+    to trade until the hold has named you, which is what she always said.
+  - **Landed — the betrayal branch:** `quest.clan.exile.proof` (kill 3
+    `enemy.clan_raider`) → `flag.clan.oathbreaker`, then `quest.clan.exile.rite`
+    (kill 2 `enemy.clan_shaman`) → `flag.clan.bloodfeud`. Given by a new NPC,
+    **Halvar One-Hand**, an exile camped at his own fire in the hold's far corner —
+    a rival faction would have needed an NPC from nowhere; an exile explains
+    himself. He has no `FactionComponent`: he is nobody's.
+  - **The branch pays in Syndicate standing, not negative clan standing.** Killing
+    clansmen already costs 12 a head automatically, so the two contracts cost ~36
+    and ~24 clan reputation on their own; adding a negative quest reward would have
+    been charging twice for one act. It also closes the branch behind you — enough
+    kills and the hold turns hostile and stops talking, exactly as 34.5B designed.
+  - **Mutual exclusivity is two `MissingFlag` gates**, no new machinery: the chief's
+    work hub needs `MissingFlag flag.clan.oathbreaker`, the exile's needs
+    `MissingFlag flag.clan.hearth_kin`. A `DialogueChoice` has **one** `Effect`, so
+    it cannot both start a quest and set a flag — the flag rides on the following
+    node's farewell choice, the `Elder.tres` shape.
+  - **Quests can now move reputation.** `QuestResource` gained
+    `FactionRewardId`/`FactionRewardAmount`, mirroring `WorldEventResource` field
+    for field, applied in `GrantRewards` **before** the no-inventory bail (standing
+    is owed whether or not you can carry anything). That is what makes rank visible
+    with **no UI work at all** — the character screen already lists the clans, so
+    the arc walks the tier Neutral → Friendly → Honored. Phase 42A still owns the
+    real rank framework and display; this is the field it will build on.
+  - **The validator got stricter again, and this one was overdue.** Story flags are
+    the only id family with no database behind them, so nothing had ever checked
+    them: a mistyped `HasFlag` is a gate that never opens, silently and for good.
+    `ValidateStoryFlags` now cross-references readers against writers — dialogue
+    `HasFlag`/`MissingFlag` args and `RegionResource.UnlockFlagId` against every
+    `SetFlag`/`ClearFlag` effect plus the three code constants. The reverse is
+    *not* an error: a flag set and never read is a legitimate record of what
+    happened. **Proven by making it fail** on a doctored `flag.clan.namd`.
+  - **Verified:** `dotnet build` clean, `dotnet test` **619/619** (the per-file
+    dialogue suite picked up the new conversation), `--validate` exits 0 with the
+    full graph battery — 13 quests, 12 conversations, 585 strings. The edited cell
+    scene was load-checked headless again (11 children, exile and his fire present).
+  - **Still owed (maintainer, at the keyboard)** — needs `F1` and the `I`/`J` screens:
+    - Walk the loyal arc: accept the proving from Hjalvar, `spawn 4 enemy.rime_shard`,
+      kill them, turn in. The journal tracks it and the character screen's
+      **Frostfang Clans** line climbs.
+    - Sigrun must **refuse** before `flag.clan.named` and offer the stores after it.
+      That gate is the whole point of the rank chain.
+    - Finish link 3: the chief greets you as hearth-kin, Yrsa and Old Vetle have new
+      lines, and **the exile's offer is gone**.
+    - On a separate save, take Halvar's contract instead: Syndicate standing rises,
+      clan standing falls ~36, and the chief's work hub disappears.
+    - `F5`/`F9` across a rank-up — flags and quest progress are separate `ISaveable`s
+      and both must survive.
+  - **Known limits:** objectives are still only Kill/Collect, so "go and speak to
+    someone" cannot be an objective — every turn-in is a conversation the player has
+    to remember to have. Rank is invisible outside dialogue and the reputation tier
+    it grants (42A owns a real rank display). And a quest completed once can never
+    be re-taken, so the arc is one-way per save.
+
+### Phase 34.5 — what outlived the session
+
+- **The clans are the first faction the game treats as a people rather than a spawn
+  table**: a hold you can walk into, warriors who ignore you until you give them a
+  reason, and an arc that moves your standing in both directions.
+- **Three durable rules moved into the permanent docs**, which are the ones to trust:
+  CLAUDE.md §8 now records that an encounter without `RegionIds` rolls in every
+  region, and that a quest can pay in faction standing.
+- **The validator gained three checks in three sub-phases**, each closing a failure
+  mode with no symptom: an encounter narrowed to a region that does not exist, a
+  quest paying an unknown faction, and a flag nothing ever sets. All three were
+  proven by making them fail.
+- **Two neutral-actor bugs were fixed at the root**, not at the call site: companions
+  no longer open fire on factions the player is at peace with, and ambient encounters
+  no longer leak across realms.
 
 ---
 

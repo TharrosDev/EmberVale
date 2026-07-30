@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="EnemyArchetypeResource" load_steps=2 format=3 uid="uid://cmbrvlenmclansh"]
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" format=3 uid="uid://uov3wiyywib4"]
 
 [ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
 

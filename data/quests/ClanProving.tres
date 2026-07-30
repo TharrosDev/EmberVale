@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="QuestResource" format=3 uid="uid://cmbrvlqclanprv"]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+
+[sub_resource type="Resource" id="Obj_kill"]
+script = ExtResource("2_obj")
+Type = 0
+TargetId = "enemy.rime_shard"
+RequiredCount = 4
+Description = "quest.clan.proving.obj"
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.clan.proving"
+Title = "quest.clan.proving.title"
+Summary = "quest.clan.proving.summary"
+Objectives = Array[Resource]([SubResource("Obj_kill")])
+XpReward = 80
+GoldReward = 25
+GoldItemId = "item.currency.gold"
+RewardItems = Array[Resource]([])
+FactionRewardId = "faction.frostfang_clans"
+FactionRewardAmount = 10
+PrerequisiteQuestId = ""

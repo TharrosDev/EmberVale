@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="QuestResource" format=3 uid="uid://cmbrvlqclanstr"]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+[ext_resource type="Script" path="res://src/Quests/QuestItemReward.cs" id="3_reward"]
+
+[sub_resource type="Resource" id="Obj_collect"]
+script = ExtResource("2_obj")
+Type = 1
+TargetId = "item.material.beast_pelt"
+RequiredCount = 5
+Description = "quest.clan.stores.obj"
+
+[sub_resource type="Resource" id="Reward_potion"]
+script = ExtResource("3_reward")
+ItemId = "item.potion.health"
+Quantity = 2
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.clan.stores"
+Title = "quest.clan.stores.title"
+Summary = "quest.clan.stores.summary"
+Objectives = Array[Resource]([SubResource("Obj_collect")])
+XpReward = 100
+GoldReward = 30
+GoldItemId = "item.currency.gold"
+RewardItems = Array[Resource]([SubResource("Reward_potion")])
+FactionRewardId = "faction.frostfang_clans"
+FactionRewardAmount = 10
+PrerequisiteQuestId = "quest.clan.proving"

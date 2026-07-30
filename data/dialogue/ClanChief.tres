@@ -4,6 +4,20 @@
 [ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
 
+[sub_resource type="Resource" id="ch_kin"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.c_kin"
+Goto = "kin"
+Condition = 5
+ConditionArg = "flag.clan.hearth_kin"
+
+[sub_resource type="Resource" id="ch_work"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.c_work"
+Goto = "work"
+Condition = 6
+ConditionArg = "flag.clan.oathbreaker"
+
 [sub_resource type="Resource" id="ch_who"]
 script = ExtResource("3_choice")
 Text = "dlg.clan_chief.c_who"
@@ -28,11 +42,113 @@ script = ExtResource("3_choice")
 Text = "dlg.clan_chief.c_back"
 Goto = "root"
 
+[sub_resource type="Resource" id="ch_kin_back"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.c_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_work_back"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.c_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_prov_thanks"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.proving.c_thanks"
+Goto = "prov_thanks"
+Condition = 3
+ConditionArg = "quest.clan.proving"
+
+[sub_resource type="Resource" id="ch_prov_offer"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.proving.c_offer"
+Goto = "prov_offer"
+Condition = 1
+ConditionArg = "quest.clan.proving"
+
+[sub_resource type="Resource" id="ch_prov_active"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.proving.c_active"
+Goto = "prov_inprogress"
+Condition = 2
+ConditionArg = "quest.clan.proving"
+
+[sub_resource type="Resource" id="ch_prov_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.proving.c_accept"
+Goto = "prov_accepted"
+Effect = 1
+EffectArg = "quest.clan.proving"
+
+[sub_resource type="Resource" id="ch_prov_decline"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.proving.c_decline"
+
+[sub_resource type="Resource" id="ch_prov_accepted_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.proving.c_accepted_bye"
+
+[sub_resource type="Resource" id="ch_prov_inprogress_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.proving.c_inprogress_bye"
+
+[sub_resource type="Resource" id="ch_prov_thanks_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.proving.c_thanks_bye"
+Effect = 2
+EffectArg = "flag.clan.named"
+
+[sub_resource type="Resource" id="ch_hol_thanks"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.hollow.c_thanks"
+Goto = "hol_thanks"
+Condition = 3
+ConditionArg = "quest.clan.hollow"
+
+[sub_resource type="Resource" id="ch_hol_offer"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.hollow.c_offer"
+Goto = "hol_offer"
+Condition = 1
+ConditionArg = "quest.clan.hollow"
+
+[sub_resource type="Resource" id="ch_hol_active"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.hollow.c_active"
+Goto = "hol_inprogress"
+Condition = 2
+ConditionArg = "quest.clan.hollow"
+
+[sub_resource type="Resource" id="ch_hol_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.hollow.c_accept"
+Goto = "hol_accepted"
+Effect = 1
+EffectArg = "quest.clan.hollow"
+
+[sub_resource type="Resource" id="ch_hol_decline"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.hollow.c_decline"
+
+[sub_resource type="Resource" id="ch_hol_accepted_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.hollow.c_accepted_bye"
+
+[sub_resource type="Resource" id="ch_hol_inprogress_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.hollow.c_inprogress_bye"
+
+[sub_resource type="Resource" id="ch_hol_thanks_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_chief.hollow.c_thanks_bye"
+Effect = 2
+EffectArg = "flag.clan.hearth_kin"
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.clan_chief.root"
-Choices = Array[Resource]([SubResource("ch_who"), SubResource("ch_tyrant"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_kin"), SubResource("ch_work"), SubResource("ch_who"), SubResource("ch_tyrant"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_who"]
 script = ExtResource("2_node")
@@ -46,9 +162,69 @@ Id = "tyrant"
 Text = "dlg.clan_chief.tyrant"
 Choices = Array[Resource]([SubResource("ch_tyrant_back")])
 
+[sub_resource type="Resource" id="node_kin"]
+script = ExtResource("2_node")
+Id = "kin"
+Text = "dlg.clan_chief.kin"
+Choices = Array[Resource]([SubResource("ch_kin_back")])
+
+[sub_resource type="Resource" id="node_work"]
+script = ExtResource("2_node")
+Id = "work"
+Text = "dlg.clan_chief.work"
+Choices = Array[Resource]([SubResource("ch_prov_thanks"), SubResource("ch_prov_offer"), SubResource("ch_prov_active"), SubResource("ch_hol_thanks"), SubResource("ch_hol_offer"), SubResource("ch_hol_active"), SubResource("ch_work_back")])
+
+[sub_resource type="Resource" id="node_prov_offer"]
+script = ExtResource("2_node")
+Id = "prov_offer"
+Text = "dlg.clan_chief.proving.offer"
+Choices = Array[Resource]([SubResource("ch_prov_accept"), SubResource("ch_prov_decline")])
+
+[sub_resource type="Resource" id="node_prov_accepted"]
+script = ExtResource("2_node")
+Id = "prov_accepted"
+Text = "dlg.clan_chief.proving.accepted"
+Choices = Array[Resource]([SubResource("ch_prov_accepted_bye")])
+
+[sub_resource type="Resource" id="node_prov_inprogress"]
+script = ExtResource("2_node")
+Id = "prov_inprogress"
+Text = "dlg.clan_chief.proving.inprogress"
+Choices = Array[Resource]([SubResource("ch_prov_inprogress_bye")])
+
+[sub_resource type="Resource" id="node_prov_thanks"]
+script = ExtResource("2_node")
+Id = "prov_thanks"
+Text = "dlg.clan_chief.proving.thanks"
+Choices = Array[Resource]([SubResource("ch_prov_thanks_bye")])
+
+[sub_resource type="Resource" id="node_hol_offer"]
+script = ExtResource("2_node")
+Id = "hol_offer"
+Text = "dlg.clan_chief.hollow.offer"
+Choices = Array[Resource]([SubResource("ch_hol_accept"), SubResource("ch_hol_decline")])
+
+[sub_resource type="Resource" id="node_hol_accepted"]
+script = ExtResource("2_node")
+Id = "hol_accepted"
+Text = "dlg.clan_chief.hollow.accepted"
+Choices = Array[Resource]([SubResource("ch_hol_accepted_bye")])
+
+[sub_resource type="Resource" id="node_hol_inprogress"]
+script = ExtResource("2_node")
+Id = "hol_inprogress"
+Text = "dlg.clan_chief.hollow.inprogress"
+Choices = Array[Resource]([SubResource("ch_hol_inprogress_bye")])
+
+[sub_resource type="Resource" id="node_hol_thanks"]
+script = ExtResource("2_node")
+Id = "hol_thanks"
+Text = "dlg.clan_chief.hollow.thanks"
+Choices = Array[Resource]([SubResource("ch_hol_thanks_bye")])
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.clan_chief"
 SpeakerName = "dlg.clan_chief.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_who"), SubResource("node_tyrant")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_who"), SubResource("node_tyrant"), SubResource("node_kin"), SubResource("node_work"), SubResource("node_prov_offer"), SubResource("node_prov_accepted"), SubResource("node_prov_inprogress"), SubResource("node_prov_thanks"), SubResource("node_hol_offer"), SubResource("node_hol_accepted"), SubResource("node_hol_inprogress"), SubResource("node_hol_thanks")])

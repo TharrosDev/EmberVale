@@ -4,6 +4,17 @@
 [ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
 
+[sub_resource type="Resource" id="ch_sworn"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_hearthkeeper.c_sworn"
+Goto = "sworn"
+Condition = 5
+ConditionArg = "flag.clan.sworn"
+
+[sub_resource type="Resource" id="ch_sworn_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_hearthkeeper.c_sworn_bye"
+
 [sub_resource type="Resource" id="ch_hold"]
 script = ExtResource("3_choice")
 Text = "dlg.clan_hearthkeeper.c_hold"
@@ -21,7 +32,13 @@ Text = "dlg.clan_hearthkeeper.c_hold_bye"
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.clan_hearthkeeper.root"
-Choices = Array[Resource]([SubResource("ch_hold"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_sworn"), SubResource("ch_hold"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_sworn"]
+script = ExtResource("2_node")
+Id = "sworn"
+Text = "dlg.clan_hearthkeeper.sworn"
+Choices = Array[Resource]([SubResource("ch_sworn_bye")])
 
 [sub_resource type="Resource" id="node_hold"]
 script = ExtResource("2_node")
@@ -34,4 +51,4 @@ script = ExtResource("1_dlg")
 Id = "dialogue.clan_hearthkeeper"
 SpeakerName = "dlg.clan_hearthkeeper.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_hold")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_hold"), SubResource("node_sworn")])

@@ -1,0 +1,214 @@
+[gd_resource type="Resource" script_class="DialogueResource" format=3 uid="uid://cmbrvldlgclexl"]
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+[sub_resource type="Resource" id="ch_feud"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_exile.c_feud"
+Goto = "feud"
+Condition = 5
+ConditionArg = "flag.clan.bloodfeud"
+
+[sub_resource type="Resource" id="ch_work"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_exile.c_work"
+Goto = "work"
+Condition = 6
+ConditionArg = "flag.clan.hearth_kin"
+
+[sub_resource type="Resource" id="ch_who"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_exile.c_who"
+Goto = "who"
+
+[sub_resource type="Resource" id="ch_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_exile.c_bye"
+
+[sub_resource type="Resource" id="ch_who_back"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_exile.c_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_feud_back"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_exile.c_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_work_back"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_exile.c_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_prf_thanks"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_exile.proof.c_thanks"
+Goto = "prf_thanks"
+Condition = 3
+ConditionArg = "quest.clan.exile.proof"
+
+[sub_resource type="Resource" id="ch_prf_offer"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_exile.proof.c_offer"
+Goto = "prf_offer"
+Condition = 1
+ConditionArg = "quest.clan.exile.proof"
+
+[sub_resource type="Resource" id="ch_prf_active"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_exile.proof.c_active"
+Goto = "prf_inprogress"
+Condition = 2
+ConditionArg = "quest.clan.exile.proof"
+
+[sub_resource type="Resource" id="ch_prf_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_exile.proof.c_accept"
+Goto = "prf_accepted"
+Effect = 1
+EffectArg = "quest.clan.exile.proof"
+
+[sub_resource type="Resource" id="ch_prf_decline"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_exile.proof.c_decline"
+
+[sub_resource type="Resource" id="ch_prf_accepted_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_exile.proof.c_accepted_bye"
+Effect = 2
+EffectArg = "flag.clan.oathbreaker"
+
+[sub_resource type="Resource" id="ch_prf_inprogress_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_exile.proof.c_inprogress_bye"
+
+[sub_resource type="Resource" id="ch_prf_thanks_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_exile.proof.c_thanks_bye"
+
+[sub_resource type="Resource" id="ch_rit_thanks"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_exile.rite.c_thanks"
+Goto = "rit_thanks"
+Condition = 3
+ConditionArg = "quest.clan.exile.rite"
+
+[sub_resource type="Resource" id="ch_rit_offer"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_exile.rite.c_offer"
+Goto = "rit_offer"
+Condition = 1
+ConditionArg = "quest.clan.exile.rite"
+
+[sub_resource type="Resource" id="ch_rit_active"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_exile.rite.c_active"
+Goto = "rit_inprogress"
+Condition = 2
+ConditionArg = "quest.clan.exile.rite"
+
+[sub_resource type="Resource" id="ch_rit_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_exile.rite.c_accept"
+Goto = "rit_accepted"
+Effect = 1
+EffectArg = "quest.clan.exile.rite"
+
+[sub_resource type="Resource" id="ch_rit_decline"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_exile.rite.c_decline"
+
+[sub_resource type="Resource" id="ch_rit_accepted_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_exile.rite.c_accepted_bye"
+
+[sub_resource type="Resource" id="ch_rit_inprogress_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_exile.rite.c_inprogress_bye"
+
+[sub_resource type="Resource" id="ch_rit_thanks_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.clan_exile.rite.c_thanks_bye"
+Effect = 2
+EffectArg = "flag.clan.bloodfeud"
+
+[sub_resource type="Resource" id="node_root"]
+script = ExtResource("2_node")
+Id = "root"
+Text = "dlg.clan_exile.root"
+Choices = Array[Resource]([SubResource("ch_feud"), SubResource("ch_work"), SubResource("ch_who"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_who"]
+script = ExtResource("2_node")
+Id = "who"
+Text = "dlg.clan_exile.who"
+Choices = Array[Resource]([SubResource("ch_who_back")])
+
+[sub_resource type="Resource" id="node_feud"]
+script = ExtResource("2_node")
+Id = "feud"
+Text = "dlg.clan_exile.feud"
+Choices = Array[Resource]([SubResource("ch_feud_back")])
+
+[sub_resource type="Resource" id="node_work"]
+script = ExtResource("2_node")
+Id = "work"
+Text = "dlg.clan_exile.work"
+Choices = Array[Resource]([SubResource("ch_prf_thanks"), SubResource("ch_prf_offer"), SubResource("ch_prf_active"), SubResource("ch_rit_thanks"), SubResource("ch_rit_offer"), SubResource("ch_rit_active"), SubResource("ch_work_back")])
+
+[sub_resource type="Resource" id="node_prf_offer"]
+script = ExtResource("2_node")
+Id = "prf_offer"
+Text = "dlg.clan_exile.proof.offer"
+Choices = Array[Resource]([SubResource("ch_prf_accept"), SubResource("ch_prf_decline")])
+
+[sub_resource type="Resource" id="node_prf_accepted"]
+script = ExtResource("2_node")
+Id = "prf_accepted"
+Text = "dlg.clan_exile.proof.accepted"
+Choices = Array[Resource]([SubResource("ch_prf_accepted_bye")])
+
+[sub_resource type="Resource" id="node_prf_inprogress"]
+script = ExtResource("2_node")
+Id = "prf_inprogress"
+Text = "dlg.clan_exile.proof.inprogress"
+Choices = Array[Resource]([SubResource("ch_prf_inprogress_bye")])
+
+[sub_resource type="Resource" id="node_prf_thanks"]
+script = ExtResource("2_node")
+Id = "prf_thanks"
+Text = "dlg.clan_exile.proof.thanks"
+Choices = Array[Resource]([SubResource("ch_prf_thanks_bye")])
+
+[sub_resource type="Resource" id="node_rit_offer"]
+script = ExtResource("2_node")
+Id = "rit_offer"
+Text = "dlg.clan_exile.rite.offer"
+Choices = Array[Resource]([SubResource("ch_rit_accept"), SubResource("ch_rit_decline")])
+
+[sub_resource type="Resource" id="node_rit_accepted"]
+script = ExtResource("2_node")
+Id = "rit_accepted"
+Text = "dlg.clan_exile.rite.accepted"
+Choices = Array[Resource]([SubResource("ch_rit_accepted_bye")])
+
+[sub_resource type="Resource" id="node_rit_inprogress"]
+script = ExtResource("2_node")
+Id = "rit_inprogress"
+Text = "dlg.clan_exile.rite.inprogress"
+Choices = Array[Resource]([SubResource("ch_rit_inprogress_bye")])
+
+[sub_resource type="Resource" id="node_rit_thanks"]
+script = ExtResource("2_node")
+Id = "rit_thanks"
+Text = "dlg.clan_exile.rite.thanks"
+Choices = Array[Resource]([SubResource("ch_rit_thanks_bye")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "dialogue.clan_exile"
+SpeakerName = "dlg.clan_exile.speaker"
+StartNodeId = "root"
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_who"), SubResource("node_feud"), SubResource("node_work"), SubResource("node_prf_offer"), SubResource("node_prf_accepted"), SubResource("node_prf_inprogress"), SubResource("node_prf_thanks"), SubResource("node_rit_offer"), SubResource("node_rit_accepted"), SubResource("node_rit_inprogress"), SubResource("node_rit_thanks")])
