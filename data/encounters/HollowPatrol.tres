@@ -13,5 +13,5 @@ SelectionWeight = 0.9
 CorruptionChance = 0.2
 AtDawn = false
 AtDay = false
-AtDusk = false
+AtDusk = true
 AtNight = true
