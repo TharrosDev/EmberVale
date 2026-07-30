@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" format=3 uid="uid://c0mhsaalifq63"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.grave_shade"
+NameKey = "enemy.grave_shade.name"
+AttributesPath = "res://data/attributes/GraveShadeAttributes.tres"
+WeaponPath = "res://data/weapons/SpectralTouch.tres"
+LootTablePath = "res://data/loot/UndeadLoot.tres"
+ModelPath = ""
+PlaceholderTint = Color(0.42, 0.44, 0.58, 1)
+AiProfileId = "ai.pack_flanker"
+FactionId = "faction.hollow"
+KnownSpellIds = Array[String]([])
+CapsuleRadius = 0.35
+CapsuleHeight = 1.7
+MaxPoise = 15.0
+StaminaRegen = 20.0
+XpValue = 40

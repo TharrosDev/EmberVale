@@ -307,7 +307,8 @@ public partial class InventoryPanel : UiPanel
             var spells = new List<SpellResource>();
             foreach (SpellResource s in SpellDatabase.All)
             {
-                if (s.School == school)
+                // Enemy-only loadouts (the Phase 34 caster roster) stay out of the player's book.
+                if (s.School == school && s.PlayerLearnable)
                 {
                     spells.Add(s);
                 }

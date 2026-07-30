@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" format=3 uid="uid://c0mhsaaldctme"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.hollow_necromancer"
+NameKey = "enemy.hollow_necromancer.name"
+AttributesPath = "res://data/attributes/NecromancerAttributes.tres"
+WeaponPath = "res://data/weapons/RustedBlade.tres"
+LootTablePath = "res://data/loot/NecromancerLoot.tres"
+ModelPath = ""
+PlaceholderTint = Color(0.28, 0.2, 0.34, 1)
+AiProfileId = "ai.caster"
+FactionId = "faction.hollow"
+KnownSpellIds = Array[String](["spell.wither", "spell.knit_bone"])
+CapsuleRadius = 0.4
+CapsuleHeight = 1.8
+MaxPoise = 25.0
+StaminaRegen = 10.0
+ManaRegen = 7.0
+XpValue = 90

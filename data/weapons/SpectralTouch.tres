@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="WeaponResource" format=3 uid="uid://uowiyay8cot4"]
+
+[ext_resource type="Script" path="res://src/Combat/WeaponResource.cs" id="1_weapon"]
+
+[resource]
+script = ExtResource("1_weapon")
+DisplayName = "Spectral Touch"
+DamageType = 6
+BaseDamage = 13.0
+PoiseDamage = 6.0
+StaminaCost = 7.0
+WindupTime = 0.26
+ActiveTime = 0.12
+RecoveryTime = 0.34
+AttackSpeed = 1.15
+ComboLength = 2
+FinisherMultiplier = 1.5

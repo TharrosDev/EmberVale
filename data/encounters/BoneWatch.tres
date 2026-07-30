@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EncounterResource" format=3 uid="uid://uov3v7ybwnt4"]
+
+[ext_resource type="Script" path="res://src/World/EncounterResource.cs" id="1_encounter"]
+
+[resource]
+script = ExtResource("1_encounter")
+Id = "encounter.bone_watch"
+DisplayName = "Bone Watch"
+EnemyTemplateId = "enemy.bone_knight"
+MinCount = 1
+MaxCount = 2
+SelectionWeight = 0.6
+AtDawn = false
+AtDay = false
+AtDusk = true
+AtNight = true

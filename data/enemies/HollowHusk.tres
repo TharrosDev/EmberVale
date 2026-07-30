@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" format=3 uid="uid://cmbrvlenmhusk"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.hollow_husk"
+NameKey = "enemy.hollow_husk.name"
+AttributesPath = "res://data/attributes/HollowHuskAttributes.tres"
+WeaponPath = "res://data/weapons/RustedBlade.tres"
+LootTablePath = "res://data/loot/UndeadLoot.tres"
+ModelPath = ""
+PlaceholderTint = Color(0.4, 0.42, 0.38, 1)
+AiProfileId = "ai.mindless"
+FactionId = "faction.hollow"
+KnownSpellIds = Array[String]([])
+CapsuleRadius = 0.4
+CapsuleHeight = 1.75
+MaxPoise = 65.0
+StaminaRegen = 8.0
+XpValue = 35

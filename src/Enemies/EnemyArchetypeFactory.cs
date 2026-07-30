@@ -62,6 +62,7 @@ public static class EnemyArchetypeFactory
             Name = "Stats",
             Attributes = attributes,
             StaminaRegen = archetype.StaminaRegen,
+            ManaRegen = archetype.ManaRegen,
         });
         enemy.AddChild(new CombatComponent { Name = "Combat", Team = HostileTeam, MaxPoise = archetype.MaxPoise });
         enemy.AddChild(new LocomotionComponent { Name = "Locomotion" });

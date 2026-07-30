@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="FactionResource" format=3 uid="uid://uov4i7428f7k"]
+
+[ext_resource type="Script" path="res://src/Factions/FactionResource.cs" id="1_faction"]
+
+[resource]
+script = ExtResource("1_faction")
+Id = "faction.hollow"
+DisplayName = "The Hollow Legion"
+Description = "The Second Flamebearer sought immortality and lost her soul for it. What answers to her now was buried once, and remembers being buried. Hostile on sight; nothing here can be reasoned with."
+DefaultReputation = -70
+HostileThreshold = 2
+KillReputationPenalty = 0
+Enemies = Array[String](["faction.villagers"])
+Allies = Array[String]([])

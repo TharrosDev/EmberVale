@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://c0mhsegk5cdnj"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.material.grave_dust"
+DisplayName = "Grave Dust"
+Description = "Ash that was once a person. It clings to everything and will not brush off clean."
+Type = 4
+Rarity = 0
+MaxStack = 50
+Weight = 0.1
+Value = 8

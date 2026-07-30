@@ -228,7 +228,7 @@ signature spell per school.
 |              | Phase                                          |
 | ------------ | ---------------------------------------------- |
 | ✅ **Done**    | 22–32 + G0 First Playable (30 Models & Animation, 30.5 UI & HUD Overhaul, 31 Audio Foundations, 32 Companion System) |
-| ▶ **Current** | 33 — Vertical Slice Assembly (33A–33C ✅; 33D/33E built — need a play-through + export check) · 34 — Enemy & Creature Roster (34A–34C ✅: AI profiles, humanoids, beasts) |
+| ▶ **Current** | 33 — Vertical Slice Assembly (33A–33C ✅; 33D/33E built — need a play-through + export check) · 34 — Enemy & Creature Roster (34A–34D ✅: AI profiles, humanoids, beasts, undead) |
 | ⏭ **Next**    | 🚩 Gate G1 — Vertical Slice, then 34D — undead archetypes |
 
 > A phase is "done" when it works in-game **and** round-trips through save/load.

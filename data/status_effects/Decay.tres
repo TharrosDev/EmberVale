@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="StatusEffectResource" format=3 uid="uid://cmbrvlstdecay"]
+
+[ext_resource type="Script" path="res://src/Magic/StatusEffectResource.cs" id="1_status"]
+
+[resource]
+script = ExtResource("1_status")
+Id = "status.decay"
+DisplayName = "Decaying"
+School = 6
+IsBeneficial = false
+Duration = 6.0
+DamagePerTick = 4.0
+TickInterval = 1.0
+ModStat = 8
+ModType = 0
+ModValue = -6.0

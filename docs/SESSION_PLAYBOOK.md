@@ -2408,8 +2408,84 @@ no code) — batch them when momentum is good.
     quadruped — worse than the humanoid placeholders did. Beast models are a Phase 53 art
     task, the same capsule-then-model path the goblin took before 30D, and not a blocker for
     "playable".
-- [ ] **34D — Undead archetypes (Hollow Queen's legions)** `[F/C]`
+- [x] **34D — Undead archetypes (Hollow Queen's legions)** `[F/C]`
   - **Done when:** undead archetypes exist and fight.
+  - **Built:** five undead on the 34A/34B pipeline, and the **first caster archetype ever
+    authored as data** — before this every one of the nine archetypes had
+    `KnownSpellIds = []`, so the caster path 34B built had never actually been used. The only
+    enemy caster in the game was the hand-written `AshenAcolyteFactory`.
+    | Archetype | Profile | Body (r/h) | Identity |
+    | --- | --- | --- | --- |
+    | `enemy.hollow_husk` | `ai.mindless` (new) | 0.4 / 1.75 | slow, 65 poise, notices you late, never stops |
+    | `enemy.bone_knight` | `ai.deathless_guard` (new) | 0.45 / 1.8 | 15 armour, guard rhythm, dies on its feet |
+    | `enemy.barrow_wight` | `ai.ambusher` | 0.4 / 1.7 | lies in wait, glass, 22% crit at 2.1× |
+    | `enemy.hollow_necromancer` | `ai.caster` | 0.4 / 1.8 | withers you, **mends its husks** |
+    | `enemy.grave_shade` | `ai.pack_flanker` | 0.35 / 1.7 | 40 HP, fast, flanks in threes |
+  - **Two new profiles, no new code — because the dead don't flee.** Every existing melee
+    profile retreats on wounds (`ai.brute` at 25%, `ai.shielded` at 15%), and a husk breaking
+    off to run is wrong fiction. `ai.mindless` = dim senses (`VisionRange 11`, `FovDegrees 90`)
+    that notice you late, then `RetreatHealthFraction 0` and `ProvokeMemory 60`.
+    `ai.deathless_guard` = `ai.shielded`'s guard rhythm with the retreat removed. The wight
+    reuses `ai.ambusher` (already zero-retreat), the shade `ai.pack_flanker`, and the
+    necromancer `ai.caster` — whose `RetreatHealthFraction 0.35` is *correct* here: a
+    necromancer kiting away is the behaviour, not cowardice.
+  - **`spell.knit_bone` buys a behaviour for free.** `EnemyAIComponent.TryCasterCast` already
+    prioritises healing the most-wounded ally under `AllyHealThreshold` within
+    `AllySupportRange`, picking any `Self` spell with `Healing > 0`. So the necromancer knits
+    its husks back together with **zero new code** — the closest thing to "commands the dead"
+    (LORE.md:333) the existing systems can express.
+  - **The Necrotic school's first enemy-facing content:** `status.decay` is the game's **first
+    Necrotic status effect** (6 s, 4/tick DoT, and `Armor` −6 Flat — flesh sloughs, so the next
+    hit lands harder), and `spell.wither` delivers it. Before this the school held exactly one
+    spell, `spell.ember_siphon`, which is the *player's* corruption-gated lifesteal and oddly
+    applies `status.burning`, a Fire effect.
+  - **Bug caught and fixed at the root:** the spellbook renders **every** spell in
+    `SpellDatabase` grouped by school (`InventoryPanel.cs:308`), so the necromancer's loadout
+    would have appeared in the player's Necrotic section as purchasable. Rather than hack the
+    two spells' costs or corruption gates, `SpellResource` gained
+    **`PlayerLearnable`** (default `true`, so nothing authored before this changes) and the
+    panel filters on it — one condition at the single seam every future faction caster in the
+    Phase 34 roster brief will route through.
+  - **`ManaRegen` is now authorable** on `EnemyArchetypeResource` (default `4f` = the
+    `StatsComponent` default, so the nine existing `.tres` are untouched). The one hand-written
+    caster in the repo explicitly wanted `6f`, so a data caster stuck at the default was a real
+    gap, not a speculative one; the necromancer runs at `7f`.
+  - **The trap worth naming:** a caster archetype needs a **`Mana` pool in its `AttributeSet`**.
+    Every beast from 34C is `Mana = 0`, and an archetype with spells but no mana silently never
+    casts — no warning, no error, it just stands there. `NecromancerAttributes.tres` carries
+    140 Mana, 18 Intelligence and 20 SpellPower.
+  - **Undead do drop coin,** unlike 34C's beasts — they were buried with it. `UndeadLoot` /
+    `NecromancerLoot` drop the new `item.material.grave_dust` plus gold, scrap and grave goods
+    (a rare affixed `item.ring.iron`, ruby off the necromancer).
+  - **Playable:** five night encounters — `HollowPatrol` (2–4 husks), `BoneWatch` (1–2, also
+    dusk), `ShadeFlock` (2–3), `BarrowRising` and `HollowRite` (1 each, low weight).
+    `spawn <n> <id>` in F1 reaches them directly.
+  - **Scope fence:** the Hollow Queen herself is **not** here — her arc is 47B and her lair
+    stub 44B. 34D owns her legions. Also **deliberately not built:** raising/summoning minions.
+    There is no minion system (`SpellTotem.cs:11` carries a `ponytail:` note saying so) and
+    adds/summon waves are 36D's brief; a raise ability would be new code in three systems,
+    which the sizing rule above calls a phase, not a sub-phase.
+  - **Lore discrepancy, flagged for 44B/47B not resolved here:** `LORE.md` gives the Hollow
+    Queen **no realm** — all four are taken and Frostfang's canon threat is the Storm Tyrant
+    (LORE.md:115) — while `PRODUCTION_ROADMAP.md:790` and 47B place her in Frostfang. 34D
+    doesn't depend on the answer, so it doesn't pick a side.
+  - **Verified:** `dotnet build` clean, **540 tests** green, `--validate` **exit 0** (14
+    archetypes / 12 profiles / 14 spells / 6 status effects / 19 encounters / 7 factions / 16
+    items all cross-referenced — including that both of the necromancer's `KnownSpellIds`
+    resolve in `SpellDatabase`), and a **120 s live `--play` session with zero warnings or
+    errors**.
+  - **Verification gap:** no live spawn, same wall as 34B/34C — the F1 console needs keyboard
+    input this harness can't inject and `--play` resumes inside the Ember Crown's 34 m
+    safe zone (both now documented in CLAUDE.md §2/§3). The one behaviour with **no automated
+    coverage at all** is the necromancer's mending, and it is the payoff of the sub-phase:
+    `spawn 2 enemy.hollow_husk`, then `spawn 1 enemy.hollow_necromancer`, hurt a husk, and
+    watch it get knitted back up. Also worth a minute: `spawn 3 enemy.hollow_husk` (slow, late
+    to notice, never breaks off), `spawn 1 enemy.bone_knight` (guard cycles, no retreat),
+    `spawn 1 enemy.hollow_necromancer` alone (kites at `StandoffRange`, `status.decay` shows in
+    the status UI with the armour debuff), and open the character screen to confirm `Wither`
+    and `Knit Bone` are **absent** from the Necrotic spellbook section.
+  - **Art gap:** all five on tinted capsules, models are Phase 53. These read better than
+    34C's quadrupeds did — a hunched humanoid husk is close to what a capsule already suggests.
 - [ ] **34E — Construct + elemental archetypes** `[F/C]`
   - **Done when:** constructs and elementals exist with distinct profiles.
 - [ ] **34F — Corrupted/Ashen creature archetypes** `[F/C]`

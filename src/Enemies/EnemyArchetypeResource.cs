@@ -52,5 +52,9 @@ public partial class EnemyArchetypeResource : Resource
     [ExportGroup("Combat")]
     [Export] public float MaxPoise { get; set; } = 40f;
     [Export] public float StaminaRegen { get; set; } = 12f;
+
+    /// <summary>Mana regenerated per second — the pacing dial for a caster archetype. The default
+    /// matches <see cref="Stats.StatsComponent"/>'s, so a non-caster never needs to set it.</summary>
+    [Export] public float ManaRegen { get; set; } = 4f;
     [Export] public int XpValue { get; set; } = 30;
 }
