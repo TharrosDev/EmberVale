@@ -69,12 +69,17 @@ Pattern column shows the canonical shape; examples are real ids from `data/**`.
 | `npc.*` | `npc.<name>` | `npc.elder` | ✅ friendly/neutral actor template — §3 |
 | `prop.*` | `prop.<name>` | `prop.cache` | ✅ persistent-actor template (`PersistentActorRegistry`) — §3 |
 | `flag.*` | `flag.<name>` | `flag.elder_thanked` | ✅ story flag (`StoryFlagsComponent`); not a `.tres` — set/read in dialogue/code |
-| `region.*` | `region.<name>` | — | ⏳ Phase 25 (`RegionResource`) |
-| `boss.*` | `boss.<name>` | — | ⏳ Phase 28/36 (`BossResource`) |
-| `relic.*` | `relic.<name>` | — | ⏳ Phase 23/51 (divine relics; likely an `item.*` subcat too — decide at Phase 51) |
-| `race.*` | `race.<name>` | — | ⏳ Phase 26 (`RaceResource`) |
-| `companion.*` | `companion.<name>` | — | ⏳ Phase 32 (`CompanionResource`) |
+| `region.*` | `region.<name>` | `region.ember_crown` | ✅ `RegionDatabase` — Phase 25 |
+| `race.*` | `race.<name>` | `race.human` | ✅ `RaceDatabase` — Phase 26 |
+| `companion.*` | `companion.<name>` | `companion.kael` | ✅ `CompanionDatabase` — Phase 32 |
 | `ai.*` | `ai.<name>` | `ai.pack_flanker` | ✅ enemy AI personality (`AIProfileDatabase`) — Phase 34A |
+| `boss.*` | `boss.<name>` | — | ⏳ Phase 36 (`BossResource`). The Iron King ships as `enemy.iron_king`; 36B re-expresses it here |
+| `relic.*` | `relic.<name>` | — | ⏳ Phase 51 (divine relics; likely an `item.*` subcat too — decide there) |
+
+> **No `bestiary.*` family.** Bestiary entries (Phase 34G) are keyed by the `enemy.*` id they
+> document, so a creature has exactly one id across the registry, its encounters, quest kill
+> targets and its journal page. `bestiary.*` in `strings.csv` is the *screen's* Loc prefix, not
+> an id namespace.
 
 ### `item.*` subcategories (in use)
 

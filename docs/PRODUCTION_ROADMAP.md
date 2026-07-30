@@ -1078,105 +1078,42 @@ The ordering is driven by hard dependencies, not preference:
 | Stage | Gate | Phases | Status |
 | ----- | ---- | ------ | ------ |
 | A — Pre-production & First Playable | G0 | 22–28 | ✅ Complete (22–28 + 25.5 hardening; G0 First Playable reached) |
-| B — Vertical Slice | G1 | 29–33 | ⏳ In progress (29 ✅, 29.5 ✅, 30 ✅, 30.5 ✅, 31 ✅, 32 ✅; next: 33 Vertical Slice Assembly) |
+| B — Vertical Slice | G1 | 29–33 | ⏳ All phases built (29–32 ✅, 33A–33E ✅); **G1 needs a maintainer play-through + one export** |
 | C — Alpha / Feature Complete | G2 | 34–45 | ⏳ In progress (**34 complete**, 34A–34G ✅; next: 34.5 Frostfang clans, then 35 dragons) |
 | D — Beta / Content Complete | G3 | 46–55 | ⬜ Planned |
 | E — Release Candidate | G4 | 56–62 | ⬜ Planned |
 | F — Launch | G5 | 63 | ⬜ Planned |
 | G — Live / Post-launch | G6 | 64–66 | ⬜ Planned |
 
-**Where we are:** **Stage A is complete** — Phases 22 (production bible/pipeline), 23 (Corruption),
-24 (meta-shell + localization), 25 (region streaming, world map/compass, fast travel), the 25.5
-hardening pass, 26 (races & character creation), 27 (the Ember Crown vertical core) and 28 (the Iron
-King boss slice) are all done and **Gate G0 (First Playable) is reached**. Stage B is underway:
-**Phase 29 (Combat Feel & Game Juice) is complete** (hit-stop, shake, directional reactions,
-parry/riposte, dodge i-frames, lock-on, stamina pacing), and **Phase 29.5 (Spellcraft & the Fading
-Weave) is complete (29.5A–G)** — cast archetypes (charged/channeled), school identities +
-status-effect mechanics, spell scaling + per-school mastery, reactive combos, the fading-Weave
-region-potency dial + spell recovery, enemy/NPC caster AI, and the 29.5G magic UI (a school-grouped
-spellbook with mastery/charge/channel feedback, a SpellPoints economy, and one signature spell per
-school: Flame Lance, Ball Lightning, Blizzard, Blink, Lifebloom Totem, Ember Siphon).
+**Where we are.** Stage A is complete and **Gate G0 (First Playable) is reached**. Stage B's phases
+are all built. Stage C is under way in parallel, because the enemy roster is front-loadable content
+that doesn't touch the slice.
 
-**Phase 30 (Animation, Models & Visual Identity) is complete (30A–30I)** — `docs/ART_STYLE.md`
-pins the direction (low-poly but detailed, Skyrim-grounded, "carved not sculpted", organic
-smooth-shaded bodies / faceted hard surfaces); the player has a rigged, animated low-poly body
-with 8 clips, a held sword on the hand bone, and cast/channel animation + school-tinted cast
-flashes; the slice cast (goblin + brute, the Iron King, vendor/innkeeper/guild-rep) has authored
-models, with goblin + Iron King rigged and animated driving the existing AI/combat states through
-the reusable `CharacterAnimationComponent`; the Ember Crown town hub is dressed with a 10-piece
-architecture/prop kit (NPCs wearing their 30D models) and the wilds got a dressing pass; status
-effects show school-tinted particle swirls, and the corruption appearance now follows the
-ART_STYLE per-tier arc (violet veining → ash → char → banked coals). All assets self-authored in
-Blender via the MCP (no external/licensed assets pulled yet).
+| Phase | | What it delivered |
+| --- | --- | --- |
+| 22–28 + 25.5 | ✅ | Production bible, corruption, meta-shell + localization, region streaming/map/fast travel, the Stage A hardening pass, races & creation, the Ember Crown, the Iron King boss slice |
+| 29 · 29.5 | ✅ | Combat feel (hit-stop, parry/riposte, dodge i-frames, lock-on); spellcraft — cast archetypes, school identities, mastery, combos, the fading Weave, enemy casters, the magic UI |
+| 30 · 30.5 · 31 · 32 | ✅ | Models & visual identity (`ART_STYLE.md`); the UI/HUD overhaul and the `UiPanel` framework; audio foundations; the companion system, with Kael authored in full |
+| 33 | ⏳ | Vertical slice assembly — 33A–33C ✅, 33D/33E **built but never played** |
+| 34 | ✅ | The enemy & creature roster (34A–34G): AI profiles, 26 creatures as data, per-school resistances, every magic school's on-hit identity, Ashen corruption variants, the bestiary |
 
-**Immediate next step: play the slice end to end** (`VERTICAL_SLICE_PLAN.md` §5.2) and export once (§8.2). Those two passes are what close Phases 33D/33E and open **Gate G1**. Phase 31 (Audio Foundations) is
-**complete** — mixer + `AudioDirector`, real CC0 SFX, adaptive music, interaction/UI SFX, environmental
-ambience, and surface footsteps (31A–31E, `SESSION_PLAYBOOK.md`). **Phase 32A** landed the companion
-follower core: an anchor/leash `CompanionAIComponent` driving the same locomotion/steering/melee
-components every other character uses, a team-0 `CompanionFactory` + `CompanionRegistry`, and an
-`ISaveable` `CompanionRoster` (recruit/dismiss/stance, party reconciled on load), and **32B** the
-command layer: a follow/hold/engage order cycled with one key, assist focus on the player's lock-on
-target, and a party HUD strip. **32C** made companions authored content (`CompanionResource` +
-`CompanionDatabase`) and added the loyalty standing — Wary→Sworn, persisted per companion, projected
-onto their stats, and exposed to dialogue as recruit/loyalty effects and conditions. **32D** closed the
-persistence round-trip: positions and hold anchors survive a save, loading reconciles rather than
-rebuilds, downed companions stay down, and a region transition cuts the band to formation. **32E**
-authored Kael in full — he stands in the Ember Crown with a recruit quest, a loyalty quest, a
-14-node conversation and an amicable parting — which **completes Phase 32**. **33A** then closed the
-new-game seam: creation flows into a narration prologue that plays over the already-built world and
-lifts on the Ember Crown. **33B** added the basics onboarding — look/move/sprint/attack/block/dodge
-taught by watching the player perform them, one self-hiding hint at a time, switchable off in
-Settings, and **33C** completed the set with interact/inventory/journal/cast. **33D** stitched the
-arc: a quest-gated boss, Kael named by the elder, a corruption warning before the arena, the
-Frostfang door held shut until the Iron King falls, and a closing card that branches on whether the
-player took his ember — built against the plan in `VERTICAL_SLICE_PLAN.md`, but **not yet played**.
-**33E** then made an exported build *be* the slice: `BuildProfile` strips the sandbox props, developer
-overlays and cheat keys from any non-development run, and export presets exist for Windows and Linux.
-What remains before **Gate G1 — Vertical Slice** is engine work no remote session can do: play the arc
-(§5.2), export once (§8.2), and give Kael a model of his own (§8.5). (Phase 30.5 UI & HUD Overhaul complete.) Remaining audio *production* (real CC0 music/ambience
-tracks, surface tagging) carries into Phase 52.
+> ### 🚩 What actually stands between here and Gate G1
+>
+> Three things, all requiring a maintainer at the keyboard — no remote session can do them:
+>
+> 1. **Play the slice arc end to end** (`VERTICAL_SLICE_PLAN.md` §5.2). 33D stitched it — a
+>    quest-gated boss, Kael named by the elder, a corruption warning before the arena, the
+>    Frostfang door held shut until the Iron King falls, a closing card that branches on whether
+>    you took his ember — but it has never been played through.
+> 2. **Export once** (§8.2). 33E made an exported build *be* the slice: `BuildProfile` strips the
+>    sandbox props, dev overlays and cheat keys from any non-development run.
+> 3. **Give Kael a model of his own** (§8.5).
+>
+> Phase 34's own at-keyboard leftovers are listed at the end of its block in
+> `SESSION_PLAYBOOK.md` — the bestiary's save round-trip is the notable one.
 
-**Stage C has begun in parallel with those two hands-on passes**, since the enemy roster is
-front-loadable content that doesn't touch the slice. **Phase 34 is underway (34A–34C)**: 34A
-data-fied enemy AI into tunable `AIProfileResource` profiles (`ai.*`) driving one brain rather
-than a subclass per behaviour; 34B data-fied enemy assembly into `EnemyArchetypeResource` +
-one shared factory and authored the four humanoids (bandit, cultist, soldier, Syndicate
-enforcer) with the outlaw and Syndicate factions; and **34C** added the beast roster — grey
-wolf, dire wolf, frost stalker, thornback boar and ashfall elk — on two new profiles
-(`ai.territorial`, `ai.prey`), a `faction.beasts` wildlife standing that the Sylthari
-communion fantasy can later flip, and a coinless pelt loot economy. The factory generalized
-past humanoids in the process (`EnemyArchetypeFactory`, melee reach now body-relative). **34D**
-then added the Hollow Queen's legions — hollow husk, bone knight, barrow wight, grave shade and
-a necromancer — on two fearless profiles (`ai.mindless`, `ai.deathless_guard`), a
-`faction.hollow` standing for 47E to attach her arc to, and the Necrotic school's first
-enemy-facing content (`spell.wither` + `status.decay`, the game's first Necrotic effect). The
-necromancer is the **first caster archetype authored as data**, which finally exercises the
-`KnownSpellIds` path 34B built and nothing used; its `spell.knit_bone` gets ally-mending free
-from the 34A caster-support branch, so it repairs its own husks with no new code. **34E** then
-added three constructs and four elementals — but had to land a *mechanic* first: `CombatMath`
-mitigated only Physical damage, so nothing in the game could resist a magic school and an
-elemental had no way to be elemental. Six per-school resistance stats now run through the same
-`ArmorMultiplier` curve armour uses, which also closed a live bug where a school-typed melee
-weapon bypassed armour entirely. Resistance never becomes immunity, per DESIGN's "no school a
-trap" rule. 34E also authored `spell.arcane_lance`, the school's first offensive spell, which
-unblocked **34E.5**: an Arcane hit now strips the target's longest-lasting buff, so **every magic
-school has a signature on-hit behaviour** and the identity table Phase 29.5B opened is closed.
-**34F** then gave the roster its corrupted half — but as a *variant layer* rather than another row:
-`AshenAffliction` takes any spawned enemy and makes it Morthul's (tougher, charred, ember-lit,
-worth more), rolled per enemy off a `CorruptionChance` authored on each encounter, since LORE puts
-creature corruption on the realm and never on the player. Phase 44.5's realm decay tier can drive
-that field later with no rework, and **35E's "Ash dragon (corrupted elite)" now inherits a
-mechanism instead of inventing one**. Two flagship Ashen creatures a modifier can't express ship
-alongside it — including a Cinder Thrall wielding the player's own corruption-gated lifesteal.
-**34G closed the phase** with the payoff the roster had been missing: 34A–34F built 26 spawnable
-creatures and nothing in the game named them. The Ash Hunters' field journal (`B`) catalogues all
-26 — kill counts, Ashen counts, and lore that opens in stages as you hunt — built entirely on the
-30.5F panel framework and the `MapService` persistence shape, with no new event needed since
-`EntityDiedEvent` already carries the template id. Its validator is the first to check a domain in
-**both** directions: every entry names a real creature *and* every registered creature has an
-entry, which is the guard against the "content exists but nothing can reach it" bug that 34E shipped
-and a playthrough had to find. **Phase 34 is complete (34A–34G).** Next: **34.5 (Frostfang clans)**,
-then **35 (dragons)**.
+**Next up:** 34.5 (Frostfang clans), then 35 (dragons). Remaining audio *production* — real CC0
+music/ambience, surface tagging — carries into Phase 52; final art across all five realms is Phase 53.
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —
 > a first-person open-world fantasy RPG where you battle fallen heroes across four

@@ -211,25 +211,22 @@ that *can express* the game. The [**production roadmap**](docs/PRODUCTION_ROADMA
 
 | Gate | Bar | Status |
 | ---- | --- | ------ |
-| **G0 — First Playable** | one region, a boss, the corruption hook | ✅ Done (Phases 22–29) |
-| **G1 — Vertical Slice** | a 30–60 min slice that looks & plays shipped | 🟢 In progress |
-| **G2 — Alpha** | every system/mechanic exists | ⏭ Queued |
+| **G0 — First Playable** | one region, a boss, the corruption hook | ✅ Done (Phases 22–28) |
+| **G1 — Vertical Slice** | a 30–60 min slice that looks & plays shipped | 🟢 Built — needs a play-through + export |
+| **G2 — Alpha** | every system/mechanic exists | 🟢 Started (Phase 34 ✅) |
 | **G3 — Beta** | all content in | ⏭ |
 | **G4 — Release Candidate** | zero blocker bugs | ⏭ |
 | **G5/G6 — Launch / Live** | shipped; then patches & content | ⏭ |
 
-**Now:** closing **G0 → G1**. Phases 22–29 are done (corruption, meta-shell &
-localization, region streaming + map + fast travel, races & creation, the Ember Crown
-greybox, the Iron King boss, and the full combat-feel pass), and **Phase 29.5 —
-Spellcraft & the Fading Weave — is complete**: cast archetypes, school identities,
-mastery, combos, the Weave, enemy casters, and a school-grouped spellbook with one
-signature spell per school.
+**Now:** everything through Phase 34 is built. **G1 is one play-through and one export away** —
+both need a human at the keyboard, which is the only reason the gate is still open.
 
 |              | Phase                                          |
 | ------------ | ---------------------------------------------- |
-| ✅ **Done**    | 22–32 + G0 First Playable (30 Models & Animation, 30.5 UI & HUD Overhaul, 31 Audio Foundations, 32 Companion System) |
-| ▶ **Current** | 33 — Vertical Slice Assembly (33A–33C ✅; 33D/33E built — need a play-through + export check) · ✅ 34 — Enemy & Creature Roster, complete (34A–34G: AI profiles, humanoids, beasts, undead, constructs & elementals, per-school resistances, every magic school's on-hit identity, Ashen corruption variants, and the Ash Hunters' bestiary) |
-| ⏭ **Next**    | 🚩 Gate G1 — Vertical Slice, then 34.5 — Frostfang clans, then 35 — dragons |
+| ✅ **Done**    | 22–32 + G0 First Playable — corruption, meta-shell & localization, region streaming/map/fast travel, races & creation, the Ember Crown, the Iron King, combat feel, spellcraft & the Weave, models, the UI/HUD overhaul, audio, companions |
+| ✅ **Done**    | 34 — Enemy & Creature Roster, complete (34A–34G): AI profiles, 26 creatures as data, per-school damage resistances, every magic school's on-hit identity, Ashen corruption variants, and the Ash Hunters' bestiary |
+| ▶ **Current** | 33 — Vertical Slice Assembly: 33A–33C ✅, **33D/33E built but never played**. Play it and export it and G1 closes |
+| ⏭ **Next**    | 34.5 — Frostfang clans, then 35 — dragons |
 
 > A phase is "done" when it works in-game **and** round-trips through save/load.
 
