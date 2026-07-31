@@ -86,11 +86,23 @@ public class AnimationClipsTests
     }
 
     [Fact]
-    public void ExactSlotNameBeatsAnAlias()
+    public void MoreSpecificClipWinsOverTheGenericSlotName()
     {
-        // Order in the list is deliberately hostile: the alias appears first.
-        string[] both = { "Bite", "Attack" };
-        Assert.Equal("Attack", AnimationClips.Resolve(both, "attack"));
+        // Deliberate policy, and a reversal of this file's first draft. "Attack" reads like the
+        // obvious winner, but real rigs use it for stances — the rogue's "Attacking_Idle" is a
+        // wind-up pose, and preferring the generic word resolved the attack slot to it, leaving the
+        // character posturing and never striking. A clip named for a weapon or a strike is always
+        // the strike, so those are tried first.
+        Assert.Equal("Bite", AnimationClips.Resolve(new[] { "Bite", "Attack" }, "attack"));
+        Assert.Equal("Bite", AnimationClips.Resolve(new[] { "Attack", "Bite" }, "attack"));
+    }
+
+    [Fact]
+    public void GenericAttackStillWinsWhenNoWeaponClipExists()
+    {
+        // The in-house rigs name it plainly, and nothing more specific is present.
+        Assert.Equal("attack", AnimationClips.Resolve(InHouse, "attack"));
+        Assert.Equal("CharacterArmature|Punch", AnimationClips.Resolve(Goblin, "attack"));
     }
 
     [Fact]
@@ -126,6 +138,32 @@ public class AnimationClipsTests
     {
         // The in-house naming has no bare "idle" at all, so the prefix pass must still carry it.
         Assert.Equal("idle-loop", AnimationClips.Resolve(new[] { "idle-loop" }, "idle"));
+    }
+
+    // The rogue standing in for Kael. "Attacking_Idle" is a stance, not a swing; resolving the
+    // attack slot to it would leave the companion winding up and never striking.
+    private static readonly string[] Rogue =
+    {
+        "Attacking_Idle", "Dagger_Attack", "Dagger_Attack2", "Death", "Idle", "PickUp",
+        "Punch", "RecieveHit", "RecieveHit_Attacking", "Roll", "Run", "Walk",
+    };
+
+    [Theory]
+    [InlineData("attack", "Dagger_Attack")]
+    [InlineData("idle", "Idle")]
+    [InlineData("run", "Run")]
+    [InlineData("hit", "RecieveHit")]
+    [InlineData("death", "Death")]
+    public void WeaponClipBeatsAStanceNamedAttack(string slot, string expected) =>
+        Assert.Equal(expected, AnimationClips.Resolve(Rogue, slot));
+
+    [Fact]
+    public void SwordClipWinsForABladeCarrier()
+    {
+        // The adventurer's only swing is "Sword_Slash"; its punches are secondary.
+        string[] adventurer = { "Idle", "Idle_Sword", "Punch_Left", "Punch_Right", "Run", "Sword_Slash" };
+        Assert.Equal("Sword_Slash", AnimationClips.Resolve(adventurer, "attack"));
+        Assert.Equal("Idle", AnimationClips.Resolve(adventurer, "idle"));
     }
 
     [Fact]
