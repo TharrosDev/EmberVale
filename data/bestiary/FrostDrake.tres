@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="BestiaryEntryResource" format=3 uid="uid://bfrstdrkbs35g"]
+
+[ext_resource type="Script" path="res://src/Enemies/BestiaryEntryResource.cs" id="1_entry"]
+
+; Beast, not Boss — it is the only dragonkin in the book you are expected to kill more than once, so
+; it takes the normal three kills to open rather than a boss's one.
+[resource]
+script = ExtResource("1_entry")
+Id = "enemy.frost_drake"
+NameKey = ""
+LoreKey = "enemy.frost_drake.lore"
+Category = 1
+KillsToKnow = 3

@@ -138,7 +138,14 @@ public partial class WorldEventDirector : Node3D
             return;
         }
 
-        WorldEventResource? resource = PickEligible(CurrentPhase());
+        // The active region gates the pool (Phase 35G, mirroring 34.5B's encounter gate) — the
+        // streamer is re-configured on every region change, so it is the one thing that always
+        // knows where the player is standing.
+        string regionId = ServiceLocator.Instance.TryGet(out RegionStreamer streamer)
+            ? streamer.ActiveRegionId
+            : string.Empty;
+
+        WorldEventResource? resource = PickEligible(CurrentPhase(), regionId);
         if (resource != null)
         {
             Begin(resource, player);
@@ -332,13 +339,13 @@ public partial class WorldEventDirector : Node3D
 
     // --- Selection helpers --------------------------------------------------
 
-    private WorldEventResource? PickEligible(DayPhase phase)
+    private WorldEventResource? PickEligible(DayPhase phase, string regionId)
     {
         var pool = new List<WorldEventResource>();
         float total = 0f;
         foreach (WorldEventResource r in WorldEventDatabase.All)
         {
-            if (!r.AllowedIn(phase) || OnCooldown(r.Id))
+            if (!r.AllowedIn(phase) || !r.AllowedIn(regionId) || OnCooldown(r.Id))
             {
                 continue;
             }

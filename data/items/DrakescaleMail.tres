@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EquippableItemResource" format=3 uid="uid://bdrkscmail35g"]
+
+[ext_resource type="Script" path="res://src/Items/EquippableItemResource.cs" id="1_eq"]
+
+; The Reach's answer to the Reach (Phase 35G). The first piece of gear in the game to carry one of
+; the 34E resistances — until now those lived on AttributeSets only, so enemies could shrug off a
+; school and the player could not.
+;
+; Frost, specifically, because that is what the region and the drakes throw: the thing that teaches
+; you to want it is the thing you take it off. It is not immunity — CombatMath puts resistance on
+; the armour curve so no school is ever a trap (DESIGN).
+[resource]
+script = ExtResource("1_eq")
+Id = "item.armor.drakescale_mail"
+DisplayName = "Drakescale Mail"
+Description = "Overlapping scales off something that used to breathe cold, laced onto a leather backing. The scales are still cold. The smith who first tried this said they always are."
+Type = 3
+Rarity = 3
+MaxStack = 1
+Weight = 9.0
+Value = 420
+Slot = 4
+BonusArmor = 28.0
+BonusMaxHealth = 40.0
+BonusFrostResist = 35.0

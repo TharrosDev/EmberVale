@@ -870,6 +870,17 @@ public static class ContentValidator
             {
                 issues.Add($"event '{worldEvent.Id}' rewards unknown faction '{worldEvent.FactionRewardId}'");
             }
+
+            // A misspelled region id (Phase 35G) silently narrows the event to nowhere, exactly as it
+            // does for an encounter: it is never eligible, and the only symptom is an event that
+            // stops appearing.
+            foreach (string regionId in worldEvent.RegionIds)
+            {
+                if (RegionDatabase.Get(regionId) == null)
+                {
+                    issues.Add($"event '{worldEvent.Id}' references unknown region '{regionId}'");
+                }
+            }
         }
     }
 

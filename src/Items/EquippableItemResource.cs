@@ -31,6 +31,12 @@ public partial class EquippableItemResource : ItemResource
     [Export] public float BonusCritChance { get; set; }
     [Export] public float BonusMoveSpeed { get; set; }
 
+    /// <summary>Frost resistance while worn (Phase 35G). Until this, the 34E resistance family was
+    /// authorable on an <see cref="Stats.AttributeSet"/> only — enemies could shrug off a school and
+    /// the player could not, so no piece of gear could answer the Reach's cold. The other five
+    /// resistances are one export and one line below each, when something wants them.</summary>
+    [Export] public float BonusFrostResist { get; set; }
+
     /// <summary>Enumerates the non-zero stat bonuses as (stat, value) pairs.</summary>
     public IEnumerable<(StatType Stat, float Value)> StatBonuses()
     {
@@ -41,5 +47,6 @@ public partial class EquippableItemResource : ItemResource
         if (BonusMaxStamina != 0f) yield return (StatType.Stamina, BonusMaxStamina);
         if (BonusCritChance != 0f) yield return (StatType.CritChance, BonusCritChance);
         if (BonusMoveSpeed != 0f) yield return (StatType.MoveSpeed, BonusMoveSpeed);
+        if (BonusFrostResist != 0f) yield return (StatType.FrostResist, BonusFrostResist);
     }
 }

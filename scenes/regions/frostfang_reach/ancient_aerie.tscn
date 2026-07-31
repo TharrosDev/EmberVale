@@ -1,13 +1,4 @@
-; The Ancient dragon's aerie (Phase 35F) — the third roost, and the first one that costs almost
-; nothing because scenes/regions/roost.tscn now owns the structure 35D and 35E each hand-authored.
-;
-; North of the Wild dragon's roost and butted against it: this floor is z ∈ [-155, -65] and the wild
-; roost's ends at z = -65, so the two are walkable across with no overlap and no co-planar z-fight.
-; 90 m of floor to a 44 m territory radius, so the leash always breaks off over solid ground.
-;
-; Pale, unburnt stone. The other two roosts are a fire and an ashfall; this one is just very high and
-; very old, and nothing has happened here for a long time.
-[gd_scene load_steps=8 format=3 uid="uid://crgnancaerie0"]
+[gd_scene format=3 uid="uid://crgnancaerie0"]
 
 [ext_resource type="PackedScene" path="res://scenes/regions/roost.tscn" id="1_roost"]
 [ext_resource type="Script" path="res://src/Entities/Entity.cs" id="2_entity"]

@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="WeaponResource" format=3 uid="uid://bdrkclaws35g"]
+
+[ext_resource type="Script" path="res://src/Combat/WeaponResource.cs" id="1_weapon"]
+
+; Between a beast's fangs (9) and a dragon's jaws (34). Slower and heavier than anything else that
+; roams — a drake telegraphs, which is what makes an ambient encounter with one survivable at all.
+[resource]
+script = ExtResource("1_weapon")
+DisplayName = "Drake's Claws"
+DamageType = 0
+BaseDamage = 18.0
+PoiseDamage = 28.0
+StaminaCost = 14.0
+WindupTime = 0.45
+ActiveTime = 0.18
+RecoveryTime = 0.6
+AttackSpeed = 0.8
+ComboLength = 2
+FinisherMultiplier = 1.45

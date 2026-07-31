@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="SpellResource" format=3 uid="uid://bdrkbrth35g0"]
+
+[ext_resource type="Script" path="res://src/Magic/SpellResource.cs" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+Id = "spell.drake_breath"
+DisplayName = "Drake's Breath"
+Description = "A short, mean exhalation of cold. It does not have the reach of a true dragon's — a drake has to mean it from close, which is the only mistake it habitually makes."
+School = 2
+Delivery = 3
+CastMode = 2
+PlayerLearnable = false
+MinCorruptionTier = 0
+ManaCost = 0.0
+Cooldown = 8.0
+BaseDamage = 12.0
+Healing = 0.0
+StatusEffectId = "status.chill"
+Range = 8.0
+ProjectileSpeed = 0.0
+ImpactRadius = 8.0
+ConeAngleDegrees = 45.0
+ChannelTickInterval = 0.4
+ChannelManaPerSecond = 14.0
