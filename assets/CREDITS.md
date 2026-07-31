@@ -11,9 +11,12 @@ it?" must be answerable without archaeology. An asset with no entry is **not fin
 
 ## Current state
 
-**15 props are Kenney CC0; everything else is still in-house.** The asset migration replaces the
-in-house set category by category (props first). Characters, creatures, buildings and the
-remaining props listed under *In-house assets* below are unchanged so far.
+**16 of the project's 34 models are Kenney CC0; the other 18 are still in-house.** The asset
+migration replaces the in-house set category by category (props first). Characters, creatures,
+buildings, the weapon and five props with no suitable match are unchanged so far.
+
+*(An earlier revision of this file, and PR #202's description, said 15. The count is 16 —
+corrected here because this file is the provenance record.)*
 
 Audio under `assets/audio/` is either CC0/open `.ogg`/`.wav` or `ProceduralAudio`
 placeholders generated at runtime (see `CLAUDE.md` §8, "a new sound cue"); any CC0 audio file
