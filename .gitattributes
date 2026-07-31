@@ -1,0 +1,24 @@
+# Godot writes its text resources with LF. This repo is developed on Windows with
+# core.autocrlf=true, so without these rules every Godot reimport rewrites the file back to LF
+# and git reports it as modified — 31 phantom "changes" appeared after the Phase 35 asset
+# migration's reimport, none of which were real edits.
+#
+# Pinning Godot's own formats to LF makes what the engine writes and what git stores identical,
+# so the churn stops. C# is deliberately left to the default so Visual Studio / dotnet keep
+# their platform-native endings.
+
+*.import   text eol=lf
+*.tres     text eol=lf
+*.tscn     text eol=lf
+*.godot    text eol=lf
+*.cfg      text eol=lf
+*.gdshader text eol=lf
+
+# Binary assets — never normalize, never diff as text.
+*.glb  binary
+*.gltf binary
+*.png  binary
+*.jpg  binary
+*.ogg  binary
+*.wav  binary
+*.blend binary

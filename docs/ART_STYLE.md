@@ -115,13 +115,17 @@ Arcane geometric glyphs, Nature growth curls, Necrotic sinks/drips).
 
 ## 3. Geometry budgets (triangles, per asset, LOD0)
 
-**Maintainer-pinned bands (2026-07-02): character-class models land between a
-strict minimum of 550 and a ceiling of 1500 triangles**, positioned by the
-model's importance and how much time the player spends looking at it. **Heavily
-instanced world props — rocks, trees, foliage, crates and the like — are exempt
-from the floor**: because of how many populate the world, they may go far lower
-so long as they still look good and don't throw off the vibe. Everything stays
-comfortably inside the Steam-Deck/min-spec target (Phase 19/57).
+> **The pinned bands are lifted (maintainer, Phase 35 asset migration).** The former hard
+> floor of 550 and ceiling of 1500 triangles no longer bind. The standing instruction is
+> *"aim to not use super intensive assets — use your discretion."* Sourced assets are
+> accepted at their own density; decimate only when a model is visibly heavy for what it is.
+> The table below is retained as **guidance for what a class typically costs**, not as a gate.
+
+For reference, the whole shipped model set was ~21.7k triangles before the migration, and the
+Kenney props that replaced 16 of them run 44–305 each. That is the order of magnitude "not
+super intensive" means in this project — it is not a licence to drop in a 100k-triangle hero
+prop. Everything should still sit comfortably inside the Steam-Deck/min-spec target
+(Phase 19/57), which is the real constraint the old numbers were standing in for.
 
 | Class | LOD0 budget | Notes |
 | ----- | ----------- | ----- |
@@ -141,6 +145,17 @@ the silhouette collapses — only then hand-author an LOD.
 ---
 
 ## 4. Materials & texturing
+
+> **Sourced assets keep their own materials (maintainer, Phase 35 asset migration).** The rules
+> below describe how to author *original* work and how the in-house set was built — 34 models
+> with **zero texture images**, bound to 46 hand-named palette materials. They are no longer a
+> gate on a downloaded asset: the Kenney props now in `assets/models/props/` carry the pack's own
+> `colormap` texture atlas, and that is accepted deliberately rather than stripped and repainted.
+>
+> Consequence to design around: the project now mixes an untextured hand-materialed set
+> (characters, creatures, buildings) with a texture-atlas set (props). Prefer sourcing further
+> assets from the **same packs already in use** so the atlas look stays one look rather than
+> several — consistency across the set is still the §7 bar.
 
 - **Workflow:** Godot `StandardMaterial3D` (Forward+), albedo + roughness (+
   metallic where true metal) (+ emission for embers/magic). Normal maps optional
@@ -211,10 +226,17 @@ runtime-parsed visual-mesh collision, per the navmesh rule in CLAUDE.md §8).
 [`ASSET_POLICY.md`](ASSET_POLICY.md), which governs acquisition and supersedes the
 old "model clean" preference below.
 
-Open-license sources are *raw material*, never dropped in verbatim: retopo/decimate
-to the §3 budget, repaint/posterize textures to §4 (a photo texture must stop
-reading as a photo), re-tint into the §2 palette. That visual contract is unchanged
-and is the reason a download is a starting point rather than a finished asset.
+Open-license sources are adapted, not authored from scratch. **What adaptation means was
+narrowed in the Phase 35 migration:** scale, origin, orientation and mesh cleanup are
+required; repainting textures into the §2 palette is **not** — sourced assets keep their own
+materials (see §4). A pack whose textures already read as stylised low-poly (Kenney's shared
+`colormap` atlas) is taken as-is.
+
+Still required of every download: match the footprint of whatever it replaces so scene
+transforms stay valid, drop the origin to the base, apply transforms, and join multi-part kit
+pieces into one mesh before scaling — parented children otherwise compound their parent's
+scale. A photo-realistic texture would still be wrong here; that part of the visual contract
+holds.
 
 Record source + license in `assets/CREDITS.md` (CC-BY requires the entry; CC0 gets
 one anyway for provenance) — an asset with no entry is not finished.

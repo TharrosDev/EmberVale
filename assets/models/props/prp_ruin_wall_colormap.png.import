@@ -2,15 +2,12 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c4ue8ds2ec8li"
+uid="uid://nr3hj8y1wwoj"
 path.s3tc="res://.godot/imported/prp_ruin_wall_colormap.png-2823b8348e5f543d1d005afebc5e60cf.s3tc.ctex"
 path.etc2="res://.godot/imported/prp_ruin_wall_colormap.png-2823b8348e5f543d1d005afebc5e60cf.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
-}
-generator_parameters={
-"md5": "ba059759a6d1a5c00589abf403baad91"
 }
 
 [deps]
