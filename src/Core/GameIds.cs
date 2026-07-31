@@ -83,8 +83,13 @@ public static class GameIds
         public const string AshMaw = "enemy.ash_maw";
         public const string CinderThrall = "enemy.cinder_thrall";
 
-        // Phase 35A — the first multi-hit-zone body. The Ash and Ancient variants are 35E/35F.
+        // Phase 35A — the first multi-hit-zone body. The Ancient variant is 35F.
         public const string WildDragon = "enemy.wild_dragon";
+
+        // Phase 35E — its own creature, not a corrupted Wild one: LORE gives Ash Dragons their own
+        // section, and AshenAffliction never changes TemplateId, so an afflicted Wild dragon could
+        // never have its own bestiary page.
+        public const string AshDragon = "enemy.ash_dragon";
     }
 
     /// <summary>Enemy AI personality ids (see <c>AIProfileDatabase</c> / data/ai_profiles, Phase 34A).</summary>
@@ -112,6 +117,10 @@ public static class GameIds
         // Phase 35A — a body too heavy to pivot: the first profile with a real turn rate, which is
         // what makes getting behind a dragon mean something.
         public const string Dragon = "ai.dragon";
+
+        // Phase 35E — slower to turn and 50 m of territory, sized to its own 100 m floor exactly, so
+        // a chase can never spill into the clan hold's safe zone next door.
+        public const string AshDragon = "ai.ash_dragon";
     }
 
     public static class Factions
@@ -171,6 +180,9 @@ public static class GameIds
 
         // Phase 35C — the first Cone delivery. Dragon breath is a channeled spell, not a bespoke attack.
         public const string DragonBreath = "spell.dragon_breath";
+
+        // Phase 35E — Necrotic rather than Fire, so fire resistance buys the player nothing here.
+        public const string AshBreath = "spell.ash_breath";
     }
 
     public static class Recipes
