@@ -40,6 +40,11 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
 
     private readonly List<SpellResource> _spells = new();
     private readonly Dictionary<string, double> _cooldowns = new();
+
+    /// <summary>Scratch list of cooldowns that expired this tick, reused every frame. Removals are
+    /// deferred into it because a dictionary cannot be removed from mid-enumeration (updating an
+    /// existing value in place is fine on .NET 8, and that is what the tick does).</summary>
+    private readonly List<string> _expiring = new();
     private readonly Dictionary<string, int> _ranks = new();
 
     private StatsComponent? _stats;
@@ -105,18 +110,27 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             return;
         }
 
-        // Snapshot the keys so removing/updating entries during the tick is safe.
-        foreach (string id in new List<string>(_cooldowns.Keys))
+        // Snapshot the keys so removing/updating entries during the tick is safe — into a reusable
+        // buffer, not a fresh List every frame. This ticks on the player and on every caster enemy, so
+        // the old allocation was a steady drip of garbage straight into the frame loop, and a GC hitch
+        // is precisely what a game with i-frames and parry windows cannot afford (DESIGN §1.3).
+        _expiring.Clear();
+        foreach (KeyValuePair<string, double> entry in _cooldowns)
         {
-            double remaining = _cooldowns[id] - delta;
+            double remaining = entry.Value - delta;
             if (remaining <= 0d)
             {
-                _cooldowns.Remove(id);
+                _expiring.Add(entry.Key);
             }
             else
             {
-                _cooldowns[id] = remaining;
+                _cooldowns[entry.Key] = remaining;
             }
+        }
+
+        foreach (string id in _expiring)
+        {
+            _cooldowns.Remove(id);
         }
     }
 
