@@ -11,7 +11,7 @@ it?" must be answerable without archaeology. An asset with no entry is **not fin
 
 ## Current state
 
-**18 of the project's 33 models are sourced; the other 15 are still in-house.** The asset
+**20 of the project's 33 models are sourced; the other 13 are still in-house.** The asset
 migration replaces the in-house set category by category. Every static prop that has a suitable
 open-source match has now been replaced. Characters, creatures, buildings, the weapon and three
 props with **no suitable match found** (see *Searched for, not replaced*) are unchanged.
@@ -26,9 +26,6 @@ That obligation ships with the game and must survive any future asset cull.
 Audio under `assets/audio/` is either CC0/open `.ogg`/`.wav` or `ProceduralAudio`
 placeholders generated at runtime (see `CLAUDE.md` §8, "a new sound cue"); any CC0 audio file
 added from here on gets an entry below too.
-
-This section stops being true the moment the first sourced model lands. Replace it with the
-entry.
 
 ---
 
@@ -116,6 +113,44 @@ Every replacement matches its predecessor's bounding box, so no scene transform 
 - **Used for:** `prp_tome_stand`
 - **Blender MCP modifications:** joined, per-axis scaled to the original's 0.55 × 1.22 × 0.44 box,
   transforms applied, origin dropped to base, mesh renamed `Mesh`.
+
+### Orc — Quaternius (CC0)
+
+- **Source:** Poly Pizza · **URL:** https://poly.pizza/m/5vO2YJsPEf
+- **Licence:** CC0 1.0 Universal · **Author:** Quaternius
+- **Why selected:** a rigged green humanoid with a weapon that reads as a goblin at 1.12 m, and it
+  ships every combat clip the project needs — Idle, Run, Punch, HitReact, Death. Chosen over a
+  lighter "Orc_Blob" (2,296 tris) because the blob has no Run and reads as a creature rather than a
+  humanoid raider.
+- **Used for:** `enm_goblin` (7,344 tris)
+
+### Knight — Quaternius (CC0)
+
+- **Source:** Poly Pizza · **URL:** https://poly.pizza/m/66kQ4dBBC7
+- **Licence:** CC0 1.0 Universal · **Author:** Quaternius
+- **Why selected:** an armoured blade-carrying figure with the richest clip set found — it adds
+  Slash and Stab on top of the standard set, so the boss's attack reads as a weapon swing rather
+  than a punch.
+- **Used for:** `boss_iron_king` (7,070 tris)
+
+**Blender MCP modifications (both):** scaled the **root node only** to the in-house model's height
+(goblin 1.12 m, Iron King 2.42 m), origin dropped to the feet, exported with skins and animations.
+
+⚠️ **Rigged models are converted differently from props.** The prop pipeline joins meshes and
+applies transforms; doing that to a skinned model destroys the rig. Applying scale to an armature
+is also wrong — it leaves the animation's keyed bone locations at the old scale and silently wrecks
+every clip. The scale therefore stays on the node and the glTF exporter writes it as a node
+transform, which Godot honours.
+
+**A trap this hit:** Blender keeps `bpy.data.actions` alive across imports, and the glTF exporter
+writes every action it can see. The first export baked *every previously imported model's*
+animations into both files — a goblin carrying `Fast_Flying` and `Headbutt`, an Iron King carrying
+`Bite_Front`. The purge between conversions must clear actions, armatures, meshes and materials,
+not just objects.
+
+**Verified post-import, not just on the source files:** Godot preserves the `CharacterArmature|`
+prefix (which is exactly why `AnimationClips` has to strip it) and strips the in-house `-loop`
+suffix. Both projects' naming resolves; the unit tests use the post-import names.
 
 ---
 
