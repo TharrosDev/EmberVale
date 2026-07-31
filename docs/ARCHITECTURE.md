@@ -144,10 +144,20 @@ direct children of the host. `Hitbox`/`Hurtbox` are `Area3D` (not
   `Hitbox=8`.
 - **`Hurtbox : Area3D`** — passive damageable region; layer `Hurtbox`, mask 0;
   points at the owner's `CombatComponent`. Needs a `CollisionShape3D` child.
+  An actor may carry **several**: Phase 35A's hit zones, each with a `ZoneId` and
+  a `DamageMultiplier` scaling damage *and* poise damage on the way through, so a
+  dragon's head is a weak point and its tail is not. Authored as
+  `EnemyArchetypeResource.HitZones`; one zone-less `Hurtbox` (multiplier `1`)
+  remains the norm for everything humanoid-sized.
+- **`HitDedupe`** — the "once per target" rule for a swing or a blast, keyed on the
+  **owning entity**, not the hurtbox. Shared by `Hitbox` and
+  `SpellResolver.Detonate`; without it a multi-zone body takes one full packet per
+  zone the volume happens to clip.
 - **`Hitbox : Area3D`** — damage-dealing region; layer `Hitbox`, mask `Hurtbox`.
   `Activate(packet)` opens the window; `_PhysicsProcess` **polls overlaps** and
-  hits each hurtbox once, skipping its own owner and **same-`Team`** hurtboxes
-  (friendly fire off). `Deactivate()` closes. Needs a `CollisionShape3D` child.
+  hits each *actor* once (via `HitDedupe`), skipping its own owner and
+  **same-`Team`** hurtboxes (friendly fire off). `Deactivate()` closes. Needs a
+  `CollisionShape3D` child.
 - **`CombatComponent`** — defender brain: `Team` (0 player, 1 hostile, 2 neutral
   target), poise/stagger, `IsBlocking`, and `ReceiveDamage(packet)` which applies
   block → armor → `StatsComponent.ApplyDamage`, manages poise (raises

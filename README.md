@@ -228,7 +228,7 @@ both need a human at the keyboard, which is the only reason the gate is still op
 | ✅ **Done**    | 34 — Enemy & Creature Roster, complete (34A–34G): AI profiles, 26 creatures as data, per-school damage resistances, every magic school's on-hit identity, Ashen corruption variants, and the Ash Hunters' bestiary |
 | ✅ **Done**    | 34.5 — the Frostfang Clans, complete (34.5A–34.5C): their faction and clan hold (Frostfang Reach's first settlement), raider/beast-tamer/shaman archetypes who ignore you until you give them a reason, and a rank chain you can earn your way up — or sell out |
 | ▶ **Current** | 33 — Vertical Slice Assembly: 33A–33C ✅, **33D/33E built but never played**. Play it and export it and G1 closes |
-| ⏭ **Next**    | 35 — dragons |
+| ▶ **Current** | 35 — dragons: 35A ✅ the body — hit zones as data (head ×2, tail ×0.6), a turn rate slow enough that getting behind one means something, and jaws/wing/tail arcs. Next up 35B, flight |
 
 > A phase is "done" when it works in-game **and** round-trips through save/load.
 

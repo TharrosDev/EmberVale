@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="WeaponResource" format=3 uid="uid://c0mhr8efdhrri"]
+
+[ext_resource type="Script" path="res://src/Combat/WeaponResource.cs" id="1_weapon"]
+
+[resource]
+script = ExtResource("1_weapon")
+DisplayName = "Dragon's Jaws"
+DamageType = 0
+BaseDamage = 34.0
+PoiseDamage = 60.0
+StaminaCost = 20.0
+WindupTime = 0.7
+ActiveTime = 0.25
+RecoveryTime = 0.85
+AttackSpeed = 0.6
+ComboLength = 2
+FinisherMultiplier = 1.5

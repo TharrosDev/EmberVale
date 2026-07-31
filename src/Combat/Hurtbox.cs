@@ -12,6 +12,16 @@ namespace Embervale.Combat;
 [GlobalClass]
 public partial class Hurtbox : Area3D
 {
+    /// <summary>Which body zone this is (<c>head</c>, <c>tail</c>, …) on a multi-zone actor, or empty
+    /// for the usual whole-body hurtbox. Phase 35A; diagnostic/authoring only.</summary>
+    [Export]
+    public string ZoneId { get; set; } = string.Empty;
+
+    /// <summary>Scales incoming damage — a dragon's head takes double, its tail shrugs hits off. The
+    /// default <c>1</c> leaves every pre-35A actor's damage untouched.</summary>
+    [Export]
+    public float DamageMultiplier { get; set; } = 1f;
+
     public IEntity? OwnerEntity { get; private set; }
 
     public CombatComponent? Combat { get; private set; }
@@ -27,9 +37,24 @@ public partial class Hurtbox : Area3D
         Combat = OwnerEntity?.GetComponent<CombatComponent>();
     }
 
-    /// <summary>Delivers a hit to the owning combat component, if any.</summary>
+    /// <summary>Delivers a hit to the owning combat component, if any, scaled by this zone's
+    /// multiplier. Poise scales with it too, so a headshot staggers harder than a tail clip.</summary>
     public DamageResult Receive(DamagePacket packet)
     {
-        return Combat?.ReceiveDamage(packet) ?? default;
+        if (Combat == null)
+        {
+            return default;
+        }
+
+        if (DamageMultiplier != 1f)
+        {
+            packet = packet with
+            {
+                Amount = packet.Amount * DamageMultiplier,
+                PoiseDamage = packet.PoiseDamage * DamageMultiplier,
+            };
+        }
+
+        return Combat.ReceiveDamage(packet);
     }
 }

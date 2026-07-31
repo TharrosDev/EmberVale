@@ -624,3 +624,7 @@ enemy.iron_king.lore,"The First Flamebearer. He was given the ember to save the 
 enemy.clan_raider.lore,"Shield, axe, and a patience the south mistakes for slowness. A raider will let you walk past a dozen times; the clans count a stranger's crossings before they count his coin. Start something and you learn what the shield was for."
 enemy.clan_beast_tamer.lore,"She hunts the way her stalkers do — wide, quiet, and never quite where you looked. The beasts are not commanded so much as agreed with, which is worse: cross her and there is no order to countermand."
 enemy.clan_shaman.lore,"The clans do not pray to Nyth. They listen to the weather and answer it, and what answers back is cold enough to stop a heart mid-beat. She mends her own before she ever turns the storm on you."
+
+# Phase 35A — dragons. The Ash and Ancient variants get their own entries in 35E/35F.
+enemy.wild_dragon.name,Wild Dragon
+enemy.wild_dragon.lore,"Older than the guilds, older than the Sundering, and entirely uninterested in either. A wild dragon claims a stretch of mountain and defends it against everything that walks — no cause, no bargain, no god. The Ash Hunters' advice is one line long: it turns slowly."
