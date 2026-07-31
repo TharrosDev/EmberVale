@@ -11,12 +11,17 @@ it?" must be answerable without archaeology. An asset with no entry is **not fin
 
 ## Current state
 
-**16 of the project's 34 models are Kenney CC0; the other 18 are still in-house.** The asset
-migration replaces the in-house set category by category (props first). Characters, creatures,
-buildings, the weapon and five props with no suitable match are unchanged so far.
+**18 of the project's 33 models are sourced; the other 15 are still in-house.** The asset
+migration replaces the in-house set category by category. Every static prop that has a suitable
+open-source match has now been replaced. Characters, creatures, buildings, the weapon and three
+props with **no suitable match found** (see *Searched for, not replaced*) are unchanged.
 
-*(An earlier revision of this file, and PR #202's description, said 15. The count is 16 —
-corrected here because this file is the provenance record.)*
+*(An earlier revision of this file, and PR #202's description, said 15 props. The prop count was
+16 — corrected here because this file is the provenance record. The model total dropped 34 → 33
+when the orphaned `enm_goblin_brute.glb` was deleted.)*
+
+⚠️ **One asset requires attribution.** `prp_tome_stand` is CC BY 3.0, not CC0 — see its entry.
+That obligation ships with the game and must survive any future asset cull.
 
 Audio under `assets/audio/` is either CC0/open `.ogg`/`.wav` or `ProceduralAudio`
 placeholders generated at runtime (see `CLAUDE.md` §8, "a new sound cue"); any CC0 audio file
@@ -85,6 +90,50 @@ Every replacement matches its predecessor's bounding box, so no scene transform 
 **Optimization:** single joined mesh per prop, transforms applied, origin at base, 44–305 tris
 (the in-house set was 28–1048). Godot extracts the embedded atlas to a sidecar PNG per model —
 16 copies of the same 11 KB image, 148 KB total, accepted as standard importer behaviour.
+
+### Practice Dummy — Quaternius (CC0)
+
+- **Source:** Poly Pizza · **URL:** https://poly.pizza/m/1pYOHhwjXP
+- **Licence:** CC0 1.0 Universal — no attribution required; recorded for provenance.
+- **Author:** Quaternius
+- **Why selected:** a mannequin silhouette that reads as a practice target at a glance, and 104
+  tris — lighter than the 648-tri in-house dummy it replaces. Chosen over a "dumbbell" hit from
+  the same search, which was visually inspected and rejected.
+- **Used for:** `prp_training_dummy`
+- **Blender MCP modifications:** joined, per-axis scaled to the original's 1.10 × 1.80 × 0.62 box,
+  transforms applied, origin dropped to base, mesh renamed `Mesh`.
+
+### Pulpit — 4444ESOUSA (CC BY 3.0) ⚠️ attribution required
+
+- **Source:** Poly Pizza · **URL:** https://poly.pizza/m/3nHkaEsTGL
+- **Licence:** **Creative Commons Attribution 3.0** — https://creativecommons.org/licenses/by/3.0/
+- **Required attribution:** *"Pulpit" by 4444ESOUSA, licensed CC BY 3.0.* This is the only asset
+  in the project carrying an attribution obligation. It must appear in the game's credits screen
+  before release; recording it here alone is not sufficient compliance.
+- **Why selected:** the only true lectern silhouette found across two search rounds — the CC0
+  alternatives were a potion bottle and a skull candle. 68 tris, the lightest model in the game.
+  Accepted a non-CC0 licence deliberately because the CC0 field had nothing that read as a lectern.
+- **Used for:** `prp_tome_stand`
+- **Blender MCP modifications:** joined, per-axis scaled to the original's 0.55 × 1.22 × 0.44 box,
+  transforms applied, origin dropped to base, mesh renamed `Mesh`.
+
+---
+
+## Searched for, not replaced
+
+Two full search rounds — Kenney (Fantasy Town, Survival, Modular Dungeon, Modular Cave), Poly
+Pizza across ~10 query terms, with every shortlisted candidate imported into Blender and
+**visually compared side by side** rather than judged on its filename. These three keep their
+in-house models:
+
+| Model | What the searches actually returned | Why rejected |
+| --- | --- | --- |
+| `prp_brazier` | cooking spit, bonfire, two rock fire-pits, potion bottle, skull candle | Nothing was a brazier — a raised fire bowl on legs. The near-misses are all ground-level fires, which is a different silhouette and a different read in a lit town square. |
+| `prp_glacier` | grey rocks, a cliff, a drinks can, an orange crystal | No ice. The closest geometric fit (`Environment_Cliff3`) is **19,960 faces** — more than the entire rest of the model set combined — and still reads as rock, not ice, which is wrong for Frostfang. |
+| `prp_relic` | two swords, generic cubes | A divine relic is too project-specific to source; its silhouette is authored narrative, not a generic prop. |
+
+Re-open these only if a winter/ice or dungeon-dressing pack lands that covers them; do not force
+a bad match to raise the sourced-asset count.
 
 ---
 
