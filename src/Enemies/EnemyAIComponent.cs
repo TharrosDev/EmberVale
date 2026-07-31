@@ -89,6 +89,13 @@ public partial class EnemyAIComponent : EntityComponent
     // This frame's delta, cached for FaceTowards' turn-rate slew (35A).
     private double _frameDelta;
 
+    // Null on everything that walks (35B). Present, it owns the vertical axis; this brain still owns
+    // the horizontal one, which is why flight needed no aerial state in the FSM below.
+    private FlightComponent? _flight;
+
+    /// <summary>True while this actor is too high for its melee to reach the ground.</summary>
+    private bool Airborne => _flight is { IsOutOfMeleeReach: true };
+
     public EnemyState State => _state;
 
     protected override void OnInitialize()
@@ -110,6 +117,7 @@ public partial class EnemyAIComponent : EntityComponent
         _weapon = Entity.GetComponent<MeleeWeaponComponent>();
         _casting = Entity.GetComponent<SpellcastingComponent>();
         _combat = Entity.GetComponent<CombatComponent>();
+        _flight = Entity.GetComponent<FlightComponent>();
         _mesh = _body.GetNodeOrNull<MeshInstance3D>("Mesh");
         _agent = _body.GetNodeOrNull<NavigationAgent3D>("NavAgent");
         _factionId = Entity.GetComponent<FactionComponent>()?.FactionId ?? string.Empty;
@@ -331,7 +339,9 @@ public partial class EnemyAIComponent : EntityComponent
             // just swings (IsUp is always false with no block duration authored).
             bool guard = GuardCycle.IsUp(_combatElapsed, _profile.BlockDuration, _profile.BlockRecovery);
             SetGuard(guard);
-            if (!guard)
+            // Range here is horizontal, so a flier hovering directly overhead reads as "in reach"
+            // and would swing at empty air the whole time it is up (35B).
+            if (!guard && !Airborne)
             {
                 _weapon?.TryAttack();
             }
@@ -741,7 +751,9 @@ public partial class EnemyAIComponent : EntityComponent
     /// </summary>
     private Vector3 NextPathPoint(Vector3 target)
     {
-        if (_agent == null)
+        // Airborne, the navmesh is the wrong map: its corners route around ground obstacles this
+        // actor is currently flying over. Steer straight (35B).
+        if (_agent == null || Airborne)
         {
             return target;
         }
@@ -820,9 +832,12 @@ public partial class EnemyAIComponent : EntityComponent
 
         // The guard only belongs up in melee — leaving combat (or dying) must never strand a corpse
         // or a patrolling enemy in a permanent block.
+        // A corpse must also fall rather than hang in the sky, and there is nothing to circle once
+        // the fight is over (35B).
         if (next != EnemyState.Combat)
         {
             SetGuard(false);
+            _flight?.Ground();
         }
 
         switch (next)

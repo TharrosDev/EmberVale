@@ -125,6 +125,13 @@ public static class EnemyArchetypeFactory
 
         enemy.AddChild(new EnemyAIComponent { Name = "AI", ProfileId = archetype.AiProfileId });
 
+        // 35B: flight is a property of the AI profile, not of the archetype — a profile with a
+        // takeoff range gets the vertical axis, everything else is untouched.
+        if (AIProfileDatabase.Get(archetype.AiProfileId) is { TakeoffRange: > 0f })
+        {
+            enemy.AddChild(new FlightComponent { Name = "Flight" });
+        }
+
         if (archetype.LootTablePath.Length > 0)
         {
             enemy.AddChild(new LootComponent { Name = "Loot", TablePath = archetype.LootTablePath });

@@ -362,6 +362,19 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 3. `ContentValidator` checks the zones (ids unique and non-empty, radius and
    multiplier positive, directional melee backed by zones).
 
+**Making a creature fly (Phase 35B)**
+1. Set `TakeoffRange > 0` on its **AI profile** (`data/ai_profiles/Xxx.tres`) plus
+   `HoverAltitude`, `ClimbSpeed`, `AirborneDuration` and `GroundedDuration`. Flight
+   is a property of the profile, not the archetype — `EnemyArchetypeFactory` attaches
+   a `FlightComponent` when the profile can fly, and `0` (the default on all four)
+   means no flight and no cost.
+2. **Keep the airborne window short.** A flier with no ranged attack that hovers
+   indefinitely is a fight where neither side can act. The cycle is deliberately
+   `Grounded → TakingOff → Airborne → Landing → Grounded`, never open-ended.
+3. Nothing else needs changing: the AI steers a flier horizontally exactly as it
+   steers a walker, and `LocomotionComponent.Flying` owns the vertical axis alone.
+   `ContentValidator` rejects half-authored flight tuning either way round.
+
 **A new weapon**
 1. Author `data/weapons/Xxx.tres` (`script_class="WeaponResource"`).
 2. Point a `MeleeWeaponComponent.Weapon` at it (factory or future equipment).

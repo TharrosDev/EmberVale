@@ -30,6 +30,18 @@ public partial class LocomotionComponent : EntityComponent
     [Export]
     public float SprintMultiplier { get; set; } = 1.6f;
 
+    /// <summary>Flight mode (Phase 35B): gravity is skipped and the body servos its vertical velocity
+    /// toward <see cref="TargetAltitude"/> instead. Horizontal movement is untouched, so a controller
+    /// (the enemy AI, in practice) keeps steering a flier exactly as it steers a walker. Off — every
+    /// actor before the dragon, and the dragon whenever it is on the ground — is the original motor.</summary>
+    public bool Flying { get; set; }
+
+    /// <summary>World-space Y the flier climbs or descends toward while <see cref="Flying"/>.</summary>
+    public float TargetAltitude { get; set; }
+
+    /// <summary>Vertical speed used to reach <see cref="TargetAltitude"/>, in m/s.</summary>
+    public float ClimbSpeed { get; set; } = 6f;
+
     private CharacterBody3D _body = null!;
     private StatsComponent? _stats;
     private float _gravity = 9.8f;
@@ -88,7 +100,15 @@ public partial class LocomotionComponent : EntityComponent
         float dt = (float)delta;
         Vector3 velocity = _body.Velocity;
 
-        if (!_body.IsOnFloor())
+        if (Flying)
+        {
+            // Servo toward the target altitude and clamp on arrival, so a hovering body holds still
+            // instead of oscillating through it. Descending into the floor is how landing ends:
+            // MoveAndSlide stops the body and IsGrounded reports it — no ground probe needed.
+            float gap = TargetAltitude - _body.GlobalPosition.Y;
+            velocity.Y = Mathf.Abs(gap) < 0.05f ? 0f : Mathf.Sign(gap) * ClimbSpeed;
+        }
+        else if (!_body.IsOnFloor())
         {
             velocity.Y -= _gravity * dt;
         }

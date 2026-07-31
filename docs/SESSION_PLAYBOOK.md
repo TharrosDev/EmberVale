@@ -2242,8 +2242,50 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
     no bespoke drops. Its greybox is a `Node3D`, not a `MeshInstance3D`, so
     `EnemyAIComponent.SetShadow`'s distance LOD silently no-ops on it (`_mesh` is null) —
     it costs a shadow at range until the model lands.
-- [ ] **35B — Aerial AI: flight pathing, takeoff/landing** `[F]`
+- [x] **35B — Aerial AI: flight pathing, takeoff/landing** `[F]` ✅
   - **Done when:** the dragon flies, lands, and takes off under AI control.
+  - **Flight is the vertical axis and nothing else.** `LocomotionComponent.Flying`
+    swaps gravity for a servo toward `TargetAltitude` at `ClimbSpeed`; horizontal
+    movement is untouched, so `EnemyAIComponent` steers a flier with exactly the code
+    that steers a walker. There is no second pathing system and no aerial branch in the
+    FSM — that split is why the whole sub-phase is four narrow guards and one component.
+  - **Tuning lives on the AI profile**, as `TurnSpeedDegrees` did in 35A:
+    `TakeoffRange`/`HoverAltitude`/`ClimbSpeed`/`AirborneDuration`/`GroundedDuration`.
+    `TakeoffRange = 0` is every other profile in the game and costs them one comparison.
+    `ai.dragon` is 16 m / 12 m / 6 m·s⁻¹ / 4.5 s / 8 s. **No new archetype and no new
+    enemy** — `enemy.wild_dragon` simply gained flight.
+  - **The cycle is time-boxed on purpose.** `FlightDecision` (pure, unit-tested) runs
+    `Grounded → TakingOff → Airborne → Landing → Grounded`; it takes off when the target
+    is past `TakeoffRange` *or* after `GroundedDuration` of melee, and always lands. A
+    dragon allowed to choose would stay up, and with no breath until 35C that is a fight
+    where neither side can act. **That hover window is where 35C's breath goes.**
+  - **Landing needs no raycast.** Descend with `Flying` still on, target an altitude below
+    the floor, and `MoveAndSlide` stops the body — `IsGrounded` ends the phase. Uneven
+    ground and landing higher than you took off are free.
+  - **Four guards in the AI, all narrow.** Range is measured horizontally, so a dragon
+    hovering overhead read as "in reach" and would swing at empty air — the swing is now
+    gated on not being airborne. The navmesh is bypassed while flying (its corners route
+    around obstacles it is flying over). Leaving combat, including dying, grounds it, so a
+    corpse falls instead of hanging in the sky. Melee resumes during `Landing` — the
+    descent is the swoop's payoff, not a helpless phase.
+  - **Verified:** `dotnet build` clean, `dotnet test` **640/640** (12 new in
+    `FlightDecisionTests`, including a full-cycle walk proving no phase is a dead end),
+    `--validate` exits 0. `ai.dragon`'s five flight fields were load-checked headless
+    (and `ai.boss` confirmed still at `TakeoffRange 0`), and `--play` boots into a live
+    world with the walking roster fighting normally — the `Flying == false` path is every
+    other enemy in the game.
+  - **Still owed (maintainer, at the keyboard)** — the `F1` console:
+    - `spawn 1 enemy.wild_dragon` and back away past 16 m: it should climb, close on you
+      from the air, and land — not hover indefinitely, not fall out of the sky.
+    - It must not swing while airborne, and must resume melee the moment it is down.
+    - Kill it mid-flight: the corpse should fall.
+    - Watch a full cycle for pacing. `AirborneDuration` and `GroundedDuration` are the
+      dials, and 12 m may read as too high once there is a model to see.
+  - **Known limits:** no flight animation — the greybox has no `AnimationPlayer`, so the
+    clips land with the `.glb`. Nothing persists: a spawned dragon is transient and
+    nothing on the enemy AI path is `ISaveable`, so a save mid-flight is not a case that
+    exists yet. The climb is a constant-velocity servo, not accelerated — fine for a
+    greybox, worth easing when the wings are real.
 - [ ] **35C — Breath attacks (cones/AoE) via SpellResolver** `[F]`
   - **Done when:** breath attacks reuse `SpellResolver`/status for cone/AoE damage.
 - [ ] **35D — Wild dragon variant (territorial world boss)** `[F/C]`
