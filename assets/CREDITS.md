@@ -188,32 +188,37 @@ earning its place on real data.
 Harmless (resolution takes the first match) and left alone rather than risking the rig to save a
 few KB.
 
-### Timber house — "Houses_FirstAge" (CC0)
+### Houses — "House_1" and a trimmed farmhouse (CC0)
 
-- **Source:** Poly Pizza · **URL:** https://poly.pizza/m/4MJWbyd6vw
-- **Licence:** CC0 1.0 Universal · 632 faces
-- **Used for:** `bld_house_a` **and** `bld_house_b`
-- **Why selected:** the only CC0 building found whose natural width-to-depth ratio (0.74) nearly
-  matches `bld_house_a`'s (0.71), so it fits the existing collider with only **7% distortion**.
-  Rejected alternatives: a pastel modern bungalow (wrong setting), a 55,581-triangle house
-  (CC-BY and ~2.6× the entire rest of the model set), an archery range, and a half-timbered farm
-  whose field could not be separated — the mesh splits into **1,086 loose parts**, one per fence
-  plank, so isolating the house was not a clean operation.
-- **Blender MCP modifications:** joined, per-axis scaled to each original's bounding box, origin
-  dropped to the base, mesh renamed `Mesh`. `bld_house_b` is additionally **rotated 90°**, because
-  that slot is wider than deep where the source is deeper than wide.
+| Slot | Model | Source | Faces | Size |
+| --- | --- | --- | --- | --- |
+| `bld_house_a` | House_1 | https://poly.pizza/m/BH2XHWUNmF | 5,758 | 4.74 × 7.50 × 5.88 m |
+| `bld_house_b` | Farm_SecondAge, field removed | https://poly.pizza/m/91wMLb9kKo | 2,288 | 4.26 × 6.80 × 5.03 m |
 
-**Deliberate reuse, and the honest cost.** One model serves both slots. `bld_house_b` carries a
-**35% depth squash** — past the 25% bar this migration otherwise held to — and was kept anyway
-after looking at it: rotated, it reads as a chunkier hut rather than a crushed one, and the number
-overstated the problem. The alternative was one sourced and one in-house building standing in the
-same town square, i.e. a textured building beside an untextured one, which `ART_STYLE.md` §7
-rules against outright ("consistency across the set beats individual asset quality"). Four huts at
-two rotations is ordinary for low-poly; a split look is not.
+- **Licence:** both CC0 1.0 Universal.
+- **Why selected:** both are **enclosed** half-timbered houses — real walls, windows, doors — in a
+  matching medieval style but distinct roofs (teal shingle vs red tile), so a square of four reads
+  as a village rather than a duplicated asset.
+- **Blender MCP modifications:** joined, **uniformly** scaled to a realistic two-storey height,
+  origin dropped to the base, mesh renamed `Mesh`. `bld_house_b` additionally had its attached farm
+  field removed: the mesh splits into 1,086 loose parts (one per fence plank), so the field was
+  separated by a **height cut** at 45% of the model's peak — 466 flat parts dropped, 620 kept.
 
-**Colliders untouched.** `Shape_bldgA` (6×5×8) and `Shape_bldgB` (8×6×6) are unchanged, which is
-precisely why the visual had to be scaled to the original box rather than left at its natural
-proportions — a mismatch would have produced invisible walls or a player clipping into a wall.
+⚠️ **The first attempt at this shipped and was wrong.** An earlier revision used a timber A-frame
+model that looked right in a three-quarter silhouette but is **open-sided** — the maintainer
+described the result as "roofs on stilts". It was chosen on outline and triangle count without
+checking for walls. Candidates are now inspected **at eye level, straight on**, which is the view
+that exposes a missing wall; that pass also caught a market stall, a modern apartment block, a
+neoclassical civic building and a torus literally named `House_Open`.
+
+⚠️ **Collision geometry was deliberately changed** — the one place in this migration where it was.
+The originals were wide, low, barn-like boxes (6×5×8 and 8×6×6); every enclosed house found is
+narrow and tall. Forcing one into the old box meant ~2× stretching, and matching the old footprint
+meant ~10 m houses towering over a 1.7 m player. So the houses are sized realistically at **uniform
+scale** and the colliders now fit them: `Shape_bldgA` → 4.74×7.50×5.88, `Shape_bldgB` →
+4.26×6.80×5.03, with the parent Y and model offsets moved to match in both
+`town_hub.tscn` and `clan_hold.tscn` (seven mounts). A collider should fit its building; keeping
+the old boxes would have meant invisible walls.
 
 ---
 
