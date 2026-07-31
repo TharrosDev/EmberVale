@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Embervale.Companions;
+using Embervale.Core;
 using Embervale.Core.Diagnostics;
 using Embervale.Crafting;
 using Embervale.Dialogue;
@@ -85,6 +86,7 @@ public static class ContentValidator
         ValidateDuplicateIds(issues);
         ValidateLootTables(issues);
         ValidateRecipes(issues);
+        ValidateRecipeReachability(issues);
         ValidateQuests(issues);
         ValidateDialogue(issues);
         ValidateSpells(issues);
@@ -613,6 +615,35 @@ public static class ContentValidator
         }
     }
 
+    /// <summary>
+    /// Every recipe must be reachable. The bestiary has had a both-directions check since 34G; recipes
+    /// never did, and because <c>CraftingComponent.Learn</c> has no caller anywhere (no tome, trainer,
+    /// dialogue effect or quest reward — that seam is Phase 38's), the *only* way a player ever knows a
+    /// recipe is <see cref="GameIds.Recipes.Starting"/>. A recipe outside that list is content nothing
+    /// can reach, which is how <c>recipe.leather_vest</c> sat dead from Phase 15 to Phase 35.
+    /// </summary>
+    private static void ValidateRecipeReachability(List<string> issues)
+    {
+        var seeded = new HashSet<string>(GameIds.Recipes.Starting);
+        foreach (CraftingRecipeResource recipe in RecipeDatabase.All)
+        {
+            if (!seeded.Contains(recipe.Id))
+            {
+                issues.Add(
+                    $"recipe '{recipe.Id}' is never learnable — nothing teaches recipes, so it must be " +
+                    "listed in GameIds.Recipes.Starting or no player can ever craft it");
+            }
+        }
+
+        foreach (string id in seeded)
+        {
+            if (RecipeDatabase.Get(id) == null)
+            {
+                issues.Add($"GameIds.Recipes.Starting seeds unknown recipe '{id}'");
+            }
+        }
+    }
+
     private static void ValidateRecipes(List<string> issues)
     {
         foreach (CraftingRecipeResource recipe in RecipeDatabase.All)
@@ -1028,8 +1059,45 @@ public static class ContentValidator
                 {
                     issues.Add($"quest '{quest.Id}' objective '{objective.TargetId}' has a non-positive RequiredCount");
                 }
+
+                // A Kill objective has to name something the world can produce again. Resolving to a
+                // registered template is not enough: a lair boss is a finite resource whose defeat is
+                // permanent, so a quest taken after the kill can never be completed and never leaves the
+                // journal. Phase 35F shipped exactly that through a green --validate.
+                if (objective.Type == ObjectiveType.Kill && !quest.AllowsOneShotTarget &&
+                    !string.IsNullOrEmpty(objective.TargetId) && !IsRepeatablySpawned(objective.TargetId))
+                {
+                    issues.Add(
+                        $"quest '{quest.Id}' kills '{objective.TargetId}', which no encounter or world event spawns — " +
+                        "it can only be killed once, so the quest is uncompletable if that happens first " +
+                        "(set AllowsOneShotTarget once the offering dialogue gates on the target being alive)");
+                }
             }
         }
+    }
+
+    /// <summary>Whether anything in the world can spawn this template more than once — an encounter or a
+    /// world event. A lair spawner deliberately does not count: that is the finite case this exists to
+    /// catch.</summary>
+    private static bool IsRepeatablySpawned(string templateId)
+    {
+        foreach (EncounterResource encounter in EncounterDatabase.All)
+        {
+            if (encounter.EnemyTemplateId == templateId)
+            {
+                return true;
+            }
+        }
+
+        foreach (WorldEventResource worldEvent in WorldEventDatabase.All)
+        {
+            if (worldEvent.Kind != WorldEventKind.Cache && worldEvent.EnemyTemplateId == templateId)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>Walks each quest's prerequisite chain and flags a cycle (a chain that revisits a
@@ -1061,6 +1129,61 @@ public static class ContentValidator
     /// the readers against the writers. A flag nothing writes is the typo that matters; the reverse
     /// (a flag set but never read) is legitimate, since flags are also a record of what happened.
     /// </summary>
+    /// <summary>
+    /// Adds story flags raised by scene-authored components to the "something writes this" set.
+    /// <see cref="Enemies.LairSpawnComponent.DefeatFlagId"/> (Phase 35F) is the first flag writer that
+    /// lives in a <c>.tscn</c> rather than in a dialogue effect or a code constant, so without this the
+    /// flag audit reports every one of them as "nothing ever sets it" — a false failure that would push
+    /// the next author to delete a working gate.
+    ///
+    /// Scanning the scene text rather than instantiating the scenes keeps this cheap and side-effect
+    /// free: the validator runs headless and must not build actors to answer a content question.
+    /// ponytail: one regex over the scene tree; if a second scene-authored flag writer appears, add its
+    /// property name to the pattern rather than a second walk.
+    /// </summary>
+    private static void CollectSceneAuthoredFlags(HashSet<string> written)
+    {
+        foreach (string path in ScenePaths("res://scenes"))
+        {
+            using FileAccess? file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
+            if (file == null)
+            {
+                continue;
+            }
+
+            foreach (System.Text.RegularExpressions.Match match in
+                     System.Text.RegularExpressions.Regex.Matches(file.GetAsText(), "DefeatFlagId = \"([^\"]+)\""))
+            {
+                written.Add(match.Groups[1].Value);
+            }
+        }
+    }
+
+    /// <summary>Every <c>.tscn</c> at or below a directory.</summary>
+    private static IEnumerable<string> ScenePaths(string directory)
+    {
+        if (!DirAccess.DirExistsAbsolute(directory))
+        {
+            yield break;
+        }
+
+        foreach (string file in DirAccess.GetFilesAt(directory))
+        {
+            if (file.EndsWith(".tscn", System.StringComparison.OrdinalIgnoreCase))
+            {
+                yield return $"{directory}/{file}";
+            }
+        }
+
+        foreach (string sub in DirAccess.GetDirectoriesAt(directory))
+        {
+            foreach (string nested in ScenePaths($"{directory}/{sub}"))
+            {
+                yield return nested;
+            }
+        }
+    }
+
     private static void ValidateStoryFlags(List<string> issues)
     {
         var written = new HashSet<string>
@@ -1069,6 +1192,8 @@ public static class ContentValidator
             Narrative.SliceDirector.CompletedFlag,
             Narrative.SliceDirector.AbsorbedFlag,
         };
+
+        CollectSceneAuthoredFlags(written);
 
         foreach (DialogueResource dialogue in DialogueDatabase.All)
         {

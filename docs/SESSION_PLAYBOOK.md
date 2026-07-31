@@ -3217,3 +3217,39 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
   draft PR. The **Done when** line is *extra*, not instead.
 </content>
 </invoke>
+
+---
+
+## Appendix — deliberate-shortcut ledger (`ponytail:` markers)
+
+Harvested by the Phase 35 audit. These are **known ceilings deliberately accepted**, not
+bugs and not oversights — each one names the cheap thing that was built and the upgrade
+path if it ever stops being enough. They are recorded here because a marker buried in a
+source file is invisible to planning, which is how "later" quietly becomes "never".
+
+Nothing here is scheduled. Revisit an entry only when its stated trigger actually fires.
+
+| Where | Ceiling accepted | Upgrade trigger |
+| ----- | ---------------- | --------------- |
+| `Combat/CombatMath.cs` | No vulnerability side — a negative resist clamps to ×1 | An encounter needs damage *amplified*, not just resisted (DESIGN §1.5 permits it, alongside a resisted-school answer) |
+| `Magic/SpellCombo.cs` | Combo table lives in code, not a `.tres` | A content author (not an engineer) needs to add combos |
+| `Magic/SpellZone.cs` | Zones spawn at the caster with a fixed radius | Aim-placed or growing zones are wanted |
+| `Magic/SpellTotem.cs` | Heals its owner only — no AI, collision or nav | A real summon system is needed (not before Phase 36's boss adds) |
+| `Magic/SpellTomeComponent.cs` | One tome teaches one spell | A multi-spell archive — but that is just several tomes |
+| `Magic/SchoolIdentity.cs` | Lightning single-jump; Arcane one buff per hit | A school needs more reach than one hop |
+| `Magic/SchoolMasteryComponent.cs` | 1 mastery point per cast *event* — a channel ranks per tick | Channelled spells out-rank instants in practice |
+| `World/SafeZones.cs` | One safe zone per region | A region needs a second safe area |
+| `World/Weave.cs` | One ambient potency value per region | Ley-site restoration lands as content |
+| `World/CellNavBaker.cs` | On-thread navmesh bake at cell load | A cell's geometry grows enough to stall a worker visibly |
+| `Quests/ObjectiveLocator.cs` | Linear scan of the enemy group per call | Group size grows past what the caller's throttle hides |
+| `UI/CompassStrip.cs` | Objective target re-resolved on a timer, cached | Targets move fast enough that the cache reads stale |
+| `Player/FirstPersonArmsComponent.cs` | Same unmirrored mesh on both hands | Real first-person arm assets replace the greybox (Phase 53) |
+| `Races/RaceComponent.cs` | Dev-tool race swap skips reputation | A player-facing respec/race-change is ever offered |
+| `Enemies/AshenAcolyteFactory.cs` | Reuses the goblin loot table | A Fallen/cultist table is authored |
+| `Localization/LocaleAudit.cs` | Hand-walks CSV lines (no quoted-comma support) | A string legitimately needs a comma inside quotes |
+| `Magic/SpellcastingComponent.cs` | Blink is a straight horizontal ray | Vertical or curved blink is wanted |
+| `Debugging/ContentValidator.cs` (×2) | Travel nodes validated at runtime, not authored; one regex for scene-authored flags | A second scene-authored writer of either kind appears |
+
+**House rule going forward:** when you write a `ponytail:` marker, name the ceiling *and*
+the trigger — a shortcut with no stated upgrade condition is indistinguishable from a bug
+six months later.

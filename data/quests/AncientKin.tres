@@ -31,3 +31,7 @@ RewardItems = Array[Resource]([])
 FactionRewardId = "faction.dragons"
 FactionRewardAmount = 25
 PrerequisiteQuestId = ""
+; The Ash dragon is a lair boss — killed once, gone for good. Permitted here because
+; dialogue.ancient_dragon gates the accept on flag.ash_dragon_defeated being unset, and pays the
+; favour outright when it is already set, so the quest can never be started in an uncompletable state.
+AllowsOneShotTarget = true

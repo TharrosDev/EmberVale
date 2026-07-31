@@ -504,6 +504,12 @@ cell sat far from the origin). `EnemySpawnDirector` had the same latent bug.
    `PrerequisiteQuestId` chains it after another. **Objectives are Kill/Collect only** —
    "go and talk to X" is not expressible, so a turn-in is a conversation the player has to
    remember to have.
+   ⚠️ **A Kill objective must name something that respawns.** `--validate` requires the target to be
+   spawnable by an encounter or world event, because a lair boss is killed once and stays dead — a
+   quest taken afterwards can never complete and never leaves the journal (Phase 35F shipped exactly
+   that). Targeting a one-shot boss needs `AllowsOneShotTarget = true` **and** an offering dialogue
+   that gates on the target still being alive; see `quest.ancient.kin` + `dialogue.ancient_dragon`,
+   which pair it with `LairSpawnComponent.DefeatFlagId`.
    **Story flags** (`Effect` SetFlag / `Condition` HasFlag) are the only way to mark
    *state* a quest can't: membership, a rank, a favour owed. They have no database, so
    `--validate` can only catch a flag that **nothing ever sets** — a `SetFlag` typo still
@@ -623,12 +629,14 @@ cell sat far from the origin). `EnemySpawnDirector` had the same latent bug.
    `CraftingComponent.StartingRecipeIds` in `PlayerFactory`, or call `Learn`); it then appears
    at a matching `CraftingStationComponent`. New stations: `CraftingStationFactory.Create(...)`
    in the bootstrap. No code change for new recipes.
-3. ⚠️ **Seed it, or it is dead content.** `CraftingComponent.Learn` exists and **nothing in the
-   game calls it** — there is no recipe tome, dialogue effect or quest reward that teaches one,
-   and `--validate` has no reachability check for recipes the way it does for the bestiary. An
-   unseeded recipe is unreachable (`recipe.leather_vest` has been since Phase 15). Gate a
-   late-game recipe on a **scarce ingredient** instead, the way `recipe.drakescale_mail` gates on
-   eight dragon scales that only Frostfang's dragonkin drop.
+3. ⚠️ **Seed it in `GameIds.Recipes.Starting`, or it is dead content.** `CraftingComponent.Learn`
+   exists and **nothing in the game calls it** — there is no recipe tome, dialogue effect or quest
+   reward that teaches one (that seam is Phase 38's). That array is therefore the whole of
+   reachability, it is what `PlayerFactory` seeds, and **`--validate` now checks it in both
+   directions** like the bestiary — an unseeded recipe fails the build rather than rotting silently
+   the way `recipe.leather_vest` did from Phase 15 to Phase 35. Gate a late-game recipe on a
+   **scarce ingredient** instead, the way `recipe.drakescale_mail` gates on eight dragon scales that
+   only Frostfang's dragonkin drop.
 
 **A new spell**
 1. Author `data/spells/Xxx.tres` (`script_class="SpellResource"`): unique `Id`, `School`
