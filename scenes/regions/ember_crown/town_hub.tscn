@@ -51,10 +51,10 @@ size = Vector3(8, 6, 6)
 albedo_color = Color(0.4, 0.38, 0.36, 1)
 
 [sub_resource type="BoxShape3D" id="Shape_bldgA"]
-size = Vector3(6, 5, 8)
+size = Vector3(4.74, 7.5, 5.88)
 
 [sub_resource type="BoxShape3D" id="Shape_bldgB"]
-size = Vector3(8, 6, 6)
+size = Vector3(4.26, 6.8, 5.03)
 
 [sub_resource type="CylinderShape3D" id="Shape_waystone"]
 radius = 0.7
@@ -163,7 +163,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
 shape = SubResource("Shape_floor")
 
 [node name="BuildingNW" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 2.5, -6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 3.75, -6)
 
 [node name="BuildingNWCol" type="StaticBody3D" parent="Nav/BuildingNW"]
 
@@ -171,7 +171,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 2.5, -6)
 shape = SubResource("Shape_bldgA")
 
 [node name="BuildingNE" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 2.5, -6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 3.75, -6)
 
 [node name="BuildingNECol" type="StaticBody3D" parent="Nav/BuildingNE"]
 
@@ -179,7 +179,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 2.5, -6)
 shape = SubResource("Shape_bldgA")
 
 [node name="BuildingSW" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 3, -22)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 3.4, -22)
 
 [node name="BuildingSWCol" type="StaticBody3D" parent="Nav/BuildingSW"]
 
@@ -187,7 +187,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 3, -22)
 shape = SubResource("Shape_bldgB")
 
 [node name="BuildingSE" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 3, -22)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 3.4, -22)
 
 [node name="BuildingSECol" type="StaticBody3D" parent="Nav/BuildingSE"]
 
@@ -567,16 +567,16 @@ Station = 3
 StationName = "Alchemy Table"
 
 [node name="Model" parent="Nav/BuildingNW" instance=ExtResource("10_house_a")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.5, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.75, 0)
 
 [node name="Model" parent="Nav/BuildingNE" instance=ExtResource("10_house_a")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.5, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.75, 0)
 
 [node name="Model" parent="Nav/BuildingSW" instance=ExtResource("11_house_b")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.4, 0)
 
 [node name="Model" parent="Nav/BuildingSE" instance=ExtResource("11_house_b")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.4, 0)
 
 [node name="Model" parent="Waystone" instance=ExtResource("12_waystone")]
 
