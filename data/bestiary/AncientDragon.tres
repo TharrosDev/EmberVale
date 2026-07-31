@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="BestiaryEntryResource" format=3 uid="uid://bancdrgnbs35f"]
+
+[ext_resource type="Script" path="res://src/Enemies/BestiaryEntryResource.cs" id="1_entry"]
+
+; KillsToKnow = 1 skips the Sighted stage, as it does for every boss — but this is the one creature
+; in the book the player may never kill at all. The page is written so it reads as complete either
+; way: what you learn about an Ancient, you learn by talking to it.
+[resource]
+script = ExtResource("1_entry")
+Id = "enemy.ancient_dragon"
+NameKey = ""
+LoreKey = "enemy.ancient_dragon.lore"
+Category = 6
+KillsToKnow = 1

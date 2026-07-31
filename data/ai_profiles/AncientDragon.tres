@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="AIProfileResource" format=3 uid="uid://bancdrgnai35f"]
+
+[ext_resource type="Script" path="res://src/Enemies/AIProfileResource.cs" id="1_profile"]
+
+; The slowest, most deliberate of the three dragons. It has the widest vision in the game and the
+; lowest turn rate: it sees you coming from the far side of its aerie and cannot be surprised, but
+; once it commits to a swing it is committed, and 35A's flank and rear arcs are wide open to anyone
+; willing to keep moving. That is the fight an old creature should be.
+;
+; It also spends the most time on the ground — a conversation is impossible with something circling
+; at 13 m, and the aerie is where it lives rather than where it hunts.
+;
+; TerritoryRadius 44 against a 90 m floor: the leash breaks off well inside its own ground, so a
+; chase can never spill over the cell edge into the void or a neighbour's props (the 35D/35E rule).
+[resource]
+script = ExtResource("1_profile")
+Id = "ai.ancient_dragon"
+VisionRange = 70.0
+FovDegrees = 170.0
+AlertRadius = 40.0
+AttackRange = 6.5
+PatrolRadius = 6.0
+TurnSpeedDegrees = 35.0
+TakeoffRange = 18.0
+HoverAltitude = 13.0
+ClimbSpeed = 5.0
+AirborneDuration = 4.0
+GroundedDuration = 10.0
+TerritoryRadius = 44.0
+RetreatHealthFraction = 0.0
+ProvokeMemory = 45.0
+ActiveDistance = 120.0

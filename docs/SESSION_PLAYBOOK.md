@@ -2448,9 +2448,87 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
     way); worth a look if the orphan diagnostic is ever tightened. **Two hand-authored roost cells is
     fine; a third should promote the roost into a reusable scene rather than a third copy.** No map
     POI for either lair.
-- [ ] **35F — Ancient dragon: dialogue-capable quest/lore giver** `[F/C]`
+- [x] **35F — Ancient dragon: dialogue-capable quest/lore giver** `[F/C]` ✅
   - **Done when:** an Ancient dragon can hold a conversation (`DialogueComponent`)
     and give quests/lore.
+  - **The first actor that is a boss and a conversation at once.** `enemy.ancient_dragon`
+    (Vharyx the Unspoken) sits in a 90 m aerie north of the Wild dragon's roost, holds
+    `dialogue.ancient_dragon`, gives `quest.ancient.kin`, and fights like the other two if you
+    make it. Everything 35A–35E built is reused unchanged: hit zones, directional melee,
+    flight, a cone breath, a territory leash, a persisted lair spawner.
+  - **Four small code seams, all of them general:**
+    - `EnemyArchetypeResource.DialogueId` → `EnemyArchetypeFactory` attaches a
+      `DialogueComponent`. Nothing else was needed to make it reachable — the interact
+      raycast is unmasked and resolves the owner from whatever collider it hits, so the body
+      the creature already has is the target.
+    - `DialogueEffect.LearnSpell` (**ordinal 8**) → `SpellcastingComponent.Learn`. This is the
+      conversational half of 29.5E's recovery seam, where `SpellTomeComponent` was the
+      found-object half, and it closes the roadmap's "earning one's favor teaches a recovered
+      spell". `Learn` ignores `PlayerLearnable`, which is exactly why it works: the spell can
+      be given but never bought.
+    - `LairSpawnComponent.DefeatFlagId` → sets a story flag on the kill (and re-applies it on
+      load). **Nothing in the game turned a kill into a flag before**, so "you have slain the
+      boss" was not askable by a dialogue condition or a gated interactable. Every world boss
+      gets it, not just this one.
+    - `SpellTomeComponent.RequiredFlagId` → a tome that will not open until a flag is held.
+      Together with the above, that is the defeat route: the hoard sits in the aerie from the
+      start and yields the same word once its keeper is dead.
+  - **🐛 A live UI defect this phase surfaced.** `InventoryPanel.BuildSpells` filtered the
+    character screen on `PlayerLearnable`, so a spell the player had *actually learned* but
+    could never buy rendered nowhere. The 35F reward would have been invisible in the one
+    screen that lists your spells. Fixed at the filter (`|| _spellcasting.IsKnown(s)`); it was
+    a latent bug for any recovered enemy-grade spell, not just this one.
+  - **Neutral until provoked cost nothing.** `faction.dragons` — its own faction, deliberately
+    not the Wild dragon's `faction.beasts` or the Ash dragon's `faction.fallen`, so clearing
+    the wilds of wyrms does not make the one you can talk to draw breath on you. Default
+    standing Neutral, `HostileThreshold` at Unfriendly: `EnemyAIComponent.PlayerIsTarget`
+    already returns false above the threshold and `OnDamaged` already sets `_provoked`. **No
+    AI code was written for this phase.**
+  - **The roost debt is paid.** 35D and 35E both ended with "a third roost should promote the
+    roost into a reusable scene rather than become a third copy", so it was promoted *before*
+    the third one landed. `scenes/regions/roost.tscn` + `RoostCell.cs` own the nav region,
+    baker, floor mesh/collider and the `Nest`/`Lair` markers; all three roosts are inherited
+    scenes carrying only their floor knobs, their identity, their occupant and their props.
+    The floor's mesh, shape and material are base-scene sub-resources shared by every roost,
+    so `RoostCell` `Duplicate()`s each before touching it — otherwise sizing the third would
+    have resized the other two. The Wild roost's floor roughness moved 0.9 → 0.95 in the
+    merge; nothing else about either existing roost changed.
+  - **One spell, not two.** `spell.elder_word` is the Ancient's breath *and* the thing it
+    teaches — Arcane, so neither the Fire resistance the Wild dragon teaches you to carry nor
+    the Necrotic one the Ash dragon does buys anything. Making the reward literally the weapon
+    that was used on you is one `.tres` instead of two, and it reads better than either.
+  - **The quest ties the three dragons together.** `quest.ancient.kin` is a Kill objective on
+    `enemy.ash_dragon` — 35E's boss — so the favour route is earned by real work in the same
+    region rather than by exhausting a dialogue tree, and Frostfang's three lairs are one story
+    instead of three fights. There is no "return and tell it" objective (the quest system is
+    Kill/Collect only), so the turn-in is a conversation the player has to remember to have.
+  - **Verified:** `dotnet build` clean, `dotnet test` **670/670**, `--validate` exits 0 (29
+    archetypes, 32 bestiary entries, 9 factions, 14 quests, 13 conversations, 18 spells, 620
+    strings). All four roost scenes were **instantiated headless** — the base plus all three
+    derived cells build with their own floor size (90 / 90 / 100 / 90), their own prop counts,
+    distinct `PersistentId`s, the right occupant each, and the hoard + defeat flag only on the
+    aerie. A headless `--play` into the Frostfang save booted clean and **streamed the
+    re-expressed wild roost cell** (`RegionStreamer: loaded cell 'frostfang_reach.dragon_roost'`)
+    with zero errors and no nav-bake warning — that is the 35F regression proof for Part 2.
+  - **⚠️ Rebuild before you believe a scene check.** The first headless run reported "Cannot
+    instantiate C# script … RoostCell.cs" on all four scenes. Not a scene bug — `Embervale.dll`
+    predated the new file. This is the §2 stale-binary trap wearing a different costume: it
+    looked exactly like a broken inherited scene.
+  - **Still owed (maintainer, at the keyboard):** the aerie is ~117 m from where the save sits,
+    so `--play` proved boot and save restore, **not** that the Ancient spawns or speaks.
+    - Walk to the aerie: the cell streams, the dragon is *in* it, and `E` reads as talking, not
+      fighting.
+    - Take the quest, kill the Ash dragon, return: the favour branch appears, the Elder Word is
+      taught, and it **shows and casts** from the character screen (the fix above).
+    - Hit it: it turns hostile, and breaks off at its territory edge rather than following you.
+    - Kill it instead: the hoard's tome opens (it must refuse before the kill), the other two
+      dragons are unaffected, and all three lairs stay dead across a cell reload and `F5`/`F9`.
+  - **Known limits:** the 35E orphaned-`ISaveable` warning on load is unchanged and still
+    harmless. No map POI for any of the three lairs. No new unit tests — everything added is
+    Godot-node-bound (a session, two components, a factory branch) and the pure-logic suite
+    takes no nodes; the one thing that could silently corrupt saves, the new enum ordinal, is
+    pinned in `EnumStabilityTests` (which now also pins the three companion effects it had
+    been missing since 32C).
 - [ ] **35G — Dragon encounters in Frostfang + high-end world events** `[C]`
   - **Done when:** dragon encounters seed Frostfang Reach and the world-event
     tables.

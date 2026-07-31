@@ -21,6 +21,11 @@ public partial class SpellTomeComponent : InteractableComponent
     /// <summary>The spell this tome restores (a <c>spell.*</c> id resolved via <see cref="SpellDatabase"/>).</summary>
     [Export] public string SpellId { get; set; } = string.Empty;
 
+    /// <summary>Optional story flag the reader must hold before the tome opens (Phase 35F) — a dragon's
+    /// hoard can then sit in its lair from the start and still only yield once the dragon is dead
+    /// (see <see cref="Enemies.LairSpawnComponent.DefeatFlagId"/>). Empty = always readable.</summary>
+    [Export] public string RequiredFlagId { get; set; } = string.Empty;
+
     private SpellResource? Spell => SpellDatabase.Get(SpellId);
 
     public override string Prompt
@@ -37,6 +42,12 @@ public partial class SpellTomeComponent : InteractableComponent
         SpellResource? spell = Spell;
         if (spell == null || instigator.GetComponent<SpellcastingComponent>() is not { } casting)
         {
+            return;
+        }
+
+        if (RequiredFlagId.Length > 0 && instigator.GetComponent<Dialogue.StoryFlagsComponent>()?.Has(RequiredFlagId) != true)
+        {
+            Log.Info("The tome is sealed — whatever guards it is still guarding it.");
             return;
         }
 

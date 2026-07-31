@@ -208,6 +208,13 @@ public static class ContentValidator
                     issues.Add($"enemy archetype '{id}' breathes '{archetype.BreathSpellId}' but does not know it");
                 }
             }
+
+            // 35F: a creature that talks. An unknown id gives it a mute DialogueComponent, which in
+            // play looks exactly like a creature that was never meant to speak.
+            if (archetype.DialogueId.Length > 0 && DialogueDatabase.Get(archetype.DialogueId) == null)
+            {
+                issues.Add($"enemy archetype '{id}' references unknown dialogue '{archetype.DialogueId}'");
+            }
         }
     }
 
@@ -722,6 +729,12 @@ public static class ContentValidator
                     if (choice.Effect == DialogueEffect.StartQuest && QuestDatabase.Get(choice.EffectArg) == null)
                     {
                         issues.Add($"dialogue '{dialogue.Id}' StartQuest effect references unknown quest '{choice.EffectArg}'");
+                    }
+
+                    // 35F: a mistyped taught spell is the whole reward for a boss fight, silently gone.
+                    if (choice.Effect == DialogueEffect.LearnSpell && SpellDatabase.Get(choice.EffectArg) == null)
+                    {
+                        issues.Add($"dialogue '{dialogue.Id}' LearnSpell effect references unknown spell '{choice.EffectArg}'");
                     }
 
                     // Corruption-typed conditions/effects take an integer threshold/amount.

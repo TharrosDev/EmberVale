@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="AttributeSet" format=3 uid="uid://bancdrgnat35f"]
+
+[ext_resource type="Script" path="res://src/Stats/AttributeSet.cs" id="1_attrset"]
+
+; The oldest thing the player can pick a fight with: more health and armour than the Ash dragon, and
+; the deepest mana pool in the game (it is a caster that has had centuries to practise). It does NOT
+; out-damage the Ash dragon — LORE keeps "among the most dangerous enemies in the game" for the
+; corrupted one. This is a wall that talks; that one is a knife.
+;
+; Broad resistances, and Arcane highest of all: a creature whose whole identity is knowledge is not
+; going to be surprised by a spell. Fire and Frost are covered because it lives in the Reach and has
+; met both dragons that share it with it. Nothing reaches immunity — CombatMath puts resistance on
+; the armour curve precisely so no school is ever a trap (DESIGN).
+[resource]
+script = ExtResource("1_attrset")
+Health = 2400.0
+Stamina = 220.0
+Mana = 400.0
+Strength = 34.0
+Dexterity = 12.0
+Intelligence = 44.0
+Vitality = 60.0
+Endurance = 30.0
+Armor = 42.0
+PhysicalPower = 36.0
+SpellPower = 46.0
+MoveSpeed = 3.6
+AttackSpeed = 0.5
+CritChance = 0.05
+CritDamage = 1.7
+FireResist = 45.0
+FrostResist = 45.0
+ArcaneResist = 60.0
+NecroticResist = 30.0

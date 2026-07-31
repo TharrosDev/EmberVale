@@ -1,6 +1,8 @@
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
+using Embervale.Core.Services;
 using Embervale.Entities;
+using Embervale.Player;
 using Embervale.Save;
 using Godot;
 
@@ -30,6 +32,13 @@ public partial class LairSpawnComponent : EntityComponent, ISaveable
 
     /// <summary>Where it stands relative to this marker.</summary>
     [Export] public Vector3 SpawnOffset { get; set; } = Vector3.Zero;
+
+    /// <summary>Optional story flag set on the player once the occupant is dead (Phase 35F). Nothing
+    /// else in the game turns a kill into a flag, so without this "you have slain the boss" cannot be
+    /// asked by a dialogue condition or an interactable gate — which is what the Ancient dragon's
+    /// hoard needs. Set on death and re-applied on load, so it survives a save taken before the flag
+    /// was written and cannot be lost by killing the boss and reloading an older world.</summary>
+    [Export] public string DefeatFlagId { get; set; } = string.Empty;
 
     /// <summary>True once the occupant has been killed. Persisted; the lair then stays empty.</summary>
     public bool Defeated { get; private set; }
@@ -94,6 +103,23 @@ public partial class LairSpawnComponent : EntityComponent, ISaveable
 
         Defeated = true;
         _occupant = null;
+        RaiseDefeatFlag();
+    }
+
+    /// <summary>Marks the kill on the player's story flags, so a conversation or a gated interactable
+    /// can ask about it. Resolving the player through the <see cref="ServiceLocator"/> rather than the
+    /// death event keeps it correct when something other than the player lands the killing blow.</summary>
+    private void RaiseDefeatFlag()
+    {
+        if (DefeatFlagId.Length == 0)
+        {
+            return;
+        }
+
+        if (ServiceLocator.Instance is { } locator && locator.TryGet(out PlayerCharacter player))
+        {
+            player.GetComponent<Dialogue.StoryFlagsComponent>()?.Set(DefeatFlagId);
+        }
     }
 
     public Godot.Collections.Dictionary Save() => new() { ["defeated"] = Defeated };
@@ -104,10 +130,17 @@ public partial class LairSpawnComponent : EntityComponent, ISaveable
 
         // A load can arrive after the lair has already populated (the save is applied to a live
         // world), so an occupant that should no longer exist is cleared out here.
-        if (Defeated && _occupant != null && IsInstanceValid(_occupant))
+        if (!Defeated)
+        {
+            return;
+        }
+
+        if (_occupant != null && IsInstanceValid(_occupant))
         {
             _occupant.QueueFree();
             _occupant = null;
         }
+
+        RaiseDefeatFlag();
     }
 }

@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="SpellResource" format=3 uid="uid://beldrword35f"]
+
+[ext_resource type="Script" path="res://src/Magic/SpellResource.cs" id="1_spell"]
+
+; The Ancient dragon's breath AND the thing it teaches (Phase 35F) — deliberately one resource, not
+; two. The Wild dragon breathes fire and the Ash dragon breathes rot because that is what they are
+; made of; an Ancient breathes a word, because what it is made of is knowing things. Recovering it
+; means the reward for the fight is literally the weapon that was used on you.
+;
+; Arcane, so neither the Fire resistance the Wild dragon teaches you to carry nor the Necrotic one
+; the Ash dragon does buys anything here. Narrower and shorter-ranged than either of theirs: it is
+; precise where they are wasteful, and it has to be survivable in a 44 m territory.
+;
+; PlayerLearnable = false keeps it out of the purchasable spellbook — the Weave's rule (29.5E) is
+; that spells are recovered, never vendored, and SpellcastingComponent.Learn ignores the flag, which
+; is exactly the seam a taught spell needs.
+[resource]
+script = ExtResource("1_spell")
+Id = "spell.elder_word"
+DisplayName = "Elder Word"
+Description = "One word in a language that stopped being spoken before there was anyone left to forget it. It does not burn or freeze. It simply disagrees with you, at length, and the argument is not survivable."
+School = 4
+Delivery = 3
+CastMode = 2
+PlayerLearnable = false
+MinCorruptionTier = 0
+ManaCost = 0.0
+Cooldown = 7.0
+BaseDamage = 24.0
+Healing = 0.0
+StatusEffectId = ""
+Range = 12.0
+ProjectileSpeed = 0.0
+ImpactRadius = 12.0
+ConeAngleDegrees = 50.0
+ChannelTickInterval = 0.35
+ChannelManaPerSecond = 22.0

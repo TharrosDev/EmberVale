@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="LootTable" format=3 uid="uid://bancdrgnlt35f"]
+
+[ext_resource type="Script" path="res://src/Loot/LootTable.cs" id="1_table"]
+[ext_resource type="Script" path="res://src/Loot/LootEntry.cs" id="2_entry"]
+
+; The richest table in the game, and the point is that it is the *lesser* of the two things killing
+; it gets you — the hoard's tome is the real prize, and the conversation gets you that without any of
+; this. Somebody who kills an Ancient for its scales has made a bad trade and the numbers should let
+; them find that out.
+[sub_resource type="Resource" id="Entry_scale"]
+script = ExtResource("2_entry")
+ItemId = "item.material.dragon_scale"
+DropChance = 1.0
+MinQuantity = 6
+MaxQuantity = 10
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_ruby"]
+script = ExtResource("2_entry")
+ItemId = "item.gem.ruby"
+DropChance = 0.9
+MinQuantity = 2
+MaxQuantity = 4
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_ring"]
+script = ExtResource("2_entry")
+ItemId = "item.ring.iron"
+DropChance = 0.6
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[resource]
+script = ExtResource("1_table")
+Entries = Array[Resource]([SubResource("Entry_scale"), SubResource("Entry_ruby"), SubResource("Entry_ring")])
+GoldItemId = "item.currency.gold"
+GoldChance = 1.0
+GoldMin = 300
+GoldMax = 600
+QualityBonus = 0.5

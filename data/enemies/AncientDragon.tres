@@ -1,0 +1,69 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" format=3 uid="uid://bancdrgnar35f"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+[ext_resource type="Script" path="res://src/Enemies/HitZoneResource.cs" id="2_zone"]
+
+; The largest of the three. Its zone spread sits between the other two: the head is worth aiming at
+; (x1.8, under the Wild dragon's x2.0 and over the Ash dragon's x1.6) but it is carried higher than
+; either, so the shot exists and is hard to take. The tail is the softest part of it — an old
+; creature's guard is its front, and it has spent a very long time not needing to turn round.
+[sub_resource type="Resource" id="Zone_head"]
+script = ExtResource("2_zone")
+Id = "head"
+DamageMultiplier = 1.8
+Offset = Vector3(0, 4.4, -4.0)
+Radius = 1.0
+Height = 0.0
+
+[sub_resource type="Resource" id="Zone_wings"]
+script = ExtResource("2_zone")
+Id = "wings"
+DamageMultiplier = 1.15
+Offset = Vector3(0, 4.0, 0)
+Radius = 1.4
+Height = 0.0
+
+[sub_resource type="Resource" id="Zone_body"]
+script = ExtResource("2_zone")
+Id = "body"
+DamageMultiplier = 1.0
+Offset = Vector3(0, 2.5, -0.7)
+Radius = 2.0
+Height = 5.4
+
+[sub_resource type="Resource" id="Zone_tail"]
+script = ExtResource("2_zone")
+Id = "tail"
+DamageMultiplier = 1.1
+Offset = Vector3(0, 1.7, 3.8)
+Radius = 0.9
+Height = 0.0
+
+; DialogueId is the 35F seam: an archetype that carries a conversation gets a DialogueComponent, and
+; the player's interact raycast finds it on the body it already has. It is paired with a faction the
+; player starts Neutral toward — a talking creature in a hostile faction attacks before the prompt is
+; ever readable, which is a bug that looks exactly like a design decision.
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.ancient_dragon"
+NameKey = "enemy.ancient_dragon.name"
+AttributesPath = "res://data/attributes/AncientDragonAttributes.tres"
+WeaponPath = "res://data/weapons/DragonJaws.tres"
+LootTablePath = "res://data/loot/AncientDragonLoot.tres"
+ModelPath = ""
+PlaceholderTint = Color(0.34, 0.36, 0.44, 1)
+AiProfileId = "ai.ancient_dragon"
+FactionId = "faction.dragons"
+KnownSpellIds = Array[String](["spell.elder_word"])
+BreathSpellId = "spell.elder_word"
+BreathDuration = 1.7
+DialogueId = "dialogue.ancient_dragon"
+CapsuleRadius = 2.0
+CapsuleHeight = 5.0
+HitZones = Array[Resource]([SubResource("Zone_head"), SubResource("Zone_wings"), SubResource("Zone_body"), SubResource("Zone_tail")])
+IsBoss = true
+DirectionalMelee = true
+MaxPoise = 300.0
+StaminaRegen = 16.0
+ManaRegen = 14.0
+XpValue = 1800

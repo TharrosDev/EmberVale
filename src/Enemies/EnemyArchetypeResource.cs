@@ -53,6 +53,13 @@ public partial class EnemyArchetypeResource : Resource
     /// <summary>Seconds a breath channel is held open once it starts.</summary>
     [Export] public float BreathDuration { get; set; } = 1.6f;
 
+    /// <summary>A conversation this creature will hold (Phase 35F): the id of a
+    /// <see cref="Dialogue.DialogueResource"/>, which gives it a <see cref="Dialogue.DialogueComponent"/>
+    /// so the player's interact raycast can talk to it. Empty for anything that only fights.
+    /// A creature that talks should also sit in a faction the player is not hostile to, or it will
+    /// attack before the prompt is ever readable.</summary>
+    [Export] public string DialogueId { get; set; } = string.Empty;
+
     [ExportGroup("Body")]
     [Export] public float CapsuleRadius { get; set; } = 0.4f;
     [Export] public float CapsuleHeight { get; set; } = 1.8f;

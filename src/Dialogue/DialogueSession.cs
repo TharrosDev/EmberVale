@@ -1,9 +1,11 @@
 using System.Collections.Generic;
 using Embervale.Companions;
 using Embervale.Core.Diagnostics;
+using Embervale.Core.Events;
 using Embervale.Core.Services;
 using Embervale.Corruption;
 using Embervale.Entities;
+using Embervale.Magic;
 using Embervale.Quests;
 
 namespace Embervale.Dialogue;
@@ -19,9 +21,11 @@ namespace Embervale.Dialogue;
 /// </summary>
 public sealed class DialogueSession
 {
+    private readonly IEntity _player;
     private readonly QuestLogComponent? _questLog;
     private readonly StoryFlagsComponent? _flags;
     private readonly CorruptionComponent? _corruption;
+    private readonly SpellcastingComponent? _spellcasting;
 
     public DialogueResource Dialogue { get; }
 
@@ -32,9 +36,11 @@ public sealed class DialogueSession
     public DialogueSession(DialogueResource dialogue, IEntity player)
     {
         Dialogue = dialogue;
+        _player = player;
         _questLog = player.GetComponent<QuestLogComponent>();
         _flags = player.GetComponent<StoryFlagsComponent>();
         _corruption = player.GetComponent<CorruptionComponent>();
+        _spellcasting = player.GetComponent<SpellcastingComponent>();
         CurrentNode = dialogue.StartNode();
     }
 
@@ -173,6 +179,21 @@ public sealed class DialogueSession
                 else
                 {
                     Log.Warn($"Dialogue effect AddCompanionLoyalty: malformed argument '{arg}' (expected <companionId>:<delta>).");
+                }
+
+                break;
+            case DialogueEffect.LearnSpell:
+                if (SpellDatabase.Get(arg) is not { } taught)
+                {
+                    Log.Warn($"Dialogue effect LearnSpell: unknown spell '{arg}'.");
+                }
+                else if (_spellcasting != null && !_spellcasting.IsKnown(taught))
+                {
+                    // Learn re-checks the 23H corruption gate itself and no-ops when it fails, so a
+                    // teacher offering a corrupted spell to the untainted is refused here as it is at
+                    // a tome — silently, which is what "the words writhe out of reach" looks like.
+                    _spellcasting.Learn(arg);
+                    EventBus.Instance?.Publish(new SpellsChangedEvent(_player));
                 }
 
                 break;

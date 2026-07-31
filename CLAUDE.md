@@ -409,8 +409,32 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    of other cells' props and the region's safe zone.
 5. **Give each lair its own `PersistentId`.** `LairSpawnComponent.SaveId` derives from
    it, so two lairs sharing one means killing either marks both defeated.
-6. Two hand-authored roost cells exist (`dragon_roost`, `ash_roost`). **A third should
-   promote the roost into a reusable scene** rather than become a third copy.
+6. **Inherit `scenes/regions/roost.tscn`** (Phase 35F paid the debt the two hand-authored
+   roosts flagged). The base owns the nav region + baker, the floor mesh/collider and the
+   `Nest`/`Lair` markers; a roost overrides the `RoostCell` script's `FloorSize`/
+   `FloorColor`/`EmberColor`/`EmberEnergy`, the `Nest`'s `PersistentId`, the `Lair`'s
+   `TemplateId`, and adds its props **as children of `Nav`** (geometry outside the
+   navigation region is not carved into the bake). Floor mesh, shape and material are
+   base-scene sub-resources and therefore shared by every roost — `RoostCell` `Duplicate()`s
+   each before touching it, and anything else you vary must do the same.
+7. **Set `DefeatFlagId` if anything needs to know the boss is dead** (35F). It is the only
+   thing in the game that turns a kill into a story flag, so it is what a dialogue
+   condition or a gated interactable (e.g. `SpellTomeComponent.RequiredFlagId`) can ask.
+
+**A creature that talks (Phase 35F)**
+1. Set `DialogueId` on the archetype. `EnemyArchetypeFactory` attaches a
+   `DialogueComponent`, and the player's interact raycast is unmasked — it resolves the
+   owner from whatever collider it hits, so the body the creature already has is the
+   target. No extra collision, no bespoke factory.
+2. **Put it in a faction the player is not hostile to**, or it attacks before the prompt is
+   ever readable. `faction.dragons` is the pattern: `DefaultReputation` in the Neutral band,
+   `HostileThreshold` at Unfriendly. `EnemyAIComponent.PlayerIsTarget` does the rest, and
+   the first player hit sets `_provoked` regardless — neutral-until-provoked is pure data.
+3. To have it **teach a recovered spell**, use the `LearnSpell` dialogue effect (`8`) with a
+   `spell.*` id. It goes through the same corruption-gated `SpellcastingComponent.Learn` a
+   tome does and **ignores `PlayerLearnable`**, which is how a spell that can never be
+   bought can still be given. Mark such a spell `PlayerLearnable = false`; the character
+   screen lists it anyway once it is known.
 
 ⚠️ **Spawning an actor into a region cell: create at zero, add, *then* set
 `GlobalPosition`.** The factories and `EnemyTemplateRegistry.Create` take a **local**
