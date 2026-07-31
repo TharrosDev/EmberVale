@@ -29,16 +29,24 @@ You are the lead engineer building this game incrementally. The non-negotiables:
   resources, not new inheritance chains or hard-coded values.
 - **Respect existing architecture.** Inspect before adding; don't duplicate
   systems; refactor when it lowers long-term cost.
-- **Check the Godot Asset Library before building from scratch.** When adding a
-  new feature/system (or art/shader/tool), first check whether the Godot Asset
-  Library already has something that fits, and reuse it instead of reinventing —
-  fetch it from the asset's linked GitHub repo (the connected Godot MCP has no
-  one-click install) and adapt it to our architecture. **Only** reuse when it fits
-  our needs *exactly* and its license is compatible (this build is **private/
-  personal — never sold or published —** so prefer MIT/CC0/open; avoid paid or
-  closed assets). A near-miss you have to fight is worse than building clean — in
-  that case, **build from scratch** against our patterns. Note what you pulled and
-  its license where it lands.
+- **3D models: search the web first — always.** Every model request starts with a
+  thorough search of reputable open-source repositories (Poly Pizza, Kenney,
+  Quaternius, OpenGameArt, Sketchfab, Khronos glTF samples, …), then a licence and
+  fit evaluation, then **adaptation via the Blender MCP** if the asset is close but
+  not perfect. Building from scratch is the **rare exception** and requires that a
+  real search found nothing, adapting is impractical, *and* combining assets cannot
+  solve it. **Never reverse that order**, and never assume a model does not exist —
+  "I couldn't think of one" is not a search. Every asset needs a verified licence
+  and a `assets/CREDITS.md` entry before it is done. **Full policy:
+  [`docs/ASSET_POLICY.md`](docs/ASSET_POLICY.md)** — it is mandatory and it
+  supersedes any older build-from-scratch guidance in this repo.
+- **Code, plugins and tools: check the Godot Asset Library before reinventing.**
+  Distinct from the art rule above. Fetch from the asset's linked GitHub repo (the
+  connected Godot MCP has no one-click install) and adapt it to our architecture.
+  Reuse only when it fits our needs *exactly* and its licence is compatible (this
+  build is **private/personal — never sold or published —** so prefer MIT/CC0/open;
+  avoid paid or closed). For *code*, a near-miss you have to fight is still worse
+  than building clean. Note what you pulled and its licence where it lands.
 - **Work in phases** (see §9). Determine the next highest-priority task and do it.
 
 ---
@@ -61,6 +69,13 @@ launch and capture errors/logs, `stop_project` to stop, `launch_editor`,
 `get_project_info`, and scene edits (`create_scene`/`add_node`/`load_sprite`/
 `save_scene`). **Prefer running the project to verify non-trivial changes** rather than
 only reasoning about them.
+
+**The Blender MCP is an adaptation tool, not an asset source.** Its job is adapting downloads,
+changing proportions, simplifying meshes, combining assets, repairing geometry, improving UVs,
+adjusting materials, building LODs and optimizing for gameplay. Reach for it to *modify* what a
+web search found; authoring an original model is the exception the §1 rule gates
+([`docs/ASSET_POLICY.md`](docs/ASSET_POLICY.md)). Through Phase 30 every model here was built
+from scratch — that is history, not the current default.
 
 **Blender MCP scene hygiene (maintainer rule, 2026-07-02):** when authoring models via the
 Blender MCP, **never leave multiple models stacked at the world origin** (each "centered
