@@ -386,6 +386,9 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             case SpellDelivery.Area:
                 CastArea(spell, team, power);
                 break;
+            case SpellDelivery.Cone:
+                CastCone(spell, team, power);
+                break;
             default:
                 CastProjectile(spell, team, power);
                 break;
@@ -477,6 +480,23 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         SpellResolver.Detonate(body, spell, BuildPacket(spell, power), Entity, team, center, radius);
     }
 
+    /// <summary>A wedge along the caster's aim (Phase 35C, dragon breath). Direction comes from the
+    /// same <see cref="Aim"/> helper a projectile uses, so pitching the aim node — which is how a
+    /// hovering dragon breathes downward — needs nothing here.</summary>
+    private void CastCone(SpellResource spell, int team, float power)
+    {
+        if (Entity?.Body is not Node3D body)
+        {
+            return;
+        }
+
+        (Vector3 origin, Vector3 direction) = Aim();
+        float length = spell.ImpactRadius > 0f ? spell.ImpactRadius : DefaultNovaRadius;
+        SpellResolver.Sweep(
+            body, spell, BuildPacket(spell, power), Entity, team,
+            origin, direction, length, spell.ConeAngleDegrees);
+    }
+
     private void CastSelf(SpellResource spell, float power)
     {
         if (spell.BlinkDistance > 0f)
@@ -544,6 +564,29 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
 
         _selected = idx;
         return TryCast();
+    }
+
+    /// <summary>Selects a known spell by id and <see cref="BeginCast"/>s it — the lever an AI needs
+    /// for a <em>charged or channeled</em> spell, which <see cref="TryCastById"/> cannot start
+    /// (Phase 35C, dragon breath). The caller then drives <see cref="UpdateCast"/> and
+    /// <see cref="EndCast"/> the way the player's held key does. Returns false if the spell is not
+    /// known or a cast is already active.</summary>
+    public bool BeginCastById(string spellId)
+    {
+        if (_activeCast != null)
+        {
+            return false;
+        }
+
+        int idx = _spells.FindIndex(s => s.Id == spellId);
+        if (idx < 0)
+        {
+            return false;
+        }
+
+        _selected = idx;
+        BeginCast();
+        return true;
     }
 
     /// <summary>Casts a Self-delivery support spell (heal/ward) onto an <em>ally</em> rather than the

@@ -375,6 +375,21 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    steers a walker, and `LocomotionComponent.Flying` owns the vertical axis alone.
    `ContentValidator` rejects half-authored flight tuning either way round.
 
+**A breath weapon (Phase 35C)**
+1. Author `data/spells/Xxx.tres` with `Delivery = 3` (Cone) and `CastMode = 2`
+   (Channeled): `ConeAngleDegrees` is the **full** opening angle, `ImpactRadius` is
+   the cone's *length*, and `PlayerLearnable = false` for a monster's breath. It is
+   an ordinary spell — school resistances, `SchoolIdentity`, status effects and
+   `SpellResolver` all apply with no special-casing.
+2. On the archetype set `BreathSpellId` **and** add the same id to `KnownSpellIds`
+   (the breath is cast through the normal spellcasting path, not around it — the
+   validator rejects one without the other). `BreathDuration` is how long the
+   channel is held.
+3. **A caster is a profile that stands off, not an actor that holds spells.** Giving
+   a melee creature spells does not turn it into a kiter — `EnemyAIComponent` branches
+   on `AIProfileResource.IsStandoff` (`StandoffRange > AttackRange`) alone. Set a
+   standoff range only if you actually want it to back away.
+
 **A new weapon**
 1. Author `data/weapons/Xxx.tres` (`script_class="WeaponResource"`).
 2. Point a `MeleeWeaponComponent.Weapon` at it (factory or future equipment).

@@ -146,6 +146,7 @@ public class EnumStabilityTests
         Assert.Equal(0, (int)SpellDelivery.Projectile);
         Assert.Equal(1, (int)SpellDelivery.Area);
         Assert.Equal(2, (int)SpellDelivery.Self);
+        Assert.Equal(3, (int)SpellDelivery.Cone);
     }
 
     [Fact]

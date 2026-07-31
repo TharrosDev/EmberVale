@@ -188,6 +188,26 @@ public static class ContentValidator
             }
 
             ValidateHitZones(archetype, issues);
+
+            // A breath (35C) is cast through the ordinary spellcasting path, so an id that is not in
+            // the creature's loadout is a component holding a spell it can never select — silent in
+            // play, and indistinguishable from "the dragon just isn't breathing yet".
+            if (archetype.BreathSpellId.Length > 0)
+            {
+                if (SpellDatabase.Get(archetype.BreathSpellId) is not { } breath)
+                {
+                    issues.Add($"enemy archetype '{id}' breathes unknown spell '{archetype.BreathSpellId}'");
+                }
+                else if (breath.Delivery != SpellDelivery.Cone)
+                {
+                    issues.Add($"enemy archetype '{id}' breathes '{breath.Id}', which is not a Cone delivery");
+                }
+
+                if (!archetype.KnownSpellIds.Contains(archetype.BreathSpellId))
+                {
+                    issues.Add($"enemy archetype '{id}' breathes '{archetype.BreathSpellId}' but does not know it");
+                }
+            }
         }
     }
 
@@ -736,6 +756,25 @@ public static class ContentValidator
                 StatusEffectDatabase.Get(spell.StatusEffectId) == null)
             {
                 issues.Add($"spell '{spell.Id}' references unknown status effect '{spell.StatusEffectId}'");
+            }
+
+            // Cone geometry (Phase 35C). A zero angle or reach resolves to a cone that contains
+            // nothing — the spell casts, costs mana, plays its flash, and never hits.
+            if (spell.Delivery == SpellDelivery.Cone)
+            {
+                if (spell.ConeAngleDegrees is <= 0f or >= 360f)
+                {
+                    issues.Add($"cone spell '{spell.Id}' has an angle of {spell.ConeAngleDegrees}°; it must be within (0, 360)");
+                }
+
+                if (spell.ImpactRadius <= 0f)
+                {
+                    issues.Add($"cone spell '{spell.Id}' has no impact radius; that is the cone's length, so it would reach nothing");
+                }
+            }
+            else if (spell.ConeAngleDegrees > 0f)
+            {
+                issues.Add($"spell '{spell.Id}' has a cone angle but is not a Cone delivery; the angle will never be read");
             }
         }
     }

@@ -18,4 +18,10 @@ public enum SpellDelivery
 
     /// <summary>Affects only the caster — a heal and/or a self-applied buff.</summary>
     Self,
+
+    /// <summary>A wedge sweeping out from the caster along their aim (Phase 35C, dragon breath):
+    /// everything inside <see cref="SpellResource.ConeAngleDegrees"/> and within
+    /// <see cref="SpellResource.ImpactRadius"/> of the origin. An Area burst you have to be in
+    /// front of.</summary>
+    Cone,
 }

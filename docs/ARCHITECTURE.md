@@ -425,9 +425,11 @@ only three of them have a factory**; the rest are `.tres` files.
 
 - **Spell content** — `SpellResource` (`[GlobalClass]`, `data/spells/*.tres`): `Id`,
   `DisplayName`, a `School` (a `DamageType`, so spells reuse the combat mitigation pipeline
-  and tint via `SpellSchools.Color`), a `Delivery` (`SpellDelivery` Projectile/Area/Self),
+  and tint via `SpellSchools.Color`), a `Delivery` (`SpellDelivery` Projectile/Area/Self/**Cone**),
   `ManaCost`, `Cooldown`, `BaseDamage`, `Healing`, an optional applied `StatusEffectId`, and
-  delivery knobs (`Range`, `ProjectileSpeed`, `ImpactRadius`). `SpellDatabase` indexes them.
+  delivery knobs (`Range`, `ProjectileSpeed`, `ImpactRadius`, `ConeAngleDegrees`).
+  `SpellDatabase` indexes them. A **Cone** (Phase 35C, dragon breath) is a wedge along the
+  caster's aim: `ConeAngleDegrees` is its *full* opening angle and `ImpactRadius` its length.
 - **Status effects** — `StatusEffectResource` (`[GlobalClass]`, `data/status_effects/*.tres`):
   a timed condition with optional DoT (`DamagePerTick`/`TickInterval`) and one stat modifier
   (`ModStat`/`ModType`/`ModValue`) — burns, chills/slows, buffs. `StatusEffectDatabase` indexes
@@ -445,10 +447,17 @@ only three of them have a factory**; the rest are `.tres` files.
   `RollAttack`).
 - **`SpellProjectile`** (`Area3D`, Hitbox layer / mask Hurtbox|World) — the moving analogue of a
   `Hitbox`: flies forward each physics frame, resolves on the first enemy hurtbox, world contact
-  or end of range. **`SpellResolver`** does the impact: `HitOne` (single target) or `Detonate`
-  (a Hurtbox-layer sphere query for AoE), honouring the same friendly-fire rules as hitboxes
-  (never the caster, never same-team), then applies the spell's status. `SpellFlash` is a
-  short-lived cosmetic burst sphere.
+  or end of range. **`SpellResolver`** does the impact: `HitOne` (single target), `Detonate`
+  (a Hurtbox-layer sphere query for AoE), or `Sweep` (that same query narrowed by `SpellCone`
+  to a wedge — the two share one private `Resolve`, so they cannot drift apart). All honour the
+  same friendly-fire rules as hitboxes (never the caster, never same-team) and the same
+  per-actor `HitDedupe`, then apply the spell's status. `SpellFlash` is a short-lived cosmetic
+  burst sphere; a cone greyboxes as a line of widening flashes along its axis.
+- **`BreathComponent`** (`src/Enemies`, Phase 35C) — the only thing an enemy could not previously
+  do: hold a *channel* open. It selects the breath via `SpellcastingComponent.BeginCastById`,
+  drives `UpdateCast`, and ends it; the damage is entirely the ordinary spell path. It aims by
+  pointing the actor's `CastOrigin` at the target, which is how a hovering dragon breathes
+  **down** — the AI keeps the body itself level. Trigger rule is the pure `BreathWindow`.
 - **UI & input** — `Q` casts the prepared spell, `F` cycles it; `DebugHud` shows mana, the
   prepared spell + cooldown, and active status effects on player/target. Events:
   `SpellCastEvent`/`SpellSelectedEvent`/`SpellsChangedEvent`/`StatusEffectAppliedEvent`/
