@@ -11,10 +11,10 @@ it?" must be answerable without archaeology. An asset with no entry is **not fin
 
 ## Current state
 
-**25 of the project's 33 models are sourced; the other 8 are still in-house.** The asset
-migration replaces the in-house set category by category. Props, characters and creatures are
-done. **Still in-house:** the two buildings, the sword, the first-person arm, the Ashen Acolyte,
-and three props with no suitable match (see *Searched for, not replaced*).
+**27 of the project's 33 models are sourced; the other 6 are still in-house.** The asset
+migration replaces the in-house set category by category. Props, characters, creatures and
+buildings are all done. **Still in-house (6):** the sword, the first-person arm, the Ashen Acolyte,
+and three props with no suitable match — see *Searched for, not replaced* for why each stayed.
 
 *(An earlier revision of this file, and PR #202's description, said 15 props. The prop count was
 16 — corrected here because this file is the provenance record. The model total dropped 34 → 33
@@ -187,6 +187,33 @@ earning its place on real data.
 `npc_kael` ships each clip twice — the Rogue source carries two armatures sharing one action set.
 Harmless (resolution takes the first match) and left alone rather than risking the rig to save a
 few KB.
+
+### Timber house — "Houses_FirstAge" (CC0)
+
+- **Source:** Poly Pizza · **URL:** https://poly.pizza/m/4MJWbyd6vw
+- **Licence:** CC0 1.0 Universal · 632 faces
+- **Used for:** `bld_house_a` **and** `bld_house_b`
+- **Why selected:** the only CC0 building found whose natural width-to-depth ratio (0.74) nearly
+  matches `bld_house_a`'s (0.71), so it fits the existing collider with only **7% distortion**.
+  Rejected alternatives: a pastel modern bungalow (wrong setting), a 55,581-triangle house
+  (CC-BY and ~2.6× the entire rest of the model set), an archery range, and a half-timbered farm
+  whose field could not be separated — the mesh splits into **1,086 loose parts**, one per fence
+  plank, so isolating the house was not a clean operation.
+- **Blender MCP modifications:** joined, per-axis scaled to each original's bounding box, origin
+  dropped to the base, mesh renamed `Mesh`. `bld_house_b` is additionally **rotated 90°**, because
+  that slot is wider than deep where the source is deeper than wide.
+
+**Deliberate reuse, and the honest cost.** One model serves both slots. `bld_house_b` carries a
+**35% depth squash** — past the 25% bar this migration otherwise held to — and was kept anyway
+after looking at it: rotated, it reads as a chunkier hut rather than a crushed one, and the number
+overstated the problem. The alternative was one sourced and one in-house building standing in the
+same town square, i.e. a textured building beside an untextured one, which `ART_STYLE.md` §7
+rules against outright ("consistency across the set beats individual asset quality"). Four huts at
+two rotations is ordinary for low-poly; a split look is not.
+
+**Colliders untouched.** `Shape_bldgA` (6×5×8) and `Shape_bldgB` (8×6×6) are unchanged, which is
+precisely why the visual had to be scaled to the original box rather than left at its natural
+proportions — a mismatch would have produced invisible walls or a player clipping into a wall.
 
 ---
 
