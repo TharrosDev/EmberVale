@@ -2529,9 +2529,63 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
     takes no nodes; the one thing that could silently corrupt saves, the new enum ordinal, is
     pinned in `EnumStabilityTests` (which now also pins the three companion effects it had
     been missing since 32C).
-- [ ] **35G — Dragon encounters in Frostfang + high-end world events** `[C]`
+- [x] **35G — Dragon encounters in Frostfang + high-end world events** `[C]` ✅
   - **Done when:** dragon encounters seed Frostfang Reach and the world-event
     tables.
+  - **The Reach became dragon country.** Every dragon before this was a fixed lair boss you
+    travelled to; nothing dragon-shaped happened on its own. `enemy.frost_drake` now wanders
+    Frostfang as an ambient encounter, an **Elder Drake** Hunt and a **Spilled Hoard** Cache give
+    the event table its first late-game tier, and the scales all four dragonkin drop forge into
+    **drakescale mail**.
+  - **A lesser dragon, not the named three.** Pointing an encounter at `enemy.ash_dragon` would
+    have put two of a one-of-a-kind creature in the world and made `quest.ancient.kin` farmable
+    from a random roll. The drake is deliberately **not boss furniture** — no `IsBoss`, no hit
+    zones, no directional melee. Those exist so a fight has geography, and geography is for a
+    creature you travel to. Declining the zones also declined a whole new AI profile: zones
+    without a turn rate leave 35A's flank arcs dead, so it reuses `ai.brute` unchanged.
+  - **The champion tier is a multiplier, not a second archetype** — `MinCount = 1` +
+    `HealthMultiplier`, the trick `event.goblin_champion` has used since Phase 17.
+  - **🐛 A live 34.5B gap this phase closed.** `WorldEventResource` had **no `RegionIds`**. 34.5B
+    gave encounters a region gate after frost stalkers prowled the Ember Crown for two phases, and
+    the *other* director never got one — so goblin raids had been rolling in Frostfang Reach ever
+    since the region existed, and a drake hunt would have rolled in the starting valley. Added the
+    field, the `AllowedIn(regionId)` gate, the `RegionStreamer.ActiveRegionId` lookup
+    `EncounterDirector` already did, and the validator's unknown-region check. **The three Phase 17
+    goblin events were gated to `region.ember_crown` in the same pass** — fixing only the new
+    entries would have left the live bug in place.
+  - **Gear can carry a resistance now.** `EquippableItemResource` exposed seven `Bonus*` fields and
+    not one of 34E's `*Resist` stats, so resistance was authorable on an `AttributeSet` only:
+    enemies could shrug off a school and the player could not. `BonusFrostResist` is one export and
+    one `yield return` — it is a `StatType`, so equipment, tooltips and the character screen pick
+    it up untouched. Only Frost, because only this item needs it; the other five are two lines each.
+  - **⚠️ Nothing in the game teaches a recipe.** `CraftingComponent.Learn` exists and **has no
+    caller** — no tome, no dialogue effect, no quest reward — and unlike the bestiary, `--validate`
+    has no reachability check for recipes. `recipe.leather_vest` has therefore been unreachable
+    since Phase 15. `recipe.drakescale_mail` is seeded in `PlayerFactory` like the other six and
+    gated on its **ingredient** instead: eight dragon scales, which only Frostfang's dragonkin drop.
+    A `LearnRecipe` dialogue effect would be cheap now that 35F put `LearnSpell` next door.
+  - **Verified:** `dotnet build` clean, `dotnet test` **670/670**, `--validate` exits 0 (30
+    archetypes, 33 bestiary entries, 19 spells, 32 encounters, **5** world events, 8 recipes, 622
+    strings). Checked by hand that no encounter or world event references `enemy.wild_dragon`,
+    `enemy.ash_dragon` or `enemy.ancient_dragon` — those three are lair-only by design and nothing
+    enforces it. **And the whole loop ran in a headless `--play`:** the Elder Drake hunt started in
+    Frostfang, the drake built and fought and died, the event completed and paid out, and a Spilled
+    Hoard followed — with no goblin event firing in the region, which is the gate doing its job.
+  - **Tuned off that run.** The champion went in at `HealthMultiplier = 3.0` (the goblin's) and the
+    log showed a **1260 HP** drake — within sight of the Wild dragon's 1400, on an event with a
+    180 s hard timer. Dropped to 2.0. A boss you must beat on a stopwatch is a different thing from
+    a hunt.
+  - **Still owed (maintainer, at the keyboard):** the ambient `encounter.drake_flight` is the one
+    piece the log did not catch — it is the lowest weight in the region's pool by design (0.25
+    against clan patrols, rites, hunts, stalkers and rime drifts), so it needs a play session rather
+    than an idle boot. Fight a drake and confirm the **breath actually fires** (34D's silent failure
+    is a caster with no mana just standing there), then confirm the mail drops from the hunt, equips,
+    and shows its frost resistance on the character screen.
+  - **Known limits:** the 35E orphaned-`ISaveable` warning on load is unchanged. The drake has no
+    model (capsule + `PlaceholderTint`) like most of the roster. No new unit tests — this phase is
+    content plus two field-and-a-line seams, and the pure-logic suite takes no Godot nodes.
+
+**Phase 35 (Dragons) is complete — 35A–35G.**
 
 ---
 

@@ -1,0 +1,43 @@
+[gd_resource type="Resource" script_class="WorldEventResource" format=3 uid="uid://bdrkchamp35g0"]
+
+[ext_resource type="Script" path="res://src/World/WorldEventResource.cs" id="1_event"]
+
+; The late-game tier the event table did not have (Phase 35G) — every entry before this was a Phase
+; 17 goblin. A Hunt with HealthMultiplier is how a champion exists without a second archetype, the
+; same trick event.goblin_champion has used since 17.
+;
+; RegionIds is the new 35G gate and this is exactly why it had to exist: without it a drake hunt
+; rolls in the starting valley, where a 420 HP breather is not a world event, it is a wall.
+;
+; Long cooldown and a generous time limit: it is a hunt across open ground, and the drake fights
+; back rather than waiting to be found.
+[resource]
+script = ExtResource("1_event")
+Id = "event.drake_champion"
+DisplayName = "Elder Drake"
+Description = "Something bigger than the usual drakes is hunting the Reach. Put it down."
+Kind = 2
+SelectionWeight = 1.0
+CooldownSeconds = 420.0
+TimeLimitSeconds = 180.0
+RegionIds = Array[String](["region.frostfang_reach"])
+AtDawn = true
+AtDay = true
+AtDusk = true
+AtNight = true
+SpawnDistanceMin = 18.0
+SpawnDistanceMax = 26.0
+EnemyTemplateId = "enemy.frost_drake"
+MinCount = 1
+MaxCount = 1
+; 2.0, not the goblin champion's 3.0. A drake's base pool is 420 where a goblin's is small change,
+; so 3.0 was observed building a 1260 HP champion in-engine — within sight of the Wild dragon's 1400,
+; on an event with a 180 s hard timer. A boss you must beat on a stopwatch is a different thing from
+; a hunt. 840 keeps it the biggest thing that can wander up to you without making it a lair boss.
+HealthMultiplier = 2.0
+XpReward = 400
+GoldReward = 150
+RewardItemId = "item.armor.drakescale_mail"
+RewardItemQuantity = 1
+FactionRewardId = "faction.frostfang_clans"
+FactionRewardAmount = 15

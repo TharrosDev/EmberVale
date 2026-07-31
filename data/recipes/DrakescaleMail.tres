@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="CraftingRecipeResource" format=3 uid="uid://bdrkscrcp35g0"]
+
+[ext_resource type="Script" path="res://src/Crafting/CraftingRecipeResource.cs" id="1_recipe"]
+[ext_resource type="Script" path="res://src/Crafting/RecipeIngredient.cs" id="2_ing"]
+
+; The second route to the mail, for anyone who does not want to wait on a world event. Eight scales
+; is the whole gate: nothing in the Ember Crown drops one, and everything that does lives in
+; Frostfang behind flag.iron_king_defeated. That is why this is seeded like every other recipe
+; rather than taught — the ingredient is the lock, not the knowledge.
+[sub_resource type="Resource" id="Ing_scale"]
+script = ExtResource("2_ing")
+ItemId = "item.material.dragon_scale"
+Quantity = 8
+
+[sub_resource type="Resource" id="Ing_strips"]
+script = ExtResource("2_ing")
+ItemId = "item.material.leather_strips"
+Quantity = 2
+
+[resource]
+script = ExtResource("1_recipe")
+Id = "recipe.drakescale_mail"
+DisplayName = "Forge Drakescale Mail"
+Description = "Lace drake scale onto a leather backing. The scales do not soften, so the backing has to give instead."
+Station = 1
+Ingredients = Array[Resource]([SubResource("Ing_scale"), SubResource("Ing_strips")])
+OutputItemId = "item.armor.drakescale_mail"
+OutputQuantity = 1
+OutputRarity = 2

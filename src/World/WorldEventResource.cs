@@ -31,6 +31,13 @@ public partial class WorldEventResource : Resource
     /// <summary>Seconds to resolve the objective before the event fails (0 = no limit).</summary>
     [Export] public float TimeLimitSeconds { get; set; } = 90f;
 
+    /// <summary>Regions this event may fire in (Phase 35G; <c>region.*</c> ids). **Empty means
+    /// anywhere**, which is what every event authored before this was — so a goblin raid rolled in
+    /// Frostfang Reach and a dragon hunt would have rolled in the starting valley. Author this
+    /// whenever an event belongs to one realm; it is the same gate 34.5B gave encounters, and the
+    /// same failure mode, since a misspelled id narrows the event to *nowhere*.</summary>
+    [Export] public Godot.Collections.Array<string> RegionIds { get; set; } = new();
+
     [ExportGroup("Allowed Time of Day")]
     [Export] public bool AtDawn { get; set; } = true;
     [Export] public bool AtDay { get; set; } = true;
@@ -69,6 +76,10 @@ public partial class WorldEventResource : Resource
         DayPhase.Dusk => AtDusk,
         _ => AtNight,
     };
+
+    /// <summary>Whether this event may fire in the given region (empty <see cref="RegionIds"/>
+    /// = anywhere).</summary>
+    public bool AllowedIn(string regionId) => RegionIds.Count == 0 || RegionIds.Contains(regionId);
 
     public int RollCount()
     {

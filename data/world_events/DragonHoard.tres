@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="WorldEventResource" format=3 uid="uid://bdrghoard35g0"]
+
+[ext_resource type="Script" path="res://src/World/WorldEventResource.cs" id="1_event"]
+
+; A Cache, not a fight — the other half of "dragons seed the world-event table". Something carried
+; part of a hoard off and did not get far with it, which is the only way loose dragon scale ends up
+; on open ground. Short timer: whatever dropped it may want it back.
+;
+; A Cache is the one event kind allowed inside the safe zone (WorldEventDirector.Begin), so this can
+; land near the clan hold without being unfair — it is treasure, not an ambush.
+[resource]
+script = ExtResource("1_event")
+Id = "event.dragon_hoard"
+DisplayName = "Spilled Hoard"
+Description = "Scale and coin scattered across the snow, still warm. Gather it before something comes back for it."
+Kind = 1
+SelectionWeight = 1.2
+CooldownSeconds = 300.0
+TimeLimitSeconds = 75.0
+RegionIds = Array[String](["region.frostfang_reach"])
+AtDawn = true
+AtDay = true
+AtDusk = true
+AtNight = true
+SpawnDistanceMin = 16.0
+SpawnDistanceMax = 24.0
+CacheItemId = "item.material.dragon_scale"
+CacheQuantity = 3
+XpReward = 120
+GoldReward = 80

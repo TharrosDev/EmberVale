@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EncounterResource" format=3 uid="uid://bdrkflght35g"]
+
+[ext_resource type="Script" path="res://src/World/EncounterResource.cs" id="1_encounter"]
+
+; The reason the Reach reads as dragon country between the lairs (Phase 35G). Frostfang only — an
+; empty RegionIds means anywhere, which is how frost stalkers ended up prowling the Ember Crown for
+; two phases.
+;
+; The lowest weight in the region's pool by some way: the director rolls every ~35 s against clan
+; patrols, rites, hunts, stalkers and rime drifts, and a drake should be the thing you tell someone
+; about afterwards, not the thing you step over. One is the common case; two is a bad day.
+;
+; A corrupted drake costs nothing (34F): AshenAffliction tints and scales the base archetype, and it
+; is a property of the place rather than the player.
+[resource]
+script = ExtResource("1_encounter")
+Id = "encounter.drake_flight"
+DisplayName = "Drake Flight"
+EnemyTemplateId = "enemy.frost_drake"
+MinCount = 1
+MaxCount = 2
+SelectionWeight = 0.25
+CorruptionChance = 0.15
+RegionIds = Array[String](["region.frostfang_reach"])
+AtDawn = true
+AtDay = true
+AtDusk = true
+AtNight = true

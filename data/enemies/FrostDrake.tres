@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" format=3 uid="uid://bfrstdrkar35g"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+; The dragon you can meet by accident (Phase 35G). Deliberately NOT boss furniture: no IsBoss, no
+; hit zones, no directional melee. Those three exist so a fight has geography, and geography is for
+; a creature you travel to — an encounter that drops one on you at 14 m wants a body, not a puzzle.
+; Skipping them also means it reuses ai.brute unchanged: hit zones without a turn rate on the
+; profile leave the flank arcs dead (35A), so declining the zones declines a whole new profile too.
+;
+; It breathes, because a dragon that does not is a wolf with scales. That needs all three of 34D's
+; pieces lined up or it fails silently: KnownSpellIds (which attaches the SpellcastingComponent),
+; the same id as BreathSpellId (the validator rejects one without the other), and a real Mana pool
+; on the AttributeSet.
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.frost_drake"
+NameKey = "enemy.frost_drake.name"
+AttributesPath = "res://data/attributes/FrostDrakeAttributes.tres"
+WeaponPath = "res://data/weapons/DrakeClaws.tres"
+LootTablePath = "res://data/loot/FrostDrakeLoot.tres"
+ModelPath = ""
+PlaceholderTint = Color(0.44, 0.58, 0.66, 1)
+AiProfileId = "ai.brute"
+FactionId = "faction.beasts"
+KnownSpellIds = Array[String](["spell.drake_breath"])
+BreathSpellId = "spell.drake_breath"
+BreathDuration = 1.2
+CapsuleRadius = 0.9
+CapsuleHeight = 2.2
+MaxPoise = 90.0
+StaminaRegen = 14.0
+ManaRegen = 6.0
+XpValue = 180

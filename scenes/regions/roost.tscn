@@ -1,9 +1,4 @@
-; Base scene for a dragon's lair cell (Phase 35F). 35D and 35E each hand-authored this structure and
-; both flagged that a third roost should promote it instead of copying it again — this is that
-; promotion. An individual roost inherits this scene, overrides the RoostCell knobs (floor size and
-; colours), the Nest's PersistentId/DisplayName and the Lair's TemplateId, and adds its own props as
-; children of Nav (geometry outside the navigation region is not carved into the bake).
-[gd_scene load_steps=7 format=3 uid="uid://crgnroostbase0"]
+[gd_scene format=3 uid="uid://fompglautjp6"]
 
 [ext_resource type="Script" path="res://src/World/RoostCell.cs" id="1_roost"]
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="2_navbaker"]

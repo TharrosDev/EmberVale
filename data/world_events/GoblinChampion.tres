@@ -11,6 +11,7 @@ Kind = 2
 SelectionWeight = 1.0
 CooldownSeconds = 150.0
 TimeLimitSeconds = 120.0
+RegionIds = Array[String](["region.ember_crown"])
 AtDawn = false
 AtDay = true
 AtDusk = true

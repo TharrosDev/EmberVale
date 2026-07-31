@@ -193,6 +193,7 @@ public static class GameIds
         public const string LeatherCap = "recipe.leather_cap";
         public const string SteelSword = "recipe.steel_sword";
         public const string IronRing = "recipe.iron_ring";
+        public const string DrakescaleMail = "recipe.drakescale_mail";
     }
 
     public static class Quests

@@ -460,7 +460,9 @@ cell sat far from the origin). `EnemySpawnDirector` had the same latent bug.
 **A new piece of equipment**
 1. Author `data/items/Xxx.tres` (`script_class="EquippableItemResource"`,
    `MaxStack = 1`): set `Slot`, the `Bonus*` fields, and (for weapons) a `Weapon`
-   `ext_resource` pointing at a `WeaponResource`.
+   `ext_resource` pointing at a `WeaponResource`. `BonusFrostResist` (Phase 35G) is the
+   only one of the 34E resistances gear can carry so far — the other five are one
+   `[Export]` and one line in `StatBonuses()` each, added when an item wants them.
 2. It's indexed by `ItemDatabase` like any item; equip it via the character screen.
    Bonuses apply automatically through `EquipmentComponent` → `StatsComponent`.
 
@@ -599,8 +601,12 @@ cell sat far from the origin). `EnemySpawnDirector` had the same latent bug.
 **A new world event**
 1. Author `data/world_events/Xxx.tres` (`script_class="WorldEventResource"`): unique `Id`,
    `Kind` (`0`=Raid / `1`=Cache / `2`=Hunt), `SelectionWeight`, `CooldownSeconds`,
-   `TimeLimitSeconds`, the `At{Dawn,Day,Dusk,Night}` flags, spawn knobs (enemy `MinCount`/
-   `MaxCount` + `HealthMultiplier`, or `CacheItemId`/`CacheQuantity`), and rewards
+   `TimeLimitSeconds`, `RegionIds` (Phase 35G — `Array[String]` of `region.*` ids;
+   **empty means anywhere**, exactly as for encounters, so author it whenever the event
+   belongs to one realm or it rolls in every region — that is how goblin raids reached
+   Frostfang Reach), the `At{Dawn,Day,Dusk,Night}` flags, spawn knobs (enemy `MinCount`/
+   `MaxCount` + `HealthMultiplier` — a Hunt champion is just a count of 1 and a multiplier,
+   not a second archetype, or `CacheItemId`/`CacheQuantity`), and rewards
    (`XpReward`, `GoldReward`, `RewardItemId`/`RewardItemQuantity`, `FactionRewardId`/
    `FactionRewardAmount`).
 2. Auto-indexed by `WorldEventDatabase`; the `WorldEventDirector` rolls and runs it (announce →
@@ -617,6 +623,12 @@ cell sat far from the origin). `EnemySpawnDirector` had the same latent bug.
    `CraftingComponent.StartingRecipeIds` in `PlayerFactory`, or call `Learn`); it then appears
    at a matching `CraftingStationComponent`. New stations: `CraftingStationFactory.Create(...)`
    in the bootstrap. No code change for new recipes.
+3. ⚠️ **Seed it, or it is dead content.** `CraftingComponent.Learn` exists and **nothing in the
+   game calls it** — there is no recipe tome, dialogue effect or quest reward that teaches one,
+   and `--validate` has no reachability check for recipes the way it does for the bestiary. An
+   unseeded recipe is unreachable (`recipe.leather_vest` has been since Phase 15). Gate a
+   late-game recipe on a **scarce ingredient** instead, the way `recipe.drakescale_mail` gates on
+   eight dragon scales that only Frostfang's dragonkin drop.
 
 **A new spell**
 1. Author `data/spells/Xxx.tres` (`script_class="SpellResource"`): unique `Id`, `School`

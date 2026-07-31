@@ -665,3 +665,7 @@ dlg.ancient.kin.c_learn,"Teach me."
 dlg.ancient.kin.taught,"It speaks, once, quietly, and the air between you disagrees about being air. When your ears work again the word is simply there, sitting behind your teeth, patient. 'Now there are two of us who know it. Do not be careless with the only copy.'"
 dlg.ancient.kin.c_taught_bye,"Leave."
 dlg.ancient.kin.c_done_bye,"Leave."
+
+# Phase 35G — the frost drake: the dragon you can meet by accident.
+enemy.frost_drake.name,Frost Drake
+enemy.frost_drake.lore,"A dragon that never finished becoming one. Drakes do not fly, do not hoard and do not talk; they hold a stretch of snow and breathe cold at anything crossing it. The Ash Hunters rate them the most dangerous thing in the Reach that is not worth a song, and lose people to them every winter for exactly that reason."

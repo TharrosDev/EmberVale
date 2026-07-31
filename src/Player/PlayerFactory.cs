@@ -165,6 +165,11 @@ public static class PlayerFactory
                 GameIds.Recipes.LeatherCap,
                 GameIds.Recipes.SteelSword,
                 GameIds.Recipes.IronRing,
+
+                // 35G: known from the start like every other recipe, because nothing in the game
+                // teaches one — CraftingComponent.Learn exists and has no caller. The gate is the
+                // eight dragon scales, which only Frostfang's dragonkin drop.
+                GameIds.Recipes.DrakescaleMail,
             },
         });
 

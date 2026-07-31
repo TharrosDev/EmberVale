@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="AttributeSet" format=3 uid="uid://bfrstdrkat35g"]
+
+[ext_resource type="Script" path="res://src/Stats/AttributeSet.cs" id="1_attrset"]
+
+; A lesser dragon: well above the dire wolf (110) and the frost stalker, and nowhere near the Wild
+; dragon's 1400. It is meant to be the hardest thing that can wander up to you in the Reach, not a
+; boss — an encounter that spawns two of these should be a fight you can lose, and one you can also
+; walk away from.
+;
+; The Mana pool is not decoration. 34D's silent failure is a creature with spells and no mana: it
+; just stands there, with no warning anywhere. 90 against a 14/s channel is roughly three breaths
+; before it has to fall back on its claws.
+;
+; It carries the frost it breathes, so the school it teaches you to fear is the one it is smug
+; about — and answering that is what the drakescale mail this phase adds is for.
+[resource]
+script = ExtResource("1_attrset")
+Health = 420.0
+Stamina = 160.0
+Mana = 90.0
+Strength = 22.0
+Dexterity = 12.0
+Intelligence = 14.0
+Vitality = 24.0
+Endurance = 18.0
+Armor = 18.0
+PhysicalPower = 24.0
+SpellPower = 20.0
+MoveSpeed = 4.6
+AttackSpeed = 0.8
+CritChance = 0.07
+CritDamage = 1.7
+FrostResist = 60.0
+FireResist = 10.0

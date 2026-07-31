@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="LootTable" format=3 uid="uid://bfrstdrklt35g"]
+
+[ext_resource type="Script" path="res://src/Loot/LootTable.cs" id="1_table"]
+[ext_resource type="Script" path="res://src/Loot/LootEntry.cs" id="2_entry"]
+
+; Scales, in ones and twos. The three lair dragons drop them in sixes and tens, so this is the slow
+; way to the same currency — the drakescale mail costs enough scales that you either hunt a boss or
+; you hunt drakes for a while, and both are meant to be real answers.
+[sub_resource type="Resource" id="Entry_scale"]
+script = ExtResource("2_entry")
+ItemId = "item.material.dragon_scale"
+DropChance = 0.85
+MinQuantity = 1
+MaxQuantity = 2
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_pelt"]
+script = ExtResource("2_entry")
+ItemId = "item.material.beast_pelt"
+DropChance = 0.5
+MinQuantity = 1
+MaxQuantity = 2
+RollAffixes = false
+
+[resource]
+script = ExtResource("1_table")
+Entries = Array[Resource]([SubResource("Entry_scale"), SubResource("Entry_pelt")])
+GoldItemId = "item.currency.gold"
+GoldChance = 0.8
+GoldMin = 25
+GoldMax = 60
+QualityBonus = 0.15
