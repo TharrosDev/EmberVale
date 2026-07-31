@@ -165,6 +165,9 @@ public static class GameIds
 
         // Phase 34E — Arcane's first offensive spell; the school had only Self casts before.
         public const string ArcaneLance = "spell.arcane_lance";
+
+        // Phase 35C — the first Cone delivery. Dragon breath is a channeled spell, not a bespoke attack.
+        public const string DragonBreath = "spell.dragon_breath";
     }
 
     public static class Recipes

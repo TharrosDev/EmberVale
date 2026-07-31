@@ -45,6 +45,14 @@ public partial class EnemyArchetypeResource : Resource
     /// with a standoff AI profile, turns it into a caster.</summary>
     [Export] public Godot.Collections.Array<string> KnownSpellIds { get; set; } = new();
 
+    /// <summary>A breath weapon (Phase 35C): the id of a <see cref="SpellDelivery.Cone"/> spell this
+    /// creature channels at its target. Must also appear in <see cref="KnownSpellIds"/> — the breath
+    /// is cast through the ordinary spellcasting path, not around it. Empty = no breath.</summary>
+    [Export] public string BreathSpellId { get; set; } = string.Empty;
+
+    /// <summary>Seconds a breath channel is held open once it starts.</summary>
+    [Export] public float BreathDuration { get; set; } = 1.6f;
+
     [ExportGroup("Body")]
     [Export] public float CapsuleRadius { get; set; } = 0.4f;
     [Export] public float CapsuleHeight { get; set; } = 1.8f;

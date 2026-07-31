@@ -132,6 +132,18 @@ public static class EnemyArchetypeFactory
             enemy.AddChild(new FlightComponent { Name = "Flight" });
         }
 
+        // 35C: a breath weapon. Needs the spellcasting component above, so it only attaches when the
+        // archetype actually knows spells — a breath id with an empty loadout is caught by the validator.
+        if (archetype.BreathSpellId.Length > 0 && archetype.KnownSpellIds.Count > 0)
+        {
+            enemy.AddChild(new BreathComponent
+            {
+                Name = "Breath",
+                BreathSpellId = archetype.BreathSpellId,
+                BreathDuration = archetype.BreathDuration,
+            });
+        }
+
         if (archetype.LootTablePath.Length > 0)
         {
             enemy.AddChild(new LootComponent { Name = "Loot", TablePath = archetype.LootTablePath });

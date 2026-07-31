@@ -75,6 +75,12 @@ public partial class SpellResource : Resource
     /// </summary>
     [Export] public float ImpactRadius { get; set; } = 0f;
 
+    /// <summary>Full opening angle of a <see cref="SpellDelivery.Cone"/> cast, in degrees — 60 is a
+    /// wedge you step out of, 160 is a wall you run from. The cone's <em>length</em> is
+    /// <see cref="ImpactRadius"/>, so a cone needs no range field of its own. Ignored by every other
+    /// delivery shape.</summary>
+    [Export] public float ConeAngleDegrees { get; set; } = 0f;
+
     [ExportGroup("Mastery (skill-point buy/upgrade)")]
     /// <summary>Skill points to learn (buy) this spell from the character screen.</summary>
     [Export] public int LearnCost { get; set; } = 1;

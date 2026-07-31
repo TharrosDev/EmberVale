@@ -2286,8 +2286,60 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
     nothing on the enemy AI path is `ISaveable`, so a save mid-flight is not a case that
     exists yet. The climb is a constant-velocity servo, not accelerated — fine for a
     greybox, worth easing when the wings are real.
-- [ ] **35C — Breath attacks (cones/AoE) via SpellResolver** `[F]`
+- [x] **35C — Breath attacks (cones/AoE) via SpellResolver** `[F]` ✅
   - **Done when:** breath attacks reuse `SpellResolver`/status for cone/AoE damage.
+  - **Breath is a spell, not an attack.** `spell.dragon_breath` is `Delivery = Cone`,
+    `CastMode = Channeled`, Fire school, 55° × 14 m, applying `status.burning` — so it goes
+    through `SpellResolver`, school resistances, `SchoolIdentity` and the status pipeline
+    exactly as any player spell does. The roadmap asked for this specifically, and it is why
+    35E/35F's Ash and Ancient breaths cost a `.tres` each.
+  - **`SpellDelivery.Cone` + `SpellResolver.Sweep`.** A cone is `Detonate`'s sphere query
+    narrowed by one predicate, so both shapes share a single private `Resolve` rather than
+    becoming two resolvers that must be kept in step. The geometry is the pure `SpellCone`;
+    `ConeAngleDegrees` is the **full** width, which the tests pin — reading it as a half-angle
+    would silently double every cone ever authored.
+  - **Hurtbox position is the shape child's, not the Area's.** An `Area3D`'s origin is the
+    actor's origin, so testing it would place a 35A dragon's head, wings and tail at the same
+    point and let a cone take all four or none. `VolumeCentre` reads the `CollisionShape3D`,
+    falling back to the Area for the ordinary single-shape hurtbox.
+  - **The blocker this had to clear.** `TickCombat` branched to standoff/kiting on
+    `_casting != null || _profile.IsStandoff` — so giving the dragon spells would have stopped
+    it biting and turned 35A's melee arcs into dead code. The first half was **already
+    redundant**: every spell-carrying actor with an `EnemyAIComponent` (the seven 34D/34E
+    archetypes *and* the bespoke Ashen Acolyte) uses `ai.caster`, whose standoff range already
+    sets `IsStandoff`; companions use a different AI entirely. Dropping it states the real rule
+    — **a caster is a profile that stands off, not an actor that holds spells.**
+  - **Aiming from 12 m up.** `Aim()` reads the `CastOrigin` node's forward and the AI keeps the
+    body level, so a hovering dragon would have breathed straight over your head.
+    `BreathComponent` points that node at the target before casting; every delivery shape
+    inherits the pitch without knowing why.
+  - **`BeginCastById` is the one thing enemies lacked** — `TryCastById` is instant-only, and a
+    channel needs `BeginCast` → `UpdateCast` → `EndCast`. It mirrors the existing method rather
+    than adding a parallel casting path.
+  - **Grounded it must turn to breathe; airborne it need not.** On the ground the breath is gated
+    on facing, so 35A's flanking denies it and the 55°/s turn rate is a real beat. In the air the
+    dragon is overhead with its aim pitched down, where a facing gate on a level body would only
+    make the hover window fire at random. `BreathWindow` is pure and pins the asymmetry.
+  - **Verified:** `dotnet build` clean, `dotnet test` **655/655** (15 new across `SpellConeTests`
+    and `BreathWindowTests`, plus the updated `SpellDelivery_Ordinals` — the test that exists to
+    catch exactly this kind of enum edit), `--validate` exits 0 with the new cone and breath
+    rules. `DragonBreath.tres` and `WildDragon.tres` were load-checked headless (delivery
+    ordinal 3, cast mode 2, the loadout carrying the breath id), and `--play` boots into a live
+    world with combat resolving and no script errors.
+  - **Still owed (maintainer, at the keyboard)** — the `F1` console:
+    - `spawn 1 enemy.wild_dragon`: stand in front and burn, stand behind and don't. Confirm the
+      burning status applies and that resistances read as Fire.
+    - Let it take off — it should breathe **down** at you from the hover, not overhead.
+    - Confirm it still bites, wing-sweeps and tail-swipes between breaths. That is what the
+      standoff-clause fix buys.
+    - `spawn 1 enemy.hollow_necromancer` and confirm it still kites and casts exactly as before —
+      that clause is the one edit here touching shipped behaviour.
+  - **Known limits:** the cone greyboxes as four widening `SpellFlash` spheres along its axis —
+    legible, but a real particle cone is an art pass. There is no wind-up telegraph: the breath
+    starts the frame it is decided, which is a Phase 36 concern (`BossController` owns
+    telegraphs) and will matter more once there is an animation to read. Mana is the only limiter
+    besides the 6 s cooldown, and the dragon's 120 mana at 18/s means it cannot chain breaths
+    indefinitely — worth re-checking once 35D/35E tune the variants.
 - [ ] **35D — Wild dragon variant (territorial world boss)** `[F/C]`
   - **Done when:** a Wild dragon spawns as a territorial world boss.
 - [ ] **35E — Ash dragon variant (corrupted elite)** `[F/C]`

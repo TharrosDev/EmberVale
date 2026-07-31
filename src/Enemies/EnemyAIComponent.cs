@@ -316,8 +316,11 @@ public partial class EnemyAIComponent : EntityComponent
         }
 
         // A standoff fighter (caster now, archer later) holds a band and kites instead of charging
-        // into melee (Phase 29.5F, generalized in 34A).
-        if (_casting != null || _profile.IsStandoff)
+        // into melee (Phase 29.5F, generalized in 34A). The rule is the *profile*, not the presence
+        // of spells: 35C's dragon carries a breath and still closes to bite. Every caster archetype
+        // uses ai.caster, whose standoff range already sets IsStandoff, so this is behaviour-neutral
+        // for the existing roster.
+        if (_profile.IsStandoff)
         {
             TickStandoffCombat(pos, delta);
             return;
