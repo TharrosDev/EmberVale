@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="FactionResource" format=3 uid="uid://bdragonfac35f"]
+
+[ext_resource type="Script" path="res://src/Factions/FactionResource.cs" id="1_faction"]
+
+; The Ancients only (Phase 35F) — deliberately NOT the faction the Wild dragon fights under
+; (faction.beasts) or the Ash dragon's (faction.fallen). An Ancient judges you on your own conduct
+; toward it, so clearing the wilds of wyrms must not make the one you can talk to draw breath on you.
+;
+; DefaultReputation sits in the Neutral band and HostileThreshold at Unfriendly, which is the whole
+; of "neutral until provoked": EnemyAIComponent.PlayerIsTarget returns false while standing is above
+; the threshold, and the first swing sets _provoked regardless. The kill penalty is heavy because
+; there are only ever a handful of them left.
+[resource]
+script = ExtResource("1_faction")
+Id = "faction.dragons"
+DisplayName = "The Ancients"
+Description = "What is left of the dragons that remember the age before the gods died. They do not gather, they do not rule, and they have nothing to prove to anything that lives a hundred years. Most of what they know has no one left to tell."
+DefaultReputation = 10
+HostileThreshold = 2
+KillReputationPenalty = 40
+Enemies = Array[String](["faction.fallen"])
+Allies = Array[String]([])

@@ -123,6 +123,14 @@ public static class EnemyArchetypeFactory
             enemy.AddChild(new FactionComponent { Name = "Faction", FactionId = archetype.FactionId });
         }
 
+        // 35F: a creature that talks. The player's interact raycast is unmasked and resolves the
+        // owning entity from whatever collider it hits, so the body it already has is the target —
+        // a conversational creature needs no extra collision, only this component.
+        if (archetype.DialogueId.Length > 0)
+        {
+            enemy.AddChild(new Dialogue.DialogueComponent { Name = "Dialogue", DialogueId = archetype.DialogueId });
+        }
+
         enemy.AddChild(new EnemyAIComponent { Name = "AI", ProfileId = archetype.AiProfileId });
 
         // 35B: flight is a property of the AI profile, not of the archetype — a profile with a

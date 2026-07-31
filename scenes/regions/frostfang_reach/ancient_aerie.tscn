@@ -1,0 +1,89 @@
+; The Ancient dragon's aerie (Phase 35F) — the third roost, and the first one that costs almost
+; nothing because scenes/regions/roost.tscn now owns the structure 35D and 35E each hand-authored.
+;
+; North of the Wild dragon's roost and butted against it: this floor is z ∈ [-155, -65] and the wild
+; roost's ends at z = -65, so the two are walkable across with no overlap and no co-planar z-fight.
+; 90 m of floor to a 44 m territory radius, so the leash always breaks off over solid ground.
+;
+; Pale, unburnt stone. The other two roosts are a fire and an ashfall; this one is just very high and
+; very old, and nothing has happened here for a long time.
+[gd_scene load_steps=8 format=3 uid="uid://crgnancaerie0"]
+
+[ext_resource type="PackedScene" path="res://scenes/regions/roost.tscn" id="1_roost"]
+[ext_resource type="Script" path="res://src/Entities/Entity.cs" id="2_entity"]
+[ext_resource type="Script" path="res://src/Magic/SpellTomeComponent.cs" id="3_tome"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="10_rock"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_glacier.glb" id="12_glacier"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_tome_stand.glb" id="13_tome"]
+
+[sub_resource type="CylinderShape3D" id="Shape_rock"]
+radius = 1.5
+height = 1.6
+
+[sub_resource type="BoxShape3D" id="Shape_tome"]
+size = Vector3(0.5, 0.7, 0.4)
+
+[node name="AncientAerieCell" instance=ExtResource("1_roost")]
+FloorSize = 90.0
+FloorColor = Color(0.55, 0.58, 0.62, 1)
+
+; Standing stones rather than crags — cover, but arranged, because something that thinks has lived
+; here for eight hundred years.
+[node name="StoneN" parent="Nav" index="3" instance=ExtResource("10_rock")]
+transform = Transform3D(1.8, 0, 0, 0, 4.2, 0, 0, 0, 1.8, 0, 0, -19)
+
+[node name="StoneNCol" type="StaticBody3D" parent="Nav/StoneN"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/StoneN/StoneNCol"]
+shape = SubResource("Shape_rock")
+
+[node name="StoneE" parent="Nav" index="4" instance=ExtResource("10_rock")]
+transform = Transform3D(1.8, 0, 0, 0, 4, 0, 0, 0, 1.8, 17, 0, 10)
+
+[node name="StoneECol" type="StaticBody3D" parent="Nav/StoneE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/StoneE/StoneECol"]
+shape = SubResource("Shape_rock")
+
+[node name="StoneW" parent="Nav" index="5" instance=ExtResource("10_rock")]
+transform = Transform3D(-1.8, 0, 0, 0, 4.4, 0, 0, 0, -1.8, -17, 0, 10)
+
+[node name="StoneWCol" type="StaticBody3D" parent="Nav/StoneW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/StoneW/StoneWCol"]
+shape = SubResource("Shape_rock")
+
+[node name="GlacierNW" parent="Nav" index="6" instance=ExtResource("12_glacier")]
+transform = Transform3D(1.6, 0, 0, 0, 2, 0, 0, 0, 1.6, -27, 0, -24)
+
+[node name="GlacierNE" parent="Nav" index="7" instance=ExtResource("12_glacier")]
+transform = Transform3D(-1.5, 0, 0.8, 0, 1.9, 0, -0.8, 0, -1.5, 28, 0, -22)
+
+; The hoard. An Ancient's treasure is one word on a stand, and the tome will not open until the thing
+; that has been keeping it is dead — RequiredFlagId is raised by the lair below on the kill. That is
+; the second route to spell.elder_word; the first is asking for it (dialogue.ancient_dragon).
+[node name="Hoard" type="Node3D" parent="." index="2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 5)
+script = ExtResource("2_entity")
+DisplayName = "The Hoard"
+
+[node name="Mesh" parent="Hoard" instance=ExtResource("13_tome")]
+
+[node name="Collider" type="StaticBody3D" parent="Hoard"]
+
+[node name="Shape" type="CollisionShape3D" parent="Hoard/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("Shape_tome")
+
+[node name="Tome" type="Node" parent="Hoard"]
+script = ExtResource("3_tome")
+SpellId = "spell.elder_word"
+RequiredFlagId = "flag.ancient_dragon_defeated"
+
+[node name="Nest" parent="." index="1"]
+DisplayName = "Ancient Aerie"
+PersistentId = "lair.frostfang_ancient_aerie"
+
+[node name="Lair" parent="Nest" index="0"]
+TemplateId = "enemy.ancient_dragon"
+DefeatFlagId = "flag.ancient_dragon_defeated"

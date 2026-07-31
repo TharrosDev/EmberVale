@@ -307,8 +307,11 @@ public partial class InventoryPanel : UiPanel
             var spells = new List<SpellResource>();
             foreach (SpellResource s in SpellDatabase.All)
             {
-                // Enemy-only loadouts (the Phase 34 caster roster) stay out of the player's book.
-                if (s.School == school && s.PlayerLearnable)
+                // Enemy-only loadouts (the Phase 34 caster roster) stay out of the player's book —
+                // unless the player has actually recovered one (35F: an Ancient dragon teaches lost
+                // spellcraft that can never be bought). A known spell must always be listed, or the
+                // reward for the fight is a spell the character screen says you do not have.
+                if (s.School == school && (s.PlayerLearnable || _spellcasting.IsKnown(s)))
                 {
                     spells.Add(s);
                 }

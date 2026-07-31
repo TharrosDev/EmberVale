@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="QuestResource" format=3 uid="uid://bancdrgnqs35f"]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+
+; The Ancient asks for the one thing in the Reach it will not do itself: kill the Ash dragon in the
+; east roost. That is 35E's boss, so this quest is the seam that ties the three dragons into one
+; story instead of three separate fights in one region — and the favour it buys (the Elder Word) is
+; earned by real work rather than by exhausting a dialogue tree.
+;
+; There is no "return and tell it" objective — the quest system only expresses Kill and Collect — so
+; the turn-in is a conversation the player has to remember to have. The reward branch is gated on
+; QuestCompleted, so it waits however long that takes.
+[sub_resource type="Resource" id="Obj_kill"]
+script = ExtResource("2_obj")
+Type = 0
+TargetId = "enemy.ash_dragon"
+RequiredCount = 1
+Description = "quest.ancient.kin.obj"
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.ancient.kin"
+Title = "quest.ancient.kin.title"
+Summary = "quest.ancient.kin.summary"
+Objectives = Array[Resource]([SubResource("Obj_kill")])
+XpReward = 500
+GoldReward = 250
+GoldItemId = "item.currency.gold"
+RewardItems = Array[Resource]([])
+FactionRewardId = "faction.dragons"
+FactionRewardAmount = 25
+PrerequisiteQuestId = ""

@@ -1,0 +1,180 @@
+[gd_resource type="Resource" script_class="DialogueResource" format=3 uid="uid://bancdrgndl35f"]
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+; The first creature in the game that is a boss and a conversation at once (Phase 35F). It is
+; reachable because enemy.ancient_dragon sits in faction.dragons, which the player starts Neutral
+; toward — walk up and the interact prompt is a talk prompt, not a healthbar.
+;
+; The favour route to spell.elder_word runs through quest.ancient.kin (kill the Ash dragon) and ends
+; on the LearnSpell effect below. The other route is killing this one and reading the tome in its
+; hoard. Both teach the same word, which is the point: it can be given or it can be taken.
+
+; --- root branches ---
+[sub_resource type="Resource" id="ch_what"]
+script = ExtResource("3_choice")
+Text = "dlg.ancient.c_what"
+Goto = "what"
+
+[sub_resource type="Resource" id="ch_knowledge"]
+script = ExtResource("3_choice")
+Text = "dlg.ancient.c_knowledge"
+Goto = "knowledge"
+
+; The Marked get a different reading of themselves. CorruptionAtLeast is the 23H gate, reused.
+[sub_resource type="Resource" id="ch_mark"]
+script = ExtResource("3_choice")
+Text = "dlg.ancient.c_mark"
+Goto = "mark"
+Condition = 7
+ConditionArg = "25"
+
+[sub_resource type="Resource" id="ch_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.ancient.c_bye"
+
+[sub_resource type="Resource" id="ch_back"]
+script = ExtResource("3_choice")
+Text = "dlg.ancient.c_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_back2"]
+script = ExtResource("3_choice")
+Text = "dlg.ancient.c_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_back3"]
+script = ExtResource("3_choice")
+Text = "dlg.ancient.c_back"
+Goto = "root"
+
+; --- the quest ---
+[sub_resource type="Resource" id="ch_kin_offer"]
+script = ExtResource("3_choice")
+Text = "dlg.ancient.kin.c_offer"
+Goto = "kin_offer"
+Condition = 1
+ConditionArg = "quest.ancient.kin"
+
+[sub_resource type="Resource" id="ch_kin_active"]
+script = ExtResource("3_choice")
+Text = "dlg.ancient.kin.c_active"
+Goto = "kin_inprogress"
+Condition = 2
+ConditionArg = "quest.ancient.kin"
+
+; The favour, offered once. The flag on the farewell below closes it — LearnSpell is idempotent, but
+; a dragon that keeps offering to teach you something you already know is a dragon with a bug.
+[sub_resource type="Resource" id="ch_kin_done"]
+script = ExtResource("3_choice")
+Text = "dlg.ancient.kin.c_done"
+Goto = "kin_done"
+Condition = 3
+ConditionArg = "quest.ancient.kin"
+
+[sub_resource type="Resource" id="ch_kin_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.ancient.kin.c_accept"
+Goto = "kin_accepted"
+Effect = 1
+EffectArg = "quest.ancient.kin"
+
+[sub_resource type="Resource" id="ch_kin_decline"]
+script = ExtResource("3_choice")
+Text = "dlg.ancient.kin.c_decline"
+
+[sub_resource type="Resource" id="ch_kin_accepted_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.ancient.kin.c_accepted_bye"
+
+[sub_resource type="Resource" id="ch_kin_inprogress_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.ancient.kin.c_inprogress_bye"
+
+; The 35F effect: the conversational half of the Weave's recovery seam (29.5E).
+; MissingFlag, not QuestCompleted: the branch into this node is what checks the quest, and this is
+; what stops the favour being offered twice. A choice carries one condition and one effect, so the
+; flag it checks is set two nodes along rather than here.
+[sub_resource type="Resource" id="ch_kin_learn"]
+script = ExtResource("3_choice")
+Text = "dlg.ancient.kin.c_learn"
+Goto = "kin_taught"
+Condition = 6
+ConditionArg = "flag.ancient.taught"
+Effect = 8
+EffectArg = "spell.elder_word"
+
+[sub_resource type="Resource" id="ch_kin_done_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.ancient.kin.c_done_bye"
+
+; One effect per choice, so the flag that closes the offer hangs on the next node's farewell.
+[sub_resource type="Resource" id="ch_kin_taught_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.ancient.kin.c_taught_bye"
+Effect = 2
+EffectArg = "flag.ancient.taught"
+
+; --- nodes ---
+[sub_resource type="Resource" id="node_root"]
+script = ExtResource("2_node")
+Id = "root"
+Text = "dlg.ancient.root"
+Choices = Array[Resource]([SubResource("ch_kin_done"), SubResource("ch_kin_offer"), SubResource("ch_kin_active"), SubResource("ch_what"), SubResource("ch_knowledge"), SubResource("ch_mark"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_what"]
+script = ExtResource("2_node")
+Id = "what"
+Text = "dlg.ancient.what"
+Choices = Array[Resource]([SubResource("ch_back")])
+
+[sub_resource type="Resource" id="node_knowledge"]
+script = ExtResource("2_node")
+Id = "knowledge"
+Text = "dlg.ancient.knowledge"
+Choices = Array[Resource]([SubResource("ch_back2")])
+
+[sub_resource type="Resource" id="node_mark"]
+script = ExtResource("2_node")
+Id = "mark"
+Text = "dlg.ancient.mark"
+Choices = Array[Resource]([SubResource("ch_back3")])
+
+[sub_resource type="Resource" id="node_kin_offer"]
+script = ExtResource("2_node")
+Id = "kin_offer"
+Text = "dlg.ancient.kin.offer"
+Choices = Array[Resource]([SubResource("ch_kin_accept"), SubResource("ch_kin_decline")])
+
+[sub_resource type="Resource" id="node_kin_accepted"]
+script = ExtResource("2_node")
+Id = "kin_accepted"
+Text = "dlg.ancient.kin.accepted"
+Choices = Array[Resource]([SubResource("ch_kin_accepted_bye")])
+
+[sub_resource type="Resource" id="node_kin_inprogress"]
+script = ExtResource("2_node")
+Id = "kin_inprogress"
+Text = "dlg.ancient.kin.inprogress"
+Choices = Array[Resource]([SubResource("ch_kin_inprogress_bye")])
+
+[sub_resource type="Resource" id="node_kin_done"]
+script = ExtResource("2_node")
+Id = "kin_done"
+Text = "dlg.ancient.kin.done"
+Choices = Array[Resource]([SubResource("ch_kin_learn"), SubResource("ch_kin_done_bye")])
+
+[sub_resource type="Resource" id="node_kin_taught"]
+script = ExtResource("2_node")
+Id = "kin_taught"
+Text = "dlg.ancient.kin.taught"
+Choices = Array[Resource]([SubResource("ch_kin_taught_bye")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "dialogue.ancient_dragon"
+SpeakerName = "dlg.ancient.speaker"
+StartNodeId = "root"
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_what"), SubResource("node_knowledge"), SubResource("node_mark"), SubResource("node_kin_offer"), SubResource("node_kin_accepted"), SubResource("node_kin_inprogress"), SubResource("node_kin_done"), SubResource("node_kin_taught")])

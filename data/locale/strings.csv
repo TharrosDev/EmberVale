@@ -632,3 +632,36 @@ enemy.wild_dragon.lore,"Older than the guilds, older than the Sundering, and ent
 # Phase 35E — the Ash dragon. Its own creature, not a corrupted Wild one (see LORE "Ash Dragons").
 enemy.ash_dragon.name,Ash Dragon
 enemy.ash_dragon.lore,"What Morthul makes of a dragon. It does not hoard, it does not claim a mountain, it does not care that you are there — it simply keeps going until the ground behind it is grey. The Hunters have no advice for this one. There is no safe side."
+
+# Phase 35F — the Ancient dragon. The one creature in the bestiary the player can talk to.
+enemy.ancient_dragon.name,Vharyx the Unspoken
+enemy.ancient_dragon.lore,"There were never many, and there are fewer now. An Ancient does not hoard gold or hold a mountain; it holds words, which is the only thing left worth keeping from before the gods died. It will talk to you. That is not the same as it being safe, and the Ash Hunters would like it noted that the last party to test the difference is still up there."
+spell.elder_word.name,Elder Word
+quest.ancient.kin.title,"What Is Wearing My Kin"
+quest.ancient.kin.summary,"The Ancient in the northern aerie will not go east itself. It says the thing in the ash roost was a dragon once, and that this is the sort of errand younger, shorter-lived things are for."
+quest.ancient.kin.obj,"Kill the Ash dragon in the eastern roost"
+dlg.ancient.speaker,Vharyx
+dlg.ancient.root,"The head comes down slowly, until one eye is level with you and considerably larger. 'You climbed all of that to look at me. Speak, then, small thing, and be interesting about it.'"
+dlg.ancient.c_what,"What are you?"
+dlg.ancient.what,"'Old. That is the whole of it, and it took a very long time. I was here when the sky had gods in it and I was here the morning it did not. Your kind writes that down as an age. I remember it as weather.'"
+dlg.ancient.c_knowledge,"They say your kind keeps what the world forgot."
+dlg.ancient.knowledge,"'Keeps. Yes. Not guards — nothing has come for it in eight hundred years. The Weave thins and your casters shout louder to be heard through it, and none of them think to ask the thing that learned to speak before the thinning started. So: keeps. Like a cellar keeps wine no one drinks.'"
+dlg.ancient.c_mark,"You are staring at me."
+dlg.ancient.mark,"'I am looking at what is in you. I have seen that grey before, on my own kin, in the east. It does not stop, you understand. It is not a wound. It is an opinion the world is having about you, and it wins arguments slowly.'"
+dlg.ancient.c_bye,"Leave."
+dlg.ancient.c_back,"Something else."
+dlg.ancient.kin.c_offer,"Is there something you want?"
+dlg.ancient.kin.offer,"'East of here, past the hold, something is sleeping in a roost that used to belong to a dragon. It still has the shape. Morthul is thorough about shapes. I will not go — I have watched enough of my kin become that, and I will not be the one who ends this one. You are younger. You have fewer things to remember afterward. Kill it.'"
+dlg.ancient.kin.c_accept,"I will do it."
+dlg.ancient.kin.accepted,"'Then go while you still think it is a favour to me. Take the cold seriously and the ash more so. It breathes rot, not fire — whatever you wore against my western cousin will not help you.'"
+dlg.ancient.kin.c_accepted_bye,"Leave."
+dlg.ancient.kin.c_decline,"No."
+dlg.ancient.kin.c_active,"The thing in the east still lives."
+dlg.ancient.kin.inprogress,"'I know. I would feel it stop. Go back down, or stay and talk — I have had centuries of practice at waiting and you have not.'"
+dlg.ancient.kin.c_inprogress_bye,"Leave."
+dlg.ancient.kin.c_done,"It is dead."
+dlg.ancient.kin.done,"The great head turns aside for a long moment. 'I felt it. Thank you is a small word and I have not needed it in some time, so you will have the other kind of payment. There is one word I have never given away. It is not a spell your teachers could sell you; there is no one alive to sell it.'"
+dlg.ancient.kin.c_learn,"Teach me."
+dlg.ancient.kin.taught,"It speaks, once, quietly, and the air between you disagrees about being air. When your ears work again the word is simply there, sitting behind your teeth, patient. 'Now there are two of us who know it. Do not be careless with the only copy.'"
+dlg.ancient.kin.c_taught_bye,"Leave."
+dlg.ancient.kin.c_done_bye,"Leave."

@@ -35,6 +35,13 @@ public enum DialogueEffect
     /// <summary>Shift a companion's loyalty: <c>EffectArg</c> is <c>&lt;companionId&gt;:&lt;delta&gt;</c>
     /// (e.g. <c>companion.kael:10</c>; the delta may be negative).</summary>
     AddCompanionLoyalty,
+
+    /// <summary>Teach the player the spell whose id is the <c>EffectArg</c> (Phase 35F). The Weave's
+    /// rule (29.5E) is that spells are <em>recovered</em>, not vendored: this is the conversational
+    /// half of that seam, where <see cref="Magic.SpellTomeComponent"/> is the found-object half. It
+    /// goes through the same corruption-gated <c>Learn</c>, and works for a spell marked
+    /// <c>PlayerLearnable = false</c> — which is the point, since such a spell can never be bought.</summary>
+    LearnSpell,
 }
 
 /// <summary>

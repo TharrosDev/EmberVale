@@ -219,6 +219,10 @@ public class EnumStabilityTests
         Assert.Equal(2, (int)DialogueEffect.SetFlag);
         Assert.Equal(3, (int)DialogueEffect.ClearFlag);
         Assert.Equal(4, (int)DialogueEffect.AddCorruption);
+        Assert.Equal(5, (int)DialogueEffect.RecruitCompanion);
+        Assert.Equal(6, (int)DialogueEffect.DismissCompanion);
+        Assert.Equal(7, (int)DialogueEffect.AddCompanionLoyalty);
+        Assert.Equal(8, (int)DialogueEffect.LearnSpell);
     }
 
     [Fact]
