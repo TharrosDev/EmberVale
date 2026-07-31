@@ -49,10 +49,24 @@ public static class AnimationClips
     {
         string[] accepted = Aliases.TryGetValue(slot, out string[]? a) ? a : new[] { slot };
 
-        // Two passes so a model that has both "attack" and "bite" prefers "attack": an earlier alias
-        // must beat a later one regardless of the order the clips happen to be listed in.
+        // Alias order is the outer loop so a model with both "attack" and "bite" prefers "attack",
+        // regardless of the order the clips happen to be listed in.
         foreach (string candidate in accepted)
         {
+            // Exact before prefix. A rig that ships Idle *and* Idle_Gun must resolve to Idle, and
+            // relying on the list order to deliver that is luck: the Iron King's replacement happens
+            // to list them alphabetically, so a first-match-wins scan is correct there purely by
+            // accident. An exact-match pass makes it correct on purpose — the failure it prevents is
+            // a fantasy boss idling in a rifle stance, which nothing would flag as an error.
+            foreach (string name in clipNames)
+            {
+                if (string.Equals(Bare(name), candidate, StringComparison.OrdinalIgnoreCase))
+                {
+                    return name;
+                }
+            }
+
+            // Prefix fallback — this is what matches the in-house "idle-loop"/"run-loop" naming.
             foreach (string name in clipNames)
             {
                 if (Bare(name).StartsWith(candidate, StringComparison.OrdinalIgnoreCase))
