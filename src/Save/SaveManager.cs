@@ -427,7 +427,19 @@ public sealed partial class SaveManager : Node
 
         var root = parsed.AsGodotDictionary();
 
-        int version = root.TryGetValue("version", out Variant versionVariant) ? versionVariant.AsInt32() : 0;
+        // A missing "version" is not an old save, it is not one of ours. Every envelope this game has
+        // ever written carries one, so the key's absence means a truncated write, a hand-edited file, or
+        // some other JSON object entirely — and the migration path below would wave it through as
+        // "version 0, older, best effort" and start feeding fragments to live components. Refused here so
+        // the only unversioned outcome is a clean failure.
+        if (!root.TryGetValue("version", out Variant versionVariant) ||
+            versionVariant.VariantType is not (Variant.Type.Int or Variant.Type.Float))
+        {
+            Log.Error($"Save slot '{slot}' has no version field; refusing to load (it is not an Embervale save).");
+            return false;
+        }
+
+        int version = versionVariant.AsInt32();
         if (!TryMigrate(slot, version, ref root))
         {
             return false;

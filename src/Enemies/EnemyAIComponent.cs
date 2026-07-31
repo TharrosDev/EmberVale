@@ -715,6 +715,12 @@ public partial class EnemyAIComponent : EntityComponent
     /// engages only while the player's standing with its faction is hostile (or it has
     /// been provoked by a direct attack); an unfactioned actor is hostile by default.
     /// </summary>
+    /// <summary>Whether this actor currently treats the player as a target — the public read of
+    /// <see cref="PlayerIsTarget"/>. A creature that can hold a conversation (35F) is the first thing
+    /// that needs to ask this from outside the brain: talking to something mid-swing has to be
+    /// refused, and "is it hostile" is a question only the AI can answer (standing *or* provocation).</summary>
+    public bool IsHostileToPlayer => PlayerIsTarget();
+
     private bool PlayerIsTarget()
     {
         if (_provoked || string.IsNullOrEmpty(_factionId))

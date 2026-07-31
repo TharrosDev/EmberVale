@@ -93,5 +93,9 @@ shape = SubResource("Shape_pine")
 DisplayName = "Ash Roost"
 PersistentId = "lair.frostfang_ash_roost"
 
+; DefeatFlagId so the Ancient can tell the deed is already done. quest.ancient.kin asks the player to
+; kill this dragon, and this lair is the only thing in the game that spawns one — so a player who came
+; east before north would otherwise take a quest that can never complete.
 [node name="Lair" parent="Nest" index="0"]
 TemplateId = "enemy.ash_dragon"
+DefeatFlagId = "flag.ash_dragon_defeated"

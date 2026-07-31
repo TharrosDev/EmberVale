@@ -74,12 +74,29 @@ Goto = "kin_done"
 Condition = 3
 ConditionArg = "quest.ancient.kin"
 
+; Accepting is gated on the Ash dragon still being alive. Its lair is the only thing in the game that
+; spawns one and its defeat is permanent, so a player who cleared the east roost before ever finding
+; this aerie would otherwise start an errand that can never be completed and never leaves the journal.
 [sub_resource type="Resource" id="ch_kin_accept"]
 script = ExtResource("3_choice")
 Text = "dlg.ancient.kin.c_accept"
 Goto = "kin_accepted"
+Condition = 6
+ConditionArg = "flag.ash_dragon_defeated"
 Effect = 1
 EffectArg = "quest.ancient.kin"
+
+; The other order of play: already done, before it was ever asked for. The Ancient reads it off you and
+; pays anyway rather than sending you after a corpse — the favour was never really about the errand.
+; This is why LairSpawnComponent.DefeatFlagId exists (35F); the ash roost now raises it.
+[sub_resource type="Resource" id="ch_kin_already"]
+script = ExtResource("3_choice")
+Text = "dlg.ancient.kin.c_already"
+Goto = "kin_taught"
+Condition = 5
+ConditionArg = "flag.ash_dragon_defeated"
+Effect = 8
+EffectArg = "spell.elder_word"
 
 [sub_resource type="Resource" id="ch_kin_decline"]
 script = ExtResource("3_choice")
@@ -146,7 +163,7 @@ Choices = Array[Resource]([SubResource("ch_back3")])
 script = ExtResource("2_node")
 Id = "kin_offer"
 Text = "dlg.ancient.kin.offer"
-Choices = Array[Resource]([SubResource("ch_kin_accept"), SubResource("ch_kin_decline")])
+Choices = Array[Resource]([SubResource("ch_kin_already"), SubResource("ch_kin_accept"), SubResource("ch_kin_decline")])
 
 [sub_resource type="Resource" id="node_kin_accepted"]
 script = ExtResource("2_node")

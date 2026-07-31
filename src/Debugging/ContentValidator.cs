@@ -1061,6 +1061,61 @@ public static class ContentValidator
     /// the readers against the writers. A flag nothing writes is the typo that matters; the reverse
     /// (a flag set but never read) is legitimate, since flags are also a record of what happened.
     /// </summary>
+    /// <summary>
+    /// Adds story flags raised by scene-authored components to the "something writes this" set.
+    /// <see cref="Enemies.LairSpawnComponent.DefeatFlagId"/> (Phase 35F) is the first flag writer that
+    /// lives in a <c>.tscn</c> rather than in a dialogue effect or a code constant, so without this the
+    /// flag audit reports every one of them as "nothing ever sets it" — a false failure that would push
+    /// the next author to delete a working gate.
+    ///
+    /// Scanning the scene text rather than instantiating the scenes keeps this cheap and side-effect
+    /// free: the validator runs headless and must not build actors to answer a content question.
+    /// ponytail: one regex over the scene tree; if a second scene-authored flag writer appears, add its
+    /// property name to the pattern rather than a second walk.
+    /// </summary>
+    private static void CollectSceneAuthoredFlags(HashSet<string> written)
+    {
+        foreach (string path in ScenePaths("res://scenes"))
+        {
+            using FileAccess? file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
+            if (file == null)
+            {
+                continue;
+            }
+
+            foreach (System.Text.RegularExpressions.Match match in
+                     System.Text.RegularExpressions.Regex.Matches(file.GetAsText(), "DefeatFlagId = \"([^\"]+)\""))
+            {
+                written.Add(match.Groups[1].Value);
+            }
+        }
+    }
+
+    /// <summary>Every <c>.tscn</c> at or below a directory.</summary>
+    private static IEnumerable<string> ScenePaths(string directory)
+    {
+        if (!DirAccess.DirExistsAbsolute(directory))
+        {
+            yield break;
+        }
+
+        foreach (string file in DirAccess.GetFilesAt(directory))
+        {
+            if (file.EndsWith(".tscn", System.StringComparison.OrdinalIgnoreCase))
+            {
+                yield return $"{directory}/{file}";
+            }
+        }
+
+        foreach (string sub in DirAccess.GetDirectoriesAt(directory))
+        {
+            foreach (string nested in ScenePaths($"{directory}/{sub}"))
+            {
+                yield return nested;
+            }
+        }
+    }
+
     private static void ValidateStoryFlags(List<string> issues)
     {
         var written = new HashSet<string>
@@ -1069,6 +1124,8 @@ public static class ContentValidator
             Narrative.SliceDirector.CompletedFlag,
             Narrative.SliceDirector.AbsorbedFlag,
         };
+
+        CollectSceneAuthoredFlags(written);
 
         foreach (DialogueResource dialogue in DialogueDatabase.All)
         {
