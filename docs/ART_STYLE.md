@@ -205,13 +205,24 @@ Default importer settings, plus: generate LODs on; static props import as
 suffixes in Blender, or a simple collider added in the factory/scene — never
 runtime-parsed visual-mesh collision, per the navmesh rule in CLAUDE.md §8).
 
-### 6.3 Sourced assets (PolyHaven / Sketchfab / generated)
+### 6.3 Sourced assets (Poly Pizza / Kenney / Quaternius / PolyHaven / Sketchfab)
 
-Open-license sources are allowed as *raw material*, never dropped in verbatim:
-retopo/decimate to the §3 budget, repaint/posterize textures to §4 (a photo
-texture must stop reading as a photo), re-tint into the §2 palette. Record
-source + license in `assets/CREDITS.md` (CC-BY requires the entry; CC0 gets one
-anyway for provenance). If adapting costs more than modeling clean — model clean.
+**Sourcing is now the default, not the fallback** — see
+[`ASSET_POLICY.md`](ASSET_POLICY.md), which governs acquisition and supersedes the
+old "model clean" preference below.
+
+Open-license sources are *raw material*, never dropped in verbatim: retopo/decimate
+to the §3 budget, repaint/posterize textures to §4 (a photo texture must stop
+reading as a photo), re-tint into the §2 palette. That visual contract is unchanged
+and is the reason a download is a starting point rather than a finished asset.
+
+Record source + license in `assets/CREDITS.md` (CC-BY requires the entry; CC0 gets
+one anyway for provenance) — an asset with no entry is not finished.
+
+> **Superseded:** this section used to end *"if adapting costs more than modeling
+> clean — model clean."* Modelling clean is now the rare exception, gated on the
+> four-part test in `ASSET_POLICY.md` §1. Adapt a close match rather than abandoning
+> it; consistency across the set beats a bespoke one-off.
 
 ---
 
