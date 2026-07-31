@@ -143,6 +143,23 @@ the new id — is the source of truth (fix the id, or amend this doc by decision
 
 ---
 
+## 5. One deliberate id collision (do not "fix" it)
+
+A **`BestiaryEntryResource.Id` is the enemy template id it documents**, not an id of its own
+(Phase 34G). So `data/bestiary/Wolf.tres` and `data/enemies/Wolf.tres` both declare
+`Id = "enemy.wolf"`, and 28 pairs currently do.
+
+This is correct and load-bearing: it is what lets `BestiaryDatabase` resolve a page from a
+kill event with no second lookup table, and it is why `--validate` can check the domain in
+both directions (every entry names a real template, every template has an entry).
+
+It also means **any naive duplicate-id scan over `data/` reports ~28 false positives.** The
+Phase 35 audit ran exactly that scan and had to rule them all out by hand. If you are
+writing id tooling, exclude `data/bestiary/` from the uniqueness check rather than
+"resolving" the collision.
+
+---
+
 > **House rule.** When you add a content domain (region, boss, relic, race, companion, …):
 > add its row to §2, add any code-referenced constants to `GameIds.cs`, and — where it
 > helps — extend `ContentValidator` to enforce its shape. The registry and the validator

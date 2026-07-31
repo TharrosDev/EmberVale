@@ -175,27 +175,28 @@ The result: a sustained mash empties the 120 bar in ~10 swings (~5.5 s) because 
 never gets its 0.9 s of quiet, then locks out attack/dodge/block until the player backs
 off — while "swing, read, recover" spends inside the regen and sustains indefinitely.
 
-### 1.7 What exists vs. what Phase 29 owns
+### 1.7 The framework and the feel — both now built
 
-The combat **framework** (Phase 3) is built and live in the sandbox; it has the *math and
-state*. The combat **feel** (Phase 29 — "Combat Feel & Game Juice") is the layer that
-makes that math *land*. This doc is the contract between them.
+The combat **framework** (Phase 3) supplied the *math and state*. The combat **feel**
+(Phase 29 — "Combat Feel & Game Juice") is the layer that makes that math *land*, and it
+**shipped in full (29A–29I)**. This doc is the contract between them; both columns below
+are now live, and the right-hand column names the file that answers each intent.
 
-| Concern | Built today (framework, Phase 3) | Phase 29 owns (feel) |
-| ------- | -------------------------------- | -------------------- |
+| Concern | Framework (Phase 3) | Feel (Phase 29 — shipped) |
+| ------- | ------------------- | ------------------------- |
 | Damage / crit | `CombatMath.RollAttack`, `DamagePacket`/`DamageResult` | — |
-| Poise / stagger | `CombatComponent` state + `EntityStaggeredEvent` | Hit-stop, hit-react animation, stagger camera shake |
-| Blocking | Stamina-gated `BlockMitigation` | Block spark/feedback; **parry/riposte** window |
-| Attack commitment | `MeleeWeaponComponent` Windup→Active→Recovery + combo/finisher | **Animation-cancel windows + input buffering** |
-| Weapon identity | `WeaponResource` timing/damage/poise/combo fields | Weapon trails, per-weapon impact VFX/SFX |
-| Defense (mobility) | — (block only) | **Dodge + i-frames** (roll) |
-| Targeting | `FocusedEntity` (Phase 18 soft focus) | **Lock-on** with target switching |
-| Anti-mash | Stamina cost per action + poise | **Stamina/poise pacing tune** (the anti-mash pass) |
-| Screen feedback | `DamageDealtEvent` (data) | Crit/stagger/block/parry screen + HUD feedback (`UiTheme`) |
+| Poise / stagger | `CombatComponent` state + `EntityStaggeredEvent` | `HitStopDirector`, hit-react animation, stagger camera shake (29A/29B) |
+| Blocking | Stamina-gated `BlockMitigation` | Block feedback; **parry/riposte** — `src/Combat/Parry.cs` (29F) |
+| Attack commitment | `MeleeWeaponComponent` Windup→Active→Recovery + combo/finisher | Animation-cancel windows + input buffering (29G) |
+| Weapon identity | `WeaponResource` timing/damage/poise/combo fields | `WeaponTrailComponent`, per-weapon impact VFX/SFX (29C) |
+| Defense (mobility) | — (block only) | **Dodge + i-frames** — `src/Combat/DodgeComponent.cs` (29E) |
+| Targeting | `FocusedEntity` (Phase 18 soft focus) | **Lock-on** with switching — `src/Combat/LockOnComponent.cs` (29H) |
+| Anti-mash | Stamina cost per action + poise | Stamina regen delay via `StaminaPacing` (29I — see §1.6) |
+| Screen feedback | `DamageDealtEvent` (data) | `CombatFeedbackOverlay` / `CombatFeedbackFx` (29D) |
 
-> **Reading this table:** anything in the right column is *intentionally not built yet* —
-> it is Phase 29's job, and Phase 29's "Done when" bars (`SESSION_PLAYBOOK.md` 29A–29I)
-> are the concrete answer to the intent set here. See §2.4 for that checklist.
+> **Reading this table:** it is a *map of what exists*, not a to-do list. Phase 29's
+> "Done when" bars (`SESSION_PLAYBOOK.md` 29A–29I) record how each intent was met. What
+> remains open is **tuning**, which is Phase 56's — the shapes are set. See §2.4.
 
 ---
 
@@ -258,11 +259,12 @@ corruption nudge) → a reason to return.* The minute-loop (§2.1) is the engine
 shape is the chassis it has to move. Any region or questline author (Phases 27, 44, 50)
 designs *to this arc*, and the slice (Phase 33) is its first full proof.
 
-### 2.4 Input & feel intent — the Phase 29 contract
+### 2.4 Input & feel intent — the Phase 29 contract, now met
 
-This is the concrete checklist the combat-feel work answers to. It restates the §1 pillars
-as *what the player's hands and eyes must experience*, so Phase 29's sub-phases
-(`SESSION_PLAYBOOK.md` 29A–29I) have an unambiguous target:
+This is the checklist the combat-feel work answered to. It restates the §1 pillars as *what
+the player's hands and eyes must experience*. **All nine sub-phases shipped**, so read this
+as the standing acceptance test any future combat change must still pass — not as
+outstanding work:
 
 - **A landed heavy hit feels like a collision** — brief hit-stop, a directional reaction,
   a camera kick on crit/stagger. (29A, 29B; serves §1.2)
@@ -352,7 +354,9 @@ in code, and the design holds it there:
 > **Intent:** corruption is the defining mechanic (LORE) and the *dial behind both
 > endings* — earned power you pay for, a temptation the player feels themselves losing to,
 > not a punishment the game inflicts. This section is the **design contract Phase 23
-> implements**; corruption does not exist in code yet.
+> implemented**; it is built and live (`src/Corruption/*` — `CorruptionComponent`, tiers,
+> the appearance controller, dialogue gates, the ending read). The decisions below still
+> govern; they now describe shipped behaviour rather than intended behaviour.
 
 The central question (LORE): *can the Seventh Flamebearer resist the fate that consumed the
 other six?* The design must make that question *felt*, not narrated:
@@ -375,11 +379,11 @@ other six?* The design must make that question *felt*, not narrated:
   — the tiers should evoke the six who failed, so reaching the highest tier feels like
   joining them.
 
-**The seams Phase 23 must build (intent, not implementation):** a tiered 0–100 meter; an
-*appearance* shift per tier; *dialogue* gates/branches on corruption; *NPC dread*
-reactions via the faction/reputation system; *darker ability* variants unlocked by tier;
-and an *ending-eligibility* read that Act IV (Phase 49) consumes for the Dawnfire vs Lord
-of Embers choice. Cross-links: LORE "The Corruption System" + both endings; Phase 23
+**The seams Phase 23 built:** a tiered 0–100 meter; an *appearance* shift per tier; *dialogue*
+gates/branches on corruption (`CorruptionAtLeast` / `CorruptionBelow`); *NPC dread*
+reactions via the faction/reputation system; *darker ability* variants gated by tier
+(`SpellResource.MinCorruptionTier`); and an *ending-eligibility* read that Act IV (Phase 49)
+consumes for the Dawnfire vs Lord of Embers choice. Cross-links: LORE "The Corruption System" + both endings; Phase 23
 (build), Phase 49 (endings consume it), §2.1 (the loop it bends).
 
 ---
@@ -416,3 +420,10 @@ yet — those are **Phase 38**; balance is **Phase 56**. This section fixes what
 > *decisions* with a one-line rationale, not restatements of LORE; cross-link real paths
 > (`src/...`, `ARCHITECTURE.md`, `CLAUDE.md` §8) so claims are verifiable; mark every
 > concrete number as a Phase-29/56 starting point, not a fixed value.
+>
+> **And one more, added by the Phase 35 audit:** when a phase this document describes in the
+> future tense *completes*, its section must be revisited in the same session. This file
+> claims authority over content and balance, which makes a stale status claim actively
+> dangerous rather than untidy — §5 told readers corruption did not exist in code for the
+> twelve phases after Phase 23 shipped it, and §1.7 listed all of Phase 29's shipped feel
+> work as "not built yet". A reader trusting either would have rebuilt working systems.
