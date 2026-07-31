@@ -11,10 +11,10 @@ it?" must be answerable without archaeology. An asset with no entry is **not fin
 
 ## Current state
 
-**20 of the project's 33 models are sourced; the other 13 are still in-house.** The asset
-migration replaces the in-house set category by category. Every static prop that has a suitable
-open-source match has now been replaced. Characters, creatures, buildings, the weapon and three
-props with **no suitable match found** (see *Searched for, not replaced*) are unchanged.
+**25 of the project's 33 models are sourced; the other 8 are still in-house.** The asset
+migration replaces the in-house set category by category. Props, characters and creatures are
+done. **Still in-house:** the two buildings, the sword, the first-person arm, the Ashen Acolyte,
+and three props with no suitable match (see *Searched for, not replaced*).
 
 *(An earlier revision of this file, and PR #202's description, said 15 props. The prop count was
 16 — corrected here because this file is the provenance record. The model total dropped 34 → 33
@@ -151,6 +151,42 @@ not just objects.
 **Verified post-import, not just on the source files:** Godot preserves the `CharacterArmature|`
 prefix (which is exactly why `AnimationClips` has to strip it) and strips the in-house `-loop`
 suffix. Both projects' naming resolves; the unit tests use the post-import names.
+
+### Adventurer / Farmer / Rogue / static townsfolk — Quaternius & others (CC0)
+
+| Model | Replacement | Source | Tris |
+| --- | --- | --- | --- |
+| `chr_player_base` | Adventurer, Quaternius | https://poly.pizza/m/5EGWBMpuXq | 10,198 |
+| `npc_kael` | Rogue | https://poly.pizza/m/DgOCW9ZCRJ | 6,050 |
+| `npc_vendor` | Farmer, Quaternius | https://poly.pizza/m/7pn3R6hPvE | 5,476 |
+| `npc_innkeeper` | townsperson (static) | https://poly.pizza/m/BCMT02FrVE | 3,893 |
+| `npc_guild_rep` | guard (static) | https://poly.pizza/m/sbaM8I229r | 416 |
+
+- **Licence:** all CC0 1.0 Universal. A CC-BY blacksmith was found and **deliberately passed over**
+  — the project already carries one attribution obligation and a second buys nothing here.
+- **Why selected:** the Adventurer and Rogue carry the richest combat clip sets found (Sword_Slash /
+  Dagger_Attack, Run, HitRecieve, Death) and read as distinct silhouettes, so the companion does not
+  look like a recolour of the player. The two static townsfolk have no rig at all, which is correct —
+  the NPCs they replace are scene-placed props with no animation component.
+- **Blender MCP modifications:** rigged models scaled at the **root node only** and exported with
+  skins + animations; static ones went through the prop pipeline (join → scale → apply → origin at
+  base → mesh renamed `Mesh`). Every model matched to its predecessor's height (1.62–1.73 m).
+
+⚠️ **`block`, `cast` and `channel` have no replacement clip.** No CC0 character pack found ships
+them. `AnimationClips` returns empty and `CharacterAnimationComponent` already guards on that, so
+nothing breaks — but the *visual* for blocking and casting is gone on these rigs. Judged acceptable
+because the player is **first-person** (this body is retained for cutscenes only, CLAUDE.md §1) and
+**Kael is not a caster** (`KnownSpellIds` is empty). Revisit if a third-person camera or a casting
+companion ever lands.
+
+**Verified in-engine, per slot.** Loaded each imported scene and resolved all eight slots against
+Godot's real animation list: player and vendor → `Idle` / `Run` / `Sword_Slash` / `HitRecieve` /
+`Death`; Kael → `Dagger_Attack`, **not** its `Attacking_Idle` stance, which is the alias ordering
+earning its place on real data.
+
+`npc_kael` ships each clip twice — the Rogue source carries two armatures sharing one action set.
+Harmless (resolution takes the first match) and left alone rather than risking the rig to save a
+few KB.
 
 ---
 

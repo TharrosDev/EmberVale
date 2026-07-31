@@ -33,7 +33,11 @@ public static class AnimationClips
         ["idle"] = new[] { "idle" },
         ["run"] = new[] { "run", "walk" },
         ["block"] = new[] { "block", "guard", "shield" },
-        ["attack"] = new[] { "attack", "bite", "slash", "punch", "swing", "melee" },
+        // Weapon-specific words are tried BEFORE the generic "attack". A rig that ships both
+        // "Attacking_Idle" (a stance) and "Dagger_Attack" (the swing) would otherwise resolve the
+        // attack slot to the stance purely on alphabetical luck — the character would wind up and
+        // never strike. A clip named after a weapon is always the swing; "attack" alone is not.
+        ["attack"] = new[] { "slash", "sword", "dagger", "bite", "swing", "attack", "punch", "melee" },
         ["hit"] = new[] { "hit", "damage", "impact", "recieve", "receive" },
         ["death"] = new[] { "death", "die", "dead" },
         ["cast"] = new[] { "cast", "spell" },
