@@ -2340,8 +2340,63 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
     telegraphs) and will matter more once there is an animation to read. Mana is the only limiter
     besides the 6 s cooldown, and the dragon's 120 mana at 18/s means it cannot chain breaths
     indefinitely — worth re-checking once 35D/35E tune the variants.
-- [ ] **35D — Wild dragon variant (territorial world boss)** `[F/C]`
+- [x] **35D — Wild dragon variant (territorial world boss)** `[F/C]` ✅
   - **Done when:** a Wild dragon spawns as a territorial world boss.
+  - **It has somewhere to be.** `scenes/regions/frostfang_reach/dragon_roost.tscn` — a third
+    Frostfang cell at `(25, 0, −20)`, 90 m of open ground ringed with crags to break the breath
+    cone against, glaciers and dead pines. Before this the dragon existed only as a dev-console
+    `spawn`.
+  - **"Territorial" was the missing mechanic, not a tuning value.** The AI had **no leash**:
+    `_home` was read only by patrol and retreat, and `TickCombat` chased until line of sight
+    broke — a flying dragon would have followed the player out of Frostfang entirely.
+    `AIProfileResource.TerritoryRadius` (`0` = every other profile, unchanged) plus the pure
+    `TerritoryLeash` and a new `EnemyState.Returning`. `ai.dragon` owns 45 m.
+  - **Returning ignores the player the whole way home**, deliberately. An "unless it can see you"
+    clause — which is what `Investigate` does, and why that state could not be reused — would let
+    the player defeat the leash by standing in the doorway. Coming home clears `_provoked` and
+    resets `_lastKnownPos`, or it would re-engage the instant it arrived.
+  - **The hysteresis matters.** Re-engaging needs it back within `ReturnFraction` (0.75) of the
+    radius. A single threshold makes a creature sitting on the boundary flicker between chasing
+    and leaving every frame.
+  - **The state came free from 35B/35C.** `EnterState` already grounds a flier and stops a breath
+    on any non-Combat state, so a dragon that disengages mid-air lands and stops breathing with no
+    new code. `EnemyState` is documented as not persisted and deliberately unpinned, so appending
+    to it is safe.
+  - **Persist the spawner, never the boss.** `CellPersistenceDirector` reconciles on
+    `RegionCellLoadedEvent`, which `RegionStreamer` publishes *after* `AddChild(root)`
+    (`RegionStreamer.cs:174,178`) — a dragon spawned that frame races the walk and a deferred one
+    misses it outright, so a killed boss would return every time the valley reloaded.
+    `LairSpawnComponent` is authored in the `.tscn` with a stable `PersistentId`, is `ISaveable`,
+    and holds one bool. Both restore paths were traced: `SaveManager.Register` restores
+    synchronously from an in-flight load *before* the deferred spawn, and
+    `CellPersistenceDirector.Save` snapshots live cells so a save taken standing in the roost is
+    complete.
+  - **Placed west, not north.** North was the obvious spot and the wrong one — the glacier cell
+    sits at `z = −60` and its props would have ended up inside the roost's floor, the same mistake
+    34.5A had to undo. West butts the roost's floor against the hold's at `x = 70`: walkable the
+    whole way, no overlap, no co-planar z-fighting, and the 45 m territory ends right at the hold's
+    edge so the dragon will not follow you into it.
+  - **It drops like a boss now** — `DragonLoot` replaces the `BeastLoot` placeholder 35A flagged as
+    owed: 3–6 `item.material.dragon_scale` (a new Rare material), rubies, an affixed ring, and
+    150–320 gold.
+  - **Verified:** `dotnet build` clean, `dotnet test` **662/662** (7 new in `TerritoryLeashTests`,
+    including that radius 0 never leashes — the property keeping every existing archetype
+    unchanged), `--validate` exits 0. The cell scene was load-checked headless (it parses, the nest
+    carries its `PersistentId`, the region reports three cells).
+    **And the whole thing was seen working in `--play`:** the roost streamed in, the dragon spawned,
+    fought, took damage at **8 / 16 / 27** per hit — the 35A zone multipliers live in a real fight —
+    died, and dropped 3 items.
+  - **Still owed (maintainer, at the keyboard):**
+    - **Run away.** Past 45 m it must break off, walk home and drop aggro rather than following you
+      to the clan hold. This is the phase's headline and the one thing no remote session can drive.
+    - **Kill it, leave, come back**, then `F5`/`F9` a save round-trip: it must stay dead both times.
+      The code paths are traced above but the round-trip itself is unrun.
+    - Walk the roost for ground/props, and confirm the drops read as scales and gold rather than
+      beast pelts.
+  - **Known limits:** no map POI for the roost — you find it by walking west from the hold, with
+    nothing on `M` to suggest it. No respawn, by choice: a world boss that returns is a balance
+    call (Phase 56), not a 35D one. Frostfang is still gated behind `flag.iron_king_defeated`, so
+    the roost is unreachable until the Iron King falls.
 - [ ] **35E — Ash dragon variant (corrupted elite)** `[F/C]`
   - **Done when:** an Ash dragon exists as a corrupted elite enemy.
 - [ ] **35F — Ancient dragon: dialogue-capable quest/lore giver** `[F/C]`

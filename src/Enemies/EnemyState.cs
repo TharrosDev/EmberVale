@@ -20,4 +20,9 @@ public enum EnemyState
 
     /// <summary>Defeated; no longer acting.</summary>
     Dead,
+
+    /// <summary>Walking back to its territory after being drawn out of it (Phase 35D). Distinct from
+    /// <see cref="Retreat"/>, which flees *from* a threat — this one heads *home*, and deliberately
+    /// ignores the player on the way so a leash cannot be defeated by standing in the doorway.</summary>
+    Returning,
 }

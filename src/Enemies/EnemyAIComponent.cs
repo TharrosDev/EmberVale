@@ -222,6 +222,9 @@ public partial class EnemyAIComponent : EntityComponent
             case EnemyState.Retreat:
                 TickRetreat(delta);
                 break;
+            case EnemyState.Returning:
+                TickReturning(delta);
+                break;
             case EnemyState.Dead:
                 TickDead(delta);
                 break;
@@ -284,6 +287,30 @@ public partial class EnemyAIComponent : EntityComponent
         }
     }
 
+    /// <summary>
+    /// Going home (Phase 35D). It ignores the player the whole way — that is the entire point of a
+    /// leash, and an "unless it can see you" clause would let the player defeat it by standing in
+    /// the way. It re-engages only once it is back well inside its territory
+    /// (<see cref="TerritoryLeash.ReturnFraction"/>), so a boundary hover cannot flicker it between
+    /// fighting and leaving.
+    /// </summary>
+    private void TickReturning(double delta)
+    {
+        float fromHome = HorizontalDistance(_body.GlobalPosition, _home);
+        if (!TerritoryLeash.ShouldBreakOff(fromHome, _profile.TerritoryRadius, returning: true))
+        {
+            // Home ground. Forget the fight entirely: a lingering provoke or a remembered last-known
+            // position would put it straight back into combat with whoever it just walked away from.
+            _provoked = false;
+            _lastKnownPos = _home;
+            EnterState(_profile.IsAmbusher ? EnemyState.Idle : EnemyState.Patrol);
+            return;
+        }
+
+        FaceTowards(_home);
+        MoveTowards(_home, delta, sprint: true, stopDistance: 1f);
+    }
+
     private void TickCombat(double delta)
     {
         PlayerCharacter? player = GetLivePlayer();
@@ -303,6 +330,15 @@ public partial class EnemyAIComponent : EntityComponent
         if (!CanSeePlayer(player, out Vector3 pos))
         {
             EnterState(EnemyState.Investigate);
+            return;
+        }
+
+        // Drawn too far from its ground: break off (35D). Checked before anything else in the fight
+        // so a territorial creature cannot be walked out of its valley one swing at a time.
+        if (TerritoryLeash.ShouldBreakOff(
+                HorizontalDistance(_body.GlobalPosition, _home), _profile.TerritoryRadius, returning: false))
+        {
+            EnterState(EnemyState.Returning);
             return;
         }
 

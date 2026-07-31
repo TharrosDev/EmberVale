@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="LootTable" format=3 uid="uid://bdrgnloot35d0"]
+
+[ext_resource type="Script" path="res://src/Loot/LootTable.cs" id="1_table"]
+[ext_resource type="Script" path="res://src/Loot/LootEntry.cs" id="2_entry"]
+
+[sub_resource type="Resource" id="Entry_scale"]
+script = ExtResource("2_entry")
+ItemId = "item.material.dragon_scale"
+DropChance = 1.0
+MinQuantity = 3
+MaxQuantity = 6
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_ruby"]
+script = ExtResource("2_entry")
+ItemId = "item.gem.ruby"
+DropChance = 0.6
+MinQuantity = 1
+MaxQuantity = 2
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_ring"]
+script = ExtResource("2_entry")
+ItemId = "item.ring.iron"
+DropChance = 0.35
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[resource]
+script = ExtResource("1_table")
+Entries = Array[Resource]([SubResource("Entry_scale"), SubResource("Entry_ruby"), SubResource("Entry_ring")])
+GoldItemId = "item.currency.gold"
+GoldChance = 1.0
+GoldMin = 150
+GoldMax = 320
+QualityBonus = 0.35

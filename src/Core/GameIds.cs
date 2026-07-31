@@ -36,6 +36,9 @@ public static class GameIds
         public const string BeastPelt = "item.material.beast_pelt";
         public const string GraveDust = "item.material.grave_dust";
         public const string ElementalMote = "item.material.elemental_mote";
+
+        // Phase 35D — the wild dragon's drop, and the first Rare material.
+        public const string DragonScale = "item.material.dragon_scale";
     }
 
     public static class Enemies

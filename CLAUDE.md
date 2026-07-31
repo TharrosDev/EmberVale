@@ -390,6 +390,24 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    on `AIProfileResource.IsStandoff` (`StandoffRange > AttackRange`) alone. Set a
    standoff range only if you actually want it to back away.
 
+**Placing a world boss in a lair (Phase 35D)**
+1. Set `TerritoryRadius` on its AI profile. Without it the AI **chases forever** —
+   `_home` is otherwise read only by patrol and retreat — and a flying boss will
+   follow the player into the next realm. `0` is no leash, which is every other
+   profile.
+2. Add a marker `Entity` to the region cell's `.tscn` with a **stable
+   `PersistentId`** and a `LairSpawnComponent` (`TemplateId`, `SpawnOffset`). It
+   builds the creature through `EnemyTemplateRegistry` — no new factory.
+3. **Persist the spawner, never the boss.** `CellPersistenceDirector` reconciles on
+   `RegionCellLoadedEvent`, published *after* the streamer adds the cell root, so a
+   boss spawned in that frame races the walk and a deferred one misses it entirely —
+   either way the boss resurrects every time the cell reloads. The authored spawner is
+   always found, so it holds the "defeated" bit instead.
+4. **The cell carries its own floor** (see 34.5A). Size it for the fight: the roost's
+   floor is 90 m because the territory radius is 45. Butt it against a neighbouring
+   cell's floor rather than overlapping — co-planar floors z-fight — and keep it clear
+   of other cells' props and the region's safe zone.
+
 **A new weapon**
 1. Author `data/weapons/Xxx.tres` (`script_class="WeaponResource"`).
 2. Point a `MeleeWeaponComponent.Weapon` at it (factory or future equipment).
