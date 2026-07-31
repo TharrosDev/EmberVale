@@ -16,5 +16,6 @@ HoverAltitude = 12.0
 ClimbSpeed = 6.0
 AirborneDuration = 4.5
 GroundedDuration = 8.0
+TerritoryRadius = 45.0
 RetreatHealthFraction = 0.0
 ActiveDistance = 120.0

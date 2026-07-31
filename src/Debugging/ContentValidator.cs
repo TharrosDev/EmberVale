@@ -293,6 +293,13 @@ public static class ContentValidator
                 issues.Add($"ai profile '{id}' retreat fraction {profile.RetreatHealthFraction} is outside 0..1");
             }
 
+            // A negative territory (35D) reads as "leashed at once": ShouldBreakOff treats <= 0 as
+            // "no leash", so the intent silently inverts into the opposite of what was authored.
+            if (profile.TerritoryRadius < 0f)
+            {
+                issues.Add($"ai profile '{id}' has a negative territory radius ({profile.TerritoryRadius})");
+            }
+
             ValidateFlight(profile, issues);
         }
     }

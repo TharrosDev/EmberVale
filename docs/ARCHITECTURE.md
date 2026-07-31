@@ -453,6 +453,19 @@ only three of them have a factory**; the rest are `.tres` files.
   same friendly-fire rules as hitboxes (never the caster, never same-team) and the same
   per-actor `HitDedupe`, then apply the spell's status. `SpellFlash` is a short-lived cosmetic
   burst sphere; a cone greyboxes as a line of widening flashes along its axis.
+- **`TerritoryLeash`** + `AIProfileResource.TerritoryRadius` (Phase 35D) — the leash the AI never
+  had. `_home` was read only by patrol/retreat and combat chased until line of sight broke, so a
+  world boss could be walked out of its valley. Past the radius `TickCombat` drops to
+  `EnemyState.Returning`, which heads home and **ignores the player the whole way** (an "unless it
+  sees you" clause would let the player defeat the leash by standing in the doorway). Re-engaging
+  needs it back inside `ReturnFraction` of the radius, so a boundary hover cannot flicker it.
+  `0` = no leash = every profile but `ai.dragon`.
+- **`LairSpawnComponent`** (`src/Enemies`, Phase 35D) — places a world boss in a region cell and
+  remembers you killed it. **The spawner persists, not the boss:** `CellPersistenceDirector`
+  reconciles on `RegionCellLoadedEvent`, which `RegionStreamer` publishes *after* `AddChild(root)`,
+  so a boss spawned that frame races the walk and one spawned deferred loses it — either way a dead
+  boss returns. The component is authored in the `.tscn` (so it is always found), is `ISaveable`,
+  and stores one bool. The boss itself stays a plain transient actor.
 - **`BreathComponent`** (`src/Enemies`, Phase 35C) — the only thing an enemy could not previously
   do: hold a *channel* open. It selects the breath via `SpellcastingComponent.BeginCastById`,
   drives `UpdateCast`, and ends it; the damage is entirely the ordinary spell path. It aims by

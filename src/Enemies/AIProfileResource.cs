@@ -102,6 +102,13 @@ public partial class AIProfileResource : Resource
     /// melee half of the cycle, and the reason the dragon does not simply bounce.</summary>
     [Export] public float GroundedDuration { get; set; } = 0f;
 
+    [ExportGroup("Territory")]
+    /// <summary>Metres from where it started that it will chase before breaking off and going home
+    /// (Phase 35D). <c>0</c> — every profile before the dragon — chases until it loses sight, which
+    /// is fine for a wolf and disastrous for a flying world boss that would otherwise follow the
+    /// player into the next realm.</summary>
+    [Export] public float TerritoryRadius { get; set; } = 0f;
+
     [ExportGroup("Nerve")]
     /// <summary>Break off below this fraction of health. 0 = fights to the death.</summary>
     [Export] public float RetreatHealthFraction { get; set; } = 0.25f;

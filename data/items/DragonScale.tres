@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://bdrgnscale35d"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.material.dragon_scale"
+DisplayName = "Dragon Scale"
+Description = "Heavier than plate and warm to the touch hours after the beast has cooled. Every smith in the Reach has an opinion on how to work it; none of them have tried."
+Type = 4
+Rarity = 3
+MaxStack = 50
+Weight = 1.2
+Value = 180
