@@ -73,8 +73,16 @@ public partial class LairSpawnComponent : EntityComponent, ISaveable
             return;
         }
 
-        _occupant = EnemyTemplateRegistry.Create(TemplateId, marker.GlobalPosition + SpawnOffset);
+        // Placed AFTER the add, in world space. EnemyTemplateRegistry.Create takes a *local*
+        // position, and this actor is parented to the cell root — which the streamer has already
+        // moved to the cell's centre. Passing a world position to Create therefore added the cell
+        // offset twice: the wild roost's occupant landed at (50, -40) instead of (25, -20), which
+        // its 90 m floor happened to cover, so the bug hid until the ash roost at x = 180 threw its
+        // dragon out to x = 360 and into the void. GlobalPosition after AddChild cannot be
+        // double-transformed whatever the parent is doing.
+        _occupant = EnemyTemplateRegistry.Create(TemplateId, Vector3.Zero);
         marker.GetParent()?.AddChild(_occupant);
+        _occupant.GlobalPosition = marker.GlobalPosition + SpawnOffset;
     }
 
     private void OnDied(EntityDiedEvent e)

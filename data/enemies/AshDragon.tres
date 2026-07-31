@@ -1,0 +1,63 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" format=3 uid="uid://du7e10bd4033a"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+[ext_resource type="Script" path="res://src/Enemies/HitZoneResource.cs" id="2_zone"]
+
+; Bigger than the Wild dragon in every dimension. The zone multipliers are deliberately FLATTER —
+; the head is still the weak point but only x1.6, and the tail no longer shrugs hits off at x0.6.
+; A corrupted thing has no good side to be on, which is what makes it the harder fight even before
+; the numbers.
+[sub_resource type="Resource" id="Zone_head"]
+script = ExtResource("2_zone")
+Id = "head"
+DamageMultiplier = 1.6
+Offset = Vector3(0, 3.9, -3.7)
+Radius = 1.0
+Height = 0.0
+
+[sub_resource type="Resource" id="Zone_wings"]
+script = ExtResource("2_zone")
+Id = "wings"
+DamageMultiplier = 1.2
+Offset = Vector3(0, 3.7, 0)
+Radius = 1.3
+Height = 0.0
+
+[sub_resource type="Resource" id="Zone_body"]
+script = ExtResource("2_zone")
+Id = "body"
+DamageMultiplier = 1.0
+Offset = Vector3(0, 2.3, -0.7)
+Radius = 1.9
+Height = 5.0
+
+[sub_resource type="Resource" id="Zone_tail"]
+script = ExtResource("2_zone")
+Id = "tail"
+DamageMultiplier = 0.85
+Offset = Vector3(0, 1.6, 3.5)
+Radius = 0.85
+Height = 0.0
+
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.ash_dragon"
+NameKey = "enemy.ash_dragon.name"
+AttributesPath = "res://data/attributes/AshDragonAttributes.tres"
+WeaponPath = "res://data/weapons/DragonJaws.tres"
+LootTablePath = "res://data/loot/AshDragonLoot.tres"
+ModelPath = ""
+PlaceholderTint = Color(0.2, 0.17, 0.17, 1)
+AiProfileId = "ai.ash_dragon"
+FactionId = "faction.fallen"
+KnownSpellIds = Array[String](["spell.ash_breath"])
+BreathSpellId = "spell.ash_breath"
+BreathDuration = 1.8
+CapsuleRadius = 1.9
+CapsuleHeight = 4.6
+HitZones = Array[Resource]([SubResource("Zone_head"), SubResource("Zone_wings"), SubResource("Zone_body"), SubResource("Zone_tail")])
+IsBoss = true
+DirectionalMelee = true
+MaxPoise = 260.0
+StaminaRegen = 18.0
+XpValue = 1400

@@ -45,8 +45,14 @@ public partial class EnemySpawnDirector : Node3D
 
     private void SpawnOne()
     {
-        EnemyEntity enemy = EnemyFactory.Create(RandomPoint());
+        // Create-at-zero, add, then place in world space — the same order BossSummonComponent uses.
+        // The factories take a *local* position, so handing one a world point and then parenting the
+        // actor under a node that is not at the origin applies the offset twice. Harmless while this
+        // director only ever sits at the world origin; a real bug the moment one is dropped into a
+        // streamed region cell, which is exactly how it bit the 35D lair spawner.
+        EnemyEntity enemy = EnemyFactory.Create(Vector3.Zero);
         GetParent().AddChild(enemy);
+        enemy.GlobalPosition = RandomPoint();
         _alive++;
         enemy.TreeExited += OnEnemyRemoved;
     }

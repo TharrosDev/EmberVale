@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="SpellResource" format=3 uid="uid://bashbrth35e00"]
+
+[ext_resource type="Script" path="res://src/Magic/SpellResource.cs" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+Id = "spell.ash_breath"
+DisplayName = "Ash Breath"
+Description = "Not fire. What comes out of an Ash dragon does not burn so much as end things early, and it hangs in the air long after the beast has gone."
+School = 6
+Delivery = 3
+CastMode = 2
+PlayerLearnable = false
+ManaCost = 0.0
+Cooldown = 6.0
+BaseDamage = 26.0
+Healing = 0.0
+StatusEffectId = "status.decay"
+Range = 11.0
+ProjectileSpeed = 0.0
+ImpactRadius = 11.0
+ConeAngleDegrees = 80.0
+ChannelTickInterval = 0.35
+ChannelManaPerSecond = 20.0

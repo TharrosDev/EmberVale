@@ -628,3 +628,7 @@ enemy.clan_shaman.lore,"The clans do not pray to Nyth. They listen to the weathe
 # Phase 35A — dragons. The Ash and Ancient variants get their own entries in 35E/35F.
 enemy.wild_dragon.name,Wild Dragon
 enemy.wild_dragon.lore,"Older than the guilds, older than the Sundering, and entirely uninterested in either. A wild dragon claims a stretch of mountain and defends it against everything that walks — no cause, no bargain, no god. The Ash Hunters' advice is one line long: it turns slowly."
+
+# Phase 35E — the Ash dragon. Its own creature, not a corrupted Wild one (see LORE "Ash Dragons").
+enemy.ash_dragon.name,Ash Dragon
+enemy.ash_dragon.lore,"What Morthul makes of a dragon. It does not hoard, it does not claim a mountain, it does not care that you are there — it simply keeps going until the ground behind it is grey. The Hunters have no advice for this one. There is no safe side."

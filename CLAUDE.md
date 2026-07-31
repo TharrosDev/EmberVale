@@ -407,6 +407,18 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    floor is 90 m because the territory radius is 45. Butt it against a neighbouring
    cell's floor rather than overlapping — co-planar floors z-fight — and keep it clear
    of other cells' props and the region's safe zone.
+5. **Give each lair its own `PersistentId`.** `LairSpawnComponent.SaveId` derives from
+   it, so two lairs sharing one means killing either marks both defeated.
+6. Two hand-authored roost cells exist (`dragon_roost`, `ash_roost`). **A third should
+   promote the roost into a reusable scene** rather than become a third copy.
+
+⚠️ **Spawning an actor into a region cell: create at zero, add, *then* set
+`GlobalPosition`.** The factories and `EnemyTemplateRegistry.Create` take a **local**
+position, and a cell's root has already been moved to the cell's centre by the
+streamer — so handing `Create` a world position applies the cell offset twice.
+`BossSummonComponent` has always done it in the right order; the 35D lair spawner did
+not, and its dragon landed on the wrong part of the map (visibly in the void once a
+cell sat far from the origin). `EnemySpawnDirector` had the same latent bug.
 
 **A new weapon**
 1. Author `data/weapons/Xxx.tres` (`script_class="WeaponResource"`).

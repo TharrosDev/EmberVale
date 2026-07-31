@@ -2397,8 +2397,57 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
     nothing on `M` to suggest it. No respawn, by choice: a world boss that returns is a balance
     call (Phase 56), not a 35D one. Frostfang is still gated behind `flag.iron_king_defeated`, so
     the roost is unreachable until the Iron King falls.
-- [ ] **35E — Ash dragon variant (corrupted elite)** `[F/C]`
+- [x] **35E — Ash dragon variant (corrupted elite)** `[F/C]` ✅
   - **Done when:** an Ash dragon exists as a corrupted elite enemy.
+  - **The payoff phase.** `enemy.ash_dragon` is a second dragon built entirely from 35A–35D's
+    pipeline: attributes, a breath spell, an AI profile, an archetype, loot, a bestiary entry, a
+    lair scene and a region cell. **No new systems** — every field it uses already existed.
+  - **Its own creature, not a corrupted Wild one.** 34F's rule is that a corrupted creature is the
+    base archetype plus `AshenAffliction`, and that rule is right — for *the same creature*
+    corrupted. `Afflict` deliberately never changes `TemplateId`, so an afflicted Wild dragon could
+    never have its own bestiary page or lore. `LORE.md` gives Ash Dragons their own section
+    alongside Wild and Ancient: they are a kind of dragon, not a tinted one.
+  - **LORE says "among the most dangerous enemies in the game", so the numbers say it too** — 1900 HP
+    to the Wild dragon's 1400, more power, 50 m of territory, and the **zone multipliers are
+    deliberately flatter** (head ×1.6 not ×2.0, tail ×0.85 not ×0.6). A corrupted thing has no good
+    side to be on, which makes it the harder fight before any stat is compared.
+  - **Necrotic breath, not Fire.** `spell.ash_breath` is a wider (80°), shorter (11 m) cone applying
+    `status.decay`. Fire resistance buys the player nothing, so the second dragon has to be prepared
+    for differently rather than fought the same way.
+  - **Placed east, mirroring the Wild roost west.** The hold sits between them: wild roost floor
+    `x ∈ [−20, 70]`, hold `[70, 130]`, ash roost `[130, 230]` — three floors butted edge to edge,
+    walkable across, none overlapping. Its territory is sized to its own floor exactly so a chase
+    can never spill into the hold's safe zone.
+
+  - **🐛 A 35D bug this phase exposed and fixed.** The maintainer saw the dragon spawn "way off its
+    den and well into the void". `LairSpawnComponent` passed a **world** position to
+    `EnemyTemplateRegistry.Create`, which sets a **local** one, and then parented the actor under the
+    cell root — which the streamer had already moved to the cell centre. The offset applied twice:
+    the wild roost's dragon landed at `(50, −40)` instead of `(25, −20)`, which its 90 m floor
+    happened to cover, so **the bug shipped in 35D looking fine**. The ash roost at `x = 180` threw
+    its dragon to `x = 360`, past the region bounds. Fixed by create-at-zero → add → set
+    `GlobalPosition`, which is the order `BossSummonComponent` already used — the lair spawner was
+    the deviation. `EnemySpawnDirector` had the same latent defect (harmless only because it sits at
+    the world origin) and was aligned to the same order.
+  - **Verified:** `dotnet build` clean, `dotnet test` **662/662** (no new tests — this phase adds no
+    logic, and YAGNI applies to tests too), `--validate` exits 0 with 31 bestiary entries. The ash
+    roost was load-checked headless — it parses, its `PersistentId` is distinct from the wild
+    roost's (they share a `SaveId` prefix, so a collision would make killing one mark both), the
+    breath reads school 6 / delivery 3 / mode 2, and the region reports four cells. **And it was seen
+    fighting in `--play`:** the roost streamed in, the dragon spawned *in its den* after the fix, and
+    took 24 / 28 / 53 / 96 per hit off 1900 HP — the flatter zone spread, live.
+  - **Still owed (maintainer, at the keyboard):**
+    - Fight it: the breath must apply **decay**, and fire resistance must not help.
+    - Kill it, then confirm the **Wild** dragon in the west roost is still alive — the two lairs must
+      persist independently.
+    - Stay-dead across a cell reload and an `F5`/`F9` round-trip, for both dragons.
+  - **Known limits:** a save taken while a roost is loaded logs
+    `entry 'lair:…' had no live claimant on load (orphaned state)` if the cell is not streamed in at
+    load time. Harmless — `CellPersistenceDirector` does the real restore when the cell arrives — and
+    it is inherent to every cell-authored `ISaveable` (`ContainerLootComponent` registers the same
+    way); worth a look if the orphan diagnostic is ever tightened. **Two hand-authored roost cells is
+    fine; a third should promote the roost into a reusable scene rather than a third copy.** No map
+    POI for either lair.
 - [ ] **35F — Ancient dragon: dialogue-capable quest/lore giver** `[F/C]`
   - **Done when:** an Ancient dragon can hold a conversation (`DialogueComponent`)
     and give quests/lore.

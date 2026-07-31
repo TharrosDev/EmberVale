@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="AIProfileResource" format=3 uid="uid://bashdrgnai35e"]
+
+[ext_resource type="Script" path="res://src/Enemies/AIProfileResource.cs" id="1_profile"]
+
+[resource]
+script = ExtResource("1_profile")
+Id = "ai.ash_dragon"
+VisionRange = 60.0
+FovDegrees = 160.0
+AlertRadius = 45.0
+AttackRange = 6.5
+PatrolRadius = 10.0
+TurnSpeedDegrees = 45.0
+TakeoffRange = 14.0
+HoverAltitude = 13.0
+ClimbSpeed = 5.5
+AirborneDuration = 5.0
+GroundedDuration = 7.0
+TerritoryRadius = 50.0
+RetreatHealthFraction = 0.0
+ProvokeMemory = 30.0
+ActiveDistance = 120.0
