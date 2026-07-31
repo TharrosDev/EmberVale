@@ -155,20 +155,11 @@ public partial class CharacterAnimationComponent : EntityComponent
         return null;
     }
 
-    /// <summary>The imported clip whose name starts with <paramref name="prefix"/> ("" if absent) —
-    /// tolerant of the importer keeping or stripping the authored <c>-loop</c> suffix.</summary>
-    private string ResolveClip(string prefix)
-    {
-        foreach (string name in _player!.GetAnimationList())
-        {
-            if (name.StartsWith(prefix, System.StringComparison.OrdinalIgnoreCase))
-            {
-                return name;
-            }
-        }
-
-        return string.Empty;
-    }
+    /// <summary>The imported clip for a gameplay slot ("" if the model has none) — tolerant of the
+    /// importer keeping or stripping the authored <c>-loop</c> suffix, of an exporter's
+    /// <c>Armature|</c> prefix, and of a pack that calls the beat something else. See
+    /// <see cref="AnimationClips"/> for why both of those matter.</summary>
+    private string ResolveClip(string slot) => AnimationClips.Resolve(_player!.GetAnimationList(), slot);
 
     private void OnAttack(AttackPerformedEvent e)
     {
