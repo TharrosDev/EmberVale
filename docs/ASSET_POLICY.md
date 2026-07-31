@@ -114,7 +114,15 @@ Before any model is committed:
 - [ ] orientation verified
 - [ ] transforms cleaned/applied
 - [ ] unused materials removed
-- [ ] topology optimized to the `ART_STYLE.md` §3 budget
+- [ ] topology sane for the class — `ART_STYLE.md` §3's bands are **lifted** for sourced assets;
+      decimate only when a model is visibly heavy for what it is
+- [ ] **origin at the base centre** in all three axes, and the bounding-box *size* matched to the
+      model it replaces (props: so scene transforms stay valid; actors: so the mesh matches its
+      `Capsule*` reach). Verify the **height**, not just where the top lands — a model floating
+      above its origin passes a top-only check while being far too short
+- [ ] rigged: the root node carries **scale only**, no translation; every gameplay slot resolves
+      against the **imported** scene's `AnimationPlayer.get_animation_list()`
+- [ ] inspected in Blender **at eye level, straight on**, not in three-quarter view
 - [ ] unnecessary geometry removed
 - [ ] normals verified
 - [ ] object hierarchy cleaned
@@ -144,9 +152,11 @@ asset with no entry is not finished.
 
 ## 8. Style consistency
 
-`ART_STYLE.md` remains the visual source of truth. A sourced asset is **raw material, never
-dropped in verbatim**: retopo/decimate to the §3 budget, repaint/posterize textures to §4 (a
-photo texture must stop reading as a photo), re-tint into the §2 palette.
+`ART_STYLE.md` remains the visual source of truth, but the maintainer relaxed two of its clauses
+for the Phase 35 migration and this section follows them: **§3's triangle bands are lifted** and
+**a sourced asset keeps its own materials** (see `ART_STYLE.md` §3 and §4). A pack whose textures
+already read as stylised low-poly is accepted as it ships; a photo texture must still stop reading
+as a photo. Prefer sourcing further assets from the packs already in use over re-tinting new ones.
 
 The one clause of `ART_STYLE.md` §6.3 that this policy overrides is *"if adapting costs more
 than modeling clean — model clean."* Adaptation is now preferred; modelling clean requires

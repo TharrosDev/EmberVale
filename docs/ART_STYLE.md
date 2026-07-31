@@ -148,6 +148,7 @@ the silhouette collapses — only then hand-author an LOD.
 
 > **Sourced assets keep their own materials (maintainer, Phase 35 asset migration).** The rules
 > below describe how to author *original* work and how the in-house set was built — 34 models
+> (33 after the orphaned `enm_goblin_brute` was deleted; **5 of them still in-house today**)
 > with **zero texture images**, bound to 46 hand-named palette materials. They are no longer a
 > gate on a downloaded asset: the Kenney props now in `assets/models/props/` carry the pack's own
 > `colormap` texture atlas, and that is accepted deliberately rather than stripped and repainted.
@@ -255,8 +256,11 @@ one anyway for provenance) — an asset with no entry is not finished.
 3. Albedo inside the palette; saturation < 40% unless emissive.
 4. Ash layer present where the world would have settled it.
 5. At most one warm ember accent; it glows, nothing else does.
-6. Within the §3 triangle budget and §4 texel budget.
-7. Exported per §6, credited if sourced.
+6. **Authored** assets: within the §3 triangle budget and §4 texel budget. **Sourced** assets:
+   §3's bands are lifted and §4's repaint rule does not apply — the bar is "not visibly heavy for
+   what it is", and the pack's own materials are kept.
+7. Exported per §6, credited if sourced. Inspected **at eye level, straight on** — a
+   three-quarter view hides a missing wall, which is how open-sided houses shipped once.
 
 > **Status:** written Phase 30A. Owners: 30B–30I author against it; Phase 53
 > (Art Complete) may extend §2.1 per-realm and §3 budgets with playtest data,
