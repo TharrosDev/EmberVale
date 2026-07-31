@@ -192,8 +192,25 @@ public static class GameIds
         public const string HealthPotion = "recipe.health_potion";
         public const string LeatherCap = "recipe.leather_cap";
         public const string SteelSword = "recipe.steel_sword";
+        public const string LeatherVest = "recipe.leather_vest";
         public const string IronRing = "recipe.iron_ring";
         public const string DrakescaleMail = "recipe.drakescale_mail";
+
+        /// <summary>
+        /// Every recipe the player begins with — the single source of truth shared by
+        /// <see cref="Player.PlayerFactory"/>, which seeds it, and the content validator, which checks
+        /// nothing has been authored outside it.
+        ///
+        /// This list <em>is</em> the reachability guarantee. <c>CraftingComponent.Learn</c> exists but
+        /// has no caller anywhere in the game — there is no tome, trainer, dialogue effect or quest
+        /// reward that teaches a recipe (that seam belongs with vendors in Phase 38). So a recipe
+        /// missing from this array is unreachable content, which is how <c>recipe.leather_vest</c> sat
+        /// dead from Phase 15 until the Phase 35 audit found it.
+        /// </summary>
+        public static readonly string[] Starting =
+        {
+            IronIngot, LeatherStrips, HealthPotion, LeatherCap, SteelSword, LeatherVest, IronRing, DrakescaleMail,
+        };
     }
 
     public static class Quests

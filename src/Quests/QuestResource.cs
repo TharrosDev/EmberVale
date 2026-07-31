@@ -45,6 +45,19 @@ public partial class QuestResource : Resource
     /// <summary>Optional quest id that must be completed first; empty = always available.</summary>
     [Export] public string PrerequisiteQuestId { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Declares that this quest may target a creature the world spawns only once — a lair boss rather
+    /// than an encounter type (Phase 35F's Ancient-dragon errand is the first). Kill objectives are
+    /// otherwise required to name something an encounter or world event can spawn again, because a
+    /// quest whose only target is already permanently dead can never be completed and never leaves the
+    /// journal.
+    ///
+    /// Setting this is a promise that <em>the conversation offering the quest gates on the target still
+    /// being alive</em> — the validator cannot see dialogue gating, so this flag is where the author
+    /// takes responsibility for it. Do not set it to silence the error.
+    /// </summary>
+    [Export] public bool AllowsOneShotTarget { get; set; }
+
     /// <summary>The objectives read back as their concrete type, skipping bad entries.</summary>
     public System.Collections.Generic.List<ObjectiveResource> ObjectiveList()
     {

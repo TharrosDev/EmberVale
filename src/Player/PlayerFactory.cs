@@ -153,24 +153,15 @@ public static class PlayerFactory
         // Quest log after progression + inventory so it resolves both for rewards.
         player.AddChild(new QuestLogComponent { Name = "QuestLog" });
 
-        // Crafting: knows the starter recipes and consumes/produces through the inventory.
+        // Crafting: knows the starter recipes and consumes/produces through the inventory. The list
+        // lives in GameIds.Recipes.Starting so the content validator can check it against the recipe
+        // database — nothing in the game teaches a recipe (CraftingComponent.Learn has no caller until
+        // Phase 38's trainers), so anything missing from it is unreachable content. Gate a late recipe
+        // on a scarce ingredient instead, the way drakescale mail gates on eight dragon scales.
         player.AddChild(new CraftingComponent
         {
             Name = "Crafting",
-            StartingRecipeIds = new Godot.Collections.Array<string>
-            {
-                GameIds.Recipes.IronIngot,
-                GameIds.Recipes.LeatherStrips,
-                GameIds.Recipes.HealthPotion,
-                GameIds.Recipes.LeatherCap,
-                GameIds.Recipes.SteelSword,
-                GameIds.Recipes.IronRing,
-
-                // 35G: known from the start like every other recipe, because nothing in the game
-                // teaches one — CraftingComponent.Learn exists and has no caller. The gate is the
-                // eight dragon scales, which only Frostfang's dragonkin drop.
-                GameIds.Recipes.DrakescaleMail,
-            },
+            StartingRecipeIds = new Godot.Collections.Array<string>(GameIds.Recipes.Starting),
         });
 
         // Story flags: persistent conversation/world memory read & written by dialogue.
