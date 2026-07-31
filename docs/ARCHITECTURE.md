@@ -177,6 +177,17 @@ direct children of the host. `Hitbox`/`Hurtbox` are `Area3D` (not
   acceleration, jump and `MoveAndSlide`. Speed comes from the `MoveSpeed` stat
   (falls back to `BaseSpeed`). **Input-agnostic** — the player controller and the
   enemy AI both feed it.
+  `Flying` (Phase 35B) swaps gravity for a vertical servo toward `TargetAltitude`
+  at `ClimbSpeed`. It is the **vertical axis only**: horizontal steering is
+  untouched, so whatever drives a walker drives a flier unchanged. Landing needs no
+  ground probe — descend with `Flying` still on, `MoveAndSlide` stops the body at
+  the floor, and `IsGrounded` reports the touchdown.
+- **`FlightComponent`** (`src/Enemies`) — the take-off/land cycle that sets the
+  above. Tuning is on the `AIProfileResource` (`TakeoffRange = 0` ⇒ never flies,
+  which is every profile but `ai.dragon`); the transitions are the pure
+  `FlightDecision`. `EnemyAIComponent` keeps its FSM: it only holds its swing while
+  airborne, skips the navmesh (ground corners are the wrong route when flying over
+  obstacles), and grounds the flier on leaving combat so a corpse falls.
 
 ### 2.4 Player (`src/Player`)
 

@@ -78,6 +78,30 @@ public partial class AIProfileResource : Resource
     /// put until the target closes inside this range — then springs.</summary>
     [Export] public float AmbushRange { get; set; } = 0f;
 
+    [ExportGroup("Flight")]
+    /// <summary>Above 0 this actor can fly (Phase 35B): it takes off when its target is further away
+    /// than this. <c>0</c> — every profile before the dragon — means it never leaves the ground, and
+    /// none of the fields below are read.</summary>
+    [Export] public float TakeoffRange { get; set; } = 0f;
+
+    // The four below default to 0 rather than to plausible numbers, so "has flight tuning" is a
+    // question the validator can actually answer: a walker's zeroes are absence, not a silent default.
+
+    /// <summary>Metres above its take-off ground the flier climbs to and holds.</summary>
+    [Export] public float HoverAltitude { get; set; } = 0f;
+
+    /// <summary>Vertical speed for the climb and the descent, in m/s.</summary>
+    [Export] public float ClimbSpeed { get; set; } = 0f;
+
+    /// <summary>Seconds spent at altitude before committing to a landing. This is deliberately short:
+    /// a flier with no ranged attack (the dragon until 35C's breath) that hovers indefinitely is a
+    /// fight where neither side can act. It is also the window a breath attack will fire into.</summary>
+    [Export] public float AirborneDuration { get; set; } = 0f;
+
+    /// <summary>Seconds it must stay on the ground after a landing before it may take off again — the
+    /// melee half of the cycle, and the reason the dragon does not simply bounce.</summary>
+    [Export] public float GroundedDuration { get; set; } = 0f;
+
     [ExportGroup("Nerve")]
     /// <summary>Break off below this fraction of health. 0 = fights to the death.</summary>
     [Export] public float RetreatHealthFraction { get; set; } = 0.25f;

@@ -272,6 +272,48 @@ public static class ContentValidator
             {
                 issues.Add($"ai profile '{id}' retreat fraction {profile.RetreatHealthFraction} is outside 0..1");
             }
+
+            ValidateFlight(profile, issues);
+        }
+    }
+
+    /// <summary>Flight tuning (Phase 35B). Every failure here is silent in play rather than loud: a
+    /// zero climb speed leaves a dragon stuck in a take-off it never completes, a zero airborne
+    /// duration makes it flicker up and straight back down, and hover numbers on a profile with no
+    /// takeoff range are tuning somebody wrote for a creature that will never leave the ground.</summary>
+    private static void ValidateFlight(AIProfileResource profile, List<string> issues)
+    {
+        string id = profile.Id;
+        if (profile.TakeoffRange <= 0f)
+        {
+            if (profile.HoverAltitude > 0f || profile.AirborneDuration > 0f || profile.ClimbSpeed > 0f)
+            {
+                issues.Add($"ai profile '{id}' has flight tuning but no takeoff range; it will never leave the ground");
+            }
+
+            return;
+        }
+
+        if (profile.HoverAltitude <= 0f)
+        {
+            issues.Add($"ai profile '{id}' takes off to a hover altitude of {profile.HoverAltitude}");
+        }
+
+        if (profile.ClimbSpeed <= 0f)
+        {
+            issues.Add($"ai profile '{id}' flies with a climb speed of {profile.ClimbSpeed}; it would never reach altitude");
+        }
+
+        if (profile.AirborneDuration <= 0f)
+        {
+            issues.Add($"ai profile '{id}' stays airborne for {profile.AirborneDuration}s; it would land the frame it took off");
+        }
+
+        if (profile.TakeoffRange > profile.VisionRange)
+        {
+            issues.Add(
+                $"ai profile '{id}' takes off beyond {profile.TakeoffRange}m but only sees {profile.VisionRange}m; " +
+                "it can never be in combat with a target that far away, so it would only ever fly on the ground timer");
         }
     }
 

@@ -1097,7 +1097,7 @@ that doesn't touch the slice.
 | 33 | ⏳ | Vertical slice assembly — 33A–33C ✅, 33D/33E **built but never played** |
 | 34 | ✅ | The enemy & creature roster (34A–34G): AI profiles, 26 creatures as data, per-school resistances, every magic school's on-hit identity, Ashen corruption variants, the bestiary |
 | 34.5 | ✅ | The Frostfang clans (34.5A–34.5C): `faction.frostfang_clans` and the clan hold — Frostfang's first settlement; raider/beast-tamer/shaman archetypes that stay neutral until provoked; and a three-link rank chain with a betrayal branch. Encounters gained a region filter and quests gained a faction reward along the way |
-| 35 | ⏳ | Dragons — 35A ✅ the body: hit zones as authored data (`HitZoneResource`, head ×2.0 / tail ×0.6) replacing the one-capsule hurtbox every actor had, entity-level hit dedupe so a swing clipping four zones bills once, an AI turn rate, and jaws/wing/tail arcs. 35B–35G to go |
+| 35 | ⏳ | Dragons — 35A ✅ the body: hit zones as authored data (`HitZoneResource`, head ×2.0 / tail ×0.6) replacing the one-capsule hurtbox every actor had, entity-level hit dedupe so a swing clipping four zones bills once, an AI turn rate, and jaws/wing/tail arcs. 35B ✅ flight: `LocomotionComponent.Flying` owns the vertical axis alone (so the AI steers a flier with the walker's code), tuned on the AI profile, running a time-boxed takeoff→hover→land cycle that 35C's breath will fire into. 35C–35G to go |
 
 > ### 🚩 What actually stands between here and Gate G1
 >
