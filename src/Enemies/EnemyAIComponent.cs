@@ -86,6 +86,9 @@ public partial class EnemyAIComponent : EntityComponent
     private PhysicsRayQueryParameters3D? _losQuery;
     private Godot.Collections.Array<Rid>? _losExclude;
 
+    // This frame's delta, cached for FaceTowards' turn-rate slew (35A).
+    private double _frameDelta;
+
     public EnemyState State => _state;
 
     protected override void OnInitialize()
@@ -150,6 +153,9 @@ public partial class EnemyAIComponent : EntityComponent
         }
 
         _perceptionTimer -= delta;
+        // Cached so FaceTowards can slew at a profile's turn rate without threading delta through
+        // the four state ticks that call it (35A).
+        _frameDelta = delta;
 
         // Level of detail: a live enemy far from the player ticks rarely and stops casting a
         // shadow. The dead state always runs so corpses still despawn on schedule.
@@ -753,14 +759,46 @@ public partial class EnemyAIComponent : EntityComponent
         GetLocomotion()?.Move(delta, Vector3.Zero, sprint: false, jump: false);
     }
 
+    /// <summary>Turns to face a point — instantly, or slewed at the profile's
+    /// <see cref="AIProfileResource.TurnSpeedDegrees"/> for a body too heavy to pivot on the spot.</summary>
     private void FaceTowards(Vector3 target)
     {
         Vector3 pos = _body.GlobalPosition;
         var flat = new Vector3(target.X, pos.Y, target.Z);
-        if (flat.DistanceSquaredTo(pos) > 0.0004f)
+        if (flat.DistanceSquaredTo(pos) <= 0.0004f)
+        {
+            return;
+        }
+
+        if (_profile.TurnSpeedDegrees <= 0f)
         {
             _body.LookAt(flat, Vector3.Up);
+            return;
         }
+
+        float desired = Mathf.Atan2(pos.X - flat.X, pos.Z - flat.Z);
+        float step = Mathf.DegToRad(_profile.TurnSpeedDegrees) * (float)_frameDelta;
+        _body.Rotation = _body.Rotation with { Y = Mathf.RotateToward(_body.Rotation.Y, desired, step) };
+    }
+
+    /// <summary>Signed angle from this actor's facing to a point, in degrees — 0 dead ahead, ±180
+    /// directly behind. Drives the directional attack set (35A).</summary>
+    public float BearingTo(Vector3 target)
+    {
+        if (_body == null)
+        {
+            return 0f;
+        }
+
+        Vector3 pos = _body.GlobalPosition;
+        var flat = new Vector3(target.X, pos.Y, target.Z);
+        if (flat.DistanceSquaredTo(pos) <= 0.0004f)
+        {
+            return 0f;
+        }
+
+        float desired = Mathf.Atan2(pos.X - flat.X, pos.Z - flat.Z);
+        return Mathf.RadToDeg(Mathf.AngleDifference(_body.Rotation.Y, desired));
     }
 
     private LocomotionComponent? GetLocomotion()

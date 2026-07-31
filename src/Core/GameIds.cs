@@ -79,6 +79,9 @@ public static class GameIds
         // (see AshenAffliction); these two are what a tint-and-scale modifier cannot produce.
         public const string AshMaw = "enemy.ash_maw";
         public const string CinderThrall = "enemy.cinder_thrall";
+
+        // Phase 35A — the first multi-hit-zone body. The Ash and Ancient variants are 35E/35F.
+        public const string WildDragon = "enemy.wild_dragon";
     }
 
     /// <summary>Enemy AI personality ids (see <c>AIProfileDatabase</c> / data/ai_profiles, Phase 34A).</summary>
@@ -102,6 +105,10 @@ public static class GameIds
 
         // Phase 34E — a construct holds its post: never patrols, never calls for help, never leaves.
         public const string Sentry = "ai.sentry";
+
+        // Phase 35A — a body too heavy to pivot: the first profile with a real turn rate, which is
+        // what makes getting behind a dragon mean something.
+        public const string Dragon = "ai.dragon";
     }
 
     public static class Factions

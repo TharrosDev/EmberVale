@@ -186,6 +186,51 @@ public static class ContentValidator
             {
                 issues.Add($"enemy archetype '{id}' has a negative XP value");
             }
+
+            ValidateHitZones(archetype, issues);
+        }
+    }
+
+    /// <summary>Hit zones (Phase 35A) are geometry authored as numbers, and the failure modes are all
+    /// silent in play: a zero radius makes a zone unhittable, a zero multiplier makes it a free
+    /// surface to stand on, and a duplicate id gives two zones the same name in the scene tree so the
+    /// second one is the only one anybody ever finds when debugging.</summary>
+    private static void ValidateHitZones(EnemyArchetypeResource archetype, List<string> issues)
+    {
+        var seen = new HashSet<string>();
+        foreach (HitZoneResource zone in archetype.HitZones)
+        {
+            if (zone == null)
+            {
+                issues.Add($"enemy archetype '{archetype.Id}' has a null hit zone");
+                continue;
+            }
+
+            if (string.IsNullOrEmpty(zone.Id))
+            {
+                issues.Add($"enemy archetype '{archetype.Id}' has a hit zone with no id");
+            }
+            else if (!seen.Add(zone.Id))
+            {
+                issues.Add($"enemy archetype '{archetype.Id}' has duplicate hit zone id '{zone.Id}'");
+            }
+
+            if (zone.Radius <= 0f)
+            {
+                issues.Add($"enemy archetype '{archetype.Id}' hit zone '{zone.Id}' has radius {zone.Radius} — unhittable");
+            }
+
+            if (zone.DamageMultiplier <= 0f)
+            {
+                issues.Add(
+                    $"enemy archetype '{archetype.Id}' hit zone '{zone.Id}' has multiplier " +
+                    $"{zone.DamageMultiplier} — it would absorb hits for free");
+            }
+        }
+
+        if (archetype.DirectionalMelee && archetype.HitZones.Count == 0)
+        {
+            issues.Add($"enemy archetype '{archetype.Id}' has directional melee but no hit zones to justify it");
         }
     }
 

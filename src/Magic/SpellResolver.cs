@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Embervale.Combat;
 using Embervale.Entities;
 using Godot;
@@ -51,7 +50,8 @@ public static class SpellResolver
         };
 
         Godot.Collections.Array<Godot.Collections.Dictionary> hits = space.IntersectShape(query, 32);
-        var struck = new HashSet<Hurtbox>();
+        // Per-actor, not per-hurtbox: a blast clipping three zones of one dragon is still one hit (35A).
+        var struck = new HitDedupe();
         foreach (Godot.Collections.Dictionary hit in hits)
         {
             if (!hit.TryGetValue("collider", out Variant colliderVar) ||
@@ -60,7 +60,8 @@ public static class SpellResolver
                 continue;
             }
 
-            if (!struck.Add(hurtbox) || !IsHostileTarget(hurtbox, caster, casterTeam))
+            if (!IsHostileTarget(hurtbox, caster, casterTeam) ||
+                !struck.TryHit(hurtbox.OwnerEntity, hurtbox))
             {
                 continue;
             }

@@ -49,6 +49,19 @@ public partial class EnemyArchetypeResource : Resource
     [Export] public float CapsuleRadius { get; set; } = 0.4f;
     [Export] public float CapsuleHeight { get; set; } = 1.8f;
 
+    /// <summary>Per-zone hurtboxes (Phase 35A). Empty — every archetype before the dragon — gives the
+    /// one whole-body capsule hurtbox instead, so this costs existing content nothing.</summary>
+    [Export] public Godot.Collections.Array<HitZoneResource> HitZones { get; set; } = new();
+
+    /// <summary>Build this archetype as a <see cref="BossEntity"/> rather than a plain
+    /// <see cref="EnemyEntity"/>, so the Phase 28C boss healthbar and the 28D corruption-on-kill loop
+    /// resolve it through the <c>ServiceLocator</c>. World bosses and the dragons set it.</summary>
+    [Export] public bool IsBoss { get; set; }
+
+    /// <summary>Give it the directional bite/wing/tail attack set (Phase 35A) instead of one swing
+    /// arc. Needs <see cref="HitZones"/> to be worth anything — it is the same body, attacking.</summary>
+    [Export] public bool DirectionalMelee { get; set; }
+
     [ExportGroup("Combat")]
     [Export] public float MaxPoise { get; set; } = 40f;
     [Export] public float StaminaRegen { get; set; } = 12f;

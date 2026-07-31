@@ -338,6 +338,30 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    `CombatComponent` (set `Team`), `LocomotionComponent`, `Hurtbox`,
    `Hitbox` + `MeleeWeaponComponent`, and a behaviour component.
 
+   **Usually you should not write a factory at all** — author a
+   `data/enemies/Xxx.tres` (`script_class="EnemyArchetypeResource"`) instead and
+   `EnemyArchetypeFactory` builds it, `EnemyArchetypeDatabase` registers it, and
+   `spawn <id>` works with no code. A bespoke factory earns its place only by doing
+   something structurally different (goblin, Ashen Acolyte, Iron King).
+
+**A big/boss creature with body zones (Phase 35A)**
+1. Author the archetype `.tres` as above, plus:
+   - `HitZones` — an array of `HitZoneResource` sub-resources (`Id`,
+     `DamageMultiplier`, `Offset`, `Radius`, `Height`; height ≤ 2×radius makes it a
+     sphere). Non-empty **replaces** the whole-body capsule hurtbox, and doubles as
+     the greybox silhouette, so the visual can never drift from what is damageable.
+     The multiplier scales poise damage too — a headshot staggers harder.
+   - `IsBoss = true` → the actor is a `BossEntity`, which is what the Phase 28C
+     healthbar and the 28D corruption-on-kill loop resolve by type.
+   - `DirectionalMelee = true` → a `DragonMeleeComponent` swaps the one
+     `MeleeWeaponComponent`'s hitbox between jaws/wing/tail by the target's bearing.
+2. **Give its AI profile a `TurnSpeedDegrees`.** The AI faces its target before every
+   swing, and the default (`0`) snaps instantly — a body that always looks at you can
+   only ever use its frontal attack, so the flank and rear arcs are dead code without
+   a turn rate. It is also the knob that makes a heavy creature *feel* heavy.
+3. `ContentValidator` checks the zones (ids unique and non-empty, radius and
+   multiplier positive, directional melee backed by zones).
+
 **A new weapon**
 1. Author `data/weapons/Xxx.tres` (`script_class="WeaponResource"`).
 2. Point a `MeleeWeaponComponent.Weapon` at it (factory or future equipment).

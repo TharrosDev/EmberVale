@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="BestiaryEntryResource" format=3 uid="uid://bdun4gyp56wbt"]
+
+[ext_resource type="Script" path="res://src/Enemies/BestiaryEntryResource.cs" id="1_entry"]
+
+[resource]
+script = ExtResource("1_entry")
+Id = "enemy.wild_dragon"
+NameKey = ""
+LoreKey = "enemy.wild_dragon.lore"
+Category = 6
+KillsToKnow = 1

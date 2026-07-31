@@ -29,13 +29,14 @@ public static class EnemyArchetypeFactory
         float radius = archetype.CapsuleRadius;
         float height = archetype.CapsuleHeight;
 
-        var enemy = new EnemyEntity
-        {
-            Name = archetype.Id,
-            DisplayName = archetype.NameKey.Length > 0 ? Loc.T(archetype.NameKey) : archetype.Id,
-            TemplateId = archetype.Id,
-            Position = position,
-        };
+        // A boss-flagged archetype is a BossEntity so the Phase 28C healthbar and the 28D
+        // corruption-on-kill loop can resolve it by type through the ServiceLocator. Everything
+        // below is identical either way — BossEntity is an EnemyEntity.
+        EnemyEntity enemy = archetype.IsBoss ? new BossEntity() : new EnemyEntity();
+        enemy.Name = archetype.Id;
+        enemy.DisplayName = archetype.NameKey.Length > 0 ? Loc.T(archetype.NameKey) : archetype.Id;
+        enemy.TemplateId = archetype.Id;
+        enemy.Position = position;
 
         enemy.AddChild(new CollisionShape3D
         {
@@ -69,7 +70,7 @@ public static class EnemyArchetypeFactory
         enemy.AddChild(new HitReactionComponent { Name = "HitReaction" });
         enemy.AddChild(new Animation.CharacterAnimationComponent { Name = "Animation", BodyMeshPath = "Mesh" });
         enemy.AddChild(new WeaponTrailComponent { Name = "WeaponTrail" });
-        enemy.AddChild(BuildHurtbox(radius, height));
+        AddHurtboxes(enemy, archetype, radius, height);
 
         // The reach and the box scale with the body: these numbers were authored against a 1.8 m
         // humanoid's sword arc, and bolting that arc onto a 0.9 m wolf would have it biting a metre
@@ -92,6 +93,13 @@ public static class EnemyArchetypeFactory
             Weapon = GD.Load<WeaponResource>(archetype.WeaponPath),
             Hitbox = hitbox,
         });
+
+        // 35A: a body this size is dangerous on every side. The component swaps the weapon's arc
+        // between jaws/wing/tail by bearing, so the single swing above becomes three attacks.
+        if (archetype.DirectionalMelee)
+        {
+            enemy.AddChild(DragonMeleeComponent.BuildArcs(enemy, height, radius));
+        }
 
         enemy.AddChild(new StatusEffectsComponent { Name = "StatusEffects" });
         enemy.AddChild(new StatusEffectVfxComponent { Name = "StatusVfx" });
@@ -141,6 +149,39 @@ public static class EnemyArchetypeFactory
             return;
         }
 
+        // A multi-zone body greyboxes as its zones (35A): one blob per hurtbox, the weak points
+        // brighter. Built from the same numbers as the hurtboxes, so the silhouette can never drift
+        // out of alignment with what is actually damageable — the trap a hand-placed greybox sets.
+        if (archetype.HitZones.Count > 0)
+        {
+            var body = new Node3D { Name = "Mesh" };
+            foreach (HitZoneResource zone in archetype.HitZones)
+            {
+                if (zone == null)
+                {
+                    continue;
+                }
+
+                body.AddChild(new MeshInstance3D
+                {
+                    Name = zone.Id,
+                    Mesh = zone.Height > zone.Radius * 2f
+                        ? new CapsuleMesh { Radius = zone.Radius, Height = zone.Height }
+                        : new SphereMesh { Radius = zone.Radius, Height = zone.Radius * 2f },
+                    Position = zone.Offset,
+                    MaterialOverride = new StandardMaterial3D
+                    {
+                        AlbedoColor = zone.DamageMultiplier >= 1f
+                            ? archetype.PlaceholderTint.Lightened((zone.DamageMultiplier - 1f) * 0.3f)
+                            : archetype.PlaceholderTint.Darkened((1f - zone.DamageMultiplier) * 0.3f),
+                    },
+                });
+            }
+
+            enemy.AddChild(body);
+            return;
+        }
+
         enemy.AddChild(new MeshInstance3D
         {
             Name = "Mesh",
@@ -150,14 +191,44 @@ public static class EnemyArchetypeFactory
         });
     }
 
-    private static Hurtbox BuildHurtbox(float radius, float height)
+    /// <summary>
+    /// One whole-body hurtbox, or — when the archetype authors <c>HitZones</c> (Phase 35A) — one per
+    /// zone, so a dragon's head can take double what its tail does. The zones replace the single
+    /// capsule rather than sitting alongside it: overlapping both would be two hurtboxes over the same
+    /// flesh, and while <see cref="HitDedupe"/> would stop the double damage, whichever one the
+    /// physics query happened to return first would decide the multiplier.
+    /// </summary>
+    private static void AddHurtboxes(EnemyEntity enemy, EnemyArchetypeResource archetype, float radius, float height)
     {
-        var hurtbox = new Hurtbox { Name = "Hurtbox" };
-        hurtbox.AddChild(new CollisionShape3D
+        if (archetype.HitZones.Count == 0)
         {
-            Shape = new CapsuleShape3D { Radius = radius, Height = height },
-            Position = new Vector3(0f, height * 0.5f, 0f),
-        });
+            enemy.AddChild(BuildHurtbox("Hurtbox", string.Empty, 1f, new Vector3(0f, height * 0.5f, 0f), radius, height));
+            return;
+        }
+
+        foreach (HitZoneResource zone in archetype.HitZones)
+        {
+            if (zone == null)
+            {
+                continue;
+            }
+
+            enemy.AddChild(BuildHurtbox(
+                $"Hurtbox_{zone.Id}", zone.Id, zone.DamageMultiplier, zone.Offset, zone.Radius, zone.Height));
+        }
+    }
+
+    /// <summary>A capsule hurtbox, or a sphere when the height cannot contain one (a head, a wing
+    /// knuckle) — Godot's CapsuleShape3D silently clamps a height below 2r, which would quietly
+    /// inflate a small zone's volume.</summary>
+    private static Hurtbox BuildHurtbox(
+        string name, string zoneId, float multiplier, Vector3 offset, float radius, float height)
+    {
+        var hurtbox = new Hurtbox { Name = name, ZoneId = zoneId, DamageMultiplier = multiplier };
+        Shape3D shape = height > radius * 2f
+            ? new CapsuleShape3D { Radius = radius, Height = height }
+            : new SphereShape3D { Radius = radius };
+        hurtbox.AddChild(new CollisionShape3D { Shape = shape, Position = offset });
         return hurtbox;
     }
 }

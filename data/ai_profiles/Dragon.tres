@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="AIProfileResource" format=3 uid="uid://c0mhr44cg7xjd"]
+
+[ext_resource type="Script" path="res://src/Enemies/AIProfileResource.cs" id="1_profile"]
+
+[resource]
+script = ExtResource("1_profile")
+Id = "ai.dragon"
+VisionRange = 55.0
+FovDegrees = 150.0
+AlertRadius = 40.0
+AttackRange = 6.0
+PatrolRadius = 8.0
+TurnSpeedDegrees = 55.0
+RetreatHealthFraction = 0.0
+ActiveDistance = 120.0

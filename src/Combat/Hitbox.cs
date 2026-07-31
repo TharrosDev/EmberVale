@@ -15,7 +15,8 @@ namespace Embervale.Combat;
 [GlobalClass]
 public partial class Hitbox : Area3D
 {
-    private readonly HashSet<Hurtbox> _alreadyHit = new();
+    // Keyed on the owning entity, not the hurtbox — a multi-zone body (35A) is still one target.
+    private readonly HitDedupe _alreadyHit = new();
     private IEntity? _ownerEntity;
     private int _ownerTeam;
     private DamagePacket _packet;
@@ -58,7 +59,7 @@ public partial class Hitbox : Area3D
 
         foreach (Area3D area in GetOverlappingAreas())
         {
-            if (area is not Hurtbox hurtbox || _alreadyHit.Contains(hurtbox))
+            if (area is not Hurtbox hurtbox)
             {
                 continue;
             }
@@ -75,7 +76,12 @@ public partial class Hitbox : Area3D
                 continue;
             }
 
-            _alreadyHit.Add(hurtbox);
+            // Last, so an ally/self skip above never burns the owner's one hit for this swing.
+            if (!_alreadyHit.TryHit(hurtbox.OwnerEntity, hurtbox))
+            {
+                continue;
+            }
+
             hurtbox.Receive(_packet);
         }
     }

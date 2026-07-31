@@ -2199,8 +2199,49 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
 
 ## Phase 35 — Dragons `[F/C]`
 
-- [ ] **35A — Dragon body: multi-hit-zone scalable boss actor** `[F]`
+- [x] **35A — Dragon body: multi-hit-zone scalable boss actor** `[F]` ✅
   - **Done when:** a large multi-hurtbox dragon actor exists with tail/wing melee.
+  - **Landed as data, not a dragon factory.** `HitZoneResource` + `HitZones`/`IsBoss`/
+    `DirectionalMelee` on `EnemyArchetypeResource`, built by the one
+    `EnemyArchetypeFactory`. 35D/35E/35F are now `.tres` and nothing else, and Phase 36
+    inherits zones for free. `enemy.wild_dragon` is the first body that is not one volume:
+    head ×2.0, wings ×1.4, body ×1.0, tail ×0.6.
+  - **The bug this phase existed to fix.** `Hitbox._alreadyHit` and
+    `SpellResolver.Detonate`'s `struck` both deduped **per hurtbox**. That was invisible
+    while every actor had exactly one — with four, a single sword arc or fireball clipping
+    three zones billed three full `DamagePacket`s. Both now route through
+    `Combat/HitDedupe.cs`, keyed on the **owning entity** (the hurtbox itself is the
+    fallback key, so `GameBootstrap`'s owner-less training dummy is unchanged).
+  - **Zones replace the capsule, they don't overlap it.** Two hurtboxes over the same
+    flesh would not double-damage any more, but whichever the physics query returned first
+    would silently decide the multiplier.
+  - **`AIProfileResource.TurnSpeedDegrees` is what makes the arcs real.** `FaceTowards`
+    used `LookAt` — an instant snap — so a dragon would always be looking at you and only
+    ever bite. The profile now slews at a turn rate (`0` = snap = every pre-35A archetype,
+    byte-identical). `ai.dragon` turns at 55°/s, which is the dial to tune if flanking
+    feels too easy or impossible.
+  - **The greybox is generated from the zones**, one blob per hurtbox, weak points
+    lightened. It cannot drift out of alignment with what is damageable — the trap a
+    hand-placed placeholder sets. The `.glb` is a later art pass, as the Iron King got in
+    30D.
+  - **Verified:** `dotnet build` clean, `dotnet test` **628/628** (17 new across
+    `HitDedupeTests` + `DragonMeleeTests`), `--validate` exits 0 with 30 templates / 30
+    bestiary entries. The archetype was additionally load-checked headless (all four zones
+    parse with their authored multipliers — a typed `Array[Resource]` is the kind of thing
+    that fails to empty in silence), and `--play` boots into a live world with combat
+    resolving and no errors.
+  - **Still owed (maintainer, at the keyboard)** — the `F1` console:
+    - `spawn 1 enemy.wild_dragon`, then hit the head and the tail: the numbers should
+      differ by the authored multipliers, and **one swing must produce one number, not
+      four**. Cast an AoE into it — same check, one tick.
+    - Walk round it: the tail should answer from behind, the wing from a flank, and 55°/s
+      should feel like a real turn rate rather than a stuck dragon.
+    - The boss healthbar should appear (the `IsBoss` → `BossEntity` path).
+  - **Known limits:** the dragon is spawn-only — nothing places it in the world until 35G,
+    and it has no encounter entry. It walks; flight is 35B. It reuses `BeastLoot` and has
+    no bespoke drops. Its greybox is a `Node3D`, not a `MeshInstance3D`, so
+    `EnemyAIComponent.SetShadow`'s distance LOD silently no-ops on it (`_mesh` is null) —
+    it costs a shadow at range until the model lands.
 - [ ] **35B — Aerial AI: flight pathing, takeoff/landing** `[F]`
   - **Done when:** the dragon flies, lands, and takes off under AI control.
 - [ ] **35C — Breath attacks (cones/AoE) via SpellResolver** `[F]`

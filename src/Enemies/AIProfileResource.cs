@@ -45,6 +45,13 @@ public partial class AIProfileResource : Resource
     /// surrounds its target instead of queueing up behind one another. 0 = charge straight in.</summary>
     [Export] public float FlankSpreadDegrees { get; set; } = 0f;
 
+    /// <summary>How fast it can turn to face its target, in degrees per second. <c>0</c> snaps
+    /// instantly, which is what every archetype before Phase 35A did and still does. A heavy body
+    /// (the dragon) sets a low value: the turn becomes a real cost, so circling behind it is a
+    /// tactic — and the thing that lets a rear/flank attack set (see <see cref="DragonMelee"/>) ever
+    /// fire, since a snap-turn target is always dead ahead.</summary>
+    [Export] public float TurnSpeedDegrees { get; set; } = 0f;
+
     [ExportGroup("Standoff (ranged / caster)")]
     /// <summary>Max range it will fight from. Above <see cref="AttackRange"/> this actor holds a band
     /// and kites rather than charging — the shape shared by casters and (future) archers.</summary>
