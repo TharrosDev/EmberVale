@@ -23,6 +23,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_relic.glb" id="20_relic"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_lamp_post.glb" id="21_lamp"]
 [ext_resource type="Script" path="res://src/Companions/CompanionRecruiterComponent.cs" id="22_recruiter"]
+[ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="24_charanim"]
 
 [sub_resource type="NavigationMesh" id="NavMesh_hub"]
 geometry_parsed_geometry_type = 1
@@ -330,6 +331,10 @@ script = ExtResource("1_entity")
 DisplayName = "Village Elder"
 TemplateId = "npc.elder"
 
+[node name="Animation" type="Node" parent="Elder"]
+script = ExtResource("24_charanim")
+BodyMeshPath = "Model"
+
 [node name="Mesh" type="MeshInstance3D" parent="Elder"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 
@@ -357,6 +362,10 @@ script = ExtResource("1_entity")
 DisplayName = "Kael Aldemar"
 TemplateId = "npc.kael"
 
+[node name="Animation" type="Node" parent="Kael"]
+script = ExtResource("24_charanim")
+BodyMeshPath = "Model"
+
 [node name="Mesh" type="MeshInstance3D" parent="Kael"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 
@@ -383,6 +392,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, -8)
 script = ExtResource("1_entity")
 DisplayName = "Aldreth, General Goods"
 TemplateId = "npc.vendor_goods"
+
+[node name="Animation" type="Node" parent="VendorGoods"]
+script = ExtResource("24_charanim")
+BodyMeshPath = "Model"
 
 [node name="Mesh" type="MeshInstance3D" parent="VendorGoods"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
@@ -412,6 +425,10 @@ script = ExtResource("1_entity")
 DisplayName = "Bryn the Smith"
 TemplateId = "npc.vendor_smith"
 
+[node name="Animation" type="Node" parent="VendorSmith"]
+script = ExtResource("24_charanim")
+BodyMeshPath = "Model"
+
 [node name="Mesh" type="MeshInstance3D" parent="VendorSmith"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 
@@ -439,6 +456,10 @@ script = ExtResource("1_entity")
 DisplayName = "Mirela, Apothecary"
 TemplateId = "npc.vendor_alch"
 
+[node name="Animation" type="Node" parent="VendorAlch"]
+script = ExtResource("24_charanim")
+BodyMeshPath = "Model"
+
 [node name="Mesh" type="MeshInstance3D" parent="VendorAlch"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 
@@ -465,6 +486,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, -6)
 script = ExtResource("1_entity")
 DisplayName = "Innkeeper Holt"
 TemplateId = "npc.innkeeper"
+
+[node name="Animation" type="Node" parent="Innkeeper"]
+script = ExtResource("24_charanim")
+BodyMeshPath = "Model"
 
 [node name="Mesh" type="MeshInstance3D" parent="Innkeeper"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)

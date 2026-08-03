@@ -22,6 +22,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_vendor.glb" id="22_npc_vendor"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_innkeeper.glb" id="23_npc_inn"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_campfire.glb" id="24_campfire"]
+[ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="25_charanim"]
 
 [sub_resource type="NavigationMesh" id="NavMesh_hold"]
 geometry_parsed_geometry_type = 1
@@ -305,6 +306,10 @@ script = ExtResource("1_entity")
 DisplayName = "Hjalvar Stormbound"
 TemplateId = "npc.clan_chief"
 
+[node name="Animation" type="Node" parent="ClanChief"]
+script = ExtResource("25_charanim")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="ClanChief"]
 
 [node name="Shape" type="CollisionShape3D" parent="ClanChief/Collider"]
@@ -328,6 +333,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, -2)
 script = ExtResource("1_entity")
 DisplayName = "Sigrun Ironhand"
 TemplateId = "npc.clan_quartermaster"
+
+[node name="Animation" type="Node" parent="Quartermaster"]
+script = ExtResource("25_charanim")
+BodyMeshPath = "Model"
 
 [node name="Collider" type="StaticBody3D" parent="Quartermaster"]
 
@@ -353,6 +362,10 @@ script = ExtResource("1_entity")
 DisplayName = "Yrsa Houndmother"
 TemplateId = "npc.clan_beast_tamer"
 
+[node name="Animation" type="Node" parent="BeastTamer"]
+script = ExtResource("25_charanim")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="BeastTamer"]
 
 [node name="Shape" type="CollisionShape3D" parent="BeastTamer/Collider"]
@@ -377,6 +390,10 @@ script = ExtResource("1_entity")
 DisplayName = "Old Vetle"
 TemplateId = "npc.clan_hearthkeeper"
 
+[node name="Animation" type="Node" parent="Hearthkeeper"]
+script = ExtResource("25_charanim")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="Hearthkeeper"]
 
 [node name="Shape" type="CollisionShape3D" parent="Hearthkeeper/Collider"]
@@ -400,6 +417,10 @@ transform = Transform3D(0.71, 0, 0.71, 0, 1, 0, -0.71, 0, 0.71, -24, 0, 22)
 script = ExtResource("1_entity")
 DisplayName = "Halvar One-Hand"
 TemplateId = "npc.clan_exile"
+
+[node name="Animation" type="Node" parent="Exile"]
+script = ExtResource("25_charanim")
+BodyMeshPath = "Model"
 
 [node name="Collider" type="StaticBody3D" parent="Exile"]
 
