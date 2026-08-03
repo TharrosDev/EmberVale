@@ -35,6 +35,8 @@ public partial class CharacterAnimationComponent : EntityComponent
     private string _idle = "", _run = "", _block = "", _attack = "", _hit = "", _death = "";
     private string _cast = "", _channel = "";
     private bool _deathPlayed;
+    private Vector3? _lastPosition;
+    private float _lastDelta;
 
     protected override void OnInitialize()
     {
@@ -188,6 +190,8 @@ public partial class CharacterAnimationComponent : EntityComponent
 
     public override void _Process(double delta)
     {
+        _lastDelta = (float)delta;
+
         if (_player == null)
         {
             return;
@@ -233,6 +237,21 @@ public partial class CharacterAnimationComponent : EntityComponent
         {
             Vector3 v = body.Velocity;
             return new Vector2(v.X, v.Z).Length();
+        }
+
+        // A scene-placed NPC is a plain Node3D and ScheduleComponent walks it by writing
+        // GlobalPosition, so there is no Velocity to read — without this it always reports 0
+        // and a townsperson slides to the market in an idle pose. Differentiate the position
+        // instead; the same component then drives the whole cast, not just the actors that
+        // happen to be CharacterBody3D.
+        if (Entity?.Body is { } node)
+        {
+            Vector3 here = node.GlobalPosition;
+            float speed = _lastPosition.HasValue && _lastDelta > 0f
+                ? new Vector2(here.X - _lastPosition.Value.X, here.Z - _lastPosition.Value.Z).Length() / _lastDelta
+                : 0f;
+            _lastPosition = here;
+            return speed;
         }
 
         return 0f;

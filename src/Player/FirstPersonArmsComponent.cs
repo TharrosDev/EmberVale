@@ -64,9 +64,11 @@ public partial class FirstPersonArmsComponent : EntityComponent
         _rightArm.AddChild(armScene.Instantiate());
         _root.AddChild(_rightArm);
 
-        // ponytail: same unmirrored mesh on the left — a mirror (negative scale) flips face
-        // winding, and at this poly count the difference is invisible anyway.
-        _leftArm = new Node3D { Name = "LeftArm", Position = LeftRest };
+        // The arm is now an actual right forearm and hand with fingers and a thumb, so the left
+        // side has to be mirrored — an unmirrored copy reads as two right hands. Godot flips face
+        // winding for a negative-determinant basis, so the mesh renders correctly; this was not
+        // worth doing while the arm was a featureless 448-tri stub.
+        _leftArm = new Node3D { Name = "LeftArm", Position = LeftRest, Scale = new Vector3(-1f, 1f, 1f) };
         _leftArm.AddChild(armScene.Instantiate());
         _root.AddChild(_leftArm);
 

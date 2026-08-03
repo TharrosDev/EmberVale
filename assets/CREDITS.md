@@ -11,12 +11,10 @@ it?" must be answerable without archaeology. An asset with no entry is **not fin
 
 ## Current state
 
-**28 of the project's 33 models are sourced; the other 5 are still in-house.** The asset
-migration replaces the in-house set category by category. Props, characters, creatures, buildings
-and the sword are all done. **Still in-house (5):** the first-person arm, the Ashen Acolyte, and
-three props with no suitable match — see *Searched for, not replaced* for why each stayed. Every
-one of the five now has a recorded search; `wpn_sword_iron` did not until the post-migration audit,
-and searching for it took one round.
+**29 of the project's 33 models are sourced; the other 4 are still in-house.** The asset
+migration replaces the in-house set category by category. Props, characters, creatures, buildings,
+the sword and the first-person arm are all done. **Still in-house (4):** the Ashen Acolyte and
+three props with no suitable match — see *Searched for, not replaced* for why each stayed.
 
 *(An earlier revision of this file, and PR #202's description, said 15 props. The prop count was
 16 — corrected here because this file is the provenance record. The model total dropped 34 → 33
@@ -141,14 +139,42 @@ fixed*.
   blade is more stylised and less grounded than ART_STYLE §1 asks for.
 - **Used for:** `wpn_sword_iron` (872 tris, up from 176 — well inside the lifted §3 bands)
 - **Blender MCP modifications:** vertex data baked (transforms written into the mesh, not left on
-  the node), uniformly scaled 0.41702×, centred in X/Z and translated so the model reproduces the
-  in-house sword's exact vertical layout — 0.96 m tall spanning **−0.035 → 0.925**, blade along
-  +Y with the grip at the origin. That is what `FirstPersonArmsComponent` and `PlayerFactory`'s
-  hand-bone mount were authored against, so neither needed changing. Footprint 0.223 × 0.051
-  (was 0.16 × 0.05) — a slightly wider crossguard, nothing else moved.
+  the node), uniformly scaled 0.41702×, centred in X/Z, and positioned so the **blade starts at
+  y = 0.175 — exactly where the in-house sword's did**. 0.96 m long, spanning −0.126 → 0.834, blade
+  along +Y. Footprint 0.223 × 0.051 (was 0.16 × 0.05) — a slightly wider crossguard.
+- ⚠️ **Aligning the overall bounding box was the wrong call and shipped visibly wrong.** The first
+  pass matched the in-house sword's *total span* (−0.035 → 0.925). But the Quaternius sword has a
+  much longer grip, so the guard landed 0.09 m higher and the hand ended up holding the pommel with
+  a hand's width of bare handle above the fist. **What the hand mount actually pins is the grip, so
+  that is what has to line up** — for a held object, align the feature the hand sits on, not the
+  bounding box.
 
 > **This was the one asset never searched for**, which is a `docs/ASSET_POLICY.md` §1 miss rather
 > than a considered outcome. It took one search.
+
+### First-person arm — extracted from the Adventurer already in the project (CC0)
+
+- **Source:** derived asset — the right forearm and hand of `chr_player_base.glb`
+  (Adventurer, Quaternius) · **URL:** https://poly.pizza/m/5EGWBMpuXq
+- **Licence:** CC0 1.0 Universal · **Author:** Quaternius
+- **Why this route:** every FPS-arms pack found was rejected — the two Poly Pizza *Rigged Fps Arms*
+  are CC BY, and the CC0 WRAD ARMS is Half-Life-1 styled and ships only as an itch.io zip. All of
+  them are also a *bonded left+right pair on one armature*, where `FirstPersonArmsComponent`
+  instantiates a **single** arm twice. Lifting the arm off the body the player already has solves
+  all three problems at once: same licence, same style, and the viewmodel now matches the body seen
+  in cutscenes.
+- **Blender MCP modifications:** posed the Adventurer's rig with its own **`Idle_Sword`** clip so
+  the hand came out **closed around a hilt** rather than open in a T-pose; applied the armature
+  modifier to bake that pose; kept only vertices weighted ≥0.5 to `LowerArm.R`, `Wrist.R` and the
+  nineteen finger/thumb bones; rotated the hanging arm to point down Godot's −Z; scaled 1.8331× to
+  the old stub's 0.609 m long axis and translated to its exact bounding box, so `RightRest` /
+  `LeftRest` and the sword mount needed no change.
+- **Optimization:** 448 → 1,016 tris. That is a deliberate increase on the model that is on screen
+  more than any other in a first-person game, and it is what buys actual fingers.
+- ⚠️ **The left arm is now mirrored** (`Scale.X = -1` in `FirstPersonArmsComponent`). The old stub
+  was reused unmirrored because it had no thumb to get wrong; a real hand does, and two right hands
+  would read immediately.
+- **Lands at:** `assets/models/characters/fp_arm.glb`
 
 ### Orc — Quaternius (CC0)
 
@@ -201,15 +227,39 @@ suffix. Both projects' naming resolves; the unit tests use the post-import names
 | `chr_player_base` | Adventurer, Quaternius | https://poly.pizza/m/5EGWBMpuXq | 10,198 |
 | `npc_kael` | Rogue | https://poly.pizza/m/DgOCW9ZCRJ | 6,050 |
 | `npc_vendor` | Farmer, Quaternius | https://poly.pizza/m/7pn3R6hPvE | 5,476 |
-| `npc_innkeeper` | townsperson (static) | https://poly.pizza/m/BCMT02FrVE | 3,893 |
-| `npc_guild_rep` | guard (static) | https://poly.pizza/m/sbaM8I229r | 416 |
+| `npc_innkeeper` | Adventurer (women pack), Quaternius | https://poly.pizza/m/ZwF0K7WBmu | 8,932 |
+| `npc_guild_rep` | King, Quaternius | https://poly.pizza/m/I1gTjmuK2m | 11,594 |
 
-- **Licence:** all CC0 1.0 Universal. A CC-BY blacksmith was found and **deliberately passed over**
-  — the project already carries one attribution obligation and a second buys nothing here.
+> ⚠️ **The last two rows are the second pass.** The first pass shipped models nobody had looked
+> at: `npc_guild_rep` was a **watch tower** — wooden legs, red roof, pennant, almost certainly from
+> Quaternius's Ultimate Fantasy RTS pack, which is full of them — standing in for the **Village
+> Elder** and the **Clan Chief**. `npc_innkeeper` was a bright green cartoon wizard from a
+> "100 Avatars" pack (its extracted texture was still named `100Avatars_019_Wizzir`), rotated 90°
+> so it faced sideways, standing in for **Innkeeper Holt**, the **Hearthkeeper** and the **Exile**.
+> Both were picked on search-result metadata, never inspected, and both were **static meshes frozen
+> in a T-pose** — so those five NPCs could never animate at all.
+>
+> Replaced with rigged CC0 characters from the same Quaternius families already in use, so they
+> carry the standard `CharacterArmature|*` clip set and animate through the existing component.
+> Rejected on sight, at eye level: `Worker` (hi-vis vest and hard hat), `Man` / `Man in Long
+> Sleeves` (jeans, t-shirts, trainers), and `Witch` (CC BY, and the project takes no second
+> attribution obligation).
+
+- **Licence:** all CC0 1.0 Universal, each verified on its own model page. A CC-BY blacksmith was
+  found and **deliberately passed over** — the project already carries one attribution obligation
+  and a second buys nothing here.
 - **Why selected:** the Adventurer and Rogue carry the richest combat clip sets found (Sword_Slash /
   Dagger_Attack, Run, HitRecieve, Death) and read as distinct silhouettes, so the companion does not
-  look like a recolour of the player. The two static townsfolk have no rig at all, which is correct —
-  the NPCs they replace are scene-placed props with no animation component.
+  look like a recolour of the player. The King reads as authority for the Elder and the Clan Chief;
+  the women-pack Adventurer is muted leather and cloth, and gives the innkeeper roles a silhouette
+  that is not a fourth copy of the Farmer. All five are rigged and all five now animate.
+
+⚠️ **The earlier claim that "the two static townsfolk have no rig at all, which is correct — the
+NPCs they replace are scene-placed props with no animation component" was the wrong conclusion
+drawn from a real observation.** The scene NPCs genuinely had no animation component — but three of
+them (`npc_vendor` ×3, `npc_kael`) had just been given **rigged** models by this same migration, so
+they stood in bind pose. The fix was to add the driver, not to pick static models to match the
+missing one. All eleven scene NPC mounts now carry a `CharacterAnimationComponent`.
 - **Blender MCP modifications:** rigged models scaled at the **root node only** and exported with
   skins + animations; static ones went through the prop pipeline (join → scale → apply → origin at
   base → mesh renamed `Mesh`).
@@ -280,7 +330,7 @@ the old boxes would have meant invisible walls.
 
 Two full search rounds — Kenney (Fantasy Town, Survival, Modular Dungeon, Modular Cave), Poly
 Pizza across ~10 query terms, with every shortlisted candidate imported into Blender and
-**visually compared side by side** rather than judged on its filename. **All six** remaining
+**visually compared side by side** rather than judged on its filename. **All four** remaining
 in-house models are listed here; the last three were missing from this table until the
 post-migration audit, and one of them had never been searched for at all.
 
@@ -289,7 +339,6 @@ post-migration audit, and one of them had never been searched for at all.
 | `prp_brazier` | cooking spit, bonfire, two rock fire-pits, potion bottle, skull candle | Nothing was a brazier — a raised fire bowl on legs. The near-misses are all ground-level fires, which is a different silhouette and a different read in a lit town square. |
 | `prp_glacier` | grey rocks, a cliff, a drinks can, an orange crystal | No ice. The closest geometric fit (`Environment_Cliff3`) is **19,960 faces** — more than the entire rest of the model set combined — and still reads as rock, not ice, which is wrong for Frostfang. |
 | `prp_relic` | two swords, generic cubes | A divine relic is too project-specific to source; its silhouette is authored narrative, not a generic prop. |
-| `fp_arm` | `Rigged Fps Arms` ×2 (Poly Pizza), WRAD ARMS (itch.io) | **Searched properly for the first time; still no.** Three separate blockers, any one of which is enough. **(a) Shape:** every FPS-arms asset found is a *bonded left+right pair driven by one armature*. `fp_arm.glb` is a **single** arm that `FirstPersonArmsComponent` instantiates **twice** and animates procedurally (bob, slash arc, guard blend) — dropping in a pair gives four arms. Using one properly means rewriting that component around a rig, which is a behaviour change, not an asset swap. **(b) Licence:** both Poly Pizza candidates (`/m/XdHWM8uSAO`, `/m/AMGNKfQqVc`) are **CC BY 3.0**, a second attribution obligation the maintainer already declined once for the blacksmith. **(c) Style:** WRAD ARMS clears the licence bar (CC0, 1,200 tris, rigged) but is explicitly Half-Life-1 / boomer-shooter styled with a 512² texture, against ART_STYLE §1's grounded weathered fantasy — and it ships only as an itch.io zip with no direct file URL. **Best remaining route:** extract and re-pose a forearm from the Quaternius Adventurer already in `chr_player_base.glb` — same CC0 licence, same style, and the viewmodel would then match the body it belongs to. That is a modelling job, not a download. **This is still the highest-value gap in the set:** the game is first-person, so these 448 untextured triangles are on screen essentially all the time while `chr_player_base` is only seen in cutscenes. |
 | `enm_ashen_acolyte` | one promising "mage" | The mage candidate had **no skin and no animation clips at all**, so it could not drive `CharacterAnimationComponent`. No other rigged CC0 robed figure was found. The in-house model is the only remaining rig authored to this project's own clip vocabulary (`idle-loop`, `run-loop`, `cast`) and **the only actor in the game whose `cast` slot resolves** — replacing it with a sourced rig would cost the casting animation, not gain one. |
 
 Re-open these if a winter/ice, dungeon-dressing, FPS-arms or robed-character pack lands that
@@ -302,13 +351,12 @@ covers them; do not force a bad match to raise the sourced-asset count.
 Authored from scratch via the Blender MCP; listed for provenance completeness, not because a
 licence requires it. See `docs/SESSION_PLAYBOOK.md` Phase 30 for the authoring notes.
 
-**This is the post-migration list — five models.** (An earlier revision of this table still listed
+**This is the post-migration list — four models.** (An earlier revision of this table still listed
 the whole Phase 30 output, including everything the migration had already replaced and the deleted
 `enm_goblin_brute`. Corrected in the post-migration audit.)
 
 | Class | Path | Phase |
 | ----- | ---- | ----- |
-| Characters | `assets/models/characters/fp_arm.glb` | 30B |
 | Creatures | `assets/models/creatures/enm_ashen_acolyte.glb` | 30D |
 | Props | `assets/models/props/` (`prp_brazier`, `prp_glacier`, `prp_relic`) | 30H |
 
@@ -369,6 +417,29 @@ leakage between conversions) and all eight gameplay slots resolve exactly as bef
 
 All three re-exported with the origin at the base centre. Bounding-box **sizes** and triangle
 counts are unchanged, so no scene transform or collider needed editing.
+
+## Second round — what a play-through caught that the audit did not
+
+The audit above measured everything and read every scene, and still missed three things that were
+obvious the moment the game was actually run. All three are now fixed.
+
+1. **Every town NPC stood in a T-pose.** The scene-placed NPCs in `town_hub.tscn` and
+   `clan_hold.tscn` are plain `Entity` nodes, and **none of them had a
+   `CharacterAnimationComponent`** — so the rigged models the migration gave them had nothing
+   driving the rig. Eleven mounts now carry one, pointed at `BodyMeshPath = "Model"`.
+   `CharacterAnimationComponent.HorizontalSpeed()` also only read `CharacterBody3D.Velocity`, and a
+   scene NPC is a bare `Node3D` that `ScheduleComponent` walks by writing `GlobalPosition` — so a
+   townsperson would have slid to the market in an idle pose. It now differentiates position when
+   there is no velocity to read.
+2. **The Village Elder and the Clan Chief were a watch tower**, and **Innkeeper Holt, the
+   Hearthkeeper and the Exile were a green cartoon wizard facing sideways.** Both models were picked
+   on search metadata and never looked at. See the character table above.
+3. **The sword was held by the pommel.** Matching the bounding box instead of the grip. See the
+   sword entry above.
+
+The common thread with the original migration's defects: **every one of them is something a
+measurement passed and a look would have caught.** The bounding boxes were right, the clip lists
+resolved, `--validate` was green, and the game still showed a watch tower called Village Elder.
 
 ## Known, not fixed
 
