@@ -312,6 +312,8 @@ public static class ContentValidator
                 }
             }
 
+            ValidateEncounter(boss, issues);
+
             if (boss.EnrageSeconds < 0f)
             {
                 issues.Add($"boss '{boss.Id}' has a negative enrage time ({boss.EnrageSeconds})");
@@ -338,6 +340,52 @@ public static class ContentValidator
             {
                 issues.Add($"enemy archetype '{archetype.Id}' names unknown boss '{archetype.BossId}'");
             }
+        }
+    }
+
+    /// <summary>
+    /// A boss's intro/defeat/reward config (36E). The load-bearing rule is the last one: a reward or
+    /// a defeat conversation with no DefeatFlagId has nothing to record that it already happened, so
+    /// it would pay out on every death. That is the shape of the bug 36E fixed, and this is what
+    /// stops it being re-authored.
+    /// </summary>
+    private static void ValidateEncounter(BossResource boss, List<string> issues)
+    {
+        bool hasReward = boss.RewardItemId.Length > 0;
+        bool hasDialogue = boss.DefeatDialogueId.Length > 0;
+
+        if (hasReward && ItemDatabase.Get(boss.RewardItemId) == null)
+        {
+            issues.Add($"boss '{boss.Id}' rewards unknown item '{boss.RewardItemId}'");
+        }
+
+        if (hasDialogue && DialogueDatabase.Get(boss.DefeatDialogueId) == null)
+        {
+            issues.Add($"boss '{boss.Id}' names unknown defeat dialogue '{boss.DefeatDialogueId}'");
+        }
+
+        if ((hasReward || hasDialogue) && boss.DefeatFlagId.Length == 0)
+        {
+            issues.Add(
+                $"boss '{boss.Id}' grants a reward or defeat conversation but sets no DefeatFlagId — " +
+                "nothing would record that it already happened, so it would pay out on every death");
+        }
+
+        if (hasReward && boss.RewardQuantity <= 0)
+        {
+            issues.Add($"boss '{boss.Id}' rewards {boss.RewardQuantity}x '{boss.RewardItemId}'");
+        }
+
+        if (boss.IntroLockSeconds < 0f || boss.DefeatSlowSeconds < 0f)
+        {
+            issues.Add($"boss '{boss.Id}' has a negative intro or defeat duration");
+        }
+
+        if (boss.DefeatTimeScale <= 0f)
+        {
+            issues.Add(
+                $"boss '{boss.Id}' has a defeat time scale of {boss.DefeatTimeScale} — the world " +
+                "would stop rather than slow, and never restart");
         }
     }
 

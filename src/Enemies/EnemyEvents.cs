@@ -18,6 +18,12 @@ public readonly record struct EnemyStateChangedEvent(IEntity Enemy, EnemyState S
 /// intro-defeat work (Phase 28C) and the future <c>BossController</c> (Phase 36) react to this.</summary>
 public readonly record struct BossPhaseChangedEvent(IEntity Boss, int Phase, int TotalPhases) : IGameEvent;
 
-/// <summary>Raised when a boss fight begins (the boss is summoned). Drives the boss healthbar + the
-/// intro lock/title (Phase 28C). <paramref name="NameKey"/> is a <c>Loc</c> key for the boss's name.</summary>
-public readonly record struct BossEncounterStartedEvent(IEntity Boss, string NameKey) : IGameEvent;
+/// <summary>
+/// Raised once when a boss fight begins. Drives the healthbar and the intro lock. Published through
+/// <c>BossController.BeginEncounter</c>, which the summoning brazier calls on the entrance beat and
+/// the controller self-calls on the first damage traded — so a lair boss nobody summons gets one too.
+/// <paramref name="DisplayName"/> is already localized (the archetype's <c>NameKey</c> resolved at
+/// build time); the bar showed a raw <c>"boss.name"</c> key for everyone before 36E.
+/// </summary>
+public readonly record struct BossEncounterStartedEvent(
+    IEntity Boss, string DisplayName, int TotalPhases) : IGameEvent;

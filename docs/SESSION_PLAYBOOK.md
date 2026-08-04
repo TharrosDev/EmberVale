@@ -2809,9 +2809,42 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
     boss** (the `F1` console needs keyboard input), so it covers boot, validation and scene loading;
     adds arriving on the markers, the vents lighting and the arena clearing on the kill are the
     maintainer's at-keyboard pass.
-- [ ] **36E — Boss intro/defeat sequencing + guaranteed relic reward** `[F]`
+- [x] **36E — Boss intro/defeat sequencing + guaranteed relic reward** `[F]` ✅
   - **Done when:** intro/defeat/reward (relic + corruption gain) are standardized
     in the framework.
+  - ⚠️ **This one fixed a live bug, not just a gap.** `BossEncounterDirector` held every value as a
+    constant naming the Iron King — `flag.iron_king_defeated`, `item.relic.iron_heart`,
+    `dialogue.iron_king_absorb`, the timings — while `OnDied` fired for **any** `BossEntity`, and
+    since 36A the dragons are among them. The reward was correctly guarded by an already-defeated
+    check, but `_absorbPending = true` sat *outside* it, and `IronKingAbsorb.tres`'s absorb choice
+    carried `Effect 4 / "25"` with no condition of its own. `FrostfangReach.tres` gates the region
+    behind `flag.iron_king_defeated`, so the player reaches the dragons only *after* the flag is
+    legitimately set — and from then on **every dragon kill re-opened his "absorb the flame?" choice
+    for another +25 corruption**, repeatable, into the meter that decides the endings.
+  - **Done:** `BossResource` gained `Encounter` and `Reward` groups (intro lock, defeat slow-mo +
+    time scale, music cue, `RewardItemId`/`RewardQuantity`, `DefeatFlagId`, `DefeatDialogueId`), and
+    the director now resolves the **dead boss's own** resource through a new `BossController.Fight`
+    accessor. The reward decision moved into the pure `BossDefeat.Resolve` — reward, flag and
+    dialogue as one first-time-only outcome, 8 tests, because splitting them is exactly how this
+    broke. Belt and braces on the content side: the absorb choice gained a `MissingFlag` condition,
+    so a second caller could not resurrect it.
+  - **Intro for every boss:** `BossController.BeginEncounter()` is idempotent. The brazier calls it
+    right after summoning (the Iron King keeps his entrance beat) and the controller self-calls on
+    the first damage traded, reusing 36A's `_engaged` moment — so a lair boss nobody summons finally
+    gets an intro lock and a healthbar. `BossEncounterStartedEvent` became
+    `(Boss, DisplayName, TotalPhases)`: it used to carry the literal Loc key `"boss.name"`, so every
+    boss bar read generically, and `GameHud` hard-coded the phase readout as `1/3`.
+  - **Authored:** the Iron King's values are the director's old constants, diffed against them —
+    2.5 s / 1.0 s / 0.35, same relic, flag, dialogue and cue. The dragons author beats only, and
+    deliberately **no** `DefeatFlagId`, leaving `LairSpawnComponent` the single writer of their
+    defeat rather than a second system that could drift.
+  - Build clean + 790 tests + `--validate` exit 0, with all three new rules negative-tested —
+    unknown item, unknown dialogue, and a reward authored with no flag (the bug's exact shape) —
+    + 3 clean `--play` runs. **`--play` cannot spawn a boss**, so that covers boot and validation.
+    The at-keyboard gate: the Iron King's bar should now read his name and his phase count; kill him
+    for relic + choice; **then kill a dragon and confirm the choice does not re-open**; and a dragon
+    should now get an intro lock and a bar where it previously got neither.
+  - **Phase 36 complete (36A–36E).**
 
 ---
 

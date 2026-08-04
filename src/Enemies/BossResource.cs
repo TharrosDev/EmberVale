@@ -44,4 +44,40 @@ public partial class BossResource : Resource
     /// <summary>Whether the enrage also drops the boss straight into its final phase, so a fight
     /// that has run long finishes at full intensity rather than in its opening stance.</summary>
     [Export] public bool EnrageForcesFinalPhase { get; set; } = true;
+
+    [ExportGroup("Encounter")]
+
+    /// <summary>Seconds the player is held to watch the boss arrive. The lock leaves the world
+    /// running (it is a cinematic hold, not a menu) — see <c>UiState.Open(pausesWorld: false)</c>.</summary>
+    [Export] public float IntroLockSeconds { get; set; } = 2.5f;
+
+    /// <summary>Seconds of slow-motion on the killing blow, and how slow.</summary>
+    [Export] public float DefeatSlowSeconds { get; set; } = 1f;
+
+    [Export] public float DefeatTimeScale { get; set; } = 0.35f;
+
+    /// <summary>Music cue on defeat.</summary>
+    [Export] public string DefeatMusicCue { get; set; } = "music.boss_defeat";
+
+    [ExportGroup("Reward")]
+
+    /// <summary>The guaranteed drop — a divine relic, for a fallen Flamebearer. Empty grants nothing,
+    /// which is every boss whose payout is its hoard or a quest.</summary>
+    [Export] public string RewardItemId { get; set; } = string.Empty;
+
+    [Export] public int RewardQuantity { get; set; } = 1;
+
+    /// <summary>
+    /// Story flag set the first time this boss falls. It is what stops a reward being granted twice,
+    /// so the validator requires one wherever a reward or a defeat conversation is authored —
+    /// without it there is nothing to ask, and 36E exists because that question went unasked.
+    ///
+    /// Leave empty on a lair boss: <c>LairSpawnComponent.DefeatFlagId</c> already records those, and
+    /// a second writer of the same fact is a drift waiting to happen.
+    /// </summary>
+    [Export] public string DefeatFlagId { get; set; } = string.Empty;
+
+    /// <summary>Conversation opened once the defeat beat ends — the corruption choice, for a boss
+    /// that offers one. Part of the reward, and gated with it.</summary>
+    [Export] public string DefeatDialogueId { get; set; } = string.Empty;
 }

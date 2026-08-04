@@ -4,10 +4,15 @@
 [ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
 
+; Condition 6 = MissingFlag. Belt and braces on the 36E fix: the director now opens this only on a
+; first-time defeat, but the choice carries +25 corruption and corruption drives the endings, so the
+; offer also refuses to appear once it has been taken. A second caller cannot resurrect the bug.
 [sub_resource type="Resource" id="ch_absorb"]
 script = ExtResource("3_choice")
 Text = "dlg.ironking.absorb.c_absorb"
 Goto = "absorbed"
+Condition = 6
+ConditionArg = "flag.iron_king_absorbed"
 Effect = 4
 EffectArg = "25"
 

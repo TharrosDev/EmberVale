@@ -79,6 +79,29 @@ public partial class BossController : EntityComponent
     /// <summary>Phases in this fight, for the healthbar and the phase-changed event.</summary>
     public int TotalPhases => Mathf.Max(1, _boss.Phases.Count);
 
+    /// <summary>This fight's authored data, so the encounter director can read the dead boss's own
+    /// intro/defeat/reward config rather than one boss's constants.</summary>
+    public BossResource Fight => _boss;
+
+    private bool _encounterBegun;
+
+    /// <summary>
+    /// Announces the fight — once. The brazier calls it right after summoning so the Iron King keeps
+    /// his entrance, and <see cref="OnDamage"/> calls it on the first blow traded so a lair boss,
+    /// which nobody summons, still gets an intro lock and a healthbar. Whichever happens first wins.
+    /// </summary>
+    public void BeginEncounter()
+    {
+        if (_encounterBegun || Entity == null)
+        {
+            return;
+        }
+
+        _encounterBegun = true;
+        EventBus.Instance?.Publish(
+            new BossEncounterStartedEvent(Entity, Entity.DisplayName, TotalPhases));
+    }
+
     protected override void OnInitialize()
     {
         ProcessMode = ProcessModeEnum.Pausable;
@@ -209,6 +232,7 @@ public partial class BossController : EntityComponent
         if (ReferenceEquals(e.Source, Entity) || ReferenceEquals(e.Target, Entity))
         {
             _engaged = true;
+            BeginEncounter();
         }
 
         if (!ReferenceEquals(e.Target, Entity) || _stats == null)

@@ -880,8 +880,8 @@ public partial class GameHud : CanvasLayer
     {
         _boss = e.Boss;
         _bossBar.Snap(1d);
-        _bossName.Text = Loc.T(e.NameKey);
-        _bossPhase.Text = Loc.TF("boss.phase", 1, 3);
+        _bossName.Text = e.DisplayName;
+        _bossPhase.Text = Loc.TF("boss.phase", 1, e.TotalPhases);
         _bossName.Visible = true;
         _bossBar.Visible = true;
         _bossPhase.Visible = true;

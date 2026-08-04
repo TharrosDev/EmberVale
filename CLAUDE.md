@@ -404,6 +404,12 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    and `HealthMultiplier`. ⚠️ **A repeating wave must set `MaxAlive`**; the validator rejects one
    without it, because an uncapped repeat ends the fight by burying the player rather than beating
    them. Adds die with the boss through the ordinary damage path, so their loot and XP still land.
+   The `Encounter`/`Reward` groups (36E) carry the intro lock, the defeat slow-mo, the guaranteed
+   `RewardItemId`, the `DefeatFlagId` and the `DefeatDialogueId` that offers the corruption choice.
+   ⚠️ **A reward or a defeat conversation requires a `DefeatFlagId`** — without one nothing records
+   that it already happened, so it pays out on every death. That is not hypothetical: it is the
+   shape of the bug 36E fixed, and `--validate` now rejects it. Leave `DefeatFlagId` empty on a lair
+   boss; `LairSpawnComponent` already records those, and a second writer of the same fact drifts.
 2. Point an archetype at it: set `IsBoss = true` **and** `BossId = "boss.xxx"` on
    `data/enemies/Xxx.tres`. `EnemyArchetypeFactory` attaches the `BossController`; there is no code
    to write. An `IsBoss` archetype with no `BossId` still gets a controller and falls back to the
@@ -926,9 +932,10 @@ zones, flight, breath weapons, lairs, and dragon country. **Phase 36 is in progr
 boss fights are authored data (`data/bosses/*.tres`), **36B and 36C are done** — the Iron King is an
 ordinary archetype now, so there is one path through the boss pipeline, and wind-ups are both
 telegraphed (a model-independent ground ring) and interruptible (a stagger cancels a wind-up or a
-cast, for every actor). **36D is done too** — phases summon add waves, and an arena binds its spawn
-points and phase reactions declaratively in its own scene. Next: 36E, boss intro/defeat sequencing
-and the guaranteed relic reward. `docs/SESSION_PLAYBOOK.md` is the live per-sub-phase tracker;
+cast, for every actor). **36D and 36E are done too** — phases summon add waves, an arena binds its
+spawn points and phase reactions declaratively in its own scene, and every boss's intro, defeat beat
+and guaranteed reward come from its own resource. **Phase 36 is complete (36A–36E).**
+Next: 37, housing and player property. `docs/SESSION_PLAYBOOK.md` is the live per-sub-phase tracker;
 `docs/PRODUCTION_ROADMAP.md` §11 mirrors phase-level status only.
 
 > **Two UI phases, both done:** Phase 14 *polished the debug-grade overlay* (shared
