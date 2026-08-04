@@ -50,7 +50,6 @@ public static class EnemyTemplateRegistry
     {
         Builders.Clear();
         Register(FallbackTemplateId, EnemyFactory.Create);
-        Register(GameIds.Enemies.IronKing, BossFactory.Create);
         Register(GameIds.Enemies.AshenAcolyte, AshenAcolyteFactory.Create);
 
         // Phase 34B/34C: every authored archetype — humanoid or beast — registers itself through the

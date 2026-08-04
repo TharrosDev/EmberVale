@@ -248,8 +248,15 @@ what a monster spell needs), and a wind-up flare on the body's claimed emissive 
 - **An unknown or absent `BossId` falls back to the Phase 28B three-stage table**, so a content typo
   costs the authored numbers, not the fight's structure.
 - `EnemyArchetypeFactory` attaches the controller for any `IsBoss` archetype. Before 36A only the
-  Iron King's bespoke factory did, so the three dragons were `BossEntity` healthbars with no phases,
-  no escalation and no telegraphs behind them.
+  Iron King's bespoke factory did, so the three dragons were `BossEntity` healthbars with no phases
+  and no escalation behind them.
+- **Every boss goes through that one factory as of 36B** — the Iron King is
+  `data/enemies/IronKing.tres` like anything else, and `BossFactory` is gone.
+- ⚠️ **A greyboxed boss has no telegraph flare.** `ClaimEmissiveSurface` needs an emission-enabled
+  material, which only an authored model supplies; the hit-zone greybox and the fallback capsule are
+  albedo-only. The three dragons are in exactly that state today. The phases, escalation and enrage
+  all run — only the flare is missing, and giving wind-ups a presentation that does not depend on a
+  model is Phase 36C's job.
 
 ---
 

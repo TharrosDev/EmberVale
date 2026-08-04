@@ -244,7 +244,7 @@ Goblins roam to the north (−Z) and drop loot.
     ├── Onboarding/          # TutorialDirector + script (diegetic hints, Phase 33)
     ├── Interaction/         # InteractableComponent (raycast interact)
     ├── Player/              # PlayerCharacter, PlayerController, PlayerFactory
-    ├── Enemies/             # EnemyEntity, EnemyAIComponent, AIProfile/EnemyArchetype/Bestiary resources+databases, EnemyArchetypeFactory (+3 bespoke), AshenAffliction, EnemyTemplateRegistry
+    ├── Enemies/             # EnemyEntity, EnemyAIComponent, AIProfile/EnemyArchetype/Bestiary resources+databases, EnemyArchetypeFactory (+2 bespoke), AshenAffliction, EnemyTemplateRegistry
     ├── Save/                # ISaveable, SaveManager (autoload), persistence directors
     ├── Localization/        # Loc string layer (Loc.T)
     ├── Analytics/           # AnalyticsSink (EventBus → user://analytics, dev-gated)
@@ -376,7 +376,9 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    `data/enemies/Xxx.tres` (`script_class="EnemyArchetypeResource"`) instead and
    `EnemyArchetypeFactory` builds it, `EnemyArchetypeDatabase` registers it, and
    `spawn <id>` works with no code. A bespoke factory earns its place only by doing
-   something structurally different (goblin, Ashen Acolyte, Iron King).
+   something structurally different (goblin, Ashen Acolyte). The Iron King had one until Phase
+   36B and lost it: once his phases moved into `data/bosses/`, his factory was a worse copy of the
+   shared one — it silently skipped the hit reaction, the weapon trail and the quest enemy group.
 
 **A new boss fight (Phase 36A)**
 1. Author `data/bosses/Xxx.tres` (`script_class="BossResource"`): unique `Id` (`boss.*`) and
@@ -897,7 +899,10 @@ identity, Ashen corruption variants, and the bestiary. **Phase 34.5 is complete
 first settlement), three clan archetypes that stay neutral until provoked, and a
 rank chain with a betrayal branch. **Phase 35 is complete (35A–35G)** — dragons: bodies with hit
 zones, flight, breath weapons, lairs, and dragon country. **Phase 36 is in progress: 36A is done** —
-boss fights are authored data (`data/bosses/*.tres`). Next: 36B, the Iron King off his bespoke factory. `docs/SESSION_PLAYBOOK.md` is the live per-sub-phase tracker;
+boss fights are authored data (`data/bosses/*.tres`), **and 36B is done** — the Iron King is an
+ordinary archetype now, so there is one path through the boss pipeline. Next: 36C, telegraph and
+interrupt/stagger tooling (which is also what a greyboxed boss needs before its wind-ups read at all —
+see the playbook). `docs/SESSION_PLAYBOOK.md` is the live per-sub-phase tracker;
 `docs/PRODUCTION_ROADMAP.md` §11 mirrors phase-level status only.
 
 > **Two UI phases, both done:** Phase 14 *polished the debug-grade overlay* (shared

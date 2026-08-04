@@ -2677,8 +2677,11 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
     validator can cross-check) + the pure `BossPhases` (`SelectPhase`/`ShouldEnrage`, 13 tests).
     `EnemyArchetypeResource.BossId` names one; `EnemyArchetypeFactory` attaches a `BossController`
     to any `IsBoss` archetype — **which is the line that gave the three dragons a fight at all**:
-    they were `BossEntity` healthbars with no phases, escalation or telegraphs, because only the
-    Iron King's bespoke factory ever attached a controller.
+    they were `BossEntity` healthbars with no phases and no escalation, because only the Iron King's
+    bespoke factory ever attached a controller. (Correction made while doing 36B: they still have no
+    telegraph *flare*. `ClaimEmissiveSurface` needs an emission-enabled material and only an authored
+    model supplies one — the hit-zone greybox is albedo-only. Phases, escalation and enrage do run.
+    A model-independent wind-up presentation is 36C's.)
     `BossController` is now data-driven end to end: phases (entered at or below a threshold, never
     left, deepest-crossed on a big hit), per-phase stat escalation under a `boss.phase{n}` source
     (remove-then-add, so a reload cannot stack it), ability grants via `SpellcastingComponent.Learn`,
@@ -2701,9 +2704,35 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
     boss** (the `F1` console needs keyboard input), so the in-engine result proves boot, database
     loading and validation — the phase flares, grants and fuse are reviewed against the Godot 4.7 C#
     API and pinned by unit tests; seeing them fire is the maintainer's at-keyboard check.
-- [ ] **36B — `BossController` generalized from the Iron King** `[F]`
+- [x] **36B — `BossController` generalized from the Iron King** `[F]` ✅
   - **Done when:** the Iron King (Phase 28) is re-expressed through
     `BossController`/`BossResource` with no behaviour regression.
+  - **Done:** 36A had already moved his fight into `data/bosses/IronKing.tres`; this is the other
+    half — he is now `data/enemies/IronKing.tres` built by `EnemyArchetypeFactory`, and the 133-line
+    `BossFactory` is **deleted**. `EnemyTemplateRegistry` drops its explicit registration (the
+    archetype loop covers him, and keeping both logged "template is being replaced" with the winner
+    decided by ordering), and `BossSummonComponent` — the one caller that bypassed the registry —
+    goes through `EnemyTemplateRegistry.Create` with a `is not BossEntity` guard, so an archetype
+    that ever loses `IsBoss` fails loudly instead of registering a plain `EnemyEntity` as the
+    `ServiceLocator`'s `BossEntity`.
+  - **Not a pure no-op, and the maintainer chose each difference.** Reach is now derived from his
+    height like every creature since 34C (front reach 2.30 m → 2.46 m, ~+7% on a slow telegraphed
+    maul) rather than adding hitbox-override exports used by one actor. He also *gains* four things
+    his factory silently skipped: `HitReactionComponent` (his 30F rig already ships the clips),
+    `WeaponTrailComponent`, membership of `ObjectiveLocator.EnemyGroup` (the HUD compass could not
+    point at the game's first boss), and the shared 0.6 m nav stop distance.
+  - **Two validator bugs surfaced by being the first archetype to hit them:**
+    `RequirePath` treats empty as missing, so requiring a model would have failed the 20-odd
+    archetypes that deliberately greybox — narrowed to "an *authored* path must resolve". And
+    `LootTablePath` was required outright while `EnemyArchetypeFactory` has always treated it as
+    optional; the contradiction went unnoticed only because every archetype happened to have a table
+    until the Iron King, who drops nothing (28D's reward loop grants his relic). Both narrowed rules
+    were negative-tested by pointing them at bad paths and watching them fail.
+  - Build clean + 759 tests + `--validate` exit 0 (**31 archetypes, +1; registry still 33; no
+    "being replaced" warning** — the three numbers that prove the swap) + 3 clean `--play` runs.
+    **`--play` cannot spawn him** (the `F1` console needs keyboard input), so that covers boot,
+    database loading and registration, not the fight — the at-keyboard check is
+    `spawn 1 enemy.iron_king` plus lighting the brazier for the summon path.
 - [ ] **36C — Telegraph/wind-up + interrupt/stagger tooling** `[F]`
   - **Done when:** reusable telegraph + interrupt/stagger windows drive off boss
     data.

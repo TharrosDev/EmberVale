@@ -165,7 +165,23 @@ public static class ContentValidator
 
             RequirePath(archetype.AttributesPath, $"enemy archetype '{id}' attributes", issues);
             RequirePath(archetype.WeaponPath, $"enemy archetype '{id}' weapon", issues);
-            RequirePath(archetype.LootTablePath, $"enemy archetype '{id}' loot table", issues);
+            // Loot is optional, and EnemyArchetypeFactory already treats it that way — it only
+            // attaches a LootComponent for a non-empty path. Requiring one here contradicted the
+            // factory; it went unnoticed only because every archetype happened to have a table until
+            // the Iron King arrived, who drops nothing (Phase 28D's reward loop grants his relic).
+            if (archetype.LootTablePath.Length > 0 && !ResourceLoader.Exists(archetype.LootTablePath))
+            {
+                issues.Add($"enemy archetype '{id}' loot table resource missing: {archetype.LootTablePath}");
+            }
+
+            // An *authored* model that fails to load falls back to a flat capsule, silently — and
+            // for a boss that is worse than cosmetic, since BossController flares an emissive
+            // material it can only find on the real model. An empty path is not an error: most
+            // archetypes deliberately greybox (from their hit zones, or a tinted capsule).
+            if (archetype.ModelPath.Length > 0 && !ResourceLoader.Exists(archetype.ModelPath))
+            {
+                issues.Add($"enemy archetype '{id}' model resource missing: {archetype.ModelPath}");
+            }
 
             if (!AIProfileDatabase.IsRegistered(archetype.AiProfileId))
             {
@@ -547,8 +563,6 @@ public static class ContentValidator
             ("goblin attributes", EnemyFactory.AttributesPath),
             ("goblin weapon", EnemyFactory.WeaponPath),
             ("goblin loot", EnemyFactory.LootTablePath),
-            ("iron king attributes", BossFactory.AttributesPath),
-            ("iron king weapon", BossFactory.WeaponPath),
         };
 
         foreach ((string label, string path) in critical)
