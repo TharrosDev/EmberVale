@@ -202,9 +202,12 @@ direct children of the host. `Hitbox`/`Hurtbox` are `Area3D` (not
   `SettingsAppliedEvent` off `Settings.ThirdPersonCamera` — the settings panel's toggle and
   the `toggle_camera` key (`V`) both flip *that*, so there is one path into the mode and it
   persists. First person seats the camera on the eye pivot with the body shadows-only and the
-  `FirstPersonArmsComponent` viewmodel visible; third person is over-the-shoulder (back/rise/
-  shoulder offsets on `PlayerFactory`), body shown, arms hidden. Body yaw equals camera yaw in
-  **both**, so combat, lock-on, dodge and melee reach are mode-agnostic.
+  `FirstPersonArmsComponent` viewmodel visible; third person is over-the-shoulder, body shown,
+  arms hidden. Body yaw equals camera yaw in **both**, so combat, lock-on, dodge and melee reach
+  are mode-agnostic. **Camera distance (2–6 m) and shoulder side (right/left/centred) are player
+  settings**, read live off `_settings.Current` each frame so the sliders move the camera while
+  they are being dragged; `PlayerFactory.ThirdPerson*` are their defaults and the rise, which is
+  not exposed.
 - **`CameraRigMath`** (pure, unit-tested) owns the three things that make third person playable:
   the eased mode blend, the wall spring (a sphere `CastMotion` from pivot to camera clamps the
   distance — instant pull-in, eased push-out, so the camera is never inside geometry), and the

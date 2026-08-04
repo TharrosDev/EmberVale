@@ -144,12 +144,21 @@ public partial class PlayerController : EntityComponent
     /// head on a crit while third-person" bug).</summary>
     public Vector3 CameraRestPosition => _cameraRest;
 
-    /// <summary>The third-person rest offset at full extension, before the wall spring.</summary>
-    private static Vector3 ThirdPersonRest => CameraRigMath.RestOffset(
-        firstPerson: false,
-        PlayerFactory.ThirdPersonBackDistance,
-        PlayerFactory.ThirdPersonRise,
-        PlayerFactory.ThirdPersonShoulder);
+    /// <summary>The third-person rest offset at full extension, before the wall spring. Read from
+    /// the live settings each frame so the distance/shoulder sliders move the camera while the
+    /// player drags them, rather than on the next mode swap.</summary>
+    private Vector3 ThirdPersonRest
+    {
+        get
+        {
+            Settings.Settings? s = _settings?.Current;
+            return CameraRigMath.RestOffset(
+                firstPerson: false,
+                s?.ThirdPersonDistance ?? PlayerFactory.ThirdPersonBackDistance,
+                PlayerFactory.ThirdPersonRise,
+                s?.ShoulderOffset() ?? PlayerFactory.ThirdPersonShoulder);
+        }
+    }
 
     /// <summary>Switches between first-person (camera at the eye, own body casting shadows
     /// only — the viewmodel arms carry the visible weapon) and over-the-shoulder third person
@@ -161,6 +170,13 @@ public partial class PlayerController : EntityComponent
     /// resumed in third person opens there instead of swooping out on the first frame.</summary>
     public void SetFirstPerson(bool firstPerson, bool immediate = false)
     {
+        if (IsFirstPerson == firstPerson && !immediate && _modeTarget == (firstPerson ? 0f : 1f))
+        {
+            // Nothing changed. Worth checking: the settings panel re-applies live on every slider
+            // drag frame, and the body-mesh shadow walk below is not free.
+            return;
+        }
+
         // The flag flips at the *start* of the blend so the viewmodel arms hide on the way out
         // rather than fading past the camera.
         IsFirstPerson = firstPerson;

@@ -40,10 +40,27 @@ public partial class Settings : Resource
     /// <summary>0 = Story, 1 = Normal, 2 = Hard. A placeholder dial; difficulty curves land in Phase 56.</summary>
     [Export] public int Difficulty { get; set; } = 1;
 
-    /// <summary>Play with the camera orbiting behind the third-person rig instead of at the eye.
-    /// Reuses the retained cutscene view (<c>PlayerController.SetFirstPerson</c>); the orbit has
-    /// no wall-collision spring yet — that polish lands with the Phase 43 camera work.</summary>
+    /// <summary>Play over the shoulder instead of at the eye. Swappable at any time, here or with
+    /// the <c>toggle_camera</c> key — both flip this one field, so they can never disagree.</summary>
     [Export] public bool ThirdPersonCamera { get; set; } = false;
+
+    /// <summary>How far behind the player the third-person camera sits, in metres. The wall spring
+    /// still shortens it against geometry; this is the distance it eases back out to.</summary>
+    [Export(PropertyHint.Range, "2,6")]
+    public float ThirdPersonDistance { get; set; } = Player.PlayerFactory.ThirdPersonBackDistance;
+
+    /// <summary>Which shoulder the third-person camera looks over: 0 = right, 1 = left,
+    /// 2 = centred (no lateral offset, the body sits under the crosshair).</summary>
+    [Export] public int ThirdPersonShoulderSide { get; set; } = ShoulderRight;
+
+    public const int ShoulderRight = 0;
+    public const int ShoulderLeft = 1;
+    public const int ShoulderCentre = 2;
+
+    /// <summary>The lateral camera offset the chosen shoulder side means, in metres. Signed off
+    /// <c>PlayerFactory.ThirdPersonShoulder</c> so there is one number to tune, not three.</summary>
+    public float ShoulderOffset() =>
+        Player.CameraRigMath.ShoulderOffset(ThirdPersonShoulderSide, Player.PlayerFactory.ThirdPersonShoulder);
 
     /// <summary>Whether the onboarding hints appear (Phase 33B). Off means a returning player is
     /// never taught a verb they already know.</summary>

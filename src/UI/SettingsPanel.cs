@@ -133,6 +133,19 @@ public partial class SettingsPanel : CanvasLayer
             s.Difficulty, i => { s.Difficulty = i; Persist(); }));
         body.AddChild(ToggleRow(Loc.T("settings.third_person"), s.ThirdPersonCamera,
             v => { s.ThirdPersonCamera = v; Persist(); }));
+
+        // Both apply live, so dragging the distance or flipping the shoulder moves the camera while
+        // the panel is open — which is the only way to actually judge either.
+        body.AddChild(SliderRow(Loc.T("settings.tp_distance"), 2.0, 6.0, 0.1, s.ThirdPersonDistance,
+            v => s.ThirdPersonDistance = (float)v));
+        body.AddChild(DropdownRow(Loc.T("settings.tp_shoulder"),
+            new[]
+            {
+                Loc.T("settings.tp_shoulder.right"),
+                Loc.T("settings.tp_shoulder.left"),
+                Loc.T("settings.tp_shoulder.centre"),
+            },
+            s.ThirdPersonShoulderSide, i => { s.ThirdPersonShoulderSide = i; Persist(); }));
         body.AddChild(ToggleRow(Loc.T("settings.show_tutorials"), s.ShowTutorials, v =>
         {
             s.ShowTutorials = v;
