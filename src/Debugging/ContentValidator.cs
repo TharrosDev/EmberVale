@@ -6,6 +6,7 @@ using Embervale.Core.Diagnostics;
 using Embervale.Crafting;
 using Embervale.Dialogue;
 using Embervale.Enemies;
+using Embervale.Housing;
 using Embervale.Factions;
 using Embervale.Items;
 using Embervale.Localization;
@@ -100,6 +101,7 @@ public static class ContentValidator
         ValidateAIProfiles(issues);
         ValidateEnemyArchetypes(issues);
         ValidateBosses(issues);
+        ValidateProperties(issues);
         ValidateBestiary(issues);
         ValidateResourcePaths(issues);
     }
@@ -508,6 +510,54 @@ public static class ContentValidator
         }
     }
 
+    /// <summary>
+    /// Holdings the player can claim (Phase 37A). The load-bearing rule is the last pair: a property
+    /// that is neither sold nor earned is free the moment someone walks into the post, and one sold
+    /// with no travel node is gold spent on a place the player cannot return to. Both look like
+    /// content until someone plays them.
+    /// </summary>
+    private static void ValidateProperties(List<string> issues)
+    {
+        foreach (PropertyResource property in PropertyDatabase.All)
+        {
+            string id = property.Id;
+
+            if (string.IsNullOrEmpty(property.NameKey) || !Loc.Has(property.NameKey))
+            {
+                issues.Add($"property '{id}' name key '{property.NameKey}' is missing from the locale catalogue");
+            }
+
+            if (RegionDatabase.Get(property.RegionId) == null)
+            {
+                issues.Add($"property '{id}' references unknown region '{property.RegionId}'");
+            }
+
+            if (property.RequiredQuestId.Length > 0 && QuestDatabase.Get(property.RequiredQuestId) == null)
+            {
+                issues.Add($"property '{id}' requires unknown quest '{property.RequiredQuestId}'");
+            }
+
+            if (property.PriceGold < 0)
+            {
+                issues.Add($"property '{id}' has a negative price ({property.PriceGold})");
+            }
+
+            if (property.PriceGold == 0 && property.RequiredQuestId.Length == 0)
+            {
+                issues.Add(
+                    $"property '{id}' is neither sold nor earned — it would be claimed by the first " +
+                    "player who walked into its deed post");
+            }
+
+            if (property.TravelNodeId.Length == 0)
+            {
+                issues.Add(
+                    $"property '{id}' registers no travel node — the player would buy somewhere they " +
+                    "then had no way back to");
+            }
+        }
+    }
+
     /// <summary>AI profiles became authored content in Phase 34A. A profile with an incoherent band
     /// (kite distance past the standoff range, standoff inside weapon reach) doesn't crash — it just
     /// produces an enemy that jitters or refuses to close, which is far harder to spot in play than
@@ -749,6 +799,7 @@ public static class ContentValidator
         CheckDuplicateIds<EnemyArchetypeResource>("res://data/enemies", "enemy archetype", r => r.Id, issues);
         CheckDuplicateIds<BestiaryEntryResource>("res://data/bestiary", "bestiary entry", r => r.Id, issues);
         CheckDuplicateIds<BossResource>("res://data/bosses", "boss", r => r.Id, issues);
+        CheckDuplicateIds<PropertyResource>("res://data/properties", "property", r => r.Id, issues);
     }
 
     /// <summary>Loads every <c>.tres</c> in <paramref name="directory"/> and reports empty or

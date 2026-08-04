@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="PropertyResource" load_steps=2 format=3 uid="uid://cmbrvlproprcottage"]
+
+[ext_resource type="Script" path="res://src/Housing/PropertyResource.cs" id="1_property"]
+
+; The first holding: a cottage on the south edge of the Ember Crown's square. Gated on the guild's
+; standing goblin bounty rather than sold outright — the town sells a house to someone who has done
+; something for the town — and then priced on top, so the quest earns you the right to pay rather
+; than replacing the payment. 600 gold is reachable but not incidental by the time that bounty is
+; done; Phase 38 owns economy balance and this is the sink it will tune.
+
+[resource]
+script = ExtResource("1_property")
+Id = "property.ember_crown.cottage"
+NameKey = "property.cottage.name"
+RegionId = "region.ember_crown"
+PriceGold = 600
+RequiredQuestId = "quest.warband.bounty"
+TravelNodeId = "travel.ember_crown.cottage"

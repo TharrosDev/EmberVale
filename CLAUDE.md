@@ -210,6 +210,7 @@ Goblins roam to the north (−Z) and drop loot.
 │   ├── races/              # RaceResource presets (Human, Draekyn, Grondar, Sylthari, Umbral, Valari)
 │   ├── companions/         # CompanionResource presets (Kael) — Phase 32
 │   ├── bosses/            # BossResource presets (boss.*) — phases/abilities/enrage, Phase 36A
+│   ├── properties/        # PropertyResource presets (property.*) — claimable holdings, Phase 37A
 │   ├── ai_profiles/        # AIProfileResource presets (ai.*) — enemy personalities, Phase 34A
 │   ├── enemies/            # EnemyArchetypeResource presets (enemy.*) — the roster, Phase 34B–34F
 │   ├── bestiary/           # BestiaryEntryResource presets — creature lore/reveal, Phase 34G
@@ -242,6 +243,7 @@ Goblins roam to the north (−Z) and drop loot.
     ├── Races/               # RaceResource, RaceComponent, character creation (Phase 26)
     ├── Companions/          # Party roster, follower AI, formation/leash cores (Phase 32)
     ├── Onboarding/          # TutorialDirector + script (diegetic hints, Phase 33)
+    ├── Housing/             # PropertyResource/Database, HousingService, deed component (Phase 37)
     ├── Interaction/         # InteractableComponent (raycast interact)
     ├── Player/              # PlayerCharacter, PlayerController, PlayerFactory
     ├── Enemies/             # EnemyEntity, EnemyAIComponent, AIProfile/EnemyArchetype/Bestiary resources+databases, EnemyArchetypeFactory (+2 bespoke), AshenAffliction, EnemyTemplateRegistry
@@ -431,6 +433,22 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 6. `--validate` checks the domain **in both directions**: phases must descend from `1.0`, granted
    spells and profile ids must resolve, an archetype's `BossId` must exist, and a `BossId` may only
    sit on an `IsBoss` archetype (otherwise it is a silent no-op).
+
+**A new claimable property (Phase 37A)**
+1. Author `data/properties/Xxx.tres` (`script_class="PropertyResource"`): unique `Id`
+   (`property.*`), a `NameKey` in `strings.csv`, its `RegionId`, and a `TravelNodeId` — claiming
+   registers the holding as a fast-travel destination, which is what makes owning it worth anything.
+2. Give it a way to be had: a `PriceGold`, a `RequiredQuestId`, or both. ⚠️ **Neither is rejected by
+   `--validate`** — a property that is neither sold nor earned is claimed by the first player who
+   walks into its post. A missing `TravelNodeId` is rejected too: gold spent on somewhere you cannot
+   return to.
+3. Place the deed: an `Entity` in a region cell with a collider (the interact raycast needs one) and
+   a `PropertyDeedComponent { PropertyId = "property.xxx" }`. See `CottageDeed` in
+   `scenes/regions/ember_crown/town_hub.tscn`.
+4. ⚠️ **Every refusal must say which refusal it is.** The prompt reports owned / quest-locked /
+   too-expensive separately, in that order — the quest gate before the price, so a player is never
+   sent to earn gold for something a quest is holding shut. `PropertyClaim.Resolve` owns that order
+   and both the prompt and the interaction read it, so they cannot drift apart.
 
 **A big/boss creature with body zones (Phase 35A)**
 1. Author the archetype `.tres` as above, plus:
@@ -935,7 +953,8 @@ telegraphed (a model-independent ground ring) and interruptible (a stagger cance
 cast, for every actor). **36D and 36E are done too** — phases summon add waves, an arena binds its
 spawn points and phase reactions declaratively in its own scene, and every boss's intro, defeat beat
 and guaranteed reward come from its own resource. **Phase 36 is complete (36A–36E).**
-Next: 37, housing and player property. `docs/SESSION_PLAYBOOK.md` is the live per-sub-phase tracker;
+**Phase 37 is in progress: 37A is done** — a property can be bought and/or earned, ownership
+persists, and claiming it registers a fast-travel node. Next: 37B, per-property storage. `docs/SESSION_PLAYBOOK.md` is the live per-sub-phase tracker;
 `docs/PRODUCTION_ROADMAP.md` §11 mirrors phase-level status only.
 
 > **Two UI phases, both done:** Phase 14 *polished the debug-grade overlay* (shared

@@ -2850,8 +2850,41 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
 
 ## Phase 37 — Housing & Player Property `[F]`
 
-- [ ] **37A — `PropertyComponent` + `HousingService` (claim/own)** `[F]`
+- [x] **37A — `PropertyComponent` + `HousingService` (claim/own)** `[F]` ✅
   - **Done when:** a property can be purchased/claimed; ownership is `ISaveable`.
+  - **Scope call (maintainer):** 37A alone, matching the 36A–E rhythm — one reviewable change,
+    verified before the next builds on it. Claiming is authored **per property** as a gold price, a
+    required quest, or both, so the roadmap's purchasable housing is real now and Phase 38 inherits
+    a real sink to tune rather than one invented later.
+  - **The scaffolding risk, and what avoided it:** "you own a plot with nothing on it" is close to
+    the §1 line. So a claim does one useful thing immediately — it registers the holding as a
+    fast-travel destination through the existing `FastTravelService.Discover`, which is the
+    housing↔Phase 25 tie the roadmap already asks for. 37A is playable on its own rather than a
+    record waiting for 37B.
+  - **Done:** `PropertyResource` + `PropertyDatabase` (the `BossDatabase` mirror), `HousingService`
+    (`Node, ISaveable`, shaped on `FastTravelService` — the one service in the repo that registers
+    **and unregisters** with both the locator and the save manager), `PropertyDeedComponent`
+    (`InteractableComponent`, the `TravelNodeComponent`/`BossSummonComponent` shape), and the pure
+    `PropertyClaim.Resolve` — 8 tests. The prompt and the interaction both read that one function, so
+    what the player is told and what happens cannot drift.
+  - **Order matters and is pinned:** owned → quest-locked → too-expensive. Reporting the price first
+    would send a player off to earn 600 gold for something a quest is holding shut anyway. Each
+    refusal names itself, because `BossSummonComponent` already learned that an inert interactable
+    giving no reason "reads as a bug rather than a gate".
+  - Reused rather than reinvented: the travel node is recorded at the **player's** position, not the
+    post's — landing fast travel inside a collider is a trap `TravelNodeComponent` paid for once.
+  - **Authored:** the Ashfall Cottage in the town hub — gated on `quest.warband.bounty` (the town
+    sells to someone who has done something for the town) *and* priced at 600 gold, so the quest
+    earns the right to pay rather than replacing the payment. A deed post sits south-west of the
+    square, clear of the buildings and the waystone.
+  - Build clean + 798 tests + `--validate` exit 0 with **every** new rule negative-tested (unknown
+    region, unknown quest, missing name key, free-on-touch, no travel node) + the edited town hub
+    headless-instantiated to confirm the deed parses + 3 clean `--play` runs. An existing save logs
+    one `no usable entry for 'housing'` warning — the framework's designed path for a saveable added
+    after the save was written (warn, keep current state = nothing owned); it is the only such
+    warning and it clears on the next save.
+  - **Unlike the boss phases, this one is reachable from `--play`:** the deed stands in the town hub,
+    where `--play` resumes. The at-keyboard pass is the prompt's three refusals and the claim itself.
 - [ ] **37B — Per-property persistent storage** `[F]`
   - **Done when:** property storage extends inventory persistence and round-trips.
 - [ ] **37C — Placeable crafting stations + decoration** `[F]`

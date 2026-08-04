@@ -5,6 +5,7 @@
 [ext_resource type="Resource" path="res://data/items/HealthPotion.tres" id="3_item"]
 [ext_resource type="Script" path="res://src/World/TravelNodeComponent.cs" id="4_travel"]
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="5_navbaker"]
+[ext_resource type="Script" path="res://src/Housing/PropertyDeedComponent.cs" id="30_deed"]
 [ext_resource type="Script" path="res://src/Factions/FactionComponent.cs" id="6_faction"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="7_dialogue"]
 [ext_resource type="Script" path="res://src/Npc/ScheduleComponent.cs" id="8_schedule"]
@@ -143,6 +144,12 @@ albedo_color = Color(0.35, 0.12, 0.16, 1)
 emission_enabled = true
 emission = Color(0.35, 0.12, 0.16, 1)
 emission_energy_multiplier = 0.2
+
+[sub_resource type="BoxMesh" id="BoxMesh_deed"]
+size = Vector3(0.8, 2.0, 0.35)
+
+[sub_resource type="BoxShape3D" id="Shape_deed"]
+size = Vector3(0.8, 2.0, 0.35)
 
 [node name="TownHubCell" type="Node3D"]
 
@@ -638,3 +645,28 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.4, 0)
 [node name="Model" parent="Nav/LampNW" instance=ExtResource("21_lamp")]
 
 [node name="Model" parent="Nav/LampNE" instance=ExtResource("21_lamp")]
+
+; --- 37A: the deed post for the Ashfall Cottage -------------------------------
+; South-west of the square, clear of BuildingSW at (-12, -22) and of the waystone at (0, -4). The
+; post is the interactable; the holding it sells is data/properties/EmberCrownCottage.tres, and the
+; travel node it registers on a claim is recorded at the PLAYER's position, not this post's — landing
+; fast travel on a collider is a trap TravelNodeComponent already paid for once.
+
+[node name="CottageDeed" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, -14)
+script = ExtResource("1_entity")
+DisplayName = "Deed Post"
+
+[node name="Mesh" type="MeshInstance3D" parent="CottageDeed"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+mesh = SubResource("BoxMesh_deed")
+
+[node name="Collider" type="StaticBody3D" parent="CottageDeed"]
+
+[node name="Shape" type="CollisionShape3D" parent="CottageDeed/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("Shape_deed")
+
+[node name="Deed" type="Node" parent="CottageDeed"]
+script = ExtResource("30_deed")
+PropertyId = "property.ember_crown.cottage"
