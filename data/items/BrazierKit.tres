@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="PlaceableItemResource" format=3 uid="uid://cmbrvlkitbr0"]
+
+[ext_resource type="Script" path="res://src/Items/PlaceableItemResource.cs" id="1_placeable"]
+
+[resource]
+script = ExtResource("1_placeable")
+Id = "item.decor.brazier"
+DisplayName = "Iron Brazier"
+Description = "A standing basin for a fire. It keeps the dark off a doorway."
+Type = 0
+Rarity = 0
+MaxStack = 5
+Weight = 9.0
+Value = 45
+TemplateId = "prop.decor.brazier"

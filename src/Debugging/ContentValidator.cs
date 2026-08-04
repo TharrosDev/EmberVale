@@ -102,6 +102,7 @@ public static class ContentValidator
         ValidateEnemyArchetypes(issues);
         ValidateBosses(issues);
         ValidateProperties(issues);
+        ValidatePlaceables(issues);
         ValidateBestiary(issues);
         ValidateResourcePaths(issues);
     }
@@ -554,6 +555,94 @@ public static class ContentValidator
                 issues.Add(
                     $"property '{id}' registers no travel node — the player would buy somewhere they " +
                     "then had no way back to");
+            }
+
+            ValidatePlacementArea(property, issues);
+        }
+    }
+
+    /// <summary>
+    /// A holding's buildable yard (Phase 37C). <c>PlacementRadius = 0</c> is legal and means the
+    /// holding cannot be built in; what is not legal is a negative one, or an area centred somewhere
+    /// the player cannot stand. The centre is <b>world</b> space, and a cell scene is authored at its
+    /// own origin then moved to the cell's <c>Center</c> by the streamer — so the easy mistake is to
+    /// copy a point straight out of a <c>.tscn</c> and land the yard a cell's width away from the
+    /// house. Checking it against the region's bounds is what catches that.
+    /// </summary>
+    private static void ValidatePlacementArea(PropertyResource property, List<string> issues)
+    {
+        string id = property.Id;
+
+        if (property.PlacementRadius < 0f)
+        {
+            issues.Add($"property '{id}' has a negative placement radius ({property.PlacementRadius})");
+            return;
+        }
+
+        if (property.PlacementRadius <= 0f)
+        {
+            return; // a holding you may not build in — deliberate, and the common case
+        }
+
+        if (RegionDatabase.Get(property.RegionId) is not { } region)
+        {
+            return; // the unknown-region rule above already said so; don't say it twice
+        }
+
+        if (!region.Bounds.HasPoint(property.PlacementCenter))
+        {
+            issues.Add(
+                $"property '{id}' centres its placement area at {property.PlacementCenter}, outside " +
+                $"region '{region.Id}' bounds {region.Bounds} — the player could never stand in it");
+        }
+    }
+
+    /// <summary>
+    /// The kits the player sets down (Phase 37C). One rule, and it is the whole reason
+    /// <see cref="PlaceableTemplates.Ids"/> exists as a plain set: the builders themselves are
+    /// registered in <c>GameBootstrap.BuildWorld</c>, which <c>--validate</c> never runs, so without
+    /// this a kit could craft, stack, carry and preview perfectly and then do nothing whatsoever when
+    /// the player pressed the key — a failure with no error and no symptom but a wasted kit.
+    /// </summary>
+    private static void ValidatePlaceables(List<string> issues)
+    {
+        // Every template must actually build. The registry only stores a delegate, so "registered"
+        // and "works" are different claims — this one builds each and throws it away.
+        foreach (string templateId in PlaceableTemplates.Ids)
+        {
+            Node3D? built = PlaceableTemplates.Build(templateId, Vector3.Zero);
+            if (built is not Entities.IEntity)
+            {
+                issues.Add(
+                    $"placeable template '{templateId}' does not build an entity — " +
+                    "PersistentSpawnDirector would discard it and the kit would be spent on nothing");
+            }
+            else if (built.GetNodeOrNull("Collider") == null)
+            {
+                issues.Add(
+                    $"placeable template '{templateId}' builds without a collider — nothing could " +
+                    "aim at it, so it could never be picked back up");
+            }
+
+            built?.QueueFree();
+        }
+
+        foreach (KeyValuePair<string, ItemResource> entry in ItemDatabase.All)
+        {
+            if (entry.Value is not PlaceableItemResource placeable)
+            {
+                continue;
+            }
+
+            if (string.IsNullOrEmpty(placeable.TemplateId))
+            {
+                issues.Add($"placeable item '{placeable.Id}' names no template to build");
+            }
+            else if (!PlaceableTemplates.Ids.Contains(placeable.TemplateId))
+            {
+                issues.Add(
+                    $"placeable item '{placeable.Id}' builds unregistered template " +
+                    $"'{placeable.TemplateId}' — it would place nothing at all");
             }
         }
     }

@@ -41,4 +41,23 @@ public partial class PropertyResource : Resource
     /// to is worth less than the gold it cost, so the validator insists on one.
     /// </summary>
     [Export] public string TravelNodeId { get; set; } = string.Empty;
+
+    [ExportGroup("Placement")]
+
+    /// <summary>
+    /// Centre of the area the owner may place props in (Phase 37C), in <b>world</b> coordinates —
+    /// <c>PersistentSpawnDirector</c> parents what it spawns to the bootstrap root at the origin, so
+    /// its transforms are world-space and this must match. Remember a cell scene is authored at its
+    /// own origin and moved to the cell's <c>Center</c> by the streamer, so a point read off a
+    /// <c>.tscn</c> needs that centre added before it goes here.
+    /// </summary>
+    [Export] public Vector3 PlacementCenter { get; set; } = Vector3.Zero;
+
+    /// <summary>
+    /// Horizontal radius of that area. <c>0</c> is a holding you may not build in at all — refusing
+    /// everywhere, never succeeding everywhere (see <see cref="PlacementCheck.Resolve"/>). The
+    /// validator rejects a negative one, and rejects a positive one whose centre falls outside the
+    /// region's bounds: a yard the player cannot reach is gold spent on nothing.
+    /// </summary>
+    [Export] public float PlacementRadius { get; set; }
 }

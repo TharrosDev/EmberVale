@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="PlaceableItemResource" format=3 uid="uid://cmbrvlkitbnr"]
+
+[ext_resource type="Script" path="res://src/Items/PlaceableItemResource.cs" id="1_placeable"]
+
+[resource]
+script = ExtResource("1_placeable")
+Id = "item.decor.banner"
+DisplayName = "Guild Banner"
+Description = "The guild's colours on a pole. Hang it where visitors will see it."
+Type = 0
+Rarity = 0
+MaxStack = 5
+Weight = 2.0
+Value = 60
+TemplateId = "prop.decor.banner"

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="PlaceableItemResource" format=3 uid="uid://cmbrvlkitfrg"]
+
+[ext_resource type="Script" path="res://src/Items/PlaceableItemResource.cs" id="1_placeable"]
+
+[resource]
+script = ExtResource("1_placeable")
+Id = "item.kit.forge"
+DisplayName = "Forge Kit"
+Description = "Stone, iron and a bellows — everything a working forge needs but the ground to stand on."
+Type = 0
+Rarity = 0
+MaxStack = 5
+Weight = 12.0
+Value = 220
+TemplateId = "prop.station.forge"

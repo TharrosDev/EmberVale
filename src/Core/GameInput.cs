@@ -41,6 +41,12 @@ public static class GameInput
     public const string ToggleCamera = "toggle_camera";
     public const string Pause = "pause";
 
+    /// <summary>Sets down (or picks back up) the prop held in placement mode, Phase 37C. It has its
+    /// own key rather than riding <see cref="Interact"/> because <c>E</c> is already double-loaded —
+    /// tap to interact, hold to sweep loot — and rather than <see cref="Attack"/> because placement
+    /// mode does not pause the world and the player can still be fighting.</summary>
+    public const string Place = "place";
+
     /// <summary>Right-stick look (Phase 54). Mouse-look stays event-driven in
     /// <c>PlayerController._Input</c>; a stick is a held axis, so it is polled per frame instead.</summary>
     public const string LookLeft = "look_left";
@@ -130,6 +136,7 @@ public static class GameInput
         Bind(CompanionCommand, new InputEventKey { PhysicalKeycode = Key.C });
         Bind(ToggleCamera, new InputEventKey { PhysicalKeycode = Key.V });
         Bind(Pause, new InputEventKey { PhysicalKeycode = Key.Escape });
+        Bind(Place, new InputEventKey { PhysicalKeycode = Key.G });
         Bind(Attack, new InputEventMouseButton { ButtonIndex = MouseButton.Left });
         Bind(Block, new InputEventMouseButton { ButtonIndex = MouseButton.Right });
         Bind(Cast, new InputEventKey { PhysicalKeycode = Key.Q });

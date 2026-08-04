@@ -16,3 +16,10 @@ RegionId = "region.ember_crown"
 PriceGold = 600
 RequiredQuestId = "quest.warband.bounty"
 TravelNodeId = "travel.ember_crown.cottage"
+
+; 37C — the yard you may build in. WORLD coordinates: the town hub cell's Center is (0, 0, -10), so
+; the storage chest authored at cell-local (-11, 0, -18.5) stands at world (-11, 0, -28.5). Seven
+; metres around that point covers the ground between the cottage wall and the square without
+; reaching either the deed post or the buildings, and sits well inside the cell's 60x60 floor.
+PlacementCenter = Vector3(-11, 0, -28)
+PlacementRadius = 7.0

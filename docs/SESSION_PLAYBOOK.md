@@ -2933,9 +2933,52 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
     `--play` resumes. The at-keyboard pass is the locked refusal before claiming, the claim, a
     store/take round trip with an affixed item and a partial stack, a full chest refusing the
     remainder, and an `F5`/`F9` plus cold reload with items inside.
-- [ ] **37C — Placeable crafting stations + decoration** `[F]`
+- [x] **37C — Placeable crafting stations + decoration** `[F]` ✅
   - **Done when:** the player can place stations (`CraftingStationFactory`) and
     decorations in an owned property; placement persists.
+  - **Persistence was free for the third phase running, and for a third different reason.** 37B
+    reused `InventoryComponent`'s save path; 37C reuses `PersistentSpawnDirector`, which exists
+    precisely for runtime-spawned things with no authored id and already records template, position
+    and yaw and reconciles them on load. 37C adds **no `ISaveable`**. What it adds is builders
+    (`PlaceableTemplates`) and an id scheme (`PlacementIds`).
+  - **What was new is the mechanic.** There was no placement of any kind in this repo — no ghost, no
+    preview, no build mode, no validity test, no overlap check. Grepping for any of it returned only
+    unrelated prose. This is the game's first world-editing verb.
+  - **`CraftingStationFactory` had zero callers.** It sat unused since Phase 15 while both
+    settlements authored their stations by hand in their cell `.tscn`, and its class doc claimed
+    otherwise. The roadmap line named it, so 37C is what finally gave it a job — every station the
+    player places is built there. It gained an optional `modelPath` so a placed forge uses the same
+    `prp_station_forge.glb` the town hub does, falling back to its old box.
+  - **The gap that needed real data:** `PropertyResource` had no spatial fields at all, so "in an
+    owned property" was unexpressible. It gained `PlacementCenter` (**world** space — the streamer
+    has already moved a cell to its `Center`, so a point copied out of a `.tscn` lands a cell's width
+    off) and `PlacementRadius`, where `0` is a holding you may not build in.
+  - **Done:** `PlacementCheck.Resolve` (pure, third in the `PropertyClaim`/`PropertyStorage` line),
+    `PlacementIds`, `PlaceableTemplates`, `PlacementDirector` (ghost, aim ray, overlap probe, commit,
+    removal), `PlacementHud`, `PlaceableItemResource`, and 6 kits + 6 recipes. **14 new tests.**
+  - **Ordering pinned again:** owned → ground → inside the holding → blocked. Saying "blocked" to
+    someone standing in the town square sends them shuffling two metres left when what they need to
+    hear is that they are nowhere near their own house.
+  - **Two traps the shape of this phase avoids.** ① `PlacementIds.Next` derives the index by scanning
+    the ids that already exist rather than counting: `PersistentSpawnDirector._autoId` is **not
+    persisted**, so a counter hands out `#1` again after a load, and `Spawn` answers a known id by
+    returning the existing actor — the new prop would simply never appear, and only in a session that
+    had loaded a save. ② The ghost is built by the *same* builder and then stripped back to its mesh,
+    so it carries no collider (it would block its own probe and its own aim ray) and no components (a
+    ghost station that opened the crafting window would be a genuinely confusing bug).
+  - **No `ItemType` enum append.** Its ordinals are persisted in every save, so appending is
+    irreversible; `PlaceableItemResource` is the marker instead and the panel filters on the type.
+  - **Five new `--validate` rules, all negative-tested:** negative placement radius; a placement
+    centre outside the region's `Bounds`; a kit naming no template; a kit naming an unregistered one;
+    and — the one worth having — **every template is actually built during validation** and checked
+    for being an `IEntity` with a collider. "Registered" and "works" are different claims, and
+    `PersistentSpawnDirector` discards a bad host with nothing but a log line, so a broken builder
+    would otherwise stay invisible until a player spent a kit on nothing.
+  - Build clean + **816** tests + `--validate` exit 0 with all five new rules negative-tested + 2
+    clean `--play` runs, no errors and no unexpected warnings.
+  - **Reachable from `--play`:** the yard is beside the deed post and the chest in the town hub. The
+    at-keyboard pass is crafting a kit, the four refusals, placing, using, removing, and a save
+    round-trip.
 - [ ] **37D — Trophy/display slots + one playable property authored** `[F/C]`
   - **Done when:** trophy slots work and one property type is fully playable; the
     rest are content.

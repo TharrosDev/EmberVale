@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Embervale.Combat;
 using Embervale.Core;
 using Embervale.Core.Events;
+using Embervale.Core.Services;
 using Embervale.Corruption;
 using Embervale.Factions;
 using Embervale.Items;
@@ -464,12 +465,29 @@ public partial class InventoryPanel : UiPanel
             {
                 AddRow(text, Loc.T("char.use"), () => _inventory.Consume(instance), color, instance.Template.Description, instance.TemplateId);
             }
+            else if (instance.Template is PlaceableItemResource placeable)
+            {
+                // 37C: placement mode is entered from the item, not from a keybind — every letter key
+                // and every gamepad button in this game is already bound.
+                AddRow(text, Loc.T("char.place"), () => BeginPlacement(placeable), color, instance.Template.Description);
+            }
             else
             {
                 AddLine($"• {text}", color, instance.Template.Description);
             }
 
             AddAffixLines(instance);
+        }
+    }
+
+    /// <summary>Closes the character screen and hands the kit to the placement director — the ghost
+    /// has to be aimed at the world, which cannot happen behind a modal that pauses it.</summary>
+    private void BeginPlacement(PlaceableItemResource kit)
+    {
+        if (ServiceLocator.Instance is { } locator && locator.TryGet(out Housing.PlacementDirector placement))
+        {
+            SetOpen(false);
+            placement.Begin(kit);
         }
     }
 

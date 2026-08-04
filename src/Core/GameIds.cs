@@ -210,6 +210,14 @@ public static class GameIds
         public const string IronRing = "recipe.iron_ring";
         public const string DrakescaleMail = "recipe.drakescale_mail";
 
+        // Phase 37C — kits the player builds and then sets down in a holding they own.
+        public const string ForgeKit = "recipe.kit.forge";
+        public const string WorkbenchKit = "recipe.kit.workbench";
+        public const string AlchemyKit = "recipe.kit.alchemy";
+        public const string BrazierKit = "recipe.kit.brazier";
+        public const string CrateKit = "recipe.kit.crate";
+        public const string BannerKit = "recipe.kit.banner";
+
         /// <summary>
         /// Every recipe the player begins with — the single source of truth shared by
         /// <see cref="Player.PlayerFactory"/>, which seeds it, and the content validator, which checks
@@ -224,6 +232,7 @@ public static class GameIds
         public static readonly string[] Starting =
         {
             IronIngot, LeatherStrips, HealthPotion, LeatherCap, SteelSword, LeatherVest, IronRing, DrakescaleMail,
+            ForgeKit, WorkbenchKit, AlchemyKit, BrazierKit, CrateKit, BannerKit,
         };
     }
 

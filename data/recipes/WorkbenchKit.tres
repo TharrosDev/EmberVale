@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="CraftingRecipeResource" format=3 uid="uid://cmbrvlrcpkwkb"]
+
+[ext_resource type="Script" path="res://src/Crafting/CraftingRecipeResource.cs" id="1_recipe"]
+[ext_resource type="Script" path="res://src/Crafting/RecipeIngredient.cs" id="2_ing"]
+
+[sub_resource type="Resource" id="Ing_a"]
+script = ExtResource("2_ing")
+ItemId = "item.material.iron_ingot"
+Quantity = 4
+
+[sub_resource type="Resource" id="Ing_b"]
+script = ExtResource("2_ing")
+ItemId = "item.material.leather_strips"
+Quantity = 3
+
+[resource]
+script = ExtResource("1_recipe")
+Id = "recipe.kit.workbench"
+DisplayName = "Build Workbench Kit"
+Description = "Trestle, vice and tools, bundled for the road."
+Station = 1
+Ingredients = Array[Resource]([SubResource("Ing_a"), SubResource("Ing_b")])
+OutputItemId = "item.kit.workbench"
+OutputQuantity = 1
+OutputRarity = 0
