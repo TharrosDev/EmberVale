@@ -31,6 +31,16 @@ public class CameraRigMathTests
         Assert.Equal(Back, offset.Z, 5); // +Z is behind: Godot cameras look down -Z
     }
 
+    [Theory]
+    [InlineData(Embervale.Settings.Settings.ShoulderRight, Shoulder)]
+    [InlineData(Embervale.Settings.Settings.ShoulderLeft, -Shoulder)]
+    [InlineData(Embervale.Settings.Settings.ShoulderCentre, 0f)]
+    [InlineData(47, Shoulder)] // a hand-edited settings file must not break the camera
+    public void ShoulderOffset_MapsEachSideToItsLateralOffset(int side, float expected)
+    {
+        Assert.Equal(expected, CameraRigMath.ShoulderOffset(side, Shoulder), 5);
+    }
+
     [Fact]
     public void Ease_PinsTheEndpointsAndIsSymmetricAtTheMiddle()
     {

@@ -21,6 +21,17 @@ public static class CameraRigMath
     public static Vector3 RestOffset(bool firstPerson, float back, float rise, float shoulder) =>
         firstPerson ? Vector3.Zero : new Vector3(shoulder, rise, back);
 
+    /// <summary>Which shoulder the camera looks over, as a signed lateral offset. Side ids are
+    /// <see cref="Settings.Settings.ShoulderRight"/> / <c>ShoulderLeft</c> / <c>ShoulderCentre</c>;
+    /// anything unrecognised falls back to the right shoulder rather than throwing, so a settings
+    /// file hand-edited to nonsense still yields a playable camera.</summary>
+    public static float ShoulderOffset(int side, float magnitude) => side switch
+    {
+        Settings.Settings.ShoulderLeft => -magnitude,
+        Settings.Settings.ShoulderCentre => 0f,
+        _ => magnitude,
+    };
+
     /// <summary>Smoothstep, clamped — the ease applied to the mode blend so the swap eases in and
     /// out rather than sliding linearly.</summary>
     public static float Ease(float t)

@@ -1528,6 +1528,14 @@ no code) — batch them when momentum is good.
     setting rather than a local flag, so the key and the panel can never disagree. Build +
     720 tests + `--validate` (exit 0) green; verified live in-engine — the maintainer fought
     goblins and looted during the `--play` runs, no errors.
+  - **Follow-up (maintainer-requested, same session):** camera **distance** (2–6 m slider) and
+    **shoulder side** (right / left / centred dropdown) exposed in the settings panel's Gameplay
+    section, both applying live so they can be judged while being dragged. `ThirdPersonRest` reads
+    them off `_settings.Current` per frame; `Settings.ShoulderOffset()` delegates to
+    `CameraRigMath.ShoulderOffset` so the mapping is pinned by tests (including a nonsense side id
+    falling back to the right shoulder rather than throwing). `SetFirstPerson` gained a
+    no-change early-out, because the panel re-applies on every drag frame and the body-mesh
+    shadow walk is not free. 724 tests, `--validate` exit 0, 4 clean `--play` runs.
   - **Trap paid on the way (now a CLAUDE.md §7 gotcha):** the rig was first hoisted *above*
     `PlayerController`'s not-playing guard so the camera would keep settling during a load. That
     dereferences the injected camera/pivot/aim nodes while a teardown is freeing them, and it

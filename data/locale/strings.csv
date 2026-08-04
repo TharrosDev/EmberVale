@@ -42,6 +42,11 @@ settings.difficulty.story,Story
 settings.difficulty.normal,Normal
 settings.difficulty.hard,Hard
 settings.third_person,Third-Person Camera
+settings.tp_distance,Camera Distance
+settings.tp_shoulder,Camera Shoulder
+settings.tp_shoulder.right,Right
+settings.tp_shoulder.left,Left
+settings.tp_shoulder.centre,Centred
 settings.reduced_motion,Reduced Motion
 settings.subtitles,Subtitles
 settings.ui_scale,UI Scale
