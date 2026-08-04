@@ -263,6 +263,18 @@ what a monster spell needs), and a wind-up flare on the body's claimed emissive 
   `BossController` summons on phase entry, ticks repeats, and kills every add through the ordinary
   damage path when the boss falls — so their loot and XP still land, rather than the player losing
   value they had already earned. `BossAdds` is the pure core (`SpawnSlot`, `SummonCount`).
+- **Intro, defeat and reward are the boss's own data (36E).** `BossController.BeginEncounter()` is
+  idempotent and publishes `BossEncounterStartedEvent` once — the summoning brazier calls it on the
+  entrance beat, and the controller self-calls on the first damage traded, so a lair boss nobody
+  summons still gets an intro lock and a healthbar. `BossEncounterDirector` then resolves the *dead
+  boss's* `BossResource` through its controller for the intro/slow-mo timings, the guaranteed
+  `RewardItemId`, the `DefeatFlagId` and the `DefeatDialogueId`.
+  > ⚠️ Every one of those was a constant naming the Iron King while the handler fired for **any**
+  > `BossEntity`, and since 36A the dragons are among them. The reward was guarded by an
+  > already-defeated check; the dialogue was queued outside it. So killing any dragon re-opened his
+  > "absorb the flame?" choice and its +25 corruption — once per boss kill, into the meter that
+  > decides the endings. `BossDefeat.Resolve` now makes reward, flag and dialogue one decision, and
+  > the validator rejects a reward authored without a flag to record it.
 - **An arena binds itself to the fight in its own scene, not in code.** `Marker3D`s tagged
   `groups=["boss_add_spawn"]` are where waves arrive — resolved by group (a rename cannot silently
   unbind one) and scoped to markers under the boss's own parent (two loaded arenas cannot borrow each

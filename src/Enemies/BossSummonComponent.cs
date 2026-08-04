@@ -86,7 +86,9 @@ public partial class BossSummonComponent : InteractableComponent
         _boss = boss;
         ServiceLocator.Instance?.Register(boss);
         boss.TreeExited += OnBossGone;
-        EventBus.Instance?.Publish(new BossEncounterStartedEvent(boss, "boss.name"));
+        // The entrance beat: announce him as he rises rather than waiting for the first blow.
+        // BeginEncounter is idempotent, so the controller's own first-damage call is a no-op after it.
+        boss.GetComponent<BossController>()?.BeginEncounter();
         Log.Info("The Iron King rises to meet your challenge.");
     }
 
