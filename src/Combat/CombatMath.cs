@@ -104,6 +104,19 @@ public static class CombatMath
     /// <summary>The physical-damage multiplier from armor: the classic <c>100 / (100 + armor)</c>
     /// curve — diminishing returns, always in (0, 1], never full immunity. Negative armor clamps to
     /// no reduction (×1). Pure (Godot-free) so the load-bearing defence formula is unit-testable.</summary>
+    /// <summary>
+    /// Poise damage actually taken from one hit (Phase 36C). A blocked hit still chips poise, by
+    /// <paramref name="blockFactor"/>, so a held guard can be broken into a stagger. On top of that,
+    /// a defender caught in its own attack wind-up takes <paramref name="windupMultiplier"/> times
+    /// as much — the tuning knob that makes a big telegraphed swing something to punish rather than
+    /// merely dodge. A multiplier of 1 leaves the pre-36C behaviour exactly as it was.
+    /// </summary>
+    public static float PoiseDamage(float poiseDamage, bool blocked, float blockFactor, float windupMultiplier)
+    {
+        float amount = blocked ? poiseDamage * blockFactor : poiseDamage;
+        return amount * System.Math.Max(0f, windupMultiplier);
+    }
+
     public static float ArmorMultiplier(float armor)
     {
         float clamped = armor < 0f ? 0f : armor;

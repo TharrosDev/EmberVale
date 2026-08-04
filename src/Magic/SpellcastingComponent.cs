@@ -105,6 +105,20 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
 
     public override void _Process(double delta)
     {
+        // Interrupt (36C): a stagger drops whatever is being charged or channelled. CancelCast has
+        // existed since 29.5A and its only caller was the player's menu/pause handler, so a staggered
+        // caster used to finish its spell and a staggered dragon used to finish its breath —
+        // BreathComponent already stops the moment IsChanneling goes false, so this covers it too.
+        // Checked before the cooldown early-out: a cast with nothing on cooldown is still a cast.
+        if (_activeCast != null && _combat is { IsStaggered: true })
+        {
+            CancelCast();
+            if (Entity != null)
+            {
+                EventBus.Instance?.Publish(new Combat.AttackInterruptedEvent(Entity));
+            }
+        }
+
         if (_cooldowns.Count == 0)
         {
             return;

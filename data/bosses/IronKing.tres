@@ -21,6 +21,7 @@ GrantSpellIds = Array[String]([])
 AiProfileId = ""
 TelegraphColor = Color(1, 0.25, 0.05, 1)
 TelegraphEnergy = 2.5
+WindupPoiseMultiplier = 1.0
 
 [sub_resource type="Resource" id="Phase_2"]
 script = ExtResource("2_phase")
@@ -31,6 +32,7 @@ GrantSpellIds = Array[String]([])
 AiProfileId = ""
 TelegraphColor = Color(1, 0.25, 0.05, 1)
 TelegraphEnergy = 3.5
+WindupPoiseMultiplier = 1.0
 
 [sub_resource type="Resource" id="Phase_3"]
 script = ExtResource("2_phase")
@@ -41,6 +43,7 @@ GrantSpellIds = Array[String]([])
 AiProfileId = ""
 TelegraphColor = Color(1, 0.25, 0.05, 1)
 TelegraphEnergy = 5.5
+WindupPoiseMultiplier = 1.0
 
 [resource]
 script = ExtResource("1_boss")

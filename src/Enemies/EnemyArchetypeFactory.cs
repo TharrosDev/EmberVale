@@ -138,6 +138,18 @@ public static class EnemyArchetypeFactory
         // BossEntities with a healthbar and no fight structure at all behind it.
         if (archetype.IsBoss)
         {
+            // 36C: the ground ring is sized to the reach it is warning about — the hitbox offset plus
+            // half its depth, from the same bodyScale the hitbox above used. A ring that does not
+            // match the blow teaches the wrong spacing, which is worse than no ring.
+            enemy.AddChild(new TelegraphComponent
+            {
+                Name = "Telegraph",
+                RingRadius = ((1.0f + (1.4f * 0.5f)) * bodyScale) + radius,
+            });
+
+            // After the telegraph, so the controller resolves it as a sibling and can push each
+            // phase's colour in. It only sets a property, never touches the ring the telegraph
+            // builds in its own OnInitialize, so the two are order-independent either way.
             enemy.AddChild(new BossController { Name = "BossController", BossId = archetype.BossId });
         }
 

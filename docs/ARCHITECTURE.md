@@ -252,11 +252,18 @@ what a monster spell needs), and a wind-up flare on the body's claimed emissive 
   and no escalation behind them.
 - **Every boss goes through that one factory as of 36B** — the Iron King is
   `data/enemies/IronKing.tres` like anything else, and `BossFactory` is gone.
-- ⚠️ **A greyboxed boss has no telegraph flare.** `ClaimEmissiveSurface` needs an emission-enabled
-  material, which only an authored model supplies; the hit-zone greybox and the fallback capsule are
-  albedo-only. The three dragons are in exactly that state today. The phases, escalation and enrage
-  all run — only the flare is missing, and giving wind-ups a presentation that does not depend on a
-  model is Phase 36C's job.
+- **Wind-ups are telegraphed and interruptible (36C).** `TelegraphComponent` + `TelegraphRing` draw
+  a ground ring under any actor for exactly the wind-up `AttackPerformedEvent.WindupSeconds`
+  reports, tinted by the current boss phase. It is model-independent by construction, which is the
+  point: `BossController`'s emissive flare needs a material only an authored model supplies, so the
+  three greyboxed dragons used to warn of nothing at all. Both cues now end together, and both end
+  early on `AttackInterruptedEvent`.
+- **The interrupt is general, the tuning is boss data.** A stagger during `Phase.Windup` cancels a
+  melee swing outright (`MeleeWeaponComponent`) and drops an active charge/channel
+  (`SpellcastingComponent`) — for every actor, the player included. Once the hitbox opens the blow is
+  committed. `BossPhaseResource.WindupPoiseMultiplier` scales incoming poise while its owner is
+  winding up, applied through the pure `CombatMath.PoiseDamage` and carried on `CombatComponent` as
+  `InWindup` + `WindupPoiseMultiplier`.
 
 ---
 

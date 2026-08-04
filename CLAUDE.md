@@ -334,6 +334,14 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
   (`y=1`, shapes centred at local origin); the player/enemy origins are at the
   feet (shapes offset to `y = height/2`). Match shapes to mesh accordingly.
 - **`GD.Load<T>` can return null** — always fall back.
+- **A stagger cancels a wind-up, not a live blow (36C).** `MeleeWeaponComponent` drops the swing
+  only while `Phase.Windup`; once the hitbox opens the attack is committed. `SpellcastingComponent`
+  drops an active charge/channel the same way (which is also how a breath ends, since
+  `BreathComponent` stops when `IsChanneling` goes false). This applies to **every actor including
+  the player** — poise is symmetric.
+- **A telegraph must run off `AttackPerformedEvent.WindupSeconds`, never a constant.** That value is
+  the *effective* wind-up (weapon time ÷ attack speed), so a boss phase that buffs attack speed
+  shortens the cue and the danger together. `BossController` used a fixed 0.5 s and drifted.
 - **A blocking menu pauses the tree; a cinematic lock does not.** `UiState.Open` defaults to
   `pausesWorld: true` and `GameManager.RefreshPause` is the only writer of `GetTree().Paused`. Don't
   scatter `UiState.MenuOpen` checks through gameplay systems to "stop things during menus" — that
@@ -387,7 +395,10 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    (fractions, applied as `PercentMult` under a `boss.phase{n}` source), optional `GrantSpellIds`,
    an optional `AiProfileId` swap, and its `TelegraphColor`/`TelegraphEnergy` wind-up flare.
    Optionally add the enrage fuse: `EnrageSeconds` (`0` = none), `EnrageSpellIds`, the two enrage
-   bonuses, and `EnrageForcesFinalPhase`.
+   bonuses, and `EnrageForcesFinalPhase`. `WindupPoiseMultiplier` (36C) decides how punishable the
+   phase's wind-ups are — above `1` makes the telegraph a window worth attacking into, below `1`
+   hardens it. It must stay positive; `0` is a phase that can never be interrupted, which in play
+   looks exactly like the interrupt being broken, so `--validate` rejects it.
 2. Point an archetype at it: set `IsBoss = true` **and** `BossId = "boss.xxx"` on
    `data/enemies/Xxx.tres`. `EnemyArchetypeFactory` attaches the `BossController`; there is no code
    to write. An `IsBoss` archetype with no `BossId` still gets a controller and falls back to the
@@ -899,10 +910,10 @@ identity, Ashen corruption variants, and the bestiary. **Phase 34.5 is complete
 first settlement), three clan archetypes that stay neutral until provoked, and a
 rank chain with a betrayal branch. **Phase 35 is complete (35A–35G)** — dragons: bodies with hit
 zones, flight, breath weapons, lairs, and dragon country. **Phase 36 is in progress: 36A is done** —
-boss fights are authored data (`data/bosses/*.tres`), **and 36B is done** — the Iron King is an
-ordinary archetype now, so there is one path through the boss pipeline. Next: 36C, telegraph and
-interrupt/stagger tooling (which is also what a greyboxed boss needs before its wind-ups read at all —
-see the playbook). `docs/SESSION_PLAYBOOK.md` is the live per-sub-phase tracker;
+boss fights are authored data (`data/bosses/*.tres`), **36B and 36C are done** — the Iron King is an
+ordinary archetype now, so there is one path through the boss pipeline, and wind-ups are both
+telegraphed (a model-independent ground ring) and interruptible (a stagger cancels a wind-up or a
+cast, for every actor). Next: 36D, adds/summon waves and arena hooks. `docs/SESSION_PLAYBOOK.md` is the live per-sub-phase tracker;
 `docs/PRODUCTION_ROADMAP.md` §11 mirrors phase-level status only.
 
 > **Two UI phases, both done:** Phase 14 *polished the debug-grade overlay* (shared
