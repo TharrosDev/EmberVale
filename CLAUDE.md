@@ -7,8 +7,8 @@ you, and step-by-step recipes for adding new content without breaking things. Th
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)** (see §5) — read the relevant
 section there before changing a system.
 
-> **One-line summary:** Embervale is an original first-person (third-person body
-> retained for cutscenes), open-world fantasy
+> **One-line summary:** Embervale is an original hybrid first/third-person
+> (swappable at any time), open-world fantasy
 > action RPG built in **Godot 4.7** with **C# (.NET 8)**, using a component-based,
 > event-driven, resource-driven architecture. The repo is kept **buildable and
 > playable at every commit**.
@@ -161,7 +161,8 @@ the save left off, which for the Ember Crown is usually the town hub *inside* th
 spawn or fight. Say which of the two you got; don't let one stand in for the other.
 
 **Sandbox controls:** `WASD` move · mouse look · `Shift` sprint · `Space` jump ·
-`LMB` attack · `RMB` block · `E` interact · `I` inventory · `B` bestiary · `C` party order ·
+`LMB` attack · `RMB` block · `E` interact · `V` swap first/third person ·
+`I` inventory · `B` bestiary · `C` party order ·
 `H` heal dummy · `R` respawn dummy · `F5`/`F9` quick save/load · `Esc` pause (frees the cursor).
 Goblins roam to the north (−Z) and drop loot.
 
@@ -272,7 +273,7 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 | `src/Entities` | `IEntity` / `Entity` / `CharacterEntity` / `EntityComponent` composition model |
 | `src/Stats` | `StatType` / `Stat` / `StatModifier` / `AttributeSet` / `StatsComponent` |
 | `src/Combat` `src/Movement` | Damage pipeline (armour **and** per-school resistances on one curve), hit/hurtboxes, weapons, `CombatComponent`; reusable locomotion |
-| `src/Player` `src/Enemies` | First-person controller (TP retained for cutscenes); one profile-driven AI brain, the data roster (`ai.*`/`enemy.*`/bestiary) behind `EnemyTemplateRegistry`, and the Ashen variant layer |
+| `src/Player` `src/Enemies` | Hybrid FP/TP controller + camera rig (`CameraRigMath`); one profile-driven AI brain, the data roster (`ai.*`/`enemy.*`/bestiary) behind `EnemyTemplateRegistry`, and the Ashen variant layer |
 | `src/Items` `src/Loot` | Inventory, equipment, item instances, affixes, loot tables |
 | `src/Progression` `src/Quests` `src/Dialogue` | XP/perks, quests, conversation graphs + story flags |
 | `src/Magic` `src/World` `src/Npc` | Spells/status effects; clock/weather/encounters/events; schedules |
@@ -329,6 +330,11 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
   (`y=1`, shapes centred at local origin); the player/enemy origins are at the
   feet (shapes offset to `y = height/2`). Match shapes to mesh accordingly.
 - **`GD.Load<T>` can return null** — always fall back.
+- **Don't dereference injected nodes outside `PlayerController`'s not-playing guard.** The
+  camera/pivot/aim nodes are being freed during a world teardown or a save/load rebuild, so
+  per-frame work that touches them (the camera rig) must stay *inside* the `IsPlaying` early-out.
+  Hoisting it above the guard produced an intermittent `gchandle.is_released` fatal on exit —
+  2 runs in 10, and nothing in the gameplay log to point at it.
 - **`ServiceLocator` holds one instance per type.** The player is registered as
   `PlayerCharacter`; the dummy as `Entity`; enemies are **not** registered.
 - Prefer running via the Godot MCP (`run_project` + `get_debug_output`, §2) to verify;
