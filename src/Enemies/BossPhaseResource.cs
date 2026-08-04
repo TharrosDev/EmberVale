@@ -57,4 +57,10 @@ public partial class BossPhaseResource : Resource
     /// winding up, which is indistinguishable in play from the interrupt being broken.
     /// </summary>
     [Export] public float WindupPoiseMultiplier { get; set; } = 1f;
+
+    [ExportGroup("Adds")]
+
+    /// <summary>Minion waves this phase brings into the fight (36D). Empty on a phase the boss
+    /// fights alone, which is most of them.</summary>
+    [Export] public Godot.Collections.Array<BossAddWaveResource> AddWaves { get; set; } = new();
 }

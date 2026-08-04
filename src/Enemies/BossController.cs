@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Embervale.Combat;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
@@ -63,6 +64,18 @@ public partial class BossController : EntityComponent
     private double _fightElapsed;
     private bool _enraged;
 
+    /// <summary>Adds summoned by this fight, per wave. Held so a repeat can top the fight up to the
+    /// wave's cap rather than stack on it, and so they can be cleared when the boss falls. Godot
+    /// nodes, so every read filters through IsInstanceValid — a held list is not a list of live
+    /// objects, which is a lesson this codebase has already paid for once.</summary>
+    private readonly Dictionary<BossAddWaveResource, List<EnemyEntity>> _adds = new();
+
+    /// <summary>Seconds until each repeating wave's next summon.</summary>
+    private readonly Dictionary<BossAddWaveResource, double> _waveTimers = new();
+
+    /// <summary>The group an arena's spawn markers declare themselves with, in its own .tscn.</summary>
+    public const string SpawnMarkerGroup = "boss_add_spawn";
+
     /// <summary>Phases in this fight, for the healthbar and the phase-changed event.</summary>
     public int TotalPhases => Mathf.Max(1, _boss.Phases.Count);
 
@@ -99,6 +112,7 @@ public partial class BossController : EntityComponent
         EventBus.Instance?.Subscribe<DamageDealtEvent>(OnDamage);
         EventBus.Instance?.Subscribe<AttackPerformedEvent>(OnAttack);
         EventBus.Instance?.Subscribe<AttackInterruptedEvent>(OnInterrupted);
+        EventBus.Instance?.Subscribe<EntityDiedEvent>(OnDied);
     }
 
     protected override void OnTeardown()
@@ -106,6 +120,7 @@ public partial class BossController : EntityComponent
         EventBus.Instance?.Unsubscribe<DamageDealtEvent>(OnDamage);
         EventBus.Instance?.Unsubscribe<AttackPerformedEvent>(OnAttack);
         EventBus.Instance?.Unsubscribe<AttackInterruptedEvent>(OnInterrupted);
+        EventBus.Instance?.Unsubscribe<EntityDiedEvent>(OnDied);
     }
 
     /// <summary>An inline <see cref="Boss"/> wins; otherwise the id is looked up. A miss warns and
@@ -174,6 +189,7 @@ public partial class BossController : EntityComponent
     public override void _Process(double delta)
     {
         TickEnrage(delta);
+        TickAddWaves(delta);
 
         if (_telegraphFlare <= 0f)
         {
@@ -250,6 +266,7 @@ public partial class BossController : EntityComponent
             _ai.ProfileId = definition.AiProfileId;
         }
 
+        SummonWaves(definition);
         ApplyPhasePresentation();
         ApplyTelegraph();
         EventBus.Instance?.Publish(new BossPhaseChangedEvent(Entity!, phase, TotalPhases));
@@ -275,6 +292,169 @@ public partial class BossController : EntityComponent
         {
             _combat.WindupPoiseMultiplier = definition.WindupPoiseMultiplier;
         }
+    }
+
+    /// <summary>The boss falling ends the fight, adds included.</summary>
+    private void OnDied(EntityDiedEvent e)
+    {
+        if (ReferenceEquals(e.Entity, Entity))
+        {
+            ClearAdds();
+        }
+    }
+
+    // --- Adds ---------------------------------------------------------------
+
+    /// <summary>Brings in every wave this phase authors, and arms the repeating ones.</summary>
+    private void SummonWaves(BossPhaseResource definition)
+    {
+        foreach (BossAddWaveResource wave in definition.AddWaves)
+        {
+            if (wave == null || string.IsNullOrEmpty(wave.TemplateId))
+            {
+                continue;
+            }
+
+            Summon(wave);
+            if (wave.RepeatSeconds > 0f)
+            {
+                _waveTimers[wave] = wave.RepeatSeconds;
+            }
+        }
+    }
+
+    private void TickAddWaves(double delta)
+    {
+        if (_waveTimers.Count == 0)
+        {
+            return;
+        }
+
+        // Iterate a snapshot: Summon writes back into the same dictionary.
+        foreach (BossAddWaveResource wave in new List<BossAddWaveResource>(_waveTimers.Keys))
+        {
+            double remaining = _waveTimers[wave] - delta;
+            if (remaining > 0d)
+            {
+                _waveTimers[wave] = remaining;
+                continue;
+            }
+
+            _waveTimers[wave] = wave.RepeatSeconds;
+            Summon(wave);
+        }
+    }
+
+    /// <summary>
+    /// Spawns as much of <paramref name="wave"/> as its cap has room for, at the arena's declared
+    /// markers or — a lair has none — on a ring around the boss.
+    /// </summary>
+    private void Summon(BossAddWaveResource wave)
+    {
+        if (Entity?.Body is not Node3D body || body.GetParent() is not Node arena)
+        {
+            return;
+        }
+
+        List<EnemyEntity> live = LiveAdds(wave);
+        int count = BossAdds.SummonCount(wave.Count, live.Count, wave.MaxAlive);
+        if (count <= 0)
+        {
+            return;
+        }
+
+        List<Node3D> markers = SpawnMarkers(arena);
+        for (int i = 0; i < count; i++)
+        {
+            // Create at zero, add, THEN place (CLAUDE.md): a cell root has already been moved to the
+            // cell's centre, so handing a world position to Create applies that offset twice — the
+            // bug that put 35D's dragon in the void.
+            EnemyEntity add = EnemyTemplateRegistry.Create(wave.TemplateId, Vector3.Zero);
+            arena.AddChild(add);
+            add.GlobalPosition = markers.Count > 0
+                ? markers[(live.Count + i) % markers.Count].GlobalPosition
+                : body.GlobalPosition + BossAdds.SpawnSlot(i, count, RingRadius);
+
+            ApplyHealthMultiplier(add, wave.HealthMultiplier);
+            live.Add(add);
+        }
+
+        Log.Info($"{Entity!.DisplayName} calls {count}x {wave.TemplateId}.");
+    }
+
+    /// <summary>Radius of the fallback ring — outside the boss's own body, inside its reach.</summary>
+    private const float RingRadius = 4.5f;
+
+    /// <summary>This wave's still-living adds, pruned of anything freed or dead.</summary>
+    private List<EnemyEntity> LiveAdds(BossAddWaveResource wave)
+    {
+        if (!_adds.TryGetValue(wave, out List<EnemyEntity>? list))
+        {
+            list = new List<EnemyEntity>();
+            _adds[wave] = list;
+        }
+
+        list.RemoveAll(add => !GodotObject.IsInstanceValid(add) ||
+            add.GetComponent<StatsComponent>() is { IsAlive: false });
+        return list;
+    }
+
+    /// <summary>
+    /// The arena's declared spawn markers: nodes in <see cref="SpawnMarkerGroup"/> that sit under
+    /// the same parent this boss does. Scoped by ancestry rather than by distance so two loaded
+    /// arenas can never borrow each other's markers, and by group rather than by node path so
+    /// renaming a marker in the scene cannot silently unbind it.
+    /// </summary>
+    private List<Node3D> SpawnMarkers(Node arena)
+    {
+        var markers = new List<Node3D>();
+        foreach (Node node in GetTree().GetNodesInGroup(SpawnMarkerGroup))
+        {
+            if (node is Node3D marker && arena.IsAncestorOf(marker))
+            {
+                markers.Add(marker);
+            }
+        }
+
+        return markers;
+    }
+
+    /// <summary>Mirrors <c>WorldEventDirector</c>'s champion scaling so one knob means one thing.</summary>
+    private static void ApplyHealthMultiplier(EnemyEntity add, float multiplier)
+    {
+        if (multiplier <= 1f || add.GetComponent<StatsComponent>() is not { } stats)
+        {
+            return;
+        }
+
+        stats.GetStat(StatType.Health).AddModifier(
+            new StatModifier(multiplier - 1f, ModifierType.PercentMult, "boss.add"));
+        stats.RefillResources();
+    }
+
+    /// <summary>
+    /// Kills every add the moment the boss falls, through the ordinary damage path so they still
+    /// drop loot and grant XP for the damage the player already did. Despawning them silently would
+    /// take that value back; leaving them alive would mean chasing minions round an empty arena for
+    /// a reward that has already been earned.
+    /// </summary>
+    private void ClearAdds()
+    {
+        foreach (List<EnemyEntity> list in _adds.Values)
+        {
+            foreach (EnemyEntity add in list)
+            {
+                if (GodotObject.IsInstanceValid(add) &&
+                    add.GetComponent<StatsComponent>() is { IsAlive: true } stats)
+                {
+                    stats.ApplyDamage(stats.GetValue(StatType.Health) * 2f, Entity);
+                }
+            }
+
+            list.Clear();
+        }
+
+        _waveTimers.Clear();
     }
 
     // --- Enrage -------------------------------------------------------------

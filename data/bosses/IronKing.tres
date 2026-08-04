@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="BossResource" load_steps=6 format=3 uid="uid://cmbrvlbossironking"]
+[gd_resource type="Resource" script_class="BossResource" load_steps=9 format=3 uid="uid://cmbrvlbossironking"]
 
 [ext_resource type="Script" path="res://src/Enemies/BossResource.cs" id="1_boss"]
 [ext_resource type="Script" path="res://src/Enemies/BossPhaseResource.cs" id="2_phase"]
+[ext_resource type="Script" path="res://src/Enemies/BossAddWaveResource.cs" id="3_wave"]
 
 ; The Iron King's fight, moved out of BossController's hard-coded table (Phase 28B) without changing
 ; a number: 66% / 33% thresholds, +25%/+15% then +30%/+20%, and the same ember flare burning hotter
@@ -11,6 +12,26 @@
 ; He deliberately has NO enrage. Adding one would be a balance change wearing a refactor's clothes,
 ; and the first boss the player meets should be beatable at their own pace. The dragons carry the
 ; fuse instead.
+
+; He does not fight alone past the first third. Two cinder thralls arrive when he is wounded, and
+; from a third health his cultists keep coming — capped at three alive, so the phase applies pressure
+; instead of accumulating into a wall. Both archetypes already exist and are faction.fallen; nothing
+; here is invented for the occasion.
+[sub_resource type="Resource" id="Wave_thralls"]
+script = ExtResource("3_wave")
+TemplateId = "enemy.cinder_thrall"
+Count = 2
+RepeatSeconds = 0.0
+MaxAlive = 0
+HealthMultiplier = 1.0
+
+[sub_resource type="Resource" id="Wave_cultists"]
+script = ExtResource("3_wave")
+TemplateId = "enemy.cultist"
+Count = 2
+RepeatSeconds = 22.0
+MaxAlive = 3
+HealthMultiplier = 1.0
 
 [sub_resource type="Resource" id="Phase_1"]
 script = ExtResource("2_phase")
@@ -22,6 +43,7 @@ AiProfileId = ""
 TelegraphColor = Color(1, 0.25, 0.05, 1)
 TelegraphEnergy = 2.5
 WindupPoiseMultiplier = 1.0
+AddWaves = Array[Resource]([])
 
 [sub_resource type="Resource" id="Phase_2"]
 script = ExtResource("2_phase")
@@ -33,6 +55,7 @@ AiProfileId = ""
 TelegraphColor = Color(1, 0.25, 0.05, 1)
 TelegraphEnergy = 3.5
 WindupPoiseMultiplier = 1.0
+AddWaves = Array[Resource]([SubResource("Wave_thralls")])
 
 [sub_resource type="Resource" id="Phase_3"]
 script = ExtResource("2_phase")
@@ -44,6 +67,7 @@ AiProfileId = ""
 TelegraphColor = Color(1, 0.25, 0.05, 1)
 TelegraphEnergy = 5.5
 WindupPoiseMultiplier = 1.0
+AddWaves = Array[Resource]([SubResource("Wave_cultists")])
 
 [resource]
 script = ExtResource("1_boss")
