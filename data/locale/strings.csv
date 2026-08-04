@@ -85,6 +85,15 @@ property.prompt_claim,"Claim {0} ({1} gold)"
 property.prompt_owned,{0} (yours)
 property.prompt_locked,"{0} — the town does not sell to strangers"
 property.prompt_price,"{0} — {1} gold, and you carry {2}"
+storage.prompt_open,Open the chest at {0}
+storage.prompt_locked,"{0} — the chest is not yours to open"
+storage.title,{0}   (E to close)
+storage.your_pack,YOUR PACK
+storage.stored,STORAGE
+storage.slots,{0}/{1}
+storage.store,Store
+storage.take,Take
+storage.empty,Nothing here.
 travel.button,Travel to {0}
 map.travel_header,FAST TRAVEL
 map.travel_empty,No waystones attuned yet.

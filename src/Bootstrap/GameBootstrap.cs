@@ -59,6 +59,7 @@ public partial class GameBootstrap : Node3D
     private QuestLogPanel _questLogPanel = null!;
     private DialoguePanel _dialoguePanel = null!;
     private CraftingPanel _craftingPanel = null!;
+    private StoragePanel _storagePanel = null!;
     private WorldClock _clock = null!;
     private WeatherDirector _weather = null!;
     private SkyController _sky = null!;
@@ -365,6 +366,10 @@ public partial class GameBootstrap : Node3D
         AddChild(_dialoguePanel);
         _craftingPanel = new CraftingPanel();
         AddChild(_craftingPanel);
+        // The stash window (37B) — event-driven like the crafting panel, one instance for every
+        // container in the world.
+        _storagePanel = new StoragePanel();
+        AddChild(_storagePanel);
 
         // The world clock drives NPC routines; create it before the NPCs below so it is
         // registered in the ServiceLocator when their schedules first read the time.

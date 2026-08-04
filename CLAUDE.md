@@ -450,6 +450,35 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    sent to earn gold for something a quest is holding shut. `PropertyClaim.Resolve` owns that order
    and both the prompt and the interaction read it, so they cannot drift apart.
 
+**Giving a property a stash (Phase 37B)**
+1. Add an `Entity` to the region cell with a collider, an `InventoryComponent`, and a
+   `PropertyStorageComponent { PropertyId = "property.xxx" }`. See `CottageChest` in
+   `scenes/regions/ember_crown/town_hub.tscn`. **That inventory *is* the storage** — there is no
+   storage service and no new save code, because an entity with a stable `PersistentId` already
+   round-trips its inventory through `SaveManager` (`inventory:<PersistentId>`) and survives cell
+   churn through `CellPersistenceDirector`.
+2. ⚠️ **Give it a `PersistentId`, and never change it.** It is the save key. Without one the
+   inventory does not register as a saveable at all (`SaveKeyPolicy.ShouldPersist`) and the stash
+   silently empties on every reload — the failure looks like an item-loss bug, not a missing field.
+   Two chests sharing an id is worse: they overwrite each other, last write wins.
+3. ⚠️ **Author `Capacity` on the `InventoryComponent` node, not on the `PropertyResource`.**
+   `InventoryComponent.Load` restores through `AddInstance`, which clamps to `Capacity`, so a
+   capacity applied by another component *after* the save manager's mid-load restore drops the
+   overflow without a word. Each property has its own chest, so the node value is already
+   per-property.
+4. Interacting publishes a `StorageOpenedEvent` carrying the container's inventory; the single
+   `StoragePanel` (built in `GameBootstrap` beside the `CraftingPanel`) shows both sides. No panel
+   wiring per container.
+5. ⚠️ **Moving a stack removes by reference for rolled items, by template id only for stackables.**
+   `RemoveItem(id, qty)` matches across *every* stack of that template, so two distinct affixed
+   instances of one template would see the first removal satisfy both and one would evaporate — that
+   bug is live in `ContainerLootComponent.Interact` today. `StoragePanel.Transfer` branches on
+   `ItemInstance.IsStackable` and uses `RemoveOneInstance` otherwise. It also only removes what
+   `AddInstance` reported as *landed*, so a full destination cannot eat the remainder.
+6. There is no `--validate` rule here: capacity and the `PropertyId` both live in a `.tscn`, which
+   `ContentValidator` does not scan. A mis-typed `PropertyId` resolves to nothing and the chest
+   shows **no prompt at all** — if a chest is silently unusable in game, check that field first.
+
 **A big/boss creature with body zones (Phase 35A)**
 1. Author the archetype `.tres` as above, plus:
    - `HitZones` — an array of `HitZoneResource` sub-resources (`Id`,
@@ -953,8 +982,10 @@ telegraphed (a model-independent ground ring) and interruptible (a stagger cance
 cast, for every actor). **36D and 36E are done too** — phases summon add waves, an arena binds its
 spawn points and phase reactions declaratively in its own scene, and every boss's intro, defeat beat
 and guaranteed reward come from its own resource. **Phase 36 is complete (36A–36E).**
-**Phase 37 is in progress: 37A is done** — a property can be bought and/or earned, ownership
-persists, and claiming it registers a fast-travel node. Next: 37B, per-property storage. `docs/SESSION_PLAYBOOK.md` is the live per-sub-phase tracker;
+**Phase 37 is in progress: 37A and 37B are done** — a property can be bought and/or earned, ownership
+persists, claiming it registers a fast-travel node, and an owned holding has a stash you can deposit
+into and withdraw from (the game's first two-way container). Next: 37C, placeable crafting stations
+and decoration. `docs/SESSION_PLAYBOOK.md` is the live per-sub-phase tracker;
 `docs/PRODUCTION_ROADMAP.md` §11 mirrors phase-level status only.
 
 > **Two UI phases, both done:** Phase 14 *polished the debug-grade overlay* (shared
