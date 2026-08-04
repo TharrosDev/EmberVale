@@ -2885,8 +2885,54 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
     warning and it clears on the next save.
   - **Unlike the boss phases, this one is reachable from `--play`:** the deed stands in the town hub,
     where `--play` resumes. The at-keyboard pass is the prompt's three refusals and the claim itself.
-- [ ] **37B — Per-property persistent storage** `[F]`
+- [x] **37B — Per-property persistent storage** `[F]` ✅
   - **Done when:** property storage extends inventory persistence and round-trips.
+  - **The whole phase is one observation:** an `Entity` with an authored `PersistentId` and an
+    `InventoryComponent` *already* round-trips, twice over — through `SaveManager` as
+    `inventory:<PersistentId>`, and across region-cell churn through `CellPersistenceDirector`. So
+    "extends inventory persistence" was met by **authoring a chest**, not by writing persistence.
+    37B adds **zero** save code. The alternative on the table was a `PropertyStorageService` keyed by
+    property id, saving its own `{property: stacks}` blob — that would have reimplemented
+    `ItemInstance.Save`/`FromSave` and the stacking rules alongside the ones that already work, and
+    given two things to keep in step forever.
+  - **What was genuinely new is the surface.** `ContainerLootComponent`, the repo's only container,
+    is one-way: it pops its contents onto the floor as pickups and has never had a deposit path. So
+    the two-way window is the actual build, not a reuse — worth saying out loud, because the roadmap
+    line makes 37B sound like a persistence task when the persistence was the free half.
+  - **Done:** `PropertyStorage.Resolve` (pure, the `PropertyClaim` sibling — 4 tests),
+    `PropertyStorageComponent` (`InteractableComponent`, publishes `StorageOpenedEvent` carrying the
+    container's own inventory), `StoragePanel` (the `CraftingPanel` shape: event-driven, `E` closes,
+    dirty-flag rebuild, two `UiTheme.ScrollList` columns with Store/Take per row), and the
+    `CottageChest` against BuildingSW's north wall in the town hub — `prp_cache_chest.glb`, already
+    imported and credited for the 30J supply cache, so no new asset.
+  - **Ordering is pinned here too:** unknown-property before not-owned. An unresolvable id is an
+    *authoring* fault, not a gate a player can pass; reporting it as "not yours" would send someone
+    off to buy a property that does not exist and would hide a typo behind a plausible refusal. So
+    an unknown id shows **no prompt at all** rather than a lie.
+  - **The one real trap, and it is a data-loss one.** `InventoryComponent.Load` restores through
+    `AddInstance`, which clamps to `Capacity` — so capacity must be authored on the chest's own node
+    and not applied by a sibling after the save manager's mid-load restore, or the overflow vanishes
+    silently on reload. That is why `PropertyResource` deliberately gained **no** `StorageCapacity`
+    field. Each property has its own chest; the node value is already per-property.
+  - **A bug deliberately not copied:** `ContainerLootComponent.Interact` removes by template id,
+    which matches across every stack of that template — two distinct affixed instances of one
+    template see the first removal satisfy both, and one evaporates. `StoragePanel.Transfer` branches
+    on `ItemInstance.IsStackable` and uses the reference-based `RemoveOneInstance` for rolled items,
+    and only ever removes what `AddInstance` reported as landed, so a full destination cannot eat the
+    remainder. (The loot component's own copy of that bug is left alone — it is a different phase's
+    fix and touching it here would widen a storage change into a loot change.)
+  - **No new `--validate` rule, deliberately.** 37B adds no data fields: capacity and `PropertyId`
+    both live in a `.tscn`, which `ContentValidator` does not scan, so a rule here would guard
+    nothing. The five existing 37A property rules were re-run as a regression check instead — each
+    negative-tested individually, each still rejects, exit **1** broken and **0** clean.
+  - Build clean + **802** tests + `--validate` exit 0 + the edited town hub headless-instantiated
+    (chest parses, `PersistentId`/`Capacity`/`PropertyId` all present, 37A's deed post intact) + 3
+    clean `--play` runs, no errors and no unexpected warnings. The pre-existing `no usable entry`
+    warnings on the old quick save are unchanged and are the framework's designed path.
+  - **Reachable from `--play`:** the chest stands beside the deed post in the town hub, where
+    `--play` resumes. The at-keyboard pass is the locked refusal before claiming, the claim, a
+    store/take round trip with an affixed item and a partial stack, a full chest refusing the
+    remainder, and an `F5`/`F9` plus cold reload with items inside.
 - [ ] **37C — Placeable crafting stations + decoration** `[F]`
   - **Done when:** the player can place stations (`CraftingStationFactory`) and
     decorations in an owned property; placement persists.

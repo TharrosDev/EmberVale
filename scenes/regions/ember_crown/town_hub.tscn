@@ -6,6 +6,9 @@
 [ext_resource type="Script" path="res://src/World/TravelNodeComponent.cs" id="4_travel"]
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="5_navbaker"]
 [ext_resource type="Script" path="res://src/Housing/PropertyDeedComponent.cs" id="30_deed"]
+[ext_resource type="Script" path="res://src/Housing/PropertyStorageComponent.cs" id="31_storage"]
+[ext_resource type="Script" path="res://src/Items/InventoryComponent.cs" id="32_inventory"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_cache_chest.glb" id="33_chest"]
 [ext_resource type="Script" path="res://src/Factions/FactionComponent.cs" id="6_faction"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="7_dialogue"]
 [ext_resource type="Script" path="res://src/Npc/ScheduleComponent.cs" id="8_schedule"]
@@ -150,6 +153,9 @@ size = Vector3(0.8, 2.0, 0.35)
 
 [sub_resource type="BoxShape3D" id="Shape_deed"]
 size = Vector3(0.8, 2.0, 0.35)
+
+[sub_resource type="BoxShape3D" id="Shape_chest"]
+size = Vector3(0.8, 0.8, 0.8)
 
 [node name="TownHubCell" type="Node3D"]
 
@@ -669,4 +675,40 @@ shape = SubResource("Shape_deed")
 
 [node name="Deed" type="Node" parent="CottageDeed"]
 script = ExtResource("30_deed")
+PropertyId = "property.ember_crown.cottage"
+
+; --- 37B: the Ashfall Cottage's stash -----------------------------------------
+; Against the north face of BuildingSW (centre (-12, -22), footprint 4.26 x 5.03, so its wall is at
+; z = -19.49) — the block that stands in for the cottage until 37C/37D build a real interior. Clear
+; of the deed post at (-6, -14).
+;
+; The chest IS its inventory: an authored PersistentId is all the persistence 37B needs, since
+; InventoryComponent already saves as inventory:<PersistentId> and CellPersistenceDirector already
+; carries it across cell unload/reload. Capacity lives on that node rather than on the property
+; resource because InventoryComponent.Load clamps to Capacity — a capacity applied after the save
+; manager's mid-load restore would silently eat the overflow.
+;
+; Reuses prp_cache_chest.glb (already imported and credited for the 30J supply cache) rather than
+; sourcing another model; the box fallback matches the deed post's greybox.
+
+[node name="CottageChest" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0, -18.5)
+script = ExtResource("1_entity")
+DisplayName = "Storage Chest"
+PersistentId = "ember_crown.cottage_chest"
+
+[node name="Mesh" parent="CottageChest" instance=ExtResource("33_chest")]
+
+[node name="Collider" type="StaticBody3D" parent="CottageChest"]
+
+[node name="Shape" type="CollisionShape3D" parent="CottageChest/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
+shape = SubResource("Shape_chest")
+
+[node name="Inventory" type="Node" parent="CottageChest"]
+script = ExtResource("32_inventory")
+Capacity = 40
+
+[node name="Storage" type="Node" parent="CottageChest"]
+script = ExtResource("31_storage")
 PropertyId = "property.ember_crown.cottage"
