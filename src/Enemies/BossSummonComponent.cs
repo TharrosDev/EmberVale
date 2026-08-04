@@ -1,3 +1,4 @@
+using Embervale.Core;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Core.Services;
@@ -69,7 +70,16 @@ public partial class BossSummonComponent : InteractableComponent
             return;
         }
 
-        BossEntity boss = BossFactory.Create(Vector3.Zero);
+        // Through the registry (36B): he is an authored archetype now, not a bespoke factory. The
+        // pattern-match is the guard — if data/enemies/IronKing.tres ever loses IsBoss, the builder
+        // returns a plain EnemyEntity, and registering that as the ServiceLocator's BossEntity would
+        // break the healthbar and the defeat loop in ways that look like anything but their cause.
+        if (EnemyTemplateRegistry.Create(GameIds.Enemies.IronKing, Vector3.Zero) is not BossEntity boss)
+        {
+            Log.Error($"'{GameIds.Enemies.IronKing}' did not build a BossEntity; the brazier stays cold.");
+            return;
+        }
+
         arena.AddChild(boss);
         boss.GlobalPosition = brazier.GlobalPosition + SpawnOffset;
 

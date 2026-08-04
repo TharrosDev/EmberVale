@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" format=3 uid="uid://c224w2m8evh0k"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+; The Iron King, off his bespoke factory (Phase 36B). Every number here is lifted from the
+; BossFactory that built him from Phase 28 to 36A — capsule, poise, stamina regen, XP, faction and
+; the ai.boss profile that never lets him flee. What he gains from the shared pipeline is a hit
+; reaction, a weapon trail, membership of the quest enemy group, and a melee reach derived from his
+; own height rather than hand-tuned (2.30 m -> 2.46 m); what he keeps is the fight itself, which
+; lives in data/bosses/IronKing.tres and did not move.
+;
+; No LootTablePath on purpose: he drops nothing through the ordinary loot roll. Phase 28D's
+; reward loop grants his relic and the corruption that comes with taking it.
+
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.iron_king"
+NameKey = "enemy.iron_king.name"
+AttributesPath = "res://data/attributes/IronKingAttributes.tres"
+WeaponPath = "res://data/weapons/IronKingMaul.tres"
+LootTablePath = ""
+ModelPath = "res://assets/models/creatures/boss_iron_king.glb"
+PlaceholderTint = Color(0.22, 0.2, 0.21, 1)
+AiProfileId = "ai.boss"
+FactionId = "faction.fallen"
+KnownSpellIds = Array[String]([])
+BreathSpellId = ""
+DialogueId = ""
+CapsuleRadius = 0.7
+CapsuleHeight = 2.6
+IsBoss = true
+BossId = "boss.iron_king"
+DirectionalMelee = false
+MaxPoise = 150.0
+StaminaRegen = 16.0
+XpValue = 500
