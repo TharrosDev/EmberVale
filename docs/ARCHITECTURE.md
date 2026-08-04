@@ -988,6 +988,27 @@ Developer tooling behind function keys (Phase 20); all run `ProcessMode.Always`.
 
 ---
 
+### 2.4b Pause & blocking menus
+
+`GameManager.RefreshPause()` is the **single writer** of `GetTree().Paused`, and it answers one
+question: is the game state `Paused`, **or** is a world-pausing menu open? It runs on `ChangeState`
+and on `UiState.Changed`.
+
+`UiState` counts two sets. `MenuOpen` is "the player's controls are suspended" — `PlayerController`
+holds position, drops the guard and cancels casts. `WorldPaused` is the subset that should also stop
+the simulation, and it is what the pause flag reads. Every modal `UiPanel` pauses (the default);
+the boss-intro lock, the opening narration and the dev console pass `pausesWorld: false` because the
+world has to keep playing under them.
+
+Because a modal panel pauses the tree, `UiPanel` sets `ProcessMode.Always` — otherwise a panel would
+freeze itself the instant it opened.
+
+> This replaced a per-system `UiState.MenuOpen` check that only `HitStopDirector` and
+> `CompanionRoster` ever applied. Enemy AI, status effects and in-flight projectiles did not, so
+> opening the inventory mid-fight left a frozen, un-blocking, un-dodging player taking free hits.
+
+---
+
 ## 3. Collision layers & teams
 
 | Layer (bit)  | Value | Used by                                   |

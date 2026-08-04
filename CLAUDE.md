@@ -164,6 +164,9 @@ spawn or fight. Say which of the two you got; don't let one stand in for the oth
 `LMB` attack · `RMB` block · `E` interact · `V` swap first/third person ·
 `I` inventory · `B` bestiary · `C` party order ·
 `H` heal dummy · `R` respawn dummy · `F5`/`F9` quick save/load · `Esc` pause (frees the cursor).
+Hotbar is `1`–`5`. Gamepad plays the whole game (sticks move/look, RT/LT attack/guard, A/B jump/dodge).
+**Any blocking menu pauses the scene tree**; a cinematic lock (boss intro, prologue) does not —
+see `UiState.Open(owner, pausesWorld:)`.
 Goblins roam to the north (−Z) and drop loot.
 
 ---
@@ -330,6 +333,15 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
   (`y=1`, shapes centred at local origin); the player/enemy origins are at the
   feet (shapes offset to `y = height/2`). Match shapes to mesh accordingly.
 - **`GD.Load<T>` can return null** — always fall back.
+- **A blocking menu pauses the tree; a cinematic lock does not.** `UiState.Open` defaults to
+  `pausesWorld: true` and `GameManager.RefreshPause` is the only writer of `GetTree().Paused`. Don't
+  scatter `UiState.MenuOpen` checks through gameplay systems to "stop things during menus" — that
+  approach is exactly what failed (only 2 of ~50 ticking systems ever remembered it, so the
+  inventory froze the player and nothing else). Do pass `pausesWorld: false` for anything the player
+  is being held still to *watch*.
+- **`ServiceLocator` drops a freed registrant on read** rather than handing it out. Several services
+  register without ever unregistering; a dereferenced freed node is a hard `gchandle.is_released`
+  crash, not a null check away.
 - **Don't dereference injected nodes outside `PlayerController`'s not-playing guard.** The
   camera/pivot/aim nodes are being freed during a world teardown or a save/load rebuild, so
   per-frame work that touches them (the camera rig) must stay *inside* the `IsPlaying` early-out.

@@ -54,7 +54,9 @@ public partial class BossEncounterDirector : Node
 
     private void OnStarted(BossEncounterStartedEvent e)
     {
-        UiState.Open(this);
+        // Cinematic lock: it holds the player still to watch the boss's entrance, so the world
+        // must keep running underneath it — pausing here would freeze the very thing being watched.
+        UiState.Open(this, pausesWorld: false);
         _locked = true;
         _introUntil = Time.GetTicksMsec() + IntroLockMs;
     }

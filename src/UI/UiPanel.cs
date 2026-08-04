@@ -53,6 +53,10 @@ public abstract partial class UiPanel : CanvasLayer
 
     public sealed override void _Ready()
     {
+        // A modal panel now pauses the tree (GameManager.RefreshPause), so the panel itself has to
+        // be pause-immune or it would freeze the moment it opened — no rebuild, no input, no close.
+        ProcessMode = ProcessModeEnum.Always;
+
         Shell = UiTheme.Panel();
         Shell.Visible = false;
         AddChild(Shell);

@@ -76,6 +76,15 @@ public partial class EnemyAIComponent : EntityComponent
 
     // LOD bookkeeping.
     private double _sleepTimer;
+
+    /// <summary>Real time this brain has slept through since it last thought, so wall-clock timers
+    /// stay on wall-clock even while the actor is ticking at the far-LOD rate.</summary>
+    private double _sleptSeconds;
+
+    /// <summary>Seconds before a wounded actor may break off again. Without it, the re-engage at the
+    /// end of a retreat walks straight back into the same low-health check that started it.</summary>
+    private double _retreatCooldown;
+
     private double _perceptionTimer;
     private bool _cachedCanSee;
     private Vector3 _cachedSeenPos;
@@ -174,13 +183,24 @@ public partial class EnemyAIComponent : EntityComponent
             _sleepTimer -= delta;
             if (_sleepTimer > 0d)
             {
+                // Bank the skipped time. Without this the wall-clock timers below advance by one
+                // *frame* per sleep interval instead of by the interval, so a distant enemy's
+                // 12 s provoke memory ran for six real minutes and it never stood down.
+                _sleptSeconds += delta;
                 return;
             }
 
             _sleepTimer = _profile.SleepInterval;
         }
 
-        _stateTimer += delta;
+        // Real time since this brain last thought. Wall-clock timers (state duration, provoke
+        // memory, retreat cooldown) use it; movement and turn slew keep using `delta`, because
+        // stepping a sleeping actor by half a second of motion would teleport it.
+        double wall = delta + _sleptSeconds;
+        _sleptSeconds = 0d;
+
+        _stateTimer += wall;
+        _retreatCooldown -= wall;
 
         // Provoke memory: a struck enemy hunts the player, but forgets after a calm spell so it stands
         // down once reputation is no longer hostile (it never forgets mid-fight).
@@ -192,7 +212,7 @@ public partial class EnemyAIComponent : EntityComponent
             }
             else
             {
-                _provokeTimer -= delta;
+                _provokeTimer -= wall;
                 if (_provokeTimer <= 0d)
                 {
                     _provoked = false;
@@ -345,7 +365,9 @@ public partial class EnemyAIComponent : EntityComponent
         _lastKnownPos = pos;
         _combatElapsed += delta;
 
-        if (LowHealth())
+        // The cooldown is what stops a wounded actor ping-ponging Combat->Retreat forever: nothing
+        // heals it, so the re-engage that ends a retreat would otherwise trip this same check.
+        if (LowHealth() && _retreatCooldown <= 0d)
         {
             EnterState(EnemyState.Retreat);
             return;
@@ -872,6 +894,7 @@ public partial class EnemyAIComponent : EntityComponent
             return;
         }
 
+        EnemyState previous = _state;
         _state = next;
         _stateTimer = 0d;
 
@@ -883,6 +906,13 @@ public partial class EnemyAIComponent : EntityComponent
         {
             SetGuard(false);
             _flight?.Ground();
+        }
+
+        // Leaving a retreat starts the cooldown, so the fight it re-enters is a fight and not an
+        // instant second retreat.
+        if (previous == EnemyState.Retreat)
+        {
+            _retreatCooldown = _profile.RetreatCooldown;
         }
 
         switch (next)

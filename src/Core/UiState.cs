@@ -15,16 +15,58 @@ namespace Embervale.Core;
 public static class UiState
 {
     private static readonly HashSet<object> _owners = new();
+    private static readonly HashSet<object> _worldPausers = new();
+
+    /// <summary>Raised whenever a menu opens or closes. <c>GameManager</c> listens so the scene
+    /// tree's paused flag is the single answer to "is a menu or the pause state holding the world",
+    /// instead of every gameplay system having to remember to ask.</summary>
+    public static event System.Action? Changed;
 
     /// <summary>True while any blocking menu is open.</summary>
     public static bool MenuOpen => _owners.Count > 0;
 
+    /// <summary>
+    /// True while an open menu should freeze the simulation. Distinct from <see cref="MenuOpen"/>
+    /// because a <em>cinematic</em> lock (the boss intro, the opening narration) also suspends the
+    /// player's controls but must leave the world running — the thing it holds the player still to
+    /// watch is in that world.
+    /// </summary>
+    public static bool WorldPaused => _worldPausers.Count > 0;
+
     /// <summary>How many blocking menus are open (diagnostics / tests).</summary>
     public static int OpenCount => _owners.Count;
 
-    /// <summary>Registers a blocking menu owner (idempotent — a repeat open is harmless).</summary>
-    public static void Open(object owner) => _owners.Add(owner);
+    /// <summary>
+    /// Registers a blocking menu owner (idempotent — a repeat open is harmless).
+    /// <paramref name="pausesWorld"/> defaults to true: a menu the player reads at their own pace
+    /// must stop the clock, because the player controller has already suspended their movement,
+    /// guard and dodge, so anything still swinging at them is unanswerable. Pass false only for a
+    /// cinematic lock that needs the world to keep playing.
+    /// </summary>
+    public static void Open(object owner, bool pausesWorld = true)
+    {
+        _owners.Add(owner);
+        if (pausesWorld)
+        {
+            _worldPausers.Add(owner);
+        }
+
+        Changed?.Invoke();
+    }
 
     /// <summary>Removes a blocking menu owner (no-op if it wasn't registered).</summary>
-    public static void Close(object owner) => _owners.Remove(owner);
+    public static void Close(object owner)
+    {
+        _owners.Remove(owner);
+        _worldPausers.Remove(owner);
+        Changed?.Invoke();
+    }
+
+    /// <summary>Drops every owner. For tests, so one case's leaked menu can't fail the next.</summary>
+    public static void ResetForTests()
+    {
+        _owners.Clear();
+        _worldPausers.Clear();
+        Changed?.Invoke();
+    }
 }

@@ -41,6 +41,17 @@ public static class GameInput
     public const string ToggleCamera = "toggle_camera";
     public const string Pause = "pause";
 
+    /// <summary>Right-stick look (Phase 54). Mouse-look stays event-driven in
+    /// <c>PlayerController._Input</c>; a stick is a held axis, so it is polled per frame instead.</summary>
+    public const string LookLeft = "look_left";
+    public const string LookRight = "look_right";
+    public const string LookUp = "look_up";
+    public const string LookDown = "look_down";
+
+    /// <summary>Deadzone for the look axes. Godot defaults an action to 0.5, which on a look stick
+    /// reads as a dead controller until it is half-deflected.</summary>
+    private const float LookDeadzone = 0.15f;
+
     /// <summary>Hotbar slots 1-5 (number-row keys) — quick-use/equip an assigned item.</summary>
     public static readonly string[] Hotbar = { "hotbar_1", "hotbar_2", "hotbar_3", "hotbar_4", "hotbar_5" };
 
@@ -136,10 +147,11 @@ public static class GameInput
         BindGamepad();
     }
 
-    /// <summary>The gamepad layer (30.5J): buttons for the menu-facing actions so no menu is
-    /// mouse-only, and the left stick mapped onto Godot's built-in <c>ui_*</c> focus-navigation
-    /// actions (the D-pad and A/B are already bound to them by the engine defaults). Full
-    /// gameplay-on-controller (movement, combat, remapping) is the Phase 54 pass.</summary>
+    /// <summary>The gamepad layer: the menu-facing actions so no menu is mouse-only, the left stick
+    /// mapped onto Godot's built-in <c>ui_*</c> focus-navigation actions (the D-pad and A/B are
+    /// already bound to them by the engine defaults), <b>and the full gameplay set</b> — sticks for
+    /// move/look, triggers for attack/guard, shoulders for magic. Before this the pad could open
+    /// every menu in the game and not walk out of the first room. Remapping is still Phase 54.</summary>
     private static void BindGamepad()
     {
         Bind(Pause, new InputEventJoypadButton { ButtonIndex = JoyButton.Start });
@@ -149,6 +161,35 @@ public static class GameInput
         Bind(Bestiary, new InputEventJoypadButton { ButtonIndex = JoyButton.DpadDown });
         Bind(Interact, new InputEventJoypadButton { ButtonIndex = JoyButton.X });
         Bind(CompanionCommand, new InputEventJoypadButton { ButtonIndex = JoyButton.DpadRight });
+
+        Bind(ToggleCamera, new InputEventJoypadButton { ButtonIndex = JoyButton.DpadLeft });
+
+        // Movement: left stick. Bound to the same four actions WASD uses, so Input.GetVector in the
+        // controller picks the pad up with no branch on device.
+        Bind(MoveForward, new InputEventJoypadMotion { Axis = JoyAxis.LeftY, AxisValue = -1f });
+        Bind(MoveBack, new InputEventJoypadMotion { Axis = JoyAxis.LeftY, AxisValue = 1f });
+        Bind(MoveLeft, new InputEventJoypadMotion { Axis = JoyAxis.LeftX, AxisValue = -1f });
+        Bind(MoveRight, new InputEventJoypadMotion { Axis = JoyAxis.LeftX, AxisValue = 1f });
+
+        // Look: right stick, polled per frame by the controller.
+        Bind(LookLeft, new InputEventJoypadMotion { Axis = JoyAxis.RightX, AxisValue = -1f });
+        Bind(LookRight, new InputEventJoypadMotion { Axis = JoyAxis.RightX, AxisValue = 1f });
+        Bind(LookUp, new InputEventJoypadMotion { Axis = JoyAxis.RightY, AxisValue = -1f });
+        Bind(LookDown, new InputEventJoypadMotion { Axis = JoyAxis.RightY, AxisValue = 1f });
+        foreach (string look in new[] { LookLeft, LookRight, LookUp, LookDown })
+        {
+            InputMap.ActionSetDeadzone(look, LookDeadzone);
+        }
+
+        // Combat: triggers for the two things held, face/shoulder buttons for the rest.
+        Bind(Attack, new InputEventJoypadMotion { Axis = JoyAxis.TriggerRight, AxisValue = 1f });
+        Bind(Block, new InputEventJoypadMotion { Axis = JoyAxis.TriggerLeft, AxisValue = 1f });
+        Bind(Jump, new InputEventJoypadButton { ButtonIndex = JoyButton.A });
+        Bind(Dodge, new InputEventJoypadButton { ButtonIndex = JoyButton.B });
+        Bind(Sprint, new InputEventJoypadButton { ButtonIndex = JoyButton.LeftStick });
+        Bind(LockOn, new InputEventJoypadButton { ButtonIndex = JoyButton.RightStick });
+        Bind(Cast, new InputEventJoypadButton { ButtonIndex = JoyButton.RightShoulder });
+        Bind(CycleSpell, new InputEventJoypadButton { ButtonIndex = JoyButton.LeftShoulder });
 
         Bind("ui_up", new InputEventJoypadMotion { Axis = JoyAxis.LeftY, AxisValue = -1f });
         Bind("ui_down", new InputEventJoypadMotion { Axis = JoyAxis.LeftY, AxisValue = 1f });
