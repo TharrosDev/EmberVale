@@ -2776,8 +2776,39 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
     input), so that covers boot and registration; a telegraph is a presentation feature and the real
     gate is the maintainer's at-keyboard pass — ring on a dragon, flare timing on the Iron King,
     a broken wind-up, a cancelled cast, and taking a stagger mid-swing as the player.
-- [ ] **36D — Adds/summon-wave + arena hooks** `[F]`
+- [x] **36D — Adds/summon-wave + arena hooks** `[F]` ✅
   - **Done when:** bosses can summon add waves and bind arena hooks declaratively.
+  - **Done:** `BossAddWaveResource` (sub-resource inside `BossPhaseResource.AddWaves`) names any
+    registered enemy id, a count, an optional `RepeatSeconds` and a `MaxAlive` cap, plus the
+    `HealthMultiplier` `WorldEventDirector` already uses for hunt champions — so any creature in the
+    game can be somebody's adds with no new factory. `BossController` summons on phase entry, ticks
+    repeats, and on the boss's death kills every add through the **ordinary damage path**, so their
+    loot and XP still land; despawning them silently would quietly take back value the player had
+    already earned. `BossAdds` is the pure core (`SpawnSlot` ring placement, `SummonCount` cap
+    arithmetic, 10 tests).
+  - **Arena hooks are declared in the arena's own `.tscn`.** Spawn points are `Marker3D`s tagged
+    `groups=["boss_add_spawn"]`, resolved **by group** (renaming or re-parenting one cannot silently
+    unbind it, which a node path would) and **scoped by ancestry** to markers under the boss's own
+    parent (`Node.IsAncestorOf`) — so two loaded arenas can never lend each other spawns, with no
+    distance heuristic and no `owned`-flag trap. No markers falls back to a computed ring, which is
+    what a lair with no authored arena gets. `ArenaHookComponent` is a plain `Node` (it belongs to
+    the arena, not an actor) that reveals authored-hidden nodes at a phase and **resets on the boss's
+    death** — that reset is load-bearing, since `BossSummonComponent` deliberately re-arms until 28D
+    persists the defeat, and an arena left lit would show the next challenger the last fight's final
+    phase from the doorway.
+  - **Authored:** the Iron King calls two `enemy.cinder_thrall` at 66%, then `enemy.cultist` on a
+    22 s repeat capped at three alive from 33% — both existing `faction.fallen` archetypes, so
+    authored rather than invented content. `arena.tscn` gained four spawn markers and four
+    ember-vent lights revealed at phases 2 and 3 by two hooks. The dragons get no waves: a roost has
+    no markers, and a dragon that summons is a design decision rather than a framework one — the
+    ring fallback is covered by tests instead.
+  - Build clean + 782 tests + `--validate` exit 0, with all three new rules negative-tested
+    (unregistered template, zero count, uncapped repeat) rather than only shown not to false-positive
+    + the edited arena headless-instantiated to confirm the bindings parse (4 markers in group,
+    4 hidden vents, 2 hooks with the right phases) + 3 clean `--play` runs. **`--play` cannot spawn a
+    boss** (the `F1` console needs keyboard input), so it covers boot, validation and scene loading;
+    adds arriving on the markers, the vents lighting and the arena clearing on the kill are the
+    maintainer's at-keyboard pass.
 - [ ] **36E — Boss intro/defeat sequencing + guaranteed relic reward** `[F]`
   - **Done when:** intro/defeat/reward (relic + corruption gain) are standardized
     in the framework.

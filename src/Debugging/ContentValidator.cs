@@ -395,6 +395,68 @@ public static class ContentValidator
             {
                 issues.Add($"boss '{boss.Id}' phase {i + 1} names unknown AI profile '{phase.AiProfileId}'");
             }
+
+            ValidateAddWaves(boss, phase, i + 1, issues);
+        }
+    }
+
+    /// <summary>
+    /// A boss's add waves (36D). Every failure here is silent in play and expensive: an unknown
+    /// template spawns the registry's fallback goblin into a boss arena and reads as a design
+    /// choice, and an uncapped repeating wave ends the fight by burying the player rather than by
+    /// killing them.
+    /// </summary>
+    private static void ValidateAddWaves(
+        BossResource boss, BossPhaseResource phase, int phaseNumber, List<string> issues)
+    {
+        for (int w = 0; w < phase.AddWaves.Count; w++)
+        {
+            BossAddWaveResource wave = phase.AddWaves[w];
+            string where = $"boss '{boss.Id}' phase {phaseNumber} wave {w + 1}";
+
+            if (wave == null)
+            {
+                issues.Add($"{where} is null");
+                continue;
+            }
+
+            if (string.IsNullOrEmpty(wave.TemplateId))
+            {
+                issues.Add($"{where} names no enemy template");
+            }
+            else if (!EnemyTemplateRegistry.IsRegistered(wave.TemplateId))
+            {
+                issues.Add($"{where} names unregistered enemy template '{wave.TemplateId}'");
+            }
+
+            if (wave.Count <= 0)
+            {
+                issues.Add($"{where} summons {wave.Count} — a wave that brings nothing");
+            }
+
+            if (wave.RepeatSeconds < 0f)
+            {
+                issues.Add($"{where} has a negative repeat interval ({wave.RepeatSeconds})");
+            }
+
+            if (wave.RepeatSeconds > 0f && wave.MaxAlive <= 0)
+            {
+                issues.Add(
+                    $"{where} repeats every {wave.RepeatSeconds:0.#}s with no MaxAlive cap — the " +
+                    "phase would keep stacking adds until the player is buried rather than beaten");
+            }
+
+            if (wave.MaxAlive > 0 && wave.MaxAlive < wave.Count)
+            {
+                issues.Add(
+                    $"{where} summons {wave.Count} but caps at {wave.MaxAlive} — the wave could " +
+                    "never arrive in full");
+            }
+
+            if (wave.HealthMultiplier <= 0f)
+            {
+                issues.Add($"{where} has a health multiplier of {wave.HealthMultiplier}");
+            }
         }
     }
 

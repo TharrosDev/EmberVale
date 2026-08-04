@@ -388,7 +388,7 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    36B and lost it: once his phases moved into `data/bosses/`, his factory was a worse copy of the
    shared one — it silently skipped the hit reaction, the weapon trail and the quest enemy group.
 
-**A new boss fight (Phase 36A)**
+**A new boss fight (Phases 36A–36D)**
 1. Author `data/bosses/Xxx.tres` (`script_class="BossResource"`): unique `Id` (`boss.*`) and
    `Phases` — an array of `BossPhaseResource` sub-resources, **ordered high health to low**, the
    first at `HealthFraction = 1.0`. Each phase carries its `AttackSpeedBonus`/`MoveSpeedBonus`
@@ -399,17 +399,30 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    phase's wind-ups are — above `1` makes the telegraph a window worth attacking into, below `1`
    hardens it. It must stay positive; `0` is a phase that can never be interrupted, which in play
    looks exactly like the interrupt being broken, so `--validate` rejects it.
+   `AddWaves` (36D) is an array of `BossAddWaveResource` sub-resources — `TemplateId` (any registered
+   enemy), `Count`, `RepeatSeconds` (`0` = once on entering the phase), `MaxAlive` (`0` = uncapped)
+   and `HealthMultiplier`. ⚠️ **A repeating wave must set `MaxAlive`**; the validator rejects one
+   without it, because an uncapped repeat ends the fight by burying the player rather than beating
+   them. Adds die with the boss through the ordinary damage path, so their loot and XP still land.
 2. Point an archetype at it: set `IsBoss = true` **and** `BossId = "boss.xxx"` on
    `data/enemies/Xxx.tres`. `EnemyArchetypeFactory` attaches the `BossController`; there is no code
    to write. An `IsBoss` archetype with no `BossId` still gets a controller and falls back to the
    default three-stage escalation, so a boss is never left with no structure at all.
-3. ⚠️ **The enrage clock starts on the first damage traded with the boss**, not on
+3. **An arena binds itself to the fight in its own `.tscn`, not in code** (36D). Tag `Marker3D`s
+   `groups=["boss_add_spawn"]` and waves arrive there — found by group, so renaming or re-parenting a
+   marker cannot silently unbind it, and scoped to markers under the boss's own parent, so two loaded
+   arenas cannot lend each other spawns. With no markers the adds fall back to a ring around the
+   boss, which is what a lair gets. Add an `ArenaHookComponent` (`ActivateAtPhase` + `Reveals`
+   node paths) to have the arena itself reveal things as the fight escalates; it resets on the boss's
+   death, because `BossSummonComponent` deliberately re-arms until the defeat is persisted.
+   See `scenes/regions/ember_crown/arena.tscn` for both.
+4. ⚠️ **The enrage clock starts on the first damage traded with the boss**, not on
    `BossEncounterStartedEvent` — only `BossSummonComponent` publishes that (the Iron King's path),
    so keying off it would leave every lair boss with a fuse that never lit.
-4. ⚠️ **Mark any spell a phase grants `PlayerLearnable = false`.** The grant goes through the same
+5. ⚠️ **Mark any spell a phase grants `PlayerLearnable = false`.** The grant goes through the same
    path a dialogue reward uses, which ignores that flag — but the player's spellbook lists every
    spell in the database, so a monster ability would otherwise show up as purchasable.
-5. `--validate` checks the domain **in both directions**: phases must descend from `1.0`, granted
+6. `--validate` checks the domain **in both directions**: phases must descend from `1.0`, granted
    spells and profile ids must resolve, an archetype's `BossId` must exist, and a `BossId` may only
    sit on an `IsBoss` archetype (otherwise it is a silent no-op).
 
@@ -913,7 +926,9 @@ zones, flight, breath weapons, lairs, and dragon country. **Phase 36 is in progr
 boss fights are authored data (`data/bosses/*.tres`), **36B and 36C are done** — the Iron King is an
 ordinary archetype now, so there is one path through the boss pipeline, and wind-ups are both
 telegraphed (a model-independent ground ring) and interruptible (a stagger cancels a wind-up or a
-cast, for every actor). Next: 36D, adds/summon waves and arena hooks. `docs/SESSION_PLAYBOOK.md` is the live per-sub-phase tracker;
+cast, for every actor). **36D is done too** — phases summon add waves, and an arena binds its spawn
+points and phase reactions declaratively in its own scene. Next: 36E, boss intro/defeat sequencing
+and the guaranteed relic reward. `docs/SESSION_PLAYBOOK.md` is the live per-sub-phase tracker;
 `docs/PRODUCTION_ROADMAP.md` §11 mirrors phase-level status only.
 
 > **Two UI phases, both done:** Phase 14 *polished the debug-grade overlay* (shared

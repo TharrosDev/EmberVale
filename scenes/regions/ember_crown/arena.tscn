@@ -5,6 +5,7 @@
 [ext_resource type="Script" path="res://src/Enemies/BossSummonComponent.cs" id="3_summon"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_arena_wall.glb" id="4_wall"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="5_brazier"]
+[ext_resource type="Script" path="res://src/Enemies/ArenaHookComponent.cs" id="6_arenahook"]
 
 [sub_resource type="NavigationMesh" id="NavMesh_ar"]
 geometry_parsed_geometry_type = 1
@@ -129,3 +130,66 @@ transform = Transform3D(4.3, 0, 0, 0, 1.15, 0, 0, 0, 1, 0, -2, 0)
 transform = Transform3D(-4.3, 0, 0, 0, 1.15, 0, 0, 0, -1, 0, -2, 0)
 
 [node name="Model" parent="Brazier" instance=ExtResource("5_brazier")]
+
+; --- 36D: the arena's declarative bindings ------------------------------------
+; Four spawn points for a boss's add waves. They are found by GROUP, not by node path or name, so
+; renaming or re-parenting one cannot silently unbind it — and BossController scopes the lookup to
+; markers under its own parent, so a second loaded arena can never lend this one its spawns.
+; The boss stands at the arena centre (the brazier's +14 X offset), so these ring him without
+; dropping an add on top of him or inside a wall.
+
+[node name="AddSpawns" type="Node3D" parent="."]
+
+[node name="SpawnNE" type="Marker3D" parent="AddSpawns" groups=["boss_add_spawn"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 7)
+
+[node name="SpawnNW" type="Marker3D" parent="AddSpawns" groups=["boss_add_spawn"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, 7)
+
+[node name="SpawnSE" type="Marker3D" parent="AddSpawns" groups=["boss_add_spawn"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, -7)
+
+[node name="SpawnSW" type="Marker3D" parent="AddSpawns" groups=["boss_add_spawn"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, -7)
+
+; Ember vents: authored hidden and revealed as the fight escalates, so the arena itself reports the
+; phase without a UI element. Two come up when he is wounded, two more when he is desperate.
+[node name="EmberVents" type="Node3D" parent="."]
+
+[node name="VentA" type="OmniLight3D" parent="EmberVents"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0.6, 10)
+visible = false
+light_color = Color(1, 0.42, 0.12, 1)
+light_energy = 2.4
+omni_range = 9.0
+
+[node name="VentB" type="OmniLight3D" parent="EmberVents"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0.6, -10)
+visible = false
+light_color = Color(1, 0.42, 0.12, 1)
+light_energy = 2.4
+omni_range = 9.0
+
+[node name="VentC" type="OmniLight3D" parent="EmberVents"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0.6, 12)
+visible = false
+light_color = Color(1, 0.26, 0.06, 1)
+light_energy = 3.2
+omni_range = 11.0
+
+[node name="VentD" type="OmniLight3D" parent="EmberVents"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0.6, -12)
+visible = false
+light_color = Color(1, 0.26, 0.06, 1)
+light_energy = 3.2
+omni_range = 11.0
+
+[node name="Phase2Hook" type="Node" parent="."]
+script = ExtResource("6_arenahook")
+ActivateAtPhase = 2
+Reveals = Array[NodePath]([NodePath("../EmberVents/VentA"), NodePath("../EmberVents/VentB")])
+
+[node name="Phase3Hook" type="Node" parent="."]
+script = ExtResource("6_arenahook")
+ActivateAtPhase = 3
+Reveals = Array[NodePath]([NodePath("../EmberVents/VentC"), NodePath("../EmberVents/VentD")])

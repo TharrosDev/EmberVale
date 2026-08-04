@@ -258,6 +258,17 @@ what a monster spell needs), and a wind-up flare on the body's claimed emissive 
   point: `BossController`'s emissive flare needs a material only an authored model supplies, so the
   three greyboxed dragons used to warn of nothing at all. Both cues now end together, and both end
   early on `AttackInterruptedEvent`.
+- **Add waves and arena hooks (36D).** `BossPhaseResource.AddWaves` holds `BossAddWaveResource`
+  sub-resources: any registered enemy id, a count, an optional repeat interval and a live cap.
+  `BossController` summons on phase entry, ticks repeats, and kills every add through the ordinary
+  damage path when the boss falls — so their loot and XP still land, rather than the player losing
+  value they had already earned. `BossAdds` is the pure core (`SpawnSlot`, `SummonCount`).
+- **An arena binds itself to the fight in its own scene, not in code.** `Marker3D`s tagged
+  `groups=["boss_add_spawn"]` are where waves arrive — resolved by group (a rename cannot silently
+  unbind one) and scoped to markers under the boss's own parent (two loaded arenas cannot borrow each
+  other's). No markers means a computed ring, which is what a lair gets. `ArenaHookComponent` is a
+  plain `Node` authored in the scene that reveals nodes at a given phase and resets on the boss's
+  death — the reset matters, because `BossSummonComponent` re-arms until the defeat is persisted.
 - **The interrupt is general, the tuning is boss data.** A stagger during `Phase.Windup` cancels a
   melee swing outright (`MeleeWeaponComponent`) and drops an active charge/channel
   (`SpellcastingComponent`) — for every actor, the player included. Once the hitbox opens the blow is
