@@ -41,6 +41,13 @@ public static class GameIds
         public const string DragonScale = "item.material.dragon_scale";
     }
 
+    /// <summary>Holdings authored under <c>data/properties/</c> (Phase 37A). Only the ones code
+    /// names need a constant here.</summary>
+    public static class Properties
+    {
+        public const string EmberCrownCottage = "property.ember_crown.cottage";
+    }
+
     /// <summary>Boss fight structures authored under <c>data/bosses/</c> (Phase 36A) and named by an
     /// archetype's <c>BossId</c>. Only the ones code references need a constant here.</summary>
     public static class Bosses

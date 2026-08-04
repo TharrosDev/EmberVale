@@ -84,6 +84,7 @@ public partial class GameBootstrap : Node3D
     private RegionStreamer? _streamer;
     private MapService? _mapService;
     private FastTravelService? _fastTravel;
+    private Housing.HousingService? _housing;
     private readonly System.Collections.Generic.List<Entity> _portals = new();
     // Post-transition settle (Phase 25.5B): time spent on the loading screen since a region load
     // began (-1 = not loading). Play resumes when the streamer reports the destination has finished
@@ -457,6 +458,11 @@ public partial class GameBootstrap : Node3D
         // Fast-travel network (Phase 25G): the set of attuned travel nodes; persists, read by the map.
         _fastTravel = new FastTravelService { Name = "FastTravel" };
         AddChild(_fastTravel);
+
+        // Property ownership (Phase 37A): what the player holds, persisted. Built beside fast travel
+        // because claiming a holding registers it as a travel destination.
+        _housing = new Housing.HousingService { Name = "Housing" };
+        AddChild(_housing);
 
         var mapScreen = new MapScreen();
         AddChild(mapScreen);

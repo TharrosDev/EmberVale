@@ -80,6 +80,11 @@ hud.compass.w,W
 hud.compass.nw,NW
 travel.prompt_attune,Attune to {0}
 travel.prompt_attuned,{0} (attuned)
+property.cottage.name,The Ashfall Cottage
+property.prompt_claim,"Claim {0} ({1} gold)"
+property.prompt_owned,{0} (yours)
+property.prompt_locked,"{0} — the town does not sell to strangers"
+property.prompt_price,"{0} — {1} gold, and you carry {2}"
 travel.button,Travel to {0}
 map.travel_header,FAST TRAVEL
 map.travel_empty,No waystones attuned yet.

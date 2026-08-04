@@ -1073,6 +1073,28 @@ freeze itself the instant it opened.
 
 ---
 
+### 2.4c Housing (`src/Housing`, Phase 37)
+
+`PropertyResource` (`data/properties/*.tres`) describes a claimable holding — name, region, a
+`PriceGold` and/or a `RequiredQuestId`, and the `TravelNodeId` it registers on a claim.
+`PropertyDatabase` indexes them (the `BossDatabase` mirror). `HousingService` is the owned set:
+`[GlobalClass] : Node, ISaveable`, shaped on `FastTravelService` — registered with **both** the
+`ServiceLocator` and the `SaveManager`, and unregistered from both.
+
+`PropertyDeedComponent : InteractableComponent` is the post in the world. `PropertyClaim.Resolve` is
+the pure decision behind it, and **both the prompt and the interaction read it**, so what the player
+is told and what happens cannot drift apart.
+
+- **The check order is deliberate**: owned → quest-locked → too-expensive. Reporting the price first
+  would send a player to earn gold for something a quest is holding shut anyway.
+- **Claiming registers a fast-travel node at the *player's* position, not the post's** — the roadmap's
+  housing↔Phase 25 tie, and landing fast travel on a collider is a trap `TravelNodeComponent` already
+  paid for once.
+- **A property must be sold or earned**, and must name a travel node; `--validate` rejects a holding
+  that is free-on-touch or that the player cannot return to.
+
+---
+
 ## 3. Collision layers & teams
 
 | Layer (bit)  | Value | Used by                                   |

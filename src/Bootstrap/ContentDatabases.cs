@@ -4,6 +4,7 @@ using Embervale.Dialogue;
 using Embervale.Enemies;
 using Embervale.Factions;
 using Embervale.Items;
+using Embervale.Housing;
 using Embervale.Magic;
 using Embervale.Npc;
 using Embervale.Progression;
@@ -46,6 +47,7 @@ public static class ContentDatabases
         EnemyArchetypeDatabase.Initialize();   // and before it too: the registry builds from these
         EnemyTemplateRegistry.Initialize();
         BestiaryDatabase.Initialize();         // after the registry: the validator cross-checks entries against it
+        PropertyDatabase.Initialize();         // holdings the player can claim (37A)
         CompanionDatabase.Initialize();
         CompanionRegistry.Initialize();
     }
