@@ -198,8 +198,8 @@ fixed*.
 **Blender MCP modifications (both):** scaled the **root node only**, exported with skins and
 animations.
 
-⚠️ **Both shipped mis-scaled** — the intended heights (goblin 1.12 m, Iron King 2.42 m) were not
-reached. The root node carried the scale factor in its **Y translation as well as its scale**, so
+⚠️ **Both shipped mis-scaled twice before landing** — the intended heights (goblin 1.12 m,
+Iron King 2.42 m) were not reached on either of the first two passes. The root node carried the scale factor in its **Y translation as well as its scale**, so
 the goblin was 0.83 m tall floating 0.29 m off the ground and the Iron King 1.46 m tall floating
 1.03 m. The check that passed them measured the model's top, which lands on target either way.
 Both re-exported at the intended height; see *Defects found and fixed*.
@@ -440,6 +440,65 @@ obvious the moment the game was actually run. All three are now fixed.
 The common thread with the original migration's defects: **every one of them is something a
 measurement passed and a look would have caught.** The bounding boxes were right, the clip lists
 resolved, `--validate` was green, and the game still showed a watch tower called Village Elder.
+
+## Third round — the Blender round-trip was corrupting bone-parented parts
+
+A play-through reported goblins half underground, a glitched head on Kael, and a sword floating
+in front of the hands. All three traced to two causes, and both invalidate measurements this file
+previously reported as verified.
+
+### Cause 1 — Blender's glTF round-trip loses a bone-parented child's placement
+
+Two models carry a mesh that is **parented to a bone rather than skinned**: Kael's hair and eyes
+(`NurbsPath.001`, on `Head`) and the Iron King's sword (`Knife`). Importing and re-exporting
+either through Blender silently moves and resizes that child. Measured against the untouched
+sources:
+
+| | source (ratio of body height) | after round-trip | should have been |
+| --- | --- | --- | --- |
+| Kael's hair | 0.712 … 1.041 | **0.437 … 0.737** | straddling the skull |
+| Iron King's sword | 0.167 … 0.721 | **0.397 … 0.451** (a 0.13 m stub) | 0.41 … 1.75 |
+
+Kael's hair and eyeballs were rendering at chest height and the Iron King's sword had shrunk to a
+nub. Both were **restored from the pristine `.glb`** and scaled by editing `RootNode` in the file
+directly — see below. **Do not round-trip a rigged model through Blender unless you have to**, and
+if you do, check every unskinned mesh against the source afterwards.
+
+### Cause 2 — Blender's `Object.bound_box` reports the *undeformed* mesh
+
+`bound_box` on an armature-modified object ignores the armature, so a model can measure correctly
+in Blender and render somewhere else entirely. That is how two models passed the second round and
+still shipped wrong:
+
+| Model | shipped | should have been |
+| --- | --- | --- |
+| `chr_player_base` | **−4.932 … −3.193** — the whole body below the floor | 0 … 1.700 |
+| `enm_goblin` | **−0.693 … 0.579** — sunk 0.69 m of a 1.12 m body | 0 … 1.117 |
+
+The goblin is what the player saw as "half underground with just their heads visible". The player
+body is first-person-invisible but is also `CompanionFactory.DefaultModelPath`, so a recruited
+companion was walking around 5 m under the map.
+
+### What replaced the measurement
+
+`scripts` no longer measure in Blender. Every rigged model's span is now read **out of Godot**, by
+skinning a sample of vertices by hand — `v_world = skeleton * bone_global_pose * bind_pose * v` —
+because `MeshInstance3D.get_aabb()` on a skinned mesh returns bind space and is off by ~60×.
+Corrections are then applied by editing `RootNode`'s `scale`/`translation` **in the `.glb` JSON**,
+which cannot disturb skins, clips or bone-parented children the way a re-export can. All eight
+rigged actors now measure exactly `0.000 … <target height>` post-import.
+
+### The sword was floating in front of the fist
+
+Not touching the hand at all — but only visible **side-on**. A straight-on viewmodel screenshot
+shows a hilt in front of the fingers as though it were held. The offset is no longer hand-tuned:
+`FirstPersonArmsComponent` now derives it from the grip point and hilt axis measured off the
+Adventurer's own `Idle_Sword` pose (fist centre, and the tunnel axis the curled fingers make),
+carried through the same fit the arm mesh went through.
+
+The viewmodel also read undersized because the world FOV (75°) is far too wide for anything held
+at arm's length. `ViewmodelFov` (default 55°) now scales the arms by the ratio of the half-angle
+tangents at unchanged distance — the single-camera equivalent of a separate viewmodel camera.
 
 ## Known, not fixed
 
