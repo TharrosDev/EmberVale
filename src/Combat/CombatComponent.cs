@@ -71,6 +71,16 @@ public partial class CombatComponent : EntityComponent
 
     public bool IsStaggered => _staggerTimer > 0d;
 
+    /// <summary>True while this actor is in its own attack wind-up (written by
+    /// <see cref="MeleeWeaponComponent"/>, which owns that window). Read here because incoming poise
+    /// damage is resolved here — see <see cref="WindupPoiseMultiplier"/>.</summary>
+    public bool InWindup { get; set; }
+
+    /// <summary>How much extra poise damage this actor takes while <see cref="InWindup"/>. Authored
+    /// per boss phase (<c>BossPhaseResource.WindupPoiseMultiplier</c>) and pushed here by
+    /// <c>BossController</c>; <c>1</c> — the default, and every non-boss — is no change.</summary>
+    public float WindupPoiseMultiplier { get; set; } = 1f;
+
     public float PoiseNormalized => MaxPoise <= 0f ? 0f : Mathf.Clamp(_poise / MaxPoise, 0f, 1f);
 
     protected override void OnInitialize()
@@ -168,8 +178,10 @@ public partial class CombatComponent : EntityComponent
         // Staggered event firing alongside the Died event on the same hit).
         if (_stats.IsAlive)
         {
-            // A block still chips poise (BlockPoiseFactor) so a held guard can be broken into a stagger.
-            _poise -= blocked ? packet.PoiseDamage * BlockPoiseFactor : packet.PoiseDamage;
+            // A block still chips poise (BlockPoiseFactor) so a held guard can be broken into a
+            // stagger; a defender caught in its own wind-up takes more (36C).
+            _poise -= CombatMath.PoiseDamage(
+                packet.PoiseDamage, blocked, BlockPoiseFactor, InWindup ? WindupPoiseMultiplier : 1f);
             if (_poise <= 0f)
             {
                 _poise = MaxPoise;

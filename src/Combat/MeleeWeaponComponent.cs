@@ -89,7 +89,10 @@ public partial class MeleeWeaponComponent : EntityComponent
 
         _stats?.ModifyCurrent(StatType.Stamina, -Weapon.StaminaCost);
         EnterPhase(Phase.Windup);
-        EventBus.Instance?.Publish(new AttackPerformedEvent(Entity!, ComboIndex));
+
+        // The telegraph is told the *effective* wind-up, not the authored one: a phase buff or a
+        // slow debuff moves the danger window, and a cue that ignores that is worse than none.
+        EventBus.Instance?.Publish(new AttackPerformedEvent(Entity!, ComboIndex, (float)_timer));
         return true;
     }
 
@@ -113,6 +116,17 @@ public partial class MeleeWeaponComponent : EntityComponent
             return;
         }
 
+        // Interrupt (36C): a stagger during the wind-up cancels the swing outright — the hitbox
+        // never opens. Only the wind-up is interruptible; once the blow is live it is committed,
+        // which is what keeps the punish window a readable thing to aim for rather than a race.
+        // Before this a stagger only stopped a swing from *starting*, so staggering a boss mid-
+        // wind-up did nothing at all and the blow landed anyway.
+        if (_phase == Phase.Windup && _combat is { IsStaggered: true })
+        {
+            CancelSwing();
+            return;
+        }
+
         _timer -= delta;
         if (_timer > 0d)
         {
@@ -132,13 +146,36 @@ public partial class MeleeWeaponComponent : EntityComponent
             case Phase.Recovery:
                 _phase = Phase.Idle;
                 ComboIndex = 0;
+                SetWindup(false);
                 break;
+        }
+    }
+
+    /// <summary>Drops the swing mid-wind-up and tells anything presenting it to stop.</summary>
+    private void CancelSwing()
+    {
+        _phase = Phase.Idle;
+        ComboIndex = 0;
+        _buffer = 0d;   // a queued press must not fire the instant the stagger lifts
+        SetWindup(false);
+        Hitbox?.Deactivate();
+        EventBus.Instance?.Publish(new AttackInterruptedEvent(Entity!));
+    }
+
+    /// <summary>Mirrors the wind-up window onto the combat component, which is where incoming poise
+    /// damage is resolved and therefore where a phase's wind-up vulnerability has to be applied.</summary>
+    private void SetWindup(bool inWindup)
+    {
+        if (_combat != null)
+        {
+            _combat.InWindup = inWindup;
         }
     }
 
     private void EnterPhase(Phase phase)
     {
         _phase = phase;
+        SetWindup(phase == Phase.Windup);
         float speed = AttackSpeed();
         _timer = phase switch
         {

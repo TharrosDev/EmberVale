@@ -2733,9 +2733,49 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
     **`--play` cannot spawn him** (the `F1` console needs keyboard input), so that covers boot,
     database loading and registration, not the fight — the at-keyboard check is
     `spawn 1 enemy.iron_king` plus lighting the brazier for the summon path.
-- [ ] **36C — Telegraph/wind-up + interrupt/stagger tooling** `[F]`
+- [x] **36C — Telegraph/wind-up + interrupt/stagger tooling** `[F]` ✅
   - **Done when:** reusable telegraph + interrupt/stagger windows drive off boss
     data.
+  - **Three gaps it closed, all found by reading:**
+    1. **A stagger interrupted nothing.** `MeleeWeaponComponent.StartSwing` refused to *begin* a
+       swing while staggered, but `_PhysicsProcess` advanced `Windup → Active` regardless — so
+       staggering a boss mid-wind-up did not stop the blow. `CancelCast` had existed since 29.5A
+       with exactly one caller (the player's menu/pause handler), so a staggered caster finished its
+       spell and a staggered dragon finished its breath.
+    2. **A greyboxed boss telegraphed nothing** — the emissive flare needs a material only an
+       authored model supplies (the 36B correction).
+    3. **The flare was out of step with the danger**, fading over a fixed 0.5 s while the maul wound
+       up for `WindupTime / AttackSpeed()` — and *further* out of step in a speed-buffed phase.
+  - **Done:** `AttackPerformedEvent` carries the **effective** `WindupSeconds`, and a new
+    `AttackInterruptedEvent` marks a cancelled action. A stagger during `Phase.Windup` cancels the
+    swing (no hitbox, combo reset, buffer cleared so it cannot fire the instant the stagger lifts);
+    once the hitbox is open the blow is committed, which keeps the punish window a thing to aim for
+    rather than a race. `SpellcastingComponent` drops an active charge/channel on the same check,
+    placed *before* its cooldown early-out — a cast with nothing on cooldown is still a cast — and
+    `BreathComponent` needed no change, since it already stops when `IsChanneling` goes false.
+    New `TelegraphRing` + `TelegraphComponent` draw a ground ring for exactly the reported wind-up,
+    sized to the creature's actual reach and tinted by its current phase; both cues die early on an
+    interrupt, and so do the player's viewmodel arms. `TelegraphComponent` knows nothing about
+    bosses — `EnemyArchetypeFactory` happens to attach it to boss archetypes, which is what makes it
+    the reusable half rather than another boss-shaped special case.
+    Tuning is boss data: `BossPhaseResource.WindupPoiseMultiplier` scales incoming poise while its
+    owner winds up, through the new pure `CombatMath.PoiseDamage` and two plain properties on
+    `CombatComponent` (`InWindup`, written by the component that owns the window;
+    `WindupPoiseMultiplier`, written by `BossController` on phase entry). The Iron King stays at
+    `1.0` in all three phases — no regression; the dragons run 1.2–1.6, so their big swings are worth
+    attacking into.
+  - ⚠️ **Player-facing difficulty change, chosen deliberately:** "general tooling" includes the
+    player, so being staggered mid-swing now cancels the player's attack too. Poise is symmetric;
+    this was called out before implementation rather than discovered in play.
+  - **Also:** `ApplyPhasePresentation` runs at initialize because phase one is never *entered*
+    (`AdvanceTo` only steps up from it), so its colour and vulnerability would otherwise sit on
+    defaults for the whole opening stage.
+    Build clean + 772 tests (13 new: ring curve + poise arithmetic) + `--validate` exit 0, with the
+    new "multiplier must be positive" rule negative-tested by setting one to `0` and watching it
+    fail + 3 clean `--play` runs. **`--play` cannot spawn a boss** (the `F1` console needs keyboard
+    input), so that covers boot and registration; a telegraph is a presentation feature and the real
+    gate is the maintainer's at-keyboard pass — ring on a dragon, flare timing on the Iron King,
+    a broken wind-up, a cancelled cast, and taking a stagger mid-swing as the player.
 - [ ] **36D — Adds/summon-wave + arena hooks** `[F]`
   - **Done when:** bosses can summon add waves and bind arena hooks declaratively.
 - [ ] **36E — Boss intro/defeat sequencing + guaranteed relic reward** `[F]`

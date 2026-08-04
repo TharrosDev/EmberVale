@@ -54,11 +54,13 @@ public partial class FirstPersonArmsComponent : EntityComponent
         _controller = owner.GetComponent<PlayerController>();
         BuildArms();
         EventBus.Instance?.Subscribe<AttackPerformedEvent>(OnAttack);
+        EventBus.Instance?.Subscribe<AttackInterruptedEvent>(OnInterrupted);
     }
 
     protected override void OnTeardown()
     {
         EventBus.Instance?.Unsubscribe<AttackPerformedEvent>(OnAttack);
+        EventBus.Instance?.Unsubscribe<AttackInterruptedEvent>(OnInterrupted);
     }
 
     private void BuildArms()
@@ -166,6 +168,16 @@ public partial class FirstPersonArmsComponent : EntityComponent
 
         _swing = 1f;
         _swingDir = e.ComboIndex % 2 == 0 ? 1 : -1;
+    }
+
+    /// <summary>A staggered swing is cancelled before the hitbox opens (36C), so the arms have to
+    /// drop with it — an arc that finishes on its own reads as a hit that should have landed.</summary>
+    private void OnInterrupted(AttackInterruptedEvent e)
+    {
+        if (ReferenceEquals(e.Attacker, Entity))
+        {
+            _swing = 0f;
+        }
     }
 
     public override void _Process(double delta)

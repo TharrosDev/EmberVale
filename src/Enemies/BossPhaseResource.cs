@@ -47,4 +47,14 @@ public partial class BossPhaseResource : Resource
 
     /// <summary>Peak emission energy of that flare.</summary>
     [Export] public float TelegraphEnergy { get; set; } = 2.5f;
+
+    /// <summary>
+    /// How much extra poise damage this boss takes while it is in its own attack wind-up (36C) —
+    /// the knob that decides whether a phase's big telegraphed swing is something to punish or only
+    /// something to dodge. <c>1</c> is no change; above <c>1</c> makes the wind-up a window worth
+    /// attacking into; below <c>1</c> hardens it, for a phase meant to be survived rather than
+    /// interrupted. Must stay positive: <c>0</c> would be a phase that can never be staggered while
+    /// winding up, which is indistinguishable in play from the interrupt being broken.
+    /// </summary>
+    [Export] public float WindupPoiseMultiplier { get; set; } = 1f;
 }

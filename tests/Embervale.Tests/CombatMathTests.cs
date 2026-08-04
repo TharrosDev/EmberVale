@@ -118,4 +118,48 @@ public class CombatMathTests
         float m = CombatMath.ArmorMultiplier(resist);
         Assert.True(m > 0f && m <= 1f, $"resist {resist} produced multiplier {m}");
     }
+    // --- Poise (Phase 36C) --------------------------------------------------
+
+    [Fact]
+    public void PoiseDamage_UnblockedAndNotWindingUp_IsTheRawAmount()
+    {
+        // The pre-36C behaviour, pinned: a multiplier of 1 must change nothing.
+        Assert.Equal(20f, CombatMath.PoiseDamage(20f, blocked: false, blockFactor: 0.5f, windupMultiplier: 1f), 4);
+    }
+
+    [Fact]
+    public void PoiseDamage_ABlockedHitStillChipsPoise()
+    {
+        // A held guard has to be breakable into a stagger, or blocking is a win button.
+        Assert.Equal(10f, CombatMath.PoiseDamage(20f, blocked: true, blockFactor: 0.5f, windupMultiplier: 1f), 4);
+    }
+
+    [Fact]
+    public void PoiseDamage_CaughtInAWindupTakesMore()
+    {
+        // The knob that makes a big telegraphed swing worth attacking into.
+        Assert.Equal(30f, CombatMath.PoiseDamage(20f, blocked: false, blockFactor: 0.5f, windupMultiplier: 1.5f), 4);
+    }
+
+    [Fact]
+    public void PoiseDamage_TheWindupMultiplierAppliesOnTopOfABlock()
+    {
+        Assert.Equal(15f, CombatMath.PoiseDamage(20f, blocked: true, blockFactor: 0.5f, windupMultiplier: 1.5f), 4);
+    }
+
+    [Fact]
+    public void PoiseDamage_AHardenedWindupTakesLess()
+    {
+        // Below 1 is legal: a phase meant to be survived rather than interrupted.
+        Assert.Equal(10f, CombatMath.PoiseDamage(20f, blocked: false, blockFactor: 0.5f, windupMultiplier: 0.5f), 4);
+    }
+
+    [Fact]
+    public void PoiseDamage_ANegativeMultiplierCannotHealPoise()
+    {
+        // Content is validated against this, but the maths must not restore poise on a hit even if
+        // a hand-edited .tres gets through.
+        Assert.Equal(0f, CombatMath.PoiseDamage(20f, blocked: false, blockFactor: 0.5f, windupMultiplier: -2f), 4);
+    }
+
 }

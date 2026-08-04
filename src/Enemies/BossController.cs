@@ -33,7 +33,6 @@ namespace Embervale.Enemies;
 [GlobalClass]
 public partial class BossController : EntityComponent
 {
-    private const float TelegraphDuration = 0.5f;
 
     /// <summary>Which <see cref="BossResource"/> drives this fight (see <c>data/bosses/</c>).</summary>
     [Export] public string BossId { get; set; } = string.Empty;
@@ -47,12 +46,19 @@ public partial class BossController : EntityComponent
     private StatsComponent? _stats;
     private SpellcastingComponent? _casting;
     private EnemyAIComponent? _ai;
+    private CombatComponent? _combat;
+    private TelegraphComponent? _telegraph;
     private StandardMaterial3D? _mat;
     private Color _baseColor = new(0.85f, 0.32f, 0.10f);
     private float _baseEmission = 0.5f;
 
     private int _phase = 1;
-    private float _telegraph;
+    private float _telegraphFlare;
+
+    /// <summary>Seconds the current wind-up lasts, taken from the attack event rather than assumed.
+    /// A fixed constant drifted from the real window the moment a phase buffed attack speed — the
+    /// flare outlasted the blow it was warning about, which is worse than not warning at all.</summary>
+    private float _telegraphSeconds = 0.5f;
     private bool _engaged;
     private double _fightElapsed;
     private bool _enraged;
@@ -67,6 +73,8 @@ public partial class BossController : EntityComponent
         _stats = Entity!.GetComponent<StatsComponent>();
         _casting = Entity.GetComponent<SpellcastingComponent>();
         _ai = Entity.GetComponent<EnemyAIComponent>();
+        _combat = Entity.GetComponent<CombatComponent>();
+        _telegraph = Entity.GetComponent<TelegraphComponent>();
 
         // The phase/telegraph glow drives the boss's emissive material: the stand-in capsule's
         // MaterialOverride, or (30D model) the first emissive surface under the "Mesh" scene root
@@ -84,14 +92,20 @@ public partial class BossController : EntityComponent
             _baseEmission = _mat.EmissionEnergyMultiplier;
         }
 
+        // Phase one is never "entered" — AdvanceTo only ever steps up from it — so its colour and
+        // wind-up vulnerability have to be pushed here or the opening stage would run on defaults.
+        ApplyPhasePresentation();
+
         EventBus.Instance?.Subscribe<DamageDealtEvent>(OnDamage);
         EventBus.Instance?.Subscribe<AttackPerformedEvent>(OnAttack);
+        EventBus.Instance?.Subscribe<AttackInterruptedEvent>(OnInterrupted);
     }
 
     protected override void OnTeardown()
     {
         EventBus.Instance?.Unsubscribe<DamageDealtEvent>(OnDamage);
         EventBus.Instance?.Unsubscribe<AttackPerformedEvent>(OnAttack);
+        EventBus.Instance?.Unsubscribe<AttackInterruptedEvent>(OnInterrupted);
     }
 
     /// <summary>An inline <see cref="Boss"/> wins; otherwise the id is looked up. A miss warns and
@@ -161,12 +175,12 @@ public partial class BossController : EntityComponent
     {
         TickEnrage(delta);
 
-        if (_telegraph <= 0f)
+        if (_telegraphFlare <= 0f)
         {
             return;
         }
 
-        _telegraph = Mathf.Max(0f, _telegraph - (float)delta / TelegraphDuration);
+        _telegraphFlare = Mathf.Max(0f, _telegraphFlare - ((float)delta / _telegraphSeconds));
         ApplyTelegraph();
     }
 
@@ -236,9 +250,31 @@ public partial class BossController : EntityComponent
             _ai.ProfileId = definition.AiProfileId;
         }
 
+        ApplyPhasePresentation();
         ApplyTelegraph();
         EventBus.Instance?.Publish(new BossPhaseChangedEvent(Entity!, phase, TotalPhases));
         Log.Info($"{Entity!.DisplayName} enters phase {phase}/{TotalPhases} — the fight escalates.");
+    }
+
+    /// <summary>Pushes the current phase's presentation and vulnerability outward: the ring takes
+    /// its colour, and the combat component takes the wind-up poise multiplier — that component is
+    /// where incoming poise resolves, so it is where the knob has to land.</summary>
+    private void ApplyPhasePresentation()
+    {
+        if (_boss.Phases.Count < _phase || _boss.Phases[_phase - 1] is not { } definition)
+        {
+            return;
+        }
+
+        if (_telegraph != null)
+        {
+            _telegraph.RingColor = definition.TelegraphColor;
+        }
+
+        if (_combat != null)
+        {
+            _combat.WindupPoiseMultiplier = definition.WindupPoiseMultiplier;
+        }
     }
 
     // --- Enrage -------------------------------------------------------------
@@ -319,7 +355,19 @@ public partial class BossController : EntityComponent
     {
         if (ReferenceEquals(e.Attacker, Entity))
         {
-            _telegraph = 1f;
+            _telegraphSeconds = Mathf.Max(0.05f, e.WindupSeconds);
+            _telegraphFlare = 1f;
+            ApplyTelegraph();
+        }
+    }
+
+    /// <summary>A punished wind-up drops the flare with the blow, so the two telegraphs (this and
+    /// the ground ring) end together and the interrupt reads as the win it is.</summary>
+    private void OnInterrupted(AttackInterruptedEvent e)
+    {
+        if (ReferenceEquals(e.Attacker, Entity))
+        {
+            _telegraphFlare = 0f;
             ApplyTelegraph();
         }
     }
@@ -332,8 +380,8 @@ public partial class BossController : EntityComponent
         }
 
         BossPhaseResource definition = _boss.Phases[_phase - 1];
-        _mat.EmissionEnergyMultiplier = Mathf.Lerp(_baseEmission, definition.TelegraphEnergy, _telegraph);
+        _mat.EmissionEnergyMultiplier = Mathf.Lerp(_baseEmission, definition.TelegraphEnergy, _telegraphFlare);
         _mat.Emission = _baseColor.Lerp(
-            definition.TelegraphColor, Mathf.Clamp(_telegraph * (0.3f + (0.2f * _phase)), 0f, 1f));
+            definition.TelegraphColor, Mathf.Clamp(_telegraphFlare * (0.3f + (0.2f * _phase)), 0f, 1f));
     }
 }

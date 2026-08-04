@@ -375,6 +375,14 @@ public static class ContentValidator
                     $"phase {i} ({boss.Phases[i - 1].HealthFraction:0.##}) — phases must descend");
             }
 
+            if (phase.WindupPoiseMultiplier <= 0f)
+            {
+                issues.Add(
+                    $"boss '{boss.Id}' phase {i + 1} has a wind-up poise multiplier of " +
+                    $"{phase.WindupPoiseMultiplier} — the phase could never be staggered mid-wind-up, " +
+                    "which in play is indistinguishable from the interrupt being broken");
+            }
+
             foreach (string spellId in phase.GrantSpellIds)
             {
                 if (SpellDatabase.Get(spellId) == null)
