@@ -147,9 +147,16 @@ dotnet test tests/Embervale.Tests
 | `Shift` | Sprint | | Middle mouse | Lock-on (wheel cycles target) |
 | `Space` | Jump | | `E` | Interact (pick up, talk) |
 | `Ctrl` | Dodge roll (i-frames) | | `I` / `J` / `M` | Inventory / Journal / Map |
-| Left mouse | Melee attack | | `1`–`9` | Hotbar |
+| Left mouse | Melee attack | | `1`–`5` | Hotbar |
 | Right mouse | Block | | `Esc` | Pause menu |
 | `V` | Swap first ↔ third person | | | |
+
+**Gamepad**: left stick move · right stick look · RT attack · LT block · A jump · B dodge ·
+L3 sprint · R3 lock-on · RB cast · LB cycle spell · X interact · D-Left swap camera ·
+Y inventory · Start pause. Remapping is still to come.
+
+Opening any blocking menu (inventory, dialogue, crafting, bestiary) **pauses the world**. Cinematic
+holds — the boss entrance, the opening narration — take the controls but keep the world running.
 
 **Debug shortcuts** (sandbox only): `H` heal dummy · `R` respawn dummy · `X` +50 XP ·
 `P` +10 corruption · `K` shift goblin reputation · `F5`/`F9` quick save/load ·

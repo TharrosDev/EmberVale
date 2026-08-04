@@ -115,6 +115,13 @@ public partial class AIProfileResource : Resource
 
     [Export] public float MaxRetreatTime { get; set; } = 3.5f;
 
+    /// <summary>Seconds after a retreat ends before this actor may break off again. Nothing heals a
+    /// wounded enemy, so without a cooldown the re-engage at the end of a retreat hits the same
+    /// <c>RetreatHealthFraction</c> check that started it and it flees again on the very next tick —
+    /// a permanent flee loop rather than the "re-engages once the panic passes" it is meant to be.
+    /// Set 0 to allow immediate re-retreat (the old behaviour).</summary>
+    [Export] public float RetreatCooldown { get; set; } = 10f;
+
     /// <summary>A coward: runs on sight and never willingly closes. Retreat becomes its answer to
     /// spotting the target rather than a wounded-animal reflex.</summary>
     [Export] public bool FleeOnSight { get; set; } = false;

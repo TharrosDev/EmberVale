@@ -1541,6 +1541,39 @@ no code) — batch them when momentum is good.
     `FirstPersonArmsComponent` scales the arms by the ratio of the world and viewmodel FOV
     half-angle tangents, so it now re-derives that scale whenever the camera's FOV changes —
     otherwise the slider silently undoes the whole trick and the hands read undersized.
+  - **Code-only deep debug pass (maintainer-requested, 2026-08-04):** a static audit of all 345
+    source files. Six issues found and fixed:
+    1. **Blocking menus suspended the player but not the world.** `GetTree().Paused` was set only
+       for `GameState.Paused`; every modal `UiPanel` merely set `UiState.MenuOpen`, whose only
+       gameplay consumer froze the *player* — and `DropHeldInput` drops the guard and cancels casts.
+       So reading the inventory or talking to an NPC mid-fight left a frozen, un-blocking,
+       un-dodging player taking free hits with DoTs still ticking. Fixed at the root:
+       `GameManager.RefreshPause()` is now the single writer of the paused flag, answering
+       `State == Paused || UiState.WorldPaused`, driven by a new `UiState.Changed` event.
+       `UiState.Open(owner, pausesWorld: true)` is the default; the boss intro, the opening
+       narration and the dev console pass `false` because the world must keep playing under them.
+       `UiPanel` gained `ProcessMode.Always` or a modal panel would freeze itself on open.
+       *(The per-system `MenuOpen` check was the tempting fix and is the one that had already
+       failed — only `HitStopDirector` and `CompanionRoster` ever remembered it.)*
+    2. **Far-LOD enemies barely advanced their wall-clock timers.** The sleep early-out returned
+       before `_stateTimer += delta`, so those timers advanced one *frame* per 0.5 s sleep interval —
+       a 12 s provoke memory ran for ~6 real minutes and the enemy never stood down. Slept time is
+       now banked and applied as `wall`; movement and turn slew still use `delta`, since stepping a
+       sleeping actor by half a second of motion would teleport it.
+    3. **Wounded enemies ping-ponged Combat↔Retreat forever.** Nothing heals them, so the re-engage
+       ending a retreat tripped the same `RetreatHealthFraction` check that started it. New
+       `AIProfileResource.RetreatCooldown` (default 10 s, `0` restores the old behaviour) gates it.
+    4. **`ServiceLocator` could hand out a freed node.** Six services register without ever
+       unregistering and 11 of 25 read sites never checked `IsInstanceValid` — latent today only
+       because `_sandboxBuilt` allows one world build per process. Fixed in the one read path
+       (`Resolve`) rather than at 11 call sites: a freed registrant is dropped and reported.
+    5. **Gamepad had no gameplay bindings at all** — it could open every menu and not walk out of
+       the first room. Added sticks for move/look, RT/LT attack/guard, A/B jump/dodge, L3/R3
+       sprint/lock-on, RB/LB cast/cycle, D-Left camera swap. Right-stick look is polled per frame
+       (a stick is a held deflection, not a delta) through the new pure `SettingsMath.StickLookStep`
+       — squared response past a 0.15 deadzone, framerate-independent, 8 tests.
+    6. **README documented a 9-slot hotbar**; there are 5. Docs corrected (maintainer kept 5).
+    740 tests, `--validate` exit 0, 6 clean `--play` runs.
   - **Trap paid on the way (now a CLAUDE.md §7 gotcha):** the rig was first hoisted *above*
     `PlayerController`'s not-playing guard so the camera would keep settling during a load. That
     dereferences the injected camera/pivot/aim nodes while a teardown is freeing them, and it

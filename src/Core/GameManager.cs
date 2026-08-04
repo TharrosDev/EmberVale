@@ -31,13 +31,34 @@ public sealed partial class GameManager : Node
         // The manager must keep ticking while the tree is paused so it can
         // resume the game out of the Paused state.
         ProcessMode = ProcessModeEnum.Always;
+        UiState.Changed += RefreshPause;
     }
 
     public override void _ExitTree()
     {
         if (Instance == this)
         {
+            UiState.Changed -= RefreshPause;
             Instance = null!;
+        }
+    }
+
+    /// <summary>
+    /// The one place the scene tree's paused flag is decided: paused while the game state says so,
+    /// <b>or</b> while a blocking menu is open.
+    ///
+    /// The menu half is not cosmetic. A modal panel suspends the player's movement, guard, dodge and
+    /// casts (see <c>PlayerController</c>), and before this it suspended nothing else — so reading
+    /// the inventory mid-fight left a frozen, un-blocking player being hit by enemies that never
+    /// stopped, with damage-over-time still ticking. Suspending the world here covers every system
+    /// at once instead of relying on each to remember a <c>UiState.MenuOpen</c> check (only two of
+    /// them ever did). Cinematic locks opt out via <c>UiState.Open(owner, pausesWorld: false)</c>.
+    /// </summary>
+    private void RefreshPause()
+    {
+        if (IsInsideTree())
+        {
+            GetTree().Paused = State == GameState.Paused || UiState.WorldPaused;
         }
     }
 
@@ -63,7 +84,7 @@ public sealed partial class GameManager : Node
 
         // Halt the scene tree's simulation while paused; only nodes with
         // ProcessMode == Always (menus, this manager) keep running.
-        GetTree().Paused = next == GameState.Paused;
+        RefreshPause();
 
         Log.Info($"GameState: {previous} -> {next}");
         EventBus.Instance?.Publish(new GameStateChangedEvent(previous, next));

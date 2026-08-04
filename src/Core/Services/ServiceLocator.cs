@@ -79,9 +79,9 @@ public sealed partial class ServiceLocator : Node
     public T Get<T>()
         where T : class
     {
-        if (_services.TryGetValue(typeof(T), out object? service))
+        if (TryGet(out T service))
         {
-            return (T)service;
+            return service;
         }
 
         throw new InvalidOperationException($"No service registered for {typeof(T).Name}.");
@@ -90,9 +90,9 @@ public sealed partial class ServiceLocator : Node
     public bool TryGet<T>(out T service)
         where T : class
     {
-        if (_services.TryGetValue(typeof(T), out object? found))
+        if (Resolve(typeof(T)) is T found)
         {
-            service = (T)found;
+            service = found;
             return true;
         }
 
@@ -103,6 +103,31 @@ public sealed partial class ServiceLocator : Node
     public bool IsRegistered<T>()
         where T : class
     {
-        return _services.ContainsKey(typeof(T));
+        return Resolve(typeof(T)) != null;
+    }
+
+    /// <summary>
+    /// The one read path, and the one place a dead registration is caught. Most services here are
+    /// Godot <see cref="Node"/>s whose lifetime is a loaded world's, and several register without
+    /// ever unregistering — so a freed registrant would otherwise be handed out as a live service
+    /// and dereferenced, which in .NET Godot is a hard <c>gchandle.is_released</c> crash rather than
+    /// a null check away. Dropping it here fixes every caller at once instead of asking two dozen
+    /// call sites to remember <c>IsInstanceValid</c> (eleven of them did not).
+    /// </summary>
+    private object? Resolve(Type key)
+    {
+        if (!_services.TryGetValue(key, out object? service))
+        {
+            return null;
+        }
+
+        if (service is GodotObject godot && !GodotObject.IsInstanceValid(godot))
+        {
+            _services.Remove(key);
+            Log.Warn($"Service {key.Name} was freed without unregistering; dropped.");
+            return null;
+        }
+
+        return service;
     }
 }

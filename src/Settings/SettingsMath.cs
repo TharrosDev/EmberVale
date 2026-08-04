@@ -38,6 +38,31 @@ public static class SettingsMath
     public static float LookStep(float rawDelta, float baseSensitivity, float multiplier) =>
         rawDelta * baseSensitivity * multiplier;
 
+    /// <summary>
+    /// Per-frame look step from an analog stick axis. A stick is a held deflection, not a delta like
+    /// a mouse, so the step is rate × time rather than raw movement — which is also why it has to be
+    /// framerate-independent where <see cref="LookStep"/> does not.
+    ///
+    /// The deflection is squared (magnitude only, sign preserved): a stick has far less travel than a
+    /// mouse mat, and a linear response makes fine aim near centre impossible while still feeling
+    /// slow at full tilt. Input below <paramref name="deadzone"/> is dropped and the remainder is
+    /// rescaled from zero, so there is no step at the deadzone edge.
+    /// </summary>
+    public static float StickLookStep(
+        float axis, float deadzone, float radiansPerSecond, float delta, float multiplier)
+    {
+        float magnitude = Math.Abs(axis);
+        if (magnitude <= deadzone || delta <= 0f)
+        {
+            return 0f;
+        }
+
+        float span = 1f - deadzone;
+        float scaled = span <= 0f ? 1f : Math.Clamp((magnitude - deadzone) / span, 0f, 1f);
+        float curved = scaled * scaled;
+        return Math.Sign(axis) * curved * radiansPerSecond * delta * multiplier;
+    }
+
     /// <summary>New pitch after a vertical look step, honouring Invert-Y and the look limit. Up is
     /// negative pitch (subtract the step); Invert-Y adds instead, flipping the vertical axis.</summary>
     public static float ApplyPitch(float pitch, float verticalStep, bool invertY, float limit)

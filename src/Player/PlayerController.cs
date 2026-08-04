@@ -77,6 +77,15 @@ public partial class PlayerController : EntityComponent
     /// <summary>How far the crosshair convergence ray reaches before falling back to a far point.</summary>
     private const float AimTraceDistance = 200f;
 
+    /// <summary>Stick-look rate at full deflection (radians/second), before the sensitivity setting.
+    /// A stick is a held deflection rather than a delta, so it turns at a rate where the mouse turns
+    /// by distance — see <see cref="SettingsMath.StickLookStep"/>.</summary>
+    private const float StickLookRate = 2.6f;
+
+    /// <summary>Matches the deadzone <see cref="GameInput"/> sets on the look actions; the raw axis
+    /// is read here (not through an action) so the response curve can shape the whole travel.</summary>
+    private const float StickDeadzone = 0.15f;
+
     /// <summary>0 = first person, 1 = third person. Eased into the camera's rest pose each frame.</summary>
     private float _modeBlend;
 
@@ -340,8 +349,10 @@ public partial class PlayerController : EntityComponent
         UpdateCameraRig(delta);
         UpdateAim();
 
-        // A blocking menu (inventory) is open: hold position, ignore combat/look
-        // so UI clicks don't also drive the character.
+        // A blocking menu is open: hold position, ignore combat/look so UI clicks don't also drive
+        // the character. A menu now pauses the whole tree, so this is normally unreachable — it is
+        // the live path for a *cinematic* lock (boss intro, opening narration), which suspends the
+        // player without stopping the world.
         if (UiState.MenuOpen)
         {
             ClearFocus();
@@ -354,6 +365,8 @@ public partial class PlayerController : EntityComponent
         {
             ToggleCameraMode();
         }
+
+        ApplyStickLook(delta);
 
         UpdateFocus();
 
@@ -594,6 +607,43 @@ public partial class PlayerController : EntityComponent
     {
         FocusedEntity = null;
         FocusedInteractable = null;
+    }
+
+    /// <summary>Right-stick look. Mouse-look is event-driven in <see cref="_Input"/>, but a stick
+    /// reports a sustained deflection rather than a movement, so it is polled here and integrated
+    /// against the frame time. It writes the same yaw/pitch the mouse does — including the lock-on
+    /// rule that only pitch is player-driven while a target is held.</summary>
+    private void ApplyStickLook(double delta)
+    {
+        Vector2 look = Godot.Input.GetVector(
+            GameInput.LookLeft, GameInput.LookRight, GameInput.LookUp, GameInput.LookDown);
+        if (look == Vector2.Zero)
+        {
+            return;
+        }
+
+        float multiplier = _settings?.Current.MouseSensitivity ?? 1f;
+        bool invertY = _settings?.Current.InvertY ?? false;
+        float dt = (float)delta;
+
+        if (_lockOn?.Target == null)
+        {
+            float yawStep = SettingsMath.StickLookStep(look.X, StickDeadzone, StickLookRate, dt, multiplier);
+            if (yawStep != 0f)
+            {
+                _yaw.RotateY(-yawStep);
+            }
+        }
+
+        float pitchStep = SettingsMath.StickLookStep(look.Y, StickDeadzone, StickLookRate, dt, multiplier);
+        if (pitchStep != 0f)
+        {
+            _pitch = SettingsMath.ApplyPitch(_pitch, pitchStep, invertY, PitchLimit);
+            if (CameraPivot != null)
+            {
+                CameraPivot.Rotation = new Vector3(_pitch, 0f, 0f);
+            }
+        }
     }
 
     public override void _Input(InputEvent @event)

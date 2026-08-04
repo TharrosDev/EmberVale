@@ -133,7 +133,9 @@ public partial class DevConsole : CanvasLayer
     {
         _open = open;
         _panel.Visible = open;
-        if (open) UiState.Open(this); else UiState.Close(this);
+        // Diagnostic overlay: freezing the simulation under it would change what is being
+        // diagnosed, so it takes the controls without taking the clock.
+        if (open) UiState.Open(this, pausesWorld: false); else UiState.Close(this);
 
         if (open)
         {

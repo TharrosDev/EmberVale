@@ -46,6 +46,91 @@ public class UiStateTests
         Assert.Equal(0, UiState.OpenCount);
     }
 
+    // --- World pause (the menu/cinematic split) -----------------------------
+
+    [Fact]
+    public void AMenuPausesTheWorldByDefault()
+    {
+        // Before this, a blocking menu suspended the player's movement, guard, dodge and casts and
+        // suspended nothing else — so reading the inventory mid-fight left a frozen, un-blocking
+        // player being hit by enemies that never stopped, with DoTs still ticking.
+        var inventory = new object();
+        UiState.Open(inventory);
+
+        Assert.True(UiState.WorldPaused);
+
+        UiState.Close(inventory);
+        Assert.False(UiState.WorldPaused);
+    }
+
+    [Fact]
+    public void ACinematicLockTakesTheControlsWithoutTheClock()
+    {
+        // The boss intro and the opening narration hold the player still to watch something that is
+        // in the world — pausing there would freeze the very thing being watched.
+        var bossIntro = new object();
+        UiState.Open(bossIntro, pausesWorld: false);
+
+        Assert.True(UiState.MenuOpen, "the player must still be held still");
+        Assert.False(UiState.WorldPaused, "the entrance has to keep playing");
+
+        UiState.Close(bossIntro);
+    }
+
+    [Fact]
+    public void AMenuOverACinematic_PausesUntilThatMenuCloses()
+    {
+        var bossIntro = new object();
+        var inventory = new object();
+        UiState.Open(bossIntro, pausesWorld: false);
+        UiState.Open(inventory);
+        Assert.True(UiState.WorldPaused);
+
+        UiState.Close(inventory);
+        Assert.False(UiState.WorldPaused);
+        Assert.True(UiState.MenuOpen);   // the cinematic lock outlives it
+
+        UiState.Close(bossIntro);
+    }
+
+    [Fact]
+    public void NestedMenus_ResumeOnlyWhenTheLastCloses()
+    {
+        var inventory = new object();
+        var crafting = new object();
+        UiState.Open(inventory);
+        UiState.Open(crafting);
+
+        UiState.Close(crafting);
+        Assert.True(UiState.WorldPaused);
+
+        UiState.Close(inventory);
+        Assert.False(UiState.WorldPaused);
+    }
+
+    [Fact]
+    public void OpenAndClose_RaiseChanged()
+    {
+        // GameManager refreshes the scene tree's paused flag off this event; a missed raise either
+        // strands the pause or never applies it.
+        var inventory = new object();
+        int raised = 0;
+        void Handler() => raised++;
+
+        UiState.Changed += Handler;
+        try
+        {
+            UiState.Open(inventory);
+            UiState.Close(inventory);
+        }
+        finally
+        {
+            UiState.Changed -= Handler;
+        }
+
+        Assert.Equal(2, raised);
+    }
+
     [Fact]
     public void Open_IsIdempotent_PerOwner()
     {
