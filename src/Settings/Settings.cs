@@ -31,6 +31,12 @@ public partial class Settings : Resource
     [Export(PropertyHint.Range, "0,1")] public float UiVolume { get; set; } = 0.9f;
     [Export(PropertyHint.Range, "0,1")] public float VoiceVolume { get; set; } = 1f;
 
+    /// <summary>Vertical field of view, in degrees. Applied to the player camera by
+    /// <c>PlayerController</c> (it is a property of that camera, not of the engine, so the
+    /// service's graphics pass cannot reach it). The first-person viewmodel
+    /// rescales itself to match — see <c>FirstPersonArmsComponent</c>.</summary>
+    [Export(PropertyHint.Range, "60,110")] public float FieldOfView { get; set; } = 75f;
+
     // --- Controls / gameplay ------------------------------------------------
 
     [Export(PropertyHint.Range, "0.05,2")] public float MouseSensitivity { get; set; } = 1f;

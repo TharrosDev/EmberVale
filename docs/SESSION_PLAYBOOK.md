@@ -1535,7 +1535,12 @@ no code) — batch them when momentum is good.
     `CameraRigMath.ShoulderOffset` so the mapping is pinned by tests (including a nonsense side id
     falling back to the right shoulder rather than throwing). `SetFirstPerson` gained a
     no-change early-out, because the panel re-applies on every drag frame and the body-mesh
-    shadow walk is not free. 724 tests, `--validate` exit 0, 4 clean `--play` runs.
+    shadow walk is not free. 724 tests, `--validate` exit 0, 4 clean `--play` runs. **FOV** (60–110°)
+    followed in the Graphics section — applied by `PlayerController`, not `SettingsService`, since
+    it belongs to the player's camera rather than the engine. The catch worth knowing:
+    `FirstPersonArmsComponent` scales the arms by the ratio of the world and viewmodel FOV
+    half-angle tangents, so it now re-derives that scale whenever the camera's FOV changes —
+    otherwise the slider silently undoes the whole trick and the hands read undersized.
   - **Trap paid on the way (now a CLAUDE.md §7 gotcha):** the rig was first hoisted *above*
     `PlayerController`'s not-playing guard so the camera would keep settling during a load. That
     dereferences the injected camera/pivot/aim nodes while a teardown is freeing them, and it

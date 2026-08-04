@@ -26,6 +26,7 @@ settings.window_mode,Window Mode
 settings.window_mode.windowed,Windowed
 settings.window_mode.fullscreen,Fullscreen
 settings.window_mode.borderless,Borderless
+settings.fov,Field of View
 settings.vsync,V-Sync
 settings.max_fps,Max FPS
 settings.max_fps.uncapped,Uncapped
