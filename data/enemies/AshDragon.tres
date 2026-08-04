@@ -57,6 +57,7 @@ CapsuleRadius = 1.9
 CapsuleHeight = 4.6
 HitZones = Array[Resource]([SubResource("Zone_head"), SubResource("Zone_wings"), SubResource("Zone_body"), SubResource("Zone_tail")])
 IsBoss = true
+BossId = "boss.ash_dragon"
 DirectionalMelee = true
 MaxPoise = 260.0
 StaminaRegen = 18.0

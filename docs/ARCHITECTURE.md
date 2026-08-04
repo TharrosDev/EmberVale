@@ -226,6 +226,33 @@ direct children of the host. `Hitbox`/`Hurtbox` are `Area3D` (not
   stats from `PlayerAttributes.tres`, locomotion, combat `Team 0`, hurtbox,
   camera pivot + camera, aim point, melee hitbox, weapon from `IronSword.tres`, controller).
 
+### 2.4c Bosses (`src/Enemies`, Phase 36A)
+
+A boss fight is authored data. `BossResource` (`data/bosses/*.tres`) holds an ordered
+`BossPhaseResource` array — HP threshold, stat escalation, `GrantSpellIds`, an optional AI-profile
+swap, telegraph colour/energy — plus the enrage fuse. An `EnemyArchetypeResource` names one through
+`BossId`, the way it names an AI profile through `AiProfileId`; the archetype stays "what this
+creature is made of", the boss resource is "how its fight is structured", and two bosses can share a
+shape.
+
+`BossController` runs it: phases entered at or below a threshold and never left, abilities granted
+through `SpellcastingComponent.Learn` (the dialogue-reward path, which ignores `PlayerLearnable` —
+what a monster spell needs), and a wind-up flare on the body's claimed emissive material.
+`BossPhases` is the pure, tested core (`SelectPhase`, `ShouldEnrage`).
+
+- **The enrage clock starts on the first damage traded with the boss**, not on
+  `BossEncounterStartedEvent` — only `BossSummonComponent` publishes that, so a lair boss's fuse
+  would never light.
+- **A big hit lands in the deepest phase crossed**, entering every stage on the way, so escalation
+  and ability grants are never skipped by a single large blow.
+- **An unknown or absent `BossId` falls back to the Phase 28B three-stage table**, so a content typo
+  costs the authored numbers, not the fight's structure.
+- `EnemyArchetypeFactory` attaches the controller for any `IsBoss` archetype. Before 36A only the
+  Iron King's bespoke factory did, so the three dragons were `BossEntity` healthbars with no phases,
+  no escalation and no telegraphs behind them.
+
+---
+
 ### 2.5 Enemies (`src/Enemies`)
 
 - **`EnemyEntity : CharacterEntity`** — marker type for hostiles.

@@ -1,0 +1,48 @@
+[gd_resource type="Resource" script_class="BossResource" load_steps=6 format=3 uid="uid://cmbrvlbossashdragon"]
+
+[ext_resource type="Script" path="res://src/Enemies/BossResource.cs" id="1_boss"]
+[ext_resource type="Script" path="res://src/Enemies/BossPhaseResource.cs" id="2_phase"]
+
+; Corrupted, and the corruption shows in the fight: it opens cold and deliberate, then burns through
+; its own reserves. Escalates harder than the wild dragon and enrages sooner, because the Ashen do
+; not pace themselves — that is what the affliction costs them.
+[sub_resource type="Resource" id="Phase_1"]
+script = ExtResource("2_phase")
+HealthFraction = 1.0
+AttackSpeedBonus = 0.0
+MoveSpeedBonus = 0.0
+GrantSpellIds = Array[String]([])
+AiProfileId = ""
+TelegraphColor = Color(0.85, 0.3, 0.35, 1)
+TelegraphEnergy = 2.2
+
+[sub_resource type="Resource" id="Phase_2"]
+script = ExtResource("2_phase")
+HealthFraction = 0.66
+AttackSpeedBonus = 0.25
+MoveSpeedBonus = 0.15
+GrantSpellIds = Array[String]([])
+AiProfileId = ""
+TelegraphColor = Color(0.95, 0.22, 0.3, 1)
+TelegraphEnergy = 3.6
+
+[sub_resource type="Resource" id="Phase_3"]
+script = ExtResource("2_phase")
+HealthFraction = 0.3
+AttackSpeedBonus = 0.4
+MoveSpeedBonus = 0.3
+GrantSpellIds = Array[String]([])
+AiProfileId = ""
+TelegraphColor = Color(1, 0.1, 0.25, 1)
+TelegraphEnergy = 5.5
+
+
+[resource]
+script = ExtResource("1_boss")
+Id = "boss.ash_dragon"
+Phases = Array[Resource]([SubResource("Phase_1"), SubResource("Phase_2"), SubResource("Phase_3")])
+EnrageSeconds = 135.0
+EnrageAttackSpeedBonus = 0.55
+EnrageMoveSpeedBonus = 0.35
+EnrageSpellIds = Array[String]([])
+EnrageForcesFinalPhase = true

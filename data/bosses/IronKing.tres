@@ -1,0 +1,53 @@
+[gd_resource type="Resource" script_class="BossResource" load_steps=6 format=3 uid="uid://cmbrvlbossironking"]
+
+[ext_resource type="Script" path="res://src/Enemies/BossResource.cs" id="1_boss"]
+[ext_resource type="Script" path="res://src/Enemies/BossPhaseResource.cs" id="2_phase"]
+
+; The Iron King's fight, moved out of BossController's hard-coded table (Phase 28B) without changing
+; a number: 66% / 33% thresholds, +25%/+15% then +30%/+20%, and the same ember flare burning hotter
+; each stage. That equivalence is the point — it is what makes "no behaviour regression" something
+; you can check rather than assert.
+;
+; He deliberately has NO enrage. Adding one would be a balance change wearing a refactor's clothes,
+; and the first boss the player meets should be beatable at their own pace. The dragons carry the
+; fuse instead.
+
+[sub_resource type="Resource" id="Phase_1"]
+script = ExtResource("2_phase")
+HealthFraction = 1.0
+AttackSpeedBonus = 0.0
+MoveSpeedBonus = 0.0
+GrantSpellIds = Array[String]([])
+AiProfileId = ""
+TelegraphColor = Color(1, 0.25, 0.05, 1)
+TelegraphEnergy = 2.5
+
+[sub_resource type="Resource" id="Phase_2"]
+script = ExtResource("2_phase")
+HealthFraction = 0.66
+AttackSpeedBonus = 0.25
+MoveSpeedBonus = 0.15
+GrantSpellIds = Array[String]([])
+AiProfileId = ""
+TelegraphColor = Color(1, 0.25, 0.05, 1)
+TelegraphEnergy = 3.5
+
+[sub_resource type="Resource" id="Phase_3"]
+script = ExtResource("2_phase")
+HealthFraction = 0.33
+AttackSpeedBonus = 0.3
+MoveSpeedBonus = 0.2
+GrantSpellIds = Array[String]([])
+AiProfileId = ""
+TelegraphColor = Color(1, 0.25, 0.05, 1)
+TelegraphEnergy = 5.5
+
+[resource]
+script = ExtResource("1_boss")
+Id = "boss.iron_king"
+Phases = Array[Resource]([SubResource("Phase_1"), SubResource("Phase_2"), SubResource("Phase_3")])
+EnrageSeconds = 0.0
+EnrageAttackSpeedBonus = 0.5
+EnrageMoveSpeedBonus = 0.25
+EnrageSpellIds = Array[String]([])
+EnrageForcesFinalPhase = true

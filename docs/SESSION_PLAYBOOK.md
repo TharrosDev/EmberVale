@@ -2665,9 +2665,42 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
 
 ## Phase 36 — Boss Framework & Encounter Design `[F]`
 
-- [ ] **36A — `BossResource` schema (phases, abilities, enrage)** `[F]`
+- [x] **36A — `BossResource` schema (phases, abilities, enrage)** `[F]` ✅
   - **Done when:** a boss is describable as data (HP-threshold phases, per-phase
     ability sets, enrage timer).
+  - **Scope call (maintainer, 2026-08-04):** the schema *runs* in this pass rather than landing as
+    an unread definition — a resource with no consumer is exactly the theoretical scaffolding §1
+    forbids, and wiring it is what turns the dragons into actual boss fights. 36B therefore shrinks
+    to moving the Iron King off `BossFactory`.
+  - **Done:** `BossResource` + `BossPhaseResource` (sub-resource array, the `HitZoneResource`
+    pattern) + `BossDatabase` (mirrors `EnemyArchetypeDatabase`, initialized *before* it so the
+    validator can cross-check) + the pure `BossPhases` (`SelectPhase`/`ShouldEnrage`, 13 tests).
+    `EnemyArchetypeResource.BossId` names one; `EnemyArchetypeFactory` attaches a `BossController`
+    to any `IsBoss` archetype — **which is the line that gave the three dragons a fight at all**:
+    they were `BossEntity` healthbars with no phases, escalation or telegraphs, because only the
+    Iron King's bespoke factory ever attached a controller.
+    `BossController` is now data-driven end to end: phases (entered at or below a threshold, never
+    left, deepest-crossed on a big hit), per-phase stat escalation under a `boss.phase{n}` source
+    (remove-then-add, so a reload cannot stack it), ability grants via `SpellcastingComponent.Learn`,
+    optional AI-profile swap, per-phase telegraph colour/energy, and an enrage fuse. Phase 28B's
+    table survives as `FallbackBoss`, so a missing or misspelled id costs the authored numbers rather
+    than the structure.
+    **Enrage keys off the first damage traded, not `BossEncounterStartedEvent`** — only
+    `BossSummonComponent` publishes that (the Iron King's path), so every lair boss would have had a
+    fuse that never lit. That gap is 36E's.
+    Authored: `IronKing.tres` reproducing his Phase 28B numbers *exactly* (1.0/0.66/0.33,
+    +25%/+15% then +30%/+20%, peaks 2.5/3.5/5.5, same `WarnColor`, no enrage — the equivalence is
+    what makes "no behaviour regression" checkable, and it was diffed against the old constants), and
+    one per dragon: the wild dragon escalates only, the Ash dragon harder and enrages sooner, the
+    Ancient dragon escalates least but grants `spell.dragon_breath` at a third health — the ability
+    set demonstrated with existing monster-only spells rather than invented content.
+    Validator covers the domain **in both directions** (descending phases from 1.0, resolvable grant
+    spells and profile ids, an archetype's `BossId` resolves, and a `BossId` only on an `IsBoss`
+    archetype); the three new rules were confirmed to fire by breaking each and seeing exit 1.
+    Build clean + 759 tests + `--validate` exit 0 + 3 clean `--play` runs. **`--play` cannot spawn a
+    boss** (the `F1` console needs keyboard input), so the in-engine result proves boot, database
+    loading and validation — the phase flares, grants and fuse are reviewed against the Godot 4.7 C#
+    API and pinned by unit tests; seeing them fire is the maintainer's at-keyboard check.
 - [ ] **36B — `BossController` generalized from the Iron King** `[F]`
   - **Done when:** the Iron King (Phase 28) is re-expressed through
     `BossController`/`BossResource` with no behaviour regression.

@@ -42,6 +42,7 @@ public static class ContentDatabases
         WorldEventDatabase.Initialize();
         RaceDatabase.Initialize();
         AIProfileDatabase.Initialize();        // before the enemy registry: factories resolve profiles by id
+        BossDatabase.Initialize();             // before the archetypes: the validator cross-checks their BossIds
         EnemyArchetypeDatabase.Initialize();   // and before it too: the registry builds from these
         EnemyTemplateRegistry.Initialize();
         BestiaryDatabase.Initialize();         // after the registry: the validator cross-checks entries against it

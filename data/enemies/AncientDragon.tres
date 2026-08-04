@@ -62,6 +62,7 @@ CapsuleRadius = 2.0
 CapsuleHeight = 5.0
 HitZones = Array[Resource]([SubResource("Zone_head"), SubResource("Zone_wings"), SubResource("Zone_body"), SubResource("Zone_tail")])
 IsBoss = true
+BossId = "boss.ancient_dragon"
 DirectionalMelee = true
 MaxPoise = 300.0
 StaminaRegen = 16.0

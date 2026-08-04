@@ -73,6 +73,12 @@ public partial class EnemyArchetypeResource : Resource
     /// resolve it through the <c>ServiceLocator</c>. World bosses and the dragons set it.</summary>
     [Export] public bool IsBoss { get; set; }
 
+    /// <summary>The <see cref="BossResource"/> driving its fight structure — phases, per-phase
+    /// abilities, enrage (Phase 36A). Only meaningful alongside <see cref="IsBoss"/>; the content
+    /// validator rejects one without the other rather than letting it be a silent no-op. Empty on a
+    /// boss that wants the default three-stage escalation.</summary>
+    [Export] public string BossId { get; set; } = string.Empty;
+
     /// <summary>Give it the directional bite/wing/tail attack set (Phase 35A) instead of one swing
     /// arc. Needs <see cref="HitZones"/> to be worth anything — it is the same body, attacking.</summary>
     [Export] public bool DirectionalMelee { get; set; }
