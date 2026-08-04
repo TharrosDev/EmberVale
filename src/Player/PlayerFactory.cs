@@ -16,7 +16,8 @@ using Godot;
 namespace Embervale.Player;
 
 /// <summary>
-/// Builds a fully-assembled third-person player actor in code. Constructing it
+/// Builds a fully-assembled player actor in code (hybrid first/third-person rig — the camera
+/// mode is a live setting <see cref="PlayerController"/> owns). Constructing it
 /// here (rather than a hand-authored <c>.tscn</c>) keeps the node graph, its
 /// collision shape and its components in one reviewable place while the project
 /// is young; it can be promoted to a packed scene later without changing callers.
@@ -32,13 +33,15 @@ public static class PlayerFactory
     private const float CapsuleRadius = 0.4f;
     private const float CapsuleHeight = 1.8f;
 
-    // First-person camera (maintainer direction, 2026-07-02): the pitch pivot sits at eye
-    // height and the camera rides it directly. The third-person offsets are kept for the
-    // Phase 43 cutscene seam — PlayerController.SetFirstPerson(false) swings the camera back
-    // out and re-shows the body, so cutscenes can frame the retained third-person rig.
+    // Hybrid camera: the pitch pivot sits at eye height, and the camera rides it directly in first
+    // person or swings out behind-and-over-the-right-shoulder in third. PlayerController owns the
+    // blend between the two and the wall spring; these are the third-person seat at full extension.
+    // The shoulder offset is what keeps the body off the crosshair. The Phase 43 cutscene director
+    // frames the same rig.
     private const float EyeHeight = 1.62f;
     internal const float ThirdPersonBackDistance = 3.8f;
     internal const float ThirdPersonRise = 0.4f;
+    internal const float ThirdPersonShoulder = 0.6f;
 
     public static PlayerCharacter Create(Vector3 position) =>
         Create(position, Races.CharacterProfile.Human, applyStartingGrants: true);
@@ -116,6 +119,13 @@ public static class PlayerFactory
         var shake = new Embervale.Combat.CameraShake { Name = "Shake" };
         camera.AddChild(shake);
 
+        // Spells aim along this node rather than the pivot. It sits at the eye but PlayerController
+        // re-aims it each frame at whatever the crosshair converges on, so a bolt goes where the
+        // reticle is in third person too — from the pivot's raw forward it would miss by the
+        // camera's pullback and shoulder offset. In first person the two are identical.
+        var aimNode = new Node3D { Name = "AimPoint", Position = new Vector3(0f, EyeHeight, 0f) };
+        player.AddChild(aimNode);
+
         // Melee swing volume in front of the body; opened by the weapon component.
         var hitbox = new Hitbox
         {
@@ -189,7 +199,7 @@ public static class PlayerFactory
         player.AddChild(new SpellcastingComponent
         {
             Name = "Spellcasting",
-            AimNode = cameraPivot,
+            AimNode = aimNode,
             KnownSpellIds = new Godot.Collections.Array<string>
             {
                 GameIds.Spells.Firebolt,
@@ -207,6 +217,7 @@ public static class PlayerFactory
             Name = "Controller",
             CameraPivot = cameraPivot,
             Camera = camera,
+            AimNode = aimNode,
         };
         player.AddChild(controller);
 

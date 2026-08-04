@@ -1,6 +1,6 @@
 # Embervale
 
-> An original first-person, open-world fantasy action-RPG (third-person body retained for cutscenes) built in **Godot 4.7**
+> An original hybrid first/third-person, open-world fantasy action-RPG (swap views at any time) built in **Godot 4.7**
 > with **C# (.NET 8)**. A dying world whose magic is failing — explore it, fight
 > with weight, master a deep spell system, and let a **corruption** system reshape
 > how that world reacts to you, all the way to one of two endings.
@@ -149,6 +149,7 @@ dotnet test tests/Embervale.Tests
 | `Ctrl` | Dodge roll (i-frames) | | `I` / `J` / `M` | Inventory / Journal / Map |
 | Left mouse | Melee attack | | `1`–`9` | Hotbar |
 | Right mouse | Block | | `Esc` | Pause menu |
+| `V` | Swap first ↔ third person | | | |
 
 **Debug shortcuts** (sandbox only): `H` heal dummy · `R` respawn dummy · `X` +50 XP ·
 `P` +10 corruption · `K` shift goblin reputation · `F5`/`F9` quick save/load ·
@@ -196,7 +197,7 @@ systems reference.
     ├── Crafting/  Factions/  # Recipes + stations; reputation + standing-driven hostility
     ├── Corruption/          # The corruption meter, tiers, appearance + dialogue hooks, endings
     ├── Races/               # Playable races + character creation
-    ├── Player/  Enemies/     # First-person controller; perception-FSM AI (+ caster branch), spawning
+    ├── Player/  Enemies/     # Hybrid FP/TP controller + camera rig; perception-FSM AI (+ caster branch), spawning
     ├── Interaction/         # InteractableComponent (raycast interact)
     ├── Save/                # ISaveable, SaveManager, persistence directors
     ├── Localization/        # Loc string layer

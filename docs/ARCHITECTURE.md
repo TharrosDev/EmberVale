@@ -7,7 +7,7 @@ step-by-step recipes and the development workflow, see
 [`../CLAUDE.md`](../CLAUDE.md); for the phase plan see
 [`PRODUCTION_ROADMAP.md`](PRODUCTION_ROADMAP.md).
 
-> **One-line summary:** an original first-person, open-world fantasy action RPG (third-person body retained for cutscenes) in
+> **One-line summary:** an original hybrid first/third-person, open-world fantasy action RPG (the player swaps views at any time) in
 > **Godot 4.7** with **C# (.NET 8)**, built on a component-based, event-driven,
 > resource-driven architecture, and kept buildable and playable at every commit.
 
@@ -193,14 +193,30 @@ direct children of the host. `Hitbox`/`Hurtbox` are `Area3D` (not
 
 - **`PlayerCharacter : CharacterEntity`** — marker type registered in the
   `ServiceLocator`, so enemies resolve the player by a distinct type.
-- **`PlayerController : EntityComponent`** — first-person input + camera (SetFirstPerson toggles the retained third-person orbit for cutscenes). Reads
+- **`PlayerController : EntityComponent`** — input + the hybrid camera rig. Reads
   `GameInput` actions, drives `LocomotionComponent`, mouse-look (body yaw +
   camera-pivot pitch), routes `attack`→`MeleeWeaponComponent.TryAttack()` and
   `block`→`CombatComponent.IsBlocking`. Subscribes to `GameStateChangedEvent` to
   capture/release the mouse. Camera pivot is **injected** by the factory.
+- **The camera is hybrid, and the mode is a setting.** `SetFirstPerson` is driven by
+  `SettingsAppliedEvent` off `Settings.ThirdPersonCamera` — the settings panel's toggle and
+  the `toggle_camera` key (`V`) both flip *that*, so there is one path into the mode and it
+  persists. First person seats the camera on the eye pivot with the body shadows-only and the
+  `FirstPersonArmsComponent` viewmodel visible; third person is over-the-shoulder (back/rise/
+  shoulder offsets on `PlayerFactory`), body shown, arms hidden. Body yaw equals camera yaw in
+  **both**, so combat, lock-on, dodge and melee reach are mode-agnostic.
+- **`CameraRigMath`** (pure, unit-tested) owns the three things that make third person playable:
+  the eased mode blend, the wall spring (a sphere `CastMotion` from pivot to camera clamps the
+  distance — instant pull-in, eased push-out, so the camera is never inside geometry), and the
+  aim direction. `CameraRestPosition` returns the *live* blended+sprung offset and is what
+  `CameraShake` offsets around.
+- **Aim comes from the camera, not the head.** The interact raycast starts at the camera and its
+  reach is then measured from the *character*, so third person can never reach further than first.
+  Spells aim along a dedicated `AimPoint` node the controller re-aims each frame at the crosshair's
+  convergence point — in first person the camera sits on the pivot, so both are exact no-ops.
 - **`PlayerFactory.Create(pos)`** — assembles the player (collision capsule,
   stats from `PlayerAttributes.tres`, locomotion, combat `Team 0`, hurtbox,
-  camera pivot + camera, melee hitbox, weapon from `IronSword.tres`, controller).
+  camera pivot + camera, aim point, melee hitbox, weapon from `IronSword.tres`, controller).
 
 ### 2.5 Enemies (`src/Enemies`)
 

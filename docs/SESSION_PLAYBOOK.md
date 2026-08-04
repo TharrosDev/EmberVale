@@ -1507,6 +1507,34 @@ no code) — batch them when momentum is good.
     in-engine; all three edited cells headless-instantiated clean (6+1+1 lights verified).
     The FP-arm motion itself is reviewed against the Godot 4.7 C# API — maintainer playtest
     pending.
+- [x] **30M — Maintainer design pivot: hybrid first/third person** `[P/F]` ✅
+  - **Goal (maintainer-directed, 2026-08-03):** the game is **both**. 30K's retained
+    third-person rig becomes a real playable mode the player swaps to at any time from the
+    settings menu, not just a cutscene pose.
+  - **Done:** the settings toggle, the live `SettingsAppliedEvent` path and the body
+    shadows-only swap all already existed from 30K — what was missing was everything that
+    made third person *playable*. New `CameraRigMath` (pure, 14 tests) owns the three:
+    an eased mode blend (0.18 s, snapped on initialize so a save resumed in TP opens there),
+    the wall spring (sphere `CastMotion` pivot→camera, **instant pull-in / eased push-out**
+    at 6 m/s, so the camera is never inside geometry — the gap 30K's own doc comment flagged),
+    and the aim direction. `CameraRestPosition` now returns the *live* blended+sprung offset,
+    so `CameraShake` follows it for free. Third person is over-the-shoulder: a 0.6 m shoulder
+    offset joins the existing back/rise, body yaw still equals camera yaw in both modes, so
+    combat, lock-on, dodge and melee reach needed no changes at all. **Aim parity:** the
+    interact raycast now starts at the camera (not the head) with its reach measured from the
+    *character*, so TP can never reach further than FP; spells aim along a new `AimPoint` node
+    re-aimed each frame at the crosshair's convergence point. Both are exact no-ops in first
+    person — the invariant the tests pin. `V` (`GameInput.ToggleCamera`) flips the persisted
+    setting rather than a local flag, so the key and the panel can never disagree. Build +
+    720 tests + `--validate` (exit 0) green; verified live in-engine — the maintainer fought
+    goblins and looted during the `--play` runs, no errors.
+  - **Trap paid on the way (now a CLAUDE.md §7 gotcha):** the rig was first hoisted *above*
+    `PlayerController`'s not-playing guard so the camera would keep settling during a load. That
+    dereferences the injected camera/pivot/aim nodes while a teardown is freeing them, and it
+    produced an intermittent `gchandle.is_released` fatal on exit — **2 runs in 10** against
+    **0 in 9** on the unmodified tree, with nothing in the gameplay log to point at it. Moving it
+    back inside the guard (still above the menu-open return, so it settles with the inventory up)
+    took it to 0 in 8.
 
 ---
 
@@ -3244,6 +3272,7 @@ Nothing here is scheduled. Revisit an entry only when its stated trigger actuall
 | `Quests/ObjectiveLocator.cs` | Linear scan of the enemy group per call | Group size grows past what the caller's throttle hides |
 | `UI/CompassStrip.cs` | Objective target re-resolved on a timer, cached | Targets move fast enough that the cache reads stale |
 | `Player/FirstPersonArmsComponent.cs` | Same unmirrored mesh on both hands | Real first-person arm assets replace the greybox (Phase 53) |
+| `Player/PlayerController.cs` | Camera spring masks `World`, which actor bodies share — a companion stepping behind the player pulls the camera in | It reads as twitchy in play; the fix is a dedicated camera-blocker layer |
 | `Races/RaceComponent.cs` | Dev-tool race swap skips reputation | A player-facing respec/race-change is ever offered |
 | `Enemies/AshenAcolyteFactory.cs` | Reuses the goblin loot table | A Fallen/cultist table is authored |
 | `Localization/LocaleAudit.cs` | Hand-walks CSV lines (no quoted-comma support) | A string legitimately needs a comma inside quotes |

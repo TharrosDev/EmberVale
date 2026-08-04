@@ -1118,5 +1118,5 @@ that doesn't touch the slice.
 music/ambience, surface tagging — carries into Phase 52; final art across all five realms is Phase 53.
 
 > This roadmap turns the 21-phase *systems sandbox* into **Embervale, shipped** —
-> a first-person open-world fantasy RPG where you battle fallen heroes across four
+> a hybrid first/third-person open-world fantasy RPG where you battle fallen heroes across four
 > dying realms and choose whether to save creation or become its next Ash King.

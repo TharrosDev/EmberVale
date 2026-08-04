@@ -35,6 +35,10 @@ public static class GameInput
 
     /// <summary>Cycles the party's standing order (follow → hold → engage), Phase 32B.</summary>
     public const string CompanionCommand = "companion_command";
+
+    /// <summary>Swaps first ↔ third person. Flips the persisted ThirdPersonCamera setting, so this
+    /// key and the settings panel's toggle are the same switch.</summary>
+    public const string ToggleCamera = "toggle_camera";
     public const string Pause = "pause";
 
     /// <summary>Hotbar slots 1-5 (number-row keys) — quick-use/equip an assigned item.</summary>
@@ -113,6 +117,7 @@ public static class GameInput
         Bind(Map, new InputEventKey { PhysicalKeycode = Key.M });
         Bind(Bestiary, new InputEventKey { PhysicalKeycode = Key.B });
         Bind(CompanionCommand, new InputEventKey { PhysicalKeycode = Key.C });
+        Bind(ToggleCamera, new InputEventKey { PhysicalKeycode = Key.V });
         Bind(Pause, new InputEventKey { PhysicalKeycode = Key.Escape });
         Bind(Attack, new InputEventMouseButton { ButtonIndex = MouseButton.Left });
         Bind(Block, new InputEventMouseButton { ButtonIndex = MouseButton.Right });
