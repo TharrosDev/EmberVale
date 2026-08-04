@@ -115,7 +115,8 @@ public static class BossFactory
         // the tuning that used to be inlined here now lives in data/ai_profiles/Boss.tres).
         boss.AddChild(new EnemyAIComponent { Name = "AI", ProfileId = GameIds.AiProfiles.Boss });
         // Phase escalation (66%/33%) + attack telegraphs (Phase 28B) on top of the shared AI/weapon.
-        boss.AddChild(new BossController { Name = "BossController" });
+        // His Phase 28B numbers now live in data/bosses/IronKing.tres; the behaviour is identical.
+        boss.AddChild(new BossController { Name = "BossController", BossId = GameIds.Bosses.IronKing });
         boss.AddChild(new ExperienceComponent { Name = "Experience", XpValue = 500 });
         return boss;
     }

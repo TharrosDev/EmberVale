@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="BossResource" load_steps=6 format=3 uid="uid://cmbrvlbosswilddragon"]
+
+[ext_resource type="Script" path="res://src/Enemies/BossResource.cs" id="1_boss"]
+[ext_resource type="Script" path="res://src/Enemies/BossPhaseResource.cs" id="2_phase"]
+
+; A wild dragon is an animal, and it fights like one: it does not gain new tricks as it is hurt, it
+; simply gets faster and less careful. Escalation only — the first fight that proves a boss needs no
+; ability set to be a boss.
+;
+; The 150 s fuse is short because this is the smallest of the three and the fight should not become a
+; war of attrition against a health pool.
+[sub_resource type="Resource" id="Phase_1"]
+script = ExtResource("2_phase")
+HealthFraction = 1.0
+AttackSpeedBonus = 0.0
+MoveSpeedBonus = 0.0
+GrantSpellIds = Array[String]([])
+AiProfileId = ""
+TelegraphColor = Color(1, 0.45, 0.12, 1)
+TelegraphEnergy = 2.0
+
+[sub_resource type="Resource" id="Phase_2"]
+script = ExtResource("2_phase")
+HealthFraction = 0.6
+AttackSpeedBonus = 0.2
+MoveSpeedBonus = 0.15
+GrantSpellIds = Array[String]([])
+AiProfileId = ""
+TelegraphColor = Color(1, 0.32, 0.08, 1)
+TelegraphEnergy = 3.2
+
+[sub_resource type="Resource" id="Phase_3"]
+script = ExtResource("2_phase")
+HealthFraction = 0.25
+AttackSpeedBonus = 0.3
+MoveSpeedBonus = 0.25
+GrantSpellIds = Array[String]([])
+AiProfileId = ""
+TelegraphColor = Color(1, 0.18, 0.04, 1)
+TelegraphEnergy = 4.8
+
+
+[resource]
+script = ExtResource("1_boss")
+Id = "boss.wild_dragon"
+Phases = Array[Resource]([SubResource("Phase_1"), SubResource("Phase_2"), SubResource("Phase_3")])
+EnrageSeconds = 150.0
+EnrageAttackSpeedBonus = 0.45
+EnrageMoveSpeedBonus = 0.3
+EnrageSpellIds = Array[String]([])
+EnrageForcesFinalPhase = true

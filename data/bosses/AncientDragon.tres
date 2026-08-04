@@ -1,0 +1,53 @@
+[gd_resource type="Resource" script_class="BossResource" load_steps=6 format=3 uid="uid://cmbrvlbossancientdragon"]
+
+[ext_resource type="Script" path="res://src/Enemies/BossResource.cs" id="1_boss"]
+[ext_resource type="Script" path="res://src/Enemies/BossPhaseResource.cs" id="2_phase"]
+
+; The oldest of the three, and the only one that changes what it DOES rather than just how fast it
+; does it. It opens speaking the elder word alone — the fight it would rather have — and only at a
+; third of its health does it stoop to ordinary dragonfire. That grant is the per-phase ability set
+; earning its place: both spells already exist and are monster-only, so this is authored content,
+; not invented content.
+;
+; It escalates least per stage. An ancient thing does not panic; it runs out of patience, which is
+; what the long 240 s fuse is for.
+[sub_resource type="Resource" id="Phase_1"]
+script = ExtResource("2_phase")
+HealthFraction = 1.0
+AttackSpeedBonus = 0.0
+MoveSpeedBonus = 0.0
+GrantSpellIds = Array[String]([])
+AiProfileId = ""
+TelegraphColor = Color(0.9, 0.55, 0.2, 1)
+TelegraphEnergy = 2.4
+
+[sub_resource type="Resource" id="Phase_2"]
+script = ExtResource("2_phase")
+HealthFraction = 0.66
+AttackSpeedBonus = 0.15
+MoveSpeedBonus = 0.1
+GrantSpellIds = Array[String]([])
+AiProfileId = ""
+TelegraphColor = Color(1, 0.42, 0.12, 1)
+TelegraphEnergy = 3.4
+
+[sub_resource type="Resource" id="Phase_3"]
+script = ExtResource("2_phase")
+HealthFraction = 0.33
+AttackSpeedBonus = 0.25
+MoveSpeedBonus = 0.15
+GrantSpellIds = Array[String](["spell.dragon_breath"])
+AiProfileId = ""
+TelegraphColor = Color(1, 0.28, 0.06, 1)
+TelegraphEnergy = 5.0
+
+
+[resource]
+script = ExtResource("1_boss")
+Id = "boss.ancient_dragon"
+Phases = Array[Resource]([SubResource("Phase_1"), SubResource("Phase_2"), SubResource("Phase_3")])
+EnrageSeconds = 240.0
+EnrageAttackSpeedBonus = 0.4
+EnrageMoveSpeedBonus = 0.2
+EnrageSpellIds = Array[String]([])
+EnrageForcesFinalPhase = true

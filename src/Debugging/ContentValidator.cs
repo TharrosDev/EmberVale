@@ -99,6 +99,7 @@ public static class ContentValidator
         ValidateCompanions(issues);
         ValidateAIProfiles(issues);
         ValidateEnemyArchetypes(issues);
+        ValidateBosses(issues);
         ValidateBestiary(issues);
         ValidateResourcePaths(issues);
     }
@@ -260,6 +261,116 @@ public static class ContentValidator
         if (archetype.DirectionalMelee && archetype.HitZones.Count == 0)
         {
             issues.Add($"enemy archetype '{archetype.Id}' has directional melee but no hit zones to justify it");
+        }
+    }
+
+    /// <summary>
+    /// Boss fights became authored content in Phase 36A. Every failure here is silent at runtime and
+    /// expensive in play: an unsorted phase table means a boss that never leaves stage one, a
+    /// misspelled spell id means an ability set that grants nothing, and a <c>BossId</c> on a
+    /// non-boss archetype is a fight structure that is simply never attached. Checked in <b>both
+    /// directions</b>, the way the bestiary domain is.
+    /// </summary>
+    private static void ValidateBosses(List<string> issues)
+    {
+        foreach (BossResource boss in BossDatabase.All)
+        {
+            if (string.IsNullOrEmpty(boss.Id))
+            {
+                issues.Add("a boss has an empty id");
+            }
+
+            if (boss.Phases.Count == 0)
+            {
+                issues.Add($"boss '{boss.Id}' has no phases — it would never escalate");
+                continue;
+            }
+
+            ValidatePhases(boss, issues);
+
+            foreach (string spellId in boss.EnrageSpellIds)
+            {
+                if (SpellDatabase.Get(spellId) == null)
+                {
+                    issues.Add($"boss '{boss.Id}' enrage grants unknown spell '{spellId}'");
+                }
+            }
+
+            if (boss.EnrageSeconds < 0f)
+            {
+                issues.Add($"boss '{boss.Id}' has a negative enrage time ({boss.EnrageSeconds})");
+            }
+        }
+
+        // The other direction: an archetype must name a boss that exists, and only a boss archetype
+        // may name one at all — otherwise the reference is a no-op nothing would ever report.
+        foreach (EnemyArchetypeResource archetype in EnemyArchetypeDatabase.All)
+        {
+            if (string.IsNullOrEmpty(archetype.BossId))
+            {
+                continue;
+            }
+
+            if (!archetype.IsBoss)
+            {
+                issues.Add(
+                    $"enemy archetype '{archetype.Id}' names boss '{archetype.BossId}' but is not " +
+                    "IsBoss — the fight structure would never be attached");
+            }
+
+            if (BossDatabase.Get(archetype.BossId) == null)
+            {
+                issues.Add($"enemy archetype '{archetype.Id}' names unknown boss '{archetype.BossId}'");
+            }
+        }
+    }
+
+    /// <summary>A phase table must open at full health and descend strictly, because
+    /// <c>BossPhases.SelectPhase</c> trusts that ordering rather than re-sorting it every hit.</summary>
+    private static void ValidatePhases(BossResource boss, List<string> issues)
+    {
+        if (!Mathf.IsEqualApprox(boss.Phases[0].HealthFraction, 1f))
+        {
+            issues.Add(
+                $"boss '{boss.Id}' opens at {boss.Phases[0].HealthFraction:0.##} health rather than 1.0 — " +
+                "an undamaged boss would start in no phase at all");
+        }
+
+        for (int i = 0; i < boss.Phases.Count; i++)
+        {
+            BossPhaseResource phase = boss.Phases[i];
+            if (phase == null)
+            {
+                issues.Add($"boss '{boss.Id}' has a null phase at index {i}");
+                continue;
+            }
+
+            if (phase.HealthFraction is <= 0f or > 1f)
+            {
+                issues.Add(
+                    $"boss '{boss.Id}' phase {i + 1} has health fraction {phase.HealthFraction} — " +
+                    "must be within (0, 1]");
+            }
+
+            if (i > 0 && phase.HealthFraction >= boss.Phases[i - 1].HealthFraction)
+            {
+                issues.Add(
+                    $"boss '{boss.Id}' phase {i + 1} ({phase.HealthFraction:0.##}) does not fall below " +
+                    $"phase {i} ({boss.Phases[i - 1].HealthFraction:0.##}) — phases must descend");
+            }
+
+            foreach (string spellId in phase.GrantSpellIds)
+            {
+                if (SpellDatabase.Get(spellId) == null)
+                {
+                    issues.Add($"boss '{boss.Id}' phase {i + 1} grants unknown spell '{spellId}'");
+                }
+            }
+
+            if (!string.IsNullOrEmpty(phase.AiProfileId) && AIProfileDatabase.Get(phase.AiProfileId) == null)
+            {
+                issues.Add($"boss '{boss.Id}' phase {i + 1} names unknown AI profile '{phase.AiProfileId}'");
+            }
         }
     }
 
@@ -505,6 +616,7 @@ public static class ContentValidator
         CheckDuplicateIds<AIProfileResource>("res://data/ai_profiles", "ai profile", r => r.Id, issues);
         CheckDuplicateIds<EnemyArchetypeResource>("res://data/enemies", "enemy archetype", r => r.Id, issues);
         CheckDuplicateIds<BestiaryEntryResource>("res://data/bestiary", "bestiary entry", r => r.Id, issues);
+        CheckDuplicateIds<BossResource>("res://data/bosses", "boss", r => r.Id, issues);
     }
 
     /// <summary>Loads every <c>.tres</c> in <paramref name="directory"/> and reports empty or

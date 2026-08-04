@@ -209,6 +209,7 @@ Goblins roam to the north (−Z) and drop loot.
 │   ├── regions/            # RegionResource presets (Ember Crown, Frostfang Reach)
 │   ├── races/              # RaceResource presets (Human, Draekyn, Grondar, Sylthari, Umbral, Valari)
 │   ├── companions/         # CompanionResource presets (Kael) — Phase 32
+│   ├── bosses/            # BossResource presets (boss.*) — phases/abilities/enrage, Phase 36A
 │   ├── ai_profiles/        # AIProfileResource presets (ai.*) — enemy personalities, Phase 34A
 │   ├── enemies/            # EnemyArchetypeResource presets (enemy.*) — the roster, Phase 34B–34F
 │   ├── bestiary/           # BestiaryEntryResource presets — creature lore/reveal, Phase 34G
@@ -376,6 +377,28 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    `EnemyArchetypeFactory` builds it, `EnemyArchetypeDatabase` registers it, and
    `spawn <id>` works with no code. A bespoke factory earns its place only by doing
    something structurally different (goblin, Ashen Acolyte, Iron King).
+
+**A new boss fight (Phase 36A)**
+1. Author `data/bosses/Xxx.tres` (`script_class="BossResource"`): unique `Id` (`boss.*`) and
+   `Phases` — an array of `BossPhaseResource` sub-resources, **ordered high health to low**, the
+   first at `HealthFraction = 1.0`. Each phase carries its `AttackSpeedBonus`/`MoveSpeedBonus`
+   (fractions, applied as `PercentMult` under a `boss.phase{n}` source), optional `GrantSpellIds`,
+   an optional `AiProfileId` swap, and its `TelegraphColor`/`TelegraphEnergy` wind-up flare.
+   Optionally add the enrage fuse: `EnrageSeconds` (`0` = none), `EnrageSpellIds`, the two enrage
+   bonuses, and `EnrageForcesFinalPhase`.
+2. Point an archetype at it: set `IsBoss = true` **and** `BossId = "boss.xxx"` on
+   `data/enemies/Xxx.tres`. `EnemyArchetypeFactory` attaches the `BossController`; there is no code
+   to write. An `IsBoss` archetype with no `BossId` still gets a controller and falls back to the
+   default three-stage escalation, so a boss is never left with no structure at all.
+3. ⚠️ **The enrage clock starts on the first damage traded with the boss**, not on
+   `BossEncounterStartedEvent` — only `BossSummonComponent` publishes that (the Iron King's path),
+   so keying off it would leave every lair boss with a fuse that never lit.
+4. ⚠️ **Mark any spell a phase grants `PlayerLearnable = false`.** The grant goes through the same
+   path a dialogue reward uses, which ignores that flag — but the player's spellbook lists every
+   spell in the database, so a monster ability would otherwise show up as purchasable.
+5. `--validate` checks the domain **in both directions**: phases must descend from `1.0`, granted
+   spells and profile ids must resolve, an archetype's `BossId` must exist, and a `BossId` may only
+   sit on an `IsBoss` archetype (otherwise it is a silent no-op).
 
 **A big/boss creature with body zones (Phase 35A)**
 1. Author the archetype `.tres` as above, plus:
@@ -872,7 +895,9 @@ elemental archetypes, per-school damage resistances, every magic school's on-hit
 identity, Ashen corruption variants, and the bestiary. **Phase 34.5 is complete
 (34.5A–34.5C)** — the Frostfang Clans faction, their clan hold (Frostfang Reach's
 first settlement), three clan archetypes that stay neutral until provoked, and a
-rank chain with a betrayal branch. Next: 35 dragons. `docs/SESSION_PLAYBOOK.md` is the live per-sub-phase tracker;
+rank chain with a betrayal branch. **Phase 35 is complete (35A–35G)** — dragons: bodies with hit
+zones, flight, breath weapons, lairs, and dragon country. **Phase 36 is in progress: 36A is done** —
+boss fights are authored data (`data/bosses/*.tres`). Next: 36B, the Iron King off his bespoke factory. `docs/SESSION_PLAYBOOK.md` is the live per-sub-phase tracker;
 `docs/PRODUCTION_ROADMAP.md` §11 mirrors phase-level status only.
 
 > **Two UI phases, both done:** Phase 14 *polished the debug-grade overlay* (shared

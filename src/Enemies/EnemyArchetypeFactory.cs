@@ -133,6 +133,14 @@ public static class EnemyArchetypeFactory
 
         enemy.AddChild(new EnemyAIComponent { Name = "AI", ProfileId = archetype.AiProfileId });
 
+        // Phase 36A: a boss archetype gets the phase/ability/enrage/telegraph controller. Before
+        // this only the Iron King's bespoke factory attached one, so the three dragons were
+        // BossEntities with a healthbar and no fight structure at all behind it.
+        if (archetype.IsBoss)
+        {
+            enemy.AddChild(new BossController { Name = "BossController", BossId = archetype.BossId });
+        }
+
         // 35B: flight is a property of the AI profile, not of the archetype — a profile with a
         // takeoff range gets the vertical axis, everything else is untouched.
         if (AIProfileDatabase.Get(archetype.AiProfileId) is { TakeoffRange: > 0f })
