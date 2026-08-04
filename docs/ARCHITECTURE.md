@@ -208,6 +208,11 @@ direct children of the host. `Hitbox`/`Hurtbox` are `Area3D` (not
   settings**, read live off `_settings.Current` each frame so the sliders move the camera while
   they are being dragged; `PlayerFactory.ThirdPerson*` are their defaults and the rise, which is
   not exposed.
+- **FOV is a setting too, applied here rather than by `SettingsService`** — it is a property of the
+  player's `Camera3D`, not of the engine, so the service's graphics pass cannot reach it.
+  `FirstPersonArmsComponent` re-derives its viewmodel scale whenever the camera's FOV changes;
+  without that, moving the FOV slider silently undoes the scale trick and the hands read
+  undersized again.
 - **`CameraRigMath`** (pure, unit-tested) owns the three things that make third person playable:
   the eased mode blend, the wall spring (a sphere `CastMotion` from pivot to camera clamps the
   distance — instant pull-in, eased push-out, so the camera is never inside geometry), and the

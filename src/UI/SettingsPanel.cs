@@ -108,6 +108,9 @@ public partial class SettingsPanel : CanvasLayer
             new[] { Loc.T("settings.window_mode.windowed"), Loc.T("settings.window_mode.fullscreen"), Loc.T("settings.window_mode.borderless") },
             s.WindowMode, i => { s.WindowMode = i; Persist(); }));
         body.AddChild(ToggleRow(Loc.T("settings.vsync"), s.VSync, v => { s.VSync = v; Persist(); }));
+        // Applies live: FOV is only judgeable by watching the world move under it.
+        body.AddChild(SliderRow(Loc.T("settings.fov"), 60.0, 110.0, 1.0, s.FieldOfView,
+            v => s.FieldOfView = (float)v));
         int[] fpsPresets = { 0, 30, 60, 120, 144 };
         body.AddChild(DropdownRow(Loc.T("settings.max_fps"),
             new[] { Loc.T("settings.max_fps.uncapped"), "30", "60", "120", "144" },

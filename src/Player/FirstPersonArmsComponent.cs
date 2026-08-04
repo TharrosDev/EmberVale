@@ -45,6 +45,7 @@ public partial class FirstPersonArmsComponent : EntityComponent
     private float _swing;      // 1 → 0 while a slash plays
     private int _swingDir = 1; // alternates per combo hit
     private float _blockBlend; // 0 → 1 guard pose
+    private float _scaledForFov; // camera FOV the arms were last sized for
 
     protected override void OnInitialize()
     {
@@ -70,11 +71,7 @@ public partial class FirstPersonArmsComponent : EntityComponent
         _root = new Node3D { Name = "FpArms" };
         Camera.AddChild(_root);
 
-        // Scaling the arms (not the rest offsets, and not the whole rig — a uniform scale about
-        // the eye point is a visual no-op) is what emulates a separate viewmodel FOV.
-        float k = ViewmodelScale();
-
-        _rightArm = new Node3D { Name = "RightArm", Position = RightRest, Scale = Vector3.One * k };
+        _rightArm = new Node3D { Name = "RightArm", Position = RightRest };
         _rightArm.AddChild(armScene.Instantiate());
         _root.AddChild(_rightArm);
 
@@ -82,9 +79,11 @@ public partial class FirstPersonArmsComponent : EntityComponent
         // side has to be mirrored — an unmirrored copy reads as two right hands. Godot flips face
         // winding for a negative-determinant basis, so the mesh renders correctly; this was not
         // worth doing while the arm was a featureless 448-tri stub.
-        _leftArm = new Node3D { Name = "LeftArm", Position = LeftRest, Scale = new Vector3(-k, k, k) };
+        _leftArm = new Node3D { Name = "LeftArm", Position = LeftRest };
         _leftArm.AddChild(armScene.Instantiate());
         _root.AddChild(_leftArm);
+
+        ApplyViewmodelScale();
 
         // The held sword rides the right hand. These numbers are not eyeballed: the arm mesh is
         // the Adventurer's right forearm captured in its own Idle_Sword pose, so the fist already
@@ -97,6 +96,26 @@ public partial class FirstPersonArmsComponent : EntityComponent
         {
             sword.Transform = GripTransform();
             _rightArm.AddChild(sword);
+        }
+    }
+
+    /// <summary>Sizes both arms for the camera's current FOV and records what it was sized for.
+    /// Scaling the arms (not the rest offsets, and not the whole rig — a uniform scale about the
+    /// eye point is a visual no-op) is what emulates a separate viewmodel FOV. The left arm keeps
+    /// its mirrored X.</summary>
+    private void ApplyViewmodelScale()
+    {
+        float k = ViewmodelScale();
+        _scaledForFov = Camera is Camera3D cam ? cam.Fov : 0f;
+
+        if (_rightArm != null)
+        {
+            _rightArm.Scale = Vector3.One * k;
+        }
+
+        if (_leftArm != null)
+        {
+            _leftArm.Scale = new Vector3(-k, k, k);
         }
     }
 
@@ -161,6 +180,14 @@ public partial class FirstPersonArmsComponent : EntityComponent
         if (!visible)
         {
             return;
+        }
+
+        // The arm scale emulates a narrower viewmodel FOV against the world's, so it has to follow
+        // the FOV setting — otherwise dragging that slider silently undoes the whole point of
+        // ViewmodelScale and the hands read undersized again.
+        if (Camera is Camera3D cam && !Mathf.IsEqualApprox(cam.Fov, _scaledForFov))
+        {
+            ApplyViewmodelScale();
         }
 
         float dt = (float)delta;

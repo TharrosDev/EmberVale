@@ -130,12 +130,28 @@ public partial class PlayerController : EntityComponent
         EventBus.Instance?.Subscribe<GameStateChangedEvent>(OnGameStateChanged);
         EventBus.Instance?.Subscribe<SettingsAppliedEvent>(OnSettingsApplied);
         CaptureMouse(true);
+        ApplyFieldOfView(_settings?.Current);
         SetFirstPerson(!(_settings?.Current.ThirdPersonCamera ?? false), immediate: true);
     }
 
     /// <summary>Follow the camera-mode setting live — the settings panel and the toggle key both
     /// route through it, so there is one path into the mode and it is always the persisted one.</summary>
-    private void OnSettingsApplied(SettingsAppliedEvent e) => SetFirstPerson(!e.Current.ThirdPersonCamera);
+    private void OnSettingsApplied(SettingsAppliedEvent e)
+    {
+        ApplyFieldOfView(e.Current);
+        SetFirstPerson(!e.Current.ThirdPersonCamera);
+    }
+
+    /// <summary>Pushes the FOV setting onto the player camera. It lives here rather than in
+    /// <see cref="SettingsService"/> because it is a property of *this* camera, not of the engine,
+    /// and the service has no handle on the player.</summary>
+    private void ApplyFieldOfView(Settings.Settings? current)
+    {
+        if (Camera != null && current != null)
+        {
+            Camera.Fov = current.FieldOfView;
+        }
+    }
 
     /// <summary>The camera's live rest position — the single source of truth shared with
     /// <see cref="Combat.CameraShake"/>, which offsets around it per frame. It follows the mode
