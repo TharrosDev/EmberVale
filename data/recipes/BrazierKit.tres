@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="CraftingRecipeResource" format=3 uid="uid://cmbrvlrcpkbr0"]
+
+[ext_resource type="Script" path="res://src/Crafting/CraftingRecipeResource.cs" id="1_recipe"]
+[ext_resource type="Script" path="res://src/Crafting/RecipeIngredient.cs" id="2_ing"]
+
+[sub_resource type="Resource" id="Ing_a"]
+script = ExtResource("2_ing")
+ItemId = "item.material.iron_ingot"
+Quantity = 3
+
+[sub_resource type="Resource" id="Ing_b"]
+script = ExtResource("2_ing")
+ItemId = "item.material.scrap"
+Quantity = 4
+
+[resource]
+script = ExtResource("1_recipe")
+Id = "recipe.kit.brazier"
+DisplayName = "Forge Iron Brazier"
+Description = "A basin and a stand, for a fire that stays put."
+Station = 1
+Ingredients = Array[Resource]([SubResource("Ing_a"), SubResource("Ing_b")])
+OutputItemId = "item.decor.brazier"
+OutputQuantity = 1
+OutputRarity = 0

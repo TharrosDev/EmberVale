@@ -60,6 +60,7 @@ public partial class GameBootstrap : Node3D
     private DialoguePanel _dialoguePanel = null!;
     private CraftingPanel _craftingPanel = null!;
     private StoragePanel _storagePanel = null!;
+    private Housing.PlacementDirector _placement = null!;
     private WorldClock _clock = null!;
     private WeatherDirector _weather = null!;
     private SkyController _sky = null!;
@@ -392,6 +393,9 @@ public partial class GameBootstrap : Node3D
         // load (the SaveManager alone only restores components of actors already in the scene).
         PersistentActorRegistry.Clear();
         PersistentActorRegistry.Register(GameIds.Templates.Cache, BuildPersistentCache);
+        // Everything the player can set down in a holding (37C). Registered here so a placed prop
+        // rebuilds itself on load through exactly the same path a saved container does.
+        Housing.PlaceableTemplates.RegisterAll();
         _persistentSpawns = new PersistentSpawnDirector { Name = "PersistentSpawns" };
         AddChild(_persistentSpawns);
 
@@ -468,6 +472,12 @@ public partial class GameBootstrap : Node3D
         // because claiming a holding registers it as a travel destination.
         _housing = new Housing.HousingService { Name = "Housing" };
         AddChild(_housing);
+
+        // Placement mode (37C): the ghost and the commit. Not ISaveable — a placed prop persists
+        // through the PersistentSpawnDirector above, which already records template, position and yaw.
+        _placement = new Housing.PlacementDirector { Name = "Placement" };
+        AddChild(_placement);
+        AddChild(new PlacementHud());
 
         var mapScreen = new MapScreen();
         AddChild(mapScreen);

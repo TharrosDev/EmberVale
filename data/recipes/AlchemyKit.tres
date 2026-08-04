@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="CraftingRecipeResource" format=3 uid="uid://cmbrvlrcpkalc"]
+
+[ext_resource type="Script" path="res://src/Crafting/CraftingRecipeResource.cs" id="1_recipe"]
+[ext_resource type="Script" path="res://src/Crafting/RecipeIngredient.cs" id="2_ing"]
+
+[sub_resource type="Resource" id="Ing_a"]
+script = ExtResource("2_ing")
+ItemId = "item.material.iron_ingot"
+Quantity = 3
+
+[sub_resource type="Resource" id="Ing_b"]
+script = ExtResource("2_ing")
+ItemId = "item.material.healing_herb"
+Quantity = 6
+
+[resource]
+script = ExtResource("1_recipe")
+Id = "recipe.kit.alchemy"
+DisplayName = "Build Alchemy Kit"
+Description = "Glassware packed in straw, and the burners to go under it."
+Station = 1
+Ingredients = Array[Resource]([SubResource("Ing_a"), SubResource("Ing_b")])
+OutputItemId = "item.kit.alchemy"
+OutputQuantity = 1
+OutputRarity = 0

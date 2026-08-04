@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="PlaceableItemResource" format=3 uid="uid://cmbrvlkitwkb"]
+
+[ext_resource type="Script" path="res://src/Items/PlaceableItemResource.cs" id="1_placeable"]
+
+[resource]
+script = ExtResource("1_placeable")
+Id = "item.kit.workbench"
+DisplayName = "Workbench Kit"
+Description = "A trestle, a vice and a roll of tools. Set it down where you mean to work."
+Type = 0
+Rarity = 0
+MaxStack = 5
+Weight = 8.0
+Value = 140
+TemplateId = "prop.station.workbench"

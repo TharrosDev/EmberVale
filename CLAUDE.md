@@ -479,6 +479,32 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    `ContentValidator` does not scan. A mis-typed `PropertyId` resolves to nothing and the chest
    shows **no prompt at all** — if a chest is silently unusable in game, check that field first.
 
+**A new placeable prop or a buildable yard (Phase 37C)**
+1. **A yard:** set `PlacementCenter` and `PlacementRadius` on the `PropertyResource`. ⚠️ The centre is
+   **world** space. A cell scene is authored at its own origin and moved to the cell's `Center` by
+   the streamer, so a point read straight out of a `.tscn` lands a cell's width from the house — add
+   the cell's `Center` first. `--validate` catches the gross version by testing the centre against
+   the region's `Bounds`. `PlacementRadius = 0` is a holding that may not be built in, and it refuses
+   everywhere rather than succeeding everywhere.
+2. **A prop:** add an id + a `Build` case to `src/Housing/PlaceableTemplates.cs`. That one file is
+   both the id set the validator reads and the builders `PersistentActorRegistry` gets, so the two
+   cannot disagree. Stations go through `CraftingStationFactory.Create` (pass a `modelPath`);
+   decorations are an `Entity` + model + collider and deliberately have **no** interaction, because
+   the only verb a decoration has is Remove and placement mode owns that.
+3. **A kit:** author `data/items/Xxx.tres` (`script_class="PlaceableItemResource"`) with `TemplateId`
+   pointing at that id, plus a recipe — and ⚠️ seed the recipe in `GameIds.Recipes.Starting` or
+   `--validate` fails the build (see the crafting recipe entry above).
+4. ⚠️ **Never hand out placement ids from a counter.** `PersistentSpawnDirector._autoId` is not
+   persisted, so a counter reissues `#1` after a load and `Spawn` answers a known id by returning the
+   *existing* actor — the new prop silently never appears, and only in a session that loaded a save.
+   `PlacementIds.Next` scans the live ids instead. The id also encodes the property
+   (`place.<propertyId>#<n>`), which is how a holding's contents are found with no second save record.
+5. `--validate` **builds every template** and requires an `IEntity` with a collider. "Registered" and
+   "works" are different claims, and `PersistentSpawnDirector` discards a bad host with only a log
+   line — the player would just lose the kit.
+6. A prop is removed in placement mode, not by interacting with it: a station's own `Interact`
+   already opens its crafting window. Removal refuses on a full pack rather than destroying the prop.
+
 **A big/boss creature with body zones (Phase 35A)**
 1. Author the archetype `.tres` as above, plus:
    - `HitZones` — an array of `HitZoneResource` sub-resources (`Id`,
@@ -982,10 +1008,12 @@ telegraphed (a model-independent ground ring) and interruptible (a stagger cance
 cast, for every actor). **36D and 36E are done too** — phases summon add waves, an arena binds its
 spawn points and phase reactions declaratively in its own scene, and every boss's intro, defeat beat
 and guaranteed reward come from its own resource. **Phase 36 is complete (36A–36E).**
-**Phase 37 is in progress: 37A and 37B are done** — a property can be bought and/or earned, ownership
-persists, claiming it registers a fast-travel node, and an owned holding has a stash you can deposit
-into and withdraw from (the game's first two-way container). Next: 37C, placeable crafting stations
-and decoration. `docs/SESSION_PLAYBOOK.md` is the live per-sub-phase tracker;
+**Phase 37 is in progress: 37A, 37B and 37C are done** — a property can be bought and/or earned,
+ownership persists, claiming it registers a fast-travel node, an owned holding has a stash you can
+deposit into and withdraw from (the game's first two-way container), and you can craft kits and set
+crafting stations and decoration down in its yard (the game's first world-editing verb), where they
+persist. Next: 37D, trophy/display slots and one fully playable property.
+`docs/SESSION_PLAYBOOK.md` is the live per-sub-phase tracker;
 `docs/PRODUCTION_ROADMAP.md` §11 mirrors phase-level status only.
 
 > **Two UI phases, both done:** Phase 14 *polished the debug-grade overlay* (shared

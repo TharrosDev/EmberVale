@@ -4,14 +4,24 @@ using Godot;
 namespace Embervale.Crafting;
 
 /// <summary>
-/// Builds a world crafting station: a coloured block with a collider (so the player's
-/// interaction raycast can hit it) and a <see cref="CraftingStationComponent"/>. Mirrors
-/// the other code-built actors (e.g. <see cref="Items.ItemPickupFactory"/>); promote to a
-/// packed scene later without touching callers.
+/// Builds a world crafting station: a model (or a coloured block) with a collider — the player's
+/// interaction raycast needs one — and a <see cref="CraftingStationComponent"/>. Mirrors the other
+/// code-built actors (e.g. <see cref="Items.ItemPickupFactory"/>).
+///
+/// It had no callers at all until Phase 37C: both settlements author their stations directly in
+/// their cell <c>.tscn</c>, so this existed for two dozen phases building nothing. 37C is what gives
+/// it a job — every station the player places is built here.
 /// </summary>
 public static class CraftingStationFactory
 {
-    public static Entity Create(CraftingStationType station, string name, Vector3 position, Color color)
+    /// <summary>
+    /// Builds a station. <paramref name="modelPath"/> is an optional <c>.glb</c>; when it is absent
+    /// or fails to load the emissive box is used instead, the same first-a-model-then-a-box order
+    /// <c>GameBootstrap.BuildPersistentCache</c> uses. <paramref name="position"/> is <b>local</b> to
+    /// the parent it will be added to.
+    /// </summary>
+    public static Entity Create(
+        CraftingStationType station, string name, Vector3 position, Color color, string modelPath = "")
     {
         var entity = new Entity
         {
@@ -21,19 +31,7 @@ public static class CraftingStationFactory
             Position = position,
         };
 
-        entity.AddChild(new MeshInstance3D
-        {
-            Name = "Mesh",
-            Mesh = new BoxMesh { Size = new Vector3(0.9f, 1.0f, 0.9f) },
-            Position = new Vector3(0f, 0.5f, 0f),
-            MaterialOverride = new StandardMaterial3D
-            {
-                AlbedoColor = color,
-                EmissionEnabled = true,
-                Emission = color,
-                EmissionEnergyMultiplier = 0.25f,
-            },
-        });
+        entity.AddChild(BuildVisual(modelPath, color));
 
         var collider = new StaticBody3D { Name = "Collider" };
         collider.AddChild(new CollisionShape3D
@@ -51,5 +49,31 @@ public static class CraftingStationFactory
         });
 
         return entity;
+    }
+
+    /// <summary>The model if there is one, the greybox block otherwise. Named "Mesh" either way, so
+    /// anything looking for the visual finds it without caring which it got.</summary>
+    private static Node3D BuildVisual(string modelPath, Color color)
+    {
+        if (!string.IsNullOrEmpty(modelPath) &&
+            GD.Load<PackedScene>(modelPath)?.Instantiate() is Node3D model)
+        {
+            model.Name = "Mesh";
+            return model;
+        }
+
+        return new MeshInstance3D
+        {
+            Name = "Mesh",
+            Mesh = new BoxMesh { Size = new Vector3(0.9f, 1.0f, 0.9f) },
+            Position = new Vector3(0f, 0.5f, 0f),
+            MaterialOverride = new StandardMaterial3D
+            {
+                AlbedoColor = color,
+                EmissionEnabled = true,
+                Emission = color,
+                EmissionEnergyMultiplier = 0.25f,
+            },
+        };
     }
 }

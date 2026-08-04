@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="PlaceableItemResource" format=3 uid="uid://cmbrvlkitcrt"]
+
+[ext_resource type="Script" path="res://src/Items/PlaceableItemResource.cs" id="1_placeable"]
+
+[resource]
+script = ExtResource("1_placeable")
+Id = "item.decor.crate"
+DisplayName = "Banded Crate"
+Description = "An empty crate. It holds nothing and looks like somewhere that does."
+Type = 0
+Rarity = 0
+MaxStack = 5
+Weight = 5.0
+Value = 20
+TemplateId = "prop.decor.crate"

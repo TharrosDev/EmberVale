@@ -94,6 +94,21 @@ storage.slots,{0}/{1}
 storage.store,Store
 storage.take,Take
 storage.empty,Nothing here.
+craft.station_forge,Forge
+craft.station_workbench,Workbench
+craft.station_alchemy,Alchemy Table
+place.decor_brazier,Iron Brazier
+place.decor_crate,Banded Crate
+place.decor_banner,Guild Banner
+place.holding,"Placing: {0}  (x{1})"
+place.keys,"[{0}] set down     [Esc] done"
+place.keys_remove,"[{0}] pick up     [Esc] done"
+place.pick_up,Take back the {0}
+place.ok,Clear ground.
+place.refuse_not_owned,You own nowhere to build.
+place.refuse_no_ground,No ground there.
+place.refuse_blocked,Something is already standing there.
+place.refuse_outside,"Outside {0}"
 travel.button,Travel to {0}
 map.travel_header,FAST TRAVEL
 map.travel_empty,No waystones attuned yet.
@@ -146,6 +161,7 @@ char.unequip,Unequip
 char.empty,(empty)
 char.equip,Equip
 char.use,Use
+char.place,Place
 char.assign_hotbar,"Assign to hotbar slot {0}"
 interact.talk_to,Talk to {0}
 interact.loot,Loot {0}

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="PlaceableItemResource" format=3 uid="uid://cmbrvlkitalc"]
+
+[ext_resource type="Script" path="res://src/Items/PlaceableItemResource.cs" id="1_placeable"]
+
+[resource]
+script = ExtResource("1_placeable")
+Id = "item.kit.alchemy"
+DisplayName = "Alchemy Kit"
+Description = "Glass, burners and a rack of empty jars, packed in straw."
+Type = 0
+Rarity = 0
+MaxStack = 5
+Weight = 6.0
+Value = 180
+TemplateId = "prop.station.alchemy"
