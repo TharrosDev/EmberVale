@@ -112,6 +112,11 @@ public partial class TutorialDirector : Node, ISaveable
             return;
         }
 
+        // Skip does not route through Begin, so it has to drop the pending gap itself. Skipping
+        // inside the ~1 s between two hints otherwise let the queued Begin fire afterwards and put a
+        // hint back on screen for a tutorial that had just been turned off — and because Complete()
+        // refuses to act once _finished is set, that hint could never be cleared again.
+        _gap = 0d;
         SetStep(TutorialStep.None);
         _finished = true;
         EventBus.Instance?.Publish(new TutorialFinishedEvent(Skipped: true));
@@ -252,6 +257,12 @@ public partial class TutorialDirector : Node, ISaveable
         _moveHeld = 0d;
         _sprintHeld = 0d;
         _blockHeld = 0d;
+
+        // The pending between-hints gap is progress state like the accumulators above, and has to
+        // clear with them: it holds a queued Begin(Next(_lastCompleted)) that would otherwise fire a
+        // moment later and overwrite whatever step this call just set. That is what made Restart()
+        // land on the first hint and then jump back to wherever the sequence had got to.
+        _gap = 0d;
 
         SetStep(step);
         if (step == TutorialStep.None && !_finished)
