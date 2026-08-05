@@ -188,6 +188,11 @@ Goblins roam to the north (−Z) and drop loot.
 │   └── VERTICAL_SLICE_PLAN.md # Phase 33D/E build plan (slice arc, capture pass, gaps)
 ├── scenes/
 │   └── Main.tscn            # Entry scene (root has GameBootstrap script)
+├── assets/
+│   ├── library/             # Vendored Quaternius CC0 source art (401 models), .gdignore'd —
+│   │                        #   Godot never imports/exports it; adapt into models/ to use one
+│   ├── models/              # The models the game actually loads
+│   └── CREDITS.md           # Provenance + licence for every asset (mandatory before commit)
 ├── data/                    # Resource-driven content (.tres)
 │   ├── attributes/          # AttributeSet presets (player, dummy, goblin)
 │   ├── weapons/             # WeaponResource presets (iron sword, goblin claw)
@@ -504,6 +509,25 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    line — the player would just lose the kit.
 6. A prop is removed in placement mode, not by interacting with it: a station's own `Interact`
    already opens its crafting window. Removal refuses on a full pack rather than destroying the prop.
+
+**Giving a property a trophy stand (Phase 37D)**
+1. **Authored:** add an `Entity` to the cell with a collider, an `InventoryComponent` of
+   **`Capacity = 1`**, and a `TrophyStandComponent { PropertyId = "property.xxx" }`. See
+   `CottageStandW`/`CottageStandE` in `town_hub.tscn`. **Placeable:** nothing to do — the
+   `prop.display.stand` template and its Display Stand kit already exist.
+2. ⚠️ **Give it a `PersistentId` and never change it**, exactly as for 37B's chest. That one-slot
+   inventory *is* the display, and it persists as `inventory:<PersistentId>`; without an id it does
+   not register as a saveable at all and the trophy vanishes on reload.
+3. ⚠️ **Capacity must be 1.** `InventoryComponent.Load` clamps to `Capacity`, and a stand acting as
+   a chest is not a trophy case. `--validate` enforces the 1 on the placeable template.
+4. **Leave `PropertyId` empty on anything placed** — a placed stand reads its holding out of its own
+   `place.<propertyId>#<n>` id (`PlacementIds.PropertyOf`), which is why one template serves every
+   property.
+5. **What it accepts is `TrophyDisplay.MinimumRarity` (Epic).** Change it there, not at a call site:
+   the stand and `StoragePanel`'s Store button both read it, so they cannot disagree. Take is
+   deliberately never gated — a stand that could trap an item is worse than one holding junk.
+6. The window is the existing `StoragePanel`; a stand publishes the same `StorageOpenedEvent` with a
+   `MinRarity`. There is no trophy UI to wire.
 
 **A big/boss creature with body zones (Phase 35A)**
 1. Author the archetype `.tres` as above, plus:
@@ -1008,11 +1032,23 @@ telegraphed (a model-independent ground ring) and interruptible (a stagger cance
 cast, for every actor). **36D and 36E are done too** — phases summon add waves, an arena binds its
 spawn points and phase reactions declaratively in its own scene, and every boss's intro, defeat beat
 and guaranteed reward come from its own resource. **Phase 36 is complete (36A–36E).**
-**Phase 37 is in progress: 37A, 37B and 37C are done** — a property can be bought and/or earned,
-ownership persists, claiming it registers a fast-travel node, an owned holding has a stash you can
-deposit into and withdraw from (the game's first two-way container), and you can craft kits and set
-crafting stations and decoration down in its yard (the game's first world-editing verb), where they
-persist. Next: 37D, trophy/display slots and one fully playable property.
+**Phase 37 is complete (37A–37D)** — a property can be bought and/or earned, ownership persists,
+claiming it registers a fast-travel node, an owned holding has a stash you can deposit into and
+withdraw from (the game's first two-way container), you can craft kits and set crafting stations and
+decoration down in its yard (the game's first world-editing verb), and display stands show off
+Epic-or-better trophies. **Persistence came free all four times** — ownership is a service; the stash
+and the stands *are* inventories keyed by `PersistentId`; placed props ride `PersistentSpawnDirector`.
+The Ashfall Cottage is authored end to end as the one playable property. Next: **38A**, vendors.
+
+**The art set standardises on Quaternius CC0 packs** (maintainer direction, 2026-08-05 — policy in
+`docs/ASSET_POLICY.md` §0, provenance in `assets/CREDITS.md`). 401 models are vendored at
+`assets/library/` behind a **`.gdignore`** so Godot never imports or exports them; a model enters the
+game only by being adapted into `assets/models/`. 18 props were re-sourced keeping their original
+filenames and bounding boxes, and **29 archetypes that greyboxed as tinted capsules now have rigged,
+animated bodies**. Every model in the game is CC0 and the project owes **no attribution** — the
+`prp_tome_stand` release blocker is gone. Two traps recorded there: judge a candidate **from behind**
+(an open-backed "cottage" nearly shipped, for the second time), and exclude the glTF importer's
+`glTF_not_exported` `Icosphere` when measuring a rig or every scale comes out 1 m too tall.
 `docs/SESSION_PLAYBOOK.md` is the live per-sub-phase tracker;
 `docs/PRODUCTION_ROADMAP.md` §11 mirrors phase-level status only.
 

@@ -2979,9 +2979,66 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
   - **Reachable from `--play`:** the yard is beside the deed post and the chest in the town hub. The
     at-keyboard pass is crafting a kit, the four refusals, placing, using, removing, and a save
     round-trip.
-- [ ] **37D — Trophy/display slots + one playable property authored** `[F/C]`
+- [x] **37D — Trophy/display slots + one playable property authored** `[F/C]` ✅
   - **Done when:** trophy slots work and one property type is fully playable; the
     rest are content.
+  - **A display stand is a one-slot container, and that is the whole design.** The inventory *is*
+    the display, so it persists as `inventory:<PersistentId>` with **no new `ISaveable`** — 37B's
+    trick, for the fourth sub-phase running and a fourth distinct reason. `Interact` publishes the
+    existing `StorageOpenedEvent`, so the existing `StoragePanel` renders it with **no new panel**.
+    What 37D actually adds is a rarity floor on that event, honoured on the **Store** direction
+    only: Take is never gated, because a stand that could trap an item is worse than one holding
+    something dull.
+  - **A trophy is Epic-or-better, by rarity rather than a marker type.** Zero authoring: the Iron
+    Heart (Legendary) and every future boss reward qualify on the day they land, and a rolled Epic
+    the player actually earned can go on the wall. `TrophyDisplay` is pure and fourth in the
+    `PropertyClaim`/`PropertyStorage`/`PlacementCheck` line.
+  - **Placed stands need no authored `PropertyId`** — they read their holding out of their own
+    `place.<propertyId>#<n>` id, which is the use `PlacementIds` was written anticipating.
+  - **One new `--validate` rule, both branches negative-tested:** a built template carrying a
+    `TrophyStandComponent` must also carry an `InventoryComponent` of capacity **1**. A stand with
+    no slot accepts nothing and persists nothing, and `PersistentSpawnDirector` discards a bad host
+    with only a log line.
+  - **The cottage stopped being `BuildingSW`.** It has its own building, a walled roofless room
+    holding the stash and two authored stands, a deed post at its own door (it was in the middle of
+    the square, selling a house nobody could see) and a re-centred yard. Roofless is deliberate: an
+    enterable interior needs a scene-transition convention this repo does not have, and inventing
+    one here would pre-empt Phase 44.
+  - ⚠️ **The bug this phase shipped and then fixed: the cottage floated.** Every building node sits
+    at half its own height so the box collider spans ground to roof, and the `.glb` origin is at its
+    base — so the `Model` child carries a **counter-offset** (`-3.75` on the square's houses). The
+    first cut of the Cottage node had none, and the house hung 3.75 m over its own garden. Copy the
+    whole idiom, not just the node.
+  - Build clean + **834** tests + `--validate` exit 0 with the new rule negative-tested both ways +
+    clean `--play`. **Phase 37 complete.**
+  - **Reachable from `--play`:** the cottage is south-west of the square. The at-keyboard pass is
+    claiming it, putting the Iron Heart on a stand, being refused a health potion, crafting a
+    Display Stand kit and placing one in the yard, then **save/reload to confirm both the authored
+    and the placed stand kept their trophies** — the one thing no headless run can prove.
+
+---
+
+## Art — the Quaternius standardisation `[P]` (2026-08-05, out of band)
+
+> Maintainer direction mid-37D: **the art set standardises on Quaternius CC0 packs.** Recorded as
+> standing policy in `docs/ASSET_POLICY.md` §0; full provenance in `assets/CREDITS.md`.
+
+- [x] **Library + town** — 401 CC0 models vendored at `assets/library/` behind a `.gdignore`;
+  the cottage got its own low, wide, single-storey building, and the square four distinct
+  buildings (house, inn, smithy, farmhouse) instead of two used twice.
+- [x] **Props** — 18 re-sourced, each keeping its **original filename and bounding box**, so no
+  scene transform, collider or `PlaceableTemplates` id needed editing. Cleared the project's last
+  attribution obligation: `prp_tome_stand` was its only CC-BY model.
+- [x] **Creatures** — 29 archetypes that greyboxed as tinted capsules got rigged, animated bodies
+  at their own `CapsuleHeight`. Phase 35's dragons finally have a body. Characters needed no work:
+  `men/Adventurer` is byte-identical to `chr_player_base`.
+- **Two traps worth re-reading before the next asset pass**, both in `ASSET_POLICY.md` §0: judge a
+  model **from behind** (an open-backed "cottage" nearly shipped, for the second time), and never
+  measure a rig's bounding box without excluding the importer's `glTF_not_exported` `Icosphere` —
+  it reads 1 m too tall and produced wrong scales for all 29 creatures **twice**, the second time
+  because the same polluted bbox was used to "verify" the fix.
+- **Still uncovered by any vendored bundle:** an anvil/forge (`prp_station_forge`) and an
+  ice/glacier prop (`prp_glacier`). Both left as-is rather than forced.
 
 ---
 

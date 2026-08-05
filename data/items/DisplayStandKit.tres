@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="PlaceableItemResource" format=3 uid="uid://cmbrvlkitdsp"]
+
+[ext_resource type="Script" path="res://src/Items/PlaceableItemResource.cs" id="1_placeable"]
+
+[resource]
+script = ExtResource("1_placeable")
+Id = "item.decor.display_stand"
+DisplayName = "Display Stand"
+Description = "A cut stone plinth. Empty, it is furniture; occupied, it is an argument."
+Type = 0
+Rarity = 0
+MaxStack = 5
+Weight = 8.0
+Value = 40
+TemplateId = "prop.display.stand"

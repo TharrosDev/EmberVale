@@ -1,0 +1,2458 @@
+{
+ "medieval_village": [
+  {
+   "title": "Fantasy House",
+   "id": "he3p42mUTH",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/c08c3ac7-e65c-41f5-b200-b00c12103e57.glb"
+  },
+  {
+   "title": "Fantasy House",
+   "id": "BH2XHWUNmF",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/341c9305-c6dd-4427-ad00-620ad57eb14e.glb"
+  },
+  {
+   "title": "Fantasy Barracks",
+   "id": "wTDbVozPAj",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/e4626d45-1c88-4a3f-9bc8-c7a077f108f0.glb"
+  },
+  {
+   "title": "Fantasy Sawmill",
+   "id": "alxTTFjKDM",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/4019f937-c8c6-4cf3-84c1-4dcc21d4a9cb.glb"
+  },
+  {
+   "title": "Fantasy Stable",
+   "id": "qhNQSOGGbi",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/210b9cdc-9b11-4ef5-a61b-5c31d0689090.glb"
+  },
+  {
+   "title": "Fantasy House",
+   "id": "dcPho4SUA3",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/b8a2c719-5a70-4d6c-8049-90af7e3f89ee.glb"
+  },
+  {
+   "title": "Blacksmith",
+   "id": "bV52eTG1Aj",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/c664d338-cf21-4cda-b0f8-efe0f0826a10.glb"
+  },
+  {
+   "title": "Mill",
+   "id": "89dsFYAoX1",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/a347d313-8be5-4585-9fc4-2f7e745c0648.glb"
+  },
+  {
+   "title": "Fantasy Inn",
+   "id": "x3ZcGn3jr4",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/270a08b6-87e1-47eb-ad1c-5fd7be321bcd.glb"
+  },
+  {
+   "title": "Bell Tower",
+   "id": "ux44tbeQvj",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/fe8e639d-f07d-4512-a38d-3519b44a5fdc.glb"
+  },
+  {
+   "title": "Rocks",
+   "id": "OQvi8PIZ40",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/c6f65def-08c5-4c81-b17f-f37b171ad911.glb"
+  },
+  {
+   "title": "Window",
+   "id": "QkcvcLgHcd",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/cd6aa318-ee06-4205-ad72-d7c8df47fc4d.glb"
+  },
+  {
+   "title": "Sawmill Saw",
+   "id": "suqpa3jKWg",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/38f1a1fe-0fe5-4f1f-b16f-e93f04e014da.glb"
+  },
+  {
+   "title": "Package",
+   "id": "kYvD6QCQRd",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/6aa29eb3-1bd8-4a40-a47d-d4a8c831eb04.glb"
+  },
+  {
+   "title": "Fence",
+   "id": "UXmKfG81fG",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/713fa0e6-a648-4896-817d-64b68ed0dac8.glb"
+  },
+  {
+   "title": "Bell",
+   "id": "cILuaO115Y",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/203c2af9-cd8b-47d0-b8d5-424b9c4448f7.glb"
+  },
+  {
+   "title": "Stairs",
+   "id": "yJJ5pH2NWs",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/87f41533-43e6-4fb8-9579-5e853eec8d5f.glb"
+  },
+  {
+   "title": "Package",
+   "id": "mWkgWyrCfM",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/8ee025af-e6cf-46d8-879b-62befe03ae9d.glb"
+  },
+  {
+   "title": "Path Straight",
+   "id": "ZuRHRsKWoz",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/7eb6f9bc-5995-413b-88c9-7809ebd16bf7.glb"
+  },
+  {
+   "title": "Round Window",
+   "id": "0U2hTU44WK",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/290d6a8b-ab0f-4670-ad61-8c95eef13b46.glb"
+  },
+  {
+   "title": "Bag",
+   "id": "VRfAODZ0Xk",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/5c18a372-e0fb-490f-aa90-8bdd04d7e92f.glb"
+  },
+  {
+   "title": "Bags",
+   "id": "gzvyAQ797z",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/5a6e6186-ab59-4c81-a5e1-9beb5e1bb8e9.glb"
+  },
+  {
+   "title": "Hay",
+   "id": "Yu8TOERkpw",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/8ab0043c-9a54-47b1-9b46-31b98d2f6ed8.glb"
+  },
+  {
+   "title": "Barrel",
+   "id": "zjCQP1TAci",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/df9e4b83-758a-4fc7-b311-70fc949ed7ff.glb"
+  },
+  {
+   "title": "Well",
+   "id": "QlqncKYxXb",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/0e044203-f62e-4dad-ad3e-c3cb6cb393ac.glb"
+  },
+  {
+   "title": "Bonfire",
+   "id": "Azj9hJwwwG",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/e96d5573-fa3a-47ad-bae0-0ef9640026fa.glb"
+  },
+  {
+   "title": "Crate",
+   "id": "3OEFd1AWfa",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/f5ed50d1-1317-4c50-befc-cda0380a6c9c.glb"
+  },
+  {
+   "title": "Bench",
+   "id": "jLxjFxFRpw",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/1361c268-20f7-4e73-a931-ce434c6b503e.glb"
+  },
+  {
+   "title": "Cauldron",
+   "id": "QaWJOPa6Gt",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/8c6e4cbc-300b-4e73-b898-3ef4d0ca5672.glb"
+  },
+  {
+   "title": "Smoke",
+   "id": "RReLSfPo1Q",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/82f23b05-a604-460a-b65f-7d68c8bb060d.glb"
+  },
+  {
+   "title": "Window",
+   "id": "EY1zrFcme9",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/9d07b976-1b21-4be8-845f-0165688f68f3.glb"
+  },
+  {
+   "title": "Bag Open",
+   "id": "rJuZexcuhU",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/d80aaa87-23d8-4e45-83a2-5ffd22c36356.glb"
+  },
+  {
+   "title": "Market Stand",
+   "id": "hts7l0NZxW",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/8927a168-7f28-4f44-8a8e-e951aeffdf89.glb"
+  },
+  {
+   "title": "Door Round",
+   "id": "4lNptAwxpV",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/28b1c8b7-00cd-4255-b7a0-d26c824b5b5a.glb"
+  },
+  {
+   "title": "Cart",
+   "id": "l7bDe7ak6j",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/94b32c91-4d46-4172-aadd-10176a4eb543.glb"
+  },
+  {
+   "title": "Bench",
+   "id": "7uSlZo3n9Y",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/6d0f118b-d6cf-4e62-8dc8-d50d11d6e402.glb"
+  },
+  {
+   "title": "Door Straight",
+   "id": "VvWlICcNi8",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/cb7af829-ea70-4f4f-8dde-7ebcd5f22bdd.glb"
+  },
+  {
+   "title": "Gazebo",
+   "id": "xYZB1TmGMv",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/a0c33317-3662-478e-b826-78590c348d83.glb"
+  },
+  {
+   "title": "Market Stand",
+   "id": "DGIM5HGISb",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/e2633001-4cf5-46fa-ac68-575c9954f4ba.glb"
+  }
+ ],
+ "monsters": [
+  {
+   "title": "Mushnub",
+   "id": "LWKmS30Xxl",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/55c64684-49a4-4fcc-b393-113126add89b.glb"
+  },
+  {
+   "title": "Pink Slime",
+   "id": "AyP8sQmDLh",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/3ddbff73-430c-4ca0-bb25-11211683fbb9.glb"
+  },
+  {
+   "title": "Green Blob",
+   "id": "y4kJh8EeYS",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/64ab590e-1f77-4678-b357-78c430fd73bf.glb"
+  },
+  {
+   "title": "Orc Enemy",
+   "id": "Q3z8ZX4kUy",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/3076c5f7-9bdf-4c27-8083-f280ee6cd64b.glb"
+  },
+  {
+   "title": "Ninja",
+   "id": "mCNoqcqpvC",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/42162a27-0aaa-40be-b50e-919776021a11.glb"
+  },
+  {
+   "title": "Cat",
+   "id": "2f54vbV0In",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/7ccb71fe-dabb-4a6f-a98a-8992bb5e6bc7.glb"
+  },
+  {
+   "title": "Pigeon",
+   "id": "9NGlBTpDEr",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/2ad33f9e-e0d5-4a11-821b-7aafe8d13dd3.glb"
+  },
+  {
+   "title": "Chicken",
+   "id": "ineV9pU5VL",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/a0001762-9352-48c3-9abd-be91e42db114.glb"
+  },
+  {
+   "title": "Cactoro",
+   "id": "66CYX5UhRK",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/625862f9-590e-4fbd-88bc-9056047885dd.glb"
+  },
+  {
+   "title": "Alien",
+   "id": "sUTLXji0aL",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/0bb74be9-e9d1-4321-aedb-a9eccecb04a1.glb"
+  },
+  {
+   "title": "Mushnub Evolved",
+   "id": "0SZyA6MV51",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/84bc88a5-22d8-44e6-af9b-58f8465eb238.glb"
+  },
+  {
+   "title": "Yeti",
+   "id": "S1E7idPFhe",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/085b078d-b72a-4d8e-a030-000d36c58447.glb"
+  },
+  {
+   "title": "Wizard",
+   "id": "o87Upt5uHX",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/d206c071-7934-40eb-9091-35ebdf93c317.glb"
+  },
+  {
+   "title": "Fish",
+   "id": "7V4gaDMQV8",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/f7d91eb6-da8e-405d-a647-18ff54b97752.glb"
+  },
+  {
+   "title": "Birb",
+   "id": "gZ2ExU9OAB",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/05dac745-bdd0-4169-9e64-f497ca21f69a.glb"
+  },
+  {
+   "title": "Green Spiky Blob",
+   "id": "IoWG5F9WUc",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/cd25a048-719e-4ec4-bbf5-a266776fe129.glb"
+  },
+  {
+   "title": "Glub",
+   "id": "x59pqJscry",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/f64d32a9-c1da-4978-8f83-158130703e6c.glb"
+  },
+  {
+   "title": "Armabee",
+   "id": "42djT5zJnx",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/de63aaf6-9170-47f7-933d-439af68826a6.glb"
+  },
+  {
+   "title": "Alpaking",
+   "id": "AQ8zbFoDln",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/acb0f155-4a8a-4084-a2a8-9c17cbff7d21.glb"
+  },
+  {
+   "title": "Armabee Evolved",
+   "id": "GcttdvsqsQ",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/fb7d7a9e-5584-4e0b-a1bf-251fc9946696.glb"
+  },
+  {
+   "title": "Goleling Evolved",
+   "id": "iHEuXiH6Aj",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/d6308fbf-fa2e-4cfe-b235-def7ede1ab90.glb"
+  },
+  {
+   "title": "Dragon",
+   "id": "3rUm1cN3yp",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/ae5b8510-1fa5-4d53-b943-a4f3b88fb629.glb"
+  },
+  {
+   "title": "Goleling",
+   "id": "71gomWolax",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/51bf31d7-1aee-4a51-acb1-d667843af205.glb"
+  },
+  {
+   "title": "Glub Evolved",
+   "id": "Z9lddNpM1M",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/27590c4e-41ee-41b5-aaaa-581de0031605.glb"
+  },
+  {
+   "title": "Alpaking Evolved",
+   "id": "UdJudob66v",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/c50fd18d-9441-491b-b2c0-835e6a8757e3.glb"
+  },
+  {
+   "title": "Ghost",
+   "id": "Iip30bDHmu",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/810f60a2-6e45-4c4e-a0d5-da91cd7288bd.glb"
+  },
+  {
+   "title": "Ghost Skull",
+   "id": "TX8r9WBXpe",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/0716bf8e-1894-4a90-8d10-34868975a239.glb"
+  },
+  {
+   "title": "Hywirl",
+   "id": "zjr7CmWGER",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/6500a805-0588-4823-bb8d-2f8ffdf338ab.glb"
+  },
+  {
+   "title": "Tribal",
+   "id": "t91lDHaqRW",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/1b4759ca-2c00-4718-90f6-2f84bc8e44f9.glb"
+  },
+  {
+   "title": "Demon",
+   "id": "Mo2ky6vkf8",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/c2e39eb4-4b8e-4d31-b014-d637bf4e15c6.glb"
+  },
+  {
+   "title": "Squidle",
+   "id": "54QyRcsogk",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/cbe8419d-59d4-4ee8-92f1-8bccb25af378.glb"
+  },
+  {
+   "title": "Dragon Evolved",
+   "id": "LlwD0QNUPj",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/90ed3740-d8c4-4910-88ce-ac2ed426022d.glb"
+  },
+  {
+   "title": "Frog",
+   "id": "37wofOCOzG",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/9018566d-c4e9-4f20-9c99-964622a6e674.glb"
+  },
+  {
+   "title": "Cactoro",
+   "id": "IGn9lhdama",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/e88090e2-46af-430b-91e5-ad5520de4939.glb"
+  },
+  {
+   "title": "Ninja",
+   "id": "xGYmeDpfTu",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/2ed11876-720e-457a-8a69-4a14ba7234dc.glb"
+  },
+  {
+   "title": "Monkroose",
+   "id": "j4rVPvxyLg",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/54ca5c4d-aa20-40ff-a510-25c1c6a48ee9.glb"
+  },
+  {
+   "title": "Dino",
+   "id": "wuerCFCWNR",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/1c1ae302-b948-4de4-961a-44f762b722cf.glb"
+  },
+  {
+   "title": "Mushroom King",
+   "id": "grnFTziU8u",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/798301fb-b950-460c-9c67-526621ad8500.glb"
+  },
+  {
+   "title": "Alien",
+   "id": "RRliSQBP7r",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/b048d82a-7fc2-4631-b859-4bde0ed19b59.glb"
+  },
+  {
+   "title": "Blue Demon",
+   "id": "S7jYW6Amye",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/6fbb8914-bd11-45e1-a906-51ace2ca5d2d.glb"
+  },
+  {
+   "title": "Fish",
+   "id": "ypEYhCImAB",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/6c98561f-4fb5-404c-91e9-a54024e1f6c5.glb"
+  },
+  {
+   "title": "Yeti",
+   "id": "ceRHrn8HHE",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/40a831b3-686a-4af8-b189-a13b38a3c26a.glb"
+  },
+  {
+   "title": "Demon",
+   "id": "LnfIziKv4o",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/46b52ba4-5d2a-4fc8-85cc-3e980f199141.glb"
+  },
+  {
+   "title": "Orc",
+   "id": "5vO2YJsPEf",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/52a479b3-a635-4a23-92cb-6697eaa5eed5.glb"
+  },
+  {
+   "title": "Bunny",
+   "id": "irZjWFARyl",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/084b5ebe-c3eb-4e64-9b17-06e2d1e3da5d.glb"
+  }
+ ],
+ "animals": [
+  {
+   "title": "Cow",
+   "id": "26zM1outCr",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/382b3d4a-a7c9-4c03-9858-3df630d90047.glb"
+  },
+  {
+   "title": "Donkey",
+   "id": "qmX6nhnvp7",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/ca29f94e-0874-41b6-8334-66642af56a61.glb"
+  },
+  {
+   "title": "Deer",
+   "id": "T6Cs7tmMHJ",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/4b6c2a41-43c7-404c-ae37-e8c4645ff93b.glb"
+  },
+  {
+   "title": "Alpaca",
+   "id": "bCVFD48i2l",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/444228bb-745d-49b2-89ef-cc12805deaa8.glb"
+  },
+  {
+   "title": "Bull",
+   "id": "a8PIIYwF7r",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/5704ef69-2c27-4de8-a942-70a29458af21.glb"
+  },
+  {
+   "title": "Fox",
+   "id": "Bc97C66HKi",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/e18e86df-1692-48d8-ac6e-1e25ab4ad574.glb"
+  },
+  {
+   "title": "Shiba Inu",
+   "id": "y4wdQpg767",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/ba6d0ee3-bcc0-4ef0-9d3c-a3e245b41c77.glb"
+  },
+  {
+   "title": "Stag",
+   "id": "tQdzbZ1Cmw",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/a9c69fbc-bf7c-4585-9a49-a82e0be1ac6b.glb"
+  },
+  {
+   "title": "Husky",
+   "id": "wcWiuEqwzq",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/611d25c7-430f-4bb5-ab2c-d8f5f3cb9712.glb"
+  },
+  {
+   "title": "Wolf",
+   "id": "P1gU3Qkr9r",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/f1d12388-e39b-4157-b32a-646a1d089fc4.glb"
+  },
+  {
+   "title": "White Horse",
+   "id": "bEdE4rmZy9",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/3edc2bd9-3378-4b43-a50d-d5e1f858562b.glb"
+  },
+  {
+   "title": "Horse",
+   "id": "qvTrSG9pZF",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/d37dbc87-ca61-4b2c-a2da-d2f0c4240bef.glb"
+  }
+ ],
+ "men": [
+  {
+   "title": "Adventurer",
+   "id": "5EGWBMpuXq",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/bbe369ee-a686-42c7-adad-14356f5f2f15.glb"
+  },
+  {
+   "title": "King",
+   "id": "I1gTjmuK2m",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/29a3436b-3b06-4dbf-a236-bcec18f3351a.glb"
+  },
+  {
+   "title": "Farmer",
+   "id": "7pn3R6hPvE",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/81f2f0cf-6f53-4b57-92ea-dba0928620f2.glb"
+  },
+  {
+   "title": "Hoodie Character",
+   "id": "gKLBoRsyKe",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/bcd66ec5-5e81-4901-a222-47abc875fe2a.glb"
+  },
+  {
+   "title": "Beach Character",
+   "id": "DojKLcO34E",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/f771a536-1c18-4a47-bb56-ceea4b603455.glb"
+  },
+  {
+   "title": "Casual Character",
+   "id": "kZ3DmIoGip",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/90a9e2d4-053f-42f1-99a2-8f5e1180ea7f.glb"
+  },
+  {
+   "title": "Worker",
+   "id": "Yg2bQZO6Hj",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/3a5f3056-ffe6-42eb-bd52-122afcbd22b2.glb"
+  },
+  {
+   "title": "Punk",
+   "id": "BTALZymknF",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/e56f23b5-3270-406f-8924-f77cad980c43.glb"
+  },
+  {
+   "title": "SWAT",
+   "id": "Btfn3G5Xv4",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/713f6535-f4f3-4367-a4c6-ced126ae0936.glb"
+  },
+  {
+   "title": "Business Man",
+   "id": "JFrLIKqvCH",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/e599abbe-7d73-488c-9d7e-3ead281e705c.glb"
+  },
+  {
+   "title": "Astronaut",
+   "id": "3hC2i0CTuO",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/0076345b-bbea-42d5-931c-4a5ad2050b18.glb"
+  }
+ ],
+ "women": [
+  {
+   "title": "Sci Fi Character",
+   "id": "4pUXv5V8kq",
+   "licence": "CC-BY 3.0",
+   "glb": "https://static.poly.pizza/a8624e73-27bd-4878-a17b-f5d9af209c85.glb"
+  },
+  {
+   "title": "Witch",
+   "id": "QBEOV9ZUT8",
+   "licence": "CC-BY 3.0",
+   "glb": "https://static.poly.pizza/a43d6661-8a89-4818-a7eb-40e1e8430a4c.glb"
+  },
+  {
+   "title": "Worker",
+   "id": "E8079Ahx7k",
+   "licence": "CC-BY 3.0",
+   "glb": "https://static.poly.pizza/c0253218-85f2-4d67-b3f2-a4611a7901fe.glb"
+  },
+  {
+   "title": "Suit",
+   "id": "sOUciDsoVV",
+   "licence": "CC-BY 3.0",
+   "glb": "https://static.poly.pizza/1bd7759c-ab76-4178-8fe6-7706dffa7d5f.glb"
+  },
+  {
+   "title": "Soldier",
+   "id": "oAArCNHjFB",
+   "licence": "CC-BY 3.0",
+   "glb": "https://static.poly.pizza/66a55d04-4286-44a3-b289-0d774c27db5b.glb"
+  },
+  {
+   "title": "Animated Woman",
+   "id": "nIItLV9nxS",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/46d6db5a-3c9f-4238-8cdf-8eb7194498dc.glb"
+  },
+  {
+   "title": "Punk",
+   "id": "djXoqejw6w",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/1d368679-1d9a-4d5c-9095-877144b02d00.glb"
+  },
+  {
+   "title": "Adventurer",
+   "id": "ZwF0K7WBmu",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/69689495-028d-4b81-8678-792338a5693e.glb"
+  },
+  {
+   "title": "Hooded Adventurer",
+   "id": "y9KWOVG21R",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/3186b8e9-afd5-4d48-846c-b2b530cd23e2.glb"
+  },
+  {
+   "title": "Animated Woman",
+   "id": "qJ2gsTUBHL",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/ba7a1955-ea51-4cb9-a561-188bdef0a6c7.glb"
+  }
+ ],
+ "rpg_items": [
+  {
+   "title": "Shield",
+   "id": "srN1KGAO7f",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/60cc7b8e-0589-4f4b-a354-f6fef73a44bd.glb"
+  },
+  {
+   "title": "Shield Celtic Golden",
+   "id": "neNWPt8WAx",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/3543f36f-1135-4ece-9c4e-666ce413b330.glb"
+  },
+  {
+   "title": "Shield Round",
+   "id": "UKXj8qjiF8",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/4bb64755-4617-4081-99d4-5e1ade52e966.glb"
+  },
+  {
+   "title": "Shield Round",
+   "id": "lWajrVXcnA",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/f0c77485-abcd-47ed-8fab-5b5130a25f85.glb"
+  },
+  {
+   "title": "Knife",
+   "id": "0g8M6yYtE4",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/608f8557-c46b-4bf4-9cb7-cd80c39532a1.glb"
+  },
+  {
+   "title": "Shield",
+   "id": "xoHSnOjsBG",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/21ae2d91-300c-43e0-b140-d119ef00ea9d.glb"
+  },
+  {
+   "title": "Scythe",
+   "id": "yE9TKCewO8",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/99977274-4591-4a0c-8326-0d441264cffe.glb"
+  },
+  {
+   "title": "Claymore",
+   "id": "BBhN1O6TOL",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/91388f84-ac26-48b5-9d7f-6c4b0181a830.glb"
+  },
+  {
+   "title": "Spear",
+   "id": "fH1zmvjPNx",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/85591d23-e537-4562-8b28-80c30c0e696d.glb"
+  },
+  {
+   "title": "Padlock",
+   "id": "2ZSHgKVr3F",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/492d2859-724c-42a4-86a2-5502214de10c.glb"
+  },
+  {
+   "title": "Parchment",
+   "id": "IrjGNYRB3f",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/9fc51588-8949-44f4-be2d-5e2f4a947b93.glb"
+  },
+  {
+   "title": "Skull",
+   "id": "YgmRBtFlcF",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/931c0503-c6c8-48bb-86cd-092710a32160.glb"
+  },
+  {
+   "title": "Coin Pouch",
+   "id": "pTZyPTMH88",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/92d5720f-6366-4fb4-a8f6-b3226fe91c23.glb"
+  },
+  {
+   "title": "Snowflake",
+   "id": "VHDU6OgUHN",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/8c0f2c97-d855-41c6-a9a2-9a4b3964b690.glb"
+  },
+  {
+   "title": "Wooden Bow",
+   "id": "QnpqjLSKFU",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/e1abc1c7-47db-48c3-9c65-0879273e8bc8.glb"
+  },
+  {
+   "title": "Key",
+   "id": "y3bSVdIjTh",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/d5f9c9e8-7c4f-4008-8260-1666db20aac6.glb"
+  },
+  {
+   "title": "Gold Ingots",
+   "id": "3jRhAgbc6t",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/1a8d43b5-9376-442a-84f9-35827779aab6.glb"
+  },
+  {
+   "title": "Open Book",
+   "id": "FsCIGEfTEs",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/8127840e-d767-4dbf-89a8-1aad1fffed13.glb"
+  },
+  {
+   "title": "Book",
+   "id": "Qkvcgg5tpj",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/3b802cb1-60a9-4407-a9d1-fa0da66186f7.glb"
+  },
+  {
+   "title": "Armor Leather",
+   "id": "na9KfWiKN8",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/79e120cf-db14-4d0b-b5ff-1fea0e9483a1.glb"
+  },
+  {
+   "title": "Skull Coin",
+   "id": "lx1A0s4aoH",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/354b2516-d327-4897-a5d4-62ff373469e1.glb"
+  },
+  {
+   "title": "Fish Bone",
+   "id": "bU5RLZnq6v",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/ed285a5f-7c35-47b0-a12d-60006f5eb74c.glb"
+  },
+  {
+   "title": "Bone",
+   "id": "uMs0lDp1u3",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/dfefb65d-139f-4230-8038-9929ce237343.glb"
+  },
+  {
+   "title": "Sword",
+   "id": "ajOJ2NLz5m",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/35ab81c3-8780-4bef-a3c5-a9fbba01141b.glb"
+  },
+  {
+   "title": "Glove",
+   "id": "l1zv4LaA4I",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/5bcc01d6-1f10-4e50-837f-1b53ba398c60.glb"
+  },
+  {
+   "title": "Book Open",
+   "id": "JO0bV6osMQ",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/185ec9c4-fe96-4993-80de-f08d070ad82e.glb"
+  },
+  {
+   "title": "Open Book",
+   "id": "JEDMpG0UIR",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/64810c3b-57be-44be-aaba-926b56a0cebc.glb"
+  },
+  {
+   "title": "Book",
+   "id": "LC0w7VI75u",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/22289cc7-5558-4c18-a927-014c5c1c7d63.glb"
+  },
+  {
+   "title": "Armor Metal",
+   "id": "TMUoxILh9w",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/60ccfcdb-6aa7-4caf-a688-9b16a2a5f300.glb"
+  },
+  {
+   "title": "Open Book",
+   "id": "1A07aI9j2d",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/caca50d9-dc62-46d1-a3ac-939219bfef9d.glb"
+  },
+  {
+   "title": "Coin",
+   "id": "7IrL01B97W",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/b39a14ae-3c2f-4b28-ad1d-79d457f9b8b1.glb"
+  },
+  {
+   "title": "Chalice",
+   "id": "VZencXtC2I",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/08cffbdd-05cb-490b-90b2-26647bd218c0.glb"
+  },
+  {
+   "title": "Star Coin",
+   "id": "n5nJIQAozN",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/a892170f-459a-4d1f-814a-76cfd4fafcbc.glb"
+  },
+  {
+   "title": "Potion Bottle",
+   "id": "WJxYta4Z96",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/7cee3dd7-29f1-4ec7-b57b-cecc748860f7.glb"
+  },
+  {
+   "title": "Potion Bottle",
+   "id": "7qbuf1TS8C",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/64997fc4-2420-4dec-aa29-b4cd7ef2bcec.glb"
+  },
+  {
+   "title": "Arrow",
+   "id": "Rt48KEPDGt",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/5af9e305-e42c-4f87-a033-28261fdaa3a4.glb"
+  },
+  {
+   "title": "Scroll",
+   "id": "MWGB9nxMIc",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/9d78fc6e-9f9d-4abb-b165-9c3019ae4dc5.glb"
+  },
+  {
+   "title": "Necklace",
+   "id": "Mezewzksj5",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/1ba2c355-431c-46d0-9ab5-0c07c146bb09.glb"
+  },
+  {
+   "title": "Necklace",
+   "id": "Jvhs8DCNDZ",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/2afce515-0123-40df-9740-23e5b97725e4.glb"
+  },
+  {
+   "title": "Armor Golden",
+   "id": "65ltdmlBcy",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/9545010d-4b33-489b-bf7e-acb0ace56824.glb"
+  },
+  {
+   "title": "Book",
+   "id": "h3Wh4fxSQX",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/e31bd2aa-b898-47a1-9480-9903fc207111.glb"
+  },
+  {
+   "title": "Axe Double",
+   "id": "uHXdfMmO8g",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/0c2955b1-c314-42d3-bae0-175cc4cb0423.glb"
+  },
+  {
+   "title": "Key",
+   "id": "MUl40QpEvv",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/76e7803b-a7c9-405f-9f12-81845e262685.glb"
+  },
+  {
+   "title": "Crown",
+   "id": "i0PZVuVlYv",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/1381b02a-8310-437b-a2a7-82cab0a94a4c.glb"
+  },
+  {
+   "title": "Axe Small",
+   "id": "o54NXjRI4V",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/654d4ee5-e217-4c23-b8e1-92e16226b21a.glb"
+  },
+  {
+   "title": "Bag",
+   "id": "Wq1JPPqHZS",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/2bc244a8-c709-4cb1-aba1-1f24beb6b9c5.glb"
+  },
+  {
+   "title": "Sword",
+   "id": "9lLmH8Et4K",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/65837148-8c3c-42d5-9ce7-c55f9295cc7e.glb"
+  },
+  {
+   "title": "Key",
+   "id": "bg6e1lfNsO",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/19808918-338e-462a-8c9e-f203ce81b3c3.glb"
+  },
+  {
+   "title": "Skull",
+   "id": "ExZmhOIjka",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/a5303f4e-817b-4bc1-86f9-a5a9b6e62af7.glb"
+  },
+  {
+   "title": "Key",
+   "id": "h5nke04hRD",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/6c4de57d-f82e-4218-bbee-f2f0441bf75a.glb"
+  },
+  {
+   "title": "Mineral",
+   "id": "STixpWYaTd",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/0440888a-3aa3-4d44-94cd-be2beec1ee7d.glb"
+  },
+  {
+   "title": "Chest",
+   "id": "IbCTSkyWDT",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/b4373a5a-463e-43e1-aece-7dda31788c0d.glb"
+  },
+  {
+   "title": "Dagger",
+   "id": "kSMpR711Y2",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/a4f869e4-48c8-4e95-bd31-ed0388b0cde4.glb"
+  },
+  {
+   "title": "Doublesided Hammer",
+   "id": "UIXvQ73DS1",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/97f342bf-7e3b-4155-a306-91b35e321c7b.glb"
+  },
+  {
+   "title": "Backpack",
+   "id": "vF7TuXCPDH",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/2eb5178b-0c98-4a0d-b0ea-ad8925525d1e.glb"
+  }
+ ],
+ "nature": [
+  {
+   "title": "Bush",
+   "id": "EoTERLq3z2",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/5d3066f4-58ac-46d4-899c-39d9e566e9df.glb"
+  },
+  {
+   "title": "Clover",
+   "id": "IQ9NVyVpUw",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/b03d60f5-bcfa-487b-9064-65f3b0f8ad6b.glb"
+  },
+  {
+   "title": "Clover",
+   "id": "u5SOgBFiut",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/319982c7-df90-47d7-bde1-68453148dc63.glb"
+  },
+  {
+   "title": "Bush with Flowers",
+   "id": "U1ymDy8tbY",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/af83abca-9b41-4229-9652-e336a5f5eaba.glb"
+  },
+  {
+   "title": "Tree",
+   "id": "QVOop92WmG",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/2c5938cb-4005-4958-829b-e191be39b3b9.glb"
+  },
+  {
+   "title": "Tree",
+   "id": "YWjGDJ9F7g",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/856b5db4-21c1-406b-a800-d96843d1ec69.glb"
+  },
+  {
+   "title": "Tree",
+   "id": "aVOxaHRPWe",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/7bf2aa94-cc44-40d9-a93c-9489eb09e008.glb"
+  },
+  {
+   "title": "Tree",
+   "id": "qZtx0AHhcy",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/24cf9df9-435f-408e-971b-640d670ce973.glb"
+  },
+  {
+   "title": "Dead Tree",
+   "id": "n8FhMgMldD",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/c02771ac-10db-420b-9426-86f26ae0869a.glb"
+  },
+  {
+   "title": "Dead Tree",
+   "id": "oM95bD8buf",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/64d345fd-02d5-44c5-9968-439a8b799acd.glb"
+  },
+  {
+   "title": "Tree",
+   "id": "t9KbsfYdXz",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/7f84a768-ac30-48d4-9c5d-f760492e7867.glb"
+  },
+  {
+   "title": "Dead Tree",
+   "id": "MlmK5488ou",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/41121684-abaa-4298-a42e-5b538184d11e.glb"
+  },
+  {
+   "title": "Dead Tree",
+   "id": "Mcd2zYqyww",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/d12c21bd-a5d1-41c9-b370-28e3708e61cc.glb"
+  },
+  {
+   "title": "Grass",
+   "id": "vUJjrRsFp4",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/0a84d74b-eb09-4794-ad58-dd10eed6b11e.glb"
+  },
+  {
+   "title": "Grass Wispy",
+   "id": "Msr9zx66VU",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/12298e95-47ef-4af3-bfde-1241dd5ecbb9.glb"
+  },
+  {
+   "title": "Tall Grass",
+   "id": "JSIYtscPmP",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/83f8e6d6-fa7e-4cd8-a0ef-8c51d0ff4e88.glb"
+  },
+  {
+   "title": "Grass Wispy",
+   "id": "6EzB7VA6vb",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/b81bea53-a5a8-4c01-a43c-e1f6a3d5d170.glb"
+  },
+  {
+   "title": "Flower Petal",
+   "id": "HifQHnKf4h",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/cc3aeea6-d375-492c-b9b4-54c4154561cd.glb"
+  },
+  {
+   "title": "Flower Petal",
+   "id": "eVE0j49ux9",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/81d9c096-d3ed-456c-84c1-96fffff28509.glb"
+  },
+  {
+   "title": "Flower Petal",
+   "id": "niuBUEJdvM",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/4f6caac4-7e02-42d6-90c6-780cffc9b718.glb"
+  },
+  {
+   "title": "Flower Petal",
+   "id": "LqvxG9OBOU",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/bd493bed-7158-4d85-99eb-bdb66e777184.glb"
+  },
+  {
+   "title": "Flower Petal",
+   "id": "tzG4JcqYWs",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/9c894451-7eb5-4e40-976c-aaa3b35b48a9.glb"
+  },
+  {
+   "title": "Fern",
+   "id": "jqcanvH7D6",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/f94d836f-4eb4-4db0-aa53-3ecdddffa527.glb"
+  },
+  {
+   "title": "Pebble Square",
+   "id": "2YtLzwgsWp",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/802d6e7e-73a5-4a54-8848-54ae9350077c.glb"
+  },
+  {
+   "title": "Pebble Round",
+   "id": "icVsN3lmVy",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/15475cf5-3def-4aa4-bebe-d7afc7851f41.glb"
+  },
+  {
+   "title": "Pebble Round",
+   "id": "kAMfq1uJUY",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/8f06f984-622f-41bc-8ef6-fa7b98a87aeb.glb"
+  },
+  {
+   "title": "Pebble Square",
+   "id": "s71L3q1nXN",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/665397de-6ded-408f-89e3-08e25679bbf6.glb"
+  },
+  {
+   "title": "Pebble Square",
+   "id": "iwxxjMtXRF",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/ebeeacea-63cd-48a1-b778-1db933d84d60.glb"
+  },
+  {
+   "title": "Pebble Round",
+   "id": "KYtJ6JNXh2",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/9ab92cc2-6cae-485b-bc34-8f99d6ba12fc.glb"
+  },
+  {
+   "title": "Pebble Round",
+   "id": "jecVTh3aQV",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/c653d0c7-e728-458d-9129-3d5dcddd52a6.glb"
+  },
+  {
+   "title": "Pebble Square",
+   "id": "Mm4RMgwNO8",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/7b90f9f3-dc02-4202-8841-c44b4df876e4.glb"
+  },
+  {
+   "title": "Pebble Square",
+   "id": "6juX57sLHe",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/5e6a2aa3-8c02-4151-b60a-cbd044953c42.glb"
+  },
+  {
+   "title": "Pebble Square",
+   "id": "l5XiYQj1oD",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/7a9ecf1d-2181-4290-8605-2e1dd7019934.glb"
+  },
+  {
+   "title": "Pebble Round",
+   "id": "nMf8LHOsbM",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/506c1ab2-61fc-4768-8a65-8236e8804853.glb"
+  },
+  {
+   "title": "Flower Single",
+   "id": "rHBoS64rRL",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/358cce00-6e7e-4411-b889-8514eae139ce.glb"
+  },
+  {
+   "title": "Mushroom",
+   "id": "aOW08oSrd4",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/abade6e4-375f-457a-898e-66644673f54e.glb"
+  },
+  {
+   "title": "Flower Group",
+   "id": "hfPzQAedOe",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/89f163b2-af28-4dd7-bd09-ed7b80fde2b7.glb"
+  },
+  {
+   "title": "Flower Single",
+   "id": "GvfHo0roi3",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/9fbc2eff-4a06-4450-801e-cdb700722ff0.glb"
+  },
+  {
+   "title": "Mushroom Laetiporus",
+   "id": "mxDOl0n6zt",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/65e92d92-b597-4719-b759-866b8d6a8f5d.glb"
+  },
+  {
+   "title": "Flower Group",
+   "id": "LqTljN6Wg2",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/48045fd1-cc1b-410d-871e-3501db7262fd.glb"
+  },
+  {
+   "title": "Pine",
+   "id": "rfnxJv0Rqa",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/3fc02c15-0e5e-4757-a553-2d065e3d0f44.glb"
+  },
+  {
+   "title": "Dead Tree",
+   "id": "CD4edbPSGm",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/4db29f97-8e10-413d-be54-39ecda1a7c8d.glb"
+  },
+  {
+   "title": "Plant Big",
+   "id": "uwJ1rwrZlB",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/ddf51174-fd7b-4225-9696-1dce54f945c2.glb"
+  },
+  {
+   "title": "Plant",
+   "id": "NrJN7UcglF",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/35b5f5ed-871c-4b5b-8c92-80c06138d5b1.glb"
+  },
+  {
+   "title": "Plant Big",
+   "id": "MbhbP7JrTI",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/e2b7d78c-f237-4ee8-be1a-62a809097d64.glb"
+  },
+  {
+   "title": "Plant",
+   "id": "xH5gNlQxAZ",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/bee11796-05ba-4026-b3c5-3dc8bac8fb07.glb"
+  },
+  {
+   "title": "Rock Path Square Smal",
+   "id": "w4TKZMjjcw",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/28009465-11d7-49ec-98a6-9030cbb5ffd7.glb"
+  },
+  {
+   "title": "Rock Path Square Smal",
+   "id": "cI9XBpVijV",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/d2722c69-df8f-4899-b742-cb6bca325e82.glb"
+  },
+  {
+   "title": "Rock Path Square Smal",
+   "id": "ClCOmVUtWx",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/15be90b0-cf21-4656-a0c1-8b814133b9bb.glb"
+  },
+  {
+   "title": "Rock Path Square Thin",
+   "id": "HAux7BIMfm",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/12e1e9fa-bff3-48fe-ab47-dd13e61f50bc.glb"
+  },
+  {
+   "title": "Rock Path Round Small",
+   "id": "QnRnpe7dd0",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/b5dc8c0b-53cb-43c1-8c8f-43cbd7c16665.glb"
+  },
+  {
+   "title": "Rock Path Round Small",
+   "id": "yHEdadj5I0",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/ba5d50a8-a7bb-4978-90fd-562c04667aba.glb"
+  },
+  {
+   "title": "Rock Path Round Thin",
+   "id": "L1GeXpXEPY",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/e658a6fe-8888-433b-90ae-633c009f913b.glb"
+  },
+  {
+   "title": "Rock Path Round Small",
+   "id": "GMttpOEFKT",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/1dba35fe-ba78-4b97-b749-ca2d4c5839fc.glb"
+  },
+  {
+   "title": "Rock Path Round Wide",
+   "id": "mWb3XxOctl",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/141c00d2-f62c-45e3-b9b7-4048b4d566af.glb"
+  },
+  {
+   "title": "Rock Path Square Wide",
+   "id": "8wDmuvrSya",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/d4b8dc53-4a35-4e09-bac2-4eda41c07d48.glb"
+  },
+  {
+   "title": "Rock Medium",
+   "id": "KZdEP3uUpa",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/aaf0aaa7-c244-430a-908b-2ac57567d81c.glb"
+  },
+  {
+   "title": "Rock Medium",
+   "id": "s1OJ3bBzqc",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/be5fef3a-4fa1-4d08-b2d4-82e02284588d.glb"
+  },
+  {
+   "title": "Rock Medium",
+   "id": "JQxF95498B",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/73b7e249-300d-4d4b-9c31-a610b8a1ffec.glb"
+  },
+  {
+   "title": "Pine",
+   "id": "igSu0cPoBz",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/712aaefa-ae7f-4cb3-8834-a1b8860df3b2.glb"
+  },
+  {
+   "title": "Pine",
+   "id": "79gmlLnweB",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/082c2026-56af-4e3f-bea7-9ae5de71101f.glb"
+  },
+  {
+   "title": "Pine",
+   "id": "699sFuLCN2",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/c55b8641-4679-4a85-8bd8-2a20e79abecd.glb"
+  },
+  {
+   "title": "Pine",
+   "id": "Zt62gceKXZ",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/be462d46-2e48-401e-8da9-2f4d9bc9df0c.glb"
+  },
+  {
+   "title": "Twisted Tree",
+   "id": "9aWlx82xUf",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/c6b8d04d-8ca3-4898-a180-e2ca2b936863.glb"
+  },
+  {
+   "title": "Twisted Tree",
+   "id": "GVTsMmuzv7",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/0e8292f8-f8ac-4483-987f-93386f07ea58.glb"
+  },
+  {
+   "title": "Twisted Tree",
+   "id": "7PDBpElkQr",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/229336e6-4632-4bc7-af2e-ec1f3c8245f7.glb"
+  },
+  {
+   "title": "Twisted Tree",
+   "id": "edSPJNECM7",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/7ca42e52-d57b-45c6-89c6-0216dda8b97e.glb"
+  },
+  {
+   "title": "Twisted Tree",
+   "id": "8oraKn9m0x",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/24873d46-c90a-4c3e-8981-a98d3bd816c5.glb"
+  }
+ ],
+ "dungeons": [
+  {
+   "title": "Wall Modular",
+   "id": "itasw0GWNf",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/7da31d48-b414-4eae-a8d6-7a1c7c796078.glb"
+  },
+  {
+   "title": "Pedestal",
+   "id": "wUeoDKnFBF",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/cc5afa7b-86ed-44d0-9521-709ade03fda3.glb"
+  },
+  {
+   "title": "Torch",
+   "id": "Gq38E7hFZw",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/0dcdbabb-629d-4eee-af16-7c49f6ba6e5e.glb"
+  },
+  {
+   "title": "Small Table",
+   "id": "rAEBvfb1FT",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/0f319f3b-b0d6-4691-bae5-c6c6e612df99.glb"
+  },
+  {
+   "title": "Banner",
+   "id": "svYG8KZxjq",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/db6f6643-649f-40cb-9a30-9f8295a2d3cb.glb"
+  },
+  {
+   "title": "Banner Wall",
+   "id": "dQjx8fBjIl",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/0c1ba162-9d94-4fc7-9a35-23653aacc7ac.glb"
+  },
+  {
+   "title": "Bucket",
+   "id": "83obI9bNun",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/ab9720c1-bfc4-4afc-a4d5-349fc725f6ae.glb"
+  },
+  {
+   "title": "Bricks",
+   "id": "Tvlvh8AAbs",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/664edd5c-2799-4b04-adb4-1485950f3743.glb"
+  },
+  {
+   "title": "Trap Door",
+   "id": "PALqVBff9b",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/8d5a838e-8744-4534-917f-65d502d93684.glb"
+  },
+  {
+   "title": "Barrel",
+   "id": "ONdghDBByN",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/6d3e8847-bda4-4d6c-8004-7b03cf848b13.glb"
+  },
+  {
+   "title": "Table Big",
+   "id": "KWaAZIDK9F",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/0286d99a-fc62-411f-ac94-fcb006a210d9.glb"
+  },
+  {
+   "title": "Column",
+   "id": "wLubNpOTX4",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/5239f88f-e30b-452b-a19e-89745d580b1e.glb"
+  },
+  {
+   "title": "Column",
+   "id": "6y1EFzpRI9",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/902b61ab-3073-4d77-8875-bf6a65051738.glb"
+  },
+  {
+   "title": "Chair",
+   "id": "zMmKNm8w4a",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/b9fc0c07-4b85-4f18-8bfc-271570fa065f.glb"
+  },
+  {
+   "title": "Cobweb",
+   "id": "EHYNWew6JK",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/51a602a6-76c9-4552-b48d-2950f91126d4.glb"
+  },
+  {
+   "title": "Pedestal",
+   "id": "VE1kTjVgJf",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/a2286c68-df68-4d2c-9446-ca223e07086c.glb"
+  },
+  {
+   "title": "Arch Door",
+   "id": "MVVMLXOfg1",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/3076f55a-92d2-4ba7-a286-3e062e3dcea8.glb"
+  },
+  {
+   "title": "Floor Tile",
+   "id": "6baBuVGcyD",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/902deaa6-c5d1-41f5-ad79-bca397626304.glb"
+  },
+  {
+   "title": "Skull",
+   "id": "EAsVEJwsv7",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/ed9c61ec-7112-4d2d-b980-4975983300f7.glb"
+  },
+  {
+   "title": "Coin Piles",
+   "id": "9OWkKczINo",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/af8eccc6-bc94-4a31-a4dd-a2d2a1755735.glb"
+  },
+  {
+   "title": "Sword Wall Mount",
+   "id": "3LyJaWgoJG",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/d77c1185-4ba3-49c2-8acc-94b3d0c0589b.glb"
+  },
+  {
+   "title": "Coin Bag",
+   "id": "iUpWtNWXI7",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/0649a666-cca0-4b94-bfc6-44b3c1825a2d.glb"
+  },
+  {
+   "title": "Arch",
+   "id": "QwWdOcNIMh",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/b4f2ce7f-e692-4b4c-aa2e-0d6b6e42d552.glb"
+  },
+  {
+   "title": "Crate",
+   "id": "SfJtdV8GDr",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/f3d1cf3a-cb48-4204-8cb3-0e43cd5780ee.glb"
+  },
+  {
+   "title": "Horse Statue",
+   "id": "AK9CmjFnL6",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/55b0aa03-543c-439d-a7d7-f0ac4c23578f.glb"
+  },
+  {
+   "title": "Chest",
+   "id": "O72u4Drp8k",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/803af4ae-433f-4b05-b1f1-c6a2da02d768.glb"
+  },
+  {
+   "title": "Chest with Gold",
+   "id": "haqf9qoiOG",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/bec58c2b-89ea-4c99-8ffe-47214f2fe4f9.glb"
+  }
+ ],
+ "survival": [
+  {
+   "title": "Pot",
+   "id": "Olu4b0aiiY",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/e211dd9c-2463-4a60-8e8d-05c0bf5e2292.glb"
+  },
+  {
+   "title": "Torch",
+   "id": "WGsvr4KOZd",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/035c4897-22f3-4e9c-b29f-ebafe2b566da.glb"
+  },
+  {
+   "title": "Can",
+   "id": "YnowJvWqxE",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/e16e13cf-fbc4-48c8-9927-ae34920a498e.glb"
+  },
+  {
+   "title": "Compass",
+   "id": "LlnxQPETHh",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/db18fada-a70e-44da-961c-0cc31dffdaa6.glb"
+  },
+  {
+   "title": "Tent",
+   "id": "5Q7qIrfDxA",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/fc8d560d-91b5-439c-88bf-4cbddb7eadbb.glb"
+  },
+  {
+   "title": "Water Bottle",
+   "id": "KpxDpidn1Z",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/3ebef9a3-c2df-49ee-abe1-df38b5777bcd.glb"
+  },
+  {
+   "title": "Axe",
+   "id": "W0UYZPYSXf",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/2b206f9f-30f7-43a4-8dd8-daa04953962b.glb"
+  },
+  {
+   "title": "Raft Paddle",
+   "id": "XLwljDJQZ7",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/28c8e9ad-b50d-49ea-905c-74597423ef2a.glb"
+  },
+  {
+   "title": "Battery",
+   "id": "OOvs45iGQg",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/2ad2fb12-fff8-479c-b32e-e2d61db4111f.glb"
+  },
+  {
+   "title": "Wooden Torch",
+   "id": "pNsfJzhXiD",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/e5d33174-f51a-4981-9cfc-67e70486cba2.glb"
+  },
+  {
+   "title": "Match Burnt",
+   "id": "CndBdbFR7V",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/7d2b5de5-7014-404e-bb63-6303e8908f52.glb"
+  },
+  {
+   "title": "Shovel",
+   "id": "oNBQSf87ZJ",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/4ca5006b-da27-4d96-9042-9672c9776750.glb"
+  },
+  {
+   "title": "Can Red",
+   "id": "IuoYedcdXQ",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/f6b52ca9-61b1-42d5-a42f-d8748a41eb45.glb"
+  },
+  {
+   "title": "Phone",
+   "id": "k2kgBepoMU",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/bb788859-3dca-4a80-b4da-f5f26e6148f6.glb"
+  },
+  {
+   "title": "Match",
+   "id": "P79Otw95no",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/49793e2e-43f2-4603-aaaf-3d9826ccb75c.glb"
+  },
+  {
+   "title": "Pan",
+   "id": "f9my9iJZMv",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/bdf0a29a-4c84-4da5-95ed-b6fa48bd038e.glb"
+  },
+  {
+   "title": "Propane Tank",
+   "id": "3revwBHxDC",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/d694382c-fd11-4ed0-a300-e5e7891a842b.glb"
+  },
+  {
+   "title": "Can Broken",
+   "id": "JjC5l1gXMo",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/98cc5a4e-9ea3-4650-808b-55fb3ccb8aa9.glb"
+  },
+  {
+   "title": "Battery",
+   "id": "MYa3uWdwPU",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/efd35cc3-a593-4482-a0c4-dc495eadabf0.glb"
+  },
+  {
+   "title": "Matchbox",
+   "id": "22eU6FjNQ8",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/5bffb6b9-2a06-408b-8aba-dbc790925480.glb"
+  },
+  {
+   "title": "First Aid Kit",
+   "id": "Hp80p6148W",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/41249676-0965-40df-8dd7-eee79dd9e6cf.glb"
+  },
+  {
+   "title": "First Aid Kit",
+   "id": "wP00rePSRD",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/ac2e0be3-3279-48be-ac2b-d50077b44eab.glb"
+  },
+  {
+   "title": "Flare Gun",
+   "id": "44H9OBUqTC",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/9ec52cda-c918-43f0-b7af-354e7fe96c37.glb"
+  },
+  {
+   "title": "Radio",
+   "id": "TPqvwkyWdV",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/7ed34c76-5ef7-4b70-b7d8-ce06e8128b07.glb"
+  },
+  {
+   "title": "Bear Trap",
+   "id": "UTau9hyAnm",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/7d15d1a5-156a-4468-97e1-19373ae5dd5c.glb"
+  },
+  {
+   "title": "Pot",
+   "id": "fyweVKYu0K",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/37104bf9-fd16-46a6-a421-283258abbc8d.glb"
+  },
+  {
+   "title": "Wood Log",
+   "id": "L4E32Wee6C",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/89d5c7b9-0735-4640-913d-87261dfecd32.glb"
+  },
+  {
+   "title": "Knife",
+   "id": "N9bfPFP1hr",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/db1c8b42-5e15-47c3-99dc-0d19b1ee5115.glb"
+  },
+  {
+   "title": "Raft",
+   "id": "Hgf0R8s4Uo",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/9c276a46-9174-48ee-9624-3944d5b0d3ef.glb"
+  },
+  {
+   "title": "Gas Can",
+   "id": "eS1OXGo51c",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/1f4c22b1-2ed8-4b1b-9f43-46610b265239.glb"
+  },
+  {
+   "title": "Bonfire",
+   "id": "k1e0cOzi8A",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/98f86943-7855-434a-a1b2-81a16f2e4b40.glb"
+  },
+  {
+   "title": "Backpack",
+   "id": "2g9Jm7kvIU",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/0d29cdc2-0baf-4bf7-835f-075b34c70b61.glb"
+  }
+ ],
+ "rts": [
+  {
+   "title": "Fortress",
+   "id": "17scbUKx6U",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/c3ccd51c-0343-4237-83f4-0bc0183911d6.glb"
+  },
+  {
+   "title": "Dock",
+   "id": "XViKoBh2UN",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/fad3fcb3-d174-469b-9f1c-a3ab00d74fb9.glb"
+  },
+  {
+   "title": "Hut",
+   "id": "I0IzdnH2iN",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/76843ec7-2056-43ed-853e-d32d0b8253c4.glb"
+  },
+  {
+   "title": "Hut",
+   "id": "4MJWbyd6vw",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/36d65045-d2ff-4689-a34d-a4acbe1873cb.glb"
+  },
+  {
+   "title": "Dock",
+   "id": "YAS4fY6UL1",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/f85cdc23-da38-43ee-8214-c466609ffd86.glb"
+  },
+  {
+   "title": "Mountain",
+   "id": "XY4ej3Zg3I",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/fdad940c-9adb-404a-acd0-bd728e8e3159.glb"
+  },
+  {
+   "title": "Mountain Group",
+   "id": "a52gSEEq8X",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/f01e8d13-d978-4d21-8980-d03b907fe362.glb"
+  },
+  {
+   "title": "Mountain",
+   "id": "7HYR2s9JVi",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/5642bd4a-1742-4025-9700-511a7a55c0b2.glb"
+  },
+  {
+   "title": "Rock",
+   "id": "4MUaQTcDdc",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/de15e8eb-53a1-4e7e-a4c5-fc2299f57158.glb"
+  },
+  {
+   "title": "Temple",
+   "id": "JsZnPztvRl",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/15348363-9f48-409b-9c33-dbd08441514a.glb"
+  },
+  {
+   "title": "Wooden Fortress Gate",
+   "id": "SiSjNL8GtO",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/77b9f0fc-39c3-49a0-a995-0994ab4fda85.glb"
+  },
+  {
+   "title": "Wall Towers Door Seco",
+   "id": "5d80r2XX3O",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/e269a247-0b4b-4c67-b413-befa8d3f5b36.glb"
+  },
+  {
+   "title": "Stone Wall",
+   "id": "tdeAOh3LQV",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/b0cfd860-1324-4253-b718-659ffae2188e.glb"
+  },
+  {
+   "title": "Small Watch Tower",
+   "id": "CygapExMf5",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/8bec6466-329a-4f83-99d9-600a00e2c437.glb"
+  },
+  {
+   "title": "Watch Tower",
+   "id": "f2J0aSLVi4",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/af1eb6e4-a1b9-415f-bb4d-6098c4a70b40.glb"
+  },
+  {
+   "title": "Watch Tower",
+   "id": "VJZZW37Vsk",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/af9ebe34-f519-48eb-9185-3e2c76405697.glb"
+  },
+  {
+   "title": "Windmill",
+   "id": "WUbU1Nct2W",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/6bf79810-ea32-4451-84e9-221e69020a40.glb"
+  },
+  {
+   "title": "Watch Tower",
+   "id": "cMxuj2gt7D",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/44e04449-9ea6-4daf-bfb9-2f2cc09aecd2.glb"
+  },
+  {
+   "title": "Barracks",
+   "id": "a1C1L8gJTX",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/77daa612-3c25-490a-970c-a6bfa24425a5.glb"
+  },
+  {
+   "title": "Barracks",
+   "id": "lnyADheSvA",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/4dd57aa3-e10b-43c8-9661-080167b1e060.glb"
+  },
+  {
+   "title": "Small Farm",
+   "id": "nELNHkk0Uh",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/78185f81-eaee-42bb-896b-03b4af09985f.glb"
+  },
+  {
+   "title": "Farm",
+   "id": "INctJkmEAl",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/4a74cb74-5fd9-473f-a616-046c3c13038e.glb"
+  },
+  {
+   "title": "House",
+   "id": "oJJIRwv6Bo",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/65d155f6-705c-4e6c-9e3a-b9974bb82324.glb"
+  },
+  {
+   "title": "House",
+   "id": "vZ1CLbWmSx",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/ddc8c38d-3c10-4cdf-9222-0065dc17a5b0.glb"
+  },
+  {
+   "title": "Houses",
+   "id": "vCoDG5hFyI",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/d150762b-2366-4acb-a841-5572a300648e.glb"
+  },
+  {
+   "title": "Wooden Monument",
+   "id": "QBTCfwOTsY",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/5e754dc8-8969-4934-8a00-f2715c58ac92.glb"
+  },
+  {
+   "title": "Barracks",
+   "id": "jjbNh1vCbj",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/9108426b-8df8-4427-a6fe-169c68605ced.glb"
+  },
+  {
+   "title": "Farm Dirt",
+   "id": "8BQFbUMOeC",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/0a2ecf5d-4134-4294-b07d-d699255da589.glb"
+  },
+  {
+   "title": "House",
+   "id": "L7h0SjZX2K",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/502869d8-98f4-42c5-a634-905add0d07b3.glb"
+  },
+  {
+   "title": "Shack",
+   "id": "HuzLJcbUd2",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/65fbcae2-7ada-4189-b444-8947ac22c5a2.glb"
+  },
+  {
+   "title": "Rock",
+   "id": "JmFMh7ztL9",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/f6e4c0d8-6ddc-4cb3-913b-f470339553bf.glb"
+  },
+  {
+   "title": "Wooden Wall",
+   "id": "8C9NBoi9cA",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/43bf4a38-5d5d-4704-860c-ea13a894ff09.glb"
+  },
+  {
+   "title": "Huts",
+   "id": "j9uMWazOBh",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/99bbd0c0-b60d-4923-bfbf-a7849e26766f.glb"
+  },
+  {
+   "title": "Shack",
+   "id": "dlMcSexDWI",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/cb30e5c5-c946-422f-b4fb-5ac29c9a3fce.glb"
+  },
+  {
+   "title": "Town Center",
+   "id": "EEojbRn1eX",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/19ae7961-9bda-4fa7-a4e2-0ad16a1f19e0.glb"
+  },
+  {
+   "title": "Logs",
+   "id": "fei4I7FfrJ",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/3acb6479-f0af-42cf-a8ad-ba2742e4bde7.glb"
+  },
+  {
+   "title": "Rock",
+   "id": "RtLRqYjfMs",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/87d3dfd2-de47-4b03-b9f1-4c84c2a605b0.glb"
+  },
+  {
+   "title": "Rocks",
+   "id": "Gl3pcrdnpW",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/88886889-dca6-4ccc-83f3-aa19ace86743.glb"
+  },
+  {
+   "title": "Trees cut",
+   "id": "zhm3D5KKRh",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/8e866eaa-ea0e-443b-9ae0-6740121db3db.glb"
+  },
+  {
+   "title": "Wooden Wall",
+   "id": "L0TxLurnES",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/a0c7ecf1-2f7f-435e-ae1a-a62b838fd256.glb"
+  },
+  {
+   "title": "House",
+   "id": "YlADpCJU8U",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/0877b108-5675-4da1-b646-2aedb9768869.glb"
+  },
+  {
+   "title": "Stone Wall Towers",
+   "id": "geisKzlSFZ",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/477a4219-6c5a-4228-b0a5-f0ab12fabf76.glb"
+  },
+  {
+   "title": "Trees cut",
+   "id": "CDzsCXJEBQ",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/9abc4cdf-24e1-40ef-b53f-fc1990e60e58.glb"
+  },
+  {
+   "title": "Windmill",
+   "id": "jpHoi9xDLG",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/8e4bd22a-1ec9-4c27-b2d2-8620b646affa.glb"
+  },
+  {
+   "title": "Castle Gate",
+   "id": "tKTchdiQzV",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/7517b51c-f2cc-4b87-bf56-22355c7754cb.glb"
+  },
+  {
+   "title": "Hut",
+   "id": "wxi3kAu5ey",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/07d9ceb2-8b8d-4eba-8823-a7d39c8aeb20.glb"
+  },
+  {
+   "title": "Wall Towers",
+   "id": "xKVeMHa2tJ",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/5a70ad27-93f3-42d7-95ff-4997bb274e8a.glb"
+  },
+  {
+   "title": "House",
+   "id": "nihGGju7DW",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/2e313d91-8241-43c4-86a0-8595a2a11d13.glb"
+  },
+  {
+   "title": "Temple",
+   "id": "v36uJiErXS",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/d62a4c9b-0bf8-46df-b888-d3529d31242d.glb"
+  },
+  {
+   "title": "Houses",
+   "id": "UvVOeyHh92",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/6d9fc6c8-d736-4269-b4c1-845aaa8dbb36.glb"
+  },
+  {
+   "title": "Wooden house tower",
+   "id": "EV7pILnaZC",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/6ce5fd67-5509-4a02-9aa7-015d397e274f.glb"
+  },
+  {
+   "title": "Resource Gold",
+   "id": "jkqD4dMoz1",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/34c11de3-309c-48a1-8ac0-7224a40b60b2.glb"
+  },
+  {
+   "title": "Gold rocks",
+   "id": "r93I0pFAE7",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/edd2df9d-37a5-4564-bb00-7d2642a8706d.glb"
+  },
+  {
+   "title": "Gold Rocks",
+   "id": "49NgnJzOHc",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/b5523c60-3263-4d97-a4c0-8526ad2443fb.glb"
+  },
+  {
+   "title": "Barracks",
+   "id": "puD1kbV4kf",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/de1a1ecc-1de8-4ced-9874-2afc17b3dfbb.glb"
+  },
+  {
+   "title": "House",
+   "id": "RSwoYSLblu",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/d1ec68ce-6b50-45b8-9806-47dc8bfddd84.glb"
+  },
+  {
+   "title": "House",
+   "id": "k6tP5nFUd2",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/40308351-1d17-4abc-9ab2-7fd50c700686.glb"
+  },
+  {
+   "title": "Mine",
+   "id": "wOJ61Fa0Lt",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/ede9a223-b9e9-4191-b499-4851ca5d9be5.glb"
+  },
+  {
+   "title": "Mountains",
+   "id": "w9VBrh7Nz0",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/37567fee-ed12-4122-a1ae-ffe14b378739.glb"
+  },
+  {
+   "title": "Shipping Port",
+   "id": "rDX8W8uqip",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/de79be59-6d8b-4b6d-bc33-b4fe86f6a3a7.glb"
+  },
+  {
+   "title": "Farm",
+   "id": "91wMLb9kKo",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/507be572-66bd-419e-bf29-265cce2cf724.glb"
+  },
+  {
+   "title": "Market Stalls",
+   "id": "jSqGy8V0MQ",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/5db05200-3d40-4d9b-b1b1-7ffec481e1b4.glb"
+  },
+  {
+   "title": "Trees",
+   "id": "jUzojhHoYR",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/953dfd22-7041-4a2b-a234-0e1088bb8340.glb"
+  },
+  {
+   "title": "Storage Hut",
+   "id": "BsTn4bKSGb",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/8d6e4780-251c-49f6-9a49-b28ea28a03f8.glb"
+  },
+  {
+   "title": "Shipping Port",
+   "id": "mJXJPCIkbM",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/29f44f43-65d5-4733-8f42-bc9d61048e98.glb"
+  },
+  {
+   "title": "Tower House",
+   "id": "xm5cViUjra",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/f157b27f-208a-4c7b-8c68-18c93d610ab9.glb"
+  },
+  {
+   "title": "Stone Tower",
+   "id": "dJLAD6p90F",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/9d0ad85b-a250-4197-a5d3-8bac9f463004.glb"
+  },
+  {
+   "title": "Stone Tower",
+   "id": "Rz4U5dZJz8",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/2ebc450e-0874-4b5a-bbfa-6e30e29fcc85.glb"
+  },
+  {
+   "title": "Temple",
+   "id": "CE2Mn7lh6A",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/e9e3b79b-605c-44d9-961a-43bc2a8130d0.glb"
+  },
+  {
+   "title": "Port",
+   "id": "Gjt5yMM4Vw",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/e0972cd9-7885-4bcd-92cb-9a5f0601d2ff.glb"
+  },
+  {
+   "title": "Town Center",
+   "id": "CoERW5nFdE",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/81e39d77-d2c8-4f53-8e44-13fb6a008e4f.glb"
+  },
+  {
+   "title": "Pine Trees",
+   "id": "oYtDty0fR6",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/1d499f8b-5a1b-4966-9a35-10c0d3841e91.glb"
+  },
+  {
+   "title": "Archery Training Grounds",
+   "id": "FD3GBkVOyX",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/ac33f0e5-56db-439a-86cc-8cdc8356ce79.glb"
+  },
+  {
+   "title": "Market Stalls",
+   "id": "4ZAhRv2tLG",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/e5bf8ed1-969f-424b-924a-a7aea1d92d9a.glb"
+  },
+  {
+   "title": "Archery Training Grounds",
+   "id": "5dWpau7C3k",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/86295aab-0081-46e3-94ad-a9dbc2d8bef8.glb"
+  },
+  {
+   "title": "Houses",
+   "id": "gEjAC1UvVU",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/9d55f5eb-6398-4708-a623-f1e688a78bde.glb"
+  },
+  {
+   "title": "Farm",
+   "id": "O4wpTLSfIn",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/45efc0ce-80ee-4f11-a0c8-124644e9d672.glb"
+  },
+  {
+   "title": "Temple",
+   "id": "nR264crTSr",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/d3bd25be-30d5-4108-b725-78c0c84395d0.glb"
+  },
+  {
+   "title": "Town Center",
+   "id": "cuQuFJEIfH",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/06cb1d0b-0db5-4ba5-82ee-d359e7b1714b.glb"
+  },
+  {
+   "title": "Storage Shed",
+   "id": "JrFL3mLOKg",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/5f6fd867-1979-4bd1-a2f9-99627cf86ac3.glb"
+  },
+  {
+   "title": "Archery Towers",
+   "id": "fPB3sm5796",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/aa2f6a28-8034-41c1-b556-65002c4bc87d.glb"
+  },
+  {
+   "title": "Market Stalls",
+   "id": "PUZZ5F91OE",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/336fbda1-a644-4deb-b980-7b27a368bdeb.glb"
+  },
+  {
+   "title": "Village Market",
+   "id": "0TsHLxX6CB",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/d99b4be3-5157-4dda-b308-ad77acbe8801.glb"
+  },
+  {
+   "title": "Wodden Temple",
+   "id": "HVg79yHQTm",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/d71d7068-0219-4851-b3ee-147b97fa1388.glb"
+  },
+  {
+   "title": "Archery Second Age Le",
+   "id": "52fgB0PCFu",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/6e897a9f-7c4c-44c2-85d6-cc79b18d6b07.glb"
+  },
+  {
+   "title": "Barracks",
+   "id": "dvlksXgxWc",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/9525bf0f-6ef9-4b9a-9d74-2d2d23352003.glb"
+  },
+  {
+   "title": "Port",
+   "id": "4sE6lmhGPF",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/27270a0e-cb71-40f7-91b1-1421ab9b17b9.glb"
+  },
+  {
+   "title": "Docks",
+   "id": "F7twMHWPXY",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/a34d55ba-16d6-4951-9126-8c15315cb6e4.glb"
+  },
+  {
+   "title": "Castle",
+   "id": "opTOmcN3o9",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/22b576c3-24c2-45c4-a89c-b088901c3695.glb"
+  },
+  {
+   "title": "Archery Building",
+   "id": "XYe1bbeUv9",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/4d652093-5c3e-4de3-a404-cc7f524725b4.glb"
+  },
+  {
+   "title": "Storage shed",
+   "id": "fkTsDdpQAA",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/d4bcb445-6ef3-4aef-b39c-3bacd95f1b29.glb"
+  },
+  {
+   "title": "Storage shed",
+   "id": "TvXpjtD2nk",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/b31de303-72fb-4475-bac3-13802ac052c7.glb"
+  },
+  {
+   "title": "Town Center",
+   "id": "76GTkSh4KM",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/38935e97-98f3-4abf-8f7d-5324be45f3e3.glb"
+  },
+  {
+   "title": "Wooden Encampment",
+   "id": "njoPJEjDQD",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/e364c4d4-e19c-4d9b-a99b-0917b9e94796.glb"
+  },
+  {
+   "title": "Castle",
+   "id": "y15yE6kWLY",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/dafe12fb-8ec0-4d2b-826a-4917d7ed78a3.glb"
+  },
+  {
+   "title": "Storage House",
+   "id": "d2ZQWcuhwR",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/a813492d-c901-4d09-b885-6dcca2f20909.glb"
+  },
+  {
+   "title": "Business Building",
+   "id": "GoF3zph6WI",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/9cf00975-0f9f-414c-bb2d-84decf12f0e0.glb"
+  },
+  {
+   "title": "Barracks",
+   "id": "UXCOwRBSxx",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/aa317363-cacd-48c5-8f9a-468133e73e24.glb"
+  },
+  {
+   "title": "Castle Fortress",
+   "id": "3r6gq3ow6O",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/89e11ad8-811d-4055-b041-12a959ac2973.glb"
+  },
+  {
+   "title": "Market Stalls",
+   "id": "OLd8vu6lPL",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/4d9dbdf1-5665-4832-8def-9d479311820d.glb"
+  },
+  {
+   "title": "Archery Towers",
+   "id": "IA5qOjIAiT",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/bfa61411-2c8c-4113-999c-997ae801d3bc.glb"
+  },
+  {
+   "title": "Wooden Fortress",
+   "id": "cwWP6GkoJc",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/fc0c763a-3a76-4af3-b89e-8901dcb39abb.glb"
+  },
+  {
+   "title": "Temple First Age Leve",
+   "id": "YrK9bureMV",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/34e1073c-2869-469b-9074-fa7a7b7d5e74.glb"
+  },
+  {
+   "title": "Wooden Castle",
+   "id": "JDUXodrPjL",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/1e49a798-42f4-4ec5-827b-a29942f35620.glb"
+  },
+  {
+   "title": "Town Center Second Age",
+   "id": "sPY1OPVCAX",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/1889ded5-a147-4a3e-be44-40f4ca8cbe47.glb"
+  },
+  {
+   "title": "Market Stalls Compact",
+   "id": "fmHUuX9AS3",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/5448d0ab-edfe-49fa-9c0e-e270fb2ed2b8.glb"
+  },
+  {
+   "title": "Crops",
+   "id": "Ro6K0Yg7mx",
+   "licence": "CC0 1.0",
+   "glb": "https://static.poly.pizza/2df95a2a-38b4-40dd-ac8d-9b290b550c63.glb"
+  }
+ ]
+}

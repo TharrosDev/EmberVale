@@ -28,6 +28,7 @@ public static class PlaceableTemplates
     public const string DecorBrazier = "prop.decor.brazier";
     public const string DecorCrate = "prop.decor.crate";
     public const string DecorBanner = "prop.decor.banner";
+    public const string DisplayStand = "prop.display.stand";
 
     /// <summary>
     /// Every placeable template id. <c>prop.*</c> is the namespace <c>docs/IDS.md</c> reserves for
@@ -38,6 +39,7 @@ public static class PlaceableTemplates
     public static readonly IReadOnlySet<string> Ids = new HashSet<string>
     {
         StationForge, StationWorkbench, StationAlchemy, DecorBrazier, DecorCrate, DecorBanner,
+        DisplayStand,
     };
 
     private const string ModelRoot = "res://assets/models/props/";
@@ -79,8 +81,32 @@ public static class PlaceableTemplates
         DecorBanner => Decor(
             "place.decor_banner", position, "prp_banner_guild.glb",
             new Color(0.35f, 0.12f, 0.16f), new Vector3(0.5f, 3f, 0.3f)),
+        DisplayStand => Stand(position),
         _ => null,
     };
+
+    /// <summary>
+    /// A display stand (37D): the decoration above, plus the one-slot inventory that <b>is</b> the
+    /// display and the <see cref="TrophyStandComponent"/> that fronts it. Its <c>PropertyId</c> is
+    /// deliberately left empty — a placed stand reads its holding back out of its own
+    /// <see cref="PlacementIds"/> id, so one template serves every property without a variant each.
+    ///
+    /// ⚠️ <c>Capacity</c> is set here on the node, for the reason 37B's chest documents:
+    /// <c>InventoryComponent.Load</c> restores through <c>AddInstance</c>, which clamps to
+    /// <c>Capacity</c>, so a capacity applied after the save manager's mid-load restore would eat the
+    /// trophy without a word.
+    /// </summary>
+    private static Node3D Stand(Vector3 position)
+    {
+        Node3D stand = Decor(
+            "place.display_stand", position, "prp_ruin_pillar.glb",
+            new Color(0.42f, 0.4f, 0.38f), new Vector3(0.6f, 1.1f, 0.6f));
+
+        stand.Name = "DisplayStand";
+        stand.AddChild(new Items.InventoryComponent { Name = "Inventory", Capacity = 1 });
+        stand.AddChild(new TrophyStandComponent { Name = "Display" });
+        return stand;
+    }
 
     /// <summary>A placed crafting station — the same actor the town hub authors by hand, built by the
     /// factory the roadmap named. <paramref name="nameKey"/> is a <c>Loc</c> key: the station's name
