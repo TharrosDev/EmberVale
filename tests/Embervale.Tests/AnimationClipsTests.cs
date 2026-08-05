@@ -166,6 +166,58 @@ public class AnimationClipsTests
         Assert.Equal("Idle", AnimationClips.Resolve(adventurer, "idle"));
     }
 
+    /// <summary>The Quaternius fliers (dragon, demon) ship no "idle" and no "walk" at all — only
+    /// Flying_Idle and Fast_Flying. Before those aliases both slots resolved to empty, which leaves
+    /// the creature in its bind pose: a T-posing dragon, and nothing logs an error.</summary>
+    private static readonly string[] Dragon =
+    {
+        "CharacterArmature|Death", "CharacterArmature|Fast_Flying", "CharacterArmature|Flying_Idle",
+        "CharacterArmature|Headbutt", "CharacterArmature|HitReact", "CharacterArmature|No",
+        "CharacterArmature|Punch", "CharacterArmature|Yes",
+    };
+
+    [Theory]
+    [InlineData("idle", "CharacterArmature|Flying_Idle")]
+    [InlineData("run", "CharacterArmature|Fast_Flying")]
+    [InlineData("attack", "CharacterArmature|Punch")]
+    [InlineData("hit", "CharacterArmature|HitReact")]
+    [InlineData("death", "CharacterArmature|Death")]
+    public void AFlierResolvesEverySlotItOwns(string slot, string expected) =>
+        Assert.Equal(expected, AnimationClips.Resolve(Dragon, slot));
+
+    [Fact]
+    public void FlyingIdleIsNeverMistakenForRunning()
+    {
+        // "flying" as a run alias would prefix-match Flying_Idle and fly a creature on the spot.
+        // A rig with only the idle must report no run clip rather than the wrong one.
+        string[] hoverOnly = { "CharacterArmature|Flying_Idle", "CharacterArmature|Death" };
+        Assert.Equal(string.Empty, AnimationClips.Resolve(hoverOnly, "run"));
+        Assert.Equal("CharacterArmature|Flying_Idle", AnimationClips.Resolve(hoverOnly, "idle"));
+    }
+
+    [Fact]
+    public void ARealIdleStillBeatsTheFlyingFallback()
+    {
+        // Alias order matters: a grounded rig owning both must not resolve to the flier's clip.
+        string[] both = { "Flying_Idle", "Idle", "Walk" };
+        Assert.Equal("Idle", AnimationClips.Resolve(both, "idle"));
+        Assert.Equal("Walk", AnimationClips.Resolve(both, "run"));
+    }
+
+    /// <summary>The animal rig uses a different armature prefix and gallops instead of running.</summary>
+    [Fact]
+    public void AnAnimalRigResolvesThroughItsOwnPrefix()
+    {
+        string[] wolf =
+        {
+            "AnimalArmature|Attack", "AnimalArmature|Death", "AnimalArmature|Gallop",
+            "AnimalArmature|Idle", "AnimalArmature|Walk",
+        };
+        Assert.Equal("AnimalArmature|Idle", AnimationClips.Resolve(wolf, "idle"));
+        Assert.Equal("AnimalArmature|Walk", AnimationClips.Resolve(wolf, "run"));
+        Assert.Equal("AnimalArmature|Attack", AnimationClips.Resolve(wolf, "attack"));
+    }
+
     [Fact]
     public void TrailingBarIsNotTreatedAsAPrefix()
     {

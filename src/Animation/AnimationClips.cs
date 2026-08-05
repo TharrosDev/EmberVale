@@ -30,8 +30,13 @@ public static class AnimationClips
     /// first so this project's own models keep winning outright.</summary>
     private static readonly Dictionary<string, string[]> Aliases = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["idle"] = new[] { "idle" },
-        ["run"] = new[] { "run", "walk" },
+        // "flying_idle" is listed for idle, and "fast_flying" for run, because the Quaternius
+        // fliers (dragon, demon) ship ONLY those two locomotion clips — no "idle", no "walk". Both
+        // are exact matches, so a grounded rig that happens to own a real "idle" still wins on the
+        // first alias. Bare "flying" is deliberately NOT a run alias: it would prefix-match
+        // "Flying_Idle" and fly the creature on the spot while it stands still.
+        ["idle"] = new[] { "idle", "flying_idle" },
+        ["run"] = new[] { "run", "walk", "gallop", "sprint", "fast_flying" },
         ["block"] = new[] { "block", "guard", "shield" },
         // Weapon-specific words are tried BEFORE the generic "attack". A rig that ships both
         // "Attacking_Idle" (a stance) and "Dagger_Attack" (the swing) would otherwise resolve the

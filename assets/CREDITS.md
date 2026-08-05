@@ -341,6 +341,59 @@ Pizza id, licence and download URL, so any of them can be re-pulled without a se
   the front before selection. Four RTS huts/shacks (`hut`, `hut_2`, `shack`, `storage_hut`) were
   rejected the same way.
 
+### Creatures — the Quaternius swap (2026-08-05, batch 3) — CC0
+
+**29 enemy archetypes had no model at all** and greyboxed as tinted capsules. They now have rigged,
+animated bodies. Each file is exported at its archetype's own `CapsuleHeight`, because
+`EnemyArchetypeFactory.AddVisual` instances the model **unscaled** — it only renames it `Mesh` and
+turns it 180°, so the file must arrive at final size.
+
+| Archetype | Source | Height |
+| --- | --- | --- |
+| `enemy.ancient_dragon` | monsters/Dragon_Evolved | 5.0 m |
+| `enemy.ash_dragon` / `wild_dragon` / `frost_drake` | monsters/Dragon | 4.6 / 4.0 / 2.2 m |
+| `enemy.wolf` / `dire_wolf` | animals/Wolf | 0.9 / 1.3 m |
+| `enemy.frost_stalker` | animals/Husky | 1.0 m |
+| `enemy.ashfall_elk` | animals/Stag | 1.6 m |
+| `enemy.thornback_boar` | animals/Bull | 1.0 m |
+| `enemy.ash_maw` | monsters/Cactoro | 1.1 m |
+| `enemy.barrow_wight` / `grave_shade` | monsters/Ghost | 1.7 m |
+| `enemy.bone_knight` / `hollow_husk` | monsters/Ghost_Skull | 1.8 / 1.75 m |
+| `enemy.hollow_necromancer` / `clan_shaman` | monsters/Wizard | 1.8 m |
+| `enemy.stone_sentinel` | monsters/Goleling_Evolved | 2.4 m |
+| `enemy.ward_golem` | monsters/Goleling | 2.1 m |
+| `enemy.ruin_crawler` | monsters/Squidle | 0.8 m |
+| `enemy.cinder_wisp` | monsters/Pink_Slime | 1.0 m |
+| `enemy.storm_mote` | monsters/Green_Blob | 1.1 m |
+| `enemy.rime_shard` | monsters/GreenSpiky_Blob | 1.6 m |
+| `enemy.arcane_echo` | monsters/Hywirl | 1.8 m |
+| `enemy.cinder_thrall` | monsters/BlueDemon | 1.8 m |
+| `enemy.clan_raider` / `clan_beast_tamer` | monsters/Tribal | 1.9 / 1.8 m |
+| `enemy.soldier` | monsters/Ninja | 1.85 m |
+| `enemy.bandit` | men/Hoodie_Character | 1.8 m |
+| `enemy.syndicate_enforcer` | men/Punk | 1.8 m |
+
+- **Licence:** CC0 1.0 Universal, Quaternius. Every model keeps its armature and clips (8–26 each).
+- **Skinned models are never joined.** Joining a rigged mesh destroys the armature and every clip
+  with it, which is precisely the T-pose failure this batch existed to avoid. Only the root's scale
+  and offset are touched, and `export_apply` stays **off** so no modifier is baked into the skin.
+- ⚠️ **The glTF importer creates an `Icosphere` bone-shape placeholder in a `glTF_not_exported`
+  collection every time it loads a rig.** The exporter correctly skips it — confirmed by parsing
+  the GLB chunks directly rather than trusting Blender — but it spans z −1…+1, so **including it in
+  a bounding-box measurement makes every source read 1 m taller than it is**. That produced a wrong
+  scale factor for all 29 creatures twice: once through the measurement, and once more when the
+  same polluted bbox was used to "verify" the result. Measure with that collection excluded, and
+  verify a written file by reading the file.
+
+**Characters were already Quaternius and needed no work.** `men/Adventurer` is byte-identical to
+`chr_player_base` (62 bones, 24 actions, 10,278 faces); `npc_vendor` is `men/Farmer`; `enm_goblin`
+is an Orc. The Phase 35 migration had already standardised them.
+
+**`AnimationClips` gained flier aliases.** The Quaternius fliers (dragon, demon) ship only
+`Flying_Idle` and `Fast_Flying` — matching neither the `idle` nor the `run` slot, so a dragon would
+have hovered in its bind pose. Bare `flying` is deliberately **not** a run alias: it prefix-matches
+`Flying_Idle` and would fly a creature on the spot while it stands still.
+
 ### Props — the Quaternius swap (2026-08-05, batch 2) — CC0
 
 Eighteen props were re-sourced from the vendored library. **Every one keeps its original filename
