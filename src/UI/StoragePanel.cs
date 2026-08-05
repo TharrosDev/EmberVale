@@ -161,9 +161,10 @@ public partial class StoragePanel : UiPanel
     /// <see cref="InventoryComponent.RemoveItem(string, int)"/> matches by <em>template id</em>
     /// across every stack, which is fine for stackables (they carry no affixes, so all copies are
     /// interchangeable) but wrong for a rolled item — two distinct affixed instances of the same
-    /// template would see the first removal satisfy both, and one of them would evaporate. That is
-    /// the bug living in <c>ContainerLootComponent.Interact</c> today; rolled items go through the
-    /// reference-based <see cref="InventoryComponent.RemoveOneInstance"/> instead.
+    /// template would see the first removal satisfy both, and one of them would evaporate. Rolled
+    /// items go through the reference-based <see cref="InventoryComponent.RemoveOneInstance"/>
+    /// instead. <c>ContainerLootComponent.Interact</c> now makes the same split — it drained
+    /// everything, so its counts happened to cancel, but only by accident of popping the lot.
     /// </summary>
     private static void Transfer(InventoryComponent from, InventoryComponent to, ItemStack stack)
     {

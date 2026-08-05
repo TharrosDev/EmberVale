@@ -59,11 +59,22 @@ public partial class ContainerLootComponent : InteractableComponent, ISaveable
 
         // Pop the container's contents out onto the floor. Snapshot the stacks — removing
         // while iterating would invalidate the list.
+        //
+        // Rolled items leave by reference, stackables by id — the same split StoragePanel.Transfer
+        // makes, and for the same reason: RemoveItem matches on template id across every stack, so
+        // two differently-affixed copies of one template are interchangeable to it. Draining the
+        // whole container happened to come out even (every instance was popped, every stack was
+        // removed, just not pairwise), but "correct because the counts cancel" is not a property to
+        // leave load-bearing under a component that may one day pop only part of itself.
         if (Entity.GetComponent<InventoryComponent>() is { } source)
         {
             foreach (ItemStack stack in new List<ItemStack>(source.Stacks))
             {
-                if (source.RemoveItem(stack.Instance.TemplateId, stack.Quantity))
+                bool removed = stack.Instance.IsStackable
+                    ? source.RemoveItem(stack.Instance.TemplateId, stack.Quantity)
+                    : source.RemoveOneInstance(stack.Instance) != null;
+
+                if (removed)
                 {
                     SpawnPickup(parent, stack.Instance, stack.Quantity, origin, index++);
                 }

@@ -294,13 +294,31 @@ public partial class PlacementDirector : Node
             return;
         }
 
+        // Only aim can set RemovalTarget, and only behind this same test — but the id is what the
+        // despawn is keyed on, so it is re-checked here rather than assumed across two methods.
+        string? id = target.PersistentId;
+        if (!PlacementIds.IsPlacement(id))
+        {
+            Log.Warn($"'{id}' is not a placement id; refusing to remove it.");
+            return;
+        }
+
         // Refuse rather than destroy: a full pack must never be a reason the prop evaporates.
         if (pack.AddItem(kit, 1) < 1)
         {
             return;
         }
 
-        spawns.Despawn(target.PersistentId);
+        // The refund lands first (above) so a full pack refuses before anything is destroyed — which
+        // leaves exactly one way for the two to disagree: the despawn failing after the kit is in the
+        // pack, i.e. a kit conjured from a prop still standing. Take it back rather than duplicate it.
+        if (!spawns.Despawn(id))
+        {
+            pack.RemoveItem(kit, 1);
+            Log.Warn($"Placement '{id}' was not tracked; the prop stands and the kit was not refunded.");
+            return;
+        }
+
         RemovalTarget = null;
         Log.Info($"Picked up {kit.DisplayName}.");
     }

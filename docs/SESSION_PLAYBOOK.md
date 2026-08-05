@@ -3634,8 +3634,6 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
 - **Every sub-phase still owes the full DoD** (`PRODUCTION_ROADMAP.md` §0.3):
   builds, playable, `ISaveable` round-trips, `validate-all` green, docs updated,
   draft PR. The **Done when** line is *extra*, not instead.
-</content>
-</invoke>
 
 ---
 

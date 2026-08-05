@@ -11,14 +11,15 @@ it?" must be answerable without archaeology. An asset with no entry is **not fin
 
 ## Current state
 
-**29 of the project's 33 models are sourced; the other 4 are still in-house.** The asset
+**61 of the project's 65 models are sourced; the other 4 are still in-house.** The asset
 migration replaces the in-house set category by category. Props, characters, creatures, buildings,
 the sword and the first-person arm are all done. **Still in-house (4):** the Ashen Acolyte and
 three props with no suitable match — see *Searched for, not replaced* for why each stayed.
 
 *(An earlier revision of this file, and PR #202's description, said 15 props. The prop count was
 16 — corrected here because this file is the provenance record. The model total dropped 34 → 33
-when the orphaned `enm_goblin_brute.glb` was deleted.)*
+when the orphaned `enm_goblin_brute.glb` was deleted, then rose to 65 with the 2026-08-05
+Quaternius standardisation, which gave bodies to 29 archetypes that had greyboxed as capsules.)*
 
 ✅ **No asset requires attribution any more.** `prp_tome_stand` was the project's only CC BY 3.0
 model, and its unmet in-game attribution was a standing **release blocker** (recording it in this
@@ -114,13 +115,19 @@ fixed*.
 - **Blender MCP modifications:** joined, per-axis scaled to the original's 1.10 × 1.80 × 0.62 box,
   transforms applied, origin dropped to base, mesh renamed `Mesh`.
 
-### Pulpit — 4444ESOUSA (CC BY 3.0) ⚠️ attribution required
+### Pulpit — 4444ESOUSA (CC BY 3.0) — ❌ SUPERSEDED, no longer in the project
+
+> **Historical entry. This model is not shipped and no attribution is owed.** The 2026-08-05
+> Quaternius standardisation replaced `prp_tome_stand` with the CC0 `dungeons/Pedestal` (see the
+> batch-2 prop table below), which retired the project's only CC BY 3.0 asset and with it the
+> release blocker. Kept as a record of what was once here and why it went; the *Current state*
+> section at the top is the authority on what ships.
 
 - **Source:** Poly Pizza · **URL:** https://poly.pizza/m/3nHkaEsTGL
 - **Licence:** **Creative Commons Attribution 3.0** — https://creativecommons.org/licenses/by/3.0/
-- **Required attribution:** *"Pulpit" by 4444ESOUSA, licensed CC BY 3.0.* This is the only asset
-  in the project carrying an attribution obligation. It must appear in the game's credits screen
-  before release; recording it here alone is not sufficient compliance.
+- **Attribution that would have been required:** *"Pulpit" by 4444ESOUSA, licensed CC BY 3.0.*
+  While this model shipped it was the only asset in the project carrying an attribution
+  obligation, and recording it here was never sufficient compliance on its own.
 - **Why selected:** the only true lectern silhouette found across two search rounds — the CC0
   alternatives were a potion bottle and a skull candle. 68 tris, the lightest model in the game.
   Accepted a non-CC0 licence deliberately because the CC0 field had nothing that read as a lectern.
@@ -248,8 +255,9 @@ suffix. Both projects' naming resolves; the unit tests use the post-import names
 > attribution obligation).
 
 - **Licence:** all CC0 1.0 Universal, each verified on its own model page. A CC-BY blacksmith was
-  found and **deliberately passed over** — the project already carries one attribution obligation
-  and a second buys nothing here.
+  found and **deliberately passed over** — the project carried an attribution obligation at the
+  time and a second bought nothing. (That obligation has since been retired; the standing rule is
+  simply that the set stays CC0.)
 - **Why selected:** the Adventurer and Rogue carry the richest combat clip sets found (Sword_Slash /
   Dagger_Attack, Run, HitRecieve, Death) and read as distinct silhouettes, so the companion does not
   look like a recolour of the player. The King reads as authority for the Elder and the Clan Chief;
@@ -311,9 +319,12 @@ Pizza id, licence and download URL, so any of them can be re-pulled without a se
 
 - **Licence:** every vendored model is **CC0 1.0**, author **Quaternius**. No attribution is owed.
 - ⚠️ **Five CC-BY 3.0 models in the Women bundle were deliberately not downloaded** (Sci Fi
-  Character, Witch, Worker, Suit, Soldier). This project already carries one unmet CC-BY obligation
-  (`prp_tome_stand`) that is a release blocker; adding more attribution debt to fix a *looks*
-  problem is a bad trade, and the filter is by `licence` field in the manifest, not by eye.
+  Character, Witch, Worker, Suit, Soldier). They stay *recorded* in `manifest.json` with their real
+  licence — 406 entries, 401 downloaded — so the exclusion is auditable rather than invisible. At
+  the time the project still carried the `prp_tome_stand` CC-BY obligation and taking on more
+  attribution debt to fix a *looks* problem was a bad trade; that obligation is now gone and the
+  set is **CC0 throughout**, which is the state to keep. Filter by the manifest's `licence` field,
+  not by eye.
 - **The three packs the maintainer named** (Medieval Village MegaKit, Fantasy Props MegaKit,
   Modular Character Outfits Fantasy) are downloadable **only** through itch.io's click-through,
   which cannot be scripted. Poly Pizza mirrors the same artist's CC0 catalogue with no login, so the

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
 namespace Embervale.Housing;
@@ -22,8 +23,12 @@ public static class PlacementIds
     /// distinguishes a placed prop from an authored actor at removal time.</summary>
     public const string Prefix = "place.";
 
-    /// <summary>True when <paramref name="persistentId"/> names a prop the player placed.</summary>
-    public static bool IsPlacement(string? persistentId) =>
+    /// <summary>True when <paramref name="persistentId"/> names a prop the player placed.
+    /// <see cref="NotNullWhenAttribute"/> so a caller that has tested the id can go on to use it
+    /// without a <c>!</c>: the guarantee lives here, where it is actually enforced, instead of being
+    /// re-asserted at each call site (<see cref="PlacementDirector"/> did, and warned when it forgot).
+    /// </summary>
+    public static bool IsPlacement([NotNullWhen(true)] string? persistentId) =>
         !string.IsNullOrEmpty(persistentId) && persistentId.StartsWith(Prefix, System.StringComparison.Ordinal);
 
     /// <summary>The <c>place.&lt;propertyId&gt;#</c> stem every prop in one holding shares.</summary>
@@ -65,7 +70,7 @@ public static class PlacementIds
             return string.Empty;
         }
 
-        int hash = persistentId!.LastIndexOf('#');
+        int hash = persistentId.LastIndexOf('#');
         return hash <= Prefix.Length ? string.Empty : persistentId[Prefix.Length..hash];
     }
 }
