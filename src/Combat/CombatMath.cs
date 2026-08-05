@@ -101,9 +101,6 @@ public static class CombatMath
         _ => StatType.Armor,
     };
 
-    /// <summary>The physical-damage multiplier from armor: the classic <c>100 / (100 + armor)</c>
-    /// curve — diminishing returns, always in (0, 1], never full immunity. Negative armor clamps to
-    /// no reduction (×1). Pure (Godot-free) so the load-bearing defence formula is unit-testable.</summary>
     /// <summary>
     /// Poise damage actually taken from one hit (Phase 36C). A blocked hit still chips poise, by
     /// <paramref name="blockFactor"/>, so a held guard can be broken into a stagger. On top of that,
@@ -117,6 +114,11 @@ public static class CombatMath
         return amount * System.Math.Max(0f, windupMultiplier);
     }
 
+    /// <summary>The mitigation multiplier from a defence stat: the classic <c>100 / (100 + x)</c>
+    /// curve — diminishing returns, always in (0, 1], never full immunity. A negative value clamps to
+    /// no reduction (×1). Named for armour, but <see cref="Mitigate"/> runs every school's resistance
+    /// through it too (Phase 34E), so there is one defence formula to balance rather than seven.
+    /// Pure (Godot-free) so the load-bearing formula is unit-testable.</summary>
     public static float ArmorMultiplier(float armor)
     {
         float clamped = armor < 0f ? 0f : armor;

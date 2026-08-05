@@ -131,12 +131,27 @@ char.title,CHARACTER   (I to close)
 char.reputation,REPUTATION
 char.dread,Dread: -{0} (corruption)
 char.rep_line,{0}: {1} ({2})
+# Reputation tier names. The enum's Label() stays the invariant identifier (save headers,
+# analytics, dev console); these are what the player is shown.
+rep.tier.hated,Hated
+rep.tier.hostile,Hostile
+rep.tier.unfriendly,Unfriendly
+rep.tier.neutral,Neutral
+rep.tier.friendly,Friendly
+rep.tier.honored,Honored
+rep.tier.allied,Allied
 char.xp_max,MAX
 char.level_line,Level {0}    XP {1}
 char.skill_points,Skill points: {0}
 char.spell_points,Spell points: {0}
 char.corruption,CORRUPTION
 char.corruption_line,{0}   ({1}/{2})
+# Corruption tier names — same split as the reputation tiers above.
+corruption.tier.untainted,Untainted
+corruption.tier.touched,Touched
+corruption.tier.marked,Marked
+corruption.tier.ashbound,Ashbound
+corruption.tier.embers,Embers
 char.perks,PERKS
 char.perk_rank,{0}  ({1}/{2})
 char.perk_learn,Learn ({0})
