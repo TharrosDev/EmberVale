@@ -11,6 +11,45 @@
 
 ---
 
+## 0. Standing direction — the art set is Quaternius (2026-08-05)
+
+> **Maintainer instruction, and it overrides §1–§4 for anything a vendored pack already covers.**
+> Embervale's art set **standardises on Quaternius CC0 packs**. The point is coherence: one artist,
+> one style, one skeleton. A slightly better model from elsewhere is the *wrong* answer.
+
+- **The library is vendored** at `assets/library/` — 401 CC0 models across 10 bundles, behind a
+  **`.gdignore`** so Godot never imports or exports any of it. It costs the build nothing.
+- **`assets/library/manifest.json`** records every model's title, Poly Pizza id, licence and
+  download URL. Re-pull without searching; check a licence without guessing.
+- **A model enters the game only by being adapted into `assets/models/`** (scaled, origin fixed,
+  mesh renamed `Mesh`) and credited in `assets/CREDITS.md`. The library is source, not content.
+- **Search is now scoped, not skipped.** §1's order still holds *inside* the library: look there
+  first, and only go to the open web for something no bundle covers (today: an anvil/forge and an
+  ice/glacier prop). Record any such exception in `CREDITS.md`.
+- **CC0 only.** The filter is the manifest's `licence` field, not eye. Five CC-BY models in the
+  Ultimate Modular Women bundle were deliberately not downloaded. As of this standardisation
+  **every model in `assets/models/` is CC0 and the project owes no attribution** — the
+  `prp_tome_stand` release blocker is gone. Keep it that way.
+
+**Two failure modes this migration actually hit — check both, every time:**
+
+1. **Judge a model from behind, not just the front.** `House_4` is the obvious cottage head-on and
+   its **back is open** — walls, no roof, hollow interior. Four RTS huts/shacks failed the same way.
+   This is the second time open-sided models have shipped or nearly shipped here (see the "roofs on
+   stilts" incident in `CREDITS.md`).
+2. **The glTF importer plants an `Icosphere`** bone-shape placeholder in a `glTF_not_exported`
+   collection on **every rig load**. The exporter skips it, so files are clean — but it spans
+   z −1…+1, so any bounding box that includes it reads 1 m too tall and silently produces a wrong
+   scale. Exclude that collection when measuring, and **verify a written file by reading the file**
+   (parse the GLB), not by re-importing into the same polluted scene.
+
+**Sources, in order:** the vendored library → Poly Pizza's Quaternius catalogue (no login, direct
+`static.poly.pizza/<uuid>.glb`, and the bundle page JSON carries every id) → quaternius.com/itch
+(**click-through only, cannot be scripted** — the maintainer must download those zips) → §2's wider
+list, only for what Quaternius does not make.
+
+---
+
 ## 1. The order of operations — never reversed
 
 1. **Search the web** for an appropriate open-source model.
