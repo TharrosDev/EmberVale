@@ -11,6 +11,9 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_cache_chest.glb" id="33_chest"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="34_pillar"]
 [ext_resource type="Script" path="res://src/Housing/TrophyStandComponent.cs" id="35_trophy"]
+[ext_resource type="PackedScene" path="res://assets/models/architecture/bld_cottage.glb" id="36_cottage"]
+[ext_resource type="PackedScene" path="res://assets/models/architecture/bld_inn.glb" id="37_inn"]
+[ext_resource type="PackedScene" path="res://assets/models/architecture/bld_blacksmith.glb" id="38_smith"]
 [ext_resource type="Script" path="res://src/Factions/FactionComponent.cs" id="6_faction"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="7_dialogue"]
 [ext_resource type="Script" path="res://src/Npc/ScheduleComponent.cs" id="8_schedule"]
@@ -184,6 +187,22 @@ size = Vector3(3, 2.6, 0.5)
 [sub_resource type="BoxShape3D" id="Shape_stand"]
 size = Vector3(0.6, 1.1, 0.6)
 
+; The cottage's own collider, sized to bld_cottage.glb (4.84 x 4.20 x 4.70). It is NOT Shape_bldgA:
+; that box is the two-storey town house's, and a collider a metre and a half taller than the roof
+; it guards is a wall the player bumps into before reaching the building.
+
+[sub_resource type="BoxShape3D" id="Shape_cottage"]
+size = Vector3(4.84, 4.2, 4.7)
+
+; The square used two models at four mounts, which reads as a copied asset rather than a village.
+; The inn and the smithy give the innkeeper and the Warband's smith buildings to stand in front of.
+
+[sub_resource type="BoxShape3D" id="Shape_inn"]
+size = Vector3(8.66, 7.5, 8.64)
+
+[sub_resource type="BoxShape3D" id="Shape_smith"]
+size = Vector3(8.42, 6.5, 7.11)
+
 [node name="TownHubCell" type="Node3D"]
 
 [node name="Nav" type="NavigationRegion3D" parent="."]
@@ -217,7 +236,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 3.75, -6)
 [node name="BuildingNECol" type="StaticBody3D" parent="Nav/BuildingNE"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/BuildingNE/BuildingNECol"]
-shape = SubResource("Shape_bldgA")
+shape = SubResource("Shape_inn")
 
 [node name="BuildingSW" type="MeshInstance3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 3.4, -22)
@@ -228,12 +247,12 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 3.4, -22)
 shape = SubResource("Shape_bldgB")
 
 [node name="BuildingSE" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 3.4, -22)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 3.25, -22)
 
 [node name="BuildingSECol" type="StaticBody3D" parent="Nav/BuildingSE"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/BuildingSE/BuildingSECol"]
-shape = SubResource("Shape_bldgB")
+shape = SubResource("Shape_smith")
 
 [node name="LampSW" type="Node3D" parent="Nav"]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -4, 0, 2)
@@ -634,14 +653,14 @@ StationName = "Alchemy Table"
 [node name="Model" parent="Nav/BuildingNW" instance=ExtResource("10_house_a")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.75, 0)
 
-[node name="Model" parent="Nav/BuildingNE" instance=ExtResource("10_house_a")]
+[node name="Model" parent="Nav/BuildingNE" instance=ExtResource("37_inn")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.75, 0)
 
 [node name="Model" parent="Nav/BuildingSW" instance=ExtResource("11_house_b")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.4, 0)
 
-[node name="Model" parent="Nav/BuildingSE" instance=ExtResource("11_house_b")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.4, 0)
+[node name="Model" parent="Nav/BuildingSE" instance=ExtResource("38_smith")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.25, 0)
 
 [node name="Model" parent="Waystone" instance=ExtResource("12_waystone")]
 
@@ -694,15 +713,22 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.4, 0)
 ; square. Roofless by design: an enterable interior needs a scene transition convention this repo
 ; does not have yet, and inventing one here would pre-empt the Phase 44 region work that owns it.
 
+; ⚠️ THE MODEL CHILD CARRIES A COUNTER-OFFSET. The building node sits at half its own height so the
+; box collider (which is centred on its origin) spans ground to roof; the .glb's origin is at its
+; BASE, so without -Y on the Model the house hangs in the air by half its height. Every other
+; building here does this (BuildingNW/NE -3.75, BuildingSW/SE -3.4) and the first cut of this node
+; did not — a cottage floating 3.75 m over its own garden.
+
 [node name="Cottage" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -22, 3.75, -26)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -22, 2.1, -25.35)
 
 [node name="CottageCol" type="StaticBody3D" parent="Nav/Cottage"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/Cottage/CottageCol"]
-shape = SubResource("Shape_bldgA")
+shape = SubResource("Shape_cottage")
 
-[node name="Model" parent="Nav/Cottage" instance=ExtResource("10_house_a")]
+[node name="Model" parent="Nav/Cottage" instance=ExtResource("36_cottage")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.1, 0)
 
 [node name="CottageWallW" type="MeshInstance3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -26.25, 1.3, -19.5)

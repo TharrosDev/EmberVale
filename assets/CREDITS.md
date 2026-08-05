@@ -286,6 +286,59 @@ earning its place on real data.
 Harmless (resolution takes the first match) and left alone rather than risking the rig to save a
 few KB.
 
+### The Quaternius standardisation (2026-08-05) — CC0
+
+The maintainer set a standing direction: **the art set standardises on Quaternius CC0 packs.** The
+whole library is vendored at `assets/library/` (401 models, 10 bundles) behind a **`.gdignore`**, so
+Godot never imports or exports any of it — a model enters the game only by being adapted and
+exported into `assets/models/`. `assets/library/manifest.json` records every model's title, Poly
+Pizza id, licence and download URL, so any of them can be re-pulled without a search.
+
+| Bundle | Models | Source |
+| --- | --- | --- |
+| Medieval Village Pack | 39 | https://poly.pizza/bundle/Medieval-Village-Pack-NsHhjhlrfY |
+| Ultimate Fantasy RTS | 107 | https://poly.pizza/bundle/Ultimate-Fantasy-RTS-nSDjmACoSU |
+| Stylized Nature MegaKit | 68 | https://poly.pizza/bundle/Stylized-Nature-MegaKit-T34GZFA0fm |
+| Ultimate RPG Items | 55 | https://poly.pizza/bundle/Ultimate-RPG-Items-Bundle-h8mhlZ0dG8 |
+| Ultimate Monsters | 45 | https://poly.pizza/bundle/Ultimate-Monsters-Bundle-5oyGWAmOB6 |
+| Survival Pack | 32 | https://poly.pizza/bundle/Survival-Pack-XzvQPP0yWB |
+| Modular Dungeons Pack | 27 | https://poly.pizza/bundle/Modular-Dungeons-Pack-HaFPqhAp3w |
+| Animated Animal Pack | 12 | https://poly.pizza/bundle/Animated-Animal-Pack-ILAPXeUYiS |
+| Ultimate Modular Men | 11 | https://poly.pizza/bundle/Ultimate-Modular-Men-Pack-ZiH8muWqwQ |
+| Ultimate Modular Women | 10 (5 taken) | https://poly.pizza/bundle/Ultimate-Modular-Women-Pack-aCBDXDdTNN |
+
+- **Licence:** every vendored model is **CC0 1.0**, author **Quaternius**. No attribution is owed.
+- ⚠️ **Five CC-BY 3.0 models in the Women bundle were deliberately not downloaded** (Sci Fi
+  Character, Witch, Worker, Suit, Soldier). This project already carries one unmet CC-BY obligation
+  (`prp_tome_stand`) that is a release blocker; adding more attribution debt to fix a *looks*
+  problem is a bad trade, and the filter is by `licence` field in the manifest, not by eye.
+- **The three packs the maintainer named** (Medieval Village MegaKit, Fantasy Props MegaKit,
+  Modular Character Outfits Fantasy) are downloadable **only** through itch.io's click-through,
+  which cannot be scripted. Poly Pizza mirrors the same artist's CC0 catalogue with no login, so the
+  library was pulled from there instead — same author, same licence, adjacent packs.
+
+### Ember Crown buildings — the Quaternius village set (CC0)
+
+| Slot | Model | Source bundle | Faces | Size |
+| --- | --- | --- | --- | --- |
+| `bld_cottage` | Houses_SecondAge_1_Level1 | Ultimate Fantasy RTS | 2,336 | 4.84 × 4.20 × 4.70 m |
+| `bld_inn` | Inn | Medieval Village Pack | 7,756 | 8.66 × 7.50 × 8.64 m |
+| `bld_blacksmith` | Blacksmith | Medieval Village Pack | 7,659 | 8.42 × 6.50 × 7.11 m |
+
+- **Licence:** CC0 1.0 Universal, Quaternius.
+- **Blender MCP modifications:** joined, uniformly scaled to a target ridge height (cottage 4.2 m,
+  inn 7.5 m, smithy 6.5 m), origin dropped to the **base centre**, mesh renamed `Mesh`.
+- **Why a cottage was needed at all:** `bld_house_a` is 4.74 m wide and 7.50 m tall — a narrow
+  two-storey towerhouse. LORE calls the holding a *cottage*, and the square was already using that
+  one model at three mounts. `bld_cottage` is low, wide and single-storey, and the square now shows
+  four distinct buildings instead of two used twice.
+- ⚠️ **Rejected on the rear view: `House_4` from the Medieval Village Pack.** It is the obvious
+  cottage from the front — low, wide, arched door — and its **back is open**: walls with no roof
+  over the rear and a hollow interior. This is the same failure mode as the "roofs on stilts"
+  incident below, caught this time because every candidate was rendered from **behind** as well as
+  the front before selection. Four RTS huts/shacks (`hut`, `hut_2`, `shack`, `storage_hut`) were
+  rejected the same way.
+
 ### Houses — "House_1" and a trimmed farmhouse (CC0)
 
 | Slot | Model | Source | Faces | Size |
