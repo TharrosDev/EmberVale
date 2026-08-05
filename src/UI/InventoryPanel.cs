@@ -225,7 +225,7 @@ public partial class InventoryPanel : UiPanel
         {
             int value = _reputation.Get(faction.Id);
             ReputationTier tier = ReputationTiers.Of(_reputation.Effective(faction.Id));
-            AddLine(Loc.TF("char.rep_line", faction.DisplayName, ReputationTiers.Label(tier), value.ToString("+0;-0;0")),
+            AddLine(Loc.TF("char.rep_line", faction.DisplayName, ReputationTiers.DisplayName(tier), value.ToString("+0;-0;0")),
                 ReputationTiers.Color(tier));
         }
     }
@@ -261,7 +261,7 @@ public partial class InventoryPanel : UiPanel
         }
 
         AddHeader(Loc.T("char.corruption"));
-        AddLine(Loc.TF("char.corruption_line", CorruptionTiers.Label(_corruption.Tier), _corruption.Value, CorruptionTiers.Max), UiTheme.CorruptionText);
+        AddLine(Loc.TF("char.corruption_line", CorruptionTiers.DisplayName(_corruption.Tier), _corruption.Value, CorruptionTiers.Max), UiTheme.CorruptionText);
 
         ProgressBar bar = UiTheme.Bar(UiTheme.Corruption);
         bar.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
@@ -374,7 +374,7 @@ public partial class InventoryPanel : UiPanel
         else
         {
             string suffix = known && rank >= spell.MaxRank ? $"  {Loc.T("char.spell_maxed")}"
-                : !known && !_spellcasting.MeetsCorruption(spell) ? $"  {Loc.TF("char.spell_needs", CorruptionTiers.Label(spell.MinCorruptionTier))}"
+                : !known && !_spellcasting.MeetsCorruption(spell) ? $"  {Loc.TF("char.spell_needs", CorruptionTiers.DisplayName(spell.MinCorruptionTier))}"
                 : !known ? $"  {Loc.TF("char.spell_cost", spell.LearnCost)}"
                 : string.Empty;
             AddLine($"• {text}{suffix}", known ? tint : UiTheme.Dim, spell.Description);
@@ -403,7 +403,7 @@ public partial class InventoryPanel : UiPanel
             {
                 bool maxed = rank >= perk.MaxRank;
                 string suffix = maxed ? $"  {Loc.T("char.perk_maxed")}"
-                    : !_perks.MeetsCorruption(perk) ? $"  {Loc.TF("char.perk_needs", CorruptionTiers.Label(perk.MinCorruptionTier))}"
+                    : !_perks.MeetsCorruption(perk) ? $"  {Loc.TF("char.perk_needs", CorruptionTiers.DisplayName(perk.MinCorruptionTier))}"
                     : string.Empty;
                 AddLine($"• {text}{suffix}");
             }

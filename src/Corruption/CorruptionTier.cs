@@ -48,6 +48,21 @@ public static class CorruptionTiers
         return (oldTier, newTier, newTier != oldTier);
     }
 
+    /// <summary>The tier name as the <b>player</b> reads it. Split from <see cref="Label"/> for the
+    /// same reason the reputation tiers are: <see cref="Label"/> is stamped into every save header
+    /// (<c>corruption_tier</c>) and the analytics sink, so localizing it in place would put a
+    /// language-dependent string into persisted data.</summary>
+    public static string DisplayName(CorruptionTier tier) => Localization.Loc.T(tier switch
+    {
+        CorruptionTier.Untainted => "corruption.tier.untainted",
+        CorruptionTier.Touched => "corruption.tier.touched",
+        CorruptionTier.Marked => "corruption.tier.marked",
+        CorruptionTier.Ashbound => "corruption.tier.ashbound",
+        _ => "corruption.tier.embers",
+    });
+
+    /// <summary>The tier's stable, culture-invariant name — for save headers, analytics and the dev
+    /// console. Use <see cref="DisplayName"/> for anything the player reads.</summary>
     public static string Label(CorruptionTier tier) => tier switch
     {
         CorruptionTier.Untainted => "Untainted",

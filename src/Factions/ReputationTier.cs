@@ -41,6 +41,26 @@ public static class ReputationTiers
         };
     }
 
+    /// <summary>
+    /// The tier name as the <b>player</b> reads it, on the character sheet. Separate from
+    /// <see cref="Label"/> on purpose: that one is baked into save headers, the analytics sink and
+    /// the dev console, so localizing it in place would make a persisted string change with the
+    /// language and show a slot saved in one locale under a tier name from another. The invariant
+    /// identifier and the display name are two jobs, and this is the display one.
+    /// </summary>
+    public static string DisplayName(ReputationTier tier) => Localization.Loc.T(tier switch
+    {
+        ReputationTier.Hated => "rep.tier.hated",
+        ReputationTier.Hostile => "rep.tier.hostile",
+        ReputationTier.Unfriendly => "rep.tier.unfriendly",
+        ReputationTier.Neutral => "rep.tier.neutral",
+        ReputationTier.Friendly => "rep.tier.friendly",
+        ReputationTier.Honored => "rep.tier.honored",
+        _ => "rep.tier.allied",
+    });
+
+    /// <summary>The tier's stable, culture-invariant name — for save headers, analytics and the dev
+    /// console. Use <see cref="DisplayName"/> for anything the player reads.</summary>
     public static string Label(ReputationTier tier) => tier switch
     {
         ReputationTier.Hated => "Hated",

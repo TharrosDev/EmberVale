@@ -111,6 +111,14 @@ public static class SchoolIdentity
 
     /// <summary>Arcs the bolt to the nearest other hostile within <see cref="ChainRadius"/> for a
     /// reduced hit. One jump only — chained arcs don't re-trigger the school hook.
+    ///
+    /// <b>"Other" is per actor, not per hurtbox.</b> This path predates 35A, when every actor had
+    /// exactly one <see cref="Hurtbox"/> and excluding the primary volume was the same as excluding
+    /// the primary creature. A dragon has four, all well inside the 6 m chain radius of each other,
+    /// so a bolt landing on its head arced straight back into its own wing — half again the damage
+    /// and a second application of the spell's status, on the four largest enemies in the game.
+    /// <see cref="HitDedupe"/> is the codebase's one answer to that question and is what the other
+    /// two damage entry points use; this is now the third rather than a second rule.
     // ponytail: single jump, widen to multi-jump if Lightning needs more reach.</summary>
     private static void ChainToNearby(
         Node3D context,
@@ -134,14 +142,24 @@ public static class SchoolIdentity
         Godot.Collections.Array<Godot.Collections.Dictionary> hits = space.IntersectShape(query, 16);
         Hurtbox? best = null;
         float bestDist = float.MaxValue;
-        var seen = new HashSet<Hurtbox>();
+
+        // Spend the primary's actor up front, so every zone of the creature just hit is already
+        // taken. This also subsumes the duplicate-hurtbox guard the query needed: two rows for one
+        // volume resolve to the same owner key.
+        //
+        // Taking one zone per actor costs nothing in the nearest-wins scan below, because a zone's
+        // Area3D sits at the actor's origin — the offset lives on its CollisionShape3D child, which
+        // is the same fact SpellResolver.VolumeCentre exists to work around. Every zone of one
+        // creature therefore measures the same distance, so which one is kept cannot change the winner.
+        var struck = new HitDedupe();
+        struck.TryHit(primary.OwnerEntity, primary);
+
         foreach (Godot.Collections.Dictionary hit in hits)
         {
             if (!hit.TryGetValue("collider", out Variant colliderVar) ||
                 colliderVar.AsGodotObject() is not Hurtbox hurtbox ||
-                ReferenceEquals(hurtbox, primary) ||
-                !seen.Add(hurtbox) ||
-                !SpellResolver.IsHostileTarget(hurtbox, caster, casterTeam))
+                !SpellResolver.IsHostileTarget(hurtbox, caster, casterTeam) ||
+                !struck.TryHit(hurtbox.OwnerEntity, hurtbox))
             {
                 continue;
             }
