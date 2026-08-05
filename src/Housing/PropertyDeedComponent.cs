@@ -63,11 +63,17 @@ public partial class PropertyDeedComponent : InteractableComponent
         }
 
         int price = PropertyClaim.PriceToCharge(property.PriceGold);
-        if (price > 0 &&
-            player.GetComponent<InventoryComponent>() is { } inventory &&
-            !inventory.RemoveItem(GameIds.Currency.Gold, price))
+        if (price > 0)
         {
-            return; // the gold went somewhere between the prompt and the press; charge nothing
+            // Both halves are a refusal, and they have to be: chained into one condition, an
+            // unresolvable pack made the whole test false and fell *through* to the claim, handing
+            // over a priced holding for nothing. A price that cannot be taken is a sale that does
+            // not happen — the same fail-closed call QuestDone below makes.
+            if (player.GetComponent<InventoryComponent>() is not { } inventory ||
+                !inventory.RemoveItem(GameIds.Currency.Gold, price))
+            {
+                return; // the gold went somewhere between the prompt and the press; charge nothing
+            }
         }
 
         if (!housing.Claim(property.Id))

@@ -215,12 +215,21 @@ public partial class CellPersistenceDirector : Node, ISaveable
 
         if (data.TryGetValue("state", out Variant stateV) && stateV.VariantType == Variant.Type.Dictionary)
         {
+            SaveManager? saves = SaveManager.Instance;
             foreach (KeyValuePair<Variant, Variant> kv in stateV.AsGodotDictionary())
             {
-                if (kv.Value.VariantType == Variant.Type.Dictionary)
+                if (kv.Value.VariantType != Variant.Type.Dictionary)
                 {
-                    _state[kv.Key.AsString()] = kv.Value.AsGodotDictionary();
+                    continue;
                 }
+
+                string id = kv.Key.AsString();
+                _state[id] = kv.Value.AsGodotDictionary();
+
+                // This ledger is that id's owner until its cell streams back in. Said out loud so the
+                // save manager's orphan report doesn't flag the normal case of saving inside a holding
+                // and loading somewhere else.
+                saves?.ClaimDeferred(id);
             }
         }
 

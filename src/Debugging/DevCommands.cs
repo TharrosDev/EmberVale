@@ -16,7 +16,6 @@ using Embervale.Player;
 using Embervale.Progression;
 using Embervale.Races;
 using Embervale.Save;
-using Embervale.World;
 using Embervale.Settings;
 using Embervale.Stats;
 using Embervale.World;

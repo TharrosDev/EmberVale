@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Embervale.Combat;
 using Embervale.Core.Events;
 using Embervale.Core.Pooling;
@@ -257,7 +258,12 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         return true;
     }
 
-    public bool CanCast(SpellResource? spell)
+    /// <summary>Whether <paramref name="spell"/> is castable right now: it exists, the caster is
+    /// alive, it is off cooldown and the mana is there. <see cref="NotNullWhenAttribute"/> carries the
+    /// non-null half of that verdict out to callers, so a guarded cast path needs no <c>!</c> — the
+    /// one that was missing here is what produced a nullable-dereference warning on the line that
+    /// wrote the cooldown.</summary>
+    public bool CanCast([NotNullWhen(true)] SpellResource? spell)
     {
         if (spell == null || _stats == null || !_stats.IsAlive)
         {
@@ -277,7 +283,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             return false;
         }
 
-        _stats!.ModifyCurrent(StatType.Mana, -EffectiveManaCost(spell!));
+        _stats!.ModifyCurrent(StatType.Mana, -EffectiveManaCost(spell));
         _cooldowns[spell.Id] = spell.Cooldown;
         Deliver(spell, 1f);
 

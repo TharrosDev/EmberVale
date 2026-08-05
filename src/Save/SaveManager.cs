@@ -61,6 +61,7 @@ public sealed partial class SaveManager : Node
     // mid-load (an actor recreated by the PersistentSpawnDirector) can restore itself immediately.
     private Godot.Collections.Dictionary? _activeLoad;
     private HashSet<string>? _activeClaimed;
+    private HashSet<string>? _activeDeferred;
 
     public override void _EnterTree()
     {
@@ -124,6 +125,22 @@ public sealed partial class SaveManager : Node
     public void Unregister(ISaveable saveable)
     {
         _saveables.Remove(saveable);
+    }
+
+    /// <summary>
+    /// Declares that <paramref name="id"/>'s state has an owner that simply is not in the tree yet, so
+    /// the orphan report below must not call it drift. <see cref="CellPersistenceDirector"/> is the
+    /// caller: a cell-scoped saveable (a holding's stash, a trophy stand) writes a top-level entry
+    /// while its cell is streamed in, and is legitimately absent when the save is loaded from
+    /// somewhere else — its state rides the cell ledger and is re-applied when the cell streams back.
+    ///
+    /// Deliberately a *separate* set from the claimed one: claiming would also suppress the live
+    /// component's own restore in the main loop, which is exactly wrong in the case where the cell
+    /// <em>is</em> loaded. This only silences the diagnostic, and only for ids something is holding.
+    /// </summary>
+    public void ClaimDeferred(string id)
+    {
+        _activeDeferred?.Add(id);
     }
 
     // --- Slot paths ---------------------------------------------------------
@@ -462,11 +479,13 @@ public sealed partial class SaveManager : Node
         int restored = 0;
         int failures = 0;
         var claimed = new HashSet<string>();
+        var deferred = new HashSet<string>();
 
         // Publish the snapshot so the Register hook can restore actors spawned during this load
         // (e.g. the PersistentSpawnDirector recreating saved actors as it is itself restored).
         _activeLoad = objects;
         _activeClaimed = claimed;
+        _activeDeferred = deferred;
         try
         {
             // Iterate a snapshot: a saveable's Load() may spawn actors that register new saveables,
@@ -500,10 +519,12 @@ public sealed partial class SaveManager : Node
 
             // Surface state that has no live owner — usually a transient/runtime-id actor
             // that no longer exists, or a renamed SaveId. Helps catch persistence drift.
+            // Entries a streamed-out cell is holding for later (see ClaimDeferred) are not drift and
+            // are not reported: warning on the healthy path is how a diagnostic teaches you to ignore it.
             foreach (System.Collections.Generic.KeyValuePair<Variant, Variant> entry in objects)
             {
                 string id = entry.Key.AsString();
-                if (!claimed.Contains(id))
+                if (!claimed.Contains(id) && !deferred.Contains(id))
                 {
                     Log.Warn($"Save slot '{slot}' entry '{id}' had no live claimant on load (orphaned state).");
                 }
@@ -513,6 +534,7 @@ public sealed partial class SaveManager : Node
         {
             _activeLoad = null;
             _activeClaimed = null;
+            _activeDeferred = null;
         }
 
         Log.Info($"Loaded slot '{slot}'; restored {restored} object(s)" + (failures > 0 ? $" ({failures} failed)." : "."));
