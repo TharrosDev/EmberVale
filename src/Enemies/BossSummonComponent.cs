@@ -72,8 +72,9 @@ public partial class BossSummonComponent : InteractableComponent
 
         // Through the registry (36B): he is an authored archetype now, not a bespoke factory. The
         // pattern-match is the guard — if data/enemies/IronKing.tres ever loses IsBoss, the builder
-        // returns a plain EnemyEntity, and registering that as the ServiceLocator's BossEntity would
-        // break the healthbar and the defeat loop in ways that look like anything but their cause.
+        // returns a plain EnemyEntity, and BossEncounterDirector and ArenaHookComponent both branch
+        // on that type off EntityDiedEvent. He would die with no defeat beat, no reward and an arena
+        // that never reset, in ways that look like anything but their cause.
         if (EnemyTemplateRegistry.Create(GameIds.Enemies.IronKing, Vector3.Zero) is not BossEntity boss)
         {
             Log.Error($"'{GameIds.Enemies.IronKing}' did not build a BossEntity; the brazier stays cold.");
@@ -84,7 +85,6 @@ public partial class BossSummonComponent : InteractableComponent
         boss.GlobalPosition = brazier.GlobalPosition + SpawnOffset;
 
         _boss = boss;
-        ServiceLocator.Instance?.Register(boss);
         boss.TreeExited += OnBossGone;
         // The entrance beat: announce him as he rises rather than waiting for the first blow.
         // BeginEncounter is idempotent, so the controller's own first-damage call is a no-op after it.
@@ -92,11 +92,9 @@ public partial class BossSummonComponent : InteractableComponent
         Log.Info("The Iron King rises to meet your challenge.");
     }
 
-    private void OnBossGone()
-    {
-        _boss = null;
-        ServiceLocator.Instance?.Unregister<BossEntity>();
-    }
+    /// <summary>Clears the held reference so the brazier re-arms. Nothing is unregistered because
+    /// nothing is registered — see <see cref="BossEntity"/> for why that slot went away.</summary>
+    private void OnBossGone() => _boss = null;
 
     /// <summary>Whether the prerequisite quest has been completed (or there is no prerequisite).
     /// A missing player/quest log fails closed: better a brazier that won't light than a boss fight

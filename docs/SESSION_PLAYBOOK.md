@@ -978,7 +978,9 @@ no code) — batch them when momentum is good.
     (`RetreatHealthFraction=0`, `VisionRange 40`, `AttackRange 3.5`). Hostile via a new
     `faction.fallen` (`data/factions/Fallen.tres`, default-hostile). `BossEntity : EnemyEntity`
     marker (`src/Enemies/BossEntity.cs`) is its own `ServiceLocator` type (the 28C bar / 28D corruption
-    hook). Registered as `enemy.iron_king` in `EnemyTemplateRegistry` (seeded 1→2). The **arena**
+    hook). *(Superseded: the bar and the corruption loop moved onto `BossEncounterStartedEvent` /
+    `BossPhaseChangedEvent`, and the Phase 36 audit removed the registration once nothing read it.
+    The type itself is still load-bearing — see `BossEntity.cs`.)* Registered as `enemy.iron_king` in `EnemyTemplateRegistry` (seeded 1→2). The **arena**
     (`scenes/regions/ember_crown/arena.tscn`) is a streamed sub-cell (nav + floor + a U of walls open
     toward town) added to `EmberCrown.tres` `Cells` at `(55,0,-10)`; its **entry trigger** is an
     E-interact **challenge brazier** (`BossSummonComponent` — mirrors `RegionTransitionComponent`) that
@@ -3667,6 +3669,7 @@ Nothing here is scheduled. Revisit an entry only when its stated trigger actuall
 | `Localization/LocaleAudit.cs` | Hand-walks CSV lines (no quoted-comma support) | A string legitimately needs a comma inside quotes |
 | `Magic/SpellcastingComponent.cs` | Blink is a straight horizontal ray | Vertical or curved blink is wanted |
 | `Debugging/ContentValidator.cs` (×2) | Travel nodes validated at runtime, not authored; one regex for scene-authored flags | A second scene-authored writer of either kind appears |
+| `Enemies/ArenaHookComponent.cs` | Reacts to *any* boss's phase change and death, not the one in this arena | A second arena, or any boss alive in the same region as one (added by the Phase 36 audit) |
 
 **House rule going forward:** when you write a `ponytail:` marker, name the ceiling *and*
 the trigger — a shortcut with no stated upgrade condition is indistinguishable from a bug

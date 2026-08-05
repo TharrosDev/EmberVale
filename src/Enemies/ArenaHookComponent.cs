@@ -41,6 +41,12 @@ public partial class ArenaHookComponent : Node
         EventBus.Instance?.Unsubscribe<EntityDiedEvent>(OnDied);
     }
 
+    // ponytail: both handlers react to ANY boss, not to the one fighting in this arena — unlike
+    // BossController.SpawnMarkers, which scopes its markers by ancestry so two loaded arenas cannot
+    // borrow each other's. Harmless today: this is the only ArenaHookComponent in the game and the
+    // lair bosses live in a different region, which is never streamed in alongside this one.
+    // Upgrade trigger: a second arena, or any boss that can be alive in the same region as one —
+    // then scope both handlers to bosses under this hook's own scene root.
     private void OnPhaseChanged(BossPhaseChangedEvent e)
     {
         if (e.Phase >= ActivateAtPhase)

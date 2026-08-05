@@ -211,6 +211,16 @@ public partial class BossController : EntityComponent
 
     public override void _Process(double delta)
     {
+        // A corpse escalates nothing. The body outlives the death by the AI profile's DespawnDelay
+        // (4 s by default), and this component ticks for every frame of it — long enough for a fuse
+        // that was about to blow to blow, buffing a dead boss into its final phase and calling in
+        // that phase's adds. The dragons all carry one (135–240 s), so it is a real window, not a
+        // theoretical one.
+        if (Defeated)
+        {
+            return;
+        }
+
         TickEnrage(delta);
         TickAddWaves(delta);
 
@@ -225,8 +235,32 @@ public partial class BossController : EntityComponent
 
     // --- Phases -------------------------------------------------------------
 
+    /// <summary>
+    /// Whether this fight is over. Read before any escalation, because <b>the killing blow arrives
+    /// here after the death</b>: <see cref="Stats.StatsComponent.ApplyDamage"/> publishes
+    /// <c>EntityDiedEvent</c> from inside itself, and <see cref="Combat.CombatComponent"/> publishes
+    /// <c>DamageDealtEvent</c> only once it returns — so <see cref="OnDied"/> runs first and
+    /// <see cref="OnDamage"/> then sees a boss at zero health.
+    ///
+    /// Untreated, that ordering made every finisher summon the phase it skipped into. A boss killed
+    /// from phase 2 always crosses the phase-3 threshold on the way to zero, so the Iron King's death
+    /// blow entered phase 3 <em>after</em> <see cref="ClearAdds"/> had run: two cultists spawned out
+    /// of the corpse on a 22 s repeat with nothing left to clear them, the arena's ember vents
+    /// re-lit off the phase-changed event that had just hidden them, and the log announced an
+    /// escalation for a boss that was already dead.
+    ///
+    /// <see cref="Combat.CombatComponent"/> guards the same hazard the same way one file over ("a
+    /// kill blow doesn't also stagger the corpse"), so this is that idiom rather than a new one.
+    /// </summary>
+    private bool Defeated => _stats is { IsAlive: false };
+
     private void OnDamage(DamageDealtEvent e)
     {
+        if (Defeated)
+        {
+            return;
+        }
+
         // Either direction counts as engagement: a boss the player is chipping at from range and one
         // that has landed the first blow are both in a fight, and both fuses should be burning.
         if (ReferenceEquals(e.Source, Entity) || ReferenceEquals(e.Target, Entity))
