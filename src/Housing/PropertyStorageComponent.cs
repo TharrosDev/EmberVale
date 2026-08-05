@@ -10,9 +10,17 @@ namespace Embervale.Housing;
 
 /// <summary>Raised when the player opens a holding's storage. Carries the container's own
 /// <see cref="InventoryComponent"/> so the UI never has to walk the scene to find it — the same
-/// "publish what you resolved" shape <c>CraftingStationOpenedEvent</c> uses.</summary>
+/// "publish what you resolved" shape <c>CraftingStationOpenedEvent</c> uses.
+///
+/// <paramref name="MinRarity"/> (37D) is the floor the container accepts, honoured by
+/// <c>StoragePanel</c> on the <b>Store</b> direction only. A chest takes anything and leaves it at
+/// the default; a display stand asks for <see cref="TrophyDisplay.MinimumRarity"/>. Taking is never
+/// gated — a container that could trap an item is worse than one holding something dull.</summary>
 public readonly record struct StorageOpenedEvent(
-    IEntity Player, InventoryComponent Storage, string StorageName) : IGameEvent;
+    IEntity Player,
+    InventoryComponent Storage,
+    string StorageName,
+    ItemRarity MinRarity = ItemRarity.Common) : IGameEvent;
 
 /// <summary>Raised when the storage window closes.</summary>
 public readonly record struct StorageClosedEvent(IEntity Player) : IGameEvent;

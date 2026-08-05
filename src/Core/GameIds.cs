@@ -217,6 +217,7 @@ public static class GameIds
         public const string BrazierKit = "recipe.kit.brazier";
         public const string CrateKit = "recipe.kit.crate";
         public const string BannerKit = "recipe.kit.banner";
+        public const string DisplayStandKit = "recipe.kit.display_stand";
 
         /// <summary>
         /// Every recipe the player begins with — the single source of truth shared by
@@ -232,7 +233,7 @@ public static class GameIds
         public static readonly string[] Starting =
         {
             IronIngot, LeatherStrips, HealthPotion, LeatherCap, SteelSword, LeatherVest, IronRing, DrakescaleMail,
-            ForgeKit, WorkbenchKit, AlchemyKit, BrazierKit, CrateKit, BannerKit,
+            ForgeKit, WorkbenchKit, AlchemyKit, BrazierKit, CrateKit, BannerKit, DisplayStandKit,
         };
     }
 

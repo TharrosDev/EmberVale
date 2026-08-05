@@ -94,12 +94,18 @@ storage.slots,{0}/{1}
 storage.store,Store
 storage.take,Take
 storage.empty,Nothing here.
+storage.too_plain,Not worth showing off.
+trophy.stand_name,Display Stand
+trophy.prompt_empty,Display something here
+trophy.prompt_shown,"{0} — on display"
+trophy.prompt_locked,"{0} — not yours to decorate"
 craft.station_forge,Forge
 craft.station_workbench,Workbench
 craft.station_alchemy,Alchemy Table
 place.decor_brazier,Iron Brazier
 place.decor_crate,Banded Crate
 place.decor_banner,Guild Banner
+place.display_stand,Display Stand
 place.holding,"Placing: {0}  (x{1})"
 place.keys,"[{0}] set down     [Esc] done"
 place.keys_remove,"[{0}] pick up     [Esc] done"

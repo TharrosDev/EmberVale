@@ -31,6 +31,7 @@ public partial class StoragePanel : UiPanel
     private InventoryComponent? _pack;
     private InventoryComponent? _storage;
     private string _storageName = string.Empty;
+    private ItemRarity _minRarity = ItemRarity.Common;
     private bool _justOpened;
 
     protected override void BuildShell(PanelContainer shell)
@@ -111,6 +112,7 @@ public partial class StoragePanel : UiPanel
         _pack = pack;
         _storage = e.Storage;
         _storageName = e.StorageName;
+        _minRarity = e.MinRarity;
 
         SetOpen(true);
 
@@ -198,8 +200,11 @@ public partial class StoragePanel : UiPanel
     {
         _title.Text = Loc.TF("storage.title", _storageName);
 
+        // Only the Store direction is gated (37D): a display stand asks for a minimum rarity, and
+        // Take must always work or a stand could trap what it was given.
+        ItemRarity floor = _minRarity;
         BuildSide(_packList, _packHeader, Loc.T("storage.your_pack"), _pack, Loc.T("storage.store"),
-            stack => Move(_pack, _storage, stack));
+            stack => Move(_pack, _storage, stack), stack => stack.Instance.Rarity >= floor);
         BuildSide(_storeList, _storeHeader, Loc.T("storage.stored"), _storage, Loc.T("storage.take"),
             stack => Move(_storage, _pack, stack));
     }
@@ -210,7 +215,8 @@ public partial class StoragePanel : UiPanel
         string label,
         InventoryComponent? inventory,
         string action,
-        System.Action<ItemStack> onPressed)
+        System.Action<ItemStack> onPressed,
+        System.Func<ItemStack, bool>? accepts = null)
     {
         UiTheme.ClearChildren(list);
 
@@ -232,12 +238,16 @@ public partial class StoragePanel : UiPanel
         // since been removed would transfer a ghost.
         foreach (ItemStack stack in new List<ItemStack>(inventory.Stacks))
         {
-            AddRow(list, stack, action, onPressed);
+            AddRow(list, stack, action, onPressed, accepts?.Invoke(stack) ?? true);
         }
     }
 
     private static void AddRow(
-        VBoxContainer list, ItemStack stack, string action, System.Action<ItemStack> onPressed)
+        VBoxContainer list,
+        ItemStack stack,
+        string action,
+        System.Action<ItemStack> onPressed,
+        bool accepted)
     {
         ItemInstance instance = stack.Instance;
         string count = stack.Quantity > 1 ? $"  x{stack.Quantity}" : string.Empty;
@@ -253,7 +263,11 @@ public partial class StoragePanel : UiPanel
         text.TooltipText = instance.Template.Description;
         row.AddChild(text);
 
+        // Refused rows keep their button, greyed and explained. Hiding it would read as the row being
+        // unmovable for no reason at all, which is the failure every 37 refusal is written to avoid.
         Button button = UiTheme.Action(action);
+        button.Disabled = !accepted;
+        button.TooltipText = accepted ? string.Empty : Loc.T("storage.too_plain");
         ItemStack captured = stack;
         button.Pressed += () => onPressed(captured);
         row.AddChild(button);

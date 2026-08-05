@@ -624,6 +624,8 @@ public static class ContentValidator
                     "aim at it, so it could never be picked back up");
             }
 
+            ValidateStandSlot(templateId, built, issues);
+
             built?.QueueFree();
         }
 
@@ -644,6 +646,34 @@ public static class ContentValidator
                     $"placeable item '{placeable.Id}' builds unregistered template " +
                     $"'{placeable.TemplateId}' — it would place nothing at all");
             }
+        }
+    }
+
+    /// <summary>
+    /// A display stand's one-slot inventory <b>is</b> its display and its whole persistence story
+    /// (Phase 37D), so a stand built without one is a plinth that accepts nothing and remembers
+    /// nothing — and a capacity other than 1 is a trophy case quietly acting as a chest. Neither
+    /// throws: <c>Interact</c> just returns and the prompt goes quiet, which in play is
+    /// indistinguishable from the stand not being finished.
+    /// </summary>
+    private static void ValidateStandSlot(string templateId, Node3D? built, List<string> issues)
+    {
+        if (built == null || built.GetNodeOrNull<Housing.TrophyStandComponent>("Display") == null)
+        {
+            return;
+        }
+
+        if (built.GetNodeOrNull<Items.InventoryComponent>("Inventory") is not { } slot)
+        {
+            issues.Add(
+                $"placeable template '{templateId}' carries a trophy stand with no inventory — the " +
+                "slot IS the display, so it would accept nothing and persist nothing");
+        }
+        else if (slot.Capacity != 1)
+        {
+            issues.Add(
+                $"placeable template '{templateId}' gives its display stand capacity {slot.Capacity}; " +
+                "a stand holds exactly one trophy");
         }
     }
 
