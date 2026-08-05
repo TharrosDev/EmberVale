@@ -168,7 +168,23 @@ public partial class CompanionRoster : Node, ISaveable
     /// put them back exactly where they were standing rather than teleporting the whole band to the
     /// player's heels on every reload. <paramref name="yawDegrees"/> null keeps the built facing.
     /// </summary>
-    public bool RecruitAt(string companionId, Vector3 position, float? yawDegrees)
+    public bool RecruitAt(string companionId, Vector3 position, float? yawDegrees) =>
+        RecruitAt(companionId, position, yawDegrees, announce: true);
+
+    /// <summary>
+    /// The shared body. <paramref name="announce"/> is false for the restore half of
+    /// <see cref="Load"/>: rebuilding a companion the save already had is not a recruitment, and
+    /// <see cref="CompanionPartyReconcile"/> exists precisely so a load does not "re-run its recruit
+    /// announcement". It only got half of that — the *Keep* set is spared, but a load into a freshly
+    /// built world has no live companions at all, so the entire party lands in *Recruit* and every
+    /// reload toasted "Kael joins you" as though the player had just met him.
+    ///
+    /// Suppressing it is safe because nothing else leans on the event to survive a load:
+    /// <see cref="CompanionRecruiterComponent"/> and <c>PartyWidget</c> both re-derive from
+    /// <c>GameLoadedEvent</c> instead, having already learned that events fired before their cell
+    /// streamed in cannot be trusted.
+    /// </summary>
+    private bool RecruitAt(string companionId, Vector3 position, float? yawDegrees, bool announce)
     {
         if (string.IsNullOrEmpty(companionId) || _active.ContainsKey(companionId))
         {
@@ -209,8 +225,18 @@ public partial class CompanionRoster : Node, ISaveable
             }
         };
 
-        EventBus.Instance?.Publish(new CompanionRecruitedEvent(companionId, companion.NameKey, companion));
-        Log.Info($"Companion '{companionId}' joined the party.");
+        if (announce)
+        {
+            EventBus.Instance?.Publish(new CompanionRecruitedEvent(companionId, companion.NameKey, companion));
+            Log.Info($"Companion '{companionId}' joined the party.");
+        }
+        else
+        {
+            // Still logged, and worded for what it is — the boot log claiming a companion "joined
+            // the party" on every load was itself misleading to read.
+            Log.Info($"Companion '{companionId}' restored to the party.");
+        }
+
         return true;
     }
 
@@ -405,7 +431,7 @@ public partial class CompanionRoster : Node, ISaveable
         foreach (string id in plan.Recruit)
         {
             (CompanionStance _, Vector3 position, float yaw) = desired[id];
-            RecruitAt(id, position, yaw);
+            RecruitAt(id, position, yaw, announce: false);
         }
 
         foreach (string id in plan.Keep)
