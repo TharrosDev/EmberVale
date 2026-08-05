@@ -174,6 +174,20 @@ public partial class CompanionAIComponent : EntityComponent, ISaveable
             _target = null;
             _state = CompanionState.Downed;
         }
+        else if (_state == CompanionState.Downed)
+        {
+            // The other direction, which was missing. A mid-session load keeps the live actor (the
+            // reconcile's Keep set), so a companion downed *now* survives into a save that has them
+            // on their feet — and then TickDowned's recovery fires and overwrites the health this
+            // load just restored with RecoveryHealthFraction of max. Loading a save where Kael was
+            // unhurt left him at 40% health, which is state corruption rather than a stale pose.
+            //
+            // Set directly rather than through EnterState, matching the branch above: a load
+            // restores state, it does not narrate one — no state-changed or recovered event.
+            _recoveryTimer = 0d;
+            _target = null;
+            _state = CompanionState.Idle;
+        }
     }
 
     public override void _PhysicsProcess(double delta)
