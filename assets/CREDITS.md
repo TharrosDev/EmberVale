@@ -20,10 +20,12 @@ three props with no suitable match — see *Searched for, not replaced* for why 
 16 — corrected here because this file is the provenance record. The model total dropped 34 → 33
 when the orphaned `enm_goblin_brute.glb` was deleted.)*
 
-⚠️ **One asset requires attribution.** `prp_tome_stand` is CC BY 3.0, not CC0 — see its entry.
-That obligation ships with the game and must survive any future asset cull. **It is currently
-unmet in-game**: there is no credits screen anywhere in `src/UI`, and recording the attribution
-in this file is not compliance. That is a release blocker, not a nice-to-have.
+✅ **No asset requires attribution any more.** `prp_tome_stand` was the project's only CC BY 3.0
+model, and its unmet in-game attribution was a standing **release blocker** (recording it in this
+file was never compliance — there is still no credits screen in `src/UI`). The 2026-08-05 Quaternius
+standardisation replaced it with a CC0 dungeon pedestal, so the obligation is **gone rather than
+deferred**, and every model in `assets/models/` is now CC0. Keep it that way: the library filter
+excludes CC-BY by the manifest's `licence` field, not by eye.
 
 ⚠️ **All five rigged replacements shipped mis-scaled and floating, and are now fixed** — see
 *Defects found and fixed in the post-migration audit* at the bottom for the root cause, which is
@@ -338,6 +340,57 @@ Pizza id, licence and download URL, so any of them can be re-pulled without a se
   incident below, caught this time because every candidate was rendered from **behind** as well as
   the front before selection. Four RTS huts/shacks (`hut`, `hut_2`, `shack`, `storage_hut`) were
   rejected the same way.
+
+### Props — the Quaternius swap (2026-08-05, batch 2) — CC0
+
+Eighteen props were re-sourced from the vendored library. **Every one keeps its original filename
+and its original bounding box**, scaled to match the model it replaced — so no scene transform, no
+collider and no `PlaceableTemplates` id needed editing. The swap is a pure asset change.
+
+| Slot | Source | Faces | Size (W × H × D) |
+| --- | --- | --- | --- |
+| `prp_tome_stand` | dungeons/Pedestal | 1,182 | 0.92 × 1.22 × 0.92 m |
+| `prp_ruin_pillar` | dungeons/Column | 548 | 1.00 × 3.13 × 1.00 m |
+| `prp_ruin_wall` | dungeons/Wall_Modular | 1,670 | 4.00 × 4.01 × 0.88 m |
+| `prp_arena_wall` | dungeons/Wall_Modular | 1,670 | 8.40 × 3.50 × 1.00 m |
+| `prp_banner_guild` | dungeons/Banner_wall | 440 | 1.94 × 3.36 × 0.70 m |
+| `prp_waystone` | dungeons/Column (2) | 440 | 0.97 × 3.01 × 0.97 m |
+| `prp_brazier` | dungeons/Torch | 386 | 0.29 × 1.18 × 0.45 m |
+| `prp_cache_chest` | dungeons/Chest | 1,676 | 0.89 × 0.68 × 0.62 m |
+| `prp_cache_chest_open` | dungeons/Chest_with_Gold | 22,512 | 1.02 × 0.78 × 1.29 m |
+| `prp_station_workbench` | dungeons/Table_Small | 804 | 1.50 × 1.32 × 1.36 m |
+| `prp_crate` | medieval_village/Crate | 784 | 1.24 × 1.24 × 1.24 m |
+| `prp_station_alchemy` | medieval_village/Cauldron | 1,238 | 1.45 × 1.01 × 1.20 m |
+| `prp_campfire` | survival/Bonfire | 704 | 0.50 × 0.53 × 0.45 m |
+| `prp_lamp_post` | survival/WoodenTorch | 448 | 0.62 × 3.66 × 0.57 m |
+| `prp_tent` | survival/Tent | 784 | 3.29 × 2.33 × 5.61 m |
+| `prp_pine_dead` | nature/DeadTree_4 | 5,702 | 3.05 × 4.90 × 2.97 m |
+| `prp_rock_cluster` | nature/Rock_Medium_2 | 244 | 2.26 × 1.41 × 1.84 m |
+| `prp_relic` | rpg_items/Chalice | 380 | 0.30 × 0.46 × 0.30 m |
+
+- **Licence:** CC0 1.0 Universal, Quaternius, every one.
+- **Blender MCP modifications:** joined, scaled to the replaced model's box, origin to base centre,
+  mesh renamed `Mesh`. Origin at the base is load-bearing — every scene mount assumes it.
+- ⚠️ **`prp_arena_wall`'s proportions are load-bearing and it is the one scaled non-uniformly.**
+  `arena.tscn` stretches the model **4.3× in X and 1.15× in Y** to span its 36 m walls, so a
+  uniformly-scaled block (which came out 8.42 m tall) would have become a 9.7 m wall. It is matched
+  exactly to the old 8.40 × 3.50 × 1.00 box instead. Check a scene's own scale before trusting a
+  uniform fit.
+- ⚠️ **`prp_station_workbench` is also matched by footprint, not height.** Height-matching the
+  dungeon table made it 3 m deep, which would have overlapped the neighbouring stations in the
+  crafting yard. A station is a footprint you stand at.
+- **Rejected: `medieval_village/Sawmill_saw` as the workbench** — a 4 m saw is a sawmill, not a
+  bench.
+- **`prp_cache_chest_open` is 22,512 faces**, up from 156, because the model is modelled coin-by-coin.
+  Accepted: `ContainerLootComponent` is its only referent and one instance of it exists. If caches
+  ever become common, this is the first thing to swap for a lighter chest.
+- **Dead trees are ~5.7k faces each** across the whole nature pack — there is no lighter variant
+  (all five measured 5,648–6,557). Five scenes reference one, so it was accepted rather than fought.
+
+**Not replaced, deliberately:** `prp_station_forge` (no anvil or forge in any vendored bundle;
+the Blacksmith is a *building*), `prp_glacier` (no ice model — `rts/Mountain` re-tinted is the
+fallback if it ever matters), `prp_training_dummy` (already a Quaternius model), and `fp_arm`
+(a first-person arm has no equivalent in a character pack).
 
 ### Houses — "House_1" and a trimmed farmhouse (CC0)
 
