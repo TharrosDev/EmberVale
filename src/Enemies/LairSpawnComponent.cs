@@ -132,6 +132,12 @@ public partial class LairSpawnComponent : EntityComponent, ISaveable
         // world), so an occupant that should no longer exist is cleared out here.
         if (!Defeated)
         {
+            // And the mirror of it, which was missing: a save where the occupant is still alive,
+            // loaded into a world where it has already been killed. Nothing else would put it back —
+            // SpawnOccupant runs once from OnInitialize — so quick-loading past a kill left the lair
+            // permanently empty until its cell happened to stream out and back in. Deferred for the
+            // same reason the first spawn is: this runs mid-restore, and the tree is being churned.
+            CallDeferred(nameof(SpawnOccupant));
             return;
         }
 
