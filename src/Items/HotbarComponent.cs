@@ -131,6 +131,14 @@ public partial class HotbarComponent : EntityComponent, ISaveable
 
     public void Load(Godot.Collections.Dictionary data)
     {
+        // Clear first: the loop below only writes the slots the save actually carries, so an absent
+        // key — or a save written when the bar had fewer slots — left this session's assignments
+        // sitting in the gaps.
+        for (int i = 0; i < SlotCount; i++)
+        {
+            _slots[i] = string.Empty;
+        }
+
         if (data.TryGetValue("slots", out Variant slotsVar))
         {
             Godot.Collections.Array slots = slotsVar.AsGodotArray();

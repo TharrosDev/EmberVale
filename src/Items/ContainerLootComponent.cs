@@ -25,6 +25,7 @@ namespace Embervale.Items;
 public partial class ContainerLootComponent : InteractableComponent, ISaveable
 {
     private const string OpenModelPath = "res://assets/models/props/prp_cache_chest_open.glb";
+    private const string ClosedModelPath = "res://assets/models/props/prp_cache_chest.glb";
 
     /// <summary>Guaranteed legendary equippables rolled on the first open (inclusive range).</summary>
     [Export] public int MinLegendaryRolls { get; set; } = 2;
@@ -125,19 +126,26 @@ public partial class ContainerLootComponent : InteractableComponent, ISaveable
     }
 
     /// <summary>Replaces the chest's closed "Mesh" visual with the open-lid model.</summary>
-    private void SwapToOpenVisual()
+    private void SwapToOpenVisual() => SwapVisual(OpenModelPath);
+
+    /// <summary>Puts the closed lid back — the load path, for a save taken before this chest was
+    /// opened. Without it the mesh stayed open while <c>_looted</c> correctly went false, so the
+    /// chest advertised itself as already plundered while still holding its contents.</summary>
+    private void SwapToClosedVisual() => SwapVisual(ClosedModelPath);
+
+    private void SwapVisual(string modelPath)
     {
         if (Entity?.Body is not Node3D body ||
-            body.GetNodeOrNull<Node3D>("Mesh") is not { } closed ||
-            GD.Load<PackedScene>(OpenModelPath)?.Instantiate() is not Node3D open)
+            body.GetNodeOrNull<Node3D>("Mesh") is not { } current ||
+            GD.Load<PackedScene>(modelPath)?.Instantiate() is not Node3D replacement)
         {
             return;
         }
 
-        open.Name = "Mesh";
-        closed.Name = "MeshClosed"; // free the node name before the replacement enters
-        closed.QueueFree();
-        body.AddChild(open);
+        replacement.Name = "Mesh";
+        current.Name = "MeshOld"; // free the node name before the replacement enters
+        current.QueueFree();
+        body.AddChild(replacement);
     }
 
     // --- ISaveable ----------------------------------------------------------
@@ -146,11 +154,19 @@ public partial class ContainerLootComponent : InteractableComponent, ISaveable
 
     public void Load(Godot.Collections.Dictionary data)
     {
+        bool wasLooted = _looted;
         _looted = data.TryGetValue("looted", out Variant looted) && looted.AsBool();
-        if (_looted)
+
+        // Deferred either way: Load runs mid-restore, before it's safe to churn the visual subtree.
+        // Both directions are handled — the second one used to be missing, so opening a chest and
+        // then loading a save from before that left an open, empty-looking chest still full of loot.
+        if (_looted && !wasLooted)
         {
-            // Deferred: Load runs mid-restore, before it's safe to churn the visual subtree.
             Callable.From(SwapToOpenVisual).CallDeferred();
+        }
+        else if (!_looted && wasLooted)
+        {
+            Callable.From(SwapToClosedVisual).CallDeferred();
         }
     }
 }

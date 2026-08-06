@@ -699,6 +699,15 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
 
     public void Load(Godot.Collections.Dictionary data)
     {
+        // Live combat state belongs to the timeline being abandoned, and neither of these is saved —
+        // so without clearing them they simply survive the load. A spell cast a moment before a
+        // quickload stayed on cooldown in a save taken long before it, and loading while holding a
+        // charge or a channel left _activeCast set, which blocks every later BeginCast and keeps
+        // IsChanneling true for a cast that no longer exists.
+        _cooldowns.Clear();
+        _activeCast = null;
+        _chargeElapsed = 0f;
+
         if (data.TryGetValue("spells", out Variant spellsVar))
         {
             KnownSpellIds = new Godot.Collections.Array<string>();

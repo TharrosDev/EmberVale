@@ -355,6 +355,20 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
   approach is exactly what failed (only 2 of ~50 ticking systems ever remembered it, so the
   inventory froze the player and nothing else). Do pass `pausesWorld: false` for anything the player
   is being held still to *watch*.
+- **`ISaveable.Load` must *replace* live state, never merge over it.** A load is not always applied
+  to a fresh world — a quickload keeps every live actor and component, so anything `Load` does not
+  explicitly overwrite survives from the timeline being abandoned. The rule: for every fact you
+  restore, ask what happens when the saved value is **absent, `false`, or `0`** while the live value
+  is not. `Clear()` the collection before repopulating; write the `else` branch for the boolean.
+  A repo-wide audit (2026-08-05) found this in 6 of 27 implementations, and the symptoms were never
+  obviously save-related — a downed companion re-wounded on load, spells still on cooldown from a
+  future that never happened, a chest that looked plundered but was full, a faction hostile in a
+  save that predates it. `EquipmentComponent.Load` and `PerksComponent.Load` are the models to copy:
+  both strip what they applied *before* rebuilding from the save.
+- **A load restores state; it does not narrate one.** Suppress the announcement events on the restore
+  path — a reconcile that re-publishes them toasts "Kael joins you" on every reload. UI that must
+  survive a load should re-derive from `GameLoadedEvent` instead, which is what `PartyWidget` and
+  `CompanionRecruiterComponent` already do.
 - **`ServiceLocator` drops a freed registrant on read** rather than handing it out. Several services
   register without ever unregistering; a dereferenced freed node is a hard `gchandle.is_released`
   crash, not a null check away.
