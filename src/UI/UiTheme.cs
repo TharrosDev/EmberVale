@@ -443,7 +443,50 @@ public static class UiTheme
     public static float UsableHeight(Control control) =>
         Mathf.Max(240f, control.GetViewportRect().Size.Y - (SpaceXl * 2f));
 
-    /// <summary>The standard inner padding container panels wrap their content in.</summary>
+    /// <summary>
+    /// A clickable card: content that sizes itself, with a transparent button laid over it for
+    /// input, hover and focus.
+    ///
+    /// ⚠️ **Use this instead of putting children inside a <see cref="Button"/>.** A `Button` is not
+    /// a `Container` — it never grows to fit its children, so anchored content inside one collapses
+    /// onto itself. 37.5H shipped exactly that bug twice: race cards declared `(160, 0)` had *zero*
+    /// height and every label drew on top of the next, and the spellbook's school rows were pinned
+    /// to a hand-guessed 44 px that two lines of text overran the moment the text-scale setting
+    /// moved. A `PanelContainer` sizes to its content; the button only has to catch the clicks.
+    ///
+    /// The button is added last so it sits above the content and takes the input, and its normal
+    /// state is fully transparent so the card underneath supplies the whole look.
+    /// </summary>
+    public static PanelContainer CardButton(Color? edge, out Button input, out VBoxContainer content)
+    {
+        var card = new PanelContainer();
+        card.AddThemeStyleboxOverride("panel", CardStyle(edge));
+
+        MarginContainer pad = Padding(SpaceSm);
+        content = new VBoxContainer();
+        content.AddThemeConstantOverride("separation", 2);
+        pad.AddChild(content);
+        card.AddChild(pad);
+
+        input = new Button { Flat = true, FocusMode = Control.FocusModeEnum.All };
+
+        var clear = new StyleBoxFlat { BgColor = new Color(0f, 0f, 0f, 0f) };
+        var hover = new StyleBoxFlat { BgColor = new Color(1f, 1f, 1f, 0.05f) };
+        hover.SetCornerRadiusAll(RadiusSm);
+
+        var focus = new StyleBoxFlat { BgColor = new Color(0f, 0f, 0f, 0f), BorderColor = Accent };
+        focus.SetBorderWidthAll(1);
+        focus.SetCornerRadiusAll(RadiusSm);
+
+        input.AddThemeStyleboxOverride("normal", clear);
+        input.AddThemeStyleboxOverride("hover", hover);
+        input.AddThemeStyleboxOverride("pressed", hover);
+        input.AddThemeStyleboxOverride("focus", focus);
+        card.AddChild(input);
+        return card;
+    }
+
+    /// <summary>The standard inner padding container panels wrap their content in.</summary>    /// <summary>The standard inner padding container panels wrap their content in.</summary>
     public static MarginContainer Padding(int amount = SpaceMd)
     {
         var margin = new MarginContainer();

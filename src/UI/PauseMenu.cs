@@ -87,7 +87,44 @@ public partial class PauseMenu : CanvasLayer
 		col.AddChild(MenuButton(Loc.T("pause.save"), () => { if (SaveManager.Instance is { } s) { s.SaveGame(s.ActiveSlot); } }));
 		col.AddChild(MenuButton(Loc.T("pause.load"), () => { if (SaveManager.Instance is { } s) { s.LoadGame(s.ActiveSlot); } }));
 		col.AddChild(MenuButton(Loc.T("pause.settings"), OpenSettings));
+		col.AddChild(MenuButton(Loc.T("pause.main_menu"), ReturnToMainMenu));
 		col.AddChild(MenuButton(Loc.T("pause.quit"), () => GetTree().Quit()));
+	}
+
+	/// <summary>
+	/// Leaves the session and returns to the title screen (37.5H). Until now the only way out of a
+	/// game was closing the process.
+	///
+	/// It **reloads the whole scene** rather than tearing the world down in place, and that is the
+	/// safe choice rather than the lazy one. `GameBootstrap` builds the world as its own children
+	/// behind a one-shot `_sandboxBuilt` guard with no teardown path, and CLAUDE.md §7 records why
+	/// unpicking that by hand is dangerous: several services register with `ServiceLocator` and
+	/// never unregister, and dereferencing a freed registrant is a hard `gchandle.is_released`
+	/// crash rather than something a null check catches. A reload rebuilds from boot, and the
+	/// autoloads (EventBus, ServiceLocator, GameManager, SaveManager) survive it by design.
+	///
+	/// ⚠️ **The two process-lifetime statics must be cleared first.** A scene reload does not touch
+	/// them, so the pause menu that triggered this would still be registered in `UiState` — and a
+	/// registered owner is also a world-pauser, so the title screen would come back with the tree
+	/// paused and nothing on screen able to unpause it. Ordering matters too: state goes back to
+	/// `MainMenu` *before* the reload so `GameManager.RefreshPause` settles on an unpaused tree.
+	///
+	/// The reload is deferred because this runs inside a button signal, and freeing the node that
+	/// owns the running signal handler mid-emit is exactly the crash `call_deferred` exists for.
+	///
+	/// Note this makes `UiPanel._Notification`'s modal-release guard reachable for the first time.
+	/// It was written as "nothing reaches this today — the game has no quit-to-menu path", and
+	/// documented as correct regardless. It now earns its place.
+	/// </summary>
+	private void ReturnToMainMenu()
+	{
+		SetPanelVisible(false);
+
+		UiState.ClearAll();
+		Godot.Input.MouseMode = Godot.Input.MouseModeEnum.Visible;
+		GameManager.Instance?.ChangeState(GameState.MainMenu);
+
+		Callable.From(() => GetTree().ReloadCurrentScene()).CallDeferred();
 	}
 
 	private static Button MenuButton(string text, System.Action onPressed)

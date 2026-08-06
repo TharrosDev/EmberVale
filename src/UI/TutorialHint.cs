@@ -26,7 +26,10 @@ public partial class TutorialHint : VBoxContainer
         MouseFilter = MouseFilterEnum.Ignore;
         Visible = false;
 
-        _frame = UiTheme.Panel();
+        // A Card, not a Panel (37.5H). One line of teaching text had been wearing a full brass
+        // frame plus a grain shader, which made the least important thing on screen the most
+        // ornamented.
+        _frame = UiTheme.Card(UiTheme.Accent);
         _frame.MouseFilter = MouseFilterEnum.Ignore;
         AddChild(_frame);
 

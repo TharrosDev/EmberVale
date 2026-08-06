@@ -52,7 +52,7 @@ public partial class PlacementHud : UiPanel
         column.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
         margin.AddChild(column);
 
-        _title = UiTheme.Header(string.Empty);
+        _title = UiTheme.Title(string.Empty);
         column.AddChild(_title);
 
         _keys = UiTheme.Caption(string.Empty, UiTheme.Dim);

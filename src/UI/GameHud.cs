@@ -152,7 +152,14 @@ public partial class GameHud : CanvasLayer
 
     private void BuildVitals()
     {
-        PanelContainer panel = Ignore(UiTheme.Panel());
+        // Cards, not Panels, for every HUD widget (37.5H).
+        //
+        // 37.5B named this trap and fixed the status chips, then left the five widgets around them
+        // on `Panel()` — so the HUD carried five brass frames, five engraved shadows and **five
+        // grain ShaderMaterials** simultaneously, which is more framing than the character screen
+        // uses. The ornament budget says a HUD widget earns none of it; the boss frame is the sole
+        // exception and it has its own class.
+        PanelContainer panel = Ignore(UiTheme.Card());
         panel.CustomMinimumSize = new Vector2(250, 0);
         _layout.BottomLeft.AddChild(panel);
 
@@ -215,7 +222,7 @@ public partial class GameHud : CanvasLayer
 
     private void BuildContext()
     {
-        PanelContainer panel = Ignore(UiTheme.Panel());
+        PanelContainer panel = Ignore(UiTheme.Card());
         _layout.TopLeft.AddChild(panel);
 
         _context = UiTheme.Body("", UiTheme.Dim);
@@ -226,7 +233,8 @@ public partial class GameHud : CanvasLayer
 
     private void BuildQuestTracker()
     {
-        _questPanel = Ignore(UiTheme.Panel());
+        // The spine carries the tracked quest's priority, matching the journal.
+        _questPanel = Ignore(UiTheme.Card(UiTheme.QuestMain));
         _questPanel.Visible = false;
         _questPanel.CustomMinimumSize = new Vector2(210, 0);
         _layout.TopRight.AddChild(_questPanel);
@@ -249,7 +257,7 @@ public partial class GameHud : CanvasLayer
 
     private void BuildBanner()
     {
-        _bannerPanel = Ignore(UiTheme.Panel());
+        _bannerPanel = Ignore(UiTheme.Card(UiTheme.AccentHot));
         _bannerPanel.Visible = false;
         _bannerPanel.SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter;
         _layout.TopCenter.AddChild(_bannerPanel);
@@ -385,7 +393,7 @@ public partial class GameHud : CanvasLayer
 
     private void BuildPrompt()
     {
-        _promptPanel = Ignore(UiTheme.Panel());
+        _promptPanel = Ignore(UiTheme.Card());
         _promptPanel.Visible = false;
         _promptPanel.SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter;
         _layout.BottomCenter.AddChild(_promptPanel);

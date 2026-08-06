@@ -15,6 +15,7 @@ pause.resume,Resume
 pause.save,Save
 pause.load,Load
 pause.settings,Settings
+pause.main_menu,Return to Main Menu
 pause.quit,Quit to Desktop
 settings.title,SETTINGS
 settings.section.graphics,GRAPHICS
@@ -55,9 +56,13 @@ settings.text_scale,Text Size
 settings.high_contrast,High Contrast
 settings.color_vision,Colour Vision
 settings.color_vision.none,Off
-settings.color_vision.deuteranopia,Deuteranopia (green-weak)
-settings.color_vision.protanopia,Protanopia (red-weak)
-settings.color_vision.tritanopia,Tritanopia (blue-yellow)
+settings.color_vision.deuteranopia,Deuteranopia
+settings.color_vision.protanopia,Protanopia
+settings.color_vision.tritanopia,Tritanopia
+settings.reduced_motion.note,Stops panels sliding and magical motifs turning. Nothing is hidden — only held still.
+settings.text_scale.note,Sizes text on its own. Unlike UI Scale this leaves panels and spacing where they are.
+settings.high_contrast.note,Solid panel backgrounds, no parchment grain, heavier frames.
+settings.color_vision.note,"Deuteranopia is green-weak, protanopia red-weak, tritanopia blue-yellow. Re-tints interface colours so shades that would blur together stay apart. Rarity also uses brightness and frame width, so it reads with colour off entirely."
 slots.new_title,NEW GAME — CHOOSE A SLOT
 slots.load_title,LOAD GAME
 slots.empty,— Empty —
