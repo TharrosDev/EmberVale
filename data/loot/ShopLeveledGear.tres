@@ -1,0 +1,52 @@
+[gd_resource type="Resource" script_class="LootTable" load_steps=5 format=3 uid="uid://cmbrvllootshopgear"]
+
+[ext_resource type="Script" path="res://src/Loot/LootTable.cs" id="1_table"]
+[ext_resource type="Script" path="res://src/Loot/LootEntry.cs" id="2_entry"]
+
+; The leveled half of a shop's stock (Phase 38B). Rolled through LootGenerator at each restock, at a
+; quality that climbs with the player's level (ShopStock.QualityForLevel) — so the *rarity and affixes*
+; of what a merchant happens to have in scale with you, while what they deal in stays authored here.
+;
+; Deliberately three equippables and nothing else. A stackable in a leveled pool would show as N rows
+; of one (see the ponytail note in ShopStockService.Restock) and gains nothing from being rolled —
+; potions belong in the static stock, where they restock at a known count.
+;
+; No gold: a merchant selling coins is nonsense, and the service filters it out of the rolled path the
+; way --validate filters it out of the authored path. GoldChance stays 0 so neither ever fires.
+;
+; Drop chances are well under 1 on purpose. The point of a leveled pool is that walking back into a
+; shop after a few days is worth doing; a pool that always rolls everything is just static stock with
+; extra steps.
+
+[sub_resource type="Resource" id="Entry_cap"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.leather_cap"
+DropChance = 0.5
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ring"]
+script = ExtResource("2_entry")
+ItemId = "item.ring.iron"
+DropChance = 0.4
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_sword"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.steel_sword"
+DropChance = 0.25
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[resource]
+script = ExtResource("1_table")
+Entries = Array[Resource]([SubResource("Entry_cap"), SubResource("Entry_ring"), SubResource("Entry_sword")])
+GoldItemId = "item.currency.gold"
+GoldChance = 0.0
+GoldMin = 0
+GoldMax = 0
+QualityBonus = 0.0

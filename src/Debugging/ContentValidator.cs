@@ -648,13 +648,15 @@ public static class ContentValidator
                 issues.Add($"shop '{id}' name key '{shop.NameKey}' is missing from the locale catalogue");
             }
 
-            if (shop.StockItemIds.Count == 0)
+            List<ShopStockEntry> stock = shop.StockList();
+            if (stock.Count == 0 && shop.LeveledTable == null)
             {
                 issues.Add($"shop '{id}' stocks nothing — its window would open empty");
             }
 
-            foreach (string itemId in shop.StockItemIds)
+            foreach (ShopStockEntry entry in stock)
             {
+                string itemId = entry.ItemId;
                 RequireItem(itemId, $"shop '{id}' stock", issues);
 
                 if (itemId == GameIds.Currency.Gold)
@@ -667,7 +669,20 @@ public static class ContentValidator
                         $"shop '{id}' stocks quest item '{itemId}' — a quest object must be found, " +
                         "not bought off a shelf");
                 }
+
+                if (entry.Quantity < 0)
+                {
+                    issues.Add($"shop '{id}' row '{itemId}' has a negative quantity ({entry.Quantity})");
+                }
+                else if (entry.Quantity > 0 && shop.RestockDays <= 0)
+                {
+                    issues.Add(
+                        $"shop '{id}' row '{itemId}' holds {entry.Quantity} and the shop never restocks " +
+                        "— the first player through the door empties it for the rest of the run");
+                }
             }
+
+            ValidateShopRestock(shop, issues);
 
             if (shop.BuyMarkup < 1f)
             {
@@ -687,6 +702,39 @@ public static class ContentValidator
                     $"shop '{id}' pays at least as much as it charges (sell {shop.SellFraction} >= buy " +
                     $"{shop.BuyMarkup}) — that is an infinite gold loop");
             }
+        }
+    }
+
+    /// <summary>
+    /// A shop's restock clock and leveled pool (Phase 38B). Both halves fail the same way — silently,
+    /// as a shop that simply never changes — so neither is safe to leave to play-testing.
+    /// </summary>
+    private static void ValidateShopRestock(ShopResource shop, List<string> issues)
+    {
+        string id = shop.Id;
+
+        if (shop.RestockDays < 0)
+        {
+            issues.Add($"shop '{id}' has a negative restock interval ({shop.RestockDays} days)");
+        }
+
+        if (shop.LeveledTable is not { } table)
+        {
+            return;
+        }
+
+        if (table.Entries.Count == 0)
+        {
+            issues.Add(
+                $"shop '{id}' has a leveled pool with no entries — it can only ever roll nothing, " +
+                "which reads in game as the leveled stock being broken");
+        }
+
+        if (shop.RestockDays <= 0)
+        {
+            issues.Add(
+                $"shop '{id}' has a leveled pool but never restocks — the pool is rolled *at* restock, " +
+                "so it would roll once and be frozen for the whole run");
         }
     }
 

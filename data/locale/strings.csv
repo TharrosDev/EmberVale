@@ -125,6 +125,8 @@ shop.sell,Sell
 shop.empty,Nothing for sale.
 shop.pack_empty,Nothing to sell.
 shop.cannot_afford,You cannot afford this.
+shop.sold_out,Sold out until the next delivery.
+shop.restocks,restocks every {0}d
 shop.worthless,Not worth a single coin.
 shop.unsellable,This is not for sale.
 craft.station_forge,Forge

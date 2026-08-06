@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using Embervale.Loot;
 using Godot;
 
 namespace Embervale.Economy;
@@ -8,11 +10,10 @@ namespace Embervale.Economy;
 /// merchant is a resource plus a component in a scene, with no code — the same shape
 /// <c>PropertyResource</c> + <c>PropertyDeedComponent</c> have.
 ///
-/// <b>Stock is static and does not deplete.</b> Phase 38B owns quantities, restock timers and
-/// leveled pools; adding depletion here without a restock clock would only mean a shop that can be
-/// permanently emptied. That is also why this resource is not <c>ISaveable</c> and the vendor holds no
-/// purse: nothing about a shop mutates, so there is no state to persist. Vendor purses are 38C's
-/// gold sink.
+/// <b>This resource stays immutable</b> even now that stock depletes (Phase 38B). It is shared by
+/// every vendor naming it and it is not <c>ISaveable</c>, so writing a remaining count into it would
+/// both leak between merchants and vanish on reload. Runtime stock lives in
+/// <see cref="ShopStockService"/>, keyed by <see cref="Id"/>. Vendor purses are still 38C's gold sink.
 /// </summary>
 [GlobalClass]
 public partial class ShopResource : Resource
@@ -27,11 +28,28 @@ public partial class ShopResource : Resource
     [ExportGroup("Wares")]
 
     /// <summary>
-    /// Item ids the shop offers, sold as plain instances (<c>ItemInstance.Plain</c>) — rolled and
-    /// leveled stock is 38B. The validator rejects an empty list, an unknown id, gold, and any
+    /// The shop's authored rows, sold as plain instances (<c>ItemInstance.Plain</c>). Untyped so
+    /// authored <c>.tres</c> sub-resource arrays bind cleanly; read it back through
+    /// <see cref="StockList"/>. The validator rejects an empty list, an unknown id, gold, and any
     /// <c>ItemType.Quest</c> item.
     /// </summary>
-    [Export] public Godot.Collections.Array<string> StockItemIds { get; set; } = new();
+    [Export] public Godot.Collections.Array Stock { get; set; } = new();
+
+    /// <summary>
+    /// Whole in-game days between restocks; <c>0</c> means this shop never restocks, which is only
+    /// legal when every row is unlimited. Restock is evaluated when the shop is <em>opened</em>, not
+    /// on a tick — see <see cref="ShopStockService"/>.
+    /// </summary>
+    [Export] public int RestockDays { get; set; }
+
+    /// <summary>
+    /// Optional pool rolled through <see cref="LootGenerator"/> at each restock, at a quality scaled
+    /// by the player's level (<see cref="ShopStock.QualityForLevel"/>) — the "leveled" half of 38B.
+    /// A <c>LootTable</c> rather than a bespoke type because it already carries drop chances,
+    /// quantities, <c>RollAffixes</c> and a quality bonus, and its item ids are already cross-checked
+    /// by the validator's loot pass.
+    /// </summary>
+    [Export] public LootTable? LeveledTable { get; set; }
 
     [ExportGroup("Spread")]
 
@@ -48,4 +66,24 @@ public partial class ShopResource : Resource
     /// hand-edited resource cannot do it either.
     /// </summary>
     [Export] public float SellFraction { get; set; } = 0.4f;
+
+    /// <summary>
+    /// The authored rows as a typed list. Deliberately <b>does not</b> filter malformed rows the way
+    /// <c>CraftingRecipeResource.IngredientList</c> does: an empty id or a negative quantity is
+    /// something <c>--validate</c> has to be able to see and report, and a silent skip is how
+    /// <c>ValidateLootTables</c> can pass a table with a blank entry in it.
+    /// </summary>
+    public List<ShopStockEntry> StockList()
+    {
+        var list = new List<ShopStockEntry>();
+        foreach (Variant element in Stock)
+        {
+            if (element.As<ShopStockEntry>() is { } entry)
+            {
+                list.Add(entry);
+            }
+        }
+
+        return list;
+    }
 }

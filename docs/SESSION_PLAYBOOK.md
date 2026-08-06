@@ -3420,9 +3420,35 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
        0.4 fraction pays nothing — accepting it would be item loss dressed as a transaction.
     3. **The spread rule is enforced twice**, in the validator *and* clamped in the arithmetic. Data
        alone is not enough for something whose failure mode is infinite gold.
-- [ ] **38B — Stock: static + restock + leveled** `[F]`
+- [x] **38B — Stock: static + restock + leveled** `[F]` ✅
   - **Done when:** vendor stock supports static lists, restock timers, and leveled
     pools.
+  - **Landed:** `ShopStockEntry` sub-resources (`ItemId` + `Quantity`) replace 38A's flat id list —
+    `Quantity = 0` is the static unlimited row, above it is finite. `RestockDays` is the clock,
+    `LeveledTable` is a `LootTable` rolled through `LootGenerator` at `ShopStock.QualityForLevel`.
+    `ShopStockService` (`ISaveable`, `"shopstock"`) holds and persists remaining counts, restock stamps
+    and rolled wares. `WorldClock` gained `Day`.
+  - **`WorldClock` had no date at all.** `TimeOfDay` wraps through `PosMod` and nothing counted the
+    wraps, so "three days later" was inexpressible — a 3-line addition that every future system can
+    key off. `SetTimeOfDay(26)` rolls the date forward, which is the only way to advance a day without
+    waiting 180 real seconds for each one.
+  - **This is the game's first player-level-driven scaling.** Nothing else reads
+    `ProgressionComponent.Level` to scale anything, despite `LootRarity.Select`'s comment having claimed
+    for several phases that quality came partly from "enemy level". It moves rarity and affixes only;
+    *what* a merchant deals in stays authored.
+  - Four things worth carrying into 38C–38E:
+    1. **Restock is lazy-on-open, not ticked.** No `_Process`, no event, no `DayChangedEvent`. Nothing
+       can observe the difference, and `WorldEventDirector` shows the cost of the alternative — it ticks
+       real-seconds cooldowns every frame and is not `ISaveable`, so they vanish on reload.
+    2. **Day arithmetic must widen to `long`.** A never-stocked shop is stamped `int.MinValue` and
+       `0 - int.MinValue` overflows back negative, so the obvious version answered "not due" for a shop
+       that had never stocked. The test written for it failed on the first run; that is the only reason
+       it is not in the build.
+    3. **A clock *behind* the stamp must also restock.** A quickload rewinds the world clock while the
+       service may still hold a stamp from the abandoned timeline; comparing only forwards freezes that
+       shop for the rest of the run, and it looks exactly like the feature not working.
+    4. **The rolled wares are in the save on purpose.** Without them a reload rerolls the pool and the
+       player reloads until a Legendary appears.
 - [ ] **38C — Reputation discounts + gold sinks** `[F/C]`
   - **Done when:** faction standing modifies prices; defined gold sinks exist.
 - [ ] **38D — Services: repair / trainer / bank / inn / stable** `[F/C]`

@@ -1,24 +1,61 @@
-[gd_resource type="Resource" script_class="ShopResource" load_steps=2 format=3 uid="uid://cmbrvlshopgoods"]
+[gd_resource type="Resource" script_class="ShopResource" load_steps=9 format=3 uid="uid://cmbrvlshopgoods"]
 
 [ext_resource type="Script" path="res://src/Economy/ShopResource.cs" id="1_shop"]
+[ext_resource type="Script" path="res://src/Economy/ShopStockEntry.cs" id="2_entry"]
+[ext_resource type="Resource" path="res://data/loot/ShopLeveledGear.tres" id="3_leveled"]
 
-; The first shop (Phase 38A): the Ember Crown's general goods. Stocked with the consumables and
-; common materials a player runs out of rather than gear — a merchant who sold weapons would be
-; competing with loot and crafting for the same job, and DESIGN §6 is explicit that gold buys
-; convenience, never defining power.
+; The first shop (Phase 38A, stocked properly in 38B): the Ember Crown's general goods. Consumables
+; and common materials rather than gear — a merchant who sold weapons outright would be competing with
+; loot and crafting for the same job, and DESIGN §6 is explicit that gold buys convenience, never
+; defining power. What gear this stall does carry comes out of the leveled pool below, rolled and
+; scarce, which is a different promise from a shelf you can shop off.
 ;
-; The spread is 1.5 / 0.4, which means selling something back costs you roughly two thirds of its
-; price. That gap is the point: it makes looting-to-sell a slow income rather than a loop, and it is
-; the number Phase 56 balance will actually tune. Phase 38B adds stock quantities, restock timers and
-; leveled pools; 38C adds the reputation discount that moves BuyMarkup per merchant.
+; The spread is 1.5 / 0.4, so selling something back costs you roughly two thirds of its price. That
+; gap is the point: it makes looting-to-sell a slow income rather than a loop, and it is the number
+; Phase 56 balance will actually tune.
 ;
-; No vendor is placed in the world yet — Phase 38E turns the three town_hub stub vendors into real
-; shops. Until then: `shop shop.ember_crown.goods` in the F1 console.
+; Stock split three ways on purpose, which is exactly what 38B is for:
+;   - Potions and herbs are FINITE. A player cannot stand at the stall and out-heal a region; they buy
+;     what is there and come back. RestockDays = 1 is what makes that a wait rather than a wall.
+;   - Ore and scrap are UNLIMITED (Quantity = 0). A materials stall running out of iron ore would only
+;     make crafting feel gated on a shopping trip, and there is nothing interesting about that.
+;   - The leveled pool is ROLLED at each restock and scales with the player's level.
+;
+; Phase 38C adds the reputation discount that moves BuyMarkup per merchant; 38E turns the three
+; town_hub stub vendors into real shops. Until then: `shop shop.ember_crown.goods` in the F1 console,
+; and `shop restock shop.ember_crown.goods` to skip the wait.
+
+[sub_resource type="Resource" id="Stock_potion"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.health"
+Quantity = 5
+
+[sub_resource type="Resource" id="Stock_herb"]
+script = ExtResource("2_entry")
+ItemId = "item.material.healing_herb"
+Quantity = 8
+
+[sub_resource type="Resource" id="Stock_ore"]
+script = ExtResource("2_entry")
+ItemId = "item.material.iron_ore"
+Quantity = 0
+
+[sub_resource type="Resource" id="Stock_strips"]
+script = ExtResource("2_entry")
+ItemId = "item.material.leather_strips"
+Quantity = 0
+
+[sub_resource type="Resource" id="Stock_scrap"]
+script = ExtResource("2_entry")
+ItemId = "item.material.scrap"
+Quantity = 0
 
 [resource]
 script = ExtResource("1_shop")
 Id = "shop.ember_crown.goods"
 NameKey = "shop.ember_crown.goods.name"
-StockItemIds = Array[String](["item.potion.health", "item.material.healing_herb", "item.material.iron_ore", "item.material.leather_strips", "item.material.scrap"])
+Stock = Array[Resource]([SubResource("Stock_potion"), SubResource("Stock_herb"), SubResource("Stock_ore"), SubResource("Stock_strips"), SubResource("Stock_scrap")])
+RestockDays = 1
+LeveledTable = ExtResource("3_leveled")
 BuyMarkup = 1.5
 SellFraction = 0.4
