@@ -3666,7 +3666,7 @@ Nothing here is scheduled. Revisit an entry only when its stated trigger actuall
 | `Player/PlayerController.cs` | Camera spring masks `World`, which actor bodies share — a companion stepping behind the player pulls the camera in | It reads as twitchy in play; the fix is a dedicated camera-blocker layer |
 | `Races/RaceComponent.cs` | Dev-tool race swap skips reputation | A player-facing respec/race-change is ever offered |
 | `Enemies/AshenAcolyteFactory.cs` | Reuses the goblin loot table | A Fallen/cultist table is authored |
-| `Localization/LocaleAudit.cs` | Hand-walks CSV lines (no quoted-comma support) | A string legitimately needs a comma inside quotes |
+| `Localization/LocaleAudit.cs` | Duplicate-key scan treats one physical line as one row, while `LocCatalog` honours RFC-4180 | The first **multi-line** value in `strings.csv` (a newline inside quotes). *Restated by the Phase 24 audit: this entry used to read "no quoted-comma support / a string needs a comma inside quotes", which had already fired 105 times with no effect — the split only extracts the key, and keys never contain commas.* |
 | `Magic/SpellcastingComponent.cs` | Blink is a straight horizontal ray | Vertical or curved blink is wanted |
 | `Debugging/ContentValidator.cs` (×2) | Travel nodes validated at runtime, not authored; one regex for scene-authored flags | A second scene-authored writer of either kind appears |
 | `Enemies/ArenaHookComponent.cs` | Reacts to *any* boss's phase change and death, not the one in this arena | A second arena, or any boss alive in the same region as one (added by the Phase 36 audit) |
