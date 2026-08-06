@@ -168,13 +168,30 @@ public partial class ReputationComponent : EntityComponent, ISaveable
             return;
         }
 
+        // Re-seed every faction's default first, exactly as OnInitialize does. A save only carries
+        // the factions that existed when it was written, so applying it over the live values let a
+        // faction the save has never heard of keep whatever this session did to it — anger the
+        // Frostfang Clans, load a save from before they were added, and they stay hostile in a world
+        // that predates them. Any faction added after this point inherits the same fix for free.
+        foreach (FactionResource faction in FactionDatabase.All)
+        {
+            _reputation[faction.Id] = faction.DefaultReputation;
+        }
+
         var values = valuesVar.AsGodotDictionary();
         foreach (Variant key in values.Keys)
         {
             string factionId = key.AsString();
-            int value = Mathf.Clamp(values[key].AsInt32(), ReputationTiers.Min, ReputationTiers.Max);
-            _reputation[factionId] = value;
-            EventBus.Instance?.Publish(new ReputationChangedEvent(factionId, value, ReputationTiers.Of(value)));
+            _reputation[factionId] = Mathf.Clamp(values[key].AsInt32(), ReputationTiers.Min, ReputationTiers.Max);
+        }
+
+        // Announce every faction, not just the saved ones: a faction reset to its default by the
+        // re-seed above has changed just as much as one the save named, and anything caching a tier
+        // needs to hear about both.
+        foreach (KeyValuePair<string, int> pair in _reputation)
+        {
+            EventBus.Instance?.Publish(
+                new ReputationChangedEvent(pair.Key, pair.Value, ReputationTiers.Of(pair.Value)));
         }
     }
 }
