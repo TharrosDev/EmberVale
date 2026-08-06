@@ -13,3 +13,4 @@ MaxStack = 5
 Weight = 5.0
 Value = 20
 TemplateId = "prop.decor.crate"
+TradeTags = Array[String](["furnishing"])

@@ -13,3 +13,4 @@ MaxStack = 5
 Weight = 8.0
 Value = 40
 TemplateId = "prop.display.stand"
+TradeTags = Array[String](["furnishing"])

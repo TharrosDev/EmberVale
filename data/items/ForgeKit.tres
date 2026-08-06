@@ -13,3 +13,4 @@ MaxStack = 5
 Weight = 12.0
 Value = 220
 TemplateId = "prop.station.forge"
+TradeTags = Array[String](["tool"])

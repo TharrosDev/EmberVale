@@ -3510,8 +3510,115 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
        outright for the service to fire. That was affordable only because it was the shared placeholder
        stub — **38E still owns the real decision** for the three shop vendors, whose conversations are
        genuine content.
-- [ ] **38E — Wire real shops into Ember Crown vendors** `[C]`
+- [x] **38E — Wire real shops into Ember Crown vendors** `[F/C]` ✅
   - **Done when:** the Phase 27 stub vendors become real shops; `validate` green.
+  - **Landed:** `DialogueEffect.OpenShop` (ordinal 9) and one case in `DialogueSession.ApplyEffect` that
+    publishes the existing `ShopOpenedEvent`. Two authored shops — `shop.ember_crown.smith` (Bryn) and
+    `shop.ember_crown.apothecary` (Mirela) — plus `dialogue.vendor_goods`, Aldreth's real conversation,
+    replacing the hard-coded `dialogue.vendor_stub`. A trade choice on all three merchants. **No new C#
+    file, no new component, no new panel:** the whole feature is one enum member, one switch case and
+    authored data, and the `.tscn` changed by exactly one string.
+  - **The one-interactable decision reserved since 38A is made: the effect, not the component.** Replacing
+    the dialogue was the cheaper diff and the wrong answer — `dialogue.smith` and `dialogue.apothecary`
+    carry `quest.warband.forge` and `quest.warband.remedies`, so it would have relocated live quest content
+    to make room for a menu. It is also load-bearing forward: **a merchant who is a person can carry hours,
+    a haggle, a contract and a rumour; a `VendorComponent` on a crate cannot.** `VendorComponent` keeps its
+    place for unattended counters and stalls, first placed in 38K.
+  - **A shop id is validated for the first time in the game's history.** `ContentValidator` does not scan
+    `.tscn`, so a mistyped `VendorComponent.ShopId` has always given *no prompt at all* rather than an
+    error. An `EffectArg` lives in a `.tres`, so `ValidateDialogue` can read it — the new rule is four lines
+    beside the `LearnSpell` check it copies.
+  - ⚠️ **An `OpenShop` choice must leave `Goto` empty, and the validator now enforces it.** A conversation
+    left open behind the vendor window returns the moment the shop closes — the player closes a shop and is
+    back in a dialogue they thought they had left. This is well-formed data and a broken interaction, which
+    is exactly what a validator rule is for.
+  - **The panel handover is safe because `UiState` counts owners.** `Choose` applies the effect *before* it
+    resolves `Goto`, so `VendorPanel` registers with `UiState` before `DialoguePanel` deregisters and the
+    count never reaches zero — no pause flicker and no mouse-mode flicker between the two windows. Had the
+    order been reversed, the world would have unpaused and recaptured the mouse for one frame mid-handover.
+  - **Two merchants now pay differently for the same item** (Bryn's `SellFraction` 0.45 against Aldreth's
+    0.4, because a smith knows what metal is worth). That is the smallest possible version of 38F's
+    specialist premium, authored rather than coded, and it is the first time in the game that *where* the
+    player sells has mattered at all.
+  - Three things worth carrying into 38F:
+    1. **The stub was a locale violation, not just filler.** `dialogue.vendor_stub` held hard-coded English
+       in a `.tres` — `Loc.T` on a literal returns the literal, so it renders correctly and no rule catches
+       it. Grep new content for prose where a key belongs; the validator only checks keys it is *told* about.
+    2. **`GameIds` constants outlive what they name.** `Dialogues.VendorStub` had zero consumers beyond
+       itself and would have kept a deleted file's id alive in code indefinitely. A dialogue id is safe to
+       rename (nothing persists it); an item or flag id in the same position would have been a migration.
+    3. **The effect route is the pattern for every conversational service too** — but `OpenService` was
+       deliberately *not* appended here, because firing a service without a `ServiceComponent` means
+       refactoring its pay-and-grant path, and an enum member with no implementation is the stub 40B
+       forbids. It lands in 38R with the innkeeper's conversation.
+  - Build clean + **972** tests + `--validate` exit 0 with both new rules negative-tested in both
+    directions + a clean `--play` boot (3 shops, 13 conversations, town hub streamed).
+  - **Reachable from `--play`:** talk to Aldreth, Bryn or Mirela in the town hub and pick the trade line.
+    `shop <id>` still reaches all three from the F1 console; `rep faction.villagers <delta>` drives the
+    discount; `shop restock <id>` skips the clock.
+
+---
+
+### Phase 38, continued — the economy overhaul arc `[F/C]`
+
+> Phase 38 built the machinery and 38E made it reachable. This arc is the final economy pass: it turns a
+> set of working shop systems into a reason to travel, to choose, and to keep playing after the gear stops
+> improving. Scoped to `region.ember_crown` — commerce in the other realms is Phase 44's content, all
+> numbers are Phase 56's, and durability/repair remains 40A's to adopt or cut.
+>
+> Design foundations, pricing chain and the full roster live in the approved arc plan; the load-bearing
+> engineering rule is that **`SELL < BUY` must hold across every multiplier**, which is why demand is
+> applied symmetrically to both sides and saturation only ever reduces the sell side. Every new multiplier
+> joins the invariant sweep test or it does not ship.
+>
+> **Cut line:** 38F–38J plus 38U and 38V is the coherent minimum economy. The rest is depth, each entry
+> independently shippable.
+
+- [x] **38F — Trade tags + merchant specialties** `[F]` ✅ *(no `TradePrice` class — see below)*
+  - **Done when:** items carry trade tags, shops accept or refuse by tag and pay a specialist premium, and `TradePrice` is the single price authority with a multiplier-sweep invariant test.
+  - **Landed:** `src/Economy/TradeTags.cs` (a closed 17-word vocabulary plus the accept/specialty rules, Godot-free), `ItemResource.TradeTags`, `ShopResource.AcceptedTags`/`Specialties`, two constants and one new function on `ShopPricing`, a fourth named refusal in `VendorPanel`, four validator rules, and all 25 sellable items tagged. Bryn deals in metal, weapons and armour; Mirela in herbs, reagents and remedies; Aldreth in everything.
+  - **The planned `TradePrice` class was cut, and that is the sub-phase's main finding.** The arc plan wanted a new price authority because five multipliers make `SELL < BUY` non-obvious. Reading `ShopPricing` closely, it is already obvious and already proven: `BuyPrice` clamps its markup to `>= 1` and `SellPrice` clamps its fraction to `0..1`, so **`sell <= value <= buy` holds for any multiplier**, by construction, and any new one folded into the markup or the fraction inherits it for free. A new class would have been a rename across `VendorPanel`, `ServiceComponent`, the tests and four docs for zero added safety. **38G onward should not re-litigate this** — extend `ShopPricing`.
+  - **What the clamps do *not* prevent is a spread closing to nothing.** `sell == buy` is not a money printer, it is frictionless churn, and it is invisible until a player notices a round trip is free. That is a content bug the arithmetic cannot report, so `ValidateShopTrade` holds every shop's widest possible sell against its narrowest possible buy with a 1.25× margin.
+  - ⚠️ **Both empties mean yes, deliberately.** An empty `AcceptedTags` is how a general store is authored, and an untagged item is accepted everywhere. Both fail *open*, matching the inverted fail-safe the shops already use for a missing `ReputationComponent` — the alternative turns every authoring gap into unsellable loot, and the symptom looks exactly like the feature being broken. It also meant the two new fields landed **without changing a single existing merchant**.
+  - **Tags rather than an `ItemType` member**, for two reasons that both matter: `ItemType`'s ordinals are persisted in every save so appending is irreversible (37C made the same call), and an item wears several trades at once — a leather cap is `armor` *and* `leather`, which no single enum member can say.
+  - Three things worth carrying into 38G:
+    1. **The vocabulary ships only tags something wears today.** Ten more are named in the arc (`contraband`, `food`, `fish`, `textile`, `tome`, `map`, `livestock`, `fuel`…) and each arrives with the sub-phase that authors a member for it. A tag with no members is a promise, not a feature.
+    2. **The sweep test is the arc's safety rail, and it is a contract.** `NoCombinationOfMultipliersLetsSellingBeatBuying` runs every tier × markup × fraction × specialty × value. ⚠️ **Every future price multiplier joins it or it does not ship** — that is what lets 38G add regional demand without re-deriving the argument. Note demand must be applied *symmetrically* to both sides, or it moves the ratio rather than the price.
+    3. **A refusal that names a trade is a tutorial nobody had to write.** "They have no use for this" leaves the player carrying a pelt around a town; "Bryn deals in metalwork, weapons and armour" tells them what kind of person to look for. The whole specialty system is taught by being refused once.
+  - Build clean + **981** tests + `--validate` exit 0 with all four new rules negative-tested in both directions + a clean `--play` boot.
+  - **Reachable from `--play`:** sell a healing herb to Bryn (refused, by trade) and to Mirela (a premium); sell iron ore to Bryn and to Aldreth and compare. `shop <id>` reaches all three from F1.
+- [ ] **38G — `RegionEconomyResource`: settlement demand** `[F/C]`
+  - **Done when:** each commercial POI has authored surplus/demand tags that move prices symmetrically on both sides.
+- [ ] **38H — Market saturation** `[F]`
+  - **Done when:** repeat sales of one item to one merchant decay toward a floor and recover on the restock clock.
+- [ ] **38I — Stock tiers + merchant investment** `[F]`
+  - **Done when:** stock can be gated by standing, flag or investment, and gold buys a stake that raises a merchant's purse and unlocks tiers.
+- [ ] **38J — Trading hours + travelling merchants** `[F]`
+  - **Done when:** shops open and close on the world clock and a merchant arrives and leaves on a day cycle, with no closed shop hard-gating an essential.
+- [ ] **38K — The Embermarket cell** `[C]`
+  - **Done when:** a market-district cell streams, navigates, lights and carries a travel node.
+- [ ] **38L — The Embermarket roster** `[C]`
+  - **Done when:** ~12 specialist merchants are authored, placed, and reachable by conversation.
+- [ ] **38M — Crossway Post: caravans and tolls** `[F/C]`
+  - **Done when:** a toll gate charges on the single path every crossing converges on, a permit exempts, and a bribe costs standing.
+- [ ] **38N — Emberdeep Mine + Tarn's Landing** `[C]`
+  - **Done when:** two production settlements make the demand table true, and a dev command can print the realm's best arbitrage.
+- [ ] **38O — Hollowreach: contraband and fences** `[F/C]`
+  - **Done when:** contraband-tagged goods sell only at the wharf, at a two-sided reputation cost, and confiscation is recoverable.
+- [ ] **38P — Consignment house + appraiser** `[F/C]`
+  - **Done when:** an item lists, sells over in-game days above vendor price without the purse cap, and the appraiser names the best buyer from the same functions the sale uses.
+- [ ] **38Q — Commissions + contracts** `[F/C]`
+  - **Done when:** a master crafts a known recipe for a fee and a board offers rotating supply contracts that never pollute the quest log.
+- [ ] **38R — Services II** `[F/C]`
+  - **Done when:** courier, passage, mercenary, cosmetic, healer, warehouse and gambling are interactable, and the innkeeper's conversation is restored through `OpenService`.
+- [ ] **38S — Haggling + merchant memory** `[F]`
+  - **Done when:** a once-per-merchant-per-day negotiation with a standing downside sets that day's prices, bound to the day in saved state so a reload cannot reroll it.
+- [ ] **38T — Caravan events + supply shocks** `[F/C]`
+  - **Done when:** shortages, gluts and fairs move authored demand for a bounded number of days from a saveable service — never from `WorldEventDirector`, which is not `ISaveable`.
+- [ ] **38U — Economy UI/UX pass** `[P]`
+  - **Done when:** every price is explicable on hover, line by line, from the same functions the transaction charges.
+- [ ] **38V — Validation, tests, docs, balance handoff** `[F/P]`
+  - **Done when:** every new rule is negative-tested both ways, `ARCHITECTURE.md` gets its missing §2.x Economy section, `DESIGN.md` §6 is rewritten, and an `economy` dev command prints the realm's price landscape for Phase 56.
 
 ---
 

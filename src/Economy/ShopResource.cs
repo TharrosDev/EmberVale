@@ -63,6 +63,33 @@ public partial class ShopResource : Resource
     /// </summary>
     [Export] public LootTable? LeveledTable { get; set; }
 
+    [ExportGroup("Trade")]
+
+    /// <summary>
+    /// The trades this merchant will buy from at all (Phase 38F) — words from <see cref="TradeTags"/>,
+    /// matched against <c>ItemResource.TradeTags</c>.
+    ///
+    /// <b>Empty means she buys anything, and that is how a general store is authored.</b> Not a gap in
+    /// the data: a merchant who deals in everything says nothing here, which is also what every shop
+    /// authored before 38F says, so the field arrives without changing a single existing merchant.
+    ///
+    /// ⚠️ <b>A settlement needs one merchant with an empty list</b>, or loot becomes unsellable by
+    /// authoring accident. In the Ember Crown that is Aldreth.
+    /// </summary>
+    [Export] public Godot.Collections.Array<string> AcceptedTags { get; set; } = new();
+
+    /// <summary>
+    /// The trades she is expert in — she pays <see cref="ShopPricing.SpecialtySellBonus"/> over the odds
+    /// for them and asks <see cref="ShopPricing.SpecialtyBuyDiscount"/> less. This is what makes
+    /// <em>where</em> the player sells matter, and it is the first merchant property that is about the
+    /// merchant rather than about the player's standing with her.
+    ///
+    /// ⚠️ Must be a subset of <see cref="AcceptedTags"/> when that list is non-empty — a specialist who
+    /// refuses her own specialty is well-formed data that reads in game as the premium being broken, so
+    /// <c>--validate</c> rejects it.
+    /// </summary>
+    [Export] public Godot.Collections.Array<string> Specialties { get; set; } = new();
+
     [ExportGroup("Spread")]
 
     /// <summary>
@@ -97,6 +124,27 @@ public partial class ShopResource : Resource
     /// something <c>--validate</c> has to be able to see and report, and a silent skip is how
     /// <c>ValidateLootTables</c> can pass a table with a blank entry in it.
     /// </summary>
+    /// <summary>The accepted trades as a plain list, for the Godot-free <see cref="TradeTags"/>
+    /// helpers.</summary>
+    public List<string> AcceptedTagList() => Plain(AcceptedTags);
+
+    /// <summary>The specialist trades as a plain list.</summary>
+    public List<string> SpecialtyList() => Plain(Specialties);
+
+    private static List<string> Plain(Godot.Collections.Array<string> tags)
+    {
+        var list = new List<string>();
+        foreach (string tag in tags)
+        {
+            if (!string.IsNullOrEmpty(tag))
+            {
+                list.Add(tag);
+            }
+        }
+
+        return list;
+    }
+
     public List<ShopStockEntry> StockList()
     {
         var list = new List<ShopStockEntry>();

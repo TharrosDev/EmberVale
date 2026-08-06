@@ -12,3 +12,4 @@ Rarity = 3
 MaxStack = 50
 Weight = 1.2
 Value = 180
+TradeTags = Array[String](["trophy", "reagent"])

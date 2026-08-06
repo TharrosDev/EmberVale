@@ -12,3 +12,4 @@ Rarity = 4
 MaxStack = 1
 Weight = 1.0
 Value = 500
+TradeTags = Array[String](["relic"])

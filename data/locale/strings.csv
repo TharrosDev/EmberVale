@@ -133,6 +133,29 @@ shop.vendor_purse,"has {0}g"
 shop.vendor_broke,They cannot cover that right now.
 shop.worthless,Not worth a single coin.
 shop.unsellable,This is not for sale.
+# Trades (Phase 38F). A merchant who refuses something names what she does deal in — a refusal that only
+# says no leaves the player carrying a pelt around a town, while one that names a trade tells them what
+# kind of person to look for. The tag names below are the plural a shopkeeper would use out loud.
+shop.specialty,their trade
+shop.not_my_trade,They have no use for this.
+shop.refuses_tag,"{0} deals in {1}."
+trade.tag.metal,metalwork
+trade.tag.ore,raw ore
+trade.tag.leather,leather
+trade.tag.pelt,pelts
+trade.tag.herb,herbs
+trade.tag.reagent,reagents
+trade.tag.potion,remedies
+trade.tag.gem,gemstones
+trade.tag.jewelry,jewellery
+trade.tag.weapon,weapons
+trade.tag.armor,armour
+trade.tag.arcane,arcana
+trade.tag.tool,tools
+trade.tag.furnishing,furnishings
+trade.tag.trophy,trophies
+trade.tag.relic,relics
+trade.tag.luxury,fine goods
 # Services (Phase 38D). Each refusal is its own line: a rested bed, a bought mount and a lesson already
 # learned are different sentences, and one shared "nothing to do here" reads as a broken interactable.
 service.ember_crown.inn.name,The Ashen Hearth
@@ -449,6 +472,23 @@ dlg.elder.heart.inprogress,"The warband still gathers. Five of them, traveller �
 dlg.elder.heart.c_inprogress_bye,"I'll see it through."
 dlg.elder.heart.thanks,"You broke the warband. The Ember Crown will sing your name by the hearth tonight — take the smith's finest steel, you have more than earned it."
 dlg.elder.heart.c_thanks_bye,"The honour was mine, elder."
+# --- Phase 38E: the Ember Crown merchants become real shops ---
+# Two shop names, one trade line per merchant, and Aldreth's conversation (replacing the hard-coded
+# dialogue.vendor_stub). A trade choice is written in the merchant's own voice rather than as a menu verb:
+# the player is asking a person to show them something, not opening a screen.
+shop.ember_crown.smith.name,Bryn's Forge
+shop.ember_crown.apothecary.name,Mirela's Remedies
+dlg.smith.c_trade,"What have you got to sell?"
+dlg.apothecary.c_trade,"Anything left on your shelves?"
+dlg.vendor_goods.speaker,"Aldreth, General Goods"
+dlg.vendor_goods.root,"Aldreth straightens a row of jars across a counter with more bare wood than goods on it."
+dlg.vendor_goods.c_trade,"Show me what you have."
+dlg.vendor_goods.c_roads,"Trade looks thin."
+dlg.vendor_goods.c_bye,"Good day to you."
+dlg.vendor_goods.road_talk,"Thin is a kind word for it. The salt cart is nine days late and the last one before that came half empty, driver white as a sheet and no talk out of him. Whatever's sitting on the roads, it eats better than we do."
+dlg.vendor_goods.c_roads_trade,"Let's see what's left, then."
+dlg.vendor_goods.c_roads_back,"Who else still comes through?"
+dlg.vendor_goods.c_roads_bye,"I'll keep an eye on the road."
 # --- Phase 28A: Iron King ---
 boss.challenge_prompt,"Challenge the Iron King"
 # --- Phase 28C: boss UI ---

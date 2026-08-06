@@ -13,3 +13,4 @@ MaxStack = 5
 Weight = 2.0
 Value = 60
 TemplateId = "prop.decor.banner"
+TradeTags = Array[String](["furnishing"])

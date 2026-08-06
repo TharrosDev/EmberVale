@@ -256,7 +256,7 @@ public static class GameIds
     public static class Dialogues
     {
         public const string Elder = "dialogue.elder";
-        public const string VendorStub = "dialogue.vendor_stub";
+        public const string VendorGoods = "dialogue.vendor_goods";
         public const string Kael = "dialogue.kael";
     }
 

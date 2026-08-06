@@ -472,7 +472,7 @@ FactionId = "faction.villagers"
 
 [node name="Dialogue" type="Node" parent="VendorGoods"]
 script = ExtResource("7_dialogue")
-DialogueId = "dialogue.vendor_stub"
+DialogueId = "dialogue.vendor_goods"
 SpeakerName = "Aldreth, General Goods"
 
 [node name="Schedule" type="Node" parent="VendorGoods"]

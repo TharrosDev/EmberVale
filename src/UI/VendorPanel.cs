@@ -227,9 +227,11 @@ public partial class VendorPanel : UiPanel
         }
 
         ItemInstance instance = stack.Instance;
-        if (!ShopPricing.Sellable(instance.Type, IsCurrency(instance)) || payout <= 0)
+        if (!ShopPricing.Sellable(instance.Type, IsCurrency(instance)) ||
+            !InTrade(shop, instance) ||
+            payout <= 0)
         {
-            return; // the button is already disabled and says why
+            return; // the button is already disabled and says why; re-checked on the press
         }
 
         // The purse is spent *before* the goods change hands (38C). A merchant who cannot cover the
@@ -259,6 +261,40 @@ public partial class VendorPanel : UiPanel
 
     private static bool IsCurrency(ItemInstance instance) =>
         instance.TemplateId == GameIds.Currency.Gold;
+
+    /// <summary>Whether this merchant deals in the item at all (38F). One function for the button's
+    /// enabled state, the refusal text and the press itself, so they cannot drift.</summary>
+    private static bool InTrade(ShopResource shop, ItemInstance instance) =>
+        TradeTags.Accepts(instance.Template.TagList(), shop.AcceptedTagList());
+
+    /// <summary>Whether the item is the merchant's own trade — the premium and the keener price.</summary>
+    private static bool IsSpecialty(ShopResource shop, ItemInstance instance) =>
+        TradeTags.IsSpecialty(instance.Template.TagList(), shop.SpecialtyList());
+
+    /// <summary>
+    /// A refusal that says where to take it instead. Naming her trade is the whole teaching moment for
+    /// the specialty system: "she won't buy this" leaves the player carrying a pelt around a town, while
+    /// "Bryn deals in metal, weapons and armour" tells them what kind of person to look for.
+    ///
+    /// Falls back to the bare line for a merchant with an accepted list and no specialties — there is
+    /// nothing truthful to name in that case.
+    /// </summary>
+    private static string TradeRefusal(ShopResource shop)
+    {
+        List<string> specialties = shop.SpecialtyList();
+        if (specialties.Count == 0)
+        {
+            return Loc.T("shop.not_my_trade");
+        }
+
+        var names = new List<string>();
+        foreach (string tag in specialties)
+        {
+            names.Add(Loc.T($"trade.tag.{tag}"));
+        }
+
+        return Loc.TF("shop.refuses_tag", Loc.T(shop.NameKey), string.Join(", ", names));
+    }
 
     /// <summary>
     /// The player's standing with the shop's faction (38C). Falls back to <c>Neutral</c> — the
@@ -330,7 +366,9 @@ public partial class VendorPanel : UiPanel
         int purse = Purse();
         foreach (ShopOffer offer in offers)
         {
-            int price = ShopPricing.BuyPrice(offer.Instance.Value, ShopPricing.MarkupFor(shop.BuyMarkup, tier));
+            bool specialty = IsSpecialty(shop, offer.Instance);
+            int price = ShopPricing.BuyPrice(
+                offer.Instance.Value, ShopPricing.MarkupFor(shop.BuyMarkup, tier, specialty));
             bool affordable = ShopPricing.CanAfford(price, purse);
 
             // A sold-out row stays on the shelf, greyed. Removing it would read as the shop never
@@ -344,7 +382,8 @@ public partial class VendorPanel : UiPanel
                 action: Loc.T("shop.buy"),
                 enabled: offer.Available && affordable,
                 refusal: offer.Available ? Loc.T("shop.cannot_afford") : Loc.T("shop.sold_out"),
-                onPressed: () => Buy(shop, captured, price));
+                onPressed: () => Buy(shop, captured, price),
+                specialty: specialty);
         }
     }
 
@@ -378,15 +417,21 @@ public partial class VendorPanel : UiPanel
         {
             ItemInstance instance = stack.Instance;
             bool sellable = ShopPricing.Sellable(instance.Type, IsCurrency(instance));
-            int payout = sellable
-                ? ShopPricing.SellPrice(instance.Value, shop.SellFraction) * stack.Quantity
+            bool inTrade = InTrade(shop, instance);
+            bool specialty = IsSpecialty(shop, instance);
+            int payout = sellable && inTrade
+                ? ShopPricing.SellPrice(
+                    instance.Value, ShopPricing.SellFractionFor(shop.SellFraction, specialty))
+                    * stack.Quantity
                 : 0;
 
-            // Three refusals, each named separately: not for sale, worth nothing, or the merchant
-            // cannot cover it. Collapsing them would tell a player with a Legendary to try a cheaper
-            // shop when the real answer is to come back after a restock.
+            // Four refusals, each named separately: not for sale at all, not this merchant's trade,
+            // worth nothing, or the merchant cannot cover it. Collapsing them would tell a player with a
+            // Legendary to try a cheaper shop when the real answer is to come back after a restock — and
+            // 38F's addition is the one that has somewhere to send them, so it names the trade.
             bool afforded = purse < 0 || payout <= purse;
             string refusal = !sellable ? Loc.T("shop.unsellable")
+                : !inTrade ? TradeRefusal(shop)
                 : payout <= 0 ? Loc.T("shop.worthless")
                 : Loc.T("shop.vendor_broke");
 
@@ -395,11 +440,12 @@ public partial class VendorPanel : UiPanel
                 _packList,
                 instance,
                 stack.Quantity,
-                priceText: sellable ? Loc.TF("shop.price", payout) : string.Empty,
+                priceText: sellable && inTrade ? Loc.TF("shop.price", payout) : string.Empty,
                 action: Loc.T("shop.sell"),
-                enabled: sellable && payout > 0 && afforded,
+                enabled: sellable && inTrade && payout > 0 && afforded,
                 refusal: refusal,
-                onPressed: () => Sell(shop, captured, payout));
+                onPressed: () => Sell(shop, captured, payout),
+                specialty: specialty);
         }
     }
 
@@ -419,7 +465,8 @@ public partial class VendorPanel : UiPanel
         string action,
         bool enabled,
         string refusal,
-        System.Action onPressed)
+        System.Action onPressed,
+        bool specialty = false)
     {
         PanelContainer card = UiTheme.Card(UiTheme.RarityColor(instance.Rarity));
         var row = new HBoxContainer();
@@ -440,6 +487,17 @@ public partial class VendorPanel : UiPanel
         Label name = UiTheme.Body(instance.DisplayName, UiTheme.RarityColor(instance.Rarity));
         name.TooltipText = instance.Template.Description;
         text.AddChild(name);
+
+        // A price that moved must say why it moved — the same rule the standing caption follows. The
+        // full line-by-line breakdown is 38U's; this is the marker 38F owes, and without it a payout
+        // 25% above the shop across the square reads as one of the two being mispriced.
+        if (specialty)
+        {
+            var trade = new HBoxContainer();
+            trade.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+            trade.AddChild(UiTheme.Chip(Loc.T("shop.specialty"), UiTheme.Accent));
+            text.AddChild(trade);
+        }
 
         if (instance.HasAffixes)
         {

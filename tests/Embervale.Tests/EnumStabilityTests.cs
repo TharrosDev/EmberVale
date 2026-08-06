@@ -235,6 +235,7 @@ public class EnumStabilityTests
         Assert.Equal(6, (int)DialogueEffect.DismissCompanion);
         Assert.Equal(7, (int)DialogueEffect.AddCompanionLoyalty);
         Assert.Equal(8, (int)DialogueEffect.LearnSpell);
+        Assert.Equal(9, (int)DialogueEffect.OpenShop);
     }
 
     [Fact]

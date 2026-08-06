@@ -103,6 +103,7 @@ public static class ContentValidator
         ValidateEnemyArchetypes(issues);
         ValidateBosses(issues);
         ValidateProperties(issues);
+        ValidateItemTags(issues);
         ValidateShops(issues);
         ValidateServices(issues);
         ValidatePlaceables(issues);
@@ -638,6 +639,30 @@ public static class ContentValidator
     /// validator does not scan — so a mistyped one is invisible here and shows in game as a merchant
     /// with no prompt at all. Same blind spot as <c>PropertyStorageComponent.PropertyId</c>.
     /// </summary>
+    /// <summary>
+    /// Every item's trade tags are words <see cref="TradeTags"/> knows (Phase 38F). A typo here is the
+    /// worst kind of silent: the item is not rejected by anything, it simply stops matching the merchant
+    /// who was meant to buy it, and the symptom is one shop refusing one item with a straight face.
+    ///
+    /// An item with <em>no</em> tags is deliberately legal — every merchant takes it. That is the
+    /// fail-open rule, not an oversight, so there is no "untagged item" issue here.
+    /// </summary>
+    private static void ValidateItemTags(List<string> issues)
+    {
+        foreach (KeyValuePair<string, ItemResource> entry in ItemDatabase.All)
+        {
+            ItemResource item = entry.Value;
+            foreach (string tag in item.TagList())
+            {
+                if (!TradeTags.IsKnown(tag))
+                {
+                    issues.Add($"item '{item.Id}' carries unknown trade tag '{tag}' — it would never " +
+                        "match a merchant's trade");
+                }
+            }
+        }
+    }
+
     private static void ValidateShops(List<string> issues)
     {
         foreach (ShopResource shop in ShopDatabase.All)
@@ -696,6 +721,8 @@ public static class ContentValidator
             {
                 issues.Add($"shop '{id}' pays nothing when selling (sell fraction {shop.SellFraction})");
             }
+
+            ValidateShopTrade(shop, issues);
 
             if (shop.FactionId.Length > 0 && FactionDatabase.Get(shop.FactionId) == null)
             {
@@ -826,6 +853,60 @@ public static class ContentValidator
                 }
 
                 break;
+        }
+    }
+
+    /// <summary>
+    /// A shop's trade: which tags it buys, which it specialises in, and whether the spread survives the
+    /// specialty premium (Phase 38F). Every failure here is well-formed data that reads in game as the
+    /// feature being broken rather than as an authoring mistake.
+    /// </summary>
+    private static void ValidateShopTrade(ShopResource shop, List<string> issues)
+    {
+        string id = shop.Id;
+        List<string> accepted = shop.AcceptedTagList();
+        List<string> specialties = shop.SpecialtyList();
+
+        foreach (string tag in accepted)
+        {
+            if (!TradeTags.IsKnown(tag))
+            {
+                issues.Add($"shop '{id}' accepts unknown trade tag '{tag}' — nothing carries it, so the " +
+                    "list silently narrows instead of widening");
+            }
+        }
+
+        foreach (string tag in specialties)
+        {
+            if (!TradeTags.IsKnown(tag))
+            {
+                issues.Add($"shop '{id}' specialises in unknown trade tag '{tag}' — the premium would " +
+                    "never apply to anything");
+            }
+
+            // A specialist who refuses her own specialty is well-formed and incoherent: the row is
+            // greyed out with a refusal that names the very trade it is refusing.
+            if (accepted.Count > 0 && !accepted.Contains(tag))
+            {
+                issues.Add($"shop '{id}' specialises in '{tag}' but does not accept it — the premium " +
+                    "sits behind a refusal");
+            }
+        }
+
+        // The clamps in ShopPricing make the specialty premium incapable of inverting the spread, but
+        // not incapable of closing it: sell == buy is frictionless churn rather than a money printer,
+        // and it is invisible until a player notices they can round-trip an item for nothing. So the
+        // widest possible sell is held against the narrowest possible buy, with room to spare.
+        const float Margin = 1.25f;
+        float widestSell = shop.SellFraction * ShopPricing.SpecialtySellBonus;
+        float narrowestBuy = ShopPricing.MarkupFor(
+            shop.BuyMarkup, Factions.ReputationTier.Allied, specialty: true);
+
+        if (widestSell * Margin > narrowestBuy)
+        {
+            issues.Add($"shop '{id}' has too thin a spread once the specialty premium applies: it could " +
+                $"pay {widestSell:0.00}x an item's value while charging as little as {narrowestBuy:0.00}x " +
+                "for it — buying and selling back would cost the player almost nothing");
         }
     }
 
@@ -1519,6 +1600,20 @@ public static class ContentValidator
                     if (choice.Effect == DialogueEffect.LearnSpell && SpellDatabase.Get(choice.EffectArg) == null)
                     {
                         issues.Add($"dialogue '{dialogue.Id}' LearnSpell effect references unknown spell '{choice.EffectArg}'");
+                    }
+
+                    // 38E: the first shop id anywhere the validator can see. The same typo on a
+                    // VendorComponent.ShopId in a .tscn gives no prompt at all, because .tscn is not scanned.
+                    if (choice.Effect == DialogueEffect.OpenShop && ShopDatabase.Get(choice.EffectArg) == null)
+                    {
+                        issues.Add($"dialogue '{dialogue.Id}' OpenShop effect references unknown shop '{choice.EffectArg}'");
+                    }
+
+                    // A shop choice with a Goto leaves the conversation open behind the vendor window, so
+                    // closing the shop drops the player back into a dialogue they thought they had left.
+                    if (choice.Effect == DialogueEffect.OpenShop && !string.IsNullOrEmpty(choice.Goto))
+                    {
+                        issues.Add($"dialogue '{dialogue.Id}' OpenShop choice must end the conversation but points at '{choice.Goto}'");
                     }
 
                     // Corruption-typed conditions/effects take an integer threshold/amount.

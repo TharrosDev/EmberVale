@@ -13,3 +13,4 @@ MaxStack = 5
 Weight = 9.0
 Value = 45
 TemplateId = "prop.decor.brazier"
+TradeTags = Array[String](["furnishing"])

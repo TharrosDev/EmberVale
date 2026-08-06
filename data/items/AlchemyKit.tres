@@ -13,3 +13,4 @@ MaxStack = 5
 Weight = 6.0
 Value = 180
 TemplateId = "prop.station.alchemy"
+TradeTags = Array[String](["tool"])

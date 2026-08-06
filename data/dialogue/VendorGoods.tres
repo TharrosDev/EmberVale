@@ -1,0 +1,66 @@
+[gd_resource type="Resource" script_class="DialogueResource" format=3 uid="uid://cmbrvldlgvndr"]
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+; Aldreth (Phase 38E), replacing dialogue.vendor_stub — one node of hard-coded English apologising for
+; there being nothing to do. There is something to do now.
+;
+; The trade choice carries Effect = 9 (OpenShop) and no Goto: the conversation ends on that choice and the
+; vendor window takes its place. A Goto here would leave this conversation open behind the shop, and
+; closing the shop would drop the player back into it.
+;
+; The road_talk node is the first commerce-as-worldbuilding beat in the game. It says what the economy is
+; going to say for the rest of Phase 38 — the roads are thinning, the caravans are late — so that when
+; 38J lands travelling merchants and 38T lands shortages, the player has already been told the world works
+; that way by a man behind a counter rather than by a tooltip.
+
+[sub_resource type="Resource" id="ch_trade"]
+script = ExtResource("3_choice")
+Text = "dlg.vendor_goods.c_trade"
+Effect = 9
+EffectArg = "shop.ember_crown.goods"
+
+[sub_resource type="Resource" id="ch_roads"]
+script = ExtResource("3_choice")
+Text = "dlg.vendor_goods.c_roads"
+Goto = "road_talk"
+
+[sub_resource type="Resource" id="ch_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.vendor_goods.c_bye"
+
+[sub_resource type="Resource" id="ch_roads_trade"]
+script = ExtResource("3_choice")
+Text = "dlg.vendor_goods.c_roads_trade"
+Effect = 9
+EffectArg = "shop.ember_crown.goods"
+
+[sub_resource type="Resource" id="ch_roads_back"]
+script = ExtResource("3_choice")
+Text = "dlg.vendor_goods.c_roads_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_roads_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.vendor_goods.c_roads_bye"
+
+[sub_resource type="Resource" id="node_root"]
+script = ExtResource("2_node")
+Id = "root"
+Text = "dlg.vendor_goods.root"
+Choices = Array[Resource]([SubResource("ch_trade"), SubResource("ch_roads"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_road_talk"]
+script = ExtResource("2_node")
+Id = "road_talk"
+Text = "dlg.vendor_goods.road_talk"
+Choices = Array[Resource]([SubResource("ch_roads_trade"), SubResource("ch_roads_back"), SubResource("ch_roads_bye")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "dialogue.vendor_goods"
+SpeakerName = "dlg.vendor_goods.speaker"
+StartNodeId = "root"
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_road_talk")])

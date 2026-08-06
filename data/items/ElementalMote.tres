@@ -12,3 +12,4 @@ Rarity = 1
 MaxStack = 50
 Weight = 0.1
 Value = 14
+TradeTags = Array[String](["reagent", "arcane"])

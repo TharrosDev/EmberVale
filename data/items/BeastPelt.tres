@@ -12,3 +12,4 @@ Rarity = 0
 MaxStack = 50
 Weight = 0.4
 Value = 5
+TradeTags = Array[String](["pelt", "leather"])
