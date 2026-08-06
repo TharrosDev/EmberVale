@@ -44,7 +44,7 @@ public partial class CombatFeedbackOverlay : CanvasLayer
         _word.SetAnchorsPreset(Control.LayoutPreset.Center);
         _word.GrowHorizontal = Control.GrowDirection.Both;
         _word.GrowVertical = Control.GrowDirection.Both;
-        _word.AddThemeFontSizeOverride("font_size", 40);
+        UiTheme.ApplyType(_word, UiTheme.FontRole.Display, UiTheme.ShoutFontSize);
         _word.Position = new Vector2(0f, -120f);
         AddChild(_word);
 

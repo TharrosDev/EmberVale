@@ -59,8 +59,7 @@ public partial class CharacterCreator : CanvasLayer
 
     private void Build()
     {
-        var backdrop = new ColorRect { Color = new Color(0.02f, 0.02f, 0.04f, 0.92f) };
-        backdrop.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        var backdrop = UiTheme.Scrim(0.92f);
         backdrop.MouseFilter = Control.MouseFilterEnum.Stop;
         AddChild(backdrop);
 

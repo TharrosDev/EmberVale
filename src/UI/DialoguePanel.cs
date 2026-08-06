@@ -128,9 +128,9 @@ public partial class DialoguePanel : UiPanel
 
         _list.AddChild(UiTheme.Header(Loc.T(_session.CurrentSpeaker())));
 
-        Label line = UiTheme.Body(Loc.T(node.Text));
-        line.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        line.AddThemeFontSizeOverride("font_size", 15);
+        // The one place in the game with a paragraph to read, so it takes the book serif
+        // (37.5B). Prose already wraps; the old off-scale 15 px override is gone with it.
+        Label line = UiTheme.Prose(Loc.T(node.Text));
         _list.AddChild(line);
 
         _list.AddChild(new HSeparator());

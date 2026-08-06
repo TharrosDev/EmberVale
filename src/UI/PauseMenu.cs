@@ -58,8 +58,7 @@ public partial class PauseMenu : CanvasLayer
 
 	private void Build()
 	{
-		_backdrop = new ColorRect { Color = new Color(0f, 0f, 0f, 0.55f) };
-		_backdrop.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+		_backdrop = UiTheme.Scrim(0.55f);
 		_backdrop.MouseFilter = Control.MouseFilterEnum.Stop;
 		AddChild(_backdrop);
 

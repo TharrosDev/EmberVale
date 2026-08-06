@@ -180,7 +180,7 @@ public partial class MapView : Control
     public override void _Draw()
     {
         // Backdrop so the plot area reads as a distinct surface within the panel.
-        DrawRect(new Rect2(Vector2.Zero, Size), new Color(0.04f, 0.05f, 0.07f, 0.9f));
+        DrawRect(new Rect2(Vector2.Zero, Size), UiTheme.WellBg);
 
         if (Service == null || !Service.HasAnyDiscovery)
         {

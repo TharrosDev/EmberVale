@@ -44,8 +44,7 @@ public partial class MainMenu : CanvasLayer
 
     private void Build()
     {
-        var backdrop = new ColorRect { Color = new Color(0.03f, 0.03f, 0.05f, 1f) };
-        backdrop.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        var backdrop = UiTheme.Scrim(1f);
         backdrop.MouseFilter = Control.MouseFilterEnum.Stop;
         AddChild(backdrop);
 
@@ -64,9 +63,8 @@ public partial class MainMenu : CanvasLayer
         col.AddThemeConstantOverride("separation", 8);
         pad.AddChild(col);
 
-        Label title = UiTheme.Header(Loc.T("menu.title"));
+        Label title = UiTheme.Display(Loc.T("menu.title"));
         title.HorizontalAlignment = HorizontalAlignment.Center;
-        title.AddThemeFontSizeOverride("font_size", 28);
         col.AddChild(title);
 
         Label subtitle = UiTheme.Body(Loc.T("menu.subtitle"), UiTheme.Dim);

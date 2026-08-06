@@ -1,4 +1,5 @@
 using Embervale.Combat;
+using Embervale.Factions;
 using Embervale.Items;
 using Embervale.UI;
 using Godot;
@@ -67,6 +68,20 @@ public class UiContrastTests
         { "Necrotic on CardBg", UiTheme.SchoolColor(DamageType.Necrotic), UiTheme.CardBg },
         { "Necrotic on WellBg (chip)", UiTheme.SchoolColor(DamageType.Necrotic), UiTheme.WellBg },
         { "Fire on WellBg (chip)", UiTheme.SchoolColor(DamageType.Fire), UiTheme.WellBg },
+
+        // --- Reputation standings (37.5B) ----------------------------------------
+        // Rendered as text in the character screen's REPUTATION section. The old ramp's Hated
+        // (0.85, 0.25, 0.25) sat at ~3.6:1 on PanelBg — the loudest standing in the game was the
+        // one hardest to read.
+        { "Hated on PanelBg", ReputationTiers.Color(ReputationTier.Hated), UiTheme.PanelBg },
+        { "Hostile on PanelBg", ReputationTiers.Color(ReputationTier.Hostile), UiTheme.PanelBg },
+        { "Unfriendly on PanelBg", ReputationTiers.Color(ReputationTier.Unfriendly), UiTheme.PanelBg },
+        { "Neutral standing on PanelBg", ReputationTiers.Color(ReputationTier.Neutral), UiTheme.PanelBg },
+        { "Friendly on PanelBg", ReputationTiers.Color(ReputationTier.Friendly), UiTheme.PanelBg },
+        { "Honored on PanelBg", ReputationTiers.Color(ReputationTier.Honored), UiTheme.PanelBg },
+        { "Allied on PanelBg", ReputationTiers.Color(ReputationTier.Allied), UiTheme.PanelBg },
+        { "Hated on CardBg", ReputationTiers.Color(ReputationTier.Hated), UiTheme.CardBg },
+        { "Hostile on CardBg", ReputationTiers.Color(ReputationTier.Hostile), UiTheme.CardBg },
 
         // --- Quest state and disposition -----------------------------------------
         { "QuestSide on PanelBg", UiTheme.QuestSide, UiTheme.PanelBg },

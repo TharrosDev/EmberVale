@@ -3088,11 +3088,43 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
   - `UiOrnament` holds the decorative layer and the **ornament budget**: decoration scales with
     the rarity of the *moment* (menu, boss frame, spellbook, Legendary drop), never with the
     importance of the widget. Rows, toggles and objectives get none, forever.
-- [ ] **37.5B — De-drift, then the HUD** `[F]`
-  - **Done when:** no `StyleBoxFlat`, colour literal or font-size override survives outside
-    `UiTheme` (~104 at audit: `GameHud` 11, `CombatFeedbackOverlay` 8, `NarrationSequence` 4,
-    `PauseMenu` 3, plus `DevConsole`/`PlacementDirector`/`CombatFeedbackFx`), and the HUD is
-    rebuilt on the new language. Split `BossFrame` and `Nameplate` out of `GameHud` (975 lines).
+- [x] **37.5B — De-drift, then the HUD** `[F]` ✅
+  - ⚠️ **The plan's "~104 drift sites" was a bad count** and the correction is the useful part.
+    Most `new Color(1f, 1f, 1f, a)` hits are the **alpha-fade idiom** — the ordinary way to fade
+    a Godot control — not palette literals; rewriting them into tokens would have been strictly
+    worse. Many more were **3D world colours** (`SkyController`, `ImpactEffect`, the factories)
+    which answer to ART_STYLE, not to UI tokens. Genuine UI drift was **~12 sites**. Grep counts
+    are not audits.
+  - Two real defects surfaced from those 12:
+    - **Seven hand-rolled scrims** across the shell at four different values, and **six were
+      blue-black** (`0.02, 0.02, 0.04`) — the one thing UI_STYLE §1 rule 1 forbids. Now
+      `UiTheme.Scrim(opacity)`, warm charcoal, one knob.
+    - **Three off-scale font sizes**: 40 (combat shout), 28 (menu title), 15 (dialogue body).
+      The 40 earned a real token (`ShoutFontSize`); the other two collapsed onto the scale.
+  - ⚠️ **Fixed a bug 37.5A introduced.** 37.5A added `UiTheme.SchoolColor` with its own values
+    without checking that `SpellSchools.Color` had existed since Phase 12 and drove every
+    projectile, flash and particle. Two authorities, different values. `SpellSchools` is now the
+    single one and `UiTheme` delegates — the same rule 37.5A had *written down* for rarity and
+    then broken for schools. `ReputationTiers.Color` was retuned and pinned in the same pass.
+  - Split `BossFrame` (240 lines) and `Nameplate` (115) out of `GameHud` (975 → 812). Both own
+    their own state; `BossFrame` also took its three event subscriptions and its update loop, so
+    `GameHud` no longer forwards to an `UpdateBoss` it does not otherwise touch.
+  - The boss frame is the one HUD element spending ornament: corner brass, the display face, and
+    **phase pips** (current phase hot, cleared phases brass, unreached engraved) beside the
+    phase line rather than instead of it.
+  - `Nameplate` gained a **disposition spine** — hostile/neutral/friendly off the combat teams.
+    The HUD had never shown it, which stopped being acceptable at Phase 34.5, when the Frostfang
+    clans and the Ancient dragon made "is this thing hostile?" unanswerable from the model.
+  - ⚠️ **Caught a 37.5A regression before it shipped:** status chips were built from
+    `UiTheme.Panel()`, so after 37.5A each one carried a 2 px brass rule *and its own grain
+    `ShaderMaterial`* — five effects meant five framed screens' worth of chrome for five words.
+    They are `UiTheme.Chip` now. Watch for this pattern wherever a small widget reused `Panel()`
+    as a generic box; 37.5C and 37.5E will hit it again.
+  - Quest tracker: objective bars under any objective counting past one.
+    ⚠️ **`QuestResource` has no main/side field.** A first pass tinted by "has a prerequisite",
+    which is invented *and backwards* — a prerequisite chains a quest, it does not demote it.
+    The tracked quest simply takes `QuestMain`. 37.5E needs the real distinction for the log's
+    Main/Side split and will have to add the field.
 - [ ] **37.5C — Character sheet, inventory, equipment, storage, crafting** `[F]`
   - **Done when:** inventory is an icon-slot grid with rarity frames and hover stat deltas, and
     storage/crafting share its vocabulary. Grids need explicit `FocusNeighbor*` or a d-pad walks
