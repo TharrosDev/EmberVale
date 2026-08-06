@@ -72,14 +72,30 @@ public static class ReputationTiers
         _ => "Allied",
     };
 
+    /// <summary>
+    /// The standing ramp, retuned to the world's palette in Phase 37.5B and pinned to WCAG AA by
+    /// <c>UiContrastTests</c> — these render as text in the character screen's REPUTATION section.
+    /// This is the third domain colour authority beside <c>ItemRarities.Color</c> and
+    /// <c>SpellSchools.Color</c>; the pattern is the same, and <c>UiTheme</c> reads from it rather
+    /// than keeping a copy.
+    ///
+    /// It is a **diverging** ramp (hostile red ← bone → allied blue), not an ordered one, and
+    /// deliberately does not carry the strict luminance ordering the rarity ramp does. It does not
+    /// need to: a standing always renders beside its own tier name and value ("Friendly +40"), so
+    /// the colour is already redundant. Rarity on a grid slot often has no such words, which is
+    /// why that ramp has to work with hue removed and this one does not.
+    ///
+    /// <c>Hated</c> exceeds the usual saturation ceiling on the same grounds <c>AccentHot</c> does:
+    /// it is an alarm state, and the whole point of one is that it is louder than its neighbours.
+    /// </summary>
     public static Color Color(ReputationTier tier) => tier switch
     {
-        ReputationTier.Hated => new Color(0.85f, 0.25f, 0.25f),
-        ReputationTier.Hostile => new Color(0.86f, 0.42f, 0.34f),
-        ReputationTier.Unfriendly => new Color(0.82f, 0.62f, 0.38f),
-        ReputationTier.Neutral => new Color(0.78f, 0.80f, 0.84f),
-        ReputationTier.Friendly => new Color(0.55f, 0.78f, 0.52f),
-        ReputationTier.Honored => new Color(0.40f, 0.78f, 0.62f),
-        _ => new Color(0.45f, 0.70f, 0.95f),
+        ReputationTier.Hated => new Color(0.90f, 0.38f, 0.30f),      // hotter than Bad — an alarm
+        ReputationTier.Hostile => new Color(0.82f, 0.42f, 0.36f),    // UiTheme.Bad
+        ReputationTier.Unfriendly => new Color(0.82f, 0.70f, 0.52f), // amber caution
+        ReputationTier.Neutral => new Color(0.74f, 0.71f, 0.60f),    // UiTheme.Neutral — bone
+        ReputationTier.Friendly => new Color(0.58f, 0.78f, 0.54f),
+        ReputationTier.Honored => new Color(0.46f, 0.80f, 0.70f),    // teal, to part from Friendly
+        _ => new Color(0.62f, 0.76f, 0.92f),                          // Allied — the cold end
     };
 }

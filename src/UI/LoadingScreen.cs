@@ -33,8 +33,7 @@ public partial class LoadingScreen : CanvasLayer
 
 	private void Build()
 	{
-		_backdrop = new ColorRect { Color = new Color(0.02f, 0.02f, 0.03f, 1f) };
-		_backdrop.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+		_backdrop = UiTheme.Scrim(1f);
 		_backdrop.MouseFilter = Control.MouseFilterEnum.Stop;
 		AddChild(_backdrop);
 

@@ -83,10 +83,7 @@ public partial class GameHud : CanvasLayer
     private Label _bannerText = null!;
     private Label _bannerTimer = null!;
 
-    private PanelContainer _namePanel = null!;
-    private Label _nameText = null!;
-    private JuicedBar _nameBar = null!;
-    private IEntity? _lastFocus;
+    private Nameplate _nameplate = null!;
 
     private PanelContainer _promptPanel = null!;
     private Label _promptText = null!;
@@ -102,18 +99,8 @@ public partial class GameHud : CanvasLayer
     private float _targetVignetteAlpha;
     private const float VignetteFadeSpeed = 0.5f; // alpha units per second
 
-    // Boss fight UI (Phase 28C): a top-centre healthbar + a transient title/defeat message, plus a
-    // screen fade for the defeat beat. Driven by the boss encounter events; HP polled each frame.
-    private PanelContainer _bossPanel = null!;
-    private Label _bossName = null!;
-    private JuicedBar _bossBar = null!;
-    private Label _bossPhase = null!;
-    private Label _bossMsg = null!;
-    private ColorRect _bossFade = null!;
-    private IEntity? _boss;
-    private ulong _bossMsgUntil;
-    private ulong _bossFadeUntil;
-    private const ulong BossFadeMs = 1400;
+    // Boss fight UI (Phase 28C): owns its own events and update loop since 37.5B — see BossFrame.
+    private BossFrame _bossFrame = null!;
 
     public void SetPlayer(IEntity? player)
     {
@@ -151,9 +138,6 @@ public partial class GameHud : CanvasLayer
         EventBus.Instance?.Subscribe<LeveledUpEvent>(OnLeveledUp);
         EventBus.Instance?.Subscribe<InputDeviceChangedEvent>(OnInputDeviceChanged);
         EventBus.Instance?.Subscribe<CorruptionTierChangedEvent>(OnCorruptionTierChanged);
-        EventBus.Instance?.Subscribe<BossEncounterStartedEvent>(OnBossStarted);
-        EventBus.Instance?.Subscribe<BossPhaseChangedEvent>(OnBossPhase);
-        EventBus.Instance?.Subscribe<EntityDiedEvent>(OnBossDied);
     }
 
     public override void _ExitTree()
@@ -162,9 +146,6 @@ public partial class GameHud : CanvasLayer
         EventBus.Instance?.Unsubscribe<LeveledUpEvent>(OnLeveledUp);
         EventBus.Instance?.Unsubscribe<InputDeviceChangedEvent>(OnInputDeviceChanged);
         EventBus.Instance?.Unsubscribe<CorruptionTierChangedEvent>(OnCorruptionTierChanged);
-        EventBus.Instance?.Unsubscribe<BossEncounterStartedEvent>(OnBossStarted);
-        EventBus.Instance?.Unsubscribe<BossPhaseChangedEvent>(OnBossPhase);
-        EventBus.Instance?.Unsubscribe<EntityDiedEvent>(OnBossDied);
     }
 
     // --- Construction -------------------------------------------------------
@@ -209,7 +190,7 @@ public partial class GameHud : CanvasLayer
 
         // Charge/channel meter (29.5G): fills while a charged cast is held, pinned full while
         // channeling, hidden otherwise. Modulated to the active spell's school colour.
-        _castBar = UiTheme.Bar(new Color(0.9f, 0.9f, 0.9f));
+        _castBar = UiTheme.Bar(UiTheme.ArcaneSilver);
         _castBar.Visible = false;
         col.AddChild(_castBar);
 
@@ -284,20 +265,8 @@ public partial class GameHud : CanvasLayer
 
     private void BuildNameplate()
     {
-        _namePanel = Ignore(UiTheme.Panel());
-        _namePanel.Visible = false;
-        _namePanel.CustomMinimumSize = new Vector2(190, 0);
-        _namePanel.SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter;
-        _layout.TopCenter.AddChild(_namePanel);
-
-        var col = new VBoxContainer();
-        col.AddThemeConstantOverride("separation", 3);
-        _nameText = UiTheme.Body("");
-        _nameText.HorizontalAlignment = HorizontalAlignment.Center;
-        col.AddChild(_nameText);
-        _nameBar = JuicedBar.Create(UiTheme.Health, 170f);
-        col.AddChild(_nameBar);
-        WrapPadded(_namePanel, col);
+        _nameplate = new Nameplate { Name = "Nameplate" };
+        _layout.TopCenter.AddChild(_nameplate);
     }
 
     /// <summary>A diamond marker (Phase 29H) tracked onto the locked-on target's screen position.</summary>
@@ -312,7 +281,7 @@ public partial class GameHud : CanvasLayer
             VerticalAlignment = VerticalAlignment.Center,
             MouseFilter = Control.MouseFilterEnum.Ignore,
         };
-        _lockReticle.AddThemeFontSizeOverride("font_size", 22);
+        UiTheme.ApplyType(_lockReticle, UiTheme.FontRole.Interface, UiTheme.TitleFontSize);
         _lockReticle.AddThemeColorOverride("font_color", UiTheme.Accent);
         _layout.Overlay.AddChild(_lockReticle);
     }
@@ -328,7 +297,7 @@ public partial class GameHud : CanvasLayer
             VerticalAlignment = VerticalAlignment.Center,
             MouseFilter = Control.MouseFilterEnum.Ignore,
         };
-        _levelUp.AddThemeFontSizeOverride("font_size", UiTheme.DisplayFontSize);
+        UiTheme.ApplyType(_levelUp, UiTheme.FontRole.Display, UiTheme.DisplayFontSize);
         _levelUp.AddThemeColorOverride("font_color", UiTheme.Accent);
         _levelUp.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         _layout.Overlay.AddChild(_levelUp);
@@ -478,7 +447,6 @@ public partial class GameHud : CanvasLayer
         UpdateFocus();
         UpdateVignette(delta);
         UpdateProgressionPops(delta);
-        UpdateBoss();
     }
 
     private void UpdateVignette(double delta)
@@ -612,21 +580,14 @@ public partial class GameHud : CanvasLayer
 
         foreach (StatusEffect effect in effects.ActiveEffects)
         {
-            PanelContainer chip = Ignore(UiTheme.Panel());
-            var row = new HBoxContainer();
-            row.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
-
             // Buffs read as dead-green, afflictions in their school's colour.
             Color tint = effect.Definition.IsBeneficial ? UiTheme.Good : SpellSchools.Color(effect.Definition.School);
-            row.AddChild(UiTheme.Caption(effect.Definition.DisplayName, tint));
 
-            Label time = UiTheme.Caption("");
-            row.AddChild(time);
+            // A Chip, not a Panel (37.5B). These were full framed panels, which after 37.5A gave
+            // every status effect a 2 px brass rule and its own grain ShaderMaterial — a five-chip
+            // row was five framed screens' worth of chrome for five words of text.
+            PanelContainer chip = UiTheme.Chip(effect.Definition.DisplayName, tint, out Label time);
             _statusChips.Add((effect, time));
-
-            MarginContainer pad = UiTheme.Padding(UiTheme.SpaceXs);
-            pad.AddChild(row);
-            chip.AddChild(pad);
             _statusRow.AddChild(chip);
         }
     }
@@ -698,16 +659,34 @@ public partial class GameHud : CanvasLayer
             child.QueueFree();
         }
 
-        _questList.AddChild(UiTheme.Body(Loc.T(progress.Quest.Title), UiTheme.Accent));
+        // The tracked quest takes QuestMain — it is the player's current focus, which is the only
+        // priority claim the data actually supports. `QuestResource` has **no main/side field**
+        // (`PrerequisiteQuestId` chains a quest, it does not demote it), so a tracker that tinted
+        // by "has a prerequisite" would be inventing a distinction and getting it backwards.
+        // 37.5E needs the real one for the quest log's Main/Side split and will have to add it.
+        _questList.AddChild(UiTheme.Body(Loc.T(progress.Quest.Title), UiTheme.QuestMain));
 
         var objectives = progress.Quest.ObjectiveList();
         for (int i = 0; i < objectives.Count; i++)
         {
-            bool done = progress.Counts[i] >= objectives[i].RequiredCount;
-            string mark = done ? "✓" : "•";
+            int required = Mathf.Max(1, objectives[i].RequiredCount);
+            int have = progress.Counts[i];
+            bool done = have >= objectives[i].RequiredCount;
+
             _questList.AddChild(UiTheme.Caption(
-                $"  {mark} {Loc.T(objectives[i].ShortLabel())}  {progress.Counts[i]}/{objectives[i].RequiredCount}",
-                done ? UiTheme.Good : UiTheme.Text));
+                $"  {(done ? "✓" : "•")} {Loc.T(objectives[i].ShortLabel())}  {have}/{objectives[i].RequiredCount}",
+                done ? UiTheme.QuestComplete : UiTheme.Text));
+
+            // A bar under any objective that counts to more than one (37.5B). "3/10 pelts" is a
+            // number you have to read; a bar is a glance. Pointless for a 1-of-1 objective, so it
+            // is not drawn there.
+            if (objectives[i].RequiredCount > 1)
+            {
+                ProgressBar track = UiTheme.Bar(done ? UiTheme.QuestComplete : UiTheme.Accent, 186f);
+                track.CustomMinimumSize = new Vector2(186f, 3f);
+                track.Value = Mathf.Clamp(have / (double)required, 0d, 1d);
+                _questList.AddChild(track);
+            }
         }
     }
 
@@ -744,33 +723,9 @@ public partial class GameHud : CanvasLayer
         UpdateLockReticle(locked);
         IEntity? focus = (locked is Node lockNode && IsInstanceValid(lockNode)) ? locked : controller?.FocusedEntity;
 
-        // Nameplate for an aimed-at damageable that isn't the player. Guard instance validity
-        // first: a focused target can be freed (despawn, save/load rebuild) while its reference
-        // lingers, and dereferencing the disposed node would throw every frame.
-        if (focus is Node focusNode && IsInstanceValid(focusNode) && !ReferenceEquals(focus, _player) &&
-            focus.GetComponent<StatsComponent>() is { } stats)
-        {
-            _nameText.Text = focus.DisplayName;
-
-            // Snap when the aimed-at subject changes so the drain lag never animates across targets.
-            double health = stats.GetNormalized(StatType.Health);
-            if (!ReferenceEquals(focus, _lastFocus))
-            {
-                _lastFocus = focus;
-                _nameBar.Snap(health);
-            }
-            else
-            {
-                _nameBar.SetTarget(health);
-            }
-
-            _namePanel.Visible = true;
-        }
-        else
-        {
-            _lastFocus = null;
-            _namePanel.Visible = false;
-        }
+        // Nameplate for an aimed-at damageable that isn't the player. The widget owns the
+        // validity guard, the snap-on-target-change and the disposition tint (37.5B).
+        _nameplate.Show(focus, _player);
 
         // Interaction prompt for an aimed-at interactable.
         string? prompt = controller?.FocusPrompt;
@@ -817,8 +772,9 @@ public partial class GameHud : CanvasLayer
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", 8);
 
-        Label cap = UiTheme.Body(caption);
+        Label cap = UiTheme.Caption(caption);
         cap.CustomMinimumSize = new Vector2(34, 0);
+        cap.VerticalAlignment = VerticalAlignment.Center;
         row.AddChild(cap);
 
         JuicedBar bar = JuicedBar.Create(fill);
@@ -842,119 +798,14 @@ public partial class GameHud : CanvasLayer
 
     // --- Boss fight UI (Phase 28C) ------------------------------------------
 
+    /// <summary>Builds the boss frame and hands it the overlay slot its full-screen defeat fade
+    /// needs. Everything else about the encounter — the events, the health poll, the fade curve —
+    /// lives in <see cref="BossFrame"/> since 37.5B.</summary>
     private void BuildBossBar()
     {
-        // Full-screen black fade for the defeat beat — built before the panel so the boss text draws
-        // over it; alpha-pulsed manually (a Tween would be slowed by the defeat's Engine.TimeScale dip).
-        _bossFade = Ignore(new ColorRect { Color = new Color(0f, 0f, 0f), SelfModulate = new Color(1f, 1f, 1f, 0f) });
-        _bossFade.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-        _bossFade.Visible = false;
-        _layout.Overlay.AddChild(_bossFade);
-
-        _bossPanel = Ignore(UiTheme.Panel());
-        _bossPanel.Visible = false;
-        _bossPanel.SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter;
-        _layout.TopCenter.AddChild(_bossPanel);
-
-        var col = new VBoxContainer();
-        _bossName = UiTheme.Header(Loc.T("boss.name"));
-        _bossName.HorizontalAlignment = HorizontalAlignment.Center;
-        col.AddChild(_bossName);
-
-        _bossBar = JuicedBar.Create(UiTheme.Health, 320f);
-        col.AddChild(_bossBar);
-
-        _bossPhase = UiTheme.Body("", UiTheme.Dim);
-        _bossPhase.HorizontalAlignment = HorizontalAlignment.Center;
-        col.AddChild(_bossPhase);
-
-        _bossMsg = UiTheme.Body("", UiTheme.Accent);
-        _bossMsg.HorizontalAlignment = HorizontalAlignment.Center;
-        _bossMsg.Visible = false;
-        col.AddChild(_bossMsg);
-
-        WrapPadded(_bossPanel, col);
-    }
-
-    private void OnBossStarted(BossEncounterStartedEvent e)
-    {
-        _boss = e.Boss;
-        _bossBar.Snap(1d);
-        _bossName.Text = e.DisplayName;
-        _bossPhase.Text = Loc.TF("boss.phase", 1, e.TotalPhases);
-        _bossName.Visible = true;
-        _bossBar.Visible = true;
-        _bossPhase.Visible = true;
-        _bossPanel.Visible = true;
-        ShowBossMessage(Loc.T("boss.intro"), 2500);
-    }
-
-    private void OnBossPhase(BossPhaseChangedEvent e) =>
-        _bossPhase.Text = Loc.TF("boss.phase", e.Phase, e.TotalPhases);
-
-    private void OnBossDied(EntityDiedEvent e)
-    {
-        if (!ReferenceEquals(e.Entity, _boss))
-        {
-            return;
-        }
-
-        _boss = null;
-        _bossBar.Visible = false;
-        _bossName.Visible = false;
-        _bossPhase.Visible = false;
-        ShowBossMessage(Loc.T("boss.defeat"), 3000);
-        _bossFade.Visible = true;
-        _bossFadeUntil = Time.GetTicksMsec() + BossFadeMs;
-    }
-
-    private void ShowBossMessage(string text, ulong durationMs)
-    {
-        _bossMsg.Text = text;
-        _bossMsg.Visible = true;
-        _bossMsgUntil = Time.GetTicksMsec() + durationMs;
-    }
-
-    private void UpdateBoss()
-    {
-        ulong now = Time.GetTicksMsec();
-
-        if (_boss is Node node && !IsInstanceValid(node))
-        {
-            // The boss left the world without dying — a region transition or a load mid-fight frees
-            // it outright and raises no EntityDiedEvent, which is the only thing that cleared this
-            // panel. The bar stayed on screen at its last value for the rest of the session. No
-            // defeat beat here: nothing was defeated, so the widget simply stands down.
-            _boss = null;
-            _bossBar.Visible = false;
-            _bossName.Visible = false;
-            _bossPhase.Visible = false;
-        }
-        else if (_boss != null && _boss.TryGetComponent(out StatsComponent stats))
-        {
-            _bossBar.SetTarget(stats.GetNormalized(StatType.Health));
-        }
-
-        if (_bossMsg.Visible && now >= _bossMsgUntil)
-        {
-            _bossMsg.Visible = false;
-        }
-
-        // Defeat fade: ramp to black and back over the window (sin curve), then clear.
-        if (_bossFade.Visible)
-        {
-            float t = Mathf.Clamp(1f - (float)(_bossFadeUntil - now) / BossFadeMs, 0f, 1f);
-            _bossFade.SelfModulate = new Color(1f, 1f, 1f, Mathf.Sin(t * Mathf.Pi) * 0.7f);
-            if (now >= _bossFadeUntil)
-            {
-                _bossFade.Visible = false;
-            }
-        }
-
-        if (_boss == null && !_bossMsg.Visible && !_bossFade.Visible)
-        {
-            _bossPanel.Visible = false;
-        }
+        _bossFrame = new BossFrame { Name = "BossFrame" };
+        _bossFrame.AttachFade(_layout.Overlay);
+        _layout.TopCenter.AddChild(_bossFrame);
     }
 
     /// <summary>Wraps <paramref name="content"/> in the theme's padding and parents it under

@@ -75,6 +75,7 @@ Disabled state must always carry a second channel too: a reason string, a struck
 | `Brass` | `0.55, 0.44, 0.26` | the 2 px panel rule |
 | `BrassLit` | `0.68, 0.56, 0.34` | divider highlights, corner ornaments |
 | `Engrave` | `0.045, 0.042, 0.038 @ 0.90` | the dark groove under every bright rule |
+| `ScrimBg` | `0.035, 0.032, 0.028` | full-screen dimming behind an overlay screen |
 | `ArcaneGround` | `0.072, 0.070, 0.095 @ 0.94` | the spellbook's cold ink-violet ground |
 | `ArcaneSilver` | `0.62, 0.66, 0.74` | the spellbook's tarnished frame |
 | `GlyphLight` | `0.68, 0.74, 0.92` | rune circles, sigils, glyph light |
@@ -107,15 +108,40 @@ stock one: hue carries the flavour, luminance carries the rank.
 Colour is never the only channel — `UiTheme.RarityBorderWidth` thickens the slot frame at
 Epic and above, and rarity is always available as a word.
 
-**Magic school** — `UiTheme.SchoolColor(DamageType)`, one per school, used by the
-spellbook, spell cards, status chips and floating combat text so a school looks the same
-everywhere. `True` has no school and falls back to `Text`; nothing resists it, so it is
-not a colour the player is asked to learn.
+**Magic school** — `SpellSchools.Color(DamageType)` is the authority (`UiTheme.SchoolColor`
+delegates). It tints the projectile in flight *and* names the school in the spellbook, so the
+two cannot drift. Retuned in 37.5B off the stock saturated set: the old Necrotic failed AA at
+~2.6:1, and the old Fire was the most saturated thing in a deliberately desaturated world.
+Arcane is silver-blue rather than violet — violet is the corruption identity (§1), and arcane
+is the spellbook's own school, so it takes the glyph light.
+
+**Reputation** — `ReputationTiers.Color(ReputationTier)`, a seven-step **diverging** ramp
+(hostile red ← bone → allied blue). It deliberately carries no luminance ordering: a standing
+always renders beside its own tier name and value, so the colour is already redundant. Rarity
+on a grid slot often has no such words, which is why that ramp must work with hue removed and
+this one need not.
 
 **Quest state** — `QuestMain` (= `Accent`; the main thread is the Flamebearer thread),
 `QuestSide`, `QuestComplete` (= `Good`), `QuestFailed` (= `Bad`).
 
 **Disposition** — `Friendly` (= `Good`), `Neutral`, `Hostile` (= `Bad`).
+
+### The three domain authorities
+
+Rarity, school and reputation ramps live with their **domain**, not in `UiTheme`, and
+`UiTheme` reads from them:
+
+| Ramp | Authority | Why it lives there |
+| ---- | --------- | ------------------ |
+| Rarity | `ItemRarities.Color` (`src/Items`) | also tints the world-space drop glow and trophy stand |
+| School | `SpellSchools.Color` (`src/Magic`) | also tints projectiles, impact flashes, cast flares, status particles |
+| Reputation | `ReputationTiers.Color` (`src/Factions`) | keeps `src/Factions` free of a `src/UI` dependency |
+
+**One authority per ramp, always.** 37.5A briefly shipped a second school ramp inside
+`UiTheme` — different values from the one that had tinted projectiles since Phase 12 — which
+would have meant a firebolt that was one orange in flight and another in the spellbook. 37.5B
+deleted it. If you find yourself writing a colour switch on a domain enum, check whether that
+domain already owns one.
 
 ### Rules
 
@@ -273,8 +299,14 @@ digits.
 
 37.5A laid the foundation above. The passes that consume it:
 
-- **37.5B** pulls the ~104 hand-rolled styleboxes/colour literals/font-size overrides
-  outside `UiTheme` back into it, then rebuilds the HUD.
+- **37.5B** ✅ de-drifted the UI and rebuilt the HUD. The audit's headline number was wrong:
+  most `new Color(1,1,1,a)` hits are the **alpha-fade idiom**, not palette literals, and many
+  more were 3D world colours answering to ART_STYLE. The genuine drift was ~12 sites, and two
+  real defects fell out of it — **seven hand-rolled scrims** at four values, six of them
+  blue-black against §1 rule 1 (now `UiTheme.Scrim`), and three off-scale font sizes (40, 28,
+  15). It also split `BossFrame` and `Nameplate` out of `GameHud` (975 → 812 lines) and gave
+  the nameplate a **disposition spine**, which the HUD had never shown despite neutral-until-
+  provoked factions existing since Phase 34.5.
 - **37.5C** rebuilds the character sheet, inventory, storage and crafting onto
   `IconSlot`/`RarityFrame`/`Card`.
 - **37.5D** lifts magic out of the character sheet into `SpellbookPanel`, the one screen

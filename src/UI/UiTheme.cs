@@ -88,28 +88,10 @@ public static class UiTheme
     /// cannot look one rarity on the ground and another in the pack.</summary>
     public static Color RarityColor(ItemRarity rarity) => ItemRarities.Color(rarity);
 
-    /// <summary>
-    /// The magic school ramp, one colour per <see cref="DamageType"/>. Used by the spellbook, spell
-    /// cards, status-effect chips and floating combat text, so a school looks the same wherever it
-    /// appears.
-    ///
-    /// <c>True</c> damage has no school and falls back to <see cref="Text"/> — it is not a colour
-    /// the player is ever asked to learn, because nothing resists it.
-    /// </summary>
-    public static Color SchoolColor(DamageType school)
-    {
-        return school switch
-        {
-            DamageType.Physical => new Color(0.76f, 0.74f, 0.70f),   // bone and steel
-            DamageType.Fire => new Color(0.93f, 0.55f, 0.28f),       // ember, the AccentHot family
-            DamageType.Frost => new Color(0.58f, 0.78f, 0.88f),      // pale ice
-            DamageType.Lightning => new Color(0.86f, 0.84f, 0.52f),  // arc-white gold
-            DamageType.Arcane => new Color(0.68f, 0.74f, 0.92f),     // GlyphLight; the school of the spellbook itself
-            DamageType.Nature => new Color(0.48f, 0.74f, 0.60f),     // verdigris, pushed teal to part from Uncommon
-            DamageType.Necrotic => new Color(0.64f, 0.54f, 0.66f),   // bruised ash-violet, duller than Epic
-            _ => Text,
-        };
-    }
+    /// <summary>The magic school ramp. Delegates to <see cref="Magic.SpellSchools.Color"/>, which is
+    /// the authority — the same value tints the projectile in flight and names the school in the
+    /// spellbook, so the two can never drift apart.</summary>
+    public static Color SchoolColor(DamageType school) => Magic.SpellSchools.Color(school);
 
     // Quest state. Main is the Flamebearer thread and therefore the ember accent itself; side
     // quests get a cool bone so the two never compete in the tracker.
@@ -131,6 +113,11 @@ public static class UiTheme
     public const int HeaderFontSize = 16;
     public const int TitleFontSize = 20;
     public const int DisplayFontSize = 26;
+
+    /// <summary>The top of the scale — a word thrown across the middle of the screen (PARRY, the
+    /// combat feedback overlay). Added in 37.5B to retire a hard-coded 40; nothing but a
+    /// full-screen shout should reach for it.</summary>
+    public const int ShoutFontSize = 40;
 
     /// <summary>
     /// The seam every builder sizes text through. It returns the token unchanged today; Phase
@@ -327,6 +314,26 @@ public static class UiTheme
         return card;
     }
 
+    /// <summary>
+    /// The ground a full-screen overlay dims the world with. **Warm charcoal, not black and not
+    /// blue-black** — 37.5B found seven hand-rolled scrims across the shell (main menu, pause,
+    /// settings, save slots, character creator, loading, narration) at four different values, and
+    /// six of the seven were blue-tinted (`0.02, 0.02, 0.04`), which is the one thing UI_STYLE §1
+    /// rule 1 says a surface in this world must never be. They now come from here, so a screen
+    /// cannot invent its own again.
+    /// </summary>
+    public static readonly Color ScrimBg = new(0.035f, 0.032f, 0.028f);
+
+    /// <summary>A full-screen dimming layer. <paramref name="opacity"/> is the only knob a screen
+    /// gets: 1.0 for a screen that replaces the world (menu, loading), ~0.9 for one that covers it
+    /// (settings, save slots), ~0.55 for one the world should still read through (pause).</summary>
+    public static ColorRect Scrim(float opacity = 0.92f)
+    {
+        var rect = new ColorRect { Color = ScrimBg with { A = opacity } };
+        rect.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        return rect;
+    }
+
     /// <summary>The standard inner padding container panels wrap their content in.</summary>
     public static MarginContainer Padding(int amount = SpaceMd)
     {
@@ -440,7 +447,27 @@ public static class UiTheme
     /// <summary>A small tinted pill — an affix, a status effect, a school tag, a filter. The
     /// label carries the colour; the ground stays near-neutral so a row of chips does not turn
     /// into a paint chart.</summary>
-    public static PanelContainer Chip(string text, Color color)
+    public static PanelContainer Chip(string text, Color color) => Chip(text, color, out _);
+
+    /// <summary>
+    /// As <see cref="Chip(string, Color)"/>, with a second label after the text for a live value —
+    /// a status effect's remaining seconds, a stack count. Handed back so the caller can update it
+    /// in place each frame instead of rebuilding the chip, which is what the HUD's status row does.
+    /// </summary>
+    public static PanelContainer Chip(string text, Color color, out Label trailing)
+    {
+        PanelContainer chip = ChipShell(color);
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", SpaceXs);
+        row.AddChild(Caption(text, color));
+
+        trailing = Caption("");
+        row.AddChild(trailing);
+        chip.AddChild(row);
+        return chip;
+    }
+
+    private static PanelContainer ChipShell(Color color)
     {
         var box = new StyleBoxFlat { BgColor = WellBg, BorderColor = color with { A = 0.55f } };
         box.SetBorderWidthAll(1);
@@ -451,7 +478,6 @@ public static class UiTheme
 
         var chip = new PanelContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
         chip.AddThemeStyleboxOverride("panel", box);
-        chip.AddChild(Caption(text, color));
         return chip;
     }
 

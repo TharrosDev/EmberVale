@@ -133,8 +133,7 @@ public abstract partial class NarrationSequence : CanvasLayer
 
     private void Build()
     {
-        _backdrop = new ColorRect { Color = new Color(0.02f, 0.02f, 0.03f, 1f) };
-        _backdrop.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        _backdrop = UiTheme.Scrim(1f);
         _backdrop.MouseFilter = Control.MouseFilterEnum.Stop;
         AddChild(_backdrop);
 
@@ -147,7 +146,7 @@ public abstract partial class NarrationSequence : CanvasLayer
         _text.HorizontalAlignment = HorizontalAlignment.Center;
         _text.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         _text.CustomMinimumSize = new Vector2(680f, 0f);
-        _text.AddThemeFontSizeOverride("font_size", UiTheme.TitleFontSize);
+        UiTheme.ApplyType(_text, UiTheme.FontRole.Serif, UiTheme.TitleFontSize);
         centre.AddChild(_text);
 
         _skipHint = UiTheme.Caption(string.Empty, UiTheme.Dim);
