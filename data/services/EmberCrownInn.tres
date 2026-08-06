@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="ServiceResource" format=3]
+
+[ext_resource type="Script" path="res://src/Economy/ServiceResource.cs" id="1_service"]
+
+; A night at the Ember Crown's inn (Phase 38D). Ten gold moves the clock to 08:00 and refills health,
+; stamina and mana — the cheapest service in the game and the one a player will use most.
+;
+; No UnlockFlagId: a bed is bought every time. That is what separates it from the bank account and the
+; mount below, and it is why RestHour rather than a flag is the interesting field.
+;
+; RestHour is 8, and the +24 that makes "rest from 20:00 to 08:00" mean *tomorrow* at 8 lives in
+; ServiceRules.RestTarget, not here. Authoring 8 and having the clock rewind to this morning would look
+; like the inn working while quietly freezing every daily clock in the game.
+;
+; Priced by faction.villagers, so standing moves it with the same ramp Aldreth's prices use.
+
+[resource]
+script = ExtResource("1_service")
+Id = "service.ember_crown.inn"
+NameKey = "service.ember_crown.inn.name"
+Kind = 2
+PriceGold = 10
+FactionId = "faction.villagers"
+UnlockFlagId = ""
+RestHour = 8
+XpReward = 0

@@ -50,6 +50,7 @@ public static class ContentDatabases
         BestiaryDatabase.Initialize();         // after the registry: the validator cross-checks entries against it
         PropertyDatabase.Initialize();         // holdings the player can claim (37A)
         ShopDatabase.Initialize();             // merchants' wares and spreads (38A)
+        ServiceDatabase.Initialize();          // trainers, banks, inns, stables (38D)
         CompanionDatabase.Initialize();
         CompanionRegistry.Initialize();
     }

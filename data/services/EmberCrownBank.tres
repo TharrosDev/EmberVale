@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="ServiceResource" format=3]
+
+[ext_resource type="Script" path="res://src/Economy/ServiceResource.cs" id="1_service"]
+
+; The guild vault (Phase 38D). One hundred gold opens an account; after that the vault is free to use
+; forever. That shape is the whole reason UnlockFlagId exists — without the flag the strongbox would
+; charge a hundred gold every single time it was opened, which is the bug 36E fixed for boss rewards
+; wearing different clothes, and --validate now rejects a Bank authored without one.
+;
+; The vault itself is 37B's storage with the property gate removed: the strongbox entity carries an
+; InventoryComponent and a stable PersistentId, and that inventory *is* the vault. No new panel, no new
+; save code — StoragePanel already answers StorageOpenedEvent.
+;
+; Deliberately one vault rather than one per settlement: a bank you cannot reach from the next town is
+; a chest, and the cottage already has a chest.
+
+[resource]
+script = ExtResource("1_service")
+Id = "service.ember_crown.bank"
+NameKey = "service.ember_crown.bank.name"
+Kind = 1
+PriceGold = 100
+FactionId = "faction.villagers"
+UnlockFlagId = "flag.bank.account"
+RestHour = 8
+XpReward = 0

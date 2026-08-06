@@ -405,7 +405,17 @@ a wallet would be a second place for money to live and a second thing to persist
 | Property deeds | `PropertyResource.PriceGold` → `PropertyDeedComponent` | 37A |
 | Goods | `ShopResource`'s spread over `ItemInstance.Value`, via `ShopPricing` | 38A |
 | Fast travel | `TravelFee` / `TravelCosts`, charged in `GameBootstrap.OnFastTravelRequested` | 38C |
-| Services — repair, trainer, bank, inn, stable | — | **38D** |
+| A night's rest | `ServiceKind.Inn` — moves the clock, refills every resource. Charged every night | 38D |
+| A bank account | `ServiceKind.Bank` — a one-off fee, then a persistent vault forever | 38D |
+| Training | `ServiceKind.Trainer` — a lesson: recipes taught, XP granted, charged once | 38D |
+| A mount | `ServiceKind.Stable` — the purchase and its record; Phase 39A owns the mount | 38D |
+| Repair | — | **pending 40A** |
+
+**Repair is not built, and that is a decision rather than an omission.** No durability or condition
+concept exists anywhere in the game: `StatType` has no such member and nothing in `src/` mentions wear.
+Phase 40A decides whether durability is adopted *or explicitly cut*, and 40B's rule is that a cut system
+leaves no stub — so 38D shipped no `ServiceKind.Repair` at all. If 40A adopts durability, repair is a new
+kind and a branch, nothing more.
 
 Two things shape income rather than drain it, and belong in the same picture: the **buy/sell spread**
 (selling something back costs roughly two thirds of its price, so looting-to-sell is a slow income and
@@ -423,19 +433,25 @@ This section fixes what money is *for*:
   rarely feel rich; gold is a constrained resource in a world that is running down, not a
   trivially-overflowing counter. Income sources are deliberate, not a faucet.
 - **Sinks, not just sources.** **Decision:** gold drains into things the player *wants* —
-  housing (Phase 37), training/perks-for-pay and repair (services, Phase 38),
-  fast-travel/inn costs (Phase 25/38). A healthy economy is defined by its sinks; design
-  every income beat alongside what it can be spent on.
+  housing (Phase 37), training and services (Phase 38D), fast travel and a bed for the night
+  (Phase 38C/D). A healthy economy is defined by its sinks; design every income beat alongside what it
+  can be spent on. (This bullet used to say "perks-for-pay", which contradicted the one below it;
+  resolved in 38D — see there.)
 - **Money buys convenience and gear — not the soul of the build.** **Decision:** gold can
   buy equipment, services, and property, but the *defining* power — divine relics, perks
   (bought with skill points, not gold), corrupted abilities — is earned through effort,
   exploration, and choice (§3, §5), never purchased. This keeps the build player-authored
   and the world's rewards meaningful.
-  ⚠️ **This bullet constrains 38D's trainer, and the bullet above it is worded loosely.** "Training/
-  perks-for-pay" and "perks are bought with skill points, **not gold**" cannot both be literally true.
-  The reading that holds: a trainer may sell *access* — unlocking a perk line, teaching a recipe, or
-  granting XP toward the next point — but never a perk rank for coin. Resolve it there, in 38D, not by
-  softening this rule.
+  ✅ **Resolved in 38D, and this rule won.** "Training/perks-for-pay" in the bullet above could not both
+  be true with "perks are bought with skill points, **not gold**", so the trainer sells **access, never a
+  rank**: recipes it teaches (`CraftingComponent.Learn`) and XP for a lesson
+  (`ProgressionComponent.AddXp`). Skill points therefore arrive only by *levelling*, and 38D deliberately
+  added no way to grant one directly — `ProgressionComponent` gained no new API.
+  ⚠️ **The bound matters as much as the route.** An XP lesson that could be re-bought would be gold
+  buying levels without limit, which is this rule broken by arithmetic rather than by wording. So a
+  trainer granting XP must record the lesson in a story flag, and `--validate` rejects one that does not.
+  A future trainer selling a *perk line unlock* (a flag gating `PerksComponent.CanLearn`) stays inside
+  the rule; one calling `GrantFree` for coin does not.
 
 > Cross-links: `src/Items/*`, `src/Loot/*` (gold as item today); Phase 37 (housing sink),
 > Phase 38 (vendors/services/sinks), Phase 56 (the numbers).

@@ -190,6 +190,18 @@ public class EnumStabilityTests
     }
 
     [Fact]
+    public void ServiceKind_Ordinals()
+    {
+        // Authored as ints in data/services/*.tres (Phase 38D), so a reorder would silently turn every
+        // inn into a trainer. There is deliberately no Repair member — durability does not exist and
+        // Phase 40A decides whether it ever will.
+        Assert.Equal(0, (int)Embervale.Economy.ServiceKind.Trainer);
+        Assert.Equal(1, (int)Embervale.Economy.ServiceKind.Bank);
+        Assert.Equal(2, (int)Embervale.Economy.ServiceKind.Inn);
+        Assert.Equal(3, (int)Embervale.Economy.ServiceKind.Stable);
+    }
+
+    [Fact]
     public void ReputationTier_Ordinals()
     {
         Assert.Equal(0, (int)ReputationTier.Hated);

@@ -56,6 +56,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("opening", "opening", "Replay the new-game prologue (Phase 33A).", Opening));
         console.Register(new ConsoleCommand("companion", "companion <list|recruit <id>|dismiss <id>|stance <id> <follow|hold|engage>|order|loyalty <id> [delta]>", "Inspect and drive the companion party (Phase 32A).", Companion));
         console.Register(new ConsoleCommand("shop", "shop [id|restock <id>]", "List shops, open one's trade window, or force a restock (Phase 38A/B).", Shop));
+        console.Register(new ConsoleCommand("service", "service [id]", "List services, or use one on the player (Phase 38D).", Service));
         console.Register(new ConsoleCommand("savecheck", "savecheck", "Audit registered saveables for volatile (would-orphan) keys (Phase 25.5A).", SaveCheck));
 
         console.Register(new ConsoleCommand("seed", "seed <n>", "Seed the global RNG (for repro).", Seed));
@@ -178,6 +179,79 @@ public static class DevCommands
 
         EventBus.Instance?.Publish(new ShopOpenedEvent(player, shop));
         return $"opened {shop.Id}";
+    }
+
+    /// <summary>
+    /// Lists services, or uses one on the player (Phase 38D). It resolves the placed
+    /// <see cref="ServiceComponent"/> rather than re-implementing the verbs, so what the console
+    /// exercises is the same code path the world does — a dev command that charged and granted by itself
+    /// would test nothing but itself.
+    /// </summary>
+    private static string Service(DevConsole console, string[] args)
+    {
+        if (args.Length < 1)
+        {
+            var sb = new StringBuilder($"{ServiceDatabase.All.Count} service(s):\n");
+            foreach (ServiceResource s in ServiceDatabase.All)
+            {
+                string once = s.UnlockFlagId.Length > 0 ? $", once ({s.UnlockFlagId})" : ", per use";
+                sb.Append($"  {s.Id}  — {s.Kind}, {s.PriceGold}g{once}\n");
+            }
+
+            return sb.ToString().TrimEnd();
+        }
+
+        if (!TryPlayer(out PlayerCharacter player))
+        {
+            return "no player";
+        }
+
+        if (ServiceDatabase.Get(args[0]) is not { } service)
+        {
+            return $"unknown service '{args[0]}'";
+        }
+
+        foreach (ServiceComponent component in FindServices(player))
+        {
+            if (component.ServiceId != service.Id)
+            {
+                continue;
+            }
+
+            string before = component.Prompt;
+            component.Interact(player);
+            return $"used {service.Id} (prompt was: {(before.Length > 0 ? before : "<silent>")})";
+        }
+
+        return $"'{service.Id}' is authored but no ServiceComponent in the loaded world offers it";
+    }
+
+    /// <summary>Every placed service in the tree. Walked rather than registered: services are ordinary
+    /// interactables on region-cell entities, so they come and go with cell streaming and a registry
+    /// would hand out freed nodes.</summary>
+    private static System.Collections.Generic.List<ServiceComponent> FindServices(Node from)
+    {
+        var found = new System.Collections.Generic.List<ServiceComponent>();
+        Collect(from.GetTree()?.Root, found);
+        return found;
+
+        static void Collect(Node? node, System.Collections.Generic.List<ServiceComponent> into)
+        {
+            if (node == null)
+            {
+                return;
+            }
+
+            if (node is ServiceComponent service)
+            {
+                into.Add(service);
+            }
+
+            foreach (Node child in node.GetChildren())
+            {
+                Collect(child, into);
+            }
+        }
     }
 
     private static string Xp(DevConsole console, string[] args)
