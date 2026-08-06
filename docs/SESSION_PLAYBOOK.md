@@ -3249,11 +3249,35 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
     produced broken text). The guard lives in `LocaleAudit.Audit`, not in `ContentValidator`, which
     is why grepping the validator for "duplicate" finds nothing. Run `--validate` after touching
     `strings.csv`; it is not optional and it is faster than reading the file.
-- [ ] **37.5F — The shell** `[F]`
-  - **Done when:** menu/pause/settings/save/loading/creator/sequences are rebuilt, and the
-    genuinely-modal `CanvasLayer` screens (settings, save slots) are migrated onto `UiPanel` so
-    they inherit the fade, focus grab, `ui_cancel` and `UiState` contract instead of
-    hand-rolling each.
+- [x] **37.5F — The shell** `[F]` ✅
+  - ⚠️ **The `UiPanel` migration was dropped, deliberately, and the plan was wrong to assume it.**
+    The premise was that these screens hand-roll what `UiPanel` provides. They do not: all five
+    (`SettingsPanel`, `SaveSlotPanel`, `MainMenu`, `PauseMenu`, `CharacterCreator`) already call
+    `UiState.Open` **and** `UiFocus.GrabFirst`. The only remaining gain was the open fade, against
+    a lifecycle rewrite — they are create-per-use static factories, `UiPanel` is a persistent
+    toggle — of **the only path into the game**, which no remote session can drive to test.
+    Check what a screen already does before migrating it for what it supposedly lacks.
+  - ⚠️ **The `Panel()`-as-generic-box trap, instances three and four.** Save-slot rows and toasts
+    were both built from `PanelStyle()`, so since 37.5A a six-slot list rendered six brass frames
+    with six grain `ShaderMaterial`s stacked vertically — competing with each other *and* with the
+    panel containing them — and every four-second toast carried a full framed screen's chrome for
+    one line of text. Both are `Card` now. **A small repeated widget takes a `Card` or a `Well`,
+    never a `Panel`.** 37.5B caught the first (status chips) and predicted the rest; that
+    prediction was right twice.
+  - **Notification colour moved from the text to the spine.** Colouring the words meant a `Dim`
+    autosave notice rendered as dim text on a dark chip — the least readable thing on screen,
+    carrying information the player may well want. The spine says which kind of thing happened;
+    the words stay `Text` and stay legible.
+  - **Save slots became cards.** Region, level and corruption tier were one crammed string with
+    five facts at equal weight; they are now a title, two chips and a caption, with the card's
+    spine carrying corruption — the one thing about a save that is a *state* rather than a
+    statistic, and what a returning player orients on. `slots.entry` was retired and the now
+    orphaned key removed from the catalogue.
+  - **The main menu is the highest-ornament screen in the game**: corner brass and the ink
+    shimmer on the title, which it shares with the spellbook and nothing else.
+  - ✅ **This is the one phase whose headline screen is genuinely verified.** `run_project` lands
+    on the main menu, so the shimmer shader and the brass brackets were actually instantiated and
+    rendered, not merely compiled — unlike every panel in 37.5C–E, which need a keypress to open.
 - [ ] **37.5G — Accessibility & responsiveness** `[F]`
   - **Done when:** `TextScale`, `ColorblindMode` and `HighContrast` exist in `Settings` and
     round-trip through the settings save, and the UI is verified at 16:9 / 16:10 / 21:9 and

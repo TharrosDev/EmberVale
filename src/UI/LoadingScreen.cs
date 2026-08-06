@@ -47,7 +47,7 @@ public partial class LoadingScreen : CanvasLayer
 		MarginContainer pad = UiTheme.Padding(16);
 		_panel.AddChild(pad);
 
-		Label header = UiTheme.Header(Loc.T("loading.title"));
+		Label header = UiTheme.Title(Loc.T("loading.title"));
 		header.HorizontalAlignment = HorizontalAlignment.Center;
 		pad.AddChild(header);
 	}

@@ -120,10 +120,18 @@ public partial class Notifications : CanvasLayer
 
     private void Push(string text, Color color)
     {
-        var toast = new Toast { SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter };
+        // The colour moves to the spine and the text goes back to Text (37.5F). Colouring the words
+        // themselves meant a Dim autosave notice was Dim *text* on a dark chip - the least readable
+        // thing on screen carrying information the player might actually want. The spine says which
+        // kind of thing happened; the words stay legible regardless.
+        var toast = new Toast
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter,
+            Accent = color,
+        };
 
-        MarginContainer pad = UiTheme.Padding(8);
-        Label label = UiTheme.Body(text, color);
+        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceSm);
+        Label label = UiTheme.Body(text);
         label.HorizontalAlignment = HorizontalAlignment.Center;
         pad.AddChild(label);
         toast.AddContent(pad);

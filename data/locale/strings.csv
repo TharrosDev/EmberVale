@@ -56,7 +56,8 @@ slots.load_title,LOAD GAME
 slots.empty,— Empty —
 slots.slot,Slot {0}
 slots.autosave,Autosave {0}
-slots.entry,{0} · Lv {1} · {2} · {3} · {4}
+slots.level,"Lv {0}"
+slots.meta,"{0}   ·   {1}"
 slots.playtime,{0}h {1}m
 common.back,Back
 common.cancel,Cancel

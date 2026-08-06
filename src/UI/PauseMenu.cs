@@ -78,7 +78,7 @@ public partial class PauseMenu : CanvasLayer
 		col.AddThemeConstantOverride("separation", 8);
 		pad.AddChild(col);
 
-		Label header = UiTheme.Header(Loc.T("pause.title"));
+		Label header = UiTheme.Title(Loc.T("pause.title"));
 		header.HorizontalAlignment = HorizontalAlignment.Center;
 		col.AddChild(header);
 		col.AddChild(new HSeparator());
