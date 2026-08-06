@@ -919,7 +919,18 @@ public partial class GameHud : CanvasLayer
     {
         ulong now = Time.GetTicksMsec();
 
-        if (_boss is Node node && IsInstanceValid(node) && _boss.TryGetComponent(out StatsComponent stats))
+        if (_boss is Node node && !IsInstanceValid(node))
+        {
+            // The boss left the world without dying — a region transition or a load mid-fight frees
+            // it outright and raises no EntityDiedEvent, which is the only thing that cleared this
+            // panel. The bar stayed on screen at its last value for the rest of the session. No
+            // defeat beat here: nothing was defeated, so the widget simply stands down.
+            _boss = null;
+            _bossBar.Visible = false;
+            _bossName.Visible = false;
+            _bossPhase.Visible = false;
+        }
+        else if (_boss != null && _boss.TryGetComponent(out StatsComponent stats))
         {
             _bossBar.SetTarget(stats.GetNormalized(StatType.Health));
         }
