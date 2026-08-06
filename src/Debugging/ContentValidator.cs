@@ -696,6 +696,35 @@ public static class ContentValidator
                 issues.Add($"shop '{id}' pays nothing when selling (sell fraction {shop.SellFraction})");
             }
 
+            if (shop.FactionId.Length > 0 && FactionDatabase.Get(shop.FactionId) == null)
+            {
+                issues.Add(
+                    $"shop '{id}' prices by unknown faction '{shop.FactionId}' — standing would have no " +
+                    "effect and the discount would silently never apply");
+            }
+
+            if (shop.PurseGold < 0)
+            {
+                issues.Add($"shop '{id}' has a negative purse ({shop.PurseGold})");
+            }
+            else if (shop.PurseGold > 0 && shop.RestockDays <= 0)
+            {
+                issues.Add(
+                    $"shop '{id}' carries {shop.PurseGold} gold and never restocks — the merchant is " +
+                    "permanently out of money once the player has sold them that much");
+            }
+
+            // The clamp in ShopPricing.BuyPrice makes a discount safe (sell can never exceed buy), which
+            // also means it silently swallows a markup too thin to discount. That is a content bug the
+            // arithmetic cannot report, so it is reported here.
+            if (shop.FactionId.Length > 0 &&
+                ShopPricing.MarkupFor(shop.BuyMarkup, ReputationTier.Honored) <= 1f)
+            {
+                issues.Add(
+                    $"shop '{id}' markup {shop.BuyMarkup} bottoms out at Honored — its best standings all " +
+                    "pay the same price, so the reputation discount stops meaning anything");
+            }
+
             if (shop.SellFraction >= shop.BuyMarkup)
             {
                 issues.Add(
@@ -1440,6 +1469,24 @@ public static class ContentValidator
                 {
                     issues.Add($"faction '{faction.Id}' lists unknown ally faction '{ally}'");
                 }
+            }
+
+            // Range checks added in 38C. Until now a faction only decided hostility, and this pass only
+            // cross-referenced its web; now standing sets prices, so a default outside the tier scale is
+            // a shop that prices at a tier the player can never move off.
+            if (faction.DefaultReputation < ReputationTiers.Min || faction.DefaultReputation > ReputationTiers.Max)
+            {
+                issues.Add(
+                    $"faction '{faction.Id}' default standing {faction.DefaultReputation} is outside " +
+                    $"{ReputationTiers.Min}..{ReputationTiers.Max}; it clamps on read, so the authored " +
+                    "value is not the one the game uses");
+            }
+
+            if (faction.KillReputationPenalty < 0)
+            {
+                issues.Add(
+                    $"faction '{faction.Id}' has a negative kill penalty " +
+                    $"({faction.KillReputationPenalty}) — killing its members would improve standing");
             }
         }
     }

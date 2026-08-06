@@ -3449,8 +3449,33 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
        shop for the rest of the run, and it looks exactly like the feature not working.
     4. **The rolled wares are in the save on purpose.** Without them a reload rerolls the pool and the
        player reloads until a Legendary appears.
-- [ ] **38C — Reputation discounts + gold sinks** `[F/C]`
+- [x] **38C — Reputation discounts + gold sinks** `[F/C]` ✅
   - **Done when:** faction standing modifies prices; defined gold sinks exist.
+  - **Landed:** `ShopResource.FactionId` + `ShopPricing.PriceMultiplierFor`/`MarkupFor` (a surcharge
+    across the hostile half of the ramp down to 15% off at Allied); a hostile faction refuses to trade
+    via `ReputationComponent.IsHostile`; `ShopResource.PurseGold` held and persisted by
+    `ShopStockService` and refilled on 38B's restock clock; and `TravelFee`/`TravelCosts` — fast travel
+    costs gold, free to a holding you own. `docs/DESIGN.md` §6 now carries the authoritative sink table.
+  - **Reputation had never changed a number.** `ReputationComponent` shipped in Phase 16 and had exactly
+    two behavioural readers, both asking the same boolean (`IsHostile`); standing was otherwise written
+    by quests and displayed on the character screen. 38C is the first tier read in the game.
+  - Three things worth carrying into 38D–38E:
+    1. **A shop must invert the AI's fail-safe.** `EnemyAIComponent` treats a missing
+       `ReputationComponent` as *hostile* — correct for something deciding whether to swing, and it would
+       make every merchant in a half-built world refuse. Any new standing-gated *service* needs the same
+       inversion.
+    2. **A price shown must be the same function call as the price taken.** The first draft of the travel
+       fee read the active region from a service the map screen could resolve and the bootstrap could
+       not, so the button would have promised a local fee while the jump charged the cross-region one.
+       The `--play` run caught the symptom (a duplicate-registration warning) and the premise turned out
+       to be wrong entirely — the streamer was already registered by the bootstrap.
+    3. **Put arithmetic where a test can reach it.** The purse logic started inside `ShopStockService`,
+       which is a Godot `Node` the test project cannot construct, so it was untestable *and* the save
+       round-trip could not be driven headlessly either. Moving `CanCover`/`AfterSpend`/`AfterRefund`
+       into `ShopStock` made the risky half provable. 38D's services will have the same shape.
+  - ⚠️ **`DESIGN.md` §6 carries an authored contradiction** — "training/perks-for-pay" against "perks are
+    bought with skill points, **not gold**". 38C left the rule alone and wrote down the reading that
+    holds (a trainer sells *access*, never a perk rank). **38D has to resolve it.**
 - [ ] **38D — Services: repair / trainer / bank / inn / stable** `[F/C]`
   - **Done when:** trainer (buy perks/points), bank (storage), innkeeper (rest/
     time-skip), stablemaster (mounts stub), and repair (if durability adopted in 40)

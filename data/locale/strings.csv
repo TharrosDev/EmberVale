@@ -127,6 +127,10 @@ shop.pack_empty,Nothing to sell.
 shop.cannot_afford,You cannot afford this.
 shop.sold_out,Sold out until the next delivery.
 shop.restocks,restocks every {0}d
+shop.standing,"Standing: {0} ({1}% on their prices)"
+shop.prompt_hostile,"{0} — they will not deal with you"
+shop.vendor_purse,"has {0}g"
+shop.vendor_broke,They cannot cover that right now.
 shop.worthless,Not worth a single coin.
 shop.unsellable,This is not for sale.
 craft.station_forge,Forge
@@ -148,6 +152,9 @@ place.refuse_outside,"Outside {0}"
 travel.button,Travel to {0}
 map.travel_header,FAST TRAVEL
 map.travel_empty,No waystones attuned yet.
+map.travel_cost,{0}g
+map.travel_free,free
+map.travel_cannot_afford,You cannot afford the passage.
 craft.mode_craft,Craft
 craft.mode_salvage,Salvage
 craft.deconstruct,Deconstruct

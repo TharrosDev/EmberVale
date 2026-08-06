@@ -1,4 +1,5 @@
 using System;
+using Embervale.Factions;
 using Embervale.Items;
 
 namespace Embervale.Economy;
@@ -44,6 +45,53 @@ public static class ShopPricing
     /// <summary>Whether the player can pay. Read by both the Buy button's enabled state and the press
     /// itself, so the two cannot drift — the same rule every Phase 37 refusal follows.</summary>
     public static bool CanAfford(int price, int goldHeld) => goldHeld >= price;
+
+    /// <summary>
+    /// What a merchant's standing with the player does to their asking price (Phase 38C). Below
+    /// <c>1</c> is a discount, above it a surcharge.
+    ///
+    /// This is the <b>first thing in the game to read a reputation tier and change a number</b>.
+    /// <c>ReputationComponent</c> has existed since Phase 16 with exactly two behavioural readers, and
+    /// both ask the same boolean (<c>IsHostile</c>) — standing was otherwise written and displayed but
+    /// never consulted.
+    ///
+    /// The hostile half of the ramp carries a <b>surcharge rather than nothing</b>: a seven-step ramp
+    /// where three steps are inert is not "standing modifies prices". <c>Hated</c> and <c>Hostile</c>
+    /// still get a number here because a faction's <c>HostileThreshold</c> is authored per faction — a
+    /// clan may deal with someone the villagers would turn away, and refusing to trade is
+    /// <c>ReputationComponent.IsHostile</c>'s call, not this table's.
+    /// </summary>
+    public static float PriceMultiplierFor(ReputationTier tier) => tier switch
+    {
+        ReputationTier.Hated => 1.35f,
+        ReputationTier.Hostile => 1.25f,
+        ReputationTier.Unfriendly => 1.15f,
+        ReputationTier.Neutral => 1f,
+        ReputationTier.Friendly => 0.95f,
+        ReputationTier.Honored => 0.9f,
+        _ => 0.85f,
+    };
+
+    /// <summary>
+    /// The markup to hand <see cref="BuyPrice"/> once standing is taken into account — the one home for
+    /// the multiplication, so no call site can apply it twice or forget it.
+    ///
+    /// <b>No new invariant appears here, and that is the point.</b> <see cref="BuyPrice"/> already
+    /// clamps to <c>&gt;= 1</c> and <see cref="SellPrice"/> to <c>&lt;= 1</c>, so
+    /// <c>sell &lt;= value &lt;= buy</c> holds for <em>any</em> multiplier: a discount cannot invert the
+    /// spread into a money printer. The 38A clamp earns its keep a second time.
+    ///
+    /// What the clamp does hide is a content bug — a shop authored near <c>1.0</c> bottoms out partway
+    /// up the ramp, so its best two tiers pay the same price. <c>--validate</c> reports that, because
+    /// the arithmetic cannot.
+    ///
+    /// <b>Only the buy side moves.</b> A merchant who likes you paying more for your loot is symmetric
+    /// and tempting, but with both clamps in play a generous sell fraction converges on
+    /// <c>sell == buy</c> — frictionless churn that is pointless rather than exploitable — and standing
+    /// already modifies prices without it.
+    /// </summary>
+    public static float MarkupFor(float markup, ReputationTier tier) =>
+        markup * PriceMultiplierFor(tier);
 
     /// <summary>
     /// Whether a vendor will take this at all. Two refusals, both load-bearing: a

@@ -190,6 +190,18 @@ public partial class MapScreen : UiPanel
         return button;
     }
 
+    /// <summary>Gold the player is carrying, for the fee display. Resolved through the
+    /// <see cref="ServiceLocator"/> the way <c>PropertyDeedComponent.GoldHeld</c> does, so the bootstrap
+    /// needs no extra wiring for the map to price a jump.</summary>
+    private static int GoldHeld() =>
+        Resolve<PlayerCharacter>()?.GetComponent<Items.InventoryComponent>()?.CountOf(GameIds.Currency.Gold) ?? 0;
+
+    private static string CurrentRegionId() => Resolve<RegionStreamer>()?.ActiveRegionId ?? string.Empty;
+
+    private static T? Resolve<T>()
+        where T : class =>
+        ServiceLocator.Instance is { } locator && locator.TryGet(out T service) ? service : null;
+
     /// <summary>The fast-travel section (Phase 25G): a button per attuned node that jumps there and
     /// closes the map. Empty until the player attunes to at least one waystone.</summary>
     private void RebuildTravelList()
@@ -202,12 +214,30 @@ public partial class MapScreen : UiPanel
         _shownTravelRevision = _travel.Revision;
         UiTheme.ClearChildren(_travelList);
 
+        // 38C: fast travel costs gold. The fee shown here and the fee charged in
+        // GameBootstrap.OnFastTravelRequested are the same TravelCosts.FeeFor call, so a button can
+        // never promise a price the jump does not take.
+        string currentRegion = CurrentRegionId();
+        int purse = GoldHeld();
+
         bool any = false;
         foreach (TravelNode node in _travel.Nodes)
         {
             any = true;
             string id = node.Id; // capture for the closure
-            Button button = UiTheme.Action(Loc.TF("travel.button", node.Label));
+            int fee = Economy.TravelCosts.FeeFor(node, currentRegion);
+            bool affordable = fee <= purse;
+
+            string label = fee > 0
+                ? $"{Loc.TF("travel.button", node.Label)}   {Loc.TF("map.travel_cost", fee)}"
+                : $"{Loc.TF("travel.button", node.Label)}   {Loc.T("map.travel_free")}";
+
+            Button button = UiTheme.Action(label);
+
+            // Greyed with the reason rather than hidden — a waypoint you cannot currently afford is
+            // still somewhere you have attuned to, and hiding it would read as losing the attunement.
+            button.Disabled = !affordable;
+            button.TooltipText = affordable ? string.Empty : Loc.T("map.travel_cannot_afford");
             button.Pressed += () =>
             {
                 SetOpen(false);

@@ -54,4 +54,30 @@ public static class ShopStock
         int steps = Math.Max(0, level - 1);
         return Math.Clamp(steps / (float)(QualityCapLevel - 1), 0f, 1f);
     }
+
+    /// <summary>Sentinel for a merchant who authors no purse and can buy anything.</summary>
+    public const int UnlimitedPurse = -1;
+
+    /// <summary>
+    /// Whether a merchant holding <paramref name="purse"/> can cover a payout (Phase 38C).
+    /// <see cref="UnlimitedPurse"/> covers everything, and a non-positive payout is nothing to cover.
+    ///
+    /// Extracted here rather than left inside <see cref="ShopStockService"/> for the reason the whole
+    /// file exists: the service is a Godot <c>Node</c>, so the test project cannot construct one, and
+    /// "can the merchant afford this" is a boundary comparison that no amount of reading proves.
+    /// </summary>
+    public static bool CanCover(int purse, int amount) =>
+        purse < 0 || amount <= 0 || purse >= amount;
+
+    /// <summary>What the purse holds after spending on a sale that went through.</summary>
+    public static int AfterSpend(int purse, int amount) =>
+        purse < 0 || amount <= 0 ? purse : Math.Max(0, purse - amount);
+
+    /// <summary>
+    /// What the purse holds after handing gold back for a sale that debited and then could not complete.
+    /// Clamped to what the shop authored, so a failed sale can never mint the merchant money — the
+    /// mirror of the buy path's refund never minting the player any.
+    /// </summary>
+    public static int AfterRefund(int purse, int amount, int authoredPurse) =>
+        purse < 0 || amount <= 0 ? purse : Math.Min(Math.Max(0, authoredPurse), purse + amount);
 }

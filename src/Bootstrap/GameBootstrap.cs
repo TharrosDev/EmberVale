@@ -645,6 +645,18 @@ public partial class GameBootstrap : Node3D
             return;
         }
 
+        // The fee (38C) is charged here rather than at the map screen because this is where the map
+        // button and the `travel goto` console command converge — gating either one alone would leave
+        // the other a free ride. Fails closed: no gold, no jump.
+        int fee = Economy.TravelCosts.FeeFor(node, _streamer.ActiveRegionId);
+        if (fee > 0 &&
+            (_player.GetComponent<InventoryComponent>() is not { } purse ||
+                !purse.RemoveItem(GameIds.Currency.Gold, fee)))
+        {
+            Log.Warn($"Fast travel to '{e.NodeId}' refused: {fee} gold required.");
+            return;
+        }
+
         PerformRegionLoad(destination, node.Position, $"Fast travelling to {node.Label}...");
     }
 

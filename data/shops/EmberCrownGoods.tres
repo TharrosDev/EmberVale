@@ -21,9 +21,16 @@
 ;     make crafting feel gated on a shopping trip, and there is nothing interesting about that.
 ;   - The leveled pool is ROLLED at each restock and scales with the player's level.
 ;
-; Phase 38C adds the reputation discount that moves BuyMarkup per merchant; 38E turns the three
-; town_hub stub vendors into real shops. Until then: `shop shop.ember_crown.goods` in the F1 console,
-; and `shop restock shop.ember_crown.goods` to skip the wait.
+; 38C: Aldreth is a villager, so FactionId prices by faction.villagers standing — Allied buys at 15%
+; off, Unfriendly pays 15% over, and at or below the villagers' HostileThreshold he refuses to deal at
+; all. PurseGold is the other half of that phase: 250 gold is enough to fence a decent haul and not
+; enough to fence a field of corpses, and it refills with the shelves on the same one-day clock. Note
+; BuyMarkup must stay far enough above 1 for the discount to have room — at 1.5 every tier is distinct,
+; and --validate rejects a markup that bottoms out at Honored.
+;
+; 38E turns the three town_hub stub vendors into real shops. Until then:
+; `shop shop.ember_crown.goods` in the F1 console, `shop restock shop.ember_crown.goods` to skip the
+; wait, and `rep faction.villagers <delta>` to walk the discount up and down.
 
 [sub_resource type="Resource" id="Stock_potion"]
 script = ExtResource("2_entry")
@@ -54,8 +61,10 @@ Quantity = 0
 script = ExtResource("1_shop")
 Id = "shop.ember_crown.goods"
 NameKey = "shop.ember_crown.goods.name"
+FactionId = "faction.villagers"
 Stock = Array[Resource]([SubResource("Stock_potion"), SubResource("Stock_herb"), SubResource("Stock_ore"), SubResource("Stock_strips"), SubResource("Stock_scrap")])
 RestockDays = 1
 LeveledTable = ExtResource("3_leveled")
 BuyMarkup = 1.5
 SellFraction = 0.4
+PurseGold = 250

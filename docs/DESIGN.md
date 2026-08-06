@@ -394,12 +394,30 @@ consumes for the Dawnfire vs Lord of Embers choice. Cross-links: LORE "The Corru
 > things that matter. Gold is a sink-driven economy, not a number that only climbs.
 
 Gold is a **stackable inventory item** (`QuestLogComponent` grants a `GoldItemId`
-through `InventoryComponent`; loot tables roll gold), and deliberately still has **no wallet** —
-a purse would be a second place for money to live and a second thing to persist. Sinks now exist:
-housing (Phase 37A) and **trade (Phase 38A** — `ShopResource`'s buy/sell spread over
-`ItemInstance.Value`, priced by `ShopPricing`**)**. Services and reputation discounts are 38C/38D;
-balance is **Phase 56**. This section fixes what money is *for* so the rest of Phase 38 builds the
-right machinery:
+through `InventoryComponent`; loot tables roll gold), and deliberately still has **no player wallet** —
+a wallet would be a second place for money to live and a second thing to persist. Balance is
+**Phase 56**; the machinery is built.
+
+**The sinks, as they actually exist** (Phase 38C closed this list):
+
+| Sink | Where | Since |
+| ---- | ----- | ----- |
+| Property deeds | `PropertyResource.PriceGold` → `PropertyDeedComponent` | 37A |
+| Goods | `ShopResource`'s spread over `ItemInstance.Value`, via `ShopPricing` | 38A |
+| Fast travel | `TravelFee` / `TravelCosts`, charged in `GameBootstrap.OnFastTravelRequested` | 38C |
+| Services — repair, trainer, bank, inn, stable | — | **38D** |
+
+Two things shape income rather than drain it, and belong in the same picture: the **buy/sell spread**
+(selling something back costs roughly two thirds of its price, so looting-to-sell is a slow income and
+not a loop) and the **vendor purse** (`ShopResource.PurseGold`, 38C — a merchant runs out of coin and
+refills on the restock clock, so a field of corpses cannot be fenced in one visit).
+
+**Standing moves prices, in both directions** (38C): `ShopPricing.PriceMultiplierFor` runs from a 15%
+surcharge at the hostile end of the ramp to 15% off at Allied, and a faction the player is *hostile* to
+will not trade at all. Only the buy side moves — see `CLAUDE.md` §8 for why the sell side deliberately
+does not.
+
+This section fixes what money is *for*:
 
 - **Scarcity is the setting expressed economically.** **Decision:** the player should
   rarely feel rich; gold is a constrained resource in a world that is running down, not a
@@ -413,6 +431,11 @@ right machinery:
   (bought with skill points, not gold), corrupted abilities — is earned through effort,
   exploration, and choice (§3, §5), never purchased. This keeps the build player-authored
   and the world's rewards meaningful.
+  ⚠️ **This bullet constrains 38D's trainer, and the bullet above it is worded loosely.** "Training/
+  perks-for-pay" and "perks are bought with skill points, **not gold**" cannot both be literally true.
+  The reading that holds: a trainer may sell *access* — unlocking a perk line, teaching a recipe, or
+  granting XP toward the next point — but never a perk rank for coin. Resolve it there, in 38D, not by
+  softening this rule.
 
 > Cross-links: `src/Items/*`, `src/Loot/*` (gold as item today); Phase 37 (housing sink),
 > Phase 38 (vendors/services/sinks), Phase 56 (the numbers).
