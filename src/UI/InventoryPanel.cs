@@ -27,7 +27,6 @@ public partial class InventoryPanel : UiPanel
     private HotbarComponent? _hotbar;
     private ProgressionComponent? _progression;
     private PerksComponent? _perks;
-    private SpellcastingComponent? _spellcasting;
     private ReputationComponent? _reputation;
     private CorruptionComponent? _corruption;
     private Embervale.Stats.StatsComponent? _stats;
@@ -55,14 +54,16 @@ public partial class InventoryPanel : UiPanel
 
     /// <summary>The character screen's tabs (Phase 29.5 spell tab + split progression/perks) —
     /// indices match the <see cref="UiTabs"/> order built in <see cref="BuildShell"/>.</summary>
-    private enum CharTab { Gear, Spells, Progression, Perks }
+    /// <summary>The character screen's tabs. Spells left in 37.5D for <see cref="SpellbookPanel"/> —
+    /// magic had been a fourth tab wearing the gear screen's chrome, which is the opposite of the
+    /// distinct arcane identity it needed.</summary>
+    private enum CharTab { Gear, Progression, Perks }
 
     private CharTab _activeTab = CharTab.Gear;
 
     private static readonly (CharTab Tab, string Key)[] TabDefs =
     {
         (CharTab.Gear, "char.tab_gear"),
-        (CharTab.Spells, "char.tab_spells"),
         (CharTab.Progression, "char.tab_progression"),
         (CharTab.Perks, "char.tab_perks"),
     };
@@ -113,7 +114,6 @@ public partial class InventoryPanel : UiPanel
     protected override void OnReady()
     {
         EventBus.Instance?.Subscribe<InventoryChangedEvent>(OnChanged);
-        EventBus.Instance?.Subscribe<SpellsChangedEvent>(OnSpellsChanged);
         EventBus.Instance?.Subscribe<EquipmentChangedEvent>(OnEquipmentChanged);
         EventBus.Instance?.Subscribe<XpGainedEvent>(OnXpGained);
         EventBus.Instance?.Subscribe<LeveledUpEvent>(OnLeveledUp);
@@ -125,7 +125,6 @@ public partial class InventoryPanel : UiPanel
     public override void _ExitTree()
     {
         EventBus.Instance?.Unsubscribe<InventoryChangedEvent>(OnChanged);
-        EventBus.Instance?.Unsubscribe<SpellsChangedEvent>(OnSpellsChanged);
         EventBus.Instance?.Unsubscribe<EquipmentChangedEvent>(OnEquipmentChanged);
         EventBus.Instance?.Unsubscribe<XpGainedEvent>(OnXpGained);
         EventBus.Instance?.Unsubscribe<LeveledUpEvent>(OnLeveledUp);
@@ -155,12 +154,6 @@ public partial class InventoryPanel : UiPanel
     public void SetProgression(ProgressionComponent? progression)
     {
         _progression = progression;
-        MarkDirty();
-    }
-
-    public void SetSpellcasting(SpellcastingComponent? spellcasting)
-    {
-        _spellcasting = spellcasting;
         MarkDirty();
     }
 
@@ -201,8 +194,6 @@ public partial class InventoryPanel : UiPanel
 
     private void OnPerkChanged(PerkChangedEvent e) => MarkDirty();
 
-    private void OnSpellsChanged(SpellsChangedEvent e) => MarkDirty();
-
     private void OnReputationChanged(ReputationChangedEvent e) => MarkDirty();
 
     private void OnCorruptionChanged(CorruptionChangedEvent e) => MarkDirty();
@@ -213,9 +204,6 @@ public partial class InventoryPanel : UiPanel
 
         switch (_activeTab)
         {
-            case CharTab.Spells:
-                BuildSpells();
-                break;
             case CharTab.Progression:
                 BuildProgression();
                 BuildCorruption();
@@ -392,117 +380,6 @@ public partial class InventoryPanel : UiPanel
     }
 
     /// <summary>The spellbook's school display order (the six magic schools; Physical/True are not schools).</summary>
-    private static readonly DamageType[] SchoolOrder =
-    {
-        DamageType.Fire, DamageType.Frost, DamageType.Lightning,
-        DamageType.Arcane, DamageType.Nature, DamageType.Necrotic,
-    };
-
-    private static string SchoolKey(DamageType school) => school switch
-    {
-        DamageType.Fire => "school.fire",
-        DamageType.Frost => "school.frost",
-        DamageType.Lightning => "school.lightning",
-        DamageType.Arcane => "school.arcane",
-        DamageType.Nature => "school.nature",
-        DamageType.Necrotic => "school.necrotic",
-        _ => "school.fire",
-    };
-
-    /// <summary>The spellbook (29.5G): spells grouped by school, each school headed by its mastery
-    /// rank + progress toward the next (the 29.5C track), tinted the school's colour.</summary>
-    private void BuildSpells()
-    {
-        if (_spellcasting == null || SpellDatabase.All.Count == 0)
-        {
-            AddLine(Loc.T("char.empty"));
-            return;
-        }
-
-        if (_progression != null)
-        {
-            AddLine(Loc.TF("char.spell_points", _progression.SpellPoints), UiTheme.Dim);
-        }
-
-        SchoolMasteryComponent? mastery = _spellcasting.Entity?.GetComponent<SchoolMasteryComponent>();
-        foreach (DamageType school in SchoolOrder)
-        {
-            var spells = new List<SpellResource>();
-            foreach (SpellResource s in SpellDatabase.All)
-            {
-                // Enemy-only loadouts (the Phase 34 caster roster) stay out of the player's book —
-                // unless the player has actually recovered one (35F: an Ancient dragon teaches lost
-                // spellcraft that can never be bought). A known spell must always be listed, or the
-                // reward for the fight is a spell the character screen says you do not have.
-                if (s.School == school && (s.PlayerLearnable || _spellcasting.IsKnown(s)))
-                {
-                    spells.Add(s);
-                }
-            }
-
-            if (spells.Count == 0)
-            {
-                continue;
-            }
-
-            Color tint = SpellSchools.Color(school);
-            int schoolRank = mastery?.RankOf(school) ?? 0;
-            int bonus = (int)Mathf.Round((SchoolMasteryMath.PowerMultiplier(schoolRank) - 1f) * 100f);
-
-            Label header = UiTheme.Header(Loc.TF("char.school_mastery",
-                Loc.T(SchoolKey(school)), schoolRank, SchoolMasteryMath.MaxRank, bonus));
-            header.Modulate = tint;
-            _list.AddChild(header);
-
-            // Progress toward the next mastery rank (hidden once the school is capped).
-            if (mastery != null && schoolRank < SchoolMasteryMath.MaxRank)
-            {
-                ProgressBar bar = UiTheme.Bar(tint);
-                bar.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-                bar.Value = (mastery.PointsIn(school) % SchoolMasteryMath.PointsPerRank)
-                    / (double)SchoolMasteryMath.PointsPerRank;
-                _list.AddChild(bar);
-            }
-
-            foreach (SpellResource spell in spells)
-            {
-                BuildSpellRow(spell, tint);
-            }
-        }
-    }
-
-    private void BuildSpellRow(SpellResource spell, Color tint)
-    {
-        bool known = _spellcasting!.IsKnown(spell);
-        int rank = _spellcasting.RankOf(spell);
-        string mode = spell.CastMode switch
-        {
-            CastMode.Charged => $"  {Loc.T("char.mode_charged")}",
-            CastMode.Channeled => $"  {Loc.T("char.mode_channeled")}",
-            _ => string.Empty,
-        };
-        string text = (known
-            ? Loc.TF("char.spell_rank", spell.DisplayName, rank, spell.MaxRank)
-            : spell.DisplayName) + mode;
-
-        if (!known && _spellcasting.CanBuy(spell))
-        {
-            AddRow(text, Loc.TF("char.spell_buy", spell.LearnCost), () => _spellcasting!.Buy(spell), tint, spell.Description);
-        }
-        else if (known && _spellcasting.CanUpgrade(spell))
-        {
-            AddRow(text, Loc.TF("char.spell_upgrade", spell.UpgradeCost), () => _spellcasting!.Upgrade(spell), tint, spell.Description);
-        }
-        else
-        {
-            string suffix = known && rank >= spell.MaxRank ? $"  {Loc.T("char.spell_maxed")}"
-                : !known && !_spellcasting.MeetsCorruption(spell) ? $"  {Loc.TF("char.spell_needs", CorruptionTiers.DisplayName(spell.MinCorruptionTier))}"
-                : !known ? $"  {Loc.TF("char.spell_cost", spell.LearnCost)}"
-                : string.Empty;
-            AddLine($"• {text}{suffix}", known ? tint : UiTheme.Dim, spell.Description);
-        }
-    }
-
     private void BuildPerks()
     {
         if (_perks == null || PerkDatabase.All.Count == 0)

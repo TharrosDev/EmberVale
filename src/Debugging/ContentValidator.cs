@@ -105,6 +105,70 @@ public static class ContentValidator
         ValidatePlaceables(issues);
         ValidateBestiary(issues);
         ValidateResourcePaths(issues);
+        ValidateUiAssets(issues);
+    }
+
+    /// <summary>
+    /// The UI's fonts and shaders (Phase 37.5D).
+    ///
+    /// These are content, and until this check they were the only content nothing could fail the
+    /// build over. A missing font degrades silently to the engine default; a shader that fails to
+    /// compile leaves an invisible decoration. Worse, three of the four UI shaders only instantiate
+    /// when a specific screen is *opened*, so a broken one would not appear in a boot log, a
+    /// `--play` run, or any automated check — only in play, on one screen, as "nothing is there".
+    ///
+    /// Loading each one is enough: Godot reports a parse or compile failure at load, and
+    /// constructing the <c>ShaderMaterial</c> catches a shader that loaded but is unusable.
+    /// </summary>
+    private static void ValidateUiAssets(List<string> issues)
+    {
+        string[] fonts =
+        {
+            "res://assets/fonts/Cinzel-Variable.ttf",
+            "res://assets/fonts/EBGaramond-Variable.ttf",
+            "res://assets/fonts/EBGaramond-Italic-Variable.ttf",
+            "res://assets/fonts/Inter-Variable.ttf",
+        };
+
+        foreach (string path in fonts)
+        {
+            if (!ResourceLoader.Exists(path) || GD.Load<FontFile>(path) is null)
+            {
+                issues.Add($"UI font '{path}' is missing or failed to import — the UI would fall back to the engine default.");
+            }
+        }
+
+        string[] shaders =
+        {
+            "res://assets/shaders/ui/ui_grain.gdshader",
+            "res://assets/shaders/ui/rune_circle.gdshader",
+            "res://assets/shaders/ui/sigil_drift.gdshader",
+            "res://assets/shaders/ui/ink_shimmer.gdshader",
+        };
+
+        foreach (string path in shaders)
+        {
+            if (!ResourceLoader.Exists(path) || GD.Load<Shader>(path) is not { } shader)
+            {
+                issues.Add($"UI shader '{path}' is missing.");
+                continue;
+            }
+
+            // ⚠️ A null check is NOT enough, and the obvious version of this check is worthless:
+            // GD.Load returns a perfectly non-null Shader for source that does not parse at all.
+            // Godot prints the compile error and hands back the resource anyway, and there is no
+            // public "did this compile" API. Verified by feeding it a file containing the words
+            // "this is not glsl", which loaded fine and passed a null check.
+            //
+            // The uniform list is the seam that does work: a shader that failed to parse exposes
+            // none. Every UI shader declares several by design, so an empty list means the source
+            // did not compile. If a future UI shader genuinely has no uniforms it must be exempted
+            // here explicitly rather than being allowed to weaken the check for the others.
+            if (shader.GetShaderUniformList().Count == 0)
+            {
+                issues.Add($"UI shader '{path}' failed to compile (it exposes no uniforms).");
+            }
+        }
     }
 
     /// <summary>The bestiary (Phase 34G) is checked in <b>both directions</b>, which no other domain

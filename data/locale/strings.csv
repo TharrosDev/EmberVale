@@ -227,6 +227,28 @@ char.points_skill,"{0} skill"
 char.points_spell,"{0} spell"
 char.perk_rank_short,"{0}/{1}"
 char.perks_none,No perks are known yet.
+
+# --- The spellbook (Phase 37.5D) ---
+spellbook.title,SPELLBOOK
+spellbook.none,No spellcraft is known in this world yet.
+spellbook.school_empty,Nothing of this school has been written down.
+spellbook.prepared,Prepared
+spellbook.prepared_none,nothing prepared
+spellbook.select_hint,Choose a spell to study it.
+spellbook.synergies,Synergies
+spellbook.synergy_line,"{0} into a target suffering {1} bursts for {2} extra."
+spellbook.mana,"{0} mana"
+spellbook.cooldown,"{0}s"
+spellbook.mana_label,Mana cost
+spellbook.cooldown_label,Cooldown
+spellbook.damage_label,Damage
+spellbook.healing_label,Healing
+spellbook.range_label,Range
+spellbook.delivery,"{0} · {1}"
+spellbook.delivery_projectile,Projectile
+spellbook.delivery_area,Area
+spellbook.delivery_self,Self
+spellbook.delivery_cone,Cone
 # Quest journal (QuestLogPanel)
 questlog.title,QUEST JOURNAL   (J to close)
 questlog.none,(no quests)

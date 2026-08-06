@@ -162,7 +162,7 @@ spawn or fight. Say which of the two you got; don't let one stand in for the oth
 
 **Sandbox controls:** `WASD` move · mouse look · `Shift` sprint · `Space` jump ·
 `LMB` attack · `RMB` block · `E` interact · `V` swap first/third person ·
-`I` inventory · `B` bestiary · `C` party order ·
+`I` inventory · `T` spellbook · `B` bestiary · `C` party order ·
 `H` heal dummy · `R` respawn dummy · `F5`/`F9` quick save/load · `Esc` pause (frees the cursor).
 Hotbar is `1`–`5`. Gamepad plays the whole game (sticks move/look, RT/LT attack/guard, A/B jump/dodge).
 **Any blocking menu pauses the scene tree**; a cinematic lock (boss intro, prologue) does not —

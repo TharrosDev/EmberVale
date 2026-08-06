@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Embervale.Combat;
 using Embervale.Core.Diagnostics;
 using Embervale.Entities;
@@ -42,6 +43,26 @@ public static class SpellCombo
         new("Shatter", DamageType.Lightning, "status.chill", 18f, true),
         new("Thermal Shock", DamageType.Fire, "status.chill", 14f, true),
     };
+
+    /// <summary>
+    /// The combo table, for the spellbook's synergy panel (37.5D). Exposed rather than duplicated so
+    /// the screen teaches exactly the rules combat resolves — a documented combo that does not fire
+    /// is worse than an undocumented one, because the player builds around it.
+    /// </summary>
+    public static IReadOnlyList<ComboRule> All => Rules;
+
+    /// <summary>Every combo a school can trigger. The spellbook lists these under the school, which
+    /// is the only place in the game that says these interactions exist at all.</summary>
+    public static IEnumerable<ComboRule> ForSchool(DamageType school)
+    {
+        foreach (ComboRule rule in Rules)
+        {
+            if (rule.TriggerSchool == school)
+            {
+                yield return rule;
+            }
+        }
+    }
 
     /// <summary>The first combo whose trigger school matches and whose required status the target has
     /// (per <paramref name="targetHas"/>), or null. Pure — the lookup is unit-testable apart from Godot.</summary>
