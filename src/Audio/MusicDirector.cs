@@ -20,7 +20,8 @@ namespace Embervale.Audio;
 ///   <item><b>Combat</b> — an enemy publishing <see cref="EnemyStateChangedEvent"/> in Combat/Retreat is
 ///     tracked; it leaves the set on any other state, on <see cref="EntityDiedEvent"/>, or when its body
 ///     is freed (periodic prune). Combat music holds while the set is non-empty.</item>
-///   <item><b>Boss</b> — <see cref="BossEncounterStartedEvent"/> until that boss dies; overrides combat.</item>
+///   <item><b>Boss</b> — <see cref="BossEncounterStartedEvent"/> until that boss dies <em>or its body
+///     leaves the world</em> (the same periodic prune); overrides combat.</item>
 ///   <item><b>Safe</b> — the player is inside the active region's <see cref="SafeZones"/> (polled).</item>
 /// </list>
 /// Beds come from the shared <see cref="AudioLibrary"/> (real CC0 tracks when present, else procedural
@@ -46,8 +47,11 @@ public partial class MusicDirector : Node
     private AudioStreamPlayer _a = null!;
     private AudioStreamPlayer _b = null!;
     private bool _aActive = true;
-    private ulong _bossId;
-    private bool _hasBoss;
+
+    /// <summary>The boss whose encounter is holding boss music, or null. Held as the entity rather
+    /// than its <c>RuntimeId</c> so <see cref="PruneDead"/> can ask whether its body is still alive —
+    /// a boss that leaves without dying used to strand the music, since only a death cleared it.</summary>
+    private IEntity? _boss;
     private MusicState? _current;
     private float _fade = 1f; // 1 = settled; <1 = crossfading
     private float _safeTimer;
@@ -85,7 +89,7 @@ public partial class MusicDirector : Node
     public override void _Process(double delta)
     {
         PollSafeZone((float)delta);
-        PruneEngaged();
+        PruneDead();
         AdvanceFade((float)delta);
     }
 
@@ -113,10 +117,9 @@ public partial class MusicDirector : Node
     private void OnDied(EntityDiedEvent e)
     {
         _engaged.Remove(e.Entity.RuntimeId);
-        if (_hasBoss && e.Entity.RuntimeId == _bossId)
+        if (_boss != null && ReferenceEquals(e.Entity, _boss))
         {
-            _hasBoss = false;
-            _machine.BossActive = false;
+            ClearBoss();
         }
 
         Reevaluate();
@@ -124,10 +127,15 @@ public partial class MusicDirector : Node
 
     private void OnBossStarted(BossEncounterStartedEvent e)
     {
-        _bossId = e.Boss.RuntimeId;
-        _hasBoss = true;
+        _boss = e.Boss;
         _machine.BossActive = true;
         Reevaluate();
+    }
+
+    private void ClearBoss()
+    {
+        _boss = null;
+        _machine.BossActive = false;
     }
 
     private void PollSafeZone(float delta)
@@ -149,8 +157,21 @@ public partial class MusicDirector : Node
         }
     }
 
-    private void PruneEngaged()
+    /// <summary>
+    /// Drops combatants — and the boss — whose bodies have been freed. Death is the tidy exit and
+    /// raises an event; leaving the world is the untidy one and raises nothing. A region transition
+    /// or a load mid-fight frees the actors outright, and the boss was only ever cleared by
+    /// <see cref="OnDied"/>, so walking out of the arena left boss music playing over the whole rest
+    /// of the game with no way back to explore.
+    /// </summary>
+    private void PruneDead()
     {
+        if (_boss != null && !GodotObject.IsInstanceValid(_boss.Body))
+        {
+            ClearBoss();
+            Reevaluate();
+        }
+
         if (_engaged.Count == 0)
         {
             return;
