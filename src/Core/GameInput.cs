@@ -27,6 +27,11 @@ public static class GameInput
     public const string LockCycleNext = "lock_cycle_next";
     public const string LockCyclePrev = "lock_cycle_prev";
     public const string Inventory = "inventory";
+
+    /// <summary>Opens the spellbook (37.5D). Bound to T for "tome" — K, the usual "skills" key, is
+    /// already taken by the dev reputation control in GameBootstrap, and a player-facing action
+    /// sharing it would fire both.</summary>
+    public const string Spellbook = "spellbook";
     public const string Journal = "journal";
     public const string Map = "map";
 
@@ -130,6 +135,7 @@ public static class GameInput
         Bind(Dodge, new InputEventKey { PhysicalKeycode = Key.Ctrl });
         Bind(Interact, new InputEventKey { PhysicalKeycode = Key.E });
         Bind(Inventory, new InputEventKey { PhysicalKeycode = Key.I });
+        Bind(Spellbook, new InputEventKey { PhysicalKeycode = Key.T });
         Bind(Journal, new InputEventKey { PhysicalKeycode = Key.J });
         Bind(Map, new InputEventKey { PhysicalKeycode = Key.M });
         Bind(Bestiary, new InputEventKey { PhysicalKeycode = Key.B });

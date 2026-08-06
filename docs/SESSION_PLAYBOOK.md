@@ -3189,10 +3189,37 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
     the "2/3" caption, and a spine colour for finished / available / out of reach; a locked perk
     names *which* refusal applies, the same rule Phase 37's property prompts follow.
 
-- [ ] **37.5D — The Magic screen** `[F/C]`
-  - **Done when:** `SpellbookPanel` exists as its own `UiPanel` with its own input action, magic
-    is out of `InventoryPanel`'s tab strip, and the screen runs cold (`ArcaneGround`, tarnished
-    silver, the rune circle) against the rest of the UI's warmth.
+- [x] **37.5D — The Magic screen** `[F/C]` ✅
+  - `SpellbookPanel` is its own `UiPanel` on a new `Spellbook` action. ⚠️ Bound to **`T`** for
+    "tome", not the conventional `K` — `K` is already the dev reputation control in
+    `GameBootstrap`'s raw `_Input`, and a player-facing action sharing it would fire both.
+  - `InventoryPanel` drops to three tabs. The screen runs **cold**: ink-violet vellum, tarnished
+    silver frame, glyph-blue light, and a much finer grain tinted toward the glyph colour. It is
+    the only surface in the game that is not ash and ember, and that contrast is the point — the
+    player should know which screen they are on before reading a word.
+  - It spends the whole ornament budget (rune circle behind the school ring, sigil field across
+    the ground, shimmer on the title) and nothing else may.
+  - **Two things the game had never shown, both now read from the authority combat uses:**
+    - The **prepared cycle**. `Q` casts "the selected spell" and `F` cycles it, and no screen ever
+      said what that order was or where in it you were — the HUD shows only the current name. A
+      caster with six spells was cycling blind.
+    - The **reactive combos** (`SpellCombo.ForSchool`). Shatter and Thermal Shock have been live
+      since Phase 29.5D and were discoverable only by casting lightning into a chilled enemy and
+      noticing the number was bigger. `SpellCombo.Rules` gained a public accessor rather than the
+      screen keeping its own copy — a documented combo that does not fire is worse than an
+      undocumented one, because the player builds around it.
+  - ⚠️ **`ContentValidator` now gates the UI's fonts and shaders**, and the obvious version of
+    that check is worthless: **`GD.Load<Shader>` returns a perfectly non-null `Shader` for source
+    that does not parse at all.** Godot prints the compile error and hands back the resource, and
+    there is no public "did this compile" API. Verified by feeding it a file containing "this is
+    not glsl" — it loaded, passed a null check, and `--validate` said PASS.
+    The seam that works is `GetShaderUniformList()`: a shader that failed to parse exposes none.
+    Every UI shader declares several by design; if one ever legitimately has no uniforms, exempt
+    it explicitly rather than weakening the check. Proven both ways — broken → `validate: FAIL`,
+    restored → `PASS`.
+    This matters because **three of the four UI shaders only instantiate when a screen is opened**,
+    so a broken one shows up in no boot log, no `--play` run and no test — only in play, on one
+    screen, as "nothing is there".
 - [ ] **37.5E — Map, quest log, dialogue, bestiary** `[F]`
   - **Done when:** marker hierarchy and filters on the map; Main/Side/Completed/Failed in the
     log (there are no Contracts or Exploration quest kinds — do not invent headings for them);

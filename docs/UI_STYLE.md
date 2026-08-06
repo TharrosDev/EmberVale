@@ -321,8 +321,14 @@ digits.
   empty boxes. Slots show a *category glyph* instead (silhouette = category, colour = rarity,
   frame width = tier), and `ItemSlot` prefers a real `Icon` the moment one is authored. That is
   a floor, not a ceiling: the art phase is a data drop with no code change.
-- **37.5D** lifts magic out of the character sheet into `SpellbookPanel`, the one screen
-  that runs cold (`ArcaneGround`, `ArcaneSilver`, the rune circle).
+- **37.5D** ✅ lifted magic out of the character sheet into `SpellbookPanel` (`T` for tome) —
+  the one screen that runs cold, and the only one spending all three motifs. It also surfaced
+  two things the game had never shown: the **prepared-spell cycle order** that `Q`/`F` walk,
+  and the **reactive combos** from `SpellCombo`'s rule table, live since Phase 29.5D and
+  discoverable only by noticing a bigger number. Both read from the same authority combat uses.
+  ⚠️ `ContentValidator` now gates the UI's fonts and shaders. Three of the four shaders only
+  instantiate when a screen is *opened*, so a broken one appeared in no boot log, no `--play`
+  run and no test — only in play, as "nothing is there".
 - **37.5E** rebuilds map, quest log, dialogue and bestiary.
 - **37.5F** rebuilds the shell, and migrates the genuinely-modal `CanvasLayer` screens
   onto `UiPanel`.

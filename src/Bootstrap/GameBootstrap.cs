@@ -55,6 +55,7 @@ public partial class GameBootstrap : Node3D
     private DevConsole? _console;
     private ProfilerOverlay? _profiler;
     private InventoryPanel _inventoryPanel = null!;
+    private SpellbookPanel _spellbookPanel = null!;
     private HotbarPanel _hotbarPanel = null!;
     private QuestLogPanel _questLogPanel = null!;
     private DialoguePanel _dialoguePanel = null!;
@@ -359,6 +360,9 @@ public partial class GameBootstrap : Node3D
         AddChild(new AnalyticsSink());
         _inventoryPanel = new InventoryPanel();
         AddChild(_inventoryPanel);
+
+        _spellbookPanel = new SpellbookPanel();
+        AddChild(_spellbookPanel);
         _hotbarPanel = new HotbarPanel { Dock = _gameHud.BottomDock };
         AddChild(_hotbarPanel);
         _questLogPanel = new QuestLogPanel();
@@ -946,7 +950,8 @@ public partial class GameBootstrap : Node3D
         _hotbarPanel.SetInventory(_player.GetComponent<InventoryComponent>());
         _inventoryPanel.SetProgression(_player.GetComponent<ProgressionComponent>());
         _inventoryPanel.SetPerks(_player.GetComponent<PerksComponent>());
-        _inventoryPanel.SetSpellcasting(_player.GetComponent<SpellcastingComponent>());
+        _spellbookPanel.SetSpellcasting(_player.GetComponent<SpellcastingComponent>());
+        _spellbookPanel.SetProgression(_player.GetComponent<ProgressionComponent>());
         _inventoryPanel.SetReputation(_player.GetComponent<ReputationComponent>());
         _inventoryPanel.SetCorruption(_player.GetComponent<CorruptionComponent>());
         _inventoryPanel.SetStats(_player.GetComponent<StatsComponent>());
