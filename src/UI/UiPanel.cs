@@ -51,6 +51,26 @@ public abstract partial class UiPanel : CanvasLayer
 
     public bool IsOpen => Shell.Visible;
 
+    /// <summary>
+    /// Releases this panel's <see cref="UiState"/> registration if it is freed while still open.
+    /// <see cref="UiState"/> holds owners in a process-lifetime static, so a modal panel that leaves
+    /// the tree open would sit in it forever — and because a modal is also a world-pauser, the
+    /// result is a permanently paused game with no menu on screen and no way to clear it.
+    ///
+    /// Hooked on the notification rather than <c>_ExitTree</c> deliberately: six subclasses override
+    /// <c>_ExitTree</c> to unsubscribe and would shadow a base implementation, whereas none override
+    /// <c>_Notification</c>. Nothing reaches this today — the game has no quit-to-menu path, so a
+    /// panel is never freed mid-session — but the guard is correct regardless of reachability: a
+    /// panel that has left the tree is by definition not an open menu.
+    /// </summary>
+    public override void _Notification(int what)
+    {
+        if (what == NotificationExitTree && Modal)
+        {
+            UiState.Close(this);
+        }
+    }
+
     public sealed override void _Ready()
     {
         // A modal panel now pauses the tree (GameManager.RefreshPause), so the panel itself has to
