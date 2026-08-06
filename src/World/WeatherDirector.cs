@@ -48,7 +48,7 @@ public partial class WeatherDirector : Node, ISaveable
 
     public override void _ExitTree()
     {
-        ServiceLocator.Instance?.Unregister<WeatherDirector>();
+        ServiceLocator.Instance?.Unregister(this);
         SaveManager.Instance?.Unregister(this);
     }
 
