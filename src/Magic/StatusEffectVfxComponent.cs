@@ -48,19 +48,32 @@ public partial class StatusEffectVfxComponent : EntityComponent
 
     private void OnRemoved(StatusEffectRemovedEvent e)
     {
-        if (ReferenceEquals(e.Target, Entity) && _active.Remove(e.EffectId, out GpuParticles3D? swirl) &&
-            IsInstanceValid(swirl))
+        if (!ReferenceEquals(e.Target, Entity) || !_active.Remove(e.EffectId, out GpuParticles3D? swirl) ||
+            !IsInstanceValid(swirl))
         {
-            // Stop emitting and let the last particles fade before freeing.
-            swirl.Emitting = false;
-            swirl.GetTree().CreateTimer(1.2).Timeout += () =>
-            {
-                if (IsInstanceValid(swirl))
-                {
-                    swirl.QueueFree();
-                }
-            };
+            return;
         }
+
+        // This handler is reached during teardown as well as during play: StatusEffectsComponent's
+        // OnTeardown calls ClearAll, which publishes a removal for every live effect. By then the
+        // swirl may already have left the tree with the body, and GetTree() returns null there — so
+        // the fade timer was a null dereference on the ordinary path of a cell unload or a death
+        // despawn. Nothing to fade into once the world is going away; just drop it.
+        if (!swirl.IsInsideTree())
+        {
+            swirl.QueueFree();
+            return;
+        }
+
+        // Stop emitting and let the last particles fade before freeing.
+        swirl.Emitting = false;
+        swirl.GetTree().CreateTimer(1.2).Timeout += () =>
+        {
+            if (IsInstanceValid(swirl))
+            {
+                swirl.QueueFree();
+            }
+        };
     }
 
     /// <summary>A small orbiting-ember swirl tinted to the school colour, built in code so no scene
