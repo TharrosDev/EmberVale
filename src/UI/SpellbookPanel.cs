@@ -240,40 +240,18 @@ public partial class SpellbookPanel : UiPanel
         int rank = _mastery?.RankOf(school) ?? 0;
         bool active = school == _school;
 
-        var button = new Button { Flat = true, ToggleMode = false };
-        var box = new StyleBoxFlat
-        {
-            BgColor = active ? UiTheme.CardBg with { A = 0.75f } : new Color(0f, 0f, 0f, 0f),
-            BorderColor = active ? tint : new Color(0f, 0f, 0f, 0f),
-        };
-        box.SetBorderWidthAll(0);
-        box.BorderWidthLeft = 3;
-        box.SetContentMarginAll(UiTheme.SpaceXs);
-        box.SetCornerRadiusAll(UiTheme.RadiusSm);
-        button.AddThemeStyleboxOverride("normal", box);
-
-        StyleBoxFlat hover = (StyleBoxFlat)box.Duplicate();
-        hover.BgColor = UiTheme.CardBg;
-        button.AddThemeStyleboxOverride("hover", hover);
-        button.AddThemeStyleboxOverride("pressed", hover);
-
-        StyleBoxFlat focus = (StyleBoxFlat)box.Duplicate();
-        focus.BorderColor = UiTheme.Accent;
-        focus.SetBorderWidthAll(1);
-        focus.BorderWidthLeft = 3;
-        button.AddThemeStyleboxOverride("focus", focus);
+        // CardButton, not a Button with anchored children (37.5H). These rows were pinned to a
+        // hand-guessed 44 px for two lines of content, which the text-scale setting overran the
+        // moment it moved off 1.0 — the name and the mastery meter drew over each other.
+        PanelContainer card = UiTheme.CardButton(active ? tint : null, out Button input, out VBoxContainer col);
 
         DamageType captured = school;
-        button.Pressed += () =>
+        input.Pressed += () =>
         {
             _school = captured;
             _selected = null;
             MarkDirty();
         };
-
-        var col = new VBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
-        col.AddThemeConstantOverride("separation", 2);
-        col.SetAnchorsPreset(Control.LayoutPreset.FullRect);
 
         Label name = UiTheme.Body(Loc.T(SchoolKey(school)), active ? tint : UiTheme.Text);
         UiTheme.ApplyType(name, UiTheme.FontRole.Display, UiTheme.HeaderFontSize);
@@ -286,8 +264,9 @@ public partial class SpellbookPanel : UiPanel
             meter.AddChild(new ColorRect
             {
                 Color = i < rank ? tint : UiTheme.Engrave,
-                CustomMinimumSize = new Vector2(22f, 4f),
+                CustomMinimumSize = new Vector2(18f, 4f),
                 MouseFilter = Control.MouseFilterEnum.Ignore,
+                SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
             });
         }
 
@@ -296,9 +275,7 @@ public partial class SpellbookPanel : UiPanel
             rank > 0 ? tint : UiTheme.Disabled));
         col.AddChild(meter);
 
-        button.AddChild(col);
-        button.CustomMinimumSize = new Vector2(0f, 44f);
-        return button;
+        return card;
     }
 
     /// <summary>The selected school's spells, one card each.</summary>

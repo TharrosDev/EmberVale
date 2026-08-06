@@ -86,7 +86,9 @@ public partial class DebugHud : CanvasLayer
 
     private void BuildVitalsPanel()
     {
-        _vitalsPanel = Ignore(UiTheme.Panel());
+        // Cards rather than Panels (37.5H): this is the F3 developer overlay, and two framed
+        // screens each carrying a grain ShaderMaterial is chrome the dev overlay does not need.
+        _vitalsPanel = Ignore(UiTheme.Card());
         // Below the GameHud's top-left clock/weather widget so the F3 overlay doesn't cover it.
         _vitalsPanel.Position = new Vector2(16, 64);
         _vitalsPanel.CustomMinimumSize = new Vector2(320, 0);
@@ -129,7 +131,7 @@ public partial class DebugHud : CanvasLayer
     private void BuildControlsHint()
     {
         // Bottom-right: bottom-left belongs to the GameHud vitals + hotbar bar (30.5B).
-        _controlsPanel = Ignore(UiTheme.Panel());
+        _controlsPanel = Ignore(UiTheme.Card());
         _controlsPanel.AnchorLeft = 1f;
         _controlsPanel.AnchorRight = 1f;
         _controlsPanel.AnchorTop = 1f;

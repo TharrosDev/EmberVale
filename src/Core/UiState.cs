@@ -62,8 +62,17 @@ public static class UiState
         Changed?.Invoke();
     }
 
-    /// <summary>Drops every owner. For tests, so one case's leaked menu can't fail the next.</summary>
-    public static void ResetForTests()
+    /// <summary>
+    /// Drops every owner.
+    ///
+    /// Two callers, both needing the same thing: a test, so one case's leaked menu cannot fail the
+    /// next; and **quit-to-menu** (37.5H), which reloads the scene out from under whatever panels
+    /// were open. Owners live in a process-lifetime static that a scene reload does not touch, so
+    /// without this the pause menu that triggered the return would still be registered — and since
+    /// a registered owner is also a world-pauser, the title screen would come back with the tree
+    /// paused and no menu on screen to clear it.
+    /// </summary>
+    public static void ClearAll()
     {
         _owners.Clear();
         _worldPausers.Clear();

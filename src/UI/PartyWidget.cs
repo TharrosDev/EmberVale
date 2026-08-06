@@ -44,7 +44,10 @@ public partial class PartyWidget : VBoxContainer
         Visible = false;
 
         // The shared frame, so the strip reads as part of the same HUD as the vitals panel below it.
-        PanelContainer frame = UiTheme.Panel();
+        // A Card, not a Panel (37.5H) - a small self-hiding HUD strip does not earn a framed
+        // screen's chrome, and it sits directly above the vitals panel where two brass rules
+        // stacked read as a seam rather than as two widgets.
+        PanelContainer frame = UiTheme.Card(UiTheme.Friendly);
         frame.MouseFilter = MouseFilterEnum.Ignore;
         frame.CustomMinimumSize = new Vector2(250, 0);
         AddChild(frame);

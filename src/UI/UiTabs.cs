@@ -51,9 +51,29 @@ public partial class UiTabs : HBoxContainer
     {
         // Swap the font colour, not Modulate — modulating the whole button multiplies the
         // already-dim font down below readable contrast (the 30.5K audit caught ~2.9:1).
+        //
+        // 37.5H adds the ember underline. Colour alone made the active tab a slightly brighter
+        // button in a row of buttons, which is a weak signal at the top of a screen whose whole
+        // job is telling you where you are — and it was the *only* signal, so it vanished
+        // entirely under a colourblind setting. The rule is a second, non-colour channel.
         for (int i = 0; i < _buttons.Count; i++)
         {
-            _buttons[i].AddThemeColorOverride("font_color", i == Current ? UiTheme.Accent : UiTheme.Dim);
+            bool active = i == Current;
+            _buttons[i].AddThemeColorOverride("font_color", active ? UiTheme.Accent : UiTheme.Dim);
+
+            var box = new StyleBoxFlat
+            {
+                BgColor = active ? UiTheme.CardBg : new Color(0f, 0f, 0f, 0f),
+                BorderColor = UiTheme.Accent,
+            };
+            box.SetBorderWidthAll(0);
+            box.BorderWidthBottom = active ? 2 : 0;
+            box.SetContentMarginAll(UiTheme.SpaceXs);
+            box.ContentMarginLeft = UiTheme.SpaceMd;
+            box.ContentMarginRight = UiTheme.SpaceMd;
+            box.CornerRadiusTopLeft = UiTheme.RadiusSm;
+            box.CornerRadiusTopRight = UiTheme.RadiusSm;
+            _buttons[i].AddThemeStyleboxOverride("normal", box);
         }
     }
 }

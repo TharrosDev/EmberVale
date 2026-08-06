@@ -3309,6 +3309,64 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
     differently — only the visual rows do. The column count is derived from the viewport now.
   - Verified at 854×534, 1280×800, 1920×1080 and 3440×1440.
 
+- [x] **37.5H — The sweep: settings, character creation, and everything missed** `[F]` ✅
+  - Added after the maintainer asked for a once-over. A coverage audit — does each file use *any*
+    of `Card`/`Chip`/`SectionRule`/`ApplyType`/`Title`/`Prose`/`Well`/`Divider`/`ItemSlot`? — found
+    **13 files with zero usage**. Two of them were whole screens.
+  - **`SettingsPanel`** was never rebuilt, only added to. Section headings were plain accent body
+    labels — the same weight as the setting names beneath them, so thirty rows read as one
+    undifferentiated column. They are engraved `SectionRule`s now, and the panel height is
+    viewport-relative (the fixed 420 px scroll plus title and Back overflowed a 533 px viewport).
+  - ⚠️ **Accessibility controls now carry an explanation line.** "Colour Vision" as a bare dropdown
+    label asks the player to already know what deuteranopia is *and* what the game intends to do
+    about it. A settings screen is exactly where that sentence belongs.
+  - **`CharacterCreator`**: race picking is a card grid, not a dropdown. The dropdown made six races
+    look like a settings value — pick blind, then read a paragraph that reflowed underneath to
+    learn what you chose, and comparing two meant flipping back and forth from memory. This is the
+    first decision the player makes and the only one they can never revise, so all six sit on
+    screen with their stat trades as signed chips.
+  - ⚠️ **The `Panel()`-as-generic-box trap, final tally: thirteen.** 37.5B named the pattern, fixed
+    the status chips — **and left five `GameHud` widgets on `Panel()` in the same file it was
+    editing**: vitals, time/weather, quest tracker, event banner, interaction prompt. All five are
+    on screen simultaneously, so the HUD was rendering five brass frames, five engraved shadows and
+    **five grain `ShaderMaterial`s** at once, more framing than the character screen uses. Also
+    caught: `HotbarPanel`, `PartyWidget`, `TutorialHint`, and both `DebugHud` panels.
+    **Naming a pattern is not the same as sweeping for it.** The sweep is what found the instances.
+  - `UiTabs` gained an ember underline on the active tab. Colour alone made it a slightly brighter
+    button in a row of buttons — a weak signal at the top of a screen whose whole job is saying
+    where you are, and one that vanished entirely under a colourblind setting.
+  - **Final state:** every remaining `UiTheme.Panel()` is a genuine full screen — main menu, pause,
+    settings, save slots, character creator, loading, the `UiPanel` framework, and the two dev
+    overlays. Verified by audit, not by memory.
+  - **Return to Main Menu** (maintainer request). Until now the only way out of a session was
+    closing the process. The pause menu clears `UiState`, moves the state out of `Paused` so
+    `RefreshPause` settles on an unpaused tree, and reloads the scene deferred.
+    ⚠️ **`--play` had to become a once-per-process latch.** `ShowMainMenu` runs again on every
+    return, so the dev flag re-fired and dropped the player straight back into the save they had
+    just left — which looks exactly like "return to main menu just reloads the world", and is only
+    reachable from a `--play` launch, which is how it hid from a normal play-test.
+    An explicit in-place teardown was written and then **not shipped**: the reload works, and
+    swapping in ~100 lines of untested teardown across 25 world-owned nodes is a regression risk on
+    a path no remote session can drive. Revisit only if the reload proves insufficient.
+  - ⚠️ **Overlap bug, mine, twice: a `Button` is not a `Container`.** It never grows to fit its
+    children, so anchored content inside one collapses onto itself. The race cards were declared
+    `(160, 0)` — **zero height**, every label drawing over the next — and the spellbook's school
+    rows were pinned to a hand-guessed 44 px that two lines overran as soon as the 37.5G text-scale
+    setting moved off 1.0. `UiTheme.CardButton` is the fix: a `PanelContainer` (which *is* a
+    container, and sizes to content) with a transparent button laid over it for input and focus.
+    **Never put content inside a `Button`; use `CardButton`.**
+  - Settings rows share one fixed right-hand control column. They were sized by their own content,
+    so a long dropdown value pushed its label around while a checkbox left a gap — thirty rows of
+    that reads as a ragged edge, and the widest dropdown squeezed its label until the two collided.
+    The long colour-vision option names moved into the explanation line, where there is room.
+  - Both screens now scroll and are viewport-relative; six race cards plus a summary and two fields
+    do not fit the 533 px logical viewport, and neither did the settings list.
+  - Not overhauled, deliberately: world VFX (`SpellFlash`, `ImpactEffect`, `WeaponTrailComponent`,
+    `StatusEffectVfxComponent`, `TelegraphRing`, the placement ghost). Those answer to
+    `ART_STYLE.md`, not to UI tokens, and recolouring them is a separate decision — the same line
+    37.5G drew for colour-vision adaptation. There are **no floating damage numbers** in the game;
+    `CombatFeedbackFx` is a screen-edge flash, and it was already on the tokens.
+
 ---
 
 > ### Phase 37.5 retrospective — what the seven sub-phases actually found
@@ -3325,13 +3383,16 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
 > | The HUD never showed **whether a target was hostile** | Phase 34.5 |
 > | The **prepared-spell cycle order** was shown nowhere | Phase 12 |
 > | Seven hand-rolled scrims, six of them **blue-black** against §1 rule 1 | various |
+> | **Five HUD widgets** each carrying a brass frame and a grain shader, at once | Phase 37.5A |
 >
 > Three lessons worth carrying forward:
 > 1. **Check what already exists before adding it.** 37.5A shipped a second school-colour ramp
 >    beside one that had tinted every projectile since Phase 12. 37.5F nearly rewrote a lifecycle
 >    to add a contract the screens already had.
-> 2. **`Panel()` is not a generic box.** Four separate widgets reused it as one and inherited a
->    brass frame and a grain shader each: status chips, save rows, toasts, spell chips.
+> 2. **`Panel()` is not a generic box** — and naming a trap is not sweeping for it. 37.5B named
+>    this one, fixed a single instance, and left five more in the very file it was editing. The
+>    final count across the overhaul was **thirteen**, and only a systematic coverage audit in
+>    37.5H found them. Grep for the pattern; do not trust the memory of having fixed it.
 > 3. **A check that cannot fail is not a check.** The first shader validator passed a file
 >    containing "this is not glsl"; the first grid-focus pass errored every frame *and worked
 >    perfectly under a mouse*. Both were caught only by deliberately breaking them.

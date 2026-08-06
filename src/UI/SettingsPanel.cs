@@ -73,7 +73,7 @@ public partial class SettingsPanel : CanvasLayer
         panel.SetAnchorsPreset(Control.LayoutPreset.Center);
         panel.GrowHorizontal = Control.GrowDirection.Both;
         panel.GrowVertical = Control.GrowDirection.Both;
-        panel.CustomMinimumSize = new Vector2(480, 0);
+        panel.CustomMinimumSize = new Vector2(660, 0);
         AddChild(panel);
 
         MarginContainer pad = UiTheme.Padding(18);
@@ -83,22 +83,31 @@ public partial class SettingsPanel : CanvasLayer
         col.AddThemeConstantOverride("separation", 8);
         pad.AddChild(col);
 
-        Label header = UiTheme.Header(Loc.T("settings.title"));
-        col.AddChild(header);
-        col.AddChild(new HSeparator());
+        col.AddChild(UiTheme.Title(Loc.T("settings.title")));
+        col.AddChild(UiTheme.Divider());
 
-        // The sections are tall, so scroll them; cap the height so the panel never exceeds the screen.
+        // The sections are tall, so scroll them. The height is viewport-relative (37.5H): a fixed
+        // 420 plus the title and the Back button overflowed a 533 px logical viewport, which is
+        // what a Steam Deck reports at UI scale 1.5.
         var scroll = new ScrollContainer
         {
-            CustomMinimumSize = new Vector2(440, 420),
+            CustomMinimumSize = new Vector2(600, Mathf.Clamp(UiTheme.UsableHeight(panel) - 110f, 220f, 460f)),
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
             FollowFocus = true, // keep the focused row in view under gamepad/keyboard nav (30.5J)
         };
         col.AddChild(scroll);
 
+        // ⚠️ Reserve the gutter the vertical scrollbar draws in. A ScrollContainer paints its bar
+        // *inside* its own rect, over the content — so a row sized to the full width had its
+        // right-hand control sitting under the bar. The fix is a wider panel plus this inset, not a
+        // taller one: the list is long by nature and shortening it only moves the problem.
+        var gutter = new MarginContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        gutter.AddThemeConstantOverride("margin_right", UiTheme.SpaceLg);
+        scroll.AddChild(gutter);
+
         var body = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         body.AddThemeConstantOverride("separation", 6);
-        scroll.AddChild(body);
+        gutter.AddChild(body);
 
         var s = _settings.Current;
 
@@ -163,7 +172,8 @@ public partial class SettingsPanel : CanvasLayer
         }));
 
         Section(body, Loc.T("settings.section.accessibility"));
-        body.AddChild(ToggleRow(Loc.T("settings.reduced_motion"), s.ReducedMotion, v => { s.ReducedMotion = v; Persist(); }));
+        body.AddChild(ToggleRow(Loc.T("settings.reduced_motion"), s.ReducedMotion,
+            v => { s.ReducedMotion = v; Persist(); }, Loc.T("settings.reduced_motion.note")));
         body.AddChild(ToggleRow(Loc.T("settings.subtitles"), s.SubtitlesEnabled, v => { s.SubtitlesEnabled = v; Persist(); }));
         body.AddChild(SliderRow(Loc.T("settings.ui_scale"), 0.75, 1.5, 0.05, s.UiScale, v => s.UiScale = (float)v));
 
@@ -172,10 +182,10 @@ public partial class SettingsPanel : CanvasLayer
         // glyphs — for a player who wants readable text without surrendering half the screen to
         // chrome. It is floored at the 12 px legibility minimum inside UiTheme.FontSize.
         body.AddChild(SliderRow(Loc.T("settings.text_scale"), 0.85, 1.5, 0.05, s.TextScale,
-            v => { s.TextScale = (float)v; Persist(); }));
+            v => { s.TextScale = (float)v; Persist(); }, Loc.T("settings.text_scale.note")));
 
         body.AddChild(ToggleRow(Loc.T("settings.high_contrast"), s.HighContrast,
-            v => { s.HighContrast = v; Persist(); }));
+            v => { s.HighContrast = v; Persist(); }, Loc.T("settings.high_contrast.note")));
 
         // Colour-vision adaptation daltonizes the UI's semantic ramps — rarity, magic school,
         // faction standing, good/bad — so pairs that would collapse together stay apart. World art
@@ -190,9 +200,10 @@ public partial class SettingsPanel : CanvasLayer
                 Loc.T("settings.color_vision.tritanopia"),
             },
             (int)s.ColorVision,
-            index => { s.ColorVision = (ColorVisionMode)index; Persist(); }));
+            index => { s.ColorVision = (ColorVisionMode)index; Persist(); },
+            Loc.T("settings.color_vision.note")));
 
-        col.AddChild(new HSeparator());
+        col.AddChild(UiTheme.Divider());
         Button back = UiTheme.Action(Loc.T("common.back"));
         back.CustomMinimumSize = new Vector2(0, 34);
         back.Pressed += Back;
@@ -201,44 +212,84 @@ public partial class SettingsPanel : CanvasLayer
         UiFocus.GrabFirst(panel); // gamepad/keyboard land on the first setting (30.5J)
     }
 
+    /// <summary>Width of the right-hand control column. Wide enough for the longest dropdown value
+    /// and the slider-plus-readout pair, so nothing has to squeeze its label.</summary>
+    private const float ControlColumn = 230f;
+
     // --- Row builders -------------------------------------------------------
 
+    /// <summary>An engraved section rule (37.5H). These were a plain accent-coloured body label,
+    /// which put a section heading at exactly the same weight as the setting names underneath it -
+    /// so a screen of thirty rows read as one undifferentiated column.</summary>
     private static void Section(VBoxContainer parent, string title)
     {
-        var label = UiTheme.Body(title, UiTheme.Accent);
-        UiTheme.ApplyType(label, UiTheme.FontRole.Interface, UiTheme.BodyFontSize);
-        parent.AddChild(label);
+        parent.AddChild(UiTheme.SectionRule(title));
     }
 
-    private static HBoxContainer Row(string label, Control control)
+    /// <summary>
+    /// One setting: name on the left, control on the right, optional explanation underneath.
+    ///
+    /// The explanation is the point of the rebuild for the accessibility block. "Colour Vision" as
+    /// a bare dropdown label asks the player to already know what deuteranopia is and what the game
+    /// intends to do about it; a settings screen is exactly where that sentence belongs.
+    /// </summary>
+    private static Control Row(string label, Control control, string? explanation = null)
     {
+        var wrap = new VBoxContainer();
+        wrap.AddThemeConstantOverride("separation", 0);
+
         var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 12);
+        row.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
+
         Label name = UiTheme.Body(label);
         name.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        name.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        name.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         row.AddChild(name);
+
+        // Every control shares one right-hand column (37.5H). They were sized by their own content
+        // before, so a long dropdown value pushed its label around while a checkbox left a gap —
+        // thirty rows of that reads as a ragged edge rather than a column of values, and the widest
+        // dropdown could squeeze its label until the two collided.
+        var slot = new MarginContainer { CustomMinimumSize = new Vector2(ControlColumn, 0f) };
         control.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-        row.AddChild(control);
-        return row;
+        control.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        slot.AddChild(control);
+        row.AddChild(slot);
+        wrap.AddChild(row);
+
+        if (!string.IsNullOrEmpty(explanation))
+        {
+            MarginContainer indent = UiTheme.Padding(0);
+            indent.AddThemeConstantOverride("margin_left", UiTheme.SpaceMd);
+            indent.AddThemeConstantOverride("margin_bottom", UiTheme.SpaceXs);
+
+            Label note = UiTheme.Caption(explanation);
+            note.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            indent.AddChild(note);
+            wrap.AddChild(indent);
+        }
+
+        return wrap;
     }
 
-    private HBoxContainer ToggleRow(string label, bool value, System.Action<bool> onChanged)
+    private Control ToggleRow(string label, bool value, System.Action<bool> onChanged, string? explanation = null)
     {
         CheckButton toggle = UiTheme.Toggle(value);
         toggle.Toggled += pressed => onChanged(pressed);
-        return Row(label, toggle);
+        return Row(label, toggle, explanation);
     }
 
-    private HBoxContainer DropdownRow(string label, string[] options, int selected, System.Action<int> onSelected)
+    private Control DropdownRow(string label, string[] options, int selected, System.Action<int> onSelected, string? explanation = null)
     {
         OptionButton dropdown = UiTheme.Dropdown(options, selected);
         dropdown.ItemSelected += index => onSelected((int)index);
-        return Row(label, dropdown);
+        return Row(label, dropdown, explanation);
     }
 
     /// <summary>A 0..1 volume slider with a live % readout; applies live while dragging, persists on
     /// release.</summary>
-    private HBoxContainer VolumeRow(string label, float value, System.Action<float> assign)
+    private Control VolumeRow(string label, float value, System.Action<float> assign)
     {
         var box = new HBoxContainer();
         box.AddThemeConstantOverride("separation", 8);
@@ -259,11 +310,11 @@ public partial class SettingsPanel : CanvasLayer
         return Row(label, box);
     }
 
-    private HBoxContainer SliderRow(string label, double min, double max, double step, float value, System.Action<double> assign)
+    private Control SliderRow(string label, double min, double max, double step, float value, System.Action<double> assign, string? explanation = null)
     {
         var box = new HBoxContainer();
         box.AddThemeConstantOverride("separation", 8);
-        HSlider slider = UiTheme.Slider(min, max, step, value, 180f);
+        HSlider slider = UiTheme.Slider(min, max, step, value, 150f);
         Label readout = UiTheme.Body($"{value:0.00}", UiTheme.Dim);
         readout.CustomMinimumSize = new Vector2(40, 0);
         readout.HorizontalAlignment = HorizontalAlignment.Right;

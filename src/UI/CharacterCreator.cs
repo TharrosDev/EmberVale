@@ -30,6 +30,7 @@ public partial class CharacterCreator : CanvasLayer
     private LineEdit _name = null!;
     private LineEdit _background = null!;
     private PanelContainer _panel = null!;
+    private GridContainer _raceGrid = null!;
 
     public void Configure(Action<CharacterProfile> onConfirm, Action onBack)
     {
@@ -67,56 +68,71 @@ public partial class CharacterCreator : CanvasLayer
         panel.SetAnchorsPreset(Control.LayoutPreset.Center);
         panel.GrowHorizontal = Control.GrowDirection.Both;
         panel.GrowVertical = Control.GrowDirection.Both;
-        panel.CustomMinimumSize = new Vector2(560, 0);
+        panel.CustomMinimumSize = new Vector2(660, 0);
         AddChild(panel);
         _panel = panel;
 
         MarginContainer pad = UiTheme.Padding(18);
         panel.AddChild(pad);
 
-        var col = new VBoxContainer();
-        col.AddThemeConstantOverride("separation", 10);
-        pad.AddChild(col);
+        var outer = new VBoxContainer();
+        outer.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        pad.AddChild(outer);
 
-        col.AddChild(UiTheme.Header(Loc.T("create.title")));
-        col.AddChild(new HSeparator());
+        outer.AddChild(UiTheme.Title(Loc.T("create.title")));
+        outer.AddChild(UiTheme.Divider());
 
-        // Race picker.
+        // Scrolled and viewport-relative (37.5H): six race cards, the lore summary and two text
+        // fields do not fit the 533 px logical viewport a Steam Deck reports at UI scale 1.5.
+        var scroll = new ScrollContainer
+        {
+            CustomMinimumSize = new Vector2(0f, Mathf.Clamp(UiTheme.UsableHeight(panel) - 150f, 200f, 420f)),
+            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
+            FollowFocus = true,
+        };
+        outer.AddChild(scroll);
+
+        // Same scrollbar gutter as the settings screen: the bar is drawn inside the scroll's rect,
+        // over whatever is beneath it.
+        var gutter = new MarginContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        gutter.AddThemeConstantOverride("margin_right", UiTheme.SpaceLg);
+        scroll.AddChild(gutter);
+
+        var col = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        col.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        gutter.AddChild(col);
+        col.AddChild(UiTheme.Divider());
+
         foreach (RaceResource race in RaceDatabase.All)
         {
             _races.Add(race);
         }
 
-        var raceNames = new string[_races.Count];
-        for (int i = 0; i < _races.Count; i++)
-        {
-            raceNames[i] = _races[i].DisplayName;
-        }
+        // Race picking is a *card grid*, not a dropdown (37.5H).
+        //
+        // The dropdown made the six races look like a settings value: you had to open a list, pick
+        // blind, then read a paragraph that reflowed underneath to find out what you had chosen —
+        // and comparing two of them meant flipping back and forth from memory. This is the first
+        // real decision the player makes and the only one they cannot revise later, so all six sit
+        // on screen at once with their traits visible.
+        col.AddChild(UiTheme.SectionRule(Loc.T("create.race")));
 
-        var raceRow = new HBoxContainer();
-        raceRow.AddThemeConstantOverride("separation", 10);
-        Label raceLabel = UiTheme.Body(Loc.T("create.race"), UiTheme.Dim);
-        raceLabel.CustomMinimumSize = new Vector2(150, 0);
-        raceRow.AddChild(raceLabel);
-        OptionButton raceDropdown = UiTheme.Dropdown(raceNames, _races.Count > 0 ? 0 : -1);
-        raceDropdown.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        raceDropdown.ItemSelected += OnRaceSelected;
-        raceRow.AddChild(raceDropdown);
-        col.AddChild(raceRow);
+        _raceGrid = new GridContainer { Columns = 2 };
+        _raceGrid.AddThemeConstantOverride("h_separation", UiTheme.SpaceXs);
+        _raceGrid.AddThemeConstantOverride("v_separation", UiTheme.SpaceXs);
+        col.AddChild(_raceGrid);
 
-        // Trait summary, rebuilt on each race change.
-        _summary = UiTheme.Body(string.Empty);
-        _summary.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        _summary.CustomMinimumSize = new Vector2(0, 150);
+        _summary = UiTheme.Prose(string.Empty);
+        _summary.CustomMinimumSize = new Vector2(0, 72);
         _summary.VerticalAlignment = VerticalAlignment.Top;
         col.AddChild(_summary);
 
-        col.AddChild(new HSeparator());
+        col.AddChild(UiTheme.Divider());
 
         _name = AddField(col, Loc.T("create.name"), Loc.T("create.name_hint"));
         _background = AddField(col, Loc.T("create.background"), Loc.T("create.background_hint"));
 
-        col.AddChild(new HSeparator());
+        outer.AddChild(UiTheme.Divider());
 
         var buttons = new HBoxContainer();
         buttons.AddThemeConstantOverride("separation", 10);
@@ -131,11 +147,57 @@ public partial class CharacterCreator : CanvasLayer
         confirm.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         confirm.Pressed += OnConfirm;
         buttons.AddChild(confirm);
-        col.AddChild(buttons);
+        outer.AddChild(buttons);
 
         if (_races.Count > 0)
         {
             OnRaceSelected(0);
+        }
+    }
+
+    /// <summary>
+    /// Rebuilds the race cards, lighting the chosen one. Each card carries the race's name and its
+    /// stat deltas as signed chips — green up, red down — so the trade a race makes is legible
+    /// before it is picked rather than after.
+    /// </summary>
+    private void RebuildRaceCards()
+    {
+        UiTheme.ClearChildren(_raceGrid);
+
+        for (int i = 0; i < _races.Count; i++)
+        {
+            RaceResource race = _races[i];
+            bool active = ReferenceEquals(race, _selected);
+
+            // CardButton, not a Button with children (37.5H). A Button never grows to fit what is
+            // inside it, so the first version of these cards had zero height and every label drew
+            // on top of the one below.
+            PanelContainer card = UiTheme.CardButton(
+                active ? UiTheme.Accent : null, out Button input, out VBoxContainer col);
+            card.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+
+            int index = i;
+            input.Pressed += () => OnRaceSelected(index);
+            input.TooltipText = race.Description;
+
+            Label name = UiTheme.Body(race.DisplayName, active ? UiTheme.Accent : UiTheme.Text);
+            UiTheme.ApplyType(name, UiTheme.FontRole.Display, UiTheme.BodyFontSize);
+            col.AddChild(name);
+
+            // Deltas wrap rather than running off the card: six races times up to three stat chips
+            // will not fit on one line at any sensible card width, and a HBox would simply overflow.
+            var chips = new HFlowContainer();
+            chips.AddThemeConstantOverride("h_separation", 2);
+            chips.AddThemeConstantOverride("v_separation", 2);
+            foreach (RaceStatDelta delta in race.StatDeltaList())
+            {
+                chips.AddChild(UiTheme.Chip(
+                    $"{Signed(delta.Amount)} {StatNames.Label(delta.Stat)}",
+                    delta.Amount >= 0f ? UiTheme.Good : UiTheme.Bad));
+            }
+
+            col.AddChild(chips);
+            _raceGrid.AddChild(card);
         }
     }
 
@@ -167,6 +229,7 @@ public partial class CharacterCreator : CanvasLayer
 
         _selected = _races[(int)index];
         _summary.Text = BuildSummary(_selected);
+        RebuildRaceCards();
     }
 
     private static string BuildSummary(RaceResource race)

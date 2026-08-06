@@ -73,6 +73,9 @@ public partial class GameBootstrap : Node3D
     private PlayerCharacter? _player;
     private MainMenu? _mainMenu;
     private bool _sandboxBuilt;
+
+    /// <summary>Whether the dev `--play` flag has already been acted on this process.</summary>
+    private bool _playFlagConsumed;
     private double _respawnCountdown = -1d;
 
     // Phase 26C: the active creation profile (race + identity) the player spawns from. New Game uses
@@ -162,8 +165,13 @@ public partial class GameBootstrap : Node3D
         // most recent save, so gameplay — and the systems that only init on world build (audio
         // directors, spawners) — can be launched deterministically from the command line / MCP:
         //   godot --path . -- --play
-        if (HasCmdFlag("--play") && MostRecentSlot() is { } slot)
+        // ⚠️ Consumed once per process. `ShowMainMenu` runs again every time the player quits to the
+        // title (37.5H), and without this latch the dev flag fires on that return too — dropping
+        // them straight back into the save they just left, which looks exactly like "return to main
+        // menu just reloads the world". Only reachable from a `--play` launch, which is how it hid.
+        if (!_playFlagConsumed && HasCmdFlag("--play") && MostRecentSlot() is { } slot)
         {
+            _playFlagConsumed = true;
             Log.Info($"--play: continuing most recent save '{slot}'.");
             StartLoadedGame(slot);
         }

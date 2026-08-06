@@ -39,7 +39,10 @@ public partial class HotbarPanel : CanvasLayer
 
     public override void _Ready()
     {
-        PanelContainer panel = _panel = UiTheme.Panel();
+        // A Well, not a Panel (37.5H). The hotbar is a strip of slots docked to the bottom bar;
+        // as a full framed panel it carried a 2 px brass rule and its own grain ShaderMaterial,
+        // competing with the vitals panel beside it. Recessed reads correctly for a row of slots.
+        PanelContainer panel = _panel = UiTheme.Well();
         if (Dock != null)
         {
             Dock.AddChild(panel);

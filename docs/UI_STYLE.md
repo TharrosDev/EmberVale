@@ -230,7 +230,18 @@ a travelling highlight has nothing meaningful to show frozen.
 
 ## 6. Widgets
 
-- `Panel()` / `Well()` / `Card(edge)` — the three depths. `Card`'s `edge` paints a left
+- `Panel()` / `Well()` / `Card(edge)` / `CardButton(edge, out input, out content)` — the depths.
+  ⚠️ **A `Button` is not a `Container`.** It never grows to fit its children, so content anchored
+  inside one collapses on top of itself. Anything clickable that holds more than a label uses
+  `CardButton`, which is a `PanelContainer` (sizes to content) with a transparent button over it.
+  ⚠️ **`Panel()` is a full screen, and nothing else.** It carries a 2 px brass rule, an engraved
+  shadow *and its own grain `ShaderMaterial`*. Thirteen widgets across the overhaul had reused it
+  as a generic box — status chips, save rows, toasts, the hotbar, the party strip, the tutorial
+  hint, both debug overlays, and **five simultaneous `GameHud` widgets** (vitals, time/weather,
+  quest tracker, event banner, interaction prompt). The HUD alone was rendering five brass frames
+  and five grain shaders at once, more framing than the character screen uses.
+  **A repeated or small widget takes `Card` (sits on) or `Well` (cut into). If you are reaching
+  for a box, it is not a `Panel`.** `Card`'s `edge` paints a left
   spine in a semantic colour (rarity, school, quest state), which is how a list conveys
   category without a legend.
 - `Padding()` — every framed surface's inner margin; modals set `UiState.MenuOpen`.
@@ -412,6 +423,10 @@ digits.
   Both are `Card` now. **When a small repeated widget needs a box, it is a `Card` or a `Well`,
   never a `Panel`.**
 - **37.5G** ✅ shipped the three accessibility settings and the responsiveness audit - sections 8
-  and 9 above are the result. **Phase 37.5 is complete.**
+  and 9 above are the result.
+- **37.5H** ✅ the sweep: settings and character creation rebuilt, and every remaining player-facing
+  widget brought onto the vocabulary. A coverage audit (does this file use *any* of `Card` /
+  `Chip` / `SectionRule` / `ApplyType` / `Title` / `Prose` / `Well` / `Divider` / `ItemSlot`?) found
+  **thirteen** widgets still on `Panel()`. **Phase 37.5 is complete (A-H).**
 
 When those passes land, update this document — it must stay the single source of truth.
