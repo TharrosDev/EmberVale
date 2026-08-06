@@ -22,8 +22,17 @@ public static class LocaleAudit
         }
 
         // Duplicate keys: LocCatalog.Parse dedupes last-wins, so a duplicate is invisible to it —
-        // walk the raw lines ourselves. ponytail: keys are simple dotted ids (no commas/quotes), so
-        // a split on the first ',' is enough; revisit if a key ever needs quoting.
+        // walk the raw lines ourselves.
+        //
+        // Splitting on the first ',' is sound and stays sound: it only ever extracts the *key*, and
+        // keys are simple dotted ids. A comma inside a quoted value is therefore a non-event — 105
+        // rows already have one. (The ledger used to record that as this shortcut's upgrade trigger,
+        // which was wrong, and would have sent someone looking for a bug that cannot happen.)
+        //
+        // ponytail: the real ceiling is that this treats one physical line as one row, while
+        // LocCatalog.ReadRows honours RFC-4180 properly and allows a newline *inside* a quoted
+        // value. Authoring one would desync this scan and make its duplicate reports meaningless.
+        // Upgrade trigger: the first multi-line value in strings.csv — today there are none.
         var seen = new HashSet<string>();
         foreach (string rawLine in csv.Replace("\r", string.Empty).Split('\n'))
         {
