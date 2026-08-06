@@ -3125,10 +3125,42 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
     which is invented *and backwards* — a prerequisite chains a quest, it does not demote it.
     The tracked quest simply takes `QuestMain`. 37.5E needs the real distinction for the log's
     Main/Side split and will have to add the field.
-- [ ] **37.5C — Character sheet, inventory, equipment, storage, crafting** `[F]`
-  - **Done when:** inventory is an icon-slot grid with rarity frames and hover stat deltas, and
-    storage/crafting share its vocabulary. Grids need explicit `FocusNeighbor*` or a d-pad walks
-    the tab order.
+- [x] **37.5C — Character sheet, inventory, equipment, storage, crafting** `[F]` ✅
+  - ⚠️ **The game has no item icons and the plan assumed it did.** `ItemResource.Icon` has been
+    on the resource since Phase 5, **0 of 26 authored items set it, and nothing in the codebase
+    read it** — dead scaffolding. A literal icon grid would have been 26 empty boxes, strictly
+    worse than the text list it replaced. Slots show a **category glyph** instead: silhouette
+    says category, colour says rarity, frame width says tier. `ItemSlot` prefers a real `Icon`
+    whenever one is authored, so the eventual art phase is a data drop with no code change.
+    The glyphs are deliberately plain Geometric Shapes, not pictographs — a missing glyph is a
+    .notdef box, and an inventory full of tofu is worse than a plain triangle.
+  - Gear tab is now three columns (worn slots | backpack grid | detail pane) rather than one
+    scrolling text list. The list could not express the two things the screen most needed to
+    say — what an item *is* at a glance, and whether picking it up is an upgrade.
+  - `ItemPresentation` holds the pure logic and **takes plain values, never `ItemInstance`**,
+    because `ItemInstance` wraps a Godot `Resource` and the test project forbids those. That is
+    the same trap `RarityFrame` hit in 37.5A; designing around it up front is why the comparison
+    maths has 8 tests instead of none. A sign error there tells the player a downgrade is an
+    upgrade and looks entirely reasonable on screen.
+  - ⚠️ **`Compare` sums each side by stat before subtracting.** An item can carry one stat from
+    its template bonus *and* from a rolled affix (+2 Power sword with a "+3 Power" prefix);
+    comparing entry-by-entry reports two deltas for one stat and gets the sign wrong when they
+    disagree. It also ignores `ModifierType` — everything in the game is flat today, and adding
+    a flat +5 to a +5% would be arithmetic nonsense presented as fact. If percentage gear is
+    ever authored, split the rows rather than summing.
+  - ⚠️ **`FocusNeighbor*` needs the node in the tree.** The first pass wired grid neighbours
+    inside the grid builder, whose result is parented only *after* it returns, so `GetPath()`
+    threw on every cell every frame — and the grid still worked perfectly under a mouse. Caught
+    by `--play`, not by the build or the tests. The pass now runs at the end of `BuildGear`.
+  - ⚠️ **The detail pane re-checks that the selected item is still held.** The selection can be
+    invalidated from outside the panel entirely (a stash transfer, a salvage, a quest turn-in),
+    and there is no event for "the thing you had selected left your pack" — without the check
+    the pane offers Use on a potion that is already gone. Matched by *reference*: two rolled
+    items can share a template and a name while carrying different affixes.
+  - Storage and crafting took the same slot/card vocabulary. Crafting ingredients are now chips
+    reading `have/need` instead of indented "(have 2)" lines that made the player do the
+    subtraction that decides whether they can craft at all.
+    `StoragePanel.Transfer`'s stackable-vs-instance branch was left untouched, as planned.
 - [ ] **37.5D — The Magic screen** `[F/C]`
   - **Done when:** `SpellbookPanel` exists as its own `UiPanel` with its own input action, magic
     is out of `InventoryPanel`'s tab strip, and the screen runs cold (`ArcaneGround`, tarnished
