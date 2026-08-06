@@ -1536,14 +1536,6 @@ public static class ContentValidator
     }
 
     /// <summary>
-    /// Story flags are the one id family with no database behind them, so nothing has ever checked
-    /// them: a mistyped <c>HasFlag</c> arg is a gate that never opens, silently and permanently, and
-    /// a mistyped <c>SetFlag</c> is a rank the hold never grants. Phase 34.5C's rank chain rests on
-    /// them, so this closes the hole the only way a registry-less id can be closed — cross-reference
-    /// the readers against the writers. A flag nothing writes is the typo that matters; the reverse
-    /// (a flag set but never read) is legitimate, since flags are also a record of what happened.
-    /// </summary>
-    /// <summary>
     /// Adds story flags raised by scene-authored components to the "something writes this" set.
     /// <see cref="Enemies.LairSpawnComponent.DefeatFlagId"/> (Phase 35F) is the first flag writer that
     /// lives in a <c>.tscn</c> rather than in a dialogue effect or a code constant, so without this the
@@ -1598,6 +1590,14 @@ public static class ContentValidator
         }
     }
 
+    /// <summary>
+    /// Story flags are the one id family with no database behind them, so nothing has ever checked
+    /// them: a mistyped <c>HasFlag</c> arg is a gate that never opens, silently and permanently, and
+    /// a mistyped <c>SetFlag</c> is a rank the hold never grants. Phase 34.5C's rank chain rests on
+    /// them, so this closes the hole the only way a registry-less id can be closed — cross-reference
+    /// the readers against the writers. A flag nothing writes is the typo that matters; the reverse
+    /// (a flag set but never read) is legitimate, since flags are also a record of what happened.
+    /// </summary>
     private static void ValidateStoryFlags(List<string> issues)
     {
         var written = new HashSet<string>
