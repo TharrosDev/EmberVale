@@ -80,6 +80,24 @@ public partial class Settings : Resource
 
     [Export(PropertyHint.Range, "0.75,1.5")] public float UiScale { get; set; } = 1f;
 
+    /// <summary>
+    /// Text size multiplier, applied to the type scale **independently of <see cref="UiScale"/>**
+    /// (Phase 37.5G). UiScale is the window's content-scale factor and magnifies everything
+    /// including panels and margins; this scales only glyphs, for a player who wants larger text
+    /// without a larger UI. Lands in <c>UiTheme.FontSize</c>, the seam 37.5A left for it.
+    /// </summary>
+    [Export(PropertyHint.Range, "0.85,1.5")] public float TextScale { get; set; } = 1f;
+
+    /// <summary>
+    /// Colour-vision adaptation for the UI's semantic palette (rarity, school, standing, good/bad).
+    /// Daltonizes rather than simulates — see <c>ColorVision</c>. World art is never touched.
+    /// </summary>
+    [Export] public UI.ColorVisionMode ColorVision { get; set; } = UI.ColorVisionMode.None;
+
+    /// <summary>Raises surface opacity, drops the grain texture and thickens frames (37.5G). For
+    /// glare, low-quality panels, and anyone who finds the parchment material noisy.</summary>
+    [Export] public bool HighContrast { get; set; } = false;
+
     /// <summary>Pairs each audio setting with its mixer bus name (Phase 31 creates these buses; the
     /// default <c>Master</c> bus always exists, so master volume applies immediately).</summary>
     public (string Bus, float Linear)[] BusVolumes() => new[]

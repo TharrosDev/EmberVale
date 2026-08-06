@@ -42,15 +42,27 @@ public partial class InventoryPanel : UiPanel
     /// <summary>Category filter; null shows everything.</summary>
     private ItemType? _filter;
 
-    /// <summary>Columns in the backpack grid. Fixed rather than derived from the panel width: the
-    /// grid must be navigable by d-pad, and that means <see cref="UiFocus"/> restoring a stable
-    /// index across rebuilds, which a reflowing column count would break.</summary>
-    private const int GridColumns = 8;
+    /// <summary>
+    /// Columns in the backpack grid, derived from the viewport each rebuild (37.5G).
+    ///
+    /// 37.5C fixed this at 8 and claimed a reflowing count would break `UiFocus` restore. That was
+    /// wrong: restore walks *child indices*, and the grid's child order does not change when it
+    /// wraps differently — only the visual rows do. What the fixed count actually did was overflow
+    /// the panel by 321 px on a Steam Deck at UI scale 1.5, where the logical viewport is 853 px
+    /// wide rather than the ~1900 the number was quietly assuming.
+    /// </summary>
+    private int _gridColumns = 8;
 
     /// <summary>The focusable backpack cells of the current rebuild, held between building the grid
     /// and wiring its focus neighbours — see <see cref="LinkGridFocus"/> for why those cannot be
     /// the same step.</summary>
     private readonly List<Button> _gridCells = new();
+
+    /// <summary>Slot edge length. Below the 44 px touch/legibility floor a glyph stops reading.</summary>
+    private const float SlotSize = 48f;
+
+    private float _sideColumn = 230f;
+    private float _detailColumn = 300f;
 
     /// <summary>The character screen's tabs (Phase 29.5 spell tab + split progression/perks) —
     /// indices match the <see cref="UiTabs"/> order built in <see cref="BuildShell"/>.</summary>
@@ -68,19 +80,11 @@ public partial class InventoryPanel : UiPanel
         (CharTab.Perks, "char.tab_perks"),
     };
 
-    /// <summary>Screen-edge gutter so the panel fills the view without covering it entirely.</summary>
-    private const float ScreenMargin = 70f;
-
     protected override string? ToggleAction => GameInput.Inventory;
 
     protected override void BuildShell(PanelContainer shell)
     {
-        // Fills the screen with a medium gutter, anchored so it tracks any resolution.
-        shell.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-        shell.OffsetLeft = ScreenMargin;
-        shell.OffsetTop = ScreenMargin;
-        shell.OffsetRight = -ScreenMargin;
-        shell.OffsetBottom = -ScreenMargin;
+        UiTheme.ApplyScreenInset(shell);
 
         MarginContainer margin = UiTheme.Padding(12);
         shell.AddChild(margin);
@@ -202,6 +206,10 @@ public partial class InventoryPanel : UiPanel
     {
         UiTheme.ClearChildren(_list);
 
+        // Re-derived per rebuild so a mid-session UI-scale change lands without a restart.
+        UiTheme.ApplyScreenInset(Shell);
+        MeasureColumns();
+
         switch (_activeTab)
         {
             case CharTab.Progression:
@@ -241,7 +249,7 @@ public partial class InventoryPanel : UiPanel
             int value = _reputation.Get(faction.Id);
             ReputationTier tier = ReputationTiers.Of(_reputation.Effective(faction.Id));
             AddLine(Loc.TF("char.rep_line", faction.DisplayName, ReputationTiers.DisplayName(tier), value.ToString("+0;-0;0")),
-                ReputationTiers.Color(tier));
+                UiTheme.ReputationColor(tier));
         }
     }
 
@@ -474,6 +482,25 @@ public partial class InventoryPanel : UiPanel
     /// glance, and whether picking it up is an upgrade - because both were words in a row of
     /// other words.
     /// </summary>
+    /// <summary>
+    /// Sizes the Gear tab's three columns against the viewport actually available.
+    ///
+    /// The side columns shrink first and the grid takes what is left, because the grid is the only
+    /// one of the three whose content genuinely reflows — narrowing the detail pane costs a line
+    /// wrap, narrowing the grid costs a column.
+    /// </summary>
+    private void MeasureColumns()
+    {
+        float usable = UiTheme.UsableWidth(Shell);
+
+        _sideColumn = Mathf.Clamp(usable * 0.22f, 150f, 230f);
+        _detailColumn = Mathf.Clamp(usable * 0.28f, 200f, 300f);
+
+        float forGrid = usable - _sideColumn - _detailColumn - (UiTheme.SpaceLg * 2f);
+        float cell = SlotSize + UiTheme.SpaceXs;
+        _gridColumns = Mathf.Clamp(Mathf.FloorToInt(forGrid / cell), 4, 10);
+    }
+
     private void BuildGear()
     {
         var row = new HBoxContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
@@ -494,7 +521,7 @@ public partial class InventoryPanel : UiPanel
     /// detail pane, where the Unequip verb lives.</summary>
     private Control BuildEquipmentColumn()
     {
-        var col = new VBoxContainer { CustomMinimumSize = new Vector2(230f, 0f) };
+        var col = new VBoxContainer { CustomMinimumSize = new Vector2(_sideColumn, 0f) };
         col.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
         col.AddChild(UiTheme.SectionRule(Loc.T("char.equipment")));
 
@@ -551,7 +578,7 @@ public partial class InventoryPanel : UiPanel
         col.AddChild(BuildSortRow());
         col.AddChild(BuildFilterRow());
 
-        var grid = new GridContainer { Columns = GridColumns };
+        var grid = new GridContainer { Columns = _gridColumns };
         grid.AddThemeConstantOverride("h_separation", UiTheme.SpaceXs);
         grid.AddThemeConstantOverride("v_separation", UiTheme.SpaceXs);
         col.AddChild(grid);
@@ -569,7 +596,7 @@ public partial class InventoryPanel : UiPanel
         foreach (ItemStack stack in ItemPresentation.Sort(shown, _sort, st => ItemPresentation.KeyOf(st.Instance)))
         {
             ItemInstance instance = stack.Instance;
-            Button cell = ItemSlot.Build(instance, stack.Quantity, ReferenceEquals(instance, _selected));
+            Button cell = ItemSlot.Build(instance, stack.Quantity, ReferenceEquals(instance, _selected), SlotSize);
             cell.Pressed += () => Select(instance);
             grid.AddChild(cell);
             _gridCells.Add(cell);
@@ -580,7 +607,7 @@ public partial class InventoryPanel : UiPanel
         // before the weight number is.
         for (int i = shown.Count; i < _inventory.Capacity; i++)
         {
-            Button empty = ItemSlot.Build(null);
+            Button empty = ItemSlot.Build(null, 1, false, SlotSize);
             empty.FocusMode = Control.FocusModeEnum.None; // nothing to inspect, so skip it in nav
             grid.AddChild(empty);
         }
@@ -616,26 +643,26 @@ public partial class InventoryPanel : UiPanel
                 continue;
             }
 
-            int column = i % GridColumns;
+            int column = i % _gridColumns;
 
             if (column > 0)
             {
                 _gridCells[i].FocusNeighborLeft = _gridCells[i - 1].GetPath();
             }
 
-            if (column < GridColumns - 1 && i + 1 < _gridCells.Count)
+            if (column < _gridColumns - 1 && i + 1 < _gridCells.Count)
             {
                 _gridCells[i].FocusNeighborRight = _gridCells[i + 1].GetPath();
             }
 
-            if (i - GridColumns >= 0)
+            if (i - _gridColumns >= 0)
             {
-                _gridCells[i].FocusNeighborTop = _gridCells[i - GridColumns].GetPath();
+                _gridCells[i].FocusNeighborTop = _gridCells[i - _gridColumns].GetPath();
             }
 
-            if (i + GridColumns < _gridCells.Count)
+            if (i + _gridColumns < _gridCells.Count)
             {
-                _gridCells[i].FocusNeighborBottom = _gridCells[i + GridColumns].GetPath();
+                _gridCells[i].FocusNeighborBottom = _gridCells[i + _gridColumns].GetPath();
             }
         }
     }
@@ -731,7 +758,7 @@ public partial class InventoryPanel : UiPanel
     /// with it.</summary>
     private Control BuildDetailColumn()
     {
-        var col = new VBoxContainer { CustomMinimumSize = new Vector2(300f, 0f) };
+        var col = new VBoxContainer { CustomMinimumSize = new Vector2(_detailColumn, 0f) };
         col.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 
         if (_selected is not { } instance || !StillHeld(instance))

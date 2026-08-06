@@ -51,6 +51,13 @@ settings.tp_shoulder.centre,Centred
 settings.reduced_motion,Reduced Motion
 settings.subtitles,Subtitles
 settings.ui_scale,UI Scale
+settings.text_scale,Text Size
+settings.high_contrast,High Contrast
+settings.color_vision,Colour Vision
+settings.color_vision.none,Off
+settings.color_vision.deuteranopia,Deuteranopia (green-weak)
+settings.color_vision.protanopia,Protanopia (red-weak)
+settings.color_vision.tritanopia,Tritanopia (blue-yellow)
 slots.new_title,NEW GAME — CHOOSE A SLOT
 slots.load_title,LOAD GAME
 slots.empty,— Empty —

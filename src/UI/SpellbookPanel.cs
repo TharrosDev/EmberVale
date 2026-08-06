@@ -42,19 +42,11 @@ public partial class SpellbookPanel : UiPanel
     private DamageType _school = DamageType.Fire;
     private SpellResource? _selected;
 
-    /// <summary>Screen-edge gutter, matching the character screen so the two feel like facing
-    /// pages rather than differently-sized windows.</summary>
-    private const float ScreenMargin = 70f;
-
     protected override string? ToggleAction => GameInput.Spellbook;
 
     protected override void BuildShell(PanelContainer shell)
     {
-        shell.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-        shell.OffsetLeft = ScreenMargin;
-        shell.OffsetTop = ScreenMargin;
-        shell.OffsetRight = -ScreenMargin;
-        shell.OffsetBottom = -ScreenMargin;
+        UiTheme.ApplyScreenInset(shell);
 
         // The cold ground. Overrides UiPanel's default parchment frame rather than extending it —
         // this screen is deliberately not made of the same material as the rest of the UI.
@@ -128,6 +120,11 @@ public partial class SpellbookPanel : UiPanel
     protected override void Rebuild()
     {
         UiTheme.ClearChildren(_body);
+        UiTheme.ApplyScreenInset(Shell);
+
+        float usable = UiTheme.UsableWidth(Shell);
+        float ring = Mathf.Clamp(usable * 0.30f, 190f, 300f);
+        float detail = Mathf.Clamp(usable * 0.28f, 190f, 280f);
 
         if (_spellcasting == null || SpellDatabase.All.Count == 0)
         {
@@ -142,9 +139,9 @@ public partial class SpellbookPanel : UiPanel
         row.AddThemeConstantOverride("separation", UiTheme.SpaceLg);
         _body.AddChild(row);
 
-        row.AddChild(BuildSchoolRing());
+        row.AddChild(BuildSchoolRing(ring));
         row.AddChild(BuildSpellList());
-        row.AddChild(BuildDetail());
+        row.AddChild(BuildDetail(detail));
     }
 
     /// <summary>The book's title, with the shimmer. One of only two places in the game that gets
@@ -215,11 +212,11 @@ public partial class SpellbookPanel : UiPanel
     /// The diagram is a <see cref="ColorRect"/> sat behind the list rather than a panel background,
     /// because its polar maths needs UV to span its rect — see <see cref="UiOrnament"/>.
     /// </summary>
-    private Control BuildSchoolRing()
+    private Control BuildSchoolRing(float width)
     {
-        var frame = new Control { CustomMinimumSize = new Vector2(300f, 0f) };
+        var frame = new Control { CustomMinimumSize = new Vector2(width, 0f) };
 
-        ColorRect ring = UiOrnament.RuneCircle(300f, UiTheme.GlyphLight, intensity: 0.5f, ticks: 30f);
+        ColorRect ring = UiOrnament.RuneCircle(width, UiTheme.GlyphLight, intensity: 0.5f, ticks: 30f);
         ring.SetAnchorsPreset(Control.LayoutPreset.CenterTop);
         ring.Position = new Vector2(0f, 10f);
         frame.AddChild(ring);
@@ -496,9 +493,9 @@ public partial class SpellbookPanel : UiPanel
     }
 
     /// <summary>The right-hand page: the selected spell in full.</summary>
-    private Control BuildDetail()
+    private Control BuildDetail(float width)
     {
-        var col = new VBoxContainer { CustomMinimumSize = new Vector2(280f, 0f) };
+        var col = new VBoxContainer { CustomMinimumSize = new Vector2(width, 0f) };
         col.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 
         if (_selected is not { } spell)

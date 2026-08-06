@@ -167,6 +167,31 @@ public partial class SettingsPanel : CanvasLayer
         body.AddChild(ToggleRow(Loc.T("settings.subtitles"), s.SubtitlesEnabled, v => { s.SubtitlesEnabled = v; Persist(); }));
         body.AddChild(SliderRow(Loc.T("settings.ui_scale"), 0.75, 1.5, 0.05, s.UiScale, v => s.UiScale = (float)v));
 
+        // 37.5G. Text scale is separate from UI scale on purpose: UI scale is the window's content
+        // scale factor and magnifies panels, margins and glyphs together, while this touches only
+        // glyphs — for a player who wants readable text without surrendering half the screen to
+        // chrome. It is floored at the 12 px legibility minimum inside UiTheme.FontSize.
+        body.AddChild(SliderRow(Loc.T("settings.text_scale"), 0.85, 1.5, 0.05, s.TextScale,
+            v => { s.TextScale = (float)v; Persist(); }));
+
+        body.AddChild(ToggleRow(Loc.T("settings.high_contrast"), s.HighContrast,
+            v => { s.HighContrast = v; Persist(); }));
+
+        // Colour-vision adaptation daltonizes the UI's semantic ramps — rarity, magic school,
+        // faction standing, good/bad — so pairs that would collapse together stay apart. World art
+        // is deliberately untouched; see ColorVision.
+        body.AddChild(DropdownRow(
+            Loc.T("settings.color_vision"),
+            new[]
+            {
+                Loc.T("settings.color_vision.none"),
+                Loc.T("settings.color_vision.deuteranopia"),
+                Loc.T("settings.color_vision.protanopia"),
+                Loc.T("settings.color_vision.tritanopia"),
+            },
+            (int)s.ColorVision,
+            index => { s.ColorVision = (ColorVisionMode)index; Persist(); }));
+
         col.AddChild(new HSeparator());
         Button back = UiTheme.Action(Loc.T("common.back"));
         back.CustomMinimumSize = new Vector2(0, 34);
