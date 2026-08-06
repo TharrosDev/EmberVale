@@ -253,19 +253,31 @@ public partial class CraftingPanel : UiPanel
 
     private void AddSalvage(ItemInstance instance, int quantity, bool equipped, CraftingRecipeResource? recipe)
     {
-        var titleRow = new HBoxContainer();
-        titleRow.AddThemeConstantOverride("separation", 8);
+        // 37.5C: a card with the shared slot, matching the character screen and the stash. The
+        // yields hang inside the card rather than as loose indented lines under it, so a long
+        // salvage list stops reading as one undifferentiated paragraph.
+        PanelContainer card = UiTheme.Card(UiTheme.RarityColor(instance.Rarity));
+        var col = new VBoxContainer();
+        col.AddThemeConstantOverride("separation", 2);
 
-        Label title = UiTheme.Body($"{instance.DisplayName} x{quantity}", UiTheme.Text);
+        var titleRow = new HBoxContainer();
+        titleRow.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+
+        Button slot = ItemSlot.Build(instance, quantity, selected: false, size: 34f);
+        slot.FocusMode = Control.FocusModeEnum.None;
+        slot.MouseFilter = Control.MouseFilterEnum.Ignore;
+        titleRow.AddChild(slot);
+
+        Label title = UiTheme.Body(instance.DisplayName, UiTheme.RarityColor(instance.Rarity));
         title.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         title.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         titleRow.AddChild(title);
 
-        // The "small visual": worn gear gets an accent [Equipped] badge so it reads apart from loose
-        // copies before the player salvages it (salvaging an equipped item takes it off first).
+        // Worn gear gets an accent chip so it reads apart from loose copies before the player
+        // salvages it (salvaging an equipped item takes it off first).
         if (equipped)
         {
-            Label badge = UiTheme.Body($"[{Loc.T("craft.equipped")}]", UiTheme.Accent);
+            PanelContainer badge = UiTheme.Chip(Loc.T("craft.equipped"), UiTheme.Accent);
             badge.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
             titleRow.AddChild(badge);
         }
@@ -273,9 +285,13 @@ public partial class CraftingPanel : UiPanel
         Button button = UiTheme.Action(Loc.T("craft.deconstruct"));
         ItemInstance captured = instance;
         button.Pressed += () => Deconstruct(captured);
+        button.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         titleRow.AddChild(button);
 
-        _list.AddChild(titleRow);
+        col.AddChild(titleRow);
+
+        var yields = new HBoxContainer();
+        yields.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
 
         if (recipe != null)
         {
@@ -289,7 +305,7 @@ public partial class CraftingPanel : UiPanel
 
                 ItemResource? material = ItemDatabase.Get(ingredient.ItemId);
                 string name = material?.DisplayName ?? ingredient.ItemId;
-                _list.AddChild(UiTheme.Body($"   → {recovered}x {name}", UiTheme.Accent));
+                yields.AddChild(UiTheme.Chip($"{recovered}x {name}", UiTheme.Accent));
             }
         }
         else
@@ -297,12 +313,17 @@ public partial class CraftingPanel : UiPanel
             // Recipe-less: generic scrap, scaled by rarity.
             int scrap = Deconstruction.ScrapYield(instance.Rarity);
             string scrapName = ItemDatabase.Get(GameIds.Items.Scrap)?.DisplayName ?? "Scrap";
-            _list.AddChild(UiTheme.Body($"   → {scrap}x {scrapName}", UiTheme.Accent));
+            yields.AddChild(UiTheme.Chip($"{scrap}x {scrapName}", UiTheme.Accent));
         }
 
         int xp = Deconstruction.Xp(instance.Template.Value, instance.Rarity);
-        _list.AddChild(UiTheme.Body($"   {Loc.TF("craft.yield_xp", xp)}", UiTheme.Good));
-        _list.AddChild(new HSeparator());
+        yields.AddChild(UiTheme.Chip(Loc.TF("craft.yield_xp", xp), UiTheme.Good));
+        col.AddChild(yields);
+
+        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceXs);
+        pad.AddChild(col);
+        card.AddChild(pad);
+        _list.AddChild(card);
     }
 
     private bool StationShows(CraftingStationType required)
@@ -314,10 +335,17 @@ public partial class CraftingPanel : UiPanel
     {
         bool canCraft = _crafting != null && _crafting.CanCraft(recipe, _station);
 
-        var titleRow = new HBoxContainer();
-        titleRow.AddThemeConstantOverride("separation", 8);
+        // The card's spine carries the *output's* rarity, so a recipe that produces something good
+        // announces it before the player reads a word. A recipe they cannot afford is dimmed as a
+        // whole rather than only in its title.
+        PanelContainer card = UiTheme.Card(canCraft ? UiTheme.RarityColor(recipe.OutputRarity) : UiTheme.Disabled);
+        var col = new VBoxContainer();
+        col.AddThemeConstantOverride("separation", 2);
 
-        Label title = UiTheme.Body(recipe.DisplayName, canCraft ? UiTheme.Text : UiTheme.Dim);
+        var titleRow = new HBoxContainer();
+        titleRow.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+
+        Label title = UiTheme.Body(recipe.DisplayName, canCraft ? UiTheme.Text : UiTheme.Disabled);
         title.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         title.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         titleRow.AddChild(title);
@@ -326,24 +354,35 @@ public partial class CraftingPanel : UiPanel
         craft.Disabled = !canCraft;
         CraftingRecipeResource captured = recipe;
         craft.Pressed += () => Craft(captured);
+        craft.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         titleRow.AddChild(craft);
 
-        _list.AddChild(titleRow);
+        col.AddChild(titleRow);
 
         ItemResource? output = ItemDatabase.Get(recipe.OutputItemId);
         string outName = output?.DisplayName ?? recipe.OutputItemId;
-        string rarity = recipe.OutputRarity != ItemRarity.Common ? $" [{recipe.OutputRarity}]" : string.Empty;
-        _list.AddChild(UiTheme.Body($"   → {recipe.OutputQuantity}x {outName}{rarity}", UiTheme.Accent));
+        col.AddChild(UiTheme.Caption(
+            $"→ {recipe.OutputQuantity}x {outName}", UiTheme.RarityColor(recipe.OutputRarity)));
 
+        // Ingredients as chips: green when you have enough, red when you do not. The old indented
+        // "(have 2)" lines made the player do the subtraction that decides whether they can craft.
+        var costs = new HBoxContainer();
+        costs.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
         foreach (RecipeIngredient ingredient in recipe.IngredientList())
         {
             int have = _inventory?.CountOf(ingredient.ItemId) ?? 0;
             ItemResource? item = ItemDatabase.Get(ingredient.ItemId);
             string itemName = item?.DisplayName ?? ingredient.ItemId;
-            Color color = have >= ingredient.Quantity ? UiTheme.Good : UiTheme.Bad;
-            _list.AddChild(UiTheme.Body($"      {ingredient.Quantity}x {itemName}  (have {have})", color));
+            bool enough = have >= ingredient.Quantity;
+            costs.AddChild(UiTheme.Chip(
+                $"{itemName} {have}/{ingredient.Quantity}", enough ? UiTheme.Good : UiTheme.Bad));
         }
 
-        _list.AddChild(new HSeparator());
+        col.AddChild(costs);
+
+        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceXs);
+        pad.AddChild(col);
+        card.AddChild(pad);
+        _list.AddChild(card);
     }
 }

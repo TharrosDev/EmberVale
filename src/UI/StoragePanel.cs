@@ -251,17 +251,42 @@ public partial class StoragePanel : UiPanel
         bool accepted)
     {
         ItemInstance instance = stack.Instance;
-        string count = stack.Quantity > 1 ? $"  x{stack.Quantity}" : string.Empty;
-        string rarity = instance.Rarity != ItemRarity.Common ? $"  [{instance.Rarity}]" : string.Empty;
 
+        // 37.5C: the same slot + card vocabulary the character screen uses, so moving an item
+        // between the two windows does not feel like moving it between two games. The rarity read
+        // now comes from the slot frame and the name colour rather than a "[Epic]" suffix.
+        PanelContainer card = UiTheme.Card(UiTheme.RarityColor(instance.Rarity));
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 
-        Label text = UiTheme.Body(
-            $"{instance.DisplayName}{count}{rarity}", ItemRarities.Color(instance.Rarity));
-        text.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        text.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-        text.TooltipText = instance.Template.Description;
+        Button slot = ItemSlot.Build(instance, stack.Quantity, selected: false, size: 34f);
+        slot.FocusMode = Control.FocusModeEnum.None; // the action button is the row's focus target
+        slot.MouseFilter = Control.MouseFilterEnum.Ignore;
+        row.AddChild(slot);
+
+        var text = new VBoxContainer
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
+        };
+        text.AddThemeConstantOverride("separation", 0);
+
+        Label name = UiTheme.Body(instance.DisplayName, UiTheme.RarityColor(instance.Rarity));
+        name.TooltipText = instance.Template.Description;
+        text.AddChild(name);
+
+        if (instance.HasAffixes)
+        {
+            var chips = new HBoxContainer();
+            chips.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+            foreach (ItemAffix affix in instance.Affixes)
+            {
+                chips.AddChild(UiTheme.Chip(affix.DisplayValue, UiTheme.Good));
+            }
+
+            text.AddChild(chips);
+        }
+
         row.AddChild(text);
 
         // Refused rows keep their button, greyed and explained. Hiding it would read as the row being
@@ -271,13 +296,12 @@ public partial class StoragePanel : UiPanel
         button.TooltipText = accepted ? string.Empty : Loc.T("storage.too_plain");
         ItemStack captured = stack;
         button.Pressed += () => onPressed(captured);
+        button.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         row.AddChild(button);
 
-        list.AddChild(row);
-
-        foreach (ItemAffix affix in instance.Affixes)
-        {
-            list.AddChild(UiTheme.Caption($"      {affix.DisplayValue}", UiTheme.Good));
-        }
+        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceXs);
+        pad.AddChild(row);
+        card.AddChild(pad);
+        list.AddChild(card);
     }
 }

@@ -241,8 +241,15 @@ a travelling highlight has nothing meaningful to show frozen.
 - `Chip(text, color)` — a small tinted pill for an affix, status effect, school tag or
   filter. The *label* carries the colour and the ground stays near-neutral, so a row of
   chips does not become a paint chart.
-- `IconSlot(size)` + `RarityFrame(rarity)` — the inventory grid's slot and its rarity
-  treatment.
+- `IconSlot(size)` + `RarityFrame(rarity)` — the raw slot well and its rarity treatment.
+  Most callers want **`ItemSlot.Build(instance, quantity, selected)`** instead, which composes
+  the two with the category glyph, the stack count and a tooltip, and is a `Button` so it gets
+  focus, hover and activation for free. `ItemSlot.Detail(instance, equipped, compare)` is its
+  companion card: rarity-coloured name, meta line, affix chips, stat deltas, flavour.
+  ⚠️ A grid of these **must** call an explicit focus-neighbour pass, and that pass has to run
+  *after* the grid is parented — `FocusNeighbor*` takes a NodePath and `GetPath()` throws
+  outside the tree. Wiring it inside the builder errors every frame and still works under a
+  mouse, which is the combination that ships.
 - `Bar(fill)` / `Meter(label, fill)` — thin resource bar, and the captioned version that
   every non-HUD progress readout uses.
 - `Action()` / `Dropdown()` — interactive controls share one style (normal/hover/pressed/
@@ -307,8 +314,13 @@ digits.
   15). It also split `BossFrame` and `Nameplate` out of `GameHud` (975 → 812 lines) and gave
   the nameplate a **disposition spine**, which the HUD had never shown despite neutral-until-
   provoked factions existing since Phase 34.5.
-- **37.5C** rebuilds the character sheet, inventory, storage and crafting onto
-  `IconSlot`/`RarityFrame`/`Card`.
+- **37.5C** ✅ rebuilt the character sheet, inventory, storage and crafting onto a shared item
+  vocabulary (`ItemSlot.Build` / `ItemSlot.Detail` / `ItemPresentation`).
+  ⚠️ **There are no item icons.** `ItemResource.Icon` has existed since Phase 5 and, at 37.5C,
+  **no authored item set it and nothing read it** — so a literal icon grid would have been 26
+  empty boxes. Slots show a *category glyph* instead (silhouette = category, colour = rarity,
+  frame width = tier), and `ItemSlot` prefers a real `Icon` the moment one is authored. That is
+  a floor, not a ceiling: the art phase is a data drop with no code change.
 - **37.5D** lifts magic out of the character sheet into `SpellbookPanel`, the one screen
   that runs cold (`ArcaneGround`, `ArcaneSilver`, the rune circle).
 - **37.5E** rebuilds map, quest log, dialogue and bestiary.

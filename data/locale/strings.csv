@@ -195,6 +195,25 @@ feedback.stagger,STAGGERED!
 feedback.parry,PARRY!
 char.backpack,BACKPACK
 char.backpack_full,BACKPACK   {0}/{1}   wt {2}
+
+# --- Item presentation (Phase 37.5C) — the shared slot/detail vocabulary ---
+item.meta,"{0}   ·   {1} wt   ·   {2}g"
+item.vs_equipped,vs equipped
+item.vs_empty,vs empty slot
+item.type_misc,Misc
+item.type_consumable,Consumable
+item.type_weapon,Weapon
+item.type_armor,Armor
+item.type_material,Material
+item.type_quest,Quest
+item.sort,Sort
+item.sort_name,Name
+item.sort_rarity,Rarity
+item.sort_weight,Weight
+item.sort_value,Value
+item.filter_all,All
+item.empty_slot,Empty
+item.select_hint,Select an item to inspect it.
 # Quest journal (QuestLogPanel)
 questlog.title,QUEST JOURNAL   (J to close)
 questlog.none,(no quests)
