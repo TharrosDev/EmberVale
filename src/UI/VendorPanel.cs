@@ -5,6 +5,7 @@ using Embervale.Core.Events;
 using Embervale.Core.Services;
 using Embervale.Economy;
 using Embervale.Entities;
+using Embervale.Factions;
 using Embervale.Items;
 using Embervale.Localization;
 using Godot;
@@ -25,6 +26,7 @@ namespace Embervale.UI;
 public partial class VendorPanel : UiPanel
 {
     private Label _title = null!;
+    private Label _standing = null!;
     private Label _waresHeader = null!;
     private Label _packHeader = null!;
     private VBoxContainer _waresList = null!;
@@ -53,6 +55,11 @@ public partial class VendorPanel : UiPanel
 
         _title = UiTheme.Header(string.Empty);
         column.AddChild(_title);
+
+        // A price that moved must say why it moved. Without this line the discount is invisible and
+        // reads as the shop being mispriced — the same reason every Phase 37 refusal names itself.
+        _standing = UiTheme.Caption(string.Empty);
+        column.AddChild(_standing);
         column.AddChild(UiTheme.Divider());
 
         var columns = new HBoxContainer
@@ -212,7 +219,7 @@ public partial class VendorPanel : UiPanel
     /// <em>every</em> stack, so selling one of two differently-affixed copies of one template would
     /// see the first removal satisfy both and evaporate the other. Rolled items go by reference.
     /// </summary>
-    private void Sell(ItemStack stack, int payout)
+    private void Sell(ShopResource shop, ItemStack stack, int payout)
     {
         if (_pack is not { } pack || ItemDatabase.Get(GameIds.Currency.Gold) is not { } gold)
         {
@@ -225,12 +232,23 @@ public partial class VendorPanel : UiPanel
             return; // the button is already disabled and says why
         }
 
+        // The purse is spent *before* the goods change hands (38C). A merchant who cannot cover the
+        // payout refuses the whole sale rather than paying part of it — the player has handed over the
+        // item either way, so a short payment is item loss with a receipt.
+        ShopStockService? stock = Stock();
+        if (stock != null && !stock.TakePurse(shop, payout))
+        {
+            return;
+        }
+
         bool removed = instance.IsStackable
             ? pack.RemoveItem(instance.TemplateId, stack.Quantity)
             : pack.RemoveOneInstance(instance) != null;
 
         if (!removed)
         {
+            // The purse was already debited, so hand it back: the merchant did not get the goods.
+            stock?.RefundPurse(shop, payout);
             Log.Warn($"Shop: could not remove '{instance.TemplateId}' to sell it; paid nothing.");
             return;
         }
@@ -242,6 +260,24 @@ public partial class VendorPanel : UiPanel
     private static bool IsCurrency(ItemInstance instance) =>
         instance.TemplateId == GameIds.Currency.Gold;
 
+    /// <summary>
+    /// The player's standing with the shop's faction (38C). Falls back to <c>Neutral</c> — the
+    /// no-effect tier — whenever the shop authors no faction or the player has no
+    /// <see cref="ReputationComponent"/>. ⚠️ That default is the <em>opposite</em> of
+    /// <c>EnemyAIComponent.PlayerIsTarget</c>, which treats a missing component as hostile; here a
+    /// half-built world must price normally rather than have every merchant turn the player away.
+    /// </summary>
+    private ReputationTier StandingWith(ShopResource shop)
+    {
+        if (string.IsNullOrEmpty(shop.FactionId) ||
+            _player?.GetComponent<ReputationComponent>() is not { } reputation)
+        {
+            return ReputationTier.Neutral;
+        }
+
+        return reputation.TierOf(shop.FactionId);
+    }
+
     protected override void Rebuild()
     {
         if (_shop is not { } shop)
@@ -250,11 +286,31 @@ public partial class VendorPanel : UiPanel
         }
 
         _title.Text = $"{Loc.TF("shop.title", Loc.T(shop.NameKey))}   {Loc.TF("shop.purse", Purse())}";
-        BuildWares(shop);
+
+        ReputationTier tier = StandingWith(shop);
+        BuildStanding(shop, tier);
+        BuildWares(shop, tier);
         BuildPack(shop);
     }
 
-    private void BuildWares(ShopResource shop)
+    /// <summary>Names the standing and what it is doing to the prices, coloured with the same
+    /// <c>ReputationTiers.Color</c> ramp the character screen uses so the two cannot disagree.</summary>
+    private void BuildStanding(ShopResource shop, ReputationTier tier)
+    {
+        if (string.IsNullOrEmpty(shop.FactionId))
+        {
+            _standing.Text = string.Empty;
+            return;
+        }
+
+        // The percentage is derived from the same multiplier the prices use, not written out again.
+        int percent = Mathf.RoundToInt((ShopPricing.PriceMultiplierFor(tier) - 1f) * 100f);
+        _standing.Text = Loc.TF(
+            "shop.standing", ReputationTiers.DisplayName(tier), percent.ToString("+0;-0;0"));
+        _standing.AddThemeColorOverride("font_color", UiTheme.ReputationColor(tier));
+    }
+
+    private void BuildWares(ShopResource shop, ReputationTier tier)
     {
         UiTheme.ClearChildren(_waresList);
 
@@ -274,7 +330,7 @@ public partial class VendorPanel : UiPanel
         int purse = Purse();
         foreach (ShopOffer offer in offers)
         {
-            int price = ShopPricing.BuyPrice(offer.Instance.Value, shop.BuyMarkup);
+            int price = ShopPricing.BuyPrice(offer.Instance.Value, ShopPricing.MarkupFor(shop.BuyMarkup, tier));
             bool affordable = ShopPricing.CanAfford(price, purse);
 
             // A sold-out row stays on the shelf, greyed. Removing it would read as the shop never
@@ -302,7 +358,13 @@ public partial class VendorPanel : UiPanel
             return;
         }
 
-        _packHeader.Text = $"{Loc.T("shop.your_pack")}   {Loc.TF("storage.slots", pack.UsedSlots, pack.Capacity)}";
+        // The merchant's own coin, when they have a finite amount of it — a player dumping a field of
+        // loot has to be able to see why the last few rows stopped being sellable.
+        int purse = Stock()?.PurseFor(shop) ?? -1;
+        string header = purse >= 0
+            ? $"{Loc.T("shop.your_pack")}   {Loc.TF("shop.vendor_purse", purse)}"
+            : Loc.T("shop.your_pack");
+        _packHeader.Text = $"{header}   {Loc.TF("storage.slots", pack.UsedSlots, pack.Capacity)}";
 
         if (pack.UsedSlots == 0)
         {
@@ -320,8 +382,14 @@ public partial class VendorPanel : UiPanel
                 ? ShopPricing.SellPrice(instance.Value, shop.SellFraction) * stack.Quantity
                 : 0;
 
-            // A zero payout is refused rather than accepted: handing an item over for nothing is
-            // item loss wearing a transaction's clothes.
+            // Three refusals, each named separately: not for sale, worth nothing, or the merchant
+            // cannot cover it. Collapsing them would tell a player with a Legendary to try a cheaper
+            // shop when the real answer is to come back after a restock.
+            bool afforded = purse < 0 || payout <= purse;
+            string refusal = !sellable ? Loc.T("shop.unsellable")
+                : payout <= 0 ? Loc.T("shop.worthless")
+                : Loc.T("shop.vendor_broke");
+
             ItemStack captured = stack;
             AddRow(
                 _packList,
@@ -329,9 +397,9 @@ public partial class VendorPanel : UiPanel
                 stack.Quantity,
                 priceText: sellable ? Loc.TF("shop.price", payout) : string.Empty,
                 action: Loc.T("shop.sell"),
-                enabled: sellable && payout > 0,
-                refusal: sellable ? Loc.T("shop.worthless") : Loc.T("shop.unsellable"),
-                onPressed: () => Sell(captured, payout));
+                enabled: sellable && payout > 0 && afforded,
+                refusal: refusal,
+                onPressed: () => Sell(shop, captured, payout));
         }
     }
 

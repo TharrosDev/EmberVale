@@ -58,6 +58,9 @@ public partial class ShopStockService : Node, ISaveable
 
         public int LastRestockDay { get; set; } = int.MinValue;
 
+        /// <summary>Gold the merchant has left to buy with; <c>-1</c> when the shop authors no purse.</summary>
+        public int Purse { get; set; } = ShopStock.UnlimitedPurse;
+
         public bool Stocked { get; set; }
     }
 
@@ -155,6 +158,38 @@ public partial class ShopStockService : Node, ISaveable
         return false;
     }
 
+    /// <summary>What the merchant has left to spend, or <c>-1</c> for an unlimited purse (38C).</summary>
+    public int PurseFor(ShopResource shop) => StateFor(shop).Purse;
+
+    /// <summary>
+    /// Spends from the merchant's purse. Returns false when they are short, so a sale is refused rather
+    /// than paid part-way — half-paying for an item is the same class of bug as 38A's zero payout, and
+    /// the player would have handed over the goods either way.
+    /// </summary>
+    public bool TakePurse(ShopResource shop, int amount)
+    {
+        ShopState state = StateFor(shop);
+
+        if (!ShopStock.CanCover(state.Purse, amount))
+        {
+            return false;
+        }
+
+        state.Purse = ShopStock.AfterSpend(state.Purse, amount);
+        Revision++;
+        return true;
+    }
+
+    /// <summary>Puts gold back in the purse after a sale that debited it and then could not complete.
+    /// Never pushes the purse above what the shop authored — a failed sale must not mint the merchant
+    /// money, which is the mirror of the buy path's refund never minting the player any.</summary>
+    public void RefundPurse(ShopResource shop, int amount)
+    {
+        ShopState state = StateFor(shop);
+        state.Purse = ShopStock.AfterRefund(state.Purse, amount, shop.PurseGold);
+        Revision++;
+    }
+
     /// <summary>Restocks now regardless of the clock; the <c>shop restock</c> dev command's whole
     /// purpose, since an in-game day is <c>DayLengthSeconds</c> of real waiting.</summary>
     public void ForceRestock(ShopResource shop) => Restock(shop, StateFor(shop));
@@ -183,6 +218,9 @@ public partial class ShopStockService : Node, ISaveable
         state.Rolled.Clear();
         state.LastRestockDay = CurrentDay();
         state.Stocked = true;
+
+        // The purse refills with the shelves — one clock, both directions of trade.
+        state.Purse = shop.PurseGold > 0 ? shop.PurseGold : ShopStock.UnlimitedPurse;
 
         if (shop.LeveledTable != null)
         {
@@ -256,6 +294,7 @@ public partial class ShopStockService : Node, ISaveable
             shops[id] = new Godot.Collections.Dictionary
             {
                 ["day"] = state.LastRestockDay,
+                ["purse"] = state.Purse,
                 ["remaining"] = remaining,
                 ["rolled"] = rolled,
             };
@@ -299,6 +338,10 @@ public partial class ShopStockService : Node, ISaveable
         var state = new ShopState
         {
             LastRestockDay = entry.TryGetValue("day", out Variant day) ? day.AsInt32() : int.MinValue,
+
+            // Absent means a save from before 38C: -1 (unlimited) rather than 0, or every restored
+            // merchant would read as broke until their next restock.
+            Purse = entry.TryGetValue("purse", out Variant purse) ? purse.AsInt32() : ShopStock.UnlimitedPurse,
 
             // A restored shop counts as stocked even with nothing left, or reopening it would restock
             // a shop the player had legitimately bought out.

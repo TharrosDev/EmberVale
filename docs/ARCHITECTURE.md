@@ -723,6 +723,12 @@ fast-travel land in 25E–25G.
   region `SpawnPoint`, fast travel lands at the node position (same-region jumps allowed); the streamer
   only swaps regions when the destination differs, and clock/weather are untouched so arrival respects
   the current time. The `travel` dev command drives jumps headlessly.
+  **A jump costs gold since 38C** (`Economy.TravelFee` / `Economy.TravelCosts`): free to a holding the
+  player owns — matched through `PropertyResource.TravelNodeId` — a small fee within a region and a
+  larger one across realms. ⚠️ It is charged in `GameBootstrap.OnFastTravelRequested`, **not** at the
+  map screen, because that handler is where the map button and the `travel goto` command converge;
+  gating only the UI would leave the console a free ride. `MapScreen` labels each button with the same
+  `TravelCosts.FeeFor` call and greys an unaffordable one, so the price shown is the price taken.
 - **Scene/world-partition convention** (for Phases 27/44 authoring): a region's sub-cell scenes
   live under `scenes/regions/<region>/<cell>.tscn`, where `<region>` is the id minus its
   `region.` prefix (e.g. `scenes/regions/ember_crown/waystone.tscn` for cell `ember_crown.waystone`).

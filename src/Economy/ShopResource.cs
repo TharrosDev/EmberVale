@@ -25,6 +25,18 @@ public partial class ShopResource : Resource
     /// window title, and CLAUDE.md §6 admits no literals in either.</summary>
     [Export] public string NameKey { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Whose standing the merchant prices by (Phase 38C). Empty means standing has no effect at all.
+    ///
+    /// Authored <b>here rather than read off the vendor entity's <c>FactionComponent</c></b>, even
+    /// though every town NPC already carries one: <c>ShopOpenedEvent</c> carries no vendor entity, the
+    /// <c>shop</c> dev command has no vendor at all (so the console would silently price without a
+    /// discount and disagree with the game), and <c>ContentValidator</c> cannot scan a <c>.tscn</c>, so
+    /// an entity-sourced faction would be unvalidatable. <c>CompanionResource.FactionId</c> is the same
+    /// call already made elsewhere.
+    /// </summary>
+    [Export] public string FactionId { get; set; } = string.Empty;
+
     [ExportGroup("Wares")]
 
     /// <summary>
@@ -66,6 +78,18 @@ public partial class ShopResource : Resource
     /// hand-edited resource cannot do it either.
     /// </summary>
     [Export] public float SellFraction { get; set; } = 0.4f;
+
+    /// <summary>
+    /// Gold the merchant can spend buying from the player before they run dry, refilled at each restock
+    /// (Phase 38C). <c>0</c> is unlimited, which is 38A/38B's behaviour and stays the default.
+    ///
+    /// This is a sink from the other end: it caps how fast a player can convert a field of corpses into
+    /// coin, without a single new piece of timing machinery — 38B's restock clock now governs income as
+    /// well as stock. ⚠️ A positive purse with <c>RestockDays = 0</c> is a merchant permanently out of
+    /// money, the same shape as a finite stock row with no clock, and <c>--validate</c> rejects it for
+    /// the same reason.
+    /// </summary>
+    [Export] public int PurseGold { get; set; }
 
     /// <summary>
     /// The authored rows as a typed list. Deliberately <b>does not</b> filter malformed rows the way

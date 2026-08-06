@@ -90,4 +90,42 @@ public class ShopStockTests
         float quality = ShopStock.QualityForLevel(level);
         Assert.InRange(quality, 0f, 1f);
     }
+
+    [Fact]
+    public void AnUnlimitedPurseCoversAnything()
+    {
+        // The sentinel, not a large number: a merchant who authors no purse must not be beatable by a
+        // sufficiently rich player, and 0 is a genuinely broke merchant rather than an unlimited one.
+        Assert.True(ShopStock.CanCover(ShopStock.UnlimitedPurse, 999_999));
+        Assert.Equal(ShopStock.UnlimitedPurse, ShopStock.AfterSpend(ShopStock.UnlimitedPurse, 500));
+        Assert.False(ShopStock.CanCover(0, 1));
+    }
+
+    [Fact]
+    public void AMerchantCanSpendExactlyWhatTheyHave()
+    {
+        // The boundary a player hits when fencing one last item: covering it exactly must succeed, and
+        // it must leave the purse at 0 rather than at -1, which would silently make them unlimited.
+        Assert.True(ShopStock.CanCover(120, 120));
+        Assert.Equal(0, ShopStock.AfterSpend(120, 120));
+        Assert.False(ShopStock.CanCover(119, 120));
+    }
+
+    [Fact]
+    public void SpendingNeverDrivesAPurseNegative()
+    {
+        Assert.Equal(0, ShopStock.AfterSpend(10, 999));
+        Assert.Equal(50, ShopStock.AfterSpend(50, 0));
+        Assert.Equal(50, ShopStock.AfterSpend(50, -20));
+    }
+
+    [Fact]
+    public void ARefundNeverMintsTheMerchantMoney()
+    {
+        // A sale that debits the purse and then fails to take the goods has to hand the gold back, and
+        // the clamp is what stops that path being a way to top a merchant up past what they authored.
+        Assert.Equal(250, ShopStock.AfterRefund(purse: 200, amount: 50, authoredPurse: 250));
+        Assert.Equal(250, ShopStock.AfterRefund(purse: 240, amount: 100, authoredPurse: 250));
+        Assert.Equal(ShopStock.UnlimitedPurse, ShopStock.AfterRefund(ShopStock.UnlimitedPurse, 50, 0));
+    }
 }

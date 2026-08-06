@@ -1,7 +1,10 @@
 using Embervale.Core.Events;
+using Embervale.Core.Services;
 using Embervale.Entities;
+using Embervale.Factions;
 using Embervale.Interaction;
 using Embervale.Localization;
+using Embervale.Player;
 using Godot;
 
 namespace Embervale.Economy;
@@ -37,20 +40,60 @@ public partial class VendorComponent : InteractableComponent
     /// <summary>Which <see cref="ShopResource"/> this merchant trades from (a <c>shop.*</c> id).</summary>
     [Export] public string ShopId { get; set; } = string.Empty;
 
-    public override string Prompt =>
-        // Nothing sensible to say about an id that resolves to nothing; the validator and the log
-        // carry authoring faults, the prompt stays silent rather than lying.
-        ShopDatabase.Get(ShopId) is { } shop
-            ? Loc.TF("shop.prompt_trade", Loc.T(shop.NameKey))
-            : string.Empty;
+    public override string Prompt
+    {
+        get
+        {
+            // Nothing sensible to say about an id that resolves to nothing; the validator and the log
+            // carry authoring faults, the prompt stays silent rather than lying.
+            if (ShopDatabase.Get(ShopId) is not { } shop)
+            {
+                return string.Empty;
+            }
+
+            string name = Loc.T(shop.NameKey);
+            return WillTrade(shop)
+                ? Loc.TF("shop.prompt_trade", name)
+                : Loc.TF("shop.prompt_hostile", name);
+        }
+    }
 
     public override void Interact(IEntity instigator)
     {
-        if (ShopDatabase.Get(ShopId) is not { } shop)
+        if (ShopDatabase.Get(ShopId) is not { } shop || !WillTrade(shop))
         {
-            return; // the prompt has already said nothing, for the same reason
+            return; // the prompt has already said why
         }
 
         EventBus.Instance?.Publish(new ShopOpenedEvent(instigator, shop));
     }
+
+    /// <summary>
+    /// Whether the merchant deals with the player at all (Phase 38C). Read by both the prompt and the
+    /// interaction, so a refusal cannot say one thing and the press do another — the same rule
+    /// <c>PropertyClaim.Resolve</c> enforces for a deed.
+    ///
+    /// Hostility is <see cref="ReputationComponent.IsHostile"/>, the game's one existing reputation
+    /// verb, which already keys off each faction's authored <c>HostileThreshold</c> — the Frostfang
+    /// clans tolerate someone the villagers would turn away, and that is content, not a second
+    /// threshold to invent here.
+    ///
+    /// ⚠️ <b>The default is inverted from the AI's.</b> <c>EnemyAIComponent.PlayerIsTarget</c> treats a
+    /// missing <c>ReputationComponent</c> as hostile, which is the right fail-safe for a creature
+    /// deciding whether to attack. For a shop it would mean every merchant in a half-built world
+    /// refusing to trade, so an unresolvable standing trades normally.
+    /// </summary>
+    private static bool WillTrade(ShopResource shop)
+    {
+        if (string.IsNullOrEmpty(shop.FactionId))
+        {
+            return true;
+        }
+
+        return Player()?.GetComponent<ReputationComponent>() is not { } reputation ||
+            !reputation.IsHostile(shop.FactionId);
+    }
+
+    private static PlayerCharacter? Player() =>
+        ServiceLocator.Instance is { } locator && locator.TryGet(out PlayerCharacter player) ? player : null;
 }

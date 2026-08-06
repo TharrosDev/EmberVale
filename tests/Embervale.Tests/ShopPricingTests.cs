@@ -1,4 +1,5 @@
 using Embervale.Economy;
+using Embervale.Factions;
 using Embervale.Items;
 using Xunit;
 
@@ -61,9 +62,57 @@ public class ShopPricingTests
     [InlineData(40, 0.2f, 3.0f)] // both ends illegal, both ends clamped
     public void SellingBackNeverPaysMoreThanBuyingCost(int value, float markup, float fraction)
     {
-        Assert.True(
-            ShopPricing.SellPrice(value, fraction) <= ShopPricing.BuyPrice(value, markup),
-            $"value {value} at buy x{markup} / sell x{fraction} prints gold");
+        // Swept across every standing (38C): a discount lowers the markup, so the money-printer
+        // invariant has to hold at Allied and not merely at the authored price. It does, because
+        // BuyPrice clamps its markup to >= 1 — but that is exactly the kind of load-bearing accident
+        // that a later refactor removes without noticing, so it is pinned here rather than reasoned about.
+        foreach (ReputationTier tier in System.Enum.GetValues<ReputationTier>())
+        {
+            float adjusted = ShopPricing.MarkupFor(markup, tier);
+            Assert.True(
+                ShopPricing.SellPrice(value, fraction) <= ShopPricing.BuyPrice(value, adjusted),
+                $"value {value} at buy x{markup} ({tier}) / sell x{fraction} prints gold");
+        }
+    }
+
+    [Fact]
+    public void NeutralStandingIsExactlyTheAuthoredPrice()
+    {
+        // The tier a player who has done nothing sits at must be the price the .tres says, or every
+        // authored number in the game is quietly off by a multiplier.
+        Assert.Equal(1f, ShopPricing.PriceMultiplierFor(ReputationTier.Neutral));
+        Assert.Equal(1.5f, ShopPricing.MarkupFor(1.5f, ReputationTier.Neutral));
+    }
+
+    [Fact]
+    public void StandingMovesPricesInBothDirections()
+    {
+        // A one-directional ramp would leave three of the seven tiers inert.
+        Assert.True(ShopPricing.PriceMultiplierFor(ReputationTier.Allied) < 1f);
+        Assert.True(ShopPricing.PriceMultiplierFor(ReputationTier.Hated) > 1f);
+    }
+
+    [Fact]
+    public void BetterStandingNeverCostsMore()
+    {
+        // Monotonic down the ramp, mirroring ReputationTierTests' monotonicity assertion. A single
+        // transposed row in the table would otherwise make one tier a worse deal than the one below it,
+        // which reads as the discount being broken rather than as a typo.
+        var tiers = System.Enum.GetValues<ReputationTier>();
+        for (int i = 1; i < tiers.Length; i++)
+        {
+            Assert.True(
+                ShopPricing.PriceMultiplierFor(tiers[i]) <= ShopPricing.PriceMultiplierFor(tiers[i - 1]),
+                $"{tiers[i]} charges more than {tiers[i - 1]}");
+        }
+    }
+
+    [Fact]
+    public void ADiscountCannotMakeAnItemFree()
+    {
+        // The floor survives the multiplier: a 1-value trinket at Allied standing still costs a coin.
+        Assert.True(ShopPricing.BuyPrice(1, ShopPricing.MarkupFor(1.5f, ReputationTier.Allied)) >= 1);
+        Assert.True(ShopPricing.BuyPrice(0, ShopPricing.MarkupFor(1f, ReputationTier.Allied)) >= 1);
     }
 
     [Fact]
