@@ -249,6 +249,14 @@ spellbook.delivery_projectile,Projectile
 spellbook.delivery_area,Area
 spellbook.delivery_self,Self
 spellbook.delivery_cone,Cone
+
+# --- Journal, map and codex (Phase 37.5E) ---
+questlog.main,Main Thread
+questlog.side,Errands
+map.filter_regions,Regions
+map.filter_pois,Places
+map.filter_travel,Waypoints
+map.legend_travel,Waypoints
 # Quest journal (QuestLogPanel)
 questlog.title,QUEST JOURNAL   (J to close)
 questlog.none,(no quests)
@@ -698,7 +706,7 @@ bestiary.tab_elementals,Elementals
 bestiary.tab_ashen,Ashen
 bestiary.tab_bosses,Flamebearers
 bestiary.progress,Field Journal — {0} of {1} catalogued
-bestiary.entry,{0}  ·  slain {1}
+bestiary.kills,slain {0}
 bestiary.unknown,??? — unrecorded
 bestiary.sighted,"Seen, not yet understood. {0} more to fill the page."
 bestiary.corrupted,{0} of them ashen

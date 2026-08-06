@@ -46,6 +46,21 @@ public partial class QuestResource : Resource
     [Export] public string PrerequisiteQuestId { get; set; } = string.Empty;
 
     /// <summary>
+    /// Whether this quest belongs to the main thread (Phase 37.5E). Drives the journal's Main/Side
+    /// split and the HUD tracker's priority colour.
+    ///
+    /// It exists because there was no honest way to infer it. 37.5B briefly tinted the tracker by
+    /// "has a `PrerequisiteQuestId`", which is not just wrong but **backwards** — a prerequisite
+    /// chains a quest into a sequence, which if anything marks it as *more* story, not less. That
+    /// heuristic was removed rather than shipped, and this is the field it was standing in for.
+    ///
+    /// Defaults to <c>false</c>: a quest is a side errand unless someone says otherwise, which is
+    /// the safe default because miscolouring an errand as the main thread is the failure that
+    /// misdirects a player.
+    /// </summary>
+    [Export] public bool IsMainQuest { get; set; }
+
+    /// <summary>
     /// Declares that this quest may target a creature the world spawns only once — a lair boss rather
     /// than an encounter type (Phase 35F's Ancient-dragon errand is the first). Kill objectives are
     /// otherwise required to name something an encounter or world event can spawn again, because a

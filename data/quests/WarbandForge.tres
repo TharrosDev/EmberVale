@@ -27,3 +27,4 @@ GoldReward = 25
 GoldItemId = "item.currency.gold"
 RewardItems = Array[Resource]([SubResource("Reward_potion")])
 PrerequisiteQuestId = "quest.warband.bounty"
+IsMainQuest = true

@@ -72,69 +72,124 @@ public partial class QuestLogPanel : UiPanel
     {
         UiTheme.ClearChildren(_list);
 
-        AddHeader(Loc.T("questlog.title"));
+        _list.AddChild(UiTheme.Title(Loc.T("questlog.title")));
 
         if (_log == null || _log.Quests.Count == 0)
         {
-            AddLine(Loc.T("questlog.none"));
+            _list.AddChild(UiTheme.Body(Loc.T("questlog.none"), UiTheme.Dim));
             return;
         }
 
-        bool anyActive = false;
-        foreach (QuestProgress progress in _log.Quests)
+        // Main / Side / Completed.
+        //
+        // ⚠️ There is deliberately **no Failed section**. `QuestStatus` has exactly two members,
+        // Active and Completed - nothing in the game can fail a quest, so a Failed heading would be
+        // a permanently empty promise. Same call as the omitted Contracts and Exploration headings:
+        // the journal shows the states the data actually has. Add the section when the state exists.
+        int active = 0;
+        active += BuildSection(Loc.T("questlog.main"), UiTheme.QuestMain, true);
+        active += BuildSection(Loc.T("questlog.side"), UiTheme.QuestSide, false);
+
+        if (active == 0)
         {
-            if (progress.Status == QuestStatus.Active)
+            _list.AddChild(UiTheme.Body(Loc.T("questlog.no_active"), UiTheme.Dim));
+        }
+
+        BuildCompleted();
+    }
+
+    /// <summary>Builds one active-quest section, returning how many it drew so the caller can tell
+    /// whether the whole journal is empty of live work.</summary>
+    private int BuildSection(string title, Color tint, bool main)
+    {
+        var matching = new List<QuestProgress>();
+        foreach (QuestProgress progress in _log!.Quests)
+        {
+            if (progress.Status == QuestStatus.Active && progress.Quest.IsMainQuest == main)
             {
-                anyActive = true;
-                BuildQuest(progress);
+                matching.Add(progress);
             }
         }
 
-        if (!anyActive)
+        if (matching.Count == 0)
         {
-            AddLine(Loc.T("questlog.no_active"));
+            return 0;
         }
 
-        bool completedHeader = false;
-        foreach (QuestProgress progress in _log.Quests)
+        _list.AddChild(UiTheme.SectionRule(title));
+        foreach (QuestProgress progress in matching)
         {
-            if (progress.Status != QuestStatus.Completed)
-            {
-                continue;
-            }
+            _list.AddChild(BuildQuestCard(progress, tint));
+        }
 
-            if (!completedHeader)
-            {
-                AddHeader(Loc.T("questlog.completed"));
-                completedHeader = true;
-            }
+        return matching.Count;
+    }
 
-            AddLine($"✓ {Loc.T(progress.Quest.Title)}", UiTheme.Good);
+    private void BuildCompleted()
+    {
+        var done = new List<QuestProgress>();
+        foreach (QuestProgress progress in _log!.Quests)
+        {
+            if (progress.Status == QuestStatus.Completed)
+            {
+                done.Add(progress);
+            }
+        }
+
+        if (done.Count == 0)
+        {
+            return;
+        }
+
+        _list.AddChild(UiTheme.SectionRule(Loc.T("questlog.completed")));
+        foreach (QuestProgress progress in done)
+        {
+            PanelContainer card = UiTheme.Card(UiTheme.QuestComplete);
+            MarginContainer pad = UiTheme.Padding(UiTheme.SpaceXs);
+            pad.AddChild(UiTheme.Body($"✓ {Loc.T(progress.Quest.Title)}", UiTheme.QuestComplete));
+            card.AddChild(pad);
+            _list.AddChild(card);
         }
     }
 
-    private void BuildQuest(QuestProgress progress)
+    /// <summary>One active quest: title on a coloured spine, then an objective row per goal with a
+    /// progress bar for anything counting past one.</summary>
+    private Control BuildQuestCard(QuestProgress progress, Color tint)
     {
-        AddLine(Loc.T(progress.Quest.Title), UiTheme.Accent);
+        PanelContainer card = UiTheme.Card(tint);
+        var col = new VBoxContainer();
+        col.AddThemeConstantOverride("separation", 2);
+
+        Label title = UiTheme.Body(Loc.T(progress.Quest.Title), tint);
+        UiTheme.ApplyType(title, UiTheme.FontRole.Display, UiTheme.BodyFontSize);
+        col.AddChild(title);
 
         List<ObjectiveResource> objectives = progress.Quest.ObjectiveList();
         for (int i = 0; i < objectives.Count; i++)
         {
             ObjectiveResource objective = objectives[i];
             bool done = progress.IsObjectiveComplete(i);
-            string mark = done ? "✓" : "•";
-            AddLine($"   {mark} {Loc.T(objective.ShortLabel())}  {progress.Counts[i]}/{objective.RequiredCount}",
-                done ? UiTheme.Good : UiTheme.Text);
+            int have = progress.Counts[i];
+            int required = Mathf.Max(1, objective.RequiredCount);
+
+            col.AddChild(UiTheme.Caption(
+                $"{(done ? "✓" : "•")} {Loc.T(objective.ShortLabel())}  {have}/{objective.RequiredCount}",
+                done ? UiTheme.QuestComplete : UiTheme.Text));
+
+            // A bar only where there is something to fill. "1/1" is a tick, not a gauge.
+            if (objective.RequiredCount > 1)
+            {
+                ProgressBar bar = UiTheme.Bar(done ? UiTheme.QuestComplete : tint, 300f);
+                bar.CustomMinimumSize = new Vector2(0f, 3f);
+                bar.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+                bar.Value = Mathf.Clamp(have / (double)required, 0d, 1d);
+                col.AddChild(bar);
+            }
         }
-    }
 
-    private void AddHeader(string text)
-    {
-        _list.AddChild(UiTheme.Header(text));
-    }
-
-    private void AddLine(string text, Color? color = null)
-    {
-        _list.AddChild(UiTheme.Body(text, color));
+        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceXs);
+        pad.AddChild(col);
+        card.AddChild(pad);
+        return card;
     }
 }

@@ -329,7 +329,16 @@ digits.
   ⚠️ `ContentValidator` now gates the UI's fonts and shaders. Three of the four shaders only
   instantiate when a screen is *opened*, so a broken one appeared in no boot log, no `--play`
   run and no test — only in play, as "nothing is there".
-- **37.5E** rebuilds map, quest log, dialogue and bestiary.
+- **37.5E** ✅ rebuilt map, quest log, dialogue and bestiary.
+  ⚠️ **The journal has no Failed section and never will until the state exists.** `QuestStatus`
+  has exactly two members, Active and Completed — nothing in the game can fail a quest, so the
+  heading would be a permanently empty promise. Same call as the omitted Contracts and
+  Exploration headings. Main/Side is real now: `QuestResource.IsMainQuest`, the field 37.5B
+  refused to fake with a backwards "has a prerequisite" heuristic.
+  ⚠️ **Quest markers are not on the map**, because quests carry no world position — Kill and
+  Collect objectives name a template id, not a place. The hierarchy that *is* real is
+  waypoints > regions > POIs, and fast-travel nodes had never been plotted at all despite
+  carrying a `Position` since Phase 25G.
 - **37.5F** rebuilds the shell, and migrates the genuinely-modal `CanvasLayer` screens
   onto `UiPanel`.
 - **37.5G** adds text scale, colourblind modes and high contrast, and audits
