@@ -87,10 +87,21 @@ public partial class HitStopDirector : Node
 
     private void Restore()
     {
-        if (_active)
+        if (!_active)
+        {
+            return;
+        }
+
+        _active = false;
+
+        // Only hand the clock back if it is still the one we took. Engage() yields to another time
+        // effect, but that check only covered *acquiring* it — an effect that starts mid-freeze was
+        // still cancelled on release. The boss defeat slow-mo does exactly that: it runs off
+        // EntityDiedEvent, which a damage-over-time tick can land inside a freeze this director is
+        // holding, and the unconditional 1f then wiped the death beat back to full speed.
+        if (Mathf.IsEqualApprox((float)Engine.TimeScale, FreezeTimeScale))
         {
             Engine.TimeScale = 1f;
-            _active = false;
         }
     }
 }
