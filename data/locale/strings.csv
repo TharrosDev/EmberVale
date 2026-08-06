@@ -112,6 +112,21 @@ trophy.stand_name,Display Stand
 trophy.prompt_empty,Display something here
 trophy.prompt_shown,"{0} — on display"
 trophy.prompt_locked,"{0} — not yours to decorate"
+# Shops and trade (Phase 38A). Prices stay unlocalised digits per UI_STYLE §10.
+shop.ember_crown.goods.name,Aldreth's General Goods
+shop.prompt_trade,Trade with {0}
+shop.title,{0}   (E to close)
+shop.wares,WARES
+shop.your_pack,YOUR PACK
+shop.purse,Purse: {0}
+shop.price,{0}g
+shop.buy,Buy
+shop.sell,Sell
+shop.empty,Nothing for sale.
+shop.pack_empty,Nothing to sell.
+shop.cannot_afford,You cannot afford this.
+shop.worthless,Not worth a single coin.
+shop.unsellable,This is not for sale.
 craft.station_forge,Forge
 craft.station_workbench,Workbench
 craft.station_alchemy,Alchemy Table

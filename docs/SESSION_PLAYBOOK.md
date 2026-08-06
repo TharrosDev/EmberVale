@@ -3401,8 +3401,25 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
 
 ## Phase 38 — Economy, Vendors & Services `[F/C]`
 
-- [ ] **38A — `VendorComponent` + `ShopResource` (buy/sell)** `[F]`
+- [x] **38A — `VendorComponent` + `ShopResource` (buy/sell)** `[F]` ✅
   - **Done when:** buy/sell works against the item system with buy/sell spreads.
+  - **Landed:** `src/Economy/` — `ShopResource` (wares + `BuyMarkup`/`SellFraction`), `ShopDatabase`,
+    `VendorComponent`, and `ShopPricing`, the Godot-free core that owns every price so
+    `ShopPricingTests` can pin the rounding. `VendorPanel` is `StoragePanel` with prices, on the
+    37.5C item vocabulary. One authored shop: `shop.ember_crown.goods`.
+  - ⚠️ **The stub vendors are untouched, deliberately.** `EntityNode.GetComponent<T>` returns the
+    *first* child match, so a `VendorComponent` behind a `DialogueComponent` on the same actor never
+    fires. Whether trade replaces the conversation or hangs off a new `OpenShop` dialogue effect is
+    **38A's decision to not make** — it is 38E's. Reach a shop meanwhile with `shop <id>` (F1), which
+    publishes the same `ShopOpenedEvent` a placed vendor does.
+  - Three traps worth carrying into 38B–38E:
+    1. **Buy must charge before it delivers.** `AddInstance` merges a stackable into an existing
+       stack, so the instance you hand it is often never stored and `RemoveOneInstance` has nothing
+       to roll back. Refunding gold always works; rolling back an item does not.
+    2. **A zero payout is refused, not accepted.** `SellPrice` floors at 0, so a 1-value common at a
+       0.4 fraction pays nothing — accepting it would be item loss dressed as a transaction.
+    3. **The spread rule is enforced twice**, in the validator *and* clamped in the arithmetic. Data
+       alone is not enough for something whose failure mode is infinite gold.
 - [ ] **38B — Stock: static + restock + leveled** `[F]`
   - **Done when:** vendor stock supports static lists, restock timers, and leveled
     pools.

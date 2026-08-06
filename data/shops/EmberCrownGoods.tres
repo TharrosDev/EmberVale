@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="ShopResource" load_steps=2 format=3 uid="uid://cmbrvlshopgoods"]
+
+[ext_resource type="Script" path="res://src/Economy/ShopResource.cs" id="1_shop"]
+
+; The first shop (Phase 38A): the Ember Crown's general goods. Stocked with the consumables and
+; common materials a player runs out of rather than gear — a merchant who sold weapons would be
+; competing with loot and crafting for the same job, and DESIGN §6 is explicit that gold buys
+; convenience, never defining power.
+;
+; The spread is 1.5 / 0.4, which means selling something back costs you roughly two thirds of its
+; price. That gap is the point: it makes looting-to-sell a slow income rather than a loop, and it is
+; the number Phase 56 balance will actually tune. Phase 38B adds stock quantities, restock timers and
+; leveled pools; 38C adds the reputation discount that moves BuyMarkup per merchant.
+;
+; No vendor is placed in the world yet — Phase 38E turns the three town_hub stub vendors into real
+; shops. Until then: `shop shop.ember_crown.goods` in the F1 console.
+
+[resource]
+script = ExtResource("1_shop")
+Id = "shop.ember_crown.goods"
+NameKey = "shop.ember_crown.goods.name"
+StockItemIds = Array[String](["item.potion.health", "item.material.healing_herb", "item.material.iron_ore", "item.material.leather_strips", "item.material.scrap"])
+BuyMarkup = 1.5
+SellFraction = 0.4

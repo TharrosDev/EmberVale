@@ -1,6 +1,7 @@
 using Embervale.Companions;
 using Embervale.Crafting;
 using Embervale.Dialogue;
+using Embervale.Economy;
 using Embervale.Enemies;
 using Embervale.Factions;
 using Embervale.Items;
@@ -48,6 +49,7 @@ public static class ContentDatabases
         EnemyTemplateRegistry.Initialize();
         BestiaryDatabase.Initialize();         // after the registry: the validator cross-checks entries against it
         PropertyDatabase.Initialize();         // holdings the player can claim (37A)
+        ShopDatabase.Initialize();             // merchants' wares and spreads (38A)
         CompanionDatabase.Initialize();
         CompanionRegistry.Initialize();
     }

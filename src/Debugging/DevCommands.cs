@@ -7,6 +7,7 @@ using Embervale.Core.Services;
 using Embervale.Combat;
 using Embervale.Companions;
 using Embervale.Corruption;
+using Embervale.Economy;
 using Embervale.Enemies;
 using Embervale.Factions;
 using Embervale.Items;
@@ -54,6 +55,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("tutorial", "tutorial <status|skip|restart>", "Inspect or drive the onboarding hints (Phase 33B).", Tutorial));
         console.Register(new ConsoleCommand("opening", "opening", "Replay the new-game prologue (Phase 33A).", Opening));
         console.Register(new ConsoleCommand("companion", "companion <list|recruit <id>|dismiss <id>|stance <id> <follow|hold|engage>|order|loyalty <id> [delta]>", "Inspect and drive the companion party (Phase 32A).", Companion));
+        console.Register(new ConsoleCommand("shop", "shop [id]", "List shops, or open one's trade window (Phase 38A).", Shop));
         console.Register(new ConsoleCommand("savecheck", "savecheck", "Audit registered saveables for volatile (would-orphan) keys (Phase 25.5A).", SaveCheck));
 
         console.Register(new ConsoleCommand("seed", "seed <n>", "Seed the global RNG (for repro).", Seed));
@@ -123,6 +125,40 @@ public static class DevCommands
         int qty = ParseInt(args, 1, 1);
         int added = inventory.AddItem(item, qty);
         return $"gave {added}x {item.DisplayName}";
+    }
+
+    /// <summary>
+    /// Opens a shop's trade window (Phase 38A). This is how the maintainer reaches the screen before
+    /// Phase 38E places a merchant in the world: an entity gets one interactable and all three town
+    /// vendors already hold a <c>DialogueComponent</c>, so whether trade replaces their conversation
+    /// is 38E's call. It publishes the same <see cref="ShopOpenedEvent"/> a
+    /// <see cref="VendorComponent"/> does, so nothing about the path being tested is a dev-only shim.
+    /// </summary>
+    private static string Shop(DevConsole console, string[] args)
+    {
+        if (args.Length < 1)
+        {
+            var sb = new StringBuilder($"{ShopDatabase.All.Count} shop(s):\n");
+            foreach (ShopResource s in ShopDatabase.All)
+            {
+                sb.Append($"  {s.Id}  — {s.StockItemIds.Count} ware(s), buy x{s.BuyMarkup}, sell x{s.SellFraction}\n");
+            }
+
+            return sb.ToString().TrimEnd();
+        }
+
+        if (!TryPlayer(out PlayerCharacter player))
+        {
+            return "no player";
+        }
+
+        if (ShopDatabase.Get(args[0]) is not { } shop)
+        {
+            return $"unknown shop '{args[0]}'";
+        }
+
+        EventBus.Instance?.Publish(new ShopOpenedEvent(player, shop));
+        return $"opened {shop.Id}";
     }
 
     private static string Xp(DevConsole console, string[] args)

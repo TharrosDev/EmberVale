@@ -77,6 +77,7 @@ Pattern column shows the canonical shape; examples are real ids from `data/**`.
 | `boss.*` | `boss.<name>` | `boss.iron_king` | ✅ `BossDatabase` — Phase 36A. Names a fight's *structure*; the actor stays an `enemy.*` archetype pointing at it via `BossId`, which is how one shape can serve several bosses |
 | `property.*` | `property.<region>.<name>` | `property.ember_crown.cottage` | ✅ `PropertyDatabase` — Phase 37A. Region-scoped, like `travel.*`, because a holding belongs to somewhere |
 | `place.*` | `place.<propertyId>#<n>` | `place.property.ember_crown.cottage#1` | ✅ a player-placed prop's `PersistentId` (`PlacementIds`) — Phase 37C. Not a `.tres`: minted at placement time and carried by `PersistentSpawnDirector`. The holding is encoded *inside* the id, which is what lets 37D ask a property what stands in it with no second record to drift |
+| `shop.*` | `shop.<region>.<trade>` | `shop.ember_crown.goods` | ✅ `ShopDatabase` — Phase 38A. Region-scoped like `property.*`, because a merchant stands somewhere. The `ShopId` naming one lives on a `VendorComponent` in a `.tscn`, which `ContentValidator` does not scan — a typo there gives no prompt at all rather than an error |
 | `relic.*` | `relic.<name>` | — | ⏳ Phase 51 (divine relics; likely an `item.*` subcat too — decide there) |
 
 > **No `bestiary.*` family.** Bestiary entries (Phase 34G) are keyed by the `enemy.*` id they
