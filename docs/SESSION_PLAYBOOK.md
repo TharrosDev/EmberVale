@@ -3670,6 +3670,7 @@ Nothing here is scheduled. Revisit an entry only when its stated trigger actuall
 | `Magic/SpellcastingComponent.cs` | Blink is a straight horizontal ray | Vertical or curved blink is wanted |
 | `Debugging/ContentValidator.cs` (×2) | Travel nodes validated at runtime, not authored; one regex for scene-authored flags | A second scene-authored writer of either kind appears |
 | `Enemies/ArenaHookComponent.cs` | Reacts to *any* boss's phase change and death, not the one in this arena | A second arena, or any boss alive in the same region as one (added by the Phase 36 audit) |
+| `Quests/QuestLogComponent.cs`, `Progression/ProgressionComponent.cs`, `Factions/ReputationComponent.cs` | **Last hit wins.** All three award on `ReferenceEquals(e.Killer, Entity)`, so a kill your companion lands grants the player no XP, no reputation shift and no quest credit | A maintainer decision, not a bug — the rule is applied consistently in all three, so it reads as deliberate. It predates Phase 32; the trigger is a play-through where Kael finishing a bounty target feels wrong. If it changes, all three move together (flagged by the Phase 9–11 audit) |
 
 **House rule going forward:** when you write a `ponytail:` marker, name the ceiling *and*
 the trigger — a shortcut with no stated upgrade condition is indistinguishable from a bug
