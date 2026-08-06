@@ -115,34 +115,58 @@ public partial class CraftingComponent : EntityComponent, ISaveable
             return false;
         }
 
-        // Ingredients are pre-validated by CanCraft, so these removals all succeed.
-        foreach (RecipeIngredient ingredient in recipe.IngredientList())
-        {
-            _inventory.RemoveItem(ingredient.ItemId, ingredient.Quantity);
-        }
-
+        // Resolved BEFORE anything is consumed. CanCraft already guards it, but this branch used to
+        // sit after the removals, so the one path written to "fail cleanly" was the one that ate the
+        // player's materials and handed back nothing.
         ItemResource? template = ItemDatabase.Get(recipe.OutputItemId);
         if (template == null)
         {
-            // CanCraft already guards this, but never force-deref a content lookup: a
-            // recipe whose output item was deleted must fail cleanly, not crash mid-craft.
             Log.Warn($"Recipe '{recipe.Id}' output item '{recipe.OutputItemId}' is missing; craft aborted.");
             return false;
         }
 
         int quantity = Mathf.Max(1, recipe.OutputQuantity);
 
+        // Ingredients are pre-validated by CanCraft, so these removals all succeed.
+        foreach (RecipeIngredient ingredient in recipe.IngredientList())
+        {
+            _inventory.RemoveItem(ingredient.ItemId, ingredient.Quantity);
+        }
+
+        // AddInstance returns what actually fit, and a full pack can take none of it. Consuming
+        // first and adding second therefore destroyed the ingredients and dropped the output in
+        // silence — crafting was the one place in the codebase that did not honour the rule
+        // StoragePanel.Transfer and PlacementDirector.Remove both state outright: a full pack must
+        // never be a reason something evaporates. Anything short of the whole output is rolled back.
+        var placed = new List<ItemInstance>();
         if (template is EquippableItemResource equippable && recipe.OutputRarity != ItemRarity.Common)
         {
             // Crafted gear rolls affixes; each piece is unique, so add them individually.
             for (int i = 0; i < quantity; i++)
             {
-                _inventory.AddInstance(LootGenerator.RollAffixed(equippable, recipe.OutputRarity), 1);
+                ItemInstance rolled = LootGenerator.RollAffixed(equippable, recipe.OutputRarity);
+                if (_inventory.AddInstance(rolled, 1) < 1)
+                {
+                    break;
+                }
+
+                placed.Add(rolled);
             }
         }
         else
         {
-            _inventory.AddInstance(ItemInstance.Plain(template), quantity);
+            ItemInstance plain = ItemInstance.Plain(template);
+            for (int i = _inventory.AddInstance(plain, quantity); i > 0; i--)
+            {
+                placed.Add(plain);
+            }
+        }
+
+        if (placed.Count < quantity)
+        {
+            Rollback(recipe, placed, plain: template);
+            Log.Warn($"Recipe '{recipe.Id}': no room for the output; the craft was refused and the ingredients returned.");
+            return false;
         }
 
         if (Entity != null)
@@ -151,6 +175,36 @@ public partial class CraftingComponent : EntityComponent, ISaveable
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Undoes a partial craft: pulls back whatever output did land and returns the ingredients.
+    /// The refund always fits — the ingredients were in this same pack a moment ago, and removing
+    /// them freed at least as much room as putting them back needs.
+    /// </summary>
+    private void Rollback(CraftingRecipeResource recipe, List<ItemInstance> placed, ItemResource plain)
+    {
+        foreach (ItemInstance instance in placed)
+        {
+            // Rolled pieces are unique, so they leave by reference; a stackable output leaves by id.
+            // The same split StoragePanel.Transfer documents, and for the same reason.
+            if (instance.IsStackable)
+            {
+                _inventory!.RemoveItem(plain.Id, 1);
+            }
+            else
+            {
+                _inventory!.RemoveOneInstance(instance);
+            }
+        }
+
+        foreach (RecipeIngredient ingredient in recipe.IngredientList())
+        {
+            if (ItemDatabase.Get(ingredient.ItemId) is { } item)
+            {
+                _inventory!.AddItem(item, ingredient.Quantity);
+            }
+        }
     }
 
     /// <summary>Whether a recipe authored for the <paramref name="required"/> station can be crafted at
