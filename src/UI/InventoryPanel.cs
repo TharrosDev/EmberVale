@@ -30,6 +30,7 @@ public partial class InventoryPanel : UiPanel
     private SpellcastingComponent? _spellcasting;
     private ReputationComponent? _reputation;
     private CorruptionComponent? _corruption;
+    private Embervale.Stats.StatsComponent? _stats;
     private UiTabs _tabs = null!;
     private VBoxContainer _list = null!;
 
@@ -181,6 +182,15 @@ public partial class InventoryPanel : UiPanel
         MarkDirty();
     }
 
+    /// <summary>The player's stats. Wired in 37.5C2 - before that this panel had no reference to
+    /// StatsComponent at all, which is why the game had never shown the player their own Armor,
+    /// Crit Chance or any of the six Phase 34E resistances.</summary>
+    public void SetStats(Embervale.Stats.StatsComponent? stats)
+    {
+        _stats = stats;
+        MarkDirty();
+    }
+
     private void OnChanged(InventoryChangedEvent e) => MarkDirty();
 
     private void OnEquipmentChanged(EquipmentChangedEvent e) => MarkDirty();
@@ -249,25 +259,120 @@ public partial class InventoryPanel : UiPanel
 
     private void BuildProgression()
     {
+        BuildLevelCard();
+        BuildStats();
+    }
+
+    /// <summary>The level card: a badge, the XP meter, and the unspent points as chips. Replaces
+    /// three loose text lines - the points in particular were a sentence the player had to read to
+    /// discover they had something to spend.</summary>
+    private void BuildLevelCard()
+    {
         if (_progression == null)
         {
             return;
         }
 
-        AddHeader(Loc.T("char.tab_progression"));
-        string xp = _progression.IsMaxLevel ? Loc.T("char.xp_max") : $"{_progression.CurrentXp} / {_progression.XpToNext}";
-        AddLine(Loc.TF("char.level_line", _progression.Level, xp));
+        PanelContainer card = UiTheme.Card(UiTheme.Accent);
+        var col = new VBoxContainer();
+        col.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
 
-        // XP toward the next level as a bar (30.5G) — same glanceable shape as corruption below.
-        if (!_progression.IsMaxLevel && _progression.XpToNext > 0)
+        var head = new HBoxContainer();
+        head.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
+
+        Label badge = UiTheme.Display(Loc.TF("char.level_badge", _progression.Level));
+        badge.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        head.AddChild(badge);
+
+        // Unspent points are the only actionable thing on this tab, so they read as chips rather
+        // than as prose. Nothing is shown when there is nothing to spend.
+        if (_progression.SkillPoints > 0)
         {
+            head.AddChild(Centred(UiTheme.Chip(Loc.TF("char.points_skill", _progression.SkillPoints), UiTheme.Accent)));
+        }
+
+        if (_progression.SpellPoints > 0)
+        {
+            head.AddChild(Centred(UiTheme.Chip(Loc.TF("char.points_spell", _progression.SpellPoints), UiTheme.GlyphLight)));
+        }
+
+        col.AddChild(head);
+
+        if (_progression.IsMaxLevel || _progression.XpToNext <= 0)
+        {
+            col.AddChild(UiTheme.Caption(Loc.T("char.xp_max")));
+        }
+        else
+        {
+            col.AddChild(UiTheme.Caption(Loc.TF("char.xp_progress", _progression.CurrentXp, _progression.XpToNext)));
             ProgressBar bar = UiTheme.Bar(UiTheme.Accent);
             bar.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
             bar.Value = _progression.CurrentXp / (double)_progression.XpToNext;
-            _list.AddChild(bar);
+            col.AddChild(bar);
         }
 
-        AddLine(Loc.TF("char.skill_points", _progression.SkillPoints));
+        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceSm);
+        pad.AddChild(col);
+        card.AddChild(pad);
+        _list.AddChild(card);
+    }
+
+    /// <summary>
+    /// The stat block - new in 37.5C2, because the game had never displayed one.
+    ///
+    /// Defence stats carry their derived mitigation percentage beside the raw number. "Armor 8" is
+    /// opaque and the curve is hyperbolic, so a player cannot infer that it removes about 7% of a
+    /// hit, nor that doubling it is not double the benefit. The percentage comes from
+    /// CombatMath.ArmorMultiplier itself, so the screen cannot disagree with combat.
+    /// </summary>
+    private void BuildStats()
+    {
+        if (_stats == null)
+        {
+            return;
+        }
+
+        foreach ((string headerKey, Embervale.Stats.StatType[] stats) in StatsPresentation.Sections)
+        {
+            _list.AddChild(UiTheme.SectionRule(Loc.T(headerKey)));
+
+            var grid = new GridContainer { Columns = 2 };
+            grid.AddThemeConstantOverride("h_separation", UiTheme.SpaceLg);
+            grid.AddThemeConstantOverride("v_separation", 1);
+
+            foreach (Embervale.Stats.StatType stat in stats)
+            {
+                float value = _stats.GetValue(stat);
+                grid.AddChild(UiTheme.Body(Embervale.Stats.StatNames.Label(stat), UiTheme.Dim));
+
+                var right = new HBoxContainer();
+                right.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+
+                Label reading = UiTheme.Body(StatsPresentation.Format(stat, value));
+                reading.HorizontalAlignment = HorizontalAlignment.Right;
+                reading.CustomMinimumSize = new Vector2(58f, 0f);
+                right.AddChild(reading);
+
+                if (StatsPresentation.IsMitigation(stat))
+                {
+                    float pct = StatsPresentation.MitigationFraction(value) * 100f;
+                    right.AddChild(UiTheme.Caption(
+                        Loc.TF("char.stat_reduced", pct.ToString("0.#")),
+                        value > 0f ? UiTheme.Good : UiTheme.Disabled));
+                }
+
+                grid.AddChild(right);
+            }
+
+            _list.AddChild(grid);
+        }
+    }
+
+    /// <summary>Wraps a control so it centres vertically against taller siblings.</summary>
+    private static Control Centred(Control control)
+    {
+        control.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        return control;
     }
 
     private void BuildCorruption()
@@ -402,29 +507,86 @@ public partial class InventoryPanel : UiPanel
     {
         if (_perks == null || PerkDatabase.All.Count == 0)
         {
+            _list.AddChild(UiTheme.Body(Loc.T("char.perks_none"), UiTheme.Dim));
             return;
         }
 
-        AddHeader(Loc.T("char.perks"));
+        _list.AddChild(UiTheme.SectionRule(Loc.T("char.perks")));
+
         foreach (PerkResource perk in PerkDatabase.All)
         {
             int rank = _perks.RankOf(perk.Id);
-            string text = Loc.TF("char.perk_rank", perk.DisplayName, rank, perk.MaxRank);
+            bool canLearn = _perks.CanLearn(perk);
+            bool maxed = rank >= perk.MaxRank;
 
-            if (_perks.CanLearn(perk))
+            // The spine says at a glance whether this perk is finished, available, or out of
+            // reach - three states the old flat list expressed only in a trailing word.
+            Color spine = maxed ? UiTheme.Accent : canLearn ? UiTheme.Good : UiTheme.Disabled;
+            PanelContainer card = UiTheme.Card(spine);
+
+            var col = new VBoxContainer();
+            col.AddThemeConstantOverride("separation", 2);
+
+            var head = new HBoxContainer();
+            head.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+
+            Label title = UiTheme.Body(perk.DisplayName, rank > 0 ? UiTheme.Text : UiTheme.Dim);
+            title.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            title.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+            head.AddChild(title);
+
+            head.AddChild(Centred(RankPips(rank, perk.MaxRank)));
+            head.AddChild(Centred(UiTheme.Caption(Loc.TF("char.perk_rank_short", rank, perk.MaxRank))));
+
+            if (canLearn)
             {
                 PerkResource captured = perk;
-                AddRow(text, Loc.TF("char.perk_learn", perk.Cost), () => _perks.Learn(captured));
+                Button learn = UiTheme.Action(Loc.TF("char.perk_learn", perk.Cost));
+                learn.Pressed += () => _perks!.Learn(captured);
+                head.AddChild(Centred(learn));
             }
-            else
+            else if (!maxed)
             {
-                bool maxed = rank >= perk.MaxRank;
-                string suffix = maxed ? $"  {Loc.T("char.perk_maxed")}"
-                    : !_perks.MeetsCorruption(perk) ? $"  {Loc.TF("char.perk_needs", CorruptionTiers.DisplayName(perk.MinCorruptionTier))}"
-                    : string.Empty;
-                AddLine($"• {text}{suffix}");
+                // Say which refusal it is - the same rule Phase 37's property prompts follow.
+                string reason = !_perks.MeetsCorruption(perk)
+                    ? Loc.TF("char.perk_needs", CorruptionTiers.DisplayName(perk.MinCorruptionTier))
+                    : Loc.TF("char.perk_learn", perk.Cost);
+                head.AddChild(Centred(UiTheme.Chip(reason, UiTheme.Disabled)));
             }
+
+            col.AddChild(head);
+
+            if (!string.IsNullOrWhiteSpace(perk.Description))
+            {
+                col.AddChild(UiTheme.Flavour(perk.Description));
+            }
+
+            MarginContainer pad = UiTheme.Padding(UiTheme.SpaceXs);
+            pad.AddChild(col);
+            card.AddChild(pad);
+            _list.AddChild(card);
         }
+    }
+
+    /// <summary>A perk's rank as filled pips. Paired with the "2/3" caption rather than replacing
+    /// it: pips are read at a glance, the numbers are read exactly, and a rankable perk is
+    /// something the player compares across a list.</summary>
+    private static Control RankPips(int rank, int maxRank)
+    {
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 2);
+
+        for (int i = 0; i < Mathf.Max(1, maxRank); i++)
+        {
+            row.AddChild(new ColorRect
+            {
+                Color = i < rank ? UiTheme.Accent : UiTheme.Engrave,
+                CustomMinimumSize = new Vector2(10f, 6f),
+                MouseFilter = Control.MouseFilterEnum.Ignore,
+            });
+        }
+
+        return row;
     }
 
     // --- The Gear tab (37.5C): equipment column | backpack grid | detail pane ---
