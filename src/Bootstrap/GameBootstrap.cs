@@ -949,6 +949,7 @@ public partial class GameBootstrap : Node3D
         _inventoryPanel.SetSpellcasting(_player.GetComponent<SpellcastingComponent>());
         _inventoryPanel.SetReputation(_player.GetComponent<ReputationComponent>());
         _inventoryPanel.SetCorruption(_player.GetComponent<CorruptionComponent>());
+        _inventoryPanel.SetStats(_player.GetComponent<StatsComponent>());
 
         QuestLogComponent? questLog = _player.GetComponent<QuestLogComponent>();
         _questLogPanel.SetQuestLog(questLog);

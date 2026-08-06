@@ -3161,6 +3161,34 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
     reading `have/need` instead of indented "(have 2)" lines that made the player do the
     subtraction that decides whether they can craft at all.
     `StoragePanel.Transfer`'s stackable-vs-instance branch was left untouched, as planned.
+- [x] **37.5C2 — The stat block, progression and perks** `[F]` ✅
+  - ⚠️ **Added because the phase plan had a hole, found by the maintainer, not by me.** 37.5C's
+    scope line said "character sheet" and I read that as the Gear tab; Progression and Perks were
+    in no phase at all, and 37.5D–G are magic/map/quests/shell/accessibility. On the plan as
+    written they would never have been touched.
+  - ⚠️ **The game had never shown the player a single stat.** `InventoryPanel` had no
+    `StatsComponent` reference, so Armor, Physical Power, Spell Power, Crit Chance, Move Speed and
+    all six Phase 34E resistances existed on the player and appeared nowhere. This also left
+    37.5C's comparison half-blind — it could say a sword was +6 Armor while the player had no way
+    to discover what their Armor was. Adding the readout was **new feature work**, not a restyle.
+  - **Defence stats show their derived mitigation**, not just the raw number: "Armor 8" is opaque,
+    the curve is hyperbolic, and a player cannot infer either that it removes ~7% or that doubling
+    it is not double the benefit. The percentage comes from `CombatMath.ArmorMultiplier` itself, so
+    the screen cannot drift from the damage pipeline.
+  - ⚠️ **Do not clamp the mitigation display.** A test asserting "reduction never reaches 100%"
+    failed at `float.MaxValue/2`, where `100/(100+x)` underflows to 0 — but it underflows *inside
+    `CombatMath`*, so combat would grant that immunity too. Clamping in the UI would make the
+    character screen disagree with combat, which is the one thing this readout must never do. The
+    test was narrowed to the reachable domain (six orders of magnitude above any rollable stat) and
+    the real ceiling recorded. If a stat ever approaches ~1e9, fix the curve, not the label.
+  - `StatsPresentationTests` includes a **coverage guard**: every non-resource `StatType` must be
+    displayed somewhere. Adding a stat without deciding where it appears now fails the build rather
+    than silently repeating the gap this sub-phase exists to close.
+  - Progression is a level card (badge, XP meter, unspent points as chips — nothing shown when
+    there is nothing to spend) over the stat sections. Perks are cards with **rank pips** beside
+    the "2/3" caption, and a spine colour for finished / available / out of reach; a locked perk
+    names *which* refusal applies, the same rule Phase 37's property prompts follow.
+
 - [ ] **37.5D — The Magic screen** `[F/C]`
   - **Done when:** `SpellbookPanel` exists as its own `UiPanel` with its own input action, magic
     is out of `InventoryPanel`'s tab strip, and the screen runs cold (`ArcaneGround`, tarnished

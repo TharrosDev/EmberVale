@@ -214,6 +214,19 @@ item.sort_value,Value
 item.filter_all,All
 item.empty_slot,Empty
 item.select_hint,Select an item to inspect it.
+
+# --- Character stats & progression (Phase 37.5C2) ---
+char.tab_stats,STATS
+char.stats_attributes,Attributes
+char.stats_combat,Offence
+char.stats_defence,Defence
+char.stat_reduced,"{0}% reduced"
+char.level_badge,"Level {0}"
+char.xp_progress,"{0} / {1} XP"
+char.points_skill,"{0} skill"
+char.points_spell,"{0} spell"
+char.perk_rank_short,"{0}/{1}"
+char.perks_none,No perks are known yet.
 # Quest journal (QuestLogPanel)
 questlog.title,QUEST JOURNAL   (J to close)
 questlog.none,(no quests)
