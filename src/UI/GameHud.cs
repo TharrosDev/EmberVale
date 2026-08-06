@@ -659,12 +659,13 @@ public partial class GameHud : CanvasLayer
             child.QueueFree();
         }
 
-        // The tracked quest takes QuestMain — it is the player's current focus, which is the only
-        // priority claim the data actually supports. `QuestResource` has **no main/side field**
-        // (`PrerequisiteQuestId` chains a quest, it does not demote it), so a tracker that tinted
-        // by "has a prerequisite" would be inventing a distinction and getting it backwards.
-        // 37.5E needs the real one for the quest log's Main/Side split and will have to add it.
-        _questList.AddChild(UiTheme.Body(Loc.T(progress.Quest.Title), UiTheme.QuestMain));
+        // Priority colour off the real field, added in 37.5E. 37.5B had this pinned to QuestMain
+        // because `QuestResource` had no main/side flag and the available heuristic ("has a
+        // prerequisite") was both invented and backwards — a prerequisite chains a quest, it does
+        // not demote it.
+        _questList.AddChild(UiTheme.Body(
+            Loc.T(progress.Quest.Title),
+            progress.Quest.IsMainQuest ? UiTheme.QuestMain : UiTheme.QuestSide));
 
         var objectives = progress.Quest.ObjectiveList();
         for (int i = 0; i < objectives.Count; i++)

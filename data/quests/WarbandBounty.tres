@@ -21,3 +21,4 @@ GoldReward = 20
 GoldItemId = "item.currency.gold"
 RewardItems = []
 PrerequisiteQuestId = ""
+IsMainQuest = true

@@ -3220,10 +3220,35 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
     This matters because **three of the four UI shaders only instantiate when a screen is opened**,
     so a broken one shows up in no boot log, no `--play` run and no test — only in play, on one
     screen, as "nothing is there".
-- [ ] **37.5E — Map, quest log, dialogue, bestiary** `[F]`
-  - **Done when:** marker hierarchy and filters on the map; Main/Side/Completed/Failed in the
-    log (there are no Contracts or Exploration quest kinds — do not invent headings for them);
-    dialogue in the book serif; the bestiary as an unlocking codex page.
+- [x] **37.5E — Map, quest log, dialogue, bestiary** `[F]` ✅
+  - **The journal.** Added `QuestResource.IsMainQuest` — the field 37.5B refused to fake — and
+    marked the warband chain (bounty → forge → remedies → heart) as the slice's main thread. The
+    HUD tracker now reads it too, replacing the placeholder 37.5B left.
+    ⚠️ **No Failed section**, and this is not an oversight: `QuestStatus` has exactly two members,
+    Active and Completed. Nothing in the game can fail a quest, so the heading would be a
+    permanently empty promise — the same call as the omitted Contracts and Exploration headings.
+    Add it when the state exists, not before.
+  - **The map.** Fast-travel nodes are plotted for the first time; they have carried a `Position`
+    since Phase 25G and were only ever *listed*, so the map named places you could travel to
+    without showing you where they were. Hierarchy is waypoints > regions > POIs, drawn weakest
+    first so overlap reinforces it. Region labels are drawn on the plot (the view's "pure shapes,
+    no font" note predates 37.5A shipping fonts at all), and the player is an arrow, not a dot —
+    orientation is the one thing that makes a map usable *while walking*.
+    ⚠️ **Filters do not re-fit the plot.** The bounds are computed over every known point whether
+    filtered or not; a map that zooms when you hide a pin is a map you cannot read.
+    ⚠️ **No quest markers**, because quests have no world position — Kill/Collect objectives name
+    a template id, not a place. Inventing one would mean guessing where an enemy type lives.
+  - **Dialogue** is the illuminated page: carved speaker, book-serif body, choices as engraved
+    cards with a spine that marks a quest-starting or conversation-ending choice apart from
+    ordinary talk. The whole card is the button, so the gamepad focus rect matches the click target.
+  - **The bestiary** is a codex: a progress meter over cards that are sealed, part-written or
+    complete. The three-stage staging has been in `BestiaryStage` since 34G and the old list spent
+    it on three differently-worded text lines.
+  - ⚠️ **I introduced duplicate locale keys and `--validate` caught them** (`bestiary.sighted` and
+    `bestiary.unknown` already existed, with a *different format arity* — `Loc.TF` would have
+    produced broken text). The guard lives in `LocaleAudit.Audit`, not in `ContentValidator`, which
+    is why grepping the validator for "duplicate" finds nothing. Run `--validate` after touching
+    `strings.csv`; it is not optional and it is faster than reading the file.
 - [ ] **37.5F — The shell** `[F]`
   - **Done when:** menu/pause/settings/save/loading/creator/sequences are rebuilt, and the
     genuinely-modal `CanvasLayer` screens (settings, save slots) are migrated onto `UiPanel` so

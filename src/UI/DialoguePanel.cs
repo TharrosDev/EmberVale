@@ -126,33 +126,66 @@ public partial class DialoguePanel : UiPanel
             return;
         }
 
-        _list.AddChild(UiTheme.Header(Loc.T(_session.CurrentSpeaker())));
+        // The illuminated page (37.5E): the speaker is carved, the words are set in the book serif,
+        // and the choices are cards rather than a stack of buttons. Dialogue is the only screen in
+        // the game the player *reads* rather than scans, so it is the one that most rewards the
+        // typography split -- and the one where a row of identical grey buttons most obviously
+        // reads as a form.
+        Label speaker = UiTheme.Title(Loc.T(_session.CurrentSpeaker()));
+        _list.AddChild(speaker);
+        _list.AddChild(UiTheme.Divider());
 
-        // The one place in the game with a paragraph to read, so it takes the book serif
-        // (37.5B). Prose already wraps; the old off-scale 15 px override is gone with it.
-        Label line = UiTheme.Prose(Loc.T(node.Text));
-        _list.AddChild(line);
+        _list.AddChild(UiTheme.Prose(Loc.T(node.Text)));
 
-        _list.AddChild(new HSeparator());
+        _list.AddChild(UiTheme.Divider());
 
         List<DialogueChoice> choices = _session.VisibleChoices();
         if (choices.Count == 0)
         {
             // Dead-end node: offer a single way out so the player is never stuck.
-            Button leave = UiTheme.Action(Loc.T("dialogue.leave"));
-            leave.Alignment = HorizontalAlignment.Left;
-            leave.Pressed += Close;
-            _list.AddChild(leave);
+            _list.AddChild(ChoiceCard(Loc.T("dialogue.leave"), UiTheme.Dim, Close));
             return;
         }
 
         foreach (DialogueChoice choice in choices)
         {
             DialogueChoice captured = choice;
-            Button button = UiTheme.Action(Loc.T(choice.Text));
-            button.Alignment = HorizontalAlignment.Left;
-            button.Pressed += () => Choose(captured);
-            _list.AddChild(button);
+
+            // A choice that starts a quest or ends the conversation is worth marking apart from
+            // ordinary talk -- the spine is the cheapest way to say so without adding a legend.
+            Color spine = choice.Effect == DialogueEffect.StartQuest ? UiTheme.QuestMain
+                : string.IsNullOrEmpty(choice.Goto) ? UiTheme.Dim
+                : UiTheme.Accent;
+
+            _list.AddChild(ChoiceCard(Loc.T(choice.Text), spine, () => Choose(captured)));
         }
+    }
+
+    /// <summary>One dialogue choice as an engraved card. The whole card is the button, so the
+    /// target is the full row rather than the text's own width -- which also means the focus rule a
+    /// gamepad follows matches what a mouse can click.</summary>
+    private Control ChoiceCard(string text, Color spine, System.Action onPressed)
+    {
+        var button = new Button { Flat = true, Alignment = HorizontalAlignment.Left };
+        UiTheme.ApplyType(button, UiTheme.FontRole.Serif, UiTheme.BodyFontSize);
+        button.Text = text;
+        button.AddThemeColorOverride("font_color", UiTheme.Text);
+        button.AddThemeColorOverride("font_hover_color", UiTheme.Accent);
+        button.AddThemeColorOverride("font_focus_color", UiTheme.Accent);
+
+        StyleBoxFlat normal = UiTheme.CardStyle(spine);
+        StyleBoxFlat hover = (StyleBoxFlat)normal.Duplicate();
+        hover.BgColor = UiTheme.CardBg with { A = 1f };
+        StyleBoxFlat focus = (StyleBoxFlat)hover.Duplicate();
+        focus.BorderColor = UiTheme.Accent;
+        focus.SetBorderWidthAll(1);
+        focus.BorderWidthLeft = 3;
+
+        button.AddThemeStyleboxOverride("normal", normal);
+        button.AddThemeStyleboxOverride("hover", hover);
+        button.AddThemeStyleboxOverride("pressed", hover);
+        button.AddThemeStyleboxOverride("focus", focus);
+        button.Pressed += () => onPressed();
+        return button;
     }
 }

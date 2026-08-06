@@ -108,8 +108,22 @@ public partial class BestiaryPanel : UiPanel
             return;
         }
 
-        _list.AddChild(UiTheme.Header(Loc.TF(
+        // A codex page opens as you fill it (37.5E): a progress meter over cards, each entry sealed,
+        // part-written or complete. The staging was always in the data - BestiaryStage has had three
+        // values since 34G - and the old flat list spent it on three differently-worded text lines.
+        var head = new VBoxContainer();
+        head.AddThemeConstantOverride("separation", 2);
+        head.AddChild(UiTheme.Title(Loc.TF(
             "bestiary.progress", _bestiary.DiscoveredCount, BestiaryDatabase.All.Count)));
+
+        ProgressBar meter = UiTheme.Bar(UiTheme.Accent);
+        meter.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        meter.CustomMinimumSize = new Vector2(0f, 4f);
+        meter.Value = BestiaryDatabase.All.Count == 0
+            ? 0d
+            : _bestiary.DiscoveredCount / (double)BestiaryDatabase.All.Count;
+        head.AddChild(meter);
+        _list.AddChild(head);
 
         var shown = new List<BestiaryEntryResource>();
         foreach (BestiaryEntryResource entry in BestiaryDatabase.All)
@@ -137,34 +151,71 @@ public partial class BestiaryPanel : UiPanel
         BestiaryService bestiary = _bestiary!;
         BestiaryStage stage = bestiary.StageOf(entry);
 
+        // Sealed page. No name and no lore leak - the blank entry is the hook, and the spine being
+        // the disabled colour is what makes a column of them read as "not yet" rather than "broken".
         if (stage == BestiaryStage.Unseen)
         {
-            // Never killed one: the blank page is the hook, so no name and no lore leak.
-            _list.AddChild(UiTheme.Body(Loc.T("bestiary.unknown"), UiTheme.Dim));
+            PanelContainer sealedCard = UiTheme.Card(UiTheme.Disabled);
+            MarginContainer sealedPad = UiTheme.Padding(UiTheme.SpaceXs);
+            sealedPad.AddChild(UiTheme.Body(Loc.T("bestiary.unknown"), UiTheme.Disabled));
+            sealedCard.AddChild(sealedPad);
+            _list.AddChild(sealedCard);
             return;
         }
 
         int kills = bestiary.KillsOf(entry.Id);
-        _list.AddChild(UiTheme.Header(Loc.TF("bestiary.entry", NameOf(entry), kills)));
+        bool known = stage == BestiaryStage.Known;
 
-        if (stage == BestiaryStage.Known)
-        {
-            Label lore = UiTheme.Body(Loc.T(entry.LoreKey));
-            lore.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-            _list.AddChild(lore);
-        }
-        else
-        {
-            // Sighted: tell them there is more to learn, and exactly how much more.
-            _list.AddChild(UiTheme.Caption(
-                Loc.TF("bestiary.sighted", entry.KillsToKnow - kills), UiTheme.Dim));
-        }
+        PanelContainer card = UiTheme.Card(known ? UiTheme.Accent : UiTheme.Dim);
+        var col = new VBoxContainer();
+        col.AddThemeConstantOverride("separation", 2);
+
+        var titleRow = new HBoxContainer();
+        titleRow.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+
+        Label name = UiTheme.Body(NameOf(entry), known ? UiTheme.Accent : UiTheme.Text);
+        UiTheme.ApplyType(name, UiTheme.FontRole.Display, UiTheme.HeaderFontSize);
+        name.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        titleRow.AddChild(name);
+
+        PanelContainer killChip = UiTheme.Chip(Loc.TF("bestiary.kills", kills), UiTheme.Dim);
+        killChip.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        titleRow.AddChild(killChip);
 
         int ashen = bestiary.AshenKillsOf(entry.Id);
         if (ashen > 0)
         {
-            _list.AddChild(UiTheme.Caption(Loc.TF("bestiary.corrupted", ashen), UiTheme.Corruption));
+            PanelContainer ashChip = UiTheme.Chip(Loc.TF("bestiary.corrupted", ashen), UiTheme.CorruptionText);
+            ashChip.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+            titleRow.AddChild(ashChip);
         }
+
+        col.AddChild(titleRow);
+
+        if (known)
+        {
+            // The page is written: the lore reads as a book, in the book face.
+            col.AddChild(UiTheme.Prose(Loc.T(entry.LoreKey)));
+        }
+        else
+        {
+            // Sighted: say there is more to learn, and show how much of the page is filled. The bar
+            // turns "3 more to fill the page" into something readable without counting.
+            col.AddChild(UiTheme.Caption(
+                Loc.TF("bestiary.sighted", entry.KillsToKnow - kills), UiTheme.Dim));
+
+            int needed = Mathf.Max(1, entry.KillsToKnow);
+            ProgressBar toward = UiTheme.Bar(UiTheme.Dim);
+            toward.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            toward.CustomMinimumSize = new Vector2(0f, 3f);
+            toward.Value = Mathf.Clamp(kills / (double)needed, 0d, 1d);
+            col.AddChild(toward);
+        }
+
+        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceXs);
+        pad.AddChild(col);
+        card.AddChild(pad);
+        _list.AddChild(card);
     }
 
     /// <summary>An entry's own name key wins; otherwise the archetype's. The bespoke creatures

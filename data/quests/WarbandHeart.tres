@@ -27,3 +27,4 @@ GoldReward = 50
 GoldItemId = "item.currency.gold"
 RewardItems = Array[Resource]([SubResource("Reward_sword")])
 PrerequisiteQuestId = "quest.warband.remedies"
+IsMainQuest = true

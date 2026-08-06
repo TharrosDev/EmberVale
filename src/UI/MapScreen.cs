@@ -26,6 +26,12 @@ public partial class MapScreen : UiPanel
     private int _shownRevision = -1;
     private int _shownTravelRevision = -1;
 
+    /// <summary>Which marker tiers are drawn. Filters live here rather than on the view so the
+    /// legend and the plot cannot disagree about what is being shown.</summary>
+    private bool _showRegions = true;
+    private bool _showPois = true;
+    private bool _showTravel = true;
+
     protected override string? ToggleAction => GameInput.Map;
 
     protected override void BuildShell(PanelContainer shell)
@@ -55,7 +61,8 @@ public partial class MapScreen : UiPanel
         _view = new MapView { CustomMinimumSize = new Vector2(500, 320) };
         col.AddChild(_view);
 
-        col.AddChild(new HSeparator());
+        col.AddChild(BuildFilterRow());
+        col.AddChild(UiTheme.Divider());
 
         _legend = new VBoxContainer();
         _legend.AddThemeConstantOverride("separation", 2);
@@ -108,6 +115,11 @@ public partial class MapScreen : UiPanel
 
     protected override void Rebuild()
     {
+        _view.ShowRegions = _showRegions;
+        _view.ShowPois = _showPois;
+        _view.ShowTravel = _showTravel;
+        _view.Travel = _travel;
+
         if (_map != null)
         {
             _shownRevision = _map.Revision;
@@ -121,19 +133,55 @@ public partial class MapScreen : UiPanel
             }
             else
             {
-                foreach (MapMarker region in _map.RegionMarkers())
+                if (_showRegions)
                 {
-                    _legend.AddChild(UiTheme.Body($"◆ {region.Label}", UiTheme.Accent));
+                    foreach (MapMarker region in _map.RegionMarkers())
+                    {
+                        _legend.AddChild(UiTheme.Body($"◆ {region.Label}", UiTheme.Accent));
+                    }
                 }
 
-                foreach (MapMarker poi in _map.PoiMarkers())
+                if (_showPois)
                 {
-                    _legend.AddChild(UiTheme.Body($"   • {poi.Label}", UiTheme.Dim));
+                    foreach (MapMarker poi in _map.PoiMarkers())
+                    {
+                        _legend.AddChild(UiTheme.Body($"   • {poi.Label}", UiTheme.Dim));
+                    }
                 }
             }
         }
 
         RebuildTravelList();
+    }
+
+    /// <summary>
+    /// Marker filters. The map is the one screen in this overhaul where decoration most easily
+    /// costs legibility, so the answer to "too many pins" is letting the player turn tiers off
+    /// rather than styling them into a hierarchy fine enough to be unreadable.
+    /// </summary>
+    private Control BuildFilterRow()
+    {
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+
+        row.AddChild(FilterButton("map.filter_regions", UiTheme.Accent, () => _showRegions, v => _showRegions = v));
+        row.AddChild(FilterButton("map.filter_pois", UiTheme.Dim, () => _showPois, v => _showPois = v));
+        row.AddChild(FilterButton("map.filter_travel", UiTheme.GlyphLight, () => _showTravel, v => _showTravel = v));
+        return row;
+    }
+
+    private Button FilterButton(string key, Color tint, System.Func<bool> get, System.Action<bool> set)
+    {
+        Button button = UiTheme.Action(Loc.T(key));
+        button.AddThemeColorOverride("font_color", get() ? tint : UiTheme.Disabled);
+
+        // Never rebuild inside a button signal (CLAUDE.md §8).
+        button.Pressed += () =>
+        {
+            set(!get());
+            MarkDirty();
+        };
+        return button;
     }
 
     /// <summary>The fast-travel section (Phase 25G): a button per attuned node that jumps there and
@@ -173,13 +221,23 @@ public partial class MapScreen : UiPanel
 /// the player, fitting them to the control rect. Pure shapes (no font), so it has no resource deps.</summary>
 public partial class MapView : Control
 {
-    private const float Margin = 24f;
+    private const float Margin = 28f;
 
     public MapService? Service { get; set; }
 
+    /// <summary>Attuned waypoints. Plotted since 37.5E — they carry a world position and had never
+    /// been drawn, so the map listed places you could travel to without showing you where they
+    /// were.</summary>
+    public FastTravelService? Travel { get; set; }
+
+    public bool ShowRegions { get; set; } = true;
+
+    public bool ShowPois { get; set; } = true;
+
+    public bool ShowTravel { get; set; } = true;
+
     public override void _Draw()
     {
-        // Backdrop so the plot area reads as a distinct surface within the panel.
         DrawRect(new Rect2(Vector2.Zero, Size), UiTheme.WellBg);
 
         if (Service == null || !Service.HasAnyDiscovery)
@@ -187,30 +245,23 @@ public partial class MapView : Control
             return;
         }
 
-        var markers = new List<(MapMarker Marker, bool IsRegion)>();
-        foreach (MapMarker m in Service.RegionMarkers())
+        var regions = new List<MapMarker>(Service.RegionMarkers());
+        var pois = new List<MapMarker>(Service.PoiMarkers());
+        var waypoints = new List<TravelNode>();
+        if (Travel != null)
         {
-            markers.Add((m, true));
+            waypoints.AddRange(Travel.Nodes);
         }
 
-        foreach (MapMarker m in Service.PoiMarkers())
-        {
-            markers.Add((m, false));
-        }
+        (Vector3 Position, float Yaw)? player = ResolvePlayer();
 
-        Vector3? player = ResolvePlayer();
-
-        // Fit bounds over every plotted point (markers + player).
+        // Fit over every known point, filtered or not: toggling a filter must not re-scale the map
+        // under the player. A map that zooms when you hide a pin is a map you cannot read.
         float minX = float.MaxValue, maxX = float.MinValue, minZ = float.MaxValue, maxZ = float.MinValue;
-        foreach ((MapMarker m, bool _) in markers)
-        {
-            Accumulate(ref minX, ref maxX, ref minZ, ref maxZ, m.X, m.Z);
-        }
-
-        if (player is { } p)
-        {
-            Accumulate(ref minX, ref maxX, ref minZ, ref maxZ, p.X, p.Z);
-        }
+        foreach (MapMarker m in regions) { Accumulate(ref minX, ref maxX, ref minZ, ref maxZ, m.X, m.Z); }
+        foreach (MapMarker m in pois) { Accumulate(ref minX, ref maxX, ref minZ, ref maxZ, m.X, m.Z); }
+        foreach (TravelNode n in waypoints) { Accumulate(ref minX, ref maxX, ref minZ, ref maxZ, n.Position.X, n.Position.Z); }
+        if (player is { } p) { Accumulate(ref minX, ref maxX, ref minZ, ref maxZ, p.Position.X, p.Position.Z); }
 
         // Pad degenerate (single point) extents so the transform never divides by zero.
         if (maxX - minX < 1f) { minX -= 20f; maxX += 20f; }
@@ -225,33 +276,105 @@ public partial class MapView : Control
                 Margin + (v * (Size.Y - (2f * Margin))));
         }
 
-        foreach ((MapMarker m, bool isRegion) in markers)
+        // Drawn weakest first so the hierarchy resolves by overlap as well as by size: a POI never
+        // covers a waypoint, and nothing ever covers the player.
+        if (ShowPois)
         {
-            Vector2 s = ToScreen(m.X, m.Z);
-            if (isRegion)
+            foreach (MapMarker m in pois)
             {
-                DrawCircle(s, 8f, UiTheme.Accent);
-                DrawArc(s, 11f, 0f, Mathf.Tau, 20, new Color(UiTheme.Accent, 0.5f), 1.5f);
+                DrawCircle(ToScreen(m.X, m.Z), 3.5f, UiTheme.Dim);
             }
-            else
+        }
+
+        if (ShowTravel)
+        {
+            foreach (TravelNode n in waypoints)
             {
-                DrawCircle(s, 4f, UiTheme.Dim);
+                Vector2 s = ToScreen(n.Position.X, n.Position.Z);
+                DrawDiamond(s, 6f, UiTheme.GlyphLight);
+                DrawArc(s, 9f, 0f, Mathf.Tau, 16, new Color(UiTheme.GlyphLight, 0.45f), 1f);
+            }
+        }
+
+        if (ShowRegions)
+        {
+            foreach (MapMarker m in regions)
+            {
+                Vector2 s = ToScreen(m.X, m.Z);
+                DrawCircle(s, 7f, UiTheme.Accent);
+                DrawArc(s, 11f, 0f, Mathf.Tau, 20, new Color(UiTheme.Accent, 0.5f), 1.5f);
+                DrawLabel(m.Label, s + new Vector2(0f, -16f), UiTheme.Accent);
             }
         }
 
         if (player is { } pp)
         {
-            Vector2 s = ToScreen(pp.X, pp.Z);
-            DrawCircle(s, 5f, UiTheme.Mana);
-            DrawArc(s, 8f, 0f, Mathf.Tau, 16, Colors.White, 1.5f);
+            DrawPlayer(ToScreen(pp.Position.X, pp.Position.Z), pp.Yaw);
         }
     }
 
-    private static Vector3? ResolvePlayer()
+    /// <summary>
+    /// The player as an arrow pointing where they are facing, not a dot.
+    ///
+    /// Orientation is the single thing that makes a map usable while walking — without it the
+    /// player has to move to work out which way "up" is on the plot, which is exactly the moment
+    /// they opened the map to avoid.
+    /// </summary>
+    private void DrawPlayer(Vector2 at, float yaw)
+    {
+        // Godot's −Z is forward and the plot puts −Z at the top, so a yaw of 0 must point up.
+        float a = -yaw;
+        var forward = new Vector2(Mathf.Sin(a), -Mathf.Cos(a));
+        Vector2 right = new Vector2(-forward.Y, forward.X);
+
+        Vector2[] tri =
+        {
+            at + (forward * 9f),
+            at - (forward * 5f) + (right * 5.5f),
+            at - (forward * 5f) - (right * 5.5f),
+        };
+
+        DrawColoredPolygon(tri, UiTheme.Text);
+        DrawPolyline(new[] { tri[0], tri[1], tri[2], tri[0] }, UiTheme.Engrave, 1.5f);
+    }
+
+    private void DrawDiamond(Vector2 at, float radius, Color color)
+    {
+        Vector2[] points =
+        {
+            at + new Vector2(0f, -radius),
+            at + new Vector2(radius, 0f),
+            at + new Vector2(0f, radius),
+            at + new Vector2(-radius, 0f),
+        };
+        DrawColoredPolygon(points, color);
+    }
+
+    /// <summary>
+    /// A region name on the plot itself.
+    ///
+    /// This control used to be documented as "pure shapes (no font), so it has no resource deps" —
+    /// true before 37.5A, when the project shipped no fonts at all. It now takes the UI face, and
+    /// falls back to drawing nothing rather than throwing if that face is unavailable: a nameless
+    /// map is a degraded map, a crashed one is no map.
+    /// </summary>
+    private void DrawLabel(string text, Vector2 at, Color color)
+    {
+        if (UiTheme.UiFont is not { } font)
+        {
+            return;
+        }
+
+        int size = UiTheme.FontSize(UiTheme.CaptionFontSize);
+        Vector2 measured = font.GetStringSize(text, HorizontalAlignment.Left, -1, size);
+        DrawString(font, at - new Vector2(measured.X * 0.5f, 0f), text, HorizontalAlignment.Left, -1, size, color);
+    }
+
+    private static (Vector3 Position, float Yaw)? ResolvePlayer()
     {
         if (ServiceLocator.Instance is { } locator && locator.TryGet(out PlayerCharacter player))
         {
-            return player.GlobalPosition;
+            return (player.GlobalPosition, player.GlobalRotation.Y);
         }
 
         return null;
