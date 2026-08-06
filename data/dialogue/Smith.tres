@@ -25,6 +25,15 @@ Goto = "thanks"
 Condition = 3
 ConditionArg = "quest.warband.forge"
 
+; 38E: trade, on the root node under the quest lines and above the farewell. The quest is why the player
+; was sent here; a trade line at the top buries it. No Goto — an OpenShop choice ends the conversation and
+; the vendor window takes its place (--validate rejects one that points anywhere).
+[sub_resource type="Resource" id="ch_trade"]
+script = ExtResource("3_choice")
+Text = "dlg.smith.c_trade"
+Effect = 9
+EffectArg = "shop.ember_crown.smith"
+
 [sub_resource type="Resource" id="ch_bye"]
 script = ExtResource("3_choice")
 Text = "dlg.smith.c_bye"
@@ -56,7 +65,7 @@ Text = "dlg.smith.c_thanks_bye"
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.smith.root"
-Choices = Array[Resource]([SubResource("ch_offer"), SubResource("ch_active"), SubResource("ch_thanks"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_offer"), SubResource("ch_active"), SubResource("ch_thanks"), SubResource("ch_trade"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_offer"]
 script = ExtResource("2_node")

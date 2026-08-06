@@ -1,0 +1,60 @@
+[gd_resource type="Resource" script_class="ShopResource" format=3 uid="uid://c0mhsn3ne7256"]
+
+[ext_resource type="Script" path="res://src/Economy/ShopResource.cs" id="1_shop"]
+[ext_resource type="Script" path="res://src/Economy/ShopStockEntry.cs" id="2_entry"]
+
+; Mirela's remedies (Phase 38E). The third merchant, reached the same way Bryn is — a trade choice on the
+; root node of a conversation she keeps, along with quest.warband.remedies.
+;
+; She is the only reliable source of healing in the Ember Crown, which makes her stock the most load-
+; bearing numbers in this file:
+;   - Potions and herbs are FINITE. This is the same rule Aldreth's stall follows and for the same
+;     reason: a player who can stand at a counter and buy their way through a region has been handed an
+;     answer to attrition that the combat design never agreed to. Six potions is a supply, not a wall.
+;   - RestockDays = 1 is what makes that a wait rather than a refusal. It is the shortest clock in the
+;     game and she is the right merchant to have it.
+;   - Grave dust and elemental motes are UNLIMITED — reagents, not remedies. Gating crafting behind a
+;     restock timer is friction with no decision in it.
+;
+; BuyMarkup 1.6, the highest in the realm. Not greed: a dying world is short of people who can still make
+; a potion, and DESIGN §6 asks for scarcity expressed economically rather than stated. It also leaves the
+; standing ramp room to matter — at 1.6 the Allied discount and the Unfriendly surcharge are visibly
+; different numbers, which is the check --validate makes when it rejects a markup that bottoms out at
+; Honored.
+;
+; PurseGold 180 is the smallest purse authored so far. An apothecary deals in copper, and a player looking
+; to offload a haul should feel pushed toward Bryn or Aldreth — that push is the whole point of merchants
+; having different purses, and it is where 38H's saturation lands next.
+
+[sub_resource type="Resource" id="Stock_potion"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.health"
+Quantity = 6
+
+[sub_resource type="Resource" id="Stock_herb"]
+script = ExtResource("2_entry")
+ItemId = "item.material.healing_herb"
+Quantity = 10
+
+[sub_resource type="Resource" id="Stock_dust"]
+script = ExtResource("2_entry")
+ItemId = "item.material.grave_dust"
+Quantity = 0
+
+[sub_resource type="Resource" id="Stock_mote"]
+script = ExtResource("2_entry")
+ItemId = "item.material.elemental_mote"
+Quantity = 0
+
+[resource]
+script = ExtResource("1_shop")
+Id = "shop.ember_crown.apothecary"
+NameKey = "shop.ember_crown.apothecary.name"
+FactionId = "faction.villagers"
+AcceptedTags = Array[String](["herb", "reagent", "potion", "arcane"])
+Specialties = Array[String](["herb", "reagent", "potion"])
+Stock = Array[Resource]([SubResource("Stock_potion"), SubResource("Stock_herb"), SubResource("Stock_dust"), SubResource("Stock_mote")])
+RestockDays = 1
+BuyMarkup = 1.6
+SellFraction = 0.4
+PurseGold = 180

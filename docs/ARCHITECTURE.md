@@ -472,7 +472,18 @@ only three of them have a factory**; the rest are `.tres` files.
   `LootTable.Entries`/`QuestResource.Objectives`). `DialogueDatabase` indexes by id.
 - **Conditions/effects are declarative — no scripting in `.tres`.** `DialogueCondition`:
   `Always`/`QuestAvailable`/`QuestActive`/`QuestCompleted`/`QuestNotStarted`/`HasFlag`/
-  `MissingFlag`. `DialogueEffect`: `None`/`StartQuest`/`SetFlag`/`ClearFlag`.
+  `MissingFlag`/`CorruptionAtLeast`/`CorruptionBelow`/`CompanionRecruited`/
+  `CompanionNotRecruited`/`CompanionLoyaltyAtLeast`. `DialogueEffect`: `None`/`StartQuest`/
+  `SetFlag`/`ClearFlag`/`AddCorruption`/`RecruitCompanion`/`DismissCompanion`/
+  `AddCompanionLoyalty`/`LearnSpell`/`OpenShop`. Both are **append-only** (ordinals are authored
+  into every `.tres`; `EnumStabilityTests` pins them).
+- **`OpenShop` (38E) is how a merchant NPC trades.** An entity gets one interactable, so a
+  `VendorComponent` behind a `DialogueComponent` never fires; a trade *choice* sidesteps that without
+  displacing the conversation, and puts the shop id somewhere `ContentValidator` can read — a
+  `VendorComponent.ShopId` in a `.tscn` is unvalidated and a typo there is silent. ⚠️ The choice must
+  leave `Goto` empty (the validator enforces it): the effect is applied *before* `Goto` resolves, so
+  `VendorPanel` registers with `UiState` before `DialoguePanel` deregisters and the owner count never
+  reaches zero — which is what makes the handover free of pause and mouse-mode flicker.
 - **`DialogueSession`** (plain runtime object, not a node) — walks one conversation:
   tracks the current node, `VisibleChoices()` filters by condition against the player's
   `QuestLogComponent` + `StoryFlagsComponent`, and `Choose(choice)` applies the effect
@@ -1185,6 +1196,10 @@ content breakage too. Enforced references:
 | `EncounterResource` / `WorldEventResource` | `EnemyTemplateId` | `EnemyTemplateRegistry` |
 | `EncounterResource` | `RegionIds` | `RegionDatabase` |
 | `WorldEventResource` | `CacheItemId`, `RewardItemId`, `FactionRewardId` | `ItemDatabase` / `FactionDatabase` |
+| `DialogueResource` | `OpenShop` effect arg (38E) | `ShopDatabase` |
+| `ShopResource` | stock `ItemId`s, `LeveledTable` entries, `FactionId`, `NameKey` | `ItemDatabase` / `FactionDatabase` / the locale catalogue |
+| `ServiceResource` | `TaughtRecipeIds`, `FactionId`, `NameKey` | `RecipeDatabase` / `FactionDatabase` / the locale catalogue |
+| `PropertyResource` | `RegionId`, `RequiredQuestId`, `NameKey` | `RegionDatabase` / `QuestDatabase` / the locale catalogue |
 
 > **Story flags have no database**, so they are checked the only way a registry-less id can be:
 > readers against writers (Phase 34.5C). A flag nothing ever `SetFlag`s is an error — that is the

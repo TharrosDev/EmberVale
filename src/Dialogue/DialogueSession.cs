@@ -4,6 +4,7 @@ using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Core.Services;
 using Embervale.Corruption;
+using Embervale.Economy;
 using Embervale.Entities;
 using Embervale.Magic;
 using Embervale.Quests;
@@ -194,6 +195,20 @@ public sealed class DialogueSession
                     // a tome — silently, which is what "the words writhe out of reach" looks like.
                     _spellcasting.Learn(arg);
                     EventBus.Instance?.Publish(new SpellsChangedEvent(_player));
+                }
+
+                break;
+            case DialogueEffect.OpenShop:
+                // The conversation ends on the same choice (an OpenShop choice authors no Goto), so the
+                // vendor window registers with UiState before the dialogue panel deregisters — the owner
+                // count never reaches zero and neither the pause nor the mouse mode flickers between them.
+                if (ShopDatabase.Get(arg) is { } shop)
+                {
+                    EventBus.Instance?.Publish(new ShopOpenedEvent(_player, shop));
+                }
+                else
+                {
+                    Log.Warn($"Dialogue effect OpenShop: unknown shop '{arg}'.");
                 }
 
                 break;

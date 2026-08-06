@@ -403,7 +403,7 @@ a wallet would be a second place for money to live and a second thing to persist
 | Sink | Where | Since |
 | ---- | ----- | ----- |
 | Property deeds | `PropertyResource.PriceGold` → `PropertyDeedComponent` | 37A |
-| Goods | `ShopResource`'s spread over `ItemInstance.Value`, via `ShopPricing` | 38A |
+| Goods | `ShopResource`'s spread over `ItemInstance.Value`, via `ShopPricing`. Three merchants behind it since 38E | 38A |
 | Fast travel | `TravelFee` / `TravelCosts`, charged in `GameBootstrap.OnFastTravelRequested` | 38C |
 | A night's rest | `ServiceKind.Inn` — moves the clock, refills every resource. Charged every night | 38D |
 | A bank account | `ServiceKind.Bank` — a one-off fee, then a persistent vault forever | 38D |
@@ -421,6 +421,16 @@ Two things shape income rather than drain it, and belong in the same picture: th
 (selling something back costs roughly two thirds of its price, so looting-to-sell is a slow income and
 not a loop) and the **vendor purse** (`ShopResource.PurseGold`, 38C — a merchant runs out of coin and
 refills on the restock clock, so a field of corpses cannot be fenced in one visit).
+
+**A merchant is a trade, not a vending machine** (38F). Every shop authors what it will buy
+(`AcceptedTags`) and what it is expert in (`Specialties`), matched against `ItemResource.TradeTags`. A
+smith refuses herbs and pays over the odds for metal; a general store takes everything and pays plainly
+for all of it, which is authored by saying nothing at all. **Decision:** *where* the player sells is a
+decision worth making, and specialisation is what makes a world full of merchants necessary rather than
+redundant — it is also the substrate regional demand, contraband and collectors are all built on.
+⚠️ Both empties fail *open* (an untagged item sells anywhere, a merchant with no accept list buys
+anything), and a settlement must always contain one merchant who takes everything, or loot becomes
+unsellable by authoring accident.
 
 **Standing moves prices, in both directions** (38C): `ShopPricing.PriceMultiplierFor` runs from a 15%
 surcharge at the hostile end of the ramp to 15% off at Allied, and a faction the player is *hostile* to
@@ -452,6 +462,15 @@ This section fixes what money is *for*:
   trainer granting XP must record the lesson in a story flag, and `--validate` rejects one that does not.
   A future trainer selling a *perk line unlock* (a flag gating `PerksComponent.CanLearn`) stays inside
   the rule; one calling `GrantFree` for coin does not.
+
+**The economy became reachable in 38E, which is a design fact and not a wiring detail.** Until then the
+only way to trade was `shop <id>` in the dev console: one authored shop, no vendor placed in the world, and
+a sink table describing money the player had no way to spend by playing. 38E put three merchants behind it
+— Aldreth, Bryn and Mirela — reached by **talking to them**, through a `DialogueEffect.OpenShop` choice
+rather than by replacing their conversations. That decision is load-bearing for everything §6 wants next:
+a merchant who is a *person* can carry hours, standing, a haggle, a contract and a rumour, and a
+`VendorComponent` on a crate cannot. It also gave two merchants different prices for the same goods for the
+first time (Bryn pays more for metal than Aldreth does), which is the seed of the specialist premium.
 
 > Cross-links: `src/Items/*`, `src/Loot/*` (gold as item today); Phase 37 (housing sink),
 > Phase 38 (vendors/services/sinks), Phase 56 (the numbers).

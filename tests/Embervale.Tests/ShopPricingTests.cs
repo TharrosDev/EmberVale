@@ -144,4 +144,115 @@ public class ShopPricingTests
     {
         Assert.True(ShopPricing.Sellable(type, isCurrency: false));
     }
+
+    [Fact]
+    public void ASpecialistPaysMoreAndChargesLess()
+    {
+        // The premium is the point of 38F: it is what makes *where* the player sells matter.
+        Assert.Equal(40, ShopPricing.SellPrice(100, ShopPricing.SellFractionFor(0.4f, specialty: false)));
+        Assert.Equal(62, ShopPricing.SellPrice(100, ShopPricing.SellFractionFor(0.5f, specialty: true)));
+
+        float plain = ShopPricing.MarkupFor(1.5f, ReputationTier.Neutral);
+        float own = ShopPricing.MarkupFor(1.5f, ReputationTier.Neutral, specialty: true);
+        Assert.True(own < plain);
+        Assert.True(ShopPricing.BuyPrice(100, own) < ShopPricing.BuyPrice(100, plain));
+    }
+
+    [Fact]
+    public void AGenerousFractionStillCannotPayAboveAnItemsValue()
+    {
+        // 0.9 x the 1.25 premium is 1.125, which SellPrice clamps to 1. That clamp is the whole reason
+        // a new multiplier cannot invert the spread, so it is worth pinning directly rather than only
+        // through the sweep below.
+        Assert.Equal(100, ShopPricing.SellPrice(100, ShopPricing.SellFractionFor(0.9f, specialty: true)));
+    }
+
+    /// <summary>
+    /// The invariant the whole economy arc rests on: a merchant never pays more for something than they
+    /// would charge for it. Every multiplier the arc adds — standing, the specialty premium, and later
+    /// regional demand and market saturation — is folded into either the markup or the fraction, and
+    /// <see cref="ShopPricing.BuyPrice"/>'s <c>&gt;= 1</c> clamp and <see cref="ShopPricing.SellPrice"/>'s
+    /// <c>0..1</c> clamp make <c>sell &lt;= value &lt;= buy</c> true for <em>any</em> of them.
+    ///
+    /// ⚠️ <b>Every future price multiplier joins this sweep or it does not ship.</b> This is the test
+    /// that lets a later sub-phase add one without re-deriving the safety argument, and the reason 38F
+    /// did not need a new price class to hold them: the guarantee already lived in the clamps.
+    /// </summary>
+    [Fact]
+    public void NoCombinationOfMultipliersLetsSellingBeatBuying()
+    {
+        ReputationTier[] tiers =
+        {
+            ReputationTier.Hated, ReputationTier.Hostile, ReputationTier.Unfriendly,
+            ReputationTier.Neutral, ReputationTier.Friendly, ReputationTier.Honored,
+            ReputationTier.Allied,
+        };
+        float[] markups = { 1f, 1.2f, 1.5f, 1.6f, 2f, 3f };
+        float[] fractions = { 0.05f, 0.2f, 0.4f, 0.45f, 0.5f, 0.8f, 0.99f };
+        int[] values = { 0, 1, 2, 3, 7, 25, 99, 100, 420, 9999 };
+
+        foreach (ReputationTier tier in tiers)
+        {
+            foreach (float markup in markups)
+            {
+                foreach (float fraction in fractions)
+                {
+                    foreach (bool specialty in new[] { false, true })
+                    {
+                        foreach (int value in values)
+                        {
+                            int buy = ShopPricing.BuyPrice(
+                                value, ShopPricing.MarkupFor(markup, tier, specialty));
+                            int sell = ShopPricing.SellPrice(
+                                value, ShopPricing.SellFractionFor(fraction, specialty));
+
+                            Assert.True(
+                                sell <= buy,
+                                $"sell {sell} > buy {buy} at tier {tier}, markup {markup}, " +
+                                $"fraction {fraction}, specialty {specialty}, value {value}");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// The stronger claim, over the band <c>--validate</c> actually permits: not merely that selling
+    /// cannot beat buying, but that a round trip always <em>costs</em> something. Equality is not an
+    /// exploit, but it is frictionless churn — a player buying and re-selling for nothing at all — and
+    /// the margin rule in <c>ValidateShopTrade</c> exists to keep authored data inside this band.
+    /// </summary>
+    [Fact]
+    public void AuthoredSpreadsAlwaysCostSomethingToRoundTrip()
+    {
+        ReputationTier[] tiers = { ReputationTier.Neutral, ReputationTier.Honored, ReputationTier.Allied };
+        float[] markups = { 1.5f, 1.6f };
+        float[] fractions = { 0.4f, 0.45f };
+
+        foreach (ReputationTier tier in tiers)
+        {
+            foreach (float markup in markups)
+            {
+                foreach (float fraction in fractions)
+                {
+                    foreach (bool specialty in new[] { false, true })
+                    {
+                        for (int value = 1; value <= 500; value++)
+                        {
+                            int buy = ShopPricing.BuyPrice(
+                                value, ShopPricing.MarkupFor(markup, tier, specialty));
+                            int sell = ShopPricing.SellPrice(
+                                value, ShopPricing.SellFractionFor(fraction, specialty));
+
+                            Assert.True(
+                                sell < buy,
+                                $"round trip is free at tier {tier}, markup {markup}, " +
+                                $"fraction {fraction}, specialty {specialty}, value {value}");
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

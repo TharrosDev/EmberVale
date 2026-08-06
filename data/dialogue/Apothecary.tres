@@ -25,6 +25,14 @@ Goto = "thanks"
 Condition = 3
 ConditionArg = "quest.warband.remedies"
 
+; 38E: trade, under the quest lines and above the farewell. No Goto — an OpenShop choice ends the
+; conversation and the vendor window takes its place.
+[sub_resource type="Resource" id="ch_trade"]
+script = ExtResource("3_choice")
+Text = "dlg.apothecary.c_trade"
+Effect = 9
+EffectArg = "shop.ember_crown.apothecary"
+
 [sub_resource type="Resource" id="ch_bye"]
 script = ExtResource("3_choice")
 Text = "dlg.apothecary.c_bye"
@@ -56,7 +64,7 @@ Text = "dlg.apothecary.c_thanks_bye"
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.apothecary.root"
-Choices = Array[Resource]([SubResource("ch_offer"), SubResource("ch_active"), SubResource("ch_thanks"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_offer"), SubResource("ch_active"), SubResource("ch_thanks"), SubResource("ch_trade"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_offer"]
 script = ExtResource("2_node")

@@ -42,6 +42,15 @@ public enum DialogueEffect
     /// goes through the same corruption-gated <c>Learn</c>, and works for a spell marked
     /// <c>PlayerLearnable = false</c> — which is the point, since such a spell can never be bought.</summary>
     LearnSpell,
+
+    /// <summary>Open the shop whose id is the <c>EffectArg</c> (Phase 38E). This is how a merchant NPC
+    /// trades without giving up the one interactable an entity gets — a <see cref="Economy.VendorComponent"/>
+    /// behind a <see cref="DialogueComponent"/> never fires, and two of the three Ember Crown merchants
+    /// carry live quest content that cannot be displaced by a menu. It also puts the shop id somewhere
+    /// <c>ContentValidator</c> can read it, which a <c>.tscn</c> export never was.
+    /// ⚠️ The choice carrying it must leave <c>Goto</c> empty: a conversation left open underneath the
+    /// shop window returns the player to it when they close the shop.</summary>
+    OpenShop,
 }
 
 /// <summary>

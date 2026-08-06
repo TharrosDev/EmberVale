@@ -14,3 +14,4 @@ Weight = 0.8
 Value = 15
 Slot = 3
 BonusArmor = 4.0
+TradeTags = Array[String](["armor", "leather"])

@@ -16,3 +16,4 @@ Value = 85
 Slot = 1
 Weapon = ExtResource("2_wpn")
 BonusPhysicalPower = 3.0
+TradeTags = Array[String](["weapon", "metal"])

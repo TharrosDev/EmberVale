@@ -1,0 +1,77 @@
+[gd_resource type="Resource" script_class="ShopResource" format=3 uid="uid://uowiqld7adc4"]
+
+[ext_resource type="Script" path="res://src/Economy/ShopResource.cs" id="1_shop"]
+[ext_resource type="Script" path="res://src/Economy/ShopStockEntry.cs" id="2_entry"]
+
+; Bryn's forge (Phase 38E). The second merchant in the game, and the first one reached by talking to a
+; person rather than by a dev command: Bryn keeps his conversation and his quest, and trade hangs off a
+; DialogueEffect.OpenShop choice on his root node.
+;
+; What he deals in is the whole of his identity until 38F gives shops real specialties. Materials over
+; gear, deliberately:
+;   - Ingots, strips and scrap are UNLIMITED (Quantity = 0). A smith who runs out of stock bar turns
+;     crafting into a shopping trip, and there is nothing interesting about being told to come back
+;     tomorrow for iron.
+;   - Finished gear is FINITE and thin — one sword, one vest, two caps. DESIGN §6 is explicit that gold
+;     buys convenience and gear but never the defining power, and a shelf the player can shop off
+;     competes with loot and crafting for the same job. Three days is long enough that the sword is an
+;     event rather than a supply line.
+;
+; RestockDays = 2 (slower than Aldreth's daily turnover — a forge works through its stock, a stall
+; restocks from a cart). It is also what makes the finite rows and the purse legal: --validate rejects
+; finite stock or a positive purse on a shop with no clock, because the first is emptied by the first
+; player through the door and the second never refills.
+;
+; SellFraction 0.45 sits above Aldreth's 0.4: a smith knows what metal is worth, so scrap and ore go
+; further here than at the general stall. That is the first time in the game two merchants have paid
+; differently for the same item, and it is the seed of 38F's specialist premium. It stays far below
+; BuyMarkup — equal or inverted is an infinite gold loop, and both the validator and ShopPricing clamp it.
+;
+; PurseGold 300: enough to fence a good haul, not enough to fence a field of corpses in one visit. It
+; refills with the shelves on the same two-day clock.
+;
+; No LeveledTable on purpose. Aldreth's rolled pool is the game's one leveled shelf; a second one halves
+; how special it is and doubles the chance the player just shops until something Legendary appears.
+
+[sub_resource type="Resource" id="Stock_ingot"]
+script = ExtResource("2_entry")
+ItemId = "item.material.iron_ingot"
+Quantity = 0
+
+[sub_resource type="Resource" id="Stock_strips"]
+script = ExtResource("2_entry")
+ItemId = "item.material.leather_strips"
+Quantity = 0
+
+[sub_resource type="Resource" id="Stock_scrap"]
+script = ExtResource("2_entry")
+ItemId = "item.material.scrap"
+Quantity = 0
+
+[sub_resource type="Resource" id="Stock_sword"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.steel_sword"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_cap"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.leather_cap"
+Quantity = 2
+
+[sub_resource type="Resource" id="Stock_vest"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.leather_vest"
+Quantity = 1
+
+[resource]
+script = ExtResource("1_shop")
+Id = "shop.ember_crown.smith"
+NameKey = "shop.ember_crown.smith.name"
+FactionId = "faction.villagers"
+AcceptedTags = Array[String](["metal", "ore", "weapon", "armor", "tool"])
+Specialties = Array[String](["metal", "weapon", "armor"])
+Stock = Array[Resource]([SubResource("Stock_ingot"), SubResource("Stock_strips"), SubResource("Stock_scrap"), SubResource("Stock_sword"), SubResource("Stock_cap"), SubResource("Stock_vest")])
+RestockDays = 2
+BuyMarkup = 1.5
+SellFraction = 0.45
+PurseGold = 300

@@ -13,3 +13,4 @@ MaxStack = 10
 Weight = 0.5
 Value = 25
 HealAmount = 40.0
+TradeTags = Array[String](["potion"])

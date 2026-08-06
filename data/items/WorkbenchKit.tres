@@ -13,3 +13,4 @@ MaxStack = 5
 Weight = 8.0
 Value = 140
 TemplateId = "prop.station.workbench"
+TradeTags = Array[String](["tool"])

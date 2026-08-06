@@ -25,6 +25,26 @@ namespace Embervale.Economy;
 public static class ShopPricing
 {
     /// <summary>
+    /// What a merchant shaves off her asking price for her own trade (Phase 38F). Small on purpose: the
+    /// specialty is meant to be felt on the <em>sell</em> side, where the player has a routing decision
+    /// to make. A deep buy-side discount would just make one shop the place to buy everything it stocks.
+    /// </summary>
+    public const float SpecialtyBuyDiscount = 0.95f;
+
+    /// <summary>
+    /// What a merchant pays over the odds for her own trade (Phase 38F) — the number that makes
+    /// <em>where</em> the player sells matter for the first time. It is deliberately large enough to be
+    /// worth walking across town for.
+    ///
+    /// ⚠️ This cannot invert the spread no matter how it is authored: <see cref="SellPrice"/> clamps its
+    /// fraction to <c>0..1</c>, so the bonus can raise a payout to the item's value and no further, while
+    /// <see cref="BuyPrice"/> clamps its markup to <c>&gt;= 1</c>. What it <em>can</em> do is narrow the
+    /// spread to nothing, which is frictionless churn rather than a money printer — that is a content
+    /// bug, so <c>--validate</c> holds every shop to a margin the arithmetic cannot enforce.
+    /// </summary>
+    public const float SpecialtySellBonus = 1.25f;
+
+    /// <summary>
     /// What the vendor charges. Rounds <b>up</b> and floors at <c>1</c>: a <c>Value = 1</c> trinket
     /// against a fractional markup must never round its way to free, which is an infinite item.
     /// The markup is clamped to <c>&gt;= 1</c> — the validator rejects a smaller one, this makes a
@@ -90,8 +110,21 @@ public static class ShopPricing
     /// <c>sell == buy</c> — frictionless churn that is pointless rather than exploitable — and standing
     /// already modifies prices without it.
     /// </summary>
-    public static float MarkupFor(float markup, ReputationTier tier) =>
-        markup * PriceMultiplierFor(tier);
+    public static float MarkupFor(float markup, ReputationTier tier, bool specialty = false) =>
+        markup * PriceMultiplierFor(tier) * (specialty ? SpecialtyBuyDiscount : 1f);
+
+    /// <summary>
+    /// The fraction to hand <see cref="SellPrice"/> once the merchant's trade is taken into account
+    /// (Phase 38F) — the sell side's counterpart to <see cref="MarkupFor"/>, so the multiplication has
+    /// one home on each side of the spread and no call site can apply it twice or forget it.
+    ///
+    /// <b>Standing is deliberately absent here.</b> Only the buy side moves with reputation
+    /// (<c>CLAUDE.md</c> §8) and 38F does not reopen that: a specialty is a property of the
+    /// <em>merchant's trade</em>, not of how she feels about the player, so the two are different
+    /// questions that happen to both end in a price.
+    /// </summary>
+    public static float SellFractionFor(float fraction, bool specialty) =>
+        fraction * (specialty ? SpecialtySellBonus : 1f);
 
     /// <summary>
     /// What a flat-priced service costs at a given standing (Phase 38D). Services have a price rather

@@ -12,3 +12,4 @@ Rarity = 0
 MaxStack = 50
 Weight = 1.5
 Value = 12
+TradeTags = Array[String](["metal"])

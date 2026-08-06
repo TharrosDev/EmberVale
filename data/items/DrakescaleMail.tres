@@ -23,3 +23,4 @@ Slot = 4
 BonusArmor = 28.0
 BonusMaxHealth = 40.0
 BonusFrostResist = 35.0
+TradeTags = Array[String](["armor", "luxury"])

@@ -553,7 +553,7 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 6. The window is the existing `StoragePanel`; a stand publishes the same `StorageOpenedEvent` with a
    `MinRarity`. There is no trophy UI to wire.
 
-**A new shop / merchant (Phase 38A–38C)**
+**A new shop / merchant (Phase 38A–38F)**
 1. Author `data/shops/Xxx.tres` (`script_class="ShopResource"`): unique `Id` (`shop.*`), a `NameKey`
    in `strings.csv`, a `Stock` array of `ShopStockEntry` sub-resources (`ItemId` + `Quantity`, the same
    `.tres` sub-resource pattern `LootEntry` uses), `RestockDays`, an optional `LeveledTable`, an
@@ -563,7 +563,23 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    stack, sell it straight back, repeat. `--validate` rejects it and `ShopPricing` clamps so a
    hand-edited `.tres` cannot do it either. Gold and `ItemType.Quest` items are rejected from stock — a
    quest object bought off a shelf, or coins bought with coins.
-2. **Stock comes in three kinds and the numbers say which** (38B), with no mode enum:
+2. **Give the merchant a trade (38F).** `AcceptedTags` is what she will buy at all; `Specialties` is what
+   she is expert in — she pays `ShopPricing.SpecialtySellBonus` over the odds for it and asks
+   `SpecialtyBuyDiscount` less. Both are words from `src/Economy/TradeTags.cs`, matched against
+   `ItemResource.TradeTags`. **Tags are not ids** — bare lowercase words, no domain prefix, no `IDS.md`
+   row; the closed vocabulary in that file is the validator's whole authority, and adding one is a line
+   there plus a `trade.tag.<tag>` locale key.
+   ⚠️ **Both empties mean yes.** An empty `AcceptedTags` is a general store, and an untagged item is
+   accepted everywhere — the same inverted fail-safe a missing `ReputationComponent` gets, so a
+   half-authored world trades normally instead of refusing everything.
+   ⚠️ **A settlement needs one merchant with an empty `AcceptedTags`**, or loot becomes unsellable by
+   authoring accident. In the Ember Crown that is Aldreth.
+   ⚠️ **`Specialties` must be a subset of a non-empty `AcceptedTags`** — a specialist who refuses her own
+   trade is well-formed data that reads in game as the premium being broken. `--validate` rejects it, and
+   also rejects a spread too thin to survive the premium (sell ≈ buy is frictionless churn).
+   **Do not add an `ItemType` member for this.** Its ordinals are persisted in every save, and an item
+   wears several tags anyway (a leather cap is `armor` *and* `leather`).
+3. **Stock comes in three kinds and the numbers say which** (38B), with no mode enum:
    `Quantity = 0` is an unlimited row (a materials stall that never runs out); `Quantity > 0` is finite
    and refills on the shop's clock; a `LeveledTable` is a `LootTable` rolled at each restock, at a
    quality scaled by the player's level through `ShopStock.QualityForLevel`. That is the game's **first
@@ -571,18 +587,18 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    ⚠️ **A finite row needs `RestockDays > 0`**, and so does a `LeveledTable`; `--validate` rejects
    either without one, because a shop with finite stock and no clock is emptied by the first player
    through the door and a pool rolled once is frozen for the run.
-3. **Restock is evaluated when a shop is opened, not on a tick.** No `_Process`, no event
+4. **Restock is evaluated when a shop is opened, not on a tick.** No `_Process`, no event
    subscription, no `DayChangedEvent` — a shop restocks because enough days had passed by the time the
    player walked up, and nothing can observe the difference. `WorldEventDirector` is the counter-example:
    it ticks real-seconds cooldowns every frame and is not `ISaveable`, so they vanish on reload.
    `WorldClock.Day` is the date; `time 26` rolls it forward one day (an in-game day is
    `DayLengthSeconds` — 180 s — of real waiting), and `shop restock <id>` skips the wait entirely.
-4. ⚠️ **Runtime stock lives in `ShopStockService`, never on the resource.** A `ShopResource` is shared
+5. ⚠️ **Runtime stock lives in `ShopStockService`, never on the resource.** A `ShopResource` is shared
    by every vendor naming it and is not `ISaveable`, so a remaining count written into it would leak
    between merchants *and* vanish on reload. **The rolled leveled wares persist too** — that is the
    whole reason they are in the save: if a reload rerolled the pool, the player would reload until a
    Legendary appeared.
-5. **Standing moves prices (38C).** Author `FactionId` on the shop and
+6. **Standing moves prices (38C).** Author `FactionId` on the shop and
    `ShopPricing.PriceMultiplierFor` does the rest: a 15%–35% surcharge across the hostile half of the
    ramp down to 15% off at Allied, applied through `ShopPricing.MarkupFor` so the multiplication has one
    home. A faction the player is **hostile** to will not trade at all — that gate reuses
@@ -603,33 +619,46 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    **Only the buy side moves.** A merchant who likes you paying *more* for your loot is symmetric and
    tempting, but with both clamps in play a generous sell fraction converges on `sell == buy` —
    frictionless churn — and standing already modifies prices without it.
-6. **A merchant's purse is a sink from the other end (38C).** `PurseGold` (`0` = unlimited) is spent
+7. **A merchant's purse is a sink from the other end (38C).** `PurseGold` (`0` = unlimited) is spent
    buying from the player and refills at restock, so a field of corpses cannot be fenced in one visit.
    ⚠️ **A positive purse needs `RestockDays > 0`** — same rule and same reason as a finite stock row.
    A payout the merchant cannot cover refuses the whole sale; paying part of it is item loss with a
    receipt. The purse arithmetic lives in `ShopStock` (`CanCover`/`AfterSpend`/`AfterRefund`) rather
    than in the service, because the service is a Godot `Node` the test project cannot construct.
-7. Place it: an `Entity` with a collider and a `VendorComponent { ShopId = "shop.xxx" }`.
-   ⚠️ **An entity gets one interactable** — `EntityNode.GetComponent<T>` returns the *first* child
-   match, so a `VendorComponent` sitting behind a `DialogueComponent` on the same actor never fires.
-   That is why the three `town_hub.tscn` stub vendors are still conversations: making them tradeable is
-   Phase 38E's call (replace the dialogue, or add an `OpenShop` dialogue effect). Reach any shop
-   meanwhile with `shop <id>` in the F1 console, and drive the discount with `rep <factionId> <delta>`.
-8. ⚠️ **`ContentValidator` does not scan `.tscn`**, so a mistyped `ShopId` gives **no prompt at all**
+8. Place it. **Two routes, and 38E decided which is which:**
+   - **A merchant who talks** — author a `DialogueChoice` with `Effect = OpenShop` (9) and
+     `EffectArg = "shop.xxx"` on the conversation she already has. This is the default. It exists because
+     ⚠️ **an entity gets one interactable** — `EntityNode.GetComponent<T>` returns the *first* child match,
+     so a `VendorComponent` behind a `DialogueComponent` never fires — and because two of the three town
+     merchants carry live quest content that a menu must not displace. It also puts the shop id somewhere
+     `ContentValidator` **can read**, which a `.tscn` export never was.
+     ⚠️ **Leave `Goto` empty on that choice.** A conversation left open behind the vendor window returns
+     when the shop closes; `--validate` rejects an `OpenShop` choice that points anywhere.
+     The handover is safe in that order: `DialogueSession.Choose` applies the effect *before* it resolves
+     `Goto`, so `VendorPanel` registers with `UiState` before `DialoguePanel` deregisters, and the owner
+     count never hits zero — no pause flicker, no mouse-mode flicker.
+   - **An unattended counter or stall** — an `Entity` with a collider and a
+     `VendorComponent { ShopId = "shop.xxx" }`. Still the right answer where there is nobody to talk to;
+     its first world placement is the market district. ⚠️ Its `ShopId` lives in a `.tscn` and is therefore
+     **unvalidated** — a typo gives no prompt at all rather than an error (see 8 below).
+
+   Reach any shop without walking to it via `shop <id>` in the F1 console; drive the discount with
+   `rep <factionId> <delta>`.
+9. ⚠️ **`ContentValidator` does not scan `.tscn`**, so a mistyped `ShopId` gives **no prompt at all**
    rather than an error — the same trap `PropertyStorageComponent.PropertyId` carries. A merchant
    silently unusable in game: check that field first.
-9. **Prices have one authority: `ItemInstance.Value`**, which already folds in rarity and affix
+10. **Prices have one authority: `ItemInstance.Value`**, which already folds in rarity and affix
    count, so the spread applies to rolled loot for free. Put any new pricing maths in
    `src/Economy/ShopPricing.cs` and any restock/level/purse maths in `src/Economy/ShopStock.cs` (both
    Godot-free, so the test project can pin them) — never at a call site, and never a second price table.
    ⚠️ Day arithmetic there widens to `long`: a never-stocked shop is stamped `int.MinValue`, and
    `0 - int.MinValue` overflows back to a negative, which answered "not due" for the one case that
    most obviously is. The test caught it on the first run.
-10. **Buying charges before it delivers, and refunds if delivery fails.** The other order cannot work:
+11. **Buying charges before it delivers, and refunds if delivery fails.** The other order cannot work:
     `InventoryComponent.AddInstance` merges a stackable into an existing stack, so the instance handed
     in is often never stored and `RemoveOneInstance` would find nothing to roll back. Refunding gold
     always works — spending it either freed a slot or left a stack with room.
-11. **Selling removes by reference for rolled items, by template id only for stackables** — the same
+12. **Selling removes by reference for rolled items, by template id only for stackables** — the same
     split `StoragePanel.Transfer` makes, for the same reason. A zero payout is refused rather than
     accepted: handing an item over for nothing is item loss wearing a transaction's clothes. The shelf
     decrement (`ShopStockService.TakeOne`) is deliberately the **last** step of a purchase: nothing may
