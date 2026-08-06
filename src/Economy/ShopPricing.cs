@@ -94,6 +94,26 @@ public static class ShopPricing
         markup * PriceMultiplierFor(tier);
 
     /// <summary>
+    /// What a flat-priced service costs at a given standing (Phase 38D). Services have a price rather
+    /// than a value and a markup, so they need their own entry point — but it reuses the same
+    /// <see cref="PriceMultiplierFor"/> table, so a merchant and an innkeeper of the same faction move
+    /// together and there is no second discount ramp to drift.
+    ///
+    /// Rounds <b>up</b> and floors at <c>1</c> for anything priced, so a discount can never make a
+    /// service free — the same rule and the same reason as <see cref="BuyPrice"/>. A base price of
+    /// <c>0</c> stays <c>0</c>: that is a service authored as genuinely free, not one discounted into it.
+    /// </summary>
+    public static int ServicePrice(int basePrice, ReputationTier tier)
+    {
+        if (basePrice <= 0)
+        {
+            return 0;
+        }
+
+        return Math.Max(1, (int)Math.Ceiling(basePrice * PriceMultiplierFor(tier)));
+    }
+
+    /// <summary>
     /// Whether a vendor will take this at all. Two refusals, both load-bearing: a
     /// <see cref="ItemType.Quest"/> item sold off would silently strand a Collect objective with no
     /// way to recover it, and gold-for-gold is nonsense the spread would turn into a slow leak.

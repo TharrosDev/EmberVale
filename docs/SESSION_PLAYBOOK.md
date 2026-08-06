@@ -3476,10 +3476,40 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
   - ⚠️ **`DESIGN.md` §6 carries an authored contradiction** — "training/perks-for-pay" against "perks are
     bought with skill points, **not gold**". 38C left the rule alone and wrote down the reading that
     holds (a trainer sells *access*, never a perk rank). **38D has to resolve it.**
-- [ ] **38D — Services: repair / trainer / bank / inn / stable** `[F/C]`
+- [x] **38D — Services: trainer / bank / inn / stable** `[F/C]` ✅ *(repair deferred to 40A)*
   - **Done when:** trainer (buy perks/points), bank (storage), innkeeper (rest/
     time-skip), stablemaster (mounts stub), and repair (if durability adopted in 40)
     are interactable services.
+  - **Landed:** `ServiceResource` + `ServiceKind` + `ServiceDatabase` + one `ServiceComponent` branching
+    on kind (the `WorldEventDirector` shape), with the pure half in `ServiceRules` and the price on
+    `ShopPricing.ServicePrice`. Four authored services in the town hub: the inn on the innkeeper, a
+    trainer and a stablemaster as new NPCs, and the vault as a prop.
+  - **The trainer is the first caller `CraftingComponent.Learn` has ever had.** It sat with zero callers
+    from Phase 15, which is why `GameIds.Recipes.Starting` was the entire reachability guarantee and how
+    `recipe.leather_vest` rotted for twenty phases. `recipe.drakescale_mail` moved *out* of `Starting`
+    to be taught — it only started there because nothing could teach a recipe, and gating it on eight
+    dragon scales was the workaround for that.
+  - **`--validate` now checks recipe reachability as a union** (`Starting` ∪ every trainer's list) and
+    rejects the overlap too: `PlayerFactory` seeds `Starting` unconditionally, so a recipe in both is a
+    trainer selling knowledge the player walked in with.
+  - **Repair is deferred, not skipped.** No durability or condition concept exists in the game at all,
+    40A decides whether it ever will, and 40B's rule is that cut systems leave no stub — so there is no
+    `ServiceKind.Repair` member. Recorded in `DESIGN.md` §6's sink table as *pending 40A*.
+  - **38C's authored contradiction is resolved** (`DESIGN.md` §6): a trainer sells **access, never a
+    rank**. Recipes and XP, so points arrive by levelling; `ProgressionComponent` gained no new API.
+  - Three things worth carrying into 38E–39:
+    1. **`WorldClock.SetTimeOfDay` needs `RestHour + 24`.** It advances `Day` only for an hour ≥ 24 and
+       otherwise just rewinds the hour, so an inn passing its authored hour straight through would look
+       like it worked while silently freezing 38B's restock clock. `ServiceRules.RestTarget` owns the +24
+       and a swept test proves no starting hour can produce a backwards jump.
+    2. **Which services need an `UnlockFlagId` is a validator rule, not a convention.** A Bank or Stable
+       without one re-charges forever; a Trainer granting XP without one is an infinite gold-to-levels
+       pump; an Inn *with* one only ever charges for the first night. All three are well-formed data and
+       a broken economy, which is exactly what the validator is for.
+    3. **The one-interactable trap bit again.** The innkeeper's `DialogueComponent` had to be removed
+       outright for the service to fire. That was affordable only because it was the shared placeholder
+       stub — **38E still owns the real decision** for the three shop vendors, whose conversations are
+       genuine content.
 - [ ] **38E — Wire real shops into Ember Crown vendors** `[C]`
   - **Done when:** the Phase 27 stub vendors become real shops; `validate` green.
 

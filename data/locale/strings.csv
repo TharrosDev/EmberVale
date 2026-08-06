@@ -133,6 +133,22 @@ shop.vendor_purse,"has {0}g"
 shop.vendor_broke,They cannot cover that right now.
 shop.worthless,Not worth a single coin.
 shop.unsellable,This is not for sale.
+# Services (Phase 38D). Each refusal is its own line: a rested bed, a bought mount and a lesson already
+# learned are different sentences, and one shared "nothing to do here" reads as a broken interactable.
+service.ember_crown.inn.name,The Ashen Hearth
+service.ember_crown.bank.name,The Guild Vault
+service.ember_crown.trainer.name,Bryn's Smithing Lesson
+service.ember_crown.stable.name,The Ember Crown Stables
+service.prompt_rest,"Rest at {0} ({1} gold)"
+service.prompt_account,"Open an account at {0} ({1} gold)"
+service.prompt_train,"Take {0} ({1} gold)"
+service.prompt_buy_mount,"Buy a mount at {0} ({1} gold)"
+service.prompt_free,Use {0}
+service.prompt_price,"{0} — {1} gold, and you carry {2}"
+service.prompt_hostile,"{0} — they will not serve you"
+service.prompt_open,Open {0}
+service.prompt_taught,"{0} — you have learned all they can teach"
+service.prompt_owned,"{0} — your mount is stabled here"
 craft.station_forge,Forge
 craft.station_workbench,Workbench
 craft.station_alchemy,Alchemy Table

@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="ServiceResource" format=3]
+
+[ext_resource type="Script" path="res://src/Economy/ServiceResource.cs" id="1_service"]
+
+; The Ember Crown's smithing lesson (Phase 38D) — and the first thing in the game ever to teach a
+; recipe. CraftingComponent.Learn has existed with zero callers since Phase 15, which is why
+; GameIds.Recipes.Starting had to be the entire reachability guarantee and why recipe.leather_vest could
+; rot unnoticed for twenty phases.
+;
+; recipe.drakescale_mail moved OUT of Starting to sit here. It only ever began as a known recipe because
+; nothing could teach one; gating it on eight dragon scales was the workaround for that, and now the
+; gate can be what it should have been — someone has to show you how.
+;
+; XpReward is where "buy points" lands, and it is bounded on purpose. DESIGN §6 forbids buying a perk
+; rank for coin, so this sells *a lesson*: one payment, one flag, one grant. Gold reaches skill points
+; only through levelling, and only as far as the authored content allows. A trainer granting XP with no
+; UnlockFlagId would be an infinite gold-to-levels pump, and --validate rejects that pairing.
+
+[resource]
+script = ExtResource("1_service")
+Id = "service.ember_crown.trainer"
+NameKey = "service.ember_crown.trainer.name"
+Kind = 0
+PriceGold = 250
+FactionId = "faction.villagers"
+UnlockFlagId = "flag.trainer.ember_crown.smithing"
+RestHour = 8
+TaughtRecipeIds = Array[String](["recipe.drakescale_mail"])
+XpReward = 300

@@ -8,6 +8,7 @@
 [ext_resource type="Script" path="res://src/Housing/PropertyDeedComponent.cs" id="30_deed"]
 [ext_resource type="Script" path="res://src/Housing/PropertyStorageComponent.cs" id="31_storage"]
 [ext_resource type="Script" path="res://src/Items/InventoryComponent.cs" id="32_inventory"]
+[ext_resource type="Script" path="res://src/Economy/ServiceComponent.cs" id="34_service"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_cache_chest.glb" id="33_chest"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="34_pillar"]
 [ext_resource type="Script" path="res://src/Housing/TrophyStandComponent.cs" id="35_trophy"]
@@ -563,14 +564,104 @@ shape = SubResource("Shape_npc")
 script = ExtResource("6_faction")
 FactionId = "faction.villagers"
 
-[node name="Dialogue" type="Node" parent="Innkeeper"]
-script = ExtResource("7_dialogue")
-DialogueId = "dialogue.vendor_stub"
-SpeakerName = "Innkeeper Holt"
+; 38D: the placeholder conversation ("come back when its trades reopen") is now a real service. An
+; entity gets ONE interactable — EntityNode.GetComponent returns the first child match — so the
+; Dialogue node had to go rather than sit beside this. That is a fair trade only because the dialogue
+; was the shared stub; the three shop vendors keep theirs until 38E decides how trade and talk share
+; an NPC.
+[node name="Service" type="Node" parent="Innkeeper"]
+script = ExtResource("34_service")
+ServiceId = "service.ember_crown.inn"
 
 [node name="Schedule" type="Node" parent="Innkeeper"]
 script = ExtResource("8_schedule")
 ScheduleId = "schedule.innkeeper"
+
+; --- 38D: the paid services -------------------------------------------------
+; The trainer and the stablemaster are new NPCs; the inn service sits on the innkeeper above, and the
+; vault is a prop rather than a person because the thing that has to persist is an inventory and no town
+; NPC carries a PersistentId.
+
+[node name="Trainer" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0, -7)
+script = ExtResource("1_entity")
+DisplayName = "Bryn's Apprentice"
+TemplateId = "npc.trainer_smith"
+
+[node name="Animation" type="Node" parent="Trainer"]
+script = ExtResource("24_charanim")
+BodyMeshPath = "Model"
+
+[node name="Mesh" type="MeshInstance3D" parent="Trainer"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+
+[node name="Collider" type="StaticBody3D" parent="Trainer"]
+
+[node name="Shape" type="CollisionShape3D" parent="Trainer/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="Trainer"]
+script = ExtResource("6_faction")
+FactionId = "faction.villagers"
+
+[node name="Service" type="Node" parent="Trainer"]
+script = ExtResource("34_service")
+ServiceId = "service.ember_crown.trainer"
+
+[node name="Stablemaster" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 2)
+script = ExtResource("1_entity")
+DisplayName = "Stablemaster Wend"
+TemplateId = "npc.stablemaster"
+
+[node name="Animation" type="Node" parent="Stablemaster"]
+script = ExtResource("24_charanim")
+BodyMeshPath = "Model"
+
+[node name="Mesh" type="MeshInstance3D" parent="Stablemaster"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+
+[node name="Collider" type="StaticBody3D" parent="Stablemaster"]
+
+[node name="Shape" type="CollisionShape3D" parent="Stablemaster/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="Stablemaster"]
+script = ExtResource("6_faction")
+FactionId = "faction.villagers"
+
+[node name="Service" type="Node" parent="Stablemaster"]
+script = ExtResource("34_service")
+ServiceId = "service.ember_crown.stable"
+
+; The vault. PersistentId is the save key (inventory:ember_crown.guild_vault) and must never change —
+; without one the InventoryComponent does not register as a saveable at all and the vault empties on
+; every reload, which looks like an item-loss bug rather than a missing field (37B's rule).
+; Capacity is authored on the node, not on the resource: InventoryComponent.Load restores through
+; AddInstance, which clamps to Capacity, so a capacity applied later would silently drop the overflow.
+[node name="GuildVault" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0, -8.5)
+script = ExtResource("1_entity")
+DisplayName = "Guild Vault"
+PersistentId = "ember_crown.guild_vault"
+
+[node name="Mesh" parent="GuildVault" instance=ExtResource("33_chest")]
+
+[node name="Collider" type="StaticBody3D" parent="GuildVault"]
+
+[node name="Shape" type="CollisionShape3D" parent="GuildVault/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
+shape = SubResource("Shape_chest")
+
+[node name="Inventory" type="Node" parent="GuildVault"]
+script = ExtResource("32_inventory")
+Capacity = 60
+
+[node name="Service" type="Node" parent="GuildVault"]
+script = ExtResource("34_service")
+ServiceId = "service.ember_crown.bank"
 
 [node name="GuildMarker" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, -20)
@@ -675,6 +766,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.25, 0)
 [node name="Model" parent="VendorAlch" instance=ExtResource("18_npc_vendor")]
 
 [node name="Model" parent="Innkeeper" instance=ExtResource("19_npc_inn")]
+
+[node name="Model" parent="Trainer" instance=ExtResource("18_npc_vendor")]
+
+[node name="Model" parent="Stablemaster" instance=ExtResource("18_npc_vendor")]
 
 [node name="Model" parent="GuildMarker" instance=ExtResource("16_banner")]
 

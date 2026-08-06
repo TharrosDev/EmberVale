@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="ServiceResource" format=3]
+
+[ext_resource type="Script" path="res://src/Economy/ServiceResource.cs" id="1_service"]
+
+; The stablemaster (Phase 38D) — the "mounts stub" of the brief, and the word stub is doing narrow work
+; here. Nothing mount-shaped exists in the repo: no MountComponent, no mounted locomotion, no
+; GameIds.Mounts. Phase 39A owns all of that.
+;
+; What is real today is the *transaction*: four hundred gold, charged once, refused a second time, and
+; recorded in a story flag that survives a save. 39A's MountComponent reads flag.stable.mount_owned as
+; its ownership record — the flag is the whole contract between the two phases, and it is the same split
+; the playbook legitimises for a mechanism landing before its consumer.
+;
+; It is emphatically not the forbidden shape: an interactable that took gold and did nothing observable
+; would be scaffolding. This one charges, persists, and tells you next time that the horse is yours.
+;
+; 400 gold sits deliberately above the cottage-adjacent tier — a mount should be a decision, and Phase
+; 56 owns the number.
+
+[resource]
+script = ExtResource("1_service")
+Id = "service.ember_crown.stable"
+NameKey = "service.ember_crown.stable.name"
+Kind = 3
+PriceGold = 400
+FactionId = "faction.villagers"
+UnlockFlagId = "flag.stable.mount_owned"
+RestHour = 8
+XpReward = 0

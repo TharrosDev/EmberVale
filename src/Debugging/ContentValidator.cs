@@ -104,6 +104,7 @@ public static class ContentValidator
         ValidateBosses(issues);
         ValidateProperties(issues);
         ValidateShops(issues);
+        ValidateServices(issues);
         ValidatePlaceables(issues);
         ValidateBestiary(issues);
         ValidateResourcePaths(issues);
@@ -735,6 +736,100 @@ public static class ContentValidator
     }
 
     /// <summary>
+    /// The paid services (Phase 38D). Modelled on <see cref="ValidateShops"/>, and the two rules worth
+    /// reading twice are the <c>UnlockFlagId</c> pairings — both are cases where the authored data is
+    /// perfectly well-formed and the *economy* is broken.
+    /// </summary>
+    private static void ValidateServices(List<string> issues)
+    {
+        foreach (ServiceResource service in ServiceDatabase.All)
+        {
+            string id = service.Id;
+
+            if (string.IsNullOrEmpty(service.NameKey) || !Loc.Has(service.NameKey))
+            {
+                issues.Add($"service '{id}' name key '{service.NameKey}' is missing from the locale catalogue");
+            }
+
+            if (service.PriceGold < 0)
+            {
+                issues.Add($"service '{id}' has a negative price ({service.PriceGold})");
+            }
+
+            if (service.FactionId.Length > 0 && FactionDatabase.Get(service.FactionId) == null)
+            {
+                issues.Add(
+                    $"service '{id}' prices by unknown faction '{service.FactionId}' — standing would " +
+                    "have no effect and the hostile refusal would never fire");
+            }
+
+            bool oneOff = service.Kind is ServiceKind.Bank or ServiceKind.Stable;
+            if (oneOff && service.UnlockFlagId.Length == 0)
+            {
+                issues.Add(
+                    $"service '{id}' is a one-off purchase with no unlock flag — nothing would record " +
+                    "that it already happened, so it charges again on every interaction");
+            }
+
+            ValidateServiceKind(service, issues);
+        }
+    }
+
+    /// <summary>The per-kind fields. Each kind reads exactly one group of the resource, so a value in the
+    /// wrong group is silently ignored rather than wrong — which is why the rules below check the fields
+    /// a kind <em>needs</em>, not the ones it leaves alone.</summary>
+    private static void ValidateServiceKind(ServiceResource service, List<string> issues)
+    {
+        string id = service.Id;
+
+        switch (service.Kind)
+        {
+            case ServiceKind.Trainer:
+                if (service.TaughtRecipeIds.Count == 0 && service.XpReward <= 0)
+                {
+                    issues.Add(
+                        $"service '{id}' is a trainer that teaches no recipes and grants no XP — it would " +
+                        "take gold for nothing");
+                }
+
+                foreach (string recipeId in service.TaughtRecipeIds)
+                {
+                    if (string.IsNullOrEmpty(recipeId) || RecipeDatabase.Get(recipeId) == null)
+                    {
+                        issues.Add($"service '{id}' teaches unknown recipe '{recipeId}'");
+                    }
+                }
+
+                // Without a flag, a trainer's "nothing left to teach" check is the recipe knowledge
+                // itself — which XP does not have. An XP lesson with no flag is an infinite
+                // gold-to-levels pump, and DESIGN §6 forbids buying the defining power outright.
+                if (service.XpReward > 0 && service.UnlockFlagId.Length == 0)
+                {
+                    issues.Add(
+                        $"service '{id}' grants {service.XpReward} XP with no unlock flag — it could be " +
+                        "bought over and over, which turns gold into levels without limit");
+                }
+
+                break;
+
+            case ServiceKind.Inn:
+                if (service.RestHour < 0 || service.RestHour > 23)
+                {
+                    issues.Add($"service '{id}' rests to hour {service.RestHour}, outside 0..23");
+                }
+
+                if (service.UnlockFlagId.Length > 0)
+                {
+                    issues.Add(
+                        $"service '{id}' is an inn with an unlock flag — a bed is bought every night, and " +
+                        "a flag would make the first stay the only one that ever charged");
+                }
+
+                break;
+        }
+    }
+
+    /// <summary>
     /// A shop's restock clock and leveled pool (Phase 38B). Both halves fail the same way — silently,
     /// as a shop that simply never changes — so neither is safe to leave to play-testing.
     /// </summary>
@@ -1126,6 +1221,7 @@ public static class ContentValidator
         CheckDuplicateIds<BossResource>("res://data/bosses", "boss", r => r.Id, issues);
         CheckDuplicateIds<PropertyResource>("res://data/properties", "property", r => r.Id, issues);
         CheckDuplicateIds<ShopResource>("res://data/shops", "shop", r => r.Id, issues);
+        CheckDuplicateIds<ServiceResource>("res://data/services", "service", r => r.Id, issues);
     }
 
     /// <summary>Loads every <c>.tres</c> in <paramref name="directory"/> and reports empty or
@@ -1243,16 +1339,45 @@ public static class ContentValidator
     /// recipe is <see cref="GameIds.Recipes.Starting"/>. A recipe outside that list is content nothing
     /// can reach, which is how <c>recipe.leather_vest</c> sat dead from Phase 15 to Phase 35.
     /// </summary>
+    /// <summary>
+    /// Recipe reachability — the <b>union</b> of the two paths that exist (Phase 38D). Until 38D there
+    /// was only one: this check read "seeded in <c>GameIds.Recipes.Starting</c> or unreachable", because
+    /// <c>CraftingComponent.Learn</c> had no caller in the entire game. A
+    /// <see cref="Economy.ServiceKind.Trainer"/> is the second path, so the rule widens rather than
+    /// relaxes — a recipe in neither still fails the build.
+    ///
+    /// The overlap is also an error, and that asymmetry is easy to miss: <c>PlayerFactory</c> seeds
+    /// <c>Starting</c> unconditionally, so a recipe in both lists is a trainer charging for knowledge the
+    /// player already walked in with.
+    /// </summary>
     private static void ValidateRecipeReachability(List<string> issues)
     {
         var seeded = new HashSet<string>(GameIds.Recipes.Starting);
+        var taught = new Dictionary<string, string>();
+
+        foreach (ServiceResource service in ServiceDatabase.All)
+        {
+            if (service.Kind != ServiceKind.Trainer)
+            {
+                continue;
+            }
+
+            foreach (string recipeId in service.TaughtRecipeIds)
+            {
+                if (!string.IsNullOrEmpty(recipeId))
+                {
+                    taught[recipeId] = service.Id;
+                }
+            }
+        }
+
         foreach (CraftingRecipeResource recipe in RecipeDatabase.All)
         {
-            if (!seeded.Contains(recipe.Id))
+            if (!seeded.Contains(recipe.Id) && !taught.ContainsKey(recipe.Id))
             {
                 issues.Add(
-                    $"recipe '{recipe.Id}' is never learnable — nothing teaches recipes, so it must be " +
-                    "listed in GameIds.Recipes.Starting or no player can ever craft it");
+                    $"recipe '{recipe.Id}' is never learnable — it must be listed in " +
+                    "GameIds.Recipes.Starting or taught by a trainer service, or no player can ever craft it");
             }
         }
 
@@ -1261,6 +1386,13 @@ public static class ContentValidator
             if (RecipeDatabase.Get(id) == null)
             {
                 issues.Add($"GameIds.Recipes.Starting seeds unknown recipe '{id}'");
+            }
+
+            if (taught.TryGetValue(id, out string? trainer))
+            {
+                issues.Add(
+                    $"recipe '{id}' is both seeded and taught by service '{trainer}' — every player " +
+                    "starts knowing it, so the trainer has nothing to sell");
             }
         }
     }

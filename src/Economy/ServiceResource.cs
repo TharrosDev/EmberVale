@@ -1,0 +1,79 @@
+using Godot;
+
+namespace Embervale.Economy;
+
+/// <summary>
+/// A paid service the player can walk up to (Phase 38D), authored under <c>data/services/</c> and
+/// indexed by <see cref="ServiceDatabase"/>. A <see cref="ServiceComponent"/> names one by id, so a new
+/// trainer or innkeeper is a <c>.tres</c> plus a component in a scene, with no code — the same shape
+/// <see cref="ShopResource"/> and <c>PropertyResource</c> have.
+///
+/// Kind-specific fields sit on the one resource rather than in four subclasses, which is how
+/// <c>WorldEventResource</c> carries a cache's item beside a raid's spawn counts. The validator is what
+/// keeps an unused field from being authored by mistake.
+/// </summary>
+[GlobalClass]
+public partial class ServiceResource : Resource
+{
+    /// <summary>Stable id, e.g. <c>service.ember_crown.inn</c>.</summary>
+    [Export] public string Id { get; set; } = "service.unknown";
+
+    /// <summary>Player-facing name. A <c>Loc</c> key — it reaches the interaction prompt, and CLAUDE.md
+    /// §6 admits no literals there.</summary>
+    [Export] public string NameKey { get; set; } = string.Empty;
+
+    /// <summary>Which of the four verbs this is.</summary>
+    [Export] public ServiceKind Kind { get; set; } = ServiceKind.Inn;
+
+    [ExportGroup("Price")]
+
+    /// <summary>
+    /// Gold it costs, before standing. <c>0</c> is a genuinely free service. Discounted through
+    /// <see cref="ShopPricing.ServicePrice"/>, which floors a priced service at 1 so a discount can
+    /// never make one free.
+    /// </summary>
+    [Export] public int PriceGold { get; set; }
+
+    /// <summary>
+    /// Whose standing prices it, and who refuses to serve a hostile player (a <c>faction.*</c> id).
+    /// Empty means standing has no effect. Authored here rather than read off the host entity's
+    /// <c>FactionComponent</c> for the reasons <see cref="ShopResource.FactionId"/> gives.
+    /// </summary>
+    [Export] public string FactionId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Story flag recording that this has been bought (a one-off purchase such as a bank account or a
+    /// mount). Empty means <b>pay every time</b>, which is right for a night's rest or a lesson.
+    ///
+    /// ⚠️ A one-off service <em>must</em> author one, and <c>--validate</c> enforces it: with nothing
+    /// recording that the purchase already happened, it charges again on every interaction. That is
+    /// precisely the bug 36E fixed for boss rewards, and it is the same fix — a flag is the receipt.
+    /// </summary>
+    [Export] public string UnlockFlagId { get; set; } = string.Empty;
+
+    [ExportGroup("Inn")]
+
+    /// <summary>
+    /// Hour (0–23) a night's rest ends at. Resting always moves the clock <em>forward</em> to it —
+    /// see <see cref="ServiceRules.RestTarget"/>, which is where the +24 lives and why.
+    /// </summary>
+    [Export] public int RestHour { get; set; } = 8;
+
+    [ExportGroup("Trainer")]
+
+    /// <summary>
+    /// Recipes this trainer teaches, through <c>CraftingComponent.Learn</c> — the method that has had
+    /// <b>no caller since Phase 15</b> and whose absence is why <c>GameIds.Recipes.Starting</c> has been
+    /// the whole of recipe reachability. A recipe here is now a second reachable path, and
+    /// <c>ContentValidator</c> reads this list as part of that union.
+    /// </summary>
+    [Export] public Godot.Collections.Array<string> TaughtRecipeIds { get; set; } = new();
+
+    /// <summary>
+    /// Experience granted per lesson. This is how a trainer sells "points": it goes through
+    /// <c>ProgressionComponent.AddXp</c>, so points arrive by <em>levelling</em>, never by purchase.
+    /// <c>docs/DESIGN.md</c> §6 forbids buying a perk rank for coin and this is the reading that
+    /// honours it — a trainer sells access and effort, not power.
+    /// </summary>
+    [Export] public int XpReward { get; set; }
+}

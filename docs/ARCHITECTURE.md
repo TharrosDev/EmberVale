@@ -912,7 +912,9 @@ standing, and persist. Built entirely on the existing character stack — a comp
   components save as `stats:player`, `inventory:player`, …) and only falls back to the
   volatile `RuntimeId` for transient actors. World singletons keep fixed, colon-free
   keys (`worldclock`, `weather`, `map`, `fasttravel`, `spawns`, `companions`, `tutorial`,
-  `cell_persistence`, `bestiary`, `housing`, `shopstock`).
+  `cell_persistence`, `bestiary`, `housing`, `shopstock`). Container inventories key off their own
+  entity instead (`inventory:ember_crown.guild_vault` for 38D's bank vault, `inventory:ember_crown.cottage_chest`
+  for 37B's stash) — the entity's authored `PersistentId` is the whole of that contract.
 
 - **`SaveKeyPolicy` — why transient actors persist nothing** (Phase 25.5A). Components used to
   register with the `SaveManager` *unconditionally*, so transient actors (the training dummy,

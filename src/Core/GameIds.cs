@@ -224,15 +224,24 @@ public static class GameIds
         /// <see cref="Player.PlayerFactory"/>, which seeds it, and the content validator, which checks
         /// nothing has been authored outside it.
         ///
-        /// This list <em>is</em> the reachability guarantee. <c>CraftingComponent.Learn</c> exists but
-        /// has no caller anywhere in the game — there is no tome, trainer, dialogue effect or quest
-        /// reward that teaches a recipe (that seam belongs with vendors in Phase 38). So a recipe
-        /// missing from this array is unreachable content, which is how <c>recipe.leather_vest</c> sat
-        /// dead from Phase 15 until the Phase 35 audit found it.
+        /// This list was the <em>whole</em> of recipe reachability until Phase 38D, because
+        /// <c>CraftingComponent.Learn</c> had no caller anywhere in the game — no tome, trainer, dialogue
+        /// effect or quest reward taught one. That is how <c>recipe.leather_vest</c> sat dead from Phase
+        /// 15 until the Phase 35 audit found it.
+        ///
+        /// **38D gave it a second path**: a <c>ServiceKind.Trainer</c> teaches
+        /// <see cref="Economy.ServiceResource.TaughtRecipeIds"/>. Reachability is now the <b>union</b> of
+        /// this array and every authored trainer's list, and <c>ContentValidator</c> checks that union —
+        /// so a recipe in neither still fails the build, and a recipe in <em>both</em> also fails, because
+        /// <c>PlayerFactory</c> seeds this list unconditionally and the trainer would be selling
+        /// knowledge the player already has.
         /// </summary>
         public static readonly string[] Starting =
         {
-            IronIngot, LeatherStrips, HealthPotion, LeatherCap, SteelSword, LeatherVest, IronRing, DrakescaleMail,
+            // DrakescaleMail left this list in Phase 38D: it is taught by the Ember Crown smithing
+            // trainer now. It only ever sat here because nothing in the game could teach a recipe, which
+            // is also why it had to be gated on eight dragon scales instead of on being learned.
+            IronIngot, LeatherStrips, HealthPotion, LeatherCap, SteelSword, LeatherVest, IronRing,
             ForgeKit, WorkbenchKit, AlchemyKit, BrazierKit, CrateKit, BannerKit, DisplayStandKit,
         };
     }

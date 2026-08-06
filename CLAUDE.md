@@ -223,6 +223,7 @@ Goblins roam to the north (−Z) and drop loot.
 │   ├── bosses/            # BossResource presets (boss.*) — phases/abilities/enrage, Phase 36A
 │   ├── properties/        # PropertyResource presets (property.*) — claimable holdings, Phase 37A
 │   ├── shops/            # ShopResource presets (shop.*) — wares + buy/sell spread, Phase 38A
+│   ├── services/         # ServiceResource presets (service.*) — trainer/bank/inn/stable, Phase 38D
 │   ├── ai_profiles/        # AIProfileResource presets (ai.*) — enemy personalities, Phase 34A
 │   ├── enemies/            # EnemyArchetypeResource presets (enemy.*) — the roster, Phase 34B–34F
 │   ├── bestiary/           # BestiaryEntryResource presets — creature lore/reveal, Phase 34G
@@ -256,7 +257,7 @@ Goblins roam to the north (−Z) and drop loot.
     ├── Companions/          # Party roster, follower AI, formation/leash cores (Phase 32)
     ├── Onboarding/          # TutorialDirector + script (diegetic hints, Phase 33)
     ├── Housing/             # PropertyResource/Database, HousingService, deed component (Phase 37)
-    ├── Economy/             # ShopResource/Database, VendorComponent, ShopPricing (Phase 38)
+    ├── Economy/             # Shops, vendors, services, pricing + travel fees (Phase 38)
     ├── Interaction/         # InteractableComponent (raycast interact)
     ├── Player/              # PlayerCharacter, PlayerController, PlayerFactory
     ├── Enemies/             # EnemyEntity, EnemyAIComponent, AIProfile/EnemyArchetype/Bestiary resources+databases, EnemyArchetypeFactory (+2 bespoke), AshenAffliction, EnemyTemplateRegistry
@@ -634,6 +635,51 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
     decrement (`ShopStockService.TakeOne`) is deliberately the **last** step of a purchase: nothing may
     consume stock on a path that ends without the player holding the goods.
 
+**A new service — trainer / bank / inn / stable (Phase 38D)**
+1. Author `data/services/Xxx.tres` (`script_class="ServiceResource"`): unique `Id` (`service.*`), a
+   `NameKey` in `strings.csv`, a `Kind`, a `PriceGold`, an optional `FactionId`, and the fields that
+   `Kind` reads. Auto-indexed by `ServiceDatabase`. Place it as an `Entity` with a collider and a
+   `ServiceComponent { ServiceId = "service.xxx" }`.
+2. **`UnlockFlagId` is the pay-once contract, and which services need it is a validator rule.**
+   Empty = charged every use (an inn bed, a lesson whose recipes are their own receipt). Set = charged
+   once, and the story flag *is* the record.
+   ⚠️ **A Bank or Stable without one charges its fee on every single interaction** — the exact shape of
+   the bug 36E fixed for boss rewards.
+   ⚠️ **A Trainer granting `XpReward` without one is an infinite gold-to-levels pump.** `DESIGN.md` §6
+   forbids buying the defining power, so an XP lesson must be bounded by a flag. A trainer that only
+   teaches recipes needs no flag: not knowing the recipe *is* the check.
+   ⚠️ **An Inn with one** would make the first night the only one that ever charged.
+3. ⚠️ **An inn must rest through `ServiceRules.RestTarget`, never with its authored `RestHour`.**
+   `WorldClock.SetTimeOfDay` advances `Day` only for an hour of 24 or more and otherwise just rewinds
+   the hour — so resting from 20:00 to 08:00 has to be asked for as `32`. Passing `8` looks like it
+   works and silently freezes 38B's shop restock clock and every future daily service, with nothing in
+   the failure pointing at the inn. Resting *at* the target hour buys a whole day, because an inn is
+   never a no-op.
+4. **A trainer sells access, never a rank.** Recipes through `CraftingComponent.Learn` and XP through
+   `ProgressionComponent.AddXp` — so skill points arrive by *levelling*. Nothing in the game grants a
+   point directly and 38D deliberately did not add a way; see the recipe-reachability rule above for
+   the `Starting` ∪ trainers union.
+5. **A bank is 37B's storage with the property gate removed.** Put an `InventoryComponent` on the
+   service's own entity and it *is* the vault — `StoragePanel` already answers `StorageOpenedEvent`, so
+   there is no UI and no save code to write.
+   ⚠️ **Give that entity a `PersistentId` and never change it** (`inventory:<PersistentId>` is the save
+   key). Without one the inventory does not register as a saveable at all and the vault empties on every
+   reload, which reads as item loss rather than a missing field. Author `Capacity` on the node, not the
+   resource: `InventoryComponent.Load` clamps to it.
+6. **Standing prices a service and can refuse it**, through the same `ShopPricing.PriceMultiplierFor`
+   ramp a shop uses — `ServicePrice` is the flat-price entry point, rounding up and flooring at 1 so a
+   discount cannot make a priced service free. ⚠️ Copy the **inverted** hostility default: an
+   unresolvable `ReputationComponent` serves normally, the opposite of `EnemyAIComponent`'s fail-safe.
+7. ⚠️ **An entity gets one interactable**, so a `ServiceComponent` behind a `DialogueComponent` never
+   fires. The innkeeper's placeholder conversation was replaced outright; the trainer and stablemaster
+   are their own NPCs; the vault is a prop, because the thing that must persist is an inventory and no
+   town NPC carries a `PersistentId`. And ⚠️ **`ContentValidator` cannot scan `.tscn`**, so a mistyped
+   `ServiceId` gives no prompt at all rather than an error.
+8. **There is no `ServiceKind.Repair`**, and that is deliberate: no durability or condition concept
+   exists anywhere in the game. 38D's brief says repair lands only "if durability is adopted in 40",
+   and 40B's rule is that cut systems leave no stub — so a kind resolving to nothing would be worse
+   than its absence. The deferral is recorded in `docs/DESIGN.md` §6 against Phase 40A.
+
 **A new gold sink (Phase 38C)**
 1. `docs/DESIGN.md` §6 holds the authoritative sink table — add the row there, or the sink exists in
    code and nowhere a designer looks.
@@ -935,14 +981,17 @@ cell sat far from the origin). `EnemySpawnDirector` had the same latent bug.
    `CraftingComponent.StartingRecipeIds` in `PlayerFactory`, or call `Learn`); it then appears
    at a matching `CraftingStationComponent`. New stations: `CraftingStationFactory.Create(...)`
    in the bootstrap. No code change for new recipes.
-3. ⚠️ **Seed it in `GameIds.Recipes.Starting`, or it is dead content.** `CraftingComponent.Learn`
-   exists and **nothing in the game calls it** — there is no recipe tome, dialogue effect or quest
-   reward that teaches one (that seam is Phase 38's). That array is therefore the whole of
-   reachability, it is what `PlayerFactory` seeds, and **`--validate` now checks it in both
-   directions** like the bestiary — an unseeded recipe fails the build rather than rotting silently
-   the way `recipe.leather_vest` did from Phase 15 to Phase 35. Gate a late-game recipe on a
-   **scarce ingredient** instead, the way `recipe.drakescale_mail` gates on eight dragon scales that
-   only Frostfang's dragonkin drop.
+3. ⚠️ **A recipe must be reachable by one of exactly two paths, and `--validate` checks the union.**
+   Either seed it in `GameIds.Recipes.Starting` (what `PlayerFactory` grants every new character), or
+   have a `ServiceKind.Trainer` teach it via `ServiceResource.TaughtRecipeIds` (Phase 38D, the first
+   caller `CraftingComponent.Learn` ever had — before that the array was the whole of reachability and
+   `recipe.leather_vest` rotted unreachable from Phase 15 to Phase 35).
+   ⚠️ **Never both.** `PlayerFactory` seeds `Starting` unconditionally, so a recipe in both lists is a
+   trainer charging for knowledge the player walked in with; the validator rejects that too.
+   A late-game recipe now has a real choice of gate: **taught** (`recipe.drakescale_mail` is bought
+   from the Ember Crown smithing lesson) or a **scarce ingredient** (the same mail still needs eight
+   dragon scales that only Frostfang's dragonkin drop). Before 38D only the second existed, which is
+   *why* it was gated that way.
 
 **A new spell**
 1. Author `data/spells/Xxx.tres` (`script_class="SpellResource"`): unique `Id`, `School`
@@ -1173,7 +1222,13 @@ on any tick. **38C is done** — faction standing finally changes a number: a me
 surcharge at the hostile end of the ramp to 15% off at Allied, and a faction the player is hostile to
 will not trade at all. Gold has real sinks now — a merchant's **purse** runs dry and refills on the
 restock clock, and **fast travel costs gold** (free to a holding you own). `docs/DESIGN.md` §6 carries
-the authoritative sink table. Next: **38D**, services (repair / trainer / bank / inn / stable).
+the authoritative sink table. **38D is done** — four paid services are interactable: a smithing lesson
+that is the **first thing ever to teach a recipe** (`CraftingComponent.Learn` had zero callers from
+Phase 15), a guild vault (37B's storage minus the property gate), an inn that rests and refills, and a
+stablemaster whose purchase Phase 39A will read. Recipe reachability is now the union of
+`GameIds.Recipes.Starting` and every trainer's list, checked both ways. **Repair is deferred to Phase
+40A** — no durability concept exists and 40B's rule is that cut systems leave no stub. Next: **38E**,
+wiring the three stub vendors into real shops.
 
 **The art set standardises on Quaternius CC0 packs** (maintainer direction, 2026-08-05 — policy in
 `docs/ASSET_POLICY.md` §0, provenance in `assets/CREDITS.md`). 401 models are vendored at
