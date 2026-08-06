@@ -103,17 +103,29 @@ public partial class EquipmentComponent : EntityComponent, ISaveable
         return true;
     }
 
-    /// <summary>Unequips the item in a slot, returning it to the inventory.</summary>
+    /// <summary>Unequips the item in a slot, returning it to the inventory. Refuses if there is no
+    /// room for it, rather than taking it off into nothing.</summary>
     public bool Unequip(EquipmentSlot slot)
     {
-        if (!_equipped.Remove(slot, out ItemInstance? instance))
+        if (!_equipped.TryGetValue(slot, out ItemInstance? instance))
         {
             return false;
         }
 
+        // Secure the destination BEFORE vacating the slot. This is a pure add with no matching
+        // removal to free a slot first, so unlike the swap in EquipInternal it can genuinely fail —
+        // and the old order discarded AddInstance's return, so taking a sword off with a full pack
+        // deleted it: gone from the slot, never in the bag, quite possibly a rolled legendary.
+        // An actor with no inventory at all (an enemy) keeps the previous behaviour and just
+        // unequips, since there was never anywhere for it to go.
+        if (_inventory != null && _inventory.AddInstance(instance, 1) < 1)
+        {
+            return false;
+        }
+
+        _equipped.Remove(slot);
         RemoveBonuses(instance);
         RestoreWeapon(instance);
-        _inventory?.AddInstance(instance, 1);
         NotifyChanged();
         return true;
     }

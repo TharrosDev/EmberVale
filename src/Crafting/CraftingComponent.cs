@@ -288,9 +288,14 @@ public partial class CraftingComponent : EntityComponent, ISaveable
 
                 // Never force-deref a content lookup: a recipe whose ingredient item was deleted skips
                 // that material rather than crashing the salvage.
-                if (ItemDatabase.Get(ingredient.ItemId) is { } material)
+                if (ItemDatabase.Get(ingredient.ItemId) is { } material &&
+                    _inventory.AddItem(material, recovered) < recovered)
                 {
-                    _inventory.AddItem(material, recovered);
+                    // Salvage is irreversible by design — the item is already gone — so a full pack
+                    // cannot be refused the way a craft can. It can at least stop being silent:
+                    // freeing the item's slot makes room for one material type, so a recipe
+                    // recovering two can overflow by one and drop it without a word.
+                    Log.Warn($"Deconstruct: no room for all the recovered '{material.Id}'; some was lost.");
                 }
             }
         }
