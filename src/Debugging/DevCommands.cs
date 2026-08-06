@@ -55,7 +55,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("tutorial", "tutorial <status|skip|restart>", "Inspect or drive the onboarding hints (Phase 33B).", Tutorial));
         console.Register(new ConsoleCommand("opening", "opening", "Replay the new-game prologue (Phase 33A).", Opening));
         console.Register(new ConsoleCommand("companion", "companion <list|recruit <id>|dismiss <id>|stance <id> <follow|hold|engage>|order|loyalty <id> [delta]>", "Inspect and drive the companion party (Phase 32A).", Companion));
-        console.Register(new ConsoleCommand("shop", "shop [id]", "List shops, or open one's trade window (Phase 38A).", Shop));
+        console.Register(new ConsoleCommand("shop", "shop [id|restock <id>]", "List shops, open one's trade window, or force a restock (Phase 38A/B).", Shop));
         console.Register(new ConsoleCommand("savecheck", "savecheck", "Audit registered saveables for volatile (would-orphan) keys (Phase 25.5A).", SaveCheck));
 
         console.Register(new ConsoleCommand("seed", "seed <n>", "Seed the global RNG (for repro).", Seed));
@@ -141,20 +141,39 @@ public static class DevCommands
             var sb = new StringBuilder($"{ShopDatabase.All.Count} shop(s):\n");
             foreach (ShopResource s in ShopDatabase.All)
             {
-                sb.Append($"  {s.Id}  — {s.StockItemIds.Count} ware(s), buy x{s.BuyMarkup}, sell x{s.SellFraction}\n");
+                string restock = s.RestockDays > 0 ? $"every {s.RestockDays}d" : "never";
+                sb.Append(
+                    $"  {s.Id}  — {s.StockList().Count} row(s), buy x{s.BuyMarkup}, sell x{s.SellFraction}, " +
+                    $"restocks {restock}{(s.LeveledTable != null ? ", leveled pool" : string.Empty)}\n");
             }
 
             return sb.ToString().TrimEnd();
         }
 
+        // `shop restock <id>` skips the wait: an in-game day is DayLengthSeconds of real time, so
+        // watching a restock happen naturally means three minutes of standing still per day.
+        bool forceRestock = args[0].Equals("restock", System.StringComparison.OrdinalIgnoreCase);
+        string shopId = forceRestock ? (args.Length > 1 ? args[1] : string.Empty) : args[0];
+
+        if (ShopDatabase.Get(shopId) is not { } shop)
+        {
+            return $"unknown shop '{shopId}'";
+        }
+
+        if (forceRestock)
+        {
+            if (!TryService(out ShopStockService stock))
+            {
+                return "no shop stock service";
+            }
+
+            stock.ForceRestock(shop);
+            return $"restocked {shop.Id} ({stock.OfferFor(shop).Count} row(s) on the shelf)";
+        }
+
         if (!TryPlayer(out PlayerCharacter player))
         {
             return "no player";
-        }
-
-        if (ShopDatabase.Get(args[0]) is not { } shop)
-        {
-            return $"unknown shop '{args[0]}'";
         }
 
         EventBus.Instance?.Publish(new ShopOpenedEvent(player, shop));

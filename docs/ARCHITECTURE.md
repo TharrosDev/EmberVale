@@ -495,7 +495,12 @@ only three of them have a factory**; the rest are `.tres` files.
   seconds/day and publishes `TimeOfDayChangedEvent(Hour, DayPhase)` on each new hour (and
   on start/load). Exposes `TimeOfDay`/`Hour`/`Phase`/`Clock()`. The minimal time source
   for schedules; **Phase 13** builds the full day/night + weather model on top. Persists
-  the time of day. `DayPhase` (Night/Dawn/Day/Dusk) is derived via `DayPhases.Of(hour)`.
+  the time of day and, since **Phase 38B**, `Day` — a plain count of elapsed in-game days.
+  Until then the game had no notion of a date at all: `TimeOfDay` wraps through `PosMod` and
+  nothing counted the wraps, so "three days later" was inexpressible. Shop restock is the
+  first consumer; `SetTimeOfDay(26)` rolls the date forward too, which is the only way to
+  advance a day without waiting `DayLengthSeconds` for each one.
+  `DayPhase` (Night/Dawn/Day/Dusk) is derived via `DayPhases.Of(hour)`.
   Created by the bootstrap; `DebugHud` shows the clock.
 - **Schedule content** — `ScheduleResource` (`[GlobalClass]`, `data/schedules/*.tres`) holds
   `ScheduleEntry` sub-resources (`StartHour`, `Activity`, `Destination`), authored untyped
@@ -901,7 +906,7 @@ standing, and persist. Built entirely on the existing character stack — a comp
   components save as `stats:player`, `inventory:player`, …) and only falls back to the
   volatile `RuntimeId` for transient actors. World singletons keep fixed, colon-free
   keys (`worldclock`, `weather`, `map`, `fasttravel`, `spawns`, `companions`, `tutorial`,
-  `cell_persistence`, `bestiary`).
+  `cell_persistence`, `bestiary`, `housing`, `shopstock`).
 
 - **`SaveKeyPolicy` — why transient actors persist nothing** (Phase 25.5A). Components used to
   register with the `SaveManager` *unconditionally*, so transient actors (the training dummy,

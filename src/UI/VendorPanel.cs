@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Embervale.Core;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
+using Embervale.Core.Services;
 using Embervale.Economy;
 using Embervale.Entities;
 using Embervale.Items;
@@ -160,15 +161,18 @@ public partial class VendorPanel : UiPanel
     ///
     /// Both refusals are separate conditions for the reason <c>PropertyDeedComponent.Interact</c>
     /// spells out: chained into one test, an unresolvable pack falls <em>through</em> to a free item.
+    ///
+    /// 38B adds the shelf decrement as a fourth step, deliberately last: nothing may consume stock on a
+    /// path that ends without the player holding the goods.
     /// </summary>
-    private void Buy(ItemResource template, int price)
+    private void Buy(ShopResource shop, ShopOffer offer, int price)
     {
         if (_pack is not { } pack || ItemDatabase.Get(GameIds.Currency.Gold) is not { } gold)
         {
             return;
         }
 
-        if (!ShopPricing.CanAfford(price, Purse()))
+        if (!offer.Available || !ShopPricing.CanAfford(price, Purse()))
         {
             return; // the button is already disabled and says why; re-checked on the press
         }
@@ -178,14 +182,26 @@ public partial class VendorPanel : UiPanel
             return; // the gold went somewhere between the rebuild and the press; deliver nothing
         }
 
-        if (pack.AddInstance(ItemInstance.Plain(template), 1) <= 0)
+        if (pack.AddInstance(offer.Instance, 1) <= 0)
         {
             pack.AddItem(gold, price); // pack full — hand the money straight back
             return;
         }
 
+        // Paid for and delivered, so the sale stands either way; a false here would mean the shelf and
+        // the window had drifted within one frame, which is worth a line in the log.
+        if (Stock() is { } stock && !stock.TakeOne(shop, offer.Instance))
+        {
+            Log.Warn($"Shop '{shop.Id}': sold '{offer.Instance.TemplateId}' that the shelf no longer had.");
+        }
+
         MarkDirty();
     }
+
+    private static ShopStockService? Stock() =>
+        ServiceLocator.Instance is { } locator && locator.TryGet(out ShopStockService service)
+            ? service
+            : null;
 
     /// <summary>
     /// Sells a whole stack — a pack row <em>is</em> a stack, the same granularity
@@ -241,36 +257,38 @@ public partial class VendorPanel : UiPanel
     private void BuildWares(ShopResource shop)
     {
         UiTheme.ClearChildren(_waresList);
-        _waresHeader.Text = Loc.T("shop.wares");
 
-        int purse = Purse();
-        var any = false;
-        foreach (string itemId in shop.StockItemIds)
-        {
-            if (ItemDatabase.Get(itemId) is not { } template)
-            {
-                continue; // --validate fails the build on this; the window just does not list it
-            }
+        // Naming the cadence is what lets a player tell "gone" from "gone forever" — a sold-out row
+        // with no restock is a different thing from one that will be back tomorrow.
+        _waresHeader.Text = shop.RestockDays > 0
+            ? $"{Loc.T("shop.wares")}   {Loc.TF("shop.restocks", shop.RestockDays)}"
+            : Loc.T("shop.wares");
 
-            any = true;
-            ItemInstance instance = ItemInstance.Plain(template);
-            int price = ShopPricing.BuyPrice(instance.Value, shop.BuyMarkup);
-            bool affordable = ShopPricing.CanAfford(price, purse);
-
-            AddRow(
-                _waresList,
-                instance,
-                quantity: 1,
-                priceText: Loc.TF("shop.price", price),
-                action: Loc.T("shop.buy"),
-                enabled: affordable,
-                refusal: Loc.T("shop.cannot_afford"),
-                onPressed: () => Buy(template, price));
-        }
-
-        if (!any)
+        IReadOnlyList<ShopOffer> offers = Stock()?.OfferFor(shop) ?? System.Array.Empty<ShopOffer>();
+        if (offers.Count == 0)
         {
             _waresList.AddChild(UiTheme.Body(Loc.T("shop.empty"), UiTheme.Dim));
+            return;
+        }
+
+        int purse = Purse();
+        foreach (ShopOffer offer in offers)
+        {
+            int price = ShopPricing.BuyPrice(offer.Instance.Value, shop.BuyMarkup);
+            bool affordable = ShopPricing.CanAfford(price, purse);
+
+            // A sold-out row stays on the shelf, greyed. Removing it would read as the shop never
+            // having stocked the thing, which is the opposite of what happened.
+            ShopOffer captured = offer;
+            AddRow(
+                _waresList,
+                offer.Instance,
+                quantity: offer.Unlimited ? 1 : offer.Remaining,
+                priceText: Loc.TF("shop.price", price),
+                action: Loc.T("shop.buy"),
+                enabled: offer.Available && affordable,
+                refusal: offer.Available ? Loc.T("shop.cannot_afford") : Loc.T("shop.sold_out"),
+                onPressed: () => Buy(shop, captured, price));
         }
     }
 

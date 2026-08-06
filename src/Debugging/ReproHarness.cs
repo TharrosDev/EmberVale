@@ -26,6 +26,10 @@ public static class ReproHarness
         ["raid"] = new Scenario(4uL, new[] { "event event.goblin_raid" }),
         // Phase 32D: a party in the field — recruit, order them to engage, then give them a fight.
         ["party"] = new Scenario(5uL, new[] { "companion recruit companion.kael", "companion order", "companion order", "spawn 3" }),
+        // Phase 38B: a leveled restock at a known level and seed. The restock rolls through an RNG
+        // seeded from GD.Randi(), so GD.Seed above reaches it — unlike LootGenerator's own shared RNG,
+        // which calls Randomize() and is therefore not reproducible at all.
+        ["shopping"] = new Scenario(6uL, new[] { "xp 400", "give item.currency.gold 500", "shop restock shop.ember_crown.goods", "shop shop.ember_crown.goods" }),
     };
 
     public static IEnumerable<string> Names => Scenarios.Keys;

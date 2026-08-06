@@ -552,14 +552,35 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 6. The window is the existing `StoragePanel`; a stand publishes the same `StorageOpenedEvent` with a
    `MinRarity`. There is no trophy UI to wire.
 
-**A new shop / merchant (Phase 38A)**
+**A new shop / merchant (Phase 38A–38B)**
 1. Author `data/shops/Xxx.tres` (`script_class="ShopResource"`): unique `Id` (`shop.*`), a `NameKey`
-   in `strings.csv`, `StockItemIds`, and the spread — `BuyMarkup` (≥ 1) and `SellFraction`.
-   Auto-indexed by `ShopDatabase`. ⚠️ **`SellFraction` must stay below `BuyMarkup`.** Equal or
+   in `strings.csv`, a `Stock` array of `ShopStockEntry` sub-resources (`ItemId` + `Quantity`, the same
+   `.tres` sub-resource pattern `LootEntry` uses), `RestockDays`, an optional `LeveledTable`, and the
+   spread — `BuyMarkup` (≥ 1) and `SellFraction`. Auto-indexed by `ShopDatabase`.
+   ⚠️ **`SellFraction` must stay below `BuyMarkup`.** Equal or
    inverted is an infinite gold loop: buy a stack, sell it straight back, repeat. `--validate`
    rejects it and `ShopPricing` clamps so a hand-edited `.tres` cannot do it either. Gold and
    `ItemType.Quest` items are rejected from stock — a quest object bought off a shelf, or coins
    bought with coins.
+1b. **Stock comes in three kinds and the numbers say which** (38B), with no mode enum:
+   `Quantity = 0` is an unlimited row (a materials stall that never runs out); `Quantity > 0` is finite
+   and refills on the shop's clock; a `LeveledTable` is a `LootTable` rolled at each restock, at a
+   quality scaled by the player's level through `ShopStock.QualityForLevel`. That is the game's **first
+   player-level-driven scaling** — it moves rarity and affixes, never *which* items a merchant deals in.
+   ⚠️ **A finite row needs `RestockDays > 0`**, and so does a `LeveledTable`; `--validate` rejects
+   either without one, because a shop with finite stock and no clock is emptied by the first player
+   through the door and a pool rolled once is frozen for the run.
+1c. **Restock is evaluated when a shop is opened, not on a tick.** No `_Process`, no event
+   subscription, no `DayChangedEvent` — a shop restocks because enough days had passed by the time the
+   player walked up, and nothing can observe the difference. `WorldEventDirector` is the counter-example:
+   it ticks real-seconds cooldowns every frame and is not `ISaveable`, so they vanish on reload.
+   `WorldClock.Day` is the date; `time 26` rolls it forward one day (an in-game day is
+   `DayLengthSeconds` — 180 s — of real waiting), and `shop restock <id>` skips the wait entirely.
+1d. ⚠️ **Runtime stock lives in `ShopStockService`, never on the resource.** A `ShopResource` is shared
+   by every vendor naming it and is not `ISaveable`, so a remaining count written into it would leak
+   between merchants *and* vanish on reload. **The rolled leveled wares persist too** — that is the
+   whole reason they are in the save: if a reload rerolled the pool, the player would reload until a
+   Legendary appeared.
 2. Place it: an `Entity` with a collider and a `VendorComponent { ShopId = "shop.xxx" }`.
    ⚠️ **An entity gets one interactable** — `EntityNode.GetComponent<T>` returns the *first* child
    match, so a `VendorComponent` sitting behind a `DialogueComponent` on the same actor never fires.
@@ -571,18 +592,21 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    silently unusable in game: check that field first.
 4. **Prices have one authority: `ItemInstance.Value`**, which already folds in rarity and affix
    count, so the spread applies to rolled loot for free. Put any new pricing maths in
-   `src/Economy/ShopPricing.cs` (Godot-free, so `ShopPricingTests` can pin it) — never at a call
-   site, and never a second price table.
-5. **Stock is static and does not deplete**, and a vendor has no purse. Deliberate: depletion without
-   38B's restock clock is a shop that can be permanently emptied, and nothing about a shop mutating
-   means no `ISaveable` and no save code. Purses are 38C's gold sink.
+   `src/Economy/ShopPricing.cs` and any restock/level maths in `src/Economy/ShopStock.cs` (both
+   Godot-free, so the test project can pin them) — never at a call site, and never a second price table.
+   ⚠️ Day arithmetic there widens to `long`: a never-stocked shop is stamped `int.MinValue`, and
+   `0 - int.MinValue` overflows back to a negative, which answered "not due" for the one case that
+   most obviously is. The test caught it on the first run.
+5. **A vendor still has no purse** — it buys anything with unlimited gold. That is 38C's gold sink.
 6. **Buying charges before it delivers, and refunds if delivery fails.** The other order cannot work:
    `InventoryComponent.AddInstance` merges a stackable into an existing stack, so the instance handed
    in is often never stored and `RemoveOneInstance` would find nothing to roll back. Refunding gold
    always works — spending it either freed a slot or left a stack with room.
 7. **Selling removes by reference for rolled items, by template id only for stackables** — the same
    split `StoragePanel.Transfer` makes, for the same reason. A zero payout is refused rather than
-   accepted: handing an item over for nothing is item loss wearing a transaction's clothes.
+   accepted: handing an item over for nothing is item loss wearing a transaction's clothes. The shelf
+   decrement (`ShopStockService.TakeOne`) is deliberately the **last** step of a purchase: nothing may
+   consume stock on a path that ends without the player holding the goods.
 
 **A big/boss creature with body zones (Phase 35A)**
 1. Author the archetype `.tres` as above, plus:
@@ -1098,8 +1122,12 @@ The Ashfall Cottage is authored end to end as the one playable property. **Phase
 `VendorComponent` opens the trade window, and `ShopPricing` is the one place the money arithmetic
 lives (Godot-free, so the rounding is pinned by tests). Gold finally flows both ways. The three
 Ember Crown vendors are **still stub conversations** — an entity gets one interactable, so making
-them tradeable is 38E's call; until then `shop <id>` in the F1 console opens any shop. Next: **38B**,
-stock depth (quantities, restock timers, leveled pools).
+them tradeable is 38E's call; until then `shop <id>` in the F1 console opens any shop. **38B is done**
+— stock has depth: unlimited rows, finite rows that deplete and refill on a restock clock, and a
+leveled pool rolled through `LootGenerator` at a quality that climbs with the player's level (the
+game's first level-driven scaling). `WorldClock` finally has a `Day`; `ShopStockService` holds and
+persists what every shop has left, and restock is evaluated lazily when a shop is opened rather than
+on any tick. Next: **38C**, reputation discounts and gold sinks.
 
 **The art set standardises on Quaternius CC0 packs** (maintainer direction, 2026-08-05 — policy in
 `docs/ASSET_POLICY.md` §0, provenance in `assets/CREDITS.md`). 401 models are vendored at
