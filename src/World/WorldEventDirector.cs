@@ -53,7 +53,7 @@ public partial class WorldEventDirector : Node3D
 
     public override void _ExitTree()
     {
-        ServiceLocator.Instance?.Unregister<WorldEventDirector>();
+        ServiceLocator.Instance?.Unregister(this);
         EventBus.Instance?.Unsubscribe<EntityDiedEvent>(OnEntityDied);
         EventBus.Instance?.Unsubscribe<ItemPickedUpEvent>(OnItemPickedUp);
         EventBus.Instance?.Unsubscribe<RegionTransitionRequestedEvent>(OnRegionTransition);

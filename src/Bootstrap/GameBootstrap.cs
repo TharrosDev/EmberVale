@@ -1074,7 +1074,7 @@ public partial class GameBootstrap : Node3D
     {
         if (_dummy != null && IsInstanceValid(_dummy))
         {
-            ServiceLocator.Instance?.Unregister<Entity>();
+            ServiceLocator.Instance?.Unregister(_dummy);
             _dummy.QueueFree();
         }
 

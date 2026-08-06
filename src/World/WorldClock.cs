@@ -51,7 +51,7 @@ public partial class WorldClock : Node, ISaveable
 
     public override void _ExitTree()
     {
-        ServiceLocator.Instance?.Unregister<WorldClock>();
+        ServiceLocator.Instance?.Unregister(this);
         SaveManager.Instance?.Unregister(this);
     }
 

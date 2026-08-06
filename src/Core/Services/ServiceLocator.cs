@@ -54,16 +54,15 @@ public sealed partial class ServiceLocator : Node
         _services[key] = service;
     }
 
-    public void Unregister<T>()
-        where T : class
-    {
-        _services.Remove(typeof(T));
-    }
-
     /// <summary>
     /// Removes the registration for <typeparamref name="T"/> only if it still points at
     /// <paramref name="instance"/>. A replaced/respawned actor tearing down must not evict
     /// a newer instance that already took its slot.
+    ///
+    /// This is the only unregister, deliberately. A blind <c>Unregister&lt;T&gt;()</c> used to sit
+    /// beside it and four call sites had drifted onto it against twenty-seven on this one — every
+    /// one of them holding the instance it meant to remove, so none of them needed it. Removing the
+    /// overload rather than the call sites means the hazard it existed to describe cannot come back.
     /// </summary>
     public void Unregister<T>(T instance)
         where T : class
