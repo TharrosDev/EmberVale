@@ -19,9 +19,6 @@ namespace Embervale.UI;
 /// </summary>
 public partial class BestiaryPanel : UiPanel
 {
-    /// <summary>Screen-edge gutter, matching the character screen.</summary>
-    private const float ScreenMargin = 70f;
-
     private static readonly (BestiaryCategory Category, string Key)[] TabDefs =
     {
         (BestiaryCategory.Beast, "bestiary.tab_beasts"),
@@ -51,11 +48,7 @@ public partial class BestiaryPanel : UiPanel
 
     protected override void BuildShell(PanelContainer shell)
     {
-        shell.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-        shell.OffsetLeft = ScreenMargin;
-        shell.OffsetTop = ScreenMargin;
-        shell.OffsetRight = -ScreenMargin;
-        shell.OffsetBottom = -ScreenMargin;
+        UiTheme.ApplyScreenInset(shell);
 
         MarginContainer margin = UiTheme.Padding(12);
         shell.AddChild(margin);

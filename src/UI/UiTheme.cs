@@ -25,9 +25,18 @@ public static class UiTheme
     // Surfaces: warm charcoal ash, never blue-black. Three depths, and the ordering is the
     // whole point — a control is understood by whether it sits *in* the panel (a well: slots,
     // troughs, input fields) or *on* it (a card: an item row, a spell, a save slot).
-    public static readonly Color WellBg = new(0.055f, 0.052f, 0.048f, 0.95f);
-    public static readonly Color PanelBg = new(0.09f, 0.085f, 0.075f, 0.92f);
-    public static readonly Color CardBg = new(0.135f, 0.126f, 0.112f, 0.95f);
+    private static readonly Color WellBase = new(0.055f, 0.052f, 0.048f, 0.95f);
+    private static readonly Color PanelBase = new(0.09f, 0.085f, 0.075f, 0.92f);
+    private static readonly Color CardBase = new(0.135f, 0.126f, 0.112f, 0.95f);
+
+    // Properties rather than fields since 37.5G: high contrast makes the surfaces fully opaque, and
+    // a translucent panel over a bright, busy world is where this UI is least readable. Source-
+    // compatible with every existing `UiTheme.PanelBg` read.
+    public static Color WellBg => Opaque(WellBase);
+    public static Color PanelBg => Opaque(PanelBase);
+    public static Color CardBg => Opaque(CardBase);
+
+    private static Color Opaque(Color surface) => HighContrast ? surface with { A = 1f } : surface;
 
     public static readonly Color PanelBorder = new(0.42f, 0.40f, 0.35f, 0.80f);
     public static readonly Color Trough = new(0.13f, 0.125f, 0.115f, 0.95f);
@@ -49,9 +58,13 @@ public static class UiTheme
     public static readonly Color Accent = new(0.85f, 0.64f, 0.25f);
     public static readonly Color AccentHot = new(0.91f, 0.45f, 0.17f);
 
-    // Semantic feedback.
-    public static readonly Color Good = new(0.55f, 0.68f, 0.44f);
-    public static readonly Color Bad = new(0.82f, 0.42f, 0.36f);
+    // Semantic feedback. Adapted for colour vision (37.5G): green-vs-red is the single most
+    // confusable pair in the whole UI and it is the one carrying "this went well" vs "this did not".
+    private static readonly Color GoodBase = new(0.55f, 0.68f, 0.44f);
+    private static readonly Color BadBase = new(0.82f, 0.42f, 0.36f);
+
+    public static Color Good => Adapt(GoodBase);
+    public static Color Bad => Adapt(BadBase);
 
     // Resource bar fills.
     public static readonly Color Health = new(0.78f, 0.30f, 0.26f);
@@ -62,7 +75,10 @@ public static class UiTheme
     // the gauge fill and the HUD vignette. The deep fill violet fails text contrast (2.8:1),
     // so corruption-tinted *text* uses the brighter CorruptionText instead (30.5K).
     public static readonly Color Corruption = new(0.48f, 0.30f, 0.55f);
-    public static readonly Color CorruptionText = new(0.68f, 0.48f, 0.76f);
+
+    private static readonly Color CorruptionTextBase = new(0.68f, 0.48f, 0.76f);
+
+    public static Color CorruptionText => Adapt(CorruptionTextBase);
 
     // --- Material tokens (37.5A) ------------------------------------------------
     // Brass is *material*, ember gold is *meaning* — they must never resolve to the same value
@@ -86,24 +102,61 @@ public static class UiTheme
     /// <summary>The item rarity ramp. Delegates to <see cref="ItemRarities.Color"/>, which is the
     /// authority — the world-space drop glow and trophy tint read the same values, so an item
     /// cannot look one rarity on the ground and another in the pack.</summary>
-    public static Color RarityColor(ItemRarity rarity) => ItemRarities.Color(rarity);
+    public static Color RarityColor(ItemRarity rarity) => Adapt(ItemRarities.Color(rarity));
 
     /// <summary>The magic school ramp. Delegates to <see cref="Magic.SpellSchools.Color"/>, which is
     /// the authority — the same value tints the projectile in flight and names the school in the
     /// spellbook, so the two can never drift apart.</summary>
-    public static Color SchoolColor(DamageType school) => Magic.SpellSchools.Color(school);
+    public static Color SchoolColor(DamageType school) => Adapt(Magic.SpellSchools.Color(school));
+
+    /// <summary>A faction standing's colour. Delegates to <c>ReputationTiers.Color</c> (the
+    /// authority) through the colour-vision adaptation, which is why UI code should call this rather
+    /// than the authority directly.</summary>
+    public static Color ReputationColor(Factions.ReputationTier tier) =>
+        Adapt(Factions.ReputationTiers.Color(tier));
 
     // Quest state. Main is the Flamebearer thread and therefore the ember accent itself; side
     // quests get a cool bone so the two never compete in the tracker.
     public static readonly Color QuestMain = Accent;
     public static readonly Color QuestSide = new(0.72f, 0.74f, 0.70f);
-    public static readonly Color QuestComplete = Good;
-    public static readonly Color QuestFailed = Bad;
+
+    public static Color QuestComplete => Good;
+
+    public static Color QuestFailed => Bad;
 
     // Disposition (nameplates, faction standings, map markers).
-    public static readonly Color Friendly = Good;
+    public static Color Friendly => Good;
+
     public static readonly Color Neutral = new(0.74f, 0.71f, 0.60f);
-    public static readonly Color Hostile = Bad;
+
+    public static Color Hostile => Bad;
+
+    // --- Accessibility (37.5G) -------------------------------------------------
+
+    private static Settings.Settings? Current =>
+        ServiceLocator.Instance is { } locator && locator.TryGet(out SettingsService settings)
+            ? settings.Current
+            : null;
+
+    /// <summary>The player's colour-vision setting, or None before the service exists (boot, and the
+    /// unit-test harness, which reads these tokens with no engine running).</summary>
+    public static ColorVisionMode VisionMode => Current?.ColorVision ?? ColorVisionMode.None;
+
+    /// <summary>Whether high-contrast mode is on.</summary>
+    public static bool HighContrast => Current?.HighContrast ?? false;
+
+    /// <summary>
+    /// Adapts a **semantic** colour for the player's colour-vision setting.
+    ///
+    /// ⚠️ **Applied at the token layer, not in the builders, and that split is load-bearing.**
+    /// Daltonization is not idempotent — adapting an already-adapted colour over-shifts it — so
+    /// exactly one layer may apply it. Doing it here means anything reading a semantic token or one
+    /// of the three domain ramps is covered wherever it ends up, including raw <c>ColorRect</c>
+    /// pips that never touch a builder. The neutral tokens (<see cref="Text"/>, <see cref="Dim"/>,
+    /// <see cref="Accent"/>) deliberately stay unadapted: they are near-achromatic, so adaptation
+    /// would move them for no gain while changing the whole UI's character.
+    /// </summary>
+    public static Color Adapt(Color color) => ColorVision.Daltonize(color, VisionMode);
 
     // --- Type scale ----------------------------------------------------------
     // Caption is the legibility floor — 12 px at reference scale (30.5K; was 11, raised in
@@ -125,7 +178,16 @@ public static class UiTheme
     /// edit rather than a sweep through every builder. Callers should never read the consts
     /// directly when building a control.
     /// </summary>
-    public static int FontSize(int token) => token;
+    public static int FontSize(int token)
+    {
+        float scale = Current?.TextScale ?? 1f;
+
+        // Never below the 12 px legibility floor (UI_STYLE §3), even if the setting goes low: the
+        // floor exists because of a real min-spec/Steam Deck readability audit, and a *text size*
+        // control that can make text unreadable is not an accessibility feature.
+        int scaled = Mathf.RoundToInt(token * Mathf.Clamp(scale, 0.85f, 1.5f));
+        return Mathf.Max(CaptionFontSize, scaled);
+    }
 
     // --- Spacing scale (px at reference scale) ---------------------------------
     public const int SpaceXs = 4;
@@ -271,8 +333,12 @@ public static class UiTheme
     /// </summary>
     public static void ApplyGrain(Control control, float grain = 0.35f, float fibre = 0.18f, float mottle = 0.22f, Color? tint = null)
     {
-        if (GrainShader is not { } shader)
+        // High contrast drops the material entirely. The grain is the single largest source of
+        // low-amplitude noise on every surface, and it is the first thing to go for a player who
+        // turned this on because the UI is hard to read.
+        if (HighContrast || GrainShader is not { } shader)
         {
+            control.Material = null;
             return;
         }
 
@@ -333,6 +399,49 @@ public static class UiTheme
         rect.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         return rect;
     }
+
+    /// <summary>
+    /// Insets a full-screen panel from the view edge, with a gutter that shrinks on narrow
+    /// viewports (37.5G).
+    ///
+    /// ⚠️ **Measure the viewport, never the window.** `GetViewportRect()` is already in *logical*
+    /// pixels — the content-scale factor the UI-scale setting drives has been applied — so a Steam
+    /// Deck at 1280×800 with UI scale 1.5 reports 853×533, not 1280×800. The screens built in
+    /// 37.5C/D used a flat 70 px gutter and fixed column widths against an assumed ~1900 px, and
+    /// overflowed by 321 px and 167 px respectively in exactly that configuration.
+    ///
+    /// Call it from `Rebuild` as well as `BuildShell`: the setting can change mid-session, and
+    /// offsets applied once at `_Ready` would keep a stale gutter until the game restarted.
+    /// </summary>
+    public static void ApplyScreenInset(Control shell)
+    {
+        float width = shell.GetViewportRect().Size.X;
+        int gutter = width < 1100f ? SpaceLg : 70;
+
+        shell.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        shell.OffsetLeft = gutter;
+        shell.OffsetTop = gutter;
+        shell.OffsetRight = -gutter;
+        shell.OffsetBottom = -gutter;
+    }
+
+    /// <summary>The logical width a full-screen panel has to lay out inside, after its gutter and
+    /// the standard padding. The number every adaptive column count should be derived from.</summary>
+    public static float UsableWidth(Control shell)
+    {
+        float width = shell.GetViewportRect().Size.X;
+        int gutter = width < 1100f ? SpaceLg : 70;
+        return Mathf.Max(320f, width - (gutter * 2f) - 28f);
+    }
+
+    /// <summary>
+    /// The logical height a centred panel may occupy. The Steam Deck at UI scale 1.5 reports a
+    /// **533 px** logical viewport — short enough that fixed heights authored against a desktop
+    /// window overflow vertically even when the width fits comfortably. Width is the obvious axis
+    /// to check and height is the one that actually bites on a handheld.
+    /// </summary>
+    public static float UsableHeight(Control control) =>
+        Mathf.Max(240f, control.GetViewportRect().Size.Y - (SpaceXl * 2f));
 
     /// <summary>The standard inner padding container panels wrap their content in.</summary>
     public static MarginContainer Padding(int amount = SpaceMd)
@@ -680,8 +789,12 @@ public static class UiTheme
     /// </summary>
     public static StyleBoxFlat PanelStyle()
     {
-        var box = new StyleBoxFlat { BgColor = PanelBg, BorderColor = Brass with { A = 0.85f } };
-        box.SetBorderWidthAll(2);
+        var box = new StyleBoxFlat
+        {
+            BgColor = PanelBg,
+            BorderColor = HighContrast ? BrassLit : Brass with { A = 0.85f },
+        };
+        box.SetBorderWidthAll(HighContrast ? 3 : 2);
         box.SetCornerRadiusAll(RadiusLg);
 
         // The groove: a hard, un-blurred dark ring just outside the brass.
@@ -707,7 +820,7 @@ public static class UiTheme
     {
         var box = new StyleBoxFlat { BgColor = CardBg, BorderColor = edge ?? (BrassLit with { A = 0.22f }) };
         box.SetBorderWidthAll(0);
-        box.BorderWidthLeft = edge is null ? 1 : 3;
+        box.BorderWidthLeft = edge is null ? 1 : HighContrast ? 5 : 3;
         box.SetCornerRadiusAll(RadiusSm);
         box.SetContentMarginAll(SpaceSm);
         box.ContentMarginLeft = SpaceMd;

@@ -64,7 +64,9 @@ public partial class CraftingPanel : UiPanel
 
         var scroll = new ScrollContainer
         {
-            CustomMinimumSize = new Vector2(436, 500),
+            // Height is viewport-relative since 37.5G; a fixed 500 overflowed the Steam Deck's
+            // 533 px logical viewport at UI scale 1.5.
+            CustomMinimumSize = new Vector2(436, 360),
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
         };
         column.AddChild(scroll);

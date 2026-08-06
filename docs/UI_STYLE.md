@@ -295,14 +295,74 @@ UV is guaranteed to span 0..1 over its rect, and every one of these shaders does
 sweep maths in UV space. On a rounded panel the ring drifts off centre as the panel
 resizes.
 
-## 8. Text rules
+## 8. Accessibility (37.5G)
+
+Three settings, all round-tripping through `user://settings.tres` for free (they are `[Export]`
+fields on a Godot `Resource`).
+
+| Setting | What it does |
+| ------- | ------------ |
+| `TextScale` (0.85-1.5) | Scales **glyphs only**, via `UiTheme.FontSize`. Distinct from `UiScale`, which is the window's content-scale factor and magnifies panels and margins too - this is for a player who wants readable text without surrendering half the screen to chrome. |
+| `ColorVision` | Daltonizes the semantic ramps (rarity, school, standing, good/bad). |
+| `HighContrast` | Surfaces go fully opaque, the grain material is dropped entirely, panel and card rules thicken. |
+
+⚠️ **`FontSize` floors at `CaptionFontSize` regardless of the setting.** The 12 px floor exists
+because of a real min-spec/Steam Deck readability audit, and a *text size* control that can make
+text unreadable is not an accessibility feature.
+
+### Colour vision
+
+`ColorVision` **daltonizes; it does not simulate.** Simulation shows a trichromat what a
+colourblind viewer sees - a diagnostic tool, and actively the wrong thing to render, since it
+would make the UI *less* distinguishable for the person who needs help. Daltonization measures
+the information the viewer loses and redistributes it into channels they retain.
+
+⚠️ **Applied at the token layer, not in the builders.** Daltonization is **not idempotent** -
+adapting an already-adapted colour over-shifts it - so exactly one layer may apply it. The token
+layer means anything reading a semantic token or one of the three domain ramps is covered
+wherever it ends up, including raw `ColorRect` pips that never touch a builder. The neutral
+tokens (`Text`, `Dim`, `Accent`) stay unadapted: near-achromatic, so adaptation would move them
+for no gain while changing the UI's whole character.
+
+⚠️ **UI only, never world art.** The world-space users of the same ramps - item drop glow,
+trophy tint, spell projectiles, impact flashes - deliberately do not route through it. Recolouring
+the world is a different and much larger decision than recolouring a label, and a fire spell that
+stops looking like fire is a worse outcome than a hard-to-read chip.
+
+`ColorVisionTests` assert the **property**, not the arithmetic: after adaptation, a confusable
+pair must be further apart *under simulation* than it was before. Pinning matrix outputs would
+only prove the numbers had not been retyped.
+
+**Colour is never the only channel**, adaptation or not: rarity climbs in luminance and thickens
+its frame, stat deltas carry the arrow glyphs, quest and objective state carry a tick, perk and
+boss-phase rank are pips as well as numbers.
+
+## 9. Responsiveness
+
+⚠️ **Measure the viewport, never the window.** `GetViewportRect()` is already in *logical* pixels
+- the content-scale factor `UiScale` drives has been applied - so a Steam Deck at 1280x800 with
+UI scale 1.5 reports **853x533**, not 1280x800.
+
+Use `UiTheme.ApplyScreenInset(shell)` for a full-screen panel (the gutter shrinks below 1100 px),
+and derive any column count or fixed dimension from `UiTheme.UsableWidth` / `UsableHeight`. Call
+them from `Rebuild` as well as `BuildShell`: the setting can change mid-session, and offsets
+applied once at `_Ready` keep a stale gutter until the game restarts.
+
+37.5C and 37.5D both authored fixed columns against an assumed ~1900 px and overflowed that
+853 px viewport by **321 px** and **167 px**. Height is the axis that actually bites on a
+handheld - 533 logical px is short enough that a panel whose *width* fits comfortably can still
+run off the bottom.
+
+Verified at 854x534, 1280x800, 1920x1080 and 3440x1440.
+
+## 10. Text rules
 
 Every player-facing string goes through `Loc.T`/`Loc.TF` (`data/locale/strings.csv`) — no
 literals in labels/buttons/toasts. Sentence case for body and actions; headers may be
 short title case. Numbers the player compares (damage, weights, gold) stay unlocalised
 digits.
 
-## 9. Roadmap seams
+## 11. Roadmap seams
 
 37.5A laid the foundation above. The passes that consume it:
 
@@ -351,7 +411,7 @@ digits.
   frames with six grain shaders, and every four-second toast carried a framed screen's chrome.
   Both are `Card` now. **When a small repeated widget needs a box, it is a `Card` or a `Well`,
   never a `Panel`.**
-- **37.5G** adds text scale, colourblind modes and high contrast, and audits
-  responsiveness.
+- **37.5G** ✅ shipped the three accessibility settings and the responsiveness audit - sections 8
+  and 9 above are the result. **Phase 37.5 is complete.**
 
 When those passes land, update this document — it must stay the single source of truth.

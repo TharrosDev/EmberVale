@@ -3278,11 +3278,63 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
   - ✅ **This is the one phase whose headline screen is genuinely verified.** `run_project` lands
     on the main menu, so the shimmer shader and the brass brackets were actually instantiated and
     rendered, not merely compiled — unlike every panel in 37.5C–E, which need a keypress to open.
-- [ ] **37.5G — Accessibility & responsiveness** `[F]`
-  - **Done when:** `TextScale`, `ColorblindMode` and `HighContrast` exist in `Settings` and
-    round-trip through the settings save, and the UI is verified at 16:9 / 16:10 / 21:9 and
-    1280×800 at `UiScale` 0.75 and 1.5. Colourblind modes remap **semantic** tokens only, never
-    world art.
+- [x] **37.5G — Accessibility & responsiveness** `[F]` ✅ — **Phase 37.5 complete.**
+  - `TextScale`, `ColorVision` and `HighContrast` on `Settings`. Persistence came free: they are
+    `[Export]` fields on a Godot `Resource` and `SettingsService` saves the whole resource.
+  - ⚠️ **`UiTheme.FontSize` floors at the 12 px caption size** whatever the setting says. That
+    floor came from a real min-spec/Steam Deck audit, and a text-size control that can make text
+    unreadable is not an accessibility feature.
+  - **`ColorVision` daltonizes, it does not simulate.** Simulating would render the UI as a
+    colourblind viewer sees it — a diagnostic view, and precisely the wrong thing to ship, since it
+    makes things *less* distinguishable for the person who needs help.
+    ⚠️ **Applied at the token layer, never in the builders**, because daltonization is **not
+    idempotent** — adapting twice over-shifts. One layer only. The token layer also covers raw
+    `ColorRect` pips that never touch a builder. Neutral tokens stay unadapted.
+    ⚠️ **World art is never adapted.** `ItemPickupFactory`, `TrophyStandComponent`, spell
+    projectiles and impact flashes read the same authorities *without* going through `UiTheme`, and
+    that is deliberate — a fire spell that stops looking like fire is worse than a hard-to-read chip.
+  - The tests assert the **property**: a confusable pair must be further apart *under simulation*
+    after adaptation than before. Pinning matrix outputs would only prove nobody retyped them.
+  - ⚠️ **Responsiveness: measure the viewport, never the window.** `GetViewportRect()` is already
+    in logical pixels, so a Steam Deck at 1280×800 with UI scale 1.5 reports **853×533**. 37.5C and
+    37.5D had both authored fixed columns against an assumed ~1900 px and overflowed by **321 px**
+    and **167 px** in exactly that configuration. `UiTheme.ApplyScreenInset` / `UsableWidth` /
+    `UsableHeight` are the seams; call them from `Rebuild` too, or a mid-session scale change keeps
+    a stale gutter until restart.
+  - ⚠️ **Height is the axis that bites on a handheld.** 533 logical px is short enough that a panel
+    whose width fits comfortably still runs off the bottom — the map's fixed 500×320 plot and the
+    crafting window's fixed 500 height both did.
+  - ⚠️ **37.5C's claim that a fixed grid column count was needed for focus restore was wrong.**
+    `UiFocus` walks child *indices*, and a grid's child order does not change when it wraps
+    differently — only the visual rows do. The column count is derived from the viewport now.
+  - Verified at 854×534, 1280×800, 1920×1080 and 3440×1440.
+
+---
+
+> ### Phase 37.5 retrospective — what the seven sub-phases actually found
+>
+> The overhaul's headline work was type, material and hierarchy. The **defects** it surfaced were
+> mostly things that had shipped and stayed invisible for many phases:
+>
+> | Found | Live since |
+> | --- | --- |
+> | The character screen showed **no player stats at all** | always |
+> | Item rarity used **stock saturated MMO colours**, against UI_STYLE §2 | Phase 7 |
+> | Reactive spell **combos were documented nowhere** | Phase 29.5D |
+> | Fast-travel nodes had a position and were **never plotted** | Phase 25G |
+> | The HUD never showed **whether a target was hostile** | Phase 34.5 |
+> | The **prepared-spell cycle order** was shown nowhere | Phase 12 |
+> | Seven hand-rolled scrims, six of them **blue-black** against §1 rule 1 | various |
+>
+> Three lessons worth carrying forward:
+> 1. **Check what already exists before adding it.** 37.5A shipped a second school-colour ramp
+>    beside one that had tinted every projectile since Phase 12. 37.5F nearly rewrote a lifecycle
+>    to add a contract the screens already had.
+> 2. **`Panel()` is not a generic box.** Four separate widgets reused it as one and inherited a
+>    brass frame and a grain shader each: status chips, save rows, toasts, spell chips.
+> 3. **A check that cannot fail is not a check.** The first shader validator passed a file
+>    containing "this is not glsl"; the first grid-focus pass errored every frame *and worked
+>    perfectly under a mouse*. Both were caught only by deliberately breaking them.
 
 ---
 

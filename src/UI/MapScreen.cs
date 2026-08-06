@@ -58,7 +58,9 @@ public partial class MapScreen : UiPanel
         header.HorizontalAlignment = HorizontalAlignment.Center;
         col.AddChild(header);
 
-        _view = new MapView { CustomMinimumSize = new Vector2(500, 320) };
+        // Sized against the viewport (37.5G): a fixed 500x320 plot plus the legend and the travel
+        // list ran past the bottom of a 533 px logical viewport (Steam Deck at UI scale 1.5).
+        _view = new MapView();
         col.AddChild(_view);
 
         col.AddChild(BuildFilterRow());
@@ -115,6 +117,10 @@ public partial class MapScreen : UiPanel
 
     protected override void Rebuild()
     {
+        // Re-measured per rebuild so a mid-session UI-scale change lands without a restart.
+        float plot = Mathf.Clamp(UiTheme.UsableHeight(Shell) * 0.55f, 180f, 320f);
+        _view.CustomMinimumSize = new Vector2(0f, plot);
+
         _view.ShowRegions = _showRegions;
         _view.ShowPois = _showPois;
         _view.ShowTravel = _showTravel;
