@@ -3044,6 +3044,80 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
 
 ---
 
+## Phase 37.5 — AAA Fantasy UI Overhaul `[F/C]`
+
+> **Why an interstitial.** Phase 30.5 built a real design *system* (tokens, `UiPanel`, focus
+> restore, WCAG pins, `Loc`) and the audit found nothing to re-architect. What the UI lacked was
+> **craft**: no font assets at all, no textures or shaders, flat 1 px boxes, and no ramp for
+> rarity/school/quest/disposition. This phase is material and hierarchy, not plumbing — which is
+> exactly why it stayed out of 30.5 and why it lands before 38A rather than after: every screen
+> Phase 38+ adds should be born in the new language instead of being retrofitted later.
+
+- [x] **37.5A — Foundation: type, material, tokens** `[F]`
+  - **Done when:** every screen renders in the new typefaces on the new surfaces, with the
+    semantic ramps available, and nothing has moved. ✅
+  - Vendored **Cinzel / EB Garamond / Inter** (SIL OFL 1.1) to `assets/fonts/` with their
+    `OFL-*.txt` — the project's first non-CC0 assets, and the licence files must travel with
+    them. Wired as `FontRole` (Display / Serif / SerifItalic / Interface), loaded **lazily**
+    with a fallback to the engine default.
+    ⚠️ Lazy is load-bearing: `UiContrastTests` reads `UiTheme` tokens from xUnit with **no
+    engine running**, so an eager `GD.Load` in a static initializer would take the suite down
+    on first touch of any colour.
+  - Four `assets/shaders/ui/` shaders: `ui_grain` (the material under every panel),
+    `rune_circle`, `sigil_drift`, `ink_shimmer`. All read one `motion` uniform fed from
+    `UiTheme.MotionUniform`, so reduced motion stops them together.
+    ⚠️ The three motifs must sit on a **`ColorRect`**, never a `PanelContainer` — their polar
+    and sweep maths need UV to span 0..1, which a rounded stylebox does not guarantee.
+  - Surface depths `WellBg` / `PanelBg` / `CardBg`; material tokens `Brass` / `BrassLit` /
+    `Engrave`; arcane tokens for 37.5D's cold screen. The engraved read is **two values at
+    different depths**, not one thicker border.
+  - **Retuned the rarity ramp.** The pre-existing `ItemRarities.Color` was stock saturated MMO
+    green/blue/purple/orange — a direct breach of UI_STYLE §2 ("only accents may exceed ~40%
+    saturation") that had been live since Phase 7. It is now an ash-world ramp with three
+    properties pinned by `RarityRampTests`: luminance climbs strictly with rarity, adjacent
+    tiers stay ≥1.15:1 apart, and Legendary out-burns `Accent`.
+    ⚠️ Keep `ItemRarities.Color` as the **single authority** — `UiTheme.RarityColor` delegates
+    to it, and `ItemPickupFactory`/`TrophyStandComponent` tint world-space meshes from the same
+    values. Two copies means a drop that looks Epic on the ground and Rare in the pack.
+  - Rarity is never colour alone: `UiTheme.RarityBorderWidth` is the second channel, kept pure
+    (and therefore testable) because the test project forbids constructing Godot objects — a
+    redundancy channel nothing checks quietly stops existing.
+  - New builders so panels stop hand-rolling: `Well`/`Card`/`Divider`/`SectionRule`/`Chip`/
+    `IconSlot`/`RarityFrame`/`Meter`/`Title`/`Display`/`Prose`/`Flavour`, plus
+    `UiTheme.FontSize(token)` as the single seam 37.5G's text-scale setting lands in.
+  - `UiOrnament` holds the decorative layer and the **ornament budget**: decoration scales with
+    the rarity of the *moment* (menu, boss frame, spellbook, Legendary drop), never with the
+    importance of the widget. Rows, toggles and objectives get none, forever.
+- [ ] **37.5B — De-drift, then the HUD** `[F]`
+  - **Done when:** no `StyleBoxFlat`, colour literal or font-size override survives outside
+    `UiTheme` (~104 at audit: `GameHud` 11, `CombatFeedbackOverlay` 8, `NarrationSequence` 4,
+    `PauseMenu` 3, plus `DevConsole`/`PlacementDirector`/`CombatFeedbackFx`), and the HUD is
+    rebuilt on the new language. Split `BossFrame` and `Nameplate` out of `GameHud` (975 lines).
+- [ ] **37.5C — Character sheet, inventory, equipment, storage, crafting** `[F]`
+  - **Done when:** inventory is an icon-slot grid with rarity frames and hover stat deltas, and
+    storage/crafting share its vocabulary. Grids need explicit `FocusNeighbor*` or a d-pad walks
+    the tab order.
+- [ ] **37.5D — The Magic screen** `[F/C]`
+  - **Done when:** `SpellbookPanel` exists as its own `UiPanel` with its own input action, magic
+    is out of `InventoryPanel`'s tab strip, and the screen runs cold (`ArcaneGround`, tarnished
+    silver, the rune circle) against the rest of the UI's warmth.
+- [ ] **37.5E — Map, quest log, dialogue, bestiary** `[F]`
+  - **Done when:** marker hierarchy and filters on the map; Main/Side/Completed/Failed in the
+    log (there are no Contracts or Exploration quest kinds — do not invent headings for them);
+    dialogue in the book serif; the bestiary as an unlocking codex page.
+- [ ] **37.5F — The shell** `[F]`
+  - **Done when:** menu/pause/settings/save/loading/creator/sequences are rebuilt, and the
+    genuinely-modal `CanvasLayer` screens (settings, save slots) are migrated onto `UiPanel` so
+    they inherit the fade, focus grab, `ui_cancel` and `UiState` contract instead of
+    hand-rolling each.
+- [ ] **37.5G — Accessibility & responsiveness** `[F]`
+  - **Done when:** `TextScale`, `ColorblindMode` and `HighContrast` exist in `Settings` and
+    round-trip through the settings save, and the UI is verified at 16:9 / 16:10 / 21:9 and
+    1280×800 at `UiScale` 0.75 and 1.5. Colourblind modes remap **semantic** tokens only, never
+    world art.
+
+---
+
 ## Phase 38 — Economy, Vendors & Services `[F/C]`
 
 - [ ] **38A — `VendorComponent` + `ShopResource` (buy/sell)** `[F]`

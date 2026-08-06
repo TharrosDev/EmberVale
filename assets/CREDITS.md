@@ -496,6 +496,61 @@ the old boxes would have meant invisible walls.
 
 ---
 
+## UI assets — fonts, textures, shaders (Phase 37.5A)
+
+The first non-model asset class in the project, so it is worth stating the shape of it: the
+UI's *material* (parchment, leather, brass, stone, rune rings) is **generated in shader code**
+at `assets/shaders/ui/` — there is nothing to licence, and it retints from `UiTheme` tokens
+rather than being baked at a fixed resolution. The only sourced UI assets are the **fonts**.
+
+### The three UI typefaces — SIL Open Font License 1.1
+
+⚠️ **These are the project's first non-CC0 assets.** OFL is permissive and imposes **no in-app
+attribution obligation** — no credits screen is owed. What it *does* require is that the
+licence text travel with the font files, which is why `OFL-*.txt` sits beside the `.ttf`s and
+must not be deleted. OFL also forbids selling the fonts on their own and requires that any
+*modified* version be renamed; we ship them unmodified, so neither bites. The "every asset is
+CC0" line in **Current state** above is about `assets/models/` and stays true.
+
+- **Cinzel** (`Cinzel-Variable.ttf`, variable weight 400–900)
+  - **Source:** Google Fonts · **URL:** https://fonts.google.com/specimen/Cinzel
+  - **Licence:** SIL OFL 1.1 — `assets/fonts/OFL-cinzel.txt`
+  - **Author:** Natanael Gama / The Cinzel Project Authors (https://github.com/NDISCOVER/Cinzel)
+  - **Why selected:** display/title face. Based on classical Roman inscriptional capitals, so it
+    reads as *carved* rather than calligraphic — which is the ART_STYLE brief (engraved stone and
+    cooled iron), and specifically **not** a blackletter or a scroll script. Variable weight means
+    one file covers title, header and the heavy boss/level-up display.
+  - **Role:** `UiTheme.DisplayFont` — screen titles, section headers, boss names, menu items.
+
+- **EB Garamond** (`EBGaramond-Variable.ttf` + `EBGaramond-Italic-Variable.ttf`, 400–800)
+  - **Source:** Google Fonts · **URL:** https://fonts.google.com/specimen/EB+Garamond
+  - **Licence:** SIL OFL 1.1 — `assets/fonts/OFL-ebgaramond.txt`
+  - **Author:** Georg Duffner, Octavio Pardo / The EB Garamond Project Authors
+  - **Why selected:** lore/flavour face. A book serif for the text meant to be *read* rather than
+    scanned — dialogue bodies, item flavour, codex pages — which is where the illuminated-manuscript
+    influence belongs. The italic is shipped because flavour text uses it and synthesising a slant
+    from the upright looks exactly as cheap as it is.
+  - **Role:** `UiTheme.SerifFont`.
+
+- **Inter** (`Inter-Variable.ttf`, variable optical size + weight)
+  - **Source:** Google Fonts · **URL:** https://fonts.google.com/specimen/Inter
+  - **Licence:** SIL OFL 1.1 — `assets/fonts/OFL-inter.txt`
+  - **Author:** Rasmus Andersson / The Inter Project Authors (https://github.com/rsms/inter)
+  - **Why selected:** interface face, deliberately **not** a serif. It carries the 12 px caption
+    floor (UI_STYLE §3) that a Garamond at 12 px cannot, and it has tabular figures — stat blocks,
+    gold, weights and damage numbers align in columns instead of shimmering as digits change.
+    Chosen over a fantasy display face for body text on purpose: readability is the brief.
+  - **Role:** `UiTheme.UiFont` — body, captions, numbers, tooltips, settings.
+
+**Optimization:** none applied and none wanted — the files are shipped byte-identical to Google
+Fonts' release, which is what keeps the "unmodified, so no rename obligation" claim true. Godot
+imports them as `FontFile` with MSDF off (the UI renders at integer scales, and MSDF would cost
+sharpness at the 12 px floor for no gain).
+
+**Lands at:** `assets/fonts/`.
+
+---
+
 ## Searched for, not replaced
 
 Two full search rounds — Kenney (Fantasy Town, Survival, Modular Dungeon, Modular Cave), Poly
