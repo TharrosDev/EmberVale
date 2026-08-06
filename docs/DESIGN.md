@@ -393,10 +393,13 @@ consumes for the Dawnfire vs Lord of Embers choice. Cross-links: LORE "The Corru
 > **Intent:** a *dying* world means *scarcity* — money is tight, meaningful, and spent on
 > things that matter. Gold is a sink-driven economy, not a number that only climbs.
 
-Gold today is a **stackable inventory item** (`QuestLogComponent` grants a `GoldItemId`
-through `InventoryComponent`; loot tables roll gold). There is no vendor, wallet, or sink
-yet — those are **Phase 38**; balance is **Phase 56**. This section fixes what money is
-*for* so Phase 38 builds the right machinery:
+Gold is a **stackable inventory item** (`QuestLogComponent` grants a `GoldItemId`
+through `InventoryComponent`; loot tables roll gold), and deliberately still has **no wallet** —
+a purse would be a second place for money to live and a second thing to persist. Sinks now exist:
+housing (Phase 37A) and **trade (Phase 38A** — `ShopResource`'s buy/sell spread over
+`ItemInstance.Value`, priced by `ShopPricing`**)**. Services and reputation discounts are 38C/38D;
+balance is **Phase 56**. This section fixes what money is *for* so the rest of Phase 38 builds the
+right machinery:
 
 - **Scarcity is the setting expressed economically.** **Decision:** the player should
   rarely feel rich; gold is a constrained resource in a world that is running down, not a

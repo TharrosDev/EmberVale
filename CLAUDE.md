@@ -21,8 +21,14 @@ You are the lead engineer building this game incrementally. The non-negotiables:
 
 - **Always keep the repo buildable and playable.** A working ugly prototype beats
   a beautiful broken feature.
-- **Build real, functioning systems** — never theoretical scaffolding. Every
-  feature must be usable in-game the moment it lands.
+- **Build real, functioning systems** — never theoretical scaffolding. A feature lands
+  complete and *exercisable*: authored data, `--validate` coverage, tests for any pure logic,
+  and at least one way to drive it (an interactable, a dialogue effect, a dev-console command).
+  **A sub-phase may land the mechanism and leave its world placement to the sub-phase that
+  owns it** — `docs/SESSION_PLAYBOOK.md` is the authority on that split, and honouring it is
+  not scaffolding. What is forbidden is a system with **no caller at all when its phase
+  closes**: `CraftingComponent.Learn` sat with zero callers from Phase 15 to Phase 35, and
+  `recipe.leather_vest` rotted behind it the whole time.
 - **Persistence is not optional.** Any system that holds gameplay state must be
   able to save/load (implement `ISaveable`).
 - **Prefer composition and data.** New actors = new components + new `.tres`
@@ -216,6 +222,7 @@ Goblins roam to the north (−Z) and drop loot.
 │   ├── companions/         # CompanionResource presets (Kael) — Phase 32
 │   ├── bosses/            # BossResource presets (boss.*) — phases/abilities/enrage, Phase 36A
 │   ├── properties/        # PropertyResource presets (property.*) — claimable holdings, Phase 37A
+│   ├── shops/            # ShopResource presets (shop.*) — wares + buy/sell spread, Phase 38A
 │   ├── ai_profiles/        # AIProfileResource presets (ai.*) — enemy personalities, Phase 34A
 │   ├── enemies/            # EnemyArchetypeResource presets (enemy.*) — the roster, Phase 34B–34F
 │   ├── bestiary/           # BestiaryEntryResource presets — creature lore/reveal, Phase 34G
@@ -249,6 +256,7 @@ Goblins roam to the north (−Z) and drop loot.
     ├── Companions/          # Party roster, follower AI, formation/leash cores (Phase 32)
     ├── Onboarding/          # TutorialDirector + script (diegetic hints, Phase 33)
     ├── Housing/             # PropertyResource/Database, HousingService, deed component (Phase 37)
+    ├── Economy/             # ShopResource/Database, VendorComponent, ShopPricing (Phase 38)
     ├── Interaction/         # InteractableComponent (raycast interact)
     ├── Player/              # PlayerCharacter, PlayerController, PlayerFactory
     ├── Enemies/             # EnemyEntity, EnemyAIComponent, AIProfile/EnemyArchetype/Bestiary resources+databases, EnemyArchetypeFactory (+2 bespoke), AshenAffliction, EnemyTemplateRegistry
@@ -289,6 +297,7 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 | `src/Progression` `src/Quests` `src/Dialogue` | XP/perks, quests, conversation graphs + story flags |
 | `src/Magic` `src/World` `src/Npc` | Spells/status effects; clock/weather/encounters/events; schedules |
 | `src/Crafting` `src/Factions` | Recipes/stations; reputation/faction tags |
+| `src/Housing` `src/Economy` | Claimable holdings + placement; shops, vendors and the buy/sell spread |
 | `src/Companions` | `CompanionRoster` (party, loyalty + persistence), `CompanionAIComponent`, `CompanionResource`, formation/leash/order cores |
 | `src/Save` | `ISaveable`, `SaveManager`, `PersistentId`, `PersistentSpawnDirector` |
 | `src/UI` `src/Debugging` | `GameHud`/panels/`UiTheme`; dev console, profiler, integrity + content validators |
@@ -542,6 +551,38 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    deliberately never gated — a stand that could trap an item is worse than one holding junk.
 6. The window is the existing `StoragePanel`; a stand publishes the same `StorageOpenedEvent` with a
    `MinRarity`. There is no trophy UI to wire.
+
+**A new shop / merchant (Phase 38A)**
+1. Author `data/shops/Xxx.tres` (`script_class="ShopResource"`): unique `Id` (`shop.*`), a `NameKey`
+   in `strings.csv`, `StockItemIds`, and the spread — `BuyMarkup` (≥ 1) and `SellFraction`.
+   Auto-indexed by `ShopDatabase`. ⚠️ **`SellFraction` must stay below `BuyMarkup`.** Equal or
+   inverted is an infinite gold loop: buy a stack, sell it straight back, repeat. `--validate`
+   rejects it and `ShopPricing` clamps so a hand-edited `.tres` cannot do it either. Gold and
+   `ItemType.Quest` items are rejected from stock — a quest object bought off a shelf, or coins
+   bought with coins.
+2. Place it: an `Entity` with a collider and a `VendorComponent { ShopId = "shop.xxx" }`.
+   ⚠️ **An entity gets one interactable** — `EntityNode.GetComponent<T>` returns the *first* child
+   match, so a `VendorComponent` sitting behind a `DialogueComponent` on the same actor never fires.
+   That is why the three `town_hub.tscn` stub vendors are still conversations: making them tradeable
+   is Phase 38E's call (replace the dialogue, or add an `OpenShop` dialogue effect). Reach any shop
+   meanwhile with `shop <id>` in the F1 console.
+3. ⚠️ **`ContentValidator` does not scan `.tscn`**, so a mistyped `ShopId` gives **no prompt at all**
+   rather than an error — the same trap `PropertyStorageComponent.PropertyId` carries. A merchant
+   silently unusable in game: check that field first.
+4. **Prices have one authority: `ItemInstance.Value`**, which already folds in rarity and affix
+   count, so the spread applies to rolled loot for free. Put any new pricing maths in
+   `src/Economy/ShopPricing.cs` (Godot-free, so `ShopPricingTests` can pin it) — never at a call
+   site, and never a second price table.
+5. **Stock is static and does not deplete**, and a vendor has no purse. Deliberate: depletion without
+   38B's restock clock is a shop that can be permanently emptied, and nothing about a shop mutating
+   means no `ISaveable` and no save code. Purses are 38C's gold sink.
+6. **Buying charges before it delivers, and refunds if delivery fails.** The other order cannot work:
+   `InventoryComponent.AddInstance` merges a stackable into an existing stack, so the instance handed
+   in is often never stored and `RemoveOneInstance` would find nothing to roll back. Refunding gold
+   always works — spending it either freed a slot or left a stack with room.
+7. **Selling removes by reference for rolled items, by template id only for stackables** — the same
+   split `StoragePanel.Transfer` makes, for the same reason. A zero payout is refused rather than
+   accepted: handing an item over for nothing is item loss wearing a transaction's clothes.
 
 **A big/boss creature with body zones (Phase 35A)**
 1. Author the archetype `.tres` as above, plus:
@@ -1052,7 +1093,13 @@ withdraw from (the game's first two-way container), you can craft kits and set c
 decoration down in its yard (the game's first world-editing verb), and display stands show off
 Epic-or-better trophies. **Persistence came free all four times** — ownership is a service; the stash
 and the stands *are* inventories keyed by `PersistentId`; placed props ride `PersistentSpawnDirector`.
-The Ashfall Cottage is authored end to end as the one playable property. Next: **38A**, vendors.
+The Ashfall Cottage is authored end to end as the one playable property. **Phase 38 is in progress:
+38A is done** — a `ShopResource` carries a merchant's wares and its buy/sell spread, a
+`VendorComponent` opens the trade window, and `ShopPricing` is the one place the money arithmetic
+lives (Godot-free, so the rounding is pinned by tests). Gold finally flows both ways. The three
+Ember Crown vendors are **still stub conversations** — an entity gets one interactable, so making
+them tradeable is 38E's call; until then `shop <id>` in the F1 console opens any shop. Next: **38B**,
+stock depth (quantities, restock timers, leveled pools).
 
 **The art set standardises on Quaternius CC0 packs** (maintainer direction, 2026-08-05 — policy in
 `docs/ASSET_POLICY.md` §0, provenance in `assets/CREDITS.md`). 401 models are vendored at

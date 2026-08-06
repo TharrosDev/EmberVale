@@ -5,6 +5,7 @@ using Embervale.Core;
 using Embervale.Core.Diagnostics;
 using Embervale.Crafting;
 using Embervale.Dialogue;
+using Embervale.Economy;
 using Embervale.Enemies;
 using Embervale.Housing;
 using Embervale.Factions;
@@ -102,6 +103,7 @@ public static class ContentValidator
         ValidateEnemyArchetypes(issues);
         ValidateBosses(issues);
         ValidateProperties(issues);
+        ValidateShops(issues);
         ValidatePlaceables(issues);
         ValidateBestiary(issues);
         ValidateResourcePaths(issues);
@@ -626,6 +628,69 @@ public static class ContentValidator
     }
 
     /// <summary>
+    /// A merchant's wares and spread (Phase 38A). The spread rule is the one that matters: a
+    /// <c>SellFraction</c> at or above <c>BuyMarkup</c> is a money printer — buy a stack, sell it
+    /// straight back, repeat. <see cref="Economy.ShopPricing"/> clamps so a hand-edited resource cannot
+    /// actually do it, and this stops one being authored in the first place.
+    ///
+    /// A shop's <c>ShopId</c> lives on a <c>VendorComponent</c> in a <c>.tscn</c>, which this
+    /// validator does not scan — so a mistyped one is invisible here and shows in game as a merchant
+    /// with no prompt at all. Same blind spot as <c>PropertyStorageComponent.PropertyId</c>.
+    /// </summary>
+    private static void ValidateShops(List<string> issues)
+    {
+        foreach (ShopResource shop in ShopDatabase.All)
+        {
+            string id = shop.Id;
+
+            if (string.IsNullOrEmpty(shop.NameKey) || !Loc.Has(shop.NameKey))
+            {
+                issues.Add($"shop '{id}' name key '{shop.NameKey}' is missing from the locale catalogue");
+            }
+
+            if (shop.StockItemIds.Count == 0)
+            {
+                issues.Add($"shop '{id}' stocks nothing — its window would open empty");
+            }
+
+            foreach (string itemId in shop.StockItemIds)
+            {
+                RequireItem(itemId, $"shop '{id}' stock", issues);
+
+                if (itemId == GameIds.Currency.Gold)
+                {
+                    issues.Add($"shop '{id}' stocks gold — the player would buy coins with coins");
+                }
+                else if (ItemDatabase.Get(itemId) is { Type: ItemType.Quest })
+                {
+                    issues.Add(
+                        $"shop '{id}' stocks quest item '{itemId}' — a quest object must be found, " +
+                        "not bought off a shelf");
+                }
+            }
+
+            if (shop.BuyMarkup < 1f)
+            {
+                issues.Add(
+                    $"shop '{id}' has a buy markup below 1 ({shop.BuyMarkup}) — it would sell below " +
+                    "an item's own value");
+            }
+
+            if (shop.SellFraction <= 0f)
+            {
+                issues.Add($"shop '{id}' pays nothing when selling (sell fraction {shop.SellFraction})");
+            }
+
+            if (shop.SellFraction >= shop.BuyMarkup)
+            {
+                issues.Add(
+                    $"shop '{id}' pays at least as much as it charges (sell {shop.SellFraction} >= buy " +
+                    $"{shop.BuyMarkup}) — that is an infinite gold loop");
+            }
+        }
+    }
+
+    /// <summary>
     /// A holding's buildable yard (Phase 37C). <c>PlacementRadius = 0</c> is legal and means the
     /// holding cannot be built in; what is not legal is a negative one, or an area centred somewhere
     /// the player cannot stand. The centre is <b>world</b> space, and a cell scene is authored at its
@@ -983,6 +1048,7 @@ public static class ContentValidator
         CheckDuplicateIds<BestiaryEntryResource>("res://data/bestiary", "bestiary entry", r => r.Id, issues);
         CheckDuplicateIds<BossResource>("res://data/bosses", "boss", r => r.Id, issues);
         CheckDuplicateIds<PropertyResource>("res://data/properties", "property", r => r.Id, issues);
+        CheckDuplicateIds<ShopResource>("res://data/shops", "shop", r => r.Id, issues);
     }
 
     /// <summary>Loads every <c>.tres</c> in <paramref name="directory"/> and reports empty or

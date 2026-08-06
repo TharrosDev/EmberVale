@@ -61,6 +61,7 @@ public partial class GameBootstrap : Node3D
     private DialoguePanel _dialoguePanel = null!;
     private CraftingPanel _craftingPanel = null!;
     private StoragePanel _storagePanel = null!;
+    private VendorPanel _vendorPanel = null!;
     private Housing.PlacementDirector _placement = null!;
     private WorldClock _clock = null!;
     private WeatherDirector _weather = null!;
@@ -383,6 +384,9 @@ public partial class GameBootstrap : Node3D
         // container in the world.
         _storagePanel = new StoragePanel();
         AddChild(_storagePanel);
+        // The shop window (38A) — same one-instance-for-every-merchant shape as the two above.
+        _vendorPanel = new VendorPanel();
+        AddChild(_vendorPanel);
 
         // The world clock drives NPC routines; create it before the NPCs below so it is
         // registered in the ServiceLocator when their schedules first read the time.
