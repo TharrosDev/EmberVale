@@ -637,7 +637,12 @@ crafting stations, trophies, and customization.
 
 ### Phase 40 — Survival & Needs (scoped, deliberate) `[F]`
 
-A **decision phase**, not an assumption. Carry weight already exists (Phase 5).
+A **decision phase**, not an assumption. Carry weight exists as *data* (Phase 5) but
+is not wired to anything: `InventoryComponent` carries `MaxWeight`, `TotalWeight` and
+`IsOverEncumbered`, and the character sheet prints the weight — but nothing reads the
+limit, so it refuses no pickup and slows no one. Deciding to keep it therefore means
+*building* it, not switching it on. (Corrected by the Phase 1–5 audit, which found the
+mechanic unconsumed; the previous wording read as though it were already live.)
 Decide — and record in `docs/DESIGN.md` — whether to add durability, food/rest,
 or temperature (Frostfang fiction supports it), or to **explicitly cut** them.
 Build only what survives the design call; an empty/cut phase is a valid outcome.
