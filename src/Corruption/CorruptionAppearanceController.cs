@@ -73,8 +73,6 @@ public partial class CorruptionAppearanceController : EntityComponent
 
     private void OnTierChanged(CorruptionTierChangedEvent e) => Apply(e.Current);
 
-    /// <summary>Placeholder per-tier look: skin fades toward ash, the ember glow rises. Phase 30
-    /// replaces these stand-ins with authored materials/VFX (see the class hook note).</summary>
     /// <summary>The ART_STYLE §2.2 corruption arc, per tier (30I): how far the body ashes, an extra
     /// skin tint (violet veining early, char late), and the skin emissive (violet → ember).</summary>
     private static (float AshT, Color SkinTint, float TintT, Color Emission, float Energy) LookFor(CorruptionTier tier) => tier switch
@@ -86,6 +84,8 @@ public partial class CorruptionAppearanceController : EntityComponent
         _ => (0f, Colors.White, 0f, Colors.Black, 0f),
     };
 
+    /// <summary>Placeholder per-tier look: skin fades toward ash, the ember glow rises. Phase 30
+    /// replaces these stand-ins with authored materials/VFX (see the class hook note).</summary>
     private void Apply(CorruptionTier tier)
     {
         (float ashT, Color skinTint, float tintT, Color emission, float energy) = LookFor(tier);
