@@ -339,8 +339,18 @@ digits.
   Collect objectives name a template id, not a place. The hierarchy that *is* real is
   waypoints > regions > POIs, and fast-travel nodes had never been plotted at all despite
   carrying a `Position` since Phase 25G.
-- **37.5F** rebuilds the shell, and migrates the genuinely-modal `CanvasLayer` screens
-  onto `UiPanel`.
+- **37.5F** ✅ rebuilt the shell. ⚠️ **The `UiPanel` migration was dropped deliberately.** The
+  plan assumed the shell screens lacked the modal contract; they do not — `SettingsPanel`,
+  `SaveSlotPanel`, `MainMenu`, `PauseMenu` and `CharacterCreator` all already call
+  `UiState.Open` *and* `UiFocus.GrabFirst`. The migration's only remaining gain was the open
+  fade, against a lifecycle rewrite (they are create-per-use factories; `UiPanel` is
+  persistent-toggle) of the **only path into the game**, which no remote session can drive.
+  Not worth it. Revisit if a shell screen ever needs the dirty-flag rebuild loop.
+  ⚠️ **Third and fourth instances of the `Panel()`-as-generic-box trap**: save-slot rows and
+  toasts were both built from `PanelStyle()`, so since 37.5A a six-slot list was six brass
+  frames with six grain shaders, and every four-second toast carried a framed screen's chrome.
+  Both are `Card` now. **When a small repeated widget needs a box, it is a `Card` or a `Well`,
+  never a `Panel`.**
 - **37.5G** adds text scale, colourblind modes and high contrast, and audits
   responsiveness.
 

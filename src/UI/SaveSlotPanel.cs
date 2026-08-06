@@ -130,21 +130,58 @@ public partial class SaveSlotPanel : CanvasLayer
 
     private Control BuildRow(string slot, string label, SaveSlotInfo? info)
     {
-        PanelContainer rowPanel = UiTheme.Panel();
+        // A Card, not a Panel (37.5F). Every save row had been a full framed panel, so after 37.5A
+        // a list of six slots was six brass frames and six grain shaders stacked vertically - the
+        // frames competed with each other and with the panel actually containing them.
+        //
+        // The spine carries corruption: a save's tier is the one thing about it that is a *state*
+        // rather than a statistic, and it is what a returning player is orienting on.
+        bool corrupted = info != null && !string.Equals(info.CorruptionTier, "Untainted", System.StringComparison.OrdinalIgnoreCase);
+        Color spine = info == null ? UiTheme.Disabled
+            : corrupted ? UiTheme.CorruptionText
+            : UiTheme.Accent;
+
+        PanelContainer rowPanel = UiTheme.Card(spine);
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", 12);
-        MarginContainer rowPad = UiTheme.Padding(8);
+        MarginContainer rowPad = UiTheme.Padding(UiTheme.SpaceSm);
         rowPanel.AddChild(rowPad);
         rowPad.AddChild(row);
 
         row.AddChild(BuildThumbnail(slot, info != null));
 
-        var text = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        text.AddChild(UiTheme.Header(label));
-        text.AddChild(UiTheme.Body(info != null ? DescribeSave(info) : Loc.T("slots.empty"),
-            info != null ? UiTheme.Text : UiTheme.Dim));
-        row.AddChild(text);
+        var text = new VBoxContainer
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
+        };
+        text.AddThemeConstantOverride("separation", 2);
 
+        Label title = UiTheme.Body(label, info == null ? UiTheme.Disabled : UiTheme.Text);
+        UiTheme.ApplyType(title, UiTheme.FontRole.Display, UiTheme.HeaderFontSize);
+        text.AddChild(title);
+
+        if (info == null)
+        {
+            text.AddChild(UiTheme.Body(Loc.T("slots.empty"), UiTheme.Disabled));
+        }
+        else
+        {
+            // Structured rather than one crammed line: the region names the place, the chips carry
+            // the two facts a player compares between slots, and the caption carries the two they
+            // read once. The old single string put all five at the same weight.
+            text.AddChild(UiTheme.Body(info.Region, UiTheme.Accent));
+
+            var chips = new HBoxContainer();
+            chips.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+            chips.AddChild(UiTheme.Chip(Loc.TF("slots.level", info.Level), UiTheme.Text));
+            chips.AddChild(UiTheme.Chip(info.CorruptionTier, corrupted ? UiTheme.CorruptionText : UiTheme.Dim));
+            text.AddChild(chips);
+
+            text.AddChild(UiTheme.Caption(DescribeSave(info)));
+        }
+
+        row.AddChild(text);
         row.AddChild(BuildActions(slot, info != null));
         return rowPanel;
     }
@@ -253,11 +290,13 @@ public partial class SaveSlotPanel : CanvasLayer
         chosen?.Invoke(slot);
     }
 
+    /// <summary>The two facts a player reads once rather than compares: how long they played and
+    /// when they left. Region, level and corruption tier moved onto the card itself in 37.5F.</summary>
     private static string DescribeSave(SaveSlotInfo info)
     {
         int total = (int)info.PlaytimeSeconds;
         string played = Loc.TF("slots.playtime", total / 3600, $"{(total % 3600) / 60:00}");
         string date = Time.GetDatetimeStringFromUnixTime((long)info.TimestampUnix, true);
-        return Loc.TF("slots.entry", info.Region, info.Level, info.CorruptionTier, played, date);
+        return Loc.TF("slots.meta", played, date);
     }
 }

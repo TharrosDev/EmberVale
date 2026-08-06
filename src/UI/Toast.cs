@@ -22,11 +22,21 @@ public partial class Toast : MarginContainer
     private readonly PanelContainer _chip = new();
     private double _age;
 
+    /// <summary>The semantic colour of the thing being announced (a level-up, a failed event, an
+    /// autosave). Painted as the chip's left spine. Set before the toast enters the tree.</summary>
+    public Color Accent { get; set; } = UiTheme.Accent;
+
     public override void _Ready()
     {
         MouseFilter = MouseFilterEnum.Ignore;
         _chip.MouseFilter = MouseFilterEnum.Ignore;
-        _chip.AddThemeStyleboxOverride("panel", UiTheme.PanelStyle());
+
+        // A Card, not a Panel (37.5F). Toasts had been built from PanelStyle(), so after 37.5A each
+        // transient chip carried a 2 px brass rule, an engraved shadow and its own grain
+        // ShaderMaterial - a full framed screen's worth of chrome for one line of text that lives
+        // four seconds. This is the third instance of the same pattern (status chips in 37.5B, save
+        // rows in this same phase): a small widget that reused Panel() as a generic box.
+        _chip.AddThemeStyleboxOverride("panel", UiTheme.CardStyle(Accent));
         AddChild(_chip);
         ApplySlide(UiTheme.Duration(UiTheme.DurationBase) > 0f ? SlideDistance : 0f);
     }

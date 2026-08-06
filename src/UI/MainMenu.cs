@@ -58,21 +58,30 @@ public partial class MainMenu : CanvasLayer
 
         MarginContainer pad = UiTheme.Padding(20);
         panel.AddChild(pad);
+        panel.AddChild(UiOrnament.CornerBrass(arm: 20f, thickness: 2f, inset: 5f));
 
         var col = new VBoxContainer();
         col.AddThemeConstantOverride("separation", 8);
         pad.AddChild(col);
 
+        // The title screen and the spellbook are the only two surfaces that get the shimmer (see
+        // the ornament budget in UiOrnament). The label and the sweep are stacked in a fixed-height
+        // Control so the sweep spans the title rather than the whole column.
+        var titleStack = new Control { CustomMinimumSize = new Vector2(0f, 40f) };
         Label title = UiTheme.Display(Loc.T("menu.title"));
         title.HorizontalAlignment = HorizontalAlignment.Center;
-        col.AddChild(title);
+        title.VerticalAlignment = VerticalAlignment.Center;
+        title.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        titleStack.AddChild(title);
+        titleStack.AddChild(UiOrnament.InkShimmer(UiTheme.Accent, period: 8f, intensity: 0.45f));
+        col.AddChild(titleStack);
 
         Label subtitle = UiTheme.Body(Loc.T("menu.subtitle"), UiTheme.Dim);
         subtitle.HorizontalAlignment = HorizontalAlignment.Center;
         subtitle.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         col.AddChild(subtitle);
 
-        col.AddChild(new HSeparator());
+        col.AddChild(UiTheme.Divider());
 
         bool hasSaves = (SaveManager.Instance?.ListSlots().Count ?? 0) > 0;
 
