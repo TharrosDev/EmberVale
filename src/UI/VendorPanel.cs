@@ -3,6 +3,7 @@ using Embervale.Core;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Core.Services;
+using Embervale.Dialogue;
 using Embervale.Economy;
 using Embervale.Entities;
 using Embervale.Factions;
@@ -27,6 +28,9 @@ public partial class VendorPanel : UiPanel
 {
     private Label _title = null!;
     private Label _standing = null!;
+    private HBoxContainer _investRow = null!;
+    private Label _investLabel = null!;
+    private Button _investButton = null!;
     private Label _waresHeader = null!;
     private Label _packHeader = null!;
     private VBoxContainer _waresList = null!;
@@ -60,6 +64,24 @@ public partial class VendorPanel : UiPanel
         // reads as the shop being mispriced — the same reason every Phase 37 refusal names itself.
         _standing = UiTheme.Caption(string.Empty);
         column.AddChild(_standing);
+
+        // The stake line (38I). It sits with the standing caption rather than in the wares column
+        // because it is a fact about the merchant, not a ware: what it buys is her purse and the rows
+        // she keeps back, and both are visible from here.
+        _investRow = new HBoxContainer { Visible = false };
+        _investRow.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+
+        _investLabel = UiTheme.Caption(string.Empty);
+        _investLabel.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        _investLabel.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        _investRow.AddChild(_investLabel);
+
+        _investButton = UiTheme.Action(Loc.T("shop.invest"));
+        _investButton.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        _investButton.Pressed += OnInvestPressed;
+        _investRow.AddChild(_investButton);
+        column.AddChild(_investRow);
+
         column.AddChild(UiTheme.Divider());
 
         var columns = new HBoxContainer
@@ -179,7 +201,9 @@ public partial class VendorPanel : UiPanel
             return;
         }
 
-        if (!offer.Available || !ShopPricing.CanAfford(price, Purse()))
+        if (!offer.Available ||
+            LockFor(shop, offer, StandingWith(shop)) != StockLock.Open ||
+            !ShopPricing.CanAfford(price, Purse()))
         {
             return; // the button is already disabled and says why; re-checked on the press
         }
@@ -200,6 +224,73 @@ public partial class VendorPanel : UiPanel
         if (Stock() is { } stock && !stock.TakeOne(shop, offer.Instance))
         {
             Log.Warn($"Shop '{shop.Id}': sold '{offer.Instance.TemplateId}' that the shelf no longer had.");
+        }
+
+        MarkDirty();
+    }
+
+    /// <summary>
+    /// Which gate, if any, is holding a row shut for this player (38I). Evaluated here rather than in
+    /// <see cref="ShopStockService"/> because it depends on the player's standing and story flags, and
+    /// that service is deliberately player-agnostic. A leveled ware carries no authored row and is
+    /// therefore never gated — the pool rolled it, so there is nobody's decision to honour.
+    /// </summary>
+    private StockLock LockFor(ShopResource shop, ShopOffer offer, ReputationTier tier)
+    {
+        if (offer.Row is not { } row || !row.IsGated)
+        {
+            return StockLock.Open;
+        }
+
+        bool hasFlag = _player?.GetComponent<StoryFlagsComponent>()?.Has(row.RequiredFlagId) ?? false;
+        int invested = Stock()?.InvestmentOf(shop) ?? 0;
+
+        return ShopStock.LockOf(
+            row.RequiredTier, row.RequiredFlagId, row.RequiredInvestment, tier, hasFlag, invested);
+    }
+
+    /// <summary>A locked row says what would open it, never just that it is shut — the same rule 38F's
+    /// trade refusal follows, and for the same reason: a refusal that names its condition is a piece of
+    /// teaching nobody had to write.</summary>
+    private static string LockRefusal(StockLock locked, ShopStockEntry row) => locked switch
+    {
+        StockLock.Flag => Loc.T("shop.locked_flag"),
+        StockLock.Standing => Loc.TF("shop.locked_standing", ReputationTiers.DisplayName(row.RequiredTier)),
+        _ => Loc.TF("shop.locked_investment", row.RequiredInvestment),
+    };
+
+    /// <summary>
+    /// Buys the next rung of a stake (38I). <b>Charged first, then recorded</b> — the same order
+    /// <see cref="Buy"/> uses and for the same reason: gold can always be handed back, so a failure
+    /// after the charge is recoverable, while a stake recorded before the charge is one the player
+    /// never paid for.
+    /// </summary>
+    private void OnInvestPressed()
+    {
+        if (_shop is not { } shop || _pack is not { } pack || Stock() is not { } stock ||
+            ItemDatabase.Get(GameIds.Currency.Gold) is not { } gold)
+        {
+            return;
+        }
+
+        List<ShopInvestmentTier> tiers = shop.InvestmentTierList();
+        int held = stock.InvestmentOf(shop);
+        if (held >= tiers.Count)
+        {
+            return; // the button is already disabled and says why; re-checked on the press
+        }
+
+        int cost = tiers[held].Cost;
+        if (!ShopPricing.CanAfford(cost, Purse()) || !pack.RemoveItem(GameIds.Currency.Gold, cost))
+        {
+            return;
+        }
+
+        if (!stock.Invest(shop))
+        {
+            // The ladder moved between the rebuild and the press. Hand the money straight back.
+            pack.AddItem(gold, cost);
+            Log.Warn($"Shop '{shop.Id}': stake refused after charging; refunded {cost}g.");
         }
 
         MarkDirty();
@@ -330,6 +421,7 @@ public partial class VendorPanel : UiPanel
 
         ReputationTier tier = StandingWith(shop);
         BuildStanding(shop, tier);
+        BuildInvest(shop);
         BuildWares(shop, tier);
         BuildPack(shop);
     }
@@ -349,6 +441,44 @@ public partial class VendorPanel : UiPanel
         _standing.Text = Loc.TF(
             "shop.standing", ReputationTiers.DisplayName(tier), percent.ToString("+0;-0;0"));
         _standing.AddThemeColorOverride("font_color", UiTheme.ReputationColor(tier));
+    }
+
+    /// <summary>
+    /// The stake on offer (38I): what the next rung costs, what it does, and how much of the ladder the
+    /// player already owns. Hidden entirely on a merchant who takes no investment, which is every shop
+    /// authored before this sub-phase.
+    /// </summary>
+    private void BuildInvest(ShopResource shop)
+    {
+        List<ShopInvestmentTier> tiers = shop.InvestmentTierList();
+        _investRow.Visible = tiers.Count > 0;
+        if (tiers.Count == 0)
+        {
+            return;
+        }
+
+        int held = Stock()?.InvestmentOf(shop) ?? 0;
+        if (held >= tiers.Count)
+        {
+            _investLabel.Text = Loc.T("shop.invest_full");
+            _investButton.Disabled = true;
+            _investButton.TooltipText = Loc.T("shop.invest_full");
+            return;
+        }
+
+        ShopInvestmentTier next = tiers[held];
+
+        // A rung that only unlocks stock says so rather than quoting a purse bonus of zero — the two
+        // are different offers and a player deciding whether to spend needs to know which one this is.
+        string offer = next.PurseBonus > 0
+            ? Loc.TF("shop.invest_offer", next.Cost, next.PurseBonus)
+            : Loc.TF("shop.invest_access", next.Cost);
+
+        _investLabel.Text = $"{offer}   {Loc.TF("shop.invest_held", held, tiers.Count)}";
+
+        bool affordable = ShopPricing.CanAfford(next.Cost, Purse());
+        _investButton.Disabled = !affordable;
+        _investButton.TooltipText = affordable ? string.Empty : Loc.T("shop.cannot_afford");
     }
 
     private void BuildWares(ShopResource shop, ReputationTier tier)
@@ -376,6 +506,11 @@ public partial class VendorPanel : UiPanel
                 offer.Instance.Value, ShopPricing.MarkupFor(shop.BuyMarkup, tier, specialty));
             bool affordable = ShopPricing.CanAfford(price, purse);
 
+            // 38I: a gated row is shown, greyed, with the gate named — the same choice a sold-out row
+            // makes below, and for a stronger reason. A hidden row teaches nothing; a locked one is
+            // how the player learns that standing and a stake buy something.
+            StockLock locked = LockFor(shop, offer, tier);
+
             // A sold-out row stays on the shelf, greyed. Removing it would read as the shop never
             // having stocked the thing, which is the opposite of what happened.
             ShopOffer captured = offer;
@@ -385,10 +520,16 @@ public partial class VendorPanel : UiPanel
                 quantity: offer.Unlimited ? 1 : offer.Remaining,
                 priceText: Loc.TF("shop.price", price),
                 action: Loc.T("shop.buy"),
-                enabled: offer.Available && affordable,
-                refusal: offer.Available ? Loc.T("shop.cannot_afford") : Loc.T("shop.sold_out"),
+                enabled: offer.Available && locked == StockLock.Open && affordable,
+
+                // The lock is named before the price: a player who cannot buy this at any amount of
+                // gold must not be told to come back with more of it.
+                refusal: locked != StockLock.Open ? LockRefusal(locked, offer.Row!)
+                    : offer.Available ? Loc.T("shop.cannot_afford")
+                    : Loc.T("shop.sold_out"),
                 onPressed: () => Buy(shop, captured, price),
-                specialty: specialty);
+                specialty: specialty,
+                locked: locked != StockLock.Open);
         }
     }
 
@@ -479,7 +620,8 @@ public partial class VendorPanel : UiPanel
         string refusal,
         System.Action onPressed,
         bool specialty = false,
-        bool glutted = false)
+        bool glutted = false,
+        bool locked = false)
     {
         PanelContainer card = UiTheme.Card(UiTheme.RarityColor(instance.Rarity));
         var row = new HBoxContainer();
@@ -504,13 +646,20 @@ public partial class VendorPanel : UiPanel
         // A price that moved must say why it moved — the same rule the standing caption follows. The
         // full line-by-line breakdown is 38U's; this is the marker 38F owes, and without it a payout
         // 25% above the shop across the square reads as one of the two being mispriced.
-        if (specialty || glutted)
+        if (specialty || glutted || locked)
         {
             var trade = new HBoxContainer();
             trade.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
             if (specialty)
             {
                 trade.AddChild(UiTheme.Chip(Loc.T("shop.specialty"), UiTheme.Accent));
+            }
+
+            // 38I: the chip is the glance, the tooltip is the reason. A greyed button alone reads as
+            // "you cannot afford this", which for a gated row is the wrong answer at any price.
+            if (locked)
+            {
+                trade.AddChild(UiTheme.Chip(Loc.T("shop.locked"), UiTheme.Disabled));
             }
 
             // 38H: a payout that fell has to say why, or a merchant who paid 6 gold yesterday and 3 today

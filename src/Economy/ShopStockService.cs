@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Embervale.Core;
 using Embervale.Core.Diagnostics;
@@ -15,7 +16,7 @@ namespace Embervale.Economy;
 /// <summary>One row of what a shop currently has. <see cref="Remaining"/> below zero is unlimited —
 /// the authored <c>Quantity = 0</c> case, kept distinct from a genuine 0 so a sold-out row and a
 /// bottomless one cannot be confused by a caller doing arithmetic.</summary>
-public readonly record struct ShopOffer(ItemInstance Instance, int Remaining)
+public readonly record struct ShopOffer(ItemInstance Instance, int Remaining, ShopStockEntry? Row = null)
 {
     public bool Unlimited => Remaining < 0;
 
@@ -65,6 +66,11 @@ public partial class ShopStockService : Node, ISaveable
         /// <summary>Gold the merchant has left to buy with; <c>-1</c> when the shop authors no purse.</summary>
         public int Purse { get; set; } = ShopStock.UnlimitedPurse;
 
+        /// <summary>Rungs of the merchant's investment ladder the player has bought (38I). Permanent:
+        /// nothing in the game reduces it, and a restock does not clear it — that is the difference
+        /// between a stake and everything else this service holds.</summary>
+        public int Investment { get; set; }
+
         public bool Stocked { get; set; }
     }
 
@@ -106,7 +112,12 @@ public partial class ShopStockService : Node, ISaveable
             int remaining = entry.Quantity <= 0
                 ? -1
                 : state.Remaining.GetValueOrDefault(entry.ItemId, entry.Quantity);
-            offers.Add(new ShopOffer(ItemInstance.Plain(template), remaining));
+
+            // The authored row rides along so the window can read its gates (38I). The gate is
+            // evaluated there, not here: it depends on the player's standing and story flags, and this
+            // service is deliberately player-agnostic — the dev console opens a shop with no player at
+            // all, and OfferFor is also what the `shop` listing reads.
+            offers.Add(new ShopOffer(ItemInstance.Plain(template), remaining, entry));
         }
 
         foreach (ItemInstance rolled in state.Rolled)
@@ -190,6 +201,59 @@ public partial class ShopStockService : Node, ISaveable
     /// <summary>What the merchant has left to spend, or <c>-1</c> for an unlimited purse (38C).</summary>
     public int PurseFor(ShopResource shop) => StateFor(shop).Purse;
 
+    /// <summary>How many rungs of this merchant's investment ladder the player holds (38I).</summary>
+    public int InvestmentOf(ShopResource shop) => StateFor(shop).Investment;
+
+    /// <summary>
+    /// Records one more rung of a stake (38I). Returns false when the ladder is already fully bought,
+    /// so a caller that has charged the player can tell a sale from a race — the same contract
+    /// <see cref="TakeOne"/> has.
+    ///
+    /// ⚠️ <b>Called only after the gold has been taken</b>, exactly as <see cref="Absorb"/> is called
+    /// only after the goods change hands. Nothing may record a stake on a path that did not charge.
+    ///
+    /// The live purse rises immediately rather than at the next restock: a player who invests to be
+    /// able to sell the haul they are standing there holding should not be told to come back tomorrow.
+    /// </summary>
+    public bool Invest(ShopResource shop)
+    {
+        ShopState state = StateFor(shop);
+        List<ShopInvestmentTier> tiers = shop.InvestmentTierList();
+
+        if (state.Investment >= tiers.Count)
+        {
+            return false;
+        }
+
+        int bonus = tiers[state.Investment].PurseBonus;
+        state.Investment++;
+
+        // An unlimited purse (< 0) is left alone — it already covers everything, and adding to it
+        // would make it finite. ShopStock.PurseAfterInvestment says the same thing for the restock.
+        if (state.Purse >= 0 && bonus > 0)
+        {
+            state.Purse += bonus;
+        }
+
+        Revision++;
+        Log.Info($"Shop '{shop.Id}': stake now {state.Investment}/{tiers.Count}, purse {state.Purse}.");
+        return true;
+    }
+
+    /// <summary>The purse a restock refills this shop to, with the player's stake folded in (38I).
+    /// One home for the sum, so the restock and the refund clamp cannot drift apart.</summary>
+    private static int EffectivePurse(ShopResource shop, int invested)
+    {
+        List<ShopInvestmentTier> tiers = shop.InvestmentTierList();
+        var bonuses = new List<int>(tiers.Count);
+        foreach (ShopInvestmentTier tier in tiers)
+        {
+            bonuses.Add(tier.PurseBonus);
+        }
+
+        return ShopStock.PurseAfterInvestment(shop.PurseGold, ShopStock.PurseBonusThrough(bonuses, invested));
+    }
+
     /// <summary>
     /// Spends from the merchant's purse. Returns false when they are short, so a sale is refused rather
     /// than paid part-way — half-paying for an item is the same class of bug as 38A's zero payout, and
@@ -215,7 +279,10 @@ public partial class ShopStockService : Node, ISaveable
     public void RefundPurse(ShopResource shop, int amount)
     {
         ShopState state = StateFor(shop);
-        state.Purse = ShopStock.AfterRefund(state.Purse, amount, shop.PurseGold);
+        // Clamped to the *invested* purse, not the authored one (38I) — otherwise a sale that debited
+        // and then failed would quietly refund the merchant back down to her pre-stake ceiling and
+        // erase what the player paid for.
+        state.Purse = ShopStock.AfterRefund(state.Purse, amount, EffectivePurse(shop, state.Investment));
         Revision++;
     }
 
@@ -252,8 +319,10 @@ public partial class ShopStockService : Node, ISaveable
         state.LastRestockDay = CurrentDay();
         state.Stocked = true;
 
-        // The purse refills with the shelves — one clock, both directions of trade.
-        state.Purse = shop.PurseGold > 0 ? shop.PurseGold : ShopStock.UnlimitedPurse;
+        // The purse refills with the shelves — one clock, both directions of trade — and refills to the
+        // figure the player's stake bought (38I), which is the whole return on an investment: a
+        // merchant who can absorb more of every haul, every restock, permanently.
+        state.Purse = EffectivePurse(shop, state.Investment);
 
         if (shop.LeveledTable != null)
         {
@@ -334,6 +403,7 @@ public partial class ShopStockService : Node, ISaveable
             {
                 ["day"] = state.LastRestockDay,
                 ["purse"] = state.Purse,
+                ["invest"] = state.Investment,
                 ["remaining"] = remaining,
                 ["absorbed"] = absorbed,
                 ["rolled"] = rolled,
@@ -382,6 +452,11 @@ public partial class ShopStockService : Node, ISaveable
             // Absent means a save from before 38C: -1 (unlimited) rather than 0, or every restored
             // merchant would read as broke until their next restock.
             Purse = entry.TryGetValue("purse", out Variant purse) ? purse.AsInt32() : ShopStock.UnlimitedPurse,
+
+            // Absent means no stake, which is every save written before 38I and is exactly right for
+            // them: a merchant restored from an older timeline is one nobody has invested in. The
+            // opposite default would hand out a permanent purse the player never paid for.
+            Investment = entry.TryGetValue("invest", out Variant invest) ? Math.Max(0, invest.AsInt32()) : 0,
 
             // A restored shop counts as stocked even with nothing left, or reopening it would restock
             // a shop the player had legitimately bought out.

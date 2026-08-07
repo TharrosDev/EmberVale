@@ -157,6 +157,18 @@ trade.tag.furnishing,furnishings
 trade.tag.trophy,trophies
 trade.tag.relic,relics
 trade.tag.luxury,fine goods
+# Stock tiers and merchant investment (Phase 38I). Each lock names a different thing to go and do, in the
+# order flag -> standing -> gold, so a player is never told to invest in a merchant who is waiting on a
+# story beat. A stake is permanent and buys two things only: her purse and the rows behind it.
+shop.locked_flag,Not shown to strangers.
+shop.locked_standing,"Kept for {0} and better."
+shop.locked_investment,"Kept for those with a stake ({0})."
+shop.locked,locked
+shop.invest,Invest
+shop.invest_offer,"A stake in the business: {0}g for {1}g more in their purse."
+shop.invest_access,"A stake in the business: {0}g, and they open the rest of their stock."
+shop.invest_held,"Stake: {0} of {1}"
+shop.invest_full,You already own all the stake they will sell.
 # Services (Phase 38D). Each refusal is its own line: a rested bed, a bought mount and a lesson already
 # learned are different sentences, and one shared "nothing to do here" reads as a broken interactable.
 service.ember_crown.inn.name,The Ashen Hearth

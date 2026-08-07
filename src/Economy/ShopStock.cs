@@ -1,6 +1,20 @@
 using System;
+using System.Collections.Generic;
+using Embervale.Factions;
 
 namespace Embervale.Economy;
+
+/// <summary>
+/// Why a stock row is not for sale (Phase 38I). <see cref="Open"/> is the sellable case; the other
+/// three each name a different thing to go and do, which is the whole reason they are not one boolean.
+/// </summary>
+public enum StockLock
+{
+    Open,
+    Flag,
+    Standing,
+    Investment,
+}
 
 /// <summary>
 /// When a shop restocks, and how good its leveled pool rolls (Phase 38B). Godot-free for the same
@@ -140,6 +154,77 @@ public static class ShopStock
 
         return total;
     }
+
+    /// <summary>
+    /// Which gate, if any, is holding a stock row shut (Phase 38I).
+    ///
+    /// ⚠️ <b>The order is the feature.</b> A row behind all three gates reports the story flag first,
+    /// then standing, then gold — the same rule <c>PropertyClaim.Resolve</c> follows, so a player is
+    /// never sent to earn coin for something a story beat is holding shut. Collapsing the three into
+    /// one "locked" would tell a player to go and invest in a merchant who is waiting on a quest.
+    ///
+    /// Every parameter is a plain value so the test project can reach it, exactly as
+    /// <see cref="ShopPricing"/>'s are — the shop resource and the player's components are read at the
+    /// call site.
+    /// </summary>
+    public static StockLock LockOf(
+        ReputationTier requiredTier,
+        string requiredFlagId,
+        int requiredInvestment,
+        ReputationTier standing,
+        bool hasFlag,
+        int invested)
+    {
+        if (!string.IsNullOrEmpty(requiredFlagId) && !hasFlag)
+        {
+            return StockLock.Flag;
+        }
+
+        if (standing < requiredTier)
+        {
+            return StockLock.Standing;
+        }
+
+        if (invested < requiredInvestment)
+        {
+            return StockLock.Investment;
+        }
+
+        return StockLock.Open;
+    }
+
+    /// <summary>
+    /// The purse bonus earned by the rungs of a stake the player actually holds (Phase 38I). Takes the
+    /// bonuses as plain numbers rather than the authored sub-resources so this file stays Godot-free.
+    ///
+    /// Clamps rather than throws on a count past the end of the ladder: a save carrying more rungs than
+    /// the shop still authors is a content edit, not a corruption, and the player keeps what they paid
+    /// for up to what exists.
+    /// </summary>
+    public static int PurseBonusThrough(IReadOnlyList<int> bonuses, int invested)
+    {
+        int total = 0;
+        int held = Math.Min(invested, bonuses.Count);
+        for (int i = 0; i < held; i++)
+        {
+            total += Math.Max(0, bonuses[i]);
+        }
+
+        return total;
+    }
+
+    /// <summary>
+    /// The purse a restock refills to once a stake is taken into account (Phase 38I).
+    ///
+    /// ⚠️ <b>An unlimited purse stays unlimited.</b> A merchant who authors no purse buys anything at
+    /// all, so adding a bonus to it would make her <em>finite</em> — a downgrade the player paid gold
+    /// for, and the exact opposite of what a stake promises. The guard lives here rather than at the
+    /// call site so a future caller cannot forget it, the same reason
+    /// <see cref="SaturationMultiplier"/>'s never-restocks case does. <c>--validate</c> still rejects
+    /// the authoring, because the arithmetic being safe does not make the data meaningful.
+    /// </summary>
+    public static int PurseAfterInvestment(int authoredPurse, int bonus) =>
+        authoredPurse <= 0 ? UnlimitedPurse : authoredPurse + Math.Max(0, bonus);
 
     /// <summary>Sentinel for a merchant who authors no purse and can buy anything.</summary>
     public const int UnlimitedPurse = -1;

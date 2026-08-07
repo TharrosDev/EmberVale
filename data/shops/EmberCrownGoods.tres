@@ -1,8 +1,9 @@
-[gd_resource type="Resource" script_class="ShopResource" load_steps=9 format=3 uid="uid://cmbrvlshopgoods"]
+[gd_resource type="Resource" script_class="ShopResource" load_steps=12 format=3 uid="uid://cmbrvlshopgoods"]
 
 [ext_resource type="Script" path="res://src/Economy/ShopResource.cs" id="1_shop"]
 [ext_resource type="Script" path="res://src/Economy/ShopStockEntry.cs" id="2_entry"]
 [ext_resource type="Resource" path="res://data/loot/ShopLeveledGear.tres" id="3_leveled"]
+[ext_resource type="Script" path="res://src/Economy/ShopInvestmentTier.cs" id="4_tier"]
 
 ; The first shop (Phase 38A, stocked properly in 38B): the Ember Crown's general goods. Consumables
 ; and common materials rather than gear — a merchant who sold weapons outright would be competing with
@@ -66,14 +67,38 @@ script = ExtResource("2_entry")
 ItemId = "item.material.scrap"
 Quantity = 0
 
+; 38I — Aldreth sells a single rung, and it carries the largest purse bonus in town. That is his
+; identity expressed as an investment: he already takes everything the player carries (no AcceptedTags,
+; the general store), so what a stake in his stall buys is the one thing he actually runs out of, which
+; is coin. A player who has been dumping goblin hides into him all week and watching the purse line go
+; grey knows exactly what 400g more a day is worth.
+;
+; One rung rather than Bryn's two on purpose: a ladder should not be every merchant's shape, or backing
+; one stops being a decision and becomes a checklist.
+
+[sub_resource type="Resource" id="Invest_share"]
+script = ExtResource("4_tier")
+Cost = 1000
+PurseBonus = 400
+
+; The ruby is the row behind it — the one luxury in the realm that is sold rather than found, and the
+; reason the rung is worth taking even for a player who never sells anything.
+
+[sub_resource type="Resource" id="Stock_ruby"]
+script = ExtResource("2_entry")
+ItemId = "item.gem.ruby"
+Quantity = 1
+RequiredInvestment = 1
+
 [resource]
 script = ExtResource("1_shop")
 Id = "shop.ember_crown.goods"
 NameKey = "shop.ember_crown.goods.name"
 FactionId = "faction.villagers"
-Stock = Array[Resource]([SubResource("Stock_potion"), SubResource("Stock_herb"), SubResource("Stock_ore"), SubResource("Stock_strips"), SubResource("Stock_scrap")])
+Stock = Array[Resource]([SubResource("Stock_potion"), SubResource("Stock_herb"), SubResource("Stock_ore"), SubResource("Stock_strips"), SubResource("Stock_scrap"), SubResource("Stock_ruby")])
 RestockDays = 1
 LeveledTable = ExtResource("3_leveled")
 BuyMarkup = 1.5
 SellFraction = 0.4
 PurseGold = 250
+InvestmentTiers = Array[Resource]([SubResource("Invest_share")])

@@ -1,3 +1,4 @@
+using Embervale.Factions;
 using Godot;
 
 namespace Embervale.Economy;
@@ -24,4 +25,34 @@ public partial class ShopStockEntry : Resource
     /// that pairing rather than leaving it to be discovered.
     /// </summary>
     [Export] public int Quantity { get; set; }
+
+    /// <summary>
+    /// The lowest standing that may buy this row (Phase 38I). <see cref="ReputationTier.Hated"/> is
+    /// the bottom of the ramp, so <b>the default is ungated</b> and no sentinel value is needed — the
+    /// same trick <see cref="Quantity"/>'s <c>0</c> plays for unlimited stock.
+    /// </summary>
+    [Export] public ReputationTier RequiredTier { get; set; } = ReputationTier.Hated;
+
+    /// <summary>
+    /// A story flag the player must hold for this row to be sold (Phase 38I). Empty is ungated.
+    ///
+    /// ⚠️ <c>--validate</c> rejects a flag nothing ever writes, through the same reader/writer
+    /// cross-reference that guards <c>RegionResource.UnlockFlagId</c>. A mistyped flag here is a shelf
+    /// that never opens, silently and permanently.
+    /// </summary>
+    [Export] public string RequiredFlagId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// How many rungs of a stake in this merchant the player must hold (Phase 38I). <c>0</c> is
+    /// ungated; anything above the shop's authored ladder is unreachable stock and <c>--validate</c>
+    /// rejects it.
+    /// </summary>
+    [Export] public int RequiredInvestment { get; set; }
+
+    /// <summary>Whether this row is gated at all — the cheap test the "every row is gated" validator
+    /// rule and the window's ordering both read, so they cannot disagree.</summary>
+    public bool IsGated =>
+        RequiredTier > ReputationTier.Hated ||
+        RequiredFlagId.Length > 0 ||
+        RequiredInvestment > 0;
 }

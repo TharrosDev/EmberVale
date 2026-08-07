@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://src/Economy/ShopResource.cs" id="1_shop"]
 [ext_resource type="Script" path="res://src/Economy/ShopStockEntry.cs" id="2_entry"]
+[ext_resource type="Script" path="res://src/Economy/ShopInvestmentTier.cs" id="3_tier"]
 
 ; Bryn's forge (Phase 38E). The second merchant in the game, and the first one reached by talking to a
 ; person rather than by a dev command: Bryn keeps his conversation and his quest, and trade hangs off a
@@ -63,6 +64,48 @@ script = ExtResource("2_entry")
 ItemId = "item.armor.leather_vest"
 Quantity = 1
 
+; 38I — the forge is the first business in the game the player can own a piece of, and it is a two-rung
+; ladder rather than a single payment so the sink has somewhere to keep going. Bryn is the right first
+; merchant for it: a forge is a thing with capacity, and buying into one reads as buying more of it.
+;
+; Each rung does the same two things, which is all a stake ever does: it raises what he can pay for a
+; haul (PurseBonus, applied at every future restock, permanently) and it opens a shelf he otherwise
+; keeps back. It moves no price — standing already owns the price ramp (38C), and 38F's sweep contract
+; means a third multiplier would have to earn its place in the invariant test. This one has nothing to
+; add to it.
+;
+; The costs (600 then 1500) are late-game money against a 300g purse and a 30g sword. They are meant to
+; be a decision rather than a purchase, and like every number here they are Phase 56's to tune.
+
+[sub_resource type="Resource" id="Invest_apprentice"]
+script = ExtResource("3_tier")
+Cost = 600
+PurseBonus = 150
+
+[sub_resource type="Resource" id="Invest_partner"]
+script = ExtResource("3_tier")
+Cost = 1500
+PurseBonus = 300
+
+; The two gated shelves. A ring first (cheap enough that the first rung nearly pays for itself in
+; access), the drakescale mail second — the most valuable thing any merchant in the Ember Crown sells,
+; and the one piece of gear in town that is bought rather than looted or forged.
+;
+; Both stay VISIBLE and greyed while locked, with the gate named in the tooltip. A hidden row teaches the
+; player nothing; a locked one is the entire reason they find out a stake buys something.
+
+[sub_resource type="Resource" id="Stock_ring"]
+script = ExtResource("2_entry")
+ItemId = "item.ring.iron"
+Quantity = 1
+RequiredInvestment = 1
+
+[sub_resource type="Resource" id="Stock_mail"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.drakescale_mail"
+Quantity = 1
+RequiredInvestment = 2
+
 [resource]
 script = ExtResource("1_shop")
 Id = "shop.ember_crown.smith"
@@ -70,8 +113,9 @@ NameKey = "shop.ember_crown.smith.name"
 FactionId = "faction.villagers"
 AcceptedTags = Array[String](["metal", "ore", "weapon", "armor", "tool"])
 Specialties = Array[String](["metal", "weapon", "armor"])
-Stock = Array[Resource]([SubResource("Stock_ingot"), SubResource("Stock_strips"), SubResource("Stock_scrap"), SubResource("Stock_sword"), SubResource("Stock_cap"), SubResource("Stock_vest")])
+Stock = Array[Resource]([SubResource("Stock_ingot"), SubResource("Stock_strips"), SubResource("Stock_scrap"), SubResource("Stock_sword"), SubResource("Stock_cap"), SubResource("Stock_vest"), SubResource("Stock_ring"), SubResource("Stock_mail")])
 RestockDays = 2
 BuyMarkup = 1.5
 SellFraction = 0.45
 PurseGold = 300
+InvestmentTiers = Array[Resource]([SubResource("Invest_apprentice"), SubResource("Invest_partner")])

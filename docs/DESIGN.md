@@ -409,6 +409,7 @@ a wallet would be a second place for money to live and a second thing to persist
 | A bank account | `ServiceKind.Bank` — a one-off fee, then a persistent vault forever | 38D |
 | Training | `ServiceKind.Trainer` — a lesson: recipes taught, XP granted, charged once | 38D |
 | A mount | `ServiceKind.Stable` — the purchase and its record; Phase 39A owns the mount | 38D |
+| A stake in a merchant | `ShopResource.InvestmentTiers` → `ShopStockService.Invest`. Permanent, never repaid | 38I |
 | Repair | — | **pending 40A** |
 
 **Repair is not built, and that is a decision rather than an omission.** No durability or condition
@@ -440,6 +441,18 @@ redundant — it is also the substrate regional demand, contraband and collector
 ⚠️ Both empties fail *open* (an untagged item sells anywhere, a merchant with no accept list buys
 anything), and a settlement must always contain one merchant who takes everything, or loot becomes
 unsellable by authoring accident.
+
+**A merchant is a business the player can own a piece of** (38I). Stock rows can be gated by standing,
+by a story flag, or by how far the player has bought into the merchant, and gold buys a permanent stake:
+a rung of an authored ladder that raises her purse at every future restock and opens the shelves she
+keeps back. **Decision:** this is the arc's flagship *late-game* sink, and it is the first one that is
+not a purchase — every other entry in the table above hands the player an object or a night's sleep,
+which stops mattering once the gear stops improving. A stake hands back capacity and access, and it is
+never repaid in coin. ⚠️ **It moves no price**, deliberately: standing already owns the price ramp, and a
+second buy-side multiplier would duplicate it from an authority that could drift. ⚠️ A locked row is
+**shown, greyed, with its gate named** in the order flag → standing → gold, so a player is never sent to
+earn coin for something a story beat is holding shut — and so that a gate teaches the player it exists
+rather than hiding the fact that the shelf goes deeper.
 
 **Standing moves prices, in both directions** (38C): `ShopPricing.PriceMultiplierFor` runs from a 15%
 surcharge at the hostile end of the ramp to 15% off at Allied, and a faction the player is *hostile* to

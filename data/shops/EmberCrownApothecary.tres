@@ -46,6 +46,32 @@ script = ExtResource("2_entry")
 ItemId = "item.material.elemental_mote"
 Quantity = 0
 
+; 38I — Mirela is the contrast case, and it is deliberate that she sells NO stake. A gate does not need
+; an investment behind it: she keeps things back for people she trusts and for people who have done
+; something, which is what standing and a story flag already say. Making every gate cost gold would have
+; collapsed three different reasons into one.
+;
+; The dragon scale is behind flag.iron_king_defeated — the boss's own DefeatFlagId, so nothing new
+; writes it and --validate's reader/writer cross-reference already covers the typo. A reagent she only
+; brings out for someone who has killed the thing on the mountain reads as a merchant with a memory
+; rather than as a lock.
+;
+; The alchemy kit is behind Honored standing (RequiredTier = 5 on the ReputationTier ramp). It is the
+; one row in the realm that lets the player stop needing her, which is exactly the thing a shopkeeper
+; sells last.
+
+[sub_resource type="Resource" id="Stock_scale"]
+script = ExtResource("2_entry")
+ItemId = "item.material.dragon_scale"
+Quantity = 1
+RequiredFlagId = "flag.iron_king_defeated"
+
+[sub_resource type="Resource" id="Stock_kit"]
+script = ExtResource("2_entry")
+ItemId = "item.kit.alchemy"
+Quantity = 1
+RequiredTier = 5
+
 [resource]
 script = ExtResource("1_shop")
 Id = "shop.ember_crown.apothecary"
@@ -53,7 +79,7 @@ NameKey = "shop.ember_crown.apothecary.name"
 FactionId = "faction.villagers"
 AcceptedTags = Array[String](["herb", "reagent", "potion", "arcane"])
 Specialties = Array[String](["herb", "reagent", "potion"])
-Stock = Array[Resource]([SubResource("Stock_potion"), SubResource("Stock_herb"), SubResource("Stock_dust"), SubResource("Stock_mote")])
+Stock = Array[Resource]([SubResource("Stock_potion"), SubResource("Stock_herb"), SubResource("Stock_dust"), SubResource("Stock_mote"), SubResource("Stock_scale"), SubResource("Stock_kit")])
 RestockDays = 1
 BuyMarkup = 1.6
 SellFraction = 0.4

@@ -55,7 +55,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("tutorial", "tutorial <status|skip|restart>", "Inspect or drive the onboarding hints (Phase 33B).", Tutorial));
         console.Register(new ConsoleCommand("opening", "opening", "Replay the new-game prologue (Phase 33A).", Opening));
         console.Register(new ConsoleCommand("companion", "companion <list|recruit <id>|dismiss <id>|stance <id> <follow|hold|engage>|order|loyalty <id> [delta]>", "Inspect and drive the companion party (Phase 32A).", Companion));
-        console.Register(new ConsoleCommand("shop", "shop [id|restock <id>]", "List shops, open one's trade window, or force a restock (Phase 38A/B).", Shop));
+        console.Register(new ConsoleCommand("shop", "shop [id|restock <id>|invest <id>]", "List shops, open one's trade window, force a restock, or buy a stake (Phase 38A/B/I).", Shop));
         console.Register(new ConsoleCommand("service", "service [id]", "List services, or use one on the player (Phase 38D).", Service));
         console.Register(new ConsoleCommand("savecheck", "savecheck", "Audit registered saveables for volatile (would-orphan) keys (Phase 25.5A).", SaveCheck));
 
@@ -143,9 +143,13 @@ public static class DevCommands
             foreach (ShopResource s in ShopDatabase.All)
             {
                 string restock = s.RestockDays > 0 ? $"every {s.RestockDays}d" : "never";
+                int rungs = s.InvestmentTierList().Count;
+                string stake = rungs == 0
+                    ? string.Empty
+                    : $", stake {(TryService(out ShopStockService held) ? held.InvestmentOf(s) : 0)}/{rungs}";
                 sb.Append(
                     $"  {s.Id}  — {s.StockList().Count} row(s), buy x{s.BuyMarkup}, sell x{s.SellFraction}, " +
-                    $"restocks {restock}{(s.LeveledTable != null ? ", leveled pool" : string.Empty)}\n");
+                    $"restocks {restock}{(s.LeveledTable != null ? ", leveled pool" : string.Empty)}{stake}\n");
             }
 
             return sb.ToString().TrimEnd();
@@ -154,11 +158,34 @@ public static class DevCommands
         // `shop restock <id>` skips the wait: an in-game day is DayLengthSeconds of real time, so
         // watching a restock happen naturally means three minutes of standing still per day.
         bool forceRestock = args[0].Equals("restock", System.StringComparison.OrdinalIgnoreCase);
-        string shopId = forceRestock ? (args.Length > 1 ? args[1] : string.Empty) : args[0];
+
+        // `shop invest <id>` buys a rung without the gold (38I). A stake is deliberately expensive —
+        // reaching the tiered shelves by farming would be an evening's work per rung, and what needs
+        // exercising is the gate and the raised purse, not the earning.
+        bool invest = args[0].Equals("invest", System.StringComparison.OrdinalIgnoreCase);
+        string shopId = forceRestock || invest ? (args.Length > 1 ? args[1] : string.Empty) : args[0];
 
         if (ShopDatabase.Get(shopId) is not { } shop)
         {
             return $"unknown shop '{shopId}'";
+        }
+
+        if (invest)
+        {
+            if (!TryService(out ShopStockService stakes))
+            {
+                return "no shop stock service";
+            }
+
+            int rungs = shop.InvestmentTierList().Count;
+            if (!stakes.Invest(shop))
+            {
+                return rungs == 0
+                    ? $"{shop.Id} sells no stake"
+                    : $"{shop.Id} stake already full ({rungs}/{rungs})";
+            }
+
+            return $"{shop.Id} stake now {stakes.InvestmentOf(shop)}/{rungs}, purse {stakes.PurseFor(shop)}";
         }
 
         if (forceRestock)
