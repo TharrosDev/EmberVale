@@ -337,6 +337,19 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 - **Lifecycle order:** identity is set in `_EnterTree` (top-down); components
   initialize in `_Ready` (bottom-up). Don't rely on a sibling component's
   `OnInitialize` having run — only on the host existing.
+- ⚠️ **A component may never `AddChild` to `Entity.Body` directly in `OnInitialize`** — always
+  `Entity!.Body.CallDeferred(Node.MethodName.AddChild, node)`. The body is still setting up its own
+  children during a component's `_Ready`, so Godot **refuses** the add ("parent node is busy setting up
+  children"), *logs it, and carries on* — it does not throw. The node you just built is then a live C#
+  object that is not in the tree, which fails in three places at once and none of them look related:
+  its `_Ready` never runs (so fields assigned there stay null and every later call throws an NRE
+  through a `?.` that passes), it renders nothing, and it leaks as an orphan node for the run — which
+  is what the `WorldIntegrityChecker` orphan invariant is actually catching when it fires.
+  `TelegraphComponent` shipped in 36C without the defer and produced 58 NREs and ~50 orphan leaks in
+  one playthrough; `WeaponTrailComponent`, `LairSpawnComponent` and `TrophyStandComponent` all defer
+  and always did. **A node built for the tree should also build its own resources in its constructor,
+  not in `_Ready`** — the deferred add leaves a one-frame window where it is alive but not ready, and
+  a caller landing in that window should draw nothing rather than crash.
 - **Autoload order** is fixed in `project.godot`; `EventBus`/`ServiceLocator`
   come before `GameManager`/`SaveManager`.
 - **Pause deadlock:** when `GameState.Paused`, the tree is paused and normal

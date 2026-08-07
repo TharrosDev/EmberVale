@@ -20,14 +20,25 @@ public partial class TelegraphRing : Node3D
     /// <summary>How far above the feet the disc sits, so it does not z-fight with the ground.</summary>
     private const float Lift = 0.05f;
 
-    private MeshInstance3D _mesh = null!;
-    private StandardMaterial3D _material = null!;
+    private readonly MeshInstance3D _mesh;
+    private readonly StandardMaterial3D _material;
     private float _radius = 1f;
     private double _duration;
     private double _age;
     private bool _active;
 
-    public override void _Ready()
+    /// <summary>
+    /// Builds the geometry in the constructor rather than in <c>_Ready</c>, so the ring is usable the
+    /// moment it exists.
+    ///
+    /// ⚠️ This is not a style preference. The owner adds this node with <c>CallDeferred</c> (it has to —
+    /// the body is mid-child-setup during the component's <c>_Ready</c>), so there is a window of up to
+    /// one frame where the ring is alive but not yet in the tree and <c>_Ready</c> has not run. With the
+    /// mesh and material built here instead, an <see cref="Arm"/> landing in that window is a no-op that
+    /// draws nothing rather than a <c>NullReferenceException</c> — and a future caller who forgets to
+    /// defer gets an invisible ring instead of a crash on every swing.
+    /// </summary>
+    public TelegraphRing()
     {
         _material = new StandardMaterial3D
         {
@@ -49,7 +60,10 @@ public partial class TelegraphRing : Node3D
             Visible = false,
             CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
         };
+    }
 
+    public override void _Ready()
+    {
         AddChild(_mesh);
     }
 
