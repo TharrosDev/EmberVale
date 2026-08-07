@@ -31,6 +31,15 @@
 ; PurseGold 300: enough to fence a good haul, not enough to fence a field of corpses in one visit. It
 ; refills with the shelves on the same two-day clock.
 ;
+; 38J — the forge trades 07:00–19:00, and those numbers are read off schedule.vendor_smith rather than
+; invented: Bryn is at his anvil through the working day and at the tavern by evening. ⚠️ --validate
+; CANNOT check that agreement — a ScheduleId lives in a .tscn, which the validator does not scan — so
+; the two are kept in step by hand, exactly like VendorComponent.ShopId. If his routine moves, move
+; these with it, or the player will find him hammering at a forge that refuses to sell.
+;
+; His trade choice in dialogue.smith is gated on ShopOpen, and a second choice answers when he is shut.
+; The gate is what makes the hours a refusal that speaks rather than a choice that does nothing.
+;
 ; No LeveledTable on purpose. Aldreth's rolled pool is the game's one leveled shelf; a second one halves
 ; how special it is and doubles the chance the player just shops until something Legendary appears.
 
@@ -119,3 +128,5 @@ BuyMarkup = 1.5
 SellFraction = 0.45
 PurseGold = 300
 InvestmentTiers = Array[Resource]([SubResource("Invest_apprentice"), SubResource("Invest_partner")])
+OpenHour = 7
+CloseHour = 19

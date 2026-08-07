@@ -105,6 +105,7 @@ public static class ContentValidator
         ValidateProperties(issues);
         ValidateItemTags(issues);
         ValidateShops(issues);
+        ValidateEssentialsAreResident(issues);
         ValidateServices(issues);
         ValidatePlaceables(issues);
         ValidateBestiary(issues);
@@ -710,6 +711,7 @@ public static class ContentValidator
 
             ValidateShopRestock(shop, issues);
             ValidateShopInvestment(shop, issues);
+            ValidateShopHours(shop, issues);
 
             if (shop.BuyMarkup < 1f)
             {
@@ -854,6 +856,104 @@ public static class ContentValidator
                 }
 
                 break;
+        }
+    }
+
+    /// <summary>
+    /// A shop's trading hours and its merchant's visit cycle (Phase 38J). Every rule here rejects a
+    /// shop the player cannot reach — open for a window nobody can plan around, or on a cycle that
+    /// never comes round. A merchant who is simply never there looks exactly like a broken interactable
+    /// from inside the game, which is what makes this worth checking at author time.
+    /// </summary>
+    private static void ValidateShopHours(ShopResource shop, List<string> issues)
+    {
+        string id = shop.Id;
+
+        if (shop.OpenHour is < 0 or > 23 || shop.CloseHour is < 0 or > 23)
+        {
+            issues.Add(
+                $"shop '{id}' trades {shop.OpenHour}:00–{shop.CloseHour}:00 — an hour outside 0–23 is " +
+                "wrapped by the arithmetic, so the authored window is not the one the player meets");
+        }
+        else if (shop.OpenHour != shop.CloseHour &&
+            ShopHours.OpenSpanHours(shop.OpenHour, shop.CloseHour) < ShopHours.MinimumOpenSpan)
+        {
+            issues.Add(
+                $"shop '{id}' is open only {ShopHours.OpenSpanHours(shop.OpenHour, shop.CloseHour)}h a " +
+                $"day ({shop.OpenHour}:00–{shop.CloseHour}:00) — below {ShopHours.MinimumOpenSpan}h a " +
+                "player has to plan a day around the window, which reads as the shop being broken");
+        }
+
+        if (shop.VisitEveryDays < 0)
+        {
+            issues.Add($"shop '{id}' has a negative visit cycle ({shop.VisitEveryDays} days)");
+        }
+        else if (shop.VisitEveryDays == 1)
+        {
+            issues.Add(
+                $"shop '{id}' visits every 1 day, which is a resident merchant — author 0 and say so, " +
+                "or the offset below silently becomes the only day he is ever absent");
+        }
+        else if (shop.VisitEveryDays > ShopHours.MaxVisitGap)
+        {
+            issues.Add(
+                $"shop '{id}' visits one day in {shop.VisitEveryDays} — more than " +
+                $"{ShopHours.MaxVisitGap} in-game days between visits is a wall rather than a cadence");
+        }
+
+        if (shop.VisitEveryDays > 0 &&
+            (shop.VisitDayOffset < 0 || shop.VisitDayOffset >= shop.VisitEveryDays))
+        {
+            issues.Add(
+                $"shop '{id}' arrives on day {shop.VisitDayOffset} of a {shop.VisitEveryDays}-day " +
+                "cycle — that position never comes round, so the merchant never appears at all");
+        }
+    }
+
+    /// <summary>
+    /// The one closure in 38J that is a hard gate rather than a wait: an attrition supply sold only by
+    /// a merchant who may not be in town. Hours are a wait — the inn advances the clock — but a
+    /// travelling merchant is a coin flip against the calendar, and a player out of potions cannot
+    /// sleep their way to one.
+    ///
+    /// Scoped to <see cref="ItemType.Consumable"/> deliberately. It is the existing enum member that
+    /// already means "the thing you run out of mid-fight", so the rule needs no new authored marker and
+    /// no judgement call about what counts as essential.
+    /// </summary>
+    private static void ValidateEssentialsAreResident(List<string> issues)
+    {
+        var travelling = new Dictionary<string, string>();   // item id -> a travelling shop that sells it
+        var resident = new HashSet<string>();
+
+        foreach (ShopResource shop in ShopDatabase.All)
+        {
+            foreach (ShopStockEntry entry in shop.StockList())
+            {
+                if (ItemDatabase.Get(entry.ItemId) is not { Type: ItemType.Consumable })
+                {
+                    continue;
+                }
+
+                if (shop.VisitEveryDays > 0)
+                {
+                    travelling.TryAdd(entry.ItemId, shop.Id);
+                }
+                else
+                {
+                    resident.Add(entry.ItemId);
+                }
+            }
+        }
+
+        foreach ((string itemId, string shopId) in travelling)
+        {
+            if (!resident.Contains(itemId))
+            {
+                issues.Add(
+                    $"consumable '{itemId}' is sold only by travelling shop '{shopId}' — a player out " +
+                    "of supplies cannot wait out a merchant who is not in town, so that is a hard gate " +
+                    "rather than a closing time");
+            }
         }
     }
 
@@ -1714,6 +1814,30 @@ public static class ContentValidator
                         issues.Add($"dialogue '{dialogue.Id}' OpenShop choice must end the conversation but points at '{choice.Goto}'");
                     }
 
+                    // 38J: the shop-hours condition pair, checked the way the quest conditions are.
+                    if (IsShopCondition(choice.Condition) && ShopDatabase.Get(choice.ConditionArg) == null)
+                    {
+                        issues.Add(
+                            $"dialogue '{dialogue.Id}' {choice.Condition} condition references unknown " +
+                            $"shop '{choice.ConditionArg}'");
+                    }
+
+                    // ⚠️ 38J's load-bearing rule. A trade choice on a shop that closes must be gated on
+                    // that shop being open, or the player picks "let's trade" at midnight and *nothing
+                    // happens* — the effect's backstop refuses silently, which is a dead choice rather
+                    // than a refusal. The condition is also what lets the merchant say she is shut.
+                    if (choice.Effect == DialogueEffect.OpenShop &&
+                        ShopDatabase.Get(choice.EffectArg) is { } gated &&
+                        gated.OpenHour != gated.CloseHour &&
+                        (choice.Condition != DialogueCondition.ShopOpen ||
+                            choice.ConditionArg != choice.EffectArg))
+                    {
+                        issues.Add(
+                            $"dialogue '{dialogue.Id}' opens shop '{choice.EffectArg}', which keeps hours, " +
+                            "without a ShopOpen condition naming it — outside those hours the choice is " +
+                            "shown and does nothing");
+                    }
+
                     // Corruption-typed conditions/effects take an integer threshold/amount.
                     if (IsCorruptionCondition(choice.Condition) && !int.TryParse(choice.ConditionArg, out _))
                     {
@@ -1735,6 +1859,13 @@ public static class ContentValidator
         DialogueCondition.QuestActive => true,
         DialogueCondition.QuestCompleted => true,
         DialogueCondition.QuestNotStarted => true,
+        _ => false,
+    };
+
+    private static bool IsShopCondition(DialogueCondition condition) => condition switch
+    {
+        DialogueCondition.ShopOpen => true,
+        DialogueCondition.ShopClosed => true,
         _ => false,
     };
 

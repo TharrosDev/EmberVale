@@ -28,11 +28,24 @@ ConditionArg = "quest.warband.forge"
 ; 38E: trade, on the root node under the quest lines and above the farewell. The quest is why the player
 ; was sent here; a trade line at the top buries it. No Goto — an OpenShop choice ends the conversation and
 ; the vendor window takes its place (--validate rejects one that points anywhere).
+;
+; 38J: the trade line is gated on Condition = 12 (ShopOpen) and a second line (13, ShopClosed) answers
+; when the forge is cold. --validate requires the pairing — an OpenShop choice on a shop with hours and
+; no ShopOpen condition is a line the player picks at 02:00 that silently does nothing.
 [sub_resource type="Resource" id="ch_trade"]
 script = ExtResource("3_choice")
 Text = "dlg.smith.c_trade"
+Condition = 12
+ConditionArg = "shop.ember_crown.smith"
 Effect = 9
 EffectArg = "shop.ember_crown.smith"
+
+[sub_resource type="Resource" id="ch_closed"]
+script = ExtResource("3_choice")
+Text = "dlg.smith.c_closed"
+Condition = 13
+ConditionArg = "shop.ember_crown.smith"
+Goto = "closed"
 
 [sub_resource type="Resource" id="ch_bye"]
 script = ExtResource("3_choice")
@@ -65,7 +78,7 @@ Text = "dlg.smith.c_thanks_bye"
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.smith.root"
-Choices = Array[Resource]([SubResource("ch_offer"), SubResource("ch_active"), SubResource("ch_thanks"), SubResource("ch_trade"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_offer"), SubResource("ch_active"), SubResource("ch_thanks"), SubResource("ch_trade"), SubResource("ch_closed"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_offer"]
 script = ExtResource("2_node")
@@ -91,9 +104,15 @@ Id = "thanks"
 Text = "dlg.smith.thanks"
 Choices = Array[Resource]([SubResource("ch_thanks_bye")])
 
+[sub_resource type="Resource" id="node_closed"]
+script = ExtResource("2_node")
+Id = "closed"
+Text = "dlg.smith.closed"
+Choices = Array[Resource]([SubResource("ch_bye")])
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.smith"
 SpeakerName = "dlg.smith.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_offer"), SubResource("node_accepted"), SubResource("node_inprogress"), SubResource("node_thanks")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_offer"), SubResource("node_accepted"), SubResource("node_inprogress"), SubResource("node_thanks"), SubResource("node_closed")])

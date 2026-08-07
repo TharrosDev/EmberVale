@@ -118,6 +118,44 @@ public partial class ShopResource : Resource
     /// </summary>
     [Export] public int PurseGold { get; set; }
 
+    [ExportGroup("Hours")]
+
+    /// <summary>
+    /// Hour the shop opens, and the hour it shuts (Phase 38J). <b>Equal values mean always open</b>,
+    /// which is the <c>0</c>/<c>0</c> default — so every shop authored before 38J keeps trading around
+    /// the clock and the fields arrive inert. The window is half-open (open <em>at</em>
+    /// <see cref="OpenHour"/>, shut <em>at</em> <see cref="CloseHour"/>) and may wrap past midnight.
+    ///
+    /// ⚠️ These should agree with the merchant's <c>ScheduleComponent</c> routine — she should shut
+    /// around the hour she walks away from her stall. <c>--validate</c> <b>cannot</b> check that: a
+    /// <c>ScheduleId</c> lives in a <c>.tscn</c>, which the validator does not scan. Author them
+    /// together by hand, the same way <c>VendorComponent.ShopId</c> has to be.
+    /// </summary>
+    [Export] public int OpenHour { get; set; }
+
+    /// <inheritdoc cref="OpenHour"/>
+    [Export] public int CloseHour { get; set; }
+
+    /// <summary>
+    /// How often the merchant is in town (Phase 38J). <c>0</c> is a <b>resident</b> merchant — always
+    /// here, and the default. <c>n</c> means one day in every <c>n</c>, on the day given by
+    /// <see cref="VisitDayOffset"/>.
+    ///
+    /// Presence is a pure function of <c>WorldClock.Day</c> (<see cref="ShopHours.IsInTown"/>), which is
+    /// why a merchant who comes and goes needs <b>no save state at all</b> — there is nothing to persist
+    /// about a fact that can be recomputed, and nothing to drift out of step with a reloaded clock.
+    ///
+    /// ⚠️ A travelling merchant may never be the only seller of a consumable. <c>--validate</c> enforces
+    /// that: attrition supplies behind a merchant who may not be in town is the one closure in this
+    /// sub-phase that is a hard gate rather than a wait.
+    /// </summary>
+    [Export] public int VisitEveryDays { get; set; }
+
+    /// <summary>Which day of the <see cref="VisitEveryDays"/> cycle he arrives on, <c>0..n-1</c>. An
+    /// offset outside that range is a cycle position that never comes round, so the merchant never
+    /// appears at all — the quietest failure in 38J, and a validator rule for exactly that reason.</summary>
+    [Export] public int VisitDayOffset { get; set; }
+
     [ExportGroup("Investment")]
 
     /// <summary>

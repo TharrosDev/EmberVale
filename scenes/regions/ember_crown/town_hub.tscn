@@ -34,6 +34,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_lamp_post.glb" id="21_lamp"]
 [ext_resource type="Script" path="res://src/Companions/CompanionRecruiterComponent.cs" id="22_recruiter"]
 [ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="24_charanim"]
+[ext_resource type="Script" path="res://src/Economy/VendorComponent.cs" id="39_vendor"]
 
 [sub_resource type="NavigationMesh" id="NavMesh_hub"]
 geometry_parsed_geometry_type = 1
@@ -997,3 +998,44 @@ Capacity = 1
 [node name="Display" type="Node" parent="CottageStandE"]
 script = ExtResource("35_trophy")
 PropertyId = "property.ember_crown.cottage"
+
+; Hesk the Wayfarer (Phase 38J) — the town's first VendorComponent, and the first merchant who is not
+; always here. He is in the square one day in four and trades 09:00-17:00 on the day he is; both live on
+; shop.ember_crown.traveller, where --validate can read them.
+;
+; The VendorComponent route rather than 38E's dialogue effect, and deliberately: an entity gets ONE
+; interactable, so the three resident merchants had to hang trade off a dialogue choice to keep their
+; quest conversations. Hesk has no conversation to protect, so the component is simply the right shape —
+; this is the placement CLAUDE.md has been promising it since 38A.
+;
+; No ScheduleComponent. He does not walk a routine; he is either in town or he is not, and that is a pure
+; function of WorldClock.Day rather than a destination to walk to.
+;
+; ⚠️ His ShopId lives in this .tscn and is therefore UNVALIDATED — a typo gives no prompt at all rather
+; than an error, the same trap PropertyStorageComponent.PropertyId carries. If he is ever silently
+; unusable in game, check that field before anything else.
+
+[node name="WanderingTrader" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, -13)
+script = ExtResource("1_entity")
+DisplayName = "Hesk the Wayfarer"
+TemplateId = "npc.traveller"
+
+[node name="Animation" type="Node" parent="WanderingTrader"]
+script = ExtResource("24_charanim")
+BodyMeshPath = "Model"
+
+[node name="Mesh" type="MeshInstance3D" parent="WanderingTrader"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+
+[node name="Collider" type="StaticBody3D" parent="WanderingTrader"]
+
+[node name="Shape" type="CollisionShape3D" parent="WanderingTrader/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Vendor" type="Node" parent="WanderingTrader"]
+script = ExtResource("39_vendor")
+ShopId = "shop.ember_crown.traveller"
+
+[node name="Model" parent="WanderingTrader" instance=ExtResource("18_npc_vendor")]

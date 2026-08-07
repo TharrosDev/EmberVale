@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Embervale.Core.Events;
 using Embervale.Core.Services;
 using Embervale.Entities;
@@ -5,6 +6,7 @@ using Embervale.Factions;
 using Embervale.Interaction;
 using Embervale.Localization;
 using Embervale.Player;
+using Embervale.World;
 using Godot;
 
 namespace Embervale.Economy;
@@ -51,21 +53,131 @@ public partial class VendorComponent : InteractableComponent
                 return string.Empty;
             }
 
+            // An absent merchant has no prompt at all — he is not standing there to be spoken to, and
+            // the toggle below has already hidden him. This is the one refusal with nothing to name.
+            if (!IsInTown(shop))
+            {
+                return string.Empty;
+            }
+
             string name = Loc.T(shop.NameKey);
-            return WillTrade(shop)
+            if (!WillTrade(shop))
+            {
+                return Loc.TF("shop.prompt_hostile", name);
+            }
+
+            // 38J: a closed shop says when it opens. "Closed" alone leaves the player standing at a
+            // stall with nothing to do about it, while an hour is an instruction — sleep at the inn,
+            // or go and do something until morning.
+            return IsOpenNow(shop)
                 ? Loc.TF("shop.prompt_trade", name)
-                : Loc.TF("shop.prompt_hostile", name);
+                : Loc.TF("shop.prompt_closed", name, Hours.NextOpen(shop));
         }
     }
 
     public override void Interact(IEntity instigator)
     {
-        if (ShopDatabase.Get(ShopId) is not { } shop || !WillTrade(shop))
+        if (ShopDatabase.Get(ShopId) is not { } shop ||
+            !IsInTown(shop) || !WillTrade(shop) || !IsOpenNow(shop))
         {
             return; // the prompt has already said why
         }
 
         EventBus.Instance?.Publish(new ShopOpenedEvent(instigator, shop));
+    }
+
+    protected override void OnInitialize()
+    {
+        // The hourly tick ScheduleComponent already rides — no new event, no _Process, and the day
+        // rolls over inside it, so arriving and leaving costs nothing per frame.
+        EventBus.Instance?.Subscribe<TimeOfDayChangedEvent>(OnTimeChanged);
+        ApplyPresence();
+    }
+
+    protected override void OnTeardown()
+    {
+        EventBus.Instance?.Unsubscribe<TimeOfDayChangedEvent>(OnTimeChanged);
+    }
+
+    private void OnTimeChanged(TimeOfDayChangedEvent e) => ApplyPresence();
+
+    /// <summary>
+    /// Shows or hides the merchant for today (Phase 38J). Presence is a pure function of
+    /// <c>WorldClock.Day</c>, so there is nothing to save and nothing that can drift out of step with a
+    /// reloaded clock — the cheapest possible version of a merchant who comes and goes.
+    ///
+    /// ⚠️ <b>Hiding a <c>Node3D</c> does not disable its collision.</b> A hidden trader still stops the
+    /// interact raycast and the player's own body, so the square would carry an invisible wall that
+    /// reads as a physics bug rather than as a merchant being away. The collider's layer is zeroed and
+    /// restored alongside the visibility, and both live in this one function so neither can be done
+    /// without the other.
+    /// </summary>
+    private void ApplyPresence()
+    {
+        if (Entity is not { } owner || ShopDatabase.Get(ShopId) is not { } shop)
+        {
+            return;
+        }
+
+        bool here = IsInTown(shop);
+        if (owner.Body.Visible == here)
+        {
+            return; // nothing changed; do not re-walk the colliders every hour
+        }
+
+        owner.Body.Visible = here;
+
+        foreach (Node child in owner.Body.GetChildren())
+        {
+            if (child is not CollisionObject3D collider)
+            {
+                continue;
+            }
+
+            // Cached on the first hide so a scene that authors its own layers is restored to them
+            // rather than to a constant. A merchant who came back on the wrong collision layer would
+            // be a ghost the raycast passes straight through — the same failure, inverted.
+            if (!here)
+            {
+                _restoreLayer.TryAdd(collider, collider.CollisionLayer);
+                collider.CollisionLayer = 0;
+            }
+            else if (_restoreLayer.TryGetValue(collider, out uint layer))
+            {
+                collider.CollisionLayer = layer;
+            }
+        }
+    }
+
+    private readonly Dictionary<CollisionObject3D, uint> _restoreLayer = new();
+
+    /// <summary>Whether the merchant is in town today (Phase 38J). A resident shop
+    /// (<c>VisitEveryDays = 0</c>) always is, and so is any shop with no clock to read.</summary>
+    private static bool IsInTown(ShopResource shop) =>
+        Clock() is not { } clock || ShopHours.IsInTown(clock.Day, shop.VisitEveryDays, shop.VisitDayOffset);
+
+    /// <summary>Whether the shop is trading at this hour. ⚠️ No clock means <b>open</b>, the same
+    /// inverted fail-safe an unresolvable standing gets: a half-built world trades normally rather than
+    /// refusing everywhere.</summary>
+    private static bool IsOpenNow(ShopResource shop) =>
+        Clock() is not { } clock || ShopHours.IsOpenAt(clock.Hour, shop.OpenHour, shop.CloseHour);
+
+    private static WorldClock? Clock() =>
+        ServiceLocator.Instance is { } locator && locator.TryGet(out WorldClock clock) ? clock : null;
+
+    /// <summary>The hour strings a prompt needs, formatted the one way <c>WorldClock.Clock()</c>
+    /// formats them so the shop and the debug overlay cannot disagree about what 8 o'clock looks
+    /// like.</summary>
+    private static class Hours
+    {
+        public static string NextOpen(ShopResource shop)
+        {
+            int hour = Clock() is { } clock
+                ? ShopHours.NextOpenHour(clock.Hour, shop.OpenHour, shop.CloseHour)
+                : shop.OpenHour;
+
+            return $"{hour:00}:00";
+        }
     }
 
     /// <summary>

@@ -143,13 +143,23 @@ public static class DevCommands
             foreach (ShopResource s in ShopDatabase.All)
             {
                 string restock = s.RestockDays > 0 ? $"every {s.RestockDays}d" : "never";
+
+                // 38J: hours and the visit cycle. Without these the console cannot tell a merchant who
+                // is shut from one who is out of town, and both look identical from the square.
+                string hours = s.OpenHour == s.CloseHour
+                    ? "always open"
+                    : $"{s.OpenHour:00}:00–{s.CloseHour:00}:00";
+                string visits = s.VisitEveryDays > 0
+                    ? $", 1 day in {s.VisitEveryDays} (offset {s.VisitDayOffset})"
+                    : string.Empty;
                 int rungs = s.InvestmentTierList().Count;
                 string stake = rungs == 0
                     ? string.Empty
                     : $", stake {(TryService(out ShopStockService held) ? held.InvestmentOf(s) : 0)}/{rungs}";
                 sb.Append(
                     $"  {s.Id}  — {s.StockList().Count} row(s), buy x{s.BuyMarkup}, sell x{s.SellFraction}, " +
-                    $"restocks {restock}{(s.LeveledTable != null ? ", leveled pool" : string.Empty)}{stake}\n");
+                    $"restocks {restock}{(s.LeveledTable != null ? ", leveled pool" : string.Empty)}{stake}, " +
+                    $"{hours}{visits}\n");
             }
 
             return sb.ToString().TrimEnd();
@@ -205,7 +215,25 @@ public static class DevCommands
         }
 
         EventBus.Instance?.Publish(new ShopOpenedEvent(player, shop));
-        return $"opened {shop.Id}";
+
+        // 38J: the console deliberately opens a shop through its closing time and on a day its merchant
+        // is away — inspecting a shelf should not require waiting three real minutes per in-game day.
+        // It says so, because a window that opened when the world said "closed" is otherwise the sort of
+        // thing that gets reported as the hours being broken.
+        bool closed = TryService(out WorldClock clock) &&
+            !ShopHours.IsOpenAt(clock.Hour, shop.OpenHour, shop.CloseHour);
+        bool away = TryService(out WorldClock dayClock) &&
+            !ShopHours.IsInTown(dayClock.Day, shop.VisitEveryDays, shop.VisitDayOffset);
+
+        string note = (closed, away) switch
+        {
+            (true, true) => " (closed and out of town — dev override)",
+            (true, false) => " (closed at this hour — dev override)",
+            (false, true) => " (merchant is out of town — dev override)",
+            _ => string.Empty,
+        };
+
+        return $"opened {shop.Id}{note}";
     }
 
     /// <summary>

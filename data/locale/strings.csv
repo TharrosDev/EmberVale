@@ -169,6 +169,18 @@ shop.invest_offer,"A stake in the business: {0}g for {1}g more in their purse."
 shop.invest_access,"A stake in the business: {0}g, and they open the rest of their stock."
 shop.invest_held,"Stake: {0} of {1}"
 shop.invest_full,You already own all the stake they will sell.
+# Trading hours and the travelling trader (Phase 38J). A closed shop names the hour it opens: "closed"
+# alone leaves the player standing at a stall with nothing to do about it, while an hour is an
+# instruction — sleep at the inn, or come back after. An absent merchant has no line at all, because he
+# is not there to say one.
+shop.prompt_closed,"{0} — closed until {1}"
+shop.ember_crown.traveller.name,Hesk the Wayfarer
+dlg.smith.c_closed,Are you trading?
+dlg.smith.closed,"Forge is cold and my arm's done. Come back when it's light and I'll see you right."
+dlg.apothecary.c_closed,Are you open?
+dlg.apothecary.closed,"Not at this hour. The tinctures need the dark to settle, and I need the sleep. Morning."
+dlg.vendor_goods.c_closed,Anything for sale?
+dlg.vendor_goods.closed,"Cart's covered, friend. I'm up before the sun most days — try me then."
 # Services (Phase 38D). Each refusal is its own line: a rested bed, a bought mount and a lesson already
 # learned are different sentences, and one shared "nothing to do here" reads as a broken interactable.
 service.ember_crown.inn.name,The Ashen Hearth

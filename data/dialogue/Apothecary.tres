@@ -27,11 +27,23 @@ ConditionArg = "quest.warband.remedies"
 
 ; 38E: trade, under the quest lines and above the farewell. No Goto — an OpenShop choice ends the
 ; conversation and the vendor window takes its place.
+;
+; 38J: gated on Condition = 12 (ShopOpen), with a ShopClosed line (13) for the hours she keeps. Hers is
+; the shortest trading day in the realm, so this is the merchant the player meets shut most often.
 [sub_resource type="Resource" id="ch_trade"]
 script = ExtResource("3_choice")
 Text = "dlg.apothecary.c_trade"
+Condition = 12
+ConditionArg = "shop.ember_crown.apothecary"
 Effect = 9
 EffectArg = "shop.ember_crown.apothecary"
+
+[sub_resource type="Resource" id="ch_closed"]
+script = ExtResource("3_choice")
+Text = "dlg.apothecary.c_closed"
+Condition = 13
+ConditionArg = "shop.ember_crown.apothecary"
+Goto = "closed"
 
 [sub_resource type="Resource" id="ch_bye"]
 script = ExtResource("3_choice")
@@ -64,7 +76,7 @@ Text = "dlg.apothecary.c_thanks_bye"
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.apothecary.root"
-Choices = Array[Resource]([SubResource("ch_offer"), SubResource("ch_active"), SubResource("ch_thanks"), SubResource("ch_trade"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_offer"), SubResource("ch_active"), SubResource("ch_thanks"), SubResource("ch_trade"), SubResource("ch_closed"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_offer"]
 script = ExtResource("2_node")
@@ -90,9 +102,15 @@ Id = "thanks"
 Text = "dlg.apothecary.thanks"
 Choices = Array[Resource]([SubResource("ch_thanks_bye")])
 
+[sub_resource type="Resource" id="node_closed"]
+script = ExtResource("2_node")
+Id = "closed"
+Text = "dlg.apothecary.closed"
+Choices = Array[Resource]([SubResource("ch_bye")])
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.apothecary"
 SpeakerName = "dlg.apothecary.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_offer"), SubResource("node_accepted"), SubResource("node_inprogress"), SubResource("node_thanks")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_offer"), SubResource("node_accepted"), SubResource("node_inprogress"), SubResource("node_thanks"), SubResource("node_closed")])

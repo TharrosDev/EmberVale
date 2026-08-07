@@ -119,9 +119,42 @@ public sealed class DialogueSession
             case DialogueCondition.CompanionLoyaltyAtLeast:
                 return CompanionArg.TryParse(arg, out string loyaltyId, out int threshold) &&
                     Roster() is { } loyaltyRoster && loyaltyRoster.LoyaltyOf(loyaltyId) >= threshold;
+
+            // ⚠️ Both spelled out rather than left to the default below. An unhandled member there
+            // falls through to *shown*, which for a trade line means the shop choice appearing at
+            // midnight — the precise failure 38J exists to remove.
+            case DialogueCondition.ShopOpen:
+                return ShopIsOpen(arg);
+            case DialogueCondition.ShopClosed:
+                return !ShopIsOpen(arg);
             default:
                 return true;
         }
+    }
+
+    /// <summary>
+    /// Whether a shop is trading right now (Phase 38J) — the one reader of a shop's hours on the
+    /// dialogue side, so the condition pair, the effect's backstop and the validator's rule all agree
+    /// on what "open" means.
+    ///
+    /// ⚠️ An unknown shop id answers <b>open</b>. The validator rejects the id, and a half-authored
+    /// world must not silently shut a merchant the player is standing in front of — the same inverted
+    /// fail-safe an unresolvable standing gets in <c>VendorComponent.WillTrade</c>. A missing
+    /// <c>WorldClock</c> answers open for the same reason.
+    /// </summary>
+    private static bool ShopIsOpen(string shopId)
+    {
+        if (ShopDatabase.Get(shopId) is not { } shop)
+        {
+            return true;
+        }
+
+        if (ServiceLocator.Instance is not { } locator || !locator.TryGet(out World.WorldClock clock))
+        {
+            return true; // no clock to be shut by — falling back to hour 0 would shut every morning shop
+        }
+
+        return ShopHours.IsOpenAt(clock.Hour, shop.OpenHour, shop.CloseHour);
     }
 
     /// <summary>The party roster, resolved live from the <see cref="ServiceLocator"/> — a
@@ -204,6 +237,16 @@ public sealed class DialogueSession
                 // count never reaches zero and neither the pause nor the mouse mode flickers between them.
                 if (ShopDatabase.Get(arg) is { } shop)
                 {
+                    // 38J's backstop. The trade choice is meant to carry a ShopOpen condition and
+                    // --validate insists on one, but a choice that forgets it must not open a shut
+                    // door: the window would show a merchant who is not there and sell her stock at
+                    // midnight. Silent rather than toasted — the condition is what tells the player.
+                    if (!ShopIsOpen(arg))
+                    {
+                        Log.Warn($"Dialogue effect OpenShop: '{arg}' is closed at this hour; not opening.");
+                        break;
+                    }
+
                     EventBus.Instance?.Publish(new ShopOpenedEvent(_player, shop));
                 }
                 else

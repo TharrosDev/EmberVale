@@ -38,6 +38,16 @@
 ; Ember Crown that is Aldreth, and it stays that way until 38L's market district gives the specialists
 ; enough coverage between them.
 ;
+; 38J: 06:00–20:00, the longest day in town and deliberately so. Aldreth opens before the smith and
+; shuts after the apothecary, which is what a general stall is for — and because he is the merchant who
+; buys everything (no AcceptedTags), a player coming back from a late hunt needs somewhere to empty a
+; pack. His hours are read off schedule.vendor_goods ("Opening the stall" at 6, tavern at 18); the two
+; are kept in step by hand, because --validate cannot see a .tscn's ScheduleId.
+;
+; ⚠️ He also stocks health potions, and 38J's essentials rule leans on that: a consumable must have at
+; least one RESIDENT seller. Hours are a wait the player can sleep through; a travelling merchant is a
+; coin flip against the calendar, so potions may never live only on a cart.
+;
 ; 38E turns the three town_hub stub vendors into real shops. Until then:
 ; `shop shop.ember_crown.goods` in the F1 console, `shop restock shop.ember_crown.goods` to skip the
 ; wait, and `rep faction.villagers <delta>` to walk the discount up and down.
@@ -102,3 +112,5 @@ BuyMarkup = 1.5
 SellFraction = 0.4
 PurseGold = 250
 InvestmentTiers = Array[Resource]([SubResource("Invest_share")])
+OpenHour = 6
+CloseHour = 20

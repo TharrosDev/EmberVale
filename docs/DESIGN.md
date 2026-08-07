@@ -454,6 +454,16 @@ second buy-side multiplier would duplicate it from an authority that could drift
 earn coin for something a story beat is holding shut — and so that a gate teaches the player it exists
 rather than hiding the fact that the shelf goes deeper.
 
+**Commerce keeps hours, and one merchant keeps a road** (38J). Shops open and close on the world clock,
+and a travelling trader is in town one day in four. **Decision:** a closing time is a *wait*, never a
+gate — the inn already advances the clock, so being told to come back at dawn costs the player a night's
+sleep and buys the world a rhythm. A merchant who might not be in town is the one exception, because no
+amount of waiting is guaranteed to produce him: ⚠️ **a consumable may never be sold only by a travelling
+shop**, and `--validate` enforces it. Services keep no hours at all, since an inn that closed at night
+would be the only way to pass the night, closed at night. The traveller pays a specialist's premium for
+what the town has no use for — pelts, trophies, gemstones — which makes catching him a reason to check
+what day it is, and is the first time the calendar has mattered to anything.
+
 **Standing moves prices, in both directions** (38C): `ShopPricing.PriceMultiplierFor` runs from a 15%
 surcharge at the hostile end of the ramp to 15% off at Allied, and a faction the player is *hostile* to
 will not trade at all. Only the buy side moves — see `CLAUDE.md` §8 for why the sell side deliberately
