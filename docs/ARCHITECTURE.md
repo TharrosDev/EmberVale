@@ -747,9 +747,18 @@ fast-travel land in 25E–25G.
   origin (the streamer places the instance at the cell `Center`), positioned within the region's
   `Bounds`. Persistent actors in a cell carry a `PersistentId` so they restore via the
   `PersistentSpawnDirector` when the cell reloads (25D). The sandbox region `region.ember_crown` is
-  now a three-cell greybox (27A): `town_hub` (plaza floor + greybox buildings + the waystone/relic),
-  `wilds_north` (ruin + rocks), `wilds_west` (rocks), with overlapping floors so navmesh patches
-  edge-connect, around the always-loaded base.
+  now a five-cell greybox: `town_hub` (plaza floor + greybox buildings + the waystone/relic),
+  `embermarket` (38K — the market district, one street south, its floor abutting the hub's exactly at
+  `z = 20`, six stalls and its own waystone), `wilds_north` (ruin + rocks), `wilds_west` (rocks) and
+  `arena` (36D), with overlapping or abutting floors so navmesh patches edge-connect, around the
+  always-loaded base.
+- **Safe areas are a list** (38K). `SafeZones` holds the region's own `SafeZoneCenter`/`SafeZoneRadius`
+  bubble plus one per cell that authors a `RegionCellResource.SafeRadius` (`0` = not a safe area),
+  rebuilt by `GameBootstrap.ApplySafeZones` on world build and on every region transition. It exists
+  because a settlement can be more than one cell: widening the single bubble to cover a district a
+  street away also smothers the encounters around the wilds cells. ⚠️ `SafeZones.Set` **replaces** and
+  runs before the per-cell `Add`s, so a transition cannot leave the previous realm's districts
+  protecting ground here.
 - **Navmesh & enemy pathing** (Phase 27A): each cell wraps its walkable geometry in a
   `NavigationRegion3D` with a `CellNavBaker` (`src/World`) child that **bakes at stream-in** from the
   cell's **static colliders** (`NavigationMesh.geometry_parsed_geometry_type = StaticColliders` —
