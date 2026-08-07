@@ -1,4 +1,5 @@
 using Embervale.Economy;
+using Embervale.Factions;
 using Xunit;
 
 namespace Embervale.Tests;
@@ -241,5 +242,114 @@ public class ShopStockTests
                 ShopStock.SaturatedPayout(unitPrice: 1, absorbed: taken, quantity: 1, restockDays: 1) > 0,
                 $"a one-coin item became unsellable after {taken} absorbed");
         }
+    }
+
+    // --- 38I: stock gates and merchant investment ---------------------------
+
+    [Fact]
+    public void AnUngatedRowIsOpenToAnyone()
+    {
+        // The defaults ARE the ungated case — Hated is the bottom of the reputation ramp, an empty flag
+        // is no flag, and zero rungs is no stake. If this ever fails, every shop authored before 38I has
+        // silently locked itself.
+        Assert.Equal(
+            StockLock.Open,
+            ShopStock.LockOf(
+                ReputationTier.Hated, string.Empty, 0,
+                standing: ReputationTier.Hated, hasFlag: false, invested: 0));
+    }
+
+    [Fact]
+    public void EachGateHoldsItsOwnRowShut()
+    {
+        Assert.Equal(
+            StockLock.Flag,
+            ShopStock.LockOf(ReputationTier.Hated, "flag.x", 0, ReputationTier.Allied, false, 9));
+
+        Assert.Equal(
+            StockLock.Standing,
+            ShopStock.LockOf(ReputationTier.Honored, string.Empty, 0, ReputationTier.Friendly, true, 9));
+
+        Assert.Equal(
+            StockLock.Investment,
+            ShopStock.LockOf(ReputationTier.Hated, string.Empty, 2, ReputationTier.Allied, true, 1));
+    }
+
+    [Fact]
+    public void MeetingTheGateOpensTheRow()
+    {
+        // Each gate in its exact boundary state: the flag held, standing *equal* to the requirement
+        // (not above it), and the last rung just bought. An off-by-one on any of these is a shelf the
+        // player has earned and still cannot buy from.
+        Assert.Equal(
+            StockLock.Open,
+            ShopStock.LockOf(ReputationTier.Honored, "flag.x", 2, ReputationTier.Honored, true, 2));
+    }
+
+    [Fact]
+    public void TheStoryGateIsReportedBeforeStandingAndStandingBeforeGold()
+    {
+        // ⚠️ The order is the feature, and it is PropertyClaim.Resolve's rule: never send a player off
+        // to earn coin for something a story beat is holding shut. A row behind all three reports the
+        // flag; with the flag held it reports standing; only then does it ask for the stake.
+        Assert.Equal(
+            StockLock.Flag,
+            ShopStock.LockOf(ReputationTier.Allied, "flag.x", 3, ReputationTier.Hated, false, 0));
+
+        Assert.Equal(
+            StockLock.Standing,
+            ShopStock.LockOf(ReputationTier.Allied, "flag.x", 3, ReputationTier.Hated, true, 0));
+
+        Assert.Equal(
+            StockLock.Investment,
+            ShopStock.LockOf(ReputationTier.Allied, "flag.x", 3, ReputationTier.Allied, true, 0));
+    }
+
+    [Fact]
+    public void AStakePaysOutOnlyTheRungsActuallyHeld()
+    {
+        int[] ladder = { 150, 300 };
+
+        Assert.Equal(0, ShopStock.PurseBonusThrough(ladder, invested: 0));
+        Assert.Equal(150, ShopStock.PurseBonusThrough(ladder, invested: 1));
+        Assert.Equal(450, ShopStock.PurseBonusThrough(ladder, invested: 2));
+
+        // A save carrying more rungs than the shop still authors is a content edit, not corruption:
+        // the player keeps what exists rather than crashing the restock that reads it.
+        Assert.Equal(450, ShopStock.PurseBonusThrough(ladder, invested: 7));
+    }
+
+    [Fact]
+    public void AnInvestedPurseRefillsHigher()
+    {
+        Assert.Equal(300, ShopStock.PurseAfterInvestment(authoredPurse: 300, bonus: 0));
+        Assert.Equal(450, ShopStock.PurseAfterInvestment(authoredPurse: 300, bonus: 150));
+    }
+
+    [Fact]
+    public void AnUnlimitedPurseStaysUnlimitedNoMatterTheStake()
+    {
+        // ⚠️ The case worth a test: adding a bonus to a merchant who authors no purse would make her
+        // FINITE — a downgrade the player paid gold for, and the exact opposite of what a stake
+        // promises. --validate rejects the authoring; this proves the arithmetic is safe anyway.
+        Assert.Equal(ShopStock.UnlimitedPurse, ShopStock.PurseAfterInvestment(0, 400));
+        Assert.Equal(ShopStock.UnlimitedPurse, ShopStock.PurseAfterInvestment(ShopStock.UnlimitedPurse, 400));
+    }
+
+    [Fact]
+    public void AnInvestedPurseStillCoversAndSpendsLikeAnyOther()
+    {
+        // The stake feeds the same three purse functions 38C already had; nothing about a raised purse
+        // is a special case downstream, which is what keeps the refund clamp honest.
+        int purse = ShopStock.PurseAfterInvestment(authoredPurse: 300, bonus: 150);
+
+        Assert.True(ShopStock.CanCover(purse, 450));
+        Assert.False(ShopStock.CanCover(purse, 451));
+        Assert.Equal(0, ShopStock.AfterSpend(purse, 450));
+
+        // ⚠️ A refunded sale must clamp to the *invested* ceiling, not the authored one, or a failed
+        // sale would quietly erase what the stake bought.
+        Assert.Equal(450, ShopStock.AfterRefund(purse: 0, amount: 450, authoredPurse: purse));
+        Assert.Equal(300, ShopStock.AfterRefund(purse: 0, amount: 450, authoredPurse: 300));
     }
 }

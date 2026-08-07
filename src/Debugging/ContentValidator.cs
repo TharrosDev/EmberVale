@@ -709,6 +709,7 @@ public static class ContentValidator
             }
 
             ValidateShopRestock(shop, issues);
+            ValidateShopInvestment(shop, issues);
 
             if (shop.BuyMarkup < 1f)
             {
@@ -853,6 +854,103 @@ public static class ContentValidator
                 }
 
                 break;
+        }
+    }
+
+    /// <summary>
+    /// A shop's stock gates and its investment ladder (Phase 38I). Every rule here rejects data that is
+    /// well-formed and buys the player nothing — a stake that grants no purse and unlocks no row, a row
+    /// gated above the ladder that exists, a standing gate on a shop with no faction to have standing
+    /// with. None of them can be seen in game: the shelf simply never opens, which reads as the feature
+    /// being broken rather than as an authoring mistake.
+    /// </summary>
+    private static void ValidateShopInvestment(ShopResource shop, List<string> issues)
+    {
+        string id = shop.Id;
+        List<ShopInvestmentTier> tiers = shop.InvestmentTierList();
+        List<ShopStockEntry> stock = shop.StockList();
+
+        int previousCost = 0;
+        bool anyPurseBonus = false;
+        for (int i = 0; i < tiers.Count; i++)
+        {
+            ShopInvestmentTier tier = tiers[i];
+
+            if (tier.Cost <= 0)
+            {
+                issues.Add(
+                    $"shop '{id}' investment rung {i + 1} costs {tier.Cost} — a free stake is not a sink");
+            }
+            else if (tier.Cost <= previousCost)
+            {
+                issues.Add(
+                    $"shop '{id}' investment rung {i + 1} costs {tier.Cost}, no more than the rung below " +
+                    $"it ({previousCost}) — a ladder that stops climbing is a mispriced ladder");
+            }
+
+            previousCost = tier.Cost;
+
+            if (tier.PurseBonus > 0)
+            {
+                anyPurseBonus = true;
+
+                // The bonus is added to an authored purse at each restock. Both of these make it a
+                // silent no-op, which is the class of bug 38C's "markup bottoms out at Honored" rule
+                // exists for: the arithmetic is safe, the data means nothing.
+                if (shop.PurseGold <= 0)
+                {
+                    issues.Add(
+                        $"shop '{id}' investment rung {i + 1} adds {tier.PurseBonus}g to a purse that is " +
+                        "already unlimited — the player would be paying to make a bottomless merchant finite");
+                }
+
+                if (shop.RestockDays <= 0)
+                {
+                    issues.Add(
+                        $"shop '{id}' investment rung {i + 1} adds {tier.PurseBonus}g to a purse that never " +
+                        "refills — the bonus lands at a restock this shop does not have");
+                }
+            }
+        }
+
+        int deepest = 0;
+        bool allGated = stock.Count > 0;
+        foreach (ShopStockEntry entry in stock)
+        {
+            deepest = System.Math.Max(deepest, entry.RequiredInvestment);
+            allGated &= entry.IsGated;
+
+            if (entry.RequiredInvestment > tiers.Count)
+            {
+                issues.Add(
+                    $"shop '{id}' row '{entry.ItemId}' needs {entry.RequiredInvestment} investment rung(s) " +
+                    $"and the shop sells {tiers.Count} — that stock can never be bought");
+            }
+
+            // The window falls back to Neutral when a shop authors no faction (the inverted fail-safe a
+            // half-built world needs), so a gate above Neutral there is a shelf that never opens.
+            if (entry.RequiredTier > ReputationTier.Neutral && shop.FactionId.Length == 0)
+            {
+                issues.Add(
+                    $"shop '{id}' row '{entry.ItemId}' needs {entry.RequiredTier} standing and the shop " +
+                    "prices by no faction — the player has no standing to earn, so it never unlocks");
+            }
+        }
+
+        if (tiers.Count > 0 && !anyPurseBonus && deepest == 0)
+        {
+            issues.Add(
+                $"shop '{id}' sells a stake that grants no purse and unlocks no row — the player would be " +
+                "paying for nothing");
+        }
+
+        // The gated cousin of the "stocks nothing" rule: every row locked is a window that opens empty
+        // for a player who has just walked in, which is exactly how the shop reads as broken.
+        if (allGated && shop.LeveledTable == null)
+        {
+            issues.Add(
+                $"shop '{id}' gates every one of its {stock.Count} row(s) — its window opens empty for a " +
+                "new player, who has no way to learn there is anything behind the gates");
         }
     }
 
@@ -2096,6 +2194,22 @@ public static class ContentValidator
             if (!string.IsNullOrEmpty(region.UnlockFlagId) && !written.Contains(region.UnlockFlagId))
             {
                 issues.Add($"region '{region.Id}' unlocks on flag '{region.UnlockFlagId}', which nothing ever sets");
+            }
+        }
+
+        // 38I's stock gates are the third reader family, and the one with the quietest failure: a
+        // mistyped flag on a shop row is a shelf that stays greyed forever, and the refusal it shows is
+        // perfectly sensible prose.
+        foreach (ShopResource shop in ShopDatabase.All)
+        {
+            foreach (ShopStockEntry entry in shop.StockList())
+            {
+                if (!string.IsNullOrEmpty(entry.RequiredFlagId) && !written.Contains(entry.RequiredFlagId))
+                {
+                    issues.Add(
+                        $"shop '{shop.Id}' row '{entry.ItemId}' unlocks on flag '{entry.RequiredFlagId}', " +
+                        "which nothing ever sets");
+                }
             }
         }
     }

@@ -118,6 +118,23 @@ public partial class ShopResource : Resource
     /// </summary>
     [Export] public int PurseGold { get; set; }
 
+    [ExportGroup("Investment")]
+
+    /// <summary>
+    /// The ladder of stakes the player may buy in this merchant (Phase 38I) — an array of
+    /// <see cref="ShopInvestmentTier"/> sub-resources, ordered cheapest first. Empty is a merchant who
+    /// takes no investment, which is every shop authored before 38I, so the field arrives without
+    /// changing a single existing one.
+    ///
+    /// This is the arc's flagship late-game sink: every other sink in the game is a purchase, so once
+    /// the gear stops improving gold only climbs. A stake is permanent, it never pays back in coin, and
+    /// what it buys is the merchant's capacity to absorb loot and access to the rows gated behind it.
+    ///
+    /// Untyped for the same reason <see cref="Stock"/> is — authored <c>.tres</c> sub-resource arrays
+    /// bind cleanly that way; read it back through <see cref="InvestmentTierList"/>.
+    /// </summary>
+    [Export] public Godot.Collections.Array InvestmentTiers { get; set; } = new();
+
     /// <summary>
     /// The authored rows as a typed list. Deliberately <b>does not</b> filter malformed rows the way
     /// <c>CraftingRecipeResource.IngredientList</c> does: an empty id or a negative quantity is
@@ -153,6 +170,21 @@ public partial class ShopResource : Resource
             if (element.As<ShopStockEntry>() is { } entry)
             {
                 list.Add(entry);
+            }
+        }
+
+        return list;
+    }
+
+    /// <summary>The authored investment ladder as a typed list, cheapest rung first (Phase 38I).</summary>
+    public List<ShopInvestmentTier> InvestmentTierList()
+    {
+        var list = new List<ShopInvestmentTier>();
+        foreach (Variant element in InvestmentTiers)
+        {
+            if (element.As<ShopInvestmentTier>() is { } tier)
+            {
+                list.Add(tier);
             }
         }
 
