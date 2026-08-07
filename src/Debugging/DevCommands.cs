@@ -143,13 +143,23 @@ public static class DevCommands
             foreach (ShopResource s in ShopDatabase.All)
             {
                 string restock = s.RestockDays > 0 ? $"every {s.RestockDays}d" : "never";
+
+                // 38J: hours and the visit cycle. Without these the console cannot tell a merchant who
+                // is shut from one who is out of town, and both look identical from the square.
+                string hours = s.OpenHour == s.CloseHour
+                    ? "always open"
+                    : $"{s.OpenHour:00}:00–{s.CloseHour:00}:00";
+                string visits = s.VisitEveryDays > 0
+                    ? $", 1 day in {s.VisitEveryDays} (offset {s.VisitDayOffset})"
+                    : string.Empty;
                 int rungs = s.InvestmentTierList().Count;
                 string stake = rungs == 0
                     ? string.Empty
                     : $", stake {(TryService(out ShopStockService held) ? held.InvestmentOf(s) : 0)}/{rungs}";
                 sb.Append(
                     $"  {s.Id}  — {s.StockList().Count} row(s), buy x{s.BuyMarkup}, sell x{s.SellFraction}, " +
-                    $"restocks {restock}{(s.LeveledTable != null ? ", leveled pool" : string.Empty)}{stake}\n");
+                    $"restocks {restock}{(s.LeveledTable != null ? ", leveled pool" : string.Empty)}{stake}, " +
+                    $"{hours}{visits}\n");
             }
 
             return sb.ToString().TrimEnd();

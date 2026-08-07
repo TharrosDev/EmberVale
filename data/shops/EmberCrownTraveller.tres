@@ -1,0 +1,59 @@
+[gd_resource type="Resource" script_class="ShopResource" load_steps=6 format=3 uid="uid://cmbrvlshoptrav"]
+
+[ext_resource type="Script" path="res://src/Economy/ShopResource.cs" id="1_shop"]
+[ext_resource type="Script" path="res://src/Economy/ShopStockEntry.cs" id="2_entry"]
+[ext_resource type="Resource" path="res://data/loot/ShopLeveledGear.tres" id="3_leveled"]
+
+; Hesk the Wayfarer (Phase 38J) — the first merchant in the game who is not always there.
+;
+; He is in the Ember Crown one day in four (VisitEveryDays = 4, VisitDayOffset = 1) and trades
+; 09:00–17:00 on the day he is. Presence is a pure function of WorldClock.Day, so unlike every other
+; piece of shop state in this arc he needs NOTHING in the save: a fact you can recompute has no
+; timeline to drift out of.
+;
+; What makes him worth waiting for is the BUY side, not the shelf. He deals in what the Ember Crown has
+; no use for — pelts, trophies, gemstones, fine goods — and pays a specialist's premium for all four,
+; against the biggest purse in the realm. A player who has been hauling beast pelts around a farming
+; village and being offered a plain price by Aldreth has a reason to check what day it is.
+;
+; ⚠️ NOT A SINGLE CONSUMABLE on his shelves, and that is a rule rather than a taste: --validate rejects
+; a consumable sold only by travelling shops. Hours are a wait — sleep at the inn and the clock moves —
+; but a merchant who might not be in town is a coin flip against the calendar, and a player out of
+; potions cannot sleep their way to one.
+;
+; He carries the realm's SECOND leveled pool, which 38B deliberately refused to Bryn ("a second one
+; halves how special it is"). That argument was about a second *resident* shelf standing open every day.
+; A pool rolled for a trader who is here a quarter of the time is the opposite: it is the reason to
+; catch him, and it cannot be shopped until something Legendary appears because he leaves.
+;
+; RestockDays = 4 matches his cycle: he arrives with a fresh cart and a full purse, which is the
+; simplest thing that can be true and needs no new machinery — 38B's clock already carries the shelves,
+; the purse and (38H) the appetite.
+
+[sub_resource type="Resource" id="Stock_scale"]
+script = ExtResource("2_entry")
+ItemId = "item.material.dragon_scale"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_dust"]
+script = ExtResource("2_entry")
+ItemId = "item.material.grave_dust"
+Quantity = 4
+
+[resource]
+script = ExtResource("1_shop")
+Id = "shop.ember_crown.traveller"
+NameKey = "shop.ember_crown.traveller.name"
+FactionId = ""
+AcceptedTags = Array[String]([])
+Specialties = Array[String](["pelt", "trophy", "gem", "luxury"])
+Stock = Array[Resource]([SubResource("Stock_scale"), SubResource("Stock_dust")])
+RestockDays = 4
+LeveledTable = ExtResource("3_leveled")
+BuyMarkup = 1.7
+SellFraction = 0.45
+PurseGold = 500
+OpenHour = 9
+CloseHour = 17
+VisitEveryDays = 4
+VisitDayOffset = 1

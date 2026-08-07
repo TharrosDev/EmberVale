@@ -26,6 +26,12 @@
 ; to offload a haul should feel pushed toward Bryn or Aldreth — that push is the whole point of merchants
 ; having different purses, and it is where 38H's saturation lands next.
 
+; 38J: 08:00–18:00, the shortest day of the three. An apothecary keeps civil hours, and it gives the
+; realm a real spread — there is an hour in the morning where only Aldreth is open and an hour in the
+; evening the same. Read off schedule.vendor_alch and kept in step by hand (--validate cannot see a
+; .tscn's ScheduleId). She also sells potions, so like Aldreth she is a resident seller of a consumable,
+; which is what 38J's essentials rule requires of somebody.
+
 [sub_resource type="Resource" id="Stock_potion"]
 script = ExtResource("2_entry")
 ItemId = "item.potion.health"
@@ -84,3 +90,5 @@ RestockDays = 1
 BuyMarkup = 1.6
 SellFraction = 0.4
 PurseGold = 180
+OpenHour = 8
+CloseHour = 18

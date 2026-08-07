@@ -16,11 +16,28 @@
 ; 38J lands travelling merchants and 38T lands shortages, the player has already been told the world works
 ; that way by a man behind a counter rather than by a tooltip.
 
+; 38J — the trade choices carry Condition = 12 (ShopOpen) on the same shop id, and a closed-hours choice
+; (Condition = 13, ShopClosed) answers when the stall is shut. --validate insists on the pairing: an
+; OpenShop choice on a shop that keeps hours without a ShopOpen condition is a line the player picks at
+; midnight that does nothing at all, which is a dead end rather than a refusal.
+;
+; ⚠️ BOTH trade choices need it. The road_talk node offers trade a second time, and a gate on one of two
+; doors is not a gate.
+
 [sub_resource type="Resource" id="ch_trade"]
 script = ExtResource("3_choice")
 Text = "dlg.vendor_goods.c_trade"
+Condition = 12
+ConditionArg = "shop.ember_crown.goods"
 Effect = 9
 EffectArg = "shop.ember_crown.goods"
+
+[sub_resource type="Resource" id="ch_closed"]
+script = ExtResource("3_choice")
+Text = "dlg.vendor_goods.c_closed"
+Condition = 13
+ConditionArg = "shop.ember_crown.goods"
+Goto = "closed"
 
 [sub_resource type="Resource" id="ch_roads"]
 script = ExtResource("3_choice")
@@ -34,6 +51,8 @@ Text = "dlg.vendor_goods.c_bye"
 [sub_resource type="Resource" id="ch_roads_trade"]
 script = ExtResource("3_choice")
 Text = "dlg.vendor_goods.c_roads_trade"
+Condition = 12
+ConditionArg = "shop.ember_crown.goods"
 Effect = 9
 EffectArg = "shop.ember_crown.goods"
 
@@ -50,7 +69,7 @@ Text = "dlg.vendor_goods.c_roads_bye"
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.vendor_goods.root"
-Choices = Array[Resource]([SubResource("ch_trade"), SubResource("ch_roads"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_trade"), SubResource("ch_closed"), SubResource("ch_roads"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_road_talk"]
 script = ExtResource("2_node")
@@ -58,9 +77,15 @@ Id = "road_talk"
 Text = "dlg.vendor_goods.road_talk"
 Choices = Array[Resource]([SubResource("ch_roads_trade"), SubResource("ch_roads_back"), SubResource("ch_roads_bye")])
 
+[sub_resource type="Resource" id="node_closed"]
+script = ExtResource("2_node")
+Id = "closed"
+Text = "dlg.vendor_goods.closed"
+Choices = Array[Resource]([SubResource("ch_roads"), SubResource("ch_bye")])
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.vendor_goods"
 SpeakerName = "dlg.vendor_goods.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_road_talk")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_road_talk"), SubResource("node_closed")])

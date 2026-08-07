@@ -100,4 +100,14 @@ public enum DialogueCondition
     /// <c>ConditionArg</c> is <c>&lt;companionId&gt;:&lt;value&gt;</c> (e.g. <c>companion.kael:65</c>).
     /// This is the gate personal/loyalty content hangs off.</summary>
     CompanionLoyaltyAtLeast,
+
+    /// <summary>Shown only while the shop (<c>ConditionArg</c>, a <c>shop.*</c> id) is trading —
+    /// its authored hours against the <c>WorldClock</c> (Phase 38J). This is what a merchant's trade
+    /// choice hangs off, so picking it is never a choice that does nothing.</summary>
+    ShopOpen,
+
+    /// <summary>Shown only while the shop is <em>shut</em> — the pair to <see cref="ShopOpen"/>, the
+    /// same way <see cref="MissingFlag"/> pairs with <see cref="HasFlag"/>. It is what lets a merchant
+    /// say she is closed in her own words rather than the game swallowing the choice.</summary>
+    ShopClosed,
 }
