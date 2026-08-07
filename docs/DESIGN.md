@@ -417,6 +417,15 @@ Phase 40A decides whether durability is adopted *or explicitly cut*, and 40B's r
 leaves no stub — so 38D shipped no `ServiceKind.Repair` at all. If 40A adopts durability, repair is a new
 kind and a branch, nothing more.
 
+**A merchant fills up** (38H). Each shop tracks how much of a thing it has bought since its last restock,
+and pays less for the next one — full price for the first several, then a slope down to a floor, cleared
+by the same clock that refills the shelves and the purse. **Decision:** the anti-grind mechanism caps
+nothing. There is no limit and no refusal; the price falls and the player decides whether it is still
+worth the walk, and the answer — another buyer, another town, come back tomorrow — is the exploration the
+economy is supposed to be buying. ⚠️ It only ever *reduces* the sell side, so it cannot touch the
+`sell <= value <= buy` invariant, and each unit floors at 1 gold so a one-coin item never saturates its
+way into being unsellable.
+
 Two things shape income rather than drain it, and belong in the same picture: the **buy/sell spread**
 (selling something back costs roughly two thirds of its price, so looting-to-sell is a slow income and
 not a loop) and the **vendor purse** (`ShopResource.PurseGold`, 38C — a merchant runs out of coin and

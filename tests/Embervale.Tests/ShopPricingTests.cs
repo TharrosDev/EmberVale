@@ -190,6 +190,7 @@ public class ShopPricingTests
         float[] markups = { 1f, 1.2f, 1.5f, 1.6f, 2f, 3f };
         float[] fractions = { 0.05f, 0.2f, 0.4f, 0.45f, 0.5f, 0.8f, 0.99f };
         int[] values = { 0, 1, 2, 3, 7, 25, 99, 100, 420, 9999 };
+        int[] absorbed = { 0, 1, 6, 12, 40 };   // 38H's market saturation, honouring the contract above
 
         foreach (ReputationTier tier in tiers)
         {
@@ -203,13 +204,20 @@ public class ShopPricingTests
                         {
                             int buy = ShopPricing.BuyPrice(
                                 value, ShopPricing.MarkupFor(markup, tier, specialty));
-                            int sell = ShopPricing.SellPrice(
+                            int unit = ShopPricing.SellPrice(
                                 value, ShopPricing.SellFractionFor(fraction, specialty));
 
-                            Assert.True(
-                                sell <= buy,
-                                $"sell {sell} > buy {buy} at tier {tier}, markup {markup}, " +
-                                $"fraction {fraction}, specialty {specialty}, value {value}");
+                            foreach (int taken in absorbed)
+                            {
+                                int sell = ShopStock.SaturatedPayout(
+                                    unit, taken, quantity: 1, restockDays: 1);
+
+                                Assert.True(
+                                    sell <= buy,
+                                    $"sell {sell} > buy {buy} at tier {tier}, markup {markup}, " +
+                                    $"fraction {fraction}, specialty {specialty}, value {value}, " +
+                                    $"absorbed {taken}");
+                            }
                         }
                     }
                 }

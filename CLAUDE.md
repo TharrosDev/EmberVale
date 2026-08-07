@@ -553,7 +553,7 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 6. The window is the existing `StoragePanel`; a stand publishes the same `StorageOpenedEvent` with a
    `MinRarity`. There is no trophy UI to wire.
 
-**A new shop / merchant (Phase 38A–38F)**
+**A new shop / merchant (Phase 38A–38H)**
 1. Author `data/shops/Xxx.tres` (`script_class="ShopResource"`): unique `Id` (`shop.*`), a `NameKey`
    in `strings.csv`, a `Stock` array of `ShopStockEntry` sub-resources (`ItemId` + `Quantity`, the same
    `.tres` sub-resource pattern `LootEntry` uses), `RestockDays`, an optional `LeveledTable`, an
@@ -619,13 +619,24 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
    **Only the buy side moves.** A merchant who likes you paying *more* for your loot is symmetric and
    tempting, but with both clamps in play a generous sell fraction converges on `sell == buy` —
    frictionless churn — and standing already modifies prices without it.
-7. **A merchant's purse is a sink from the other end (38C).** `PurseGold` (`0` = unlimited) is spent
+7. **A merchant fills up (38H).** `ShopStockService` counts units absorbed per template since the shop's
+   last restock, and `ShopStock.SaturatedPayout` prices a stack **unit by unit** as that count climbs —
+   never one price times a quantity, or dumping the whole stack at once becomes strictly optimal and the
+   mechanic punishes only the tidy seller. There is nothing to author: it rides `RestockDays`, which now
+   carries the shelves, the purse and the appetite.
+   ⚠️ **A shop with `RestockDays = 0` does not saturate at all** — nothing would clear it, so the decay
+   would be permanent. That is answered inside `SaturationMultiplier`, which is why there is no validator
+   rule for it.
+   ⚠️ **Each unit floors at 1 gold.** A one-coin item against any multiplier below 1 rounds to nothing,
+   and a zero payout is refused as worthless — saturation would become a silent *refusal* for exactly the
+   cheap high-volume goods it exists for.
+8. **A merchant's purse is a sink from the other end (38C).** `PurseGold` (`0` = unlimited) is spent
    buying from the player and refills at restock, so a field of corpses cannot be fenced in one visit.
    ⚠️ **A positive purse needs `RestockDays > 0`** — same rule and same reason as a finite stock row.
    A payout the merchant cannot cover refuses the whole sale; paying part of it is item loss with a
    receipt. The purse arithmetic lives in `ShopStock` (`CanCover`/`AfterSpend`/`AfterRefund`) rather
    than in the service, because the service is a Godot `Node` the test project cannot construct.
-8. Place it. **Two routes, and 38E decided which is which:**
+9. Place it. **Two routes, and 38E decided which is which:**
    - **A merchant who talks** — author a `DialogueChoice` with `Effect = OpenShop` (9) and
      `EffectArg = "shop.xxx"` on the conversation she already has. This is the default. It exists because
      ⚠️ **an entity gets one interactable** — `EntityNode.GetComponent<T>` returns the *first* child match,
@@ -644,21 +655,21 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 
    Reach any shop without walking to it via `shop <id>` in the F1 console; drive the discount with
    `rep <factionId> <delta>`.
-9. ⚠️ **`ContentValidator` does not scan `.tscn`**, so a mistyped `ShopId` gives **no prompt at all**
+10. ⚠️ **`ContentValidator` does not scan `.tscn`**, so a mistyped `ShopId` gives **no prompt at all**
    rather than an error — the same trap `PropertyStorageComponent.PropertyId` carries. A merchant
    silently unusable in game: check that field first.
-10. **Prices have one authority: `ItemInstance.Value`**, which already folds in rarity and affix
+11. **Prices have one authority: `ItemInstance.Value`**, which already folds in rarity and affix
    count, so the spread applies to rolled loot for free. Put any new pricing maths in
    `src/Economy/ShopPricing.cs` and any restock/level/purse maths in `src/Economy/ShopStock.cs` (both
    Godot-free, so the test project can pin them) — never at a call site, and never a second price table.
    ⚠️ Day arithmetic there widens to `long`: a never-stocked shop is stamped `int.MinValue`, and
    `0 - int.MinValue` overflows back to a negative, which answered "not due" for the one case that
    most obviously is. The test caught it on the first run.
-11. **Buying charges before it delivers, and refunds if delivery fails.** The other order cannot work:
+12. **Buying charges before it delivers, and refunds if delivery fails.** The other order cannot work:
     `InventoryComponent.AddInstance` merges a stackable into an existing stack, so the instance handed
     in is often never stored and `RemoveOneInstance` would find nothing to roll back. Refunding gold
     always works — spending it either freed a slot or left a stack with room.
-12. **Selling removes by reference for rolled items, by template id only for stackables** — the same
+13. **Selling removes by reference for rolled items, by template id only for stackables** — the same
     split `StoragePanel.Transfer` makes, for the same reason. A zero payout is refused rather than
     accepted: handing an item over for nothing is item loss wearing a transaction's clothes. The shelf
     decrement (`ShopStockService.TakeOne`) is deliberately the **last** step of a purchase: nothing may

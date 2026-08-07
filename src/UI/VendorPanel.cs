@@ -256,6 +256,11 @@ public partial class VendorPanel : UiPanel
         }
 
         pack.AddItem(gold, payout);
+
+        // Recorded last, and only here (38H): the merchant now has the goods, so their appetite for the
+        // next one has genuinely fallen. Every early return above leaves the player holding the item, and
+        // none of them may mark a merchant as glutted for a sale that did not happen.
+        stock?.Absorb(shop, instance.TemplateId, stack.Quantity);
         MarkDirty();
     }
 
@@ -419,11 +424,17 @@ public partial class VendorPanel : UiPanel
             bool sellable = ShopPricing.Sellable(instance.Type, IsCurrency(instance));
             bool inTrade = InTrade(shop, instance);
             bool specialty = IsSpecialty(shop, instance);
+
+            // 38H: the stack's units are priced one at a time as the merchant's appetite falls, so
+            // selling twenty at once pays exactly what selling them singly would. The multiply this
+            // replaced made dumping the whole stack strictly optimal.
+            int absorbed = Stock()?.AbsorbedOf(shop, instance.TemplateId) ?? 0;
+            int unitPrice = ShopPricing.SellPrice(
+                instance.Value, ShopPricing.SellFractionFor(shop.SellFraction, specialty));
             int payout = sellable && inTrade
-                ? ShopPricing.SellPrice(
-                    instance.Value, ShopPricing.SellFractionFor(shop.SellFraction, specialty))
-                    * stack.Quantity
+                ? ShopStock.SaturatedPayout(unitPrice, absorbed, stack.Quantity, shop.RestockDays)
                 : 0;
+            bool glutted = ShopStock.SaturationMultiplier(absorbed, shop.RestockDays) < 1f;
 
             // Four refusals, each named separately: not for sale at all, not this merchant's trade,
             // worth nothing, or the merchant cannot cover it. Collapsing them would tell a player with a
@@ -445,7 +456,8 @@ public partial class VendorPanel : UiPanel
                 enabled: sellable && inTrade && payout > 0 && afforded,
                 refusal: refusal,
                 onPressed: () => Sell(shop, captured, payout),
-                specialty: specialty);
+                specialty: specialty,
+                glutted: glutted);
         }
     }
 
@@ -466,7 +478,8 @@ public partial class VendorPanel : UiPanel
         bool enabled,
         string refusal,
         System.Action onPressed,
-        bool specialty = false)
+        bool specialty = false,
+        bool glutted = false)
     {
         PanelContainer card = UiTheme.Card(UiTheme.RarityColor(instance.Rarity));
         var row = new HBoxContainer();
@@ -491,11 +504,22 @@ public partial class VendorPanel : UiPanel
         // A price that moved must say why it moved — the same rule the standing caption follows. The
         // full line-by-line breakdown is 38U's; this is the marker 38F owes, and without it a payout
         // 25% above the shop across the square reads as one of the two being mispriced.
-        if (specialty)
+        if (specialty || glutted)
         {
             var trade = new HBoxContainer();
             trade.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
-            trade.AddChild(UiTheme.Chip(Loc.T("shop.specialty"), UiTheme.Accent));
+            if (specialty)
+            {
+                trade.AddChild(UiTheme.Chip(Loc.T("shop.specialty"), UiTheme.Accent));
+            }
+
+            // 38H: a payout that fell has to say why, or a merchant who paid 6 gold yesterday and 3 today
+            // reads as a pricing bug rather than as a market the player has been filling up.
+            if (glutted)
+            {
+                trade.AddChild(UiTheme.Chip(Loc.T("shop.glutted"), UiTheme.Dim));
+            }
+
             text.AddChild(trade);
         }
 

@@ -128,4 +128,118 @@ public class ShopStockTests
         Assert.Equal(250, ShopStock.AfterRefund(purse: 240, amount: 100, authoredPurse: 250));
         Assert.Equal(ShopStock.UnlimitedPurse, ShopStock.AfterRefund(ShopStock.UnlimitedPurse, 50, 0));
     }
+
+    [Fact]
+    public void AppetiteFallsToAFloorAndStaysThere()
+    {
+        Assert.Equal(1f, ShopStock.SaturationMultiplier(absorbed: 0, restockDays: 1));
+
+        // The grace band is full price to its last unit, and the slope starts from there rather than
+        // from zero — one honest haul must not be docked for being a haul.
+        Assert.Equal(
+            1f, ShopStock.SaturationMultiplier(ShopStock.SaturationGrace - 1, restockDays: 1));
+        Assert.Equal(
+            1f, ShopStock.SaturationMultiplier(ShopStock.SaturationGrace, restockDays: 1));
+        Assert.True(
+            ShopStock.SaturationMultiplier(ShopStock.SaturationGrace + 1, restockDays: 1) < 1f);
+        Assert.Equal(
+            ShopStock.SaturationFloor,
+            ShopStock.SaturationMultiplier(
+                ShopStock.SaturationGrace + ShopStock.SaturationSpan, restockDays: 1));
+
+        // Past the span it holds rather than continuing down: saturation is a slope, never a refusal,
+        // and a payout that reached zero would be item loss dressed as a market.
+        Assert.Equal(
+            ShopStock.SaturationFloor,
+            ShopStock.SaturationMultiplier(ShopStock.SaturationSpan * 100, restockDays: 1));
+
+        // Monotone all the way down — a bump anywhere in the ramp is a unit that pays more than the one
+        // before it, which is an ordering the player can farm.
+        float previous = 1f;
+        for (int absorbed = 0; absorbed <= ShopStock.SaturationSpan * 2; absorbed++)
+        {
+            float current = ShopStock.SaturationMultiplier(absorbed, restockDays: 1);
+            Assert.True(current <= previous, $"appetite rose at {absorbed}");
+            previous = current;
+        }
+    }
+
+    [Fact]
+    public void AShopThatNeverRestocksNeverSaturates()
+    {
+        // Nothing would ever clear it, so the decay would be permanent — a markdown that lasts the rest
+        // of the run and reads as the merchant being broken rather than as a mechanic.
+        Assert.Equal(1f, ShopStock.SaturationMultiplier(absorbed: 500, restockDays: 0));
+        Assert.Equal(120, ShopStock.SaturatedPayout(unitPrice: 6, absorbed: 500, quantity: 20, restockDays: 0));
+    }
+
+    /// <summary>
+    /// ⚠️ The test 38H exists to pass. A stack's payout must decay across its <em>own</em> units, so
+    /// selling twenty at once pays exactly what selling them one at a time pays. Price a stack at a
+    /// single pre-sale multiplier instead and "dump everything in one click" becomes strictly optimal —
+    /// saturation would then punish only the player who sells tidily, which is the opposite of the point.
+    /// </summary>
+    [Fact]
+    public void StackSaleMatchesSellingOneAtATime()
+    {
+        const int UnitPrice = 7;
+        const int RestockDays = 1;
+
+        for (int quantity = 1; quantity <= 40; quantity++)
+        {
+            int drip = 0;
+            for (int sold = 0; sold < quantity; sold++)
+            {
+                drip += ShopStock.SaturatedPayout(UnitPrice, absorbed: sold, quantity: 1, RestockDays);
+            }
+
+            int atOnce = ShopStock.SaturatedPayout(UnitPrice, absorbed: 0, quantity, RestockDays);
+            Assert.Equal(drip, atOnce);
+        }
+    }
+
+    [Fact]
+    public void AHaulInsideTheGraceBandPaysExactlyWhatItDidBeforeSaturationExisted()
+    {
+        // 38A's arithmetic was unitPrice * quantity, and inside the grace band that is still exactly what
+        // a player gets. This is the assertion that keeps 38H a pressure on repeat volume rather than a
+        // silent markdown on every sale in the game.
+        Assert.Equal(
+            6 * ShopStock.SaturationGrace,
+            ShopStock.SaturatedPayout(
+                unitPrice: 6, absorbed: 0, quantity: ShopStock.SaturationGrace, restockDays: 1));
+
+        Assert.Equal(0, ShopStock.SaturatedPayout(unitPrice: 0, absorbed: 0, quantity: 10, restockDays: 1));
+        Assert.Equal(0, ShopStock.SaturatedPayout(unitPrice: 6, absorbed: 0, quantity: 0, restockDays: 1));
+    }
+
+    [Fact]
+    public void BeyondTheGraceBandVolumeCostsSomething()
+    {
+        // The mechanic has to actually bite, or it is a constant wearing a curve's clothes. Twice the
+        // grace band must pay measurably less than twice its price.
+        int quantity = ShopStock.SaturationGrace * 2;
+        int paid = ShopStock.SaturatedPayout(unitPrice: 6, absorbed: 0, quantity, restockDays: 1);
+
+        Assert.True(paid < 6 * quantity);
+        Assert.True(paid > 6 * ShopStock.SaturationGrace);
+    }
+
+    [Fact]
+    public void AGluttedMerchantStillPaysSomething()
+    {
+        // The floor is a floor, not zero: a row that paid nothing would be refused as worthless (38A),
+        // and turning "I have plenty" into "this is worthless" loses the mechanic's meaning entirely.
+        Assert.True(ShopStock.SaturatedPayout(unitPrice: 10, absorbed: 999, quantity: 1, restockDays: 1) > 0);
+
+        // ⚠️ The case that actually bites: a goblin hide pays a single coin, so any multiplier below 1
+        // floors it to nothing and the sale is refused. Cheap high-volume goods are precisely what this
+        // mechanic is about, so they must stay sellable at every point on the ramp.
+        for (int taken = 0; taken < 200; taken++)
+        {
+            Assert.True(
+                ShopStock.SaturatedPayout(unitPrice: 1, absorbed: taken, quantity: 1, restockDays: 1) > 0,
+                $"a one-coin item became unsellable after {taken} absorbed");
+        }
+    }
 }
