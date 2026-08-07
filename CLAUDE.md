@@ -566,7 +566,7 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 6. The window is the existing `StoragePanel`; a stand publishes the same `StorageOpenedEvent` with a
    `MinRarity`. There is no trophy UI to wire.
 
-**A new shop / merchant (Phase 38A–38H)**
+**A new shop / merchant (Phase 38A–38I)**
 1. Author `data/shops/Xxx.tres` (`script_class="ShopResource"`): unique `Id` (`shop.*`), a `NameKey`
    in `strings.csv`, a `Stock` array of `ShopStockEntry` sub-resources (`ItemId` + `Quantity`, the same
    `.tres` sub-resource pattern `LootEntry` uses), `RestockDays`, an optional `LeveledTable`, an
@@ -687,6 +687,35 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
     accepted: handing an item over for nothing is item loss wearing a transaction's clothes. The shelf
     decrement (`ShopStockService.TakeOne`) is deliberately the **last** step of a purchase: nothing may
     consume stock on a path that ends without the player holding the goods.
+14. **Gate a shelf, and sell a stake in the merchant (38I).** A `ShopStockEntry` carries three optional
+    gates, all of whose defaults mean *ungated*: `RequiredTier` (`ReputationTier.Hated` is the bottom of
+    the ramp, so it needs no sentinel), `RequiredFlagId`, and `RequiredInvestment`. `ShopResource`
+    carries `InvestmentTiers` — an array of `ShopInvestmentTier` (`Cost` + `PurseBonus`), cheapest
+    first — and buying a rung is permanent, raises the merchant's purse at **every future restock**, and
+    unlocks the rows gated behind it. `ShopStock.LockOf` is the one gate authority (pure, swept by
+    tests); the panel evaluates it because the gate needs the player and `ShopStockService` is
+    deliberately player-agnostic.
+    ⚠️ **A stake moves no price, on purpose.** Standing owns the price ramp (38C) and 38F's sweep
+    contract says every new multiplier joins `NoCombinationOfMultipliersLetsSellingBeatBuying` — 38I
+    honours it by adding none. If a later sub-phase wants an investor discount, it joins that test.
+    ⚠️ **A locked row is shown, greyed, with its gate named** — the sold-out rule, for a stronger
+    reason: a hidden row teaches nothing, and a locked one is how the player learns a stake buys
+    something. The refusal order is **flag → standing → gold**, `PropertyClaim.Resolve`'s rule, so
+    nobody is sent to earn coin for something a story beat is holding shut.
+    ⚠️ **An unlimited purse (`PurseGold = 0`) stays unlimited** no matter the stake — adding to it would
+    make a bottomless merchant *finite*, a downgrade the player paid for. Settled in
+    `ShopStock.PurseAfterInvestment` so no caller can forget it, **and** rejected by `--validate`,
+    because safe arithmetic does not make the data meaningful.
+    ⚠️ **`RefundPurse` clamps to the invested ceiling, not the authored one**, or a sale that debited and
+    failed would quietly erase what the stake bought.
+    `--validate` rejects nine shapes, every one of them well-formed data that buys nothing: a free rung,
+    a ladder that stops climbing, a purse bonus on an unlimited purse or on a shop with no restock clock,
+    a stake granting no purse and unlocking no row, a row needing more rungs than exist, a shop that
+    gates *every* row (its window opens empty for a new player), a `RequiredFlagId` nothing writes
+    (folded into `ValidateStoryFlags`' reader pass), and a standing gate above Neutral on a shop with no
+    `FactionId` — the window falls back to Neutral there, so that shelf never opens.
+    Reach it without the grind: `shop invest <id>` in the F1 console buys a rung for free, and the
+    `shop` listing prints `stake held/total`.
 
 **A new service — trainer / bank / inn / stable (Phase 38D)**
 1. Author `data/services/Xxx.tres` (`script_class="ServiceResource"`): unique `Id` (`service.*`), a
