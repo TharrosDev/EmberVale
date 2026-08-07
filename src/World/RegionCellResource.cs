@@ -24,4 +24,20 @@ public partial class RegionCellResource : Resource
 
     /// <summary>Planar distance (metres) within which the cell is loaded.</summary>
     [Export] public float LoadRadius { get; set; } = 32f;
+
+    /// <summary>
+    /// Planar radius around <see cref="Center"/> in which the ambient spawners must not drop enemies
+    /// (Phase 38K). <c>0</c> — the default — means this cell is not a safe area, which is every cell
+    /// authored before the Embermarket, so the field arrives inert.
+    ///
+    /// This exists because a settlement can be more than one cell. The region's own
+    /// <c>SafeZoneCenter</c>/<c>SafeZoneRadius</c> is a single bubble over the town square; widening it
+    /// to reach a market district a street away also smothers the encounters around the wilds cells,
+    /// which is the whole of the region's pressure. A district declares its own bubble instead, and
+    /// <see cref="SafeZones"/> holds them all.
+    ///
+    /// ⚠️ Scripted spawns (quests, world events with a fixed point) bypass safe zones entirely, so this
+    /// never makes a district un-attackable by design — only by accident.
+    /// </summary>
+    [Export] public float SafeRadius { get; set; }
 }

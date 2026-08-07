@@ -10,6 +10,28 @@ ScenePath = "res://scenes/regions/ember_crown/town_hub.tscn"
 Center = Vector3(0, 0, -10)
 LoadRadius = 50.0
 
+; The Embermarket (Phase 38K). Placed so its 52 m square ABUTS the town hub's 60 m one exactly: the hub
+; floor runs to z = 20, and a 52-wide floor centred at z = 46 starts there. A gap is a hole the player
+; falls through; an overlap is two coplanar floors z-fighting along a seam. Neither is visible in the
+; editor from a .tres, so the arithmetic is written down here rather than eyeballed.
+;
+; LoadRadius 40 against a spawn point at z = 5 means the district streams in as the player takes their
+; first steps south rather than being resident from the main menu — the cheapest possible demonstration
+; that the streamer works, and the reason not to round it up to the hub's 50.
+;
+; SafeRadius 32 is the field 38K added: a settlement can be more than one cell, and the region's own
+; 34 m bubble around the square cannot reach a district a street away without also swallowing the wilds
+; cells the encounters live in. The two bubbles overlap between z = 14 and z = 24, so there is no strip
+; of unprotected ground between the square and the market for a warband to spawn into.
+
+[sub_resource type="Resource" id="Cell_embermarket"]
+script = ExtResource("2_cell")
+Id = "ember_crown.embermarket"
+ScenePath = "res://scenes/regions/ember_crown/embermarket.tscn"
+Center = Vector3(0, 0, 46)
+LoadRadius = 40.0
+SafeRadius = 32.0
+
 [sub_resource type="Resource" id="Cell_wilds_north"]
 script = ExtResource("2_cell")
 Id = "ember_crown.wilds_north"
@@ -37,7 +59,7 @@ Id = "region.ember_crown"
 DisplayName = "The Ember Crown"
 Realm = 0
 SpawnPoint = Vector3(0, 1.2, 5)
-Cells = Array[ExtResource("2_cell")]([SubResource("Cell_town_hub"), SubResource("Cell_wilds_north"), SubResource("Cell_wilds_west"), SubResource("Cell_arena")])
+Cells = Array[ExtResource("2_cell")]([SubResource("Cell_town_hub"), SubResource("Cell_embermarket"), SubResource("Cell_wilds_north"), SubResource("Cell_wilds_west"), SubResource("Cell_arena")])
 Bounds = AABB(-256, -16, -256, 512, 64, 512)
 SafeZoneCenter = Vector3(0, 0, -10)
 SafeZoneRadius = 34.0

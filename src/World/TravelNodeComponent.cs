@@ -20,8 +20,17 @@ public partial class TravelNodeComponent : InteractableComponent
     /// <summary>Stable node id (a <c>travel.*</c> key).</summary>
     [Export] public string Id { get; set; } = string.Empty;
 
-    /// <summary>Player-facing name of this waystone/travel point.</summary>
+    /// <summary>
+    /// Player-facing name of this waystone/travel point. Passed through <c>Loc.T</c>, so it may be a
+    /// locale key — which is what CLAUDE.md §6 asks for and what new nodes should author.
+    ///
+    /// ponytail: <c>Loc.T</c> on a plain string returns it unchanged, so the Phase 25 waystone's
+    /// authored English still renders correctly and did not have to be migrated to close the rule.
+    /// </summary>
     [Export] public string TravelName { get; set; } = string.Empty;
+
+    /// <summary>The display name, resolved through the locale catalogue.</summary>
+    private string DisplayName => string.IsNullOrEmpty(TravelName) ? "waystone" : Loc.T(TravelName);
 
     /// <summary>Region this node lives in (a <c>region.*</c> key), resolved on jump.</summary>
     [Export] public string RegionId { get; set; } = string.Empty;
@@ -30,10 +39,9 @@ public partial class TravelNodeComponent : InteractableComponent
     {
         get
         {
-            string name = string.IsNullOrEmpty(TravelName) ? "waystone" : TravelName;
             return Resolve() is { } svc && svc.HasNode(Id)
-                ? Loc.TF("travel.prompt_attuned", name)
-                : Loc.TF("travel.prompt_attune", name);
+                ? Loc.TF("travel.prompt_attuned", DisplayName)
+                : Loc.TF("travel.prompt_attune", DisplayName);
         }
     }
 
@@ -47,9 +55,9 @@ public partial class TravelNodeComponent : InteractableComponent
         // Record where the PLAYER stands to attune — a known-walkable spot beside the post — not the
         // post's own position. Fast travel lands the player at this point; landing on the post's own
         // collider trapped them inside it.
-        if (svc.Discover(Id, TravelName, RegionId, playerBody.GlobalPosition))
+        if (svc.Discover(Id, DisplayName, RegionId, playerBody.GlobalPosition))
         {
-            Log.Info($"Attuned to {TravelName}.");
+            Log.Info($"Attuned to {DisplayName}.");
         }
     }
 

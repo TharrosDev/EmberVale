@@ -93,6 +93,10 @@ hud.compass.w,W
 hud.compass.nw,NW
 travel.prompt_attune,Attune to {0}
 travel.prompt_attuned,{0} (attuned)
+# 38K: a travel node's name now goes through Loc.T, so new ones author a key here. The Phase 25 waystone
+# still carries its authored English in the .tscn and renders correctly — Loc.T on a plain string returns
+# it unchanged — so closing the §6 rule cost no migration.
+travel.ember_crown.embermarket.name,The Embermarket
 property.cottage.name,The Ashfall Cottage
 property.prompt_claim,"Claim {0} ({1} gold)"
 property.prompt_owned,{0} (yours)
