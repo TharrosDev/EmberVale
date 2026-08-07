@@ -33,7 +33,15 @@ public partial class TelegraphComponent : EntityComponent
     protected override void OnInitialize()
     {
         _ring = new TelegraphRing { Name = "TelegraphRing" };
-        Entity!.Body.AddChild(_ring);
+
+        // ⚠️ Deferred, and it must be: the body is still setting up its children during this
+        // component's _Ready, so a direct AddChild is refused ("parent node is busy setting up
+        // children"). Godot logs that and carries on rather than throwing, so the ring silently stayed
+        // out of the tree — which meant its _Ready never ran, every Arm/Clear dereferenced a null mesh,
+        // and the unparented node leaked as an orphan for the lifetime of the run. One missed
+        // CallDeferred produced all three symptoms; WeaponTrailComponent, LairSpawnComponent and
+        // TrophyStandComponent all defer for exactly this reason.
+        Entity!.Body.CallDeferred(Node.MethodName.AddChild, _ring);
 
         EventBus.Instance?.Subscribe<AttackPerformedEvent>(OnAttack);
         EventBus.Instance?.Subscribe<AttackInterruptedEvent>(OnInterrupted);
