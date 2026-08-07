@@ -566,7 +566,7 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 6. The window is the existing `StoragePanel`; a stand publishes the same `StorageOpenedEvent` with a
    `MinRarity`. There is no trophy UI to wire.
 
-**A new shop / merchant (Phase 38A–38I)**
+**A new shop / merchant (Phase 38A–38J)**
 1. Author `data/shops/Xxx.tres` (`script_class="ShopResource"`): unique `Id` (`shop.*`), a `NameKey`
    in `strings.csv`, a `Stock` array of `ShopStockEntry` sub-resources (`ItemId` + `Quantity`, the same
    `.tres` sub-resource pattern `LootEntry` uses), `RestockDays`, an optional `LeveledTable`, an
@@ -716,6 +716,42 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
     `FactionId` — the window falls back to Neutral there, so that shelf never opens.
     Reach it without the grind: `shop invest <id>` in the F1 console buys a rung for free, and the
     `shop` listing prints `stake held/total`.
+
+15. **Give a shop a clock, and a merchant a road (38J).** `ShopResource` carries `OpenHour`/`CloseHour`
+    (**equal means always open** — the `0`/`0` default, so the fields arrive inert) and
+    `VisitEveryDays`/`VisitDayOffset` (`0` = resident). All the arithmetic lives in the new Godot-free
+    `src/Economy/ShopHours.cs` — `IsOpenAt` (half-open window, wraps past midnight), `OpenSpanHours`,
+    `NextOpenHour`, `IsInTown`, `NextVisitDay`.
+    **Presence needs no save state at all.** It is a pure function of `WorldClock.Day`, so unlike every
+    other piece of shop state in this arc there is nothing to persist and nothing to drift out of step
+    with a reloaded clock. Do the same for anything else derivable from the clock.
+    - **A merchant who talks** gates her trade choice on `DialogueCondition.ShopOpen` (12) with
+      `ConditionArg` = her shop id, and authors a second choice on `ShopClosed` (13) pointing at a
+      closed-hours node. ⚠️ **`--validate` requires that pairing** on any shop with hours: without it the
+      player picks "let's trade" at midnight and *nothing happens*, which is a dead choice rather than a
+      refusal. `ApplyEffect` refuses too, as a backstop — but the backstop is silent by design, so the
+      condition is what actually speaks. ⚠️ **Gate every trade choice**, not just the first: Aldreth
+      offers trade on two nodes, and a gate on one of two doors is not a gate.
+    - **An unattended stall or a traveller** uses `VendorComponent`, which now hides its own entity on
+      the days the merchant is away. ⚠️ **Hiding a `Node3D` does not disable its collision** — the
+      hidden trader would still stop the interact ray and the player's body, an invisible wall that
+      reads as a physics bug. `ApplyPresence` zeroes and restores the collider's `CollisionLayer`
+      alongside `Visible`, and both live in one function so neither can happen without the other.
+    - It rides `TimeOfDayChangedEvent`, the hourly tick `ScheduleComponent` already uses — no
+      `_Process`, no new event, and the day rolls over inside it.
+    ⚠️ **Hours must be authored to match the merchant's `ScheduleComponent` routine, by hand.** A
+    `ScheduleId` lives in a `.tscn`, which `ContentValidator` does not scan, so nothing can check that
+    the shop shuts around the hour she walks away from her stall.
+    ⚠️ **A consumable may never be sold only by travelling shops**, and `--validate` enforces it. Hours
+    are a *wait* — the inn advances the clock — but a merchant who may not be in town is a coin flip
+    against the calendar, and a player out of potions cannot sleep their way to one. **Services keep no
+    hours at all**: an inn that closed at night would be the only way to pass the night, closed at
+    night.
+    Eight validator rules in all: an hour outside `0..23`, a day shorter than
+    `ShopHours.MinimumOpenSpan`, a negative visit cycle, a cycle of `1` (that is a resident), a cycle
+    above `ShopHours.MaxVisitGap`, an offset outside `0..n-1` (a merchant who never appears), a
+    shop-hours condition naming an unknown shop, and the ungated `OpenShop` choice above.
+    `shop <id>` in the console **deliberately overrides both** and says so in its output.
 
 **A new service — trainer / bank / inn / stable (Phase 38D)**
 1. Author `data/services/Xxx.tres` (`script_class="ServiceResource"`): unique `Id` (`service.*`), a

@@ -215,7 +215,25 @@ public static class DevCommands
         }
 
         EventBus.Instance?.Publish(new ShopOpenedEvent(player, shop));
-        return $"opened {shop.Id}";
+
+        // 38J: the console deliberately opens a shop through its closing time and on a day its merchant
+        // is away — inspecting a shelf should not require waiting three real minutes per in-game day.
+        // It says so, because a window that opened when the world said "closed" is otherwise the sort of
+        // thing that gets reported as the hours being broken.
+        bool closed = TryService(out WorldClock clock) &&
+            !ShopHours.IsOpenAt(clock.Hour, shop.OpenHour, shop.CloseHour);
+        bool away = TryService(out WorldClock dayClock) &&
+            !ShopHours.IsInTown(dayClock.Day, shop.VisitEveryDays, shop.VisitDayOffset);
+
+        string note = (closed, away) switch
+        {
+            (true, true) => " (closed and out of town — dev override)",
+            (true, false) => " (closed at this hour — dev override)",
+            (false, true) => " (merchant is out of town — dev override)",
+            _ => string.Empty,
+        };
+
+        return $"opened {shop.Id}{note}";
     }
 
     /// <summary>
