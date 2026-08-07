@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Godot;
 
 namespace Embervale.World;
@@ -9,33 +10,55 @@ namespace Embervale.World;
 /// <c>EnemyTemplateRegistry</c> directly and bypass this, so a quest thief/assassin in town still works.
 ///
 /// Populated from the active <see cref="RegionResource"/> at world build and on each region transition.
-/// ponytail: one zone per region (RegionResource.SafeZone*); make it a list when a second safe area
-/// (e.g. a "safe" POI) actually exists.
+///
+/// <b>A region may now have several</b> (Phase 38K). It held exactly one until the Embermarket, whose
+/// stalls sit a district away from the town square: with a single bubble the market was either outside
+/// it — goblins spawning among the merchants — or the bubble had to swell wide enough to smother the
+/// encounters around the wilds cells too. A second area was the condition the old ponytail note here
+/// named for making this a list, and the Embermarket is it.
 /// </summary>
 public static class SafeZones
 {
-    private static Vector3 _center;
-    private static float _radius;
+    private static readonly List<(Vector3 Center, float Radius)> Zones = new();
 
+    /// <summary>Replaces every zone with a single one — the region's own bubble. Callers add the
+    /// cell-level areas after it, so a region transition cannot leave the previous realm's districts
+    /// protecting ground in this one.</summary>
     public static void Set(Vector3 center, float radius)
     {
-        _center = center;
-        _radius = Mathf.Max(0f, radius);
+        Zones.Clear();
+        Add(center, radius);
     }
 
-    public static void Clear() => _radius = 0f;
+    /// <summary>Adds another safe area — a settlement cell that is not the region's own hub. A
+    /// non-positive radius is ignored rather than stored, which is how <c>RegionCellResource</c>'s
+    /// default of <c>0</c> means "this cell is not a safe area" without a second flag to disagree
+    /// with it.</summary>
+    public static void Add(Vector3 center, float radius)
+    {
+        if (radius > 0f)
+        {
+            Zones.Add((center, radius));
+        }
+    }
 
-    /// <summary>True if <paramref name="worldPos"/> lies inside the safe bubble (XZ distance).</summary>
+    public static void Clear() => Zones.Clear();
+
+    /// <summary>True if <paramref name="worldPos"/> lies inside <em>any</em> safe bubble (XZ
+    /// distance).</summary>
     public static bool Contains(Vector3 worldPos)
     {
-        if (_radius <= 0f)
+        foreach ((Vector3 center, float radius) in Zones)
         {
-            return false;
+            float dx = worldPos.X - center.X;
+            float dz = worldPos.Z - center.Z;
+            if ((dx * dx) + (dz * dz) <= radius * radius)
+            {
+                return true;
+            }
         }
 
-        float dx = worldPos.X - _center.X;
-        float dz = worldPos.Z - _center.Z;
-        return (dx * dx) + (dz * dz) <= _radius * _radius;
+        return false;
     }
 
     /// <summary>Picks a ring point in [min,max] around <paramref name="center"/> that is outside the

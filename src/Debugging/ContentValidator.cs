@@ -2034,6 +2034,7 @@ public static class ContentValidator
                 issues.Add($"region '{region.Id}' spawn point {region.SpawnPoint} is outside its bounds {region.Bounds}");
             }
 
+            var seenCellIds = new HashSet<string>();
             foreach (RegionCellResource cell in region.Cells)
             {
                 if (cell == null || string.IsNullOrEmpty(cell.ScenePath) || !ResourceLoader.Exists(cell.ScenePath))
@@ -2042,10 +2043,57 @@ public static class ContentValidator
                     continue;
                 }
 
+                // 38K: "the file is there" and "the file parses" are different claims, and a cell scene is
+                // hand-authored text — a bad sub-resource id or an ext_resource pointing at nothing yields
+                // a file that exists and a PackedScene that is null. The streamer logs that and carries on,
+                // so the symptom is a district that simply never appears. Loading does NOT instantiate, so
+                // no component _Ready runs here; this is the same "registered is not works" line 37C drew
+                // for placeable templates.
+                if (GD.Load<PackedScene>(cell.ScenePath) == null)
+                {
+                    issues.Add(
+                        $"region '{region.Id}' cell '{cell.Id}' scene '{cell.ScenePath}' exists but does " +
+                        "not load — the streamer would log it and carry on, and the cell would simply " +
+                        "never appear");
+                    continue;
+                }
+
                 if (!region.Bounds.HasPoint(cell.Center))
                 {
                     issues.Add($"region '{region.Id}' cell '{cell.Id}' center {cell.Center} is outside region bounds");
                 }
+
+                // 38K. A cell that never loads and a cell nothing can walk in are both authored the same
+                // way a working one is, and neither says anything at runtime: the streamer simply never
+                // instances the first, and in the second every NPC and enemy falls back to straight-line
+                // steering through the scenery. Adding the Embermarket made all three of these one typo
+                // away, so they are checked rather than remembered.
+                if (cell.LoadRadius <= 0f)
+                {
+                    issues.Add(
+                        $"region '{region.Id}' cell '{cell.Id}' has a load radius of {cell.LoadRadius} — " +
+                        "the streamer would never bring it in, so the cell is authored and unreachable");
+                }
+
+                if (cell.SafeRadius < 0f)
+                {
+                    issues.Add($"region '{region.Id}' cell '{cell.Id}' has a negative safe radius ({cell.SafeRadius})");
+                }
+
+                if (!seenCellIds.Add(cell.Id))
+                {
+                    issues.Add(
+                        $"region '{region.Id}' has two cells with id '{cell.Id}' — the streamer keys its " +
+                        "loaded set by id, so one of them can never be instanced");
+                }
+
+                // ponytail: there is deliberately NO "every cell scene declares a NavigationRegion3D"
+                // rule. 38K wrote one and deleted it the same hour: a text scan cannot see through scene
+                // inheritance, so the three Frostfang roosts — which inherit their Nav from RoostCell —
+                // all reported as unnavigable, and the glacier legitimately has no navmesh because it is
+                // scenery. A check that is wrong three times out of four teaches authors to ignore the
+                // validator. Resolving inherited scenes properly needs a real PackedScene walk; do that
+                // if a missing navmesh ever actually ships.
             }
         }
     }

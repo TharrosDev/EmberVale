@@ -1041,6 +1041,32 @@ cell sat far from the origin). `EnemySpawnDirector` had the same latent bug.
    `RegionStreamer` loads/unloads the `Cells` by distance (hysteresis + a per-frame budget). The
    `ContentValidator` checks neighbours, default weather, and that each cell `ScenePath` resolves.
    No code change for a new region.
+   **Adding a cell to an existing region (Phase 38K)** is the same `.tres` sub-resource plus a
+   `.tscn`, and four things are worth doing deliberately:
+   - ⚠️ **Work out where the floors meet on paper.** The Embermarket's 52 m square abuts the hub's
+     60 m one exactly (hub floor ends at `z = 20`; a 52-wide floor centred at `z = 46` starts there).
+     A gap is a hole the player falls through and an overlap is two coplanar floors z-fighting along
+     a seam — neither is visible from the `.tres`, so the arithmetic goes in a comment beside it.
+   - **`SafeRadius` (38K) makes a cell its own no-spawn area.** `0` — the default — means it is not
+     one. A settlement can be more than one cell, and stretching the region's single
+     `SafeZoneRadius` to reach a district a street away also smothers the encounters around the
+     wilds. Author overlapping bubbles so there is no unprotected strip of road between them.
+     `SafeZones` holds a list now; `GameBootstrap.ApplySafeZones` rebuilds it, and ⚠️ `SafeZones.Set`
+     **replaces** and must be called before the per-cell `Add`s, or a region transition leaves the
+     previous realm's districts protecting empty ground here.
+   - **A travel node's `TravelName` is a locale key now.** `TravelNodeComponent` resolves it through
+     `Loc.T`, and because `Loc.T` returns a plain string unchanged, the Phase 25 waystone's authored
+     English still renders and needed no migration.
+   - `--validate` rejects a cell whose scene **exists but does not parse** (a hand-authored `.tscn`
+     with a syntax error — note it does *not* catch a missing `ext_resource`, which Godot tolerates
+     and loads anyway), a `LoadRadius <= 0` (the streamer would never bring it in), a negative
+     `SafeRadius`, and two cells sharing an `Id` (the streamer keys its loaded set by id, so one can
+     never be instanced).
+   - ⚠️ There is deliberately **no** "every cell declares a `NavigationRegion3D`" rule. 38K wrote one
+     and deleted it the same hour: a text scan cannot see through scene inheritance, so the three
+     Frostfang roosts — which inherit their `Nav` from `RoostCell` — all reported as unnavigable, and
+     the glacier legitimately has none because it is scenery. A check that is wrong three times out
+     of four teaches authors to ignore the validator.
 3. **Hard transitions (Phase 25C):** declaring a region in another's `Neighbours` makes the
    bootstrap spawn a travel portal between them automatically (a `RegionTransitionComponent` at the
    region's `SpawnPoint`). Stepping through (or `region goto <id>` in F1) publishes a

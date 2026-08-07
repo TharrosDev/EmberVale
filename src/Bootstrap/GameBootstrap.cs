@@ -529,8 +529,35 @@ public partial class GameBootstrap : Node3D
         AddChild(_streamer);
         ServiceLocator.Instance?.Register(_streamer);
         SpawnRegionPortals(region);
-        SafeZones.Set(region?.SafeZoneCenter ?? Vector3.Zero, region?.SafeZoneRadius ?? 0f);
+        ApplySafeZones(region);
         Weave.Set(region?.WeavePotency ?? Weave.DefaultPotency);
+    }
+
+    /// <summary>
+    /// Rebuilds the no-spawn areas for a region (Phase 38K): its own hub bubble, then one per cell that
+    /// declares a <see cref="RegionCellResource.SafeRadius"/>.
+    ///
+    /// ⚠️ <see cref="SafeZones.Set"/> <b>replaces</b> rather than adds, and it must be called first —
+    /// otherwise a region transition leaves the previous realm's districts protecting empty ground in
+    /// this one, and the symptom is enemies quietly refusing to spawn in a place with nothing there.
+    /// The same replace-never-merge rule every <c>ISaveable.Load</c> follows, for the same reason.
+    /// </summary>
+    private static void ApplySafeZones(RegionResource? region)
+    {
+        SafeZones.Set(region?.SafeZoneCenter ?? Vector3.Zero, region?.SafeZoneRadius ?? 0f);
+
+        if (region == null)
+        {
+            return;
+        }
+
+        foreach (RegionCellResource cell in region.Cells)
+        {
+            if (cell != null)
+            {
+                SafeZones.Add(cell.Center, cell.SafeRadius);
+            }
+        }
     }
 
     /// <summary>Places a hard-transition portal for each of the region's neighbours (Phase 25C), a
@@ -675,7 +702,7 @@ public partial class GameBootstrap : Node3D
             _streamer.Configure(destination);
             _mapService?.DiscoverRegion(destination.Id); // entering reveals it on the map (Phase 25E)
             SpawnRegionPortals(destination);
-            SafeZones.Set(destination.SafeZoneCenter, destination.SafeZoneRadius);
+            ApplySafeZones(destination);
             Weave.Set(destination.WeavePotency);
         }
 
