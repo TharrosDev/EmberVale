@@ -137,6 +137,7 @@ shop.unsellable,This is not for sale.
 # says no leaves the player carrying a pelt around a town, while one that names a trade tells them what
 # kind of person to look for. The tag names below are the plural a shopkeeper would use out loud.
 shop.specialty,their trade
+shop.glutted,plenty already
 shop.not_my_trade,They have no use for this.
 shop.refuses_tag,"{0} deals in {1}."
 trade.tag.metal,metalwork

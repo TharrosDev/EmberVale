@@ -56,6 +56,10 @@ public partial class ShopStockService : Node, ISaveable
         /// remove the exact instance the player is looking at.</summary>
         public readonly List<ItemInstance> Rolled = new();
 
+        /// <summary>Units of each template this merchant has bought from the player since their last
+        /// restock (38H). Absent means none, which is the unsaturated full price.</summary>
+        public readonly Dictionary<string, int> Absorbed = new();
+
         public int LastRestockDay { get; set; } = int.MinValue;
 
         /// <summary>Gold the merchant has left to buy with; <c>-1</c> when the shop authors no purse.</summary>
@@ -158,6 +162,31 @@ public partial class ShopStockService : Node, ISaveable
         return false;
     }
 
+    /// <summary>How many units of a template this merchant has already taken since their last restock
+    /// (38H). Drives <see cref="ShopStock.SaturatedPayout"/>, so the window and the sale read one
+    /// number.</summary>
+    public int AbsorbedOf(ShopResource shop, string templateId) =>
+        StateFor(shop).Absorbed.GetValueOrDefault(templateId, 0);
+
+    /// <summary>
+    /// Records a completed sale against the merchant's appetite (38H).
+    ///
+    /// ⚠️ Called only <em>after</em> the goods have actually changed hands — the same discipline that
+    /// makes <see cref="TakeOne"/> the last step of a purchase. Nothing may mark a merchant as glutted on
+    /// a path that ends with the player still holding the item.
+    /// </summary>
+    public void Absorb(ShopResource shop, string templateId, int quantity)
+    {
+        if (string.IsNullOrEmpty(templateId) || quantity <= 0)
+        {
+            return;
+        }
+
+        ShopState state = StateFor(shop);
+        state.Absorbed[templateId] = state.Absorbed.GetValueOrDefault(templateId, 0) + quantity;
+        Revision++;
+    }
+
     /// <summary>What the merchant has left to spend, or <c>-1</c> for an unlimited purse (38C).</summary>
     public int PurseFor(ShopResource shop) => StateFor(shop).Purse;
 
@@ -216,6 +245,10 @@ public partial class ShopStockService : Node, ISaveable
     {
         state.Remaining.Clear();
         state.Rolled.Clear();
+
+        // A merchant who has restocked has moved on what they bought (38H) — one clock now carries the
+        // shelves, the purse and the market's appetite, and none of the three needed new machinery.
+        state.Absorbed.Clear();
         state.LastRestockDay = CurrentDay();
         state.Stocked = true;
 
@@ -285,6 +318,12 @@ public partial class ShopStockService : Node, ISaveable
                 remaining[itemId] = count;
             }
 
+            var absorbed = new Godot.Collections.Dictionary();
+            foreach ((string itemId, int count) in state.Absorbed)
+            {
+                absorbed[itemId] = count;
+            }
+
             var rolled = new Godot.Collections.Array();
             foreach (ItemInstance instance in state.Rolled)
             {
@@ -296,6 +335,7 @@ public partial class ShopStockService : Node, ISaveable
                 ["day"] = state.LastRestockDay,
                 ["purse"] = state.Purse,
                 ["remaining"] = remaining,
+                ["absorbed"] = absorbed,
                 ["rolled"] = rolled,
             };
         }
@@ -354,6 +394,18 @@ public partial class ShopStockService : Node, ISaveable
             foreach (KeyValuePair<Variant, Variant> pair in remaining.AsGodotDictionary())
             {
                 state.Remaining[pair.Key.AsString()] = pair.Value.AsInt32();
+            }
+        }
+
+        // Absent means nothing absorbed — which is every save written before 38H, and is the right
+        // answer for them: a merchant restored from an older timeline starts the session unglutted
+        // rather than mysteriously paying the floor. Failing open, as 38F's tags do.
+        if (entry.TryGetValue("absorbed", out Variant absorbed) &&
+            absorbed.VariantType == Variant.Type.Dictionary)
+        {
+            foreach (KeyValuePair<Variant, Variant> pair in absorbed.AsGodotDictionary())
+            {
+                state.Absorbed[pair.Key.AsString()] = pair.Value.AsInt32();
             }
         }
 
