@@ -151,6 +151,11 @@ The `--` forwards `--validate` as a user argument; `GameBootstrap` detects it
 references + well-formedness + graph reachability), prints the report, and exits **0** on
 pass / **1** on any issue.
 
+**Headless economy report (no gameplay):** `godot --headless --path . -- --economy` loads every
+database, prints the realm's buy-low/sell-high table and exits **0** (an observation, not a gate). It
+is the same `EconomyReport.Arbitrage` the `economy` dev command prints — and it exists because the
+`F1` console cannot be driven from a remote session, so a console-only report would ship unexercised.
+
 **Launch straight into gameplay (dev):** `godot --path . -- --play` boots past the menu into
 the most recent save, so systems that only init on world build (the audio directors, spawners)
 can be launched deterministically — useful for capturing runtime logs without driving the menu
@@ -374,13 +379,13 @@ It is a separate file for one measured reason: it was **66% of this one**, and t
 every session while no session needs more than one recipe. Splitting it cut the standing cost of
 opening this repo by roughly two thirds and lost nothing — the recipes are one `Read` away.
 
-The 39 recipes, so you know what exists without opening it:
+The 40 recipes, so you know what exists without opening it:
 
 - **Code** — A new component · A new status effect · A new stat · A new event · A new persistent system · A new input action · A new dev-console command · A new UI panel / HUD widget
 - **Actors & combat** — A new actor / enemy type · A new boss fight (Phases 36A–36D) · A big/boss creature with body zones (Phase 35A) · Making a creature fly (Phase 35B) · A breath weapon (Phase 35C) · Placing a world boss in a lair (Phase 35D) · A creature that talks (Phase 35F) · A new weapon
 - **Items & progression** — A new item · A new piece of equipment · A new loot affix · A new loot table / dropper · A new perk · A new XP-bearing enemy (or tuning the curve) · A new crafting recipe · A new spell
 - **World & content** — A new quest · A new conversation · A new NPC routine · A new weather state · A new encounter · A new world event · A new faction
-- **Economy & housing** — A new claimable property (Phase 37A) · Giving a property a stash (Phase 37B) · A new placeable prop or a buildable yard (Phase 37C) · Giving a property a trophy stand (Phase 37D) · A new shop / merchant (Phase 38A–38J) · A new service — trainer / bank / inn / stable (Phase 38D) · A tolled crossing — toll, permit, bribe (Phase 38M) · A new gold sink (Phase 38C)
+- **Economy & housing** — A new claimable property (Phase 37A) · Giving a property a stash (Phase 37B) · A new placeable prop or a buildable yard (Phase 37C) · Giving a property a trophy stand (Phase 37D) · A new shop / merchant (Phase 38A–38J) · A new service — trainer / bank / inn / stable (Phase 38D) · A production settlement (Phase 38N1) · A tolled crossing — toll, permit, bribe (Phase 38M) · A new gold sink (Phase 38C)
 
 ⚠️ **If you are about to author content and cannot find a recipe for it, that is a finding.** Write
 one when you are done, in the same shape: what to author, in what order, and what bit you personally.
@@ -405,7 +410,7 @@ one when you are done, in the same shape: what to author, in what order, and wha
 
 ## 10. Roadmap status
 
-**Where the project is: Stage C, Phase 38 (economy), sub-phases 38A–38M2 done, 38N next.**
+**Where the project is: Stage C, Phase 38 (economy), sub-phases 38A–38N1 done, 38N2 next.**
 
 - **Phases 1–21 built the systems**, not the game — a data-driven sandbox that *can* express
   Embervale. **Phases 22+ are the production roadmap** that carries it to launch.
