@@ -410,7 +410,7 @@ one when you are done, in the same shape: what to author, in what order, and wha
 
 ## 10. Roadmap status
 
-**Where the project is: Stage C, Phase 38 (economy), sub-phases 38A–38N1 done, 38N2 next.**
+**Where the project is: Stage C, Phase 38 (economy), sub-phases 38A–38N2 done, 38O next.**
 
 - **Phases 1–21 built the systems**, not the game — a data-driven sandbox that *can* express
   Embervale. **Phases 22+ are the production roadmap** that carries it to launch.
@@ -446,9 +446,15 @@ the ones immediately before it usually name the thing that will bite you.
   scale comes out 1 m too tall; **verify a written asset by parsing the file**, not the Blender
   viewport; and **do not round-trip a rigged model** — it destroys bone-parented children, so when
   a rig already fits, the correct adaptation is a **file copy**.
-- ⚠️ **The library is out of medieval character bodies.** Seven usable bodies dress twelve
-  merchants; the five unused women are **CC-BY 3.0** and the unused men are modern dress. Closing
-  it needs an open-web pull of Quaternius's own CC0 RPG Character Pack.
+- ⚠️ **Check what is already vendored before pulling anything** (38N2). The library was declared
+  "out of medieval bodies" in 38L; the open-web pull that followed returned a file **byte-identical**
+  to `assets/library/women/adventurer.glb`, which had been sitting unadapted since the migration —
+  38L's claim that the unused women were all CC-BY 3.0 was wrong about that one. `ls` the library and
+  read `manifest.json`'s licence field first.
+- ⚠️ **Render every candidate body at eye level, front and back, before adopting it.** Four of six
+  candidates in 38N2 were unusable (modern dress, a punk with a chainsaw, an ornament that is not a
+  person, a four-bone rig), and none of it was visible from a filename. This trap has now fired three
+  times: `npc_townsman` (hi-vis, 38K→38L), `npc_merchant_f` (t-shirt and trainers, 38L→38N1).
 - **A region loads whole** (maintainer direction, 38M2). Every cell of the active region is resident
   from the moment it is entered; `RegionStreamer` has no distance test and no unload path during
   play, and `RegionCellResource.LoadRadius`, `StreamDecision` and its tests were deleted with the
