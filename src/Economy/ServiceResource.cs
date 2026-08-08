@@ -76,4 +76,23 @@ public partial class ServiceResource : Resource
     /// honours it — a trainer sells access and effort, not power.
     /// </summary>
     [Export] public int XpReward { get; set; }
+
+    [ExportGroup("Passage")]
+
+    /// <summary>
+    /// Story flag a <see cref="ServiceKind.Passage"/> grants (Phase 38M). Separate from
+    /// <see cref="UnlockFlagId"/> because that one doubles as the <em>receipt</em>: a bribe recorded
+    /// there would refuse to sell a second time, and a bribe you can only pay once is a permit.
+    /// So a permit authors <see cref="UnlockFlagId"/> and nothing here; a bribe authors this and
+    /// leaves <see cref="UnlockFlagId"/> empty, and is sold again the moment the last one is spent.
+    /// </summary>
+    [Export] public string GrantedFlagId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Standing this costs (negative) or earns with <see cref="FactionId"/>. A bribe is a service
+    /// whose price is partly paid in reputation — and because 38C prices every merchant in the realm
+    /// off the same standing, the cheap crossing is charged for twice over at every counter in town.
+    /// That is the whole of "a bribe costs standing"; no second currency was needed to say it.
+    /// </summary>
+    [Export] public int ReputationDelta { get; set; }
 }

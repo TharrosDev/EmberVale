@@ -26,6 +26,7 @@
 - [Giving a property a trophy stand (Phase 37D)](#giving-a-property-a-trophy-stand-phase-37d)
 - [A new shop / merchant (Phase 38A–38J)](#a-new-shop--merchant-phase-38a38j)
 - [A new service — trainer / bank / inn / stable (Phase 38D)](#a-new-service--trainer--bank--inn--stable-phase-38d)
+- [A tolled crossing — toll, permit, bribe (Phase 38M)](#a-tolled-crossing--toll-permit-bribe-phase-38m)
 - [A new gold sink (Phase 38C)](#a-new-gold-sink-phase-38c)
 - [A big/boss creature with body zones (Phase 35A)](#a-bigboss-creature-with-body-zones-phase-35a)
 - [Making a creature fly (Phase 35B)](#making-a-creature-fly-phase-35b)
@@ -466,6 +467,39 @@
    exists anywhere in the game. 38D's brief says repair lands only "if durability is adopted in 40",
    and 40B's rule is that cut systems leave no stub — so a kind resolving to nothing would be worse
    than its absence. The deferral is recorded in `docs/DESIGN.md` §6 against Phase 40A.
+
+## A tolled crossing — toll, permit, bribe (Phase 38M)
+
+1. **Author the toll on the destination region**, not on the link: `TollGold`, `TollPermitFlagId` and
+   `TollPassFlagId` on `data/regions/Xxx.tres`. `TollGold = 0` (the default) is an untolled road, so
+   every existing region is unaffected. A gate on a two-way road is **two identical blocks, one per
+   region** — the same "declare it on the destination" shape `UnlockFlagId` has, so the bootstrap
+   needs no per-link table.
+2. **Sell the papers as `ServiceKind.Passage` services.** A permit authors `UnlockFlagId` and nothing
+   else — the receipt *is* the exemption, so there is no second record to drift. A bribe authors
+   `GrantedFlagId` (consumed at the gate) and a negative `ReputationDelta`, and leaves `UnlockFlagId`
+   **empty**.
+   ⚠️ **Recording a bribe in `UnlockFlagId` makes it a permit**: that field doubles as
+   `ServiceComponent`'s already-bought check, so the gate-hand would refuse to sell a second one.
+   ⚠️ **A permanent pass sold cheaper than the permit deletes the sink** — one bribe and the road is
+   free forever. The pass is consumed by `GameBootstrap.PayToll` for exactly that reason.
+3. **The standing cost is the second half of the price and needs no new currency.** 38C prices every
+   merchant off the same faction standing, so a bribe is charged once at the gate and again at every
+   counter in town, forever. Author `FactionId` or the cost lands nowhere — a validator rule.
+4. ⚠️ **A permit and a bribe are two entities.** `GetComponent<T>` returns the first child match, so
+   two `ServiceComponent`s on one body leave the second unreachable and silent (the 38E finding).
+5. **Charge at the crossing, never at the interactable.** `GameBootstrap.PayToll` sits in
+   `OnRegionTransitionRequested`, which the portal *and* the `region` dev command both arrive at —
+   gating only the component leaves the console a free ride, which is 38C's travel-fee lesson.
+   Fast travel is deliberately **not** tolled: it already pays `TravelFee`, and one journey does not
+   pay two charges.
+6. **Quote the price from the function that charges it.** `RegionTransitionComponent.Prompt` and
+   `PayToll` both call `TollFee.Resolve`, so the number at the gate is the number taken. The prompt is
+   also the refusal channel — `Notifications` has no generic message event, and a refusal that says
+   itself where the player is already looking needs none.
+7. **Two flags, no database — so `--validate` is the only thing standing between a typo and an
+   uncrossable road.** The rule checks that each flag a tolled region names is granted by some
+   authored `Passage` service, as a union. Placing the warden proves nothing: `.tscn` is not scanned.
 
 ## A new gold sink (Phase 38C)
 

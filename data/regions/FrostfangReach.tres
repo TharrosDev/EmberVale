@@ -65,3 +65,11 @@ WeavePotency = 0.5
 DefaultWeatherId = "weather.clear"
 DayPhaseBias = 2
 Neighbours = Array[String](["region.ember_crown"])
+
+; The Crossway toll, northbound (Phase 38M). The twin of the block in EmberCrown.tres — same gate, same
+; road, same permit — because the toll is declared on the destination and a crossing has two of those.
+; The two must stay in step; the validator checks that a tolled region names flags some Passage service
+; actually grants, which is what catches one of them being edited alone.
+TollGold = 25
+TollPermitFlagId = "flag.crossway.permit"
+TollPassFlagId = "flag.crossway.pass"

@@ -650,7 +650,68 @@ public partial class GameBootstrap : Node3D
             return;
         }
 
+        if (!PayToll(destination))
+        {
+            return;
+        }
+
         PerformRegionLoad(destination, destination.SpawnPoint, $"Entering {destination.DisplayName}...");
+    }
+
+    /// <summary>
+    /// Takes the road wardens' toll for entering <paramref name="destination"/> (Phase 38M), and
+    /// answers whether the crossing may proceed.
+    ///
+    /// This is here rather than in <see cref="RegionTransitionComponent"/> because it is the one place
+    /// the portal and the <c>region</c> dev command both arrive — 38C's lesson from the travel fee,
+    /// where gating the map screen alone would have left the console a free ride. It is deliberately
+    /// <em>not</em> on the fast-travel path: that already pays <c>TravelFee</c>, and one journey does
+    /// not pay two charges.
+    ///
+    /// Fails closed, like the travel fee: no gold, no crossing. The refusal is not toasted because
+    /// <c>Notifications</c> has no generic message event — the portal's own prompt has already named
+    /// the price and the shortfall, which is <c>ServiceComponent</c>'s rule that every refusal says
+    /// itself where the player is already looking.
+    /// </summary>
+    private bool PayToll(RegionResource destination)
+    {
+        if (destination.TollGold <= 0 || _player == null)
+        {
+            return true;
+        }
+
+        StoryFlagsComponent? flags = _player.GetComponent<StoryFlagsComponent>();
+        InventoryComponent? purse = _player.GetComponent<InventoryComponent>();
+
+        switch (Economy.TollFee.Resolve(
+            hasPermit: flags?.Has(destination.TollPermitFlagId) ?? false,
+            hasPass: flags?.Has(destination.TollPassFlagId) ?? false,
+            fee: destination.TollGold,
+            goldHeld: purse?.CountOf(GameIds.Currency.Gold) ?? 0))
+        {
+            case Economy.TollOutcome.PassSpent:
+                flags?.Clear(destination.TollPassFlagId);
+                Log.Info($"Toll at '{destination.Id}' covered by a one-crossing pass.");
+                return true;
+
+            case Economy.TollOutcome.Charged:
+                // The RemoveItem is still its own condition: chained into the Resolve above, a purse
+                // that emptied between the prompt and the press would fall through to a free crossing.
+                if (purse?.RemoveItem(GameIds.Currency.Gold, destination.TollGold) != true)
+                {
+                    Log.Warn($"Toll at '{destination.Id}' refused: {destination.TollGold} gold required.");
+                    return false;
+                }
+
+                return true;
+
+            case Economy.TollOutcome.CannotAfford:
+                Log.Warn($"Toll at '{destination.Id}' refused: {destination.TollGold} gold required.");
+                return false;
+
+            default:
+                return true; // Free, or a permit the player has already bought
+        }
     }
 
     /// <summary>Fast-travels to a discovered <see cref="FastTravelService"/> node (Phase 25G): resolves

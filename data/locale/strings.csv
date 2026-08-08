@@ -81,6 +81,10 @@ common.confirm_delete,Confirm delete
 common.confirm_new,Confirm new
 loading.title,Loading…
 region.travel_prompt,Travel to {0}
+region.travel_prompt_toll,"Travel to {0} — the wardens take {1} gold"
+region.travel_prompt_permit,"Travel to {0} — your permit is in order"
+region.travel_prompt_pass,"Travel to {0} — your pass is taken at the gate"
+region.travel_prompt_short,"The road to {0} is barred — the wardens want {1} gold, and you carry {2}"
 map.title,WORLD MAP
 map.empty,Nothing discovered yet — explore to fill the map.
 hud.compass.n,N
@@ -208,6 +212,10 @@ service.prompt_hostile,"{0} — they will not serve you"
 service.prompt_open,Open {0}
 service.prompt_taught,"{0} — you have learned all they can teach"
 service.prompt_owned,"{0} — your mount is stabled here"
+service.crossway.permit.name,A Crossway Permit
+service.crossway.bribe.name,A Quiet Word at the Gate
+service.prompt_passage,"{0} ({1} gold)"
+service.prompt_passage_held,"{0} — your papers are already in order"
 craft.station_forge,Forge
 craft.station_workbench,Workbench
 craft.station_alchemy,Alchemy Table

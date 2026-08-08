@@ -107,6 +107,7 @@ public static class ContentValidator
         ValidateShops(issues);
         ValidateEssentialsAreResident(issues);
         ValidateServices(issues);
+        ValidateTolls(issues);
         ValidatePlaceables(issues);
         ValidateBestiary(issues);
         ValidateResourcePaths(issues);
@@ -856,6 +857,90 @@ public static class ContentValidator
                 }
 
                 break;
+
+            case ServiceKind.Passage:
+                // A permit records itself in UnlockFlagId; a bribe grants a consumable pass in
+                // GrantedFlagId. With neither, the gold is taken and the road stays shut — and the
+                // player has no way to tell that from having been robbed.
+                if (service.UnlockFlagId.Length == 0 && service.GrantedFlagId.Length == 0)
+                {
+                    issues.Add(
+                        $"service '{id}' sells passage but grants no flag — it would take gold and open " +
+                        "nothing, because a toll is only ever read through a flag");
+                }
+
+                // The standing cost is the honest half of a bribe's price. Authored without a faction
+                // it lands nowhere, and the cheap crossing quietly becomes strictly better than the
+                // permit rather than a trade.
+                if (service.ReputationDelta != 0 && service.FactionId.Length == 0)
+                {
+                    issues.Add(
+                        $"service '{id}' moves standing by {service.ReputationDelta} with no faction — " +
+                        "the cost would be charged to nobody");
+                }
+
+                break;
+        }
+    }
+
+    /// <summary>
+    /// A tolled crossing must be crossable (Phase 38M). A toll is read entirely through two story
+    /// flags, and story flags have no database — so a typo in either one is a road that charges every
+    /// time and can never be papered, which from inside the game looks like a bug in the portal rather
+    /// than a bad string.
+    ///
+    /// The check is reachability as a <b>union</b>, the same shape 38D gave taught recipes: some
+    /// authored <see cref="ServiceKind.Passage"/> must grant each flag the region names. Nothing else
+    /// in the battery can catch this — <c>.tscn</c> is not scanned, so placing the warden is not proof
+    /// he sells the right paper.
+    /// </summary>
+    private static void ValidateTolls(List<string> issues)
+    {
+        var granted = new HashSet<string>();
+        foreach (ServiceResource service in ServiceDatabase.All)
+        {
+            if (service.Kind != ServiceKind.Passage)
+            {
+                continue;
+            }
+
+            if (service.UnlockFlagId.Length > 0)
+            {
+                granted.Add(service.UnlockFlagId);
+            }
+
+            if (service.GrantedFlagId.Length > 0)
+            {
+                granted.Add(service.GrantedFlagId);
+            }
+        }
+
+        foreach (RegionResource region in RegionDatabase.All)
+        {
+            if (region.TollGold <= 0)
+            {
+                continue; // an untolled road, which is every region but the Crossway
+            }
+
+            foreach ((string label, string flag) in new[]
+            {
+                ("permit", region.TollPermitFlagId),
+                ("pass", region.TollPassFlagId),
+            })
+            {
+                if (flag.Length == 0)
+                {
+                    issues.Add(
+                        $"region '{region.Id}' charges a {region.TollGold} gold toll with no {label} flag — " +
+                        "there would be no way past it but paying, every time");
+                }
+                else if (!granted.Contains(flag))
+                {
+                    issues.Add(
+                        $"region '{region.Id}' toll {label} flag '{flag}' is granted by no passage " +
+                        "service — nothing in the world can sell the player past this gate");
+                }
+            }
         }
     }
 

@@ -67,3 +67,15 @@ WeavePotency = 1.0
 DefaultWeatherId = "weather.cloudy"
 DayPhaseBias = 2
 Neighbours = Array[String](["region.frostfang_reach"])
+
+; The Crossway toll (Phase 38M). Authored on BOTH regions rather than on one, because there is one gate
+; on one road and the wardens do not care which way a cart is pointing — RegionResource declares this on
+; the destination for the same reason UnlockFlagId is declared there, so "both directions" is two small
+; identical blocks rather than a per-link table nothing else in the game has.
+;
+; 25 gold sits under TravelFee.CrossRegionFee (40) on purpose: walking must stay the cheap way across,
+; or the toll is a tax on the only option and the map screen quietly becomes the sensible one. The
+; permit (250) and the bribe (10, plus standing) are authored in data/services/.
+TollGold = 25
+TollPermitFlagId = "flag.crossway.permit"
+TollPassFlagId = "flag.crossway.pass"

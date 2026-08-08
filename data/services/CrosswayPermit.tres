@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="ServiceResource" format=3]
+
+[ext_resource type="Script" path="res://src/Economy/ServiceResource.cs" id="1_service"]
+
+; The road warden's permit (Phase 38M) — the honest way past the Crossway Post.
+;
+; This is a ServiceKind.Passage, which is one enum member and one branch on top of 38D's component.
+; Everything that makes it feel like a transaction — the price shown in the prompt, the standing
+; discount through ShopPricing.ServicePrice, the refusal to sell twice, the gold taken before the verb
+; runs — was already written for the innkeeper and the stablemaster, and none of it needed touching.
+;
+; The receipt IS the exemption: UnlockFlagId does both jobs here, so there is nothing to keep in sync
+; and no second record of a thing the player bought. That is why the permit authors UnlockFlagId and
+; leaves GrantedFlagId empty, and the bribe next door does the exact opposite.
+;
+; 250 gold against a 25-gold toll is ten crossings to break even, which is the number the decision is
+; actually about: a player who means to live on both sides of the Crossway buys it, and one passing
+; through twice should not. Phase 56 owns the balance; the shape is what is being authored here.
+;
+; No ReputationDelta. Buying a permit from a warden is not a thing the villagers hold against you —
+; that distinction is the entire point of there being two ways through.
+
+[resource]
+script = ExtResource("1_service")
+Id = "service.crossway.permit"
+NameKey = "service.crossway.permit.name"
+Kind = 4
+PriceGold = 250
+FactionId = "faction.villagers"
+UnlockFlagId = "flag.crossway.permit"
+RestHour = 8
+XpReward = 0
+GrantedFlagId = ""
+ReputationDelta = 0
