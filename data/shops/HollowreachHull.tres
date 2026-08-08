@@ -1,0 +1,64 @@
+[gd_resource type="Resource" script_class="ShopResource" format=3]
+
+[ext_resource type="Script" path="res://src/Economy/ShopResource.cs" id="1_shop"]
+[ext_resource type="Script" path="res://src/Economy/ShopStockEntry.cs" id="2_entry"]
+
+; Sedge Marrow, aboard the Wet Hull (Phase 38O) — the realm's first fence, and the discreet one.
+;
+; THE REFUSALS ARE THE DESIGN (38N1's rule, and it matters twice as much here). Sedge takes contraband,
+; fine goods, stones and jewellery and NOTHING ELSE — no ore, no fish, no pelts, no iron. A fence who
+; bought everything would be a general store with a reputation cost bolted on, and the walk down the
+; water would buy the player nothing they could not get from Aldreth.
+;
+; ⚠️ FactionId IS EMPTY, AND THAT IS LOAD-BEARING. The natural owner is faction.outlaws, which starts
+; at -30 — tier Hostile, at or below its own HostileThreshold of 2 — so a shop factioned to it would be
+; hidden by VendorComponent.ApplyPresence and refuse to trade from the first minute of a new game. The
+; standing a fence MOVES and the standing she PRICES BY are two different questions, and 38O only
+; answers the first. She therefore prices flat, at every tier, for everybody.
+;
+; The two-sided cost: +5 with the outlaws, -2 with the villagers, per sale rather than per unit. Six
+; sales carry the outlaws from -30 to Neutral, at which point they stop being hostile on sight and the
+; bandits on the road leave the player alone — a consequence that needed no new machinery at all,
+; because EnemyAIComponent already reads IsHostile(faction.outlaws). The villagers' -2 is charged again
+; at every honest counter in the realm through 38C's price ramp, forever. That is the trade.
+;
+; SellFraction 0.55 is the second-most generous in the game after Marta's 0.62, and it has to be: the
+; player is paying a standing cost on top of walking here, and a fence who paid the ordinary 0.4 would
+; be strictly worse than dumping the goods.
+;
+; PurseGold 260 with a 2-day clock is the brake instead. She is not a bottomless fence; a big haul
+; needs two trips or two fences, which is why there are two.
+
+[sub_resource type="Resource" id="Stock_moonstone"]
+script = ExtResource("2_entry")
+ItemId = "item.gem.moonstone_rough"
+Quantity = 3
+
+[sub_resource type="Resource" id="Stock_ash"]
+script = ExtResource("2_entry")
+ItemId = "item.material.barrow_ash"
+Quantity = 2
+
+[sub_resource type="Resource" id="Stock_spice"]
+script = ExtResource("2_entry")
+ItemId = "item.material.spice_pouch"
+Quantity = 6
+
+[resource]
+script = ExtResource("1_shop")
+Id = "shop.hollowreach.hull"
+NameKey = "shop.hollowreach.hull.name"
+FactionId = ""
+AcceptedTags = Array[String](["contraband", "luxury", "gem", "jewelry"])
+Specialties = Array[String](["contraband", "gem"])
+Stock = Array[Resource]([SubResource("Stock_moonstone"), SubResource("Stock_ash"), SubResource("Stock_spice")])
+RestockDays = 2
+BuyMarkup = 1.62
+SellFraction = 0.55
+PurseGold = 260
+OpenHour = 20
+CloseHour = 5
+ContrabandFactionId = "faction.outlaws"
+ContrabandDelta = 5
+ContrabandPenaltyFactionId = "faction.villagers"
+ContrabandPenaltyDelta = -2

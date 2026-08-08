@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="ScheduleResource" format=3]
+
+[ext_resource type="Script" path="res://src/Npc/ScheduleResource.cs" id="1_sched"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleEntry.cs" id="2_entry"]
+
+; Sedge Marrow, the Wet Hull (Phase 38O).
+;
+; ⚠️ DESTINATIONS ARE CELL-LOCAL against Origin (-106, 0, 74), Hollowreach's Center (38L's
+; ScheduleResource.Origin). A raw world destination copied out of a cell .tscn lands a cell's width
+; away and nothing reports it.
+;
+; ⚠️ Hours track shop.hollowreach.hull (20:00-05:00) and are kept in step BY HAND — a ScheduleId lives
+; in a .tscn, which ContentValidator cannot scan.
+;
+; She is the only merchant in the realm whose working day is the night, and the schedule is what makes
+; that visible rather than merely true: at dusk she walks out to the pier head, works the dark hours by
+; the north brazier, and is back inside the hull before the sun is up. A player who arrives at noon
+; finds a shut hatch and a woman asleep, which is the shop's OpenHour said in a second language.
+;
+; ScheduleComponent walks a straight line with no pathing, so every point is on open board or shingle.
+
+[sub_resource type="Resource" id="e_0"]
+script = ExtResource("2_entry")
+StartHour = 5
+Activity = "Asleep aboard the hull"
+Destination = Vector3(-9, 0, -4)
+
+[sub_resource type="Resource" id="e_1"]
+script = ExtResource("2_entry")
+StartHour = 19
+Activity = "Walking out to the pier head"
+Destination = Vector3(-6, 0, -8)
+
+[sub_resource type="Resource" id="e_2"]
+script = ExtResource("2_entry")
+StartHour = 20
+Activity = "Trading by the brazier"
+Destination = Vector3(-7, 0, -4)
+
+[resource]
+script = ExtResource("1_sched")
+Id = "schedule.hollowreach.hull"
+Origin = Vector3(-106, 0, 74)
+Entries = Array[Resource]([SubResource("e_0"), SubResource("e_1"), SubResource("e_2")])

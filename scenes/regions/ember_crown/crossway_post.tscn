@@ -25,6 +25,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_banner_guild.glb" id="26_banner"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_guild_rep.glb" id="30_guild_rep"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_hooded.glb" id="31_hooded"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_townswoman.glb" id="32_townswoman"]
 
 ; THE CROSSWAY POST (Phase 38M2) — the wardens' gate on the road north, and the place 38M's toll is
 ; actually about. 38M built the toll, the permit and the bribe and left them standing in the town
@@ -714,3 +715,71 @@ script = ExtResource("6_service")
 ServiceId = "service.crossway.bribe"
 
 [node name="Model" parent="GateHand" instance=ExtResource("31_hooded")]
+
+; --- The search and the impound (Phase 38O) --------------------------------------
+; Two MORE bodies, four metres up the road from the permit and the bribe, and the reason is 38M's own
+; and not a new one: GetComponent<T> returns the first child match (38E), so a search and a redemption
+; stacked on Alric would leave the second one silent forever. Four services, four people.
+;
+; ⚠️ THE SEARCH IS THE ONLY REASON HOLLOWREACH IS A JOURNEY RATHER THAN A SHOP. Contraband bought or
+; looted on the wrong side of this gate can be taken off the player here, and bought back at the shed
+; behind — a cost the player can price, not a punishment they cannot. ContrabandImpound holds it and
+; the save carries it.
+;
+; They are dressed apart on purpose, as the first two were: Deryn wears the guild body every official
+; in the realm wears, because she IS the same office as Alric standing beside her; the clerk wears the
+; townswoman, because a ledger and a counter are not a warden's job and should not look like one.
+; Neither wears npc_townsman — that body is a hi-vis vest and a hard hat, retired since 38L.
+;
+; They are NOT parented to Nav: only static geometry should carve the navmesh.
+[node name="SearchWarden" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.2, 0, 2.5)
+script = ExtResource("2_entity")
+DisplayName = "Warden Deryn Colt"
+TemplateId = "npc.search_warden"
+
+[node name="Animation" type="Node" parent="SearchWarden"]
+script = ExtResource("4_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="SearchWarden"]
+
+[node name="Shape" type="CollisionShape3D" parent="SearchWarden/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="SearchWarden"]
+script = ExtResource("5_faction")
+FactionId = "faction.villagers"
+
+[node name="Service" type="Node" parent="SearchWarden"]
+script = ExtResource("6_service")
+ServiceId = "service.crossway.search"
+
+[node name="Model" parent="SearchWarden" instance=ExtResource("30_guild_rep")]
+
+[node name="ImpoundClerk" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.2, 0, 2.5)
+script = ExtResource("2_entity")
+DisplayName = "The Impound Clerk"
+TemplateId = "npc.impound_clerk"
+
+[node name="Animation" type="Node" parent="ImpoundClerk"]
+script = ExtResource("4_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="ImpoundClerk"]
+
+[node name="Shape" type="CollisionShape3D" parent="ImpoundClerk/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="ImpoundClerk"]
+script = ExtResource("5_faction")
+FactionId = "faction.villagers"
+
+[node name="Service" type="Node" parent="ImpoundClerk"]
+script = ExtResource("6_service")
+ServiceId = "service.crossway.impound"
+
+[node name="Model" parent="ImpoundClerk" instance=ExtResource("32_townswoman")]

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://cmbrvlctbfurs"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+; Phase 38O - contraband, and the one that names the toll out loud. A fur run past the Crossway without
+; paying is worth more than one that paid, which is exactly the pressure 38M's gate was built to apply.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.material.untaxed_fur"
+DisplayName = "Untaxed Frostfang Fur"
+Description = "Thick winter pelt, still uncut by a warden's mark. Somebody walked it around the gate."
+Type = 4
+Rarity = 1
+MaxStack = 20
+Weight = 1.2
+Value = 55
+TradeTags = Array[String](["contraband", "pelt"])

@@ -149,6 +149,10 @@ shop.specialty,their trade
 shop.glutted,plenty already
 shop.not_my_trade,They have no use for this.
 shop.refuses_tag,"{0} deals in {1}."
+# Contraband (Phase 38O). A fifth named refusal, and it must NOT reuse shop.not_my_trade: "no use for
+# this" sends the player looking for a specialist who does not exist, when the true answer is that no
+# honest counter in the realm will take it and the wharf is the only door.
+shop.refuses_contraband,"{0} will not have this in the shop. Somewhere quieter, perhaps."
 trade.tag.metal,metalwork
 trade.tag.ore,raw ore
 trade.tag.leather,leather
@@ -167,12 +171,13 @@ trade.tag.trophy,trophies
 trade.tag.relic,relics
 trade.tag.luxury,fine goods
 # 38L opened five of the eight tags the economy arc had named, each with goods wearing it on the same
-# day. contraband waits for 38O's fence; map and livestock wait for anything at all to carry them.
+# day. 38O opened contraband the same way; map and livestock wait for anything at all to carry them.
 trade.tag.food,provisions
 trade.tag.fish,fish
 trade.tag.textile,cloth
 trade.tag.tome,books
 trade.tag.fuel,fuel
+trade.tag.contraband,goods best not asked about
 # Stock tiers and merchant investment (Phase 38I). Each lock names a different thing to go and do, in the
 # order flag -> standing -> gold, so a player is never told to invest in a merchant who is waiting on a
 # story beat. A stake is permanent and buys two things only: her purse and the rows behind it.
@@ -217,6 +222,15 @@ service.crossway.permit.name,A Crossway Permit
 service.crossway.bribe.name,A Quiet Word at the Gate
 service.prompt_passage,"{0} ({1} gold)"
 service.prompt_passage_held,"{0} — your papers are already in order"
+# Contraband search and impound (Phase 38O). The search is the one service in the game the player is
+# not buying, so its offer line has to say what the press will do — the generic free line ("Use {0}")
+# would have a warden take their goods off them with no warning at all.
+service.crossway.search.name,The Warden's Search
+service.crossway.impound.name,The Crossway Impound
+service.prompt_search,"{0} — stand still and be searched"
+service.prompt_search_clean,"{0} — you have nothing to declare"
+service.prompt_redeem,"{0} — pay the fine and take your goods ({1} gold)"
+service.prompt_redeem_empty,"{0} — they are holding nothing of yours"
 craft.station_forge,Forge
 craft.station_workbench,Workbench
 craft.station_alchemy,Alchemy Table
@@ -1115,3 +1129,32 @@ dlg.odger.c_bye,"Another time."
 dlg.odger.c_talk_trade,"Rope it is, then."
 dlg.odger.c_talk_back,"Something else."
 dlg.odger.c_talk_bye,"Noted."
+# HOLLOWREACH (Phase 38O) — the wharf, its two fences and the travel node. The prose is hand-written;
+# only the dialogue graphs were generated. Neither fence ever uses the word "contraband": Sedge talks
+# around it and Coyle does not care enough to, and between them the player learns what the place is
+# without a tutorial line being written.
+travel.ember_crown.hollowreach.name,Hollowreach
+shop.hollowreach.hull.name,The Wet Hull
+shop.hollowreach.locker.name,The Longshore Locker
+dlg.sedge.speaker,"Sedge Marrow"
+dlg.sedge.root,"She does not get up. ""You came a long way in the dark, so I'll assume you didn't come for the view. Small things. Bright things. Things with no paper on them. That's the whole of my trade and I'd thank you not to widen it."""
+dlg.sedge.talk,"""Up the hill they'll tell you every stone has a register entry and every fur has a warden's mark."" She turns a stone over without looking at it. ""Down here we take the ones that don't. It pays better than it should, and it costs you with the sort of people who keep registers. You'll feel that at their counters soon enough — it's not a rumour, it's arithmetic."""
+dlg.sedge.closed,"The Wet Hull sits dark and low against the jetty, hatches pegged shut. Somebody has chalked on the boards: AFTER DUSK. NOT BEFORE."
+dlg.sedge.c_trade,"Show me what you'll take."
+dlg.sedge.c_closed,"Anyone aboard?"
+dlg.sedge.c_talk,"Who else deals down here?"
+dlg.sedge.c_bye,"Another night."
+dlg.sedge.c_talk_trade,"Then let's talk arithmetic."
+dlg.sedge.c_talk_back,"Something else."
+dlg.sedge.c_talk_bye,"I'll think on it."
+dlg.coyle.speaker,"Coyle Ferrin"
+dlg.coyle.root,"He kicks a crate straight and grins at you over it. ""Whatever's in the pack, friend. Furs, cloth, pitch, iron, and the other sort — I don't sort it and I don't ask. I pay less than she does and I pay it now."""
+dlg.coyle.talk,"""Sedge'll tell you she's discreet. She is. I'm not, and I'm cheaper for it."" He shrugs. ""Sell through me and half the coast hears about it by morning, and the folk up the hill hear it by noon. You want quiet, walk to the hull. You want it gone, it's gone now."""
+dlg.coyle.closed,"The locker is open. It is always open."
+dlg.coyle.c_trade,"What'll you give me?"
+dlg.coyle.c_closed,"You ever shut?"
+dlg.coyle.c_talk,"Why so cheap?"
+dlg.coyle.c_bye,"Not today."
+dlg.coyle.c_talk_trade,"Gone now, then."
+dlg.coyle.c_talk_back,"Something else."
+dlg.coyle.c_talk_bye,"I'll keep walking."

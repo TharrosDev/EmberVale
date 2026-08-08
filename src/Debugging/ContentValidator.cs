@@ -105,6 +105,7 @@ public static class ContentValidator
         ValidateProperties(issues);
         ValidateItemTags(issues);
         ValidateShops(issues);
+        ValidateContrabandReachability(issues);
         ValidateEssentialsAreResident(issues);
         ValidateServices(issues);
         ValidateTolls(issues);
@@ -665,6 +666,121 @@ public static class ContentValidator
         }
     }
 
+    /// <summary>
+    /// Every contraband good has somewhere to go (Phase 38O) — 38M's toll-flag reachability rule in a
+    /// different hat, and needed for the same reason.
+    ///
+    /// <see cref="TradeTags.Accepts"/> makes contraband the one tag that fails <em>closed</em>: an item
+    /// wearing it is refused everywhere except a shop that names <c>contraband</c> explicitly. So a
+    /// realm with no fence, or a fence whose accepted list loses the word to a typo, turns every
+    /// contraband item into permanently unsellable loot — and the symptom the player sees is a merchant
+    /// refusing something with a straight face, which reads as the feature being broken rather than as
+    /// the data being wrong.
+    ///
+    /// Checked as a <b>union across every shop</b>, not per shop: one fence anywhere in the realm is
+    /// enough, which is exactly the shape <c>ValidateRecipeReachability</c> and the toll-flag rule use.
+    /// </summary>
+    private static void ValidateContrabandReachability(List<string> issues)
+    {
+        var fences = new List<string>();
+        foreach (ShopResource shop in ShopDatabase.All)
+        {
+            if (TradeTags.IsFence(shop.AcceptedTagList()))
+            {
+                fences.Add(shop.Id);
+            }
+        }
+
+        if (fences.Count > 0)
+        {
+            return;
+        }
+
+        foreach (KeyValuePair<string, ItemResource> entry in ItemDatabase.All)
+        {
+            if (TradeTags.IsContraband(entry.Value.TagList()))
+            {
+                issues.Add($"item '{entry.Value.Id}' is contraband but no shop in the realm accepts " +
+                    "'contraband' — it can never be sold to anyone, anywhere");
+            }
+        }
+    }
+
+    /// <summary>
+    /// A fence's two-sided cost is coherent (Phase 38O). Three ways to author it wrong, and every one
+    /// of them is well-formed data that reads in game as the penalty being broken rather than missing.
+    ///
+    /// ⚠️ The two rules are kept separable on purpose (38L's finding: a break that trips an earlier rule
+    /// proves nothing about the one under test). A side is "authored" if <em>either</em> its faction or
+    /// its delta is set, so clearing only the faction reaches the pairing rule, and clearing both
+    /// reaches the completeness rule — one break, one message, each time.
+    /// </summary>
+    private static void ValidateShopContraband(ShopResource shop, List<string> issues)
+    {
+        string id = shop.Id;
+        bool fence = TradeTags.IsFence(shop.AcceptedTagList());
+        bool gain = !string.IsNullOrEmpty(shop.ContrabandFactionId) || shop.ContrabandDelta != 0;
+        bool penalty = !string.IsNullOrEmpty(shop.ContrabandPenaltyFactionId) ||
+            shop.ContrabandPenaltyDelta != 0;
+
+        // A cost on a shop that will not take the goods can never fire — dead authoring that looks like
+        // a working fence to anyone reading the resource.
+        if (!fence && (gain || penalty))
+        {
+            issues.Add($"shop '{id}' authors a contraband standing cost but does not accept " +
+                "'contraband' — nothing can ever trigger it");
+        }
+
+        // Two-sided means two sides. One-sided fencing is either a free reputation faucet or a pure
+        // punishment, and both are the mechanic silently becoming something else.
+        if (fence && !(gain && penalty))
+        {
+            issues.Add($"shop '{id}' fences contraband but authors only " +
+                $"{(gain ? "the standing it gains" : penalty ? "the standing it costs" : "neither side")}" +
+                " — the sale has to please somebody and offend somebody");
+        }
+
+        CheckContrabandSide(id, shop.ContrabandFactionId, shop.ContrabandDelta, gained: true, issues);
+        CheckContrabandSide(
+            id, shop.ContrabandPenaltyFactionId, shop.ContrabandPenaltyDelta, gained: false, issues);
+    }
+
+    /// <summary>One half of a fence's cost: the faction has to exist, the pair has to be complete, and
+    /// the sign has to match which half it is. A "penalty" that raises standing is the sort of thing
+    /// that only shows up as a player farming reputation off a merchant.</summary>
+    private static void CheckContrabandSide(
+        string id, string factionId, int delta, bool gained, List<string> issues)
+    {
+        string side = gained ? "gains" : "costs";
+
+        if (delta != 0 && string.IsNullOrEmpty(factionId))
+        {
+            issues.Add($"shop '{id}' {side} {delta} standing on a fenced sale with no faction named — " +
+                "the change would be dropped on the floor");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(factionId))
+        {
+            return;
+        }
+
+        if (FactionDatabase.Get(factionId) == null)
+        {
+            issues.Add($"shop '{id}' {side} standing with unknown faction '{factionId}'");
+        }
+
+        if (delta == 0)
+        {
+            issues.Add($"shop '{id}' names a faction it {side} standing with but moves it by 0");
+        }
+        else if (gained == delta < 0)
+        {
+            issues.Add($"shop '{id}' {side} standing by {delta} — the sign is backwards for the side " +
+                "it is authored on");
+        }
+    }
+
     private static void ValidateShops(List<string> issues)
     {
         foreach (ShopResource shop in ShopDatabase.All)
@@ -727,6 +843,7 @@ public static class ContentValidator
             }
 
             ValidateShopTrade(shop, issues);
+            ValidateShopContraband(shop, issues);
 
             if (shop.FactionId.Length > 0 && FactionDatabase.Get(shop.FactionId) == null)
             {
@@ -804,6 +921,47 @@ public static class ContentValidator
 
             ValidateServiceKind(service, issues);
         }
+
+        ValidateConfiscationIsRecoverable(issues);
+    }
+
+    /// <summary>
+    /// A realm that can seize contraband can also give it back (Phase 38O). The whole design rests on
+    /// this: a fine is a decision the player can price, and a permanent seizure is a punishment they
+    /// cannot — 38H's ruling against a hard cap, applied to property instead of to a payout.
+    ///
+    /// A union across every authored service, like the contraband-reachability rule and 38M's
+    /// toll-flag one. Checked here rather than per resource because neither service is wrong on its
+    /// own; it is the <em>absence</em> of the second one that breaks the promise, and nothing about
+    /// the first can see that.
+    /// </summary>
+    private static void ValidateConfiscationIsRecoverable(List<string> issues)
+    {
+        var searches = new List<string>();
+        bool redeems = false;
+
+        foreach (ServiceResource service in ServiceDatabase.All)
+        {
+            if (service.Kind == ServiceKind.Search)
+            {
+                searches.Add(service.Id);
+            }
+            else if (service.Kind == ServiceKind.Redeem)
+            {
+                redeems = true;
+            }
+        }
+
+        if (redeems)
+        {
+            return;
+        }
+
+        foreach (string id in searches)
+        {
+            issues.Add($"service '{id}' confiscates contraband but no impound counter exists to sell it " +
+                "back — a seizure would be permanent, which is theft rather than a fine");
+        }
     }
 
     /// <summary>The per-kind fields. Each kind reads exactly one group of the resource, so a value in the
@@ -854,6 +1012,45 @@ public static class ContentValidator
                     issues.Add(
                         $"service '{id}' is an inn with an unlock flag — a bed is bought every night, and " +
                         "a flag would make the first stay the only one that ever charged");
+                }
+
+                break;
+
+            case ServiceKind.Search:
+                // A search the player can be too poor to undergo is a search that lets a broke smuggler
+                // through, and ServiceRules refuses anything unaffordable before the verb ever runs.
+                if (service.PriceGold != 0)
+                {
+                    issues.Add(
+                        $"service '{id}' is a warden's search priced at {service.PriceGold} gold — a " +
+                        "search is not sold, and an unaffordable one waves the contraband through");
+                }
+
+                if (service.UnlockFlagId.Length > 0 || service.GrantedFlagId.Length > 0)
+                {
+                    issues.Add(
+                        $"service '{id}' is a search with a flag authored on it — nothing reads it, " +
+                        "because a search is repeatable by nature and answers 'nothing to do' from the " +
+                        "player's pack instead");
+                }
+
+                break;
+
+            case ServiceKind.Redeem:
+                // PriceGold is the per-unit fine here, not the bill (ContrabandLaw.Fine). Zero means a
+                // free redemption, which makes every confiscation a brief inconvenience.
+                if (service.PriceGold <= 0)
+                {
+                    issues.Add(
+                        $"service '{id}' redeems impounded goods for nothing — the fine is the only cost " +
+                        "confiscation has, so a free counter makes the search inert");
+                }
+
+                if (service.UnlockFlagId.Length > 0 || service.GrantedFlagId.Length > 0)
+                {
+                    issues.Add(
+                        $"service '{id}' is an impound counter with a flag authored on it — nothing " +
+                        "reads it, and a one-off receipt would make the second confiscation permanent");
                 }
 
                 break;

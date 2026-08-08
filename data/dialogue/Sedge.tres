@@ -1,0 +1,82 @@
+[gd_resource type="Resource" script_class="DialogueResource" format=3]
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+; Sedge Marrow (shop.hollowreach.hull). Scaffold from tools/gen_merchant_dialogue.py; prose is hand-written in
+; data/locale/strings.csv.
+;
+; The standard resident-merchant shape, and every part of it is load-bearing:
+;   - the trade choice carries Effect = 9 (OpenShop) and NO Goto. A Goto would leave this
+;     conversation open behind the vendor window, returning the player to it when the shop closes.
+;   - BOTH trade doors are gated on Condition = 12 (ShopOpen) naming the same shop id. A gate on one
+;     of two doors is not a gate - the trap Aldreth's file records.
+;   - Condition = 13 (ShopClosed) puts the closing time in the merchant's own mouth rather than
+;     letting the option silently do nothing.
+
+[sub_resource type="Resource" id="ch_trade"]
+script = ExtResource("3_choice")
+Text = "dlg.sedge.c_trade"
+Condition = 12
+ConditionArg = "shop.hollowreach.hull"
+Effect = 9
+EffectArg = "shop.hollowreach.hull"
+
+[sub_resource type="Resource" id="ch_closed"]
+script = ExtResource("3_choice")
+Text = "dlg.sedge.c_closed"
+Condition = 13
+ConditionArg = "shop.hollowreach.hull"
+Goto = "closed"
+
+[sub_resource type="Resource" id="ch_talk"]
+script = ExtResource("3_choice")
+Text = "dlg.sedge.c_talk"
+Goto = "talk"
+
+[sub_resource type="Resource" id="ch_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.sedge.c_bye"
+
+[sub_resource type="Resource" id="ch_talk_trade"]
+script = ExtResource("3_choice")
+Text = "dlg.sedge.c_talk_trade"
+Condition = 12
+ConditionArg = "shop.hollowreach.hull"
+Effect = 9
+EffectArg = "shop.hollowreach.hull"
+
+[sub_resource type="Resource" id="ch_talk_back"]
+script = ExtResource("3_choice")
+Text = "dlg.sedge.c_talk_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_talk_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.sedge.c_talk_bye"
+
+[sub_resource type="Resource" id="node_root"]
+script = ExtResource("2_node")
+Id = "root"
+Text = "dlg.sedge.root"
+Choices = Array[Resource]([SubResource("ch_trade"), SubResource("ch_closed"), SubResource("ch_talk"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_talk"]
+script = ExtResource("2_node")
+Id = "talk"
+Text = "dlg.sedge.talk"
+Choices = Array[Resource]([SubResource("ch_talk_trade"), SubResource("ch_talk_back"), SubResource("ch_talk_bye")])
+
+[sub_resource type="Resource" id="node_closed"]
+script = ExtResource("2_node")
+Id = "closed"
+Text = "dlg.sedge.closed"
+Choices = Array[Resource]([SubResource("ch_talk"), SubResource("ch_bye")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "dialogue.sedge"
+SpeakerName = "dlg.sedge.speaker"
+StartNodeId = "root"
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_talk"), SubResource("node_closed")])

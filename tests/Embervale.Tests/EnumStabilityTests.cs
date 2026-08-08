@@ -199,6 +199,11 @@ public class EnumStabilityTests
         Assert.Equal(1, (int)Embervale.Economy.ServiceKind.Bank);
         Assert.Equal(2, (int)Embervale.Economy.ServiceKind.Inn);
         Assert.Equal(3, (int)Embervale.Economy.ServiceKind.Stable);
+
+        // 38M's Passage was never pinned here; 38O found the gap while appending its own two.
+        Assert.Equal(4, (int)Embervale.Economy.ServiceKind.Passage);
+        Assert.Equal(5, (int)Embervale.Economy.ServiceKind.Search);
+        Assert.Equal(6, (int)Embervale.Economy.ServiceKind.Redeem);
     }
 
     [Fact]

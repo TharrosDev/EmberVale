@@ -398,7 +398,7 @@ through `InventoryComponent`; loot tables roll gold), and deliberately still has
 a wallet would be a second place for money to live and a second thing to persist. Balance is
 **Phase 56**; the machinery is built.
 
-**The sinks, as they actually exist** (last extended by 38M; 38L added merchants, not new kinds of sink):
+**The sinks, as they actually exist** (last extended by 38O; 38L added merchants, not new kinds of sink):
 
 | Sink | Where | Since |
 | ---- | ----- | ----- |
@@ -413,6 +413,7 @@ a wallet would be a second place for money to live and a second thing to persist
 | The Crossway toll | `RegionResource.TollGold` → `GameBootstrap.PayToll`, on every **portal** crossing. Not on fast travel, which already pays the row above | 38M |
 | A road permit | `ServiceKind.Passage` — 250 gold once, then the Crossway is free. Ten crossings to break even | 38M |
 | A bribe at the gate | `ServiceKind.Passage` — 10 gold **and 8 standing**, for one crossing. The standing is charged again at every counter in town through the 38C ramp | 38M |
+| An impound fine | `ServiceKind.Redeem` — **12 gold a unit** against whatever the wardens took, through `ContrabandLaw.Fine`. The only price in the game not authored as the price it charges, because the bill depends on how much was seized | 38O |
 | Repair | — | **pending 40A** |
 
 **Repair is not built, and that is a decision rather than an omission.** No durability or condition
@@ -420,6 +421,17 @@ concept exists anywhere in the game: `StatType` has no such member and nothing i
 Phase 40A decides whether durability is adopted *or explicitly cut*, and 40B's rule is that a cut system
 leaves no stub — so 38D shipped no `ServiceKind.Repair` at all. If 40A adopts durability, repair is a new
 kind and a branch, nothing more.
+
+**Contraband is a market, not a sink** (38O), and it is the first thing in the economy that is priced
+by *who will take it* rather than by what it is worth. `TradeTags.Contraband` is the one tag that fails
+**closed**: a good wearing it is refused by every merchant except one who names `contraband` in her own
+accepted list, which is the two fences at Hollowreach and nobody else. **Decision:** the cost of selling
+it is standing, not gold, and it is **two-sided** — each sale pleases one faction and offends another
+(`+5`/`-2` at the Wet Hull, `+3`/`-4` at the Longshore Locker, per sale rather than per unit). The
+villagers' half is charged again at every honest counter in the realm through the 38C ramp, exactly as
+38M's bribe is; the outlaws' half is what eventually stops bandits attacking on sight. Confiscation at
+the Crossway is the counterweight, and it is **recoverable by design** — a fine the player can price,
+never a deletion they cannot.
 
 **A merchant fills up** (38H). Each shop tracks how much of a thing it has bought since its last restock,
 and pays less for the next one — full price for the first several, then a slope down to a floor, cleared

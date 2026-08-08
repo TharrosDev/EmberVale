@@ -29,6 +29,7 @@
 - [Generators — do not hand-write boilerplate](#generators--do-not-hand-write-boilerplate-agent-ergonomics-pass)
 - [A production settlement (Phase 38N1)](#a-production-settlement-phase-38n1)
 - [A tolled crossing — toll, permit, bribe (Phase 38M)](#a-tolled-crossing--toll-permit-bribe-phase-38m)
+- [A fence and contraband (Phase 38O)](#a-fence-and-contraband-phase-38o)
 - [A new gold sink (Phase 38C)](#a-new-gold-sink-phase-38c)
 - [A big/boss creature with body zones (Phase 35A)](#a-bigboss-creature-with-body-zones-phase-35a)
 - [Making a creature fly (Phase 35B)](#making-a-creature-fly-phase-35b)
@@ -543,6 +544,55 @@ Both scripts were written ad hoc and thrown away twice before being committed.
 7. **Two flags, no database — so `--validate` is the only thing standing between a typo and an
    uncrossable road.** The rule checks that each flag a tolled region names is granted by some
    authored `Passage` service, as a union. Placing the warden proves nothing: `.tscn` is not scanned.
+
+## A fence and contraband (Phase 38O)
+
+**Read this before authoring anything that no honest merchant should touch.** Contraband is not a
+trade tag like the other twenty-two — it is the only one that fails **closed**, and every step below
+exists because the ordinary tag rules are wrong for a prohibition.
+
+1. **Tag the goods, and tag them with something else too.** `TradeTags.Contraband` on the item, plus
+   whatever it actually is (`gem`, `pelt`, `arcane`…). The second tag is not decoration: it is what
+   makes the refusal legible, because the jeweller who deals in gemstones turns down a stolen signet
+   in front of the player.
+   ⚠️ **Contraband dominates.** `TradeTags.Accepts` answers it first and ignores everything else, so
+   a contraband item is refused by every shop that does not name `contraband` in its own accepted
+   list — including a general store with an **empty** list, which under 38F's "both empties mean yes"
+   would otherwise fence smuggled goods across the most respectable counter in town.
+2. **Give it a source.** Contraband nothing drops and nobody stocks is five files that exist and
+   cannot be reached. Loot rows on the factions who would carry it (`BanditLoot`, `SyndicateLoot`) are
+   the cheap answer; a fence's own shelf is the other, and an item on neither is the
+   `CraftingComponent.Learn` shape CLAUDE.md §1 forbids.
+3. **Author the fence's refusals first**, exactly as a production settlement does (38N1). A fence who
+   takes everything is a general store with a reputation cost bolted on, and the walk to her buys the
+   player nothing.
+4. ⚠️ **Leave the fence's `FactionId` EMPTY.** The natural owner is `faction.outlaws`, which starts at
+   `-30` — tier `Hostile`, at or below its own `HostileThreshold` — so an outlaw-factioned vendor is
+   hidden by `VendorComponent.ApplyPresence` and refuses to trade from the first minute of a new game.
+   The standing a fence *moves* and the standing she *prices by* are two different questions.
+5. **Author both sides of the cost.** `ContrabandFactionId`/`ContrabandDelta` for the faction the sale
+   pleases, `ContrabandPenaltyFactionId`/`ContrabandPenaltyDelta` for the one it offends. Positive and
+   negative respectively — `--validate` rejects a backwards sign, a missing faction, a zero delta
+   beside a named faction, a one-sided fence, and a cost on a shop that will not take the goods.
+   ⚠️ **Per sale, not per unit.** This is deliberately the opposite of 38H's per-unit payout decay:
+   charged per unit, one click on a stack of twenty moves the player three reputation tiers.
+6. **Two fences, not one.** One fence is a door; two are a choice, and they differ in the three
+   numbers that matter — what they accept, what they pay, and what the sale costs in standing. Give at
+   least one of them `OpenHour == CloseHour` (always open), or contraband becomes unsellable for part
+   of every day and the player reads a shop's opening times as the mechanic being broken.
+7. **Confiscation is a `ServiceKind.Search`; recovery is a `ServiceKind.Redeem`.** Both are ordinary
+   38D services and inherit the price, the standing discount, the hostile refusal and the whole prompt
+   battery. The search is priced `0` — a search the player can be too poor to undergo waves the
+   contraband through — and the redemption's `PriceGold` is the **per-unit fine**, not the bill;
+   `ContrabandLaw.Fine` multiplies it by what is held.
+   ⚠️ **Two bodies, not one with two services** — `GetComponent<T>` returns the first child match
+   (38E), the same rule the permit and the bribe already follow.
+   ⚠️ **A realm that can seize must be able to give back.** `--validate` fails a `Search` with no
+   `Redeem` anywhere: a permanent seizure is theft rather than a fine, and it is the only thing that
+   would make carrying contraband a risk the player cannot price.
+8. **Nothing new joins the sweep test, and say so where you would have added it.** Contraband adds a
+   *refusal*, not a price multiplier, so `NoCombinationOfMultipliersLetsSellingBeatBuying` is honoured
+   by there being nothing to add — 38F's contract still binds the next author who does add one.
 
 ## A new gold sink (Phase 38C)
 

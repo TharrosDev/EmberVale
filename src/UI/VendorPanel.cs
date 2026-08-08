@@ -352,7 +352,31 @@ public partial class VendorPanel : UiPanel
         // next one has genuinely fallen. Every early return above leaves the player holding the item, and
         // none of them may mark a merchant as glutted for a sale that did not happen.
         stock?.Absorb(shop, instance.TemplateId, stack.Quantity);
+        FenceStanding(shop, instance);
         MarkDirty();
+    }
+
+    /// <summary>
+    /// The two-sided cost of fencing (38O): standing gained with whoever the fence answers to, and lost
+    /// with whoever she is hiding from.
+    ///
+    /// ⚠️ Called from exactly here, beside <c>Absorb</c>, and for exactly the same reason: every early
+    /// return above leaves the player still holding the item, and none of them may move a faction for a
+    /// sale that did not happen. A reputation change is louder than a glutted shelf — it toasts, and it
+    /// reprices every merchant in the region.
+    ///
+    /// Once per sale, whatever the stack size. See <see cref="ShopResource.ContrabandFactionId"/>.
+    /// </summary>
+    private void FenceStanding(ShopResource shop, ItemInstance instance)
+    {
+        if (!TradeTags.IsContraband(instance.Template.TagList()) ||
+            _player?.GetComponent<ReputationComponent>() is not { } reputation)
+        {
+            return;
+        }
+
+        reputation.Add(shop.ContrabandFactionId, shop.ContrabandDelta);
+        reputation.Add(shop.ContrabandPenaltyFactionId, shop.ContrabandPenaltyDelta);
     }
 
     private static bool IsCurrency(ItemInstance instance) =>
@@ -374,9 +398,19 @@ public partial class VendorPanel : UiPanel
     ///
     /// Falls back to the bare line for a merchant with an accepted list and no specialties — there is
     /// nothing truthful to name in that case.
+    ///
+    /// ⚠️ <b>Contraband is answered first and separately (38O).</b> Naming a trade is the right answer to
+    /// "she does not deal in this"; it is the wrong answer to "nobody with a shopfront deals in this",
+    /// because it sends the player looking for a specialist who cannot exist. The contraband line points
+    /// somewhere quieter instead, which is the only hint the wharf ever gets.
     /// </summary>
-    private static string TradeRefusal(ShopResource shop)
+    private static string TradeRefusal(ShopResource shop, ItemInstance instance)
     {
+        if (TradeTags.IsContraband(instance.Template.TagList()))
+        {
+            return Loc.TF("shop.refuses_contraband", Loc.T(shop.NameKey));
+        }
+
         List<string> specialties = shop.SpecialtyList();
         if (specialties.Count == 0)
         {
@@ -577,13 +611,14 @@ public partial class VendorPanel : UiPanel
                 : 0;
             bool glutted = ShopStock.SaturationMultiplier(absorbed, shop.RestockDays) < 1f;
 
-            // Four refusals, each named separately: not for sale at all, not this merchant's trade,
-            // worth nothing, or the merchant cannot cover it. Collapsing them would tell a player with a
-            // Legendary to try a cheaper shop when the real answer is to come back after a restock — and
-            // 38F's addition is the one that has somewhere to send them, so it names the trade.
+            // Five refusals, each named separately: not for sale at all, not this merchant's trade,
+            // nothing an honest merchant will touch, worth nothing, or the merchant cannot cover it.
+            // Collapsing them would tell a player with a Legendary to try a cheaper shop when the real
+            // answer is to come back after a restock — and 38F's addition is the one that has somewhere
+            // to send them, so it names the trade.
             bool afforded = purse < 0 || payout <= purse;
             string refusal = !sellable ? Loc.T("shop.unsellable")
-                : !inTrade ? TradeRefusal(shop)
+                : !inTrade ? TradeRefusal(shop, instance)
                 : payout <= 0 ? Loc.T("shop.worthless")
                 : Loc.T("shop.vendor_broke");
 

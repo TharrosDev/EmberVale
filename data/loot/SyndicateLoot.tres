@@ -27,9 +27,28 @@ MinQuantity = 1
 MaxQuantity = 1
 RollAffixes = true
 
+; Phase 38O - the Syndicate's half of the contraband supply, and the dearer half. A courier loyal to
+; the contract is exactly who is carrying the stone with no register entry.
+
+[sub_resource type="Resource" id="Entry_moonstone"]
+script = ExtResource("2_entry")
+ItemId = "item.gem.moonstone_rough"
+DropChance = 0.2
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_ash"]
+script = ExtResource("2_entry")
+ItemId = "item.material.barrow_ash"
+DropChance = 0.14
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+
 [resource]
 script = ExtResource("1_table")
-Entries = Array[Resource]([SubResource("Entry_ruby"), SubResource("Entry_ring"), SubResource("Entry_sword")])
+Entries = Array[Resource]([SubResource("Entry_ruby"), SubResource("Entry_ring"), SubResource("Entry_sword"), SubResource("Entry_moonstone"), SubResource("Entry_ash")])
 GoldItemId = "item.currency.gold"
 GoldChance = 0.9
 GoldMin = 15

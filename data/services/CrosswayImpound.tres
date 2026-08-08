@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="ServiceResource" format=3]
+
+[ext_resource type="Script" path="res://src/Economy/ServiceResource.cs" id="1_service"]
+
+; The Crossway impound (Phase 38O) — the recoverable half of confiscation, and the half that makes the
+; search a cost rather than a punishment. Seized goods sit in ContrabandImpound until this counter
+; hands them back.
+;
+; ⚠️ PriceGold IS THE PER-UNIT FINE, NOT THE BILL. ServiceComponent.PriceOf routes this kind through
+; ContrabandLaw.Fine, so the prompt quotes 12 gold a unit against whatever is actually held. It is the
+; only service in the game whose price is not the number authored here, and the reason is that a flat
+; redemption fee makes one enormous seizure cheaper per unit than a small one — which would reward
+; carrying more.
+;
+; Twelve is set against the goods: the cheapest contraband in the game is worth 38 and the dearest 110,
+; and a fence pays a fraction of value. Redeeming is therefore always worth it and never free, which is
+; the shape a sink wants (DESIGN.md §6).
+;
+; FactionId villagers, as the search beside it: the wardens' standing discount applies to a fine
+; exactly as it does to a bed, through the one ShopPricing ramp, so there is no second table to drift.
+
+[resource]
+script = ExtResource("1_service")
+Id = "service.crossway.impound"
+NameKey = "service.crossway.impound.name"
+Kind = 6
+PriceGold = 12
+FactionId = "faction.villagers"
+UnlockFlagId = ""
+RestHour = 8
+XpReward = 0
+GrantedFlagId = ""
+ReputationDelta = 0

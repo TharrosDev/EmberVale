@@ -1,0 +1,65 @@
+[gd_resource type="Resource" script_class="ShopResource" format=3]
+
+[ext_resource type="Script" path="res://src/Economy/ShopResource.cs" id="1_shop"]
+[ext_resource type="Script" path="res://src/Economy/ShopStockEntry.cs" id="2_entry"]
+
+; Coyle Ferrin at the Longshore Locker (Phase 38O) — the second fence, and the careless one.
+;
+; TWO FENCES, NOT ONE, and the pair is the sub-phase's only real content decision. A single fence makes
+; contraband a door: you either walk through it or you do not. Two make it a choice, and the two
+; differ in the three numbers that matter — what they will take, what they pay, and what the sale
+; costs you in standing.
+;
+; Coyle takes bulk (pelts, cloth, fuel, metal) as well as contraband and pays less for it; Sedge takes
+; only the small dear things and pays more. Their standing is mirrored: Coyle is loud, so his sales
+; cost -4 with the villagers and earn only +3 with the outlaws, where Sedge's are +5 and -2. Selling
+; through Coyle is the fast, expensive road to the same place.
+;
+; ⚠️ FactionId EMPTY, for the reason spelled out in HollowreachHull.tres: an outlaw-factioned vendor
+; starts hostile and is hidden from turn one.
+;
+; ALWAYS OPEN (OpenHour == CloseHour == 0), against Sedge's 20..5. The wharf must have one counter
+; standing at any hour or contraband becomes unsellable for a third of the day, which is a refusal the
+; player would read as the mechanic being broken rather than as somebody's opening times.
+;
+; He is the only seller of the forged writ, which nothing drops — the one contraband good the player
+; can only ever buy. It exists to be carried past a warden, which is the loop 38M's gate was built for.
+
+[sub_resource type="Resource" id="Stock_writ"]
+script = ExtResource("2_entry")
+ItemId = "item.tome.forged_writ"
+Quantity = 2
+
+[sub_resource type="Resource" id="Stock_dreamsmoke"]
+script = ExtResource("2_entry")
+ItemId = "item.material.dreamsmoke"
+Quantity = 8
+
+[sub_resource type="Resource" id="Stock_fur"]
+script = ExtResource("2_entry")
+ItemId = "item.material.untaxed_fur"
+Quantity = 5
+
+[sub_resource type="Resource" id="Stock_rope"]
+script = ExtResource("2_entry")
+ItemId = "item.material.net_cordage"
+Quantity = 10
+
+[resource]
+script = ExtResource("1_shop")
+Id = "shop.hollowreach.locker"
+NameKey = "shop.hollowreach.locker.name"
+FactionId = ""
+AcceptedTags = Array[String](["contraband", "pelt", "textile", "fuel", "metal"])
+Specialties = Array[String](["contraband", "pelt"])
+Stock = Array[Resource]([SubResource("Stock_writ"), SubResource("Stock_dreamsmoke"), SubResource("Stock_fur"), SubResource("Stock_rope")])
+RestockDays = 3
+BuyMarkup = 1.48
+SellFraction = 0.46
+PurseGold = 340
+OpenHour = 0
+CloseHour = 0
+ContrabandFactionId = "faction.outlaws"
+ContrabandDelta = 3
+ContrabandPenaltyFactionId = "faction.villagers"
+ContrabandPenaltyDelta = -4

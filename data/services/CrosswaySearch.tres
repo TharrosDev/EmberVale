@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="ServiceResource" format=3]
+
+[ext_resource type="Script" path="res://src/Economy/ServiceResource.cs" id="1_service"]
+
+; The warden's search (Phase 38O) — the third and fourth people at the Crossway Post, and the reason
+; the wharf is worth walking to instead of hauling everything straight up the road.
+;
+; PriceGold 0 is deliberate and is not a placeholder. This is the one service the player is not buying:
+; it costs nothing, it is refused when there is nothing to find, and what it takes is not the warden's
+; to sell. ServiceRules.Resolve reads a zero price as always affordable, which is exactly right — a
+; search you can be too poor to undergo is not a search.
+;
+; FactionId is the villagers', so the wardens refuse to deal with a player they are hostile to. That
+; is the correct behaviour and it is worth naming: a player low enough with the villagers to be turned
+; away at the gate cannot be searched either, and their contraband rides through. Standing has bought
+; them something, which is the whole point of 38C's ramp having a bottom as well as a top.
+;
+; ⚠️ TWO NPCs, NOT ONE WITH TWO SERVICES. GetComponent<T> returns the first child match (38E), so the
+; searcher and the bailiff at the impound counter are separate bodies — the same rule the permit and
+; the bribe already follow four metres away.
+
+[resource]
+script = ExtResource("1_service")
+Id = "service.crossway.search"
+NameKey = "service.crossway.search.name"
+Kind = 5
+PriceGold = 0
+FactionId = "faction.villagers"
+UnlockFlagId = ""
+RestHour = 8
+XpReward = 0
+GrantedFlagId = ""
+ReputationDelta = 0
