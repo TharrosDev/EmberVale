@@ -19,7 +19,7 @@
 > single most expensive file in the repo to open. Reading it whole to find out what to do next costs
 > more than the work usually does.
 >
-> **You are here: 38M2 is next** (167 done, 174 remaining).
+> **You are here: 38N is next** (168 done, 173 remaining).
 >
 > ⚠️ **"First unchecked" is the WRONG way to find that, and this note exists because it just
 > misled a tool.** 38G is unchecked and sits above 38M, but it is **deferred** — it prices goods by
@@ -27,7 +27,7 @@
 > a ⏸ in its line is parked, not next. **Read the box, do not trust the first empty checkbox.**
 >
 > **How to use it:**
-> 1. `grep -n "38M2 —" docs/SESSION_PLAYBOOK.md` (your sub-phase id) to get a line number.
+> 1. `grep -n "38N —" docs/SESSION_PLAYBOOK.md` (your sub-phase id) to get a line number.
 > 2. Read from a few hundred lines *before* it — the entries just above yours carry the
 >    **"two things worth carrying into the next sub-phase"** lines, which are the whole point of
 >    the log and the cheapest bug prevention in this repo.
@@ -3727,9 +3727,22 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
     2. **The toll is authored on both regions and nothing enforces that they agree.** One gate, one road, two `RegionResource` blocks, and the reachability rule only catches a flag that nothing grants — not a `TollGold` of 25 northbound and 250 southbound. If 38M2 gives the Crossway its own cell, that is the moment to ask whether the toll should live on the *cell* instead.
   - Build clean + **1109** tests + `--validate` exit 0 (four break paths tested, each firing its own message, every file restored from a backup rather than through git) + the town hub instantiated in-engine (701 nodes, no errors) and rendered at noon and dusk from four positions + a clean `--play` boot with the new region fields loading. ⚠️ **No in-game walk** — the MCP cannot inject input, so the gate prompt's four states, the two purchases and the pass being spent at the crossing are *reviewed against the Godot 4.7 C# API*, not observed in a session.
   - **Reachable when next played:** the warden and the gate-hand stand either side of the Frostfang portal, four metres from where you spawn. Buy the permit (250) or the quiet word (10, and eight standing), then walk through; the portal's prompt names the price, your papers or your shortfall before you press `E`. `region region.frostfang_reach` in the F1 console goes through the same charge.
-- [ ] **38M2 — The Crossway Post itself** `[C]`
+- [x] **38M2 — The Crossway Post itself** `[C]` ✅ *(plus two maintainer-requested engine changes, below)*
   - **Done when:** the Crossway Post is a cell — a gatehouse on the road, wardens, a caravan yard — and the toll, the permit and the bribe are bought *there* rather than in the town square.
-  - The mechanic is already built and authored (38M); this is the district it was written for, and the two NPCs move out of `town_hub.tscn` when it exists. 38K's rules apply: `CharacterBody3D` has **no step-up**, so verticality comes from props and never from terrain, and a `.tscn` reads fine while looking wrong — instantiate and render it.
+  - **Landed:** `crossway_post.tscn` (300 nodes) at `Center (0, 0, -116)`, three adopted models, `RegionResource.PortalPoint`, the two wardens moved out of `town_hub.tscn`, a travel node and its locale row.
+  - **The portal moved, and that is the half of this that made the toll mean anything.** 38M charged for a road whose crossing happened four metres from the player's bed. `PortalPoint` (`Vector3.Zero` = the old spawn-relative placement, so Frostfang needed no edit — the same "default is the ungated case" trick 38I and 38M both used) puts the Ember Crown's door at world `z = -122`, the far side of the gate. The wardens are now people you walk past. ⚠️ **One point per region**, so a region with two neighbours would stack both portals on it; two regions exist, and this becomes per-neighbour when a third does.
+  - ⚠️ **THE `rts` PACK IS ROUGHLY 1/6 SCALE AND NOTHING IN THE FILES SAYS SO.** A "Wooden Fortress Gate" measures **1.94 × 0.67 × 0.31 m** out of the box — a gateway two feet high. It was caught by measuring every candidate against a 1.8 m reference box *before* authoring anything around it, which took one throwaway harness run. Adopting one of these blind would have produced a cell whose every transform was wrong and whose wrongness only showed at eye level. The pack is authored for a top-down camera; **assume the same of any pack whose models were made for a different camera.**
+  - **The adaptation is `nodes/root_scale` in the `.import`, not Blender.** One number in one file, no round-trip (the thing that destroyed bone-parented parts in the third-round audit), and no per-scene scale for future placements to guess at. Recorded in `CREDITS.md` with the raw sizes.
+  - ⚠️ **`prp_gate_palisade` has no opening in it** — it is a closed palisade, so the gate is a **gap between two of them**: each is 15.93 m wide at `x = ±11.9`, inner edges at `x = ±3.94`, and the 8 m road runs through the 7.88 m gap. Nothing has to animate for the player to pass, which is the cheapest possible gate.
+  - **The library search paid for itself in the negative, too**: `castle_gate` measured identically to the fortress gate (same mesh, different name), and `path_straight` was dropped in favour of a `BoxMesh` road skin — a road out of tiles is dozens of nodes for something one box does.
+  - Two things worth carrying into 38N:
+    1. **Measure before you place, not after.** Every trap in this sub-phase was a number: the pack's scale, the palisade's width, the seam at `z = -90`. Each was cheap to check and expensive to discover from a screenshot.
+    2. **A cell is now ~300 nodes and always resident.** With distance streaming gone, every cell added to a region is permanently in the tree — 38N adds two settlements, and that is the first time the residency decision will actually be worth measuring.
+- [x] **Engine changes landed alongside 38M2** *(maintainer direction, not a sub-phase)*
+  - **Regions load whole.** `RegionStreamer` instances every cell of the active region on entry and never unloads during play; `StreamDecision`, its 75 lines of hysteresis tests, `UnloadMargin` and `RegionCellResource.LoadRadius` were all deleted with the rule, along with the validator's `LoadRadius <= 0` check and ten authored lines. `IsSettledAround(origin)` became `IsSettled()`.
+    - ⚠️ **Both regions cannot be resident at once, and it is a world-layout problem rather than a streaming one.** Frostfang's `dragon_roost` (25, 0, -20) and `ancient_aerie` (25, 0, -110) share coordinate space with the Ember Crown's `arena` (55, 0, -10) and `wilds_north` (0, 0, -65). Loading both would put two regions inside each other. Phase 44 owns that.
+    - **The save path was the thing worth checking and it needed no change.** `CellPersistenceDirector` snapshots on `RegionCellUnloadedEvent` because "the base `SaveManager` only restores actors alive at load time". Resident cells mean those actors are *always* alive at save time, so the normal path covers them and the ledger is now only exercised across a region transition, where `UnloadAll` still fires the event.
+  - **Spawn caps to 15.** `EncounterDirector.MaxConcurrent` 5 → 15 and the sandbox goblin camp 3 → 15. ⚠️ `EnemySpawnDirector._Ready` seeds its whole population in one go, so `SpawnRadius` had to go 6 → 14 with it — fifteen bodies in the old circle spawn inside one another, which is a defect that would have read as a physics bug.
 - [ ] **38N — Emberdeep Mine + Tarn's Landing** `[C]`
   - **Done when:** two production settlements make the demand table true, and a dev command can print the realm's best arbitrage.
 - [ ] **38O — Hollowreach: contraband and fences** `[F/C]`

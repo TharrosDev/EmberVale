@@ -683,12 +683,21 @@ fast-travel land in 25E–25G.
   so it restores with the region on load (no extra save state). The `weave` console command
   inspects/tunes it; the two sandbox regions contrast (Ember Crown 1.0, Frostfang Reach 0.5).
 - **`RegionCellResource`** (`[GlobalClass]`, a sub-resource of the region): `Id` (`<region>.<cell>`),
-  `ScenePath`, `Center` (world position), `LoadRadius`. The lightweight metadata the streamer reads
-  to decide whether to load, without instancing the scene.
-- **`RegionStreamer`** (`Node3D`, `Pausable`, built by the bootstrap): each frame it computes the
-  player's planar distance to every cell `Center` and applies the pure
-  `StreamDecision.Decide(distance, loadRadius, unloadMargin, isLoaded)` — load inside `LoadRadius`,
-  keep out to `LoadRadius + UnloadMargin` (hysteresis, ~10 m), then unload. Loads are instanced at
+  `ScenePath`, `Center` (world position), `SafeRadius`. The lightweight metadata the streamer reads
+  without instancing the scene.
+- **`RegionStreamer`** (`Node3D`, `Pausable`, built by the bootstrap): **every cell of the active
+  region is resident** (38M2, maintainer direction). Each frame it enqueues any cell not yet in the
+  tree; there is no distance test and no unload path during play. Until 38M2 a cell loaded inside its
+  `LoadRadius` and was freed past `LoadRadius + UnloadMargin` through a pure `StreamDecision`; a
+  region is five or six cells and the largest is ~1,000 nodes, so residency costs nothing against the
+  seams distance-streaming bought — a routine walking an unloaded cell, a district popping in as the
+  player crests a road, and a class of bug that only reproduces from one approach direction. The
+  radius, the margin, `StreamDecision` and its tests were all deleted with the rule.
+  ⚠️ **Both regions cannot be resident together** — Frostfang's `dragon_roost` (25, 0, -20) and
+  `ancient_aerie` (25, 0, -110) share coordinate space with the Ember Crown's `arena` (55, 0, -10)
+  and `wilds_north` (0, 0, -65), so the two would load inside each other. Whole-realm residency is a
+  world-layout decision (Phase 44), not a streaming one.
+  Loads are instanced at
   most **one per frame** (a queue drains over frames so a wave never hitches; the `PackedScene` is
   `ResourceLoader`-cached so re-load is cheap). It publishes `RegionCellLoadedEvent`/
   `RegionCellUnloadedEvent` — the seam Phase 25D's persistence hooks. The procedural sandbox is the
@@ -705,7 +714,11 @@ fast-travel land in 25E–25G.
   region-boundary autosave (`AutosaveService.RequestRegionChangeAutosave`), then hold Loading for a
   short settle (so the destination cells stream in) before returning to `Playing`. Portals are spawned
   by the bootstrap per `RegionResource.Neighbours`, so a reciprocal link is a two-way door with no
-  per-scene authoring. Drive it from F1 with `region goto <id>`.
+  per-scene authoring — at `RegionResource.PortalPoint` when the region authors one (38M2, which is
+  how the Ember Crown's door stands at the Crossway gate rather than beside the player's spawn),
+  otherwise a few metres in front of `SpawnPoint`. **The Crossway toll (38M) is charged here**, in
+  `GameBootstrap.PayToll`, because this handler is where the portal and `region goto` converge.
+  Drive it from F1 with `region goto <id>`.
 - **Cell persistence (25D)** — `CellPersistenceDirector` (`Node`, `ISaveable`, built before the
   streamer) keeps streamed-in actors that carry a `PersistentId` remembering themselves across cell
   unload/reload. On `RegionCellLoadedEvent` it walks the cell for persistent `IEntity` actors and

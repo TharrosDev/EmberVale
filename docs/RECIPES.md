@@ -758,7 +758,9 @@ cell sat far from the origin). `EnemySpawnDirector` had the same latent bug.
    automatically; with no Nav region they fall back to straight-line steering, so a navmesh is
    optional per cell but expected for any space enemies fight in.
 2. Auto-indexed by `RegionDatabase`; the save header resolves the active region's name, and the
-   `RegionStreamer` loads/unloads the `Cells` by distance (hysteresis + a per-frame budget). The
+   `RegionStreamer` instances **every** one of the `Cells` on entering the region and keeps them all
+   resident (a per-frame budget, no distance test — 38M2 deleted the `LoadRadius` rule, the
+   hysteresis and the field, so a cell is authored with a `Center` and nothing else). The
    `ContentValidator` checks neighbours, default weather, and that each cell `ScenePath` resolves.
    No code change for a new region.
    **Adding a cell to an existing region (Phase 38K)** is the same `.tres` sub-resource plus a
@@ -779,17 +781,19 @@ cell sat far from the origin). `EnemySpawnDirector` had the same latent bug.
      English still renders and needed no migration.
    - `--validate` rejects a cell whose scene **exists but does not parse** (a hand-authored `.tscn`
      with a syntax error — note it does *not* catch a missing `ext_resource`, which Godot tolerates
-     and loads anyway), a `LoadRadius <= 0` (the streamer would never bring it in), a negative
-     `SafeRadius`, and two cells sharing an `Id` (the streamer keys its loaded set by id, so one can
-     never be instanced).
+     and loads anyway), a negative `SafeRadius`, and two cells sharing an `Id` (the streamer keys its
+     loaded set by id, so one can never be instanced).
    - ⚠️ There is deliberately **no** "every cell declares a `NavigationRegion3D`" rule. 38K wrote one
      and deleted it the same hour: a text scan cannot see through scene inheritance, so the three
      Frostfang roosts — which inherit their `Nav` from `RoostCell` — all reported as unnavigable, and
      the glacier legitimately has none because it is scenery. A check that is wrong three times out
      of four teaches authors to ignore the validator.
 3. **Hard transitions (Phase 25C):** declaring a region in another's `Neighbours` makes the
-   bootstrap spawn a travel portal between them automatically (a `RegionTransitionComponent` at the
-   region's `SpawnPoint`). Stepping through (or `region goto <id>` in F1) publishes a
+   bootstrap spawn a travel portal between them automatically (a `RegionTransitionComponent` a few
+   metres in front of the region's `SpawnPoint`, or at **`RegionResource.PortalPoint`** when the
+   region authors one — 38M2, so a region with a gate can put its door at the gate).
+   ⚠️ One `PortalPoint` per region, so a region with two neighbours would stack both portals on it.
+   Fine for two regions; a third makes this per-neighbour. Stepping through (or `region goto <id>` in F1) publishes a
    `RegionTransitionRequestedEvent`; the bootstrap shows the `LoadingScreen`, re-targets the
    streamer (`UnloadAll` + `Configure`), teleports the player to the destination's `SpawnPoint`, and
    autosaves the boundary. Reciprocal links give a two-way door. No code change for a new transition.

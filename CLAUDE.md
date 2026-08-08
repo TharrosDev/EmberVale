@@ -405,7 +405,7 @@ one when you are done, in the same shape: what to author, in what order, and wha
 
 ## 10. Roadmap status
 
-**Where the project is: Stage C, Phase 38 (economy), sub-phases 38A–38M done, 38M2 next.**
+**Where the project is: Stage C, Phase 38 (economy), sub-phases 38A–38M2 done, 38N next.**
 
 - **Phases 1–21 built the systems**, not the game — a data-driven sandbox that *can* express
   Embervale. **Phases 22+ are the production roadmap** that carries it to launch.
@@ -444,6 +444,15 @@ the ones immediately before it usually name the thing that will bite you.
 - ⚠️ **The library is out of medieval character bodies.** Seven usable bodies dress twelve
   merchants; the five unused women are **CC-BY 3.0** and the unused men are modern dress. Closing
   it needs an open-web pull of Quaternius's own CC0 RPG Character Pack.
+- **A region loads whole** (maintainer direction, 38M2). Every cell of the active region is resident
+  from the moment it is entered; `RegionStreamer` has no distance test and no unload path during
+  play, and `RegionCellResource.LoadRadius`, `StreamDecision` and its tests were deleted with the
+  rule. ⚠️ **Both regions cannot be resident at once** — Frostfang's roosts share coordinate space
+  with the Ember Crown's arena and northern wilds, so that is a Phase 44 world-layout question and
+  not a streaming one. A new cell is therefore permanently in the tree: author accordingly.
+- ⚠️ **The `rts` library pack is roughly 1/6 scale** and nothing in the files says so (38M2). Measure
+  any candidate against a 1.8 m reference before authoring around it, and adapt through
+  `nodes/root_scale` in the `.import` rather than a Blender round-trip.
 - **Repair does not exist and that is a decision** — no durability concept exists anywhere, Phase
   40A decides whether to adopt or explicitly cut it, and 40B's rule is that a cut system leaves no
   stub. `docs/DESIGN.md` §6 carries the authoritative gold-sink table.
