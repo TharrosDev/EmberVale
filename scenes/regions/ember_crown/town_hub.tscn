@@ -35,7 +35,6 @@
 [ext_resource type="Script" path="res://src/Companions/CompanionRecruiterComponent.cs" id="22_recruiter"]
 [ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="24_charanim"]
 [ext_resource type="Script" path="res://src/Economy/VendorComponent.cs" id="39_vendor"]
-[ext_resource type="PackedScene" path="res://assets/models/characters/npc_hooded.glb" id="40_npc_hooded"]
 
 [sub_resource type="NavigationMesh" id="NavMesh_hub"]
 geometry_parsed_geometry_type = 1
@@ -638,66 +637,6 @@ FactionId = "faction.villagers"
 script = ExtResource("34_service")
 ServiceId = "service.ember_crown.stable"
 
-; --- 38M: the Crossway toll, sold on both sides of the road --------------------
-; These two flank the region portal, which GameBootstrap spawns at SpawnPoint + (0, -1.2, -4) = (0, 0, 1)
-; — so a player walking out of the square meets the warden before they meet the gate. The Crossway Post
-; itself is 38M2's cell; what has to exist today is somewhere to buy the papers the toll reads.
-;
-; ⚠️ They are TWO entities and must stay that way. EntityNode.GetComponent<T> returns the first child
-; match, so a permit and a bribe hung on one body would leave the second one unreachable and silent —
-; the 38E finding, which is also why neither of them carries a DialogueComponent.
-;
-; The gate-hand is not a warden and is dressed to say so: the permit-seller wears the guild body every
-; other official in the square wears, and the man who takes ten gold in the dark wears the hood.
-
-[node name="RoadWarden" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.5, 0, 2.5)
-script = ExtResource("1_entity")
-DisplayName = "Warden Sergeant Alric"
-TemplateId = "npc.road_warden"
-
-[node name="Animation" type="Node" parent="RoadWarden"]
-script = ExtResource("24_charanim")
-BodyMeshPath = "Model"
-
-[node name="Collider" type="StaticBody3D" parent="RoadWarden"]
-
-[node name="Shape" type="CollisionShape3D" parent="RoadWarden/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-shape = SubResource("Shape_npc")
-
-[node name="Faction" type="Node" parent="RoadWarden"]
-script = ExtResource("6_faction")
-FactionId = "faction.villagers"
-
-[node name="Service" type="Node" parent="RoadWarden"]
-script = ExtResource("34_service")
-ServiceId = "service.crossway.permit"
-
-[node name="GateHand" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0, 2.5)
-script = ExtResource("1_entity")
-DisplayName = "A Gate-Hand"
-TemplateId = "npc.gate_hand"
-
-[node name="Animation" type="Node" parent="GateHand"]
-script = ExtResource("24_charanim")
-BodyMeshPath = "Model"
-
-[node name="Collider" type="StaticBody3D" parent="GateHand"]
-
-[node name="Shape" type="CollisionShape3D" parent="GateHand/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-shape = SubResource("Shape_npc")
-
-[node name="Faction" type="Node" parent="GateHand"]
-script = ExtResource("6_faction")
-FactionId = "faction.villagers"
-
-[node name="Service" type="Node" parent="GateHand"]
-script = ExtResource("34_service")
-ServiceId = "service.crossway.bribe"
-
 ; The vault. PersistentId is the save key (inventory:ember_crown.guild_vault) and must never change —
 ; without one the InventoryComponent does not register as a saveable at all and the vault empties on
 ; every reload, which looks like an item-loss bug rather than a missing field (37B's rule).
@@ -832,10 +771,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.25, 0)
 [node name="Model" parent="Trainer" instance=ExtResource("18_npc_vendor")]
 
 [node name="Model" parent="Stablemaster" instance=ExtResource("18_npc_vendor")]
-
-[node name="Model" parent="RoadWarden" instance=ExtResource("17_npc_elder")]
-
-[node name="Model" parent="GateHand" instance=ExtResource("40_npc_hooded")]
 
 [node name="Model" parent="GuildMarker" instance=ExtResource("16_banner")]
 

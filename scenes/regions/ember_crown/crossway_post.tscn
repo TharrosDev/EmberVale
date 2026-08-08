@@ -1,0 +1,716 @@
+[gd_scene format=3 uid="uid://b0th1qffgwiit"]
+
+[ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="1_navbaker"]
+[ext_resource type="Script" path="res://src/Entities/Entity.cs" id="2_entity"]
+[ext_resource type="Script" path="res://src/World/TravelNodeComponent.cs" id="3_travel"]
+[ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="4_charanim"]
+[ext_resource type="Script" path="res://src/Factions/FactionComponent.cs" id="5_faction"]
+[ext_resource type="Script" path="res://src/Economy/ServiceComponent.cs" id="6_service"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_gate_palisade.glb" id="10_gate"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_watch_tower.glb" id="11_tower"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_warden_post.glb" id="12_post"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_waystone.glb" id="13_waystone"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="14_brazier"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_cart.glb" id="15_cart"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_crate.glb" id="16_crate"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_barrel.glb" id="17_barrel"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_hay.glb" id="18_hay"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_sacks.glb" id="19_sacks"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_fence.glb" id="20_fence"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_bench.glb" id="21_bench"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_well.glb" id="22_well"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_campfire.glb" id="23_campfire"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_pine_dead.glb" id="24_pine"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="25_rocks"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_banner_guild.glb" id="26_banner"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_guild_rep.glb" id="30_guild_rep"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_hooded.glb" id="31_hooded"]
+
+; THE CROSSWAY POST (Phase 38M2) — the wardens' gate on the road north, and the place 38M's toll is
+; actually about. 38M built the toll, the permit and the bribe and left them standing in the town
+; square because there was nowhere else to put them; this is that somewhere.
+;
+; ⚠️ ORIENTATION. World z DECREASES going north, so the player arrives from the SOUTH — local z = +26
+; is the seam with wilds_north, and the road runs north (−z) through the gate at z = 0 and out the far
+; side to the portal beyond. Everything in this file is LOCAL to the cell's own origin; the streamer
+; places the cell at Center (0, 0, -116). Reading a transform out of here and using it as a world
+; point is the 37C bug and lands 116 m south of where it was authored.
+;
+; ⚠️ THE GATE IS A GAP, NOT AN ARCH. prp_gate_palisade is a closed palisade with two towers — there is
+; no opening in the model. The road passes BETWEEN two of them: each is 15.93 m wide and centred at
+; x = ±11.9, so their inner edges land at x = ±3.94 and the 8 m road runs clean through the 7.88 m
+; gap. That arithmetic is here rather than eyeballed, because the .tscn shows nothing about it and a
+; palisade half a metre too far in is a wall across the only route in the cell.
+;
+; ⚠️ EVERYTHING STATIC PARENTS TO Nav. Geometry outside the NavigationRegion3D is not carved into the
+; navmesh, so an NPC walks straight through a palisade that looks solid. The two wardens deliberately
+; do NOT — only static geometry should carve.
+;
+; ⚠️ NO RAISED GROUND ANYWHERE (38K's engine finding). CharacterBody3D has no step-up, so a kerb is an
+; invisible wall the navmesh happily paths NPCs over. The road is a 6 cm skin with NO COLLIDER; the
+; height in this cell comes from an 8 m tower and a 5.5 m palisade, from props and never from terrain.
+;
+; LAYOUT, south (the approach from the wilds) to north (through the gate):
+;   z +26..+12  the approach: dead pines and rock closing both verges down to the road, one brazier.
+;   z +12..+2   the queue: the waystone, the caravan yard east of the road (carts, crates, hay, a
+;               fence line and a cook-fire) and the wardens' compound west of it, with the well and
+;               two benches for the people waiting. This is where the warden and the gate-hand stand.
+;   z  0        the gate line: two palisades and two watch towers, banner on the west tower.
+;   z -6        the far side, and the region portal (authored on RegionResource.PortalPoint, not
+;               here) — so a player pays or produces papers BEFORE the crossing, never after.
+
+[sub_resource type="NavigationMesh" id="NavMesh_crossway"]
+geometry_parsed_geometry_type = 1
+cell_size = 0.25
+cell_height = 0.25
+agent_height = 1.75
+agent_radius = 0.5
+agent_max_climb = 0.5
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+size = Vector3(52, 0.5, 52)
+
+[sub_resource type="BoxShape3D" id="Shape_floor"]
+size = Vector3(52, 0.5, 52)
+
+; Colder and greyer than either the square's packed earth or the market's swept flagstones — this is
+; the last of the valley before the Reach, and the ground is meant to read as leaving somewhere.
+[sub_resource type="StandardMaterial3D" id="Mat_floor"]
+albedo_color = Color(0.27, 0.27, 0.25, 1)
+roughness = 0.95
+
+; The road itself: the one lighter surface in the cell, so the route through is legible from the seam.
+[sub_resource type="StandardMaterial3D" id="Mat_road"]
+albedo_color = Color(0.42, 0.38, 0.32, 1)
+roughness = 0.9
+
+; The yard's hardstanding, east of the road, so the caravan ground reads as a different room.
+[sub_resource type="StandardMaterial3D" id="Mat_yard"]
+albedo_color = Color(0.33, 0.31, 0.28, 1)
+roughness = 0.88
+
+; The ONE warm accent (ART_STYLE §7): coals in the braziers and under the cook-fire, the OmniLights
+; and nothing else in the cell glows.
+[sub_resource type="StandardMaterial3D" id="Mat_ember"]
+albedo_color = Color(0.62, 0.22, 0.08, 1)
+emission_enabled = true
+emission = Color(1, 0.45, 0.12, 1)
+emission_energy_multiplier = 3.0
+
+[sub_resource type="SphereMesh" id="Mesh_coals"]
+radius = 0.13
+height = 0.26
+radial_segments = 8
+rings = 4
+
+; --- Ground skins. NO COLLIDERS on any of them (see the step-up note above). Sized to ABUT, never to
+; --- overlap: two coplanar slabs z-fight along their seam and that is invisible from the .tscn.
+; ---   road   x -4 .. +4,  the full 52 m of the cell
+; ---   yard   x +5 .. +19, z -2 .. +12
+[sub_resource type="BoxMesh" id="BoxMesh_road"]
+size = Vector3(8, 0.06, 52)
+
+[sub_resource type="BoxMesh" id="BoxMesh_yard"]
+size = Vector3(14, 0.06, 14)
+
+; --- Colliders, every one sized from the model's real bounding box measured off the written .glb
+; --- rather than guessed (the trap that left 2.4 m of a market tent with no collision in 38K).
+[sub_resource type="BoxShape3D" id="Shape_gate"]
+size = Vector3(15.93, 5.51, 2.57)
+
+[sub_resource type="BoxShape3D" id="Shape_tower"]
+size = Vector3(2.77, 8.01, 2.85)
+
+[sub_resource type="BoxShape3D" id="Shape_post"]
+size = Vector3(8.22, 4.0, 7.29)
+
+[sub_resource type="BoxShape3D" id="Shape_crate"]
+size = Vector3(1.24, 1.24, 1.24)
+
+[sub_resource type="CylinderShape3D" id="Shape_barrel"]
+height = 0.85
+radius = 0.34
+
+[sub_resource type="BoxShape3D" id="Shape_sacks"]
+size = Vector3(1.15, 0.45, 1.05)
+
+[sub_resource type="BoxShape3D" id="Shape_hay"]
+size = Vector3(0.62, 0.9, 0.64)
+
+[sub_resource type="BoxShape3D" id="Shape_cart"]
+size = Vector3(0.95, 1.6, 1.9)
+
+[sub_resource type="BoxShape3D" id="Shape_bench"]
+size = Vector3(1.8, 0.85, 0.66)
+
+[sub_resource type="BoxShape3D" id="Shape_well"]
+size = Vector3(1.5, 2.75, 2.25)
+
+[sub_resource type="BoxShape3D" id="Shape_fence"]
+size = Vector3(2.95, 1.2, 0.16)
+
+[sub_resource type="CylinderShape3D" id="Shape_brazier"]
+height = 1.2
+radius = 0.3
+
+[sub_resource type="CylinderShape3D" id="Shape_waystone"]
+height = 3.0
+radius = 0.8
+
+[sub_resource type="BoxShape3D" id="Shape_banner"]
+size = Vector3(1.0, 3.4, 0.7)
+
+[sub_resource type="BoxShape3D" id="Shape_rocks"]
+size = Vector3(2.3, 1.4, 1.9)
+
+; Trunk only: a canopy collider would make a dead pine a pillar the player cannot walk past.
+[sub_resource type="CylinderShape3D" id="Shape_pine"]
+height = 6.0
+radius = 0.4
+
+[sub_resource type="CapsuleShape3D" id="Shape_npc"]
+radius = 0.4
+height = 1.8
+
+[node name="CrosswayPost" type="Node3D"]
+
+[node name="Nav" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("NavMesh_crossway")
+
+[node name="NavBaker" type="Node" parent="Nav"]
+script = ExtResource("1_navbaker")
+
+[node name="Floor" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+mesh = SubResource("BoxMesh_floor")
+surface_material_override/0 = SubResource("Mat_floor")
+
+[node name="FloorCol" type="StaticBody3D" parent="Nav"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FloorCol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+shape = SubResource("Shape_floor")
+
+[node name="Road" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.03, 0)
+mesh = SubResource("BoxMesh_road")
+surface_material_override/0 = SubResource("Mat_road")
+
+[node name="Yard" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0.03, 5)
+mesh = SubResource("BoxMesh_yard")
+surface_material_override/0 = SubResource("Mat_yard")
+
+; --- The gate line -------------------------------------------------------------
+[node name="GateWest" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.9, 0, 0)
+
+[node name="Model" parent="Nav/GateWest" instance=ExtResource("10_gate")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/GateWest"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/GateWest/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.75, 0)
+shape = SubResource("Shape_gate")
+
+[node name="GateEast" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.9, 0, 0)
+
+[node name="Model" parent="Nav/GateEast" instance=ExtResource("10_gate")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/GateEast"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/GateEast/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.75, 0)
+shape = SubResource("Shape_gate")
+
+[node name="TowerWest" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.8, 0, 1.8)
+
+[node name="Model" parent="Nav/TowerWest" instance=ExtResource("11_tower")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/TowerWest"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/TowerWest/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
+shape = SubResource("Shape_tower")
+
+[node name="TowerEast" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.8, 0, 1.8)
+
+[node name="Model" parent="Nav/TowerEast" instance=ExtResource("11_tower")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/TowerEast"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/TowerEast/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
+shape = SubResource("Shape_tower")
+
+; The realm's banner on the gate — the only thing in the cell that says whose road this is.
+[node name="GateBanner" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.8, 0, 2.6)
+
+[node name="Model" parent="Nav/GateBanner" instance=ExtResource("26_banner")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/GateBanner"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/GateBanner/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
+shape = SubResource("Shape_banner")
+
+; --- The wardens' compound, west of the road ------------------------------------
+[node name="WardenPost" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, 8.5)
+
+[node name="Model" parent="Nav/WardenPost" instance=ExtResource("12_post")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/WardenPost"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/WardenPost/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Shape_post")
+
+[node name="Well" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.5, 0, 13)
+
+[node name="Model" parent="Nav/Well" instance=ExtResource("22_well")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/Well"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Well/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.37, 0)
+shape = SubResource("Shape_well")
+
+[node name="BenchA" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.5, 0, 11)
+
+[node name="Model" parent="Nav/BenchA" instance=ExtResource("21_bench")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BenchA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BenchA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
+shape = SubResource("Shape_bench")
+
+[node name="BenchB" type="Node3D" parent="Nav"]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -9.5, 0, 15)
+
+[node name="Model" parent="Nav/BenchB" instance=ExtResource("21_bench")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BenchB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BenchB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
+shape = SubResource("Shape_bench")
+
+; --- The caravan yard, east of the road -----------------------------------------
+[node name="CartA" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 8.5, 0, 3)
+
+[node name="Model" parent="Nav/CartA" instance=ExtResource("15_cart")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/CartA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CartA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("Shape_cart")
+
+[node name="CartB" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 8.5, 0, 8)
+
+[node name="Model" parent="Nav/CartB" instance=ExtResource("15_cart")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/CartB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CartB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("Shape_cart")
+
+[node name="CrateA" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.5, 0, 1.5)
+
+[node name="Model" parent="Nav/CrateA" instance=ExtResource("16_crate")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/CrateA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CrateA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
+shape = SubResource("Shape_crate")
+
+[node name="CrateB" type="Node3D" parent="Nav"]
+transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 13.8, 0, 2.4)
+
+[node name="Model" parent="Nav/CrateB" instance=ExtResource("16_crate")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/CrateB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CrateB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
+shape = SubResource("Shape_crate")
+
+[node name="CrateC" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.6, 1.24, 1.5)
+
+[node name="Model" parent="Nav/CrateC" instance=ExtResource("16_crate")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/CrateC"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CrateC/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
+shape = SubResource("Shape_crate")
+
+[node name="BarrelA" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.5, 0, 4.5)
+
+[node name="Model" parent="Nav/BarrelA" instance=ExtResource("17_barrel")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BarrelA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BarrelA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
+shape = SubResource("Shape_barrel")
+
+[node name="BarrelB" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.3, 0, 5.3)
+
+[node name="Model" parent="Nav/BarrelB" instance=ExtResource("17_barrel")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BarrelB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BarrelB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
+shape = SubResource("Shape_barrel")
+
+[node name="SacksA" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.2, 0, 7.5)
+
+[node name="Model" parent="Nav/SacksA" instance=ExtResource("19_sacks")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/SacksA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/SacksA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.22, 0)
+shape = SubResource("Shape_sacks")
+
+[node name="HayA" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.5, 0, 8.5)
+
+[node name="Model" parent="Nav/HayA" instance=ExtResource("18_hay")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/HayA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/HayA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+shape = SubResource("Shape_hay")
+
+[node name="HayB" type="Node3D" parent="Nav"]
+transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 18.2, 0, 7.4)
+
+[node name="Model" parent="Nav/HayB" instance=ExtResource("18_hay")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/HayB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/HayB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+shape = SubResource("Shape_hay")
+
+; The caravan's cook-fire — the yard's own warm point, away from the road's braziers.
+[node name="YardFire" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 5.5)
+
+[node name="Model" parent="Nav/YardFire" instance=ExtResource("23_campfire")]
+
+[node name="Coals" type="MeshInstance3D" parent="Nav/YardFire"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 0)
+mesh = SubResource("Mesh_coals")
+surface_material_override/0 = SubResource("Mat_ember")
+
+[node name="Light" type="OmniLight3D" parent="Nav/YardFire"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+light_color = Color(1, 0.62, 0.32, 1)
+light_energy = 1.6
+omni_range = 9.0
+
+; Fence line closing the yard's east side so the caravan ground reads as enclosed rather than as
+; clutter dropped on open dirt.
+[node name="FenceA" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 19.5, 0, 2)
+
+[node name="Model" parent="Nav/FenceA" instance=ExtResource("20_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceB" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 19.5, 0, 5)
+
+[node name="Model" parent="Nav/FenceB" instance=ExtResource("20_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceC" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 19.5, 0, 8)
+
+[node name="Model" parent="Nav/FenceC" instance=ExtResource("20_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceC"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceC/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+; --- Braziers along the road ----------------------------------------------------
+[node name="BrazierSW" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, 14)
+
+[node name="Model" parent="Nav/BrazierSW" instance=ExtResource("14_brazier")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BrazierSW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BrazierSW/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_brazier")
+
+[node name="Coals" type="MeshInstance3D" parent="Nav/BrazierSW"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 0)
+mesh = SubResource("Mesh_coals")
+surface_material_override/0 = SubResource("Mat_ember")
+
+[node name="Light" type="OmniLight3D" parent="Nav/BrazierSW"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+light_color = Color(1, 0.6, 0.3, 1)
+light_energy = 1.5
+omni_range = 10.0
+
+[node name="BrazierSE" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 14)
+
+[node name="Model" parent="Nav/BrazierSE" instance=ExtResource("14_brazier")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BrazierSE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BrazierSE/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_brazier")
+
+[node name="Coals" type="MeshInstance3D" parent="Nav/BrazierSE"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 0)
+mesh = SubResource("Mesh_coals")
+surface_material_override/0 = SubResource("Mat_ember")
+
+[node name="Light" type="OmniLight3D" parent="Nav/BrazierSE"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+light_color = Color(1, 0.6, 0.3, 1)
+light_energy = 1.5
+omni_range = 10.0
+
+[node name="BrazierGate" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.4, 0, 3.4)
+
+[node name="Model" parent="Nav/BrazierGate" instance=ExtResource("14_brazier")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BrazierGate"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BrazierGate/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_brazier")
+
+[node name="Coals" type="MeshInstance3D" parent="Nav/BrazierGate"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 0)
+mesh = SubResource("Mesh_coals")
+surface_material_override/0 = SubResource("Mat_ember")
+
+[node name="Light" type="OmniLight3D" parent="Nav/BrazierGate"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+light_color = Color(1, 0.6, 0.3, 1)
+light_energy = 1.7
+omni_range = 11.0
+
+; --- The verges: dead pines and rock, closing both sides down to the road -------
+[node name="PineA" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17, 0, 20)
+
+[node name="Model" parent="Nav/PineA" instance=ExtResource("24_pine")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/PineA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+shape = SubResource("Shape_pine")
+
+[node name="PineB" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0, 22.5)
+
+[node name="Model" parent="Nav/PineB" instance=ExtResource("24_pine")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/PineB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+shape = SubResource("Shape_pine")
+
+[node name="PineC" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, 21)
+
+[node name="Model" parent="Nav/PineC" instance=ExtResource("24_pine")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/PineC"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineC/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+shape = SubResource("Shape_pine")
+
+[node name="PineD" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, 18)
+
+[node name="Model" parent="Nav/PineD" instance=ExtResource("24_pine")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/PineD"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineD/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+shape = SubResource("Shape_pine")
+
+[node name="PineE" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 0, -9)
+
+[node name="Model" parent="Nav/PineE" instance=ExtResource("24_pine")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/PineE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineE/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+shape = SubResource("Shape_pine")
+
+[node name="PineF" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, -11)
+
+[node name="Model" parent="Nav/PineF" instance=ExtResource("24_pine")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/PineF"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineF/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+shape = SubResource("Shape_pine")
+
+[node name="RocksA" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 0, 12)
+
+[node name="Model" parent="Nav/RocksA" instance=ExtResource("25_rocks")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RocksA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RocksA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("Shape_rocks")
+
+[node name="RocksB" type="Node3D" parent="Nav"]
+transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 21, 0, 6)
+
+[node name="Model" parent="Nav/RocksB" instance=ExtResource("25_rocks")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RocksB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RocksB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("Shape_rocks")
+
+[node name="RocksC" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0, -13)
+
+[node name="Model" parent="Nav/RocksC" instance=ExtResource("25_rocks")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RocksC"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RocksC/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("Shape_rocks")
+
+; --- The waystone. TravelName is a LOCALE KEY, not prose (38K): TravelNodeComponent resolves it
+; --- through Loc.T, and Loc.T returns an unknown string unchanged, so a mistyped key renders as the
+; --- key itself rather than failing.
+[node name="CrosswayWaystone" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 15)
+script = ExtResource("2_entity")
+DisplayName = "Crossway Waystone"
+
+[node name="Model" parent="CrosswayWaystone" instance=ExtResource("13_waystone")]
+
+[node name="Collider" type="StaticBody3D" parent="CrosswayWaystone"]
+
+[node name="Shape" type="CollisionShape3D" parent="CrosswayWaystone/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+shape = SubResource("Shape_waystone")
+
+[node name="Travel" type="Node" parent="CrosswayWaystone"]
+script = ExtResource("3_travel")
+Id = "travel.ember_crown.crossway_post"
+TravelName = "travel.ember_crown.crossway_post.name"
+RegionId = "region.ember_crown"
+
+; --- The wardens ----------------------------------------------------------------
+; Moved here from town_hub.tscn, which is where 38M had to leave them: the toll existed and the road
+; did not. They stand on the SOUTH side of the gate, so papers are bought before the crossing.
+;
+; ⚠️ TWO ENTITIES, NOT ONE WITH TWO SERVICES. EntityNode.GetComponent<T> returns the first child
+; match, so a permit and a bribe on one body leaves the second one unreachable and silent (38E).
+;
+; They are NOT parented to Nav: only static geometry should carve the navmesh.
+[node name="RoadWarden" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.2, 0, 6.5)
+script = ExtResource("2_entity")
+DisplayName = "Warden Sergeant Alric"
+TemplateId = "npc.road_warden"
+
+[node name="Animation" type="Node" parent="RoadWarden"]
+script = ExtResource("4_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="RoadWarden"]
+
+[node name="Shape" type="CollisionShape3D" parent="RoadWarden/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="RoadWarden"]
+script = ExtResource("5_faction")
+FactionId = "faction.villagers"
+
+[node name="Service" type="Node" parent="RoadWarden"]
+script = ExtResource("6_service")
+ServiceId = "service.crossway.permit"
+
+[node name="Model" parent="RoadWarden" instance=ExtResource("30_guild_rep")]
+
+[node name="GateHand" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.2, 0, 6.5)
+script = ExtResource("2_entity")
+DisplayName = "A Gate-Hand"
+TemplateId = "npc.gate_hand"
+
+[node name="Animation" type="Node" parent="GateHand"]
+script = ExtResource("4_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="GateHand"]
+
+[node name="Shape" type="CollisionShape3D" parent="GateHand/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="GateHand"]
+script = ExtResource("5_faction")
+FactionId = "faction.villagers"
+
+[node name="Service" type="Node" parent="GateHand"]
+script = ExtResource("6_service")
+ServiceId = "service.crossway.bribe"
+
+[node name="Model" parent="GateHand" instance=ExtResource("31_hooded")]
