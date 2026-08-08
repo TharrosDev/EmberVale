@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+; Phase 38N1 - the Emberdeep Mine's own product, and the one item in the game that wears `ore` AND
+; `fuel`. That pairing is the point: it is the mine's to sell and Ash Dunmore's to burn, so the first
+; route the arbitrage table can describe runs between two settlements rather than around one market.
+;
+; Priced at 5 against charcoal's 4. Dunmore's own line - "hotter than wood and quieter than coal" -
+; already says charcoal is the better fuel for a forge; coal is what you burn when there is a mountain
+; of it at your feet and no time to burn oak slowly.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.material.coal"
+DisplayName = "Coal"
+Description = "Cut black from the Emberdeep seams. It burns hot, dirty and long, and every cart of it that leaves the mine is spoken for."
+Type = 4
+Rarity = 0
+MaxStack = 99
+Weight = 0.8
+Value = 5
+TradeTags = Array[String](["fuel", "ore"])

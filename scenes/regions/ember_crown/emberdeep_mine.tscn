@@ -1,0 +1,890 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="1_navbaker"]
+[ext_resource type="Script" path="res://src/Entities/Entity.cs" id="2_entity"]
+[ext_resource type="Script" path="res://src/World/TravelNodeComponent.cs" id="3_travel"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="4_dialogue"]
+[ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="5_charanim"]
+[ext_resource type="Script" path="res://src/Factions/FactionComponent.cs" id="6_faction"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleComponent.cs" id="7_schedule"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_mine_head.glb" id="10_minehead"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_boulder.glb" id="11_boulder"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_ore_seam.glb" id="12_oreseam"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_timber_stack.glb" id="13_timber"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_market_stand_b.glb" id="14_stand"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_gazebo.glb" id="15_gazebo"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_cart.glb" id="16_cart"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_crate.glb" id="17_crate"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_barrel.glb" id="18_barrel"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_sacks.glb" id="19_sacks"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="20_brazier"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_campfire.glb" id="21_campfire"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_fence.glb" id="22_fence"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_pine_dead.glb" id="23_pine"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="24_rocks"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_waystone.glb" id="25_waystone"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_vendor.glb" id="30_vendor"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_townswoman.glb" id="31_townswoman"]
+
+; THE EMBERDEEP MINE (Phase 38N1) — the realm's first PRODUCTION settlement, and the second market the
+; economy has been waiting for since 38F.
+;
+; It exists to be the other side of the Embermarket's prices. Ash Dunmore has been saying since 38L
+; that "there's a mine east of here they say is opening again. Emberdeep. If it does, I'll be buying
+; ore by the cartload"; this is that mine, and the two shops in it are deliberately a SOURCE and a
+; SINK rather than two more stalls:
+;   Bregan Holt weighs ore at the lowest markup in the realm (1.15) and barely buys.
+;   Marta Quill pays the most for food anywhere (0.62 fraction, `food` specialty) and sells nothing.
+; A settlement whose merchants accepted everything would be the town square with different scenery,
+; which is the whole failure 38G was parked to avoid.
+;
+; ⚠️ The cell is placed at Center (99, 0, -10), abutting the arena's 36 m floor which ends at x = 73:
+; a 52 m floor centred at x = 99 starts exactly there. Every transform in this file is LOCAL. The road
+; in is from the WEST, so local -x is toward the town and the mine head sits against the east wall.
+;
+; ⚠️ EVERYTHING STATIC PARENTS TO Nav — geometry outside the NavigationRegion3D is not carved into the
+; navmesh, so an NPC would walk straight through the mine head. The two merchants deliberately do not.
+;
+; ⚠️ NO RAISED GROUND (38K). CharacterBody3D has no step-up, so the yard is flat and its height comes
+; from a 6 m mine head, 2.2 m boulders and the ore heaps — from props, never from terrain.
+;
+; LAYOUT, west (the road from the arena) to east (the seam):
+;   x -26..-14  the approach: dead pines, rock, the waystone.
+;   x -14..+2   the yard: Bregan's weighing stand (north side) and Marta's company store (south),
+;               with the carts, crates, sacks and the shift's cook-fire between them.
+;   x  +2..+20  the workings: ore heaps, timber for pit props, spoil boulders, and the mine head
+;               itself facing west into the yard.
+
+[sub_resource type="NavigationMesh" id="NavMesh_mine"]
+geometry_parsed_geometry_type = 1
+cell_size = 0.25
+cell_height = 0.25
+agent_height = 1.75
+agent_radius = 0.5
+agent_max_climb = 0.5
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+size = Vector3(52, 0.5, 52)
+
+[sub_resource type="BoxShape3D" id="Shape_floor"]
+size = Vector3(52, 0.5, 52)
+
+; Darker and browner than any ground in the game so far — spoil, not soil. The mine reads as a place
+; that has been dug over rather than built on.
+[sub_resource type="StandardMaterial3D" id="Mat_floor"]
+albedo_color = Color(0.24, 0.22, 0.19, 1)
+roughness = 0.97
+
+; The hardstanding the carts stand on, and the one lighter surface: the route from the road to the
+; mine head, so the yard is legible from the seam.
+[sub_resource type="StandardMaterial3D" id="Mat_yard"]
+albedo_color = Color(0.38, 0.35, 0.3, 1)
+roughness = 0.92
+
+; The ONE warm accent (ART_STYLE §7): coals in the braziers and under the cook-fire. Nothing else here
+; glows, which is what makes a lit brazier read as somewhere people are.
+[sub_resource type="StandardMaterial3D" id="Mat_ember"]
+albedo_color = Color(0.62, 0.22, 0.08, 1)
+emission_enabled = true
+emission = Color(1, 0.45, 0.12, 1)
+emission_energy_multiplier = 3.0
+
+[sub_resource type="SphereMesh" id="Mesh_coals"]
+radius = 0.13
+height = 0.26
+radial_segments = 8
+rings = 4
+
+; Ground skin. NO COLLIDER (see the step-up note above): a 6 cm lip is something the player catches on.
+[sub_resource type="BoxMesh" id="BoxMesh_yard"]
+size = Vector3(34, 0.06, 16)
+
+; --- Colliders, every one sized from the model's real bounding box measured off the written .glb.
+[sub_resource type="BoxShape3D" id="Shape_minehead"]
+size = Vector3(6.59, 6.0, 6.98)
+
+[sub_resource type="BoxShape3D" id="Shape_boulder"]
+size = Vector3(3.38, 2.2, 3.73)
+
+[sub_resource type="BoxShape3D" id="Shape_oreseam"]
+size = Vector3(2.81, 1.6, 2.88)
+
+[sub_resource type="BoxShape3D" id="Shape_timber"]
+size = Vector3(5.67, 1.2, 4.08)
+
+[sub_resource type="BoxShape3D" id="Shape_stand"]
+size = Vector3(2.5, 2.6, 3.0)
+
+[sub_resource type="BoxShape3D" id="Shape_gazebo_post"]
+size = Vector3(0.35, 2.8, 3.3)
+
+[sub_resource type="BoxShape3D" id="Shape_cart"]
+size = Vector3(0.95, 1.6, 1.9)
+
+[sub_resource type="BoxShape3D" id="Shape_crate"]
+size = Vector3(1.24, 1.24, 1.24)
+
+[sub_resource type="CylinderShape3D" id="Shape_barrel"]
+height = 0.85
+radius = 0.34
+
+[sub_resource type="BoxShape3D" id="Shape_sacks"]
+size = Vector3(1.15, 0.45, 1.05)
+
+[sub_resource type="CylinderShape3D" id="Shape_brazier"]
+height = 1.2
+radius = 0.3
+
+[sub_resource type="BoxShape3D" id="Shape_fence"]
+size = Vector3(2.95, 1.2, 0.16)
+
+[sub_resource type="CylinderShape3D" id="Shape_pine"]
+height = 6.0
+radius = 0.4
+
+[sub_resource type="BoxShape3D" id="Shape_rocks"]
+size = Vector3(2.3, 1.4, 1.9)
+
+[sub_resource type="CylinderShape3D" id="Shape_waystone"]
+height = 3.0
+radius = 0.8
+
+[sub_resource type="CapsuleShape3D" id="Shape_npc"]
+radius = 0.4
+height = 1.8
+
+[node name="EmberdeepMine" type="Node3D"]
+
+[node name="Nav" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("NavMesh_mine")
+
+[node name="NavBaker" type="Node" parent="Nav"]
+script = ExtResource("1_navbaker")
+
+[node name="Floor" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+mesh = SubResource("BoxMesh_floor")
+surface_material_override/0 = SubResource("Mat_floor")
+
+[node name="FloorCol" type="StaticBody3D" parent="Nav"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FloorCol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+shape = SubResource("Shape_floor")
+
+[node name="Yard" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 0.03, 0)
+mesh = SubResource("BoxMesh_yard")
+surface_material_override/0 = SubResource("Mat_yard")
+
+; --- The workings ---------------------------------------------------------------
+; The mine head faces WEST into the yard (yaw -90: the model's adit faces its own +Z).
+[node name="MineHead" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 14, 0, -2)
+
+[node name="Model" parent="Nav/MineHead" instance=ExtResource("10_minehead")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/MineHead"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/MineHead/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+shape = SubResource("Shape_minehead")
+
+[node name="OreSeamA" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, -8)
+
+[node name="Model" parent="Nav/OreSeamA" instance=ExtResource("12_oreseam")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/OreSeamA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/OreSeamA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("Shape_oreseam")
+
+[node name="OreSeamB" type="Node3D" parent="Nav"]
+transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 10, 0, 6)
+
+[node name="Model" parent="Nav/OreSeamB" instance=ExtResource("12_oreseam")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/OreSeamB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/OreSeamB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("Shape_oreseam")
+
+[node name="OreSeamC" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17, 0, 12)
+
+[node name="Model" parent="Nav/OreSeamC" instance=ExtResource("12_oreseam")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/OreSeamC"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/OreSeamC/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("Shape_oreseam")
+
+[node name="BoulderA" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19, 0, -14)
+
+[node name="Model" parent="Nav/BoulderA" instance=ExtResource("11_boulder")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BoulderA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BoulderA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+shape = SubResource("Shape_boulder")
+
+[node name="BoulderB" type="Node3D" parent="Nav"]
+transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 20, 0, 16)
+
+[node name="Model" parent="Nav/BoulderB" instance=ExtResource("11_boulder")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BoulderB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BoulderB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+shape = SubResource("Shape_boulder")
+
+[node name="BoulderC" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, -18)
+
+[node name="Model" parent="Nav/BoulderC" instance=ExtResource("11_boulder")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BoulderC"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BoulderC/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+shape = SubResource("Shape_boulder")
+
+[node name="TimberA" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 12)
+
+[node name="Model" parent="Nav/TimberA" instance=ExtResource("13_timber")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/TimberA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/TimberA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_timber")
+
+[node name="TimberB" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 6, 0, -13)
+
+[node name="Model" parent="Nav/TimberB" instance=ExtResource("13_timber")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/TimberB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/TimberB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_timber")
+
+; --- The yard: the weighing stand north, the company store south -----------------
+[node name="WeighStand" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0, -8)
+
+[node name="Model" parent="Nav/WeighStand" instance=ExtResource("14_stand")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/WeighStand"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/WeighStand/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("Shape_stand")
+
+; The company store is the one roofed thing in the cell — a pavilion rather than a building, because a
+; mine's store is a counter under a roof and nothing more.
+[node name="CompanyStore" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, 8)
+
+[node name="Model" parent="Nav/CompanyStore" instance=ExtResource("15_gazebo")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/CompanyStore"]
+
+[node name="PostW" type="CollisionShape3D" parent="Nav/CompanyStore/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6, 1.4, 0)
+shape = SubResource("Shape_gazebo_post")
+
+[node name="PostE" type="CollisionShape3D" parent="Nav/CompanyStore/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.6, 1.4, 0)
+shape = SubResource("Shape_gazebo_post")
+
+[node name="CartA" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 1, 0, 0)
+
+[node name="Model" parent="Nav/CartA" instance=ExtResource("16_cart")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/CartA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CartA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("Shape_cart")
+
+[node name="CartB" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 1, 0, 4)
+
+[node name="Model" parent="Nav/CartB" instance=ExtResource("16_cart")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/CartB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CartB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("Shape_cart")
+
+[node name="CrateA" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, -6)
+
+[node name="Model" parent="Nav/CrateA" instance=ExtResource("17_crate")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/CrateA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CrateA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
+shape = SubResource("Shape_crate")
+
+[node name="CrateB" type="Node3D" parent="Nav"]
+transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, -7.2, 0, -5)
+
+[node name="Model" parent="Nav/CrateB" instance=ExtResource("17_crate")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/CrateB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CrateB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
+shape = SubResource("Shape_crate")
+
+[node name="CrateC" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 1.24, -6)
+
+[node name="Model" parent="Nav/CrateC" instance=ExtResource("17_crate")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/CrateC"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CrateC/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
+shape = SubResource("Shape_crate")
+
+[node name="BarrelA" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.5, 0, 10)
+
+[node name="Model" parent="Nav/BarrelA" instance=ExtResource("18_barrel")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BarrelA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BarrelA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
+shape = SubResource("Shape_barrel")
+
+[node name="BarrelB" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.3, 0, 10.8)
+
+[node name="Model" parent="Nav/BarrelB" instance=ExtResource("18_barrel")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BarrelB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BarrelB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
+shape = SubResource("Shape_barrel")
+
+[node name="SacksA" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, 9)
+
+[node name="Model" parent="Nav/SacksA" instance=ExtResource("19_sacks")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/SacksA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/SacksA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.22, 0)
+shape = SubResource("Shape_sacks")
+
+[node name="SacksB" type="Node3D" parent="Nav"]
+transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, -2.5, 0, 10)
+
+[node name="Model" parent="Nav/SacksB" instance=ExtResource("19_sacks")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/SacksB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/SacksB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.22, 0)
+shape = SubResource("Shape_sacks")
+
+; The shift's cook-fire, between the two counters — the one place in the cell people stand together.
+[node name="ShiftFire" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, 0)
+
+[node name="Model" parent="Nav/ShiftFire" instance=ExtResource("21_campfire")]
+
+[node name="Coals" type="MeshInstance3D" parent="Nav/ShiftFire"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 0)
+mesh = SubResource("Mesh_coals")
+surface_material_override/0 = SubResource("Mat_ember")
+
+[node name="Light" type="OmniLight3D" parent="Nav/ShiftFire"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+light_color = Color(1, 0.62, 0.32, 1)
+light_energy = 1.6
+omni_range = 10.0
+
+[node name="BrazierAdit" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, -5)
+
+[node name="Model" parent="Nav/BrazierAdit" instance=ExtResource("20_brazier")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BrazierAdit"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BrazierAdit/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_brazier")
+
+[node name="Coals" type="MeshInstance3D" parent="Nav/BrazierAdit"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 0)
+mesh = SubResource("Mesh_coals")
+surface_material_override/0 = SubResource("Mat_ember")
+
+[node name="Light" type="OmniLight3D" parent="Nav/BrazierAdit"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+light_color = Color(1, 0.6, 0.3, 1)
+light_energy = 1.6
+omni_range = 11.0
+
+[node name="BrazierRoad" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, -3)
+
+[node name="Model" parent="Nav/BrazierRoad" instance=ExtResource("20_brazier")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BrazierRoad"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BrazierRoad/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_brazier")
+
+[node name="Coals" type="MeshInstance3D" parent="Nav/BrazierRoad"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 0)
+mesh = SubResource("Mesh_coals")
+surface_material_override/0 = SubResource("Mat_ember")
+
+[node name="Light" type="OmniLight3D" parent="Nav/BrazierRoad"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+light_color = Color(1, 0.6, 0.3, 1)
+light_energy = 1.5
+omni_range = 10.0
+
+; --- Edges: fence along the yard's south side, dead pines and rock at the approach.
+[node name="FenceA" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0, 13)
+
+[node name="Model" parent="Nav/FenceA" instance=ExtResource("22_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceB" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, 13)
+
+[node name="Model" parent="Nav/FenceB" instance=ExtResource("22_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="PineA" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 0, -12)
+
+[node name="Model" parent="Nav/PineA" instance=ExtResource("23_pine")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/PineA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+shape = SubResource("Shape_pine")
+
+[node name="PineB" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17, 0, 16)
+
+[node name="Model" parent="Nav/PineB" instance=ExtResource("23_pine")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/PineB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+shape = SubResource("Shape_pine")
+
+[node name="PineC" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -22, 0, 6)
+
+[node name="Model" parent="Nav/PineC" instance=ExtResource("23_pine")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/PineC"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineC/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+shape = SubResource("Shape_pine")
+
+[node name="RocksA" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18, 0, -18)
+
+[node name="Model" parent="Nav/RocksA" instance=ExtResource("24_rocks")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RocksA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RocksA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("Shape_rocks")
+
+[node name="RocksB" type="Node3D" parent="Nav"]
+transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, -21, 0, -2)
+
+[node name="Model" parent="Nav/RocksB" instance=ExtResource("24_rocks")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RocksB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RocksB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("Shape_rocks")
+
+; --- The waystone. ⚠️ TravelName is a LOCALE KEY, not prose (38K).
+[node name="MineWaystone" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -19, 0, -6)
+script = ExtResource("2_entity")
+DisplayName = "Emberdeep Waystone"
+
+[node name="Model" parent="MineWaystone" instance=ExtResource("25_waystone")]
+
+[node name="Collider" type="StaticBody3D" parent="MineWaystone"]
+
+[node name="Shape" type="CollisionShape3D" parent="MineWaystone/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+shape = SubResource("Shape_waystone")
+
+[node name="Travel" type="Node" parent="MineWaystone"]
+script = ExtResource("3_travel")
+Id = "travel.ember_crown.emberdeep_mine"
+TravelName = "travel.ember_crown.emberdeep_mine.name"
+RegionId = "region.ember_crown"
+
+; --- The two merchants. NOT parented to Nav: only static geometry should carve the navmesh.
+; ⚠️ Each carries ONE interactable (a DialogueComponent), and trade hangs off it through
+; DialogueEffect.OpenShop — the 38E route. A VendorComponent behind the dialogue would never fire.
+[node name="Bregan" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0, -6)
+script = ExtResource("2_entity")
+DisplayName = "Bregan Holt"
+TemplateId = "npc.bregan"
+
+[node name="Animation" type="Node" parent="Bregan"]
+script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="Bregan"]
+
+[node name="Shape" type="CollisionShape3D" parent="Bregan/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="Bregan"]
+script = ExtResource("6_faction")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="Bregan"]
+script = ExtResource("4_dialogue")
+DialogueId = "dialogue.bregan"
+
+[node name="Schedule" type="Node" parent="Bregan"]
+script = ExtResource("7_schedule")
+ScheduleId = "schedule.emberdeep.factor"
+
+[node name="Model" parent="Bregan" instance=ExtResource("30_vendor")]
+
+[node name="Marta" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, 6)
+script = ExtResource("2_entity")
+DisplayName = "Marta Quill"
+TemplateId = "npc.marta"
+
+[node name="Animation" type="Node" parent="Marta"]
+script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="Marta"]
+
+[node name="Shape" type="CollisionShape3D" parent="Marta/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="Marta"]
+script = ExtResource("6_faction")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="Marta"]
+script = ExtResource("4_dialogue")
+DialogueId = "dialogue.marta"
+
+[node name="Schedule" type="Node" parent="Marta"]
+script = ExtResource("7_schedule")
+ScheduleId = "schedule.emberdeep.quartermaster"
+
+; ⚠️ NOT npc_merchant_f. That body is a white t-shirt, tan trousers and blue trainers — modern dress,
+; found by rendering it at eye level here (38N1). It shipped in 38L on the Embermarket merchants and is
+; recorded in CREDITS.md under "Known, not fixed" rather than propagated to a third district.
+[node name="Model" parent="Marta" instance=ExtResource("31_townswoman")]
+
+; --- Second pass (38N1). The first draft was correct and empty: a cluster of props in the middle of
+; --- 2,704 m2 of dark ground, which is precisely the critique 38K's first Embermarket earned. These
+; --- fill the workings and close the verges so the cell reads as a place being dug rather than a
+; --- diorama on a plain. Nothing here is new art — density, not another model.
+
+[node name="OreSeamD" type="Node3D" parent="Nav"]
+transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, -9, 0, -14)
+
+[node name="Model" parent="Nav/OreSeamD" instance=ExtResource("12_oreseam")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/OreSeamD"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/OreSeamD/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("Shape_oreseam")
+
+[node name="OreSeamE" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, -9)
+
+[node name="Model" parent="Nav/OreSeamE" instance=ExtResource("12_oreseam")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/OreSeamE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/OreSeamE/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("Shape_oreseam")
+
+[node name="OreSeamF" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 20, 0, -6)
+
+[node name="Model" parent="Nav/OreSeamF" instance=ExtResource("12_oreseam")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/OreSeamF"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/OreSeamF/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("Shape_oreseam")
+
+[node name="BoulderD" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 19)
+
+[node name="Model" parent="Nav/BoulderD" instance=ExtResource("11_boulder")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BoulderD"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BoulderD/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+shape = SubResource("Shape_boulder")
+
+[node name="BoulderE" type="Node3D" parent="Nav"]
+transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, -14, 0, -20)
+
+[node name="Model" parent="Nav/BoulderE" instance=ExtResource("11_boulder")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BoulderE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BoulderE/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+shape = SubResource("Shape_boulder")
+
+[node name="BoulderF" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 0, 3)
+
+[node name="Model" parent="Nav/BoulderF" instance=ExtResource("11_boulder")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BoulderF"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BoulderF/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+shape = SubResource("Shape_boulder")
+
+[node name="TimberC" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 11, 0, 16)
+
+[node name="Model" parent="Nav/TimberC" instance=ExtResource("13_timber")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/TimberC"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/TimberC/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_timber")
+
+[node name="CrateD" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0, 5)
+
+[node name="Model" parent="Nav/CrateD" instance=ExtResource("17_crate")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/CrateD"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CrateD/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
+shape = SubResource("Shape_crate")
+
+[node name="CrateE" type="Node3D" parent="Nav"]
+transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 2, 0, -9)
+
+[node name="Model" parent="Nav/CrateE" instance=ExtResource("17_crate")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/CrateE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CrateE/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
+shape = SubResource("Shape_crate")
+
+[node name="CrateF" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.1, 1.24, 5)
+
+[node name="Model" parent="Nav/CrateF" instance=ExtResource("17_crate")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/CrateF"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CrateF/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
+shape = SubResource("Shape_crate")
+
+[node name="BarrelC" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, 9)
+
+[node name="Model" parent="Nav/BarrelC" instance=ExtResource("18_barrel")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BarrelC"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BarrelC/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
+shape = SubResource("Shape_barrel")
+
+[node name="SacksC" type="Node3D" parent="Nav"]
+transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, -10, 0, 1)
+
+[node name="Model" parent="Nav/SacksC" instance=ExtResource("19_sacks")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/SacksC"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/SacksC/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.22, 0)
+shape = SubResource("Shape_sacks")
+
+[node name="CartC" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 7, 0, 9)
+
+[node name="Model" parent="Nav/CartC" instance=ExtResource("16_cart")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/CartC"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CartC/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("Shape_cart")
+
+[node name="FenceC" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 0, 13)
+
+[node name="Model" parent="Nav/FenceC" instance=ExtResource("22_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceC"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceC/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceD" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, 13)
+
+[node name="Model" parent="Nav/FenceD" instance=ExtResource("22_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceD"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceD/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="PineD" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -24, 0, -7)
+
+[node name="Model" parent="Nav/PineD" instance=ExtResource("23_pine")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/PineD"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineD/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
+shape = SubResource("Shape_pine")
+
+[node name="PineE" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 0, 21)
+
+[node name="Model" parent="Nav/PineE" instance=ExtResource("23_pine")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/PineE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineE/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
+shape = SubResource("Shape_pine")
+
+[node name="PineF" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21, 0, -20)
+
+[node name="Model" parent="Nav/PineF" instance=ExtResource("23_pine")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/PineF"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineF/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
+shape = SubResource("Shape_pine")
+
+[node name="RocksC" type="Node3D" parent="Nav"]
+transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, -23, 0, 15)
+
+[node name="Model" parent="Nav/RocksC" instance=ExtResource("24_rocks")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RocksC"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RocksC/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("Shape_rocks")
+
+[node name="RocksD" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 21)
+
+[node name="Model" parent="Nav/RocksD" instance=ExtResource("24_rocks")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RocksD"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RocksD/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("Shape_rocks")
+
+[node name="RocksE" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 16, 0, -21)
+
+[node name="Model" parent="Nav/RocksE" instance=ExtResource("24_rocks")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RocksE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RocksE/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("Shape_rocks")
+
+[node name="BrazierYard" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, -2)
+
+[node name="Model" parent="Nav/BrazierYard" instance=ExtResource("20_brazier")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BrazierYard"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BrazierYard/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_brazier")
+
+[node name="Coals" type="MeshInstance3D" parent="Nav/BrazierYard"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 0)
+mesh = SubResource("Mesh_coals")
+surface_material_override/0 = SubResource("Mat_ember")
+
+[node name="Light" type="OmniLight3D" parent="Nav/BrazierYard"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+light_color = Color(1, 0.6, 0.3, 1)
+light_energy = 1.5
+omni_range = 10.0

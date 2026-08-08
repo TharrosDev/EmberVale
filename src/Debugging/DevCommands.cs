@@ -52,6 +52,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("event", "event <id>", "Force a world event.", Event));
         console.Register(new ConsoleCommand("region", "region <list|goto <id>>", "List regions or hard-load into one (Phase 25C).", Region));
         console.Register(new ConsoleCommand("travel", "travel <list|goto <id>>", "List attuned travel nodes or fast-travel to one (Phase 25G).", Travel));
+        console.Register(new ConsoleCommand("economy", "economy [arbitrage]", "Print the realm's best buy-low/sell-high routes (Phase 38N1).", Economy));
         console.Register(new ConsoleCommand("tutorial", "tutorial <status|skip|restart>", "Inspect or drive the onboarding hints (Phase 33B).", Tutorial));
         console.Register(new ConsoleCommand("opening", "opening", "Replay the new-game prologue (Phase 33A).", Opening));
         console.Register(new ConsoleCommand("companion", "companion <list|recruit <id>|dismiss <id>|stance <id> <follow|hold|engage>|order|loyalty <id> [delta]>", "Inspect and drive the companion party (Phase 32A).", Companion));
@@ -666,6 +667,24 @@ public static class DevCommands
         }
 
         return "usage: region <list|goto <id>>";
+    }
+
+    /// <summary>
+    /// The realm's price landscape (Phase 38N1). Delegates to <see cref="Economy.EconomyReport"/>, the
+    /// same function <c>--economy</c> prints headlessly — so the table the maintainer reads at F1 and
+    /// the one a tool captures from the command line are the same table.
+    ///
+    /// 38V's brief reserves an <c>economy</c> command for the full price landscape; this is that
+    /// command arriving with its first subcommand rather than a second one to merge later.
+    /// </summary>
+    private static string Economy(DevConsole console, string[] args)
+    {
+        if (args.Length >= 1 && args[0] != "arbitrage")
+        {
+            return "usage: economy [arbitrage]";
+        }
+
+        return Embervale.Economy.EconomyReport.Arbitrage();
     }
 
     private static string Travel(DevConsole console, string[] args)

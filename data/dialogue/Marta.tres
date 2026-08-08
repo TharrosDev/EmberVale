@@ -1,0 +1,80 @@
+[gd_resource type="Resource" script_class="DialogueResource" format=3]
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+; Marta Quill, the Emberdeep quartermaster (Phase 38N1). The sink's own voice.
+;
+; Her talk node is the other half of Bregan's: he says what the ore is worth up the road, she says what
+; a loaf is worth down here. Between the two of them a player who never opens the F1 console can work
+; out the route the arbitrage table prints.
+;
+; Standard resident shape - trade behind Condition = 12 with no Goto, closed behind 13, both trade
+; doors gated (the trap Aldreth's file records).
+
+[sub_resource type="Resource" id="ch_trade"]
+script = ExtResource("3_choice")
+Text = "dlg.marta.c_trade"
+Condition = 12
+ConditionArg = "shop.emberdeep.quartermaster"
+Effect = 9
+EffectArg = "shop.emberdeep.quartermaster"
+
+[sub_resource type="Resource" id="ch_closed"]
+script = ExtResource("3_choice")
+Text = "dlg.marta.c_closed"
+Condition = 13
+ConditionArg = "shop.emberdeep.quartermaster"
+Goto = "closed"
+
+[sub_resource type="Resource" id="ch_talk"]
+script = ExtResource("3_choice")
+Text = "dlg.marta.c_talk"
+Goto = "talk"
+
+[sub_resource type="Resource" id="ch_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.marta.c_bye"
+
+[sub_resource type="Resource" id="ch_talk_trade"]
+script = ExtResource("3_choice")
+Text = "dlg.marta.c_talk_trade"
+Condition = 12
+ConditionArg = "shop.emberdeep.quartermaster"
+Effect = 9
+EffectArg = "shop.emberdeep.quartermaster"
+
+[sub_resource type="Resource" id="ch_talk_back"]
+script = ExtResource("3_choice")
+Text = "dlg.marta.c_talk_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_talk_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.marta.c_talk_bye"
+
+[sub_resource type="Resource" id="node_root"]
+script = ExtResource("2_node")
+Id = "root"
+Text = "dlg.marta.root"
+Choices = Array[Resource]([SubResource("ch_trade"), SubResource("ch_closed"), SubResource("ch_talk"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_talk"]
+script = ExtResource("2_node")
+Id = "talk"
+Text = "dlg.marta.talk"
+Choices = Array[Resource]([SubResource("ch_talk_trade"), SubResource("ch_talk_back"), SubResource("ch_talk_bye")])
+
+[sub_resource type="Resource" id="node_closed"]
+script = ExtResource("2_node")
+Id = "closed"
+Text = "dlg.marta.closed"
+Choices = Array[Resource]([SubResource("ch_talk"), SubResource("ch_bye")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "dialogue.marta"
+SpeakerName = "dlg.marta.speaker"
+StartNodeId = "root"
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_talk"), SubResource("node_closed")])

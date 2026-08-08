@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+; Phase 38N1. The `ore` tag had exactly one member - iron ore - which is the shape 38L spent a whole
+; sub-phase fixing for six other trades: a settlement whose entire economy is one tag needs more than
+; one thing wearing it, or the ore factor is a merchant selling a single rock.
+;
+; Copper is worth more than iron here (7 against 5) because the Emberdeep seams are iron; copper comes
+; up as a by-product and leaves in smaller quantities. That is also why the factor stocks it finite
+; while the iron is unlimited.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.material.copper_ore"
+DisplayName = "Copper Ore"
+Description = "Green-streaked rock from the shallow drifts. Softer than iron and worth more by the sack, which the miners find funny."
+Type = 4
+Rarity = 0
+MaxStack = 99
+Weight = 0.9
+Value = 7
+TradeTags = Array[String](["ore", "metal"])

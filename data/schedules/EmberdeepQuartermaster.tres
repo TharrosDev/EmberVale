@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="ScheduleResource" format=3]
+
+[ext_resource type="Script" path="res://src/Npc/ScheduleResource.cs" id="1_sched"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleEntry.cs" id="2_entry"]
+
+; Marta Quill, the Emberdeep quartermaster (Phase 38N1).
+;
+; ⚠️ Cell-local destinations against Origin (99, 0, -10), and hours kept in step with
+; shop.emberdeep.quartermaster (6:00-20:00) by hand — see the factor's file for why nothing validates
+; that pairing.
+;
+; She opens an hour after Bregan and closes an hour later: the store serves the shift, and the shift
+; comes off the hill after the ore has been weighed.
+
+[sub_resource type="Resource" id="e_open"]
+script = ExtResource("2_entry")
+StartHour = 6
+Activity = "Keeping the store"
+Destination = Vector3(-4, 0, 6)
+
+[sub_resource type="Resource" id="e_stock"]
+script = ExtResource("2_entry")
+StartHour = 13
+Activity = "Checking the stores against the ledger"
+Destination = Vector3(-8, 0, 9)
+
+[sub_resource type="Resource" id="e_shut"]
+script = ExtResource("2_entry")
+StartHour = 20
+Activity = "Locking the strongbox"
+Destination = Vector3(-4, 0, 6)
+
+[resource]
+script = ExtResource("1_sched")
+Id = "schedule.emberdeep.quartermaster"
+Origin = Vector3(99, 0, -10)
+Entries = Array[Resource]([SubResource("e_open"), SubResource("e_stock"), SubResource("e_shut")])

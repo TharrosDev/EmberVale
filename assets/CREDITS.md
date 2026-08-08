@@ -633,6 +633,24 @@ keeps one number in one file: a model scaled per-scene would have every future p
 arch. The Crossway gate is therefore a **gap between two of them** with the road running through,
 which is also why nothing has to animate for the player to pass.
 
+### Phase 38N1 — the Emberdeep Mine (four workings props, `rts` pack)
+
+- **Source:** the vendored `assets/library/rts/` pack again — a library lookup, not a web search
+  (`docs/ASSET_POLICY.md` §0). Provenance and licence per model in `assets/library/manifest.json`
+  (`Mine`, `Rock 2`, `Gold Rocks`, `Logs`), all **CC0 1.0**, author Quaternius.
+
+| Lands at | Source | Height | Root scale | Role |
+| --- | --- | --- | --- | --- |
+| `props/prp_mine_head.glb` | `rts/mine.glb` | 6.00 m | 5.13 | the adit and the outcrop over it |
+| `props/prp_boulder.glb` | `rts/rock_2.glb` | 2.20 m | 5.66 | spoil |
+| `props/prp_ore_seam.glb` | `rts/gold_rocks.glb` | 1.60 m | 3.79 | ore-bearing rock, the heaps in the yard |
+| `props/prp_timber_stack.glb` | `rts/logs.glb` | 1.20 m | 4.88 | pit props |
+
+**The 1/6-scale rule held a second time**, which is what makes it a rule rather than an anecdote: raw
+heights here were **1.17 m, 0.39 m, 0.42 m and 0.25 m**. Everything in this pack is measured against a
+1.8 m reference box before anything is authored around it, and adapted through `nodes/root_scale` in
+the `.import` — the same one-number adaptation 38M2 used, and still no Blender round-trip.
+
 ---
 
 ## UI assets — fonts, textures, shaders (Phase 37.5A)
@@ -866,6 +884,12 @@ tangents at unchanged distance — the single-camera equivalent of a separate vi
 
 ## Known, not fixed
 
+- ⚠️ **`npc_merchant_f` is modern dress and it shipped in 38L.** `women/animated_woman_2.glb` is a
+  white t-shirt, tan trousers and blue trainers; it dresses Embermarket merchants today. Found in
+  38N1 by rendering it at eye level before using it a second time, and not used again — Marta Quill
+  wears `npc_townswoman` instead. This is the same trap as the hi-vis worker (38K → 38L), one pack
+  over: **a body is only vetted at the range someone actually rendered it.** Fixing the Embermarket
+  is an `ext_resource` swap in one `.tscn` and was left for a session that can re-render the district.
 - **`prp_banner_guild`'s collider is a poor shape match.** `Shape_banner` is 0.5 × 3 × 0.12 (wide
   in X, thin in Z); the banner is 0.2 × 3.36 × 2.0 (thin in X, wide in Z). Now that the model is
   centred the collider sits inside it, so the interact prompt works, but it covers only a 0.12 m

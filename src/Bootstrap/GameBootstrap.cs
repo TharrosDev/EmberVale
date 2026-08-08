@@ -116,6 +116,14 @@ public partial class GameBootstrap : Node3D
             return;
         }
 
+        // The same shape for the economy report (38N1): `-- --economy` prints the arbitrage table
+        // and quits. Always exit 0 — it is an observation, not a gate.
+        if (HeadlessEconomy.Requested())
+        {
+            HeadlessEconomy.Run(GetTree());
+            return;
+        }
+
         Log.Info("=== Embervale bootstrapping (Phase 20: Deep Debugging) ===");
 
         // The bootstrap is the flow manager for the sandbox, so it must keep
