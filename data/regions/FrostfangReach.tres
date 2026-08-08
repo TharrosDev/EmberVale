@@ -8,7 +8,6 @@ script = ExtResource("2_cell")
 Id = "frostfang_reach.clan_hold"
 ScenePath = "res://scenes/regions/frostfang_reach/clan_hold.tscn"
 Center = Vector3(100, 0, -20)
-LoadRadius = 50.0
 
 ; Placed WEST of the hold rather than north of it, so its 90 m floor stops exactly where the clan
 ; hold's 60 m floor begins (x = 70) — abutting, not overlapping, so there is walkable ground the
@@ -20,7 +19,6 @@ script = ExtResource("2_cell")
 Id = "frostfang_reach.dragon_roost"
 ScenePath = "res://scenes/regions/frostfang_reach/dragon_roost.tscn"
 Center = Vector3(25, 0, -20)
-LoadRadius = 70.0
 
 ; The Ash dragon's roost, mirroring the Wild one to the EAST. Its 100 m floor spans x ∈ [130, 230],
 ; butting the clan hold's floor at x = 130 the same way the wild roost butts it at 70 — walkable
@@ -30,7 +28,6 @@ script = ExtResource("2_cell")
 Id = "frostfang_reach.ash_roost"
 ScenePath = "res://scenes/regions/frostfang_reach/ash_roost.tscn"
 Center = Vector3(180, 0, -20)
-LoadRadius = 75.0
 
 ; The Ancient's aerie (35F), NORTH of the Wild dragon's roost and butted against it: its 90 m floor
 ; is z ∈ [-155, -65] where the wild roost's ends at z = -65, so the two abut without overlapping.
@@ -41,14 +38,12 @@ script = ExtResource("2_cell")
 Id = "frostfang_reach.ancient_aerie"
 ScenePath = "res://scenes/regions/frostfang_reach/ancient_aerie.tscn"
 Center = Vector3(25, 0, -110)
-LoadRadius = 70.0
 
 [sub_resource type="Resource" id="Cell_glacier"]
 script = ExtResource("2_cell")
 Id = "frostfang_reach.glacier"
 ScenePath = "res://scenes/regions/frostfang_reach/glacier.tscn"
 Center = Vector3(100, 0, -60)
-LoadRadius = 24.0
 
 [resource]
 script = ExtResource("1_region")

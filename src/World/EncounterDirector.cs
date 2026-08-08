@@ -26,8 +26,10 @@ public partial class EncounterDirector : Node3D
     /// <summary>Average real seconds between encounter checks during the day.</summary>
     [Export] public float BaseIntervalSeconds { get; set; } = 35f;
 
-    /// <summary>Max enemies alive from encounters at once (the spawn budget).</summary>
-    [Export] public int MaxConcurrent { get; set; } = 5;
+    /// <summary>Max enemies alive from encounters at once (the spawn budget). Raised 5 → 15 by
+    /// maintainer direction (38M2): five was a budget set when a region was one loaded cell at a
+    /// time, and it left the wilds thin now that a whole region is resident at once.</summary>
+    [Export] public int MaxConcurrent { get; set; } = 15;
 
     [Export] public float SpawnDistanceMin { get; set; } = 14f;
     [Export] public float SpawnDistanceMax { get; set; } = 20f;
