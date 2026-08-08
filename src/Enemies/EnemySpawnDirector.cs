@@ -13,11 +13,13 @@ namespace Embervale.Enemies;
 [GlobalClass]
 public partial class EnemySpawnDirector : Node3D
 {
-    [Export] public int MaxAlive { get; set; } = 15;
+    [Export] public int MaxAlive { get; set; } = 5;
 
     /// <summary>⚠️ <see cref="_Ready"/> seeds the whole population in one go, so this has to be wide
-    /// enough for <see cref="MaxAlive"/> bodies to land clear of each other — raised with the cap in
-    /// 38M2, because fifteen goblins in the old eight-metre circle spawn inside one another.</summary>
+    /// enough for <see cref="MaxAlive"/> bodies to land clear of each other — widened in 38M2 because
+    /// fifteen goblins in the old eight-metre circle spawn inside one another. It stays wide now the
+    /// cap is back to five: five in fourteen metres is merely sparse, and narrowing it would re-arm
+    /// the defect for nothing.</summary>
     [Export] public float SpawnRadius { get; set; } = 14f;
     [Export] public float RespawnInterval { get; set; } = 5f;
 

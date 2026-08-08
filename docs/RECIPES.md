@@ -26,6 +26,7 @@
 - [Giving a property a trophy stand (Phase 37D)](#giving-a-property-a-trophy-stand-phase-37d)
 - [A new shop / merchant (Phase 38A–38J)](#a-new-shop--merchant-phase-38a38j)
 - [A new service — trainer / bank / inn / stable (Phase 38D)](#a-new-service--trainer--bank--inn--stable-phase-38d)
+- [A production settlement (Phase 38N1)](#a-production-settlement-phase-38n1)
 - [A tolled crossing — toll, permit, bribe (Phase 38M)](#a-tolled-crossing--toll-permit-bribe-phase-38m)
 - [A new gold sink (Phase 38C)](#a-new-gold-sink-phase-38c)
 - [A big/boss creature with body zones (Phase 35A)](#a-bigboss-creature-with-body-zones-phase-35a)
@@ -467,6 +468,29 @@
    exists anywhere in the game. 38D's brief says repair lands only "if durability is adopted in 40",
    and 40B's rule is that cut systems leave no stub — so a kind resolving to nothing would be worse
    than its absence. The deferral is recorded in `docs/DESIGN.md` §6 against Phase 40A.
+
+## A production settlement (Phase 38N1)
+
+1. **Author what it refuses before what it sells.** A settlement is a different *place* only if its
+   merchants are a **source** and a **sink** rather than two more stalls: one who sells the local
+   product at the realm's lowest `BuyMarkup` and barely buys, and one who pays the realm's best
+   `SellFraction` for what the place cannot make. `AcceptedTags` is the design; `Stock` is decoration
+   on top of it.
+   ⚠️ **The temptation is to let the sink buy everything so the walk is never wasted, and that is
+   exactly what flattens two settlements back into one.** The Emberdeep quartermaster deliberately
+   does not accept `ore`.
+2. **Check the tag has members first.** `TradeTags`' own rule is that a tag with nothing wearing it is
+   "a promise rather than a feature" — the mine needed a second and third `ore` item before an ore
+   settlement meant anything, exactly as 38L needed a catalogue before twelve specialists did.
+3. **Everything else is the existing recipes**: the cell recipe above, "a new shop / merchant" for the
+   two shops and their conversations, and a `ScheduleResource` with `Origin` set to the cell's
+   `Center` so destinations stay cell-local.
+4. ⚠️ **Carrying goods between two settlements cannot turn a profit yet, and no amount of authoring
+   changes it.** `ShopPricing` clamps every markup to `>= 1` and every sell fraction to `<= 1`, so
+   `sell <= value <= buy` holds at each shop and a two-shop carry is always a loss. Run
+   `godot --headless --path . -- --economy` to see it. Regional demand (38G) moves an item's *value*
+   per settlement and is the only thing that turns those margins positive — do not try to author
+   around it with a generous spread, which just narrows the loss.
 
 ## A tolled crossing — toll, permit, bribe (Phase 38M)
 

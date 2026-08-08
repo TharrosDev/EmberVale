@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="RegionResource" load_steps=7 format=3 uid="uid://crgnembrcrown0"]
+[gd_resource type="Resource" script_class="RegionResource" load_steps=8 format=3 uid="uid://crgnembrcrown0"]
 
 [ext_resource type="Script" path="res://src/World/RegionResource.cs" id="1_region"]
 [ext_resource type="Script" path="res://src/World/RegionCellResource.cs" id="2_cell"]
@@ -14,7 +14,7 @@ Center = Vector3(0, 0, -10)
 ; falls through; an overlap is two coplanar floors z-fighting along a seam. Neither is visible in the
 ; editor from a .tres, so the arithmetic is written down here rather than eyeballed.
 ;
-; 38M2 removed every LoadRadius here: the streamer no longer decides anything by distance, so all six
+; 38M2 removed every LoadRadius here: the streamer no longer decides anything by distance, so all seven
 ; cells are resident from the moment the region is entered.
 ;
 ; SafeRadius 32 is the field 38K added: a settlement can be more than one cell, and the region's own
@@ -44,6 +44,19 @@ Id = "ember_crown.crossway_post"
 ScenePath = "res://scenes/regions/ember_crown/crossway_post.tscn"
 Center = Vector3(0, 0, -116)
 SafeRadius = 26.0
+
+; The Emberdeep Mine (Phase 38N1). Placed so its 52 m square ABUTS the arena's 36 m one exactly: the
+; arena is centred at x = 55 and its floor ends at x = 73, and a 52-wide floor centred at x = 99 starts
+; there. Same arithmetic as the Embermarket and the Crossway Post, for the same reason.
+;
+; SafeRadius 24 covers the yard and the two counters but not the workings: a company that keeps
+; wardens keeps them where the coin is, and 38G will want somewhere on this map that is not safe.
+[sub_resource type="Resource" id="Cell_emberdeep_mine"]
+script = ExtResource("2_cell")
+Id = "ember_crown.emberdeep_mine"
+ScenePath = "res://scenes/regions/ember_crown/emberdeep_mine.tscn"
+Center = Vector3(99, 0, -10)
+SafeRadius = 24.0
 
 [sub_resource type="Resource" id="Cell_wilds_north"]
 script = ExtResource("2_cell")
@@ -75,7 +88,7 @@ SpawnPoint = Vector3(0, 1.2, 5)
 ; two palisades, which is what makes the toll something you pay BEFORE the crossing and the wardens
 ; people you have to walk past. Empty on Frostfang, which keeps the original spawn-relative placement.
 PortalPoint = Vector3(0, 0, -122)
-Cells = Array[ExtResource("2_cell")]([SubResource("Cell_town_hub"), SubResource("Cell_embermarket"), SubResource("Cell_crossway_post"), SubResource("Cell_wilds_north"), SubResource("Cell_wilds_west"), SubResource("Cell_arena")])
+Cells = Array[ExtResource("2_cell")]([SubResource("Cell_town_hub"), SubResource("Cell_embermarket"), SubResource("Cell_crossway_post"), SubResource("Cell_emberdeep_mine"), SubResource("Cell_wilds_north"), SubResource("Cell_wilds_west"), SubResource("Cell_arena")])
 Bounds = AABB(-256, -16, -256, 512, 64, 512)
 SafeZoneCenter = Vector3(0, 0, -10)
 SafeZoneRadius = 34.0

@@ -1,0 +1,57 @@
+[gd_resource type="Resource" script_class="ShopResource" format=3]
+
+[ext_resource type="Script" path="res://src/Economy/ShopResource.cs" id="1_shop"]
+[ext_resource type="Script" path="res://src/Economy/ShopStockEntry.cs" id="2_entry"]
+
+; Bregan Holt, the Emberdeep ore factor (Phase 38N1) - and the first shop in the game authored to be a
+; SOURCE rather than a shop.
+;
+; BuyMarkup 1.15 is the lowest in the realm by a wide margin (the Embermarket runs 1.4-1.65). That
+; single number is the whole of "a production settlement": ore is cheap where it comes out of the
+; ground, and every merchant who buys it has to be somewhere else. It is still >= 1, so 38A's
+; sell <= value <= buy invariant holds here exactly as it does everywhere - see the arbitrage note in
+; the playbook for why that matters more than it looks.
+;
+; He barely buys: AcceptedTags is `ore` and `metal` only, and SellFraction 0.25 is deliberately mean.
+; A mine does not want your ore. Bringing iron TO Emberdeep is the losing half of the route, and the
+; table should say so in numbers rather than in a comment.
+;
+; Iron and coal are unlimited - a materials seam that runs dry is a shopping errand, which is the
+; argument Bryn's ingots won in 38B. Copper is finite because it comes up as a by-product.
+;
+; PurseGold 90 is small on purpose. He is a factor, not a bank; his coin is in the ground.
+
+[sub_resource type="Resource" id="Stock_iron_ore"]
+script = ExtResource("2_entry")
+ItemId = "item.material.iron_ore"
+Quantity = 0
+
+[sub_resource type="Resource" id="Stock_coal"]
+script = ExtResource("2_entry")
+ItemId = "item.material.coal"
+Quantity = 0
+
+[sub_resource type="Resource" id="Stock_copper"]
+script = ExtResource("2_entry")
+ItemId = "item.material.copper_ore"
+Quantity = 14
+
+[sub_resource type="Resource" id="Stock_scrap"]
+script = ExtResource("2_entry")
+ItemId = "item.material.scrap"
+Quantity = 0
+
+[resource]
+script = ExtResource("1_shop")
+Id = "shop.emberdeep.factor"
+NameKey = "shop.emberdeep.factor.name"
+FactionId = "faction.villagers"
+AcceptedTags = Array[String](["ore", "metal"])
+Specialties = Array[String](["ore"])
+Stock = Array[Resource]([SubResource("Stock_iron_ore"), SubResource("Stock_coal"), SubResource("Stock_copper"), SubResource("Stock_scrap")])
+RestockDays = 1
+BuyMarkup = 1.15
+SellFraction = 0.25
+PurseGold = 90
+OpenHour = 5
+CloseHour = 19

@@ -19,15 +19,18 @@
 > single most expensive file in the repo to open. Reading it whole to find out what to do next costs
 > more than the work usually does.
 >
-> **You are here: 38N is next** (168 done, 173 remaining).
+> **You are here: 38N2 is next** (169 done, 173 remaining).
 >
 > ⚠️ **"First unchecked" is the WRONG way to find that, and this note exists because it just
-> misled a tool.** 38G is unchecked and sits above 38M, but it is **deferred** — it prices goods by
-> settlement demand and needed a second market to contrast against, so it waits on 38N. A `[ ]` with
-> a ⏸ in its line is parked, not next. **Read the box, do not trust the first empty checkbox.**
+> misled a tool.** 38G is unchecked and sits above 38M, but it was **deferred** — it prices goods by
+> settlement demand and needed a second market to contrast against. **38N1 built that market and
+> proved 38G is not optional**: with `sell <= value <= buy` holding at every shop, no carry between
+> two merchants can ever turn a profit until demand moves an item's value per settlement, and the
+> `--economy` table shows 48 goods with every margin negative. A `[ ]` with a ⏸ in its line is parked,
+> not next. **Read the box, do not trust the first empty checkbox.**
 >
 > **How to use it:**
-> 1. `grep -n "38N —" docs/SESSION_PLAYBOOK.md` (your sub-phase id) to get a line number.
+> 1. `grep -n "38N2 —" docs/SESSION_PLAYBOOK.md` (your sub-phase id) to get a line number.
 > 2. Read from a few hundred lines *before* it — the entries just above yours carry the
 >    **"two things worth carrying into the next sub-phase"** lines, which are the whole point of
 >    the log and the cheapest bug prevention in this repo.
@@ -3742,9 +3745,25 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
   - **Regions load whole.** `RegionStreamer` instances every cell of the active region on entry and never unloads during play; `StreamDecision`, its 75 lines of hysteresis tests, `UnloadMargin` and `RegionCellResource.LoadRadius` were all deleted with the rule, along with the validator's `LoadRadius <= 0` check and ten authored lines. `IsSettledAround(origin)` became `IsSettled()`.
     - ⚠️ **Both regions cannot be resident at once, and it is a world-layout problem rather than a streaming one.** Frostfang's `dragon_roost` (25, 0, -20) and `ancient_aerie` (25, 0, -110) share coordinate space with the Ember Crown's `arena` (55, 0, -10) and `wilds_north` (0, 0, -65). Loading both would put two regions inside each other. Phase 44 owns that.
     - **The save path was the thing worth checking and it needed no change.** `CellPersistenceDirector` snapshots on `RegionCellUnloadedEvent` because "the base `SaveManager` only restores actors alive at load time". Resident cells mean those actors are *always* alive at save time, so the normal path covers them and the ledger is now only exercised across a region transition, where `UnloadAll` still fires the event.
-  - **Spawn caps to 15.** `EncounterDirector.MaxConcurrent` 5 → 15 and the sandbox goblin camp 3 → 15. ⚠️ `EnemySpawnDirector._Ready` seeds its whole population in one go, so `SpawnRadius` had to go 6 → 14 with it — fifteen bodies in the old circle spawn inside one another, which is a defect that would have read as a physics bug.
-- [ ] **38N — Emberdeep Mine + Tarn's Landing** `[C]`
-  - **Done when:** two production settlements make the demand table true, and a dev command can print the realm's best arbitrage.
+  - **Spawn caps to 15** *(reverted to 5 in 38N1 by maintainer direction — fifteen read as too much pressure against a whole-region residency; the widened `SpawnRadius` stayed)*. `EncounterDirector.MaxConcurrent` 5 → 15 and the sandbox goblin camp 3 → 15. ⚠️ `EnemySpawnDirector._Ready` seeds its whole population in one go, so `SpawnRadius` had to go 6 → 14 with it — fifteen bodies in the old circle spawn inside one another, which is a defect that would have read as a physics bug.
+- [x] **38N1 — Emberdeep Mine** `[C]` ✅ *(38N split in two at the maintainer's call: one settlement per session, the way 38K/38L were)*
+  - **Done when:** the first production settlement exists and a dev command can print the realm's best arbitrage.
+  - **Landed:** `emberdeep_mine.tscn` (396 nodes) at `Center (99, 0, -10)`, **2 items**, **2 shops**, 2 conversations + 27 locale rows, 2 routines, four adopted models, and `EconomyReport` behind both an `economy` console command and a new **`--economy` headless flag**.
+  - ⚠️ **ARBITRAGE IS MATHEMATICALLY IMPOSSIBLE TODAY, AND THE TABLE PROVES IT RATHER THAN ASSERTING IT.** `ShopPricing.BuyPrice` clamps its markup to `>= 1` and `SellPrice` clamps its fraction to `0..1`, so `sell <= value <= buy` holds at **every** shop by construction (38A) — which means a carry between two merchants is *always* a loss, whatever the content says. 48 goods across 18 shops, every margin negative, best route −2. **The report says so in its own output.** This is the strongest possible argument for 38G: regional demand moves an item's *value* per settlement, and that is the only thing that can turn these positive. 38N was written as the content that makes the demand table true; it turns out to also be the proof that the table is not optional.
+  - **A production settlement is a SOURCE and a SINK, not more stalls.** Bregan Holt sells ore at `BuyMarkup 1.15` (the realm's lowest — the Embermarket runs 1.4–1.65) and barely buys; Marta Quill pays `SellFraction 0.62` with `food` as her specialty (the realm's most generous) and sells almost nothing. ⚠️ **Her `AcceptedTags` deliberately exclude `ore`.** The temptation was to let her buy everything so the walk is never wasted, and that is exactly the decision that would flatten two settlements back into one. It shows immediately: the mine is now the cheapest seller of every ore and the best buyer of every food in the game.
+  - ⚠️ **`npc_merchant_f` IS MODERN DRESS — white t-shirt, tan trousers, blue trainers — AND IT SHIPPED IN 38L.** Found by rendering it at eye level for Marta. 38L's own retrospective says the modern bodies "were rendered and rejected on sight"; this one was among the seven *adopted*, so it never got that look. Marta wears `npc_townswoman` instead, and the defect is recorded in `CREDITS.md` under "Known, not fixed" rather than propagated to a third district. **This is the third time the same trap has fired** (hi-vis worker 38K→38L, this now): a body is only vetted at the range someone actually rendered it.
+  - ⚠️ **The mine head shipped facing backwards in the first render** — the adit pointed into the rock and the yard saw a blank stone face. A yaw derived by reasoning about which way a model's +Z points was wrong, and one render settled it in a minute. **Do not reason about model facing; rotate it, render it, look.**
+  - **The cell needed a second pass in the same session**, and that is 38K's lesson arriving early enough to be cheap: the first draft was a cluster of props in the middle of 2,704 m² of dark ground. 22 more props — ore heaps into the workings, pines and rock closing the verges, a third brazier — took it from a diorama to a site. No new art, just density.
+  - **`--economy` exists because the F1 console cannot be driven from this environment.** A report reachable only through the console would have shipped having never once been run — the `CraftingComponent.Learn` shape. Both entry points call one function, so the table the maintainer reads and the table a tool captures cannot drift. It always exits 0: an observation, not a gate.
+  - Two things worth carrying into 38N2:
+    1. **Author the sink's refusals first.** What a settlement will *not* buy is what makes it a different place; the accepted-tag list is the design, and the shelf is decoration on top of it.
+    2. **Every `rts` model is ~1/6 scale, now confirmed twice.** Raw heights here were 1.17 m, 0.39 m, 0.42 m and 0.25 m. Measure against a 1.8 m box before authoring anything around it; adapt with `nodes/root_scale`.
+  - Build clean + **1116** tests + `--validate` exit 0 + `--economy` captured + the cell instantiated in-engine (396 nodes, no errors) and rendered at noon and dusk from seven positions + a `--play` boot with **all seven** Ember Crown cells resident. ⚠️ **No in-game walk** — the conversations, the interact prompts and the two routines are *reviewed against the Godot 4.7 C# API*, not observed in a session.
+  - **Reachable when next played:** `travel goto travel.ember_crown.emberdeep_mine`, or walk east past the arena. Talk to Bregan for ore at a price nobody else in the realm asks; take him bread and he will barely look at it. Take the bread to Marta instead. `economy arbitrage` at F1 prints the whole picture.
+- [ ] **38N2 — Tarn's Landing** `[C]`
+  - **Done when:** the fishing hamlet exists as a cell with its own source/sink pair, and the realm has three markets to price against.
+  - **The water is decided** (maintainer call, 38N1): a flat translucent plane a few centimetres above the cell floor with **no collider**, floor continuing underneath, so the shoreline reads and the player can wade without swimming existing. Phase 39C owns real traversal verbs; a hamlet walled off from its own water would be worse than a shallow one.
+  - Its sink is the mirror of the mine's: Tarn's Landing has fish and wants everything else. ⚠️ Author what it **refuses** first (38N1's finding).
 - [ ] **38O — Hollowreach: contraband and fences** `[F/C]`
   - **Done when:** contraband-tagged goods sell only at the wharf, at a two-sided reputation cost, and confiscation is recoverable.
 - [ ] **38P — Consignment house + appraiser** `[F/C]`

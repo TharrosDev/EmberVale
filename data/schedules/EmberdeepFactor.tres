@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="ScheduleResource" format=3]
+
+[ext_resource type="Script" path="res://src/Npc/ScheduleResource.cs" id="1_sched"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleEntry.cs" id="2_entry"]
+
+; Bregan Holt, the Emberdeep ore factor (Phase 38N1).
+;
+; ⚠️ DESTINATIONS ARE CELL-LOCAL. Origin carries the mine's Center (99, 0, -10), so these read straight
+; out of emberdeep_mine.tscn with nobody doing the arithmetic by hand (38L's ScheduleResource.Origin).
+;
+; ⚠️ These hours track shop.emberdeep.factor (5:00-19:00) and are kept in step BY HAND — a ScheduleId
+; lives in a .tscn, which ContentValidator cannot scan, so if the shop's hours move, move these too or
+; the player finds him at a counter that refuses to sell.
+;
+; ScheduleComponent walks a straight line with no navmesh pathing, so every destination here is on open
+; yard: the weighing stand, the ore heap he checks at dawn, and the mine head he shuts up at dusk.
+
+[sub_resource type="Resource" id="e_check"]
+script = ExtResource("2_entry")
+StartHour = 4
+Activity = "Counting last night's haul"
+Destination = Vector3(8, 0, -8)
+
+[sub_resource type="Resource" id="e_trade"]
+script = ExtResource("2_entry")
+StartHour = 5
+Activity = "Weighing ore"
+Destination = Vector3(-2, 0, -6)
+
+[sub_resource type="Resource" id="e_close"]
+script = ExtResource("2_entry")
+StartHour = 19
+Activity = "Chaining the scales"
+Destination = Vector3(9, 0, -2)
+
+[resource]
+script = ExtResource("1_sched")
+Id = "schedule.emberdeep.factor"
+Origin = Vector3(99, 0, -10)
+Entries = Array[Resource]([SubResource("e_check"), SubResource("e_trade"), SubResource("e_close")])

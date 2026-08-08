@@ -1,0 +1,47 @@
+[gd_resource type="Resource" script_class="ShopResource" format=3]
+
+[ext_resource type="Script" path="res://src/Economy/ShopResource.cs" id="1_shop"]
+[ext_resource type="Script" path="res://src/Economy/ShopStockEntry.cs" id="2_entry"]
+
+; Marta Quill, the Emberdeep quartermaster (Phase 38N1) - the SINK the factor next door is the source
+; for, and the other half of what makes a second settlement visible.
+;
+; SellFraction 0.62 is the most generous in the realm (the Embermarket runs 0.35-0.45), and `food` is
+; her specialty on top of that. A mine grows nothing: every loaf, sack of grain and block of salt down
+; here came up the road, so she pays over the odds for all of it and the player who walks food east is
+; running the profitable leg of 38N's route.
+;
+; She sells almost nothing, and what she does sell is dear (BuyMarkup 1.7): a company store is not
+; competing with anyone. The field rations are for the miners, priced as such.
+;
+; ⚠️ Her AcceptedTags are food, fuel and textile - NOT ore. The temptation was to let her buy
+; everything so the walk is never wasted, and that is exactly the decision that would flatten the two
+; settlements back into one. A production settlement has to refuse things.
+;
+; PurseGold 260 is the largest outside the town square, because a company that pays its people needs
+; coin on hand - and because a sink with no money is a sink the player can empty on one trip.
+
+[sub_resource type="Resource" id="Stock_ration"]
+script = ExtResource("2_entry")
+ItemId = "item.food.field_ration"
+Quantity = 12
+
+[sub_resource type="Resource" id="Stock_pick"]
+script = ExtResource("2_entry")
+ItemId = "item.kit.forge"
+Quantity = 1
+
+[resource]
+script = ExtResource("1_shop")
+Id = "shop.emberdeep.quartermaster"
+NameKey = "shop.emberdeep.quartermaster.name"
+FactionId = "faction.villagers"
+AcceptedTags = Array[String](["food", "fuel", "textile"])
+Specialties = Array[String](["food"])
+Stock = Array[Resource]([SubResource("Stock_ration"), SubResource("Stock_pick")])
+RestockDays = 2
+BuyMarkup = 1.7
+SellFraction = 0.62
+PurseGold = 260
+OpenHour = 6
+CloseHour = 20

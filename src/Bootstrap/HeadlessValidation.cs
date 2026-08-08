@@ -22,11 +22,17 @@ public static class HeadlessValidation
 
     /// <summary>True when <see cref="FlagArgument"/> was passed on the command line (whether as a
     /// user argument after <c>--</c> or as a raw engine argument).</summary>
-    public static bool Requested()
+    public static bool Requested() => HasFlag(FlagArgument);
+
+    /// <summary>Whether <paramref name="flag"/> was passed, as a user argument after <c>--</c> or as a
+    /// raw engine argument. Shared with <see cref="HeadlessEconomy"/> (38N1) so a second headless
+    /// entry point does not mean a second copy of this loop — and so a flag that works one way for
+    /// <c>--validate</c> works the same way for every other.</summary>
+    public static bool HasFlag(string flag)
     {
         foreach (string arg in OS.GetCmdlineUserArgs())
         {
-            if (arg == FlagArgument)
+            if (arg == flag)
             {
                 return true;
             }
@@ -34,7 +40,7 @@ public static class HeadlessValidation
 
         foreach (string arg in OS.GetCmdlineArgs())
         {
-            if (arg == FlagArgument)
+            if (arg == flag)
             {
                 return true;
             }
