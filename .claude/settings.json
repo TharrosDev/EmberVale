@@ -1,0 +1,33 @@
+{
+  "$comment": [
+    "Committed agent settings (agent-ergonomics pass). Every command here is one an agent runs in",
+    "essentially every session of this repo; without the allowlist each one costs a permission",
+    "round-trip. Read-only inspection, the build/test/validate battery, and the git/gh flow CLAUDE.md",
+    "§9 prescribes. Nothing here writes outside the repo or pushes to main.",
+    "",
+    "Deliberately NOT allowed: `git push` (a branch push is fine but is left explicit), `rm -rf`, and",
+    "anything that edits settings or hooks."
+  ],
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build:*)",
+      "Bash(dotnet test:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git checkout:*)",
+      "Bash(git fetch:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(gh pr view:*)",
+      "Bash(wc:*)",
+      "Bash(awk:*)",
+      "Bash(ls:*)",
+      "Bash(md5sum:*)"
+    ]
+  }
+}

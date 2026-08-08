@@ -25,7 +25,7 @@ You are the lead engineer building this game incrementally. The non-negotiables:
   complete and *exercisable*: authored data, `--validate` coverage, tests for any pure logic,
   and at least one way to drive it (an interactable, a dialogue effect, a dev-console command).
   **A sub-phase may land the mechanism and leave its world placement to the sub-phase that
-  owns it** — `docs/SESSION_PLAYBOOK.md` is the authority on that split, and honouring it is
+  owns it** — `docs/playbook/` is the authority on that split, and honouring it is
   not scaffolding. What is forbidden is a system with **no caller at all when its phase
   closes**: `CraftingComponent.Learn` sat with zero callers from Phase 15 to Phase 35, and
   `recipe.leather_vest` rotted behind it the whole time.
@@ -151,6 +151,11 @@ The `--` forwards `--validate` as a user argument; `GameBootstrap` detects it
 references + well-formedness + graph reachability), prints the report, and exits **0** on
 pass / **1** on any issue.
 
+**Headless content census (no gameplay):** `godot --headless --path . -- --state` prints how many
+regions, cells, items, shops, services, dialogues and quests exist, and every cell with its centre.
+It reads the databases the game loads, so it cannot drift from a doc. Use it instead of grepping
+`data/` at the start of a session. Exits **0** — a census, not a gate.
+
 **Headless economy report (no gameplay):** `godot --headless --path . -- --economy` loads every
 database, prints the realm's buy-low/sell-high table and exits **0** (an observation, not a gate). It
 is the same `EconomyReport.Arbitrage` the `economy` dev command prints — and it exists because the
@@ -190,7 +195,7 @@ Embervale.sln     C# solution (net8.0, Godot.NET.Sdk 4.7.0)
 CLAUDE.md         You are here
 README.md         Public overview + the player-facing phase table
 docs/             ARCHITECTURE · RECIPES · IDS · DESIGN · LORE · ART_STYLE · UI_STYLE
-                  ASSET_POLICY · PRODUCTION_ROADMAP · SESSION_PLAYBOOK  (§5 says which to read when)
+                  ASSET_POLICY · PRODUCTION_ROADMAP · NOW.md · playbook/  (§5 says which to read when)
 scenes/           Main.tscn (entry, GameBootstrap) + regions/<region>/<cell>.tscn
 assets/
   library/        Vendored Quaternius CC0 SOURCE art, .gdignore'd — Godot never imports or
@@ -200,7 +205,10 @@ assets/
 data/             Authored content, one folder per resource type
 src/              One folder per system — §5 maps folder → system
 tests/            Embervale.Tests (xUnit, pure logic only; a Godot Resource cannot be constructed)
-tools/            Dev harnesses, not shipped content (market_shots.gd renders a cell)
+tools/            Dev harnesses, not shipped content:
+                    market_shots.gd          instantiates a cell and renders it (copy per use)
+                    gen_cell_props.py        prop table -> .tscn node stanzas
+                    gen_merchant_dialogue.py the resident-merchant graph scaffold
 ```
 
 **`data/` is uniform, so it does not need listing:** the folder name *is* the resource type
@@ -234,17 +242,20 @@ file) is free.
 | Author content of any kind | [`RECIPES.md`](docs/RECIPES.md) — **the one recipe only** | ~17k tok total |
 | Change how a system works | [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) — the relevant § only | ~23k |
 | Pick an id for anything new | [`IDS.md`](docs/IDS.md) | ~3k |
-| Continue the roadmap | [`SESSION_PLAYBOOK.md`](docs/SESSION_PLAYBOOK.md) — **your sub-phase's entry and the two before it** | ~89k total |
+| Continue the roadmap | **[`docs/NOW.md`](docs/NOW.md) first**, then your phase's file in [`docs/playbook/`](docs/playbook/README.md) | ~1k + ~8k |
 | Check a phase's scope or gate | [`PRODUCTION_ROADMAP.md`](docs/PRODUCTION_ROADMAP.md) | ~22k |
 | Make a design call (economy, difficulty, systems cut) | [`DESIGN.md`](docs/DESIGN.md) | ~9k |
 | Write or place anything the player reads | [`LORE.md`](docs/LORE.md) | ~3k |
 | Add or adapt a model | [`ASSET_POLICY.md`](docs/ASSET_POLICY.md) + `assets/CREDITS.md` | ~2k |
 | Build or restyle a model / a screen | [`ART_STYLE.md`](docs/ART_STYLE.md) / [`UI_STYLE.md`](docs/UI_STYLE.md) | ~4k / ~7k |
 
-⚠️ **`SESSION_PLAYBOOK.md` is ~89k tokens and is a chronological log — never read it whole.** It is
-sectioned by phase; `grep -n` for your sub-phase id and read outwards. Its most useful content is
-almost always the "two things worth carrying into the next sub-phase" line on the entries just
-before yours.
+**Start every session at [`docs/NOW.md`](docs/NOW.md)** — where the project is, the live invariants,
+and the commands, in about a screen. It is the only place project state is maintained; everything
+else links to it.
+
+The playbook is **one file per phase** in [`docs/playbook/`](docs/playbook/README.md) — open only
+yours, and read the two entries above it. Its most useful content is almost always the "two things
+worth carrying into the next sub-phase" line on the entries just before yours.
 
 Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
 
@@ -286,6 +297,11 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
   later (e.g. camera refs) can be set before the *host* enters the main tree.
 - **`[GlobalClass]`** on Godot types you want creatable in the editor / usable in
   `.tres` (`Entity`, `CharacterEntity`, components, resources).
+- ⚠️ **No documentation line over ~2,000 characters** (agent-ergonomics pass). A table cell that
+  wants a paragraph becomes a `###` section below the table with a link from the cell. This is not
+  style: `PRODUCTION_ROADMAP.md` had a **15,421-character** phase cell on one line and `README.md`
+  an 11,582-character one, so *any* `grep` matching a phase word dumped ~5k tokens of prose into
+  context. Check with `awk 'length($0)>2000' docs/*.md README.md CLAUDE.md`.
 - Editorconfig: 4-space indent, `csharp_new_line_before_open_brace = all`
   (Allman braces), `using`s system-first.
 
@@ -379,13 +395,8 @@ It is a separate file for one measured reason: it was **66% of this one**, and t
 every session while no session needs more than one recipe. Splitting it cut the standing cost of
 opening this repo by roughly two thirds and lost nothing — the recipes are one `Read` away.
 
-The 40 recipes, so you know what exists without opening it:
-
-- **Code** — A new component · A new status effect · A new stat · A new event · A new persistent system · A new input action · A new dev-console command · A new UI panel / HUD widget
-- **Actors & combat** — A new actor / enemy type · A new boss fight (Phases 36A–36D) · A big/boss creature with body zones (Phase 35A) · Making a creature fly (Phase 35B) · A breath weapon (Phase 35C) · Placing a world boss in a lair (Phase 35D) · A creature that talks (Phase 35F) · A new weapon
-- **Items & progression** — A new item · A new piece of equipment · A new loot affix · A new loot table / dropper · A new perk · A new XP-bearing enemy (or tuning the curve) · A new crafting recipe · A new spell
-- **World & content** — A new quest · A new conversation · A new NPC routine · A new weather state · A new encounter · A new world event · A new faction
-- **Economy & housing** — A new claimable property (Phase 37A) · Giving a property a stash (Phase 37B) · A new placeable prop or a buildable yard (Phase 37C) · Giving a property a trophy stand (Phase 37D) · A new shop / merchant (Phase 38A–38J) · A new service — trainer / bank / inn / stable (Phase 38D) · A production settlement (Phase 38N1) · A tolled crossing — toll, permit, bribe (Phase 38M) · A new gold sink (Phase 38C)
+Its table of contents lists all 40 by name — one `Read` of the ToC is cheaper than carrying the
+list here, where it loaded every session whether or not any content was being authored.
 
 ⚠️ **If you are about to author content and cannot find a recipe for it, that is a finding.** Write
 one when you are done, in the same shape: what to author, in what order, and what bit you personally.
@@ -410,27 +421,23 @@ one when you are done, in the same shape: what to author, in what order, and wha
 
 ## 10. Roadmap status
 
-**Where the project is: Stage C, Phase 38 (economy), sub-phases 38A–38N2 done, 38O next.**
+**Where the project is lives in [`docs/NOW.md`](docs/NOW.md) and nowhere else.** It carries the
+current sub-phase, the next one, the last verification numbers, and the live invariants — about a
+screen. It used to be duplicated here, in `README.md`, in the roadmap and in the playbook, and all
+four were rewritten every sub-phase.
 
 - **Phases 1–21 built the systems**, not the game — a data-driven sandbox that *can* express
   Embervale. **Phases 22+ are the production roadmap** that carries it to launch.
 - **Stage A ✅** (22–28 + 25.5, gate G0 reached). **Stage B ⏳** — 29–33 are built, and
   **gate G1 needs a maintainer play-through and one export**. That is the only thing between here
   and G1, and no amount of further building moves it.
-- **Stage C ⏳ in progress.** Complete: **34** (AI profiles + the enemy roster + per-school
-  resistances + the bestiary), **34.5** (Frostfang Clans and their hold), **35** (dragons: hit
-  zones, flight, breath, lairs), **36** (bosses as authored data, telegraphed and interruptible),
-  **37** (housing: deeds, stashes, placeable props, trophy stands), **37.5** (the UI overhaul).
-  In progress: **38** (economy) — shops, stock depth, standing-priced trade, paid services, trade
-  tags and specialties, saturation, gated shelves and merchant investment, trading hours and
-  travelling merchants, the Embermarket district and its twelve merchants, and the Crossway toll
-  with the permit and the bribe that get past it.
+- **Stage C ⏳ in progress**, and it is the arc you are almost certainly working in.
 
 **Two docs carry the detail and this one deliberately does not:**
 [`docs/PRODUCTION_ROADMAP.md`](docs/PRODUCTION_ROADMAP.md) §11 mirrors phase-level status;
-[`docs/SESSION_PLAYBOOK.md`](docs/SESSION_PLAYBOOK.md) is the live per-sub-phase tracker and holds
-every retrospective and trap. **Read the playbook entry for the sub-phase you are about to do** —
-the ones immediately before it usually name the thing that will bite you.
+[`docs/playbook/`](docs/playbook/README.md) is the per-sub-phase tracker and holds every
+retrospective and trap. **Read the playbook entry for the sub-phase you are about to do** — the ones
+immediately before it usually name the thing that will bite you.
 
 ### Standing constraints (these are rules, not history)
 
@@ -483,10 +490,6 @@ Alpha → Beta → Release Candidate → Launch.
 
 ## 11. Glossary
 
-- **Actor / entity** — any in-world object implementing `IEntity`.
-- **Component** — an `EntityComponent` child providing one slice of behaviour/data.
-- **Resource** — a Godot `Resource` (`.tres`) holding authored data/content.
-- **Hurtbox / Hitbox** — `Area3D`s that receive / deal damage.
-- **Packet** — a `DamagePacket`, a self-contained description of one hit.
-- **Team** — faction id on `CombatComponent` controlling friendly fire.
-- **Autoload** — a Godot global singleton node declared in `project.godot`.
+Terms are defined where they are used: `IEntity`/`EntityComponent` in `src/Entities`, `DamagePacket`
+in `src/Combat`, hurt/hitboxes in `docs/ARCHITECTURE.md` §2. It lived here as a list and cost tokens
+every session to answer questions nobody was asking.

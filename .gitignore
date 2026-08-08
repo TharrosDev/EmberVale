@@ -32,3 +32,8 @@ Thumbs.db
 
 # Claude Code personal settings
 .claude/settings.local.json
+
+# Throwaway render output from tools/*.gd harnesses (agent-ergonomics pass).
+# The .gdignore inside keeps Godot from importing stray PNGs as textures and IS tracked;
+# the PNGs themselves are disposable and were repeatedly caught in `git checkout` churn.
+tools/shots/*.png
