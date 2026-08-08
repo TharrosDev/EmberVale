@@ -374,13 +374,13 @@ It is a separate file for one measured reason: it was **66% of this one**, and t
 every session while no session needs more than one recipe. Splitting it cut the standing cost of
 opening this repo by roughly two thirds and lost nothing — the recipes are one `Read` away.
 
-The 38 recipes, so you know what exists without opening it:
+The 39 recipes, so you know what exists without opening it:
 
 - **Code** — A new component · A new status effect · A new stat · A new event · A new persistent system · A new input action · A new dev-console command · A new UI panel / HUD widget
 - **Actors & combat** — A new actor / enemy type · A new boss fight (Phases 36A–36D) · A big/boss creature with body zones (Phase 35A) · Making a creature fly (Phase 35B) · A breath weapon (Phase 35C) · Placing a world boss in a lair (Phase 35D) · A creature that talks (Phase 35F) · A new weapon
 - **Items & progression** — A new item · A new piece of equipment · A new loot affix · A new loot table / dropper · A new perk · A new XP-bearing enemy (or tuning the curve) · A new crafting recipe · A new spell
 - **World & content** — A new quest · A new conversation · A new NPC routine · A new weather state · A new encounter · A new world event · A new faction
-- **Economy & housing** — A new claimable property (Phase 37A) · Giving a property a stash (Phase 37B) · A new placeable prop or a buildable yard (Phase 37C) · Giving a property a trophy stand (Phase 37D) · A new shop / merchant (Phase 38A–38J) · A new service — trainer / bank / inn / stable (Phase 38D) · A new gold sink (Phase 38C)
+- **Economy & housing** — A new claimable property (Phase 37A) · Giving a property a stash (Phase 37B) · A new placeable prop or a buildable yard (Phase 37C) · Giving a property a trophy stand (Phase 37D) · A new shop / merchant (Phase 38A–38J) · A new service — trainer / bank / inn / stable (Phase 38D) · A tolled crossing — toll, permit, bribe (Phase 38M) · A new gold sink (Phase 38C)
 
 ⚠️ **If you are about to author content and cannot find a recipe for it, that is a finding.** Write
 one when you are done, in the same shape: what to author, in what order, and what bit you personally.
@@ -405,7 +405,7 @@ one when you are done, in the same shape: what to author, in what order, and wha
 
 ## 10. Roadmap status
 
-**Where the project is: Stage C, Phase 38 (economy), sub-phases 38A–38L done, 38M next.**
+**Where the project is: Stage C, Phase 38 (economy), sub-phases 38A–38M done, 38M2 next.**
 
 - **Phases 1–21 built the systems**, not the game — a data-driven sandbox that *can* express
   Embervale. **Phases 22+ are the production roadmap** that carries it to launch.
@@ -418,7 +418,8 @@ one when you are done, in the same shape: what to author, in what order, and wha
   **37** (housing: deeds, stashes, placeable props, trophy stands), **37.5** (the UI overhaul).
   In progress: **38** (economy) — shops, stock depth, standing-priced trade, paid services, trade
   tags and specialties, saturation, gated shelves and merchant investment, trading hours and
-  travelling merchants, the Embermarket district and its twelve merchants.
+  travelling merchants, the Embermarket district and its twelve merchants, and the Crossway toll
+  with the permit and the bribe that get past it.
 
 **Two docs carry the detail and this one deliberately does not:**
 [`docs/PRODUCTION_ROADMAP.md`](docs/PRODUCTION_ROADMAP.md) §11 mirrors phase-level status;

@@ -398,7 +398,7 @@ through `InventoryComponent`; loot tables roll gold), and deliberately still has
 a wallet would be a second place for money to live and a second thing to persist. Balance is
 **Phase 56**; the machinery is built.
 
-**The sinks, as they actually exist** (last extended by 38I; 38L added merchants, not new kinds of sink):
+**The sinks, as they actually exist** (last extended by 38M; 38L added merchants, not new kinds of sink):
 
 | Sink | Where | Since |
 | ---- | ----- | ----- |
@@ -410,6 +410,9 @@ a wallet would be a second place for money to live and a second thing to persist
 | Training | `ServiceKind.Trainer` — a lesson: recipes taught, XP granted, charged once | 38D |
 | A mount | `ServiceKind.Stable` — the purchase and its record; Phase 39A owns the mount | 38D |
 | A stake in a merchant | `ShopResource.InvestmentTiers` → `ShopStockService.Invest`. Permanent, never repaid | 38I |
+| The Crossway toll | `RegionResource.TollGold` → `GameBootstrap.PayToll`, on every **portal** crossing. Not on fast travel, which already pays the row above | 38M |
+| A road permit | `ServiceKind.Passage` — 250 gold once, then the Crossway is free. Ten crossings to break even | 38M |
+| A bribe at the gate | `ServiceKind.Passage` — 10 gold **and 8 standing**, for one crossing. The standing is charged again at every counter in town through the 38C ramp | 38M |
 | Repair | — | **pending 40A** |
 
 **Repair is not built, and that is a decision rather than an omission.** No durability or condition

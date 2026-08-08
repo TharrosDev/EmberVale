@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="ServiceResource" format=3]
+
+[ext_resource type="Script" path="res://src/Economy/ServiceResource.cs" id="1_service"]
+
+; The gate-hand's price (Phase 38M) — the other way past the Crossway Post, and the one the wardens
+; would rather you did not write down.
+;
+; It is the same ServiceKind.Passage as the permit beside it, and the two differ in exactly three
+; numbers. That is the design, not a shortcut: a bribe is not a different mechanism from a permit, it
+; is a permit sold cheap by the wrong person for a price that is only partly gold.
+;
+; UnlockFlagId is EMPTY and GrantedFlagId carries the pass, and the pair of them is load-bearing.
+; UnlockFlagId doubles as ServiceComponent's receipt, so recording the bribe there would refuse to sell
+; a second one — and a bribe you can only pay once is a permit with a discount. GrantedFlagId is
+; consumed by GameBootstrap.PayToll at the gate, so the gate-hand is back in business the moment you
+; have used what you bought. AlreadyHeld reads it too, so he will not take a second payment for a
+; crossing already covered.
+;
+; ReputationDelta -8 against villagers who start at 10: three bribes drop the player below Neutral into
+; Unfriendly, and 38C then prices every merchant in the Ember Crown off that same standing. The bribe is
+; therefore charged twice — ten gold at the gate, and a little more at every counter in town, forever.
+; That second charge is what makes 10 gold against a 25-gold toll a decision rather than a free lunch.
+
+[resource]
+script = ExtResource("1_service")
+Id = "service.crossway.bribe"
+NameKey = "service.crossway.bribe.name"
+Kind = 4
+PriceGold = 10
+FactionId = "faction.villagers"
+UnlockFlagId = ""
+RestHour = 8
+XpReward = 0
+GrantedFlagId = "flag.crossway.pass"
+ReputationDelta = -8

@@ -1,9 +1,11 @@
 using System.Collections.Generic;
+using Embervale.Core;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Dialogue;
 using Embervale.Entities;
 using Embervale.Interaction;
+using Embervale.Items;
 using Embervale.Localization;
 using Embervale.Player;
 using Embervale.Core.Services;
@@ -107,10 +109,38 @@ public partial class RegionTransitionComponent : InteractableComponent
     {
         get
         {
-            string where = RegionDatabase.Get(TargetRegionId)?.DisplayName ?? "elsewhere";
-            return Loc.TF("region.travel_prompt", where);
+            RegionResource? destination = RegionDatabase.Get(TargetRegionId);
+            string where = destination?.DisplayName ?? "elsewhere";
+
+            if (destination == null || destination.TollGold <= 0)
+            {
+                return Loc.TF("region.travel_prompt", where);
+            }
+
+            // The price is quoted from the same TollFee.Resolve that GameBootstrap charges, so the
+            // number at the gate and the number taken are one decision — 38C's finding, where the
+            // travel fee's first draft resolved the region two different ways and would have shown a
+            // price it did not charge.
+            StoryFlagsComponent? flags = Player()?.GetComponent<StoryFlagsComponent>();
+            int gold = Player()?.GetComponent<InventoryComponent>()?.CountOf(GameIds.Currency.Gold) ?? 0;
+
+            return Economy.TollFee.Resolve(
+                hasPermit: flags?.Has(destination.TollPermitFlagId) ?? false,
+                hasPass: flags?.Has(destination.TollPassFlagId) ?? false,
+                fee: destination.TollGold,
+                goldHeld: gold) switch
+            {
+                Economy.TollOutcome.PermitHeld => Loc.TF("region.travel_prompt_permit", where),
+                Economy.TollOutcome.PassSpent => Loc.TF("region.travel_prompt_pass", where),
+                Economy.TollOutcome.CannotAfford =>
+                    Loc.TF("region.travel_prompt_short", where, destination.TollGold, gold),
+                _ => Loc.TF("region.travel_prompt_toll", where, destination.TollGold),
+            };
         }
     }
+
+    private static PlayerCharacter? Player() =>
+        ServiceLocator.Instance is { } locator && locator.TryGet(out PlayerCharacter player) ? player : null;
 
     public override void Interact(IEntity instigator)
     {

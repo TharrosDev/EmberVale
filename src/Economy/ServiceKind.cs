@@ -28,4 +28,15 @@ public enum ServiceKind
     /// <summary>Sells the right to a mount. A stub only in that Phase 39A owns the mount itself; the
     /// purchase, its persistence and its refusal to sell twice are all real.</summary>
     Stable,
+
+    /// <summary>
+    /// Sells the right to cross a tolled road (Phase 38M) — a warden's permit, or the bribe his man
+    /// takes at the side of the gate. Both are the same verb: pay, receive a flag
+    /// <see cref="World.RegionResource.TollPermitFlagId"/> or
+    /// <see cref="World.RegionResource.TollPassFlagId"/> names, and in the bribe's case pay part of
+    /// the price in standing. Nothing else about it is new, which is 38D's branch-on-kind design
+    /// collecting its rent: the price, the standing discount, the hostile refusal and the
+    /// charge-before-the-verb ordering all come free.
+    /// </summary>
+    Passage,
 }

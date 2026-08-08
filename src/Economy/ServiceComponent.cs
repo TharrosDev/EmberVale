@@ -97,6 +97,9 @@ public partial class ServiceComponent : InteractableComponent
             case ServiceKind.Inn:
                 Rest(service, instigator);
                 break;
+            case ServiceKind.Passage:
+                Passage(service, instigator);
+                break;
             default:
                 StableMount(service, instigator);
                 break;
@@ -164,6 +167,27 @@ public partial class ServiceComponent : InteractableComponent
     private static void StableMount(ServiceResource service, IEntity instigator) =>
         Unlock(service, instigator);
 
+    /// <summary>
+    /// Sells passage through a tolled crossing (Phase 38M): the flag <c>TollFee</c> reads, plus the
+    /// standing a bribe costs. The order matters in one small way — the reputation is moved
+    /// <em>after</em> the flag is set, so a standing swing that turns the faction hostile cannot
+    /// retroactively swallow the thing that was just paid for.
+    /// </summary>
+    private static void Passage(ServiceResource service, IEntity instigator)
+    {
+        Unlock(service, instigator);
+
+        if (!string.IsNullOrEmpty(service.GrantedFlagId))
+        {
+            instigator.GetComponent<StoryFlagsComponent>()?.Set(service.GrantedFlagId);
+        }
+
+        if (service.ReputationDelta != 0 && !string.IsNullOrEmpty(service.FactionId))
+        {
+            instigator.GetComponent<ReputationComponent>()?.Add(service.FactionId, service.ReputationDelta);
+        }
+    }
+
     /// <summary>Records a one-off purchase. A service with no flag is pay-per-use and this is a no-op;
     /// the validator is what stops a one-off service being authored without one.</summary>
     private static void Unlock(ServiceResource service, IEntity instigator)
@@ -201,6 +225,14 @@ public partial class ServiceComponent : InteractableComponent
         if (!string.IsNullOrEmpty(service.UnlockFlagId))
         {
             return Player()?.GetComponent<StoryFlagsComponent>()?.Has(service.UnlockFlagId) ?? false;
+        }
+
+        // 38M: a pass is repeatable but not stackable. Without this the gate-hand happily takes a
+        // second bribe for a crossing already paid for, which is a refusal the player would only
+        // discover by losing the gold.
+        if (!string.IsNullOrEmpty(service.GrantedFlagId))
+        {
+            return Player()?.GetComponent<StoryFlagsComponent>()?.Has(service.GrantedFlagId) ?? false;
         }
 
         if (service.Kind != ServiceKind.Trainer)
@@ -270,6 +302,7 @@ public partial class ServiceComponent : InteractableComponent
         ServiceKind.Trainer => "service.prompt_taught",
         ServiceKind.Bank => "service.prompt_open",
         ServiceKind.Stable => "service.prompt_owned",
+        ServiceKind.Passage => "service.prompt_passage_held",
         _ => "service.prompt_free",
     };
 
@@ -278,6 +311,7 @@ public partial class ServiceComponent : InteractableComponent
         ServiceKind.Trainer => "service.prompt_train",
         ServiceKind.Bank => "service.prompt_account",
         ServiceKind.Stable => "service.prompt_buy_mount",
+        ServiceKind.Passage => "service.prompt_passage",
         _ => "service.prompt_rest",
     };
 

@@ -68,4 +68,31 @@ public partial class RegionResource : Resource
     [ExportGroup("Graph")]
     /// <summary>Ids of directly-reachable neighbouring regions (the map + fast-travel adjacency).</summary>
     [Export] public Godot.Collections.Array<string> Neighbours { get; set; } = new();
+
+    [ExportGroup("Toll")]
+
+    /// <summary>
+    /// Gold the road wardens take to let the player walk in through a portal (Phase 38M). <c>0</c> —
+    /// the default — is an untolled road, so every region authored before the Crossway Post is
+    /// unaffected without being edited (38I's rule that the default is the ungated case).
+    ///
+    /// Declared on the <em>destination</em> for the same reason <see cref="UnlockFlagId"/> is: one
+    /// gate on one road, charged from whichever side the player approaches, and no per-link table for
+    /// the bootstrap to special-case. It is charged in <c>GameBootstrap.OnRegionTransitionRequested</c>
+    /// — the one place the portal and the <c>region</c> dev command both arrive — and <b>never</b> on
+    /// fast travel, which pays <see cref="Economy.TravelFee"/> instead. See <see cref="Economy.TollFee"/>.
+    /// </summary>
+    [Export] public int TollGold { get; set; }
+
+    /// <summary>Story flag that exempts the bearer permanently — the warden's permit. Empty on an
+    /// untolled region.</summary>
+    [Export] public string TollPermitFlagId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Story flag that covers <em>one</em> crossing and is cleared as it is used — what a bribe buys.
+    /// Consumed rather than kept so the cheap route stays a repeating decision: a permanent pass for
+    /// less gold than the permit would simply be the permit, and the toll would stop being a sink
+    /// after one bribe.
+    /// </summary>
+    [Export] public string TollPassFlagId { get; set; } = string.Empty;
 }
