@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="ShopResource" format=3 uid="uid://uowiql2wgb43"]
+
+[ext_resource type="Script" path="res://src/Economy/ShopResource.cs" id="1_shop"]
+[ext_resource type="Script" path="res://src/Economy/ShopStockEntry.cs" id="2_entry"]
+
+; Hana Netmender (Phase 38L) - the shortest trading day on the square, and the only one that is
+; short for a reason the player can work out unaided: fish sells in the morning or it does not sell.
+; 05:00-13:00 is eight hours, comfortably over ShopHours.MinimumOpenSpan, and it makes her the merchant
+; a player who sleeps in never meets.
+;
+; Her flask of fish oil wears `fish` AND `reagent`, so she and Odo the herbalist compete for the same
+; customer without selling the same shelf. That is what 38F's tag pairs are for; a roster where every
+; specialist is sealed off from every other one is twelve shops, not a market.
+;
+; Smallest purse in the market (120g). She buys a morning's catch, not a season's.
+
+[sub_resource type="Resource" id="Stock_fish"]
+script = ExtResource("2_entry")
+ItemId = "item.food.smoked_fish"
+Quantity = 0
+
+[sub_resource type="Resource" id="Stock_oil"]
+script = ExtResource("2_entry")
+ItemId = "item.material.fish_oil"
+Quantity = 0
+
+[sub_resource type="Resource" id="Stock_salt"]
+script = ExtResource("2_entry")
+ItemId = "item.material.salt"
+Quantity = 4
+
+[resource]
+script = ExtResource("1_shop")
+Id = "shop.embermarket.fishmonger"
+NameKey = "shop.embermarket.fishmonger.name"
+FactionId = "faction.villagers"
+AcceptedTags = Array[String](["fish", "food"])
+Specialties = Array[String](["fish"])
+Stock = Array[Resource]([SubResource("Stock_fish"), SubResource("Stock_oil"), SubResource("Stock_salt")])
+RestockDays = 1
+BuyMarkup = 1.5
+SellFraction = 0.42
+PurseGold = 120
+OpenHour = 5
+CloseHour = 13

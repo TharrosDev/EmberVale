@@ -1,0 +1,48 @@
+[gd_resource type="Resource" script_class="LootTable" format=3 uid="uid://c0mhshbnjarml"]
+
+[ext_resource type="Script" path="res://src/Loot/LootTable.cs" id="1_table"]
+[ext_resource type="Script" path="res://src/Loot/LootEntry.cs" id="2_entry"]
+
+; Sera's rolled shelf (Phase 38L) - the game's second leveled pool, and the argument for a second one is
+; the argument 38J already made for Hesk's: a pool rolled for a merchant who is here one day in five is a
+; reason to catch her, not a shelf standing open every morning. Aldreth's stays the only resident one.
+;
+; Three equippables and nothing else, on ShopLeveledGear.tres's shape and for its reasons: a stackable in
+; a rolled pool shows as N rows of one, and gold in a shop's pool is a merchant selling coins.
+;
+; Chances are lower than Aldreth's across the board. She restocks on a 5-day clock and is present on a
+; 5-day cycle, so the player sees this pool roll a fraction as often - a generous table would make her the
+; place you shop rather than the place you happen to catch.
+
+[sub_resource type="Resource" id="Entry_vest"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.leather_vest"
+DropChance = 0.4
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_dagger"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.iron_dagger"
+DropChance = 0.35
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[sub_resource type="Resource" id="Entry_ring"]
+script = ExtResource("2_entry")
+ItemId = "item.ring.iron"
+DropChance = 0.2
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = true
+
+[resource]
+script = ExtResource("1_table")
+Entries = Array[Resource]([SubResource("Entry_vest"), SubResource("Entry_dagger"), SubResource("Entry_ring")])
+GoldItemId = "item.currency.gold"
+GoldChance = 0.0
+GoldMin = 0
+GoldMax = 0
+QualityBonus = 0.0

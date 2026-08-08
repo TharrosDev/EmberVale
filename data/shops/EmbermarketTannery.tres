@@ -1,0 +1,49 @@
+[gd_resource type="Resource" script_class="ShopResource" format=3 uid="uid://uowiqmhobhwf"]
+
+[ext_resource type="Script" path="res://src/Economy/ShopResource.cs" id="1_shop"]
+[ext_resource type="Script" path="res://src/Economy/ShopStockEntry.cs" id="2_entry"]
+
+; Perrin the Tanner (Phase 38L), and the one merchant on this square who fixes a real hole.
+;
+; Before 38L every leather good in the game was something the player SOLD and could never buy back - five
+; items, all of them drops. `item.material.tanned_hide` is the first worked leather anyone stocks, so the
+; tag finally runs in both directions.
+;
+; Highest sell fraction among the cheap stalls (0.45): he is the best place in the realm to fence a haul of
+; hides, which is the point of a specialist. It stays far below his markup - equal or inverted is an
+; infinite gold loop, and both --validate and ShopPricing clamp against it.
+
+[sub_resource type="Resource" id="Stock_hide"]
+script = ExtResource("2_entry")
+ItemId = "item.material.tanned_hide"
+Quantity = 0
+
+[sub_resource type="Resource" id="Stock_strips"]
+script = ExtResource("2_entry")
+ItemId = "item.material.leather_strips"
+Quantity = 0
+
+[sub_resource type="Resource" id="Stock_pelt"]
+script = ExtResource("2_entry")
+ItemId = "item.material.beast_pelt"
+Quantity = 6
+
+[sub_resource type="Resource" id="Stock_cap"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.leather_cap"
+Quantity = 2
+
+[resource]
+script = ExtResource("1_shop")
+Id = "shop.embermarket.tannery"
+NameKey = "shop.embermarket.tannery.name"
+FactionId = "faction.villagers"
+AcceptedTags = Array[String](["leather", "pelt"])
+Specialties = Array[String](["leather", "pelt"])
+Stock = Array[Resource]([SubResource("Stock_hide"), SubResource("Stock_strips"), SubResource("Stock_pelt"), SubResource("Stock_cap")])
+RestockDays = 2
+BuyMarkup = 1.5
+SellFraction = 0.45
+PurseGold = 240
+OpenHour = 7
+CloseHour = 17

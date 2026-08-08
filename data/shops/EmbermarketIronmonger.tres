@@ -1,0 +1,63 @@
+[gd_resource type="Resource" script_class="ShopResource" format=3 uid="uid://uowiql56ch43"]
+
+[ext_resource type="Script" path="res://src/Economy/ShopResource.cs" id="1_shop"]
+[ext_resource type="Script" path="res://src/Economy/ShopStockEntry.cs" id="2_entry"]
+[ext_resource type="Script" path="res://src/Economy/ShopInvestmentTier.cs" id="3_tier"]
+
+; Gilda Ironmonger (Phase 38L) - metal traded rather than metal worked, which is the whole distinction
+; between her and Bryn one street north. He forges; she buys and sells what forges eat and produce.
+;
+; The iron dagger exists so her `weapon` specialty is a shelf. Before 38L the tag had exactly one member
+; and a "weapons specialist" specialised in one sword - the premium was authored, validated, and applied
+; to a single row.
+;
+; One investment rung, not Bryn's two: a stall is a smaller thing to buy into than a forge, and the ladder
+; should read as proportional to what is being bought. It opens the steel sword, which she otherwise keeps
+; back for people she knows.
+
+[sub_resource type="Resource" id="Stock_ingot"]
+script = ExtResource("2_entry")
+ItemId = "item.material.iron_ingot"
+Quantity = 0
+
+[sub_resource type="Resource" id="Stock_steel"]
+script = ExtResource("2_entry")
+ItemId = "item.material.steel_ingot"
+Quantity = 6
+
+[sub_resource type="Resource" id="Stock_scrap"]
+script = ExtResource("2_entry")
+ItemId = "item.material.scrap"
+Quantity = 0
+
+[sub_resource type="Resource" id="Stock_dagger"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.iron_dagger"
+Quantity = 2
+
+[sub_resource type="Resource" id="Stock_sword"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.steel_sword"
+Quantity = 1
+RequiredInvestment = 1
+
+[sub_resource type="Resource" id="Invest_stall"]
+script = ExtResource("3_tier")
+Cost = 700
+PurseBonus = 200
+
+[resource]
+script = ExtResource("1_shop")
+Id = "shop.embermarket.ironmonger"
+NameKey = "shop.embermarket.ironmonger.name"
+FactionId = "faction.villagers"
+AcceptedTags = Array[String](["metal", "ore", "weapon"])
+Specialties = Array[String](["metal", "weapon"])
+Stock = Array[Resource]([SubResource("Stock_ingot"), SubResource("Stock_steel"), SubResource("Stock_scrap"), SubResource("Stock_dagger"), SubResource("Stock_sword")])
+RestockDays = 2
+BuyMarkup = 1.55
+SellFraction = 0.42
+PurseGold = 320
+InvestmentTiers = Array[Resource]([SubResource("Invest_stall")])
+OpenHour = 7
+CloseHour = 19

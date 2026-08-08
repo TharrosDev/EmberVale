@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://uov73i1d1q68"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+; Phase 38L - the Embermarket catalogue. Ties the new tag to the realm's ART_STYLE signature - banners faded to rose.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.material.dyed_wool"
+DisplayName = "Dyed Wool"
+Description = "Madder red, fixed with alum. The colour the Ember Crown's banners fade from."
+Type = 4
+Rarity = 1
+MaxStack = 30
+Weight = 1.0
+Value = 22
+TradeTags = Array[String](["textile", "luxury"])

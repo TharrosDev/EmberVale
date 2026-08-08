@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://bduu48hwmnug0"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+; Phase 38L - the Embermarket catalogue. The one good on this square that comes from the other realm, which is the caravanner's whole reason to exist.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.material.frost_pelt"
+DisplayName = "Frostfang Pelt"
+Description = "White fur from the northern reach, thick enough to sleep on snow in."
+Type = 4
+Rarity = 2
+MaxStack = 30
+Weight = 2.0
+Value = 60
+TradeTags = Array[String](["pelt", "luxury"])

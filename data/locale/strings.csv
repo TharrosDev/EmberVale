@@ -161,6 +161,13 @@ trade.tag.furnishing,furnishings
 trade.tag.trophy,trophies
 trade.tag.relic,relics
 trade.tag.luxury,fine goods
+# 38L opened five of the eight tags the economy arc had named, each with goods wearing it on the same
+# day. contraband waits for 38O's fence; map and livestock wait for anything at all to carry them.
+trade.tag.food,provisions
+trade.tag.fish,fish
+trade.tag.textile,cloth
+trade.tag.tome,books
+trade.tag.fuel,fuel
 # Stock tiers and merchant investment (Phase 38I). Each lock names a different thing to go and do, in the
 # order flag -> standing -> gold, so a player is never told to invest in a merchant who is waiting on a
 # story beat. A stake is permanent and buys two things only: her purse and the rows behind it.
@@ -459,6 +466,18 @@ dlg.guild_board.inprogress,"The bounty still stands: three goblins, not yet cull
 dlg.guild_board.c_inprogress_bye,"I'm working on it."
 dlg.guild_board.thanks,"The bounty is settled — the guild thanks you. Watch the board for more."
 dlg.guild_board.c_thanks_bye,"I will."
+# 38K second pass: the Embermarket's notice board. Read-only flavour — no choice here carries an
+# Effect, so nothing reaches the quest log or the story flags.
+dlg.market_board.speaker,"Embermarket Notice"
+dlg.market_board.root,"A slab of oak nailed with proclamations, half of them faded to nothing. Three are still legible."
+dlg.market_board.c_customs,"(Read the market customs.)"
+dlg.market_board.c_tolls,"(Read the notice about the Crossway.)"
+dlg.market_board.c_stalls,"(Read the list of stall holders.)"
+dlg.market_board.c_back,"(Look at the other notices.)"
+dlg.market_board.c_bye,"(Step away from the board.)"
+dlg.market_board.customs,"BY ORDER OF THE TOWN: no blade drawn between the lamps. No fire but the braziers. Weights are the town's and are checked at dawn. Any trader found short-weighing forfeits his stall and his stock, and the Dawnwardens will see him to the gate."
+dlg.market_board.tolls,"NOTICE: the Crossway Post now takes a toll of every cart that comes south. The road wardens say it pays for the road. The carters say it pays for the wardens. Either way, what arrives here arrives dearer than it did last season."
+dlg.market_board.stalls,"STALL HOLDERS, EMBERMARKET: every stall on this square stands let and unclaimed, awaiting the season's traders. Coin, cloth, iron, herb, hide and glass. Enquiries to the town, who will want to know your trade before your name."
 dlg.smith.speaker,"Bryn the Smith"
 dlg.smith.root,"Bryn looks up from a cold anvil, soot dark on his brow."
 dlg.smith.c_offer,"Need anything forged?"
@@ -507,6 +526,19 @@ dlg.elder.heart.c_thanks_bye,"The honour was mine, elder."
 # the player is asking a person to show them something, not opening a screen.
 shop.ember_crown.smith.name,Bryn's Forge
 shop.ember_crown.apothecary.name,Mirela's Remedies
+# 38L — the Embermarket roster. Ten residents around the crossroads and two travellers.
+shop.embermarket.provisions.name,Corvin's Provisions
+shop.embermarket.fishmonger.name,The Netmender's Slab
+shop.embermarket.weaver.name,Sable's Cloth
+shop.embermarket.scriptorium.name,Quillfellow's Scriptorium
+shop.embermarket.collier.name,Dunmore Charcoal
+shop.embermarket.ironmonger.name,Gilda's Ironmongery
+shop.embermarket.tannery.name,Perrin's Tannery
+shop.embermarket.jeweller.name,Brightcut Gems
+shop.embermarket.herbalist.name,Greenhand's Herbs
+shop.embermarket.joiner.name,Halvard's Joinery
+shop.embermarket.caravan.name,The Long Road Caravan
+shop.embermarket.curios.name,Quill's Curios
 dlg.smith.c_trade,"What have you got to sell?"
 dlg.apothecary.c_trade,"Anything left on your shelves?"
 dlg.vendor_goods.speaker,"Aldreth, General Goods"
@@ -911,3 +943,116 @@ dlg.ancient.kin.c_done_bye,"Leave."
 enemy.frost_drake.name,Frost Drake
 enemy.frost_drake.lore,"A dragon that never finished becoming one. Drakes do not fly, do not hoard and do not talk; they hold a stretch of snow and breathe cold at anything crossing it. The Ash Hunters rate them the most dangerous thing in the Reach that is not worth a song, and lose people to them every winter for exactly that reason."
 dlg.ancient.kin.c_already,"It is already dead. I found the east roost before I found you."
+# 38L — the ten Embermarket merchant conversations. Each is dialogue.vendor_goods's shape:
+# a ShopOpen-gated trade line, a ShopClosed line that puts the closing time in the merchant's
+# own mouth, and one talk node carrying a beat of what the economy arc is about to build.
+dlg.corvin.speaker,"Corvin, Provisioner"
+dlg.corvin.root,"A broad man in a flour-dusted apron sets down a tray of loaves without looking at it. ""Morning. Bread's fresh, ration's honest, and I don't sell anything I wouldn't eat."""
+dlg.corvin.talk,"""Busier? Aye, it was. Two seasons back you couldn't cross this square without turning sideways."" He shrugs. ""Carts come south slower now, and dearer, and the folk who mind that most are the ones with nothing to sell but bread."""
+dlg.corvin.closed,"The trays are covered and the shutter is down. Corvin is somewhere behind it, asleep, and has been since the light went."
+dlg.corvin.c_trade,"Let's see what you have."
+dlg.corvin.c_closed,"Anything left?"
+dlg.corvin.c_talk,"Square seems quiet."
+dlg.corvin.c_bye,"Another time."
+dlg.corvin.c_talk_trade,"I'll take some of that bread."
+dlg.corvin.c_talk_back,"Let me ask something else."
+dlg.corvin.c_talk_bye,"I'll let you work."
+dlg.hana.speaker,"Hana Netmender"
+dlg.hana.root,"A woman with forearms like cable slaps a split fish onto the slab. ""You're early enough to matter. Come back after noon and you're buying yesterday."""
+dlg.hana.talk,"""Tarn's Landing sends what it can, when the road lets it."" She wipes the blade. ""There's talk of the wharf down at Hollowreach selling cheaper. There's always talk. Cheaper fish usually means somebody didn't pay the toll."""
+dlg.hana.closed,"The slab is scrubbed white and the ice is a puddle. Hana is long gone; she trades at dawn or not at all."
+dlg.hana.c_trade,"What's good today?"
+dlg.hana.c_closed,"Anything left on the slab?"
+dlg.hana.c_talk,"Where does the catch come from?"
+dlg.hana.c_bye,"Good day to you."
+dlg.hana.c_talk_trade,"I'll take some before it's gone."
+dlg.hana.c_talk_back,"Something else."
+dlg.hana.c_talk_bye,"Understood."
+dlg.sable.speaker,"Sable, Weaver"
+dlg.sable.root,"Bolts of cloth stand on end behind the counter like a rank of soldiers. ""Linen, wool, and one red I'd not sell to just anyone. Look, don't finger."""
+dlg.sable.talk,"""That red is madder, fixed with alum, and it costs what it costs."" She turns a bolt to the light. ""Every banner over this town started that colour. They go rose in a year and pink in three, and nobody replaces them any more, which tells you more about the Ember Crown than I'd care to say aloud."""
+dlg.sable.closed,"The bolts are sheeted over against the damp and the shutter is barred from inside."
+dlg.sable.c_trade,"Show me the cloth."
+dlg.sable.c_closed,"Are you still trading?"
+dlg.sable.c_talk,"Tell me about the red."
+dlg.sable.c_bye,"I'll leave you to it."
+dlg.sable.c_talk_trade,"I'll buy a length of it."
+dlg.sable.c_talk_back,"Something else, then."
+dlg.sable.c_talk_bye,"Thank you."
+dlg.tam.speaker,"Tam Quillfellow"
+dlg.tam.root,"A narrow man looks up over a pair of cracked spectacles, one finger keeping his place. ""Books. Copies of books. Copies of copies, if you're not particular."""
+dlg.tam.talk,"""There's a treatise under this counter I don't show strangers."" He does not look at where it is. ""The Veiled Archive would rather it had stayed in the Archive. I'd rather know who I'm handing it to. Come back when the town knows your name."""
+dlg.tam.closed,"The stall is shuttered and a chain runs through the handles. A card in the gap reads: BACK AT NINE."
+dlg.tam.c_trade,"What are you selling?"
+dlg.tam.c_closed,"Are you open?"
+dlg.tam.c_talk,"Anything you don't put on the shelf?"
+dlg.tam.c_bye,"Another time."
+dlg.tam.c_talk_trade,"Show me what you will sell."
+dlg.tam.c_talk_back,"Let me ask something else."
+dlg.tam.c_talk_bye,"I'll earn it, then."
+dlg.ash.speaker,"Ash Dunmore, Collier"
+dlg.ash.root,"Everything about him is grey except his hands, which are black to the wrist. ""Charcoal, pitch, and whatever ore comes my way. Mind the sacks, they mark."""
+dlg.ash.talk,"""Every forge in this town burns what I cut, and none of them think about it twice."" He coughs. ""There's a mine east of here they say is opening again. Emberdeep. If it does, I'll be buying ore by the cartload and you'll be able to tell, because the price of everything iron will fall through the floor."""
+dlg.ash.closed,"The stall is a tarpaulin over a heap of sacks, roped down and unattended. Dunmore burns his kilns at night."
+dlg.ash.c_trade,"What have you got?"
+dlg.ash.c_closed,"Are you trading?"
+dlg.ash.c_talk,"Who buys all this?"
+dlg.ash.c_bye,"Good luck with the kilns."
+dlg.ash.c_talk_trade,"I'll take some charcoal."
+dlg.ash.c_talk_back,"Something else."
+dlg.ash.c_talk_bye,"I'll watch for it."
+dlg.gilda.speaker,"Gilda Ironmonger"
+dlg.gilda.root,"Iron bar is stacked to the counter's edge in graded rows. ""I don't forge. I buy, I sell, and I know to the ounce what's in front of you. Bryn's up the hill if you want it beaten into something."""
+dlg.gilda.talk,"""Stall's mine, the stock isn't - not all of it."" She raps the counter. ""Half of what you see I hold on somebody else's coin, and I pay for the privilege. Anyone with money to put down and the sense to leave it down would find me a good deal more generous about what I keep in the back."""
+dlg.gilda.closed,"The bar stock is under a locked grille. A slate reads: SEVEN TILL SEVEN. NO CREDIT."
+dlg.gilda.c_trade,"Show me the stock."
+dlg.gilda.c_closed,"Still open?"
+dlg.gilda.c_talk,"Is the stall yours?"
+dlg.gilda.c_bye,"I'll come back."
+dlg.gilda.c_talk_trade,"Let's trade, then."
+dlg.gilda.c_talk_back,"Something else."
+dlg.gilda.c_talk_bye,"I'll bear it in mind."
+dlg.perrin.speaker,"Perrin the Tanner"
+dlg.perrin.root,"The smell arrives before the stall does. ""Hides, strips, and a cap or two. If you've been out in the wilds and come back with anything skinned, I'm the best price in the realm and I'll not pretend otherwise."""
+dlg.perrin.talk,"""Month of work in a single sheet, that."" He holds a hide up and lets the light through it. ""Scraped, limed, cured, and every step of it something you can ruin. Folk think a tanner buys hides. A tanner buys a month and sells it back to you flat."""
+dlg.perrin.closed,"The frames are empty and the vats are covered. Whatever is curing under those lids will keep until seven."
+dlg.perrin.c_trade,"Let's trade."
+dlg.perrin.c_closed,"Are you buying?"
+dlg.perrin.c_talk,"How much work is in one?"
+dlg.perrin.c_bye,"I'll be off."
+dlg.perrin.c_talk_trade,"Then let me see them."
+dlg.perrin.c_talk_back,"Ask something else."
+dlg.perrin.c_talk_bye,"Fair enough."
+dlg.nessa.speaker,"Nessa Brightcut"
+dlg.nessa.root,"Cloth-of-grey under glass, and on it four stones arranged with more care than most people give a meal. ""Don't breathe on the sapphires."""
+dlg.nessa.talk,"""Everyone in this market thinks they know what their goods are worth."" She does not look up from the loupe. ""They know what they were paid last time. Those are different numbers and the difference is my living. Bring me anything with a stone in it and I'll tell you which one you're holding."""
+dlg.nessa.closed,"The glass is empty and the cloth is folded. Nessa keeps banker's hours and makes no apology for it."
+dlg.nessa.c_trade,"Let me see the stones."
+dlg.nessa.c_closed,"Are you open yet?"
+dlg.nessa.c_talk,"You sound sure of yourself."
+dlg.nessa.c_bye,"Later, then."
+dlg.nessa.c_talk_trade,"Then show me what you have."
+dlg.nessa.c_talk_back,"Something else."
+dlg.nessa.c_talk_bye,"I'll remember that."
+dlg.odo.speaker,"Odo Greenhand"
+dlg.odo.root,"Bundles hang drying from every strut of the stall, and the man beneath them is half hidden by them. ""Careful of your head. Everything here was alive this week."""
+dlg.odo.talk,"""Mirela up in the square brews. I walk."" He grins, missing a tooth. ""She'll not go past the wall for a leaf and I'll not stand over a pot for six hours, so between us the town gets its remedies. Emberbloom only opens when the ash falls, which means the days I earn most are the days nobody else wants to be outside."""
+dlg.odo.closed,"The bundles are in and the stall is a bare frame. Odo is out past the wall somewhere, or asleep."
+dlg.odo.c_trade,"What's dried and ready?"
+dlg.odo.c_closed,"Are you here?"
+dlg.odo.c_talk,"You and the apothecary both?"
+dlg.odo.c_bye,"Mind yourself out there."
+dlg.odo.c_talk_trade,"I'll buy what you've gathered."
+dlg.odo.c_talk_back,"Something else."
+dlg.odo.c_talk_bye,"Good hunting."
+dlg.halvard.speaker,"Halvard, Joiner"
+dlg.halvard.root,"Planks lean in a fan against the stall post, and a half-made crate sits on the counter with the pegs still proud. ""Timber, or things made of timber. Take your pick."""
+dlg.halvard.talk,"""You've a holding of your own, I hear."" He taps the crate. ""Then you'll want more than planks. I sell the kits whole - crate, stand, brazier, bench - packed flat and pegged, so you carry them home and set them down where you like. Beats standing at a workbench for an afternoon, unless you enjoy that. Some do."""
+dlg.halvard.closed,"The plank fan is chained to the post and the counter is bare. Halvard works to the light and the light has gone."
+dlg.halvard.c_trade,"Show me the timber."
+dlg.halvard.c_closed,"Still working?"
+dlg.halvard.c_talk,"What else do you make?"
+dlg.halvard.c_bye,"Another day."
+dlg.halvard.c_talk_trade,"Let me see the kits."
+dlg.halvard.c_talk_back,"Something else."
+dlg.halvard.c_talk_bye,"I'll think on it."

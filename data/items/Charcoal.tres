@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://bduu48el3lhjr"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+; Phase 38L - the Embermarket catalogue. The fuel tag's baseline, and the collier's whole trade.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.material.charcoal"
+DisplayName = "Charcoal"
+Description = "Slow-burnt oak. Hotter than wood and quieter than coal, which is why a forge wants it."
+Type = 4
+Rarity = 0
+MaxStack = 99
+Weight = 0.6
+Value = 4
+TradeTags = Array[String](["fuel"])

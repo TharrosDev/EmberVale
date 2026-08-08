@@ -1,37 +1,87 @@
-[gd_scene format=3 uid="uid://crgnembermkt01"]
+[gd_scene format=3 uid="uid://fn8m15764lc7"]
 
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="1_navbaker"]
 [ext_resource type="Script" path="res://src/Entities/Entity.cs" id="2_entity"]
 [ext_resource type="Script" path="res://src/World/TravelNodeComponent.cs" id="3_travel"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_tent.glb" id="4_tent"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_crate.glb" id="5_crate"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_lamp_post.glb" id="6_lamp"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_waystone.glb" id="7_waystone"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_banner_guild.glb" id="8_banner"]
-[ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_a.glb" id="9_house_a"]
-[ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_b.glb" id="10_house_b"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="4_dialogue"]
+[ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="5_charanim"]
+[ext_resource type="Script" path="res://src/Factions/FactionComponent.cs" id="6_faction"]
+[ext_resource type="Script" path="res://src/Audio/AmbientEmitterComponent.cs" id="7_ambient"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_crate.glb" id="11_crate"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_lamp_post.glb" id="12_lamp"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_waystone.glb" id="13_waystone"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_banner_guild.glb" id="14_banner"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="15_brazier"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="16_rocks"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_market_stand.glb" id="17_stand_a"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_market_stand_b.glb" id="18_stand_b"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_cart.glb" id="19_cart"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_barrel.glb" id="20_barrel"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_sacks.glb" id="21_sacks"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_hay.glb" id="22_hay"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_bench.glb" id="23_bench"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_well.glb" id="24_well"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_bell_tower.glb" id="25_belltower"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_gazebo.glb" id="26_gazebo"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_cauldron.glb" id="27_cauldron"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_fence.glb" id="28_fence"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_tree_broadleaf.glb" id="29_tree"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_bush_flowering.glb" id="30_bush"]
+[ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_a.glb" id="31_house_a"]
+[ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_b.glb" id="32_house_b"]
+[ext_resource type="PackedScene" path="res://assets/models/architecture/bld_cottage.glb" id="33_cottage"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_townswoman.glb" id="35_townswoman"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_hooded.glb" id="36_hooded"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleComponent.cs" id="8_schedule"]
+[ext_resource type="Script" path="res://src/Economy/VendorComponent.cs" id="9_vendor"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_vendor.glb" id="37_vendor_body"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_innkeeper.glb" id="38_innkeeper"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_guild_rep.glb" id="39_guild_rep"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_merchant_m.glb" id="40_merchant_m"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_merchant_f.glb" id="41_merchant_f"]
 
-; THE EMBERMARKET (Phase 38K) — the Ember Crown's market district, one street south of the town square.
+; THE EMBERMARKET (Phase 38K, second pass) — the Ember Crown's market district, one street south of
+; the town square.
 ;
-; This sub-phase builds the PLACE and nothing else: it streams, it navigates, it lights, and it carries a
-; travel node. The twelve specialist merchants who will stand at these stalls are 38L's, and the stalls
-; are laid out and named for them now (StallW1..StallE3) so that placing a vendor is a transform copied
-; out of this file rather than a position guessed in the dark.
+; 38K's first pass built a cell that streamed, navigated, lit and carried a travel node, and it was
+; correct and completely lifeless: seven model files in twenty-four instances, six identical tents on
+; six identical crates in two mirrored rows, six identical lamps, one flat 52 m box, two materials and
+; no emission anywhere. This pass keeps every one of those decisions that was load-bearing and rebuilds
+; everything that was placeholder.
 ;
-; ⚠️ EVERYTHING PARENTS TO Nav. Geometry outside the NavigationRegion3D is not carved into the navmesh,
-; so an NPC or an enemy walks straight through a stall that looks solid. That is the trap town_hub.tscn
-; already documents at the top of its own prop block, and it is repeated here because it is invisible
-; until something walks through a tent.
+; ⚠️ THE STALL TRANSFORMS ARE A CONTRACT WITH 38L AND DO NOT MOVE. StallW1..StallE3 keep their names,
+; their positions (x = ±9, z = -14 / -3 / +8) and their Counter child at local (2.2, 0, 0), because the
+; playbook promised 38L that placing a merchant would be "a transform copied out of this file". Variety
+; comes from a different stall MODEL and different dressing per stall — never from rotating or nudging
+; a stall root, which would silently invalidate every counter offset 38L is going to copy.
+;
+; ⚠️ EVERYTHING STATIC PARENTS TO Nav. Geometry outside the NavigationRegion3D is not carved into the
+; navmesh, so an NPC or an enemy walks straight through a stall that looks solid. NPCs and the notice
+; board deliberately do NOT (see the actor block at the bottom) — only static geometry should carve.
 ;
 ; ⚠️ The cell is placed at its Center by the RegionStreamer, so every transform in this file is LOCAL to
 ; the market's own origin. The 37C placement bug — a point read out of a .tscn landing a cell's width
 ; from where it was authored — is the same mistake in the other direction.
 ;
-; LAYOUT: a 52 x 52 flagged square. Two rows of stalls face each other across a central aisle running
-; north–south (the approach from the town square), the waystone at the north end where the player enters,
-; houses closing the east and west edges so the district reads as enclosed rather than as a field with
-; tents on it. Six lamp posts, warm and low, on the same colour and energy as the square's so the two
-; cells look like one town after dark.
+; ⚠️ NOTHING IN THIS CELL IS RAISED GROUND, AND THAT IS DELIBERATE. The first draft of this pass had a
+; 0.3 m plaza dais. Godot's CharacterBody3D has no step-up: MoveAndSlide climbs nothing taller than
+; floor_snap_length (0.1 m by default, and this project never raises it), so a 0.3 m kerb is an
+; invisible wall the player walks into, and the navmesh's agent_max_climb = 0.5 cheerfully bakes NPCs a
+; path over ground the player cannot follow them onto. Every ground slab here is a 5-6 cm decorative
+; skin with NO COLLIDER, exactly like the original aisle. The district's verticality comes from an
+; 11 m bell tower, 8 m trees and 2.6 m awnings — from props, never from terrain.
+;
+; LAYOUT, north (the approach from the square) to south (the landmark that stops the eye):
+;   z -26..-18  the forecourt: a paved threshold, the waystone, the market banner, two braziers, two
+;               parked carts and the notice board.
+;   z -18..+17  the spine: a 7 m aisle with the two stall rows facing each other across it, crossed
+;               east-west at z = -8.5 so the district reads as a quarter rather than a corridor.
+;   z +9..+21   the plaza, off-axis to the WEST: the well, three benches, a cook-fire and a brazier.
+;               Off-axis on purpose — a plaza centred on the aisle would have to be walked through,
+;               and the whole point of it is that it is somewhere you turn aside to go.
+;   z +20       the bell tower, dead centre, terminating the aisle.
+; Houses, fences, trees and bushes close the east and west edges; five clutter clusters sit against
+; stall flanks and house walls. NOTHING enters the 7 m spine — the aisle is the navigation affordance.
 
 [sub_resource type="NavigationMesh" id="NavMesh_market"]
 geometry_parsed_geometry_type = 1
@@ -52,34 +102,204 @@ size = Vector3(52, 0.5, 52)
 albedo_color = Color(0.33, 0.3, 0.26, 1)
 roughness = 0.95
 
-; The aisle itself, a shade lighter, laid over the floor. It is the only piece of art direction in the
-; cell doing navigation work: it tells the player where the stalls are before they can read a sign.
-[sub_resource type="BoxMesh" id="BoxMesh_aisle"]
-size = Vector3(7, 0.06, 44)
-
+; Three ground materials, all inside ART_STYLE's ~40% saturation ceiling for environment albedo. The
+; aisle is the lightest so it reads as the swept route; the plaza is a colder grey so the well corner
+; reads as a different room; the forecourt sits between them at the threshold.
 [sub_resource type="StandardMaterial3D" id="Mat_aisle"]
-albedo_color = Color(0.42, 0.38, 0.32, 1)
+albedo_color = Color(0.47, 0.44, 0.4, 1)
 roughness = 0.9
 
-[sub_resource type="BoxShape3D" id="Shape_stall"]
-size = Vector3(3.2, 2.4, 3.2)
+[sub_resource type="StandardMaterial3D" id="Mat_plaza"]
+albedo_color = Color(0.3, 0.29, 0.28, 1)
+roughness = 0.85
+
+[sub_resource type="StandardMaterial3D" id="Mat_forecourt"]
+albedo_color = Color(0.38, 0.34, 0.29, 1)
+roughness = 0.9
+
+; The ONE warm accent (ART_STYLE §7: at most one, it glows and nothing else does). A coal ball inside
+; each brazier bowl and one under the cauldron; the OmniLight and the ember particles are the same
+; accent doing the other two jobs.
+[sub_resource type="StandardMaterial3D" id="Mat_ember"]
+albedo_color = Color(0.62, 0.22, 0.08, 1)
+emission_enabled = true
+emission = Color(1, 0.45, 0.12, 1)
+emission_energy_multiplier = 3.0
+
+[sub_resource type="SphereMesh" id="Mesh_coals"]
+radius = 0.13
+height = 0.26
+radial_segments = 8
+rings = 4
+
+; --- Ground skins. Sizes chosen so they ABUT rather than overlap: two coplanar slabs z-fight along
+; --- their seam, and that is invisible in the .tscn, so the arithmetic is written down here.
+; ---   forecourt  z -26 .. -18   (13 wide, centred z = -22)
+; ---   spine      z -18 .. +17   ( 7 wide, centred z = -0.5)
+; ---   cross-lane x -17 .. -3.5 and +3.5 .. +17, split around the spine for the same reason
+; ---   plaza      x -18 .. -6, z +9.5 .. +21.5, joined to the spine by a 2.5 m path
+[sub_resource type="BoxMesh" id="BoxMesh_spine"]
+size = Vector3(7, 0.06, 35)
+
+[sub_resource type="BoxMesh" id="BoxMesh_forecourt"]
+size = Vector3(13, 0.05, 8)
+
+[sub_resource type="BoxMesh" id="BoxMesh_cross"]
+size = Vector3(13.5, 0.06, 5)
+
+[sub_resource type="BoxMesh" id="BoxMesh_plaza"]
+size = Vector3(12, 0.06, 12)
+
+[sub_resource type="BoxMesh" id="BoxMesh_plaza_path"]
+size = Vector3(2.5, 0.06, 4)
+
+; --- Colliders. Every one of these is sized from the model's real bounding box, read out of the
+; --- written .glb rather than guessed. The first pass's Shape_stall (3.2 x 2.4 x 3.2) was authored for
+; --- a tent that is actually 3.29 x 2.33 x 5.61, so 2.4 m of the tent's depth had no collision at all
+; --- and neither the navmesh nor the player knew it was there.
+[sub_resource type="BoxShape3D" id="Shape_stand_a"]
+size = Vector3(1.4, 2.6, 3.0)
+
+[sub_resource type="BoxShape3D" id="Shape_stand_b"]
+size = Vector3(2.5, 2.6, 3.0)
 
 [sub_resource type="BoxShape3D" id="Shape_crate"]
-size = Vector3(1, 1, 1)
+size = Vector3(1.24, 1.24, 1.24)
+
+[sub_resource type="CylinderShape3D" id="Shape_barrel"]
+height = 0.85
+radius = 0.34
+
+[sub_resource type="BoxShape3D" id="Shape_sacks"]
+size = Vector3(1.15, 0.45, 1.05)
+
+[sub_resource type="BoxShape3D" id="Shape_hay"]
+size = Vector3(0.62, 0.9, 0.64)
+
+[sub_resource type="BoxShape3D" id="Shape_cart"]
+size = Vector3(0.95, 1.6, 1.9)
+
+[sub_resource type="BoxShape3D" id="Shape_bench"]
+size = Vector3(1.8, 0.85, 0.66)
+
+[sub_resource type="BoxShape3D" id="Shape_well"]
+size = Vector3(1.5, 2.75, 2.25)
+
+[sub_resource type="BoxShape3D" id="Shape_belltower"]
+size = Vector3(4.4, 11, 5.0)
+
+; The gazebo is a roof on four posts, so it gets two thin post colliders instead of one solid box —
+; walking under the pavilion is the whole reason it is the only overhead geometry in the cell.
+[sub_resource type="BoxShape3D" id="Shape_gazebo_post"]
+size = Vector3(0.35, 2.8, 3.3)
+
+[sub_resource type="BoxShape3D" id="Shape_cauldron"]
+size = Vector3(1.15, 0.8, 0.95)
+
+[sub_resource type="BoxShape3D" id="Shape_fence"]
+size = Vector3(2.95, 1.2, 0.16)
+
+; Trunk only: a canopy collider would stop the player walking under a tree, which is the one thing a
+; tree in a market square is for.
+[sub_resource type="CylinderShape3D" id="Shape_tree"]
+height = 8.0
+radius = 0.5
+
+[sub_resource type="CylinderShape3D" id="Shape_bush"]
+height = 1.1
+radius = 0.62
 
 [sub_resource type="CylinderShape3D" id="Shape_lamp"]
 height = 3.6
 radius = 0.22
 
+[sub_resource type="CylinderShape3D" id="Shape_brazier"]
+height = 1.2
+radius = 0.3
+
 [sub_resource type="CylinderShape3D" id="Shape_waystone"]
 height = 3.0
 radius = 0.8
 
+[sub_resource type="BoxShape3D" id="Shape_banner"]
+size = Vector3(1.0, 3.4, 0.7)
+
+[sub_resource type="BoxShape3D" id="Shape_rocks"]
+size = Vector3(2.3, 1.4, 1.9)
+
+[sub_resource type="CapsuleShape3D" id="Shape_npc"]
+radius = 0.4
+height = 1.8
+
+; Corrected from the first pass, which gave both houses a 6.4-6.6 m wide box against models that are
+; 4.26-4.74 m wide: nearly a metre of empty ground on each side of every house was solid, and the
+; 5.6-6.0 m height let the player clip a 6.8-7.5 m roof.
 [sub_resource type="BoxShape3D" id="Shape_house_a"]
-size = Vector3(6.4, 6.0, 6.2)
+size = Vector3(4.8, 7.5, 5.9)
 
 [sub_resource type="BoxShape3D" id="Shape_house_b"]
-size = Vector3(6.6, 5.6, 6.4)
+size = Vector3(4.3, 6.8, 5.1)
+
+[sub_resource type="BoxShape3D" id="Shape_cottage"]
+size = Vector3(4.9, 4.2, 4.8)
+
+; --- Ember VFX. Two emitters: rising motes over a fire, and a slow smoke wisp over the cook-pot.
+; --- Authored here rather than built in code (SkyController.BuildRain / StatusEffectVfxComponent
+; --- do theirs in C#) because these are scenery, and a cell that carries its own particles stays
+; --- self-contained the way ARCHITECTURE §2.6h-2 asks cells to be.
+[sub_resource type="StandardMaterial3D" id="Mat_particle_ember"]
+transparency = 1
+shading_mode = 0
+blend_mode = 1
+albedo_color = Color(1, 0.55, 0.2, 1)
+emission_enabled = true
+emission = Color(1, 0.5, 0.15, 1)
+emission_energy_multiplier = 2.5
+billboard_mode = 3
+disable_receive_shadows = true
+
+[sub_resource type="QuadMesh" id="Mesh_particle_ember"]
+material = SubResource("Mat_particle_ember")
+size = Vector2(0.075, 0.075)
+
+[sub_resource type="StandardMaterial3D" id="Mat_particle_smoke"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.54, 0.52, 0.5, 0.16)
+billboard_mode = 3
+disable_receive_shadows = true
+
+[sub_resource type="QuadMesh" id="Mesh_particle_smoke"]
+material = SubResource("Mat_particle_smoke")
+size = Vector2(0.55, 0.55)
+
+[sub_resource type="ParticleProcessMaterial" id="PPM_ember"]
+emission_shape = 1
+emission_sphere_radius = 0.16
+direction = Vector3(0, 1, 0)
+spread = 18.0
+initial_velocity_min = 0.45
+initial_velocity_max = 1.0
+gravity = Vector3(0, 0.25, 0)
+damping_min = 0.3
+damping_max = 0.7
+scale_min = 0.4
+scale_max = 1.0
+color = Color(1, 0.58, 0.22, 1)
+
+[sub_resource type="ParticleProcessMaterial" id="PPM_smoke"]
+emission_shape = 1
+emission_sphere_radius = 0.22
+direction = Vector3(0.15, 1, 0)
+spread = 12.0
+initial_velocity_min = 0.25
+initial_velocity_max = 0.5
+gravity = Vector3(0.05, 0.35, 0)
+damping_min = 0.1
+damping_max = 0.3
+scale_min = 0.7
+scale_max = 1.8
+color = Color(0.6, 0.58, 0.56, 1)
 
 [node name="EmbermarketCell" type="Node3D"]
 
@@ -100,204 +320,907 @@ surface_material_override/0 = SubResource("Mat_floor")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
 shape = SubResource("Shape_floor")
 
-; The aisle is a thin slab sitting ON the floor with NO collider of its own — a 6cm step the player
-; would otherwise catch on, and a collider here would be carved into the navmesh as a lip that NPCs
-; path around for no visible reason.
-[node name="Aisle" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.03, 0)
-mesh = SubResource("BoxMesh_aisle")
+; --- Ground skins. NONE of these has a collider: a 6 cm lip is something the player catches on, and a
+; --- collider here would be carved into the navmesh as a step NPCs path around for no visible reason.
+[node name="AisleSpine" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.03, -0.5)
+mesh = SubResource("BoxMesh_spine")
 surface_material_override/0 = SubResource("Mat_aisle")
 
-; --- The west row: three stalls facing east across the aisle -------------------------------------
+[node name="Forecourt" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.025, -22)
+mesh = SubResource("BoxMesh_forecourt")
+surface_material_override/0 = SubResource("Mat_forecourt")
+
+[node name="AisleCrossW" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10.25, 0.03, -8.5)
+mesh = SubResource("BoxMesh_cross")
+surface_material_override/0 = SubResource("Mat_aisle")
+
+[node name="AisleCrossE" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.25, 0.03, -8.5)
+mesh = SubResource("BoxMesh_cross")
+surface_material_override/0 = SubResource("Mat_aisle")
+
+[node name="PlazaFloor" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0.03, 15.5)
+mesh = SubResource("BoxMesh_plaza")
+surface_material_override/0 = SubResource("Mat_plaza")
+
+[node name="PlazaPath" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.75, 0.03, 15.5)
+mesh = SubResource("BoxMesh_plaza_path")
+surface_material_override/0 = SubResource("Mat_plaza")
+
+; --- The west row: three stalls facing east across the aisle. The stall models all face their own
+; --- local +X, which is why the west row needs no rotation and the east row keeps the 180° yaw the
+; --- first pass already used. Each stall is a different model and carries a different Counter and a
+; --- different piece of dressing behind it, so no two read the same at a glance.
 
 [node name="StallW1" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0, -14)
 
-[node name="Model" parent="Nav/StallW1" instance=ExtResource("4_tent")]
+[node name="Model" parent="Nav/StallW1" instance=ExtResource("17_stand_a")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/StallW1"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/StallW1/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
-shape = SubResource("Shape_stall")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("Shape_stand_a")
 
 [node name="Counter" type="Node3D" parent="Nav/StallW1"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 0, 0)
 
-[node name="Model" parent="Nav/StallW1/Counter" instance=ExtResource("5_crate")]
+[node name="Model" parent="Nav/StallW1/Counter" instance=ExtResource("20_barrel")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/StallW1/Counter"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/StallW1/Counter/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0)
+shape = SubResource("Shape_barrel")
+
+[node name="Dressing" type="Node3D" parent="Nav/StallW1"]
+transform = Transform3D(0.9063, 0, -0.4226, 0, 1, 0, 0.4226, 0, 0.9063, -1.3, 0, 2.7)
+
+[node name="Model" parent="Nav/StallW1/Dressing" instance=ExtResource("11_crate")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/StallW1/Dressing"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/StallW1/Dressing/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
 shape = SubResource("Shape_crate")
 
 [node name="StallW2" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0, -3)
 
-[node name="Model" parent="Nav/StallW2" instance=ExtResource("4_tent")]
+[node name="Model" parent="Nav/StallW2" instance=ExtResource("18_stand_b")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/StallW2"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/StallW2/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
-shape = SubResource("Shape_stall")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("Shape_stand_b")
 
 [node name="Counter" type="Node3D" parent="Nav/StallW2"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 0, 0)
 
-[node name="Model" parent="Nav/StallW2/Counter" instance=ExtResource("5_crate")]
+[node name="Model" parent="Nav/StallW2/Counter" instance=ExtResource("21_sacks")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/StallW2/Counter"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/StallW2/Counter/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
-shape = SubResource("Shape_crate")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.225, 0)
+shape = SubResource("Shape_sacks")
 
+[node name="Dressing" type="Node3D" parent="Nav/StallW2"]
+transform = Transform3D(0.9659, 0, 0.2588, 0, 1, 0, -0.2588, 0, 0.9659, -1.6, 0, -2.5)
+
+[node name="Model" parent="Nav/StallW2/Dressing" instance=ExtResource("20_barrel")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/StallW2/Dressing"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/StallW2/Dressing/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0)
+shape = SubResource("Shape_barrel")
+
+; One stall in each row is a roofed gazebo rather than a counter: at 3.6 m it is the tallest thing in
+; either row, so the rows have a rhythm instead of a uniform height. The first draft of this pass put
+; a camping tent here for variety and it read as exactly that — a camping tent, parked in a market.
 [node name="StallW3" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0, 8)
 
-[node name="Model" parent="Nav/StallW3" instance=ExtResource("4_tent")]
+[node name="Model" parent="Nav/StallW3" instance=ExtResource("26_gazebo")]
 
-[node name="Col" type="StaticBody3D" parent="Nav/StallW3"]
+[node name="ColW" type="StaticBody3D" parent="Nav/StallW3"]
 
-[node name="Shape" type="CollisionShape3D" parent="Nav/StallW3/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
-shape = SubResource("Shape_stall")
+[node name="Shape" type="CollisionShape3D" parent="Nav/StallW3/ColW"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.25, 1.4, 0)
+shape = SubResource("Shape_gazebo_post")
+
+[node name="ColE" type="StaticBody3D" parent="Nav/StallW3"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/StallW3/ColE"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.25, 1.4, 0)
+shape = SubResource("Shape_gazebo_post")
 
 [node name="Counter" type="Node3D" parent="Nav/StallW3"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 0, 0)
 
-[node name="Model" parent="Nav/StallW3/Counter" instance=ExtResource("5_crate")]
+[node name="Model" parent="Nav/StallW3/Counter" instance=ExtResource("11_crate")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/StallW3/Counter"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/StallW3/Counter/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
 shape = SubResource("Shape_crate")
+
+[node name="Dressing" type="Node3D" parent="Nav/StallW3"]
+transform = Transform3D(0.866, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866, -2.7, 0, 3.4)
+
+[node name="Model" parent="Nav/StallW3/Dressing" instance=ExtResource("22_hay")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/StallW3/Dressing"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/StallW3/Dressing/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+shape = SubResource("Shape_hay")
 
 ; --- The east row: three stalls facing west, turned to face the aisle -----------------------------
 
 [node name="StallE1" type="Node3D" parent="Nav"]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 9, 0, -14)
 
-[node name="Model" parent="Nav/StallE1" instance=ExtResource("4_tent")]
+[node name="Model" parent="Nav/StallE1" instance=ExtResource("18_stand_b")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/StallE1"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/StallE1/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
-shape = SubResource("Shape_stall")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("Shape_stand_b")
 
 [node name="Counter" type="Node3D" parent="Nav/StallE1"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 0, 0)
 
-[node name="Model" parent="Nav/StallE1/Counter" instance=ExtResource("5_crate")]
+[node name="Model" parent="Nav/StallE1/Counter" instance=ExtResource("11_crate")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/StallE1/Counter"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/StallE1/Counter/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
 shape = SubResource("Shape_crate")
+
+[node name="Dressing" type="Node3D" parent="Nav/StallE1"]
+transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, -1.5, 0, 2.6)
+
+[node name="Model" parent="Nav/StallE1/Dressing" instance=ExtResource("21_sacks")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/StallE1/Dressing"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/StallE1/Dressing/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.225, 0)
+shape = SubResource("Shape_sacks")
 
 [node name="StallE2" type="Node3D" parent="Nav"]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 9, 0, -3)
 
-[node name="Model" parent="Nav/StallE2" instance=ExtResource("4_tent")]
+[node name="Model" parent="Nav/StallE2" instance=ExtResource("26_gazebo")]
 
-[node name="Col" type="StaticBody3D" parent="Nav/StallE2"]
+[node name="ColW" type="StaticBody3D" parent="Nav/StallE2"]
 
-[node name="Shape" type="CollisionShape3D" parent="Nav/StallE2/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
-shape = SubResource("Shape_stall")
+[node name="Shape" type="CollisionShape3D" parent="Nav/StallE2/ColW"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.25, 1.4, 0)
+shape = SubResource("Shape_gazebo_post")
+
+[node name="ColE" type="StaticBody3D" parent="Nav/StallE2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/StallE2/ColE"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.25, 1.4, 0)
+shape = SubResource("Shape_gazebo_post")
 
 [node name="Counter" type="Node3D" parent="Nav/StallE2"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 0, 0)
 
-[node name="Model" parent="Nav/StallE2/Counter" instance=ExtResource("5_crate")]
+[node name="Model" parent="Nav/StallE2/Counter" instance=ExtResource("20_barrel")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/StallE2/Counter"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/StallE2/Counter/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0)
+shape = SubResource("Shape_barrel")
+
+[node name="Dressing" type="Node3D" parent="Nav/StallE2"]
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -2.8, 0, -3.2)
+
+[node name="Model" parent="Nav/StallE2/Dressing" instance=ExtResource("11_crate")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/StallE2/Dressing"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/StallE2/Dressing/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
 shape = SubResource("Shape_crate")
 
 [node name="StallE3" type="Node3D" parent="Nav"]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 9, 0, 8)
 
-[node name="Model" parent="Nav/StallE3" instance=ExtResource("4_tent")]
+[node name="Model" parent="Nav/StallE3" instance=ExtResource("17_stand_a")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/StallE3"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/StallE3/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
-shape = SubResource("Shape_stall")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("Shape_stand_a")
 
 [node name="Counter" type="Node3D" parent="Nav/StallE3"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 0, 0)
 
-[node name="Model" parent="Nav/StallE3/Counter" instance=ExtResource("5_crate")]
+[node name="Model" parent="Nav/StallE3/Counter" instance=ExtResource("21_sacks")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/StallE3/Counter"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/StallE3/Counter/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.225, 0)
+shape = SubResource("Shape_sacks")
+
+[node name="Dressing" type="Node3D" parent="Nav/StallE3"]
+transform = Transform3D(0.9063, 0, -0.4226, 0, 1, 0, 0.4226, 0, 0.9063, -1.4, 0, 2.9)
+
+[node name="Model" parent="Nav/StallE3/Dressing" instance=ExtResource("22_hay")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/StallE3/Dressing"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/StallE3/Dressing/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+shape = SubResource("Shape_hay")
+
+; --- Four more stalls, facing the east-west cross-lane ------------------------------------------------
+; ⚠️ These are named StallX*, NOT StallW*/StallE*, and they carry NO Counter child. That is the whole
+; signal: the six stalls with a Counter at local (2.2, 0, 0) are 38L's mounts and their transforms are
+; frozen; these four are set dressing and may be moved by anyone. Naming them StallW4.. would have made
+; the contract ambiguous the first time someone read the file quickly.
+;
+; They exist because the cross-lane was a paved lane with nothing on it. Six stalls in two rows 18 m
+; apart read as an avenue; ten stalls around a crossroads read as a market — which is the difference
+; the first pass of this rebuild still had not closed.
+
+[node name="StallX1" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -13, 0, -12.5)
+
+[node name="Model" parent="Nav/StallX1" instance=ExtResource("17_stand_a")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/StallX1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/StallX1/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("Shape_stand_a")
+
+[node name="Dressing" type="Node3D" parent="Nav/StallX1"]
+transform = Transform3D(0.9063, 0, -0.4226, 0, 1, 0, 0.4226, 0, 0.9063, -1.4, 0, 2.5)
+
+[node name="Model" parent="Nav/StallX1/Dressing" instance=ExtResource("20_barrel")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/StallX1/Dressing"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/StallX1/Dressing/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0)
+shape = SubResource("Shape_barrel")
+
+[node name="StallX2" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 13, 0, -12.5)
+
+[node name="Model" parent="Nav/StallX2" instance=ExtResource("18_stand_b")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/StallX2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/StallX2/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("Shape_stand_b")
+
+[node name="Dressing" type="Node3D" parent="Nav/StallX2"]
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -1.8, 0, 2.4)
+
+[node name="Model" parent="Nav/StallX2/Dressing" instance=ExtResource("11_crate")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/StallX2/Dressing"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/StallX2/Dressing/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
 shape = SubResource("Shape_crate")
 
-; --- The edges: houses closing east and west so the district reads as a street, not a field --------
+[node name="StallX3" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -13, 0, -4.5)
 
-[node name="HouseW1" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -19, 0, -12)
+[node name="Model" parent="Nav/StallX3" instance=ExtResource("18_stand_b")]
 
-[node name="Model" parent="Nav/HouseW1" instance=ExtResource("9_house_a")]
+[node name="Col" type="StaticBody3D" parent="Nav/StallX3"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/StallX3/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("Shape_stand_b")
+
+[node name="Dressing" type="Node3D" parent="Nav/StallX3"]
+transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, -1.8, 0, -2.5)
+
+[node name="Model" parent="Nav/StallX3/Dressing" instance=ExtResource("21_sacks")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/StallX3/Dressing"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/StallX3/Dressing/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.225, 0)
+shape = SubResource("Shape_sacks")
+
+[node name="StallX4" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 13, 0, -4.5)
+
+[node name="Model" parent="Nav/StallX4" instance=ExtResource("17_stand_a")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/StallX4"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/StallX4/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("Shape_stand_a")
+
+[node name="Dressing" type="Node3D" parent="Nav/StallX4"]
+transform = Transform3D(0.866, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866, -1.5, 0, -2.6)
+
+[node name="Model" parent="Nav/StallX4/Dressing" instance=ExtResource("22_hay")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/StallX4/Dressing"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/StallX4/Dressing/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+shape = SubResource("Shape_hay")
+
+; --- The plaza, off the aisle to the west: a well, three benches around it, and a cook-fire ---------
+
+[node name="Well" type="Node3D" parent="Nav"]
+transform = Transform3D(0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, 0.9397, -12, 0, 15.5)
+
+[node name="Model" parent="Nav/Well" instance=ExtResource("24_well")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/Well"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Well/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.375, 0)
+shape = SubResource("Shape_well")
+
+[node name="BenchA" type="Node3D" parent="Nav"]
+transform = Transform3D(0.866, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866, -15.4, 0, 12.6)
+
+[node name="Model" parent="Nav/BenchA" instance=ExtResource("23_bench")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/BenchA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BenchA/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0)
+shape = SubResource("Shape_bench")
+
+[node name="BenchB" type="Node3D" parent="Nav"]
+transform = Transform3D(-0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, -0.342, -8.6, 0, 17.4)
+
+[node name="Model" parent="Nav/BenchB" instance=ExtResource("23_bench")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/BenchB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BenchB/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0)
+shape = SubResource("Shape_bench")
+
+[node name="BenchC" type="Node3D" parent="Nav"]
+transform = Transform3D(-0.9063, 0, 0.4226, 0, 1, 0, -0.4226, 0, -0.9063, -13.6, 0, 19.4)
+
+[node name="Model" parent="Nav/BenchC" instance=ExtResource("23_bench")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/BenchC"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BenchC/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0)
+shape = SubResource("Shape_bench")
+
+[node name="Cauldron" type="Node3D" parent="Nav"]
+transform = Transform3D(0.766, 0, -0.6428, 0, 1, 0, 0.6428, 0, 0.766, -8.8, 0, 12.4)
+
+[node name="Model" parent="Nav/Cauldron" instance=ExtResource("27_cauldron")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/Cauldron"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Cauldron/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
+shape = SubResource("Shape_cauldron")
+
+[node name="Coals" type="MeshInstance3D" parent="Nav/Cauldron"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.16, 0)
+mesh = SubResource("Mesh_coals")
+surface_material_override/0 = SubResource("Mat_ember")
+
+[node name="Light" type="OmniLight3D" parent="Nav/Cauldron"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+light_color = Color(1, 0.52, 0.2, 1)
+light_energy = 1.6
+omni_range = 5.5
+
+[node name="Smoke" type="GPUParticles3D" parent="Nav/Cauldron"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
+amount = 14
+lifetime = 4.0
+randomness = 0.6
+visibility_aabb = AABB(-1.5, -0.5, -1.5, 3, 5, 3)
+process_material = SubResource("PPM_smoke")
+draw_pass_1 = SubResource("Mesh_particle_smoke")
+
+[node name="Ambience" type="Node3D" parent="Nav/Cauldron"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+script = ExtResource("7_ambient")
+CueId = "sfx.ambient.fire"
+IntervalSeconds = 4.0
+IntervalJitter = 0.5
+Radius = 12.0
+
+; --- The landmark. Eleven metres of stone and a bell, dead centre at the south end of the aisle: the
+; --- silhouette the first pass had nothing of, and the thing that stops the district reading as a
+; --- field that simply runs out.
+
+[node name="BellTower" type="Node3D" parent="Nav"]
+transform = Transform3D(-0.9962, 0, -0.0872, 0, 1, 0, 0.0872, 0, -0.9962, 0, 0, 20)
+
+[node name="Model" parent="Nav/BellTower" instance=ExtResource("25_belltower")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/BellTower"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BellTower/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.5, 0)
+shape = SubResource("Shape_belltower")
+
+; The one piece of overhead geometry in the cell, and the reason it is here: a flat square with nothing
+; to walk *under* reads as a plane with objects on it. Two post colliders, not one solid box.
+
+[node name="Gazebo" type="Node3D" parent="Nav"]
+transform = Transform3D(0.9659, 0, 0.2588, 0, 1, 0, -0.2588, 0, 0.9659, 13, 0, 14)
+
+[node name="Model" parent="Nav/Gazebo" instance=ExtResource("26_gazebo")]
+
+[node name="ColW" type="StaticBody3D" parent="Nav/Gazebo"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Gazebo/ColW"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.25, 1.4, 0)
+shape = SubResource("Shape_gazebo_post")
+
+[node name="ColE" type="StaticBody3D" parent="Nav/Gazebo"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Gazebo/ColE"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.25, 1.4, 0)
+shape = SubResource("Shape_gazebo_post")
+
+; --- The edges: houses closing east and west so the district reads as a street, not a field. Six
+; --- buildings now instead of four, three models instead of two, and every one of them yawed a few
+; --- degrees off the grid — the first pass's mirrored pair-of-pairs was the single loudest thing
+; --- telling the player this was a level rather than a town.
+
+[node name="HouseW1" type="Node3D" parent="Nav"]
+transform = Transform3D(0.9903, 0, -0.1392, 0, 1, 0, 0.1392, 0, 0.9903, -19.5, 0, -13)
+
+[node name="Model" parent="Nav/HouseW1" instance=ExtResource("31_house_a")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/HouseW1"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/HouseW1/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.75, 0)
 shape = SubResource("Shape_house_a")
 
-[node name="HouseW2" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -19, 0, 6)
+[node name="HouseW2" type="Node3D" parent="Nav"]
+transform = Transform3D(0.9945, 0, 0.1045, 0, 1, 0, -0.1045, 0, 0.9945, -19, 0, 6)
 
-[node name="Model" parent="Nav/HouseW2" instance=ExtResource("10_house_b")]
+[node name="Model" parent="Nav/HouseW2" instance=ExtResource("32_house_b")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/HouseW2"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/HouseW2/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.8, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.4, 0)
 shape = SubResource("Shape_house_b")
 
-[node name="HouseE1" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 19, 0, -12)
+[node name="HouseW3" type="Node3D" parent="Nav"]
+transform = Transform3D(0.9703, 0, -0.2419, 0, 1, 0, 0.2419, 0, 0.9703, -21.5, 0, -2)
 
-[node name="Model" parent="Nav/HouseE1" instance=ExtResource("10_house_b")]
+[node name="Model" parent="Nav/HouseW3" instance=ExtResource("33_cottage")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/HouseW3"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/HouseW3/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.1, 0)
+shape = SubResource("Shape_cottage")
+
+[node name="HouseE1" type="Node3D" parent="Nav"]
+transform = Transform3D(-0.9962, 0, 0.0872, 0, 1, 0, -0.0872, 0, -0.9962, 19.5, 0, -13.5)
+
+[node name="Model" parent="Nav/HouseE1" instance=ExtResource("32_house_b")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/HouseE1"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/HouseE1/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.8, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.4, 0)
 shape = SubResource("Shape_house_b")
 
-[node name="HouseE2" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 19, 0, 6)
+[node name="HouseE2" type="Node3D" parent="Nav"]
+transform = Transform3D(-0.9925, 0, -0.1219, 0, 1, 0, 0.1219, 0, -0.9925, 20, 0, 6)
 
-[node name="Model" parent="Nav/HouseE2" instance=ExtResource("9_house_a")]
+[node name="Model" parent="Nav/HouseE2" instance=ExtResource("31_house_a")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/HouseE2"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/HouseE2/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.75, 0)
 shape = SubResource("Shape_house_a")
 
-; --- Lamps. Same colour and energy as the town square's, deliberately: two cells of one town must not
-; --- light differently after dark, and a market lit brighter than the square would read as the more
-; --- important place. Four along the aisle, two at the south gate.
+[node name="HouseE3" type="Node3D" parent="Nav"]
+transform = Transform3D(-0.9781, 0, 0.2079, 0, 1, 0, -0.2079, 0, -0.9781, 19, 0, 18)
+
+[node name="Model" parent="Nav/HouseE3" instance=ExtResource("33_cottage")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/HouseE3"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/HouseE3/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.1, 0)
+shape = SubResource("Shape_cottage")
+
+; --- Fences and planting, filling the gaps between buildings so the edges close ---------------------
+
+[node name="FenceW1" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -22.5, 0, -8.6)
+
+[node name="Model" parent="Nav/FenceW1" instance=ExtResource("28_fence")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/FenceW1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceW1/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceW2" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -22.5, 0, -5.7)
+
+[node name="Model" parent="Nav/FenceW2" instance=ExtResource("28_fence")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/FenceW2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceW2/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceE1" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 22.5, 0, -1)
+
+[node name="Model" parent="Nav/FenceE1" instance=ExtResource("28_fence")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/FenceE1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceE1/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceE2" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 22.5, 0, 1.9)
+
+[node name="Model" parent="Nav/FenceE2" instance=ExtResource("28_fence")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/FenceE2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceE2/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="TreeW1" type="Node3D" parent="Nav"]
+transform = Transform3D(0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, 0.9397, -22, 0, 12)
+
+[node name="Model" parent="Nav/TreeW1" instance=ExtResource("29_tree")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/TreeW1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/TreeW1/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
+shape = SubResource("Shape_tree")
+
+[node name="TreeW2" type="Node3D" parent="Nav"]
+transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, -23, 0, 22)
+
+[node name="Model" parent="Nav/TreeW2" instance=ExtResource("29_tree")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/TreeW2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/TreeW2/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
+shape = SubResource("Shape_tree")
+
+[node name="TreeE1" type="Node3D" parent="Nav"]
+transform = Transform3D(0.5, 0, -0.866, 0, 1, 0, 0.866, 0, 0.5, 22.5, 0, -3)
+
+[node name="Model" parent="Nav/TreeE1" instance=ExtResource("29_tree")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/TreeE1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/TreeE1/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
+shape = SubResource("Shape_tree")
+
+[node name="TreeE2" type="Node3D" parent="Nav"]
+transform = Transform3D(-0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, -0.766, 21.5, 0, 23)
+
+[node name="Model" parent="Nav/TreeE2" instance=ExtResource("29_tree")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/TreeE2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/TreeE2/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
+shape = SubResource("Shape_tree")
+
+[node name="BushA" type="Node3D" parent="Nav"]
+transform = Transform3D(0.866, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866, -7.6, 0, -24)
+
+[node name="Model" parent="Nav/BushA" instance=ExtResource("30_bush")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/BushA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BushA/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0)
+shape = SubResource("Shape_bush")
+
+[node name="BushB" type="Node3D" parent="Nav"]
+transform = Transform3D(-0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, -0.342, 8.4, 0, 21.5)
+
+[node name="Model" parent="Nav/BushB" instance=ExtResource("30_bush")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/BushB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BushB/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0)
+shape = SubResource("Shape_bush")
+
+[node name="BushC" type="Node3D" parent="Nav"]
+transform = Transform3D(0.9659, 0, 0.2588, 0, 1, 0, -0.2588, 0, 0.9659, -20.5, 0, -20.5)
+
+[node name="Model" parent="Nav/BushC" instance=ExtResource("30_bush")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/BushC"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BushC/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0)
+shape = SubResource("Shape_bush")
+
+[node name="BushD" type="Node3D" parent="Nav"]
+transform = Transform3D(-0.9063, 0, 0.4226, 0, 1, 0, -0.4226, 0, -0.9063, 17.5, 0, -21)
+
+[node name="Model" parent="Nav/BushD" instance=ExtResource("30_bush")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/BushD"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BushD/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0)
+shape = SubResource("Shape_bush")
+
+[node name="RocksW" type="Node3D" parent="Nav"]
+transform = Transform3D(0.766, 0, -0.6428, 0, 1, 0, 0.6428, 0, 0.766, -24, 0, 4)
+
+[node name="Model" parent="Nav/RocksW" instance=ExtResource("16_rocks")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/RocksW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RocksW/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("Shape_rocks")
+
+[node name="RocksE" type="Node3D" parent="Nav"]
+transform = Transform3D(-0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, -0.9397, 23.5, 0, 11)
+
+[node name="Model" parent="Nav/RocksE" instance=ExtResource("16_rocks")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/RocksE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RocksE/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("Shape_rocks")
+
+; --- Clutter clusters. Five irregular groups against stall flanks and house walls, none of them in the
+; --- 7 m spine. Deliberately not symmetric and deliberately not on the grid: a market is a place where
+; --- goods are put down where there was room, and the readable difference between a level and a town
+; --- is whether anything in it looks like it was placed by a person in a hurry.
+
+[node name="ClutterNW1" type="Node3D" parent="Nav"]
+transform = Transform3D(0.9659, 0, -0.2588, 0, 1, 0, 0.2588, 0, 0.9659, -6.6, 0, -19.2)
+
+[node name="Model" parent="Nav/ClutterNW1" instance=ExtResource("20_barrel")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/ClutterNW1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/ClutterNW1/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0)
+shape = SubResource("Shape_barrel")
+
+[node name="ClutterNW2" type="Node3D" parent="Nav"]
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -7.4, 0, -20.4)
+
+[node name="Model" parent="Nav/ClutterNW2" instance=ExtResource("20_barrel")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/ClutterNW2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/ClutterNW2/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0)
+shape = SubResource("Shape_barrel")
+
+[node name="ClutterNW3" type="Node3D" parent="Nav"]
+transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, -6.0, 0, -21.0)
+
+[node name="Model" parent="Nav/ClutterNW3" instance=ExtResource("21_sacks")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/ClutterNW3"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/ClutterNW3/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.225, 0)
+shape = SubResource("Shape_sacks")
+
+[node name="ClutterNE1" type="Node3D" parent="Nav"]
+transform = Transform3D(0.8192, 0, -0.5736, 0, 1, 0, 0.5736, 0, 0.8192, 6.9, 0, -19.4)
+
+[node name="Model" parent="Nav/ClutterNE1" instance=ExtResource("22_hay")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/ClutterNE1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/ClutterNE1/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+shape = SubResource("Shape_hay")
+
+[node name="ClutterNE2" type="Node3D" parent="Nav"]
+transform = Transform3D(0.9063, 0, -0.4226, 0, 1, 0, 0.4226, 0, 0.9063, 7.9, 0, -20.6)
+
+[node name="Model" parent="Nav/ClutterNE2" instance=ExtResource("11_crate")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/ClutterNE2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/ClutterNE2/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
+shape = SubResource("Shape_crate")
+
+[node name="ClutterNE3" type="Node3D" parent="Nav"]
+transform = Transform3D(0.9781, 0, 0.2079, 0, 1, 0, -0.2079, 0, 0.9781, 6.3, 0, -21.3)
+
+[node name="Model" parent="Nav/ClutterNE3" instance=ExtResource("20_barrel")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/ClutterNE3"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/ClutterNE3/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0)
+shape = SubResource("Shape_barrel")
+
+[node name="ClutterMW1" type="Node3D" parent="Nav"]
+transform = Transform3D(0.9659, 0, -0.2588, 0, 1, 0, 0.2588, 0, 0.9659, -6.4, 0, 1.8)
+
+[node name="Model" parent="Nav/ClutterMW1" instance=ExtResource("21_sacks")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/ClutterMW1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/ClutterMW1/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.225, 0)
+shape = SubResource("Shape_sacks")
+
+[node name="ClutterMW2" type="Node3D" parent="Nav"]
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -7.1, 0, 2.9)
+
+[node name="Model" parent="Nav/ClutterMW2" instance=ExtResource("20_barrel")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/ClutterMW2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/ClutterMW2/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0)
+shape = SubResource("Shape_barrel")
+
+[node name="ClutterMW3" type="Node3D" parent="Nav"]
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -6.1, 0, 3.9)
+
+[node name="Model" parent="Nav/ClutterMW3" instance=ExtResource("11_crate")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/ClutterMW3"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/ClutterMW3/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
+shape = SubResource("Shape_crate")
+
+[node name="ClutterME1" type="Node3D" parent="Nav"]
+transform = Transform3D(0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, 0.9397, 6.6, 0, 12.4)
+
+[node name="Model" parent="Nav/ClutterME1" instance=ExtResource("20_barrel")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/ClutterME1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/ClutterME1/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0)
+shape = SubResource("Shape_barrel")
+
+[node name="ClutterME2" type="Node3D" parent="Nav"]
+transform = Transform3D(0.766, 0, -0.6428, 0, 1, 0, 0.6428, 0, 0.766, 7.3, 0, 13.5)
+
+[node name="Model" parent="Nav/ClutterME2" instance=ExtResource("22_hay")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/ClutterME2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/ClutterME2/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+shape = SubResource("Shape_hay")
+
+[node name="ClutterME3" type="Node3D" parent="Nav"]
+transform = Transform3D(0.9063, 0, 0.4226, 0, 1, 0, -0.4226, 0, 0.9063, 6.2, 0, 14.4)
+
+[node name="Model" parent="Nav/ClutterME3" instance=ExtResource("21_sacks")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/ClutterME3"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/ClutterME3/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.225, 0)
+shape = SubResource("Shape_sacks")
+
+[node name="ClutterS1" type="Node3D" parent="Nav"]
+transform = Transform3D(0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, 0.9397, -6.4, 0, 19.0)
+
+[node name="Model" parent="Nav/ClutterS1" instance=ExtResource("11_crate")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/ClutterS1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/ClutterS1/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
+shape = SubResource("Shape_crate")
+
+[node name="ClutterS2" type="Node3D" parent="Nav"]
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -7.2, 0, 20.1)
+
+[node name="Model" parent="Nav/ClutterS2" instance=ExtResource("20_barrel")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/ClutterS2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/ClutterS2/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0)
+shape = SubResource("Shape_barrel")
+
+[node name="ClutterS3" type="Node3D" parent="Nav"]
+transform = Transform3D(0.9659, 0, 0.2588, 0, 1, 0, -0.2588, 0, 0.9659, -6.0, 0, 21.0)
+
+[node name="Model" parent="Nav/ClutterS3" instance=ExtResource("22_hay")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/ClutterS3"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/ClutterS3/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+shape = SubResource("Shape_hay")
+
+; Two carts parked at the threshold, both off the square, both at an angle. A cart squarely aligned
+; with a wall has been put there by a level designer; a cart at 25° has been left there by a carter.
+
+[node name="CartW" type="Node3D" parent="Nav"]
+transform = Transform3D(0.9063, 0, -0.4226, 0, 1, 0, 0.4226, 0, 0.9063, -6.4, 0, -23)
+
+[node name="Model" parent="Nav/CartW" instance=ExtResource("19_cart")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/CartW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CartW/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("Shape_cart")
+
+[node name="CartE" type="Node3D" parent="Nav"]
+transform = Transform3D(-0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, -0.9397, 6.8, 0, -24)
+
+[node name="Model" parent="Nav/CartE" instance=ExtResource("19_cart")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/CartE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CartE/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("Shape_cart")
+
+; --- Lamps. Same colour, energy and range as the town square's, deliberately and still: two cells of
+; --- one town must not light differently after dark, and a market lit brighter than the square would
+; --- read as the more important place. The VALUES do not change; only the posts' yaw does, so six
+; --- identical lamps stop reading as six copies of one lamp.
 
 [node name="LampNW" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 0, -18)
+transform = Transform3D(0.9659, 0, -0.2588, 0, 1, 0, 0.2588, 0, 0.9659, -4.5, 0, -18)
 
-[node name="Model" parent="Nav/LampNW" instance=ExtResource("6_lamp")]
+[node name="Model" parent="Nav/LampNW" instance=ExtResource("12_lamp")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/LampNW"]
 
@@ -312,9 +1235,9 @@ light_energy = 2.5
 omni_range = 9.0
 
 [node name="LampNE" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, 0, -18)
+transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 4.5, 0, -18)
 
-[node name="Model" parent="Nav/LampNE" instance=ExtResource("6_lamp")]
+[node name="Model" parent="Nav/LampNE" instance=ExtResource("12_lamp")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/LampNE"]
 
@@ -329,9 +1252,9 @@ light_energy = 2.5
 omni_range = 9.0
 
 [node name="LampMW" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 0, 2)
+transform = Transform3D(-0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, -0.9397, -4.5, 0, 2)
 
-[node name="Model" parent="Nav/LampMW" instance=ExtResource("6_lamp")]
+[node name="Model" parent="Nav/LampMW" instance=ExtResource("12_lamp")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/LampMW"]
 
@@ -346,9 +1269,9 @@ light_energy = 2.5
 omni_range = 9.0
 
 [node name="LampME" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, 0, 2)
+transform = Transform3D(-0.0872, 0, -0.9962, 0, 1, 0, 0.9962, 0, -0.0872, 4.5, 0, 2)
 
-[node name="Model" parent="Nav/LampME" instance=ExtResource("6_lamp")]
+[node name="Model" parent="Nav/LampME" instance=ExtResource("12_lamp")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/LampME"]
 
@@ -363,9 +1286,9 @@ light_energy = 2.5
 omni_range = 9.0
 
 [node name="LampSW" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 0, 18)
+transform = Transform3D(-0.0872, 0, 0.9962, 0, 1, 0, -0.9962, 0, -0.0872, -4.5, 0, 18)
 
-[node name="Model" parent="Nav/LampSW" instance=ExtResource("6_lamp")]
+[node name="Model" parent="Nav/LampSW" instance=ExtResource("12_lamp")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/LampSW"]
 
@@ -380,9 +1303,9 @@ light_energy = 2.5
 omni_range = 9.0
 
 [node name="LampSE" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, 0, 18)
+transform = Transform3D(-0.9962, 0, -0.0872, 0, 1, 0, 0.0872, 0, -0.9962, 4.5, 0, 18)
 
-[node name="Model" parent="Nav/LampSE" instance=ExtResource("6_lamp")]
+[node name="Model" parent="Nav/LampSE" instance=ExtResource("12_lamp")]
 
 [node name="Col" type="StaticBody3D" parent="Nav/LampSE"]
 
@@ -396,26 +1319,161 @@ light_color = Color(1, 0.65, 0.32, 1)
 light_energy = 2.5
 omni_range = 9.0
 
-; The market's banner, at the north entrance where the player arrives from the square. Purely a sign.
-[node name="MarketBanner" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -21)
+; --- Braziers. The ember accent: a coal ball with an emissive material, a warm OmniLight softer and
+; --- shorter-ranged than a lamp's, a fistful of rising motes, and a crackle emitter. Two flank the
+; --- north threshold and one stands at the plaza. Three, not six — ART_STYLE §7 wants the accent
+; --- findable in a vista, never dominant in it.
 
-[node name="Model" parent="Nav/MarketBanner" instance=ExtResource("8_banner")]
+[node name="BrazierNW" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, -21.5)
 
-; --- The travel node. Deliberately OUTSIDE Nav ------------------------------------------------------
+[node name="Model" parent="Nav/BrazierNW" instance=ExtResource("15_brazier")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/BrazierNW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BrazierNW/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_brazier")
+
+[node name="Coals" type="MeshInstance3D" parent="Nav/BrazierNW"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.05, 0)
+mesh = SubResource("Mesh_coals")
+surface_material_override/0 = SubResource("Mat_ember")
+
+[node name="Light" type="OmniLight3D" parent="Nav/BrazierNW"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+light_color = Color(1, 0.5, 0.18, 1)
+light_energy = 2.0
+omni_range = 7.0
+
+[node name="Embers" type="GPUParticles3D" parent="Nav/BrazierNW"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 0)
+amount = 20
+lifetime = 2.4
+randomness = 0.5
+visibility_aabb = AABB(-1.2, -0.5, -1.2, 2.4, 4, 2.4)
+process_material = SubResource("PPM_ember")
+draw_pass_1 = SubResource("Mesh_particle_ember")
+
+[node name="Ambience" type="Node3D" parent="Nav/BrazierNW"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+script = ExtResource("7_ambient")
+CueId = "sfx.ambient.fire"
+IntervalSeconds = 3.5
+IntervalJitter = 0.6
+Radius = 11.0
+
+[node name="BrazierNE" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, -21.5)
+
+[node name="Model" parent="Nav/BrazierNE" instance=ExtResource("15_brazier")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/BrazierNE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BrazierNE/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_brazier")
+
+[node name="Coals" type="MeshInstance3D" parent="Nav/BrazierNE"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.05, 0)
+mesh = SubResource("Mesh_coals")
+surface_material_override/0 = SubResource("Mat_ember")
+
+[node name="Light" type="OmniLight3D" parent="Nav/BrazierNE"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+light_color = Color(1, 0.5, 0.18, 1)
+light_energy = 2.0
+omni_range = 7.0
+
+[node name="Embers" type="GPUParticles3D" parent="Nav/BrazierNE"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 0)
+amount = 20
+lifetime = 2.4
+randomness = 0.5
+visibility_aabb = AABB(-1.2, -0.5, -1.2, 2.4, 4, 2.4)
+process_material = SubResource("PPM_ember")
+draw_pass_1 = SubResource("Mesh_particle_ember")
+
+[node name="BrazierPlaza" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16.2, 0, 17.4)
+
+[node name="Model" parent="Nav/BrazierPlaza" instance=ExtResource("15_brazier")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/BrazierPlaza"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BrazierPlaza/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_brazier")
+
+[node name="Coals" type="MeshInstance3D" parent="Nav/BrazierPlaza"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.05, 0)
+mesh = SubResource("Mesh_coals")
+surface_material_override/0 = SubResource("Mat_ember")
+
+[node name="Light" type="OmniLight3D" parent="Nav/BrazierPlaza"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+light_color = Color(1, 0.5, 0.18, 1)
+light_energy = 2.0
+omni_range = 7.0
+
+[node name="Embers" type="GPUParticles3D" parent="Nav/BrazierPlaza"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 0)
+amount = 20
+lifetime = 2.4
+randomness = 0.5
+visibility_aabb = AABB(-1.2, -0.5, -1.2, 2.4, 4, 2.4)
+process_material = SubResource("PPM_ember")
+draw_pass_1 = SubResource("Mesh_particle_ember")
+
+[node name="Ambience" type="Node3D" parent="Nav/BrazierPlaza"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+script = ExtResource("7_ambient")
+CueId = "sfx.ambient.fire"
+IntervalSeconds = 3.5
+IntervalJitter = 0.6
+Radius = 11.0
+
+; Banners. Two flank the threshold and one stands at the head of the west row. Signs only — no
+; colliders, because a banner the player bumps into is a wall pretending to be cloth.
+; ⚠️ NOTHING STANDS IN THE SPINE. The first draft of this pass put the market's own banner dead centre
+; at (0, 0, -21) — a 1.9 x 3.4 m sign, with no collider, in the middle of the only route in. It looked
+; like a gate and behaved like fog. Both threshold banners are now at x = ±4.3, outside the 7 m aisle.
+
+[node name="BannerGateW" type="Node3D" parent="Nav"]
+transform = Transform3D(0.9781, 0, -0.2079, 0, 1, 0, 0.2079, 0, 0.9781, -4.3, 0, -20.3)
+
+[node name="Model" parent="Nav/BannerGateW" instance=ExtResource("14_banner")]
+
+[node name="BannerGateE" type="Node3D" parent="Nav"]
+transform = Transform3D(0.9781, 0, 0.2079, 0, 1, 0, -0.2079, 0, 0.9781, 4.3, 0, -20.3)
+
+[node name="Model" parent="Nav/BannerGateE" instance=ExtResource("14_banner")]
+
+[node name="BannerRowW" type="Node3D" parent="Nav"]
+transform = Transform3D(0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, 0.9397, -11.5, 0, -20.5)
+
+[node name="Model" parent="Nav/BannerRowW" instance=ExtResource("14_banner")]
+
+; ====================================================================================================
+; ACTORS AND INTERACTABLES — deliberately OUTSIDE Nav.
+; Only static geometry belongs inside the NavigationRegion3D: a body that carves the navmesh is a hole
+; in the paths of everything else, and these three villagers stand where people would.
+; ====================================================================================================
+
+; --- The travel node. Kept exactly as the first pass authored it -------------------------------------
 ; It is an Entity with its own collider, and the pattern town_hub's waystone established: the component
 ; records where the PLAYER stands when attuning, never the post's own position, because fast travel that
 ; lands on the post's collider traps the player inside it.
 ;
-; ⚠️ TravelName is a LOCALE KEY, not prose. TravelNodeComponent now resolves it through Loc.T (the Phase
-; 25 waystone's authored English still renders, because Loc.T on a plain string returns it unchanged).
+; ⚠️ TravelName is a LOCALE KEY, not prose. TravelNodeComponent resolves it through Loc.T (the Phase 25
+; waystone's authored English still renders, because Loc.T on a plain string returns it unchanged).
 
 [node name="MarketWaystone" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -18)
 script = ExtResource("2_entity")
 DisplayName = "Embermarket Waystone"
 
-[node name="Model" parent="MarketWaystone" instance=ExtResource("7_waystone")]
+[node name="Model" parent="MarketWaystone" instance=ExtResource("13_waystone")]
 
 [node name="Collider" type="StaticBody3D" parent="MarketWaystone"]
 
@@ -428,3 +1486,443 @@ script = ExtResource("3_travel")
 Id = "travel.ember_crown.embermarket"
 TravelName = "travel.ember_crown.embermarket.name"
 RegionId = "region.ember_crown"
+
+; --- The notice board: this district's one new interactable, and 38K's answer to a place with nothing
+; --- to say. Same shape as town_hub's GuildMarker (banner mesh + collider + DialogueComponent).
+; ⚠️ An entity gets ONE interactable — EntityNode.GetComponent<T> returns the first child match — so the
+; board carries a DialogueComponent and nothing else, forever.
+; ⚠️ No choice in dialogue.market_board carries an Effect. A notice board that started a quest would put
+; market gossip in the journal, which is the failure 38Q's brief already names.
+
+[node name="MarketNotice" type="Node3D" parent="."]
+transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, -5, 0, -16.5)
+script = ExtResource("2_entity")
+DisplayName = "Embermarket Notice"
+
+[node name="Model" parent="MarketNotice" instance=ExtResource("14_banner")]
+
+[node name="Collider" type="StaticBody3D" parent="MarketNotice"]
+
+[node name="Shape" type="CollisionShape3D" parent="MarketNotice/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
+shape = SubResource("Shape_banner")
+
+[node name="Dialogue" type="Node" parent="MarketNotice"]
+script = ExtResource("4_dialogue")
+DialogueId = "dialogue.market_board"
+
+; --- The three silent villagers 38K placed here are GONE (38L) ------------------------------------
+; They were authored for one stated reason - "no people in 2,704 m2" - and twelve merchants answer it
+; better than three bystanders did. Two of the three also had to go on their own merits: the Porter wore
+; npc_townsman, which is Quaternius's Worker, which is a hi-vis vest and a hard hat, and it does not
+; survive being looked at from three metres in a medieval market.
+;
+; What 38K's note promised 38L is still true and now moot: the villagers kept their interactable slot
+; free so a merchant could be dropped onto one. In the event the merchants got their own mounts at the
+; stalls, which is where a merchant belongs.
+;
+; ⚠️ npc_townsman.glb is now referenced by nothing. It is left in assets/models/ rather than deleted -
+; it is a valid CC0 body and some future modern-dress or labourer role may want it - but do not reach
+; for it to dress anyone in the Ember Crown.
+
+; --- The market's own sound. Two positional emitters on the spine, so the murmur swells as the player
+; --- walks in and fades as they leave — which an amb.* bed can never do, because those are 2D and
+; --- chosen globally from weather / in-town / clock, and SafeZones cannot tell this district from the
+; --- square one street north. See AmbientEmitterComponent's own note.
+
+[node name="AmbienceNorth" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, -9)
+script = ExtResource("7_ambient")
+CueId = "sfx.ambient.market"
+IntervalSeconds = 7.0
+IntervalJitter = 0.55
+Radius = 24.0
+
+[node name="AmbienceSouth" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 1.6, 11)
+script = ExtResource("7_ambient")
+CueId = "sfx.ambient.market"
+IntervalSeconds = 9.0
+IntervalJitter = 0.55
+Radius = 24.0
+
+; ====================================================================================================
+; THE ROSTER (Phase 38L) - ten resident merchants and two travellers.
+;
+; ⚠️ ALL TWELVE ARE OUTSIDE Nav, like every other actor in this cell. A body inside the
+; NavigationRegion3D carves a hole in the navmesh where a person is standing.
+;
+; ⚠️ THE TEN RESIDENTS TALK; THE TWO TRAVELLERS CARRY A VendorComponent. That split is forced, not
+; stylistic. DialogueSession evaluates the ShopOpen/ShopClosed conditions through ShopHours.IsOpenAt
+; alone - HOURS, NOT PRESENCE - and the only thing that hides an away merchant and zeroes her collider
+; is VendorComponent.ApplyPresence. A traveller wired through a dialogue choice would stand at her cart
+; every day of a five-day cycle with a working trade line, which is 38J's mechanic inverted. Hesk in
+; town_hub.tscn took the same route for the same reason.
+;   The cost, and it is real: a VendorComponent's ShopId lives in this .tscn and --validate CANNOT read
+;   it. A typo gives NO PROMPT AT ALL rather than an error. If Sera or Quill is ever silently unusable,
+;   check those two strings before anything else. The ten residents' shop ids live in their dialogue
+;   .tres files, where the validator does read them - which is most of why they talk.
+;
+; ⚠️ ONE INTERACTABLE PER ENTITY. EntityNode.GetComponent<T> returns the first child match, so a
+; merchant carries EITHER a DialogueComponent OR a VendorComponent and never both.
+;
+; ⚠️ BodyMeshPath = "Model" on every one. The default is "BodyMesh" and a scene NPC that keeps it
+; T-poses in place with nothing logged.
+;
+; A merchant stands BETWEEN her stall and its Counter, facing the aisle - so the Counter at the stall's
+; local (2.2, 0, 0) is the customer's side of the boards, which is what 38K's contract meant by it.
+; These are starting poses only: each resident's ScheduleComponent walks them to their stall at opening
+; and a couple of metres behind it at closing, and every one of those destinations is CELL-LOCAL
+; against schedule Origin (0, 0, 46).
+;
+; ⚠️ EIGHT BODIES FOR TWELVE MERCHANTS. assets/library/ holds exactly two unused CC0 models a medieval
+; market can wear (men/adventurer, women/animated_woman_2, shipped here as npc_merchant_m/f); the other
+; five unused women are CC-BY 3.0 and this project is CC0-only, and the remaining men are a business
+; suit, a hoodie and jeans-and-sneakers. Four bodies therefore appear twice, paired as far apart as the
+; square allows. Closing the gap needs an open-web pull of Quaternius's RPG Character Pack, which 38L
+; did not make.
+; ====================================================================================================
+
+[node name="MerchantCorvin" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -7.9, 0, -14)
+script = ExtResource("2_entity")
+DisplayName = "Corvin, Provisioner"
+TemplateId = "npc.corvin"
+
+[node name="Animation" type="Node" parent="MerchantCorvin"]
+script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="MerchantCorvin"]
+
+[node name="Shape" type="CollisionShape3D" parent="MerchantCorvin/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="MerchantCorvin"]
+script = ExtResource("6_faction")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="MerchantCorvin"]
+script = ExtResource("4_dialogue")
+DialogueId = "dialogue.corvin"
+
+[node name="Schedule" type="Node" parent="MerchantCorvin"]
+script = ExtResource("8_schedule")
+ScheduleId = "schedule.embermarket.provisions"
+
+[node name="Model" parent="MerchantCorvin" instance=ExtResource("37_vendor_body")]
+
+[node name="MerchantHana" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -7.9, 0, -3)
+script = ExtResource("2_entity")
+DisplayName = "Hana Netmender"
+TemplateId = "npc.hana"
+
+[node name="Animation" type="Node" parent="MerchantHana"]
+script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="MerchantHana"]
+
+[node name="Shape" type="CollisionShape3D" parent="MerchantHana/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="MerchantHana"]
+script = ExtResource("6_faction")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="MerchantHana"]
+script = ExtResource("4_dialogue")
+DialogueId = "dialogue.hana"
+
+[node name="Schedule" type="Node" parent="MerchantHana"]
+script = ExtResource("8_schedule")
+ScheduleId = "schedule.embermarket.fishmonger"
+
+[node name="Model" parent="MerchantHana" instance=ExtResource("41_merchant_f")]
+
+[node name="MerchantSable" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -7.9, 0, 8)
+script = ExtResource("2_entity")
+DisplayName = "Sable, Weaver"
+TemplateId = "npc.sable"
+
+[node name="Animation" type="Node" parent="MerchantSable"]
+script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="MerchantSable"]
+
+[node name="Shape" type="CollisionShape3D" parent="MerchantSable/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="MerchantSable"]
+script = ExtResource("6_faction")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="MerchantSable"]
+script = ExtResource("4_dialogue")
+DialogueId = "dialogue.sable"
+
+[node name="Schedule" type="Node" parent="MerchantSable"]
+script = ExtResource("8_schedule")
+ScheduleId = "schedule.embermarket.weaver"
+
+[node name="Model" parent="MerchantSable" instance=ExtResource("35_townswoman")]
+
+[node name="MerchantTam" type="Node3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 7.9, 0, -14)
+script = ExtResource("2_entity")
+DisplayName = "Tam Quillfellow"
+TemplateId = "npc.tam"
+
+[node name="Animation" type="Node" parent="MerchantTam"]
+script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="MerchantTam"]
+
+[node name="Shape" type="CollisionShape3D" parent="MerchantTam/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="MerchantTam"]
+script = ExtResource("6_faction")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="MerchantTam"]
+script = ExtResource("4_dialogue")
+DialogueId = "dialogue.tam"
+
+[node name="Schedule" type="Node" parent="MerchantTam"]
+script = ExtResource("8_schedule")
+ScheduleId = "schedule.embermarket.scriptorium"
+
+[node name="Model" parent="MerchantTam" instance=ExtResource("40_merchant_m")]
+
+[node name="MerchantDunmore" type="Node3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 7.9, 0, -3)
+script = ExtResource("2_entity")
+DisplayName = "Ash Dunmore, Collier"
+TemplateId = "npc.ash_dunmore"
+
+[node name="Animation" type="Node" parent="MerchantDunmore"]
+script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="MerchantDunmore"]
+
+[node name="Shape" type="CollisionShape3D" parent="MerchantDunmore/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="MerchantDunmore"]
+script = ExtResource("6_faction")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="MerchantDunmore"]
+script = ExtResource("4_dialogue")
+DialogueId = "dialogue.ash"
+
+[node name="Schedule" type="Node" parent="MerchantDunmore"]
+script = ExtResource("8_schedule")
+ScheduleId = "schedule.embermarket.collier"
+
+[node name="Model" parent="MerchantDunmore" instance=ExtResource("36_hooded")]
+
+[node name="MerchantGilda" type="Node3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 7.9, 0, 8)
+script = ExtResource("2_entity")
+DisplayName = "Gilda Ironmonger"
+TemplateId = "npc.gilda"
+
+[node name="Animation" type="Node" parent="MerchantGilda"]
+script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="MerchantGilda"]
+
+[node name="Shape" type="CollisionShape3D" parent="MerchantGilda/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="MerchantGilda"]
+script = ExtResource("6_faction")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="MerchantGilda"]
+script = ExtResource("4_dialogue")
+DialogueId = "dialogue.gilda"
+
+[node name="Schedule" type="Node" parent="MerchantGilda"]
+script = ExtResource("8_schedule")
+ScheduleId = "schedule.embermarket.ironmonger"
+
+[node name="Model" parent="MerchantGilda" instance=ExtResource("38_innkeeper")]
+
+[node name="MerchantPerrin" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -13, 0, -11.4)
+script = ExtResource("2_entity")
+DisplayName = "Perrin the Tanner"
+TemplateId = "npc.perrin"
+
+[node name="Animation" type="Node" parent="MerchantPerrin"]
+script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="MerchantPerrin"]
+
+[node name="Shape" type="CollisionShape3D" parent="MerchantPerrin/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="MerchantPerrin"]
+script = ExtResource("6_faction")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="MerchantPerrin"]
+script = ExtResource("4_dialogue")
+DialogueId = "dialogue.perrin"
+
+[node name="Schedule" type="Node" parent="MerchantPerrin"]
+script = ExtResource("8_schedule")
+ScheduleId = "schedule.embermarket.tannery"
+
+[node name="Model" parent="MerchantPerrin" instance=ExtResource("40_merchant_m")]
+
+[node name="MerchantNessa" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 13, 0, -11.4)
+script = ExtResource("2_entity")
+DisplayName = "Nessa Brightcut"
+TemplateId = "npc.nessa"
+
+[node name="Animation" type="Node" parent="MerchantNessa"]
+script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="MerchantNessa"]
+
+[node name="Shape" type="CollisionShape3D" parent="MerchantNessa/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="MerchantNessa"]
+script = ExtResource("6_faction")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="MerchantNessa"]
+script = ExtResource("4_dialogue")
+DialogueId = "dialogue.nessa"
+
+[node name="Schedule" type="Node" parent="MerchantNessa"]
+script = ExtResource("8_schedule")
+ScheduleId = "schedule.embermarket.jeweller"
+
+[node name="Model" parent="MerchantNessa" instance=ExtResource("39_guild_rep")]
+
+[node name="MerchantOdo" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, -5.6)
+script = ExtResource("2_entity")
+DisplayName = "Odo Greenhand"
+TemplateId = "npc.odo"
+
+[node name="Animation" type="Node" parent="MerchantOdo"]
+script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="MerchantOdo"]
+
+[node name="Shape" type="CollisionShape3D" parent="MerchantOdo/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="MerchantOdo"]
+script = ExtResource("6_faction")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="MerchantOdo"]
+script = ExtResource("4_dialogue")
+DialogueId = "dialogue.odo"
+
+[node name="Schedule" type="Node" parent="MerchantOdo"]
+script = ExtResource("8_schedule")
+ScheduleId = "schedule.embermarket.herbalist"
+
+[node name="Model" parent="MerchantOdo" instance=ExtResource("36_hooded")]
+
+[node name="MerchantHalvard" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, -5.6)
+script = ExtResource("2_entity")
+DisplayName = "Halvard, Joiner"
+TemplateId = "npc.halvard"
+
+[node name="Animation" type="Node" parent="MerchantHalvard"]
+script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="MerchantHalvard"]
+
+[node name="Shape" type="CollisionShape3D" parent="MerchantHalvard/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="MerchantHalvard"]
+script = ExtResource("6_faction")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="MerchantHalvard"]
+script = ExtResource("4_dialogue")
+DialogueId = "dialogue.halvard"
+
+[node name="Schedule" type="Node" parent="MerchantHalvard"]
+script = ExtResource("8_schedule")
+ScheduleId = "schedule.embermarket.joiner"
+
+[node name="Model" parent="MerchantHalvard" instance=ExtResource("37_vendor_body")]
+
+[node name="TraderSera" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -5.2, 0, -21.4)
+script = ExtResource("2_entity")
+DisplayName = "Sera of the Long Road"
+TemplateId = "npc.sera"
+
+[node name="Animation" type="Node" parent="TraderSera"]
+script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="TraderSera"]
+
+[node name="Shape" type="CollisionShape3D" parent="TraderSera/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Vendor" type="Node" parent="TraderSera"]
+script = ExtResource("9_vendor")
+ShopId = "shop.embermarket.caravan"
+
+[node name="Model" parent="TraderSera" instance=ExtResource("41_merchant_f")]
+
+[node name="TraderQuill" type="Node3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 11.2, 0, 12.8)
+script = ExtResource("2_entity")
+DisplayName = "Quill the Curioseller"
+TemplateId = "npc.quill"
+
+[node name="Animation" type="Node" parent="TraderQuill"]
+script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="TraderQuill"]
+
+[node name="Shape" type="CollisionShape3D" parent="TraderQuill/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Vendor" type="Node" parent="TraderQuill"]
+script = ExtResource("9_vendor")
+ShopId = "shop.embermarket.curios"
+
+[node name="Model" parent="TraderQuill" instance=ExtResource("35_townswoman")]

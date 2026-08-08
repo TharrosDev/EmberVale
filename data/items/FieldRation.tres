@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ConsumableItemResource" format=3 uid="uid://uov73jfohc7b"]
+
+[ext_resource type="Script" path="res://src/Items/ConsumableItemResource.cs" id="1_item"]
+
+; Phase 38L - the Embermarket catalogue. The provisioner's staple, and the one consumable a player leaving town is meant to buy by the stack.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.food.field_ration"
+DisplayName = "Field Ration"
+Description = "Salt pork, hard cheese and twice-baked bread, wrapped in waxed cloth for the road."
+Type = 1
+Rarity = 0
+MaxStack = 20
+Weight = 0.6
+Value = 9
+HealAmount = 26.0
+TradeTags = Array[String](["food"])

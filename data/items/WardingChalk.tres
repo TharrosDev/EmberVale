@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://bduu48yv55mgq"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+; Phase 38L - the Embermarket catalogue. The arcane tag had two members and one of them was a ring.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.material.warding_chalk"
+DisplayName = "Warding Chalk"
+Description = "Ground bone and salt. Draws a line the wrong sort of thing will not cross. Usually."
+Type = 4
+Rarity = 0
+MaxStack = 50
+Weight = 0.2
+Value = 12
+TradeTags = Array[String](["arcane", "reagent"])

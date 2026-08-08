@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="EquippableItemResource" format=3 uid="uid://c0mhsadhhlubh"]
+
+[ext_resource type="Script" path="res://src/Items/EquippableItemResource.cs" id="1_eq"]
+[ext_resource type="Resource" path="res://data/weapons/IronDagger.tres" id="2_wpn"]
+
+; Phase 38L - the ONLY new equippable in the Embermarket catalogue, and it exists for one reason: the
+; weapon trade tag had exactly one member (the steel sword), so an ironmonger "specialising in weapons"
+; specialised in a single row. Everything else 38L authors is a trade good.
+;
+; Deliberately WEAKER and cheaper than the steel sword. A market is where you buy your first blade, not
+; your best one; the gear ladder is Phase 51's and this is not a rung on it.
+
+[resource]
+script = ExtResource("1_eq")
+Id = "item.weapon.iron_dagger"
+DisplayName = "Iron Dagger"
+Description = "A hand's length of plain iron with a wrapped grip. Quick, and honest about what it is."
+Type = 2
+Rarity = 0
+MaxStack = 1
+Weight = 1.2
+Value = 35
+Slot = 1
+Weapon = ExtResource("2_wpn")
+BonusPhysicalPower = 1.0
+TradeTags = Array[String](["weapon", "metal"])

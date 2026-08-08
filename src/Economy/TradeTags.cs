@@ -15,9 +15,11 @@ namespace Embervale.Economy;
 /// Godot objects, so every parameter is a plain collection and the resource accessors do the converting.
 ///
 /// <b>The vocabulary deliberately holds only tags with members today.</b> A tag nothing carries is a
-/// promise rather than a feature — <c>contraband</c>, <c>food</c>, <c>fish</c>, <c>textile</c>,
-/// <c>tome</c>, <c>map</c>, <c>livestock</c> and <c>fuel</c> are all named in the economy arc and each
-/// arrives with the sub-phase that authors something wearing it.
+/// promise rather than a feature — each arrives with the sub-phase that authors something wearing it.
+/// 38L kept that bargain for five of the eight the arc had named: <c>food</c>, <c>fish</c>,
+/// <c>textile</c>, <c>tome</c> and <c>fuel</c> landed with the Embermarket roster and its catalogue.
+/// <c>contraband</c> waits for 38O's fence, and <c>map</c> and <c>livestock</c> wait for anything at
+/// all to wear them.
 /// </summary>
 public static class TradeTags
 {
@@ -46,12 +48,22 @@ public static class TradeTags
     public const string Relic = "relic";
     public const string Luxury = "luxury";
 
+    // What a market sells that an adventurer's shop does not (38L). These five exist because the
+    // Embermarket roster authored goods wearing them in the same sub-phase — a specialist whose whole
+    // trade is one tag is only a specialist if that tag has a shelf behind it.
+    public const string Food = "food";
+    public const string Fish = "fish";
+    public const string Textile = "textile";
+    public const string Tome = "tome";
+    public const string Fuel = "fuel";
+
     private static readonly HashSet<string> _all = new()
     {
         Metal, Ore, Leather, Pelt,
         Herb, Reagent, Potion,
         Gem, Jewelry, Weapon, Armor, Arcane, Tool, Furnishing,
         Trophy, Relic, Luxury,
+        Food, Fish, Textile, Tome, Fuel,
     };
 
     /// <summary>Every tag an item or a shop may author. The validator's whole authority.</summary>

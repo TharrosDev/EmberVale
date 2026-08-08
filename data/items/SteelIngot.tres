@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://uov73jg78c53"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+; Phase 38L - the Embermarket catalogue. A rung above the iron ingot, so the ironmonger's metal specialty is a ladder rather than a flat rate.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.material.steel_ingot"
+DisplayName = "Steel Ingot"
+Description = "Folded iron with the carbon beaten through it. Twice the work of an iron bar and four times the price."
+Type = 4
+Rarity = 1
+MaxStack = 50
+Weight = 2.5
+Value = 28
+TradeTags = Array[String](["metal"])

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://bduu48vrp3v7y"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+; Phase 38L - the Embermarket catalogue. The scriptorium's high row, and its bridge to the curioseller's trade.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.tome.wardings"
+DisplayName = "A Treatise on Wardings"
+Description = "Copied out by a Veiled Archive hand, badly, and sold on twice since."
+Type = 0
+Rarity = 1
+MaxStack = 5
+Weight = 1.8
+Value = 90
+TradeTags = Array[String](["tome", "arcane"])

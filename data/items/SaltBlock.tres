@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://cmbrvlitmsalt"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+; Phase 38L - the Embermarket catalogue. Salt is what the Crossway toll (38M) will actually be about.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.material.salt"
+DisplayName = "Block of Salt"
+Description = "Cut from the pans east of the Crossway. What keeps a winter's meat from turning."
+Type = 4
+Rarity = 0
+MaxStack = 50
+Weight = 0.5
+Value = 10
+TradeTags = Array[String](["food"])

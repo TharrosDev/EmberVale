@@ -234,9 +234,13 @@ public class ShopPricingTests
     [Fact]
     public void AuthoredSpreadsAlwaysCostSomethingToRoundTrip()
     {
+        // ⚠️ These arrays are the set of spreads ACTUALLY AUTHORED in data/shops/. A new shop with a
+        // pair outside them is covered only by ValidateShopTrade's margin rule, so the pair goes here
+        // in the same commit. 38L widened them from {1.5, 1.6} x {0.4, 0.45} when the Embermarket
+        // roster added 1.55, 1.65 and 1.7 markups and a 0.42 fraction.
         ReputationTier[] tiers = { ReputationTier.Neutral, ReputationTier.Honored, ReputationTier.Allied };
-        float[] markups = { 1.5f, 1.6f };
-        float[] fractions = { 0.4f, 0.45f };
+        float[] markups = { 1.5f, 1.55f, 1.6f, 1.65f, 1.7f };
+        float[] fractions = { 0.4f, 0.42f, 0.45f };
 
         foreach (ReputationTier tier in tiers)
         {

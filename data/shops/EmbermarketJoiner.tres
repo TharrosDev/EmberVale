@@ -1,0 +1,66 @@
+[gd_resource type="Resource" script_class="ShopResource" format=3 uid="uid://uowiql625hwf"]
+
+[ext_resource type="Script" path="res://src/Economy/ShopResource.cs" id="1_shop"]
+[ext_resource type="Script" path="res://src/Economy/ShopStockEntry.cs" id="2_entry"]
+[ext_resource type="Script" path="res://src/Economy/ShopInvestmentTier.cs" id="3_tier"]
+
+; Halvard, joiner (Phase 38L) - the first merchant in the game who sells the 37C placeable kits, which
+; have existed since Phase 37 and until now could only be crafted.
+;
+; No NEW placeable is authored here, deliberately: a PlaceableItemResource needs a matching id and Build
+; case in src/Housing/PlaceableTemplates.cs, which is code rather than content, and 38L is a content
+; sub-phase. His oak plank is a plain trade good wearing `furnishing` and needs nothing at all.
+;
+; The workbench kit sits behind one rung - a stake in a joiner's yard buys you the yard's own tools.
+
+[sub_resource type="Resource" id="Stock_plank"]
+script = ExtResource("2_entry")
+ItemId = "item.material.oak_plank"
+Quantity = 0
+
+[sub_resource type="Resource" id="Stock_crate"]
+script = ExtResource("2_entry")
+ItemId = "item.decor.crate"
+Quantity = 3
+
+[sub_resource type="Resource" id="Stock_stand"]
+script = ExtResource("2_entry")
+ItemId = "item.decor.display_stand"
+Quantity = 2
+
+[sub_resource type="Resource" id="Stock_banner"]
+script = ExtResource("2_entry")
+ItemId = "item.decor.banner"
+Quantity = 2
+
+[sub_resource type="Resource" id="Stock_brazier"]
+script = ExtResource("2_entry")
+ItemId = "item.decor.brazier"
+Quantity = 2
+
+[sub_resource type="Resource" id="Stock_bench"]
+script = ExtResource("2_entry")
+ItemId = "item.kit.workbench"
+Quantity = 1
+RequiredInvestment = 1
+
+[sub_resource type="Resource" id="Invest_yard"]
+script = ExtResource("3_tier")
+Cost = 800
+PurseBonus = 200
+
+[resource]
+script = ExtResource("1_shop")
+Id = "shop.embermarket.joiner"
+NameKey = "shop.embermarket.joiner.name"
+FactionId = "faction.villagers"
+AcceptedTags = Array[String](["furnishing", "tool"])
+Specialties = Array[String](["furnishing"])
+Stock = Array[Resource]([SubResource("Stock_plank"), SubResource("Stock_crate"), SubResource("Stock_stand"), SubResource("Stock_banner"), SubResource("Stock_brazier"), SubResource("Stock_bench")])
+RestockDays = 2
+BuyMarkup = 1.5
+SellFraction = 0.4
+PurseGold = 260
+InvestmentTiers = Array[Resource]([SubResource("Invest_yard")])
+OpenHour = 7
+CloseHour = 18

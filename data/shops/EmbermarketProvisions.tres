@@ -1,0 +1,59 @@
+[gd_resource type="Resource" script_class="ShopResource" format=3 uid="uid://uowiqmd6cp1g"]
+
+[ext_resource type="Script" path="res://src/Economy/ShopResource.cs" id="1_shop"]
+[ext_resource type="Script" path="res://src/Economy/ShopStockEntry.cs" id="2_entry"]
+
+; Corvin, provisioner (Phase 38L) - the Embermarket's first stall and the one that opens earliest,
+; because bread is baked before dawn and everything else on this square waits on somebody eating.
+;
+; He is the roster's cheap end on purpose. Bread is 4 gold and unlimited; 38H's saturation curve prices
+; the sell side unit by unit and floors every unit at 1 coin, and a market with nothing cheap in it never
+; exercises that. Test the coin, not the ingot.
+;
+; He stocks smoked riverfish that Hana two stalls down also sells, and that overlap is deliberate twice
+; over: a food tag shared between two specialists is how a market feels like a market rather than a menu,
+; and --validate requires that no Consumable is sold ONLY by a travelling shop, so a staple wants more
+; than one resident shelf under it.
+;
+; 05:00-19:00 tracks schedule.embermarket_provisions. Nothing validates that agreement - a ScheduleId
+; lives in a .tscn - so if his routine moves, move these with it.
+
+[sub_resource type="Resource" id="Stock_bread"]
+script = ExtResource("2_entry")
+ItemId = "item.food.bread"
+Quantity = 0
+
+[sub_resource type="Resource" id="Stock_ration"]
+script = ExtResource("2_entry")
+ItemId = "item.food.field_ration"
+Quantity = 12
+
+[sub_resource type="Resource" id="Stock_grain"]
+script = ExtResource("2_entry")
+ItemId = "item.material.grain_sack"
+Quantity = 0
+
+[sub_resource type="Resource" id="Stock_salt"]
+script = ExtResource("2_entry")
+ItemId = "item.material.salt"
+Quantity = 6
+
+[sub_resource type="Resource" id="Stock_fish"]
+script = ExtResource("2_entry")
+ItemId = "item.food.smoked_fish"
+Quantity = 4
+
+[resource]
+script = ExtResource("1_shop")
+Id = "shop.embermarket.provisions"
+NameKey = "shop.embermarket.provisions.name"
+FactionId = "faction.villagers"
+AcceptedTags = Array[String](["food", "herb"])
+Specialties = Array[String](["food"])
+Stock = Array[Resource]([SubResource("Stock_bread"), SubResource("Stock_ration"), SubResource("Stock_grain"), SubResource("Stock_salt"), SubResource("Stock_fish")])
+RestockDays = 1
+BuyMarkup = 1.5
+SellFraction = 0.4
+PurseGold = 200
+OpenHour = 5
+CloseHour = 19

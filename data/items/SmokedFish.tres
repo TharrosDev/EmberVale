@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ConsumableItemResource" format=3 uid="uid://uov73jg07ab4"]
+
+[ext_resource type="Script" path="res://src/Items/ConsumableItemResource.cs" id="1_item"]
+
+; Phase 38L - the Embermarket catalogue. Wears both new tags, which is what lets the fishmonger and the provisioner overlap without being the same shop.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.food.smoked_fish"
+DisplayName = "Smoked Riverfish"
+Description = "Split, salted and hung over alderwood until the flesh turns amber."
+Type = 1
+Rarity = 0
+MaxStack = 20
+Weight = 0.3
+Value = 7
+HealAmount = 18.0
+TradeTags = Array[String](["food", "fish"])

@@ -22,6 +22,27 @@ public partial class ScheduleResource : Resource
     /// elements are read back as <see cref="ScheduleEntry"/>.</summary>
     [Export] public Godot.Collections.Array Entries { get; set; } = new();
 
+    /// <summary>
+    /// World-space offset added to every entry's <see cref="ScheduleEntry.Destination"/> (Phase 38L).
+    /// Zero — the default — is the behaviour every routine authored before 38L already had, so the
+    /// nine existing schedules needed no migration. The same "the default is the ungated case" trick
+    /// 38I's three stock gates play.
+    ///
+    /// <para><b>Why it exists.</b> <see cref="ScheduleEntry.Destination"/> is a raw <em>world</em>
+    /// position, but a region cell is authored at its own origin and moved to the cell's
+    /// <c>Center</c> by the <see cref="World.RegionStreamer"/> — so a destination copied out of a
+    /// cell's <c>.tscn</c> lands a cell's width from where it was read. That is the 37C placement bug
+    /// wearing a different hat, it is silent, and the Embermarket is 46 m south of the origin the
+    /// town square's schedules were written against. Setting <c>Origin</c> once per file lets a
+    /// routine be authored in the coordinates a designer actually has in front of them.</para>
+    /// </summary>
+    [Export] public Vector3 Origin { get; set; } = Vector3.Zero;
+
+    /// <summary>The world destination of a routine block: its authored point plus this routine's
+    /// <see cref="Origin"/>. The single place the two are combined, so no caller can forget.</summary>
+    public Vector3 DestinationOf(ScheduleEntry entry) =>
+        ScheduleMath.Destination(entry.Destination, Origin);
+
     /// <summary>The entries read back as their concrete type, skipping bad elements.</summary>
     public List<ScheduleEntry> EntryList()
     {

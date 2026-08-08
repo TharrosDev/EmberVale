@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="ShopResource" format=3 uid="uid://uowiqly28f01"]
+
+[ext_resource type="Script" path="res://src/Economy/ShopResource.cs" id="1_shop"]
+[ext_resource type="Script" path="res://src/Economy/ShopStockEntry.cs" id="2_entry"]
+
+; Ash Dunmore, collier (Phase 38L). The `fuel` tag in one stall: charcoal for the forges and pitch for
+; everything else. Both unlimited - a smith who cannot get charcoal is a crafting system with a shopping
+; trip bolted to it, which is the argument Bryn's ingots already won.
+;
+; His pot of pitch wears `fuel` and `reagent`, the same trick Hana's fish oil plays: no specialist on this
+; square is sealed off from every other one.
+;
+; He buys ore he does not sell (`ore` is accepted, `fuel` is the specialty) because a collier burns through
+; the same seams the miners work. 38N's Emberdeep Mine is who he is really waiting for.
+
+[sub_resource type="Resource" id="Stock_charcoal"]
+script = ExtResource("2_entry")
+ItemId = "item.material.charcoal"
+Quantity = 0
+
+[sub_resource type="Resource" id="Stock_pitch"]
+script = ExtResource("2_entry")
+ItemId = "item.material.pitch"
+Quantity = 0
+
+[sub_resource type="Resource" id="Stock_ore"]
+script = ExtResource("2_entry")
+ItemId = "item.material.iron_ore"
+Quantity = 8
+
+[resource]
+script = ExtResource("1_shop")
+Id = "shop.embermarket.collier"
+NameKey = "shop.embermarket.collier.name"
+FactionId = "faction.villagers"
+AcceptedTags = Array[String](["fuel", "ore"])
+Specialties = Array[String](["fuel"])
+Stock = Array[Resource]([SubResource("Stock_charcoal"), SubResource("Stock_pitch"), SubResource("Stock_ore")])
+RestockDays = 1
+BuyMarkup = 1.5
+SellFraction = 0.4
+PurseGold = 140
+OpenHour = 6
+CloseHour = 16

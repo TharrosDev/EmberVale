@@ -1,0 +1,54 @@
+[gd_resource type="Resource" script_class="ShopResource" format=3 uid="uid://uowiql0afc7g"]
+
+[ext_resource type="Script" path="res://src/Economy/ShopResource.cs" id="1_shop"]
+[ext_resource type="Script" path="res://src/Economy/ShopStockEntry.cs" id="2_entry"]
+
+; Quill the Curioseller (Phase 38L) - the second traveller, one day in three, and the only merchant in
+; the game who specialises in `relic`. He keeps the latest hours on the square (11:00-21:00) because what
+; he deals in is not the sort of thing anyone buys in daylight.
+;
+; ⚠️ VendorComponent rather than dialogue, for the same forced reason as Sera - see EmbermarketCaravan.tres
+; for the long version. His ShopId is likewise unvalidated.
+;
+; ⚠️ No consumables, same rule.
+;
+; He is the market's outlet for what comes back from the wilds: he accepts trophies and gems he does not
+; stock, which is what makes him worth catching after a run rather than before one. His rune shards are
+; the only `arcane` goods in the realm that are neither a ring nor a mote.
+
+[sub_resource type="Resource" id="Stock_shard"]
+script = ExtResource("2_entry")
+ItemId = "item.material.rune_shard"
+Quantity = 2
+
+[sub_resource type="Resource" id="Stock_chalk"]
+script = ExtResource("2_entry")
+ItemId = "item.material.warding_chalk"
+Quantity = 0
+
+[sub_resource type="Resource" id="Stock_tome"]
+script = ExtResource("2_entry")
+ItemId = "item.tome.wardings"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_mote"]
+script = ExtResource("2_entry")
+ItemId = "item.material.elemental_mote"
+Quantity = 0
+
+[resource]
+script = ExtResource("1_shop")
+Id = "shop.embermarket.curios"
+NameKey = "shop.embermarket.curios.name"
+FactionId = ""
+AcceptedTags = Array[String](["arcane", "relic", "gem", "trophy"])
+Specialties = Array[String](["arcane", "relic"])
+Stock = Array[Resource]([SubResource("Stock_shard"), SubResource("Stock_chalk"), SubResource("Stock_tome"), SubResource("Stock_mote")])
+RestockDays = 3
+BuyMarkup = 1.7
+SellFraction = 0.45
+PurseGold = 450
+OpenHour = 11
+CloseHour = 21
+VisitEveryDays = 3
+VisitDayOffset = 0

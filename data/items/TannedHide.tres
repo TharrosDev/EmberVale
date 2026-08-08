@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://bduu48vfhbm7k"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+; Phase 38L - the Embermarket catalogue. Gives the tanner something to SELL. Before this, every leather good in the game was something the player sold TO a merchant and could never buy back.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.material.tanned_hide"
+DisplayName = "Tanned Hide"
+Description = "Beast hide scraped, limed and cured. A month of work in a single sheet."
+Type = 4
+Rarity = 0
+MaxStack = 50
+Weight = 1.5
+Value = 11
+TradeTags = Array[String](["leather"])

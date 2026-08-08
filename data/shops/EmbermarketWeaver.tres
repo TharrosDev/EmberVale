@@ -1,0 +1,43 @@
+[gd_resource type="Resource" script_class="ShopResource" format=3 uid="uid://uowiqmkrwpwf"]
+
+[ext_resource type="Script" path="res://src/Economy/ShopResource.cs" id="1_shop"]
+[ext_resource type="Script" path="res://src/Economy/ShopStockEntry.cs" id="2_entry"]
+
+; Sable the Weaver (Phase 38L). The `textile` tag exists because of this stall, and her dyed wool is
+; madder red fixed with alum - the colour ART_STYLE gives the Ember Crown as its signature, banners faded
+; to rose. A realm's palette should be buyable somewhere.
+;
+; She accepts leather as well as cloth and specialises in neither-but-one: Perrin the tanner is four
+; stalls away and they are the two ends of the same trade, so her `leather` is an acceptance and his is a
+; specialty. --validate enforces that specialties are a subset of what a merchant will take at all, which
+; is the rule that stops a premium sitting behind a refusal.
+
+[sub_resource type="Resource" id="Stock_linen"]
+script = ExtResource("2_entry")
+ItemId = "item.material.linen_bolt"
+Quantity = 0
+
+[sub_resource type="Resource" id="Stock_wool"]
+script = ExtResource("2_entry")
+ItemId = "item.material.dyed_wool"
+Quantity = 5
+
+[sub_resource type="Resource" id="Stock_hide"]
+script = ExtResource("2_entry")
+ItemId = "item.material.tanned_hide"
+Quantity = 3
+
+[resource]
+script = ExtResource("1_shop")
+Id = "shop.embermarket.weaver"
+NameKey = "shop.embermarket.weaver.name"
+FactionId = "faction.villagers"
+AcceptedTags = Array[String](["textile", "leather"])
+Specialties = Array[String](["textile"])
+Stock = Array[Resource]([SubResource("Stock_linen"), SubResource("Stock_wool"), SubResource("Stock_hide")])
+RestockDays = 2
+BuyMarkup = 1.55
+SellFraction = 0.42
+PurseGold = 220
+OpenHour = 8
+CloseHour = 18

@@ -1,0 +1,90 @@
+[gd_resource type="Resource" script_class="DialogueResource" format=3 uid="uid://bq7m2xk3vd1ne"]
+
+; The Embermarket's notice board (Phase 38K second pass). It is the district's one interactable
+; besides the waystone, and it exists so the place has a voice before 38L gives it merchants.
+;
+; ⚠️ NO CHOICE CARRIES AN EFFECT, DELIBERATELY. A board that started a quest would put a market
+; notice in the journal, and 38Q's brief already names "never pollutes the quest log" as the rule
+; contracts have to meet — a decoration should not get there eleven sub-phases early. Everything
+; here is read-only flavour, so there is nothing to persist and nothing that can be done twice.
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+[sub_resource type="Resource" id="ch_customs"]
+script = ExtResource("3_choice")
+Text = "dlg.market_board.c_customs"
+Goto = "customs"
+
+[sub_resource type="Resource" id="ch_tolls"]
+script = ExtResource("3_choice")
+Text = "dlg.market_board.c_tolls"
+Goto = "tolls"
+
+[sub_resource type="Resource" id="ch_stalls"]
+script = ExtResource("3_choice")
+Text = "dlg.market_board.c_stalls"
+Goto = "stalls"
+
+[sub_resource type="Resource" id="ch_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.market_board.c_bye"
+
+[sub_resource type="Resource" id="ch_customs_back"]
+script = ExtResource("3_choice")
+Text = "dlg.market_board.c_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_customs_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.market_board.c_bye"
+
+[sub_resource type="Resource" id="ch_tolls_back"]
+script = ExtResource("3_choice")
+Text = "dlg.market_board.c_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_tolls_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.market_board.c_bye"
+
+[sub_resource type="Resource" id="ch_stalls_back"]
+script = ExtResource("3_choice")
+Text = "dlg.market_board.c_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_stalls_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.market_board.c_bye"
+
+[sub_resource type="Resource" id="node_root"]
+script = ExtResource("2_node")
+Id = "root"
+Text = "dlg.market_board.root"
+Choices = Array[Resource]([SubResource("ch_customs"), SubResource("ch_tolls"), SubResource("ch_stalls"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_customs"]
+script = ExtResource("2_node")
+Id = "customs"
+Text = "dlg.market_board.customs"
+Choices = Array[Resource]([SubResource("ch_customs_back"), SubResource("ch_customs_bye")])
+
+[sub_resource type="Resource" id="node_tolls"]
+script = ExtResource("2_node")
+Id = "tolls"
+Text = "dlg.market_board.tolls"
+Choices = Array[Resource]([SubResource("ch_tolls_back"), SubResource("ch_tolls_bye")])
+
+[sub_resource type="Resource" id="node_stalls"]
+script = ExtResource("2_node")
+Id = "stalls"
+Text = "dlg.market_board.stalls"
+Choices = Array[Resource]([SubResource("ch_stalls_back"), SubResource("ch_stalls_bye")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "dialogue.market_board"
+SpeakerName = "dlg.market_board.speaker"
+StartNodeId = "root"
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_customs"), SubResource("node_tolls"), SubResource("node_stalls")])

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ConsumableItemResource" format=3 uid="uid://c0mhsegk0pu32"]
+
+[ext_resource type="Script" path="res://src/Items/ConsumableItemResource.cs" id="1_item"]
+
+; Phase 38L - the Embermarket catalogue. The cheapest thing in the market, and deliberately so: 38H's lesson was that price maths breaks on a one-coin item, and a market with nothing cheap in it never tests that.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.food.bread"
+DisplayName = "Loaf of Dark Bread"
+Description = "Heavy rye, baked before dawn. Keeps three days and fills a hole for one."
+Type = 1
+Rarity = 0
+MaxStack = 20
+Weight = 0.4
+Value = 4
+HealAmount = 12.0
+TradeTags = Array[String](["food"])
