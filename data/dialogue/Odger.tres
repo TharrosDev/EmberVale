@@ -1,0 +1,78 @@
+[gd_resource type="Resource" script_class="DialogueResource" format=3]
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+; Odger Vane, the chandler at Tarn's Landing (Phase 38N2). The sink's voice, and the mirror of Marta
+; Quill's at the mine: she says what bread is worth on a mountain, he says what a yard of rope is worth
+; on a shore.
+;
+; His talk node is where the refusal is said out loud - he does not buy fish, and a player who has just
+; walked here with a pack of it deserves to hear why from a person rather than from a greyed-out row.
+
+[sub_resource type="Resource" id="ch_trade"]
+script = ExtResource("3_choice")
+Text = "dlg.odger.c_trade"
+Condition = 12
+ConditionArg = "shop.tarn.chandler"
+Effect = 9
+EffectArg = "shop.tarn.chandler"
+
+[sub_resource type="Resource" id="ch_closed"]
+script = ExtResource("3_choice")
+Text = "dlg.odger.c_closed"
+Condition = 13
+ConditionArg = "shop.tarn.chandler"
+Goto = "closed"
+
+[sub_resource type="Resource" id="ch_talk"]
+script = ExtResource("3_choice")
+Text = "dlg.odger.c_talk"
+Goto = "talk"
+
+[sub_resource type="Resource" id="ch_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.odger.c_bye"
+
+[sub_resource type="Resource" id="ch_talk_trade"]
+script = ExtResource("3_choice")
+Text = "dlg.odger.c_talk_trade"
+Condition = 12
+ConditionArg = "shop.tarn.chandler"
+Effect = 9
+EffectArg = "shop.tarn.chandler"
+
+[sub_resource type="Resource" id="ch_talk_back"]
+script = ExtResource("3_choice")
+Text = "dlg.odger.c_talk_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_talk_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.odger.c_talk_bye"
+
+[sub_resource type="Resource" id="node_root"]
+script = ExtResource("2_node")
+Id = "root"
+Text = "dlg.odger.root"
+Choices = Array[Resource]([SubResource("ch_trade"), SubResource("ch_closed"), SubResource("ch_talk"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_talk"]
+script = ExtResource("2_node")
+Id = "talk"
+Text = "dlg.odger.talk"
+Choices = Array[Resource]([SubResource("ch_talk_trade"), SubResource("ch_talk_back"), SubResource("ch_talk_bye")])
+
+[sub_resource type="Resource" id="node_closed"]
+script = ExtResource("2_node")
+Id = "closed"
+Text = "dlg.odger.closed"
+Choices = Array[Resource]([SubResource("ch_talk"), SubResource("ch_bye")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "dialogue.odger"
+SpeakerName = "dlg.odger.speaker"
+StartNodeId = "root"
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_talk"), SubResource("node_closed")])

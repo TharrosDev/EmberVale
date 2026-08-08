@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+; Phase 38N2. The other half of the chandler's shelf, and dearer than cordage because it comes up the
+; road from the weaver in the Embermarket - the second authored route between two settlements.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.material.sailcloth"
+DisplayName = "Bolt of Sailcloth"
+Description = "Heavy flax, waxed against the weather. Sold by the bolt and cursed by the yard."
+Type = 4
+Rarity = 0
+MaxStack = 30
+Weight = 1.1
+Value = 24
+TradeTags = Array[String](["textile"])

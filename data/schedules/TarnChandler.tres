@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="ScheduleResource" format=3]
+
+[ext_resource type="Script" path="res://src/Npc/ScheduleResource.cs" id="1_sched"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleEntry.cs" id="2_entry"]
+
+; Odger Vane, the chandler (Phase 38N2). Cell-local against Origin (-106, 0, -10); hours track
+; shop.tarn.chandler (6:00-19:00) by hand.
+;
+; He opens two hours after Wenna and closes five hours later — the curer serves the boats, the chandler
+; serves the people who have finished with them.
+
+[sub_resource type="Resource" id="e_0"]
+script = ExtResource("2_entry")
+StartHour = 6
+Activity = "Opening the chandlery"
+Destination = Vector3(6, 0, 4)
+
+[sub_resource type="Resource" id="e_1"]
+script = ExtResource("2_entry")
+StartHour = 12
+Activity = "Hauling cordage out to dry"
+Destination = Vector3(9, 0, 8)
+
+[sub_resource type="Resource" id="e_2"]
+script = ExtResource("2_entry")
+StartHour = 19
+Activity = "Roping down the tarpaulin"
+Destination = Vector3(6, 0, 4)
+
+[resource]
+script = ExtResource("1_sched")
+Id = "schedule.tarn.chandler"
+Origin = Vector3(-106, 0, -10)
+Entries = Array[Resource]([SubResource("e_0"), SubResource("e_1"), SubResource("e_2")])

@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+; Phase 38N2. The cured half of the Landing's trade, and the one that actually travels - which is why
+; it is worth four times a fresh catch and why the hamlet buys salt by the block.
+;
+; It leans on the salt already in the catalogue (38L's SaltBlock, whose own comment says salt is what
+; keeps a winter's meat from turning). A trade good that consumes another trade good is what makes a
+; production settlement more than a shop with a theme.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.food.salted_eel"
+DisplayName = "Salted Eel"
+Description = "Split, salted and rolled in cloth. The Landing's answer to a road that is only open when it feels like it."
+Type = 4
+Rarity = 0
+MaxStack = 50
+Weight = 0.6
+Value = 13
+TradeTags = Array[String](["fish", "food"])

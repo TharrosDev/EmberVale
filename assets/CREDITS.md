@@ -653,6 +653,48 @@ the `.import` — the same one-number adaptation 38M2 used, and still no Blender
 
 ---
 
+### Phase 38N2 — two character bodies, three waterside props, and the shortage that was not one
+
+**THE HEADLINE: the open-web pull returned a file that was already on disk.** 38L declared the library
+"out of medieval character bodies" and named Quaternius's CC0 **RPG Characters** pack as the fix.
+Pulling it (poly.pizza, filtering on creator) turned up an **Adventurer** that is **byte-identical**
+to `assets/library/women/adventurer.glb` — `md5 cba6105cf1f2824d86a65e5eb484a426`, 1,585,676 bytes,
+vendored since the 38L migration and **never adapted**. 38L's claim that "the five unused women are
+CC-BY 3.0" was wrong about that one: it is CC0, and it was the best body of the entire search. The
+shortage was a bookkeeping error, not an art problem.
+
+**Six candidates were rendered at eye level, front and back. Four were rejected on sight:**
+
+| Candidate | Verdict |
+| --- | --- |
+| `Adventurer` (women, already vendored) | OK — green gambeson, mantle, boots. 62 bones, 1.83 m out of the box |
+| `Woman in Dress` (`zMyPlQXBzq`) | OK — plain red dress, period-neutral. 31 bones, needs `root_scale 0.384` (imports at 4.69 m) |
+| `Woman` (`AQsd9ngvKU`) | REJECTED — **modern**: black-and-pink top, blue jeans. The exact defect being fixed |
+| `Lis` (`gjuwleUT1U`) | REJECTED — cartoon punk, blue mohawk, sneakers, **holding a chainsaw** |
+| `Monk` (`P5FzFYgG5z`) | REJECTED — not a person at all; an ornament with coins and rays |
+| `Wizard` (`o87Upt5uHX`) | REJECTED — 4 bones, not a usable actor |
+
+Four of six unusable is the argument for the render gate in one line. All are CC0 1.0 by Quaternius;
+`Woman in Dress` is vendored to `assets/library/women/` and added to `manifest.json`.
+
+| Lands at | Source | Height | Root scale | Role |
+| --- | --- | --- | --- | --- |
+| `characters/npc_adventurer_f.glb` | `women/adventurer.glb` (file copy) | 1.83 m | 1.0 | Sera the traveller |
+| `characters/npc_woman_dress.glb` | `women/woman_in_dress.glb` | 1.80 m | 0.384 | Hana, and Wenna at the Landing |
+| `props/prp_dock_complex.glb` | `rts/docks.glb` | 7.00 m | 5.60 | the Landing's warehouse and piers |
+| `props/prp_jetty.glb` | `rts/dock.glb` | 1.39 m | 2.98 | the two jetties |
+| `props/prp_fishing_hut.glb` | `rts/storage_hut.glb` | 4.51 m | 5.92 | Wenna's curing sheds |
+
+**A file copy, not a Blender round-trip**, for the Adventurer: the rig already fits at 1.83 m, and the
+round-trip is what destroyed bone-parented parts in the third-round audit. Everything else carries its
+scale on `nodes/root_scale` in the `.import`.
+
+⚠️ **The dock and the jetty are modelled to stand IN water** — their posts run below their own origin
+(`min.y` -2.35 and -1.05, measured off the written `.glb`). The jetties are sunk 0.30 m in the scene so
+their decks land flush rather than as a 34 cm kerb the player would catch on (no step-up, 38K).
+
+---
+
 ## UI assets — fonts, textures, shaders (Phase 37.5A)
 
 The first non-model asset class in the project, so it is worth stating the shape of it: the
@@ -884,12 +926,10 @@ tangents at unchanged distance — the single-camera equivalent of a separate vi
 
 ## Known, not fixed
 
-- ⚠️ **`npc_merchant_f` is modern dress and it shipped in 38L.** `women/animated_woman_2.glb` is a
-  white t-shirt, tan trousers and blue trainers; it dresses Embermarket merchants today. Found in
-  38N1 by rendering it at eye level before using it a second time, and not used again — Marta Quill
-  wears `npc_townswoman` instead. This is the same trap as the hi-vis worker (38K → 38L), one pack
-  over: **a body is only vetted at the range someone actually rendered it.** Fixing the Embermarket
-  is an `ext_resource` swap in one `.tscn` and was left for a session that can re-render the district.
+- **`npc_merchant_f` was modern dress and is now retired** (fixed in 38N2). It dressed Hana and
+  Sera until 38N2 re-dressed them; the file stays on disk unreferenced so its provenance row above
+  keeps meaning something. The lesson it cost is in the 38N2 section: **a body is only vetted at the
+  range someone actually rendered it.**
 - **`prp_banner_guild`'s collider is a poor shape match.** `Shape_banner` is 0.5 × 3 × 0.12 (wide
   in X, thin in Z); the banner is 0.2 × 3.36 × 2.0 (thin in X, wide in Z). Now that the model is
   centred the collider sits inside it, so the interact prompt works, but it covers only a 0.12 m

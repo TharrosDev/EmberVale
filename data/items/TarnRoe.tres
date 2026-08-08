@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+; Phase 38N2. The Landing's seam into the other trades: `fish` AND `reagent`, so Mirela's apothecary
+; and the Embermarket herbalist both want it and the hamlet is not sealed off from every other
+; specialist (38L's rule - a specialist nobody overlaps with is a menu entry, not a merchant).
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.material.tarn_roe"
+DisplayName = "Tarn Roe"
+Description = "Pale orange eggs pressed into a horn jar. Half the valley eats it; the other half grinds it into something that glows faintly."
+Type = 4
+Rarity = 0
+MaxStack = 40
+Weight = 0.3
+Value = 19
+TradeTags = Array[String](["fish", "reagent"])

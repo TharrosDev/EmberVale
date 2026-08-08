@@ -19,7 +19,7 @@
 > single most expensive file in the repo to open. Reading it whole to find out what to do next costs
 > more than the work usually does.
 >
-> **You are here: 38N2 is next** (169 done, 173 remaining).
+> **You are here: 38O is next** (170 done, 172 remaining).
 >
 > ⚠️ **"First unchecked" is the WRONG way to find that, and this note exists because it just
 > misled a tool.** 38G is unchecked and sits above 38M, but it was **deferred** — it prices goods by
@@ -30,7 +30,7 @@
 > not next. **Read the box, do not trust the first empty checkbox.**
 >
 > **How to use it:**
-> 1. `grep -n "38N2 —" docs/SESSION_PLAYBOOK.md` (your sub-phase id) to get a line number.
+> 1. `grep -n "38O —" docs/SESSION_PLAYBOOK.md` (your sub-phase id) to get a line number.
 > 2. Read from a few hundred lines *before* it — the entries just above yours carry the
 >    **"two things worth carrying into the next sub-phase"** lines, which are the whole point of
 >    the log and the cheapest bug prevention in this repo.
@@ -3760,10 +3760,23 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
     2. **Every `rts` model is ~1/6 scale, now confirmed twice.** Raw heights here were 1.17 m, 0.39 m, 0.42 m and 0.25 m. Measure against a 1.8 m box before authoring anything around it; adapt with `nodes/root_scale`.
   - Build clean + **1116** tests + `--validate` exit 0 + `--economy` captured + the cell instantiated in-engine (396 nodes, no errors) and rendered at noon and dusk from seven positions + a `--play` boot with **all seven** Ember Crown cells resident. ⚠️ **No in-game walk** — the conversations, the interact prompts and the two routines are *reviewed against the Godot 4.7 C# API*, not observed in a session.
   - **Reachable when next played:** `travel goto travel.ember_crown.emberdeep_mine`, or walk east past the arena. Talk to Bregan for ore at a price nobody else in the realm asks; take him bread and he will barely look at it. Take the bread to Marta instead. `economy arbitrage` at F1 prints the whole picture.
-- [ ] **38N2 — Tarn's Landing** `[C]`
+- [x] **38N2 — Tarn's Landing** `[C]` ✅ *(plus the catalogue pass and the body pull, at the maintainer's call)*
   - **Done when:** the fishing hamlet exists as a cell with its own source/sink pair, and the realm has three markets to price against.
-  - **The water is decided** (maintainer call, 38N1): a flat translucent plane a few centimetres above the cell floor with **no collider**, floor continuing underneath, so the shoreline reads and the player can wade without swimming existing. Phase 39C owns real traversal verbs; a hamlet walled off from its own water would be worse than a shallow one.
-  - Its sink is the mirror of the mine's: Tarn's Landing has fish and wants everything else. ⚠️ Author what it **refuses** first (38N1's finding).
+  - **Landed:** `tarn_landing.tscn` (350 nodes) at `Center (-106, 0, -10)`, **7 items**, **2 shops**, 2 conversations + 27 locale rows, 2 routines, **5 adopted models**, and Hana and Sera re-dressed out of modern clothes.
+  - ⚠️ **THE OPEN-WEB PULL RETURNED A FILE THAT WAS ALREADY ON DISK, AND THAT IS THE SUB-PHASE'S BEST FINDING.** 38L declared the library "out of medieval character bodies" and named Quaternius's CC0 RPG Characters pack as the fix. The pull produced an **Adventurer byte-identical to `assets/library/women/adventurer.glb`** — `md5 cba6105c…`, vendored since the 38L migration, **never adapted**, and the best body of the whole search. 38L's "the five unused women are CC-BY 3.0" was simply wrong about that one. **The shortage was a bookkeeping error.** Before pulling anything, `ls` what is already vendored and check the licence field rather than a sentence in a retrospective.
+  - ⚠️ **Four of six candidates were rejected on sight, and the sixth had a chainsaw.** `Woman` is a black-and-pink top and blue jeans; `Lis` is a cartoon punk with a blue mohawk holding a chainsaw; `Monk` is not a person at all (an ornament with coins and rays); `Wizard` has four bones. One render pass, front and back, disposed of all four. **A 4-in-6 rejection rate is the entire argument for the gate**, and it is now the third sub-phase running to prove it.
+  - **`npc_merchant_f` is retired from the game.** Hana wears the dress body, Sera the adventurer's kit. The defect it caused took three sub-phases to travel: shipped 38L, found 38N1, fixed here.
+  - **The water is a decal and it needed a lakebed to be visible.** The first pass was a translucent plane over the *same shingle the shore is made of*, and at eye level it read as flat grey ground: **a transparent surface needs something dark underneath it to be transparent against.** A near-black skin under the tarn (no collider) fixed it in one edit, and the waterline now reads as an edge.
+  - ⚠️ **The dock and jetty models are built to stand IN water** — posts below their own origin (`min.y` −2.35 / −1.05). The jetties are sunk 0.30 m so their decks land flush instead of as a 34 cm kerb, which with no step-up (38K) would have been an invisible wall on the one route to the water.
+  - **The third market makes the table a network rather than a list.** `--economy` now shows fish cheapest at the Landing and best-paid at the mine's company store, and copper ore cheapest at the mine and best-paid at the Landing's chandler — two settlements that each want what the other digs up, with the Embermarket in the middle. 55 goods across 20 shops. Every margin is still negative and will be until 38G.
+  - **The sink's refusal is now doing visible work.** Odger accepts `textile`, `metal`, `fuel` and **not `fish`** — and says so in his own dialogue before the player can ask, which is the difference between a refusal and a greyed-out row.
+  - **A crate scare that was not a defect**, worth recording because the check is cheap: the crates read as 3 m cubes in one render. Measured — `prp_crate` is 1.24 m and `prp_barrel` 0.85 m, exactly as authored, and the render was foreshortening on a stacked pair six metres from the lens. **Measure before believing a screenshot, in both directions.**
+  - Two things worth carrying into 38O:
+    1. **Check the library before the web.** This session spent its first hour pulling an asset it already owned.
+    2. **Budget the second dressing pass into the estimate.** Three cells in a row have needed one, so it is not a surprise any more — it is the second half of the job.
+  - Build clean + **1132** tests + `--validate` exit 0 + `--economy` captured + the cell instantiated in-engine (350 nodes, no errors) and rendered at noon and dusk from eight positions + a `--play` boot with **all eight** Ember Crown cells resident. ⚠️ **No in-game walk** — conversations, prompts and routines are *reviewed against the Godot 4.7 C# API*, not observed.
+  - **Reachable when next played:** `travel goto travel.ember_crown.tarn_landing`, or walk west past the wilds. Buy a fresh catch off Wenna for four gold and carry it to Marta at the mine. Try to sell Odger a fish and watch him point you back up the beach.
+
 - [ ] **38O — Hollowreach: contraband and fences** `[F/C]`
   - **Done when:** contraband-tagged goods sell only at the wharf, at a two-sided reputation cost, and confiscation is recoverable.
 - [ ] **38P — Consignment house + appraiser** `[F/C]`
