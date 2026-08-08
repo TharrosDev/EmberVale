@@ -11,6 +11,33 @@
 > Work it **top to bottom**. Open a session, pick the next unchecked sub-phase,
 > do *only* that sub-phase, satisfy its **Done when** bar, commit, and stop.
 > One sub-phase ≈ one session ≈ one small PR (or one commit on the phase's PR).
+> ---
+>
+> ## ⚠️ Read this file by jumping, never end to end
+>
+> It is **~4k lines and ~88k tokens** — a chronological log of every sub-phase ever done, and the
+> single most expensive file in the repo to open. Reading it whole to find out what to do next costs
+> more than the work usually does.
+>
+> **You are here: 38M is next** (166 done, 174 remaining).
+>
+> ⚠️ **"First unchecked" is the WRONG way to find that, and this note exists because it just
+> misled a tool.** 38G is unchecked and sits above 38M, but it is **deferred** — it prices goods by
+> settlement demand and needed a second market to contrast against, so it waits on 38N. A `[ ]` with
+> a ⏸ in its line is parked, not next. **Read the box, do not trust the first empty checkbox.**
+>
+> **How to use it:**
+> 1. `grep -n "38M —" docs/SESSION_PLAYBOOK.md` (your sub-phase id) to get a line number.
+> 2. Read from a few hundred lines *before* it — the entries just above yours carry the
+>    **"two things worth carrying into the next sub-phase"** lines, which are the whole point of
+>    the log and the cheapest bug prevention in this repo.
+> 3. Ignore everything else. Phases 22–37 are history; their retrospectives are for the phase
+>    that immediately followed them.
+>
+> Sub-phase entries below `[ ]` are **plans**; entries marked `[x] ✅` are **retrospectives**
+> written after the fact and are the authority on what actually happened and what it cost.
+>
+> ---
 
 ---
 
@@ -21,7 +48,7 @@
 1. **Pick** the next unchecked `[ ]` sub-phase in order. Do not skip ahead — the
    ordering encodes dependencies.
 2. **Read** the sub-phase's *Goal*, *Tasks*, and *Done when*. Read the linked
-   CLAUDE.md §8 recipe and the relevant `docs/ARCHITECTURE.md` section **before**
+   docs/RECIPES.md recipe and the relevant `docs/ARCHITECTURE.md` section **before**
    touching code.
 3. **Do** only that sub-phase. If you discover it's two sessions of work, split
    it: do the first half, append a new lettered sub-phase for the remainder, and
@@ -140,7 +167,7 @@ no code) — batch them when momentum is good.
 - [x] **22G — `data/_templates/` canonical starting `.tres`** `[P]`
   - **Goal:** copy-paste starting points for every content type.
   - **Tasks:** create `data/_templates/` with one minimal, commented `.tres`
-    exemplar per content domain already in CLAUDE.md §8 (item, equippable, affix,
+    exemplar per content domain already in docs/RECIPES.md (item, equippable, affix,
     loot table, perk, quest, dialogue, schedule, weather, encounter, world event,
     recipe, spell, status effect, faction). Each is the recipe's "canonical
     starting point."
@@ -174,13 +201,13 @@ no code) — batch them when momentum is good.
     `CorruptionEvents.cs`. Implement `ISaveable` (stable `SaveId`), register in
     `OnInitialize`, unregister in `OnTeardown`. Add to `PlayerFactory`.
   - **Done when:** corruption can be raised/queried in code, fires tier events at
-    thresholds, and round-trips save/load. (CLAUDE.md §8 "new component" + "new
+    thresholds, and round-trips save/load. (docs/RECIPES.md "new component" + "new
     persistent system" + "new event".)
 
 - [x] **23B — Corruption dev console + debug surface** `[F]`
   - **Goal:** make it testable before it has any visual.
   - **Tasks:** register a `corruption` console command (`get` / `set N` / `add N`
-    / `tier`) per CLAUDE.md §8 "new dev-console command," resolving the player via
+    / `tier`) per docs/RECIPES.md "new dev-console command," resolving the player via
     `ServiceLocator`. Add a line to the F3 debug overlay showing value + tier.
   - **Done when:** the maintainer can drive corruption from `F1` and watch it on
     F3.
@@ -190,14 +217,14 @@ no code) — batch them when momentum is good.
   - **Tasks:** extend `DialogueEnums.cs` with `Condition` `CorruptionAtLeast` /
     `CorruptionBelow` and `Effect` `AddCorruption`. Wire evaluation in the dialogue
     session runner against `CorruptionComponent`. Author one test dialogue using
-    each. (Extends CLAUDE.md §8 "new conversation"; read `src/Dialogue/` first.)
+    each. (Extends docs/RECIPES.md "new conversation"; read `src/Dialogue/` first.)
   - **Done when:** a conversation visibly branches on corruption and a choice can
     raise it; `validate` understands the new enum values.
 
 - [x] **23D — Corruption UI: character-screen gauge** `[F]`
   - **Goal:** the player can see their corruption.
   - **Tasks:** add a corruption gauge to the character screen via `UiTheme.Bar`
-    (CLAUDE.md §8 "new UI panel"). Label the current tier. Rebuild from a dirty
+    (docs/RECIPES.md "new UI panel"). Label the current tier. Rebuild from a dirty
     flag in `_Process`, never in a signal handler.
   - **Done when:** the gauge reflects live corruption + tier through `UiTheme`.
 
@@ -241,7 +268,7 @@ no code) — batch them when momentum is good.
   - **Goal:** corruption unlocks corrupted variants and feeds the endings dial.
   - **Tasks:** add a corruption-tier gate option to `SpellResource`/`PerkResource`
     consumption (author one corrupted spell + one corrupted perk `.tres` gated by
-    tier — CLAUDE.md §8 recipes, no new system). Expose a
+    tier — docs/RECIPES.md recipes, no new system). Expose a
     `CorruptionComponent.EndingEligibility` read (Dawnfire vs Lord of Embers
     threshold) that Phase 49 will consume. Document the contract.
   - **Done when:** a tier-gated spell/perk is learnable only above its tier; an
@@ -473,7 +500,7 @@ no code) — batch them when momentum is good.
     region dup-id + neighbour/default-weather cross-ref checks (in `CollectCoreIssues`, so the boot
     and `--validate` gates both run them). The region/sub-cell scene convention
     (`scenes/regions/<region>/<cell>.tscn`, world-partition discipline) is documented in
-    `ARCHITECTURE.md` §2.6h-2 + a "A new region" recipe in CLAUDE.md §8. Verified: build + 79 tests
+    `ARCHITECTURE.md` §2.6h-2 + a "A new region" recipe in docs/RECIPES.md. Verified: build + 79 tests
     + `--validate` green (region checks pass); in-engine boot logs *"RegionDatabase loaded 1
     region(s)"* and the save header now reports "The Ember Crown" from the resource. No streaming
     yet — that is 25B.
@@ -716,7 +743,7 @@ no code) — batch them when momentum is good.
   - **Tasks:** author all six `data/races/*.tres` per LORE traits (Valari magic
     affinity, Grondar strength/endurance, Sylthari wildlife communion, Draekyn
     dragon ability seed, Umbral stealth, Human flexible). Reference existing
-    perks/stats; create any small new perk `.tres` they need (CLAUDE.md §8 "new
+    perks/stats; create any small new perk `.tres` they need (docs/RECIPES.md "new
     perk"). Pure content.
   - **Done when:** six valid race `.tres`; `validate` green; traits reference real
     ids.
@@ -848,7 +875,7 @@ no code) — batch them when momentum is good.
 - [x] **27C — Scheduled NPC population** `[C]` ✅
   - **Goal:** the hub feels inhabited.
   - **Tasks:** author `ScheduleResource`s and attach `ScheduleComponent`s to hub
-    NPCs (home → work → tavern → sleep routines) per CLAUDE.md §8 "new NPC
+    NPCs (home → work → tavern → sleep routines) per docs/RECIPES.md "new NPC
     routine." Give 3–5 named NPCs full day routines.
   - **Done when:** NPCs walk believable daily routines off the `WorldClock`.
   - **Done:** all **five** hub NPCs now run full day routines off the `WorldClock` (work by day
@@ -1094,7 +1121,7 @@ no code) — batch them when momentum is good.
     `--validate` 0; boot clean. Feel/tuning is the maintainer's at-keyboard pass.
 - [x] **29C — Weapon trails, impact VFX/SFX hooks** `[F/P]` ✅
   - **Done when:** swings show trails and impacts spawn placeholder VFX/SFX through
-    a poolable effect (CLAUDE.md §8 pooling).
+    a poolable effect (docs/RECIPES.md pooling).
   - **Done:** `CombatFeedbackDirector` (bootstrap `Node`) owns a `NodePool<ImpactEffect>` and on every
     `DamageDealtEvent` spawns a pooled expand-and-fade spark at the target (tinted gold/grey/white by
     crit/block/hit) + publishes a positional `SoundCueRequestedEvent` (the Phase 31 audio hook). The
@@ -1176,7 +1203,7 @@ no code) — batch them when momentum is good.
   - **Tasks:** author the signature mechanic + status effects per school — Fire ignite/DoT
     stacks, Frost chill→freeze, Lightning chain-to-nearby, Arcane ward/dispel, Nature
     heal-over-time/totem, Necrotic lifesteal/decay (corruption-gated per 23H). Mostly new
-    `StatusEffectResource` `.tres` + small resolver hooks (CLAUDE.md §8).
+    `StatusEffectResource` `.tres` + small resolver hooks (docs/RECIPES.md).
   - **Done when:** every school has a distinct on-hit behavior provable in the sandbox.
   - **Done:** one shared on-hit seam (`SchoolIdentity.OnSpellHit`, invoked by `SpellResolver`
     after damage, before the spell's own status). **Fire** = stacking ignite (`StatusEffectResource.MaxStacks`,
@@ -1971,7 +1998,7 @@ no code) — batch them when momentum is good.
 
 > Turned the enemy roster from code into content. **26 creatures are spawnable by id and only
 > three have a factory** — the rest are `.tres`. The systems reference is
-> `ARCHITECTURE.md` §2.5; the authoring recipes are CLAUDE.md §8. This block is the log.
+> `ARCHITECTURE.md` §2.5; the authoring recipes are docs/RECIPES.md. This block is the log.
 
 - [x] **34A — AI behaviour profiles: data-fy `EnemyAIComponent`** `[F]`
   - `AIProfileResource` + `AIProfileDatabase` (`data/ai_profiles/`, ids `ai.*`). Every knob the
@@ -2038,7 +2065,7 @@ no code) — batch them when momentum is good.
 
 ### What outlived the session
 
-- **Durable rules moved into the permanent docs**, which are the ones to trust: CLAUDE.md §8 has
+- **Durable rules moved into the permanent docs**, which are the ones to trust: docs/RECIPES.md has
   the recipes (new archetype, AI profile, bestiary entry, corrupted variant, new stat) and the
   traps — a caster needs spells *and* a standoff profile *and* a Mana pool or it silently never
   casts; never change `TemplateId`; always `Duplicate()` a material before tinting.
@@ -2081,7 +2108,7 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
 >
 > It landed as one: a hold you can walk into, warriors who ignore you until you
 > give them a reason, and a rank chain that moves your standing both ways. The
-> authoring recipes are CLAUDE.md §8; this block is the log.
+> authoring recipes are docs/RECIPES.md; this block is the log.
 
 - [x] **34.5A — Frostfang Clans `FactionResource` + hub presence** `[F/C]` ✅
   - **Done when:** the clan faction exists with a hub/outpost; reputation/dread
@@ -2261,7 +2288,7 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
   table**: a hold you can walk into, warriors who ignore you until you give them a
   reason, and an arc that moves your standing in both directions.
 - **Three durable rules moved into the permanent docs**, which are the ones to trust:
-  CLAUDE.md §8 now records that an encounter without `RegionIds` rolls in every
+  docs/RECIPES.md now records that an encounter without `RegionIds` rolls in every
   region, and that a quest can pay in faction standing.
 - **The validator gained three checks in three sub-phases**, each closing a failure
   mode with no symptom: an encounter narrowed to a region that does not exist, a
@@ -3650,8 +3677,40 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
     2. **Verify a negative test twice before believing an engine quirk.** A `LoadRadius = 0.0` case appeared not to fire, which looked like Godot skipping a default-valued export — a finding that would have gone into §7 as a repo-wide authoring trap. Re-run cleanly, it fired: the first result was an artifact of the test harness, not the engine. An hour of "interesting" engine behaviour is usually your own shell.
   - Build clean + **1010** tests + `--validate` exit 0, with all four new rules negative-tested in both directions and the market scene's parse proven by the new load gate. ⚠️ **No `--play` walk** — code-only verification at the maintainer's standing request, so the cell's navmesh bake, its lighting after dark and the waystone attunement are *reviewed against the Godot 4.7 C# API*, not observed.
   - **Reachable when next played:** walk south from the town square — the district streams in at about `z = 6`; attune at the Embermarket waystone and it joins the map screen's jump list.
-- [ ] **38L — The Embermarket roster** `[C]`
+- [x] **38K, second pass — dressing the Embermarket** `[C/F]` ✅ *(maintainer-requested rework before 38L: "the market is very important and the current version is bland and stale")*
+  - **Done when:** the district reads as the commercial heart of the Ember Crown rather than as a correct empty cell — without taking any of 38L's work.
+  - **Landed:** **17 CC0 models adapted out of `assets/library/`** (market stands ×2, cart, barrel, sacks, hay, bench, well, bell tower, gazebo, cauldron, fence, tree, bush; three townsfolk rigs), a rewritten `embermarket.tscn` (24 prop instances → ~90, 7 models → 19, **607 nodes**), `data/dialogue/MarketBoard.tres` + 12 locale keys, `src/Audio/AmbientEmitterComponent.cs` + two `sfx.ambient.*` cues, and `tools/market_shots.gd` — a throwaway-turned-keeper harness that instantiates a cell in the real engine and writes PNGs, which is the only way anyone in this repo has ever *looked* at a cell without walking to it.
+  - **The first pass was bland structurally, not by taste, and that is the finding worth carrying.** Six identical tents on six identical crates in two mirrored rows, six byte-identical lamps, four houses as a mirrored pair-of-pairs, one flat 52 m box, **two** authored materials and **zero** emission. Every one of those was individually defensible and the sum was a diagram of a market. **A cell built by copying one block six times will always read as a level**; variety has to be authored per instance or it does not exist.
+  - ⚠️ **`StallW1..StallE3` did not move, and that was the constraint the whole rebuild was designed around.** 38K promised 38L a transform to copy; a per-stall yaw "for variety" would have silently invalidated every `Counter` offset. Variety came from a different **model** and different dressing per stall instead. The four extra stalls are named **`StallX1..X4` and carry no `Counter`** — the naming *is* the contract, so nobody reading quickly can mistake dressing for a merchant mount.
+  - ⚠️ **NO RAISED GROUND ANYWHERE, and this cost a redesign.** The plan had a 0.3 m plaza dais. Godot's `CharacterBody3D` has **no step-up**: `MoveAndSlide` climbs nothing above `floor_snap_length` (0.1 m, never raised here), so a 0.3 m kerb is an invisible wall — while the navmesh's `agent_max_climb = 0.5` cheerfully bakes NPCs a path onto ground the player cannot follow them onto. **Verticality in this engine comes from props, never from terrain**: an 11 m bell tower, 8 m trees, 3.6 m gazebos. Every ground slab here is a 5–6 cm decorative skin with no collider.
+  - ⚠️ **Nothing may stand in the aisle.** The first draft put the market's own banner dead centre at `(0, 0, -21)` — a 1.9 × 3.4 m sign, colliderless, in the middle of the only route in. It looked like a gate and behaved like fog. Both threshold banners are now at `x = ±4.3`, outside the 7 m spine. A prop with no collider on a walking route is worse than one with a collider; the player is told it is solid and then told it is not.
+  - ⚠️ **`CLEAR_KEEP_TRANSFORM`, never `matrix_world = Identity`** (`CREDITS.md` has the long version). The `medieval_village` glTFs carry scale on a **parent node**, so unparenting by zeroing the world matrix exported all twelve props at ~1/200 scale — a 2.6 m stall written as 13 mm, with nothing logged. It was caught only because every file was **verified by parsing the written GLB**, which is now the rule for props as well as rigs.
+  - ⚠️ **Superseded by 38L: the three townsfolk are no longer in the cell.** Twelve merchants answered "no people in 2,704 m²" better than three bystanders did, and one of the three wore `npc_townsman`, which turned out to be a hi-vis vest and a hard hat. The paragraph below is kept because its *finding* still stands.
+  - **The three townsfolk were adapted by not adapting them.** All three already stood at 1.80–1.91 m with feet on the origin, and `npc_hooded` carries a bone-parented `Sword` that a Blender round-trip destroys (third-round finding, `CREDITS.md`). **When a rig needs no change, the correct adaptation is a file copy.** They also carry **no interactable and no `ScheduleComponent`** — the free interactable slot is what lets 38L promote any of them to a merchant with one component, and a schedule's `Destination` is a raw *world* `Vector3` against a cell authored at its own origin (the 37C bug in a different hat) that would then need hand-matching to 38L's shop hours, which nothing validates.
+  - **The market's sound is an `sfx.*` emitter, not an `amb.*` bed, and the reason generalises.** `AmbienceSelection.Resolve` picks one **global 2D** bed from weather → in-town → clock, and "in town" is a `SafeZones` membership test that cannot tell the market from the square. A new member there would have changed the ambience of the whole town to get a sound into one district. `AudioCueRouting` already makes any `sfx.*` id positional on the SFX bus and `AudioDirector` already pools the player, so the emitter needed **no routing work at all** — the same "the prefix is the wiring" property Phase 31A bought and nothing had spent since.
+  - **No new `ContentValidator` rules, deliberately** — 38K's own "a validator that cries wolf is a validator nobody reads" applies, and everything added is either already covered (the cell-scene parse gate; `MarketBoard.tres` and its keys ride the existing dialogue-graph and locale audits for free) or lives in a `.tscn`, which the validator does not scan.
+  - **The notice board carries no `Effect` on any choice.** A board that started a quest would put market gossip in the journal — the failure 38Q's brief names, arriving eleven sub-phases early. It also turns the empty stalls into deliberate fiction ("every stall on this square stands let and unclaimed") instead of an unfinished level.
+  - Two things worth carrying into 38L:
+    1. **Look at the thing.** Every fault above — the camping tents in a market, the banner in the aisle, the empty middle, the guessed colliders — was invisible in the `.tscn` and obvious in the first render. A 60-line `SceneTree` script that instantiates a cell, lights it, and saves PNGs found more in one run than re-reading the file three times did. It is checked in at `tools/market_shots.gd`; point it at the next cell.
+    2. **The stall models face their own local +X.** The west row therefore needs no rotation and the east row keeps the 180° yaw 38K already authored — so a 38L merchant standing at a `Counter` faces the aisle by standing at local `(2.2, 0, 0)` and looking back along −X. That fact is worth an hour if you have to rediscover it.
+  - Build clean + **1022** tests + `--validate` exit 0 + the cell instantiated in-engine (607 nodes, no errors) and rendered at noon and dusk from six camera positions. ⚠️ **Still no in-game `--play` walk** — the MCP cannot inject input, so the navmesh bake at stream-in, the interact prompt on the notice board and the villagers' idle animation are *reviewed against the Godot 4.7 C# API and verified in a standalone instantiation*, not observed in a session.
+  - **Reachable when next played:** walk south from the square; the braziers and the bell tower are visible from the seam. `E` on the notice board opens `dialogue.market_board`. `travel goto travel.ember_crown.embermarket` jumps there once attuned.
+- [x] **38L — The Embermarket roster** `[C]` ✅
   - **Done when:** ~12 specialist merchants are authored, placed, and reachable by conversation.
+  - **Landed:** **23 items and 5 new trade tags**, **12 shops** (`shop.embermarket.*`), **10 conversations** + 122 locale rows, **10 routines**, two merchant bodies, `ScheduleResource.Origin`, and twelve mounts in `embermarket.tscn`. One new leveled pool. **No new validator rules and no new systems** — the 38A–38J battery was built for exactly this drop and it held.
+  - ⚠️ **38L is two jobs, and the second one is only possible because of the first.** The game had **26 items**, and `weapon`, `gem`, `jewelry`, `potion`, `herb`, `ore`, `trophy` and `relic` had **exactly one member each**. Twelve specialists carved out of that would have been twelve merchants selling each other's iron ingot, and 38F's whole premise — that `AcceptedTags`/`Specialties` make a merchant *mean* something — would have been decorative. The catalogue came first. **The general lesson: a system that prices identity cannot be exercised by content that has no identity to price**, and 38F/38H/38I have all been running against a shelf too thin to show what they do.
+  - **`TradeTags.cs` kept its own bargain.** The file said a tag with no members is "a promise rather than a feature", and named eight. Five arrive here with goods wearing them the same day — `food`, `fish`, `textile`, `tome`, `fuel`. `contraband` waits for 38O's fence; `map` and `livestock` wait for anything at all to carry them. **A tag opened without an item is the thing that file exists to prevent.**
+  - ⚠️ **A TRAVELLING MERCHANT CANNOT USE THE DIALOGUE ROUTE, AND THIS IS THE SUB-PHASE'S BEST FINDING.** `DialogueSession` evaluates `ShopOpen`/`ShopClosed` through `ShopHours.IsOpenAt` alone — **hours, never `IsInTown`** — and the only thing that hides an away merchant and zeroes their collider is `VendorComponent.ApplyPresence`. Wire a traveller through a conversation and they stand at their cart every day of the cycle with a working trade line: 38J's mechanic inverted, and nothing reports it. So the ten residents talk and **Sera and Quill carry `VendorComponent`s**, which is Hesk's route for Hesk's reason. The price is theirs too: those two `ShopId`s live in a `.tscn` and `--validate` cannot read them. Written into `CLAUDE.md` §8 as a rule rather than left as a discovery.
+  - **`ScheduleResource.Origin` cost one export and removed thirty chances at a silent bug.** `ScheduleEntry.Destination` is a raw **world** `Vector3`, but a cell is authored at its own origin and streamed to its `Center` — so a stall position read out of `embermarket.tscn` lands 46 m north of where it was read. That is 37C's placement bug in a different hat. `Origin` defaults to `Vector3.Zero`, which is *exactly* the pre-38L behaviour, so the nine existing routines needed no migration — the same "the default is the ungated case" trick 38I's three gates play. ⚠️ The arithmetic lives in `ScheduleMath.Destination`, **not** on the resource, because the test project **crashes with an `AccessViolationException` constructing any Godot `Resource`**; a `Vector3` is a plain struct and passes fine. That is the constraint `ShopStock` was carved out for, met again from the other direction.
+  - ⚠️ **`npc_townsman` is a hi-vis vest and a hard hat**, and it shipped in 38K as a market villager. It survived because nobody stood three metres from it; 38L found it in the first close-range render, dropped it from the roster and retired the villager wearing it. **Look at the thing, at eye level, from close** — 38K's own lesson, re-earned within one sub-phase of being written down.
+  - ⚠️ **The library is out of medieval bodies and the entry in `CREDITS.md` says so rather than papering over it.** Seven usable bodies dress twelve merchants, so four appear twice. The five unused women are **CC-BY 3.0** (licence, not taste — the Witch and the Worker would have been perfect) and the four unused men are a business suit, a hoodie, jeans-and-sneakers and an astronaut. All three modern ones were rendered and rejected on sight. Closing it needs an open-web pull of Quaternius's own CC0 **RPG Character Pack**, which 38L did not make.
+  - **The three 38K villagers are gone**, and that is a deletion rather than a loss: they were authored for one stated reason — "no people in 2,704 m²" — and twelve merchants answer it better than three bystanders. One of the three was the hi-vis worker.
+  - **The roster is a market rather than twelve shops**, and the tag pairs are what do it: Hana's fish oil is `fish` **and** `reagent`, Ash's pitch is `fuel` **and** `reagent`, Corvin and Hana both stock the smoked fish. A specialist sealed off from every other specialist is a menu entry, not a merchant.
+  - Two things worth carrying into 38M:
+    1. **The validator battery is the deliverable, not the shops.** Twelve shops, ten conversations and 23 items landed with **zero new rules** and the only failures were caught by rules 38A–38J had already written — including the two that fired in the negative pass for reasons *other* than the one under test (an investment gate on a shop with no ladder trips "needs 1 rung, sells 0" first). ⚠️ **A rule can only be negative-tested by a break that actually reaches it**; a break that trips an earlier rule proves nothing about the one you meant to test, and both of mine did that on the first attempt.
+    2. **Generate the authoring, hand-write the prose.** All 55 `.tres` files came out of throwaway generators, which is what made a 12-shop drop tractable at all — but every merchant's four lines of dialogue and every file's rationale comment were written by hand, because a generated justification is a comment nobody will trust in six months.
+  - Build clean + **1105** tests + `--validate` exit 0, with **five rules negative-tested in both directions** (traveller-only consumable, specialty outside `AcceptedTags`, an ungated trade choice, a shop gating every row, a spread too thin for the premium) — each firing its own message on broken data and silent on the authored data, with every touched file backed up and restored rather than reverted through git. The cell instantiated in-engine (1 063 nodes, no errors) and rendered at noon and dusk from nine camera positions. ⚠️ **No in-game `--play` walk** — the MCP cannot inject input, so the merchants' idle animation, the interact prompts and the schedules walking them to their stalls at opening are *reviewed against the Godot 4.7 C# API and verified in a standalone instantiation*, not observed in a session.
+  - **Reachable when next played:** walk south and talk to anyone; every stall has somebody behind it. `shop shop.embermarket.jeweller` opens Nessa's case from the console and names any hours override; `time 26` rolls the day until Sera or Quill is in town; `rep faction.villagers 60` opens Tam's Treatise on Wardings; `shop invest shop.embermarket.ironmonger` buys Gilda's rung and unlocks her steel sword.
 - [ ] **38M — Crossway Post: caravans and tolls** `[F/C]`
   - **Done when:** a toll gate charges on the single path every crossing converges on, a permit exempts, and a bribe costs standing.
 - [ ] **38N — Emberdeep Mine + Tarn's Landing** `[C]`
@@ -3714,7 +3773,7 @@ Everything below needs the `F1` console or `F5`/`F9`, which no remote session ca
 - [ ] **40.5D — Relic-trial vault convention + one authored example** `[F/C]`
   - **Done when:** one vault (puzzle + guardian encounter) is authored end-to-end
     as the template Phase 51E's relics reuse.
-- [ ] **40.5E — CLAUDE.md §8 recipe + `ContentValidator` checks** `[F/P]`
+- [ ] **40.5E — docs/RECIPES.md recipe + `ContentValidator` checks** `[F/P]`
   - **Done when:** "a new puzzle/trap" is documented and content is checked for
     solvability/dangling triggers.
 

@@ -274,7 +274,7 @@ a travelling highlight has nothing meaningful to show frozen.
   tab order instead of the grid.
 - **Prompt glyphs:** any on-HUD key hint uses `GameInput.PromptLabel` (device-aware) and
   refreshes on `InputDeviceChangedEvent` — never a hard-coded key name.
-- Rebuild-from-dirty-flag in `_Process`, never inside a button signal (CLAUDE.md §8).
+- Rebuild-from-dirty-flag in `_Process`, never inside a button signal (docs/RECIPES.md).
 
 ## 7. Material & ornament (37.5A)
 

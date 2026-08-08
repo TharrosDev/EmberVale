@@ -68,7 +68,7 @@ Pattern column shows the canonical shape; examples are real ids from `data/**`.
 | `enemy.*` | `enemy.<name>` | `enemy.goblin` | ✅ hostile actor template (`EnemyTemplateRegistry`) — §3 |
 | `npc.*` | `npc.<name>` | `npc.elder` | ✅ friendly/neutral actor template — §3 |
 | `prop.*` | `prop.<name>` | `prop.cache` | ✅ persistent-actor template (`PersistentActorRegistry`) — §3 |
-| `flag.*` | `flag.<name>` or `flag.<arc>.<name>` | `flag.elder_thanked`, `flag.clan.named` | ✅ story flag (`StoryFlagsComponent`); not a `.tres` — set/read in dialogue/code. Arc-scoped chains (Kael's, the clan rank chain) take the middle segment |
+| `flag.*` | `flag.<name>`, `flag.<arc>.<name>` or `flag.<domain>.<fact>` | `flag.elder_thanked`, `flag.clan.named`, `flag.stable.mount_owned` | ✅ story flag (`StoryFlagsComponent`); not a `.tres` — set and read in dialogue and code. Arc-scoped chains (Kael's, the clan rank chain) take the middle segment; 38D uses the same shape for purchase receipts (`flag.bank.account`). ⚠️ **No database, so `--validate` can only catch a flag nothing ever *sets*** — a `SetFlag` typo stays silent |
 | `travel.*` | `travel.<region>.<node>` | `travel.frostfang_reach.clan_hold` | ✅ fast-travel node (`TravelNodeComponent` in a cell scene, discovered at runtime by `FastTravelService`); **not validated** — a typo in its `RegionId` fails silently |
 | `region.*` | `region.<name>` | `region.ember_crown` | ✅ `RegionDatabase` — Phase 25 |
 | `race.*` | `race.<name>` | `race.human` | ✅ `RaceDatabase` — Phase 26 |
@@ -77,9 +77,8 @@ Pattern column shows the canonical shape; examples are real ids from `data/**`.
 | `boss.*` | `boss.<name>` | `boss.iron_king` | ✅ `BossDatabase` — Phase 36A. Names a fight's *structure*; the actor stays an `enemy.*` archetype pointing at it via `BossId`, which is how one shape can serve several bosses |
 | `property.*` | `property.<region>.<name>` | `property.ember_crown.cottage` | ✅ `PropertyDatabase` — Phase 37A. Region-scoped, like `travel.*`, because a holding belongs to somewhere |
 | `place.*` | `place.<propertyId>#<n>` | `place.property.ember_crown.cottage#1` | ✅ a player-placed prop's `PersistentId` (`PlacementIds`) — Phase 37C. Not a `.tres`: minted at placement time and carried by `PersistentSpawnDirector`. The holding is encoded *inside* the id, which is what lets 37D ask a property what stands in it with no second record to drift |
-| `shop.*` | `shop.<region>.<trade>` | `shop.ember_crown.goods` | ✅ `ShopDatabase` — Phase 38A. Region-scoped like `property.*`, because a merchant stands somewhere. Referenced two ways since 38E: a `DialogueEffect.OpenShop` arg in a `.tres`, which **is** validated, and a `VendorComponent.ShopId` in a `.tscn`, which is not — `ContentValidator` does not scan scenes, so a typo there gives no prompt at all rather than an error. Prefer the effect for anyone the player can talk to |
+| `shop.*` | `shop.<region>.<trade>` | `shop.ember_crown.goods` | ✅ `ShopDatabase` — Phase 38A. Region-scoped like `property.*`, because a merchant stands somewhere. Referenced two ways since 38E: a `DialogueEffect.OpenShop` arg in a `.tres`, which **is** validated, and a `VendorComponent.ShopId` in a `.tscn`, which is not — `ContentValidator` does not scan scenes, so a typo there gives no prompt at all rather than an error. Prefer the effect for anyone the player can talk to. ⚠️ **38L scopes by *settlement district*, not by region id**: the Embermarket's twelve are `shop.embermarket.*`, not `shop.ember_crown.*`, because sixteen shops in one region all reading `ember_crown` tells a reader nothing about where the merchant is. A district is the useful unit once a region has more than one |
 | `service.*` | `service.<region>.<kind>` | `service.ember_crown.inn` | ✅ `ServiceDatabase` — Phase 38D (trainer/bank/inn/stable). Region-scoped like `shop.*`. Same `.tscn` blind spot: the `ServiceId` on a `ServiceComponent` is unvalidated, so a typo gives no prompt rather than an error |
-| `flag.*` | `flag.<domain>.<fact>` | `flag.stable.mount_owned` | ✅ story flags (`StoryFlagsComponent`) — **no database, so `--validate` can only catch a flag nothing ever sets**; a `SetFlag` typo stays silent. 38D uses them as purchase receipts (`flag.bank.account`) |
 | `relic.*` | `relic.<name>` | — | ⏳ Phase 51 (divine relics; likely an `item.*` subcat too — decide there) |
 
 > **No `bestiary.*` family.** Bestiary entries (Phase 34G) are keyed by the `enemy.*` id they
@@ -89,11 +88,20 @@ Pattern column shows the canonical shape; examples are real ids from `data/**`.
 
 ### `item.*` subcategories (in use)
 
-`currency` · `potion` · `material` · `gem` · `armor` · `weapon` · `ring`
+`currency` · `potion` · `material` · `gem` · `armor` · `weapon` · `ring` · `kit` · `decor` ·
+`relic` · `food` · `tome`
 
 e.g. `item.currency.gold`, `item.potion.health`, `item.material.iron_ore`,
 `item.gem.ruby`, `item.armor.leather_vest`, `item.weapon.steel_sword`,
-`item.ring.iron`. **Convention:** add a new subcategory only for a genuinely new item
+`item.ring.iron`, `item.kit.forge`, `item.decor.banner`, `item.relic.iron_heart`,
+`item.food.bread`, `item.tome.herbal`.
+
+> `kit`, `decor` and `relic` went live in Phases 37–38 and this list was not updated with them;
+> `food` and `tome` arrived with 38L's Embermarket catalogue. Recorded together in 38L. Both new
+> ones are genuinely new families — a thing that is eaten and a thing that is read — rather than
+> shades of `material`, which is the bar this convention sets.
+
+**Convention:** add a new subcategory only for a genuinely new item
 *family*; accessories currently use a slot-specific category (`ring`) — widen to
 `accessory.*` only if a future slot makes `ring` too narrow (a Phase 51 call).
 
@@ -148,7 +156,7 @@ the new id — is the source of truth (fix the id, or amend this doc by decision
 
 ---
 
-## 5. One deliberate id collision (do not "fix" it)
+## 6. One deliberate id collision (do not "fix" it)
 
 A **`BestiaryEntryResource.Id` is the enemy template id it documents**, not an id of its own
 (Phase 34G). So `data/bestiary/Wolf.tres` and `data/enemies/Wolf.tres` both declare
