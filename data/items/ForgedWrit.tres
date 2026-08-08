@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://cmbrvlctbwrit"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+; Phase 38O - contraband. Deliberately NOT a working permit: 38M's TollPermitFlagId is granted by a
+; Passage service and nothing else, and an item that quietly granted a flag would be a second authority
+; over the same road. This is a forgery you sell, not a forgery you use.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.tome.forged_writ"
+DisplayName = "Forged Warden's Writ"
+Description = "The seal is close. The hand is closer. Neither is close enough to show a warden who reads."
+Type = 0
+Rarity = 1
+MaxStack = 5
+Weight = 0.3
+Value = 70
+TradeTags = Array[String](["contraband", "tome"])

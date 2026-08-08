@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://cmbrvlctbdrsm"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+; Phase 38O - contraband. Every one of these five wears `contraband` AND an ordinary trade, so the
+; dominance rule is exercised by the authored data and not only by a test: Mirela deals in reagents and
+; still will not touch this one.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.material.dreamsmoke"
+DisplayName = "Dreamsmoke Resin"
+Description = "Scraped from a poppy that does not grow this side of the pass. Burns sweet, and the burning is the point."
+Type = 4
+Rarity = 1
+MaxStack = 20
+Weight = 0.2
+Value = 38
+TradeTags = Array[String](["contraband", "reagent"])

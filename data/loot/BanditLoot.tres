@@ -27,9 +27,29 @@ MinQuantity = 1
 MaxQuantity = 1
 RollAffixes = true
 
+; Phase 38O - where contraband comes from. It has to drop off somebody or the fence has nothing to
+; buy, and an outlaw carrying untaxed goods needs no explanation at all. The loop it closes is the
+; grim one: the standing a fenced sale pays out is standing with the faction you took the goods from.
+
+[sub_resource type="Resource" id="Entry_dreamsmoke"]
+script = ExtResource("2_entry")
+ItemId = "item.material.dreamsmoke"
+DropChance = 0.22
+MinQuantity = 1
+MaxQuantity = 2
+RollAffixes = false
+
+[sub_resource type="Resource" id="Entry_fur"]
+script = ExtResource("2_entry")
+ItemId = "item.material.untaxed_fur"
+DropChance = 0.16
+MinQuantity = 1
+MaxQuantity = 1
+RollAffixes = false
+
 [resource]
 script = ExtResource("1_table")
-Entries = Array[Resource]([SubResource("Entry_scrap"), SubResource("Entry_potion"), SubResource("Entry_cap")])
+Entries = Array[Resource]([SubResource("Entry_scrap"), SubResource("Entry_potion"), SubResource("Entry_cap"), SubResource("Entry_dreamsmoke"), SubResource("Entry_fur")])
 GoldItemId = "item.currency.gold"
 GoldChance = 0.8
 GoldMin = 6

@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://cmbrvlctbmoon"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+; Phase 38O - contraband. The dearest of the five, and the reason a fence is worth the walk: Nessa the
+; jeweller deals in gemstones and refuses it, because a stone with no register entry is a stone that
+; came out of somebody else's claim.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.gem.moonstone_rough"
+DisplayName = "Unregistered Moonstone"
+Description = "Uncut, unlisted, and still wearing the grit of a claim nobody filed."
+Type = 4
+Rarity = 2
+MaxStack = 20
+Weight = 0.1
+Value = 95
+TradeTags = Array[String](["contraband", "gem"])

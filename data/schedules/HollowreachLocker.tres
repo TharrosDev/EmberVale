@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="ScheduleResource" format=3]
+
+[ext_resource type="Script" path="res://src/Npc/ScheduleResource.cs" id="1_sched"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleEntry.cs" id="2_entry"]
+
+; Coyle Ferrin, the Longshore Locker (Phase 38O).
+;
+; ⚠️ DESTINATIONS ARE CELL-LOCAL against Origin (-106, 0, 74), Hollowreach's Center.
+;
+; His shop never shuts (OpenHour == CloseHour == 0), so this routine has nothing to keep in step with
+; and exists for a different reason: a merchant who is always open must not be a merchant who never
+; moves. He works the pitches in the morning, the wharf when the boats are in, and the locker door
+; after dark — always reachable, never in the same place twice.
+;
+; ⚠️ That "always open" is not laziness, it is the pair's design. Sedge trades 20:00-05:00, so if Coyle
+; kept hours too there would be stretches of the day when contraband could not be sold anywhere in the
+; realm — a refusal the player would read as the mechanic being broken rather than as somebody's
+; opening times.
+
+[sub_resource type="Resource" id="e_0"]
+script = ExtResource("2_entry")
+StartHour = 6
+Activity = "Setting out the pitches"
+Destination = Vector3(3, 0, 5)
+
+[sub_resource type="Resource" id="e_1"]
+script = ExtResource("2_entry")
+StartHour = 11
+Activity = "Working the wharf"
+Destination = Vector3(-1, 0, 2)
+
+[sub_resource type="Resource" id="e_2"]
+script = ExtResource("2_entry")
+StartHour = 18
+Activity = "At the locker door"
+Destination = Vector3(4, 0, 4)
+
+[resource]
+script = ExtResource("1_sched")
+Id = "schedule.hollowreach.locker"
+Origin = Vector3(-106, 0, 74)
+Entries = Array[Resource]([SubResource("e_0"), SubResource("e_1"), SubResource("e_2")])

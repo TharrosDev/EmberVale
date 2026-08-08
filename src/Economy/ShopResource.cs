@@ -156,6 +156,45 @@ public partial class ShopResource : Resource
     /// appears at all — the quietest failure in 38J, and a validator rule for exactly that reason.</summary>
     [Export] public int VisitDayOffset { get; set; }
 
+    [ExportGroup("Contraband")]
+
+    /// <summary>
+    /// The faction a fenced sale <em>pleases</em>, and by how much (Phase 38O). Empty/<c>0</c> is a
+    /// merchant who deals in nothing illicit — which is every shop authored before 38O, so both pairs
+    /// arrive without changing a single existing one (38I/38M's "the default is the ungated case").
+    ///
+    /// ⚠️ <b>Per sale, not per unit.</b> A stack sale is one price multiplied across a quantity (38H),
+    /// but standing is not divisible the same way: charged per unit, one click on a stack of twenty
+    /// would move the player three tiers. This is deliberately the opposite of 38H's per-unit ruling on
+    /// the payout, and the two are only in tension if you read "a stack decays across its own units" as
+    /// a rule about stacks rather than about appetite.
+    ///
+    /// A fence prices flat: she authors no <see cref="FactionId"/>, because the natural owner
+    /// (<c>faction.outlaws</c>) starts at <c>-30</c> — tier <c>Hostile</c>, at or below its own
+    /// <c>HostileThreshold</c> — so a shop factioned to it would be hidden by
+    /// <see cref="VendorComponent"/> and refuse to trade from the first minute of the game. The
+    /// standing she moves and the standing she prices by are two different questions, and 38O only
+    /// answers the first.
+    /// </summary>
+    [Export] public string ContrabandFactionId { get; set; } = string.Empty;
+
+    /// <inheritdoc cref="ContrabandFactionId"/>
+    [Export] public int ContrabandDelta { get; set; }
+
+    /// <summary>
+    /// The faction a fenced sale <em>offends</em>, and by how much — the other half of the two-sided
+    /// cost (Phase 38O). Negative, and the same machinery 38M's bribe uses: standing lost with the
+    /// villagers is charged again at every honest counter in the realm, forever, because
+    /// <see cref="ShopPricing.PriceMultiplierFor"/> reads it.
+    ///
+    /// ⚠️ A fence must author <b>both</b> sides. One-sided is well-formed data that reads in game as
+    /// the penalty being broken, so <c>--validate</c> rejects it.
+    /// </summary>
+    [Export] public string ContrabandPenaltyFactionId { get; set; } = string.Empty;
+
+    /// <inheritdoc cref="ContrabandPenaltyFactionId"/>
+    [Export] public int ContrabandPenaltyDelta { get; set; }
+
     [ExportGroup("Investment")]
 
     /// <summary>

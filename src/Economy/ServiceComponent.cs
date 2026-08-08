@@ -60,9 +60,12 @@ public partial class ServiceComponent : InteractableComponent
                 ServiceOutcome.Hostile => Loc.TF("service.prompt_hostile", name),
                 ServiceOutcome.AlreadyHeld => Loc.TF(HeldKey(service.Kind), name),
                 ServiceOutcome.CannotAfford => Loc.TF("service.prompt_price", name, price, GoldHeld()),
+                // ⚠️ A free service falls back to the bare "Use {0}" line, which is right for a free
+                // bed and wrong for a warden's search — the one service the player is not buying, and
+                // the only one where not knowing what the press does costs them their goods (38O).
                 _ => price > 0
                     ? Loc.TF(OfferKey(service.Kind), name, price)
-                    : Loc.TF("service.prompt_free", name),
+                    : Loc.TF(FreeKey(service.Kind), name),
             };
         }
     }
@@ -99,6 +102,12 @@ public partial class ServiceComponent : InteractableComponent
                 break;
             case ServiceKind.Passage:
                 Passage(service, instigator);
+                break;
+            case ServiceKind.Search:
+                Search(instigator);
+                break;
+            case ServiceKind.Redeem:
+                Redeem(service, instigator, price);
                 break;
             default:
                 StableMount(service, instigator);
@@ -188,6 +197,57 @@ public partial class ServiceComponent : InteractableComponent
         }
     }
 
+    /// <summary>
+    /// Searches the player and impounds whatever the law does not let them carry (Phase 38O). Free, so
+    /// there is no charge to roll back, and the outcome is reported by the prompt flipping to "nothing
+    /// to declare" the instant the pack is clean.
+    /// </summary>
+    private static void Search(IEntity instigator)
+    {
+        if (Resolve<ContrabandImpound>() is not { } impound ||
+            instigator.GetComponent<InventoryComponent>() is not { } pack)
+        {
+            return;
+        }
+
+        impound.SeizeFrom(pack);
+    }
+
+    /// <summary>
+    /// Gives the goods back for the fine already charged (Phase 38O).
+    ///
+    /// ⚠️ <b>The refund is the load-bearing part.</b> The fine was charged on every unit held, but a
+    /// full pack cannot take every unit back — and a charge for goods the wardens still hold is item
+    /// loss with a receipt, the exact failure <c>VendorPanel.Sell</c> refunds the vendor purse to
+    /// avoid. The units that did not fit stay impounded and their share of the fine comes back, so a
+    /// second visit with room finishes the job at no extra cost.
+    ///
+    /// The refund fits by construction in every case that matters: the gold was taken out of a stack
+    /// that is either still there or whose slot has just been freed by emptying.
+    /// </summary>
+    private static void Redeem(ServiceResource service, IEntity instigator, int price)
+    {
+        if (Resolve<ContrabandImpound>() is not { } impound ||
+            instigator.GetComponent<InventoryComponent>() is not { } pack)
+        {
+            return;
+        }
+
+        int units = impound.Units;
+        int left = impound.ReturnTo(pack);
+        if (left <= 0 || units <= 0 || price <= 0)
+        {
+            return;
+        }
+
+        int refund = (int)((long)price * left / units);
+        if (refund > 0 && ItemDatabase.Get(GameIds.Currency.Gold) is { } gold)
+        {
+            pack.AddItem(gold, refund);
+            Log.Info($"Service '{service.Id}': refunded {refund}g for {left} units that would not fit.");
+        }
+    }
+
     /// <summary>Records a one-off purchase. A service with no flag is pay-per-use and this is a no-op;
     /// the validator is what stops a one-off service being authored without one.</summary>
     private static void Unlock(ServiceResource service, IEntity instigator)
@@ -222,6 +282,21 @@ public partial class ServiceComponent : InteractableComponent
     /// </summary>
     private static bool AlreadyHeld(ServiceResource service)
     {
+        // 38O's two, answered before the flags because neither authors one: there is nothing to search
+        // an empty-handed traveller for, and nothing to buy back from an empty impound. Both reach the
+        // player as the "already held" prompt, which is the one state in the battery that means
+        // "correct, and nothing to do" rather than a refusal.
+        if (service.Kind == ServiceKind.Search)
+        {
+            return Player()?.GetComponent<InventoryComponent>() is not { } pack ||
+                ContrabandImpound.ContrabandIn(pack) == 0;
+        }
+
+        if (service.Kind == ServiceKind.Redeem)
+        {
+            return ImpoundedUnits() == 0;
+        }
+
         if (!string.IsNullOrEmpty(service.UnlockFlagId))
         {
             return Player()?.GetComponent<StoryFlagsComponent>()?.Has(service.UnlockFlagId) ?? false;
@@ -278,8 +353,24 @@ public partial class ServiceComponent : InteractableComponent
             reputation.IsHostile(factionId);
     }
 
-    private static int PriceOf(ServiceResource service) =>
-        ShopPricing.ServicePrice(service.PriceGold, StandingWith(service.FactionId));
+    /// <summary>
+    /// The gold this costs at the player's standing. Every kind but one reads its authored price.
+    ///
+    /// ⚠️ <b><see cref="ServiceKind.Redeem"/> is priced from the impound, not from the resource</b>
+    /// (38O): <c>PriceGold</c> is the per-unit fine, and the bill depends on how much was taken. It
+    /// still goes through <see cref="ShopPricing.ServicePrice"/>, so the wardens' standing discount
+    /// applies to a fine exactly as it does to a bed — there is no second discount ramp to drift.
+    /// </summary>
+    private static int PriceOf(ServiceResource service)
+    {
+        int gold = service.Kind == ServiceKind.Redeem
+            ? ContrabandLaw.Fine(service.PriceGold, ImpoundedUnits())
+            : service.PriceGold;
+
+        return ShopPricing.ServicePrice(gold, StandingWith(service.FactionId));
+    }
+
+    private static int ImpoundedUnits() => Resolve<ContrabandImpound>()?.Units ?? 0;
 
     private static ReputationTier StandingWith(string factionId)
     {
@@ -303,6 +394,8 @@ public partial class ServiceComponent : InteractableComponent
         ServiceKind.Bank => "service.prompt_open",
         ServiceKind.Stable => "service.prompt_owned",
         ServiceKind.Passage => "service.prompt_passage_held",
+        ServiceKind.Search => "service.prompt_search_clean",
+        ServiceKind.Redeem => "service.prompt_redeem_empty",
         _ => "service.prompt_free",
     };
 
@@ -312,7 +405,16 @@ public partial class ServiceComponent : InteractableComponent
         ServiceKind.Bank => "service.prompt_account",
         ServiceKind.Stable => "service.prompt_buy_mount",
         ServiceKind.Passage => "service.prompt_passage",
+        ServiceKind.Redeem => "service.prompt_redeem",
         _ => "service.prompt_rest",
+    };
+
+    /// <summary>The offer line when there is nothing to pay. Only the search needs its own — every
+    /// other free service is something the player chose to walk up to.</summary>
+    private static string FreeKey(ServiceKind kind) => kind switch
+    {
+        ServiceKind.Search => "service.prompt_search",
+        _ => "service.prompt_free",
     };
 
     private static Player.PlayerCharacter? Player() =>

@@ -93,6 +93,7 @@ public partial class GameBootstrap : Node3D
     private FastTravelService? _fastTravel;
     private Housing.HousingService? _housing;
     private Economy.ShopStockService? _shopStock;
+    private Economy.ContrabandImpound? _impound;
     private readonly System.Collections.Generic.List<Entity> _portals = new();
     // Post-transition settle (Phase 25.5B): time spent on the loading screen since a region load
     // began (-1 = not loading). Play resumes when the streamer reports the destination has finished
@@ -512,6 +513,12 @@ public partial class GameBootstrap : Node3D
         // persist. Restock is lazy-on-open, so there is nothing here that ticks.
         _shopStock = new Economy.ShopStockService { Name = "ShopStock" };
         AddChild(_shopStock);
+
+        // Confiscated contraband (38O): what the Crossway wardens have taken and not yet given back.
+        // Its own node rather than a field on the shop service, because it is the player's property in
+        // someone else's keeping — nothing about it is a shop, and it outlives every shop it touches.
+        _impound = new Economy.ContrabandImpound { Name = "ContrabandImpound" };
+        AddChild(_impound);
 
         // Placement mode (37C): the ghost and the commit. Not ISaveable — a placed prop persists
         // through the PersistentSpawnDirector above, which already records template, position and yaw.

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://cmbrvlctbbash"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+; Phase 38O - contraband, and the one the villagers mind most. Distinct from item.material.grave_dust,
+; which is an honest reagent off a battlefield: this came out of a barrow that was sealed for a reason.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.material.barrow_ash"
+DisplayName = "Barrow Ash"
+Description = "Grey, fine, and faintly warm. Taken from under a cairn that somebody's grandmother helped pile."
+Type = 4
+Rarity = 2
+MaxStack = 20
+Weight = 0.4
+Value = 110
+TradeTags = Array[String](["contraband", "arcane"])
