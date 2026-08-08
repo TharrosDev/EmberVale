@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="RegionResource" load_steps=6 format=3 uid="uid://crgnembrcrown0"]
+[gd_resource type="Resource" script_class="RegionResource" load_steps=7 format=3 uid="uid://crgnembrcrown0"]
 
 [ext_resource type="Script" path="res://src/World/RegionResource.cs" id="1_region"]
 [ext_resource type="Script" path="res://src/World/RegionCellResource.cs" id="2_cell"]
@@ -8,16 +8,14 @@ script = ExtResource("2_cell")
 Id = "ember_crown.town_hub"
 ScenePath = "res://scenes/regions/ember_crown/town_hub.tscn"
 Center = Vector3(0, 0, -10)
-LoadRadius = 50.0
 
 ; The Embermarket (Phase 38K). Placed so its 52 m square ABUTS the town hub's 60 m one exactly: the hub
 ; floor runs to z = 20, and a 52-wide floor centred at z = 46 starts there. A gap is a hole the player
 ; falls through; an overlap is two coplanar floors z-fighting along a seam. Neither is visible in the
 ; editor from a .tres, so the arithmetic is written down here rather than eyeballed.
 ;
-; LoadRadius 40 against a spawn point at z = 5 means the district streams in as the player takes their
-; first steps south rather than being resident from the main menu — the cheapest possible demonstration
-; that the streamer works, and the reason not to round it up to the hub's 50.
+; 38M2 removed every LoadRadius here: the streamer no longer decides anything by distance, so all six
+; cells are resident from the moment the region is entered.
 ;
 ; SafeRadius 32 is the field 38K added: a settlement can be more than one cell, and the region's own
 ; 34 m bubble around the square cannot reach a district a street away without also swallowing the wilds
@@ -29,29 +27,41 @@ script = ExtResource("2_cell")
 Id = "ember_crown.embermarket"
 ScenePath = "res://scenes/regions/ember_crown/embermarket.tscn"
 Center = Vector3(0, 0, 46)
-LoadRadius = 40.0
 SafeRadius = 32.0
+
+; The Crossway Post (Phase 38M2). Placed so its 52 m square ABUTS wilds_north's 50 m one exactly:
+; wilds_north is centred at z = -65 and its floor ends at z = -90, and a 52-wide floor centred at
+; z = -116 starts there. Same arithmetic 38K did for the Embermarket, and for the same reason — a gap
+; is a hole the player falls through and an overlap is two coplanar floors z-fighting along the seam,
+; and neither is visible from this file.
+;
+; SafeRadius 26 keeps the wardens' own gate from being a warband spawn point. It does NOT reach the
+; wilds it borders, deliberately: the road between the town and the gate is meant to be the dangerous
+; part, and that is the whole reason a toll on it reads as something the wardens are owed.
+[sub_resource type="Resource" id="Cell_crossway_post"]
+script = ExtResource("2_cell")
+Id = "ember_crown.crossway_post"
+ScenePath = "res://scenes/regions/ember_crown/crossway_post.tscn"
+Center = Vector3(0, 0, -116)
+SafeRadius = 26.0
 
 [sub_resource type="Resource" id="Cell_wilds_north"]
 script = ExtResource("2_cell")
 Id = "ember_crown.wilds_north"
 ScenePath = "res://scenes/regions/ember_crown/wilds_north.tscn"
 Center = Vector3(0, 0, -65)
-LoadRadius = 45.0
 
 [sub_resource type="Resource" id="Cell_wilds_west"]
 script = ExtResource("2_cell")
 Id = "ember_crown.wilds_west"
 ScenePath = "res://scenes/regions/ember_crown/wilds_west.tscn"
 Center = Vector3(-55, 0, -10)
-LoadRadius = 45.0
 
 [sub_resource type="Resource" id="Cell_arena"]
 script = ExtResource("2_cell")
 Id = "ember_crown.arena"
 ScenePath = "res://scenes/regions/ember_crown/arena.tscn"
 Center = Vector3(55, 0, -10)
-LoadRadius = 45.0
 
 [resource]
 script = ExtResource("1_region")
@@ -59,7 +69,13 @@ Id = "region.ember_crown"
 DisplayName = "The Ember Crown"
 Realm = 0
 SpawnPoint = Vector3(0, 1.2, 5)
-Cells = Array[ExtResource("2_cell")]([SubResource("Cell_town_hub"), SubResource("Cell_embermarket"), SubResource("Cell_wilds_north"), SubResource("Cell_wilds_west"), SubResource("Cell_arena")])
+
+; 38M2: the Frostfang portal stands at the Crossway gate rather than four metres from where the player
+; wakes up. Local z = -6 in crossway_post.tscn, so world z = -122 — the far side of the gap between the
+; two palisades, which is what makes the toll something you pay BEFORE the crossing and the wardens
+; people you have to walk past. Empty on Frostfang, which keeps the original spawn-relative placement.
+PortalPoint = Vector3(0, 0, -122)
+Cells = Array[ExtResource("2_cell")]([SubResource("Cell_town_hub"), SubResource("Cell_embermarket"), SubResource("Cell_crossway_post"), SubResource("Cell_wilds_north"), SubResource("Cell_wilds_west"), SubResource("Cell_arena")])
 Bounds = AABB(-256, -16, -256, 512, 64, 512)
 SafeZoneCenter = Vector3(0, 0, -10)
 SafeZoneRadius = 34.0

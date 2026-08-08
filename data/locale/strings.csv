@@ -101,6 +101,7 @@ travel.prompt_attuned,{0} (attuned)
 # still carries its authored English in the .tscn and renders correctly — Loc.T on a plain string returns
 # it unchanged — so closing the §6 rule cost no migration.
 travel.ember_crown.embermarket.name,The Embermarket
+travel.ember_crown.crossway_post.name,The Crossway Post
 property.cottage.name,The Ashfall Cottage
 property.prompt_claim,"Claim {0} ({1} gold)"
 property.prompt_owned,{0} (yours)

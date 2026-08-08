@@ -13,8 +13,12 @@ namespace Embervale.Enemies;
 [GlobalClass]
 public partial class EnemySpawnDirector : Node3D
 {
-    [Export] public int MaxAlive { get; set; } = 3;
-    [Export] public float SpawnRadius { get; set; } = 8f;
+    [Export] public int MaxAlive { get; set; } = 15;
+
+    /// <summary>⚠️ <see cref="_Ready"/> seeds the whole population in one go, so this has to be wide
+    /// enough for <see cref="MaxAlive"/> bodies to land clear of each other — raised with the cap in
+    /// 38M2, because fifteen goblins in the old eight-metre circle spawn inside one another.</summary>
+    [Export] public float SpawnRadius { get; set; } = 14f;
     [Export] public float RespawnInterval { get; set; } = 5f;
 
     private int _alive;

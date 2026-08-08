@@ -3,11 +3,15 @@ using Godot;
 namespace Embervale.World;
 
 /// <summary>
-/// One streamable sub-cell of a <see cref="RegionResource"/> (Phase 25B): a scene that the
-/// <see cref="RegionStreamer"/> instances when the player comes within <see cref="LoadRadius"/> of
-/// <see cref="Center"/> and frees when they leave (plus a hysteresis margin). The lightweight
-/// metadata here lets the streamer decide *whether* to load without instancing the heavy scene.
-/// Authored as a sub-resource inside the region's <c>.tres</c>.
+/// One sub-cell of a <see cref="RegionResource"/> (Phase 25B): a scene the
+/// <see cref="RegionStreamer"/> instances at <see cref="Center"/> when the player enters the region,
+/// and keeps resident until they leave it. Authored as a sub-resource inside the region's
+/// <c>.tres</c>.
+///
+/// ⚠️ <b>There is no <c>LoadRadius</c> any more (38M2).</b> It was the distance at which the streamer
+/// brought the cell in, and it went with the distance rule itself — a field the streamer no longer
+/// reads is a number the next author would tune to no effect, which is the failure mode this repo
+/// keeps writing down. <see cref="SafeRadius"/> below is a different field and is still live.
 /// </summary>
 [GlobalClass]
 public partial class RegionCellResource : Resource
@@ -19,11 +23,8 @@ public partial class RegionCellResource : Resource
     /// <c>res://scenes/regions/&lt;region&gt;/&lt;cell&gt;.tscn</c>.</summary>
     [Export(PropertyHint.File, "*.tscn")] public string ScenePath { get; set; } = "";
 
-    /// <summary>World-space centre the cell loads around (the instance is placed here).</summary>
+    /// <summary>World-space centre the cell is placed at.</summary>
     [Export] public Vector3 Center { get; set; } = Vector3.Zero;
-
-    /// <summary>Planar distance (metres) within which the cell is loaded.</summary>
-    [Export] public float LoadRadius { get; set; } = 32f;
 
     /// <summary>
     /// Planar radius around <see cref="Center"/> in which the ambient spawners must not drop enemies

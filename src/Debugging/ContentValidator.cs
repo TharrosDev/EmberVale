@@ -2148,18 +2148,12 @@ public static class ContentValidator
                     issues.Add($"region '{region.Id}' cell '{cell.Id}' center {cell.Center} is outside region bounds");
                 }
 
-                // 38K. A cell that never loads and a cell nothing can walk in are both authored the same
-                // way a working one is, and neither says anything at runtime: the streamer simply never
-                // instances the first, and in the second every NPC and enemy falls back to straight-line
-                // steering through the scenery. Adding the Embermarket made all three of these one typo
-                // away, so they are checked rather than remembered.
-                if (cell.LoadRadius <= 0f)
-                {
-                    issues.Add(
-                        $"region '{region.Id}' cell '{cell.Id}' has a load radius of {cell.LoadRadius} — " +
-                        "the streamer would never bring it in, so the cell is authored and unreachable");
-                }
-
+                // 38K. A cell nothing can walk in is authored exactly like a working one and says
+                // nothing at runtime — every NPC and enemy just falls back to straight-line steering
+                // through the scenery. Adding the Embermarket made these one typo away, so they are
+                // checked rather than remembered.
+                // ⚠️ The "load radius of 0 never loads" rule was deleted in 38M2 with the radius
+                // itself: every cell of the active region is resident now, so there is no such state.
                 if (cell.SafeRadius < 0f)
                 {
                     issues.Add($"region '{region.Id}' cell '{cell.Id}' has a negative safe radius ({cell.SafeRadius})");

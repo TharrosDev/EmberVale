@@ -604,6 +604,35 @@ Quaternius's own **RPG Character Pack** (six rigged fantasy characters, CC0, con
 https://quaternius.com/packs/rpgcharacters.html) is the obvious candidate and is the same author as
 everything else here. 38L did not make that pull.
 
+### Phase 38M2 — the Crossway Post (three fortification props, `rts` pack)
+
+- **Source:** the vendored `assets/library/rts/` pack. A library lookup, not a web search
+  (`docs/ASSET_POLICY.md` §0) — the road needed fortification, and this is the only pack in the
+  project that holds any.
+- **URL / licence:** per model in `assets/library/manifest.json` — `Wooden Fortress Gate`
+  (`SiSjNL8GtO`), `Watch Tower` (`f2J0aSLVi4`), `Wooden Encampment` (`njoPJEjDQD`), all **CC0 1.0**,
+  author Quaternius. No attribution required; recorded for provenance.
+
+| Lands at | Source | Height | Root scale | Role |
+| --- | --- | --- | --- | --- |
+| `props/prp_gate_palisade.glb` | `rts/wooden_fortress_gate.glb` | 5.51 m | 8.2 | the gate line either side of the road |
+| `props/prp_watch_tower.glb` | `rts/watch_tower.glb` | 8.01 m | 5.48 | the tower the wardens watch the road from |
+| `props/prp_warden_post.glb` | `rts/wooden_encampment.glb` | 4.00 m | 3.74 | the wardens' compound off the road |
+
+⚠️ **The `rts` pack is authored for a top-down camera and everything in it is roughly 1/6 scale.** A
+"fortress gate" measures 1.94 × 0.67 × 0.31 m out of the box — a gateway two feet high. Every model
+in this pack needs a scale pass before it can stand next to a person, and nothing about the file says
+so; it was caught by measuring against a 1.8 m reference box before anything was authored around it.
+
+**Adaptation: `nodes/root_scale` in the `.import`, not a Blender round-trip.** These carry their
+scale on the importer rather than in the mesh, which is the cheapest correct adaptation available and
+avoids the round-trip that destroyed bone-parented parts in the third-round audit below. It also
+keeps one number in one file: a model scaled per-scene would have every future placement guessing.
+
+⚠️ **`prp_gate_palisade` has no opening in it** — it is a closed palisade with two towers, not an
+arch. The Crossway gate is therefore a **gap between two of them** with the road running through,
+which is also why nothing has to animate for the player to pass.
+
 ---
 
 ## UI assets — fonts, textures, shaders (Phase 37.5A)

@@ -29,6 +29,21 @@ public partial class RegionResource : Resource
     [Export] public Vector3 SpawnPoint { get; set; } = Vector3.Zero;
 
     /// <summary>
+    /// Where this region's outbound portals stand, in world space (Phase 38M2). <c>Vector3.Zero</c> —
+    /// the default — keeps the original behaviour of parking them at
+    /// <c>SpawnPoint + (0, -1.2, -4)</c>, so no region that does not care is affected.
+    ///
+    /// The Ember Crown authors one because the Crossway Post is where the crossing *is*: 38M put a
+    /// toll on the road and the road has a gate now, so a portal four metres from the player's bed
+    /// would be the wardens charging for a door nobody uses.
+    ///
+    /// ⚠️ <b>One point per region, so a region with two neighbours would stack both portals on it.</b>
+    /// Two regions exist. When a third arrives this becomes a per-neighbour placement — and not
+    /// before, because the per-link table would be authored data with exactly one row in it today.
+    /// </summary>
+    [Export] public Vector3 PortalPoint { get; set; } = Vector3.Zero;
+
+    /// <summary>
     /// Story flag the player must carry before portals <em>into</em> this region appear (Phase 33D).
     /// Empty = always open. Declared on the destination rather than per-link, so a region that is
     /// meant to be earned is earned from every direction, and the bootstrap needs no special cases.

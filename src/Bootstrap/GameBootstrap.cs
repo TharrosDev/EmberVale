@@ -590,11 +590,15 @@ public partial class GameBootstrap : Node3D
                 continue;
             }
 
+            // 38M2: a region can say where its doors stand. Empty means the original "a few metres in
+            // front of the spawn", which is still right for a region with no gate of its own.
             var portal = new Entity
             {
                 Name = $"Portal_{neighbourId}",
                 DisplayName = neighbour.DisplayName,
-                Position = region.SpawnPoint + new Vector3(0f, -1.2f, -4f),
+                Position = region.PortalPoint != Vector3.Zero
+                    ? region.PortalPoint
+                    : region.SpawnPoint + new Vector3(0f, -1.2f, -4f),
             };
 
             portal.AddChild(new MeshInstance3D
@@ -825,8 +829,7 @@ public partial class GameBootstrap : Node3D
         if (_loadingElapsed >= 0d)
         {
             _loadingElapsed += delta;
-            bool settled = _streamer == null || _player == null ||
-                _streamer.IsSettledAround(_player.GlobalPosition);
+            bool settled = _streamer == null || _streamer.IsSettled();
             if ((settled && _loadingElapsed >= LoadingMinSeconds) || _loadingElapsed >= LoadingMaxSeconds)
             {
                 _loadingElapsed = -1d;

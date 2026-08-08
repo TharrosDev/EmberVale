@@ -41,8 +41,8 @@ internal static class SandboxProps
             Name = "GoblinCamp",
             // Out in the northern wilds (wilds_north cell), clear of the town's safe zone.
             Position = new Vector3(0f, 0f, -58f),
-            MaxAlive = 3,
-            SpawnRadius = 6f,
+            MaxAlive = 15,
+            SpawnRadius = 14f,
         });
         Log.Info("A goblin camp stirs in the northern wilds (−Z).");
     }
