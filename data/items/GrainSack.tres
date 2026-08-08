@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://c0mhsegk5prdd"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+; Phase 38L - the Embermarket catalogue. Bulk trade goods: heavy, cheap, and what a cart actually carries.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.material.grain_sack"
+DisplayName = "Sack of Grain"
+Description = "Winter rye from the Ember Crown's own fields, still the best in the realm."
+Type = 4
+Rarity = 0
+MaxStack = 50
+Weight = 2.0
+Value = 6
+TradeTags = Array[String](["food"])

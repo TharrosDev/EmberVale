@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="ScheduleResource" format=3 uid="uid://uowild10xcax"]
+
+[ext_resource type="Script" path="res://src/Npc/ScheduleResource.cs" id="1_sched"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleEntry.cs" id="2_entry"]
+
+; Odo Greenhand (Phase 38L).
+;
+; ⚠️ DESTINATIONS ARE CELL-LOCAL. Origin carries the Embermarket's Center (0, 0, 46), so these read
+; straight out of embermarket.tscn without anyone doing the arithmetic by hand thirty times. A raw
+; world destination copied from a cell .tscn lands a cell's width away and nothing reports it.
+;
+; ⚠️ These hours track shop.embermarket.herbalist (8:00-20:00) and are kept in step BY HAND. A ScheduleId lives
+; in a .tscn, which ContentValidator cannot scan, so if the shop's hours move, move these with them or
+; the player finds Odo standing at a stall that refuses to sell.
+;
+; Both destinations are on the market floor. ScheduleComponent walks a straight line with no navmesh
+; pathing, so the packing-up spot is a couple of metres behind the stall, not the tavern in the square.
+
+[sub_resource type="Resource" id="e_setup"]
+script = ExtResource("2_entry")
+StartHour = 7
+Activity = "Hanging the bundles"
+Destination = Vector3(-13, 0, -5.6)
+
+[sub_resource type="Resource" id="e_trade"]
+script = ExtResource("2_entry")
+StartHour = 8
+Activity = "Selling herbs"
+Destination = Vector3(-13, 0, -5.6)
+
+[sub_resource type="Resource" id="e_close"]
+script = ExtResource("2_entry")
+StartHour = 20
+Activity = "Taking the bundles in"
+Destination = Vector3(-13, 0, -2.5)
+
+[resource]
+script = ExtResource("1_sched")
+Id = "schedule.embermarket.herbalist"
+Origin = Vector3(0, 0, 46)
+Entries = Array[Resource]([SubResource("e_setup"), SubResource("e_trade"), SubResource("e_close")])

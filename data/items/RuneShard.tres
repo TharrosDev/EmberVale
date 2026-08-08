@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://bduu48t0hmmmj"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+; Phase 38L - the Embermarket catalogue. The curioseller's stock-in-trade - a shard of something that used to be a whole thing.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.material.rune_shard"
+DisplayName = "Rune Shard"
+Description = "A finger of black glass with half a word cut into it. Nobody agrees which word."
+Type = 4
+Rarity = 2
+MaxStack = 30
+Weight = 0.3
+Value = 40
+TradeTags = Array[String](["arcane"])

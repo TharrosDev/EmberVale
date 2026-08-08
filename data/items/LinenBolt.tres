@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://c0mhseglbg48d"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+; Phase 38L - the Embermarket catalogue. The textile tag's baseline.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.material.linen_bolt"
+DisplayName = "Bolt of Linen"
+Description = "Plain, close-woven and undyed. The cloth every other cloth is cut against."
+Type = 4
+Rarity = 0
+MaxStack = 30
+Weight = 1.2
+Value = 14
+TradeTags = Array[String](["textile"])

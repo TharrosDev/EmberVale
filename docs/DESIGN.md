@@ -62,7 +62,7 @@ The framework already encodes the *state* for this — Phase 29 adds the *feel* 
   `StaminaCost`, and a `FinisherMultiplier` on the last combo hit. **Design intent:**
   heavier = longer wind-up, more poise damage, higher stamina cost, slower recovery. A
   dagger and a war-axe must *feel* like different verbs, authored entirely in these
-  fields (CLAUDE.md §8 "a new weapon").
+  fields (docs/RECIPES.md "a new weapon").
 - **What Phase 29 owes this pillar:** hit-stop/freeze-frames on impact, directional hit
   reactions, camera shake on crit/stagger, weapon trails, impact VFX/SFX. The math says a
   hit landed; juice makes the *player* feel it. See §1.7.
@@ -315,7 +315,7 @@ in code, and the design holds it there:
 
 > Concrete curve/skill-point/cap values are a Phase 56 balance call; this section fixes the
 > *shape*, not the digits. Cross-links: `ARCHITECTURE.md` §2.6c; `src/Progression/*`;
-> CLAUDE.md §8 "a new perk".
+> docs/RECIPES.md "a new perk".
 
 ---
 
@@ -398,12 +398,12 @@ through `InventoryComponent`; loot tables roll gold), and deliberately still has
 a wallet would be a second place for money to live and a second thing to persist. Balance is
 **Phase 56**; the machinery is built.
 
-**The sinks, as they actually exist** (Phase 38C closed this list):
+**The sinks, as they actually exist** (last extended by 38I; 38L added merchants, not new kinds of sink):
 
 | Sink | Where | Since |
 | ---- | ----- | ----- |
 | Property deeds | `PropertyResource.PriceGold` → `PropertyDeedComponent` | 37A |
-| Goods | `ShopResource`'s spread over `ItemInstance.Value`, via `ShopPricing`. Three merchants behind it since 38E | 38A |
+| Goods | `ShopResource`'s spread over `ItemInstance.Value`, via `ShopPricing`. **Sixteen** merchants behind it since 38L — three in the town square, twelve in the Embermarket, one traveller | 38A |
 | Fast travel | `TravelFee` / `TravelCosts`, charged in `GameBootstrap.OnFastTravelRequested` | 38C |
 | A night's rest | `ServiceKind.Inn` — moves the clock, refills every resource. Charged every night | 38D |
 | A bank account | `ServiceKind.Bank` — a one-off fee, then a persistent vault forever | 38D |

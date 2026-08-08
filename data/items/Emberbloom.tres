@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://uov73i10w44a"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+; Phase 38L - the Embermarket catalogue. The herb tag had exactly one member before this, and a herbalist who specialises in one leaf is not a herbalist.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.material.emberbloom"
+DisplayName = "Emberbloom"
+Description = "A pale flower that opens only in ash-fall. Bitter, and worth the walk."
+Type = 4
+Rarity = 1
+MaxStack = 50
+Weight = 0.1
+Value = 16
+TradeTags = Array[String](["herb", "reagent"])

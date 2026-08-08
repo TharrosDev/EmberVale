@@ -130,7 +130,10 @@ public partial class ScheduleComponent : EntityComponent
             return;
         }
 
-        _target = entry.Destination;
+        // Through ScheduleResource.DestinationOf, never entry.Destination directly: a cell-local
+        // routine is only correct once its cell's Origin is added, and one caller that forgets walks
+        // a merchant out of the market and into the town square.
+        _target = _schedule.DestinationOf(entry);
         SetActivity(entry.Activity);
     }
 

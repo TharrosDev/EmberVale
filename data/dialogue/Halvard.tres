@@ -1,0 +1,85 @@
+[gd_resource type="Resource" script_class="DialogueResource" format=3 uid="uid://uov2uc4n8qa0"]
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+; Halvard the joiner (Phase 38L), one of the ten resident merchants of the Embermarket.
+;
+; The first merchant in the game to sell 37C's placeable kits, which until now could only be crafted. His talk node says so in a joiner's words rather than a patch note's.
+;
+; The shape is dialogue.vendor_goods's, and every part of it is load-bearing:
+;   - the trade choice carries Effect = 9 (OpenShop) and NO Goto. A Goto would leave this conversation
+;     open behind the vendor window, and closing the shop would drop the player back into it.
+;   - it is gated on Condition = 12 (ShopOpen) naming the same shop id. --validate requires the pairing
+;     on any shop that keeps hours: without it, "let's trade" at midnight is a line that silently does
+;     nothing, which is a dead end rather than a refusal.
+;   - Condition = 13 (ShopClosed) puts the closing time in the merchant's own mouth.
+; ⚠️ BOTH trade doors are gated. The talk node offers trade a second time, and a gate on one of two
+;   doors is not a gate - the trap Aldreth's file records.
+
+[sub_resource type="Resource" id="ch_trade"]
+script = ExtResource("3_choice")
+Text = "dlg.halvard.c_trade"
+Condition = 12
+ConditionArg = "shop.embermarket.joiner"
+Effect = 9
+EffectArg = "shop.embermarket.joiner"
+
+[sub_resource type="Resource" id="ch_closed"]
+script = ExtResource("3_choice")
+Text = "dlg.halvard.c_closed"
+Condition = 13
+ConditionArg = "shop.embermarket.joiner"
+Goto = "closed"
+
+[sub_resource type="Resource" id="ch_talk"]
+script = ExtResource("3_choice")
+Text = "dlg.halvard.c_talk"
+Goto = "talk"
+
+[sub_resource type="Resource" id="ch_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.halvard.c_bye"
+
+[sub_resource type="Resource" id="ch_talk_trade"]
+script = ExtResource("3_choice")
+Text = "dlg.halvard.c_talk_trade"
+Condition = 12
+ConditionArg = "shop.embermarket.joiner"
+Effect = 9
+EffectArg = "shop.embermarket.joiner"
+
+[sub_resource type="Resource" id="ch_talk_back"]
+script = ExtResource("3_choice")
+Text = "dlg.halvard.c_talk_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_talk_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.halvard.c_talk_bye"
+
+[sub_resource type="Resource" id="node_root"]
+script = ExtResource("2_node")
+Id = "root"
+Text = "dlg.halvard.root"
+Choices = Array[Resource]([SubResource("ch_trade"), SubResource("ch_closed"), SubResource("ch_talk"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_talk"]
+script = ExtResource("2_node")
+Id = "talk"
+Text = "dlg.halvard.talk"
+Choices = Array[Resource]([SubResource("ch_talk_trade"), SubResource("ch_talk_back"), SubResource("ch_talk_bye")])
+
+[sub_resource type="Resource" id="node_closed"]
+script = ExtResource("2_node")
+Id = "closed"
+Text = "dlg.halvard.closed"
+Choices = Array[Resource]([SubResource("ch_talk"), SubResource("ch_bye")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "dialogue.halvard"
+SpeakerName = "dlg.halvard.speaker"
+StartNodeId = "root"
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_talk"), SubResource("node_closed")])

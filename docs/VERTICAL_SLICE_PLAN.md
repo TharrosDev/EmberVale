@@ -1,5 +1,10 @@
 # Vertical Slice Plan — Phase 33D
 
+> 🗄️ **HISTORICAL — Phase 33D/E is built.** Kept because the slice arc it describes is still
+> the game's spine and the capture/gap passes are still the shape a future slice takes. Do not
+> read it for current state; that is `CLAUDE.md` §10 and
+> [`SESSION_PLAYBOOK.md`](SESSION_PLAYBOOK.md).
+
 **"The Warband and the King"** — the implementation plan for stitching Phases 22–33C into one
 continuous, polished 30–60 minute arc, ending at 🚩 **Gate G1 — Vertical Slice**.
 

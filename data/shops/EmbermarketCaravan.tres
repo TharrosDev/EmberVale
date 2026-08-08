@@ -1,0 +1,68 @@
+[gd_resource type="Resource" script_class="ShopResource" format=3 uid="uid://uowiqlyoe4fb"]
+
+[ext_resource type="Script" path="res://src/Economy/ShopResource.cs" id="1_shop"]
+[ext_resource type="Script" path="res://src/Economy/ShopStockEntry.cs" id="2_entry"]
+[ext_resource type="Resource" path="res://data/loot/EmbermarketCaravanGear.tres" id="4_pool"]
+
+; Sera of the Long Road (Phase 38L) - one of two travelling merchants on this square, in one day in
+; five, and the only shop in the Ember Crown that sells goods from another realm. Her Frostfang pelts and
+; her southern spice are the market's evidence that there IS somewhere else.
+;
+; ⚠️ SHE IS MOUNTED WITH A VendorComponent, NOT A CONVERSATION, AND THAT IS FORCED. DialogueSession
+; evaluates ShopOpen/ShopClosed through ShopHours.IsOpenAt alone - hours, not presence - and the only
+; thing that hides an away merchant and kills her collider is VendorComponent.ApplyPresence. A traveller
+; wired through a dialogue choice would stand at her cart every day of the cycle with a working trade
+; line, which is 38J's mechanic inverted. Hesk took the same route for the same reason.
+; ⚠️ The cost of that: her ShopId lives in embermarket.tscn and --validate cannot read it. A typo gives
+; NO PROMPT AT ALL rather than an error.
+;
+; ⚠️ NOT ONE CONSUMABLE ON HER SHELVES. --validate rejects a consumable sold only by travelling shops:
+; hours are a wait a player can sleep off, but a merchant who may not be in town is a coin flip against
+; the calendar, and a player out of rations cannot sleep their way to one.
+;
+; Empty AcceptedTags - she buys anything, like Hesk. Aldreth is still the settlement's mandated resident
+; catch-all; a traveller cannot be it.
+;
+; Empty FactionId, which also means none of her rows may carry a standing gate: --validate rejects one on
+; a shop that prices by no faction, because the window falls back to Neutral and the shelf never opens.
+;
+; A 5-day cycle at offset 2 against Quill's 3-day at offset 0: they share the square only one day in
+; fifteen. Two travellers who always arrive together are one traveller.
+
+[sub_resource type="Resource" id="Stock_spice"]
+script = ExtResource("2_entry")
+ItemId = "item.material.spice_pouch"
+Quantity = 3
+
+[sub_resource type="Resource" id="Stock_pelt"]
+script = ExtResource("2_entry")
+ItemId = "item.material.frost_pelt"
+Quantity = 2
+
+[sub_resource type="Resource" id="Stock_wool"]
+script = ExtResource("2_entry")
+ItemId = "item.material.dyed_wool"
+Quantity = 4
+
+[sub_resource type="Resource" id="Stock_sapphire"]
+script = ExtResource("2_entry")
+ItemId = "item.gem.sapphire"
+Quantity = 1
+
+[resource]
+script = ExtResource("1_shop")
+Id = "shop.embermarket.caravan"
+NameKey = "shop.embermarket.caravan.name"
+FactionId = ""
+AcceptedTags = Array[String]([])
+Specialties = Array[String](["luxury", "food", "textile"])
+Stock = Array[Resource]([SubResource("Stock_spice"), SubResource("Stock_pelt"), SubResource("Stock_wool"), SubResource("Stock_sapphire")])
+RestockDays = 5
+LeveledTable = ExtResource("4_pool")
+BuyMarkup = 1.7
+SellFraction = 0.45
+PurseGold = 600
+OpenHour = 8
+CloseHour = 18
+VisitEveryDays = 5
+VisitDayOffset = 2

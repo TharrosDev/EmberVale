@@ -1,5 +1,10 @@
 # Embervale — Architecture & Systems Reference
 
+> **~23k tokens — read one section, not the file.** `grep -n "^## " docs/ARCHITECTURE.md`
+> gives you the map; open only the § for the system you are changing.
+> [`RECIPES.md`](RECIPES.md) is the actionable companion — that one is how to *add* content,
+> this one is how the machinery *works*.
+
 The deep reference for how Embervale is built: the core architecture, every
 gameplay system that exists today, the collision/team model, and the
 content/data pipeline. For the working agreement, coding conventions, gotchas,
@@ -749,7 +754,11 @@ fast-travel land in 25E–25G.
   `PersistentSpawnDirector` when the cell reloads (25D). The sandbox region `region.ember_crown` is
   now a five-cell greybox: `town_hub` (plaza floor + greybox buildings + the waystone/relic),
   `embermarket` (38K — the market district, one street south, its floor abutting the hub's exactly at
-  `z = 20`, six stalls and its own waystone), `wilds_north` (ruin + rocks), `wilds_west` (rocks) and
+  `z = 20`: a crossroads of ten stalls carrying **twelve merchants** (38L — ten residents reached by
+  conversation and two travellers on `VendorComponent`s, since only that route hides an away
+  merchant), a plaza off the aisle to the west, a bell tower terminating it to the south, three
+  braziers, two positional ambience emitters, a notice board and its own waystone),
+  `wilds_north` (ruin + rocks), `wilds_west` (rocks) and
   `arena` (36D), with overlapping or abutting floors so navmesh patches edge-connect, around the
   always-loaded base.
 - **Safe areas are a list** (38K). `SafeZones` holds the region's own `SafeZoneCenter`/`SafeZoneRadius`

@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="ShopResource" load_steps=6 format=3 uid="uid://cmbrvlshoptrav"]
+[gd_resource type="Resource" script_class="ShopResource" format=3 uid="uid://c0mhsn3nfr84l"]
 
 [ext_resource type="Script" path="res://src/Economy/ShopResource.cs" id="1_shop"]
 [ext_resource type="Script" path="res://src/Economy/ShopStockEntry.cs" id="2_entry"]

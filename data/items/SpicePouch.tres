@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://c0mhsegliny53"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+; Phase 38L - the Embermarket catalogue. The caravanner's headline good: light, dear, and only here on the days she is.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.material.spice_pouch"
+DisplayName = "Pouch of Southern Spice"
+Description = "Peppercorn, clove and something the trader will not name. Worth its weight twice over."
+Type = 4
+Rarity = 1
+MaxStack = 30
+Weight = 0.2
+Value = 45
+TradeTags = Array[String](["food", "luxury"])

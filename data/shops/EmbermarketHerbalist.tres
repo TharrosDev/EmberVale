@@ -1,0 +1,59 @@
+[gd_resource type="Resource" script_class="ShopResource" format=3 uid="uid://uowiql4se4r8"]
+
+[ext_resource type="Script" path="res://src/Economy/ShopResource.cs" id="1_shop"]
+[ext_resource type="Script" path="res://src/Economy/ShopStockEntry.cs" id="2_entry"]
+
+; Odo Greenhand (Phase 38L). Mirela in the square is an apothecary who brews; Odo is a herbalist who
+; gathers, and the difference is which end of the trade each specialises in - hers is `potion`, his is
+; `herb` and `reagent`. Both accept all three, so a player never has to know which is which to sell.
+;
+; He carries the health potion Mirela also sells, and that is not redundancy: --validate rejects a
+; Consumable stocked only by travelling shops, and a second resident shelf under a staple is cheap
+; insurance against a future roster change making it one.
+;
+; Emberbloom is the reason the `herb` tag is worth specialising in at all - before it, there was one leaf.
+
+[sub_resource type="Resource" id="Stock_bloom"]
+script = ExtResource("2_entry")
+ItemId = "item.material.emberbloom"
+Quantity = 0
+
+[sub_resource type="Resource" id="Stock_herb"]
+script = ExtResource("2_entry")
+ItemId = "item.material.healing_herb"
+Quantity = 0
+
+[sub_resource type="Resource" id="Stock_stone"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.stamina"
+Quantity = 5
+
+[sub_resource type="Resource" id="Stock_health"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.health"
+Quantity = 4
+
+[sub_resource type="Resource" id="Stock_dust"]
+script = ExtResource("2_entry")
+ItemId = "item.material.grave_dust"
+Quantity = 0
+
+[sub_resource type="Resource" id="Stock_chalk"]
+script = ExtResource("2_entry")
+ItemId = "item.material.warding_chalk"
+Quantity = 3
+
+[resource]
+script = ExtResource("1_shop")
+Id = "shop.embermarket.herbalist"
+NameKey = "shop.embermarket.herbalist.name"
+FactionId = "faction.villagers"
+AcceptedTags = Array[String](["herb", "reagent", "potion"])
+Specialties = Array[String](["herb", "reagent"])
+Stock = Array[Resource]([SubResource("Stock_bloom"), SubResource("Stock_herb"), SubResource("Stock_stone"), SubResource("Stock_health"), SubResource("Stock_dust"), SubResource("Stock_chalk")])
+RestockDays = 1
+BuyMarkup = 1.6
+SellFraction = 0.45
+PurseGold = 200
+OpenHour = 8
+CloseHour = 20

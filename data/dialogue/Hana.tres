@@ -1,0 +1,85 @@
+[gd_resource type="Resource" script_class="DialogueResource" format=3 uid="uid://cmbrvldlghana"]
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+; Hana Netmender the fishmonger (Phase 38L), one of the ten resident merchants of the Embermarket.
+;
+; Shuts at one in the afternoon, so she is the merchant the player is most likely to meet through a closed shutter. Her closed node has to be worth reading.
+;
+; The shape is dialogue.vendor_goods's, and every part of it is load-bearing:
+;   - the trade choice carries Effect = 9 (OpenShop) and NO Goto. A Goto would leave this conversation
+;     open behind the vendor window, and closing the shop would drop the player back into it.
+;   - it is gated on Condition = 12 (ShopOpen) naming the same shop id. --validate requires the pairing
+;     on any shop that keeps hours: without it, "let's trade" at midnight is a line that silently does
+;     nothing, which is a dead end rather than a refusal.
+;   - Condition = 13 (ShopClosed) puts the closing time in the merchant's own mouth.
+; ⚠️ BOTH trade doors are gated. The talk node offers trade a second time, and a gate on one of two
+;   doors is not a gate - the trap Aldreth's file records.
+
+[sub_resource type="Resource" id="ch_trade"]
+script = ExtResource("3_choice")
+Text = "dlg.hana.c_trade"
+Condition = 12
+ConditionArg = "shop.embermarket.fishmonger"
+Effect = 9
+EffectArg = "shop.embermarket.fishmonger"
+
+[sub_resource type="Resource" id="ch_closed"]
+script = ExtResource("3_choice")
+Text = "dlg.hana.c_closed"
+Condition = 13
+ConditionArg = "shop.embermarket.fishmonger"
+Goto = "closed"
+
+[sub_resource type="Resource" id="ch_talk"]
+script = ExtResource("3_choice")
+Text = "dlg.hana.c_talk"
+Goto = "talk"
+
+[sub_resource type="Resource" id="ch_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.hana.c_bye"
+
+[sub_resource type="Resource" id="ch_talk_trade"]
+script = ExtResource("3_choice")
+Text = "dlg.hana.c_talk_trade"
+Condition = 12
+ConditionArg = "shop.embermarket.fishmonger"
+Effect = 9
+EffectArg = "shop.embermarket.fishmonger"
+
+[sub_resource type="Resource" id="ch_talk_back"]
+script = ExtResource("3_choice")
+Text = "dlg.hana.c_talk_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_talk_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.hana.c_talk_bye"
+
+[sub_resource type="Resource" id="node_root"]
+script = ExtResource("2_node")
+Id = "root"
+Text = "dlg.hana.root"
+Choices = Array[Resource]([SubResource("ch_trade"), SubResource("ch_closed"), SubResource("ch_talk"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_talk"]
+script = ExtResource("2_node")
+Id = "talk"
+Text = "dlg.hana.talk"
+Choices = Array[Resource]([SubResource("ch_talk_trade"), SubResource("ch_talk_back"), SubResource("ch_talk_bye")])
+
+[sub_resource type="Resource" id="node_closed"]
+script = ExtResource("2_node")
+Id = "closed"
+Text = "dlg.hana.closed"
+Choices = Array[Resource]([SubResource("ch_talk"), SubResource("ch_bye")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "dialogue.hana"
+SpeakerName = "dlg.hana.speaker"
+StartNodeId = "root"
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_talk"), SubResource("node_closed")])

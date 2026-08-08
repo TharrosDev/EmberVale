@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="WeaponResource" format=3 uid="uid://c0mhseendbrbh"]
+
+[ext_resource type="Script" path="res://src/Combat/WeaponResource.cs" id="1_weapon"]
+
+; Phase 38L. Faster and lighter than the steel sword, and markedly weaker - a starter blade sold off a
+; market stall. Poise damage is low on purpose: 36C made a stagger cancel a wind-up, so a dagger trades
+; the interrupt away for the speed rather than getting both.
+
+[resource]
+script = ExtResource("1_weapon")
+DisplayName = "Iron Dagger"
+DamageType = 0
+BaseDamage = 11.0
+PoiseDamage = 9.0
+StaminaCost = 8.0
+WindupTime = 0.10
+ActiveTime = 0.09
+RecoveryTime = 0.18
+AttackSpeed = 1.35
+ComboLength = 3
+FinisherMultiplier = 1.5

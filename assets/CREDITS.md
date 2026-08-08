@@ -494,6 +494,116 @@ scale** and the colliders now fit them: `Shape_bldgA` → 4.74×7.50×5.88, `Sha
 `town_hub.tscn` and `clan_hold.tscn` (seven mounts). A collider should fit its building; keeping
 the old boxes would have meant invisible walls.
 
+### The Embermarket dressing set (Phase 38K, second pass) — CC0
+
+- **Source:** Quaternius, via the vendored `assets/library/` bundles (`medieval_village`, `nature`).
+  Per `docs/ASSET_POLICY.md` §0 this was a **library lookup, not a web search** — the pack the project
+  standardises on already held every one of these.
+- **URL:** recorded per model in `assets/library/manifest.json` (title, Poly Pizza id, licence, URL).
+- **Licence:** CC0 1.0 Universal. No attribution required; recorded for provenance.
+- **Author:** Quaternius
+- **Why selected:** the Embermarket shipped dressed in camping gear — six copies of the survival-kit
+  tent standing in for market stalls, six crates standing in for counters. `medieval_village` holds the
+  actual furniture of a market, in the same pack as the buildings already around it, so the district
+  stops reading as two art sets bolted together (ART_STYLE §4: prefer sourcing further assets from the
+  packs already in use).
+
+| Lands at | Source | Height | Tris | Role |
+| --- | --- | --- | --- | --- |
+| `props/prp_market_stand.glb` | `medieval_village/market_stand.glb` | 2.60 m | 1132 | stall, backed |
+| `props/prp_market_stand_b.glb` | `medieval_village/market_stand_2.glb` | 2.62 m | 1548 | stall, open counter |
+| `props/prp_cart.glb` | `medieval_village/cart.glb` | 1.60 m | 2659 | parked carts |
+| `props/prp_barrel.glb` | `medieval_village/barrel.glb` | 0.85 m | 1312 | clutter |
+| `props/prp_sacks.glb` | `medieval_village/bags.glb` | 0.45 m | 912 | clutter, stall goods |
+| `props/prp_hay.glb` | `medieval_village/hay.glb` | 0.90 m | 488 | clutter |
+| `props/prp_bench.glb` | `medieval_village/bench.glb` | 0.85 m | 376 | plaza seating |
+| `props/prp_well.glb` | `medieval_village/well.glb` | 2.75 m | 1870 | plaza centrepiece |
+| `props/prp_bell_tower.glb` | `medieval_village/bell_tower.glb` | 11.00 m | 11799 | the district's landmark |
+| `props/prp_gazebo.glb` | `medieval_village/gazebo.glb` | 3.60 m | 698 | roofed stall / pavilion |
+| `props/prp_cauldron.glb` | `medieval_village/cauldron.glb` | 0.80 m | 1238 | cook-fire |
+| `props/prp_fence.glb` | `medieval_village/fence.glb` | 1.20 m | 208 | edge infill |
+| `props/prp_tree_broadleaf.glb` | `nature/tree_2.glb` | 8.00 m | 4066 | planting |
+| `props/prp_bush_flowering.glb` | `nature/bush_with_flowers.glb` | 1.10 m | 1368 | planting |
+| `characters/npc_townsman.glb` | `men/worker.glb` | 1.82 m | 5240 | townsfolk |
+| `characters/npc_townswoman.glb` | `women/animated_woman.glb` | 1.80 m | 6108 | townsfolk |
+| `characters/npc_hooded.glb` | `women/hooded_adventurer.glb` | 1.91 m | 7276 | townsfolk |
+
+**Blender MCP modifications (the 14 props):** imported glTF → parent cleared **keeping transform** →
+joined → scaled to a target height → transforms applied → origin dropped to the base centre in all
+three axes → mesh renamed `Mesh` → GLB exported. Laid out side by side along +X afterwards, never
+stacked at the origin.
+
+⚠️ **`CLEAR_KEEP_TRANSFORM`, never `matrix_world = Identity`.** The `medieval_village` glTFs carry
+their scale on a **parent node**, not on the mesh object, so a first pass that unparented by zeroing
+the world matrix silently wrote all twelve props at roughly 1/200 scale — a 2.6 m market stall
+exported as 13 mm. Nothing errored. This is a new instance of the same family as the "joined children
+compound their parent's scale" trap that produced a 10 m anvil, and it fails in the other direction.
+
+**Blender MCP modifications (the 3 characters): none — the files are copied byte for byte.** All three
+already stand at 1.80–1.91 m with their feet on the origin, which is the band the shipped set already
+occupies (`npc_kael` is 1.80 m), so there was nothing to scale. That also honours the third-round
+finding below: `npc_hooded` carries a **bone-parented `Sword`**, and a round-trip through Blender is
+exactly what destroys those. When a rig needs no change, the right adaptation is no adaptation.
+
+**Optimization:** single joined mesh per prop, transforms applied, origin at base, 208–11 799 tris
+(the bell tower is the only heavy one and there is one of it). Colliders are author-time boxes and
+cylinders sized **from the written GLB's own bounding box** — see below.
+
+⚠️ **Every one of the 17 was verified by parsing the written file**, not by looking at the Blender
+viewport: a standalone GLB reader walked the node hierarchy and the `POSITION` accessor min/max to
+report real size, floor height and XZ centre. The characters were re-imported and measured through
+the evaluated depsgraph with the `glTF_not_exported` `Icosphere` excluded, because a skinned
+primitive's accessor bounds are in joint space and a naive file read mis-measures them — which is
+precisely the shape of the defect the audit below records.
+
+**A collision correction rode along.** Reading the real boxes showed the market's authored colliders
+were guesses: `prp_tent` is 3.29 × 2.33 × **5.61** m against a `Shape_stall` of 3.2 × 2.4 × **3.2**, so
+2.4 m of every tent had no collision at all and neither the navmesh nor the player knew it was there;
+and the market's house boxes were the pre-2026-08-05 sizes (6.4–6.6 m wide, 5.6–6.0 m tall) against
+models that are 4.26–4.74 m wide and 6.8–7.5 m tall — a metre of solid empty ground each side, and a
+roof the player could clip. Both fixed in `embermarket.tscn`; the tent left the district entirely.
+
+### Two merchant bodies, and the end of the library's character bench (Phase 38L) — CC0
+
+- **Source:** Quaternius, via the vendored `assets/library/` bundles.
+- **Licence:** CC0 1.0 Universal. **Blender MCP modifications: none — both are file copies.**
+
+| Lands at | Source | Height | Tris |
+| --- | --- | --- | --- |
+| `characters/npc_merchant_m.glb` | `men/adventurer.glb` | 1.78 m | 10 198 |
+| `characters/npc_merchant_f.glb` | `women/animated_woman_2.glb` | 1.81 m | 6 424 |
+
+Both already stand in the shipped set's 1.78–1.91 m band with their feet on the origin, and both
+carry 24 clips including a bare `Idle`, so there was nothing to scale — and 38K's rule applies: **when
+a rig needs no change, the correct adaptation is a file copy**, because a Blender round-trip is what
+destroys bone-parented parts. Verified by re-importing the written files and measuring through the
+evaluated depsgraph with the `glTF_not_exported` `Icosphere` excluded.
+
+⚠️ **THE LIBRARY IS OUT OF MEDIEVAL BODIES, AND THIS IS THE ENTRY THAT SAYS SO.** 38L needed twelve
+distinct merchants and the vendored set can dress seven. What is left is unusable, for two different
+reasons and neither is fixable by adapting harder:
+
+- **The five unused women are CC-BY 3.0** — Sci Fi Character, Witch, Worker, Suit, Soldier. They are
+  in `manifest.json` and deliberately never downloaded. The Witch and the Worker would have been
+  perfect; the licence is the whole answer, and §0's rule is CC0 only.
+- **The four unused men are modern dress** — Business Man (black suit and tie), Casual Character
+  (t-shirt, jeans, pink sneakers), Hoodie Character (purple hoodie and shorts), plus Astronaut, SWAT
+  and Punk. `ART_STYLE` §4 is explicit that consistency across the game beats individual asset
+  quality, and a man in a business suit at a medieval stall fails that outright. **All three were
+  rendered and rejected on sight** — which is the check §6 asks for, working.
+
+⚠️ **`npc_townsman` is Quaternius's Worker, which is a hi-vis vest and a hard hat.** It shipped in 38K
+as the Embermarket's "Porter" and survived because nobody stood three metres from it. 38L found it in
+a close-range render, dropped it from the roster, and retired the villager wearing it. The model stays
+in `assets/models/` — it is valid CC0 and a modern or labourer role may want it — but **it is not
+Ember Crown dress.** The lesson is 38K's own, re-earned: look at the thing, at eye level, from close.
+
+**Consequence, recorded rather than papered over:** seven bodies dress twelve merchants, so four
+appear twice, paired as far apart as the square allows. Closing the gap means an open-web pull —
+Quaternius's own **RPG Character Pack** (six rigged fantasy characters, CC0, confirmed at
+https://quaternius.com/packs/rpgcharacters.html) is the obvious candidate and is the same author as
+everything else here. 38L did not make that pull.
+
 ---
 
 ## UI assets — fonts, textures, shaders (Phase 37.5A)

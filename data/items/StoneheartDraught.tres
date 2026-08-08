@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ConsumableItemResource" format=3 uid="uid://uov73jg8chv4"]
+
+[ext_resource type="Script" path="res://src/Items/ConsumableItemResource.cs" id="1_item"]
+
+; Phase 38L - the Embermarket catalogue. A second potion, so the herbalist's specialty is a shelf rather than a single row.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.potion.stamina"
+DisplayName = "Stoneheart Draught"
+Description = "Bitter and grey. Herbalists swear it settles the nerves; soldiers swear at the taste."
+Type = 1
+Rarity = 1
+MaxStack = 10
+Weight = 0.5
+Value = 22
+HealAmount = 20.0
+TradeTags = Array[String](["potion"])

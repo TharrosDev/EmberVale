@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://c0mhseglfhb56"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+; Phase 38L - the Embermarket catalogue. Fuel that is also a reagent, so the collier and the herbalist are not sealed off from one another.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.material.pitch"
+DisplayName = "Pot of Pitch"
+Description = "Black, tarry and slow to light. Seals a hull, dresses a torch, and ruins a good glove."
+Type = 4
+Rarity = 0
+MaxStack = 50
+Weight = 1.0
+Value = 9
+TradeTags = Array[String](["fuel", "reagent"])

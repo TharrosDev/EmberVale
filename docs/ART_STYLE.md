@@ -181,7 +181,7 @@ the silhouette collapses — only then hand-author an LOD.
 
 `1 Godot unit = 1 metre`. Door openings 2.2 m; storey height 3 m; the modular
 architecture kit snaps to a **0.5 m grid** (navmesh voxels are 0.25 — keep
-walkables on-grid, CLAUDE.md §8 "new region").
+walkables on-grid, docs/RECIPES.md "new region").
 
 ### 5.2 Modular kits
 
@@ -219,7 +219,7 @@ budgeted for interiors/valleys only (min-spec).
 Default importer settings, plus: generate LODs on; static props import as
 `StaticBody3D`-ready scenes with **author-time collision** (`-col`/`-convcol`
 suffixes in Blender, or a simple collider added in the factory/scene — never
-runtime-parsed visual-mesh collision, per the navmesh rule in CLAUDE.md §8).
+runtime-parsed visual-mesh collision, per the navmesh rule in docs/RECIPES.md).
 
 ### 6.3 Sourced assets (Poly Pizza / Kenney / Quaternius / PolyHaven / Sketchfab)
 

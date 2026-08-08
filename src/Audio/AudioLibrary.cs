@@ -80,6 +80,16 @@ public sealed class AudioLibrary
                 ProceduralAudio.Sine(784.0f, 0.55f, gain: 0.20f, attackSeconds: 0.08f, releaseSeconds: 0.25f),
                 ProceduralAudio.Sine(1046.5f, 0.5f, gain: 0.18f, attackSeconds: 0.10f, releaseSeconds: 0.2f)), shipped: false),
 
+            // World ambience emitters (positional) — Phase 38K second pass. Placed in a cell scene on an
+            // AmbientEmitterComponent, which is why these are sfx.* rather than amb.*: the amb.* beds are
+            // 2D and global, and the whole point of a market murmur is that it gets louder as you walk
+            // into the market. Procedural until CC0 field recordings land, so shipped: false keeps the
+            // "no asset" line at info and out of the warning channel.
+            ["sfx.ambient.market"] = Load("res://assets/audio/sfx/ambient/market.ogg",
+                () => ProceduralAudio.NoiseBed(2.2f, lowpass: 0.16f, gain: 0.10f, seed: 81), shipped: false),
+            ["sfx.ambient.fire"] = Load("res://assets/audio/sfx/ambient/fire.ogg",
+                () => ProceduralAudio.NoiseBurst(0.35f, lowpass: 0.30f, gain: 0.16f, seed: 82), shipped: false),
+
             // Footsteps by surface (positional). Used by the Phase 31E FootstepComponent.
             ["step.grass"] = Load("res://assets/audio/sfx/steps/grass.ogg", () => Footstep(0.35f, 7)),
             ["step.wood"] = Load("res://assets/audio/sfx/steps/wood.ogg", () => Footstep(0.55f, 8)),

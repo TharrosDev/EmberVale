@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://bduu48ufjjmdx"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+; Phase 38L - the Embermarket catalogue. The gem tag had exactly one member, and it was the ruby half the loot tables already drop.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.gem.sapphire"
+DisplayName = "Sapphire"
+Description = "Cold blue and flawless. The jeweller will not say where she gets them."
+Type = 4
+Rarity = 2
+MaxStack = 20
+Weight = 0.1
+Value = 140
+TradeTags = Array[String](["gem", "luxury"])

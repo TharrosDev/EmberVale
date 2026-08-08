@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="ShopResource" format=3 uid="uid://uowiqmgqfc8h"]
+
+[ext_resource type="Script" path="res://src/Economy/ShopResource.cs" id="1_shop"]
+[ext_resource type="Script" path="res://src/Economy/ShopStockEntry.cs" id="2_entry"]
+
+; Tam Quillfellow (Phase 38L) - the `tome` tag's only specialist, and the roster's one standing gate.
+;
+; The Treatise on Wardings sits behind Honored with faction.villagers. A book is the right thing to gate on
+; standing rather than on gold: a stranger is sold a herbal and a townsman is sold what the Veiled Archive
+; would rather nobody had copied. --validate rejects a standing gate on a shop with no FactionId, because
+; the window falls back to Neutral there and the shelf would never open - his faction line is load-bearing.
+;
+; Not every row is gated, deliberately: a shop whose whole window opens empty for a new player teaches them
+; nothing, and --validate rejects that shape too.
+
+[sub_resource type="Resource" id="Stock_herbal"]
+script = ExtResource("2_entry")
+ItemId = "item.tome.herbal"
+Quantity = 2
+
+[sub_resource type="Resource" id="Stock_chalk"]
+script = ExtResource("2_entry")
+ItemId = "item.material.warding_chalk"
+Quantity = 0
+
+[sub_resource type="Resource" id="Stock_wardings"]
+script = ExtResource("2_entry")
+ItemId = "item.tome.wardings"
+Quantity = 1
+RequiredTier = 5
+
+[resource]
+script = ExtResource("1_shop")
+Id = "shop.embermarket.scriptorium"
+NameKey = "shop.embermarket.scriptorium.name"
+FactionId = "faction.villagers"
+AcceptedTags = Array[String](["tome", "arcane"])
+Specialties = Array[String](["tome"])
+Stock = Array[Resource]([SubResource("Stock_herbal"), SubResource("Stock_chalk"), SubResource("Stock_wardings")])
+RestockDays = 3
+BuyMarkup = 1.65
+SellFraction = 0.42
+PurseGold = 260
+OpenHour = 9
+CloseHour = 17
