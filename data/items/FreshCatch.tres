@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+; Phase 38N2 - Tarn's Landing's product, and the cheapest food in the game at its source. It is `fish`
+; AND `food`, so the Emberdeep quartermaster wants it as badly as the fishmonger sells it: the first
+; item authored to be one settlement's surplus and another's shortage at the same time.
+;
+; Value 3 against smoked fish's 7. Fresh is what you eat here; smoked is what survives the road, which
+; is the whole reason a hamlet on the water sells one and the market up the hill sells the other.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.food.fresh_catch"
+DisplayName = "Fresh Catch"
+Description = "A string of silver tarn-fish, still cold from the water. It will not last the walk to the Ember Crown, and everyone here knows it."
+Type = 4
+Rarity = 0
+MaxStack = 99
+Weight = 0.4
+Value = 3
+TradeTags = Array[String](["fish", "food"])

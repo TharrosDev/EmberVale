@@ -1,0 +1,54 @@
+[gd_resource type="Resource" script_class="ShopResource" format=3]
+
+[ext_resource type="Script" path="res://src/Economy/ShopResource.cs" id="1_shop"]
+[ext_resource type="Script" path="res://src/Economy/ShopStockEntry.cs" id="2_entry"]
+
+; Odger Vane, the chandler (Phase 38N2) — the Landing's SINK, and the mirror of the Emberdeep
+; quartermaster: a hamlet on the water has fish and nothing else, so everything a boat is made of has
+; to be bought.
+;
+; ⚠️ AcceptedTags are `textile`, `metal`, `fuel` — and NOT `fish`. That refusal is the design, not an
+; oversight. 38N1's finding, now a step in the recipe: a sink that buys everything so the walk is never
+; wasted is what flattens two settlements back into one. Bring Odger a barrel of fish and he will point
+; you forty feet up the beach at Wenna.
+;
+; SellFraction 0.58 with no specialty is generous but under Marta Quill's 0.62 — the mine is further
+; from everywhere and pays for it. Two sinks that paid identically would be one sink twice.
+;
+; He sells his own trade dear (BuyMarkup 1.6): cordage, sailcloth and pitch are what the Landing runs
+; on, and he is the only person selling them.
+
+[sub_resource type="Resource" id="Stock_cord"]
+script = ExtResource("2_entry")
+ItemId = "item.material.net_cordage"
+Quantity = 0
+
+[sub_resource type="Resource" id="Stock_cloth"]
+script = ExtResource("2_entry")
+ItemId = "item.material.sailcloth"
+Quantity = 6
+
+[sub_resource type="Resource" id="Stock_pitch"]
+script = ExtResource("2_entry")
+ItemId = "item.material.boat_pitch"
+Quantity = 0
+
+[sub_resource type="Resource" id="Stock_hooks"]
+script = ExtResource("2_entry")
+ItemId = "item.material.fish_hooks"
+Quantity = 14
+
+[resource]
+script = ExtResource("1_shop")
+Id = "shop.tarn.chandler"
+NameKey = "shop.tarn.chandler.name"
+FactionId = "faction.villagers"
+AcceptedTags = Array[String](["textile", "metal", "fuel"])
+Specialties = Array[String](["textile"])
+Stock = Array[Resource]([SubResource("Stock_cord"), SubResource("Stock_cloth"), SubResource("Stock_pitch"), SubResource("Stock_hooks")])
+RestockDays = 2
+BuyMarkup = 1.6
+SellFraction = 0.58
+PurseGold = 210
+OpenHour = 6
+CloseHour = 19

@@ -1,0 +1,58 @@
+[gd_resource type="Resource" script_class="ShopResource" format=3]
+
+[ext_resource type="Script" path="res://src/Economy/ShopResource.cs" id="1_shop"]
+[ext_resource type="Script" path="res://src/Economy/ShopStockEntry.cs" id="2_entry"]
+
+; Wenna Tarn, the curer (Phase 38N2) — the Landing's SOURCE, and the third market in the realm.
+;
+; BuyMarkup 1.18 is second only to the Emberdeep factor's 1.15, and for the same reason: fish is cheap
+; where it comes out of the water. The Embermarket's fishmonger runs 1.55 on the same goods, and that
+; gap between two authored shops IS the settlement — it is the only thing that makes walking here mean
+; anything, and it needed a second fishmonger in the world to exist at all.
+;
+; SellFraction 0.28 is mean, and deliberately: bringing fish TO the Landing is the losing leg. Her
+; specialty is `fish`, so she is also the best judge of it in the realm — the premium and the keen
+; price are the same fact seen from two sides (38F).
+;
+; Fresh catch is unlimited because a boat comes in every morning. Salted eel and roe are finite because
+; both take work and salt, and salt comes up the road.
+
+[sub_resource type="Resource" id="Stock_fresh"]
+script = ExtResource("2_entry")
+ItemId = "item.food.fresh_catch"
+Quantity = 0
+
+[sub_resource type="Resource" id="Stock_eel"]
+script = ExtResource("2_entry")
+ItemId = "item.food.salted_eel"
+Quantity = 10
+
+[sub_resource type="Resource" id="Stock_roe"]
+script = ExtResource("2_entry")
+ItemId = "item.material.tarn_roe"
+Quantity = 6
+
+[sub_resource type="Resource" id="Stock_oil"]
+script = ExtResource("2_entry")
+ItemId = "item.material.fish_oil"
+Quantity = 12
+
+[sub_resource type="Resource" id="Stock_smoked"]
+script = ExtResource("2_entry")
+ItemId = "item.food.smoked_fish"
+Quantity = 8
+
+[resource]
+script = ExtResource("1_shop")
+Id = "shop.tarn.curer"
+NameKey = "shop.tarn.curer.name"
+FactionId = "faction.villagers"
+AcceptedTags = Array[String](["fish", "food"])
+Specialties = Array[String](["fish"])
+Stock = Array[Resource]([SubResource("Stock_fresh"), SubResource("Stock_eel"), SubResource("Stock_roe"), SubResource("Stock_oil"), SubResource("Stock_smoked")])
+RestockDays = 1
+BuyMarkup = 1.18
+SellFraction = 0.28
+PurseGold = 110
+OpenHour = 4
+CloseHour = 14

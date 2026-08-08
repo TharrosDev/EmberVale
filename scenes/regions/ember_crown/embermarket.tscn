@@ -38,7 +38,8 @@
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_innkeeper.glb" id="38_innkeeper"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_guild_rep.glb" id="39_guild_rep"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_merchant_m.glb" id="40_merchant_m"]
-[ext_resource type="PackedScene" path="res://assets/models/characters/npc_merchant_f.glb" id="41_merchant_f"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_woman_dress.glb" id="41_woman_dress"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_adventurer_f.glb" id="42_adventurer_f"]
 
 ; THE EMBERMARKET (Phase 38K, second pass) — the Ember Crown's market district, one street south of
 ; the town square.
@@ -1641,7 +1642,9 @@ DialogueId = "dialogue.hana"
 script = ExtResource("8_schedule")
 ScheduleId = "schedule.embermarket.fishmonger"
 
-[node name="Model" parent="MerchantHana" instance=ExtResource("41_merchant_f")]
+; 38N2: was npc_merchant_f — a white t-shirt, tan trousers and blue trainers. Modern dress, shipped
+; in 38L and caught in 38N1 by rendering it at eye level. Retired from the whole game here.
+[node name="Model" parent="MerchantHana" instance=ExtResource("41_woman_dress")]
 
 [node name="MerchantSable" type="Node3D" parent="."]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -7.9, 0, 8)
@@ -1903,7 +1906,8 @@ shape = SubResource("Shape_npc")
 script = ExtResource("9_vendor")
 ShopId = "shop.embermarket.caravan"
 
-[node name="Model" parent="TraderSera" instance=ExtResource("41_merchant_f")]
+; 38N2: was npc_merchant_f (see Hana above). Sera travels, so she gets the adventurer's kit.
+[node name="Model" parent="TraderSera" instance=ExtResource("42_adventurer_f")]
 
 [node name="TraderQuill" type="Node3D" parent="."]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 11.2, 0, 12.8)

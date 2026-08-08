@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="ScheduleResource" format=3]
+
+[ext_resource type="Script" path="res://src/Npc/ScheduleResource.cs" id="1_sched"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleEntry.cs" id="2_entry"]
+
+; Wenna Tarn, the curer (Phase 38N2).
+;
+; ⚠️ DESTINATIONS ARE CELL-LOCAL against Origin (-106, 0, -10), the Landing's Center (38L's
+; ScheduleResource.Origin). A raw world destination copied out of a cell .tscn lands a cell's width
+; away and nothing reports it.
+;
+; ⚠️ Hours track shop.tarn.curer (4:00-14:00) and are kept in step BY HAND — a ScheduleId lives in a
+; .tscn, which ContentValidator cannot scan.
+;
+; She meets the boats at the jetty before dawn, works the racks through the morning, and is gone by
+; mid-afternoon. ScheduleComponent walks a straight line with no pathing, so both points are on open
+; shingle.
+
+[sub_resource type="Resource" id="e_0"]
+script = ExtResource("2_entry")
+StartHour = 4
+Activity = "Meeting the boats"
+Destination = Vector3(-2, 0, -12)
+
+[sub_resource type="Resource" id="e_1"]
+script = ExtResource("2_entry")
+StartHour = 6
+Activity = "Working the curing racks"
+Destination = Vector3(-6, 0, 2)
+
+[sub_resource type="Resource" id="e_2"]
+script = ExtResource("2_entry")
+StartHour = 14
+Activity = "Salting down what is left"
+Destination = Vector3(-9, 0, 4)
+
+[resource]
+script = ExtResource("1_sched")
+Id = "schedule.tarn.curer"
+Origin = Vector3(-106, 0, -10)
+Entries = Array[Resource]([SubResource("e_0"), SubResource("e_1"), SubResource("e_2")])

@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+; Phase 38N2. Ash Dunmore's pitch (38L) is `fuel` + `reagent`; this is the caulker's grade, `fuel` +
+; `tool`, and it is deliberately a DIFFERENT item rather than a second use for his. A hamlet that
+; bought the collier's pot would have been a customer; one that wants its own grade is a trade.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.material.boat_pitch"
+DisplayName = "Caulking Pitch"
+Description = "Black, stiff and stinking, boiled down for hull seams. It will outlast the boat."
+Type = 4
+Rarity = 0
+MaxStack = 40
+Weight = 0.9
+Value = 15
+TradeTags = Array[String](["fuel", "tool"])

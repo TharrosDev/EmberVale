@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+; Phase 38N2. The metal the Landing needs and cannot make - the chandler's third accepted tag, and the
+; item that points at the Emberdeep Mine from the opposite end of the realm.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.material.fish_hooks"
+DisplayName = "Card of Fish Hooks"
+Description = "Two dozen barbed hooks on a card of leather. Iron out of the Emberdeep, bent by somebody's grandmother."
+Type = 4
+Rarity = 0
+MaxStack = 50
+Weight = 0.2
+Value = 9
+TradeTags = Array[String](["metal", "tool"])

@@ -1,0 +1,857 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="1_navbaker"]
+[ext_resource type="Script" path="res://src/Entities/Entity.cs" id="2_entity"]
+[ext_resource type="Script" path="res://src/World/TravelNodeComponent.cs" id="3_travel"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="4_dialogue"]
+[ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="5_charanim"]
+[ext_resource type="Script" path="res://src/Factions/FactionComponent.cs" id="6_faction"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleComponent.cs" id="7_schedule"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_dock_complex.glb" id="10_docks"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_jetty.glb" id="11_jetty"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_fishing_hut.glb" id="12_hut"]
+[ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_b.glb" id="13_house"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_waystone.glb" id="14_waystone"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="15_brazier"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_campfire.glb" id="16_campfire"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_barrel.glb" id="17_barrel"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_crate.glb" id="18_crate"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_sacks.glb" id="19_sacks"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_fence.glb" id="20_fence"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_cart.glb" id="21_cart"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_bench.glb" id="22_bench"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="23_rocks"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_pine_dead.glb" id="24_pine"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_hay.glb" id="25_hay"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_woman_dress.glb" id="30_wenna"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_vendor.glb" id="31_odger"]
+
+; TARN'S LANDING (Phase 38N2) — the fishing hamlet on the western water, and the realm's THIRD market.
+;
+; Hana the fishmonger has named it since 38L ("Tarn's Landing sends what it can, when the road lets
+; it"). It is the Emberdeep Mine's mirror: a place with one thing in abundance and a need for
+; everything else. Wenna Tarn sells fish at a markup nobody up the hill can match; Odger Vane pays
+; over the odds for rope, cloth and iron and ⚠️ WILL NOT BUY FISH — the refusal is the design, and it
+; is what stops a third settlement being a third stall (38N1's finding, now a step in the recipe).
+;
+; ⚠️ THE WATER IS A DECAL, NOT A VOLUME. A translucent plane 5 cm above the floor with NO COLLIDER,
+; and the floor collider runs on underneath it. Swimming does not exist (Phase 39C owns traversal
+; verbs), so a real water volume would be either an invisible wall or a hole to fall in. This way the
+; shoreline reads, the player can wade, and nothing has to be built to support it.
+;
+; ⚠️ The dock and the jetties are built to stand IN water: their posts run below their own origin
+; (dock min.y = -2.35, jetty min.y = -1.05), measured off the written .glb. The jetties are therefore
+; sunk 0.30 m so their decks land flush at +0.04 rather than as a 34 cm kerb — CharacterBody3D has no
+; step-up (38K), and a deck you catch your feet on is worse than a deck you walk over.
+;
+; ⚠️ Cell placed at Center (-106, 0, -10), abutting wilds_west's 50 m floor which ends at x = -80: a
+; 52 m floor centred at x = -106 starts exactly there. Every transform here is LOCAL. The road in is
+; from the EAST, so local +x is toward the valley and the water is west.
+;
+; ⚠️ EVERYTHING STATIC PARENTS TO Nav; the two merchants deliberately do not (only static geometry
+; should carve the navmesh).
+;
+; LAYOUT, east (the road) to west (the tarn):
+;   x +26..+12  the approach: the waystone, dead pines, rock.
+;   x +12..0    the hamlet: Odger's chandlery and cottage north of the track, Wenna's curing hut and
+;               racks south of it, with the shore fire between them.
+;   x  0..-6    the shingle: barrels, drying racks, the two jetties running out.
+;   x -6..-26   the tarn itself, with the dock complex standing in it.
+
+[sub_resource type="NavigationMesh" id="NavMesh_tarn"]
+geometry_parsed_geometry_type = 1
+cell_size = 0.25
+cell_height = 0.25
+agent_height = 1.75
+agent_radius = 0.5
+agent_max_climb = 0.5
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+size = Vector3(52, 0.5, 52)
+
+[sub_resource type="BoxShape3D" id="Shape_floor"]
+size = Vector3(52, 0.5, 52)
+
+; Wet grey-brown shingle, colder than the mine's spoil and the square's packed earth.
+[sub_resource type="StandardMaterial3D" id="Mat_floor"]
+albedo_color = Color(0.29, 0.29, 0.27, 1)
+roughness = 0.94
+
+; The shore path — the one lighter surface, so the route from the road to the water is legible.
+[sub_resource type="StandardMaterial3D" id="Mat_shore"]
+albedo_color = Color(0.42, 0.4, 0.36, 1)
+roughness = 0.9
+
+; THE TARN. Transparency = 1 is ALPHA blending; the alpha in albedo_color is what makes the shingle
+; read through the shallows. No collider anywhere near it — see the header note.
+[sub_resource type="StandardMaterial3D" id="Mat_water"]
+transparency = 1
+albedo_color = Color(0.1, 0.26, 0.3, 0.82)
+metallic = 0.35
+roughness = 0.08
+
+; ⚠️ The first pass had water at alpha 0.62 over the SAME shingle the shore is made of, and at eye
+; level it read as flat grey ground — a transparent surface needs something dark underneath it to be
+; transparent against. This is the lakebed: a near-black skin under the tarn, no collider, so the
+; shallows read as depth and the waterline reads as an edge.
+[sub_resource type="StandardMaterial3D" id="Mat_lakebed"]
+albedo_color = Color(0.09, 0.11, 0.12, 1)
+roughness = 0.98
+
+[sub_resource type="BoxMesh" id="BoxMesh_water"]
+size = Vector3(20, 0.05, 52)
+
+[sub_resource type="BoxMesh" id="BoxMesh_shore"]
+size = Vector3(8, 0.06, 40)
+
+; The ONE warm accent (ART_STYLE §7).
+[sub_resource type="StandardMaterial3D" id="Mat_ember"]
+albedo_color = Color(0.62, 0.22, 0.08, 1)
+emission_enabled = true
+emission = Color(1, 0.45, 0.12, 1)
+emission_energy_multiplier = 3.0
+
+[sub_resource type="SphereMesh" id="Mesh_coals"]
+radius = 0.13
+height = 0.26
+radial_segments = 8
+rings = 4
+
+; --- Colliders, sized from each model's measured bounding box. The dock's box covers the warehouse
+; --- mass only; its piers are open deck the player walks over.
+[sub_resource type="BoxShape3D" id="Shape_dock_house"]
+size = Vector3(6.0, 4.6, 6.0)
+
+[sub_resource type="BoxShape3D" id="Shape_hut"]
+size = Vector3(8.35, 4.51, 8.68)
+
+[sub_resource type="BoxShape3D" id="Shape_house"]
+size = Vector3(4.3, 6.8, 5.1)
+
+[sub_resource type="BoxShape3D" id="Shape_crate"]
+size = Vector3(1.24, 1.24, 1.24)
+
+[sub_resource type="CylinderShape3D" id="Shape_barrel"]
+height = 0.85
+radius = 0.34
+
+[sub_resource type="BoxShape3D" id="Shape_sacks"]
+size = Vector3(1.15, 0.45, 1.05)
+
+[sub_resource type="BoxShape3D" id="Shape_hay"]
+size = Vector3(0.62, 0.9, 0.64)
+
+[sub_resource type="BoxShape3D" id="Shape_cart"]
+size = Vector3(0.95, 1.6, 1.9)
+
+[sub_resource type="BoxShape3D" id="Shape_bench"]
+size = Vector3(1.8, 0.85, 0.66)
+
+[sub_resource type="BoxShape3D" id="Shape_fence"]
+size = Vector3(2.95, 1.2, 0.16)
+
+[sub_resource type="CylinderShape3D" id="Shape_brazier"]
+height = 1.2
+radius = 0.3
+
+[sub_resource type="CylinderShape3D" id="Shape_waystone"]
+height = 3.0
+radius = 0.8
+
+[sub_resource type="BoxShape3D" id="Shape_rocks"]
+size = Vector3(2.3, 1.4, 1.9)
+
+[sub_resource type="CylinderShape3D" id="Shape_pine"]
+height = 6.0
+radius = 0.4
+
+[sub_resource type="CapsuleShape3D" id="Shape_npc"]
+radius = 0.4
+height = 1.8
+
+[node name="TarnLanding" type="Node3D"]
+
+[node name="Nav" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("NavMesh_tarn")
+
+[node name="NavBaker" type="Node" parent="Nav"]
+script = ExtResource("1_navbaker")
+
+[node name="Floor" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+mesh = SubResource("BoxMesh_floor")
+surface_material_override/0 = SubResource("Mat_floor")
+
+[node name="FloorCol" type="StaticBody3D" parent="Nav"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FloorCol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+shape = SubResource("Shape_floor")
+
+[node name="Shore" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0.03, 0)
+mesh = SubResource("BoxMesh_shore")
+surface_material_override/0 = SubResource("Mat_shore")
+
+; The tarn. NOT under Nav — it carves nothing and blocks nothing; it is the only thing in the cell
+; that is purely a picture.
+[node name="Lakebed" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 0.02, 0)
+mesh = SubResource("BoxMesh_water")
+surface_material_override/0 = SubResource("Mat_lakebed")
+
+[node name="Tarn" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 0.05, 0)
+mesh = SubResource("BoxMesh_water")
+surface_material_override/0 = SubResource("Mat_water")
+
+; --- The water's edge -----------------------------------------------------------
+[node name="DockComplex" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, -4)
+
+[node name="Model" parent="Nav/DockComplex" instance=ExtResource("10_docks")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/DockComplex"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/DockComplex/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.3, 0)
+shape = SubResource("Shape_dock_house")
+
+; Sunk 0.30 m so the deck lands flush — see the header note about step-up.
+[node name="JettyNorth" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -3, -0.3, -12)
+
+[node name="Model" parent="Nav/JettyNorth" instance=ExtResource("11_jetty")]
+
+[node name="JettySouth" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -3, -0.3, 10)
+
+[node name="Model" parent="Nav/JettySouth" instance=ExtResource("11_jetty")]
+
+; --- Wenna's curing sheds, south of the track ------------------------------------
+[node name="CuringHut" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, 6)
+
+[node name="Model" parent="Nav/CuringHut" instance=ExtResource("12_hut")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/CuringHut"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CuringHut/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.25, 0)
+shape = SubResource("Shape_hut")
+
+; The drying racks: a fence line is exactly what a rack of split fish looks like from ten feet, and it
+; is already in the kit. Three of them make the row read as work rather than as a boundary.
+[node name="RackA" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -2, 0, 1)
+
+[node name="Model" parent="Nav/RackA" instance=ExtResource("20_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RackA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RackA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="RackB" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -2, 0, 4)
+
+[node name="Model" parent="Nav/RackB" instance=ExtResource("20_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RackB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RackB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="RackC" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -2, 0, 7)
+
+[node name="Model" parent="Nav/RackC" instance=ExtResource("20_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RackC"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RackC/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+; --- Odger's chandlery, north of the track ---------------------------------------
+[node name="Chandlery" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 8)
+
+[node name="Model" parent="Nav/Chandlery" instance=ExtResource("13_house")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/Chandlery"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Chandlery/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.4, 0)
+shape = SubResource("Shape_house")
+
+[node name="CartA" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 4, 0, 2)
+
+[node name="Model" parent="Nav/CartA" instance=ExtResource("21_cart")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/CartA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CartA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("Shape_cart")
+
+[node name="BarrelA" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.5, 0, 5)
+
+[node name="Model" parent="Nav/BarrelA" instance=ExtResource("17_barrel")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BarrelA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BarrelA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
+shape = SubResource("Shape_barrel")
+
+[node name="BarrelB" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.3, 0, 5.8)
+
+[node name="Model" parent="Nav/BarrelB" instance=ExtResource("17_barrel")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BarrelB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BarrelB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
+shape = SubResource("Shape_barrel")
+
+[node name="BarrelC" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 0, -3)
+
+[node name="Model" parent="Nav/BarrelC" instance=ExtResource("17_barrel")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BarrelC"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BarrelC/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
+shape = SubResource("Shape_barrel")
+
+[node name="CrateA" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 3)
+
+[node name="Model" parent="Nav/CrateA" instance=ExtResource("18_crate")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/CrateA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CrateA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
+shape = SubResource("Shape_crate")
+
+[node name="CrateB" type="Node3D" parent="Nav"]
+transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 7, 1.24, 3)
+
+[node name="Model" parent="Nav/CrateB" instance=ExtResource("18_crate")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/CrateB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CrateB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
+shape = SubResource("Shape_crate")
+
+[node name="SacksA" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, 9)
+
+[node name="Model" parent="Nav/SacksA" instance=ExtResource("19_sacks")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/SacksA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/SacksA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.22, 0)
+shape = SubResource("Shape_sacks")
+
+[node name="HayA" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, 4)
+
+[node name="Model" parent="Nav/HayA" instance=ExtResource("25_hay")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/HayA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/HayA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+shape = SubResource("Shape_hay")
+
+[node name="BenchA" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, -6)
+
+[node name="Model" parent="Nav/BenchA" instance=ExtResource("22_bench")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BenchA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BenchA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
+shape = SubResource("Shape_bench")
+
+; The shore fire, between the two trades — the Landing's one gathering point.
+[node name="ShoreFire" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1)
+
+[node name="Model" parent="Nav/ShoreFire" instance=ExtResource("16_campfire")]
+
+[node name="Coals" type="MeshInstance3D" parent="Nav/ShoreFire"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 0)
+mesh = SubResource("Mesh_coals")
+surface_material_override/0 = SubResource("Mat_ember")
+
+[node name="Light" type="OmniLight3D" parent="Nav/ShoreFire"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+light_color = Color(1, 0.62, 0.32, 1)
+light_energy = 1.6
+omni_range = 11.0
+
+[node name="BrazierJetty" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 0, -11)
+
+[node name="Model" parent="Nav/BrazierJetty" instance=ExtResource("15_brazier")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BrazierJetty"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BrazierJetty/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_brazier")
+
+[node name="Coals" type="MeshInstance3D" parent="Nav/BrazierJetty"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 0)
+mesh = SubResource("Mesh_coals")
+surface_material_override/0 = SubResource("Mat_ember")
+
+[node name="Light" type="OmniLight3D" parent="Nav/BrazierJetty"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+light_color = Color(1, 0.6, 0.3, 1)
+light_energy = 1.6
+omni_range = 11.0
+
+[node name="BrazierRoad" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 0)
+
+[node name="Model" parent="Nav/BrazierRoad" instance=ExtResource("15_brazier")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BrazierRoad"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BrazierRoad/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_brazier")
+
+[node name="Coals" type="MeshInstance3D" parent="Nav/BrazierRoad"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 0)
+mesh = SubResource("Mesh_coals")
+surface_material_override/0 = SubResource("Mat_ember")
+
+[node name="Light" type="OmniLight3D" parent="Nav/BrazierRoad"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+light_color = Color(1, 0.6, 0.3, 1)
+light_energy = 1.5
+omni_range = 10.0
+
+; --- The verges ------------------------------------------------------------------
+[node name="PineA" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, -12)
+
+[node name="Model" parent="Nav/PineA" instance=ExtResource("24_pine")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/PineA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+shape = SubResource("Shape_pine")
+
+[node name="PineB" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17, 0, 14)
+
+[node name="Model" parent="Nav/PineB" instance=ExtResource("24_pine")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/PineB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+shape = SubResource("Shape_pine")
+
+[node name="PineC" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, -18)
+
+[node name="Model" parent="Nav/PineC" instance=ExtResource("24_pine")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/PineC"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineC/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+shape = SubResource("Shape_pine")
+
+[node name="PineD" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 19)
+
+[node name="Model" parent="Nav/PineD" instance=ExtResource("24_pine")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/PineD"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineD/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+shape = SubResource("Shape_pine")
+
+[node name="RocksA" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, -16)
+
+[node name="Model" parent="Nav/RocksA" instance=ExtResource("23_rocks")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RocksA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RocksA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("Shape_rocks")
+
+[node name="RocksB" type="Node3D" parent="Nav"]
+transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, -6, 0, 15)
+
+[node name="Model" parent="Nav/RocksB" instance=ExtResource("23_rocks")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RocksB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RocksB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("Shape_rocks")
+
+[node name="RocksC" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19, 0, 6)
+
+[node name="Model" parent="Nav/RocksC" instance=ExtResource("23_rocks")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RocksC"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RocksC/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("Shape_rocks")
+
+; --- The waystone. ⚠️ TravelName is a LOCALE KEY, not prose (38K).
+[node name="LandingWaystone" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, -3)
+script = ExtResource("2_entity")
+DisplayName = "Landing Waystone"
+
+[node name="Model" parent="LandingWaystone" instance=ExtResource("14_waystone")]
+
+[node name="Collider" type="StaticBody3D" parent="LandingWaystone"]
+
+[node name="Shape" type="CollisionShape3D" parent="LandingWaystone/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+shape = SubResource("Shape_waystone")
+
+[node name="Travel" type="Node" parent="LandingWaystone"]
+script = ExtResource("3_travel")
+Id = "travel.ember_crown.tarn_landing"
+TravelName = "travel.ember_crown.tarn_landing.name"
+RegionId = "region.ember_crown"
+
+; --- The two merchants -----------------------------------------------------------
+; ⚠️ Wenna wears npc_woman_dress, NOT npc_merchant_f — that body is a t-shirt and trainers, retired
+; from the whole game in 38N2. One interactable each (a DialogueComponent), trade behind
+; DialogueEffect.OpenShop (38E).
+[node name="Wenna" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, 2)
+script = ExtResource("2_entity")
+DisplayName = "Wenna Tarn"
+TemplateId = "npc.wenna"
+
+[node name="Animation" type="Node" parent="Wenna"]
+script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="Wenna"]
+
+[node name="Shape" type="CollisionShape3D" parent="Wenna/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="Wenna"]
+script = ExtResource("6_faction")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="Wenna"]
+script = ExtResource("4_dialogue")
+DialogueId = "dialogue.wenna"
+
+[node name="Schedule" type="Node" parent="Wenna"]
+script = ExtResource("7_schedule")
+ScheduleId = "schedule.tarn.curer"
+
+[node name="Model" parent="Wenna" instance=ExtResource("30_wenna")]
+
+[node name="Odger" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 4)
+script = ExtResource("2_entity")
+DisplayName = "Odger Vane"
+TemplateId = "npc.odger"
+
+[node name="Animation" type="Node" parent="Odger"]
+script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="Odger"]
+
+[node name="Shape" type="CollisionShape3D" parent="Odger/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="Odger"]
+script = ExtResource("6_faction")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="Odger"]
+script = ExtResource("4_dialogue")
+DialogueId = "dialogue.odger"
+
+[node name="Schedule" type="Node" parent="Odger"]
+script = ExtResource("7_schedule")
+ScheduleId = "schedule.tarn.chandler"
+
+[node name="Model" parent="Odger" instance=ExtResource("31_odger")]
+
+; --- Second pass (38N2). The first draft put the whole hamlet in a strip down the middle and left the
+; --- verges bare — the same critique 38K's first Embermarket and 38N1's first mine both earned, so it
+; --- is budgeted for now rather than discovered. Density, not new art: more racks along the shore,
+; --- the boats' gear where the boats land, and the east approach closed in.
+
+[node name="RackD" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -2, 0, -4)
+
+[node name="Model" parent="Nav/RackD" instance=ExtResource("20_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RackD"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RackD/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="RackE" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -2, 0, -7)
+
+[node name="Model" parent="Nav/RackE" instance=ExtResource("20_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RackE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RackE/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="RackF" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 1, 0, 11)
+
+[node name="Model" parent="Nav/RackF" instance=ExtResource("20_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RackF"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RackF/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="BarrelD" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 0, -4)
+
+[node name="Model" parent="Nav/BarrelD" instance=ExtResource("17_barrel")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BarrelD"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BarrelD/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
+shape = SubResource("Shape_barrel")
+
+[node name="BarrelE" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.3, 0, -4.8)
+
+[node name="Model" parent="Nav/BarrelE" instance=ExtResource("17_barrel")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BarrelE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BarrelE/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
+shape = SubResource("Shape_barrel")
+
+[node name="BarrelF" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, 11)
+
+[node name="Model" parent="Nav/BarrelF" instance=ExtResource("17_barrel")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BarrelF"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BarrelF/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
+shape = SubResource("Shape_barrel")
+
+[node name="BarrelG" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.8, 0, 11.6)
+
+[node name="Model" parent="Nav/BarrelG" instance=ExtResource("17_barrel")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BarrelG"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BarrelG/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
+shape = SubResource("Shape_barrel")
+
+[node name="CrateC" type="Node3D" parent="Nav"]
+transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, -5, 0, -9)
+
+[node name="Model" parent="Nav/CrateC" instance=ExtResource("18_crate")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/CrateC"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CrateC/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
+shape = SubResource("Shape_crate")
+
+[node name="CrateD" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 1)
+
+[node name="Model" parent="Nav/CrateD" instance=ExtResource("18_crate")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/CrateD"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CrateD/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
+shape = SubResource("Shape_crate")
+
+[node name="SacksB" type="Node3D" parent="Nav"]
+transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, -6, 0, -10)
+
+[node name="Model" parent="Nav/SacksB" instance=ExtResource("19_sacks")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/SacksB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/SacksB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.22, 0)
+shape = SubResource("Shape_sacks")
+
+[node name="SacksC" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 6)
+
+[node name="Model" parent="Nav/SacksC" instance=ExtResource("19_sacks")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/SacksC"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/SacksC/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.22, 0)
+shape = SubResource("Shape_sacks")
+
+[node name="HayB" type="Node3D" parent="Nav"]
+transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 12, 0, 7)
+
+[node name="Model" parent="Nav/HayB" instance=ExtResource("25_hay")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/HayB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/HayB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+shape = SubResource("Shape_hay")
+
+[node name="CartB" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -1, 0, 0)
+
+[node name="Model" parent="Nav/CartB" instance=ExtResource("21_cart")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/CartB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CartB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("Shape_cart")
+
+[node name="BenchB" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 3, 0, 3)
+
+[node name="Model" parent="Nav/BenchB" instance=ExtResource("22_bench")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BenchB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BenchB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
+shape = SubResource("Shape_bench")
+
+[node name="PineE" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 0, 8)
+
+[node name="Model" parent="Nav/PineE" instance=ExtResource("24_pine")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/PineE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineE/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
+shape = SubResource("Shape_pine")
+
+[node name="PineF" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, -16)
+
+[node name="Model" parent="Nav/PineF" instance=ExtResource("24_pine")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/PineF"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineF/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
+shape = SubResource("Shape_pine")
+
+[node name="PineG" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, 20)
+
+[node name="Model" parent="Nav/PineG" instance=ExtResource("24_pine")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/PineG"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineG/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
+shape = SubResource("Shape_pine")
+
+[node name="PineH" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, -22)
+
+[node name="Model" parent="Nav/PineH" instance=ExtResource("24_pine")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/PineH"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineH/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
+shape = SubResource("Shape_pine")
+
+[node name="RocksD" type="Node3D" parent="Nav"]
+transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 13, 0, -8)
+
+[node name="Model" parent="Nav/RocksD" instance=ExtResource("23_rocks")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RocksD"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RocksD/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("Shape_rocks")
+
+[node name="RocksE" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, 20)
+
+[node name="Model" parent="Nav/RocksE" instance=ExtResource("23_rocks")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RocksE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RocksE/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("Shape_rocks")
+
+[node name="RocksF" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 21, 0, -2)
+
+[node name="Model" parent="Nav/RocksF" instance=ExtResource("23_rocks")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RocksF"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RocksF/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("Shape_rocks")
+
+[node name="RocksG" type="Node3D" parent="Nav"]
+transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, -7, 0, -20)
+
+[node name="Model" parent="Nav/RocksG" instance=ExtResource("23_rocks")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RocksG"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RocksG/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("Shape_rocks")

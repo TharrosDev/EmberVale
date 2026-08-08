@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+; Phase 38N2 - what the Landing CONSUMES rather than sells, and the reason its chandler is a sink.
+; `textile` had two members before this (linen bolt, dyed wool); a hamlet that eats rope needed rope
+; to exist before its chandler could refuse to sell it.
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.material.net_cordage"
+DisplayName = "Coil of Net Cordage"
+Description = "Tarred hemp laid in three strands. A net is mostly this, and a net is mostly what the Landing owns."
+Type = 4
+Rarity = 0
+MaxStack = 60
+Weight = 0.7
+Value = 11
+TradeTags = Array[String](["textile"])
