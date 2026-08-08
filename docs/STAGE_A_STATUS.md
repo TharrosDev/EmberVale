@@ -2,11 +2,11 @@
 
 > 🗄️ **HISTORICAL — Stage A closed at gate G0 and the project is in Stage C.** Kept for the
 > known-issues ledger and the sign-off record. Do not read this for current state; that is
-> `CLAUDE.md` §10 and [`SESSION_PLAYBOOK.md`](SESSION_PLAYBOOK.md).
+> `CLAUDE.md` §10 and [`docs/playbook/`](playbook/README.md).
 
 > **Scope:** the Stage-A (Phases 22–25) integration sign-off. It is a point-in-time
 > snapshot, not a live status of the whole project — later phases (26+, 29.5, …) are
-> tracked in [`SESSION_PLAYBOOK.md`](SESSION_PLAYBOOK.md) and
+> tracked in [`docs/playbook/`](playbook/README.md) and
 > [`PRODUCTION_ROADMAP.md`](PRODUCTION_ROADMAP.md).
 
 Status of the **Stage-A foundation (production systems 22–25)** after the Phase 25.5

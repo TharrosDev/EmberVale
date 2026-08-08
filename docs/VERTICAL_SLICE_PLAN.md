@@ -3,7 +3,7 @@
 > 🗄️ **HISTORICAL — Phase 33D/E is built.** Kept because the slice arc it describes is still
 > the game's spine and the capture/gap passes are still the shape a future slice takes. Do not
 > read it for current state; that is `CLAUDE.md` §10 and
-> [`SESSION_PLAYBOOK.md`](SESSION_PLAYBOOK.md).
+> [`docs/playbook/`](playbook/README.md).
 
 **"The Warband and the King"** — the implementation plan for stitching Phases 22–33C into one
 continuous, polished 30–60 minute arc, ending at 🚩 **Gate G1 — Vertical Slice**.
@@ -13,7 +13,7 @@ continuous, polished 30–60 minute arc, ending at 🚩 **Gate G1 — Vertical S
 > design decisions that are **locked**, the beat-by-beat arc, and a task-by-task build order with
 > acceptance criteria. Where a decision is still open it says so explicitly.
 >
-> Companion documents: `SESSION_PLAYBOOK.md` (the sub-phase checklist), `PRODUCTION_ROADMAP.md`
+> Companion documents: `docs/playbook/` (the sub-phase checklist), `PRODUCTION_ROADMAP.md`
 > (§Phase 33 and Gate G1), `ARCHITECTURE.md` (the systems this leans on), `LORE.md` (canon).
 >
 > **Status: tasks 1–7 are built** (see §4 — each is marked). What remains is **§5.2, the manual

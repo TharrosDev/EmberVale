@@ -26,6 +26,7 @@
 - [Giving a property a trophy stand (Phase 37D)](#giving-a-property-a-trophy-stand-phase-37d)
 - [A new shop / merchant (Phase 38A–38J)](#a-new-shop--merchant-phase-38a38j)
 - [A new service — trainer / bank / inn / stable (Phase 38D)](#a-new-service--trainer--bank--inn--stable-phase-38d)
+- [Generators — do not hand-write boilerplate](#generators--do-not-hand-write-boilerplate-agent-ergonomics-pass)
 - [A production settlement (Phase 38N1)](#a-production-settlement-phase-38n1)
 - [A tolled crossing — toll, permit, bribe (Phase 38M)](#a-tolled-crossing--toll-permit-bribe-phase-38m)
 - [A new gold sink (Phase 38C)](#a-new-gold-sink-phase-38c)
@@ -468,6 +469,24 @@
    exists anywhere in the game. 38D's brief says repair lands only "if durability is adopted in 40",
    and 40B's rule is that cut systems leave no stub — so a kind resolving to nothing would be worse
    than its absence. The deferral is recorded in `docs/DESIGN.md` §6 against Phase 40A.
+
+## Generators — do not hand-write boilerplate (agent-ergonomics pass)
+
+Two committed scripts cover the repo's highest-volume authoring. Both **print to stdout** so the
+output is read before it lands: the `.tscn`/`.tres` stays the authored artefact.
+
+- **`python tools/gen_cell_props.py props.txt`** — a table of
+  `name  ext_id  x  z  shape_id  y_centre  [yaw]  [y_offset]` becomes the four-node prop stanzas.
+  Verified byte-identical against `emberdeep_mine.tscn`. `--no-collider` for scenery that must not
+  carve the navmesh. It encodes the conventions that were being retyped per prop: static props
+  parent to `Nav`, the collider is a child `StaticBody3D`, and its size comes from the model's
+  **measured** bounding box.
+- **`python tools/gen_merchant_dialogue.py <key> <dialogue.id> <shop.id> "<Speaker>"`** — the
+  resident-merchant graph, verified identical against `data/dialogue/Wenna.tres`. ⚠️ It emits the
+  **scaffold only**; the locale rows stay hand-written, and it lists which ones you owe on stderr.
+
+A dressed cell was ~8k output tokens of near-identical stanzas and a merchant conversation ~1.3k.
+Both scripts were written ad hoc and thrown away twice before being committed.
 
 ## A production settlement (Phase 38N1)
 

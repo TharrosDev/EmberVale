@@ -195,7 +195,7 @@ are now live, and the right-hand column names the file that answers each intent.
 | Screen feedback | `DamageDealtEvent` (data) | `CombatFeedbackOverlay` / `CombatFeedbackFx` (29D) |
 
 > **Reading this table:** it is a *map of what exists*, not a to-do list. Phase 29's
-> "Done when" bars (`SESSION_PLAYBOOK.md` 29A–29I) record how each intent was met. What
+> "Done when" bars (`docs/playbook/` 29A–29I) record how each intent was met. What
 > remains open is **tuning**, which is Phase 56's — the shapes are set. See §2.4.
 
 ---

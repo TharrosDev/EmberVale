@@ -124,6 +124,15 @@ public partial class GameBootstrap : Node3D
             return;
         }
 
+        // And a content census: `-- --state` prints what is on disk and quits (agent-ergonomics
+        // pass). It replaces a handful of greps at the start of a session and cannot drift from
+        // reality, because it reads the same databases the game loads.
+        if (HeadlessState.Requested())
+        {
+            HeadlessState.Run(GetTree());
+            return;
+        }
+
         Log.Info("=== Embervale bootstrapping (Phase 20: Deep Debugging) ===");
 
         // The bootstrap is the flow manager for the sandbox, so it must keep
