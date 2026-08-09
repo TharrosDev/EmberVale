@@ -36,5 +36,5 @@ Destination = Vector3(9, 0, -2)
 [resource]
 script = ExtResource("1_sched")
 Id = "schedule.emberdeep.factor"
-Origin = Vector3(99, 0, -10)
+Origin = Vector3(56, 0, -10)
 Entries = Array[Resource]([SubResource("e_check"), SubResource("e_trade"), SubResource("e_close")])

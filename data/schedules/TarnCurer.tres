@@ -37,5 +37,5 @@ Destination = Vector3(-9, 0, 4)
 [resource]
 script = ExtResource("1_sched")
 Id = "schedule.tarn.curer"
-Origin = Vector3(-106, 0, -10)
+Origin = Vector3(-56, 0, -6)
 Entries = Array[Resource]([SubResource("e_0"), SubResource("e_1"), SubResource("e_2")])
