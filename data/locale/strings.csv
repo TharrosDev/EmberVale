@@ -134,6 +134,12 @@ shop.sell,Sell
 shop.consign,List
 shop.consign_price,"{0}g in {1}d"
 shop.consign_shelf,On her shelf: {0}
+appraisal.title,APPRAISAL — {0}
+appraisal.subtitle,"Per unit, at your standing. A merchant pays less as you fill her up."
+appraisal.buyer,"{0} pays {1}g"
+appraisal.no_buyer,No honest counter will take this
+appraisal.consign,"{0} would list it for {1}g in {2}d"
+appraisal.nothing,Nothing here has a market.
 shop.empty,Nothing for sale.
 shop.pack_empty,Nothing to sell.
 shop.cannot_afford,You cannot afford this.
@@ -237,6 +243,9 @@ service.prompt_redeem_empty,"{0} — they are holding nothing of yours"
 service.embermarket.collect.name,The Consignment Counter
 service.prompt_collect,"{0} — collect what has sold ({1} gold)"
 service.prompt_collect_empty,"{0} — nothing of yours has sold yet"
+service.embermarket.appraisal.name,Brightcut's Scales
+service.prompt_appraise,"{0} — have your goods valued"
+service.prompt_appraise_empty,"{0} — you are carrying nothing worth weighing"
 craft.station_forge,Forge
 craft.station_workbench,Workbench
 craft.station_alchemy,Alchemy Table
@@ -1055,7 +1064,7 @@ dlg.perrin.c_talk_back,"Ask something else."
 dlg.perrin.c_talk_bye,"Fair enough."
 dlg.nessa.speaker,"Nessa Brightcut"
 dlg.nessa.root,"Cloth-of-grey under glass, and on it four stones arranged with more care than most people give a meal. ""Don't breathe on the sapphires."""
-dlg.nessa.talk,"""Everyone in this market thinks they know what their goods are worth."" She does not look up from the loupe. ""They know what they were paid last time. Those are different numbers and the difference is my living. Bring me anything with a stone in it and I'll tell you which one you're holding."""
+dlg.nessa.talk,"""Everyone in this market thinks they know what their goods are worth."" She does not look up from the loupe. ""They know what they were paid last time. Those are different numbers and the difference is my living."" She taps the brass scales at the end of her counter without looking at them. ""Put your pack on those and I'll tell you what every piece of it is worth and who'll pay it. No charge. I'd rather you sold in the right place than came back telling me the market's crooked."""
 dlg.nessa.closed,"The glass is empty and the cloth is folded. Nessa keeps banker's hours and makes no apology for it."
 dlg.nessa.c_trade,"Let me see the stones."
 dlg.nessa.c_closed,"Are you open yet?"

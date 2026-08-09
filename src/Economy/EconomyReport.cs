@@ -29,6 +29,30 @@ namespace Embervale.Economy;
 /// from a remote session at all — CLAUDE.md §3 — so a console-only report would have shipped
 /// unexercised, which is the shape of every dead feature this project has had to dig out.
 /// </summary>
+/// <summary>
+/// One merchant's offer for one item: who, and how much (38P2). "No such buyer" is
+/// <see cref="Has"/> being false — kept distinct from a price of <c>0</c>, which is a real merchant
+/// who values the thing at nothing.
+///
+/// ⚠️ <b>Ask <see cref="Has"/>, never <c>Shop.Length</c>.</b> <c>default(Offer)</c> bypasses the
+/// primary constructor, so <see cref="Shop"/> is <c>null</c> in the empty case however carefully the
+/// constructor is written — a defensive <c>?? string.Empty</c> on the property does not run either,
+/// which is exactly the false confidence that shipped an NRE into <c>--economy</c> mid-38P2 and hung
+/// the headless run.
+/// </summary>
+public readonly record struct Offer(string Shop, int Price)
+{
+    public bool Has => !string.IsNullOrEmpty(Shop);
+}
+
+/// <summary>What a broker would list an item for (38P2): the net per unit after her commission, and
+/// the days it takes to sell. <see cref="Has"/> false means nobody will take it on consignment —
+/// same null caveat as <see cref="Offer"/>.</summary>
+public readonly record struct ConsignQuote(string Shop, int Net, int Days)
+{
+    public bool Has => !string.IsNullOrEmpty(Shop);
+}
+
 public static class EconomyReport
 {
     /// <summary>How many routes the table prints. Anything past this is noise: the tail is the same
@@ -122,6 +146,7 @@ public static class EconomyReport
                 $"sell {route.Sell,4} to {route.To}");
         }
 
+        text.Append(Brokers());
         return text.ToString();
     }
 
@@ -143,49 +168,31 @@ public static class EconomyReport
         route = default;
         (string Shop, int Price) buy1 = (string.Empty, int.MaxValue);
         (string Shop, int Price) buy2 = (string.Empty, int.MaxValue);
-        (string Shop, int Price) sell1 = (string.Empty, int.MinValue);
-        (string Shop, int Price) sell2 = (string.Empty, int.MinValue);
 
         foreach (ShopResource shop in ShopDatabase.All)
         {
-            if (IsHostile(shop.FactionId))
+            if (IsHostile(shop.FactionId) || !Stocks(shop, itemId))
             {
                 continue;
             }
 
             bool specialty = TradeTags.IsSpecialty(tags, shop.SpecialtyList());
-            ReputationTier tier = TierOf(shop.FactionId);
-
-            if (Stocks(shop, itemId))
+            int price = ShopPricing.BuyPrice(
+                item.Value, ShopPricing.MarkupFor(shop.BuyMarkup, TierOf(shop.FactionId), specialty));
+            if (price < buy1.Price)
             {
-                int price = ShopPricing.BuyPrice(item.Value, ShopPricing.MarkupFor(shop.BuyMarkup, tier, specialty));
-                if (price < buy1.Price)
-                {
-                    buy2 = buy1;
-                    buy1 = (shop.Id, price);
-                }
-                else if (price < buy2.Price)
-                {
-                    buy2 = (shop.Id, price);
-                }
+                buy2 = buy1;
+                buy1 = (shop.Id, price);
             }
-
-            if (TradeTags.Accepts(tags, shop.AcceptedTagList()))
+            else if (price < buy2.Price)
             {
-                int price = ShopPricing.SellPrice(item.Value, ShopPricing.SellFractionFor(shop.SellFraction, specialty));
-                if (price > sell1.Price)
-                {
-                    sell2 = sell1;
-                    sell1 = (shop.Id, price);
-                }
-                else if (price > sell2.Price)
-                {
-                    sell2 = (shop.Id, price);
-                }
+                buy2 = (shop.Id, price);
             }
         }
 
-        if (buy1.Shop.Length == 0 || sell1.Shop.Length == 0)
+        BestBuyers(item, tags, out Offer sell1, out Offer sell2);
+
+        if (buy1.Shop.Length == 0 || !sell1.Has)
         {
             return false; // nobody sells it, or nobody deals in it
         }
@@ -198,7 +205,7 @@ public static class EconomyReport
 
         // The same merchant is both ends, so take the better of the two legal fallbacks.
         bool useSecondBuyer = buy2.Shop.Length > 0;
-        bool useSecondSeller = sell2.Shop.Length > 0;
+        bool useSecondSeller = sell2.Has;
         int viaSecondBuyer = useSecondBuyer ? sell1.Price - buy2.Price : int.MinValue;
         int viaSecondSeller = useSecondSeller ? sell2.Price - buy1.Price : int.MinValue;
 
@@ -211,6 +218,131 @@ public static class EconomyReport
             ? new Route(item.DisplayName, buy2.Shop, buy2.Price, sell1.Shop, sell1.Price)
             : new Route(item.DisplayName, buy1.Shop, buy1.Price, sell2.Shop, sell2.Price);
         return true;
+    }
+
+    /// <summary>
+    /// What the realm's brokers pay, appended to the arbitrage table (38P2).
+    ///
+    /// ⚠️ <b>The table above cannot carry it, and that is why this is a separate block.</b> Every row
+    /// up there is a two-shop <em>route</em> with a margin; a consignment is one counter, paid days
+    /// later, with no second end to subtract. Forcing it into a route column would have meant either a
+    /// fake buy price or a margin that means something different on one row than on all the others.
+    ///
+    /// Without this the report omitted the best payout in the realm — 38P shipped that gap knowingly
+    /// and recorded it in <c>NOW.md</c>, because the extraction it needed is this sub-phase's job.
+    /// </summary>
+    private static string Brokers()
+    {
+        var houses = new List<ShopResource>();
+        foreach (ShopResource shop in ShopDatabase.All)
+        {
+            if (shop.IsConsignment)
+            {
+                houses.Add(shop);
+            }
+        }
+
+        if (houses.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var text = new StringBuilder();
+        text.AppendLine();
+        text.AppendLine("=== On consignment — paid later, and better than any counter ===");
+
+        foreach (ShopResource house in houses)
+        {
+            int perHundred = ConsignmentRules.Net(
+                ConsignmentRules.Gross(100, house.ConsignFraction), house.ConsignCommission);
+            text.AppendLine(
+                $"{house.Id,-34} {perHundred,3}g per 100 of value in {house.ConsignDays}d, " +
+                $"takes {string.Join(", ", house.AcceptedTagList())}");
+        }
+
+        text.AppendLine("No purse and no saturation apply here, so a whole stack lists at once — but " +
+            "the payout is still capped at an item's value (ShopPricing.SellPrice), so this is the " +
+            "best price in the realm and still not arbitrage.");
+        return text.ToString();
+    }
+
+    /// <summary>
+    /// The two best outright buyers for one item, ranked, at the player's standing. Empty
+    /// <see cref="Offer.Shop"/> means there is no such buyer.
+    ///
+    /// <b>Extracted in 38P2 so the arbitrage table and the appraiser share one authority</b> on what a
+    /// merchant will pay. It returns <em>two</em> because <see cref="TryBestRoute"/> excludes the
+    /// self-pair and needs a fallback; a single-best version would have forced a second pass over
+    /// every shop for the one item where it matters.
+    ///
+    /// ⚠️ <b>A consignment house is skipped, and that is a defect fix rather than a refinement</b>
+    /// (38P2). A broker's <see cref="ShopResource.SellFraction"/> is inert data — <c>VendorPanel</c>
+    /// branches on <see cref="ShopResource.IsConsignment"/> and never reads it — but this loop used to
+    /// quote it like any other counter, so the report offered a sale at a price the game would refuse
+    /// to make. That is precisely the failure this class's own header warns about. Her real offer is
+    /// <see cref="BestConsignment"/>, which is a different shape: it pays later and takes a cut.
+    /// </summary>
+    public static void BestBuyers(ItemResource item, List<string> tags, out Offer first, out Offer second)
+    {
+        first = default;
+        second = default;
+
+        foreach (ShopResource shop in ShopDatabase.All)
+        {
+            if (shop.IsConsignment || IsHostile(shop.FactionId) ||
+                !TradeTags.Accepts(tags, shop.AcceptedTagList()))
+            {
+                continue;
+            }
+
+            bool specialty = TradeTags.IsSpecialty(tags, shop.SpecialtyList());
+            int price = ShopPricing.SellPrice(
+                item.Value, ShopPricing.SellFractionFor(shop.SellFraction, specialty));
+
+            if (!first.Has || price > first.Price)
+            {
+                second = first;
+                first = new Offer(shop.Id, price);
+            }
+            else if (!second.Has || price > second.Price)
+            {
+                second = new Offer(shop.Id, price);
+            }
+        }
+    }
+
+    /// <summary>
+    /// The best broker quote for one item (38P2): what the player is paid per unit once the house has
+    /// taken its cut, and how many days it takes. Empty <see cref="ConsignQuote.Shop"/> means no
+    /// broker in the realm will take it.
+    ///
+    /// <b>It prices through <see cref="ConsignmentRules"/>, the same two calls
+    /// <c>VendorPanel.BuildPack</c> makes</b> — 38P's carried lesson, and it bites harder here than in
+    /// the panel: this code exists to <em>report</em> a price, so a second computation of it would stay
+    /// invisible until a player was quoted a number the game refuses to pay.
+    /// </summary>
+    public static ConsignQuote BestConsignment(ItemResource item, List<string> tags)
+    {
+        var best = default(ConsignQuote);
+
+        foreach (ShopResource shop in ShopDatabase.All)
+        {
+            if (!shop.IsConsignment || IsHostile(shop.FactionId) ||
+                !TradeTags.Accepts(tags, shop.AcceptedTagList()))
+            {
+                continue;
+            }
+
+            int net = ConsignmentRules.Net(
+                ConsignmentRules.Gross(item.Value, shop.ConsignFraction), shop.ConsignCommission);
+
+            if (!best.Has || net > best.Net)
+            {
+                best = new ConsignQuote(shop.Id, net, shop.ConsignDays);
+            }
+        }
+
+        return best;
     }
 
     private static bool Stocks(ShopResource shop, string itemId)

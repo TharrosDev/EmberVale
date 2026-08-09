@@ -19,6 +19,11 @@ public readonly record struct ShopOpenedEvent(IEntity Player, ShopResource Shop)
 /// <summary>Raised when the shop window closes.</summary>
 public readonly record struct ShopClosedEvent(IEntity Player) : IGameEvent;
 
+/// <summary>Raised when an appraiser is asked what the player's goods are worth (Phase 38P2).
+/// Answered by <c>AppraisalPanel</c>, the same event-driven seam <see cref="ShopOpenedEvent"/> and
+/// <c>StorageOpenedEvent</c> use — so the service publishes and knows nothing about the UI.</summary>
+public readonly record struct AppraisalOpenedEvent(IEntity Player, string AppraiserName) : IGameEvent;
+
 /// <summary>
 /// A merchant the player can trade with (Phase 38A). Authored on an entity with a collider (the
 /// interact raycast needs one) and pointed at a <see cref="ShopResource"/> by id — the same

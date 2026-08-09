@@ -62,6 +62,7 @@ public partial class GameBootstrap : Node3D
     private CraftingPanel _craftingPanel = null!;
     private StoragePanel _storagePanel = null!;
     private VendorPanel _vendorPanel = null!;
+    private AppraisalPanel _appraisalPanel = null!;
     private Housing.PlacementDirector _placement = null!;
     private WorldClock _clock = null!;
     private WeatherDirector _weather = null!;
@@ -407,6 +408,10 @@ public partial class GameBootstrap : Node3D
         // The shop window (38A) — same one-instance-for-every-merchant shape as the two above.
         _vendorPanel = new VendorPanel();
         AddChild(_vendorPanel);
+        // The appraiser's window (38P2) — the first panel that only reads. Same one instance for
+        // every appraiser, answered off an event, so the service knows nothing about the UI.
+        _appraisalPanel = new AppraisalPanel();
+        AddChild(_appraisalPanel);
 
         // The world clock drives NPC routines; create it before the NPCs below so it is
         // registered in the ServiceLocator when their schedules first read the time.

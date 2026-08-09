@@ -77,4 +77,21 @@ public enum ServiceKind
     /// is a second commission the broker's own cut has already taken.
     /// </summary>
     Collect,
+
+    /// <summary>
+    /// The appraiser's scales (Phase 38P2): opens a valuation of everything in the pack — who pays
+    /// most for each thing, and what a broker would list it for.
+    ///
+    /// It is a <b>service that changes nothing</b>, which is new. Every other kind moves gold, goods,
+    /// standing, the clock or a flag; this one only reads. That is still the right home for it: the
+    /// prompt battery, the hostile refusal and the "nothing to do here" state are exactly what an
+    /// appraiser needs, and it inherits all three for the cost of a member and a published event —
+    /// the same three lines <see cref="Bank"/> spends opening a vault.
+    ///
+    /// ⚠️ Always free, and <c>--validate</c> enforces it. <see cref="ServiceRules"/> refuses any
+    /// service the player cannot afford <em>before</em> the verb runs, so a fee would fail closed on
+    /// the player with an empty purse and a full pack — precisely the person who walked over to ask
+    /// what is worth carrying. 38O's priced-search rule, third instance.
+    /// </summary>
+    Appraise,
 }

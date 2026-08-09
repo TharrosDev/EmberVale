@@ -10,15 +10,13 @@ existed the same three lines were maintained in four places and rewritten every 
 
 ## Where we are
 
-- **Stage C, Phase 38 (economy). 38A–38P done. Next: 38P2 — the appraiser.**
-- Open the plan: `docs/playbook/phase-38.md`, the `38P2` entry. Read the two entries above it too —
+- **Stage C, Phase 38 (economy). 38A–38P2 done. Next: 38Q — commissions + contracts.**
+- Open the plan: `docs/playbook/phase-38.md`, the `38Q` entry. Read the two entries above it too —
   the "two things worth carrying" lines are the cheapest bug prevention in the repo.
-- ⏸ **38G is parked, not next.** It prices goods by settlement demand and sits above 38P2 in the file.
-  Do not trust the first unchecked box. Neither 38O nor 38P unparked it: a fence changes *who will
-  buy* and a broker changes *how much one counter pays*, but neither moves an item's **value** by
-  settlement, so every margin in `--economy` is still negative.
-- **38P was split at the maintainer's call**, the way 38M/38M2 and 38N1/38N2 were: consignment
-  landed whole, the appraiser is 38P2.
+- ⏸ **38G is parked, not next.** It prices goods by settlement demand and sits above 38Q in the file.
+  Do not trust the first unchecked box. Nothing since 38N has unparked it: a fence changes *who will
+  buy*, a broker *how much one counter pays*, an appraiser only *what the player is told* — none of
+  them moves an item's **value** by settlement, so every margin in `--economy` is still negative.
 - 🎨 **Running alongside: the asset migration onto the four Quaternius MegaKits.** **A (animation
   gate) done and proved. B (nature) done** — 12 ground-cover props adopted and **all 9 Ember Crown
   cells dressed**, each to a style that suits the place.
@@ -31,11 +29,11 @@ existed the same three lines were maintained in four places and rewritten every 
 | | |
 | --- | --- |
 | Build | clean, 0 warnings |
-| Tests | 1198 passing |
-| `--validate` | exit 0; **all 6 new 38P rules negative-tested both ways** across two runs |
-| `--economy` | runs; 60 goods across 23 shops, every margin still negative (38G's job, not a defect) |
-| **`--play`** | **55 s in-world: booted, loaded slot1, restored 27 objects, streamed all 9 cells, 0 project errors** |
-| Embermarket | 11 residents; the consignment premises rendered at noon and dusk from 5 positions |
+| Tests | 1198 passing; **38P2 added none** — `EconomyReport` is Godot-bound, so `--economy` is its check |
+| `--validate` | exit 0; **both new 38P2 rules negative-tested both ways** |
+| `--economy` | runs; 60 goods across 23 shops, **plus the broker block**; every margin still negative (38G's job) |
+| **`--play`** | **55 s in-world: booted, loaded slot1, streamed all 9 cells, 0 project errors** |
+| Embermarket | 11 residents; the consignment premises and the assay counter rendered noon and dusk |
 | Ember Crown | 9 cells, 0 overlaps, all connected by full shared edges |
 | Bodies retargeted | **12 of 12** skinned (`fp_arm` has no skin and needs none) |
 | Props with no collider | 0 (audit clean) |
@@ -55,9 +53,10 @@ existed the same three lines were maintained in four places and rewritten every 
    a stack of twenty lists for twenty times one. ⚠️ **It still cannot invert the spread**: the payout
    goes through `ConsignmentRules.Gross` → `ShopPricing.SellPrice`, whose `0..1` clamp holds it to the
    item's value, so invariant 2 survives untouched. `ConsignmentRulesTests` asserts exactly that.
-   ⚠️ **`--economy` does not know consignment exists** — the arbitrage table is shop-to-shop only, so
-   the realm's best payout is missing from the realm's price report. Owned by 38P2, which refactors
-   `EconomyReport` anyway.
+   ⚠️ **`EconomyReport.BestBuyers` skips a consignment house and that is not optional** (38P2): her
+   `SellFraction` is inert data the vendor window never reads, so quoting it advertises a sale the
+   game refuses to make. Her real offer is `BestConsignment`, printed as its own block because a
+   consignment is one counter paid later, not a two-shop route with a margin.
 4. **`contraband` is the one trade tag that fails CLOSED** (38O). Every other tag is a filter a shop
    may opt out of; that one is a door a shop must opt *in* to, and it overrides an item's other tags.
    The whole exception is one branch in `TradeTags.Accepts`, which the vendor window, the sale and
@@ -117,13 +116,19 @@ godot --path . -- --play                        # boot into the newest save
     ships **one wall height, 3.12 m**, so `bld_cottage`'s 4.20 m silhouette cannot be built from it.
     `tools/compose_building.py` writes a shell from `<name> <wide> <deep> <storeys>`.
 
-14. ⚠️ **Solid-looking scenery with no collider is a real class of defect here, and 18 props had it**
+14. ⚠️ **MEASURING A MODEL'S ACCESSORS IS NOT MEASURING THE MODEL** (38P2). `prp_tome_stand`'s
+    POSITION min/max read 1.743 × 2.315 × 1.743, but its single node carries **scale 0.527**, so
+    the real prop is 0.92 × 1.22. The first collider authored off the raw numbers was over twice
+    too big in every axis — an invisible wall. Apply node scale (and `nodes/root_scale` from the
+    `.import`) to any measured bounding box, or the number is fiction. Adjacent to the documented
+    `Icosphere` trap and it fires the same way: a plausible number, wrong by a constant factor.
+15. ⚠️ **Solid-looking scenery with no collider is a real class of defect here, and 18 props had it**
     — dead pines, rock clusters, six glaciers. When adding scenery: a collider child **inherits its
     node's scale** (author in local units), a tree takes a **trunk** collider rather than a bounding
     box, and a collider **outside the `NavigationRegion3D` blocks the player while the navmesh stays
     ignorant of it**. `ASSET_POLICY.md` §0.6.
 
-15. ⚠️ **The Ember Crown map was re-laid (38F) and two documented decisions were reversed.** The
+16. ⚠️ **The Ember Crown map was re-laid (38F) and two documented decisions were reversed.** The
     settled cells now form one contiguous city — town_hub + embermarket + hollowreach, with Tarn's
     Landing adjoining — and every wilds cell is outside it. The **arena moved from 65 m off the town
     square to 150 m**, past the gate and the wilds, as the last cell in the realm.
