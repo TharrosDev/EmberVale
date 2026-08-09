@@ -246,6 +246,9 @@ service.prompt_collect_empty,"{0} — nothing of yours has sold yet"
 service.embermarket.appraisal.name,Brightcut's Scales
 service.prompt_appraise,"{0} — have your goods valued"
 service.prompt_appraise_empty,"{0} — you are carrying nothing worth weighing"
+service.ember_crown.commission.name,Bryn's Order Bench
+service.prompt_commission,"{0} — have it made for you ({1} gold and materials)"
+service.prompt_commission_none,"{0} — you know nothing he could make here"
 craft.station_forge,Forge
 craft.station_workbench,Workbench
 craft.station_alchemy,Alchemy Table
@@ -276,6 +279,7 @@ craft.yield_xp,+{0} XP
 craft.equipped,Equipped
 craft.recipes_none,No recipes for this station.
 craft.craft,Craft
+craft.commission,Commission ({0}g)
 # Character screen (InventoryPanel)
 char.title,CHARACTER   (I to close)
 char.reputation,REPUTATION
@@ -579,6 +583,8 @@ shop.embermarket.joiner.name,Halvard's Joinery
 shop.embermarket.caravan.name,The Long Road Caravan
 shop.embermarket.curios.name,Quill's Curios
 dlg.smith.c_trade,"What have you got to sell?"
+dlg.smith.c_commission,"Would you make something for me?"
+dlg.smith.commission,"Aye — if you know the shape of it, I know the making. Leave the order on the bench there and tell me what you want. Bring your own metal and you pay only for my hands; bring none and you pay for both."
 dlg.apothecary.c_trade,"Anything left on your shelves?"
 dlg.vendor_goods.speaker,"Aldreth, General Goods"
 dlg.vendor_goods.root,"Aldreth straightens a row of jars across a counter with more bare wood than goods on it."

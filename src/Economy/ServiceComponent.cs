@@ -86,8 +86,14 @@ public partial class ServiceComponent : InteractableComponent
         // PropertyDeedComponent spells out: chained into one test, an unresolvable pack falls *through*
         // to a free service. Unlike a purchase there is nothing to roll back — a refill, a flag and a
         // taught recipe cannot fail after the gold is taken.
+        // ⚠️ 38Q is the one kind that is NOT charged here, and it looks like an oversight beside the
+        // seven above. A commission's verb can fail — a full pack refuses the piece and rolls the
+        // whole craft back — and the fee is per piece, not per visit. Charged at the counter it would
+        // take gold from a player who then commissions nothing, and take it once for a window they
+        // might order five things from. CraftingComponent.Commission owns the money for that reason.
         int price = PriceOf(service);
-        if (price > 0 && !pack.RemoveItem(GameIds.Currency.Gold, price))
+        bool chargedAtTheCounter = service.Kind != ServiceKind.Commission;
+        if (chargedAtTheCounter && price > 0 && !pack.RemoveItem(GameIds.Currency.Gold, price))
         {
             return; // the gold went somewhere between the prompt and the press; deliver nothing
         }
@@ -118,12 +124,21 @@ public partial class ServiceComponent : InteractableComponent
             case ServiceKind.Appraise:
                 EventBus.Instance?.Publish(new AppraisalOpenedEvent(instigator, Loc.T(service.NameKey)));
                 break;
+            case ServiceKind.Commission:
+                // The master's order desk is the ordinary crafting window with a fee on it, so this
+                // adds no panel: CraftingPanel already lists what the player knows at a station, and
+                // 38Q's two extra fields turn missing ingredients from a refusal into a line on a bill.
+                EventBus.Instance?.Publish(new CraftingStationOpenedEvent(
+                    instigator, service.CommissionStation, Loc.T(service.NameKey), price, service.MaterialsShopId));
+                break;
             default:
                 StableMount(service, instigator);
                 break;
         }
 
-        Log.Info($"Service '{service.Id}' used for {price} gold.");
+        Log.Info(chargedAtTheCounter
+            ? $"Service '{service.Id}' used for {price} gold."
+            : $"Service '{service.Id}' opened at {price} gold a piece.");
     }
 
     // --- the four verbs -----------------------------------------------------
@@ -337,6 +352,15 @@ public partial class ServiceComponent : InteractableComponent
             return Player()?.GetComponent<InventoryComponent>() is not { } pack || !HasAnythingToValue(pack);
         }
 
+        // 38Q, the Appraise shape again from the other end: an empty window is unreachable rather
+        // than merely unlikely. A master will make anything the player knows how to make at his
+        // station, so knowing none of it is "nothing to do here" — and it is answered from what the
+        // player knows, never from what he stocks, because his materials come out of the back.
+        if (service.Kind == ServiceKind.Commission)
+        {
+            return !KnowsAnythingFor(service.CommissionStation);
+        }
+
         if (!string.IsNullOrEmpty(service.UnlockFlagId))
         {
             return Player()?.GetComponent<StoryFlagsComponent>()?.Has(service.UnlockFlagId) ?? false;
@@ -426,6 +450,27 @@ public partial class ServiceComponent : InteractableComponent
         return false;
     }
 
+    /// <summary>Whether the player knows a single recipe a master at <paramref name="station"/> could
+    /// make (38Q). Reads the same two questions <c>CraftingPanel</c> filters its list by, so the
+    /// prompt cannot promise a window the panel would then draw empty.</summary>
+    private static bool KnowsAnythingFor(CraftingStationType station)
+    {
+        if (Player()?.GetComponent<CraftingComponent>() is not { } crafting)
+        {
+            return false;
+        }
+
+        foreach (CraftingRecipeResource recipe in RecipeDatabase.All)
+        {
+            if (crafting.Knows(recipe.Id) && CraftingComponent.StationAccepts(recipe.Station, station))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static int ImpoundedUnits() => Resolve<ContrabandImpound>()?.Units ?? 0;
 
     /// <summary>Gold the consignment shelf has earned and not yet handed over (38P). Read by both the
@@ -461,6 +506,7 @@ public partial class ServiceComponent : InteractableComponent
         ServiceKind.Redeem => "service.prompt_redeem_empty",
         ServiceKind.Collect => "service.prompt_collect_empty",
         ServiceKind.Appraise => "service.prompt_appraise_empty",
+        ServiceKind.Commission => "service.prompt_commission_none",
         _ => "service.prompt_free",
     };
 
@@ -471,6 +517,9 @@ public partial class ServiceComponent : InteractableComponent
         ServiceKind.Stable => "service.prompt_buy_mount",
         ServiceKind.Passage => "service.prompt_passage",
         ServiceKind.Redeem => "service.prompt_redeem",
+        // The price named here is the labour only — the materials line depends on what is in the pack
+        // and on which recipe is chosen, so it belongs in the window rather than on a walk-up prompt.
+        ServiceKind.Commission => "service.prompt_commission",
         _ => "service.prompt_rest",
     };
 

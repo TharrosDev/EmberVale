@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Embervale.Core.Services;
+using Embervale.Crafting;
 using Embervale.Factions;
 using Embervale.Items;
 using Embervale.Player;
@@ -343,6 +344,53 @@ public static class EconomyReport
         }
 
         return best;
+    }
+
+    /// <summary>
+    /// What a master charges to make <paramref name="recipe"/> for the player (38Q): his labour, plus
+    /// every ingredient <paramref name="pack"/> is short, at <paramref name="shop"/>'s own counter
+    /// price and the player's standing with it.
+    ///
+    /// <b>It lives here rather than in a third file because the panel and <c>--validate</c> must agree
+    /// exactly</b> — this is 38P2's extraction argument in its sharpest form. The window <em>quotes</em>
+    /// this number and then charges it; the validator proves no recipe's output can be sold for more
+    /// than it. A second computation of either would be invisible until a player found the loop.
+    ///
+    /// <paramref name="pack"/> is <c>null</c> for "the player supplies nothing", which is the case the
+    /// validator checks: buying every material from the master and selling the piece he makes is the
+    /// only unbounded loop a commission can create. Supplying materials yourself only ever makes the
+    /// bill <em>smaller</em>, and those materials cost something to get — the free forge already does
+    /// that trade without the labour fee.
+    /// </summary>
+    public static int CommissionCost(
+        CraftingRecipeResource recipe, ShopResource shop, InventoryComponent? pack, int labourFee) =>
+        CommissionCost(recipe, shop, TierOf(shop.FactionId), pack, labourFee);
+
+    /// <inheritdoc cref="CommissionCost(CraftingRecipeResource, ShopResource, InventoryComponent, int)"/>
+    /// <remarks>The explicit-tier overload is <c>--validate</c>'s: it checks the cheapest standing the
+    /// ramp allows rather than the live one, because the loop only has to be closed at its cheapest.</remarks>
+    public static int CommissionCost(
+        CraftingRecipeResource recipe, ShopResource shop, ReputationTier tier, InventoryComponent? pack, int labourFee)
+    {
+        var shortfall = new List<(int UnitValue, int Missing, float Markup)>();
+        List<string> specialties = shop.SpecialtyList();
+
+        foreach (RecipeIngredient ingredient in recipe.IngredientList())
+        {
+            int missing = ingredient.Quantity - (pack?.CountOf(ingredient.ItemId) ?? 0);
+
+            // An ingredient the item database has lost is skipped rather than force-dereferenced, the
+            // same call CraftingComponent.Deconstruct makes: a broken recipe should not crash a quote.
+            if (missing <= 0 || ItemDatabase.Get(ingredient.ItemId) is not { } item)
+            {
+                continue;
+            }
+
+            shortfall.Add((item.Value, missing, ShopPricing.MarkupFor(
+                shop.BuyMarkup, tier, TradeTags.IsSpecialty(item.TagList(), specialties))));
+        }
+
+        return CommissionRules.Cost(labourFee, shortfall);
     }
 
     private static bool Stocks(ShopResource shop, string itemId)
