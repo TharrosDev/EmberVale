@@ -351,6 +351,38 @@ public class AnimationClipsTests
         Assert.Equal(string.Empty, AnimationClips.Resolve(new[] { "Idle/" }, "run"));
     }
 
+    /// <summary>Exactly what <c>npc_woman_dress.glb</c> ships. Every clip is named for the body
+    /// rather than for the beat, and before the prefix was stripped this rig resolved
+    /// <b>nothing at all</b> — she had been standing in the Embermarket in her bind pose.</summary>
+    private static readonly string[] GenderedPack =
+    {
+        "HumanArmature|Female_Clapping", "HumanArmature|Female_Death", "HumanArmature|Female_Idle",
+        "HumanArmature|Female_Jump", "HumanArmature|Female_Punch", "HumanArmature|Female_Run",
+        "HumanArmature|Female_RunningJump", "HumanArmature|Female_Sitting",
+        "HumanArmature|Female_Standing", "HumanArmature|Female_SwordSlash",
+        "HumanArmature|Female_Walk",
+    };
+
+    [Theory]
+    [InlineData("idle", "HumanArmature|Female_Idle")]
+    [InlineData("run", "HumanArmature|Female_Run")]
+    [InlineData("attack", "HumanArmature|Female_SwordSlash")]
+    [InlineData("death", "HumanArmature|Female_Death")]
+    public void AGenderedPackResolvesThroughBothPrefixes(string slot, string expected) =>
+        Assert.Equal(expected, AnimationClips.Resolve(GenderedPack, slot));
+
+    [Fact]
+    public void GenderedPackStillReportsWhatItGenuinelyLacks()
+    {
+        // She has no hit, block or cast clip. Empty is still the right answer for a body on its
+        // own — the shared library fills those three once her rig is retargeted.
+        Assert.Equal(string.Empty, AnimationClips.Resolve(GenderedPack, "hit"));
+        Assert.Equal(string.Empty, AnimationClips.Resolve(GenderedPack, "block"));
+
+        // And a clip that is nothing but the prefix must not slice to empty and match every slot.
+        Assert.Equal(string.Empty, AnimationClips.Resolve(new[] { "Female_" }, "run"));
+    }
+
     [Fact]
     public void APistolRigIsNotMistakenForAnythingThisGameAsksFor()
     {

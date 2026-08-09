@@ -1,6 +1,6 @@
 [gd_resource type="BoneMap" load_steps=2 format=3]
 
-; Quaternius (62-bone) character rig -> SkeletonProfileHumanoid. Body and the *4 finger tips are unmapped; Eyes/Jaw absent.
+; The 62-bone Quaternius rig (10 of the 13 bodies) -> SkeletonProfileHumanoid. Toes stay UNMAPPED: PT.L/PT.R are IK pole targets, not toes (rest 63cm up, 30cm forward). Eyes/Jaw absent from the rig.
 
 [sub_resource type="SkeletonProfileHumanoid" id="SkeletonProfileHumanoid_1"]
 
@@ -57,8 +57,8 @@ bone_map/RightLittleDistal = "Pinky3.R"
 bone_map/LeftUpperLeg = "UpperLeg.L"
 bone_map/LeftLowerLeg = "LowerLeg.L"
 bone_map/LeftFoot = "Foot.L"
-bone_map/LeftToes = "PT.L"
+bone_map/LeftToes = ""
 bone_map/RightUpperLeg = "UpperLeg.R"
 bone_map/RightLowerLeg = "LowerLeg.R"
 bone_map/RightFoot = "Foot.R"
-bone_map/RightToes = "PT.R"
+bone_map/RightToes = ""
