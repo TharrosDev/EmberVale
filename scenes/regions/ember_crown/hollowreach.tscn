@@ -36,6 +36,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_grass_wispy.glb" id="37_grass_wispy"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_a.glb" id="43_pebble_a"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_b.glb" id="44_pebble_b"]
+[ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_modular.tscn" id="45_cottage_modular"]
 
 ; HOLLOWREACH (Phase 38O) — the wharf down the water from Tarn's Landing, and the realm's FOURTH
 ; market. It is the only place in Embervale that will buy contraband, and that is the whole of its
@@ -505,13 +506,7 @@ shape = SubResource("Shape_ruin")
 [node name="Locker" type="Node3D" parent="Nav"]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 7, 0, 4)
 
-[node name="Model" parent="Nav/Locker" instance=ExtResource("13_house")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/Locker"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Locker/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.4, 0)
-shape = SubResource("Shape_house")
+[node name="Model" parent="Nav/Locker" instance=ExtResource("45_cottage_modular")]
 
 [node name="StandA" type="Node3D" parent="Nav"]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 3, 0, 8)

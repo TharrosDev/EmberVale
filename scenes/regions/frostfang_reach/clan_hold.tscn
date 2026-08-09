@@ -23,6 +23,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_innkeeper.glb" id="23_npc_inn"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_campfire.glb" id="24_campfire"]
 [ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="25_charanim"]
+[ext_resource type="PackedScene" path="res://scenes/props/bld_townhouse.tscn" id="26_townhouse"]
 
 [sub_resource type="NavigationMesh" id="NavMesh_hold"]
 geometry_parsed_geometry_type = 1
@@ -97,26 +98,11 @@ shape = SubResource("Shape_floor")
 [node name="LonghouseW" type="MeshInstance3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 3.75, -6)
 
-[node name="LonghouseWCol" type="StaticBody3D" parent="Nav/LonghouseW"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/LonghouseW/LonghouseWCol"]
-shape = SubResource("Shape_bldgA")
-
 [node name="LonghouseE" type="MeshInstance3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 3.75, -6)
 
-[node name="LonghouseECol" type="StaticBody3D" parent="Nav/LonghouseE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/LonghouseE/LonghouseECol"]
-shape = SubResource("Shape_bldgA")
-
 [node name="MootHall" type="MeshInstance3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.4, -18)
-
-[node name="MootHallCol" type="StaticBody3D" parent="Nav/MootHall"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/MootHall/MootHallCol"]
-shape = SubResource("Shape_bldgB")
 
 [node name="TentSW" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 0, 6)
@@ -483,13 +469,13 @@ script = ExtResource("7_station")
 Station = 3
 StationName = "Alchemy Table"
 
-[node name="Model" parent="Nav/LonghouseW" instance=ExtResource("10_house_a")]
+[node name="Model" parent="Nav/LonghouseW" instance=ExtResource("26_townhouse")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.75, 0)
 
-[node name="Model" parent="Nav/LonghouseE" instance=ExtResource("10_house_a")]
+[node name="Model" parent="Nav/LonghouseE" instance=ExtResource("26_townhouse")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.75, 0)
 
-[node name="Model" parent="Nav/MootHall" instance=ExtResource("11_house_b")]
+[node name="Model" parent="Nav/MootHall" instance=ExtResource("26_townhouse")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.4, 0)
 
 [node name="Model" parent="Nav/TentSW" instance=ExtResource("16_tent")]

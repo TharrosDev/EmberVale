@@ -35,6 +35,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_mushrooms.glb" id="39_mushrooms"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_a.glb" id="40_pebble_a"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_b.glb" id="41_pebble_b"]
+[ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_modular.tscn" id="42_cottage_modular"]
 
 ; TARN'S LANDING (Phase 38N2) — the fishing hamlet on the western water, and the realm's THIRD market.
 ;
@@ -289,13 +290,7 @@ shape = SubResource("Shape_fence")
 [node name="Chandlery" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 8)
 
-[node name="Model" parent="Nav/Chandlery" instance=ExtResource("13_house")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/Chandlery"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/Chandlery/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.4, 0)
-shape = SubResource("Shape_house")
+[node name="Model" parent="Nav/Chandlery" instance=ExtResource("42_cottage_modular")]
 
 [node name="CartA" type="Node3D" parent="Nav"]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 4, 0, 2)
