@@ -585,6 +585,24 @@ shop.embermarket.curios.name,Quill's Curios
 dlg.smith.c_trade,"What have you got to sell?"
 dlg.smith.c_commission,"Would you make something for me?"
 dlg.smith.commission,"Aye — if you know the shape of it, I know the making. Leave the order on the bench there and tell me what you want. Bring your own metal and you pay only for my hands; bring none and you pay for both."
+service.crossway.contracts.name,The Caravan Board
+service.prompt_contracts,"{0} — see what the caravans want"
+contracts.title,{0}   (E to close)
+contracts.none,Nothing is posted. Come back when the carts do.
+contracts.rotation,"The postings change in {0} day(s)."
+contracts.wanted,"{0}x {1}"
+contracts.deliver,Deliver
+contracts.filled,Filled
+contracts.reward_gold,{0}g
+contracts.reward_standing,"+{0} {1}"
+contract.crossway.iron_ore.name,"Ore for the Emberdeep road"
+contract.crossway.coal.name,"Coal for the gate fires"
+contract.crossway.smoked_fish.name,"Smoked fish out of Tarn's Landing"
+contract.crossway.grain.name,"Grain for the Crossway table"
+contract.crossway.charcoal.name,"Charcoal by the sack"
+contract.crossway.leather.name,"Harness leather for the yard"
+contract.crossway.pelts.name,"Pelts, any condition"
+contract.crossway.rations.name,"Rations for the next escort"
 dlg.apothecary.c_trade,"Anything left on your shelves?"
 dlg.vendor_goods.speaker,"Aldreth, General Goods"
 dlg.vendor_goods.root,"Aldreth straightens a row of jars across a counter with more bare wood than goods on it."

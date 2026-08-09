@@ -115,4 +115,26 @@ public enum ServiceKind
     /// both directions, so neither can be "tidied" into the other.
     /// </summary>
     Commission,
+
+    /// <summary>
+    /// The caravan board (Phase 38Q2): a rotating set of supply contracts — deliver so many of a good,
+    /// take gold and standing.
+    ///
+    /// ⚠️ <b>It is a service and not a quest giver, and that distinction is the brief.</b>
+    /// <c>QuestLogPanel</c> deliberately omits a Contracts heading, on the rule that the journal shows
+    /// the states the data actually has — so a haulage job must never reach it. Being a service means
+    /// the prompt battery, the hostile refusal and the free-service rule all arrive for the cost of a
+    /// member and a published event, exactly as <see cref="Appraise"/> did.
+    ///
+    /// ⚠️ <b>Always available, unlike every other read-only kind.</b> <see cref="Appraise"/>,
+    /// <see cref="Collect"/> and <see cref="Search"/> all answer "nothing to do here" from the player's
+    /// pack; a board does not, because <em>reading</em> it is the point even empty-handed. An
+    /// already-held state would tell a player with nothing on them that the board is closed.
+    ///
+    /// ⚠️ <b>Free, and <c>--validate</c> enforces it.</b> 38O's priced-service rule, fourth instance
+    /// and the plainest of them: the player is being <em>paid</em> here. Note this is the opposite
+    /// ruling to <see cref="Commission"/> one member above, which must be priced because it hands over
+    /// goods — the two sit together on purpose so the distinction is visible from one screen.
+    /// </summary>
+    Contracts,
 }

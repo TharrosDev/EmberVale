@@ -63,6 +63,7 @@ public partial class GameBootstrap : Node3D
     private StoragePanel _storagePanel = null!;
     private VendorPanel _vendorPanel = null!;
     private AppraisalPanel _appraisalPanel = null!;
+    private ContractBoardPanel _contractPanel = null!;
     private Housing.PlacementDirector _placement = null!;
     private WorldClock _clock = null!;
     private WeatherDirector _weather = null!;
@@ -96,6 +97,7 @@ public partial class GameBootstrap : Node3D
     private Economy.ShopStockService? _shopStock;
     private Economy.ContrabandImpound? _impound;
     private Economy.ConsignmentLedger? _consignment;
+    private Economy.ContractLedger? _contracts;
     private readonly System.Collections.Generic.List<Entity> _portals = new();
     // Post-transition settle (Phase 25.5B): time spent on the loading screen since a region load
     // began (-1 = not loading). Play resumes when the streamer reports the destination has finished
@@ -412,6 +414,10 @@ public partial class GameBootstrap : Node3D
         // every appraiser, answered off an event, so the service knows nothing about the UI.
         _appraisalPanel = new AppraisalPanel();
         AddChild(_appraisalPanel);
+        // The caravan board (38Q2) — one instance for every board, answered off an event. It reads the
+        // clock rather than a snapshot, so what it shows cannot go stale while it is open.
+        _contractPanel = new ContractBoardPanel();
+        AddChild(_contractPanel);
 
         // The world clock drives NPC routines; create it before the NPCs below so it is
         // registered in the ServiceLocator when their schedules first read the time.
@@ -531,6 +537,13 @@ public partial class GameBootstrap : Node3D
         // goods are the player's, held by someone else, and the listing outlives every visit to the shop.
         _consignment = new Economy.ConsignmentLedger { Name = "Consignment" };
         AddChild(_consignment);
+
+        // Filled supply contracts (38Q2). Beside the two above and for a narrower reason: the board
+        // itself is derived from the day and needs no storage at all, so the only thing here is the
+        // record of what the player has already delivered — which is also the only thing stopping a
+        // posting being filled twice in one rotation.
+        _contracts = new Economy.ContractLedger { Name = "Contracts" };
+        AddChild(_contracts);
 
         // Placement mode (37C): the ghost and the commit. Not ISaveable — a placed prop persists
         // through the PersistentSpawnDirector above, which already records template, position and yaw.

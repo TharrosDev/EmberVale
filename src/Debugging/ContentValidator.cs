@@ -985,6 +985,104 @@ public static class ContentValidator
 
         ValidateConfiscationIsRecoverable(issues);
         ValidateConsignmentIsPayable(issues);
+        ValidateContracts(issues);
+    }
+
+    /// <summary>
+    /// The caravan board's postings (Phase 38Q2). Four rules on each contract plus one on the pool.
+    ///
+    /// ⚠️ <b>The reward rule runs the OPPOSITE way to 38Q's.</b> A commission is refused for being too
+    /// <em>cheap</em>, because materials-in and goods-out could be looped. A contract is refused for
+    /// being too <em>poor</em>: it is a one-shot per rotation, so nothing can be looped, and a posting
+    /// paying less than a merchant already pays is strictly worse than selling — correct, saved,
+    /// validated and pointless, which is the imperceptibility failure that got 38G parked. The bound
+    /// on a contract is <c>ContractLedger</c>, never the price.
+    /// </summary>
+    private static void ValidateContracts(List<string> issues)
+    {
+        foreach (ContractResource contract in ContractDatabase.All)
+        {
+            string id = contract.Id;
+
+            if (ItemDatabase.Get(contract.ItemId) is not { } item)
+            {
+                issues.Add($"contract '{id}' wants unknown item '{contract.ItemId}'");
+                continue;
+            }
+
+            // A posting that ate a quest item would strand a Collect objective with no way to recover
+            // it — the same refusal ShopPricing.Sellable makes at every counter in the realm, and the
+            // reason it is a rule rather than a convention.
+            if (item.Type == ItemType.Quest)
+            {
+                issues.Add(
+                    $"contract '{id}' wants quest item '{contract.ItemId}' — handing it over would " +
+                    "strand a Collect objective with no way to get it back");
+            }
+
+            if (contract.Quantity <= 0)
+            {
+                issues.Add($"contract '{id}' wants {contract.Quantity} of '{contract.ItemId}' — nothing to deliver");
+            }
+
+            if (contract.RewardGold <= 0)
+            {
+                issues.Add(
+                    $"contract '{id}' pays {contract.RewardGold} gold — a posting nobody is paid for is " +
+                    "a shop counter that takes the goods");
+            }
+
+            if (contract.ReputationDelta != 0 && FactionDatabase.Get(contract.FactionId) == null)
+            {
+                issues.Add(
+                    $"contract '{id}' pays {contract.ReputationDelta} standing to unknown faction " +
+                    $"'{contract.FactionId}' — the reward would be paid to nobody");
+            }
+
+            // The load-bearing one. A contract that pays less than a merchant already pays is a longer
+            // walk for less money, and the player would only ever discover that by doing it.
+            EconomyReport.BestBuyers(item, item.TagList(), out Offer best, out _);
+            long shelf = (long)best.Price * Mathf.Max(1, contract.Quantity);
+            if (best.Has && contract.RewardGold <= shelf)
+            {
+                issues.Add(
+                    $"contract '{id}' pays {contract.RewardGold} for {contract.Quantity}x " +
+                    $"'{contract.ItemId}', and '{best.Shop}' already pays {shelf} over the counter — " +
+                    $"the posting is strictly worse than selling: raise it above {shelf}");
+            }
+        }
+
+        ValidateBoardsHaveEnoughPostings(issues);
+    }
+
+    /// <summary>
+    /// A board must have more postings to draw from than it has slots (Phase 38Q2), or a rotation has
+    /// to show one contract on two of them.
+    ///
+    /// Checked across the pool rather than per contract, the shape 38D's recipe reachability and 38M's
+    /// toll flags both use: no single contract is wrong, it is the <em>count</em> that is, and nothing
+    /// about one resource can see that. <c>ContractRules.SlotContract</c> keeps a rotation distinct by
+    /// construction, so this is not protecting the arithmetic — it is protecting the board from being
+    /// authored with nothing to rotate.
+    /// </summary>
+    private static void ValidateBoardsHaveEnoughPostings(List<string> issues)
+    {
+        int pool = ContractDatabase.All.Count;
+
+        foreach (ServiceResource service in ServiceDatabase.All)
+        {
+            if (service.Kind != ServiceKind.Contracts)
+            {
+                continue;
+            }
+
+            if (service.BoardSlots > pool)
+            {
+                issues.Add(
+                    $"service '{service.Id}' posts {service.BoardSlots} contracts and only {pool} " +
+                    "are authored — a rotation would have to show the same posting twice");
+            }
+        }
     }
 
     /// <summary>
@@ -1224,6 +1322,41 @@ public static class ContentValidator
 
             case ServiceKind.Commission:
                 ValidateCommission(service, id, issues);
+                break;
+
+            case ServiceKind.Contracts:
+                // 38O's priced-service rule, fourth instance and the plainest: the player is being
+                // PAID at a board. Note this is the opposite ruling to Commission directly above,
+                // which must be priced because it hands over goods — the two cases sit together so
+                // nobody reading one applies it to the other.
+                if (service.PriceGold != 0)
+                {
+                    issues.Add(
+                        $"service '{id}' charges {service.PriceGold} gold to read a contract board — " +
+                        "the board pays the player, and ServiceRules would refuse it to anyone too " +
+                        "broke to be given work");
+                }
+
+                if (service.UnlockFlagId.Length > 0 || service.GrantedFlagId.Length > 0)
+                {
+                    issues.Add(
+                        $"service '{id}' is a contract board with a flag authored on it — nothing " +
+                        "reads it, and a one-off receipt would close the board after one rotation");
+                }
+
+                if (service.BoardSlots < 1)
+                {
+                    issues.Add($"service '{id}' posts {service.BoardSlots} contracts — its board would be empty");
+                }
+
+                if (service.RotationDays < 1)
+                {
+                    issues.Add(
+                        $"service '{id}' rotates every {service.RotationDays} days — the rotation is the " +
+                        "only deadline a contract has, so a board that never turns is a board that is " +
+                        "finished once each posting is filled");
+                }
+
                 break;
         }
     }

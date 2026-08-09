@@ -428,6 +428,20 @@ the cheapest standing on the ramp, and refuses the data outright. **A future rec
 a new specialty can each open the loop**, which is why the fee is authored well clear of the printed
 floor rather than on it.
 
+**Supply contracts are the first deliberate gold SOURCE, and they are not in the table above on
+purpose** (38Q2). Everything listed there takes money out; the Crossway caravan board puts it in, by
+paying above what any merchant pays for goods brought to the yard. That does not contradict the
+scarcity intent, because of what bounds it: **a posting can be filled once per rotation**, so the
+board is a few hundred gold every four days for a specific errand, not a tap. `--validate` refuses a
+posting that pays *less* than the best buyer — a contract worth less than selling is a longer walk
+for less money, which the player would only discover by doing it — and deliberately imposes no
+ceiling, because the ceiling is the rotation.
+
+⚠️ **The board must never reach the quest log**, and that is the brief rather than a detail.
+`QuestLogPanel` carries no Contracts heading on the rule that the journal shows the states the data
+actually has; a haulage job in the journal beside the story is the failure 38K's notice board was
+already written to avoid.
+
 **The appraiser is free, and that is a decision too** (38P2). A valuation is an obvious per-use sink and it was deliberately not taken: `ServiceRules` refuses any service the player cannot afford *before* the verb runs, so a fee fails closed on the player with an empty purse and a full pack — exactly the person who walked over to ask what is worth carrying. An appraisal only the rich can buy is not a sink, it is a lock on the one screen that explains the economy. Same reasoning as 38O's free warden search and 38P's free consignment counter; `--validate` enforces all three.
 
 **Repair is not built, and that is a decision rather than an omission.** No durability or condition

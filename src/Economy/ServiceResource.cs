@@ -122,4 +122,25 @@ public partial class ServiceResource : Resource
     /// to make anything. The shop is consulted for its <em>prices</em> only.
     /// </summary>
     [Export] public string MaterialsShopId { get; set; } = string.Empty;
+
+    [ExportGroup("Contracts")]
+
+    /// <summary>
+    /// How many supply contracts a <see cref="ServiceKind.Contracts"/> board shows at once (Phase
+    /// 38Q2). ⚠️ <c>--validate</c> insists the authored pool holds <em>more</em> contracts than this,
+    /// or a rotation would have to show one posting on two slots.
+    /// </summary>
+    [Export] public int BoardSlots { get; set; } = 3;
+
+    /// <summary>
+    /// How many days a set of postings stays up. It is also the deadline, and the only one: a posting
+    /// is up until the board turns and then it is gone, which is why nothing about a contract is
+    /// accepted, due or lapsed.
+    ///
+    /// ⚠️ The rotation is <b>derived</b> from this and the day (<see cref="ContractRules.Cycle"/>) and
+    /// is never stored, so a quickload cannot reroll the board. Changing this number changes which
+    /// posting sat on which slot for every past cycle too — harmless, because nothing saved refers to
+    /// it, but worth knowing before blaming the board for looking wrong after an edit.
+    /// </summary>
+    [Export] public int RotationDays { get; set; } = 4;
 }

@@ -57,6 +57,7 @@ public static class HeadlessState
         text.AppendLine($"items         {ItemDatabase.All.Count}");
         text.AppendLine($"shops         {ShopDatabase.All.Count}");
         text.AppendLine($"services      {ServiceDatabase.All.Count}");
+        text.AppendLine($"contracts     {ContractDatabase.All.Count}");
         text.AppendLine($"dialogues     {DialogueDatabase.All.Count}");
         text.AppendLine($"quests        {QuestDatabase.All.Count}");
         text.AppendLine();

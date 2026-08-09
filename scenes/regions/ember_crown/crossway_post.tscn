@@ -117,6 +117,25 @@ rings = 4
 ; --- overlap: two coplanar slabs z-fight along their seam and that is invisible from the .tscn.
 ; ---   road   x -4 .. +4,  the full 52 m of the cell
 ; ---   yard   x +5 .. +19, z -2 .. +12
+; 38Q2, the caravan board. Built from primitives rather than a model, and that is the second answer
+; to this question: prp_banner_guild was placed here first (it is what the Embermarket's notice board
+; uses) and rejected on the render for two reasons at once. It is a hanging cloth PENNANT, so at
+; reading distance it fills the view as a red sheet with no surface to post anything on — and this
+; cell already spends that model on GateBanner, "the only thing in the cell that says whose road this
+; is". Two identical pennants forty feet apart would have diluted the one that means something.
+[sub_resource type="BoxMesh" id="BoxMesh_board_face"]
+size = Vector3(1.6, 1.1, 0.09)
+
+[sub_resource type="BoxMesh" id="BoxMesh_board_leg"]
+size = Vector3(0.12, 1.5, 0.12)
+
+[sub_resource type="StandardMaterial3D" id="Mat_board"]
+albedo_color = Color(0.36, 0.26, 0.17, 1)
+roughness = 0.92
+
+[sub_resource type="BoxShape3D" id="Shape_board"]
+size = Vector3(1.7, 1.9, 0.35)
+
 [sub_resource type="BoxMesh" id="BoxMesh_road"]
 size = Vector3(8, 0.06, 52)
 
@@ -425,6 +444,52 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
 shape = SubResource("Shape_hay")
 
 ; The caravan's cook-fire — the yard's own warm point, away from the road's braziers.
+; --- 38Q2: the caravan board ------------------------------------------------------------------
+; Rotating supply contracts, posted where the carts actually load. Same CONTRACT as the Embermarket's
+; notice board and town_hub's guild marker — a prop entity, a collider and ONE component — and the ⚠️
+; on those applies again: an entity gets one interactable, so this carries a ServiceComponent and
+; nothing else, forever.
+;
+; ⚠️ THE THIRD BOARD IN THE REALM AND THEY MUST READ APART. The guild board STARTS A QUEST; the market
+; notice is deliberately effect-free gossip; this one moves goods and never touches the journal. They
+; stand in three different cells and are never in view of one another.
+;
+; ⚠️ NOT prp_banner_guild, which is what the other two use — see the mesh comment above for the two
+; reasons the render gave. Built instead from the cell's own primitive vocabulary, the same BoxMesh +
+; StandardMaterial3D the floor, the road and the yard are made of.
+;
+; ⚠️ Position and yaw are the RENDERED answers, not the reasoned ones. It stands in the working yard
+; between CartB and the fire, face turned south to the walk in from the waystone.
+[node name="CaravanBoard" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.5, 0, 9.5)
+script = ExtResource("2_entity")
+DisplayName = "The Caravan Board"
+
+[node name="Face" type="MeshInstance3D" parent="Nav/CaravanBoard"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
+mesh = SubResource("BoxMesh_board_face")
+surface_material_override/0 = SubResource("Mat_board")
+
+[node name="LegW" type="MeshInstance3D" parent="Nav/CaravanBoard"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.66, 0.75, 0)
+mesh = SubResource("BoxMesh_board_leg")
+surface_material_override/0 = SubResource("Mat_board")
+
+[node name="LegE" type="MeshInstance3D" parent="Nav/CaravanBoard"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.66, 0.75, 0)
+mesh = SubResource("BoxMesh_board_leg")
+surface_material_override/0 = SubResource("Mat_board")
+
+[node name="Collider" type="StaticBody3D" parent="Nav/CaravanBoard"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CaravanBoard/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 0)
+shape = SubResource("Shape_board")
+
+[node name="Service" type="Node" parent="Nav/CaravanBoard"]
+script = ExtResource("6_service")
+ServiceId = "service.crossway.contracts"
+
 [node name="YardFire" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 5.5)
 

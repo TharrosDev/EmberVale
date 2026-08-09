@@ -24,6 +24,12 @@ public readonly record struct ShopClosedEvent(IEntity Player) : IGameEvent;
 /// <c>StorageOpenedEvent</c> use — so the service publishes and knows nothing about the UI.</summary>
 public readonly record struct AppraisalOpenedEvent(IEntity Player, string AppraiserName) : IGameEvent;
 
+/// <summary>Raised when the caravan board is read (Phase 38Q2). Answered by <c>ContractBoardPanel</c>.
+/// It carries no postings: the board is derived from the day by <see cref="ContractRules"/>, so the
+/// panel asks the clock rather than being handed a snapshot that could go stale behind it.</summary>
+public readonly record struct ContractBoardOpenedEvent(
+    IEntity Player, string BoardName, int Slots, int RotationDays) : IGameEvent;
+
 /// <summary>
 /// A merchant the player can trade with (Phase 38A). Authored on an entity with a collider (the
 /// interact raycast needs one) and pointed at a <see cref="ShopResource"/> by id — the same
