@@ -35,14 +35,54 @@ works.
 older vendored bundles (`men/`, `women/`, `monsters/`, `animals/`, `rpg_items/`), which is why step 2
 exists and is not optional.
 
-⚠️ **THE ANIMATION LIBRARY DOES NOT FIT THE CHARACTER RIGS, AND NOTHING IN EITHER FILE SAYS SO.**
-Measured 2026-08-08 by parsing both skeletons: the library is a **Rigify-style** rig — 53 bones named
-`root`, `DEF-hips`, `DEF-spine.001`, `DEF-shoulder.L` — while every adopted Quaternius body is a
-**62-bone** rig named `Root`, `Body`, `Hips`, `Abdomen`, `Torso`, `Chest`. **They share zero bone
-names.** Dropping the library onto an existing character animates nothing. Retargeting is required
-and must be **proved on one character before anything is planned around it**; prefer Godot 4's native
-import-dock retargeting (`Retarget` → `BoneMap`) over a Blender round-trip, which is already recorded
-below as the thing that destroys bone-parented children.
+### §0.2 The animation library — retargeting, proved (2026-08-08)
+
+The library is a **Rigify-style** 53-bone rig (`root`, `DEF-hips`, `DEF-spine.001`, `DEF-shoulder.L`);
+every adopted Quaternius body is a **62-bone** rig (`Root`, `Body`, `Hips`, `Abdomen`, `Torso`,
+`Chest`). **They share zero bone names**, so the library animates nothing as it ships.
+
+**Retargeting works, was proved end to end on `npc_merchant_m`, and needs no Blender round-trip.**
+Both sides are mapped onto `SkeletonProfileHumanoid` by a `BoneMap` referenced from the `.import`
+(`assets/models/animations/bonemap_rigify.tres`, `bonemap_quaternius.tres`); the importer's bone
+renamer rewrites each file's own tracks and unifies both skeletons as `%GeneralSkeleton`. 53 of the
+profile's 56 bones map on each side. The clips reach a character as a shared `AnimationLibrary`
+added at runtime by `CharacterAnimationComponent`, gated on the skeleton being named
+`GeneralSkeleton` — which is the retarget's own marker.
+
+⚠️ **What the library actually buys is three slots, not animation.** Every adopted body already
+ships 24 clips, and `idle`, `run`, `attack`, `hit` and `death` already resolved before any of this.
+Only **`block`, `cast` and `channel`** were empty. Do not plan work on the assumption that
+characters are unanimated.
+
+**Four traps, each of which produced a wrong build before it was written down:**
+
+1. **The importer strips a trailing `_Loop`** and sets the clip's loop mode instead, so the pack's
+   `Idle_Loop` arrives as `Idle` and `Jog_Fwd_Loop` as `Jog_Fwd`. A mapping written from the `.glb`
+   names sends two slots to clips that do not exist. **Read the imported resource, not the file.**
+2. **That stripping also makes the library ship a clip literally called `Idle`**, bare-identical to
+   the body's own. Neither an exact-match nor a prefix pass can separate them, so the winner was
+   whatever the engine listed first — alphabetical luck turning on the library's name.
+   `AnimationClips.Resolve` now offers a model's **own** clips first and lets the library answer only
+   what it alone can.
+3. **Strip the library's position tracks.** Its rig is `root → Hips`, so hip translation carries the
+   whole standing height; the Quaternius rig is `Root → Body → Hips` and its `Body` bone already
+   carries that lift. The track landed on top of it and stood the merchant at **1.63 m, floating**.
+   Nothing in this game consumes root motion, so the tracks are not merely broken here, they are
+   unwanted.
+4. ⚠️ **The Quaternius feet are IK goals, not FK bones.** `Foot.L`/`Foot.R` and the pole targets
+   `PT.L`/`PT.R` are parented to **`Root`**, not to the shin — `PT.L`'s rest sits 63 cm up and 30 cm
+   forward of the foot, which is what gave it away; it is a pole target, not a toe. FK foot rotation
+   written onto a root-parented goal leaves the boot pinned while the leg swings, as a black spike
+   out of the ankle. **The library is therefore stripped to an upper-body pose from the hips up**
+   (`tools/extract_anim_library.gd`), which is exactly right for the three standing poses it is here
+   to fill and wrong for its Jog/Crouch/Sitting/Swim clips — none of which are wired to a slot.
+
+Every one of those four was invisible in a log and visible only in a render. **The clip plays either
+way.** `tools/extract_anim_library.gd` regenerates the committed `.res`; re-run it whenever the
+`.glb` or its retarget settings change.
+
+Prefer this import-dock route over a Blender round-trip, which is recorded below as the thing that
+destroys bone-parented children — and `npc_hooded` carries a `Sword` bone-parented under `Middle1.R`.
 
 ⚠️ **Do not mix kits.** Four kits by one author read as one world; a stray model from a fifth source
 reads as a mistake even when it is better made. If the open web or Blender is reached, match the

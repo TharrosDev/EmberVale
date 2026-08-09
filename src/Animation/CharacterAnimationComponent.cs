@@ -27,6 +27,25 @@ public partial class CharacterAnimationComponent : EntityComponent
     /// <summary>Horizontal speed (m/s) above which locomotion reads as running.</summary>
     [Export] public float RunSpeedThreshold { get; set; } = 0.6f;
 
+    /// <summary>The shared 46-clip Quaternius library (Phase 38A), retargeted onto
+    /// <c>SkeletonProfileHumanoid</c> so its tracks address <c>%GeneralSkeleton</c> by profile bone
+    /// name. Extracted from the .glb by <c>tools/extract_anim_library.gd</c> so the library's
+    /// Mannequin mesh never reaches a build.</summary>
+    private const string LibraryPath = "res://assets/models/animations/anim_library.res";
+
+    /// <summary>The library name the clips are added under; it becomes their <c>lib/Name</c> prefix,
+    /// which <see cref="AnimationClips"/> strips.</summary>
+    private static readonly StringName LibraryName = "lib";
+
+    /// <summary>What the importer's bone renamer names a retargeted skeleton. It doubles as the
+    /// marker that a rig speaks the shared library's bone vocabulary — see
+    /// <see cref="AddSharedLibrary"/>.</summary>
+    private const string RetargetedSkeletonName = "GeneralSkeleton";
+
+    /// <summary>Loaded once for the whole cast — every character shares the one resource, and its
+    /// clips are only ever read.</summary>
+    private static AnimationLibrary? _sharedLibrary;
+
     private AnimationPlayer? _player;
     private CombatComponent? _combat;
     private StatsComponent? _stats;
@@ -46,10 +65,12 @@ public partial class CharacterAnimationComponent : EntityComponent
         if (Entity.Body.GetNodeOrNull<Node3D>(BodyMeshPath) is { } bodyRoot)
         {
             _player = FindAnimationPlayer(bodyRoot);
+            _skeleton = FindSkeleton(bodyRoot);
         }
 
         if (_player != null)
         {
+            AddSharedLibrary();
             _idle = ResolveClip("idle");
             _run = ResolveClip("run");
             _block = ResolveClip("block");
@@ -61,10 +82,6 @@ public partial class CharacterAnimationComponent : EntityComponent
         }
 
         _spellcasting = Entity.GetComponent<SpellcastingComponent>();
-        if (Entity.Body.GetNodeOrNull<Node3D>(BodyMeshPath) is { } root)
-        {
-            _skeleton = FindSkeleton(root);
-        }
 
         EventBus.Instance?.Subscribe<AttackPerformedEvent>(OnAttack);
         EventBus.Instance?.Subscribe<EntityDamagedEvent>(OnDamaged);
@@ -76,6 +93,29 @@ public partial class CharacterAnimationComponent : EntityComponent
         EventBus.Instance?.Unsubscribe<AttackPerformedEvent>(OnAttack);
         EventBus.Instance?.Unsubscribe<EntityDamagedEvent>(OnDamaged);
         EventBus.Instance?.Unsubscribe<SpellCastEvent>(OnSpellCast);
+    }
+
+    /// <summary>Hands this character the shared library — but <b>only if its rig was retargeted</b>.
+    ///
+    /// The library's tracks address <c>%GeneralSkeleton</c> by <c>SkeletonProfileHumanoid</c> bone
+    /// name, which is exactly what the importer's bone renamer produces, so the skeleton being
+    /// *called* <c>GeneralSkeleton</c> is the retarget's own marker and a reliable gate. Without it a
+    /// non-retargeted rig would still <i>resolve</i> a block/cast clip and then play a clip whose
+    /// every track points at bones it does not have — the actor freezes mid-guard rather than simply
+    /// having no block, and nothing is logged either way.</summary>
+    private void AddSharedLibrary()
+    {
+        if (_skeleton == null || (string)_skeleton.Name != RetargetedSkeletonName ||
+            _player!.HasAnimationLibrary(LibraryName))
+        {
+            return;
+        }
+
+        _sharedLibrary ??= GD.Load<AnimationLibrary>(LibraryPath);
+        if (_sharedLibrary != null)
+        {
+            _player.AddAnimationLibrary(LibraryName, _sharedLibrary);
+        }
     }
 
     private static Skeleton3D? FindSkeleton(Node node)
@@ -123,17 +163,9 @@ public partial class CharacterAnimationComponent : EntityComponent
     /// <summary>World position of the left (casting) hand bone, falling back to chest height.</summary>
     private Vector3 CastingHandPosition()
     {
-        if (_skeleton != null)
+        if (_skeleton != null && HumanoidBones.FindHand(_skeleton, right: false) is { Length: > 0 } hand)
         {
-            for (int i = 0; i < _skeleton.GetBoneCount(); i++)
-            {
-                string name = _skeleton.GetBoneName(i);
-                if (name.Contains("hand", System.StringComparison.OrdinalIgnoreCase) &&
-                    name.EndsWith("L", System.StringComparison.OrdinalIgnoreCase))
-                {
-                    return (_skeleton.GlobalTransform * _skeleton.GetBoneGlobalPose(i)).Origin;
-                }
-            }
+            return (_skeleton.GlobalTransform * _skeleton.GetBoneGlobalPose(_skeleton.FindBone(hand))).Origin;
         }
 
         return Entity!.Body.GlobalPosition + (Vector3.Up * 1.3f);

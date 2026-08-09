@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://ct06sw1brvkl4"
-path="res://.godot/imported/npc_merchant_m.glb-0d73a94ca8fd7904062e38117dfcdd4c.scn"
+uid="uid://dygns686qimtp"
+path="res://.godot/imported/anim_library.glb-ba02d405c3f74f4ac0e8b11c27a91605.scn"
 
 [deps]
 
-source_file="res://assets/models/characters/npc_merchant_m.glb"
-dest_files=["res://.godot/imported/npc_merchant_m.glb-0d73a94ca8fd7904062e38117dfcdd4c.scn"]
+source_file="res://assets/models/animations/anim_library.glb"
+dest_files=["res://.godot/imported/anim_library.glb-ba02d405c3f74f4ac0e8b11c27a91605.scn"]
 
 [params]
 
@@ -41,8 +41,8 @@ materials/extract_format=0
 materials/extract_path=""
 _subresources={
 "nodes": {
-"PATH:RootNode/CharacterArmature/Skeleton3D": {
-"retarget/bone_map": Resource("res://assets/models/animations/bonemap_quaternius.tres"),
+"PATH:Rig/Skeleton3D": {
+"retarget/bone_map": Resource("res://assets/models/animations/bonemap_rigify.tres"),
 "retarget/bone_renamer/rename_bones": true,
 "retarget/bone_renamer/unique_node/make_unique": true,
 "retarget/bone_renamer/unique_node/skeleton_name": "GeneralSkeleton",
