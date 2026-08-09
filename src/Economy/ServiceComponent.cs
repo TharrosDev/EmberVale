@@ -124,6 +124,10 @@ public partial class ServiceComponent : InteractableComponent
             case ServiceKind.Appraise:
                 EventBus.Instance?.Publish(new AppraisalOpenedEvent(instigator, Loc.T(service.NameKey)));
                 break;
+            case ServiceKind.Contracts:
+                EventBus.Instance?.Publish(new ContractBoardOpenedEvent(
+                    instigator, Loc.T(service.NameKey), service.BoardSlots, service.RotationDays));
+                break;
             case ServiceKind.Commission:
                 // The master's order desk is the ordinary crafting window with a fee on it, so this
                 // adds no panel: CraftingPanel already lists what the player knows at a station, and
@@ -507,6 +511,8 @@ public partial class ServiceComponent : InteractableComponent
         ServiceKind.Collect => "service.prompt_collect_empty",
         ServiceKind.Appraise => "service.prompt_appraise_empty",
         ServiceKind.Commission => "service.prompt_commission_none",
+        // 38Q2 authors no key here on purpose: a board is never "already held". If this line is ever
+        // reached, AlreadyHeld has grown a branch it should not have.
         _ => "service.prompt_free",
     };
 
@@ -530,6 +536,7 @@ public partial class ServiceComponent : InteractableComponent
         ServiceKind.Search => "service.prompt_search",
         ServiceKind.Collect => "service.prompt_collect",
         ServiceKind.Appraise => "service.prompt_appraise",
+        ServiceKind.Contracts => "service.prompt_contracts",
         _ => "service.prompt_free",
     };
 

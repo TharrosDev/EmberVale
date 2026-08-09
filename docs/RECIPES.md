@@ -492,6 +492,35 @@
    `town_hub` has three public stations; a master charging for labour alone would be strictly worse
    than walking twenty metres, which is the "correct and imperceptible" failure that got 38G parked.
 
+## A supply contract / a contract board (Phase 38Q2)
+
+1. Author `data/contracts/Xxx.tres` (`script_class="ContractResource"`): `Id` (`contract.*`), a
+   `NameKey` in `strings.csv`, `ItemId`, `Quantity`, `RewardGold`, and optionally `FactionId` +
+   `ReputationDelta`. Auto-indexed by `ContractDatabase`. **No code, and no quest.**
+2. ⚠️ **A contract is not a quest and must never become one.** `QuestLogPanel` deliberately carries no
+   Contracts heading — "the journal shows the states the data actually has" — so there is no
+   `QuestResource`, no objective and no `DialogueEffect.StartQuest` anywhere in the feature. The
+   board's own window is the whole UI.
+3. ⚠️ **The reward must BEAT the best buyer, and `--validate` enforces the floor it prints.** A
+   posting paying less than a merchant already pays is a longer walk for less money — 38G's
+   imperceptibility failure. There is deliberately **no ceiling**: buying goods cheap and delivering
+   them dear is a real trade, and what bounds it is that a posting can be filled **once per rotation**
+   (`ContractLedger`). ⚠️ This is the exact mirror of the commission rule above — that one is refused
+   for being too *cheap* because it can be looped; this one for being too *poor* because it cannot.
+4. ⚠️ **Never name an `ItemType.Quest` item.** Handing one over would strand a Collect objective with
+   no way to recover it — `ShopPricing.Sellable`'s own reasoning, and a rule because of it.
+5. **The board itself is a `ServiceKind.Contracts` service** (`BoardSlots`, `RotationDays`), free and
+   flagless, on a prop entity with a collider and one component — an entity gets one interactable.
+   ⚠️ `--validate` insists the authored pool holds **more** contracts than the board has slots, or a
+   rotation would show one posting twice.
+6. ⚠️ **The rotation is derived from the day and never stored** (`ContractRules.Cycle`), so the same
+   day always shows the same board and a quickload cannot reroll it. Only what has been *filled* is
+   saved. If a later board ever needs a rolled rotation, that rotation has to become saved state and
+   this property is gone — do not reach for an RNG without meaning it.
+7. **Adding or removing a contract reshuffles which posting sits on which slot** for every cycle past
+   and future, because the pool is indexed by position. Harmless — nothing saved refers to it — but
+   worth knowing before blaming the rotation for looking wrong after an edit.
+
 ## Generators — do not hand-write boilerplate (agent-ergonomics pass)
 
 Two committed scripts cover the repo's highest-volume authoring. Both **print to stdout** so the

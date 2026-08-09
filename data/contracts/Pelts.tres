@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="ContractResource" format=3]
+
+[ext_resource type="Script" path="res://src/Economy/ContractResource.cs" id="1_contract"]
+
+; Beast pelts, any condition. The tannery pays better and is further; that is the whole offer.
+;
+; A Crossway supply contract (Phase 38Q2). Deliver the lot at the caravan board and take the pay.
+;
+; ⚠️ IT IS NOT A QUEST AND MUST NEVER BECOME ONE. QuestLogPanel deliberately carries no Contracts
+; heading — "the journal shows the states the data actually has" — so a haulage job lives and dies on
+; the board. No QuestResource, no objective, no journal entry.
+;
+; ⚠️ THE REWARD IS MEANT TO BEAT THE SHELF, AND --validate REFUSES IT IF IT DOES NOT. The best buyer in
+; the realm pays 24 for 12x this; 60 is what the caravans pay to have it brought here
+; instead. A posting worth less than a merchant already pays is a longer walk for less money, which
+; the player would only discover by doing it — 38G's imperceptibility failure in a new hat.
+;
+; ⚠️ AND THE PRICE IS *NOT* WHAT KEEPS IT SAFE — the BOUND is. Buying the goods cheap and delivering
+; them dear is a real trade and is meant to be, because a posting can be filled ONCE PER ROTATION and
+; ContractLedger is what remembers that. This is the mirror of 38Q's commission rule: that one is
+; refused for being too cheap because it could be looped; this one is refused for being too poor
+; because it cannot be.
+
+[resource]
+script = ExtResource("1_contract")
+Id = "contract.crossway.pelts"
+NameKey = "contract.crossway.pelts.name"
+ItemId = "item.material.beast_pelt"
+Quantity = 12
+RewardGold = 60
+FactionId = "faction.villagers"
+ReputationDelta = 2

@@ -51,6 +51,7 @@ public static class ContentDatabases
         PropertyDatabase.Initialize();         // holdings the player can claim (37A)
         ShopDatabase.Initialize();             // merchants' wares and spreads (38A)
         ServiceDatabase.Initialize();          // trainers, banks, inns, stables (38D)
+        ContractDatabase.Initialize();         // the caravan board's postings (38Q2)
         CompanionDatabase.Initialize();
         CompanionRegistry.Initialize();
     }

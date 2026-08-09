@@ -1,0 +1,55 @@
+[gd_resource type="Resource" script_class="ServiceResource" format=3]
+
+[ext_resource type="Script" path="res://src/Economy/ServiceResource.cs" id="1_service"]
+
+; The Crossway caravan board (Phase 38Q2) — rotating supply contracts, posted where the carts actually
+; load. Deliver the lot, take the pay.
+;
+; ⚠️ THE THIRD BOARD IN THE REALM, AND THE THREE MUST READ APART. The town hub's guild board STARTS A
+; QUEST (quest.warband.bounty); the Embermarket's notice board deliberately carries no Effect on any
+; choice and is gossip; this one moves goods and never touches the journal. They stand in three
+; different cells and are never in view of one another, which is what makes three boards legible
+; rather than confusing — if a fourth is ever wanted, that is the test it has to pass.
+;
+; ⚠️ FREE, AND --validate ENFORCES IT. 38O's priced-service rule, fourth instance and the plainest of
+; them: the player is being PAID here. Note this is the OPPOSITE ruling to the commission counter in
+; town, which --validate insists must be priced because it hands over goods. The two rules sit one
+; enum member apart on purpose so the distinction is visible from one screen.
+;
+; BoardSlots 3 of a pool of 8. --validate refuses a board with as many slots as postings, because a
+; rotation would then have to show one twice — and ContractRules.SlotContract keeps the three distinct
+; by construction (a stride forced coprime with the pool), so three of eight is always three different
+; jobs.
+;
+; RotationDays 4, and it is the ONLY deadline a contract has. A posting is up until the board turns
+; and then it is gone: nothing is accepted, nothing lapses, nothing fails. Four days is long enough to
+; walk to Tarn's Landing and back for the fish and short enough that the board is worth checking.
+;
+; ⚠️ THE ROTATION IS DERIVED FROM THE DAY AND NEVER STORED. ContractRules.Cycle(day, 4) is the whole of
+; it, so the same day always shows the same board and a quickload CANNOT reroll it — which is 38S's
+; stated rule arriving a sub-phase early and for free. The only thing saved is which postings have
+; been filled (ContractLedger), because that is the only thing the player did.
+;
+; No flag of any kind. A board is repeatable by nature; a one-off receipt would close it forever after
+; one rotation.
+;
+; FactionId villagers: with PriceGold 0 the standing ramp returns 0 at every tier, so it is authored
+; for the hostile refusal, which does apply — the wardens do not hand work to someone the realm has
+; turned on. Same reading as the warden's search and the appraiser's scales.
+
+[resource]
+script = ExtResource("1_service")
+Id = "service.crossway.contracts"
+NameKey = "service.crossway.contracts.name"
+Kind = 10
+PriceGold = 0
+FactionId = "faction.villagers"
+UnlockFlagId = ""
+RestHour = 8
+XpReward = 0
+GrantedFlagId = ""
+ReputationDelta = 0
+CommissionStation = 1
+MaterialsShopId = ""
+BoardSlots = 3
+RotationDays = 4
