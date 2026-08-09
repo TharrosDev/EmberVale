@@ -252,19 +252,9 @@ public static class PlayerFactory
             return;
         }
 
-        string? handBone = null;
-        for (int i = 0; i < skeleton.GetBoneCount(); i++)
-        {
-            string name = skeleton.GetBoneName(i);
-            if (name.Contains("hand", System.StringComparison.OrdinalIgnoreCase) &&
-                name.EndsWith("R", System.StringComparison.OrdinalIgnoreCase))
-            {
-                handBone = name;
-                break;
-            }
-        }
+        string handBone = Animation.HumanoidBones.FindHand(skeleton, right: true);
 
-        if (handBone == null)
+        if (handBone.Length == 0)
         {
             sword.QueueFree();
             return;

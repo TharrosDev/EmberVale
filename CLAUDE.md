@@ -45,7 +45,7 @@ You are the lead engineer building this game incrementally. The non-negotiables:
   | `medieval_megakit/` | modular architecture — walls, roofs, doors, windows, floors, stairs | 176 |
   | `medieval_interiors/` | interiors, furniture, containers, tools, market stalls | 94 |
   | `nature_megakit/` | trees, pines, bushes, grass, flowers, rocks, pebbles, rock paths | 68 |
-  | `animations/` | 46-clip universal animation library (⚠️ see `ASSET_POLICY.md` §0.1) | 1 |
+  | `animations/` | 46-clip universal animation library (retargeted — `ASSET_POLICY.md` §0.2) | 1 |
 
   **The order is fixed. Stop at the first step that works:**
   1. **The four packs.** `ls assets/library/<pack>/` and read `manifest.json`. Do not skip this

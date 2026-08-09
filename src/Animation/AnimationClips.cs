@@ -36,17 +36,34 @@ public static class AnimationClips
         // first alias. Bare "flying" is deliberately NOT a run alias: it would prefix-match
         // "Flying_Idle" and fly the creature on the spot while it stands still.
         ["idle"] = new[] { "idle", "flying_idle" },
-        ["run"] = new[] { "run", "walk", "gallop", "sprint", "fast_flying" },
-        ["block"] = new[] { "block", "guard", "shield" },
+        // "jog" sits between run and walk for the 38A library, whose forward locomotion is
+        // Jog_Fwd and Walk — a jog reads as this game's run, a walk does not.
+        ["run"] = new[] { "run", "jog", "walk", "gallop", "sprint", "fast_flying" },
+        // "sword_idle" is the library's only guard pose; it is listed here and NOT reachable from
+        // the attack slot, see the note on that slot below.
+        ["block"] = new[] { "block", "guard", "shield", "sword_idle" },
         // Weapon-specific words are tried BEFORE the generic "attack". A rig that ships both
         // "Attacking_Idle" (a stance) and "Dagger_Attack" (the swing) would otherwise resolve the
         // attack slot to the stance purely on alphabetical luck — the character would wind up and
         // never strike. A clip named after a weapon is always the swing; "attack" alone is not.
-        ["attack"] = new[] { "slash", "sword", "dagger", "bite", "swing", "attack", "punch", "melee" },
+        // ⚠️ 38A: the bare "sword" prefix matches the library's Sword_Attack AND its Sword_Idle, and
+        // a retargeted character carries both alongside its own Sword_Slash. Whichever the engine
+        // happened to list first would win — that is the same "winds up and never strikes" failure
+        // the exact-match pass below was written for, and the exact pass does NOT save it because
+        // neither clip is called "sword". The two full names are therefore listed ahead of it:
+        // a body's own Sword_Slash first, the library's Sword_Attack second, bare "sword" last.
+        ["attack"] = new[]
+        {
+            "slash", "sword_slash", "sword_attack", "sword", "dagger", "bite", "swing", "attack",
+            "punch", "melee",
+        },
         ["hit"] = new[] { "hit", "damage", "impact", "recieve", "receive" },
         ["death"] = new[] { "death", "die", "dead" },
-        ["cast"] = new[] { "cast", "spell" },
-        ["channel"] = new[] { "channel" },
+        // Spell_Simple_Shoot is the release; Spell_Simple_Enter/Exit are the transitions into and
+        // out of the sustained Spell_Simple_Idle. Bare "spell" would take Enter (it sorts first)
+        // and the caster would wind up into a pose it never fires from.
+        ["cast"] = new[] { "cast", "spell_simple_shoot", "spell" },
+        ["channel"] = new[] { "channel", "spell_simple_idle" },
     };
 
     /// <summary>
@@ -55,6 +72,28 @@ public static class AnimationClips
     /// guard on length rather than treating it as a failure.
     /// </summary>
     public static string Resolve(IEnumerable<string> clipNames, string slot)
+    {
+        string[] all = clipNames as string[] ?? System.Linq.Enumerable.ToArray(clipNames);
+
+        // A model's OWN clips beat a borrowed one at equal strength (38A). The shared library's
+        // importer strips the "_Loop" suffix, so it contributes a clip literally called "Idle" —
+        // bare-identical to the body's own "CharacterArmature|Idle", and the exact-match pass below
+        // cannot tell them apart. Whichever the engine happened to list first would win, which is
+        // alphabetical luck that turns on what the library is named. A body's clips are authored for
+        // its own rig and its own proportions; the library is the fallback that fills the gaps. So
+        // the un-prefixed set is offered first, and the library only answers what it alone can.
+        string[] own = System.Linq.Enumerable.ToArray(
+            System.Linq.Enumerable.Where(all, n => n.IndexOf('/') < 0));
+
+        if (own.Length < all.Length && Match(own, slot) is { Length: > 0 } mine)
+        {
+            return mine;
+        }
+
+        return Match(all, slot);
+    }
+
+    private static string Match(string[] clipNames, string slot)
     {
         string[] accepted = Aliases.TryGetValue(slot, out string[]? a) ? a : new[] { slot };
 
@@ -89,11 +128,15 @@ public static class AnimationClips
     }
 
     /// <summary>Strips an exporter's armature prefix — <c>CharacterArmature|Idle</c> becomes
-    /// <c>Idle</c>. Godot keeps the full name as the clip's key, so only the comparison is stripped;
-    /// the value returned to the caller is always the real, playable name.</summary>
+    /// <c>Idle</c> — and an <see cref="Godot.AnimationLibrary"/>'s name prefix, so 38A's shared
+    /// library reads as <c>Sword_Attack</c> rather than <c>lib/Sword_Attack</c>. Godot keeps the
+    /// full name as the clip's key, so only the comparison is stripped; the value returned to the
+    /// caller is always the real, playable name.</summary>
     private static string Bare(string clipName)
     {
-        int bar = clipName.LastIndexOf('|');
-        return bar >= 0 && bar < clipName.Length - 1 ? clipName[(bar + 1)..] : clipName;
+        int cut = clipName.LastIndexOfAny(Separators);
+        return cut >= 0 && cut < clipName.Length - 1 ? clipName[(cut + 1)..] : clipName;
     }
+
+    private static readonly char[] Separators = { '|', '/' };
 }

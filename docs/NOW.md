@@ -16,16 +16,20 @@ existed the same three lines were maintained in four places and rewritten every 
 - ⏸ **38G is parked, not next.** It prices goods by settlement demand and sits above 38P in the file.
   Do not trust the first unchecked box. 38O did not unpark it: a fence changes *who will buy*, not
   the spread, so every margin in `--economy` is still negative.
+- 🎨 **Running alongside: the asset migration onto the four Quaternius MegaKits.** Phase A (the
+  animation gate) is **done and proved**; B–E are queued and are prop/building work that touches no
+  rig. `docs/ASSET_POLICY.md` §0.2 is the authority.
 
-## Last verified (38O)
+## Last verified (asset Phase A)
 
 | | |
 | --- | --- |
 | Build | clean |
-| Tests | 1158 passing |
+| Tests | **1179** passing (1158 + 21 new) |
 | `--validate` | exit 0 |
 | Ember Crown cells | 9, all resident |
 | Shops / items | 22 / 63 |
+| Retarget render gate | `npc_merchant_m`, eye level, front/back/side — feet planted, 1.8 m, sword in hand |
 
 ## Live invariants — the things that will bite you this arc
 
@@ -51,7 +55,14 @@ existed the same three lines were maintained in four places and rewritten every 
    `wilds_north` gives it a lying-down box). Render the cell, do not only read it.
 7. **`CharacterBody3D` has no step-up.** Verticality comes from props, never from terrain; a 30 cm
    kerb is an invisible wall the navmesh happily paths NPCs over.
-8. **Check what is already vendored before pulling from the web.** 38N2's pull returned a file
+8. **A retargeted rig is marked by its skeleton being named `GeneralSkeleton`**, and only
+   `npc_merchant_m` is retargeted so far. `CharacterAnimationComponent` gates the shared animation
+   library on that name — an un-retargeted rig must not receive it, or it resolves a block/cast clip
+   whose every track points at bones it does not have and freezes mid-guard with nothing logged.
+   ⚠️ The library is an **upper-body pose from the hips up**: the Quaternius feet are root-parented
+   IK goals (`PT.*` are pole targets, not toes), so its leg motion cannot transfer. `ASSET_POLICY.md`
+   §0.2 carries all four traps.
+9. **Check what is already vendored before pulling from the web.** 38N2's pull returned a file
    byte-identical to one sitting unadapted in `assets/library/`. As of 38O the library holds **no
    unadopted CC0 medieval bodies at all** — every one is already in `assets/models/characters/`, and
    the remaining unadopted men are modern dress.

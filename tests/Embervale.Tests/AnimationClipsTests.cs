@@ -1,3 +1,4 @@
+using System.Linq;
 using Embervale.Animation;
 using Xunit;
 
@@ -223,5 +224,142 @@ public class AnimationClipsTests
     {
         // A name ending in '|' would slice to empty and match every slot; it must not.
         Assert.Equal(string.Empty, AnimationClips.Resolve(new[] { "Idle|" }, "run"));
+    }
+
+    // ================================================================================================
+    // Phase 38A — the shared retargeted library.
+    // ================================================================================================
+
+    /// <summary>All 46 clips of <c>anim_library.res</c> as Godot reports them <b>after import</b>,
+    /// under the <c>lib/</c> prefix an <see cref="Godot.AnimationLibrary"/> adds.
+    ///
+    /// ⚠️ These are NOT the names in the .glb. The scene importer strips a trailing <c>_Loop</c> and
+    /// sets the clip's loop mode instead, so the pack's <c>Idle_Loop</c> arrives as <c>Idle</c> and
+    /// <c>Jog_Fwd_Loop</c> as <c>Jog_Fwd</c>. Written from the source names first, this list sent
+    /// two slots to clips that do not exist and the render gate is what caught it — read the
+    /// imported resource, never the .glb.</summary>
+    private static readonly string[] Library =
+    {
+        "lib/A_TPose", "lib/Crouch_Fwd", "lib/Crouch_Idle", "lib/Dance",
+        "lib/Death01", "lib/Driving", "lib/Fixing_Kneeling", "lib/Hit_Chest", "lib/Hit_Head",
+        "lib/Idle", "lib/Idle_Talking", "lib/Idle_Torch", "lib/Interact",
+        "lib/Jog_Fwd", "lib/Jump", "lib/Jump_Land", "lib/Jump_Start", "lib/PickUp_Table",
+        "lib/Pistol_Aim_Down", "lib/Pistol_Aim_Neutral", "lib/Pistol_Aim_Up", "lib/Pistol_Idle",
+        "lib/Pistol_Reload", "lib/Pistol_Shoot", "lib/Punch_Cross", "lib/Punch_Enter",
+        "lib/Punch_Jab", "lib/Push", "lib/Roll", "lib/Roll_RM", "lib/Sitting_Enter",
+        "lib/Sitting_Exit", "lib/Sitting_Idle", "lib/Sitting_Talking",
+        "lib/Spell_Simple_Enter", "lib/Spell_Simple_Exit", "lib/Spell_Simple_Idle",
+        "lib/Spell_Simple_Shoot", "lib/Sprint", "lib/Swim_Fwd", "lib/Swim_Idle",
+        "lib/Sword_Attack", "lib/Sword_Attack_RM", "lib/Sword_Idle", "lib/Walk", "lib/Walk_Formal",
+    };
+
+    /// <summary>The 24 clips every adopted Quaternius body ships. Kept separate from
+    /// <see cref="Library"/> so both the library-alone and the realistic combined case are covered —
+    /// a retargeted character carries both lists at once.</summary>
+    private static readonly string[] Body =
+    {
+        "CharacterArmature|Death", "CharacterArmature|Gun_Shoot", "CharacterArmature|HitRecieve",
+        "CharacterArmature|HitRecieve_2", "CharacterArmature|Idle", "CharacterArmature|Idle_Gun",
+        "CharacterArmature|Idle_Gun_Pointing", "CharacterArmature|Idle_Gun_Shoot",
+        "CharacterArmature|Idle_Neutral", "CharacterArmature|Idle_Sword",
+        "CharacterArmature|Interact", "CharacterArmature|Kick_Left", "CharacterArmature|Kick_Right",
+        "CharacterArmature|Punch_Left", "CharacterArmature|Punch_Right", "CharacterArmature|Roll",
+        "CharacterArmature|Run", "CharacterArmature|Run_Back", "CharacterArmature|Run_Left",
+        "CharacterArmature|Run_Right", "CharacterArmature|Run_Shoot",
+        "CharacterArmature|Sword_Slash", "CharacterArmature|Walk", "CharacterArmature|Wave",
+    };
+
+    private static string[] Retargeted =>
+        Body.Concat(Library).OrderBy(n => n, System.StringComparer.Ordinal).ToArray();
+
+    [Theory]
+    [InlineData("idle", "lib/Idle")]
+    [InlineData("run", "lib/Jog_Fwd")]
+    [InlineData("block", "lib/Sword_Idle")]
+    [InlineData("attack", "lib/Sword_Attack")]
+    [InlineData("hit", "lib/Hit_Chest")]
+    [InlineData("death", "lib/Death01")]
+    [InlineData("cast", "lib/Spell_Simple_Shoot")]
+    [InlineData("channel", "lib/Spell_Simple_Idle")]
+    public void SharedLibraryFillsEverySlotOnItsOwn(string slot, string expected) =>
+        Assert.Equal(expected, AnimationClips.Resolve(Library, slot));
+
+    [Theory]
+    // The five slots a body already owned keep resolving to the body's own clip: those are already
+    // authored for this rig, and the retarget must not quietly swap the whole cast's locomotion.
+    [InlineData("idle", "CharacterArmature|Idle")]
+    [InlineData("run", "CharacterArmature|Run")]
+    [InlineData("attack", "CharacterArmature|Sword_Slash")]
+    [InlineData("hit", "CharacterArmature|HitRecieve")]
+    [InlineData("death", "CharacterArmature|Death")]
+    // ...and the three that were empty before 38A are the library's, which is the whole point.
+    [InlineData("block", "lib/Sword_Idle")]
+    [InlineData("cast", "lib/Spell_Simple_Shoot")]
+    [InlineData("channel", "lib/Spell_Simple_Idle")]
+    public void RetargetedBodyPrefersItsOwnClipsAndBorrowsOnlyTheGaps(string slot, string expected) =>
+        Assert.Equal(expected, AnimationClips.Resolve(Retargeted, slot));
+
+    [Fact]
+    public void SwordIdleIsNeverMistakenForTheSwing()
+    {
+        // The failure this exists for: bare "sword" prefix-matches Sword_Attack AND Sword_Idle, and
+        // neither is an exact match for "sword", so the exact pass cannot break the tie. Resolving
+        // attack to the guard pose leaves the character winding up and never striking.
+        Assert.NotEqual("lib/Sword_Idle", AnimationClips.Resolve(Library, "attack"));
+        Assert.NotEqual("lib/Sword_Idle", AnimationClips.Resolve(Retargeted, "attack"));
+
+        // Order-independent: reversing the list must not change either answer.
+        string[] reversed = Library.Reverse().ToArray();
+        Assert.Equal("lib/Sword_Attack", AnimationClips.Resolve(reversed, "attack"));
+        Assert.Equal("lib/Sword_Idle", AnimationClips.Resolve(reversed, "block"));
+    }
+
+    [Fact]
+    public void CastResolvesToTheReleaseNotTheWindUp()
+    {
+        // Spell_Simple_Enter sorts first and is the transition INTO the channel pose. A caster that
+        // resolved its cast slot to it would raise its hands and never let the spell go.
+        Assert.Equal("lib/Spell_Simple_Shoot", AnimationClips.Resolve(Library, "cast"));
+        Assert.Equal("lib/Spell_Simple_Idle", AnimationClips.Resolve(Library, "channel"));
+    }
+
+    [Fact]
+    public void ABodysOwnClipBeatsAnIdenticallyNamedLibraryClipWhateverTheOrder()
+    {
+        // The importer's _Loop stripping leaves the library with a clip literally called "Idle",
+        // bare-identical to the body's own. Neither the exact pass nor the prefix pass can separate
+        // them, so without the own-clips-first rule the winner is whatever the engine listed first —
+        // which turns on the library happening to be named "lib". Both orders must give the body's.
+        string[] forward = { "CharacterArmature|Idle", "lib/Idle" };
+        string[] reversed = { "lib/Idle", "CharacterArmature|Idle" };
+        Assert.Equal("CharacterArmature|Idle", AnimationClips.Resolve(forward, "idle"));
+        Assert.Equal("CharacterArmature|Idle", AnimationClips.Resolve(reversed, "idle"));
+
+        // But the library must still answer a slot the body has nothing for, in either order.
+        Assert.Equal("lib/Sword_Idle", AnimationClips.Resolve(
+            new[] { "lib/Sword_Idle", "CharacterArmature|Idle" }, "block"));
+    }
+
+    [Fact]
+    public void LibraryPrefixIsStrippedForComparisonButNotForPlayback()
+    {
+        // The returned value must stay the full, playable key — AnimationPlayer.Play("Idle_Loop")
+        // on a clip registered as "lib/Idle_Loop" throws.
+        Assert.Equal("lib/Idle_Loop", AnimationClips.Resolve(new[] { "lib/Idle_Loop" }, "idle"));
+
+        // And a trailing '/' must not slice to empty and match every slot, same as a trailing '|'.
+        Assert.Equal(string.Empty, AnimationClips.Resolve(new[] { "Idle/" }, "run"));
+    }
+
+    [Fact]
+    public void APistolRigIsNotMistakenForAnythingThisGameAsksFor()
+    {
+        // The library is a general-purpose pack and ships six Pistol_* clips. None of them may leak
+        // into a fantasy slot — a merchant reloading a revolver would be the 38L hi-vis vest again.
+        foreach (string slot in new[] { "idle", "run", "block", "attack", "hit", "death", "cast", "channel" })
+        {
+            Assert.DoesNotContain("Pistol", AnimationClips.Resolve(Library, slot));
+            Assert.DoesNotContain("Gun", AnimationClips.Resolve(Retargeted, slot));
+        }
     }
 }
