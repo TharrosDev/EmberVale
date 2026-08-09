@@ -210,6 +210,25 @@ be.** The composed cottage is a near-exact stand-in for `bld_house_a` (7.47 m ag
 `bld_cottage`**, whose 4.20 m silhouette this kit cannot make — a genuinely low cottage would need a
 half-height wall the pack does not ship. Do not force it; that is a real limit, not an oversight.
 
+**What was actually swapped: 11 of 16 placements, 5 cells.** `bld_house_a` and `bld_house_b` are
+generic houses and became composed shells, alternating `bld_townhouse` and `bld_cottage_modular` so a
+street reads as a street rather than as eleven of the same house. Each cell's own building collider
+was **deleted** in the swap — the composed scene carries its own, and two colliders on one building
+is two carves in the navmesh.
+
+⚠️ **Three kinds of building were deliberately LEFT monolithic, and that is the more useful result:**
+
+| left alone | why |
+| --- | --- |
+| `bld_cottage` ×3 | 4.20 m tall; the kit's single 3.12 m wall height cannot go that low. |
+| `bld_blacksmith` ×1 | **It reads as a blacksmith** — forge canopy, anvil, open front. A composed 3×3 hall is a generic barn, so swapping *loses* information. |
+| `bld_inn` ×1 | Same: its dormers and frontage say "inn". The composed 4×4×2 shell was handsomer and said nothing. |
+
+**A generic wall kit composes generic buildings well and special-purpose buildings badly.** Bespoke
+geometry is what made those two readable, and no arrangement of walls and windows replaces it. Both
+were composed, rendered against the monolith, judged worse and **deleted** rather than shipped as
+scaffolding with no caller — along with the four roof/gable modules adopted only for them.
+
 **Cost of composing**: 61 module instances, 60 meshes, 11.7k tris — against 1 mesh and 5.8k tris for
 the monolith it replaces. The collider stays **one box on the whole shell**: fifty little static
 bodies would carve fifty little holes in the navmesh.

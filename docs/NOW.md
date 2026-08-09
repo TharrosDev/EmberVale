@@ -18,7 +18,9 @@ existed the same three lines were maintained in four places and rewritten every 
   the spread, so every margin in `--economy` is still negative.
 - 🎨 **Running alongside: the asset migration onto the four Quaternius MegaKits.** **A (animation
   gate) done and proved. B (nature) done** — 12 ground-cover props adopted and **all 9 Ember Crown
-  cells dressed**, each to a style that suits the place. **C–E queued.**
+  cells dressed**, each to a style that suits the place.
+  **C (architecture) done** — 11 of 16 building placements are composed modular scenes; the
+  blacksmith, the inn and the low cottage stay monolithic on purpose. **D–E queued.**
   `docs/ASSET_POLICY.md` §0.2–§0.3 is the authority.
 
 ## Last verified (asset Phase A)
@@ -32,6 +34,7 @@ existed the same three lines were maintained in four places and rewritten every 
 | Shops / items | 22 / 63 |
 | Retarget render gate | 11 of 12 bodies, eye level front/back — feet at y≈0.02, heads 1.27–1.55 m |
 | Ground cover | 9 cells, ~900 nodes, no colliders anywhere, navmesh untouched |
+| Composed buildings | 11 placements, 5 cells, one collider each |
 
 ## Live invariants — the things that will bite you this arc
 
@@ -94,3 +97,9 @@ godot --path . -- --play                        # boot into the newest save
     floor has to stay legible, and scenery a player reads as cover is worse than a bare floor.
     ⚠️ A banded style must be sampled **around the ring**, not by rejection — three separate
     truncation bugs put town_hub's whole verge on one edge before a render caught it.
+
+12. ⚠️ **A generic wall kit composes generic buildings well and special-purpose ones badly.** The
+    blacksmith and the inn stay monolithic because their bespoke geometry — forge canopy, dormers —
+    is what makes them readable; a composed shell is a handsome barn that says nothing. And the kit
+    ships **one wall height, 3.12 m**, so `bld_cottage`'s 4.20 m silhouette cannot be built from it.
+    `tools/compose_building.py` writes a shell from `<name> <wide> <deep> <storeys>`.
