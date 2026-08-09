@@ -189,8 +189,26 @@ bit while composing the first building, each of which looked finished from the a
 4. **`Wall_Plaster_WoodGrid` is an OVERLAY FRAME, NOT A WALL.** On its own the storey is a
    see-through lattice; it layers *on* a plain wall at the same transform.
 
-None of these logged anything. `scenes/props/bld_townhouse.tscn` is the worked example and records
-each one where it bit.
+None of these logged anything. `tools/compose_building.py` writes a shell from `<wide> <deep> <storeys>` and carries all four in
+its header; `scenes/props/bld_townhouse.tscn` and `bld_cottage_modular.tscn` are its output.
+
+**How the composed shells measure against the monoliths they can replace** (in-engine, not parsed):
+
+| | footprint | height | tris |
+| --- | --- | --- | --- |
+| composed cottage (2×2×1) | 5.51 × 5.56 | **7.47** | 5 447 |
+| composed town house (2×3×2) | 5.51 × 7.57 | 10.59 | 11 669 |
+| `bld_house_a` ×3 | 4.74 × 5.88 | **7.50** | 5 758 |
+| `bld_house_b` ×5 | 4.26 × 5.03 | 6.80 | 2 288 |
+| `bld_cottage` ×3 | 4.84 × 4.70 | **4.20** | 2 336 |
+| `bld_inn` ×1 | 8.66 × 8.64 | 7.50 | 7 756 |
+| `bld_blacksmith` ×1 | 8.42 × 7.11 | 6.50 | 7 659 |
+
+⚠️ **The kit has exactly one wall height, 3.12 m, and that sets the floor on how low a building can
+be.** The composed cottage is a near-exact stand-in for `bld_house_a` (7.47 m against 7.50, and
+*cheaper* in triangles) and an acceptable one for `bld_house_b`. It is **78% too tall for
+`bld_cottage`**, whose 4.20 m silhouette this kit cannot make — a genuinely low cottage would need a
+half-height wall the pack does not ship. Do not force it; that is a real limit, not an oversight.
 
 **Cost of composing**: 61 module instances, 60 meshes, 11.7k tris — against 1 mesh and 5.8k tris for
 the monolith it replaces. The collider stays **one box on the whole shell**: fifty little static
