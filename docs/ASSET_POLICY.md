@@ -161,6 +161,43 @@ imported scene and merge the `MeshInstance3D` world AABBs — the same numbers t
 and texture names before planning a swap: replacing a pack model with another pack model changes 20
 cells' look and buys nothing.
 
+### §0.4 Composing a modular building (2026-08-08)
+
+`tools/adopt_kit_model.py` has **two modes and the wrong one is expensive**. `embed` writes one
+self-contained `.glb` — right for a prop that owns its textures (nature megakit props are 0.8–3 MB).
+`--shared` copies the `.gltf` + `.bin` and puts the textures *alongside*, so a whole kit references
+one set. ⚠️ A medieval-megakit wall module carries **~0 MB of geometry and six shared PBR maps
+totalling ~17 MB**: embedding fourteen of them cost **204 MB of the same textures fourteen times
+over**, where shared they are **43 MB once**.
+
+**The grid.** Walls are **2.00 m wide × 3.12 m tall**; a storey is one wall. Floors are 2×2 m tiles.
+Roofs and gables are cut for whole numbers of modules — `Roof_RoundTiles_4x6` and `Roof_Front_Brick4`
+fit a 2×3-module shell to the millimetre.
+
+⚠️ **A wall module's outer face is its local −Z.** Yaw each face to turn that face outward: back 0,
+left 90, front 180, right 270. Get one wrong and the building is right from three sides and shows
+its plaster backing on the fourth — the open-backed-cottage trap one layer down.
+
+⚠️ **THIS KIT SEPARATES A HOLE FROM THE THING THAT FILLS IT, AND A MISSING FILLER IS SILENT.** Four
+bit while composing the first building, each of which looked finished from the angle it was built at:
+
+1. **A pitched roof with no gable end** is open to the sky at both ends.
+2. **A window WALL is an opening.** Without a window INSERT you see through the house and out the far
+   side.
+3. **The door leaf is a separate piece from the doorway**, and it hangs on its hinge — its origin is
+   *not* its centre (local x −0.05…1.07), so under yaw 180 the node sits 0.51 m off centre.
+4. **`Wall_Plaster_WoodGrid` is an OVERLAY FRAME, NOT A WALL.** On its own the storey is a
+   see-through lattice; it layers *on* a plain wall at the same transform.
+
+None of these logged anything. `scenes/props/bld_townhouse.tscn` is the worked example and records
+each one where it bit.
+
+**Cost of composing**: 61 module instances, 60 meshes, 11.7k tris — against 1 mesh and 5.8k tris for
+the monolith it replaces. The collider stays **one box on the whole shell**: fifty little static
+bodies would carve fifty little holes in the navmesh.
+
+---
+
 ---
 
 - **The library is vendored** at `assets/library/` — 746 CC0 models across 14 bundles, behind a
