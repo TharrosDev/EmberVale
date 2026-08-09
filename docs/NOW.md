@@ -34,6 +34,7 @@ existed the same three lines were maintained in four places and rewritten every 
 | Shops / items | 22 / 63 |
 | Retarget render gate | 11 of 12 bodies, eye level front/back — feet at y≈0.02, heads 1.27–1.55 m |
 | Ground cover | 9 cells, ~900 nodes, no colliders anywhere, navmesh untouched |
+| Ember Crown map | re-laid: 9 cells, 0 overlaps, all connected by full edges |
 | Composed buildings | 11 placements, 5 cells, one collider each |
 
 ## Live invariants — the things that will bite you this arc
@@ -109,3 +110,13 @@ godot --path . -- --play                        # boot into the newest save
     node's scale** (author in local units), a tree takes a **trunk** collider rather than a bounding
     box, and a collider **outside the `NavigationRegion3D` blocks the player while the navmesh stays
     ignorant of it**. `ASSET_POLICY.md` §0.6.
+
+14. ⚠️ **The Ember Crown map was re-laid (38F) and two documented decisions were reversed.** The
+    settled cells now form one contiguous city — town_hub + embermarket + hollowreach, with Tarn's
+    Landing adjoining — and every wilds cell is outside it. The **arena moved from 65 m off the town
+    square to 150 m**, past the gate and the wilds, as the last cell in the realm.
+    ⚠️ **The Crossway toll's old justification is gone**: wilds_north no longer sits between the town
+    and the gate, so the toll now stands on what is *beyond* the gate rather than the road to it.
+    `data/regions/EmberCrown.tres` carries the full arithmetic and the reasoning.
+    ⚠️ **A schedule carries a copy of its cell's `Center` as `Origin`** — six had to move with their
+    cells. Moving a cell is never a one-line edit.

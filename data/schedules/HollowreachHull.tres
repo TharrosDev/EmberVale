@@ -40,5 +40,5 @@ Destination = Vector3(-7, 0, -4)
 [resource]
 script = ExtResource("1_sched")
 Id = "schedule.hollowreach.hull"
-Origin = Vector3(-106, 0, 74)
+Origin = Vector3(-52, 0, 46)
 Entries = Array[Resource]([SubResource("e_0"), SubResource("e_1"), SubResource("e_2")])

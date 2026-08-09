@@ -3,6 +3,59 @@
 [ext_resource type="Script" path="res://src/World/RegionResource.cs" id="1_region"]
 [ext_resource type="Script" path="res://src/World/RegionCellResource.cs" id="2_cell"]
 
+; ====================================================================================================
+; THE MAP (38F, 2026-08-09). Re-laid at the maintainer's direction after a play-through: the settled
+; cells now form ONE CONTIGUOUS CITY in the middle and every wilds cell sits outside it.
+;
+;                                     arena          (0, -160)   z -178..-142
+;                                wilds_north         (0, -117)   z -142..-92
+;                              crossway_post         (0,  -66)   z  -92..-40
+;   wilds_west     tarn_landing        TOWN_HUB          emberdeep_mine
+;   (-107, -6)      (-56, -6)          (0, -10)            (56, -10)
+;                  hollowreach        embermarket
+;                   (-52, 46)          (0, 46)
+;
+; ⚠️ EVERY CENTRE HERE IS ARITHMETIC, NOT TASTE. A cell floor is centred on its own origin, so two
+; cells abut when |dz| = (depth_a + depth_b) / 2. A gap is a hole the player falls through; an overlap
+; is two coplanar floors z-fighting along the seam; and NEITHER IS VISIBLE FROM THIS FILE. Floors, all
+; measured in-engine: town_hub 60x60, arena 36x36, wilds_north 50x50, wilds_west 50x40, everything
+; else 52x52. Every seam below is a full shared edge, not a corner touch:
+;
+;   town_hub   x -30..30, z -40..20     the anchor - it does NOT move, because SpawnPoint,
+;                                       SafeZoneCenter and the cottage property all read off it
+;   embermarket        z  20..72        abuts the hub's south edge          (unchanged)
+;   hollowreach  x -78..-26, z 20..72   abuts the market's west edge at x = -26, and shares 48 m of
+;                                       its north edge with Tarn's Landing
+;   tarn_landing x -82..-30, z -32..20  abuts the hub's west edge at x = -30
+;   wilds_west  x -132..-82             abuts Tarn's west edge at x = -82
+;   emberdeep_mine x 30..82             abuts the hub's east edge at x = 30
+;   crossway_post      z -92..-40       abuts the hub's north edge at z = -40
+;   wilds_north        z -142..-92      abuts the gate
+;   arena              z -178..-142     abuts the northern wilds, 150 m from the town square
+;
+; WHAT CHANGED AND WHY, because two of these reverse decisions this file used to argue for:
+;
+; 1. ⚠️ THE ARENA WAS AT (55, -10) - SIXTY-FIVE METRES FROM THE TOWN SQUARE, sitting on the road
+;    between the town and the mine. A boss arena is not a suburb. It is now the far end of the
+;    northern road, past the gate and past the wilds, and it is the last cell in the realm.
+;
+; 2. ⚠️ HOLLOWREACH WAS AT (-106, 74), separated from everything by 32 m of nothing. This file used
+;    to argue that gap was deliberate - "two settlements on one shore should not share a property
+;    line". Played, it just read as a cell that had fallen off the map. It is now the city's dockside
+;    district, abutting the market.
+;
+; 3. ⚠️ THE WILDS USED TO SIT BETWEEN SETTLEMENTS, and this file used to argue that too: the road
+;    from the town to the gate ran through wilds_north, which is what made the Crossway toll read as
+;    something the wardens were owed. THAT ARGUMENT IS NOW GONE - the gate abuts the town directly.
+;    The toll still stands on what is BEYOND the gate rather than before it: the wilds and the arena
+;    are on the far side, so the wardens hold the last safe ground before the frontier. If the toll
+;    ever stops reading, this is the paragraph that explains why.
+;
+; Hollowreach keeps SafeRadius 0. It is a city district now, but a smugglers' wharf the wardens do
+; not visit still has no business being safe ground, and the region's own 34 m bubble is centred on
+; the square 74 m away, so nothing covers it.
+; ====================================================================================================
+
 [sub_resource type="Resource" id="Cell_town_hub"]
 script = ExtResource("2_cell")
 Id = "ember_crown.town_hub"
@@ -35,75 +88,59 @@ SafeRadius = 32.0
 ; is a hole the player falls through and an overlap is two coplanar floors z-fighting along the seam,
 ; and neither is visible from this file.
 ;
-; SafeRadius 26 keeps the wardens' own gate from being a warband spawn point. It does NOT reach the
-; wilds it borders, deliberately: the road between the town and the gate is meant to be the dangerous
-; part, and that is the whole reason a toll on it reads as something the wardens are owed.
 [sub_resource type="Resource" id="Cell_crossway_post"]
 script = ExtResource("2_cell")
 Id = "ember_crown.crossway_post"
 ScenePath = "res://scenes/regions/ember_crown/crossway_post.tscn"
-Center = Vector3(0, 0, -116)
+Center = Vector3(0, 0, -66)
 SafeRadius = 26.0
 
 ; The Emberdeep Mine (Phase 38N1). Placed so its 52 m square ABUTS the arena's 36 m one exactly: the
 ; arena is centred at x = 55 and its floor ends at x = 73, and a 52-wide floor centred at x = 99 starts
 ; there. Same arithmetic as the Embermarket and the Crossway Post, for the same reason.
 ;
-; SafeRadius 24 covers the yard and the two counters but not the workings: a company that keeps
-; wardens keeps them where the coin is, and 38G will want somewhere on this map that is not safe.
 [sub_resource type="Resource" id="Cell_emberdeep_mine"]
 script = ExtResource("2_cell")
 Id = "ember_crown.emberdeep_mine"
 ScenePath = "res://scenes/regions/ember_crown/emberdeep_mine.tscn"
-Center = Vector3(99, 0, -10)
+Center = Vector3(56, 0, -10)
 SafeRadius = 24.0
 
 [sub_resource type="Resource" id="Cell_wilds_north"]
 script = ExtResource("2_cell")
 Id = "ember_crown.wilds_north"
 ScenePath = "res://scenes/regions/ember_crown/wilds_north.tscn"
-Center = Vector3(0, 0, -65)
+Center = Vector3(0, 0, -117)
 
 ; Tarn's Landing (Phase 38N2). Placed so its 52 m square ABUTS wilds_west's 50 m one exactly:
 ; wilds_west is centred at x = -55 and its floor ends at x = -80, and a 52-wide floor centred at
 ; x = -106 starts there. Third time this arithmetic has been written down and third time it has been
 ; right, which is the argument for writing it down.
 ;
-; SafeRadius 22 covers the hamlet and the shore but not the far water: a fishing village keeps no
-; wardens, and the encounters have to have somewhere to be.
 [sub_resource type="Resource" id="Cell_tarn_landing"]
 script = ExtResource("2_cell")
 Id = "ember_crown.tarn_landing"
 ScenePath = "res://scenes/regions/ember_crown/tarn_landing.tscn"
-Center = Vector3(-106, 0, -10)
+Center = Vector3(-56, 0, -6)
 SafeRadius = 22.0
 
-; Hollowreach (Phase 38O). Same x band as Tarn's Landing so the two share a coastline, 32 m of open
-; water further south: a 52-wide floor centred at z = 74 runs z 48..100, and the Landing's ends at
-; z = 16. The gap is deliberate here where the Embermarket's abutment was deliberate — two settlements
-; on one shore should not share a property line, and there is nothing to fall through because neither
-; edge is walked to.
-; ⚠️ NO SafeRadius, and that is the only line of this block worth arguing about. Every other
-; settlement suppresses encounters around its centre; a smugglers' wharf that the wardens do not visit
-; has no business being the safest ground in the realm. It is left at 0 — the region's own
-; SafeZoneRadius is centred on the town, 90 m away, so nothing covers this place at all.
 [sub_resource type="Resource" id="Cell_hollowreach"]
 script = ExtResource("2_cell")
 Id = "ember_crown.hollowreach"
 ScenePath = "res://scenes/regions/ember_crown/hollowreach.tscn"
-Center = Vector3(-106, 0, 74)
+Center = Vector3(-52, 0, 46)
 
 [sub_resource type="Resource" id="Cell_wilds_west"]
 script = ExtResource("2_cell")
 Id = "ember_crown.wilds_west"
 ScenePath = "res://scenes/regions/ember_crown/wilds_west.tscn"
-Center = Vector3(-55, 0, -10)
+Center = Vector3(-107, 0, -6)
 
 [sub_resource type="Resource" id="Cell_arena"]
 script = ExtResource("2_cell")
 Id = "ember_crown.arena"
 ScenePath = "res://scenes/regions/ember_crown/arena.tscn"
-Center = Vector3(55, 0, -10)
+Center = Vector3(0, 0, -160)
 
 [resource]
 script = ExtResource("1_region")
@@ -116,7 +153,7 @@ SpawnPoint = Vector3(0, 1.2, 5)
 ; wakes up. Local z = -6 in crossway_post.tscn, so world z = -122 — the far side of the gap between the
 ; two palisades, which is what makes the toll something you pay BEFORE the crossing and the wardens
 ; people you have to walk past. Empty on Frostfang, which keeps the original spawn-relative placement.
-PortalPoint = Vector3(0, 0, -122)
+PortalPoint = Vector3(0, 0, -72)
 Cells = Array[ExtResource("2_cell")]([SubResource("Cell_town_hub"), SubResource("Cell_embermarket"), SubResource("Cell_crossway_post"), SubResource("Cell_emberdeep_mine"), SubResource("Cell_wilds_north"), SubResource("Cell_tarn_landing"), SubResource("Cell_hollowreach"), SubResource("Cell_wilds_west"), SubResource("Cell_arena")])
 Bounds = AABB(-256, -16, -256, 512, 64, 512)
 SafeZoneCenter = Vector3(0, 0, -10)
