@@ -135,8 +135,26 @@ public static class AnimationClips
     private static string Bare(string clipName)
     {
         int cut = clipName.LastIndexOfAny(Separators);
-        return cut >= 0 && cut < clipName.Length - 1 ? clipName[(cut + 1)..] : clipName;
+        string bare = cut >= 0 && cut < clipName.Length - 1 ? clipName[(cut + 1)..] : clipName;
+
+        // ...and a gendered pack prefix. Some packs name every clip for the body rather than for the
+        // beat — npc_woman_dress ships "HumanArmature|Female_Idle", "Female_Run", "Female_SwordSlash"
+        // — and that prefix silently emptied EVERY slot she has: she had been standing in the
+        // Embermarket in her bind pose, which reads as a T-posing merchant and logs nothing.
+        // Stripping it here rather than adding a "female_" twin for every alias means the next
+        // gendered pack works on import, which is the same bargain the armature prefix made.
+        foreach (string sex in Sexes)
+        {
+            if (bare.StartsWith(sex, StringComparison.OrdinalIgnoreCase) && bare.Length > sex.Length)
+            {
+                return bare[sex.Length..];
+            }
+        }
+
+        return bare;
     }
 
     private static readonly char[] Separators = { '|', '/' };
+
+    private static readonly string[] Sexes = { "Female_", "Male_" };
 }

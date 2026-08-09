@@ -81,6 +81,39 @@ Every one of those four was invisible in a log and visible only in a render. **T
 way.** `tools/extract_anim_library.gd` regenerates the committed `.res`; re-run it whenever the
 `.glb` or its retarget settings change.
 
+**Two more from rolling it out to the rest of the cast:**
+
+5. ⚠️ **The `_subresources` path key names the node in the SOURCE scene, not the retargeted one.**
+   `"PATH:RootNode/CharacterArmature/Skeleton3D"` — even for a file that already imports as
+   `GeneralSkeleton`. Point it at the retargeted name and the key matches nothing, **the retarget
+   silently stops applying, and the model reverts to its raw rig** with no error at all. This is how
+   `npc_merchant_m` un-retargeted itself mid-session.
+6. ⚠️ **`retarget/rest_fixer/apply_node_transforms` is unsafe on a model whose root carries a
+   translation.** `chr_player_base`'s `RootNode` has `T = [0, 4.8237, 0]` (and a 0.9161 scale) where
+   every other body has zero — a standing violation of §6's "root node carries **scale only, no
+   translation**", which had been harmless only because the node transform cancelled the skeleton's
+   own offset. With the flag on, the rest fixer consumes the node transform and the character
+   **sinks 4.8 m**; with it off, the un-applied scale and the rewritten rest disagree and the spine
+   **shears — the player bends double at the waist**. There is no third setting.
+   **`chr_player_base` is therefore NOT retargeted**, and cannot be until the model is re-exported
+   with a zeroed root translation. It loses nothing it had: its own 24 clips still resolve
+   idle/run/attack/hit/death, and it simply never receives the shared library — which is precisely
+   what the `GeneralSkeleton` gate in `CharacterAnimationComponent` is for. ⚠️ A re-export is **not**
+   a Blender round-trip job: the model carries 17 bone-parented `BoneAttachment3D` children.
+
+**Status: 11 of the 12 skinned bodies are retargeted** (`chr_player_base` excepted, above;
+`fp_arm` has no skin and needs none). Three BoneMaps cover them — `bonemap_quaternius.tres` for the
+62-bone rig (9 bodies), and `bonemap_quaternius_lite_fist.tres` / `_palm.tres` for the two 31-bone
+reduced rigs (`npc_kael`, `npc_woman_dress`), which have no fourth spine bone and aggregate finger
+bones that are deliberately left unmapped.
+
+⚠️ **`npc_woman_dress` had been resolving NOTHING and standing in the Embermarket in its bind pose.**
+Its clips are named for the body rather than the beat — `HumanArmature|Female_Idle`, `Female_Run`,
+`Female_SwordSlash` — and that prefix emptied every slot she has. `AnimationClips.Bare` now strips a
+leading `Female_`/`Male_` alongside the armature prefix, so the next gendered pack works on import.
+**A T-posing NPC is the only symptom an unresolved slot ever has**, and it had been there since she
+was adopted.
+
 Prefer this import-dock route over a Blender round-trip, which is recorded below as the thing that
 destroys bone-parented children — and `npc_hooded` carries a `Sword` bone-parented under `Middle1.R`.
 

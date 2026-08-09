@@ -55,10 +55,14 @@ existed the same three lines were maintained in four places and rewritten every 
    `wilds_north` gives it a lying-down box). Render the cell, do not only read it.
 7. **`CharacterBody3D` has no step-up.** Verticality comes from props, never from terrain; a 30 cm
    kerb is an invisible wall the navmesh happily paths NPCs over.
-8. **A retargeted rig is marked by its skeleton being named `GeneralSkeleton`**, and only
-   `npc_merchant_m` is retargeted so far. `CharacterAnimationComponent` gates the shared animation
-   library on that name — an un-retargeted rig must not receive it, or it resolves a block/cast clip
-   whose every track points at bones it does not have and freezes mid-guard with nothing logged.
+8. **A retargeted rig is marked by its skeleton being named `GeneralSkeleton`** — **11 of the 12
+   skinned bodies are.** ⚠️ **`chr_player_base` is the exception and stays that way**: its `RootNode`
+   carries a 4.82 m translation, so the rest fixer either sinks it 4.8 m or shears its spine, and
+   there is no third setting. It needs a re-export with a zeroed root translation, which is not a
+   Blender round-trip job (17 bone-parented children). `CharacterAnimationComponent` gates the shared
+   library on the skeleton name — an un-retargeted rig must not receive it, or it resolves a
+   block/cast clip whose every track points at bones it does not have and freezes mid-guard with
+   nothing logged. **The player therefore has no block/cast/channel clip**, exactly as before.
    ⚠️ The library is an **upper-body pose from the hips up**: the Quaternius feet are root-parented
    IK goals (`PT.*` are pole targets, not toes), so its leg motion cannot transfer. `ASSET_POLICY.md`
    §0.2 carries all four traps.
