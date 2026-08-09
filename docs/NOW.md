@@ -20,7 +20,7 @@ existed the same three lines were maintained in four places and rewritten every 
   gate) done and proved. B (nature) done** — 12 ground-cover props adopted and **all 9 Ember Crown
   cells dressed**, each to a style that suits the place.
   **C (architecture) done** — 11 of 16 building placements are composed modular scenes; the
-  blacksmith, the inn and the low cottage stay monolithic on purpose. **D–E queued.**
+  blacksmith, the inn and the low cottage stay monolithic on purpose. **D (interiors) done.** **E queued.**
   `docs/ASSET_POLICY.md` §0.2–§0.3 is the authority.
 
 ## Last verified (asset Phase A)

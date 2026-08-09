@@ -51,6 +51,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_b.glb" id="52_pebble_b"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_townhouse.tscn" id="53_townhouse"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_modular.tscn" id="54_cottage_modular"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_stall_empty.gltf" id="55_stall_empty"]
 
 ; THE EMBERMARKET (Phase 38K, second pass) — the Ember Crown's market district, one street south of
 ; the town square.
@@ -313,6 +314,9 @@ scale_min = 0.7
 scale_max = 1.8
 color = Color(0.6, 0.58, 0.56, 1)
 
+[sub_resource type="BoxShape3D" id="Shape_stall_empty"]
+size = Vector3(1.84, 2.63, 0.93)
+
 [node name="EmbermarketCell" type="Node3D"]
 
 [node name="Nav" type="NavigationRegion3D" parent="."]
@@ -441,7 +445,7 @@ shape = SubResource("Shape_barrel")
 [node name="StallW3" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0, 8)
 
-[node name="Model" parent="Nav/StallW3" instance=ExtResource("26_gazebo")]
+[node name="Model" parent="Nav/StallW3" instance=ExtResource("55_stall_empty")]
 
 [node name="ColW" type="StaticBody3D" parent="Nav/StallW3"]
 
@@ -515,7 +519,7 @@ shape = SubResource("Shape_sacks")
 [node name="StallE2" type="Node3D" parent="Nav"]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 9, 0, -3)
 
-[node name="Model" parent="Nav/StallE2" instance=ExtResource("26_gazebo")]
+[node name="Model" parent="Nav/StallE2" instance=ExtResource("55_stall_empty")]
 
 [node name="ColW" type="StaticBody3D" parent="Nav/StallE2"]
 

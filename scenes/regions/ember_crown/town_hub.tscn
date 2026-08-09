@@ -45,6 +45,8 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_b.glb" id="49_pebble_b"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_townhouse.tscn" id="50_townhouse"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_modular.tscn" id="51_cottage_modular"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_anvil_log.gltf" id="52_anvil_log"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_workbench.gltf" id="53_workbench"]
 
 [sub_resource type="NavigationMesh" id="NavMesh_hub"]
 geometry_parsed_geometry_type = 1
@@ -214,6 +216,12 @@ size = Vector3(8.66, 7.5, 8.64)
 
 [sub_resource type="BoxShape3D" id="Shape_smith"]
 size = Vector3(8.42, 6.5, 7.11)
+
+[sub_resource type="BoxShape3D" id="Shape_anvil_log"]
+size = Vector3(0.93, 1.07, 0.82)
+
+[sub_resource type="BoxShape3D" id="Shape_workbench"]
+size = Vector3(2.02, 0.89, 1.02)
 
 [node name="TownHubCell" type="Node3D"]
 
@@ -694,8 +702,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
 [node name="Collider" type="StaticBody3D" parent="StationForge"]
 
 [node name="Shape" type="CollisionShape3D" parent="StationForge/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
-shape = SubResource("Shape_station")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.535, 0)
+shape = SubResource("Shape_anvil_log")
 
 [node name="Station" type="Node" parent="StationForge"]
 script = ExtResource("9_station")
@@ -714,8 +722,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
 [node name="Collider" type="StaticBody3D" parent="StationWorkbench"]
 
 [node name="Shape" type="CollisionShape3D" parent="StationWorkbench/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
-shape = SubResource("Shape_station")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.445, 0)
+shape = SubResource("Shape_workbench")
 
 [node name="Station" type="Node" parent="StationWorkbench"]
 script = ExtResource("9_station")
@@ -774,9 +782,9 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.25, 0)
 
 [node name="Model" parent="GuildMarker" instance=ExtResource("16_banner")]
 
-[node name="Model" parent="StationForge" instance=ExtResource("13_forge")]
+[node name="Model" parent="StationForge" instance=ExtResource("52_anvil_log")]
 
-[node name="Model" parent="StationWorkbench" instance=ExtResource("14_workbench")]
+[node name="Model" parent="StationWorkbench" instance=ExtResource("53_workbench")]
 
 [node name="Model" parent="StationAlchemy" instance=ExtResource("15_alchemy")]
 

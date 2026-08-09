@@ -229,6 +229,34 @@ geometry is what made those two readable, and no arrangement of walls and window
 were composed, rendered against the monolith, judged worse and **deleted** rather than shipped as
 scaffolding with no caller — along with the four roof/gable modules adopted only for them.
 
+### §0.5 Interiors (38D, 2026-08-09)
+
+Eight `medieval_interiors` models adopted with `--shared` (13 textures, one set). Four went straight
+onto existing callers; four are the prerequisites 38P–38R were promised, and sit unplaced by design —
+`docs/playbook/` owns that split and it is not scaffolding.
+
+| swapped | was | now |
+| --- | --- | --- |
+| `town_hub/StationForge` | `prp_station_forge` | `prp_anvil_log` |
+| `town_hub/StationWorkbench` | `prp_station_workbench` | `prp_workbench` |
+| `embermarket/StallW3`, `StallE2` | **`prp_gazebo`** | `prp_stall_empty` |
+| `emberdeep_mine/CompanyStore` | **`prp_gazebo`** | `prp_stall_cart` |
+
+⚠️ **`prp_station_forge` was a pastel-blue anvil on bright-orange legs** — an off-palette in-house
+placeholder standing in the middle of the town hub, and the same class of defect as the hi-vis vest
+in the market: invisible in a filename, obvious the moment it is rendered next to the pack.
+
+⚠️ **`prp_gazebo` was standing in as a market stall in three places.** A gazebo is a roof on posts
+with no counter; it was collided as **two separate posts**, so the swap had to replace the collider
+shape as well as the model. A stall is one counter box.
+
+⚠️ **`Shape_station` is shared by all three crafting stations**, so resizing it for the anvil would
+have silently moved the alchemy table's collider too. Each swapped station got its own measured box.
+
+Also re-measured `Shape_boulder` in `emberdeep_mine` — Phase B swapped the model for `Rock_Medium_3`
+and left the previous model's numbers behind (3.38 × 2.20 × 3.73 against the real 3.42 × 2.32 × 3.48).
+**Swapping a model and keeping its collider is the 38O trap repeating**, and I did it to myself.
+
 **Cost of composing**: 61 module instances, 60 meshes, 11.7k tris — against 1 mesh and 5.8k tris for
 the monolith it replaces. The collider stays **one box on the whole shell**: fifty little static
 bodies would carve fifty little holes in the navmesh.
