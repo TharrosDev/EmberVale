@@ -257,6 +257,41 @@ Also re-measured `Shape_boulder` in `emberdeep_mine` — Phase B swapped the mod
 and left the previous model's numbers behind (3.38 × 2.20 × 3.73 against the real 3.42 × 2.32 × 3.48).
 **Swapping a model and keeping its collider is the 38O trap repeating**, and I did it to myself.
 
+### §0.6 The sweep (38E, 2026-08-09)
+
+Scoped as "whatever is left from a non-Quaternius source, especially the `rts` bundle at ~1/6 scale".
+
+**The licence question is closed.** Every vendored pack is CC0 in the manifest except five CC-BY
+women that were never downloaded.
+
+**The `rts` scale trap is already handled, and better than expected.** Nine adopted models carry a
+compensating `nodes/root_scale` between 2.98 and 8.20 — `prp_jetty`, `prp_warden_post`,
+`prp_ore_seam`, `prp_timber_stack`, `prp_mine_head`, `prp_watch_tower`, `prp_dock_complex`,
+`prp_fishing_hut`, `prp_gate_palisade`. Every one measures to a sane real-world size in-engine, and
+**every declared collider matches its model's measured bounds to the centimetre**. There is no
+megakit equivalent for a dock, a mine head or a palisade, so these stay. ⚠️ The spread of scales
+means the correction was made per model rather than once at pack level: right answers, arrived at
+nine times.
+
+⚠️ **What the sweep actually found was the opposite of an invisible wall: SOLID-LOOKING SCENERY YOU
+WALK THROUGH.** An audit for "renders more than 8 m³ and has no `StaticBody3D` anywhere under it"
+returned **18 props**: six dead pines, two rock clusters and a ruin pillar in the wilds, six glaciers
+up to 17.5 m across in Frostfang, and one banner whose two siblings were already collided.
+
+Three things that fix taught, none of which a log would say:
+
+1. **A collider child inherits its node's scale.** `Rocks1` carries 1.4×, the glaciers 1.2 and 0.9,
+   so the shape must be authored in the model's LOCAL units or it comes out 40% too big.
+2. **A tree takes a TRUNK collider, not a bounding box.** A 3 m box around a dead pine is an
+   invisible wall three metres from anything you can see.
+3. ⚠️ **A collider outside the `NavigationRegion3D` blocks the player while the navmesh stays
+   ignorant of it** — an enemy then paths straight through a tree it cannot walk through. The wilds
+   pines were parented to the cell root and are now under `Nav`, which moves nothing because `Nav`
+   is at the origin with an identity basis.
+
+⚠️ **`frostfang_reach/glacier.tscn` has no `NavigationRegion3D` at all** — a bare two-prop stub. Its
+ice is now collided, but there is no navmesh there to carve. Recorded rather than papered over.
+
 **Cost of composing**: 61 module instances, 60 meshes, 11.7k tris — against 1 mesh and 5.8k tris for
 the monolith it replaces. The collider stays **one box on the whole shell**: fifty little static
 bodies would carve fifty little holes in the navmesh.

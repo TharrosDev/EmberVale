@@ -20,7 +20,7 @@ existed the same three lines were maintained in four places and rewritten every 
   gate) done and proved. B (nature) done** — 12 ground-cover props adopted and **all 9 Ember Crown
   cells dressed**, each to a style that suits the place.
   **C (architecture) done** — 11 of 16 building placements are composed modular scenes; the
-  blacksmith, the inn and the low cottage stay monolithic on purpose. **D (interiors) done.** **E queued.**
+  blacksmith, the inn and the low cottage stay monolithic on purpose. **D (interiors) and E (sweep) done — the asset migration is complete.**
   `docs/ASSET_POLICY.md` §0.2–§0.3 is the authority.
 
 ## Last verified (asset Phase A)
@@ -103,3 +103,9 @@ godot --path . -- --play                        # boot into the newest save
     is what makes them readable; a composed shell is a handsome barn that says nothing. And the kit
     ships **one wall height, 3.12 m**, so `bld_cottage`'s 4.20 m silhouette cannot be built from it.
     `tools/compose_building.py` writes a shell from `<name> <wide> <deep> <storeys>`.
+
+13. ⚠️ **Solid-looking scenery with no collider is a real class of defect here, and 18 props had it**
+    — dead pines, rock clusters, six glaciers. When adding scenery: a collider child **inherits its
+    node's scale** (author in local units), a tree takes a **trunk** collider rather than a bounding
+    box, and a collider **outside the `NavigationRegion3D` blocks the player while the navmesh stays
+    ignorant of it**. `ASSET_POLICY.md` §0.6.

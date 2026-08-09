@@ -19,6 +19,9 @@ height = 1.6
 radius = 0.4
 height = 5.0
 
+[sub_resource type="BoxShape3D" id="Shape_glacier"]
+size = Vector3(8.43, 4.96, 6.02)
+
 [node name="DragonRoostCell" instance=ExtResource("1_roost")]
 FloorSize = 90.0
 FloorColor = Color(0.46, 0.48, 0.53, 1)
@@ -60,8 +63,20 @@ shape = SubResource("Shape_rock")
 [node name="GlacierNW" parent="Nav" index="7" instance=ExtResource("12_glacier")]
 transform = Transform3D(1.4, 0, 0, 0, 1.6, 0, 0, 0, 1.4, -24, 0, -20)
 
+[node name="Col" type="StaticBody3D" parent="Nav/GlacierNW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/GlacierNW/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
+shape = SubResource("Shape_glacier")
+
 [node name="GlacierNE" parent="Nav" index="8" instance=ExtResource("12_glacier")]
 transform = Transform3D(-1.3, 0, 0.7, 0, 1.5, 0, -0.7, 0, -1.3, 26, 0, -18)
+
+[node name="Col" type="StaticBody3D" parent="Nav/GlacierNE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/GlacierNE/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
+shape = SubResource("Shape_glacier")
 
 [node name="PineW" parent="Nav" index="9" instance=ExtResource("11_pine")]
 transform = Transform3D(1, 0, 0, 0, 1.2, 0, 0, 0, 1, -21, 0, 14)

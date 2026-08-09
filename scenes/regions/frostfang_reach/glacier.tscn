@@ -2,9 +2,24 @@
 
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_glacier.glb" id="1_glacier"]
 
+[sub_resource type="BoxShape3D" id="Shape_glacier"]
+size = Vector3(8.43, 4.96, 6.02)
+
 [node name="GlacierCell" type="Node3D"]
 
 [node name="Ice" parent="." instance=ExtResource("1_glacier")]
 
+[node name="Col" type="StaticBody3D" parent="Ice"]
+
+[node name="Shape" type="CollisionShape3D" parent="Ice/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
+shape = SubResource("Shape_glacier")
+
 [node name="Ice2" parent="." instance=ExtResource("1_glacier")]
 transform = Transform3D(-0.6, 0, 0.5, 0, 0.7, 0, -0.5, 0, -0.6, 9, 0, -6)
+
+[node name="Col" type="StaticBody3D" parent="Ice2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Ice2/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
+shape = SubResource("Shape_glacier")
