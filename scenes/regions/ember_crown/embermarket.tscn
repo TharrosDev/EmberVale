@@ -49,6 +49,8 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_fern.glb" id="49_fern"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_a.glb" id="51_pebble_a"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_b.glb" id="52_pebble_b"]
+[ext_resource type="PackedScene" path="res://scenes/props/bld_townhouse.tscn" id="53_townhouse"]
+[ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_modular.tscn" id="54_cottage_modular"]
 
 ; THE EMBERMARKET (Phase 38K, second pass) — the Ember Crown's market district, one street south of
 ; the town square.
@@ -808,24 +810,12 @@ shape = SubResource("Shape_gazebo_post")
 [node name="HouseW1" type="Node3D" parent="Nav"]
 transform = Transform3D(0.9903, 0, -0.1392, 0, 1, 0, 0.1392, 0, 0.9903, -19.5, 0, -13)
 
-[node name="Model" parent="Nav/HouseW1" instance=ExtResource("31_house_a")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/HouseW1"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/HouseW1/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.75, 0)
-shape = SubResource("Shape_house_a")
+[node name="Model" parent="Nav/HouseW1" instance=ExtResource("53_townhouse")]
 
 [node name="HouseW2" type="Node3D" parent="Nav"]
 transform = Transform3D(0.9945, 0, 0.1045, 0, 1, 0, -0.1045, 0, 0.9945, -19, 0, 6)
 
-[node name="Model" parent="Nav/HouseW2" instance=ExtResource("32_house_b")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/HouseW2"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/HouseW2/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.4, 0)
-shape = SubResource("Shape_house_b")
+[node name="Model" parent="Nav/HouseW2" instance=ExtResource("54_cottage_modular")]
 
 [node name="HouseW3" type="Node3D" parent="Nav"]
 transform = Transform3D(0.9703, 0, -0.2419, 0, 1, 0, 0.2419, 0, 0.9703, -21.5, 0, -2)
@@ -841,24 +831,12 @@ shape = SubResource("Shape_cottage")
 [node name="HouseE1" type="Node3D" parent="Nav"]
 transform = Transform3D(-0.9962, 0, 0.0872, 0, 1, 0, -0.0872, 0, -0.9962, 19.5, 0, -13.5)
 
-[node name="Model" parent="Nav/HouseE1" instance=ExtResource("32_house_b")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/HouseE1"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/HouseE1/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.4, 0)
-shape = SubResource("Shape_house_b")
+[node name="Model" parent="Nav/HouseE1" instance=ExtResource("53_townhouse")]
 
 [node name="HouseE2" type="Node3D" parent="Nav"]
 transform = Transform3D(-0.9925, 0, -0.1219, 0, 1, 0, 0.1219, 0, -0.9925, 20, 0, 6)
 
-[node name="Model" parent="Nav/HouseE2" instance=ExtResource("31_house_a")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/HouseE2"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/HouseE2/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.75, 0)
-shape = SubResource("Shape_house_a")
+[node name="Model" parent="Nav/HouseE2" instance=ExtResource("54_cottage_modular")]
 
 [node name="HouseE3" type="Node3D" parent="Nav"]
 transform = Transform3D(-0.9781, 0, 0.2079, 0, 1, 0, -0.2079, 0, -0.9781, 19, 0, 18)

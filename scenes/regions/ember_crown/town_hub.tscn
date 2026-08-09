@@ -43,6 +43,8 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_flowers_b.glb" id="45_flowers_b"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_a.glb" id="48_pebble_a"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_b.glb" id="49_pebble_b"]
+[ext_resource type="PackedScene" path="res://scenes/props/bld_townhouse.tscn" id="50_townhouse"]
+[ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_modular.tscn" id="51_cottage_modular"]
 
 [sub_resource type="NavigationMesh" id="NavMesh_hub"]
 geometry_parsed_geometry_type = 1
@@ -235,11 +237,6 @@ shape = SubResource("Shape_floor")
 [node name="BuildingNW" type="MeshInstance3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 3.75, -6)
 
-[node name="BuildingNWCol" type="StaticBody3D" parent="Nav/BuildingNW"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/BuildingNW/BuildingNWCol"]
-shape = SubResource("Shape_bldgA")
-
 [node name="BuildingNE" type="MeshInstance3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 3.75, -6)
 
@@ -250,11 +247,6 @@ shape = SubResource("Shape_inn")
 
 [node name="BuildingSW" type="MeshInstance3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 3.4, -22)
-
-[node name="BuildingSWCol" type="StaticBody3D" parent="Nav/BuildingSW"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/BuildingSW/BuildingSWCol"]
-shape = SubResource("Shape_bldgB")
 
 [node name="BuildingSE" type="MeshInstance3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 3.25, -22)
@@ -750,13 +742,13 @@ script = ExtResource("9_station")
 Station = 3
 StationName = "Alchemy Table"
 
-[node name="Model" parent="Nav/BuildingNW" instance=ExtResource("10_house_a")]
+[node name="Model" parent="Nav/BuildingNW" instance=ExtResource("50_townhouse")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.75, 0)
 
 [node name="Model" parent="Nav/BuildingNE" instance=ExtResource("37_inn")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.75, 0)
 
-[node name="Model" parent="Nav/BuildingSW" instance=ExtResource("11_house_b")]
+[node name="Model" parent="Nav/BuildingSW" instance=ExtResource("51_cottage_modular")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.4, 0)
 
 [node name="Model" parent="Nav/BuildingSE" instance=ExtResource("38_smith")]
