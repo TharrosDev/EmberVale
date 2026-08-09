@@ -17,9 +17,9 @@ existed the same three lines were maintained in four places and rewritten every 
   Do not trust the first unchecked box. 38O did not unpark it: a fence changes *who will buy*, not
   the spread, so every margin in `--economy` is still negative.
 - 🎨 **Running alongside: the asset migration onto the four Quaternius MegaKits.** **A (animation
-  gate) done and proved. B (nature) half done** — 12 ground-cover props adopted and `wilds_north`
-  dressed; the other 8 cells are undressed. **C–E queued.** `docs/ASSET_POLICY.md` §0.2–§0.3 is the
-  authority.
+  gate) done and proved. B (nature) done** — 12 ground-cover props adopted and **all 9 Ember Crown
+  cells dressed**, each to a style that suits the place. **C–E queued.**
+  `docs/ASSET_POLICY.md` §0.2–§0.3 is the authority.
 
 ## Last verified (asset Phase A)
 
@@ -31,7 +31,7 @@ existed the same three lines were maintained in four places and rewritten every 
 | Ember Crown cells | 9, all resident |
 | Shops / items | 22 / 63 |
 | Retarget render gate | 11 of 12 bodies, eye level front/back — feet at y≈0.02, heads 1.27–1.55 m |
-| `wilds_north` | 193 ground-cover nodes, no colliders, navmesh untouched |
+| Ground cover | 9 cells, ~900 nodes, no colliders anywhere, navmesh untouched |
 
 ## Live invariants — the things that will bite you this arc
 
@@ -88,3 +88,9 @@ godot --path . -- --play                        # boot into the newest save
     in each prop's `.import` (`nodes/root_scale`), never in a cell transform. And **grass goes in
     patches** — an even scatter reads as litter, which is what `wilds_north`'s first pass looked
     like. `ASSET_POLICY.md` §0.3.
+11. **A cell's dressing is a judgement about the place, not a setting.** `tools/dress_cell.py` has
+    five styles — `meadow`, `verge`, `shore`, `industrial`, `edges` — and every cell records which
+    one it used and the command to regenerate it. ⚠️ **The arena is `edges` on purpose**: a combat
+    floor has to stay legible, and scenery a player reads as cover is worse than a bare floor.
+    ⚠️ A banded style must be sampled **around the ring**, not by rejection — three separate
+    truncation bugs put town_hub's whole verge on one edge before a render caught it.
