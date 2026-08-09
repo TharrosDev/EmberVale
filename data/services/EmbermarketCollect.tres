@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="ServiceResource" format=3]
+
+[ext_resource type="Script" path="res://src/Economy/ServiceResource.cs" id="1_service"]
+
+; The consignment counter beside Mirelle's shelf (Phase 38P) — the paying half of consignment, and the
+; half that keeps a listing from being an item given away.
+;
+; ⚠️ A SEPARATE INTERACTABLE FROM THE BROKER, AND IT HAS TO BE. An entity gets one interactable
+; (ServiceComponent's own warning): Mirelle carries a DialogueComponent, because the Embermarket's ten
+; residents talk and only the two travellers carry a VendorComponent. So the clerk's ledger stands on
+; its own — which is also the better reading of the place. You bring goods to a person and you collect
+; money from a counter.
+;
+; ⚠️ FREE, AND --validate ENFORCES IT. The 18% commission is the only cut consignment takes; a fee here
+; would be a second one charged on the player's own money. Worse, ServiceRules refuses any service the
+; player cannot afford BEFORE the verb runs — so a player whose only gold is on the shelf would be too
+; poor to be paid. That is the Search rule (38O) arriving from the opposite direction.
+;
+; No flag of any kind. Collecting is repeatable by nature and answers "nothing to do" from the ledger
+; itself, exactly as the warden's search answers it from the player's pack.
+;
+; FactionId villagers: the standing ramp reaches it as it reaches everything, though with PriceGold 0
+; ShopPricing.ServicePrice returns 0 at every tier. It is authored for the hostile refusal, which does
+; apply — a player the market has turned on cannot walk up to its counter.
+
+[resource]
+script = ExtResource("1_service")
+Id = "service.embermarket.collect"
+NameKey = "service.embermarket.collect.name"
+Kind = 7
+PriceGold = 0
+FactionId = "faction.villagers"
+UnlockFlagId = ""
+RestHour = 8
+XpReward = 0
+GrantedFlagId = ""
+ReputationDelta = 0

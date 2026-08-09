@@ -61,4 +61,20 @@ public enum ServiceKind
     /// shared function to tell them apart, which is the enum doing its job badly.
     /// </summary>
     Redeem,
+
+    /// <summary>
+    /// The consignment clerk's counter (Phase 38P): take the gold everything on the broker's shelf has
+    /// earned so far.
+    ///
+    /// <b>The other half of a pair again, and for 38O's reason rather than 38M's.</b> Listing an item
+    /// lives in the vendor window because the player has to choose <em>which</em> one; collecting has
+    /// nothing to choose, so it is a service and inherits the price, the standing discount, the hostile
+    /// refusal, the charge ordering and the whole prompt battery from 38D for about ten lines. The
+    /// "nothing to do here" state is what makes an early press say <em>nothing has sold yet</em>
+    /// instead of firing an empty payout.
+    ///
+    /// ⚠️ It is always free, and <c>--validate</c> enforces it: a fee to be handed money already owed
+    /// is a second commission the broker's own cut has already taken.
+    /// </summary>
+    Collect,
 }

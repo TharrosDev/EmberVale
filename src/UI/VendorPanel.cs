@@ -9,6 +9,7 @@ using Embervale.Entities;
 using Embervale.Factions;
 using Embervale.Items;
 using Embervale.Localization;
+using Embervale.World;
 using Godot;
 
 namespace Embervale.UI;
@@ -357,6 +358,64 @@ public partial class VendorPanel : UiPanel
     }
 
     /// <summary>
+    /// Puts a whole stack on a broker's shelf (Phase 38P). Same granularity as <see cref="Sell"/>, and
+    /// the removal branch below is copied from it verbatim for the reason that method records:
+    /// <c>RemoveItem</c> matches by template id across every stack, so one of two differently-affixed
+    /// copies would take the other with it.
+    ///
+    /// ⚠️ <b>It calls neither <c>TakePurse</c>, nor <c>Absorb</c>, nor <c>FenceStanding</c>, and all
+    /// three absences are the feature rather than oversights.</b> A broker fronts no money, so there is
+    /// no purse to spend before the goods change hands and no short payment to guard against; she never
+    /// owns the item, so her appetite for the next one has not fallen; and she is not a fence, because
+    /// <c>TradeTags.Accepts</c> refuses contraband at any counter that does not name it (38O) and this
+    /// row was already gated on that one function.
+    ///
+    /// What replaces the purse check is the ledger entry: nothing is paid here at all. The gold exists
+    /// only as a promise until the clerk's counter is pressed some days later, which is what a
+    /// consignment <em>is</em> — and it is why the whole-stack payout above needs no cap.
+    /// </summary>
+    private void Consign(ShopResource shop, ItemStack stack, int netPerUnit)
+    {
+        if (_pack is not { } pack || Ledger() is not { } ledger)
+        {
+            return;
+        }
+
+        ItemInstance instance = stack.Instance;
+        if (!ShopPricing.Sellable(instance.Type, IsCurrency(instance)) ||
+            !InTrade(shop, instance) ||
+            netPerUnit <= 0)
+        {
+            return; // the button is already disabled and says why; re-checked on the press
+        }
+
+        bool removed = instance.IsStackable
+            ? pack.RemoveItem(instance.TemplateId, stack.Quantity)
+            : pack.RemoveOneInstance(instance) != null;
+
+        if (!removed)
+        {
+            Log.Warn($"Shop: could not remove '{instance.TemplateId}' to consign it; listed nothing.");
+            return;
+        }
+
+        // Recorded only once the goods are actually gone, the ordering 38H and 38O both settled: every
+        // early return above leaves the player still holding the item, and none of them may put an
+        // entry on a shelf that never received it.
+        ledger.Add(
+            shop.Id, instance.TemplateId, stack.Quantity, netPerUnit, CurrentDay(), shop.ConsignDays);
+        MarkDirty();
+    }
+
+    private static ConsignmentLedger? Ledger() =>
+        ServiceLocator.Instance is { } locator && locator.TryGet(out ConsignmentLedger ledger)
+            ? ledger
+            : null;
+
+    private static int CurrentDay() =>
+        ServiceLocator.Instance is { } locator && locator.TryGet(out WorldClock clock) ? clock.Day : 0;
+
+    /// <summary>
     /// The two-sided cost of fencing (38O): standing gained with whoever the fence answers to, and lost
     /// with whoever she is hiding from.
     ///
@@ -579,10 +638,15 @@ public partial class VendorPanel : UiPanel
 
         // The merchant's own coin, when they have a finite amount of it — a player dumping a field of
         // loot has to be able to see why the last few rows stopped being sellable.
-        int purse = Stock()?.PurseFor(shop) ?? -1;
-        string header = purse >= 0
-            ? $"{Loc.T("shop.your_pack")}   {Loc.TF("shop.vendor_purse", purse)}"
-            : Loc.T("shop.your_pack");
+        //
+        // ⚠️ A broker has none, and the header says what she has instead (38P): a shelf. She fronts no
+        // money at all, so there is no purse to run down and nothing to explain a refused row with.
+        int purse = shop.IsConsignment ? -1 : Stock()?.PurseFor(shop) ?? -1;
+        string header = shop.IsConsignment
+            ? $"{Loc.T("shop.your_pack")}   {Loc.TF("shop.consign_shelf", Ledger()?.Pending ?? 0)}"
+            : purse >= 0
+                ? $"{Loc.T("shop.your_pack")}   {Loc.TF("shop.vendor_purse", purse)}"
+                : Loc.T("shop.your_pack");
         _packHeader.Text = $"{header}   {Loc.TF("storage.slots", pack.UsedSlots, pack.Capacity)}";
 
         if (pack.UsedSlots == 0)
@@ -603,12 +667,19 @@ public partial class VendorPanel : UiPanel
             // 38H: the stack's units are priced one at a time as the merchant's appetite falls, so
             // selling twenty at once pays exactly what selling them singly would. The multiply this
             // replaced made dumping the whole stack strictly optimal.
-            int absorbed = Stock()?.AbsorbedOf(shop, instance.TemplateId) ?? 0;
-            int unitPrice = ShopPricing.SellPrice(
-                instance.Value, ShopPricing.SellFractionFor(shop.SellFraction, specialty));
-            int payout = sellable && inTrade
-                ? ShopStock.SaturatedPayout(unitPrice, absorbed, stack.Quantity, shop.RestockDays)
-                : 0;
+            //
+            // ⚠️ A broker's rows take neither correction (38P). She never touches the goods, so there
+            // is no appetite to glut and no purse to run down — a stack of twenty lists for twenty
+            // times one, which is the whole reason to walk them across the square to her.
+            int absorbed = shop.IsConsignment ? 0 : Stock()?.AbsorbedOf(shop, instance.TemplateId) ?? 0;
+            int unitPrice = shop.IsConsignment
+                ? ConsignmentRules.Net(
+                    ConsignmentRules.Gross(instance.Value, shop.ConsignFraction), shop.ConsignCommission)
+                : ShopPricing.SellPrice(
+                    instance.Value, ShopPricing.SellFractionFor(shop.SellFraction, specialty));
+            int payout = !sellable || !inTrade ? 0
+                : shop.IsConsignment ? unitPrice * stack.Quantity
+                : ShopStock.SaturatedPayout(unitPrice, absorbed, stack.Quantity, shop.RestockDays);
             bool glutted = ShopStock.SaturationMultiplier(absorbed, shop.RestockDays) < 1f;
 
             // Five refusals, each named separately: not for sale at all, not this merchant's trade,
@@ -622,16 +693,25 @@ public partial class VendorPanel : UiPanel
                 : payout <= 0 ? Loc.T("shop.worthless")
                 : Loc.T("shop.vendor_broke");
 
+            // The broker's price line names the wait as well as the money: an offer that is better
+            // than every counter in town and does not pay today is only a good deal if the player can
+            // see both halves of it before pressing.
+            string priceText = !sellable || !inTrade ? string.Empty
+                : shop.IsConsignment ? Loc.TF("shop.consign_price", payout, shop.ConsignDays)
+                : Loc.TF("shop.price", payout);
+
             ItemStack captured = stack;
             AddRow(
                 _packList,
                 instance,
                 stack.Quantity,
-                priceText: sellable && inTrade ? Loc.TF("shop.price", payout) : string.Empty,
-                action: Loc.T("shop.sell"),
+                priceText: priceText,
+                action: Loc.T(shop.IsConsignment ? "shop.consign" : "shop.sell"),
                 enabled: sellable && inTrade && payout > 0 && afforded,
                 refusal: refusal,
-                onPressed: () => Sell(shop, captured, payout),
+                onPressed: shop.IsConsignment
+                    ? () => Consign(shop, captured, unitPrice)
+                    : () => Sell(shop, captured, payout),
                 specialty: specialty,
                 glutted: glutted);
         }

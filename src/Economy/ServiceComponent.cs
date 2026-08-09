@@ -63,9 +63,12 @@ public partial class ServiceComponent : InteractableComponent
                 // ⚠️ A free service falls back to the bare "Use {0}" line, which is right for a free
                 // bed and wrong for a warden's search — the one service the player is not buying, and
                 // the only one where not knowing what the press does costs them their goods (38O).
+                // The gold owed rides along as {1} for the one free service that has a number to
+                // report (38P's clerk). Every other free line ignores it, which is what string.Format
+                // does with a spare argument — cheaper than a third key-to-argument table.
                 _ => price > 0
                     ? Loc.TF(OfferKey(service.Kind), name, price)
-                    : Loc.TF(FreeKey(service.Kind), name),
+                    : Loc.TF(FreeKey(service.Kind), name, DueGold()),
             };
         }
     }
@@ -108,6 +111,9 @@ public partial class ServiceComponent : InteractableComponent
                 break;
             case ServiceKind.Redeem:
                 Redeem(service, instigator, price);
+                break;
+            case ServiceKind.Collect:
+                Collect(instigator);
                 break;
             default:
                 StableMount(service, instigator);
@@ -248,6 +254,22 @@ public partial class ServiceComponent : InteractableComponent
         }
     }
 
+    /// <summary>
+    /// Hands over what the broker's shelf has earned (Phase 38P). Free, so there is nothing to roll
+    /// back, and the ledger keeps whatever would not fit in the pack — the prompt then still reads as
+    /// money waiting, which is the honest state.
+    /// </summary>
+    private static void Collect(IEntity instigator)
+    {
+        if (Resolve<ConsignmentLedger>() is not { } ledger ||
+            instigator.GetComponent<InventoryComponent>() is not { } pack)
+        {
+            return;
+        }
+
+        ledger.Collect(CurrentDay(), pack);
+    }
+
     /// <summary>Records a one-off purchase. A service with no flag is pay-per-use and this is a no-op;
     /// the validator is what stops a one-off service being authored without one.</summary>
     private static void Unlock(ServiceResource service, IEntity instigator)
@@ -295,6 +317,14 @@ public partial class ServiceComponent : InteractableComponent
         if (service.Kind == ServiceKind.Redeem)
         {
             return ImpoundedUnits() == 0;
+        }
+
+        // 38P, the same shape: nothing has sold yet, so there is nothing to hand over. It reaches the
+        // player as the "correct, and nothing to do" prompt rather than a refusal — a shelf full of
+        // unsold goods is the system working, not a merchant turning them away.
+        if (service.Kind == ServiceKind.Collect)
+        {
+            return DueGold() == 0;
         }
 
         if (!string.IsNullOrEmpty(service.UnlockFlagId))
@@ -372,6 +402,13 @@ public partial class ServiceComponent : InteractableComponent
 
     private static int ImpoundedUnits() => Resolve<ContrabandImpound>()?.Units ?? 0;
 
+    /// <summary>Gold the consignment shelf has earned and not yet handed over (38P). Read by both the
+    /// prompt and the already-held test, so "nothing has sold yet" and an empty payout cannot
+    /// disagree — the rule <c>PropertyDeedComponent</c> set for a deed.</summary>
+    private static int DueGold() => Resolve<ConsignmentLedger>()?.DueGold(CurrentDay()) ?? 0;
+
+    private static int CurrentDay() => Resolve<WorldClock>()?.Day ?? 0;
+
     private static ReputationTier StandingWith(string factionId)
     {
         if (string.IsNullOrEmpty(factionId) ||
@@ -396,6 +433,7 @@ public partial class ServiceComponent : InteractableComponent
         ServiceKind.Passage => "service.prompt_passage_held",
         ServiceKind.Search => "service.prompt_search_clean",
         ServiceKind.Redeem => "service.prompt_redeem_empty",
+        ServiceKind.Collect => "service.prompt_collect_empty",
         _ => "service.prompt_free",
     };
 
@@ -414,6 +452,7 @@ public partial class ServiceComponent : InteractableComponent
     private static string FreeKey(ServiceKind kind) => kind switch
     {
         ServiceKind.Search => "service.prompt_search",
+        ServiceKind.Collect => "service.prompt_collect",
         _ => "service.prompt_free",
     };
 

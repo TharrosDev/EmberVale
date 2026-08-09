@@ -212,6 +212,47 @@ public partial class ShopResource : Resource
     /// </summary>
     [Export] public Godot.Collections.Array InvestmentTiers { get; set; } = new();
 
+    [ExportGroup("Consignment")]
+
+    /// <summary>
+    /// Fraction of an item's value a broker puts it on the shelf for (Phase 38P), before her
+    /// commission. <b><c>0</c> means this is not a consignment house</b>, which is every shop
+    /// authored before 38P — the flag and the number are deliberately one field, because a broker
+    /// with a zero fraction is not a thing that can exist.
+    ///
+    /// It is authored <em>above</em> every <see cref="SellFraction"/> in the realm, which is the whole
+    /// offer: the broker pays better than any counter and takes days about it. <c>--validate</c>
+    /// enforces that ordering, because a broker who pays less than a shop is dead content nobody would
+    /// ever use.
+    ///
+    /// ⚠️ It cannot be authored into a money printer. <see cref="ConsignmentRules.Gross"/> routes
+    /// through <see cref="ShopPricing.SellPrice"/>, whose <c>0..1</c> clamp holds a payout to the
+    /// item's value — so <c>sell &lt;= value &lt;= buy</c> survives 38P untouched.
+    /// </summary>
+    [Export] public float ConsignFraction { get; set; }
+
+    /// <summary>
+    /// In-game days a listing takes to sell. Must be at least <c>1</c> on a consignment house:
+    /// <see cref="ConsignmentRules.HasSold"/> inherits <see cref="ShopStock.IsRestockDue"/>'s
+    /// treatment of a non-positive period as "never", so a <c>0</c> here is a shelf the player can
+    /// never collect from — the same shape as a finite stock row with no restock clock, and
+    /// <c>--validate</c> rejects it for the same reason.
+    /// </summary>
+    [Export] public int ConsignDays { get; set; }
+
+    /// <summary>
+    /// The house's cut, <c>0..1</c>. This is the sink half of consignment: the player is paid more
+    /// than any shop would give and still hands a slice back, so the mechanism moves gold out of the
+    /// economy rather than only around it. A cut of <c>1</c> is a free item and <c>--validate</c>
+    /// rejects it.
+    /// </summary>
+    [Export] public float ConsignCommission { get; set; }
+
+    /// <summary>Whether this shop is a broker rather than a counter — read by the vendor window to
+    /// decide whether the pack's rows sell or list. One function so the panel, the sale and the
+    /// validator cannot disagree about what <see cref="ConsignFraction"/> means.</summary>
+    public bool IsConsignment => ConsignFraction > 0f;
+
     /// <summary>
     /// The authored rows as a typed list. Deliberately <b>does not</b> filter malformed rows the way
     /// <c>CraftingRecipeResource.IngredientList</c> does: an empty id or a negative quantity is
