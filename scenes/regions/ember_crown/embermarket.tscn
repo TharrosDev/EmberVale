@@ -1446,6 +1446,12 @@ transform = Transform3D(0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, 0.9397, -11.5, 0, 
 
 [node name="Model" parent="Nav/BannerRowW" instance=ExtResource("14_banner")]
 
+[node name="Col" type="StaticBody3D" parent="Nav/BannerRowW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BannerRowW/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
+shape = SubResource("Shape_banner")
+
 ; ====================================================================================================
 ; ACTORS AND INTERACTABLES — deliberately OUTSIDE Nav.
 ; Only static geometry belongs inside the NavigationRegion3D: a body that carves the navmesh is a hole

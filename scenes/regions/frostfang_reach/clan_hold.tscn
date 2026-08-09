@@ -76,6 +76,9 @@ height = 1.6
 radius = 0.5
 height = 1.2
 
+[sub_resource type="BoxShape3D" id="Shape_glacier"]
+size = Vector3(8.43, 4.96, 6.02)
+
 [node name="ClanHoldCell" type="Node3D"]
 
 [node name="Nav" type="NavigationRegion3D" parent="."]
@@ -266,8 +269,20 @@ shape = SubResource("Shape_rock")
 [node name="GlacierW" parent="Nav" instance=ExtResource("20_glacier")]
 transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, -27, 0, 10)
 
+[node name="Col" type="StaticBody3D" parent="Nav/GlacierW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/GlacierW/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
+shape = SubResource("Shape_glacier")
+
 [node name="GlacierE" parent="Nav" instance=ExtResource("20_glacier")]
 transform = Transform3D(-0.9, 0, 0.6, 0, 1, 0, -0.6, 0, -0.9, 27, 0, -2)
+
+[node name="Col" type="StaticBody3D" parent="Nav/GlacierE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/GlacierE/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
+shape = SubResource("Shape_glacier")
 
 [node name="Waystone" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 14)

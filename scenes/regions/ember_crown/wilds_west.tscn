@@ -91,6 +91,9 @@ emission_enabled = true
 emission = Color(0.3, 0.62, 0.3, 1)
 emission_energy_multiplier = 0.45
 
+[sub_resource type="BoxShape3D" id="Shape_pine_trunk"]
+size = Vector3(0.55, 4.9, 0.55)
+
 [node name="WildsWestCell" type="Node3D"]
 
 [node name="Nav" type="NavigationRegion3D" parent="."]
@@ -228,11 +231,23 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.9, 0)
 [node name="Model" parent="Nav/Tent2" instance=ExtResource("8_tent")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, -0.9, 0)
 
-[node name="Pine1" parent="." instance=ExtResource("10_pine")]
+[node name="Pine1" parent="Nav" instance=ExtResource("10_pine")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0, -9)
 
-[node name="Pine2" parent="." instance=ExtResource("10_pine")]
+[node name="Col" type="StaticBody3D" parent="Nav/Pine1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Pine1/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 0)
+shape = SubResource("Shape_pine_trunk")
+
+[node name="Pine2" parent="Nav" instance=ExtResource("10_pine")]
 transform = Transform3D(0.7, 0, 0.71, 0, 1.1, 0, -0.71, 0, 0.7, 11, 0, 8)
+
+[node name="Col" type="StaticBody3D" parent="Nav/Pine2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Pine2/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 0)
+shape = SubResource("Shape_pine_trunk")
 
 ; ====================================================================================================
 ; GROUND COVER (38B) - open wilderness, so grass everywhere, with the shade species under the pines.

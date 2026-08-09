@@ -105,6 +105,15 @@ emission_enabled = true
 emission = Color(0.35, 0.32, 0.3, 1)
 emission_energy_multiplier = 0.3
 
+[sub_resource type="BoxShape3D" id="Shape_pine_trunk"]
+size = Vector3(0.55, 4.9, 0.55)
+
+[sub_resource type="BoxShape3D" id="Shape_rock_cluster"]
+size = Vector3(2.26, 1.41, 1.84)
+
+[sub_resource type="BoxShape3D" id="Shape_ruin_pillar"]
+size = Vector3(1.0, 3.13, 1.0)
+
 [node name="WildsNorthCell" type="Node3D"]
 
 [node name="Nav" type="NavigationRegion3D" parent="."]
@@ -252,29 +261,71 @@ script = ExtResource("3_pickup")
 Item = ExtResource("7_ore")
 Quantity = 3
 
-[node name="Pine1" parent="." instance=ExtResource("8_pine")]
+[node name="Pine1" parent="Nav" instance=ExtResource("8_pine")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 0, -10)
 
-[node name="Pine2" parent="." instance=ExtResource("8_pine")]
+[node name="Col" type="StaticBody3D" parent="Nav/Pine1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Pine1/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 0)
+shape = SubResource("Shape_pine_trunk")
+
+[node name="Pine2" parent="Nav" instance=ExtResource("8_pine")]
 transform = Transform3D(0.8, 0, 0.6, 0, 1, 0, -0.6, 0, 0.8, 16, 0, -14)
 
-[node name="Pine3" parent="." instance=ExtResource("8_pine")]
+[node name="Col" type="StaticBody3D" parent="Nav/Pine2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Pine2/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 0)
+shape = SubResource("Shape_pine_trunk")
+
+[node name="Pine3" parent="Nav" instance=ExtResource("8_pine")]
 transform = Transform3D(-0.7, 0, 0.71, 0, 1, 0, -0.71, 0, -0.7, -18, 0, 12)
 
-[node name="Pine4" parent="." instance=ExtResource("8_pine")]
+[node name="Col" type="StaticBody3D" parent="Nav/Pine3"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Pine3/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 0)
+shape = SubResource("Shape_pine_trunk")
+
+[node name="Pine4" parent="Nav" instance=ExtResource("8_pine")]
 transform = Transform3D(1, 0, 0, 0, 1.15, 0, 0, 0, 1, 10, 0, 16)
 
-[node name="Rocks1" parent="." instance=ExtResource("9_rocks")]
+[node name="Col" type="StaticBody3D" parent="Nav/Pine4"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Pine4/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 0)
+shape = SubResource("Shape_pine_trunk")
+
+[node name="Rocks1" parent="Nav" instance=ExtResource("9_rocks")]
 transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 1.4, 8, 0, -6)
 
-[node name="Rocks2" parent="." instance=ExtResource("9_rocks")]
+[node name="Col" type="StaticBody3D" parent="Nav/Rocks1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Rocks1/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.705, 0)
+shape = SubResource("Shape_rock_cluster")
+
+[node name="Rocks2" parent="Nav" instance=ExtResource("9_rocks")]
 transform = Transform3D(-0.9, 0, 0.44, 0, 1, 0, -0.44, 0, -0.9, -10, 0, 8)
+
+[node name="Col" type="StaticBody3D" parent="Nav/Rocks2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Rocks2/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.705, 0)
+shape = SubResource("Shape_rock_cluster")
 
 [node name="RuinPillar1" parent="." instance=ExtResource("10_pillar")]
 transform = Transform3D(0.94, 0, 0.34, 0, 1, 0, -0.34, 0, 0.94, -6, 0, -16)
 
-[node name="RuinPillar2" parent="." instance=ExtResource("10_pillar")]
+[node name="RuinPillar2" parent="Nav" instance=ExtResource("10_pillar")]
 transform = Transform3D(0.5, -0.1, 0.86, 0.1, 0.99, 0, -0.86, 0.05, 0.5, 5, 0, -18)
+
+[node name="Col" type="StaticBody3D" parent="Nav/RuinPillar2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RuinPillar2/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.565, 0)
+shape = SubResource("Shape_ruin_pillar")
 
 [node name="Model" parent="Nav/RuinWall" instance=ExtResource("11_ruinwall")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.5, 0)

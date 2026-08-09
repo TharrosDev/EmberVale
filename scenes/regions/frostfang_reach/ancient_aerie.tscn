@@ -14,6 +14,9 @@ height = 1.6
 [sub_resource type="BoxShape3D" id="Shape_tome"]
 size = Vector3(0.5, 0.7, 0.4)
 
+[sub_resource type="BoxShape3D" id="Shape_glacier"]
+size = Vector3(8.43, 4.96, 6.02)
+
 [node name="AncientAerieCell" instance=ExtResource("1_roost")]
 FloorSize = 90.0
 FloorColor = Color(0.55, 0.58, 0.62, 1)
@@ -47,8 +50,20 @@ shape = SubResource("Shape_rock")
 [node name="GlacierNW" parent="Nav" index="6" instance=ExtResource("12_glacier")]
 transform = Transform3D(1.6, 0, 0, 0, 2, 0, 0, 0, 1.6, -27, 0, -24)
 
+[node name="Col" type="StaticBody3D" parent="Nav/GlacierNW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/GlacierNW/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
+shape = SubResource("Shape_glacier")
+
 [node name="GlacierNE" parent="Nav" index="7" instance=ExtResource("12_glacier")]
 transform = Transform3D(-1.5, 0, 0.8, 0, 1.9, 0, -0.8, 0, -1.5, 28, 0, -22)
+
+[node name="Col" type="StaticBody3D" parent="Nav/GlacierNE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/GlacierNE/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
+shape = SubResource("Shape_glacier")
 
 ; The hoard. An Ancient's treasure is one word on a stand, and the tome will not open until the thing
 ; that has been keeping it is dead — RequiredFlagId is raised by the lair below on the kill. That is
