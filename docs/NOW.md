@@ -23,19 +23,20 @@ existed the same three lines were maintained in four places and rewritten every 
   blacksmith, the inn and the low cottage stay monolithic on purpose. **D (interiors) and E (sweep) done — the asset migration is complete.**
   `docs/ASSET_POLICY.md` §0.2–§0.3 is the authority.
 
-## Last verified (asset Phase A)
+## Last verified (session close, 2026-08-09)
 
 | | |
 | --- | --- |
-| Build | clean |
-| Tests | **1179** passing (1158 + 21 new) |
+| Build | clean, 0 warnings |
+| Tests | 1184 passing |
 | `--validate` | exit 0 |
-| Ember Crown cells | 9, all resident |
-| Shops / items | 22 / 63 |
-| Retarget render gate | 11 of 12 bodies, eye level front/back — feet at y≈0.02, heads 1.27–1.55 m |
-| Ground cover | 9 cells, ~900 nodes, no colliders anywhere, navmesh untouched |
-| Ember Crown map | re-laid: 9 cells, 0 overlaps, all connected by full edges |
-| Composed buildings | 11 placements, 5 cells, one collider each |
+| `--economy` | runs; every margin still negative (38G's job, not a defect) |
+| **`--play`** | **50 s in-world: booted, loaded slot1, restored Kael, streamed all 9 cells, 0 errors, 0 warnings** |
+| Ember Crown | 9 cells, 0 overlaps, all connected by full shared edges |
+| Bodies retargeted | **12 of 12** skinned (`fp_arm` has no skin and needs none) |
+| Props with no collider | 0 (audit clean) |
+| Colliders off-centre or floating | 0 |
+| Ground cover | 9 cells, ~900 collider-less nodes, navmesh untouched |
 
 ## Live invariants — the things that will bite you this arc
 
