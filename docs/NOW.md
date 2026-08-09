@@ -10,35 +10,30 @@ existed the same three lines were maintained in four places and rewritten every 
 
 ## Where we are
 
-- **Stage C, Phase 38 (economy). 38A–38P2 done. Next: 38Q — commissions + contracts.**
-- Open the plan: `docs/playbook/phase-38.md`, the `38Q` entry. Read the two entries above it too —
+- **Stage C, Phase 38 (economy). 38A–38Q done. Next: 38Q2 — the contract board.**
+- Open the plan: `docs/playbook/phase-38.md`, the `38Q2` entry. Read the two entries above it too —
   the "two things worth carrying" lines are the cheapest bug prevention in the repo.
-- ⏸ **38G is parked, not next.** It prices goods by settlement demand and sits above 38Q in the file.
+- ⏸ **38G is parked, not next.** It prices goods by settlement demand and sits above 38Q2 in the file.
   Do not trust the first unchecked box. Nothing since 38N has unparked it: a fence changes *who will
-  buy*, a broker *how much one counter pays*, an appraiser only *what the player is told* — none of
-  them moves an item's **value** by settlement, so every margin in `--economy` is still negative.
-- 🎨 **Running alongside: the asset migration onto the four Quaternius MegaKits.** **A (animation
-  gate) done and proved. B (nature) done** — 12 ground-cover props adopted and **all 9 Ember Crown
-  cells dressed**, each to a style that suits the place.
-  **C (architecture) done** — 11 of 16 building placements are composed modular scenes; the
-  blacksmith, the inn and the low cottage stay monolithic on purpose. **D (interiors) and E (sweep) done — the asset migration is complete.**
-  `docs/ASSET_POLICY.md` §0.2–§0.3 is the authority.
+  buy*, a broker *how much one counter pays*, an appraiser only *what the player is told*, and a
+  commission is not a route at all — none of them moves an item's **value** by settlement, so every
+  margin in `--economy` is still negative.
+- 🎨 **The asset migration onto the four Quaternius MegaKits is complete** (A–E). `docs/ASSET_POLICY.md`
+  §0.2–§0.3 is the authority.
 
 ## Last verified (session close, 2026-08-09)
 
 | | |
 | --- | --- |
-| Build | clean, 0 warnings |
-| Tests | 1198 passing; **38P2 added none** — `EconomyReport` is Godot-bound, so `--economy` is its check |
-| `--validate` | exit 0; **both new 38P2 rules negative-tested both ways** |
-| `--economy` | runs; 60 goods across 23 shops, **plus the broker block**; every margin still negative (38G's job) |
-| **`--play`** | **55 s in-world: booted, loaded slot1, streamed all 9 cells, 0 project errors** |
-| Embermarket | 11 residents; the consignment premises and the assay counter rendered noon and dusk |
-| Ember Crown | 9 cells, 0 overlaps, all connected by full shared edges |
-| Bodies retargeted | **12 of 12** skinned (`fp_arm` has no skin and needs none) |
+| Build | clean, **0 warnings** |
+| Tests | **1203 passing**; 38Q added 5 (`CommissionRulesTests`) |
+| `--validate` | exit 0; **all five new 38Q rules negative-tested both ways** |
+| `--economy` | **byte-identical before and after 38Q** — a commission is not a route; every margin still negative (38G's job) |
+| `--state` | 2 regions, 14 cells, 63 items, 23 shops, **11 services**, 31 dialogues, 14 quests |
+| **`--play`** | booted, loaded slot1, streamed all 9 cells, 27 objects restored, **0 project errors** |
+| Town hub | Bryn's order bench rendered noon and dusk across **three placements and three candidate props** |
+| Bodies retargeted | 12 of 12 skinned (`fp_arm` has no skin and needs none) |
 | Props with no collider | 0 (audit clean) |
-| Colliders off-centre or floating | 0 |
-| Ground cover | 9 cells, ~900 collider-less nodes, navmesh untouched |
 
 ## Live invariants — the things that will bite you this arc
 
@@ -48,45 +43,66 @@ existed the same three lines were maintained in four places and rewritten every 
 2. **`sell <= value <= buy` holds at every shop by construction**, so carrying goods between two
    merchants can *never* turn a profit. `--economy` prints the proof. Only 38G's regional demand can
    change it — do not try to author around it with a generous spread.
-3. **A broker fronts nothing, so no purse and no saturation apply to her** (38P). `VendorPanel.Consign`
-   calls neither `TakePurse` nor `Absorb` nor `FenceStanding`, and all three absences are the feature —
-   a stack of twenty lists for twenty times one. ⚠️ **It still cannot invert the spread**: the payout
-   goes through `ConsignmentRules.Gross` → `ShopPricing.SellPrice`, whose `0..1` clamp holds it to the
-   item's value, so invariant 2 survives untouched. `ConsignmentRulesTests` asserts exactly that.
-   ⚠️ **`EconomyReport.BestBuyers` skips a consignment house and that is not optional** (38P2): her
-   `SellFraction` is inert data the vendor window never reads, so quoting it advertises a sale the
-   game refuses to make. Her real offer is `BestConsignment`, printed as its own block because a
-   consignment is one counter paid later, not a two-shop route with a margin.
-4. **`contraband` is the one trade tag that fails CLOSED** (38O). Every other tag is a filter a shop
-   may opt out of; that one is a door a shop must opt *in* to, and it overrides an item's other tags.
-   The whole exception is one branch in `TradeTags.Accepts`, which the vendor window, the sale and
-   `EconomyReport` all already route through — do not add a second check anywhere else.
-5. **A fenced sale moves two factions, once per sale, never per unit.** `ShopResource`'s four
-   contraband fields; applied in `VendorPanel.Sell` beside `Absorb`, *after* the goods change hands.
-   Deliberately the opposite granularity to 38H's per-unit payout decay.
-6. **The Crossway toll is charged in `GameBootstrap.PayToll`**, on portal crossings only. Fast travel
+3. ⚠️ **A COMMISSION IS THE FIRST PRICE THOSE CLAMPS DO NOT PROTECT** (38Q). Every other price is a
+   spread over *one* item's value; a commission relates **two** — ingredients in, a finished piece out
+   — and crafting is meant to add value, so buy-materials → commission → sell is an unbounded loop
+   that no clamp closes. Only the authored labour fee does, and `--validate` proves it every boot via
+   `CommissionRules.Exploitable` at the cheapest standing on the ramp. **A new recipe, a keener buyer
+   or a new specialty can each reopen it.** General form: when a new price appears, ask what it is a
+   spread *over* before assuming the 38A clamps cover it.
+4. **A broker fronts nothing, so no purse and no saturation apply to her** (38P). `VendorPanel.Consign`
+   calls neither `TakePurse` nor `Absorb` nor `FenceStanding`, and all three absences are the feature.
+   It still cannot invert the spread: the payout routes through `ShopPricing.SellPrice`. ⚠️
+   **`EconomyReport.BestBuyers` skips a consignment house and that is not optional** (38P2) — her
+   `SellFraction` is inert data the vendor window never reads.
+5. ⚠️ **`ServiceKind.Commission` is charged AFTER its verb and must be PRICED — both invert the rules
+   around it** (38Q). Every other service is charged first, because none of their verbs can fail; this
+   one fails on a full pack and rolls back, so charging first is the only way to lose money for
+   nothing. And 38O's *free* rule (a fee fails closed on the player who needs the counter) has been
+   right three times running and is wrong here, because this service hands over **goods** — a free
+   master is the materials shop with the spread deleted. `--validate` enforces both directions.
+6. **`contraband` is the one trade tag that fails CLOSED** (38O). Every other tag is a filter a shop
+   may opt out of; that one is a door a shop must opt *in* to. The whole exception is one branch in
+   `TradeTags.Accepts` — do not add a second check anywhere else.
+7. **A fenced sale moves two factions, once per sale, never per unit** (`ShopResource`'s four
+   contraband fields, applied in `VendorPanel.Sell`). Deliberately the opposite granularity to 38H's
+   per-unit payout decay.
+8. **The Crossway toll is charged in `GameBootstrap.PayToll`**, on portal crossings only. Fast travel
    pays `TravelFee` and nothing else; one journey does not pay twice.
-7. **Render every character body at eye level, front and back, before adopting it.** This trap has
-   fired three times (`npc_townsman` hi-vis, `npc_merchant_f` t-shirt-and-trainers, and 4-of-6
-   rejections in 38N2). Nothing about it is visible from a filename. ⚠️ 38O found the same trap one
-   layer down: a **collider** copied from another cell was wrong too (`prp_ruin_pillar` stands up;
-   `wilds_north` gives it a lying-down box). Render the cell, do not only read it.
-8. **`CharacterBody3D` has no step-up.** Verticality comes from props, never from terrain; a 30 cm
+9. ⚠️ **RENDER THE THING, AND RENDER IT WITH THE PEOPLE AND FURNITURE AROUND IT.** This trap has now
+   fired five times and 38Q hit three variants in one session: a **prop** rejected on sight
+   (`prp_weapon_stand` reads as a sawhorse from every angle but straight-on), a placement **inside a
+   building**, and a placement that put **Bryn standing inside his own 2.85 m counter** — a fault in
+   neither object alone, which is why only the render found it. Earlier instances: `npc_townsman`
+   hi-vis, `npc_merchant_f` t-shirt-and-trainers, 4-of-6 rejections in 38N2, and a lying-down collider
+   on a standing pillar in 38O.
+10. **`CharacterBody3D` has no step-up.** Verticality comes from props, never from terrain; a 30 cm
    kerb is an invisible wall the navmesh happily paths NPCs over.
-9. **A retargeted rig is marked by its skeleton being named `GeneralSkeleton`** — **all 12 skinned
-   bodies now are**, including `chr_player_base`, repaired by `tools/normalize_rig_root.py`
-   (`ASSET_POLICY.md` §0.7). `CharacterAnimationComponent` gates the shared library on that name: an
-   un-retargeted rig must not receive it, or it resolves a block/cast clip whose every track points
-   at bones it does not have and freezes mid-guard with nothing logged.
-   ⚠️ **A model whose root node carries a translation cannot be retargeted until it is normalised** —
-   two errors that cancel render correctly and break every rest-fixer setting.
-   ⚠️ The library is an **upper-body pose from the hips up**: the Quaternius feet are root-parented
-   IK goals (`PT.*` are pole targets, not toes), so its leg motion cannot transfer. `ASSET_POLICY.md`
-   §0.2 carries all four traps.
-10. **Check what is already vendored before pulling from the web.** 38N2's pull returned a file
-   byte-identical to one sitting unadapted in `assets/library/`. As of 38O the library holds **no
-   unadopted CC0 medieval bodies at all** — every one is already in `assets/models/characters/`, and
-   the remaining unadopted men are modern dress.
+11. **A retargeted rig is marked by its skeleton being named `GeneralSkeleton`** — all 12 skinned
+   bodies are. `CharacterAnimationComponent` gates the shared library on that name; an un-retargeted
+   rig given it freezes mid-guard with nothing logged. ⚠️ A model whose root node carries a
+   translation cannot be retargeted until normalised, and the library is an **upper-body pose from the
+   hips up**. `ASSET_POLICY.md` §0.2 carries all four traps.
+12. **Check what is already vendored before pulling from the web.** As of 38O the library holds **no
+   unadopted CC0 medieval bodies at all**.
+13. ⚠️ **MEASURING A MODEL'S ACCESSORS IS NOT MEASURING THE MODEL** (38P2). Apply node scale *and*
+   `nodes/root_scale` from the `.import`, or the number is fiction — `prp_tome_stand`'s first collider
+   was over twice too big in every axis. ⚠️ And a **solid-looking prop with no collider** is a real
+   class of defect here (18 had it): a collider child inherits its node's scale, a tree takes a trunk
+   rather than a bounding box, and a collider outside the `NavigationRegion3D` blocks the player while
+   the navmesh stays ignorant of it. `ASSET_POLICY.md` §0.6.
+14. ⚠️ **The nature megakit's ground cover is 4–10× life size while its trees are 1:1**, and scale
+   lives in each prop's `.import`, never in a cell transform. **Grass goes in patches**, not an even
+   scatter. A cell's dressing is a judgement about the place: `tools/dress_cell.py` has five styles and
+   every cell records which one it used. ⚠️ The arena is `edges` on purpose — a combat floor has to
+   stay legible.
+15. ⚠️ **A generic wall kit composes generic buildings well and special-purpose ones badly.** The
+   blacksmith and the inn stay monolithic; the kit ships one wall height, 3.12 m.
+   `tools/compose_building.py` writes a shell from `<name> <wide> <deep> <storeys>`.
+16. ⚠️ **The Ember Crown map was re-laid (38F).** The settled cells form one contiguous city and every
+   wilds cell is outside it; the arena moved to 150 m, past the gate, as the last cell in the realm.
+   ⚠️ **A schedule carries a copy of its cell's `Center` as `Origin`** — moving a cell is never a
+   one-line edit. `data/regions/EmberCrown.tres` carries the arithmetic.
 
 ## Commands worth knowing
 
@@ -98,42 +114,3 @@ godot --headless --path . -- --economy          # the realm's price landscape
 godot --headless --path . -- --state            # the content census
 godot --path . -- --play                        # boot into the newest save
 ```
-
-11. ⚠️ **The nature megakit's ground cover is 4–10× life size while its trees are 1:1.** Scale lives
-    in each prop's `.import` (`nodes/root_scale`), never in a cell transform. And **grass goes in
-    patches** — an even scatter reads as litter, which is what `wilds_north`'s first pass looked
-    like. `ASSET_POLICY.md` §0.3.
-12. **A cell's dressing is a judgement about the place, not a setting.** `tools/dress_cell.py` has
-    five styles — `meadow`, `verge`, `shore`, `industrial`, `edges` — and every cell records which
-    one it used and the command to regenerate it. ⚠️ **The arena is `edges` on purpose**: a combat
-    floor has to stay legible, and scenery a player reads as cover is worse than a bare floor.
-    ⚠️ A banded style must be sampled **around the ring**, not by rejection — three separate
-    truncation bugs put town_hub's whole verge on one edge before a render caught it.
-
-13. ⚠️ **A generic wall kit composes generic buildings well and special-purpose ones badly.** The
-    blacksmith and the inn stay monolithic because their bespoke geometry — forge canopy, dormers —
-    is what makes them readable; a composed shell is a handsome barn that says nothing. And the kit
-    ships **one wall height, 3.12 m**, so `bld_cottage`'s 4.20 m silhouette cannot be built from it.
-    `tools/compose_building.py` writes a shell from `<name> <wide> <deep> <storeys>`.
-
-14. ⚠️ **MEASURING A MODEL'S ACCESSORS IS NOT MEASURING THE MODEL** (38P2). `prp_tome_stand`'s
-    POSITION min/max read 1.743 × 2.315 × 1.743, but its single node carries **scale 0.527**, so
-    the real prop is 0.92 × 1.22. The first collider authored off the raw numbers was over twice
-    too big in every axis — an invisible wall. Apply node scale (and `nodes/root_scale` from the
-    `.import`) to any measured bounding box, or the number is fiction. Adjacent to the documented
-    `Icosphere` trap and it fires the same way: a plausible number, wrong by a constant factor.
-15. ⚠️ **Solid-looking scenery with no collider is a real class of defect here, and 18 props had it**
-    — dead pines, rock clusters, six glaciers. When adding scenery: a collider child **inherits its
-    node's scale** (author in local units), a tree takes a **trunk** collider rather than a bounding
-    box, and a collider **outside the `NavigationRegion3D` blocks the player while the navmesh stays
-    ignorant of it**. `ASSET_POLICY.md` §0.6.
-
-16. ⚠️ **The Ember Crown map was re-laid (38F) and two documented decisions were reversed.** The
-    settled cells now form one contiguous city — town_hub + embermarket + hollowreach, with Tarn's
-    Landing adjoining — and every wilds cell is outside it. The **arena moved from 65 m off the town
-    square to 150 m**, past the gate and the wilds, as the last cell in the realm.
-    ⚠️ **The Crossway toll's old justification is gone**: wilds_north no longer sits between the town
-    and the gate, so the toll now stands on what is *beyond* the gate rather than the road to it.
-    `data/regions/EmberCrown.tres` carries the full arithmetic and the reasoning.
-    ⚠️ **A schedule carries a copy of its cell's `Center` as `Origin`** — six had to move with their
-    cells. Moving a cell is never a one-line edit.

@@ -94,4 +94,25 @@ public enum ServiceKind
     /// what is worth carrying. 38O's priced-search rule, third instance.
     /// </summary>
     Appraise,
+
+    /// <summary>
+    /// A master's commission (Phase 38Q): he makes something you already know how to make, charges for
+    /// his hands, and <b>supplies whatever materials you did not bring</b> at his own counter price.
+    ///
+    /// ⚠️ <b>The materials are the whole feature, and without them this kind should not exist.</b>
+    /// <c>town_hub</c> has a free public forge twenty metres from the smith, so a master charging for
+    /// labour alone is strictly worse than walking — correct, validated, saved and completely
+    /// imperceptible, which is the failure that got 38G parked. What the player buys here is not
+    /// having to go and dig up two iron ingots.
+    ///
+    /// ⚠️ <b>It is the first kind that is charged AFTER its verb, and the first that must be PRICED.</b>
+    /// Every other service's verb cannot fail once the gold is taken, so 38D charges first; a
+    /// commission fails cleanly whenever the pack is full and rolls itself back, so charging first
+    /// would be the only way to lose money for nothing — see <c>CraftingComponent.Commission</c>.
+    /// And 38O's priced-service rule (a fee that fails closed on the player who needs the counter
+    /// most) has been the right call three times running and is the wrong call here: a free master
+    /// hands out materials at cost, which is the shop spread deleted. <c>--validate</c> enforces
+    /// both directions, so neither can be "tidied" into the other.
+    /// </summary>
+    Commission,
 }

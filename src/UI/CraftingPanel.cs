@@ -1,6 +1,7 @@
 using Embervale.Core;
 using Embervale.Core.Events;
 using Embervale.Crafting;
+using Embervale.Economy;
 using Embervale.Entities;
 using Embervale.Items;
 using Embervale.Localization;
@@ -28,6 +29,12 @@ public partial class CraftingPanel : UiPanel
     private InventoryComponent? _inventory;
     private CraftingStationType _station;
     private string _stationName = "Crafting";
+
+    // 38Q: zero is a free public station, which is every station the game had before it. Non-zero
+    // turns this window into a master's order desk — he supplies what the player is short of, and
+    // every Craft button becomes a priced Commission.
+    private int _labourGold;
+    private ShopResource? _materialsShop;
     private bool _justOpened;
     private bool _salvageMode;
 
@@ -105,6 +112,8 @@ public partial class CraftingPanel : UiPanel
         _inventory = e.Player.GetComponent<InventoryComponent>();
         _station = e.Station;
         _stationName = e.StationName;
+        _labourGold = e.LabourGold;
+        _materialsShop = string.IsNullOrEmpty(e.MaterialsShopId) ? null : ShopDatabase.Get(e.MaterialsShopId);
 
         if (_crafting == null)
         {
@@ -146,9 +155,28 @@ public partial class CraftingPanel : UiPanel
         base._Process(delta);
     }
 
+    /// <summary>Whether this window is a master's order desk rather than a free public station (38Q).
+    /// Keyed off the shop, not the fee: without somewhere to price materials there is nothing to
+    /// supply, and a fee alone would charge for what the forge outside does for nothing.</summary>
+    private bool IsCommission => _materialsShop != null;
+
+    /// <summary>What the master wants for this piece: his labour plus whatever the pack is short of.
+    /// ⚠️ The one call — the card displays this number and <c>Commission</c> is handed the same one.
+    /// A second computation is how a quote and a bill drift apart.</summary>
+    private int CommissionPrice(CraftingRecipeResource recipe) =>
+        EconomyReport.CommissionCost(recipe, _materialsShop!, _inventory, _labourGold);
+
     private void Craft(CraftingRecipeResource recipe)
     {
-        _crafting?.Craft(recipe, _station);
+        if (IsCommission)
+        {
+            _crafting?.Commission(recipe, _station, CommissionPrice(recipe));
+        }
+        else
+        {
+            _crafting?.Craft(recipe, _station);
+        }
+
         MarkDirty(); // rebuild next frame (events also flag it)
     }
 
@@ -335,7 +363,14 @@ public partial class CraftingPanel : UiPanel
 
     private void AddRecipe(CraftingRecipeResource recipe)
     {
-        bool canCraft = _crafting != null && _crafting.CanCraft(recipe, _station);
+        // At a master's desk the gate is the money, not the materials — supplying those is what he is
+        // being paid for. Everything below reads `canCraft` for enabled/dim, so the two cases differ
+        // in this one line rather than in every branch under it.
+        int price = IsCommission ? CommissionPrice(recipe) : 0;
+        bool canCraft = IsCommission
+            ? _crafting != null && _crafting.CanMake(recipe, _station) &&
+                ShopPricing.CanAfford(price, _inventory?.CountOf(GameIds.Currency.Gold) ?? 0)
+            : _crafting != null && _crafting.CanCraft(recipe, _station);
 
         // The card's spine carries the *output's* rarity, so a recipe that produces something good
         // announces it before the player reads a word. A recipe they cannot afford is dimmed as a
@@ -352,7 +387,8 @@ public partial class CraftingPanel : UiPanel
         title.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         titleRow.AddChild(title);
 
-        Button craft = UiTheme.Action(Loc.T("craft.craft"));
+        Button craft = UiTheme.Action(
+            IsCommission ? Loc.TF("craft.commission", price) : Loc.T("craft.craft"));
         craft.Disabled = !canCraft;
         CraftingRecipeResource captured = recipe;
         craft.Pressed += () => Craft(captured);
@@ -376,8 +412,12 @@ public partial class CraftingPanel : UiPanel
             ItemResource? item = ItemDatabase.Get(ingredient.ItemId);
             string itemName = item?.DisplayName ?? ingredient.ItemId;
             bool enough = have >= ingredient.Quantity;
-            costs.AddChild(UiTheme.Chip(
-                $"{itemName} {have}/{ingredient.Quantity}", enough ? UiTheme.Good : UiTheme.Bad));
+
+            // A shortfall at a master's desk is not a refusal, it is a line on the bill — so it reads
+            // as him supplying it rather than as red missing materials. Same numbers, opposite
+            // meaning, and showing it red would tell the player the button is broken.
+            Color colour = enough ? UiTheme.Good : IsCommission ? UiTheme.Accent : UiTheme.Bad;
+            costs.AddChild(UiTheme.Chip($"{itemName} {have}/{ingredient.Quantity}", colour));
         }
 
         col.AddChild(costs);

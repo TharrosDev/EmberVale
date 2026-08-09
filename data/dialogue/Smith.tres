@@ -47,6 +47,16 @@ Condition = 13
 ConditionArg = "shop.ember_crown.smith"
 Goto = "closed"
 
+; 38Q: the order bench. No Effect and no OpenShop — a commission is placed at the bench beside him,
+; not in the conversation, because an entity gets one interactable and his is this dialogue. The line
+; exists so the bench is discoverable by talking to the man, which is how a player finds anything in
+; this town; ungated, because the bench answers "you know nothing I could make" on its own prompt and
+; a second gate here would be a second authority on the same question.
+[sub_resource type="Resource" id="ch_commission"]
+script = ExtResource("3_choice")
+Text = "dlg.smith.c_commission"
+Goto = "commission"
+
 [sub_resource type="Resource" id="ch_bye"]
 script = ExtResource("3_choice")
 Text = "dlg.smith.c_bye"
@@ -78,7 +88,7 @@ Text = "dlg.smith.c_thanks_bye"
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.smith.root"
-Choices = Array[Resource]([SubResource("ch_offer"), SubResource("ch_active"), SubResource("ch_thanks"), SubResource("ch_trade"), SubResource("ch_closed"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_offer"), SubResource("ch_active"), SubResource("ch_thanks"), SubResource("ch_trade"), SubResource("ch_closed"), SubResource("ch_commission"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_offer"]
 script = ExtResource("2_node")
@@ -104,6 +114,12 @@ Id = "thanks"
 Text = "dlg.smith.thanks"
 Choices = Array[Resource]([SubResource("ch_thanks_bye")])
 
+[sub_resource type="Resource" id="node_commission"]
+script = ExtResource("2_node")
+Id = "commission"
+Text = "dlg.smith.commission"
+Choices = Array[Resource]([SubResource("ch_bye")])
+
 [sub_resource type="Resource" id="node_closed"]
 script = ExtResource("2_node")
 Id = "closed"
@@ -115,4 +131,4 @@ script = ExtResource("1_dlg")
 Id = "dialogue.smith"
 SpeakerName = "dlg.smith.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_offer"), SubResource("node_accepted"), SubResource("node_inprogress"), SubResource("node_thanks"), SubResource("node_closed")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_offer"), SubResource("node_accepted"), SubResource("node_inprogress"), SubResource("node_thanks"), SubResource("node_commission"), SubResource("node_closed")])

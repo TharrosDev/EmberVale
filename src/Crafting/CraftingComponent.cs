@@ -96,15 +96,23 @@ public partial class CraftingComponent : EntityComponent, ISaveable
         return true;
     }
 
-    /// <summary>Whether the recipe can be crafted right now at the given station.</summary>
-    public bool CanCraft(CraftingRecipeResource? recipe, CraftingStationType station)
+    /// <summary>
+    /// Everything a craft needs except the materials: the recipe exists, the entity knows it, the
+    /// station will take it, and its output is a real item. Split out for 38Q — a master's commission
+    /// asks exactly this and then <em>sells</em> the missing half, so the two questions had to stop
+    /// being one.
+    /// </summary>
+    public bool CanMake(CraftingRecipeResource? recipe, CraftingStationType station)
     {
         return recipe != null
             && Knows(recipe.Id)
             && StationAccepts(recipe.Station, station)
-            && ItemDatabase.Get(recipe.OutputItemId) != null
-            && HasIngredients(recipe);
+            && ItemDatabase.Get(recipe.OutputItemId) != null;
     }
+
+    /// <summary>Whether the recipe can be crafted right now at the given station.</summary>
+    public bool CanCraft(CraftingRecipeResource? recipe, CraftingStationType station) =>
+        CanMake(recipe, station) && HasIngredients(recipe!);
 
     /// <summary>Crafts the recipe: consumes ingredients and adds the output. Returns false
     /// if it isn't currently craftable.</summary>
@@ -175,6 +183,82 @@ public partial class CraftingComponent : EntityComponent, ISaveable
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Has a master make <paramref name="recipe"/> for <paramref name="totalPrice"/> (Phase 38Q): he
+    /// supplies every ingredient the pack is short of, then crafts it as normal.
+    ///
+    /// ⚠️ <b>THE GOLD IS TAKEN LAST, INVERTING THE HOUSE RULE, AND FOR THE REASON THE HOUSE RULE
+    /// EXISTS.</b> <c>ServiceComponent</c> charges before every other verb because none of them can
+    /// fail once paid — a bed, a flag, a taught recipe. This one fails whenever the pack has no room
+    /// for the piece, and <see cref="Craft"/> already rolls itself back cleanly when it does. Charging
+    /// first would therefore be the only way in the whole battery to lose the money for nothing.
+    ///
+    /// ⚠️ <b><paramref name="totalPrice"/> is passed in rather than computed here</b>, and that is
+    /// deliberate: the window quotes a number and this charges one, and they must be the same number.
+    /// It comes from <c>EconomyReport.CommissionCost</c>, which is also what <c>--validate</c> proves
+    /// no output can be sold for more than.
+    /// </summary>
+    public bool Commission(CraftingRecipeResource? recipe, CraftingStationType station, int totalPrice)
+    {
+        if (recipe == null || _inventory == null || !CanMake(recipe, station))
+        {
+            return false;
+        }
+
+        if (totalPrice > 0 && _inventory.CountOf(GameIds.Currency.Gold) < totalPrice)
+        {
+            return false; // the prompt and the button have both already said so
+        }
+
+        // The materials he supplies go into the pack so that Craft consumes them the ordinary way.
+        // Handing over a finished piece without them would be a second crafting path, and the two
+        // would drift the first time a recipe grew an ingredient.
+        var supplied = new List<(string ItemId, int Quantity)>();
+        foreach (RecipeIngredient ingredient in recipe.IngredientList())
+        {
+            int missing = ingredient.Quantity - _inventory.CountOf(ingredient.ItemId);
+            if (missing <= 0)
+            {
+                continue;
+            }
+
+            if (ItemDatabase.Get(ingredient.ItemId) is not { } material ||
+                _inventory.AddItem(material, missing) < missing)
+            {
+                // A pack too full to hold the materials is refused whole. Anything already handed over
+                // goes back first: leaving it would be a free half-order, which is the mirror of the
+                // bug Craft's own rollback exists to prevent.
+                Return(supplied);
+                Log.Warn($"Commission '{recipe.Id}': no room for the materials; the order was refused.");
+                return false;
+            }
+
+            supplied.Add((ingredient.ItemId, missing));
+        }
+
+        if (!Craft(recipe, station))
+        {
+            Return(supplied);
+            return false; // Craft has already returned the player's own ingredients
+        }
+
+        if (totalPrice > 0)
+        {
+            _inventory.RemoveItem(GameIds.Currency.Gold, totalPrice);
+        }
+
+        return true;
+    }
+
+    /// <summary>Takes back materials the master supplied for an order that did not complete.</summary>
+    private void Return(List<(string ItemId, int Quantity)> supplied)
+    {
+        foreach ((string itemId, int quantity) in supplied)
+        {
+            _inventory!.RemoveItem(itemId, quantity);
+        }
     }
 
     /// <summary>

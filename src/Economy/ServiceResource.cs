@@ -95,4 +95,31 @@ public partial class ServiceResource : Resource
     /// That is the whole of "a bribe costs standing"; no second currency was needed to say it.
     /// </summary>
     [Export] public int ReputationDelta { get; set; }
+
+    [ExportGroup("Commission")]
+
+    /// <summary>
+    /// The station a <see cref="ServiceKind.Commission"/> master works at (Phase 38Q). The window he
+    /// opens is the ordinary crafting window filtered to this station, so what he will make is exactly
+    /// what the player could make standing at one — <c>CraftingPanel.StationShows</c> and
+    /// <c>CraftingComponent.Knows</c> already answer it and no second list is authored.
+    ///
+    /// ⚠️ <c>Hand</c> is refused by <c>--validate</c>: a hand recipe crafts anywhere, so a counter
+    /// offering only those charges for something the player can do standing still.
+    /// </summary>
+    [Export] public Crafting.CraftingStationType CommissionStation { get; set; } =
+        Crafting.CraftingStationType.Forge;
+
+    /// <summary>
+    /// The shop whose prices the master's materials come out of (a <c>shop.*</c> id) — normally his own
+    /// counter. Authored as a shop rather than as a second markup field so that his standing discount
+    /// and his specialty reach a commission exactly as they reach his shelf, with no second ramp to
+    /// drift out of step. <see cref="PriceGold"/> is the labour on top.
+    ///
+    /// ⚠️ <b>He is not required to stock what he supplies, and that is deliberate.</b> Commission
+    /// materials come out of the back, not off the shelf; requiring stock would make a master's
+    /// usefulness depend on 38B's restock clock, so the day he sold out he would also stop being able
+    /// to make anything. The shop is consulted for its <em>prices</em> only.
+    /// </summary>
+    [Export] public string MaterialsShopId { get; set; } = string.Empty;
 }

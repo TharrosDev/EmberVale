@@ -47,6 +47,7 @@
 [ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_modular.tscn" id="51_cottage_modular"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_anvil_log.gltf" id="52_anvil_log"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_workbench.gltf" id="53_workbench"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_table_large.gltf" id="54_order_bench"]
 
 [sub_resource type="NavigationMesh" id="NavMesh_hub"]
 geometry_parsed_geometry_type = 1
@@ -200,6 +201,18 @@ size = Vector3(3, 2.6, 0.5)
 
 [sub_resource type="BoxShape3D" id="Shape_stand"]
 size = Vector3(0.6, 1.1, 0.6)
+
+; 38Q, Bryn's order bench. prp_table_large has NO node scale and root_scale 1.0, so its 2.848 x
+; 0.813 x 1.097 is the real size — the same measurement embermarket.tscn records for Nessa's assay
+; counter, and this reuses the number rather than re-deriving it. ⚠️ 38P2's trap is that a measured
+; box is fiction until node scale and nodes/root_scale are applied; both are 1 here and were checked.
+;
+; ⚠️ prp_weapon_stand was authored here FIRST and rejected on the render — fifth time this trap has
+; fired. A smith's empty weapon rack is the right idea and the wrong object: from any side but
+; straight-on the slots are invisible and it reads as a SAWHORSE, so the prompt would be inviting the
+; player to commission a sword from a trestle. Nothing in the .tscn or the filename said so.
+[sub_resource type="BoxShape3D" id="Shape_order_bench"]
+size = Vector3(2.848, 0.813, 1.097)
 
 ; The cottage's own collider, sized to bld_cottage.glb (4.84 x 4.20 x 4.70). It is NOT Shape_bldgA:
 ; that box is the two-storey town house's, and a collider a metre and a half taller than the roof
@@ -750,6 +763,39 @@ script = ExtResource("9_station")
 Station = 3
 StationName = "Alchemy Table"
 
+; --- 38Q: Bryn's order bench ------------------------------------------------
+; The commission counter. Everything above it in this block is FREE — the forge eight metres away is
+; a public station and always has been — and that contrast is the feature rather than a problem with
+; it: the bench charges for the materials the player did not bring, and for nothing else the forge
+; would have done for them.
+;
+; ⚠️ A SEPARATE ENTITY FROM BRYN, AND FORCED. An entity gets one interactable and he carries a
+; DialogueComponent holding his shop and his quest, so a ServiceComponent on him would never fire.
+; 38P split a broker and her clerk for the same reason and it read better than it deserved: you talk
+; to the man, and you leave an order at the bench.
+;
+; Parented to Nav rather than to the root like the three stations above it, so its collider is inside
+; the NavigationRegion3D. NOW.md invariant 15: a collider outside it blocks the player while the
+; navmesh stays ignorant of it, and Bryn's routine walks him past this spot twice a day.
+;
+; ⚠️ Yaw 0 and this model are the RENDERED answers, not the reasoned ones. The table runs east-west
+; so its long side faces the square the player walks in from, and Bryn stands off its west end —
+; the smith behind his counter. See the shape comment above for the prop that was rejected on sight.
+[node name="OrderBench" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.9, 0, -4.3)
+script = ExtResource("1_entity")
+DisplayName = "Bryn's Order Bench"
+
+[node name="Collider" type="StaticBody3D" parent="Nav/OrderBench"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/OrderBench/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.406, 0)
+shape = SubResource("Shape_order_bench")
+
+[node name="Service" type="Node" parent="Nav/OrderBench"]
+script = ExtResource("34_service")
+ServiceId = "service.ember_crown.commission"
+
 [node name="Model" parent="Nav/BuildingNW" instance=ExtResource("50_townhouse")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.75, 0)
 
@@ -787,6 +833,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.25, 0)
 [node name="Model" parent="StationWorkbench" instance=ExtResource("53_workbench")]
 
 [node name="Model" parent="StationAlchemy" instance=ExtResource("15_alchemy")]
+
+[node name="Model" parent="Nav/OrderBench" instance=ExtResource("54_order_bench")]
 
 [node name="Model" parent="Relic" instance=ExtResource("20_relic")]
 

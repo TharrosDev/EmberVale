@@ -415,7 +415,18 @@ a wallet would be a second place for money to live and a second thing to persist
 | A bribe at the gate | `ServiceKind.Passage` — 10 gold **and 8 standing**, for one crossing. The standing is charged again at every counter in town through the 38C ramp | 38M |
 | An impound fine | `ServiceKind.Redeem` — **12 gold a unit** against whatever the wardens took, through `ContrabandLaw.Fine`. The only price in the game not authored as the price it charges, because the bill depends on how much was seized | 38O |
 | A broker's commission | `ShopResource.ConsignCommission` — **18%** of every consignment, taken out of a payout that is already the best in the realm (~0.70 of value against the most generous counter's 0.62). The player is paid more than anywhere else and still hands a slice back, which is why it is a sink rather than a discount | 38P |
+| A master's commission | `ServiceKind.Commission` — **60 gold of labour** per piece at Bryn's order bench, plus every ingredient the player did not bring, priced through his own shop's markup. The one sink in the table that is *cheaper* than the alternative it competes with: commissioning undercuts buying the finished piece off his shelf in proportion to what the player already carries | 38Q |
 | Repair | — | **pending 40A** |
+
+⚠️ **A commission is the first price in the economy the `ShopPricing` clamps do not protect, and the
+labour fee is load-bearing** (38Q). Every earlier price was a spread over one item's value, so
+`sell <= value <= buy` held by construction and 38P inherited it for free by calling `SellPrice`. A
+commission spans *two different items* — ingredients in, a finished piece out — and crafting is meant
+to add value, so nothing in the arithmetic stops buy-materials → commission → sell from paying for
+itself. `--validate` runs `CommissionRules.Exploitable` over every recipe the counter can reach, at
+the cheapest standing on the ramp, and refuses the data outright. **A future recipe, a keener buyer or
+a new specialty can each open the loop**, which is why the fee is authored well clear of the printed
+floor rather than on it.
 
 **The appraiser is free, and that is a decision too** (38P2). A valuation is an obvious per-use sink and it was deliberately not taken: `ServiceRules` refuses any service the player cannot afford *before* the verb runs, so a fee fails closed on the player with an empty purse and a full pack — exactly the person who walked over to ask what is worth carrying. An appraisal only the rich can buy is not a sink, it is a lock on the one screen that explains the economy. Same reasoning as 38O's free warden search and 38P's free consignment counter; `--validate` enforces all three.
 

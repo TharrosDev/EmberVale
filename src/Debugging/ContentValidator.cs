@@ -1221,6 +1221,93 @@ public static class ContentValidator
                 }
 
                 break;
+
+            case ServiceKind.Commission:
+                ValidateCommission(service, id, issues);
+                break;
+        }
+    }
+
+    /// <summary>
+    /// A master's commission counter (Phase 38Q). Four rules, and the last of them is the only thing
+    /// in the battery guarding an <b>unbounded gold loop</b> rather than a broken reference.
+    ///
+    /// ⚠️ <b>The free-service rule that fired three times running does not apply here, and this comment
+    /// is the reason nobody should "tidy" it into place.</b> 38O's search, 38P's collect counter and
+    /// 38P2's appraiser are all forced free because <see cref="ServiceRules"/> refuses an unaffordable
+    /// service before the verb runs, so a fee would fail closed on exactly the player who needs it. A
+    /// commission is the opposite case: it <em>hands over goods</em>, so a free one is the realm's
+    /// materials shop with the spread deleted.
+    /// </summary>
+    private static void ValidateCommission(ServiceResource service, string id, List<string> issues)
+    {
+        if (service.CommissionStation == CraftingStationType.Hand)
+        {
+            issues.Add(
+                $"service '{id}' commissions at the Hand station — hand recipes craft anywhere, so the " +
+                "counter would charge for something the player can do standing still");
+        }
+
+        if (service.PriceGold <= 0)
+        {
+            issues.Add(
+                $"service '{id}' commissions for {service.PriceGold} gold — a master who charges no " +
+                "labour hands out materials at his own cost, which is the shop spread deleted");
+        }
+
+        if (service.UnlockFlagId.Length > 0 || service.GrantedFlagId.Length > 0)
+        {
+            issues.Add(
+                $"service '{id}' is a commission counter with a flag authored on it — nothing reads it, " +
+                "and a one-off receipt would make every later order silently do nothing");
+        }
+
+        if (ShopDatabase.Get(service.MaterialsShopId) is not { } shop)
+        {
+            issues.Add(
+                $"service '{id}' prices its materials from unknown shop '{service.MaterialsShopId}' — " +
+                "without one there is nothing to charge for what the master supplies, which is the " +
+                "whole of what he sells");
+            return; // every rule below prices through that shop
+        }
+
+        var any = false;
+        foreach (CraftingRecipeResource recipe in RecipeDatabase.All)
+        {
+            if (!CraftingComponent.StationAccepts(recipe.Station, service.CommissionStation) ||
+                ItemDatabase.Get(recipe.OutputItemId) is not { } output)
+            {
+                continue;
+            }
+
+            any = true;
+
+            // ⚠️ THE LOAD-BEARING ONE. Buy every material from the master, have him make the piece,
+            // sell it — that is an unbounded loop with no cooldown, and unlike every earlier price in
+            // the economy the ShopPricing clamps cannot close it: a commission spans two different
+            // items, and crafting is meant to add value. Only the labour fee closes it.
+            //
+            // Checked at its cheapest: Allied standing takes 15% off the buy side (38C), and the sell
+            // side does not move with standing at all, so this is the corner the loop opens at first.
+            int cost = EconomyReport.CommissionCost(
+                recipe, shop, ReputationTier.Allied, pack: null, service.PriceGold);
+            EconomyReport.BestBuyers(output, output.TagList(), out Offer best, out _);
+
+            if (best.Has && CommissionRules.Exploitable(cost, best.Price, recipe.OutputQuantity))
+            {
+                issues.Add(
+                    $"service '{id}' commissions '{recipe.Id}' for {cost} gold at best standing, and " +
+                    $"'{best.Shop}' pays {best.Price} x{recipe.OutputQuantity} for the result — buy the " +
+                    "materials, commission it, sell it, repeat: raise the labour fee above " +
+                    $"{best.Price * Mathf.Max(1, recipe.OutputQuantity)}");
+            }
+        }
+
+        if (!any)
+        {
+            issues.Add(
+                $"service '{id}' commissions at {service.CommissionStation} and no authored recipe uses " +
+                "that station — its window would open empty");
         }
     }
 

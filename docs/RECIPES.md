@@ -471,6 +471,27 @@
    and 40B's rule is that cut systems leave no stub — so a kind resolving to nothing would be worse
    than its absence. The deferral is recorded in `docs/DESIGN.md` §6 against Phase 40A.
 
+9. **A commission counter (38Q) is this recipe plus two fields, and it breaks two of the habits above.**
+   `Kind = Commission`, `CommissionStation` (never `Hand`), `MaterialsShopId` pointing at the master's
+   own shop, and `PriceGold` as the labour. He opens the ordinary `CraftingPanel` filtered to that
+   station and supplies whatever the pack is short of, at that shop's prices and the player's standing.
+   ⚠️ **It must be PRICED, and `--validate` enforces that** — the opposite of the free-service rule
+   that fired for 38O's search, 38P's collect counter and 38P2's appraiser. Those are free because an
+   unaffordable service fails closed on the player who needs it; a commission *hands over goods*, so a
+   free one is the materials shop with the spread deleted.
+   ⚠️ **It is charged AFTER its verb**, the only kind that is (`CraftingComponent.Commission`). A full
+   pack refuses the piece and rolls the whole craft back, so charging first would be the one way in the
+   battery to lose the money for nothing.
+   ⚠️ **A commission is the first price the `ShopPricing` clamps do not protect.** It spans two
+   different items — ingredients in, output out — and crafting is meant to add value, so buy-make-sell
+   is an unbounded loop that only the labour fee closes. `--validate` runs
+   `CommissionRules.Exploitable` over every recipe at the station, at Allied standing, and names the fee
+   you need. **Do not author the fee on the floor it prints** — a later recipe or a keener buyer eats
+   the margin.
+   ⚠️ **Sanity-check what the counter is worth next to a free station** before authoring one at all.
+   `town_hub` has three public stations; a master charging for labour alone would be strictly worse
+   than walking twenty metres, which is the "correct and imperceptible" failure that got 38G parked.
+
 ## Generators — do not hand-write boilerplate (agent-ergonomics pass)
 
 Two committed scripts cover the repo's highest-volume authoring. Both **print to stdout** so the

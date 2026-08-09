@@ -1,0 +1,71 @@
+[gd_resource type="Resource" script_class="ServiceResource" format=3]
+
+[ext_resource type="Script" path="res://src/Economy/ServiceResource.cs" id="1_service"]
+
+; Bryn's order bench (Phase 38Q) — the master's commission counter. He makes anything the player
+; already knows how to make at a forge, and SUPPLIES WHATEVER THEY DID NOT BRING at his own counter
+; price, on top of this fee for his hands.
+;
+; ⚠️ THE MATERIALS ARE THE WHOLE FEATURE, AND WITHOUT THEM THIS FILE SHOULD NOT EXIST. StationForge
+; stands eight metres from this bench and is FREE. A master who charged for labour on a recipe the
+; player can already supply would be strictly worse than walking over to it — correct, validated,
+; saved and completely imperceptible, which is the failure that got 38G parked. What is being sold
+; here is not having to go and dig up three iron ingots.
+;
+; ⚠️ PRICED, AND --validate ENFORCES THAT IT IS PRICED — the opposite of the last three services to
+; ship. 38O's search, 38P's collect counter and 38P2's appraisal are all forced FREE because
+; ServiceRules refuses an unaffordable service before the verb runs, so a fee fails closed on exactly
+; the player who needs the counter. A commission hands over GOODS, so the same reasoning inverts: a
+; free master is the realm's materials shop with the spread deleted. Do not "correct" this to 0.
+;
+; PriceGold 60 — the labour, and it is the only thing standing between the game and an unbounded gold
+; loop. Buy the materials from Bryn, have him make the piece, sell the piece: unlike every earlier
+; price in the economy the ShopPricing clamps CANNOT close that, because a commission spans two
+; different items and crafting is meant to add value. Only one recipe in the realm is anywhere near
+; it, and these numbers are --validate's own rather than reasoned out: dropped to a fee of 1, the
+; single failure printed is
+;
+;   recipe.kit.alchemy  materials 69 at Allied standing, and the smith pays 81 for the kit
+;
+; so the floor is a fee above 12. Every other forge recipe stayed silent even at a fee of 1: the
+; gear ones cost far more in materials than the piece fetches, which is crafting working as intended.
+;
+; 60 is chosen well clear of that floor rather than on it, because the margin an author leaves is the
+; margin a later recipe, a keener buyer or a new specialty removes — and --validate checks it in both
+; directions every boot, at Allied standing, which is the cheapest corner the loop could open at.
+; 60 is also roughly two thirds of a steel sword's shelf price, which is the feel wanted:
+; commissioning undercuts buying the finished piece off his shelf in exact proportion to what the
+; player already carries, and never by enough to be worth doing for its own sake.
+;
+; MaterialsShopId is his own shop rather than a second markup field, so his standing discount and his
+; metal specialty reach a commission exactly as they reach his shelf — one ramp, not two. ⚠️ He is
+; NOT required to stock what he supplies: commission materials come out of the back, and requiring
+; stock would mean the day he sold out he also stopped being able to make anything.
+;
+; CommissionStation Forge (1). What he will make is what the player knows at a forge — no second list
+; is authored, because CraftingPanel and CraftingComponent.Knows already answer that question and a
+; second answer is a second thing to keep in step.
+;
+; ⚠️ A SEPARATE INTERACTABLE FROM BRYN HIMSELF, AND IT HAS TO BE. An entity gets one interactable
+; (ServiceComponent's own warning) and he carries a DialogueComponent — his conversation holds a quest
+; and his shop. So the order bench stands on its own beside him, which is 38P2's appraiser shape and
+; 38P's broker-and-clerk split for the same reason: you talk to the man and you leave an order at the
+; bench.
+;
+; No flag of any kind. Commissioning is repeatable by nature and answers "nothing to do" from what the
+; player knows, exactly as the warden's search answers it from the pack.
+
+[resource]
+script = ExtResource("1_service")
+Id = "service.ember_crown.commission"
+NameKey = "service.ember_crown.commission.name"
+Kind = 9
+PriceGold = 60
+FactionId = "faction.villagers"
+UnlockFlagId = ""
+RestHour = 8
+XpReward = 0
+GrantedFlagId = ""
+ReputationDelta = 0
+CommissionStation = 1
+MaterialsShopId = "shop.ember_crown.smith"
