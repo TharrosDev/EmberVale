@@ -115,6 +115,9 @@ public partial class ServiceComponent : InteractableComponent
             case ServiceKind.Collect:
                 Collect(instigator);
                 break;
+            case ServiceKind.Appraise:
+                EventBus.Instance?.Publish(new AppraisalOpenedEvent(instigator, Loc.T(service.NameKey)));
+                break;
             default:
                 StableMount(service, instigator);
                 break;
@@ -327,6 +330,13 @@ public partial class ServiceComponent : InteractableComponent
             return DueGold() == 0;
         }
 
+        // 38P2, answered from the pack the way Search's is: an appraiser with nothing to look at
+        // would open an empty window. "Correct, and nothing to do" rather than a refusal.
+        if (service.Kind == ServiceKind.Appraise)
+        {
+            return Player()?.GetComponent<InventoryComponent>() is not { } pack || !HasAnythingToValue(pack);
+        }
+
         if (!string.IsNullOrEmpty(service.UnlockFlagId))
         {
             return Player()?.GetComponent<StoryFlagsComponent>()?.Has(service.UnlockFlagId) ?? false;
@@ -400,6 +410,22 @@ public partial class ServiceComponent : InteractableComponent
         return ShopPricing.ServicePrice(gold, StandingWith(service.FactionId));
     }
 
+    /// <summary>Whether the pack holds anything an appraiser could put a price on (38P2). Uses
+    /// <see cref="ShopPricing.Sellable"/> — the same refusal the vendor window applies — so a pack of
+    /// quest objects and coin reads as nothing to value rather than as an empty valuation.</summary>
+    private static bool HasAnythingToValue(InventoryComponent pack)
+    {
+        foreach (ItemStack stack in pack.Stacks)
+        {
+            if (ShopPricing.Sellable(stack.Instance.Type, stack.Instance.TemplateId == GameIds.Currency.Gold))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static int ImpoundedUnits() => Resolve<ContrabandImpound>()?.Units ?? 0;
 
     /// <summary>Gold the consignment shelf has earned and not yet handed over (38P). Read by both the
@@ -434,6 +460,7 @@ public partial class ServiceComponent : InteractableComponent
         ServiceKind.Search => "service.prompt_search_clean",
         ServiceKind.Redeem => "service.prompt_redeem_empty",
         ServiceKind.Collect => "service.prompt_collect_empty",
+        ServiceKind.Appraise => "service.prompt_appraise_empty",
         _ => "service.prompt_free",
     };
 
@@ -453,6 +480,7 @@ public partial class ServiceComponent : InteractableComponent
     {
         ServiceKind.Search => "service.prompt_search",
         ServiceKind.Collect => "service.prompt_collect",
+        ServiceKind.Appraise => "service.prompt_appraise",
         _ => "service.prompt_free",
     };
 

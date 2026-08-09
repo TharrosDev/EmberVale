@@ -398,7 +398,7 @@ through `InventoryComponent`; loot tables roll gold), and deliberately still has
 a wallet would be a second place for money to live and a second thing to persist. Balance is
 **Phase 56**; the machinery is built.
 
-**The sinks, as they actually exist** (last extended by 38O; 38L added merchants, not new kinds of sink):
+**The sinks, as they actually exist** (last extended by 38P2; 38L added merchants, not new kinds of sink):
 
 | Sink | Where | Since |
 | ---- | ----- | ----- |
@@ -414,7 +414,10 @@ a wallet would be a second place for money to live and a second thing to persist
 | A road permit | `ServiceKind.Passage` — 250 gold once, then the Crossway is free. Ten crossings to break even | 38M |
 | A bribe at the gate | `ServiceKind.Passage` — 10 gold **and 8 standing**, for one crossing. The standing is charged again at every counter in town through the 38C ramp | 38M |
 | An impound fine | `ServiceKind.Redeem` — **12 gold a unit** against whatever the wardens took, through `ContrabandLaw.Fine`. The only price in the game not authored as the price it charges, because the bill depends on how much was seized | 38O |
+| A broker's commission | `ShopResource.ConsignCommission` — **18%** of every consignment, taken out of a payout that is already the best in the realm (~0.70 of value against the most generous counter's 0.62). The player is paid more than anywhere else and still hands a slice back, which is why it is a sink rather than a discount | 38P |
 | Repair | — | **pending 40A** |
+
+**The appraiser is free, and that is a decision too** (38P2). A valuation is an obvious per-use sink and it was deliberately not taken: `ServiceRules` refuses any service the player cannot afford *before* the verb runs, so a fee fails closed on the player with an empty purse and a full pack — exactly the person who walked over to ask what is worth carrying. An appraisal only the rich can buy is not a sink, it is a lock on the one screen that explains the economy. Same reasoning as 38O's free warden search and 38P's free consignment counter; `--validate` enforces all three.
 
 **Repair is not built, and that is a decision rather than an omission.** No durability or condition
 concept exists anywhere in the game: `StatType` has no such member and nothing in `src/` mentions wear.

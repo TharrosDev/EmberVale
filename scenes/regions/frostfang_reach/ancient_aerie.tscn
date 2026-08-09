@@ -11,8 +11,11 @@
 radius = 1.5
 height = 1.6
 
+; ⚠️ Re-measured in 38P2. prp_tome_stand's POSITION accessors read 1.743 x 2.315 x 1.743, but its
+; single node carries scale 0.527, so the real prop is 0.919 x 1.220 x 0.919. The old (0.5, 0.7, 0.4)
+; left roughly half a metre of solid-looking plinth with no collider at all - NOW.md invariant 14.
 [sub_resource type="BoxShape3D" id="Shape_tome"]
-size = Vector3(0.5, 0.7, 0.4)
+size = Vector3(0.919, 1.220, 0.919)
 
 [sub_resource type="BoxShape3D" id="Shape_glacier"]
 size = Vector3(8.43, 4.96, 6.02)
@@ -78,7 +81,7 @@ DisplayName = "The Hoard"
 [node name="Collider" type="StaticBody3D" parent="Hoard"]
 
 [node name="Shape" type="CollisionShape3D" parent="Hoard/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.61, 0)
 shape = SubResource("Shape_tome")
 
 [node name="Tome" type="Node" parent="Hoard"]

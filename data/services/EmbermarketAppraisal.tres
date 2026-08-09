@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="ServiceResource" format=3]
+
+[ext_resource type="Script" path="res://src/Economy/ServiceResource.cs" id="1_service"]
+
+; Nessa Brightcut's scales (Phase 38P2) — the appraiser, and the first service in the game that
+; changes nothing at all. It reads the pack and opens a valuation: who pays most for each thing, and
+; what Mirelle would list it for.
+;
+; ⚠️ FREE, AND --validate ENFORCES IT. ServiceRules refuses any service the player cannot afford
+; BEFORE the verb runs, so a fee would fail closed on the player with an empty purse and a full pack —
+; precisely the person who walked across the square to ask what is worth carrying. That is 38O's
+; priced-search rule for the third time, and it is the reason a perfectly good gold sink is not taken
+; here: a valuation only the rich can buy is a lock on the one screen that explains the economy.
+; The decision and its reason are in docs/DESIGN.md §6 so nobody re-litigates it.
+;
+; ⚠️ A SEPARATE INTERACTABLE FROM NESSA HERSELF, AND IT HAS TO BE. An entity gets one interactable
+; (ServiceComponent's own warning) and she carries a DialogueComponent, because the Embermarket's ten
+; residents talk. So the scales stand on their own beside her stall — which is also how her talk line
+; now reads: she tells you to put it on the scales rather than handing you a number herself.
+;
+; No flag of any kind. Appraising is repeatable by nature and answers "nothing to do" from the pack,
+; exactly as the warden's search does.
+;
+; FactionId villagers: with PriceGold 0 the standing ramp returns 0 at every tier, so it is authored
+; for the hostile refusal, which does apply — a player the market has turned on gets no valuations.
+
+[resource]
+script = ExtResource("1_service")
+Id = "service.embermarket.appraisal"
+NameKey = "service.embermarket.appraisal.name"
+Kind = 8
+PriceGold = 0
+FactionId = "faction.villagers"
+UnlockFlagId = ""
+RestHour = 8
+XpReward = 0
+GrantedFlagId = ""
+ReputationDelta = 0

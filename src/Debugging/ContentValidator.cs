@@ -1177,6 +1177,28 @@ public static class ContentValidator
 
                 break;
 
+            case ServiceKind.Appraise:
+                // Third instance of 38O's priced-search rule, and the sharpest: ServiceRules refuses
+                // an unaffordable service before the verb runs, so a fee here fails closed on the
+                // player with an empty purse and a full pack — exactly the person who walked over to
+                // ask what is worth carrying. An appraisal that only the rich can buy is not a sink,
+                // it is a lock on the one screen that explains the economy.
+                if (service.PriceGold != 0)
+                {
+                    issues.Add(
+                        $"service '{id}' charges {service.PriceGold} gold to appraise — a valuation is " +
+                        "the advice a broke player most needs, and ServiceRules would refuse it to them");
+                }
+
+                if (service.UnlockFlagId.Length > 0 || service.GrantedFlagId.Length > 0)
+                {
+                    issues.Add(
+                        $"service '{id}' is an appraiser with a flag authored on it — nothing reads it, " +
+                        "and a one-off receipt would make every later visit silently do nothing");
+                }
+
+                break;
+
             case ServiceKind.Passage:
                 // A permit records itself in UnlockFlagId; a bribe grants a consumable pass in
                 // GrantedFlagId. With neither, the gold is taken and the road stays shut — and the
