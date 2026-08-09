@@ -1,0 +1,58 @@
+[gd_resource type="Resource" script_class="ShopResource" format=3]
+
+[ext_resource type="Script" path="res://src/Economy/ShopResource.cs" id="1_shop"]
+
+; Mirelle Vantry, the consignment broker of the Embermarket (Phase 38P) — the eleventh resident, and the
+; first counter in the realm that is not a counter at all. She buys nothing. She takes a thing, puts it
+; on her shelf, and pays when it sells.
+;
+; ⚠️ SHE EXISTS BECAUSE EVERY OTHER COUNTER IS CAPPED TWICE. 38C gave each merchant a purse that runs
+; dry; 38H made her appetite fall as a stack is dumped on her. Both are deliberate sinks and both work.
+; What neither of them left room for is the ONE expensive thing — a rolled Legendary is worth more than
+; any purse in the realm, so the game's best loot was also its least sellable. A broker fronts no money,
+; so neither cap applies to her, and the item's whole value can move in one press.
+;
+; THE THREE NUMBERS ARE THE DESIGN:
+;   ConsignFraction 0.85 — above every SellFraction in the realm (the most generous is Marta Quill's
+;     0.62 at the mine, 38N1). Waiting has to pay more than not waiting or nobody would ever wait.
+;   ConsignCommission 0.18 — the sink. The player is paid better than anywhere else and still hands a
+;     slice back, so consignment moves gold OUT of the economy rather than only around it (DESIGN.md §6).
+;     Net is therefore 0.85 * 0.82 = ~0.70 of value: comfortably the best payout in the game, and still
+;     nowhere near the 1.0 that ShopPricing's clamp would refuse to exceed anyway.
+;   ConsignDays 3 — the cost is time, and three days is the same clock the shops restock on, so a player
+;     doing the market circuit collects on their next circuit rather than making a special trip.
+;
+; ⚠️ HER REFUSALS ARE THE DESIGN, which is 38N1's carried lesson and 38O's after it. She takes the small
+; dear things — jewelry, gems, relics, arcane work, weapons and armour — and NOT ore, food, fish, fuel or
+; textile. A broker who took everything would quietly become the correct place to sell everything, which
+; flattens the five settlements 38K–38O spent five sessions making different from each other. Bregan's
+; ore still goes to Bregan.
+;
+; ⚠️ NO STOCK, NO PURSE, and --validate enforces both. She sells nothing of her own and fronts no money,
+; so either field authored here would be one the game never reads.
+;
+; ⚠️ CONTRABAND NEEDS NO ENTRY AND MUST NOT HAVE ONE. TradeTags.Accepts fails closed on it (38O): a shop
+; that does not name `contraband` refuses it whatever else its list says. A stolen signet is `jewelry`
+; and Mirelle turns it down without a line of code here — which is right. She keeps a ledger, and the
+; wharf is where things go when you would rather nobody kept one.
+;
+; Hours 9..18: the ordinary square hours. She is not a secret, and a broker who is closed when the
+; player comes back from the wilds at dusk is a mechanic they meet once and forget.
+
+[resource]
+script = ExtResource("1_shop")
+Id = "shop.embermarket.consignment"
+NameKey = "shop.embermarket.consignment.name"
+FactionId = "faction.villagers"
+AcceptedTags = Array[String](["jewelry", "gem", "relic", "arcane", "weapon", "armor", "luxury"])
+Specialties = Array[String](["relic", "jewelry"])
+Stock = Array[Resource]([])
+RestockDays = 0
+BuyMarkup = 1.5
+SellFraction = 0.4
+PurseGold = 0
+OpenHour = 9
+CloseHour = 18
+ConsignFraction = 0.85
+ConsignDays = 3
+ConsignCommission = 0.18

@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="ScheduleResource" format=3]
+
+[ext_resource type="Script" path="res://src/Npc/ScheduleResource.cs" id="1_sched"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleEntry.cs" id="2_entry"]
+
+; Mirelle Vantry (Phase 38P).
+;
+; ⚠️ DESTINATIONS ARE CELL-LOCAL. Origin carries the Embermarket's Center (0, 0, 46), so these read
+; straight out of embermarket.tscn without anyone doing the arithmetic by hand. A raw world destination
+; copied from a cell .tscn lands a cell's width away and nothing reports it.
+;
+; ⚠️ These hours track shop.embermarket.consignment (9:00-18:00) and are kept in step BY HAND. A
+; ScheduleId lives in a .tscn, which ContentValidator cannot scan, so if the shop's hours move, move
+; these with them or the player finds Mirelle standing at a stall that refuses to take anything.
+;
+; ⚠️ HALDER HAS NO SCHEDULE AND MUST NOT GET ONE. The counter is the only half of consignment with no
+; hours: a player who lists at five and returns at seven has already earned the money, and a clerk who
+; walks off at six turns a paid sale into a locked door. Mirelle keeps hours; the coin does not.
+;
+; Both destinations are on the market floor. ScheduleComponent walks a straight line with no navmesh
+; pathing, so the locking-up spot is a couple of metres behind the stall, not off the square.
+
+[sub_resource type="Resource" id="e_open"]
+script = ExtResource("2_entry")
+StartHour = 9
+Activity = "Opening the ledger"
+Destination = Vector3(14.2, 0, 3.5)
+
+[sub_resource type="Resource" id="e_trade"]
+script = ExtResource("2_entry")
+StartHour = 10
+Activity = "Taking listings"
+Destination = Vector3(14.2, 0, 3.5)
+
+[sub_resource type="Resource" id="e_close"]
+script = ExtResource("2_entry")
+StartHour = 18
+Activity = "Locking the ledger away"
+Destination = Vector3(15.4, 0, 4.6)
+
+[resource]
+script = ExtResource("1_sched")
+Id = "schedule.embermarket.consignment"
+Origin = Vector3(0, 0, 46)
+Entries = Array[Resource]([SubResource("e_open"), SubResource("e_trade"), SubResource("e_close")])

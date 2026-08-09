@@ -707,6 +707,60 @@ public static class ContentValidator
     }
 
     /// <summary>
+    /// A consignment house is usable (Phase 38P). Four rules, each of which passes as well-formed data
+    /// and reads in game as the broker being broken rather than misconfigured.
+    ///
+    /// ⚠️ Every one of them is gated on <see cref="ShopResource.IsConsignment"/>, so the whole block is
+    /// inert for the twenty-two shops authored before 38P — the field arrives without touching one of
+    /// them, the way <c>InvestmentTiers</c> did in 38I.
+    ///
+    /// ⚠️ They are kept separable (38L's finding, restated in 38O): each reads a different field, so a
+    /// break in one cannot trip another and every negative test names exactly the rule under it.
+    /// </summary>
+    private static void ValidateShopConsignment(ShopResource shop, List<string> issues)
+    {
+        if (!shop.IsConsignment)
+        {
+            return;
+        }
+
+        string id = shop.Id;
+
+        if (shop.ConsignDays < 1)
+        {
+            issues.Add(
+                $"consignment shop '{id}' sells a listing in {shop.ConsignDays} days — a non-positive " +
+                "period never matures (ShopStock.IsRestockDue), so the player could never collect");
+        }
+
+        // A broker who pays no better than a counter is content nobody would ever walk to. The realm's
+        // most generous sell fraction is 0.62 (38N1); a broker is authored above every one of them.
+        if (shop.ConsignFraction <= shop.SellFraction)
+        {
+            issues.Add(
+                $"consignment shop '{id}' lists at {shop.ConsignFraction} and buys outright at " +
+                $"{shop.SellFraction} — waiting days for the same money or less is never worth doing");
+        }
+
+        if (shop.ConsignCommission < 0f || shop.ConsignCommission >= 1f)
+        {
+            issues.Add(
+                $"consignment shop '{id}' takes a commission of {shop.ConsignCommission} — outside " +
+                "0..1 it either pays the player a bonus for listing or keeps the whole sale");
+        }
+
+        // She never owns the goods, so the two things a counter needs are meaningless on her: a purse
+        // she would never spend, and a shelf she has nothing to put on it. Authored, they read as a
+        // merchant whose Buy tab is silently empty and whose purse never moves.
+        if (shop.PurseGold > 0 || shop.StockList().Count > 0)
+        {
+            issues.Add(
+                $"consignment shop '{id}' authors a purse or stock — a broker fronts no money and " +
+                "sells nothing of her own, so neither would ever be read");
+        }
+    }
+
+    /// <summary>
     /// A fence's two-sided cost is coherent (Phase 38O). Three ways to author it wrong, and every one
     /// of them is well-formed data that reads in game as the penalty being broken rather than missing.
     ///
@@ -793,7 +847,13 @@ public static class ContentValidator
             }
 
             List<ShopStockEntry> stock = shop.StockList();
-            if (stock.Count == 0 && shop.LeveledTable == null)
+
+            // ⚠️ A broker is the one shop whose window is SUPPOSED to open with nothing on the left
+            // (38P): she sells nothing of her own, and the pack side is the whole interface. Note the
+            // exemption is here rather than in ValidateShopConsignment, because this is the rule that
+            // has to know about the exception — a second rule saying "unless" would leave two
+            // authorities on when an empty shelf is a defect.
+            if (stock.Count == 0 && shop.LeveledTable == null && !shop.IsConsignment)
             {
                 issues.Add($"shop '{id}' stocks nothing — its window would open empty");
             }
@@ -844,6 +904,7 @@ public static class ContentValidator
 
             ValidateShopTrade(shop, issues);
             ValidateShopContraband(shop, issues);
+            ValidateShopConsignment(shop, issues);
 
             if (shop.FactionId.Length > 0 && FactionDatabase.Get(shop.FactionId) == null)
             {
@@ -923,6 +984,7 @@ public static class ContentValidator
         }
 
         ValidateConfiscationIsRecoverable(issues);
+        ValidateConsignmentIsPayable(issues);
     }
 
     /// <summary>
@@ -961,6 +1023,44 @@ public static class ContentValidator
         {
             issues.Add($"service '{id}' confiscates contraband but no impound counter exists to sell it " +
                 "back — a seizure would be permanent, which is theft rather than a fine");
+        }
+    }
+
+    /// <summary>
+    /// A consignment listing can be paid out (Phase 38P) — 38O's recoverability rule in its second
+    /// instance, and the shape generalises: <b>a system that takes something from the player must have
+    /// the thing that gives it back authored somewhere in the realm</b>.
+    ///
+    /// A broker with no clerk anywhere is worse than a broken shop. She takes the goods, prices them
+    /// generously, records the sale, and there is no counter in the world to hand the money over — so
+    /// the player watches an item leave their pack and is paid for it never. Nothing about the shop
+    /// resource can see that, which is why the rule lives out here as a union across services rather
+    /// than beside the other four.
+    /// </summary>
+    private static void ValidateConsignmentIsPayable(List<string> issues)
+    {
+        bool collects = false;
+        foreach (ServiceResource service in ServiceDatabase.All)
+        {
+            if (service.Kind == ServiceKind.Collect)
+            {
+                collects = true;
+                break;
+            }
+        }
+
+        if (collects)
+        {
+            return;
+        }
+
+        foreach (ShopResource shop in ShopDatabase.All)
+        {
+            if (shop.IsConsignment)
+            {
+                issues.Add($"shop '{shop.Id}' takes goods on consignment but no counter anywhere in the " +
+                    "realm pays the earnings out — a listing would be an item given away for nothing");
+            }
         }
     }
 
@@ -1051,6 +1151,28 @@ public static class ContentValidator
                     issues.Add(
                         $"service '{id}' is an impound counter with a flag authored on it — nothing " +
                         "reads it, and a one-off receipt would make the second confiscation permanent");
+                }
+
+                break;
+
+            case ServiceKind.Collect:
+                // The broker's commission is the only cut consignment takes. A fee to be handed money
+                // already owed is a second one, charged on the player's own gold, and ServiceRules
+                // would refuse the payout outright to anyone too broke to pay it — so a player whose
+                // only money is on the shelf could never get at it.
+                if (service.PriceGold != 0)
+                {
+                    issues.Add(
+                        $"service '{id}' charges {service.PriceGold} gold to collect consignment " +
+                        "earnings — the commission is already taken, and a player with no coin but a " +
+                        "full shelf could never afford to be paid");
+                }
+
+                if (service.UnlockFlagId.Length > 0 || service.GrantedFlagId.Length > 0)
+                {
+                    issues.Add(
+                        $"service '{id}' is a consignment counter with a flag authored on it — nothing " +
+                        "reads it, and a one-off receipt would make every later listing unpayable");
                 }
 
                 break;

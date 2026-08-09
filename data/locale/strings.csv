@@ -131,6 +131,9 @@ shop.purse,Purse: {0}
 shop.price,{0}g
 shop.buy,Buy
 shop.sell,Sell
+shop.consign,List
+shop.consign_price,"{0}g in {1}d"
+shop.consign_shelf,On her shelf: {0}
 shop.empty,Nothing for sale.
 shop.pack_empty,Nothing to sell.
 shop.cannot_afford,You cannot afford this.
@@ -231,6 +234,9 @@ service.prompt_search,"{0} — stand still and be searched"
 service.prompt_search_clean,"{0} — you have nothing to declare"
 service.prompt_redeem,"{0} — pay the fine and take your goods ({1} gold)"
 service.prompt_redeem_empty,"{0} — they are holding nothing of yours"
+service.embermarket.collect.name,The Consignment Counter
+service.prompt_collect,"{0} — collect what has sold ({1} gold)"
+service.prompt_collect_empty,"{0} — nothing of yours has sold yet"
 craft.station_forge,Forge
 craft.station_workbench,Workbench
 craft.station_alchemy,Alchemy Table
@@ -558,6 +564,7 @@ shop.embermarket.collier.name,Dunmore Charcoal
 shop.embermarket.ironmonger.name,Gilda's Ironmongery
 shop.embermarket.tannery.name,Perrin's Tannery
 shop.embermarket.jeweller.name,Brightcut Gems
+shop.embermarket.consignment.name,Vantry's Consignment
 shop.embermarket.herbalist.name,Greenhand's Herbs
 shop.embermarket.joiner.name,Halvard's Joinery
 shop.embermarket.caravan.name,The Long Road Caravan
@@ -1107,6 +1114,17 @@ dlg.marta.c_talk_bye,"I'll remember that."
 travel.ember_crown.tarn_landing.name,Tarn's Landing
 shop.tarn.curer.name,Wenna's Curing Sheds
 shop.tarn.chandler.name,The Landing Chandlery
+dlg.mirelle.speaker,"Mirelle Vantry"
+dlg.mirelle.root,"A long counter, an empty shelf behind it, and a ledger open at a page of names. ""I don't buy. Understand that first and we'll get on."""
+dlg.mirelle.talk,"""Every stall on this square can only pay you what's in their box that morning. I'm not paying you at all — I'm selling it for you, to somebody with deeper pockets than anyone here, and I take my eighteen out of what it fetches."" She taps the ledger without looking down. ""Three days. Then the counter behind me, not me. I keep the book; Halder keeps the coin. That way neither of us can be robbed of both."""
+dlg.mirelle.closed,"The shelf is under a sheet and the ledger is locked. A card in the glass reads: LISTINGS TAKEN NINE TILL SIX. COLLECTIONS ANY HOUR AT THE COUNTER."
+dlg.mirelle.c_trade,"What will you take?"
+dlg.mirelle.c_closed,"Are you taking anything?"
+dlg.mirelle.c_talk,"Why would I wait three days?"
+dlg.mirelle.c_bye,"Another time."
+dlg.mirelle.c_talk_trade,"Then here's what I have."
+dlg.mirelle.c_talk_back,"Something else."
+dlg.mirelle.c_talk_bye,"I'll think on it."
 dlg.wenna.speaker,"Wenna Tarn"
 dlg.wenna.root,"She is splitting an eel without looking at it. ""Fresh off the boats, salted if you're travelling, roe if you've the coin. Say which and be quick, it's half gone already."""
 dlg.wenna.talk,"""Everything you can see, we pull out of that water."" She nods at the tarn. ""Everything else comes up the road, when the road lets it. Salt, rope, cloth, hooks — we buy the lot, and we pay what we're asked, because what else are we going to do?"""

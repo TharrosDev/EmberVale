@@ -94,6 +94,7 @@ public partial class GameBootstrap : Node3D
     private Housing.HousingService? _housing;
     private Economy.ShopStockService? _shopStock;
     private Economy.ContrabandImpound? _impound;
+    private Economy.ConsignmentLedger? _consignment;
     private readonly System.Collections.Generic.List<Entity> _portals = new();
     // Post-transition settle (Phase 25.5B): time spent on the loading screen since a region load
     // began (-1 = not loading). Play resumes when the streamer reports the destination has finished
@@ -519,6 +520,12 @@ public partial class GameBootstrap : Node3D
         // someone else's keeping — nothing about it is a shop, and it outlives every shop it touches.
         _impound = new Economy.ContrabandImpound { Name = "ContrabandImpound" };
         AddChild(_impound);
+
+        // Consignment listings (38P): what the player has left with a broker and what it has earned.
+        // Beside the impound and not inside the shop service for the same reason that one is out: the
+        // goods are the player's, held by someone else, and the listing outlives every visit to the shop.
+        _consignment = new Economy.ConsignmentLedger { Name = "Consignment" };
+        AddChild(_consignment);
 
         // Placement mode (37C): the ghost and the commit. Not ISaveable — a placed prop persists
         // through the PersistentSpawnDirector above, which already records template, position and yaw.

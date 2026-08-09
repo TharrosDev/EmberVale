@@ -52,6 +52,7 @@
 [ext_resource type="PackedScene" path="res://scenes/props/bld_townhouse.tscn" id="53_townhouse"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_modular.tscn" id="54_cottage_modular"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_stall_empty.gltf" id="55_stall_empty"]
+[ext_resource type="Script" path="res://src/Economy/ServiceComponent.cs" id="56_service"]
 
 ; THE EMBERMARKET (Phase 38K, second pass) — the Ember Crown's market district, one street south of
 ; the town square.
@@ -2141,3 +2142,197 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.52, 0, -21.06)
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 12.62, 0, -20.32)
 
 [node name="Model" parent="Pebble13" instance=ExtResource("51_pebble_a")]
+
+; --- Vantry's Consignment (Phase 38P) ------------------------------------------------------------
+; The eleventh resident and the first counter on the square that buys nothing. Mirelle takes a thing,
+; lists it, and pays three days later through Halder at the counter beside her.
+;
+; ⚠️ TWO ENTITIES, NOT ONE, AND THAT IS FORCED. An entity gets ONE interactable (ServiceComponent's
+; own warning): a service sitting behind a DialogueComponent on the same actor never fires. Mirelle
+; has to talk, because the Embermarket's rule is that residents talk and only travellers carry a
+; VendorComponent. So the paying half is a second person. It also reads better than the constraint
+; deserves - you hand goods to a broker and you collect coin from a clerk.
+;
+; ⚠️ HER STALL IS prp_stall_empty AND THE EMPTINESS IS THE POINT. Every other stall in the market is
+; dressed with what its merchant sells; she has nothing of her own, so the bare boards say what her
+; trade is before she opens her mouth. Re-read, not re-modelled - no new art in this sub-phase.
+;
+; The east row continues: StallX2 at z -12.5, StallX4 at z -4.5, this at z 3.5. Same x, same rhythm.
+
+
+[node name="StallConsign" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 13.0, 0, 3.5)
+
+[node name="Model" parent="Nav/StallConsign" instance=ExtResource("55_stall_empty")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/StallConsign"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/StallConsign/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.315, 0)
+shape = SubResource("Shape_stall_empty")
+
+[node name="CounterConsign" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 13.0, 0, 7.5)
+
+[node name="Model" parent="Nav/CounterConsign" instance=ExtResource("18_stand_b")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/CounterConsign"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CounterConsign/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.30, 0)
+shape = SubResource("Shape_stand_b")
+
+[node name="ConsignCrateA" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.3, 0, 5.4)
+
+[node name="Model" parent="Nav/ConsignCrateA" instance=ExtResource("11_crate")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/ConsignCrateA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/ConsignCrateA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
+shape = SubResource("Shape_crate")
+
+[node name="ConsignCrateB" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 14.4, 0, 6.1)
+
+[node name="Model" parent="Nav/ConsignCrateB" instance=ExtResource("11_crate")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/ConsignCrateB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/ConsignCrateB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
+shape = SubResource("Shape_crate")
+
+[node name="ConsignBarrel" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.2, 0, 2.2)
+
+[node name="Model" parent="Nav/ConsignBarrel" instance=ExtResource("20_barrel")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/ConsignBarrel"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/ConsignBarrel/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0)
+shape = SubResource("Shape_barrel")
+
+
+; Second dressing pass, same session. The first put two counters and three boxes on open ground and
+; it read as two counters on open ground - fifth cell running to need this, so it is a step rather
+; than a surprise (38O). A bench on the customer side, a lamp for the corner, and stores stacked
+; behind turn a pair of stalls into somebody's premises. No new art.
+
+
+[node name="BenchConsign" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 10.8, 0, 1.6)
+
+[node name="Model" parent="Nav/BenchConsign" instance=ExtResource("23_bench")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BenchConsign"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BenchConsign/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0)
+shape = SubResource("Shape_bench")
+
+[node name="LampConsign" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.4, 0, 9.6)
+
+[node name="Model" parent="Nav/LampConsign" instance=ExtResource("12_lamp")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/LampConsign"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/LampConsign/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.80, 0)
+shape = SubResource("Shape_lamp")
+
+[node name="SacksConsign" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 14.6, 0, 8.5)
+
+[node name="Model" parent="Nav/SacksConsign" instance=ExtResource("21_sacks")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/SacksConsign"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/SacksConsign/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.225, 0)
+shape = SubResource("Shape_sacks")
+
+[node name="BarrelConsignB" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.7, 0, 9.2)
+
+[node name="Model" parent="Nav/BarrelConsignB" instance=ExtResource("20_barrel")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BarrelConsignB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BarrelConsignB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0)
+shape = SubResource("Shape_barrel")
+
+[node name="CrateConsignC" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 14.5, 0, 1.4)
+
+[node name="Model" parent="Nav/CrateConsignC" instance=ExtResource("11_crate")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/CrateConsignC"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CrateConsignC/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
+shape = SubResource("Shape_crate")
+
+[node name="MerchantMirelle" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 14.2, 0, 3.5)
+script = ExtResource("2_entity")
+DisplayName = "Mirelle Vantry"
+TemplateId = "npc.mirelle"
+
+[node name="Animation" type="Node" parent="MerchantMirelle"]
+script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="MerchantMirelle"]
+
+[node name="Shape" type="CollisionShape3D" parent="MerchantMirelle/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="MerchantMirelle"]
+script = ExtResource("6_faction")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="MerchantMirelle"]
+script = ExtResource("4_dialogue")
+DialogueId = "dialogue.mirelle"
+
+[node name="Schedule" type="Node" parent="MerchantMirelle"]
+script = ExtResource("8_schedule")
+ScheduleId = "schedule.embermarket.consignment"
+
+[node name="Model" parent="MerchantMirelle" instance=ExtResource("41_woman_dress")]
+
+; ⚠️ NO SCHEDULE ON HALDER, DELIBERATELY. Mirelle keeps the shop's hours and walks off at six; the
+; counter does not. A player who lists at five and comes back at seven has earned their money and must
+; be able to collect it, and the collect service is the one thing in the pair with no hours at all -
+; which is what the card in her window says out loud.
+[node name="ClerkHalder" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 14.2, 0, 7.5)
+script = ExtResource("2_entity")
+DisplayName = "Halder Vantry"
+TemplateId = "npc.halder"
+
+[node name="Animation" type="Node" parent="ClerkHalder"]
+script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="ClerkHalder"]
+
+[node name="Shape" type="CollisionShape3D" parent="ClerkHalder/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="ClerkHalder"]
+script = ExtResource("6_faction")
+FactionId = "faction.villagers"
+
+[node name="Service" type="Node" parent="ClerkHalder"]
+script = ExtResource("56_service")
+ServiceId = "service.embermarket.collect"
+
+[node name="Model" parent="ClerkHalder" instance=ExtResource("40_merchant_m")]
