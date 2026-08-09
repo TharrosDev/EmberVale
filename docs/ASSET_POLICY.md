@@ -88,18 +88,14 @@ way.** `tools/extract_anim_library.gd` regenerates the committed `.res`; re-run 
    `GeneralSkeleton`. Point it at the retargeted name and the key matches nothing, **the retarget
    silently stops applying, and the model reverts to its raw rig** with no error at all. This is how
    `npc_merchant_m` un-retargeted itself mid-session.
-6. ⚠️ **`retarget/rest_fixer/apply_node_transforms` is unsafe on a model whose root carries a
-   translation.** `chr_player_base`'s `RootNode` has `T = [0, 4.8237, 0]` (and a 0.9161 scale) where
+6. ⚠️ **A model whose root node carries a translation cannot be retargeted until that is fixed —
+   and `tools/normalize_rig_root.py` fixes it.** `chr_player_base`'s `RootNode` has `T = [0, 4.8237, 0]` (and a 0.9161 scale) where
    every other body has zero — a standing violation of §6's "root node carries **scale only, no
    translation**", which had been harmless only because the node transform cancelled the skeleton's
    own offset. With the flag on, the rest fixer consumes the node transform and the character
    **sinks 4.8 m**; with it off, the un-applied scale and the rewritten rest disagree and the spine
    **shears — the player bends double at the waist**. There is no third setting.
-   **`chr_player_base` is therefore NOT retargeted**, and cannot be until the model is re-exported
-   with a zeroed root translation. It loses nothing it had: its own 24 clips still resolve
-   idle/run/attack/hit/death, and it simply never receives the shared library — which is precisely
-   what the `GeneralSkeleton` gate in `CharacterAnimationComponent` is for. ⚠️ A re-export is **not**
-   a Blender round-trip job: the model carries 17 bone-parented `BoneAttachment3D` children.
+   **`chr_player_base` IS now retargeted**, via `tools/normalize_rig_root.py` — see §0.7.
 
 **Status: 11 of the 12 skinned bodies are retargeted** (`chr_player_base` excepted, above;
 `fp_arm` has no skin and needs none). Three BoneMaps cover them — `bonemap_quaternius.tres` for the
@@ -483,3 +479,33 @@ as a photo. Prefer sourcing further assets from the packs already in use over re
 The one clause of `ART_STYLE.md` §6.3 that this policy overrides is *"if adapting costs more
 than modeling clean — model clean."* Adaptation is now preferred; modelling clean requires
 the §1 four-part test.
+
+### §0.7 Normalising a rig's root node (2026-08-09)
+
+**`tools/normalize_rig_root.py` is how a model with a crooked root node is repaired**, and it is the
+reason the player can be retargeted at all. Compared against a body that retargets cleanly:
+
+| | `RootNode` | `CharacterArmature` | root bone |
+| --- | --- | --- | --- |
+| `npc_townsman` | T 0, R identity, S 1 | R −90° X, S 100 | t = (0, −0.00072, 0) |
+| `chr_player_base` (before) | **T (0, 4.8237, 0), S 0.9161** | R −90° X, S 100 | **t = (0, 0.00725, −0.05264)** |
+
+⚠️ **Those are two errors that cancel.** The root bone's −0.05264 on Z, carried through the
+armature's −90° X rotation and ×91.61 of scale, lands at −4.822 in world Y — which the root node's
++4.8237 cancels almost exactly. The model rendered correctly, and **all four** rest-fixer flag
+combinations broke it, because every one redistributes exactly those two numbers.
+
+The tool collapses the cancellation rather than moving it: the scene root becomes exact identity
+(its uniform scale folded into the armature, so the total reaching the bones is unchanged —
+0.9161 × 100 = 1 × 91.61), and its translation is folded into the root bone in the bone's own space.
+Vertices and inverse bind matrices are never touched, and all **17 bone-parented children survive**,
+which is the whole reason this is not a Blender job.
+
+⚠️ **The animation keyframes have to move with the rest pose.** All 24 of this model's animations
+drive the root bone's translation, so fixing only the rest pose is undone the instant anything
+plays. ⚠️ **And several animations SHARE one output accessor**, so each must be rewritten exactly
+once — an earlier draft applied the factor once per animation and overflowed a float32 on the
+nineteenth pass. That failure was at least loud; a smaller factor would have silently produced a
+subtly wrong rig.
+
+**Result: 12 of 12 skinned bodies retarget.** The player now has block, cast and channel.
