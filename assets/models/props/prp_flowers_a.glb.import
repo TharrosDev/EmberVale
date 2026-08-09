@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://bml5nuy10gtis"
-path="res://.godot/imported/prp_boulder.glb-8b4853b8b173033a2ae5f56407743f67.scn"
+uid="uid://c77pgiohn47aj"
+path="res://.godot/imported/prp_flowers_a.glb-9d8ce12c8bfa7929f0c7fd65ddfb35aa.scn"
 
 [deps]
 
-source_file="res://assets/models/props/prp_boulder.glb"
-dest_files=["res://.godot/imported/prp_boulder.glb-8b4853b8b173033a2ae5f56407743f67.scn"]
+source_file="res://assets/models/props/prp_flowers_a.glb"
+dest_files=["res://.godot/imported/prp_flowers_a.glb-9d8ce12c8bfa7929f0c7fd65ddfb35aa.scn"]
 
 [params]
 
@@ -19,7 +19,7 @@ nodes/root_script=null
 mesh_library/use_node_names_as_mesh_names=false
 array_mesh/deduplicate_surfaces=true
 nodes/apply_root_scale=true
-nodes/root_scale=1.0
+nodes/root_scale=0.22
 nodes/import_as_skeleton_bones=false
 nodes/use_name_suffixes=true
 nodes/use_node_type_suffixes=true

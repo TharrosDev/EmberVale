@@ -16,9 +16,10 @@ existed the same three lines were maintained in four places and rewritten every 
 - ⏸ **38G is parked, not next.** It prices goods by settlement demand and sits above 38P in the file.
   Do not trust the first unchecked box. 38O did not unpark it: a fence changes *who will buy*, not
   the spread, so every margin in `--economy` is still negative.
-- 🎨 **Running alongside: the asset migration onto the four Quaternius MegaKits.** Phase A (the
-  animation gate) is **done and proved**; B–E are queued and are prop/building work that touches no
-  rig. `docs/ASSET_POLICY.md` §0.2 is the authority.
+- 🎨 **Running alongside: the asset migration onto the four Quaternius MegaKits.** **A (animation
+  gate) done and proved. B (nature) half done** — 12 ground-cover props adopted and `wilds_north`
+  dressed; the other 8 cells are undressed. **C–E queued.** `docs/ASSET_POLICY.md` §0.2–§0.3 is the
+  authority.
 
 ## Last verified (asset Phase A)
 
@@ -29,7 +30,8 @@ existed the same three lines were maintained in four places and rewritten every 
 | `--validate` | exit 0 |
 | Ember Crown cells | 9, all resident |
 | Shops / items | 22 / 63 |
-| Retarget render gate | `npc_merchant_m`, eye level, front/back/side — feet planted, 1.8 m, sword in hand |
+| Retarget render gate | 11 of 12 bodies, eye level front/back — feet at y≈0.02, heads 1.27–1.55 m |
+| `wilds_north` | 193 ground-cover nodes, no colliders, navmesh untouched |
 
 ## Live invariants — the things that will bite you this arc
 
@@ -81,3 +83,8 @@ godot --headless --path . -- --economy          # the realm's price landscape
 godot --headless --path . -- --state            # the content census
 godot --path . -- --play                        # boot into the newest save
 ```
+
+10. ⚠️ **The nature megakit's ground cover is 4–10× life size while its trees are 1:1.** Scale lives
+    in each prop's `.import` (`nodes/root_scale`), never in a cell transform. And **grass goes in
+    patches** — an even scatter reads as litter, which is what `wilds_north`'s first pass looked
+    like. `ASSET_POLICY.md` §0.3.

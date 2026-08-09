@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://bml5nuy10gtis"
-path="res://.godot/imported/prp_boulder.glb-8b4853b8b173033a2ae5f56407743f67.scn"
+uid="uid://cf7ofaek1saoq"
+path="res://.godot/imported/prp_rockpath_wide.glb-d4d0007de8f5fdada9de4a250ebf11d2.scn"
 
 [deps]
 
-source_file="res://assets/models/props/prp_boulder.glb"
-dest_files=["res://.godot/imported/prp_boulder.glb-8b4853b8b173033a2ae5f56407743f67.scn"]
+source_file="res://assets/models/props/prp_rockpath_wide.glb"
+dest_files=["res://.godot/imported/prp_rockpath_wide.glb-d4d0007de8f5fdada9de4a250ebf11d2.scn"]
 
 [params]
 

@@ -126,6 +126,41 @@ published and never sold, and everything in it is CC0, so no attribution was eve
 `assets/CREDITS.md` is **frozen as history**: read it for the traps it records, do not add to it, and
 do not treat a missing entry as unfinished work. What replaced it is one line: **the manifest**.
 
+### §0.3 Adopting a pack model — the container, and the scale (2026-08-08)
+
+**`tools/gltf_to_glb.py` is how a MegaKit model enters the game.** The packs ship `.gltf` + `.bin` +
+shared `.png`; `assets/models/` is `.glb` with images embedded. That is a **container** change and
+nothing else, so it must not go through Blender: a round-trip re-exports every vertex, normal and UV
+through another tool's opinion of them. The script copies the buffer byte for byte and only appends
+the sidecar textures as bufferViews.
+
+⚠️ **THE NATURE MEGAKIT IS NOT UNIFORMLY 1 m = 1 unit.** Its **trees are** — `Pine_1` is 7.32 m,
+`CommonTree_3` is 9.43 m, all sane. Its **ground cover is four to ten times life size**:
+
+| shipped as | measures | is called |
+| --- | --- | --- |
+| `Grass_Common_Short` | **1.33 m tall** | *short* grass |
+| `Clover_1` | **1.14 m tall** | clover |
+| `Flower_4_Group` | **2.49 m tall** | a flower |
+| `Fern_1` | **2.83 m across** | a fern |
+| `Pebble_Round_1` | **0.50 m** | a pebble |
+
+Nothing in the files says so, and it is the same class of trap as the `rts` pack's 1/6 scale in the
+opposite direction. Every adopted ground-cover prop carries a measured `nodes/root_scale`; the
+correction belongs in the `.import` so all nine cells get it, never in one cell's transform.
+(Whoever adopted `prp_bush_flowering` hit this and applied 0.70 without recording why.)
+
+⚠️ **Measure in-engine, not by parsing the glTF accessors.** Accessor bounds ignore node scale, and
+that reads `prp_boulder` as a 1 cm pebble and `prp_rock_cluster` 35% too large. Instantiate the
+imported scene and merge the `MeshInstance3D` world AABBs — the same numbers the game will use.
+
+⚠️ **Four of the five props Phase B was to "replace" were already this pack** — `prp_pine_dead`
+(`Bark_DeadTree`), `prp_tree_broadleaf` (`Bark_NormalTree`), `prp_bush_flowering` (`Flowers`) and
+`prp_rock_cluster` (`Rocks`) all carry nature-megakit materials. Only `prp_boulder` was foreign
+(material `Stone`, no textures, mesh `Resource_Rock_2`) and only it was replaced. Check the material
+and texture names before planning a swap: replacing a pack model with another pack model changes 20
+cells' look and buys nothing.
+
 ---
 
 - **The library is vendored** at `assets/library/` — 746 CC0 models across 14 bundles, behind a
