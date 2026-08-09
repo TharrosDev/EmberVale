@@ -35,17 +35,42 @@ You are the lead engineer building this game incrementally. The non-negotiables:
   resources, not new inheritance chains or hard-coded values.
 - **Respect existing architecture.** Inspect before adding; don't duplicate
   systems; refactor when it lowers long-term cost.
-- **3D models: search the web first — always.** Every model request starts with a
-  thorough search of reputable open-source repositories (Poly Pizza, Kenney,
-  Quaternius, OpenGameArt, Sketchfab, Khronos glTF samples, …), then a licence and
-  fit evaluation, then **adaptation via the Blender MCP** if the asset is close but
-  not perfect. Building from scratch is the **rare exception** and requires that a
-  real search found nothing, adapting is impractical, *and* combining assets cannot
-  solve it. **Never reverse that order**, and never assume a model does not exist —
-  "I couldn't think of one" is not a search. Every asset needs a verified licence
-  and a `assets/CREDITS.md` entry before it is done. **Full policy:
-  [`docs/ASSET_POLICY.md`](docs/ASSET_POLICY.md)** — it is mandatory and it
-  supersedes any older build-from-scratch guidance in this repo.
+- **3D models: THE FOUR PACKS FIRST, ALWAYS** (maintainer direction, 2026-08-08 — this
+  supersedes the older "search the web first" rule, which is now step 3). The art set is
+  four Quaternius CC0 MegaKits vendored under `assets/library/`, and **the near-entirety of
+  the game is to be built from them**:
+
+  | Bundle | Covers | Models |
+  | --- | --- | --- |
+  | `medieval_megakit/` | modular architecture — walls, roofs, doors, windows, floors, stairs | 176 |
+  | `medieval_interiors/` | interiors, furniture, containers, tools, market stalls | 94 |
+  | `nature_megakit/` | trees, pines, bushes, grass, flowers, rocks, pebbles, rock paths | 68 |
+  | `animations/` | 46-clip universal animation library (⚠️ see `ASSET_POLICY.md` §0.1) | 1 |
+
+  **The order is fixed. Stop at the first step that works:**
+  1. **The four packs.** `ls assets/library/<pack>/` and read `manifest.json`. Do not skip this
+     because a name did not come to mind — the library has been "searched" from memory twice and
+     been wrong both times.
+  2. **The other vendored bundles** (`men/`, `women/`, `monsters/`, `animals/`, `rpg_items/`,
+     `dungeons/`, `survival/`, `nature/`, `rts/`, `medieval_village/`). Characters and creatures are
+     **not** in the four packs, so this is where they come from.
+  3. **The open web** (Poly Pizza, Kenney, Quaternius, OpenGameArt, Sketchfab) — only once 1 and 2
+     genuinely do not have it, and CC0/MIT only.
+  4. **Build it in Blender via the MCP.** The rare exception, and now genuinely rare: with 746
+     vendored models the honest answer is almost always in step 1 or 2.
+
+  ⚠️ **Mixing kits is the thing to avoid.** Four kits by one author read as one world; a stray
+  model from a fifth source reads as a mistake even when it is well made. If step 3 or 4 is reached,
+  match the pack's flat-shaded, untextured-looking style or do not adopt it.
+
+  **No crediting is required** (maintainer direction, 2026-08-08). This build is personal, never
+  published and never sold, and every asset in it is CC0, so no attribution was ever legally owed.
+  `assets/CREDITS.md` is **frozen as history** — do not add entries to it and do not treat a missing
+  entry as unfinished work. `assets/library/manifest.json` stays, because it is an *index* rather
+  than a credit: it is what makes step 1 above cheap, and searching it costs one `grep`.
+
+  **Full policy: [`docs/ASSET_POLICY.md`](docs/ASSET_POLICY.md)** — mandatory, and it supersedes
+  any older build-from-scratch or attribution guidance in this repo.
 - **Code, plugins and tools: check the Godot Asset Library before reinventing.**
   Distinct from the art rule above. Fetch from the asset's linked GitHub repo (the
   connected Godot MCP has no one-click install) and adapt it to our architecture.
@@ -441,11 +466,12 @@ immediately before it usually name the thing that will bite you.
 
 ### Standing constraints (these are rules, not history)
 
-- **The art set standardises on Quaternius CC0 packs** (maintainer direction, 2026-08-05 — policy
-  in [`docs/ASSET_POLICY.md`](docs/ASSET_POLICY.md) §0, provenance in `assets/CREDITS.md`). 677
-  models are vendored at `assets/library/` behind a `.gdignore`; a model enters the game only by
-  being **adapted into `assets/models/`** and credited. **Every model is CC0 and the project owes
-  no attribution — keep it that way.**
+- **The art set is four Quaternius CC0 MegaKits** (maintainer direction, 2026-08-08 — the priority
+  order is §1, the detail is [`docs/ASSET_POLICY.md`](docs/ASSET_POLICY.md) §0). **746** models are
+  vendored at `assets/library/` behind a `.gdignore`; a model enters the game by being **adapted
+  into `assets/models/`**, and that is now the only step — **crediting is not required and
+  `assets/CREDITS.md` is frozen as history.** Everything is CC0 and the build is personal, never
+  published and never sold.
 - **Four asset traps, each of which shipped a defect before it was written down:** judge a
   candidate **from behind and at eye level** (an open-backed cottage nearly shipped twice; a
   **hi-vis vest and hard hat** stood in a medieval market until someone rendered it close up);
