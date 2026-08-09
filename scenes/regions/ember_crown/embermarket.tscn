@@ -40,6 +40,15 @@
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_merchant_m.glb" id="40_merchant_m"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_woman_dress.glb" id="41_woman_dress"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_adventurer_f.glb" id="42_adventurer_f"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_grass_short.glb" id="43_grass_short"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_grass_tall.glb" id="44_grass_tall"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_grass_wispy.glb" id="45_grass_wispy"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_clover.glb" id="46_clover"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_flowers_a.glb" id="47_flowers_a"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_flowers_b.glb" id="48_flowers_b"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_fern.glb" id="49_fern"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_a.glb" id="51_pebble_a"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_b.glb" id="52_pebble_b"]
 
 ; THE EMBERMARKET (Phase 38K, second pass) — the Ember Crown's market district, one street south of
 ; the town square.
@@ -1930,3 +1939,217 @@ script = ExtResource("9_vendor")
 ShopId = "shop.embermarket.curios"
 
 [node name="Model" parent="TraderQuill" instance=ExtResource("35_townswoman")]
+
+; ====================================================================================================
+; GROUND COVER (38B) - grass at the margins only - nothing on the thoroughfare, where a tuft an NPC paths
+; around or a player mistakes for an interactable is worse than bare ground.
+;
+; Style "verge", scattered by tools/dress_cell.py (seed 38), which reads this cell's OWN node
+; positions out of this file and treats them as keep-outs, so nothing lands inside a building or on
+; a merchant. Regenerate with:
+;     python tools/dress_cell.py scenes/regions/ember_crown/embermarket.tscn verge 43
+;
+; WARNING EVERY NODE BELOW PARENTS TO THE CELL ROOT, NOT TO Nav, AND CARRIES NO COLLIDER. The navmesh
+; parses static colliders only, so a collider-less tuft could not carve it from inside Nav either -
+; but parenting out states the intent where a reader will see it. Grass an NPC paths around is worse
+; than no grass.
+;
+; WARNING SCALE LIVES IN THE .import. The nature megakit ships its trees at 1 m = 1 unit and its
+; ground cover four to ten times life size. Correct a size in the prop's .import so every cell gets
+; it, never in a transform here. docs/ASSET_POLICY.md section 0.3.
+; ====================================================================================================
+
+[node name="Grass1" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 3.45, 0, -14.11)
+
+[node name="Model" parent="Grass1" instance=ExtResource("45_grass_wispy")]
+
+[node name="Grass2" type="Node3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 11.43, 0, -20.90)
+
+[node name="Model" parent="Grass2" instance=ExtResource("45_grass_wispy")]
+
+[node name="Grass3" type="Node3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 12.09, 0, -18.86)
+
+[node name="Model" parent="Grass3" instance=ExtResource("43_grass_short")]
+
+[node name="Grass4" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 10.86, 0, -19.59)
+
+[node name="Model" parent="Grass4" instance=ExtResource("43_grass_short")]
+
+[node name="Grass5" type="Node3D" parent="."]
+transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 12.67, 0, -20.59)
+
+[node name="Model" parent="Grass5" instance=ExtResource("45_grass_wispy")]
+
+[node name="Grass6" type="Node3D" parent="."]
+transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 12.14, 0, -19.45)
+
+[node name="Model" parent="Grass6" instance=ExtResource("44_grass_tall")]
+
+[node name="Grass7" type="Node3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 13.19, 0, -20.16)
+
+[node name="Model" parent="Grass7" instance=ExtResource("44_grass_tall")]
+
+[node name="Grass8" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 12.33, 0, -20.61)
+
+[node name="Model" parent="Grass8" instance=ExtResource("43_grass_short")]
+
+[node name="Grass9" type="Node3D" parent="."]
+transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 13.64, 0, -20.11)
+
+[node name="Model" parent="Grass9" instance=ExtResource("43_grass_short")]
+
+[node name="Fern1" type="Node3D" parent="."]
+transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 22.60, 0, -4.43)
+
+[node name="Model" parent="Fern1" instance=ExtResource("49_fern")]
+
+[node name="Fern2" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 22.61, 0, -4.86)
+
+[node name="Model" parent="Fern2" instance=ExtResource("49_fern")]
+
+[node name="Clover1" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -3.22, 0, -13.64)
+
+[node name="Model" parent="Clover1" instance=ExtResource("46_clover")]
+
+[node name="Clover2" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -2.36, 0, -14.60)
+
+[node name="Model" parent="Clover2" instance=ExtResource("46_clover")]
+
+[node name="Clover3" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -3.62, 0, -13.78)
+
+[node name="Model" parent="Clover3" instance=ExtResource("46_clover")]
+
+[node name="Clover4" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.19, 0, -13.95)
+
+[node name="Model" parent="Clover4" instance=ExtResource("46_clover")]
+
+[node name="Clover5" type="Node3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 1.43, 0, -13.65)
+
+[node name="Model" parent="Clover5" instance=ExtResource("46_clover")]
+
+[node name="Clover6" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.58, 0, -13.29)
+
+[node name="Model" parent="Clover6" instance=ExtResource("46_clover")]
+
+[node name="Clover7" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 4.23, 0, -13.75)
+
+[node name="Model" parent="Clover7" instance=ExtResource("46_clover")]
+
+[node name="Clover8" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 2.01, 0, -14.79)
+
+[node name="Model" parent="Clover8" instance=ExtResource("46_clover")]
+
+[node name="FlowerA1" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.96, 0, -19.97)
+
+[node name="Model" parent="FlowerA1" instance=ExtResource("47_flowers_a")]
+
+[node name="FlowerA2" type="Node3D" parent="."]
+transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 12.84, 0, -18.13)
+
+[node name="Model" parent="FlowerA2" instance=ExtResource("47_flowers_a")]
+
+[node name="FlowerA3" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 10.83, 0, -19.78)
+
+[node name="Model" parent="FlowerA3" instance=ExtResource("47_flowers_a")]
+
+[node name="FlowerA4" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 12.89, 0, -19.61)
+
+[node name="Model" parent="FlowerA4" instance=ExtResource("47_flowers_a")]
+
+[node name="FlowerB1" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.36, 0, -18.56)
+
+[node name="Model" parent="FlowerB1" instance=ExtResource("48_flowers_b")]
+
+[node name="FlowerB2" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 10.52, 0, -19.38)
+
+[node name="Model" parent="FlowerB2" instance=ExtResource("48_flowers_b")]
+
+[node name="FlowerB3" type="Node3D" parent="."]
+transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 10.26, 0, -18.91)
+
+[node name="Model" parent="FlowerB3" instance=ExtResource("48_flowers_b")]
+
+[node name="Pebble1" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 3.60, 0, -13.81)
+
+[node name="Model" parent="Pebble1" instance=ExtResource("51_pebble_a")]
+
+[node name="Pebble2" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 3.16, 0, -13.64)
+
+[node name="Model" parent="Pebble2" instance=ExtResource("52_pebble_b")]
+
+[node name="Pebble3" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 13.21, 0, -20.34)
+
+[node name="Model" parent="Pebble3" instance=ExtResource("52_pebble_b")]
+
+[node name="Pebble4" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.66, 0, -13.49)
+
+[node name="Model" parent="Pebble4" instance=ExtResource("51_pebble_a")]
+
+[node name="Pebble5" type="Node3D" parent="."]
+transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 11.65, 0, -20.49)
+
+[node name="Model" parent="Pebble5" instance=ExtResource("51_pebble_a")]
+
+[node name="Pebble6" type="Node3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 12.26, 0, -20.59)
+
+[node name="Model" parent="Pebble6" instance=ExtResource("52_pebble_b")]
+
+[node name="Pebble7" type="Node3D" parent="."]
+transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 4.03, 0, -13.05)
+
+[node name="Model" parent="Pebble7" instance=ExtResource("52_pebble_b")]
+
+[node name="Pebble8" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 11.80, 0, -20.67)
+
+[node name="Model" parent="Pebble8" instance=ExtResource("51_pebble_a")]
+
+[node name="Pebble9" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 11.87, 0, -21.18)
+
+[node name="Model" parent="Pebble9" instance=ExtResource("51_pebble_a")]
+
+[node name="Pebble10" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.22, 0, -19.45)
+
+[node name="Model" parent="Pebble10" instance=ExtResource("51_pebble_a")]
+
+[node name="Pebble11" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.36, 0, -19.66)
+
+[node name="Model" parent="Pebble11" instance=ExtResource("52_pebble_b")]
+
+[node name="Pebble12" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.52, 0, -21.06)
+
+[node name="Model" parent="Pebble12" instance=ExtResource("52_pebble_b")]
+
+[node name="Pebble13" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 12.62, 0, -20.32)
+
+[node name="Model" parent="Pebble13" instance=ExtResource("51_pebble_a")]
