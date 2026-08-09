@@ -4354,5 +4354,494 @@
    "file": "assets/library/medieval_interiors/Workbench_Drawers.gltf",
    "source": "https://quaternius.com"
   }
+ ],
+ "nature_megakit": [
+  {
+   "title": "Bush_Common",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Bush_Common.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Bush_Common_Flowers",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Bush_Common_Flowers.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Clover_1",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Clover_1.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Clover_2",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Clover_2.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "CommonTree_1",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/CommonTree_1.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "CommonTree_2",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/CommonTree_2.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "CommonTree_3",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/CommonTree_3.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "CommonTree_4",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/CommonTree_4.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "CommonTree_5",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/CommonTree_5.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "DeadTree_1",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/DeadTree_1.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "DeadTree_2",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/DeadTree_2.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "DeadTree_3",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/DeadTree_3.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "DeadTree_4",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/DeadTree_4.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "DeadTree_5",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/DeadTree_5.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Fern_1",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Fern_1.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Flower_3_Group",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Flower_3_Group.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Flower_3_Single",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Flower_3_Single.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Flower_4_Group",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Flower_4_Group.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Flower_4_Single",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Flower_4_Single.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Grass_Common_Short",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Grass_Common_Short.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Grass_Common_Tall",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Grass_Common_Tall.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Grass_Wispy_Short",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Grass_Wispy_Short.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Grass_Wispy_Tall",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Grass_Wispy_Tall.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Mushroom_Common",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Mushroom_Common.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Mushroom_Laetiporus",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Mushroom_Laetiporus.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Pebble_Round_1",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Pebble_Round_1.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Pebble_Round_2",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Pebble_Round_2.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Pebble_Round_3",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Pebble_Round_3.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Pebble_Round_4",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Pebble_Round_4.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Pebble_Round_5",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Pebble_Round_5.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Pebble_Square_1",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Pebble_Square_1.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Pebble_Square_2",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Pebble_Square_2.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Pebble_Square_3",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Pebble_Square_3.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Pebble_Square_4",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Pebble_Square_4.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Pebble_Square_5",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Pebble_Square_5.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Pebble_Square_6",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Pebble_Square_6.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Petal_1",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Petal_1.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Petal_2",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Petal_2.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Petal_3",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Petal_3.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Petal_4",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Petal_4.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Petal_5",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Petal_5.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Pine_1",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Pine_1.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Pine_2",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Pine_2.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Pine_3",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Pine_3.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Pine_4",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Pine_4.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Pine_5",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Pine_5.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Plant_1",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Plant_1.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Plant_1_Big",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Plant_1_Big.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Plant_7",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Plant_7.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Plant_7_Big",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Plant_7_Big.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "RockPath_Round_Small_1",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/RockPath_Round_Small_1.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "RockPath_Round_Small_2",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/RockPath_Round_Small_2.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "RockPath_Round_Small_3",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/RockPath_Round_Small_3.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "RockPath_Round_Thin",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/RockPath_Round_Thin.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "RockPath_Round_Wide",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/RockPath_Round_Wide.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "RockPath_Square_Small_1",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/RockPath_Square_Small_1.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "RockPath_Square_Small_2",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/RockPath_Square_Small_2.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "RockPath_Square_Small_3",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/RockPath_Square_Small_3.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "RockPath_Square_Thin",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/RockPath_Square_Thin.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "RockPath_Square_Wide",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/RockPath_Square_Wide.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Rock_Medium_1",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Rock_Medium_1.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Rock_Medium_2",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Rock_Medium_2.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Rock_Medium_3",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/Rock_Medium_3.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "TwistedTree_1",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/TwistedTree_1.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "TwistedTree_2",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/TwistedTree_2.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "TwistedTree_3",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/TwistedTree_3.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "TwistedTree_4",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/TwistedTree_4.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "TwistedTree_5",
+   "pack": "Stylized Nature MegaKit (free tier, 68 of 116)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/nature_megakit/TwistedTree_5.gltf",
+   "source": "https://quaternius.com"
+  }
+ ],
+ "animations": [
+  {
+   "title": "Universal Animation Library (Godot Standard)",
+   "pack": "Universal Animation Library",
+   "licence": "CC0 1.0",
+   "file": "assets/library/animations/AnimationLibrary_Godot_Standard.glb",
+   "source": "https://quaternius.com",
+   "clips": 46,
+   "note": "Rigify-style skeleton (root/DEF-*), 53 bones. Shares ZERO bone names with the adopted Quaternius character rigs (Root/Hips/Abdomen, 62 bones) - needs retargeting."
+  }
  ]
 }

@@ -1,5 +1,11 @@
 # Asset credits & provenance
 
+> ⚠️ **FROZEN 2026-08-08.** Crediting is not required — this build is personal, never published and
+> never sold, and everything in it is CC0. Do NOT add entries to this file. It is kept because the
+> traps it records (the 1/6-scale pack, the Blender round-trip destroying bone-parented children, the
+> hi-vis villager, the modern-dress merchant) are still true and still expensive. The live index is
+> `assets/library/manifest.json`; the live policy is `docs/ASSET_POLICY.md` §0.1.
+
 Required by [`docs/ASSET_POLICY.md`](../docs/ASSET_POLICY.md) §7 and
 [`docs/ART_STYLE.md`](../docs/ART_STYLE.md) §6.3.
 

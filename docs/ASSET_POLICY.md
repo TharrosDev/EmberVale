@@ -17,15 +17,53 @@
 > Embervale's art set **standardises on Quaternius CC0 packs**. The point is coherence: one artist,
 > one style, one skeleton. A slightly better model from elsewhere is the *wrong* answer.
 
-- **The library is vendored** at `assets/library/` — 677 CC0 models across 12 bundles, behind a
+### §0.1 The four packs, and the order to reach for them (2026-08-08)
+
+**Four Quaternius MegaKits are the art set.** `CLAUDE.md` §1 carries the short version; this is the
+detail. The near-entirety of the game is to be built from these, and the search order is fixed:
+**the four packs → the other vendored bundles → the open web → Blender MCP.** Stop at the first that
+works.
+
+| Bundle | Covers | Models |
+| --- | --- | --- |
+| `medieval_megakit/` | modular architecture: walls, roofs, doors, windows, shutters, floors, stairs, balconies, overhangs, chimneys | 176 |
+| `medieval_interiors/` | interiors and props: beds, cabinets, bookcases, shelves, tables, chairs, chests, anvil, workbench, market stalls | 94 |
+| `nature_megakit/` | trees (common/pine/dead/twisted), bushes, ferns, grass, clover, flowers, mushrooms, pebbles, rocks, rock paths | 68 |
+| `animations/` | `AnimationLibrary_Godot_Standard.glb` — 46 clips on one shared skeleton | 1 |
+
+⚠️ **What the four packs do NOT cover: characters, creatures and weapons.** Those come from the
+older vendored bundles (`men/`, `women/`, `monsters/`, `animals/`, `rpg_items/`), which is why step 2
+exists and is not optional.
+
+⚠️ **THE ANIMATION LIBRARY DOES NOT FIT THE CHARACTER RIGS, AND NOTHING IN EITHER FILE SAYS SO.**
+Measured 2026-08-08 by parsing both skeletons: the library is a **Rigify-style** rig — 53 bones named
+`root`, `DEF-hips`, `DEF-spine.001`, `DEF-shoulder.L` — while every adopted Quaternius body is a
+**62-bone** rig named `Root`, `Body`, `Hips`, `Abdomen`, `Torso`, `Chest`. **They share zero bone
+names.** Dropping the library onto an existing character animates nothing. Retargeting is required
+and must be **proved on one character before anything is planned around it**; prefer Godot 4's native
+import-dock retargeting (`Retarget` → `BoneMap`) over a Blender round-trip, which is already recorded
+below as the thing that destroys bone-parented children.
+
+⚠️ **Do not mix kits.** Four kits by one author read as one world; a stray model from a fifth source
+reads as a mistake even when it is better made. If the open web or Blender is reached, match the
+flat-shaded, untextured-looking style or do not adopt it.
+
+**Crediting is not required** (maintainer direction, 2026-08-08). The build is personal, never
+published and never sold, and everything in it is CC0, so no attribution was ever legally owed.
+`assets/CREDITS.md` is **frozen as history**: read it for the traps it records, do not add to it, and
+do not treat a missing entry as unfinished work. What replaced it is one line: **the manifest**.
+
+---
+
+- **The library is vendored** at `assets/library/` — 746 CC0 models across 14 bundles, behind a
   **`.gdignore`** so Godot never imports or exports any of it. It costs the build nothing.
-- **`assets/library/manifest.json`** records every model's title, Poly Pizza id, licence and
-  download URL. Re-pull without searching; check a licence without guessing.
-- **A model enters the game only by being adapted into `assets/models/`** (scaled, origin fixed,
-  mesh renamed `Mesh`) and credited in `assets/CREDITS.md`. The library is source, not content.
-- **Search is now scoped, not skipped.** §1's order still holds *inside* the library: look there
-  first, and only go to the open web for something no bundle covers (today: an anvil/forge and an
-  ice/glacier prop). Record any such exception in `CREDITS.md`.
+  ⚠️ A pack dropped anywhere *else* — the repository root, say — **is in the game**, importing and
+  exported, whether or not anyone adapted it. This has now happened twice.
+- **`assets/library/manifest.json`** is the index: title, pack, licence and where each model lives.
+  It stays even though crediting does not, because it is what makes "check the library first" cost
+  one `grep` instead of one session. It has been searched from memory twice and been wrong twice.
+- **A model enters the game by being adapted into `assets/models/`** (scaled, origin fixed, mesh
+  renamed `Mesh`). The library is source, not content. That is now the whole checklist.
 - **CC0 only.** The filter is the manifest's `licence` field, not eye. Five CC-BY models in the
   Ultimate Modular Women bundle were deliberately not downloaded. As of this standardisation
   **every model in `assets/models/` is CC0 and the project owes no attribution** — the

@@ -42,3 +42,6 @@ tools/shots/*.png
 # assets/library/<pack>/ folder ships its own game-resolution textures beside the models, and those
 # are what the .gltf files load. Kept on disk for a future retexturing pass, out of git history.
 assets/library/_source_textures/
+
+# Nature pack 4K source textures (2026-08-08). Same reason as the line above: nothing references them.
+assets/library/_source_textures_nature/
