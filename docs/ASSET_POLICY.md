@@ -17,7 +17,7 @@
 > Embervale's art set **standardises on Quaternius CC0 packs**. The point is coherence: one artist,
 > one style, one skeleton. A slightly better model from elsewhere is the *wrong* answer.
 
-- **The library is vendored** at `assets/library/` — 401 CC0 models across 10 bundles, behind a
+- **The library is vendored** at `assets/library/` — 677 CC0 models across 12 bundles, behind a
   **`.gdignore`** so Godot never imports or exports any of it. It costs the build nothing.
 - **`assets/library/manifest.json`** records every model's title, Poly Pizza id, licence and
   download URL. Re-pull without searching; check a licence without guessing.

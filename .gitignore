@@ -37,3 +37,8 @@ Thumbs.db
 # The .gdignore inside keeps Godot from importing stray PNGs as textures and IS tracked;
 # the PNGs themselves are disposable and were repeatedly caught in `git checkout` churn.
 tools/shots/*.png
+
+# Quaternius pack source textures (2026-08-08). 132 MB of 4K PNGs that NOTHING references — each
+# assets/library/<pack>/ folder ships its own game-resolution textures beside the models, and those
+# are what the .gltf files load. Kept on disk for a future retexturing pass, out of git history.
+assets/library/_source_textures/
