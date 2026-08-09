@@ -924,6 +924,60 @@ The viewmodel also read undersized because the world FOV (75°) is far too wide 
 at arm's length. `ViewmodelFov` (default 55°) now scales the arms by the ratio of the half-angle
 tangents at unchanged distance — the single-camera equivalent of a separate viewmodel camera.
 
+## Two Quaternius packs vendored, 2026-08-08 (maintainer download)
+
+The maintainer downloaded two packs from **quaternius.com** and dropped them in the repository root.
+They are vendored under `assets/library/` like everything else and are **not in the game yet** — a
+model enters by being adapted into `assets/models/` and credited, and none of these have been.
+
+| Folder | Pack | Models | Licence |
+| --- | --- | --- | --- |
+| `assets/library/medieval_megakit/` | Medieval Village MegaKit (free tier) | 176 | CC0 1.0 |
+| `assets/library/medieval_interiors/` | Medieval interiors & props | 94 | CC0 1.0 |
+
+**Both CC0 1.0, both by @Quaternius, no attribution owed** — which keeps the standing constraint in
+`CLAUDE.md` §10 intact. The MegaKit shipped its own `License_Standard.txt` naming CC0; the interiors
+pack shipped none, and the maintainer confirmed the source directly (2026-08-08). Quaternius releases
+uniformly under CC0.
+
+**Why this matters more than the model count suggests.** The MegaKit is **modular architecture** —
+walls, roofs, doors, windows, shutters, floors, stairs, balconies, overhangs, chimneys. Every building
+in the game until now is one of five monolithic `bld_*.glb` files, which is why 38K's Embermarket
+rebuild and 38O's Hollowreach both had to manufacture variety out of *dressing*: there was no second
+silhouette to reach for. The interiors pack is the other half — beds, cabinets, bookcases, shelves,
+tables, chairs, chests, an anvil, a workbench, market stalls — and the game currently has **no
+interiors at all**.
+
+✅ **Both packs are authored in metres and need no scale adaptation.** Measured by parsing the glTF
+accessor bounds rather than by eye: `Wall_Plaster_Straight` 2.00 × 3.12 m, `Door_1_Flat` 1.12 ×
+2.10 m, `Table_Large` 0.81 m high, `Chair_1` 1.12 m, `Anvil` 1.08 m. This is **not** the `rts` pack's
+situation, where everything was roughly 1/6 scale and nothing in the files said so — but the check was
+run precisely because of it, and it should be run again on the next pack.
+
+⚠️ **The FBX and OBJ copies were deleted.** Each pack shipped the same models three times; only glTF
+is used here, and the duplicates were ~60 MB of dead weight. Re-download from quaternius.com if some
+future tool needs them.
+
+⚠️ **`assets/library/_source_textures/` is NOT committed** (a `.gitignore` line). It is the packs'
+132 MB set of 4K source textures, and **nothing references it**: each `glTF/` folder ships its own
+game-resolution PNGs beside the models, which is what the 270 `.gltf` files actually load. It is kept
+on disk for a future retexturing pass and left out of git history, where 132 MB of unreferenced art
+would live forever. The Unreal Engine normal-map variants were deleted outright — this is a Godot
+project.
+
+⚠️ **The packs were importing into the project while they sat in the repository root.** 305 `.import`
+sidecars had already been generated, which made them live project resources that a build export would
+have shipped. They are now behind `assets/library/.gdignore` with the sidecars deleted, which is the
+whole reason that `.gdignore` exists. **A pack dropped anywhere but `assets/library/` is in the game
+whether or not anyone adapted it.**
+
+⚠️ **`Stairs_Exterior_*` and `Stair_Interior_*` are unproven, and should be treated as a trap until
+tested.** `CharacterBody3D` has no step-up in this project (verticality comes from props, never from
+terrain), so a staircase model may be geometry the player simply cannot climb. Test one before
+authoring a cell around it.
+
+---
+
 ## Known, not fixed
 
 - **`npc_merchant_f` was modern dress and is now retired** (fixed in 38N2). It dressed Hana and

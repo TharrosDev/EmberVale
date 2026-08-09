@@ -2460,5 +2460,1899 @@
    "licence": "CC0 1.0",
    "glb": "https://static.poly.pizza/2df95a2a-38b4-40dd-ac8d-9b290b550c63.glb"
   }
+ ],
+ "medieval_megakit": [
+  {
+   "title": "Balcony_Cross_Corner",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Balcony_Cross_Corner.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Balcony_Cross_Straight",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Balcony_Cross_Straight.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Balcony_Simple_Corner",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Balcony_Simple_Corner.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Balcony_Simple_Straight",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Balcony_Simple_Straight.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Corner_ExteriorWide_Brick",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Corner_ExteriorWide_Brick.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Corner_ExteriorWide_Wood",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Corner_ExteriorWide_Wood.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Corner_Exterior_Brick",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Corner_Exterior_Brick.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Corner_Exterior_TopDown",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Corner_Exterior_TopDown.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Corner_Exterior_TopOnly",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Corner_Exterior_TopOnly.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Corner_Exterior_Wood",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Corner_Exterior_Wood.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Corner_Interior_Big",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Corner_Interior_Big.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Corner_Interior_Small",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Corner_Interior_Small.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "DoorFrame_Flat_Brick",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/DoorFrame_Flat_Brick.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "DoorFrame_Flat_WoodDark",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/DoorFrame_Flat_WoodDark.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "DoorFrame_Round_Brick",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/DoorFrame_Round_Brick.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "DoorFrame_Round_WoodDark",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/DoorFrame_Round_WoodDark.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Door_1_Flat",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Door_1_Flat.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Door_1_Round",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Door_1_Round.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Door_2_Flat",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Door_2_Flat.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Door_2_Round",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Door_2_Round.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Door_4_Flat",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Door_4_Flat.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Door_4_Round",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Door_4_Round.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Door_8_Flat",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Door_8_Flat.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Door_8_Round",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Door_8_Round.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Floor_Brick",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Floor_Brick.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Floor_RedBrick",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Floor_RedBrick.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Floor_UnevenBrick",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Floor_UnevenBrick.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Floor_WoodDark",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Floor_WoodDark.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Floor_WoodDark_Half1",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Floor_WoodDark_Half1.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Floor_WoodDark_Half2",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Floor_WoodDark_Half2.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Floor_WoodDark_Half3",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Floor_WoodDark_Half3.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Floor_WoodDark_OverhangCorner",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Floor_WoodDark_OverhangCorner.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Floor_WoodDark_OverhangCorner2",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Floor_WoodDark_OverhangCorner2.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Floor_WoodLight",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Floor_WoodLight.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Floor_WoodLight_OverhangCorner",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Floor_WoodLight_OverhangCorner.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Floor_WoodLight_OverhangCorner2",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Floor_WoodLight_OverhangCorner2.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "HoleCover_90Angle",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/HoleCover_90Angle.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "HoleCover_90Half",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/HoleCover_90Half.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "HoleCover_90Stairs",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/HoleCover_90Stairs.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "HoleCover_Straight",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/HoleCover_Straight.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "HoleCover_StraightHalf",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/HoleCover_StraightHalf.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Overhang_Plaster_Corner",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Overhang_Plaster_Corner.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Overhang_Plaster_Corner_Front",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Overhang_Plaster_Corner_Front.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Overhang_Plaster_Long",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Overhang_Plaster_Long.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Overhang_Plaster_Short",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Overhang_Plaster_Short.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Overhang_RoofIncline_Plaster",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Overhang_RoofIncline_Plaster.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Overhang_RoofIncline_UnevenBricks",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Overhang_RoofIncline_UnevenBricks.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Overhang_Roof_Plaster",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Overhang_Roof_Plaster.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Overhang_Roof_UnevenBricks",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Overhang_Roof_UnevenBricks.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Overhang_Side_Plaster_Long_L",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Overhang_Side_Plaster_Long_L.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Overhang_Side_Plaster_Long_R",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Overhang_Side_Plaster_Long_R.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Overhang_Side_Plaster_Short_L",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Overhang_Side_Plaster_Short_L.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Overhang_Side_Plaster_Short_R",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Overhang_Side_Plaster_Short_R.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Overhang_Side_UnevenBrick_Long_L",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Overhang_Side_UnevenBrick_Long_L.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Overhang_Side_UnevenBrick_Long_R",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Overhang_Side_UnevenBrick_Long_R.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Overhang_Side_UnevenBrick_Short_L",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Overhang_Side_UnevenBrick_Short_L.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Overhang_Side_UnevenBrick_Short_R",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Overhang_Side_UnevenBrick_Short_R.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Overhang_UnevenBrick_Corner",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Overhang_UnevenBrick_Corner.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Overhang_UnevenBrick_Corner_Front",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Overhang_UnevenBrick_Corner_Front.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Overhang_UnevenBrick_Long",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Overhang_UnevenBrick_Long.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Overhang_UnevenBrick_Short",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Overhang_UnevenBrick_Short.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Prop_Brick1",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Prop_Brick1.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Prop_Brick2",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Prop_Brick2.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Prop_Brick3",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Prop_Brick3.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Prop_Brick4",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Prop_Brick4.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Prop_Chimney",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Prop_Chimney.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Prop_Chimney2",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Prop_Chimney2.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Prop_Crate",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Prop_Crate.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Prop_ExteriorBorder_Corner",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Prop_ExteriorBorder_Corner.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Prop_ExteriorBorder_Straight1",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Prop_ExteriorBorder_Straight1.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Prop_ExteriorBorder_Straight2",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Prop_ExteriorBorder_Straight2.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Prop_MetalFence_Ornament",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Prop_MetalFence_Ornament.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Prop_MetalFence_Simple",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Prop_MetalFence_Simple.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Prop_Support",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Prop_Support.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Prop_Vine1",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Prop_Vine1.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Prop_Vine2",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Prop_Vine2.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Prop_Vine4",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Prop_Vine4.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Prop_Vine5",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Prop_Vine5.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Prop_Vine6",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Prop_Vine6.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Prop_Vine9",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Prop_Vine9.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Prop_Wagon",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Prop_Wagon.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Prop_WoodenFence_Extension1",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Prop_WoodenFence_Extension1.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Prop_WoodenFence_Extension2",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Prop_WoodenFence_Extension2.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Prop_WoodenFence_Single",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Prop_WoodenFence_Single.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_2x4_RoundTile",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_2x4_RoundTile.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_Dormer_RoundTile",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_Dormer_RoundTile.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_FrontSupports",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_FrontSupports.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_Front_Brick2",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_Front_Brick2.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_Front_Brick4",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_Front_Brick4.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_Front_Brick4_Half_L",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_Front_Brick4_Half_L.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_Front_Brick4_Half_R",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_Front_Brick4_Half_R.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_Front_Brick6",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_Front_Brick6.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_Front_Brick6_Half_L",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_Front_Brick6_Half_L.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_Front_Brick6_Half_R",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_Front_Brick6_Half_R.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_Front_Brick8",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_Front_Brick8.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_Front_Brick8_Half_L",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_Front_Brick8_Half_L.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_Front_Brick8_Half_R",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_Front_Brick8_Half_R.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_Log",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_Log.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_Modular_RoundTiles",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_Modular_RoundTiles.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_RoundTile_2x1",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_RoundTile_2x1.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_RoundTile_2x1_Long",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_RoundTile_2x1_Long.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_RoundTiles_4x4",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_RoundTiles_4x4.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_RoundTiles_4x6",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_RoundTiles_4x6.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_RoundTiles_4x8",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_RoundTiles_4x8.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_RoundTiles_6x10",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_RoundTiles_6x10.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_RoundTiles_6x12",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_RoundTiles_6x12.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_RoundTiles_6x14",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_RoundTiles_6x14.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_RoundTiles_6x4",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_RoundTiles_6x4.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_RoundTiles_6x6",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_RoundTiles_6x6.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_RoundTiles_6x8",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_RoundTiles_6x8.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_RoundTiles_8x10",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_RoundTiles_8x10.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_RoundTiles_8x12",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_RoundTiles_8x12.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_RoundTiles_8x14",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_RoundTiles_8x14.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_RoundTiles_8x8",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_RoundTiles_8x8.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_Support2",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_Support2.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_Tower_RoundTiles",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_Tower_RoundTiles.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_Wooden_2x1",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_Wooden_2x1.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_Wooden_2x1_Center",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_Wooden_2x1_Center.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_Wooden_2x1_Center_Mirror",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_Wooden_2x1_Center_Mirror.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_Wooden_2x1_Corner",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_Wooden_2x1_Corner.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_Wooden_2x1_L",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_Wooden_2x1_L.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_Wooden_2x1_Middle",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_Wooden_2x1_Middle.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Roof_Wooden_2x1_R",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Roof_Wooden_2x1_R.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Stair_Interior_Rails",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Stair_Interior_Rails.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Stair_Interior_Simple",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Stair_Interior_Simple.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Stair_Interior_Solid",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Stair_Interior_Solid.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Stair_Interior_SolidExtended",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Stair_Interior_SolidExtended.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Stairs_Exterior_NoFirstStep",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Stairs_Exterior_NoFirstStep.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Stairs_Exterior_Platform",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Stairs_Exterior_Platform.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Stairs_Exterior_Platform45",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Stairs_Exterior_Platform45.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Stairs_Exterior_Platform45Clean",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Stairs_Exterior_Platform45Clean.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Stairs_Exterior_PlatformU",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Stairs_Exterior_PlatformU.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Stairs_Exterior_SidePlatform",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Stairs_Exterior_SidePlatform.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Stairs_Exterior_Sides",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Stairs_Exterior_Sides.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Stairs_Exterior_Sides45",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Stairs_Exterior_Sides45.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Stairs_Exterior_SidesU",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Stairs_Exterior_SidesU.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Stairs_Exterior_SingleSide",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Stairs_Exterior_SingleSide.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Stairs_Exterior_SingleSideThick",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Stairs_Exterior_SingleSideThick.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Stairs_Exterior_Straight",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Stairs_Exterior_Straight.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Stairs_Exterior_Straight_Center",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Stairs_Exterior_Straight_Center.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Stairs_Exterior_Straight_L",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Stairs_Exterior_Straight_L.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Stairs_Exterior_Straight_R",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Stairs_Exterior_Straight_R.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Wall_Arch",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Wall_Arch.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Wall_BottomCover",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Wall_BottomCover.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Wall_Plaster_Door_Flat",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Wall_Plaster_Door_Flat.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Wall_Plaster_Door_Round",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Wall_Plaster_Door_Round.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Wall_Plaster_Door_RoundInset",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Wall_Plaster_Door_RoundInset.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Wall_Plaster_Straight",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Wall_Plaster_Straight.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Wall_Plaster_Straight_Base",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Wall_Plaster_Straight_Base.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Wall_Plaster_Straight_L",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Wall_Plaster_Straight_L.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Wall_Plaster_Straight_R",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Wall_Plaster_Straight_R.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Wall_Plaster_Window_Thin_Round",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Wall_Plaster_Window_Thin_Round.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Wall_Plaster_Window_Wide_Flat",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Wall_Plaster_Window_Wide_Flat.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Wall_Plaster_Window_Wide_Flat2",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Wall_Plaster_Window_Wide_Flat2.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Wall_Plaster_Window_Wide_Round",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Wall_Plaster_Window_Wide_Round.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Wall_Plaster_WoodGrid",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Wall_Plaster_WoodGrid.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Wall_UnevenBrick_Door_Flat",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Wall_UnevenBrick_Door_Flat.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Wall_UnevenBrick_Door_Round",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Wall_UnevenBrick_Door_Round.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Wall_UnevenBrick_Straight",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Wall_UnevenBrick_Straight.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Wall_UnevenBrick_Window_Thin_Round",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Wall_UnevenBrick_Window_Thin_Round.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Wall_UnevenBrick_Window_Wide_Flat",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Wall_UnevenBrick_Window_Wide_Flat.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Wall_UnevenBrick_Window_Wide_Round",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Wall_UnevenBrick_Window_Wide_Round.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "WindowShutters_Thin_Flat_Closed",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/WindowShutters_Thin_Flat_Closed.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "WindowShutters_Thin_Flat_Open",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/WindowShutters_Thin_Flat_Open.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "WindowShutters_Thin_Round_Closed",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/WindowShutters_Thin_Round_Closed.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "WindowShutters_Thin_Round_Open",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/WindowShutters_Thin_Round_Open.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "WindowShutters_Wide_Flat_Closed",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/WindowShutters_Wide_Flat_Closed.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "WindowShutters_Wide_Flat_Open",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/WindowShutters_Wide_Flat_Open.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "WindowShutters_Wide_Round_Closed",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/WindowShutters_Wide_Round_Closed.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "WindowShutters_Wide_Round_Open",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/WindowShutters_Wide_Round_Open.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Window_Roof_Thin",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Window_Roof_Thin.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Window_Roof_Wide",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Window_Roof_Wide.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Window_Thin_Flat1",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Window_Thin_Flat1.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Window_Thin_Round1",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Window_Thin_Round1.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Window_Wide_Flat1",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Window_Wide_Flat1.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  },
+  {
+   "title": "Window_Wide_Round1",
+   "pack": "Medieval Village MegaKit (free tier)",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_megakit/Window_Wide_Round1.gltf",
+   "source": "https://quaternius.com/packs/medievalvillagemegakit.html"
+  }
+ ],
+ "medieval_interiors": [
+  {
+   "title": "Anvil",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Anvil.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Anvil_Log",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Anvil_Log.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Axe_Bronze",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Axe_Bronze.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Bag",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Bag.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Banner_1",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Banner_1.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Banner_1_Cloth",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Banner_1_Cloth.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Banner_2",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Banner_2.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Banner_2_Cloth",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Banner_2_Cloth.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Barrel",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Barrel.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Barrel_Apples",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Barrel_Apples.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Barrel_Holder",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Barrel_Holder.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Bed_Twin1",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Bed_Twin1.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Bed_Twin2",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Bed_Twin2.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Bench",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Bench.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "BookGroup_Medium_1",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/BookGroup_Medium_1.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "BookGroup_Medium_2",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/BookGroup_Medium_2.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "BookGroup_Medium_3",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/BookGroup_Medium_3.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "BookGroup_Small_1",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/BookGroup_Small_1.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "BookGroup_Small_2",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/BookGroup_Small_2.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "BookGroup_Small_3",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/BookGroup_Small_3.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "BookStand",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/BookStand.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Book_5",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Book_5.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Book_7",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Book_7.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Book_Simplified_Single",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Book_Simplified_Single.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Book_Stack_1",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Book_Stack_1.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Book_Stack_2",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Book_Stack_2.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Bookcase_2",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Bookcase_2.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Bottle_1",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Bottle_1.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Bucket_Metal",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Bucket_Metal.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Bucket_Wooden_1",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Bucket_Wooden_1.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Cabinet",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Cabinet.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Cage_Small",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Cage_Small.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "CandleStick",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/CandleStick.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "CandleStick_Stand",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/CandleStick_Stand.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "CandleStick_Triple",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/CandleStick_Triple.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Candle_1",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Candle_1.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Candle_2",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Candle_2.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Carrot",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Carrot.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Cauldron",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Cauldron.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Chain_Coil",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Chain_Coil.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Chair_1",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Chair_1.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Chalice",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Chalice.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Chandelier",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Chandelier.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Chest_Wood",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Chest_Wood.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Coin",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Coin.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Coin_Pile",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Coin_Pile.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Coin_Pile_2",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Coin_Pile_2.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Crate_Metal",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Crate_Metal.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Crate_Wooden",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Crate_Wooden.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Dummy",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Dummy.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "FarmCrate_Apple",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/FarmCrate_Apple.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "FarmCrate_Carrot",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/FarmCrate_Carrot.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "FarmCrate_Empty",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/FarmCrate_Empty.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Key_Gold",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Key_Gold.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Key_Metal",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Key_Metal.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Lantern_Wall",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Lantern_Wall.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Mug",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Mug.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Nightstand_Shelf",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Nightstand_Shelf.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Peg_Rack",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Peg_Rack.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Pickaxe_Bronze",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Pickaxe_Bronze.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Pot_1",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Pot_1.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Pot_1_Lid",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Pot_1_Lid.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Potion_1",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Potion_1.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Potion_2",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Potion_2.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Potion_4",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Potion_4.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Pouch_Large",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Pouch_Large.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Rope_1",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Rope_1.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Rope_2",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Rope_2.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Rope_3",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Rope_3.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Scroll_1",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Scroll_1.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Scroll_2",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Scroll_2.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Shelf_Arch",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Shelf_Arch.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Shelf_Simple",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Shelf_Simple.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Shelf_Small_Bottles",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Shelf_Small_Bottles.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Shield_Wooden",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Shield_Wooden.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "SmallBottle",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/SmallBottle.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "SmallBottles_1",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/SmallBottles_1.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Stall_Cart_Empty",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Stall_Cart_Empty.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Stall_Empty",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Stall_Empty.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Stool",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Stool.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Sword_Bronze",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Sword_Bronze.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Table_Fork",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Table_Fork.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Table_Knife",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Table_Knife.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Table_Large",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Table_Large.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Table_Plate",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Table_Plate.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Table_Spoon",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Table_Spoon.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Torch_Metal",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Torch_Metal.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Vase_2",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Vase_2.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Vase_4",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Vase_4.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Vase_Rubble_Medium",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Vase_Rubble_Medium.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "WeaponStand",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/WeaponStand.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Whetstone",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Whetstone.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Workbench",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Workbench.gltf",
+   "source": "https://quaternius.com"
+  },
+  {
+   "title": "Workbench_Drawers",
+   "pack": "Medieval Interiors / props",
+   "licence": "CC0 1.0",
+   "file": "assets/library/medieval_interiors/Workbench_Drawers.gltf",
+   "source": "https://quaternius.com"
+  }
  ]
 }

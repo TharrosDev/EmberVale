@@ -442,7 +442,7 @@ immediately before it usually name the thing that will bite you.
 ### Standing constraints (these are rules, not history)
 
 - **The art set standardises on Quaternius CC0 packs** (maintainer direction, 2026-08-05 — policy
-  in [`docs/ASSET_POLICY.md`](docs/ASSET_POLICY.md) §0, provenance in `assets/CREDITS.md`). 401
+  in [`docs/ASSET_POLICY.md`](docs/ASSET_POLICY.md) §0, provenance in `assets/CREDITS.md`). 677
   models are vendored at `assets/library/` behind a `.gdignore`; a model enters the game only by
   being **adapted into `assets/models/`** and credited. **Every model is CC0 and the project owes
   no attribution — keep it that way.**
