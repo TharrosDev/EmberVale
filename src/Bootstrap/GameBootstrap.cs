@@ -99,6 +99,7 @@ public partial class GameBootstrap : Node3D
     private Economy.ConsignmentLedger? _consignment;
     private Economy.ContractLedger? _contracts;
     private Economy.WagerLedger? _wagers;
+    private Economy.HaggleLedger? _haggles;
     private readonly System.Collections.Generic.List<Entity> _portals = new();
     // Post-transition settle (Phase 25.5B): time spent on the loading screen since a region load
     // began (-1 = not loading). Play resumes when the streamer reports the destination has finished
@@ -552,6 +553,12 @@ public partial class GameBootstrap : Node3D
         // and it is this node.
         _wagers = new Economy.WagerLedger { Name = "Wagers" };
         AddChild(_wagers);
+
+        // Merchants already talked down today (38S). The fifth, and the same division of labour as the
+        // fourth: the outcome is a function of the day and needs no storage, while the one attempt a day
+        // is the only thing stopping the player asking until the answer changes.
+        _haggles = new Economy.HaggleLedger { Name = "Haggles" };
+        AddChild(_haggles);
 
         // Placement mode (37C): the ghost and the commit. Not ISaveable — a placed prop persists
         // through the PersistentSpawnDirector above, which already records template, position and yaw.

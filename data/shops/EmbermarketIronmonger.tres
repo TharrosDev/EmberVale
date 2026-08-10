@@ -14,6 +14,10 @@
 ; One investment rung, not Bryn's two: a stall is a smaller thing to buy into than a forge, and the ladder
 ; should read as proportional to what is being bought. It opens the steel sword, which she otherwise keeps
 ; back for people she knows.
+;
+; 38S: she haggles at 40 for -2, harder and dearer than Aldreth's 50 for -1 across the square. A market
+; trader who has heard every line before is the reason in fiction; in play it is the second rung of the
+; same lesson, and the two counters being a minute apart is what makes the difference legible at all.
 
 [sub_resource type="Resource" id="Stock_ingot"]
 script = ExtResource("2_entry")
@@ -58,6 +62,8 @@ RestockDays = 2
 BuyMarkup = 1.55
 SellFraction = 0.42
 PurseGold = 320
+HaggleChance = 40
+HaggleDelta = -2
 InvestmentTiers = Array[Resource]([SubResource("Invest_stall")])
 OpenHour = 7
 CloseHour = 19

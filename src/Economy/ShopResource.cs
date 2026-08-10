@@ -118,6 +118,31 @@ public partial class ShopResource : Resource
     /// </summary>
     [Export] public int PurseGold { get; set; }
 
+    [ExportGroup("Haggling")]
+
+    /// <summary>
+    /// The chance in a hundred that this merchant is talked down, asked once per day (Phase 38S).
+    /// <c>0</c> — the default, and every shop authored before 38S — is a merchant who will not
+    /// negotiate at all, and the panel shows no button for them.
+    ///
+    /// ⚠️ <b>A haggling shop must have a <see cref="FactionId"/></b>, because <see cref="HaggleDelta"/>
+    /// is the whole downside and a shop with no faction cannot be thought worse of. <c>--validate</c>
+    /// refuses the pairing, exactly as it refuses a gambling house with no faction (38R2) and for the
+    /// same reason: an authored risk that cannot land is not a risk.
+    /// </summary>
+    [Export] public int HaggleChance { get; set; }
+
+    /// <summary>
+    /// What a <em>failed</em> attempt costs the player with <see cref="FactionId"/> — negative, and
+    /// charged once per day because <see cref="HaggleLedger"/> allows one attempt.
+    ///
+    /// ⚠️ It is a standing hit rather than a price surcharge deliberately: a surcharge would be
+    /// invisible against a spread the player never memorised, while standing is shown on the panel,
+    /// carried between every counter of the faction and slow to earn back. That is also why the numbers
+    /// are small — a failed conversation must not cost what fencing contraband costs.
+    /// </summary>
+    [Export] public int HaggleDelta { get; set; }
+
     [ExportGroup("Hours")]
 
     /// <summary>

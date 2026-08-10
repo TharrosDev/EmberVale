@@ -200,23 +200,28 @@ public class ShopPricingTests
                 {
                     foreach (bool specialty in new[] { false, true })
                     {
-                        foreach (int value in values)
+                        // 38S's haggle, joining the sweep as the contract above requires — and the
+                        // first multiplier here to move the SELL side, which is exactly why it had to.
+                        foreach (bool haggled in new[] { false, true })
                         {
-                            int buy = ShopPricing.BuyPrice(
-                                value, ShopPricing.MarkupFor(markup, tier, specialty));
-                            int unit = ShopPricing.SellPrice(
-                                value, ShopPricing.SellFractionFor(fraction, specialty));
-
-                            foreach (int taken in absorbed)
+                            foreach (int value in values)
                             {
-                                int sell = ShopStock.SaturatedPayout(
-                                    unit, taken, quantity: 1, restockDays: 1);
+                                int buy = ShopPricing.BuyPrice(
+                                    value, ShopPricing.MarkupFor(markup, tier, specialty, haggled));
+                                int unit = ShopPricing.SellPrice(
+                                    value, ShopPricing.SellFractionFor(fraction, specialty, haggled));
 
-                                Assert.True(
-                                    sell <= buy,
-                                    $"sell {sell} > buy {buy} at tier {tier}, markup {markup}, " +
-                                    $"fraction {fraction}, specialty {specialty}, value {value}, " +
-                                    $"absorbed {taken}");
+                                foreach (int taken in absorbed)
+                                {
+                                    int sell = ShopStock.SaturatedPayout(
+                                        unit, taken, quantity: 1, restockDays: 1);
+
+                                    Assert.True(
+                                        sell <= buy,
+                                        $"sell {sell} > buy {buy} at tier {tier}, markup {markup}, " +
+                                        $"fraction {fraction}, specialty {specialty}, " +
+                                        $"haggled {haggled}, value {value}, absorbed {taken}");
+                                }
                             }
                         }
                     }

@@ -29,6 +29,13 @@
 ; BuyMarkup must stay far enough above 1 for the discount to have room — at 1.5 every tier is distinct,
 ; and --validate rejects a markup that bottoms out at Honored.
 ;
+; 38S: the realm's first haggle, and the teaching one. HaggleChance 50 is the best odds anywhere — a
+; player should meet the mechanic where the answer is often yes, not at the counter that says no twice
+; running and reads as broken. HaggleDelta -1 is the smallest downside in the game for the same reason;
+; it is still real, because villagers standing prices every honest counter in the realm and there is no
+; way to earn it back at this stall. ⚠️ The chance is not a difficulty knob — it is bounded to one
+; attempt a day by HaggleLedger, so what a high number buys is a lesson, not an income.
+;
 ; 38F: Aldreth authors NO AcceptedTags and NO Specialties, and that is his whole identity rather than an
 ; omission. A general store is the merchant who takes everything and knows nothing especially well — he
 ; will buy the pelts Bryn refuses and the ruby nobody in town has a use for, and he pays plainly for all
@@ -111,6 +118,8 @@ LeveledTable = ExtResource("3_leveled")
 BuyMarkup = 1.5
 SellFraction = 0.4
 PurseGold = 250
+HaggleChance = 50
+HaggleDelta = -1
 InvestmentTiers = Array[Resource]([SubResource("Invest_share")])
 OpenHour = 6
 CloseHour = 20
