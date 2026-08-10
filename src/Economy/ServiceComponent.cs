@@ -42,6 +42,32 @@ public partial class ServiceComponent : InteractableComponent
     /// <summary>Which <see cref="ServiceResource"/> this offers (a <c>service.*</c> id).</summary>
     [Export] public string ServiceId { get; set; } = string.Empty;
 
+    /// <summary>
+    /// A holding the player must own before this counter will serve them (Phase 37E).
+    /// <b>Empty is ungated</b>, which is every service authored before 37E — so the field arrives
+    /// without changing a single existing one, the same shape <c>ShopResource.CellId</c> took.
+    ///
+    /// It exists for the bed in the player's own house. ⚠️ <b>Without it a free service standing in a
+    /// private room is free to everyone who walks in</b>, and this component was the only one of the
+    /// three property-aware interactables with no ownership check —
+    /// <see cref="Housing.PropertyStorageComponent"/> and <see cref="Housing.TrophyStandComponent"/>
+    /// have both asked <see cref="HousingService.Owns"/> since 37B.
+    ///
+    /// ⚠️ <b>The gate lives on the component, not in <see cref="TryUse"/>, and that is deliberate.</b>
+    /// <c>TryUse</c> is static because <c>DialogueEffect.OpenService</c> reaches it with no component
+    /// at all — a service fired from a conversation has no holding to belong to, so it is ungated by
+    /// nature rather than by omission.
+    ///
+    /// ⚠️ <c>--validate</c> cannot see this: it lives in a <c>.tscn</c>, which the validator does not
+    /// scan — the same limit <c>VendorComponent.ShopId</c> has carried since 38A.
+    /// </summary>
+    [Export] public string PropertyId { get; set; } = string.Empty;
+
+    /// <summary>Whether this counter is standing in someone else's house. Answers <c>false</c> when
+    /// no holding is named, so an ungated service never consults the housing service at all.</summary>
+    private bool NotMine =>
+        PropertyId.Length > 0 && !(Resolve<HousingService>()?.Owns(PropertyId) ?? false);
+
     public override string Prompt
     {
         get
@@ -52,6 +78,15 @@ public partial class ServiceComponent : InteractableComponent
             }
 
             string name = Loc.T(service.NameKey);
+
+            // 37E: answered before anything else, and it NAMES itself rather than going quiet. A bed
+            // that says nothing when you look at it reads as broken furniture; one that says whose it
+            // is teaches the player that the house is for sale.
+            if (NotMine)
+            {
+                return Loc.TF("service.not_yours", name);
+            }
+
             int price = PriceOf(service);
 
             // 38U, and the one place the gate's word "hover" cannot be honoured: this is a world
@@ -93,6 +128,13 @@ public partial class ServiceComponent : InteractableComponent
 
     public override void Interact(IEntity instigator)
     {
+        // ⚠️ Re-checked on the press, not trusted from the prompt — the same rule every Phase 37
+        // refusal follows. A prompt is a frame old and ownership can change between the two.
+        if (NotMine)
+        {
+            return;
+        }
+
         if (ServiceDatabase.Get(ServiceId) is { } service)
         {
             // The vault is the host entity's own inventory (38D), which is the one thing a service

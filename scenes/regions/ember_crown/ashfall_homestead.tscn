@@ -1,0 +1,1148 @@
+[gd_scene load_steps=44 format=3]
+
+[ext_resource type="Script" path="res://src/Entities/Entity.cs" id="1_entity"]
+[ext_resource type="Script" path="res://src/Items/InventoryComponent.cs" id="2_inventory"]
+[ext_resource type="Script" path="res://src/Housing/PropertyDeedComponent.cs" id="3_deed"]
+[ext_resource type="Script" path="res://src/Housing/PropertyStorageComponent.cs" id="4_storage"]
+[ext_resource type="Script" path="res://src/Housing/TrophyStandComponent.cs" id="5_trophy"]
+[ext_resource type="Script" path="res://src/Economy/ServiceComponent.cs" id="6_service"]
+[ext_resource type="PackedScene" path="res://scenes/props/bld_ashfall_house.tscn" id="7_house"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_tome_stand.glb" id="8_deedstand"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_chest_wood.gltf" id="9_chest"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_weapon_rack.gltf" id="10_weapon_rack"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_book_stand.gltf" id="11_book_stand"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_bed.gltf" id="12_bed"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_nightstand.gltf" id="13_nightstand"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_table_large.gltf" id="14_table"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_chair.gltf" id="15_chair"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_stool.gltf" id="16_stool"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_bookcase.gltf" id="17_bookcase"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_cabinet.gltf" id="18_cabinet"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_cauldron.glb" id="19_cauldron"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_shelf.gltf" id="20_shelf"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_shelf_arch.gltf" id="21_shelf_arch"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_chandelier.gltf" id="22_chandelier"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_lantern_wall.gltf" id="23_lantern"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_candles.gltf" id="24_candles"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_pot.gltf" id="25_pot"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_rope.gltf" id="26_rope"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_crate_wood.gltf" id="27_crate_wood"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_station_forge.glb" id="28_forge"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_station_workbench.glb" id="29_bench"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_station_alchemy.glb" id="30_alchemy"]
+[ext_resource type="Script" path="res://src/Crafting/CraftingStationComponent.cs" id="31_station"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_fence.glb" id="32_fence"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_tree_broadleaf.glb" id="33_tree"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_bush_flowering.glb" id="34_bush"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_well.glb" id="35_well"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_rockpath_wide.glb" id="36_path"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_grass_tall.glb" id="37_grass"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_flowers_a.glb" id="38_flowers"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_timber_stack.glb" id="39_timber"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_lamp_post.glb" id="40_lamp"]
+
+[sub_resource type="NavigationMesh" id="NavMesh_home"]
+vertices = PackedVector3Array()
+geometry_parsed_geometry_type = 1
+agent_radius = 0.5
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+size = Vector3(52, 0.2, 52)
+
+[sub_resource type="BoxShape3D" id="Shape_floor"]
+size = Vector3(52, 0.2, 52)
+
+[sub_resource type="StandardMaterial3D" id="Mat_floor"]
+albedo_color = Color(0.29, 0.32, 0.2, 1)
+roughness = 0.95
+
+[sub_resource type="BoxShape3D" id="Shape_deed"]
+size = Vector3(0.92, 1.22, 0.92)
+
+[sub_resource type="BoxShape3D" id="Shape_chest"]
+size = Vector3(1.28, 0.72, 0.76)
+
+[sub_resource type="BoxShape3D" id="Shape_rack"]
+size = Vector3(1.39, 1.11, 0.98)
+
+[sub_resource type="BoxShape3D" id="Shape_stand"]
+size = Vector3(0.51, 1.45, 0.51)
+
+[sub_resource type="BoxShape3D" id="Shape_bed"]
+size = Vector3(1.88, 0.81, 2.41)
+
+[sub_resource type="BoxShape3D" id="Shape_table"]
+size = Vector3(2.85, 0.81, 1.1)
+
+[sub_resource type="BoxShape3D" id="Shape_bookcase"]
+size = Vector3(1.46, 2.54, 0.43)
+
+[sub_resource type="BoxShape3D" id="Shape_cabinet"]
+size = Vector3(1.36, 1, 0.36)
+
+[sub_resource type="BoxShape3D" id="Shape_cauldron"]
+size = Vector3(1.15, 0.8, 0.95)
+
+[sub_resource type="BoxShape3D" id="Shape_forge"]
+size = Vector3(1.8, 1.88, 1.65)
+
+[sub_resource type="BoxShape3D" id="Shape_bench"]
+size = Vector3(1.5, 1.32, 1.36)
+
+[sub_resource type="BoxShape3D" id="Shape_alchemy"]
+size = Vector3(1.45, 1.01, 1.2)
+
+[sub_resource type="BoxShape3D" id="Shape_fence"]
+size = Vector3(2.91, 1.2, 0.14)
+
+[sub_resource type="BoxShape3D" id="Shape_tree"]
+size = Vector3(0.9, 8, 0.9)
+
+[sub_resource type="BoxShape3D" id="Shape_well"]
+size = Vector3(1.47, 2.75, 2.21)
+
+[sub_resource type="BoxShape3D" id="Shape_timber"]
+size = Vector3(5.67, 1.2, 4.08)
+
+; ====================================================================================================
+; ASHFALL HOMESTEAD — the player's holding (Phase 37E). Cell Center is (52, 0, 46), so every
+; coordinate below is LOCAL and world = local + Center.
+;
+; ⚠️ IT REPLACES 37D's COTTAGE ENTIRELY. That was `bld_cottage.glb` — a sealed 4.8 m mesh you could
+; not enter — beside a ROOFLESS pen of grey BoxMesh walls holding the stash. 37D's own comment said
+; why: "an enterable interior needs a scene transition convention this repo does not have yet". That
+; turned out not to be true. The megakit has walls with openings, floors and roofs, and the only
+; thing missing was a composition with per-wall colliders instead of one solid box — which is now
+; `compose_building.py --hollow`. There is no transition: you walk in through the door.
+;
+; ⚠️ EVERYTHING WITH A COLLIDER PARENTS TO `Nav`. Geometry outside the NavigationRegion3D is not
+; carved into the bake (27A), and the failure is invisible until you watch something walk through a
+; wall. The interactables (deed, stash, stands, bed) parent to the cell root exactly as they did in
+; the town hub — they are Entities, not scenery, and their colliders are interact targets.
+;
+; ⚠️ THE PersistentIds ARE UNCHANGED FROM 37B/37D — `ember_crown.cottage_chest`,
+; `ember_crown.cottage_trophy_a`, `ember_crown.cottage_trophy_b`. An inventory saves as
+; `inventory:<PersistentId>`, so a player who had goods in the old chest still has them in this one.
+; Renaming any of the three would silently empty a save's stash and read as item loss.
+;
+; The plot: the player arrives at the WEST gate (the Embermarket is the next cell west, abutting at
+; local x = -26), walks the path east and turns north to the door. The house sits at local (0, -6)
+; with its door on its +Z face, so the interior spans x -3..3, z -10..-2 and the doorway is at
+; (-2, -2). The yard for 37C placement is the open ground SOUTH-EAST at (6, 8); the workshop is the
+; three stations east of the house.
+; ====================================================================================================
+
+[node name="AshfallHomesteadCell" type="Node3D"]
+
+[node name="Nav" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("NavMesh_home")
+
+[node name="Floor" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+mesh = SubResource("BoxMesh_floor")
+surface_material_override/0 = SubResource("Mat_floor")
+
+[node name="FloorCol" type="StaticBody3D" parent="Nav"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FloorCol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+shape = SubResource("Shape_floor")
+
+; --- the house ------------------------------------------------------------------------------------
+; Composed by `python tools/compose_building.py ashfall_house 3 4 1 --hollow`. Its own scene carries
+; the per-wall colliders, the open doorway and the floor at y = 0, so it needs nothing here but a
+; position. ⚠️ Under `Nav`, so its walls carve the bake and nothing paths through the house.
+
+[node name="House" parent="Nav" instance=ExtResource("7_house")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -6)
+
+; --- interior light -------------------------------------------------------------------------------
+; ⚠️ A ROOF KILLS THE SUN AND THE ROOM GOES BLACK. The chandelier and the wall lantern are meshes;
+; neither emits anything. These two Omnis are what makes the interior readable, and the only way to
+; know they are needed — or that they are enough — is to render from inside.
+
+[node name="HearthLight" type="OmniLight3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.1, 1.1, -9)
+light_color = Color(1, 0.72, 0.42, 1)
+light_energy = 2.4
+omni_range = 7.5
+
+[node name="RoomLight" type="OmniLight3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, -6)
+light_color = Color(1, 0.87, 0.68, 1)
+light_energy = 2.2
+omni_range = 9
+
+; --- interior: the hearth end ---------------------------------------------------------------------
+
+[node name="Cauldron" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.1, 0, -9.2)
+
+[node name="Model" parent="Nav/Cauldron" instance=ExtResource("19_cauldron")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/Cauldron"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Cauldron/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
+shape = SubResource("Shape_cauldron")
+
+[node name="Bookcase" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.6, 0, -9.6)
+
+[node name="Model" parent="Nav/Bookcase" instance=ExtResource("17_bookcase")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/Bookcase"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Bookcase/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.27, 0)
+shape = SubResource("Shape_bookcase")
+
+[node name="Cabinet" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 2.6, 0, -8.4)
+
+[node name="Model" parent="Nav/Cabinet" instance=ExtResource("18_cabinet")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/Cabinet"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Cabinet/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("Shape_cabinet")
+
+; --- interior: the sleeping nook --------------------------------------------------------------------
+
+[node name="Nightstand" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -2.55, 0, -8.5)
+
+[node name="Model" parent="Nav/Nightstand" instance=ExtResource("13_nightstand")]
+
+[node name="Candles" parent="Nav/Nightstand" instance=ExtResource("24_candles")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.22, 0)
+
+; --- interior: the table ----------------------------------------------------------------------------
+
+[node name="Table" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.7, 0, -5.4)
+
+[node name="Model" parent="Nav/Table" instance=ExtResource("14_table")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/Table"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Table/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
+shape = SubResource("Shape_table")
+
+[node name="Pot" parent="Nav/Table" instance=ExtResource("25_pot")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.8, 0.81, 0)
+
+[node name="ChairS" type="Node3D" parent="Nav"]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.1, 0, -4.3)
+
+[node name="Model" parent="Nav/ChairS" instance=ExtResource("15_chair")]
+
+[node name="ChairN" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.3, 0, -6.5)
+
+[node name="Model" parent="Nav/ChairN" instance=ExtResource("16_stool")]
+
+; --- interior: shelves, hangings and the small dressing ---------------------------------------------
+; No colliders on any of these: they are on the walls or on furniture, nothing bumps into them, and
+; a collider each would carve the room's navmesh into confetti for no gain.
+
+[node name="ShelfW" parent="Nav" instance=ExtResource("20_shelf")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -2.85, 1.7, -8.6)
+
+[node name="ShelfArchE" parent="Nav" instance=ExtResource("21_shelf_arch")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 2.85, 1.9, -5.4)
+
+[node name="Chandelier" parent="Nav" instance=ExtResource("22_chandelier")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.5, -6)
+
+[node name="LanternW" parent="Nav" instance=ExtResource("23_lantern")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -2.9, 2, -4)
+
+[node name="RopeCoil" parent="Nav" instance=ExtResource("26_rope")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.4, 0, -9.4)
+
+[node name="CrateIn" parent="Nav" instance=ExtResource("27_crate_wood")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.4, 0, -3.4)
+
+; --- the workshop -----------------------------------------------------------------------------------
+; Authored rather than left to 37C's kits, so the holding is a base of operations the moment it is
+; claimed. The yard stays placeable on top of these — a player who wants a fourth station still buys
+; a kit and sets it down.
+
+[node name="Forge" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.5, 0, -8)
+
+[node name="Model" parent="Nav/Forge" instance=ExtResource("28_forge")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/Forge"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Forge/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.94, 0)
+shape = SubResource("Shape_forge")
+
+[node name="Station" type="Node" parent="Nav/Forge"]
+script = ExtResource("31_station")
+Station = 1
+
+[node name="Workbench" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.5, 0, -5.2)
+
+[node name="Model" parent="Nav/Workbench" instance=ExtResource("29_bench")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/Workbench"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Workbench/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.66, 0)
+shape = SubResource("Shape_bench")
+
+[node name="Station" type="Node" parent="Nav/Workbench"]
+script = ExtResource("31_station")
+Station = 2
+
+[node name="Alchemy" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.5, 0, -2.6)
+
+[node name="Model" parent="Nav/Alchemy" instance=ExtResource("30_alchemy")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/Alchemy"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Alchemy/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("Shape_alchemy")
+
+[node name="Station" type="Node" parent="Nav/Alchemy"]
+script = ExtResource("31_station")
+Station = 3
+
+[node name="TimberStack" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.5, 0, -6.5)
+
+[node name="Model" parent="Nav/TimberStack" instance=ExtResource("39_timber")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/TimberStack"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/TimberStack/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_timber")
+
+; --- the grounds ------------------------------------------------------------------------------------
+
+[node name="Well" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, 2)
+
+[node name="Model" parent="Nav/Well" instance=ExtResource("35_well")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/Well"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Well/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.37, 0)
+shape = SubResource("Shape_well")
+
+; ⚠️ IT BELONGS AT THE GATE AND NOWHERE ELSE. Two placements were tried nearer the house and both
+; rendered as a grey stone monolith blocking the front door — the model is read at 20 m in the town
+; square, where its lamp is the silhouette; at 3 m it is a pillar and the lamp is out of frame. The
+; .tscn cannot show you that.
+[node name="LampGate" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -19.4, 0, 6.4)
+
+[node name="Model" parent="Nav/LampGate" instance=ExtResource("40_lamp")]
+
+[node name="Glow" type="OmniLight3D" parent="Nav/LampGate"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.2, 0)
+light_color = Color(1, 0.79, 0.5, 1)
+light_energy = 1.6
+omni_range = 9
+
+[node name="PathA" parent="Nav" instance=ExtResource("36_path")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18, 0.01, 2)
+
+[node name="PathB" parent="Nav" instance=ExtResource("36_path")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 0.01, 2)
+
+[node name="PathC" parent="Nav" instance=ExtResource("36_path")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 0.01, 1.6)
+
+[node name="PathD" parent="Nav" instance=ExtResource("36_path")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0.01, 1.2)
+
+[node name="PathE" parent="Nav" instance=ExtResource("36_path")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0.01, 0.8)
+
+[node name="PathF" parent="Nav" instance=ExtResource("36_path")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0.01, 0.4)
+
+[node name="PathG" parent="Nav" instance=ExtResource("36_path")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0.01, 0)
+
+[node name="PathH" parent="Nav" instance=ExtResource("36_path")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0.01, -0.4)
+
+[node name="PathI" parent="Nav" instance=ExtResource("36_path")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0.01, -0.8)
+
+; --- planting ---------------------------------------------------------------------------------------
+; ⚠️ Trees get a TRUNK collider, not a canopy one: an 8 m broadleaf boxed to its 3.2 m spread is an
+; invisible wall you cannot see the edge of. Bushes, grass and flowers get none — they are ground
+; cover, and a collider on each would fence the garden off from its own owner.
+
+[node name="TreeNW" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, -11)
+
+[node name="Model" parent="Nav/TreeNW" instance=ExtResource("33_tree")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/TreeNW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/TreeNW/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
+shape = SubResource("Shape_tree")
+
+[node name="TreeNE" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, -13)
+
+[node name="Model" parent="Nav/TreeNE" instance=ExtResource("33_tree")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/TreeNE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/TreeNE/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
+shape = SubResource("Shape_tree")
+
+[node name="TreeS" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 0, 14)
+
+[node name="Model" parent="Nav/TreeS" instance=ExtResource("33_tree")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/TreeS"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/TreeS/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
+shape = SubResource("Shape_tree")
+
+[node name="BushA" parent="Nav" instance=ExtResource("34_bush")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 0, -2.6)
+
+[node name="BushB" parent="Nav" instance=ExtResource("34_bush")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.6, 0, -2.4)
+
+[node name="BushC" parent="Nav" instance=ExtResource("34_bush")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0, 5)
+
+[node name="FlowersA" parent="Nav" instance=ExtResource("38_flowers")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.4, 0, -1.4)
+
+[node name="FlowersB" parent="Nav" instance=ExtResource("38_flowers")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.2, 0, -1.6)
+
+[node name="FlowersC" parent="Nav" instance=ExtResource("38_flowers")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.8, 0, -1.2)
+
+[node name="GrassA" parent="Nav" instance=ExtResource("37_grass")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.2, 0, 4.2)
+
+[node name="GrassB" parent="Nav" instance=ExtResource("37_grass")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.4, 0, 5)
+
+[node name="GrassC" parent="Nav" instance=ExtResource("37_grass")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 6.4)
+
+[node name="GrassD" parent="Nav" instance=ExtResource("37_grass")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.8, 0, 7)
+
+; --- the boundary -------------------------------------------------------------------------------------
+; A homestead needs an edge or it is a house in a field. The fence runs the south and east sides and
+; stops either side of the west gate, which is where the path comes in from the Embermarket.
+
+[node name="FenceS0" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0, 16)
+
+[node name="Model" parent="Nav/FenceS0" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceS0"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceS0/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceS1" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.1, 0, 16)
+
+[node name="Model" parent="Nav/FenceS1" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceS1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceS1/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceS2" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.2, 0, 16)
+
+[node name="Model" parent="Nav/FenceS2" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceS2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceS2/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceS3" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.3, 0, 16)
+
+[node name="Model" parent="Nav/FenceS3" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceS3"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceS3/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceS4" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0, 16)
+
+[node name="Model" parent="Nav/FenceS4" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceS4"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceS4/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceS5" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0, 16)
+
+[node name="Model" parent="Nav/FenceS5" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceS5"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceS5/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceE0" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 15, 0, 13.5)
+
+[node name="Model" parent="Nav/FenceE0" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceE0"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceE0/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceE1" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 15, 0, 10.6)
+
+[node name="Model" parent="Nav/FenceE1" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceE1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceE1/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceE2" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 15, 0, 7.7)
+
+[node name="Model" parent="Nav/FenceE2" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceE2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceE2/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+; --- 37A: the deed post -------------------------------------------------------------------------------
+; ⚠️ It stays OUTSIDE the house, on the path, where a non-owner can walk up to it — a deed nobody can
+; reach is a deed nobody can buy, which is the mistake 37D fixed by moving it off the middle of the
+; square. It is a waystone now rather than the grey BoxMesh it was: the post the player is asked for
+; 600 gold at should not look like placeholder geometry.
+;
+; ⚠️ IT WAS A WAYSTONE FOR ONE RENDER AND THAT WAS WRONG. `prp_waystone` is 3 m of grey stone and it
+; stood in the approach shot as a monolith blocking the front door — the model reads fine at 20 m on
+; a road and dominates everything at 4 m on a garden path. A lectern is waist height, reads as
+; something with a document on it, and lets the player see the house they are being sold.
+
+[node name="CottageDeed" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.4, 0, 1.7)
+script = ExtResource("1_entity")
+DisplayName = "Deed Post"
+
+[node name="Mesh" parent="CottageDeed" instance=ExtResource("8_deedstand")]
+
+[node name="Collider" type="StaticBody3D" parent="CottageDeed"]
+
+[node name="Shape" type="CollisionShape3D" parent="CottageDeed/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.61, 0)
+shape = SubResource("Shape_deed")
+
+[node name="Deed" type="Node" parent="CottageDeed"]
+script = ExtResource("3_deed")
+PropertyId = "property.ember_crown.cottage"
+
+; --- 37B: the stash -----------------------------------------------------------------------------------
+; ⚠️ PersistentId UNCHANGED from 37B. The chest IS its inventory (`inventory:<PersistentId>`), so this
+; is the same chest a player filled before 37E moved it, and renaming it would empty their save.
+; Capacity stays on the node, not the property: InventoryComponent.Load clamps to Capacity, so a
+; capacity applied after the save manager's mid-load restore would silently eat the overflow.
+
+[node name="CottageChest" type="Node3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 2.5, 0, -6.6)
+script = ExtResource("1_entity")
+DisplayName = "Storage Chest"
+PersistentId = "ember_crown.cottage_chest"
+
+[node name="Mesh" parent="CottageChest" instance=ExtResource("9_chest")]
+
+[node name="Collider" type="StaticBody3D" parent="CottageChest"]
+
+[node name="Shape" type="CollisionShape3D" parent="CottageChest/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.36, 0)
+shape = SubResource("Shape_chest")
+
+[node name="Inventory" type="Node" parent="CottageChest"]
+script = ExtResource("2_inventory")
+Capacity = 40
+
+[node name="Storage" type="Node" parent="CottageChest"]
+script = ExtResource("4_storage")
+PropertyId = "property.ember_crown.cottage"
+
+; --- 37D: the trophy stands ---------------------------------------------------------------------------
+; ⚠️ Both PersistentIds UNCHANGED, for the chest's reason. What changed is the MODEL: they were
+; `prp_ruin_pillar` — a broken column doing duty as furniture — and are now a weapon rack and a book
+; stand, which is what a trophy actually sits on. Capacity must stay 1 (`InventoryComponent.Load`
+; restores through AddInstance and clamps to it).
+
+[node name="CottageStandW" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -2.6, 0, -4.6)
+script = ExtResource("1_entity")
+DisplayName = "Display Stand"
+PersistentId = "ember_crown.cottage_trophy_a"
+
+[node name="Mesh" parent="CottageStandW" instance=ExtResource("10_weapon_rack")]
+
+[node name="Collider" type="StaticBody3D" parent="CottageStandW"]
+
+[node name="Shape" type="CollisionShape3D" parent="CottageStandW/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0)
+shape = SubResource("Shape_rack")
+
+[node name="Inventory" type="Node" parent="CottageStandW"]
+script = ExtResource("2_inventory")
+Capacity = 1
+
+[node name="Display" type="Node" parent="CottageStandW"]
+script = ExtResource("5_trophy")
+PropertyId = "property.ember_crown.cottage"
+
+[node name="CottageStandE" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.3, 0, -4.2)
+script = ExtResource("1_entity")
+DisplayName = "Display Stand"
+PersistentId = "ember_crown.cottage_trophy_b"
+
+[node name="Mesh" parent="CottageStandE" instance=ExtResource("11_book_stand")]
+
+[node name="Collider" type="StaticBody3D" parent="CottageStandE"]
+
+[node name="Shape" type="CollisionShape3D" parent="CottageStandE/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.72, 0)
+shape = SubResource("Shape_stand")
+
+[node name="Inventory" type="Node" parent="CottageStandE"]
+script = ExtResource("2_inventory")
+Capacity = 1
+
+[node name="Display" type="Node" parent="CottageStandE"]
+script = ExtResource("5_trophy")
+PropertyId = "property.ember_crown.cottage"
+
+; --- 37E: the bed -------------------------------------------------------------------------------------
+; A free `ServiceKind.Inn` gated on owning the holding. ⚠️ THE GATE IS THE WHOLE POINT — without it
+; any passer-by sleeps in the player's bed, and `ServiceComponent` had no ownership check before 37E
+; while `PropertyStorageComponent` and `TrophyStandComponent` both did. It reads `HousingService.Owns`
+; through the same call they use.
+;
+; ⚠️ It is deliberately free, and DESIGN §6 carries the argument: the inn is 10 gold a night forever,
+; this house was 600 gold once, and the purchase IS the sink. The inn keeps its job for every player
+; who has not bought and in every settlement that is not this one.
+
+[node name="AshfallBed" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.85, 0, -6.9)
+script = ExtResource("1_entity")
+DisplayName = "Bed"
+
+[node name="Mesh" parent="AshfallBed" instance=ExtResource("12_bed")]
+
+[node name="Collider" type="StaticBody3D" parent="AshfallBed"]
+
+[node name="Shape" type="CollisionShape3D" parent="AshfallBed/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
+shape = SubResource("Shape_bed")
+
+[node name="Service" type="Node" parent="AshfallBed"]
+script = ExtResource("6_service")
+ServiceId = "service.ashfall.bed"
+PropertyId = "property.ember_crown.cottage"
+
+; --- 37E second pass: the boundary reads as an ENCLOSURE, not a stray railing ---------------------
+; ⚠️ The first render showed the fence as two disconnected runs in an empty field, which reads as
+; scenery someone forgot to finish. It now returns up the west side and along the north, stopping
+; either side of the gate the path comes through. Only a render shows this: from the .tscn the first
+; version looked like a boundary because the coordinates said "boundary".
+
+[node name="FenceS6" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.4, 0, 16)
+
+[node name="Model" parent="Nav/FenceS6" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceS6"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceS6/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceS7" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.3, 0, 16)
+
+[node name="Model" parent="Nav/FenceS7" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceS7"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceS7/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceS8" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.2, 0, 16)
+
+[node name="Model" parent="Nav/FenceS8" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceS8"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceS8/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceS9" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.1, 0, 16)
+
+[node name="Model" parent="Nav/FenceS9" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceS9"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceS9/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceSW0" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.9, 0, 16)
+
+[node name="Model" parent="Nav/FenceSW0" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceSW0"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceSW0/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceSW1" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17.8, 0, 16)
+
+[node name="Model" parent="Nav/FenceSW1" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceSW1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceSW1/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceW0" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -19.2, 0, 14.6)
+
+[node name="Model" parent="Nav/FenceW0" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceW0"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceW0/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceW1" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -19.2, 0, 11.7)
+
+[node name="Model" parent="Nav/FenceW1" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceW1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceW1/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceW2" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -19.2, 0, 8.8)
+
+[node name="Model" parent="Nav/FenceW2" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceW2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceW2/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceW3" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -19.2, 0, 5.9)
+
+[node name="Model" parent="Nav/FenceW3" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceW3"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceW3/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceWN0" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -19.2, 0, -0.8)
+
+[node name="Model" parent="Nav/FenceWN0" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceWN0"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceWN0/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceWN1" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -19.2, 0, -3.7)
+
+[node name="Model" parent="Nav/FenceWN1" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceWN1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceWN1/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceWN2" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -19.2, 0, -6.6)
+
+[node name="Model" parent="Nav/FenceWN2" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceWN2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceWN2/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceWN3" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -19.2, 0, -9.5)
+
+[node name="Model" parent="Nav/FenceWN3" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceWN3"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceWN3/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceN0" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17.8, 0, -12.4)
+
+[node name="Model" parent="Nav/FenceN0" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceN0"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceN0/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceN1" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.9, 0, -12.4)
+
+[node name="Model" parent="Nav/FenceN1" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceN1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceN1/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceN2" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12.0, 0, -12.4)
+
+[node name="Model" parent="Nav/FenceN2" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceN2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceN2/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceN3" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.1, 0, -12.4)
+
+[node name="Model" parent="Nav/FenceN3" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceN3"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceN3/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceN4" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.2, 0, -12.4)
+
+[node name="Model" parent="Nav/FenceN4" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceN4"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceN4/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceN5" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.3, 0, -12.4)
+
+[node name="Model" parent="Nav/FenceN5" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceN5"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceN5/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceN6" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0, -12.4)
+
+[node name="Model" parent="Nav/FenceN6" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceN6"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceN6/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceN7" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0, -12.4)
+
+[node name="Model" parent="Nav/FenceN7" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceN7"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceN7/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceN8" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.4, 0, -12.4)
+
+[node name="Model" parent="Nav/FenceN8" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceN8"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceN8/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceN9" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.3, 0, -12.4)
+
+[node name="Model" parent="Nav/FenceN9" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceN9"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceN9/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceN10" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.2, 0, -12.4)
+
+[node name="Model" parent="Nav/FenceN10" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceN10"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceN10/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceN11" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.1, 0, -12.4)
+
+[node name="Model" parent="Nav/FenceN11" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceN11"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceN11/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceE3" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 15, 0, -10.9)
+
+[node name="Model" parent="Nav/FenceE3" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceE3"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceE3/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceE4" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 15, 0, -8.0)
+
+[node name="Model" parent="Nav/FenceE4" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceE4"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceE4/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceE5" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 15, 0, -5.1)
+
+[node name="Model" parent="Nav/FenceE5" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceE5"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceE5/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceE6" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 15, 0, -2.2)
+
+[node name="Model" parent="Nav/FenceE6" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceE6"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceE6/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceE7" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 15, 0, 0.7)
+
+[node name="Model" parent="Nav/FenceE7" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceE7"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceE7/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+[node name="FenceE8" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 15, 0, 3.6)
+
+[node name="Model" parent="Nav/FenceE8" instance=ExtResource("32_fence")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/FenceE8"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/FenceE8/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_fence")
+
+; --- 37E second pass: planting ---------------------------------------------------------------------
+; ⚠️ A 52 m plot with three trees and four grass tufts renders as a green plane. Ground cover goes in
+; PATCHES (the nature kit's own rule) rather than spread evenly, so the eye reads clumps and not a
+; lawn. None of it takes a collider: it is ground cover, and fencing a garden off from its owner is
+; the defect this avoids.
+
+[node name="Grass0" parent="Nav" instance=ExtResource("37_grass")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0.0, 6.5)
+
+[node name="Grass1" parent="Nav" instance=ExtResource("37_grass")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10.2, 0.0, 7.4)
+
+[node name="Grass2" parent="Nav" instance=ExtResource("37_grass")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.6, 0.0, 8.1)
+
+[node name="Grass3" parent="Nav" instance=ExtResource("37_grass")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.4, 0.0, 8.6)
+
+[node name="Grass4" parent="Nav" instance=ExtResource("37_grass")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 0.0, 12.5)
+
+[node name="Grass5" parent="Nav" instance=ExtResource("37_grass")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.4, 0.0, 13.4)
+
+[node name="Grass6" parent="Nav" instance=ExtResource("37_grass")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.8, 0.0, 13.8)
+
+[node name="Grass7" parent="Nav" instance=ExtResource("37_grass")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.6, 0.0, 12.2)
+
+[node name="Grass8" parent="Nav" instance=ExtResource("37_grass")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 0.0, -6)
+
+[node name="Grass9" parent="Nav" instance=ExtResource("37_grass")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.2, 0.0, -7)
+
+[node name="Grass10" parent="Nav" instance=ExtResource("37_grass")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 0.0, -7.6)
+
+[node name="Grass11" parent="Nav" instance=ExtResource("37_grass")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0.0, 2)
+
+[node name="Grass12" parent="Nav" instance=ExtResource("37_grass")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0.0, 2.8)
+
+[node name="Grass13" parent="Nav" instance=ExtResource("37_grass")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.4, 0.0, 3.6)
+
+[node name="Grass14" parent="Nav" instance=ExtResource("37_grass")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0.0, 11)
+
+[node name="Grass15" parent="Nav" instance=ExtResource("37_grass")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0.0, 12)
+
+[node name="Grass16" parent="Nav" instance=ExtResource("37_grass")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.2, 0.0, 12.4)
+
+[node name="Flower0" parent="Nav" instance=ExtResource("38_flowers")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.9, 0.0, 0.9)
+
+[node name="Flower1" parent="Nav" instance=ExtResource("38_flowers")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.8, 0.0, -1.2)
+
+[node name="Flower2" parent="Nav" instance=ExtResource("38_flowers")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.4, 0.0, 0.6)
+
+[node name="Flower3" parent="Nav" instance=ExtResource("38_flowers")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.6, 0.0, 1.4)
+
+[node name="Flower4" parent="Nav" instance=ExtResource("38_flowers")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.4, 0.0, 6.2)
+
+[node name="Flower5" parent="Nav" instance=ExtResource("38_flowers")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.2, 0.0, 9.4)
+
+[node name="Flower6" parent="Nav" instance=ExtResource("38_flowers")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12.4, 0.0, 10.2)
+
+[node name="Bush0" parent="Nav" instance=ExtResource("34_bush")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0.0, -3.4)
+
+[node name="Bush1" parent="Nav" instance=ExtResource("34_bush")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16.5, 0.0, 1.5)
+
+[node name="Bush2" parent="Nav" instance=ExtResource("34_bush")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.5, 0.0, 8.5)
+
+[node name="Bush3" parent="Nav" instance=ExtResource("34_bush")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0.0, 13.5)
+
+[node name="Bush4" parent="Nav" instance=ExtResource("34_bush")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.5, 0.0, -9)
+
+[node name="CrateYardA" parent="Nav" instance=ExtResource("27_crate_wood")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.5, 0.0, -8.5)
+
+[node name="CrateYardB" parent="Nav" instance=ExtResource("27_crate_wood")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.3, 0.0, -9.4)
+
+[node name="RopeYard" parent="Nav" instance=ExtResource("26_rope")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.6, 0.0, -3.6)

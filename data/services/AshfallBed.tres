@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="ServiceResource" format=3]
+
+[ext_resource type="Script" path="res://src/Economy/ServiceResource.cs" id="1_service"]
+
+; The bed in the player's own house (Phase 37E). Mechanically the Ember Crown inn with the price taken
+; off — same Kind, same RestHour, same clock arithmetic — because a bed is a bed and a second rest
+; mechanism would be two things to keep in step.
+;
+; ⚠️ IT IS FREE, AND THAT IS AN ECONOMY DECISION RATHER THAN AN OVERSIGHT. The inn is 10 gold a night
+; forever; this house was 600 gold once, so it breaks even at sixty nights and every night after that
+; is the purchase paying out. DESIGN §6 carries the argument in full. The inn keeps its job for every
+; player who has not bought a house and in every settlement that is not this one — and there is
+; exactly one house in the realm, so this deletes nothing.
+;
+; ⚠️ THE OWNERSHIP GATE IS NOT IN THIS FILE AND CANNOT BE. It is `PropertyId` on the
+; ServiceComponent in ashfall_homestead.tscn, because a service resource is shared by every counter
+; naming it while a holding belongs to one place. --validate cannot see it either: a .tscn is not
+; scanned, the same limit VendorComponent.ShopId has carried since 38A.
+;
+; No FactionId: there is nobody to be on good terms with in your own bedroom, and a standing ramp on a
+; price of zero moves nothing anyway (ShopPricing.ServicePrice leaves a 0 at 0).
+;
+; No UnlockFlagId, for the inn's reason and enforced by the same rule: --validate refuses an inn with
+; a flag, because a bed is bought every night and a flag would make the first stay the only one.
+
+[resource]
+script = ExtResource("1_service")
+Id = "service.ashfall.bed"
+NameKey = "service.ashfall.bed.name"
+Kind = 2
+PriceGold = 0
+FactionId = ""
+UnlockFlagId = ""
+RestHour = 8
+XpReward = 0
