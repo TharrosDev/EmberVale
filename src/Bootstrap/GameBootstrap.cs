@@ -100,6 +100,7 @@ public partial class GameBootstrap : Node3D
     private Economy.ContractLedger? _contracts;
     private Economy.WagerLedger? _wagers;
     private Economy.HaggleLedger? _haggles;
+    private Economy.SupplyShockService? _shocks;
     private readonly System.Collections.Generic.List<Entity> _portals = new();
     // Post-transition settle (Phase 25.5B): time spent on the loading screen since a region load
     // began (-1 = not loading). Play resumes when the streamer reports the destination has finished
@@ -559,6 +560,14 @@ public partial class GameBootstrap : Node3D
         // is the only thing stopping the player asking until the answer changes.
         _haggles = new Economy.HaggleLedger { Name = "Haggles" };
         AddChild(_haggles);
+
+        // Supply shocks (38T). The sixth, and the first whose state is not a record of what the player
+        // did to a price but of what happened to one: the roll is a pure function of the day, so nothing
+        // here can be rerolled, but a shortage the player has hauled goods into ends early and no clock
+        // can derive that. It is a node rather than something inside WorldEventDirector for the reason
+        // the gate names — that director is not ISaveable, so a shock in it would end at every reload.
+        _shocks = new Economy.SupplyShockService { Name = "SupplyShocks" };
+        AddChild(_shocks);
 
         // Placement mode (37C): the ghost and the commit. Not ISaveable — a placed prop persists
         // through the PersistentSpawnDirector above, which already records template, position and yaw.

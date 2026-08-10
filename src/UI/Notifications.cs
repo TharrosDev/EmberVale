@@ -50,6 +50,7 @@ public partial class Notifications : CanvasLayer
         bus?.Subscribe<CompanionOrderIssuedEvent>(OnCompanionOrder);
         bus?.Subscribe<CompanionLoyaltyTierChangedEvent>(OnCompanionLoyalty);
         bus?.Subscribe<WagerSettledEvent>(OnWagerSettled);
+        bus?.Subscribe<SupplyShockRelievedEvent>(OnShockRelieved);
     }
 
     public override void _ExitTree()
@@ -72,6 +73,7 @@ public partial class Notifications : CanvasLayer
         bus.Unsubscribe<CompanionOrderIssuedEvent>(OnCompanionOrder);
         bus.Unsubscribe<CompanionLoyaltyTierChangedEvent>(OnCompanionLoyalty);
         bus.Unsubscribe<WagerSettledEvent>(OnWagerSettled);
+        bus.Unsubscribe<SupplyShockRelievedEvent>(OnShockRelieved);
     }
 
     private void OnLeveledUp(LeveledUpEvent e) => Push(Loc.TF("notify.levelup", e.NewLevel), UiTheme.Accent);
@@ -128,6 +130,11 @@ public partial class Notifications : CanvasLayer
         Push(
             Loc.TF(e.Won ? "notify.wager_won" : "notify.wager_lost", e.HouseName, e.Gold),
             e.Won ? UiTheme.Good : UiTheme.Bad);
+
+    // 38T. The last cart of a haul is indistinguishable from the one before it, and what it bought —
+    // prices at the far end going back to normal — is only visible to a player who goes and looks.
+    private void OnShockRelieved(SupplyShockRelievedEvent e) =>
+        Push(Loc.TF("notify.shock_relieved", Loc.T($"trade.tag.{e.Tag}")), UiTheme.Good);
 
     private void Push(string text, Color color)
     {

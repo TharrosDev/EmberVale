@@ -205,6 +205,14 @@ shop.invest_full,You already own all the stake they will sell.
 shop.local_trade,"This place is awash in {0} and short of {1}."
 shop.local_surplus,"This place is awash in {0} — it fetches little here."
 shop.local_demand,"This place is short of {0} — it fetches more here."
+# Supply shocks (Phase 38T). The line above says what this place is normally like; these say what has
+# happened to it this week, and both are on screen at once because a shocked cell still has a standing
+# trade underneath. The shortage line carries the haul counter because selling into it is the only
+# thing a player can do about a shock and nothing else in the game would mention it.
+shop.shock_shortage,"Word from the road: no {0} is getting through. Prices are up for {1} more day(s)."
+shop.shock_glut,"A caravan got through — {0} is going cheap here for {1} more day(s)."
+shop.shock_fair,"The fair is on. The stalls are overflowing for {0} more day(s)."
+shop.shock_relief,"({0}/{1} hauled in)"
 # Haggling (Phase 38S). The offer names the odds because the downside is real and unnamed odds are a
 # coin the player cannot decide about; the two outcomes name what moved, because a price that changed
 # without a line of text reads as the shop being mispriced.
@@ -604,6 +612,17 @@ service.prompt_contracts,"{0} — see what the caravans want"
 contracts.title,{0}   (E to close)
 contracts.none,Nothing is posted. Come back when the carts do.
 contracts.rotation,"The postings change in {0} day(s)."
+# The notices above the postings (38T) — the feature's only unprompted voice. Without them a supply
+# shock could only be found by walking to the counter it moved.
+contracts.notices,WORD FROM THE ROADS
+contracts.notice_shortage,"{0} is short of {1} — {2} day(s) yet."
+contracts.notice_glut,"{0} is awash in {1} — {2} day(s) yet."
+contracts.notice_fair,"A fair is on at {0} — {1} day(s) yet."
+# Settlement names, for the notices. Authored per cell that can be shocked; --validate holds every
+# cell with shock candidates to having one, because the notice reads "cell.ember_crown.x is short of"
+# without it and a raw key on a board is a bug report waiting to happen.
+cell.ember_crown.emberdeep_mine,The Emberdeep Mine
+cell.ember_crown.tarn_landing,Tarn's Landing
 contracts.wanted,"{0}x {1}"
 contracts.deliver,Deliver
 contracts.filled,Filled
@@ -1250,5 +1269,6 @@ dlg.wren.c_talk_bye,"I'll think on it."
 service.hollowreach.bones.name,The Dockside Bones
 service.prompt_wager,"{0} — throw for it ({1} gold, {2} left today)"
 service.prompt_wager_spent,"{0} — you have had your throws today"
+notify.shock_relieved,"Word spreads: the {0} shortage has broken."
 notify.wager_won,"The bones fall your way at {0}. {1} gold."
 notify.wager_lost,"{0} takes your {1} gold."

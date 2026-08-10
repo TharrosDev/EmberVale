@@ -1045,7 +1045,13 @@ public static class ContentValidator
 
             // The load-bearing one. A contract that pays less than a merchant already pays is a longer
             // walk for less money, and the player would only ever discover that by doing it.
-            EconomyReport.BestBuyers(item, item.TagList(), out Offer best, out _);
+            //
+            // ⚠️ Asked at PriceView.Peak since 38T: a supply shock moves what the best buyer pays for a
+            // few days at a time, so a posting that beats the shelf today can be beaten by the shelf on
+            // Thursday. This is 38G's carried warning — "the demand table is a floor under other
+            // people's rules" — made mechanical, and it is the same rule asked a harder question rather
+            // than a second rule about shocks that would drift from this one.
+            EconomyReport.BestBuyers(item, item.TagList(), out Offer best, out _, PriceView.Peak);
             long shelf = (long)best.Price * Mathf.Max(1, contract.Quantity);
             if (best.Has && contract.RewardGold <= shelf)
             {
@@ -1528,10 +1534,15 @@ public static class ContentValidator
             // settlement (cheapest where they are a surplus) while BestBuyers below now scans every
             // settlement for the keenest buyer — so the loop is asked across the whole demand band
             // rather than at one price. And 38S's haggle was missing from "cheapest standing" entirely.
+            // ⚠️ 38T widens it once more, and in BOTH directions at once: the materials are quoted at
+            // the cheapest a glut at the master's own settlement could ever make them, and the result at
+            // the keenest a shortage anywhere could ever make a buyer. Neither end is a day the game
+            // will necessarily roll — one shock runs at a cell at a time — but the loop has to be shut
+            // on the worst pair of days rather than on a pairing nobody thought to simulate.
             int cost = EconomyReport.CommissionCost(
                 recipe, shop, ReputationTier.Allied, pack: null, service.PriceGold,
-                haggled: shop.HaggleChance > 0);
-            EconomyReport.BestBuyers(output, output.TagList(), out Offer best, out _);
+                haggled: shop.HaggleChance > 0, view: PriceView.Trough);
+            EconomyReport.BestBuyers(output, output.TagList(), out Offer best, out _, PriceView.Peak);
 
             if (best.Has && CommissionRules.Exploitable(cost, best.Price, recipe.OutputQuantity))
             {
@@ -1922,9 +1933,11 @@ public static class ContentValidator
                     }
                 }
 
+                ValidateCellShocks(cell, surplus, demand, issues);
+
                 // 38G's parking notice, mechanised: demand that no counter reads is a multiplier the
                 // player can never meet — correct, validated and completely imperceptible.
-                if ((surplus.Count > 0 || demand.Count > 0) && !AnyShopIn(cell.Id))
+                if ((surplus.Count > 0 || demand.Count > 0 || cell.ShockTags.Count > 0) && !AnyShopIn(cell.Id))
                 {
                     issues.Add(
                         $"cell '{cell.Id}' authors surplus or demand and no shop stands in it — no " +
@@ -1932,6 +1945,80 @@ public static class ContentValidator
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// What a settlement's fortunes can turn on (Phase 38T). Three rules, and the second is the one
+    /// worth having: <b>a shock that cannot invert the cell's authored lists is an event that changes no
+    /// price</b>, and it fails silently — the notice appears on the board, the days count down, and
+    /// every number in the game is the number it was yesterday. <c>SupplyShockRules.Roll</c> already
+    /// refuses to roll one, so without this rule the authoring mistake is a candidate that simply never
+    /// fires, which is indistinguishable from a run of quiet days.
+    /// </summary>
+    private static void ValidateCellShocks(
+        RegionCellResource cell, List<string> surplus, List<string> demand, List<string> issues)
+    {
+        List<string> candidates = Tags(cell.ShockTags);
+        var seen = new HashSet<string>();
+
+        // A shocked cell is named on the caravan board, and Loc falls back to printing the key — so
+        // without this the board posts "cell.ember_crown.emberdeep_mine is short of raw ore" and looks
+        // like a bug in the board rather than a missing row in a CSV.
+        if (candidates.Count > 0 && !Loc.Has($"cell.{cell.Id}"))
+        {
+            issues.Add(
+                $"cell '{cell.Id}' can be shocked but has no 'cell.{cell.Id}' locale row — the caravan " +
+                "board would post the raw key as the settlement's name");
+        }
+
+        foreach (string tag in candidates)
+        {
+            if (!TradeTags.IsKnown(tag))
+            {
+                issues.Add($"cell '{cell.Id}' can be shocked in unknown trade tag '{tag}'");
+                continue;
+            }
+
+            if (!seen.Add(tag))
+            {
+                issues.Add(
+                    $"cell '{cell.Id}' lists '{tag}' twice as a shock candidate — a fair would move it " +
+                    "once and the duplicate would only weight the roll");
+            }
+
+            // A tag that is a surplus here can still become a shortage and vice versa; what cannot
+            // happen is both, so a tag in neither list is always legal and a tag in one is legal for the
+            // shock that inverts it. Only a tag the cell somehow authors in both is dead on arrival —
+            // and that pairing is already refused above, so what is left to catch is the fair.
+            if (surplus.Contains(tag) && demand.Contains(tag))
+            {
+                issues.Add(
+                    $"cell '{cell.Id}' can be shocked in '{tag}', which it authors as both a surplus " +
+                    "and a demand — no shock could invert that, so the candidate would never fire");
+            }
+        }
+
+        // A fair floods every candidate into surplus at once, so a cell whose candidates are ALL already
+        // a surplus can roll a fair that does nothing. Roll refuses it; this says so at author time.
+        if (candidates.Count > 0 && AllIn(candidates, surplus))
+        {
+            issues.Add(
+                $"cell '{cell.Id}' lists only goods it is already awash in as shock candidates — every " +
+                "glut and every fair there would change no price at all");
+        }
+    }
+
+    private static bool AllIn(List<string> tags, List<string> list)
+    {
+        foreach (string tag in tags)
+        {
+            if (!list.Contains(tag))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static bool AnyShopIn(string cellId)

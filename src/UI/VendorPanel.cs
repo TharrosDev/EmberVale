@@ -30,6 +30,7 @@ public partial class VendorPanel : UiPanel
     private Label _title = null!;
     private Label _standing = null!;
     private Label _localTrade = null!;
+    private Label _localShock = null!;
     private HBoxContainer _investRow = null!;
     private Label _investLabel = null!;
     private Button _investButton = null!;
@@ -75,6 +76,12 @@ public partial class VendorPanel : UiPanel
         _localTrade = UiTheme.Caption(string.Empty);
         _localTrade.AddThemeColorOverride("font_color", UiTheme.Dim);
         column.AddChild(_localTrade);
+
+        // The event, under the standing state of the trade (38T): the line above says what this place
+        // is normally like, this one says what has happened to it this week. Two lines rather than one
+        // sentence because the first is a fact about the place and the second expires.
+        _localShock = UiTheme.Caption(string.Empty);
+        column.AddChild(_localShock);
 
         // The stake line (38I). It sits with the standing caption rather than in the wares column
         // because it is a fact about the merchant, not a ware: what it buys is her purse and the rows
@@ -381,6 +388,16 @@ public partial class VendorPanel : UiPanel
         // next one has genuinely fallen. Every early return above leaves the player holding the item, and
         // none of them may mark a merchant as glutted for a sale that did not happen.
         stock?.Absorb(shop, instance.TemplateId, stack.Quantity);
+
+        // The goods have reached the settlement (38T), so a shortage of their kind is that much nearer
+        // broken. ⚠️ Here beside Absorb for exactly its reason: every early return above leaves the
+        // player holding the item, and none of them may credit a haul that did not arrive. A sale to a
+        // broker deliberately does NOT count — she is holding it for the player, not selling it here.
+        if (shop.CellId.Length > 0)
+        {
+            Shocks()?.Deliver(shop.CellId, instance.Template.TagList(), stack.Quantity);
+        }
+
         FenceStanding(shop, instance);
         MarkDirty();
     }
@@ -443,6 +460,11 @@ public partial class VendorPanel : UiPanel
     private static HaggleLedger? Haggles() =>
         ServiceLocator.Instance is { } locator && locator.TryGet(out HaggleLedger ledger)
             ? ledger
+            : null;
+
+    private static SupplyShockService? Shocks() =>
+        ServiceLocator.Instance is { } locator && locator.TryGet(out SupplyShockService service)
+            ? service
             : null;
 
     private static int CurrentDay() =>
@@ -609,11 +631,24 @@ public partial class VendorPanel : UiPanel
         if (shop.CellId.Length == 0 || World.RegionDatabase.Cell(shop.CellId) is not { } cell)
         {
             _localTrade.Visible = false;
+            _localShock.Visible = false;
             return;
         }
 
-        string surplus = TagNames(cell.Surplus);
-        string demand = TagNames(cell.Demand);
+        // ⚠️ The caption reads the SHOCKED lists, not the authored ones (38T). The prices beside it come
+        // through ShopResource.LocalValue, which applies whatever is running today — a caption built
+        // from the .tres would calmly explain the wrong numbers on exactly the days the feature exists
+        // for, which is worse than no caption at all.
+        int day = CurrentDay();
+        SupplyShock? shock = Shocks()?.At(cell.Id, day);
+        (List<string> live, List<string> wanted) = Shocks() is { } service
+            ? service.TagsFor(cell, day)
+            : (ShopResource.Plain(cell.Surplus), ShopResource.Plain(cell.Demand));
+
+        BuildShockLine(shock, day);
+
+        string surplus = TagNames(live);
+        string demand = TagNames(wanted);
         _localTrade.Visible = surplus.Length > 0 || demand.Length > 0;
 
         _localTrade.Text = surplus.Length > 0 && demand.Length > 0
@@ -625,7 +660,42 @@ public partial class VendorPanel : UiPanel
 
     /// <summary>The cell's tags in the player's language — the same `trade.tag.<c>x</c>` keys the
     /// refusal line names a merchant's trade with, so the two cannot describe one tag differently.</summary>
-    private static string TagNames(Godot.Collections.Array<string> tags)
+    /// <summary>
+    /// The caravan news, in one line (38T): what has happened, and how much longer it lasts. A shortage
+    /// also says how far along breaking it is, because hauling goods in is the one thing the player can
+    /// do about a shock and nothing else in the game would ever mention it.
+    /// </summary>
+    private void BuildShockLine(SupplyShock? active, int day)
+    {
+        if (active is not { } shock)
+        {
+            _localShock.Visible = false;
+            return;
+        }
+
+        string what = shock.Kind == ShockKind.Fair ? string.Empty : Loc.T($"trade.tag.{shock.Tag}");
+        int left = shock.DaysLeft(day);
+
+        string text = shock.Kind switch
+        {
+            ShockKind.Shortage => Loc.TF("shop.shock_shortage", what, left),
+            ShockKind.Glut => Loc.TF("shop.shock_glut", what, left),
+            _ => Loc.TF("shop.shock_fair", left),
+        };
+
+        if (shock.Kind == ShockKind.Shortage && Shocks() is { } service)
+        {
+            text += " " + Loc.TF(
+                "shop.shock_relief", service.DeliveredTo(shock), SupplyShockRules.ReliefUnits);
+        }
+
+        _localShock.Text = text;
+        _localShock.Visible = true;
+        _localShock.AddThemeColorOverride(
+            "font_color", shock.Kind == ShockKind.Shortage ? UiTheme.Bad : UiTheme.Good);
+    }
+
+    private static string TagNames(List<string> tags)
     {
         var names = new List<string>();
         foreach (string tag in tags)

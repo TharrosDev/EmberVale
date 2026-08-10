@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Embervale.Core;
 using Embervale.Core.Events;
 using Embervale.Core.Services;
@@ -114,6 +115,8 @@ public partial class ContractBoardPanel : UiPanel
         int cycle = ContractRules.Cycle(day, _rotationDays);
         int pool = ContractDatabase.All.Count;
 
+        AddNotices(day);
+
         int rows = 0;
         for (int slot = 0; slot < _slots; slot++)
         {
@@ -136,6 +139,58 @@ public partial class ContractBoardPanel : UiPanel
 
         _footer.Text = Loc.TF("contracts.rotation", ContractRules.DaysLeft(day, _rotationDays));
     }
+
+    /// <summary>
+    /// What the roads are saying (Phase 38T): every settlement whose trade is disturbed today, what has
+    /// happened to it and for how much longer.
+    ///
+    /// ⚠️ <b>This board is the feature's only unprompted voice.</b> A shock is otherwise visible solely
+    /// as a caption inside a vendor window the player has to already be standing in — which means the
+    /// one thing a shock is *for*, going somewhere else, could only be discovered after arriving. Posted
+    /// here beside the haulage contracts, where a player is already asking what is worth carrying where.
+    ///
+    /// The postings above are derived from the day and these are read from the save, and they sit on one
+    /// board because the player has no reason to care which is which.
+    /// </summary>
+    private void AddNotices(int day)
+    {
+        if (Shocks() is not { } service)
+        {
+            return;
+        }
+
+        IReadOnlyList<SupplyShock> live = service.ActiveOn(day);
+        if (live.Count == 0)
+        {
+            return;
+        }
+
+        _list.AddChild(UiTheme.Caption(Loc.T("contracts.notices"), UiTheme.Dim));
+
+        foreach (SupplyShock shock in live)
+        {
+            string place = Loc.T($"cell.{shock.CellId}");
+            string what = shock.Kind == ShockKind.Fair ? string.Empty : Loc.T($"trade.tag.{shock.Tag}");
+            int left = shock.DaysLeft(day);
+
+            string text = shock.Kind switch
+            {
+                ShockKind.Shortage => Loc.TF("contracts.notice_shortage", place, what, left),
+                ShockKind.Glut => Loc.TF("contracts.notice_glut", place, what, left),
+                _ => Loc.TF("contracts.notice_fair", place, left),
+            };
+
+            _list.AddChild(UiTheme.Body(
+                text, shock.Kind == ShockKind.Shortage ? UiTheme.Bad : UiTheme.Good));
+        }
+
+        _list.AddChild(new HSeparator());
+    }
+
+    private static SupplyShockService? Shocks() =>
+        ServiceLocator.Instance is { } locator && locator.TryGet(out SupplyShockService service)
+            ? service
+            : null;
 
     /// <summary>
     /// One posting: what is wanted, how much of it the player is carrying, and what it pays.

@@ -53,6 +53,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("region", "region <list|goto <id>>", "List regions or hard-load into one (Phase 25C).", Region));
         console.Register(new ConsoleCommand("travel", "travel <list|goto <id>>", "List attuned travel nodes or fast-travel to one (Phase 25G).", Travel));
         console.Register(new ConsoleCommand("economy", "economy [arbitrage]", "Print the realm's best buy-low/sell-high routes (Phase 38N1).", Economy));
+        console.Register(new ConsoleCommand("shock", "shock [list|force <cellId> <tag> <shortage|glut|fair> [days]|clear <cellId>]", "Inspect or drive supply shocks (Phase 38T).", Shock));
         console.Register(new ConsoleCommand("tutorial", "tutorial <status|skip|restart>", "Inspect or drive the onboarding hints (Phase 33B).", Tutorial));
         console.Register(new ConsoleCommand("opening", "opening", "Replay the new-game prologue (Phase 33A).", Opening));
         console.Register(new ConsoleCommand("companion", "companion <list|recruit <id>|dismiss <id>|stance <id> <follow|hold|engage>|order|loyalty <id> [delta]>", "Inspect and drive the companion party (Phase 32A).", Companion));
@@ -685,6 +686,58 @@ public static class DevCommands
         }
 
         return Embervale.Economy.EconomyReport.Arbitrage();
+    }
+
+    /// <summary>
+    /// Supply shocks (38T). The roll is a pure function of the day, so the only way to see a specific
+    /// one from a session is to force it — waiting for the dice is a week of pressing <c>time</c>.
+    /// </summary>
+    private static string Shock(DevConsole console, string[] args)
+    {
+        if (ServiceLocator.Instance is not { } locator ||
+            !locator.TryGet(out Embervale.Economy.SupplyShockService shocks))
+        {
+            return "supply shock service unavailable";
+        }
+
+        int day = locator.TryGet(out WorldClock clock) ? clock.Day : 0;
+
+        if (args.Length == 0 || args[0] == "list")
+        {
+            var sb = new StringBuilder($"supply shocks (day {day}):");
+            bool any = false;
+            foreach (Embervale.Economy.SupplyShock shock in shocks.ActiveOn(day))
+            {
+                any = true;
+                sb.Append($"\n  {shock.CellId} — {shock.Kind} of '{shock.Tag}', {shock.DaysLeft(day)} day(s) left" +
+                    $" ({shocks.DeliveredTo(shock)}/{Embervale.Economy.SupplyShockRules.ReliefUnits} hauled)");
+            }
+
+            return any ? sb.ToString() : sb.Append("\n  (none — the roads are quiet)").ToString();
+        }
+
+        if (args[0] == "clear" && args.Length >= 2)
+        {
+            return shocks.Clear(args[1]) ? $"cleared the shock at '{args[1]}'" : "nothing was running there";
+        }
+
+        if (args[0] == "force" && args.Length >= 4)
+        {
+            if (!System.Enum.TryParse(args[3], ignoreCase: true, out Embervale.Economy.ShockKind kind))
+            {
+                return "kind must be shortage, glut or fair";
+            }
+
+            int days = args.Length >= 5 && int.TryParse(args[4], out int parsed)
+                ? parsed
+                : Embervale.Economy.SupplyShockRules.MinDays;
+
+            shocks.Force(args[1], args[2], kind, day, days);
+
+            return $"{kind} of '{args[2]}' at '{args[1]}' for {days} day(s)";
+        }
+
+        return "usage: shock [list|force <cellId> <tag> <shortage|glut|fair> [days]|clear <cellId>]";
     }
 
     private static string Travel(DevConsole console, string[] args)
