@@ -35,6 +35,10 @@ window/stretch/aspect="expand"
 
 project/assembly_name="Embervale"
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/godot_mcp/plugin.cfg")
+
 [physics]
 
 3d/physics_engine="GodotPhysics3D"
@@ -42,7 +46,3 @@ project/assembly_name="Embervale"
 [rendering]
 
 textures/vram_compression/import_etc2_astc=true
-
-[editor_plugins]
-
-enabled=PackedStringArray("res://addons/godot_mcp/plugin.cfg")
