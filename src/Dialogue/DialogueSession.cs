@@ -255,6 +255,27 @@ public sealed class DialogueSession
                 }
 
                 break;
+            case DialogueEffect.OpenService:
+                // 38R, and the shape is OpenShop's for the same UiState reason: an OpenService choice
+                // authors no Goto, so a panel-opening kind registers with UiState before the dialogue
+                // panel deregisters and the owner count never reaches zero.
+                //
+                // vault: null is the whole reason TryUse takes the parameter — a conversation has no
+                // host entity, so a Bank has nothing to open. --validate refuses that authoring, and
+                // OpenVault logs rather than throws if one ever reaches here.
+                if (ServiceDatabase.Get(arg) is { } service)
+                {
+                    // Silent when refused, exactly as the walk-up prompt is: the refusal states
+                    // (hostile, already held, cannot afford) are what the conversation's own text is
+                    // for, and a toast here would talk over the line the author wrote.
+                    ServiceComponent.TryUse(service, _player, vault: null);
+                }
+                else
+                {
+                    Log.Warn($"Dialogue effect OpenService: unknown service '{arg}'.");
+                }
+
+                break;
         }
     }
 }

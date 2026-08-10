@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="ServiceResource" format=3]
+
+[ext_resource type="Script" path="res://src/Economy/ServiceResource.cs" id="1_service"]
+
+; Wren Halloway, a caravan guard between contracts (Phase 38R). Five hundred gold puts a sword in the
+; party — the most expensive thing the Ember Crown sells, and deliberately dearer than the mount at
+; 400, because a mount is a convenience and a second fighter changes what the player can walk into.
+;
+; ⚠️ PRICED, AND --validate REFUSES A FREE ONE. This is 38Q's ruling rather than 38O's: the free-service
+; rule (a fee fails closed on the player who most needs the counter) governs the counters that hand out
+; ADVICE. This one hands over a person who fights for you. And a free companion already exists —
+; DialogueEffect.RecruitCompanion, which is how Kael joins after his oath. A mercenary at zero gold is
+; not a generous mercenary, it is a story recruit with the story deleted.
+;
+; ⚠️ NO UnlockFlagId, and --validate refuses one. Every other one-off purchase in the battery records
+; itself in a flag; this one must not, because CompanionRoster already records the hire AND persists it,
+; and a flag would survive a dismissal. Dismiss her with a flag set and she could never be hired again —
+; a receipt outliving the thing it was a receipt for. The already-held test asks the roster instead.
+;
+; ⚠️ CHARGED AFTER THE VERB, which only two services in the game are (the other is the commission
+; bench). CompanionRoster.Recruit returns false on a full party, so gold taken at the counter would buy
+; nobody. ServiceComponent.Hire owns that ordering; the prompt tells a full party so first.
+;
+; Priced by faction.villagers, so the same standing ramp that moves a bed and a permit moves a hire.
+; She stands in the caravan yard rather than in town on purpose: the Crossway is where guards are
+; taken on, and until now the cell had four wardens and not one conversation.
+
+[resource]
+script = ExtResource("1_service")
+Id = "service.crossway.mercenary"
+NameKey = "service.crossway.mercenary.name"
+Kind = 11
+PriceGold = 500
+FactionId = "faction.villagers"
+UnlockFlagId = ""
+RestHour = 8
+XpReward = 0
+CompanionId = "companion.wren"

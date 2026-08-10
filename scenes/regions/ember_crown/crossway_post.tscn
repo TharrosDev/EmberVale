@@ -26,6 +26,9 @@
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_guild_rep.glb" id="30_guild_rep"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_hooded.glb" id="31_hooded"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_townswoman.glb" id="32_townswoman"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="43_dialogue"]
+[ext_resource type="Script" path="res://src/Companions/CompanionRecruiterComponent.cs" id="44_recruiter"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_adventurer_f.glb" id="45_adventurer_f"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_grass_short.glb" id="33_grass_short"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_grass_tall.glb" id="34_grass_tall"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_grass_wispy.glb" id="35_grass_wispy"]
@@ -857,6 +860,65 @@ script = ExtResource("6_service")
 ServiceId = "service.crossway.impound"
 
 [node name="Model" parent="ImpoundClerk" instance=ExtResource("32_townswoman")]
+
+; --- The hired sword (Phase 38R) -------------------------------------------------
+; Wren Halloway, a caravan guard between contracts. Five hundred gold puts her in the party through
+; service.crossway.mercenary, and the whole hire happens in CONVERSATION — she carries a
+; DialogueComponent and no ServiceComponent, because DialogueEffect.OpenService now exists and a
+; person you hire by pressing E on her is a vending machine with a face.
+;
+; ⚠️ THIS CELL HAD FOUR SERVICES AND NOT ONE CONVERSATION until now, which 38Q2 recorded as a finding
+; when it went looking for somewhere to mention the board. The four wardens are all counters on
+; purpose — a permit, a bribe, a search and a fine are transactions, not talk. A sword for hire is
+; the opposite, and is the cell's first speaking part.
+;
+; ⚠️ CompanionRecruiterComponent is what keeps her from standing here while she also walks behind the
+; player (32E). It hides the body AND its collider, so the interaction prompt goes with it, and it
+; re-derives from GameLoadedEvent rather than trusting the recruit event a streamed-in cell missed.
+; Without it a hired Wren is in two places, and the second one can be hired again.
+;
+; ⚠️ The body is npc_adventurer_f — the same model Sera wears in the Embermarket. 38Q2's duplicate
+; rule is about two identical models IN ONE FRAME; these two are cells apart. What IS in frame here
+; are the two guild-body wardens four metres up the road, which is why she wears a fighter's kit and
+; not the guild coat: she works this road, she does not police it.
+;
+; She is NOT parented to Nav: only static geometry should carve the navmesh.
+; ⚠️ POSITION AND YAW ARE THE RENDERED ANSWERS. The first placement, (10.6, 0, 6.4), was three metres
+; due south of the caravan board — which is exactly where a player stands to READ the board, so she
+; blocked the one interactable this cell shipped last sub-phase. Nothing in the .tscn said so; the
+; front-on shot came back with the board filling the frame behind her. 38Q's "render the people AND
+; the furniture together" fired again, on a prop that was not even hers.
+; ⚠️ And the body faces +Z, not Godot's -Z: the identity transform pointed her at the board's back.
+; The yaw below is the same basis CartA carries, and turns her west across the yard to the road.
+[node name="Mercenary" type="Node3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 12.6, 0, 8.9)
+script = ExtResource("2_entity")
+DisplayName = "Wren Halloway"
+TemplateId = "npc.mercenary"
+
+[node name="Animation" type="Node" parent="Mercenary"]
+script = ExtResource("4_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="Mercenary"]
+
+[node name="Shape" type="CollisionShape3D" parent="Mercenary/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="Mercenary"]
+script = ExtResource("5_faction")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="Mercenary"]
+script = ExtResource("43_dialogue")
+DialogueId = "dialogue.wren"
+
+[node name="Recruiter" type="Node" parent="Mercenary"]
+script = ExtResource("44_recruiter")
+CompanionId = "companion.wren"
+
+[node name="Model" parent="Mercenary" instance=ExtResource("45_adventurer_f")]
 
 ; ====================================================================================================
 ; GROUND COVER (38B) - grass at the margins only - nothing on the thoroughfare, where a tuft an NPC paths

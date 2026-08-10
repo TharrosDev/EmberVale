@@ -1358,6 +1358,39 @@ public static class ContentValidator
                 }
 
                 break;
+
+            case ServiceKind.Mercenary:
+                // 38Q's priced-service ruling, second instance and for its exact reason: this hands
+                // over something — a sword that fights for you — rather than advice. And a free
+                // companion is what DialogueEffect.RecruitCompanion already does, which is how Kael
+                // joins. A free hire is therefore not a generous mercenary, it is a story recruit with
+                // the story removed: the plumbing kept and the feature deleted.
+                if (service.PriceGold <= 0)
+                {
+                    issues.Add(
+                        $"service '{id}' hires a sword for {service.PriceGold} gold — the coin is the " +
+                        "only thing separating a mercenary from RecruitCompanion, which already " +
+                        "recruits for free when a story has earned it");
+                }
+
+                if (CompanionDatabase.Get(service.CompanionId) == null)
+                {
+                    issues.Add(
+                        $"service '{id}' hires unknown companion '{service.CompanionId}' — the press " +
+                        "would take nothing and produce nobody");
+                }
+
+                // The roster is the record and it persists. A flag beside it is a second record of the
+                // same fact that a dismissal does not clear, so the hire would be permanently retired
+                // by having once been made — the already-held test asks the roster for that reason.
+                if (service.UnlockFlagId.Length > 0 || service.GrantedFlagId.Length > 0)
+                {
+                    issues.Add(
+                        $"service '{id}' is a mercenary with a flag authored on it — the roster already " +
+                        "records the hire, and a flag would survive a dismissal and retire her for good");
+                }
+
+                break;
         }
     }
 
@@ -2458,6 +2491,32 @@ public static class ContentValidator
                     if (choice.Effect == DialogueEffect.OpenShop && !string.IsNullOrEmpty(choice.Goto))
                     {
                         issues.Add($"dialogue '{dialogue.Id}' OpenShop choice must end the conversation but points at '{choice.Goto}'");
+                    }
+
+                    // 38R: the same two rules for the service route, plus one that is genuinely new.
+                    if (choice.Effect == DialogueEffect.OpenService &&
+                        ServiceDatabase.Get(choice.EffectArg) == null)
+                    {
+                        issues.Add($"dialogue '{dialogue.Id}' OpenService effect references unknown service '{choice.EffectArg}'");
+                    }
+
+                    if (choice.Effect == DialogueEffect.OpenService && !string.IsNullOrEmpty(choice.Goto))
+                    {
+                        issues.Add($"dialogue '{dialogue.Id}' OpenService choice must end the conversation but points at '{choice.Goto}'");
+                    }
+
+                    // ⚠️ The one that is not a copy. A Bank opens the *host entity's* inventory, and a
+                    // conversation has no host entity — the vault it would open does not exist. The
+                    // failure is silent at runtime (a log line and a press that does nothing), so it is
+                    // refused in the data instead. A banker who talks keeps the ServiceComponent on his
+                    // vault and points the player at it; he does not open it mid-sentence.
+                    if (choice.Effect == DialogueEffect.OpenService &&
+                        ServiceDatabase.Get(choice.EffectArg) is { Kind: ServiceKind.Bank } vaultless)
+                    {
+                        issues.Add(
+                            $"dialogue '{dialogue.Id}' OpenService names '{vaultless.Id}', which is a Bank — " +
+                            "a bank opens its own entity's inventory and a conversation has no entity, " +
+                            "so the choice would do nothing");
                     }
 
                     // 38J: the shop-hours condition pair, checked the way the quest conditions are.

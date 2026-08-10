@@ -416,6 +416,7 @@ a wallet would be a second place for money to live and a second thing to persist
 | An impound fine | `ServiceKind.Redeem` — **12 gold a unit** against whatever the wardens took, through `ContrabandLaw.Fine`. The only price in the game not authored as the price it charges, because the bill depends on how much was seized | 38O |
 | A broker's commission | `ShopResource.ConsignCommission` — **18%** of every consignment, taken out of a payout that is already the best in the realm (~0.70 of value against the most generous counter's 0.62). The player is paid more than anywhere else and still hands a slice back, which is why it is a sink rather than a discount | 38P |
 | A master's commission | `ServiceKind.Commission` — **60 gold of labour** per piece at Bryn's order bench, plus every ingredient the player did not bring, priced through his own shop's markup. The one sink in the table that is *cheaper* than the alternative it competes with: commissioning undercuts buying the finished piece off his shelf in proportion to what the player already carries | 38Q |
+| A sword for hire | `ServiceKind.Mercenary` — **500 gold once**, and `CompanionRoster` is the only record of it. The dearest thing the Ember Crown sells, deliberately above the mount at 400: a mount is a convenience, a second fighter changes what the player can walk into | 38R |
 | Repair | — | **pending 40A** |
 
 ⚠️ **A commission is the first price in the economy the `ShopPricing` clamps do not protect, and the
@@ -441,6 +442,25 @@ ceiling, because the ceiling is the rotation.
 `QuestLogPanel` carries no Contracts heading on the rule that the journal shows the states the data
 actually has; a haulage job in the journal beside the story is the failure 38K's notice board was
 already written to avoid.
+
+**Four services were struck rather than built, and each was struck for a different reason** (38R). The
+38R brief listed seven; three of them are recorded here so nobody re-litigates them. **A barber/cosmetic
+service has nothing to change** — no player appearance system exists anywhere in the game, and 40B's
+rule is that a cut system leaves no stub. **A healer is strictly worse than the bed** — `ServiceKind.Inn`
+already refills every resource stat and moves the clock for 10 gold, and the one version that *would* be
+perceptible (selling corruption away) is forbidden by §5 above rather than merely redundant. **A
+warehouse is the second vault 38D already declined**, in `EmberCrownBank.tres`'s own header: a bank you
+cannot reach from the next town is a chest, and nothing about a contract or the toll reads a vault, so
+"storage staged beside the caravan board" is a chest with a story. (The fourth, passage, was not a
+decision at all — 38M had already shipped it.)
+
+**A companion can be bought, and the price is what makes it a service** (38R). `ServiceKind.Mercenary`
+puts a sword on the roster for 500 gold, and `--validate` refuses a free one — which is 38Q's ruling
+rather than 38O's, because this hands over *goods* (a person who fights for you) rather than advice. The
+sharper reason is that a free companion **already exists**: `DialogueEffect.RecruitCompanion` is how Kael
+joins after his oath. A mercenary at zero gold is not a generous mercenary, it is a story recruit with
+the story deleted. ⚠️ The hire is recorded by `CompanionRoster` and by **nothing else** — a story flag
+beside it would survive a dismissal and retire her permanently, which is why `--validate` refuses one.
 
 **The appraiser is free, and that is a decision too** (38P2). A valuation is an obvious per-use sink and it was deliberately not taken: `ServiceRules` refuses any service the player cannot afford *before* the verb runs, so a fee fails closed on the player with an empty purse and a full pack — exactly the person who walked over to ask what is worth carrying. An appraisal only the rich can buy is not a sink, it is a lock on the one screen that explains the economy. Same reasoning as 38O's free warden search and 38P's free consignment counter; `--validate` enforces all three.
 

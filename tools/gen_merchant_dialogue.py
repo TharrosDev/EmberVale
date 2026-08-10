@@ -21,6 +21,17 @@ Usage
     shop      the shop id gating and opened by the trade choices
     speaker   a human name, used only in the header comment
 
+    --service emits the SERVICE shape instead (38R): the door carries `Effect = 10` (OpenService)
+              and the third argument is a `service.*` id.
+
+                  python tools/gen_merchant_dialogue.py --service innkeeper dialogue.innkeeper \\
+                      service.ember_crown.inn "Hesta Vell" > data/dialogue/Innkeeper.tres
+
+              ⚠️ It emits **no hours nodes**, and that is the difference rather than an omission:
+              services deliberately keep none (`DESIGN.md` §6 — an inn that shut at night would be
+              the only way to pass the night, shut at night), so there is nothing for a ShopOpen
+              gate to test and a closed line would be prose about a state that cannot happen.
+
 What the shape encodes (each of these is a defect that shipped once)
 --------------------------------------------------------------------
 * the trade choice carries `Effect = 9` (OpenShop) and **no `Goto`** — a `Goto` leaves the
@@ -117,17 +128,92 @@ StartNodeId = "root"
 Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_talk"), SubResource("node_closed")])
 '''
 
+SERVICE_TEMPLATE = '''[gd_resource type="Resource" script_class="DialogueResource" format=3]
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+; {speaker} ({shop}). Scaffold from tools/gen_merchant_dialogue.py --service; prose is hand-written
+; in data/locale/strings.csv.
+;
+; The service shape (38R), and what differs from the merchant one above it is the whole point:
+;   - the door carries Effect = 10 (OpenService) and NO Goto, for the merchant shape's reason: a
+;     Goto leaves this conversation open behind whatever window the service opens, and the player
+;     lands back in it on close. --validate refuses it.
+;   - there are NO hours and no closed node. Services keep none by design (DESIGN.md section 6), so
+;     there is no ShopOpen equivalent to gate on and no closed line to write.
+;   - the price is NOT in the graph. A walk-up ServiceComponent prompt derives it from standing;
+;     a conversation says it in authored prose, so the number lives in the locale row and the
+;     refusals (hostile, already held, cannot afford) are silent here on purpose.
+
+[sub_resource type="Resource" id="ch_use"]
+script = ExtResource("3_choice")
+Text = "dlg.{key}.c_use"
+Effect = 10
+EffectArg = "{shop}"
+
+[sub_resource type="Resource" id="ch_talk"]
+script = ExtResource("3_choice")
+Text = "dlg.{key}.c_talk"
+Goto = "talk"
+
+[sub_resource type="Resource" id="ch_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.{key}.c_bye"
+
+[sub_resource type="Resource" id="ch_talk_use"]
+script = ExtResource("3_choice")
+Text = "dlg.{key}.c_talk_use"
+Effect = 10
+EffectArg = "{shop}"
+
+[sub_resource type="Resource" id="ch_talk_back"]
+script = ExtResource("3_choice")
+Text = "dlg.{key}.c_talk_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_talk_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.{key}.c_talk_bye"
+
+[sub_resource type="Resource" id="node_root"]
+script = ExtResource("2_node")
+Id = "root"
+Text = "dlg.{key}.root"
+Choices = Array[Resource]([SubResource("ch_use"), SubResource("ch_talk"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_talk"]
+script = ExtResource("2_node")
+Id = "talk"
+Text = "dlg.{key}.talk"
+Choices = Array[Resource]([SubResource("ch_talk_use"), SubResource("ch_talk_back"), SubResource("ch_talk_bye")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "{did}"
+SpeakerName = "dlg.{key}.speaker"
+StartNodeId = "root"
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_talk")])
+'''
+
 LOCALE_KEYS = ["speaker", "root", "talk", "closed", "c_trade", "c_closed", "c_talk", "c_bye",
                "c_talk_trade", "c_talk_back", "c_talk_bye"]
 
+SERVICE_LOCALE_KEYS = ["speaker", "root", "talk", "c_use", "c_talk", "c_bye",
+                       "c_talk_use", "c_talk_back", "c_talk_bye"]
+
 
 def main(argv):
+    service = "--service" in argv
+    argv = [a for a in argv if a != "--service"]
     if len(argv) < 4:
         raise SystemExit(__doc__)
     key, did, shop, speaker = argv[0], argv[1], argv[2], argv[3]
-    sys.stdout.write(TEMPLATE.format(key=key, did=did, shop=shop, speaker=speaker))
+    template = SERVICE_TEMPLATE if service else TEMPLATE
+    sys.stdout.write(template.format(key=key, did=did, shop=shop, speaker=speaker))
     print("\n; locale rows still to write by hand in data/locale/strings.csv:", file=sys.stderr)
-    for k in LOCALE_KEYS:
+    for k in (SERVICE_LOCALE_KEYS if service else LOCALE_KEYS):
         print(f";   dlg.{key}.{k}", file=sys.stderr)
 
 

@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="CompanionResource" load_steps=2 format=3 uid="uid://cmbrvlcompwren"]
+
+[ext_resource type="Script" path="res://src/Companions/CompanionResource.cs" id="1_companion"]
+
+; Wren Halloway, the caravan yard's hired sword (Phase 38R) — the second companion in the game and
+; the first who joins for money rather than for a reason.
+;
+; ⚠️ NO RecruitQuestId AND NO LoyaltyQuestId, and both absences are the design. Kael is recruited by
+; an oath and deepened by his brother's quest; a mercenary is recruited by a purse and has no story to
+; be owed. Authoring empty quest ids is what says so — --validate checks each only if it is set, so a
+; hopeful placeholder id would be a broken reference rather than a promise.
+;
+; StartingLoyalty 25 against Kael's 40, and that is the whole characterisation in one number: she is
+; bought, not sworn, so she starts colder than the man who volunteered. Nothing in 38R spends it —
+; CompanionLoyaltyComponent already moves it in play — but a hire that started as loyal as an oath
+; would quietly say the coin meant nothing.
+;
+; The body is npc_adventurer_f, already adopted and already retargeted (GeneralSkeleton, so the shared
+; animation library binds). ⚠️ It is the same model Sera wears in the Embermarket — allowed here
+; because 38Q2's rule is about two identical models IN ONE FRAME, and these two stand in different
+; cells two hundred metres apart. Rendered at eye level, front and back, beside the two guild-body
+; wardens she shares the yard with before it was adopted.
+
+[resource]
+script = ExtResource("1_companion")
+Id = "companion.wren"
+NameKey = "companion.wren.name"
+TitleKey = "companion.wren.title"
+AttributesPath = "res://data/attributes/CompanionAttributes.tres"
+WeaponPath = "res://data/weapons/SteelSword.tres"
+ModelPath = "res://assets/models/characters/npc_adventurer_f.glb"
+FactionId = "faction.villagers"
+KnownSpellIds = Array[String]([])
+FollowDistance = 3.0
+EngageRadius = 14.0
+AttackRange = 2.1
+LeashRadius = 18.0
+StartingLoyalty = 25
+LoyaltyQuestReward = 0
+RecruitQuestId = ""
+LoyaltyQuestId = ""
+DialogueId = "dialogue.wren"

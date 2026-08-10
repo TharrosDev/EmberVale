@@ -143,4 +143,18 @@ public partial class ServiceResource : Resource
     /// it, but worth knowing before blaming the board for looking wrong after an edit.
     /// </summary>
     [Export] public int RotationDays { get; set; } = 4;
+
+    [ExportGroup("Mercenary")]
+
+    /// <summary>
+    /// The companion a <see cref="ServiceKind.Mercenary"/> hires onto the roster (a <c>companion.*</c>
+    /// id, Phase 38R). <c>--validate</c> checks it against <c>CompanionDatabase</c>, which is more than
+    /// the <c>.tscn</c>-borne ids get.
+    ///
+    /// ⚠️ <b>No <see cref="UnlockFlagId"/> belongs beside it.</b> The roster already knows who is hired
+    /// and persists it, so a flag would be a second record of the same fact that a dismissal would not
+    /// clear — and a dismissed mercenary who can never be hired again is a flag outliving its meaning.
+    /// The already-held test asks <c>CompanionRoster.IsRecruited</c> for that reason.
+    /// </summary>
+    [Export] public string CompanionId { get; set; } = string.Empty;
 }
