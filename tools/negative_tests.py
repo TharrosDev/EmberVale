@@ -270,6 +270,19 @@ CASES = [
      [("data/locale/strings.csv",
        'shop.line.glut,"{0} of them, their appetite falling — {1}g"\n', "")],
      "price breakdown line"),
+
+    # ---- ValidateMount (Phase 39A) --------------------------------------------------------
+    # ⚠️ The one that matters. Ownership of the mount is a single string held in two files that
+    # never meet: the stablemaster's UnlockFlagId is what 400 gold buys, MountComponent.OwnedFlagId
+    # is what the whistle key reads. Rename either and BOTH halves stay individually correct — the
+    # service still charges, the component still checks a flag — while the horse never comes.
+    # No test in the suite touches both sides, so this rule and this mutation are the only thing
+    # standing between that rename and a silently dead 400-gold purchase.
+    ("mount.flag_unreachable", "ValidateMount",
+     [("data/services/EmberCrownStable.tres",
+       'UnlockFlagId = "flag.stable.mount_owned"',
+       'UnlockFlagId = "flag.stable.mount_bought"')],
+     "which is the flag"),
 ]
 
 

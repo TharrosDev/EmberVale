@@ -2,6 +2,7 @@ using Embervale.Companions;
 using Embervale.Core.Events;
 using Embervale.Economy;
 using Embervale.Localization;
+using Embervale.Movement;
 using Embervale.Progression;
 using Embervale.Quests;
 using Embervale.World;
@@ -51,6 +52,8 @@ public partial class Notifications : CanvasLayer
         bus?.Subscribe<CompanionLoyaltyTierChangedEvent>(OnCompanionLoyalty);
         bus?.Subscribe<WagerSettledEvent>(OnWagerSettled);
         bus?.Subscribe<SupplyShockRelievedEvent>(OnShockRelieved);
+        bus?.Subscribe<MountChangedEvent>(OnMountChanged);
+        bus?.Subscribe<MountRefusedEvent>(OnMountRefused);
     }
 
     public override void _ExitTree()
@@ -74,6 +77,8 @@ public partial class Notifications : CanvasLayer
         bus.Unsubscribe<CompanionLoyaltyTierChangedEvent>(OnCompanionLoyalty);
         bus.Unsubscribe<WagerSettledEvent>(OnWagerSettled);
         bus.Unsubscribe<SupplyShockRelievedEvent>(OnShockRelieved);
+        bus.Unsubscribe<MountChangedEvent>(OnMountChanged);
+        bus.Unsubscribe<MountRefusedEvent>(OnMountRefused);
     }
 
     private void OnLeveledUp(LeveledUpEvent e) => Push(Loc.TF("notify.levelup", e.NewLevel), UiTheme.Accent);
@@ -135,6 +140,18 @@ public partial class Notifications : CanvasLayer
     // prices at the far end going back to normal — is only visible to a player who goes and looks.
     private void OnShockRelieved(SupplyShockRelievedEvent e) =>
         Push(Loc.TF("notify.shock_relieved", Loc.T($"trade.tag.{e.Tag}")), UiTheme.Good);
+
+    // 39A. An EMPTY key is the load path saying "restore this, do not narrate it" — the same rule
+    // that keeps a reloaded save from toasting "Kael joins you" every time it is opened.
+    private void OnMountChanged(MountChangedEvent e)
+    {
+        if (e.MessageKey.Length > 0)
+        {
+            Push(Loc.T(e.MessageKey), e.Mounted ? UiTheme.Accent : UiTheme.Dim);
+        }
+    }
+
+    private void OnMountRefused(MountRefusedEvent e) => Push(Loc.T(e.ReasonKey), UiTheme.Bad);
 
     private void Push(string text, Color color)
     {
