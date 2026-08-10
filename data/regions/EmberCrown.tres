@@ -64,6 +64,21 @@
 ; HollowreachHull.tres explains why its economics are deliberately flat at every tier, and a fence
 ; whose prices moved with the local trade would be a fence with an opinion about the local trade.
 ;
+; ⚠️ SHOCK CANDIDATES (38T), AND THEY ARE THE THIRD LIST RATHER THAN A SETTING ON THE FIRST TWO. A
+; shock moves a tag OUT of one of the lists above and INTO the other for two to five days, so a
+; candidate is only an event where it inverts what the cell already says: the mine can be cut off from
+; the ore under its own feet (the seam floods) or finally see a food cart get through, and the Landing
+; is the mirror - the boats stay in, or a train of ore carts arrives. A candidate the cell already
+; treats the shocked way is a notice on the board announcing that nothing has happened, which is what
+; SupplyShockRules.Roll and --validate both refuse.
+;
+; ONLY THE TWO CELLS THAT AUTHOR TRADE AUTHOR SHOCKS, and that is the same argument as above rather
+; than a smaller version of it: a shock at the Embermarket would move prices at thirteen shops that
+; all price at par by CellId, so it would move nothing until every one of them was pointed at the cell
+; - and 38G's trap is precisely that a half-authored settlement is invisible. A fair belongs at a
+; market and this is where it will go when those shops are placed; here, a "fair" is a caravan
+; arriving at a mine that had run short, which is the same event wearing work clothes.
+;
 ; The two lists are a PAIR and have to be read together: a carry only pays when the source has the
 ; surplus and the destination the demand, because the buy/sell spread it has to clear is about 1.84x
 ; at a specialist. See RegionDemand for the arithmetic and the factors.
@@ -120,6 +135,7 @@ Center = Vector3(56, 0, -10)
 SafeRadius = 24.0
 Surplus = Array[String](["ore", "metal", "fuel"])
 Demand = Array[String](["food", "fish", "textile"])
+ShockTags = Array[String](["ore", "food"])
 
 [sub_resource type="Resource" id="Cell_wilds_north"]
 script = ExtResource("2_cell")
@@ -140,6 +156,7 @@ Center = Vector3(-56, 0, -6)
 SafeRadius = 22.0
 Surplus = Array[String](["fish"])
 Demand = Array[String](["ore", "metal", "fuel"])
+ShockTags = Array[String](["fish", "ore"])
 
 [sub_resource type="Resource" id="Cell_hollowreach"]
 script = ExtResource("2_cell")

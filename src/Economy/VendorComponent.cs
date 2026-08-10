@@ -42,6 +42,16 @@ public readonly record struct WagerSettledEvent(
     IEntity Player, string HouseName, bool Won, int Gold) : IGameEvent;
 
 /// <summary>
+/// Raised when enough goods have reached a shocked settlement to break its shortage (Phase 38T).
+///
+/// ⚠️ <b>Same reason as the wager above.</b> The last cart of a haul looks exactly like the one before
+/// it — the sale completes, the gold arrives — and the only visible difference is that the prices the
+/// player was hauling *towards* have just fallen back to normal. Without a line saying so, the reward
+/// for the whole run reads as the shortage having quietly expired on its own.
+/// </summary>
+public readonly record struct SupplyShockRelievedEvent(string CellId, string Tag) : IGameEvent;
+
+/// <summary>
 /// A merchant the player can trade with (Phase 38A). Authored on an entity with a collider (the
 /// interact raycast needs one) and pointed at a <see cref="ShopResource"/> by id — the same
 /// "declare it in the scene, resolve it at runtime" shape <c>PropertyStorageComponent</c> and

@@ -319,17 +319,49 @@ public partial class ShopResource : Resource
     /// <c>VendorPanel.StandingWith</c> takes, and for the same reason: a half-built world must price
     /// normally rather than refuse to trade.
     /// </summary>
-    public int LocalValue(int baseValue, List<string> itemTags)
+    /// <param name="view">
+    /// Which day to price for (Phase 38T). <see cref="PriceView.Today"/> applies whatever supply shock
+    /// is running at this cell right now and is what every live transaction passes; the other two ask
+    /// for the ends of the band a shock can move this counter through, and exist for
+    /// <c>ContentValidator</c> — a rule proved only against today's prices is a rule that breaks on a
+    /// day nobody was playing on.
+    /// </param>
+    public int LocalValue(int baseValue, List<string> itemTags, PriceView view = PriceView.Today)
     {
         if (CellId.Length == 0 || World.RegionDatabase.Cell(CellId) is not { } cell)
         {
             return baseValue;
         }
 
-        return RegionDemand.ValueAt(baseValue, itemTags, Plain(cell.Surplus), Plain(cell.Demand));
+        (List<string> surplus, List<string> demand) = view == PriceView.Today
+            ? LiveTags(cell)
+            : SupplyShockRules.Extremes(
+                Plain(cell.Surplus), Plain(cell.Demand), Plain(cell.ShockTags), view);
+
+        return RegionDemand.ValueAt(baseValue, itemTags, surplus, demand);
     }
 
-    private static List<string> Plain(Godot.Collections.Array<string> tags)
+    /// <summary>
+    /// The cell's tags as they stand today. Falls back to the authored pair when no
+    /// <see cref="SupplyShockService"/> is in the tree — which is every headless run (<c>--validate</c>,
+    /// <c>--economy</c>) and is the right answer there: those tools ask their own questions about the
+    /// shocked band explicitly rather than inheriting one session's dice.
+    /// </summary>
+    private static (List<string> Surplus, List<string> Demand) LiveTags(World.RegionCellResource cell)
+    {
+        if (Core.Services.ServiceLocator.Instance is { } locator &&
+            locator.TryGet(out SupplyShockService shocks) &&
+            locator.TryGet(out World.WorldClock clock))
+        {
+            return shocks.TagsFor(cell, clock.Day);
+        }
+
+        return (Plain(cell.Surplus), Plain(cell.Demand));
+    }
+
+    /// <summary>A Godot string array as a plain list, for the Godot-free helpers. Public because
+    /// <see cref="SupplyShockService"/> converts the same cell arrays this does.</summary>
+    public static List<string> Plain(Godot.Collections.Array<string> tags)
     {
         var list = new List<string>();
         foreach (string tag in tags)

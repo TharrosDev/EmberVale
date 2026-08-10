@@ -66,4 +66,20 @@ public partial class RegionCellResource : Resource
     /// 1.84× at a specialist. `RegionDemand` carries the arithmetic.
     /// </summary>
     [Export] public Godot.Collections.Array<string> Demand { get; set; } = new();
+
+    /// <summary>
+    /// Trade tags this place's fortunes can <b>turn on</b> for a few days at a time (Phase 38T): the
+    /// seam floods, the boats stay in, a caravan finally gets through, the fair comes to town.
+    ///
+    /// ⚠️ <b>A candidate here is only an event when it INVERTS the two lists above.</b> A shock moves its
+    /// tag out of one list and into the other, so authoring a tag the cell already treats the shocked way
+    /// is a notice on the board announcing that nothing has happened — <c>SupplyShockRules.Roll</c>
+    /// refuses to roll one and <c>--validate</c> refuses to ship one, but the authoring instinct (list
+    /// everything the place trades in) produces exactly that.
+    ///
+    /// <b>Empty means a place with steady trade</b>, which is most of the realm and every wilds cell.
+    /// The bounds on how long a shock runs are in <c>SupplyShockRules</c>, not here: a duration authored
+    /// per cell is a number nobody can tune without replaying a week.
+    /// </summary>
+    [Export] public Godot.Collections.Array<string> ShockTags { get; set; } = new();
 }

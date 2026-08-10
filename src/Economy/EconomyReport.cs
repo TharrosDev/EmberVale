@@ -304,7 +304,12 @@ public static class EconomyReport
     /// to make. That is precisely the failure this class's own header warns about. Her real offer is
     /// <see cref="BestConsignment"/>, which is a different shape: it pays later and takes a cut.
     /// </summary>
-    public static void BestBuyers(ItemResource item, List<string> tags, out Offer first, out Offer second)
+    /// <param name="view">Which day to price for (38T). <c>ContentValidator</c> passes
+    /// <see cref="PriceView.Peak"/> so the rules measured against "what the best buyer pays" are proved
+    /// against the keenest buyer a supply shock can ever produce, not the one standing there today.</param>
+    public static void BestBuyers(
+        ItemResource item, List<string> tags, out Offer first, out Offer second,
+        PriceView view = PriceView.Today)
     {
         first = default;
         second = default;
@@ -319,7 +324,7 @@ public static class EconomyReport
 
             bool specialty = TradeTags.IsSpecialty(tags, shop.SpecialtyList());
             int price = ShopPricing.SellPrice(
-                shop.LocalValue(item.Value, tags),
+                shop.LocalValue(item.Value, tags, view),
                 ShopPricing.SellFractionFor(shop.SellFraction, specialty));
 
             if (!first.Has || price > first.Price)
@@ -344,7 +349,8 @@ public static class EconomyReport
     /// the panel: this code exists to <em>report</em> a price, so a second computation of it would stay
     /// invisible until a player was quoted a number the game refuses to pay.
     /// </summary>
-    public static ConsignQuote BestConsignment(ItemResource item, List<string> tags)
+    public static ConsignQuote BestConsignment(
+        ItemResource item, List<string> tags, PriceView view = PriceView.Today)
     {
         var best = default(ConsignQuote);
 
@@ -357,7 +363,7 @@ public static class EconomyReport
             }
 
             int net = ConsignmentRules.Net(
-                ConsignmentRules.Gross(shop.LocalValue(item.Value, tags), shop.ConsignFraction),
+                ConsignmentRules.Gross(shop.LocalValue(item.Value, tags, view), shop.ConsignFraction),
                 shop.ConsignCommission);
 
             if (!best.Has || net > best.Net)
@@ -404,7 +410,8 @@ public static class EconomyReport
         ReputationTier tier,
         InventoryComponent? pack,
         int labourFee,
-        bool haggled = false)
+        bool haggled = false,
+        PriceView view = PriceView.Today)
     {
         var shortfall = new List<(int UnitValue, int Missing, float Markup)>();
         List<string> specialties = shop.SpecialtyList();
@@ -424,7 +431,7 @@ public static class EconomyReport
             // stands somewhere. ⚠️ This is half of the commission exploit check — the other half is
             // BestBuyers above, which now scans every settlement's local value for the best sale.
             List<string> itemTags = item.TagList();
-            shortfall.Add((shop.LocalValue(item.Value, itemTags), missing, ShopPricing.MarkupFor(
+            shortfall.Add((shop.LocalValue(item.Value, itemTags, view), missing, ShopPricing.MarkupFor(
                 shop.BuyMarkup, tier, TradeTags.IsSpecialty(itemTags, specialties), haggled)));
         }
 

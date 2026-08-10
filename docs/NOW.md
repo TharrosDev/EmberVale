@@ -10,32 +10,30 @@ existed the same three lines were maintained in four places and rewritten every 
 
 ## Where we are
 
-- **Stage C, Phase 38 (economy). 38A–38S done, and 38G with them. Next: 38T — Caravan events +
-  supply shocks.**
-- Open the plan: `docs/playbook/phase-38.md`, the `38T` entry, plus **38G's** — 38T moves the table
-  38G authored, and 38G's two carried lines are written for it.
-- ✅ **38G is no longer parked.** It was deferred for eleven sub-phases on one condition — *"it needs a
-  second market to contrast against"* — which 38K and 38N had satisfied five sub-phases earlier while
-  the notice sat unread. **Nothing else is parked.** ⚠️ If a future item is parked, park it with a
-  check someone can run, not a verdict.
+- **Stage C, Phase 38 (economy). 38A–38T done. Next: 38U — the economy UI/UX pass.**
+- Open the plan: `docs/playbook/phase-38.md`, the `38U` entry, plus **38T's and 38S's** — 38U has to
+  explain, line by line, every multiplier those two added.
+- **Nothing is parked.** ⚠️ If a future item is parked, park it with a check someone can run, not a
+  verdict — 38G sat eleven sub-phases past its own condition because the notice named a conclusion.
 - ⚠️ **Five of 38R's seven briefed services were struck, not deferred** — cosmetic, healer, passage,
   warehouse (38R) and courier (38R2). Each reason is in the playbook and `DESIGN.md` §6. Two of the
   five already existed under another name. **Do not rebuild them.**
 - 🎨 **The asset migration onto the four Quaternius MegaKits is complete** (A–E). `docs/ASSET_POLICY.md`
   §0.2–§0.3 is the authority.
 
-## Last verified (session close, 2026-08-09)
+## Last verified (session close, 2026-08-10)
 
 | | |
 | --- | --- |
 | Build | clean, **0 warnings** |
-| Tests | **1257 passing**; 38G added 9 (`RegionDemandTests`) and gave the 38F sweep a demand axis |
-| `--validate` | exit 0; **4 new 38G rules + both commission cases negative-tested both ways** |
-| `--economy` | **CHANGED ON PURPOSE — 3 routes now turn a profit** (eel and riverfish east, copper ore west) |
-| `--state` | 2 regions, 14 cells, 63 items, **23 shops**, 14 services, 8 contracts, 33 dialogues, 14 quests |
-| **`--play`** | booted, loaded slot1, all 9 cells resident, 27 objects restored, **0 project errors** |
-| Saved state | **38G adds none** — demand is authored data. Four "no usable entry" warnings, not five |
-| Rendered | **nothing — 38G placed nothing in the world.** Its driver is a caption in `VendorPanel` |
+| Tests | **1270 passing**; 38T added 13 (`SupplyShockTests`) |
+| `--validate` | exit 0; **5 new 38T rules negative-tested both ways**, and the two widened rules proved by inverting `PriceView` |
+| `--economy` | **byte-identical** — headless has no shock service, so it prices the authored lists |
+| `--state` | 2 regions, 14 cells, 63 items, 23 shops, 14 services, 8 contracts, 33 dialogues, 14 quests |
+| **`--play`** | booted, loaded slot1, all 9 cells resident, **31 objects restored**, **0 project errors** |
+| Saved state | **38T adds `shocks`** — one "no usable entry" warning on the pre-38T save, as expected |
+| Save round trip | `tools/shock_roundtrip.gd`, **17 checks, run headlessly** (incl. the §7 empty-save case) |
+| Rendered | **nothing — 38T placed nothing in the world.** Its drivers are the caravan board and `VendorPanel` |
 | Bodies retargeted | 12 of 12 skinned (`fp_arm` has no skin and needs none) |
 | Props with no collider | 0 (audit clean) |
 
@@ -76,6 +74,10 @@ existed the same three lines were maintained in four places and rewritten every 
    `WagerLedger`, `HaggleLedger` — each storing only **what the player did**, never what was offered or
    what the answer was. ⚠️ Storing the outcome is the obvious shape and the one that rots.
    ⚠️ `string.GetHashCode()` is randomised per process; `StableRoll` is a hand-written FNV-1a.
+   ⚠️ **38T is the first that needed BOTH halves**: the roll is derived from the day, and the window is
+   stored because the player can end a shortage early by hauling goods in — which no clock can derive.
+   ⚠️ **GDScript can only call methods whose signatures marshal**, so a `.gd` save harness cannot reach
+   anything taking a record struct or an `IReadOnlyList`; probe `has_method` before writing one.
    ⚠️ **Nothing about a contract may reach the quest log.**
 8. ⚠️ **A SERVICE CAN BE FIRED FROM A CONVERSATION, EXCEPT A BANK** (38R). `DialogueEffect.OpenService`
    runs the whole 38D battery through `ServiceComponent.TryUse` — but a `Bank` opens the **host
