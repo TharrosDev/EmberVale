@@ -346,3 +346,57 @@ time in, and want to spend gold to purchase."*
      names. Reading the save was three commands and settled all of it.
 
 ---
+
+## 37G — The Iron King gets a body `[C]` ✅
+
+*37F found it and deliberately left it: with his texture restored, the game's flagship boss rendered
+as a man in an orange bomber jacket, teal shorts and trainers. This is the pass that fixes it.*
+
+- **Landed:** `assets/library/men/king.glb` copied over `boss_iron_king.glb` — a bearded king in a
+  mail coif and gold crown, steel plate at shoulder, arm and knee, dark blue tabard — at
+  `nodes/root_scale = 1.368` so he stands **2.605 m** against the archetype's `CapsuleHeight = 2.6`.
+  Plus `IronKingClipsTests` (8 cases). **No code change and no data change**: `ModelPath` already
+  pointed here, so the swap is a file and an import setting.
+- ⚠️ **THE WHOLE RISK WAS SILENT AND THE TEST IS THE ONLY THING THAT RETIRED IT.** The old body
+  shipped `Slash`, `Stab`, `HitReact`; this one ships `Sword_Slash` and `HitRecieve` — **no overlap
+  on two of the three**. `AnimationClips.Resolve` returning empty is a *legal* answer (a creature
+  with no block clip simply never blocks), so a boss that has quietly lost its attack animation winds
+  up and never strikes and **nothing logs a word**. A render of a standing model cannot see it.
+- ⚠️ **AND THE PACK SHIPS GUN CLIPS** — `Idle_Gun`, `Idle_Gun_Pointing`, `Gun_Shoot`, `Run_Shoot`.
+  Only `AnimationClips`' exact-match pass keeps the plain `Idle`; a first-match-wins scan would be
+  correct here *purely because the list happens to be alphabetical*. The failure that guards against
+  is the one its own comment names: **"a fantasy boss idling in a rifle stance, which nothing would
+  flag as an error"**.
+- 🎯 **THE RESOLVER HAD ALREADY BEEN HARDENED FOR THIS EXACT SWAP, BY SOMEONE WHO NEVER MADE IT.**
+  `AnimationClips.Match` carries the comment *"the Iron King's replacement happens to list them
+  alphabetically…"*, and `hit`'s alias list contains the **misspelled** `recieve` — which is exactly
+  how this pack spells `HitRecieve`. The groundwork was laid and then not used. **Read the code that
+  will consume your change before assuming it has not thought about you.**
+- **File copy, not a round-trip** (`ASSET_POLICY.md`): the rig already fits, and a Blender round-trip
+  destroys bone-parented children — which this model has, since the sword hangs off a hand bone.
+- **Verified in the right order.** Rendered **front and back before adopting** (the standing rule:
+  four of six 38N2 candidates were unusable and none of it was visible from a filename) — the back is
+  fully modelled armour, no open geometry. Then measured: 2.605 m tall, **feet at −0.002 m**, which
+  is the sunk-body defect `ce150cc` had to fix twice. Then rendered **in the arena at eye level**,
+  not in isolation — 37F's carry.
+- ⚠️ **Three candidates were rendered and rejected**, which is the gate working rather than
+  ceremony: `monsters/demon` (1.68 m, too small and reads as a minion), `monsters/goleling_evolved`
+  (2.57 m and the right size, but a rock golem is not a fallen Flamebearer) and `monsters/orc_enemy`
+  (1.46 m). The lore is specific — *"The First Flamebearer… power consumed him, now rules through
+  fear"* — and a crowned man in armour is the only one of the four that reads as a king at all.
+- Build clean, **0 warnings** + **1297** tests (8 new) + `--validate` exit 0 + `--economy`
+  **byte-identical** + `--state` unchanged + a `--play` boot with 10 cells, 32 objects, **0 project
+  errors**.
+- ⚠️ **What was NOT verified.** He was rendered standing, not fought: **no clip was actually played**,
+  so the bindings are proved by `AnimationClips.Resolve` under test rather than by watching him
+  swing. His rig is a plain 62-bone `Skeleton3D`, **not** `GeneralSkeleton` — so he is un-retargeted
+  and cannot reach the shared library's `block`/`cast`/`channel`. That matches the body he replaced
+  exactly (43-bone `Skeleton3D`, no block or cast either), so it is not a regression — but it does
+  mean **he still has no guard animation**, and if the fight ever wants one that is a retarget pass.
+- One thing worth carrying: ⚠️ **"The model is missing its texture" and "the model is wrong" are two
+  bugs, and fixing the first reveals the second.** 37F fixed a stale import cache and declared the
+  boss repaired; the boss was repaired, and was also a civilian in a bomber jacket. **A render is the
+  only step that distinguishes "loads" from "correct", and it belongs after every asset fix, not
+  only after an asset *addition*.**
+
+---
