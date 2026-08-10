@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="ServiceResource" format=3]
+
+[ext_resource type="Script" path="res://src/Economy/ServiceResource.cs" id="1_service"]
+
+; The dockside bones (Phase 38R2) — the smugglers' game, running on a table between the tent and the
+; cart at Hollowreach. Fifty gold a throw, three throws a day, a hundred and fifty on a win at one in
+; four.
+;
+; ⚠️ THE NUMBERS ARE A SINK AND THAT IS ENFORCED, NOT INTENDED. Expected value at Neutral is
+; 0.25 x 150 - 50 = -12.5 a throw, so the table drains about 37 gold a day off a player who plays it
+; out. WagerRules.Exploitable refuses any house whose payout times its chance reaches its stake, and
+; --validate runs it at ALLIED standing, where the stake is discounted to 43 and the payout is not.
+; The ceiling at that corner is a payout of 172; 150 is authored well clear of it rather than on it,
+; because the margin an author leaves is the margin a later edit removes (38Q's lesson, second outing).
+;
+; ⚠️ FactionId is outlaws ON PURPOSE, and it is what makes the rule above live rather than theoretical.
+; A house with no faction never sees the standing ramp, so its Allied case is unreachable and the
+; validator rule would be guarding nothing. Here the discount is real: run with the outlaws and the
+; bones cost you less, which is also the only place in the economy where their standing buys anything.
+;
+; ⚠️ NO UnlockFlagId and no GrantedFlagId, and --validate refuses both. WagerLedger records the throws
+; and a flag beside it would be a one-off receipt that shuts the table after the first game.
+;
+; PlaysPerDay 3 is THE bound on the whole feature. The outcome is derived from the day and the throw
+; number (WagerRules.Won), so a quickload replays a loss rather than rerolling it — but nothing in that
+; arithmetic stops a hundred throws in an afternoon, and a negative expectation is only a certainty
+; over a bounded number of tries.
+
+[resource]
+script = ExtResource("1_service")
+Id = "service.hollowreach.bones"
+NameKey = "service.hollowreach.bones.name"
+Kind = 12
+PriceGold = 50
+FactionId = "faction.outlaws"
+UnlockFlagId = ""
+RestHour = 8
+XpReward = 0
+WinPercent = 25
+PayoutGold = 150
+PlaysPerDay = 3

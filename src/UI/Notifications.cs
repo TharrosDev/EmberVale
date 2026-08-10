@@ -1,5 +1,6 @@
 using Embervale.Companions;
 using Embervale.Core.Events;
+using Embervale.Economy;
 using Embervale.Localization;
 using Embervale.Progression;
 using Embervale.Quests;
@@ -48,6 +49,7 @@ public partial class Notifications : CanvasLayer
         bus?.Subscribe<CompanionDownedEvent>(OnCompanionDowned);
         bus?.Subscribe<CompanionOrderIssuedEvent>(OnCompanionOrder);
         bus?.Subscribe<CompanionLoyaltyTierChangedEvent>(OnCompanionLoyalty);
+        bus?.Subscribe<WagerSettledEvent>(OnWagerSettled);
     }
 
     public override void _ExitTree()
@@ -69,6 +71,7 @@ public partial class Notifications : CanvasLayer
         bus.Unsubscribe<CompanionDownedEvent>(OnCompanionDowned);
         bus.Unsubscribe<CompanionOrderIssuedEvent>(OnCompanionOrder);
         bus.Unsubscribe<CompanionLoyaltyTierChangedEvent>(OnCompanionLoyalty);
+        bus.Unsubscribe<WagerSettledEvent>(OnWagerSettled);
     }
 
     private void OnLeveledUp(LeveledUpEvent e) => Push(Loc.TF("notify.levelup", e.NewLevel), UiTheme.Accent);
@@ -117,6 +120,14 @@ public partial class Notifications : CanvasLayer
                 Loc.T(CompanionDatabase.Get(e.CompanionId)?.NameKey ?? e.CompanionId),
                 Loc.T(CompanionLoyalty.NameKey(e.Tier))),
             e.Improved ? UiTheme.Good : UiTheme.Bad);
+
+    // 38R2. A wager opens no window, so this line IS the result — without it a loss is a gold counter
+    // falling for no stated reason, which is what a player reports as a bug. Good/Bad rather than
+    // Accent, because which way it went is the entire content.
+    private void OnWagerSettled(WagerSettledEvent e) =>
+        Push(
+            Loc.TF(e.Won ? "notify.wager_won" : "notify.wager_lost", e.HouseName, e.Gold),
+            e.Won ? UiTheme.Good : UiTheme.Bad);
 
     private void Push(string text, Color color)
     {

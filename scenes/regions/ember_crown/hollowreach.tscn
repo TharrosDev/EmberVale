@@ -37,6 +37,8 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_a.glb" id="43_pebble_a"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_b.glb" id="44_pebble_b"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_modular.tscn" id="45_cottage_modular"]
+[ext_resource type="Script" path="res://src/Economy/ServiceComponent.cs" id="46_service"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_table_large.gltf" id="47_bones_table"]
 
 ; HOLLOWREACH (Phase 38O) — the wharf down the water from Tarn's Landing, and the realm's FOURTH
 ; market. It is the only place in Embervale that will buy contraband, and that is the whole of its
@@ -209,6 +211,13 @@ size = Vector3(0.62, 0.9, 0.64)
 
 [sub_resource type="BoxShape3D" id="Shape_bench"]
 size = Vector3(1.8, 0.85, 0.66)
+
+; 38R2, the bones table. prp_table_large has NO node scale and root_scale 1.0, so 2.848 x 0.813 x
+; 1.097 is the real size — the number town_hub records for Bryn's order bench and embermarket for
+; Nessa's assay counter, reused rather than re-derived (38P2's trap is a measured box that never had
+; its transforms applied).
+[sub_resource type="BoxShape3D" id="Shape_bones"]
+size = Vector3(2.848, 0.813, 1.097)
 
 [sub_resource type="CapsuleShape3D" id="Shape_npc"]
 radius = 0.4
@@ -1362,6 +1371,67 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
 shape = SubResource("Shape_rocks")
 
 ; ====================================================================================================
+; --- 38R2: the dockside bones ----------------------------------------------------------------
+; The smugglers' game, running on a table in the nook between the tent and the cart. Fifty gold a
+; throw, three a day, and the house wins three times in four — the arithmetic is in the .tres and
+; --validate refuses a table that expects to pay.
+;
+; ⚠️ THE INTERACTABLE IS THE TABLE AND NOT A PERSON, WHICH IS THE OPPOSITE CALL TO 38R'S HIRE. Wren
+; is hired in conversation because pressing E on a woman to buy her is a vending machine with a face.
+; A throw is the other shape: three a day means three presses, and a conversation reopened for each
+; one would put two clicks between the player and the dice. 38Q2's board took the same reading.
+;
+; ⚠️ prp_table_large rather than a fifth crate, and this one was reasoned rather than rendered: the
+; cell already carries four crates, so a crate holding the district's one prompt is a "which crate is
+; the game?" problem before anything is drawn. What the render DID settle is below.
+;
+; ⚠️ Position and yaw are the RENDERED answers. It sits clear of both fences' pitches so the district's
+; three interactables never share a frame with each other.
+[node name="BonesTable" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 10.5, 0, -4.5)
+script = ExtResource("2_entity")
+DisplayName = "The Dockside Bones"
+
+[node name="Model" parent="Nav/BonesTable" instance=ExtResource("47_bones_table")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BonesTable"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BonesTable/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.41, 0)
+shape = SubResource("Shape_bones")
+
+[node name="Service" type="Node" parent="Nav/BonesTable"]
+script = ExtResource("46_service")
+ServiceId = "service.hollowreach.bones"
+
+; ⚠️ THE TWO BARRELS ARE NOT DRESSING, THEY ARE THE READ. prp_table_large is already Bryn's order
+; bench and Nessa's assay counter, so this is its THIRD use and its SECOND as an interactable — a
+; player who has learned "long table = counter" walks up to this one expecting one. A seat on either
+; side is the cheapest thing that says two people sit here and play, and it is the only table in the
+; realm with them. The alternative was a fifth crate, which this cell cannot afford, or a new model,
+; which the four packs do not have.
+[node name="BonesStoolW" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.1, 0, -4.5)
+
+[node name="Model" parent="Nav/BonesStoolW" instance=ExtResource("16_barrel")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BonesStoolW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BonesStoolW/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.43, 0)
+shape = SubResource("Shape_barrel")
+
+[node name="BonesStoolE" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.9, 0, -4.5)
+
+[node name="Model" parent="Nav/BonesStoolE" instance=ExtResource("16_barrel")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BonesStoolE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BonesStoolE/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.43, 0)
+shape = SubResource("Shape_barrel")
+
 ; GROUND COVER (38B) - a thin band hard against the boundary and NOTHING in the middle.
 ;
 ; Style "edges", scattered by tools/dress_cell.py (seed 38), which reads this cell's OWN node

@@ -154,4 +154,26 @@ public enum ServiceKind
     /// same thing is the coin, so a free one is the feature deleted and the plumbing kept.
     /// </summary>
     Mercenary,
+
+    /// <summary>
+    /// A game of chance (Phase 38R2): stake gold on a throw, take the payout or lose the lot, a fixed
+    /// number of times a day.
+    ///
+    /// ⚠️ <b>It is the only service that can hand the player MORE gold than it took, and the rule that
+    /// keeps that honest is authored rather than coded.</b> <c>--validate</c> refuses a house whose
+    /// payout times its chance reaches its stake — the expected value must be negative — so the table
+    /// is a gold <em>sink</em> that occasionally pays, rather than a tap with a delay. ⚠️ And it is
+    /// checked at the <b>cheapest standing on the ramp</b>, because <c>PriceOf</c> discounts the stake
+    /// and nothing discounts the payout: a house that is a sink at Neutral can be a printer at Allied.
+    ///
+    /// ⚠️ <b>The outcome is derived, never rolled</b> (<see cref="WagerRules.Won"/>), so a quickload
+    /// replays a loss instead of rerolling it. The day's allowance is what bounds the whole thing and
+    /// it lives in <see cref="WagerLedger"/> — 38Q2's board arrangement, with the ledger doing more
+    /// work because a throw is repeatable where a posting is not.
+    ///
+    /// <b>Charged BEFORE the verb, like everything except the commission and the hire.</b> A throw
+    /// cannot fail: the stake goes, the outcome is read, and a win adds gold — which is stackable, so
+    /// it fits in any pack that had room for the stake.
+    /// </summary>
+    Wager,
 }

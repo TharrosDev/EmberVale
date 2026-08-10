@@ -417,6 +417,7 @@ a wallet would be a second place for money to live and a second thing to persist
 | A broker's commission | `ShopResource.ConsignCommission` — **18%** of every consignment, taken out of a payout that is already the best in the realm (~0.70 of value against the most generous counter's 0.62). The player is paid more than anywhere else and still hands a slice back, which is why it is a sink rather than a discount | 38P |
 | A master's commission | `ServiceKind.Commission` — **60 gold of labour** per piece at Bryn's order bench, plus every ingredient the player did not bring, priced through his own shop's markup. The one sink in the table that is *cheaper* than the alternative it competes with: commissioning undercuts buying the finished piece off his shelf in proportion to what the player already carries | 38Q |
 | A sword for hire | `ServiceKind.Mercenary` — **500 gold once**, and `CompanionRoster` is the only record of it. The dearest thing the Ember Crown sells, deliberately above the mount at 400: a mount is a convenience, a second fighter changes what the player can walk into | 38R |
+| A throw of the bones | `ServiceKind.Wager` — **50 gold a throw, three a day** at Hollowreach, paying 150 one time in four. The only entry here that sometimes hands money *back*, and the only one whose sink-ness is enforced by `--validate` rather than by being a purchase | 38R2 |
 | Repair | — | **pending 40A** |
 
 ⚠️ **A commission is the first price in the economy the `ShopPricing` clamps do not protect, and the
@@ -442,6 +443,26 @@ ceiling, because the ceiling is the rotation.
 `QuestLogPanel` carries no Contracts heading on the rule that the journal shows the states the data
 actually has; a haulage job in the journal beside the story is the failure 38K's notice board was
 already written to avoid.
+
+**A game of chance is a sink, and that is enforced arithmetic rather than an intention** (38R2). The
+dockside bones at Hollowreach take 50 gold a throw, three throws a day, and pay 150 one time in four —
+an expectation of −12.5 a throw. ⚠️ **`--validate` refuses any house whose payout times its chance
+reaches its stake**, and it asks at **Allied standing**, where `ShopPricing.ServicePrice` has discounted
+the stake by 15% and nothing has discounted the payout: a table that is a sink at Neutral can be a
+printer at the top of the ramp, and a wager is not a spread over an item's value, so none of the 38A
+clamps apply to it. **Decision:** the outcome is *derived* from the day and the throw number, never
+rolled and never saved, so a quickload replays a loss instead of rerolling it — but that is not what
+bounds the feature. **The throws-a-day allowance is**, and it lives in `WagerLedger`; a negative
+expectation is only a certainty over a bounded number of tries. ⚠️ The faction on the table is
+deliberate: a house with no faction never meets the standing ramp, so the rule above would be guarding
+nothing.
+
+**A courier was struck because fast travel already is one** (38R2). "Move goods between settlements for
+a fee" is `TravelFee`: 15 gold within a region, free to a holding the player owns, and it carries the
+player *and* their pack. A courier moving only the goods must undercut a 30-gold round trip to matter.
+It cannot lean on encumbrance either — `MaxWeight` and `IsOverEncumbered` are computed by
+`InventoryComponent` and read by nothing in `src/`, so slot count is the only real pressure. Fifth of
+38R's seven services struck, and the second struck for already existing under another name.
 
 **Four services were struck rather than built, and each was struck for a different reason** (38R). The
 38R brief listed seven; three of them are recorded here so nobody re-litigates them. **A barber/cosmetic
