@@ -635,8 +635,15 @@ crafting stations, trophies, and customization.
 
 ### Phase 39 — Mounts & Traversal `[F]`
 
-- **`MountComponent`** — summon/dismount, mounted locomotion/sprint/stamina,
-  mounted-while-combat rules; integrates with fast travel and stamina.
+- **`MountComponent`** ✅ **(39A)** — summon/dismount and mounted locomotion/sprint/stamina.
+  The mount is a **state of the rider, not a second body**: the player's own `CharacterBody3D`
+  keeps moving, wearing a horse, so there is no navigation, no second persistence record and no
+  dismount-placement problem — and no step-up either, which is invariant 16 unchanged and 39C's to
+  decide. Ownership is 38D's `flag.stable.mount_owned` and a `--validate` rule holds the two halves
+  together. Gallop is a pool of the horse's own, and its exhaustion **latch clears only when the
+  player stops asking** (clearing on the recovery mark alone sawtooths). Mounted-while-combat rules
+  and fast-travel integration are **39B** — 39A deliberately leaves combat inputs untouched rather
+  than half-defining them.
 - **Traversal verbs the world needs** — climbing, swimming, ledges/jumping
   refinements — added only where region design (44) calls for them.
 

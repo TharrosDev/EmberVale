@@ -94,6 +94,13 @@ func _initialize() -> void:
 		["03_side", Vector3(5.0, 1.7, 0.4), Vector3(0, 1.4, 0)],
 		["04_walkup", Vector3(-4.5, 1.7, -8.0), Vector3(0, 1.3, 0)],
 		["05_high", Vector3(-6, 6, -9), Vector3(0, 1, 0)],
+		# ⚠️ The two that matter most and are the least obvious. MountComponent raises the camera
+		# pivot by SADDLE_Y, and if it did not, the shipping first-person eye would sit at 1.62 m —
+		# INSIDE the horse's neck. These are those two camera seats, not artistic angles:
+		# first person at the raised eye, and the third-person rest offset from PlayerFactory
+		# (3.8 m back, 0.4 m up, 0.6 m right shoulder) measured from the same raised pivot.
+		["06_firstperson", Vector3(0, SADDLE_Y + 1.62, SADDLE_Z), Vector3(0, SADDLE_Y + 1.5, -12)],
+		["07_thirdperson", Vector3(0.6, SADDLE_Y + 2.02, SADDLE_Z + 3.8), Vector3(0, SADDLE_Y + 1.4, -6)],
 	]
 	_render()
 

@@ -149,7 +149,7 @@ dotnet test tests/Embervale.Tests
 | `Ctrl` | Dodge roll (i-frames) | | `I` / `J` / `M` | Inventory / Journal / Map |
 | Left mouse | Melee attack | | `1`–`5` | Hotbar |
 | Right mouse | Block | | `Esc` | Pause menu |
-| `V` | Swap first ↔ third person | | | |
+| `V` | Swap first ↔ third person | | `Y` | Whistle up / step off your mount |
 
 **Gamepad**: left stick move · right stick look · RT attack · LT block · A jump · B dodge ·
 L3 sprint · R3 lock-on · RB cast · LB cycle spell · X interact · D-Left swap camera ·
@@ -324,6 +324,15 @@ texture back, and two crashes that turned out to be the same crash.
 bomber jacket and green shorts — the First Flamebearer, dressed for a coffee run. He is now a crowned
 king in mail and plate, head and shoulders above any man in the realm, waiting in the middle of his
 arena.
+
+### Phase 39 — mounts
+
+- 39A ✅ and the four hundred gold you gave the stablemaster finally buys something. Press `Y` and a
+horse comes; press it again and you swing down. Riding is faster than walking, and holding sprint is
+a gallop the horse pays for — about five seconds of it, then it drops to a walk however hard you ask,
+and it will not run again until you have let it stop asking. The horse is a real animal at real scale,
+you sit on it with the reins in your hands, and in first person you look out over its ears. It is
+still there when you reload.
 
 ### Phase 36 — the boss framework
 
