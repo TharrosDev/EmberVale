@@ -64,4 +64,33 @@ public static class RegionDatabase
     {
         return ById.TryGetValue(id, out RegionResource? region) ? region : null;
     }
+
+    /// <summary>
+    /// One cell by its <c>&lt;region&gt;.&lt;cell&gt;</c> id, across every region (Phase 38G) — cells are
+    /// authored as sub-resources inside their region, so before this the only way to find one was to
+    /// walk `All` and its `Cells`, which four call sites did by hand.
+    ///
+    /// A linear scan on purpose: 14 cells in the realm, and a second dictionary is a second thing to
+    /// keep in step with <see cref="Initialize"/>.
+    /// </summary>
+    public static RegionCellResource? Cell(string id)
+    {
+        if (string.IsNullOrEmpty(id))
+        {
+            return null;
+        }
+
+        foreach (RegionResource region in AllList)
+        {
+            foreach (RegionCellResource cell in region.Cells)
+            {
+                if (cell.Id == id)
+                {
+                    return cell;
+                }
+            }
+        }
+
+        return null;
+    }
 }

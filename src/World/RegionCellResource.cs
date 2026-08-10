@@ -41,4 +41,29 @@ public partial class RegionCellResource : Resource
     /// never makes a district un-attackable by design — only by accident.
     /// </summary>
     [Export] public float SafeRadius { get; set; }
+
+    /// <summary>
+    /// Trade tags this place is <b>awash in</b> — goods worth less here than anywhere else in the realm
+    /// (Phase 38G). Ore twenty metres from the seam, fish pulled out of the water behind the stall.
+    ///
+    /// ⚠️ <b>Empty is not "unfinished", it is the reference.</b> The town square and the Embermarket
+    /// author nothing on purpose: a multiplier applied everywhere is a multiplier nowhere, and the two
+    /// districts where the player learns what things cost are what the mine and the coast are read
+    /// against. That was also 38G's parking notice — a system that reads identically in all three
+    /// settlements is correct, validated and completely imperceptible.
+    ///
+    /// A tag here and in <see cref="Demand"/> at once is authoring nonsense and <c>--validate</c>
+    /// refuses it. The vocabulary is <c>TradeTags</c>, held to by the same validator.
+    /// </summary>
+    [Export] public Godot.Collections.Array<string> Surplus { get; set; } = new();
+
+    /// <summary>
+    /// Trade tags this place is <b>short of</b> — goods worth more here, because everything of the kind
+    /// came up the road (Phase 38G). Nothing grows in a hole in the ground.
+    ///
+    /// ⚠️ <b>A surplus at one end and a demand at the other is what makes a carry pay</b>, and it takes
+    /// both: one side moving is still a loss, because the buy/sell spread it has to clear is about
+    /// 1.84× at a specialist. `RegionDemand` carries the arithmetic.
+    /// </summary>
+    [Export] public Godot.Collections.Array<string> Demand { get; set; } = new();
 }

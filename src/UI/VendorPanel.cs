@@ -29,6 +29,7 @@ public partial class VendorPanel : UiPanel
 {
     private Label _title = null!;
     private Label _standing = null!;
+    private Label _localTrade = null!;
     private HBoxContainer _investRow = null!;
     private Label _investLabel = null!;
     private Button _investButton = null!;
@@ -68,6 +69,12 @@ public partial class VendorPanel : UiPanel
         // reads as the shop being mispriced — the same reason every Phase 37 refusal names itself.
         _standing = UiTheme.Caption(string.Empty);
         column.AddChild(_standing);
+
+        // What the place itself does to the prices (38G), directly under what the merchant thinks of
+        // you — two different reasons a number moved, in the order the player meets them.
+        _localTrade = UiTheme.Caption(string.Empty);
+        _localTrade.AddThemeColorOverride("font_color", UiTheme.Dim);
+        column.AddChild(_localTrade);
 
         // The stake line (38I). It sits with the standing caption rather than in the wares column
         // because it is a fact about the merchant, not a ware: what it buys is her purse and the rows
@@ -545,6 +552,7 @@ public partial class VendorPanel : UiPanel
         bool haggled = DealStruck(shop);
 
         BuildStanding(shop, tier);
+        BuildLocalTrade(shop);
         BuildInvest(shop);
         BuildHaggle(shop, haggled);
         BuildWares(shop, tier, haggled);
@@ -585,6 +593,50 @@ public partial class VendorPanel : UiPanel
         _standing.Text = Loc.TF(
             "shop.standing", ReputationTiers.DisplayName(tier), percent.ToString("+0;-0;0"));
         _standing.AddThemeColorOverride("font_color", UiTheme.ReputationColor(tier));
+    }
+
+    /// <summary>
+    /// What this place is awash in and what it is short of (38G). ⚠️ Without it the mine's prices are
+    /// simply *different* from the market's with no stated reason, which is the "price that moved must
+    /// say why it moved" rule the standing caption above exists for — and here it is doing more work,
+    /// because it is also the only in-world hint that carrying goods between settlements can pay.
+    ///
+    /// Silent at a shop in a cell that authors nothing, which is the town square and the Embermarket:
+    /// they are the reference, and a line saying "prices are normal here" is noise.
+    /// </summary>
+    private void BuildLocalTrade(ShopResource shop)
+    {
+        if (shop.CellId.Length == 0 || World.RegionDatabase.Cell(shop.CellId) is not { } cell)
+        {
+            _localTrade.Visible = false;
+            return;
+        }
+
+        string surplus = TagNames(cell.Surplus);
+        string demand = TagNames(cell.Demand);
+        _localTrade.Visible = surplus.Length > 0 || demand.Length > 0;
+
+        _localTrade.Text = surplus.Length > 0 && demand.Length > 0
+            ? Loc.TF("shop.local_trade", surplus, demand)
+            : surplus.Length > 0
+                ? Loc.TF("shop.local_surplus", surplus)
+                : Loc.TF("shop.local_demand", demand);
+    }
+
+    /// <summary>The cell's tags in the player's language — the same `trade.tag.<c>x</c>` keys the
+    /// refusal line names a merchant's trade with, so the two cannot describe one tag differently.</summary>
+    private static string TagNames(Godot.Collections.Array<string> tags)
+    {
+        var names = new List<string>();
+        foreach (string tag in tags)
+        {
+            if (!string.IsNullOrEmpty(tag))
+            {
+                names.Add(Loc.T($"trade.tag.{tag}"));
+            }
+        }
+
+        return string.Join(", ", names);
     }
 
     /// <summary>
@@ -703,8 +755,12 @@ public partial class VendorPanel : UiPanel
         foreach (ShopOffer offer in offers)
         {
             bool specialty = IsSpecialty(shop, offer.Instance);
+
+            // 38G: what the good is worth HERE, not in the realm at large. Both sides of this counter
+            // spread over the same local value, so the 38A invariant is untouched at the shop.
+            int local = shop.LocalValue(offer.Instance.Value, offer.Instance.Template.TagList());
             int price = ShopPricing.BuyPrice(
-                offer.Instance.Value, ShopPricing.MarkupFor(shop.BuyMarkup, tier, specialty, haggled));
+                local, ShopPricing.MarkupFor(shop.BuyMarkup, tier, specialty, haggled));
             bool affordable = ShopPricing.CanAfford(price, purse);
 
             // 38I: a gated row is shown, greyed, with the gate named — the same choice a sold-out row
@@ -780,11 +836,15 @@ public partial class VendorPanel : UiPanel
             // is no appetite to glut and no purse to run down — a stack of twenty lists for twenty
             // times one, which is the whole reason to walk them across the square to her.
             int absorbed = shop.IsConsignment ? 0 : Stock()?.AbsorbedOf(shop, instance.TemplateId) ?? 0;
+
+            // 38G, and the broker takes it too: she fronts no money and takes no saturation, but she
+            // still stands somewhere, and what she can get for a thing depends on where that is.
+            int localSell = shop.LocalValue(instance.Value, instance.Template.TagList());
             int unitPrice = shop.IsConsignment
                 ? ConsignmentRules.Net(
-                    ConsignmentRules.Gross(instance.Value, shop.ConsignFraction), shop.ConsignCommission)
+                    ConsignmentRules.Gross(localSell, shop.ConsignFraction), shop.ConsignCommission)
                 : ShopPricing.SellPrice(
-                    instance.Value, ShopPricing.SellFractionFor(shop.SellFraction, specialty, haggled));
+                    localSell, ShopPricing.SellFractionFor(shop.SellFraction, specialty, haggled));
             int payout = !sellable || !inTrade ? 0
                 : shop.IsConsignment ? unitPrice * stack.Quantity
                 : ShopStock.SaturatedPayout(unitPrice, absorbed, stack.Quantity, shop.RestockDays);

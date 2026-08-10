@@ -45,6 +45,7 @@ Quantity = 8
 [resource]
 script = ExtResource("1_shop")
 Id = "shop.tarn.curer"
+CellId = "ember_crown.tarn_landing"
 NameKey = "shop.tarn.curer.name"
 FactionId = "faction.villagers"
 AcceptedTags = Array[String](["fish", "food"])

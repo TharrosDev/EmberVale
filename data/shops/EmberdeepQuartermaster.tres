@@ -41,6 +41,7 @@ Quantity = 1
 [resource]
 script = ExtResource("1_shop")
 Id = "shop.emberdeep.quartermaster"
+CellId = "ember_crown.emberdeep_mine"
 NameKey = "shop.emberdeep.quartermaster.name"
 FactionId = "faction.villagers"
 AcceptedTags = Array[String](["food", "fuel", "textile"])

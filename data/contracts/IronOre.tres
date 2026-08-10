@@ -10,10 +10,15 @@
 ; heading — "the journal shows the states the data actually has" — so a haulage job lives and dies on
 ; the board. No QuestResource, no objective, no journal entry.
 ;
-; ⚠️ THE REWARD IS MEANT TO BEAT THE SHELF, AND --validate REFUSES IT IF IT DOES NOT. The best buyer in
-; the realm pays 80 for 40x this; 160 is what the caravans pay to have it brought here
-; instead. A posting worth less than a merchant already pays is a longer walk for less money, which
-; the player would only discover by doing it — 38G's imperceptibility failure in a new hat.
+; ⚠️ THE REWARD IS MEANT TO BEAT THE SHELF, AND --validate REFUSES IT IF IT DOES NOT. A posting worth
+; less than a merchant already pays is a longer walk for less money, which the player would only
+; discover by doing it.
+;
+; ⚠️ 38G MOVED THE SHELF UNDER THIS POSTING AND THE VALIDATOR CAUGHT IT ON THE FIRST RUN. Ore is in
+; demand at Tarn's Landing now, so the chandler went from paying 80 for 40x to paying 160 — exactly
+; what this contract paid, which made it strictly worse than walking the same ore to the coast. 240 is
+; the new number, and it is deliberately set against a counter price that can now MOVE: any future
+; settlement that authors an ore demand raises the floor under this line again.
 ;
 ; ⚠️ AND THE PRICE IS *NOT* WHAT KEEPS IT SAFE — the BOUND is. Buying the goods cheap and delivering
 ; them dear is a real trade and is meant to be, because a posting can be filled ONCE PER ROTATION and
@@ -27,6 +32,6 @@ Id = "contract.crossway.iron_ore"
 NameKey = "contract.crossway.iron_ore.name"
 ItemId = "item.material.iron_ore"
 Quantity = 40
-RewardGold = 160
+RewardGold = 240
 FactionId = "faction.iron_syndicate"
 ReputationDelta = 4
