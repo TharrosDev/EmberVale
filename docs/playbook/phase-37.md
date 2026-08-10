@@ -262,3 +262,87 @@ time in, and want to spend gold to purchase."*
      was clean three times while the walk-up was wrong.
 
 ---
+
+## 37F — Reported runtime errors, and the arena rebuilt `[F/C]` ✅
+
+*Out of band, maintainer direction (2026-08-10): a list of Godot errors from a play session, plus
+"rebuild the Boss arena as it too looks super boring bad".*
+
+- ⚠️ **TWO OF THE FOUR REPORTS WERE ONE BUG, AND THE STACK TRACES HID IT.** A companion tripped
+  `MoveAndSlide`'s *"Vector3 cannot be normalized"*; a **dead** enemy tripped `Mathf.MoveToward`,
+  which throws inside `Math.Sign` on NaN. Different systems, different frames, different messages —
+  and the same non-finite value, because **a `CharacterBody3D` keeps its velocity between frames**,
+  so one bad write poisons that body for the rest of the run and the crash surfaces wherever the
+  body next happens to move. **Neither trace points anywhere near the source.**
+- ⚠️ **THE ENEMY'S PATH IN WAS `Zero * NaN`, WHICH READING THE CALL SITE ARGUES IS IMPOSSIBLE.**
+  `Stand` passes `Vector3.Zero`, so "the direction was bad" is ruled out by inspection — but the
+  motor computes `horizontal * speed`, and a poisoned `MoveSpeed` stat makes a NaN target out of a
+  zero input. **The arithmetic knew something the call site denied.** `MotionSafetyTests` pins that
+  exact line so the next reader does not re-derive it.
+- **Landed:** `MotionSafety` (pure, 6 tests) and three guards in `LocomotionComponent.Move` — the one
+  function both AI movers route through, and the player does not use it at all, so the fix has
+  exactly two callers and no blast radius.
+- ⚠️ **IT LOGS ONCE PER BODY, AND THAT IS THE HALF THAT MATTERS.** A silent clamp fixes the crash and
+  destroys the evidence. The source is **still unproven** — `Stat.Recalculate` has no division, so a
+  NaN modifier value is the likeliest door and I could not reach it from a reading. The log line
+  names the owner, which is what keeps this findable instead of a bug that merely stopped shouting.
+- **The Iron King's missing texture was a stale import cache**, not a missing asset: the `.glb`
+  carries its image in a bufferView, but `ce150cc` replaced the model and deleted the extracted
+  `boss_iron_king_Zombie_Atlas.png` while `.godot/imported/…scn` — **stamped ten minutes before that
+  commit** — still pointed at it. Set to embed-uncompressed and re-imported; the cache is now `.scn`
+  + `.md5` with no `.ctex` and no loose PNG, so there is nothing left to go missing.
+  ⚠️ **The class was swept, not the instance**: all 32 creature models now load with geometry.
+- ⚠️ **THE `'consignment'` WARNING WAS NOT A DEFECT, AND CHECKING BEAT ASSUMING IN BOTH DIRECTIONS.**
+  The plan said verify before fixing. Reading `slot1/save.json` directly: it contains `consignment`,
+  `shopstock`, `contraband_impound`, `shocks`, `haggles`, `wagers`, `contracts` and `housing` — every
+  economy system. The warning came from an **older save**. ⚠️ My own first pass then flagged
+  `shop_stock` and `impound` as missing, which was **my guess at the key names**, not the data:
+  they are `shopstock` and `contraband_impound`. **A missing key is a claim about two things, and I
+  had only checked one.** A `--play` boot now logs no "no usable entry" line at all.
+- **The arena was a 36 m flat-grey `BoxMesh` floor, three `BoxMesh` walls (there was no west one) and
+  one CYLINDER brazier** — and its single `prp_arena_wall` per side was **scaled 4.3x** to span 36 m,
+  stretching the stonework with it. It is now a ring of five unstretched wall instances a side, a
+  broken outer tier of ruin walls, ten pillars, rim braziers with real lights, banners on the inner
+  face, and dead pines beyond. The west stays open — it is the entrance — with two gate pillars.
+- ⚠️ **THE FIGHTING CIRCLE STAYED BARE, AND THAT WAS THE CONSTRAINT THE FILE ITSELF SHOUTED.** The
+  old scene's ground cover carries a capitalised note: *"a combat floor has to stay legible: scenery
+  a player reads as cover, or an enemy appears to path around, is worse than a bare floor."* Every
+  piece added here is on the rim or beyond it. **The temptation was to fill the middle, because the
+  middle is what the screenshot shows.**
+- ⚠️ **Four node groups had to survive byte-identical** — `Brazier/Summon`, `AddSpawns` (found by
+  *group*, so a rename is safe but a **move** drops an add on the boss), `EmberVents/VentA–D`, and
+  the two `ArenaHookComponent`s whose `Reveals` are **NodePaths to those vents**. Renaming a vent
+  breaks the boss's phase telegraph silently.
+- **Two render-only defects, both mine, both invisible in the `.tscn`:** the floor's `uv1_scale` of 9
+  over a 36 m plane made **4 m flagstones**, and the banners hung *inside* the ring wall at ground
+  level so only their top edge showed. 37E's carry — *render the approach, not the object* — applied
+  again and caught both.
+- Build clean, **0 warnings** + **1289** tests (6 new) + `--validate` exit 0 + `--economy`
+  **byte-identical** + `--state` unchanged at 15 cells / 15 services + a `--play` boot with **10
+  cells resident, 32 objects restored, 0 project errors and no save warnings at all**.
+- ⚠️ **What was NOT verified, and one item is uncomfortable.** The NaN guard is proved by unit tests
+  and by reading, **not** by watching the reported errors fail to recur — they need a long combat
+  session with a companion, which a `--play` boot does not produce. **The guard is correct; the claim
+  "the bug is gone" is not yet earned.** The boss was rendered in isolation, not summoned in the
+  arena. The arena's collision was not walked.
+- ⚠️ **AND A FINDING BIGGER THAN ANYTHING REPORTED: THE IRON KING IS A MAN IN AN ORANGE BOMBER JACKET.**
+  With the texture fixed he renders correctly — as a modern-dress civilian in a bomber jacket, teal
+  shorts and trainers, holding a thin sword. The game's flagship boss. This is the **fourth** time
+  this exact defect has shipped (`npc_townsman` hi-vis, `npc_merchant_f` t-shirt-and-trainers, four
+  of six 38N2 candidates) and the first time it has been on a boss.
+  **Deliberately not fixed here, with the check written down rather than a verdict:**
+  `assets/library/men/king.glb` is the obvious body and is the *same 62-bone Quaternius rig as
+  `chr_player_base`* — but its clip names differ (`Sword_Slash`/`HitRecieve` against the current
+  `Slash`/`Stab`/`HitReact`), and `AnimationClips.Resolve` failing is **silent**: the actor T-poses or
+  winds up and never strikes. **The check to run: resolve every slot against `king.glb`'s clip list
+  and confirm each one binds, then retarget via the `.import` bonemap and render.** Doing that badly
+  inside a bug-fix sub-phase is how a boss fight breaks quietly.
+- Two things worth carrying:
+  1. ⚠️ **A STATEFUL COMPONENT TURNS ONE BAD FRAME INTO A PERMANENT FAULT.** Velocity, cooldowns,
+     accumulators — anything read back out of the engine next frame. **Guard where the value enters
+     the stateful thing, not where it explodes**, because those are never the same place.
+  2. **Verify a warning before silencing it, and verify your verification.** The `'consignment'`
+     report was not a bug; my first check of it produced two *new* false alarms from guessed key
+     names. Reading the save was three commands and settled all of it.
+
+---

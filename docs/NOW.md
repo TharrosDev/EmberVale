@@ -15,6 +15,10 @@ existed the same three lines were maintained in four places and rewritten every 
   beside a roofless grey pen. It is now **a real, enterable cottage in its own cell** —
   `ember_crown.ashfall_homestead` at `(52, 0, 46)`, east of the Embermarket — furnished, with a
   workshop, a garden and a bed you can sleep in. `docs/playbook/phase-37.md` carries the retrospective.
+- **37F landed out of band** (maintainer direction, 2026-08-10): four reported runtime errors traced
+  and fixed — two of them **one bug** — plus the boss arena rebuilt from a grey box into a ruined
+  stone amphitheatre. ⚠️ **It also found that the Iron King's body is a man in an orange bomber
+  jacket**, deliberately left for its own pass; the check to run is in the playbook.
 - **Next: Phase 39 (Mounts & Traversal), starting at 39A** — `MountComponent`, summon/mount/dismount
   and mounted locomotion. Open `docs/playbook/phase-39.md`. ⚠️ **39A is not starting from nothing:**
   38D's `ServiceKind.Stable` already sells a mount and records it in a story flag, so 39A owns the
@@ -34,14 +38,14 @@ existed the same three lines were maintained in four places and rewritten every 
 | | |
 | --- | --- |
 | Build | clean, **0 warnings** |
-| Tests | **1283 passing** (neither 38V nor 37E added any — a closing gate and a content rebuild) |
+| Tests | **1289 passing** (37F added 6, `MotionSafetyTests`) |
 | `--validate` | exit 0 |
 | **Negative tests** | `python tools/negative_tests.py` — **42/42 rules broken and restored**, each caught by its own refusal. **Run this after moving authored numbers, not only after changing code** |
 | `--economy` | **byte-identical** to 38U's |
 | `--state` | 2 regions, **15 cells**, 63 items, 23 shops, **15 services**, 8 contracts, 33 dialogues, 14 quests |
-| **`--play`** | booted, loaded slot1, all **10 cells resident** (the homestead among them), **32 objects restored**, **0 project errors** — and the log shows a live shortage of ore at the mine, which is 38T running in-world. ⚠️ One `WASAPI: GetBufferSize` line is the **Windows audio driver**, not the project |
+| **`--play`** | booted, loaded slot1, all **10 cells resident**, **32 objects restored**, **0 project errors and no save warnings at all** — and the log shows a live shortage of ore at the mine, which is 38T running in-world. ⚠️ One `WASAPI: GetBufferSize` line is the **Windows audio driver**, not the project |
 | Saved state | 38V adds none |
-| Rendered | **the whole homestead, day and dusk, from 12 positions at eye level** — the approach, the doorway, inside in both directions, the workshop, the yard. Three defects found and fixed that were invisible in the `.tscn` |
+| Rendered | **the arena day and dusk from 7 positions**, the Iron King front and back, and (37E) the homestead from 12 — the approach, the doorway, inside in both directions, the workshop, the yard. Three defects found and fixed that were invisible in the `.tscn` |
 | Bodies retargeted | 12 of 12 skinned (`fp_arm` has no skin and needs none) |
 | Props with no collider | 0 (audit clean) |
 
@@ -70,56 +74,63 @@ existed the same three lines were maintained in four places and rewritten every 
    extremes — so the run that proved it was proving a rule the repo no longer had.
    **`tools/negative_tests.py` is the answer and it is re-runnable.** ⚠️ It edits `data/` in place
    and refuses to start on a dirty tree; that refusal is the guard working.
-7. ⚠️ **A MODEL THAT READS AT 20 m CAN DOMINATE AT 4 m** (37E). A 3 m waystone that looks right on a
+7. ⚠️ **A STATEFUL COMPONENT TURNS ONE BAD FRAME INTO A PERMANENT FAULT** (37F). A
+   `CharacterBody3D` keeps its velocity between frames, so a single non-finite write poisons that
+   body for the rest of the run and surfaces as a crash in whatever system moves it next — two
+   reports, two subsystems, one value. ⚠️ **Guard where a value enters the stateful thing, not where
+   it explodes**; those are never the same place. `MotionSafety` + the guards in
+   `LocomotionComponent.Move` are the pattern, and **they log once per body** so the still-unproven
+   source stays findable.
+8. ⚠️ **A MODEL THAT READS AT 20 m CAN DOMINATE AT 4 m** (37E). A 3 m waystone that looks right on a
    road stood as a monolith blocking the player's own front door; the lamp post moved twice for the
    same reason. ⚠️ **Render the APPROACH, not just the object** — every 37E defect was a correctly
    authored model in a position that ruined the shot, and the isolated render was clean three times
    while the walk-up was wrong. ⚠️ **A roof kills the sun**: a chandelier is a mesh and emits nothing,
    so an interior needs real lights or it renders as a cave.
-8. ⚠️ **A GODOT `Label` DEFAULTS `mouse_filter` TO IGNORE, SO A TOOLTIP ON ONE IS SILENTLY DEAD**
+9. ⚠️ **A GODOT `Label` DEFAULTS `mouse_filter` TO IGNORE, SO A TOOLTIP ON ONE IS SILENTLY DEAD**
    (38U). `UiTheme`'s text builders set **`Pass`** — hoverable without becoming clickable. **A
    property whose default differs from its base class's is the defect class that passes every review.**
-9. ⚠️ **DERIVE, THEN BOUND — TWO MECHANISMS, NEITHER SUBSTITUTING FOR THE OTHER.** Everything a
+10. ⚠️ **DERIVE, THEN BOUND — TWO MECHANISMS, NEITHER SUBSTITUTING FOR THE OTHER.** Everything a
    quickload could reroll is a pure function of the day, so a reload **replays** it; a ledger stores
    only **what the player did**. ⚠️ `string.GetHashCode()` is randomised per process; `StableRoll` is
    a hand-written FNV-1a. ⚠️ **GDScript can only call methods whose signatures marshal** — probe
    `has_method` before writing a `.gd` harness. ⚠️ **Nothing about a contract may reach the quest log.**
-10. ⚠️ **A SERVICE CAN BE FIRED FROM A CONVERSATION, EXCEPT A BANK** — a bank opens the **host
+11. ⚠️ **A SERVICE CAN BE FIRED FROM A CONVERSATION, EXCEPT A BANK** — a bank opens the **host
    entity's** inventory and a conversation has no host entity. ⚠️ **An entity still gets one
    interactable**: the realm's only bed is reachable through `dialogue.innkeeper` and nowhere else.
    ⚠️ **A world interaction prompt is not a `Control` and has nothing to hover.**
-11. **A broker fronts nothing, so no purse and no saturation apply to her.** ⚠️ **A stack at a broker
+12. **A broker fronts nothing, so no purse and no saturation apply to her.** ⚠️ **A stack at a broker
     is a multiply and a stack at a counter is 38H's decaying sum** — the one place in the game where
     unit price × quantity is the wrong number.
-12. **`contraband` is the one trade tag that fails CLOSED**, and a fenced sale moves two factions
+13. **`contraband` is the one trade tag that fails CLOSED**, and a fenced sale moves two factions
     **once per sale, never per unit**. The Crossway toll is charged in `GameBootstrap.PayToll`.
-13. ⚠️ **RENDER THE THING, AND RENDER IT WITH THE PEOPLE AND FURNITURE AROUND IT.** Seven firings.
+14. ⚠️ **RENDER THE THING, AND RENDER IT WITH THE PEOPLE AND FURNITURE AROUND IT.** Seven firings.
     38R's is the plainest: an NPC on open ground stood exactly where the player stands to read the
     previous sub-phase's board, and the fault was in neither object and in no line of either `.tscn`.
     ⚠️ **A body's facing is not knowable from a file.** Earlier: `prp_banner_guild` by precedent
     (38Q2), `prp_weapon_stand` reading as a sawhorse (38Q), a lying-down collider on a standing
     pillar (38O), 4-of-6 rejections in 38N2, `npc_townsman` hi-vis, `npc_merchant_f` in trainers.
     ⚠️ **When no pack model fits, primitives are a legitimate answer.**
-14. ⚠️ **A DECISION CAN LIVE IN A `.tres` HEADER, AND NOTHING GREPS THOSE.** 38R's warehouse was
+15. ⚠️ **A DECISION CAN LIVE IN A `.tres` HEADER, AND NOTHING GREPS THOSE.** 38R's warehouse was
     killed mid-session by a comment in `EmberCrownBank.tres`. **Before authoring content of a kind
     that already exists, read the existing one's header.**
-15. **`CharacterBody3D` has no step-up.** Verticality comes from props, never from terrain; a 30 cm
+16. **`CharacterBody3D` has no step-up.** Verticality comes from props, never from terrain; a 30 cm
     kerb is an invisible wall the navmesh happily paths NPCs over. ⚠️ **Phase 39C inherits this
     one** — it is the phase that decides whether that stays true.
-16. **A retargeted rig is marked by its skeleton being named `GeneralSkeleton`** — all 12 skinned
+17. **A retargeted rig is marked by its skeleton being named `GeneralSkeleton`** — all 12 skinned
     bodies are. An un-retargeted rig given it freezes mid-guard with nothing logged. ⚠️ A model whose
     root carries a translation cannot be retargeted until normalised, and the library is an
     **upper-body pose from the hips up**. `ASSET_POLICY.md` §0.2 carries all four traps.
-17. **Check what is already vendored before pulling from the web.** As of 38O the library holds **no
+18. **Check what is already vendored before pulling from the web.** As of 38O the library holds **no
     unadopted CC0 medieval bodies at all**.
-18. ⚠️ **MEASURING A MODEL'S ACCESSORS IS NOT MEASURING THE MODEL.** Apply node scale *and*
+19. ⚠️ **MEASURING A MODEL'S ACCESSORS IS NOT MEASURING THE MODEL.** Apply node scale *and*
     `nodes/root_scale` from the `.import`. ⚠️ A **solid-looking prop with no collider** is a real
     class of defect here. ⚠️ **The `rts` pack is roughly 1/6 scale and nothing in the files says so.**
-19. ⚠️ **The nature megakit's ground cover is 4–10× life size while its trees are 1:1**, and scale
+20. ⚠️ **The nature megakit's ground cover is 4–10× life size while its trees are 1:1**, and scale
     lives in each prop's `.import`, never in a cell transform. **Grass goes in patches.**
-20. ⚠️ **A generic wall kit composes generic buildings well and special-purpose ones badly.** The
+21. ⚠️ **A generic wall kit composes generic buildings well and special-purpose ones badly.** The
     blacksmith and the inn stay monolithic; the kit ships one wall height, 3.12 m.
-21. ⚠️ **The Ember Crown map was re-laid (38F).** The settled cells form one contiguous city and every
+22. ⚠️ **The Ember Crown map was re-laid (38F).** The settled cells form one contiguous city and every
     wilds cell is outside it; the arena moved to 150 m, past the gate. ⚠️ **A schedule carries a copy
     of its cell's `Center` as `Origin`** — moving a cell is never a one-line edit.
 
