@@ -54,6 +54,19 @@
 ; Hollowreach keeps SafeRadius 0. It is a city district now, but a smugglers' wharf the wardens do
 ; not visit still has no business being safe ground, and the region's own 34 m bubble is centred on
 ; the square 74 m away, so nothing covers it.
+;
+; ⚠️ SURPLUS AND DEMAND (38G), AND THE EMPTY LISTS ARE AS DELIBERATE AS THE FULL ONES. Only two cells
+; author anything: the mine is awash in ore, metal and fuel and short of everything that has to be
+; carried up to it; the Landing is the mirror, awash in fish and short of everything the mine digs up.
+; The town square and the Embermarket author NOTHING, because they are the reference the other two are
+; read against - a multiplier applied everywhere is a multiplier nowhere, which is the sentence 38G
+; was parked on for eleven sub-phases. Hollowreach authors nothing either, for a different reason:
+; HollowreachHull.tres explains why its economics are deliberately flat at every tier, and a fence
+; whose prices moved with the local trade would be a fence with an opinion about the local trade.
+;
+; The two lists are a PAIR and have to be read together: a carry only pays when the source has the
+; surplus and the destination the demand, because the buy/sell spread it has to clear is about 1.84x
+; at a specialist. See RegionDemand for the arithmetic and the factors.
 ; ====================================================================================================
 
 [sub_resource type="Resource" id="Cell_town_hub"]
@@ -105,6 +118,8 @@ Id = "ember_crown.emberdeep_mine"
 ScenePath = "res://scenes/regions/ember_crown/emberdeep_mine.tscn"
 Center = Vector3(56, 0, -10)
 SafeRadius = 24.0
+Surplus = Array[String](["ore", "metal", "fuel"])
+Demand = Array[String](["food", "fish", "textile"])
 
 [sub_resource type="Resource" id="Cell_wilds_north"]
 script = ExtResource("2_cell")
@@ -123,6 +138,8 @@ Id = "ember_crown.tarn_landing"
 ScenePath = "res://scenes/regions/ember_crown/tarn_landing.tscn"
 Center = Vector3(-56, 0, -6)
 SafeRadius = 22.0
+Surplus = Array[String](["fish"])
+Demand = Array[String](["ore", "metal", "fuel"])
 
 [sub_resource type="Resource" id="Cell_hollowreach"]
 script = ExtResource("2_cell")

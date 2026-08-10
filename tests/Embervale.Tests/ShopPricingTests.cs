@@ -17,6 +17,10 @@ namespace Embervale.Tests;
 /// </summary>
 public class ShopPricingTests
 {
+    /// <summary>A tagged good and an indifferent place, for the sweep's 38G dimension.</summary>
+    private static readonly System.Collections.Generic.List<string> Tags = new() { "fish" };
+    private static readonly System.Collections.Generic.List<string> Empty = new();
+
     [Fact]
     public void BuyingRoundsUpAndIsNeverFree()
     {
@@ -206,21 +210,36 @@ public class ShopPricingTests
                         {
                             foreach (int value in values)
                             {
-                                int buy = ShopPricing.BuyPrice(
-                                    value, ShopPricing.MarkupFor(markup, tier, specialty, haggled));
-                                int unit = ShopPricing.SellPrice(
-                                    value, ShopPricing.SellFractionFor(fraction, specialty, haggled));
-
-                                foreach (int taken in absorbed)
+                                // 38G joins the sweep as a LOCAL VALUE rather than a multiplier, which
+                                // is the whole of why it can make a carry pay without breaking this:
+                                // both sides of one counter spread over the same number. Run at the
+                                // surplus, the reference and the demand — the invariant is per shop.
+                                foreach (float demand in new[]
+                                    { RegionDemand.SurplusFactor, 1f, RegionDemand.DemandFactor })
                                 {
-                                    int sell = ShopStock.SaturatedPayout(
-                                        unit, taken, quantity: 1, restockDays: 1);
+                                    int local = demand == 1f
+                                        ? value
+                                        : RegionDemand.ValueAt(
+                                            value, Tags, demand < 1f ? Tags : Empty,
+                                            demand < 1f ? Empty : Tags);
 
-                                    Assert.True(
-                                        sell <= buy,
-                                        $"sell {sell} > buy {buy} at tier {tier}, markup {markup}, " +
-                                        $"fraction {fraction}, specialty {specialty}, " +
-                                        $"haggled {haggled}, value {value}, absorbed {taken}");
+                                    int buy = ShopPricing.BuyPrice(
+                                        local, ShopPricing.MarkupFor(markup, tier, specialty, haggled));
+                                    int unit = ShopPricing.SellPrice(
+                                        local, ShopPricing.SellFractionFor(fraction, specialty, haggled));
+
+                                    foreach (int taken in absorbed)
+                                    {
+                                        int sell = ShopStock.SaturatedPayout(
+                                            unit, taken, quantity: 1, restockDays: 1);
+
+                                        Assert.True(
+                                            sell <= buy,
+                                            $"sell {sell} > buy {buy} at tier {tier}, markup {markup}, " +
+                                            $"fraction {fraction}, specialty {specialty}, " +
+                                            $"haggled {haggled}, demand {demand}, value {value}, " +
+                                            $"absorbed {taken}");
+                                    }
                                 }
                             }
                         }

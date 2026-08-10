@@ -123,11 +123,31 @@ public static class EconomyReport
         // goods only pays once something moves an item's *value* by settlement, which is 38G.
         if (routes.Count > 0 && routes[0].Margin <= 0)
         {
-            text.AppendLine("No route turns a profit, and none can yet: ShopPricing clamps every " +
-                "markup to >= 1 and every sell fraction to <= 1, so sell <= value <= buy holds at " +
-                "each shop and a carry between two of them is always a loss. What is ranked below is " +
-                "the CHEAPEST way to be wrong. Regional demand (38G) is what moves an item's value " +
-                "per settlement and turns these positive.");
+            text.AppendLine("No route turns a profit: ShopPricing clamps every markup to >= 1 and " +
+                "every sell fraction to <= 1, so sell <= local value <= buy holds at each shop and a " +
+                "carry between two of them loses money. What is ranked below is the CHEAPEST way to " +
+                "be wrong. 38G's settlement demand is authored on the cells — if this line is showing, " +
+                "no pair of surplus and demand tags is wide enough to clear a specialist's spread.");
+        }
+        else if (routes.Count > 0)
+        {
+            // 38G. The clamps still hold AT A SHOP — both sides of one counter spread over the same
+            // local value — so this is not the money printer 38A closed; it is the one thing in the
+            // economy that pays for walking, and it pays only where a surplus faces a demand.
+            int paying = 0;
+            foreach (Route r in routes)
+            {
+                if (r.Margin > 0)
+                {
+                    paying++;
+                }
+            }
+
+            text.AppendLine($"{paying} route(s) turn a profit, and they are the whole point of 38G: " +
+                "an item's value now moves by settlement, so buying where a good is a surplus and " +
+                "selling where it is in demand pays for the walk. sell <= local value <= buy still " +
+                "holds at every counter, so nothing here is a loop — a round trip at ONE shop still " +
+                "costs, and the profit is the carry.");
         }
 
         text.AppendLine();
@@ -179,7 +199,8 @@ public static class EconomyReport
 
             bool specialty = TradeTags.IsSpecialty(tags, shop.SpecialtyList());
             int price = ShopPricing.BuyPrice(
-                item.Value, ShopPricing.MarkupFor(shop.BuyMarkup, TierOf(shop.FactionId), specialty));
+                shop.LocalValue(item.Value, tags),
+                ShopPricing.MarkupFor(shop.BuyMarkup, TierOf(shop.FactionId), specialty));
             if (price < buy1.Price)
             {
                 buy2 = buy1;
@@ -298,7 +319,8 @@ public static class EconomyReport
 
             bool specialty = TradeTags.IsSpecialty(tags, shop.SpecialtyList());
             int price = ShopPricing.SellPrice(
-                item.Value, ShopPricing.SellFractionFor(shop.SellFraction, specialty));
+                shop.LocalValue(item.Value, tags),
+                ShopPricing.SellFractionFor(shop.SellFraction, specialty));
 
             if (!first.Has || price > first.Price)
             {
@@ -335,7 +357,8 @@ public static class EconomyReport
             }
 
             int net = ConsignmentRules.Net(
-                ConsignmentRules.Gross(item.Value, shop.ConsignFraction), shop.ConsignCommission);
+                ConsignmentRules.Gross(shop.LocalValue(item.Value, tags), shop.ConsignFraction),
+                shop.ConsignCommission);
 
             if (!best.Has || net > best.Net)
             {
@@ -367,10 +390,21 @@ public static class EconomyReport
         CommissionCost(recipe, shop, TierOf(shop.FactionId), pack, labourFee);
 
     /// <inheritdoc cref="CommissionCost(CraftingRecipeResource, ShopResource, InventoryComponent, int)"/>
-    /// <remarks>The explicit-tier overload is <c>--validate</c>'s: it checks the cheapest standing the
-    /// ramp allows rather than the live one, because the loop only has to be closed at its cheapest.</remarks>
+    /// <remarks>
+    /// The explicit-tier overload is <c>--validate</c>'s: it checks the cheapest standing the ramp
+    /// allows rather than the live one, because the loop only has to be closed at its cheapest.
+    /// ⚠️ <b><paramref name="haggled"/> is the other half of "cheapest", and 38S missed it</b> — a
+    /// master whose materials shop can be talked down is 10% cheaper again, and the validator was still
+    /// asking at the un-haggled price. The live quote passes <c>false</c>: a commission is a service and
+    /// has no access to that shop's ledger, so the number the window quotes is the number it charges.
+    /// </remarks>
     public static int CommissionCost(
-        CraftingRecipeResource recipe, ShopResource shop, ReputationTier tier, InventoryComponent? pack, int labourFee)
+        CraftingRecipeResource recipe,
+        ShopResource shop,
+        ReputationTier tier,
+        InventoryComponent? pack,
+        int labourFee,
+        bool haggled = false)
     {
         var shortfall = new List<(int UnitValue, int Missing, float Markup)>();
         List<string> specialties = shop.SpecialtyList();
@@ -386,8 +420,12 @@ public static class EconomyReport
                 continue;
             }
 
-            shortfall.Add((item.Value, missing, ShopPricing.MarkupFor(
-                shop.BuyMarkup, tier, TradeTags.IsSpecialty(item.TagList(), specialties))));
+            // 38G: the master charges his own counter's price for what he supplies, and his counter
+            // stands somewhere. ⚠️ This is half of the commission exploit check — the other half is
+            // BestBuyers above, which now scans every settlement's local value for the best sale.
+            List<string> itemTags = item.TagList();
+            shortfall.Add((shop.LocalValue(item.Value, itemTags), missing, ShopPricing.MarkupFor(
+                shop.BuyMarkup, tier, TradeTags.IsSpecialty(itemTags, specialties), haggled)));
         }
 
         return CommissionRules.Cost(labourFee, shortfall);

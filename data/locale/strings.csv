@@ -199,6 +199,12 @@ shop.invest_offer,"A stake in the business: {0}g for {1}g more in their purse."
 shop.invest_access,"A stake in the business: {0}g, and they open the rest of their stock."
 shop.invest_held,"Stake: {0} of {1}"
 shop.invest_full,You already own all the stake they will sell.
+# Local trade (Phase 38G). The line says what the PLACE does to the prices, where the standing line
+# says what the merchant does — two different reasons a number moved, and the player meets them in
+# that order. A settlement that authors neither says nothing at all: "prices are normal here" is noise.
+shop.local_trade,"This place is awash in {0} and short of {1}."
+shop.local_surplus,"This place is awash in {0} — it fetches little here."
+shop.local_demand,"This place is short of {0} — it fetches more here."
 # Haggling (Phase 38S). The offer names the odds because the downside is real and unnamed odds are a
 # coin the player cannot decide about; the two outcomes name what moved, because a price that changed
 # without a line of text reads as the shop being mispriced.

@@ -105,6 +105,7 @@ public static class ContentValidator
         ValidateProperties(issues);
         ValidateItemTags(issues);
         ValidateShops(issues);
+        ValidateCellTrade(issues);
         ValidateContrabandReachability(issues);
         ValidateEssentialsAreResident(issues);
         ValidateServices(issues);
@@ -936,6 +937,7 @@ public static class ContentValidator
             }
 
             ValidateShopHaggle(shop, issues);
+            ValidateShopCell(shop, issues);
 
             if (shop.SellFraction >= shop.BuyMarkup)
             {
@@ -1522,8 +1524,13 @@ public static class ContentValidator
             //
             // Checked at its cheapest: Allied standing takes 15% off the buy side (38C), and the sell
             // side does not move with standing at all, so this is the corner the loop opens at first.
+            // ⚠️ 38G widened this corner twice over. The materials are priced at the master's OWN
+            // settlement (cheapest where they are a surplus) while BestBuyers below now scans every
+            // settlement for the keenest buyer — so the loop is asked across the whole demand band
+            // rather than at one price. And 38S's haggle was missing from "cheapest standing" entirely.
             int cost = EconomyReport.CommissionCost(
-                recipe, shop, ReputationTier.Allied, pack: null, service.PriceGold);
+                recipe, shop, ReputationTier.Allied, pack: null, service.PriceGold,
+                haggled: shop.HaggleChance > 0);
             EconomyReport.BestBuyers(output, output.TagList(), out Offer best, out _);
 
             if (best.Has && CommissionRules.Exploitable(cost, best.Price, recipe.OutputQuantity))
@@ -1860,6 +1867,98 @@ public static class ContentValidator
                 $"pay {widestSell:0.00}x an item's value while charging as little as {narrowestBuy:0.00}x " +
                 "for it — buying and selling back would cost the player almost nothing");
         }
+    }
+
+    /// <summary>
+    /// Where a counter stands, and therefore what things are worth at it (Phase 38G). One rule, and it
+    /// exists because the failure is <b>silent and looks like balance</b>: a shop whose
+    /// <c>CellId</c> resolves to nothing prices at the realm reference, which is a perfectly ordinary
+    /// set of numbers. Nobody would think to check.
+    /// </summary>
+    private static void ValidateShopCell(ShopResource shop, List<string> issues)
+    {
+        if (shop.CellId.Length > 0 && World.RegionDatabase.Cell(shop.CellId) is null)
+        {
+            issues.Add(
+                $"shop '{shop.Id}' stands in unknown cell '{shop.CellId}' — local surplus and demand " +
+                "would silently not apply and its prices would read as the realm average");
+        }
+    }
+
+    /// <summary>
+    /// A settlement's surplus and demand (Phase 38G). Three rules over the cells rather than the shops,
+    /// because the tags are authored on the place — and the third one is the sub-phase's own parking
+    /// notice made mechanical: <b>an authored place nobody prices from is invisible.</b>
+    /// </summary>
+    private static void ValidateCellTrade(List<string> issues)
+    {
+        foreach (RegionResource region in RegionDatabase.All)
+        {
+            foreach (RegionCellResource cell in region.Cells)
+            {
+                List<string> surplus = Tags(cell.Surplus);
+                List<string> demand = Tags(cell.Demand);
+
+                foreach (string tag in surplus)
+                {
+                    if (!TradeTags.IsKnown(tag))
+                    {
+                        issues.Add($"cell '{cell.Id}' has surplus in unknown trade tag '{tag}'");
+                    }
+
+                    if (demand.Contains(tag))
+                    {
+                        issues.Add(
+                            $"cell '{cell.Id}' is both awash in and short of '{tag}' — the value would " +
+                            "be resolved as a surplus and the demand half would silently do nothing");
+                    }
+                }
+
+                foreach (string tag in demand)
+                {
+                    if (!TradeTags.IsKnown(tag))
+                    {
+                        issues.Add($"cell '{cell.Id}' has demand for unknown trade tag '{tag}'");
+                    }
+                }
+
+                // 38G's parking notice, mechanised: demand that no counter reads is a multiplier the
+                // player can never meet — correct, validated and completely imperceptible.
+                if ((surplus.Count > 0 || demand.Count > 0) && !AnyShopIn(cell.Id))
+                {
+                    issues.Add(
+                        $"cell '{cell.Id}' authors surplus or demand and no shop stands in it — no " +
+                        "price in the game reads those tags, so the settlement's economy is invisible");
+                }
+            }
+        }
+    }
+
+    private static bool AnyShopIn(string cellId)
+    {
+        foreach (ShopResource shop in ShopDatabase.All)
+        {
+            if (shop.CellId == cellId)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static List<string> Tags(Godot.Collections.Array<string> tags)
+    {
+        var list = new List<string>();
+        foreach (string tag in tags)
+        {
+            if (!string.IsNullOrEmpty(tag))
+            {
+                list.Add(tag);
+            }
+        }
+
+        return list;
     }
 
     /// <summary>

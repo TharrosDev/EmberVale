@@ -273,6 +273,20 @@ public partial class ShopResource : Resource
     /// </summary>
     [Export] public float ConsignCommission { get; set; }
 
+    /// <summary>
+    /// Which cell this counter stands in (Phase 38G) — <c>&lt;region&gt;.&lt;cell&gt;</c>, matching
+    /// <c>RegionCellResource.Id</c>. It exists for one purpose: the cell's <c>Surplus</c> and
+    /// <c>Demand</c> tags say what a good is worth <em>here</em>.
+    ///
+    /// ⚠️ <b>Empty means the realm reference, not "unknown"</b> — the town square and the Embermarket
+    /// price at par deliberately, so only a shop in a cell that authors demand needs this filled in.
+    /// The cost of that default is real and is the sub-phase's trap: <b>a new shop at the mine that
+    /// forgets this prices as though it were in town, and nothing says so.</b> It shows in
+    /// <c>--economy</c> as a route that does not appear, which is a thing you have to already suspect.
+    /// A non-empty id that resolves to no cell is refused by <c>--validate</c>.
+    /// </summary>
+    [Export] public string CellId { get; set; } = string.Empty;
+
     /// <summary>Whether this shop is a broker rather than a counter — read by the vendor window to
     /// decide whether the pack's rows sell or list. One function so the panel, the sale and the
     /// validator cannot disagree about what <see cref="ConsignFraction"/> means.</summary>
@@ -290,6 +304,30 @@ public partial class ShopResource : Resource
 
     /// <summary>The specialist trades as a plain list.</summary>
     public List<string> SpecialtyList() => Plain(Specialties);
+
+    /// <summary>
+    /// What this counter reckons a good is worth (Phase 38G): the item's value moved by the surplus and
+    /// demand tags of the cell the shop stands in.
+    ///
+    /// ⚠️ <b>Every price in the game goes through here or it is wrong</b>, and that is four call sites
+    /// in two files plus the two shared helpers in <see cref="EconomyReport"/>. The failure mode is not
+    /// a crash: a site left on the raw <c>Value</c> quotes one number and charges another, or lets
+    /// <c>--validate</c> ask the commission question at a price no player pays.
+    ///
+    /// Falls through to the plain value when the shop authors no <see cref="CellId"/>, when the id has
+    /// gone stale, or when the cell authors nothing — the same tolerant default
+    /// <c>VendorPanel.StandingWith</c> takes, and for the same reason: a half-built world must price
+    /// normally rather than refuse to trade.
+    /// </summary>
+    public int LocalValue(int baseValue, List<string> itemTags)
+    {
+        if (CellId.Length == 0 || World.RegionDatabase.Cell(CellId) is not { } cell)
+        {
+            return baseValue;
+        }
+
+        return RegionDemand.ValueAt(baseValue, itemTags, Plain(cell.Surplus), Plain(cell.Demand));
+    }
 
     private static List<string> Plain(Godot.Collections.Array<string> tags)
     {
