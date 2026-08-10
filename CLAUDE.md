@@ -106,13 +106,33 @@ through the console exe below. What the MCP adds that the shell cannot is **view
 isolated-node screenshots** — which is aimed squarely at §7's most expensive recurring defect, the
 "RENDER IT" trap that has fired seven times and currently needs a hand-copied `tools/market_shots.gd`.
 
-⚠️ **It is in Custom (local) mode on purpose**: `http://localhost:8080/mcp`, with the server binary
-downloaded and run by the addon's own dock. The default is a hosted cloud at `ai-game.dev` that would
-route this project's scenes and scripts through a third party. Do not switch modes without asking.
+⚠️ **It is in Custom (local) mode on purpose.** The server is the `gamedev-mcp-server` binary running
+on **this machine** at `localhost:23630`, under `.ai-game-dev/` (gitignored — a 40 MB binary and a
+credential file do not belong in the history). The vendor default is a hosted cloud at `ai-game.dev`
+that would route this project's scenes and scripts through a third party. **Do not switch modes
+without asking.**
 
-Start it: `godot-cli open . --mode Custom --url http://localhost:8080` then
-`godot-cli wait-for-ready .` (the CLI is `npm i -g godot-cli`). The editor must be open for any
-`mcp__ai-game-developer__*` tool to answer.
+**Bringing it up — three commands, in this order, all verified 2026-08-09:**
+
+```
+.ai-game-dev/server/gamedev-mcp-server.exe --port 23630        # leave running; loopback only
+godot-cli open . --mode Custom --url http://localhost:23630 \
+  --editor-path <the console-less .exe from §2's path>
+godot-cli wait-for-ready .
+```
+
+⚠️ **The port has to match in three places or nothing connects**, and the failure is a bare
+"connection refused": the server's `--port`, the editor's `--url` (it reads `GODOT_MCP_HOST` **at
+process start**, so an editor already running in the wrong mode must be closed and reopened —
+`godot-cli close .`), and `.mcp.json`, which `godot-cli configure . --agent claude-code` writes as
+`http://localhost:23630/p/<pin>`. The CLI derives 23630 from the project path; the binary defaults to
+**8080**, which is the mismatch to expect.
+
+⚠️ **`.mcp.json` is read when Claude Code starts.** Changing it mid-session does not add the tools —
+restart. Until then the same tools are reachable over HTTP: `godot-cli run-tool <name> . --url
+http://localhost:23630 --input '{...}'`, and `godot-cli status .` says whether the editor and server
+are both up. Tool names are the folder names under `.claude/skills/`; each `SKILL.md` carries the
+argument schema (⚠️ they are the *tool's* names, e.g. `scene-open` takes `resourcePath`, not `path`).
 
 **The Blender MCP is an adaptation tool, not an asset source.** Its job is adapting downloads,
 changing proportions, simplifying meshes, combining assets, repairing geometry, improving UVs,

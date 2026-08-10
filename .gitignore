@@ -45,3 +45,9 @@ assets/library/_source_textures/
 
 # Nature pack 4K source textures (2026-08-08). Same reason as the line above: nothing references them.
 assets/library/_source_textures_nature/
+
+# Godot-MCP local server binary, credentials and per-project MCP state (38G tooling,
+# 2026-08-09). Downloaded per machine by `godot-cli install-plugin --with-server`; a 40 MB
+# binary and a credential file have no business in the history.
+.ai-game-dev/
+.godot-mcp/
