@@ -10,9 +10,10 @@ existed the same three lines were maintained in four places and rewritten every 
 
 ## Where we are
 
-- **Stage C, Phase 38 (economy). 38A–38T done. Next: 38U — the economy UI/UX pass.**
-- Open the plan: `docs/playbook/phase-38.md`, the `38U` entry, plus **38T's and 38S's** — 38U has to
-  explain, line by line, every multiplier those two added.
+- **Stage C, Phase 38 (economy). 38A–38U done. Next: 38V — validation, tests, docs, balance handoff.**
+- Open the plan: `docs/playbook/phase-38.md`, the `38V` entry, plus **38U's and 38T's**. 38V is the
+  phase's closing gate: `ARCHITECTURE.md` still has **no §2.x Economy section** and `DESIGN.md` §6
+  needs rewriting against what actually shipped.
 - **Nothing is parked.** ⚠️ If a future item is parked, park it with a check someone can run, not a
   verdict — 38G sat eleven sub-phases past its own condition because the notice named a conclusion.
 - ⚠️ **Five of 38R's seven briefed services were struck, not deferred** — cosmetic, healer, passage,
@@ -26,14 +27,14 @@ existed the same three lines were maintained in four places and rewritten every 
 | | |
 | --- | --- |
 | Build | clean, **0 warnings** |
-| Tests | **1270 passing**; 38T added 13 (`SupplyShockTests`) |
-| `--validate` | exit 0; **5 new 38T rules negative-tested both ways**, and the two widened rules proved by inverting `PriceView` |
-| `--economy` | **byte-identical** — headless has no shock service, so it prices the authored lists |
-| `--state` | 2 regions, 14 cells, 63 items, 23 shops, 14 services, 8 contracts, 33 dialogues, 14 quests |
-| **`--play`** | booted, loaded slot1, all 9 cells resident, **31 objects restored**, **0 project errors** |
-| Saved state | **38T adds `shocks`** — one "no usable entry" warning on the pre-38T save, as expected |
-| Save round trip | `tools/shock_roundtrip.gd`, **17 checks, run headlessly** (incl. the §7 empty-save case) |
-| Rendered | **nothing — 38T placed nothing in the world.** Its drivers are the caravan board and `VendorPanel` |
+| Tests | **1283 passing**; 38U added 13 (`PriceBreakdownTests`) |
+| `--validate` | exit 0; the new `ValidateBreakdownKeys` rule **broken and restored** (`shop.line.glut`) |
+| `--economy` | **byte-identical**, diffed against a stashed-and-rebuilt `main` — 38U renders prices, it does not move them |
+| `--state` | unchanged: 2 regions, 14 cells, 63 items, 23 shops, 14 services, 8 contracts, 33 dialogues, 14 quests |
+| **`--play`** | booted, loaded slot1, all 9 cells resident, **31 objects restored**, **0 project errors** (the `ERROR:` lines in that log are engine teardown noise from the `timeout` kill) |
+| Saved state | **38U adds none.** A breakdown is a pure function of numbers the save already holds |
+| Label probe | `mouse_filter` of a bare `Label` is **2 (IGNORE)** while `Control`'s is 0 — run headlessly, and the reason every `label.TooltipText` in the repo was dead |
+| Rendered | **nothing — 38U placed nothing in the world.** ⚠️ And the tooltips themselves are **not observed**: a hover needs a cursor no tool here can inject |
 | Bodies retargeted | 12 of 12 skinned (`fp_arm` has no skin and needs none) |
 | Props with no collider | 0 (audit clean) |
 
@@ -50,51 +51,54 @@ existed the same three lines were maintained in four places and rewritten every 
    margin in that table** — that is the feature. Do treat `sell > buy` **at one shop** as a defect.
 3. ⚠️ **A DEMAND TABLE IS A FLOOR UNDER OTHER PEOPLE'S RULES** (38G). A contract reward, a commission
    fee and a fence's margin are all measured against *what the best buyer pays*, and that number moves
-   when a cell authors a tag. Authoring ore demand at the coast broke `contract.crossway.iron_ore` on
-   the first `--validate` run — correctly. ⚠️ **`ShopResource.CellId` is empty by default and empty
-   means par**, so a shop that forgets it prices as though it were in town and only the `--economy`
-   table shows it; the validator can only catch a cell *no* shop points at.
+   when a cell authors a tag. ⚠️ **`ShopResource.CellId` is empty by default and empty means par**, so a
+   shop that forgets it prices as though it were in town and only the `--economy` table shows it.
 4. ⚠️ **WHEN A NEW PRICE APPEARS, ASK WHAT IT IS A SPREAD OVER.** A commission (38Q) relates **two**
-   items — materials in, a finished piece out — so no clamp closes it and only the authored labour fee
-   does; `--validate` proves that every boot at the cheapest standing. A **haggle** (38S) is a spread
-   over *one* item's value like standing and the specialty premium, so the 38A clamps cover it with no
-   new argument. **The question is cheap and the answer is sometimes "nothing to do".**
+   items, so no clamp closes it and only the authored labour fee does. A **haggle** (38S) is a spread
+   over *one* item's value, so the 38A clamps cover it. A **shock** (38T) and a **breakdown** (38U) are
+   not spreads at all. **The question is cheap and the answer is now three times running "nothing to do".**
 5. ⚠️ **BUT A CLAMP STOPS A MONEY PRINTER, NOT A FREE ROUND TRIP** (38S). `ValidateShopTrade`'s margin
-   rule is the one that keeps buying and selling back *costing* something, and every new multiplier
-   must be folded into **both** of its sides. The haggle tightened the permitted fraction/markup ratio
-   from ~0.52 to ~0.42 on a haggling shop. ⚠️ **And every new multiplier joins
+   rule is what keeps buying and selling back *costing* something, and every new multiplier must be
+   folded into **both** of its sides. ⚠️ **And every new multiplier joins
    `NoCombinationOfMultipliersLetsSellingBeatBuying` or it does not ship** (38F's contract).
-6. ⚠️ **A HAGGLE IS THE FIRST THING TO MOVE THE SELL SIDE, AND IT MAY ONLY BECAUSE IT IS DAY-BOUNDED**
-   (38S). Standing deliberately does not (`MarkupFor` says why: a generous fraction converges on
-   `sell == buy`). ⚠️ **A broker cannot be haggled** — `VendorPanel` prices her rows through
-   `ConsignmentRules`, which the deal never reaches, so `--validate` refuses the pairing.
-7. ⚠️ **DERIVE, THEN BOUND — TWO MECHANISMS, NEITHER SUBSTITUTING FOR THE OTHER** (38Q2, 38R2, 38S).
-   The contract board, a throw of the bones and a merchant's mood are all pure functions of the day, so
-   a quickload **replays** them. What stops them being farmed is a ledger: `ContractLedger`,
-   `WagerLedger`, `HaggleLedger` — each storing only **what the player did**, never what was offered or
-   what the answer was. ⚠️ Storing the outcome is the obvious shape and the one that rots.
+6. ⚠️ **THE EXPLANATION IS THE CHARGE, NOT A COMMENTARY ON IT** (38U). `PriceBreakdown` returns
+   `Total`, and the vendor window, the commission desk and the map screen all *charge* that number.
+   The obvious shape — a display-only breakdown beside the shipped expression, kept honest by a
+   validator rule — is two expressions of one number and a rule to stop them drifting. ⚠️ Its
+   intermediate lines accumulate factors in **`ShopPricing`'s own multiplication order**, which is the
+   only reason the last line equals the total exactly rather than within a gold. **Reordering those
+   multiplies is a silent off-by-one and only `BuyLastLineIsTheTotal` would catch it.**
+7. ⚠️ **A GODOT `Label` DEFAULTS ITS `mouse_filter` TO IGNORE, SO A TOOLTIP ON ONE IS SILENTLY DEAD**
+   (38U). Verified headlessly: a bare `Label` reads 2 where `Control` reads 0. Every `label.TooltipText`
+   in this repo had never once shown. `UiTheme`'s text builders now set **`Pass`** — hoverable without
+   becoming clickable, because a label laid over a card must not eat presses meant for what is behind
+   it. ⚠️ **A property whose default differs from its base class's is the class of defect that reads
+   correct in every review.**
+8. ⚠️ **DERIVE, THEN BOUND — TWO MECHANISMS, NEITHER SUBSTITUTING FOR THE OTHER** (38Q2, 38R2, 38S).
+   The contract board, a throw of the bones and a merchant's mood are pure functions of the day, so a
+   quickload **replays** them. What stops them being farmed is a ledger storing only **what the player
+   did**, never what was offered. ⚠️ **38T is the first that needed BOTH halves.**
    ⚠️ `string.GetHashCode()` is randomised per process; `StableRoll` is a hand-written FNV-1a.
-   ⚠️ **38T is the first that needed BOTH halves**: the roll is derived from the day, and the window is
-   stored because the player can end a shortage early by hauling goods in — which no clock can derive.
    ⚠️ **GDScript can only call methods whose signatures marshal**, so a `.gd` save harness cannot reach
    anything taking a record struct or an `IReadOnlyList`; probe `has_method` before writing one.
    ⚠️ **Nothing about a contract may reach the quest log.**
-8. ⚠️ **A SERVICE CAN BE FIRED FROM A CONVERSATION, EXCEPT A BANK** (38R). `DialogueEffect.OpenService`
+9. ⚠️ **A SERVICE CAN BE FIRED FROM A CONVERSATION, EXCEPT A BANK** (38R). `DialogueEffect.OpenService`
    runs the whole 38D battery through `ServiceComponent.TryUse` — but a `Bank` opens the **host
    entity's** inventory and a conversation has no host entity. ⚠️ **An entity still gets one
    interactable**: the innkeeper's `ServiceComponent` was *deleted* to put his conversation back, and
    the realm's only bed is reachable through `dialogue.innkeeper` and nowhere else.
-9. ⚠️ **TWO SERVICES ARE CHARGED AFTER THEIR VERB AND EVERY OTHER ONE BEFORE** (38Q, 38R): a commission
-   fails on a full pack, a hire fails on a full party. Only the commission needs a rollback. ⚠️ Both
-   must be **PRICED**, inverting 38O's free-service rule, because both hand over *goods*.
+   ⚠️ **A world interaction prompt is not a `Control` and has nothing to hover** (38U) — a service
+   price that moved says so inline, which is the gate's intent where a tooltip is impossible.
 10. ⚠️ **A WAGER'S RULE IS CHECKED AT *ALLIED* STANDING** (38R2) — and so is every 38S rule.
-    `PriceOf` discounts a stake and nothing discounts a payout, so a table that is a sink at Neutral can
-    print at the top of the ramp. **Every price the player can move directly is evaluated at Allied.**
+    `PriceOf` discounts a stake and nothing discounts a payout. **Every price the player can move
+    directly is evaluated at Allied.**
 11. **A broker fronts nothing, so no purse and no saturation apply to her** (38P). ⚠️
     **`EconomyReport.BestBuyers` skips a consignment house and that is not optional** (38P2).
+    ⚠️ **A stack at a broker is a multiply and a stack at a counter is 38H's decaying sum** — the one
+    place in the game where unit price × quantity is the wrong number.
 12. **`contraband` is the one trade tag that fails CLOSED** (38O), and **a fenced sale moves two
-    factions once per sale, never per unit** — deliberately the opposite granularity to 38H's per-unit
-    payout decay. **The Crossway toll is charged in `GameBootstrap.PayToll`**, portal crossings only.
+    factions once per sale, never per unit**. **The Crossway toll is charged in
+    `GameBootstrap.PayToll`**, portal crossings only.
 13. ⚠️ **RENDER THE THING, AND RENDER IT WITH THE PEOPLE AND FURNITURE AROUND IT.** Seven firings.
     38R's is the plainest: an NPC on open ground stood exactly where the player stands to read the
     previous sub-phase's board, and the fault was in neither object and in no line of either `.tscn`.
@@ -134,4 +138,5 @@ godot --headless --path . -- --validate         # content gate, exit 0/1
 godot --headless --path . -- --economy          # the realm's price landscape
 godot --headless --path . -- --state            # the content census
 godot --path . -- --play                        # boot into the newest save
+godot-cli status .                              # the Godot MCP probe — it is DOWN every session start
 ```

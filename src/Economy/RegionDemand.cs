@@ -84,9 +84,15 @@ public static class RegionDemand
         return Math.Max(1, (int)Math.Round(baseValue * factor, MidpointRounding.AwayFromZero));
     }
 
-    /// <summary>Whether any of the item's tags appears in the cell's list. Small lists both — the
-    /// vocabulary is closed and a settlement authors a handful — so a nested scan beats a set.</summary>
-    private static bool Wears(IReadOnlyList<string> itemTags, IReadOnlyList<string> cellTags)
+    /// <summary>
+    /// <b>Which</b> of the item's tags the cell has an opinion about, or empty for none — the same scan
+    /// <see cref="Wears"/> does, returning the tag instead of a boolean.
+    ///
+    /// It exists for 38U: a breakdown line that says a price moved must name <em>what</em> moved it, and
+    /// re-deriving the match at the call site is a second copy of the rule this file owns. The cell's
+    /// list is walked in its authored order, so the answer is the same one <see cref="ValueAt"/> acted on.
+    /// </summary>
+    public static string MatchedTag(IReadOnlyList<string> itemTags, IReadOnlyList<string> cellTags)
     {
         for (int i = 0; i < cellTags.Count; i++)
         {
@@ -94,11 +100,16 @@ public static class RegionDemand
             {
                 if (string.Equals(itemTags[j], cellTags[i], StringComparison.Ordinal))
                 {
-                    return true;
+                    return cellTags[i];
                 }
             }
         }
 
-        return false;
+        return string.Empty;
     }
+
+    /// <summary>Whether any of the item's tags appears in the cell's list. Small lists both — the
+    /// vocabulary is closed and a settlement authors a handful — so a nested scan beats a set.</summary>
+    private static bool Wears(IReadOnlyList<string> itemTags, IReadOnlyList<string> cellTags) =>
+        MatchedTag(itemTags, cellTags).Length > 0;
 }

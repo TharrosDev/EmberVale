@@ -525,7 +525,7 @@ public static class UiTheme
 
     public static Label Body(string text, Color? color = null)
     {
-        var label = new Label { Text = text };
+        var label = new Label { Text = text, MouseFilter = Control.MouseFilterEnum.Pass };
         ApplyType(label, FontRole.Interface, BodyFontSize);
         label.AddThemeColorOverride("font_color", color ?? Text);
         return label;
@@ -535,7 +535,12 @@ public static class UiTheme
     /// default, because everything this builder is for is a paragraph.</summary>
     public static Label Prose(string text, Color? color = null)
     {
-        var label = new Label { Text = text, AutowrapMode = TextServer.AutowrapMode.WordSmart };
+        var label = new Label
+        {
+            Text = text,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            MouseFilter = Control.MouseFilterEnum.Pass,
+        };
         ApplyType(label, FontRole.Serif, BodyFontSize);
         label.AddThemeColorOverride("font_color", color ?? Text);
         return label;
@@ -544,16 +549,32 @@ public static class UiTheme
     /// <summary>Item flavour and asides, in the serif italic.</summary>
     public static Label Flavour(string text, Color? color = null)
     {
-        var label = new Label { Text = text, AutowrapMode = TextServer.AutowrapMode.WordSmart };
+        var label = new Label
+        {
+            Text = text,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            MouseFilter = Control.MouseFilterEnum.Pass,
+        };
         ApplyType(label, FontRole.SerifItalic, BodyFontSize);
         label.AddThemeColorOverride("font_color", color ?? Dim);
         return label;
     }
 
-    /// <summary>A small secondary line (slot numbers, hints, metadata).</summary>
+    /// <summary>
+    /// A small secondary line (slot numbers, hints, metadata).
+    ///
+    /// ⚠️ <b>Every text builder above and below sets <see cref="Control.MouseFilterEnum.Pass"/>, and
+    /// that one word is why a tooltip on a label works at all</b> (Phase 38U). A Godot 4
+    /// <see cref="Label"/> defaults its filter to <c>Ignore</c> — unlike every other Control — so it is
+    /// never the node under the cursor and <c>TooltipText</c> on one is <em>silently</em> dead. Every
+    /// <c>label.TooltipText</c> in this repo had been dead since it was written: the vendor row's item
+    /// description, and both of <c>InventoryPanel</c>'s. <c>Pass</c> rather than <c>Stop</c> because a
+    /// label is decoration — it must become hoverable without becoming clickable, or a label laid over
+    /// a card would start eating presses meant for what is behind it.
+    /// </summary>
     public static Label Caption(string text, Color? color = null)
     {
-        var label = new Label { Text = text };
+        var label = new Label { Text = text, MouseFilter = Control.MouseFilterEnum.Pass };
         ApplyType(label, FontRole.Interface, CaptionFontSize);
         label.AddThemeColorOverride("font_color", color ?? Dim);
         return label;

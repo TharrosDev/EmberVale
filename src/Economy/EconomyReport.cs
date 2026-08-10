@@ -413,7 +413,47 @@ public static class EconomyReport
         bool haggled = false,
         PriceView view = PriceView.Today)
     {
-        var shortfall = new List<(int UnitValue, int Missing, float Markup)>();
+        var costed = new List<(int UnitValue, int Missing, float Markup)>();
+        foreach ((string _, int unitValue, int missing, float markup) in
+            CommissionShortfall(recipe, shop, tier, pack, haggled, view))
+        {
+            costed.Add((unitValue, missing, markup));
+        }
+
+        return CommissionRules.Cost(labourFee, costed);
+    }
+
+    /// <summary>
+    /// A commission's price <em>with its reasons</em> (38U) — the labour fee and one line per material
+    /// the player did not bring. The live standing, as <see cref="CommissionCost"/>'s short overload
+    /// takes it, and never haggled: a service cannot reach a shop's haggle ledger, so the number this
+    /// quotes is the number it charges.
+    /// </summary>
+    public static PriceQuote CommissionQuote(
+        CraftingRecipeResource recipe, ShopResource shop, InventoryComponent? pack, int labourFee) =>
+        PriceBreakdown.Commission(
+            labourFee, CommissionShortfall(recipe, shop, TierOf(shop.FactionId), pack));
+
+    /// <summary>
+    /// What the master has to supply and what each line costs him — the loop
+    /// <see cref="CommissionCost"/> used to hold inline, lifted out in 38U so the window can *show*
+    /// the split it was already being charged. Each entry carries the item's display name, because a
+    /// breakdown line that says "materials" and not "iron ingot x2" explains nothing.
+    ///
+    /// ⚠️ <b>One loop, two callers, and that is the point.</b> The quote and the bill were one
+    /// expression before this and have to stay one: a second walk of the ingredient list in the panel
+    /// would price a commission twice, and the two copies would disagree the first time an
+    /// <c>ItemDatabase</c> lookup failed on only one of them.
+    /// </summary>
+    public static List<(string Name, int UnitValue, int Missing, float Markup)> CommissionShortfall(
+        CraftingRecipeResource recipe,
+        ShopResource shop,
+        ReputationTier tier,
+        InventoryComponent? pack,
+        bool haggled = false,
+        PriceView view = PriceView.Today)
+    {
+        var shortfall = new List<(string Name, int UnitValue, int Missing, float Markup)>();
         List<string> specialties = shop.SpecialtyList();
 
         foreach (RecipeIngredient ingredient in recipe.IngredientList())
@@ -431,11 +471,15 @@ public static class EconomyReport
             // stands somewhere. ⚠️ This is half of the commission exploit check — the other half is
             // BestBuyers above, which now scans every settlement's local value for the best sale.
             List<string> itemTags = item.TagList();
-            shortfall.Add((shop.LocalValue(item.Value, itemTags, view), missing, ShopPricing.MarkupFor(
-                shop.BuyMarkup, tier, TradeTags.IsSpecialty(itemTags, specialties), haggled)));
+            shortfall.Add((
+                item.DisplayName,
+                shop.LocalValue(item.Value, itemTags, view),
+                missing,
+                ShopPricing.MarkupFor(
+                    shop.BuyMarkup, tier, TradeTags.IsSpecialty(itemTags, specialties), haggled)));
         }
 
-        return CommissionRules.Cost(labourFee, shortfall);
+        return shortfall;
     }
 
     private static bool Stocks(ShopResource shop, string itemId)

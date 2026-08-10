@@ -695,6 +695,12 @@ public partial class VendorPanel : UiPanel
             "font_color", shock.Kind == ShockKind.Shortage ? UiTheme.Bad : UiTheme.Good);
     }
 
+    /// <summary>One trade tag in the player's language, or empty for no tag — the same
+    /// <c>trade.tag.*</c> keys <see cref="TagNames"/> and the refusal line use, so a breakdown line and
+    /// the caption above it cannot name one tag two ways.</summary>
+    private static string TagName(string tag) =>
+        tag.Length > 0 ? Loc.T($"trade.tag.{tag}") : string.Empty;
+
     private static string TagNames(List<string> tags)
     {
         var names = new List<string>();
@@ -828,9 +834,16 @@ public partial class VendorPanel : UiPanel
 
             // 38G: what the good is worth HERE, not in the realm at large. Both sides of this counter
             // spread over the same local value, so the 38A invariant is untouched at the shop.
-            int local = shop.LocalValue(offer.Instance.Value, offer.Instance.Template.TagList());
-            int price = ShopPricing.BuyPrice(
-                local, ShopPricing.MarkupFor(shop.BuyMarkup, tier, specialty, haggled));
+            //
+            // 38U: the quote below IS the price — the row shows `quote.Total` and Buy charges it. The
+            // breakdown is not a second opinion about a number computed elsewhere, which is the only
+            // way an explanation cannot drift from a bill.
+            (int local, string localTag, bool shocked) =
+                shop.LocalQuote(offer.Instance.Value, offer.Instance.Template.TagList());
+            PriceQuote quote = PriceBreakdown.Buy(
+                offer.Instance.Value, local, TagName(localTag), shocked,
+                shop.BuyMarkup, tier, specialty, haggled);
+            int price = quote.Total;
             bool affordable = ShopPricing.CanAfford(price, purse);
 
             // 38I: a gated row is shown, greyed, with the gate named — the same choice a sold-out row
@@ -855,6 +868,7 @@ public partial class VendorPanel : UiPanel
                     : offer.Available ? Loc.T("shop.cannot_afford")
                     : Loc.T("shop.sold_out"),
                 onPressed: () => Buy(shop, captured, price),
+                priceTooltip: PriceTooltip.Render(quote),
                 specialty: specialty,
                 locked: locked != StockLock.Open);
         }
@@ -909,15 +923,23 @@ public partial class VendorPanel : UiPanel
 
             // 38G, and the broker takes it too: she fronts no money and takes no saturation, but she
             // still stands somewhere, and what she can get for a thing depends on where that is.
-            int localSell = shop.LocalValue(instance.Value, instance.Template.TagList());
-            int unitPrice = shop.IsConsignment
-                ? ConsignmentRules.Net(
-                    ConsignmentRules.Gross(localSell, shop.ConsignFraction), shop.ConsignCommission)
-                : ShopPricing.SellPrice(
-                    localSell, ShopPricing.SellFractionFor(shop.SellFraction, specialty, haggled));
-            int payout = !sellable || !inTrade ? 0
-                : shop.IsConsignment ? unitPrice * stack.Quantity
-                : ShopStock.SaturatedPayout(unitPrice, absorbed, stack.Quantity, shop.RestockDays);
+            //
+            // 38U: one quote per row, and it is the payout rather than a commentary on it. ⚠️ The two
+            // branches differ in more than a fraction — a broker's stack is a multiply and a counter's
+            // is 38H's decaying sum — so the split lives in PriceBreakdown where both endings are
+            // written down beside each other, not in a ternary that hides which one ran.
+            (int localSell, string localTag, bool shocked) =
+                shop.LocalQuote(instance.Value, instance.Template.TagList());
+            PriceQuote quote = shop.IsConsignment
+                ? PriceBreakdown.Consign(
+                    instance.Value, localSell, TagName(localTag), shocked,
+                    shop.ConsignFraction, shop.ConsignCommission, stack.Quantity)
+                : PriceBreakdown.Sell(
+                    instance.Value, localSell, TagName(localTag), shocked,
+                    shop.SellFraction, specialty, haggled, stack.Quantity, absorbed, shop.RestockDays);
+
+            int unitPrice = quote.Unit;
+            int payout = !sellable || !inTrade ? 0 : quote.Total;
             bool glutted = ShopStock.SaturationMultiplier(absorbed, shop.RestockDays) < 1f;
 
             // Five refusals, each named separately: not for sale at all, not this merchant's trade,
@@ -950,6 +972,11 @@ public partial class VendorPanel : UiPanel
                 onPressed: shop.IsConsignment
                     ? () => Consign(shop, captured, unitPrice)
                     : () => Sell(shop, captured, payout),
+
+                // A refused row explains the refusal, not the arithmetic — quoting a breakdown of a
+                // payout nobody is being offered is the "come back with more gold" mistake in another
+                // costume.
+                priceTooltip: sellable && inTrade ? PriceTooltip.Render(quote) : string.Empty,
                 specialty: specialty,
                 glutted: glutted);
         }
@@ -972,6 +999,7 @@ public partial class VendorPanel : UiPanel
         bool enabled,
         string refusal,
         System.Action onPressed,
+        string priceTooltip = "",
         bool specialty = false,
         bool glutted = false,
         bool locked = false)
@@ -1041,6 +1069,12 @@ public partial class VendorPanel : UiPanel
 
         Label price = UiTheme.Caption(priceText, enabled ? UiTheme.Accent : UiTheme.Disabled);
         price.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+
+        // 38U's whole deliverable: the number says why it is that number, line by line, from the same
+        // quote the button charges. ⚠️ This only shows because UiTheme's label builders set
+        // MouseFilterEnum.Pass — a Godot Label defaults to Ignore and is never the node under the
+        // cursor, which is why the item description one line up had been dead since 38A.
+        price.TooltipText = priceTooltip;
         row.AddChild(price);
 
         Button button = UiTheme.Action(action);
