@@ -112,6 +112,16 @@ credential file do not belong in the history). The vendor default is a hosted cl
 that would route this project's scenes and scripts through a third party. **Do not switch modes
 without asking.**
 
+⚠️ **IT IS DOWN AT THE START OF EVERY SESSION AND NOTHING SAYS SO.** Nothing below survives a reboot,
+a closed editor or a restarted Claude Code, and **every failure mode reads as a broken tool rather
+than a stopped process.** Three pieces have to line up, and the middle one is usually the missing one:
+
+| Half | What it is | Who starts it | Alive when |
+| --- | --- | --- | --- |
+| The server | `.ai-game-dev/server/gamedev-mcp-server.exe --port 23630` | **A human, once per boot** — nothing here spawns it | `gamedev-mcp-server.exe` is in the task list and 23630 is LISTENING |
+| The editor | Godot open **on this project**, in Custom mode, pointed at that URL | **A human, every session** | a `Godot_v4.7.1…` process is running |
+| The tools | `.mcp.json` → `http://localhost:23630/p/<pin>` | **Claude Code, at startup only** | `mcp__ai-game-developer__*` appear in the tool list |
+
 **Bringing it up — three commands, in this order, all verified 2026-08-09:**
 
 ```
@@ -120,6 +130,39 @@ godot-cli open . --mode Custom --url http://localhost:23630 \
   --editor-path <the console-less .exe from §2's path>
 godot-cli wait-for-ready .
 ```
+
+**Check it with one command before planning any work that needs it** — `godot-cli status .` reports
+both processes, and its "everything is off" answer looks like this (**captured 2026-08-10**):
+
+```
+Godot Editor Process
+WARN: Godot is not running with this project
+MCP Server
+  URL: http://localhost:23630
+Probing http://localhost:23630...
+ERROR: Not available (timed out)
+ERROR: Godot is not running and MCP server is not reachable
+```
+
+⚠️ **A LISTENING PORT IS NOT A WORKING MCP, AND THAT IS THE TRAP WORTH THE INK.** In that capture
+`gamedev-mcp-server.exe` **was** running and 23630 **was** LISTENING in `netstat` — the probe still
+timed out and every tool call failed, because the server only relays and there was no editor behind
+it to answer. So `netstat` and the task list prove nothing here; **`godot-cli status .` is the probe**.
+The failure a tool call gives instead is an HTTP 503 that names retries rather than a missing editor,
+which is why it reads as a broken server:
+
+```
+ERROR: HTTP 503: Service Unavailable
+  "error": "Invoke 'RunCallTool': Failed to invoke '…Model.RequestCallTool' after 10 retries."
+```
+
+⚠️ **Do not start either half yourself, and do not work around it.** Opening a Godot editor is a GUI
+process on the maintainer's desktop; ask them to run the three commands above. And note what is
+*not* blocked meanwhile: `dotnet build`, `dotnet test` and every `--validate` / `--economy` /
+`--state` / `--play` run go through the console exe and **do not touch the MCP at all**, so a session
+with the editor closed can still do the whole verification spine. The one thing genuinely lost is
+screenshots — which is exactly the "RENDER IT" trap, so a sub-phase that places anything in the world
+**needs the editor up before it starts**, not after the placement is done.
 
 ⚠️ **The port has to match in three places or nothing connects**, and the failure is a bare
 "connection refused": the server's `--port`, the editor's `--url` (it reads `GODOT_MCP_HOST` **at
