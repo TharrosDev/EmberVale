@@ -86,20 +86,33 @@ You are the lead engineer building this game incrementally. The non-negotiables:
 
 | Thing            | Value                                                           |
 | ---------------- | --------------------------------------------------------------- |
-| Engine           | Godot 4.7 (.NET / Mono build)                                   |
+| Engine           | Godot **4.7.1** (.NET / Mono build) — 4.7.0 until 2026-08-09     |
 | Language         | C# targeting `net8.0`, `Nullable` enabled, `ImplicitUsings` off |
 | SDK              | `Godot.NET.Sdk/4.7.0` (see `Embervale.csproj`)                  |
 | Assembly / root ns | `Embervale`                                                   |
 | Entry scene      | `scenes/Main.tscn` → `GameBootstrap` (`src/Bootstrap`)          |
 | Target platforms | Windows, Linux, Steam Deck (Forward+ renderer)                  |
 
-**A Godot MCP server (`mcp__godot__*`) is connected**, running
-**Godot 4.7.stable.mono** — the same engine and version this project targets. Through
-it you can actually build and run the game: `run_project` + `get_debug_output` to
-launch and capture errors/logs, `stop_project` to stop, `launch_editor`,
-`get_project_info`, and scene edits (`create_scene`/`add_node`/`load_sprite`/
-`save_scene`). **Prefer running the project to verify non-trivial changes** rather than
-only reasoning about them.
+**The Godot MCP is [IvanMurzak/Godot-MCP](https://github.com/IvanMurzak/Godot-MCP) v0.20.1**
+(maintainer direction, 2026-08-09 — it replaced `@coding-solo/godot-mcp`, which was last published
+in February and whose npm build is missing its own upstream RCE fix). It is a **C# editor addon
+vendored into this repo** at `addons/godot_mcp/`, wired by `.mcp.json` (project-scoped) and declared
+in `Embervale.csproj` — see the comments there before touching either.
+
+⚠️ **IT IS EDITOR-BOUND, AND THE OLD ONE WAS NOT.** Its ~42 tools drive a **running Godot editor**;
+they cannot launch a headless run. So the verification spine of this repo is unchanged and is still
+the shell: `dotnet build`, `dotnet test`, and `--validate` / `--economy` / `--state` / `--play`
+through the console exe below. What the MCP adds that the shell cannot is **viewport, camera and
+isolated-node screenshots** — which is aimed squarely at §7's most expensive recurring defect, the
+"RENDER IT" trap that has fired seven times and currently needs a hand-copied `tools/market_shots.gd`.
+
+⚠️ **It is in Custom (local) mode on purpose**: `http://localhost:8080/mcp`, with the server binary
+downloaded and run by the addon's own dock. The default is a hosted cloud at `ai-game.dev` that would
+route this project's scenes and scripts through a third party. Do not switch modes without asking.
+
+Start it: `godot-cli open . --mode Custom --url http://localhost:8080` then
+`godot-cli wait-for-ready .` (the CLI is `npm i -g godot-cli`). The editor must be open for any
+`mcp__ai-game-developer__*` tool to answer.
 
 **The Blender MCP is an adaptation tool, not an asset source.** Its job is adapting downloads,
 changing proportions, simplifying meshes, combining assets, repairing geometry, improving UVs,
@@ -115,27 +128,24 @@ so the maintainer can see at a glance what is being made in the Blender viewport
 an object's location transiently at export time (glTF export needs origin-relative
 placement), and move it back or lay out the next asset offset afterwards.
 
-⚠️ **`run_project` does NOT recompile C#.** It launches whatever `Embervale.dll` was
-last built, so after editing any `.cs` you MUST rebuild first or the MCP runs a **stale
-binary** (a silent trap — a behaviour-preserving change looks "verified" while your edit
-never ran). The shell here **has `dotnet` 8.0**: rebuild with
-`dotnet build Embervale.sln` (output goes to `.godot/mono/temp/bin/Debug/Embervale.dll`,
-where the game loads it), *then* `run_project`. Run the pure-logic unit suite with
-`dotnet test tests/Embervale.Tests`.
+⚠️ **NOTHING THAT RUNS THE GAME RECOMPILES C#.** Launching the engine — from a shell or from the
+editor — runs whatever `Embervale.dll` was last built, so after editing any `.cs` you MUST rebuild
+first or you are exercising a **stale binary** (a silent trap: a behaviour-preserving change looks
+"verified" while your edit never ran). The shell here **has `dotnet` 8.0**: rebuild with
+`dotnet build Embervale.sln` (output goes to `.godot/mono/temp/bin/Debug/Embervale.dll`, where the
+game loads it), *then* run. Pure-logic unit suite: `dotnet test tests/Embervale.Tests`.
 
-Other caveats: `run_project` launches the **real game window** — use it deliberately and
-`stop_project` when done; it is not a headless check. It also lands on the **main menu**, not
-in the world (Phase 24's meta-shell), and the menu's buttons need input the MCP can't inject —
-so a bare `run_project` verifies boot and database loading, nothing in-world. Use `--play`
-(§3) when you need an actual session. The `WorldIntegrityChecker` (5s) stays silent unless an
-invariant breaks, so give a run several seconds before trusting a clean log. When you have
-**not** built+run something, say it was *reviewed against the Godot 4.7 C# API* — reserve
+A plain launch lands on the **main menu**, not in the world (Phase 24's meta-shell), and the menu's
+buttons need input no tool here can inject — so it verifies boot and database loading, nothing
+in-world. Use `--play` (§3) when you need an actual session. The `WorldIntegrityChecker` (5s) stays
+silent unless an invariant breaks, so give a run several seconds before trusting a clean log. When
+you have **not** built+run something, say it was *reviewed against the Godot 4.7 C# API* — reserve
 "verified/tested running" for output you actually captured.
 
 ⚠️ **`godot` is not on `PATH`.** The `godot …` invocations below are shorthand; the binary is
 
 ```
-C:\Users\magnu\Downloads\Godot_v4.7-stable_mono_win64\Godot_v4.7-stable_mono_win64\Godot_v4.7-stable_mono_win64_console.exe
+C:\Users\magnu\Downloads\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64_console.exe
 ```
 
 Use the `_console.exe` variant from a shell — the plain `.exe` detaches and prints nothing to
