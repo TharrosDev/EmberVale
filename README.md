@@ -334,6 +334,13 @@ and it will not run again until you have let it stop asking. The horse is a real
 you sit on it with the reins in your hands, and in first person you look out over its ears. It is
 still there when you reload.
 
+- 39B ✅ and you can fight from the saddle. A blow struck at a gallop lands harder — a walking horse
+adds nothing, so the stamina you spend running is the same stamina that makes the first hit count.
+You cannot dodge-roll off a horse, which is the one thing riding takes away. Waypoints stopped
+charging you for a jump across your own realm when you own the horse that would have carried you —
+crossing into Frostfang still costs, because that is a longer road than a horse fixes. And a hit
+taken in the saddle no longer drops you through the animal you are sitting on.
+
 ### Phase 36 — the boss framework
 
 - 36A ✅ a boss fight is data. Phases with HP thresholds, the escalation each stage brings, the abilities it hands over, the colour it burns when it winds up, and an enrage fuse so a boss cannot be out-waited — all authored in `data/bosses/*.tres` and named by one field on the archetype. The Iron King's numbers moved out of code without changing one of them; the three dragons, which until now were healthbars with no fight structure behind them, gained phases the moment the file existed.

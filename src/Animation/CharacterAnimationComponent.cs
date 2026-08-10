@@ -220,9 +220,22 @@ public partial class CharacterAnimationComponent : EntityComponent
         }
     }
 
+    /// <summary>
+    /// ⚠️ <b>A rider plays no full-body one-shot (39B), and the render is why.</b> The library has no
+    /// mounted attack, so a swing from the saddle plays the standing <c>Sword_Slash</c> — and a
+    /// standing clip puts the hips ~0.5 m higher than the seated pose the saddle offset was measured
+    /// against, so the rider does not "straighten mid-swing": he <b>stands up inside the horse</b>,
+    /// sunk to the knee in its barrel, for the length of every attack and every flinch.
+    ///
+    /// Holding the ride pose instead costs the mounted swing its animation — the blow still lands,
+    /// still rolls damage, still gets 39B's charge bonus, and the impact still reads. A missing
+    /// animation is a smaller defect than a wrong one, and this is the only lever that does not cost
+    /// art: the real fix is an <c>AnimationTree</c> with a bone-filtered upper-body layer, which is a
+    /// sub-phase and not a patch.
+    /// </summary>
     private void PlayOneShot(string clip)
     {
-        if (_player != null && clip.Length > 0 && !_deathPlayed)
+        if (_player != null && clip.Length > 0 && !_deathPlayed && !Riding)
         {
             _player.Play(clip);
         }

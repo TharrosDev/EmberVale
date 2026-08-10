@@ -74,6 +74,11 @@ public partial class MountComponent : EntityComponent, ISaveable
     /// <summary>Remaining gallop pool, for the HUD and for the save.</summary>
     public float Stamina => _gallop.Stamina;
 
+    /// <summary>Whether the mount actually galloped on the last <see cref="Tick"/> — which is not
+    /// the same question as whether the player held sprint (39A: a blown horse refuses). 39B's
+    /// charge bonus reads this, so a rider who has spent the pool swings for ordinary damage.</summary>
+    public bool IsGalloping => IsMounted && _gallop.Galloping;
+
     public string SaveId => SaveKey("mount");
 
     protected override void OnInitialize()
@@ -206,7 +211,18 @@ public partial class MountComponent : EntityComponent, ISaveable
     {
         if (_bodyMesh != null)
         {
-            _bodyMesh.Position = mounted ? new Vector3(0f, SaddleHeight, SaddleForward) : Vector3.Zero;
+            Vector3 seat = mounted ? new Vector3(0f, SaddleHeight, SaddleForward) : Vector3.Zero;
+            _bodyMesh.Position = seat;
+
+            // ⚠️ HitReactionComponent owns this mesh's position while a hit lurch is easing out, and
+            // it puts the mesh back at ITS idea of rest. Mounting inside that 0.18 s window would
+            // otherwise leave the rider standing where the horse is not, until the next hit
+            // re-sampled it. The component samples rest on its own too — this is the ordering case
+            // that sampling cannot see, because the mesh is not at rest when it happens.
+            if (Entity!.GetComponent<Combat.HitReactionComponent>() is { } recoil)
+            {
+                recoil.Rest = seat;
+            }
         }
 
         if (_cameraPivot != null)

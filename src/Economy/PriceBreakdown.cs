@@ -108,6 +108,11 @@ public static class PriceBreakdown
     /// <summary>A jump to a holding the player owns, which is free (38C/37A).</summary>
     public const string KeyTravelOwned = "shop.line.travel_owned";
 
+    /// <summary>A local jump made free by owning a mount (39B). It is a separate key from
+    /// <see cref="KeyTravelOwned"/> for the reason 38O split search from redeem: both are zero, and
+    /// a player told "your own land" while standing on someone else's has been lied to.</summary>
+    public const string KeyTravelMounted = "shop.line.travel_mounted";
+
     /// <summary>
     /// Every key a breakdown can emit. It exists so <c>ContentValidator</c> can prove the whole set
     /// resolves rather than only the ones today's authored data happens to reach — a shock line, a
@@ -118,7 +123,7 @@ public static class PriceBreakdown
     {
         KeyBase, KeyLocalSurplus, KeyLocalDemand, KeyShockSurplus, KeyShockDemand, KeyMarkup,
         KeyFraction, KeyStanding, KeySpecialty, KeyHaggle, KeyStack, KeyGlut, KeyShelf, KeyHouseCut,
-        KeyLabour, KeyMaterial, KeyTravelLocal, KeyTravelCross, KeyTravelOwned,
+        KeyLabour, KeyMaterial, KeyTravelLocal, KeyTravelCross, KeyTravelOwned, KeyTravelMounted,
     };
 
     /// <summary>
@@ -298,13 +303,24 @@ public static class PriceBreakdown
         return new PriceQuote(lines, total, total);
     }
 
-    /// <summary>What a fast-travel jump costs and which of <see cref="TravelFee"/>'s three cases it
+    /// <summary>What a fast-travel jump costs and which of <see cref="TravelFee"/>'s four cases it
     /// is. One line, because the fee has one reason — the gate still applies: a number the player is
-    /// charged says why.</summary>
-    public static PriceQuote Travel(bool ownedHolding, bool crossRegion)
+    /// charged says why.
+    ///
+    /// ⚠️ <b>The key order mirrors <see cref="TravelFee.For"/>'s branch order and has to.</b> Both
+    /// zero cases can be true at once (riding to your own front door), and if the two functions
+    /// disagreed about which one wins, the map screen would print one reason while charging the
+    /// other's number — 38U's rule that the explanation IS the charge, broken in the quietest
+    /// possible way. Owned land wins in both, because it is the older and the more specific fact.
+    /// </summary>
+    public static PriceQuote Travel(bool ownedHolding, bool crossRegion, bool mounted)
     {
-        int fee = TravelFee.For(ownedHolding, crossRegion);
-        string key = ownedHolding ? KeyTravelOwned : crossRegion ? KeyTravelCross : KeyTravelLocal;
+        int fee = TravelFee.For(ownedHolding, crossRegion, mounted);
+        string key =
+            ownedHolding ? KeyTravelOwned
+            : crossRegion ? KeyTravelCross
+            : mounted ? KeyTravelMounted
+            : KeyTravelLocal;
 
         return new PriceQuote(new[] { new PriceLine(key, string.Empty, fee) }, fee, fee);
     }

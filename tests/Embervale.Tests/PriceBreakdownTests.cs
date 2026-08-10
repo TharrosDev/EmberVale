@@ -154,14 +154,22 @@ public class PriceBreakdownTests
     [Fact]
     public void TravelIsTheFeeAndNamesWhichCaseItIs()
     {
-        Assert.Equal(TravelFee.LocalFee, PriceBreakdown.Travel(false, false).Total);
-        Assert.Equal(PriceBreakdown.KeyTravelLocal, PriceBreakdown.Travel(false, false).Lines[0].Key);
-        Assert.Equal(TravelFee.CrossRegionFee, PriceBreakdown.Travel(false, true).Total);
-        Assert.Equal(PriceBreakdown.KeyTravelCross, PriceBreakdown.Travel(false, true).Lines[0].Key);
+        Assert.Equal(TravelFee.LocalFee, PriceBreakdown.Travel(false, false, false).Total);
+        Assert.Equal(PriceBreakdown.KeyTravelLocal, PriceBreakdown.Travel(false, false, false).Lines[0].Key);
+        Assert.Equal(TravelFee.CrossRegionFee, PriceBreakdown.Travel(false, true, false).Total);
+        Assert.Equal(PriceBreakdown.KeyTravelCross, PriceBreakdown.Travel(false, true, false).Lines[0].Key);
 
         // Owned wins over cross-region, exactly as TravelFee.For orders the two.
-        Assert.Equal(0, PriceBreakdown.Travel(true, true).Total);
-        Assert.Equal(PriceBreakdown.KeyTravelOwned, PriceBreakdown.Travel(true, true).Lines[0].Key);
+        Assert.Equal(0, PriceBreakdown.Travel(true, true, false).Total);
+        Assert.Equal(PriceBreakdown.KeyTravelOwned, PriceBreakdown.Travel(true, true, false).Lines[0].Key);
+
+        // 39B, and the ordering that matters: a mount frees the local jump and says so, but owned
+        // land outranks it and cross-region outranks the mount. Three reasons, one printed, and the
+        // one printed is the one charged.
+        Assert.Equal(0, PriceBreakdown.Travel(false, false, true).Total);
+        Assert.Equal(PriceBreakdown.KeyTravelMounted, PriceBreakdown.Travel(false, false, true).Lines[0].Key);
+        Assert.Equal(PriceBreakdown.KeyTravelOwned, PriceBreakdown.Travel(true, false, true).Lines[0].Key);
+        Assert.Equal(TravelFee.CrossRegionFee, PriceBreakdown.Travel(false, true, true).Total);
     }
 
     [Fact]
@@ -232,9 +240,10 @@ public class PriceBreakdownTests
             100, 100, string.Empty, false, 0.85f, 0.2f, 3).Lines);
         emitted.AddRange(PriceBreakdown.Commission(
             40, new List<(string, int, int, float)> { ("Iron Ingot", 12, 2, 1.5f) }).Lines);
-        emitted.AddRange(PriceBreakdown.Travel(false, false).Lines);
-        emitted.AddRange(PriceBreakdown.Travel(false, true).Lines);
-        emitted.AddRange(PriceBreakdown.Travel(true, false).Lines);
+        emitted.AddRange(PriceBreakdown.Travel(false, false, false).Lines);
+        emitted.AddRange(PriceBreakdown.Travel(false, true, false).Lines);
+        emitted.AddRange(PriceBreakdown.Travel(true, false, false).Lines);
+        emitted.AddRange(PriceBreakdown.Travel(false, false, true).Lines);
 
         foreach (PriceLine line in emitted)
         {

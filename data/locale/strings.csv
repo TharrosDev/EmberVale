@@ -245,6 +245,7 @@ shop.line.material,"materials he must supply: {0} — {1}g"
 shop.line.travel_local,"a jump inside this realm — {1}g"
 shop.line.travel_cross,"across the realm boundary — {1}g"
 shop.line.travel_owned,"a holding of your own — no charge"
+shop.line.travel_mounted,"you ride it yourself — no charge"
 shop.haggle_spent,You have already tried your luck with them today.
 # Trading hours and the travelling trader (Phase 38J). A closed shop names the hour it opens: "closed"
 # alone leaves the player standing at a stall with nothing to do about it, while an hour is an

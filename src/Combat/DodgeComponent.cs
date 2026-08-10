@@ -26,6 +26,7 @@ public partial class DodgeComponent : EntityComponent
     private LocomotionComponent? _locomotion;
     private StatsComponent? _stats;
     private CombatComponent? _combat;
+    private MountComponent? _mount;
     private bool _rolling;
     private float _elapsed;
 
@@ -34,6 +35,7 @@ public partial class DodgeComponent : EntityComponent
         _locomotion = Entity!.GetComponent<LocomotionComponent>();
         _stats = Entity!.GetComponent<StatsComponent>();
         _combat = Entity!.GetComponent<CombatComponent>();
+        _mount = Entity!.GetComponent<MountComponent>();
     }
 
     protected override void OnTeardown()
@@ -49,6 +51,16 @@ public partial class DodgeComponent : EntityComponent
     /// facing if zero). Returns true if it began.</summary>
     public bool TryDodge(Vector3 direction)
     {
+        // 39B: a mounted rider does not shoulder-roll. It is the one combat verb riding takes away —
+        // melee, block and casting all work from the saddle — because a roll from up there has no
+        // reading at all, and 39A's gallop is already the mounted evade. Refused before the stamina
+        // check so it costs nothing, and silently: a dodge press is a panic reflex and a toast in
+        // that moment is noise.
+        if (_mount is { IsMounted: true })
+        {
+            return false;
+        }
+
         bool grounded = _locomotion?.IsGrounded ?? false;
         float stamina = _stats?.GetCurrent(StatType.Stamina) ?? 0f;
         bool staggered = _combat?.IsStaggered ?? false;

@@ -12,14 +12,18 @@ existed the same three lines were maintained in four places and rewritten every 
 
 - **Stage C. Phase 38 (economy) is ✅ CLOSED — 38A–38V.** 37E/37F/37G landed out of band after it
   (the player's cottage, four runtime errors + the arena rebuild, and the Iron King's body).
-- **Phase 39 (Mounts & Traversal) has started. 39A is ✅ DONE** — `MountComponent`: `Y` whistles a
-  horse up or steps off it, riding is 1.7x, gallop is the horse's own pool, and the whole thing
-  saves. **It is the first thing in the repo to read 38D's `flag.stable.mount_owned`.**
-- **Next: 39B — mounted-combat rules + fast-travel integration.** ⚠️ **39A deliberately left every
-  combat input untouched while mounted** (maintainer direction): attack, block, cast and dodge behave
-  exactly as on foot today, so 39B is defining them from nothing rather than correcting a half-rule.
-  ⚠️ **The mount is a state of the rider, not a second body** — there is no horse entity to hit, aim
-  at, or knock the player off. That is the fact 39B's rules have to be written against.
+- **Phase 39 (Mounts & Traversal): 39A and 39B are ✅ DONE.** `Y` whistles a horse up; riding is
+  1.7x with the gallop on the horse's own pool; melee works from the saddle and a gallop is a charge;
+  a mount makes a **local** fast-travel jump free. ⚠️ **The mount is a state of the rider, not a
+  second body** — there is no horse entity to hit, aim at, or knock the player off.
+- **Next: 39C — traversal verbs (climb/swim/ledge), and it is a decision phase.** ⚠️ **It inherits
+  invariant 16 and is the phase that decides whether it stays true.** Only the verbs region design
+  (Phase 44) actually requires should land; a verb with no world that needs it is the shape CLAUDE.md
+  §1 forbids.
+- ⚠️ **DYING WHILE MOUNTED IS A KNOWN GAP, NAMED RATHER THAN FIXED (39B).** 39B stopped the body
+  playing full-body one-shots while riding — a standing clip on a seated offset makes the rider stand
+  up *inside* the horse — but **death is not a one-shot and still plays**, and nothing dismounts on
+  death. Expect the corpse to do exactly what the swing did. Whoever touches mounts next owns it.
 - **Nothing is parked.** ⚠️ If a future item is parked, park it with a check someone can run, not a
   verdict — 38G sat eleven sub-phases past its own condition because the notice named a conclusion.
 - ⚠️ **Five of 38R's seven briefed services were struck, not deferred** — cosmetic, healer, passage,
@@ -41,14 +45,14 @@ existed the same three lines were maintained in four places and rewritten every 
 | | |
 | --- | --- |
 | Build | clean, **0 warnings** |
-| Tests | **1308 passing** (39A added 12) |
+| Tests | **1317 passing** (39A added 12, 39B added 9) |
 | `--validate` | exit 0 |
-| **Negative tests** | `python tools/negative_tests.py` — **43/43 rules broken and restored**, each caught by its own refusal. **Run this after moving authored numbers, not only after changing code** |
-| `--economy` | not run — 39A touches no price |
+| **Negative tests** | `python tools/negative_tests.py` — **44/44 rules broken and restored**, each caught by its own refusal. ⚠️ **It now runs longer than two minutes**; killing it mid-run defeats its own `finally` restore and leaves `data/` mutated (`git checkout -- data/` recovers). **Run this after moving authored numbers, not only after changing code** |
+| `--economy` | **price landscape identical**; the only moved line is the locale string count (1187 → 1188). ⚠️ Diff the report body, not the loader chatter — a travel fee is not a shop multiplier and must never reach `ShopPricing` |
 | `--state` | 2 regions, 15 cells, 63 items, 23 shops, **15 services**, 8 contracts, 33 dialogues, 14 quests — unchanged |
 | **`--play`** | booted, loaded slot1, **32 objects restored, zero project errors**. ⚠️ One `no usable entry for 'mount:player'` warning: expected and self-healing — every new `ISaveable` says it once against a save older than itself. ⚠️ `WASAPI: GetBufferSize` is the Windows audio driver, and exit-time `PagedAllocator`/RID-leak lines are the forced kill, not the project |
-| Rendered | the mount **7 ways** via `tools/mount_shots.gd` — front, back, side, the walk-up with stalls and townspeople around it, overhead, **and both camera seats** (first-person eye, third-person rest offset). ⚠️ Four seat iterations were needed and the first horse was **twice the height of a two-storey house** |
-| Not verified | ⚠️ **no key was ever pressed.** `Y`, the toggle, the toasts, the dev command and the gallop drain in motion are proved by test and by reading. The renders reproduce the component's transforms and clips in a harness; they are not `MountComponent` assembling them |
+| Rendered | the mount **8 ways** via `tools/mount_shots.gd` — front, back, side, the walk-up with stalls and townspeople around it, overhead, **and both camera seats** (first-person eye, third-person rest offset) **and the swing**. ⚠️ Four seat iterations were needed and the first horse was **twice the height of a two-storey house** |
+| Not verified | ⚠️ **no key has ever been pressed.** `Y`, the toggle, the toasts, the dev command, the gallop drain in motion, the charge bonus, the `HitReaction` fix and the travel discount on the map screen are all proved by test and by reading. The renders reproduce the component's transforms and clips in a harness; they are not `MountComponent` assembling them |
 
 ## Live invariants — the things that will bite you
 
@@ -80,6 +84,12 @@ existed the same three lines were maintained in four places and rewritten every 
    body for the rest of the run and surfaces as a crash in whatever system moves it next.
    ⚠️ **Guard where a value enters the stateful thing, not where it explodes.** `MotionSafety` +
    `LocomotionComponent.Move` are the pattern, and they **log once per body**.
+   ⚠️ **A CACHED POSE IS THE SAME BUG WEARING VISUALS** (39B): `HitReactionComponent` cached the body
+   mesh's rest position at spawn, 39A moved that mesh to the saddle, and the first hit taken while
+   mounted dropped the rider through the horse permanently. **When a sub-phase adds a state, ask what
+   every existing component does IN that state — the answer is a list of things that cached
+   something.** A green build/test/validate/economy/play/render battery walked past it six ways,
+   because none of those things hits the player while mounted.
 8. ⚠️ **A MODEL THAT READS AT 20 m CAN DOMINATE AT 4 m** (37E) — and **39A adds the next turn of it:
    RENDER FROM THE SEAT, NOT AT THE OBJECT.** Every exterior shot of the mount was correct while the
    first-person eye sat *inside the horse's neck*; a defect that lives at a camera position is only
@@ -131,7 +141,17 @@ existed the same three lines were maintained in four places and rewritten every 
 22. ⚠️ **The Ember Crown map was re-laid (38F).** The settled cells form one contiguous city and every
     wilds cell is outside it; the arena moved to 150 m, past the gate. ⚠️ **A schedule carries a copy
     of its cell's `Center` as `Origin`** — moving a cell is never a one-line edit.
-23. ⚠️ **A RESTORED FILE WITH AN OLD TIMESTAMP DOES NOT REBUILD** (39A). Undoing a deliberate break
+23. ⚠️ **A MOUNTED BODY MAY NOT PLAY A FULL-BODY CLIP** (39B). The library has no mounted animation,
+    and a standing clip puts the hips ~0.5 m above the seated pose the saddle offset was measured
+    against — so an attack or a flinch does not bend the rider, it **stands him up inside the horse**.
+    `CharacterAnimationComponent.PlayOneShot` refuses one-shots while `Riding`; **death is not a
+    one-shot and is the known remaining hole.** The real fix is an `AnimationTree` with a
+    bone-filtered upper-body layer, which is a sub-phase.
+24. ⚠️ **TWO FUNCTIONS THAT ORDER THE SAME BRANCHES MUST AGREE, OR THE SCREEN EXPLAINS A NUMBER IT
+    DID NOT CHARGE** (39B). `TravelFee.For` picks the fee and `PriceBreakdown.Travel` picks the
+    reason; owned-land and mounted are both free, so the two orderings are a real decision and a test
+    pins it. ⚠️ **A price lookup fails CLOSED** — an unresolvable service charges rather than waives.
+25. ⚠️ **A RESTORED FILE WITH AN OLD TIMESTAMP DOES NOT REBUILD** (39A). Undoing a deliberate break
     with `mv file.bak file` and rebuilding prints **"Build succeeded"** and then runs the *broken*
     binary. `touch` before `dotnet build` — it is CLAUDE.md §2's stale-binary trap through a door
     that section does not name.
@@ -142,7 +162,7 @@ existed the same three lines were maintained in four places and rewritten every 
 dotnet build Embervale.sln                      # ALWAYS before running — nothing else recompiles C#
 dotnet test tests/Embervale.Tests
 godot --headless --path . -- --validate         # content gate, exit 0/1
-python tools/negative_tests.py                  # proves the gate still bites (43 cases)
+python tools/negative_tests.py                  # proves the gate still bites (44 cases, >2 min)
 godot --headless --path . -- --economy          # the realm's price landscape
 godot --headless --path . -- --state            # the content census
 godot --path . -- --play                        # boot into the newest save

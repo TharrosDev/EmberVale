@@ -2,7 +2,7 @@
 
 - [x] **39A — `MountComponent`: summon/dismount + mounted locomotion** `[F]` ✅
   - **Done when:** summon/mount/dismount works with mounted move/sprint/stamina.
-- [ ] **39B — Mounted-combat rules + fast-travel integration** `[F]`
+- [x] **39B — Mounted-combat rules + fast-travel integration** `[F]` ✅
   - **Done when:** combat-while-mounted rules are defined and mounts integrate with
     fast travel.
 - [ ] **39C — Traversal verbs the world needs (climb/swim/ledge)** `[F]`
@@ -92,3 +92,74 @@ those rules, and leaving them untouched writes no half-rule).*
   2. ⚠️ **A TEST THAT ASSERTS THE WRONG MECHANISM PASSES FOR ONE FRAME AND THEN LIES.** "The pool is
      empty" and "the horse refuses" are different claims about a latch, and only the second is the
      rule. When a test fails, check which of the two you wrote before changing the code.
+
+---
+
+## 39B — Mounted combat, a travel discount, and two defects 39A shipped `[F]` ✅
+
+*39A left every combat input untouched while riding, so this defines them rather than correcting a
+half-rule. Maintainer decisions: **melee works from horseback** (with the animation gap knowingly
+accepted), **damage does not throw you off**, and **a mount makes local fast travel free**.*
+
+- **Landed:** `MountedCombat` (pure, 5 tests), the charge bonus in `MeleeWeaponComponent`, a dodge
+  refusal, the `HitReaction` fix, silent footsteps, `TravelFee`'s mounted case + its breakdown line
+  (7 new travel/breakdown tests), and negative case 44.
+- 🎯 **READING THE COMBAT PATH TO PLAN THIS FOUND A DEFECT 39A HAD SHIPPED, AND IT WAS INVISIBLE TO
+  EVERY CHECK 39A RAN.** `HitReactionComponent` caches the body mesh's rest position **once, at
+  spawn**, then writes `mesh = rest + offset` every frame of a recoil. 39A moved that same mesh to
+  the saddle. **The first hit taken while mounted slammed the rider down to the horse's hooves and
+  left them there for the rest of the ride.** Build, tests, `--validate`, `--economy`, `--play` and
+  eight renders all passed over it, because nothing in that battery hits the player while mounted.
+- ⚠️ **THE FIX WENT IN THE SHARED COMPONENT, NOT AT THE ONE CALLER.** Re-read the rest at each recoil
+  (sampled only when the mesh is *at* rest, so a second hit mid-lurch cannot capture the lurch and
+  walk the mesh away one hit at a time), plus a `Rest` setter for the ordering case sampling cannot
+  see — mounting *during* a recoil, when the mesh is not at rest. A `MountComponent`-pokes-
+  `HitReaction` fix would have had to be written again for the next thing that moves a body mesh.
+- ⚠️ **THE ANIMATION GAP WAS ACCEPTED AS "THE LEGS STRAIGHTEN". THE RENDER SHOWED SOMETHING WORSE.**
+  A standing clip puts the hips ~0.5 m higher than the seated pose the saddle offset was measured
+  against, so a mounted swing does not straighten the rider — **he stands up inside the horse, sunk
+  to the knee in its barrel**, for the length of every attack and every flinch. `PlayOneShot` now
+  refuses full-body one-shots while riding: the blow still lands, rolls damage and takes the charge
+  bonus, it just has no swing animation. **A missing animation is a smaller defect than a wrong one.**
+  ⚠️ The harness keeps a `SWING` switch that reproduces the bad frame, because it is the evidence for
+  the guard. The real fix is an `AnimationTree` with a bone-filtered upper-body layer — a sub-phase.
+- **The charge is the gait, not the mount.** A walking horse is exactly neutral; the bonus rides on
+  the gallop, which is what makes 39A's stamina pool a decision *inside* a fight. ⚠️ **The unmounted
+  case returns a literal `1f` and is tested**, because `MeleeWeaponComponent` drives every melee
+  actor in the game and a 0.99 would restat the world and read as balance drift, not as a bug.
+- **A dodge roll is the one verb riding takes away.** Melee, block and casting all work. Refused
+  before the stamina check so it costs nothing, and silently — a dodge press is a panic reflex and a
+  toast in that moment is noise.
+- ⚠️ **THE TRAVEL DISCOUNT NEEDED TWO FUNCTIONS TO AGREE ABOUT WHICH REASON WINS.** Both zero cases
+  can be true at once (riding home), and `TravelFee.For` and `PriceBreakdown.Travel` order their
+  branches independently — if they disagreed, the map screen would **print one reason and charge the
+  other's number**, which is 38U's rule broken in the quietest possible way. Owned land wins in both,
+  and a test pins it. The discount reads the **live** mount, not the ownership flag: it is for riding
+  there. And `TravelCosts` **fails closed** — an unresolvable player pays, because a discount that
+  appears when a lookup breaks is a bug that pays the player and nobody reports those.
+- ⚠️ **`--economy` IS NOT BYTE-IDENTICAL AND THAT IS THE CORRECT RESULT.** One line moved: the
+  locale string count, 1187 → 1188. **The price landscape itself is identical**, which is the claim
+  worth making — a travel fee is not a shop multiplier and must not reach `ShopPricing`. Diff the
+  report body, not the loader chatter, or the check answers a question nobody asked.
+- ⚠️ **`tools/negative_tests.py` NOW TAKES LONGER THAN A TWO-MINUTE TOOL TIMEOUT** (44 validate runs).
+  Killing it mid-run **defeats guard 2**: the `finally` restore never ran and left a mutated
+  `HollowreachWager.tres` in the tree. `git checkout -- data/` is the recovery, and the run needs a
+  real budget rather than a default one.
+- Build clean, **0 warnings** + **1317** tests (9 new) + `--validate` exit 0 + `negative_tests.py`
+  **44/44** + `--state` unchanged + a `--play` boot with 32 objects restored and **0 project errors**
+  + the mount rendered from 8 positions including the swing.
+- ⚠️ **What was NOT verified.** Again, **no key was pressed.** The `HitReaction` fix needs something
+  to hit the player while mounted; the charge bonus needs a swing; the travel discount needs the map
+  screen. All three are proved by test and by reading. ⚠️ **Dying while mounted is untested and
+  probably wrong** — the death clip is not a one-shot and still plays, so the corpse likely stands up
+  inside the horse the way the swing did. Nothing dismounts on death. **That is a known gap, named
+  rather than fixed, and it belongs to whoever touches this next.**
+- Two things worth carrying:
+  1. ⚠️ **A GREEN BATTERY PROVES THE BATTERY, NOT THE FEATURE.** 39A shipped a defect that six kinds
+     of check walked past, because none of them did the one thing that triggers it. **When a
+     sub-phase adds a state, ask what the existing systems do *in* that state** — the answer is a
+     list of components that cached something, and caching is where they break.
+  2. ⚠️ **RENDER THE COST YOU AGREED TO PAY.** "The animation will be a bit off" was accepted on a
+     description and was wrong about the magnitude. Two minutes of harness turned an accepted
+     trade-off into a fixed defect.
+
