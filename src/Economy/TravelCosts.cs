@@ -16,7 +16,19 @@ namespace Embervale.Economy;
 public static class TravelCosts
 {
     /// <summary>The gold this jump costs from <paramref name="currentRegionId"/>.</summary>
-    public static int FeeFor(TravelNode node, string currentRegionId) => TravelFee.For(
+    public static int FeeFor(TravelNode node, string currentRegionId) =>
+        QuoteFor(node, currentRegionId).Total;
+
+    /// <summary>
+    /// The fee <em>and which of <see cref="TravelFee"/>'s three cases it is</em> (38U). One line, but
+    /// the line the map screen could not say before: a free jump reads as a bug unless something names
+    /// the holding that made it free, and the 40g one reads as arbitrary unless something names the
+    /// realm boundary.
+    ///
+    /// <see cref="FeeFor"/> is this function's <c>Total</c>, so the button's label, its tooltip and
+    /// <c>GameBootstrap</c>'s charge remain one decision — which is the reason this type exists.
+    /// </summary>
+    public static PriceQuote QuoteFor(TravelNode node, string currentRegionId) => PriceBreakdown.Travel(
         ownedHolding: IsOwnedHolding(node.Id),
         crossRegion: !string.IsNullOrEmpty(currentRegionId) && node.RegionId != currentRegionId);
 

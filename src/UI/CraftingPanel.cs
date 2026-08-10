@@ -163,8 +163,13 @@ public partial class CraftingPanel : UiPanel
     /// <summary>What the master wants for this piece: his labour plus whatever the pack is short of.
     /// ⚠️ The one call — the card displays this number and <c>Commission</c> is handed the same one.
     /// A second computation is how a quote and a bill drift apart.</summary>
-    private int CommissionPrice(CraftingRecipeResource recipe) =>
-        EconomyReport.CommissionCost(recipe, _materialsShop!, _inventory, _labourGold);
+    /// <summary>The master's quote and the reasons for it (38U). ⚠️ The price charged is
+    /// <c>Total</c> — the same number the tooltip's last line shows, because they are one
+    /// value rather than two computations of one.</summary>
+    private PriceQuote CommissionQuote(CraftingRecipeResource recipe) =>
+        EconomyReport.CommissionQuote(recipe, _materialsShop!, _inventory, _labourGold);
+
+    private int CommissionPrice(CraftingRecipeResource recipe) => CommissionQuote(recipe).Total;
 
     private void Craft(CraftingRecipeResource recipe)
     {
@@ -366,7 +371,8 @@ public partial class CraftingPanel : UiPanel
         // At a master's desk the gate is the money, not the materials — supplying those is what he is
         // being paid for. Everything below reads `canCraft` for enabled/dim, so the two cases differ
         // in this one line rather than in every branch under it.
-        int price = IsCommission ? CommissionPrice(recipe) : 0;
+        PriceQuote quote = IsCommission ? CommissionQuote(recipe) : default;
+        int price = IsCommission ? quote.Total : 0;
         bool canCraft = IsCommission
             ? _crafting != null && _crafting.CanMake(recipe, _station) &&
                 ShopPricing.CanAfford(price, _inventory?.CountOf(GameIds.Currency.Gold) ?? 0)
@@ -390,6 +396,16 @@ public partial class CraftingPanel : UiPanel
         Button craft = UiTheme.Action(
             IsCommission ? Loc.TF("craft.commission", price) : Loc.T("craft.craft"));
         craft.Disabled = !canCraft;
+
+        // 38U: the fee splits into the work and each material the player failed to bring. Without it a
+        // player who walked in carrying half the recipe could not tell they had saved anything — the
+        // window quoted one figure either way. A Button is hoverable even when disabled, so the
+        // breakdown is readable exactly when the player is deciding whether to go and fetch the rest.
+        if (IsCommission)
+        {
+            craft.TooltipText = PriceTooltip.Render(quote);
+        }
+
         CraftingRecipeResource captured = recipe;
         craft.Pressed += () => Craft(captured);
         craft.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;

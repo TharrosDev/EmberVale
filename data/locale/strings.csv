@@ -220,6 +220,31 @@ shop.haggle,Haggle
 shop.haggle_offer,"They might be talked down today ({0} in 100). A refusal will be remembered."
 shop.haggle_won,"You talked them round — better prices from them today."
 shop.haggle_lost,"They did not care for the attempt, and they will remember it today."
+# Price breakdown (Phase 38U). One row per step of a price, hovered on the number itself. {0} is the
+# line's own argument — a trade, a percentage, a quantity — and {1} is the gold AFTER that step, so a
+# row that needs only one of the two simply does not mention the other. Keys are declared as constants
+# on PriceBreakdown and --validate proves every one of them resolves, because a shock line, a glut line
+# and a broker's cut are all unreachable at the town square: walking the authored shops would pass
+# while three tooltips showed a raw key.
+shop.line.base,"worth {1}g anywhere"
+shop.line.local_surplus,"{0} is common here — {1}g"
+shop.line.local_demand,"{0} is scarce here — {1}g"
+shop.line.shock_surplus,"a caravan brought {0} in — {1}g"
+shop.line.shock_demand,"no {0} is getting through — {1}g"
+shop.line.markup,"their margin {0}% — {1}g"
+shop.line.fraction,"they pay {0}% of that — {1}g"
+shop.line.standing,"how they take to you {0}% — {1}g"
+shop.line.specialty,"their own trade {0}% — {1}g"
+shop.line.haggle,"today's bargain {0}% — {1}g"
+shop.line.stack,"{0} of them — {1}g"
+shop.line.glut,"{0} of them, their appetite falling — {1}g"
+shop.line.shelf,"her shelf, at {0}% of value — {1}g"
+shop.line.house_cut,"less the house's {0}% — {1}g"
+shop.line.labour,"the work itself — {1}g"
+shop.line.material,"materials he must supply: {0} — {1}g"
+shop.line.travel_local,"a jump inside this realm — {1}g"
+shop.line.travel_cross,"across the realm boundary — {1}g"
+shop.line.travel_owned,"a holding of your own — no charge"
 shop.haggle_spent,You have already tried your luck with them today.
 # Trading hours and the travelling trader (Phase 38J). A closed shop names the hour it opens: "closed"
 # alone leaves the player standing at a stall with nothing to do about it, while an hour is an
@@ -245,6 +270,10 @@ service.prompt_train,"Take {0} ({1} gold)"
 service.prompt_buy_mount,"Buy a mount at {0} ({1} gold)"
 service.prompt_free,Use {0}
 service.prompt_price,"{0} — {1} gold, and you carry {2}"
+# 38U: a world prompt is not a Control and has nothing to hover, so the reason a service price moved
+# rides inline on the lines that quote a number. Silent at Neutral, which is the tier every service is
+# authored against and the only one that changes nothing.
+service.price_standing," (standing {0}%)"
 service.prompt_hostile,"{0} — they will not serve you"
 service.prompt_open,Open {0}
 service.prompt_taught,"{0} — you have learned all they can teach"

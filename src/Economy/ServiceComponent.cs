@@ -54,6 +54,12 @@ public partial class ServiceComponent : InteractableComponent
             string name = Loc.T(service.NameKey);
             int price = PriceOf(service);
 
+            // 38U, and the one place the gate's word "hover" cannot be honoured: this is a world
+            // interaction prompt, not a Control, so there is nothing to put a tooltip on. The rule
+            // underneath it still applies — a price that moved says why it moved — so the reason rides
+            // inline on the lines that quote a number, and on no others.
+            string note = StandingNote(service);
+
             return Evaluate(service) switch
             {
                 ServiceOutcome.Unknown => string.Empty,
@@ -68,9 +74,10 @@ public partial class ServiceComponent : InteractableComponent
                 // a fourth key-to-argument table. The throws left are the interesting number at a
                 // gambling table — the stake alone would make three presses look like one.
                 ServiceOutcome.Granted when service.Kind == ServiceKind.Wager =>
-                    Loc.TF("service.prompt_wager", name, price, ThrowsLeft(service)),
+                    Loc.TF("service.prompt_wager", name, price, ThrowsLeft(service)) + note,
                 ServiceOutcome.AlreadyHeld => Loc.TF(HeldKey(service.Kind), name),
-                ServiceOutcome.CannotAfford => Loc.TF("service.prompt_price", name, price, GoldHeld()),
+                ServiceOutcome.CannotAfford =>
+                    Loc.TF("service.prompt_price", name, price, GoldHeld()) + note,
                 // ⚠️ A free service falls back to the bare "Use {0}" line, which is right for a free
                 // bed and wrong for a warden's search — the one service the player is not buying, and
                 // the only one where not knowing what the press does costs them their goods (38O).
@@ -78,7 +85,7 @@ public partial class ServiceComponent : InteractableComponent
                 // report (38P's clerk). Every other free line ignores it, which is what string.Format
                 // does with a spare argument — cheaper than a third key-to-argument table.
                 _ => price > 0
-                    ? Loc.TF(OfferKey(service.Kind), name, price)
+                    ? Loc.TF(OfferKey(service.Kind), name, price) + note
                     : Loc.TF(FreeKey(service.Kind), name, DueGold()),
             };
         }
@@ -535,6 +542,29 @@ public partial class ServiceComponent : InteractableComponent
     /// still goes through <see cref="ShopPricing.ServicePrice"/>, so the wardens' standing discount
     /// applies to a fine exactly as it does to a bed — there is no second discount ramp to drift.
     /// </summary>
+    /// <summary>
+    /// Why this service costs what it costs (38U) — empty at <see cref="ReputationTier.Neutral"/>,
+    /// which is the tier that changes nothing and the tier every service is authored against.
+    ///
+    /// The percentage is derived from <see cref="ShopPricing.PriceMultiplierFor"/> rather than written
+    /// out again, exactly as <c>VendorPanel.BuildStanding</c> derives its own — one ramp, two readers,
+    /// nothing to keep in step by hand. A free service gets no note at all: a discount on nothing is
+    /// noise, and <see cref="ShopPricing.ServicePrice"/> deliberately leaves a <c>0</c> at <c>0</c>.
+    /// </summary>
+    private static string StandingNote(ServiceResource service)
+    {
+        ReputationTier tier = StandingWith(service.FactionId);
+        if (tier == ReputationTier.Neutral)
+        {
+            return string.Empty;
+        }
+
+        int percent = (int)System.Math.Round(
+            (ShopPricing.PriceMultiplierFor(tier) - 1f) * 100f, System.MidpointRounding.AwayFromZero);
+
+        return Loc.TF("service.price_standing", percent.ToString("+0;-0;0"));
+    }
+
     private static int PriceOf(ServiceResource service)
     {
         int gold = service.Kind == ServiceKind.Redeem

@@ -98,6 +98,7 @@ public static class ContentValidator
         ValidateRegions(issues);
         ValidateRaces(issues);
         ValidateLocale(issues);
+        ValidateBreakdownKeys(issues);
         ValidateCompanions(issues);
         ValidateAIProfiles(issues);
         ValidateEnemyArchetypes(issues);
@@ -114,6 +115,32 @@ public static class ContentValidator
         ValidateBestiary(issues);
         ValidateResourcePaths(issues);
         ValidateUiAssets(issues);
+    }
+
+    /// <summary>
+    /// Every line a price breakdown can print (Phase 38U).
+    ///
+    /// ⚠️ <b>It walks <see cref="PriceBreakdown.AllKeys"/> rather than the authored shops, and that is
+    /// the whole reason it is worth writing.</b> A shock line, a glutted stack and a broker's cut are
+    /// all unreachable at the town square — a rule that priced the realm's shops and checked the keys
+    /// it happened to emit would pass while three tooltips showed a raw key to the one player who
+    /// walked to the coast during a shortage. The declared set is the contract; the reachable set is
+    /// today's accident.
+    ///
+    /// A missing row is invisible in every other check: <see cref="Loc.T"/> returns the key itself, so
+    /// the tooltip renders <c>shop.line.glut</c> in the player's face and nothing logs a thing.
+    /// </summary>
+    private static void ValidateBreakdownKeys(List<string> issues)
+    {
+        foreach (string key in Economy.PriceBreakdown.AllKeys)
+        {
+            if (!Loc.Has(key))
+            {
+                issues.Add(
+                    $"price breakdown line '{key}' is missing from the locale catalogue — the tooltip " +
+                    "would show the raw key");
+            }
+        }
     }
 
     /// <summary>

@@ -225,7 +225,8 @@ public partial class MapScreen : UiPanel
         {
             any = true;
             string id = node.Id; // capture for the closure
-            int fee = Economy.TravelCosts.FeeFor(node, currentRegion);
+            Economy.PriceQuote quote = Economy.TravelCosts.QuoteFor(node, currentRegion);
+            int fee = quote.Total;
             bool affordable = fee <= purse;
 
             string label = fee > 0
@@ -237,7 +238,13 @@ public partial class MapScreen : UiPanel
             // Greyed with the reason rather than hidden — a waypoint you cannot currently afford is
             // still somewhere you have attuned to, and hiding it would read as losing the attunement.
             button.Disabled = !affordable;
-            button.TooltipText = affordable ? string.Empty : Loc.T("map.travel_cannot_afford");
+
+            // 38U: why this jump costs what it costs — the boundary it crosses, or the holding that
+            // makes it free. ⚠️ The refusal still wins when there is one: a player who cannot pay needs
+            // to be told that before they are told how the fee was arrived at.
+            button.TooltipText = affordable
+                ? PriceTooltip.Render(quote)
+                : Loc.T("map.travel_cannot_afford");
             button.Pressed += () =>
             {
                 SetOpen(false);

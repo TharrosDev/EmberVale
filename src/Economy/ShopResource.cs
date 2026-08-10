@@ -342,6 +342,47 @@ public partial class ShopResource : Resource
     }
 
     /// <summary>
+    /// <see cref="LocalValue"/>'s answer <em>with its reason</em> (Phase 38U): the local value, the tag
+    /// the cell had an opinion about, and whether that opinion is a supply shock rather than the place's
+    /// standing character.
+    ///
+    /// ⚠️ <b>It resolves the live tags once and answers both questions off that one pair.</b> A caller
+    /// that asked <see cref="LocalValue"/> for the number and re-derived the tag itself would be running
+    /// the match twice — and on a day a shock begins between the two calls, running it against two
+    /// different worlds. Always <see cref="PriceView.Today"/>, because a breakdown of a price the player
+    /// is being charged has no business quoting a band.
+    /// </summary>
+    public (int Value, string Tag, bool Shocked) LocalQuote(int baseValue, List<string> itemTags)
+    {
+        if (CellId.Length == 0 || World.RegionDatabase.Cell(CellId) is not { } cell)
+        {
+            return (baseValue, string.Empty, false);
+        }
+
+        (List<string> surplus, List<string> demand) = LiveTags(cell);
+        int value = RegionDemand.ValueAt(baseValue, itemTags, surplus, demand);
+        if (value == baseValue)
+        {
+            return (value, string.Empty, false);
+        }
+
+        // Surplus is answered first here for the reason RegionDemand.ValueAt answers it first: a tag in
+        // both lists is treated as a surplus, and the explanation must name the list that actually won.
+        string tag = RegionDemand.MatchedTag(itemTags, surplus);
+        bool fromSurplus = tag.Length > 0;
+        if (!fromSurplus)
+        {
+            tag = RegionDemand.MatchedTag(itemTags, demand);
+        }
+
+        // A shock is exactly "a tag in today's list that the .tres did not author into it" — there is no
+        // flag to read, because 38T deliberately added no multiplier and no marker, only a list edit.
+        bool shocked = tag.Length > 0 && !Plain(fromSurplus ? cell.Surplus : cell.Demand).Contains(tag);
+
+        return (value, tag, shocked);
+    }
+
+    /// <summary>
     /// The cell's tags as they stand today. Falls back to the authored pair when no
     /// <see cref="SupplyShockService"/> is in the tree — which is every headless run (<c>--validate</c>,
     /// <c>--economy</c>) and is the right answer there: those tools ask their own questions about the
