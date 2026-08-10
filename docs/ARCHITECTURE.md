@@ -931,6 +931,113 @@ standing, and persist. Built entirely on the existing character stack — a comp
 - **Dev console** — `companion <list|recruit|dismiss|stance|order|loyalty>`; the `party` repro
   scenario runs a deterministic party-in-the-field.
 
+### 2.6m Economy (`src/Economy`, Phase 38)
+
+Shops, services, prices and the things that move them. `docs/DESIGN.md` §6 owns the *intent* (what
+gold is for, where the sinks are); this section owns the mechanism, and the two deliberately do not
+restate each other.
+
+**One price authority, and everything hangs off it.** `ShopPricing` is pure and Godot-free — the
+test project throws constructing any Godot object, which is why every parameter is a plain value.
+It spreads over `ItemInstance.Value`, which already folds in rarity and affix count, so rolled loot
+is priced for free and no second table can drift.
+
+- `BuyPrice` rounds **up** and floors at **1**; its markup is clamped to **`>= 1`**.
+- `SellPrice` rounds **down** and floors at **0**; its fraction is clamped to **`0..1`**.
+- Those two clamps are why **`sell <= value <= buy` holds for any authored spread** — a money
+  printer is unauthorable rather than merely un-authored. ⚠️ What they do **not** stop is a *free
+  round trip*: a spread narrowed to nothing is frictionless churn, and only `ContentValidator`'s
+  margin rule (`ValidateShopTrade`) keeps buying-and-selling-back costing something.
+
+⚠️ **THE MULTIPLICATION ORDER IS LOAD-BEARING AND IT IS WRITTEN DOWN HERE BECAUSE NOTHING ELSE
+STATES IT.**
+
+```
+MarkupFor(markup, tier, specialty, haggled)   = markup   × PriceMultiplierFor(tier)
+                                                         × SpecialtyBuyDiscount(0.95)
+                                                         × HaggleRules.BuyFactor(0.90)
+SellFractionFor(fraction, specialty, haggled) = fraction × SpecialtySellBonus(1.25)
+                                                         × HaggleRules.SellFactor(1.10)
+```
+
+Float multiplication is not associative, and `PriceBreakdown` re-runs `BuyPrice`/`SellPrice` after
+each factor to print a running total. It accumulates in **exactly this sequence**, which is the only
+reason its last line equals the charged total rather than landing a gold away from it. Reordering
+either line is a silent off-by-one that one test (`BuyLastLineIsTheTotal`) catches and no reading
+would. ⚠️ **Standing is absent from the sell side on purpose** (`MarkupFor`'s comment says why: with
+both clamps in play a generous fraction converges on `sell == buy`). A **haggle** is the one thing
+allowed to move it, because the ledger bounds it to one merchant for one day.
+
+**What a good is worth *here* — the local-value layer** (38G). `RegionDemand.ValueAt` moves the
+*value*, not the spread: a cell's authored `Surplus` tags price at `0.62` and its `Demand` tags at
+`1.50`, and a tag in neither prices at the realm reference. ⚠️ **Symmetry is structural rather than a
+rule to remember — a value has no sides**, so both halves of one counter spread over the same local
+number and `sell <= LOCAL value <= buy` survives untouched *at a shop*, while two shops in different
+places can finally disagree about a sack of grain. This is the only thing in the game that can make
+a carry between settlements pay. ⚠️ `ShopResource.CellId` is **empty by default and empty means
+par**, so a shop that forgets it prices as though it stood in town and only `--economy` shows it.
+
+- `ShopResource.LocalValue(value, tags, view)` is the call **every** price must go through.
+- `ShopResource.LocalQuote(value, tags)` answers the same question *with its reason* — the value,
+  the tag the cell had an opinion about, and whether that opinion is a shock. It resolves the live
+  tags **once**, so a caller cannot run the match twice against two different days.
+- `PriceView` (`Today` / `Peak` / `Trough`) exists for `ContentValidator`: a rule proved only
+  against today's prices is a rule that breaks on a day nobody was playing on.
+
+**A supply shock is a temporary list edit, not a multiplier** (38T). `SupplyShockRules.Apply` moves
+a tag from one of the cell's lists to the other for a bounded number of days and hands the result to
+`RegionDemand.ValueAt` unchanged. Because it adds no factor, the clamps, the specialty premium, the
+standing ramp, the haggle and 38F's `NoCombinationOfMultipliersLetsSellingBeatBuying` sweep all
+cover it with no new argument — which is the answer to "what is this a spread over?" being *nothing;
+it is not a spread*.
+
+**`PriceBreakdown` is the charge path, not a commentary on it** (38U). It returns ordered
+`PriceLine`s plus a `Total`, and `VendorPanel`, `CraftingPanel` and `MapScreen` all display *and
+charge* that `Total`. A display-only breakdown beside the shipped expression would be two
+expressions of one number; `PriceTooltip` renders it, and lives in `src/UI` because
+`PriceBreakdown` may not touch Godot. `PriceBreakdown.AllKeys` is the declared locale contract that
+`--validate` walks — deliberately the declared set rather than the reachable one, because a shock
+line and a glutted stack are unreachable at the town square.
+
+**The seven economy nodes, all `ISaveable`, built in `GameBootstrap`:**
+
+| Node | Holds | Derives |
+| --- | --- | --- |
+| `ShopStockService` | stock remaining, purses, absorption, investment rungs | restock due-ness from the day |
+| `ContrabandImpound` | what the wardens took | the fine, from `ContrabandLaw` |
+| `ConsignmentLedger` | listings and their stamped day | whether one has sold |
+| `ContractLedger` | **only what the player filled** | the whole board rotation, from the day |
+| `WagerLedger` | **only throws spent today** | win/loss, from (day, throw) |
+| `HaggleLedger` | **only that the player asked** | the answer, from (day, shop) |
+| `SupplyShockService` | the active window **and** what the player hauled in | the roll, from (day, cell) |
+
+⚠️ **DERIVE, THEN BOUND — TWO MECHANISMS, NEITHER SUBSTITUTING FOR THE OTHER.** Everything a
+quickload could otherwise reroll is a pure function of the day, so a reload **replays** it; what
+stops it being farmed is a ledger storing what the player *did*, never what was offered or what the
+answer was. **Storing the outcome is the obvious shape and the one that rots.**
+⚠️ `string.GetHashCode()` is randomised per process — `StableRoll` is a hand-written FNV-1a, and the
+derived rolls are pinned by hard-coded across-process strings for exactly that reason.
+⚠️ `SupplyShockService` is the first that needed **both** halves: the roll is derived, but a player
+can end a shortage early by hauling goods in, and no clock can derive that.
+
+**Services** (`ServiceResource` + `ServiceKind` + one `ServiceComponent`, 38D). Thirteen kinds branch
+in one component rather than thirteen classes; `ServiceRules` is the pure half and
+`ShopPricing.ServicePrice` the price, so a merchant and an innkeeper of the same faction move on one
+discount ramp. ⚠️ **Two kinds are charged *after* their verb and every other one before**: a
+commission fails on a full pack and a hire fails on a full party, and only the commission needs a
+rollback. ⚠️ **A service can be fired from a conversation, except a `Bank`** — `DialogueEffect.
+OpenService` runs the whole battery through `TryUse`, but a bank opens the *host entity's* inventory
+and a conversation has no host entity. ⚠️ **A world interaction prompt is not a `Control`**, so a
+service price that standing moved says so inline rather than on hover.
+
+**Validation.** The economy battery is roughly 110 refusals across ~24 functions in
+`ContentValidator` — see §4.1. ⚠️ **Its per-rule negative tests live in `tools/negative_tests.py`**
+(38V): 42 cases that each break authored data, assert the *expected* refusal fired, and restore.
+Run it after touching any economy rule or any authored price — a rule proven once decays as the data
+moves under it, which is how `ValidateShopTrade`'s band tightened twice after its original proof.
+`--economy` prints the realm's buy-low/sell-high table (the same `EconomyReport.Arbitrage` the
+`economy` dev command prints) and is an observation rather than a gate.
+
 ### 2.7 Save (`src/Save`)
 
 - **`ISaveable`** — `SaveId`, `Godot.Collections.Dictionary Save()`,

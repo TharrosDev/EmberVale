@@ -398,12 +398,22 @@ through `InventoryComponent`; loot tables roll gold), and deliberately still has
 a wallet would be a second place for money to live and a second thing to persist. Balance is
 **Phase 56**; the machinery is built.
 
+⚠️ **38G CHANGED WHAT THE FIRST PARAGRAPH MEANS, AND IT IS THE ONE ENTRY HERE THAT IS NOT A SINK.**
+Until regional demand shipped, `ShopPricing`'s clamps held `sell <= value <= buy` at every counter in
+the realm, so **every** carry was a loss and 48 goods came back with 48 negative margins — scarcity
+enforced by making trade itself unprofitable, which is not the same thing as a tight economy.
+`RegionDemand` moves an item's *value* by place, so a good bought where it is abundant and sold where
+it is scarce can now pay. That is a deliberate widening of the intent, not a hole in it: **the player
+is meant to be able to earn by trading; what they must not be able to do is stand at one counter and
+farm it.** The round trip at a single shop still costs, always, and by construction. Read the three
+routes that pay out of `--economy` and do not "fix" a positive margin in that table.
+
 **The sinks, as they actually exist** (last extended by 38P2; 38L added merchants, not new kinds of sink):
 
 | Sink | Where | Since |
 | ---- | ----- | ----- |
 | Property deeds | `PropertyResource.PriceGold` → `PropertyDeedComponent` | 37A |
-| Goods | `ShopResource`'s spread over `ItemInstance.Value`, via `ShopPricing`. **Sixteen** merchants behind it since 38L — three in the town square, twelve in the Embermarket, one traveller | 38A |
+| Goods | `ShopResource`'s spread over `ItemInstance.Value`, via `ShopPricing`. **Twenty-three** counters behind it across four markets — the town square, the Embermarket, the Emberdeep mine, Tarn's Landing and the Hollowreach wharf | 38A |
 | Fast travel | `TravelFee` / `TravelCosts`, charged in `GameBootstrap.OnFastTravelRequested` | 38C |
 | A night's rest | `ServiceKind.Inn` — moves the clock, refills every resource. Charged every night | 38D |
 | A bank account | `ServiceKind.Bank` — a one-off fee, then a persistent vault forever | 38D |
@@ -588,8 +598,59 @@ a merchant who is a *person* can carry hours, standing, a haggle, a contract and
 `VendorComponent` on a crate cannot. It also gave two merchants different prices for the same goods for the
 first time (Bryn pays more for metal than Aldreth does), which is the seed of the specialist premium.
 
+**A day-bounded multiplier is safe where a permanent one is not, and that is the whole of 38S and
+38T.** Standing may not touch the sell side — with both clamps in play a generous fraction converges
+on `sell == buy`, which is frictionless churn — but a **haggle** may, because `HaggleLedger` bounds it
+to one merchant for one day. A **supply shock** may move a settlement's whole demand table, because
+the window expires. ⚠️ **The bound is a ledger, never a stronger clamp.** A clamp tight enough to make
+a permanent bonus safe would also flatten the temporary one into nothing, and the feature would read
+as broken rather than as bounded. **Decision:** the bonus a struck deal gives on the sell side (1.10)
+is deliberately smaller than the discount it gives on the buy side (0.90), for that same convergence
+reason, and a haggle costs standing rather than a price surcharge — a surcharge is invisible against a
+spread no player memorised, while standing is on the panel and slow to earn back.
+
+⚠️ **A SHORTAGE THE PLAYER CAN BREAK IS THE ONE PLACE THE ECONOMY ASKS FOR SOMETHING BACK** (38T).
+Twelve units of the shocked good hauled into a settlement ends its shortage early. A **glut and a fair
+cannot be relieved**, deliberately: a player who could "fix" a glut would be paid twice for one cart —
+once at the counter and once for the price they sold into.
+
+**Every price the player is charged must be explicable where they are charged it** (38U). Not a UI
+nicety — a constraint on every future price. A number the player cannot decompose is a number they
+cannot plan against, and by 38T a single figure at a counter was the product of six things, one of
+which expired in three days. `PriceBreakdown` is therefore the *charge* rather than a commentary on
+it. ⚠️ **The corollary binds the next feature that touches money:** a new multiplier is not shipped
+until it appears as its own line, and one that cannot be named on screen in a few words is probably
+one the player was never going to be able to reason about.
+
+### 6.1 Handoff to Phase 56 — where the numbers actually live
+
+Phase 38 built the machinery and authored a first pass at every number in it. **None of them are
+balanced and all of them are meant to move.** A balancer needs four things and no source reading:
+
+| Knob | Where it is authored | What refuses to let it cross |
+| --- | --- | --- |
+| A merchant's spread | `BuyMarkup` / `SellFraction` on each `data/shops/*.tres` | `ValidateShopTrade`'s round-trip margin, asked with the specialty premium **and** a struck haggle folded into both sides |
+| What a place is awash in / short of | `Surplus` / `Demand` on each cell in `data/regions/*.tres` | `ValidateCellTrade`; and every rule measured against "what the best buyer pays" moves with it |
+| Shock candidates and their odds | `ShockTags` per cell; `SupplyShockRules`' constants | `ValidateCellShocks` — a candidate no shock could invert is refused |
+| Haggle odds and their cost | `HaggleChance` / `HaggleDelta` per shop | `ValidateShopHaggle`, evaluated at **Allied** |
+| Service prices | `PriceGold` on each `data/services/*.tres` | `ValidateServiceKind`, per kind — several kinds must be **free** and two must be **priced** |
+| Contract rewards | `RewardGold` per `data/contracts/*.tres` | `ValidateContracts` — a posting must beat the best counter, with **no ceiling** (the rotation is the ceiling) |
+| The wager's edge | `PriceGold` / `PayoutGold` / `WinPercent` / `PlaysPerDay` | `ValidateWager`, evaluated at **Allied**, where the stake is discounted and the payout is not |
+| A commission's labour fee | `PriceGold` on the commission service | `ValidateCommission` — the only price the `ShopPricing` clamps do not protect |
+
+- **`--economy` is the instrument.** It prints the realm's buy-low/sell-high table and names the
+  routes that pay; the `economy` dev command prints the same thing in game (both since 38N1).
+- **`--validate` is the floor**, and `tools/negative_tests.py` is what proves the floor is still
+  there — 42 cases that each break a rule and restore it. ⚠️ **Run it after moving numbers**, not
+  only after changing code: several rules are relations *between* authored values, so a balance pass
+  is exactly the thing that walks into them.
+- ⚠️ **Two numbers are relations rather than values** and will fight a naive pass: `RegionDemand`'s
+  `DemandFactor / SurplusFactor` must clear the widest specialty spread in the realm or no route can
+  ever pay (1.50 / 0.62 = 2.42 against a worst case of ~1.84), and a shop's markup must stay far
+  enough above 1 that the standing ramp does not bottom out at Honored.
+
 > Cross-links: `src/Items/*`, `src/Loot/*` (gold as item today); Phase 37 (housing sink),
-> Phase 38 (vendors/services/sinks), Phase 56 (the numbers).
+> Phase 38 (vendors/services/sinks — mechanism in `ARCHITECTURE.md` §2.6m), Phase 56 (the numbers).
 
 ---
 

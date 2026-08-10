@@ -10,15 +10,18 @@ existed the same three lines were maintained in four places and rewritten every 
 
 ## Where we are
 
-- **Stage C, Phase 38 (economy). 38A–38U done. Next: 38V — validation, tests, docs, balance handoff.**
-- Open the plan: `docs/playbook/phase-38.md`, the `38V` entry, plus **38U's and 38T's**. 38V is the
-  phase's closing gate: `ARCHITECTURE.md` still has **no §2.x Economy section** and `DESIGN.md` §6
-  needs rewriting against what actually shipped.
+- **Stage C. Phase 38 (economy) is ✅ CLOSED — 38A–38V, all twenty-two sub-phases.**
+- **Next: Phase 39 (Mounts & Traversal), starting at 39A** — `MountComponent`, summon/mount/dismount
+  and mounted locomotion. Open `docs/playbook/phase-39.md`. ⚠️ **39A is not starting from nothing:**
+  38D's `ServiceKind.Stable` already sells a mount and records it in a story flag, so 39A owns the
+  mount itself and not the purchase.
 - **Nothing is parked.** ⚠️ If a future item is parked, park it with a check someone can run, not a
   verdict — 38G sat eleven sub-phases past its own condition because the notice named a conclusion.
 - ⚠️ **Five of 38R's seven briefed services were struck, not deferred** — cosmetic, healer, passage,
   warehouse (38R) and courier (38R2). Each reason is in the playbook and `DESIGN.md` §6. Two of the
   five already existed under another name. **Do not rebuild them.**
+- 📖 **The economy is now documented where you would look for it:** `ARCHITECTURE.md` §2.6m is the
+  mechanism, `DESIGN.md` §6 + §6.1 the intent and the Phase 56 balance handoff.
 - 🎨 **The asset migration onto the four Quaternius MegaKits is complete** (A–E). `docs/ASSET_POLICY.md`
   §0.2–§0.3 is the authority.
 
@@ -27,114 +30,96 @@ existed the same three lines were maintained in four places and rewritten every 
 | | |
 | --- | --- |
 | Build | clean, **0 warnings** |
-| Tests | **1283 passing**; 38U added 13 (`PriceBreakdownTests`) |
-| `--validate` | exit 0; the new `ValidateBreakdownKeys` rule **broken and restored** (`shop.line.glut`) |
-| `--economy` | **byte-identical**, diffed against a stashed-and-rebuilt `main` — 38U renders prices, it does not move them |
+| Tests | **1283 passing** (38V added none — it is a closing gate, not a feature) |
+| `--validate` | exit 0 |
+| **Negative tests** | `python tools/negative_tests.py` — **42/42 rules broken and restored**, each caught by its own refusal. **Run this after moving authored numbers, not only after changing code** |
+| `--economy` | **byte-identical** to 38U's |
 | `--state` | unchanged: 2 regions, 14 cells, 63 items, 23 shops, 14 services, 8 contracts, 33 dialogues, 14 quests |
-| **`--play`** | booted, loaded slot1, all 9 cells resident, **31 objects restored**, **0 project errors** (the `ERROR:` lines in that log are engine teardown noise from the `timeout` kill) |
-| Saved state | **38U adds none.** A breakdown is a pure function of numbers the save already holds |
-| Label probe | `mouse_filter` of a bare `Label` is **2 (IGNORE)** while `Control`'s is 0 — run headlessly, and the reason every `label.TooltipText` in the repo was dead |
-| Rendered | **nothing — 38U placed nothing in the world.** ⚠️ And the tooltips themselves are **not observed**: a hover needs a cursor no tool here can inject |
+| **`--play`** | booted, loaded slot1, all 9 cells resident, **32 objects restored**, **0 project errors** — and the log shows a live shortage of ore at the mine, which is 38T running in-world. ⚠️ One `WASAPI: GetBufferSize` line is the **Windows audio driver**, not the project |
+| Saved state | 38V adds none |
+| Rendered | **nothing — 38V placed nothing in the world** |
 | Bodies retargeted | 12 of 12 skinned (`fp_arm` has no skin and needs none) |
 | Props with no collider | 0 (audit clean) |
 
-## Live invariants — the things that will bite you this arc
+## Live invariants — the things that will bite you
 
 1. **A region loads whole.** Every cell of the active region is resident; `RegionStreamer` has no
    distance test and no unload during play. A new cell is permanently in the tree.
    ⚠️ Both *regions* cannot be resident together — their cells share coordinate space (Phase 44).
-2. ⚠️ **`sell <= LOCAL value <= buy` holds at every shop by construction — and as of 38G that is a
-   narrower claim than it was.** A carry between two settlements **can now pay**, because
-   `RegionDemand.ValueAt` moves an item's value by place and both sides of one counter spread over the
-   same local number. So: a round trip at **one** shop still costs, always; a carry from a surplus to a
-   demand is meant to pay, and `--economy` names the three routes that do. **Do not "fix" a positive
-   margin in that table** — that is the feature. Do treat `sell > buy` **at one shop** as a defect.
-3. ⚠️ **A DEMAND TABLE IS A FLOOR UNDER OTHER PEOPLE'S RULES** (38G). A contract reward, a commission
-   fee and a fence's margin are all measured against *what the best buyer pays*, and that number moves
-   when a cell authors a tag. ⚠️ **`ShopResource.CellId` is empty by default and empty means par**, so a
-   shop that forgets it prices as though it were in town and only the `--economy` table shows it.
-4. ⚠️ **WHEN A NEW PRICE APPEARS, ASK WHAT IT IS A SPREAD OVER.** A commission (38Q) relates **two**
-   items, so no clamp closes it and only the authored labour fee does. A **haggle** (38S) is a spread
-   over *one* item's value, so the 38A clamps cover it. A **shock** (38T) and a **breakdown** (38U) are
-   not spreads at all. **The question is cheap and the answer is now three times running "nothing to do".**
-5. ⚠️ **BUT A CLAMP STOPS A MONEY PRINTER, NOT A FREE ROUND TRIP** (38S). `ValidateShopTrade`'s margin
-   rule is what keeps buying and selling back *costing* something, and every new multiplier must be
-   folded into **both** of its sides. ⚠️ **And every new multiplier joins
-   `NoCombinationOfMultipliersLetsSellingBeatBuying` or it does not ship** (38F's contract).
-6. ⚠️ **THE EXPLANATION IS THE CHARGE, NOT A COMMENTARY ON IT** (38U). `PriceBreakdown` returns
-   `Total`, and the vendor window, the commission desk and the map screen all *charge* that number.
-   The obvious shape — a display-only breakdown beside the shipped expression, kept honest by a
-   validator rule — is two expressions of one number and a rule to stop them drifting. ⚠️ Its
-   intermediate lines accumulate factors in **`ShopPricing`'s own multiplication order**, which is the
-   only reason the last line equals the total exactly rather than within a gold. **Reordering those
-   multiplies is a silent off-by-one and only `BuyLastLineIsTheTotal` would catch it.**
-7. ⚠️ **A GODOT `Label` DEFAULTS ITS `mouse_filter` TO IGNORE, SO A TOOLTIP ON ONE IS SILENTLY DEAD**
-   (38U). Verified headlessly: a bare `Label` reads 2 where `Control` reads 0. Every `label.TooltipText`
-   in this repo had never once shown. `UiTheme`'s text builders now set **`Pass`** — hoverable without
-   becoming clickable, because a label laid over a card must not eat presses meant for what is behind
-   it. ⚠️ **A property whose default differs from its base class's is the class of defect that reads
-   correct in every review.**
-8. ⚠️ **DERIVE, THEN BOUND — TWO MECHANISMS, NEITHER SUBSTITUTING FOR THE OTHER** (38Q2, 38R2, 38S).
-   The contract board, a throw of the bones and a merchant's mood are pure functions of the day, so a
-   quickload **replays** them. What stops them being farmed is a ledger storing only **what the player
-   did**, never what was offered. ⚠️ **38T is the first that needed BOTH halves.**
-   ⚠️ `string.GetHashCode()` is randomised per process; `StableRoll` is a hand-written FNV-1a.
-   ⚠️ **GDScript can only call methods whose signatures marshal**, so a `.gd` save harness cannot reach
-   anything taking a record struct or an `IReadOnlyList`; probe `has_method` before writing one.
-   ⚠️ **Nothing about a contract may reach the quest log.**
-9. ⚠️ **A SERVICE CAN BE FIRED FROM A CONVERSATION, EXCEPT A BANK** (38R). `DialogueEffect.OpenService`
-   runs the whole 38D battery through `ServiceComponent.TryUse` — but a `Bank` opens the **host
+2. ⚠️ **`sell <= LOCAL value <= buy` holds at every shop by construction, and 38G made that a
+   narrower claim than it sounds.** A round trip at **one** shop always costs. A carry from a surplus
+   to a demand is *meant* to pay, and `--economy` names the routes that do — **do not "fix" a
+   positive margin in that table.** Treat `sell > buy` **at one shop** as a defect.
+3. ⚠️ **A DEMAND TABLE IS A FLOOR UNDER OTHER PEOPLE'S RULES.** A contract reward, a commission fee
+   and a fence's margin are all measured against *what the best buyer pays*, and that moves when a
+   cell authors a tag. ⚠️ **`ShopResource.CellId` is empty by default and empty means par.**
+4. ⚠️ **WHEN A NEW PRICE APPEARS, ASK WHAT IT IS A SPREAD OVER** — and every new multiplier joins
+   `NoCombinationOfMultipliersLetsSellingBeatBuying` or it does not ship. A clamp stops a money
+   printer, not a free round trip; `ValidateShopTrade`'s margin rule is what stops that one, and
+   **every price the player can move directly is evaluated at Allied.**
+5. ⚠️ **THE EXPLANATION IS THE CHARGE** (38U). `PriceBreakdown.Total` is what the vendor window, the
+   commission desk and the map screen display *and* charge. Its lines accumulate factors in
+   **`ShopPricing`'s own multiplication order** (`ARCHITECTURE.md` §2.6m spells it out) — reordering
+   those multiplies is a silent off-by-one gold and one test catches it.
+6. ⚠️ **A RULE PROVEN ONCE IS NOT A RULE PROVEN TODAY** (38V). `ValidateShopTrade`'s band tightened
+   twice after its original negative test — 38S folded in the haggle, 38T asked it at the shocked
+   extremes — so the run that proved it was proving a rule the repo no longer had.
+   **`tools/negative_tests.py` is the answer and it is re-runnable.** ⚠️ It edits `data/` in place
+   and refuses to start on a dirty tree; that refusal is the guard working.
+7. ⚠️ **A GODOT `Label` DEFAULTS `mouse_filter` TO IGNORE, SO A TOOLTIP ON ONE IS SILENTLY DEAD**
+   (38U). `UiTheme`'s text builders set **`Pass`** — hoverable without becoming clickable. **A
+   property whose default differs from its base class's is the defect class that passes every review.**
+8. ⚠️ **DERIVE, THEN BOUND — TWO MECHANISMS, NEITHER SUBSTITUTING FOR THE OTHER.** Everything a
+   quickload could reroll is a pure function of the day, so a reload **replays** it; a ledger stores
+   only **what the player did**. ⚠️ `string.GetHashCode()` is randomised per process; `StableRoll` is
+   a hand-written FNV-1a. ⚠️ **GDScript can only call methods whose signatures marshal** — probe
+   `has_method` before writing a `.gd` harness. ⚠️ **Nothing about a contract may reach the quest log.**
+9. ⚠️ **A SERVICE CAN BE FIRED FROM A CONVERSATION, EXCEPT A BANK** — a bank opens the **host
    entity's** inventory and a conversation has no host entity. ⚠️ **An entity still gets one
-   interactable**: the innkeeper's `ServiceComponent` was *deleted* to put his conversation back, and
-   the realm's only bed is reachable through `dialogue.innkeeper` and nowhere else.
-   ⚠️ **A world interaction prompt is not a `Control` and has nothing to hover** (38U) — a service
-   price that moved says so inline, which is the gate's intent where a tooltip is impossible.
-10. ⚠️ **A WAGER'S RULE IS CHECKED AT *ALLIED* STANDING** (38R2) — and so is every 38S rule.
-    `PriceOf` discounts a stake and nothing discounts a payout. **Every price the player can move
-    directly is evaluated at Allied.**
-11. **A broker fronts nothing, so no purse and no saturation apply to her** (38P). ⚠️
-    **`EconomyReport.BestBuyers` skips a consignment house and that is not optional** (38P2).
-    ⚠️ **A stack at a broker is a multiply and a stack at a counter is 38H's decaying sum** — the one
-    place in the game where unit price × quantity is the wrong number.
-12. **`contraband` is the one trade tag that fails CLOSED** (38O), and **a fenced sale moves two
-    factions once per sale, never per unit**. **The Crossway toll is charged in
-    `GameBootstrap.PayToll`**, portal crossings only.
-13. ⚠️ **RENDER THE THING, AND RENDER IT WITH THE PEOPLE AND FURNITURE AROUND IT.** Seven firings.
+   interactable**: the realm's only bed is reachable through `dialogue.innkeeper` and nowhere else.
+   ⚠️ **A world interaction prompt is not a `Control` and has nothing to hover.**
+10. **A broker fronts nothing, so no purse and no saturation apply to her.** ⚠️ **A stack at a broker
+    is a multiply and a stack at a counter is 38H's decaying sum** — the one place in the game where
+    unit price × quantity is the wrong number.
+11. **`contraband` is the one trade tag that fails CLOSED**, and a fenced sale moves two factions
+    **once per sale, never per unit**. The Crossway toll is charged in `GameBootstrap.PayToll`.
+12. ⚠️ **RENDER THE THING, AND RENDER IT WITH THE PEOPLE AND FURNITURE AROUND IT.** Seven firings.
     38R's is the plainest: an NPC on open ground stood exactly where the player stands to read the
     previous sub-phase's board, and the fault was in neither object and in no line of either `.tscn`.
-    ⚠️ **A body's facing is not knowable from a file.** Earlier: `prp_banner_guild` chosen by precedent
-    (38Q2), `prp_weapon_stand` reading as a sawhorse (38Q), a lying-down collider on a standing pillar
-    (38O), 4-of-6 rejections in 38N2, `npc_townsman` hi-vis, `npc_merchant_f` t-shirt-and-trainers.
+    ⚠️ **A body's facing is not knowable from a file.** Earlier: `prp_banner_guild` by precedent
+    (38Q2), `prp_weapon_stand` reading as a sawhorse (38Q), a lying-down collider on a standing
+    pillar (38O), 4-of-6 rejections in 38N2, `npc_townsman` hi-vis, `npc_merchant_f` in trainers.
     ⚠️ **When no pack model fits, primitives are a legitimate answer.**
-14. ⚠️ **A DECISION CAN LIVE IN A `.tres` HEADER, AND NOTHING GREPS THOSE** (38R). 38R's warehouse was
-    killed mid-session by a comment in `EmberCrownBank.tres`; 38S's haggle skipped the two wharf fences
-    because `HollowreachHull.tres` explains why their `FactionId` is empty. **Before authoring content
-    of a kind that already exists, read the existing one's header.**
-15. **`CharacterBody3D` has no step-up.** Verticality comes from props, never from terrain; a 30 cm
-    kerb is an invisible wall the navmesh happily paths NPCs over.
-16. **A retargeted rig is marked by its skeleton being named `GeneralSkeleton`** — all 12 skinned
+13. ⚠️ **A DECISION CAN LIVE IN A `.tres` HEADER, AND NOTHING GREPS THOSE.** 38R's warehouse was
+    killed mid-session by a comment in `EmberCrownBank.tres`. **Before authoring content of a kind
+    that already exists, read the existing one's header.**
+14. **`CharacterBody3D` has no step-up.** Verticality comes from props, never from terrain; a 30 cm
+    kerb is an invisible wall the navmesh happily paths NPCs over. ⚠️ **Phase 39C inherits this
+    one** — it is the phase that decides whether that stays true.
+15. **A retargeted rig is marked by its skeleton being named `GeneralSkeleton`** — all 12 skinned
     bodies are. An un-retargeted rig given it freezes mid-guard with nothing logged. ⚠️ A model whose
     root carries a translation cannot be retargeted until normalised, and the library is an
     **upper-body pose from the hips up**. `ASSET_POLICY.md` §0.2 carries all four traps.
-17. **Check what is already vendored before pulling from the web.** As of 38O the library holds **no
+16. **Check what is already vendored before pulling from the web.** As of 38O the library holds **no
     unadopted CC0 medieval bodies at all**.
-18. ⚠️ **MEASURING A MODEL'S ACCESSORS IS NOT MEASURING THE MODEL** (38P2). Apply node scale *and*
-    `nodes/root_scale` from the `.import`. ⚠️ A **solid-looking prop with no collider** is a real class
-    of defect here (18 had it). `ASSET_POLICY.md` §0.6.
-19. ⚠️ **The nature megakit's ground cover is 4–10× life size while its trees are 1:1**, and scale
+17. ⚠️ **MEASURING A MODEL'S ACCESSORS IS NOT MEASURING THE MODEL.** Apply node scale *and*
+    `nodes/root_scale` from the `.import`. ⚠️ A **solid-looking prop with no collider** is a real
+    class of defect here. ⚠️ **The `rts` pack is roughly 1/6 scale and nothing in the files says so.**
+18. ⚠️ **The nature megakit's ground cover is 4–10× life size while its trees are 1:1**, and scale
     lives in each prop's `.import`, never in a cell transform. **Grass goes in patches.**
-20. ⚠️ **A generic wall kit composes generic buildings well and special-purpose ones badly.** The
+19. ⚠️ **A generic wall kit composes generic buildings well and special-purpose ones badly.** The
     blacksmith and the inn stay monolithic; the kit ships one wall height, 3.12 m.
-21. ⚠️ **The Ember Crown map was re-laid (38F).** The settled cells form one contiguous city and every
+20. ⚠️ **The Ember Crown map was re-laid (38F).** The settled cells form one contiguous city and every
     wilds cell is outside it; the arena moved to 150 m, past the gate. ⚠️ **A schedule carries a copy
     of its cell's `Center` as `Origin`** — moving a cell is never a one-line edit.
 
 ## Commands worth knowing
 
 ```
-dotnet build Embervale.sln                      # ALWAYS before run_project — it does not recompile
+dotnet build Embervale.sln                      # ALWAYS before running — nothing else recompiles C#
 dotnet test tests/Embervale.Tests
 godot --headless --path . -- --validate         # content gate, exit 0/1
+python tools/negative_tests.py                  # proves the gate still bites (42 cases)
 godot --headless --path . -- --economy          # the realm's price landscape
 godot --headless --path . -- --state            # the content census
 godot --path . -- --play                        # boot into the newest save
