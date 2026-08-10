@@ -418,7 +418,7 @@ routes that pay out of `--economy` and do not "fix" a positive margin in that ta
 | A night's rest | `ServiceKind.Inn` — moves the clock, refills every resource. Charged every night | 38D |
 | A bank account | `ServiceKind.Bank` — a one-off fee, then a persistent vault forever | 38D |
 | Training | `ServiceKind.Trainer` — a lesson: recipes taught, XP granted, charged once | 38D |
-| A mount | `ServiceKind.Stable` — the purchase and its record; Phase 39A owns the mount | 38D |
+| A mount | `ServiceKind.Stable` — **400 gold once.** ⚠️ **No longer a pure sink (39B):** owning one makes a *local* fast-travel jump free, so it pays for itself in about twenty-seven jumps. That is the same shape as the two discounts already in this table — a deed frees travel to your holding, and 38M's 250-gold permit frees the Crossway — and the reasoning is that the 15 gold buys a seat on somebody's cart, which a player with their own horse does not need. **Crossing a realm still costs 40**: a horse shortens a walk across the Ember Crown, it does not carry you through the Crossway for nothing, and a cross-region fee only the mountless pay would be a tax on being poor. `TravelFee.For` is the one function, and the discount is on the *live* mount rather than the ownership flag — it is for riding there, not for having bought a horse | 38D, 39B |
 | A stake in a merchant | `ShopResource.InvestmentTiers` → `ShopStockService.Invest`. Permanent, never repaid | 38I |
 | The Crossway toll | `RegionResource.TollGold` → `GameBootstrap.PayToll`, on every **portal** crossing. Not on fast travel, which already pays the row above | 38M |
 | A road permit | `ServiceKind.Passage` — 250 gold once, then the Crossway is free. Ten crossings to break even | 38M |

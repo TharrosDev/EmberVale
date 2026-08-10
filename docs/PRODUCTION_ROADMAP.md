@@ -642,8 +642,13 @@ crafting stations, trophies, and customization.
   decide. Ownership is 38D's `flag.stable.mount_owned` and a `--validate` rule holds the two halves
   together. Gallop is a pool of the horse's own, and its exhaustion **latch clears only when the
   player stops asking** (clearing on the recovery mark alone sawtooths). Mounted-while-combat rules
-  and fast-travel integration are **39B** — 39A deliberately leaves combat inputs untouched rather
-  than half-defining them.
+  Mounted-combat rules and fast-travel integration are ✅ **(39B)**: melee works from horseback and a
+  **gallop is a charge** (a walking mount is exactly neutral), a dodge roll is the one verb riding
+  takes away, and a mount makes a **local** jump free while a realm crossing still costs — a horse
+  shortens a walk, it does not carry the player through 38M's toll for nothing. ⚠️ **The mount is no
+  longer a pure sink**; `docs/DESIGN.md` §6's table says so. ⚠️ 39B also fixed two defects 39A
+  shipped, one of which (a cached mesh rest pose dropping the rider through the horse on the first
+  hit) passed every check 39A ran.
 - **Traversal verbs the world needs** — climbing, swimming, ledges/jumping
   refinements — added only where region design (44) calls for them.
 

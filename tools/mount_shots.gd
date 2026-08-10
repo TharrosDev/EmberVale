@@ -24,6 +24,9 @@ const SADDLE_Z := -0.52
 const MOUNT_Z := 0.0
 const RIDE_CLIP := "Driving"
 
+# Set true to pose the rider mid-swing instead of at rest (39B).
+const SWING := false
+
 var _shots: Array = []
 
 
@@ -87,6 +90,13 @@ func _initialize() -> void:
 	_pose(body, "ride")
 	_pose(steed, "idle")
 
+	# ⚠️ SWING true reproduces what the body WOULD do if the attack one-shot were allowed to play
+	# while riding — shot 08. It is kept as a switch rather than deleted because it is the evidence
+	# for the guard in CharacterAnimationComponent.PlayOneShot: the rider does not straighten, he
+	# stands up inside the horse, sunk to the knee. Leave it false to render the shipping behaviour.
+	if SWING:
+		_pose(body, "attack")
+
 	_light()
 	_shots = [
 		["01_front", Vector3(0, 1.7, -5.0), Vector3(0, 1.4, 0)],
@@ -101,6 +111,7 @@ func _initialize() -> void:
 		# (3.8 m back, 0.4 m up, 0.6 m right shoulder) measured from the same raised pivot.
 		["06_firstperson", Vector3(0, SADDLE_Y + 1.62, SADDLE_Z), Vector3(0, SADDLE_Y + 1.5, -12)],
 		["07_thirdperson", Vector3(0.6, SADDLE_Y + 2.02, SADDLE_Z + 3.8), Vector3(0, SADDLE_Y + 1.4, -6)],
+		["08_swing", Vector3(3.4, 1.9, -1.2), Vector3(0, 1.5, -0.4)],
 	]
 	_render()
 
@@ -180,7 +191,8 @@ func _pose(node: Node, slot: String) -> void:
 		var bare: String = name.get_slice("/", name.get_slice_count("/") - 1).get_slice("|", 1) \
 			if "|" in name else name.get_slice("/", name.get_slice_count("/") - 1)
 		if (slot == "ride" and bare.begins_with(RIDE_CLIP)) or \
-				(slot == "idle" and bare == "Idle"):
+				(slot == "idle" and bare == "Idle") or \
+				(slot == "attack" and bare == "Sword_Slash"):
 			player.play(name)
 			print("  posed %s -> %s" % [slot, name])
 			return
