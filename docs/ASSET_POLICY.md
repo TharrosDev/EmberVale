@@ -409,6 +409,13 @@ matches the set is the better choice.
 
 ## 5. The Blender MCP is an adaptation tool
 
+⚠️ **It is not connected by default** (maintainer direction, 2026-08-10): the `uvx blender-mcp` entry
+was removed from the user-level `~/.claude.json`, so `mcp__blender__*` does not appear in a session's
+tool list at all and re-adding it needs a command **and** a Claude Code restart **and** a Blender with
+the add-on connected. `CLAUDE.md` §2 carries all three. **An absent tool list here is the intended
+state, not a fault** — reach for the vendored library instead, and treat needing this section as a
+conversation with the maintainer.
+
 `mcp__blender__*` is **not** the primary source of assets. Its intended uses:
 
 adapting downloads · changing proportions · simplifying meshes · combining assets · repairing
