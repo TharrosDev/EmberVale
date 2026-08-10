@@ -46,6 +46,11 @@ public partial class LocomotionComponent : EntityComponent
     private StatsComponent? _stats;
     private float _gravity = 9.8f;
 
+    /// <summary>Whether this body has already reported a poisoned velocity. One line per body, not one
+    /// per frame — the failure repeats every physics tick and would otherwise bury the log it exists
+    /// to make readable.</summary>
+    private bool _reportedBadVelocity;
+
     private bool _dashing;
     private double _dashTimer;
     private Vector3 _dashDir;
@@ -100,6 +105,34 @@ public partial class LocomotionComponent : EntityComponent
         float dt = (float)delta;
         Vector3 velocity = _body.Velocity;
 
+        // ⚠️ THE POISON GUARD (37F). A CharacterBody3D keeps its velocity between frames, so ONE
+        // non-finite value is not one bad frame — it is every frame for the rest of the run, and the
+        // crash surfaces far from wherever the value came from. Two reports came in from this: a dead
+        // enemy hitting Mathf.MoveToward (which throws inside Math.Sign on NaN) and a companion
+        // hitting MoveAndSlide (which warns that a Vector3 cannot be normalized). Same bad value,
+        // different first victim.
+        //
+        // ⚠️ IT LOGS, ONCE PER BODY, AND THAT IS THE HALF THAT MATTERS. A silent clamp fixes the crash
+        // and destroys the evidence — the source is still unproven, so this line is what makes it
+        // findable the next time it happens instead of a permanently hidden bug that stopped shouting.
+        if (!MotionSafety.IsFinite(velocity))
+        {
+            if (!_reportedBadVelocity)
+            {
+                _reportedBadVelocity = true;
+                Log.Error(
+                    $"Locomotion: '{Entity?.DisplayName ?? _body.Name}' had a non-finite velocity " +
+                    $"({velocity}); stopping it. Something upstream wrote NaN or infinity — the wish " +
+                    "direction, a MoveSpeed modifier, or a dash direction are the candidates.");
+            }
+
+            velocity = Vector3.Zero;
+        }
+
+        // The other door into the same failure. Zero is the honest reading of "no usable direction",
+        // and it is what Stand already passes deliberately.
+        wishDir = MotionSafety.Sanitize(wishDir);
+
         if (Flying)
         {
             // Servo toward the target altitude and clamp on arrival, so a hovering body holds still
@@ -140,7 +173,13 @@ public partial class LocomotionComponent : EntityComponent
         }
 
         float speed = CurrentSpeed() * (sprint ? SprintMultiplier : 1f);
-        Vector3 target = horizontal * speed;
+
+        // ⚠️ THIS IS THE DOOR THE REPORTED CRASH CAME THROUGH, AND IT IS NOT OBVIOUS. `Stand` passes
+        // Vector3.Zero, so the enemy's NaN could not have been the direction — but `Zero * NaN` is
+        // NaN, so a poisoned MoveSpeed stat produces a NaN target from a zero input, and MoveToward
+        // throws on it THIS frame, before the velocity guard above ever sees the value.
+        // Sanitised here rather than in CurrentSpeed so a bad stat cannot reach the motor by any route.
+        Vector3 target = MotionSafety.Sanitize(horizontal * speed);
 
         velocity.X = Mathf.MoveToward(velocity.X, target.X, Acceleration * dt);
         velocity.Z = Mathf.MoveToward(velocity.Z, target.Z, Acceleration * dt);

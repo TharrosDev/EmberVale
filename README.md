@@ -313,6 +313,13 @@ overhead — lit, warm, and yours. Outside: a well, a fenced garden, a woodpile,
 workbench and an alchemy bench standing ready. The bed is free and it is the point — the inn takes
 ten gold a night forever, and the house takes six hundred once.
 
+- 37F ✅ and the Iron King has somewhere worth fighting him. The arena was a flat grey slab with three
+walls and a cylinder for a fire; it is now a ruined stone amphitheatre — a flagstone floor, a ring
+wall of real masonry, a broken outer tier, braziers burning on the rim, banners on the stone and dead
+pines standing over it all. The fighting circle itself is still deliberately bare, because anything
+you can mistake for cover in a boss fight is worse than nothing. Also fixed: the boss now has his
+texture back, and two crashes that turned out to be the same crash.
+
 ### Phase 36 — the boss framework
 
 - 36A ✅ a boss fight is data. Phases with HP thresholds, the escalation each stage brings, the abilities it hands over, the colour it burns when it winds up, and an enrage fuse so a boss cannot be out-waited — all authored in `data/bosses/*.tres` and named by one field on the archetype. The Iron King's numbers moved out of code without changing one of them; the three dragons, which until now were healthbars with no fight structure behind them, gained phases the moment the file existed.
