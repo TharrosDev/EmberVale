@@ -18,7 +18,8 @@ existed the same three lines were maintained in four places and rewritten every 
 - **37F landed out of band** (maintainer direction, 2026-08-10): four reported runtime errors traced
   and fixed — two of them **one bug** — plus the boss arena rebuilt from a grey box into a ruined
   stone amphitheatre. ⚠️ **It also found that the Iron King's body is a man in an orange bomber
-  jacket**, deliberately left for its own pass; the check to run is in the playbook.
+  jacket**. **37G then fixed it**: he is a crowned, armoured king at 2.605 m, with the clip bindings
+  pinned by test because a mis-bound animation slot is silent.
 - **Next: Phase 39 (Mounts & Traversal), starting at 39A** — `MountComponent`, summon/mount/dismount
   and mounted locomotion. Open `docs/playbook/phase-39.md`. ⚠️ **39A is not starting from nothing:**
   38D's `ServiceKind.Stable` already sells a mount and records it in a story flag, so 39A owns the
@@ -38,14 +39,14 @@ existed the same three lines were maintained in four places and rewritten every 
 | | |
 | --- | --- |
 | Build | clean, **0 warnings** |
-| Tests | **1289 passing** (37F added 6, `MotionSafetyTests`) |
+| Tests | **1297 passing** (37F added 6, 37G added 8) |
 | `--validate` | exit 0 |
 | **Negative tests** | `python tools/negative_tests.py` — **42/42 rules broken and restored**, each caught by its own refusal. **Run this after moving authored numbers, not only after changing code** |
 | `--economy` | **byte-identical** to 38U's |
 | `--state` | 2 regions, **15 cells**, 63 items, 23 shops, **15 services**, 8 contracts, 33 dialogues, 14 quests |
 | **`--play`** | booted, loaded slot1, all **10 cells resident**, **32 objects restored**, **0 project errors and no save warnings at all** — and the log shows a live shortage of ore at the mine, which is 38T running in-world. ⚠️ One `WASAPI: GetBufferSize` line is the **Windows audio driver**, not the project |
 | Saved state | 38V adds none |
-| Rendered | **the arena day and dusk from 7 positions**, the Iron King front and back, and (37E) the homestead from 12 — the approach, the doorway, inside in both directions, the workshop, the yard. Three defects found and fixed that were invisible in the `.tscn` |
+| Rendered | **the arena day and dusk from 7 positions**, the Iron King in the arena from 5 and every candidate body front and back, and (37E) the homestead from 12 — the approach, the doorway, inside in both directions, the workshop, the yard. Three defects found and fixed that were invisible in the `.tscn` |
 | Bodies retargeted | 12 of 12 skinned (`fp_arm` has no skin and needs none) |
 | Props with no collider | 0 (audit clean) |
 

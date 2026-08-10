@@ -320,6 +320,11 @@ pines standing over it all. The fighting circle itself is still deliberately bar
 you can mistake for cover in a boss fight is worse than nothing. Also fixed: the boss now has his
 texture back, and two crashes that turned out to be the same crash.
 
+- 37G ✅ and the Iron King looks like one. He was, for longer than anyone noticed, a man in an orange
+bomber jacket and green shorts — the First Flamebearer, dressed for a coffee run. He is now a crowned
+king in mail and plate, head and shoulders above any man in the realm, waiting in the middle of his
+arena.
+
 ### Phase 36 — the boss framework
 
 - 36A ✅ a boss fight is data. Phases with HP thresholds, the escalation each stage brings, the abilities it hands over, the colour it burns when it winds up, and an enrage fuse so a boss cannot be out-waited — all authored in `data/bosses/*.tres` and named by one field on the archetype. The Iron King's numbers moved out of code without changing one of them; the three dragons, which until now were healthbars with no fight structure behind them, gained phases the moment the file existed.
