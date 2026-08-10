@@ -1,5 +1,6 @@
 using Embervale.Core.Events;
 using Embervale.Entities;
+using Embervale.Movement;
 using Embervale.World;
 using Godot;
 
@@ -22,11 +23,13 @@ public partial class FootstepComponent : EntityComponent
 
     private readonly FootstepGait _gait = new();
     private CharacterBody3D? _body;
+    private MountComponent? _mount;
 
     protected override void OnInitialize()
     {
         _gait.Stride = StrideDistance;
         _body = Entity?.Body as CharacterBody3D;
+        _mount = Entity?.GetComponent<MountComponent>();
     }
 
     public override void _PhysicsProcess(double delta)
@@ -36,7 +39,10 @@ public partial class FootstepComponent : EntityComponent
             return;
         }
 
-        if (!_body.IsOnFloor())
+        // 39B: a rider's boots are not on the ground. Silence rather than a hoof cue because there
+        // is no hoof cue — Surfaces maps floor tags to footstep sounds and nothing in the set is a
+        // horse. Adding one is an audio job of the shape Phase 31E did, not a line in this guard.
+        if (!_body.IsOnFloor() || _mount is { IsMounted: true })
         {
             _gait.Reset();
             return;

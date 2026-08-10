@@ -1,5 +1,6 @@
 using Embervale.Core.Events;
 using Embervale.Entities;
+using Embervale.Movement;
 using Embervale.Stats;
 using Godot;
 
@@ -37,6 +38,11 @@ public partial class MeleeWeaponComponent : EntityComponent
 
     private StatsComponent? _stats;
     private CombatComponent? _combat;
+
+    /// <summary>The owner's mount, when it has one (39B). ⚠️ This component drives EVERY melee
+    /// actor in the game, so this is null for all of them but the player and
+    /// <see cref="MountedCombat.DamageScale"/> answers exactly 1.0 for null.</summary>
+    private MountComponent? _mount;
     private Phase _phase = Phase.Idle;
     private double _timer;
     private double _buffer;
@@ -45,6 +51,7 @@ public partial class MeleeWeaponComponent : EntityComponent
     {
         _stats = Entity!.GetComponent<StatsComponent>();
         _combat = Entity.GetComponent<CombatComponent>();
+        _mount = Entity.GetComponent<MountComponent>();
     }
 
     /// <summary>True during the committed window (wind-up + active) — no new swing or dodge can start
@@ -194,7 +201,13 @@ public partial class MeleeWeaponComponent : EntityComponent
         }
 
         bool isFinisher = ComboIndex == Mathf.Max(1, Weapon.ComboLength) - 1;
-        float baseDamage = Weapon.BaseDamage * (isFinisher ? Weapon.FinisherMultiplier : 1f);
+
+        // 39B: a blow struck from a galloping horse carries the horse. Applied to the BASE damage,
+        // before CombatMath rolls, so it scales with the finisher and the crit the same way every
+        // other weapon factor does rather than becoming a fourth thing stacked on the outcome.
+        float mounted = MountedCombat.DamageScale(
+            _mount is { IsMounted: true }, _mount is { IsGalloping: true });
+        float baseDamage = Weapon.BaseDamage * (isFinisher ? Weapon.FinisherMultiplier : 1f) * mounted;
 
         (float amount, bool isCrit) = CombatMath.RollAttack(baseDamage, _stats);
         var packet = new DamagePacket(amount, Weapon.DamageType, Entity, isCrit, Weapon.PoiseDamage);

@@ -23,6 +23,16 @@ public partial class HitReactionComponent : EntityComponent
     private Vector3 _restPosition;
     private Vector3 _offset;
 
+    /// <summary>Where the mesh sits when it is not lurching. Sampled at spawn and re-sampled at each
+    /// recoil, but a component that moves the mesh <em>during</em> a recoil must write it here —
+    /// this component owns the mesh's position for those 0.18 s and would otherwise put it back
+    /// where it used to be. <see cref="Movement.MountComponent"/> is the one caller.</summary>
+    public Vector3 Rest
+    {
+        get => _restPosition;
+        set => _restPosition = value;
+    }
+
     protected override void OnInitialize()
     {
         _mesh = FindMesh(Entity!.Body);
@@ -81,6 +91,25 @@ public partial class HitReactionComponent : EntityComponent
 
         dir.Y = 0f;
         dir = dir.LengthSquared() > 0.0001f ? dir.Normalized() : Vector3.Back;
+
+        // ⚠️ THE REST POSE IS RE-READ HERE, NOT CACHED AT SPAWN (39B), AND THAT IS A BUG FIX.
+        // This component owns the mesh's position for the length of a recoil and puts it back
+        // afterwards — which was correct while nothing else ever moved that mesh. 39A's
+        // MountComponent raises the same BodyMesh to the saddle, so a rest captured in OnInitialize
+        // is (0,0,0) and the FIRST HIT TAKEN WHILE MOUNTED slammed the rider down to the horse's
+        // hooves and left them there for the rest of the ride.
+        //
+        // Invariant 7's shape exactly: a component cached a value another component now writes, and
+        // the symptom named neither of them. The fix is here rather than in MountComponent because
+        // every future thing that moves a body mesh — a cutscene pose, a knockdown, a vehicle —
+        // inherits it, and a MountComponent-pokes-HitReaction fix would have to be written again
+        // each time. Sampled only when the mesh is AT rest, so a second hit mid-recoil cannot
+        // capture the lurch as the new rest and walk the mesh away one hit at a time.
+        if (_offset.LengthSquared() < 0.000001f)
+        {
+            _restPosition = _mesh.Position;
+        }
+
         _offset = dir * RecoilDistance;
     }
 

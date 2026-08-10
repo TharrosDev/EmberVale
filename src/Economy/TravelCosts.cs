@@ -1,5 +1,7 @@
 using Embervale.Core.Services;
 using Embervale.Housing;
+using Embervale.Movement;
+using Embervale.Player;
 using Embervale.World;
 
 namespace Embervale.Economy;
@@ -30,7 +32,21 @@ public static class TravelCosts
     /// </summary>
     public static PriceQuote QuoteFor(TravelNode node, string currentRegionId) => PriceBreakdown.Travel(
         ownedHolding: IsOwnedHolding(node.Id),
-        crossRegion: !string.IsNullOrEmpty(currentRegionId) && node.RegionId != currentRegionId);
+        crossRegion: !string.IsNullOrEmpty(currentRegionId) && node.RegionId != currentRegionId,
+        mounted: IsMounted());
+
+    /// <summary>
+    /// Whether the player is on their horse right now (39B). ⚠️ <b>Fails closed</b>, exactly as
+    /// <see cref="IsOwnedHolding"/> does: an unresolvable player or a missing component charges the
+    /// fee rather than waiving it. A discount that appears when a lookup breaks is a bug that pays
+    /// the player, and those are the ones nobody reports.
+    ///
+    /// ⚠️ It reads the <em>live</em> mount, not the ownership flag, and that is the design: the
+    /// discount is for riding there, not for having bought a horse. Whistling one up at the waypoint
+    /// is a keypress, which is the point — the player does the thing the price is about.
+    /// </summary>
+    private static bool IsMounted() =>
+        Resolve<PlayerCharacter>()?.GetComponent<MountComponent>() is { IsMounted: true };
 
     /// <summary>
     /// Whether the node is the travel point of a holding the player owns. Matched through

@@ -271,6 +271,17 @@ CASES = [
        'shop.line.glut,"{0} of them, their appetite falling — {1}g"\n', "")],
      "price breakdown line"),
 
+    # ---- ValidateBreakdownKeys, the 39B travel line ---------------------------------------
+    # 38U's rule is that the EXPLANATION IS THE CHARGE: a price the player is shown has to say why.
+    # A new factor with no authored line prints a raw key where a sentence belongs, and the map
+    # screen is the one surface where nobody would notice quickly — a free jump just looks free.
+    # PriceBreakdown.AllKeys exists so the validator proves the whole set resolves rather than only
+    # the ones today's data happens to reach, and this is that guard being made to fire.
+    ("travel.mounted_line_unauthored", "ValidateBreakdownKeys",
+     [("data/locale/strings.csv",
+       'shop.line.travel_mounted,"you ride it yourself — no charge"\n', "")],
+     "price breakdown line"),
+
     # ---- ValidateMount (Phase 39A) --------------------------------------------------------
     # ⚠️ The one that matters. Ownership of the mount is a single string held in two files that
     # never meet: the stablemaster's UnlockFlagId is what 400 gold buys, MountComponent.OwnedFlagId
