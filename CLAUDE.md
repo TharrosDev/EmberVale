@@ -57,7 +57,9 @@ You are the lead engineer building this game incrementally. The non-negotiables:
   3. **The open web** (Poly Pizza, Kenney, Quaternius, OpenGameArt, Sketchfab) — only once 1 and 2
      genuinely do not have it, and CC0/MIT only.
   4. **Build it in Blender via the MCP.** The rare exception, and now genuinely rare: with 746
-     vendored models the honest answer is almost always in step 1 or 2.
+     vendored models the honest answer is almost always in step 1 or 2. ⚠️ **That MCP is not
+     connected by default any more** (2026-08-10) — §2 says what re-adding it costs, and reaching
+     this step is a conversation with the maintainer rather than a tool call.
 
   ⚠️ **Mixing kits is the thing to avoid.** Four kits by one author read as one world; a stray
   model from a fifth source reads as a mistake even when it is well made. If step 3 or 4 is reached,
@@ -177,38 +179,35 @@ http://localhost:23630 --input '{...}'`, and `godot-cli status .` says whether t
 are both up. Tool names are the folder names under `.claude/skills/`; each `SKILL.md` carries the
 argument schema (⚠️ they are the *tool's* names, e.g. `scene-open` takes `resourcePath`, not `path`).
 
-⚠️ **THE BLENDER MCP HAS TWO HALVES AND ONLY ONE OF THEM STARTS ITSELF.** Its tools
-(`mcp__blender__*`) are listed and callable from the first second of every session, which reads as
-"connected" and is not — the half that answers them is a socket server **inside a running Blender**,
-and it is off until a human switches it on. There is nothing this repo, this session or any tool here
-can do to start it.
+⚠️ **THE BLENDER MCP NO LONGER STARTS WITH A SESSION** (maintainer direction, 2026-08-10). Its
+`uvx blender-mcp` entry was **removed from the user-level `~/.claude.json`**, so no `blender-mcp.exe`
+is spawned at startup and **no `mcp__blender__*` tools appear in the tool list at all.** That is the
+intended state: it was launching a process every session for a step-4 tool that almost no session
+reaches (746 models are vendored, and §1 stops at step 1 or 2 nearly every time).
 
-| Half | What it is | Who starts it |
-| --- | --- | --- |
-| The MCP server | `uvx blender-mcp` (stdio), declared in the **user-level** `~/.claude.json`, not this repo's `.mcp.json` | **Claude Code, automatically** at session start — `blender-mcp.exe` in the task list is this |
-| The addon | `BlenderMCP` add-on listening on **`localhost:9876`**, installed at `%APPDATA%\Blender Foundation\Blender\5.1\scripts\addons\addon.py` | **The maintainer, by hand, every session** |
+**If a session genuinely needs it, the maintainer re-adds it — ask, do not do it yourself:**
 
-**Bringing it up (the maintainer does this — ask, do not attempt it yourself):**
-1. Launch Blender (`C:\Program Files\Blender Foundation\Blender 5.1\blender.exe`).
-2. In the 3D viewport press `N` for the sidebar, open the **`BlenderMCP`** tab.
-3. Press **`Connect to Claude`**. The panel is `Blender MCP`; the port field defaults to `9876`.
+```
+claude mcp add blender -s user -- uvx blender-mcp     # then RESTART Claude Code; the tools
+                                                      # are read at startup and not before
+```
 
-⚠️ **The failure is a tool result, not a missing tool**, and it is the same sentence every time:
+⚠️ **And re-adding it is only half.** The other half is a socket server **inside a running Blender**
+(`BlenderMCP` add-on on `localhost:9876`, installed at
+`%APPDATA%\Blender Foundation\Blender\5.1\scripts\addons\addon.py`), started by hand: launch
+`C:\Program Files\Blender Foundation\Blender 5.1\blender.exe`, press `N` in the viewport for the
+sidebar, open the **`BlenderMCP`** tab, press **`Connect to Claude`**. With the server entry back but
+Blender closed, every call returns this and nothing else (**captured 2026-08-10**, when it was still
+registered):
 
 ```
 Error getting scene info: Could not connect to Blender. Make sure the Blender addon is running.
 ```
 
-**Verified 2026-08-10** — that string was captured from a real `get_scene_info` call with Blender
-closed, while `blender-mcp.exe` was running and nothing was listening on 9876. So: **if a
-`mcp__blender__*` call returns it, stop and ask the maintainer to do the three steps above.** Do not
-retry, do not work around it, and do not conclude the model you wanted has to come from somewhere
-else — the §1 priority order is unchanged and Blender is step 4 of it either way.
-
-⚠️ **Check it before planning work that needs it, not after.** One `get_scene_info` is the whole
-probe and it costs nothing; discovering the addon is off *after* deciding an asset has to be built in
-Blender wastes the decision. There is no need to probe it in a session that will not touch Blender —
-which, with 746 vendored models, is almost every session.
+**So there are two different "it is missing" states and they mean opposite things:** *no
+`mcp__blender__*` tools at all* is the normal, intended state and needs no action — reach for the
+vendored library instead; *tools present but calls returning the string above* means the entry is back
+and Blender is closed, so ask the maintainer to connect the add-on.
 
 **The Blender MCP is an adaptation tool, not an asset source.** Its job is adapting downloads,
 changing proportions, simplifying meshes, combining assets, repairing geometry, improving UVs,
