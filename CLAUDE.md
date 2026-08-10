@@ -134,6 +134,39 @@ http://localhost:23630 --input '{...}'`, and `godot-cli status .` says whether t
 are both up. Tool names are the folder names under `.claude/skills/`; each `SKILL.md` carries the
 argument schema (⚠️ they are the *tool's* names, e.g. `scene-open` takes `resourcePath`, not `path`).
 
+⚠️ **THE BLENDER MCP HAS TWO HALVES AND ONLY ONE OF THEM STARTS ITSELF.** Its tools
+(`mcp__blender__*`) are listed and callable from the first second of every session, which reads as
+"connected" and is not — the half that answers them is a socket server **inside a running Blender**,
+and it is off until a human switches it on. There is nothing this repo, this session or any tool here
+can do to start it.
+
+| Half | What it is | Who starts it |
+| --- | --- | --- |
+| The MCP server | `uvx blender-mcp` (stdio), declared in the **user-level** `~/.claude.json`, not this repo's `.mcp.json` | **Claude Code, automatically** at session start — `blender-mcp.exe` in the task list is this |
+| The addon | `BlenderMCP` add-on listening on **`localhost:9876`**, installed at `%APPDATA%\Blender Foundation\Blender\5.1\scripts\addons\addon.py` | **The maintainer, by hand, every session** |
+
+**Bringing it up (the maintainer does this — ask, do not attempt it yourself):**
+1. Launch Blender (`C:\Program Files\Blender Foundation\Blender 5.1\blender.exe`).
+2. In the 3D viewport press `N` for the sidebar, open the **`BlenderMCP`** tab.
+3. Press **`Connect to Claude`**. The panel is `Blender MCP`; the port field defaults to `9876`.
+
+⚠️ **The failure is a tool result, not a missing tool**, and it is the same sentence every time:
+
+```
+Error getting scene info: Could not connect to Blender. Make sure the Blender addon is running.
+```
+
+**Verified 2026-08-10** — that string was captured from a real `get_scene_info` call with Blender
+closed, while `blender-mcp.exe` was running and nothing was listening on 9876. So: **if a
+`mcp__blender__*` call returns it, stop and ask the maintainer to do the three steps above.** Do not
+retry, do not work around it, and do not conclude the model you wanted has to come from somewhere
+else — the §1 priority order is unchanged and Blender is step 4 of it either way.
+
+⚠️ **Check it before planning work that needs it, not after.** One `get_scene_info` is the whole
+probe and it costs nothing; discovering the addon is off *after* deciding an asset has to be built in
+Blender wastes the decision. There is no need to probe it in a session that will not touch Blender —
+which, with 746 vendored models, is almost every session.
+
 **The Blender MCP is an adaptation tool, not an asset source.** Its job is adapting downloads,
 changing proportions, simplifying meshes, combining assets, repairing geometry, improving UVs,
 adjusting materials, building LODs and optimizing for gameplay. Reach for it to *modify* what a
