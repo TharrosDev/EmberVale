@@ -191,3 +191,74 @@
   ice/glacier prop (`prp_glacier`). Both left as-is rather than forced.
 
 ---
+
+## 37E — The Ashfall Homestead: a real, enterable home in its own cell `[C]` ✅
+
+*Out of band, maintainer direction (2026-08-10): "the current player house looks terrible and janky —
+rebuild it completely, in its own cell, make it a real house a player would actually like to spend
+time in, and want to spend gold to purchase."*
+
+- **What was there.** `bld_cottage.glb` — a **sealed 4.84 m mesh you could not enter** — beside a
+  **roofless pen of grey `BoxMesh` walls** holding the stash, a `BoxMesh` deed post and two trophy
+  stands that were broken ruin columns. Six hundred gold bought a box you stood next to.
+- ⚠️ **37D's STATED BLOCKER WAS NO LONGER TRUE, AND CHECKING THAT WAS THE WHOLE UNLOCK.** Its comment
+  read: *"Roofless by design: an enterable interior needs a scene transition convention this repo
+  does not have yet."* It does not need one. The megakit has walls with door and window openings,
+  floors and roofs; the only thing missing was a composition with **per-wall colliders instead of one
+  solid box**. There is no transition — you walk in through the door. **A parked reason ages into a
+  fact if nobody re-reads it** — the same failure 38G's parking notice had, one phase earlier.
+- **Landed:** `compose_building.py --hollow` (per-wall colliders, an open doorway, a floor), the
+  house `bld_ashfall_house.tscn` (3x4 modules, 6x8 m interior), a new cell
+  `ember_crown.ashfall_homestead` at `(52, 0, 46)`, 18 models adopted from the two kits, a free
+  ownership-gated bed, the missing **"A new region cell"** recipe, and the demolition of the old one.
+- ⚠️ **THE NAVMESH ARGUMENT INVERTS FOR A BUILDING YOU ENTER.** The composer's one-box collider is
+  documented as deliberate — *"fifty little static bodies would carve fifty little holes in the
+  navmesh"* — and that is right for a background town house and wrong for a home. Hollow mode carves
+  exactly those holes on purpose: the walls **should** obstruct and the interior **should** be
+  walkable. The rule was not wrong, its scope was.
+- ⚠️ **A HOLLOW HOUSE'S DOOR MUST HANG OPEN, AND THE HINGE GOES ON THE EDGE OF THE OPENING.** The leaf
+  has no collider and hollow mode leaves none across the door module, so a shut door is one the player
+  walks *through* — clipping, not an entrance. First fix swung it from the module centre, where the
+  leaf stood **edge-on in the middle of its own doorway** and rendered as a post across the entrance.
+  The leaf's origin is its hinge (local x -0.05..1.07), so the origin belongs at the opening's edge.
+- ⚠️ **A MODEL THAT READS AT 20 m CAN DOMINATE AT 4 m, AND THIS COST THREE RENDERS.** The deed post
+  was `prp_waystone` — 3 m of grey stone that stood in the approach shot as a **monolith blocking the
+  front door**. It is a lectern now. The lamp post was moved twice for the same reason before landing
+  at the gate, which is the only place its silhouette reads as a lamp. ⚠️ **Neither is visible from a
+  `.tscn`, and both looked correct in the file.** Invariant 12, fired twice in one session.
+- ⚠️ **A ROOF KILLS THE SUN AND NOTHING WARNS YOU.** The chandelier and the wall lantern are meshes;
+  neither emits light. Two `OmniLight3D`s are what make the interior a room rather than a cave, and
+  the only way to know they were needed — or enough — was to render from inside.
+- **The bed is a free `ServiceKind.Inn` gated on ownership**, and the gate is the one code change.
+  `ServiceComponent` had **no ownership check** while `PropertyStorageComponent` and
+  `TrophyStandComponent` had both asked `HousingService.Owns` since 37B — so without it any passer-by
+  sleeps in the player's bed. ⚠️ **The gate lives on the component, not in `TryUse`**, which is static
+  because `DialogueEffect.OpenService` reaches it with no component at all: a service fired from a
+  conversation has no holding to belong to, so it is ungated **by nature rather than by omission**.
+- ⚠️ **THE `PersistentId`s ARE UNCHANGED AND THAT IS NOT COSMETIC.** An inventory saves as
+  `inventory:<PersistentId>`, so `ember_crown.cottage_chest` and both trophy ids moved cells byte for
+  byte. Renaming one would have silently emptied a player's stash and read as item loss, not as a
+  content change. **What changed is the models on them**, which the id does not care about.
+- **The economy note is in `DESIGN.md` §6**: the inn is 10 gold a night forever, the house was 600
+  gold once, so it breaks even at sixty nights and **the purchase is the sink**. The inn keeps its job
+  for every player who has not bought and in every settlement that is not this one.
+- ⚠️ **THERE WAS NO "A NEW REGION CELL" RECIPE AND THE SETTLEMENT RECIPE POINTED AT ONE** ("the cell
+  recipe above"). CLAUDE.md §8's rule applied exactly: it is written now — the abutment arithmetic,
+  the `Nav` parenting rule, the trade-tag gate and `SafeRadius`.
+- Build clean, **0 warnings** + **1283** tests unchanged + `--validate` exit 0 + `tools/negative_tests.py`
+  **42/42** + `--economy` **byte-identical** + `--state` **15 cells, 15 services** + a `--play` boot
+  with **10 cells resident, 32 objects restored, 0 project errors** and the homestead in the load log.
+- ⚠️ **What was NOT verified.** The bed's prompt, the not-yours refusal and the deed purchase need a
+  human at the interact key — **reviewed against the Godot 4.7 C# API, not observed**. The
+  third-person camera indoors was judged from a 1.7 m eye-level render rather than from playing, so
+  "the room is big enough for the camera" is an inference from a 6x8 m span, not a measurement.
+- Two things worth carrying:
+  1. ⚠️ **A DELIBERATE LIMITATION IS STILL A LIMITATION, AND IT DECAYS.** 37D's "needs a scene
+     transition convention" was true of the approach 37D took and became a repo-wide fact nobody
+     re-tested for two phases. **When a comment explains why something cannot be done, check whether
+     it is explaining the world or explaining last year's decision.**
+  2. **Render the approach, not just the object.** Every defect this sub-phase found was a *framing*
+     defect — a correct model in a position that ruined the shot. The isolated render of the house
+     was clean three times while the walk-up was wrong.
+
+---

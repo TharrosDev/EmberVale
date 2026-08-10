@@ -261,6 +261,11 @@ dlg.vendor_goods.closed,"Cart's covered, friend. I'm up before the sun most days
 # Services (Phase 38D). Each refusal is its own line: a rested bed, a bought mount and a lesson already
 # learned are different sentences, and one shared "nothing to do here" reads as a broken interactable.
 service.ember_crown.inn.name,The Ashen Hearth
+# 37E: the bed in the player's own house. Free, and gated on owning the holding by PropertyId on
+# the ServiceComponent -- a .tscn field --validate cannot see. The refusal names whose it is
+# rather than going quiet: a bed that says nothing reads as broken furniture.
+service.ashfall.bed.name,Your Own Bed
+service.not_yours,"{0} — this is not yours. The deed post outside says what it would take."
 service.ember_crown.bank.name,The Guild Vault
 service.ember_crown.trainer.name,Bryn's Smithing Lesson
 service.ember_crown.stable.name,The Ember Crown Stables

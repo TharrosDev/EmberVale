@@ -305,6 +305,14 @@ characters each, one line apiece, made every search of this file expensive.*
 
 - 38V ✅ and the phase closes. Nothing here is visible in game, which is the point of it: the economy's rules are now written down where someone would look for them, and — more usefully — they can be *re-proved*. `tools/negative_tests.py` breaks forty-two of them one at a time, checks that the right refusal fired, and puts the realm back. That matters because a rule proved once quietly stops being true: the merchant-spread check tightened twice after the day it was tested, and nothing re-checked it until now.
 
+- 37E ✅ and the house is a home. What you could buy before was a sealed cottage-shaped rock beside a
+roofless pen of grey walls; what you buy now is a plot of your own east of the market, with a stone
+path up to a plaster-and-timber cottage you walk into. Inside there is a bed with linen on it, a
+table you could sit at, a bookcase, a cabinet, shelves, a cauldron under the chimney and a chandelier
+overhead — lit, warm, and yours. Outside: a well, a fenced garden, a woodpile, and a forge, a
+workbench and an alchemy bench standing ready. The bed is free and it is the point — the inn takes
+ten gold a night forever, and the house takes six hundred once.
+
 ### Phase 36 — the boss framework
 
 - 36A ✅ a boss fight is data. Phases with HP thresholds, the escalation each stage brings, the abilities it hands over, the colour it burns when it winds up, and an enrage fuse so a boss cannot be out-waited — all authored in `data/bosses/*.tres` and named by one field on the archetype. The Iron King's numbers moved out of code without changing one of them; the three dragons, which until now were healthbars with no fight structure behind them, gained phases the moment the file existed.

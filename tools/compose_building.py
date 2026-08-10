@@ -35,14 +35,28 @@ Four bit while composing the first building, each looking finished from the angl
 
 Render front AND back before believing any of it.
 
+Solid or hollow, and it is a gameplay decision rather than a modelling one
+-------------------------------------------------------------------------
+By default the shell gets **one box collider** covering the whole footprint: fifty little static
+bodies would carve fifty little holes in the navmesh, and a background town house is one obstacle.
+
+`--hollow` builds a house you can **walk into**: a collider per wall module, **none across the door
+module**, and a floor. Use it only for a building the player actually enters.
+
+⚠️ The navmesh holes are then the CORRECT result — the walls are supposed to obstruct, and the
+interior is supposed to be walkable. Do not author an NPC routine through a hollow building.
+⚠️ ⚠️ **`CharacterBody3D` has no step-up**, so the floor sits flush at y = 0 and nothing may lip
+above it. A 30 cm threshold is an invisible wall in the player's own doorway.
+
 Usage
 -----
-    python tools/compose_building.py <name> <wide> <deep> <storeys>
+    python tools/compose_building.py <name> <wide> <deep> <storeys> [--hollow]
 
     name      output goes to scenes/props/bld_<name>.tscn
     wide      modules across X   (2 -> a 4 m wall, 4.4 m with thickness)
     deep      modules along Z
     storeys   1 or 2; the upper storey is half-timbered
+    --hollow  enterable: per-wall colliders, an open doorway, and a floor
 """
 
 import os
@@ -52,6 +66,11 @@ YAW = {0: "1, 0, 0, 0, 1, 0, 0, 0, 1", 90: "0, 0, 1, 0, 1, 0, -1, 0, 0",
        180: "-1, 0, 0, 0, 1, 0, 0, 0, -1", 270: "0, 0, -1, 0, 1, 0, 1, 0, 0"}
 STOREY = 3.12
 MODULE = 2.0
+
+# A wall module's depth, measured in-engine rather than read off the accessors (ASSET_POLICY §0.6:
+# accessor bounds ignore node scale and will lie to you). Only --hollow uses it, for the per-wall
+# colliders; the solid path boxes the whole shell and does not care.
+THICKNESS = 0.41
 GLAZING = {"wall_window": "window_wide", "wall_window_thin": "window_thin"}
 
 
@@ -60,11 +79,13 @@ def slots(count):
     return [(i - (count - 1) / 2.0) * MODULE for i in range(count)]
 
 
-def compose(name, wide, deep, storeys):
+def compose(name, wide, deep, storeys, hollow=False):
     roof = f"roof_{wide * 2}x{deep * 2}"
     gable = f"gable_{wide * 2}"
     modules = ["wall_plain", "wall_timber", "wall_door", "wall_window", "wall_window_thin",
                "window_wide", "window_thin", "corner", roof, gable, "door", "chimney", "wall_base"]
+    if hollow:
+        modules.append("floor_wood")
     for m in (roof, gable):
         if not os.path.isfile(f"assets/models/architecture/mod_{m}.gltf"):
             raise SystemExit(f"no mod_{m}.gltf -- adopt it before composing a {wide}x{deep} shell")
@@ -91,7 +112,13 @@ def compose(name, wide, deep, storeys):
         up = storey > 0
         tag = "U" if up else "G"
         for i, x in enumerate(xs):
-            front = "wall_window" if up else ("wall_door" if i == 0 else "wall_plain")
+            # ⚠️ A hollow house gets a window on its FRONT as well. A solid one does not, and that is
+            # not laziness: a background town house is seen from the street and its frontage is one
+            # of thirty, while a house you live in is looked AT — a blank front elevation with a
+            # single door reads as a shed, which is exactly the complaint 37E was opened on.
+            front = "wall_window" if up else (
+                "wall_door" if i == 0 else
+                "wall_window" if hollow and i == len(xs) - 1 else "wall_plain")
             wall(f"{tag}Front{i}", front, x, y, half_z, 180, timber=up)
             back = "wall_window_thin" if (up and i == mid_x) else "wall_plain"
             wall(f"{tag}Back{i}", back, x, y, -half_z, 0, timber=up)
@@ -113,25 +140,85 @@ def compose(name, wide, deep, storeys):
     eaves = storeys * STOREY
     put("GableFront", gable, 0.0, eaves, half_z, 180)
     put("GableBack", gable, 0.0, eaves, -half_z, 0)
-    put("Door", "door", xs[0] + 0.51, 0.0, half_z + 0.20, 180)
+    # ⚠️ A HOLLOW HOUSE'S DOOR HANGS OPEN, and it has to. The leaf is a separate piece with no
+    # collider of its own, and hollow mode deliberately leaves no collider across the door module —
+    # so a shut leaf is a door the player walks straight THROUGH, which reads as clipping rather than
+    # as an entrance. Swung back on its hinge it reads as a house someone lives in.
+    # ⚠️ The hinge goes on the EDGE of the opening, not its centre. The leaf's origin IS its hinge
+    # (local x -0.05..1.07), so an origin at the module centre swings the door to stand edge-on in
+    # the middle of its own doorway — which renders as a post across the entrance.
+    if hollow:
+        put("Door", "door", xs[0] - 0.56, 0.0, half_z + 0.05, 270)
+    else:
+        put("Door", "door", xs[0] + 0.51, 0.0, half_z + 0.20, 180)
     put("Roof", roof, 0.0, eaves, 0.0)
     put("Chimney", "chimney", -1.10, eaves + 1.06, -half_z + 1.0)
+
+    # ⚠️ The floor is laid before the colliders below so a hollow house has something to stand on at
+    # y = 0 exactly. One tile per module, because the kit's floor piece IS one module (2.00 x 2.00).
+    if hollow:
+        for i, x in enumerate(xs):
+            for j, z in enumerate(zs):
+                put(f"Floor{i}_{j}", "floor_wood", x, 0.0, z)
+
+    # Colliders. Solid: one box on the whole shell. Hollow: one per wall module, and NONE across the
+    # door module (front slot 0) — that absence is the doorway, and it is the whole of the feature.
+    # Corners and the base trim get none either: they are thin decoration inside the wall planes, and
+    # a collider on each would pinch the opening without appearing to.
+    walls = []
+    if hollow:
+        for i, x in enumerate(xs):
+            if i != 0:   # slot 0 of the front run is the door — leave it open
+                walls.append((f"WallFront{i}", x, half_z, "x"))
+            walls.append((f"WallBack{i}", x, -half_z, "x"))
+        for i, z in enumerate(zs):
+            walls.append((f"WallLeft{i}", -half_x, z, "z"))
+            walls.append((f"WallRight{i}", half_x, z, "z"))
 
     ext = "".join(
         '[ext_resource type="PackedScene" path="res://assets/models/architecture/mod_%s.gltf" id="%s"]\n'
         % (m, ids[m]) for m in modules)
     depth = deep * MODULE + 0.4
     width = wide * MODULE + 0.4
-    body = f'''[gd_scene load_steps={len(modules) + 2} format=3]
+
+    if hollow:
+        shapes = (f'[sub_resource type="BoxShape3D" id="Shape_wall_x"]\n'
+                  f"size = Vector3({MODULE}, {eaves}, {THICKNESS})\n\n"
+                  f'[sub_resource type="BoxShape3D" id="Shape_wall_z"]\n'
+                  f"size = Vector3({THICKNESS}, {eaves}, {MODULE})\n\n"
+                  f'[sub_resource type="BoxShape3D" id="Shape_floor"]\n'
+                  f"size = Vector3({wide * MODULE}, 0.2, {deep * MODULE})\n")
+        collider = '[node name="Colliders" type="StaticBody3D" parent="."]\n\n'
+        collider += ('[node name="FloorShape" type="CollisionShape3D" parent="Colliders"]\n'
+                     "transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)\n"
+                     'shape = SubResource("Shape_floor")\n\n')
+        for node, x, z, axis in walls:
+            collider += (f'[node name="{node}" type="CollisionShape3D" parent="Colliders"]\n'
+                         f"transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, {x}, {eaves / 2.0}, {z})\n"
+                         f'shape = SubResource("Shape_wall_{axis}")\n\n')
+        note = ("; ENTERABLE (--hollow): one collider per wall module and NONE across the door module,\n"
+                "; which is what makes the doorway an opening. The navmesh holes this carves are the\n"
+                "; intended result here — do not route an NPC through it. The floor is flush at y = 0\n"
+                "; because CharacterBody3D has no step-up and a lip would be an invisible wall.")
+    else:
+        shapes = (f'[sub_resource type="BoxShape3D" id="Shape_{name}"]\n'
+                  f"size = Vector3({width}, {eaves}, {depth})\n")
+        collider = ('[node name="Collider" type="StaticBody3D" parent="."]\n\n'
+                    '[node name="Shape" type="CollisionShape3D" parent="Collider"]\n'
+                    f"transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, {eaves / 2.0}, 0)\n"
+                    f'shape = SubResource("Shape_{name}")\n')
+        note = ("; The collider is ONE box on the whole shell, not one per module: fifty little static\n"
+                "; bodies would carve fifty little holes in the navmesh, and the building is one obstacle.")
+
+    body = f'''[gd_scene load_steps={len(modules) + 4} format=3]
 
 {ext}
-[sub_resource type="BoxShape3D" id="Shape_{name}"]
-size = Vector3({width}, {eaves}, {depth})
+{shapes}
 
 ; ====================================================================================================
 ; {name.upper()} ({wide}x{deep} modules, {storeys} storey) - COMPOSED, not a monolithic mesh.
 ; Generated by tools/compose_building.py; regenerate with:
-;     python tools/compose_building.py {name} {wide} {deep} {storeys}
+;     python tools/compose_building.py {name} {wide} {deep} {storeys}{" --hollow" if hollow else ""}
 ; Read that file's header before editing this one - it carries the grid and the four traps this kit
 ; sets, every one of which is silent and visible only in a render.
 ;
@@ -140,8 +227,7 @@ size = Vector3({width}, {eaves}, {depth})
 ; insert; the gable ends close a roof that is otherwise open to the sky; the timber frame is an
 ; OVERLAY on a plain wall, not a wall. Judge this from BEHIND before believing it.
 ;
-; The collider is ONE box on the whole shell, not one per module: fifty little static bodies would
-; carve fifty little holes in the navmesh, and the building is one obstacle.
+{note}
 ; ====================================================================================================
 
 [node name="{name.title().replace("_", "")}" type="Node3D"]
@@ -149,18 +235,16 @@ size = Vector3({width}, {eaves}, {depth})
 [node name="Shell" type="Node3D" parent="."]
 
 {"".join(nodes)}
-[node name="Collider" type="StaticBody3D" parent="."]
-
-[node name="Shape" type="CollisionShape3D" parent="Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, {eaves / 2.0}, 0)
-shape = SubResource("Shape_{name}")
-'''
+{collider}'''
     out = f"scenes/props/bld_{name}.tscn"
     open(out, "w", encoding="utf-8", newline="\n").write(body)
-    print(f"{out}: {len(nodes)} module instances, {width} x {depth} m footprint, eaves {eaves} m")
+    kind = "hollow (enterable)" if hollow else "solid"
+    print(f"{out}: {len(nodes)} module instances, {width} x {depth} m footprint, "
+          f"eaves {eaves} m, {kind}")
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 5:
+    args = [a for a in sys.argv[1:] if a != "--hollow"]
+    if len(args) != 4:
         raise SystemExit(__doc__)
-    compose(sys.argv[1], int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4]))
+    compose(args[0], int(args[1]), int(args[2]), int(args[3]), hollow="--hollow" in sys.argv)

@@ -170,6 +170,28 @@ Id = "ember_crown.wilds_west"
 ScenePath = "res://scenes/regions/ember_crown/wilds_west.tscn"
 Center = Vector3(-107, 0, -6)
 
+; The Ashfall Homestead (Phase 37E) — the player's holding, and the first cell in the realm that is
+; not a settlement, a wilds or an arena. Placed so its 52 m square ABUTS the Embermarket's exactly:
+; the market is a 52 m square centred at x = 0, so its floor ends at x = 26, and a 52-wide floor
+; centred at x = 52 starts there. Fourth time this arithmetic has been written down and fourth time
+; it has been right — a gap is a hole the player falls through, an overlap is two coplanar floors
+; z-fighting along the seam, and neither is visible from this file.
+;
+; ⚠️ NO Surplus/Demand/ShockTags, and that is a rule rather than an omission: ValidateCellTrade
+; refuses a cell that authors trade tags with no shop standing in it, and a homestead sells nothing.
+; A player's house is not a market and giving it a demand table would put a price on his own bread.
+;
+; SafeRadius 26 covers the whole plot. The EncounterDirector will not spawn inside it, which is the
+; entire point — a warband in the player's garden is the failure this field exists for, and unlike a
+; settlement there is nobody here to fight back.
+
+[sub_resource type="Resource" id="Cell_ashfall_homestead"]
+script = ExtResource("2_cell")
+Id = "ember_crown.ashfall_homestead"
+ScenePath = "res://scenes/regions/ember_crown/ashfall_homestead.tscn"
+Center = Vector3(52, 0, 46)
+SafeRadius = 26.0
+
 [sub_resource type="Resource" id="Cell_arena"]
 script = ExtResource("2_cell")
 Id = "ember_crown.arena"
@@ -188,7 +210,7 @@ SpawnPoint = Vector3(0, 1.2, 5)
 ; two palisades, which is what makes the toll something you pay BEFORE the crossing and the wardens
 ; people you have to walk past. Empty on Frostfang, which keeps the original spawn-relative placement.
 PortalPoint = Vector3(0, 0, -72)
-Cells = Array[ExtResource("2_cell")]([SubResource("Cell_town_hub"), SubResource("Cell_embermarket"), SubResource("Cell_crossway_post"), SubResource("Cell_emberdeep_mine"), SubResource("Cell_wilds_north"), SubResource("Cell_tarn_landing"), SubResource("Cell_hollowreach"), SubResource("Cell_wilds_west"), SubResource("Cell_arena")])
+Cells = Array[ExtResource("2_cell")]([SubResource("Cell_town_hub"), SubResource("Cell_embermarket"), SubResource("Cell_crossway_post"), SubResource("Cell_emberdeep_mine"), SubResource("Cell_wilds_north"), SubResource("Cell_tarn_landing"), SubResource("Cell_hollowreach"), SubResource("Cell_wilds_west"), SubResource("Cell_ashfall_homestead"), SubResource("Cell_arena")])
 Bounds = AABB(-256, -16, -256, 512, 64, 512)
 SafeZoneCenter = Vector3(0, 0, -10)
 SafeZoneRadius = 34.0

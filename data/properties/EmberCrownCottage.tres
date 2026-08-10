@@ -17,11 +17,19 @@ PriceGold = 600
 RequiredQuestId = "quest.warband.bounty"
 TravelNodeId = "travel.ember_crown.cottage"
 
-; 37C/37D — the yard you may build in, re-centred once the cottage got its own building and room.
-; WORLD coordinates: the town hub cell's Center is (0, 0, -10), so a point read out of town_hub.tscn
-; needs -10 on z before it goes here. This is the open ground NORTH of the room's doorway (the room
-; itself is walled and only 8x6 — a yard inside it would be a yard you cannot turn around in), local
-; (-22, -11) => world (-22, -21). Six metres reaches the doorway without swallowing BuildingNW at
-; local (-12, -6), and sits well inside the cell's 60x60 floor.
-PlacementCenter = Vector3(-22, 0, -21)
-PlacementRadius = 6.0
+; 37C/37D/37E — the yard you may build in. Re-centred by 37E when the holding moved out of the town
+; square into its own cell.
+;
+; ⚠️ WORLD COORDINATES, AND THE CORRECTION IS NOW ON BOTH AXES. A point read out of a cell's .tscn is
+; LOCAL; world = local + the cell's Center. The homestead's Center is (52, 0, 46), so the yard at
+; local (6, 8) is world (58, 0, 54). Until 37E this cell was the town hub at (0, 0, -10) and the note
+; here said "add -10 on z" — read that against the new cell and every prop lands 52 m west in a
+; market square. The number to trust is the Center in data/regions/EmberCrown.tres, never this
+; comment's arithmetic.
+;
+; Seven metres of open ground SOUTH-EAST of the house, between it and the boundary fence: clear of
+; the house's own footprint (which ends at local z = -1.8), clear of the workshop's three stations
+; along local x = 7.5, and inside the fence line at local x = 15 / z = 16. The path in from the west
+; gate is deliberately outside it — a player who fences their own front path in has to walk round it.
+PlacementCenter = Vector3(58, 0, 54)
+PlacementRadius = 7.0

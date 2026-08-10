@@ -27,6 +27,7 @@
 - [A new shop / merchant (Phase 38A–38J)](#a-new-shop--merchant-phase-38a38j)
 - [A new service — trainer / bank / inn / stable (Phase 38D)](#a-new-service--trainer--bank--inn--stable-phase-38d)
 - [Generators — do not hand-write boilerplate](#generators--do-not-hand-write-boilerplate-agent-ergonomics-pass)
+- [A new region cell (Phases 25, 38K/N1/N2/O, 37E)](#a-new-region-cell-phases-25-38kn1n2o-37e)
 - [A production settlement (Phase 38N1)](#a-production-settlement-phase-38n1)
 - [A tolled crossing — toll, permit, bribe (Phase 38M)](#a-tolled-crossing--toll-permit-bribe-phase-38m)
 - [A fence and contraband (Phase 38O)](#a-fence-and-contraband-phase-38o)
@@ -538,6 +539,39 @@ output is read before it lands: the `.tscn`/`.tres` stays the authored artefact.
 
 A dressed cell was ~8k output tokens of near-identical stanzas and a merchant conversation ~1.3k.
 Both scripts were written ad hoc and thrown away twice before being committed.
+
+## A new region cell (Phases 25, 38K/N1/N2/O, 37E)
+
+⚠️ **This recipe did not exist until 37E**, and the settlement recipe below pointed at it ("the cell
+recipe above"). Everything here had been rediscovered four times from other cells' comments.
+
+1. **Pick the centre by arithmetic, not by eye.** Cells share one coordinate space and abut exactly.
+   A 52 m floor centred at x = 52 runs x 26..78, so it abuts a 52 m floor centred at x = 0 (which ends
+   at 26) precisely. ⚠️ **A gap is a hole the player falls through; an overlap is two coplanar floors
+   z-fighting along the seam. Neither is visible from the `.tres` or the `.tscn`** — write the sum
+   into the cell's comment, which is what every cell since 38K does.
+2. **Author the cell** in `data/regions/<Region>.tres`: a `sub_resource` with `Id`, `ScenePath`,
+   `Center`, and add it to the region's `Cells` array. ⚠️ **Forgetting the array is silent** — the
+   resource exists, `--state` does not count it, and nothing loads.
+3. **`SafeRadius`** is the no-spawn bubble. Set it to cover anywhere the player is meant to be able to
+   stand still. The region's own `SafeZoneRadius` cannot reach a cell a street away.
+4. ⚠️ **`Surplus` / `Demand` / `ShockTags` only if a shop stands in the cell.** `ValidateCellTrade`
+   refuses trade tags with no counter to read them — a half-authored settlement is invisible (38G),
+   and a cell that sells nothing (a homestead, a wilds, an arena) authors none.
+   ⚠️ A shockable cell also needs a `cell.<id>` locale row, or the caravan board posts the raw key.
+5. **The scene** (`scenes/regions/<region>/<cell>.tscn`): a `NavigationRegion3D` named `Nav`, a floor
+   mesh + `StaticBody3D`, then the content. ⚠️ **Everything with a collider parents under `Nav`** —
+   geometry outside it is not carved into the bake (27A) and the failure is invisible until you watch
+   an NPC walk through a wall. Interactable `Entity`s parent to the cell root.
+6. **A schedule in the cell carries a COPY of the cell's `Center` as `Origin`** so destinations stay
+   cell-local. Moving a cell is never a one-line edit.
+7. **Props: measure, never guess.** `python tools/gen_cell_props.py` expands a table into stanzas;
+   collider sizes come from the model's measured bounding box (`ASSET_POLICY.md` §0.6 — accessor
+   bounds ignore node scale and will lie to you).
+8. ⚠️ **RENDER IT — the approach, not just the objects.** Copy `tools/market_shots.gd`, point it at
+   the cell, and shoot at **eye level** from where the player actually arrives. Every 37E defect was a
+   correctly-authored model in a position that ruined the shot: a 3 m waystone that reads fine on a
+   road stood as a monolith blocking a front door at 4 m. **A `.tscn` reads fine while looking wrong.**
 
 ## A production settlement (Phase 38N1)
 

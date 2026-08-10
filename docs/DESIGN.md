@@ -428,7 +428,21 @@ routes that pay out of `--economy` and do not "fix" a positive margin in that ta
 | A master's commission | `ServiceKind.Commission` — **60 gold of labour** per piece at Bryn's order bench, plus every ingredient the player did not bring, priced through his own shop's markup. The one sink in the table that is *cheaper* than the alternative it competes with: commissioning undercuts buying the finished piece off his shelf in proportion to what the player already carries | 38Q |
 | A sword for hire | `ServiceKind.Mercenary` — **500 gold once**, and `CompanionRoster` is the only record of it. The dearest thing the Ember Crown sells, deliberately above the mount at 400: a mount is a convenience, a second fighter changes what the player can walk into | 38R |
 | A throw of the bones | `ServiceKind.Wager` — **50 gold a throw, three a day** at Hollowreach, paying 150 one time in four. The only entry here that sometimes hands money *back*, and the only one whose sink-ness is enforced by `--validate` rather than by being a purchase | 38R2 |
+| A night's rest at home | `service.ashfall.bed` — **free**, gated on owning the holding. See below | 37E |
 | Repair | — | **pending 40A** |
+
+⚠️ **A FREE BED IN THE PLAYER'S OWN HOUSE IS NOT A HOLE IN THE INN, IT IS WHAT THE HOUSE IS FOR**
+(37E). The Ashen Hearth charges 10 gold a night, every night, forever. The Ashfall Cottage cost 600
+gold once — so the house pays for itself at sixty nights and every night after that is the purchase
+returning. **The purchase is the sink**, and a one-off 600 is a deeper one than a 10-gold drip the
+player stops paying the moment they can afford not to.
+
+What keeps it honest is that it is **one bed in one house in the whole realm**, and it is gated on
+ownership: `PropertyId` on the `ServiceComponent` asks `HousingService.Owns` before the prompt says
+anything. The inn keeps its job for every player who has not bought, in every settlement that is not
+this one, and on every night the player is not at home. ⚠️ **A second house, or a bed sold cheaply,
+would change this arithmetic** — the sink is the 600, so any future holding has to carry a price that
+makes its own bed worth the walk.
 
 ⚠️ **A commission is the first price in the economy the `ShopPricing` clamps do not protect, and the
 labour fee is load-bearing** (38Q). Every earlier price was a spread over one item's value, so

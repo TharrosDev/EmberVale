@@ -5,14 +5,9 @@
 [ext_resource type="Resource" path="res://data/items/HealthPotion.tres" id="3_item"]
 [ext_resource type="Script" path="res://src/World/TravelNodeComponent.cs" id="4_travel"]
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="5_navbaker"]
-[ext_resource type="Script" path="res://src/Housing/PropertyDeedComponent.cs" id="30_deed"]
-[ext_resource type="Script" path="res://src/Housing/PropertyStorageComponent.cs" id="31_storage"]
 [ext_resource type="Script" path="res://src/Items/InventoryComponent.cs" id="32_inventory"]
 [ext_resource type="Script" path="res://src/Economy/ServiceComponent.cs" id="34_service"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_cache_chest.glb" id="33_chest"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="34_pillar"]
-[ext_resource type="Script" path="res://src/Housing/TrophyStandComponent.cs" id="35_trophy"]
-[ext_resource type="PackedScene" path="res://assets/models/architecture/bld_cottage.glb" id="36_cottage"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/bld_inn.glb" id="37_inn"]
 [ext_resource type="PackedScene" path="res://assets/models/architecture/bld_blacksmith.glb" id="38_smith"]
 [ext_resource type="Script" path="res://src/Factions/FactionComponent.cs" id="6_faction"]
@@ -48,6 +43,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_anvil_log.gltf" id="52_anvil_log"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_workbench.gltf" id="53_workbench"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_table_large.gltf" id="54_order_bench"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_waystone.glb" id="50_waystone"]
 
 [sub_resource type="NavigationMesh" id="NavMesh_hub"]
 geometry_parsed_geometry_type = 1
@@ -168,8 +164,6 @@ emission_enabled = true
 emission = Color(0.35, 0.12, 0.16, 1)
 emission_energy_multiplier = 0.2
 
-[sub_resource type="BoxMesh" id="BoxMesh_deed"]
-size = Vector3(0.8, 2.0, 0.35)
 
 [sub_resource type="BoxShape3D" id="Shape_deed"]
 size = Vector3(0.8, 2.0, 0.35)
@@ -199,8 +193,6 @@ size = Vector3(3, 2.6, 0.5)
 [sub_resource type="BoxShape3D" id="Shape_wall_n"]
 size = Vector3(3, 2.6, 0.5)
 
-[sub_resource type="BoxShape3D" id="Shape_stand"]
-size = Vector3(0.6, 1.1, 0.6)
 
 ; 38Q, Bryn's order bench. prp_table_large has NO node scale and root_scale 1.0, so its 2.848 x
 ; 0.813 x 1.097 is the real size — the same measurement embermarket.tscn records for Nessa's assay
@@ -218,8 +210,6 @@ size = Vector3(2.848, 0.813, 1.097)
 ; that box is the two-storey town house's, and a collider a metre and a half taller than the roof
 ; it guards is a wall the player bumps into before reaching the building.
 
-[sub_resource type="BoxShape3D" id="Shape_cottage"]
-size = Vector3(4.84, 4.2, 4.7)
 
 ; The square used two models at four mounts, which reads as a copied asset rather than a village.
 ; The inn and the smithy give the innkeeper and the Warband's smith buildings to stand in front of.
@@ -856,210 +846,29 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.25, 0)
 
 [node name="Model" parent="Nav/LampNE" instance=ExtResource("21_lamp")]
 
-; --- 37D: the Ashfall Cottage itself ------------------------------------------
-; Until 37D the "cottage" was BuildingSW — a generic greybox town house shared with the 27B square,
-; with the deed post and the stash bolted to its outside wall. It now has its own building in the
-; south-west corner, clear of BuildingSW (footprint x -16..-8, z -25..-19), with a walled room in
-; front of it holding the stash and the trophy stands.
+; --- 37E: the way to the Ashfall Homestead --------------------------------------
+; The cottage that stood here until 37E was `bld_cottage.glb` -- a sealed 4.8 m mesh you could not
+; enter -- beside a ROOFLESS pen of grey BoxMesh walls holding the stash and two greybox pillars.
+; The whole holding moved to its own cell east of the Embermarket, where it is a house you walk into.
 ;
-; EVERYTHING HERE PARENTS TO Nav. Geometry outside the NavigationRegion3D is not carved into the
-; bake (27A), so walls parented to the cell root would leave every NPC and enemy pathing straight
-; through the cottage — visible only as actors walking through walls, which reads as a nav bug
-; anywhere but here.
+; ⚠️ WHAT STAYS BEHIND IS A SIGNPOST, AND IT IS NOT DECORATION. The deed post moved with the house,
+; so nothing in the square would otherwise tell a player a house exists at all -- and a sink nobody
+; can find is a sink nobody spends into. This is 37D's own lesson (it moved the deed OUT of the
+; middle of the square and had to leave the player a reason to walk to it) applied one cell further.
 ;
-; Room interior spans x -26..-18, z -22.5..-16.5, with a 2.5 m doorway in the north wall facing the
-; square. Roofless by design: an enterable interior needs a scene transition convention this repo
-; does not have yet, and inventing one here would pre-empt the Phase 44 region work that owns it.
+; BuildingSW keeps bld_cottage_modular: it is a generic town house and always was.
 
-; ⚠️ THE MODEL CHILD CARRIES A COUNTER-OFFSET. The building node sits at half its own height so the
-; box collider (which is centred on its origin) spans ground to roof; the .glb's origin is at its
-; BASE, so without -Y on the Model the house hangs in the air by half its height. Every other
-; building here does this (BuildingNW/NE -3.75, BuildingSW/SE -3.4) and the first cut of this node
-; did not — a cottage floating 3.75 m over its own garden.
+[node name="HomesteadSign" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -20.5, 0, -14.5)
 
-[node name="Cottage" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -22, 2.1, -25.35)
+[node name="Model" parent="Nav/HomesteadSign" instance=ExtResource("50_waystone")]
 
-[node name="CottageCol" type="StaticBody3D" parent="Nav/Cottage"]
+[node name="Collider" type="StaticBody3D" parent="Nav/HomesteadSign"]
 
-[node name="Shape" type="CollisionShape3D" parent="Nav/Cottage/CottageCol"]
-shape = SubResource("Shape_cottage")
-
-[node name="Model" parent="Nav/Cottage" instance=ExtResource("36_cottage")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.1, 0)
-
-[node name="CottageWallW" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -26.25, 1.3, -19.5)
-mesh = SubResource("Mesh_wall_x")
-surface_material_override/0 = SubResource("Mat_bldg")
-
-[node name="Col" type="StaticBody3D" parent="Nav/CottageWallW"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/CottageWallW/Col"]
-shape = SubResource("Shape_wall_x")
-
-[node name="CottageWallE" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17.75, 1.3, -19.5)
-mesh = SubResource("Mesh_wall_x")
-surface_material_override/0 = SubResource("Mat_bldg")
-
-[node name="Col" type="StaticBody3D" parent="Nav/CottageWallE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/CottageWallE/Col"]
-shape = SubResource("Shape_wall_x")
-
-[node name="CottageWallS" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -22, 1.3, -22.75)
-mesh = SubResource("Mesh_wall_s")
-surface_material_override/0 = SubResource("Mat_bldg")
-
-[node name="Col" type="StaticBody3D" parent="Nav/CottageWallS"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/CottageWallS/Col"]
-shape = SubResource("Shape_wall_s")
-
-[node name="CottageWallNW" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -24.75, 1.3, -16.25)
-mesh = SubResource("Mesh_wall_n")
-surface_material_override/0 = SubResource("Mat_bldg")
-
-[node name="Col" type="StaticBody3D" parent="Nav/CottageWallNW"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/CottageWallNW/Col"]
-shape = SubResource("Shape_wall_n")
-
-[node name="CottageWallNE" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -19.25, 1.3, -16.25)
-mesh = SubResource("Mesh_wall_n")
-surface_material_override/0 = SubResource("Mat_bldg")
-
-[node name="Col" type="StaticBody3D" parent="Nav/CottageWallNE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/CottageWallNE/Col"]
-shape = SubResource("Shape_wall_n")
-
-; --- 37A: the deed post for the Ashfall Cottage -------------------------------
-; Moved in 37D from (-6, -14) — a post in the middle of the square selling a house nobody could see —
-; to just outside its own doorway. It stays OUTSIDE the room: a deed a non-owner cannot walk up to is
-; a deed nobody can buy. The holding it sells is data/properties/EmberCrownCottage.tres, and the
-; travel node it registers on a claim is recorded at the PLAYER's position, not this post's — landing
-; fast travel on a collider is a trap TravelNodeComponent already paid for once, and standing at the
-; post puts that landing point in the open ground north of the door.
-
-[node name="CottageDeed" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -22, 0, -14.5)
-script = ExtResource("1_entity")
-DisplayName = "Deed Post"
-
-[node name="Mesh" type="MeshInstance3D" parent="CottageDeed"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
-mesh = SubResource("BoxMesh_deed")
-
-[node name="Collider" type="StaticBody3D" parent="CottageDeed"]
-
-[node name="Shape" type="CollisionShape3D" parent="CottageDeed/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+[node name="Shape" type="CollisionShape3D" parent="Nav/HomesteadSign/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
 shape = SubResource("Shape_deed")
 
-[node name="Deed" type="Node" parent="CottageDeed"]
-script = ExtResource("30_deed")
-PropertyId = "property.ember_crown.cottage"
-
-; --- 37B: the Ashfall Cottage's stash -----------------------------------------
-; Moved in 37D off the outside wall of BuildingSW and into the cottage's own room, against the west
-; wall (interior edge x = -26) beside the door.
-;
-; The chest IS its inventory: an authored PersistentId is all the persistence 37B needs, since
-; InventoryComponent already saves as inventory:<PersistentId> and CellPersistenceDirector already
-; carries it across cell unload/reload. Capacity lives on that node rather than on the property
-; resource because InventoryComponent.Load clamps to Capacity — a capacity applied after the save
-; manager's mid-load restore would silently eat the overflow.
-;
-; Reuses prp_cache_chest.glb (already imported and credited for the 30J supply cache) rather than
-; sourcing another model; the box fallback matches the deed post's greybox.
-
-[node name="CottageChest" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -25, 0, -18.5)
-script = ExtResource("1_entity")
-DisplayName = "Storage Chest"
-PersistentId = "ember_crown.cottage_chest"
-
-[node name="Mesh" parent="CottageChest" instance=ExtResource("33_chest")]
-
-[node name="Collider" type="StaticBody3D" parent="CottageChest"]
-
-[node name="Shape" type="CollisionShape3D" parent="CottageChest/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
-shape = SubResource("Shape_chest")
-
-[node name="Inventory" type="Node" parent="CottageChest"]
-script = ExtResource("32_inventory")
-Capacity = 40
-
-[node name="Storage" type="Node" parent="CottageChest"]
-script = ExtResource("31_storage")
-PropertyId = "property.ember_crown.cottage"
-
-; --- 37D: the Ashfall Cottage's trophy stands ---------------------------------
-; Two authored stands against the room's south wall, so the display slot is reachable the moment the
-; cottage is claimed — before the player has crafted anything. More can be placed in the yard with
-; the Display Stand kit; both routes build through the same TrophyStandComponent, and a placed one
-; reads its holding out of its own place.<propertyId>#<n> id rather than authoring it.
-;
-; ⚠️ THE PersistentId IS THE SAVE KEY, exactly as for the chest. The one-slot Inventory below IS the
-; display, and it persists as inventory:<PersistentId>; without an id it does not register as a
-; saveable at all (SaveKeyPolicy.ShouldPersist) and the trophy vanishes on reload, which looks like
-; item loss rather than a missing field. Two stands sharing an id is worse — last write wins and one
-; trophy silently becomes the other.
-;
-; Capacity is authored on the node and must stay 1: InventoryComponent.Load restores through
-; AddInstance, which clamps to Capacity, so a capacity applied after the save manager's mid-load
-; restore would drop the trophy without a word. --validate now enforces the 1 on the placeable
-; template for the same reason.
-
-[node name="CottageStandW" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -24, 0, -21.5)
-script = ExtResource("1_entity")
-DisplayName = "Display Stand"
-PersistentId = "ember_crown.cottage_trophy_a"
-
-[node name="Mesh" parent="CottageStandW" instance=ExtResource("34_pillar")]
-
-[node name="Collider" type="StaticBody3D" parent="CottageStandW"]
-
-[node name="Shape" type="CollisionShape3D" parent="CottageStandW/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0)
-shape = SubResource("Shape_stand")
-
-[node name="Inventory" type="Node" parent="CottageStandW"]
-script = ExtResource("32_inventory")
-Capacity = 1
-
-[node name="Display" type="Node" parent="CottageStandW"]
-script = ExtResource("35_trophy")
-PropertyId = "property.ember_crown.cottage"
-
-[node name="CottageStandE" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 0, -21.5)
-script = ExtResource("1_entity")
-DisplayName = "Display Stand"
-PersistentId = "ember_crown.cottage_trophy_b"
-
-[node name="Mesh" parent="CottageStandE" instance=ExtResource("34_pillar")]
-
-[node name="Collider" type="StaticBody3D" parent="CottageStandE"]
-
-[node name="Shape" type="CollisionShape3D" parent="CottageStandE/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0)
-shape = SubResource("Shape_stand")
-
-[node name="Inventory" type="Node" parent="CottageStandE"]
-script = ExtResource("32_inventory")
-Capacity = 1
-
-[node name="Display" type="Node" parent="CottageStandE"]
-script = ExtResource("35_trophy")
-PropertyId = "property.ember_crown.cottage"
 
 ; Hesk the Wayfarer (Phase 38J) — the town's first VendorComponent, and the first merchant who is not
 ; always here. He is in the square one day in four and trades 09:00-17:00 on the day he is; both live on
