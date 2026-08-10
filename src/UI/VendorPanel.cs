@@ -32,6 +32,9 @@ public partial class VendorPanel : UiPanel
     private HBoxContainer _investRow = null!;
     private Label _investLabel = null!;
     private Button _investButton = null!;
+    private HBoxContainer _haggleRow = null!;
+    private Label _haggleLabel = null!;
+    private Button _haggleButton = null!;
     private Label _waresHeader = null!;
     private Label _packHeader = null!;
     private VBoxContainer _waresList = null!;
@@ -82,6 +85,24 @@ public partial class VendorPanel : UiPanel
         _investButton.Pressed += OnInvestPressed;
         _investRow.AddChild(_investButton);
         column.AddChild(_investRow);
+
+        // The haggle line (38S), directly under the stake and for the same reason: it is a fact about
+        // the merchant rather than a ware. Hidden entirely on a merchant who will not negotiate, which
+        // is every shop authored before this sub-phase — a greyed-out button on twenty counters would
+        // teach the player the feature is broken.
+        _haggleRow = new HBoxContainer { Visible = false };
+        _haggleRow.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+
+        _haggleLabel = UiTheme.Caption(string.Empty);
+        _haggleLabel.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        _haggleLabel.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        _haggleRow.AddChild(_haggleLabel);
+
+        _haggleButton = UiTheme.Action(Loc.T("shop.haggle"));
+        _haggleButton.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        _haggleButton.Pressed += OnHagglePressed;
+        _haggleRow.AddChild(_haggleButton);
+        column.AddChild(_haggleRow);
 
         column.AddChild(UiTheme.Divider());
 
@@ -412,6 +433,11 @@ public partial class VendorPanel : UiPanel
             ? ledger
             : null;
 
+    private static HaggleLedger? Haggles() =>
+        ServiceLocator.Instance is { } locator && locator.TryGet(out HaggleLedger ledger)
+            ? ledger
+            : null;
+
     private static int CurrentDay() =>
         ServiceLocator.Instance is { } locator && locator.TryGet(out WorldClock clock) ? clock.Day : 0;
 
@@ -513,10 +539,35 @@ public partial class VendorPanel : UiPanel
         _title.Text = $"{Loc.TF("shop.title", Loc.T(shop.NameKey))}   {Loc.TF("shop.purse", Purse())}";
 
         ReputationTier tier = StandingWith(shop);
+
+        // Asked once and threaded into both sides, so the wares and the pack cannot disagree about
+        // whether a deal was struck — the same reason `tier` is resolved here rather than per row.
+        bool haggled = DealStruck(shop);
+
         BuildStanding(shop, tier);
         BuildInvest(shop);
-        BuildWares(shop, tier);
-        BuildPack(shop);
+        BuildHaggle(shop, haggled);
+        BuildWares(shop, tier, haggled);
+        BuildPack(shop, haggled);
+    }
+
+    /// <summary>
+    /// Whether today's negotiation with this merchant was won. ⚠️ <b>Two questions, both required:</b>
+    /// the ledger says whether the player has asked (bounded, saved), <see cref="HaggleRules.Succeeds"/>
+    /// says what the answer was (derived, never saved). An unasked merchant prices normally even on a day
+    /// they would have said yes — the discount is something the player does, not something the day gives.
+    /// </summary>
+    private static bool DealStruck(ShopResource shop)
+    {
+        if (shop.HaggleChance <= 0 || Haggles() is not { } ledger)
+        {
+            return false;
+        }
+
+        int day = CurrentDay();
+
+        return ledger.TriedToday(shop.Id, day) &&
+            HaggleRules.Succeeds(day, shop.Id, shop.HaggleChance);
     }
 
     /// <summary>Names the standing and what it is doing to the prices, coloured with the same
@@ -574,7 +625,64 @@ public partial class VendorPanel : UiPanel
         _investButton.TooltipText = affordable ? string.Empty : Loc.T("shop.cannot_afford");
     }
 
-    private void BuildWares(ShopResource shop, ReputationTier tier)
+    /// <summary>
+    /// The negotiation line (38S): the offer before it is taken, the outcome after. Both states name
+    /// what happened — a price that moved must say why it moved, which is the standing caption's rule
+    /// above and the reason a failed haggle reads as a refusal rather than as nothing at all.
+    /// </summary>
+    private void BuildHaggle(ShopResource shop, bool haggled)
+    {
+        _haggleRow.Visible = shop.HaggleChance > 0;
+        if (shop.HaggleChance <= 0)
+        {
+            return;
+        }
+
+        bool tried = Haggles()?.TriedToday(shop.Id, CurrentDay()) ?? false;
+
+        _haggleLabel.Text = tried
+            ? haggled ? Loc.T("shop.haggle_won") : Loc.T("shop.haggle_lost")
+            : Loc.TF("shop.haggle_offer", shop.HaggleChance);
+        _haggleLabel.AddThemeColorOverride(
+            "font_color", tried ? haggled ? UiTheme.Good : UiTheme.Bad : UiTheme.Dim);
+
+        _haggleButton.Disabled = tried;
+        _haggleButton.TooltipText = tried ? Loc.T("shop.haggle_spent") : string.Empty;
+    }
+
+    /// <summary>
+    /// One attempt, and everything that can go wrong with it happens before the standing is charged.
+    /// ⚠️ <see cref="HaggleLedger.TryTake"/> is what says the attempt is allowed, not the button's
+    /// disabled state — a press that arrives between two rebuilds must not buy a second conversation,
+    /// and the guard belongs with the record rather than here.
+    /// </summary>
+    private void OnHagglePressed()
+    {
+        if (_shop is not { } shop || shop.HaggleChance <= 0 || Haggles() is not { } ledger)
+        {
+            return;
+        }
+
+        int day = CurrentDay();
+        if (!ledger.TryTake(shop.Id, day))
+        {
+            return; // already tried today; the button is disabled and says so
+        }
+
+        if (!HaggleRules.Succeeds(day, shop.Id, shop.HaggleChance) &&
+            _player?.GetComponent<ReputationComponent>() is { } reputation)
+        {
+            // The downside, charged once per day because the ledger allows one attempt. Same shape as
+            // FenceStanding: nothing above this line may move a faction for a conversation that did not
+            // happen, and the toast ReputationComponent.Add publishes is the whole announcement.
+            reputation.Add(shop.FactionId, shop.HaggleDelta);
+        }
+
+        // Reprices every row through the same two functions the transaction charges.
+        MarkDirty();
+    }
+
+    private void BuildWares(ShopResource shop, ReputationTier tier, bool haggled)
     {
         UiTheme.ClearChildren(_waresList);
 
@@ -596,7 +704,7 @@ public partial class VendorPanel : UiPanel
         {
             bool specialty = IsSpecialty(shop, offer.Instance);
             int price = ShopPricing.BuyPrice(
-                offer.Instance.Value, ShopPricing.MarkupFor(shop.BuyMarkup, tier, specialty));
+                offer.Instance.Value, ShopPricing.MarkupFor(shop.BuyMarkup, tier, specialty, haggled));
             bool affordable = ShopPricing.CanAfford(price, purse);
 
             // 38I: a gated row is shown, greyed, with the gate named — the same choice a sold-out row
@@ -626,7 +734,7 @@ public partial class VendorPanel : UiPanel
         }
     }
 
-    private void BuildPack(ShopResource shop)
+    private void BuildPack(ShopResource shop, bool haggled)
     {
         UiTheme.ClearChildren(_packList);
 
@@ -676,7 +784,7 @@ public partial class VendorPanel : UiPanel
                 ? ConsignmentRules.Net(
                     ConsignmentRules.Gross(instance.Value, shop.ConsignFraction), shop.ConsignCommission)
                 : ShopPricing.SellPrice(
-                    instance.Value, ShopPricing.SellFractionFor(shop.SellFraction, specialty));
+                    instance.Value, ShopPricing.SellFractionFor(shop.SellFraction, specialty, haggled));
             int payout = !sellable || !inTrade ? 0
                 : shop.IsConsignment ? unitPrice * stack.Quantity
                 : ShopStock.SaturatedPayout(unitPrice, absorbed, stack.Quantity, shop.RestockDays);

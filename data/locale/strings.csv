@@ -199,6 +199,14 @@ shop.invest_offer,"A stake in the business: {0}g for {1}g more in their purse."
 shop.invest_access,"A stake in the business: {0}g, and they open the rest of their stock."
 shop.invest_held,"Stake: {0} of {1}"
 shop.invest_full,You already own all the stake they will sell.
+# Haggling (Phase 38S). The offer names the odds because the downside is real and unnamed odds are a
+# coin the player cannot decide about; the two outcomes name what moved, because a price that changed
+# without a line of text reads as the shop being mispriced.
+shop.haggle,Haggle
+shop.haggle_offer,"They might be talked down today ({0} in 100). A refusal will be remembered."
+shop.haggle_won,"You talked them round — better prices from them today."
+shop.haggle_lost,"They did not care for the attempt, and they will remember it today."
+shop.haggle_spent,You have already tried your luck with them today.
 # Trading hours and the travelling trader (Phase 38J). A closed shop names the hour it opens: "closed"
 # alone leaves the player standing at a stall with nothing to do about it, while an hour is an
 # instruction — sleep at the inn, or come back after. An absent merchant has no line at all, because he

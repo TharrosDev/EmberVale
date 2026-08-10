@@ -935,6 +935,8 @@ public static class ContentValidator
                     "pay the same price, so the reputation discount stops meaning anything");
             }
 
+            ValidateShopHaggle(shop, issues);
+
             if (shop.SellFraction >= shop.BuyMarkup)
             {
                 issues.Add(
@@ -1839,16 +1841,84 @@ public static class ContentValidator
         // not incapable of closing it: sell == buy is frictionless churn rather than a money printer,
         // and it is invisible until a player notices they can round-trip an item for nothing. So the
         // widest possible sell is held against the narrowest possible buy, with room to spare.
+        //
+        // ⚠️ 38S folds the day's haggle into both sides for a haggling merchant, and it is the first
+        // multiplier in the arc that moves the SELL side — so this band tightens from a ratio of about
+        // 0.52 to about 0.42 for those shops, and a spread authored at the old edge would now be
+        // reported. That is the rule working: a merchant who can be talked down on both halves of the
+        // spread is the one round trip in the game that could reach zero.
         const float Margin = 1.25f;
-        float widestSell = shop.SellFraction * ShopPricing.SpecialtySellBonus;
+        bool haggles = shop.HaggleChance > 0;
+        float widestSell = ShopPricing.SellFractionFor(
+            shop.SellFraction, specialty: true, haggled: haggles);
         float narrowestBuy = ShopPricing.MarkupFor(
-            shop.BuyMarkup, Factions.ReputationTier.Allied, specialty: true);
+            shop.BuyMarkup, Factions.ReputationTier.Allied, specialty: true, haggled: haggles);
 
         if (widestSell * Margin > narrowestBuy)
         {
             issues.Add($"shop '{id}' has too thin a spread once the specialty premium applies: it could " +
                 $"pay {widestSell:0.00}x an item's value while charging as little as {narrowestBuy:0.00}x " +
                 "for it — buying and selling back would cost the player almost nothing");
+        }
+    }
+
+    /// <summary>
+    /// A merchant's willingness to be talked down (Phase 38S). Four rules, and three of them are about
+    /// something the arithmetic cannot see: <c>ShopPricing</c>'s clamps make a haggle incapable of
+    /// inverting the spread, so what is left to check is whether the authored risk can land and whether
+    /// the authored discount is visible.
+    ///
+    /// ⚠️ <b>Every question here is asked at ALLIED, not Neutral</b> — 38R2's carried lesson. A haggle
+    /// stacks with the standing ramp, so the cheapest the player can ever be charged is the only
+    /// interesting case, and it is the one no play-test at Neutral would ever reach.
+    /// </summary>
+    private static void ValidateShopHaggle(ShopResource shop, List<string> issues)
+    {
+        string id = shop.Id;
+
+        if (shop.HaggleChance < 0 || shop.HaggleChance > 100)
+        {
+            issues.Add($"shop '{id}' has a haggle chance of {shop.HaggleChance} — it is a percentage");
+        }
+
+        if (shop.HaggleChance <= 0)
+        {
+            return; // a merchant who does not negotiate; nothing below applies
+        }
+
+        // The wager's FactionId rule with the sign flipped (38R2): there, no faction meant the discount
+        // could never apply; here it means the PENALTY can never land, so the player negotiates for free.
+        if (shop.FactionId.Length == 0)
+        {
+            issues.Add(
+                $"shop '{id}' haggles but prices by no faction — the standing penalty would land " +
+                "nowhere, so the attempt costs the player nothing and is free money");
+        }
+
+        if (shop.HaggleDelta >= 0)
+        {
+            issues.Add(
+                $"shop '{id}' haggles with a standing delta of {shop.HaggleDelta} — a failed " +
+                "negotiation must cost something, or asking is strictly better than not asking");
+        }
+
+        // A broker never touches ShopPricing.SellFractionFor (38P): her rows are priced by
+        // ConsignmentRules, so a haggle would move her buy side, silently miss her shelf, and read in
+        // game as the discount half-working.
+        if (shop.IsConsignment)
+        {
+            issues.Add(
+                $"shop '{id}' is a consignment house and cannot be haggled — a broker's payout comes " +
+                "from ConsignmentRules, which the deal never reaches");
+        }
+
+        // The 38C bottoming-out rule, asked with the deal struck. A thin markup discounted twice hits
+        // BuyPrice's >= 1 clamp, and then the negotiation the player just won changes no number at all.
+        if (ShopPricing.MarkupFor(shop.BuyMarkup, ReputationTier.Allied, haggled: true) <= 1f)
+        {
+            issues.Add(
+                $"shop '{id}' markup {shop.BuyMarkup} bottoms out once a haggle and Allied standing " +
+                "both apply — the negotiation the player won would change no price on the shelf");
         }
     }
 

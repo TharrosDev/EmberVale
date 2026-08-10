@@ -20,6 +20,13 @@
 ;
 ; PurseGold 260 is the largest outside the town square, because a company that pays its people needs
 ; coin on hand - and because a sink with no money is a sink the player can empty on one trip.
+;
+; 38S: the stingiest haggle in the realm, 30 for -3, and the only one worth trying for the SELL side.
+; Her 0.62 fraction is the realm's best and a struck deal pushes it to 0.68, or 0.85 on the food she
+; specialises in (the clamp in SellPrice is what keeps even that under an item's own value) -
+; which is the profitable leg of 38N's route paying better for one day, on a merchant who says no seven
+; times in ten. ⚠️ A company store is the right place for the worst odds: she is not competing with
+; anyone (see BuyMarkup 1.7 above), so there is nothing forcing her to deal.
 
 [sub_resource type="Resource" id="Stock_ration"]
 script = ExtResource("2_entry")
@@ -43,5 +50,7 @@ RestockDays = 2
 BuyMarkup = 1.7
 SellFraction = 0.62
 PurseGold = 260
+HaggleChance = 30
+HaggleDelta = -3
 OpenHour = 6
 CloseHour = 20

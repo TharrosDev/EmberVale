@@ -16,7 +16,7 @@ namespace Embervale.Economy;
 /// ⚠️ <b>And that means no engine RNG, no <c>System.Random</c> and no <c>string.GetHashCode</c>.</b>
 /// .NET randomises string hashing per process, so a house folded in that way would pay differently
 /// after a restart — which is the one thing this design exists to prevent, and would look exactly like
-/// an RNG working correctly. <see cref="HouseSeed"/> is an explicit FNV-1a for that reason.
+/// an RNG working correctly. <see cref="StableRoll"/> is an explicit FNV-1a for that reason.
 /// </summary>
 public static class WagerRules
 {
@@ -39,9 +39,10 @@ public static class WagerRules
             return true;
         }
 
-        uint seed = Mix((uint)day * 0x9E3779B9u ^ Mix((uint)playIndex + 0x85EBCA6Bu) ^ HouseSeed(houseId));
-
-        return seed % 100u < (uint)winPercent;
+        // 38S lifted this arithmetic into StableRoll when haggling became its second caller. It is the
+        // same expression to the character — the test pinning a hard-coded win/loss string is what
+        // proves the move changed no outcome.
+        return StableRoll.Percent(day, playIndex, houseId) < (uint)winPercent;
     }
 
     /// <summary>Throws still available today. Clamped at zero, so a <c>PlaysPerDay</c> lowered between
@@ -68,37 +69,4 @@ public static class WagerRules
     public static bool Exploitable(int stake, int winPercent, int payoutGold) =>
         (long)payoutGold * winPercent >= (long)stake * 100L;
 
-    /// <summary>
-    /// A stable 32-bit hash of the house id — FNV-1a, written out rather than borrowed, because
-    /// <c>string.GetHashCode()</c> is randomised per process and every guarantee above depends on this
-    /// number being the same tomorrow, on another machine, in another build.
-    /// </summary>
-    private static uint HouseSeed(string houseId)
-    {
-        uint hash = 2166136261u;
-        if (string.IsNullOrEmpty(houseId))
-        {
-            return hash;
-        }
-
-        foreach (char c in houseId)
-        {
-            hash ^= c;
-            hash *= 16777619u;
-        }
-
-        return hash;
-    }
-
-    /// <summary>The splitmix32 finalizer <see cref="ContractRules"/> uses, for its reason: deterministic
-    /// across machines and runs, which an engine RNG is not.</summary>
-    private static uint Mix(uint value)
-    {
-        value ^= value >> 16;
-        value *= 0x7FEB352Du;
-        value ^= value >> 15;
-        value *= 0x846CA68Bu;
-        value ^= value >> 16;
-        return value;
-    }
 }

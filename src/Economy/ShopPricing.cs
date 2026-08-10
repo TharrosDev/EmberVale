@@ -110,8 +110,13 @@ public static class ShopPricing
     /// <c>sell == buy</c> — frictionless churn that is pointless rather than exploitable — and standing
     /// already modifies prices without it.
     /// </summary>
-    public static float MarkupFor(float markup, ReputationTier tier, bool specialty = false) =>
-        markup * PriceMultiplierFor(tier) * (specialty ? SpecialtyBuyDiscount : 1f);
+    /// <b>38S folds the day's haggle in here too</b>, for the same reason and with the same result: it
+    /// is a multiplier over one item's value, so the clamp already covers it and no new invariant
+    /// appears. What it can close is the round-trip margin, which <c>--validate</c> checks at Allied.
+    public static float MarkupFor(
+        float markup, ReputationTier tier, bool specialty = false, bool haggled = false) =>
+        markup * PriceMultiplierFor(tier) * (specialty ? SpecialtyBuyDiscount : 1f) *
+        HaggleRules.BuyFactor(haggled);
 
     /// <summary>
     /// The fraction to hand <see cref="SellPrice"/> once the merchant's trade is taken into account
@@ -122,9 +127,15 @@ public static class ShopPricing
     /// (<c>CLAUDE.md</c> §8) and 38F does not reopen that: a specialty is a property of the
     /// <em>merchant's trade</em>, not of how she feels about the player, so the two are different
     /// questions that happen to both end in a price.
+    ///
+    /// ⚠️ <b>A haggle IS present, and it is the first thing here that moves with the player</b> (38S).
+    /// The convergence argument above still holds — <see cref="SellPrice"/> clamps to the item's value,
+    /// so the worst case is <c>sell == buy</c>, frictionless rather than exploitable — and what keeps
+    /// authored data clear of even that is the margin rule in <c>ValidateShopTrade</c>, which now asks
+    /// its question with the haggle applied.
     /// </summary>
-    public static float SellFractionFor(float fraction, bool specialty) =>
-        fraction * (specialty ? SpecialtySellBonus : 1f);
+    public static float SellFractionFor(float fraction, bool specialty, bool haggled = false) =>
+        fraction * (specialty ? SpecialtySellBonus : 1f) * HaggleRules.SellFactor(haggled);
 
     /// <summary>
     /// What a flat-priced service costs at a given standing (Phase 38D). Services have a price rather
