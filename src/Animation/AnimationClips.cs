@@ -64,6 +64,16 @@ public static class AnimationClips
         // and the caster would wind up into a pose it never fires from.
         ["cast"] = new[] { "cast", "spell_simple_shoot", "spell" },
         ["channel"] = new[] { "channel", "spell_simple_idle" },
+        // 39A, the rider's seat. The library has no riding clip and never will — what it has are two
+        // seated poses, and they are not interchangeable: "Driving" holds the hands out in front,
+        // which reads as reins, while "Sitting_Idle" rests them in the lap and reads as a passenger.
+        // Rendered side by side on the horse before the order was written down. Bare "sitting" is
+        // last because it also prefix-matches Sitting_Talking.
+        ["ride"] = new[] { "ride", "driving", "sitting_idle", "sitting" },
+        // The mount's own second gear. It is deliberately NOT the "run" slot: run lists "walk" ahead
+        // of "gallop" (a jog is this game's run), so asking run for a gallop returns the walk and the
+        // horse ambles while the player sprints.
+        ["gallop"] = new[] { "gallop", "run", "sprint" },
     };
 
     /// <summary>

@@ -13,6 +13,7 @@ using Embervale.Items;
 using Embervale.Localization;
 using Embervale.Loot;
 using Embervale.Magic;
+using Embervale.Movement;
 using Embervale.Npc;
 using Embervale.Player;
 using Embervale.Progression;
@@ -110,6 +111,7 @@ public static class ContentValidator
         ValidateContrabandReachability(issues);
         ValidateEssentialsAreResident(issues);
         ValidateServices(issues);
+        ValidateMount(issues);
         ValidateTolls(issues);
         ValidatePlaceables(issues);
         ValidateBestiary(issues);
@@ -1196,6 +1198,46 @@ public static class ContentValidator
                 issues.Add($"shop '{shop.Id}' takes goods on consignment but no counter anywhere in the " +
                     "realm pays the earnings out — a listing would be an item given away for nothing");
             }
+        }
+    }
+
+    /// <summary>
+    /// The mount (Phase 39A), and specifically the seam between it and 38D.
+    ///
+    /// ⚠️ <b>Ownership is one string held in two files that never meet.</b> The stablemaster's
+    /// <c>UnlockFlagId</c> is what the 400 gold buys; <see cref="MountComponent.OwnedFlagId"/> is
+    /// what the whistle key reads. Nothing in the game dereferences both, so a rename on either side
+    /// leaves a service that charges and a mount that never comes — and every test still passes,
+    /// because each half is individually correct. That is exactly the failure a content gate is for.
+    ///
+    /// The model check is the same rule the enemy archetypes get, for the same reason: a missing
+    /// model is silent, and here it would summon an invisible horse.
+    /// ⚠️ <b>It catches a wrong path, not a deleted file</b> — proved by trying both. Moving the
+    /// <c>.glb</c> out of the tree leaves <c>--validate</c> passing, because the <c>.import</c>
+    /// sidecar and the cached <c>.scn</c> still satisfy <c>ResourceLoader.Exists</c>. The archetype
+    /// rule this copies has always had that hole; naming it is cheaper than a fake proof.
+    /// </summary>
+    private static void ValidateMount(List<string> issues)
+    {
+        if (!ResourceLoader.Exists(MountComponent.MountModelPath))
+        {
+            issues.Add($"mount model resource missing: {MountComponent.MountModelPath}");
+        }
+
+        bool granted = false;
+        foreach (ServiceResource service in ServiceDatabase.All)
+        {
+            if (service.Kind == ServiceKind.Stable)
+            {
+                granted |= service.UnlockFlagId == MountComponent.OwnedFlagId;
+            }
+        }
+
+        if (!granted)
+        {
+            issues.Add(
+                $"no stable service grants '{MountComponent.OwnedFlagId}', which is the flag " +
+                "MountComponent reads as proof of ownership — the mount would be unreachable in play");
         }
     }
 

@@ -52,7 +52,14 @@ public partial class CharacterAnimationComponent : EntityComponent
     private SpellcastingComponent? _spellcasting;
     private Skeleton3D? _skeleton;
     private string _idle = "", _run = "", _block = "", _attack = "", _hit = "", _death = "";
-    private string _cast = "", _channel = "";
+    private string _cast = "", _channel = "", _ride = "";
+
+    /// <summary>Set by <see cref="Movement.MountComponent"/> while the owner is on a mount. It sits
+    /// above locomotion in the selection below because a rider's legs are not running — without it
+    /// the body plays the run loop while the horse carries it, which reads as sprinting on the spot
+    /// four feet off the ground.</summary>
+    public bool Riding { get; set; }
+
     private bool _deathPlayed;
     private Vector3? _lastPosition;
     private float _lastDelta;
@@ -79,6 +86,7 @@ public partial class CharacterAnimationComponent : EntityComponent
             _death = ResolveClip("death");
             _cast = ResolveClip("cast");
             _channel = ResolveClip("channel");
+            _ride = ResolveClip("ride");
         }
 
         _spellcasting = Entity.GetComponent<SpellcastingComponent>();
@@ -252,7 +260,8 @@ public partial class CharacterAnimationComponent : EntityComponent
         }
 
         string next =
-            _spellcasting is { IsCharging: true } or { IsChanneling: true } && _channel.Length > 0 ? _channel
+            Riding && _ride.Length > 0 ? _ride
+            : _spellcasting is { IsCharging: true } or { IsChanneling: true } && _channel.Length > 0 ? _channel
             : _combat is { IsBlocking: true } && _block.Length > 0 ? _block
             : HorizontalSpeed() > RunSpeedThreshold && _run.Length > 0 ? _run
             : _idle;

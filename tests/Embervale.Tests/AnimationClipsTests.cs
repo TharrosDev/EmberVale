@@ -30,6 +30,17 @@ public class AnimationClipsTests
         "CharacterArmature|Weapon", "CharacterArmature|Yes",
     };
 
+    // Verbatim from mnt_horse.glb after import (Phase 39A) — the mount is an animal rig, so none of
+    // the humanoid vocabularies above cover it.
+    private static readonly string[] Horse =
+    {
+        "AnimalArmature|Attack_Headbutt", "AnimalArmature|Attack_Kick", "AnimalArmature|Death",
+        "AnimalArmature|Eating", "AnimalArmature|Gallop", "AnimalArmature|Gallop_Jump",
+        "AnimalArmature|Idle", "AnimalArmature|Idle_2", "AnimalArmature|Idle_Headlow",
+        "AnimalArmature|Idle_HitReact_Left", "AnimalArmature|Idle_HitReact_Right",
+        "AnimalArmature|Jump_toIdle", "AnimalArmature|Walk",
+    };
+
     // Verbatim from a downloaded Quaternius model, typo and all.
     private static readonly string[] Quaternius =
     {
@@ -393,5 +404,42 @@ public class AnimationClipsTests
             Assert.DoesNotContain("Pistol", AnimationClips.Resolve(Library, slot));
             Assert.DoesNotContain("Gun", AnimationClips.Resolve(Retargeted, slot));
         }
+    }
+
+    /// <summary>
+    /// 39A's rider seat. The library has no riding clip, so the slot lands on a seated pose, and
+    /// <em>which</em> seated pose is a decision that was made by rendering both on the horse:
+    /// Driving holds the hands out where reins would be, Sitting_Idle rests them in the lap.
+    /// ⚠️ Bare "sitting" also prefix-matches Sitting_Talking, which is why it is last in the alias
+    /// list and why this test pins the winner rather than merely asserting non-empty.
+    /// </summary>
+    [Fact]
+    public void RideResolvesToTheReinsPoseNotTheChairPose()
+    {
+        Assert.Equal("lib/Driving", AnimationClips.Resolve(Library, "ride"));
+        Assert.Equal("lib/Driving", AnimationClips.Resolve(Library.Reverse().ToArray(), "ride"));
+        Assert.Equal("lib/Driving", AnimationClips.Resolve(Retargeted, "ride"));
+
+        // A body with no seated clip at all answers empty, which is a legal answer everywhere else
+        // in this resolver — MountComponent then simply has no rider pose rather than throwing.
+        Assert.Equal(string.Empty, AnimationClips.Resolve(Goblin, "ride"));
+    }
+
+    /// <summary>
+    /// The mount's own second gear, and the reason it is not just the "run" slot: run lists "walk"
+    /// ahead of "gallop" because a jog is this game's run, so asking run for a gallop on a horse
+    /// returns Walk — the horse ambles while the player holds sprint and nothing looks broken enough
+    /// to report.
+    /// </summary>
+    [Fact]
+    public void GallopIsItsOwnSlotBecauseRunWouldAnswerWalk()
+    {
+        Assert.Equal("AnimalArmature|Walk", AnimationClips.Resolve(Horse, "run"));
+        Assert.Equal("AnimalArmature|Gallop", AnimationClips.Resolve(Horse, "gallop"));
+        Assert.Equal("AnimalArmature|Idle", AnimationClips.Resolve(Horse, "idle"));
+
+        // Gallop_Jump sorts adjacent to Gallop and is a one-shot leap; the exact-match pass is what
+        // keeps the loop from resolving to it.
+        Assert.NotEqual("AnimalArmature|Gallop_Jump", AnimationClips.Resolve(Horse, "gallop"));
     }
 }

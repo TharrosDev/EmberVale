@@ -105,6 +105,7 @@ public partial class PlayerController : EntityComponent
     private CombatComponent? _combat;
     private DodgeComponent? _dodge;
     private LockOnComponent? _lockOn;
+    private MountComponent? _mount;
     private SpellcastingComponent? _spellcasting;
     private SettingsService? _settings;
     private float _pitch;
@@ -131,6 +132,7 @@ public partial class PlayerController : EntityComponent
         _combat = owner.GetComponent<CombatComponent>();
         _dodge = owner.GetComponent<DodgeComponent>();
         _lockOn = owner.GetComponent<LockOnComponent>();
+        _mount = owner.GetComponent<MountComponent>();
         _spellcasting = owner.GetComponent<SpellcastingComponent>();
         _settings = ServiceLocator.Instance is { } locator && locator.TryGet(out SettingsService settings)
             ? settings
@@ -376,8 +378,17 @@ public partial class PlayerController : EntityComponent
         // Orient input by the body's yaw so "forward" is where the player faces.
         Vector3 wishDir = _yaw.GlobalBasis * new Vector3(input.X, 0f, input.Y);
 
-        bool sprint = Godot.Input.IsActionPressed(GameInput.Sprint);
+        if (Godot.Input.IsActionJustPressed(GameInput.Mount))
+        {
+            _mount?.Toggle();
+        }
+
         bool jump = Godot.Input.IsActionJustPressed(GameInput.Jump);
+
+        // Held sprint is a request. On foot it is granted outright; mounted, the horse's own pool
+        // answers — Tick returns the input unchanged when not mounted, so there is no branch here.
+        bool sprint = _mount?.Tick(delta, Godot.Input.IsActionPressed(GameInput.Sprint))
+            ?? Godot.Input.IsActionPressed(GameInput.Sprint);
         _locomotion?.Move(delta, wishDir, sprint, jump);
 
         // Dodge can't interrupt a committed swing (Phase 29G commit window); it cancels recovery/idle.

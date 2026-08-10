@@ -44,6 +44,10 @@ public static class GameInput
     /// <summary>Swaps first ↔ third person. Flips the persisted ThirdPersonCamera setting, so this
     /// key and the settings panel's toggle are the same switch.</summary>
     public const string ToggleCamera = "toggle_camera";
+
+    /// <summary>Whistles the mount up, or steps off it (Phase 39A). One key for both because there
+    /// is nothing to choose between — you are either on the horse or you are not.</summary>
+    public const string Mount = "mount";
     public const string Pause = "pause";
 
     /// <summary>Sets down (or picks back up) the prop held in placement mode, Phase 37C. It has its
@@ -141,6 +145,7 @@ public static class GameInput
         Bind(Bestiary, new InputEventKey { PhysicalKeycode = Key.B });
         Bind(CompanionCommand, new InputEventKey { PhysicalKeycode = Key.C });
         Bind(ToggleCamera, new InputEventKey { PhysicalKeycode = Key.V });
+        Bind(Mount, new InputEventKey { PhysicalKeycode = Key.Y });
         Bind(Pause, new InputEventKey { PhysicalKeycode = Key.Escape });
         Bind(Place, new InputEventKey { PhysicalKeycode = Key.G });
         Bind(Attack, new InputEventMouseButton { ButtonIndex = MouseButton.Left });

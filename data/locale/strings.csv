@@ -1306,3 +1306,10 @@ service.prompt_wager_spent,"{0} — you have had your throws today"
 notify.shock_relieved,"Word spreads: the {0} shortage has broken."
 notify.wager_won,"The bones fall your way at {0}. {1} gold."
 notify.wager_lost,"{0} takes your {1} gold."
+# Mounts (Phase 39A). The whistle is one key for two verbs, so the toast is what tells the player
+# which one happened. "Not owned" names the stablemaster rather than the flag: a refusal that does not
+# say where to fix it reads as a broken key.
+mount.summoned,"You whistle, and the horse comes."
+mount.dismissed,You swing down and let the horse wander off.
+mount.not_owned,You have no mount. The Ember Crown Stables sell one.
+mount.exhausted,"The horse is blown — it drops to a walk, whatever you ask of it."

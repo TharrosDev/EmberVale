@@ -13,6 +13,7 @@ using Embervale.Factions;
 using Embervale.Items;
 using Embervale.Localization;
 using Embervale.Magic;
+using Embervale.Movement;
 using Embervale.Player;
 using Embervale.Progression;
 using Embervale.Races;
@@ -40,6 +41,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("give", "give <itemId> [qty]", "Give the player an item.", Give));
         console.Register(new ConsoleCommand("xp", "xp <n>", "Grant the player XP.", Xp));
         console.Register(new ConsoleCommand("heal", "heal", "Refill the player's resources.", Heal));
+        console.Register(new ConsoleCommand("mount", "mount [own]", "Toggle the mount; 'own' grants the stable flag first (Phase 39A).", Mount));
         console.Register(new ConsoleCommand("rep", "rep <factionId> <delta>", "Shift faction standing.", Rep));
         console.Register(new ConsoleCommand("corruption", "corruption <get|set N|add N|tier>", "Inspect or drive the player's corruption.", Corruption));
         console.Register(new ConsoleCommand("learn", "learn <spellId|perkId>", "Learn a spell or perk (respects corruption gating).", Learn));
@@ -332,6 +334,26 @@ public static class DevCommands
 
         stats.RefillResources();
         return "resources refilled";
+    }
+
+    /// <summary>Mounts or dismounts, and with <c>own</c> grants 38D's purchase flag first — the one
+    /// thing that otherwise costs 400 gold to reach from a fresh save.</summary>
+    private static string Mount(DevConsole console, string[] args)
+    {
+        if (!TryPlayer(out PlayerCharacter player) || player.GetComponent<MountComponent>() is not { } mount)
+        {
+            return "no mount component";
+        }
+
+        if (args.Length > 0 && args[0].Equals("own", System.StringComparison.OrdinalIgnoreCase))
+        {
+            player.GetComponent<Dialogue.StoryFlagsComponent>()?.Set(MountComponent.OwnedFlagId);
+        }
+
+        mount.Toggle();
+        return mount.IsMounted
+            ? $"mounted (gallop pool {mount.Stamina:0})"
+            : "on foot";
     }
 
     private static string Rep(DevConsole console, string[] args)

@@ -151,6 +151,10 @@ public static class PlayerFactory
         player.AddChild(new WeaponTrailComponent { Name = "WeaponTrail" });
         player.AddChild(new DodgeComponent { Name = "Dodge" });
         player.AddChild(new LockOnComponent { Name = "LockOn" });
+        // 39A: the mount rides ON this body rather than beside it, so it is a component of the
+        // player and not an entity of its own. It reads the animation component and the camera
+        // pivot, both of which exist by the time any OnInitialize runs.
+        player.AddChild(new Embervale.Movement.MountComponent { Name = "Mount" });
 
         // Equipment sits after inventory + weapon so it can resolve both; the
         // starting weapon above becomes the baseline restored on unequip.

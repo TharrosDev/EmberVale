@@ -10,45 +10,45 @@ existed the same three lines were maintained in four places and rewritten every 
 
 ## Where we are
 
-- **Stage C. Phase 38 (economy) is ✅ CLOSED — 38A–38V, all twenty-two sub-phases.**
-- **37E landed out of band** (maintainer direction, 2026-08-10): the player's house was a sealed mesh
-  beside a roofless grey pen. It is now **a real, enterable cottage in its own cell** —
-  `ember_crown.ashfall_homestead` at `(52, 0, 46)`, east of the Embermarket — furnished, with a
-  workshop, a garden and a bed you can sleep in. `docs/playbook/phase-37.md` carries the retrospective.
-- **37F landed out of band** (maintainer direction, 2026-08-10): four reported runtime errors traced
-  and fixed — two of them **one bug** — plus the boss arena rebuilt from a grey box into a ruined
-  stone amphitheatre. ⚠️ **It also found that the Iron King's body is a man in an orange bomber
-  jacket**. **37G then fixed it**: he is a crowned, armoured king at 2.605 m, with the clip bindings
-  pinned by test because a mis-bound animation slot is silent.
-- **Next: Phase 39 (Mounts & Traversal), starting at 39A** — `MountComponent`, summon/mount/dismount
-  and mounted locomotion. Open `docs/playbook/phase-39.md`. ⚠️ **39A is not starting from nothing:**
-  38D's `ServiceKind.Stable` already sells a mount and records it in a story flag, so 39A owns the
-  mount itself and not the purchase.
+- **Stage C. Phase 38 (economy) is ✅ CLOSED — 38A–38V.** 37E/37F/37G landed out of band after it
+  (the player's cottage, four runtime errors + the arena rebuild, and the Iron King's body).
+- **Phase 39 (Mounts & Traversal) has started. 39A is ✅ DONE** — `MountComponent`: `Y` whistles a
+  horse up or steps off it, riding is 1.7x, gallop is the horse's own pool, and the whole thing
+  saves. **It is the first thing in the repo to read 38D's `flag.stable.mount_owned`.**
+- **Next: 39B — mounted-combat rules + fast-travel integration.** ⚠️ **39A deliberately left every
+  combat input untouched while mounted** (maintainer direction): attack, block, cast and dodge behave
+  exactly as on foot today, so 39B is defining them from nothing rather than correcting a half-rule.
+  ⚠️ **The mount is a state of the rider, not a second body** — there is no horse entity to hit, aim
+  at, or knock the player off. That is the fact 39B's rules have to be written against.
 - **Nothing is parked.** ⚠️ If a future item is parked, park it with a check someone can run, not a
   verdict — 38G sat eleven sub-phases past its own condition because the notice named a conclusion.
 - ⚠️ **Five of 38R's seven briefed services were struck, not deferred** — cosmetic, healer, passage,
   warehouse (38R) and courier (38R2). Each reason is in the playbook and `DESIGN.md` §6. Two of the
   five already existed under another name. **Do not rebuild them.**
-- 📖 **The economy is now documented where you would look for it:** `ARCHITECTURE.md` §2.6m is the
+- 📖 **The economy is documented where you would look for it:** `ARCHITECTURE.md` §2.6m is the
   mechanism, `DESIGN.md` §6 + §6.1 the intent and the Phase 56 balance handoff.
-- 🎨 **The asset migration onto the four Quaternius MegaKits is complete** (A–E). `docs/ASSET_POLICY.md`
+- 🎨 **The asset migration onto the four Quaternius MegaKits is complete.** `docs/ASSET_POLICY.md`
   §0.2–§0.3 is the authority.
+- ⚠️ **Maintainer action outstanding, found by 39A and not caused by it:** all 42
+  `.claude/skills/*/SKILL.md` were regenerated on disk pointing at **`https://ai-game.dev/mcp/...`**
+  instead of `http://localhost:23630`. That is the vendor's hosted cloud, which CLAUDE.md §2 says is
+  not to be switched to without asking. **39A reverted them and did not commit the change**, but the
+  editor is presumably still in Cloud mode — which also explains `godot-cli status .` reporting the
+  local MCP server unreachable while a Godot editor was running.
 
 ## Last verified (session close, 2026-08-10)
 
 | | |
 | --- | --- |
 | Build | clean, **0 warnings** |
-| Tests | **1297 passing** (37F added 6, 37G added 8) |
+| Tests | **1308 passing** (39A added 12) |
 | `--validate` | exit 0 |
-| **Negative tests** | `python tools/negative_tests.py` — **42/42 rules broken and restored**, each caught by its own refusal. **Run this after moving authored numbers, not only after changing code** |
-| `--economy` | **byte-identical** to 38U's |
-| `--state` | 2 regions, **15 cells**, 63 items, 23 shops, **15 services**, 8 contracts, 33 dialogues, 14 quests |
-| **`--play`** | booted, loaded slot1, all **10 cells resident**, **32 objects restored**, **0 project errors and no save warnings at all** — and the log shows a live shortage of ore at the mine, which is 38T running in-world. ⚠️ One `WASAPI: GetBufferSize` line is the **Windows audio driver**, not the project |
-| Saved state | 38V adds none |
-| Rendered | **the arena day and dusk from 7 positions**, the Iron King in the arena from 5 and every candidate body front and back, and (37E) the homestead from 12 — the approach, the doorway, inside in both directions, the workshop, the yard. Three defects found and fixed that were invisible in the `.tscn` |
-| Bodies retargeted | 12 of 12 skinned (`fp_arm` has no skin and needs none) |
-| Props with no collider | 0 (audit clean) |
+| **Negative tests** | `python tools/negative_tests.py` — **43/43 rules broken and restored**, each caught by its own refusal. **Run this after moving authored numbers, not only after changing code** |
+| `--economy` | not run — 39A touches no price |
+| `--state` | 2 regions, 15 cells, 63 items, 23 shops, **15 services**, 8 contracts, 33 dialogues, 14 quests — unchanged |
+| **`--play`** | booted, loaded slot1, **32 objects restored, zero project errors**. ⚠️ One `no usable entry for 'mount:player'` warning: expected and self-healing — every new `ISaveable` says it once against a save older than itself. ⚠️ `WASAPI: GetBufferSize` is the Windows audio driver, and exit-time `PagedAllocator`/RID-leak lines are the forced kill, not the project |
+| Rendered | the mount **7 ways** via `tools/mount_shots.gd` — front, back, side, the walk-up with stalls and townspeople around it, overhead, **and both camera seats** (first-person eye, third-person rest offset). ⚠️ Four seat iterations were needed and the first horse was **twice the height of a two-storey house** |
+| Not verified | ⚠️ **no key was ever pressed.** `Y`, the toggle, the toasts, the dev command and the gallop drain in motion are proved by test and by reading. The renders reproduce the component's transforms and clips in a harness; they are not `MountComponent` assembling them |
 
 ## Live invariants — the things that will bite you
 
@@ -68,65 +68,62 @@ existed the same three lines were maintained in four places and rewritten every 
    **every price the player can move directly is evaluated at Allied.**
 5. ⚠️ **THE EXPLANATION IS THE CHARGE** (38U). `PriceBreakdown.Total` is what the vendor window, the
    commission desk and the map screen display *and* charge. Its lines accumulate factors in
-   **`ShopPricing`'s own multiplication order** (`ARCHITECTURE.md` §2.6m spells it out) — reordering
-   those multiplies is a silent off-by-one gold and one test catches it.
-6. ⚠️ **A RULE PROVEN ONCE IS NOT A RULE PROVEN TODAY** (38V). `ValidateShopTrade`'s band tightened
-   twice after its original negative test — 38S folded in the haggle, 38T asked it at the shocked
-   extremes — so the run that proved it was proving a rule the repo no longer had.
-   **`tools/negative_tests.py` is the answer and it is re-runnable.** ⚠️ It edits `data/` in place
-   and refuses to start on a dirty tree; that refusal is the guard working.
+   **`ShopPricing`'s own multiplication order** (`ARCHITECTURE.md` §2.6m) — reordering those
+   multiplies is a silent off-by-one gold and one test catches it.
+6. ⚠️ **A RULE PROVEN ONCE IS NOT A RULE PROVEN TODAY** (38V). **`tools/negative_tests.py` is the
+   answer and it is re-runnable.** ⚠️ It edits `data/` in place and refuses to start on a dirty tree;
+   that refusal is the guard working. ⚠️ **It cannot reach a rule that lives in a code constant** —
+   39A's model-path rule had to be broken by hand, and doing so found that the rule catches a wrong
+   path but **not a deleted file** (the `.import` sidecar keeps `ResourceLoader.Exists` true).
 7. ⚠️ **A STATEFUL COMPONENT TURNS ONE BAD FRAME INTO A PERMANENT FAULT** (37F). A
    `CharacterBody3D` keeps its velocity between frames, so a single non-finite write poisons that
-   body for the rest of the run and surfaces as a crash in whatever system moves it next — two
-   reports, two subsystems, one value. ⚠️ **Guard where a value enters the stateful thing, not where
-   it explodes**; those are never the same place. `MotionSafety` + the guards in
-   `LocomotionComponent.Move` are the pattern, and **they log once per body** so the still-unproven
-   source stays findable.
-8. ⚠️ **A MODEL THAT READS AT 20 m CAN DOMINATE AT 4 m** (37E). A 3 m waystone that looks right on a
-   road stood as a monolith blocking the player's own front door; the lamp post moved twice for the
-   same reason. ⚠️ **Render the APPROACH, not just the object** — every 37E defect was a correctly
-   authored model in a position that ruined the shot, and the isolated render was clean three times
-   while the walk-up was wrong. ⚠️ **A roof kills the sun**: a chandelier is a mesh and emits nothing,
-   so an interior needs real lights or it renders as a cave.
+   body for the rest of the run and surfaces as a crash in whatever system moves it next.
+   ⚠️ **Guard where a value enters the stateful thing, not where it explodes.** `MotionSafety` +
+   `LocomotionComponent.Move` are the pattern, and they **log once per body**.
+8. ⚠️ **A MODEL THAT READS AT 20 m CAN DOMINATE AT 4 m** (37E) — and **39A adds the next turn of it:
+   RENDER FROM THE SEAT, NOT AT THE OBJECT.** Every exterior shot of the mount was correct while the
+   first-person eye sat *inside the horse's neck*; a defect that lives at a camera position is only
+   visible from that camera position. ⚠️ **A roof kills the sun**: an interior needs real lights.
 9. ⚠️ **A GODOT `Label` DEFAULTS `mouse_filter` TO IGNORE, SO A TOOLTIP ON ONE IS SILENTLY DEAD**
-   (38U). `UiTheme`'s text builders set **`Pass`** — hoverable without becoming clickable. **A
-   property whose default differs from its base class's is the defect class that passes every review.**
-10. ⚠️ **DERIVE, THEN BOUND — TWO MECHANISMS, NEITHER SUBSTITUTING FOR THE OTHER.** Everything a
-   quickload could reroll is a pure function of the day, so a reload **replays** it; a ledger stores
-   only **what the player did**. ⚠️ `string.GetHashCode()` is randomised per process; `StableRoll` is
-   a hand-written FNV-1a. ⚠️ **GDScript can only call methods whose signatures marshal** — probe
-   `has_method` before writing a `.gd` harness. ⚠️ **Nothing about a contract may reach the quest log.**
+   (38U). `UiTheme`'s text builders set **`Pass`**. **A property whose default differs from its base
+   class's is the defect class that passes every review.**
+10. ⚠️ **DERIVE, THEN BOUND — TWO MECHANISMS, NEITHER SUBSTITUTING FOR THE OTHER.** A quickload
+   **replays** what the day determines; a ledger stores only **what the player did**.
+   ⚠️ `string.GetHashCode()` is randomised per process; `StableRoll` is a hand-written FNV-1a.
+   ⚠️ **GDScript can only call methods whose signatures marshal** — probe `has_method` first.
+   ⚠️ **Nothing about a contract may reach the quest log.**
 11. ⚠️ **A SERVICE CAN BE FIRED FROM A CONVERSATION, EXCEPT A BANK** — a bank opens the **host
    entity's** inventory and a conversation has no host entity. ⚠️ **An entity still gets one
-   interactable**: the realm's only bed is reachable through `dialogue.innkeeper` and nowhere else.
-   ⚠️ **A world interaction prompt is not a `Control` and has nothing to hover.**
+   interactable.** ⚠️ **A world interaction prompt is not a `Control` and has nothing to hover.**
 12. **A broker fronts nothing, so no purse and no saturation apply to her.** ⚠️ **A stack at a broker
-    is a multiply and a stack at a counter is 38H's decaying sum** — the one place in the game where
-    unit price × quantity is the wrong number.
+    is a multiply and a stack at a counter is 38H's decaying sum.**
 13. **`contraband` is the one trade tag that fails CLOSED**, and a fenced sale moves two factions
     **once per sale, never per unit**. The Crossway toll is charged in `GameBootstrap.PayToll`.
 14. ⚠️ **RENDER THE THING, AND RENDER IT WITH THE PEOPLE AND FURNITURE AROUND IT.** Seven firings.
     38R's is the plainest: an NPC on open ground stood exactly where the player stands to read the
     previous sub-phase's board, and the fault was in neither object and in no line of either `.tscn`.
-    ⚠️ **A body's facing is not knowable from a file.** Earlier: `prp_banner_guild` by precedent
-    (38Q2), `prp_weapon_stand` reading as a sawhorse (38Q), a lying-down collider on a standing
-    pillar (38O), 4-of-6 rejections in 38N2, `npc_townsman` hi-vis, `npc_merchant_f` in trainers.
-    ⚠️ **When no pack model fits, primitives are a legitimate answer.**
+    ⚠️ **A body's facing is not knowable from a file.** ⚠️ **When no pack model fits, primitives are
+    a legitimate answer.**
 15. ⚠️ **A DECISION CAN LIVE IN A `.tres` HEADER, AND NOTHING GREPS THOSE.** 38R's warehouse was
-    killed mid-session by a comment in `EmberCrownBank.tres`. **Before authoring content of a kind
-    that already exists, read the existing one's header.**
+    killed mid-session by a comment in `EmberCrownBank.tres`; 39A's whole brief was in
+    `EmberCrownStable.tres`'s. **Before authoring content of a kind that already exists, read the
+    existing one's header.**
 16. **`CharacterBody3D` has no step-up.** Verticality comes from props, never from terrain; a 30 cm
-    kerb is an invisible wall the navmesh happily paths NPCs over. ⚠️ **Phase 39C inherits this
-    one** — it is the phase that decides whether that stays true.
+    kerb is an invisible wall the navmesh happily paths NPCs over. ⚠️ **A mount does not change
+    this** — 39A rides on the player's own capsule, so a horse climbs what a man climbs. **39C is the
+    phase that decides whether that stays true.**
 17. **A retargeted rig is marked by its skeleton being named `GeneralSkeleton`** — all 12 skinned
-    bodies are. An un-retargeted rig given it freezes mid-guard with nothing logged. ⚠️ A model whose
-    root carries a translation cannot be retargeted until normalised, and the library is an
-    **upper-body pose from the hips up**. `ASSET_POLICY.md` §0.2 carries all four traps.
+    bodies are; an un-retargeted rig given the shared library freezes mid-guard with nothing logged.
+    ⚠️ **An unresolved clip slot is silent**, so a slot whose *choice* matters (39A's `ride`, which
+    picks between two seated poses) is pinned by test, not asserted non-empty.
 18. **Check what is already vendored before pulling from the web.** As of 38O the library holds **no
-    unadopted CC0 medieval bodies at all**.
+    unadopted CC0 medieval bodies at all** — but it does hold twelve animals, and 39A's horse came
+    from there.
 19. ⚠️ **MEASURING A MODEL'S ACCESSORS IS NOT MEASURING THE MODEL.** Apply node scale *and*
-    `nodes/root_scale` from the `.import`. ⚠️ A **solid-looking prop with no collider** is a real
-    class of defect here. ⚠️ **The `rts` pack is roughly 1/6 scale and nothing in the files says so.**
+    `nodes/root_scale`. ⚠️ **The `animals` pack's armatures carry a 100x scale, so its accessors read
+    ~4.8 m for a horse** — measure the *imported* scene. ⚠️ **And `global_transform` returns IDENTITY
+    with an error for a node added during `_initialize`**, which reports the raw bind-pose box as
+    confidently as the right answer: `await process_frame` twice first.
 20. ⚠️ **The nature megakit's ground cover is 4–10× life size while its trees are 1:1**, and scale
     lives in each prop's `.import`, never in a cell transform. **Grass goes in patches.**
 21. ⚠️ **A generic wall kit composes generic buildings well and special-purpose ones badly.** The
@@ -134,6 +131,10 @@ existed the same three lines were maintained in four places and rewritten every 
 22. ⚠️ **The Ember Crown map was re-laid (38F).** The settled cells form one contiguous city and every
     wilds cell is outside it; the arena moved to 150 m, past the gate. ⚠️ **A schedule carries a copy
     of its cell's `Center` as `Origin`** — moving a cell is never a one-line edit.
+23. ⚠️ **A RESTORED FILE WITH AN OLD TIMESTAMP DOES NOT REBUILD** (39A). Undoing a deliberate break
+    with `mv file.bak file` and rebuilding prints **"Build succeeded"** and then runs the *broken*
+    binary. `touch` before `dotnet build` — it is CLAUDE.md §2's stale-binary trap through a door
+    that section does not name.
 
 ## Commands worth knowing
 
@@ -141,9 +142,10 @@ existed the same three lines were maintained in four places and rewritten every 
 dotnet build Embervale.sln                      # ALWAYS before running — nothing else recompiles C#
 dotnet test tests/Embervale.Tests
 godot --headless --path . -- --validate         # content gate, exit 0/1
-python tools/negative_tests.py                  # proves the gate still bites (42 cases)
+python tools/negative_tests.py                  # proves the gate still bites (43 cases)
 godot --headless --path . -- --economy          # the realm's price landscape
 godot --headless --path . -- --state            # the content census
 godot --path . -- --play                        # boot into the newest save
+godot --path . --script res://tools/mount_shots.gd   # measure + render the mount (needs a GPU)
 godot-cli status .                              # the Godot MCP probe — it is DOWN every session start
 ```
