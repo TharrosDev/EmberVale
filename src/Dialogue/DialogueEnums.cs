@@ -51,6 +51,25 @@ public enum DialogueEffect
     /// ⚠️ The choice carrying it must leave <c>Goto</c> empty: a conversation left open underneath the
     /// shop window returns the player to it when they close the shop.</summary>
     OpenShop,
+
+    /// <summary>
+    /// Use the service whose id is the <c>EffectArg</c> (Phase 38R) — the conversational half of
+    /// <see cref="Economy.ServiceComponent"/>, and the member 38E deliberately did not append until
+    /// there was an implementation behind it.
+    ///
+    /// It runs the whole 38D battery: the ordered refusal, the standing discount, the charge and the
+    /// verb, through <c>ServiceComponent.TryUse</c>. What it does <em>not</em> carry is a prompt, so a
+    /// choice offering a service says its price in authored text rather than deriving it — a
+    /// conversation is written, not generated.
+    ///
+    /// ⚠️ The choice carrying it must leave <c>Goto</c> empty, for <see cref="OpenShop"/>'s reason: a
+    /// conversation left open behind a vault or a crafting window returns when that window closes.
+    ///
+    /// ⚠️ <b>It cannot open a <c>Bank</c>.</b> That verb opens the <em>host entity's</em> inventory and
+    /// a conversation has no host entity — <c>--validate</c> refuses the authoring outright rather than
+    /// letting it warn at runtime.
+    /// </summary>
+    OpenService,
 }
 
 /// <summary>

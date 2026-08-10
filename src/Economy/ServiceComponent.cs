@@ -58,6 +58,12 @@ public partial class ServiceComponent : InteractableComponent
             {
                 ServiceOutcome.Unknown => string.Empty,
                 ServiceOutcome.Hostile => Loc.TF("service.prompt_hostile", name),
+                // ⚠️ 38R's one prompt state that is not an outcome. A full party is neither
+                // "already hired" nor "cannot afford" — the press would simply do nothing, which is
+                // 38J's dead-choice failure. Kept out of AlreadyHeld because "you already travel with
+                // her" would send a player looking for someone they have never met.
+                ServiceOutcome.Granted when service.Kind == ServiceKind.Mercenary && PartyIsFull() =>
+                    Loc.TF("service.prompt_mercenary_full", name),
                 ServiceOutcome.AlreadyHeld => Loc.TF(HeldKey(service.Kind), name),
                 ServiceOutcome.CannotAfford => Loc.TF("service.prompt_price", name, price, GoldHeld()),
                 // ⚠️ A free service falls back to the bare "Use {0}" line, which is right for a free
@@ -75,8 +81,27 @@ public partial class ServiceComponent : InteractableComponent
 
     public override void Interact(IEntity instigator)
     {
-        if (ServiceDatabase.Get(ServiceId) is not { } service ||
-            Evaluate(service) != ServiceOutcome.Granted ||
+        if (ServiceDatabase.Get(ServiceId) is { } service)
+        {
+            // The vault is the host entity's own inventory (38D), which is the one thing a service
+            // needs that only the component standing in the world can supply — see TryUse.
+            TryUse(service, instigator, Entity?.GetComponent<InventoryComponent>());
+        }
+    }
+
+    /// <summary>
+    /// Runs a service: the ordered refusal, the charge and the verb (Phase 38D, extracted in 38R).
+    ///
+    /// ⚠️ <b><paramref name="vault"/> is why this is not a pure extraction.</b> Every other verb works
+    /// off the player and the resource, but <see cref="ServiceKind.Bank"/> opens the <em>host entity's</em>
+    /// inventory — and a service fired from a conversation
+    /// (<see cref="Dialogue.DialogueEffect.OpenService"/>) has no host entity to open. Rather than
+    /// invent a vault at runtime, the parameter is nullable, a bank without one logs and does nothing,
+    /// and <c>--validate</c> refuses the authoring that would reach it.
+    /// </summary>
+    public static void TryUse(ServiceResource service, IEntity instigator, InventoryComponent? vault)
+    {
+        if (Evaluate(service) != ServiceOutcome.Granted ||
             instigator.GetComponent<InventoryComponent>() is not { } pack)
         {
             return; // the prompt has already said why
@@ -91,8 +116,12 @@ public partial class ServiceComponent : InteractableComponent
         // whole craft back — and the fee is per piece, not per visit. Charged at the counter it would
         // take gold from a player who then commissions nothing, and take it once for a window they
         // might order five things from. CraftingComponent.Commission owns the money for that reason.
+        // ⚠️ 38R adds the second exemption, and it is 38Q's reason rather than a new one: a hire fails
+        // on a full party, so the money must follow the companion actually arriving. Two kinds is
+        // still a list and not a mechanism — if a third appears, that is when it earns a field.
         int price = PriceOf(service);
-        bool chargedAtTheCounter = service.Kind != ServiceKind.Commission;
+        bool chargedAtTheCounter =
+            service.Kind is not (ServiceKind.Commission or ServiceKind.Mercenary);
         if (chargedAtTheCounter && price > 0 && !pack.RemoveItem(GameIds.Currency.Gold, price))
         {
             return; // the gold went somewhere between the prompt and the press; deliver nothing
@@ -104,7 +133,7 @@ public partial class ServiceComponent : InteractableComponent
                 Train(service, instigator);
                 break;
             case ServiceKind.Bank:
-                OpenVault(service, instigator);
+                OpenVault(service, instigator, vault);
                 break;
             case ServiceKind.Inn:
                 Rest(service, instigator);
@@ -127,6 +156,9 @@ public partial class ServiceComponent : InteractableComponent
             case ServiceKind.Contracts:
                 EventBus.Instance?.Publish(new ContractBoardOpenedEvent(
                     instigator, Loc.T(service.NameKey), service.BoardSlots, service.RotationDays));
+                break;
+            case ServiceKind.Mercenary:
+                Hire(service, pack, price);
                 break;
             case ServiceKind.Commission:
                 // The master's order desk is the ordinary crafting window with a fee on it, so this
@@ -170,10 +202,12 @@ public partial class ServiceComponent : InteractableComponent
     /// <summary>Opens the vault. The container's own <see cref="InventoryComponent"/> <b>is</b> the
     /// storage, exactly as in 37B — which is why this adds no persistence code and no UI: the existing
     /// <c>StoragePanel</c> already answers <c>StorageOpenedEvent</c>.</summary>
-    private void OpenVault(ServiceResource service, IEntity instigator)
+    private static void OpenVault(ServiceResource service, IEntity instigator, InventoryComponent? vault)
     {
-        if (Entity?.GetComponent<InventoryComponent>() is not { } vault)
+        if (vault == null)
         {
+            // Also the fail-safe for a bank reached through a conversation, which has no host entity
+            // to carry a vault. --validate refuses that authoring, so this line means a .tscn fault.
             Log.Warn($"Service '{service.Id}' is a bank with no InventoryComponent on its entity.");
             return;
         }
@@ -292,6 +326,31 @@ public partial class ServiceComponent : InteractableComponent
         ledger.Collect(CurrentDay(), pack);
     }
 
+    /// <summary>
+    /// Hires a sword (Phase 38R): the companion joins, and only then is the gold taken.
+    ///
+    /// ⚠️ <b>The order is the 38Q inversion and it needs no rollback here, which is the difference.</b>
+    /// A commission's fee is charged from a window the player may leave open for minutes, so its gold
+    /// has a real window to disappear in; this runs inside the same synchronous call as the
+    /// affordability check, so once <c>Recruit</c> says yes the purse cannot have moved. The refusal
+    /// path is the one that matters: a full party recruits nobody and is charged nothing.
+    /// </summary>
+    private static void Hire(ServiceResource service, InventoryComponent pack, int price)
+    {
+        if (Resolve<Companions.CompanionRoster>() is not { } roster ||
+            !roster.Recruit(service.CompanionId))
+        {
+            // A full party, an unknown id, or no roster at all — nobody arrived, so nothing is owed.
+            // The prompt already says so for the party-full case, which is the only one a player meets.
+            return;
+        }
+
+        if (price > 0 && !pack.RemoveItem(GameIds.Currency.Gold, price))
+        {
+            Log.Warn($"Service '{service.Id}': hired '{service.CompanionId}' but could not take {price}g.");
+        }
+    }
+
     /// <summary>Records a one-off purchase. A service with no flag is pay-per-use and this is a no-op;
     /// the validator is what stops a one-off service being authored without one.</summary>
     private static void Unlock(ServiceResource service, IEntity instigator)
@@ -304,7 +363,7 @@ public partial class ServiceComponent : InteractableComponent
 
     // --- shared evaluation --------------------------------------------------
 
-    private ServiceOutcome Evaluate(ServiceResource? service)
+    private static ServiceOutcome Evaluate(ServiceResource? service)
     {
         if (service == null)
         {
@@ -363,6 +422,13 @@ public partial class ServiceComponent : InteractableComponent
         if (service.Kind == ServiceKind.Commission)
         {
             return !KnowsAnythingFor(service.CommissionStation);
+        }
+
+        // 38R: the roster is the record, so there is no flag to ask. A dismissal must put the hire
+        // back on the market — a flag would survive it and retire her permanently.
+        if (service.Kind == ServiceKind.Mercenary)
+        {
+            return Resolve<Companions.CompanionRoster>()?.IsRecruited(service.CompanionId) ?? false;
         }
 
         if (!string.IsNullOrEmpty(service.UnlockFlagId))
@@ -475,6 +541,13 @@ public partial class ServiceComponent : InteractableComponent
         return false;
     }
 
+    /// <summary>Whether there is no room in the band for one more (38R). An unresolvable roster reads
+    /// as not full, which fails the same way <see cref="IsHostileTo"/> does — the refusal is
+    /// <c>Recruit</c>'s to make, and a prompt that hides an offer in a half-built world is worse than
+    /// one that makes it and is turned down.</summary>
+    private static bool PartyIsFull() =>
+        Resolve<Companions.CompanionRoster>() is { } roster && roster.Count >= roster.MaxPartySize;
+
     private static int ImpoundedUnits() => Resolve<ContrabandImpound>()?.Units ?? 0;
 
     /// <summary>Gold the consignment shelf has earned and not yet handed over (38P). Read by both the
@@ -511,6 +584,7 @@ public partial class ServiceComponent : InteractableComponent
         ServiceKind.Collect => "service.prompt_collect_empty",
         ServiceKind.Appraise => "service.prompt_appraise_empty",
         ServiceKind.Commission => "service.prompt_commission_none",
+        ServiceKind.Mercenary => "service.prompt_mercenary_hired",
         // 38Q2 authors no key here on purpose: a board is never "already held". If this line is ever
         // reached, AlreadyHeld has grown a branch it should not have.
         _ => "service.prompt_free",
@@ -526,6 +600,7 @@ public partial class ServiceComponent : InteractableComponent
         // The price named here is the labour only — the materials line depends on what is in the pack
         // and on which recipe is chosen, so it belongs in the window rather than on a walk-up prompt.
         ServiceKind.Commission => "service.prompt_commission",
+        ServiceKind.Mercenary => "service.prompt_mercenary",
         _ => "service.prompt_rest",
     };
 

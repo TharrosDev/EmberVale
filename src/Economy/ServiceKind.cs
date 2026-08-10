@@ -137,4 +137,21 @@ public enum ServiceKind
     /// goods — the two sit together on purpose so the distinction is visible from one screen.
     /// </summary>
     Contracts,
+
+    /// <summary>
+    /// A sword for hire (Phase 38R): gold buys a companion onto the roster.
+    ///
+    /// ⚠️ <b>It is the second kind charged AFTER its verb, and for exactly 38Q's reason.</b>
+    /// <c>CompanionRoster.Recruit</c> returns false on a full party — so the verb can fail, and
+    /// charging at the counter would be the one path that takes the money and delivers nobody. The
+    /// full-party refusal is deliberately *not* folded into the already-held state: "you already
+    /// travel with her" and "you have no room for her" are different sentences, and a player told the
+    /// first about a mercenary they have never met would go looking for someone who is not there.
+    ///
+    /// ⚠️ <b>It must be PRICED, and <c>--validate</c> enforces it</b> — 38Q's ruling, second instance.
+    /// A free companion is what <c>DialogueEffect.RecruitCompanion</c> already does, which is how Kael
+    /// joins: a story recruit, earned. What makes this a *service* rather than a second route to the
+    /// same thing is the coin, so a free one is the feature deleted and the plumbing kept.
+    /// </summary>
+    Mercenary,
 }

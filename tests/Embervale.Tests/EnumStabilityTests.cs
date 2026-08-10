@@ -204,6 +204,16 @@ public class EnumStabilityTests
         Assert.Equal(4, (int)Embervale.Economy.ServiceKind.Passage);
         Assert.Equal(5, (int)Embervale.Economy.ServiceKind.Search);
         Assert.Equal(6, (int)Embervale.Economy.ServiceKind.Redeem);
+
+        // ⚠️ 38P, 38Q and 38Q2 each appended a member and none of them extended this test, so the
+        // pinning had drifted five members behind the enum by the time 38R needed ordinal 11. Every
+        // one of these is written as a bare integer in a .tres — CrosswayMercenary.tres says
+        // `Kind = 11` and nothing but this test stops that meaning something else next phase.
+        Assert.Equal(7, (int)Embervale.Economy.ServiceKind.Collect);
+        Assert.Equal(8, (int)Embervale.Economy.ServiceKind.Appraise);
+        Assert.Equal(9, (int)Embervale.Economy.ServiceKind.Commission);
+        Assert.Equal(10, (int)Embervale.Economy.ServiceKind.Contracts);
+        Assert.Equal(11, (int)Embervale.Economy.ServiceKind.Mercenary);
     }
 
     [Fact]
@@ -241,6 +251,11 @@ public class EnumStabilityTests
         Assert.Equal(7, (int)DialogueEffect.AddCompanionLoyalty);
         Assert.Equal(8, (int)DialogueEffect.LearnSpell);
         Assert.Equal(9, (int)DialogueEffect.OpenShop);
+
+        // 38R. Written as `Effect = 10` by tools/gen_merchant_dialogue.py --service, in every service
+        // conversation it emits — the generator hard-codes the integer, so this is what keeps the
+        // generator honest as much as the data.
+        Assert.Equal(10, (int)DialogueEffect.OpenService);
     }
 
     [Fact]

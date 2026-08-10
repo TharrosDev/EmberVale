@@ -10,14 +10,17 @@ existed the same three lines were maintained in four places and rewritten every 
 
 ## Where we are
 
-- **Stage C, Phase 38 (economy). 38A–38Q2 done. Next: 38R — Services II.**
-- Open the plan: `docs/playbook/phase-38.md`, the `38R` entry. Read the two entries above it too —
+- **Stage C, Phase 38 (economy). 38A–38R done. Next: 38R2 — Courier + gambling.**
+- Open the plan: `docs/playbook/phase-38.md`, the `38R2` entry. Read the two entries above it too —
   the "two things worth carrying" lines are the cheapest bug prevention in the repo.
-- ⏸ **38G is parked, not next.** It prices goods by settlement demand and sits above 38R in the file.
+- ⏸ **38G is parked, not next.** It prices goods by settlement demand and sits above 38R2 in the file.
   Do not trust the first unchecked box. Nothing since 38N has unparked it: a fence changes *who will
-  buy*, a broker *how much one counter pays*, an appraiser only *what the player is told*, and
-  neither a commission nor a contract is a route at all — none of them moves an item's **value** by
-  settlement, so every margin in `--economy` is still negative.
+  buy*, a broker *how much one counter pays*, an appraiser only *what the player is told*, and neither
+  a commission, a contract nor a hired sword is a route at all — none of them moves an item's **value**
+  by settlement, so every margin in `--economy` is still negative.
+- ⚠️ **38R2 has no design yet, and courier has never had one.** Read its entry before authoring: the
+  repo is silent on what a courier *does*, and with a region resident whole it may have no receiving
+  end that is not the second vault 38R struck.
 - 🎨 **The asset migration onto the four Quaternius MegaKits is complete** (A–E). `docs/ASSET_POLICY.md`
   §0.2–§0.3 is the authority.
 
@@ -26,13 +29,12 @@ existed the same three lines were maintained in four places and rewritten every 
 | | |
 | --- | --- |
 | Build | clean, **0 warnings** |
-| Tests | **1210 passing**; 38Q2 added 7 (`ContractRulesTests`) |
-| `--validate` | exit 0; **all seven new 38Q2 rules negative-tested both ways** |
-| `--economy` | **byte-identical before and after 38Q2** — neither a commission nor a contract is a route; every margin still negative (38G's job) |
-| `--state` | 2 regions, 14 cells, 63 items, 23 shops, **12 services, 8 contracts**, 31 dialogues, 14 quests |
-| **`--play`** | booted, loaded slot1, streamed all 9 cells, 27 objects restored, **0 project errors** |
-| `ContractLedger` | save/load round trip **actually run** headlessly, including the §7 replace-never-merge rule |
-| Cells rendered | Bryn's order bench (38Q) and the Crossway caravan board (38Q2), noon and dusk, front and back |
+| Tests | **1226 passing**; 38R added no new facts and 6 assertions (`EnumStabilityTests` had drifted 5 members behind `ServiceKind`) |
+| `--validate` | exit 0; **all six new 38R rules negative-tested both ways, each firing alone** |
+| `--economy` | **byte-identical before and after 38R** — a hire is not a route; every margin still negative (38G's job) |
+| `--state` | 2 regions, 14 cells, 63 items, 23 shops, **13 services**, 8 contracts, **33 dialogues**, 14 quests, **2 companions** |
+| **`--play`** | booted, loaded slot1, streamed all 9 cells, 27 objects restored, Kael restored, **0 project errors** |
+| Cells rendered | the Crossway mercenary (38R), noon and dusk, five positions across two placements and two facings |
 | Bodies retargeted | 12 of 12 skinned (`fp_arm` has no skin and needs none) |
 | Props with no collider | 0 (audit clean) |
 
@@ -53,68 +55,65 @@ existed the same three lines were maintained in four places and rewritten every 
    spread *over* before assuming the 38A clamps cover it.
 4. ⚠️ **THE CONTRACT BOARD IS DERIVED FROM THE DAY AND NEVER STORED** (38Q2). `ContractRules.Cycle` +
    a fixed scramble is the whole rotation, so the same day always shows the same postings and a
-   quickload cannot reroll them — 38S's rule, honoured a sub-phase early and for free. `ContractLedger`
-   saves **only what the player filled**, never what was offered. ⚠️ And the reward rule is the
-   **mirror** of the commission one: a contract is refused for paying *less* than the best buyer (a
-   longer walk for less money), with **no ceiling**, because what bounds it is being fillable once per
-   rotation — the ledger, never the price. ⚠️ **Nothing about a contract may reach the quest log**:
-   `QuestLogPanel` carries no Contracts heading on purpose.
-5. **A broker fronts nothing, so no purse and no saturation apply to her** (38P). `VendorPanel.Consign`
+   quickload cannot reroll them. `ContractLedger` saves **only what the player filled**, never what was
+   offered. ⚠️ The reward rule is the **mirror** of the commission one: a contract is refused for
+   paying *less* than the best buyer, with **no ceiling**, because what bounds it is being fillable
+   once per rotation. ⚠️ **Nothing about a contract may reach the quest log.**
+5. ⚠️ **A SERVICE CAN NOW BE FIRED FROM A CONVERSATION, EXCEPT A BANK** (38R).
+   `DialogueEffect.OpenService` runs the whole 38D battery through `ServiceComponent.TryUse` — but a
+   `Bank` opens the **host entity's** inventory and a conversation has no host entity, so `--validate`
+   refuses that authoring outright. ⚠️ **An entity still gets one interactable**: the innkeeper's
+   `ServiceComponent` was *deleted* to put his conversation back, and the realm's only bed is now
+   reachable through `dialogue.innkeeper` and nowhere else.
+6. ⚠️ **TWO SERVICES ARE CHARGED AFTER THEIR VERB AND EVERY OTHER ONE BEFORE** (38Q, 38R): a
+   commission fails on a full pack, a hire fails on a full party. Only the commission needs a
+   rollback — a hire resolves inside the same synchronous call as its affordability check, so the
+   purse cannot move. ⚠️ Both must be **PRICED**, which inverts 38O's free-service rule (a fee fails
+   closed on the player who needs the counter) because both hand over *goods*. A free mercenary is
+   `DialogueEffect.RecruitCompanion`, which already exists and is how Kael joins.
+7. **A broker fronts nothing, so no purse and no saturation apply to her** (38P). `VendorPanel.Consign`
    calls neither `TakePurse` nor `Absorb` nor `FenceStanding`, and all three absences are the feature.
-   It still cannot invert the spread: the payout routes through `ShopPricing.SellPrice`. ⚠️
-   **`EconomyReport.BestBuyers` skips a consignment house and that is not optional** (38P2) — her
-   `SellFraction` is inert data the vendor window never reads.
-6. ⚠️ **`ServiceKind.Commission` is charged AFTER its verb and must be PRICED — both invert the rules
-   around it** (38Q). Every other service is charged first, because none of their verbs can fail; this
-   one fails on a full pack and rolls back, so charging first is the only way to lose money for
-   nothing. And 38O's *free* rule (a fee fails closed on the player who needs the counter) has been
-   right three times running and is wrong here, because this service hands over **goods** — a free
-   master is the materials shop with the spread deleted. `--validate` enforces both directions.
-7. **`contraband` is the one trade tag that fails CLOSED** (38O). Every other tag is a filter a shop
-   may opt out of; that one is a door a shop must opt *in* to. The whole exception is one branch in
-   `TradeTags.Accepts` — do not add a second check anywhere else.
-8. **A fenced sale moves two factions, once per sale, never per unit** (`ShopResource`'s four
+   ⚠️ **`EconomyReport.BestBuyers` skips a consignment house and that is not optional** (38P2).
+8. **`contraband` is the one trade tag that fails CLOSED** (38O). Every other tag is a filter a shop
+   may opt out of; that one is a door a shop must opt *in* to. One branch in `TradeTags.Accepts`.
+9. **A fenced sale moves two factions, once per sale, never per unit** (`ShopResource`'s four
    contraband fields, applied in `VendorPanel.Sell`). Deliberately the opposite granularity to 38H's
    per-unit payout decay.
-9. **The Crossway toll is charged in `GameBootstrap.PayToll`**, on portal crossings only. Fast travel
+10. **The Crossway toll is charged in `GameBootstrap.PayToll`**, on portal crossings only. Fast travel
    pays `TravelFee` and nothing else; one journey does not pay twice.
-10. ⚠️ **RENDER THE THING, AND RENDER IT WITH THE PEOPLE AND FURNITURE AROUND IT.** Six firings now.
-   38Q hit three variants in one session: a **prop** rejected on sight (`prp_weapon_stand` reads as a
-   sawhorse from every angle but straight-on), a placement **inside a building**, and one that put
-   **Bryn standing inside his own 2.85 m counter** — a fault in neither object alone, which is why
-   only the render found it. ⚠️ 38Q2 added the sixth and it is a new kind: `prp_banner_guild` was
-   chosen **because two other boards already use it**, and it was wrong twice over — a cloth pennant
-   has no surface to post on, *and* this cell already spends that model on the one banner that says
-   whose road it is. **Precedent is not judgement, and a duplicate model is only visible with both
-   objects in one frame.** Earlier: `npc_townsman` hi-vis, `npc_merchant_f` t-shirt-and-trainers,
-   4-of-6 rejections in 38N2, a lying-down collider on a standing pillar in 38O.
+11. ⚠️ **RENDER THE THING, AND RENDER IT WITH THE PEOPLE AND FURNITURE AROUND IT.** Seven firings now.
+   38R's is the plainest: an NPC placed on open ground stood exactly where the player stands to **read
+   last sub-phase's board**, and the fault was in neither object and in no line of either `.tscn`.
+   ⚠️ **A body's facing is not knowable from a file** — this one faces +Z, so the identity transform
+   pointed her backwards, and only two opposed eye-level shots settled it. Earlier: `prp_banner_guild`
+   chosen by precedent (38Q2), `prp_weapon_stand` reading as a sawhorse and Bryn standing inside his
+   own counter (38Q), a lying-down collider on a standing pillar (38O), 4-of-6 rejections in 38N2,
+   `npc_townsman` hi-vis, `npc_merchant_f` t-shirt-and-trainers.
    ⚠️ **When no pack model fits, primitives are a legitimate answer** — the Crossway board is three
-   `BoxMesh`es in the cell's own vocabulary, and a wrong-shaped model adopted to honour the
-   four-packs rule would have been worse than a right-shaped box.
-11. **`CharacterBody3D` has no step-up.** Verticality comes from props, never from terrain; a 30 cm
+   `BoxMesh`es in the cell's own vocabulary.
+12. ⚠️ **A DECISION CAN LIVE IN A `.tres` HEADER, AND NOTHING GREPS THOSE** (38R). 38R's warehouse
+   survived the brief, the plan and a review, and was killed mid-session by a comment in
+   `EmberCrownBank.tres` ruling out a second vault. **Before authoring content of a kind that already
+   exists, read the existing one's header.**
+13. **`CharacterBody3D` has no step-up.** Verticality comes from props, never from terrain; a 30 cm
    kerb is an invisible wall the navmesh happily paths NPCs over.
-12. **A retargeted rig is marked by its skeleton being named `GeneralSkeleton`** — all 12 skinned
+14. **A retargeted rig is marked by its skeleton being named `GeneralSkeleton`** — all 12 skinned
    bodies are. `CharacterAnimationComponent` gates the shared library on that name; an un-retargeted
    rig given it freezes mid-guard with nothing logged. ⚠️ A model whose root node carries a
    translation cannot be retargeted until normalised, and the library is an **upper-body pose from the
    hips up**. `ASSET_POLICY.md` §0.2 carries all four traps.
-13. **Check what is already vendored before pulling from the web.** As of 38O the library holds **no
+15. **Check what is already vendored before pulling from the web.** As of 38O the library holds **no
    unadopted CC0 medieval bodies at all**.
-14. ⚠️ **MEASURING A MODEL'S ACCESSORS IS NOT MEASURING THE MODEL** (38P2). Apply node scale *and*
-   `nodes/root_scale` from the `.import`, or the number is fiction — `prp_tome_stand`'s first collider
-   was over twice too big in every axis. ⚠️ And a **solid-looking prop with no collider** is a real
-   class of defect here (18 had it): a collider child inherits its node's scale, a tree takes a trunk
-   rather than a bounding box, and a collider outside the `NavigationRegion3D` blocks the player while
-   the navmesh stays ignorant of it. `ASSET_POLICY.md` §0.6.
-15. ⚠️ **The nature megakit's ground cover is 4–10× life size while its trees are 1:1**, and scale
-   lives in each prop's `.import`, never in a cell transform. **Grass goes in patches**, not an even
-   scatter. A cell's dressing is a judgement about the place: `tools/dress_cell.py` has five styles and
-   every cell records which one it used. ⚠️ The arena is `edges` on purpose — a combat floor has to
-   stay legible.
-16. ⚠️ **A generic wall kit composes generic buildings well and special-purpose ones badly.** The
+16. ⚠️ **MEASURING A MODEL'S ACCESSORS IS NOT MEASURING THE MODEL** (38P2). Apply node scale *and*
+   `nodes/root_scale` from the `.import`. ⚠️ And a **solid-looking prop with no collider** is a real
+   class of defect here (18 had it). `ASSET_POLICY.md` §0.6.
+17. ⚠️ **The nature megakit's ground cover is 4–10× life size while its trees are 1:1**, and scale
+   lives in each prop's `.import`, never in a cell transform. **Grass goes in patches.**
+   `tools/dress_cell.py` has five styles; the arena is `edges` on purpose.
+18. ⚠️ **A generic wall kit composes generic buildings well and special-purpose ones badly.** The
    blacksmith and the inn stay monolithic; the kit ships one wall height, 3.12 m.
    `tools/compose_building.py` writes a shell from `<name> <wide> <deep> <storeys>`.
-17. ⚠️ **The Ember Crown map was re-laid (38F).** The settled cells form one contiguous city and every
+19. ⚠️ **The Ember Crown map was re-laid (38F).** The settled cells form one contiguous city and every
    wilds cell is outside it; the arena moved to 150 m, past the gate, as the last cell in the realm.
    ⚠️ **A schedule carries a copy of its cell's `Center` as `Origin`** — moving a cell is never a
    one-line edit. `data/regions/EmberCrown.tres` carries the arithmetic.

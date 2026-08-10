@@ -586,14 +586,20 @@ shape = SubResource("Shape_npc")
 script = ExtResource("6_faction")
 FactionId = "faction.villagers"
 
-; 38D: the placeholder conversation ("come back when its trades reopen") is now a real service. An
-; entity gets ONE interactable — EntityNode.GetComponent returns the first child match — so the
-; Dialogue node had to go rather than sit beside this. That is a fair trade only because the dialogue
-; was the shared stub; the three shop vendors keep theirs until 38E decides how trade and talk share
-; an NPC.
-[node name="Service" type="Node" parent="Innkeeper"]
-script = ExtResource("34_service")
-ServiceId = "service.ember_crown.inn"
+; ⚠️ 38R PUTS THE CONVERSATION BACK, AND THE ServiceComponent IS GONE RATHER THAN BESIDE IT.
+; 38D replaced the placeholder conversation with a ServiceComponent because an entity gets ONE
+; interactable — EntityNode.GetComponent returns the first child match — and left a note that the
+; trade-and-talk question was 38E's. 38E answered it for shops (DialogueEffect.OpenShop) and said
+; the same answer was owed to services; DialogueEffect.OpenService is that answer, so the bed is
+; bought through the door choice in dialogue.innkeeper and the walk-up prompt is retired.
+;
+; ⚠️ The two must NOT sit side by side: with both here the Dialogue node above would win and the
+; service would be silent forever, which is the exact fault this comment has now described twice.
+; ⚠️ And the bed is now reachable ONLY through this graph — a broken dialogue id here is not a
+; missing conversation, it is the only inn in the realm closing.
+[node name="Dialogue" type="Node" parent="Innkeeper"]
+script = ExtResource("7_dialogue")
+DialogueId = "dialogue.innkeeper"
 
 [node name="Schedule" type="Node" parent="Innkeeper"]
 script = ExtResource("8_schedule")
