@@ -1359,6 +1359,10 @@ public static class ContentValidator
 
                 break;
 
+            case ServiceKind.Wager:
+                ValidateWager(service, id, issues);
+                break;
+
             case ServiceKind.Mercenary:
                 // 38Q's priced-service ruling, second instance and for its exact reason: this hands
                 // over something — a sword that fights for you — rather than advice. And a free
@@ -1391,6 +1395,67 @@ public static class ContentValidator
                 }
 
                 break;
+        }
+    }
+
+    /// <summary>
+    /// A gambling house (Phase 38R2). Five rules, and the last is the only thing in the battery
+    /// standing between the economy and a **tap** rather than a broken reference.
+    ///
+    /// ⚠️ <b>A wager is the first price in the game that can pay the player MORE than it took</b>, and
+    /// the <c>ShopPricing</c> clamps have nothing to say about it — it is not a spread over an item's
+    /// value at all. What keeps it a sink is the authored expectation, so that is what is checked, and
+    /// checked at the standing where it is worst.
+    /// </summary>
+    private static void ValidateWager(ServiceResource service, string id, List<string> issues)
+    {
+        if (service.PriceGold <= 0)
+        {
+            issues.Add(
+                $"service '{id}' stakes {service.PriceGold} gold — a free throw at a paying table is a " +
+                "gift with a delay, and the stake is the whole of what makes this a game");
+        }
+
+        if (service.WinPercent < 1 || service.WinPercent > 99)
+        {
+            issues.Add(
+                $"service '{id}' wins {service.WinPercent}% of the time — a house that never pays and a " +
+                "house that always does are both something other than a game");
+        }
+
+        if (service.PlaysPerDay < 1)
+        {
+            issues.Add(
+                $"service '{id}' allows {service.PlaysPerDay} throws a day — the table would be shut, " +
+                "and the daily allowance is the only bound this feature has");
+        }
+
+        if (service.PayoutGold <= service.PriceGold)
+        {
+            issues.Add(
+                $"service '{id}' pays {service.PayoutGold} on a win against a {service.PriceGold} stake — " +
+                "a win that returns less than it took is a loss with congratulations on it");
+        }
+
+        if (service.UnlockFlagId.Length > 0 || service.GrantedFlagId.Length > 0)
+        {
+            issues.Add(
+                $"service '{id}' is a gambling house with a flag authored on it — nothing reads it, and " +
+                "a one-off receipt would close the table after a single throw");
+        }
+
+        // ⚠️ THE LOAD-BEARING ONE, and it is 38Q's trap in a place with no clamps to fall back on.
+        // PriceOf runs the stake through ShopPricing.ServicePrice, so an Allied player stakes 15% less
+        // against a payout that does not move — a house authored as a sink at Neutral can be a printer
+        // at the top of the ramp, and only the discounted stake shows it.
+        int cheapestStake = ShopPricing.ServicePrice(service.PriceGold, ReputationTier.Allied);
+        if (WagerRules.Exploitable(cheapestStake, service.WinPercent, service.PayoutGold))
+        {
+            issues.Add(
+                $"service '{id}' pays {service.PayoutGold} at {service.WinPercent}% against a stake of " +
+                $"{cheapestStake} at best standing — that expects to make the player money, so the " +
+                "table is a tap bounded only by its throws a day; drop the payout below " +
+                $"{cheapestStake * 100 / Mathf.Max(1, service.WinPercent)}");
         }
     }
 

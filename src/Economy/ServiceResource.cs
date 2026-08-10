@@ -157,4 +157,33 @@ public partial class ServiceResource : Resource
     /// The already-held test asks <c>CompanionRoster.IsRecruited</c> for that reason.
     /// </summary>
     [Export] public string CompanionId { get; set; } = string.Empty;
+
+    [ExportGroup("Wager")]
+
+    /// <summary>
+    /// The chance in 100 that a throw at a <see cref="ServiceKind.Wager"/> house comes good (Phase
+    /// 38R2). <c>--validate</c> holds it inside 1–99: a house that never pays and a house that always
+    /// does are both something other than a game.
+    ///
+    /// ⚠️ <b>There is no separate stake field — <see cref="PriceGold"/> is the stake</b>, which is what
+    /// gives a wager the standing ramp, the hostile refusal and the affordability check for nothing.
+    /// It is also the reason the expected-value rule has to be evaluated at the cheapest standing.
+    /// </summary>
+    [Export] public int WinPercent { get; set; } = 30;
+
+    /// <summary>
+    /// Gold handed over on a win — the whole payout, not the profit, so a 50-stake table paying 150
+    /// leaves the player 100 up. <c>--validate</c> insists it exceeds the stake (a "win" paying less
+    /// than it took is a loss with congratulations on it) <b>and</b> that
+    /// <see cref="WagerRules.Exploitable"/> refuses it, which is the rule that matters.
+    /// </summary>
+    [Export] public int PayoutGold { get; set; } = 100;
+
+    /// <summary>
+    /// Throws allowed each day. ⚠️ <b>This is the only bound on the game.</b> The outcome is derived
+    /// from the day and the throw number, so a reload cannot fish for a better result — but nothing
+    /// about the arithmetic stops a hundred throws in one afternoon, and a negative expectation only
+    /// becomes a certainty over a bounded number of tries.
+    /// </summary>
+    [Export] public int PlaysPerDay { get; set; } = 3;
 }

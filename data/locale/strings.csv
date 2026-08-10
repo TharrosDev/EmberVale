@@ -1233,3 +1233,8 @@ dlg.wren.c_bye,"Not today."
 dlg.wren.c_talk_use,"Take the coin."
 dlg.wren.c_talk_back,"Something else."
 dlg.wren.c_talk_bye,"I'll think on it."
+service.hollowreach.bones.name,The Dockside Bones
+service.prompt_wager,"{0} — throw for it ({1} gold, {2} left today)"
+service.prompt_wager_spent,"{0} — you have had your throws today"
+notify.wager_won,"The bones fall your way at {0}. {1} gold."
+notify.wager_lost,"{0} takes your {1} gold."

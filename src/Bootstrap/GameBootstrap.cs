@@ -98,6 +98,7 @@ public partial class GameBootstrap : Node3D
     private Economy.ContrabandImpound? _impound;
     private Economy.ConsignmentLedger? _consignment;
     private Economy.ContractLedger? _contracts;
+    private Economy.WagerLedger? _wagers;
     private readonly System.Collections.Generic.List<Entity> _portals = new();
     // Post-transition settle (Phase 25.5B): time spent on the loading screen since a region load
     // began (-1 = not loading). Play resumes when the streamer reports the destination has finished
@@ -544,6 +545,13 @@ public partial class GameBootstrap : Node3D
         // posting being filled twice in one rotation.
         _contracts = new Economy.ContractLedger { Name = "Contracts" };
         AddChild(_contracts);
+
+        // Throws taken at the gambling tables (38R2). The fourth of these and the one holding the most
+        // weight for its size: the outcome of a throw is derived from the day, so nothing about the
+        // result needs storing — but the day's allowance is the ONLY bound on a house that pays out,
+        // and it is this node.
+        _wagers = new Economy.WagerLedger { Name = "Wagers" };
+        AddChild(_wagers);
 
         // Placement mode (37C): the ghost and the commit. Not ISaveable — a placed prop persists
         // through the PersistentSpawnDirector above, which already records template, position and yaw.

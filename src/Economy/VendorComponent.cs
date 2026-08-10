@@ -31,6 +31,17 @@ public readonly record struct ContractBoardOpenedEvent(
     IEntity Player, string BoardName, int Slots, int RotationDays) : IGameEvent;
 
 /// <summary>
+/// Raised when a throw at a gambling house settles (Phase 38R2). <paramref name="Gold"/> is the payout
+/// on a win and the stake on a loss, so the toast can name a number either way.
+///
+/// ⚠️ <b>This event is not decoration.</b> A wager opens no window, so without a line of feedback the
+/// only sign of a loss is the gold counter falling — which is indistinguishable from a bug, and is the
+/// state a player would report as one. It is the smallest thing that makes a press readable.
+/// </summary>
+public readonly record struct WagerSettledEvent(
+    IEntity Player, string HouseName, bool Won, int Gold) : IGameEvent;
+
+/// <summary>
 /// A merchant the player can trade with (Phase 38A). Authored on an entity with a collider (the
 /// interact raycast needs one) and pointed at a <see cref="ShopResource"/> by id — the same
 /// "declare it in the scene, resolve it at runtime" shape <c>PropertyStorageComponent</c> and

@@ -214,6 +214,7 @@ public class EnumStabilityTests
         Assert.Equal(9, (int)Embervale.Economy.ServiceKind.Commission);
         Assert.Equal(10, (int)Embervale.Economy.ServiceKind.Contracts);
         Assert.Equal(11, (int)Embervale.Economy.ServiceKind.Mercenary);
+        Assert.Equal(12, (int)Embervale.Economy.ServiceKind.Wager);
     }
 
     [Fact]

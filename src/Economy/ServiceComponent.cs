@@ -64,6 +64,11 @@ public partial class ServiceComponent : InteractableComponent
                 // her" would send a player looking for someone they have never met.
                 ServiceOutcome.Granted when service.Kind == ServiceKind.Mercenary && PartyIsFull() =>
                     Loc.TF("service.prompt_mercenary_full", name),
+                // 38R2: the only offer line with a third argument, so it gets its own arm rather than
+                // a fourth key-to-argument table. The throws left are the interesting number at a
+                // gambling table — the stake alone would make three presses look like one.
+                ServiceOutcome.Granted when service.Kind == ServiceKind.Wager =>
+                    Loc.TF("service.prompt_wager", name, price, ThrowsLeft(service)),
                 ServiceOutcome.AlreadyHeld => Loc.TF(HeldKey(service.Kind), name),
                 ServiceOutcome.CannotAfford => Loc.TF("service.prompt_price", name, price, GoldHeld()),
                 // ⚠️ A free service falls back to the bare "Use {0}" line, which is right for a free
@@ -159,6 +164,9 @@ public partial class ServiceComponent : InteractableComponent
                 break;
             case ServiceKind.Mercenary:
                 Hire(service, pack, price);
+                break;
+            case ServiceKind.Wager:
+                Throw(service, instigator, pack, price);
                 break;
             case ServiceKind.Commission:
                 // The master's order desk is the ordinary crafting window with a fee on it, so this
@@ -351,6 +359,31 @@ public partial class ServiceComponent : InteractableComponent
         }
     }
 
+    /// <summary>
+    /// Takes a throw at a gambling house (Phase 38R2). The stake has already been taken by the caller,
+    /// which is the ordinary ordering and is right here for the reason the two exceptions are not: a
+    /// throw cannot fail, and a payout is gold, which stacks into any pack that had room for the stake.
+    ///
+    /// ⚠️ <b>The throw is recorded before it is resolved, and the ledger hands back the index it is
+    /// resolved with.</b> Counting the throw here and asking <see cref="WagerRules.Won"/> with a
+    /// separately-derived number would be two places that must agree about how many throws have
+    /// happened — and the day the two disagreed, the same throw would pay twice.
+    /// </summary>
+    private static void Throw(ServiceResource service, IEntity instigator, InventoryComponent pack, int stake)
+    {
+        int day = CurrentDay();
+        int index = Resolve<WagerLedger>() is { } ledger ? ledger.TakePlay(service.Id, day) : 0;
+        bool won = WagerRules.Won(day, index, service.Id, service.WinPercent);
+
+        if (won && ItemDatabase.Get(GameIds.Currency.Gold) is { } gold)
+        {
+            pack.AddItem(gold, service.PayoutGold);
+        }
+
+        EventBus.Instance?.Publish(new WagerSettledEvent(
+            instigator, Loc.T(service.NameKey), won, won ? service.PayoutGold : stake));
+    }
+
     /// <summary>Records a one-off purchase. A service with no flag is pay-per-use and this is a no-op;
     /// the validator is what stops a one-off service being authored without one.</summary>
     private static void Unlock(ServiceResource service, IEntity instigator)
@@ -422,6 +455,13 @@ public partial class ServiceComponent : InteractableComponent
         if (service.Kind == ServiceKind.Commission)
         {
             return !KnowsAnythingFor(service.CommissionStation);
+        }
+
+        // 38R2: the day's allowance is spent. "Correct, and nothing to do" rather than a refusal —
+        // the house has not turned the player away, tomorrow is a different day.
+        if (service.Kind == ServiceKind.Wager)
+        {
+            return ThrowsLeft(service) <= 0;
         }
 
         // 38R: the roster is the record, so there is no flag to ask. A dismissal must put the hire
@@ -548,6 +588,11 @@ public partial class ServiceComponent : InteractableComponent
     private static bool PartyIsFull() =>
         Resolve<Companions.CompanionRoster>() is { } roster && roster.Count >= roster.MaxPartySize;
 
+    /// <summary>Throws left at this house today (38R2). Read by the already-held test and by the
+    /// prompt, so what the walk-up line says and what the press does cannot drift.</summary>
+    private static int ThrowsLeft(ServiceResource service) => WagerRules.PlaysLeft(
+        Resolve<WagerLedger>()?.PlaysToday(service.Id, CurrentDay()) ?? 0, service.PlaysPerDay);
+
     private static int ImpoundedUnits() => Resolve<ContrabandImpound>()?.Units ?? 0;
 
     /// <summary>Gold the consignment shelf has earned and not yet handed over (38P). Read by both the
@@ -585,6 +630,7 @@ public partial class ServiceComponent : InteractableComponent
         ServiceKind.Appraise => "service.prompt_appraise_empty",
         ServiceKind.Commission => "service.prompt_commission_none",
         ServiceKind.Mercenary => "service.prompt_mercenary_hired",
+        ServiceKind.Wager => "service.prompt_wager_spent",
         // 38Q2 authors no key here on purpose: a board is never "already held". If this line is ever
         // reached, AlreadyHeld has grown a branch it should not have.
         _ => "service.prompt_free",
