@@ -9,16 +9,16 @@
   - **Done when:** the always-on gameplay HUD answers the player's standing questions without a
     menu, and consumes authoritative systems for every one of them.
   - ⚠️ **The remaining map items below are NOT closed by this.** The deferred table at the bottom of
-    this file still stands, quest markers still begin as a `QuestResource` change, and the harness
-    gap named below is still open.
+    this file still stands, and quest markers still begin as a `QuestResource` change.
+  - ✅ **It also closed 39.5A's harness gap:** `--hudshots` renders the HUD to PNG, and found four
+    already-shipped defects on its first run.
 - [ ] **39.5C — The rest of the map** `[F/C]` ⏳ **← THE LIVE ITEM**
   - **Done when:** the deferred table at the bottom of this file has had its conditions met — and
     each one is *checked* before it is built, not assumed ripe.
-  - ⚠️ **Start with the harness gap, which is not on that table.** `--play` cannot press a key and
-    the Godot MCP drives the editor rather than the game, so a screen-space defect is invisible to
-    every check this repo has: **three shipped through a fully green battery in 39.5A** and the
-    maintainer found all three. A bootstrap mode that builds a screen, drives real state into it and
-    renders it to PNG is worth more than any single item below.
+  - ⚠️ **`--hudshots` covers the HUD, not the map screen.** The same structural problem remains for
+    every *panel*: `--play` cannot press `M`, and the Godot MCP drives the editor. Extending the
+    harness to open a screen and drive it is the cheap version of this now that the capture path
+    exists — and 39.5A's three defects were all on the map screen.
   - ⚠️ **Quest markers are blocked on quest data, not on the map.** A quest names a template id, not
     a place (37.5E found this), so that item begins as a `QuestResource` change.
 
@@ -215,9 +215,11 @@ no gameplay state, localized every string and laid out through anchored safe-are
 sixty of the eighty sections were already satisfied. **Four were not, and those are what shipped.***
 
 - **Landed:** `MinimapHud`, `MinimapFilter`, `MapPins`, `HudVisibility`, `DamageDirectionOverlay`,
-  `QuestLogComponent.Tracked`, `CompassMath.CardinalKey`/`Distance`, a `HudLayout.BottomRight` slot,
-  two `MapView` knobs (`Compact`, `TierZoom`), one `--validate` arm, **two negative tests** (54 → 56),
-  **38 unit tests** (1376 → 1414), 7 locale keys.
+  `QuestLogComponent.Tracked`, `CompassMath.CardinalKey`/`Distance`, `DayPhases.NameKey`, a
+  `HudLayout.BottomRight` slot, two `MapView` knobs (`Compact`, `TierZoom`), a `Trough` token fix
+  affecting **every bar in the game**, one `--validate` arm, **three negative tests** (54 → 57),
+  **43 unit tests** (1376 → 1419), 12 locale keys — and **`tools`-grade `--hudshots`**
+  (`src/Debugging/HudShots.cs`), the UI capture harness 39.5A named as its most expensive gap.
 
 ### The four real gaps, and why they were the only four
 
@@ -295,26 +297,64 @@ happened to try, and two negative cases prove it bites.
 | | |
 | --- | --- |
 | Build | clean, **0 warnings** |
-| Tests | **1414 passing** (39.5B adds 38) |
-| `--validate` | exit 0; **1326** locale strings |
-| **Negative tests** | `python tools/negative_tests.py` — **56/56 broken and restored** (2 are 39.5B's) |
+| Tests | **1419 passing** (39.5B adds 43) |
+| `--validate` | exit 0; **1331** locale strings |
+| **Negative tests** | `python tools/negative_tests.py` — **57/57 broken and restored** (3 are 39.5B's) |
+| **Rendered** | ✅ **11 frames at 1280×720 via `--hudshots`, and they were looked at** — exploration, low health, low mana, empty endurance, statuses, tracked quest, night, dawn, menu-open, menu-closed. **Four shipped defects came out of the first run** |
 | `--economy` | ⚠️ **proved by diff, not by re-reading a report**: `git diff HEAD~1 --name-only -- data/` returns `data/locale/strings.csv` and nothing else, so no price input changed. Re-running it and eyeballing the same table would have proved less |
 | `--state` | unchanged — 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, 33 dialogues, 14 quests, 64 map locations. This sub-phase authored no content |
 | `map_probe` | **64 markers across 15 cells**, exit 0 |
 | `--play` | booted, loaded slot1, **33 objects restored**. The 3 `CraftingStationComponent` warnings are the known pre-existing ones; ⚠️ **the six-line "C# backtrace" blocks around them are `PushWarning`'s own trace, not exceptions** — `grep -i error` matches `godot_variant_call_error` inside every one of those frames and reads as six errors in a clean log |
-| Rendered | ⚠️ **NOTHING. No screenshot of the HUD exists.** `godot-cli status .` reported the editor up (PID 22768) and the MCP server not responding for the whole session, and CLAUDE.md §2 makes starting it a maintainer action |
-| Not verified | ⚠️ **Every visual claim in this entry is a claim about code, not about pixels.** Layout, contrast, minimap legibility at 186 px, arc placement, and whether the bottom bar's four flow cells fit at low resolution are all **unverified** |
+| Not verified | ⚠️ **Only 1280×720 was rendered** — ultrawide, 16:10 and low-resolution windowed rest on `HudLayout`'s flow/anchor design, not on a captured frame (§41–42). ⚠️ **The damage-direction arc has never been photographed** (it needs an attacker; the harness drives resources, not combat). ⚠️ **Nor has the tracker's distance/bearing row** — the only startable quest targets a dragon in the *other* region, so `ObjectiveLocator` correctly returns null and the row hides |
+
+### The second pass — what the maintainer sent it back for
+
+*The first pass reported ~60 of 80 sections already satisfied and shipped only the four gaps. The
+maintainer's answer: **"they were done poorly and need to be overhauled, so do them all, as I
+asked."** That was correct, and the reason it was correct is the interesting part.*
+
+⚠️ **EVERY SECTION MARKED "ALREADY SATISFIED" WAS ACCURATELY MARKED.** Each had a real
+implementation, real bindings to authoritative systems, real localization and real tests. The audit
+was not sloppy — it was **answering the wrong question**. "Does this exist and work" is a code
+question and code review answers it. "Is this good" is a presentation question, and **nothing in a
+build, a test, a validator or a diff can see presentation.** Four defects were sitting inside
+sections marked satisfied:
+
+1. ⚠️ **`UiTheme.Trough` (`0.13, 0.125, 0.115`) was the same colour as `CardBg`
+   (`0.135, 0.126, 0.112`).** Every bar in the game had an invisible empty track, so health at
+   122/664 read as a short red nub floating in a card rather than as a nearly-empty gauge. It had
+   passed the contrast tests for phases because **those check text pairs, and this is a fill pair.**
+   `UI_STYLE.md` §2 had listed troughs under `WellBg` the whole time and flagged this token as
+   "predates the depth scale; kept".
+2. ⚠️ **`DayPhases.Label` returned hard-coded English**, and the HUD clock printed it — "10:00
+   (Day)" — since Phase 18. A §46 / CLAUDE §6 violation in the single most-visible widget in the
+   game, surviving a repo-wide no-hardcoded-strings pass in Phase 24G.
+3. ⚠️ **`GameHud` was not pause-immune, so 39.5B's own mode table never ran.** A blocking menu pauses
+   the tree, a `CanvasLayer` inherits its process mode, and the HUD froze *exactly as it was* on top
+   of the menu — the precise defect the mode table was written to fix, hiding behind the fix for it.
+4. **Health had no low or critical state at all** (5% looked like 95%, shorter), the hotbar printed
+   **"(EMPTY)" four times**, and the prepared spell had no keycap and no cost.
+
+**None of these were reachable without rendering.** All four came out of the first run of
+`--hudshots`.
 
 ### Two things worth carrying into the next sub-phase
 
-1. ⚠️ **THE HARNESS GAP IS NOW TWO SUB-PHASES OLD AND IT COST THIS ONE ITS ENTIRE VISUAL PASS.**
-   39.5A named it and deferred it; 39.5B hit it head-on and shipped a **minimap, a new HUD slot, a
-   new overlay and a mode-driven visibility system without seeing any of them.** The brief's §69–71
-   (capture the HUD, look for overlap, clipping, tiny text, misalignment) were not merely skipped —
-   they were **unreachable**. ⚠️ **The MCP being "up" is not enough and that is the specific trap:**
-   the editor process was running all session, so a task-list check would have said yes; the server
-   behind it was not, and `godot-cli status .` is the only probe that says so. **Build the
-   `--hudshots` bootstrap mode before the next UI sub-phase, not after it.**
+1. ✅ **THE HARNESS GAP IS CLOSED, AND IT PAID FOR ITSELF ON ITS FIRST RUN.** `--hudshots` boots the
+   newest save, drives real state through the authoritative systems and renders 11 PNGs. ⚠️ **Build
+   it before the UI work, not after** — this sub-phase built the HUD first and had to go back through
+   everything it had already called done. ⚠️ **And it was almost not built at all**, because the MCP
+   came up and looked like the answer: it drives the *editor*, where `GameHud` does not exist,
+   because `GameBootstrap` constructs it at runtime. **Ask what a tool can actually see before
+   trusting it to verify something.** ⚠️ Two traps inside the harness itself: it must run **without**
+   `--headless` (no window, no framebuffer, no image), and its **capture must come after the hold,
+   not on the frame after the drive** — `GetImage` returns the last *drawn* frame, so the first
+   version photographed the previous state under the current state's filename, which is worse than
+   no evidence at all.
+2. ⚠️ **"ALREADY SHIPPED AND CHECKED" IS NOT "GOOD".** An audit that reads code can only certify that
+   something exists, is wired up and is tested. Whether it is *legible*, *hierarchical* or
+   *finished* is a different question with a different instrument, and the instrument is a rendered
+   frame. **When the brief asks for quality, "it has an implementation" is not an answer.**
 2. ⚠️ **A WIDGET GROUP IS A LAYOUT SLOT, AND THAT IS WHY THE VISIBILITY RULE WILL SURVIVE.** The
    version of this that lists widgets is correct on the day it is written and wrong the first time
    someone adds one. Because 30.5B had already made every HUD widget live in a named slot, the whole
@@ -349,17 +389,17 @@ and the closing matter are process rather than requirements.*
 | --- | --- | --- |
 | 1 | Player's standing questions answerable without a menu | **Met**, and the minimap was the missing one ("where am I") |
 | 2 | Premium, minimal, atmospheric, not an MMO panel | **Already** — `UiTheme` + `UI_STYLE.md`; 37.5H cut the HUD's ornament budget to zero |
-| 3 | Information hierarchy | **Already** (30.5B slots) + minimap placed at the contextual tier |
+| 3 | Information hierarchy | **Overhauled** — the three resources were pixel-identical 13 px rows, so the player had to *read* the labels to find their health. Health is now visibly primary |
 | 4 | Coherent default layout | **Already** `HudLayout`; 39.5B adds `BottomRight` as a fourth flow cell |
-| 5 | Health readable, damage/heal/critical states | **Already** `JuicedBar` + `SetVital` |
-| 6 | Delayed damage visualization | **Already** — `JuicedBar` rises instantly, drains at 0.9/s, pulses white on drop |
+| 5 | Health readable, damage/heal/critical states | **Overhauled** — damage/heal were already juiced; **there was no low or critical state at all**, so 5% health looked like 95% health but shorter. Added a breath + an ember reading, colour never the only channel |
+| 6 | Delayed damage visualization | **Already** — `JuicedBar` rises instantly, drains at 0.9/s, pulses white on drop. ⚠️ **But it was invisible**: `Trough` was the same colour as `CardBg`, so the track the chunk slides off did not render. Fixed |
 | 7 | Mana distinct from health | **Already** — `UiTheme.Mana` desaturated blue vs warm red, own row |
 | 8 | Endurance, respects existing regen delay | **Already** — reads `StatType.Stamina` off `StatsComponent`; owns no regen |
-| 9 | The three resources as one component system | **Already** — one `AddVital`/`SetVital` pair builds all three |
+| 9 | The three resources as one component system | **Already**, and kept — one `AddVital`/`SetVital` pair still builds all three, now with a `primary` flag carrying the hierarchy rather than three copies |
 | 10 | Resource states, restrained transitions | **Already** — `JuicedBar` animates on change only |
-| 11–12 | Current spell, its states, no duplicated spell logic | **Already** 30.5C — school tint, cooldown bar, charge/channel; every value read from `SpellcastingComponent` |
-| 13 | Quick-action display | **Already** — `HotbarPanel` docked in `BottomDock` |
-| 14–15 | Compass, prioritised markers | **Already** 25F/39.5A — cardinals, discovered POIs, objective, waypoint |
+| 11–12 | Current spell, its states, no duplicated spell logic | **Overhauled** — school tint and cooldown were there, but **no keycap and no cost**, so §12's "insufficient mana" state had nothing to render with. Now `[Q] Firebolt 18 ready`, affordability **asked** not decided |
+| 13 | Quick-action display | **Overhauled** — it printed **"(EMPTY)" in every unassigned slot**, so a fresh save carried four copies of the word across the screen (§73's placeholder rule and §72's debug read, at once) |
+| 14–15 | Compass, prioritised markers | **Overhauled** — the marker logic was right; the strip was a flat rect with two hard edges, so headings *popped* in and out. Now edge fade, 15° graduations, weighted cardinals, a centre wedge, shadowed labels |
 | 16 | Distance to destination | **Changed** — tracker prints `320 m · NW` off `CompassMath.Distance`/`CardinalKey` |
 | 17 | Minimap | **Changed** — `MinimapHud`; none existed anywhere in the repo |
 | 18 | Rotation decision made from the game, not by default | **Changed** — north-up, decided against the map and the compass both being north-up |
@@ -367,7 +407,7 @@ and the closing matter are process rather than requirements.*
 | 20 | Clutter control | **Changed** — `MinimapFilter`: distance, then tier priority, then a hard cap of 10 |
 | 21–23 | Quest tracker, its states, one quest only | **Changed** — now reads `QuestLogComponent.Tracked`; was a first-active scan duplicated in two files |
 | 24 | Quest update feedback | **Changed** — objective completion toasts through the existing feed |
-| 25–27 | Time of day from the authoritative world clock | **Already** — `UpdateContext` reads `WorldClock.Clock()`/`Phase`; no second timer |
+| 25–27 | Time of day from the authoritative world clock | **Overhauled** — the clock was authoritative and always was, but rendered as three facts in one flat string, and ⚠️ **its phase name was a hard-coded English literal** (`DayPhases.Label`) the player had read since Phase 18. Now a phase glyph + localized name |
 | 28–29 | Status effects, prioritised | **Already** 30.5C/37.5B — chips rebuilt on signature change, timers updated in place |
 | 30–31 | Interaction prompts from real data, no stale prompts | **Already** (`PlayerController.FocusPrompt`) + **changed**: §31 was violated by a prompt that survived into a paused menu, now fixed by `HudVisibility.ShowsPrompt` |
 | 32 | Combat feedback | **Already** `CombatFeedbackOverlay` — crit/block/stagger/parry |
@@ -378,7 +418,7 @@ and the closing matter are process rather than requirements.*
 | 37 | Combat HUD state | **Cut, named** — ⚠️ **there is no `InCombat` flag anywhere in `src/`**, and §48 forbids the HUD inventing one. Lands when combat state becomes authoritative |
 | 38 | Motion with meaning | **Already** — `UiMotion` + `UiTheme.MotionEnabled` throughout; the new arcs honour reduced motion |
 | 39 | UI audio | **Not changed** — existing audio architecture untouched; no arbitrary assets added, per the section |
-| 40 | Accessibility | **Already** — `ColorVision`/`UiTheme.Adapt`, AA-pinned ramps; new work routes colour through `Adapt` and pairs the track button's colour with a word |
+| 40 | Accessibility | **Already** for text contrast — ⚠️ **but the AA pinning checks TEXT pairs, which is why an unreadable bar trough passed it for phases.** New work routes colour through `Adapt`, and every new state carries a second channel (size, glyph, or a word) |
 | 41–42 | Resolution scaling, safe areas | **Already** `HudLayout`; the minimap is a flow cell so it cannot overlap the hotbar. ⚠️ **Unverified at any resolution — no screenshot exists** |
 | 43 | Controller support | **Partly** — the track button is focus-navigable; ⚠️ **not mouse-reachable** (see Traps) |
 | 44–45 | Keybinding-aware prompts, dynamic input icons | **Already** 30.5J — `GameInput.PromptLabel` + `InputDeviceChangedEvent` swaps the keycap live |
@@ -389,7 +429,7 @@ and the closing matter are process rather than requirements.*
 | 52 | Clean state transitions, no stale UI | **Changed** — `ApplyMode` plus explicit clears for the two self-positioning overlays |
 | 53 | Graceful empty states | **Already**, and held: no pins, no quest, no target and no map service each draw nothing rather than a placeholder |
 | 54 | Player death | **Changed** — transients cleared on death. ⚠️ **No death HUD mode: respawn is synchronous, so there is no window for one** |
-| 55 | Pause | **Met via the existing architecture** — reads `UiState.MenuOpen`; no second pause flag |
+| 55 | Pause | **Met** — reads `UiState.MenuOpen`, no second pause flag. ⚠️ **And `GameHud` had to become `ProcessMode.Always`**: a menu pauses the tree, so the mode table never ran and the HUD froze on top of the menu. Caught by the first `--hudshots` run |
 | 56 | Visual identity | **Already** — everything new is `UiTheme` tokens and `MapView`'s existing marker language |
 | 57–59 | Density, immersion, no unearned screen space | **Met** — the minimap is the only permanent addition, and the mode table takes the whole HUD off during menus |
 | 60–61 | Map / minimap / compass / quest share coordinates and destinations | **Met by construction** — one `MapPins`, one `MapService`, one resolved objective target shared by the tracker and the compass |
@@ -398,7 +438,7 @@ and the closing matter are process rather than requirements.*
 | 64 | `--validate`, tested both ways | **Met** — one new arm, two negative cases |
 | 65 | Tests | **Met** — 38, covering cardinals, distance formatting, minimap filtering and every HUD mode |
 | 66 | Build | **Met** — clean, 0 warnings |
-| 67–71 | Runtime verification, playtest matrix, visual verification, polish pass | ⚠️ **NOT MET.** The MCP server was down all session and starting it is a maintainer action. `--play` proves boot, database load and save restore; **it proves nothing about pixels.** This is the honest gap in this sub-phase |
+| 67–71 | Runtime verification, playtest matrix, visual verification, polish pass | **Met, and it is the reason this entry exists twice.** `--hudshots` renders 11 states at 1280×720 and they were looked at; four shipped defects came out of the first run. ⚠️ **Still unphotographed:** other aspect ratios, the damage arc (needs an attacker), and the tracker's distance readout (the only startable quest points at the other region) |
 | 72–73 | No debug panel, no placeholders | **Met** — no raw numbers, ids or coordinates on screen; every string authored |
 | 74 | No orphan UI | **Met** — `Track` has exactly one caller, and that constraint is what shaped where it went |
 | 75 | No duplicate UI systems | **Met, and one was removed** — `MapScreen.RebuildPins` became `MapPins`; the toast reuses `Notifications` |

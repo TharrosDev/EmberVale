@@ -18,21 +18,32 @@ existed the same three lines were maintained in four places and rewritten every 
   filter/select, distance and bearing, a waypoint, and land drawn from measured ground footprint.
   **39.5B was the player HUD** (maintainer direction, 2026-08-11 — briefed as a standalone overhaul
   and folded in here, because the minimap, the tracked quest and the compass are all `MapService`).
-- ⚠️ **39.5B's headline finding is that the HUD did not need overhauling.** Roughly sixty of the
-  brief's eighty sections were **already satisfied** by Phase 18, 30.5B/C/D/I and 37.5B. Four were
-  not, and only those shipped: **there was no minimap anywhere in the repo**; there was **no
+- ⚠️ **39.5B's structural win is `--hudshots`, and everything else followed from it.** The audit
+  first concluded the HUD was already fine — roughly sixty of the brief's eighty sections were
+  shipped and checked by Phase 18, 30.5B/C/D/I and 37.5B. **The maintainer rejected that: shipped is
+  not the same as good.** Building the capture harness settled it, because every finding below came
+  from *looking at a frame*, and not one was reachable by any other check this repo has:
+  1. ⚠️ **`UiTheme.Trough` was the same colour as `CardBg`** (`0.13,0.125,0.115` vs
+     `0.135,0.126,0.112`), so **every bar in the game had an invisible empty track** — health at
+     122/664 read as a short red nub, not a nearly-empty gauge. Now delegates to `WellBg`, which is
+     what `UI_STYLE.md` §2 always said troughs were.
+  2. ⚠️ **`DayPhases.Label` returned hard-coded English and the HUD clock printed it at the player**
+     from Phase 18 — a §46 violation in the most-visible widget in the game.
+  3. **`GameHud` was not pause-immune**, so the new mode table never ran: a menu paused the tree and
+     froze the whole HUD *on top of the menu*, which is the exact defect the table was added to fix.
+  4. The three resources were **pixel-identical rows** (no hierarchy), health had **no low/critical
+     treatment at all**, the hotbar printed **"(EMPTY)" four times**, and the prepared spell had no
+     keycap and no cost.
+- **Four genuine gaps also shipped:** there was **no minimap anywhere in the repo**; **no
   tracked-quest concept** (`GameHud` and `CompassStrip` each scanned for the first active quest and
-  agreed only by accident of dictionary order); `GameHud` had **no visibility logic at all**, so the
-  tracker, the compass and an interaction prompt for a paused tree sat on top of every menu; and
-  objective advances were silent. The section-by-section audit is in `docs/playbook/phase-39_5.md`.
+  agreed only by accident of dictionary order); no HUD visibility logic; and silent objective
+  advances. The section-by-section audit of all 80 is in `docs/playbook/phase-39_5.md`.
+- ✅ **THE HARNESS GAP IS CLOSED.** `godot --path . -- --hudshots` boots the newest save, drives real
+  state through the authoritative systems and renders **11 PNGs** an agent can open. It was the #1
+  carry-forward from 39.5A and it paid for itself on its first run.
 - **NEXT: Phase 39.5C — the rest of the map.** The deferred table in `docs/playbook/phase-39_5.md`
   is the scope, and ⚠️ **every item there carries a runnable condition rather than a verdict** —
-  check each before building it. ⚠️ **The first item is not on that table and outranks it: THIS REPO
-  STILL CANNOT SEE ITS OWN UI, and it has now cost two sub-phases.** 39.5A shipped three screen-space
-  defects through a fully green battery; 39.5B shipped a minimap, a new HUD slot, a new overlay and a
-  mode-driven visibility system **without a single screenshot**. Build the `--hudshots`-style
-  bootstrap mode (build a screen, drive real state into it, render to PNG) **before** the next UI
-  sub-phase, not after.
+  check each before building it.
 - **Then: Phase 40 (Survival & Needs) — a decision phase, starting at 40A.** ⚠️ **40A owns the
   repair/durability call** that 38D deferred to it, and `docs/DESIGN.md` §6's sink table has an empty
   "Repair — pending 40A" row waiting on it. ⚠️ **40B's rule is that a cut system leaves no stub** —
@@ -65,15 +76,15 @@ existed the same three lines were maintained in four places and rewritten every 
 | | |
 | --- | --- |
 | Build | clean, **0 warnings** |
-| Tests | **1414 passing** (39.5B adds 38) |
-| `--validate` | exit 0; **1326** locale strings |
-| **Negative tests** | `python tools/negative_tests.py` — **56/56 broken and restored** (2 are 39.5B's). ⚠️ Runs **over two minutes**; killing it mid-run defeats its own `finally` and leaves the tree mutated (`git checkout -- data/ scenes/` recovers). ⚠️ It edits `scenes/` too, and refuses to start on a dirty tree |
+| Tests | **1419 passing** (39.5B adds 43) |
+| `--validate` | exit 0; **1331** locale strings |
+| **Negative tests** | `python tools/negative_tests.py` — **57/57 broken and restored** (3 are 39.5B's). ⚠️ Runs **over two minutes**; killing it mid-run defeats its own `finally` and leaves the tree mutated (`git checkout -- data/ scenes/` recovers). ⚠️ It edits `scenes/` too, and refuses to start on a dirty tree |
 | `--economy` | ⚠️ **proved by diff, not by re-reading the report**: `git diff HEAD~1 --name-only -- data/` returned `data/locale/strings.csv` alone, so no price input changed. Cheaper *and* stronger than eyeballing the same table twice — and it sidesteps the `git stash` trap (**a stash on a committed tree stashes NOTHING**, so a stash-based before/after silently compares a build with itself) |
 | `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, 33 dialogues, 14 quests, **64 map locations** — unchanged; 39.5B authored no content |
 | **`map_probe`** | `godot --headless --path . --script res://tools/map_probe.gd` — **64 markers across 15 cells**. Exits 0/1, so it is a gate |
 | **`--play`** | booted, loaded slot1, **33 objects restored**. ⚠️ The 3 `CraftingStationComponent` warnings are **pre-existing**. ⚠️ **The six-line "C# backtrace" blocks around them are `PushWarning`'s own trace, not exceptions** — `grep -i error` matches `godot_variant_call_error` inside every frame and reads as six errors in a clean log |
-| Rendered | ⚠️ **NOTHING. No screenshot of the HUD or the map exists.** `godot-cli status .` reported the editor up (PID 22768) and the MCP server not responding for the whole 39.5B session |
-| Not verified | ⚠️ **Every visual claim about the HUD is a claim about code, not about pixels**: layout, contrast, minimap legibility at 186 px, damage-arc placement, and whether the bottom bar's four flow cells fit at low resolution are **all unverified** |
+| **Rendered** | ✅ **11 HUD frames at 1280×720, and they were looked at** — `--hudshots`. Exploration, low health, low mana, empty endurance, statuses, a tracked quest, night, dawn, menu-open and menu-closed. **Four defects came out of them**, listed above |
+| Not verified | ⚠️ **Only 1280×720 has been rendered** — ultrawide, 16:10 and low-resolution windowed are still unchecked, so §41/§42 rest on `HudLayout`'s flow/anchor design rather than on a captured frame. ⚠️ **The damage-direction arc has never been photographed**: it needs an attacker, and the harness drives resources rather than combat. ⚠️ **The quest tracker's distance/bearing readout is also unphotographed** — the only startable quest targets a dragon in the *other* region, so `ObjectiveLocator` correctly returns null and the row hides |
 
 ## Live invariants — the things that will bite you
 
@@ -98,11 +109,17 @@ existed the same three lines were maintained in four places and rewritten every 
    adds a state, ask what every existing thing does IN that state.** ⚠️ **39.5B is the corollary: the
    HUD had never been asked what it does in the "a menu is open" state, and the answer was "everything
    it does in gameplay, on top of the menu, including offering a key that a paused tree ignores."**
-8. ⚠️ **THE UI HAS NO SEAT TO RENDER FROM** (39.5A) — `--play` cannot press a key and the Godot MCP
-   drives the *editor*, not the game, so **a screen-space defect is invisible to every check this repo
-   has.** ⚠️ **AND A RUNNING EDITOR IS NOT A WORKING MCP** (39.5B): the editor process was up all
-   session, so a task-list check says yes; the server behind it was not. **`godot-cli status .` is the
-   only probe that tells the truth**, and it costs one command.
+8. ✅ **THE UI NOW HAS A SEAT TO RENDER FROM — USE IT** (39.5B). `--hudshots` is the answer to 39.5A's
+   most expensive gap, and **it found four shipped defects on its first run**, including a bar trough
+   the same colour as its background and a hard-coded English string on screen since Phase 18. ⚠️ **A
+   UI change that has not been captured is not verified**, and "reviewed against the API" is the
+   phrase that preceded every one of those defects. Extend the shot list rather than trusting a diff.
+   ⚠️ **AND A RUNNING EDITOR IS NOT A WORKING MCP** (39.5B): the editor process was up all session, so
+   a task-list check says yes; the server behind it was not. The tell is
+   `.claude/skills/*/SKILL.md` showing `ai-game.dev` URLs — that means the editor was opened from the
+   project manager and is in **Cloud** mode, so the local server has nothing behind it and every call
+   503s or times out. `godot-cli close .` then `godot-cli open . --mode Custom --url
+   http://localhost:23630 --editor-path <the console-LESS .exe>` is the fix.
 9. ⚠️ **A GODOT PROPERTY WHOSE DEFAULT DIFFERS FROM ITS BASE CLASS'S IS THE DEFECT CLASS THAT PASSES
    EVERY REVIEW** — a `Label` defaults `mouse_filter` to Ignore (38U); a public `Hidden` on a
    `Control` shadows `CanvasItem.Hidden` (39.5A). ⚠️ **39.5B's member of the family: a `Button` in a
@@ -150,6 +167,19 @@ existed the same three lines were maintained in four places and rewritten every 
     **synchronously**, so there is no window in which one could be seen. It asked for a combat HUD
     state; **there is no `InCombat` flag anywhere in `src/`** and the HUD may not invent one. Both
     were cut and named. **Check whether the state exists before building the presentation of it.**
+29. ⚠️ **"ALREADY SHIPPED AND CHECKED" IS NOT "GOOD", AND AN AUDIT THAT ONLY READS CODE CANNOT TELL
+    THE DIFFERENCE** (39.5B, maintainer direction). The first pass through the HUD brief marked ~60 of
+    80 sections satisfied, correctly: every one had a real implementation, real data bindings and real
+    tests. **Four defects were sitting in them anyway** — an invisible bar trough, a hard-coded English
+    string on screen since Phase 18, a HUD that froze on top of menus, and three resources with no
+    hierarchy between them. Every one is a *presentation* fact, and presentation facts are invisible to
+    builds, tests, validators and code review alike. **When the question is quality rather than
+    correctness, render it and look; "it has an implementation" answers a different question.**
+30. ⚠️ **A COLOUR TOKEN CAN BE WRONG AND NOTHING WILL EVER SAY SO.** `Trough` sat within a rounding
+    error of `CardBg` for multiple phases, making every bar in the game unreadable, and it passed the
+    contrast tests because those check *text* pairs. ⚠️ **When two tokens are used together, the pair
+    is the thing to check, not each token against `Text`** — and the depth scale (`WellBg`/`PanelBg`/
+    `CardBg`) already encodes which pairs are meant to be distinguishable.
 
 ## Commands worth knowing
 
@@ -162,6 +192,7 @@ python tools/gen_map_locations.py [--check]     # author map locations; --check 
 godot --headless --path . -- --economy          # the realm's price landscape
 godot --headless --path . -- --state            # the content census
 godot --path . -- --play                        # boot into the newest save
+godot --path . -- --hudshots                    # render 11 HUD states to PNG. ⚠️ NOT --headless
 godot --headless --path . --script res://tools/map_probe.gd     # map placement gate, exit 0/1
 godot --headless --path . --script res://tools/stepup_probe.gd  # step-up gate, exit 0/1
 godot-cli status .                              # the Godot MCP probe — it is DOWN every session start
