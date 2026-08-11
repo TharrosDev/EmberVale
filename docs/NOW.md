@@ -12,14 +12,21 @@ existed the same three lines were maintained in four places and rewritten every 
 
 - **Stage C. Phase 38 (economy) is ✅ CLOSED — 38A–38V.** 37E/37F/37G landed out of band after it
   (the player's cottage, four runtime errors + the arena rebuild, and the Iron King's body).
-- **Phase 39 (Mounts & Traversal): 39A and 39B are ✅ DONE.** `Y` whistles a horse up; riding is
+- **Phase 39 (Mounts & Traversal) is ✅ CLOSED — 39A, 39B, 39C.** `Y` whistles a horse up; riding is
   1.7x with the gallop on the horse's own pool; melee works from the saddle and a gallop is a charge;
   a mount makes a **local** fast-travel jump free. ⚠️ **The mount is a state of the rider, not a
   second body** — there is no horse entity to hit, aim at, or knock the player off.
-- **Next: 39C — traversal verbs (climb/swim/ledge), and it is a decision phase.** ⚠️ **It inherits
-  invariant 16 and is the phase that decides whether it stays true.** Only the verbs region design
-  (Phase 44) actually requires should land; a verb with no world that needs it is the shape CLAUDE.md
-  §1 forbids.
+- **39C answered invariant 16: a body now steps up 0.5 m**, matched to the navmesh's own
+  `agent_max_climb`, and the Embermarket plaza dais the world had deleted to live without it is back
+  as the realm's only raised ground. ⚠️ **CLIMB AND SWIM ARE CUT, NOT DEFERRED, AND EACH HAS A
+  CONDITION:** swim lands when a cell authors a water **volume with something on the far side**
+  (today both water planes are decals with 32 m of empty lake beyond); climb lands when a cell
+  authors a surface reachable no other way. Neither left a stub, a flag or a dead export.
+  **Do not build either speculatively.**
+- **Next: Phase 40 (Survival & Needs) — a decision phase, starting at 40A.** ⚠️ **40A owns the
+  repair/durability call** that 38D deferred to it, and `docs/DESIGN.md` §6's sink table has an empty
+  "Repair — pending 40A" row waiting on it. ⚠️ **40B's rule is that a cut system leaves no stub** —
+  39C is the worked example: two verbs cut, zero code left behind.
 - ⚠️ **DYING WHILE MOUNTED IS A KNOWN GAP, NAMED RATHER THAN FIXED (39B).** 39B stopped the body
   playing full-body one-shots while riding — a standing clip on a seated offset makes the rider stand
   up *inside* the horse — but **death is not a one-shot and still plays**, and nothing dismounts on
@@ -45,14 +52,15 @@ existed the same three lines were maintained in four places and rewritten every 
 | | |
 | --- | --- |
 | Build | clean, **0 warnings** |
-| Tests | **1317 passing** (39A added 12, 39B added 9) |
+| Tests | **1329 passing** (39A 12, 39B 9, 39C 12) |
 | `--validate` | exit 0 |
-| **Negative tests** | `python tools/negative_tests.py` — **44/44 rules broken and restored**, each caught by its own refusal. ⚠️ **It now runs longer than two minutes**; killing it mid-run defeats its own `finally` restore and leaves `data/` mutated (`git checkout -- data/` recovers). **Run this after moving authored numbers, not only after changing code** |
+| **Negative tests** | `python tools/negative_tests.py` — **45/45 rules broken and restored**, each caught by its own refusal. ⚠️ **It now runs longer than two minutes**; killing it mid-run defeats its own `finally` restore and leaves the tree mutated (`git checkout -- data/ scenes/` recovers). ⚠️ **It edits `scenes/` too as of 39C**, and its clean-tree guard covers both. **Run this after moving authored numbers, not only after changing code** |
 | `--economy` | **price landscape identical**; the only moved line is the locale string count (1187 → 1188). ⚠️ Diff the report body, not the loader chatter — a travel fee is not a shop multiplier and must never reach `ShopPricing` |
 | `--state` | 2 regions, 15 cells, 63 items, 23 shops, **15 services**, 8 contracts, 33 dialogues, 14 quests — unchanged |
 | **`--play`** | booted, loaded slot1, **32 objects restored, zero project errors**. ⚠️ One `no usable entry for 'mount:player'` warning: expected and self-healing — every new `ISaveable` says it once against a save older than itself. ⚠️ `WASAPI: GetBufferSize` is the Windows audio driver, and exit-time `PagedAllocator`/RID-leak lines are the forced kill, not the project |
-| Rendered | the mount **8 ways** via `tools/mount_shots.gd` — front, back, side, the walk-up with stalls and townspeople around it, overhead, **and both camera seats** (first-person eye, third-person rest offset) **and the swing**. ⚠️ Four seat iterations were needed and the first horse was **twice the height of a two-storey house** |
-| Not verified | ⚠️ **no key has ever been pressed.** `Y`, the toggle, the toasts, the dev command, the gallop drain in motion, the charge bonus, the `HitReaction` fix and the travel discount on the map screen are all proved by test and by reading. The renders reproduce the component's transforms and clips in a harness; they are not `MountComponent` assembling them |
+| Rendered | the plaza dais day and dusk from 3 positions (approach, on top, the kerb from a metre); the mount **8 ways** via `tools/mount_shots.gd` — front, back, side, the walk-up with stalls and townspeople around it, overhead, **and both camera seats** (first-person eye, third-person rest offset) **and the swing**. ⚠️ Four seat iterations were needed and the first horse was **twice the height of a two-storey house** |
+| **Step-up** | `godot --headless --path . --script res://tools/stepup_probe.gd` — a real body, real geometry, **both directions**: climbs the 0.3 m dais (rose 0.301), refuses the 11 m bell tower (rose 0.000). Exits 0/1, so it is a gate |
+| Not verified | ⚠️ **no key has ever been pressed.** `Y`, the toggle, the toasts, the dev command, the gallop drain in motion, the charge bonus, the `HitReaction` fix the travel discount on the map screen, and how the step **feels** under a hand are all proved by test and by reading. ⚠️ **No NPC was watched climbing the dais**, and the step now runs for every walking actor while only the player's case was exercised. The renders reproduce the component's transforms and clips in a harness; they are not `MountComponent` assembling them |
 
 ## Live invariants — the things that will bite you
 
@@ -118,10 +126,16 @@ existed the same three lines were maintained in four places and rewritten every 
     killed mid-session by a comment in `EmberCrownBank.tres`; 39A's whole brief was in
     `EmberCrownStable.tres`'s. **Before authoring content of a kind that already exists, read the
     existing one's header.**
-16. **`CharacterBody3D` has no step-up.** Verticality comes from props, never from terrain; a 30 cm
-    kerb is an invisible wall the navmesh happily paths NPCs over. ⚠️ **A mount does not change
-    this** — 39A rides on the player's own capsule, so a horse climbs what a man climbs. **39C is the
-    phase that decides whether that stays true.**
+16. ⚠️ **`CharacterBody3D` STILL has no step-up; `LocomotionComponent` does** (39C). Every walking
+    actor climbs up to **0.5 m**, matched to the navmesh's `agent_max_climb` and pinned to it by a
+    `--validate` rule. ⚠️ **RAISED GROUND IS NOW POSSIBLE, NOT FREE:** the plaza dais is the realm's
+    only piece of it and it is the only ground skin with a collider — everything else is a 5–6 cm
+    decal, which is *beneath* the step's own minimum and is caught on rather than climbed.
+    ⚠️ **A step must be legible from a metre away or it is a trip hazard** — the dais needed a
+    hue change, not a value change, to read at 0.3 m. ⚠️ Verticality still comes mostly from props.
+    ⚠️ **The step is simulated by the engine, never computed**: a capsule's rounded bottom catches a
+    step's *corner*, so arithmetic under-reports every real step (0.3 m measured as 0.156 m) and
+    unit tests will happily agree with it. `tools/stepup_probe.gd` is the check, both directions.
 17. **A retargeted rig is marked by its skeleton being named `GeneralSkeleton`** — all 12 skinned
     bodies are; an un-retargeted rig given the shared library freezes mid-guard with nothing logged.
     ⚠️ **An unresolved clip slot is silent**, so a slot whose *choice* matters (39A's `ride`, which
@@ -162,10 +176,11 @@ existed the same three lines were maintained in four places and rewritten every 
 dotnet build Embervale.sln                      # ALWAYS before running — nothing else recompiles C#
 dotnet test tests/Embervale.Tests
 godot --headless --path . -- --validate         # content gate, exit 0/1
-python tools/negative_tests.py                  # proves the gate still bites (44 cases, >2 min)
+python tools/negative_tests.py                  # proves the gate still bites (45 cases, >2 min)
 godot --headless --path . -- --economy          # the realm's price landscape
 godot --headless --path . -- --state            # the content census
 godot --path . -- --play                        # boot into the newest save
-godot --path . --script res://tools/mount_shots.gd   # measure + render the mount (needs a GPU)
+godot --path . --script res://tools/mount_shots.gd        # measure + render the mount (needs a GPU)
+godot --headless --path . --script res://tools/stepup_probe.gd  # step-up gate, exit 0/1
 godot-cli status .                              # the Godot MCP probe — it is DOWN every session start
 ```

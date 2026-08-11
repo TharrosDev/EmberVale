@@ -341,6 +341,14 @@ charging you for a jump across your own realm when you own the horse that would 
 crossing into Frostfang still costs, because that is a longer road than a horse fixes. And a hit
 taken in the saddle no longer drops you through the animal you are sitting on.
 
+- 39C ✅ and the ground can have steps in it again. Until now the whole realm was flat by necessity —
+a kerb the height of your shin was an invisible wall you walked into, so every raised surface in the
+game had been either deleted or flattened to a painted-on skin. You step up now, as high as the
+townspeople's own paths allow, and the market plaza is a real dais again: you walk up onto it, the
+well and the benches and the cook-fire stand on it, and it is the first piece of raised ground in
+Embervale. Climbing and swimming are deliberately not here — nothing in the world needs them yet,
+and the conditions under which they would be built are written down.
+
 ### Phase 36 — the boss framework
 
 - 36A ✅ a boss fight is data. Phases with HP thresholds, the escalation each stage brings, the abilities it hands over, the colour it burns when it winds up, and an enrage fuse so a boss cannot be out-waited — all authored in `data/bosses/*.tres` and named by one field on the archetype. The Iron King's numbers moved out of code without changing one of them; the three dragons, which until now were healthbars with no fight structure behind them, gained phases the moment the file existed.
