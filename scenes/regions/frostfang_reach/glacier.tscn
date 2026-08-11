@@ -1,6 +1,7 @@
 [gd_scene load_steps=2 format=3 uid="uid://crgnfrostcell0"]
 
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_glacier.glb" id="1_glacier"]
+[ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 
 [sub_resource type="BoxShape3D" id="Shape_glacier"]
 size = Vector3(8.43, 4.96, 6.02)
@@ -23,3 +24,7 @@ transform = Transform3D(-0.6, 0, 0.5, 0, 0.7, 0, -0.5, 0, -0.6, 9, 0, -6)
 [node name="Shape" type="CollisionShape3D" parent="Ice2/Col"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
 shape = SubResource("Shape_glacier")
+
+[node name="MapPin" type="Node3D" parent="."]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.frostfang.glacier"

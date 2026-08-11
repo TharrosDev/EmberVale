@@ -24,6 +24,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_campfire.glb" id="24_campfire"]
 [ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="25_charanim"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_townhouse.tscn" id="26_townhouse"]
+[ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 
 [sub_resource type="NavigationMesh" id="NavMesh_hold"]
 geometry_parsed_geometry_type = 1
@@ -549,3 +550,11 @@ omni_range = 6.0
 [node name="Model" parent="StationWorkbench" instance=ExtResource("14_workbench")]
 
 [node name="Model" parent="StationAlchemy" instance=ExtResource("15_alchemy")]
+
+[node name="MapPin" type="Node3D" parent="."]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.frostfang.clan_hold"
+
+[node name="MapPin" type="Node3D" parent="Waystone"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.frostfang.waystone"

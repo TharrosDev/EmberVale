@@ -44,6 +44,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_workbench.gltf" id="53_workbench"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_table_large.gltf" id="54_order_bench"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_waystone.glb" id="50_waystone"]
+[ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 
 [sub_resource type="NavigationMesh" id="NavMesh_hub"]
 geometry_parsed_geometry_type = 1
@@ -1384,3 +1385,55 @@ transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 1.44, 0, -27.43)
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 1.44, 0, -27.80)
 
 [node name="Model" parent="Pebble16" instance=ExtResource("48_pebble_a")]
+
+[node name="MapPin" type="Node3D" parent="."]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.ember_crown.town"
+
+[node name="MapPin" type="Node3D" parent="Waystone"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.ember_crown.waystone"
+
+[node name="MapPin" type="Node3D" parent="VendorSmith"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.ember_crown.smith"
+
+[node name="MapPin" type="Node3D" parent="VendorGoods"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.ember_crown.goods"
+
+[node name="MapPin" type="Node3D" parent="VendorAlch"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.ember_crown.apothecary"
+
+[node name="MapPin" type="Node3D" parent="Innkeeper"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.ember_crown.inn"
+
+[node name="MapPin" type="Node3D" parent="Trainer"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.ember_crown.trainer"
+
+[node name="MapPin" type="Node3D" parent="Stablemaster"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.ember_crown.stable"
+
+[node name="MapPin" type="Node3D" parent="GuildVault"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.ember_crown.vault"
+
+[node name="MapPin" type="Node3D" parent="GuildMarker"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.ember_crown.guild_board"
+
+[node name="MapPin" type="Node3D" parent="Nav/OrderBench"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.ember_crown.commission"
+
+[node name="MapPin" type="Node3D" parent="WanderingTrader"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.ember_crown.traveller"
+
+[node name="MapPin" type="Node3D" parent="StationForge"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.ember_crown.crafting"

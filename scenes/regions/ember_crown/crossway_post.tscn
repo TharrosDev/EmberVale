@@ -38,6 +38,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_fern.glb" id="39_fern"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_a.glb" id="41_pebble_a"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_b.glb" id="42_pebble_b"]
+[ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 
 ; THE CROSSWAY POST (Phase 38M2) — the wardens' gate on the road north, and the place 38M's toll is
 ; actually about. 38M built the toll, the permit and the bribe and left them standing in the town
@@ -1468,3 +1469,35 @@ transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 17.38, 0, -16.61)
 transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 16.83, 0, -17.68)
 
 [node name="Model" parent="Pebble16" instance=ExtResource("41_pebble_a")]
+
+[node name="MapPin" type="Node3D" parent="."]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.crossway.post"
+
+[node name="MapPin" type="Node3D" parent="CrosswayWaystone"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.crossway.waystone"
+
+[node name="MapPin" type="Node3D" parent="Nav/CaravanBoard"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.crossway.board"
+
+[node name="MapPin" type="Node3D" parent="RoadWarden"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.crossway.permit"
+
+[node name="MapPin" type="Node3D" parent="GateHand"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.crossway.bribe"
+
+[node name="MapPin" type="Node3D" parent="SearchWarden"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.crossway.search"
+
+[node name="MapPin" type="Node3D" parent="ImpoundClerk"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.crossway.impound"
+
+[node name="MapPin" type="Node3D" parent="Mercenary"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.crossway.mercenary"

@@ -24,6 +24,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_b.glb" id="22_pebble_b"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_rockpath_wide.glb" id="23_rockpath_wide"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_rockpath_small.glb" id="24_rockpath_small"]
+[ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 
 [sub_resource type="NavigationMesh" id="NavMesh_wn"]
 geometry_parsed_geometry_type = 1
@@ -1423,3 +1424,7 @@ transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 1.72, 0, 0.04)
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -2.89, 0, -2.95)
 
 [node name="Model" parent="PebbleB9" instance=ExtResource("22_pebble_b")]
+
+[node name="MapPin" type="Node3D" parent="."]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.wilds.north"

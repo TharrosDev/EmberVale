@@ -115,6 +115,7 @@ public static class ContentValidator
         ValidateStepUp(issues);
         ValidateTolls(issues);
         ValidatePlaceables(issues);
+        ValidateMapLocations(issues);
         ValidateBestiary(issues);
         ValidateResourcePaths(issues);
         ValidateUiAssets(issues);
@@ -3447,6 +3448,105 @@ public static class ContentValidator
     }
 
     /// <summary>Every <c>.tscn</c> at or below a directory.</summary>
+    /// <summary>
+    /// The world map's location catalogue (Phase 39.5A).
+    ///
+    /// ⚠️ <b>The last two rules scan <c>.tscn</c> text, and they are the reason this is worth
+    /// writing.</b> IDS.md records an open hole for <c>shop.*</c> and <c>service.*</c>: those ids are
+    /// referenced from scenes as well as from resources, <c>ContentValidator</c> does not scan
+    /// scenes, and a typo in a <c>VendorComponent.ShopId</c> therefore gives no prompt at all rather
+    /// than an error. A map location is referenced from a scene <em>by construction</em> — the scene
+    /// is where its position lives — so shipping it with the same hole would mean a mistyped
+    /// <c>LocationId</c> produced a marker that silently never appears, which is indistinguishable
+    /// from a location the player has not discovered yet. So the seam is checked in both directions:
+    /// every id a scene names must exist, and every authored location must be placed somewhere.
+    ///
+    /// The second direction is the brief's §54 (no orphan systems) enforced by a machine instead of
+    /// by good intentions — <c>CraftingComponent.Learn</c> sat with zero callers from Phase 15 to
+    /// Phase 35 precisely because nothing could fail over it.
+    /// </summary>
+    private static void ValidateMapLocations(List<string> issues)
+    {
+        foreach (World.MapLocationResource location in World.MapLocationDatabase.All)
+        {
+            string id = location.Id;
+
+            if (string.IsNullOrEmpty(location.NameKey) || !Loc.Has(location.NameKey))
+            {
+                issues.Add($"map location '{id}' has no name in the locale catalogue " +
+                           $"('{location.NameKey}') — the map would draw the raw key");
+            }
+
+            if (location.DescriptionKey.Length > 0 && !Loc.Has(location.DescriptionKey))
+            {
+                issues.Add($"map location '{id}' names a missing description key " +
+                           $"'{location.DescriptionKey}'");
+            }
+
+            if (location.CellId.Length == 0 || World.RegionDatabase.Cell(location.CellId) == null)
+            {
+                issues.Add($"map location '{id}' names cell '{location.CellId}', which no region " +
+                           "declares — its settlement breadcrumb would be blank");
+            }
+
+            if (location.ShopId.Length > 0 && Economy.ShopDatabase.Get(location.ShopId) == null)
+            {
+                issues.Add($"map location '{id}' names shop '{location.ShopId}', which does not exist");
+            }
+
+            if (location.ServiceId.Length > 0 && Economy.ServiceDatabase.Get(location.ServiceId) == null)
+            {
+                issues.Add($"map location '{id}' names service '{location.ServiceId}', which does not exist");
+            }
+
+            if (location.DialogueId.Length > 0 && Dialogue.DialogueDatabase.Get(location.DialogueId) == null)
+            {
+                issues.Add($"map location '{id}' names dialogue '{location.DialogueId}', which does not exist");
+            }
+        }
+
+        ValidateMapMarkersArePlaced(issues);
+    }
+
+    /// <summary>Both directions of the scene↔catalogue seam.</summary>
+    private static void ValidateMapMarkersArePlaced(List<string> issues)
+    {
+        var placed = new HashSet<string>();
+
+        foreach (string path in ScenePaths("res://scenes/regions"))
+        {
+            using FileAccess? file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
+            if (file == null)
+            {
+                continue;
+            }
+
+            foreach (System.Text.RegularExpressions.Match match in
+                     System.Text.RegularExpressions.Regex.Matches(
+                         file.GetAsText(), @"(?m)^LocationId = ""([^""]*)"""))
+            {
+                string id = match.Groups[1].Value;
+                placed.Add(id);
+
+                if (World.MapLocationDatabase.Get(id) == null)
+                {
+                    issues.Add($"cell scene '{path}' places a MapLocationComponent for '{id}', " +
+                               "which no map location declares — the marker would never appear");
+                }
+            }
+        }
+
+        foreach (World.MapLocationResource location in World.MapLocationDatabase.All)
+        {
+            if (!placed.Contains(location.Id))
+            {
+                issues.Add($"map location '{location.Id}' is authored but no cell scene places a " +
+                           "MapLocationComponent for it — nothing gives it a position, so it can " +
+                           "never be discovered or drawn");
+            }
+        }
+    }
+
     private static IEnumerable<string> ScenePaths(string directory)
     {
         if (!DirAccess.DirExistsAbsolute(directory))

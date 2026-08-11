@@ -36,6 +36,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_a.glb" id="40_pebble_a"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_b.glb" id="41_pebble_b"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_modular.tscn" id="42_cottage_modular"]
+[ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 
 ; TARN'S LANDING (Phase 38N2) — the fishing hamlet on the western water, and the realm's THIRD market.
 ;
@@ -1563,3 +1564,19 @@ transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, -0.08, 0, -18.71)
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.33, 0, -18.24)
 
 [node name="Model" parent="Pebble28" instance=ExtResource("40_pebble_a")]
+
+[node name="MapPin" type="Node3D" parent="."]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.tarn.landing"
+
+[node name="MapPin" type="Node3D" parent="LandingWaystone"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.tarn.waystone"
+
+[node name="MapPin" type="Node3D" parent="Wenna"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.tarn.curer"
+
+[node name="MapPin" type="Node3D" parent="Odger"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.tarn.chandler"

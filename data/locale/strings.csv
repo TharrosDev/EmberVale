@@ -464,10 +464,6 @@ spellbook.delivery_cone,Cone
 # --- Journal, map and codex (Phase 37.5E) ---
 questlog.main,Main Thread
 questlog.side,Errands
-map.filter_regions,Regions
-map.filter_pois,Places
-map.filter_travel,Waypoints
-map.legend_travel,Waypoints
 # Quest journal (QuestLogPanel)
 questlog.title,QUEST JOURNAL   (J to close)
 questlog.none,(no quests)
@@ -1314,3 +1310,141 @@ mount.summoned,"You whistle, and the horse comes."
 mount.dismissed,You swing down and let the horse wander off.
 mount.not_owned,You have no mount. The Ember Crown Stables sell one.
 mount.exhausted,"The horse is blown — it drops to a walk, whatever you ask of it."
+# World map (Phase 39.5A) — screen furniture
+map.search_placeholder,Search people, trades, places
+map.search_none,Nothing discovered matches that.
+map.info_header,SELECTED
+map.info_none,Select a marker to read about it.
+map.filters_header,FILTERS
+map.legend_header,LEGEND
+map.legend_player,You
+map.legend_waypoint,Your waypoint
+map.show_all,Show all
+map.hide_all,Hide all
+map.reset,Reset
+map.zoom_in,Zoom in
+map.zoom_out,Zoom out
+map.center_player,Centre on me
+map.reset_view,Reset view
+map.waypoint_clear,Clear waypoint
+map.hint,Drag to pan  ·  wheel to zoom  ·  right-click to mark a spot
+map.distance,{0} m {1}
+map.distance_here,You are here.
+map.trade_header,TRADE
+map.service_header,SERVICE
+map.service_price,{0} ({1}g)
+map.npc_header,KEPT BY
+# World map — compass points (MapDistance)
+map.dir.north,north
+map.dir.northeast,north-east
+map.dir.east,east
+map.dir.southeast,south-east
+map.dir.south,south
+map.dir.southwest,south-west
+map.dir.west,west
+map.dir.northwest,north-west
+# World map — marker groups (shape) and categories (glyph)
+map.group.settlement,Settlements
+map.group.trade,Trade
+map.group.service,Services
+map.group.exploration,Exploration
+map.group.travel,Travel
+map.group.personal,Yours
+map.category.capital,Capital
+map.category.town,Town
+map.category.village,Village
+map.category.outpost,Outpost
+map.category.camp,Camp
+map.category.wilds,Wilds
+map.category.smith,Smith
+map.category.merchant,Merchant
+map.category.alchemist,Alchemist
+map.category.provisioner,Provisioner
+map.category.outfitter,Outfitter
+map.category.jeweller,Jeweller
+map.category.scriptorium,Scriptorium
+map.category.inn,Inn
+map.category.bank,Vault
+map.category.stable,Stable
+map.category.trainer,Trainer
+map.category.contracts,Contracts
+map.category.arena,Arena
+map.category.mine,Mine
+map.category.dungeon,Dungeon
+map.category.landmark,Landmark
+map.category.gate,Gate
+map.category.waystone,Waystone
+map.category.home,Holding
+map.category.waypoint,Waypoint
+# --- BEGIN generated map location names (tools/gen_map_locations.py) ---
+location.ember_crown.town.name,Ember Crown
+location.ember_crown.town.desc,"The seat of the realm. Its square holds the smith, the apothecary and the inn; the guild board stands at the south road."
+location.ember_crown.waystone.name,Ember Crown Waystone
+location.ember_crown.smith.name,The Iron Anvil
+location.ember_crown.goods.name,The Long Counter
+location.ember_crown.apothecary.name,The Green Retort
+location.ember_crown.inn.name,The Ember Rest
+location.ember_crown.trainer.name,The Trainer's Yard
+location.ember_crown.stable.name,The Ember Crown Stable
+location.ember_crown.vault.name,The Ember Crown Vault
+location.ember_crown.guild_board.name,The Guild Board
+location.ember_crown.commission.name,The Order Bench
+location.ember_crown.traveller.name,The Wandering Trader
+location.ember_crown.crafting.name,The Crafting Yard
+location.embermarket.market.desc,"Rows of stalls under awnings, a plaza at the north end, and the realm's densest run of trades — twelve merchants between the aisles and the forecourt."
+location.embermarket.waystone.name,Embermarket Waystone
+location.embermarket.provisions.name,Corvin's Provisions
+location.embermarket.fishmonger.name,Hana's Slab
+location.embermarket.weaver.name,Sable's Loom
+location.embermarket.scriptorium.name,Tam's Scriptorium
+location.embermarket.collier.name,The Collier's Stall
+location.embermarket.ironmonger.name,Gilda's Ironmongery
+location.embermarket.tannery.name,Perrin's Tannery
+location.embermarket.jeweller.name,Nessa's Bench
+location.embermarket.herbalist.name,Odo's Herbs
+location.embermarket.joiner.name,Halvard's Joinery
+location.embermarket.consignment.name,Mirelle's Consignment
+location.embermarket.caravan.name,Sera's Caravan
+location.embermarket.curios.name,Quill's Curios
+location.embermarket.collect.name,The Collection Desk
+location.embermarket.appraisal.name,The Brightcut Scales
+location.embermarket.board.name,The Market Notice
+location.crossway.post.desc,"The wardens' post on the road between the realms. Nothing crosses here without the toll, a permit, or a word with the man at the side of the gate."
+location.crossway.waystone.name,Crossway Waystone
+location.crossway.board.name,The Caravan Board
+location.crossway.permit.name,The Warden's Desk
+location.crossway.bribe.name,The Gate Hand
+location.crossway.search.name,The Search Table
+location.crossway.impound.name,The Impound Counter
+location.crossway.mercenary.name,The Hiring Post
+location.emberdeep.mine.desc,"Ore out of the hill and food in at any price. The factor sells the realm's cheapest metal; the quartermaster pays its best coin for a full pack of provisions."
+location.emberdeep.waystone.name,Emberdeep Waystone
+location.emberdeep.factor.name,The Factor's Office
+location.emberdeep.quartermaster.name,The Quartermaster's Store
+location.tarn.landing.desc,"A jetty, a smokehouse and a chandlery on the tarn's edge."
+location.tarn.waystone.name,Landing Waystone
+location.tarn.curer.name,Wenna's Smokehouse
+location.tarn.chandler.name,Odger's Chandlery
+location.hollowreach.reach.desc,"Boat-builders and salvagers in the low ground, and a bones table that will take your coin on a throw."
+location.hollowreach.waystone.name,Hollowreach Waystone
+location.hollowreach.hull.name,Sedge's Hull Works
+location.hollowreach.locker.name,Coyle's Locker
+location.hollowreach.bones.name,The Bones Table
+location.ashfall.homestead.name,Ashfall Homestead
+location.ashfall.homestead.desc,"A farmstead on the ash flats east of the city, with a bed for anyone caught out after dark."
+location.ashfall.bed.name,The Ashfall Bed
+location.ember_crown.arena.name,The Ember Arena
+location.ember_crown.arena.desc,"A ring of tiered stone past the north gate, well outside the walls."
+location.wilds.north.name,The Northern Wilds
+location.wilds.north.desc,"Open country north of the city. Goblins range here."
+location.wilds.west.name,The Western Wilds
+location.wilds.west.desc,"Broken ground west of the tarn."
+location.frostfang.clan_hold.name,The Frostfang Clan Hold
+location.frostfang.clan_hold.desc,"Longhouses banked against the wind, and the clan that keeps them."
+location.frostfang.waystone.name,Clan Hold Waystone
+location.frostfang.glacier.name,The Glacier
+location.frostfang.glacier.desc,"Blue ice and meltwater, north of the hold."
+location.frostfang.dragon_roost.name,The Dragon Roost
+location.frostfang.ash_roost.name,The Ash Roost
+location.frostfang.ancient_aerie.name,The Ancient Aerie
+# --- END generated map location names ---

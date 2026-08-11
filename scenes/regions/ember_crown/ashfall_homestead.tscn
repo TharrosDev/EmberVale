@@ -40,6 +40,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_flowers_a.glb" id="38_flowers"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_timber_stack.glb" id="39_timber"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_lamp_post.glb" id="40_lamp"]
+[ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 
 [sub_resource type="NavigationMesh" id="NavMesh_home"]
 vertices = PackedVector3Array()
@@ -1146,3 +1147,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.3, 0.0, -9.4)
 
 [node name="RopeYard" parent="Nav" instance=ExtResource("26_rope")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.6, 0.0, -3.6)
+
+[node name="MapPin" type="Node3D" parent="."]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.ashfall.homestead"
+
+[node name="MapPin" type="Node3D" parent="AshfallBed"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.ashfall.bed"

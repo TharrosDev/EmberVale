@@ -39,6 +39,7 @@
 [ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_modular.tscn" id="45_cottage_modular"]
 [ext_resource type="Script" path="res://src/Economy/ServiceComponent.cs" id="46_service"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_table_large.gltf" id="47_bones_table"]
+[ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 
 ; HOLLOWREACH (Phase 38O) — the wharf down the water from Tarn's Landing, and the realm's FOURTH
 ; market. It is the only place in Embervale that will buy contraband, and that is the whole of its
@@ -1628,3 +1629,23 @@ transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -17.20, 0, -12.31)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -23.60, 0, 5.78)
 
 [node name="Model" parent="Pebble7" instance=ExtResource("44_pebble_b")]
+
+[node name="MapPin" type="Node3D" parent="."]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.hollowreach.reach"
+
+[node name="MapPin" type="Node3D" parent="ReachWaystone"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.hollowreach.waystone"
+
+[node name="MapPin" type="Node3D" parent="Sedge"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.hollowreach.hull"
+
+[node name="MapPin" type="Node3D" parent="Coyle"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.hollowreach.locker"
+
+[node name="MapPin" type="Node3D" parent="Nav/BonesTable"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.hollowreach.bones"

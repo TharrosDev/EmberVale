@@ -10,6 +10,7 @@
 [ext_resource type="PackedScene" path="res://scenes/regions/roost.tscn" id="1_roost"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="10_rock"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pine_dead.glb" id="11_pine"]
+[ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 
 [sub_resource type="StandardMaterial3D" id="Mat_charred"]
 albedo_color = Color(0.19, 0.16, 0.16, 1)
@@ -99,3 +100,7 @@ PersistentId = "lair.frostfang_ash_roost"
 [node name="Lair" parent="Nest" index="0"]
 TemplateId = "enemy.ash_dragon"
 DefeatFlagId = "flag.ash_dragon_defeated"
+
+[node name="MapPin" type="Node3D" parent="."]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.frostfang.ash_roost"

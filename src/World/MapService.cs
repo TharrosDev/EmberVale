@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using Embervale.Core.Events;
 using Embervale.Core.Services;
+using Embervale.Dialogue;
+using Embervale.Player;
 using Embervale.Save;
 using Godot;
 
@@ -10,25 +12,61 @@ namespace Embervale.World;
 /// label and a world-space planar position (X/Z).</summary>
 public readonly record struct MapMarker(string Id, string Label, float X, float Z);
 
+/// <summary>A discovered location and where it stands (Phase 39.5A).</summary>
+public readonly record struct MapLocationView(MapLocationResource Location, Vector3 Position);
+
 /// <summary>
-/// Tracks world-map discovery (Phase 25E) and exposes it as data the <see cref="Embervale.UI.MapScreen"/>
-/// renders. Regions are discovered on entry (the bootstrap calls <see cref="DiscoverRegion"/> for the
-/// starting region and each hard transition); POIs are discovered when their cell first streams in
-/// (it subscribes to <see cref="RegionCellLoadedEvent"/>). Undiscovered regions stay hidden (fog).
+/// What the player knows about the world (Phase 25E, rebuilt in 39.5A) — discovered regions, cells
+/// and locations, plus their custom waypoint — exposed as data the <see cref="Embervale.UI.MapScreen"/>
+/// renders. <see cref="ISaveable"/>, so all of it survives save/load.
 ///
-/// Marker geometry is re-resolved from the <see cref="RegionDatabase"/> at read time, so only the
-/// discovered id sets need persisting. <see cref="ISaveable"/>, so discovery survives save/load.
+/// <b>Where positions come from.</b> Nothing here authors a coordinate. A
+/// <see cref="MapLocationComponent"/> in a cell scene calls <see cref="RegisterLocation"/> with its
+/// own <c>GlobalPosition</c> as the cell streams in, so the map's idea of where the blacksmith is
+/// *is* where the blacksmith is. See <see cref="MapLocationResource"/> for why that split exists.
+///
+/// ⚠️ <b>Two position stores, and the split is load-bearing.</b> <c>_livePositions</c> is what
+/// components registered this run; <c>_savedPositions</c> is what a save file remembered. Reads
+/// prefer the live one. This is what lets the world map still draw the Emberdeep Mine while the
+/// player is in Frostfang — invariant 1 says a region loads whole and only one region is resident,
+/// so the other region's markers have no live position to offer — <em>without</em> ever letting a
+/// stale saved coordinate override a marker that is standing right there. A load replaces the saved
+/// half and does not touch the live half, because the live half is the world and the world is not
+/// something a save file gets to be wrong about.
+///
+/// <b>Discovery has two states, Unknown and Discovered, and that is a decision.</b> Rumoured and
+/// Fully-Known were considered and cut rather than stubbed (Phase 40B's rule, 39C the worked
+/// example): nothing in Embervale currently produces a rumour. The condition for adding Rumoured is
+/// a check rather than a verdict — <em>when a dialogue graph sets a flag naming a place the player
+/// has not visited</em>. Until then there is no third state and no dead enum member.
 /// </summary>
 [GlobalClass]
 public partial class MapService : Node, ISaveable
 {
     public string SaveId => "map";
 
+    /// <summary>How close the player must come for a location to reveal itself. Anything visible
+    /// from further off should author <see cref="MapLocationResource.RevealWithCell"/> instead.</summary>
+    public const float DiscoveryRadius = 20f;
+
+    private const float TickSeconds = 0.25f;
+
     private readonly HashSet<string> _regions = new();
     private readonly HashSet<string> _pois = new();
+    private readonly HashSet<string> _locations = new();
+
+    private readonly Dictionary<string, Vector3> _livePositions = new();
+    private readonly Dictionary<string, Vector3> _savedPositions = new();
+
+    private float _sinceTick;
 
     /// <summary>Bumped whenever discovery changes, so the map UI can tell when to rebuild.</summary>
     public int Revision { get; private set; }
+
+    /// <summary>The player's custom waypoint, or null. One at a time: the brief asks for waypoints
+    /// "without unnecessarily complicating the UI", and a single move-it-where-you-want pin needs no
+    /// list, no naming and no management screen.</summary>
+    public Vector3? Waypoint { get; private set; }
 
     public override void _EnterTree()
     {
@@ -53,6 +91,113 @@ public partial class MapService : Node, ISaveable
         }
     }
 
+    /// <summary>
+    /// Records where a placed <see cref="MapLocationComponent"/> stands. Called once per marker as
+    /// its cell streams in; re-registering updates the position, so the scene always wins.
+    /// </summary>
+    public void RegisterLocation(string id, Vector3 position)
+    {
+        if (string.IsNullOrEmpty(id))
+        {
+            return;
+        }
+
+        _livePositions[id] = position;
+        TryDiscover(id, PlayerPosition());
+    }
+
+    public bool IsDiscovered(string locationId) => _locations.Contains(locationId);
+
+    /// <summary>Where a location is, live position preferred over the remembered one.</summary>
+    public Vector3? PositionOf(string locationId)
+    {
+        if (_livePositions.TryGetValue(locationId, out Vector3 live))
+        {
+            return live;
+        }
+
+        return _savedPositions.TryGetValue(locationId, out Vector3 saved) ? saved : null;
+    }
+
+    /// <summary>Every discovered location whose resource still exists, with its position.</summary>
+    public IEnumerable<MapLocationView> DiscoveredLocations()
+    {
+        foreach (string id in _locations)
+        {
+            if (MapLocationDatabase.Get(id) is { } location && PositionOf(id) is { } position)
+            {
+                yield return new MapLocationView(location, position);
+            }
+        }
+    }
+
+    /// <summary>Places or moves the player's waypoint; null clears it.</summary>
+    public void SetWaypoint(Vector3? position)
+    {
+        Waypoint = position;
+        Revision++;
+    }
+
+    public override void _Process(double delta)
+    {
+        _sinceTick += (float)delta;
+        if (_sinceTick < TickSeconds)
+        {
+            return;
+        }
+
+        _sinceTick = 0f;
+
+        // Polled rather than driven off player movement: a location can also become discoverable
+        // because a flag was set while the player stood still. ~20 candidates at 4 Hz — the §35
+        // mistake would be doing this every frame, not doing it at all.
+        if (_livePositions.Count == 0)
+        {
+            return;
+        }
+
+        Vector3? player = PlayerPosition();
+        foreach (string id in _livePositions.Keys)
+        {
+            TryDiscover(id, player);
+        }
+    }
+
+    /// <summary>Reveals a location if it is eligible and either reveals-with-cell or close enough.</summary>
+    private void TryDiscover(string id, Vector3? player)
+    {
+        if (_locations.Contains(id) || MapLocationDatabase.Get(id) is not { } location)
+        {
+            return;
+        }
+
+        if (location.RequiredFlagId.Length > 0 && !HasFlag(location.RequiredFlagId))
+        {
+            return;
+        }
+
+        if (!location.RevealWithCell)
+        {
+            if (player is not { } at || !_livePositions.TryGetValue(id, out Vector3 position))
+            {
+                return;
+            }
+
+            // Planar distance: a marker on an upper floor is not further away for being above you.
+            float dx = position.X - at.X;
+            float dz = position.Z - at.Z;
+            if ((dx * dx) + (dz * dz) > DiscoveryRadius * DiscoveryRadius)
+            {
+                return;
+            }
+        }
+
+        if (_locations.Add(id))
+        {
+            Revision++;
+        }
+    }
+
     private void OnCellLoaded(RegionCellLoadedEvent e)
     {
         bool changed = _pois.Add(e.CellId);
@@ -68,6 +213,15 @@ public partial class MapService : Node, ISaveable
             Revision++;
         }
     }
+
+    private static Vector3? PlayerPosition() =>
+        ServiceLocator.Instance is { } locator && locator.TryGet(out PlayerCharacter player)
+            ? player.GlobalPosition
+            : null;
+
+    private static bool HasFlag(string flagId) =>
+        ServiceLocator.Instance is { } locator && locator.TryGet(out PlayerCharacter player) &&
+        (player.GetComponent<StoryFlagsComponent>()?.Has(flagId) ?? false);
 
     /// <summary>Discovered regions as plottable markers (position from each region's spawn point).</summary>
     public IEnumerable<MapMarker> RegionMarkers()
@@ -93,7 +247,10 @@ public partial class MapService : Node, ISaveable
         }
     }
 
-    public bool HasAnyDiscovery => _regions.Count > 0 || _pois.Count > 0;
+    public bool HasAnyDiscovery => _regions.Count > 0 || _pois.Count > 0 || _locations.Count > 0;
+
+    /// <summary>Whether a cell has been visited — the breadcrumb and the info panel both ask.</summary>
+    public bool IsCellKnown(string cellId) => _pois.Contains(cellId);
 
     private static RegionResource? RegionOfCell(string cellId)
     {
@@ -158,13 +315,43 @@ public partial class MapService : Node, ISaveable
             pois.Add(id);
         }
 
-        return new Godot.Collections.Dictionary { ["regions"] = regions, ["pois"] = pois };
+        // Discovered locations carry their position, exactly as FastTravelService persists a node's:
+        // the cell that knows where it stands is not resident when the other region is.
+        var locations = new Godot.Collections.Array();
+        foreach (string id in _locations)
+        {
+            var entry = new Godot.Collections.Dictionary { ["id"] = id };
+            if (PositionOf(id) is { } position)
+            {
+                entry["pos"] = position;
+            }
+
+            locations.Add(entry);
+        }
+
+        var data = new Godot.Collections.Dictionary
+        {
+            ["regions"] = regions,
+            ["pois"] = pois,
+            ["locations"] = locations,
+        };
+
+        if (Waypoint is { } waypoint)
+        {
+            data["waypoint"] = waypoint;
+        }
+
+        return data;
     }
 
     public void Load(Godot.Collections.Dictionary data)
     {
+        // Replace, never merge (CLAUDE.md §7). A quickload keeps every live actor, so anything not
+        // explicitly overwritten here survives from the timeline being abandoned.
         _regions.Clear();
         _pois.Clear();
+        _locations.Clear();
+        _savedPositions.Clear();
 
         if (data.TryGetValue("regions", out Variant r) && r.VariantType == Variant.Type.Array)
         {
@@ -181,6 +368,36 @@ public partial class MapService : Node, ISaveable
                 _pois.Add(id.AsString());
             }
         }
+
+        if (data.TryGetValue("locations", out Variant l) && l.VariantType == Variant.Type.Array)
+        {
+            foreach (Variant entry in l.AsGodotArray())
+            {
+                if (entry.VariantType != Variant.Type.Dictionary)
+                {
+                    continue;
+                }
+
+                Godot.Collections.Dictionary row = entry.AsGodotDictionary();
+                string id = row.TryGetValue("id", out Variant idv) ? idv.AsString() : string.Empty;
+                if (id.Length == 0)
+                {
+                    continue;
+                }
+
+                _locations.Add(id);
+                if (row.TryGetValue("pos", out Variant pos) && pos.VariantType == Variant.Type.Vector3)
+                {
+                    _savedPositions[id] = pos.AsVector3();
+                }
+            }
+        }
+
+        // ⚠️ The else branch is the whole point: a save with no waypoint must CLEAR a live one, or
+        // loading an older timeline leaves a pin the player placed in a future that never happened.
+        Waypoint = data.TryGetValue("waypoint", out Variant w) && w.VariantType == Variant.Type.Vector3
+            ? w.AsVector3()
+            : null;
 
         Revision++;
     }
