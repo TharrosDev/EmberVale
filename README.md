@@ -349,8 +349,18 @@ well and the benches and the cook-fire stand on it, and it is the first piece of
 Embervale. Climbing and swimming are deliberately not here — nothing in the world needs them yet,
 and the conditions under which they would be built are written down.
 
-### Phase 39.5 — the map
+### Phase 39.5 — the map and the HUD
 
+- 39.5B ✅ and the HUD tells you where you are. There is a minimap now — there never was one — in the
+bottom-right corner, north-up, showing the ground you have walked and the places you have found
+within about fifty metres, with your arrow turning inside it. It is the same map you open with `M`,
+drawn by the same code from the same places, so the two cannot disagree about where anything is. The
+quest tracker will now tell you how far your objective is and which way, and you can choose which
+quest it follows from the journal instead of it always picking whichever one it happened to find
+first. When something hits you, a short arc marks the side of the screen it came from. When you
+finish an objective, the game says so. And the whole HUD now gets out of the way when you open a
+menu — it used to sit on top of the pause screen and your inventory, still offering you a key to
+press that the paused game would have ignored.
 - 39.5A ✅ and the map knows what is in the world. It used to show three kinds of thing, because
 those were the only three that had a position: the region, the cells you had walked into, and the
 waystones. It could not show you a blacksmith, because nothing in the game recorded where one was.
