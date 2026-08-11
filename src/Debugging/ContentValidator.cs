@@ -112,6 +112,7 @@ public static class ContentValidator
         ValidateEssentialsAreResident(issues);
         ValidateServices(issues);
         ValidateMount(issues);
+        ValidateStepUp(issues);
         ValidateTolls(issues);
         ValidatePlaceables(issues);
         ValidateBestiary(issues);
@@ -1197,6 +1198,68 @@ public static class ContentValidator
             {
                 issues.Add($"shop '{shop.Id}' takes goods on consignment but no counter anywhere in the " +
                     "realm pays the earnings out — a listing would be an item given away for nothing");
+            }
+        }
+    }
+
+    /// <summary>
+    /// The seam between what the navmesh lets an NPC climb and what a body can actually climb
+    /// (Phase 39C).
+    ///
+    /// ⚠️ <b>This mismatch was live for the whole project and nothing could see it.</b> Every cell
+    /// authors <c>agent_max_climb = 0.5</c>, and before 39C a <c>CharacterBody3D</c> climbed
+    /// <c>floor_snap_length</c> — 0.1 m. So the navmesh happily baked NPC routes over ground the
+    /// player could not follow them onto, and the only symptom was a townsman walking somewhere you
+    /// could not. The cells were authored around it instead: <c>embermarket.tscn</c> deleted a 0.3 m
+    /// dais over exactly this, and every ground slab in the realm is a collider-less skin.
+    ///
+    /// Now that <see cref="StepUp.MaxHeight"/> answers the same number, this keeps them answering it.
+    /// The day someone raises a cell's <c>agent_max_climb</c> for a new piece of terrain, the bug
+    /// comes back **silently** — a navmesh is not something anyone re-reads.
+    ///
+    /// ponytail: a regex over the scene text, exactly as <see cref="CollectSceneAuthoredFlags"/> does
+    /// and for the same reason — the validator runs headless and must not instantiate cells to answer
+    /// a content question.
+    /// ⚠️ <b>Anchored to the start of a line</b>, because a <c>.tscn</c> header is prose in the same
+    /// file: <c>embermarket.tscn</c> discusses <c>agent_max_climb</c> twice in comments, and an
+    /// unanchored match reads those as settings — a cell would fail this gate over a sentence.
+    /// </summary>
+    private static void ValidateStepUp(List<string> issues)
+    {
+        foreach (string path in ScenePaths("res://scenes/regions/ember_crown"))
+        {
+            CheckAgentClimb(path, issues);
+        }
+
+        foreach (string path in ScenePaths("res://scenes/regions/frostfang_reach"))
+        {
+            CheckAgentClimb(path, issues);
+        }
+    }
+
+    private static void CheckAgentClimb(string path, List<string> issues)
+    {
+        using FileAccess? file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
+        if (file == null)
+        {
+            return;
+        }
+
+        foreach (System.Text.RegularExpressions.Match match in
+                 System.Text.RegularExpressions.Regex.Matches(
+                     file.GetAsText(), @"(?m)^agent_max_climb = ([0-9.]+)"))
+        {
+            if (float.TryParse(
+                    match.Groups[1].Value,
+                    System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out float climb) &&
+                climb > Movement.StepUp.MaxHeight)
+            {
+                issues.Add(
+                    $"cell scene '{path}' bakes navigation with agent_max_climb {climb}, above the " +
+                    $"{Movement.StepUp.MaxHeight} m a body can actually step — NPCs would be pathed " +
+                    "onto ground the player cannot follow them onto");
             }
         }
     }

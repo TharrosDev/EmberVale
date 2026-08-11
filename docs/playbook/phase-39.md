@@ -5,7 +5,7 @@
 - [x] **39B — Mounted-combat rules + fast-travel integration** `[F]` ✅
   - **Done when:** combat-while-mounted rules are defined and mounts integrate with
     fast travel.
-- [ ] **39C — Traversal verbs the world needs (climb/swim/ledge)** `[F]`
+- [x] **39C — Traversal verbs the world needs (climb/swim/ledge)** `[F]` ✅
   - **Done when:** only the verbs region design (44) requires are added and tuned.
 
 ---
@@ -162,4 +162,77 @@ accepted), **damage does not throw you off**, and **a mount makes local fast tra
   2. ⚠️ **RENDER THE COST YOU AGREED TO PAY.** "The animation will be a bit off" was accepted on a
      description and was wrong about the magnitude. Two minutes of harness turned an accepted
      trade-off into a fixed defect.
+
+---
+
+## 39C — Step-up, and the dais the world deleted to live without it `[F]` ✅
+
+*"Only the verbs region design (44) requires." Maintainer decisions: **step-up only, at 0.5 m**, with
+climb and swim **cut against runnable conditions** rather than verdicts.*
+
+- 🎯 **THE WORLD HAD ALREADY WRITTEN THE BRIEF, IN TWO `.tscn` HEADERS.** `embermarket.tscn`:
+  *"NOTHING IN THIS CELL IS RAISED GROUND, AND THAT IS DELIBERATE. The first draft had a 0.3 m plaza
+  dais… a 0.3 m kerb is an invisible wall the player walks into, and the navmesh's
+  `agent_max_climb = 0.5` cheerfully bakes NPCs a path over ground the player cannot follow them
+  onto."* And both water cells: *"THE WATER IS A DECAL, NOT A VOLUME… because swimming does not exist
+  (Phase 39C owns the traversal verbs)."* **Invariant 15 paying for itself** — the scoping question
+  was answered by reading the files the work would touch.
+- **Landed:** `StepUp` (pure, 12 tests), the climb in `LocomotionComponent`, the plaza dais restored,
+  a `--validate` rule pinning every cell's `agent_max_climb` to `StepUp.MaxHeight`, negative case 45,
+  and `tools/stepup_probe.gd` — a two-directional gate that exits 0/1.
+- ⚠️ **THE FIRST IMPLEMENTATION WAS WRONG AND SIX UNIT TESTS AGREED WITH IT.** It computed the lift
+  arithmetically: probe down from a raised position, lift by `height - drop`. Against a real capsule
+  that under-reports **every** step, because the capsule's rounded bottom catches the step's
+  **corner** rather than its top face — the 0.3 m dais measured **0.156 m**. The body then lifted a
+  fraction of what it needed and `MoveAndSlide`'s floor snap pulled it straight back: a lift every
+  frame, forever, and no movement. **The climb is now three engine moves** (up, forward, down) with a
+  whole-transform rollback, which is shorter *and* correct.
+- ⚠️ **AND ONLY WALKING A BODY AT THE GEOMETRY FOUND IT.** Build, tests and `--validate` were all
+  green over it. `tools/stepup_probe.gd` builds a real `CharacterEntity` with the real
+  `LocomotionComponent` in the real cell and walks it at the dais — 40 lines, and it is the
+  difference between "reviewed against the API" and a number. ⚠️ **Its first version was itself
+  flaky**: it measured the rise from the *spawn* height, so the body's last few centimetres of fall
+  counted against the climb and the 0.3 m dais passed a 0.1 m threshold **by one millimetre**. It
+  settles the body before measuring now.
+- ⚠️ **THE GATE RUNS BOTH DIRECTIONS OR IT PROVES NOTHING.** A step-up that climbs everything passes
+  a positive-only harness and turns every wall in the game into a staircase. The probe also walks a
+  body into the 11 m bell tower and asserts it does **not** rise: `dais rose 0.301` /
+  `tower rose 0.000`.
+- ⚠️ **RENDERED, THE DAIS EDGE WAS INVISIBLE FROM A METRE AWAY.** `Mat_plaza` was
+  `(0.30,0.29,0.28)` against a `(0.33,0.30,0.26)` floor — a correct, subtle choice for a **6 cm
+  skin** and a **trip hazard** at 0.3 m. It is cool grey now, so the dais separates by **hue** and
+  not by a shadow line that overcast light erases. ⚠️ **A material value can be right at one
+  thickness and wrong at another**, and nothing but a render says which.
+- **The dais is the caller, and it had to exist.** Nothing else in the realm is between 0.1 m and
+  0.5 m — the world was authored around the absence — so without restoring it, step-up would have
+  shipped with **no surface in the game to climb**, which is the defect CLAUDE.md §1 names.
+  The well, three benches and the cook-fire ride up with it; no schedule destination lands in the
+  plaza band, so no NPC was stranded.
+- ⚠️ **THE NEGATIVE CASE CAUGHT A BUG IN MY OWN RULE, NOT JUST IN THE MUTATION.** The mutation landed
+  twice — the cell's header *discusses* `agent_max_climb` as well as setting it — and the same fact
+  meant the validator's regex was reading **comments as settings**, so a cell could have failed the
+  gate over a sentence. Both are anchored to a line start now. ⚠️ It is also the battery's first
+  **scene** mutation, so `tree_is_clean` now covers `scenes/` as well as `data/`: the restore is a
+  `git checkout --`, and anything this script can mutate it can also destroy.
+- **Climb and swim are CUT, with conditions someone can run** (NOW.md's rule, and 40B's "a cut system
+  leaves no stub"): **swim** lands when a cell authors a water *volume* with something on the far
+  side — today both water planes are decals with 32 m of empty lake beyond them, so the verb's only
+  content would be the absence of a wall. **Climb/ledge-mantle** lands when a cell authors a surface
+  reachable no other way. Neither has a stub, a flag or a dead export.
+- Build clean, **0 warnings** + **1329** tests (12 new) + `--validate` exit 0 + `negative_tests.py`
+  **45/45** + `--economy` **price landscape identical** + `--state` unchanged + a `--play` boot with
+  32 objects and **0 project errors** + the dais rendered day and dusk from 3 positions.
+- ⚠️ **What was NOT verified.** The step is proved by a headless harness driving the real component,
+  **not by a human walking up it** — feel, camera behaviour on the rise and whether 0.5 m reads as
+  too generous in the hand are all unjudged. ⚠️ **NPC pathing onto the dais was not observed**: the
+  navmesh bakes it and `agent_max_climb` allows it, but no townsman was watched climbing. ⚠️ The step
+  now runs for **every** walking actor, and only the player's case was exercised.
+- Two things worth carrying:
+  1. ⚠️ **A UNIT TEST CAN ONLY CHECK THE MODEL YOU BUILT, NOT WHETHER IT IS THE RIGHT MODEL.** Six
+     tests certified arithmetic that a capsule's geometry makes meaningless. **When logic stands in
+     for physics, one run against the real geometry outranks any number of tests** — and it was
+     forty lines.
+  2. ⚠️ **AUTHORED WORLD SHAPES ARE EVIDENCE, AND THE HEADERS ARE WHERE THEY SPEAK.** Two cells had
+     recorded exactly what this sub-phase should build and what it should not, months before it ran.
+     **Read the headers of the files a phase will touch before scoping it**, not after.
 

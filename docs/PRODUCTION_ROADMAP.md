@@ -649,8 +649,15 @@ crafting stations, trophies, and customization.
   longer a pure sink**; `docs/DESIGN.md` §6's table says so. ⚠️ 39B also fixed two defects 39A
   shipped, one of which (a cached mesh rest pose dropping the rider through the horse on the first
   hit) passed every check 39A ran.
-- **Traversal verbs the world needs** — climbing, swimming, ledges/jumping
-  refinements — added only where region design (44) calls for them.
+- **Traversal verbs the world needs** ✅ **(39C)** — **step-up only, at 0.5 m**, matched to every
+  cell's `agent_max_climb` and pinned to it by a `--validate` rule. That mismatch was live for the
+  whole project: the navmesh routed NPCs over ground a body could not follow them onto, and cells
+  were authored around it (`embermarket.tscn` deleted a 0.3 m dais over exactly this). The dais is
+  back as the realm's only raised ground and the verb's in-world caller.
+  ⚠️ **Climbing and swimming are CUT, each against a runnable condition** rather than a verdict:
+  swim when a cell authors a water *volume with something on the far side* (both water planes are
+  decals today), climb when a cell authors a surface reachable no other way. **Neither left a stub** —
+  40B's rule, worked example. Phase 44 should author verticality against 0.5 m.
 
 ### Phase 40 — Survival & Needs (scoped, deliberate) `[F]`
 

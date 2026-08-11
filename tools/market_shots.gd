@@ -26,6 +26,12 @@ const SHOTS := [
 	["07_weststall",  Vector3(-3.4, 1.7, -3),  Vector3(-9, 1.5, -3)],
 	["08_eaststall",  Vector3(3.4, 1.7, -14),  Vector3(9, 1.5, -14)],
 	["09_crosslane",  Vector3(-3.6, 1.7, -8.5), Vector3(-13, 1.5, -9)],
+	# 39C: the plaza dais — the realm's only raised ground, and the one surface the step-up exists
+	# for. Shot 10 is the walk-up from the aisle (where the 0.3 m edge is either legible or a trip
+	# hazard), 11 is eye level ON the dais with the well and benches, 12 the kerb from a metre away.
+	["10_daisapproach", Vector3(-4.0, 1.7, 13.0), Vector3(-13, 1.2, 16.5)],
+	["11_daistop",    Vector3(-9.5, 2.0, 15.5),  Vector3(-15, 1.5, 16.5)],
+	["12_daiskerb",   Vector3(-5.4, 0.9, 15.5),  Vector3(-9, 0.35, 15.5)],
 ]
 
 func _initialize() -> void:
