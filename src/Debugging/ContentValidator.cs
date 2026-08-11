@@ -1220,6 +1220,9 @@ public static class ContentValidator
     /// ponytail: a regex over the scene text, exactly as <see cref="CollectSceneAuthoredFlags"/> does
     /// and for the same reason — the validator runs headless and must not instantiate cells to answer
     /// a content question.
+    /// ⚠️ <b>Anchored to the start of a line</b>, because a <c>.tscn</c> header is prose in the same
+    /// file: <c>embermarket.tscn</c> discusses <c>agent_max_climb</c> twice in comments, and an
+    /// unanchored match reads those as settings — a cell would fail this gate over a sentence.
     /// </summary>
     private static void ValidateStepUp(List<string> issues)
     {
@@ -1244,7 +1247,7 @@ public static class ContentValidator
 
         foreach (System.Text.RegularExpressions.Match match in
                  System.Text.RegularExpressions.Regex.Matches(
-                     file.GetAsText(), @"agent_max_climb = ([0-9.]+)"))
+                     file.GetAsText(), @"(?m)^agent_max_climb = ([0-9.]+)"))
         {
             if (float.TryParse(
                     match.Groups[1].Value,

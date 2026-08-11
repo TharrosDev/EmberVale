@@ -279,9 +279,13 @@ CASES = [
     # agent_max_climb to what a body can actually step (StepUp.MaxHeight): raise one for a new piece
     # of terrain and the navmesh silently goes back to routing NPCs onto ground the player cannot
     # follow them onto — the exact mismatch that made embermarket.tscn delete its dais.
+    # ⚠️ Anchored on the newlines, and the uniqueness check is what made that necessary: this cell's
+    # header DISCUSSES agent_max_climb in prose as well as setting it, so the bare string lands twice.
+    # The same run proved the validator regex had the mirror-image bug and was reading those comments
+    # as settings — a rule that fails a cell over a sentence. Both are anchored to a line start now.
     ("stepup.navmesh_out_of_reach", "ValidateStepUp",
      [("scenes/regions/ember_crown/embermarket.tscn",
-       "agent_max_climb = 0.5", "agent_max_climb = 0.8")],
+       "\nagent_max_climb = 0.5\n", "\nagent_max_climb = 0.8\n")],
      "above the"),
 
     # ---- ValidateBreakdownKeys, the 39B travel line ---------------------------------------
