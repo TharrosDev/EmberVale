@@ -25,6 +25,7 @@ CellId = "ember_crown.embermarket"
 ShopId = "shop.embermarket.jeweller"
 ServiceId = ""
 DialogueId = "dialogue.nessa"
+PropertyId = ""
 TravelNodeId = ""
 RevealWithCell = false
 RequiredFlagId = ""

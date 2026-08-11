@@ -44,10 +44,10 @@ L = []
 
 
 def add(cell_file, tail, category, anchor, name, shop="", service="", dialogue="",
-        travel="", reveal=False, desc="", name_key=""):
+        travel="", reveal=False, desc="", name_key="", prop=""):
     L.append(dict(cell_file=cell_file, tail=tail, category=category, anchor=anchor, name=name,
                   shop=shop, service=service, dialogue=dialogue, travel=travel, reveal=reveal,
-                  desc=desc, name_key=name_key))
+                  desc=desc, name_key=name_key, prop=prop))
 
 
 # ── Ember Crown ──────────────────────────────────────────────────────────────────────────────
@@ -186,6 +186,11 @@ add("ember_crown/ashfall_homestead", "ashfall.homestead", "Camp", ".", "Ashfall 
     desc="A farmstead on the ash flats east of the city, with a bed for anyone caught out after dark.")
 add("ember_crown/ashfall_homestead", "ashfall.bed", "Inn", "AshfallBed", "The Ashfall Bed",
     service="service.ashfall.bed")
+# The player's own holding — the realm's only property, and it was missing from the map entirely
+# until a continuity audit found it. Its name is REUSED from the property rather than authored
+# again, the same rule the five waystone settlements follow: one place, one name.
+add("ember_crown/ashfall_homestead", "ashfall.cottage", "Home", "CottageDeed", "",
+    name_key="property.cottage.name", prop="property.ember_crown.cottage")
 add("ember_crown/arena", "ember_crown.arena", "Arena", ".", "The Ember Arena", reveal=True,
     desc="A ring of tiered stone past the north gate, well outside the walls.")
 add("ember_crown/wilds_north", "wilds.north", "Wilds", ".", "The Northern Wilds", reveal=True,
@@ -269,6 +274,7 @@ def tres_body(item):
         'ShopId = "{shop}"\n'
         'ServiceId = "{service}"\n'
         'DialogueId = "{dialogue}"\n'
+        'PropertyId = "{prop}"\n'
         'TravelNodeId = "{travel}"\n'
         "RevealWithCell = {reveal}\n"
         'RequiredFlagId = ""\n'
@@ -276,7 +282,8 @@ def tres_body(item):
         tail=item["tail"], name_key=key, desc_key=desc_key,
         cat=CATEGORY.index(item["category"]), cell=CELL_ID[item["cell_file"]],
         shop=item["shop"], service=item["service"], dialogue=item["dialogue"],
-        travel=item["travel"], reveal="true" if item["reveal"] else "false")
+        prop=item["prop"], travel=item["travel"],
+        reveal="true" if item["reveal"] else "false")
 
 
 def build_tres():

@@ -25,6 +25,7 @@ CellId = "frostfang_reach.clan_hold"
 ShopId = ""
 ServiceId = ""
 DialogueId = ""
+PropertyId = ""
 TravelNodeId = ""
 RevealWithCell = true
 RequiredFlagId = ""

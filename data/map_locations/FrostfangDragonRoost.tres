@@ -25,6 +25,7 @@ CellId = "frostfang_reach.dragon_roost"
 ShopId = ""
 ServiceId = ""
 DialogueId = ""
+PropertyId = ""
 TravelNodeId = ""
 RevealWithCell = false
 RequiredFlagId = ""

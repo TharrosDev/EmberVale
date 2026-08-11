@@ -25,6 +25,7 @@ CellId = "ember_crown.crossway_post"
 ShopId = ""
 ServiceId = "service.crossway.mercenary"
 DialogueId = "dialogue.wren"
+PropertyId = ""
 TravelNodeId = ""
 RevealWithCell = false
 RequiredFlagId = ""

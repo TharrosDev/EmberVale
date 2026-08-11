@@ -25,6 +25,7 @@ CellId = "frostfang_reach.ancient_aerie"
 ShopId = ""
 ServiceId = ""
 DialogueId = ""
+PropertyId = ""
 TravelNodeId = ""
 RevealWithCell = false
 RequiredFlagId = ""

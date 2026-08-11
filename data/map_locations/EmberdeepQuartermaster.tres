@@ -25,6 +25,7 @@ CellId = "ember_crown.emberdeep_mine"
 ShopId = "shop.emberdeep.quartermaster"
 ServiceId = ""
 DialogueId = "dialogue.marta"
+PropertyId = ""
 TravelNodeId = ""
 RevealWithCell = false
 RequiredFlagId = ""

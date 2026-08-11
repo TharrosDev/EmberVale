@@ -25,6 +25,7 @@ CellId = "ember_crown.embermarket"
 ShopId = ""
 ServiceId = ""
 DialogueId = "dialogue.market_board"
+PropertyId = ""
 TravelNodeId = ""
 RevealWithCell = false
 RequiredFlagId = ""

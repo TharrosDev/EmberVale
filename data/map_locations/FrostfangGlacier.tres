@@ -25,6 +25,7 @@ CellId = "frostfang_reach.glacier"
 ShopId = ""
 ServiceId = ""
 DialogueId = ""
+PropertyId = ""
 TravelNodeId = ""
 RevealWithCell = true
 RequiredFlagId = ""

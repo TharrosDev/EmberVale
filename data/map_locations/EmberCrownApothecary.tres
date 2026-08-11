@@ -25,6 +25,7 @@ CellId = "ember_crown.town_hub"
 ShopId = "shop.ember_crown.apothecary"
 ServiceId = ""
 DialogueId = "dialogue.apothecary"
+PropertyId = ""
 TravelNodeId = ""
 RevealWithCell = false
 RequiredFlagId = ""

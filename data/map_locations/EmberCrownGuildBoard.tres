@@ -25,6 +25,7 @@ CellId = "ember_crown.town_hub"
 ShopId = ""
 ServiceId = ""
 DialogueId = "dialogue.guild_board"
+PropertyId = ""
 TravelNodeId = ""
 RevealWithCell = false
 RequiredFlagId = ""

@@ -25,6 +25,7 @@ CellId = "ember_crown.emberdeep_mine"
 ShopId = "shop.emberdeep.factor"
 ServiceId = ""
 DialogueId = "dialogue.bregan"
+PropertyId = ""
 TravelNodeId = ""
 RevealWithCell = false
 RequiredFlagId = ""

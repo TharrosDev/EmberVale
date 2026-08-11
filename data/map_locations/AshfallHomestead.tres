@@ -25,6 +25,7 @@ CellId = "ember_crown.ashfall_homestead"
 ShopId = ""
 ServiceId = ""
 DialogueId = ""
+PropertyId = ""
 TravelNodeId = ""
 RevealWithCell = true
 RequiredFlagId = ""

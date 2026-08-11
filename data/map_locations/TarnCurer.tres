@@ -25,6 +25,7 @@ CellId = "ember_crown.tarn_landing"
 ShopId = "shop.tarn.curer"
 ServiceId = ""
 DialogueId = "dialogue.wenna"
+PropertyId = ""
 TravelNodeId = ""
 RevealWithCell = false
 RequiredFlagId = ""

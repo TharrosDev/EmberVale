@@ -25,6 +25,7 @@ CellId = "frostfang_reach.ash_roost"
 ShopId = ""
 ServiceId = ""
 DialogueId = ""
+PropertyId = ""
 TravelNodeId = ""
 RevealWithCell = false
 RequiredFlagId = ""

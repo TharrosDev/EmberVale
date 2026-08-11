@@ -86,6 +86,10 @@ public partial class MapLocationResource : Resource
     /// This is how the map names an NPC without holding a second copy of their name.</summary>
     [Export] public string DialogueId { get; set; } = string.Empty;
 
+    /// <summary>The holding claimed here (a <c>property.*</c> id), or empty. Validated — and every
+    /// property must be named by some location, the same rule shops and services get.</summary>
+    [Export] public string PropertyId { get; set; } = string.Empty;
+
     /// <summary>The fast-travel node here (a <c>travel.*</c> id), or empty. ⚠️ Not validated, for the
     /// reason IDS.md already records for <c>travel.*</c>: travel nodes live in scenes and are
     /// discovered at runtime, so there is no database to check the id against.</summary>

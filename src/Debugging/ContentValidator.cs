@@ -3503,6 +3503,11 @@ public static class ContentValidator
             {
                 issues.Add($"map location '{id}' names dialogue '{location.DialogueId}', which does not exist");
             }
+
+            if (location.PropertyId.Length > 0 && Housing.PropertyDatabase.Get(location.PropertyId) == null)
+            {
+                issues.Add($"map location '{id}' names property '{location.PropertyId}', which does not exist");
+            }
         }
 
         ValidateMapMarkersArePlaced(issues);
@@ -3565,6 +3570,7 @@ public static class ContentValidator
     {
         var mappedShops = new HashSet<string>();
         var mappedServices = new HashSet<string>();
+        var mappedProperties = new HashSet<string>();
 
         foreach (World.MapLocationResource location in World.MapLocationDatabase.All)
         {
@@ -3576,6 +3582,11 @@ public static class ContentValidator
             if (location.ServiceId.Length > 0)
             {
                 mappedServices.Add(location.ServiceId);
+            }
+
+            if (location.PropertyId.Length > 0)
+            {
+                mappedProperties.Add(location.PropertyId);
             }
         }
 
@@ -3596,6 +3607,20 @@ public static class ContentValidator
                 issues.Add($"service '{service.Id}' is not on the world map — no map location names " +
                            "it. Add one with tools/gen_map_locations.py (docs/RECIPES.md, 'a new map " +
                            "location'); a service the map cannot show is a service the player cannot find");
+            }
+        }
+
+        // ⚠️ Properties joined this rule after a continuity audit found the realm's ONLY holding —
+        // the player's own cottage — missing from the map entirely, while the rule that was supposed
+        // to prevent exactly that shipped covering shops and services and nothing else. A coverage
+        // rule that does not enumerate every kind of place is a coverage rule with a hole in it.
+        foreach (Housing.PropertyResource property in Housing.PropertyDatabase.All)
+        {
+            if (!mappedProperties.Contains(property.Id))
+            {
+                issues.Add($"property '{property.Id}' is not on the world map — no map location names " +
+                           "it. A holding the player owns and cannot find on their own map is the " +
+                           "plainest possible failure of a world-readability system");
             }
         }
     }

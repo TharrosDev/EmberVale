@@ -353,6 +353,14 @@ CASES = [
        'ServiceId = "service.ember_crown.inn"', 'ServiceId = ""')],
      "is not on the world map"),
 
+    # ⚠️ Properties joined the coverage rule after a continuity audit found the realm's only holding
+    # — the player's own cottage — missing from the map, while the rule meant to prevent exactly that
+    # covered shops and services and nothing else.
+    ("maploc.property_not_on_the_map", "ValidateEverythingIsOnTheMap",
+     [("data/map_locations/AshfallCottage.tres",
+       'PropertyId = "property.ember_crown.cottage"', 'PropertyId = ""')],
+     "is not on the world map"),
+
     # ⚠️ A category name is COMPUTED from the enum member, so adding a member adds a key reference
     # that no resource mentions and no other rule can see. Crafting shipped without its key in 39.5A.
     ("maploc.category_unnamed", "ValidateMapTaxonomyIsNamed",

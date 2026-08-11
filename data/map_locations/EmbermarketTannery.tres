@@ -25,6 +25,7 @@ CellId = "ember_crown.embermarket"
 ShopId = "shop.embermarket.tannery"
 ServiceId = ""
 DialogueId = "dialogue.perrin"
+PropertyId = ""
 TravelNodeId = ""
 RevealWithCell = false
 RequiredFlagId = ""

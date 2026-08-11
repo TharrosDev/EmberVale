@@ -25,6 +25,7 @@ CellId = "ember_crown.hollowreach"
 ShopId = ""
 ServiceId = ""
 DialogueId = ""
+PropertyId = ""
 TravelNodeId = ""
 RevealWithCell = true
 RequiredFlagId = ""

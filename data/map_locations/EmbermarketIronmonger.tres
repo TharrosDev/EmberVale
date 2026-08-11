@@ -25,6 +25,7 @@ CellId = "ember_crown.embermarket"
 ShopId = "shop.embermarket.ironmonger"
 ServiceId = ""
 DialogueId = "dialogue.gilda"
+PropertyId = ""
 TravelNodeId = ""
 RevealWithCell = false
 RequiredFlagId = ""

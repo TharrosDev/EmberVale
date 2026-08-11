@@ -25,6 +25,7 @@ CellId = "ember_crown.town_hub"
 ShopId = "shop.ember_crown.traveller"
 ServiceId = ""
 DialogueId = ""
+PropertyId = ""
 TravelNodeId = ""
 RevealWithCell = false
 RequiredFlagId = ""

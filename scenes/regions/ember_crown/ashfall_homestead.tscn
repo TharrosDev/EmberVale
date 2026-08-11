@@ -1155,3 +1155,7 @@ LocationId = "location.ashfall.homestead"
 [node name="MapPin" type="Node3D" parent="AshfallBed"]
 script = ExtResource("maploc_39_5a")
 LocationId = "location.ashfall.bed"
+
+[node name="MapPin" type="Node3D" parent="CottageDeed"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.ashfall.cottage"
