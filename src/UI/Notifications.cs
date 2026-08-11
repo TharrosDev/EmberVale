@@ -41,6 +41,7 @@ public partial class Notifications : CanvasLayer
         EventBus bus = EventBus.Instance;
         bus?.Subscribe<LeveledUpEvent>(OnLeveledUp);
         bus?.Subscribe<QuestStartedEvent>(OnQuestStarted);
+        bus?.Subscribe<QuestObjectiveAdvancedEvent>(OnObjectiveAdvanced);
         bus?.Subscribe<QuestCompletedEvent>(OnQuestCompleted);
         bus?.Subscribe<WorldEventStartedEvent>(OnWorldEventStarted);
         bus?.Subscribe<WorldEventEndedEvent>(OnWorldEventEnded);
@@ -66,6 +67,7 @@ public partial class Notifications : CanvasLayer
 
         bus.Unsubscribe<LeveledUpEvent>(OnLeveledUp);
         bus.Unsubscribe<QuestStartedEvent>(OnQuestStarted);
+        bus.Unsubscribe<QuestObjectiveAdvancedEvent>(OnObjectiveAdvanced);
         bus.Unsubscribe<QuestCompletedEvent>(OnQuestCompleted);
         bus.Unsubscribe<WorldEventStartedEvent>(OnWorldEventStarted);
         bus.Unsubscribe<WorldEventEndedEvent>(OnWorldEventEnded);
@@ -86,6 +88,35 @@ public partial class Notifications : CanvasLayer
     // Quest.Title is a Loc key (data-authored), so it must be resolved before display.
     private void OnQuestStarted(QuestStartedEvent e) =>
         Push(Loc.TF("notify.quest_started", Loc.T(e.Quest.Title)), UiTheme.Text);
+
+    /// <summary>
+    /// An objective ticking over (§24). Reuses this feed rather than adding a second notification
+    /// system (§75) — the toast stack already knows how to queue, hold and fade.
+    ///
+    /// ⚠️ <b>Only on completion, and only for multi-objective quests.</b> Toasting every increment
+    /// puts nine chips on screen for a ten-pelt errand, which is how a feed stops being read at all;
+    /// the tracker's own progress bar is the at-a-glance channel for counting, and that is what it
+    /// was added for in 37.5B. A single-objective quest is skipped because finishing its one
+    /// objective IS finishing the quest, and <see cref="OnQuestCompleted"/> already says so — two
+    /// chips for one event reads as a bug.
+    /// </summary>
+    private void OnObjectiveAdvanced(QuestObjectiveAdvancedEvent e)
+    {
+        if (e.Count < e.Required)
+        {
+            return;
+        }
+
+        var objectives = e.Quest.ObjectiveList();
+        if (objectives.Count <= 1 || e.ObjectiveIndex < 0 || e.ObjectiveIndex >= objectives.Count)
+        {
+            return;
+        }
+
+        Push(
+            Loc.TF("hud.quest.objective_done", Loc.T(objectives[e.ObjectiveIndex].ShortLabel())),
+            UiTheme.QuestComplete);
+    }
 
     private void OnQuestCompleted(QuestCompletedEvent e) =>
         Push(Loc.TF("notify.quest_complete", Loc.T(e.Quest.Title)), UiTheme.Good);

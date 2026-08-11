@@ -77,6 +77,7 @@ public partial class GameHud : CanvasLayer
 
     private PanelContainer _questPanel = null!;
     private VBoxContainer _questList = null!;
+    private Label _questWhere = null!;
     private string _questSignature = string.Empty;
 
     private PanelContainer _bannerPanel = null!;
@@ -92,6 +93,14 @@ public partial class GameHud : CanvasLayer
     private Label _lockReticle = null!;
 
     private CompassStrip _compass = null!;
+
+    private MinimapHud _minimap = null!;
+
+    private DamageDirectionOverlay _damageDirection = null!;
+
+    // Starts Inactive so the first ApplyMode always runs — the HUD is built before the world is,
+    // and a field defaulting to the mode we are about to enter would skip the initial layout pass.
+    private HudMode _mode = HudMode.Inactive;
 
     // Corruption dread: a dark blood-red edge vignette that fades in at high tiers (23E).
     private TextureRect _vignette = null!;
@@ -120,6 +129,8 @@ public partial class GameHud : CanvasLayer
 
         BuildVignette(); // backmost overlay — built first so the HUD widgets draw over it
         _layout.Overlay.AddChild(new Crosshair());
+        _damageDirection = new DamageDirectionOverlay { Name = "DamageDirection" };
+        _layout.Overlay.AddChild(_damageDirection);
         BuildParty();
         BuildVitals();
         BuildTutorialHint();
@@ -130,6 +141,7 @@ public partial class GameHud : CanvasLayer
         BuildBanner();
         BuildNameplate();
         BuildQuestTracker();
+        BuildMinimap();
         BuildPrompt();
         BuildLockReticle();
         BuildLevelUp();
@@ -138,6 +150,7 @@ public partial class GameHud : CanvasLayer
         EventBus.Instance?.Subscribe<LeveledUpEvent>(OnLeveledUp);
         EventBus.Instance?.Subscribe<InputDeviceChangedEvent>(OnInputDeviceChanged);
         EventBus.Instance?.Subscribe<CorruptionTierChangedEvent>(OnCorruptionTierChanged);
+        EventBus.Instance?.Subscribe<EntityDiedEvent>(OnEntityDied);
     }
 
     public override void _ExitTree()
@@ -146,6 +159,29 @@ public partial class GameHud : CanvasLayer
         EventBus.Instance?.Unsubscribe<LeveledUpEvent>(OnLeveledUp);
         EventBus.Instance?.Unsubscribe<InputDeviceChangedEvent>(OnInputDeviceChanged);
         EventBus.Instance?.Unsubscribe<CorruptionTierChangedEvent>(OnCorruptionTierChanged);
+        EventBus.Instance?.Unsubscribe<EntityDiedEvent>(OnEntityDied);
+    }
+
+    /// <summary>
+    /// Clears the transient combat overlays when the player dies (§54).
+    ///
+    /// ⚠️ Embervale respawns the player in the same frame they die, so there is no death state for
+    /// the HUD to enter (see <see cref="HudVisibility"/>) — but there IS a teleport, and the two
+    /// widgets that draw from live world state would carry the moment of death across it: the lock
+    /// reticle would sit on a corpse the player is no longer near, and the damage arcs would keep
+    /// fading in the direction of an attacker now on the other side of the map.
+    /// </summary>
+    private void OnEntityDied(EntityDiedEvent e)
+    {
+        if (!ReferenceEquals(e.Entity, _player))
+        {
+            return;
+        }
+
+        _lockReticle.Visible = false;
+        _damageDirection.Clear();
+        _nameplate.Show(null, _player);
+        _promptPanel.Visible = false;
     }
 
     // --- Construction -------------------------------------------------------
@@ -245,7 +281,22 @@ public partial class GameHud : CanvasLayer
         _questList = new VBoxContainer();
         _questList.AddThemeConstantOverride("separation", 2);
         col.AddChild(_questList);
+
+        // Distance + bearing to the tracked objective. Its own label under the objective rows, so
+        // the rows can stay on their rebuild-on-change signature while this updates as you walk.
+        _questWhere = UiTheme.Caption("", UiTheme.Accent);
+        _questWhere.Visible = false;
+        col.AddChild(_questWhere);
+
         WrapPadded(_questPanel, col);
+    }
+
+    /// <summary>The local minimap (39.5B), bottom-right. Self-contained — it resolves the map service
+    /// and the player itself, so the HUD hands it nothing and cannot hand it something stale.</summary>
+    private void BuildMinimap()
+    {
+        _minimap = new MinimapHud { Name = "Minimap" };
+        _layout.BottomRight.AddChild(_minimap);
     }
 
     private void BuildCompass()
@@ -448,13 +499,72 @@ public partial class GameHud : CanvasLayer
 
     public override void _Process(double delta)
     {
+        // 39.5B: the HUD is a view of a live session, so before reading anything from it, work out
+        // whether there IS one. Resolved from the existing authorities every frame rather than cached
+        // off events, because UiState has five owners and GameManager has its own lifecycle — the
+        // version of this that subscribes to both and keeps a bool is the one that gets stuck showing
+        // a HUD over a menu when the two disagree by a frame.
+        ApplyMode(HudVisibility.ModeFor(
+            GameManager.Instance is { IsPlaying: true }, UiState.MenuOpen));
+
+        if (!HudVisibility.ShowsVitals(_mode))
+        {
+            return;
+        }
+
         UpdateVitals();
+
+        if (!HudVisibility.ShowsHud(_mode))
+        {
+            return;
+        }
+
         UpdateContext();
         UpdateQuest();
         UpdateBanner();
         UpdateFocus();
         UpdateVignette(delta);
         UpdateProgressionPops(delta);
+    }
+
+    /// <summary>
+    /// Shows and hides the widget groups for a mode, on the frame the mode changes.
+    ///
+    /// Works on the <see cref="HudLayout"/> slots rather than the individual widgets: a slot is
+    /// exactly one group, so nothing can be added to the HUD later and quietly miss the rule — which
+    /// is the failure mode a per-widget list has. The data-driven <c>Visible</c> flags inside a slot
+    /// (the quest panel hiding itself with no quest, the prompt hiding itself with no focus) are
+    /// untouched and still decide what shows WITHIN a visible slot.
+    /// </summary>
+    private void ApplyMode(HudMode mode)
+    {
+        if (mode == _mode)
+        {
+            return;
+        }
+
+        _mode = mode;
+
+        _layout.BottomLeft.Visible = HudVisibility.ShowsVitals(mode);   // vitals, spell, status, party
+        // The hotbar rides with the vitals rather than the rest: assigning a quick-use slot is done
+        // from inside the inventory (its own 1–5 buttons), and doing that with the bar you are
+        // assigning to hidden is working blind.
+        _layout.BottomDock.Visible = HudVisibility.ShowsVitals(mode);   // quick-use hotbar
+        _layout.TopLeft.Visible = HudVisibility.ShowsNavigation(mode);  // clock + weather
+        _layout.TopRight.Visible = HudVisibility.ShowsNavigation(mode); // quest tracker
+        _layout.TopCenter.Visible = HudVisibility.ShowsNavigation(mode); // compass, boss, banner, nameplate
+        _layout.BottomRight.Visible = HudVisibility.ShowsNavigation(mode); // minimap
+        _layout.BottomCenter.Visible = HudVisibility.ShowsPrompt(mode); // interaction prompt, tutorial hint
+        _layout.Overlay.Visible = HudVisibility.ShowsHud(mode);         // crosshair, vignette, reticle, arcs
+
+        // No stale UI survives a transition (§52). The lock reticle and the damage arcs are the two
+        // that position themselves from live world state, so hiding their layer is not enough —
+        // returning to exploration would flash the last frame's placement before the next update.
+        if (!HudVisibility.ShowsCombat(mode))
+        {
+            _lockReticle.Visible = false;
+            _damageDirection.Clear();
+        }
     }
 
     private void UpdateVignette(double delta)
@@ -620,18 +730,8 @@ public partial class GameHud : CanvasLayer
 
     private void UpdateQuest()
     {
-        QuestProgress? active = null;
-        if (_player is { } player && player.GetComponent<QuestLogComponent>() is { } log)
-        {
-            foreach (QuestProgress progress in log.Quests)
-            {
-                if (progress.Status == QuestStatus.Active)
-                {
-                    active = progress;
-                    break;
-                }
-            }
-        }
+        // 39.5B: one authority for "which quest am I on" — see QuestLogComponent.Tracked.
+        QuestProgress? active = _player?.GetComponent<QuestLogComponent>()?.Tracked;
 
         if (active == null)
         {
@@ -654,7 +754,34 @@ public partial class GameHud : CanvasLayer
             RebuildQuestRows(active);
         }
 
+        UpdateQuestDestination();
         _questPanel.Visible = true;
+    }
+
+    /// <summary>
+    /// How far the tracked objective is and which way (§16, §21) — "320 m · NW" under the objectives.
+    ///
+    /// Reads the compass strip's already-resolved target rather than locating one itself, so the
+    /// number under the tracker and the marker on the strip are the same point by construction. Lives
+    /// outside the signature-driven rebuild because it changes every time the player takes a step,
+    /// and rebuilding the objective rows at walking pace to update one label would be the "recreating
+    /// nodes every frame" §50 forbids.
+    /// </summary>
+    private void UpdateQuestDestination()
+    {
+        if (_compass.ObjectiveTarget is not { } target ||
+            _player?.Body is not { } body || !IsInstanceValid(body))
+        {
+            _questWhere.Visible = false;
+            return;
+        }
+
+        Vector3 offset = target - body.GlobalPosition;
+        (string value, string unitKey) = CompassMath.Distance(new Vector2(offset.X, offset.Z).Length());
+        string cardinal = Loc.T(CompassMath.CardinalKey(CompassMath.BearingTo(offset.X, offset.Z)));
+
+        _questWhere.Text = Loc.TF("hud.quest.destination", value, Loc.T(unitKey), cardinal);
+        _questWhere.Visible = true;
     }
 
     /// <summary>Structured tracker rows (30.5D): accent title, then one line per objective —

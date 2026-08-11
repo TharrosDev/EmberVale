@@ -50,6 +50,14 @@ public sealed partial class CompassStrip : Control
 
     public void SetPlayer(IEntity? player) => _player = player;
 
+    /// <summary>The tracked objective's world position, or null when there is nothing to walk toward.
+    ///
+    /// Exposed so the quest tracker can print the distance and bearing to the same point this strip
+    /// is drawing a marker at (39.5B). Resolving it twice would mean two <see cref="ObjectiveLocator"/>
+    /// scene walks per interval and — worse — two answers, which is how a tracker saying "320 m NW"
+    /// ends up beside a compass marker pointing east.</summary>
+    public Vector3? ObjectiveTarget => _objectiveTarget;
+
     public override void _Ready()
     {
         MouseFilter = MouseFilterEnum.Ignore;
@@ -200,34 +208,27 @@ public sealed partial class CompassStrip : Control
         DrawString(font, pos, text, HorizontalAlignment.Left, -1f, UiTheme.BodyFontSize, colour);
     }
 
-    /// <summary>First active quest → its first incomplete objective → its nearest live world target.</summary>
+    /// <summary>Tracked quest → its first incomplete objective → its nearest live world target.
+    ///
+    /// 39.5B: the tracked quest comes from <see cref="QuestLogComponent.Tracked"/> rather than from a
+    /// first-active scan of its own. The two scans agreed only by accident of dictionary order.</summary>
     private Vector3? ResolveObjectiveTarget()
     {
         if (_player is not { } player || player.Body is not { } body || !IsInstanceValid(body) ||
-            player.GetComponent<QuestLogComponent>() is not { } log)
+            player.GetComponent<QuestLogComponent>()?.Tracked is not { } progress)
         {
             return null;
         }
 
-        foreach (QuestProgress progress in log.Quests)
+        var objectives = progress.Quest.ObjectiveList();
+        for (int i = 0; i < objectives.Count; i++)
         {
-            if (progress.Status != QuestStatus.Active)
+            if (!progress.IsObjectiveComplete(i))
             {
-                continue;
+                return ObjectiveLocator.Locate(objectives[i], GetTree(), body.GlobalPosition);
             }
-
-            var objectives = progress.Quest.ObjectiveList();
-            for (int i = 0; i < objectives.Count; i++)
-            {
-                if (!progress.IsObjectiveComplete(i))
-                {
-                    return ObjectiveLocator.Locate(objectives[i], GetTree(), body.GlobalPosition);
-                }
-            }
-
-            return null; // active quest with all objectives met (awaiting turn-in)
         }
 
-        return null;
+        return null; // active quest with all objectives met (awaiting turn-in)
     }
 }

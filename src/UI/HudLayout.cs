@@ -47,6 +47,10 @@ public partial class HudLayout : Control
     /// <summary>Bottom-centre stack (interaction prompt), floated above the screen edge.</summary>
     public VBoxContainer BottomCenter { get; private set; } = null!;
 
+    /// <summary>Bottom-right stack (minimap, 39.5B) — the last cell of the bottom flow bar, so it can
+    /// no more overlap the hotbar than the hotbar can overlap the vitals.</summary>
+    public VBoxContainer BottomRight { get; private set; } = null!;
+
     /// <summary>Free layer for screen-space widgets that position themselves (lock reticle) and
     /// full-screen overlays (vignette, fades). Not inset by the safe margin.</summary>
     public Control Overlay { get; private set; } = null!;
@@ -105,6 +109,15 @@ public partial class HudLayout : Control
         bar.AddChild(BottomDock);
 
         bar.AddChild(new Control { MouseFilter = MouseFilterEnum.Ignore, SizeFlagsHorizontal = SizeFlags.ExpandFill });
+
+        BottomRight = new VBoxContainer
+        {
+            Name = "BottomRight",
+            MouseFilter = MouseFilterEnum.Ignore,
+            SizeFlagsVertical = SizeFlags.ShrinkEnd,
+        };
+        BottomRight.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        bar.AddChild(BottomRight);
     }
 
     /// <summary>A stacked slot pinned to a corner/edge. <paramref name="horizontal"/> and
