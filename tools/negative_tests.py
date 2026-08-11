@@ -367,6 +367,23 @@ CASES = [
      [("data/locale/strings.csv", "\nmap.category.smith,Smith\n", "\n")],
      "has no locale key"),
 
+    # ⚠️ 39.5B: the same computed-key hole one screen over. The quest tracker picks a compass point
+    # from a bearing and a unit from a magnitude, so neither key is named by any .tres — a missing one
+    # prints the raw key under the objective. Two cases, because the two key sets fail independently.
+    ("hud.compass_point_unnamed", "ValidateHudComputedKeys",
+     [("data/locale/strings.csv", "\nhud.compass.nw,NW\n", "\n")],
+     "has no locale key"),
+
+    ("hud.distance_unit_unnamed", "ValidateHudComputedKeys",
+     [("data/locale/strings.csv", "\nhud.unit.kilometres,km\n", "\n")],
+     "HUD distance readout has no locale key"),
+
+    # ⚠️ 39.5B: the clock's phase name. It was a hard-coded English literal in DayPhases.Label,
+    # on screen beside the time since Phase 18, and localizing it created a third computed key set.
+    ("hud.day_phase_unnamed", "ValidateHudComputedKeys",
+     [("data/locale/strings.csv", "\ntime.phase.dusk,Dusk\n", "\n")],
+     "has no locale key"),
+
     ("maploc.location_never_placed", "ValidateMapMarkersArePlaced",
      [("scenes/regions/ember_crown/town_hub.tscn",
        '\n[node name="MapPin" type="Node3D" parent="VendorSmith"]\n'

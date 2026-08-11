@@ -50,4 +50,53 @@ public static class CompassMath
     /// <summary>Horizontal pixel offset from strip centre for a relative angle (right = +).</summary>
     public static float StripOffset(float relAngle, float fov, float halfWidth) =>
         (relAngle / fov) * halfWidth;
+
+    /// <summary>
+    /// The eight compass point locale keys, in bearing order from North, clockwise.
+    ///
+    /// ⚠️ <b>Declared as a set, not built from a format string</b> (invariant 26). A key assembled at
+    /// runtime is invisible to every data-driven check this repo has: no <c>.tres</c> mentions it and
+    /// no database walk can reach it, which is how <c>map.category.crafting</c> shipped missing and
+    /// showed the player a raw key in three places. Exposing the array is what lets
+    /// <c>ContentValidator</c> enumerate exactly what <see cref="CardinalKey"/> can return.
+    /// </summary>
+    public static readonly string[] CardinalKeys =
+    {
+        "hud.compass.n", "hud.compass.ne", "hud.compass.e", "hud.compass.se",
+        "hud.compass.s", "hud.compass.sw", "hud.compass.w", "hud.compass.nw",
+    };
+
+    /// <summary>The locale key for the compass point nearest <paramref name="bearing"/>. Every
+    /// return value is an element of <see cref="CardinalKeys"/>, for any input including NaN-free
+    /// extremes and unwrapped angles.</summary>
+    public static string CardinalKey(float bearing)
+    {
+        const float tau = MathF.PI * 2f;
+        const float sector = tau / 8f;
+
+        // +half a sector then floor: the North bucket straddles 0, so rounding to the nearest
+        // multiple of 45° is a shift, not a truncation. Truncating puts due North in the NE bucket.
+        float turns = (bearing + (sector * 0.5f)) / tau;
+        int index = (int)MathF.Floor((turns - MathF.Floor(turns)) * 8f);
+        return CardinalKeys[Math.Clamp(index, 0, 7)];
+    }
+
+    /// <summary>
+    /// A distance for the player to read: whole metres up to a kilometre, then one decimal of a
+    /// kilometre. Returns the number and the unit's locale key separately so the caller formats it
+    /// through <c>Loc</c> rather than concatenating a unit into a string (§46).
+    /// </summary>
+    public static (string Value, string UnitKey) Distance(float metres)
+    {
+        if (metres < 0f)
+        {
+            metres = 0f;
+        }
+
+        return metres < 1000f
+            ? (MathF.Round(metres).ToString("0", System.Globalization.CultureInfo.InvariantCulture),
+                "hud.unit.metres")
+            : ((metres / 1000f).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture),
+                "hud.unit.kilometres");
+    }
 }

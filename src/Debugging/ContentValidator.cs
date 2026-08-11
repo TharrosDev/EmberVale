@@ -3513,6 +3513,49 @@ public static class ContentValidator
         ValidateMapMarkersArePlaced(issues);
         ValidateEverythingIsOnTheMap(issues);
         ValidateMapTaxonomyIsNamed(issues);
+        ValidateHudComputedKeys(issues);
+    }
+
+    /// <summary>
+    /// Every locale key the HUD builds at runtime rather than reading from a resource (39.5B).
+    ///
+    /// ⚠️ <b>Same class of hole as <see cref="ValidateMapTaxonomyIsNamed"/>, one screen over.</b> The
+    /// quest tracker's destination readout picks a compass point from a bearing and a unit from a
+    /// magnitude — neither key is named by any <c>.tres</c>, so no database walk can reach them and a
+    /// missing one would print <c>hud.compass.nw</c> at the player under the objective. Enumerating
+    /// <see cref="UI.CompassMath.CardinalKeys"/> is what makes the declared set checkable; deriving
+    /// the check from "the bearings a test happened to try" would be the reachable set again.
+    /// </summary>
+    private static void ValidateHudComputedKeys(List<string> issues)
+    {
+        foreach (string key in UI.CompassMath.CardinalKeys)
+        {
+            if (!Loc.Has(key))
+            {
+                issues.Add($"compass point '{key}' has no locale key — the compass strip and the " +
+                           "quest tracker's bearing would each show the raw key");
+            }
+        }
+
+        foreach (string key in new[] { "hud.unit.metres", "hud.unit.kilometres", "hud.quest.destination" })
+        {
+            if (!Loc.Has(key))
+            {
+                issues.Add($"HUD distance readout has no locale key '{key}'");
+            }
+        }
+
+        // The clock's phase name, computed from the enum member the same way (39.5B). It shipped as a
+        // hard-coded English literal from Phase 18 until the HUD audit found it.
+        foreach (World.DayPhase phase in System.Enum.GetValues<World.DayPhase>())
+        {
+            string key = World.DayPhases.NameKey(phase);
+            if (!Loc.Has(key))
+            {
+                issues.Add($"day phase '{phase}' has no locale key '{key}' — the HUD clock would " +
+                           "show the raw key beside the time");
+            }
+        }
     }
 
     /// <summary>

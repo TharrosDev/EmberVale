@@ -152,6 +152,37 @@ public partial class QuestLogPanel : UiPanel
         }
     }
 
+    /// <summary>
+    /// Follow-this-quest toggle. Shows which quest the HUD is currently on, and pressing it moves the
+    /// tracker and the compass marker together (they read one authority since 39.5B).
+    ///
+    /// The state is carried by the label as well as the colour — "TRACKED" versus "TRACK" — because
+    /// colour is never the only channel (UI_STYLE §2, brief §40).
+    /// </summary>
+    private Button TrackButton(QuestProgress progress)
+    {
+        bool tracked = ReferenceEquals(_log?.Tracked, progress);
+
+        var button = new Button
+        {
+            Text = Loc.T(tracked ? "questlog.tracked" : "questlog.track"),
+            Disabled = tracked,
+            TooltipText = Loc.T("questlog.track_tip"),
+        };
+        UiTheme.ApplyType(button, UiTheme.FontRole.Interface, UiTheme.CaptionFontSize);
+        button.AddThemeColorOverride("font_color", tracked ? UiTheme.Accent : UiTheme.Dim);
+
+        // Never rebuild inside a button signal (CLAUDE.md §8 / UiPanel) — flag it and let the
+        // panel's own dirty loop redraw on the next frame.
+        button.Pressed += () =>
+        {
+            _log?.Track(progress.Quest.Id);
+            MarkDirty();
+        };
+
+        return button;
+    }
+
     /// <summary>One active quest: title on a coloured spine, then an objective row per goal with a
     /// progress bar for anything counting past one.</summary>
     private Control BuildQuestCard(QuestProgress progress, Color tint)
@@ -160,9 +191,24 @@ public partial class QuestLogPanel : UiPanel
         var col = new VBoxContainer();
         col.AddThemeConstantOverride("separation", 2);
 
+        // Title row: the name, and the control that chooses which quest the HUD follows (39.5B).
+        //
+        // ⚠️ This is the ONLY caller of QuestLogComponent.Track, and it exists because a tracked-quest
+        // field with no way to set it is exactly the CraftingComponent.Learn failure the working
+        // agreement names. It is reachable by keyboard and gamepad through the focus navigation
+        // UiPanel already grabs on open — NOT by mouse, because the journal is non-modal and so leaves
+        // the cursor captured by the player controller. That is the journal's existing contract, not
+        // something introduced here, and making it modal would be redesigning a screen this sub-phase
+        // is scoped out of touching.
+        var titleRow = new HBoxContainer();
+        titleRow.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+
         Label title = UiTheme.Body(Loc.T(progress.Quest.Title), tint);
         UiTheme.ApplyType(title, UiTheme.FontRole.Display, UiTheme.BodyFontSize);
-        col.AddChild(title);
+        title.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        titleRow.AddChild(title);
+        titleRow.AddChild(TrackButton(progress));
+        col.AddChild(titleRow);
 
         List<ObjectiveResource> objectives = progress.Quest.ObjectiveList();
         for (int i = 0; i < objectives.Count; i++)

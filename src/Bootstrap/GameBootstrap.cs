@@ -196,11 +196,20 @@ public partial class GameBootstrap : Node3D
         // title (37.5H), and without this latch the dev flag fires on that return too — dropping
         // them straight back into the save they just left, which looks exactly like "return to main
         // menu just reloads the world". Only reachable from a `--play` launch, which is how it hid.
-        if (!_playFlagConsumed && HasCmdFlag("--play") && MostRecentSlot() is { } slot)
+        // `--hudshots` implies `--play`: the harness needs a live session with a real player in it,
+        // and boots the same way. See HudShots for why this exists at all — the MCP drives the
+        // editor, where the HUD has not been constructed yet, so nothing else here can see it.
+        bool hudShots = HasCmdFlag("--hudshots");
+        if (!_playFlagConsumed && (hudShots || HasCmdFlag("--play")) && MostRecentSlot() is { } slot)
         {
             _playFlagConsumed = true;
-            Log.Info($"--play: continuing most recent save '{slot}'.");
+            Log.Info($"{(hudShots ? "--hudshots" : "--play")}: continuing most recent save '{slot}'.");
             StartLoadedGame(slot);
+
+            if (hudShots)
+            {
+                AddChild(new Debugging.HudShots { Name = "HudShots" });
+            }
         }
     }
 

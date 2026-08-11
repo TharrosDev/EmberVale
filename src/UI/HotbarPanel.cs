@@ -109,25 +109,58 @@ public partial class HotbarPanel : CanvasLayer
             child.QueueFree();
         }
 
+        // ⚠️ AN EMPTY SLOT SHOWS ITS NUMBER AND NOTHING ELSE (§53, §72, §73).
+        //
+        // It used to print the word "(EMPTY)" in every unassigned cell, so a fresh save's HUD carried
+        // **four copies of the word EMPTY** across the bottom of the screen — which is both the
+        // "placeholder text" §73 forbids and the debug-panel read §72 forbids, and it drew the eye to
+        // the four cells with no information in them rather than the one with a potion in it. A blank
+        // recessed cell already says "nothing here"; the word is the interface talking about itself.
         for (int i = 0; i < HotbarComponent.SlotCount; i++)
         {
             string id = _hotbar?.Get(i) ?? string.Empty;
-            string text;
-            if (id.Length == 0)
+            bool filled = id.Length > 0;
+
+            Button cell = UiTheme.Action(string.Empty);
+            cell.CustomMinimumSize = new Vector2(78f, 46f);
+            cell.TooltipText = Loc.T(filled ? "hud.hotbar_hint" : "hud.hotbar_empty_hint");
+            cell.Disabled = !filled;
+
+            var stack = new VBoxContainer
             {
-                text = $"{i + 1}\n{Loc.T("char.empty")}";
-            }
-            else
+                MouseFilter = Control.MouseFilterEnum.Ignore,
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            };
+            stack.AddThemeConstantOverride("separation", 0);
+            stack.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+
+            // The number is the binding, so it is always present and always in the same corner —
+            // that is what makes the row scannable as "slot 3" rather than as a list of names.
+            Label number = UiTheme.Caption($"{i + 1}", filled ? UiTheme.Accent : UiTheme.Disabled);
+            number.HorizontalAlignment = HorizontalAlignment.Center;
+            stack.AddChild(number);
+
+            if (filled)
             {
                 string name = ItemDatabase.Get(id)?.DisplayName ?? id;
                 int count = _inventory?.CountOf(id) ?? 0;
-                string qty = count > 1 ? $" x{count}" : string.Empty;
-                text = $"{i + 1}. {name}{qty}";
+
+                Label label = UiTheme.Caption(name, UiTheme.Text);
+                label.HorizontalAlignment = HorizontalAlignment.Center;
+                label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+                stack.AddChild(label);
+
+                // A count of one is not information — every consumable you can use you have at least
+                // one of, so printing "x1" adds a character to every slot and tells the player nothing.
+                if (count > 1)
+                {
+                    Label qty = UiTheme.Caption($"×{count}", UiTheme.Dim);
+                    qty.HorizontalAlignment = HorizontalAlignment.Center;
+                    stack.AddChild(qty);
+                }
             }
 
-            Button cell = UiTheme.Action(text);
-            cell.CustomMinimumSize = new Vector2(78f, 0f);
-            cell.TooltipText = Loc.T("hud.hotbar_hint");
+            cell.AddChild(stack);
             int slot = i;
             cell.Pressed += () => _hotbar?.Clear(slot);
             _row.AddChild(cell);

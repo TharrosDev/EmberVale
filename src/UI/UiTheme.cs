@@ -39,7 +39,22 @@ public static class UiTheme
     private static Color Opaque(Color surface) => HighContrast ? surface with { A = 1f } : surface;
 
     public static readonly Color PanelBorder = new(0.42f, 0.40f, 0.35f, 0.80f);
-    public static readonly Color Trough = new(0.13f, 0.125f, 0.115f, 0.95f);
+
+    /// <summary>
+    /// The empty part of every bar in the game.
+    ///
+    /// ⚠️ <b>This used to be `0.13, 0.125, 0.115` — within a rounding error of <see cref="CardBg"/>'s
+    /// `0.135, 0.126, 0.112`, which is the surface almost every bar sits on.</b> The result was that a
+    /// bar's empty track was *invisible*: a health bar at 122/664 read as a short red nub floating in
+    /// a card rather than as a nearly-empty gauge, so the player could not tell a low bar from a short
+    /// one. It survived every check this repo has because nothing renders a colour comparison, and it
+    /// was found the first time 39.5B captured the HUD and looked at it.
+    ///
+    /// Now the depth scale's own answer: `UI_STYLE.md` §2 lists **troughs** under `WellBg` — "cut
+    /// into the panel" — and flagged this token as "predates the depth scale; kept". It no longer
+    /// predates anything.
+    /// </summary>
+    public static Color Trough => WellBg;
 
     // Text: bone pale primary, ash-grey secondary. Dim is tuned to hold WCAG AA (≥4.5:1)
     // on every surface it labels, including button faces (30.5K; pinned by UiContrastTests).

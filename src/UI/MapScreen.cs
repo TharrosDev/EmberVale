@@ -521,24 +521,9 @@ public partial class MapScreen : UiPanel
         }
     }
 
-    private void RebuildPins()
-    {
-        _pins.Clear();
-        if (_map == null)
-        {
-            return;
-        }
-
-        foreach (MapLocationView view in _map.DiscoveredLocations())
-        {
-            _pins.Add(new MapPin(
-                view.Location.Id,
-                Loc.T(view.Location.NameKey),
-                new Vector2(view.Position.X, view.Position.Z),
-                view.Location.Category,
-                view.Location.EffectiveTier));
-        }
-    }
+    /// <summary>Shared with the HUD minimap since 39.5B — see <see cref="MapPins"/> for why there is
+    /// exactly one pin builder.</summary>
+    private void RebuildPins() => MapPins.Rebuild(_pins, _map);
 
     /// <summary>How far the waypoint is and which way, on the footer beside the button that
     /// clears it — so the mark is answerable without selecting anything.</summary>

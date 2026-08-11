@@ -160,10 +160,25 @@ public partial class PartyWidget : VBoxContainer
         }
 
         // The command hint only earns its space once there is someone to command.
+        //
+        // ⚠️ It used to render as the bare string "C · order", which reads as a fragment rather than
+        // an instruction — and it was the only input hint on the HUD NOT drawn as a keycap, so the
+        // one consistent visual language the interface had ("a key looks like a key") had a hole in
+        // it. Now it matches the interaction prompt and the spell row (§56).
         if (_rows.Count > 0)
         {
-            _list.AddChild(UiTheme.Caption(
-                Loc.TF("hud.party_hint", GameInput.PromptLabel(GameInput.CompanionCommand)), UiTheme.Dim));
+            var hint = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
+            hint.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+
+            PanelContainer cap = UiTheme.KeyCap(GameInput.PromptLabel(GameInput.CompanionCommand));
+            cap.SizeFlagsVertical = SizeFlags.ShrinkCenter;
+            hint.AddChild(cap);
+
+            Label label = UiTheme.Caption(Loc.T("hud.party_hint"), UiTheme.Dim);
+            label.SizeFlagsVertical = SizeFlags.ShrinkCenter;
+            hint.AddChild(label);
+
+            _list.AddChild(hint);
         }
     }
 

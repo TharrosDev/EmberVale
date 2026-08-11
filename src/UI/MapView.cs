@@ -67,6 +67,28 @@ public partial class MapView : Control
 
     public Vector3? Waypoint { get; set; }
 
+    /// <summary>
+    /// Drops every label from the plot (39.5B): region lettering, pin names and the hover caption.
+    ///
+    /// The HUD minimap is the same drawing surface at a fifth of the size, and at that size the
+    /// labels are the whole problem — a name is wider than the box it sits in, so six of them
+    /// overlap into an unreadable smear over the markers they are meant to identify. Shape and
+    /// colour already carry the category (§13), and the full map is one keypress away for the name.
+    /// </summary>
+    public bool Compact { get; set; }
+
+    /// <summary>
+    /// The zoom the <see cref="MapTiers">tier</see> test is taken at, when it must differ from the
+    /// zoom the plot is actually drawn at (39.5B).
+    ///
+    /// Tier-by-zoom is the full map's clutter control and it is the right one there: zoom in, see
+    /// more. A minimap cannot use it — it has one fixed zoom, so the rule would either show
+    /// settlements only, forever, or every market stall in the district at all times. The minimap
+    /// pins the tier test open and culls by <b>distance</b> instead (§20), which is the filter that
+    /// actually matches "what is near me".
+    /// </summary>
+    public float? TierZoom { get; set; }
+
     /// <summary>Raised when a drag or a wheel moved the view.</summary>
     public event Action<MapProjection>? ViewChanged;
 
@@ -102,7 +124,8 @@ public partial class MapView : Control
 
     /// <summary>True when a category passes the filter and its tier is visible at this zoom.</summary>
     private bool Shows(MapPin pin) =>
-        !HiddenCategories.Contains(pin.Category) && MapTiers.VisibleAt(pin.Tier, Projection.Zoom);
+        !HiddenCategories.Contains(pin.Category) &&
+        MapTiers.VisibleAt(pin.Tier, TierZoom ?? Projection.Zoom);
 
     // ── Input ─────────────────────────────────────────────────────────────────────────────────
 
@@ -253,10 +276,13 @@ public partial class MapView : Control
         DrawCoastline();
 
         // Region names sit under the markers, as a cartographer would letter a territory.
-        foreach (MapMarker region in Regions)
+        if (!Compact)
         {
-            Vector2 at = Projection.WorldToScreen(new Vector2(region.X, region.Z));
-            DrawLabel(region.Label, at, new Color(UiTheme.Accent, 0.45f), UiTheme.HeaderFontSize);
+            foreach (MapMarker region in Regions)
+            {
+                Vector2 at = Projection.WorldToScreen(new Vector2(region.X, region.Z));
+                DrawLabel(region.Label, at, new Color(UiTheme.Accent, 0.45f), UiTheme.HeaderFontSize);
+            }
         }
 
         DrawSettlementHalos();
@@ -445,7 +471,8 @@ public partial class MapView : Control
 
             // Labels only for what is big enough to earn one: everything at once is the icon soup
             // §50 names. The selection always gets its name; hover gets its own label by the cursor.
-            if (tier == MapTier.Primary || selected || Projection.Zoom >= MapTiers.DetailZoom)
+            if (!Compact &&
+                (tier == MapTier.Primary || selected || Projection.Zoom >= MapTiers.DetailZoom))
             {
                 DrawLabel(pin.Label, at + new Vector2(0f, -(radius + 6f)), colour, UiTheme.CaptionFontSize);
             }
@@ -575,7 +602,7 @@ public partial class MapView : Control
     /// readable without labelling every pin at once.</summary>
     private void DrawHoverLabel()
     {
-        if (_hoverId == null || UiTheme.UiFont is not { } font)
+        if (Compact || _hoverId == null || UiTheme.UiFont is not { } font)
         {
             return;
         }
