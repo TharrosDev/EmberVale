@@ -704,11 +704,20 @@ transforms and schedule routes.
   hierarchy, the clock, the compass strip, the tracker rows, the spell row and the hotbar's empty
   states. The section-by-section audit of all 80 is in
   [`docs/playbook/phase-39_5.md`](playbook/phase-39_5.md).
-- **39.5C ⏳ — THE LIVE ITEM.** Cartography, quests on the map, districts, clustering, live NPC
-  positions, routes — plus the UI-render harness gap, which has now cost two sub-phases and should be
-  built first. ⚠️ **Every deferred item carries a condition rather than a verdict**; the table is in
-  [`docs/playbook/phase-39_5.md`](playbook/phase-39_5.md). The notable blocker is quests: **a quest
-  names a template id, not a place**, so quest markers are a quest-data change rather than a map one.
+- **39.5C ✅ — panel capture, the map's labels, quest destinations.** Measured all eight deferred
+  conditions before building any: three ripe, five not, and the five stay deferred with their
+  measurements recorded. Built `--panelshots` **first** (39.5B built its harness last and had to
+  revisit finished work), which found two defects immediately. ⚠️ **The clustering condition named
+  the wrong defect** — markers never overlap (closest pair 2.13 m, 19 px at Detail zoom) but their
+  50–70 px **labels** did, so `LabelPlacer` replaced the clustering that was queued. ⚠️ The map rail
+  overflowed and Godot resolved it by crushing the `ExpandFill` child, slicing the FILTERS buttons in
+  half. Quest destinations landed with the map-coverage arm CLAUDE.md §1 promised — ⚠️ **and exactly
+  one objective in the game earns one**, because hostiles are region-scoped encounters and materials
+  come off loot tables; this world needs search *areas*, not points. The compass was **rebuilt from
+  nothing** at the maintainer's direction: nine draw passes in a 320×26 box, now four, with the
+  discovered-place ticks cut because the minimap answers that question better.
+- **Phase 39.5 is CLOSED.** ⚠️ **There is no 39.5D** — the remaining table is condition-gated rather
+  than scheduled, and creating a sub-phase to hold unripe items is what 38G did wrong.
 
 ### Phase 40 — Survival & Needs (scoped, deliberate) `[F]`
 

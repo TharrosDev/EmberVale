@@ -38,13 +38,35 @@ existed the same three lines were maintained in four places and rewritten every 
   tracked-quest concept** (`GameHud` and `CompassStrip` each scanned for the first active quest and
   agreed only by accident of dictionary order); no HUD visibility logic; and silent objective
   advances. The section-by-section audit of all 80 is in `docs/playbook/phase-39_5.md`.
-- ✅ **THE HARNESS GAP IS CLOSED.** `godot --path . -- --hudshots` boots the newest save, drives real
-  state through the authoritative systems and renders **11 PNGs** an agent can open. It was the #1
-  carry-forward from 39.5A and it paid for itself on its first run.
-- **NEXT: Phase 39.5C — the rest of the map.** The deferred table in `docs/playbook/phase-39_5.md`
-  is the scope, and ⚠️ **every item there carries a runnable condition rather than a verdict** —
-  check each before building it.
-- **Then: Phase 40 (Survival & Needs) — a decision phase, starting at 40A.** ⚠️ **40A owns the
+- ✅ **THE HARNESS GAP IS CLOSED, BOTH HALVES.** `godot --path . -- --hudshots` renders **12** HUD
+  states; `-- --panelshots` renders **9** panel states, and **the map screen has now been
+  photographed for the first time in the project's history**. Between them they found six shipped
+  defects across 39.5B and 39.5C. ⚠️ **Build the instrument before the work** — 39.5B built its
+  harness afterwards and had to revisit everything it had already called done.
+- **Phase 39.5C ✅ CLOSED — panel capture, the map's labels, quest destinations.** It measured all
+  eight deferred conditions before building any of them: three ripe, five not. ⚠️ **The five stay
+  deferred and `docs/playbook/phase-39_5.md` records what each MEASURED AT**, so the next session
+  checks whether the world changed rather than re-deriving the number.
+  1. ⚠️ **The clustering condition named the wrong defect.** It was deferred until "two `Detail`
+     markers overlap"; the closest pair in the game is **2.13 m** (19 px at Detail zoom, against a
+     4 px pin) and they never do. **Their 50–70 px labels always did** — the town hub drew seven
+     names as one pile of struck-through text. `LabelPlacer` fixes that; clustering would have
+     merged the markers, which were the part that worked.
+  2. ⚠️ **A `VBoxContainer` resolves overflow by crushing whichever child has `ExpandFill`.** The map
+     rail's fast-travel list grows a row per attunement with no ceiling, so the FILTERS scroll
+     collapsed to ~14 px and rendered its buttons **sliced in half**.
+  3. ⚠️ **Quest destinations landed, and exactly ONE objective in the game earns one.** Every hostile
+     is a **region-scoped** `EncounterResource` spawned around the player; every quest material comes
+     off a **loot table**, not a placed node. Only the Ash dragon is a placed lair. **This world
+     needs search AREAS, not points** — now a measured condition rather than a guess.
+- ⚠️ **THE COMPASS WAS REBUILT FROM NOTHING** (maintainer: "bad and janky", then "multiple elements
+  overlapping — break it down and restart"). It was **nine draw passes in a 320×26 box** and read as
+  a barcode. The rewrite is mostly subtraction: no panel, no fade, no graduations, and — the real cut
+  — **no discovered-place ticks, because the minimap now answers that question better**. Four
+  elements remain, plus an edge arrow for a destination behind you, which used to draw nothing at all.
+- **Phase 39.5 is CLOSED. There is no 39.5D** — the remaining table is condition-gated, not
+  scheduled, and inventing a sub-phase to hold unripe items is what 38G did wrong.
+- **NEXT: Phase 40 (Survival & Needs) — a decision phase, starting at 40A.** ⚠️ **40A owns the
   repair/durability call** that 38D deferred to it, and `docs/DESIGN.md` §6's sink table has an empty
   "Repair — pending 40A" row waiting on it. ⚠️ **40B's rule is that a cut system leaves no stub** —
   39C, 39.5A and 39.5B's cut `HudMode.Dead` are all worked examples.
@@ -76,15 +98,15 @@ existed the same three lines were maintained in four places and rewritten every 
 | | |
 | --- | --- |
 | Build | clean, **0 warnings** |
-| Tests | **1419 passing** (39.5B adds 43) |
+| Tests | **1428 passing** (39.5C adds 9) |
 | `--validate` | exit 0; **1331** locale strings |
-| **Negative tests** | `python tools/negative_tests.py` — **57/57 broken and restored** (3 are 39.5B's). ⚠️ Runs **over two minutes**; killing it mid-run defeats its own `finally` and leaves the tree mutated (`git checkout -- data/ scenes/` recovers). ⚠️ It edits `scenes/` too, and refuses to start on a dirty tree |
-| `--economy` | ⚠️ **proved by diff, not by re-reading the report**: `git diff HEAD~1 --name-only -- data/` returned `data/locale/strings.csv` alone, so no price input changed. Cheaper *and* stronger than eyeballing the same table twice — and it sidesteps the `git stash` trap (**a stash on a committed tree stashes NOTHING**, so a stash-based before/after silently compares a build with itself) |
-| `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, 33 dialogues, 14 quests, **64 map locations** — unchanged; 39.5B authored no content |
+| **Negative tests** | `python tools/negative_tests.py` — **58/58 broken and restored** (1 is 39.5C's). ⚠️ Runs **over two minutes**; killing it mid-run defeats its own `finally` and leaves the tree mutated (`git checkout -- data/ scenes/` recovers). ⚠️ It edits `scenes/` too, and refuses to start on a dirty tree |
+| `--economy` | unchanged — **60 goods, 3 routes**, and `git diff origin/main --name-only -- data/` returns `AncientKin.tres` alone, a quest that carries no price. ⚠️ **Prove it by diff rather than by re-reading the report**: cheaper *and* stronger than eyeballing the same table twice — and it sidesteps the `git stash` trap (**a stash on a committed tree stashes NOTHING**, so a stash-based before/after silently compares a build with itself). |
+| `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, 33 dialogues, 14 quests, **64 map locations** — unchanged |
 | **`map_probe`** | `godot --headless --path . --script res://tools/map_probe.gd` — **64 markers across 15 cells**. Exits 0/1, so it is a gate |
 | **`--play`** | booted, loaded slot1, **33 objects restored**. ⚠️ The 3 `CraftingStationComponent` warnings are **pre-existing**. ⚠️ **The six-line "C# backtrace" blocks around them are `PushWarning`'s own trace, not exceptions** — `grep -i error` matches `godot_variant_call_error` inside every frame and reads as six errors in a clean log |
-| **Rendered** | ✅ **11 HUD frames at 1280×720, and they were looked at** — `--hudshots`. Exploration, low health, low mana, empty endurance, statuses, a tracked quest, night, dawn, menu-open and menu-closed. **Four defects came out of them**, listed above |
-| Not verified | ⚠️ **Only 1280×720 has been rendered** — ultrawide, 16:10 and low-resolution windowed are still unchecked, so §41/§42 rest on `HudLayout`'s flow/anchor design rather than on a captured frame. ⚠️ **The damage-direction arc has never been photographed**: it needs an attacker, and the harness drives resources rather than combat. ⚠️ **The quest tracker's distance/bearing readout is also unphotographed** — the only startable quest targets a dragon in the *other* region, so `ObjectiveLocator` correctly returns null and the row hides |
+| **Rendered** | ✅ **21 frames at 1280×720, all opened and read** — `--hudshots` (12) + `--panelshots` (9). **The map screen has now been photographed for the first time.** Six shipped defects came out of these captures across 39.5B and 39.5C |
+| Not verified | ⚠️ **Only 1280×720** — ultrawide, 16:10 and low-resolution windowed rest on `HudLayout`'s flow/anchor design, not a frame (§41–42). ⚠️ **The damage-direction arc is still unphotographed**: it needs an attacker, and both harnesses drive state rather than combat. ⚠️ **The map's objective ring is wired and correct but cannot render yet** — the one authored quest destination is cross-region, so its pin is undiscovered and therefore absent |
 
 ## Live invariants — the things that will bite you
 
@@ -175,7 +197,21 @@ existed the same three lines were maintained in four places and rewritten every 
     hierarchy between them. Every one is a *presentation* fact, and presentation facts are invisible to
     builds, tests, validators and code review alike. **When the question is quality rather than
     correctness, render it and look; "it has an implementation" answers a different question.**
-30. ⚠️ **A COLOUR TOKEN CAN BE WRONG AND NOTHING WILL EVER SAY SO.** `Trough` sat within a rounding
+30. ⚠️ **A DEFERRED CONDITION IS A HYPOTHESIS, AND IT CAN BE WRONG IN THE RIGHT NEIGHBOURHOOD**
+    (39.5C). Marker clustering was gated on "two `Detail` markers overlap"; measured, the closest pair
+    in the game is 2.13 m and they never do — while their **labels** collided badly enough to render
+    seven names as one pile. **Measure the condition, then look at the area anyway**: the measurement
+    tells you whether to build *that thing*, not whether the neighbourhood is clean.
+31. ⚠️ **WHEN A NEW SURFACE ANSWERS AN OLD SURFACE'S QUESTION, TAKE THE QUESTION AWAY FROM THE OLD
+    ONE** (39.5C). The compass carried a tick per discovered place for two sub-phases after the
+    minimap made that job redundant, and the cost was not duplication — **both surfaces got worse**.
+    Adding a widget is the moment to ask what it makes unnecessary elsewhere.
+32. ⚠️ **A `VBoxContainer` RESOLVES OVERFLOW BY CRUSHING WHOEVER HAS `ExpandFill`** (39.5C). The map
+    rail's fast-travel list grows a row per attunement with no ceiling, so the FILTERS scroll beside
+    it collapsed to ~14 px and drew its buttons sliced in half. **Bound the section that grows, and
+    give anything with `ExpandFill` a `CustomMinimumSize` floor too** — `ExpandFill` means "take the
+    slack", and there may be none.
+33. ⚠️ **A COLOUR TOKEN CAN BE WRONG AND NOTHING WILL EVER SAY SO.** `Trough` sat within a rounding
     error of `CardBg` for multiple phases, making every bar in the game unreadable, and it passed the
     contrast tests because those check *text* pairs. ⚠️ **When two tokens are used together, the pair
     is the thing to check, not each token against `Text`** — and the depth scale (`WellBg`/`PanelBg`/
@@ -192,7 +228,8 @@ python tools/gen_map_locations.py [--check]     # author map locations; --check 
 godot --headless --path . -- --economy          # the realm's price landscape
 godot --headless --path . -- --state            # the content census
 godot --path . -- --play                        # boot into the newest save
-godot --path . -- --hudshots                    # render 11 HUD states to PNG. ⚠️ NOT --headless
+godot --path . -- --hudshots                    # render 12 HUD states to PNG. ⚠️ NOT --headless
+godot --path . -- --panelshots                  # render 9 map/journal states. ⚠️ NOT --headless
 godot --headless --path . --script res://tools/map_probe.gd     # map placement gate, exit 0/1
 godot --headless --path . --script res://tools/stepup_probe.gd  # step-up gate, exit 0/1
 godot-cli status .                              # the Godot MCP probe — it is DOWN every session start

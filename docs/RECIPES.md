@@ -925,7 +925,19 @@ cell sat far from the origin). `EnemySpawnDirector` had the same latent bug.
    `--validate` can only catch a flag that **nothing ever sets** — a `SetFlag` typo still
    fails silently. A choice carries **one** `Effect`, so a choice that starts a quest cannot
    also set a flag: hang the flag on the next node's farewell choice (see `Elder.tres`).
-2. Auto-indexed by `QuestDatabase`. Start it via a `QuestGiverComponent` (set its
+2. **Set `LocationId` on an objective only if the thing it names actually lives somewhere**
+   (39.5C). It takes a `location.*` id and is what puts the objective on the compass, prints a
+   destination under the HUD tracker, and rings the pin on the map — see
+   [a new map location](#a-new-map-location-phase-395a) for authoring the place itself.
+   ⚠️ **Almost nothing in Embervale qualifies, and leaving it empty is the normal answer.** Every
+   hostile is a **region-scoped** `EncounterResource` spawned around the player by the
+   `EncounterDirector`, and every quest material comes off a **loot table**, not a placed node — so
+   "kill six goblins" and "gather iron ore" have no destination, and inventing one sends the player
+   somewhere no better than anywhere else. The one authored example is `quest.ancient.kin`, whose
+   target is a **placed lair** (`ash_roost.tscn`, which carries the matching `MapPin`).
+   ⚠️ `--validate` fails on a `LocationId` no `MapLocationResource` declares — this is the quest arm
+   of *"if the player can go there, it goes on the map"* (CLAUDE.md §1).
+3. Auto-indexed by `QuestDatabase`. Start it via a `QuestGiverComponent` (set its
    `QuestId`) on a world `Entity`, in a `DialogueChoice` (`Effect` StartQuest), or
    directly with `player.GetComponent<QuestLogComponent>().StartQuest(...)`. Objectives
    advance and rewards apply automatically. No code change for new Kill/Collect quests.
