@@ -351,6 +351,15 @@ and the conditions under which they would be built are written down.
 
 ### Phase 39.5 — the map and the HUD
 
+- 39.5C ✅ and the map is legible. Zoom into a busy market and the names no longer pile on top of
+each other — the map now works out which labels fit and quietly drops the ones that would overlap,
+keeping whatever you have selected. The filter list on the right stopped being crushed to a sliver
+once you had found enough places to travel to. Quests can point at a place now, so the tracker can
+tell you where you are going by name even when it is too far to give you a distance. And the compass
+was rebuilt from scratch: it used to be a cluttered little box with a picket fence of tick marks in
+it, and it is now a clean line of headings with your objective marked on it, the distance underneath,
+and an arrow at the edge when the thing you are looking for is behind you.
+
 - 39.5B ✅ and the HUD tells you where you are. There is a minimap now — there never was one — in the
 bottom-right corner, north-up, showing the ground you have walked and the places you have found
 within about fifty metres, with your arrow turning inside it. It is the same map you open with `M`,

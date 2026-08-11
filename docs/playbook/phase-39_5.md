@@ -12,13 +12,13 @@
     this file still stands, and quest markers still begin as a `QuestResource` change.
   - ✅ **It also closed 39.5A's harness gap:** `--hudshots` renders the HUD to PNG, and found four
     already-shipped defects on its first run.
-- [ ] **39.5C — The rest of the map** `[F/C]` ⏳ **← THE LIVE ITEM**
-  - **Done when:** the deferred table at the bottom of this file has had its conditions met — and
-    each one is *checked* before it is built, not assumed ripe.
-  - ⚠️ **`--hudshots` covers the HUD, not the map screen.** The same structural problem remains for
-    every *panel*: `--play` cannot press `M`, and the Godot MCP drives the editor. Extending the
-    harness to open a screen and drive it is the cheap version of this now that the capture path
-    exists — and 39.5A's three defects were all on the map screen.
+- [x] **39.5C — Panel capture, the map's labels, quest destinations** `[F/C]` ✅
+  - **Done when:** every deferred condition has been *measured*, the ripe ones built, and the map
+    screen is capturable.
+  - ⚠️ **Five conditions were measured and found genuinely unmet, so those items are still
+    deferred** — the table below records the measurements so the next session does not repeat them.
+  - ⚠️ **Phase 39.5 is closed. The remaining table is condition-gated, not scheduled**: there is no
+    39.5D, and inventing one to hold five unripe items would be the thing 38G did wrong.
   - ⚠️ **Quest markers are blocked on quest data, not on the map.** A quest names a template id, not
     a place (37.5E found this), so that item begins as a `QuestResource` change.
 
@@ -363,18 +363,150 @@ sections marked satisfied:
 
 ---
 
-## Deferred to 39.5C — each with the condition that triggers it
+## 39.5C — Panel capture, the map's labels, quest destinations `[F/C]` ✅
 
-| Brief § | Deferred | Lands when |
-| --- | --- | --- |
-| §15 | Marker clustering | two `Detail` markers overlap at `DetailZoom`. Tier culling means they do not today. |
-| §20, §21, §30 | Quest markers, search areas, journal ↔ map links | `QuestResource` gains a place to point at. 37.5E found the blocker: **a quest names a template id, not a location.** A quest-data change, not a map change. |
-| §19 | Live NPC positions | `ScheduleComponent` exposes a current destination the map can read without polling every NPC. Static "kept by" via `DialogueId` ships now, and search already finds a keeper by name. |
-| §19 | Quest-only NPCs as locations | they have no trade, so a category for them would be a lie. Lands with quest integration above. |
-| §24 | Route drawing / reachability | measured need. Roads are not a graph; the navmesh is per-cell. |
-| §11 | Districts | a settlement's cell authors more than one named quarter. |
-| §33, §27 | Terrain cartography, fog rendering | after the information hierarchy is proven. The land layer is the floor, not the ceiling. |
-| §26 | Rumoured / Fully-Known | a dialogue graph sets a flag naming a place the player has not visited. |
+*The sub-phase that measured its own backlog before building any of it. Eight deferred items, eight
+conditions, all eight checked: three ripe, five not. The five stay deferred with their measurements
+recorded above, and Phase 39.5 closes without a 39.5D — inventing one to hold unripe items is what
+38G did wrong.*
+
+- **Landed:** `PanelShots` + `ShotHarness`, `LabelPlacer`, `ObjectiveResource.LocationId`, an
+  `ObjectiveLocator` location fallback, a tracker destination-name state, a map objective ring, the
+  quest arm of `ValidateEverythingIsOnTheMap`, a rebuilt `CompassStrip`, **one negative test**
+  (57 → 58), **9 unit tests** (1419 → 1428).
+
+### Build the instrument before the work, not after
+
+39.5B built `--hudshots` *after* its HUD work and had to revisit everything it had already called
+done. 39.5C built `--panelshots` **first**, and it found two defects before a line of map work was
+written. ⚠️ **The Godot MCP looked like it would do this job and cannot** — it drives the *editor*,
+where `MapScreen` does not exist because `GameBootstrap` constructs it at runtime. `UiPanel.SetOpen`
+is public, so a panel opens from code with no key injection at all; that is the whole trick.
+
+⚠️ **The loop moved into `ShotHarness` rather than being copied.** The settle → drive → hold →
+capture cycle took two attempts in 39.5B — the first captured one frame after driving, and
+`GetImage` returns the last *drawn* frame, so every PNG photographed the previous state under the
+current state's name. Copying that loop would have been copying a bug that has already bitten.
+
+### The condition named the wrong defect
+
+⚠️ **Marker clustering was deferred until "two `Detail` markers overlap at `DetailZoom`". They never
+do — and their labels always did.** Closest pair in the game: 2.13 m, 19 px at Detail zoom, against
+a 4 px pin. But a name is 50–70 px wide and centred over its pin, so the town hub rendered the
+Vault, the Miner's Yard, the Anvil, the Booth, the Waystone, the Long Counter and the Crafting Yard
+as one pile of struck-through text. **Clustering would have merged the markers — the one thing that
+was working — and left the labels exactly as they were.**
+
+`LabelPlacer` is a greedy priority-ordered placer instead: selection ▸ hover ▸ tier, drop on
+overlap, drop on out-of-bounds. ⚠️ **The bounds test earns its place as much as the overlap test**:
+the plot clips its contents, so a label running past the edge is not omitted but *sliced*, and "The
+Fact" where "The Factor's Rest" belongs reads as corrupted data rather than as a tight fit.
+
+**The lesson is about the table, not the labels: a deferred condition is a hypothesis about where a
+defect will appear, and it can be wrong in the right neighbourhood.** Check the area, not the
+sentence.
+
+### A `VBoxContainer` resolves overflow by squashing whoever flexes
+
+⚠️ The map rail's fast-travel list gains a row per attunement and had no ceiling, so a well-travelled
+player's rail was taller than the screen. Godot resolves that by crushing the child with
+`ExpandFill` — the FILTERS scroll — to about **fourteen pixels**, rendering its buttons sliced in
+half with the legend sitting on the remains. **Bound the section that grows without limit, and give
+anything with `ExpandFill` a `CustomMinimumSize` floor as well**: `ExpandFill` alone means "take the
+slack", and there is no slack to take.
+
+### The feature is complete; the content for it barely exists
+
+⚠️ **Exactly ONE objective in the game earns a `LocationId`, and that is a measurement, not an
+oversight.** Every hostile is a **region-scoped** `EncounterResource` spawned around the player by
+the `EncounterDirector`; every quest material (iron ore, goblin hide, beast pelt, healing herb)
+comes off a **loot table**, not a placed node. The Ash dragon is the exception because it is a lair
+— placed once, in `ash_roost.tscn`, which already carried the matching `MapPin`.
+
+Authoring the other nineteen would have meant inventing specificity the world does not have:
+"goblins are north" is true of the sandbox blurb and false of the spawner, and a marker sending the
+player somewhere no better than anywhere else is worse than no marker. **What this world needs for
+them is a search AREA, not a point** — now a measured condition on the table above rather than a
+guess.
+
+### The compass was nine things in a 320×26 box
+
+*Maintainer, mid-session: "the compass looks bad and janky", then "it looks like there are multiple
+elements overlapping each other — break it down and restart".*
+
+⚠️ **Both were right, and the first fix was wrong.** A filled panel, a sixteen-band fade, 15°
+graduations, a tick under every cardinal, the letters, a tick per discovered place, two chevrons and
+a centre wedge — nine passes inside twenty-six vertical pixels. Every addition was individually
+reasonable; the sum was a row of twenty-odd near-identical hairlines, which is a **barcode**. The
+first attempt separated the channels into rows and treated the symptom. **The problem was the number
+of channels, so the rewrite is mostly subtraction:**
+
+- **No panel and no fade.** A single hairline rule with letters above it. Removing the fill removed
+  the box, the banding and the stepping artefact together — nothing is left that can look stepped.
+  (16 bands over 320 px is a 26 px staircase, which *is* the "janky".)
+- **No graduations.** They gave a slow turn something to move against; the letters and the
+  destination marks already do, and they were most of the barcode.
+- ⚠️ **No discovered-place ticks — the real cut.** 39.5A put every found shop on the strip because
+  nothing else showed them. **39.5B added the minimap**, which answers "what is near me" far better
+  than a one-dimensional strip can. Two surfaces answering one question is how both get cluttered.
+  **The minimap owns nearby places; the compass owns facing and destination.**
+
+Four elements remain, each in its own band. The one thing *added* is the functional gap worth
+closing: a destination outside the ±90° window used to draw **nothing at all**, so a player facing
+away from their own waypoint saw an empty compass and had to spin on the spot to learn which way to
+turn. There is now an edge arrow pointing the shorter way round, and a distance under the marker.
+
+⚠️ **Two shots were added to drive a waypoint ahead of and behind the player**, because the
+destination channel renders in no other state — the one authored quest destination is cross-region
+and resolves to no position. Without them, half the rebuild would have shipped unphotographed, which
+is precisely the gap 39.5B left behind.
+
+### Verification
+
+| | |
+| --- | --- |
+| Build | clean, **0 warnings** |
+| Tests | **1428 passing** (39.5C adds 9) |
+| `--validate` | exit 0 |
+| **Negative tests** | **58/58 broken and restored** (1 is 39.5C's — the quest map-coverage arm) |
+| `--state` | unchanged — 14 quests, 64 map locations. |
+| `--economy` | unchanged: **60 goods, 3 routes**, and `git diff origin/main --name-only -- data/` returns `AncientKin.tres` alone, which carries no price |
+| `map_probe` | **64 markers across 15 cells**, exit 0 |
+| `--play` | booted, restored 33 objects, only the 3 known pre-existing warnings |
+| **Rendered** | ✅ **`--hudshots` (12 states) and `--panelshots` (9 states), all opened and read.** The map screen has now been photographed for the first time in the project's history |
+| Not verified | ⚠️ Still only **1280×720**. ⚠️ The **damage-direction arc** remains unphotographed — it needs an attacker, and both harnesses drive state rather than combat. ⚠️ The **map's objective ring** is wired and correct but cannot render yet: the one authored destination is cross-region, so its pin is undiscovered and therefore absent |
+
+### Two things worth carrying into the next sub-phase
+
+1. ⚠️ **A DEFERRED CONDITION IS A HYPOTHESIS, AND IT CAN BE WRONG IN THE RIGHT NEIGHBOURHOOD.**
+   Clustering's condition was measured false and the defect it was guarding against was real, three
+   feet to the left. **Measure the condition, then look at the area anyway** — the measurement tells
+   you whether to build *that*, not whether the neighbourhood is clean.
+2. ⚠️ **WHEN A NEW SURFACE ANSWERS AN OLD SURFACE'S QUESTION, TAKE THE QUESTION AWAY FROM THE OLD
+   ONE.** The compass carried discovered places for two sub-phases after the minimap made that job
+   redundant, and the cost was not duplication — it was that **both surfaces got worse**. Adding a
+   widget is the moment to ask what it makes unnecessary elsewhere.
+
+---
+
+## Still deferred — each with the condition that triggers it, and what it measured at
+
+*⚠️ **39.5C measured every one of these.** The "measured" column is the evidence, so the next session
+checks whether the world has changed rather than re-deriving the number. 38G sat eleven sub-phases
+past its own condition because a notice named a conclusion; a notice that names a measurement cannot
+do that.*
+
+| Brief § | Deferred | Lands when | Measured (2026-08-11) |
+| --- | --- | --- | --- |
+| §15 | Marker clustering | two `Detail` markers overlap at `DetailZoom` | ❌ **Closest pair in the game is 2.13 m** (`embermarket.jeweller` ↔ `embermarket.appraisal`) = 19 px at 9 px/m, against a 4 px pin; they need to be **under 1.22 m** to touch. Only 3 pairs are within 2.5 m. ⚠️ **The condition named the wrong thing** — the *labels* collided, and `LabelPlacer` fixed that instead. |
+| §20, §30 | Quest markers, journal ↔ map links | — | ✅ **DONE in 39.5C.** `ObjectiveResource.LocationId`, an `ObjectiveLocator` fallback, a tracker destination name, a map ring and the promised validator arm. |
+| §21 | **Search areas** | an objective can name an area rather than a point | ⏳ **NEW, and this world needs it.** Only **1 of ~20 objectives** could take a `LocationId`: every hostile is a **region-scoped** `EncounterResource` spawned around the player, and every quest material comes off a **loot table**, not a placed node. Points are the wrong shape for the other 19. |
+| §19 | Live NPC positions | `ScheduleComponent` exposes a current destination | ❌ It exposes `Activity` (a string) and nothing else. |
+| §19 | Quest-only NPCs as locations | they have trade or a reason to exist on the map | ❌ Unchanged — a category for them would still be a lie. |
+| §24 | Route drawing / reachability | measured need | ❌ No measurement exists. Roads are not a graph; the navmesh is per-cell. |
+| §11 | Districts | a settlement's cell authors more than one named quarter | ❌ **No cell authors a quarter**, and `MapLocationResource` carries a comment saying the absence of `DistrictKey` is a decision. |
+| §33, §27 | Terrain cartography, fog rendering | after the information hierarchy is proven | ✅ Condition met — **deliberately not taken** in 39.5C, which spent its budget on the two defects the panel captures found. The land layer is the floor, not the ceiling. |
+| §26 | Rumoured / Fully-Known | a dialogue graph sets a flag naming a place the player has not visited | ❌ **All six story flags name states**, not places (`flag.bank.account`, `flag.crossway.permit`, `flag.iron_king_defeated`…). |
 
 ---
 

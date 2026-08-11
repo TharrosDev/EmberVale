@@ -384,6 +384,14 @@ CASES = [
      [("data/locale/strings.csv", "\ntime.phase.dusk,Dusk\n", "\n")],
      "has no locale key"),
 
+    # ⚠️ 39.5C: the quest arm of "IF THE PLAYER CAN GO THERE, IT GOES ON THE MAP", promised in
+    # CLAUDE.md §1 as the exemption that ends when quest-to-location linking lands. It has landed.
+    ("quest.objective_unknown_location", "ValidateQuests",
+     [("data/quests/AncientKin.tres",
+       'LocationId = "location.frostfang.ash_roost"',
+       'LocationId = "location.frostfang.nowhere"')],
+     "points at unknown map location"),
+
     ("maploc.location_never_placed", "ValidateMapMarkersArePlaced",
      [("scenes/regions/ember_crown/town_hub.tscn",
        '\n[node name="MapPin" type="Node3D" parent="VendorSmith"]\n'

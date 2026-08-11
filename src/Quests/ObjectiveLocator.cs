@@ -1,6 +1,8 @@
 using System;
+using Embervale.Core.Services;
 using Embervale.Entities;
 using Embervale.Items;
+using Embervale.World;
 using Godot;
 
 namespace Embervale.Quests;
@@ -27,12 +29,12 @@ public static class ObjectiveLocator
     /// is loaded (so the compass simply shows no objective marker that frame).</summary>
     public static Vector3? Locate(ObjectiveResource? objective, SceneTree? tree, Vector3 from)
     {
-        if (objective == null || tree == null || string.IsNullOrEmpty(objective.TargetId))
+        if (objective == null || tree == null)
         {
             return null;
         }
 
-        return objective.Type switch
+        Vector3? live = string.IsNullOrEmpty(objective.TargetId) ? null : objective.Type switch
         {
             ObjectiveType.Kill => Nearest(tree, EnemyGroup, from,
                 e => e.TemplateId == objective.TargetId),
@@ -40,6 +42,35 @@ public static class ObjectiveLocator
                 e => e.GetComponent<ItemPickupComponent>()?.ItemId == objective.TargetId),
             _ => null,
         };
+
+        // ⚠️ THE LIVE TARGET WINS, AND THE AUTHORED PLACE IS THE FALLBACK — NOT THE OTHER WAY ROUND
+        // (39.5C). The dragon actually standing in front of you is a better answer than the roost it
+        // is supposed to be in, and a Collect objective should point at the herb you can see rather
+        // than at the meadow it usually grows in. The authored location is what the game knows when
+        // it can see nothing.
+        return live ?? LocationOf(objective);
+    }
+
+    /// <summary>
+    /// Where the objective's authored <see cref="ObjectiveResource.LocationId"/> is, or null.
+    ///
+    /// ⚠️ <b>Null is the correct and common answer, and it must stay null.</b>
+    /// <see cref="MapService.PositionOf"/> knows a position only for a location whose cell is
+    /// resident or which the player has already found — so an objective across a region boundary
+    /// resolves to nothing, by design (maintainer decision, 39.5C). The tracker names the place
+    /// instead of drawing an arrow at a coordinate nobody measured; a position invented here would
+    /// be the one thing 39.5A's invariant forbids, and it would point the compass at a lie.
+    /// </summary>
+    public static Vector3? LocationOf(ObjectiveResource? objective)
+    {
+        if (objective == null || string.IsNullOrEmpty(objective.LocationId))
+        {
+            return null;
+        }
+
+        return ServiceLocator.Instance is { } locator && locator.TryGet(out MapService map)
+            ? map.PositionOf(objective.LocationId)
+            : null;
     }
 
     // ponytail: linear scan of the (small) group each call; the caller throttles re-resolution.

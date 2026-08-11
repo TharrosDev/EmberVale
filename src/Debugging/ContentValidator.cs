@@ -2867,6 +2867,21 @@ public static class ContentValidator
                         RequireItem(objective.TargetId, $"quest '{quest.Id}' collect objective", issues);
                         break;
                 }
+
+                // ⚠️ THE QUEST ARM OF THE MAP-COVERAGE RULE (39.5C), PROMISED IN CLAUDE.md §1.
+                //
+                // "IF THE PLAYER CAN GO THERE, IT GOES ON THE MAP" has been a gate for shops,
+                // services and properties since 39.5A, and quests were the one named exemption —
+                // "a quest names a template id rather than a place (39.5B), so when quest-to-location
+                // linking lands, this rule extends to quests and gets its own validator arm." The
+                // linking has landed, so here is the arm. A destination that names a location the
+                // database does not have is a marker the player is sent to and never finds.
+                if (objective.LocationId.Length > 0 &&
+                    World.MapLocationDatabase.Get(objective.LocationId) == null)
+                {
+                    issues.Add($"quest '{quest.Id}' objective points at unknown map location " +
+                               $"'{objective.LocationId}'");
+                }
             }
 
             foreach (Variant element in quest.RewardItems)
