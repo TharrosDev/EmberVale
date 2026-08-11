@@ -43,6 +43,20 @@ existed the same three lines were maintained in four places and rewritten every 
   be broken by adding something new. CLAUDE.md §1 and the shop/service/cell recipes all say so.
   ⚠️ **Quest destinations are not coverable yet** — a quest names a template id, not a place — and
   that is 39.5B, not an exemption.
+- ⚠️ **THREE ORPHANS FOUND BY A FEATURE-CONTINUITY AUDIT (2026-08-11), EACH NEEDING A DECISION
+  RATHER THAN A FIX.** All three are content or code with **no caller**, which is the
+  `CraftingComponent.Learn` failure the working agreement names — nothing fails over any of them:
+  1. **`quest.cull_goblins` cannot be started by anything.** 33D deliberately stopped the sandbox
+     auto-seeding it (good reason: a full journal before the player has done anything undercuts the
+     opening) but left the `.tres` **and** the dead `GameIds.CullGoblins` constant behind. Either
+     wire it to a giver or delete both. ⚠️ **There is no `ValidateQuestReachability` rule** — the
+     pattern exists for recipes and contraband, and a quest arm would have caught this.
+  2. **`QuestGiverComponent` has zero references** — not code, not scenes, not data. Quests are
+     granted by `DialogueEffect.StartQuest` instead. ⚠️ It also carries two **hard-coded
+     player-facing strings** (`"Talk"`, `"Accept: …"`), so if it is ever placed it ships
+     untranslated.
+  3. **`CraftingStationType.Cooking` has no recipe and no station.** ⚠️ **Do not delete it blind —
+     Phase 40A owns the food/cooking decision**, so this is 40A's to adopt or cut.
 - ⚠️ **DYING WHILE MOUNTED IS A KNOWN GAP, NAMED RATHER THAN FIXED (39B).** Death is not a one-shot,
   so it still plays a full-body clip on a seated offset, and nothing dismounts on death. Whoever
   touches mounts next owns it.
@@ -65,7 +79,8 @@ existed the same three lines were maintained in four places and rewritten every 
 | `--validate` | exit 0 |
 | **Negative tests** | `python tools/negative_tests.py` — **53/53 broken and restored** (8 are the map's). ⚠️ Runs **over two minutes**; killing it mid-run defeats its own `finally` and leaves the tree mutated (`git checkout -- data/ scenes/` recovers). ⚠️ It edits `scenes/` too, and refuses to start on a dirty tree |
 | `--economy` | **price landscape identical**, diffed against `HEAD~1` data. ⚠️ **`git stash` stashes NOTHING on a committed tree**, so a stash-based before/after comparison silently compares a build with itself — check the diff is non-trivial before believing it. Locale count 1188 → 1317 |
-| `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, 33 dialogues, 14 quests, **63 map locations** |
+| `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, 33 dialogues, 14 quests, **64 map locations** |
+| **Continuity audit** | 2026-08-11, static: 59 components all attached · 300+ authored ids across 21 content types with **zero orphans** · 18/18 story flags set *and* read · 29/29 input actions bound *and* read · 12/12 UI panels instantiated · every gameplay enum member handled **except `CraftingStationType.Cooking`**. Three orphans found, listed above |
 | **`map_probe`** | `godot --headless --path . --script res://tools/map_probe.gd` — **63 markers across 15 cells**, each a distinct in-cell world position. Exits 0/1, so it is a gate |
 | **`--play`** | booted, loaded slot1, 33 objects restored. ⚠️ The 3 `CraftingStationComponent has no owning Entity ancestor` warnings are **pre-existing** — proved by re-running against `HEAD~1` scenes |
 | Rendered | ⚠️ **NOTHING NEW. No screenshot of the map screen exists**, and the world is visually unchanged (map markers are invisible `Node3D`s). Every visual fact about the map in this session came from the maintainer opening it |
