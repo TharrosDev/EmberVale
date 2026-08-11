@@ -60,6 +60,7 @@ public static class HeadlessState
         text.AppendLine($"contracts     {ContractDatabase.All.Count}");
         text.AppendLine($"dialogues     {DialogueDatabase.All.Count}");
         text.AppendLine($"quests        {QuestDatabase.All.Count}");
+        text.AppendLine($"map locations {MapLocationDatabase.All.Count}  (39.5A — each placed in a cell scene)");
         text.AppendLine();
 
         foreach (RegionResource region in RegionDatabase.All)

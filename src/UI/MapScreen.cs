@@ -42,6 +42,7 @@ public partial class MapScreen : UiPanel
     private VBoxContainer _info = null!;
     private VBoxContainer _filters = null!;
     private VBoxContainer _legend = null!;
+    private VBoxContainer _travelList = null!;
 
     private MapProjection _projection = new(Vector2.Zero, MapProjection.DefaultZoom, Vector2.One);
     private readonly HashSet<MapCategory> _hidden = new();
@@ -142,6 +143,11 @@ public partial class MapScreen : UiPanel
         _info = new VBoxContainer();
         _info.AddThemeConstantOverride("separation", 2);
         rail.AddChild(_info);
+
+        rail.AddChild(UiTheme.SectionRule(Loc.T("map.travel_header")));
+        _travelList = new VBoxContainer();
+        _travelList.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        rail.AddChild(_travelList);
 
         rail.AddChild(UiTheme.SectionRule(Loc.T("map.filters_header")));
         (ScrollContainer filterScroll, VBoxContainer filterList) = UiTheme.ScrollList();
@@ -305,8 +311,25 @@ public partial class MapScreen : UiPanel
         MarkDirty();
     }
 
+    /// <summary>Keeps the stored projection's viewport in step with the plot, so a rebuild after a
+    /// window resize does not hand the view a transform built for the old size.</summary>
+    private void SyncViewport()
+    {
+        if (_view.Size.X > 1f && _view.Size.Y > 1f && !_projection.Viewport.IsEqualApprox(_view.Size))
+        {
+            _projection = _projection.Resized(_view.Size);
+        }
+    }
+
     private void SetProjection(MapProjection projection)
     {
+        // Same reconciliation MapView does: _projection is built before any layout, so its viewport
+        // is meaningless until the plot has a size. Clamping and zoom-about-centre both read it.
+        if (_view.Size.X > 1f && _view.Size.Y > 1f)
+        {
+            projection = projection.Resized(_view.Size);
+        }
+
         _projection = ClampToContent(projection);
         _view.Projection = _projection;
         _view.QueueRedraw();
@@ -332,8 +355,10 @@ public partial class MapScreen : UiPanel
         return projection.ClampedTo(min, max);
     }
 
+    // Anchored on the PLOT's centre, not the projection's stored viewport — the stored one is a
+    // half-pixel until the first layout pass, which put the zoom anchor in the top-left corner.
     private void ZoomBy(float factor) =>
-        SetProjection(_projection.ZoomedAbout(_projection.Viewport * 0.5f, factor));
+        SetProjection(_projection.ZoomedAbout(_view.Size * 0.5f, factor));
 
     private void CenterOnPlayer()
     {
@@ -406,19 +431,68 @@ public partial class MapScreen : UiPanel
 
         RebuildPins();
 
+        SyncViewport();
         _view.Projection = _projection;
         _view.Pins = _pins;
         _view.HiddenCategories = _hidden;
         _view.SelectedId = _selectedId;
         _view.Waypoint = _map?.Waypoint;
         _view.Regions = _map != null ? new List<MapMarker>(_map.RegionMarkers()) : new List<MapMarker>();
+        _view.Land = BuildLand();
         _view.QueueRedraw();
 
         RebuildBreadcrumb();
+        RebuildTravelList();
         RebuildResults();
         RebuildInfo();
         RebuildFilters();
         RebuildLegend();
+    }
+
+    private List<Rect2> BuildLand()
+    {
+        var land = new List<Rect2>();
+        if (_map == null)
+        {
+            return land;
+        }
+
+        foreach ((string _, Rect2 rect) in _map.KnownFootprints())
+        {
+            land.Add(rect);
+        }
+
+        return land;
+    }
+
+    /// <summary>
+    /// Every attuned waypoint, as a jump button.
+    ///
+    /// ⚠️ This is deliberately still a list, and 39.5A briefly shipped without one. Moving fast
+    /// travel onto the selected marker alone reads as the feature having been REMOVED: the waystone
+    /// pins are Secondary tier and are discovered by proximity, so a player who had attuned to five
+    /// nodes could open the map and see no way to travel at all. Selection is the richer path;
+    /// this is the one that is always there.
+    /// </summary>
+    private void RebuildTravelList()
+    {
+        UiTheme.ClearChildren(_travelList);
+        if (_travel == null)
+        {
+            return;
+        }
+
+        bool any = false;
+        foreach (TravelNode node in _travel.Nodes)
+        {
+            any = true;
+            _travelList.AddChild(TravelButton(node));
+        }
+
+        if (!any)
+        {
+            _travelList.AddChild(UiTheme.Body(Loc.T("map.travel_empty"), UiTheme.Dim));
+        }
     }
 
     private void RebuildPins()
@@ -617,12 +691,65 @@ public partial class MapScreen : UiPanel
     /// </summary>
     private void AddTravelButton(MapLocationResource location)
     {
-        if (_travel == null || location.TravelNodeId.Length == 0 ||
-            !_travel.TryGetNode(location.TravelNodeId, out TravelNode node))
+        if (TravelNodeFor(location) is not { } node)
         {
             return;
         }
 
+        _info.AddChild(TravelButton(node));
+    }
+
+    /// <summary>
+    /// The waypoint a selected location can be travelled to.
+    ///
+    /// Its own <c>TravelNodeId</c> first; failing that, ANY attuned node in the same cell. That
+    /// fallback is what makes the feature behave the way a player expects: you select "The
+    /// Embermarket", not the unremarkable stone at its north end, and the jump you have already
+    /// earned is offered on the place rather than on the object.
+    ///
+    /// ⚠️ It reads the whole catalogue rather than only discovered locations on purpose — attuning
+    /// to the node IS having been there, so gating the offer on having also walked within twenty
+    /// metres of the marker would refuse a jump the player has already paid for.
+    /// </summary>
+    private TravelNode? TravelNodeFor(MapLocationResource location)
+    {
+        if (_travel == null)
+        {
+            return null;
+        }
+
+        if (location.TravelNodeId.Length > 0 &&
+            _travel.TryGetNode(location.TravelNodeId, out TravelNode own))
+        {
+            return own;
+        }
+
+        if (location.CellId.Length == 0)
+        {
+            return null;
+        }
+
+        foreach (MapLocationResource candidate in MapLocationDatabase.All)
+        {
+            if (candidate.CellId == location.CellId && candidate.TravelNodeId.Length > 0 &&
+                _travel.TryGetNode(candidate.TravelNodeId, out TravelNode neighbour))
+            {
+                return neighbour;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// A jump button for one waypoint (Phase 25G rules unchanged).
+    ///
+    /// ⚠️ The fee shown is <see cref="TravelCosts.QuoteFor"/> — the same call
+    /// <c>GameBootstrap.OnFastTravelRequested</c> charges — so a button can never promise a price the
+    /// jump does not take (invariant 5).
+    /// </summary>
+    private Button TravelButton(TravelNode node)
+    {
         PriceQuote quote = TravelCosts.QuoteFor(node, CurrentRegionId());
         int fee = quote.Total;
         bool affordable = fee <= GoldHeld();
@@ -642,7 +769,7 @@ public partial class MapScreen : UiPanel
             SetOpen(false);
             EventBus.Instance?.Publish(new FastTravelRequestedEvent(id));
         };
-        _info.AddChild(button);
+        return button;
     }
 
     private void RebuildFilters()

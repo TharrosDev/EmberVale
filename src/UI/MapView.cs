@@ -52,6 +52,10 @@ public partial class MapView : Control
     /// <summary>Region name labels, drawn under everything at low zoom.</summary>
     public IReadOnlyList<MapMarker> Regions { get; set; } = Array.Empty<MapMarker>();
 
+    /// <summary>World-space XZ footprints of the cells the player has seen. Drawn as land, so the
+    /// plot reads as a place rather than markers floating on a void.</summary>
+    public IReadOnlyList<Rect2> Land { get; set; } = Array.Empty<Rect2>();
+
     public string? SelectedId { get; set; }
 
     public Vector3? Waypoint { get; set; }
@@ -71,7 +75,23 @@ public partial class MapView : Control
         ClipContents = true;
         SizeFlagsHorizontal = SizeFlags.ExpandFill;
         SizeFlagsVertical = SizeFlags.ExpandFill;
+        Resized += QueueRedraw;
     }
+
+    /// <summary>
+    /// The projection with its viewport reconciled to this control's real size.
+    ///
+    /// ⚠️ <b>EVERYTHING must go through this rather than <see cref="Projection"/> directly.</b>
+    /// A <see cref="MapProjection"/> is a value the screen owns and hands over; it is constructed
+    /// before any layout has happened, when the control's size is still meaningless, and
+    /// <see cref="MapProjection.WorldToScreen"/> centres on <c>Viewport * 0.5</c>. Reading the stale
+    /// value therefore projects the whole world about a half-pixel origin at the top-left corner, so
+    /// every marker lands off-screen and is culled — and the map draws nothing but the region
+    /// lettering, which is not a marker and so looks like "discovery is broken" rather than "the
+    /// transform is wrong". That is exactly what shipped for the first hour of this sub-phase.
+    /// </summary>
+    private MapProjection Fitted =>
+        Projection.Viewport.IsEqualApprox(Size) ? Projection : Projection.Resized(Size);
 
     /// <summary>True when a category passes the filter and its tier is visible at this zoom.</summary>
     private bool Shows(MapPin pin) =>
@@ -92,7 +112,7 @@ public partial class MapView : Control
             if (delta.LengthSquared() > 0f)
             {
                 _dragMoved |= delta.Length() > DragSlop;
-                Projection = Projection.Panned(delta);
+                Projection = Fitted.Panned(delta);
                 ViewChanged?.Invoke(Projection);
                 QueueRedraw();
             }
@@ -131,7 +151,7 @@ public partial class MapView : Control
                 break;
 
             case MouseButton.Right when button.Pressed:
-                Vector2 world = Projection.ScreenToWorld(button.Position);
+                Vector2 world = Fitted.ScreenToWorld(button.Position);
                 WaypointRequested?.Invoke(new Vector3(world.X, 0f, world.Y));
                 AcceptEvent();
                 break;
@@ -140,7 +160,7 @@ public partial class MapView : Control
 
     private void Zoom(Vector2 at, float factor)
     {
-        Projection = Projection.ZoomedAbout(at, factor);
+        Projection = Fitted.ZoomedAbout(at, factor);
         ViewChanged?.Invoke(Projection);
         QueueRedraw();
         AcceptEvent();
@@ -160,7 +180,7 @@ public partial class MapView : Control
                 continue;
             }
 
-            float distance = Projection.WorldToScreen(pin.WorldXz).DistanceSquaredTo(pixel);
+            float distance = Fitted.WorldToScreen(pin.WorldXz).DistanceSquaredTo(pixel);
             if (distance <= bestDistance)
             {
                 bestDistance = distance;
@@ -173,7 +193,15 @@ public partial class MapView : Control
 
     public override void _Draw()
     {
-        DrawRect(new Rect2(Vector2.Zero, Size), UiTheme.WellBg);
+        // Reconcile once per frame, so a resize between frames cannot leave the pins and the
+        // graticule disagreeing about where the centre of the map is.
+        Projection = Fitted;
+
+        // Sea first, then the land the player has walked, then the grid over both. A parchment
+        // warmth rather than the plain well colour: an unlettered dark rectangle reads as a screen
+        // that failed to load, which is exactly how it was reported.
+        DrawRect(new Rect2(Vector2.Zero, Size), Deep);
+        DrawLand();
         DrawGraticule();
 
         // Region names sit under the markers, as a cartographer would letter a territory.
@@ -193,12 +221,38 @@ public partial class MapView : Control
         DrawPlayer();
     }
 
+    /// <summary>Unmapped ground — the colour under everything.</summary>
+    private static Color Deep => new(0.055f, 0.052f, 0.048f);
+
+    /// <summary>Ground the player has been to.</summary>
+    private static Color Ground => new(0.128f, 0.116f, 0.098f);
+
+    /// <summary>
+    /// The cells the player has seen, drawn as land.
+    ///
+    /// Each rect is the real measured extent of that cell's ground geometry, not a shape authored
+    /// for the map — so the coastline of the known world is the world, and a new cell appears on the
+    /// map the moment it is walked into with no cartography step at all.
+    /// </summary>
+    private void DrawLand()
+    {
+        foreach (Rect2 cell in Land)
+        {
+            Vector2 a = Projection.WorldToScreen(cell.Position);
+            Vector2 b = Projection.WorldToScreen(cell.End);
+            var screen = new Rect2(a, b - a).Abs();
+
+            DrawRect(screen, Ground);
+            DrawRect(screen, new Color(UiTheme.Brass, 0.22f), false, 1f);
+        }
+    }
+
     /// <summary>A faint 50 m grid, so panning and zooming have something to read motion against.
     /// Without it a uniform field reads as static no matter how fast you drag it.</summary>
     private void DrawGraticule()
     {
         const float spacing = 50f;
-        var ink = new Color(UiTheme.PanelBorder, 0.16f);
+        var ink = new Color(UiTheme.PanelBorder, 0.22f);
 
         Vector2 topLeft = Projection.ScreenToWorld(Vector2.Zero);
         Vector2 bottomRight = Projection.ScreenToWorld(Size);

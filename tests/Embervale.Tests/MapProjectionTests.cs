@@ -121,6 +121,33 @@ public class MapProjectionTests
     }
 
     [Fact]
+    public void Resized_KeepsCentreAndZoom_AndRecentresTheProjection()
+    {
+        MapProjection built = At(20f, -40f, 8f) with { Viewport = Vector2.One };
+        MapProjection fitted = built.Resized(Viewport);
+
+        Assert.Equal(built.Center, fitted.Center);
+        Assert.Equal(built.Zoom, fitted.Zoom, 3);
+
+        // The centre of the world must land in the middle of the PLOT, not half a pixel from its
+        // top-left corner.
+        Assert.Equal(new Vector2(400f, 300f), fitted.WorldToScreen(built.Center));
+    }
+
+    [Fact]
+    public void AnUnfittedViewportProjectsEverythingIntoTheCorner()
+    {
+        // The 39.5A shipping bug, pinned so it cannot come back quietly: a projection built before
+        // layout carries Viewport = (1,1), so WorldToScreen centres on half a pixel and every marker
+        // lands off the top-left corner and is culled. MapView.Fitted exists to prevent this, and
+        // this test is what makes the difference between the two states observable.
+        MapProjection unfitted = At(0f, 0f, 6f) with { Viewport = Vector2.One };
+
+        Assert.Equal(new Vector2(0.5f, 0.5f), unfitted.WorldToScreen(Vector2.Zero));
+        Assert.Equal(new Vector2(400f, 300f), unfitted.Resized(Viewport).WorldToScreen(Vector2.Zero));
+    }
+
+    [Fact]
     public void ClampedTo_LeavesAViewInsideTheContentAlone()
     {
         MapProjection p = At(0f, 0f, 6f);

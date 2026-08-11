@@ -58,6 +58,10 @@ public partial class MapService : Node, ISaveable
     private readonly Dictionary<string, Vector3> _livePositions = new();
     private readonly Dictionary<string, Vector3> _savedPositions = new();
 
+    /// <summary>World-space XZ footprint of each cell the player has seen, so the map can draw land
+    /// instead of a void. Persisted: a cell in the other region is not resident to measure.</summary>
+    private readonly Dictionary<string, Rect2> _footprints = new();
+
     private float _sinceTick;
 
     /// <summary>Bumped whenever discovery changes, so the map UI can tell when to rebuild.</summary>
@@ -202,6 +206,12 @@ public partial class MapService : Node, ISaveable
     {
         bool changed = _pois.Add(e.CellId);
 
+        if (MeasureGround(e.Root) is { } footprint)
+        {
+            _footprints[e.CellId] = footprint;
+            changed = true;
+        }
+
         // Discovering a cell also discovers the region that owns it (so walking in reveals it).
         if (RegionOfCell(e.CellId) is { } region)
         {
@@ -211,6 +221,65 @@ public partial class MapService : Node, ISaveable
         if (changed)
         {
             Revision++;
+        }
+    }
+
+    /// <summary>Every cell footprint the player has seen, for the map's land layer.</summary>
+    public IEnumerable<(string CellId, Rect2 Rect)> KnownFootprints()
+    {
+        foreach (KeyValuePair<string, Rect2> entry in _footprints)
+        {
+            yield return (entry.Key, entry.Value);
+        }
+    }
+
+    /// <summary>
+    /// The world-space XZ extent of a cell's GROUND, measured from the geometry actually in it.
+    ///
+    /// ponytail: ground is "big and flat" — a mesh whose vertical extent is under two metres and
+    /// whose area is over a hundred square metres. That heuristic is here because a cell has no
+    /// authored size: <see cref="RegionCellResource"/> carries a centre and nothing else, and the
+    /// floor dimensions live only as prose in the region .tres header. Unioning EVERY visual instead
+    /// would let one tall tree or a distant backdrop mesh stretch a cell across the realm, which is
+    /// worse than measuring nothing. If a cell ever authors its own size, delete this and read it.
+    /// </summary>
+    private static Rect2? MeasureGround(Node3D? root)
+    {
+        if (root == null)
+        {
+            return null;
+        }
+
+        Rect2? bounds = null;
+        foreach (Node node in Descendants(root))
+        {
+            if (node is not VisualInstance3D visual || !visual.IsInsideTree())
+            {
+                continue;
+            }
+
+            Aabb box = visual.GlobalTransform * visual.GetAabb();
+            if (box.Size.Y > 2f || box.Size.X * box.Size.Z < 100f)
+            {
+                continue;
+            }
+
+            var rect = new Rect2(box.Position.X, box.Position.Z, box.Size.X, box.Size.Z);
+            bounds = bounds is { } current ? current.Merge(rect) : rect;
+        }
+
+        return bounds;
+    }
+
+    private static IEnumerable<Node> Descendants(Node node)
+    {
+        foreach (Node child in node.GetChildren())
+        {
+            yield return child;
+            foreach (Node nested in Descendants(child))
+            {
+                yield return nested;
+            }
         }
     }
 
@@ -329,11 +398,18 @@ public partial class MapService : Node, ISaveable
             locations.Add(entry);
         }
 
+        var footprints = new Godot.Collections.Dictionary();
+        foreach (KeyValuePair<string, Rect2> entry in _footprints)
+        {
+            footprints[entry.Key] = entry.Value;
+        }
+
         var data = new Godot.Collections.Dictionary
         {
             ["regions"] = regions,
             ["pois"] = pois,
             ["locations"] = locations,
+            ["footprints"] = footprints,
         };
 
         if (Waypoint is { } waypoint)
@@ -352,6 +428,7 @@ public partial class MapService : Node, ISaveable
         _pois.Clear();
         _locations.Clear();
         _savedPositions.Clear();
+        _footprints.Clear();
 
         if (data.TryGetValue("regions", out Variant r) && r.VariantType == Variant.Type.Array)
         {
@@ -389,6 +466,18 @@ public partial class MapService : Node, ISaveable
                 if (row.TryGetValue("pos", out Variant pos) && pos.VariantType == Variant.Type.Vector3)
                 {
                     _savedPositions[id] = pos.AsVector3();
+                }
+            }
+        }
+
+        if (data.TryGetValue("footprints", out Variant f) &&
+            f.VariantType == Variant.Type.Dictionary)
+        {
+            foreach (KeyValuePair<Variant, Variant> entry in f.AsGodotDictionary())
+            {
+                if (entry.Value.VariantType == Variant.Type.Rect2)
+                {
+                    _footprints[entry.Key.AsString()] = entry.Value.AsRect2();
                 }
             }
         }
