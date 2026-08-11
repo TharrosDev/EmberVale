@@ -30,6 +30,12 @@ existed the same three lines were maintained in four places and rewritten every 
   or keeper says where. `--validate` scans `.tscn` in **both** directions. Author with
   `tools/gen_map_locations.py` — it generates the `.tres`, the locale keys and the scene markers from
   one table, and `--check` is a gate.
+- ⚠️ **IF THE PLAYER CAN GO THERE, IT GOES ON THE MAP, IN THE SAME SUB-PHASE THAT ADDS IT**
+  (maintainer direction, 39.5A). **This is a gate:** `ValidateEverythingIsOnTheMap` fails `--validate`
+  for any shop or service no map location names, and coverage ships at 23/23 and 15/15 so it can only
+  be broken by adding something new. CLAUDE.md §1 and the shop/service/cell recipes all say so.
+  ⚠️ **Quest destinations are not coverable yet** — a quest names a template id, not a place — and
+  that is 39.5B, not an exemption.
 - ⚠️ **DYING WHILE MOUNTED IS A KNOWN GAP, NAMED RATHER THAN FIXED (39B).** Death is not a one-shot,
   so it still plays a full-body clip on a seated offset, and nothing dismounts on death. Whoever
   touches mounts next owns it.
@@ -50,7 +56,7 @@ existed the same three lines were maintained in four places and rewritten every 
 | Build | clean, **0 warnings** |
 | Tests | **1376 passing** (39.5A adds 47) |
 | `--validate` | exit 0 |
-| **Negative tests** | `python tools/negative_tests.py` — **50/50 broken and restored**. ⚠️ Runs **over two minutes**; killing it mid-run defeats its own `finally` and leaves the tree mutated (`git checkout -- data/ scenes/` recovers). ⚠️ It edits `scenes/` too, and refuses to start on a dirty tree |
+| **Negative tests** | `python tools/negative_tests.py` — **53/53 broken and restored** (8 are the map's). ⚠️ Runs **over two minutes**; killing it mid-run defeats its own `finally` and leaves the tree mutated (`git checkout -- data/ scenes/` recovers). ⚠️ It edits `scenes/` too, and refuses to start on a dirty tree |
 | `--economy` | **price landscape identical**, diffed against `HEAD~1` data. ⚠️ **`git stash` stashes NOTHING on a committed tree**, so a stash-based before/after comparison silently compares a build with itself — check the diff is non-trivial before believing it. Locale count 1188 → 1317 |
 | `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, 33 dialogues, 14 quests, **63 map locations** |
 | **`map_probe`** | `godot --headless --path . --script res://tools/map_probe.gd` — **63 markers across 15 cells**, each a distinct in-cell world position. Exits 0/1, so it is a gate |
@@ -117,7 +123,12 @@ existed the same three lines were maintained in four places and rewritten every 
 23. ⚠️ **A MOUNTED BODY MAY NOT PLAY A FULL-BODY CLIP** (39B). **Death is the known remaining hole.**
 24. ⚠️ **TWO FUNCTIONS THAT ORDER THE SAME BRANCHES MUST AGREE.** ⚠️ **A price lookup fails CLOSED.**
 25. ⚠️ **A RESTORED FILE WITH AN OLD TIMESTAMP DOES NOT REBUILD** (39A). `touch` before `dotnet build`.
-26. ⚠️ **MOVING A FEATURE IS INDISTINGUISHABLE FROM DELETING IT** (39.5A). Fast travel was relocated
+26. ⚠️ **A COMPUTED LOCALE KEY IS INVISIBLE TO EVERY DATA-DRIVEN CHECK** (39.5A). A category name is
+    built from an enum member, so adding a member adds a key reference no `.tres` mentions and no
+    database walk can find — `map.category.crafting` shipped missing and would have shown the player
+    a raw key in three places. `ValidateMapTaxonomyIsNamed` and `ValidateBreakdownKeys` are the
+    pattern: **enumerate the declared set, not the set today's data happens to reach.**
+27. ⚠️ **MOVING A FEATURE IS INDISTINGUISHABLE FROM DELETING IT** (39.5A). Fast travel was relocated
     onto a marker behind a discovery gate the player had not walked yet, and read as removed. **Ask
     what state the player is in when the new path does not exist yet.**
 

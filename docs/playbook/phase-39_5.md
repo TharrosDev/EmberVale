@@ -16,9 +16,11 @@ untouched and still next. The maintainer approved the insertion before any code 
 
 - **Landed:** `MapLocationResource` / `MapLocationDatabase` / `MapLocationComponent`, a rewritten
   `MapService` and `MapScreen`, a new `MapView`, four pure helpers (`MapProjection`, `MapTiers`,
-  `MapSearch`, `MapDistance`), **63 authored locations across all 15 cells**, 129 locale keys, five
-  `--validate` rules, five negative tests (45 → 50), **47 unit tests** (1329 → 1376),
-  `tools/gen_map_locations.py` and `tools/map_probe.gd`.
+  `MapSearch`, `MapDistance`), `WaypointBeacon`, a compass waypoint bearing, **63 authored locations
+  across all 15 cells**, 130 locale keys, **four `--validate` rule groups** (location links, both
+  directions of the scene seam, map coverage of every shop and service, and the computed taxonomy),
+  **eight negative tests** (45 → 53), **47 unit tests** (1329 → 1376), `tools/gen_map_locations.py`
+  and `tools/map_probe.gd`.
 
 ### The one architectural decision
 
@@ -69,6 +71,59 @@ capture that** — `--play` cannot press `M`, and the Godot MCP drives the *edit
    stone at its north end. ⚠️ **Attunement is the gate, not marker discovery** — gating on both would
    refuse a jump the player has already paid for.
 
+### What the second pass added, after the maintainer used it
+
+*"Grey tiles, and make it comfortable to navigate" — the first version was correct and unpleasant.*
+
+- **Cartography from measured data, not authored art.** Land is each cell's real ground footprint,
+  toned per cell by `StableRoll.Seed` so abutting cells are not one flat wash, with a **coastline
+  drawn only along edges no neighbour covers**. ⚠️ **Stroking every cell was the "grey tiles" report**:
+  the realm's cells share edges by construction (38F), so a per-cell outline draws a grid of boxes and
+  the world reads as tiling rather than as a place. Settlements also get a soft halo sized by
+  category, because a city is an area and a dot says otherwise.
+- **Navigation comfort:** hover highlight with the name at the cursor (so a dense plot needs no
+  permanent labels), pointing-hand cursor over pins, double-click to zoom, middle-drag to pan,
+  Enter in the search box takes the top hit, a live waypoint distance on the footer, and a Clear
+  button that disables itself when there is nothing to clear.
+- **The waypoint leaves the map.** `WaypointBeacon` stands a 60 m shaft of light with a turning ring
+  at the mark, and `CompassStrip` carries its bearing. ⚠️ **Both are needed, and neither is
+  sufficient**: the beacon vanishes behind a building, the compass never does. ⚠️ The beacon is
+  planted at **y = 0 and made tall** rather than raycast onto terrain — a top-down click has no
+  height, the realm has no heightmap, and a raycast could miss, hit a rooftop, or fire before the
+  cell under it has streamed in.
+- ⚠️ **"EVERYTHING GOES ON THE MAP" IS A GATE, NOT A DOC NOTE** (maintainer direction).
+  `ValidateEverythingIsOnTheMap` fails `--validate` for any shop or service no location names.
+  Coverage ships at **23/23 and 15/15**, so it can only be broken by adding something new — which is
+  the entire point. A note asking authors to remember is the mechanism that let
+  `recipe.leather_vest` rot for twenty phases: nothing could fail over it. The rule is also in
+  CLAUDE.md §1 and at the top of the shop, service and cell recipes.
+
+### The audit, and what it actually found
+
+*A deep read of every map file after it was working. Four real defects, none of which any green
+check would have reported.*
+
+1. ⚠️ **`map.category.crafting` DID NOT EXIST.** `Crafting` was added to the enum in this sub-phase
+   and its locale key was not, so the filter row, the legend and the info panel would each have shown
+   the player the raw string `map.category.crafting`. **Nothing could catch it**: every other key on
+   the screen is authored in a `.tres` and is checkable by walking the database, but a category name
+   is *computed* from the enum member, so adding a member adds a key reference no resource mentions.
+   Fixed, and closed by `ValidateMapTaxonomyIsNamed` — `ValidateBreakdownKeys`'s lesson applied to a
+   second computed key set: **the declared set is the contract, the reachable set is today's accident.**
+2. ⚠️ **DRAGGING THE MAP REBUILT THE ENTIRE RAIL, ON EVERY MOUSE-MOTION EVENT.** `OnViewChanged`
+   called `MarkDirty`, and a rebuild frees and re-creates the search results, the info panel, the
+   travel list, ~30 filter buttons and the legend — tens of times a second, to produce identical
+   content. **Nothing in the rail depends on where the view is looking.** The plot repaints itself.
+3. ⚠️ **A QUICKLOAD MADE THE LAND VANISH.** `Load` cleared the footprint cache and restored from the
+   save — but footprints are *measured from resident cells*, and a quickload does not reload cells.
+   This is the same defect the two position stores already exist to prevent, in a field added later
+   and not given the same treatment. Now `_liveFootprints` / `_savedFootprints`, live winning.
+   ⚠️ **When you add a second cache with the same lifetime question, copy the answer, not the shape.**
+4. ⚠️ **THE COMPASS ENUMERATED EVERY DISCOVERED LOCATION EVERY FRAME.** `CompassStrip` calls
+   `QueueRedraw` every frame by design (the heading moves constantly), and the new place ticks walked
+   63 ids through a database lookup each time — to draw marks that only change on discovery. Cached
+   against `MapService.Revision`, which the service already maintains.
+
 ### Decisions worth carrying
 
 - ⚠️ **TWO POSITION STORES, AND THE SPLIT IS LOAD-BEARING.** `_livePositions` is what components
@@ -110,8 +165,9 @@ capture that** — `--play` cannot press `M`, and the Godot MCP drives the *edit
 | --- | --- |
 | Build | clean, **0 warnings** |
 | Tests | **1376 passing** (39.5A adds 47) |
+| `gen_map_locations.py --check` | exit 0 — the generator is idempotent, so it is a gate |
 | `--validate` | exit 0; `MapLocationDatabase loaded 63` |
-| Negative tests | **50/50**, tree restored clean |
+| Negative tests | **53/53**, tree restored clean — 8 of them the map's |
 | `--economy` | **price landscape identical**, diffed against `HEAD~1` data rather than assumed. ⚠️ The first attempt was void: `git stash` had nothing to stash on a committed tree, so both runs used the same code |
 | `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, **63 map locations** |
 | `map_probe` | **63 markers across 15 cells**, each resolving to a distinct in-cell world position |
