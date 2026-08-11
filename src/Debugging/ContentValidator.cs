@@ -3544,6 +3544,18 @@ public static class ContentValidator
                 issues.Add($"HUD distance readout has no locale key '{key}'");
             }
         }
+
+        // The clock's phase name, computed from the enum member the same way (39.5B). It shipped as a
+        // hard-coded English literal from Phase 18 until the HUD audit found it.
+        foreach (World.DayPhase phase in System.Enum.GetValues<World.DayPhase>())
+        {
+            string key = World.DayPhases.NameKey(phase);
+            if (!Loc.Has(key))
+            {
+                issues.Add($"day phase '{phase}' has no locale key '{key}' — the HUD clock would " +
+                           "show the raw key beside the time");
+            }
+        }
     }
 
     /// <summary>

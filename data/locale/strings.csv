@@ -481,12 +481,18 @@ hud.sta,STA
 hud.mp,MP
 hud.quest,QUEST
 hud.level,Lv {0}
+hud.no_mana,not enough mana
 hud.ready,ready
 hud.charging,charging…
 hud.channeling,channeling
-hud.spell,Q: {0} ({1})
 hud.xp_gain,+{0} XP
 hud.levelup,Level {0}
+hud.hotbar_empty_hint,Assign a consumable from your inventory
+# Day phase names (39.5B) — were hard-coded English in DayPhases.Label, on screen since Phase 18
+time.phase.dawn,Dawn
+time.phase.day,Day
+time.phase.dusk,Dusk
+time.phase.night,Night
 # Tracked-objective readout (39.5B): {0} distance, {1} unit, {2} compass point
 hud.quest.destination,{0} {1} · {2}
 hud.unit.metres,m
@@ -720,7 +726,7 @@ companion.order.hold,Holding
 companion.order.engage,Engaging
 companion.order.downed,Down
 notify.companion_order,"Order: {0}"
-hud.party_hint,{0} · order
+hud.party_hint,Orders
 companion.kael.title,Shieldsworn of the Ember Crown
 companion.loyalty.wary,Wary
 companion.loyalty.steady,Steady

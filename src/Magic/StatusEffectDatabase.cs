@@ -55,4 +55,9 @@ public static class StatusEffectDatabase
     {
         return ById.TryGetValue(id, out StatusEffectResource? effect) ? effect : null;
     }
+
+    /// <summary>Every loaded effect. Added for the 39.5B screenshot harness, which needs to apply
+    /// whatever effects the game actually has rather than naming ids it hopes exist — a harness that
+    /// hard-codes content is one content rename away from silently photographing an empty row.</summary>
+    public static IEnumerable<StatusEffectResource> All() => ById.Values;
 }

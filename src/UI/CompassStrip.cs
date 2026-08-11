@@ -82,9 +82,26 @@ public sealed partial class CompassStrip : Control
         float halfWidth = Size.X / 2f;
         float centreX = halfWidth;
 
-        // Backdrop + the fixed centre tick (the player's current heading).
-        DrawRect(new Rect2(0f, 0f, Size.X, StripHeight), UiTheme.PanelBg);
-        DrawLine(new Vector2(centreX, 2f), new Vector2(centreX, StripHeight - 2f), UiTheme.Accent, 2f);
+        // ⚠️ THE BACKDROP FADES AT BOTH ENDS RATHER THAN STOPPING (39.5B).
+        //
+        // It was one flat `DrawRect`, which gave the strip two hard vertical edges — so a heading
+        // scrolling past them *popped* in and out, and the widget read as a grey box pasted on the
+        // world rather than as a band of the horizon. The fade is what makes it read as a window onto
+        // something continuous, and it costs eight quads.
+        DrawBackdrop();
+
+        // The centre mark: a downward wedge over a full-height hairline. A bare 2 px line was
+        // ambiguous about which pixel it meant at the exact moment precision matters.
+        var mark = UiTheme.Adapt(UiTheme.Accent);
+        DrawLine(new Vector2(centreX, 3f), new Vector2(centreX, StripHeight - 3f), new Color(mark, 0.55f), 1f);
+        DrawColoredPolygon(
+            new[]
+            {
+                new Vector2(centreX - 5f, 0f),
+                new Vector2(centreX + 5f, 0f),
+                new Vector2(centreX, 7f),
+            },
+            mark);
 
         if (_player?.Body is not { } body || !IsInstanceValid(body))
         {
@@ -95,7 +112,29 @@ public sealed partial class CompassStrip : Control
         Vector3 origin = body.GlobalPosition;
         Font font = GetThemeDefaultFont();
 
-        // Cardinal letters.
+        // Minor graduations every 15°, so the strip has something to scroll against between letters.
+        // Without them a slow turn looks like nothing is happening until a cardinal drifts into view.
+        for (int degrees = 0; degrees < 360; degrees += 15)
+        {
+            if (degrees % 45 == 0)
+            {
+                continue; // a lettered heading draws its own, taller tick
+            }
+
+            float rel = CompassMath.Relative(Mathf.DegToRad(degrees), heading);
+            if (!CompassMath.InView(rel, Fov))
+            {
+                continue;
+            }
+
+            float x = centreX + CompassMath.StripOffset(rel, Fov, halfWidth);
+            DrawLine(new Vector2(x, StripHeight - 6f), new Vector2(x, StripHeight - 2f),
+                new Color(UiTheme.Dim, EdgeFade(x, halfWidth) * 0.5f), 1f);
+        }
+
+        // Cardinal letters. The four true cardinals carry more weight than the diagonals, so a glance
+        // lands on N/E/S/W and the intercardinals fill in — a strip where all eight shout equally is
+        // eight things to read instead of one.
         foreach ((string key, float angle) in Cardinals)
         {
             float rel = CompassMath.Relative(angle, heading);
@@ -105,8 +144,14 @@ public sealed partial class CompassStrip : Control
             }
 
             float x = centreX + CompassMath.StripOffset(rel, Fov, halfWidth);
-            Color colour = Mathf.IsZeroApprox(angle) ? UiTheme.Accent : UiTheme.Dim;
-            DrawLabel(font, Loc.T(key), x, colour);
+            bool major = Mathf.IsZeroApprox(Mathf.PosMod(angle + 0.001f, Mathf.Pi / 2f) - 0.001f);
+            bool north = Mathf.IsZeroApprox(angle);
+
+            float fade = EdgeFade(x, halfWidth);
+            Color colour = north ? UiTheme.Accent : major ? UiTheme.Text : UiTheme.Dim;
+            DrawLine(new Vector2(x, StripHeight - (major ? 9f : 7f)), new Vector2(x, StripHeight - 2f),
+                new Color(colour, fade * 0.7f), major ? 1.5f : 1f);
+            DrawLabel(font, Loc.T(key), x, new Color(colour, fade));
         }
 
         // Discovered places (small dim ticks). 39.5A: the map's own locations, not just cell centres —
@@ -149,7 +194,7 @@ public sealed partial class CompassStrip : Control
         if (map?.Waypoint is { } waypoint &&
             TryStripX(waypoint.X, waypoint.Z, origin, heading, halfWidth, centreX, out float wx))
         {
-            var mark = UiTheme.Adapt(UiTheme.AccentHot);
+            var waypointMark = UiTheme.Adapt(UiTheme.AccentHot);
             DrawColoredPolygon(
                 new[]
                 {
@@ -157,9 +202,52 @@ public sealed partial class CompassStrip : Control
                     new Vector2(wx + 6f, StripHeight - 12f),
                     new Vector2(wx, StripHeight - 1f),
                 },
-                mark);
-            DrawLine(new Vector2(wx, 2f), new Vector2(wx, StripHeight - 12f), new Color(mark, 0.55f), 1.5f);
+                waypointMark);
+            DrawLine(new Vector2(wx, 2f), new Vector2(wx, StripHeight - 12f),
+                new Color(waypointMark, 0.55f), 1.5f);
         }
+    }
+
+    /// <summary>
+    /// The strip's ground: opaque in the middle, transparent at both ends.
+    ///
+    /// Drawn as a handful of vertical bands rather than a gradient texture — the strip is 320 px
+    /// wide and repaints every frame, so a dozen `DrawRect`s is cheaper than allocating and sampling
+    /// an image, and it needs no asset.
+    /// </summary>
+    private void DrawBackdrop()
+    {
+        const int bands = 16;
+        float bandWidth = Size.X / bands;
+        float halfWidth = Size.X / 2f;
+
+        for (int i = 0; i < bands; i++)
+        {
+            float x = i * bandWidth;
+            float alpha = EdgeFade(x + (bandWidth * 0.5f), halfWidth);
+            DrawRect(
+                new Rect2(x, 0f, bandWidth + 1f, StripHeight),
+                new Color(UiTheme.PanelBg, UiTheme.PanelBg.A * alpha));
+        }
+
+        // A hairline along the bottom, fading with everything else — it gives the band an edge to sit
+        // on so the letters are not floating over the sky.
+        DrawLine(new Vector2(0f, StripHeight - 0.5f), new Vector2(Size.X, StripHeight - 0.5f),
+            new Color(UiTheme.Brass, 0.35f), 1f);
+    }
+
+    /// <summary>Opacity for a position across the strip: 1 through the middle, easing to 0 at the two
+    /// ends. Shared by the backdrop, the ticks and the letters so they all vanish together.</summary>
+    private static float EdgeFade(float x, float halfWidth)
+    {
+        const float fadeZone = 0.34f; // fraction of each half that fades
+        float distance = Mathf.Abs(x - halfWidth) / halfWidth; // 0 centre .. 1 edge
+        if (distance <= 1f - fadeZone)
+        {
+            return 1f;
+        }
+
+        return Mathf.Clamp((1f - distance) / fadeZone, 0f, 1f);
     }
 
     /// <summary>Re-caches the discovered places, but only when discovery has actually changed.</summary>
@@ -203,9 +291,16 @@ public sealed partial class CompassStrip : Control
 
     private void DrawLabel(Font font, string text, float x, Color colour)
     {
-        Vector2 size = font.GetStringSize(text, HorizontalAlignment.Left, -1f, UiTheme.BodyFontSize);
-        var pos = new Vector2(x - (size.X / 2f), (StripHeight + size.Y) / 2f - 2f);
-        DrawString(font, pos, text, HorizontalAlignment.Left, -1f, UiTheme.BodyFontSize, colour);
+        int size = UiTheme.FontSize(UiTheme.CaptionFontSize);
+        Vector2 measured = font.GetStringSize(text, HorizontalAlignment.Left, -1f, size);
+        var pos = new Vector2(x - (measured.X / 2f), 15f);
+
+        // Shadowed, like every other label drawn over the world (MapView.DrawLabel's lesson): the
+        // strip is semi-transparent at the ends, so an unshadowed letter crossing a bright sky
+        // disappears exactly where the fade makes it faintest.
+        DrawString(font, pos + Vector2.One, text, HorizontalAlignment.Left, -1f, size,
+            new Color(UiTheme.Engrave, colour.A));
+        DrawString(font, pos, text, HorizontalAlignment.Left, -1f, size, colour);
     }
 
     /// <summary>Tracked quest → its first incomplete objective → its nearest live world target.

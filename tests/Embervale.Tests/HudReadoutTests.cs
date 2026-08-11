@@ -257,6 +257,34 @@ public class HudReadoutTests
         }
     }
 
+    // ── Day phase naming ──────────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void DayPhaseNameKey_IsDistinctAndTotal()
+    {
+        // DayPhases.Label returned hard-coded English and the HUD clock printed it at the player from
+        // Phase 18 until 39.5B. NameKey replaced it; this pins that every member has its own key, so
+        // a new phase cannot silently share another's name — and ValidateHudComputedKeys checks those
+        // keys exist in the catalogue (invariant 26).
+        var keys = new HashSet<string>();
+        foreach (DayPhase phase in Enum.GetValues<DayPhase>())
+        {
+            string key = DayPhases.NameKey(phase);
+            Assert.StartsWith("time.phase.", key);
+            Assert.True(keys.Add(key), $"{phase} shares a locale key with another phase");
+        }
+
+        Assert.Equal(Enum.GetValues<DayPhase>().Length, keys.Count);
+    }
+
+    [Theory]
+    [InlineData(6, DayPhase.Dawn)]
+    [InlineData(12, DayPhase.Day)]
+    [InlineData(20, DayPhase.Dusk)]
+    [InlineData(2, DayPhase.Night)]
+    public void DayPhaseOf_MatchesTheHour(int hour, DayPhase expected) =>
+        Assert.Equal(expected, DayPhases.Of(hour));
+
     private static float Radians(int degrees) => degrees * MathF.PI / 180f;
 
     private static MapPin Pin(string id, float distance, MapTier tier) =>
