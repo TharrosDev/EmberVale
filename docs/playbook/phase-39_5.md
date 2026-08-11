@@ -3,8 +3,16 @@
 - [x] **39.5A — The location layer + the map that reads it** `[F/C]` ✅
   - **Done when:** the map can answer "where is a blacksmith" from authoritative data, and every
     authored location is placed in a cell scene.
-- [ ] **39.5B — Cartography, quests on the map, districts** `[F/C]`
-  - **Done when:** the deferred table at the bottom of this file has had its conditions met.
+- [ ] **39.5B — The rest of the map** `[F/C]` ⏳ **← THE LIVE ITEM** (maintainer direction, 2026-08-10)
+  - **Done when:** the deferred table at the bottom of this file has had its conditions met — and
+    each one is *checked* before it is built, not assumed ripe.
+  - ⚠️ **Start with the harness gap, which is not on that table.** `--play` cannot press a key and
+    the Godot MCP drives the editor rather than the game, so a screen-space defect is invisible to
+    every check this repo has: **three shipped through a fully green battery in 39.5A** and the
+    maintainer found all three. A bootstrap mode that builds a screen, drives real state into it and
+    renders it to PNG is worth more than any single item below.
+  - ⚠️ **Quest markers are blocked on quest data, not on the map.** A quest names a template id, not
+    a place (37.5E found this), so that item begins as a `QuestResource` change.
 
 ---
 
