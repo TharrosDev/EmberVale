@@ -78,13 +78,24 @@
 ; the market's own origin. The 37C placement bug — a point read out of a .tscn landing a cell's width
 ; from where it was authored — is the same mistake in the other direction.
 ;
-; ⚠️ NOTHING IN THIS CELL IS RAISED GROUND, AND THAT IS DELIBERATE. The first draft of this pass had a
-; 0.3 m plaza dais. Godot's CharacterBody3D has no step-up: MoveAndSlide climbs nothing taller than
-; floor_snap_length (0.1 m by default, and this project never raises it), so a 0.3 m kerb is an
-; invisible wall the player walks into, and the navmesh's agent_max_climb = 0.5 cheerfully bakes NPCs a
-; path over ground the player cannot follow them onto. Every ground slab here is a 5-6 cm decorative
-; skin with NO COLLIDER, exactly like the original aisle. The district's verticality comes from an
-; 11 m bell tower, 8 m trees and 2.6 m awnings — from props, never from terrain.
+; ⚠️ THE PLAZA DAIS IS BACK (39C), AND IT IS THE ONLY RAISED GROUND IN THE REALM. Read the paragraph
+; this replaces before adding a second one — it said: "NOTHING IN THIS CELL IS RAISED GROUND, AND THAT
+; IS DELIBERATE. The first draft of this pass had a 0.3 m plaza dais. Godot's CharacterBody3D has no
+; step-up: MoveAndSlide climbs nothing taller than floor_snap_length (0.1 m by default, and this
+; project never raises it), so a 0.3 m kerb is an invisible wall the player walks into, and the
+; navmesh's agent_max_climb = 0.5 cheerfully bakes NPCs a path over ground the player cannot follow
+; them onto."
+;
+; Phase 39C built the step-up that paragraph was waiting for (StepUp.MaxHeight = 0.5, matched to
+; agent_max_climb by a --validate rule), so the dais is authored as it was first drawn: a 0.3 m slab,
+; 12 x 12, at x -18..-6 / z +9.5..+21.5, and it is the ONE ground skin in this cell with a collider.
+; The well, the three benches and the cook-fire ride 0.3 m up with it — a prop left at y = 0 would be
+; sunk to its ankles in a floor that did not used to be there.
+;
+; ⚠️ EVERY OTHER GROUND SLAB HERE IS STILL A 5-6 CM SKIN WITH NO COLLIDER, and that has not changed:
+; a 6 cm lip is beneath the step-up's own minimum and is something the player catches on rather than
+; climbs. Raised ground is now possible; it is not therefore free. The district's verticality still
+; comes mostly from an 11 m bell tower, 8 m trees and 2.6 m awnings — from props, not from terrain.
 ;
 ; LAYOUT, north (the approach from the square) to south (the landmark that stops the eye):
 ;   z -26..-18  the forecourt: a paved threshold, the waystone, the market banner, two braziers, two
@@ -124,8 +135,13 @@ roughness = 0.95
 albedo_color = Color(0.47, 0.44, 0.4, 1)
 roughness = 0.9
 
+; 39C: ⚠️ THIS COLOUR IS LOAD-BEARING NOW AND IT WAS NOT BEFORE. As a 6 cm skin the plaza was a subtle
+; tonal shift off the earth floor (0.3,0.29,0.28 against 0.33,0.3,0.26) and that was right. As a 0.3 m
+; dais the same colour made the edge INVISIBLE from a metre away — rendered, and the kerb simply was
+; not there — which is a trip hazard rather than a platform. Cool grey against the warm floor, so the
+; dais separates by HUE and not only by value: a shadow line alone does not survive overcast light.
 [sub_resource type="StandardMaterial3D" id="Mat_plaza"]
-albedo_color = Color(0.3, 0.29, 0.28, 1)
+albedo_color = Color(0.44, 0.45, 0.48, 1)
 roughness = 0.85
 
 [sub_resource type="StandardMaterial3D" id="Mat_forecourt"]
@@ -163,7 +179,7 @@ size = Vector3(13, 0.05, 8)
 size = Vector3(13.5, 0.06, 5)
 
 [sub_resource type="BoxMesh" id="BoxMesh_plaza"]
-size = Vector3(12, 0.06, 12)
+size = Vector3(12, 0.3, 12)
 
 [sub_resource type="BoxMesh" id="BoxMesh_plaza_path"]
 size = Vector3(2.5, 0.06, 4)
@@ -196,6 +212,12 @@ size = Vector3(0.95, 1.6, 1.9)
 
 [sub_resource type="BoxShape3D" id="Shape_bench"]
 size = Vector3(1.8, 0.85, 0.66)
+
+; 39C: the dais is the one ground skin in the realm WITH a collider, because it is the one that is
+; meant to be climbed rather than walked over. 0.3 m, inside StepUp.MaxHeight (0.5) and inside the
+; navmesh's agent_max_climb (0.5), so the player and every NPC reach it by the same rule.
+[sub_resource type="BoxShape3D" id="Shape_plaza"]
+size = Vector3(12, 0.3, 12)
 
 [sub_resource type="BoxShape3D" id="Shape_well"]
 size = Vector3(1.5, 2.75, 2.25)
@@ -364,9 +386,15 @@ mesh = SubResource("BoxMesh_cross")
 surface_material_override/0 = SubResource("Mat_aisle")
 
 [node name="PlazaFloor" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0.03, 15.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0.15, 15.5)
 mesh = SubResource("BoxMesh_plaza")
 surface_material_override/0 = SubResource("Mat_plaza")
+
+[node name="PlazaCol" type="StaticBody3D" parent="Nav"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PlazaCol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0.15, 15.5)
+shape = SubResource("Shape_plaza")
 
 [node name="PlazaPath" type="MeshInstance3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.75, 0.03, 15.5)
@@ -694,7 +722,7 @@ shape = SubResource("Shape_hay")
 ; --- The plaza, off the aisle to the west: a well, three benches around it, and a cook-fire ---------
 
 [node name="Well" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, 0.9397, -12, 0, 15.5)
+transform = Transform3D(0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, 0.9397, -12, 0.3, 15.5)
 
 [node name="Model" parent="Nav/Well" instance=ExtResource("24_well")]
 
@@ -705,7 +733,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.375, 0)
 shape = SubResource("Shape_well")
 
 [node name="BenchA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.866, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866, -15.4, 0, 12.6)
+transform = Transform3D(0.866, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866, -15.4, 0.3, 12.6)
 
 [node name="Model" parent="Nav/BenchA" instance=ExtResource("23_bench")]
 
@@ -716,7 +744,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0)
 shape = SubResource("Shape_bench")
 
 [node name="BenchB" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, -0.342, -8.6, 0, 17.4)
+transform = Transform3D(-0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, -0.342, -8.6, 0.3, 17.4)
 
 [node name="Model" parent="Nav/BenchB" instance=ExtResource("23_bench")]
 
@@ -727,7 +755,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0)
 shape = SubResource("Shape_bench")
 
 [node name="BenchC" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9063, 0, 0.4226, 0, 1, 0, -0.4226, 0, -0.9063, -13.6, 0, 19.4)
+transform = Transform3D(-0.9063, 0, 0.4226, 0, 1, 0, -0.4226, 0, -0.9063, -13.6, 0.3, 19.4)
 
 [node name="Model" parent="Nav/BenchC" instance=ExtResource("23_bench")]
 
@@ -738,7 +766,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0)
 shape = SubResource("Shape_bench")
 
 [node name="Cauldron" type="Node3D" parent="Nav"]
-transform = Transform3D(0.766, 0, -0.6428, 0, 1, 0, 0.6428, 0, 0.766, -8.8, 0, 12.4)
+transform = Transform3D(0.766, 0, -0.6428, 0, 1, 0, 0.6428, 0, 0.766, -8.8, 0.3, 12.4)
 
 [node name="Model" parent="Nav/Cauldron" instance=ExtResource("27_cauldron")]
 

@@ -16,9 +16,11 @@ So: each entry below mutates authored data, runs `--validate`, and asserts BOTH 
 AND that the expected refusal is the one that fired. The exit code alone is not evidence — it proves
 that *some* rule tripped, and a mutation that trips the wrong rule looks identical to one that works.
 
-⚠️ THIS EDITS `data/` IN PLACE, and that makes it the most dangerous script in the repo. Three
-guards, all required and none of them optional:
-  1. it refuses to start unless git reports `data/` clean, so it can never eat uncommitted authoring;
+⚠️ THIS EDITS `data/` AND `scenes/` IN PLACE, and that makes it the most dangerous script in the
+repo. Three guards, all required and none of them optional:
+  1. it refuses to start unless git reports `data/` AND `scenes/` clean, so it can never eat
+     uncommitted authoring or level work (39C added the second directory with the first scene case —
+     the restore is a `git checkout --`, so anything this can mutate it can also destroy);
   2. every mutation is undone in a `finally`, so Ctrl-C and a crash both restore;
   3. it re-asserts a clean tree before exiting, and shouts if it cannot.
 
@@ -271,6 +273,17 @@ CASES = [
        'shop.line.glut,"{0} of them, their appetite falling — {1}g"\n', "")],
      "price breakdown line"),
 
+    # ---- ValidateStepUp (Phase 39C) -------------------------------------------------------
+    # ⚠️ The first case in this battery that mutates a SCENE rather than authored data, which is why
+    # the clean-tree guard below had to grow a second directory. The rule pins every cell's
+    # agent_max_climb to what a body can actually step (StepUp.MaxHeight): raise one for a new piece
+    # of terrain and the navmesh silently goes back to routing NPCs onto ground the player cannot
+    # follow them onto — the exact mismatch that made embermarket.tscn delete its dais.
+    ("stepup.navmesh_out_of_reach", "ValidateStepUp",
+     [("scenes/regions/ember_crown/embermarket.tscn",
+       "agent_max_climb = 0.5", "agent_max_climb = 0.8")],
+     "above the"),
+
     # ---- ValidateBreakdownKeys, the 39B travel line ---------------------------------------
     # 38U's rule is that the EXPLANATION IS THE CHARGE: a price the player is shown has to say why.
     # A new factor with no authored line prints a raw key where a sentence belongs, and the map
@@ -302,7 +315,10 @@ def run(cmd, **kwargs):
 
 
 def tree_is_clean():
-    out = run(["git", "status", "--porcelain", "data/"]).stdout.strip()
+    """⚠️ `scenes/` joined `data/` here in 39C, and the reason is worth the line: the restore is a
+    `git checkout --`, so any directory this script MUTATES it can also DESTROY. A case that edits a
+    cell scene while the guard watches only data/ would silently discard uncommitted level work."""
+    out = run(["git", "status", "--porcelain", "data/", "scenes/"]).stdout.strip()
     return out == "", out
 
 
@@ -354,7 +370,7 @@ def main():
 
     clean, dirty = tree_is_clean()
     if not clean:
-        print("REFUSING TO RUN: data/ has uncommitted changes.\n"
+        print("REFUSING TO RUN: data/ or scenes/ has uncommitted changes.\n"
               "This script edits authored data in place and restores with `git checkout`, which "
               "would discard the work below.\n" + dirty)
         return 2
