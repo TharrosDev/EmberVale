@@ -293,6 +293,20 @@ public partial class StatsComponent : EntityComponent, ISaveable
 
         Callable.From(() =>
         {
+            // ⚠️ THE DEFERRED CALL CAN OUTLIVE THIS COMPONENT. Only entities with a stable
+            // PersistentId register as saveables (EntityComponent.RegisterSaveable), and those are
+            // exactly the actors PersistentSpawnDirector.Load despawns when the save it is restoring
+            // does not contain them. Both happen during the same load: this restore is deferred to
+            // the end of the frame and the despawn is a queue_free that lands at the end of the frame
+            // too, so the ordering between them is not something either side controls. Touching a
+            // freed Godot object from C# is a hard `gchandle.is_released` fatal, not a null check
+            // away — the same crash class CLAUDE.md §7 records as "2 runs in 10, and nothing in the
+            // gameplay log to point at it".
+            if (!IsInstanceValid(this))
+            {
+                return;
+            }
+
             foreach (KeyValuePair<StatType, float> pair in restored)
             {
                 SetCurrent(pair.Key, pair.Value);
