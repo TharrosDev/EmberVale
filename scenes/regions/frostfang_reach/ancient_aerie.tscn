@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="10_rock"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_glacier.glb" id="12_glacier"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_tome_stand.glb" id="13_tome"]
+[ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 
 [sub_resource type="CylinderShape3D" id="Shape_rock"]
 radius = 1.5
@@ -96,3 +97,7 @@ PersistentId = "lair.frostfang_ancient_aerie"
 [node name="Lair" parent="Nest" index="0"]
 TemplateId = "enemy.ancient_dragon"
 DefeatFlagId = "flag.ancient_dragon_defeated"
+
+[node name="MapPin" type="Node3D" parent="."]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.frostfang.ancient_aerie"

@@ -18,6 +18,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_b.glb" id="16_pebble_b"]
 [ext_resource type="Texture2D" path="res://assets/models/architecture/T_Brick_BaseColor.png" id="17_brick"]
 [ext_resource type="Texture2D" path="res://assets/models/architecture/T_Brick_Normal.png" id="18_brick_n"]
+[ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 
 [sub_resource type="NavigationMesh" id="NavMesh_ar"]
 geometry_parsed_geometry_type = 1
@@ -950,3 +951,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.94, 0, -13.27)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.25, 0, -13.84)
 
 [node name="Model" parent="Pebble7" instance=ExtResource("15_pebble_a")]
+
+[node name="MapPin" type="Node3D" parent="."]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.ember_crown.arena"

@@ -52,6 +52,7 @@ public static class ContentDatabases
         ShopDatabase.Initialize();             // merchants' wares and spreads (38A)
         ServiceDatabase.Initialize();          // trainers, banks, inns, stables (38D)
         ContractDatabase.Initialize();         // the caravan board's postings (38Q2)
+        MapLocationDatabase.Initialize();      // what the world map knows about (39.5A)
         CompanionDatabase.Initialize();
         CompanionRegistry.Initialize();
     }

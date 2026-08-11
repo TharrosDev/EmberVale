@@ -126,6 +126,7 @@ no code) — batch them when momentum is good.
 | [Phase 37.5 — AAA Fantasy UI Overhaul `[F/C]`](./phase-37_5.md) | 355 |
 | [Phase 38 — Economy, Vendors & Services `[F/C]`](./phase-38.md) | 367 |
 | [Phase 39 — Mounts & Traversal `[F]`](./phase-39.md) | 12 |
+| [Phase 39.5 — World Map & Location Intelligence `[F/C]`](./phase-39_5.md) | 2 |
 | [Phase 40 — Survival & Needs (scoped decision) `[F]`](./phase-40.md) | 11 |
 | [Phase 40.5 — Dungeon & Puzzle Framework `[F]`](./phase-40_5.md) | 22 |
 | [Phase 41 — Quest Authoring at Scale & Branching `[F/C]`](./phase-41.md) | 21 |

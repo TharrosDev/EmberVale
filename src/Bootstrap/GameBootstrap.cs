@@ -514,6 +514,10 @@ public partial class GameBootstrap : Node3D
         AddChild(_mapService);
         _mapService.DiscoverRegion(_currentRegionId); // the starting region is known immediately
 
+        // The map waypoint, standing in the world (39.5A). A mark you can only see by opening the
+        // map is a mark you have to keep opening the map to follow.
+        AddChild(new WaypointBeacon { Name = "WaypointBeacon" });
+
         // Fast-travel network (Phase 25G): the set of attuned travel nodes; persists, read by the map.
         _fastTravel = new FastTravelService { Name = "FastTravel" };
         AddChild(_fastTravel);

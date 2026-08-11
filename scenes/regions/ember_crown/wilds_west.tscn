@@ -20,6 +20,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_mushrooms.glb" id="18_mushrooms"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_a.glb" id="19_pebble_a"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_b.glb" id="20_pebble_b"]
+[ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 
 [sub_resource type="NavigationMesh" id="NavMesh_ww"]
 geometry_parsed_geometry_type = 1
@@ -1156,3 +1157,7 @@ transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -16.46, 0, -6.67)
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -16.69, 0, -6.25)
 
 [node name="Model" parent="Pebble20" instance=ExtResource("20_pebble_b")]
+
+[node name="MapPin" type="Node3D" parent="."]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.wilds.west"

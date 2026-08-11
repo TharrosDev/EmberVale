@@ -31,6 +31,19 @@ You are the lead engineer building this game incrementally. The non-negotiables:
   `recipe.leather_vest` rotted behind it the whole time.
 - **Persistence is not optional.** Any system that holds gameplay state must be
   able to save/load (implement `ISaveable`).
+- ⚠️ **IF THE PLAYER CAN GO THERE, IT GOES ON THE MAP — IN THE SAME SUB-PHASE THAT ADDS IT**
+  (maintainer direction, 2026-08-10). Every **shop, service, settlement, dungeon, landmark, quest
+  destination and point of interest** authored from now on gets a `MapLocationResource` and a placed
+  `MapLocationComponent` *as part of the work that creates it*, never as a follow-up. Author it with
+  `tools/gen_map_locations.py`; the recipe is `docs/RECIPES.md` → *a new map location*.
+  **This is enforced, not requested:** `ContentValidator.ValidateEverythingIsOnTheMap` fails
+  `--validate` for any shop or service no map location names, and coverage ships at 23/23 and 15/15
+  so the rule can only be broken by adding something new. The map is a world-readability system only
+  while it is complete — the first merchant with no pin is the one that teaches the player the map
+  cannot be trusted, and after that they stop looking at it. ⚠️ **Quest destinations are not yet
+  coverable and that is tracked, not forgotten:** a quest names a template id rather than a place
+  (39.5B), so when quest-to-location linking lands, this rule extends to quests and gets its own
+  validator arm.
 - **Prefer composition and data.** New actors = new components + new `.tres`
   resources, not new inheritance chains or hard-coded values.
 - **Respect existing architecture.** Inspect before adding; don't duplicate
@@ -173,11 +186,28 @@ process start**, so an editor already running in the wrong mode must be closed a
 `http://localhost:23630/p/<pin>`. The CLI derives 23630 from the project path; the binary defaults to
 **8080**, which is the mismatch to expect.
 
-⚠️ **`.mcp.json` is read when Claude Code starts.** Changing it mid-session does not add the tools —
-restart. Until then the same tools are reachable over HTTP: `godot-cli run-tool <name> . --url
-http://localhost:23630 --input '{...}'`, and `godot-cli status .` says whether the editor and server
-are both up. Tool names are the folder names under `.claude/skills/`; each `SKILL.md` carries the
-argument schema (⚠️ they are the *tool's* names, e.g. `scene-open` takes `resourcePath`, not `path`).
+⚠️ **`.mcp.json` is read when Claude Code starts**, and **the server has to be reachable at that
+moment** — otherwise no `mcp__ai-game-developer__*` tools exist for the whole session no matter what
+you fix afterwards (39.5A ran its entire session this way). Restarting is the only cure; until then
+the same tools are reachable over HTTP: `godot-cli run-tool <name> . --url http://localhost:23630
+--input '{...}'`, and `godot-cli status .` says whether the editor and server are both up. Tool names
+are the folder names under `.claude/skills/`; each `SKILL.md` carries the argument schema (⚠️ they
+are the *tool's* names, e.g. `scene-open` takes `resourcePath`, not `path`).
+
+⚠️ **THERE ARE TWO TOOL ENDPOINTS AND `run-tool` ONLY REACHES ONE** (39.5A). `ping` lives at
+`/api/system-tools/` and **404s** through `run-tool` with `Tool with Name 'ping' not found` — which
+reads exactly like a broken connection on a connection that is working perfectly. Use
+`godot-cli run-system-tool ping . --url ...` for those, and probe with a real editor tool such as
+`scene-list-opened` instead. Both were captured working this way; `screenshot-viewport` returns a
+genuine PNG once the editor is attached.
+
+⚠️ **OPENING GODOT FROM THE PROJECT MANAGER PUTS IT IN CLOUD MODE, SILENTLY** (39.5A, and it is the
+cause of the `SKILL.md` drift 39A reported). `GODOT_MCP_HOST` / `GODOT_MCP_CONNECTION_MODE` are read
+at process start and are only set when the editor is launched **through `godot-cli open`**. Launch it
+any other way and the running editor talks to `ai-game.dev` while the local server sits listening with
+nothing behind it — which is precisely the "listening port, 503 anyway" state above, and it also
+regenerates all 42 `.claude/skills/*/SKILL.md` pointing at the cloud. **If the skill docs show cloud
+URLs, the editor is in the wrong mode: close it and reopen with the `godot-cli open` line above.**
 
 ⚠️ **THE BLENDER MCP NO LONGER STARTS WITH A SESSION** (maintainer direction, 2026-08-10). Its
 `uvx blender-mcp` entry was **removed from the user-level `~/.claude.json`**, so no `blender-mcp.exe`

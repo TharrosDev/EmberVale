@@ -33,6 +33,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_a.glb" id="40_pebble_a"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_b.glb" id="41_pebble_b"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_stall_cart.gltf" id="42_stall_cart"]
+[ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 
 ; THE EMBERDEEP MINE (Phase 38N1) — the realm's first PRODUCTION settlement, and the second market the
 ; economy has been waiting for since 38F.
@@ -1289,3 +1290,19 @@ transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 13.59, 0, -16.73)
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 13.67, 0, -16.06)
 
 [node name="Model" parent="Pebble24" instance=ExtResource("41_pebble_b")]
+
+[node name="MapPin" type="Node3D" parent="."]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.emberdeep.mine"
+
+[node name="MapPin" type="Node3D" parent="MineWaystone"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.emberdeep.waystone"
+
+[node name="MapPin" type="Node3D" parent="Bregan"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.emberdeep.factor"
+
+[node name="MapPin" type="Node3D" parent="Marta"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.emberdeep.quartermaster"

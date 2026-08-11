@@ -10,51 +10,51 @@ namespace Embervale.Core.Diagnostics;
 /// </summary>
 public static class Log
 {
-    public enum Level
-    {
-        Trace,
-        Info,
-        Warn,
-        Error,
-    }
+	public enum Level
+	{
+		Trace,
+		Info,
+		Warn,
+		Error,
+	}
 
-    /// <summary>Messages below this level are suppressed.</summary>
-    public static Level MinimumLevel { get; set; } = Level.Trace;
+	/// <summary>Messages below this level are suppressed.</summary>
+	public static Level MinimumLevel { get; set; } = Level.Trace;
 
-    public static void Trace(string message, [CallerMemberName] string caller = "")
-    {
-        if (MinimumLevel > Level.Trace)
-        {
-            return;
-        }
+	public static void Trace(string message, [CallerMemberName] string caller = "")
+	{
+		if (MinimumLevel > Level.Trace)
+		{
+			return;
+		}
 
-        GD.Print($"[TRACE] ({caller}) {message}");
-    }
+		GD.Print($"[TRACE] ({caller}) {message}");
+	}
 
-    public static void Info(string message, [CallerMemberName] string caller = "")
-    {
-        if (MinimumLevel > Level.Info)
-        {
-            return;
-        }
+	public static void Info(string message, [CallerMemberName] string caller = "")
+	{
+		if (MinimumLevel > Level.Info)
+		{
+			return;
+		}
 
-        GD.Print($"[INFO]  {message}");
-    }
+		GD.Print($"[INFO]  {message}");
+	}
 
-    public static void Warn(string message, [CallerMemberName] string caller = "")
-    {
-        if (MinimumLevel > Level.Warn)
-        {
-            return;
-        }
+	public static void Warn(string message, [CallerMemberName] string caller = "")
+	{
+		if (MinimumLevel > Level.Warn)
+		{
+			return;
+		}
 
-        GD.PushWarning($"[WARN]  ({caller}) {message}");
-        GD.Print($"[WARN]  ({caller}) {message}");
-    }
+		GD.PushWarning($"[WARN]  ({caller}) {message}");
+		GD.Print($"[WARN]  ({caller}) {message}");
+	}
 
-    public static void Error(string message, [CallerMemberName] string caller = "")
-    {
-        GD.PushError($"[ERROR] ({caller}) {message}");
-        GD.PrintErr($"[ERROR] ({caller}) {message}");
-    }
+	public static void Error(string message, [CallerMemberName] string caller = "")
+	{
+		GD.PushError($"[ERROR] ({caller}) {message}");
+		GD.PrintErr($"[ERROR] ({caller}) {message}");
+	}
 }

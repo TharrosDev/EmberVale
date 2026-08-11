@@ -311,6 +311,61 @@ CASES = [
        'UnlockFlagId = "flag.stable.mount_owned"',
        'UnlockFlagId = "flag.stable.mount_bought"')],
      "which is the flag"),
+
+    # ---- ValidateMapLocations (Phase 39.5A) -----------------------------------------------
+    # A map location is half resource and half scene: the .tres says what a place IS, the
+    # MapLocationComponent in the cell scene says WHERE. Every failure below is silent in play —
+    # a marker that never appears is indistinguishable from one the player has not discovered yet,
+    # which is precisely the state the feature is supposed to represent.
+    ("maploc.name_unauthored", "ValidateMapLocations",
+     [("data/map_locations/EmberCrownSmith.tres",
+       'NameKey = "location.ember_crown.smith.name"',
+       'NameKey = "location.ember_crown.anvil.name"')],
+     "has no name in the locale catalogue"),
+
+    ("maploc.shop_missing", "ValidateMapLocations",
+     [("data/map_locations/EmberCrownSmith.tres",
+       'ShopId = "shop.ember_crown.smith"', 'ShopId = "shop.ember_crown.smithy"')],
+     "which does not exist"),
+
+    ("maploc.cell_missing", "ValidateMapLocations",
+     [("data/map_locations/EmberCrownSmith.tres",
+       'CellId = "ember_crown.town_hub"', 'CellId = "ember_crown.town_square"')],
+     "which no region declares"),
+
+    # ⚠️ The two directions of the scene seam, and the pair IDS.md says is missing for shop.*
+    # and service.*: a scene naming an id nothing declares, and an authored location nothing places.
+    ("maploc.scene_names_unknown_id", "ValidateMapMarkersArePlaced",
+     [("scenes/regions/ember_crown/town_hub.tscn",
+       'LocationId = "location.ember_crown.smith"',
+       'LocationId = "location.ember_crown.blacksmith"')],
+     "which no map location declares"),
+
+    # ⚠️ The rule that keeps the map from rotting: every shop and service must be ON it. Coverage is
+    # 23/23 and 15/15, so this can only be broken by adding something new — which is the point.
+    ("maploc.shop_not_on_the_map", "ValidateEverythingIsOnTheMap",
+     [("data/map_locations/EmberCrownSmith.tres",
+       'ShopId = "shop.ember_crown.smith"', 'ShopId = ""')],
+     "is not on the world map"),
+
+    ("maploc.service_not_on_the_map", "ValidateEverythingIsOnTheMap",
+     [("data/map_locations/EmberCrownInn.tres",
+       'ServiceId = "service.ember_crown.inn"', 'ServiceId = ""')],
+     "is not on the world map"),
+
+    # ⚠️ A category name is COMPUTED from the enum member, so adding a member adds a key reference
+    # that no resource mentions and no other rule can see. Crafting shipped without its key in 39.5A.
+    ("maploc.category_unnamed", "ValidateMapTaxonomyIsNamed",
+     [("data/locale/strings.csv", "\nmap.category.smith,Smith\n", "\n")],
+     "has no locale key"),
+
+    ("maploc.location_never_placed", "ValidateMapMarkersArePlaced",
+     [("scenes/regions/ember_crown/town_hub.tscn",
+       '\n[node name="MapPin" type="Node3D" parent="VendorSmith"]\n'
+       'script = ExtResource("maploc_39_5a")\n'
+       'LocationId = "location.ember_crown.smith"\n',
+       "\n")],
+     "no cell scene places a MapLocationComponent"),
 ]
 
 

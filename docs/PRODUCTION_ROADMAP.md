@@ -153,6 +153,7 @@ authoring recipes that turn them into content with no new code, see docs/RECIPES
 | 37 | Housing & Player Property | F | Purchasable homes, storage, station placement, trophies, customization (LORE Housing) |
 | 38 | Economy, Vendors & Services | F/C | Merchants, buy/sell, repair, training, banks, dynamic pricing, gold sinks |
 | 39 | Mounts & Traversal | F | Mounts, stamina/sprint traversal, climbing/swimming as the world demands |
+| 39.5 | World Map & Location Intelligence | F/C | The map as the world's geographical index: a location layer, discovery, search, waypoints |
 | 40 | Survival & Needs (scoped) | F | Only the systems LORE/design require (e.g. carry weight already exists) — keep or cut deliberately |
 | 40.5 | Dungeon & Puzzle Framework | F | Reusable lever/trap/puzzle tooling for ruins/temples/vaults, plus the relic-trial vault convention |
 | 41 | Quest Authoring at Scale & Branching | F/C | Beyond Kill/Collect: escort, defend, choice/branch, timed, faction-gated objective types |
@@ -659,6 +660,30 @@ crafting stations, trophies, and customization.
   decals today), climb when a cell authors a surface reachable no other way. **Neither left a stub** —
   40B's rule, worked example. Phase 44 should author verticality against 0.5 m.
 
+### Phase 39.5 — World Map & Location Intelligence `[F/C]`
+
+⚠️ **Inserted after Phase 39 shipped, with the maintainer's approval** — the map was on no phase at
+all, having last been touched as 25E and 37.5E. It is numbered 39.5 because that is when it landed;
+Phase 40 was not displaced.
+
+The realm outgrew its map. 23 shops, 15 services and 15 cells, and the map could plot exactly three
+kinds of thing — region spawn points, cell centres and fast-travel nodes — because those were the
+only things in the game that had a position. **A shop has no coordinates**; `ShopResource.CellId` is
+an economy field, buildings and districts are not entities, and NPC positions live in scene
+transforms and schedule routes.
+
+- **39.5A ✅** — the location layer and the map that reads it. `MapLocationResource` says what a place
+  is and links to the authoritative record by id; a `MapLocationComponent` in the cell scene says
+  where, and is the only record of it. 63 locations across all 15 cells, pan/zoom/tier-culling,
+  search over shop and keeper names, category filters, a selection panel with distance and bearing,
+  a waypoint, a live region breadcrumb, and land drawn from each cell's measured ground footprint.
+  Five `--validate` rules including both directions of the scene seam, five negative tests, 47 unit
+  tests, `tools/gen_map_locations.py` and `tools/map_probe.gd`.
+- **39.5B ⏳** — cartography, quests on the map, districts, clustering, live NPC positions, routes.
+  ⚠️ **Every deferred item carries a condition rather than a verdict**; the table is in
+  [`docs/playbook/phase-39_5.md`](playbook/phase-39_5.md). The notable blocker is quests: **a quest
+  names a template id, not a place**, so quest markers are a quest-data change rather than a map one.
+
 ### Phase 40 — Survival & Needs (scoped, deliberate) `[F]`
 
 A **decision phase**, not an assumption. Carry weight exists as *data* (Phase 5) but
@@ -1130,6 +1155,7 @@ that doesn't touch the slice.
 | 36 | ✅ | The boss kit (36A–36E): a boss is authored data now (`data/bosses/*.tres` — phases, enrage, granted spells, telegraph colours), the Iron King lost his bespoke factory so there is **one** path through the pipeline, wind-ups are telegraphed by a model-independent ground ring and interruptible by a stagger **for every actor including the player**, phases summon capped add waves, an arena binds its own spawn points and phase reactions declaratively in its `.tscn`, and each boss's intro lock, defeat slow-mo, guaranteed reward and corruption-choice dialogue come from its own resource |
 | 37 | ✅ | Housing (37A–37D): a holding can be bought and/or earned, ownership persists and registers a fast-travel node; it has a stash (the game's **first two-way container**); you can craft kits and set stations and decoration down in its yard (the game's **first world-editing verb**, with a ghost that names *which* refusal applies); and display stands show off Epic-or-better trophies. Persistence came free all four times — ownership is a service, the stash and the stands **are** inventories keyed by `PersistentId`, and placed props ride `PersistentSpawnDirector`. The Ashfall Cottage is authored end to end as the one playable property **37E (out of band, 2026-08-10)** rebuilt the holding entirely: `compose_building.py --hollow` makes a house with per-wall colliders and an open doorway, so the Ashfall Cottage is now an **enterable, furnished home in its own cell** (`ember_crown.ashfall_homestead`) with a workshop, a garden and an ownership-gated free bed |
 | 37.5 | ✅ | **The UI overhaul** (37.5A–G) — an original AAA-fantasy interface language across every screen — sub-phase detail in [Phase 37.5 — what shipped, sub-phase by sub-phase](#phase-375--what-shipped-sub-phase-by-sub-phase) below |
+| 39.5 | ⏳ | **World map & location intelligence — 39.5A closed.** The map reads authoritative world data instead of the three things that happened to have coordinates. ⚠️ **A location's position is its node's transform in a cell scene, never an authored coordinate**, and `--validate` checks that seam in both directions. Author with `tools/gen_map_locations.py`. 39.5B is queued with a condition per deferred item — see [`docs/playbook/phase-39_5.md`](playbook/phase-39_5.md) |
 | 38 | ✅ | **Economy, vendors & services — closed at 38V.** All twenty-two sub-phases (38A–38V) including 38G; nothing parked, five briefed services deliberately struck. Mechanism in [`ARCHITECTURE.md`](ARCHITECTURE.md) §2.6m, intent + the Phase 56 balance handoff in [`DESIGN.md`](DESIGN.md) §6/§6.1, and the rules are re-provable with `python tools/negative_tests.py` (42 cases). Sub-phase detail in [Phase 38 — what shipped, sub-phase by sub-phase](#phase-38--what-shipped-sub-phase-by-sub-phase) below (that list stops at 38O; **`docs/playbook/phase-38.md` is the current one**) |
 | Art | ✅ | **The Quaternius standardisation** (out of band, maintainer direction): the art set is now one CC0 artist. 401 models vendored at `assets/library/` behind a `.gdignore`, 18 props re-sourced keeping their filenames and boxes, and **29 archetypes that greyboxed as tinted capsules got rigged animated bodies** — Phase 35's dragons finally have one. Every model in the game is CC0 and the project owes **no attribution**; the `prp_tome_stand` release blocker is gone. Policy in `ASSET_POLICY.md` §0 |
 

@@ -28,6 +28,7 @@
 - [A new service — trainer / bank / inn / stable (Phase 38D)](#a-new-service--trainer--bank--inn--stable-phase-38d)
 - [Generators — do not hand-write boilerplate](#generators--do-not-hand-write-boilerplate-agent-ergonomics-pass)
 - [A new region cell (Phases 25, 38K/N1/N2/O, 37E)](#a-new-region-cell-phases-25-38kn1n2o-37e)
+- [A new map location (Phase 39.5A)](#a-new-map-location-phase-395a)
 - [A production settlement (Phase 38N1)](#a-production-settlement-phase-38n1)
 - [A tolled crossing — toll, permit, bribe (Phase 38M)](#a-tolled-crossing--toll-permit-bribe-phase-38m)
 - [A fence and contraband (Phase 38O)](#a-fence-and-contraband-phase-38o)
@@ -230,6 +231,11 @@
 
 ## A new shop / merchant (Phase 38A–38J)
 
+> ⚠️ **MANDATORY LAST STEP: put it on the map.** A shop with no `MapLocationResource` **fails
+> `--validate`** (`ValidateEverythingIsOnTheMap`). Add a row to `tools/gen_map_locations.py` and run
+> it — see [a new map location](#a-new-map-location-phase-395a). Do it in this sub-phase, not the
+> next one.
+
 1. Author `data/shops/Xxx.tres` (`script_class="ShopResource"`): unique `Id` (`shop.*`), a `NameKey`
    in `strings.csv`, a `Stock` array of `ShopStockEntry` sub-resources (`ItemId` + `Quantity`, the same
    `.tres` sub-resource pattern `LootEntry` uses), `RestockDays`, an optional `LeveledTable`, an
@@ -428,6 +434,10 @@
 
 ## A new service — trainer / bank / inn / stable (Phase 38D)
 
+> ⚠️ **MANDATORY LAST STEP: put it on the map.** A service with no `MapLocationResource` **fails
+> `--validate`** (`ValidateEverythingIsOnTheMap`). Add a row to `tools/gen_map_locations.py` and run
+> it — see [a new map location](#a-new-map-location-phase-395a).
+
 1. Author `data/services/Xxx.tres` (`script_class="ServiceResource"`): unique `Id` (`service.*`), a
    `NameKey` in `strings.csv`, a `Kind`, a `PriceGold`, an optional `FactionId`, and the fields that
    `Kind` reads. Auto-indexed by `ServiceDatabase`. Place it as an `Entity` with a collider and a
@@ -540,7 +550,43 @@ output is read before it lands: the `.tscn`/`.tres` stays the authored artefact.
 A dressed cell was ~8k output tokens of near-identical stanzas and a merchant conversation ~1.3k.
 Both scripts were written ad hoc and thrown away twice before being committed.
 
+## A new map location (Phase 39.5A)
+
+**Do not hand-author these.** The `.tres`, the locale keys and the scene marker must agree, and
+`tools/gen_map_locations.py` generates all three from one table so they cannot drift.
+
+1. **Add a row to the table in `tools/gen_map_locations.py`** with the `add(...)` helper:
+   the cell file, the id tail, the category, **the anchor node path in the cell scene**, the display
+   name, and whichever of `shop=` / `service=` / `dialogue=` / `travel=` apply.
+2. **Pick the anchor carefully — it is the whole feature.** ⚠️ **Parent the marker to the stall,
+   counter or keeper the location IS, never to the cell root with an offset.** The marker's transform
+   is the location's only position, so a marker parented to the thing moves with it and a marker
+   parented to the cell root is a second copy of a coordinate that will rot (invariant 22).
+   `.` means the cell root and is correct **only** for the settlement itself.
+3. **Do not author a coordinate anywhere.** There is no field for one.
+4. **Link, do not restate.** The map asks `ShopDatabase` what a place sells, `ServiceDatabase` what
+   it charges and `DialogueDatabase` who keeps it. Never copy a name or a price into the location.
+5. **Reuse an existing name key where the place already has one.** The five settlements with
+   waystones use their `travel.*.name` key, so renaming the waystone renames the pin.
+6. `RevealWithCell = true` only for something visible from outside. ⚠️ **A region loads whole, so it
+   really means "known on entering the region"** — anything the player should *find* leaves it false
+   and is discovered by walking within 20 m.
+7. **Run it:** `python tools/gen_map_locations.py`, then `--check` to confirm it is idempotent.
+8. **Gate it:** `godot --headless --path . -- --validate` (both directions of the scene seam) and
+   `godot --headless --path . --script res://tools/map_probe.gd` (a distinct, in-cell world position).
+
+⚠️ **A new `MapCategory` is a change to `src/World/MapCategory.cs` AND to the `CATEGORY` list in the
+generator**, which stores the enum's *index*. They are a contract; reordering one without the other
+silently recategorises every location, and only `--validate` catches it.
+
+⚠️ **Add a category only when content exists for it.** The filter panel and legend already hide
+groups with no pins, so an empty category is invisible rather than harmless — it is a promise the
+world does not keep, which is the empty-heading problem 37.5E refused for the journal.
+
 ## A new region cell (Phases 25, 38K/N1/N2/O, 37E)
+
+> ⚠️ **A new cell needs at least a settlement/landmark map location**, or it is a place the player can
+> stand in that the map cannot name. See [a new map location](#a-new-map-location-phase-395a).
 
 ⚠️ **This recipe did not exist until 37E**, and the settlement recipe below pointed at it ("the cell
 recipe above"). Everything here had been rediscovered four times from other cells' comments.
