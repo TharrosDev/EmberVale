@@ -3506,6 +3506,98 @@ public static class ContentValidator
         }
 
         ValidateMapMarkersArePlaced(issues);
+        ValidateEverythingIsOnTheMap(issues);
+        ValidateMapTaxonomyIsNamed(issues);
+    }
+
+    /// <summary>
+    /// Every <see cref="World.MapCategory"/> and <see cref="World.MapGroup"/> has a locale key.
+    ///
+    /// ⚠️ <b>This closes a hole the rest of the map's validation could not see, and it shipped
+    /// through it once.</b> Every other key on this screen is authored in a <c>.tres</c> and is
+    /// therefore checkable by walking the database; a category name is <em>computed</em> from the
+    /// enum member at runtime (<c>MapCategories.NameKey</c>), so adding a member is adding a key
+    /// reference that no resource mentions. <c>Crafting</c> was added in 39.5A and its key was not,
+    /// and nothing failed — <see cref="Loc.T"/> returns the key itself, so the filter row, the
+    /// legend and the info panel would all have read <c>map.category.crafting</c> at the player.
+    /// This is <c>ValidateBreakdownKeys</c>'s lesson applied to a second computed key set: <b>the
+    /// declared set is the contract, the reachable set is today's accident.</b>
+    /// </summary>
+    private static void ValidateMapTaxonomyIsNamed(List<string> issues)
+    {
+        foreach (World.MapCategory category in System.Enum.GetValues<World.MapCategory>())
+        {
+            string key = World.MapCategories.NameKey(category);
+            if (!Loc.Has(key))
+            {
+                issues.Add($"map category '{category}' has no locale key '{key}' — the filter row, " +
+                           "the legend and the info panel would each show the raw key");
+            }
+        }
+
+        foreach (World.MapGroup group in System.Enum.GetValues<World.MapGroup>())
+        {
+            string key = World.MapCategories.NameKey(group);
+            if (!Loc.Has(key))
+            {
+                issues.Add($"map group '{group}' has no locale key '{key}'");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Every shop and every service must be findable on the world map (Phase 39.5A, at the
+    /// maintainer's direction).
+    ///
+    /// ⚠️ <b>THIS IS THE RULE THAT KEEPS THE MAP FROM ROTTING, AND IT IS DELIBERATELY A GATE RATHER
+    /// THAN A NOTE IN A DOC.</b> The map is only a world-readability system while it is complete;
+    /// the first merchant who is authored without a pin makes it a system the player cannot trust,
+    /// and after that they check the map less rather than more. A note asking authors to remember
+    /// is exactly the mechanism that let <c>recipe.leather_vest</c> rot behind an uncalled
+    /// <c>CraftingComponent.Learn</c> for twenty phases — nothing could fail over it.
+    ///
+    /// Coverage is 23/23 shops and 15/15 services as of 39.5A, so this rule ships already satisfied
+    /// and can only be broken by adding something new. If a future shop genuinely should not appear
+    /// on the map, that is a design conversation and an explicit exemption here — not a silent
+    /// omission.
+    /// </summary>
+    private static void ValidateEverythingIsOnTheMap(List<string> issues)
+    {
+        var mappedShops = new HashSet<string>();
+        var mappedServices = new HashSet<string>();
+
+        foreach (World.MapLocationResource location in World.MapLocationDatabase.All)
+        {
+            if (location.ShopId.Length > 0)
+            {
+                mappedShops.Add(location.ShopId);
+            }
+
+            if (location.ServiceId.Length > 0)
+            {
+                mappedServices.Add(location.ServiceId);
+            }
+        }
+
+        foreach (Economy.ShopResource shop in Economy.ShopDatabase.All)
+        {
+            if (!mappedShops.Contains(shop.Id))
+            {
+                issues.Add($"shop '{shop.Id}' is not on the world map — no map location names it. " +
+                           "Add one with tools/gen_map_locations.py (docs/RECIPES.md, 'a new map " +
+                           "location'); a shop the map cannot show is a shop the player cannot find");
+            }
+        }
+
+        foreach (Economy.ServiceResource service in Economy.ServiceDatabase.All)
+        {
+            if (!mappedServices.Contains(service.Id))
+            {
+                issues.Add($"service '{service.Id}' is not on the world map — no map location names " +
+                           "it. Add one with tools/gen_map_locations.py (docs/RECIPES.md, 'a new map " +
+                           "location'); a service the map cannot show is a service the player cannot find");
+            }
+        }
     }
 
     /// <summary>Both directions of the scene↔catalogue seam.</summary>

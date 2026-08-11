@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Embervale.Core.Services;
 using Embervale.Entities;
 using Embervale.Localization;
@@ -38,6 +39,14 @@ public sealed partial class CompassStrip : Control
     // ponytail: the objective target is re-resolved on a timer and cached, not searched every frame.
     private Vector3? _objectiveTarget;
     private float _resolveTimer;
+
+    // ⚠️ The discovered places are cached against MapService.Revision, NOT re-enumerated per frame.
+    // This widget calls QueueRedraw every frame by design (the heading moves constantly), and
+    // DiscoveredLocations() walks every discovered id through a database lookup — 63 of them at
+    // 60 fps, to draw ticks that only change when the player discovers something. Caching on the
+    // revision counter the service already maintains costs one int comparison.
+    private readonly List<Vector2> _places = new();
+    private int _placesRevision = -1;
 
     public void SetPlayer(IEntity? player) => _player = player;
 
@@ -92,12 +101,18 @@ public sealed partial class CompassStrip : Control
             DrawLabel(font, Loc.T(key), x, colour);
         }
 
-        // Discovered POIs (small dim ticks).
-        if (ServiceLocator.Instance is { } locator && locator.TryGet(out MapService map))
+        // Discovered places (small dim ticks). 39.5A: the map's own locations, not just cell centres —
+        // a settlement tick is now the settlement rather than the middle of the tile it sits in, and
+        // every shop and service the player has found is on the strip too.
+        MapService? map = null;
+        if (ServiceLocator.Instance is { } locator && locator.TryGet(out MapService resolved))
         {
-            foreach (MapMarker poi in map.PoiMarkers())
+            map = resolved;
+            RefreshPlaces(resolved);
+
+            foreach (Vector2 place in _places)
             {
-                if (TryStripX(poi.X, poi.Z, origin, heading, halfWidth, centreX, out float px))
+                if (TryStripX(place.X, place.Y, origin, heading, halfWidth, centreX, out float px))
                 {
                     DrawLine(new Vector2(px, StripHeight - 9f), new Vector2(px, StripHeight - 2f), UiTheme.Dim, 2f);
                 }
@@ -116,6 +131,42 @@ public sealed partial class CompassStrip : Control
                     new Vector2(ox, 12f),
                 },
                 UiTheme.Good);
+        }
+
+        // The player's own waypoint (39.5A), drawn last so it wins every overlap.
+        //
+        // ⚠️ This is what makes a map mark navigable. The world beacon is visible until something
+        // stands between the player and it; the compass bearing never is, so the two together mean
+        // "walk that way" survives a building, a hill and a turn.
+        if (map?.Waypoint is { } waypoint &&
+            TryStripX(waypoint.X, waypoint.Z, origin, heading, halfWidth, centreX, out float wx))
+        {
+            var mark = UiTheme.Adapt(UiTheme.AccentHot);
+            DrawColoredPolygon(
+                new[]
+                {
+                    new Vector2(wx - 6f, StripHeight - 12f),
+                    new Vector2(wx + 6f, StripHeight - 12f),
+                    new Vector2(wx, StripHeight - 1f),
+                },
+                mark);
+            DrawLine(new Vector2(wx, 2f), new Vector2(wx, StripHeight - 12f), new Color(mark, 0.55f), 1.5f);
+        }
+    }
+
+    /// <summary>Re-caches the discovered places, but only when discovery has actually changed.</summary>
+    private void RefreshPlaces(MapService map)
+    {
+        if (_placesRevision == map.Revision)
+        {
+            return;
+        }
+
+        _placesRevision = map.Revision;
+        _places.Clear();
+        foreach (MapLocationView view in map.DiscoveredLocations())
+        {
+            _places.Add(new Vector2(view.Position.X, view.Position.Z));
         }
     }
 

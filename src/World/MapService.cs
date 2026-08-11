@@ -58,9 +58,11 @@ public partial class MapService : Node, ISaveable
     private readonly Dictionary<string, Vector3> _livePositions = new();
     private readonly Dictionary<string, Vector3> _savedPositions = new();
 
-    /// <summary>World-space XZ footprint of each cell the player has seen, so the map can draw land
-    /// instead of a void. Persisted: a cell in the other region is not resident to measure.</summary>
-    private readonly Dictionary<string, Rect2> _footprints = new();
+    /// <summary>World-space XZ footprints measured from cells resident THIS RUN.</summary>
+    private readonly Dictionary<string, Rect2> _liveFootprints = new();
+
+    /// <summary>Footprints a save remembered, for cells that are not resident to measure.</summary>
+    private readonly Dictionary<string, Rect2> _savedFootprints = new();
 
     private float _sinceTick;
 
@@ -208,7 +210,7 @@ public partial class MapService : Node, ISaveable
 
         if (MeasureGround(e.Root) is { } footprint)
         {
-            _footprints[e.CellId] = footprint;
+            _liveFootprints[e.CellId] = footprint;
             changed = true;
         }
 
@@ -224,12 +226,23 @@ public partial class MapService : Node, ISaveable
         }
     }
 
-    /// <summary>Every cell footprint the player has seen, for the map's land layer.</summary>
+    /// <summary>
+    /// Every cell footprint the player has seen, for the map's land layer. Live measurements win
+    /// over remembered ones, exactly as <see cref="PositionOf"/> does and for the same reason.
+    /// </summary>
     public IEnumerable<(string CellId, Rect2 Rect)> KnownFootprints()
     {
-        foreach (KeyValuePair<string, Rect2> entry in _footprints)
+        foreach (KeyValuePair<string, Rect2> entry in _liveFootprints)
         {
             yield return (entry.Key, entry.Value);
+        }
+
+        foreach (KeyValuePair<string, Rect2> entry in _savedFootprints)
+        {
+            if (!_liveFootprints.ContainsKey(entry.Key))
+            {
+                yield return (entry.Key, entry.Value);
+            }
         }
     }
 
@@ -399,9 +412,9 @@ public partial class MapService : Node, ISaveable
         }
 
         var footprints = new Godot.Collections.Dictionary();
-        foreach (KeyValuePair<string, Rect2> entry in _footprints)
+        foreach ((string cellId, Rect2 rect) in KnownFootprints())
         {
-            footprints[entry.Key] = entry.Value;
+            footprints[cellId] = rect;
         }
 
         var data = new Godot.Collections.Dictionary
@@ -428,7 +441,11 @@ public partial class MapService : Node, ISaveable
         _pois.Clear();
         _locations.Clear();
         _savedPositions.Clear();
-        _footprints.Clear();
+
+        // ⚠️ Only the SAVED half is cleared — the live half is what the resident cells actually
+        // measure, and a quickload does not reload them. Clearing both made the world's land vanish
+        // on a quickload until the player crossed a region border. Same rule as _savedPositions.
+        _savedFootprints.Clear();
 
         if (data.TryGetValue("regions", out Variant r) && r.VariantType == Variant.Type.Array)
         {
@@ -477,7 +494,7 @@ public partial class MapService : Node, ISaveable
             {
                 if (entry.Value.VariantType == Variant.Type.Rect2)
                 {
-                    _footprints[entry.Key.AsString()] = entry.Value.AsRect2();
+                    _savedFootprints[entry.Key.AsString()] = entry.Value.AsRect2();
                 }
             }
         }

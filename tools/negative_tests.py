@@ -341,6 +341,25 @@ CASES = [
        'LocationId = "location.ember_crown.blacksmith"')],
      "which no map location declares"),
 
+    # ⚠️ The rule that keeps the map from rotting: every shop and service must be ON it. Coverage is
+    # 23/23 and 15/15, so this can only be broken by adding something new — which is the point.
+    ("maploc.shop_not_on_the_map", "ValidateEverythingIsOnTheMap",
+     [("data/map_locations/EmberCrownSmith.tres",
+       'ShopId = "shop.ember_crown.smith"', 'ShopId = ""')],
+     "is not on the world map"),
+
+    ("maploc.service_not_on_the_map", "ValidateEverythingIsOnTheMap",
+     [("data/map_locations/EmberCrownInn.tres",
+       'ServiceId = "service.ember_crown.inn"', 'ServiceId = ""')],
+     "is not on the world map"),
+
+    # ⚠️ A category name is COMPUTED from the enum member, so adding a member adds a key reference
+    # that no resource mentions and no other rule can see. Crafting shipped without its key in 39.5A.
+    ("maploc.category_unnamed", "ValidateMapTaxonomyIsNamed",
+     [("data/locale/strings.csv", "map.category.smith,Smith
+", "")],
+     "has no locale key"),
+
     ("maploc.location_never_placed", "ValidateMapMarkersArePlaced",
      [("scenes/regions/ember_crown/town_hub.tscn",
        '\n[node name="MapPin" type="Node3D" parent="VendorSmith"]\n'

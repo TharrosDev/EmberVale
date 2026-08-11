@@ -43,6 +43,8 @@ public partial class MapScreen : UiPanel
     private VBoxContainer _filters = null!;
     private VBoxContainer _legend = null!;
     private VBoxContainer _travelList = null!;
+    private Button _clearWaypoint = null!;
+    private Label _waypointReadout = null!;
 
     private MapProjection _projection = new(Vector2.Zero, MapProjection.DefaultZoom, Vector2.One);
     private readonly HashSet<MapCategory> _hidden = new();
@@ -132,6 +134,7 @@ public partial class MapScreen : UiPanel
         };
         UiTheme.ApplyType(_search, UiTheme.FontRole.Interface, UiTheme.BodyFontSize);
         _search.TextChanged += OnSearchChanged;
+        _search.TextSubmitted += OnSearchSubmitted;
         rail.AddChild(_search);
 
         (ScrollContainer scroll, VBoxContainer list) = UiTheme.ScrollList();
@@ -172,7 +175,11 @@ public partial class MapScreen : UiPanel
         row.AddChild(FooterButton("map.zoom_in", () => ZoomBy(1.3f)));
         row.AddChild(FooterButton("map.center_player", CenterOnPlayer));
         row.AddChild(FooterButton("map.reset_view", ResetView));
-        row.AddChild(FooterButton("map.waypoint_clear", () => _map?.SetWaypoint(null)));
+        _clearWaypoint = FooterButton("map.waypoint_clear", () => _map?.SetWaypoint(null));
+        row.AddChild(_clearWaypoint);
+
+        _waypointReadout = UiTheme.Body(string.Empty, UiTheme.AccentHot);
+        row.AddChild(_waypointReadout);
 
         var spacer = new Control { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         row.AddChild(spacer);
@@ -308,7 +315,13 @@ public partial class MapScreen : UiPanel
     {
         _projection = ClampToContent(projection);
         _view.Projection = _projection;
-        MarkDirty();
+
+        // ⚠️ NO MarkDirty HERE. This fires on every mouse-motion event of a drag, and a rebuild
+        // frees and re-creates every row in the rail — search results, the selection panel, the
+        // travel list, ~30 filter buttons and the legend. Nothing in the rail depends on where the
+        // view is looking, so panning the map was rebuilding the whole screen tens of times a second
+        // to produce identical content. The plot repaints itself; the rail does not need to know.
+        _view.QueueRedraw();
     }
 
     /// <summary>Keeps the stored projection's viewport in step with the plot, so a rebuild after a
@@ -396,6 +409,18 @@ public partial class MapScreen : UiPanel
         MarkDirty();
     }
 
+    /// <summary>Enter takes the top hit. Typing a name and pressing return is what everyone does
+    /// first, and a search box that ignores it feels broken however good the list below is.</summary>
+    private void OnSearchSubmitted(string text)
+    {
+        IReadOnlyList<MapSearchHit> hits = MapSearch.Rank(text, SearchEntries());
+        if (hits.Count > 0)
+        {
+            FocusLocation(hits[0].Id);
+            MarkDirty();
+        }
+    }
+
     /// <summary>Centres and selects a location, zooming in far enough that its tier is actually
     /// drawn — a result that centres on an invisible pin reads as broken search.</summary>
     private void FocusLocation(string id)
@@ -442,6 +467,7 @@ public partial class MapScreen : UiPanel
         _view.QueueRedraw();
 
         RebuildBreadcrumb();
+        RebuildWaypointReadout();
         RebuildTravelList();
         RebuildResults();
         RebuildInfo();
@@ -449,17 +475,17 @@ public partial class MapScreen : UiPanel
         RebuildLegend();
     }
 
-    private List<Rect2> BuildLand()
+    private List<MapLandTile> BuildLand()
     {
-        var land = new List<Rect2>();
+        var land = new List<MapLandTile>();
         if (_map == null)
         {
             return land;
         }
 
-        foreach ((string _, Rect2 rect) in _map.KnownFootprints())
+        foreach ((string cellId, Rect2 rect) in _map.KnownFootprints())
         {
-            land.Add(rect);
+            land.Add(new MapLandTile(cellId, rect));
         }
 
         return land;
@@ -512,6 +538,25 @@ public partial class MapScreen : UiPanel
                 view.Location.Category,
                 view.Location.EffectiveTier));
         }
+    }
+
+    /// <summary>How far the waypoint is and which way, on the footer beside the button that
+    /// clears it — so the mark is answerable without selecting anything.</summary>
+    private void RebuildWaypointReadout()
+    {
+        Vector3? waypoint = _map?.Waypoint;
+        _clearWaypoint.Disabled = waypoint == null;
+
+        if (waypoint is not { } mark || PlayerPosition() is not { } player)
+        {
+            _waypointReadout.Text = string.Empty;
+            return;
+        }
+
+        (int metres, string dirKey) = MapDistance.Describe(player.X, player.Z, mark.X, mark.Z);
+        _waypointReadout.Text = dirKey.Length == 0
+            ? Loc.T("map.distance_here")
+            : Loc.TF("map.waypoint_distance", metres, Loc.T(dirKey));
     }
 
     private void RebuildBreadcrumb()

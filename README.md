@@ -349,6 +349,22 @@ well and the benches and the cook-fire stand on it, and it is the first piece of
 Embervale. Climbing and swimming are deliberately not here — nothing in the world needs them yet,
 and the conditions under which they would be built are written down.
 
+### Phase 39.5 — the map
+
+- 39.5A ✅ and the map knows what is in the world. It used to show three kinds of thing, because
+those were the only three that had a position: the region, the cells you had walked into, and the
+waystones. It could not show you a blacksmith, because nothing in the game recorded where one was.
+Now sixty-three places across every cell in the realm are on it — every shop, every service, every
+settlement, the mine, the arena, the roosts — and each one is pinned to the actual stall or counter
+or keeper it names, so a pin cannot drift from the thing it points at. You can drag the map around
+and zoom it, and it shows you more as you go in: the towns at any distance, the dungeons and gates
+and waystones closer, the individual merchants once you are looking at a single market. You can
+search it — type "blacksmith" and it finds The Iron Anvil, type a merchant's name and it finds their
+stall. You can filter by what you care about, click a place to read what it offers and how far away
+it is and which way, right-click anywhere to leave yourself a mark, and travel from it. The top of
+the screen tells you where you are standing, and the land you have walked is drawn underneath it all.
+What you have not found is not there yet.
+
 ### Phase 36 — the boss framework
 
 - 36A ✅ a boss fight is data. Phases with HP thresholds, the escalation each stage brings, the abilities it hands over, the colour it burns when it winds up, and an enrage fuse so a boss cannot be out-waited — all authored in `data/bosses/*.tres` and named by one field on the archetype. The Iron King's numbers moved out of code without changing one of them; the three dragons, which until now were healthbars with no fight structure behind them, gained phases the moment the file existed.

@@ -1328,6 +1328,7 @@ map.center_player,Centre on me
 map.reset_view,Reset view
 map.waypoint_clear,Clear waypoint
 map.hint,Drag to pan  ·  wheel to zoom  ·  right-click to mark a spot
+map.waypoint_distance,Waypoint: {0} m {1}
 map.distance,{0} m {1}
 map.distance_here,You are here.
 map.trade_header,TRADE
@@ -1368,6 +1369,7 @@ map.category.bank,Vault
 map.category.stable,Stable
 map.category.trainer,Trainer
 map.category.contracts,Contracts
+map.category.crafting,Crafting
 map.category.arena,Arena
 map.category.mine,Mine
 map.category.dungeon,Dungeon

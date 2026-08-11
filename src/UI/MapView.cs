@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Embervale.Core.Services;
+using Embervale.Economy;
 using Embervale.Player;
 using Embervale.World;
 using Godot;
@@ -12,9 +13,13 @@ namespace Embervale.UI;
 public readonly record struct MapPin(
     string Id, string Label, Vector2 WorldXz, MapCategory Category, MapTier Tier);
 
+/// <summary>A cell's measured ground footprint, in world XZ. The id varies its tone so the realm
+/// does not read as a grid of identical tiles.</summary>
+public readonly record struct MapLandTile(string CellId, Rect2 Rect);
+
 /// <summary>
 /// The map plot (Phase 39.5A): the drawing surface and every mouse interaction on it — drag to pan,
-/// wheel to zoom, click to select, right-click to drop a waypoint.
+/// wheel to zoom, click to select, double-click to zoom in, right-click to drop a waypoint.
 ///
 /// It is deliberately dumb. It holds a <see cref="MapProjection"/> and a list of
 /// <see cref="MapPin"/>s it was handed, and it resolves nothing itself: no database lookups, no
@@ -39,6 +44,8 @@ public partial class MapView : Control
     private bool _dragging;
     private bool _dragMoved;
     private Vector2 _lastDragAt;
+    private Vector2 _cursor;
+    private string? _hoverId;
 
     /// <summary>The current view. <see cref="MapScreen"/> owns the value; this raises
     /// <see cref="ViewChanged"/> whenever the mouse moves it.</summary>
@@ -49,12 +56,12 @@ public partial class MapView : Control
     /// <summary>Categories the player has filtered out.</summary>
     public HashSet<MapCategory> HiddenCategories { get; set; } = new();
 
-    /// <summary>Region name labels, drawn under everything at low zoom.</summary>
+    /// <summary>Region name labels, drawn under the markers.</summary>
     public IReadOnlyList<MapMarker> Regions { get; set; } = Array.Empty<MapMarker>();
 
-    /// <summary>World-space XZ footprints of the cells the player has seen. Drawn as land, so the
-    /// plot reads as a place rather than markers floating on a void.</summary>
-    public IReadOnlyList<Rect2> Land { get; set; } = Array.Empty<Rect2>();
+    /// <summary>Footprints of the cells the player has seen. Drawn as land, so the plot reads as a
+    /// place rather than markers floating on a void.</summary>
+    public IReadOnlyList<MapLandTile> Land { get; set; } = Array.Empty<MapLandTile>();
 
     public string? SelectedId { get; set; }
 
@@ -97,15 +104,27 @@ public partial class MapView : Control
     private bool Shows(MapPin pin) =>
         !HiddenCategories.Contains(pin.Category) && MapTiers.VisibleAt(pin.Tier, Projection.Zoom);
 
+    // ── Input ─────────────────────────────────────────────────────────────────────────────────
+
     public override void _GuiInput(InputEvent @event)
     {
-        if (@event is InputEventMouseButton button)
+        switch (@event)
         {
-            HandleButton(button);
-            return;
-        }
+            case InputEventMouseButton button:
+                HandleButton(button);
+                return;
 
-        if (@event is InputEventMouseMotion motion && _dragging)
+            case InputEventMouseMotion motion:
+                HandleMotion(motion);
+                return;
+        }
+    }
+
+    private void HandleMotion(InputEventMouseMotion motion)
+    {
+        _cursor = motion.Position;
+
+        if (_dragging)
         {
             Vector2 delta = motion.Position - _lastDragAt;
             _lastDragAt = motion.Position;
@@ -118,7 +137,19 @@ public partial class MapView : Control
             }
 
             AcceptEvent();
+            return;
         }
+
+        // Hover is what makes a dense plot legible without labelling everything: the name under the
+        // cursor appears, and nothing else has to.
+        string? hover = PinAt(motion.Position);
+        MouseDefaultCursorShape = hover != null ? CursorShape.PointingHand : CursorShape.Arrow;
+        if (hover != _hoverId)
+        {
+            _hoverId = hover;
+        }
+
+        QueueRedraw(); // the hover label follows the cursor, so it repaints on every move
     }
 
     private void HandleButton(InputEventMouseButton button)
@@ -133,7 +164,13 @@ public partial class MapView : Control
                 Zoom(button.Position, 1f / 1.15f);
                 break;
 
+            // Double-click zooms in about the cursor — the gesture every map in the world has.
+            case MouseButton.Left when button.Pressed && button.DoubleClick:
+                Zoom(button.Position, 1.8f);
+                break;
+
             case MouseButton.Left when button.Pressed:
+            case MouseButton.Middle when button.Pressed:
                 _dragging = true;
                 _dragMoved = false;
                 _lastDragAt = button.Position;
@@ -147,6 +184,11 @@ public partial class MapView : Control
                     Picked?.Invoke(PinAt(button.Position));
                 }
 
+                AcceptEvent();
+                break;
+
+            case MouseButton.Middle when !button.Pressed:
+                _dragging = false;
                 AcceptEvent();
                 break;
 
@@ -191,25 +233,33 @@ public partial class MapView : Control
         return best;
     }
 
+    // ── Drawing ───────────────────────────────────────────────────────────────────────────────
+
+    /// <summary>Unmapped ground — the colour under everything.</summary>
+    private static Color Deep => new(0.058f, 0.054f, 0.049f);
+
+    /// <summary>Ground the player has walked, before its per-cell tone variation.</summary>
+    private static Color Ground => new(0.148f, 0.132f, 0.108f);
+
     public override void _Draw()
     {
         // Reconcile once per frame, so a resize between frames cannot leave the pins and the
         // graticule disagreeing about where the centre of the map is.
         Projection = Fitted;
 
-        // Sea first, then the land the player has walked, then the grid over both. A parchment
-        // warmth rather than the plain well colour: an unlettered dark rectangle reads as a screen
-        // that failed to load, which is exactly how it was reported.
         DrawRect(new Rect2(Vector2.Zero, Size), Deep);
         DrawLand();
         DrawGraticule();
+        DrawCoastline();
 
         // Region names sit under the markers, as a cartographer would letter a territory.
         foreach (MapMarker region in Regions)
         {
             Vector2 at = Projection.WorldToScreen(new Vector2(region.X, region.Z));
-            DrawLabel(region.Label, at, new Color(UiTheme.Accent, 0.55f), UiTheme.HeaderFontSize);
+            DrawLabel(region.Label, at, new Color(UiTheme.Accent, 0.45f), UiTheme.HeaderFontSize);
         }
+
+        DrawSettlementHalos();
 
         // Weakest tier first, so a settlement is never buried under a stall and the player is never
         // buried under anything — the same overlap-resolves-hierarchy rule the 25E plot had.
@@ -219,31 +269,109 @@ public partial class MapView : Control
 
         DrawWaypoint();
         DrawPlayer();
+        DrawHoverLabel();
+        DrawFrame();
     }
-
-    /// <summary>Unmapped ground — the colour under everything.</summary>
-    private static Color Deep => new(0.055f, 0.052f, 0.048f);
-
-    /// <summary>Ground the player has been to.</summary>
-    private static Color Ground => new(0.128f, 0.116f, 0.098f);
 
     /// <summary>
     /// The cells the player has seen, drawn as land.
     ///
-    /// Each rect is the real measured extent of that cell's ground geometry, not a shape authored
-    /// for the map — so the coastline of the known world is the world, and a new cell appears on the
-    /// map the moment it is walked into with no cartography step at all.
+    /// Each rect is the real measured extent of that cell's ground geometry, not a shape authored for
+    /// the map — so the coastline of the known world is the world, and a new cell appears the moment
+    /// it is walked into with no cartography step at all.
+    ///
+    /// ⚠️ <b>Fills only, no per-cell outline.</b> The realm's cells abut on a shared edge by
+    /// construction (38F), so stroking each one draws a grid of boxes and the world reads as tiling
+    /// rather than as a place — which is exactly how it was reported. The silhouette is drawn once,
+    /// by <see cref="DrawCoastline"/>, along the edges no neighbour shares.
     /// </summary>
     private void DrawLand()
     {
-        foreach (Rect2 cell in Land)
+        foreach (MapLandTile tile in Land)
         {
-            Vector2 a = Projection.WorldToScreen(cell.Position);
-            Vector2 b = Projection.WorldToScreen(cell.End);
-            var screen = new Rect2(a, b - a).Abs();
+            // A stable, tiny tone shift per cell so abutting ground is not one flat wash — the same
+            // hand-drawn-map cue that keeps a large area from reading as a single grey rectangle.
+            float shade = (((StableRoll.Seed(tile.CellId) % 100u) / 100f) - 0.5f) * 0.035f;
+            var tone = new Color(
+                Ground.R + shade, Ground.G + (shade * 0.9f), Ground.B + (shade * 0.7f));
 
-            DrawRect(screen, Ground);
-            DrawRect(screen, new Color(UiTheme.Brass, 0.22f), false, 1f);
+            DrawRect(ScreenRect(tile.Rect), tone);
+        }
+    }
+
+    /// <summary>
+    /// The outline of the known world — every land edge that no other cell covers.
+    ///
+    /// O(n²) over at most fifteen cells, once per redraw. ponytail: a real polygon union is the
+    /// correct general answer and would be entirely wasted here.
+    /// </summary>
+    private void DrawCoastline()
+    {
+        var ink = new Color(UiTheme.Brass, 0.45f);
+
+        foreach (MapLandTile tile in Land)
+        {
+            Rect2 r = tile.Rect;
+            TryEdge(tile.CellId, new Vector2(r.Position.X, r.Position.Y), new Vector2(r.End.X, r.Position.Y), ink);
+            TryEdge(tile.CellId, new Vector2(r.Position.X, r.End.Y), new Vector2(r.End.X, r.End.Y), ink);
+            TryEdge(tile.CellId, new Vector2(r.Position.X, r.Position.Y), new Vector2(r.Position.X, r.End.Y), ink);
+            TryEdge(tile.CellId, new Vector2(r.End.X, r.Position.Y), new Vector2(r.End.X, r.End.Y), ink);
+        }
+    }
+
+    /// <summary>Draws a world-space edge unless a DIFFERENT tile's ground already covers its
+    /// midpoint — in which case it is an interior seam between two abutting cells, not a coast.</summary>
+    private void TryEdge(string ownerCellId, Vector2 worldA, Vector2 worldB, Color ink)
+    {
+        Vector2 mid = (worldA + worldB) * 0.5f;
+
+        foreach (MapLandTile other in Land)
+        {
+            if (other.CellId == ownerCellId)
+            {
+                continue;
+            }
+
+            // Grown slightly: two cells abut on a shared edge, so the midpoint sits exactly ON the
+            // neighbour's boundary and an exact HasPoint would miss it on the far side.
+            if (other.Rect.Grow(0.5f).HasPoint(mid))
+            {
+                return;
+            }
+        }
+
+        DrawLine(Projection.WorldToScreen(worldA), Projection.WorldToScreen(worldB), ink, 1.5f);
+    }
+
+    /// <summary>A soft halo under each settlement, so a built-up area reads as an area rather than a
+    /// dot. Radius is by category, which is the only size information the world actually carries.</summary>
+    private void DrawSettlementHalos()
+    {
+        foreach (MapPin pin in Pins)
+        {
+            if (!Shows(pin) || MapCategories.GroupOf(pin.Category) != MapGroup.Settlement)
+            {
+                continue;
+            }
+
+            float metres = pin.Category switch
+            {
+                MapCategory.Capital => 26f,
+                MapCategory.Town => 20f,
+                MapCategory.Village => 14f,
+                MapCategory.Outpost or MapCategory.Camp => 9f,
+                _ => 0f,
+            };
+
+            if (metres <= 0f)
+            {
+                continue;
+            }
+
+            DrawCircle(
+                Projection.WorldToScreen(pin.WorldXz),
+                metres * Projection.Zoom,
+                new Color(UiTheme.Brass, 0.10f));
         }
     }
 
@@ -252,7 +380,7 @@ public partial class MapView : Control
     private void DrawGraticule()
     {
         const float spacing = 50f;
-        var ink = new Color(UiTheme.PanelBorder, 0.22f);
+        var ink = new Color(UiTheme.PanelBorder, 0.20f);
 
         Vector2 topLeft = Projection.ScreenToWorld(Vector2.Zero);
         Vector2 bottomRight = Projection.ScreenToWorld(Size);
@@ -276,6 +404,13 @@ public partial class MapView : Control
         }
     }
 
+    private Rect2 ScreenRect(Rect2 world)
+    {
+        Vector2 a = Projection.WorldToScreen(world.Position);
+        Vector2 b = Projection.WorldToScreen(world.End);
+        return new Rect2(a, b - a).Abs();
+    }
+
     private void DrawPins(MapTier tier)
     {
         foreach (MapPin pin in Pins)
@@ -295,16 +430,21 @@ public partial class MapView : Control
             Color colour = ColourOf(group);
             float radius = RadiusOf(tier);
             bool selected = pin.Id == SelectedId;
+            bool hovered = pin.Id == _hoverId;
 
             if (selected)
             {
                 DrawArc(at, radius + 6f, 0f, Mathf.Tau, 24, UiTheme.AccentHot, 2f);
             }
+            else if (hovered)
+            {
+                DrawArc(at, radius + 5f, 0f, Mathf.Tau, 24, new Color(UiTheme.Text, 0.65f), 1.5f);
+            }
 
             DrawShape(group, at, radius, colour);
 
             // Labels only for what is big enough to earn one: everything at once is the icon soup
-            // the brief's §50 names. The selection always gets its name, whatever its tier.
+            // §50 names. The selection always gets its name; hover gets its own label by the cursor.
             if (tier == MapTier.Primary || selected || Projection.Zoom >= MapTiers.DetailZoom)
             {
                 DrawLabel(pin.Label, at + new Vector2(0f, -(radius + 6f)), colour, UiTheme.CaptionFontSize);
@@ -332,6 +472,9 @@ public partial class MapView : Control
     /// <summary>The group's silhouette. Shape carries the meaning; colour agrees with it.</summary>
     private void DrawShape(MapGroup group, Vector2 at, float r, Color colour)
     {
+        // A dark seat under every marker, so a pin on pale ground still reads as a pin.
+        DrawCircle(at, r + 1.5f, new Color(UiTheme.Engrave, 0.55f));
+
         switch (group)
         {
             case MapGroup.Settlement:
@@ -390,8 +533,8 @@ public partial class MapView : Control
         Vector2 at = Projection.WorldToScreen(new Vector2(waypoint.X, waypoint.Z));
         Color colour = UiTheme.Adapt(UiTheme.AccentHot);
 
-        // A dashed ring plus a cross: unmistakably the player's own mark rather than a place.
-        DrawArc(at, 10f, 0f, Mathf.Tau, 24, new Color(colour, 0.75f), 1.5f);
+        // A ring plus a cross: unmistakably the player's own mark rather than a place.
+        DrawArc(at, 10f, 0f, Mathf.Tau, 24, new Color(colour, 0.85f), 1.5f);
         DrawCross(at, 5f, colour);
     }
 
@@ -423,9 +566,48 @@ public partial class MapView : Control
             at - (forward * 5.5f) - (right * 6f),
         };
 
+        DrawCircle(at, 12f, new Color(UiTheme.Text, 0.14f));
         DrawColoredPolygon(tri, UiTheme.Text);
         DrawPolyline(new[] { tri[0], tri[1], tri[2], tri[0] }, UiTheme.Engrave, 1.5f);
     }
+
+    /// <summary>The hovered marker's name beside the cursor — the cheapest way to make a dense plot
+    /// readable without labelling every pin at once.</summary>
+    private void DrawHoverLabel()
+    {
+        if (_hoverId == null || UiTheme.UiFont is not { } font)
+        {
+            return;
+        }
+
+        foreach (MapPin pin in Pins)
+        {
+            if (pin.Id != _hoverId)
+            {
+                continue;
+            }
+
+            int size = UiTheme.FontSize(UiTheme.BodyFontSize);
+            Vector2 measured = font.GetStringSize(pin.Label, HorizontalAlignment.Left, -1, size);
+            Vector2 origin = _cursor + new Vector2(14f, -6f);
+
+            // Flip to the other side of the cursor rather than run off the edge of the plot.
+            if (origin.X + measured.X + 8f > Size.X)
+            {
+                origin.X = _cursor.X - measured.X - 14f;
+            }
+
+            DrawRect(
+                new Rect2(origin - new Vector2(5f, measured.Y - 2f), measured + new Vector2(10f, 6f)),
+                new Color(UiTheme.PanelBg, 0.92f));
+            DrawString(font, origin, pin.Label, HorizontalAlignment.Left, -1, size, UiTheme.Text);
+            return;
+        }
+    }
+
+    /// <summary>A hairline inside the plot's edge, so the map reads as a framed chart.</summary>
+    private void DrawFrame() =>
+        DrawRect(new Rect2(Vector2.Zero, Size), new Color(UiTheme.PanelBorder, 0.55f), false, 1f);
 
     /// <summary>
     /// A label on the plot.
