@@ -356,8 +356,7 @@ CASES = [
     # ⚠️ A category name is COMPUTED from the enum member, so adding a member adds a key reference
     # that no resource mentions and no other rule can see. Crafting shipped without its key in 39.5A.
     ("maploc.category_unnamed", "ValidateMapTaxonomyIsNamed",
-     [("data/locale/strings.csv", "map.category.smith,Smith
-", "")],
+     [("data/locale/strings.csv", "\nmap.category.smith,Smith\n", "\n")],
      "has no locale key"),
 
     ("maploc.location_never_placed", "ValidateMapMarkersArePlaced",
