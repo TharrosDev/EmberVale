@@ -19,9 +19,16 @@ existed the same three lines were maintained in four places and rewritten every 
   roadmap deliberately, with the maintainer's approval, because the map was on no phase at all.**
   The map now reads the world: 63 authored locations across all 15 cells, pan/zoom/search/filter/
   select, distance and bearing, a waypoint, a live region breadcrumb, and land drawn from each
-  cell's measured ground footprint. **39.5B is queued and every deferred item has a condition, not a
-  verdict** — see `docs/playbook/phase-39_5.md`.
-- **Next: Phase 40 (Survival & Needs) — a decision phase, starting at 40A.** ⚠️ **40A owns the
+  cell's measured ground footprint.
+- **NEXT: Phase 39.5B — the rest of the map** (maintainer direction, 2026-08-10). The deferred table
+  in `docs/playbook/phase-39_5.md` is the scope, and ⚠️ **every item there carries a runnable
+  condition rather than a verdict** — check each one before building it, because 38G sat eleven
+  sub-phases past its own condition when the notice named a conclusion. ⚠️ **The first item is not on
+  that table and outranks it: THIS REPO CANNOT SEE ITS OWN UI.** Three screen-space defects shipped
+  through a fully green battery in 39.5A and every one was found by the maintainer opening the map.
+  ⚠️ **The quest-marker item is blocked on quest data, not on map work** — a quest names a template
+  id, not a place — so it is a `QuestResource` change first.
+- **Then: Phase 40 (Survival & Needs) — a decision phase, starting at 40A.** ⚠️ **40A owns the
   repair/durability call** that 38D deferred to it, and `docs/DESIGN.md` §6's sink table has an empty
   "Repair — pending 40A" row waiting on it. ⚠️ **40B's rule is that a cut system leaves no stub** —
   39C and 39.5A are both worked examples.
