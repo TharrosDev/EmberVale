@@ -921,19 +921,59 @@ public partial class GameHud : CanvasLayer
     /// </summary>
     private void UpdateQuestDestination()
     {
-        if (_compass.ObjectiveTarget is not { } target ||
-            _player?.Body is not { } body || !IsInstanceValid(body))
+        if (_compass.ObjectiveTarget is { } target &&
+            _player?.Body is { } body && IsInstanceValid(body))
         {
-            _questWhere.Visible = false;
+            Vector3 offset = target - body.GlobalPosition;
+            (string value, string unitKey) = CompassMath.Distance(new Vector2(offset.X, offset.Z).Length());
+            string cardinal = Loc.T(CompassMath.CardinalKey(CompassMath.BearingTo(offset.X, offset.Z)));
+
+            _questWhere.Text = Loc.TF("hud.quest.destination", value, Loc.T(unitKey), cardinal);
+            _questWhere.AddThemeColorOverride("font_color", UiTheme.Accent);
+            _questWhere.Visible = true;
             return;
         }
 
-        Vector3 offset = target - body.GlobalPosition;
-        (string value, string unitKey) = CompassMath.Distance(new Vector2(offset.X, offset.Z).Length());
-        string cardinal = Loc.T(CompassMath.CardinalKey(CompassMath.BearingTo(offset.X, offset.Z)));
+        // ⚠️ NO POSITION IS NOT NO INFORMATION (39.5C).
+        //
+        // A destination across a region boundary has no resolvable position — its cell is not
+        // resident and the player may never have stood there — so there is no distance and no
+        // bearing to print. Naming the place is still worth the line: "Dragon Roost" tells the
+        // player where they are going, which is most of what the readout was for, and it is the
+        // difference between the tracker looking incomplete and looking broken. 39.5B shipped this
+        // row and it had never once rendered, because until `LocationId` existed there was nothing
+        // for it to fall back to.
+        string? place = TrackedDestinationName();
+        _questWhere.Visible = place != null;
+        if (place != null)
+        {
+            _questWhere.Text = place;
+            _questWhere.AddThemeColorOverride("font_color", UiTheme.Dim);
+        }
+    }
 
-        _questWhere.Text = Loc.TF("hud.quest.destination", value, Loc.T(unitKey), cardinal);
-        _questWhere.Visible = true;
+    /// <summary>The tracked objective's authored destination name, or null when it has none.</summary>
+    private string? TrackedDestinationName()
+    {
+        if (_player?.GetComponent<QuestLogComponent>()?.Tracked is not { } progress)
+        {
+            return null;
+        }
+
+        var objectives = progress.Quest.ObjectiveList();
+        for (int i = 0; i < objectives.Count; i++)
+        {
+            if (progress.IsObjectiveComplete(i) || objectives[i].LocationId.Length == 0)
+            {
+                continue;
+            }
+
+            return MapLocationDatabase.Get(objectives[i].LocationId) is { } location
+                ? Loc.T(location.NameKey)
+                : null;
+        }
+
+        return null;
     }
 
     /// <summary>Structured tracker rows (30.5D): accent title, then one line per objective —

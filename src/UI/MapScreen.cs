@@ -147,13 +147,26 @@ public partial class MapScreen : UiPanel
         _info.AddThemeConstantOverride("separation", 2);
         rail.AddChild(_info);
 
+        // ⚠️ THE TRAVEL LIST IS THE ONE SECTION THAT GROWS WITHOUT A CEILING, SO IT IS THE ONE THAT
+        // SCROLLS (39.5C).
+        //
+        // It was a plain VBox, and it gains a row per attuned waystone — so a well-travelled player's
+        // rail was taller than the screen. A `VBoxContainer` resolves that by squashing whichever
+        // child has `ExpandFill`, which was the FILTERS scroll: at seven destinations the filter box
+        // collapsed to about fourteen pixels and rendered as a row of buttons **sliced in half**, with
+        // the legend sitting on top of the remains. Found by the first `--panelshots` run; invisible
+        // to every other check, and invisible to a player who had not yet discovered enough places.
         rail.AddChild(UiTheme.SectionRule(Loc.T("map.travel_header")));
-        _travelList = new VBoxContainer();
+        (ScrollContainer travelScroll, VBoxContainer travelList) = UiTheme.ScrollList();
+        travelScroll.CustomMinimumSize = new Vector2(0f, 132f);
+        _travelList = travelList;
         _travelList.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
-        rail.AddChild(_travelList);
+        rail.AddChild(travelScroll);
 
         rail.AddChild(UiTheme.SectionRule(Loc.T("map.filters_header")));
         (ScrollContainer filterScroll, VBoxContainer filterList) = UiTheme.ScrollList();
+        // A floor as well as a flex: ExpandFill alone is what let it be squashed to nothing.
+        filterScroll.CustomMinimumSize = new Vector2(0f, 96f);
         filterScroll.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
         _filters = filterList;
         rail.AddChild(filterScroll);
@@ -422,8 +435,13 @@ public partial class MapScreen : UiPanel
     }
 
     /// <summary>Centres and selects a location, zooming in far enough that its tier is actually
-    /// drawn — a result that centres on an invisible pin reads as broken search.</summary>
-    private void FocusLocation(string id)
+    /// drawn — a result that centres on an invisible pin reads as broken search.
+    ///
+    /// Public since 39.5C so the panel screenshot harness can drive the map to a named place at a
+    /// chosen zoom. ⚠️ **The harness reuses this rather than setting the projection directly**, so
+    /// what it photographs is the state a player reaches by searching — a capture path that bypasses
+    /// the real one photographs the harness, not the screen.</summary>
+    public void FocusLocation(string id)
     {
         _selectedId = id;
         if (_map?.PositionOf(id) is not { } position)
@@ -439,6 +457,11 @@ public partial class MapScreen : UiPanel
 
         SetProjection((_projection with { Zoom = zoom }).CenteredOn(new Vector2(position.X, position.Z)));
     }
+
+    /// <summary>Sets the zoom, keeping the centre — the other half of what a capture harness needs
+    /// (39.5C), since <see cref="FocusLocation"/> only ever zooms IN to reveal its target's tier.
+    /// Routed through the same clamp every mouse wheel goes through.</summary>
+    public void SetZoom(float zoom) => SetProjection(_projection with { Zoom = zoom });
 
     // ── Rebuild ───────────────────────────────────────────────────────────────────────────────
 
@@ -461,6 +484,7 @@ public partial class MapScreen : UiPanel
         _view.Pins = _pins;
         _view.HiddenCategories = _hidden;
         _view.SelectedId = _selectedId;
+        _view.ObjectiveId = TrackedObjectiveLocationId();
         _view.Waypoint = _map?.Waypoint;
         _view.Regions = _map != null ? new List<MapMarker>(_map.RegionMarkers()) : new List<MapMarker>();
         _view.Land = BuildLand();
@@ -1005,6 +1029,33 @@ public partial class MapScreen : UiPanel
         Resolve<PlayerCharacter>()?.GetComponent<Items.InventoryComponent>()?.CountOf(GameIds.Currency.Gold) ?? 0;
 
     private static string CurrentRegionId() => Resolve<RegionStreamer>()?.ActiveRegionId ?? string.Empty;
+
+    /// <summary>
+    /// The map location the tracked quest's first outstanding objective points at, or null.
+    ///
+    /// ⚠️ Reads <see cref="Quests.QuestLogComponent.Tracked"/> — the same single authority the HUD
+    /// tracker and the compass strip read since 39.5B. The map showing one quest while the tracker
+    /// shows another is the exact class of drift that authority was created to make impossible.
+    /// </summary>
+    private static string? TrackedObjectiveLocationId()
+    {
+        if (Resolve<PlayerCharacter>()?.GetComponent<Quests.QuestLogComponent>()?.Tracked
+            is not { } progress)
+        {
+            return null;
+        }
+
+        var objectives = progress.Quest.ObjectiveList();
+        for (int i = 0; i < objectives.Count; i++)
+        {
+            if (!progress.IsObjectiveComplete(i) && objectives[i].LocationId.Length > 0)
+            {
+                return objectives[i].LocationId;
+            }
+        }
+
+        return null;
+    }
 
     private static Vector3? PlayerPosition() => Resolve<PlayerCharacter>()?.GlobalPosition;
 

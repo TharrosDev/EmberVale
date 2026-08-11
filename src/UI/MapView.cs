@@ -41,6 +41,10 @@ public partial class MapView : Control
     /// two-pixel wobble selects nothing and the map feels unresponsive rather than precise.</summary>
     private const float DragSlop = 4f;
 
+    /// <summary>This frame's label competition — measured in <see cref="QueueLabel"/>, resolved by
+    /// <see cref="LabelPlacer"/>, drawn in <see cref="DrawPlacedLabels"/>. Cleared every `_Draw`.</summary>
+    private readonly List<(LabelCandidate Candidate, string Text, Vector2 Origin, Color Colour)> _labels = new();
+
     private bool _dragging;
     private bool _dragMoved;
     private Vector2 _lastDragAt;
@@ -64,6 +68,11 @@ public partial class MapView : Control
     public IReadOnlyList<MapLandTile> Land { get; set; } = Array.Empty<MapLandTile>();
 
     public string? SelectedId { get; set; }
+
+    /// <summary>The tracked quest objective's destination, ringed so it stands out from every other
+    /// pin (39.5C). Null when the tracked objective has no authored place — which is most of them,
+    /// because Embervale's hostiles are region-scoped encounters rather than placed actors.</summary>
+    public string? ObjectiveId { get; set; }
 
     public Vector3? Waypoint { get; set; }
 
@@ -289,9 +298,14 @@ public partial class MapView : Control
 
         // Weakest tier first, so a settlement is never buried under a stall and the player is never
         // buried under anything — the same overlap-resolves-hierarchy rule the 25E plot had.
+        // Shapes first, all three tiers, collecting the labels each one wants rather than drawing
+        // them inline (39.5C). A label can only be dropped for colliding with another label if every
+        // label is known before any is drawn.
+        _labels.Clear();
         DrawPins(MapTier.Detail);
         DrawPins(MapTier.Secondary);
         DrawPins(MapTier.Primary);
+        DrawPlacedLabels();
 
         DrawWaypoint();
         DrawPlayer();
@@ -458,6 +472,16 @@ public partial class MapView : Control
             bool selected = pin.Id == SelectedId;
             bool hovered = pin.Id == _hoverId;
 
+            // The tracked objective is ringed under everything else, so a selection or hover still
+            // reads on top of it — the quest marker says "this is where you are going", and the
+            // selection ring says "this is what you just clicked". Both can be true of one pin.
+            if (pin.Id == ObjectiveId)
+            {
+                Color quest = UiTheme.Adapt(UiTheme.QuestMain);
+                DrawArc(at, radius + 9f, 0f, Mathf.Tau, 28, new Color(quest, 0.9f), 2f);
+                DrawArc(at, radius + 12.5f, 0f, Mathf.Tau, 28, new Color(quest, 0.35f), 1f);
+            }
+
             if (selected)
             {
                 DrawArc(at, radius + 6f, 0f, Mathf.Tau, 24, UiTheme.AccentHot, 2f);
@@ -474,7 +498,17 @@ public partial class MapView : Control
             if (!Compact &&
                 (tier == MapTier.Primary || selected || Projection.Zoom >= MapTiers.DetailZoom))
             {
-                DrawLabel(pin.Label, at + new Vector2(0f, -(radius + 6f)), colour, UiTheme.CaptionFontSize);
+                // Queued, not drawn. Rank decides who survives a collision: the selection the player
+                // clicked outranks everything, then the hover, then tier — so zooming into a market
+                // never costs you the name of the town you are standing in.
+                int rank = selected ? 0 : hovered ? 1 : tier switch
+                {
+                    MapTier.Primary => 2,
+                    MapTier.Secondary => 3,
+                    _ => 4,
+                };
+
+                QueueLabel(pin.Label, at + new Vector2(0f, -(radius + 6f)), colour, rank);
             }
         }
     }
@@ -636,8 +670,46 @@ public partial class MapView : Control
     private void DrawFrame() =>
         DrawRect(new Rect2(Vector2.Zero, Size), new Color(UiTheme.PanelBorder, 0.55f), false, 1f);
 
+    /// <summary>Measures a pin label and adds it to this frame's competition (39.5C).</summary>
+    private void QueueLabel(string text, Vector2 at, Color colour, int rank)
+    {
+        if (UiTheme.UiFont is not { } font || string.IsNullOrEmpty(text))
+        {
+            return;
+        }
+
+        int size = UiTheme.FontSize(UiTheme.CaptionFontSize);
+        Vector2 measured = font.GetStringSize(text, HorizontalAlignment.Left, -1, size);
+        var origin = new Vector2(at.X - (measured.X * 0.5f), at.Y);
+
+        // DrawString's origin is the text BASELINE, so the box starts a line-height above it.
+        var rect = new Rect2(origin.X, origin.Y - measured.Y, measured.X, measured.Y);
+        _labels.Add((new LabelCandidate(rect, rank, _labels.Count), text, origin, colour));
+    }
+
+    /// <summary>Runs the placer over this frame's labels and draws the survivors.</summary>
+    private void DrawPlacedLabels()
+    {
+        if (_labels.Count == 0)
+        {
+            return;
+        }
+
+        var candidates = new List<LabelCandidate>(_labels.Count);
+        foreach ((LabelCandidate candidate, _, _, _) in _labels)
+        {
+            candidates.Add(candidate);
+        }
+
+        foreach (int index in LabelPlacer.Place(candidates, new Rect2(Vector2.Zero, Size)))
+        {
+            (_, string text, Vector2 origin, Color colour) = _labels[index];
+            DrawLabelAt(text, origin, colour, UiTheme.CaptionFontSize);
+        }
+    }
+
     /// <summary>
-    /// A label on the plot.
+    /// A label on the plot, centred on <paramref name="at"/>.
     ///
     /// Falls back to drawing nothing rather than throwing if the UI face is unavailable: a nameless
     /// map is a degraded map, a crashed one is no map. (37.5E.)
@@ -651,7 +723,18 @@ public partial class MapView : Control
 
         int size = UiTheme.FontSize(sizeToken);
         Vector2 measured = font.GetStringSize(text, HorizontalAlignment.Left, -1, size);
-        Vector2 origin = at - new Vector2(measured.X * 0.5f, 0f);
+        DrawLabelAt(text, at - new Vector2(measured.X * 0.5f, 0f), colour, sizeToken);
+    }
+
+    /// <summary>A label whose left-baseline origin is already decided (the placer's output).</summary>
+    private void DrawLabelAt(string text, Vector2 origin, Color colour, int sizeToken)
+    {
+        if (UiTheme.UiFont is not { } font || string.IsNullOrEmpty(text))
+        {
+            return;
+        }
+
+        int size = UiTheme.FontSize(sizeToken);
 
         // Drawn once dark and offset, then in colour: a plot label crosses terrain of every value,
         // and an unshadowed one disappears over its own marker.

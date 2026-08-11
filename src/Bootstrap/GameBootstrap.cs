@@ -58,6 +58,7 @@ public partial class GameBootstrap : Node3D
     private SpellbookPanel _spellbookPanel = null!;
     private HotbarPanel _hotbarPanel = null!;
     private QuestLogPanel _questLogPanel = null!;
+    private MapScreen _mapScreen = null!;
     private DialoguePanel _dialoguePanel = null!;
     private CraftingPanel _craftingPanel = null!;
     private StoragePanel _storagePanel = null!;
@@ -200,15 +201,28 @@ public partial class GameBootstrap : Node3D
         // and boots the same way. See HudShots for why this exists at all — the MCP drives the
         // editor, where the HUD has not been constructed yet, so nothing else here can see it.
         bool hudShots = HasCmdFlag("--hudshots");
-        if (!_playFlagConsumed && (hudShots || HasCmdFlag("--play")) && MostRecentSlot() is { } slot)
+        bool panelShots = HasCmdFlag("--panelshots");
+        if (!_playFlagConsumed && (hudShots || panelShots || HasCmdFlag("--play")) &&
+            MostRecentSlot() is { } slot)
         {
             _playFlagConsumed = true;
-            Log.Info($"{(hudShots ? "--hudshots" : "--play")}: continuing most recent save '{slot}'.");
+            string mode = hudShots ? "--hudshots" : panelShots ? "--panelshots" : "--play";
+            Log.Info($"{mode}: continuing most recent save '{slot}'.");
             StartLoadedGame(slot);
 
             if (hudShots)
             {
                 AddChild(new Debugging.HudShots { Name = "HudShots" });
+            }
+
+            if (panelShots)
+            {
+                AddChild(new Debugging.PanelShots
+                {
+                    Name = "PanelShots",
+                    Map = _mapScreen,
+                    Journal = _questLogPanel,
+                });
             }
         }
     }
@@ -588,10 +602,12 @@ public partial class GameBootstrap : Node3D
         AddChild(_placement);
         AddChild(new PlacementHud());
 
-        var mapScreen = new MapScreen();
-        AddChild(mapScreen);
-        mapScreen.SetMapService(_mapService);
-        mapScreen.SetFastTravel(_fastTravel);
+        // Held in a field since 39.5C so `--panelshots` can open and drive it — the map screen is
+        // where all three of 39.5A's shipped defects lived, and nothing here could photograph it.
+        _mapScreen = new MapScreen();
+        AddChild(_mapScreen);
+        _mapScreen.SetMapService(_mapService);
+        _mapScreen.SetFastTravel(_fastTravel);
 
         // The Ash Hunters' field journal (Phase 34G): counts every creature the party puts down and
         // persists it. Service-backed like the map — it documents the world, not the player.

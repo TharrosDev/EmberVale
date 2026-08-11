@@ -11,12 +11,25 @@
 ; There is no "return and tell it" objective — the quest system only expresses Kill and Collect — so
 ; the turn-in is a conversation the player has to remember to have. The reward branch is gated on
 ; QuestCompleted, so it waits however long that takes.
+; LocationId added in 39.5C, and this is the ONLY objective in the game that gets one — not an
+; oversight, a measurement. An objective earns a destination when the thing it names lives somewhere
+; specific, and almost nothing in Embervale does: every hostile is a REGION-scoped
+; `EncounterResource` spawned around the player by the `EncounterDirector`, and every quest material
+; (iron ore, goblin hide, beast pelt, healing herb) comes off a loot table rather than a placed node.
+; The Ash dragon is the exception because it is a LAIR — placed once, in `ash_roost.tscn`, which
+; already carries the matching MapPin.
+;
+; ⚠️ Authoring a destination for the others would mean inventing one: "goblins are north" is true of
+; the sandbox blurb, not of the spawner, and a marker sending the player somewhere no better than
+; anywhere else is worse than no marker. What this world actually needs for the rest is a SEARCH
+; AREA rather than a point — see the 39.5C playbook entry.
 [sub_resource type="Resource" id="Obj_kill"]
 script = ExtResource("2_obj")
 Type = 0
 TargetId = "enemy.ash_dragon"
 RequiredCount = 1
 Description = "quest.ancient.kin.obj"
+LocationId = "location.frostfang.ash_roost"
 
 [resource]
 script = ExtResource("1_quest")

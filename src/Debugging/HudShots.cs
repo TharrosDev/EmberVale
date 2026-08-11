@@ -32,36 +32,11 @@ namespace Embervale.Debugging;
 /// harness that set the widgets directly would photograph itself rather than the HUD, and would go
 /// on producing perfect screenshots after the bindings broke.
 /// </summary>
-public sealed partial class HudShots : Node
+public sealed partial class HudShots : ShotHarness
 {
-    /// <summary>Where the PNGs land. <c>user://</c> resolves to the project's app-data folder; the
-    /// absolute path is logged on every capture so it can be opened without guessing.</summary>
-    private const string OutputDir = "user://hudshots";
+    protected override string Flag => "--hudshots";
 
-    /// <summary>Frames to let the world settle before the first capture — the region streams in over
-    /// several frames and a shot taken too early photographs a half-loaded world.</summary>
-    private const int SettleFrames = 90;
-
-    /// <summary>Frames between driving a state and capturing it. The HUD updates in
-    /// <c>_Process</c> and several widgets ease over <see cref="UI.UiTheme"/> durations, so a capture
-    /// on the next frame catches the transition rather than the state.</summary>
-    private const int HoldFrames = 30;
-
-    private readonly List<(string Name, System.Action Drive)> _shots = new();
-    private int _index = -1;
-    private int _countdown = SettleFrames;
-    private bool _capturePending;
-
-    public override void _Ready()
-    {
-        // Pause-immune: one of the states IS a blocking menu, and a paused harness cannot photograph
-        // it or advance past it (CLAUDE.md §7's pause deadlock, from the other side).
-        ProcessMode = ProcessModeEnum.Always;
-
-        DirAccess.MakeDirRecursiveAbsolute(OutputDir);
-        BuildShotList();
-        Log.Info($"--hudshots: {_shots.Count} state(s) queued; output -> {ProjectSettings.GlobalizePath(OutputDir)}");
-    }
+    protected override string OutputDir => "user://hudshots";
 
     /// <summary>
     /// The states worth looking at, in the order the brief's §69 asks for them.
@@ -70,93 +45,32 @@ public sealed partial class HudShots : Node
     /// statuses land on the drained bars, and the menu shot comes last because it is the only one
     /// that changes what is on screen rather than what the widgets say.
     /// </summary>
-    private void BuildShotList()
+    protected override void BuildShotList()
     {
-        _shots.Add(("01-exploration", () => Stats()?.RefillResources()));
+        Shot("01-exploration", () => Stats()?.RefillResources());
 
-        _shots.Add(("02-health-low", () => SetFraction(StatType.Health, 0.18f)));
+        Shot("02-health-low", () => SetFraction(StatType.Health, 0.18f));
 
-        _shots.Add(("03-mana-low", () => SetFraction(StatType.Mana, 0.08f)));
+        Shot("03-mana-low", () => SetFraction(StatType.Mana, 0.08f));
 
-        _shots.Add(("04-endurance-empty", () => SetFraction(StatType.Stamina, 0f)));
+        Shot("04-endurance-empty", () => SetFraction(StatType.Stamina, 0f));
 
-        _shots.Add(("05-statuses", ApplyStatuses));
+        Shot("05-statuses", ApplyStatuses);
 
         // ⚠️ The save this harness loads has no active quest, so without this the tracker — and the
         // distance/bearing readout that is one of 39.5B's headline changes — never appears in a single
         // image. A capture set that silently omits the feature under review is the failure mode this
         // whole tool exists to prevent.
-        _shots.Add(("05b-quest-tracked", StartAndTrackAQuest));
+        Shot("05b-quest-tracked", StartAndTrackAQuest);
 
-        _shots.Add(("06-night", () => SetHour(23)));
+        Shot("06-night", () => SetHour(23));
 
-        _shots.Add(("07-dawn", () => SetHour(6)));
+        Shot("07-dawn", () => SetHour(6));
 
         // The visibility rule this sub-phase added — the one shot that proves a HUD is ABSENT.
-        _shots.Add(("08-menu-open", () => UiState.Open(this)));
+        Shot("08-menu-open", () => UiState.Open(this));
 
-        _shots.Add(("09-menu-closed", () => UiState.Close(this)));
-    }
-
-    public override void _Process(double delta)
-    {
-        if (--_countdown > 0)
-        {
-            return;
-        }
-
-        // ⚠️ THE CAPTURE MUST COME AFTER THE HOLD, NOT ON THE FRAME AFTER THE DRIVE.
-        //
-        // The first version checked `_capturePending` at the top of the loop, so every image was
-        // taken one frame after its state was driven — and `GetImage` returns the LAST DRAWN frame,
-        // which is the one rendered before the drive landed. Every PNG was therefore a photograph of
-        // the PREVIOUS state, correctly named after the current one. It was only obvious because the
-        // clock is on screen: the shot named `07-dawn` read "23:00 (Night)". **A capture harness that
-        // is off by one is worse than none — it produces confident evidence for the wrong claim.**
-        if (_capturePending)
-        {
-            _capturePending = false;
-            Capture(_shots[_index].Name);
-
-            if (_index + 1 >= _shots.Count)
-            {
-                Log.Info($"--hudshots: wrote {_shots.Count} image(s) to {ProjectSettings.GlobalizePath(OutputDir)}");
-                GetTree().Quit(0);
-                return;
-            }
-
-            _countdown = 1; // drive the next state on the following frame
-            return;
-        }
-
-        _index++;
-        _countdown = HoldFrames;
-        _capturePending = true;
-
-        (string name, System.Action drive) = _shots[_index];
-        drive();
-        Log.Info($"--hudshots: [{_index + 1}/{_shots.Count}] {name}");
-    }
-
-    /// <summary>Renders the current frame to <c>OutputDir/&lt;name&gt;.png</c>.</summary>
-    private void Capture(string name)
-    {
-        if (GetViewport()?.GetTexture()?.GetImage() is not { } image)
-        {
-            Log.Warn($"--hudshots: no viewport image for '{name}' — is this a headless run? " +
-                     "This harness needs a real window; run it WITHOUT --headless.");
-            return;
-        }
-
-        string path = $"{OutputDir}/{name}.png";
-        Error error = image.SavePng(path);
-        if (error != Error.Ok)
-        {
-            Log.Warn($"--hudshots: could not write '{path}' ({error}).");
-            return;
-        }
-
-        Log.Info($"--hudshots: wrote {ProjectSettings.GlobalizePath(path)} ({image.GetWidth()}x{image.GetHeight()})");
+        Shot("09-menu-closed", () => UiState.Close(this));
     }
 
     // --- State drivers, all through the owning system ------------------------
