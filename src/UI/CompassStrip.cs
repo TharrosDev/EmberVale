@@ -1,8 +1,6 @@
-using System.Collections.Generic;
 using Embervale.Core.Services;
 using Embervale.Entities;
 using Embervale.Localization;
-using Embervale.Player;
 using Embervale.Quests;
 using Embervale.World;
 using Godot;
@@ -10,17 +8,56 @@ using Godot;
 namespace Embervale.UI;
 
 /// <summary>
-/// The Phase 25F HUD compass: a top-of-screen strip that scrolls cardinal headings with the player's
-/// facing and plots nearby discovered POIs (from <see cref="MapService"/>) plus the active quest
-/// objective (resolved to a live world target by <see cref="ObjectiveLocator"/>). One self-drawn
-/// <see cref="Control"/> — ticks, letters and markers are painted in <see cref="_Draw"/> rather than
-/// built as a node tree. The heading/strip arithmetic is the pure, unit-tested <see cref="CompassMath"/>.
+/// The HUD compass — rebuilt from nothing in 39.5C.
+///
+/// ⚠️ <b>THE OLD ONE WAS NINE OVERLAPPING DRAW PASSES IN A 320×26 BOX, AND IT LOOKED LIKE IT.</b>
+/// A filled panel, a sixteen-band fade over it, 15° graduations, a tick under every cardinal, the
+/// cardinal letters, a tick for every discovered place, an objective chevron, a waypoint chevron and
+/// a centre wedge — all competing inside twenty-six vertical pixels. Each addition was individually
+/// reasonable and the sum was unreadable: at any heading the widget was a row of twenty-odd
+/// near-identical hairlines, which is a **barcode**, not a compass. 39.5C first tried to fix it by
+/// separating the channels into rows; that treated the symptom. The real problem was that there were
+/// too many channels.
+///
+/// So this is a rewrite, and the design is mostly subtraction:
+///
+/// <list type="bullet">
+/// <item><b>No panel and no fade.</b> The strip is a single hairline rule with letters above it.
+/// Removing the fill removed the box, the banding and the stepping artefact together — there is
+/// nothing left to look stepped.</item>
+/// <item><b>No graduations.</b> They existed to give a slow turn something to move against; the
+/// letters and the destination marks already do that, and the graduations were most of the
+/// barcode.</item>
+/// <item><b>No discovered-place ticks.</b> This is the real cut. 39.5A put every found shop on the
+/// strip because nothing else showed them — but 39.5B added the <see cref="MinimapHud"/>, which
+/// answers "what is near me" far better than a one-dimensional strip ever could. Two surfaces
+/// answering one question is how both end up cluttered. **The minimap owns nearby places; the
+/// compass owns facing and destination.**</item>
+/// </list>
+///
+/// What is left is four things, each in its own horizontal band: a centre mark, the eight headings,
+/// the rule, and the destinations — with a distance for the one the player is actually following,
+/// and an edge arrow when it is behind them.
+///
+/// The heading arithmetic remains the pure, unit-tested <see cref="CompassMath"/>.
 /// </summary>
 public sealed partial class CompassStrip : Control
 {
-    private const float Fov = Mathf.Pi / 2f; // ±90° visible to either side of straight ahead
-    private const float StripHeight = 26f;
-    private const float ObjectiveResolveInterval = 0.4f; // re-find the objective target this often
+    /// <summary>±90° visible either side of straight ahead.</summary>
+    private const float Fov = Mathf.Pi / 2f;
+
+    private const float Width = 460f;
+
+    // The four bands, top to bottom. Everything drawn here lands in exactly one of them, which is
+    // the whole rule that keeps the widget legible.
+    private const float MarkTop = 0f;        // centre mark + destination chevrons: y 0..9
+    private const float LetterBaseline = 26f; // cardinal letters sit above the rule
+    private const float RuleY = 32f;          // the horizon
+    private const float DistanceBaseline = 45f; // destination distance, hanging below
+
+    private const float Height = 50f;
+
+    private const float ObjectiveResolveInterval = 0.4f;
 
     private static readonly (string Key, float Angle)[] Cardinals =
     {
@@ -40,28 +77,20 @@ public sealed partial class CompassStrip : Control
     private Vector3? _objectiveTarget;
     private float _resolveTimer;
 
-    // ⚠️ The discovered places are cached against MapService.Revision, NOT re-enumerated per frame.
-    // This widget calls QueueRedraw every frame by design (the heading moves constantly), and
-    // DiscoveredLocations() walks every discovered id through a database lookup — 63 of them at
-    // 60 fps, to draw ticks that only change when the player discovers something. Caching on the
-    // revision counter the service already maintains costs one int comparison.
-    private readonly List<Vector2> _places = new();
-    private int _placesRevision = -1;
-
     public void SetPlayer(IEntity? player) => _player = player;
 
     /// <summary>The tracked objective's world position, or null when there is nothing to walk toward.
     ///
-    /// Exposed so the quest tracker can print the distance and bearing to the same point this strip
-    /// is drawing a marker at (39.5B). Resolving it twice would mean two <see cref="ObjectiveLocator"/>
-    /// scene walks per interval and — worse — two answers, which is how a tracker saying "320 m NW"
-    /// ends up beside a compass marker pointing east.</summary>
+    /// Exposed so the quest tracker prints the distance and bearing to the same point this strip
+    /// marks (39.5B). Resolving it twice would mean two <see cref="ObjectiveLocator"/> scene walks
+    /// per interval and — worse — two answers, which is how a tracker saying "320 m NW" ends up
+    /// beside a compass marker pointing east.</summary>
     public Vector3? ObjectiveTarget => _objectiveTarget;
 
     public override void _Ready()
     {
         MouseFilter = MouseFilterEnum.Ignore;
-        CustomMinimumSize = new Vector2(320f, StripHeight);
+        CustomMinimumSize = new Vector2(Width, Height);
         Size = CustomMinimumSize;
     }
 
@@ -74,7 +103,7 @@ public sealed partial class CompassStrip : Control
             _objectiveTarget = ResolveObjectiveTarget();
         }
 
-        QueueRedraw(); // heading changes every frame; one widget, cheap to repaint
+        QueueRedraw(); // the heading moves every frame; one widget, cheap to repaint
     }
 
     public override void _Draw()
@@ -82,26 +111,8 @@ public sealed partial class CompassStrip : Control
         float halfWidth = Size.X / 2f;
         float centreX = halfWidth;
 
-        // ⚠️ THE BACKDROP FADES AT BOTH ENDS RATHER THAN STOPPING (39.5B).
-        //
-        // It was one flat `DrawRect`, which gave the strip two hard vertical edges — so a heading
-        // scrolling past them *popped* in and out, and the widget read as a grey box pasted on the
-        // world rather than as a band of the horizon. The fade is what makes it read as a window onto
-        // something continuous, and it costs eight quads.
-        DrawBackdrop();
-
-        // The centre mark: a downward wedge over a full-height hairline. A bare 2 px line was
-        // ambiguous about which pixel it meant at the exact moment precision matters.
-        var mark = UiTheme.Adapt(UiTheme.Accent);
-        DrawLine(new Vector2(centreX, 3f), new Vector2(centreX, StripHeight - 3f), new Color(mark, 0.55f), 1f);
-        DrawColoredPolygon(
-            new[]
-            {
-                new Vector2(centreX - 5f, 0f),
-                new Vector2(centreX + 5f, 0f),
-                new Vector2(centreX, 7f),
-            },
-            mark);
+        DrawRule(halfWidth);
+        DrawCentreMark(centreX);
 
         if (_player?.Body is not { } body || !IsInstanceValid(body))
         {
@@ -112,29 +123,56 @@ public sealed partial class CompassStrip : Control
         Vector3 origin = body.GlobalPosition;
         Font font = GetThemeDefaultFont();
 
-        // Minor graduations every 15°, so the strip has something to scroll against between letters.
-        // Without them a slow turn looks like nothing is happening until a cardinal drifts into view.
-        for (int degrees = 0; degrees < 360; degrees += 15)
+        DrawCardinals(font, heading, halfWidth, centreX);
+
+        // Destinations last so nothing draws over them. The objective is the game's mark; the
+        // waypoint is the player's own and wins ties by being drawn after it.
+        if (_objectiveTarget is { } target)
         {
-            if (degrees % 45 == 0)
-            {
-                continue; // a lettered heading draws its own, taller tick
-            }
-
-            float rel = CompassMath.Relative(Mathf.DegToRad(degrees), heading);
-            if (!CompassMath.InView(rel, Fov))
-            {
-                continue;
-            }
-
-            float x = centreX + CompassMath.StripOffset(rel, Fov, halfWidth);
-            DrawLine(new Vector2(x, StripHeight - 6f), new Vector2(x, StripHeight - 2f),
-                new Color(UiTheme.Dim, EdgeFade(x, halfWidth) * 0.5f), 1f);
+            DrawDestination(font, target, origin, heading, halfWidth, centreX, UiTheme.Good);
         }
 
-        // Cardinal letters. The four true cardinals carry more weight than the diagonals, so a glance
-        // lands on N/E/S/W and the intercardinals fill in — a strip where all eight shout equally is
-        // eight things to read instead of one.
+        if (ServiceLocator.Instance is { } locator && locator.TryGet(out MapService map) &&
+            map.Waypoint is { } waypoint)
+        {
+            DrawDestination(font, waypoint, origin, heading, halfWidth, centreX, UiTheme.AccentHot);
+        }
+    }
+
+    /// <summary>The horizon: one hairline, fading to nothing at both ends so the strip has no edges
+    /// to pop against. Drawn in segments because a single line cannot carry a gradient.</summary>
+    private void DrawRule(float halfWidth)
+    {
+        int segments = Mathf.Max(Mathf.RoundToInt(Size.X / 4f), 8);
+        float step = Size.X / segments;
+
+        for (int i = 0; i < segments; i++)
+        {
+            float x = i * step;
+            float alpha = EdgeFade(x + (step * 0.5f), halfWidth);
+            DrawRect(new Rect2(x, RuleY, step + 1f, 1f), new Color(UiTheme.Brass, 0.55f * alpha));
+        }
+    }
+
+    /// <summary>Where the player is facing: one small wedge on the rule, pointing up into the
+    /// letters. The only fixed element on the strip.</summary>
+    private void DrawCentreMark(float centreX)
+    {
+        var mark = UiTheme.Adapt(UiTheme.Accent);
+        DrawColoredPolygon(
+            new[]
+            {
+                new Vector2(centreX - 5f, RuleY + 6f),
+                new Vector2(centreX + 5f, RuleY + 6f),
+                new Vector2(centreX, RuleY - 1f),
+            },
+            mark);
+    }
+
+    /// <summary>The eight headings. N is ember and the true cardinals are bone at body size; the
+    /// intercardinals are dim and smaller — so a glance lands on one letter, not eight.</summary>
+    private void DrawCardinals(Font font, float heading, float halfWidth, float centreX)
+    {
         foreach ((string key, float angle) in Cardinals)
         {
             float rel = CompassMath.Relative(angle, heading);
@@ -147,123 +185,86 @@ public sealed partial class CompassStrip : Control
             bool major = Mathf.IsZeroApprox(Mathf.PosMod(angle + 0.001f, Mathf.Pi / 2f) - 0.001f);
             bool north = Mathf.IsZeroApprox(angle);
 
-            float fade = EdgeFade(x, halfWidth);
-            Color colour = north ? UiTheme.Accent : major ? UiTheme.Text : UiTheme.Dim;
-            DrawLine(new Vector2(x, StripHeight - (major ? 9f : 7f)), new Vector2(x, StripHeight - 2f),
-                new Color(colour, fade * 0.7f), major ? 1.5f : 1f);
-            DrawLabel(font, Loc.T(key), x, new Color(colour, fade));
-        }
-
-        // Discovered places (small dim ticks). 39.5A: the map's own locations, not just cell centres —
-        // a settlement tick is now the settlement rather than the middle of the tile it sits in, and
-        // every shop and service the player has found is on the strip too.
-        MapService? map = null;
-        if (ServiceLocator.Instance is { } locator && locator.TryGet(out MapService resolved))
-        {
-            map = resolved;
-            RefreshPlaces(resolved);
-
-            foreach (Vector2 place in _places)
-            {
-                if (TryStripX(place.X, place.Y, origin, heading, halfWidth, centreX, out float px))
-                {
-                    DrawLine(new Vector2(px, StripHeight - 9f), new Vector2(px, StripHeight - 2f), UiTheme.Dim, 2f);
-                }
-            }
-        }
-
-        // Active objective (a bright downward marker).
-        if (_objectiveTarget is { } target &&
-            TryStripX(target.X, target.Z, origin, heading, halfWidth, centreX, out float ox))
-        {
-            DrawColoredPolygon(
-                new[]
-                {
-                    new Vector2(ox - 6f, 2f),
-                    new Vector2(ox + 6f, 2f),
-                    new Vector2(ox, 12f),
-                },
-                UiTheme.Good);
-        }
-
-        // The player's own waypoint (39.5A), drawn last so it wins every overlap.
-        //
-        // ⚠️ This is what makes a map mark navigable. The world beacon is visible until something
-        // stands between the player and it; the compass bearing never is, so the two together mean
-        // "walk that way" survives a building, a hill and a turn.
-        if (map?.Waypoint is { } waypoint &&
-            TryStripX(waypoint.X, waypoint.Z, origin, heading, halfWidth, centreX, out float wx))
-        {
-            var waypointMark = UiTheme.Adapt(UiTheme.AccentHot);
-            DrawColoredPolygon(
-                new[]
-                {
-                    new Vector2(wx - 6f, StripHeight - 12f),
-                    new Vector2(wx + 6f, StripHeight - 12f),
-                    new Vector2(wx, StripHeight - 1f),
-                },
-                waypointMark);
-            DrawLine(new Vector2(wx, 2f), new Vector2(wx, StripHeight - 12f),
-                new Color(waypointMark, 0.55f), 1.5f);
+            Color colour = north ? UiTheme.Adapt(UiTheme.Accent) : major ? UiTheme.Text : UiTheme.Dim;
+            DrawLabel(font, Loc.T(key), x, new Color(colour, EdgeFade(x, halfWidth)),
+                major ? UiTheme.BodyFontSize : UiTheme.CaptionFontSize, LetterBaseline);
         }
     }
 
     /// <summary>
-    /// The strip's ground: opaque in the middle, transparent at both ends.
+    /// A destination: a chevron above the rule, its distance below, and — when it is behind the
+    /// player — an arrow pinned to the edge pointing the shorter way round.
     ///
-    /// Drawn as a handful of vertical bands rather than a gradient texture — the strip is 320 px
-    /// wide and repaints every frame, so a dozen `DrawRect`s is cheaper than allocating and sampling
-    /// an image, and it needs no asset.
+    /// ⚠️ <b>The edge arrow is the functional half and its absence was a real gap.</b> Outside the
+    /// ±90° window the old strip drew nothing at all, so a player facing away from their own
+    /// waypoint saw an empty compass and had to spin on the spot to find which way to turn. A marker
+    /// that vanishes exactly when it is needed is worse than a coarse one that does not.
     /// </summary>
-    private void DrawBackdrop()
+    private void DrawDestination(
+        Font font, Vector3 target, Vector3 origin, float heading, float halfWidth, float centreX,
+        Color tint)
     {
-        const int bands = 16;
-        float bandWidth = Size.X / bands;
-        float halfWidth = Size.X / 2f;
+        float dx = target.X - origin.X;
+        float dz = target.Z - origin.Z;
+        float rel = CompassMath.Relative(CompassMath.BearingTo(dx, dz), heading);
+        Color mark = UiTheme.Adapt(tint);
 
-        for (int i = 0; i < bands; i++)
+        if (!CompassMath.InView(rel, Fov))
         {
-            float x = i * bandWidth;
-            float alpha = EdgeFade(x + (bandWidth * 0.5f), halfWidth);
-            DrawRect(
-                new Rect2(x, 0f, bandWidth + 1f, StripHeight),
-                new Color(UiTheme.PanelBg, UiTheme.PanelBg.A * alpha));
-        }
-
-        // A hairline along the bottom, fading with everything else — it gives the band an edge to sit
-        // on so the letters are not floating over the sky.
-        DrawLine(new Vector2(0f, StripHeight - 0.5f), new Vector2(Size.X, StripHeight - 0.5f),
-            new Color(UiTheme.Brass, 0.35f), 1f);
-    }
-
-    /// <summary>Opacity for a position across the strip: 1 through the middle, easing to 0 at the two
-    /// ends. Shared by the backdrop, the ticks and the letters so they all vanish together.</summary>
-    private static float EdgeFade(float x, float halfWidth)
-    {
-        const float fadeZone = 0.34f; // fraction of each half that fades
-        float distance = Mathf.Abs(x - halfWidth) / halfWidth; // 0 centre .. 1 edge
-        if (distance <= 1f - fadeZone)
-        {
-            return 1f;
-        }
-
-        return Mathf.Clamp((1f - distance) / fadeZone, 0f, 1f);
-    }
-
-    /// <summary>Re-caches the discovered places, but only when discovery has actually changed.</summary>
-    private void RefreshPlaces(MapService map)
-    {
-        if (_placesRevision == map.Revision)
-        {
+            float edgeX = rel > 0f ? Size.X - 6f : 6f;
+            float direction = rel > 0f ? 1f : -1f;
+            DrawColoredPolygon(
+                new[]
+                {
+                    new Vector2(edgeX + (direction * 5f), MarkTop + 5f),
+                    new Vector2(edgeX - (direction * 4f), MarkTop),
+                    new Vector2(edgeX - (direction * 4f), MarkTop + 10f),
+                },
+                new Color(mark, 0.85f));
             return;
         }
 
-        _placesRevision = map.Revision;
-        _places.Clear();
-        foreach (MapLocationView view in map.DiscoveredLocations())
-        {
-            _places.Add(new Vector2(view.Position.X, view.Position.Z));
-        }
+        float x = centreX + CompassMath.StripOffset(rel, Fov, halfWidth);
+        float fade = EdgeFade(x, halfWidth);
+
+        DrawColoredPolygon(
+            new[]
+            {
+                new Vector2(x - 6f, MarkTop),
+                new Vector2(x + 6f, MarkTop),
+                new Vector2(x, MarkTop + 9f),
+            },
+            new Color(mark, fade));
+
+        // §16: a distance for the destination that matters, and only that one. Printing it for every
+        // marker is the "excessive text" the same section warns against.
+        (string value, string unitKey) = CompassMath.Distance(Mathf.Sqrt((dx * dx) + (dz * dz)));
+        DrawLabel(font, $"{value}{Loc.T(unitKey)}", x, new Color(mark, fade),
+            UiTheme.CaptionFontSize, DistanceBaseline);
+    }
+
+    /// <summary>Opacity across the strip: solid through the middle, easing to nothing at the ends, so
+    /// a heading scrolling off the side dissolves rather than popping.</summary>
+    private static float EdgeFade(float x, float halfWidth)
+    {
+        const float fadeZone = 0.30f;
+        float distance = Mathf.Abs(x - halfWidth) / halfWidth; // 0 centre .. 1 edge
+        return distance <= 1f - fadeZone
+            ? 1f
+            : Mathf.Clamp((1f - distance) / fadeZone, 0f, 1f);
+    }
+
+    /// <summary>A centred, shadowed label on a given baseline. The shadow is not decoration: the
+    /// strip has no panel behind it now, so a letter crossing a bright sky is otherwise invisible.</summary>
+    private void DrawLabel(Font font, string text, float x, Color colour, int sizeToken, float baselineY)
+    {
+        int size = UiTheme.FontSize(sizeToken);
+        Vector2 measured = font.GetStringSize(text, HorizontalAlignment.Left, -1f, size);
+        var pos = new Vector2(x - (measured.X / 2f), baselineY);
+
+        DrawString(font, pos + Vector2.One, text, HorizontalAlignment.Left, -1f, size,
+            new Color(UiTheme.Engrave, colour.A));
+        DrawString(font, pos, text, HorizontalAlignment.Left, -1f, size, colour);
     }
 
     /// <summary>The player's compass heading from its facing (forward = -Z).</summary>
@@ -273,40 +274,8 @@ public sealed partial class CompassStrip : Control
         return CompassMath.HeadingFromForward(forward.X, forward.Z);
     }
 
-    /// <summary>Projects a world X/Z onto the strip; false when it falls outside the ±FOV window.</summary>
-    private static bool TryStripX(float worldX, float worldZ, Vector3 origin, float heading,
-        float halfWidth, float centreX, out float stripX)
-    {
-        float bearing = CompassMath.BearingTo(worldX - origin.X, worldZ - origin.Z);
-        float rel = CompassMath.Relative(bearing, heading);
-        if (!CompassMath.InView(rel, Fov))
-        {
-            stripX = 0f;
-            return false;
-        }
-
-        stripX = centreX + CompassMath.StripOffset(rel, Fov, halfWidth);
-        return true;
-    }
-
-    private void DrawLabel(Font font, string text, float x, Color colour)
-    {
-        int size = UiTheme.FontSize(UiTheme.CaptionFontSize);
-        Vector2 measured = font.GetStringSize(text, HorizontalAlignment.Left, -1f, size);
-        var pos = new Vector2(x - (measured.X / 2f), 15f);
-
-        // Shadowed, like every other label drawn over the world (MapView.DrawLabel's lesson): the
-        // strip is semi-transparent at the ends, so an unshadowed letter crossing a bright sky
-        // disappears exactly where the fade makes it faintest.
-        DrawString(font, pos + Vector2.One, text, HorizontalAlignment.Left, -1f, size,
-            new Color(UiTheme.Engrave, colour.A));
-        DrawString(font, pos, text, HorizontalAlignment.Left, -1f, size, colour);
-    }
-
-    /// <summary>Tracked quest → its first incomplete objective → its nearest live world target.
-    ///
-    /// 39.5B: the tracked quest comes from <see cref="QuestLogComponent.Tracked"/> rather than from a
-    /// first-active scan of its own. The two scans agreed only by accident of dictionary order.</summary>
+    /// <summary>Tracked quest → its first incomplete objective → its nearest live world target, or
+    /// the authored destination when nothing matching is loaded (39.5C).</summary>
     private Vector3? ResolveObjectiveTarget()
     {
         if (_player is not { } player || player.Body is not { } body || !IsInstanceValid(body) ||

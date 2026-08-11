@@ -63,6 +63,14 @@ public sealed partial class HudShots : ShotHarness
         // whole tool exists to prevent.
         Shot("05b-quest-tracked", StartAndTrackAQuest);
 
+        // ⚠️ The compass's destination channel — chevron, distance, and the edge arrow for a mark
+        // behind you — is invisible in every other shot, because the one authored quest destination
+        // is cross-region and resolves to no position. Without these two the 39.5C compass rebuild
+        // would ship with half of it never once rendered, which is exactly the gap 39.5B left.
+        Shot("05c-waypoint-ahead", () => SetWaypointRelative(forward: 60f, right: 12f));
+
+        Shot("05d-waypoint-behind", () => SetWaypointRelative(forward: -80f, right: -30f));
+
         Shot("06-night", () => SetHour(23));
 
         Shot("07-dawn", () => SetHour(6));
@@ -127,6 +135,22 @@ public sealed partial class HudShots : ShotHarness
                 return;
             }
         }
+    }
+
+    /// <summary>Drops the player's waypoint relative to where they are facing, so a shot can put a
+    /// destination in front of them or deliberately behind them.</summary>
+    private static void SetWaypointRelative(float forward, float right)
+    {
+        if (ServiceLocator.Instance is not { } locator ||
+            !locator.TryGet(out PlayerCharacter player) ||
+            !locator.TryGet(out MapService map))
+        {
+            return;
+        }
+
+        Vector3 ahead = -player.GlobalBasis.Z;
+        Vector3 side = player.GlobalBasis.X;
+        map.SetWaypoint(player.GlobalPosition + (ahead * forward) + (side * right));
     }
 
     private static void SetHour(int hour)

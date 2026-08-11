@@ -12,13 +12,13 @@
     this file still stands, and quest markers still begin as a `QuestResource` change.
   - ✅ **It also closed 39.5A's harness gap:** `--hudshots` renders the HUD to PNG, and found four
     already-shipped defects on its first run.
-- [ ] **39.5C — The rest of the map** `[F/C]` ⏳ **← THE LIVE ITEM**
-  - **Done when:** the deferred table at the bottom of this file has had its conditions met — and
-    each one is *checked* before it is built, not assumed ripe.
-  - ⚠️ **`--hudshots` covers the HUD, not the map screen.** The same structural problem remains for
-    every *panel*: `--play` cannot press `M`, and the Godot MCP drives the editor. Extending the
-    harness to open a screen and drive it is the cheap version of this now that the capture path
-    exists — and 39.5A's three defects were all on the map screen.
+- [x] **39.5C — Panel capture, the map's labels, quest destinations** `[F/C]` ✅
+  - **Done when:** every deferred condition has been *measured*, the ripe ones built, and the map
+    screen is capturable.
+  - ⚠️ **Five conditions were measured and found genuinely unmet, so those items are still
+    deferred** — the table below records the measurements so the next session does not repeat them.
+  - ⚠️ **Phase 39.5 is closed. The remaining table is condition-gated, not scheduled**: there is no
+    39.5D, and inventing one to hold five unripe items would be the thing 38G did wrong.
   - ⚠️ **Quest markers are blocked on quest data, not on the map.** A quest names a template id, not
     a place (37.5E found this), so that item begins as a `QuestResource` change.
 
@@ -363,7 +363,7 @@ sections marked satisfied:
 
 ---
 
-## Deferred to 39.5C — each with the condition that triggers it
+## Still deferred — each with the condition that triggers it, and what it measured at
 
 | Brief § | Deferred | Lands when |
 | --- | --- | --- |
