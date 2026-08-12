@@ -75,7 +75,8 @@
   - ⚠️ **`DESIGN.md` §6 carries an authored contradiction** — "training/perks-for-pay" against "perks are
     bought with skill points, **not gold**". 38C left the rule alone and wrote down the reading that
     holds (a trainer sells *access*, never a perk rank). **38D has to resolve it.**
-- [x] **38D — Services: trainer / bank / inn / stable** `[F/C]` ✅ *(repair deferred to 40A)*
+- [x] **38D — Services: trainer / bank / inn / stable** `[F/C]` ✅ *(repair deferred to 40A — ❌ since
+  **cut**: Phase 40 struck, 2026-08-12)*
   - **Done when:** trainer (buy perks/points), bank (storage), innkeeper (rest/
     time-skip), stablemaster (mounts stub), and repair (if durability adopted in 40)
     are interactable services.
@@ -94,6 +95,10 @@
   - **Repair is deferred, not skipped.** No durability or condition concept exists in the game at all,
     40A decides whether it ever will, and 40B's rule is that cut systems leave no stub — so there is no
     `ServiceKind.Repair` member. Recorded in `DESIGN.md` §6's sink table as *pending 40A*.
+    - ✅ **RESOLVED 2026-08-12: the answer was no.** Phase 40 was struck as *not wanted* (maintainer
+      direction) and durability is **cut**, so the deferral above is closed and the sink-table row now
+      reads ❌ rather than *pending*. **38D shipping the absence rather than a disabled stub turned out
+      to be free** — nothing had to be unbuilt. See [`phase-40.md`](./phase-40.md).
   - **38C's authored contradiction is resolved** (`DESIGN.md` §6): a trainer sells **access, never a
     rank**. Recipes and XP, so points arrive by levelling; `ProgressionComponent` gained no new API.
   - Three things worth carrying into 38E–39:

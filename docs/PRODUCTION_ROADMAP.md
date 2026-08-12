@@ -154,8 +154,8 @@ authoring recipes that turn them into content with no new code, see docs/RECIPES
 | 38 | Economy, Vendors & Services | F/C | Merchants, buy/sell, repair, training, banks, dynamic pricing, gold sinks |
 | 39 | Mounts & Traversal | F | Mounts, stamina/sprint traversal, climbing/swimming as the world demands |
 | 39.5 | World Map & Location Intelligence | F/C | The map as the world's geographical index: a location layer, discovery, search, waypoints |
-| 40 | Survival & Needs (scoped) | F | Only the systems LORE/design require (e.g. carry weight already exists) — keep or cut deliberately |
-| 40.5 | Dungeon & Puzzle Framework | F | Reusable lever/trap/puzzle tooling for ruins/temples/vaults, plus the relic-trial vault convention |
+| ~~40~~ | ~~Survival & Needs~~ | ❌ | **NOT WANTED — struck 2026-08-12.** No durability, hunger, thirst, temperature or encumbrance. Ever |
+| ~~40.5~~ | ~~Dungeon & Puzzle Framework~~ | ❌ | **NOT WANTED — struck 2026-08-12.** No puzzle, trap or vault tooling. Phases 50 and 51E owe their own answers |
 | 41 | Quest Authoring at Scale & Branching | F/C | Beyond Kill/Collect: escort, defend, choice/branch, timed, faction-gated objective types |
 | 41.5 | Divine Shrines & Blessings | F/C | The Seven Gods, mechanized — shrine blessings tied to each god's domain |
 | 42 | Guild & Faction Questlines | C | The five LORE guilds as joinable factions with multi-quest arcs and ranks |
@@ -629,7 +629,7 @@ crafting stations, trophies, and customization.
 - **`VendorComponent`/`ShopResource`** — buy/sell with the existing item system,
   per-vendor stock (static + restocking + leveled), buy/sell spreads,
   reputation-discounts (faction standing), gold sinks.
-- **Services** — repair (a durability system if adopted in Phase 40), trainers
+- **Services** — ~~repair~~ (❌ durability struck with Phase 40, 2026-08-12), trainers
   (buy perks/skill points), bank/storage, stablemaster (mounts), innkeeper (rest/
   time-skip).
 - Economy balance is later (Phase 56); this builds the machinery.
@@ -719,34 +719,37 @@ transforms and schedule routes.
 - **Phase 39.5 is CLOSED.** ⚠️ **There is no 39.5D** — the remaining table is condition-gated rather
   than scheduled, and creating a sub-phase to hold unripe items is what 38G did wrong.
 
-### Phase 40 — Survival & Needs (scoped, deliberate) `[F]`
+### ~~Phase 40 — Survival & Needs~~ ❌ **NOT WANTED — STRUCK 2026-08-12**
 
-A **decision phase**, not an assumption. Carry weight exists as *data* (Phase 5) but
-is not wired to anything: `InventoryComponent` carries `MaxWeight`, `TotalWeight` and
-`IsOverEncumbered`, and the character sheet prints the weight — but nothing reads the
-limit, so it refuses no pickup and slows no one. Deciding to keep it therefore means
-*building* it, not switching it on. (Corrected by the Phase 1–5 audit, which found the
-mechanic unconsumed; the previous wording read as though it were already live.)
-Decide — and record in `docs/DESIGN.md` — whether to add durability, food/rest,
-or temperature (Frostfang fiction supports it), or to **explicitly cut** them.
-Build only what survives the design call; an empty/cut phase is a valid outcome.
+**Maintainer direction: this game has no survival needs.** Durability/repair, food/hunger and
+temperature are **cut** — not deferred, not condition-gated, and there is no condition that revives
+them. Rest already exists as a *sink* (`ServiceKind.Inn`, `service.ashfall.bed`) and is untouched.
 
-### Phase 40.5 — Dungeon & Puzzle Framework `[F]`
+The cut deleted two long-standing stubs, which is the only code this phase ever produced:
+`CraftingStationType.Cooking` (zero recipes, zero stations, last enum member) and
+`InventoryComponent.MaxWeight` / `IsOverEncumbered` — carry weight shipped in Phase 5 as *"not yet
+enforced (drives encumbrance later)"* and sat with **zero readers for thirty-five phases**. `later`
+never comes now, so the pair went. **`TotalWeight` stays** and the character sheet still prints it: a
+weight readout is an item fact, not a budget.
 
-LORE's ruins, buried temples, and dragon nests imply environmental puzzles and traps —
-no phase 1–40 builds that tooling; `EncounterResource`/`WorldEventResource` are combat
--only. This lands before dungeon content (Phase 50E) authors against it, and gives
-divine-relic acquisition (Phase 51E) a real seam.
+⚠️ **Do not reach for durability as a Phase 56 economy fix.** §6's rule is *sinks the player wants to
+spend on*; the table already has one recurring drip and sixteen purchases. Full reasoning and the
+per-need table: [`playbook/phase-40.md`](./playbook/phase-40.md).
 
-- **Puzzle primitives** — a `PuzzleResource`/`PuzzleComponent` family (lever/pressure
-  -plate, sequence, light-and-shadow) wired through `InteractableComponent` + the
-  EventBus, gating a door/reward on solve.
-- **Trap primitives** — hazard triggers (spikes, dart volleys, collapsing floors)
-  dealing damage through the existing `DamagePacket` pipeline, authored as data.
-- **Relic-trial vault convention** — one puzzle + one guardian encounter per vault, the
-  template every realm's divine relic (51E) reuses for its acquisition.
-- A docs/RECIPES.md "a new puzzle/trap" recipe, and `ContentValidator` checks for
-  solvability/dangling triggers.
+### ~~Phase 40.5 — Dungeon & Puzzle Framework~~ ❌ **NOT WANTED — STRUCK 2026-08-12**
+
+**Struck whole**, same direction. No `PuzzleComponent`, no trap primitives, no relic-trial vault
+convention. Nothing existed to remove. ⚠️ **The trap arm (40.5C) was offered as a partial keep and
+declined** — recorded so the cheapest-looking piece is not re-proposed.
+
+**Two phases were written against this one and now owe their own answer:**
+
+- **Phase 50** — dungeons become **rooms with encounters and loot**, on the existing
+  `EncounterResource` / `LootTable` / cell-scene tooling. ⚠️ **Do not reinvent hazards inside Phase 50**
+  because a room feels empty; that is this phase returning through the side door.
+- **Phase 51E** — the guardian half of a relic trial is already expressible (`LairSpawnComponent`);
+  the *trial* half has no answer. The likeliest shape is a relic won from a fight or a quest, needing
+  no new system. Detail: [`playbook/phase-40_5.md`](./playbook/phase-40_5.md).
 
 ### Phase 41 — Quest Authoring at Scale & Branching `[F/C]`
 
@@ -1190,7 +1193,9 @@ that doesn't touch the slice.
 | 36 | ✅ | The boss kit (36A–36E): a boss is authored data now (`data/bosses/*.tres` — phases, enrage, granted spells, telegraph colours), the Iron King lost his bespoke factory so there is **one** path through the pipeline, wind-ups are telegraphed by a model-independent ground ring and interruptible by a stagger **for every actor including the player**, phases summon capped add waves, an arena binds its own spawn points and phase reactions declaratively in its `.tscn`, and each boss's intro lock, defeat slow-mo, guaranteed reward and corruption-choice dialogue come from its own resource |
 | 37 | ✅ | Housing (37A–37D): a holding can be bought and/or earned, ownership persists and registers a fast-travel node; it has a stash (the game's **first two-way container**); you can craft kits and set stations and decoration down in its yard (the game's **first world-editing verb**, with a ghost that names *which* refusal applies); and display stands show off Epic-or-better trophies. Persistence came free all four times — ownership is a service, the stash and the stands **are** inventories keyed by `PersistentId`, and placed props ride `PersistentSpawnDirector`. The Ashfall Cottage is authored end to end as the one playable property **37E (out of band, 2026-08-10)** rebuilt the holding entirely: `compose_building.py --hollow` makes a house with per-wall colliders and an open doorway, so the Ashfall Cottage is now an **enterable, furnished home in its own cell** (`ember_crown.ashfall_homestead`) with a workshop, a garden and an ownership-gated free bed |
 | 37.5 | ✅ | **The UI overhaul** (37.5A–G) — an original AAA-fantasy interface language across every screen — sub-phase detail in [Phase 37.5 — what shipped, sub-phase by sub-phase](#phase-375--what-shipped-sub-phase-by-sub-phase) below |
-| 39.5 | ⏳ | **World map & location intelligence — 39.5A and 39.5B closed.** The map reads authoritative world data instead of the three things that happened to have coordinates. ⚠️ **A location's position is its node's transform in a cell scene, never an authored coordinate**, and `--validate` checks that seam in both directions. Author with `tools/gen_map_locations.py`. **39.5B was the player HUD**: a minimap (none existed), one tracked-quest authority replacing two independent first-active scans, and the visibility logic `GameHud` had never had. ⚠️ **Its audit found ~60 of the brief's 80 sections already satisfied** — the finding was that the HUD was mature, not broken. ✅ **39.5B also closed the harness gap** with `--hudshots`, which renders the HUD to PNG and found four already-shipped defects on its first run. ⚠️ **It covers the HUD, not panels** — the map screen still cannot be captured, and that is where 39.5A's three defects were. **39.5C is the live sub-phase** and carries a runnable condition per deferred item — see [`docs/playbook/phase-39_5.md`](playbook/phase-39_5.md) |
+| 39.5 | ✅ | **World map & location intelligence — CLOSED at 39.5C; there is no 39.5D.** The map reads authoritative world data instead of the three things that happened to have coordinates. ⚠️ **A location's position is its node's transform in a cell scene, never an authored coordinate**, and `--validate` checks that seam in both directions. Author with `tools/gen_map_locations.py`. **39.5B was the player HUD**: a minimap (none existed), one tracked-quest authority replacing two independent first-active scans, and the visibility logic `GameHud` had never had. ⚠️ **Its audit found ~60 of the brief's 80 sections already satisfied** — the finding was that the HUD was mature, not broken. ✅ **39.5B also closed the harness gap** with `--hudshots`, which renders the HUD to PNG and found four already-shipped defects on its first run. ⚠️ **It covers the HUD, not panels** — the map screen still cannot be captured, and that is where 39.5A's three defects were. **39.5C added panel capture (`--panelshots`), the map's label placer and quest destinations**, and measured all eight deferred conditions rather than guessing — each carries a runnable condition *and the number it measured at*; see [`docs/playbook/phase-39_5.md`](playbook/phase-39_5.md) |
+| ~~40~~ | ❌ | **Survival & Needs — NOT WANTED, struck 2026-08-12** (maintainer direction). No durability/repair, hunger, thirst, temperature or encumbrance, and no condition revives them. Rest already exists as a *sink* (the inn, the home bed) and is untouched; food items stay instant-heal consumables with a `food` trade tag. The cut deleted the two stubs the decision had been holding — `CraftingStationType.Cooking` and `InventoryComponent.MaxWeight`/`IsOverEncumbered`, the latter unread since Phase 5 — and settled seven "pending 40A" pointers. ⚠️ **Do not reach for wear as a Phase 56 economy fix.** See [`docs/playbook/phase-40.md`](playbook/phase-40.md) |
+| ~~40.5~~ | ❌ | **Dungeon & Puzzle Framework — NOT WANTED, struck 2026-08-12**, whole phase. Nothing existed, so nothing was removed. ⚠️ **The trap arm was offered as a partial keep and declined.** Two phases owe their own answer: **Phase 50** authors dungeons as rooms with encounters and loot on existing tooling, and **Phase 51E** has a guardian but no trial. See [`docs/playbook/phase-40_5.md`](playbook/phase-40_5.md) |
 | 38 | ✅ | **Economy, vendors & services — closed at 38V.** All twenty-two sub-phases (38A–38V) including 38G; nothing parked, five briefed services deliberately struck. Mechanism in [`ARCHITECTURE.md`](ARCHITECTURE.md) §2.6m, intent + the Phase 56 balance handoff in [`DESIGN.md`](DESIGN.md) §6/§6.1, and the rules are re-provable with `python tools/negative_tests.py` (42 cases). Sub-phase detail in [Phase 38 — what shipped, sub-phase by sub-phase](#phase-38--what-shipped-sub-phase-by-sub-phase) below (that list stops at 38O; **`docs/playbook/phase-38.md` is the current one**) |
 | Art | ✅ | **The Quaternius standardisation** (out of band, maintainer direction): the art set is now one CC0 artist. 401 models vendored at `assets/library/` behind a `.gdignore`, 18 props re-sourced keeping their filenames and boxes, and **29 archetypes that greyboxed as tinted capsules got rigged animated bodies** — Phase 35's dragons finally have one. Every model in the game is CC0 and the project owes **no attribution**; the `prp_tome_stand` release blocker is gone. Policy in `ASSET_POLICY.md` §0 |
 
@@ -1209,7 +1214,7 @@ that doesn't touch the slice.
 
 - 38C ✅ standing finally changes a number. A merchant prices by faction: a surcharge across the hostile half of the seven-step ramp down to 15% off at Allied, and a faction the player is *hostile* to will not deal at all — reusing each faction's own authored `HostileThreshold` rather than inventing a second notion of hostile in the economy. That is the **first reputation tier read in the game**: `ReputationComponent` shipped in Phase 16 with exactly two behavioural readers, both asking the same boolean. Only the buy side moves, deliberately — with both of `ShopPricing`'s clamps in play a generous sell fraction converges on `sell == buy`, which is frictionless churn rather than an exploit. Gold has real sinks now: a merchant's **purse** runs dry and refills on 38B's restock clock, so a field of corpses cannot be fenced in one visit, and **fast travel costs gold** — free to a holding you own, which is what makes the sink read as a choice rather than a toll booth. `DESIGN.md` §6 carries the authoritative sink table, as its own house rule requires. Two process notes worth keeping: the travel fee's first draft resolved the active region two different ways, so the price shown would have differed from the price charged (caught by a `--play` run, and the premise behind it — that `RegionStreamer` was unregistered — turned out to be wrong outright); and the purse arithmetic had to move out of the Godot `Node` into `ShopStock` before any test could reach it.
 
-- 38D ✅ four paid services, one component. `ServiceResource` + `ServiceKind` + one `ServiceComponent` branching the way `WorldEventDirector` does, the pure half in `ServiceRules`, and the price on `ShopPricing.ServicePrice` so a service and a shop of the same faction move on one discount ramp. The trainer is **the first caller `CraftingComponent.Learn` has ever had** — it had none from Phase 15, which is why `GameIds.Recipes.Starting` was the entire reachability guarantee and how `recipe.leather_vest` rotted unreachable for twenty phases; `recipe.drakescale_mail` moved out of that array to be taught, since it only ever sat there because nothing could teach a recipe. `--validate` now checks reachability as a **union** and rejects the overlap too. The bank is 37B's storage with the property gate removed — an `InventoryComponent` on a prop with a `PersistentId` *is* the vault, so no panel and no save code. The inn moves the clock and refills every resource; the stablemaster sells a mount that Phase 39A will read out of a story flag. ⚠️ **Repair is deferred to 40A, deliberately**: no durability concept exists anywhere, and 40B's rule is that cut systems leave no stub, so there is no `Repair` kind at all. 38D also **resolved the §6 contradiction 38C left standing** — a trainer sells access, never a rank, so gold reaches skill points only through levelling. Two traps the phase records: `SetTimeOfDay` needs `RestHour + 24` or a rest rewinds the hour and freezes 38B's restock clock, and which kinds require an `UnlockFlagId` is a validator rule because every wrong pairing is well-formed data and a broken economy. **
+- 38D ✅ four paid services, one component. `ServiceResource` + `ServiceKind` + one `ServiceComponent` branching the way `WorldEventDirector` does, the pure half in `ServiceRules`, and the price on `ShopPricing.ServicePrice` so a service and a shop of the same faction move on one discount ramp. The trainer is **the first caller `CraftingComponent.Learn` has ever had** — it had none from Phase 15, which is why `GameIds.Recipes.Starting` was the entire reachability guarantee and how `recipe.leather_vest` rotted unreachable for twenty phases; `recipe.drakescale_mail` moved out of that array to be taught, since it only ever sat there because nothing could teach a recipe. `--validate` now checks reachability as a **union** and rejects the overlap too. The bank is 37B's storage with the property gate removed — an `InventoryComponent` on a prop with a `PersistentId` *is* the vault, so no panel and no save code. The inn moves the clock and refills every resource; the stablemaster sells a mount that Phase 39A will read out of a story flag. ⚠️ **Repair was deferred to 40A, deliberately**: no durability concept exists anywhere, and 40B's rule is that cut systems leave no stub, so there is no `Repair` kind at all. ✅ **Resolved 2026-08-12 — the answer was no**: Phase 40 was struck as *not wanted* and durability is CUT, so the absence 38D shipped is now permanent and cost nothing to make so. 38D also **resolved the §6 contradiction 38C left standing** — a trainer sells access, never a rank, so gold reaches skill points only through levelling. Two traps the phase records: `SetTimeOfDay` needs `RestHour + 24` or a rest rewinds the hour and freezes 38B's restock clock, and which kinds require an `UnlockFlagId` is a validator rule because every wrong pairing is well-formed data and a broken economy. **
 
 - 38E** ✅ closed the phase by making the economy reachable at all: `DialogueEffect.OpenShop` (ordinal 9) lets a trade choice publish the existing `ShopOpenedEvent`, so Aldreth, Bryn and Mirela became real merchants **without losing the quest conversations** two of them carry. That was the one-interactable decision reserved since 38A, and the effect won over replacing the component for a forward reason as much as a content one — a merchant who is a person can carry hours, a haggle, a contract and a rumour, and a `VendorComponent` on a crate cannot. It also validated a shop id for the first time ever: `.tscn` is not scanned, so a mistyped `ShopId` has always been silent, while an `EffectArg` sits in a `.tres` the validator reads. Two authored shops (`shop.ember_crown.smith`, `shop.ember_crown.apothecary`) and Aldreth's real conversation replaced the hard-coded stub. ⚠️ An `OpenShop` choice must leave `Goto` empty or the conversation waits behind the shop window and returns when it closes — enforced by a new rule. No new C# file: one enum member, one switch case, and data. **38F–
 

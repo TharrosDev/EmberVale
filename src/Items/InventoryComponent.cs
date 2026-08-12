@@ -23,9 +23,12 @@ public partial class InventoryComponent : EntityComponent, ISaveable
 {
     [Export] public int Capacity { get; set; } = 24;
 
-    /// <summary>Informational weight budget; not yet enforced (drives encumbrance later).</summary>
-    [Export] public float MaxWeight { get; set; } = 100f;
-
+    // ⚠️ MaxWeight and IsOverEncumbered were removed in Phase 40 (2026-08-12). They shipped in Phase 5
+    // as "not yet enforced (drives encumbrance later)" and sat with ZERO readers for thirty-five
+    // phases — MaxWeight was read only by IsOverEncumbered, and IsOverEncumbered by nothing at all.
+    // Encumbrance is a survival need, and survival needs are CUT, so "later" never comes and the pair
+    // was the stub 40B's rule forbids. TotalWeight STAYS: it is printed on the character sheet
+    // (char.backpack_full) as an item fact, not a limit, and nothing about it implies a budget.
     private readonly List<ItemStack> _stacks = new();
 
     public IReadOnlyList<ItemStack> Stacks => _stacks;
@@ -53,8 +56,6 @@ public partial class InventoryComponent : EntityComponent, ISaveable
             return total;
         }
     }
-
-    public bool IsOverEncumbered => TotalWeight > MaxWeight;
 
     protected override void OnInitialize()
     {

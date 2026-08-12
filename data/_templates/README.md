@@ -71,7 +71,8 @@ Enums export as their integer ordinal in `.tres`. **Append-only** — never reor
   `0` Physical, `1` Fire, `2` Frost, `3` Lightning, `4` Arcane, `5` Nature, `6` Necrotic,
   `7` True.
 - **Spell `Delivery`** — `0` Projectile, `1` Area, `2` Self.
-- **Recipe `Station`** — `0` Hand, `1` Forge, `2` Workbench, `3` Alchemy, `4` Cooking.
+- **Recipe `Station`** — `0` Hand, `1` Forge, `2` Workbench, `3` Alchemy. (`4` was Cooking,
+  retired unauthored in Phase 40 when survival needs were struck; the next station appends at `5`.)
 - **World event `Kind`** — `0` Raid, `1` Cache, `2` Hunt.
 - **Weather `Type`** (`src/World/WeatherType.cs`) — `0` Clear and up.
 - **`HostileThreshold`** (`src/Factions/ReputationTier.cs`) — a `ReputationTier` int

@@ -178,7 +178,10 @@ public class EnumStabilityTests
         Assert.Equal(1, (int)CraftingStationType.Forge);
         Assert.Equal(2, (int)CraftingStationType.Workbench);
         Assert.Equal(3, (int)CraftingStationType.Alchemy);
-        Assert.Equal(4, (int)CraftingStationType.Cooking);
+
+        // Ordinal 4 was Cooking, removed in Phase 40 when survival needs were cut. It was the LAST
+        // member and no recipe, station or scene ever named it, so nothing shifted. 4 stays retired;
+        // the next station appends at 5. Deliberately not pinned as a count — an append is legal.
     }
 
     [Fact]
@@ -194,7 +197,7 @@ public class EnumStabilityTests
     {
         // Authored as ints in data/services/*.tres (Phase 38D), so a reorder would silently turn every
         // inn into a trainer. There is deliberately no Repair member — durability does not exist and
-        // Phase 40A decides whether it ever will.
+        // never will: Phase 40 struck survival needs outright (maintainer direction, 2026-08-12).
         Assert.Equal(0, (int)Embervale.Economy.ServiceKind.Trainer);
         Assert.Equal(1, (int)Embervale.Economy.ServiceKind.Bank);
         Assert.Equal(2, (int)Embervale.Economy.ServiceKind.Inn);
