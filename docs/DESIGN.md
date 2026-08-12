@@ -429,7 +429,7 @@ routes that pay out of `--economy` and do not "fix" a positive margin in that ta
 | A sword for hire | `ServiceKind.Mercenary` — **500 gold once**, and `CompanionRoster` is the only record of it. The dearest thing the Ember Crown sells, deliberately above the mount at 400: a mount is a convenience, a second fighter changes what the player can walk into | 38R |
 | A throw of the bones | `ServiceKind.Wager` — **50 gold a throw, three a day** at Hollowreach, paying 150 one time in four. The only entry here that sometimes hands money *back*, and the only one whose sink-ness is enforced by `--validate` rather than by being a purchase | 38R2 |
 | A night's rest at home | `service.ashfall.bed` — **free**, gated on owning the holding. See below | 37E |
-| Repair | — | **pending 40A** |
+| Repair | — | ❌ **CUT — Phase 40 struck, 2026-08-12.** Not pending, not condition-gated. See below |
 
 ⚠️ **A FREE BED IN THE PLAYER'S OWN HOUSE IS NOT A HOLE IN THE INN, IT IS WHAT THE HOUSE IS FOR**
 (37E). The Ashen Hearth charges 10 gold a night, every night, forever. The Ashfall Cottage cost 600
@@ -509,11 +509,30 @@ beside it would survive a dismissal and retire her permanently, which is why `--
 
 **The appraiser is free, and that is a decision too** (38P2). A valuation is an obvious per-use sink and it was deliberately not taken: `ServiceRules` refuses any service the player cannot afford *before* the verb runs, so a fee fails closed on the player with an empty purse and a full pack — exactly the person who walked over to ask what is worth carrying. An appraisal only the rich can buy is not a sink, it is a lock on the one screen that explains the economy. Same reasoning as 38O's free warden search and 38P's free consignment counter; `--validate` enforces all three.
 
-**Repair is not built, and that is a decision rather than an omission.** No durability or condition
-concept exists anywhere in the game: `StatType` has no such member and nothing in `src/` mentions wear.
-Phase 40A decides whether durability is adopted *or explicitly cut*, and 40B's rule is that a cut system
-leaves no stub — so 38D shipped no `ServiceKind.Repair` at all. If 40A adopts durability, repair is a new
-kind and a branch, nothing more.
+⚠️ **REPAIR IS CUT, AND SO IS EVERY OTHER SURVIVAL NEED** (maintainer direction, 2026-08-12 —
+`docs/playbook/phase-40.md`). This was 38D's one open question and it stayed open for two phases; it
+is now closed in the direction of *no*. **The game has no survival needs**: no durability, no hunger,
+no thirst, no temperature. There is no repairsmith, no `ServiceKind.Repair`, and there will not be one.
+
+No durability or condition concept exists anywhere in the game — `StatType` has no such member and
+nothing in `src/` mentions wear — so the cut removes nothing, which is the cheapest possible outcome
+and the reason 38D was right to ship the absence rather than a disabled stub. **Repair was the only
+row in the table above that named a future**, and a sink table promising a sink that is never coming
+is worse than a shorter table.
+
+⚠️ **What this means for the economy is nothing, and that is the point.** Repair would have been a
+*recurring drip* sink, and this table already has one (`ServiceKind.Inn`, charged every night) plus
+sixteen purchases. The scarcity intent in §6's opening is carried by the seventeen entries that exist;
+it never depended on the eighteenth. **Do not reintroduce a wear mechanic as an economy fix** — if
+Phase 56 finds gold accumulating faster than it drains, the answer is a price or a new sink of a kind
+the player *wants* to spend on, per the "sinks, not just sources" rule below.
+
+**Food stays exactly what it is.** `item.food.bread`, `item.food.field_ration` and
+`item.food.smoked_fish` are instant-heal `ConsumableItemResource`s wearing a `food` trade tag, and the
+tag is doing real work — it is what lets the provisioner and the fishmonger overlap without being the
+same shop (38L). Cutting hunger does not touch them: they are cheap healing and a market category,
+never a need. ⚠️ **`CraftingStationType.Cooking` was deleted in the same pass** — it had zero recipes,
+zero stations and zero scenes, and with survival cut there was nothing left for a cooking fire to be.
 
 **Contraband is a market, not a sink** (38O), and it is the first thing in the economy that is priced
 by *who will take it* rather than by what it is worth. `TradeTags.Contraband` is the one tag that fails

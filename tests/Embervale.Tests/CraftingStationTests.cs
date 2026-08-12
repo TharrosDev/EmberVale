@@ -14,7 +14,6 @@ public class CraftingStationTests
     [InlineData(CraftingStationType.Forge)]
     [InlineData(CraftingStationType.Workbench)]
     [InlineData(CraftingStationType.Alchemy)]
-    [InlineData(CraftingStationType.Cooking)]
     public void HandRecipe_IsAcceptedAtEveryStation(CraftingStationType open)
     {
         Assert.True(CraftingComponent.StationAccepts(CraftingStationType.Hand, open));
@@ -29,7 +28,6 @@ public class CraftingStationTests
     [Theory]
     [InlineData(CraftingStationType.Workbench)]
     [InlineData(CraftingStationType.Alchemy)]
-    [InlineData(CraftingStationType.Cooking)]
     [InlineData(CraftingStationType.Hand)] // standing at no station can't run a forge recipe
     public void ForgeRecipe_IsRejectedElsewhere(CraftingStationType open)
     {

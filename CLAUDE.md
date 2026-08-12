@@ -632,9 +632,15 @@ immediately before it usually name the thing that will bite you.
 - ⚠️ **The `rts` library pack is roughly 1/6 scale** and nothing in the files says so (38M2). Measure
   any candidate against a 1.8 m reference before authoring around it, and adapt through
   `nodes/root_scale` in the `.import` rather than a Blender round-trip.
-- **Repair does not exist and that is a decision** — no durability concept exists anywhere, Phase
-  40A decides whether to adopt or explicitly cut it, and 40B's rule is that a cut system leaves no
-  stub. `docs/DESIGN.md` §6 carries the authoritative gold-sink table.
+- ⚠️ **THERE ARE NO SURVIVAL NEEDS IN THIS GAME, AND PHASE 40 IS STRUCK** (maintainer direction,
+  2026-08-12). No durability, no hunger, no thirst, no temperature, and no repair service — all cut,
+  not deferred and not condition-gated, so **do not propose any of them as a fix for anything.** Food
+  items stay what they are: instant-heal consumables with a `food` trade tag. 40B's rule that a cut
+  system leaves no stub is what the cut was executed under, and it survives the phase being struck —
+  `docs/NOW.md` invariant 28 is its home. `docs/DESIGN.md` §6 carries the gold-sink table.
+- ⚠️ **PHASE 40.5 IS STRUCK TOO** — no puzzle, trap or dungeon-framework tooling (same direction).
+  Phase 50 authors dungeons as rooms with encounters and loot; Phase 51E's relic trials will need
+  their own answer when they land. `docs/playbook/phase-40_5.md` records the consequence.
 
 > **Two UI phases, both done:** Phase 14 *polished the debug-grade overlay* (shared
 > `UiTheme`, vitals bars, crosshair, framed panels). Phase 18 built the *real game UI*

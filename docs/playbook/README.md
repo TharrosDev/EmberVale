@@ -127,8 +127,8 @@ no code) — batch them when momentum is good.
 | [Phase 38 — Economy, Vendors & Services `[F/C]`](./phase-38.md) | 367 |
 | [Phase 39 — Mounts & Traversal `[F]`](./phase-39.md) | 12 |
 | [Phase 39.5 — World Map & Location Intelligence `[F/C]`](./phase-39_5.md) | 2 |
-| [Phase 40 — Survival & Needs (scoped decision) `[F]`](./phase-40.md) | 11 |
-| [Phase 40.5 — Dungeon & Puzzle Framework `[F]`](./phase-40_5.md) | 22 |
+| [~~Phase 40 — Survival & Needs~~ ❌ **NOT WANTED**](./phase-40.md) | 74 |
+| [~~Phase 40.5 — Dungeon & Puzzle Framework~~ ❌ **NOT WANTED**](./phase-40_5.md) | 62 |
 | [Phase 41 — Quest Authoring at Scale & Branching `[F/C]`](./phase-41.md) | 21 |
 | [Phase 41.5 — Divine Shrines & Blessings `[F/C]`](./phase-41_5.md) | 17 |
 | [Phase 42 — Guild & Faction Questlines `[C]`](./phase-42.md) | 15 |

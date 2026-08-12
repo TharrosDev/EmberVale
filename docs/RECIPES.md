@@ -477,10 +477,11 @@
    are their own NPCs; the vault is a prop, because the thing that must persist is an inventory and no
    town NPC carries a `PersistentId`. And ⚠️ **`ContentValidator` cannot scan `.tscn`**, so a mistyped
    `ServiceId` gives no prompt at all rather than an error.
-8. **There is no `ServiceKind.Repair`**, and that is deliberate: no durability or condition concept
-   exists anywhere in the game. 38D's brief says repair lands only "if durability is adopted in 40",
-   and 40B's rule is that cut systems leave no stub — so a kind resolving to nothing would be worse
-   than its absence. The deferral is recorded in `docs/DESIGN.md` §6 against Phase 40A.
+8. **There is no `ServiceKind.Repair`, and that is now settled rather than pending.** No durability or
+   condition concept exists anywhere in the game, and ⚠️ **Phase 40 struck survival needs outright**
+   (maintainer direction, 2026-08-12) — durability, hunger and temperature are all CUT. 40B's rule is
+   that cut systems leave no stub, so a kind resolving to nothing would be worse than its absence.
+   **Do not author a repair service**; recorded in `docs/DESIGN.md` §6 and `docs/playbook/phase-40.md`.
 
 9. **A commission counter (38Q) is this recipe plus two fields, and it breaks two of the habits above.**
    `Kind = Commission`, `CommissionStation` (never `Hand`), `MaterialsShopId` pointing at the master's

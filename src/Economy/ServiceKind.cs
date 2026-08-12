@@ -6,11 +6,12 @@ namespace Embervale.Economy;
 /// <see cref="World.WorldEventKind"/> — the four share a price, a standing discount, an ordered refusal
 /// and a gold charge, and differ only in the verb.
 ///
-/// <b>There is no <c>Repair</c> member, deliberately.</b> No durability or condition concept exists
-/// anywhere in the game — <c>StatType</c> has no such member and nothing in <c>src/</c> mentions wear.
-/// 38D's own brief says repair lands only "if durability is adopted in 40", and 40B's rule is that cut
-/// systems leave no stub, so a kind that resolved to nothing would be worse than its absence. The
-/// deferral is recorded in <c>docs/DESIGN.md</c> §6 against Phase 40A.
+/// <b>There is no <c>Repair</c> member, and that is now permanent rather than pending.</b> No
+/// durability or condition concept exists anywhere in the game — <c>StatType</c> has no such member and
+/// nothing in <c>src/</c> mentions wear. 38D deferred the call to Phase 40; <b>Phase 40 struck survival
+/// needs outright</b> (maintainer direction, 2026-08-12), so durability is CUT and repair is not coming.
+/// 40B's rule is that a cut system leaves no stub, so a kind resolving to nothing would be worse than
+/// its absence. Recorded in <c>docs/DESIGN.md</c> §6's sink table and <c>docs/playbook/phase-40.md</c>.
 /// </summary>
 // APPEND ONLY: ordinals persist in .tres — never reorder/insert/remove (EnumStabilityTests).
 public enum ServiceKind
