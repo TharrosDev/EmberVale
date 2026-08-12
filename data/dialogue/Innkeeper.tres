@@ -17,6 +17,12 @@
 ;     a conversation says it in authored prose, so the number lives in the locale row and the
 ;     refusals (hostile, already held, cannot afford) are silent here on purpose.
 
+; ⚠️ 41A ADDED THE WORD-TO-THE-WHARF LINE, AND IT IS THE FIRST QUEST THIS FILE HAS CARRIED.
+; It follows the Elder's four-state shape exactly - offer / accepted / inprogress / thanks, gated on
+; QuestAvailable (1) / QuestActive (2) / QuestCompleted (3) - because that shape is what makes a giver
+; readable at every point in a quest's life. A giver with only an offer node tells the player nothing
+; once they have accepted, which reads as the conversation being broken.
+
 [sub_resource type="Resource" id="ch_use"]
 script = ExtResource("3_choice")
 Text = "dlg.innkeeper.c_use"
@@ -47,11 +53,55 @@ Goto = "root"
 script = ExtResource("3_choice")
 Text = "dlg.innkeeper.c_talk_bye"
 
+[sub_resource type="Resource" id="ch_word_offer"]
+script = ExtResource("3_choice")
+Text = "dlg.innkeeper.word.c_offer"
+Goto = "word_offer"
+Condition = 1
+ConditionArg = "quest.hollowreach.word"
+
+[sub_resource type="Resource" id="ch_word_active"]
+script = ExtResource("3_choice")
+Text = "dlg.innkeeper.word.c_active"
+Goto = "word_inprogress"
+Condition = 2
+ConditionArg = "quest.hollowreach.word"
+
+[sub_resource type="Resource" id="ch_word_thanks"]
+script = ExtResource("3_choice")
+Text = "dlg.innkeeper.word.c_thanks"
+Goto = "word_thanks"
+Condition = 3
+ConditionArg = "quest.hollowreach.word"
+
+[sub_resource type="Resource" id="ch_word_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.innkeeper.word.c_accept"
+Goto = "word_accepted"
+Effect = 1
+EffectArg = "quest.hollowreach.word"
+
+[sub_resource type="Resource" id="ch_word_decline"]
+script = ExtResource("3_choice")
+Text = "dlg.innkeeper.word.c_decline"
+
+[sub_resource type="Resource" id="ch_word_accepted_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.innkeeper.word.c_accepted_bye"
+
+[sub_resource type="Resource" id="ch_word_inprogress_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.innkeeper.word.c_inprogress_bye"
+
+[sub_resource type="Resource" id="ch_word_thanks_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.innkeeper.word.c_thanks_bye"
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.innkeeper.root"
-Choices = Array[Resource]([SubResource("ch_use"), SubResource("ch_talk"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_word_thanks"), SubResource("ch_word_offer"), SubResource("ch_word_active"), SubResource("ch_use"), SubResource("ch_talk"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_talk"]
 script = ExtResource("2_node")
@@ -59,9 +109,33 @@ Id = "talk"
 Text = "dlg.innkeeper.talk"
 Choices = Array[Resource]([SubResource("ch_talk_use"), SubResource("ch_talk_back"), SubResource("ch_talk_bye")])
 
+[sub_resource type="Resource" id="node_word_offer"]
+script = ExtResource("2_node")
+Id = "word_offer"
+Text = "dlg.innkeeper.word.offer"
+Choices = Array[Resource]([SubResource("ch_word_accept"), SubResource("ch_word_decline")])
+
+[sub_resource type="Resource" id="node_word_accepted"]
+script = ExtResource("2_node")
+Id = "word_accepted"
+Text = "dlg.innkeeper.word.accepted"
+Choices = Array[Resource]([SubResource("ch_word_accepted_bye")])
+
+[sub_resource type="Resource" id="node_word_inprogress"]
+script = ExtResource("2_node")
+Id = "word_inprogress"
+Text = "dlg.innkeeper.word.inprogress"
+Choices = Array[Resource]([SubResource("ch_word_inprogress_bye")])
+
+[sub_resource type="Resource" id="node_word_thanks"]
+script = ExtResource("2_node")
+Id = "word_thanks"
+Text = "dlg.innkeeper.word.thanks"
+Choices = Array[Resource]([SubResource("ch_word_thanks_bye")])
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.innkeeper"
 SpeakerName = "dlg.innkeeper.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_talk")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_talk"), SubResource("node_word_offer"), SubResource("node_word_accepted"), SubResource("node_word_inprogress"), SubResource("node_word_thanks")])

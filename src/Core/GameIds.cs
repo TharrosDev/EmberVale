@@ -248,7 +248,9 @@ public static class GameIds
 
     public static class Quests
     {
-        public const string CullGoblins = "quest.cull_goblins";
+        // CullGoblins was removed in 41A along with its quest: nothing had started it since Phase 33D
+        // dropped the sandbox auto-start, no dialogue ever named it, and quest.warband.bounty already
+        // covers "slay goblins for a reward" — reachable, and properly localized.
         public const string KaelOath = "quest.kael.oath";
         public const string KaelBrother = "quest.kael.brother";
     }

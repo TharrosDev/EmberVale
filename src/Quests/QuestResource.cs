@@ -13,7 +13,7 @@ namespace Embervale.Quests;
 [GlobalClass]
 public partial class QuestResource : Resource
 {
-    /// <summary>Stable unique id, e.g. "quest.cull_goblins". The save/database key.</summary>
+    /// <summary>Stable unique id, e.g. "quest.warband.bounty". The save/database key.</summary>
     [Export] public string Id { get; set; } = "quest.unknown";
 
     [Export] public string Title { get; set; } = "Untitled Quest";

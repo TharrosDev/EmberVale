@@ -26,6 +26,21 @@ public partial class DialogueComponent : InteractableComponent
 
     private DialogueResource? Dialogue => DialogueDatabase.Get(DialogueId);
 
+    /// <summary>
+    /// Joins the objective lookup group so a <see cref="Quests.ObjectiveType.Talk"/> objective can be
+    /// pointed at (41A). Self-registered rather than added by a factory because NPCs have none — see
+    /// <see cref="Quests.ObjectiveLocator.NpcGroup"/> for why that is the cheaper half.
+    /// </summary>
+    protected override void OnInitialize()
+    {
+        base.OnInitialize();
+
+        if (Entity is Node actor)
+        {
+            actor.AddToGroup(Quests.ObjectiveLocator.NpcGroup);
+        }
+    }
+
     public override string Prompt
     {
         get

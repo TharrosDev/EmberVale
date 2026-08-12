@@ -162,6 +162,12 @@ public class EnumStabilityTests
     {
         Assert.Equal(0, (int)ObjectiveType.Kill);
         Assert.Equal(1, (int)ObjectiveType.Collect);
+
+        // 41A. Authored as ints in data/quests/*.tres (Type = 2 / Type = 3) and persisted in the
+        // quest log, so a reorder would turn a "walk to Hollowreach" into "talk to Hollowreach" —
+        // an objective that can never advance, in a save the player already has.
+        Assert.Equal(2, (int)ObjectiveType.Reach);
+        Assert.Equal(3, (int)ObjectiveType.Talk);
     }
 
     [Fact]

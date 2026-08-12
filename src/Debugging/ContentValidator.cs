@@ -91,6 +91,7 @@ public static class ContentValidator
         ValidateRecipes(issues);
         ValidateRecipeReachability(issues);
         ValidateQuests(issues);
+        ValidateQuestStringsAreKeys(issues);
         ValidateDialogue(issues);
         ValidateSpells(issues);
         ValidateFactions(issues);
@@ -2690,6 +2691,30 @@ public static class ContentValidator
         }
     }
 
+    private static void RequireMapLocation(string id, string context, List<string> issues)
+    {
+        if (string.IsNullOrEmpty(id))
+        {
+            issues.Add($"{context} has an empty map location id");
+        }
+        else if (World.MapLocationDatabase.Get(id) == null)
+        {
+            issues.Add($"{context} references unknown map location '{id}'");
+        }
+    }
+
+    private static void RequireDialogue(string id, string context, List<string> issues)
+    {
+        if (string.IsNullOrEmpty(id))
+        {
+            issues.Add($"{context} has an empty dialogue id");
+        }
+        else if (DialogueDatabase.Get(id) == null)
+        {
+            issues.Add($"{context} references unknown dialogue '{id}'");
+        }
+    }
+
     private static void RequireEnemy(string id, string context, List<string> issues)
     {
         if (string.IsNullOrEmpty(id))
@@ -2852,6 +2877,81 @@ public static class ContentValidator
         }
     }
 
+    /// <summary>
+    /// Every player-facing string on a quest must be a key that exists in the locale catalogue (41A).
+    ///
+    /// ⚠️ <b>THIS IS THE DEFECT CLASS THAT LOOKS CORRECT ON SCREEN AND IS WRONG IN THE FILE.</b>
+    /// Twelve of the fourteen quests author keys (<c>Title = "quest.warband.bounty.title"</c>); two —
+    /// <c>GatherIron</c> and the since-deleted <c>CullTheGoblins</c> — authored <b>literal English</b>.
+    /// Nothing caught it for twenty-nine phases because <c>Loc.T</c> returns the key unchanged on a
+    /// miss, so <c>Loc.T("Gather Iron")</c> renders "Gather Iron" and the quest looks perfect. It is
+    /// wrong the day a second locale ships, and <c>quest.gather_iron</c> is <b>live</b> — the Elder
+    /// hands it out. Same family as invariant 33: a value can be wrong and nothing will ever say so.
+    ///
+    /// Checking <em>presence in the catalogue</em> rather than "looks dotted" is what makes this worth
+    /// having: it catches a mistyped key too, which is the failure that survives a rename.
+    /// </summary>
+    private static void ValidateQuestStringsAreKeys(List<string> issues)
+    {
+        HashSet<string>? keys = LocaleKeys();
+        if (keys == null)
+        {
+            return;
+        }
+
+        foreach (QuestResource quest in QuestDatabase.All)
+        {
+            Require(quest.Title, "title", issues, keys, quest.Id);
+            Require(quest.Summary, "summary", issues, keys, quest.Id);
+
+            List<ObjectiveResource> objectives = quest.ObjectiveList();
+            for (int i = 0; i < objectives.Count; i++)
+            {
+                // Empty is refused too, not merely unlocalized: ObjectiveResource.ShortLabel falls back
+                // to a generic when Description is missing, so an unauthored objective would render as
+                // the word "objective" to the player. Authoring the line is the rule.
+                Require(objectives[i].Description, $"objective {i} description", issues, keys, quest.Id);
+            }
+        }
+
+        static void Require(string value, string what, List<string> issues, HashSet<string> keys, string questId)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                issues.Add($"quest '{questId}' {what} is empty (author a locale key)");
+            }
+            else if (!keys.Contains(value))
+            {
+                issues.Add($"quest '{questId}' {what} '{value}' is not a key in data/locale/strings.csv — " +
+                           "quest text must be authored as a locale key, never as literal display text " +
+                           "(Loc.T returns the key on a miss, so literal English renders correctly and " +
+                           "breaks silently on the first non-English locale)");
+            }
+        }
+    }
+
+    /// <summary>The default-locale key set from the catalogue, or null when it cannot be read (which
+    /// <see cref="ValidateLocale"/> already reports — no need to say it twice).</summary>
+    private static HashSet<string>? LocaleKeys()
+    {
+        const string path = "res://data/locale/strings.csv";
+        if (!FileAccess.FileExists(path))
+        {
+            return null;
+        }
+
+        using FileAccess? file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
+        if (file == null)
+        {
+            return null;
+        }
+
+        Dictionary<string, Dictionary<string, string>> byLocale = LocCatalog.Parse(file.GetAsText());
+        return byLocale.TryGetValue(Loc.DefaultLocale, out Dictionary<string, string>? messages)
+            ? new HashSet<string>(messages.Keys)
+            : null;
+    }
+
     private static void ValidateQuests(List<string> issues)
     {
         foreach (QuestResource quest in QuestDatabase.All)
@@ -2865,6 +2965,29 @@ public static class ContentValidator
                         break;
                     case ObjectiveType.Collect:
                         RequireItem(objective.TargetId, $"quest '{quest.Id}' collect objective", issues);
+                        break;
+
+                    // 41A. Both new types name a row in a database rather than a template, so a typo
+                    // is an objective that can never advance — silently, because nothing in the game
+                    // ever looks the id up until the player is standing in the right place.
+                    case ObjectiveType.Reach:
+                        RequireMapLocation(objective.TargetId, $"quest '{quest.Id}' reach objective", issues);
+
+                        // ⚠️ A Reach objective's TargetId IS its destination, so a LocationId beside
+                        // it is either redundant or a contradiction — and a contradiction would send
+                        // the compass and the map to two different places (invariant 5: one surface
+                        // owns each fact).
+                        if (objective.LocationId.Length > 0)
+                        {
+                            issues.Add($"quest '{quest.Id}' reach objective sets both TargetId " +
+                                       $"'{objective.TargetId}' and LocationId '{objective.LocationId}' — " +
+                                       "a reach objective's target is already its destination, so leave " +
+                                       "LocationId empty");
+                        }
+
+                        break;
+                    case ObjectiveType.Talk:
+                        RequireDialogue(objective.TargetId, $"quest '{quest.Id}' talk objective", issues);
                         break;
                 }
 

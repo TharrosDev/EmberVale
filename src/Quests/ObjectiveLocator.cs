@@ -25,6 +25,19 @@ public static class ObjectiveLocator
     /// <summary>Group every world item pickup joins on spawn (see <c>ItemPickupFactory</c>).</summary>
     public const string PickupGroup = "objective.pickup";
 
+    /// <summary>
+    /// Group every conversable actor joins (41A), for <see cref="ObjectiveType.Talk"/>.
+    ///
+    /// ⚠️ <b>Joined by <c>DialogueComponent</c> itself, not by a factory, and that is the difference
+    /// from the two groups above.</b> Enemies and pickups are spawned by code, so their factories add
+    /// them — three enemy factories do it in three places. NPCs have <b>no factory at all</b>: all
+    /// seventeen are authored directly as nodes in seven cell <c>.tscn</c> files. Adding the group
+    /// there would mean editing seventeen scene stanzas and remembering it for every NPC ever
+    /// authored afterwards, which is the kind of rule that holds for exactly as long as whoever wrote
+    /// it is still reading. Self-registration covers the whole roster, now and later, in one line.
+    /// </summary>
+    public const string NpcGroup = "objective.npc";
+
     /// <summary>The world position of the nearest live target for this objective, or null when none
     /// is loaded (so the compass simply shows no objective marker that frame).</summary>
     public static Vector3? Locate(ObjectiveResource? objective, SceneTree? tree, Vector3 from)
@@ -40,6 +53,14 @@ public static class ObjectiveLocator
                 e => e.TemplateId == objective.TargetId),
             ObjectiveType.Collect => Nearest(tree, PickupGroup, from,
                 e => e.GetComponent<ItemPickupComponent>()?.ItemId == objective.TargetId),
+            ObjectiveType.Talk => Nearest(tree, NpcGroup, from,
+                e => e.GetComponent<Dialogue.DialogueComponent>()?.DialogueId == objective.TargetId),
+
+            // ⚠️ Reach resolves through MapService rather than by scanning actors, because a place is
+            // not an actor — there is nothing in the tree to find. It is also the one type whose
+            // TargetId IS a location id, so it needs no LocationId fallback and authoring one on a
+            // Reach objective is a mistake the validator refuses.
+            ObjectiveType.Reach => LocationPosition(objective.TargetId),
             _ => null,
         };
 
@@ -68,8 +89,20 @@ public static class ObjectiveLocator
             return null;
         }
 
+        return LocationPosition(objective.LocationId);
+    }
+
+    /// <summary>Where a <c>location.*</c> id is according to <see cref="MapService"/>, or null when
+    /// the map cannot answer (its cell is not resident and no save remembered it).</summary>
+    private static Vector3? LocationPosition(string locationId)
+    {
+        if (string.IsNullOrEmpty(locationId))
+        {
+            return null;
+        }
+
         return ServiceLocator.Instance is { } locator && locator.TryGet(out MapService map)
-            ? map.PositionOf(objective.LocationId)
+            ? map.PositionOf(locationId)
             : null;
     }
 
