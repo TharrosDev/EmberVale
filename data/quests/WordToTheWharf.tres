@@ -1,0 +1,49 @@
+[gd_resource type="Resource" script_class="QuestResource" load_steps=4 format=3 uid="uid://cmbrvlqstword"]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+
+; Phase 41A - the first quest in the game that is neither a cull nor a fetch, and it exists to be the
+; caller for the two objective types the sub-phase added. Before this every one of the fourteen quests
+; was Kill or Collect, because those were the only two verbs a quest could measure.
+;
+; ⚠️ THE TWO OBJECTIVES ARE DELIBERATELY UNORDERED, AND THE GEOGRAPHY DOES THE ORDERING.
+; Nothing in QuestLogComponent sequences objectives - all of them simply have to be met (ordering and
+; branching are 41D). That would be a problem for a "go here, then do this" quest authored anywhere
+; else, but Sedge Marrow IS at Hollowreach: you cannot talk to her without arriving, so the reach
+; objective always completes first by construction rather than by a rule. Author the next courier
+; quest the same way, or wait for 41D - do NOT hand-roll sequencing into a quest .tres.
+;
+; ⚠️ THE REACH OBJECTIVE SETS NO LocationId, AND --validate REFUSES ONE. A reach objective's TargetId
+; is already a location id, so it is its own destination; a LocationId beside it is a second answer to
+; a question that has one (NOW.md invariant 5).
+;
+; Holt is the giver rather than the Elder for a reason worth keeping: the Elder's root node already
+; carries TWELVE choices across four quest lines, and a fifth would make the most important
+; conversation in the game a menu. Holt had three.
+
+[sub_resource type="Resource" id="Obj_reach_wharf"]
+script = ExtResource("2_obj")
+Type = 2
+TargetId = "location.hollowreach.reach"
+RequiredCount = 1
+Description = "quest.hollowreach.word.obj_reach"
+
+[sub_resource type="Resource" id="Obj_talk_sedge"]
+script = ExtResource("2_obj")
+Type = 3
+TargetId = "dialogue.sedge"
+RequiredCount = 1
+Description = "quest.hollowreach.word.obj_talk"
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.hollowreach.word"
+Title = "quest.hollowreach.word.title"
+Summary = "quest.hollowreach.word.summary"
+Objectives = Array[Resource]([SubResource("Obj_reach_wharf"), SubResource("Obj_talk_sedge")])
+XpReward = 60
+GoldReward = 25
+GoldItemId = "item.currency.gold"
+RewardItems = []
+PrerequisiteQuestId = ""

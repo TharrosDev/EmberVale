@@ -1184,7 +1184,8 @@ public partial class GameBootstrap : Node3D
         _questLogPanel.SetQuestLog(questLog);
 
         // No seeded quest (Phase 33D). The sandbox used to auto-start `quest.cull_goblins` so the
-        // journal had content on Play; in the slice the first quest is the guild board's bounty,
+        // journal had content on Play; that quest was deleted outright in 41A, having sat unstartable
+        // ever since. In the slice the first quest is the guild board's bounty,
         // earned by walking into town and talking to someone. A journal that is already full before
         // the player has done anything undercuts the whole opening.
 

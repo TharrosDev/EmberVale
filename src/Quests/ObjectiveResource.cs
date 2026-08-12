@@ -13,8 +13,17 @@ public partial class ObjectiveResource : Resource
 {
     [Export] public ObjectiveType Type { get; set; } = ObjectiveType.Kill;
 
-    /// <summary>For <see cref="ObjectiveType.Kill"/>: an entity <c>TemplateId</c>
-    /// (e.g. "enemy.goblin"). For <see cref="ObjectiveType.Collect"/>: an item id.</summary>
+    /// <summary>
+    /// What the objective measures against, by type:
+    /// <list type="bullet">
+    /// <item><see cref="ObjectiveType.Kill"/> — an entity <c>TemplateId</c> (e.g. "enemy.goblin").</item>
+    /// <item><see cref="ObjectiveType.Collect"/> — an item id.</item>
+    /// <item><see cref="ObjectiveType.Reach"/> — a <c>location.*</c> map location id (41A).</item>
+    /// <item><see cref="ObjectiveType.Talk"/> — a <c>dlg.*</c> dialogue id (41A).</item>
+    /// </list>
+    /// Every one of the four is checked by <c>--validate</c> against its own database, so a typo is a
+    /// failed gate rather than an objective that can never advance.
+    /// </summary>
     [Export] public string TargetId { get; set; } = string.Empty;
 
     [Export] public int RequiredCount { get; set; } = 1;
@@ -43,20 +52,19 @@ public partial class ObjectiveResource : Resource
     /// </summary>
     [Export] public string LocationId { get; set; } = string.Empty;
 
-    /// <summary>Count-free objective label for UI (the count is shown separately as
-    /// "n/N"). Uses <see cref="Description"/> when authored.</summary>
-    public string ShortLabel()
-    {
-        if (!string.IsNullOrEmpty(Description))
-        {
-            return Description;
-        }
-
-        return Type switch
-        {
-            ObjectiveType.Kill => $"Slay {TargetId}",
-            ObjectiveType.Collect => $"Collect {TargetId}",
-            _ => TargetId,
-        };
-    }
+    /// <summary>
+    /// Count-free objective label for UI (the count is shown separately as "n/N"). Returns
+    /// <see cref="Description"/>, which every caller passes through <c>Loc.T</c>.
+    ///
+    /// ⚠️ <b>The fallback deliberately names nothing (41A).</b> It used to build a line out of the
+    /// target — <c>$"Slay {TargetId}"</c> — which puts a raw id like <c>enemy.goblin</c> on screen
+    /// the first time anyone authors an objective without a <see cref="Description"/>, violating both
+    /// §46 (hard-coded English) and §72/73 (no raw ids, no placeholders). It has never fired because
+    /// all fourteen quests author one, which is exactly why it survived: a fallback nothing reaches
+    /// is a defect nothing reports. <c>ValidateQuestStringsAreKeys</c> now makes an authored key a
+    /// gate, so this path is unreachable by rule rather than by luck — and if it is reached anyway,
+    /// it says "objective" instead of leaking an id.
+    /// </summary>
+    public string ShortLabel() =>
+        !string.IsNullOrEmpty(Description) ? Description : "quest.objective.unnamed";
 }

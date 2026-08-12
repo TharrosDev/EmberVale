@@ -109,13 +109,32 @@ public sealed partial class PanelShots : ShotHarness
         }
     }
 
-    /// <summary>Starts the first startable quest so the journal has a card to draw.</summary>
+    /// <summary>
+    /// Starts a quest so the journal has a card to draw, preferring the courier quest (41A).
+    ///
+    /// ⚠️ <b>The preference is doing real work, not tidying.</b> <c>quest.hollowreach.word</c> is the
+    /// only quest carrying a Reach and a Talk objective, so it is the only one whose journal card
+    /// renders the two new types at all — a shot of a Kill objective proves nothing about them.
+    ///
+    /// ⚠️ <b>And this shot doubles as the one check that a Reach objective is PROXIMITY rather than
+    /// DISCOVERY.</b> <see cref="DiscoverEverything"/> runs before this, revealing all 64 locations
+    /// while the player stands in the town hub — roughly 90 m from Hollowreach. A discovery-driven
+    /// Reach would therefore render <c>1/1</c> here, complete, without the player having walked
+    /// anywhere. It must render <c>0/1</c>. That distinction is invisible to the build, the tests and
+    /// the validator alike, which is exactly why it is pinned to a frame somebody looks at.
+    /// </summary>
     private static void StartAQuest()
     {
         if (ServiceLocator.Instance is not { } locator ||
             !locator.TryGet(out PlayerCharacter player) ||
             player.GetComponent<QuestLogComponent>() is not { } log)
         {
+            return;
+        }
+
+        if (QuestDatabase.Get("quest.hollowreach.word") is { } courier && log.StartQuest(courier))
+        {
+            log.Track(courier.Id);
             return;
         }
 

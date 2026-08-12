@@ -44,16 +44,35 @@ existed the same three lines were maintained in four places and rewritten every 
 - **Two phases were written against 40.5 and now owe their own answer**, named rather than discovered
   later: **Phase 50** authors dungeons as rooms with encounters and loot on existing tooling (⚠️ **do
   not reinvent hazards there**), and **Phase 51E** has a guardian (`LairSpawnComponent`) but no trial.
-- **NEXT: Phase 41 (Quest Authoring at Scale & Branching), starting at 41A** — Reach/Explore and Talk
-  objective types, event-driven like the existing two.
-- ⚠️ **TWO ORPHANS ARE NOW 41's, AND THEY ARE THE SHAPE OF ITS FIRST BUG.** Both are content or code
-  with **no caller**, from the 2026-08-11 feature-continuity audit (the third was resolved by the
-  Phase 40 cut above):
-  1. **`quest.cull_goblins` cannot be started by anything.** Wire it to a giver or delete it and the
-     dead `GameIds.CullGoblins` constant. ⚠️ **There is no `ValidateQuestReachability` rule** — and
-     **41F is the sub-phase that adds the quest validator arm**, so this is its natural home.
-  2. **`QuestGiverComponent` has zero references** — quests are granted by `DialogueEffect.StartQuest`
-     instead. ⚠️ It carries two hard-coded player-facing strings, so if placed it ships untranslated.
+- **Phase 41 (Quest Authoring at Scale & Branching) — 41A ✅ CLOSED.** `ObjectiveType.Reach` (2) and
+  `Talk` (3) join `Kill` and `Collect` through the same `QuestLogComponent.Advance` choke point. Talk
+  rides `DialogueEndedEvent` — **no new event type**; Reach polls at 4 Hz. `quest.hollowreach.word`
+  is the caller: Holt sends the player to Hollowreach to ask Sedge Marrow about the barrels, and it
+  is **the first quest in the game that is neither a cull nor a fetch.**
+- ⚠️ **REACH IS PROXIMITY, NOT DISCOVERY, AND THE FREE-LOOKING REUSE IS THE TRAP** (41A). `MapService`
+  already tracks discovery, so driving Reach off it looks like the whole feature for one subscription
+  — but a location authored `RevealWithCell` is discovered **on entering the REGION** (invariant 1),
+  so that Reach objective completes the moment the player crosses into the Ember Crown from anywhere
+  in it. ⚠️ **`ArrivalRadius` is its own constant, deliberately not `MapService.DiscoveryRadius`**:
+  spotting a place and arriving at it are different questions.
+- ⚠️ **BOTH 41-BOUND ORPHANS ARE RESOLVED, BY DELETION** (41A). `quest.cull_goblins` and
+  `GameIds.CullGoblins` are gone — unstartable since Phase 33D, and `quest.warband.bounty` already
+  covers *slay goblins for a reward*. `QuestGiverComponent` is gone — zero references, superseded by
+  `DialogueEffect.StartQuest`, and carrying two hard-coded player-facing strings.
+  **All three of the 2026-08-11 audit's orphans are now closed.**
+- ⚠️ **A DEFECT WAS ALREADY SHIPPED IN TWO QUESTS AND NOTHING COULD SEE IT** (41A). Twelve of fourteen
+  quests author locale keys; `GatherIron` and `CullTheGoblins` authored **literal English**. Invisible
+  because **`Loc.T` returns the key unchanged on a miss**, so `Loc.T("Gather Iron")` renders "Gather
+  Iron" and looks perfect in the journal, on the tracker and in every screenshot — then breaks on the
+  first non-English locale. **`quest.gather_iron` is live** and had been wrong since Phase 12.
+  `ValidateQuestStringsAreKeys` checks **presence in the catalogue**, not "looks dotted", so it
+  catches a mistyped key too. ⚠️ **`ObjectiveResource.ShortLabel()` had the same hole** — its fallback
+  built `$"Slay {TargetId}"`, putting a raw id on screen for the first objective authored without a
+  `Description`. **A fallback nothing reaches is a defect nothing reports.**
+- **NEXT: 41B — Escort + Defend/Survive objective types.** ⚠️ **41A's lesson applies directly:** a new
+  objective type is a few lines, and the whole job is knowing *which event means what*. For 41B that
+  question is **what exactly counts as a fail, and which event says so** — answer it before writing
+  the branch.
 - ⚠️ **A LOCATION'S POSITION IS ITS NODE'S TRANSFORM IN A CELL SCENE, NEVER AN AUTHORED COORDINATE**
   (39.5A). `MapLocationResource` says what a place is; a `MapLocationComponent` parented to the stall
   or keeper says where. `--validate` scans `.tscn` in **both** directions. Author with
@@ -61,9 +80,13 @@ existed the same three lines were maintained in four places and rewritten every 
 - ⚠️ **IF THE PLAYER CAN GO THERE, IT GOES ON THE MAP, IN THE SAME SUB-PHASE THAT ADDS IT.**
   **This is a gate:** `ValidateEverythingIsOnTheMap` fails `--validate` for any shop or service no
   map location names; coverage ships at 23/23 and 15/15. ⚠️ **Quest destinations landed in 39.5C and
-  exactly ONE objective in the game earns one** — every hostile is a region-scoped `EncounterResource`
-  and every quest material comes off a loot table, so **this world needs search AREAS, not points.**
-  That is now a measured condition rather than a guess, and **Phase 41 is where it will bite.**
+  exactly ONE objective in the game earned one** — every hostile is a region-scoped
+  `EncounterResource` and every quest material comes off a loot table, so **this world needs search
+  AREAS, not points**, and that stays a measured condition rather than a guess. ✅ **41A changed the
+  arithmetic in one direction only: a `Reach` objective's `TargetId` IS a location id, so every Reach
+  objective is its own destination by construction** — and `--validate` refuses a `LocationId`
+  authored beside one, because that would be two answers to a question that has one (invariant 5).
+  **Reach is the one objective shape a point genuinely fits**; it does not help the other nineteen.
 - ⚠️ **DYING WHILE MOUNTED IS A KNOWN GAP, NAMED RATHER THAN FIXED (39B).** Death plays a full-body
   clip on a seated offset, and nothing dismounts on death.
 - ⚠️ **Five of 38R's seven briefed services were struck, not deferred.** Two already existed under
@@ -71,19 +94,20 @@ existed the same three lines were maintained in four places and rewritten every 
 - 📖 Economy: `ARCHITECTURE.md` §2.6m is the mechanism, `DESIGN.md` §6 + §6.1 the intent.
   🎨 `docs/ASSET_POLICY.md` §0.2–§0.3 is the asset authority.
 
-## Last verified (session close, 2026-08-12)
+## Last verified (session close, 2026-08-12 — 41A)
 
 | | |
 | --- | --- |
 | Build | clean, **0 warnings** |
-| Tests | **1426 passing** — 1428 minus the two `[InlineData(…Cooking)]` rows the cut removed. ⚠️ **The drop is the deletion, not a regression** |
-| `--validate` | exit 0; **1331** locale strings — unchanged, no new keys |
-| `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, 33 dialogues, 14 quests, 64 map locations — **unchanged, and that is the point**: a struck phase authors nothing |
-| **`--play`** | booted, loaded slot1, **33 objects restored**. ⚠️ The 3 `CraftingStationComponent` warnings are **pre-existing**. ⚠️ **The six-line "C# backtrace" blocks around them are `PushWarning`'s own trace, not exceptions** — `grep -i error` matches `godot_variant_call_error` inside every frame and reads as six errors in a clean log |
-| **No-stub gate** | `grep -rn "Cooking\|MaxWeight\|IsOverEncumbered" src/ data/ scenes/ tests/*.cs` returns **only the two comments that explain the removals** |
-| **No-dangling-pointer gate** | `grep -rn "pending 40A\|40A decides\|40A owns\|deferred to 40A"` returns **nothing**. ⚠️ **This grep is the deliverable of a struck phase, not the checkbox** |
-| Not run | ⚠️ **`--economy` — nothing touched a price.** ⚠️ **No render — nothing was placed in the world and no UI changed.** ⚠️ **`tools/negative_tests.py` — no validator rule was added or changed for it to bite**; it runs over two minutes and mutates `data/` and `scenes/`. All three **reviewed as not-applicable, not run** |
-| MCP | ⚠️ **DOWN all session, both halves** (`godot-cli status .` → editor not running, 23630 connection refused). Not needed — see the row above |
+| Tests | **1426 passing.** 41A's two enum pins joined an existing `[Fact]`, so the count is unchanged — ⚠️ **a passing count is not evidence a new assert ran**; the negative suite is what proves the new rules bite |
+| `--validate` | exit 0; **1351** locale strings (1331 + 20: the courier quest, Holt's four new nodes, and `quest.gather_iron`'s three converted rows) |
+| **Negative tests** | `python tools/negative_tests.py` — **63/63 broken and restored**, 5 of them 41A's (reach/talk unknown target, redundant `LocationId`, and two literal-text cases). Tree restored clean, and the battery re-proved `--validate` exit 0 afterwards. ⚠️ Runs **over two minutes**, mutates `data/` **and** `scenes/`, refuses a dirty tree; killing it mid-run defeats its own `finally` (`git checkout -- data/ scenes/` recovers) |
+| `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, 33 dialogues, **14 quests** (one deleted, one authored), 64 map locations |
+| **`map_probe`** | **64 markers across 15 cells**, exit 0 |
+| **`--play`** | booted, loaded slot1, **33 objects restored**, **0 errors**. ⚠️ The 3 `CraftingStationComponent` warnings are **pre-existing**. ⚠️ **The six-line "C# backtrace" blocks around them are `PushWarning`'s own trace, not exceptions** |
+| **Rendered** | ✅ **`--panelshots` (9 states), the journal frame opened and read.** It shows the courier quest tracked, both new objective types as localized prose, and **`0/1` on the Reach objective with all 64 locations discovered and the player 53 m away** — which is the only check anywhere that Reach is proximity rather than discovery |
+| Not run | ⚠️ **`--economy` — a quest reward is not a price**, and no price, spread or multiplier was touched. ⚠️ **`--hudshots` — the HUD tracker is visible in the panel frame** (top-right, rendering the new quest and its destination), so the state was captured; the dedicated HUD battery was **reviewed as unchanged, not re-run** |
+| MCP | ⚠️ **DOWN all session, both halves** (`godot-cli status .` → editor not running, 23630 connection refused). Not needed — nothing was placed in the world. ⚠️ **`.claude/skills/*/SKILL.md` had drifted to `ai-game.dev` URLs and was restored, not committed** — that is invariant 8's Cloud-mode tell, and it means the editor was opened from the project manager at some point |
 
 ## Live invariants — the things that will bite you
 
@@ -178,6 +202,20 @@ existed the same three lines were maintained in four places and rewritten every 
     contrast tests because those check *text* pairs. ⚠️ **When two tokens are used together, the pair
     is the thing to check** — the depth scale (`WellBg`/`PanelBg`/`CardBg`) already encodes which
     pairs are meant to be distinguishable.
+34. ⚠️ **A MISSING LOCALE KEY WHOSE NAME READS AS ENGLISH IS SILENT IN EVERY INSTRUMENT** (41A).
+    `Loc.T` returns the key unchanged on a miss, so a `.tres` authoring `Title = "Gather Iron"`
+    renders "Gather Iron" — correct on screen, in the journal, on the tracker and in a captured
+    frame — and breaks on the first non-English locale. Two live quests carried this for twenty-nine
+    phases. **The only rule that catches it asks *is this string a key*, not *does this string
+    render*, and it must check presence in the catalogue** (which also catches a mistyped key, the
+    failure that survives a rename). ⚠️ **Its sibling: a fallback nothing reaches is a defect nothing
+    reports** — `ShortLabel()` was one line from putting `enemy.goblin` on screen.
+35. ⚠️ **WHEN A NEW STATE ARRIVES, ASK WHICH EXISTING EVENT ACTUALLY MEANS IT** (41A). A new objective
+    type is a few lines, because `Advance` is one choke point and the events already exist; the whole
+    job is the semantics. "Discovered" is not "arrived" — `RevealWithCell` means *entered the region*
+    — so the free-looking reuse would have shipped a quest that completes itself on region entry.
+    **The cheap implementation and the correct one differ by a question nobody is forced to ask.**
+
 
 ## Commands worth knowing
 

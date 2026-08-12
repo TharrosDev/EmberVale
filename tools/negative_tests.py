@@ -392,6 +392,45 @@ CASES = [
        'LocationId = "location.frostfang.nowhere"')],
      "points at unknown map location"),
 
+    # ---- 41A: the two new objective types, and the locale rule that caught two live quests --------
+    # Reach and Talk each name a row in a database rather than a spawnable template, so a typo is an
+    # objective that can never advance — and it fails SILENTLY, because nothing looks the id up until
+    # the player is standing in the right place talking to the right person.
+    ("quest.reach_unknown_location", "ValidateQuests",
+     [("data/quests/WordToTheWharf.tres",
+       'TargetId = "location.hollowreach.reach"',
+       'TargetId = "location.hollowreach.nowhere"')],
+     "references unknown map location"),
+
+    ("quest.talk_unknown_dialogue", "ValidateQuests",
+     [("data/quests/WordToTheWharf.tres",
+       'TargetId = "dialogue.sedge"', 'TargetId = "dialogue.nobody"')],
+     "references unknown dialogue"),
+
+    # ⚠️ A reach objective's target IS its destination, so a LocationId beside it is a second answer
+    # to a question that has one — and the map and the compass would read the two different fields.
+    ("quest.reach_with_redundant_location", "ValidateQuests",
+     [("data/quests/WordToTheWharf.tres",
+       'TargetId = "location.hollowreach.reach"\nRequiredCount = 1',
+       'TargetId = "location.hollowreach.reach"\nLocationId = "location.hollowreach.hull"\n'
+       'RequiredCount = 1')],
+     "already its destination"),
+
+    # ⚠️ 41A's most valuable rule, because it found two defects that had shipped. Quest text must be a
+    # KEY: twelve quests authored keys and two authored literal English, and nothing noticed for
+    # twenty-nine phases because Loc.T returns the key on a miss — so the English rendered perfectly
+    # and would have broken on the first non-English locale. quest.gather_iron was live.
+    ("quest.title_is_literal_text", "ValidateQuestStringsAreKeys",
+     [("data/quests/GatherIron.tres",
+       'Title = "quest.gather_iron.title"', 'Title = "Gather Iron"')],
+     "is not a key in data/locale/strings.csv"),
+
+    ("quest.objective_description_is_literal_text", "ValidateQuestStringsAreKeys",
+     [("data/quests/WordToTheWharf.tres",
+       'Description = "quest.hollowreach.word.obj_talk"',
+       'Description = "Ask Sedge Marrow about the barrels"')],
+     "is not a key in data/locale/strings.csv"),
+
     ("maploc.location_never_placed", "ValidateMapMarkersArePlaced",
      [("scenes/regions/ember_crown/town_hub.tscn",
        '\n[node name="MapPin" type="Node3D" parent="VendorSmith"]\n'

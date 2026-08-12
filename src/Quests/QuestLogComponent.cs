@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
+using Embervale.Core.Services;
+using Embervale.Dialogue;
 using Embervale.Entities;
 using Embervale.Factions;
 using Embervale.Items;
@@ -21,7 +23,27 @@ namespace Embervale.Quests;
 [GlobalClass]
 public partial class QuestLogComponent : EntityComponent, ISaveable
 {
+    /// <summary>
+    /// How close the player must come for a <see cref="ObjectiveType.Reach"/> objective to count as
+    /// arrived.
+    ///
+    /// ⚠️ <b>Deliberately its own number rather than <c>MapService.DiscoveryRadius</c>, which is also
+    /// 20 m today.</b> Spotting a place and arriving at it are different questions — a landmark can
+    /// be visible from much further than a quest should accept as "you are there" — so the two want
+    /// to be tunable apart. Sharing the constant would silently couple them the first time either is
+    /// changed, which is the kind of link nobody finds by reading one file.
+    /// </summary>
+    public const float ArrivalRadius = 12f;
+
+    /// <summary>Reach poll cadence, matching <c>MapService</c>'s own 4 Hz tick.</summary>
+    private const float ReachTickSeconds = 0.25f;
+
     private readonly Dictionary<string, QuestProgress> _quests = new();
+
+    /// <summary>Scratch buffer for the Reach poll, reused so a 4 Hz tick allocates nothing.</summary>
+    private readonly List<string> _reachTargets = new();
+
+    private float _sinceReachTick;
 
     private ProgressionComponent? _progression;
     private InventoryComponent? _inventory;
@@ -89,6 +111,7 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
 
         EventBus.Instance?.Subscribe<EntityDiedEvent>(OnEntityDied);
         EventBus.Instance?.Subscribe<ItemPickedUpEvent>(OnItemPickedUp);
+        EventBus.Instance?.Subscribe<DialogueEndedEvent>(OnDialogueEnded);
         RegisterSaveable();
     }
 
@@ -96,6 +119,7 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
     {
         EventBus.Instance?.Unsubscribe<EntityDiedEvent>(OnEntityDied);
         EventBus.Instance?.Unsubscribe<ItemPickedUpEvent>(OnItemPickedUp);
+        EventBus.Instance?.Unsubscribe<DialogueEndedEvent>(OnDialogueEnded);
         SaveManager.Instance?.Unregister(this);
     }
 
@@ -158,6 +182,103 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
         }
 
         Advance(ObjectiveType.Collect, e.Item.Id, e.Quantity);
+    }
+
+    /// <summary>Advances Talk objectives when this actor finishes a conversation (41A). Fires on
+    /// <em>ended</em> rather than started: the objective is having the conversation, not opening the
+    /// panel, and a player who dismisses a graph on the first line has still met the speaker.</summary>
+    private void OnDialogueEnded(DialogueEndedEvent e)
+    {
+        if (Entity == null || !ReferenceEquals(e.Player, Entity) || e.Dialogue == null)
+        {
+            return;
+        }
+
+        Advance(ObjectiveType.Talk, e.Dialogue.Id);
+    }
+
+    /// <summary>
+    /// Polls arrival for active <see cref="ObjectiveType.Reach"/> objectives (41A).
+    ///
+    /// ⚠️ <b>This is a distance test and NOT a discovery check</b>, which is the one thing about
+    /// Reach that is easy to get wrong — see <see cref="ObjectiveType.Reach"/>. It also lives here
+    /// rather than in <c>MapService</c> on purpose: <c>src/World</c> has no business knowing what a
+    /// quest is, and the map would have to poll all 64 locations forever to answer a question that is
+    /// usually about none of them.
+    ///
+    /// ponytail: the scan below runs at 4 Hz and early-outs on the common case (no Reach objective
+    /// active) before touching the service locator or the player transform. Objectives are a handful
+    /// per save; index them only if a profile ever says so.
+    /// </summary>
+    public override void _Process(double delta)
+    {
+        _sinceReachTick += (float)delta;
+        if (_sinceReachTick < ReachTickSeconds)
+        {
+            return;
+        }
+
+        _sinceReachTick = 0f;
+        CheckReachObjectives();
+    }
+
+    private void CheckReachObjectives()
+    {
+        if (Entity == null || _quests.Count == 0)
+        {
+            return;
+        }
+
+        // Collected first so the Advance calls below cannot mutate the log while it is being walked
+        // — completing one quest can start another through its rewards, the same reason Advance
+        // snapshots. Reused across ticks to keep a 4 Hz poll from allocating.
+        _reachTargets.Clear();
+        foreach (QuestProgress progress in _quests.Values)
+        {
+            if (progress.Status != QuestStatus.Active)
+            {
+                continue;
+            }
+
+            List<ObjectiveResource> objectives = progress.Quest.ObjectiveList();
+            for (int i = 0; i < objectives.Count; i++)
+            {
+                ObjectiveResource objective = objectives[i];
+                if (objective.Type == ObjectiveType.Reach &&
+                    !progress.IsObjectiveComplete(i) &&
+                    objective.TargetId.Length > 0)
+                {
+                    _reachTargets.Add(objective.TargetId);
+                }
+            }
+        }
+
+        if (_reachTargets.Count == 0 ||
+            ServiceLocator.Instance is not { } locator ||
+            !locator.TryGet(out World.MapService map))
+        {
+            return;
+        }
+
+        Vector3 here = Entity.Body.GlobalPosition;
+        foreach (string locationId in _reachTargets)
+        {
+            if (map.PositionOf(locationId) is not { } target)
+            {
+                // The location's cell is not resident and no save remembered it, so there is nothing
+                // to measure against. Silent by design: the player simply has not arrived yet.
+                continue;
+            }
+
+            // Planar, matching MapService.TryDiscover — a marker on an upper floor is not further
+            // away for being above you.
+            float dx = target.X - here.X;
+            float dz = target.Z - here.Z;
+            if ((dx * dx) + (dz * dz) <= ArrivalRadius * ArrivalRadius)
+            {
+                Advance(ObjectiveType.Reach, locationId);
+            }
+        }
     }
 
     /// <summary>Advances every active objective matching the type+target by <paramref name="amount"/>.</summary>

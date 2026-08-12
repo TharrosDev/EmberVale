@@ -349,6 +349,18 @@ well and the benches and the cook-fire stand on it, and it is the first piece of
 Embervale. Climbing and swimming are deliberately not here — nothing in the world needs them yet,
 and the conditions under which they would be built are written down.
 
+### Phase 41 — quests worth the name
+
+- 41A ✅ and a quest can finally ask you to go somewhere and speak to someone. Until now every quest in
+the game was one of two things: kill N of something, or fetch N of something. That is what the quest
+system could measure, so that is what all fourteen quests were. Now Innkeeper Holt will ask you to
+walk down to Hollowreach and find out from Sedge Marrow what happened to his barrels, and the journal
+tracks the walk and the conversation as real objectives — the first quest here that is neither a cull
+nor a fetch. Two quests were also quietly broken in a way nobody could see: their text was written
+straight into the file instead of into the translation catalogue, which looks perfectly correct in
+English and falls apart in any other language. One of them was live. The game now refuses to load a
+quest written that way.
+
 ### Phase 39.5 — the map and the HUD
 
 - 39.5C ✅ and the map is legible. Zoom into a busy market and the names no longer pile on top of

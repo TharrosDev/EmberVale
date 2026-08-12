@@ -756,10 +756,20 @@ declined** — recorded so the cheapest-looking piece is not re-proposed.
 The systems quest framework does Kill/Collect (Phase 9). The main story needs
 more **objective types and branching**.
 
-- New `ObjectiveResource` types: Reach/Explore, Escort, Defend/Survive, Interact/
-  Use, Talk, Timed, Stealth, Choice/Branch — each event-driven like the existing
-  two; **branching** via story flags + dialogue effects (Phase 10 already has the
-  flag spine).
+- New `ObjectiveResource` types: ✅ **Reach/Explore and Talk (41A)**, then Escort,
+  Defend/Survive, Interact/Use, Timed, Stealth, Choice/Branch — each event-driven
+  like the existing two; **branching** via story flags + dialogue effects (Phase 10
+  already has the flag spine).
+  - ⚠️ **41A's lesson for every type after it: the type is a few lines, and the whole
+    job is knowing which existing event actually means the thing.** `Advance` is one
+    choke point and the events mostly exist already, so the cheap implementation and
+    the correct one differ only by a question nobody is forced to ask — "discovered"
+    turned out not to mean "arrived". **41B's version of that question is what counts
+    as a fail, and which event says so.**
+  - ⚠️ **Objectives are UNORDERED and stay that way until 41D.** A quest completes when
+    all its objectives are met; `quest.hollowreach.word` sequences by geography (you
+    cannot talk to Sedge without reaching Hollowreach) rather than by a rule. **Do not
+    hand-roll sequencing into a quest `.tres`.**
 - Quest **state graphs** (a quest with multiple endings/paths), failure states,
   and quest-driven world changes (an NPC dies, a region opens).
 - A quest-debugging console (`quest start/advance/complete/reset`) for content QA.
@@ -1196,6 +1206,7 @@ that doesn't touch the slice.
 | 39.5 | ✅ | **World map & location intelligence — CLOSED at 39.5C; there is no 39.5D.** The map reads authoritative world data instead of the three things that happened to have coordinates. ⚠️ **A location's position is its node's transform in a cell scene, never an authored coordinate**, and `--validate` checks that seam in both directions. Author with `tools/gen_map_locations.py`. **39.5B was the player HUD**: a minimap (none existed), one tracked-quest authority replacing two independent first-active scans, and the visibility logic `GameHud` had never had. ⚠️ **Its audit found ~60 of the brief's 80 sections already satisfied** — the finding was that the HUD was mature, not broken. ✅ **39.5B also closed the harness gap** with `--hudshots`, which renders the HUD to PNG and found four already-shipped defects on its first run. ⚠️ **It covers the HUD, not panels** — the map screen still cannot be captured, and that is where 39.5A's three defects were. **39.5C added panel capture (`--panelshots`), the map's label placer and quest destinations**, and measured all eight deferred conditions rather than guessing — each carries a runnable condition *and the number it measured at*; see [`docs/playbook/phase-39_5.md`](playbook/phase-39_5.md) |
 | ~~40~~ | ❌ | **Survival & Needs — NOT WANTED, struck 2026-08-12** (maintainer direction). No durability/repair, hunger, thirst, temperature or encumbrance, and no condition revives them. Rest already exists as a *sink* (the inn, the home bed) and is untouched; food items stay instant-heal consumables with a `food` trade tag. The cut deleted the two stubs the decision had been holding — `CraftingStationType.Cooking` and `InventoryComponent.MaxWeight`/`IsOverEncumbered`, the latter unread since Phase 5 — and settled seven "pending 40A" pointers. ⚠️ **Do not reach for wear as a Phase 56 economy fix.** See [`docs/playbook/phase-40.md`](playbook/phase-40.md) |
 | ~~40.5~~ | ❌ | **Dungeon & Puzzle Framework — NOT WANTED, struck 2026-08-12**, whole phase. Nothing existed, so nothing was removed. ⚠️ **The trap arm was offered as a partial keep and declined.** Two phases owe their own answer: **Phase 50** authors dungeons as rooms with encounters and loot on existing tooling, and **Phase 51E** has a guardian but no trial. See [`docs/playbook/phase-40_5.md`](playbook/phase-40_5.md) |
+| 41 | ⏳ | **Quest authoring at scale — 41A closed.** `ObjectiveType.Reach` and `Talk` join `Kill`/`Collect` on the one `QuestLogComponent.Advance` choke point; Talk rides the existing `DialogueEndedEvent`, Reach polls at 4 Hz. `quest.hollowreach.word` is the caller and the first quest in the game that is neither a cull nor a fetch. ⚠️ **Reach is PROXIMITY, not discovery** — `RevealWithCell` means "known on entering the region", so the free-looking reuse of `MapService`'s discovery set would complete the objective on region entry. ⚠️ **41A also found a shipped defect: two of fourteen quests authored literal English instead of locale keys**, invisible because `Loc.T` returns the key on a miss, and one of them was live. All three of the 2026-08-11 audit's orphans are now closed. **41B is next** — see [`docs/playbook/phase-41.md`](playbook/phase-41.md) |
 | 38 | ✅ | **Economy, vendors & services — closed at 38V.** All twenty-two sub-phases (38A–38V) including 38G; nothing parked, five briefed services deliberately struck. Mechanism in [`ARCHITECTURE.md`](ARCHITECTURE.md) §2.6m, intent + the Phase 56 balance handoff in [`DESIGN.md`](DESIGN.md) §6/§6.1, and the rules are re-provable with `python tools/negative_tests.py` (42 cases). Sub-phase detail in [Phase 38 — what shipped, sub-phase by sub-phase](#phase-38--what-shipped-sub-phase-by-sub-phase) below (that list stops at 38O; **`docs/playbook/phase-38.md` is the current one**) |
 | Art | ✅ | **The Quaternius standardisation** (out of band, maintainer direction): the art set is now one CC0 artist. 401 models vendored at `assets/library/` behind a `.gdignore`, 18 props re-sourced keeping their filenames and boxes, and **29 archetypes that greyboxed as tinted capsules got rigged animated bodies** — Phase 35's dragons finally have one. Every model in the game is CC0 and the project owes **no attribution**; the `prp_tome_stand` release blocker is gone. Policy in `ASSET_POLICY.md` §0 |
 
