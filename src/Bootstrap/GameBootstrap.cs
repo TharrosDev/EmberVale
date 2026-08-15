@@ -299,7 +299,6 @@ public partial class GameBootstrap : Node3D
         // Restore the saved character before building: the race must be known at spawn (BuildWorld →
         // PlayerFactory.Create) so its stat deltas apply; the innate perks/spells/reputation come back
         // via the LoadGame overlay below, so don't re-grant them here (Phase 26C).
-        SaveSlotInfo? savedLocation = null;
         if (SaveManager.Instance?.ReadHeader(slot) is { } header)
         {
             _activeProfile = CharacterProfile.FromHeaderFields(new Dictionary<string, string>
@@ -314,21 +313,16 @@ public partial class GameBootstrap : Node3D
             {
                 _currentRegionId = header.RegionId;
             }
-
-            savedLocation = header.HasLocation ? header : null;
         }
 
         _applyStartingGrants = false;
 
         BuildWorld();
-        SaveManager.Instance?.LoadGame(slot);
 
-        // Return the player to where they saved (BuildWorld spawned them at the region's start tile).
-        if (savedLocation is { } loc && _player != null)
-        {
-            _player.GlobalPosition = new Vector3(loc.PlayerX, loc.PlayerY, loc.PlayerZ);
-            _player.Rotation = new Vector3(_player.Rotation.X, loc.PlayerYaw, _player.Rotation.Z);
-        }
+        // LoadGame calls ApplySavedLocation at the end of its overlay, which returns the player to
+        // where they saved (BuildWorld spawned them at the region's start tile). The region was
+        // already switched above, so that call finds it current and only writes the transform.
+        SaveManager.Instance?.LoadGame(slot);
 
         GameManager.Instance?.ChangeState(GameState.Playing);
         Log.Info($"Loaded game from slot '{slot}' as {_activeProfile.CharacterName} ({_activeProfile.RaceId}). Sandbox ready.");
@@ -353,6 +347,7 @@ public partial class GameBootstrap : Node3D
             // gameplay state via the provider (Phase 24B) without coupling the manager to gameplay.
             SaveManager.Instance.ActiveSlot = slot;
             SaveManager.Instance.HeaderProvider = BuildSaveHeader;
+            SaveManager.Instance.LocationApplier = ApplySavedLocation;
         }
 
         return true;
@@ -858,7 +853,10 @@ public partial class GameBootstrap : Node3D
     /// destination region (only when it actually changes), teleport the player to <paramref name="landing"/>,
     /// autosave the boundary, then settle for a few frames so the new cells stream in before play resumes.
     /// The world clock and weather are untouched, so arrival respects the current time/weather.</summary>
-    private void PerformRegionLoad(RegionResource destination, Vector3 landing, string message)
+    /// <param name="autosave">False when the move is itself a restore (see
+    /// <see cref="ApplySavedLocation"/>): autosaving the state we just read back is pure churn, and
+    /// on the autosave ring it would overwrite an older save with a copy of the one being loaded.</param>
+    private void PerformRegionLoad(RegionResource destination, Vector3 landing, string message, bool autosave = true)
     {
         GameManager.Instance?.ChangeState(GameState.Loading);
 
@@ -884,9 +882,9 @@ public partial class GameBootstrap : Node3D
             party.RegroupNow();
         }
 
-        if (ServiceLocator.Instance != null && ServiceLocator.Instance.TryGet(out AutosaveService autosave))
+        if (autosave && ServiceLocator.Instance != null && ServiceLocator.Instance.TryGet(out AutosaveService autosaveService))
         {
-            autosave.RequestRegionChangeAutosave();
+            autosaveService.RequestRegionChangeAutosave();
         }
 
         // Hold the loading screen until the streamer reports the destination settled (Phase 25.5B);
@@ -894,6 +892,42 @@ public partial class GameBootstrap : Node3D
         // screen clears, and small ones don't wait needlessly.
         _loadingElapsed = 0d;
         Log.Info(message);
+    }
+
+    /// <summary>
+    /// Returns the player to the transform and region a save was written at. Wired into
+    /// <see cref="SaveManager.LocationApplier"/> by <see cref="BeginSession"/>, so it runs at the
+    /// end of <b>every</b> load — the slot browser, F9, and the pause menu — rather than only the
+    /// route that happened to implement it.
+    ///
+    /// ⚠️ <b>A cross-region load is a hard load, not a teleport.</b> Writing the transform alone
+    /// would drop the player into a region whose cells, portals, safe zones and Weave potency are
+    /// still configured for the one they were standing in.
+    /// </summary>
+    private void ApplySavedLocation(SaveSlotInfo header)
+    {
+        if (_player == null)
+        {
+            return;
+        }
+
+        var landing = new Vector3(header.PlayerX, header.PlayerY, header.PlayerZ);
+
+        // Cross-region: reuse the streamer swap + loading-screen settle the portal path already uses.
+        // StartLoadedGame set _currentRegionId from this same header before BuildWorld, so a load
+        // from the slot browser never takes this branch — only a mid-session F9/pause load can.
+        if (!string.IsNullOrEmpty(header.RegionId) && header.RegionId != _currentRegionId &&
+            RegionDatabase.Get(header.RegionId) is { } destination)
+        {
+            PerformRegionLoad(destination, landing, $"Loaded into {destination.DisplayName} from a save.", autosave: false);
+        }
+        else
+        {
+            _player.Velocity = Vector3.Zero;
+            _player.GlobalPosition = landing;
+        }
+
+        _player.Rotation = new Vector3(_player.Rotation.X, header.PlayerYaw, _player.Rotation.Z);
     }
 
     public override void _ExitTree()
