@@ -438,6 +438,30 @@ CASES = [
        'LocationId = "location.ember_crown.smith"\n',
        "\n")],
      "no cell scene places a MapLocationComponent"),
+
+    # ⚠️ The audit's rule (2026-08-15), and the hole it closes was named in the code for phases
+    # before it was closed: ServiceComponent's own header said a mistyped ServiceId "yields NO PROMPT
+    # AT ALL rather than an error", because no rule scanned .tscn for it. A database walk cannot
+    # reach these — the id is a string in a scene file, not a field on any resource — so the failure
+    # was a keeper who silently offers nothing, which reads as unfinished content, not as a typo.
+    #
+    # Three cases, not one: the rule dispatches per property name through a table, so proving
+    # ServiceId fires does not prove ShopId's row is wired to the shop database rather than a
+    # copy-pasted service lookup. One per database that a scene can name today.
+    ("scene_id.service_unknown", "ValidateSceneAuthoredIds",
+     [("scenes/regions/ember_crown/town_hub.tscn",
+       'ServiceId = "service.ember_crown.bank"', 'ServiceId = "service.no_such_keeper"')],
+     "which no service declares"),
+
+    ("scene_id.shop_unknown", "ValidateSceneAuthoredIds",
+     [("scenes/regions/ember_crown/town_hub.tscn",
+       'ShopId = "shop.ember_crown.traveller"', 'ShopId = "shop.no_such_stall"')],
+     "which no shop declares"),
+
+    ("scene_id.dialogue_unknown", "ValidateSceneAuthoredIds",
+     [("scenes/regions/ember_crown/town_hub.tscn",
+       'DialogueId = "dialogue.elder"', 'DialogueId = "dialogue.no_such_conversation"')],
+     "which no dialogue declares"),
 ]
 
 

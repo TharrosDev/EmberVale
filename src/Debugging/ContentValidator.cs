@@ -117,6 +117,7 @@ public static class ContentValidator
         ValidateTolls(issues);
         ValidatePlaceables(issues);
         ValidateMapLocations(issues);
+        ValidateSceneAuthoredIds(issues);
         ValidateBestiary(issues);
         ValidateResourcePaths(issues);
         ValidateUiAssets(issues);
@@ -3802,6 +3803,83 @@ public static class ContentValidator
                 issues.Add($"property '{property.Id}' is not on the world map — no map location names " +
                            "it. A holding the player owns and cannot find on their own map is the " +
                            "plainest possible failure of a world-readability system");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Content ids authored on components in <c>.tscn</c> scenes rather than in <c>.tres</c> resources
+    /// (audit 2026-08-15).
+    ///
+    /// ⚠️ <b>This was the largest silent-failure surface in the content pipeline, and the code already
+    /// knew.</b> <see cref="Economy.ServiceComponent"/> carries the note verbatim: <i>"ContentValidator
+    /// does not scan .tscn files, so a mistyped ServiceId yields NO PROMPT AT ALL rather than an
+    /// error — the same trap VendorComponent.ShopId and PropertyStorageComponent.PropertyId carry."</i>
+    /// A database walk cannot reach these: the id is not in any resource, it is a string in a scene
+    /// file, so every existing rule was blind to it by construction. The failure is a merchant who
+    /// opens an empty shop, a keeper who offers nothing, or a chest that stores into a property that
+    /// does not exist — all of which look like unfinished content rather than a typo.
+    ///
+    /// <see cref="ValidateMapMarkersArePlaced"/> proved the technique on <c>LocationId</c> in 39.5A;
+    /// this is the same scan widened to the rest of the family, which is what that rule's own comment
+    /// said should happen ("IDS.md records an open hole for shop.* and service.*").
+    ///
+    /// <b>Only ids with a database behind them are here.</b> Two scene-authored ids are deliberately
+    /// out: <c>TemplateId</c> (48 values) resolves through <see cref="Save.PersistentActorRegistry"/>,
+    /// whose builders are seeded at runtime by the bootstrap and are therefore empty in a headless
+    /// validate — checking it would mean duplicating the registration list, and a second list to keep
+    /// in step is what this audit spent its time removing. <c>TravelNodeComponent.RegionId</c> is
+    /// validated at runtime on discovery, by an existing documented decision.
+    ///
+    /// An empty value is legal everywhere here — it is every one of these properties' default and
+    /// means "none", not "unset by mistake".
+    ///
+    /// ponytail: one regex pass per scene over all eight names; adding a ninth is a row in the table,
+    /// not another walk of the scene tree.
+    /// </summary>
+    private static void ValidateSceneAuthoredIds(List<string> issues)
+    {
+        // property name -> (does this id exist?, what to call it in the message)
+        var rules = new Dictionary<string, (System.Func<string, bool> Exists, string Noun)>
+        {
+            ["ShopId"] = (id => Economy.ShopDatabase.Get(id) != null, "shop"),
+            ["ServiceId"] = (id => Economy.ServiceDatabase.Get(id) != null, "service"),
+            ["PropertyId"] = (id => Housing.PropertyDatabase.Get(id) != null, "property"),
+            ["ScheduleId"] = (id => Npc.ScheduleDatabase.Get(id) != null, "schedule"),
+            ["DialogueId"] = (id => Dialogue.DialogueDatabase.Get(id) != null, "dialogue"),
+            ["FactionId"] = (id => Factions.FactionDatabase.Get(id) != null, "faction"),
+            ["SpellId"] = (id => Magic.SpellDatabase.Get(id) != null, "spell"),
+            ["CompanionId"] = (id => Companions.CompanionDatabase.Get(id) != null, "companion"),
+        };
+
+        // Anchored to the start of a line: a .tscn header is prose in the same file, and an
+        // unanchored match would read ids out of the comments that discuss them.
+        var pattern = new System.Text.RegularExpressions.Regex(
+            $@"(?m)^({string.Join("|", rules.Keys)}) = ""([^""]*)""");
+
+        foreach (string path in ScenePaths("res://scenes"))
+        {
+            using FileAccess? file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
+            if (file == null)
+            {
+                continue;
+            }
+
+            foreach (System.Text.RegularExpressions.Match match in pattern.Matches(file.GetAsText()))
+            {
+                string property = match.Groups[1].Value;
+                string id = match.Groups[2].Value;
+                if (id.Length == 0)
+                {
+                    continue;
+                }
+
+                (System.Func<string, bool> exists, string noun) = rules[property];
+                if (!exists(id))
+                {
+                    issues.Add($"scene '{path}' authors {property} = '{id}', which no {noun} declares — " +
+                               $"the component would find nothing at runtime and fail silently");
+                }
             }
         }
     }
