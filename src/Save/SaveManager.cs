@@ -226,9 +226,34 @@ public sealed partial class SaveManager : Node
 
         // The header mirror is a read optimization for the slot browser; if it fails the save is
         // still valid (the header also lives inside the envelope), so warn rather than fail.
+        //
+        // ⚠️ BUT A STALE MIRROR IS WORSE THAN A MISSING ONE, so a failed write deletes it. These are
+        // two independent atomic writes with no transaction across them: save.json has already been
+        // committed above, so leaving the PREVIOUS save's header.json beside it means ReadHeader —
+        // which prefers the mirror — answers every question about this save with the last one's
+        // answers. That is not only a wrong row in the slot browser: the header carries the region
+        // and the player transform that ApplySavedLocation restores, and the race that
+        // StartLoadedGame spawns, so a stale mirror loads the new save and puts the player in the
+        // old save's position, in the old save's region, as the old save's character.
+        //
+        // Deleting it costs a slower ReadHeader (it parses the envelope instead) and is always
+        // correct, because the envelope carries the same header and ReadHeader already falls back
+        // to it. ponytail: a mirror that can be rebuilt does not need a transaction, it needs to be
+        // absent when it would lie.
         if (!AtomicWrite(SlotHeaderPath(slot), Json.Stringify(header, "\t")))
         {
-            Log.Warn($"Saved slot '{slot}' but could not write its header.json mirror.");
+            string mirror = SlotHeaderPath(slot);
+            if (FileAccess.FileExists(mirror) && DirAccess.RemoveAbsolute(mirror) != Error.Ok)
+            {
+                Log.Error($"Slot '{slot}' has a STALE header.json that could not be written or removed; " +
+                          "the slot browser and a load will read the previous save's region, position " +
+                          "and character until it is deleted by hand.");
+            }
+            else
+            {
+                Log.Warn($"Saved slot '{slot}' but could not write its header.json mirror; removed it " +
+                         "so reads fall back to the header inside save.json.");
+            }
         }
 
         CaptureScreenshot(slot);
