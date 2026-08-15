@@ -450,7 +450,7 @@ public partial class BossController : EntityComponent
                 ? markers[(live.Count + i) % markers.Count].GlobalPosition
                 : body.GlobalPosition + BossAdds.SpawnSlot(i, count, RingRadius);
 
-            ApplyHealthMultiplier(add, wave.HealthMultiplier);
+            EnemyScaling.ApplyHealthMultiplier(add, wave.HealthMultiplier, "boss.add");
             live.Add(add);
         }
 
@@ -492,19 +492,6 @@ public partial class BossController : EntityComponent
         }
 
         return markers;
-    }
-
-    /// <summary>Mirrors <c>WorldEventDirector</c>'s champion scaling so one knob means one thing.</summary>
-    private static void ApplyHealthMultiplier(EnemyEntity add, float multiplier)
-    {
-        if (multiplier <= 1f || add.GetComponent<StatsComponent>() is not { } stats)
-        {
-            return;
-        }
-
-        stats.GetStat(StatType.Health).AddModifier(
-            new StatModifier(multiplier - 1f, ModifierType.PercentMult, "boss.add"));
-        stats.RefillResources();
     }
 
     /// <summary>

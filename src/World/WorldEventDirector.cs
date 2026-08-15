@@ -198,7 +198,7 @@ public partial class WorldEventDirector : Node3D
             EnemyEntity enemy = EnemyTemplateRegistry.Create(worldEvent.Resource.EnemyTemplateId, worldEvent.Origin + jitter);
             GetParent().AddChild(enemy);
 
-            ApplyHealthMultiplier(enemy, worldEvent.Resource.HealthMultiplier);
+            EnemyScaling.ApplyHealthMultiplier(enemy, worldEvent.Resource.HealthMultiplier, "world_event.champion");
             worldEvent.Enemies.Add(enemy);
             worldEvent.EnemyIds.Add(enemy.RuntimeId);
         }
@@ -211,18 +211,6 @@ public partial class WorldEventDirector : Node3D
         {
             GetParent().AddChild(ItemPickupFactory.Create(item, Mathf.Max(1, r.CacheQuantity), worldEvent.Origin));
         }
-    }
-
-    private static void ApplyHealthMultiplier(EnemyEntity enemy, float multiplier)
-    {
-        if (multiplier <= 1f || enemy.GetComponent<StatsComponent>() is not { } stats)
-        {
-            return;
-        }
-
-        stats.GetStat(StatType.Health).AddModifier(
-            new StatModifier(multiplier - 1f, ModifierType.PercentMult, "world_event.champion"));
-        stats.RefillResources();
     }
 
     // --- Objective tracking -------------------------------------------------
