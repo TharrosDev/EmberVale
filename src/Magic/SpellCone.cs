@@ -47,7 +47,16 @@ public static class SpellCone
         }
 
         // The authored angle is the cone's full width, so a target may sit up to half of it off-axis.
+        //
+        // ⚠️ The epsilon is what makes "the boundary is inclusive" TRUE RATHER THAN LUCKY. The off-axis
+        // angle is reconstructed through a normalize and an acos, so a point built to sit at exactly
+        // half the angle arrives as 30.000002° about as often as 29.999998° — and which one depends on
+        // the platform's libm, not on the geometry. This passed on Windows and failed on Linux for
+        // three years' worth of the same input; the CI run that first executed these tests on Linux is
+        // what surfaced it. A thousandth of a degree is far below anything a cone can express and far
+        // above the error being corrected for.
+        const float boundaryEpsilon = 0.001f;
         float offAxis = Mathf.RadToDeg(direction.Normalized().AngleTo(offset / distance));
-        return offAxis <= angleDegrees * 0.5f;
+        return offAxis <= (angleDegrees * 0.5f) + boundaryEpsilon;
     }
 }

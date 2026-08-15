@@ -276,10 +276,24 @@ C:\Users\magnu\Downloads\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono
 Use the `_console.exe` variant from a shell — the plain `.exe` detaches and prints nothing to
 stdout, so you lose the log you ran it for.
 
-There is **no CI** (the maintainer declined to add GitHub Actions). The green
-**Vercel** check that appears on every PR is a meaningless no-op — Vercel is
-trying to deploy a Godot game as a web app. Ignore it; do not treat it as a
-build signal.
+**CI runs in GitHub Actions** (`.github/workflows/ci.yml`, added by the 2026-08-15 audit —
+CI had been declined earlier, and the maintainer reversed that once the audit showed 1426
+tests and the whole `ContentValidator` battery depended on someone remembering two commands).
+Two jobs on every push:
+
+- **Build & test** — `dotnet build --warnaserror` then `dotnet test`. This is the gate, and it
+  has no external dependency beyond NuGet. Red here means the code.
+- **Validate content** — downloads Godot and runs `-- --validate`, which exits non-zero on a
+  content failure. Slower (it imports `assets/`, cached on the `.import` hashes) and has more
+  moving parts, so it is deliberately a separate job.
+
+⚠️ **`.github/workflows/` needs a token with `workflow` scope.** The session OAuth token does
+not have it; that file was pushed through the GitHub API instead. If a workflow edit is ever
+rejected on push, that is why — it is not a repo permission problem.
+
+⚠️ The green **Vercel** check that also appears on every PR is still a meaningless no-op —
+Vercel is trying to deploy a Godot game as a web app. Ignore that one; the two CI jobs above
+are the build signal.
 
 ---
 
@@ -575,7 +589,8 @@ one when you are done, in the same shape: what to author, in what order, and wha
   `git fetch origin main && git reset --hard origin/main` to resync, then carry on.
 - **Commits:** clear, descriptive messages. Co-author/session trailers are added
   per harness configuration. Do **not** put model identifiers in commits/PRs.
-- **No CI to satisfy.** The Vercel check is a no-op (see §2).
+- **CI must be green before a merge** — build + tests, and content validation (see §2). The
+  Vercel check remains a no-op and is not a signal.
 
 ---
 

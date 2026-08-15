@@ -93,10 +93,11 @@ existed the same three lines were maintained in four places and rewritten every 
   another name. **Do not rebuild them.**
 - ✅ **A FULL-REPO AUDIT RAN 2026-08-15 AND ITS WAVE 1 IS LANDED** — no feature work.
   Two save-path P0s (invariant 36), the inert boss AI knob (invariant 37), and three per-frame
-  allocation sites. ⚠️ **CI is the one Wave 1 item NOT in this branch**: the workflow is written and
-  the maintainer approved it (reversing the earlier decline), but the session's token could not push
-  `.github/workflows/` — it lands separately, and **the no-CI note in `CLAUDE.md` §2 is stale from
-  the moment it does**. ⚠️ **Waves 2–4 are
+  allocation sites, and **CI: `dotnet build --warnaserror` + 1426 tests + `--validate` now run on
+  every push** (`.github/workflows/ci.yml`). ⚠️ **CI had been declined before and that was reversed
+  deliberately** — do not "restore" the no-CI note as drift. ⚠️ **Editing that workflow needs a token
+  with `workflow` scope**, which the session OAuth token lacks; it went in through the GitHub API.
+  ⚠️ **Waves 2–4 are
   authorized only as findings, not as work**: the report is the plan file from that session, and its
   §N "DO NOT TOUCH" list is the important half — `CombatMath`, `ShopPricing`/`PriceBreakdown`,
   `EventBus`, the `.tres` pipeline and the UI/gameplay boundary are healthy, and **refactoring them

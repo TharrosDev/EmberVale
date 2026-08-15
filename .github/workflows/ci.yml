@@ -1,0 +1,123 @@
+# Embervale CI.
+#
+# Until now nothing ran the quality apparatus this repo already has: 1426 unit tests and a
+# 3945-line ContentValidator, both entirely dependent on a human remembering two shell commands.
+# HeadlessValidation's own doc comment has said "and, later, CI" since it was written.
+#
+# Two jobs, deliberately split by reliability:
+#
+#   build-and-test  — no external downloads beyond NuGet. This is the gate. If it is ever red,
+#                     it is red because of the code.
+#   validate-content — needs a real Godot binary and an asset import of a ~670 MB assets/ tree.
+#                     Slower and more moving parts, so it is kept out of the fast job's way.
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: [main]
+
+# A new push to the same branch makes the previous run's answer irrelevant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  # Keep this in step with the Godot.NET.Sdk version in Embervale.csproj — a mismatch between the
+  # editor and the SDK is the kind of failure that reads as a content error.
+  GODOT_VERSION: '4.7.1'
+
+jobs:
+  build-and-test:
+    name: Build & test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      # The repo holds a 0-warning standard and reports it every session, so warnings fail here.
+      # Note CS0618 is suppressed assembly-wide in Embervale.csproj for the vendored Godot-MCP addon;
+      # if that addon is ever removed, drop the NoWarn and this stays honest.
+      - name: Build
+        run: dotnet build --warnaserror
+
+      - name: Test
+        run: dotnet test tests/Embervale.Tests --no-build --verbosity normal
+
+  validate-content:
+    name: Validate content
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      # Godot re-imports every texture and model on a cold .godot/, which for this assets/ tree is
+      # the slowest thing in CI by a wide margin. Cached on the asset tree's own hash so it only
+      # pays that cost when the art actually changes.
+      - name: Cache Godot import
+        uses: actions/cache@v4
+        with:
+          path: .godot/imported
+          key: godot-import-${{ env.GODOT_VERSION }}-${{ hashFiles('assets/**/*.import') }}
+          restore-keys: godot-import-${{ env.GODOT_VERSION }}-
+
+      - name: Install Godot ${{ env.GODOT_VERSION }} (mono)
+        run: |
+          set -euo pipefail
+          NAME="Godot_v${GODOT_VERSION}-stable_mono_linux_x86_64"
+          curl -fsSL -o godot.zip \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/${NAME}.zip"
+          unzip -q godot.zip
+
+          # ⚠️ Locate the binary, do not construct its name. The extracted DIRECTORY is
+          # ..._mono_linux_x86_64 but the executable inside it is ..._mono_linux.x86_64 — an
+          # underscore in one and a dot in the other. Assuming they matched is what made the first
+          # run exit 127 "not found", which reads like a missing download rather than a wrong path.
+          GODOT_BIN=$(find "$NAME" -maxdepth 1 -type f -name 'Godot_v*' ! -name '*.zip' | head -1)
+          if [ -z "$GODOT_BIN" ]; then
+            echo "::error::Could not find the Godot binary. Extracted tree:"
+            find "$NAME" -maxdepth 2 | head -40
+            exit 1
+          fi
+          chmod +x "$GODOT_BIN"
+          echo "GODOT_BIN=$PWD/$GODOT_BIN" >> "$GITHUB_ENV"
+          "$PWD/$GODOT_BIN" --version
+
+      # The game assembly has to exist before Godot can run the project: --validate boots
+      # GameBootstrap, which is C#.
+      - name: Build game assembly
+        run: dotnet build
+
+      # Import first, separately, so an asset-pipeline failure is not reported as a content failure.
+      # Godot exits non-zero on some import warnings that are not errors, hence the `|| true`; the
+      # validate step below is the one whose exit code means something.
+      - name: Import assets
+        run: xvfb-run -a "$GODOT_BIN" --headless --path . --import || true
+
+      # ContentValidator.RunAll — exits 0 on PASS, 1 on FAIL (see HeadlessValidation.Run).
+      - name: Validate content
+        run: xvfb-run -a "$GODOT_BIN" --headless --path . -- --validate
