@@ -334,7 +334,10 @@ public partial class MapService : Node, ISaveable
     /// <summary>Whether a cell has been visited — the breadcrumb and the info panel both ask.</summary>
     public bool IsCellKnown(string cellId) => _pois.Contains(cellId);
 
-    private static RegionResource? RegionOfCell(string cellId)
+    /// <summary>The one scan of the region table. It was written out twice — once returning the
+    /// region and once the cell, byte-identical otherwise — so the two halves of one lookup are now
+    /// one lookup with two projections below.</summary>
+    private static (RegionResource Region, RegionCellResource Cell)? FindCell(string cellId)
     {
         foreach (RegionResource region in RegionDatabase.All)
         {
@@ -342,7 +345,7 @@ public partial class MapService : Node, ISaveable
             {
                 if (cell != null && cell.Id == cellId)
                 {
-                    return region;
+                    return (region, cell);
                 }
             }
         }
@@ -350,21 +353,9 @@ public partial class MapService : Node, ISaveable
         return null;
     }
 
-    private static RegionCellResource? CellById(string cellId)
-    {
-        foreach (RegionResource region in RegionDatabase.All)
-        {
-            foreach (RegionCellResource cell in region.Cells)
-            {
-                if (cell != null && cell.Id == cellId)
-                {
-                    return cell;
-                }
-            }
-        }
+    private static RegionResource? RegionOfCell(string cellId) => FindCell(cellId)?.Region;
 
-        return null;
-    }
+    private static RegionCellResource? CellById(string cellId) => FindCell(cellId)?.Cell;
 
     /// <summary>"ember_crown.waystone" -> "Waystone": the segment after the last dot, title-cased.</summary>
     private static string Prettify(string id)
