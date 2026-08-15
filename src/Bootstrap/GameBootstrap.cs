@@ -322,7 +322,11 @@ public partial class GameBootstrap : Node3D
         // LoadGame calls ApplySavedLocation at the end of its overlay, which returns the player to
         // where they saved (BuildWorld spawned them at the region's start tile). The region was
         // already switched above, so that call finds it current and only writes the transform.
-        SaveManager.Instance?.LoadGame(slot);
+        if (SaveManager.Instance?.LoadGame(slot) == false)
+        {
+            AbortToTitle($"Save slot '{slot}' failed to restore; returning to the title screen.");
+            return;
+        }
 
         GameManager.Instance?.ChangeState(GameState.Playing);
         Log.Info($"Loaded game from slot '{slot}' as {_activeProfile.CharacterName} ({_activeProfile.RaceId}). Sandbox ready.");
@@ -930,6 +934,24 @@ public partial class GameBootstrap : Node3D
         _player.Rotation = new Vector3(_player.Rotation.X, header.PlayerYaw, _player.Rotation.Z);
     }
 
+    /// <summary>
+    /// Leaves a session that cannot be trusted. Reached only when <see cref="SaveManager.LoadGame"/>
+    /// reports a partial restore: continuing would hand the player a world assembled from some of
+    /// the save and some of whatever was already live, and the next autosave would write that over
+    /// the good file. Mirrors the pause menu's quit-to-title, which is the only teardown this build
+    /// has — the world cannot be dismantled in place (see <c>_sandboxBuilt</c>).
+    /// </summary>
+    private void AbortToTitle(string reason)
+    {
+        Log.Error(reason);
+
+        UiState.ClearAll();
+        Godot.Input.MouseMode = Godot.Input.MouseModeEnum.Visible;
+        GameManager.Instance?.ChangeState(GameState.MainMenu);
+
+        Callable.From(() => GetTree().ReloadCurrentScene()).CallDeferred();
+    }
+
     public override void _ExitTree()
     {
         UnsubscribeEvents();
@@ -1021,7 +1043,10 @@ public partial class GameBootstrap : Node3D
                 if (SaveManager.Instance is { } saver) { saver.SaveGame(saver.ActiveSlot); }
                 break;
             case Key.F9:
-                if (SaveManager.Instance is { } loader) { loader.LoadGame(loader.ActiveSlot); }
+                if (SaveManager.Instance is { } loader && !loader.LoadGame(loader.ActiveSlot))
+                {
+                    AbortToTitle($"Quickload of slot '{loader.ActiveSlot}' failed; returning to the title screen.");
+                }
                 break;
             case Key.F1:
                 _console?.Toggle();

@@ -430,7 +430,12 @@ public sealed partial class SaveManager : Node
 
     // --- Load ---------------------------------------------------------------
 
-    /// <summary>Loads the given slot and dispatches state to registered saveables.</summary>
+    /// <summary>
+    /// Loads the given slot and dispatches state to registered saveables. Returns false if the
+    /// save could not be read <b>or if any saveable failed to restore</b> — see the partial-restore
+    /// guard at the end. ⚠️ <b>Callers must not enter <c>GameState.Playing</c> on false</b>: the
+    /// world is left partly restored and saving over it destroys the good file.
+    /// </summary>
     public bool LoadGame(string slot)
     {
         // Prefer the new directory layout; fall back to a legacy flat file.
@@ -555,6 +560,17 @@ public sealed partial class SaveManager : Node
         }
 
         Log.Info($"Loaded slot '{slot}'; restored {restored} object(s)" + (failures > 0 ? $" ({failures} failed)." : "."));
+
+        // ⚠️ A PARTIAL RESTORE IS A FAILED LOAD, NOT A LOAD. Each saveable's exception is caught so
+        // one bad entry cannot abort the other thirty-three, but this used to then return true and
+        // publish GameLoadedEvent regardless — a load where every saveable threw was indistinguishable
+        // from a clean one to every caller. The world proceeds half-restored and the next quest
+        // completion autosaves over the good file. Report it instead; the caller abandons the session.
+        if (failures > 0)
+        {
+            Log.Error($"Save slot '{slot}' restored {restored} object(s) but {failures} failed; the world is only partly restored. Treating the load as failed.");
+            return false;
+        }
 
         // Put the player back BEFORE announcing the load: MapScreen, RegionTransitionComponent and
         // the party widget all rebuild on GameLoadedEvent, and they should see the restored region
