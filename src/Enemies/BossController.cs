@@ -73,6 +73,10 @@ public partial class BossController : EntityComponent
     /// <summary>Seconds until each repeating wave's next summon.</summary>
     private readonly Dictionary<BossAddWaveResource, double> _waveTimers = new();
 
+    /// <summary>Scratch list of add-waves due to fire this tick, reused every frame (see
+    /// <see cref="TickAddWaves"/>). Keeps Summon out of the dictionary's enumeration.</summary>
+    private readonly List<BossAddWaveResource> _dueWaves = new();
+
     /// <summary>The group an arena's spawn markers declare themselves with, in its own .tscn.</summary>
     public const string SpawnMarkerGroup = "boss_add_spawn";
 
@@ -388,16 +392,29 @@ public partial class BossController : EntityComponent
             return;
         }
 
-        // Iterate a snapshot: Summon writes back into the same dictionary.
-        foreach (BossAddWaveResource wave in new List<BossAddWaveResource>(_waveTimers.Keys))
+        // Reusable buffer, not a fresh List every frame: this ticks for the whole fight the moment any
+        // phase authors a repeating wave, so the old snapshot was steady garbage during the one
+        // encounter that can least afford a GC hitch. Same fix as SpellcastingComponent._expiring.
+        //
+        // Updating an existing value in place mid-enumeration is fine on .NET 8, and resetting a timer
+        // is all this loop does to the dictionary — but Summon spawns actors and is deferred out of the
+        // enumeration anyway, so nothing it might reach can invalidate the enumerator.
+        _dueWaves.Clear();
+        foreach (KeyValuePair<BossAddWaveResource, double> entry in _waveTimers)
         {
-            double remaining = _waveTimers[wave] - delta;
+            double remaining = entry.Value - delta;
             if (remaining > 0d)
             {
-                _waveTimers[wave] = remaining;
-                continue;
+                _waveTimers[entry.Key] = remaining;
             }
+            else
+            {
+                _dueWaves.Add(entry.Key);
+            }
+        }
 
+        foreach (BossAddWaveResource wave in _dueWaves)
+        {
             _waveTimers[wave] = wave.RepeatSeconds;
             Summon(wave);
         }
