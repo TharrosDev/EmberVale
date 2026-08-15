@@ -91,6 +91,16 @@ existed the same three lines were maintained in four places and rewritten every 
   clip on a seated offset, and nothing dismounts on death.
 - ⚠️ **Five of 38R's seven briefed services were struck, not deferred.** Two already existed under
   another name. **Do not rebuild them.**
+- ✅ **A FULL-REPO AUDIT RAN 2026-08-15 AND ITS WAVE 1 IS LANDED** — no feature work.
+  Two save-path P0s (invariant 36), the inert boss AI knob (invariant 37), and three per-frame
+  allocation sites. ⚠️ **CI is the one Wave 1 item NOT in this branch**: the workflow is written and
+  the maintainer approved it (reversing the earlier decline), but the session's token could not push
+  `.github/workflows/` — it lands separately, and **the no-CI note in `CLAUDE.md` §2 is stale from
+  the moment it does**. ⚠️ **Waves 2–4 are
+  authorized only as findings, not as work**: the report is the plan file from that session, and its
+  §N "DO NOT TOUCH" list is the important half — `CombatMath`, `ShopPricing`/`PriceBreakdown`,
+  `EventBus`, the `.tres` pipeline and the UI/gameplay boundary are healthy, and **refactoring them
+  is how the audit does harm.**
 - 📖 Economy: `ARCHITECTURE.md` §2.6m is the mechanism, `DESIGN.md` §6 + §6.1 the intent.
   🎨 `docs/ASSET_POLICY.md` §0.2–§0.3 is the asset authority.
 
@@ -215,6 +225,20 @@ existed the same three lines were maintained in four places and rewritten every 
     job is the semantics. "Discovered" is not "arrived" — `RevealWithCell` means *entered the region*
     — so the free-looking reuse would have shipped a quest that completes itself on region entry.
     **The cheap implementation and the correct one differ by a question nobody is forced to ask.**
+36. ⚠️ **A ROUTE THAT SKIPS THE RESTORE IS STILL A LOAD, AND NOTHING SAID SO** (audit 2026-08-15).
+    Position and region came back in `StartLoadedGame` only — **F9 and the pause menu called
+    `SaveManager.LoadGame` directly and got the world rewound around a player who never moved.**
+    The restore now lives *inside* the load (`SaveManager.LocationApplier`), so a fourth route
+    inherits it. **⚠️ AND A PARTIAL RESTORE IS A FAILED LOAD:** `LoadGame` caught each saveable's
+    exception and still returned `true`, so all-34-threw was indistinguishable from clean and the
+    next autosave wrote it over the good file. It returns `false` now and **every caller drops to
+    the title** — a half-restored world is not a world to resume into.
+37. ⚠️ **A KNOB YOU VALIDATE IS A CLAIM THAT THE KNOB WORKS** (audit 2026-08-15).
+    `BossPhaseResource.AiProfileId` was authored, validated by `ContentValidator`, and **inert** —
+    `EnemyAIComponent` resolved its profile once in `OnInitialize` and cached it, so the phase-change
+    write landed on a field nothing read again. Masked only because all nine authored phases set it
+    to `""`. **Verify the read path exists before writing the validator rule**, or the first author to
+    use the field gets a green gate and no behaviour.
 
 
 ## Commands worth knowing
