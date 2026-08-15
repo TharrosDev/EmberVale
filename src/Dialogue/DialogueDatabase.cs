@@ -1,6 +1,5 @@
 using System.Collections.Generic;
-using Embervale.Core.Diagnostics;
-using Godot;
+using Embervale.Core;
 
 namespace Embervale.Dialogue;
 
@@ -21,42 +20,8 @@ public static class DialogueDatabase
 
     public static void Initialize(string directory = DefaultDirectory)
     {
-        ById.Clear();
-        AllList.Clear();
-
-        if (!DirAccess.DirExistsAbsolute(directory))
-        {
-            Log.Warn($"DialogueDatabase: directory '{directory}' not found; no dialogue loaded.");
-            return;
-        }
-
-        foreach (string file in DirAccess.GetFilesAt(directory))
-        {
-            string name = file.EndsWith(".remap") ? file[..^6] : file;
-            if (!name.EndsWith(".tres"))
-            {
-                continue;
-            }
-
-            var dialogue = GD.Load<DialogueResource>($"{directory}/{name}");
-            if (dialogue == null)
-            {
-                continue;
-            }
-
-            if (ById.ContainsKey(dialogue.Id))
-            {
-                Log.Warn($"Duplicate dialogue id '{dialogue.Id}' in {name}; overwriting.");
-            }
-            else
-            {
-                AllList.Add(dialogue);
-            }
-
-            ById[dialogue.Id] = dialogue;
-        }
-
-        Log.Info($"DialogueDatabase loaded {ById.Count} conversation(s) from {directory}.");
+        ResourceDirectory.Load<DialogueResource>(
+            directory, "dialogue", dialogue => dialogue.Id, ById, AllList);
     }
 
     public static DialogueResource? Get(string id)

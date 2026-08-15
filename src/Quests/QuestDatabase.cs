@@ -1,6 +1,5 @@
 using System.Collections.Generic;
-using Embervale.Core.Diagnostics;
-using Godot;
+using Embervale.Core;
 
 namespace Embervale.Quests;
 
@@ -21,42 +20,8 @@ public static class QuestDatabase
 
     public static void Initialize(string directory = DefaultDirectory)
     {
-        ById.Clear();
-        AllList.Clear();
-
-        if (!DirAccess.DirExistsAbsolute(directory))
-        {
-            Log.Warn($"QuestDatabase: directory '{directory}' not found; no quests loaded.");
-            return;
-        }
-
-        foreach (string file in DirAccess.GetFilesAt(directory))
-        {
-            string name = file.EndsWith(".remap") ? file[..^6] : file;
-            if (!name.EndsWith(".tres"))
-            {
-                continue;
-            }
-
-            var quest = GD.Load<QuestResource>($"{directory}/{name}");
-            if (quest == null)
-            {
-                continue;
-            }
-
-            if (ById.ContainsKey(quest.Id))
-            {
-                Log.Warn($"Duplicate quest id '{quest.Id}' in {name}; overwriting.");
-            }
-            else
-            {
-                AllList.Add(quest);
-            }
-
-            ById[quest.Id] = quest;
-        }
-
-        Log.Info($"QuestDatabase loaded {ById.Count} quest(s) from {directory}.");
+        ResourceDirectory.Load<QuestResource>(
+            directory, "quest", quest => quest.Id, ById, AllList);
     }
 
     public static QuestResource? Get(string id)

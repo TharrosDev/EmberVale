@@ -1,6 +1,5 @@
 using System.Collections.Generic;
-using Embervale.Core.Diagnostics;
-using Godot;
+using Embervale.Core;
 
 namespace Embervale.Npc;
 
@@ -17,37 +16,8 @@ public static class ScheduleDatabase
 
     public static void Initialize(string directory = DefaultDirectory)
     {
-        ById.Clear();
-
-        if (!DirAccess.DirExistsAbsolute(directory))
-        {
-            Log.Warn($"ScheduleDatabase: directory '{directory}' not found; no schedules loaded.");
-            return;
-        }
-
-        foreach (string file in DirAccess.GetFilesAt(directory))
-        {
-            string name = file.EndsWith(".remap") ? file[..^6] : file;
-            if (!name.EndsWith(".tres"))
-            {
-                continue;
-            }
-
-            var schedule = GD.Load<ScheduleResource>($"{directory}/{name}");
-            if (schedule == null)
-            {
-                continue;
-            }
-
-            if (ById.ContainsKey(schedule.Id))
-            {
-                Log.Warn($"Duplicate schedule id '{schedule.Id}' in {name}; overwriting.");
-            }
-
-            ById[schedule.Id] = schedule;
-        }
-
-        Log.Info($"ScheduleDatabase loaded {ById.Count} schedule(s) from {directory}.");
+        ResourceDirectory.Load<ScheduleResource>(
+            directory, "schedule", schedule => schedule.Id, ById);
     }
 
     public static ScheduleResource? Get(string id)

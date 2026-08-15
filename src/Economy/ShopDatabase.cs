@@ -1,6 +1,5 @@
 using System.Collections.Generic;
-using Embervale.Core.Diagnostics;
-using Godot;
+using Embervale.Core;
 
 namespace Embervale.Economy;
 
@@ -20,42 +19,8 @@ public static class ShopDatabase
 
     public static void Initialize(string directory = DefaultDirectory)
     {
-        ById.Clear();
-        AllList.Clear();
-
-        if (!DirAccess.DirExistsAbsolute(directory))
-        {
-            Log.Warn($"ShopDatabase: directory '{directory}' not found; no shops loaded.");
-            return;
-        }
-
-        foreach (string file in DirAccess.GetFilesAt(directory))
-        {
-            string name = file.EndsWith(".remap") ? file[..^6] : file;
-            if (!name.EndsWith(".tres"))
-            {
-                continue;
-            }
-
-            var shop = GD.Load<ShopResource>($"{directory}/{name}");
-            if (shop == null)
-            {
-                continue;
-            }
-
-            if (ById.ContainsKey(shop.Id))
-            {
-                Log.Warn($"Duplicate shop id '{shop.Id}' in {name}; overwriting.");
-            }
-            else
-            {
-                AllList.Add(shop);
-            }
-
-            ById[shop.Id] = shop;
-        }
-
-        Log.Info($"ShopDatabase loaded {ById.Count} shop(s) from {directory}.");
+        ResourceDirectory.Load<ShopResource>(
+            directory, "shop", shop => shop.Id, ById, AllList);
     }
 
     public static ShopResource? Get(string id) =>

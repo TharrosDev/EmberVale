@@ -1,6 +1,5 @@
 using System.Collections.Generic;
-using Embervale.Core.Diagnostics;
-using Godot;
+using Embervale.Core;
 
 namespace Embervale.Companions;
 
@@ -21,42 +20,8 @@ public static class CompanionDatabase
 
     public static void Initialize(string directory = DefaultDirectory)
     {
-        ById.Clear();
-        AllList.Clear();
-
-        if (!DirAccess.DirExistsAbsolute(directory))
-        {
-            Log.Warn($"CompanionDatabase: directory '{directory}' not found; no companions loaded.");
-            return;
-        }
-
-        foreach (string file in DirAccess.GetFilesAt(directory))
-        {
-            string name = file.EndsWith(".remap") ? file[..^6] : file;
-            if (!name.EndsWith(".tres"))
-            {
-                continue;
-            }
-
-            var companion = GD.Load<CompanionResource>($"{directory}/{name}");
-            if (companion == null)
-            {
-                continue;
-            }
-
-            if (ById.ContainsKey(companion.Id))
-            {
-                Log.Warn($"Duplicate companion id '{companion.Id}' in {name}; overwriting.");
-            }
-            else
-            {
-                AllList.Add(companion);
-            }
-
-            ById[companion.Id] = companion;
-        }
-
-        Log.Info($"CompanionDatabase loaded {ById.Count} companion(s) from {directory}.");
+        ResourceDirectory.Load<CompanionResource>(
+            directory, "companion", companion => companion.Id, ById, AllList);
     }
 
     public static CompanionResource? Get(string id) =>

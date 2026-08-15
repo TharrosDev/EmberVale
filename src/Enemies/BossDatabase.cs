@@ -1,6 +1,5 @@
 using System.Collections.Generic;
-using Embervale.Core.Diagnostics;
-using Godot;
+using Embervale.Core;
 
 namespace Embervale.Enemies;
 
@@ -24,42 +23,8 @@ public static class BossDatabase
 
     public static void Initialize(string directory = DefaultDirectory)
     {
-        ById.Clear();
-        AllList.Clear();
-
-        if (!DirAccess.DirExistsAbsolute(directory))
-        {
-            Log.Warn($"BossDatabase: directory '{directory}' not found; no bosses loaded.");
-            return;
-        }
-
-        foreach (string file in DirAccess.GetFilesAt(directory))
-        {
-            string name = file.EndsWith(".remap") ? file[..^6] : file;
-            if (!name.EndsWith(".tres"))
-            {
-                continue;
-            }
-
-            var boss = GD.Load<BossResource>($"{directory}/{name}");
-            if (boss == null)
-            {
-                continue;
-            }
-
-            if (ById.ContainsKey(boss.Id))
-            {
-                Log.Warn($"Duplicate boss id '{boss.Id}' in {name}; overwriting.");
-            }
-            else
-            {
-                AllList.Add(boss);
-            }
-
-            ById[boss.Id] = boss;
-        }
-
-        Log.Info($"BossDatabase loaded {ById.Count} boss(es) from {directory}.");
+        ResourceDirectory.Load<BossResource>(
+            directory, "boss", boss => boss.Id, ById, AllList);
     }
 
     public static BossResource? Get(string id) =>

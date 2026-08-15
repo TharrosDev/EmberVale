@@ -1,6 +1,5 @@
 using System.Collections.Generic;
-using Embervale.Core.Diagnostics;
-using Godot;
+using Embervale.Core;
 
 namespace Embervale.World;
 
@@ -22,42 +21,8 @@ public static class RegionDatabase
 
     public static void Initialize(string directory = DefaultDirectory)
     {
-        ById.Clear();
-        AllList.Clear();
-
-        if (!DirAccess.DirExistsAbsolute(directory))
-        {
-            Log.Warn($"RegionDatabase: directory '{directory}' not found; none loaded.");
-            return;
-        }
-
-        foreach (string file in DirAccess.GetFilesAt(directory))
-        {
-            string name = file.EndsWith(".remap") ? file[..^6] : file;
-            if (!name.EndsWith(".tres"))
-            {
-                continue;
-            }
-
-            var region = GD.Load<RegionResource>($"{directory}/{name}");
-            if (region == null)
-            {
-                continue;
-            }
-
-            if (ById.ContainsKey(region.Id))
-            {
-                Log.Warn($"Duplicate region id '{region.Id}' in {name}; overwriting.");
-            }
-            else
-            {
-                AllList.Add(region);
-            }
-
-            ById[region.Id] = region;
-        }
-
-        Log.Info($"RegionDatabase loaded {ById.Count} region(s) from {directory}.");
+        ResourceDirectory.Load<RegionResource>(
+            directory, "region", region => region.Id, ById, AllList);
     }
 
     public static RegionResource? Get(string id)

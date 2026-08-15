@@ -1,6 +1,5 @@
 using System.Collections.Generic;
-using Embervale.Core.Diagnostics;
-using Godot;
+using Embervale.Core;
 
 namespace Embervale.World;
 
@@ -21,42 +20,8 @@ public static class MapLocationDatabase
 
     public static void Initialize(string directory = DefaultDirectory)
     {
-        ById.Clear();
-        AllList.Clear();
-
-        if (!DirAccess.DirExistsAbsolute(directory))
-        {
-            Log.Warn($"MapLocationDatabase: directory '{directory}' not found; no locations loaded.");
-            return;
-        }
-
-        foreach (string file in DirAccess.GetFilesAt(directory))
-        {
-            string name = file.EndsWith(".remap") ? file[..^6] : file;
-            if (!name.EndsWith(".tres"))
-            {
-                continue;
-            }
-
-            var location = GD.Load<MapLocationResource>($"{directory}/{name}");
-            if (location == null)
-            {
-                continue;
-            }
-
-            if (ById.ContainsKey(location.Id))
-            {
-                Log.Warn($"Duplicate map location id '{location.Id}' in {name}; overwriting.");
-            }
-            else
-            {
-                AllList.Add(location);
-            }
-
-            ById[location.Id] = location;
-        }
-
-        Log.Info($"MapLocationDatabase loaded {ById.Count} map location(s) from {directory}.");
+        ResourceDirectory.Load<MapLocationResource>(
+            directory, "map location", location => location.Id, ById, AllList);
     }
 
     public static MapLocationResource? Get(string id) =>

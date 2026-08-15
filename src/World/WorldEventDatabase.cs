@@ -1,6 +1,5 @@
 using System.Collections.Generic;
-using Embervale.Core.Diagnostics;
-using Godot;
+using Embervale.Core;
 
 namespace Embervale.World;
 
@@ -21,42 +20,8 @@ public static class WorldEventDatabase
 
     public static void Initialize(string directory = DefaultDirectory)
     {
-        ById.Clear();
-        AllList.Clear();
-
-        if (!DirAccess.DirExistsAbsolute(directory))
-        {
-            Log.Warn($"WorldEventDatabase: directory '{directory}' not found; none loaded.");
-            return;
-        }
-
-        foreach (string file in DirAccess.GetFilesAt(directory))
-        {
-            string name = file.EndsWith(".remap") ? file[..^6] : file;
-            if (!name.EndsWith(".tres"))
-            {
-                continue;
-            }
-
-            var worldEvent = GD.Load<WorldEventResource>($"{directory}/{name}");
-            if (worldEvent == null)
-            {
-                continue;
-            }
-
-            if (ById.ContainsKey(worldEvent.Id))
-            {
-                Log.Warn($"Duplicate world event id '{worldEvent.Id}' in {name}; overwriting.");
-            }
-            else
-            {
-                AllList.Add(worldEvent);
-            }
-
-            ById[worldEvent.Id] = worldEvent;
-        }
-
-        Log.Info($"WorldEventDatabase loaded {ById.Count} world event(s) from {directory}.");
+        ResourceDirectory.Load<WorldEventResource>(
+            directory, "world event", worldEvent => worldEvent.Id, ById, AllList);
     }
 
     public static WorldEventResource? Get(string id)

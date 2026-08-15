@@ -1,6 +1,5 @@
 using System.Collections.Generic;
-using Embervale.Core.Diagnostics;
-using Godot;
+using Embervale.Core;
 
 namespace Embervale.Housing;
 
@@ -21,42 +20,8 @@ public static class PropertyDatabase
 
     public static void Initialize(string directory = DefaultDirectory)
     {
-        ById.Clear();
-        AllList.Clear();
-
-        if (!DirAccess.DirExistsAbsolute(directory))
-        {
-            Log.Warn($"PropertyDatabase: directory '{directory}' not found; no properties loaded.");
-            return;
-        }
-
-        foreach (string file in DirAccess.GetFilesAt(directory))
-        {
-            string name = file.EndsWith(".remap") ? file[..^6] : file;
-            if (!name.EndsWith(".tres"))
-            {
-                continue;
-            }
-
-            var property = GD.Load<PropertyResource>($"{directory}/{name}");
-            if (property == null)
-            {
-                continue;
-            }
-
-            if (ById.ContainsKey(property.Id))
-            {
-                Log.Warn($"Duplicate property id '{property.Id}' in {name}; overwriting.");
-            }
-            else
-            {
-                AllList.Add(property);
-            }
-
-            ById[property.Id] = property;
-        }
-
-        Log.Info($"PropertyDatabase loaded {ById.Count} property(s) from {directory}.");
+        ResourceDirectory.Load<PropertyResource>(
+            directory, "property", property => property.Id, ById, AllList);
     }
 
     public static PropertyResource? Get(string id) =>

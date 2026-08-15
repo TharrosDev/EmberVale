@@ -1,6 +1,5 @@
 using System.Collections.Generic;
-using Embervale.Core.Diagnostics;
-using Godot;
+using Embervale.Core;
 
 namespace Embervale.Items;
 
@@ -22,32 +21,8 @@ public static class ItemDatabase
     /// <summary>Scans the items directory and (re)builds the id → template map.</summary>
     public static void Initialize(string directory = DefaultDirectory)
     {
-        ById.Clear();
-
-        foreach (string file in DirAccess.GetFilesAt(directory))
-        {
-            // Exported builds expose resources as "<name>.tres.remap".
-            string name = file.EndsWith(".remap") ? file[..^6] : file;
-            if (!name.EndsWith(".tres"))
-            {
-                continue;
-            }
-
-            var item = GD.Load<ItemResource>($"{directory}/{name}");
-            if (item == null)
-            {
-                continue;
-            }
-
-            if (ById.ContainsKey(item.Id))
-            {
-                Log.Warn($"Duplicate item id '{item.Id}' in {name}; overwriting.");
-            }
-
-            ById[item.Id] = item;
-        }
-
-        Log.Info($"ItemDatabase loaded {ById.Count} item(s) from {directory}.");
+        ResourceDirectory.Load<ItemResource>(
+            directory, "item", item => item.Id, ById);
     }
 
     public static ItemResource? Get(string id)

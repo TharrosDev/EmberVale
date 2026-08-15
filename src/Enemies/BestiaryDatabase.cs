@@ -1,6 +1,5 @@
 using System.Collections.Generic;
-using Embervale.Core.Diagnostics;
-using Godot;
+using Embervale.Core;
 
 namespace Embervale.Enemies;
 
@@ -20,42 +19,8 @@ public static class BestiaryDatabase
 
     public static void Initialize(string directory = DefaultDirectory)
     {
-        ById.Clear();
-        AllList.Clear();
-
-        if (!DirAccess.DirExistsAbsolute(directory))
-        {
-            Log.Warn($"BestiaryDatabase: directory '{directory}' not found; no entries loaded.");
-            return;
-        }
-
-        foreach (string file in DirAccess.GetFilesAt(directory))
-        {
-            string name = file.EndsWith(".remap") ? file[..^6] : file;
-            if (!name.EndsWith(".tres"))
-            {
-                continue;
-            }
-
-            var entry = GD.Load<BestiaryEntryResource>($"{directory}/{name}");
-            if (entry == null)
-            {
-                continue;
-            }
-
-            if (ById.ContainsKey(entry.Id))
-            {
-                Log.Warn($"Duplicate bestiary entry id '{entry.Id}' in {name}; overwriting.");
-            }
-            else
-            {
-                AllList.Add(entry);
-            }
-
-            ById[entry.Id] = entry;
-        }
-
-        Log.Info($"BestiaryDatabase loaded {ById.Count} bestiary entry(s) from {directory}.");
+        ResourceDirectory.Load<BestiaryEntryResource>(
+            directory, "bestiary entry", entry => entry.Id, ById, AllList);
     }
 
     public static BestiaryEntryResource? Get(string id) =>
