@@ -1,6 +1,5 @@
 using System.Collections.Generic;
-using Embervale.Core.Diagnostics;
-using Godot;
+using Embervale.Core;
 
 namespace Embervale.Magic;
 
@@ -18,37 +17,8 @@ public static class StatusEffectDatabase
 
     public static void Initialize(string directory = DefaultDirectory)
     {
-        ById.Clear();
-
-        if (!DirAccess.DirExistsAbsolute(directory))
-        {
-            Log.Warn($"StatusEffectDatabase: directory '{directory}' not found; none loaded.");
-            return;
-        }
-
-        foreach (string file in DirAccess.GetFilesAt(directory))
-        {
-            string name = file.EndsWith(".remap") ? file[..^6] : file;
-            if (!name.EndsWith(".tres"))
-            {
-                continue;
-            }
-
-            var effect = GD.Load<StatusEffectResource>($"{directory}/{name}");
-            if (effect == null)
-            {
-                continue;
-            }
-
-            if (ById.ContainsKey(effect.Id))
-            {
-                Log.Warn($"Duplicate status effect id '{effect.Id}' in {name}; overwriting.");
-            }
-
-            ById[effect.Id] = effect;
-        }
-
-        Log.Info($"StatusEffectDatabase loaded {ById.Count} effect(s) from {directory}.");
+        ResourceDirectory.Load<StatusEffectResource>(
+            directory, "status effect", effect => effect.Id, ById);
     }
 
     public static StatusEffectResource? Get(string id)

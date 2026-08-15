@@ -44,6 +44,10 @@ public partial class CellPersistenceDirector : Node, ISaveable
     private readonly Dictionary<string, Node3D> _cells = new();
     private readonly HashSet<string> _unloading = new();
 
+    // Instance ids of bodies whose TreeExiting is already hooked, so a body is hooked once and not
+    // once per reconcile. See HookRemoval — entries are dropped by the handler itself as it fires.
+    private readonly HashSet<ulong> _hooked = new();
+
     public override void _EnterTree()
     {
         ServiceLocator.Instance?.Register(this);
@@ -122,12 +126,35 @@ public partial class CellPersistenceDirector : Node, ISaveable
         }
     }
 
+    /// <summary>
+    /// Attaches the removal detector to an actor's body — <b>once per body</b>.
+    ///
+    /// ⚠️ <b>The guard is the point.</b> <see cref="Reconcile"/> runs on every
+    /// <c>RegionCellLoadedEvent</c> and again from <see cref="Load"/>, so a save loaded while a cell
+    /// is live — or any path that reconciles the same cell twice — used to attach a second closure to
+    /// the same body, each capturing <c>cellId</c>, <c>pid</c> and <c>actor</c>, with nothing ever
+    /// detaching them. The duplicates were invisible because the work is idempotent (a
+    /// <see cref="HashSet{T}"/> add and a dictionary remove), so this never produced a wrong result —
+    /// it accumulated closures on a live node and would keep accumulating for the session.
+    ///
+    /// Keyed on the instance id rather than the actor: a cell that unloads and streams back in brings
+    /// a <em>new</em> body, which must be hooked again. The handler drops its own entry as it fires,
+    /// which is both the cleanup and the reason an unload/reload cycle re-hooks correctly.
+    /// </summary>
     private void HookRemoval(string cellId, IEntity actor)
     {
         string pid = actor.PersistentId!;
         var body = (Node)actor.Body;
+        ulong instanceId = body.GetInstanceId();
+        if (!_hooked.Add(instanceId))
+        {
+            return;
+        }
+
         body.TreeExiting += () =>
         {
+            _hooked.Remove(instanceId);
+
             // Leaving because the cell is streaming out is not a removal; a death/pickup is.
             if (_unloading.Contains(cellId))
             {

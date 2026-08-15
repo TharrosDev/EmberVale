@@ -1,6 +1,5 @@
 using System.Collections.Generic;
-using Embervale.Core.Diagnostics;
-using Godot;
+using Embervale.Core;
 
 namespace Embervale.Magic;
 
@@ -21,42 +20,8 @@ public static class SpellDatabase
 
     public static void Initialize(string directory = DefaultDirectory)
     {
-        ById.Clear();
-        AllList.Clear();
-
-        if (!DirAccess.DirExistsAbsolute(directory))
-        {
-            Log.Warn($"SpellDatabase: directory '{directory}' not found; no spells loaded.");
-            return;
-        }
-
-        foreach (string file in DirAccess.GetFilesAt(directory))
-        {
-            string name = file.EndsWith(".remap") ? file[..^6] : file;
-            if (!name.EndsWith(".tres"))
-            {
-                continue;
-            }
-
-            var spell = GD.Load<SpellResource>($"{directory}/{name}");
-            if (spell == null)
-            {
-                continue;
-            }
-
-            if (ById.ContainsKey(spell.Id))
-            {
-                Log.Warn($"Duplicate spell id '{spell.Id}' in {name}; overwriting.");
-            }
-            else
-            {
-                AllList.Add(spell);
-            }
-
-            ById[spell.Id] = spell;
-        }
-
-        Log.Info($"SpellDatabase loaded {ById.Count} spell(s) from {directory}.");
+        ResourceDirectory.Load<SpellResource>(
+            directory, "spell", spell => spell.Id, ById, AllList);
     }
 
     public static SpellResource? Get(string id)

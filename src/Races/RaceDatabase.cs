@@ -1,6 +1,5 @@
 using System.Collections.Generic;
-using Embervale.Core.Diagnostics;
-using Godot;
+using Embervale.Core;
 
 namespace Embervale.Races;
 
@@ -21,42 +20,8 @@ public static class RaceDatabase
 
     public static void Initialize(string directory = DefaultDirectory)
     {
-        ById.Clear();
-        AllList.Clear();
-
-        if (!DirAccess.DirExistsAbsolute(directory))
-        {
-            Log.Warn($"RaceDatabase: directory '{directory}' not found; no races loaded.");
-            return;
-        }
-
-        foreach (string file in DirAccess.GetFilesAt(directory))
-        {
-            string name = file.EndsWith(".remap") ? file[..^6] : file;
-            if (!name.EndsWith(".tres"))
-            {
-                continue;
-            }
-
-            var race = GD.Load<RaceResource>($"{directory}/{name}");
-            if (race == null)
-            {
-                continue;
-            }
-
-            if (ById.ContainsKey(race.Id))
-            {
-                Log.Warn($"Duplicate race id '{race.Id}' in {name}; overwriting.");
-            }
-            else
-            {
-                AllList.Add(race);
-            }
-
-            ById[race.Id] = race;
-        }
-
-        Log.Info($"RaceDatabase loaded {ById.Count} race(s) from {directory}.");
+        ResourceDirectory.Load<RaceResource>(
+            directory, "race", race => race.Id, ById, AllList);
     }
 
     public static RaceResource? Get(string id)

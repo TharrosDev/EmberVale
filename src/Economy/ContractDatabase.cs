@@ -1,6 +1,5 @@
 using System.Collections.Generic;
-using Embervale.Core.Diagnostics;
-using Godot;
+using Embervale.Core;
 
 namespace Embervale.Economy;
 
@@ -27,42 +26,8 @@ public static class ContractDatabase
 
     public static void Initialize(string directory = DefaultDirectory)
     {
-        ById.Clear();
-        AllList.Clear();
-
-        if (!DirAccess.DirExistsAbsolute(directory))
-        {
-            Log.Warn($"ContractDatabase: directory '{directory}' not found; no contracts loaded.");
-            return;
-        }
-
-        foreach (string file in DirAccess.GetFilesAt(directory))
-        {
-            string name = file.EndsWith(".remap") ? file[..^6] : file;
-            if (!name.EndsWith(".tres"))
-            {
-                continue;
-            }
-
-            var contract = GD.Load<ContractResource>($"{directory}/{name}");
-            if (contract == null)
-            {
-                continue;
-            }
-
-            if (ById.ContainsKey(contract.Id))
-            {
-                Log.Warn($"Duplicate contract id '{contract.Id}' in {name}; overwriting.");
-            }
-            else
-            {
-                AllList.Add(contract);
-            }
-
-            ById[contract.Id] = contract;
-        }
-
-        Log.Info($"ContractDatabase loaded {ById.Count} contract(s) from {directory}.");
+        ResourceDirectory.Load<ContractResource>(
+            directory, "contract", contract => contract.Id, ById, AllList);
     }
 
     public static ContractResource? Get(string id) =>

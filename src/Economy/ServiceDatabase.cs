@@ -1,6 +1,5 @@
 using System.Collections.Generic;
-using Embervale.Core.Diagnostics;
-using Godot;
+using Embervale.Core;
 
 namespace Embervale.Economy;
 
@@ -20,42 +19,8 @@ public static class ServiceDatabase
 
     public static void Initialize(string directory = DefaultDirectory)
     {
-        ById.Clear();
-        AllList.Clear();
-
-        if (!DirAccess.DirExistsAbsolute(directory))
-        {
-            Log.Warn($"ServiceDatabase: directory '{directory}' not found; no services loaded.");
-            return;
-        }
-
-        foreach (string file in DirAccess.GetFilesAt(directory))
-        {
-            string name = file.EndsWith(".remap") ? file[..^6] : file;
-            if (!name.EndsWith(".tres"))
-            {
-                continue;
-            }
-
-            var service = GD.Load<ServiceResource>($"{directory}/{name}");
-            if (service == null)
-            {
-                continue;
-            }
-
-            if (ById.ContainsKey(service.Id))
-            {
-                Log.Warn($"Duplicate service id '{service.Id}' in {name}; overwriting.");
-            }
-            else
-            {
-                AllList.Add(service);
-            }
-
-            ById[service.Id] = service;
-        }
-
-        Log.Info($"ServiceDatabase loaded {ById.Count} service(s) from {directory}.");
+        ResourceDirectory.Load<ServiceResource>(
+            directory, "service", service => service.Id, ById, AllList);
     }
 
     public static ServiceResource? Get(string id) =>

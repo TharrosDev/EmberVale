@@ -1,6 +1,5 @@
 using System.Collections.Generic;
-using Embervale.Core.Diagnostics;
-using Godot;
+using Embervale.Core;
 
 namespace Embervale.Progression;
 
@@ -21,42 +20,8 @@ public static class PerkDatabase
 
     public static void Initialize(string directory = DefaultDirectory)
     {
-        ById.Clear();
-        AllList.Clear();
-
-        if (!DirAccess.DirExistsAbsolute(directory))
-        {
-            Log.Warn($"PerkDatabase: directory '{directory}' not found; no perks loaded.");
-            return;
-        }
-
-        foreach (string file in DirAccess.GetFilesAt(directory))
-        {
-            string name = file.EndsWith(".remap") ? file[..^6] : file;
-            if (!name.EndsWith(".tres"))
-            {
-                continue;
-            }
-
-            var perk = GD.Load<PerkResource>($"{directory}/{name}");
-            if (perk == null)
-            {
-                continue;
-            }
-
-            if (ById.ContainsKey(perk.Id))
-            {
-                Log.Warn($"Duplicate perk id '{perk.Id}' in {name}; overwriting.");
-            }
-            else
-            {
-                AllList.Add(perk);
-            }
-
-            ById[perk.Id] = perk;
-        }
-
-        Log.Info($"PerkDatabase loaded {ById.Count} perk(s) from {directory}.");
+        ResourceDirectory.Load<PerkResource>(
+            directory, "perk", perk => perk.Id, ById, AllList);
     }
 
     public static PerkResource? Get(string id)

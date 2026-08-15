@@ -1,6 +1,5 @@
 using System.Collections.Generic;
-using Embervale.Core.Diagnostics;
-using Godot;
+using Embervale.Core;
 
 namespace Embervale.Items;
 
@@ -22,42 +21,8 @@ public static class AffixDatabase
 
     public static void Initialize(string directory = DefaultDirectory)
     {
-        ById.Clear();
-        AllList.Clear();
-
-        if (!DirAccess.DirExistsAbsolute(directory))
-        {
-            Log.Warn($"AffixDatabase: directory '{directory}' not found; no affixes loaded.");
-            return;
-        }
-
-        foreach (string file in DirAccess.GetFilesAt(directory))
-        {
-            string name = file.EndsWith(".remap") ? file[..^6] : file;
-            if (!name.EndsWith(".tres"))
-            {
-                continue;
-            }
-
-            var affix = GD.Load<AffixDefinition>($"{directory}/{name}");
-            if (affix == null)
-            {
-                continue;
-            }
-
-            if (ById.ContainsKey(affix.Id))
-            {
-                Log.Warn($"Duplicate affix id '{affix.Id}' in {name}; overwriting.");
-            }
-            else
-            {
-                AllList.Add(affix);
-            }
-
-            ById[affix.Id] = affix;
-        }
-
-        Log.Info($"AffixDatabase loaded {ById.Count} affix(es) from {directory}.");
+        ResourceDirectory.Load<AffixDefinition>(
+            directory, "affix", affix => affix.Id, ById, AllList);
     }
 
     public static AffixDefinition? Get(string id)

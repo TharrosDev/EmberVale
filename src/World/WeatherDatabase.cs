@@ -1,6 +1,5 @@
 using System.Collections.Generic;
-using Embervale.Core.Diagnostics;
-using Godot;
+using Embervale.Core;
 
 namespace Embervale.World;
 
@@ -21,42 +20,8 @@ public static class WeatherDatabase
 
     public static void Initialize(string directory = DefaultDirectory)
     {
-        ById.Clear();
-        AllList.Clear();
-
-        if (!DirAccess.DirExistsAbsolute(directory))
-        {
-            Log.Warn($"WeatherDatabase: directory '{directory}' not found; none loaded.");
-            return;
-        }
-
-        foreach (string file in DirAccess.GetFilesAt(directory))
-        {
-            string name = file.EndsWith(".remap") ? file[..^6] : file;
-            if (!name.EndsWith(".tres"))
-            {
-                continue;
-            }
-
-            var weather = GD.Load<WeatherResource>($"{directory}/{name}");
-            if (weather == null)
-            {
-                continue;
-            }
-
-            if (ById.ContainsKey(weather.Id))
-            {
-                Log.Warn($"Duplicate weather id '{weather.Id}' in {name}; overwriting.");
-            }
-            else
-            {
-                AllList.Add(weather);
-            }
-
-            ById[weather.Id] = weather;
-        }
-
-        Log.Info($"WeatherDatabase loaded {ById.Count} weather state(s) from {directory}.");
+        ResourceDirectory.Load<WeatherResource>(
+            directory, "weather", weather => weather.Id, ById, AllList);
     }
 
     public static WeatherResource? Get(string id)

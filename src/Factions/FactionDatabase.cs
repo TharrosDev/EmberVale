@@ -1,6 +1,5 @@
 using System.Collections.Generic;
-using Embervale.Core.Diagnostics;
-using Godot;
+using Embervale.Core;
 
 namespace Embervale.Factions;
 
@@ -22,42 +21,8 @@ public static class FactionDatabase
 
     public static void Initialize(string directory = DefaultDirectory)
     {
-        ById.Clear();
-        AllList.Clear();
-
-        if (!DirAccess.DirExistsAbsolute(directory))
-        {
-            Log.Warn($"FactionDatabase: directory '{directory}' not found; no factions loaded.");
-            return;
-        }
-
-        foreach (string file in DirAccess.GetFilesAt(directory))
-        {
-            string name = file.EndsWith(".remap") ? file[..^6] : file;
-            if (!name.EndsWith(".tres"))
-            {
-                continue;
-            }
-
-            var faction = GD.Load<FactionResource>($"{directory}/{name}");
-            if (faction == null)
-            {
-                continue;
-            }
-
-            if (ById.ContainsKey(faction.Id))
-            {
-                Log.Warn($"Duplicate faction id '{faction.Id}' in {name}; overwriting.");
-            }
-            else
-            {
-                AllList.Add(faction);
-            }
-
-            ById[faction.Id] = faction;
-        }
-
-        Log.Info($"FactionDatabase loaded {ById.Count} faction(s) from {directory}.");
+        ResourceDirectory.Load<FactionResource>(
+            directory, "faction", faction => faction.Id, ById, AllList);
     }
 
     public static FactionResource? Get(string id)

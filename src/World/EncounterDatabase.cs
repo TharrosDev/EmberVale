@@ -1,6 +1,5 @@
 using System.Collections.Generic;
-using Embervale.Core.Diagnostics;
-using Godot;
+using Embervale.Core;
 
 namespace Embervale.World;
 
@@ -21,42 +20,8 @@ public static class EncounterDatabase
 
     public static void Initialize(string directory = DefaultDirectory)
     {
-        ById.Clear();
-        AllList.Clear();
-
-        if (!DirAccess.DirExistsAbsolute(directory))
-        {
-            Log.Warn($"EncounterDatabase: directory '{directory}' not found; none loaded.");
-            return;
-        }
-
-        foreach (string file in DirAccess.GetFilesAt(directory))
-        {
-            string name = file.EndsWith(".remap") ? file[..^6] : file;
-            if (!name.EndsWith(".tres"))
-            {
-                continue;
-            }
-
-            var encounter = GD.Load<EncounterResource>($"{directory}/{name}");
-            if (encounter == null)
-            {
-                continue;
-            }
-
-            if (ById.ContainsKey(encounter.Id))
-            {
-                Log.Warn($"Duplicate encounter id '{encounter.Id}' in {name}; overwriting.");
-            }
-            else
-            {
-                AllList.Add(encounter);
-            }
-
-            ById[encounter.Id] = encounter;
-        }
-
-        Log.Info($"EncounterDatabase loaded {ById.Count} encounter(s) from {directory}.");
+        ResourceDirectory.Load<EncounterResource>(
+            directory, "encounter", encounter => encounter.Id, ById, AllList);
     }
 
     public static EncounterResource? Get(string id)

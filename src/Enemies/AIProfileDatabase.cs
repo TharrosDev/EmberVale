@@ -1,6 +1,5 @@
 using System.Collections.Generic;
-using Embervale.Core.Diagnostics;
-using Godot;
+using Embervale.Core;
 
 namespace Embervale.Enemies;
 
@@ -21,42 +20,8 @@ public static class AIProfileDatabase
 
     public static void Initialize(string directory = DefaultDirectory)
     {
-        ById.Clear();
-        AllList.Clear();
-
-        if (!DirAccess.DirExistsAbsolute(directory))
-        {
-            Log.Warn($"AIProfileDatabase: directory '{directory}' not found; no profiles loaded.");
-            return;
-        }
-
-        foreach (string file in DirAccess.GetFilesAt(directory))
-        {
-            string name = file.EndsWith(".remap") ? file[..^6] : file;
-            if (!name.EndsWith(".tres"))
-            {
-                continue;
-            }
-
-            var profile = GD.Load<AIProfileResource>($"{directory}/{name}");
-            if (profile == null)
-            {
-                continue;
-            }
-
-            if (ById.ContainsKey(profile.Id))
-            {
-                Log.Warn($"Duplicate AI profile id '{profile.Id}' in {name}; overwriting.");
-            }
-            else
-            {
-                AllList.Add(profile);
-            }
-
-            ById[profile.Id] = profile;
-        }
-
-        Log.Info($"AIProfileDatabase loaded {ById.Count} AI profile(s) from {directory}.");
+        ResourceDirectory.Load<AIProfileResource>(
+            directory, "AI profile", profile => profile.Id, ById, AllList);
     }
 
     public static AIProfileResource? Get(string id) =>

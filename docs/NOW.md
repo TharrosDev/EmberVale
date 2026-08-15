@@ -97,11 +97,20 @@ existed the same three lines were maintained in four places and rewritten every 
   every push** (`.github/workflows/ci.yml`). ⚠️ **CI had been declined before and that was reversed
   deliberately** — do not "restore" the no-CI note as drift. ⚠️ **Editing that workflow needs a token
   with `workflow` scope**, which the session OAuth token lacks; it went in through the GitHub API.
-  ⚠️ **Waves 2–4 are
-  authorized only as findings, not as work**: the report is the plan file from that session, and its
+- ✅ **WAVE 2 (foundation) IS ALSO LANDED** — five commits, still no feature work. One
+  `ResourceDirectory.Load<T>` replaced **25 copied `*Database.Initialize` bodies** (−930 lines, and
+  `ItemDatabase` was the one that had already drifted out of a directory guard);
+  `ValidateSceneAuthoredIds` closes the `.tscn` hole `ServiceComponent`'s header had named for
+  phases (8 id families, 96 values, **negative battery now 66/66**); a `CellPersistenceDirector`
+  closure leak; the `header.json` mirror is deleted rather than left stale; and `TryMigrate` now
+  **refuses** an unmigratable save instead of best-efforting it. 📖 **`docs/SAVE_FORMAT.md` is new
+  and is the contract** — read it before touching anything that saves, and note its "what is
+  deliberately NOT saved" list before filing a bug against a decision.
+- ⚠️ **WAVES 3–4 ARE FINDINGS, NOT WORK.** The report is the plan file from that session, and its
   §N "DO NOT TOUCH" list is the important half — `CombatMath`, `ShopPricing`/`PriceBreakdown`,
   `EventBus`, the `.tres` pipeline and the UI/gameplay boundary are healthy, and **refactoring them
-  is how the audit does harm.**
+  is how the audit does harm.** ⚠️ **Wave 3 is `GameBootstrap`'s 17 responsibilities and is scheduled
+  against a phase boundary, never mid-phase.**
 - 📖 Economy: `ARCHITECTURE.md` §2.6m is the mechanism, `DESIGN.md` §6 + §6.1 the intent.
   🎨 `docs/ASSET_POLICY.md` §0.2–§0.3 is the asset authority.
 

@@ -1,6 +1,5 @@
 using System.Collections.Generic;
-using Embervale.Core.Diagnostics;
-using Godot;
+using Embervale.Core;
 
 namespace Embervale.Crafting;
 
@@ -22,42 +21,8 @@ public static class RecipeDatabase
 
     public static void Initialize(string directory = DefaultDirectory)
     {
-        ById.Clear();
-        AllList.Clear();
-
-        if (!DirAccess.DirExistsAbsolute(directory))
-        {
-            Log.Warn($"RecipeDatabase: directory '{directory}' not found; no recipes loaded.");
-            return;
-        }
-
-        foreach (string file in DirAccess.GetFilesAt(directory))
-        {
-            string name = file.EndsWith(".remap") ? file[..^6] : file;
-            if (!name.EndsWith(".tres"))
-            {
-                continue;
-            }
-
-            var recipe = GD.Load<CraftingRecipeResource>($"{directory}/{name}");
-            if (recipe == null)
-            {
-                continue;
-            }
-
-            if (ById.ContainsKey(recipe.Id))
-            {
-                Log.Warn($"Duplicate recipe id '{recipe.Id}' in {name}; overwriting.");
-            }
-            else
-            {
-                AllList.Add(recipe);
-            }
-
-            ById[recipe.Id] = recipe;
-        }
-
-        Log.Info($"RecipeDatabase loaded {ById.Count} recipe(s) from {directory}.");
+        ResourceDirectory.Load<CraftingRecipeResource>(
+            directory, "recipe", recipe => recipe.Id, ById, AllList);
     }
 
     public static CraftingRecipeResource? Get(string id)

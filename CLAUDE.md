@@ -416,6 +416,7 @@ file) is free.
 | Author content of any kind | [`RECIPES.md`](docs/RECIPES.md) — **the one recipe only** | ~17k tok total |
 | Change how a system works | [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) — the relevant § only | ~23k |
 | Pick an id for anything new | [`IDS.md`](docs/IDS.md) | ~3k |
+| **Touch anything that saves or loads** | **[`SAVE_FORMAT.md`](docs/SAVE_FORMAT.md)** — the `SaveId` contract, what is deliberately *not* saved, and the failure policy | ~3k |
 | Continue the roadmap | **[`docs/NOW.md`](docs/NOW.md) first**, then your phase's file in [`docs/playbook/`](docs/playbook/README.md) | ~1k + ~8k |
 | Check a phase's scope or gate | [`PRODUCTION_ROADMAP.md`](docs/PRODUCTION_ROADMAP.md) | ~22k |
 | Make a design call (economy, difficulty, systems cut) | [`DESIGN.md`](docs/DESIGN.md) | ~9k |
