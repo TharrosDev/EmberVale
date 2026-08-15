@@ -38,8 +38,33 @@ public partial class EnemyAIComponent : EntityComponent
 
     /// <summary>Which <see cref="AIProfileResource"/> drives this actor (see <c>data/ai_profiles/</c>).
     /// An unknown id falls back to a default brute profile with a warning, so a content typo degrades
-    /// to "fights plainly" rather than a dead brain.</summary>
-    [Export] public string ProfileId { get; set; } = DefaultProfileId;
+    /// to "fights plainly" rather than a dead brain.
+    ///
+    /// ⚠️ <b>Assigning this after the actor is live re-resolves the brain, and it has to.</b> This was
+    /// an auto-property, and the profile is resolved exactly once in <see cref="OnInitialize"/> and
+    /// cached in <c>_profile</c> — so <c>BossController</c>'s phase-change write (from
+    /// <c>BossPhaseResource.AiProfileId</c>) landed on a field nothing read again and changed nothing.
+    /// <c>ContentValidator</c> checks that field, so the first boss to author it would have got a
+    /// green validator, no warning, and no behaviour.
+    /// </summary>
+    [Export] public string ProfileId
+    {
+        get => _profileId;
+        set
+        {
+            _profileId = value;
+
+            // Only once the actor is live: Godot writes exported properties during scene load, well
+            // before the databases are populated, and OnInitialize resolves it properly anyway.
+            if (_profileResolved)
+            {
+                _profile = ResolveProfile(allowInline: false);
+            }
+        }
+    }
+
+    private string _profileId = DefaultProfileId;
+    private bool _profileResolved;
 
     /// <summary>Directly-assigned profile, for tests and for scenes that would rather inline it than
     /// go through the database. Wins over <see cref="ProfileId"/> when set.</summary>
@@ -115,7 +140,8 @@ public partial class EnemyAIComponent : EntityComponent
             return;
         }
 
-        _profile = ResolveProfile();
+        _profile = ResolveProfile(allowInline: true);
+        _profileResolved = true;
 
         // A stable per-instance slot, so members of a pack fan to different sides of the target and
         // keep that side for their whole life rather than jittering between approaches each tick.
@@ -146,9 +172,14 @@ public partial class EnemyAIComponent : EntityComponent
 
     /// <summary>An inline <see cref="Profile"/> wins; otherwise the id is looked up in the database.
     /// A miss warns once and falls back to a brute so the actor still fights.</summary>
-    private AIProfileResource ResolveProfile()
+    /// <param name="allowInline">False for a runtime <see cref="ProfileId"/> write. An authored
+    /// inline profile is this node's starting personality, but a later assignment is a deliberate
+    /// instruction from something that knows more (a boss entering its second phase) — so the id
+    /// wins there, rather than the swap being silently ignored on any actor that inlines a profile.
+    /// </param>
+    private AIProfileResource ResolveProfile(bool allowInline)
     {
-        if (Profile != null)
+        if (allowInline && Profile != null)
         {
             return Profile;
         }
