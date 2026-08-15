@@ -14,6 +14,13 @@
 *.cfg      text eol=lf
 *.gdshader text eol=lf
 
+# CI workflows run on Linux, and a `run: |` block stored with CRLF fails there with
+# `$'\r': command not found` — the shell treats the carriage return as part of the command. This
+# repo is developed on Windows with core.autocrlf=true, so without this the checkout would be
+# correct and the workflow would still be broken.
+*.yml  text eol=lf
+*.yaml text eol=lf
+
 # Binary assets — never normalize, never diff as text.
 *.glb  binary
 *.gltf binary
