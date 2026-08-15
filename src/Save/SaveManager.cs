@@ -629,9 +629,21 @@ public sealed partial class SaveManager : Node
             return false;
         }
 
-        // version < SaveFormatVersion: walk forward one step at a time. No upgrade steps
-        // exist yet (v1 is the first format); this branch is the documented seam.
-        Log.Warn($"Save slot '{slot}' is an older version {version}; loading at best effort (no migration steps registered).");
-        return true;
+        // version < SaveFormatVersion: walk forward one step at a time. This is the seam where those
+        // steps go, and it is empty because v1 is the first format this game has ever written.
+        //
+        // ⚠️ THAT EMPTINESS IS WHY THIS REFUSES RATHER THAN BEST-EFFORTS. There is no such thing as a
+        // legitimate v0 Embervale save — nothing ever wrote one. A document that declares a version
+        // below the first one is a hand-edited file, a foreign file that happens to carry an integer
+        // "version", or a corrupted one, and the old branch waved all three through with a warning and
+        // started feeding their fragments to live components. Refusing costs nothing today (no real
+        // save can reach here) and is the correct default the moment a v2 exists: an unmigratable save
+        // must fail loudly, not load in pieces.
+        //
+        // When a step IS registered, upgrade `root` in place here and fall through to `return true`.
+        Log.Error($"Save slot '{slot}' is version {version}, older than the first format this game " +
+                  $"wrote ({SaveFormatVersion}), and no migration step covers it; refusing to load " +
+                  "rather than feeding a partial document to live components.");
+        return false;
     }
 }

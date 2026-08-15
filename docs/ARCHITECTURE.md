@@ -1040,6 +1040,10 @@ moves under it, which is how `ValidateShopTrade`'s band tightened twice after it
 
 ### 2.7 Save (`src/Save`)
 
+> 📖 **[`SAVE_FORMAT.md`](SAVE_FORMAT.md) is the contract** — the on-disk layout, the `SaveId` rules,
+> **what is deliberately not saved**, the failure policy, and what to check before changing any of
+> it. This section is the shape of the code; that one is what the bytes mean and what you can break.
+
 - **`ISaveable`** — `SaveId`, `Godot.Collections.Dictionary Save()`,
   `void Load(dict)`. State exchanged as a Godot `Dictionary` → serializes to JSON
   with no reflection.
