@@ -92,7 +92,20 @@ jobs:
           curl -fsSL -o godot.zip \
             "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/${NAME}.zip"
           unzip -q godot.zip
-          echo "GODOT_BIN=$PWD/${NAME}/${NAME}" >> "$GITHUB_ENV"
+
+          # ⚠️ Locate the binary, do not construct its name. The extracted DIRECTORY is
+          # ..._mono_linux_x86_64 but the executable inside it is ..._mono_linux.x86_64 — an
+          # underscore in one and a dot in the other. Assuming they matched is what made the first
+          # run exit 127 "not found", which reads like a missing download rather than a wrong path.
+          GODOT_BIN=$(find "$NAME" -maxdepth 1 -type f -name 'Godot_v*' ! -name '*.zip' | head -1)
+          if [ -z "$GODOT_BIN" ]; then
+            echo "::error::Could not find the Godot binary. Extracted tree:"
+            find "$NAME" -maxdepth 2 | head -40
+            exit 1
+          fi
+          chmod +x "$GODOT_BIN"
+          echo "GODOT_BIN=$PWD/$GODOT_BIN" >> "$GITHUB_ENV"
+          "$PWD/$GODOT_BIN" --version
 
       # The game assembly has to exist before Godot can run the project: --validate boots
       # GameBootstrap, which is C#.
