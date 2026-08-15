@@ -59,12 +59,6 @@ public partial class GameBootstrap : Node3D
     private HotbarPanel _hotbarPanel = null!;
     private QuestLogPanel _questLogPanel = null!;
     private MapScreen _mapScreen = null!;
-    private DialoguePanel _dialoguePanel = null!;
-    private CraftingPanel _craftingPanel = null!;
-    private StoragePanel _storagePanel = null!;
-    private VendorPanel _vendorPanel = null!;
-    private AppraisalPanel _appraisalPanel = null!;
-    private ContractBoardPanel _contractPanel = null!;
     private Housing.PlacementDirector _placement = null!;
     private WorldClock _clock = null!;
     private WeatherDirector _weather = null!;
@@ -424,25 +418,24 @@ public partial class GameBootstrap : Node3D
         AddChild(_hotbarPanel);
         _questLogPanel = new QuestLogPanel();
         AddChild(_questLogPanel);
-        _dialoguePanel = new DialoguePanel();
-        AddChild(_dialoguePanel);
-        _craftingPanel = new CraftingPanel();
-        AddChild(_craftingPanel);
+        // ⚠️ The six panels below are added WITHOUT a field, and that is deliberate. Each is
+        // event-driven — one instance answering every merchant, container, appraiser or board in the
+        // world — so once it is in the tree nothing ever calls back into it. They used to be stored
+        // in fields that were assigned and never read again: object state describing nothing.
+        // A new panel earns a field when something reads it, not because its neighbours have one.
+        AddChild(new DialoguePanel());
+        AddChild(new CraftingPanel());
         // The stash window (37B) — event-driven like the crafting panel, one instance for every
         // container in the world.
-        _storagePanel = new StoragePanel();
-        AddChild(_storagePanel);
+        AddChild(new StoragePanel());
         // The shop window (38A) — same one-instance-for-every-merchant shape as the two above.
-        _vendorPanel = new VendorPanel();
-        AddChild(_vendorPanel);
+        AddChild(new VendorPanel());
         // The appraiser's window (38P2) — the first panel that only reads. Same one instance for
         // every appraiser, answered off an event, so the service knows nothing about the UI.
-        _appraisalPanel = new AppraisalPanel();
-        AddChild(_appraisalPanel);
+        AddChild(new AppraisalPanel());
         // The caravan board (38Q2) — one instance for every board, answered off an event. It reads the
         // clock rather than a snapshot, so what it shows cannot go stale while it is open.
-        _contractPanel = new ContractBoardPanel();
-        AddChild(_contractPanel);
+        AddChild(new ContractBoardPanel());
 
         // The world clock drives NPC routines; create it before the NPCs below so it is
         // registered in the ServiceLocator when their schedules first read the time.
