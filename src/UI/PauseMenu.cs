@@ -85,7 +85,12 @@ public partial class PauseMenu : CanvasLayer
 
 		col.AddChild(MenuButton(Loc.T("pause.resume"), Resume));
 		col.AddChild(MenuButton(Loc.T("pause.save"), () => { if (SaveManager.Instance is { } s) { s.SaveGame(s.ActiveSlot); } }));
-		col.AddChild(MenuButton(Loc.T("pause.load"), () => { if (SaveManager.Instance is { } s) { s.LoadGame(s.ActiveSlot); } }));
+		// A load that only partly restores leaves an untrustworthy world, so it drops to the title
+		// rather than resuming into it (see SaveManager.LoadGame's partial-restore guard).
+		col.AddChild(MenuButton(Loc.T("pause.load"), () =>
+		{
+			if (SaveManager.Instance is { } s && !s.LoadGame(s.ActiveSlot)) { ReturnToMainMenu(); }
+		}));
 		col.AddChild(MenuButton(Loc.T("pause.settings"), OpenSettings));
 		col.AddChild(MenuButton(Loc.T("pause.main_menu"), ReturnToMainMenu));
 		col.AddChild(MenuButton(Loc.T("pause.quit"), () => GetTree().Quit()));

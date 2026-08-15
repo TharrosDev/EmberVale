@@ -36,10 +36,41 @@ public partial class EnemyAIComponent : EntityComponent
     /// pre-34A <c>CastRange</c> default, so an unconverted caster fights exactly as it used to.</summary>
     private const float DefaultCastRange = 14f;
 
+    /// <summary>How often a support caster may scan its team for someone to heal. A constant rather
+    /// than a profile knob for the same reason <c>CompanionAIComponent.ScanInterval</c> is one: it
+    /// paces a cost, it does not express a personality. Short enough that a heal still lands inside
+    /// a swing, long enough that the scan stops being per-frame.</summary>
+    private const double SupportScanInterval = 0.3d;
+
     /// <summary>Which <see cref="AIProfileResource"/> drives this actor (see <c>data/ai_profiles/</c>).
     /// An unknown id falls back to a default brute profile with a warning, so a content typo degrades
-    /// to "fights plainly" rather than a dead brain.</summary>
-    [Export] public string ProfileId { get; set; } = DefaultProfileId;
+    /// to "fights plainly" rather than a dead brain.
+    ///
+    /// ⚠️ <b>Assigning this after the actor is live re-resolves the brain, and it has to.</b> This was
+    /// an auto-property, and the profile is resolved exactly once in <see cref="OnInitialize"/> and
+    /// cached in <c>_profile</c> — so <c>BossController</c>'s phase-change write (from
+    /// <c>BossPhaseResource.AiProfileId</c>) landed on a field nothing read again and changed nothing.
+    /// <c>ContentValidator</c> checks that field, so the first boss to author it would have got a
+    /// green validator, no warning, and no behaviour.
+    /// </summary>
+    [Export] public string ProfileId
+    {
+        get => _profileId;
+        set
+        {
+            _profileId = value;
+
+            // Only once the actor is live: Godot writes exported properties during scene load, well
+            // before the databases are populated, and OnInitialize resolves it properly anyway.
+            if (_profileResolved)
+            {
+                _profile = ResolveProfile(allowInline: false);
+            }
+        }
+    }
+
+    private string _profileId = DefaultProfileId;
+    private bool _profileResolved;
 
     /// <summary>Directly-assigned profile, for tests and for scenes that would rather inline it than
     /// go through the database. Wins over <see cref="ProfileId"/> when set.</summary>
@@ -86,6 +117,10 @@ public partial class EnemyAIComponent : EntityComponent
     private double _retreatCooldown;
 
     private double _perceptionTimer;
+
+    /// <summary>Paces <see cref="FindWoundedAlly"/>. Ticked on wall-clock time (so LOD sleep is
+    /// accounted for) beside the state and retreat timers.</summary>
+    private double _supportScanTimer;
     private bool _cachedCanSee;
     private Vector3 _cachedSeenPos;
     private bool _shadowOn = true;
@@ -115,7 +150,8 @@ public partial class EnemyAIComponent : EntityComponent
             return;
         }
 
-        _profile = ResolveProfile();
+        _profile = ResolveProfile(allowInline: true);
+        _profileResolved = true;
 
         // A stable per-instance slot, so members of a pack fan to different sides of the target and
         // keep that side for their whole life rather than jittering between approaches each tick.
@@ -146,9 +182,14 @@ public partial class EnemyAIComponent : EntityComponent
 
     /// <summary>An inline <see cref="Profile"/> wins; otherwise the id is looked up in the database.
     /// A miss warns once and falls back to a brute so the actor still fights.</summary>
-    private AIProfileResource ResolveProfile()
+    /// <param name="allowInline">False for a runtime <see cref="ProfileId"/> write. An authored
+    /// inline profile is this node's starting personality, but a later assignment is a deliberate
+    /// instruction from something that knows more (a boss entering its second phase) — so the id
+    /// wins there, rather than the swap being silently ignored on any actor that inlines a profile.
+    /// </param>
+    private AIProfileResource ResolveProfile(bool allowInline)
     {
-        if (Profile != null)
+        if (allowInline && Profile != null)
         {
             return Profile;
         }
@@ -201,6 +242,7 @@ public partial class EnemyAIComponent : EntityComponent
 
         _stateTimer += wall;
         _retreatCooldown -= wall;
+        _supportScanTimer -= wall;
 
         // Provoke memory: a struck enemy hunts the player, but forgets after a calm spell so it stands
         // down once reputation is no longer hostile (it never forgets mid-fight).
@@ -571,9 +613,28 @@ public partial class EnemyAIComponent : EntityComponent
     }
 
     /// <summary>The most-wounded ally (or itself) within <see cref="AllySupportRange"/> on the caster's
-    /// team whose health is below <see cref="AllyHealThreshold"/>, or null when none needs healing.</summary>
+    /// team whose health is below <see cref="AllyHealThreshold"/>, or null when none needs healing.
+    ///
+    /// ⚠️ <b>Throttled, because this is a group-wide scan inside the combat tick.</b> It walks every
+    /// node in the enemy group — a freshly marshalled Godot array each call — and does an owner lookup
+    /// plus two GetComponent calls per candidate. It ran unthrottled on every physics frame for every
+    /// caster with a heal ready, so the cost was O(casters × live enemies) per frame: invisible with
+    /// ten enemies, real in a boss arena where Summon has built a crowd. Perception (PerceptionInterval)
+    /// and the companion's target scan (ScanInterval) were already behind timers; this was the one
+    /// group scan that was not.
+    ///
+    /// A throttled tick returns null and the caster falls through to attacking instead, rather than
+    /// caching an ally reference that could be freed before the next tick reads it.
+    /// </summary>
     private IEntity? FindWoundedAlly()
     {
+        if (_supportScanTimer > 0d)
+        {
+            return null;
+        }
+
+        _supportScanTimer = SupportScanInterval;
+
         int team = _combat?.Team ?? 0;
         IEntity? best = null;
         float lowest = _profile.AllyHealThreshold;

@@ -35,6 +35,10 @@ public partial class WorldEventDirector : Node3D
 
     private readonly Dictionary<string, double> _cooldowns = new();
 
+    /// <summary>Scratch list of cooldowns that expired this tick, reused every frame (see
+    /// <see cref="TickCooldowns"/>). Mirrors <c>SpellcastingComponent._expiring</c>.</summary>
+    private readonly List<string> _expiring = new();
+
     private double _timer;
     private WorldEvent? _active;
 
@@ -381,17 +385,28 @@ public partial class WorldEventDirector : Node3D
             return;
         }
 
-        foreach (string id in new List<string>(_cooldowns.Keys))
+        // Reusable buffer, not a fresh List every frame — the same fix SpellcastingComponent.TickCooldowns
+        // already carries, which this had not picked up. Authored world-event cooldowns are stamped in
+        // real seconds, so this dictionary stays non-empty for minutes at a stretch and the old snapshot
+        // was ~60 allocations a second, indefinitely, for the whole session.
+        // Updating an existing value in place mid-enumeration is fine on .NET 8; removing is not.
+        _expiring.Clear();
+        foreach (KeyValuePair<string, double> entry in _cooldowns)
         {
-            double remaining = _cooldowns[id] - delta;
+            double remaining = entry.Value - delta;
             if (remaining <= 0d)
             {
-                _cooldowns.Remove(id);
+                _expiring.Add(entry.Key);
             }
             else
             {
-                _cooldowns[id] = remaining;
+                _cooldowns[entry.Key] = remaining;
             }
+        }
+
+        foreach (string id in _expiring)
+        {
+            _cooldowns.Remove(id);
         }
     }
 

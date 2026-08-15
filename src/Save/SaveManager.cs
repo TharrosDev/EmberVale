@@ -49,6 +49,20 @@ public sealed partial class SaveManager : Node
     /// </summary>
     public Func<Godot.Collections.Dictionary>? HeaderProvider { get; set; }
 
+    /// <summary>
+    /// Optional sink for the saved player location, set by the bootstrap alongside
+    /// <see cref="HeaderProvider"/> and invoked at the end of a successful <see cref="LoadGame"/>.
+    ///
+    /// ⚠️ <b>This exists because the restore used to live in ONE of the three load routes.</b> The
+    /// slot browser went through <c>GameBootstrap.StartLoadedGame</c>, which applied the header's
+    /// region and transform after its overlay — but F9 and the pause menu call
+    /// <see cref="LoadGame"/> directly, so they rewound inventory, quests, stats, the economy and
+    /// the world to the save point and left the player standing wherever they happened to be, in
+    /// whatever region they happened to be in. Restoring from inside the load is what makes the
+    /// three routes agree; a new route gets it for free.
+    /// </summary>
+    public Action<SaveSlotInfo>? LocationApplier { get; set; }
+
     /// <summary>The slot that quick/manual saves (F5/F9, pause menu) target. Set to a chosen slot
     /// when a game is started or loaded from the slot browser (Phase 24C); defaults to <c>quick</c>.</summary>
     public string ActiveSlot { get; set; } = "quick";
@@ -416,7 +430,12 @@ public sealed partial class SaveManager : Node
 
     // --- Load ---------------------------------------------------------------
 
-    /// <summary>Loads the given slot and dispatches state to registered saveables.</summary>
+    /// <summary>
+    /// Loads the given slot and dispatches state to registered saveables. Returns false if the
+    /// save could not be read <b>or if any saveable failed to restore</b> — see the partial-restore
+    /// guard at the end. ⚠️ <b>Callers must not enter <c>GameState.Playing</c> on false</b>: the
+    /// world is left partly restored and saving over it destroys the good file.
+    /// </summary>
     public bool LoadGame(string slot)
     {
         // Prefer the new directory layout; fall back to a legacy flat file.
@@ -469,10 +488,13 @@ public sealed partial class SaveManager : Node
             return false;
         }
 
-        // Continue this save's playtime from where it was last written.
+        // Continue this save's playtime from where it was last written, and keep the header around:
+        // it also carries the region/transform the LocationApplier restores once the overlay lands.
+        SaveSlotInfo? savedHeader = null;
         if (root.TryGetValue("header", out Variant headerVariant) && headerVariant.VariantType == Variant.Type.Dictionary)
         {
-            _playtimeSeconds = SaveSlotInfo.FromDictionary(headerVariant.AsGodotDictionary()).PlaytimeSeconds;
+            savedHeader = SaveSlotInfo.FromDictionary(headerVariant.AsGodotDictionary());
+            _playtimeSeconds = savedHeader.PlaytimeSeconds;
         }
 
         var objects = objectsVariant.AsGodotDictionary();
@@ -538,6 +560,27 @@ public sealed partial class SaveManager : Node
         }
 
         Log.Info($"Loaded slot '{slot}'; restored {restored} object(s)" + (failures > 0 ? $" ({failures} failed)." : "."));
+
+        // ⚠️ A PARTIAL RESTORE IS A FAILED LOAD, NOT A LOAD. Each saveable's exception is caught so
+        // one bad entry cannot abort the other thirty-three, but this used to then return true and
+        // publish GameLoadedEvent regardless — a load where every saveable threw was indistinguishable
+        // from a clean one to every caller. The world proceeds half-restored and the next quest
+        // completion autosaves over the good file. Report it instead; the caller abandons the session.
+        if (failures > 0)
+        {
+            Log.Error($"Save slot '{slot}' restored {restored} object(s) but {failures} failed; the world is only partly restored. Treating the load as failed.");
+            return false;
+        }
+
+        // Put the player back BEFORE announcing the load: MapScreen, RegionTransitionComponent and
+        // the party widget all rebuild on GameLoadedEvent, and they should see the restored region
+        // and position rather than wherever the player was standing when they pressed F9.
+        // A pre-29.5 header has no location (HasLocation false) and is left alone.
+        if (savedHeader is { HasLocation: true })
+        {
+            LocationApplier?.Invoke(savedHeader);
+        }
+
         EventBus.Instance?.Publish(new GameLoadedEvent(slot));
         return true;
     }
