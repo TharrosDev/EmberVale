@@ -187,19 +187,30 @@ public partial class EnemyAIComponent : EntityComponent
     /// instruction from something that knows more (a boss entering its second phase) — so the id
     /// wins there, rather than the swap being silently ignored on any actor that inlines a profile.
     /// </param>
-    private AIProfileResource ResolveProfile(bool allowInline)
+    private AIProfileResource ResolveProfile(bool allowInline) =>
+        Resolve(ProfileId, allowInline ? Profile : null);
+
+    /// <summary>The one answer to "which profile drives this actor", so nothing else has to
+    /// re-derive it and get a different one. <c>EnemyArchetypeFactory</c> is the caller that made
+    /// this static: it decides whether to attach a <see cref="FlightComponent"/> from the profile's
+    /// takeoff range, and it was reading <c>AIProfileDatabase</c> directly — which skips
+    /// <paramref name="inline"/> entirely, so an actor whose personality is inlined would fly by one
+    /// answer and walk by the other. The entity is still detached while the factory builds it, so
+    /// <see cref="ActiveProfile"/> is not usable there (<c>OnInitialize</c> has not run and the field
+    /// is still the default) — reading it would look right and return the wrong profile.</summary>
+    internal static AIProfileResource Resolve(string profileId, AIProfileResource? inline)
     {
-        if (allowInline && Profile != null)
+        if (inline != null)
         {
-            return Profile;
+            return inline;
         }
 
-        if (AIProfileDatabase.Get(ProfileId) is { } found)
+        if (AIProfileDatabase.Get(profileId) is { } found)
         {
             return found;
         }
 
-        Log.Warn($"AI profile '{ProfileId}' is not registered; falling back to '{DefaultProfileId}'.");
+        Log.Warn($"AI profile '{profileId}' is not registered; falling back to '{DefaultProfileId}'.");
         return AIProfileResource.CreateDefault();
     }
 

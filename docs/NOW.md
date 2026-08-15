@@ -120,27 +120,58 @@ existed the same three lines were maintained in four places and rewritten every 
      reading. **It waits for a session with a playthrough in it.**
   ⚠️ **A refactor of code no gate covers is a refactor that needs a human, and saying so is cheaper
   than a regression found three phases later.**
-- ⚠️ **WAVE 4 IS FINDINGS, NOT WORK**, and its items are opportunistic — do them when the file is
-  already open, never as scheduled work. The report is the plan file from that session, and its
-  §N "DO NOT TOUCH" list is the important half — `CombatMath`, `ShopPricing`/`PriceBreakdown`,
-  `EventBus`, the `.tres` pipeline and the UI/gameplay boundary are healthy, and **refactoring them
-  is how the audit does harm.**
+- ✅ **WAVE 4 IS CLOSED — THREE COMMITS AND FOUR REFUSALS, AND THE REFUSALS ARE THE LONGER HALF.**
+  It was scheduled against its own "opportunistic, never as scheduled work" classification, on the
+  instruction to push back where that was right. Done: **L-14** — `EnemyArchetypeFactory` decided
+  flight from `AIProfileDatabase` while the brain it built one line earlier resolved through
+  `ResolveProfile`; both now go through one static `EnemyAIComponent.Resolve`. ⚠️ **LATENT, NOT
+  LIVE** — the factory never sets an inline `Profile` and all four boss `.tres` author every phase
+  `AiProfileId = ""`, so no data reaches the divergence; **this removed a second answer, it did not
+  fix a symptom.** **L-15a** — `MapService`'s twin 14-line lookups became one `FindCell` with two
+  projections. **L-15c** — `EnemyScaling.ApplyHealthMultiplier` now holds the champion-scaling rule
+  `WorldEventDirector` and `BossController` each carried a copy of.
+  ⚠️ **FOUR THINGS WERE REFUSED, WITH REASONS:**
+  1. **L-12 (~40 balance constants → data) — declined entire, not deferred.** `ShakeMath` and
+     `HitStop` say in their own headers that they are Godot-free *so the feel curve is
+     unit-testable*, and the test project's csproj forbids `GodotObject` construction. **The
+     constants are not a workaround for that limit; they are the shape it correctly produced.**
+     Moving them to `.tres` would delete the tests that pin the curves to serve an audience of one
+     who edits C# here every session.
+  2. **L-15b (`HorizontalDistance` ×3) — skipped.** Four pure lines carrying **no rule**: no
+     invariant, no balance decision, nothing that can drift. A shared home means a new file plus a
+     dependency edge from `Enemies`, `Companions` and `Housing` to delete eight lines — addition
+     dressed as deletion. ⚠️ **And the same files flatten Y inline in twelve other places**, so
+     consolidating three of fifteen sites is a new inconsistency, not consolidation. **This is the
+     line between L-15b and L-15c: duplication that encodes a decision gets one home, duplication
+     that encodes a formula does not.**
+  3. **`AshenAffliction` was not folded into `EnemyScaling`** though it names itself a third mirror —
+     it scales health, power and XP under one removable tag, a different rule that shares a line.
+  4. ~~**L-17**~~ — the "53 raw content ids in `VendorPanel`" finding was **retracted 2026-08-15 as
+     wrong**: all 47 literals are `Loc.T` **locale keys**, which correctly live in the UI. Moving
+     them to `GameIds` would be actively harmful. Recorded so it is not rediscovered and "fixed".
+  ⚠️ **A KNOWN BOUND, NAMED RATHER THAN BUILT FOR** (invariant 28): `FlightComponent` is attached at
+  build time, so a boss phase that switched to a flying profile at runtime still could not gain
+  flight. **Flight is structural, not a knob a phase can turn.**
+  📖 The report is the plan file from the audit session, and its §N "DO NOT TOUCH" list is still the
+  important half — `CombatMath`, `ShopPricing`/`PriceBreakdown`, `EventBus`, the `.tres` pipeline and
+  the UI/gameplay boundary are healthy, and **refactoring them is how the audit does harm.**
 - 📖 Economy: `ARCHITECTURE.md` §2.6m is the mechanism, `DESIGN.md` §6 + §6.1 the intent.
   🎨 `docs/ASSET_POLICY.md` §0.2–§0.3 is the asset authority.
 
-## Last verified (session close, 2026-08-12 — 41A)
+## Last verified (session close, 2026-08-15 — audit Wave 4)
 
 | | |
 | --- | --- |
-| Build | clean, **0 warnings** |
-| Tests | **1426 passing.** 41A's two enum pins joined an existing `[Fact]`, so the count is unchanged — ⚠️ **a passing count is not evidence a new assert ran**; the negative suite is what proves the new rules bite |
-| `--validate` | exit 0; **1351** locale strings (1331 + 20: the courier quest, Holt's four new nodes, and `quest.gather_iron`'s three converted rows) |
-| **Negative tests** | `python tools/negative_tests.py` — **63/63 broken and restored**, 5 of them 41A's (reach/talk unknown target, redundant `LocationId`, and two literal-text cases). Tree restored clean, and the battery re-proved `--validate` exit 0 afterwards. ⚠️ Runs **over two minutes**, mutates `data/` **and** `scenes/`, refuses a dirty tree; killing it mid-run defeats its own `finally` (`git checkout -- data/ scenes/` recovers) |
-| `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, 33 dialogues, **14 quests** (one deleted, one authored), 64 map locations |
-| **`map_probe`** | **64 markers across 15 cells**, exit 0 |
-| **`--play`** | booted, loaded slot1, **33 objects restored**, **0 errors**. ⚠️ The 3 `CraftingStationComponent` warnings are **pre-existing**. ⚠️ **The six-line "C# backtrace" blocks around them are `PushWarning`'s own trace, not exceptions** |
-| **Rendered** | ✅ **`--panelshots` (9 states), the journal frame opened and read.** It shows the courier quest tracked, both new objective types as localized prose, and **`0/1` on the Reach objective with all 64 locations discovered and the player 53 m away** — which is the only check anywhere that Reach is proximity rather than discovery |
-| Not run | ⚠️ **`--economy` — a quest reward is not a price**, and no price, spread or multiplier was touched. ⚠️ **`--hudshots` — the HUD tracker is visible in the panel frame** (top-right, rendering the new quest and its destination), so the state was captured; the dedicated HUD battery was **reviewed as unchanged, not re-run** |
+| Build | `dotnet build --warnaserror` clean, **0 warnings** — and CI enforces that on every push |
+| Tests | **1426 passing**, unchanged. ⚠️ **No test was added and none could be**: every Wave 4 change is either a Godot-`Resource` path (`AIProfileResource`, `AIProfileDatabase.Get`) or a live-`StatsComponent` path, all excluded by the test project's own no-`GodotObject` rule. **That constraint is exactly why L-12 was refused** |
+| `--validate` | exit 0; **1351** locale strings, unchanged (no string was touched) |
+| **Negative tests** | `python tools/negative_tests.py` — **66/66 broken and restored** (63 → 66 was Wave 2's `ValidateSceneAuthoredIds`; the 2026-08-12 table said 63 and was stale). ⚠️ **No case was added, because Wave 4 added no validator rule** — invariant 6 has nothing to bite here, so the battery was run to prove the existing rules still pass. Tree restored clean, `--validate` exit 0 afterwards. ⚠️ Runs **over two minutes**, mutates `data/` **and** `scenes/`, refuses a dirty tree; killing it mid-run defeats its own `finally` (`git checkout -- data/ scenes/` recovers) |
+| `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, 33 dialogues, **14 quests**, 64 map locations — **identical to 41A's census**, which is the point of running it |
+| **`--play`** | booted, loaded slot1, **33 objects restored**, **10 cells**, **0 errors**. ⚠️ The 3 `CraftingStationComponent` warnings are **pre-existing**. ⚠️ **The six-line "C# backtrace" blocks around them are `PushWarning`'s own trace, not exceptions** |
+| **Verbatim proof** | Wave 3's habit, kept: every moved body diffed against its original normalised for renames — `MapService` **14/14 and 14/14** into one `FindCell`, champion scaling **10/10 and 10/10** into `EnemyScaling`. ⚠️ **A green build does not prove a loop survived** |
+| Not run, deliberately | ⚠️ **`--panelshots` / `--hudshots` — nothing in these three files reaches a `Control`**, so invariant 8 does not apply. Said rather than skipped silently. ⚠️ **`--economy`** — `EnemyScaling` moves a *combat* multiplier, not a price; no price, spread or multiplier was touched. ⚠️ **`map_probe`** — no map location or cell scene changed; `MapService`'s lookup change is a proved-verbatim body move |
+| ⚠️ **Not covered by anything** | **The flight attachment L-14 touches is never exercised by a gate.** No dragon spawns in slot1 and the `F1` console needs keyboard input, so nothing observed a `FlightComponent` being attached. What *is* certain is narrower and worth stating plainly: with no archetype authoring an inline `Profile`, the new expression **reduces to the identical `AIProfileDatabase.Get` call** for every one of the 31 archetypes in `data/`. **Region transitions remain uncovered too** — `MapService` is on that path |
+| MCP | ⚠️ Not needed and not probed — nothing was placed in the world and nothing was rendered |
 | MCP | ⚠️ **DOWN all session, both halves** (`godot-cli status .` → editor not running, 23630 connection refused). Not needed — nothing was placed in the world. ⚠️ **`.claude/skills/*/SKILL.md` had drifted to `ai-game.dev` URLs and was restored, not committed** — that is invariant 8's Cloud-mode tell, and it means the editor was opened from the project manager at some point |
 
 ## Live invariants — the things that will bite you

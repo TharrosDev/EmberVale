@@ -11,9 +11,10 @@ namespace Embervale.Enemies;
 /// so a corrupted wolf is still a wolf rather than a second `.tres` that drifts out of sync with
 /// the first every time either is tuned.
 ///
-/// Mirrors <c>WorldEventDirector.ApplyHealthMultiplier</c>, the codebase's only other spawn-time
-/// enemy variation: build through the registry, then add named stat modifiers after the entity is
-/// in the tree.
+/// Shares its shape with <see cref="EnemyScaling.ApplyHealthMultiplier"/>, the realm's other
+/// spawn-time enemy variation: build through the registry, then add named stat modifiers after the
+/// entity is in the tree. It is deliberately not routed through it — this scales health, power and
+/// XP together under one removable tag, so it is a different rule that happens to share a line.
 ///
 /// The look deliberately reuses the player's corruption language rather than inventing one — the
 /// ash and ember colours below are <c>CorruptionAppearanceController.LookFor</c>'s, and ART_STYLE
