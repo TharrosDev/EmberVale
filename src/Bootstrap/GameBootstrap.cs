@@ -59,20 +59,12 @@ public partial class GameBootstrap : Node3D
     private HotbarPanel _hotbarPanel = null!;
     private QuestLogPanel _questLogPanel = null!;
     private MapScreen _mapScreen = null!;
-    private DialoguePanel _dialoguePanel = null!;
-    private CraftingPanel _craftingPanel = null!;
-    private StoragePanel _storagePanel = null!;
-    private VendorPanel _vendorPanel = null!;
-    private AppraisalPanel _appraisalPanel = null!;
-    private ContractBoardPanel _contractPanel = null!;
     private Housing.PlacementDirector _placement = null!;
     private WorldClock _clock = null!;
     private WeatherDirector _weather = null!;
     private SkyController _sky = null!;
     private PersistentSpawnDirector _persistentSpawns = null!;
     private OpeningSequence? _opening;
-    private DirectionalLight3D _sun = null!;
-    private Godot.Environment _environment = null!;
     private Entity? _dummy;
     private PlayerCharacter? _player;
     private MainMenu? _mainMenu;
@@ -361,7 +353,9 @@ public partial class GameBootstrap : Node3D
     /// session paths.</summary>
     private void BuildWorld()
     {
-        BuildEnvironment();
+        // Sun, sky, tonemap and ground. The two handles come back rather than living in fields:
+        // the SkyController below is their only other reader, and it is in this same method.
+        WorldEnvironmentBuilder.Result env = WorldEnvironmentBuilder.Build(this);
 
         // The purpose-built game HUD is the default overlay; the DebugHud is now a
         // developer panel toggled with F3. Toasts and the pause menu round out the game UI.
@@ -424,25 +418,24 @@ public partial class GameBootstrap : Node3D
         AddChild(_hotbarPanel);
         _questLogPanel = new QuestLogPanel();
         AddChild(_questLogPanel);
-        _dialoguePanel = new DialoguePanel();
-        AddChild(_dialoguePanel);
-        _craftingPanel = new CraftingPanel();
-        AddChild(_craftingPanel);
+        // ⚠️ The six panels below are added WITHOUT a field, and that is deliberate. Each is
+        // event-driven — one instance answering every merchant, container, appraiser or board in the
+        // world — so once it is in the tree nothing ever calls back into it. They used to be stored
+        // in fields that were assigned and never read again: object state describing nothing.
+        // A new panel earns a field when something reads it, not because its neighbours have one.
+        AddChild(new DialoguePanel());
+        AddChild(new CraftingPanel());
         // The stash window (37B) — event-driven like the crafting panel, one instance for every
         // container in the world.
-        _storagePanel = new StoragePanel();
-        AddChild(_storagePanel);
+        AddChild(new StoragePanel());
         // The shop window (38A) — same one-instance-for-every-merchant shape as the two above.
-        _vendorPanel = new VendorPanel();
-        AddChild(_vendorPanel);
+        AddChild(new VendorPanel());
         // The appraiser's window (38P2) — the first panel that only reads. Same one instance for
         // every appraiser, answered off an event, so the service knows nothing about the UI.
-        _appraisalPanel = new AppraisalPanel();
-        AddChild(_appraisalPanel);
+        AddChild(new AppraisalPanel());
         // The caravan board (38Q2) — one instance for every board, answered off an event. It reads the
         // clock rather than a snapshot, so what it shows cannot go stale while it is open.
-        _contractPanel = new ContractBoardPanel();
-        AddChild(_contractPanel);
+        AddChild(new ContractBoardPanel());
 
         // The world clock drives NPC routines; create it before the NPCs below so it is
         // registered in the ServiceLocator when their schedules first read the time.
@@ -458,7 +451,7 @@ public partial class GameBootstrap : Node3D
         _hud?.SetWeather(_weather);
         _gameHud.SetWeather(_weather);
 
-        _sky = new SkyController { Name = "Sky", Sun = _sun, Environment = _environment };
+        _sky = new SkyController { Name = "Sky", Sun = env.Sun, Environment = env.Environment };
         AddChild(_sky);
 
         // Persistent spawned actors: a director that recreates saved named actors/containers on
@@ -629,113 +622,11 @@ public partial class GameBootstrap : Node3D
         _streamer.Configure(region);
         AddChild(_streamer);
         ServiceLocator.Instance?.Register(_streamer);
-        SpawnRegionPortals(region);
-        ApplySafeZones(region);
+        RegionSetup.RebuildPortals(this, _portals, region);
+        RegionSetup.ApplySafeZones(region);
         Weave.Set(region?.WeavePotency ?? Weave.DefaultPotency);
     }
 
-    /// <summary>
-    /// Rebuilds the no-spawn areas for a region (Phase 38K): its own hub bubble, then one per cell that
-    /// declares a <see cref="RegionCellResource.SafeRadius"/>.
-    ///
-    /// ⚠️ <see cref="SafeZones.Set"/> <b>replaces</b> rather than adds, and it must be called first —
-    /// otherwise a region transition leaves the previous realm's districts protecting empty ground in
-    /// this one, and the symptom is enemies quietly refusing to spawn in a place with nothing there.
-    /// The same replace-never-merge rule every <c>ISaveable.Load</c> follows, for the same reason.
-    /// </summary>
-    private static void ApplySafeZones(RegionResource? region)
-    {
-        SafeZones.Set(region?.SafeZoneCenter ?? Vector3.Zero, region?.SafeZoneRadius ?? 0f);
-
-        if (region == null)
-        {
-            return;
-        }
-
-        foreach (RegionCellResource cell in region.Cells)
-        {
-            if (cell != null)
-            {
-                SafeZones.Add(cell.Center, cell.SafeRadius);
-            }
-        }
-    }
-
-    /// <summary>Places a hard-transition portal for each of the region's neighbours (Phase 25C), a
-    /// few metres in front of where the player enters. Clears any prior region's portals first so a
-    /// transition swaps them out. Mirrors the other code-built actors: an Entity + mesh + collider +
-    /// a <see cref="RegionTransitionComponent"/>.</summary>
-    private void SpawnRegionPortals(RegionResource? region)
-    {
-        foreach (Entity portal in _portals)
-        {
-            if (IsInstanceValid(portal))
-            {
-                portal.QueueFree();
-            }
-        }
-
-        _portals.Clear();
-
-        if (region == null)
-        {
-            return;
-        }
-
-        foreach (string neighbourId in region.Neighbours)
-        {
-            RegionResource? neighbour = RegionDatabase.Get(neighbourId);
-            if (neighbour == null)
-            {
-                Log.Warn($"SpawnRegionPortals: region '{region.Id}' lists unknown neighbour '{neighbourId}'.");
-                continue;
-            }
-
-            // 38M2: a region can say where its doors stand. Empty means the original "a few metres in
-            // front of the spawn", which is still right for a region with no gate of its own.
-            var portal = new Entity
-            {
-                Name = $"Portal_{neighbourId}",
-                DisplayName = neighbour.DisplayName,
-                Position = region.PortalPoint != Vector3.Zero
-                    ? region.PortalPoint
-                    : region.SpawnPoint + new Vector3(0f, -1.2f, -4f),
-            };
-
-            portal.AddChild(new MeshInstance3D
-            {
-                Name = "Mesh",
-                Mesh = new TorusMesh { InnerRadius = 0.9f, OuterRadius = 1.3f },
-                Position = new Vector3(0f, 1.6f, 0f),
-                MaterialOverride = new StandardMaterial3D
-                {
-                    AlbedoColor = new Color(0.5f, 0.75f, 1f),
-                    EmissionEnabled = true,
-                    Emission = new Color(0.35f, 0.6f, 1f),
-                },
-            });
-
-            var collider = new StaticBody3D { Name = "Collider" };
-            collider.AddChild(new CollisionShape3D
-            {
-                Shape = new CylinderShape3D { Radius = 1.3f, Height = 3.2f },
-                Position = new Vector3(0f, 1.6f, 0f),
-            });
-            portal.AddChild(collider);
-
-            portal.AddChild(new RegionTransitionComponent
-            {
-                Name = "Transition",
-                TargetRegionId = neighbourId,
-
-                // The destination decides what unlocks it (33D). Frostfang carries the Iron King's
-                // defeat flag, which keeps the slice's cliffhanger door out of the starting square.
-                RequiredFlagId = neighbour.UnlockFlagId,
-            });
-            AddChild(portal);
-            _portals.Add(portal);
-        }
-    }
 
     /// <summary>Performs a hard region-to-region load (Phase 25C): show the loading screen, unload the
     /// current region's cells, re-target the streamer, teleport the player to the destination spawn,
@@ -755,7 +646,7 @@ public partial class GameBootstrap : Node3D
             return;
         }
 
-        if (!PayToll(destination))
+        if (!RegionSetup.PayToll(_player, destination))
         {
             return;
         }
@@ -763,61 +654,6 @@ public partial class GameBootstrap : Node3D
         PerformRegionLoad(destination, destination.SpawnPoint, $"Entering {destination.DisplayName}...");
     }
 
-    /// <summary>
-    /// Takes the road wardens' toll for entering <paramref name="destination"/> (Phase 38M), and
-    /// answers whether the crossing may proceed.
-    ///
-    /// This is here rather than in <see cref="RegionTransitionComponent"/> because it is the one place
-    /// the portal and the <c>region</c> dev command both arrive — 38C's lesson from the travel fee,
-    /// where gating the map screen alone would have left the console a free ride. It is deliberately
-    /// <em>not</em> on the fast-travel path: that already pays <c>TravelFee</c>, and one journey does
-    /// not pay two charges.
-    ///
-    /// Fails closed, like the travel fee: no gold, no crossing. The refusal is not toasted because
-    /// <c>Notifications</c> has no generic message event — the portal's own prompt has already named
-    /// the price and the shortfall, which is <c>ServiceComponent</c>'s rule that every refusal says
-    /// itself where the player is already looking.
-    /// </summary>
-    private bool PayToll(RegionResource destination)
-    {
-        if (destination.TollGold <= 0 || _player == null)
-        {
-            return true;
-        }
-
-        StoryFlagsComponent? flags = _player.GetComponent<StoryFlagsComponent>();
-        InventoryComponent? purse = _player.GetComponent<InventoryComponent>();
-
-        switch (Economy.TollFee.Resolve(
-            hasPermit: flags?.Has(destination.TollPermitFlagId) ?? false,
-            hasPass: flags?.Has(destination.TollPassFlagId) ?? false,
-            fee: destination.TollGold,
-            goldHeld: purse?.CountOf(GameIds.Currency.Gold) ?? 0))
-        {
-            case Economy.TollOutcome.PassSpent:
-                flags?.Clear(destination.TollPassFlagId);
-                Log.Info($"Toll at '{destination.Id}' covered by a one-crossing pass.");
-                return true;
-
-            case Economy.TollOutcome.Charged:
-                // The RemoveItem is still its own condition: chained into the Resolve above, a purse
-                // that emptied between the prompt and the press would fall through to a free crossing.
-                if (purse?.RemoveItem(GameIds.Currency.Gold, destination.TollGold) != true)
-                {
-                    Log.Warn($"Toll at '{destination.Id}' refused: {destination.TollGold} gold required.");
-                    return false;
-                }
-
-                return true;
-
-            case Economy.TollOutcome.CannotAfford:
-                Log.Warn($"Toll at '{destination.Id}' refused: {destination.TollGold} gold required.");
-                return false;
-
-            default:
-                return true; // Free, or a permit the player has already bought
-        }
-    }
 
     /// <summary>Fast-travels to a discovered <see cref="FastTravelService"/> node (Phase 25G): resolves
     /// the node and reuses the 25C hard-load path, but lands the player at the node's exact position
@@ -870,8 +706,8 @@ public partial class GameBootstrap : Node3D
             _currentRegionId = destination.Id;
             _streamer.Configure(destination);
             _mapService?.DiscoverRegion(destination.Id); // entering reveals it on the map (Phase 25E)
-            SpawnRegionPortals(destination);
-            ApplySafeZones(destination);
+            RegionSetup.RebuildPortals(this, _portals, destination);
+            RegionSetup.ApplySafeZones(destination);
             Weave.Set(destination.WeavePotency);
         }
 
@@ -1062,77 +898,6 @@ public partial class GameBootstrap : Node3D
     }
 
     // --- Scene assembly -----------------------------------------------------
-
-    private void BuildEnvironment()
-    {
-        // No camera here — the player provides the active third-person camera. The sun's
-        // orientation/energy/colour are animated by the SkyController off the world clock.
-        _sun = new DirectionalLight3D
-        {
-            Name = "Sun",
-            RotationDegrees = new Vector3(-55f, -40f, 0f),
-            ShadowEnabled = true,
-            // Softer, less crisp shadows suit the hazy dying-world mood (Phase 27F).
-            ShadowBlur = 1.5f,
-        };
-        AddChild(_sun);
-
-        // Sky background; with the sky ambient source this also provides soft ambient light, so
-        // unlit faces are not pure black. The SkyController dims the sky at night and applies
-        // weather fog to this env. The base look here is the dying-world palette (Phase 27F) — an
-        // ashen, overcast-leaning sky rather than the bright procedural blue; see SkyController for
-        // the day/night + haze tuning that rides on top. This is the reference bar for all regions.
-        var sky = new ProceduralSkyMaterial
-        {
-            // Desaturated grey-blue overhead fading to a dusty warm-grey horizon; dim brown-grey ground.
-            SkyTopColor = new Color(0.42f, 0.45f, 0.50f),
-            SkyHorizonColor = new Color(0.60f, 0.57f, 0.52f),
-            SkyEnergyMultiplier = 0.7f,
-            GroundHorizonColor = new Color(0.40f, 0.37f, 0.34f),
-            GroundBottomColor = new Color(0.24f, 0.22f, 0.20f),
-            SunAngleMax = 18f,
-        };
-
-        var worldEnv = new WorldEnvironment();
-        _environment = new Godot.Environment
-        {
-            BackgroundMode = Godot.Environment.BGMode.Sky,
-            // ACES tonemap with a slightly pulled-back exposure keeps the muted, filmic dying look.
-            TonemapMode = Godot.Environment.ToneMapper.Aces,
-            TonemapExposure = 0.95f,
-            TonemapWhite = 6f,
-            // A breath of warm-grey ambient fill so shadowed faces read ashen, not black.
-            AmbientLightSource = Godot.Environment.AmbientSource.Sky,
-            AmbientLightColor = new Color(0.46f, 0.44f, 0.42f),
-            AmbientLightSkyContribution = 0.85f,
-            AmbientLightEnergy = 1.0f,
-            // Soft bloom so embers, fires and bright highlights bleed a little.
-            GlowEnabled = true,
-            GlowIntensity = 0.5f,
-            GlowBloom = 0.1f,
-            GlowStrength = 0.9f,
-        };
-        _environment.Sky = new Sky { SkyMaterial = sky };
-        worldEnv.Environment = _environment;
-        AddChild(worldEnv);
-
-        // A generous ground plane so dynamic encounters (spawned ~14–20m out) land on
-        // visible terrain; the collider below is an infinite plane regardless. Sits 5 cm below
-        // y=0 so authored region greybox floors (top at y=0, Phase 27A) render cleanly on top of
-        // it instead of z-fighting; the WorldBoundary collider stays at y=0 so standing is unchanged.
-        var floor = new MeshInstance3D
-        {
-            Mesh = new PlaneMesh { Size = new Vector2(80f, 80f) },
-            MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.18f, 0.22f, 0.20f) },
-            Position = new Vector3(0f, -0.05f, 0f),
-        };
-        AddChild(floor);
-
-        // Physics collider for the ground so the player can stand on it.
-        var floorBody = new StaticBody3D { Name = "FloorBody" };
-        floorBody.AddChild(new CollisionShape3D { Shape = new WorldBoundaryShape3D() });
-        AddChild(floorBody);
-    }
 
     private void SpawnEncounterDirector()
     {

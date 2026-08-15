@@ -106,11 +106,25 @@ existed the same three lines were maintained in four places and rewritten every 
   **refuses** an unmigratable save instead of best-efforting it. 📖 **`docs/SAVE_FORMAT.md` is new
   and is the contract** — read it before touching anything that saves, and note its "what is
   deliberately NOT saved" list before filing a bug against a decision.
-- ⚠️ **WAVES 3–4 ARE FINDINGS, NOT WORK.** The report is the plan file from that session, and its
+- ✅ **WAVE 3 (structure) IS PARTLY LANDED — `GameBootstrap` 1501 → 1266 lines and 8 fields gone.**
+  Three commits, taken at the 41A/41B boundary: `WorldEnvironmentBuilder` (sun/sky/tonemap/ground),
+  six write-only panel fields deleted, and `RegionSetup` (safe zones, portals, toll).
+  ⚠️ **TWO EXTRACTIONS WERE REFUSED WITH REASONS, AND THE REASONS ARE THE USEFUL PART:**
+  1. **`DebugHotkeys`** — the roadmap called it easy because it is already behind
+     `BuildProfile.ShowDeveloperTools`. It is not: the block reaches `_dummy`, `_respawnCountdown`,
+     `_player`, `_console`, `_hud`, `_profiler` and `AbortToTitle`, so extracting it **relocates**
+     coupling. `SandboxProps` already ruled on that exact state and wrote down why.
+  2. **The region-transition state machine** (~290 lines: streamer swap, fast travel,
+     `PerformRegionLoad`, `_currentRegionId`). ⚠️ **NOTHING HERE EXERCISES A REGION TRANSITION** —
+     `--play` never walks a portal, `--panelshots` never travels — so it would ship verified by
+     reading. **It waits for a session with a playthrough in it.**
+  ⚠️ **A refactor of code no gate covers is a refactor that needs a human, and saying so is cheaper
+  than a regression found three phases later.**
+- ⚠️ **WAVE 4 IS FINDINGS, NOT WORK**, and its items are opportunistic — do them when the file is
+  already open, never as scheduled work. The report is the plan file from that session, and its
   §N "DO NOT TOUCH" list is the important half — `CombatMath`, `ShopPricing`/`PriceBreakdown`,
   `EventBus`, the `.tres` pipeline and the UI/gameplay boundary are healthy, and **refactoring them
-  is how the audit does harm.** ⚠️ **Wave 3 is `GameBootstrap`'s 17 responsibilities and is scheduled
-  against a phase boundary, never mid-phase.**
+  is how the audit does harm.**
 - 📖 Economy: `ARCHITECTURE.md` §2.6m is the mechanism, `DESIGN.md` §6 + §6.1 the intent.
   🎨 `docs/ASSET_POLICY.md` §0.2–§0.3 is the asset authority.
 
