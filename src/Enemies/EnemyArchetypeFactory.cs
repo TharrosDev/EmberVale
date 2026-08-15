@@ -131,7 +131,8 @@ public static class EnemyArchetypeFactory
             enemy.AddChild(new Dialogue.DialogueComponent { Name = "Dialogue", DialogueId = archetype.DialogueId });
         }
 
-        enemy.AddChild(new EnemyAIComponent { Name = "AI", ProfileId = archetype.AiProfileId });
+        var ai = new EnemyAIComponent { Name = "AI", ProfileId = archetype.AiProfileId };
+        enemy.AddChild(ai);
 
         // Phase 36A: a boss archetype gets the phase/ability/enrage/telegraph controller. Before
         // this only the Iron King's bespoke factory attached one, so the three dragons were
@@ -154,8 +155,12 @@ public static class EnemyArchetypeFactory
         }
 
         // 35B: flight is a property of the AI profile, not of the archetype — a profile with a
-        // takeoff range gets the vertical axis, everything else is untouched.
-        if (AIProfileDatabase.Get(archetype.AiProfileId) is { TakeoffRange: > 0f })
+        // takeoff range gets the vertical axis, everything else is untouched. Asked through the
+        // brain's own resolver rather than the database, so the two cannot answer differently for an
+        // actor that inlines its profile. ⚠️ The component is attached HERE, at build time, so a
+        // profile swapped in later (a boss phase writing ProfileId) cannot grant flight — flight is
+        // structural, not a knob a phase can turn.
+        if (EnemyAIComponent.Resolve(ai.ProfileId, ai.Profile) is { TakeoffRange: > 0f })
         {
             enemy.AddChild(new FlightComponent { Name = "Flight" });
         }
