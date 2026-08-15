@@ -71,8 +71,6 @@ public partial class GameBootstrap : Node3D
     private SkyController _sky = null!;
     private PersistentSpawnDirector _persistentSpawns = null!;
     private OpeningSequence? _opening;
-    private DirectionalLight3D _sun = null!;
-    private Godot.Environment _environment = null!;
     private Entity? _dummy;
     private PlayerCharacter? _player;
     private MainMenu? _mainMenu;
@@ -361,7 +359,9 @@ public partial class GameBootstrap : Node3D
     /// session paths.</summary>
     private void BuildWorld()
     {
-        BuildEnvironment();
+        // Sun, sky, tonemap and ground. The two handles come back rather than living in fields:
+        // the SkyController below is their only other reader, and it is in this same method.
+        WorldEnvironmentBuilder.Result env = WorldEnvironmentBuilder.Build(this);
 
         // The purpose-built game HUD is the default overlay; the DebugHud is now a
         // developer panel toggled with F3. Toasts and the pause menu round out the game UI.
@@ -458,7 +458,7 @@ public partial class GameBootstrap : Node3D
         _hud?.SetWeather(_weather);
         _gameHud.SetWeather(_weather);
 
-        _sky = new SkyController { Name = "Sky", Sun = _sun, Environment = _environment };
+        _sky = new SkyController { Name = "Sky", Sun = env.Sun, Environment = env.Environment };
         AddChild(_sky);
 
         // Persistent spawned actors: a director that recreates saved named actors/containers on
@@ -1062,77 +1062,6 @@ public partial class GameBootstrap : Node3D
     }
 
     // --- Scene assembly -----------------------------------------------------
-
-    private void BuildEnvironment()
-    {
-        // No camera here — the player provides the active third-person camera. The sun's
-        // orientation/energy/colour are animated by the SkyController off the world clock.
-        _sun = new DirectionalLight3D
-        {
-            Name = "Sun",
-            RotationDegrees = new Vector3(-55f, -40f, 0f),
-            ShadowEnabled = true,
-            // Softer, less crisp shadows suit the hazy dying-world mood (Phase 27F).
-            ShadowBlur = 1.5f,
-        };
-        AddChild(_sun);
-
-        // Sky background; with the sky ambient source this also provides soft ambient light, so
-        // unlit faces are not pure black. The SkyController dims the sky at night and applies
-        // weather fog to this env. The base look here is the dying-world palette (Phase 27F) — an
-        // ashen, overcast-leaning sky rather than the bright procedural blue; see SkyController for
-        // the day/night + haze tuning that rides on top. This is the reference bar for all regions.
-        var sky = new ProceduralSkyMaterial
-        {
-            // Desaturated grey-blue overhead fading to a dusty warm-grey horizon; dim brown-grey ground.
-            SkyTopColor = new Color(0.42f, 0.45f, 0.50f),
-            SkyHorizonColor = new Color(0.60f, 0.57f, 0.52f),
-            SkyEnergyMultiplier = 0.7f,
-            GroundHorizonColor = new Color(0.40f, 0.37f, 0.34f),
-            GroundBottomColor = new Color(0.24f, 0.22f, 0.20f),
-            SunAngleMax = 18f,
-        };
-
-        var worldEnv = new WorldEnvironment();
-        _environment = new Godot.Environment
-        {
-            BackgroundMode = Godot.Environment.BGMode.Sky,
-            // ACES tonemap with a slightly pulled-back exposure keeps the muted, filmic dying look.
-            TonemapMode = Godot.Environment.ToneMapper.Aces,
-            TonemapExposure = 0.95f,
-            TonemapWhite = 6f,
-            // A breath of warm-grey ambient fill so shadowed faces read ashen, not black.
-            AmbientLightSource = Godot.Environment.AmbientSource.Sky,
-            AmbientLightColor = new Color(0.46f, 0.44f, 0.42f),
-            AmbientLightSkyContribution = 0.85f,
-            AmbientLightEnergy = 1.0f,
-            // Soft bloom so embers, fires and bright highlights bleed a little.
-            GlowEnabled = true,
-            GlowIntensity = 0.5f,
-            GlowBloom = 0.1f,
-            GlowStrength = 0.9f,
-        };
-        _environment.Sky = new Sky { SkyMaterial = sky };
-        worldEnv.Environment = _environment;
-        AddChild(worldEnv);
-
-        // A generous ground plane so dynamic encounters (spawned ~14–20m out) land on
-        // visible terrain; the collider below is an infinite plane regardless. Sits 5 cm below
-        // y=0 so authored region greybox floors (top at y=0, Phase 27A) render cleanly on top of
-        // it instead of z-fighting; the WorldBoundary collider stays at y=0 so standing is unchanged.
-        var floor = new MeshInstance3D
-        {
-            Mesh = new PlaneMesh { Size = new Vector2(80f, 80f) },
-            MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.18f, 0.22f, 0.20f) },
-            Position = new Vector3(0f, -0.05f, 0f),
-        };
-        AddChild(floor);
-
-        // Physics collider for the ground so the player can stand on it.
-        var floorBody = new StaticBody3D { Name = "FloorBody" };
-        floorBody.AddChild(new CollisionShape3D { Shape = new WorldBoundaryShape3D() });
-        AddChild(floorBody);
-    }
 
     private void SpawnEncounterDirector()
     {
