@@ -15,6 +15,12 @@
 ;   - Condition = 13 (ShopClosed) puts the closing time in the merchant's own mouth rather than
 ;     letting the option silently do nothing.
 
+; ⚠️ THE LEDGER RUN IS TWO CHOICES DEEP AND THAT IS ON PURPOSE (41B). A DialogueChoice carries ONE
+; effect, and this errand needs two things to happen - the quest starts, and Tessa joins the party -
+; so accepting goes to a second node whose only choice recruits her. The root's Condition = 2
+; (QuestActive) door back into that node is what covers the player who accepted and then walked off
+; without her: without it, the quest would be live with nobody to escort and no way to fix it.
+
 [sub_resource type="Resource" id="ch_trade"]
 script = ExtResource("3_choice")
 Text = "dlg.sedge.c_trade"
@@ -56,11 +62,42 @@ Goto = "root"
 script = ExtResource("3_choice")
 Text = "dlg.sedge.c_talk_bye"
 
+[sub_resource type="Resource" id="ch_ledger"]
+script = ExtResource("3_choice")
+Text = "dlg.sedge.c_ledger"
+Condition = 1
+ConditionArg = "quest.hollowreach.ledger"
+Goto = "ledger"
+
+[sub_resource type="Resource" id="ch_ledger_resume"]
+script = ExtResource("3_choice")
+Text = "dlg.sedge.c_ledger_resume"
+Condition = 2
+ConditionArg = "quest.hollowreach.ledger"
+Goto = "ledger_go"
+
+[sub_resource type="Resource" id="ch_ledger_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.sedge.c_ledger_accept"
+Goto = "ledger_go"
+Effect = 1
+EffectArg = "quest.hollowreach.ledger"
+
+[sub_resource type="Resource" id="ch_ledger_decline"]
+script = ExtResource("3_choice")
+Text = "dlg.sedge.c_ledger_decline"
+
+[sub_resource type="Resource" id="ch_ledger_go"]
+script = ExtResource("3_choice")
+Text = "dlg.sedge.c_ledger_go"
+Effect = 5
+EffectArg = "companion.tessa"
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.sedge.root"
-Choices = Array[Resource]([SubResource("ch_trade"), SubResource("ch_closed"), SubResource("ch_talk"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_ledger"), SubResource("ch_ledger_resume"), SubResource("ch_trade"), SubResource("ch_closed"), SubResource("ch_talk"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_talk"]
 script = ExtResource("2_node")
@@ -74,9 +111,21 @@ Id = "closed"
 Text = "dlg.sedge.closed"
 Choices = Array[Resource]([SubResource("ch_talk"), SubResource("ch_bye")])
 
+[sub_resource type="Resource" id="node_ledger"]
+script = ExtResource("2_node")
+Id = "ledger"
+Text = "dlg.sedge.ledger"
+Choices = Array[Resource]([SubResource("ch_ledger_accept"), SubResource("ch_ledger_decline")])
+
+[sub_resource type="Resource" id="node_ledger_go"]
+script = ExtResource("2_node")
+Id = "ledger_go"
+Text = "dlg.sedge.ledger_go"
+Choices = Array[Resource]([SubResource("ch_ledger_go")])
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.sedge"
 SpeakerName = "dlg.sedge.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_talk"), SubResource("node_closed")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_talk"), SubResource("node_closed"), SubResource("node_ledger"), SubResource("node_ledger_go")])

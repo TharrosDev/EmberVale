@@ -4,6 +4,11 @@
 [ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
 
+; ⚠️ THE SECOND POSTING IS A COPY OF THE FIRST'S SHAPE, NOT A VARIATION ON IT (41B). The board now
+; carries two quests, and the offer/active/completed triple is repeated verbatim for the hold with a
+; hold_ prefix. A board that answered its two postings in two different shapes would be the kind of
+; drift nothing greps - and the bounty's triple is the one every other giver in the game copies.
+
 [sub_resource type="Resource" id="ch_offer"]
 script = ExtResource("3_choice")
 Text = "dlg.guild_board.c_offer"
@@ -52,11 +57,55 @@ Text = "dlg.guild_board.c_inprogress_bye"
 script = ExtResource("3_choice")
 Text = "dlg.guild_board.c_thanks_bye"
 
+[sub_resource type="Resource" id="ch_hold_offer"]
+script = ExtResource("3_choice")
+Text = "dlg.guild_board.c_hold_offer"
+Goto = "hold"
+Condition = 1
+ConditionArg = "quest.warband.hold_north"
+
+[sub_resource type="Resource" id="ch_hold_active"]
+script = ExtResource("3_choice")
+Text = "dlg.guild_board.c_hold_active"
+Goto = "hold_inprogress"
+Condition = 2
+ConditionArg = "quest.warband.hold_north"
+
+[sub_resource type="Resource" id="ch_hold_thanks"]
+script = ExtResource("3_choice")
+Text = "dlg.guild_board.c_hold_thanks"
+Goto = "hold_thanks"
+Condition = 3
+ConditionArg = "quest.warband.hold_north"
+
+[sub_resource type="Resource" id="ch_hold_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.guild_board.c_hold_accept"
+Goto = "hold_accepted"
+Effect = 1
+EffectArg = "quest.warband.hold_north"
+
+[sub_resource type="Resource" id="ch_hold_decline"]
+script = ExtResource("3_choice")
+Text = "dlg.guild_board.c_hold_decline"
+
+[sub_resource type="Resource" id="ch_hold_accepted_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.guild_board.c_hold_accepted_bye"
+
+[sub_resource type="Resource" id="ch_hold_inprogress_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.guild_board.c_hold_inprogress_bye"
+
+[sub_resource type="Resource" id="ch_hold_thanks_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.guild_board.c_hold_thanks_bye"
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.guild_board.root"
-Choices = Array[Resource]([SubResource("ch_offer"), SubResource("ch_active"), SubResource("ch_thanks"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_offer"), SubResource("ch_active"), SubResource("ch_thanks"), SubResource("ch_hold_offer"), SubResource("ch_hold_active"), SubResource("ch_hold_thanks"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_offer"]
 script = ExtResource("2_node")
@@ -82,9 +131,33 @@ Id = "thanks"
 Text = "dlg.guild_board.thanks"
 Choices = Array[Resource]([SubResource("ch_thanks_bye")])
 
+[sub_resource type="Resource" id="node_hold"]
+script = ExtResource("2_node")
+Id = "hold"
+Text = "dlg.guild_board.hold"
+Choices = Array[Resource]([SubResource("ch_hold_accept"), SubResource("ch_hold_decline")])
+
+[sub_resource type="Resource" id="node_hold_accepted"]
+script = ExtResource("2_node")
+Id = "hold_accepted"
+Text = "dlg.guild_board.hold_accepted"
+Choices = Array[Resource]([SubResource("ch_hold_accepted_bye")])
+
+[sub_resource type="Resource" id="node_hold_inprogress"]
+script = ExtResource("2_node")
+Id = "hold_inprogress"
+Text = "dlg.guild_board.hold_inprogress"
+Choices = Array[Resource]([SubResource("ch_hold_inprogress_bye")])
+
+[sub_resource type="Resource" id="node_hold_thanks"]
+script = ExtResource("2_node")
+Id = "hold_thanks"
+Text = "dlg.guild_board.hold_thanks"
+Choices = Array[Resource]([SubResource("ch_hold_thanks_bye")])
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.guild_board"
 SpeakerName = "dlg.guild_board.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_offer"), SubResource("node_accepted"), SubResource("node_inprogress"), SubResource("node_thanks")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_offer"), SubResource("node_accepted"), SubResource("node_inprogress"), SubResource("node_thanks"), SubResource("node_hold"), SubResource("node_hold_accepted"), SubResource("node_hold_inprogress"), SubResource("node_hold_thanks")])

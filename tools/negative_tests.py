@@ -431,6 +431,31 @@ CASES = [
        'Description = "Ask Sedge Marrow about the barrels"')],
      "is not a key in data/locale/strings.csv"),
 
+    # ---- 41B: escort and defend, and the two fields whose meaning changes with the type ----------
+    # An escort names a person AND a destination. Either half missing is an objective that can never
+    # advance, and the missing-destination case is the one nothing at runtime would ever explain.
+    ("quest.escort_unknown_companion", "ValidateQuests",
+     [("data/quests/LedgerRun.tres",
+       'TargetId = "companion.tessa"', 'TargetId = "companion.nobody"')],
+     "names unknown companion"),
+
+    ("quest.escort_without_destination", "ValidateQuests",
+     [("data/quests/LedgerRun.tres",
+       'LocationId = "location.embermarket.market"', 'LocationId = ""')],
+     "sets no LocationId"),
+
+    ("quest.defend_unknown_location", "ValidateQuests",
+     [("data/quests/HoldTheNorthRoad.tres",
+       'TargetId = "location.wilds.north"', 'TargetId = "location.wilds.nowhere"')],
+     "references unknown map location"),
+
+    # ⚠️ RequiredCount is SECONDS on a Defend objective and a tally on every other type, so the
+    # authoring default of 1 means a quarter-second hold that completes before the player stops
+    # walking. This is the rule that catches an author who copied a Kill objective.
+    ("quest.defend_hold_too_short", "ValidateQuests",
+     [("data/quests/HoldTheNorthRoad.tres", "RequiredCount = 60", "RequiredCount = 1")],
+     "RequiredCount is seconds"),
+
     ("maploc.location_never_placed", "ValidateMapMarkersArePlaced",
      [("scenes/regions/ember_crown/town_hub.tscn",
        '\n[node name="MapPin" type="Node3D" parent="VendorSmith"]\n'

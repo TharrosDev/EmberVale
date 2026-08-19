@@ -80,12 +80,14 @@ public partial class QuestLogPanel : UiPanel
             return;
         }
 
-        // Main / Side / Completed.
+        // Main / Side / Completed / Failed.
         //
-        // ⚠️ There is deliberately **no Failed section**. `QuestStatus` has exactly two members,
-        // Active and Completed - nothing in the game can fail a quest, so a Failed heading would be
-        // a permanently empty promise. Same call as the omitted Contracts and Exploration headings:
-        // the journal shows the states the data actually has. Add the section when the state exists.
+        // ⚠️ The Failed section arrived with the state, not before it (41B). Until this sub-phase
+        // `QuestStatus` had exactly two members and nothing in the game could fail a quest, so the
+        // heading would have been a permanently empty promise - the same call as the still-omitted
+        // Contracts and Exploration headings. The journal shows the states the data actually has,
+        // which is invariant 28 read from the UI side: check whether the state exists before
+        // building the presentation of it.
         int active = 0;
         active += BuildSection(Loc.T("questlog.main"), UiTheme.QuestMain, true);
         active += BuildSection(Loc.T("questlog.side"), UiTheme.QuestSide, false);
@@ -96,6 +98,7 @@ public partial class QuestLogPanel : UiPanel
         }
 
         BuildCompleted();
+        BuildFailed();
     }
 
     /// <summary>Builds one active-quest section, returning how many it drew so the caller can tell
@@ -147,6 +150,43 @@ public partial class QuestLogPanel : UiPanel
             PanelContainer card = UiTheme.Card(UiTheme.QuestComplete);
             MarginContainer pad = UiTheme.Padding(UiTheme.SpaceXs);
             pad.AddChild(UiTheme.Body($"✓ {Loc.T(progress.Quest.Title)}", UiTheme.QuestComplete));
+            card.AddChild(pad);
+            _list.AddChild(card);
+        }
+    }
+
+    /// <summary>
+    /// The quests that ended badly (41B). Drawn like the completed list and below it — a failure is
+    /// history, not work — but with the ✗ mark and <see cref="UiTheme.QuestFailed"/> beside
+    /// completed's ✓, so the two are never told apart by colour alone (UI_STYLE §2).
+    ///
+    /// ⚠️ It says nothing about the quest being retakeable. That fact belongs to the giver's
+    /// conversation, which reopens on its own because <c>CanStart</c> allows a failed quest — a
+    /// journal line promising a second chance would be a second answer to a question the dialogue
+    /// already owns.
+    /// </summary>
+    private void BuildFailed()
+    {
+        var lost = new List<QuestProgress>();
+        foreach (QuestProgress progress in _log!.Quests)
+        {
+            if (progress.Status == QuestStatus.Failed)
+            {
+                lost.Add(progress);
+            }
+        }
+
+        if (lost.Count == 0)
+        {
+            return;
+        }
+
+        _list.AddChild(UiTheme.SectionRule(Loc.T("questlog.failed")));
+        foreach (QuestProgress progress in lost)
+        {
+            PanelContainer card = UiTheme.Card(UiTheme.QuestFailed);
+            MarginContainer pad = UiTheme.Padding(UiTheme.SpaceXs);
+            pad.AddChild(UiTheme.Body($"✗ {Loc.T(progress.Quest.Title)}", UiTheme.QuestFailed));
             card.AddChild(pad);
             _list.AddChild(card);
         }

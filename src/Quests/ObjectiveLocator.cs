@@ -60,7 +60,11 @@ public static class ObjectiveLocator
             // not an actor — there is nothing in the tree to find. It is also the one type whose
             // TargetId IS a location id, so it needs no LocationId fallback and authoring one on a
             // Reach objective is a mistake the validator refuses.
-            ObjectiveType.Reach => LocationPosition(objective.TargetId),
+            // Defend is Reach's sibling here: its target is a place too, so it resolves the same way
+            // (41B). Escort deliberately has NO branch — the live "target" would be the companion
+            // walking beside you, and an arrow pointing at your own escort is the least useful thing
+            // the compass could draw. It falls through to LocationOf below, which is the destination.
+            ObjectiveType.Reach or ObjectiveType.Defend => LocationPosition(objective.TargetId),
             _ => null,
         };
 

@@ -1,0 +1,48 @@
+[gd_resource type="Resource" script_class="CompanionResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/Companions/CompanionResource.cs" id="1_companion"]
+
+; Tessa Rill, Sedge Marrow's hull-hand at Hollowreach (Phase 41B) — the third companion, and the
+; first who exists to be PROTECTED rather than to fight beside you.
+;
+; ⚠️ SHE IS A COMPANION BECAUSE NOTHING ELSE IN THIS BUILD CAN BE HURT. The seventeen authored NPCs
+; are Entity nodes with a static collider, no StatsComponent and no hurtbox — an enemy cannot damage
+; one, which means an escort quest built on an NPC has no honest fail state at all. CompanionFactory
+; already assembles a body with health, combat, follow AI, a leash and persistence from exactly this
+; file, and DialogueEffect.RecruitCompanion already puts it beside the player, so the whole of the
+; escort mechanic is this .tres plus two dialogue choices.
+;
+; ⚠️ RecruitQuestId IS SET AND LoyaltyQuestId IS NOT, which is the opposite of both existing
+; companions. Kael has both (sworn, then deepened); Wren has neither (bought). Tessa is recruited by
+; one errand and has no second act — authoring an id for one would be a broken reference dressed as a
+; promise, which is the trap Wren's header records.
+;
+; StartingLoyalty 50, above Kael's 40: she is not weighing whether to trust you, she is a girl who was
+; told to walk with you by her employer and is glad of the company.
+;
+; The body is npc_woman_dress, already adopted, already retargeted (GeneralSkeleton, so the shared
+; animation library binds), and NOT npc_adventurer_f — Wren wears that, and two companions in one
+; party wearing one body is the version of 38Q2's rule that a walking actor can actually break. It is
+; also not npc_hooded: Sedge wears it, and Tessa is recruited standing next to her.
+;
+; The dagger is characterisation. She is not a sword — the escort is meant to be losable.
+
+[resource]
+script = ExtResource("1_companion")
+Id = "companion.tessa"
+NameKey = "companion.tessa.name"
+TitleKey = "companion.tessa.title"
+AttributesPath = "res://data/attributes/CompanionAttributes.tres"
+WeaponPath = "res://data/weapons/IronDagger.tres"
+ModelPath = "res://assets/models/characters/npc_woman_dress.glb"
+FactionId = "faction.villagers"
+KnownSpellIds = Array[String]([])
+FollowDistance = 2.5
+EngageRadius = 9.0
+AttackRange = 1.9
+LeashRadius = 16.0
+StartingLoyalty = 50
+LoyaltyQuestReward = 0
+RecruitQuestId = "quest.hollowreach.ledger"
+LoyaltyQuestId = ""
+DialogueId = "dialogue.tessa"

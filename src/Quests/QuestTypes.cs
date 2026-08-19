@@ -35,6 +35,47 @@ public enum ObjectiveType
     /// rather than on the panel opening.
     /// </summary>
     Talk,
+
+    /// <summary>
+    /// Bring a recruited companion to a place alive (Phase 41B). <c>TargetId</c> is a
+    /// <c>companion.*</c> id and <see cref="ObjectiveResource.LocationId"/> is the destination —
+    /// this is the one objective shape where that field is <b>required</b>, the mirror of
+    /// <see cref="Reach"/>, which refuses it.
+    ///
+    /// ⚠️ <b>The escortee is a party companion, and that is the whole implementation.</b> Nothing in
+    /// this build could damage a villager NPC — they are <c>Entity</c> nodes with a static collider,
+    /// no stats and no hurtbox — so an escort whose fail state is "your charge died" needs a body
+    /// that can actually take a hit. <c>CompanionFactory</c> already builds one from a <c>.tres</c>,
+    /// with health, combat, follow AI and persistence, and <c>DialogueEffect.RecruitCompanion</c>
+    /// already puts it beside the player. So escorting is authored data rather than a new system.
+    ///
+    /// <b>Fails on <c>CompanionDownedEvent(Downed: true)</c></b> for that companion — the one event
+    /// in the game that means *the person you were protecting has fallen*. A companion stands back
+    /// up afterwards (they are story actors and are never permanently lost), so the failure is the
+    /// moment they go down, not a corpse to find.
+    /// </summary>
+    Escort,
+
+    /// <summary>
+    /// Hold a place for a while (Phase 41B). <c>TargetId</c> is a <c>location.*</c> id and
+    /// <see cref="ObjectiveResource.RequiredCount"/> is <b>seconds</b>, accumulated by the same 4 Hz
+    /// poll <see cref="Reach"/> uses while the player stands inside
+    /// <c>QuestLogComponent.DefendRadius</c>.
+    ///
+    /// ⚠️ <b>Leaving the site stops the count; it does not reset it.</b> A hold that silently rewinds
+    /// is a fail state wearing no label — the player sees the number fall and has been told nothing.
+    /// Walking away costs the time it costs, and the only fail here is the loud one below.
+    ///
+    /// ⚠️ <b>There is no attacker knob, deliberately.</b> The pressure is geography: site the
+    /// objective outside a region's <c>SafeZoneRadius</c> and the <c>EncounterDirector</c> already
+    /// spawns into it. Driving a <c>WorldEventDirector</c> raid from the quest was considered and
+    /// refused — a randomly rolled raid of the same id is indistinguishable from the quest's own, so
+    /// an unrelated timeout would fail the player's quest (41A's trap, one type later).
+    ///
+    /// <b>Fails on the player's own <c>EntityDiedEvent</c></b> while the hold is unfinished. Surviving
+    /// is the objective, so dying is the only thing that can be a failure of it.
+    /// </summary>
+    Defend,
 }
 
 /// <summary>Lifecycle state of a quest in the player's log.</summary>
@@ -43,4 +84,16 @@ public enum QuestStatus
 {
     Active,
     Completed,
+
+    /// <summary>
+    /// The quest was lost rather than finished (Phase 41B) — the escortee went down, or the player
+    /// died mid-hold. The first state a quest could ever end in that is not a success.
+    ///
+    /// ⚠️ <b>A failed quest is retakeable, and that is a decision rather than an oversight.</b>
+    /// <c>QuestLogComponent.CanStart</c> refuses any quest already in the log <em>except</em> a
+    /// failed one, which restarts with fresh counts. The alternative — failure is permanent —
+    /// silently deletes content from a save on one bad fight, with no warning and no way back to
+    /// the giver who is still standing there.
+    /// </summary>
+    Failed,
 }

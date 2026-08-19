@@ -168,6 +168,13 @@ public class EnumStabilityTests
         // an objective that can never advance, in a save the player already has.
         Assert.Equal(2, (int)ObjectiveType.Reach);
         Assert.Equal(3, (int)ObjectiveType.Talk);
+
+        // 41B, for the same reason: Type = 4 and Type = 5 are authored in LedgerRun.tres and
+        // HoldTheNorthRoad.tres. Escort and Defend also read DIFFERENT fields (Escort needs
+        // LocationId, Defend reads RequiredCount as seconds), so a swap would not merely mistarget
+        // an objective — it would reinterpret the numbers beside it.
+        Assert.Equal(4, (int)ObjectiveType.Escort);
+        Assert.Equal(5, (int)ObjectiveType.Defend);
     }
 
     [Fact]
@@ -175,6 +182,10 @@ public class EnumStabilityTests
     {
         Assert.Equal(0, (int)QuestStatus.Active);
         Assert.Equal(1, (int)QuestStatus.Completed);
+
+        // 41B. Persisted as an int in every save's quest log (QuestProgress.Save), so an inserted
+        // member would silently turn a failed quest into a completed one on load.
+        Assert.Equal(2, (int)QuestStatus.Failed);
     }
 
     [Fact]

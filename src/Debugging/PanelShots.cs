@@ -92,8 +92,50 @@ public sealed partial class PanelShots : ShotHarness
             Journal?.SetOpen(true);
         });
 
-        Shot("08-journal-closed", () => Journal?.SetOpen(false));
+        // 41B. The journal with a Defend objective live: its count is SECONDS, so this card reads
+        // "0/60" where every other objective in the game counts things. A quest whose progress bar
+        // measures a different unit from its neighbours is worth looking at once.
+        Shot("08-journal-defend", () =>
+        {
+            StartTheHold();
+            Journal?.SetOpen(true);
+        });
+
+        // ⚠️ 41B, AND THIS IS THE ONE THE SUB-PHASE EXISTS TO PHOTOGRAPH. Failure is the first way a
+        // quest can end without succeeding, and the journal's FAILED section had never been drawn
+        // because until now the state could not exist (the panel's own header said so). A shot of
+        // the happy path proves nothing about the branch — 41A's lesson, applied to its own sequel.
+        Shot("09-journal-failed", () =>
+        {
+            FailTheHold();
+            Journal?.SetOpen(true);
+        });
+
+        Shot("10-journal-closed", () => Journal?.SetOpen(false));
     }
+
+    /// <summary>Starts the north-road hold (41B) — the only authored quest with a Defend objective,
+    /// and the one this harness can reach: it has no prerequisite, so it starts from a fresh save.
+    /// The escort quest deliberately cannot be started here, because it requires 41A's courier quest
+    /// to be COMPLETED and nothing in a screenshot harness can walk to Hollowreach.</summary>
+    private static void StartTheHold()
+    {
+        if (Log() is { } log && QuestDatabase.Get(HoldQuestId) is { } hold && log.StartQuest(hold))
+        {
+            log.Track(hold.Id);
+        }
+    }
+
+    /// <summary>Drives the hold into <see cref="QuestStatus.Failed"/> — the state the player reaches
+    /// by dying with it live, which is not something a harness can stage.</summary>
+    private static void FailTheHold() => Log()?.Fail(HoldQuestId);
+
+    private const string HoldQuestId = "quest.warband.hold_north";
+
+    private static QuestLogComponent? Log() =>
+        ServiceLocator.Instance is { } locator && locator.TryGet(out PlayerCharacter player)
+            ? player.GetComponent<QuestLogComponent>()
+            : null;
 
     /// <summary>Reveals every region and location so the plot is dense enough to judge.</summary>
     private static void DiscoverEverything()

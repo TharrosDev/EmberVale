@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="QuestResource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+
+; Phase 41B - the caller for ObjectiveType.Defend, posted on the guild board beside the standing
+; goblin bounty.
+;
+; ⚠️ RequiredCount IS SECONDS HERE, NOT A TALLY. It is the one field on ObjectiveResource whose unit
+; changes with the objective type, which is why --validate refuses a Defend objective under ten
+; seconds: the authoring default is 1, and a one-second hold completes before the player has stopped
+; walking. Sixty is a real minute standing still in open country.
+;
+; ⚠️ THE SITE IS THE DIFFICULTY, AND IT IS CHOSEN RATHER THAN CONFIGURED. location.wilds.north sits in
+; ember_crown.wilds_north, roughly 107 m out from the town hub and far outside the region's 34 m
+; SafeZoneRadius - which is precisely where the EncounterDirector is already allowed to spawn. There
+; is no attacker knob on this objective and there should not be one: a quest that spawned its own
+; raid would be a second answer to a question the encounter and world-event directors already own,
+; and a randomly rolled raid could then fail somebody else's quest.
+;
+; ⚠️ THE FAIL STATE IS DYING. Surviving is the objective, so nothing else can be a failure of it -
+; walking away merely stops the clock, and the count keeps what it earned (a hold that silently
+; rewound would be a fail state wearing no label).
+
+[sub_resource type="Resource" id="Obj_hold_north"]
+script = ExtResource("2_obj")
+Type = 5
+TargetId = "location.wilds.north"
+RequiredCount = 60
+Description = "quest.warband.hold_north.obj"
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.warband.hold_north"
+Title = "quest.warband.hold_north.title"
+Summary = "quest.warband.hold_north.summary"
+Objectives = Array[Resource]([SubResource("Obj_hold_north")])
+XpReward = 70
+GoldReward = 40
+GoldItemId = "item.currency.gold"
+RewardItems = []
+FactionRewardId = "faction.villagers"
+FactionRewardAmount = 8
+PrerequisiteQuestId = ""

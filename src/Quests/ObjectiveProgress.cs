@@ -30,4 +30,26 @@ public static class ObjectiveProgress
 
         return true;
     }
+
+    /// <summary>
+    /// Advances a <see cref="ObjectiveType.Defend"/> hold by one poll tick (41B): adds
+    /// <paramref name="delta"/> seconds to <paramref name="held"/> and returns the number of WHOLE
+    /// seconds earned, leaving the sub-second remainder behind.
+    ///
+    /// Pure and Godot-free for this file's reason — the poll runs at 4 Hz while the objective is
+    /// authored in seconds, so the interesting behaviour is that four quarter-ticks make exactly one
+    /// second and never five or three. That is arithmetic, and arithmetic is testable.
+    /// </summary>
+    public static int TickHold(ref float held, float delta)
+    {
+        if (delta <= 0f)
+        {
+            return 0;
+        }
+
+        held += delta;
+        int whole = (int)held;
+        held -= whole;
+        return whole;
+    }
 }

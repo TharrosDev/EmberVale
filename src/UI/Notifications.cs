@@ -43,6 +43,7 @@ public partial class Notifications : CanvasLayer
         bus?.Subscribe<QuestStartedEvent>(OnQuestStarted);
         bus?.Subscribe<QuestObjectiveAdvancedEvent>(OnObjectiveAdvanced);
         bus?.Subscribe<QuestCompletedEvent>(OnQuestCompleted);
+        bus?.Subscribe<QuestFailedEvent>(OnQuestFailed);
         bus?.Subscribe<WorldEventStartedEvent>(OnWorldEventStarted);
         bus?.Subscribe<WorldEventEndedEvent>(OnWorldEventEnded);
         bus?.Subscribe<GameSavedEvent>(OnGameSaved);
@@ -69,6 +70,7 @@ public partial class Notifications : CanvasLayer
         bus.Unsubscribe<QuestStartedEvent>(OnQuestStarted);
         bus.Unsubscribe<QuestObjectiveAdvancedEvent>(OnObjectiveAdvanced);
         bus.Unsubscribe<QuestCompletedEvent>(OnQuestCompleted);
+        bus.Unsubscribe<QuestFailedEvent>(OnQuestFailed);
         bus.Unsubscribe<WorldEventStartedEvent>(OnWorldEventStarted);
         bus.Unsubscribe<WorldEventEndedEvent>(OnWorldEventEnded);
         bus.Unsubscribe<GameSavedEvent>(OnGameSaved);
@@ -120,6 +122,12 @@ public partial class Notifications : CanvasLayer
 
     private void OnQuestCompleted(QuestCompletedEvent e) =>
         Push(Loc.TF("notify.quest_complete", Loc.T(e.Quest.Title)), UiTheme.Good);
+
+    /// <summary>A quest lost (41B). It shares the world event's failure colour rather than the
+    /// companion-downed one: what the player needs told apart here is "this ended badly" from "this
+    /// ended well", and the downed toast that caused an escort failure has already fired beside it.</summary>
+    private void OnQuestFailed(QuestFailedEvent e) =>
+        Push(Loc.TF("notify.quest_failed", Loc.T(e.Quest.Title)), UiTheme.Bad);
 
     private void OnWorldEventStarted(WorldEventStartedEvent e) => Push(Loc.TF("notify.event_started", e.DisplayName), UiTheme.Accent);
 

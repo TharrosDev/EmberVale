@@ -2953,6 +2953,11 @@ public static class ContentValidator
             : null;
     }
 
+    /// <summary>Shortest hold a <see cref="ObjectiveType.Defend"/> objective may author (41B). Not a
+    /// balance number — a floor under the authoring mistake of leaving RequiredCount at its default
+    /// of 1 on a type whose count is measured in seconds.</summary>
+    private const int MinimumHoldSeconds = 10;
+
     private static void ValidateQuests(List<string> issues)
     {
         foreach (QuestResource quest in QuestDatabase.All)
@@ -2989,6 +2994,43 @@ public static class ContentValidator
                         break;
                     case ObjectiveType.Talk:
                         RequireDialogue(objective.TargetId, $"quest '{quest.Id}' talk objective", issues);
+                        break;
+
+                    // 41B. An escort names a person AND a destination, and it is the one objective
+                    // type that needs both — the mirror of Reach, which refuses the second. Without
+                    // LocationId there is nothing to measure the escortee against, so the objective
+                    // can never advance and nothing at runtime would ever say why.
+                    case ObjectiveType.Escort:
+                        if (Companions.CompanionDatabase.Get(objective.TargetId) == null)
+                        {
+                            issues.Add($"quest '{quest.Id}' escort objective names unknown companion " +
+                                       $"'{objective.TargetId}'");
+                        }
+
+                        if (objective.LocationId.Length == 0)
+                        {
+                            issues.Add($"quest '{quest.Id}' escort objective for '{objective.TargetId}' " +
+                                       "sets no LocationId — an escort has to name where the escortee is " +
+                                       "being taken, or it can never complete");
+                        }
+
+                        break;
+
+                    // 41B. A hold's target is a place, like Reach's — but its RequiredCount is
+                    // SECONDS rather than a tally, which is the one thing about this type that reads
+                    // wrong at a glance. An unset count is the authoring default of 1, i.e. a
+                    // quarter-second hold that completes before the player has stopped walking.
+                    case ObjectiveType.Defend:
+                        RequireMapLocation(objective.TargetId, $"quest '{quest.Id}' defend objective", issues);
+
+                        if (objective.RequiredCount < MinimumHoldSeconds)
+                        {
+                            issues.Add($"quest '{quest.Id}' defend objective at '{objective.TargetId}' " +
+                                       $"holds for {objective.RequiredCount}s — RequiredCount is seconds " +
+                                       $"for a Defend objective, and anything under {MinimumHoldSeconds}s " +
+                                       "completes before the player can notice it started");
+                        }
+
                         break;
                 }
 

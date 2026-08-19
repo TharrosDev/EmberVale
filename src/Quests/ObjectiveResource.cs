@@ -20,12 +20,18 @@ public partial class ObjectiveResource : Resource
     /// <item><see cref="ObjectiveType.Collect"/> — an item id.</item>
     /// <item><see cref="ObjectiveType.Reach"/> — a <c>location.*</c> map location id (41A).</item>
     /// <item><see cref="ObjectiveType.Talk"/> — a <c>dlg.*</c> dialogue id (41A).</item>
+    /// <item><see cref="ObjectiveType.Escort"/> — a <c>companion.*</c> id; the destination is
+    /// <see cref="LocationId"/>, which this type <b>requires</b> (41B).</item>
+    /// <item><see cref="ObjectiveType.Defend"/> — a <c>location.*</c> id to hold, for
+    /// <see cref="RequiredCount"/> seconds (41B).</item>
     /// </list>
-    /// Every one of the four is checked by <c>--validate</c> against its own database, so a typo is a
+    /// Every one of the six is checked by <c>--validate</c> against its own database, so a typo is a
     /// failed gate rather than an objective that can never advance.
     /// </summary>
     [Export] public string TargetId { get; set; } = string.Empty;
 
+    /// <summary>How many of <see cref="TargetId"/> the objective needs — and for
+    /// <see cref="ObjectiveType.Defend"/>, how many <b>seconds</b> the place must be held (41B).</summary>
     [Export] public int RequiredCount { get; set; } = 1;
 
     /// <summary>Optional hand-written objective text; falls back to a generated line.</summary>
@@ -45,6 +51,12 @@ public partial class ObjectiveResource : Resource
     /// a herb that grows everywhere has no one place, and inventing one would send the player to a
     /// spot no better than any other — worse than admitting the game does not know. Author it only
     /// where a destination genuinely exists.
+    ///
+    /// ⚠️ <b>An <see cref="ObjectiveType.Escort"/> objective is the one shape that REQUIRES it</b>
+    /// (41B), and <c>--validate</c> refuses one without it. There the target is the person and this
+    /// is where they are being taken, so the objective is unanswerable without both — the exact
+    /// mirror of <see cref="ObjectiveType.Reach"/>, whose target already IS the destination and which
+    /// therefore refuses this field.
     ///
     /// ⚠️ <b>It names a location, never a coordinate.</b> Where that location IS remains its
     /// marker's transform in a cell scene (39.5A's rule); this is a reference, and `--validate`
