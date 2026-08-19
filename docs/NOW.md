@@ -60,19 +60,34 @@ existed the same three lines were maintained in four places and rewritten every 
   covers *slay goblins for a reward*. `QuestGiverComponent` is gone — zero references, superseded by
   `DialogueEffect.StartQuest`, and carrying two hard-coded player-facing strings.
   **All three of the 2026-08-11 audit's orphans are now closed.**
-- ⚠️ **A DEFECT WAS ALREADY SHIPPED IN TWO QUESTS AND NOTHING COULD SEE IT** (41A). Twelve of fourteen
-  quests author locale keys; `GatherIron` and `CullTheGoblins` authored **literal English**. Invisible
-  because **`Loc.T` returns the key unchanged on a miss**, so `Loc.T("Gather Iron")` renders "Gather
-  Iron" and looks perfect in the journal, on the tracker and in every screenshot — then breaks on the
-  first non-English locale. **`quest.gather_iron` is live** and had been wrong since Phase 12.
-  `ValidateQuestStringsAreKeys` checks **presence in the catalogue**, not "looks dotted", so it
-  catches a mistyped key too. ⚠️ **`ObjectiveResource.ShortLabel()` had the same hole** — its fallback
-  built `$"Slay {TargetId}"`, putting a raw id on screen for the first objective authored without a
-  `Description`. **A fallback nothing reaches is a defect nothing reports.**
-- **NEXT: 41B — Escort + Defend/Survive objective types.** ⚠️ **41A's lesson applies directly:** a new
-  objective type is a few lines, and the whole job is knowing *which event means what*. For 41B that
-  question is **what exactly counts as a fail, and which event says so** — answer it before writing
-  the branch.
+- ⚠️ **A DEFECT WAS ALREADY SHIPPED IN TWO QUESTS AND NOTHING COULD SEE IT** (41A) — two quests
+  authored literal English where twelve authored keys, invisible because `Loc.T` returns the key on a
+  miss. `ValidateQuestStringsAreKeys` is the rule; **invariant 34 is the whole story** and is not
+  repeated here.
+- **41B — Escort + Defend/Survive ✅ CLOSED.** `Escort` (4) and `Defend` (5) join the same `Advance`
+  choke point, and the quest log gained the state it never had: **`QuestStatus.Failed` (2)**, with
+  `QuestFailedEvent`, a journal FAILED section and a toast. ⚠️ **A FAILED QUEST IS RETAKEABLE** —
+  `CanStart` admits it, so every `QuestAvailable` dialogue gate reopens with no authoring change.
+- ⚠️ **THE ESCORTEE IS A COMPANION BECAUSE NOTHING ELSE IN THIS GAME CAN BE HURT** (41B, and this is
+  invariant 38 below). 41A's question — *which event means fail* — was answered with *there is no
+  such event and there cannot be*: all seventeen NPCs are `Entity` nodes with a static collider, no
+  stats and no hurtbox. `CompanionFactory` already builds a damageable ally **from a `.tres`**, so
+  `companion.tessa` + two dialogue choices is the whole escort mechanic, and `CompanionDownedEvent`
+  is the fail. **Defend's fail is the player's own death**; leaving the site stops the hold's clock
+  and keeps what it earned, because a count that silently rewinds is a fail state wearing no label.
+- ⚠️ **A QUEST-STARTED WORLD EVENT WAS REFUSED, AND IT IS 41A'S TRAP ONE TYPE LATER** (41B).
+  `ForceStart` exists and a `TriggerWorldEvent` effect was eight lines — but `WorldEventEndedEvent`
+  names an event **id, not an instance**, so a randomly rolled raid would fail the player's quest.
+  The hold's pressure is **geography**: `location.wilds.north` is far outside the 34 m safe zone,
+  which is exactly where the `EncounterDirector` already spawns.
+- ⚠️ **TWO `ObjectiveResource` FIELDS NOW CHANGE MEANING WITH THE TYPE, AND BOTH ARE GATED** (41B).
+  `LocationId` is **forbidden** on Reach and **required** on Escort; `RequiredCount` is a tally
+  everywhere except Defend, where it is **seconds** — the authoring default of 1 would be a
+  quarter-second hold, so `--validate` refuses anything under ten.
+- **NEXT: 41C — Interact/Use + Timed + Stealth objective types.** ⚠️ **Ask 41B's question, not just
+  41A's:** before adding the actor a type needs, check whether something in the build **already knows
+  the player did that**. ⚠️ **There is no stealth state anywhere in `src/`** — invariant 28 applies
+  before any presentation of one is built.
 - ⚠️ **A LOCATION'S POSITION IS ITS NODE'S TRANSFORM IN A CELL SCENE, NEVER AN AUTHORED COORDINATE**
   (39.5A). `MapLocationResource` says what a place is; a `MapLocationComponent` parented to the stall
   or keeper says where. `--validate` scans `.tscn` in **both** directions. Author with
@@ -158,21 +173,21 @@ existed the same three lines were maintained in four places and rewritten every 
 - 📖 Economy: `ARCHITECTURE.md` §2.6m is the mechanism, `DESIGN.md` §6 + §6.1 the intent.
   🎨 `docs/ASSET_POLICY.md` §0.2–§0.3 is the asset authority.
 
-## Last verified (session close, 2026-08-15 — audit Wave 4)
+## Last verified (session close, 2026-08-19 — 41B)
 
 | | |
 | --- | --- |
-| Build | `dotnet build --warnaserror` clean, **0 warnings** — and CI enforces that on every push |
-| Tests | **1426 passing**, unchanged. ⚠️ **No test was added and none could be**: every Wave 4 change is either a Godot-`Resource` path (`AIProfileResource`, `AIProfileDatabase.Get`) or a live-`StatsComponent` path, all excluded by the test project's own no-`GodotObject` rule. **That constraint is exactly why L-12 was refused** |
-| `--validate` | exit 0; **1351** locale strings, unchanged (no string was touched) |
-| **Negative tests** | `python tools/negative_tests.py` — **66/66 broken and restored** (63 → 66 was Wave 2's `ValidateSceneAuthoredIds`; the 2026-08-12 table said 63 and was stale). ⚠️ **No case was added, because Wave 4 added no validator rule** — invariant 6 has nothing to bite here, so the battery was run to prove the existing rules still pass. Tree restored clean, `--validate` exit 0 afterwards. ⚠️ Runs **over two minutes**, mutates `data/` **and** `scenes/`, refuses a dirty tree; killing it mid-run defeats its own `finally` (`git checkout -- data/ scenes/` recovers) |
-| `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, 33 dialogues, **14 quests**, 64 map locations — **identical to 41A's census**, which is the point of running it |
-| **`--play`** | booted, loaded slot1, **33 objects restored**, **10 cells**, **0 errors**. ⚠️ The 3 `CraftingStationComponent` warnings are **pre-existing**. ⚠️ **The six-line "C# backtrace" blocks around them are `PushWarning`'s own trace, not exceptions** |
-| **Verbatim proof** | Wave 3's habit, kept: every moved body diffed against its original normalised for renames — `MapService` **14/14 and 14/14** into one `FindCell`, champion scaling **10/10 and 10/10** into `EnemyScaling`. ⚠️ **A green build does not prove a loop survived** |
-| Not run, deliberately | ⚠️ **`--panelshots` / `--hudshots` — nothing in these three files reaches a `Control`**, so invariant 8 does not apply. Said rather than skipped silently. ⚠️ **`--economy`** — `EnemyScaling` moves a *combat* multiplier, not a price; no price, spread or multiplier was touched. ⚠️ **`map_probe`** — no map location or cell scene changed; `MapService`'s lookup change is a proved-verbatim body move |
-| ⚠️ **Not covered by anything** | **The flight attachment L-14 touches is never exercised by a gate.** No dragon spawns in slot1 and the `F1` console needs keyboard input, so nothing observed a `FlightComponent` being attached. What *is* certain is narrower and worth stating plainly: with no archetype authoring an inline `Profile`, the new expression **reduces to the identical `AIProfileDatabase.Get` call** for every one of the 31 archetypes in `data/`. **Region transitions remain uncovered too** — `MapService` is on that path |
-| MCP | ⚠️ Not needed and not probed — nothing was placed in the world and nothing was rendered |
-| MCP | ⚠️ **DOWN all session, both halves** (`godot-cli status .` → editor not running, 23630 connection refused). Not needed — nothing was placed in the world. ⚠️ **`.claude/skills/*/SKILL.md` had drifted to `ai-game.dev` URLs and was restored, not committed** — that is invariant 8's Cloud-mode tell, and it means the editor was opened from the project manager at some point |
+| Build | `dotnet build Embervale.sln` clean, **0 warnings** |
+| Tests | **1440 passing** (1426 + 14): the Defend hold accumulator (`ObjectiveProgress.TickHold`, extracted pure for exactly this reason — 240 quarter-ticks must earn 60 and not 59) and both new enum ordinals |
+| `--validate` | exit 0; **1386** locale strings (+35), 16 quests, 34 dialogues, 3 companions |
+| **Negative tests** | `python tools/negative_tests.py` — **70/70 broken and restored** (66 → 70: unknown escort companion, escort without a destination, unknown defend location, a hold under ten seconds). Tree restored clean, `--validate` exit 0 afterwards |
+| `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, **34 dialogues**, **16 quests**, 64 map locations, **3 companions** |
+| **`--panelshots`** | 11 frames. **`08-journal-defend`** renders the hold at `0/60` with the HUD tracker resolving the site at `151 m · N` — live proof the new `ObjectiveLocator` branch answers for a Defend target. **`09-journal-failed`** renders the FAILED section |
+| ⚠️ **What the frame caught** | The first `09-journal-failed` had **no FAILED section**: the failed quest was still under ERRANDS marked TRACKED, because `QuestLogPanel` subscribed to started/advanced/completed and not failed. Build, 1440 tests, `--validate` and 70 negative cases were **all green through it** (invariant 8) |
+| **`--play`** | booted, loaded slot1, **33 objects restored**, 0 errors. ⚠️ The 3 `CraftingStationComponent` warnings are **pre-existing** |
+| ⚠️ **Not covered by anything** | **No playthrough exercised either new type end to end.** Nothing recruited Tessa, walked her to Embermarket or downed her; nothing stood in the north wilds for sixty seconds. What *is* proven: both types resolve their targets (the tracker's `151 m · N`), both are gated by `--validate` in four directions, failure renders, and the arithmetic is unit-tested. **The escort walk is owed** |
+| Not run, deliberately | ⚠️ **`--economy`** — no price, spread or multiplier was touched. ⚠️ **`map_probe`** — no map location or cell scene changed. ⚠️ **`--hudshots`** — the HUD tracker is covered by the panel frames above, which show it |
+| MCP | ⚠️ **DOWN all session, both halves** (`godot-cli status .` → editor not running, 23630 connection refused). Not needed: **nothing was placed in the world and no new model was adopted** — `npc_woman_dress` is already live in two cells |
 
 ## Live invariants — the things that will bite you
 
@@ -194,7 +209,11 @@ existed the same three lines were maintained in four places and rewritten every 
    THE SAME BUG WEARING VISUALS** (39B); **A VALUE TYPE CARRYING LAYOUT STATE IS THE SAME BUG WITH NO
    CACHE IN IT** (39.5A — `MapProjection`'s viewport is `(1,1)` until `Resized`). **When a sub-phase
    adds a state, ask what every existing thing does IN that state.** ⚠️ **39.5B is the corollary: the
-   HUD had never been asked what it does in the "a menu is open" state.**
+   HUD had never been asked what it does in the "a menu is open" state.** ⚠️ **41B is the sharper
+   one: a new state must reach every surface that draws the old one, and the surface you are editing
+   is the one you will miss.** The journal got a FAILED *section* and no FAILED *refresh*, so a quest
+   that failed while it was open stayed under ERRANDS marked TRACKED while the toast and the tracker
+   both said otherwise. **The grep is not "who draws this" but "who subscribes to the sibling event".**
 8. ✅ **THE UI HAS A SEAT TO RENDER FROM — USE IT.** `--hudshots` (12 states) and `--panelshots` (9)
    found **six** shipped defects across 39.5B/C. ⚠️ **A UI change that has not been captured is not
    verified**, and "reviewed against the API" is the phrase that preceded every one of them. ⚠️ **AND
@@ -294,6 +313,16 @@ existed the same three lines were maintained in four places and rewritten every 
     write landed on a field nothing read again. Masked only because all nine authored phases set it
     to `""`. **Verify the read path exists before writing the validator rule**, or the first author to
     use the field gets a green gate and no behaviour.
+38. ⚠️ **NOTHING IN THIS GAME CAN DAMAGE AN NPC** (41B). All seventeen authored NPCs are `Entity`
+    nodes with a static collider, **no `StatsComponent` and no hurtbox** — so any feature whose
+    failure or drama depends on a villager being hurt has no honest event to ride, and building one
+    means building a damageable body. **The damageable ally already exists and is pure data:**
+    `CompanionFactory` assembles health, combat, follow AI, a leash and persistence from a
+    `CompanionResource`, and `DialogueEffect.RecruitCompanion` places one. ⚠️ **`RecruitQuestId` on
+    that resource is validated and read by nothing** — invariant 37's shape, named here rather than
+    fixed. ⚠️ **And `WorldEvent.ObjectiveLabel()` / `WorldEventResource.DisplayName` are literal
+    English on the HUD banner** (`GameHud.cs:1054`) — invariant 34's family, live today, found by
+    41B and deliberately not folded into it.
 
 
 ## Commands worth knowing
