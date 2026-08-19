@@ -757,9 +757,14 @@ The systems quest framework does Kill/Collect (Phase 9). The main story needs
 more **objective types and branching**.
 
 - New `ObjectiveResource` types: ✅ **Reach/Explore and Talk (41A)**, ✅ **Escort and
-  Defend/Survive (41B)**, then Interact/Use, Timed, Stealth, Choice/Branch — each
-  event-driven like the existing two; **branching** via story flags + dialogue effects
-  (Phase 10 already has the flag spine).
+  Defend/Survive (41B)**, ✅ **Interact/Use and Stealth (41C)**, then Choice/Branch —
+  each event-driven like the existing two; **branching** via story flags + dialogue
+  effects (Phase 10 already has the flag spine).
+  - ⚠️ **Timed was NOT appended as an objective type (41C), deliberately.** A deadline is
+    a property of the errand, and `QuestProgress` stores one `int` per objective with
+    nowhere to put a per-objective clock — so it is `QuestResource.TimeLimitSeconds`,
+    mirroring `WorldEventResource`. Two ways to express one deadline is invariant 5
+    waiting to happen. **Do not "restore" it as a type.**
   - ⚠️ **41A's lesson for every type after it: the type is a few lines, and the whole
     job is knowing which existing event actually means the thing.** `Advance` is one
     choke point and the events mostly exist already, so the cheap implementation and
@@ -769,7 +774,11 @@ more **objective types and branching**.
     event: nothing in this build can damage an NPC.** The escortee is therefore a
     companion (`CompanionFactory` builds a damageable ally from a `.tres`), and
     `CompanionDownedEvent` is the fail; Defend's fail is the player's own death.
-    **41C's version: is there already something here that knows the player did that?**
+    ✅ **41C's version found a third answer: an event that means the thing only when a
+    data knob says so.** `EnemyAlertedEvent` is published only when the AI profile's
+    `AlertRadius > 0`, which an ambusher authors as 0 — so stealth rides the
+    unconditional `EnemyStateChangedEvent` instead. **41D's version: who else writes
+    this story flag?**
   - ⚠️ **Objectives are UNORDERED and stay that way until 41D.** A quest completes when
     all its objectives are met; `quest.hollowreach.word` sequences by geography (you
     cannot talk to Sedge without reaching Hollowreach) rather than by a rule. **Do not
@@ -1212,7 +1221,7 @@ that doesn't touch the slice.
 | 39.5 | ✅ | **World map & location intelligence — CLOSED at 39.5C; there is no 39.5D.** The map reads authoritative world data instead of the three things that happened to have coordinates. ⚠️ **A location's position is its node's transform in a cell scene, never an authored coordinate**, and `--validate` checks that seam in both directions. Author with `tools/gen_map_locations.py`. **39.5B was the player HUD**: a minimap (none existed), one tracked-quest authority replacing two independent first-active scans, and the visibility logic `GameHud` had never had. ⚠️ **Its audit found ~60 of the brief's 80 sections already satisfied** — the finding was that the HUD was mature, not broken. ✅ **39.5B also closed the harness gap** with `--hudshots`, which renders the HUD to PNG and found four already-shipped defects on its first run. ⚠️ **It covers the HUD, not panels** — the map screen still cannot be captured, and that is where 39.5A's three defects were. **39.5C added panel capture (`--panelshots`), the map's label placer and quest destinations**, and measured all eight deferred conditions rather than guessing — each carries a runnable condition *and the number it measured at*; see [`docs/playbook/phase-39_5.md`](playbook/phase-39_5.md) |
 | ~~40~~ | ❌ | **Survival & Needs — NOT WANTED, struck 2026-08-12** (maintainer direction). No durability/repair, hunger, thirst, temperature or encumbrance, and no condition revives them. Rest already exists as a *sink* (the inn, the home bed) and is untouched; food items stay instant-heal consumables with a `food` trade tag. The cut deleted the two stubs the decision had been holding — `CraftingStationType.Cooking` and `InventoryComponent.MaxWeight`/`IsOverEncumbered`, the latter unread since Phase 5 — and settled seven "pending 40A" pointers. ⚠️ **Do not reach for wear as a Phase 56 economy fix.** See [`docs/playbook/phase-40.md`](playbook/phase-40.md) |
 | ~~40.5~~ | ❌ | **Dungeon & Puzzle Framework — NOT WANTED, struck 2026-08-12**, whole phase. Nothing existed, so nothing was removed. ⚠️ **The trap arm was offered as a partial keep and declined.** Two phases owe their own answer: **Phase 50** authors dungeons as rooms with encounters and loot on existing tooling, and **Phase 51E** has a guardian but no trial. See [`docs/playbook/phase-40_5.md`](playbook/phase-40_5.md) |
-| 41 | ⏳ | **Quest authoring at scale — 41A and 41B closed.** Four objective types now join `Kill`/`Collect` on the one `QuestLogComponent.Advance` choke point: `Reach` and `Talk` (41A), `Escort` and `Defend` (41B). ⚠️ **Reach is PROXIMITY, not discovery.** ⚠️ **The escortee is a COMPANION because nothing in this build can damage an NPC** — seventeen authored NPCs have no stats and no hurtbox, so an escort built on one has no honest fail state; `CompanionFactory` already builds a damageable ally from a `.tres`. Defend holds a place for RequiredCount **seconds** and fails on the player's own death. 41B also gave the log its first losing end state, `QuestStatus.Failed`, **retakeable by design**. ⚠️ **A rendered frame caught the defect the build, 1440 tests, `--validate` and 70 negative cases all passed over** — the journal drew a FAILED section but never refreshed on failure. **41C is next** — see [`docs/playbook/phase-41.md`](playbook/phase-41.md) |
+| 41 | ⏳ | **Quest authoring at scale — 41A, 41B and 41C closed; the objective vocabulary is complete.** Six types now join `Kill`/`Collect` on the one `QuestLogComponent.Advance` choke point: `Reach`/`Talk` (41A), `Escort`/`Defend` (41B), `Interact`/`Stealth` (41C). 41B gave the log its first losing end state, `QuestStatus.Failed`, **retakeable by design**; 41C gave the quest a **deadline** — a quest-level `TimeLimitSeconds`, deliberately not an objective type. ⚠️ **The escortee is a COMPANION because nothing in this build can damage an NPC.** ⚠️ **Stealth rides `EnemyStateChangedEvent`, not `EnemyAlertedEvent`, which is published only when the AI profile's `AlertRadius > 0`** — an ambusher authors 0, so the obvious rule would never fire against the enemies built to catch you unawares. ⚠️ **A seeded state is invisible to every rule written for an earned one**, and ⚠️ **a rendered frame keeps catching what the build, the tests and the validator pass over.** **41D is next** — see [`docs/playbook/phase-41.md`](playbook/phase-41.md) |
 | 38 | ✅ | **Economy, vendors & services — closed at 38V.** All twenty-two sub-phases (38A–38V) including 38G; nothing parked, five briefed services deliberately struck. Mechanism in [`ARCHITECTURE.md`](ARCHITECTURE.md) §2.6m, intent + the Phase 56 balance handoff in [`DESIGN.md`](DESIGN.md) §6/§6.1, and the rules are re-provable with `python tools/negative_tests.py` (42 cases). Sub-phase detail in [Phase 38 — what shipped, sub-phase by sub-phase](#phase-38--what-shipped-sub-phase-by-sub-phase) below (that list stops at 38O; **`docs/playbook/phase-38.md` is the current one**) |
 | Art | ✅ | **The Quaternius standardisation** (out of band, maintainer direction): the art set is now one CC0 artist. 401 models vendored at `assets/library/` behind a `.gdignore`, 18 props re-sourced keeping their filenames and boxes, and **29 archetypes that greyboxed as tinted capsules got rigged animated bodies** — Phase 35's dragons finally have one. Every model in the game is CC0 and the project owes **no attribution**; the `prp_tome_stand` release blocker is gone. Policy in `ASSET_POLICY.md` §0 |
 

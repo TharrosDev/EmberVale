@@ -49,17 +49,9 @@ existed the same three lines were maintained in four places and rewritten every 
   rides `DialogueEndedEvent` — **no new event type**; Reach polls at 4 Hz. `quest.hollowreach.word`
   is the caller: Holt sends the player to Hollowreach to ask Sedge Marrow about the barrels, and it
   is **the first quest in the game that is neither a cull nor a fetch.**
-- ⚠️ **REACH IS PROXIMITY, NOT DISCOVERY, AND THE FREE-LOOKING REUSE IS THE TRAP** (41A). `MapService`
-  already tracks discovery, so driving Reach off it looks like the whole feature for one subscription
-  — but a location authored `RevealWithCell` is discovered **on entering the REGION** (invariant 1),
-  so that Reach objective completes the moment the player crosses into the Ember Crown from anywhere
-  in it. ⚠️ **`ArrivalRadius` is its own constant, deliberately not `MapService.DiscoveryRadius`**:
-  spotting a place and arriving at it are different questions.
-- ⚠️ **BOTH 41-BOUND ORPHANS ARE RESOLVED, BY DELETION** (41A). `quest.cull_goblins` and
-  `GameIds.CullGoblins` are gone — unstartable since Phase 33D, and `quest.warband.bounty` already
-  covers *slay goblins for a reward*. `QuestGiverComponent` is gone — zero references, superseded by
-  `DialogueEffect.StartQuest`, and carrying two hard-coded player-facing strings.
-  **All three of the 2026-08-11 audit's orphans are now closed.**
+- ⚠️ **REACH IS PROXIMITY, NOT DISCOVERY** (41A) — **invariant 35 is the whole story**, and
+  `ArrivalRadius` is deliberately its own constant, not `MapService.DiscoveryRadius`.
+- ✅ **All three of the 2026-08-11 audit's orphans are closed** (41A, by deletion).
 - ⚠️ **A DEFECT WAS ALREADY SHIPPED IN TWO QUESTS AND NOTHING COULD SEE IT** (41A) — two quests
   authored literal English where twelve authored keys, invisible because `Loc.T` returns the key on a
   miss. `ValidateQuestStringsAreKeys` is the rule; **invariant 34 is the whole story** and is not
@@ -84,10 +76,36 @@ existed the same three lines were maintained in four places and rewritten every 
   `LocationId` is **forbidden** on Reach and **required** on Escort; `RequiredCount` is a tally
   everywhere except Defend, where it is **seconds** — the authoring default of 1 would be a
   quarter-second hold, so `--validate` refuses anything under ten.
-- **NEXT: 41C — Interact/Use + Timed + Stealth objective types.** ⚠️ **Ask 41B's question, not just
-  41A's:** before adding the actor a type needs, check whether something in the build **already knows
-  the player did that**. ⚠️ **There is no stealth state anywhere in `src/`** — invariant 28 applies
-  before any presentation of one is built.
+- **41C — Interact/Use + Timed + Stealth ✅ CLOSED. The objective vocabulary is complete.**
+  `Interact` (6) rides `InteractionPerformedEvent`, which already carried the component used;
+  `Stealth` (7) is a **condition seeded ALREADY MET** that can only be lost. **Timed is a quest-level
+  `TimeLimitSeconds`, deliberately NOT an objective type** — `QuestProgress` stores one int per
+  objective and two ways to express a deadline is invariant 5 waiting to happen. It stops while the
+  tree is paused, so reading the journal costs nothing; do not "fix" that into a wall clock.
+- ⚠️ **AN EVENT THAT FIRES CONDITIONALLY IS NOT AN EVENT THAT MEANS THE THING** (41C). The obvious
+  stealth signal is `EnemyAlertedEvent` — and `EnemyAIComponent` publishes it **only when the
+  profile's `AlertRadius > 0`**, which an ambusher sets to 0 on purpose. Riding it would have shipped
+  a rule that never fires against exactly the enemies built to catch you unawares, through every
+  green gate. `EnemyStateChangedEvent` is unconditional, and the brain only ever targets the player.
+- ⚠️ **A SEEDED STATE IS INVISIBLE TO EVERY RULE WRITTEN FOR AN EARNED ONE** (41C). A Stealth
+  objective starts complete, so 41B's `FailQuestsWith` — which correctly skips objectives already
+  met — stepped over the whole type. `alreadyMetStillCounts` is the path that exists for it. **Every
+  helper filtering on *unmet* is a candidate to be wrong about a state that begins finished.**
+- ⚠️ **`InteractId` IS THE SECOND SCENE-AUTHORED ID WITH NO DATABASE BEHIND IT** (41C), after
+  `MapLocationComponent.LocationId`, and it is validated the same way — `ValidateInteractIdsArePlaced`
+  scans the cell scenes **both** ways. ⚠️ **The duplicate arm is the half a one-way check misses:**
+  two nodes sharing an id both advance one objective. It lives on the base class because all thirteen
+  subclasses carry their own domain id and a waystone or container carries none.
+- ⚠️ **A GATE ONLY A HUMAN CAN OPEN IS A GATE NO INSTRUMENT SEES BEHIND** (41C). `quest.emberdeep.tally`
+  was authored behind a prerequisite, which made every 41C mechanic unreachable by `--panelshots` —
+  build, tests, validator and 75 negative cases all green, and not one frame of any of it. **When a
+  piece of content is the only caller of a new mechanic, its availability gate is part of that
+  mechanic's testability.**
+- **NEXT: 41D — Choice/Branch objectives + quest state graphs.** ⚠️ **The 41A→41C question, one more
+  time:** branching keys on story flags and dialogue effects, so the question is **who else writes
+  this flag** — `ValidateStoryFlags` already knows which flags nothing writes. ⚠️ **And ordering
+  finally lands here:** every quest to date is UNORDERED by rule and three `.tres` headers say so
+  ("do NOT hand-roll sequencing into a quest `.tres`") — 41D is where those notes come due.
 - ⚠️ **A LOCATION'S POSITION IS ITS NODE'S TRANSFORM IN A CELL SCENE, NEVER AN AUTHORED COORDINATE**
   (39.5A). `MapLocationResource` says what a place is; a `MapLocationComponent` parented to the stall
   or keeper says where. `--validate` scans `.tscn` in **both** directions. Author with
@@ -173,21 +191,20 @@ existed the same three lines were maintained in four places and rewritten every 
 - 📖 Economy: `ARCHITECTURE.md` §2.6m is the mechanism, `DESIGN.md` §6 + §6.1 the intent.
   🎨 `docs/ASSET_POLICY.md` §0.2–§0.3 is the asset authority.
 
-## Last verified (session close, 2026-08-19 — 41B)
+## Last verified (session close, 2026-08-19 — 41C)
 
 | | |
 | --- | --- |
 | Build | `dotnet build Embervale.sln` clean, **0 warnings** |
-| Tests | **1440 passing** (1426 + 14): the Defend hold accumulator (`ObjectiveProgress.TickHold`, extracted pure for exactly this reason — 240 quarter-ticks must earn 60 and not 59) and both new enum ordinals |
-| `--validate` | exit 0; **1386** locale strings (+35), 16 quests, 34 dialogues, 3 companions |
-| **Negative tests** | `python tools/negative_tests.py` — **70/70 broken and restored** (66 → 70: unknown escort companion, escort without a destination, unknown defend location, a hold under ten seconds). Tree restored clean, `--validate` exit 0 afterwards |
-| `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, **34 dialogues**, **16 quests**, 64 map locations, **3 companions** |
-| **`--panelshots`** | 11 frames. **`08-journal-defend`** renders the hold at `0/60` with the HUD tracker resolving the site at `151 m · N` — live proof the new `ObjectiveLocator` branch answers for a Defend target. **`09-journal-failed`** renders the FAILED section |
-| ⚠️ **What the frame caught** | The first `09-journal-failed` had **no FAILED section**: the failed quest was still under ERRANDS marked TRACKED, because `QuestLogPanel` subscribed to started/advanced/completed and not failed. Build, 1440 tests, `--validate` and 70 negative cases were **all green through it** (invariant 8) |
+| Tests | **1440 passing**, unchanged. ⚠️ **No test was added and one could not be**: 41C's logic is a seeded count on a `QuestResource`-backed object and a float subtraction on a live component, both Godot-typed and both excluded by the test project's no-`GodotObject` rule. The two new ordinals are pinned in `EnumStabilityTests`, which is the part that persists |
+| `--validate` | exit 0; **1403** locale strings (+17), **17 quests**, 34 dialogues |
+| **Negative tests** | `python tools/negative_tests.py` — **75/75 broken and restored** (70 → 75: an interact id nothing authors, an interact id authored twice, a stealth objective with a target, a quest of only stealth objectives, a deadline under the floor). Run **twice**, before and after the content change. Tree restored clean, `--validate` exit 0 afterwards |
+| `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, 34 dialogues, **17 quests**, 64 map locations, 3 companions |
+| **`--panelshots`** | 12 frames. **`08-journal-timed`** is the one that matters: the journal draws the Interact row at `0/1` **and the Stealth row at `✓ 1/1`** — the only evidence anywhere that a seeded condition renders as satisfied rather than as unmet — while the tracker draws `62 m · NE` for the interact target and **`3:00 left`** counting down |
 | **`--play`** | booted, loaded slot1, **33 objects restored**, 0 errors. ⚠️ The 3 `CraftingStationComponent` warnings are **pre-existing** |
-| ⚠️ **Not covered by anything** | **No playthrough exercised either new type end to end.** Nothing recruited Tessa, walked her to Embermarket or downed her; nothing stood in the north wilds for sixty seconds. What *is* proven: both types resolve their targets (the tracker's `151 m · N`), both are gated by `--validate` in four directions, failure renders, and the arithmetic is unit-tested. **The escort walk is owed** |
-| Not run, deliberately | ⚠️ **`--economy`** — no price, spread or multiplier was touched. ⚠️ **`map_probe`** — no map location or cell scene changed. ⚠️ **`--hudshots`** — the HUD tracker is covered by the panel frames above, which show it |
-| MCP | ⚠️ **DOWN all session, both halves** (`godot-cli status .` → editor not running, 23630 connection refused). Not needed: **nothing was placed in the world and no new model was adopted** — `npc_woman_dress` is already live in two cells |
+| ⚠️ **Not covered by anything** | **No playthrough exercised any of the three.** Nothing used the waystone, tripped an enemy into `Combat`, or let a deadline run out in a live session — and 41B's escort walk is still owed too. What is proven: the types resolve, render and are gated in five directions; what is not: that the fail actually fires when a goblin sees you |
+| Not run, deliberately | ⚠️ **`--economy`** — no price, spread or multiplier touched. ⚠️ **`map_probe`** — the mine waystone gained a *field*, not a place; no map location or cell geometry changed. ⚠️ **`--hudshots`** — the tracker is covered by the panel frames above, which draw it |
+| MCP | ⚠️ **DOWN all session, both halves** (`godot-cli status .` → editor not running, 23630 refused). Not needed: **nothing was placed in the world and no model was adopted** |
 
 ## Live invariants — the things that will bite you
 
@@ -323,6 +340,15 @@ existed the same three lines were maintained in four places and rewritten every 
     fixed. ⚠️ **And `WorldEvent.ObjectiveLabel()` / `WorldEventResource.DisplayName` are literal
     English on the HUD banner** (`GameHud.cs:1054`) — invariant 34's family, live today, found by
     41B and deliberately not folded into it.
+39. ⚠️ **AN EVENT THAT FIRES CONDITIONALLY IS NOT AN EVENT THAT MEANS THE THING** (41C).
+    `EnemyAlertedEvent` looks like "the player was spotted" and is published **only when the AI
+    profile's `AlertRadius > 0`** — an ambusher authors 0 so the pack is not given away. Before
+    riding an event, read the line that publishes it and ask **what has to be true for it to fire at
+    all**; the answer is sometimes authored in a `.tres` a hundred files away.
+    ⚠️ **Its sibling: a SEEDED state is invisible to every rule written for an EARNED one.** A
+    `Stealth` objective starts already met, so a helper that correctly skips completed objectives
+    skipped the entire type. **Every filter on *unmet* / *not yet done* is a candidate to be wrong
+    about a state that begins in the finished position.**
 
 
 ## Commands worth knowing
