@@ -12,3 +12,11 @@ public readonly record struct QuestObjectiveAdvancedEvent(
 
 /// <summary>Raised when all of a quest's objectives are met and rewards are granted.</summary>
 public readonly record struct QuestCompletedEvent(IEntity Owner, QuestResource Quest) : IGameEvent;
+
+/// <summary>
+/// Raised when a quest is lost rather than finished (Phase 41B) — the escortee went down, or the
+/// player died with a hold unfinished. Deliberately a sibling of <see cref="QuestCompletedEvent"/>
+/// rather than a flag on it: the toast, the journal and any future ending flag all want to know
+/// which of the two happened without inspecting the quest's state afterwards.
+/// </summary>
+public readonly record struct QuestFailedEvent(IEntity Owner, QuestResource Quest) : IGameEvent;

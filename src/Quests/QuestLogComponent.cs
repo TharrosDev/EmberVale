@@ -35,13 +35,35 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
     /// </summary>
     public const float ArrivalRadius = 12f;
 
-    /// <summary>Reach poll cadence, matching <c>MapService</c>'s own 4 Hz tick.</summary>
+    /// <summary>
+    /// How close the player must stand to a <see cref="ObjectiveType.Defend"/> site for the hold to
+    /// count (41B). Wider than <see cref="ArrivalRadius"/> on purpose: arriving is a point, but
+    /// holding a place means fighting across it, and a defender pushed six metres chasing a goblin
+    /// has not abandoned the crossing.
+    /// </summary>
+    public const float DefendRadius = 22f;
+
+    /// <summary>Positional poll cadence, matching <c>MapService</c>'s own 4 Hz tick.</summary>
     private const float ReachTickSeconds = 0.25f;
 
     private readonly Dictionary<string, QuestProgress> _quests = new();
 
-    /// <summary>Scratch buffer for the Reach poll, reused so a 4 Hz tick allocates nothing.</summary>
+    /// <summary>Scratch buffers for the positional poll, reused so a 4 Hz tick allocates nothing.</summary>
     private readonly List<string> _reachTargets = new();
+    private readonly List<ObjectiveResource> _escortObjectives = new();
+    private readonly List<string> _defendTargets = new();
+
+    /// <summary>
+    /// Sub-second remainder of each <see cref="ObjectiveType.Defend"/> hold, by location id.
+    ///
+    /// The poll runs at 4 Hz but <c>RequiredCount</c> is authored in <em>seconds</em>, so quarters
+    /// accumulate here and whole seconds go through <see cref="Advance"/> — the same choke point every
+    /// other objective type uses, rather than a second way to write to <c>Counts</c>.
+    ///
+    /// ponytail: the remainder is deliberately not saved. It is under one second, and a save format
+    /// entry for it would be more machinery than the fact is worth (docs/SAVE_FORMAT.md).
+    /// </summary>
+    private readonly Dictionary<string, float> _defendHeld = new();
 
     private float _sinceReachTick;
 
@@ -112,6 +134,7 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
         EventBus.Instance?.Subscribe<EntityDiedEvent>(OnEntityDied);
         EventBus.Instance?.Subscribe<ItemPickedUpEvent>(OnItemPickedUp);
         EventBus.Instance?.Subscribe<DialogueEndedEvent>(OnDialogueEnded);
+        EventBus.Instance?.Subscribe<Companions.CompanionDownedEvent>(OnCompanionDowned);
         RegisterSaveable();
     }
 
@@ -120,6 +143,7 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
         EventBus.Instance?.Unsubscribe<EntityDiedEvent>(OnEntityDied);
         EventBus.Instance?.Unsubscribe<ItemPickedUpEvent>(OnItemPickedUp);
         EventBus.Instance?.Unsubscribe<DialogueEndedEvent>(OnDialogueEnded);
+        EventBus.Instance?.Unsubscribe<Companions.CompanionDownedEvent>(OnCompanionDowned);
         SaveManager.Instance?.Unregister(this);
     }
 
@@ -131,11 +155,21 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
 
     public bool HasQuest(string questId) => _quests.ContainsKey(questId);
 
-    /// <summary>True if the quest isn't already in the log and its prerequisite (if any)
-    /// has been completed.</summary>
+    public bool IsFailed(string questId) =>
+        _quests.TryGetValue(questId, out QuestProgress? p) && p.Status == QuestStatus.Failed;
+
+    /// <summary>
+    /// True if the quest isn't already in the log and its prerequisite (if any) has been completed.
+    ///
+    /// ⚠️ <b>A FAILED quest is startable again (41B)</b>, and it re-enters the log with fresh counts.
+    /// Failure is the first way a quest can end without succeeding, and the alternative — a failed
+    /// entry that blocks its own id forever — deletes content from a save on one bad fight, with no
+    /// warning and the giver still standing there offering it. Every dialogue gate keyed on
+    /// <c>QuestAvailable</c> therefore reopens on a failure with no authoring change.
+    /// </summary>
     public bool CanStart(QuestResource quest)
     {
-        if (quest == null || _quests.ContainsKey(quest.Id))
+        if (quest == null || (_quests.ContainsKey(quest.Id) && !IsFailed(quest.Id)))
         {
             return false;
         }
@@ -166,12 +200,39 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
 
     private void OnEntityDied(EntityDiedEvent e)
     {
-        if (Entity == null || e.Killer == null || !ReferenceEquals(e.Killer, Entity))
+        if (Entity == null)
+        {
+            return;
+        }
+
+        // ⚠️ THE OWNER'S OWN DEATH IS CHECKED FIRST, AND IT IS A DIFFERENT QUESTION FROM THE KILL
+        // CREDIT BELOW (41B). Surviving is what a Defend objective measures, so dying is the only
+        // thing that can fail it — and the player is the one actor that can appear in this event as
+        // the subject rather than the killer.
+        if (ReferenceEquals(e.Entity, Entity))
+        {
+            FailQuestsWith(ObjectiveType.Defend, null);
+            return;
+        }
+
+        if (e.Killer == null || !ReferenceEquals(e.Killer, Entity))
         {
             return;
         }
 
         Advance(ObjectiveType.Kill, e.Entity.TemplateId);
+    }
+
+    /// <summary>Fails any escort whose charge just went down (41B). Ignores the recovery half of the
+    /// event (<c>Downed: false</c>) — a companion standing back up does not un-fail a quest.</summary>
+    private void OnCompanionDowned(Companions.CompanionDownedEvent e)
+    {
+        if (Entity == null || !e.Downed)
+        {
+            return;
+        }
+
+        FailQuestsWith(ObjectiveType.Escort, e.CompanionId);
     }
 
     private void OnItemPickedUp(ItemPickedUpEvent e)
@@ -219,10 +280,10 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
         }
 
         _sinceReachTick = 0f;
-        CheckReachObjectives();
+        CheckPositionalObjectives();
     }
 
-    private void CheckReachObjectives()
+    private void CheckPositionalObjectives()
     {
         if (Entity == null || _quests.Count == 0)
         {
@@ -233,6 +294,8 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
         // — completing one quest can start another through its rewards, the same reason Advance
         // snapshots. Reused across ticks to keep a 4 Hz poll from allocating.
         _reachTargets.Clear();
+        _escortObjectives.Clear();
+        _defendTargets.Clear();
         foreach (QuestProgress progress in _quests.Values)
         {
             if (progress.Status != QuestStatus.Active)
@@ -244,18 +307,40 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
             for (int i = 0; i < objectives.Count; i++)
             {
                 ObjectiveResource objective = objectives[i];
-                if (objective.Type == ObjectiveType.Reach &&
-                    !progress.IsObjectiveComplete(i) &&
-                    objective.TargetId.Length > 0)
+                if (progress.IsObjectiveComplete(i) || objective.TargetId.Length == 0)
                 {
-                    _reachTargets.Add(objective.TargetId);
+                    continue;
+                }
+
+                switch (objective.Type)
+                {
+                    case ObjectiveType.Reach:
+                        _reachTargets.Add(objective.TargetId);
+                        break;
+
+                    // The objective itself rather than its id: an escort is answered by two values,
+                    // the companion (TargetId) and where they are being taken (LocationId).
+                    case ObjectiveType.Escort when objective.LocationId.Length > 0:
+                        _escortObjectives.Add(objective);
+                        break;
+
+                    case ObjectiveType.Defend:
+                        _defendTargets.Add(objective.TargetId);
+                        break;
                 }
             }
         }
 
-        if (_reachTargets.Count == 0 ||
-            ServiceLocator.Instance is not { } locator ||
-            !locator.TryGet(out World.MapService map))
+        if (_reachTargets.Count == 0 && _escortObjectives.Count == 0 && _defendTargets.Count == 0)
+        {
+            // Nothing positional is live, so no partial hold can be. Dropping the remainders here is
+            // what makes a retaken quest start its hold from zero rather than from wherever the
+            // failed attempt left it.
+            _defendHeld.Clear();
+            return;
+        }
+
+        if (ServiceLocator.Instance is not { } locator || !locator.TryGet(out World.MapService map))
         {
             return;
         }
@@ -277,6 +362,82 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
             if ((dx * dx) + (dz * dz) <= ArrivalRadius * ArrivalRadius)
             {
                 Advance(ObjectiveType.Reach, locationId);
+            }
+        }
+
+        CheckEscorts(map);
+        CheckHolds(map, here);
+    }
+
+    /// <summary>
+    /// Completes an escort when the charge — not the player — is standing at the destination (41B).
+    ///
+    /// ⚠️ <b>It measures the COMPANION's position, and that is the whole difference from Reach.</b>
+    /// Measuring the player would complete the objective for someone who walked to the market alone
+    /// and left their charge at the wharf, which is exactly the failure the quest exists to make
+    /// possible. The companion follows by their own AI and can be ordered to hold, so the two
+    /// positions genuinely differ.
+    /// </summary>
+    private void CheckEscorts(World.MapService map)
+    {
+        if (_escortObjectives.Count == 0 ||
+            ServiceLocator.Instance is not { } locator ||
+            !locator.TryGet(out Companions.CompanionRoster roster))
+        {
+            return;
+        }
+
+        foreach (ObjectiveResource objective in _escortObjectives)
+        {
+            // Not recruited yet (or dismissed mid-quest): there is nobody to escort, so nothing
+            // advances. Silent by design, the same as an unloaded location.
+            if (!roster.TryGet(objective.TargetId, out Companions.CompanionEntity companion) ||
+                !GodotObject.IsInstanceValid(companion) ||
+                map.PositionOf(objective.LocationId) is not { } destination)
+            {
+                continue;
+            }
+
+            Vector3 at = companion.Body.GlobalPosition;
+            float dx = destination.X - at.X;
+            float dz = destination.Z - at.Z;
+            if ((dx * dx) + (dz * dz) <= ArrivalRadius * ArrivalRadius)
+            {
+                Advance(ObjectiveType.Escort, objective.TargetId);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Accumulates <see cref="ObjectiveType.Defend"/> holds while the player stands at the site.
+    ///
+    /// Whole seconds go through <see cref="Advance"/> so the hold reaches <c>Counts</c> by the same
+    /// route every other type does; the sub-second remainder lives in <see cref="_defendHeld"/>.
+    /// Leaving the radius stops the clock and keeps what was earned — see
+    /// <see cref="ObjectiveType.Defend"/> for why it does not rewind.
+    /// </summary>
+    private void CheckHolds(World.MapService map, Vector3 here)
+    {
+        foreach (string locationId in _defendTargets)
+        {
+            if (map.PositionOf(locationId) is not { } site)
+            {
+                continue;
+            }
+
+            float dx = site.X - here.X;
+            float dz = site.Z - here.Z;
+            if ((dx * dx) + (dz * dz) > DefendRadius * DefendRadius)
+            {
+                continue;
+            }
+
+            _defendHeld.TryGetValue(locationId, out float held);
+            int whole = ObjectiveProgress.TickHold(ref held, ReachTickSeconds);
+            _defendHeld[locationId] = held;
+            if (whole > 0)
+            {
+                Advance(ObjectiveType.Defend, locationId, whole);
             }
         }
     }
@@ -326,6 +487,78 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
                 TryComplete(progress);
             }
         }
+    }
+
+    /// <summary>
+    /// Fails every active quest carrying an unmet objective of <paramref name="type"/> (41B),
+    /// optionally narrowed to one <paramref name="targetId"/> — an escortee going down fails only
+    /// the quests escorting <em>them</em>, while the player dying fails every hold at once.
+    /// </summary>
+    private void FailQuestsWith(ObjectiveType type, string? targetId)
+    {
+        // Snapshot for Advance's reason: Fail publishes, and a listener may touch the log.
+        var active = new List<QuestProgress>();
+        foreach (QuestProgress p in _quests.Values)
+        {
+            if (p.Status == QuestStatus.Active)
+            {
+                active.Add(p);
+            }
+        }
+
+        foreach (QuestProgress progress in active)
+        {
+            List<ObjectiveResource> objectives = progress.Quest.ObjectiveList();
+            for (int i = 0; i < objectives.Count; i++)
+            {
+                ObjectiveResource objective = objectives[i];
+                if (objective.Type != type || progress.IsObjectiveComplete(i) ||
+                    (targetId != null && objective.TargetId != targetId))
+                {
+                    continue;
+                }
+
+                Fail(progress.Quest.Id);
+                break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Marks an active quest failed and announces it (41B). Returns false when the quest is not in
+    /// the log or is not active, so completing and failing can never race to a second outcome.
+    ///
+    /// Public because failure has three callers of different shapes — the two event handlers, and
+    /// the harness/dev tooling that has to be able to reach a state the player reaches by dying.
+    /// </summary>
+    public bool Fail(string questId)
+    {
+        if (!_quests.TryGetValue(questId, out QuestProgress? progress) ||
+            progress.Status != QuestStatus.Active)
+        {
+            return false;
+        }
+
+        progress.Status = QuestStatus.Failed;
+
+        // The tracker and the compass both read Tracked, which only ever returns an Active quest —
+        // so a failed quest drops off both surfaces by construction (invariant 5). Clearing the
+        // explicit choice as well keeps the journal's TRACKED button honest.
+        if (TrackedQuestId == questId)
+        {
+            TrackedQuestId = string.Empty;
+        }
+
+        // Any partial hold belonged to the attempt that just ended.
+        _defendHeld.Clear();
+
+        Log.Info($"Quest failed: {progress.Quest.Title}");
+        if (Entity != null)
+        {
+            EventBus.Instance?.Publish(new QuestFailedEvent(Entity, progress.Quest));
+        }
+
+        return true;
     }
 
     private void TryComplete(QuestProgress progress)

@@ -351,6 +351,14 @@ and the conditions under which they would be built are written down.
 
 ### Phase 41 — quests worth the name
 
+- 41B ✅ and a quest can now be lost. Sedge Marrow will ask you to walk her hull-hand Tessa up the
+road to Embermarket with the season's ledger, and if she goes down on the way the errand is over —
+the journal moves it into a FAILED section and Sedge, who is still standing on her wharf, will offer
+it again. The guild board has a second posting beside the goblin bounty: stand in the north wilds and
+hold the road for a full minute, which is the first thing the game has asked you to do that is
+measured in seconds rather than in kills. Failing is not the end of anything; every failed quest can
+be taken again.
+
 - 41A ✅ and a quest can finally ask you to go somewhere and speak to someone. Until now every quest in
 the game was one of two things: kill N of something, or fetch N of something. That is what the quest
 system could measure, so that is what all fourteen quests were. Now Innkeeper Holt will ask you to

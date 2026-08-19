@@ -469,6 +469,8 @@ questlog.title,QUEST JOURNAL   (J to close)
 questlog.none,(no quests)
 questlog.no_active,(no active quests)
 questlog.completed,COMPLETED
+# 41B — the journal's first not-a-success ending. The heading landed with the state, not before it.
+questlog.failed,FAILED
 # Quest tracking (39.5B) — chooses which quest the HUD tracker and compass follow
 questlog.track,TRACK
 questlog.tracked,TRACKED
@@ -542,6 +544,13 @@ quest.hollowreach.word.summary,"Holt's barrels come up from Hollowreach and this
 quest.hollowreach.word.obj_reach,"Go down to Hollowreach"
 quest.hollowreach.word.obj_talk,"Ask Sedge Marrow about the barrels"
 quest.objective.unnamed,"Objective"
+# --- Phase 41B: escort + defend, and the two quests that call them ---
+quest.hollowreach.ledger.title,"The Ledger Run"
+quest.hollowreach.ledger.summary,"Sedge Marrow will not send her season's ledger up the road with a stranger, and she will not send it alone either. Walk her hull-hand Tessa Rill to Embermarket and see her there in one piece."
+quest.hollowreach.ledger.obj,"See Tessa Rill safely to Embermarket"
+quest.warband.hold_north.title,"Hold the North Road"
+quest.warband.hold_north.summary,"The warband wants the north road held long enough for a cart to clear it. Stand in the wilds north of the Ember Crown for a full minute and do not be moved off it."
+quest.warband.hold_north.obj,"Hold the north wilds"
 quest.warband.bounty.title,"Goblin Cullers"
 quest.warband.bounty.summary,"Goblins harry the roads out of the Ember Crown. The guild posts a standing bounty: thin their numbers in the wilds."
 quest.warband.bounty.obj,"Slay goblins"
@@ -720,6 +729,7 @@ dlg.ironking.absorb.c_declined_bye,"Not today."
 notify.levelup,Level up!  You are now level {0}
 notify.quest_started,Quest started:  {0}
 notify.quest_complete,Quest complete:  {0}
+notify.quest_failed,Quest failed:  {0}
 notify.event_started,★ {0}
 notify.event_resolved,{0} resolved!
 notify.event_failed,{0} failed
@@ -1302,6 +1312,8 @@ service.prompt_mercenary,"{0} — take her on ({1} gold)"
 service.prompt_mercenary_hired,"{0} — she already walks with you"
 service.prompt_mercenary_full,"{0} — you have no room in your band for her"
 companion.wren.name,Wren
+companion.tessa.name,Tessa Rill
+companion.tessa.title,Hull-hand of Hollowreach
 companion.wren.title,Sword of the Crossway Road
 dlg.innkeeper.speaker,"Innkeeper Holt"
 dlg.innkeeper.root,"Holt is drying the same cup he was drying an hour ago. ""Rooms upstairs, ten gold, and the shutters actually close."""
@@ -1414,6 +1426,33 @@ map.category.gate,Gate
 map.category.waystone,Waystone
 map.category.home,Holding
 map.category.waypoint,Waypoint
+# --- Phase 41B: the ledger run (Sedge -> Tessa -> Embermarket) and the north-road hold ---
+dlg.sedge.c_ledger,"Sending anything up the road this week?"
+dlg.sedge.ledger,"The season's ledger, and I will not put it in a stranger's hands. Tessa knows the road, but she is one girl with a satchel and the goblins have been bold. Walk up with her."
+dlg.sedge.c_ledger_accept,"She will get there."
+dlg.sedge.c_ledger_decline,"Find someone else."
+dlg.sedge.ledger_go,"Tessa! The market, with this one. Stay at their shoulder and do not wander."
+dlg.sedge.c_ledger_go,"Come on then."
+dlg.sedge.c_ledger_resume,"Tessa should walk with me."
+dlg.tessa.speaker,Tessa Rill
+dlg.tessa.root,"Wharf to market and back before dusk, that is the whole of it. I am right behind you."
+dlg.tessa.c_hold,"Stay close."
+dlg.tessa.c_bye,"Keep up."
+dlg.tessa.arrived,"That is the ledger where it belongs. Sedge will hear you did it properly."
+dlg.tessa.c_part,"Safe road back."
+dlg.guild_board.c_hold_offer,"Anything on the north road?"
+dlg.guild_board.hold,"A cart wants the north road clear for a minute together. Not swept. Held. Stand in the wilds north of the walls and be immovable for sixty seconds."
+dlg.guild_board.c_hold_accept,"I will hold it."
+dlg.guild_board.c_hold_decline,"Not my work."
+dlg.guild_board.hold_accepted,"North of the walls. A full minute on your feet."
+dlg.guild_board.c_hold_accepted_bye,"Understood."
+dlg.guild_board.c_hold_active,"About the north road."
+dlg.guild_board.hold_inprogress,"The cart is still waiting. So is the road."
+dlg.guild_board.c_hold_inprogress_bye,"On my way."
+dlg.guild_board.c_hold_thanks,"The road is held."
+dlg.guild_board.hold_thanks,"The cart came through. The warband remembers who stood there."
+dlg.guild_board.c_hold_thanks_bye,"Good."
+
 # --- BEGIN generated map location names (tools/gen_map_locations.py) ---
 location.ember_crown.town.name,Ember Crown
 location.ember_crown.town.desc,"The seat of the realm. Its square holds the smith, the apothecary and the inn; the guild board stands at the south road."

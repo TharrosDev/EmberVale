@@ -33,8 +33,50 @@
     superseded by `DialogueEffect.StartQuest`, and it carried two hard-coded player-facing strings so
     placing it would have shipped untranslated text. Both were `NOW.md` orphans 1 and 2.
   - ⚠️ **THE MOST VALUABLE THING THIS SUB-PHASE SHIPPED WAS NOT AN OBJECTIVE TYPE** — see below.
-- [ ] **41B — Escort + Defend/Survive objective types** `[F]`
+- [x] **41B — Escort + Defend/Survive objective types** `[F]` ✅ *(2026-08-19)*
   - **Done when:** escort and defend/survive objectives work with fail states.
+  - **Landed:** `ObjectiveType.Escort` (4) and `Defend` (5) through the same
+    `QuestLogComponent.Advance` choke point, plus the state the quest log never had —
+    `QuestStatus.Failed` (2), `QuestFailedEvent`, `QuestLogComponent.Fail`, a journal FAILED section
+    and a toast. Four `--validate` arms, four negative cases (66 → 70), the hold accumulator
+    extracted pure and tested, and two authored quests: `quest.hollowreach.ledger` (escort,
+    continuing 41A's courier thread off Sedge Marrow) and `quest.warband.hold_north` (defend, posted
+    on the guild board beside the standing bounty).
+  - ⚠️ **41A ASKED THE RIGHT QUESTION AND THE ANSWER WAS "NOTHING IN THIS GAME CAN BE HURT".** *What
+    counts as a fail, and which event says so* was answered before any branch was written — and for
+    escort the answer forced the whole design. All seventeen authored NPCs are `Entity` nodes with a
+    static collider, **no `StatsComponent` and no hurtbox**: an enemy cannot damage one. So an escort
+    built on an NPC has no honest fail state at all, and the choice was between building a damageable
+    villager and using the damageable ally that already exists. `CompanionFactory` assembles health,
+    combat, follow AI, a leash and persistence **from a `.tres`**, and `DialogueEffect.RecruitCompanion`
+    already puts one beside the player — so the escortee is `companion.tessa`, the mechanic is two
+    dialogue choices, and `CompanionDownedEvent` is the event that means *your charge has fallen*.
+  - ⚠️ **THE FAIL STATE FOR A HOLD IS DYING, AND NOTHING ELSE MAY BE.** Defend accumulates seconds in
+    the 4 Hz poll Reach already runs; leaving the site **stops the clock and keeps what was earned**.
+    A hold that silently rewound would be a fail state wearing no label — the player watches the
+    number fall having been told nothing. Walking away costs the time it costs.
+  - ⚠️ **A QUEST-STARTED RAID WAS CONSIDERED AND REFUSED, AND IT IS 41A'S TRAP ONE TYPE LATER.**
+    `WorldEventDirector.ForceStart` exists and a `DialogueEffect.TriggerWorldEvent` would have been
+    eight lines, giving the hold real attackers on cue. But `WorldEventEndedEvent` carries an event
+    **id**, not an instance — a randomly rolled raid of the same id is indistinguishable from the
+    quest's own, so an unrelated timeout would fail the player's quest. The pressure is geography
+    instead: `location.wilds.north` sits ~107 m out, far outside the region's 34 m `SafeZoneRadius`,
+    which is exactly where the `EncounterDirector` is already allowed to spawn.
+  - ⚠️ **FAILURE IS RETAKEABLE, AND THAT IS ONE CONDITION OF CODE AND ONE PARAGRAPH OF DECISION.**
+    `CanStart` refuses a quest already in the log **unless it is `Failed`**. Because every giver's
+    offer is gated on `QuestAvailable`, which routes through `CanStart`, **the offer reopens with no
+    authoring change** — Sedge asks again. Permanent failure would delete content from a save on one
+    bad fight, with no warning and the giver still standing there.
+  - ⚠️ **`ObjectiveResource` NOW HAS TWO FIELDS WHOSE MEANING CHANGES WITH THE TYPE, AND BOTH ARE
+    GATED.** `LocationId` is **forbidden** on Reach (its target is already the destination) and
+    **required** on Escort (its target is a person). `RequiredCount` is a tally everywhere except
+    Defend, where it is **seconds** — so the authoring default of 1 is a quarter-second hold that
+    completes before the player stops walking, and `--validate` refuses anything under ten.
+  - ⚠️ **THE RENDERED FRAME CAUGHT A DEFECT THE BUILD, THE TESTS AND THE VALIDATOR ALL PASSED OVER** —
+    see below.
+  - **Not exercised in-world:** nothing recruited Tessa, walked her to Embermarket or downed her, and
+    nothing stood in the north wilds for a minute. The mechanism is verified by frames, gates and
+    tests; **the escort playthrough is owed and is named rather than implied.**
 - [ ] **41C — Interact/Use + Timed + Stealth objective types** `[F]`
   - **Done when:** the remaining objective types are authorable and validated.
 - [ ] **41D — Choice/Branch objectives + quest state graphs** `[F]`
@@ -94,3 +136,57 @@ unreachable by rule rather than by luck.
    or the frame is decoration.**
 
 ---
+
+---
+
+## 41B — three surfaces, two answers
+
+⚠️ **THE JOURNAL KEPT SHOWING A FAILED QUEST UNDER *ERRANDS*, STILL LABELLED *TRACKED*.**
+
+`QuestLogPanel` marked itself dirty on `QuestStartedEvent`, `QuestObjectiveAdvancedEvent` and
+`QuestCompletedEvent`. A new terminal state arrived and nobody told the panel — so a quest that
+failed while the journal was open sat there as live work until some *other* quest event happened to
+rebuild it. Meanwhile the toast said "Quest failed" and the HUD tracker had already moved on.
+**Three surfaces drawing one fact, and two of them were right.**
+
+Everything was green: `dotnet build --warnaserror` clean, 1440 tests passing, `--validate` exit 0,
+70/70 negative cases caught. **The only instrument that could see it was the screenshot this
+sub-phase had just added for a different reason** — the FAILED section — and the frame came back
+with no FAILED section in it at all.
+
+This is invariant 8 meeting invariant 7: *a UI change that has not been captured is not verified*,
+and *when a sub-phase adds a state, ask what every existing thing does IN that state*. The second
+question, asked of the journal, would have found it without the render. It was not asked, because
+the journal was where the new state was being **built** — the blind spot is the file you are already
+editing.
+
+### Two things worth carrying into the next sub-phase
+
+1. ⚠️ **THE ANSWER TO "WHICH EVENT MEANS THIS" CAN BE "NO EVENT, BECAUSE THE STATE CANNOT HAPPEN".**
+   41A said knowing which event means what is the whole job; 41B's escort found that the event did
+   not exist and *could not*, because nothing in the build can damage an NPC. The useful move was not
+   to build a damageable NPC — it was to notice that the damageable ally already existed and was
+   authored entirely in data. **Before adding the actor a feature needs, check whether the feature
+   can be expressed with the actor that already carries the state.** 41C's Interact/Use and Stealth
+   types have the same shape of question: *is there already something in this game that knows the
+   player did that?*
+2. ⚠️ **A NEW STATE HAS TO REACH EVERY SURFACE THAT DRAWS THE OLD ONE, AND THE SURFACE YOU ARE
+   EDITING IS THE ONE YOU WILL MISS.** Failure reached the journal's *rendering* (a FAILED section
+   was written deliberately) and not the journal's *refresh*. The grep that would have caught it is
+   not "who draws quests" but **"who subscribes to `QuestCompletedEvent`"** — every listener of the
+   new state's sibling is a candidate listener of the new state. 41C adds no state, but 41D adds
+   branching and 41E adds world changes, and both are exactly this shape.
+
+### Two findings, recorded rather than fixed
+
+⚠️ **`WorldEvent.ObjectiveLabel()` and `WorldEventResource.DisplayName` are literal English on a
+player-facing surface.** `GameHud.cs:1054` builds the event banner as
+`$"★ {Resource.DisplayName} — {worldEvent.ObjectiveLabel()}"`, and `ObjectiveLabel` hard-codes
+`"Defeat the raiders (n/N)"`. That is invariant 34's family (CLAUDE.md §6: no hard-coded
+player-facing strings), it is **live today**, and it is not 41B's to fix — recorded here so the next
+session that opens `src/World` finds it named rather than rediscovering it.
+
+⚠️ **`CompanionResource.RecruitQuestId` is validated and read by nothing** — invariant 37's exact
+shape, *a knob you validate is a claim that the knob works*. It is descriptive metadata on all three
+companions and harmless today, but it is not a behaviour, and the first author who expects it to gate
+recruitment will get a green gate and no effect.

@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="QuestResource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+
+; Phase 41B - the caller for ObjectiveType.Escort, and the first quest in the game that can be LOST.
+; It continues 41A's thread: quest.hollowreach.word sends you to Sedge Marrow, and this is what she
+; asks for once you have spoken.
+;
+; ⚠️ ONE OBJECTIVE, DELIBERATELY. Nothing sequences objectives (41A's note, still true - ordering is
+; 41D), so a "walk her there, then come back" quest would have both halves live at once and complete
+; in whichever order geography allowed. The escort IS the quest.
+;
+; ⚠️ THE OBJECTIVE NAMES TWO THINGS AND NEEDS BOTH. TargetId is the companion; LocationId is where she
+; is being taken. That is the exact mirror of a Reach objective, which refuses LocationId because its
+; target already IS the destination - and --validate enforces both directions, so neither shape can be
+; authored as the other by accident.
+;
+; ⚠️ THE FAIL STATE IS HERS, NOT YOURS. The quest fails on CompanionDownedEvent for companion.tessa -
+; the only event in the build that means "the person you were protecting has fallen". Failing is not
+; the end of it: CanStart allows a failed quest to be retaken, so Sedge's offer reopens on its own
+; through the same QuestAvailable gate that offered it the first time.
+
+[sub_resource type="Resource" id="Obj_escort_tessa"]
+script = ExtResource("2_obj")
+Type = 4
+TargetId = "companion.tessa"
+RequiredCount = 1
+Description = "quest.hollowreach.ledger.obj"
+LocationId = "location.embermarket.market"
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.hollowreach.ledger"
+Title = "quest.hollowreach.ledger.title"
+Summary = "quest.hollowreach.ledger.summary"
+Objectives = Array[Resource]([SubResource("Obj_escort_tessa")])
+XpReward = 80
+GoldReward = 30
+GoldItemId = "item.currency.gold"
+RewardItems = []
+FactionRewardId = "faction.villagers"
+FactionRewardAmount = 8
+PrerequisiteQuestId = "quest.hollowreach.word"
