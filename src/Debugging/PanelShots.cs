@@ -92,10 +92,21 @@ public sealed partial class PanelShots : ShotHarness
             Journal?.SetOpen(true);
         });
 
+        // 41C. The tally errand, which is the only quest carrying an Interact objective, a Stealth
+        // condition and a deadline — so this one frame is the only check that any of the three draw
+        // at all. ⚠️ The tracker's countdown is the point: a Stealth objective is seeded ALREADY MET,
+        // so it must render as satisfied here rather than as 0/1, and the clock must be counting down
+        // rather than sitting at its authored value.
+        Shot("08-journal-timed", () =>
+        {
+            StartTheTally();
+            Journal?.SetOpen(true);
+        });
+
         // 41B. The journal with a Defend objective live: its count is SECONDS, so this card reads
         // "0/60" where every other objective in the game counts things. A quest whose progress bar
         // measures a different unit from its neighbours is worth looking at once.
-        Shot("08-journal-defend", () =>
+        Shot("09-journal-defend", () =>
         {
             StartTheHold();
             Journal?.SetOpen(true);
@@ -105,14 +116,26 @@ public sealed partial class PanelShots : ShotHarness
         // quest can end without succeeding, and the journal's FAILED section had never been drawn
         // because until now the state could not exist (the panel's own header said so). A shot of
         // the happy path proves nothing about the branch — 41A's lesson, applied to its own sequel.
-        Shot("09-journal-failed", () =>
+        Shot("10-journal-failed", () =>
         {
             FailTheHold();
             Journal?.SetOpen(true);
         });
 
-        Shot("10-journal-closed", () => Journal?.SetOpen(false));
+        Shot("11-journal-closed", () => Journal?.SetOpen(false));
     }
+
+    /// <summary>Starts the sealed-tally errand (41C) and tracks it, so the HUD tracker draws its
+    /// countdown and the journal draws its Interact and Stealth rows.</summary>
+    private static void StartTheTally()
+    {
+        if (Log() is { } log && QuestDatabase.Get(TallyQuestId) is { } tally && log.StartQuest(tally))
+        {
+            log.Track(tally.Id);
+        }
+    }
+
+    private const string TallyQuestId = "quest.emberdeep.tally";
 
     /// <summary>Starts the north-road hold (41B) — the only authored quest with a Defend objective,
     /// and the one this harness can reach: it has no prerequisite, so it starts from a fresh save.

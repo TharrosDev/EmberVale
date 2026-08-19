@@ -19,6 +19,15 @@
 ; achieve not being seen - which is why --validate refuses a quest made only of stealth objectives:
 ; it would complete on the frame it was accepted.
 ;
+; ⚠️ NO PrerequisiteQuestId, AND THAT IS A CHANGE OF MIND WORTH RECORDING. It was first authored
+; behind quest.hollowreach.word, on the reasoning that the courier quest is how a player learns
+; Hollowreach exists. That is true and it is still not a reason to gate: Coyle stands two metres from
+; Sedge, so anyone who has reached him has already found the place, and a merchant's errand that
+; refuses you because you have not done an unrelated errand reads as a bug. The second reason is
+; smaller and honest: with the gate on, NOTHING could start this quest without a playthrough - not
+; --panelshots, not any harness - so the countdown and both new objective types would have shipped
+; unphotographed. A gate that only a human can open is a gate no instrument can see behind.
+;
 ; ⚠️ 180 SECONDS IS THE ROUTE, NOT A NUMBER. Hollowreach (-52, 0, 46) to the Emberdeep mine
 ; (56, 0, -10) is about 120 m of open ground, which is a comfortable walk in half that - and the whole
 ; point is that the fast way crosses the wilds where the EncounterDirector spawns, so the stealth
@@ -53,4 +62,4 @@ RewardItems = []
 FactionRewardId = "faction.villagers"
 FactionRewardAmount = 6
 TimeLimitSeconds = 180.0
-PrerequisiteQuestId = "quest.hollowreach.word"
+PrerequisiteQuestId = ""
