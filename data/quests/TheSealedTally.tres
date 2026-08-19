@@ -1,0 +1,56 @@
+[gd_resource type="Resource" script_class="QuestResource" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+
+; Phase 41C - the caller for BOTH remaining objective types and for the quest-level deadline, in one
+; errand, because they only mean anything together: a clock with no route is arithmetic, and a stealth
+; condition with no reason to hurry is just a walk.
+;
+; ⚠️ THE INTERACT TARGET IS A THING THAT WAS ALREADY STANDING THERE. interact.emberdeep.waystone is
+; authored on the mine's existing waystone node - no prop was placed, no model adopted, so invariant
+; 14 does not fire. An Interact objective names a scene-authored id with NO database behind it, so
+; --validate scans the cell scenes both ways: an id no node carries fails, and an id two nodes carry
+; fails harder, because whichever the player reaches first would silently be "the one the quest meant".
+;
+; ⚠️ THE STEALTH OBJECTIVE AUTHORS NO TargetId AND THAT IS ENFORCED. It is a condition on the errand,
+; not a target in it: any enemy entering combat blows it, from anywhere, so an authored target would
+; promise a scope the rule does not keep. It also starts ALREADY MET - there is nothing to do to
+; achieve not being seen - which is why --validate refuses a quest made only of stealth objectives:
+; it would complete on the frame it was accepted.
+;
+; ⚠️ 180 SECONDS IS THE ROUTE, NOT A NUMBER. Hollowreach (-52, 0, 46) to the Emberdeep mine
+; (56, 0, -10) is about 120 m of open ground, which is a comfortable walk in half that - and the whole
+; point is that the fast way crosses the wilds where the EncounterDirector spawns, so the stealth
+; condition and the clock pull against each other. The deadline counts REAL seconds of play and stops
+; while the tree is paused, so reading the journal costs nothing.
+
+[sub_resource type="Resource" id="Obj_touch_waystone"]
+script = ExtResource("2_obj")
+Type = 6
+TargetId = "interact.emberdeep.waystone"
+RequiredCount = 1
+Description = "quest.emberdeep.tally.obj_set"
+LocationId = "location.emberdeep.waystone"
+
+[sub_resource type="Resource" id="Obj_unseen"]
+script = ExtResource("2_obj")
+Type = 7
+TargetId = ""
+RequiredCount = 1
+Description = "quest.emberdeep.tally.obj_unseen"
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.emberdeep.tally"
+Title = "quest.emberdeep.tally.title"
+Summary = "quest.emberdeep.tally.summary"
+Objectives = Array[Resource]([SubResource("Obj_touch_waystone"), SubResource("Obj_unseen")])
+XpReward = 90
+GoldReward = 35
+GoldItemId = "item.currency.gold"
+RewardItems = []
+FactionRewardId = "faction.villagers"
+FactionRewardAmount = 6
+TimeLimitSeconds = 180.0
+PrerequisiteQuestId = "quest.hollowreach.word"

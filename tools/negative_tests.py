@@ -456,6 +456,41 @@ CASES = [
      [("data/quests/HoldTheNorthRoad.tres", "RequiredCount = 60", "RequiredCount = 1")],
      "RequiredCount is seconds"),
 
+    # ---- 41C: the two remaining objective types, and the deadline ---------------------------------
+    # An Interact target is a scene-authored id with NO database behind it (the second of its kind
+    # after LocationId), so both directions of the scan are rules: an id nothing authors, and an id
+    # two nodes author.
+    ("quest.interact_unplaced_id", "ValidateInteractIdsArePlaced",
+     [("data/quests/TheSealedTally.tres",
+       'TargetId = "interact.emberdeep.waystone"',
+       'TargetId = "interact.emberdeep.nowhere"')],
+     "which no scene authors on an interactable"),
+
+    ("scene_id.interact_id_authored_twice", "ValidateInteractIdsArePlaced",
+     [("scenes/regions/ember_crown/hollowreach.tscn",
+       'Id = "travel.ember_crown.hollowreach"',
+       'Id = "travel.ember_crown.hollowreach"\nInteractId = "interact.emberdeep.waystone"')],
+     "is authored twice"),
+
+    # ⚠️ A stealth objective is a CONDITION and targets nothing. An authored target reads as a scope
+    # ("undetected by goblins") that the rule does not keep - any enemy engaging blows it.
+    ("quest.stealth_with_a_target", "ValidateQuests",
+     [("data/quests/TheSealedTally.tres",
+       'Type = 7\nTargetId = ""', 'Type = 7\nTargetId = "enemy.goblin"')],
+     "a stealth condition targets nothing"),
+
+    # ⚠️ Stealth objectives start ALREADY MET, so a quest made only of them completes on the frame it
+    # is accepted - silently, with rewards.
+    ("quest.only_stealth_objectives", "ValidateQuestCompletability",
+     [("data/quests/TheSealedTally.tres",
+       'Objectives = Array[Resource]([SubResource("Obj_touch_waystone"), SubResource("Obj_unseen")])',
+       'Objectives = Array[Resource]([SubResource("Obj_unseen")])')],
+     "has only stealth objectives"),
+
+    ("quest.deadline_too_short", "ValidateQuestCompletability",
+     [("data/quests/TheSealedTally.tres", "TimeLimitSeconds = 180.0", "TimeLimitSeconds = 5.0")],
+     "time limit"),
+
     ("maploc.location_never_placed", "ValidateMapMarkersArePlaced",
      [("scenes/regions/ember_crown/town_hub.tscn",
        '\n[node name="MapPin" type="Node3D" parent="VendorSmith"]\n'

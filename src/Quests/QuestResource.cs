@@ -41,6 +41,23 @@ public partial class QuestResource : Resource
     /// <summary>Standing granted with <see cref="FactionRewardId"/>. May be negative.</summary>
     [Export] public int FactionRewardAmount { get; set; }
 
+    /// <summary>
+    /// Seconds the player has to finish this quest before it fails (Phase 41C); <b>0 = untimed</b>,
+    /// which is what every quest authored before this was and what almost every quest should stay.
+    ///
+    /// ⚠️ <b>The deadline is a property of the ERRAND, not of one of its steps</b>, which is why
+    /// there is no <c>Timed</c> objective type. <see cref="QuestProgress"/> stores one <c>int</c> per
+    /// objective — a count — with nowhere to put a per-objective clock, and two ways to express a
+    /// deadline is invariant 5's failure waiting to happen. It mirrors
+    /// <c>WorldEventResource.TimeLimitSeconds</c>, which made the same call for the same reason.
+    ///
+    /// ⚠️ <b>It counts REAL seconds of play, and it does not run while the tree is paused</b> — so a
+    /// player reading their journal or their inventory is not losing time. That falls out of the
+    /// countdown living in an ordinary component's <c>_Process</c>, and it is correct: the clock is a
+    /// pressure on the errand, not a punishment for opening a menu.
+    /// </summary>
+    [Export] public float TimeLimitSeconds { get; set; }
+
     [ExportGroup("Availability")]
     /// <summary>Optional quest id that must be completed first; empty = always available.</summary>
     [Export] public string PrerequisiteQuestId { get; set; } = string.Empty;

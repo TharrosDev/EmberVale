@@ -175,6 +175,12 @@ public class EnumStabilityTests
         // an objective — it would reinterpret the numbers beside it.
         Assert.Equal(4, (int)ObjectiveType.Escort);
         Assert.Equal(5, (int)ObjectiveType.Defend);
+
+        // 41C. Type = 6 and Type = 7 are authored in TheSealedTally.tres. Stealth is the one whose
+        // ordinal carries a behaviour rather than a lookup: QuestProgress seeds it already met, so a
+        // swap would silently pre-complete whichever objective took its place.
+        Assert.Equal(6, (int)ObjectiveType.Interact);
+        Assert.Equal(7, (int)ObjectiveType.Stealth);
     }
 
     [Fact]

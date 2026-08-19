@@ -83,6 +83,7 @@ public partial class GameHud : CanvasLayer
     private PanelContainer _questPanel = null!;
     private VBoxContainer _questList = null!;
     private Label _questWhere = null!;
+    private Label _questClock = null!;
     private string _questSignature = string.Empty;
 
     private PanelContainer _bannerPanel = null!;
@@ -362,6 +363,12 @@ public partial class GameHud : CanvasLayer
         _questWhere = UiTheme.Caption("", UiTheme.Accent);
         _questWhere.Visible = false;
         col.AddChild(_questWhere);
+
+        // The deadline on a timed quest (41C). Its own label for the same reason as the one above:
+        // it changes every frame, and the objective rows must not be rebuilt at that rate (§50).
+        _questClock = UiTheme.Caption("", UiTheme.Dim);
+        _questClock.Visible = false;
+        col.AddChild(_questClock);
 
         WrapPadded(_questPanel, col);
     }
@@ -907,6 +914,7 @@ public partial class GameHud : CanvasLayer
         }
 
         UpdateQuestDestination();
+        UpdateQuestClock(active);
         _questPanel.Visible = true;
     }
 
@@ -950,6 +958,30 @@ public partial class GameHud : CanvasLayer
             _questWhere.Text = place;
             _questWhere.AddThemeColorOverride("font_color", UiTheme.Dim);
         }
+    }
+
+    /// <summary>
+    /// The countdown on a timed quest (41C) — "0:47" under the destination, turning hot in the last
+    /// ten seconds like the world-event banner's timer it is modelled on.
+    ///
+    /// ⚠️ <b>Outside the signature-driven rebuild, deliberately.</b> <c>_questSignature</c> is built
+    /// from the objective counts precisely so the rows are rebuilt only when they change; a value
+    /// that changes every frame folded into it would recreate the tracker's nodes every frame, which
+    /// is what §50 forbids and what the destination readout above already avoids.
+    /// </summary>
+    private void UpdateQuestClock(QuestProgress active)
+    {
+        if (!active.IsTimed)
+        {
+            _questClock.Visible = false;
+            return;
+        }
+
+        int seconds = Mathf.Max(0, Mathf.CeilToInt(active.SecondsLeft));
+        _questClock.Text = Loc.TF("hud.quest.time_left", seconds / 60, (seconds % 60).ToString("00"));
+        _questClock.AddThemeColorOverride(
+            "font_color", seconds <= 10 ? UiTheme.AccentHot : UiTheme.Dim);
+        _questClock.Visible = true;
     }
 
     /// <summary>The tracked objective's authored destination name, or null when it has none.</summary>

@@ -53,6 +53,9 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
     private readonly List<ObjectiveResource> _escortObjectives = new();
     private readonly List<string> _defendTargets = new();
 
+    /// <summary>Scratch buffer for expiring deadlines, reused so a per-frame tick allocates nothing.</summary>
+    private readonly List<string> _expired = new();
+
     /// <summary>
     /// Sub-second remainder of each <see cref="ObjectiveType.Defend"/> hold, by location id.
     ///
@@ -135,6 +138,8 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
         EventBus.Instance?.Subscribe<ItemPickedUpEvent>(OnItemPickedUp);
         EventBus.Instance?.Subscribe<DialogueEndedEvent>(OnDialogueEnded);
         EventBus.Instance?.Subscribe<Companions.CompanionDownedEvent>(OnCompanionDowned);
+        EventBus.Instance?.Subscribe<Interaction.InteractionPerformedEvent>(OnInteracted);
+        EventBus.Instance?.Subscribe<Enemies.EnemyStateChangedEvent>(OnEnemyStateChanged);
         RegisterSaveable();
     }
 
@@ -144,6 +149,8 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
         EventBus.Instance?.Unsubscribe<ItemPickedUpEvent>(OnItemPickedUp);
         EventBus.Instance?.Unsubscribe<DialogueEndedEvent>(OnDialogueEnded);
         EventBus.Instance?.Unsubscribe<Companions.CompanionDownedEvent>(OnCompanionDowned);
+        EventBus.Instance?.Unsubscribe<Interaction.InteractionPerformedEvent>(OnInteracted);
+        EventBus.Instance?.Unsubscribe<Enemies.EnemyStateChangedEvent>(OnEnemyStateChanged);
         SaveManager.Instance?.Unregister(this);
     }
 
@@ -223,6 +230,40 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
         Advance(ObjectiveType.Kill, e.Entity.TemplateId);
     }
 
+    /// <summary>Advances Interact objectives when this actor uses a targetable interactable (41C).
+    /// The event already carries the component that was used, so the id comes straight off it and
+    /// nothing about the interaction path changed shape to support quests.</summary>
+    private void OnInteracted(Interaction.InteractionPerformedEvent e)
+    {
+        if (Entity == null || !ReferenceEquals(e.Instigator, Entity) ||
+            e.Target is not { InteractId.Length: > 0 } target)
+        {
+            return;
+        }
+
+        Advance(ObjectiveType.Interact, target.InteractId);
+    }
+
+    /// <summary>
+    /// Blows a Stealth condition the moment any enemy engages (41C).
+    ///
+    /// ⚠️ <b><c>EnemyStateChangedEvent</c> and NOT <c>EnemyAlertedEvent</c>, which is the trap.</b>
+    /// The alert event is published only when the profile's <c>AlertRadius &gt; 0</c> — an ambusher
+    /// sets it to 0 deliberately — so a stealth rule riding it would never fire against exactly the
+    /// enemies built to catch you unawares, silently and through every green gate. This event is
+    /// published on every state entry with no condition, and since the brain only ever targets the
+    /// player, <c>Combat</c> means you were seen or you struck first.
+    /// </summary>
+    private void OnEnemyStateChanged(Enemies.EnemyStateChangedEvent e)
+    {
+        if (Entity == null || e.State != Enemies.EnemyState.Combat)
+        {
+            return;
+        }
+
+        FailQuestsWith(ObjectiveType.Stealth, null, alreadyMetStillCounts: true);
+    }
+
     /// <summary>Fails any escort whose charge just went down (41B). Ignores the recovery half of the
     /// event (<c>Downed: false</c>) — a companion standing back up does not un-fail a quest.</summary>
     private void OnCompanionDowned(Companions.CompanionDownedEvent e)
@@ -279,8 +320,51 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
             return;
         }
 
+        TickDeadlines((float)delta);
+
         _sinceReachTick = 0f;
         CheckPositionalObjectives();
+    }
+
+    /// <summary>
+    /// Counts down every timed quest and fails the ones that run out (41C).
+    ///
+    /// ⚠️ <b>Deliberately outside the 4 Hz gate above.</b> The poll cadence is an optimisation for
+    /// distance tests against a service; subtracting a float is not worth batching, and a countdown
+    /// the HUD prints wants to be the same number every frame it is drawn.
+    ///
+    /// ⚠️ <b>It does not run while the tree is paused</b>, so a menu does not eat the deadline. That
+    /// is a property of being an ordinary component rather than a design decision to re-implement —
+    /// see <c>QuestResource.TimeLimitSeconds</c> before "fixing" it.
+    /// </summary>
+    private void TickDeadlines(float delta)
+    {
+        if (_quests.Count == 0 || delta <= 0f)
+        {
+            return;
+        }
+
+        _expired.Clear();
+        foreach (QuestProgress progress in _quests.Values)
+        {
+            if (progress.Status != QuestStatus.Active || !progress.IsTimed)
+            {
+                continue;
+            }
+
+            progress.SecondsLeft -= delta;
+            if (progress.SecondsLeft <= 0f)
+            {
+                progress.SecondsLeft = 0f;
+                _expired.Add(progress.Quest.Id);
+            }
+        }
+
+        // Collected first: Fail publishes, and a listener may touch the log.
+        foreach (string questId in _expired)
+        {
+            Fail(questId);
+        }
     }
 
     private void CheckPositionalObjectives()
@@ -490,11 +574,18 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
     }
 
     /// <summary>
-    /// Fails every active quest carrying an unmet objective of <paramref name="type"/> (41B),
-    /// optionally narrowed to one <paramref name="targetId"/> — an escortee going down fails only
-    /// the quests escorting <em>them</em>, while the player dying fails every hold at once.
+    /// Fails every active quest carrying an objective of <paramref name="type"/> (41B), optionally
+    /// narrowed to one <paramref name="targetId"/> — an escortee going down fails only the quests
+    /// escorting <em>them</em>, while the player dying fails every hold at once.
+    ///
+    /// ⚠️ <b><paramref name="alreadyMetStillCounts"/> exists for exactly one caller and it is not
+    /// optional there (41C).</b> A completed objective normally cannot be failed — a hold you have
+    /// already finished is finished. But a <see cref="ObjectiveType.Stealth"/> objective is seeded
+    /// MET at the moment the quest starts, so the default skip would step over every stealth
+    /// condition in the game and the rule would ship as a silent no-op through a green build, green
+    /// tests and a green validator.
     /// </summary>
-    private void FailQuestsWith(ObjectiveType type, string? targetId)
+    private void FailQuestsWith(ObjectiveType type, string? targetId, bool alreadyMetStillCounts = false)
     {
         // Snapshot for Advance's reason: Fail publishes, and a listener may touch the log.
         var active = new List<QuestProgress>();
@@ -512,7 +603,8 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
             for (int i = 0; i < objectives.Count; i++)
             {
                 ObjectiveResource objective = objectives[i];
-                if (objective.Type != type || progress.IsObjectiveComplete(i) ||
+                if (objective.Type != type ||
+                    (!alreadyMetStillCounts && progress.IsObjectiveComplete(i)) ||
                     (targetId != null && objective.TargetId != targetId))
                 {
                     continue;
