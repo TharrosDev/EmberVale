@@ -118,9 +118,61 @@
   - **Not exercised in-world:** nothing walked the tally run, tripped an enemy into `Combat`, or let a
     deadline expire in a live session. Named rather than implied, and still owed alongside 41B's
     escort walk.
-- [ ] **41D — Choice/Branch objectives + quest state graphs** `[F]`
+- [x] **41D — Choice/Branch objectives + quest state graphs** `[F]` ✅ *(2026-08-19)*
   - **Done when:** quests can branch on story flags/dialogue effects into multiple
     paths/endings with failure states.
+  - **Landed:** three authored fields and no new resource type. `ObjectiveResource.RequiredFlagId` /
+    `ForbiddenFlagId` make an objective **inert**; `QuestResource.SequentialObjectives` orders them.
+    One predicate answers both — `QuestProgress.IsObjectiveActive`, over a pure Godot-free
+    `ObjectiveProgress.IsActive` / `AllLiveMet` that carries **eight new tests** (1440 → 1448; 41C
+    could add none). Five `--validate` arms, five negative cases (75 → 80), six drawing surfaces
+    re-asked, and one authored caller — `quest.hollowreach.barrels` off Sedge Marrow, the first quest
+    in the game with two paths.
+  - ⚠️ **NO NEW SAVE STATE, AND THAT WAS THE DESIGN RATHER THAN A SAVING.** The branch is not stored;
+    it is **re-derived** from a story flag that `StoryFlagsComponent` has persisted since Phase 10.
+    So `docs/SAVE_FORMAT.md` needed no edit, `QuestProgress.Save` did not change shape, and every
+    pre-41D save loads into the new code as an unbranched quest by construction. The alternative —
+    a `chosenPath` int on the progress — is a second answer to a question the flag already answers
+    (invariant 5), and it would have needed a migration.
+  - ⚠️ **AN INERT OBJECTIVE IS A THIRD STATE, AND SIX SURFACES WERE WRITTEN WITHOUT IT.** Every
+    existing filter reads `!IsObjectiveComplete(i)` — correct for two states and wrong for three.
+    Three of the six were the loud kind: `CompassStrip.ResolveObjectiveTarget`,
+    `MapScreen.TrackedObjectiveLocationId` and `GameHud.UpdateQuestDestination` would each have
+    aimed the player **down the branch they had just declined**, with the needle, the pin and the
+    distance readout all agreeing with each other and all wrong. This is 41C's carried lesson turned
+    inside out: *a seeded state is invisible to every rule written for an earned one* became **a
+    state that is neither met nor pending is invisible to every rule that knows only those two.**
+  - ⚠️ **THE TRACKER CACHED THE FORK, AND IT IS 41B'S DEFECT IN A CACHE KEY.** `GameHud.UpdateQuest`
+    rebuilds its rows only when a signature of quest id + counts changes — and **a flag change moves
+    no count**, so the tracker would have kept listing the abandoned path forever. Its sibling was
+    exactly 41B's: `QuestLogPanel` subscribed to three quest events and a story flag is not one, so a
+    fork chosen with the journal open left the card showing the road not taken. 41B's rule said *the
+    grep is not "who draws this" but "who subscribes to the sibling event"*; 41D's amendment is that
+    **a cache key is a subscription too**, and it is the one no `Subscribe<>` grep will ever find.
+  - ⚠️ **BOTH FLAGS SET IS THE STATE THE AUTHORING HAS TO MAKE UNREACHABLE.** A `DialogueChoice`
+    carries one `Effect`, so the fork sets the flag and the *next* node's choice starts the quest —
+    which leaves a real window where a player has picked a side and walked off with no quest. Come
+    back and the other fork is still on offer, and now **both paths run at once**. The two fork
+    choices therefore gate on each other's absence (`MissingFlag`), which closes it and, for free,
+    gives the walked-off player their own route back to the accept node.
+  - ⚠️ **ZERO LIVE OBJECTIVES IS NOT COMPLETION, AND VACUOUS TRUTH PAYS OUT REWARDS.** A quest whose
+    objectives all belong to branches has nothing live until a flag lands, and `AllObjectivesMet` over
+    an empty set is trivially true — so the natural one-line filter completes the quest, with gold and
+    XP, on the frame it is accepted. `AllLiveMet` refuses it. **41C's only-stealth-objectives trap is
+    the same bug with a different empty set.**
+  - ⚠️ **THE SEQUENTIAL SCAN STEPS OVER SHUT GATES, AND THAT ONE LINE IS THE WHOLE COMPOSITION.**
+    Without it, an ordered branching quest locks itself forever behind the path not taken — the
+    journal shows two rows, neither advances, and nothing anywhere says why.
+  - **Per-outcome rewards were declined** (maintainer call). The ending is the **flag**, and its
+    consumers already existed: `flag.hollowreach.barrels_hushed` opens a gated shelf on
+    `shop.hollowreach.hull` through `ShopStockEntry.RequiredFlagId`, live since 38I. A reward table
+    per outcome is a second home for rewards; a shelf that stays open for the rest of the game is a
+    consequence the player can walk back to.
+  - **Not exercised in-world:** nobody has held the conversation, walked either road, or reloaded a
+    save mid-branch in a live session. What is proven: the fork renders, re-derives from the flag
+    across a frame with no quest event in it, and is gated in five directions. Owed alongside 41B's
+    escort walk and 41C's tally run — **three named playthroughs now, and that is the debt to say out
+    loud rather than let accumulate quietly.**
 - [ ] **41E — Quest-driven world changes** `[F]`
   - **Done when:** a quest can change the world (an NPC dies, a region opens),
     persistently.
@@ -266,3 +318,78 @@ other gate, and that the countdown resolves through the same tracker that draws 
    finished" guard stepped over the entire type. Every helper that filters on *unmet*, *incomplete*
    or *not yet done* is a candidate to be wrong about a state that begins in the finished position —
    and 41D's branch objectives will have the same shape the moment one path is pre-satisfied.
+
+---
+
+## 41D — the branch that three surfaces pointed away from
+
+⚠️ **AN OBJECTIVE THE PLAYER CANNOT DO IS NOT AN OBJECTIVE THEY HAVE NOT DONE YET, AND NOTHING IN
+THIS CODEBASE KNEW THE DIFFERENCE.**
+
+Before 41D an objective had two states, and every consumer was written as a single negation:
+
+```
+if (!progress.IsObjectiveComplete(i)) { ...point the player at it... }
+```
+
+Six files spelled some version of that. It is correct while "not complete" means "still to do" —
+and a branch gate makes it mean *"still to do, or belonging to the road you turned down"*. Three of
+the six then answer the question **"where should the player go next?"**: the compass needle
+(`CompassStrip.ResolveObjectiveTarget`), the map's quest pin (`MapScreen.TrackedObjectiveLocationId`)
+and the tracker's distance readout (`GameHud.UpdateQuestDestination`).
+
+**All three would have agreed with each other, and all three would have been wrong** — needle, pin
+and "97 m · N" pointing at the Crossway impound for a player who had just told Sedge to send word to
+Odger instead. Invariant 5 says one surface owns each fact; it does not save you when the one fact
+is itself computed from a stale premise. Every one of them shares a single predicate now
+(`IsObjectiveActive`) rather than a shared *answer*.
+
+### The two that no `Subscribe<>` grep finds
+
+The journal and the tracker draw objective **rows**, and both were stale for reasons that look
+nothing alike:
+
+- **`QuestLogPanel`** subscribed to `QuestStartedEvent`, `QuestObjectiveAdvancedEvent`,
+  `QuestCompletedEvent`, `QuestFailedEvent` and `GameLoadedEvent`. A story flag is none of those, so
+  a fork chosen while the journal was open left the card showing the abandoned path until some
+  unrelated quest event rebuilt it. **This is 41B's defect, in the same file, one sub-phase later** —
+  and 41B's own rule ("the grep is who subscribes to the sibling event") would have caught it, if
+  anyone had thought of `StoryFlagChangedEvent` as a sibling of `QuestObjectiveAdvancedEvent`. It is
+  not a quest event. It changes what a quest looks like.
+- **`GameHud.UpdateQuest`** does not subscribe to anything; it rebuilds when a **signature** of quest
+  id + counts changes. **A flag change moves no count.** So the tracker would have cached the fork
+  permanently, and the fix is a term in a cache key rather than a subscription. ⚠️ **A cache key is
+  a subscription with no `Subscribe<>` to grep for**, and that is the genuinely new half of this.
+
+Everything was green throughout: `dotnet build --warnaserror` clean, 1448 tests passing, `--validate`
+exit 0, 80/80 negative cases caught. **The only instrument that could see either was the pair of
+frames this sub-phase added** — and the pair is the point. One frame of a branch proves nothing; two
+frames of *the same quest instance* under opposite flags is the only evidence that the branch is
+re-derived rather than frozen, which is in turn the entire justification for adding no save state.
+The tracker's distance readout flipping **97 m · N → 61 m · NW** with no count changing is that
+proof in one number.
+
+### Two things worth carrying into the next sub-phase
+
+1. ⚠️ **WHEN A NEW STATE IS DEFINED BY A NEGATION, GREP FOR THE NEGATION, NOT FOR THE FEATURE.**
+   41A asked *which event means this*; 41B found *no event can*; 41C found *an event that means it
+   only when a knob says so*; 41D's question was different in kind — the events were fine, and the
+   damage was in **six pre-existing boolean tests that had been correct for thirty phases.** The
+   productive grep was not "quest" or "branch" but `!IsObjectiveComplete` and `Counts`. **41E adds
+   quest-driven world changes, which is a new state on the WORLD** — so the grep there is every
+   place that asks whether a thing exists, is alive, or is passable, and the ones written when the
+   answer could never change are the ones that will be wrong.
+2. ⚠️ **A CACHE KEY IS A SUBSCRIPTION, AND IT IS THE ONE NOTHING LISTS.** `GameHud` keeps a
+   signature so it does not rebuild nodes every frame (§50), which is right — and it means the HUD
+   has an opinion about *what can change* that lives in a `StringBuilder` rather than in an event
+   handler. Any sub-phase that adds a fact a surface draws must ask whether that fact is in the
+   signature. 41E's world changes are drawn by the map, the minimap and the compass, **all three of
+   which cache**.
+
+### One finding, recorded rather than fixed
+
+⚠️ **`ObjectiveLocator.Locate` is still called with objectives the caller has already filtered, and
+it has no opinion of its own about branch state.** That is correct today — every caller filters
+first — but it is `RecruitQuestId`'s shape (41B's finding, invariant 37): a helper that looks like it
+answers the whole question and does not. If a fourth caller ever appears without the filter, it will
+locate an inert objective and nothing will say so.

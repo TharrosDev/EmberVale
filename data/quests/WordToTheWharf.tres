@@ -8,11 +8,15 @@
 ; was Kill or Collect, because those were the only two verbs a quest could measure.
 ;
 ; ⚠️ THE TWO OBJECTIVES ARE DELIBERATELY UNORDERED, AND THE GEOGRAPHY DOES THE ORDERING.
-; Nothing in QuestLogComponent sequences objectives - all of them simply have to be met (ordering and
-; branching are 41D). That would be a problem for a "go here, then do this" quest authored anywhere
-; else, but Sedge Marrow IS at Hollowreach: you cannot talk to her without arriving, so the reach
-; objective always completes first by construction rather than by a rule. Author the next courier
-; quest the same way, or wait for 41D - do NOT hand-roll sequencing into a quest .tres.
+; Sedge Marrow IS at Hollowreach: you cannot talk to her without arriving, so the reach objective
+; always completes first by construction rather than by a rule.
+;
+; ⚠️ THIS IS NOW A CHOICE, NOT A WAIT (41D). When this file was written nothing could sequence
+; objectives at all and the note here said "wait for 41D - do NOT hand-roll sequencing into a quest
+; .tres". QuestResource.SequentialObjectives exists now, and this quest still does not set it, on
+; purpose: the world already supplies the order, and a rule that restates what the geography enforces
+; is a second answer to a question that has one (invariant 5). Set the bool where the world does NOT
+; supply the order - quest.hollowreach.barrels is the worked example.
 ;
 ; ⚠️ THE REACH OBJECTIVE SETS NO LocationId, AND --validate REFUSES ONE. A reach objective's TargetId
 ; is already a location id, so it is its own destination; a LocationId beside it is a second answer to

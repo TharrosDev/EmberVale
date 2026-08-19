@@ -912,9 +912,15 @@ cell sat far from the origin). `EnemySpawnDirector` had the same latent bug.
    `RequiredCount`), and rewards (`XpReward`, `GoldReward`, `RewardItems` of
    `QuestItemReward`, and `FactionRewardId`/`FactionRewardAmount` — Phase 34.5C, the same
    pair `WorldEventResource` has; the amount may be negative). Optional
-   `PrerequisiteQuestId` chains it after another. **Objectives are Kill/Collect only** —
-   "go and talk to X" is not expressible, so a turn-in is a conversation the player has to
-   remember to have.
+   `PrerequisiteQuestId` chains it after another.
+   **There are eight objective types now** (`ObjectiveType`, append-only): 0=Kill, 1=Collect,
+   2=Reach (a `location.*` id), 3=Talk (a `dialogue.*` id), 4=Escort (a `companion.*` id — the one
+   type that **requires** `LocationId`), 5=Defend (a `location.*` id, `RequiredCount` in **seconds**),
+   6=Interact (an `InteractId` authored on a node in a cell scene), 7=Stealth (**no** `TargetId` —
+   a condition on the errand, seeded already met, lost when any enemy enters `Combat`).
+   ⚠️ **A deadline is NOT an objective type** — it is `QuestResource.TimeLimitSeconds` on the quest
+   (41C). `QuestProgress` stores one `int` per objective and two ways to express a deadline is
+   invariant 5 waiting to happen.
    ⚠️ **A Kill objective must name something that respawns.** `--validate` requires the target to be
    spawnable by an encounter or world event, because a lair boss is killed once and stays dead — a
    quest taken afterwards can never complete and never leaves the journal (Phase 35F shipped exactly
@@ -938,10 +944,31 @@ cell sat far from the origin). `EnemySpawnDirector` had the same latent bug.
    target is a **placed lair** (`ash_roost.tscn`, which carries the matching `MapPin`).
    ⚠️ `--validate` fails on a `LocationId` no `MapLocationResource` declares — this is the quest arm
    of *"if the player can go there, it goes on the map"* (CLAUDE.md §1).
-3. Auto-indexed by `QuestDatabase`. Start it via a `QuestGiverComponent` (set its
-   `QuestId`) on a world `Entity`, in a `DialogueChoice` (`Effect` StartQuest), or
-   directly with `player.GetComponent<QuestLogComponent>().StartQuest(...)`. Objectives
-   advance and rewards apply automatically. No code change for new Kill/Collect quests.
+3. **Branching and ordering are two authored fields and no new machinery** (41D).
+   `ObjectiveResource.RequiredFlagId` / `ForbiddenFlagId` make an objective **inert** — it cannot
+   advance, it does not block completion, and no player-facing surface draws it. Two objectives behind
+   one flag and two behind another is a two-path quest. `QuestResource.SequentialObjectives` (a bool,
+   default false) makes objectives complete in authored order; the sequential scan **steps over**
+   objectives whose gate is shut, which is what lets one quest be both ordered and branched.
+   ⚠️ **Choose the branch BEFORE the quest starts.** A `DialogueChoice` carries one `Effect`, so the
+   fork sets the flag and the choice on the next node starts the quest — the two-choices-deep shape
+   `Sedge.tres` uses twice. A quest whose objectives are all gated has *nothing live* until a flag
+   lands, and `QuestProgress` refuses to complete on zero live objectives precisely because that state
+   would otherwise be vacuously finished, with rewards, on the frame it was accepted.
+   ⚠️ **Gate the two fork choices on each other** (`MissingFlag`), or a player who picks a fork and
+   walks off without accepting comes back to both forks and ends up with **both** flags set.
+   ⚠️ **The ending is the flag, and it needs a consumer or it is not an ending.** `DialogueCondition.HasFlag`,
+   `ShopStockEntry.RequiredFlagId` and `RegionResource.UnlockFlagId` all already read flags — there is
+   deliberately **no** per-outcome reward table (a second place rewards live is invariant 5 again).
+   `quest.hollowreach.barrels` + `shop.hollowreach.hull` is the worked example.
+   ⚠️ `--validate` refuses: a gate flag nothing writes, a gate that both requires and forbids one flag,
+   a gated `Stealth` objective, `SequentialObjectives` with fewer than two objectives, and every
+   objective sharing one `RequiredFlagId` (that is availability, not a branch).
+4. Auto-indexed by `QuestDatabase`. Start it from a `DialogueChoice` (`Effect` StartQuest) or
+   directly with `player.GetComponent<QuestLogComponent>().StartQuest(...)`. Objectives advance and
+   rewards apply automatically. No code change for a new quest of any existing type.
+   ⚠️ **`QuestGiverComponent` no longer exists** (deleted 41A: zero references, superseded by
+   `DialogueEffect.StartQuest`, and it carried hard-coded player-facing strings).
 
 ## A new conversation
 
@@ -952,7 +979,8 @@ cell sat far from the origin). `EnemySpawnDirector` had the same latent bug.
    visibility — incl. `QuestAvailable`, `HasFlag`, and `CorruptionAtLeast`/`CorruptionBelow`)
    and an optional `Effect`+`EffectArg` (`1`=StartQuest, `2`=SetFlag, `3`=ClearFlag,
    `4`=AddCorruption, `5`=RecruitCompanion, `6`=DismissCompanion, `7`=AddCompanionLoyalty
-   (`<companionId>:<delta>`)). Companion gates come as conditions too (`CompanionRecruited`,
+   (`<companionId>:<delta>`), `8`=LearnSpell, `9`=OpenShop, `10`=OpenService — the last two must
+   leave `Goto` empty, or the conversation reopens behind the window they opened). Companion gates come as conditions too (`CompanionRecruited`,
    `CompanionNotRecruited`, `CompanionLoyaltyAtLeast` = `<companionId>:<value>`).
    Enums export as ints (see `DialogueEnums.cs`).
 2. Auto-indexed by `DialogueDatabase`. Attach a `DialogueComponent` (set its

@@ -7,9 +7,11 @@
 ; It continues 41A's thread: quest.hollowreach.word sends you to Sedge Marrow, and this is what she
 ; asks for once you have spoken.
 ;
-; ⚠️ ONE OBJECTIVE, DELIBERATELY. Nothing sequences objectives (41A's note, still true - ordering is
-; 41D), so a "walk her there, then come back" quest would have both halves live at once and complete
-; in whichever order geography allowed. The escort IS the quest.
+; ⚠️ ONE OBJECTIVE, DELIBERATELY - AND IT STAYS ONE NOW THAT ORDERING EXISTS (41D). When this
+; was written nothing sequenced objectives, so a "walk her there, then come back" quest would have had
+; both halves live at once and completed in whichever order geography allowed.
+; QuestResource.SequentialObjectives would express it correctly today, and the answer is still no: the
+; escort IS the quest, and a come-back-and-report step would add a walk rather than a decision.
 ;
 ; ⚠️ THE OBJECTIVE NAMES TWO THINGS AND NEEDS BOTH. TargetId is the companion; LocationId is where she
 ; is being taken. That is the exact mirror of a Reach objective, which refuses LocationId because its
