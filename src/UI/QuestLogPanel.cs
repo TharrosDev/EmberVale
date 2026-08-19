@@ -43,6 +43,13 @@ public partial class QuestLogPanel : UiPanel
         EventBus.Instance?.Subscribe<QuestStartedEvent>(OnQuestStarted);
         EventBus.Instance?.Subscribe<QuestObjectiveAdvancedEvent>(OnObjectiveAdvanced);
         EventBus.Instance?.Subscribe<QuestCompletedEvent>(OnQuestCompleted);
+
+        // ⚠️ CAUGHT BY A RENDERED FRAME, NOT BY REVIEW (41B). Without this line the journal keeps
+        // showing a failed quest under ERRANDS, still labelled TRACKED, until some other quest event
+        // happens to mark the panel dirty - while the toast says it failed and the HUD tracker has
+        // already moved on. Three surfaces, two answers. A new state has to reach every surface that
+        // draws the old one.
+        EventBus.Instance?.Subscribe<QuestFailedEvent>(OnQuestFailed);
         EventBus.Instance?.Subscribe<GameLoadedEvent>(OnGameLoaded);
     }
 
@@ -51,6 +58,7 @@ public partial class QuestLogPanel : UiPanel
         EventBus.Instance?.Unsubscribe<QuestStartedEvent>(OnQuestStarted);
         EventBus.Instance?.Unsubscribe<QuestObjectiveAdvancedEvent>(OnObjectiveAdvanced);
         EventBus.Instance?.Unsubscribe<QuestCompletedEvent>(OnQuestCompleted);
+        EventBus.Instance?.Unsubscribe<QuestFailedEvent>(OnQuestFailed);
         EventBus.Instance?.Unsubscribe<GameLoadedEvent>(OnGameLoaded);
     }
 
@@ -65,6 +73,8 @@ public partial class QuestLogPanel : UiPanel
     private void OnObjectiveAdvanced(QuestObjectiveAdvancedEvent e) => MarkDirty();
 
     private void OnQuestCompleted(QuestCompletedEvent e) => MarkDirty();
+
+    private void OnQuestFailed(QuestFailedEvent e) => MarkDirty();
 
     private void OnGameLoaded(GameLoadedEvent e) => MarkDirty();
 
