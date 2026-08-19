@@ -107,4 +107,84 @@ public class ObjectiveProgressTests
         Assert.Equal(0, ObjectiveProgress.TickHold(ref held, delta));
         Assert.Equal(0.75f, held);
     }
+
+    // --- 41D: branch gates and sequencing ------------------------------------------------------
+
+    private static readonly bool[] BothOpen = { true, true };
+
+    [Fact]
+    public void IsActive_UnorderedAndUngated_IsAlwaysActive()
+    {
+        // The shape every quest authored before 41D has, and it must not change.
+        Assert.True(ObjectiveProgress.IsActive(0, BothOpen, new[] { 0, 0 }, new[] { 1, 1 }, false));
+        Assert.True(ObjectiveProgress.IsActive(1, BothOpen, new[] { 0, 0 }, new[] { 1, 1 }, false));
+    }
+
+    [Fact]
+    public void IsActive_ShutGate_IsInert()
+    {
+        // The branch the player is not on. Inert is a THIRD state — not complete, not pending — and
+        // it is the one every pre-41D filter is wrong about.
+        Assert.False(ObjectiveProgress.IsActive(
+            1, new[] { true, false }, new[] { 0, 0 }, new[] { 1, 1 }, false));
+    }
+
+    [Fact]
+    public void IsActive_Sequential_LocksLaterObjectivesUntilEarlierOnesAreDone()
+    {
+        int[] required = { 1, 1, 1 };
+        bool[] open = { true, true, true };
+
+        Assert.True(ObjectiveProgress.IsActive(0, open, new[] { 0, 0, 0 }, required, true));
+        Assert.False(ObjectiveProgress.IsActive(1, open, new[] { 0, 0, 0 }, required, true));
+
+        // First done: the second unlocks, the third does not.
+        Assert.True(ObjectiveProgress.IsActive(1, open, new[] { 1, 0, 0 }, required, true));
+        Assert.False(ObjectiveProgress.IsActive(2, open, new[] { 1, 0, 0 }, required, true));
+    }
+
+    [Fact]
+    public void IsActive_Sequential_StepsOverAnEarlierObjectiveOnTheOtherBranch()
+    {
+        // ⚠️ The line that lets ordering and branching be authored on ONE quest. Objective 1 belongs
+        // to the path not taken; without skipping it, objective 2 would be locked forever and the
+        // quest could never be finished — silently, with the journal showing two rows and no reason.
+        bool[] open = { true, false, true };
+        Assert.True(ObjectiveProgress.IsActive(2, open, new[] { 1, 0, 0 }, new[] { 1, 1, 1 }, true));
+    }
+
+    [Fact]
+    public void AllLiveMet_IgnoresTheBranchNotTaken()
+    {
+        // Path A done, path B untouched and shut: the quest is finished.
+        Assert.True(ObjectiveProgress.AllLiveMet(
+            new[] { true, false }, new[] { 1, 0 }, new[] { 1, 1 }, false));
+    }
+
+    [Fact]
+    public void AllLiveMet_NothingLive_IsNotCompletion()
+    {
+        // ⚠️ The guard that stops a branching quest completing on the frame it is accepted. "All
+        // zero of them are met" is trivially true, and vacuous truth here pays out rewards.
+        Assert.False(ObjectiveProgress.AllLiveMet(
+            new[] { false, false }, new[] { 0, 0 }, new[] { 1, 1 }, false));
+    }
+
+    [Fact]
+    public void AllLiveMet_Sequential_StillNeedsEveryLiveObjective()
+    {
+        // Locking DELAYS an objective, it never excuses one: an ordered quest finishes under exactly
+        // the same condition an unordered one does.
+        Assert.False(ObjectiveProgress.AllLiveMet(
+            BothOpen, new[] { 1, 0 }, new[] { 1, 1 }, true));
+        Assert.True(ObjectiveProgress.AllLiveMet(
+            BothOpen, new[] { 1, 1 }, new[] { 1, 1 }, true));
+    }
+
+    [Fact]
+    public void IsActive_OutOfRange_IsInertRatherThanThrowing()
+    {
+        Assert.False(ObjectiveProgress.IsActive(-1, BothOpen, new[] { 0, 0 }, new[] { 1, 1 }, false));
+        Assert.False(ObjectiveProgress.IsActive(5, BothOpen, new[] { 0, 0 }, new[] { 1, 1 }, false));
+    }
 }

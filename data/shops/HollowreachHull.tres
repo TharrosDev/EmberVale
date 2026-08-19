@@ -26,6 +26,14 @@
 ; player is paying a standing cost on top of walking here, and a fence who paid the ordinary 0.4 would
 ; be strictly worse than dumping the goods.
 ;
+; ⚠️ 41D — THE UNDER-THE-BENCH ROW IS THE HUSHED ENDING, MADE OF NOTHING NEW. Stock_dreamsmoke is
+; gated on flag.hollowreach.barrels_hushed, which quest.hollowreach.barrels sets when the player moves
+; Holt's barrels through Odger Vane instead of declaring them at the post. ShopStockEntry.RequiredFlagId
+; has existed since 38I and --validate already cross-references it against the writers, so a branching
+; quest's ENDING needed no reward machinery at all: it is a shelf that opens, permanently, for the
+; player who proved they could be dull about it. The declared ending deliberately gets no shelf — that
+; is what the honest road costs, and Sedge says so in her own words.
+;
 ; PurseGold 260 with a 2-day clock is the brake instead. She is not a bottomless fence; a big haul
 ; needs two trips or two fences, which is why there are two.
 
@@ -44,6 +52,12 @@ script = ExtResource("2_entry")
 ItemId = "item.material.spice_pouch"
 Quantity = 6
 
+[sub_resource type="Resource" id="Stock_dreamsmoke"]
+script = ExtResource("2_entry")
+ItemId = "item.material.dreamsmoke"
+Quantity = 4
+RequiredFlagId = "flag.hollowreach.barrels_hushed"
+
 [resource]
 script = ExtResource("1_shop")
 Id = "shop.hollowreach.hull"
@@ -51,7 +65,7 @@ NameKey = "shop.hollowreach.hull.name"
 FactionId = ""
 AcceptedTags = Array[String](["contraband", "luxury", "gem", "jewelry"])
 Specialties = Array[String](["contraband", "gem"])
-Stock = Array[Resource]([SubResource("Stock_moonstone"), SubResource("Stock_ash"), SubResource("Stock_spice")])
+Stock = Array[Resource]([SubResource("Stock_moonstone"), SubResource("Stock_ash"), SubResource("Stock_spice"), SubResource("Stock_dreamsmoke")])
 RestockDays = 2
 BuyMarkup = 1.62
 SellFraction = 0.55

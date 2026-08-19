@@ -122,7 +122,30 @@ public sealed partial class PanelShots : ShotHarness
             Journal?.SetOpen(true);
         });
 
-        Shot("11-journal-closed", () => Journal?.SetOpen(false));
+        // ⚠️ 41D, AND THE PAIR IS THE EVIDENCE — ONE FRAME OF A BRANCH PROVES NOTHING. The barrels
+        // errand has four objectives: two behind flag.hollowreach.barrels_declared, two behind
+        // flag.hollowreach.barrels_hushed. This card must show the CROSSWAY pair and nothing else,
+        // with the second row padlocked because the quest is SequentialObjectives — the first frame
+        // anywhere that an ordered quest draws a locked step.
+        Shot("11-journal-declared", () =>
+        {
+            SetBranch(DeclaredFlag);
+            StartTheBarrels();
+            Journal?.SetOpen(true);
+        });
+
+        // ⚠️ THE SAME QUEST INSTANCE, THE OTHER FLAG — and that is deliberately not two quests. It
+        // is the only check anywhere that a branch is RE-DERIVED from the flag rather than frozen
+        // when the quest was accepted, which is the entire reason 41D added no save state: the flag
+        // already persists, so the branch comes back with it. If the card still shows the Crossway
+        // rows here, the tracker/journal are caching a fork.
+        Shot("12-journal-hushed", () =>
+        {
+            SetBranch(HushedFlag);
+            Journal?.SetOpen(true);
+        });
+
+        Shot("13-journal-closed", () => Journal?.SetOpen(false));
     }
 
     /// <summary>Starts the sealed-tally errand (41C) and tracks it, so the HUD tracker draws its
@@ -154,6 +177,44 @@ public sealed partial class PanelShots : ShotHarness
     private static void FailTheHold() => Log()?.Fail(HoldQuestId);
 
     private const string HoldQuestId = "quest.warband.hold_north";
+
+    private const string BarrelsQuestId = "quest.hollowreach.barrels";
+
+    private const string DeclaredFlag = "flag.hollowreach.barrels_declared";
+
+    private const string HushedFlag = "flag.hollowreach.barrels_hushed";
+
+    /// <summary>Starts the branching barrels errand (41D) and tracks it. Authored with no
+    /// prerequisite for 41C's reason — a gate only a human can open is a gate no instrument sees
+    /// behind, and this quest is the only caller of every 41D mechanic.</summary>
+    private static void StartTheBarrels()
+    {
+        if (Log() is { } log && QuestDatabase.Get(BarrelsQuestId) is { } barrels && log.StartQuest(barrels))
+        {
+            log.Track(barrels.Id);
+        }
+    }
+
+    /// <summary>
+    /// Puts the save on exactly one branch (41D) — sets <paramref name="flag"/> and clears the other.
+    ///
+    /// ⚠️ Clearing the other is not tidiness. Both flags set means both paths live, which is a state
+    /// the authored dialogue makes unreachable (each fork choice hides on the other's flag) and which
+    /// this harness could otherwise walk straight into — photographing four objective rows and
+    /// calling it a branch.
+    /// </summary>
+    private static void SetBranch(string flag)
+    {
+        if (ServiceLocator.Instance is not { } locator ||
+            !locator.TryGet(out PlayerCharacter player) ||
+            player.GetComponent<Dialogue.StoryFlagsComponent>() is not { } flags)
+        {
+            return;
+        }
+
+        flags.Set(flag);
+        flags.Clear(flag == DeclaredFlag ? HushedFlag : DeclaredFlag);
+    }
 
     private static QuestLogComponent? Log() =>
         ServiceLocator.Instance is { } locator && locator.TryGet(out PlayerCharacter player)

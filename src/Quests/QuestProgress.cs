@@ -34,6 +34,22 @@ public sealed class QuestProgress
 
     public QuestResource Quest { get; }
 
+    /// <summary>
+    /// How this progress answers "is that story flag set" (41D) — supplied by
+    /// <see cref="QuestLogComponent"/>, which owns the actor and therefore the
+    /// <c>StoryFlagsComponent</c>.
+    ///
+    /// ⚠️ <b>NULL MEANS EVERY GATE IS OPEN, and that default is load-bearing.</b> A
+    /// <see cref="QuestProgress"/> built anywhere else — a harness, a future headless report — then
+    /// behaves exactly as it did before branching existed, rather than seeing every gated objective
+    /// as inert and completing quests that have not been done. The failure of the other default is
+    /// silent and grants rewards, which is the worse of the two by a long way.
+    ///
+    /// A delegate rather than the component itself so the branch rule stays free of Godot types and
+    /// the objective predicates below remain testable.
+    /// </summary>
+    public System.Func<string, bool>? HasFlag { get; set; }
+
     /// <summary>Progress toward each objective, indexed to <see cref="QuestResource.ObjectiveList"/>.</summary>
     public int[] Counts { get; }
 
@@ -53,19 +69,90 @@ public sealed class QuestProgress
             && ObjectiveProgress.IsComplete(Counts[index], objectives[index].RequiredCount);
     }
 
-    /// <summary>True when every objective has met its required count.</summary>
+    /// <summary>
+    /// Whether objective <paramref name="index"/> counts at all right now (41D): its branch gate is
+    /// open, and — on a <see cref="QuestResource.SequentialObjectives"/> quest — every earlier live
+    /// objective is done.
+    ///
+    /// ⚠️ <b>THIS IS THE SINGLE ANSWER TO "DOES THIS OBJECTIVE COUNT", AND EVERY SURFACE MUST ASK
+    /// IT.</b> An inert objective is neither complete nor pending, which is a third state the whole
+    /// codebase was written without — so every existing filter spelled <c>!IsObjectiveComplete(i)</c>
+    /// is wrong about it by default, and wrong in the loudest possible way: the compass, the map pin
+    /// and the tracker would each aim the player at the branch they did not take. 41C predicted this
+    /// exact shape one type early (*a seeded state is invisible to every rule written for an earned
+    /// one*); this is its mirror.
+    /// </summary>
+    public bool IsObjectiveActive(int index)
+    {
+        List<ObjectiveResource> objectives = Quest.ObjectiveList();
+        if (index < 0 || index >= objectives.Count)
+        {
+            return false;
+        }
+
+        // Common case by a wide margin: nothing on this quest is gated and it is not ordered, so no
+        // array is built and no flag is read.
+        if (!Quest.SequentialObjectives && !objectives[index].IsGated)
+        {
+            return true;
+        }
+
+        return ObjectiveProgress.IsActive(
+            index, GateStates(objectives), Counts, Required(objectives), Quest.SequentialObjectives);
+    }
+
+    /// <summary>
+    /// Whether objective <paramref name="index"/> belongs to the path this save is on (41D) — its
+    /// branch gate alone, ignoring sequential locking.
+    ///
+    /// ⚠️ <b>The two questions are different and the UI needs both.</b> A gate-shut objective belongs
+    /// to the branch the player did NOT take and is hidden outright — drawing it would advertise a
+    /// path they can no longer reach. An objective that is in-branch but not yet active is merely
+    /// LOCKED behind an earlier step, and hiding that one would make a three-step errand look like a
+    /// one-step errand and its journal card look wrong when a row appears from nowhere.
+    /// </summary>
+    public bool IsObjectiveInBranch(int index)
+    {
+        List<ObjectiveResource> objectives = Quest.ObjectiveList();
+        return index >= 0 && index < objectives.Count && objectives[index].IsGateOpen(HasFlag);
+    }
+
+    /// <summary>
+    /// True when every LIVE objective has met its required count — and at least one IS live.
+    ///
+    /// ⚠️ <b>The "at least one" half is not a nicety.</b> A quest whose objectives all belong to
+    /// branches has nothing live until a flag chooses a path, and an all-inert quest would otherwise
+    /// be vacuously complete: accepted and finished on the same frame, with rewards, through a green
+    /// build. See <see cref="ObjectiveProgress.AllLiveMet"/>.
+    /// </summary>
     public bool AllObjectivesMet()
     {
         List<ObjectiveResource> objectives = Quest.ObjectiveList();
+        return ObjectiveProgress.AllLiveMet(
+            GateStates(objectives), Counts, Required(objectives), Quest.SequentialObjectives);
+    }
+
+    /// <summary>Each objective's branch-gate state, resolved through <see cref="HasFlag"/>.</summary>
+    private bool[] GateStates(List<ObjectiveResource> objectives)
+    {
+        var open = new bool[objectives.Count];
         for (int i = 0; i < objectives.Count; i++)
         {
-            if (!ObjectiveProgress.IsComplete(Counts[i], objectives[i].RequiredCount))
-            {
-                return false;
-            }
+            open[i] = objectives[i].IsGateOpen(HasFlag);
         }
 
-        return true;
+        return open;
+    }
+
+    private static int[] Required(List<ObjectiveResource> objectives)
+    {
+        var required = new int[objectives.Count];
+        for (int i = 0; i < objectives.Count; i++)
+        {
+            required[i] = objectives[i].RequiredCount;
+        }
+
+        return required;
     }
 
     public Godot.Collections.Dictionary Save()

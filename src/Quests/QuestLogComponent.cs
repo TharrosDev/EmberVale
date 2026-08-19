@@ -73,6 +73,11 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
     private ProgressionComponent? _progression;
     private InventoryComponent? _inventory;
 
+    /// <summary>The actor's story flags — the source every branch gate reads (41D). Resolved once,
+    /// beside the other siblings, and handed to each <see cref="QuestProgress"/> as a delegate so the
+    /// branch rule itself stays free of Godot types.</summary>
+    private Dialogue.StoryFlagsComponent? _flags;
+
     public string SaveId => SaveKey("questlog");
 
     public IReadOnlyCollection<QuestProgress> Quests => _quests.Values;
@@ -133,6 +138,7 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
     {
         _progression = Entity!.GetComponent<ProgressionComponent>();
         _inventory = Entity.GetComponent<InventoryComponent>();
+        _flags = Entity.GetComponent<Dialogue.StoryFlagsComponent>();
 
         EventBus.Instance?.Subscribe<EntityDiedEvent>(OnEntityDied);
         EventBus.Instance?.Subscribe<ItemPickedUpEvent>(OnItemPickedUp);
@@ -193,6 +199,7 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
         }
 
         var progress = new QuestProgress(quest);
+        BindFlags(progress);
         _quests[quest.Id] = progress;
         Log.Info($"Quest started: {quest.Title}");
         if (Entity != null)
@@ -391,7 +398,8 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
             for (int i = 0; i < objectives.Count; i++)
             {
                 ObjectiveResource objective = objectives[i];
-                if (progress.IsObjectiveComplete(i) || objective.TargetId.Length == 0)
+                if (progress.IsObjectiveComplete(i) || !progress.IsObjectiveActive(i) ||
+                    objective.TargetId.Length == 0)
                 {
                     continue;
                 }
@@ -526,6 +534,18 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
         }
     }
 
+    /// <summary>
+    /// Points a progress at this actor's story flags (41D), so its branch gates resolve.
+    ///
+    /// ⚠️ <b>It has to run BEFORE the first <c>AllObjectivesMet</c>, which for a fresh quest is the
+    /// <c>TryComplete</c> at the end of <see cref="StartQuest"/>.</b> An unbound progress reads every
+    /// gate as open, so a branching quest would briefly look like every path was live — and if the
+    /// paths happen to be empty of ungated work, that is a completed quest before the player has
+    /// spoken a second line.
+    /// </summary>
+    private void BindFlags(QuestProgress progress) =>
+        progress.HasFlag = _flags != null ? _flags.Has : null;
+
     /// <summary>Advances every active objective matching the type+target by <paramref name="amount"/>.</summary>
     private void Advance(ObjectiveType type, string targetId, int amount = 1)
     {
@@ -552,7 +572,8 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
             for (int i = 0; i < objectives.Count; i++)
             {
                 ObjectiveResource objective = objectives[i];
-                if (objective.Type != type || objective.TargetId != targetId || progress.IsObjectiveComplete(i))
+                if (objective.Type != type || objective.TargetId != targetId ||
+                    progress.IsObjectiveComplete(i) || !progress.IsObjectiveActive(i))
                 {
                     continue;
                 }
@@ -603,7 +624,14 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
             for (int i = 0; i < objectives.Count; i++)
             {
                 ObjectiveResource objective = objectives[i];
+
+                // ⚠️ The active check is NOT covered by `alreadyMetStillCounts` and the two are
+                // opposites (41D). That flag exists so a SEEDED-met objective can still fail; this
+                // one refuses to fail on an objective that belongs to a branch the player never took
+                // — an escort on the path not chosen has no charge to lose, so nothing about it can
+                // be a failure. A dead branch must not be able to lose the quest.
                 if (objective.Type != type ||
+                    !progress.IsObjectiveActive(i) ||
                     (!alreadyMetStillCounts && progress.IsObjectiveComplete(i)) ||
                     (targetId != null && objective.TargetId != targetId))
                 {
@@ -741,6 +769,12 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
                 QuestProgress? progress = QuestProgress.FromSave(entry.AsGodotDictionary());
                 if (progress != null)
                 {
+                    // ⚠️ A restored progress needs the flag source too, and the order here is the
+                    // subtle half: StoryFlagsComponent is a SEPARATE ISaveable, so the flags may not
+                    // have been restored yet when this runs. Binding a delegate rather than reading
+                    // the flags is what makes that a non-issue — the gate is asked at draw/advance
+                    // time, by which point every saveable has loaded.
+                    BindFlags(progress);
                     _quests[progress.Quest.Id] = progress;
                 }
             }

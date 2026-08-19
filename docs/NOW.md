@@ -82,30 +82,48 @@ existed the same three lines were maintained in four places and rewritten every 
   `TimeLimitSeconds`, deliberately NOT an objective type** — `QuestProgress` stores one int per
   objective and two ways to express a deadline is invariant 5 waiting to happen. It stops while the
   tree is paused, so reading the journal costs nothing; do not "fix" that into a wall clock.
-- ⚠️ **AN EVENT THAT FIRES CONDITIONALLY IS NOT AN EVENT THAT MEANS THE THING** (41C). The obvious
-  stealth signal is `EnemyAlertedEvent` — and `EnemyAIComponent` publishes it **only when the
-  profile's `AlertRadius > 0`**, which an ambusher sets to 0 on purpose. Riding it would have shipped
-  a rule that never fires against exactly the enemies built to catch you unawares, through every
-  green gate. `EnemyStateChangedEvent` is unconditional, and the brain only ever targets the player.
-- ⚠️ **A SEEDED STATE IS INVISIBLE TO EVERY RULE WRITTEN FOR AN EARNED ONE** (41C). A Stealth
-  objective starts complete, so 41B's `FailQuestsWith` — which correctly skips objectives already
-  met — stepped over the whole type. `alreadyMetStillCounts` is the path that exists for it. **Every
-  helper filtering on *unmet* is a candidate to be wrong about a state that begins finished.**
-- ⚠️ **`InteractId` IS THE SECOND SCENE-AUTHORED ID WITH NO DATABASE BEHIND IT** (41C), after
-  `MapLocationComponent.LocationId`, and it is validated the same way — `ValidateInteractIdsArePlaced`
-  scans the cell scenes **both** ways. ⚠️ **The duplicate arm is the half a one-way check misses:**
-  two nodes sharing an id both advance one objective. It lives on the base class because all thirteen
-  subclasses carry their own domain id and a waystone or container carries none.
-- ⚠️ **A GATE ONLY A HUMAN CAN OPEN IS A GATE NO INSTRUMENT SEES BEHIND** (41C). `quest.emberdeep.tally`
-  was authored behind a prerequisite, which made every 41C mechanic unreachable by `--panelshots` —
-  build, tests, validator and 75 negative cases all green, and not one frame of any of it. **When a
-  piece of content is the only caller of a new mechanic, its availability gate is part of that
-  mechanic's testability.**
-- **NEXT: 41D — Choice/Branch objectives + quest state graphs.** ⚠️ **The 41A→41C question, one more
-  time:** branching keys on story flags and dialogue effects, so the question is **who else writes
-  this flag** — `ValidateStoryFlags` already knows which flags nothing writes. ⚠️ **And ordering
-  finally lands here:** every quest to date is UNORDERED by rule and three `.tres` headers say so
-  ("do NOT hand-roll sequencing into a quest `.tres`") — 41D is where those notes come due.
+- ⚠️ **THREE 41C TRAPS, KEPT SHORT — the full versions are `docs/playbook/phase-41.md`.**
+  **(a)** An event that fires **conditionally** is not an event that means the thing: `EnemyAlertedEvent`
+  is published only when the AI profile's `AlertRadius > 0`, which an ambusher authors as 0
+  (**invariant 39**). **(b)** A **seeded** state is invisible to every rule written for an earned one —
+  a Stealth objective starts met, so 41B's `FailQuestsWith` stepped over the whole type. **(c)** A gate
+  only a human can open is a gate **no instrument sees behind**: `quest.emberdeep.tally` was authored
+  behind a prerequisite, and every 41C mechanic was unreachable by `--panelshots` through five green
+  gates. ⚠️ **`InteractId` is the second scene-authored id with no database behind it**, validated
+  both ways — **the duplicate arm is the half a one-way check misses.**
+- **41D — Choice/Branch objectives + quest state graphs ✅ CLOSED. Quests branch and quests order.**
+  `ObjectiveResource.RequiredFlagId`/`ForbiddenFlagId` make an objective **inert**;
+  `QuestResource.SequentialObjectives` orders them. ⚠️ **NO NEW SAVE STATE, BY DESIGN** — the branch
+  is **re-derived** from a story flag `StoryFlagsComponent` has persisted since Phase 10, so
+  `SAVE_FORMAT.md` needed no edit and every old save loads as an unbranched quest by construction.
+  The ordering debt three `.tres` headers named is **paid**, and those notes are rewritten rather
+  than left dangling.
+- ⚠️ **AN INERT OBJECTIVE IS A THIRD STATE AND SIX SURFACES WERE WRITTEN WITHOUT IT** (41D).
+  Every filter spelled `!IsObjectiveComplete(i)` — correct for two states, wrong for three. **Three
+  of the six answer "where next?"** (compass needle, map pin, tracker distance) and would have
+  agreed with each other while pointing the player **down the branch they had just declined**.
+  **Invariant 39 is the whole story**; one predicate, `QuestProgress.IsObjectiveActive`, is now the
+  single answer.
+- ⚠️ **A CACHE KEY IS A SUBSCRIPTION, AND IT IS THE ONE NO `Subscribe<>` GREP FINDS** (41D).
+  `QuestLogPanel` missed `StoryFlagChangedEvent` — 41B's defect in the same file one sub-phase later
+  — but `GameHud`'s tracker was staler and stranger: it rebuilds on a **signature of quest id +
+  counts**, and a flag change moves no count. Both fixed. **Any sub-phase adding a fact a surface
+  draws must ask whether that fact is in the signature.**
+- ⚠️ **ZERO LIVE OBJECTIVES IS NOT COMPLETION** (41D). A fully-branched quest has nothing live
+  until a flag lands, and `AllObjectivesMet` over an empty set is vacuously true — the natural
+  one-line filter completes it with rewards on the frame it is accepted. `AllLiveMet` refuses.
+  **41C's only-stealth trap is the same bug with a different empty set.** ⚠️ **And the sequential
+  scan STEPS OVER shut gates**, which is the one line that lets ordering and branching compose.
+- ⚠️ **PER-OUTCOME REWARDS WERE DECLINED (maintainer call) AND THE ENDING IS THE FLAG.**
+  `flag.hollowreach.barrels_hushed` opens a gated shelf on `shop.hollowreach.hull` through
+  `ShopStockEntry.RequiredFlagId`, live since 38I — a consequence the player can walk back to, and
+  no second home for rewards (invariant 5). `quest.hollowreach.barrels` off Sedge Marrow is the
+  caller; its fork is chosen **before the quest starts** (two choices deep) and the fork choices gate
+  on each other, so **both flags can never be set**.
+- **NEXT: 41E — Quest-driven world changes.** ⚠️ **41D's carried question:** a new state on the
+  WORLD means the grep is every place that asks whether a thing exists, is alive or is passable —
+  **and the ones written when the answer could never change are the ones that will be wrong.**
+  ⚠️ **The map, the minimap and the compass all CACHE**, so all three need the signature question.
 - ⚠️ **A LOCATION'S POSITION IS ITS NODE'S TRANSFORM IN A CELL SCENE, NEVER AN AUTHORED COORDINATE**
   (39.5A). `MapLocationResource` says what a place is; a `MapLocationComponent` parented to the stall
   or keeper says where. `--validate` scans `.tscn` in **both** directions. Author with
@@ -191,20 +209,20 @@ existed the same three lines were maintained in four places and rewritten every 
 - 📖 Economy: `ARCHITECTURE.md` §2.6m is the mechanism, `DESIGN.md` §6 + §6.1 the intent.
   🎨 `docs/ASSET_POLICY.md` §0.2–§0.3 is the asset authority.
 
-## Last verified (session close, 2026-08-19 — 41C)
+## Last verified (session close, 2026-08-19 — 41D)
 
 | | |
 | --- | --- |
 | Build | `dotnet build Embervale.sln` clean, **0 warnings** |
-| Tests | **1440 passing**, unchanged. ⚠️ **No test was added and one could not be**: 41C's logic is a seeded count on a `QuestResource`-backed object and a float subtraction on a live component, both Godot-typed and both excluded by the test project's no-`GodotObject` rule. The two new ordinals are pinned in `EnumStabilityTests`, which is the part that persists |
-| `--validate` | exit 0; **1403** locale strings (+17), **17 quests**, 34 dialogues |
-| **Negative tests** | `python tools/negative_tests.py` — **75/75 broken and restored** (70 → 75: an interact id nothing authors, an interact id authored twice, a stealth objective with a target, a quest of only stealth objectives, a deadline under the floor). Run **twice**, before and after the content change. Tree restored clean, `--validate` exit 0 afterwards |
-| `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, 34 dialogues, **17 quests**, 64 map locations, 3 companions |
-| **`--panelshots`** | 12 frames. **`08-journal-timed`** is the one that matters: the journal draws the Interact row at `0/1` **and the Stealth row at `✓ 1/1`** — the only evidence anywhere that a seeded condition renders as satisfied rather than as unmet — while the tracker draws `62 m · NE` for the interact target and **`3:00 left`** counting down |
+| Tests | **1448 passing** (+8). ⚠️ **41C could add none and 41D could add eight** — the branch/order decision is arithmetic over three arrays, so it lives in `ObjectiveProgress` (Godot-free) rather than on the Godot-typed `QuestProgress`. The step-over case (an ordered quest whose earlier objective is on the other branch) is the one that would silently lock a quest forever |
+| `--validate` | exit 0; **1422** locale strings (+19), **18 quests** (+1), 34 dialogues |
+| **Negative tests** | `python tools/negative_tests.py` — **80/80 broken and restored** (75 → 80: a branch flag nothing writes, a gate that contradicts itself, a gated Stealth objective, `SequentialObjectives` on a one-objective quest, and every objective behind one flag). ⚠️ **Run ONCE, after the content, not twice** — the harness refuses a dirty `data/`, so it ran post-commit. It covers all 75 pre-existing rules against the new code, which is the substance of the before-run. Tree restored clean, `--validate` exit 0 afterwards |
+| `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, 34 dialogues, **18 quests**, 64 map locations, 3 companions |
+| **`--panelshots`** | 14 frames (+2). **`11-journal-declared` and `12-journal-hushed` are the pair, and the PAIR is the evidence** — the *same quest instance* under opposite flags. The journal draws the Crossway pair then the Tarn pair, never four rows; the second row of each is **dim and padlocked** (the first ordered quest ever drawn); and the tracker's readout flips **`97 m · N` → `61 m · NW` with no count changing.** That one number is the proof the branch is re-derived rather than frozen — which is the entire justification for adding no save state |
 | **`--play`** | booted, loaded slot1, **33 objects restored**, 0 errors. ⚠️ The 3 `CraftingStationComponent` warnings are **pre-existing** |
-| ⚠️ **Not covered by anything** | **No playthrough exercised any of the three.** Nothing used the waystone, tripped an enemy into `Combat`, or let a deadline run out in a live session — and 41B's escort walk is still owed too. What is proven: the types resolve, render and are gated in five directions; what is not: that the fail actually fires when a goblin sees you |
-| Not run, deliberately | ⚠️ **`--economy`** — no price, spread or multiplier touched. ⚠️ **`map_probe`** — the mine waystone gained a *field*, not a place; no map location or cell geometry changed. ⚠️ **`--hudshots`** — the tracker is covered by the panel frames above, which draw it |
-| MCP | ⚠️ **DOWN all session, both halves** (`godot-cli status .` → editor not running, 23630 refused). Not needed: **nothing was placed in the world and no model was adopted** |
+| ⚠️ **Not covered by anything** | **No playthrough held the conversation, walked either road, or reloaded mid-branch.** Proven: the fork renders, re-derives across a frame with no quest event in it, and is gated in five directions. Not proven: that a save reloaded on the hushed path comes back on it. ⚠️ **Three named playthroughs are now owed** — 41B's escort walk, 41C's tally run, 41D's fork — and saying so out loud is the point |
+| Not run, deliberately | ⚠️ **`--economy`** — no price, spread or multiplier touched; the new shop row is a *gated* entry priced by the existing curve. ⚠️ **`map_probe`** — nothing was placed; the quest names four locations that already existed. ⚠️ **`--hudshots`** — the tracker is covered by the panel frames above, which draw it |
+| MCP | ✅ **UP, and brought up mid-session.** The editor was open in **Cloud mode** (the `ai-game.dev` tell in `.claude/skills/*/SKILL.md`) with the relay not running at all — `godot-cli close .` + `godot-cli open . --mode Custom --url http://localhost:23630` fixed it, and the regenerated skill docs now point at localhost. ⚠️ **`mcp__ai-game-developer__*` tools were absent all session** (`.mcp.json` is read at Claude Code startup and the server was down then), so it was driven over HTTP via `godot-cli run-tool`. Not needed: nothing was placed in the world and no model was adopted |
 
 ## Live invariants — the things that will bite you
 
@@ -349,6 +367,14 @@ existed the same three lines were maintained in four places and rewritten every 
     `Stealth` objective starts already met, so a helper that correctly skips completed objectives
     skipped the entire type. **Every filter on *unmet* / *not yet done* is a candidate to be wrong
     about a state that begins in the finished position.**
+40. ⚠️ **A STATE THAT IS NEITHER MET NOR PENDING IS INVISIBLE TO EVERY RULE THAT KNOWS ONLY THOSE
+    TWO** (41D — invariant 39's mirror). A branch-gated or order-locked objective is **inert**, and
+    six surfaces asked `!IsObjectiveComplete(i)`, which had been exactly right for thirty phases.
+    **The productive grep was the negation, not the feature** — not "quest" or "branch" but
+    `!IsObjectiveComplete` and `Counts`. ⚠️ **And two of the six were caches, not subscriptions:**
+    `GameHud`'s tracker rebuilds on a signature of quest id + counts and a flag change moves no
+    count, so it would have cached the fork forever. **A cache key is an opinion about what can
+    change, and it is the only kind of listener nothing lists.**
 
 
 ## Commands worth knowing

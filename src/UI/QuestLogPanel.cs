@@ -51,6 +51,13 @@ public partial class QuestLogPanel : UiPanel
         // draws the old one.
         EventBus.Instance?.Subscribe<QuestFailedEvent>(OnQuestFailed);
         EventBus.Instance?.Subscribe<GameLoadedEvent>(OnGameLoaded);
+
+        // ⚠️ 41D, and this line exists because 41B shipped its absence. A quest's BRANCH changes on a
+        // story flag, which is not a quest event at all — so a fork chosen while the journal is open
+        // would leave the card showing the path the player just declined, until some unrelated quest
+        // event happened to rebuild it. 41B's rule, one sub-phase later: the grep is not "who draws
+        // quests" but "what else can change what a quest looks like".
+        EventBus.Instance?.Subscribe<Dialogue.StoryFlagChangedEvent>(OnStoryFlagChanged);
     }
 
     public override void _ExitTree()
@@ -60,6 +67,7 @@ public partial class QuestLogPanel : UiPanel
         EventBus.Instance?.Unsubscribe<QuestCompletedEvent>(OnQuestCompleted);
         EventBus.Instance?.Unsubscribe<QuestFailedEvent>(OnQuestFailed);
         EventBus.Instance?.Unsubscribe<GameLoadedEvent>(OnGameLoaded);
+        EventBus.Instance?.Unsubscribe<Dialogue.StoryFlagChangedEvent>(OnStoryFlagChanged);
     }
 
     public void SetQuestLog(QuestLogComponent? log)
@@ -77,6 +85,8 @@ public partial class QuestLogPanel : UiPanel
     private void OnQuestFailed(QuestFailedEvent e) => MarkDirty();
 
     private void OnGameLoaded(GameLoadedEvent e) => MarkDirty();
+
+    private void OnStoryFlagChanged(Dialogue.StoryFlagChangedEvent e) => MarkDirty();
 
     protected override void Rebuild()
     {
@@ -264,13 +274,25 @@ public partial class QuestLogPanel : UiPanel
         for (int i = 0; i < objectives.Count; i++)
         {
             ObjectiveResource objective = objectives[i];
+
+            // ⚠️ 41D. An objective on the branch the player did not take is not drawn here at all —
+            // the journal is where a quest's shape is read, and listing an unreachable step is worse
+            // than listing nothing. A LOCKED one (SequentialObjectives, earlier step outstanding) is
+            // drawn dim and padlocked, because a quest whose rows appear one at a time reads as the
+            // journal losing them.
+            if (!progress.IsObjectiveInBranch(i))
+            {
+                continue;
+            }
+
+            bool locked = !progress.IsObjectiveActive(i);
             bool done = progress.IsObjectiveComplete(i);
             int have = progress.Counts[i];
             int required = Mathf.Max(1, objective.RequiredCount);
 
             col.AddChild(UiTheme.Caption(
-                $"{(done ? "✓" : "•")} {Loc.T(objective.ShortLabel())}  {have}/{objective.RequiredCount}",
-                done ? UiTheme.QuestComplete : UiTheme.Text));
+                $"{(done ? "✓" : locked ? "🔒" : "•")} {Loc.T(objective.ShortLabel())}  {have}/{objective.RequiredCount}",
+                done ? UiTheme.QuestComplete : locked ? UiTheme.Dim : UiTheme.Text));
 
             // A bar only where there is something to fill. "1/1" is a tick, not a gauge.
             if (objective.RequiredCount > 1)

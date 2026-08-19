@@ -1,0 +1,88 @@
+[gd_resource type="Resource" script_class="QuestResource" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+
+; Phase 41D - the first quest in the game with two paths, and the caller for both halves of the
+; sub-phase: the branch gates (RequiredFlagId) and the ordering bool (SequentialObjectives).
+;
+; ⚠️ THE BRANCH IS CHOSEN BEFORE THE QUEST EXISTS, AND THAT IS THE WHOLE SAFETY OF IT. The flag is
+; set by one dialogue choice and the quest is started by the choice on the NEXT node - the two-choices-
+; deep shape the ledger run already uses in this same graph, because a DialogueChoice carries ONE
+; effect. So there is never a frame where this quest is in the log with no path picked. That matters:
+; a quest whose objectives are ALL gated has nothing live until a flag lands, and "all zero live
+; objectives are met" is trivially true. QuestProgress refuses to complete on zero live objectives for
+; exactly that reason - but relying on that guard instead of authoring around it would be building the
+; content on top of the backstop.
+;
+; ⚠️ THE TWO FORK CHOICES GATE ON EACH OTHER (MissingFlag), NOT ON THE QUEST. A player can set a flag
+; and walk off without starting the quest - the accept node is still one choice away - and on coming
+; back the un-taken fork must be gone, or both flags end up set and BOTH paths run at once. Gating
+; each fork on the other's absence closes that and, for free, gives the walked-off player their own
+; path back to the accept node.
+;
+; ⚠️ SequentialObjectives IS THE POINT OF THE ORDER, AND THE ORDER READS ODDLY ON PURPOSE. The four
+; objectives are declare-reach, declare-talk, hush-reach, hush-talk - so on the hushed path the first
+; TWO objectives are inert, and objective 2 is live immediately because the sequential scan steps over
+; earlier objectives whose gate is shut. Without that step-over an ordered branching quest would lock
+; itself forever behind the path not taken. Interleaving the pairs would work identically; keeping each
+; branch contiguous is what makes the .tres readable.
+;
+; ⚠️ NEITHER PATH PAYS DIFFERENTLY, AND THAT IS A DECISION (maintainer call). The ending is the FLAG,
+; and the flag has live consumers that already existed: shop.hollowreach.hull opens a gated shelf on
+; flag.hollowreach.barrels_hushed, and Sedge has a different line for each. Per-outcome reward tables
+; were considered and declined - a second place rewards live is invariant 5 waiting to happen, and the
+; consequence a player actually feels here is what the world does afterwards.
+;
+; ⚠️ NO PrerequisiteQuestId, FOR 41C's REASON. A gate only a human can open is a gate no instrument
+; sees behind: with one on, --panelshots could not start this quest and neither branch would ever be
+; photographed. quest.hollowreach.word is the natural lead-in and is deliberately NOT required.
+
+[sub_resource type="Resource" id="Obj_reach_post"]
+script = ExtResource("2_obj")
+Type = 2
+TargetId = "location.crossway.impound"
+RequiredCount = 1
+Description = "quest.hollowreach.barrels.obj_post"
+RequiredFlagId = "flag.hollowreach.barrels_declared"
+
+[sub_resource type="Resource" id="Obj_talk_wren"]
+script = ExtResource("2_obj")
+Type = 3
+TargetId = "dialogue.wren"
+RequiredCount = 1
+Description = "quest.hollowreach.barrels.obj_wren"
+RequiredFlagId = "flag.hollowreach.barrels_declared"
+
+[sub_resource type="Resource" id="Obj_reach_landing"]
+script = ExtResource("2_obj")
+Type = 2
+TargetId = "location.tarn.chandler"
+RequiredCount = 1
+Description = "quest.hollowreach.barrels.obj_landing"
+RequiredFlagId = "flag.hollowreach.barrels_hushed"
+
+[sub_resource type="Resource" id="Obj_talk_odger"]
+script = ExtResource("2_obj")
+Type = 3
+TargetId = "dialogue.odger"
+RequiredCount = 1
+Description = "quest.hollowreach.barrels.obj_odger"
+RequiredFlagId = "flag.hollowreach.barrels_hushed"
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.hollowreach.barrels"
+Title = "quest.hollowreach.barrels.title"
+Summary = "quest.hollowreach.barrels.summary"
+Objectives = Array[Resource]([SubResource("Obj_reach_post"), SubResource("Obj_talk_wren"), SubResource("Obj_reach_landing"), SubResource("Obj_talk_odger")])
+XpReward = 110
+GoldReward = 45
+GoldItemId = "item.currency.gold"
+RewardItems = []
+FactionRewardId = "faction.villagers"
+FactionRewardAmount = 5
+TimeLimitSeconds = 0.0
+SequentialObjectives = true
+PrerequisiteQuestId = ""
+IsMainQuest = false

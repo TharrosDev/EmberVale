@@ -58,6 +58,28 @@ public partial class QuestResource : Resource
     /// </summary>
     [Export] public float TimeLimitSeconds { get; set; }
 
+    /// <summary>
+    /// Whether the objectives must be met in the order they are authored (41D); <b>false = unordered</b>,
+    /// which is what every quest before this was and what most quests should stay.
+    ///
+    /// ⚠️ <b>This is the field three <c>.tres</c> headers and the roadmap have been pointing at.</b>
+    /// Until now nothing sequenced objectives — a quest completed when all of them were met — and the
+    /// standing instruction was *"do NOT hand-roll sequencing into a quest `.tres`, wait for 41D"*.
+    /// <c>quest.hollowreach.word</c> sequences by geography instead (you cannot talk to Sedge without
+    /// arriving at Hollowreach), which is a fine answer where the world supplies it and no answer at
+    /// all anywhere else.
+    ///
+    /// ⚠️ <b>A locked objective is INERT, exactly like a gated-off one</b>, so the two compose: an
+    /// earlier objective that belongs to the branch you did not take is skipped rather than blocking
+    /// the rest of the quest forever. That is the only interaction between ordering and branching, and
+    /// it falls out of both answering through one predicate.
+    ///
+    /// ⚠️ <b>It is a quest-level bool rather than a per-objective prerequisite</b> (maintainer call).
+    /// An index-into-a-sibling-array is fragile the first time anyone reorders a <c>.tres</c>, and it
+    /// buys a diamond graph nothing has asked for. A line is what the content wants.
+    /// </summary>
+    [Export] public bool SequentialObjectives { get; set; }
+
     [ExportGroup("Availability")]
     /// <summary>Optional quest id that must be completed first; empty = always available.</summary>
     [Export] public string PrerequisiteQuestId { get; set; } = string.Empty;

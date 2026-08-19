@@ -1543,3 +1543,23 @@ location.frostfang.dragon_roost.name,The Dragon Roost
 location.frostfang.ash_roost.name,The Ash Roost
 location.frostfang.ancient_aerie.name,The Ancient Aerie
 # --- END generated map location names ---
+# --- Phase 41D: the branching barrels errand (quest.hollowreach.barrels) ---
+quest.hollowreach.barrels.title,"What the Post Took"
+quest.hollowreach.barrels.summary,"Holt's barrels never left the realm — the Crossway post pulled them off a cart and put them in the impound shed. Sedge Marrow knows two ways they come out again, and only one of them has your name written down anywhere."
+quest.hollowreach.barrels.obj_post,"Go up to the Crossway impound"
+quest.hollowreach.barrels.obj_wren,"Settle the barrels with Wren Halloway"
+quest.hollowreach.barrels.obj_landing,"Go down to the Tarn Landing chandlery"
+quest.hollowreach.barrels.obj_odger,"Have Odger Vane move the barrels quietly"
+dlg.sedge.c_barrels,"Holt's barrels. Where did they go?"
+dlg.sedge.barrels,"""They went where everything goes."" She sets the stone down. ""The post pulled the cart at the Crossway and the barrels are in the impound shed with a number chalked on them. Now. There is a clerk's way and there is my way. The clerk's way is you walk up there, you give Halloway the manifest, you pay what they say the duty is, and the barrels come out with your name in a book that never gets thrown away. My way is Odger Vane at the Landing has a boat and no paperwork, and by the third night the barrels are on Holt's floor and nobody wrote anything down at all."""
+dlg.sedge.c_barrels_declare,"I'll take the manifest up to the post."
+dlg.sedge.c_barrels_hush,"Tell Vane to fetch them."
+dlg.sedge.c_barrels_off,"I'll think about which of us I am."
+dlg.sedge.barrels_declare,"""The honest road."" She does not say it unkindly. ""Halloway holds the impound key on the post's coin, and she is exactly as bribable as the coin is good, which is to say not very. Take the number, pay the duty, and be pleasant. The book will remember you, and one day that will be worth something or it will cost you, and neither of us gets to know which."""
+dlg.sedge.c_barrels_declare_go,"Give me the number."
+dlg.sedge.barrels_hush,"""The other road."" Now she does look up. ""Vane runs cordage and pitch up that coast twice a week and nobody has ever asked him to open a crate, because nobody up the hill can imagine wanting what a chandler carries. Walk down to the Landing and say the barrels are red-chalked. He'll know the rest. And you will owe me a quiet mouth, which I collect in kind."""
+dlg.sedge.c_barrels_hush_go,"Red-chalked. Understood."
+dlg.sedge.c_after_declared,"The barrels came out of the shed."
+dlg.sedge.after_declared,"""So they did, with a duty stamp and your name under it."" She turns the stone over. ""I don't hold it against you. I hold it in mind, which is a different shelf, and nothing on that shelf ever comes back down. You'll buy what everybody buys."""
+dlg.sedge.c_after_hushed,"Nobody wrote anything down."
+dlg.sedge.after_hushed,"""Nobody did."" She reaches under the bench and moves something forward on it without showing you what. ""There's a shelf here I keep for people who have already proved they can be dull about it. You're on it now. Don't make me take you off."""

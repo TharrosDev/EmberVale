@@ -3063,6 +3063,28 @@ public static class ContentValidator
                         break;
                 }
 
+                // 41D. A gate that is its own opposite can never be open, so the objective is one
+                // that silently does not exist — the quest is shorter than it reads and nothing
+                // anywhere reports it.
+                if (objective.RequiredFlagId.Length > 0 &&
+                    objective.RequiredFlagId == objective.ForbiddenFlagId)
+                {
+                    issues.Add($"quest '{quest.Id}' objective both requires and is blocked by flag " +
+                               $"'{objective.RequiredFlagId}' — it could never be active");
+                }
+
+                // 41D. A Stealth objective is seeded ALREADY MET and can only be lost, so a branch
+                // gate on one has no honest meaning: on the open path it is a condition that starts
+                // satisfied, and on the shut path it is a condition that cannot be broken. Refusing
+                // the authoring is cheaper than defining what seeded-and-inert would mean, and 41C
+                // is the reason to be suspicious of the combination at all.
+                if (objective.Type == ObjectiveType.Stealth && objective.IsGated)
+                {
+                    issues.Add($"quest '{quest.Id}' stealth objective carries a branch flag gate — " +
+                               "a stealth condition starts already met and can only be lost, so " +
+                               "gating one off makes it a condition that cannot be broken");
+                }
+
                 // ⚠️ THE QUEST ARM OF THE MAP-COVERAGE RULE (39.5C), PROMISED IN CLAUDE.md §1.
                 //
                 // "IF THE PLAYER CAN GO THERE, IT GOES ON THE MAP" has been a gate for shops,
@@ -3585,6 +3607,40 @@ public static class ContentValidator
             {
                 issues.Add($"quest '{quest.Id}' has only stealth objectives — a stealth condition " +
                            "starts met, so the quest would complete the instant it is accepted");
+            }
+
+            // 41D. A knob you validate is a claim the knob works (invariant 37). Ordering one
+            // objective is ordering nothing, so the bool is set on a quest where it can have no
+            // effect — and the author who set it believes their quest is sequenced.
+            if (quest.SequentialObjectives && objectives.Count < 2)
+            {
+                issues.Add($"quest '{quest.Id}' sets SequentialObjectives with {objectives.Count} " +
+                           "objective(s) — ordering needs at least two to mean anything");
+            }
+
+            // 41D. Every objective behind ONE flag is not a branch, it is a gate on the whole quest
+            // wearing the wrong hat — and it is the shape that produces a quest sitting in the log
+            // with literally nothing in it until the flag lands. Availability is
+            // PrerequisiteQuestId's job, or the giving dialogue's; a branch gate is for telling two
+            // paths apart, which needs two flags.
+            if (objectives.Count > 1 && objectives[0].RequiredFlagId.Length > 0)
+            {
+                bool allSame = true;
+                foreach (ObjectiveResource objective in objectives)
+                {
+                    if (objective.RequiredFlagId != objectives[0].RequiredFlagId)
+                    {
+                        allSame = false;
+                        break;
+                    }
+                }
+
+                if (allSame)
+                {
+                    issues.Add($"quest '{quest.Id}' gates every objective on the same flag " +
+                               $"'{objectives[0].RequiredFlagId}' — that is availability, not a " +
+                               "branch; use PrerequisiteQuestId or gate the giving dialogue instead");
+                }
             }
 
             foreach (ObjectiveResource objective in objectives)
@@ -4165,6 +4221,30 @@ public static class ContentValidator
             if (!string.IsNullOrEmpty(region.UnlockFlagId) && !written.Contains(region.UnlockFlagId))
             {
                 issues.Add($"region '{region.Id}' unlocks on flag '{region.UnlockFlagId}', which nothing ever sets");
+            }
+        }
+
+        // 41D. Quest objectives are the fourth reader family, and the one NOW.md named as this
+        // sub-phase's whole question — *who else writes this flag?* A branch gate on a flag nothing
+        // sets is a path the player can never be on: the objective is inert forever, the journal
+        // never draws it, and the quest either sits unfinishable or quietly completes without it.
+        // Every failure of that is silent, which is exactly what this rule family exists for.
+        foreach (QuestResource quest in QuestDatabase.All)
+        {
+            foreach (ObjectiveResource objective in quest.ObjectiveList())
+            {
+                RequireWritten(objective.RequiredFlagId, "requires", quest.Id, written, issues);
+                RequireWritten(objective.ForbiddenFlagId, "is blocked by", quest.Id, written, issues);
+            }
+        }
+
+        static void RequireWritten(
+            string flag, string verb, string questId, HashSet<string> written, List<string> issues)
+        {
+            if (!string.IsNullOrEmpty(flag) && !written.Contains(flag))
+            {
+                issues.Add($"quest '{questId}' has an objective that {verb} flag '{flag}', " +
+                           "which nothing ever sets");
             }
         }
 

@@ -351,6 +351,16 @@ and the conditions under which they would be built are written down.
 
 ### Phase 41 — quests worth the name
 
+- 41D ✅ and a quest can fork. Sedge Marrow knows where Holt's barrels went — the Crossway post pulled
+the cart and they are sitting in the impound shed — and she offers two ways to get them out. Walk the
+manifest up to the post, pay the duty and settle it with Wren Halloway, and your name goes in a book
+that never gets thrown away. Or send word down to Odger Vane at the Landing, who runs cordage up that
+coast twice a week and has never been asked to open a crate, and by the third night the barrels are on
+Holt's floor with nothing written down anywhere. The journal only ever shows the road you took; the
+other one is not greyed out, it is simply not there. And the choice is not scenery: keep it quiet and
+Sedge moves something forward on the bench under her counter that stays there for the rest of the
+game. Take the honest road and she does not hold it against you, she holds it in mind.
+
 - 41C ✅ and a quest can now ask you for the three things it never could: use a particular thing, do
 it before a clock runs out, and do it without being seen. Coyle Ferrin at the wharf has a month of
 figures sealed in a tin, due at the Emberdeep waystone before the shift changes — the short way north
