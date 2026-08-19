@@ -900,10 +900,19 @@ public partial class GameHud : CanvasLayer
         }
 
         // Rebuild the tracker rows only when the tracked quest's shape/progress changes.
+        //
+        // ⚠️ THE BRANCH STATE IS PART OF THE SHAPE (41D), AND LEAVING IT OUT IS 41B's DEFECT AGAIN.
+        // A story flag changing swaps which objectives are drawn WITHOUT moving a single count — so
+        // a signature of counts alone is stale exactly when the player has just made the choice the
+        // whole quest is about, and the tracker would keep listing the path they turned down. The
+        // journal's version of this is a missing event subscription; this one is a missing term in a
+        // cache key, and neither is visible to a build, a test or a validator.
         var signature = new StringBuilder(active.Quest.Id);
-        foreach (int count in active.Counts)
+        for (int i = 0; i < active.Counts.Length; i++)
         {
-            signature.Append(':').Append(count);
+            signature.Append(':').Append(active.Counts[i])
+                     .Append(active.IsObjectiveInBranch(i) ? 'b' : '-')
+                     .Append(active.IsObjectiveActive(i) ? 'a' : '-');
         }
 
         string current = signature.ToString();
@@ -995,7 +1004,10 @@ public partial class GameHud : CanvasLayer
         var objectives = progress.Quest.ObjectiveList();
         for (int i = 0; i < objectives.Count; i++)
         {
-            if (progress.IsObjectiveComplete(i) || objectives[i].LocationId.Length == 0)
+            // Active rather than incomplete (41D) — see CompassStrip.ResolveObjectiveTarget. This
+            // is the third of the three surfaces that would otherwise name the dead branch's place.
+            if (progress.IsObjectiveComplete(i) || !progress.IsObjectiveActive(i) ||
+                objectives[i].LocationId.Length == 0)
             {
                 continue;
             }
@@ -1034,6 +1046,16 @@ public partial class GameHud : CanvasLayer
         var objectives = progress.Quest.ObjectiveList();
         for (int i = 0; i < objectives.Count; i++)
         {
+            // ⚠️ 41D, and the two states are not the same state. Out of branch = the player is on
+            // the other path, so the row is not drawn at all. In branch but not active = locked
+            // behind an earlier step on a SequentialObjectives quest, which IS drawn, dimmed and
+            // padlocked — an errand that silently grows rows as you finish them reads as a bug.
+            if (!progress.IsObjectiveInBranch(i))
+            {
+                continue;
+            }
+
+            bool locked = !progress.IsObjectiveActive(i);
             int required = Mathf.Max(1, objectives[i].RequiredCount);
             int have = progress.Counts[i];
             bool done = have >= objectives[i].RequiredCount;
@@ -1045,13 +1067,15 @@ public partial class GameHud : CanvasLayer
             var line = new HBoxContainer();
             line.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
 
-            Label bullet = UiTheme.Caption(done ? "✓" : "•", done ? UiTheme.QuestComplete : UiTheme.Dim);
+            Label bullet = UiTheme.Caption(
+                done ? "✓" : locked ? "🔒" : "•",
+                done ? UiTheme.QuestComplete : UiTheme.Dim);
             bullet.CustomMinimumSize = new Vector2(10f, 0f);
             line.AddChild(bullet);
 
             Label text = UiTheme.Caption(
                 Loc.T(objectives[i].ShortLabel()),
-                done ? UiTheme.QuestComplete : UiTheme.Text);
+                done ? UiTheme.QuestComplete : locked ? UiTheme.Dim : UiTheme.Text);
             text.AutowrapMode = TextServer.AutowrapMode.WordSmart;
             text.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
             line.AddChild(text);

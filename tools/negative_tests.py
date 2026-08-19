@@ -522,6 +522,53 @@ CASES = [
      [("scenes/regions/ember_crown/town_hub.tscn",
        'DialogueId = "dialogue.elder"', 'DialogueId = "dialogue.no_such_conversation"')],
      "which no dialogue declares"),
+
+    # ---- 41D: branch gates and objective ordering -------------------------------------------
+    #
+    # ⚠️ A branch gate is a story flag, and story flags are the ONE id family with no database
+    # behind them - so the only instrument that can catch a typo is the reader/writer
+    # cross-reference. A gate on a flag nothing sets is a path the player can never be on: the
+    # objective is inert forever, the journal never draws it, and nothing at runtime says why.
+    ("quest.branch_flag_never_set", "ValidateStoryFlags",
+     [("data/quests/WhatThePostTook.tres",
+       'Description = "quest.hollowreach.barrels.obj_post"\nRequiredFlagId = "flag.hollowreach.barrels_declared"',
+       'Description = "quest.hollowreach.barrels.obj_post"\nRequiredFlagId = "flag.hollowreach.barrels_declaredd"')],
+     "which nothing ever sets"),
+
+    # ⚠️ A gate that is its own opposite can never open, so the objective silently does not exist -
+    # the quest is shorter than it reads and nothing anywhere reports it.
+    ("quest.gate_contradicts_itself", "ValidateQuests",
+     [("data/quests/WhatThePostTook.tres",
+       'Description = "quest.hollowreach.barrels.obj_wren"\nRequiredFlagId = "flag.hollowreach.barrels_declared"',
+       'Description = "quest.hollowreach.barrels.obj_wren"\nRequiredFlagId = "flag.hollowreach.barrels_declared"\nForbiddenFlagId = "flag.hollowreach.barrels_declared"')],
+     "could never be active"),
+
+    # ⚠️ A Stealth objective is seeded ALREADY MET and can only be lost (41C), so gating one off
+    # makes it a condition that cannot be broken - a rule that ships as a no-op through every gate.
+    ("quest.stealth_objective_gated", "ValidateQuests",
+     [("data/quests/TheSealedTally.tres",
+       'Description = "quest.emberdeep.tally.obj_unseen"',
+       'Description = "quest.emberdeep.tally.obj_unseen"\nRequiredFlagId = "flag.slice.completed"')],
+     "starts already met and can only be lost"),
+
+    # ⚠️ A knob you validate is a claim the knob works (invariant 37). Ordering one objective orders
+    # nothing, and the author who set the bool believes their quest is sequenced.
+    ("quest.sequential_with_one_objective", "ValidateQuestCompletability",
+     [("data/quests/GatherIron.tres",
+       "\nPrerequisiteQuestId", "\nSequentialObjectives = true\nPrerequisiteQuestId")],
+     "ordering needs at least two"),
+
+    # ⚠️ Every objective behind ONE flag is availability wearing a branch's hat - the quest sits in
+    # the log with nothing in it at all, which is the state QuestProgress refuses to complete and
+    # therefore the state that hangs forever.
+    ("quest.whole_quest_gated_on_one_flag", "ValidateQuestCompletability",
+     [("data/quests/WhatThePostTook.tres",
+       'Description = "quest.hollowreach.barrels.obj_landing"\nRequiredFlagId = "flag.hollowreach.barrels_hushed"',
+       'Description = "quest.hollowreach.barrels.obj_landing"\nRequiredFlagId = "flag.hollowreach.barrels_declared"'),
+      ("data/quests/WhatThePostTook.tres",
+       'Description = "quest.hollowreach.barrels.obj_odger"\nRequiredFlagId = "flag.hollowreach.barrels_hushed"',
+       'Description = "quest.hollowreach.barrels.obj_odger"\nRequiredFlagId = "flag.hollowreach.barrels_declared"')],
+     "that is availability, not a branch"),
 ]
 
 

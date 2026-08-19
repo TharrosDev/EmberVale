@@ -287,7 +287,11 @@ public sealed partial class CompassStrip : Control
         var objectives = progress.Quest.ObjectiveList();
         for (int i = 0; i < objectives.Count; i++)
         {
-            if (!progress.IsObjectiveComplete(i))
+            // ⚠️ ACTIVE, not merely incomplete (41D). A branch objective the player is not on is
+            // inert — neither done nor pending — and the needle would happily point at it, sending
+            // the player down the path they declined. Same line, same reason, in MapScreen and
+            // GameHud: three surfaces, one fact (invariant 5).
+            if (!progress.IsObjectiveComplete(i) && progress.IsObjectiveActive(i))
             {
                 return ObjectiveLocator.Locate(objectives[i], GetTree(), body.GlobalPosition);
             }

@@ -317,7 +317,11 @@ public partial class DebugHud : CanvasLayer
             var objectives = progress.Quest.ObjectiveList();
             for (int i = 0; i < objectives.Count; i++)
             {
-                sb.Append($"  {objectives[i].ShortLabel()} {progress.Counts[i]}/{objectives[i].RequiredCount}\n");
+                // The one surface that deliberately draws INERT objectives too (41D): every other
+                // one hides them, so without this there is nowhere at all to see that a branch
+                // exists and which side of it the save is on.
+                string state = progress.IsObjectiveActive(i) ? string.Empty : " [inert]";
+                sb.Append($"  {objectives[i].ShortLabel()} {progress.Counts[i]}/{objectives[i].RequiredCount}{state}\n");
             }
 
             return; // Track only the first active quest in the HUD.

@@ -64,6 +64,59 @@ public partial class ObjectiveResource : Resource
     /// </summary>
     [Export] public string LocationId { get; set; } = string.Empty;
 
+    [ExportGroup("Branching")]
+
+    /// <summary>
+    /// Story flag that must be SET for this objective to count at all (41D); empty = ungated.
+    ///
+    /// ⚠️ <b>A gated-off objective is INERT, not incomplete.</b> It cannot advance, it is skipped by
+    /// <c>AllObjectivesMet</c>, and every surface that draws objectives hides it — so a quest with an
+    /// A-path and a B-path is one quest whose journal card shows only the path you took. That is the
+    /// whole of "branching": no quest graph, no node type, no new save state, because the flag itself
+    /// is the state and <c>StoryFlagsComponent</c> already persists it.
+    ///
+    /// ⚠️ <b>The flag is a READER here, which makes it <c>ValidateStoryFlags</c>' business.</b> That
+    /// rule cross-references readers against writers precisely because story flags are the one id
+    /// family with no database behind them — a mistyped gate is a branch that never opens, silently
+    /// and permanently. NOW.md named this sub-phase's question in advance: <b>who else writes this
+    /// flag?</b> The answer has to be "something", or <c>--validate</c> fails.
+    ///
+    /// ⚠️ <b>Name it the same as <c>ShopStockEntry.RequiredFlagId</c> on purpose.</b> Same concept,
+    /// same word, and the validator already knew that name.
+    /// </summary>
+    [Export] public string RequiredFlagId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Story flag that makes this objective inert while it is SET (41D); empty = ungated. The pair to
+    /// <see cref="RequiredFlagId"/>, exactly as <c>DialogueCondition.MissingFlag</c> pairs with
+    /// <c>HasFlag</c> — a two-path fork is authorable as one flag rather than two, and the path that
+    /// was not taken is the one carrying it.
+    ///
+    /// ⚠️ Authoring the same flag in both fields is refused by <c>--validate</c>: the objective could
+    /// never be active, which is an objective that silently does not exist.
+    /// </summary>
+    [Export] public string ForbiddenFlagId { get; set; } = string.Empty;
+
+    /// <summary>Whether this objective carries any branch gate at all — the cheap early-out for the
+    /// common case, since almost every objective ever authored is ungated.</summary>
+    public bool IsGated => RequiredFlagId.Length > 0 || ForbiddenFlagId.Length > 0;
+
+    /// <summary>
+    /// Whether this objective's branch gate is open for an actor whose flags <paramref name="hasFlag"/>
+    /// answers. A null predicate means "no flag source", which reads every gate as OPEN — so a
+    /// <see cref="QuestProgress"/> built outside a live actor behaves exactly as it did before 41D.
+    /// </summary>
+    public bool IsGateOpen(System.Func<string, bool>? hasFlag)
+    {
+        if (!IsGated || hasFlag == null)
+        {
+            return true;
+        }
+
+        return (RequiredFlagId.Length == 0 || hasFlag(RequiredFlagId))
+            && (ForbiddenFlagId.Length == 0 || !hasFlag(ForbiddenFlagId));
+    }
+
     /// <summary>
     /// Count-free objective label for UI (the count is shown separately as "n/N"). Returns
     /// <see cref="Description"/>, which every caller passes through <c>Loc.T</c>.

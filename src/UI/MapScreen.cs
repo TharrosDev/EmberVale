@@ -1048,7 +1048,9 @@ public partial class MapScreen : UiPanel
         var objectives = progress.Quest.ObjectiveList();
         for (int i = 0; i < objectives.Count; i++)
         {
-            if (!progress.IsObjectiveComplete(i) && objectives[i].LocationId.Length > 0)
+            // Active rather than incomplete (41D) — see CompassStrip.ResolveObjectiveTarget.
+            if (!progress.IsObjectiveComplete(i) && progress.IsObjectiveActive(i) &&
+                objectives[i].LocationId.Length > 0)
             {
                 return objectives[i].LocationId;
             }
