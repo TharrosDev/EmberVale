@@ -15,6 +15,11 @@
 ;   - Condition = 13 (ShopClosed) puts the closing time in the merchant's own mouth rather than
 ;     letting the option silently do nothing.
 
+; ⚠️ THE TALLY ERRAND IS THE GUILD BOARD'S OFFER/ACTIVE/THANKS TRIPLE, COPIED RATHER THAN VARIED
+; (41C). Every giver in the game answers a posting the same three ways - available, in progress,
+; done - and a fourth shape would be drift nothing greps. Coyle gets it because his root had four
+; choices and Sedge's has six after 41B: the errand goes to the conversation that can still hold it.
+
 [sub_resource type="Resource" id="ch_trade"]
 script = ExtResource("3_choice")
 Text = "dlg.coyle.c_trade"
@@ -56,11 +61,55 @@ Goto = "root"
 script = ExtResource("3_choice")
 Text = "dlg.coyle.c_talk_bye"
 
+[sub_resource type="Resource" id="ch_tally_offer"]
+script = ExtResource("3_choice")
+Text = "dlg.coyle.c_tally_offer"
+Goto = "tally"
+Condition = 1
+ConditionArg = "quest.emberdeep.tally"
+
+[sub_resource type="Resource" id="ch_tally_active"]
+script = ExtResource("3_choice")
+Text = "dlg.coyle.c_tally_active"
+Goto = "tally_inprogress"
+Condition = 2
+ConditionArg = "quest.emberdeep.tally"
+
+[sub_resource type="Resource" id="ch_tally_thanks"]
+script = ExtResource("3_choice")
+Text = "dlg.coyle.c_tally_thanks"
+Goto = "tally_thanks"
+Condition = 3
+ConditionArg = "quest.emberdeep.tally"
+
+[sub_resource type="Resource" id="ch_tally_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.coyle.c_tally_accept"
+Goto = "tally_accepted"
+Effect = 1
+EffectArg = "quest.emberdeep.tally"
+
+[sub_resource type="Resource" id="ch_tally_decline"]
+script = ExtResource("3_choice")
+Text = "dlg.coyle.c_tally_decline"
+
+[sub_resource type="Resource" id="ch_tally_accepted_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.coyle.c_tally_accepted_bye"
+
+[sub_resource type="Resource" id="ch_tally_inprogress_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.coyle.c_tally_inprogress_bye"
+
+[sub_resource type="Resource" id="ch_tally_thanks_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.coyle.c_tally_thanks_bye"
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.coyle.root"
-Choices = Array[Resource]([SubResource("ch_trade"), SubResource("ch_closed"), SubResource("ch_talk"), SubResource("ch_bye")])
+Choices = Array[Resource]([SubResource("ch_tally_offer"), SubResource("ch_tally_active"), SubResource("ch_tally_thanks"), SubResource("ch_trade"), SubResource("ch_closed"), SubResource("ch_talk"), SubResource("ch_bye")])
 
 [sub_resource type="Resource" id="node_talk"]
 script = ExtResource("2_node")
@@ -74,9 +123,33 @@ Id = "closed"
 Text = "dlg.coyle.closed"
 Choices = Array[Resource]([SubResource("ch_talk"), SubResource("ch_bye")])
 
+[sub_resource type="Resource" id="node_tally"]
+script = ExtResource("2_node")
+Id = "tally"
+Text = "dlg.coyle.tally"
+Choices = Array[Resource]([SubResource("ch_tally_accept"), SubResource("ch_tally_decline")])
+
+[sub_resource type="Resource" id="node_tally_accepted"]
+script = ExtResource("2_node")
+Id = "tally_accepted"
+Text = "dlg.coyle.tally_accepted"
+Choices = Array[Resource]([SubResource("ch_tally_accepted_bye")])
+
+[sub_resource type="Resource" id="node_tally_inprogress"]
+script = ExtResource("2_node")
+Id = "tally_inprogress"
+Text = "dlg.coyle.tally_inprogress"
+Choices = Array[Resource]([SubResource("ch_tally_inprogress_bye")])
+
+[sub_resource type="Resource" id="node_tally_thanks"]
+script = ExtResource("2_node")
+Id = "tally_thanks"
+Text = "dlg.coyle.tally_thanks"
+Choices = Array[Resource]([SubResource("ch_tally_thanks_bye")])
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.coyle"
 SpeakerName = "dlg.coyle.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_talk"), SubResource("node_closed")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_talk"), SubResource("node_closed"), SubResource("node_tally"), SubResource("node_tally_accepted"), SubResource("node_tally_inprogress"), SubResource("node_tally_thanks")])

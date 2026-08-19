@@ -497,6 +497,7 @@ time.phase.dusk,Dusk
 time.phase.night,Night
 # Tracked-objective readout (39.5B): {0} distance, {1} unit, {2} compass point
 hud.quest.destination,{0} {1} · {2}
+hud.quest.time_left,{0}:{1} left
 hud.unit.metres,m
 hud.unit.kilometres,km
 # Objective completed toast (39.5B): {0} is the objective's short label
@@ -551,6 +552,10 @@ quest.hollowreach.ledger.obj,"See Tessa Rill safely to Embermarket"
 quest.warband.hold_north.title,"Hold the North Road"
 quest.warband.hold_north.summary,"The warband wants the north road held long enough for a cart to clear it. Stand in the wilds north of the Ember Crown for a full minute and do not be moved off it."
 quest.warband.hold_north.obj,"Hold the north wilds"
+quest.emberdeep.tally.title,"The Sealed Tally"
+quest.emberdeep.tally.summary,"Coyle Ferrin's month of figures is sealed in a tin and due at the Emberdeep waystone before the shift changes. The short way north is open ground, and the goblins on it do not need to know what you are carrying."
+quest.emberdeep.tally.obj_set,"Set the tally at the Emberdeep waystone"
+quest.emberdeep.tally.obj_unseen,"Reach the mine without being drawn into a fight"
 quest.warband.bounty.title,"Goblin Cullers"
 quest.warband.bounty.summary,"Goblins harry the roads out of the Ember Crown. The guild posts a standing bounty: thin their numbers in the wilds."
 quest.warband.bounty.obj,"Slay goblins"
@@ -1452,6 +1457,19 @@ dlg.guild_board.c_hold_inprogress_bye,"On my way."
 dlg.guild_board.c_hold_thanks,"The road is held."
 dlg.guild_board.hold_thanks,"The cart came through. The warband remembers who stood there."
 dlg.guild_board.c_hold_thanks_bye,"Good."
+# --- Phase 41C: the sealed tally (Coyle -> the Emberdeep waystone, unseen, against a clock) ---
+dlg.coyle.c_tally_offer,"Anything going up the north road?"
+dlg.coyle.tally,"A month of figures in a sealed tin, due at the mine waystone before the shift changes. Quick, and quiet. If the goblins take an interest in you they take an interest in the tin."
+dlg.coyle.c_tally_accept,"Before the shift. Quietly."
+dlg.coyle.c_tally_decline,"Send it with someone else."
+dlg.coyle.tally_accepted,"Then go. Do not stop to be brave about anything."
+dlg.coyle.c_tally_accepted_bye,"On my way."
+dlg.coyle.c_tally_active,"About your tin."
+dlg.coyle.tally_inprogress,"Still here? It is a waystone, not a wedding. Go north."
+dlg.coyle.c_tally_inprogress_bye,"Going."
+dlg.coyle.c_tally_thanks,"Your figures are set."
+dlg.coyle.tally_thanks,"Set, and nobody the wiser. That is the whole trick of it."
+dlg.coyle.c_tally_thanks_bye,"Any time."
 
 # --- BEGIN generated map location names (tools/gen_map_locations.py) ---
 location.ember_crown.town.name,Ember Crown

@@ -76,6 +76,49 @@ public enum ObjectiveType
     /// is the objective, so dying is the only thing that can be a failure of it.
     /// </summary>
     Defend,
+
+    /// <summary>
+    /// Use a specific interactable (Phase 41C). <c>TargetId</c> is an
+    /// <see cref="Interaction.InteractableComponent.InteractId"/> authored on a node in a cell scene.
+    ///
+    /// ⚠️ <b>It rides <c>InteractionPerformedEvent</c>, which already existed and already carries the
+    /// component that was used</b> — the player controller publishes it at the moment the verb fires,
+    /// precisely so systems that care whether the verb <em>happened</em> do not have to infer it from
+    /// a keypress that may have hit nothing. No event changed shape for this type.
+    ///
+    /// ⚠️ <b>The id is on the BASE class and nowhere else.</b> All thirteen subclasses carry their own
+    /// domain id (<c>SpellId</c>, <c>PropertyId</c>, <c>ShopId</c>, <c>StationName</c>…) and a plain
+    /// waystone or container carries none, so dispatching per subclass would be thirteen special
+    /// cases that still could not name half the world. <c>--validate</c> scans the cell scenes in
+    /// both directions: a quest naming an unauthored id fails, and two nodes sharing one id fails,
+    /// because that would advance a single objective twice.
+    /// </summary>
+    Interact,
+
+    /// <summary>
+    /// Do the rest of the quest without being seen (Phase 41C). It authors <b>no</b> <c>TargetId</c>:
+    /// it is a condition on the errand, not a target in it.
+    ///
+    /// ⚠️ <b>IT IS SEEDED ALREADY MET AND CAN ONLY BE LOST.</b> <see cref="QuestProgress"/> fills its
+    /// count on construction, so <c>AllObjectivesMet</c> needs no special case and a quest is never
+    /// blocked by an objective with nothing to do. The journal shows it as a standing condition.
+    ///
+    /// ⚠️ <b>Fails on <c>EnemyStateChangedEvent</c> entering <c>Combat</c> — NOT on
+    /// <c>EnemyAlertedEvent</c>, and that distinction is 41A's trap wearing new clothes.</b> The alert
+    /// event looks like the obvious signal and is <em>conditional on an authored knob</em>:
+    /// <c>EnemyAIComponent</c> publishes it only when the profile's <c>AlertRadius &gt; 0</c>, which
+    /// an ambusher sets to 0 on purpose. A stealth objective riding it would silently never fail
+    /// against exactly the enemies designed to ambush you. The state change is published on every
+    /// entry with no condition — and because the brain only ever targets the player, entering
+    /// <c>Combat</c> unambiguously means <em>you were seen, or you swung first</em>.
+    ///
+    /// ⚠️ <b>There is no stealth SYSTEM behind this and none was built</b> (invariant 28). No crouch,
+    /// no noise, no visibility meter. What exists is the perception the AI already runs — FOV cone,
+    /// line-of-sight raycast, alert radius — so the player's tools are flanking, breaking sight and
+    /// keeping range. Author accordingly: a stealth condition on a route with no cover is a fail
+    /// waiting to happen rather than a challenge.
+    /// </summary>
+    Stealth,
 }
 
 /// <summary>Lifecycle state of a quest in the player's log.</summary>

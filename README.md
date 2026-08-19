@@ -351,6 +351,13 @@ and the conditions under which they would be built are written down.
 
 ### Phase 41 — quests worth the name
 
+- 41C ✅ and a quest can now ask you for the three things it never could: use a particular thing, do
+it before a clock runs out, and do it without being seen. Coyle Ferrin at the wharf has a month of
+figures sealed in a tin, due at the Emberdeep waystone before the shift changes — the short way north
+is open ground, and if the goblins on it take an interest in you the errand is over. The tracker
+counts the minutes down while you run, and it stops while you are reading your journal, because a
+deadline should press on the road and not on the menu.
+
 - 41B ✅ and a quest can now be lost. Sedge Marrow will ask you to walk her hull-hand Tessa up the
 road to Embermarket with the season's ledger, and if she goes down on the way the errand is over —
 the journal moves it into a FAILED section and Sedge, who is still standing on her wharf, will offer

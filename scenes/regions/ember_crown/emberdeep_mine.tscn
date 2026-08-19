@@ -570,6 +570,10 @@ shape = SubResource("Shape_waystone")
 [node name="Travel" type="Node" parent="MineWaystone"]
 script = ExtResource("3_travel")
 Id = "travel.ember_crown.emberdeep_mine"
+; 41C: the first authored InteractId in the game. It names THIS waystone so a quest can ask the
+; player to touch it; the id is unique project-wide by rule (--validate refuses a second) and
+; means nothing to the travel node itself.
+InteractId = "interact.emberdeep.waystone"
 TravelName = "travel.ember_crown.emberdeep_mine.name"
 RegionId = "region.ember_crown"
 

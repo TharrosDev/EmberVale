@@ -77,8 +77,47 @@
   - **Not exercised in-world:** nothing recruited Tessa, walked her to Embermarket or downed her, and
     nothing stood in the north wilds for a minute. The mechanism is verified by frames, gates and
     tests; **the escort playthrough is owed and is named rather than implied.**
-- [ ] **41C — Interact/Use + Timed + Stealth objective types** `[F]`
+- [x] **41C — Interact/Use + Timed + Stealth objective types** `[F]` ✅ *(2026-08-19)*
   - **Done when:** the remaining objective types are authorable and validated.
+  - **Landed:** `ObjectiveType.Interact` (6) and `Stealth` (7), plus timed quests as a **quest-level**
+    `QuestResource.TimeLimitSeconds` with a saved countdown and a HUD readout. Five `--validate` arms
+    including a new scene scan, five negative cases (70 → 75), both ordinals pinned, and one authored
+    caller — `quest.emberdeep.tally` off Coyle Ferrin — that exercises **all three at once**, because
+    separately they mean very little: a clock with no route is arithmetic, and a stealth condition
+    with no reason to hurry is a walk.
+  - ⚠️ **THE OBVIOUS STEALTH EVENT IS CONDITIONAL ON AN AUTHORED KNOB, AND THAT IS 41A'S TRAP IN NEW
+    CLOTHES.** `EnemyAlertedEvent` reads like the signal for *you have been spotted* — and
+    `EnemyAIComponent` publishes it **only when the profile's `AlertRadius > 0`**, which an ambusher
+    profile sets to 0 on purpose so the pack is not given away. A stealth rule riding it would
+    silently never fire against exactly the enemies designed to catch you unawares, through a green
+    build, green tests and a green validator. `EnemyStateChangedEvent` is published on **every** state
+    entry with no condition, and since the brain only ever targets the player, `Combat` means *seen,
+    or you swung first*.
+  - ⚠️ **A STEALTH OBJECTIVE STARTS ALREADY MET, AND THAT ONE DECISION MOVED THE WHOLE DESIGN.** There
+    is nothing to *do* to achieve not being seen. Seeding the count in `QuestProgress`'s constructor
+    means `AllObjectivesMet`, the journal, the tracker and the save all stay exactly as they were —
+    but it also means **41B's `FailQuestsWith` would have skipped it**, because that method ignores
+    objectives already complete. Without the `alreadyMetStillCounts` path the entire type ships as a
+    no-op that passes every gate. **A seeded state is invisible to every rule written for an earned
+    one.**
+  - ⚠️ **TIMED IS NOT AN OBJECTIVE TYPE, AND REFUSING TO MAKE IT ONE IS THE POINT.** `QuestProgress`
+    stores one `int` per objective — a count — with nowhere to put a per-objective clock, and two ways
+    to express a deadline is invariant 5 waiting to happen. It is a property of the errand, mirroring
+    `WorldEventResource.TimeLimitSeconds`. ⚠️ **It stops while the tree is paused**, so reading the
+    journal costs nothing — that falls out of the countdown living in an ordinary component's
+    `_Process`, and it is written down so nobody "fixes" it into a wall clock.
+  - ⚠️ **THE INTERACT ID IS THE SECOND SCENE-AUTHORED ID WITH NO DATABASE BEHIND IT.** All thirteen
+    `InteractableComponent` subclasses carry their own domain id (`SpellId`, `PropertyId`, `ShopId`,
+    `StationName`…) and a waystone, a container or a trophy stand carries none — so a quest that
+    wanted to name *the thing you use* had nothing to name. One `InteractId` on the base class covers
+    the family now and later, and `ValidateInteractIdsArePlaced` scans the cell scenes in **both**
+    directions, exactly as `ValidateMapMarkersArePlaced` does. ⚠️ **The duplicate arm is the half a
+    one-way check misses:** two nodes sharing an id both advance one objective, so the errand is
+    completed by whichever the player reaches first.
+  - ⚠️ **A GATE ONLY A HUMAN CAN OPEN IS A GATE NO INSTRUMENT SEES BEHIND** — see below.
+  - **Not exercised in-world:** nothing walked the tally run, tripped an enemy into `Combat`, or let a
+    deadline expire in a live session. Named rather than implied, and still owed alongside 41B's
+    escort walk.
 - [ ] **41D — Choice/Branch objectives + quest state graphs** `[F]`
   - **Done when:** quests can branch on story flags/dialogue effects into multiple
     paths/endings with failure states.
@@ -190,3 +229,40 @@ session that opens `src/World` finds it named rather than rediscovering it.
 shape, *a knob you validate is a claim that the knob works*. It is descriptive metadata on all three
 companions and harmless today, but it is not a behaviour, and the first author who expects it to gate
 recruitment will get a green gate and no effect.
+
+---
+
+## 41C — the prerequisite that hid the whole sub-phase
+
+`quest.emberdeep.tally` was first authored behind `PrerequisiteQuestId = "quest.hollowreach.word"`,
+which is good narrative sequencing: the courier quest is how a player learns Hollowreach exists, and
+Coyle stands on that wharf.
+
+**It also made every new mechanic in 41C unreachable by any instrument.** `--panelshots` starts a
+quest and photographs the journal; `CanStart` refuses a quest whose prerequisite is not *completed*,
+and nothing in a screenshot harness can walk to Hollowreach and hold a conversation. So the tracker's
+countdown, the Interact row and the Stealth row would all have shipped with a green build, green
+tests, a green validator, 75 negative cases — **and not one frame of any of them.**
+
+The gate came off, for a reason that stands on its own: Coyle is two metres from Sedge, so anyone who
+has reached him has already found Hollowreach, and a merchant refusing an errand over an unrelated
+errand reads as a bug. But the second reason is the one worth carrying: **when a piece of content is
+the only caller of a new mechanic, its availability gate is part of the mechanic's testability.**
+
+The frame then did its job immediately — it is the only evidence that a seeded Stealth objective
+renders as *satisfied* (`✓ … 1/1`) rather than as `0/1`, which is a distinction invisible to every
+other gate, and that the countdown resolves through the same tracker that draws the distance readout.
+
+### Two things worth carrying into the next sub-phase
+
+1. ⚠️ **AN EVENT THAT FIRES CONDITIONALLY IS NOT AN EVENT THAT MEANS THE THING.** 41A asked *which
+   event means this*; 41B found *no event can*; 41C found an event that means it **only when a data
+   knob says so**. `EnemyAlertedEvent` is published behind `AlertRadius > 0`. Before riding an event,
+   read the line that publishes it and ask **what has to be true for it to fire at all** — the answer
+   is sometimes authored in a `.tres` a hundred files away. 41D branches on story flags and dialogue
+   effects, where the same question is *who else writes this flag*.
+2. ⚠️ **A SEEDED STATE IS INVISIBLE TO EVERY RULE WRITTEN FOR AN EARNED ONE.** A Stealth objective
+   starts complete, so `FailQuestsWith`'s perfectly correct "you cannot fail what you have already
+   finished" guard stepped over the entire type. Every helper that filters on *unmet*, *incomplete*
+   or *not yet done* is a candidate to be wrong about a state that begins in the finished position —
+   and 41D's branch objectives will have the same shape the moment one path is pre-satisfied.

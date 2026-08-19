@@ -14,7 +14,22 @@ public sealed class QuestProgress
     public QuestProgress(QuestResource quest)
     {
         Quest = quest;
-        Counts = new int[quest.ObjectiveList().Count];
+        SecondsLeft = quest.TimeLimitSeconds;
+
+        List<ObjectiveResource> objectives = quest.ObjectiveList();
+        Counts = new int[objectives.Count];
+
+        // ⚠️ A Stealth objective starts MET (41C). It is a condition rather than a task — there is
+        // nothing to do to "achieve" not being seen — so seeding it here is what lets AllObjectivesMet
+        // and every counting surface stay exactly as they were. The alternative, a special case in
+        // AllObjectivesMet, would put the rule somewhere nothing reading Counts can see it.
+        for (int i = 0; i < objectives.Count; i++)
+        {
+            if (objectives[i].Type == ObjectiveType.Stealth)
+            {
+                Counts[i] = objectives[i].RequiredCount;
+            }
+        }
     }
 
     public QuestResource Quest { get; }
@@ -23,6 +38,13 @@ public sealed class QuestProgress
     public int[] Counts { get; }
 
     public QuestStatus Status { get; set; } = QuestStatus.Active;
+
+    /// <summary>Seconds left on a timed quest's deadline (41C), counted down by
+    /// <see cref="QuestLogComponent"/>. Meaningless when <see cref="QuestResource.TimeLimitSeconds"/>
+    /// is 0, and <see cref="IsTimed"/> is the question to ask rather than comparing this to zero.</summary>
+    public float SecondsLeft { get; set; }
+
+    public bool IsTimed => Quest.TimeLimitSeconds > 0f;
 
     public bool IsObjectiveComplete(int index)
     {
@@ -59,6 +81,7 @@ public sealed class QuestProgress
             ["id"] = Quest.Id,
             ["status"] = (int)Status,
             ["counts"] = counts,
+            ["left"] = SecondsLeft,
         };
     }
 
@@ -77,6 +100,15 @@ public sealed class QuestProgress
         {
             Status = (QuestStatus)data["status"].AsInt32(),
         };
+
+        // ⚠️ Absent means an old save, not "no time left" — a missing key must restore the full
+        // deadline rather than zero, or every timed quest in a pre-41C save fails on the first tick
+        // after loading. The constructor has already seeded it from the resource, so the absent case
+        // is simply left alone (CLAUDE.md §7: ask what happens when the saved value is 0 or missing).
+        if (data.TryGetValue("left", out Variant leftVar))
+        {
+            progress.SecondsLeft = (float)leftVar.AsDouble();
+        }
 
         if (data.TryGetValue("counts", out Variant countsVar))
         {

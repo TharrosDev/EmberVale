@@ -92,6 +92,7 @@ public static class ContentValidator
         ValidateRecipeReachability(issues);
         ValidateQuests(issues);
         ValidateQuestStringsAreKeys(issues);
+        ValidateInteractIdsArePlaced(issues);
         ValidateDialogue(issues);
         ValidateSpells(issues);
         ValidateFactions(issues);
@@ -2953,6 +2954,10 @@ public static class ContentValidator
             : null;
     }
 
+    /// <summary>Shortest deadline a timed quest may author (41C). A floor under the authoring
+    /// mistake, not a balance number.</summary>
+    private const int MinimumDeadlineSeconds = 30;
+
     /// <summary>Shortest hold a <see cref="ObjectiveType.Defend"/> objective may author (41B). Not a
     /// balance number — a floor under the authoring mistake of leaving RequiredCount at its default
     /// of 1 on a type whose count is measured in seconds.</summary>
@@ -3020,6 +3025,30 @@ public static class ContentValidator
                     // SECONDS rather than a tally, which is the one thing about this type that reads
                     // wrong at a glance. An unset count is the authoring default of 1, i.e. a
                     // quarter-second hold that completes before the player has stopped walking.
+                    // 41C. The interact id has no database behind it — it is authored on a node in a
+                    // cell scene — so this arm only checks that the objective names one at all, and
+                    // ValidateInteractIdsArePlaced does the cross-reference in both directions.
+                    case ObjectiveType.Interact:
+                        if (objective.TargetId.Length == 0)
+                        {
+                            issues.Add($"quest '{quest.Id}' interact objective names no InteractId");
+                        }
+
+                        break;
+
+                    // 41C. A stealth objective is a CONDITION, not a target: it fails on any enemy
+                    // engaging, from anywhere, so an authored target would be a promise the rule does
+                    // not keep ("undetected by goblins" reads as scoped and is not).
+                    case ObjectiveType.Stealth:
+                        if (objective.TargetId.Length > 0)
+                        {
+                            issues.Add($"quest '{quest.Id}' stealth objective sets TargetId " +
+                                       $"'{objective.TargetId}' — a stealth condition targets nothing " +
+                                       "and is blown by any enemy engaging, so leave it empty");
+                        }
+
+                        break;
+
                     case ObjectiveType.Defend:
                         RequireMapLocation(objective.TargetId, $"quest '{quest.Id}' defend objective", issues);
 
@@ -3530,6 +3559,34 @@ public static class ContentValidator
                 continue;
             }
 
+            // 41C. A deadline shorter than this is not pressure, it is a quest that fails while the
+            // giver is still talking — and 0 is the authored default meaning "untimed", so only a
+            // positive value is judged.
+            if (quest.TimeLimitSeconds > 0f && quest.TimeLimitSeconds < MinimumDeadlineSeconds)
+            {
+                issues.Add($"quest '{quest.Id}' has a {quest.TimeLimitSeconds}s time limit — under " +
+                           $"{MinimumDeadlineSeconds}s the quest can fail before the player has " +
+                           "finished the conversation that started it (0 means untimed)");
+            }
+
+            // 41C. A Stealth objective is seeded already met, so a quest made only of stealth
+            // conditions completes on the frame it starts, silently, with rewards.
+            bool anythingToDo = false;
+            foreach (ObjectiveResource objective in objectives)
+            {
+                if (objective.Type != ObjectiveType.Stealth)
+                {
+                    anythingToDo = true;
+                    break;
+                }
+            }
+
+            if (!anythingToDo)
+            {
+                issues.Add($"quest '{quest.Id}' has only stealth objectives — a stealth condition " +
+                           "starts met, so the quest would complete the instant it is accepted");
+            }
+
             foreach (ObjectiveResource objective in objectives)
             {
                 if (objective.RequiredCount <= 0)
@@ -3718,7 +3775,14 @@ public static class ContentValidator
             }
         }
 
-        foreach (string key in new[] { "hud.unit.metres", "hud.unit.kilometres", "hud.quest.destination" })
+        foreach (string key in new[]
+                 {
+                     "hud.unit.metres", "hud.unit.kilometres", "hud.quest.destination",
+
+                     // 41C. The timed-quest countdown, built at the call site from two numbers, so no
+                     // database walk can reach it — invariant 26's family, enumerated here.
+                     "hud.quest.time_left",
+                 })
         {
             if (!Loc.Has(key))
             {
@@ -3961,6 +4025,64 @@ public static class ContentValidator
                 issues.Add($"map location '{location.Id}' is authored but no cell scene places a " +
                            "MapLocationComponent for it — nothing gives it a position, so it can " +
                            "never be discovered or drawn");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Cross-references <see cref="ObjectiveType.Interact"/> targets against the ids actually
+    /// authored on interactables in the cell scenes (41C), in <b>both</b> directions.
+    ///
+    /// ⚠️ <b>This is the second scene-authored id with no database behind it</b> — the first was
+    /// <c>MapLocationComponent.LocationId</c>, and this is deliberately the same technique
+    /// (<see cref="ValidateMapMarkersArePlaced"/>) rather than a new one. A quest naming an id no
+    /// node carries is an objective that can never advance, and nothing at runtime would ever say so:
+    /// the player simply uses the thing and watches nothing happen.
+    ///
+    /// ⚠️ <b>Duplicates fail too, and that is the half a one-directional check would miss.</b> Two
+    /// nodes sharing an id both advance the same objective, so a "use the north brazier" errand would
+    /// be completed by the south one — or by both at once, twice.
+    /// </summary>
+    private static void ValidateInteractIdsArePlaced(List<string> issues)
+    {
+        var placed = new Dictionary<string, string>();
+
+        foreach (string path in ScenePaths("res://scenes"))
+        {
+            using FileAccess? file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
+            if (file == null)
+            {
+                continue;
+            }
+
+            foreach (System.Text.RegularExpressions.Match match in
+                     System.Text.RegularExpressions.Regex.Matches(
+                         file.GetAsText(), @"(?m)^InteractId = ""([^""]+)"""))
+            {
+                string id = match.Groups[1].Value;
+                if (placed.TryGetValue(id, out string? first))
+                {
+                    issues.Add($"InteractId '{id}' is authored twice — in '{first}' and in '{path}'. " +
+                               "Two interactables sharing an id advance the same quest objective, so " +
+                               "whichever the player reaches first is the one the quest meant");
+                    continue;
+                }
+
+                placed[id] = path;
+            }
+        }
+
+        foreach (QuestResource quest in QuestDatabase.All)
+        {
+            foreach (ObjectiveResource objective in quest.ObjectiveList())
+            {
+                if (objective.Type == ObjectiveType.Interact && objective.TargetId.Length > 0 &&
+                    !placed.ContainsKey(objective.TargetId))
+                {
+                    issues.Add($"quest '{quest.Id}' interact objective targets '{objective.TargetId}', " +
+                               "which no scene authors on an interactable — the player would use the " +
+                               "thing and watch nothing happen");
+                }
             }
         }
     }

@@ -17,6 +17,23 @@ public readonly record struct InteractionPerformedEvent(
 /// </summary>
 public abstract partial class InteractableComponent : EntityComponent
 {
+    /// <summary>
+    /// Optional stable id naming <b>this specific interactable</b> so a quest can target it
+    /// (Phase 41C, <see cref="Quests.ObjectiveType.Interact"/>). Empty — the default — means the
+    /// thing is usable but not quest-targetable, which is true of almost everything.
+    ///
+    /// ⚠️ <b>It lives on the base class because nothing else covers the family.</b> Each of the
+    /// thirteen subclasses carries its own domain id (<c>SpellId</c>, <c>PropertyId</c>,
+    /// <c>ShopId</c>, <c>StationName</c>…) and a waystone, a container or a trophy stand carries
+    /// none at all, so a quest that named "the thing you use" had nothing to name.
+    ///
+    /// ⚠️ <b>It is a scene-authored id with no database behind it</b>, which makes it the second of
+    /// its kind after <c>MapLocationComponent.LocationId</c> — and it is validated the same way, by
+    /// scanning the cell scenes in <em>both</em> directions. Unique across the project by rule: two
+    /// nodes sharing an id would advance one objective twice.
+    /// </summary>
+    [Godot.Export] public string InteractId { get; set; } = string.Empty;
+
     /// <summary>Short verb shown in the interaction prompt, e.g. "Pick up Health Potion".</summary>
     public abstract string Prompt { get; }
 
