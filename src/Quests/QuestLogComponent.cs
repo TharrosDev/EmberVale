@@ -690,6 +690,17 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
 
         progress.Status = QuestStatus.Completed;
         GrantRewards(progress.Quest);
+
+        // The world consequence is a flag rather than a separate quest-world save record. The
+        // player's StoryFlagsComponent is already an ISaveable and every consumer re-derives on
+        // StoryFlagChangedEvent and GameLoadedEvent, so this is persistent without parallel state.
+        if (QuestCompletionRules.ShouldSetFlag(
+                progress.Quest.CompletionFlagId,
+                _flags?.Has(progress.Quest.CompletionFlagId) == true))
+        {
+            _flags?.Set(progress.Quest.CompletionFlagId);
+        }
+
         Log.Info($"Quest completed: {progress.Quest.Title}");
         if (Entity != null)
         {

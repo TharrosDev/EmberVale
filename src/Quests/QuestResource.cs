@@ -80,6 +80,15 @@ public partial class QuestResource : Resource
     /// </summary>
     [Export] public bool SequentialObjectives { get; set; }
 
+    [ExportGroup("World change")]
+    /// <summary>
+    /// Story flag raised exactly when this quest succeeds (41E). This is the bridge from a quest's
+    /// completed state to the world: region portals, map locations and placed actors already
+    /// re-derive from persistent story flags, so a completion must not grow a second save store for
+    /// the same fact. Empty leaves the world unchanged.
+    /// </summary>
+    [Export] public string CompletionFlagId { get; set; } = string.Empty;
+
     [ExportGroup("Availability")]
     /// <summary>Optional quest id that must be completed first; empty = always available.</summary>
     [Export] public string PrerequisiteQuestId { get; set; } = string.Empty;

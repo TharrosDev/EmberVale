@@ -393,3 +393,34 @@ it has no opinion of its own about branch state.** That is correct today — eve
 first — but it is `RecruitQuestId`'s shape (41B's finding, invariant 37): a helper that looks like it
 answers the whole question and does not. If a fourth caller ever appears without the filter, it will
 locate an inert objective and nothing will say so.
+
+---
+
+## 41E — the world fact that already had a save home
+
+**A quest completion can now author one persistent world consequence.** `QuestResource.CompletionFlagId`
+is written at `QuestLogComponent.TryComplete`'s existing completion choke point, before
+`QuestCompletedEvent` is published. The flag lives in the player's `StoryFlagsComponent`, which already
+implements `ISaveable`; there is deliberately no quest-world ledger to merge over a restored run.
+
+`quest.warband.heart` sets `flag.frostfang.passage_open`, which the Frostfang region gate already reads.
+`quest.emberdeep.tally` sets `flag.emberdeep.tally_delivered`; Coyle's new
+`FlagVisibilityComponent` re-derives his departure from it on both the change event and `GameLoadedEvent`.
+It disables collision with the mesh, so the absent merchant cannot leave a ghost interact prompt.
+
+**The roadmap's NPC death example is not faked.** Invariant 38 remains true: no authored NPC can take
+damage, so 41E ships a departure, not a death event with no body behind it. The new component is a
+general actor-presence reader for when future authored state has an honest reason to remove someone.
+
+`ValidateStoryFlags` now counts completion flags as writers, rejects non-`flag.*` completion ids, and
+scans scene visibility readers. The negative suite proves both refusals; pure tests cover one-shot
+writes and the visibility decision.
+
+### Two things worth carrying into the next sub-phase
+
+1. ⚠️ **A WORLD CHANGE MUST DERIVE FROM ONE PERSISTED FACT.** A second save record for "departed"
+   beside the flag would be a second authority and a load-merge hazard. If the fact cannot be named as
+   an existing persistent state, establish that state deliberately before building its presentation.
+2. ⚠️ **HIDING A BODY IS NOT ONLY VISUAL.** Any state-driven world removal must account for collision
+   and prompts, and must refresh after a wholesale load because loads do not replay individual flag
+   events.

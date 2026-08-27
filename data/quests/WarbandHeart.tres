@@ -4,6 +4,10 @@
 [ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
 [ext_resource type="Script" path="res://src/Quests/QuestItemReward.cs" id="3_reward"]
 
+; Phase 41E: completing the last warband errand opens the Frostfang passage. The region gate reads
+; this completion flag directly, so a load re-derives the portal from StoryFlagsComponent rather than
+; merging a second world-state collection over the current run.
+
 [sub_resource type="Resource" id="Obj_kill"]
 script = ExtResource("2_obj")
 Type = 0
@@ -26,5 +30,6 @@ XpReward = 150
 GoldReward = 50
 GoldItemId = "item.currency.gold"
 RewardItems = Array[Resource]([SubResource("Reward_sword")])
+CompletionFlagId = "flag.frostfang.passage_open"
 PrerequisiteQuestId = "quest.warband.remedies"
 IsMainQuest = true
