@@ -186,6 +186,7 @@ public static class ContentValidator
             "res://assets/shaders/ui/rune_circle.gdshader",
             "res://assets/shaders/ui/sigil_drift.gdshader",
             "res://assets/shaders/ui/ink_shimmer.gdshader",
+            "res://assets/shaders/world/world_surface.gdshader",
         };
 
         foreach (string path in shaders)
@@ -1732,6 +1733,11 @@ public static class ContentValidator
 
         foreach (RegionResource region in RegionDatabase.All)
         {
+            if (region.EnvironmentProfile == null)
+            {
+                issues.Add($"region '{region.Id}' has no world environment profile — its cells would expose their prototype floor materials");
+            }
+
             if (region.TollGold <= 0)
             {
                 continue; // an untolled road, which is every region but the Crossway
@@ -3464,6 +3470,15 @@ public static class ContentValidator
                 if (cell.SafeRadius < 0f)
                 {
                     issues.Add($"region '{region.Id}' cell '{cell.Id}' has a negative safe radius ({cell.SafeRadius})");
+                }
+
+                if (cell.Presentation == null)
+                {
+                    issues.Add($"region '{region.Id}' cell '{cell.Id}' has no world presentation profile");
+                }
+                else if (cell.Presentation.Width <= 0f || cell.Presentation.Depth <= 0f)
+                {
+                    issues.Add($"region '{region.Id}' cell '{cell.Id}' has a non-positive presentation envelope");
                 }
 
                 if (!seenCellIds.Add(cell.Id))

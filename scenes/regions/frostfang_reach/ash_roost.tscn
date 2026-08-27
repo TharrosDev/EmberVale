@@ -88,6 +88,38 @@ surface_material_override/0 = SubResource("Mat_charred")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
 shape = SubResource("Shape_pine")
 
+; Three low ember vents pull the eye toward the nest at dusk and repeat the region's corruption
+; language without adding a second world-state system. They are light only: no collision or nav cost.
+[node name="EmberVentN" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0.25, -14)
+light_color = Color(1, 0.25, 0.06, 1)
+light_energy = 2.2
+omni_range = 8.0
+
+[node name="EmberVentE" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0.25, 5)
+light_color = Color(1, 0.22, 0.04, 1)
+light_energy = 2.0
+omni_range = 7.0
+
+[node name="EmberVentW" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18, 0.25, 12)
+light_color = Color(1, 0.3, 0.07, 1)
+light_energy = 1.8
+omni_range = 7.0
+
+[node name="CragSE" parent="Nav" instance=ExtResource("10_rock")]
+transform = Transform3D(2.2, 0, 0, 0, 2.7, 0, 0, 0, 2.2, 31, 0, 28)
+[node name="Col" type="StaticBody3D" parent="Nav/CragSE"]
+[node name="Shape" type="CollisionShape3D" parent="Nav/CragSE/Col"]
+shape = SubResource("Shape_rock")
+
+[node name="CragSW" parent="Nav" instance=ExtResource("10_rock")]
+transform = Transform3D(-2, 0, 0, 0, 2.4, 0, 0, 0, -2, -32, 0, 27)
+[node name="Col" type="StaticBody3D" parent="Nav/CragSW"]
+[node name="Shape" type="CollisionShape3D" parent="Nav/CragSW/Col"]
+shape = SubResource("Shape_rock")
+
 ; Its own PersistentId — LairSpawnComponent.SaveId derives from it, so sharing one with the Wild
 ; dragon's nest would make killing either mark both defeated.
 [node name="Nest" parent="." index="1"]

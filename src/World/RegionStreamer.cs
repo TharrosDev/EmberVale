@@ -42,6 +42,8 @@ public sealed partial class RegionStreamer : Node3D
     private readonly Dictionary<string, Node3D> _loaded = new();
     private readonly List<RegionCellResource> _pending = new();
     private readonly HashSet<string> _pendingIds = new();
+    private WorldEnvironmentProfileResource? _environmentProfile;
+    private WorldRegionBackdrop? _backdrop;
 
     /// <summary>The region currently being streamed, or empty before the first <see cref="Configure"/>.
     /// The streamer is re-configured at both places the active region changes (world build and each
@@ -54,9 +56,21 @@ public sealed partial class RegionStreamer : Node3D
     {
         _cells.Clear();
         ActiveRegionId = region?.Id ?? string.Empty;
+        _environmentProfile = region?.EnvironmentProfile;
+        if (_backdrop != null)
+        {
+            _backdrop.QueueFree();
+            _backdrop = null;
+        }
         if (region == null)
         {
             return;
+        }
+
+        if (_environmentProfile != null)
+        {
+            _backdrop = WorldRegionBackdrop.Create(_environmentProfile);
+            AddChild(_backdrop);
         }
 
         foreach (RegionCellResource cell in region.Cells)
@@ -148,6 +162,7 @@ public sealed partial class RegionStreamer : Node3D
 
         root.Name = cell.Id;
         root.Position = cell.Center;
+        WorldCellPresentation.Attach(root, _environmentProfile, cell.Presentation);
         AddChild(root);
         _loaded[cell.Id] = root;
 

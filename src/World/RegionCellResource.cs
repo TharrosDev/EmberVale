@@ -27,6 +27,12 @@ public partial class RegionCellResource : Resource
     [Export] public Vector3 Center { get; set; } = Vector3.Zero;
 
     /// <summary>
+    /// Visual surface envelope and boundary treatment. It deliberately carries no collision: the
+    /// cell scene remains the authority for gameplay geometry and exact shared seams.
+    /// </summary>
+    [Export] public WorldCellPresentationResource? Presentation { get; set; }
+
+    /// <summary>
     /// Planar radius around <see cref="Center"/> in which the ambient spawners must not drop enemies
     /// (Phase 38K). <c>0</c> — the default — means this cell is not a safe area, which is every cell
     /// authored before the Embermarket, so the field arrives inert.

@@ -1008,8 +1008,9 @@ cell sat far from the origin). `EnemySpawnDirector` had the same latent bug.
 1. Author `data/regions/Xxx.tres` (`script_class="RegionResource"`): unique `Id` (`region.*`),
    `DisplayName`, `Realm` (the `Realm` enum int), `SpawnPoint` (`Vector3` — where the player
    appears on entry, Phase 25C), `Bounds` (`AABB`), `DefaultWeatherId` + `DayPhaseBias`,
-   `Neighbours` (`Array[String]` of region ids), and `Cells` — an array of `RegionCellResource`
-   sub-resources (each: `Id` `<region>.<cell>`, `ScenePath`, `Center` `Vector3`, `LoadRadius`).
+   `Neighbours` (`Array[String]` of region ids), one `WorldEnvironmentProfileResource`, and `Cells`
+   — an array of `RegionCellResource` sub-resources (each: `Id` `<region>.<cell>`, `ScenePath`,
+   `Center` `Vector3`, and a `WorldCellPresentationResource`; there is no `LoadRadius`).
    Place each cell scene at `scenes/regions/<region>/<cell>.tscn`, built at local origin (the
    streamer positions the instance at `Center`); see `docs/ARCHITECTURE.md` §2.6h-2.
    **Navmesh (Phase 27A):** wrap the cell's walkable geometry in a `NavigationRegion3D` "Nav" with a

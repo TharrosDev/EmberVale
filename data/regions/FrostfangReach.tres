@@ -2,12 +2,75 @@
 
 [ext_resource type="Script" path="res://src/World/RegionResource.cs" id="1_region"]
 [ext_resource type="Script" path="res://src/World/RegionCellResource.cs" id="2_cell"]
+[ext_resource type="Script" path="res://src/World/WorldEnvironmentProfileResource.cs" id="3_environment"]
+[ext_resource type="Script" path="res://src/World/WorldCellPresentationResource.cs" id="4_presentation"]
+
+[sub_resource type="Resource" id="Environment_frostfang"]
+script = ExtResource("3_environment")
+SurfaceColor = Color(0.49, 0.55, 0.60, 1)
+SecondaryColor = Color(0.70, 0.75, 0.78, 1)
+DetailColor = Color(0.26, 0.31, 0.36, 1)
+RoadColor = Color(0.34, 0.39, 0.43, 1)
+BackdropColor = Color(0.25, 0.29, 0.34, 1)
+Relief = 0.09
+DetailScale = 3.5
+BackdropCenter = Vector3(100, 0, -55)
+BackdropRadius = 255.0
+BackdropHeight = 92.0
+BackdropCount = 24
+
+[sub_resource type="Resource" id="Presentation_clan_hold"]
+script = ExtResource("4_presentation")
+Width = 60.0
+Depth = 60.0
+RoadAxis = 2
+RoadWidth = 7.0
+Seed = 201
+
+[sub_resource type="Resource" id="Presentation_dragon_roost"]
+script = ExtResource("4_presentation")
+Width = 90.0
+Depth = 90.0
+RoadAxis = 2
+RoadWidth = 6.0
+Seed = 202
+
+[sub_resource type="Resource" id="Presentation_ash_roost"]
+script = ExtResource("4_presentation")
+Width = 100.0
+Depth = 100.0
+RoadAxis = 2
+RoadWidth = 6.0
+Seed = 203
+Tint = Color(0.20, 0.13, 0.11, 1)
+TintStrength = 0.68
+
+[sub_resource type="Resource" id="Presentation_aerie"]
+script = ExtResource("4_presentation")
+Width = 90.0
+Depth = 90.0
+RoadAxis = 1
+RoadWidth = 5.5
+Seed = 204
+Tint = Color(0.67, 0.72, 0.82, 1)
+TintStrength = 0.16
+
+[sub_resource type="Resource" id="Presentation_glacier"]
+script = ExtResource("4_presentation")
+Width = 60.0
+Depth = 20.0
+RoadAxis = 2
+RoadWidth = 8.0
+Seed = 205
+Tint = Color(0.70, 0.84, 0.92, 1)
+TintStrength = 0.30
 
 [sub_resource type="Resource" id="Cell_clan_hold"]
 script = ExtResource("2_cell")
 Id = "frostfang_reach.clan_hold"
 ScenePath = "res://scenes/regions/frostfang_reach/clan_hold.tscn"
 Center = Vector3(100, 0, -20)
+Presentation = SubResource("Presentation_clan_hold")
 
 ; Placed WEST of the hold rather than north of it, so its 90 m floor stops exactly where the clan
 ; hold's 60 m floor begins (x = 70) — abutting, not overlapping, so there is walkable ground the
@@ -19,6 +82,7 @@ script = ExtResource("2_cell")
 Id = "frostfang_reach.dragon_roost"
 ScenePath = "res://scenes/regions/frostfang_reach/dragon_roost.tscn"
 Center = Vector3(25, 0, -20)
+Presentation = SubResource("Presentation_dragon_roost")
 
 ; The Ash dragon's roost, mirroring the Wild one to the EAST. Its 100 m floor spans x ∈ [130, 230],
 ; butting the clan hold's floor at x = 130 the same way the wild roost butts it at 70 — walkable
@@ -28,6 +92,7 @@ script = ExtResource("2_cell")
 Id = "frostfang_reach.ash_roost"
 ScenePath = "res://scenes/regions/frostfang_reach/ash_roost.tscn"
 Center = Vector3(180, 0, -20)
+Presentation = SubResource("Presentation_ash_roost")
 
 ; The Ancient's aerie (35F), NORTH of the Wild dragon's roost and butted against it: its 90 m floor
 ; is z ∈ [-155, -65] where the wild roost's ends at z = -65, so the two abut without overlapping.
@@ -38,12 +103,14 @@ script = ExtResource("2_cell")
 Id = "frostfang_reach.ancient_aerie"
 ScenePath = "res://scenes/regions/frostfang_reach/ancient_aerie.tscn"
 Center = Vector3(25, 0, -110)
+Presentation = SubResource("Presentation_aerie")
 
 [sub_resource type="Resource" id="Cell_glacier"]
 script = ExtResource("2_cell")
 Id = "frostfang_reach.glacier"
 ScenePath = "res://scenes/regions/frostfang_reach/glacier.tscn"
 Center = Vector3(100, 0, -60)
+Presentation = SubResource("Presentation_glacier")
 
 [resource]
 script = ExtResource("1_region")
@@ -53,6 +120,7 @@ Realm = 1
 SpawnPoint = Vector3(100, 1.2, 0)
 UnlockFlagId = "flag.frostfang.passage_open"
 Cells = Array[ExtResource("2_cell")]([SubResource("Cell_clan_hold"), SubResource("Cell_glacier"), SubResource("Cell_dragon_roost"), SubResource("Cell_ash_roost"), SubResource("Cell_ancient_aerie")])
+EnvironmentProfile = SubResource("Environment_frostfang")
 Bounds = AABB(-256, -16, -256, 512, 64, 512)
 SafeZoneCenter = Vector3(100, 0, -20)
 SafeZoneRadius = 30.0

@@ -2,6 +2,94 @@
 
 [ext_resource type="Script" path="res://src/World/RegionResource.cs" id="1_region"]
 [ext_resource type="Script" path="res://src/World/RegionCellResource.cs" id="2_cell"]
+[ext_resource type="Script" path="res://src/World/WorldEnvironmentProfileResource.cs" id="3_environment"]
+[ext_resource type="Script" path="res://src/World/WorldCellPresentationResource.cs" id="4_presentation"]
+
+[sub_resource type="Resource" id="Environment_ember_crown"]
+script = ExtResource("3_environment")
+SurfaceColor = Color(0.24, 0.20, 0.15, 1)
+SecondaryColor = Color(0.34, 0.29, 0.20, 1)
+DetailColor = Color(0.12, 0.105, 0.09, 1)
+RoadColor = Color(0.31, 0.255, 0.18, 1)
+BackdropColor = Color(0.19, 0.17, 0.15, 1)
+Relief = 0.055
+DetailScale = 2.75
+BackdropCenter = Vector3(-20, 0, -55)
+BackdropRadius = 240.0
+BackdropHeight = 52.0
+BackdropCount = 22
+
+[sub_resource type="Resource" id="Presentation_town_hub"]
+script = ExtResource("4_presentation")
+Width = 60.0
+Depth = 60.0
+RoadAxis = 1
+RoadWidth = 6.5
+Seed = 101
+
+[sub_resource type="Resource" id="Presentation_embermarket"]
+script = ExtResource("4_presentation")
+RoadAxis = 1
+RoadWidth = 6.0
+Seed = 102
+
+[sub_resource type="Resource" id="Presentation_crossway"]
+script = ExtResource("4_presentation")
+RoadAxis = 1
+RoadWidth = 7.0
+Seed = 103
+
+[sub_resource type="Resource" id="Presentation_mine"]
+script = ExtResource("4_presentation")
+RoadAxis = 2
+RoadWidth = 6.0
+Seed = 104
+Tint = Color(0.58, 0.45, 0.33, 1)
+TintStrength = 0.15
+
+[sub_resource type="Resource" id="Presentation_wilds_north"]
+script = ExtResource("4_presentation")
+Width = 50.0
+Depth = 50.0
+RoadAxis = 1
+RoadWidth = 5.0
+Seed = 105
+
+[sub_resource type="Resource" id="Presentation_tarn"]
+script = ExtResource("4_presentation")
+RoadAxis = 2
+RoadWidth = 5.5
+Seed = 106
+
+[sub_resource type="Resource" id="Presentation_hollowreach"]
+script = ExtResource("4_presentation")
+RoadAxis = 2
+RoadWidth = 5.0
+Seed = 107
+Tint = Color(0.38, 0.42, 0.38, 1)
+TintStrength = 0.12
+
+[sub_resource type="Resource" id="Presentation_wilds_west"]
+script = ExtResource("4_presentation")
+Width = 50.0
+Depth = 40.0
+RoadAxis = 2
+RoadWidth = 4.5
+Seed = 108
+
+[sub_resource type="Resource" id="Presentation_homestead"]
+script = ExtResource("4_presentation")
+Seed = 109
+
+[sub_resource type="Resource" id="Presentation_arena"]
+script = ExtResource("4_presentation")
+Width = 36.0
+Depth = 36.0
+RoadAxis = 1
+RoadWidth = 5.0
+Seed = 110
+Tint = Color(0.36, 0.24, 0.20, 1)
+TintStrength = 0.16
 
 ; ====================================================================================================
 ; THE MAP (38F, 2026-08-09). Re-laid at the maintainer's direction after a play-through: the settled
@@ -89,6 +177,7 @@ script = ExtResource("2_cell")
 Id = "ember_crown.town_hub"
 ScenePath = "res://scenes/regions/ember_crown/town_hub.tscn"
 Center = Vector3(0, 0, -10)
+Presentation = SubResource("Presentation_town_hub")
 
 ; The Embermarket (Phase 38K). Placed so its 52 m square ABUTS the town hub's 60 m one exactly: the hub
 ; floor runs to z = 20, and a 52-wide floor centred at z = 46 starts there. A gap is a hole the player
@@ -108,6 +197,7 @@ script = ExtResource("2_cell")
 Id = "ember_crown.embermarket"
 ScenePath = "res://scenes/regions/ember_crown/embermarket.tscn"
 Center = Vector3(0, 0, 46)
+Presentation = SubResource("Presentation_embermarket")
 SafeRadius = 32.0
 
 ; The Crossway Post (Phase 38M2). Placed so its 52 m square ABUTS wilds_north's 50 m one exactly:
@@ -121,6 +211,7 @@ script = ExtResource("2_cell")
 Id = "ember_crown.crossway_post"
 ScenePath = "res://scenes/regions/ember_crown/crossway_post.tscn"
 Center = Vector3(0, 0, -66)
+Presentation = SubResource("Presentation_crossway")
 SafeRadius = 26.0
 
 ; The Emberdeep Mine (Phase 38N1). Placed so its 52 m square ABUTS the arena's 36 m one exactly: the
@@ -132,6 +223,7 @@ script = ExtResource("2_cell")
 Id = "ember_crown.emberdeep_mine"
 ScenePath = "res://scenes/regions/ember_crown/emberdeep_mine.tscn"
 Center = Vector3(56, 0, -10)
+Presentation = SubResource("Presentation_mine")
 SafeRadius = 24.0
 Surplus = Array[String](["ore", "metal", "fuel"])
 Demand = Array[String](["food", "fish", "textile"])
@@ -142,6 +234,7 @@ script = ExtResource("2_cell")
 Id = "ember_crown.wilds_north"
 ScenePath = "res://scenes/regions/ember_crown/wilds_north.tscn"
 Center = Vector3(0, 0, -117)
+Presentation = SubResource("Presentation_wilds_north")
 
 ; Tarn's Landing (Phase 38N2). Placed so its 52 m square ABUTS wilds_west's 50 m one exactly:
 ; wilds_west is centred at x = -55 and its floor ends at x = -80, and a 52-wide floor centred at
@@ -153,6 +246,7 @@ script = ExtResource("2_cell")
 Id = "ember_crown.tarn_landing"
 ScenePath = "res://scenes/regions/ember_crown/tarn_landing.tscn"
 Center = Vector3(-56, 0, -6)
+Presentation = SubResource("Presentation_tarn")
 SafeRadius = 22.0
 Surplus = Array[String](["fish"])
 Demand = Array[String](["ore", "metal", "fuel"])
@@ -163,12 +257,14 @@ script = ExtResource("2_cell")
 Id = "ember_crown.hollowreach"
 ScenePath = "res://scenes/regions/ember_crown/hollowreach.tscn"
 Center = Vector3(-52, 0, 46)
+Presentation = SubResource("Presentation_hollowreach")
 
 [sub_resource type="Resource" id="Cell_wilds_west"]
 script = ExtResource("2_cell")
 Id = "ember_crown.wilds_west"
 ScenePath = "res://scenes/regions/ember_crown/wilds_west.tscn"
 Center = Vector3(-107, 0, -6)
+Presentation = SubResource("Presentation_wilds_west")
 
 ; The Ashfall Homestead (Phase 37E) — the player's holding, and the first cell in the realm that is
 ; not a settlement, a wilds or an arena. Placed so its 52 m square ABUTS the Embermarket's exactly:
@@ -190,6 +286,7 @@ script = ExtResource("2_cell")
 Id = "ember_crown.ashfall_homestead"
 ScenePath = "res://scenes/regions/ember_crown/ashfall_homestead.tscn"
 Center = Vector3(52, 0, 46)
+Presentation = SubResource("Presentation_homestead")
 SafeRadius = 26.0
 
 [sub_resource type="Resource" id="Cell_arena"]
@@ -197,6 +294,7 @@ script = ExtResource("2_cell")
 Id = "ember_crown.arena"
 ScenePath = "res://scenes/regions/ember_crown/arena.tscn"
 Center = Vector3(0, 0, -160)
+Presentation = SubResource("Presentation_arena")
 
 [resource]
 script = ExtResource("1_region")
@@ -211,6 +309,7 @@ SpawnPoint = Vector3(0, 1.2, 5)
 ; people you have to walk past. Empty on Frostfang, which keeps the original spawn-relative placement.
 PortalPoint = Vector3(0, 0, -72)
 Cells = Array[ExtResource("2_cell")]([SubResource("Cell_town_hub"), SubResource("Cell_embermarket"), SubResource("Cell_crossway_post"), SubResource("Cell_emberdeep_mine"), SubResource("Cell_wilds_north"), SubResource("Cell_tarn_landing"), SubResource("Cell_hollowreach"), SubResource("Cell_wilds_west"), SubResource("Cell_ashfall_homestead"), SubResource("Cell_arena")])
+EnvironmentProfile = SubResource("Environment_ember_crown")
 Bounds = AABB(-256, -16, -256, 512, 64, 512)
 SafeZoneCenter = Vector3(0, 0, -10)
 SafeZoneRadius = 34.0

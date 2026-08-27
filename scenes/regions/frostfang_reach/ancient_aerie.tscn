@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_glacier.glb" id="12_glacier"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_tome_stand.glb" id="13_tome"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="14_pillar"]
 
 [sub_resource type="CylinderShape3D" id="Shape_rock"]
 radius = 1.5
@@ -20,6 +21,10 @@ size = Vector3(0.919, 1.220, 0.919)
 
 [sub_resource type="BoxShape3D" id="Shape_glacier"]
 size = Vector3(8.43, 4.96, 6.02)
+
+[sub_resource type="CylinderShape3D" id="Shape_pillar"]
+radius = 0.75
+height = 4.0
 
 [node name="AncientAerieCell" instance=ExtResource("1_roost")]
 FloorSize = 90.0
@@ -68,6 +73,43 @@ transform = Transform3D(-1.5, 0, 0.8, 0, 1.9, 0, -0.8, 0, -1.5, 28, 0, -22)
 [node name="Shape" type="CollisionShape3D" parent="Nav/GlacierNE/Col"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
 shape = SubResource("Shape_glacier")
+
+; Six broken markers make the aerie an authored observatory rather than another rock ring. Their
+; 28 m radius keeps the dragon's centre and the tome approach completely clear.
+[node name="PillarN" parent="Nav" instance=ExtResource("14_pillar")]
+transform = Transform3D(1.2, 0, 0, 0, 1.8, 0, 0, 0, 1.2, 0, 0, -30)
+[node name="Col" type="StaticBody3D" parent="Nav/PillarN"]
+[node name="Shape" type="CollisionShape3D" parent="Nav/PillarN/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Shape_pillar")
+
+[node name="PillarNE" parent="Nav" instance=ExtResource("14_pillar")]
+transform = Transform3D(0.8, 0, 0.5, 0, 1.35, 0, -0.5, 0, 0.8, 25, 0, -15)
+[node name="Col" type="StaticBody3D" parent="Nav/PillarNE"]
+[node name="Shape" type="CollisionShape3D" parent="Nav/PillarNE/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Shape_pillar")
+
+[node name="PillarSE" parent="Nav" instance=ExtResource("14_pillar")]
+transform = Transform3D(-1, 0, 0, 0, 1.55, 0, 0, 0, -1, 25, 0, 16)
+[node name="Col" type="StaticBody3D" parent="Nav/PillarSE"]
+[node name="Shape" type="CollisionShape3D" parent="Nav/PillarSE/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Shape_pillar")
+
+[node name="PillarSW" parent="Nav" instance=ExtResource("14_pillar")]
+transform = Transform3D(0.8, 0, -0.5, 0, 1.25, 0, 0.5, 0, 0.8, -25, 0, 16)
+[node name="Col" type="StaticBody3D" parent="Nav/PillarSW"]
+[node name="Shape" type="CollisionShape3D" parent="Nav/PillarSW/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Shape_pillar")
+
+[node name="PillarNW" parent="Nav" instance=ExtResource("14_pillar")]
+transform = Transform3D(-0.9, 0, 0, 0, 1.6, 0, 0, 0, -0.9, -25, 0, -15)
+[node name="Col" type="StaticBody3D" parent="Nav/PillarNW"]
+[node name="Shape" type="CollisionShape3D" parent="Nav/PillarNW/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Shape_pillar")
 
 ; The hoard. An Ancient's treasure is one word on a stand, and the tome will not open until the thing
 ; that has been keeping it is dead — RequiredFlagId is raised by the lair below on the kill. That is
