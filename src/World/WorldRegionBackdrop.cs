@@ -5,6 +5,21 @@ namespace Embervale.World;
 /// <summary>One-draw-call, non-playable macro landscape outside a region's authored cell lattice.</summary>
 public sealed partial class WorldRegionBackdrop : MultiMeshInstance3D
 {
+    public override void _ExitTree()
+    {
+        if (Multimesh is not { } multiMesh)
+        {
+            return;
+        }
+
+        Mesh? mesh = multiMesh.Mesh;
+        Material? material = mesh?.GetSurfaceCount() > 0 ? mesh.SurfaceGetMaterial(0) : null;
+        Multimesh = null;
+        multiMesh.Dispose();
+        material?.Dispose();
+        mesh?.Dispose();
+    }
+
     public static WorldRegionBackdrop Create(WorldEnvironmentProfileResource profile)
     {
         var mountain = new CylinderMesh

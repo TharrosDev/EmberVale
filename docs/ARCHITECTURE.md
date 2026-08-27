@@ -688,7 +688,8 @@ fast-travel land in 25E–25G.
   `ScenePath`, `Center` (world position), `SafeRadius`, required `WorldCellPresentationResource`,
   and optional `WorldBiomeScatterResource`. The lightweight metadata the streamer reads without
   instancing the scene. Scatter layers are deterministic cosmetic MultiMeshes; exclusion circles
-  and the presentation road mask keep gameplay space clear.
+  and the presentation road mask keep gameplay space clear. Each layer can pair its detailed mesh
+  with a reduced cone/box HLOD proxy and overlapping visibility ranges.
 - **`RegionStreamer`** (`Node3D`, `Pausable`, built by the bootstrap): **every cell of the active
   region is resident** (38M2, maintainer direction). Each frame it enqueues any cell not yet in the
   tree; there is no distance test and no unload path during play. Until 38M2 a cell loaded inside its
@@ -701,9 +702,12 @@ fast-travel land in 25E–25G.
   `ancient_aerie` (25, 0, -110) share coordinate space with the Ember Crown's `arena` (55, 0, -10)
   and `wilds_north` (0, 0, -65), so the two would load inside each other. Whole-realm residency is a
   world-layout decision (Phase 44), not a streaming one.
-  Loads are instanced at
-  most **one per frame** (a queue drains over frames so a wave never hitches; the `PackedScene` is
-  `ResourceLoader`-cached so re-load is cheap). It publishes `RegionCellLoadedEvent`/
+  Loads now pass through explicit **queued → threaded request → ready → instanced** stages. Scene
+  I/O and dependency loading happen through `ResourceLoader.LoadThreadedRequest`; the main thread
+  polls completion and instances only the region budget's `MaxCellInstantiationsPerFrame`.
+  `MaxConcurrentLoadRequests` controls parallel I/O and drops to one when global static memory is
+  above the region limit, preserving forward progress instead of deadlocking the loading screen.
+  It publishes `RegionCellLoadedEvent`/
   `RegionCellUnloadedEvent` — the seam Phase 25D's persistence hooks. The procedural sandbox is the
   always-loaded base; the streamer manages only the region's authored `Cells`. For a hard transition
   (25C) the bootstrap calls `UnloadAll()` (free every loaded cell + clear the queue) then
@@ -712,7 +716,10 @@ fast-travel land in 25E–25G.
   `ActiveRegionId` — the cheapest honest answer to "where is the player standing" for systems
   that need it, and what the encounter region gate reads (Phase 34.5B).
   Each loaded root also receives its seam-neutral presentation skin and optional biome scatter.
-  `WorldPerformanceMonitor` samples expanded runtime nodes, scatter instances, draw calls, static
+  The presentation is an indexed CPU-built heightfield with edge-flat topology and shader blending
+  driven by world-space noise, height, slope, road, and roughness. `WorldVisibilityManager` leaves
+  gameplay resident but culls cosmetic scatter cells beyond the authored distance; GeometryInstance
+  ranges cross-fade detailed and HLOD batches. `WorldPerformanceMonitor` samples expanded runtime nodes, scatter instances, draw calls, static
   memory and frame time against the region budget; the validator separately gates authored `.tscn`
   node counts and requested scatter counts before runtime.
 - **Hard transitions (25C)** — a `RegionTransitionComponent` (an `InteractableComponent` carrying a

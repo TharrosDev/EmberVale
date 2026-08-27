@@ -173,6 +173,31 @@ CASES = [
        'TollPermitFlagId = "flag.crossway.permit"', 'TollPermitFlagId = "flag.crossway.nope"')],
      "granted by no passage service"),
 
+    # ---- World infrastructure budgets -------------------------------------------------------
+    ("world.loading_budget_zero", "ValidateRegions",
+     [("data/regions/EmberCrown.tres",
+       "MaxConcurrentLoadRequests = 2", "MaxConcurrentLoadRequests = 0")],
+     "invalid visibility or staged-loading budget"),
+
+    ("world.terrain_vertex_budget_exceeded", "ValidateRegions",
+     [("data/regions/EmberCrown.tres",
+       "MaxTerrainVerticesPerCell = 3000", "MaxTerrainVerticesPerCell = 2000")],
+     "terrain vertices, over its per-cell budget"),
+
+    ("world.terrain_blend_inverted", "ValidateRegions",
+     [("data/regions/EmberCrown.tres", "SlopeBlendEnd = 0.32", "SlopeBlendEnd = 0.04")],
+     "invalid terrain material-blending thresholds"),
+
+    ("world.scatter_source_missing", "ValidateRegions",
+     [("data/regions/FrostfangReach.tres",
+       'ScenePath = "res://assets/models/props/prp_pine_dead.glb"',
+       'ScenePath = "res://assets/models/props/prp_missing.glb"')],
+     "scatter source 'res://assets/models/props/prp_missing.glb' does not exist"),
+
+    ("world.hlod_reduction_invalid", "ValidateRegions",
+     [("data/regions/FrostfangReach.tres", "HlodReduction = 4", "HlodReduction = 1")],
+     "invalid HLOD scatter tier"),
+
     # ---- The contract board ------------------------------------------------------------------
     ("contract.nothing_to_deliver", "ValidateContracts",
      [("data/contracts/Charcoal.tres", "Quantity = 25", "Quantity = 0")],

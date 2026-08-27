@@ -6,18 +6,25 @@ uniform vec4 secondary_color : source_color;
 uniform vec4 detail_color : source_color;
 uniform vec4 road_color : source_color;
 uniform vec2 cell_size = vec2(52.0);
-uniform float relief : hint_range(0.0, 0.18) = 0.055;
 uniform float detail_scale : hint_range(0.25, 8.0) = 2.5;
 uniform int road_axis = 0;
 uniform float road_width = 5.0;
 uniform float road_offset = 0.0;
-uniform float seed = 38.0;
 uniform vec4 tint : source_color = vec4(1.0);
 uniform float tint_strength : hint_range(0.0, 1.0) = 0.0;
+uniform vec2 world_origin = vec2(0.0);
+uniform float terrain_seed = 3800.0;
+uniform float surface_roughness : hint_range(0.0, 1.0) = 0.96;
+uniform float detail_roughness : hint_range(0.0, 1.0) = 0.88;
+uniform float road_roughness : hint_range(0.0, 1.0) = 0.82;
+uniform vec2 slope_blend = vec2(0.08, 0.32);
+uniform vec2 height_blend = vec2(0.04, 0.15);
+
+varying float terrain_height;
 
 float hash21(vec2 p) {
     p = fract(p * vec2(123.34, 345.45));
-    p += dot(p, p + 34.345 + seed);
+    p += dot(p, p + 34.345 + terrain_seed);
     return fract(p.x * p.y);
 }
 
@@ -30,24 +37,25 @@ float value_noise(vec2 p) {
 }
 
 void vertex() {
-    vec2 centred = abs(UV * 2.0 - 1.0);
-    float seam_fade = smoothstep(1.0, 0.78, max(centred.x, centred.y));
-    float macro = value_noise(UV * detail_scale * 3.0);
-    float micro = value_noise(UV * detail_scale * 11.0 + 17.0);
-    VERTEX.y += ((macro - 0.5) * 1.4 + (micro - 0.5) * 0.35) * relief * seam_fade;
+    terrain_height = VERTEX.y;
 }
 
 void fragment() {
     vec2 metres = (UV - vec2(0.5)) * cell_size;
-    float macro = value_noise(UV * detail_scale * 3.0);
-    float micro = value_noise(UV * detail_scale * 15.0 + 31.0);
+    vec2 world_metres = world_origin + metres;
+    float macro = value_noise(world_metres * detail_scale * 0.055);
+    float micro = value_noise(world_metres * detail_scale * 0.21 + 31.0);
     vec3 ground = mix(surface_color.rgb, secondary_color.rgb, smoothstep(0.28, 0.78, macro));
-    ground = mix(ground, detail_color.rgb, smoothstep(0.72, 0.95, micro) * 0.35);
+    float slope = 1.0 - clamp(dot(normalize(NORMAL), vec3(0.0, 1.0, 0.0)), 0.0, 1.0);
+    float slope_mask = smoothstep(slope_blend.x, slope_blend.y, slope);
+    float height_mask = smoothstep(height_blend.x, height_blend.y, terrain_height);
+    float detail_mask = max(slope_mask, height_mask * smoothstep(0.42, 0.78, micro));
+    ground = mix(ground, detail_color.rgb, detail_mask);
     float cross_axis = road_axis == 1 ? metres.x : metres.y;
     float road = road_axis == 0 ? 0.0 : 1.0 - smoothstep(road_width * 0.42, road_width * 0.58, abs(cross_axis - road_offset));
     float ruts = 0.82 + 0.18 * value_noise(metres * vec2(0.7, 0.13));
     ground = mix(ground, road_color.rgb * ruts, road);
     ground = mix(ground, tint.rgb, tint_strength);
     ALBEDO = ground;
-    ROUGHNESS = mix(0.98, 0.86, road);
+    ROUGHNESS = mix(mix(surface_roughness, detail_roughness, detail_mask), road_roughness, road);
 }

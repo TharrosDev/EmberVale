@@ -21,4 +21,12 @@ public partial class WorldEnvironmentProfileResource : Resource
     [Export(PropertyHint.Range, "100,600,5")] public float BackdropRadius { get; set; } = 240f;
     [Export(PropertyHint.Range, "20,160,1")] public float BackdropHeight { get; set; } = 65f;
     [Export(PropertyHint.Range, "8,40,1")] public int BackdropCount { get; set; } = 20;
+    [Export] public int TerrainSeed { get; set; } = 3800;
+    [Export(PropertyHint.Range, "0,1,0.01")] public float SurfaceRoughness { get; set; } = 0.96f;
+    [Export(PropertyHint.Range, "0,1,0.01")] public float DetailRoughness { get; set; } = 0.88f;
+    [Export(PropertyHint.Range, "0,1,0.01")] public float RoadRoughness { get; set; } = 0.82f;
+    [Export(PropertyHint.Range, "0,1,0.01")] public float SlopeBlendStart { get; set; } = 0.08f;
+    [Export(PropertyHint.Range, "0,1,0.01")] public float SlopeBlendEnd { get; set; } = 0.32f;
+    [Export(PropertyHint.Range, "-2,2,0.01")] public float HeightBlendStart { get; set; } = 0.04f;
+    [Export(PropertyHint.Range, "-2,2,0.01")] public float HeightBlendEnd { get; set; } = 0.15f;
 }

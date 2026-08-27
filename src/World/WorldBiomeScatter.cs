@@ -13,6 +13,30 @@ public sealed partial class WorldBiomeScatter : Node3D
     public int InstanceCount { get; private set; }
     public int LayerCount { get; private set; }
 
+    public static void ClearSourceCache() => MeshCache.Clear();
+
+    public override void _ExitTree()
+    {
+        foreach (Node child in GetChildren())
+        {
+            if (child is not MultiMeshInstance3D instance || instance.Multimesh is not { } multiMesh)
+            {
+                continue;
+            }
+
+            bool ownsProxyMesh = instance.Name == "HlodLayer";
+            Mesh? proxyMesh = ownsProxyMesh ? multiMesh.Mesh : null;
+            Material? proxyMaterial = proxyMesh?.GetSurfaceCount() > 0
+                ? proxyMesh.SurfaceGetMaterial(0)
+                : null;
+            instance.MaterialOverride = null;
+            instance.Multimesh = null;
+            multiMesh.Dispose();
+            proxyMaterial?.Dispose();
+            proxyMesh?.Dispose();
+        }
+    }
+
     public static WorldBiomeScatter? Attach(
         Node3D cellRoot, WorldCellPresentationResource? presentation, WorldBiomeScatterResource? profile)
     {
@@ -70,12 +94,21 @@ public sealed partial class WorldBiomeScatter : Node3D
                 Multimesh = multiMesh,
                 MaterialOverride = material,
                 VisibilityRangeEnd = layer.VisibilityRangeEnd,
+                VisibilityRangeEndMargin = layer.VisibilityFadeMargin,
+                VisibilityRangeFadeMode = GeometryInstance3D.VisibilityRangeFadeModeEnum.Self,
                 CastShadow = layer.CastShadows
                     ? GeometryInstance3D.ShadowCastingSetting.On
                     : GeometryInstance3D.ShadowCastingSetting.Off,
             });
             scatter.InstanceCount += placements.Count;
             scatter.LayerCount++;
+
+            if (layer.HlodShape != 0)
+            {
+                MultiMeshInstance3D proxy = BuildHlod(layer, placements);
+                scatter.AddChild(proxy);
+                scatter.InstanceCount += proxy.Multimesh?.InstanceCount ?? 0;
+            }
         }
 
         if (scatter.LayerCount == 0)
@@ -86,6 +119,48 @@ public sealed partial class WorldBiomeScatter : Node3D
 
         cellRoot.AddChild(scatter);
         return scatter;
+    }
+
+    private static MultiMeshInstance3D BuildHlod(
+        BiomeScatterLayerResource layer, IReadOnlyList<WorldScatterPlacement> placements)
+    {
+        int reduction = Mathf.Max(2, layer.HlodReduction);
+        int count = Mathf.CeilToInt(placements.Count / (float)reduction);
+        Mesh proxyMesh = layer.HlodShape == 1
+            ? new CylinderMesh { TopRadius = 0.05f, BottomRadius = 0.55f, Height = 2f, RadialSegments = 5, Rings = 1 }
+            : new BoxMesh { Size = Vector3.One };
+        proxyMesh.SurfaceSetMaterial(0, new StandardMaterial3D
+        {
+            AlbedoColor = layer.HlodColor,
+            Roughness = 1f,
+        });
+
+        var multiMesh = new MultiMesh
+        {
+            TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
+            Mesh = proxyMesh,
+            InstanceCount = count,
+        };
+        for (int proxyIndex = 0; proxyIndex < count; proxyIndex++)
+        {
+            WorldScatterPlacement placement = placements[Mathf.Min(proxyIndex * reduction, placements.Count - 1)];
+            float scale = Mathf.Lerp(layer.MinimumScale, layer.MaximumScale, placement.ScaleUnit);
+            var basis = new Basis(Vector3.Up, placement.Yaw).Scaled(layer.HlodScale * scale);
+            multiMesh.SetInstanceTransform(proxyIndex,
+                new Transform3D(basis, new Vector3(placement.X, layer.HlodScale.Y * scale, placement.Z)));
+        }
+
+        return new MultiMeshInstance3D
+        {
+            Name = "HlodLayer",
+            Multimesh = multiMesh,
+            VisibilityRangeBegin = layer.HlodRangeBegin,
+            VisibilityRangeBeginMargin = layer.VisibilityFadeMargin,
+            VisibilityRangeEnd = layer.HlodRangeEnd,
+            VisibilityRangeEndMargin = layer.VisibilityFadeMargin,
+            VisibilityRangeFadeMode = GeometryInstance3D.VisibilityRangeFadeModeEnum.Self,
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+        };
     }
 
     private static List<WorldScatterExclusion> BuildExclusions(WorldBiomeScatterResource profile)

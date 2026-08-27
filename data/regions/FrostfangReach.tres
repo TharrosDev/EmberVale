@@ -22,6 +22,14 @@ BackdropCenter = Vector3(100, 0, -55)
 BackdropRadius = 255.0
 BackdropHeight = 92.0
 BackdropCount = 24
+TerrainSeed = 3800
+SurfaceRoughness = 0.93
+DetailRoughness = 0.84
+RoadRoughness = 0.78
+SlopeBlendStart = 0.06
+SlopeBlendEnd = 0.28
+HeightBlendStart = 0.03
+HeightBlendEnd = 0.13
 
 [sub_resource type="Resource" id="Budget_frostfang"]
 script = ExtResource("5_budget")
@@ -30,11 +38,17 @@ MaxResidentAuthoredNodes = 600
 MaxResidentRuntimeNodes = 1200
 MaxScatterInstancesPerCell = 160
 MaxResidentScatterInstances = 700
+MaxTerrainVerticesPerCell = 3000
+MaxResidentTerrainVertices = 13000
 MaxDrawCalls = 1800
 MaxNodeCount = 14000
 MaxStaticMemoryMb = 2048.0
 MaxFrameMilliseconds = 25.0
 ConsecutiveSamplesBeforeWarning = 5
+BiomeCullDistance = 320.0
+VisibilityUpdateInterval = 0.25
+MaxConcurrentLoadRequests = 2
+MaxCellInstantiationsPerFrame = 1
 
 [sub_resource type="Resource" id="Layer_dead_pine"]
 script = ExtResource("7_layer")
@@ -46,6 +60,13 @@ MinimumSpacing = 6.5
 Tint = Color(0.78, 0.84, 0.90, 1)
 TintVariation = 0.10
 VisibilityRangeEnd = 155.0
+VisibilityFadeMargin = 20.0
+HlodShape = 1
+HlodReduction = 4
+HlodRangeBegin = 120.0
+HlodRangeEnd = 300.0
+HlodColor = Color(0.22, 0.24, 0.27, 1)
+HlodScale = Vector3(0.75, 2.8, 0.75)
 
 [sub_resource type="Resource" id="Layer_frost_rock"]
 script = ExtResource("7_layer")
@@ -57,6 +78,13 @@ MinimumSpacing = 3.2
 Tint = Color(0.72, 0.79, 0.86, 1)
 TintVariation = 0.12
 VisibilityRangeEnd = 135.0
+VisibilityFadeMargin = 18.0
+HlodShape = 2
+HlodReduction = 5
+HlodRangeBegin = 105.0
+HlodRangeEnd = 260.0
+HlodColor = Color(0.34, 0.38, 0.42, 1)
+HlodScale = Vector3(1.4, 0.8, 1.2)
 
 [sub_resource type="Resource" id="Exclusion_roost"]
 script = ExtResource("8_exclusion")

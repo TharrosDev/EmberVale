@@ -601,6 +601,9 @@ recipe above"). Everything here had been rediscovered four times from other cell
    `Center`, a `WorldCellPresentationResource`, and optional `WorldBiomeScatterResource`, then add
    it to the region's `Cells` array. Scatter is cosmetic only: layer scenes become MultiMeshes and
    exclusion circles keep roads, landmarks, encounter centres, and interaction fronts clear.
+   Each layer may declare a reduced cone/box HLOD tier; overlap its begin range with the detailed
+   end range and give both a fade margin. The cell presentation's `TopologyResolution` contributes
+   directly to the region terrain-vertex budget.
    ⚠️ **Forgetting the array is silent** — the
    resource exists, `--state` does not count it, and nothing loads.
 3. **`SafeRadius`** is the no-spawn bubble. Set it to cover anywhere the player is meant to be able to
@@ -1030,8 +1033,9 @@ cell sat far from the origin). `EnemySpawnDirector` had the same latent bug.
    `RegionStreamer` instances **every** one of the `Cells` on entering the region and keeps them all
    resident (a per-frame budget, no distance test — 38M2 deleted the `LoadRadius` rule, the
    hysteresis and the field, so a cell is authored with a `Center` and nothing else). The
-   `ContentValidator` checks neighbours, default weather, performance limits, authored node counts,
-   scatter source paths/counts, and that each cell `ScenePath` resolves.
+   `ContentValidator` checks neighbours, default weather, performance/loading limits, authored node
+   and terrain-vertex counts, detailed+HLOD scatter source/count limits, and that each cell
+   `ScenePath` resolves.
    No code change for a new region.
    **Adding a cell to an existing region (Phase 38K)** is the same `.tres` sub-resource plus a
    `.tscn`, and four things are worth doing deliberately:

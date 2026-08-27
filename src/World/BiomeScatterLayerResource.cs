@@ -14,5 +14,14 @@ public partial class BiomeScatterLayerResource : Resource
     [Export] public Color Tint { get; set; } = Colors.White;
     [Export(PropertyHint.Range, "0,0.5,0.01")] public float TintVariation { get; set; } = 0.08f;
     [Export(PropertyHint.Range, "10,500,5")] public float VisibilityRangeEnd { get; set; } = 140f;
+    [Export(PropertyHint.Range, "0,100,1")] public float VisibilityFadeMargin { get; set; } = 18f;
     [Export] public bool CastShadows { get; set; } = true;
+
+    [ExportGroup("HLOD proxy")]
+    [Export(PropertyHint.Enum, "None,Cone,Box")] public int HlodShape { get; set; }
+    [Export(PropertyHint.Range, "2,32,1")] public int HlodReduction { get; set; } = 4;
+    [Export(PropertyHint.Range, "10,500,5")] public float HlodRangeBegin { get; set; } = 105f;
+    [Export(PropertyHint.Range, "20,800,5")] public float HlodRangeEnd { get; set; } = 280f;
+    [Export] public Color HlodColor { get; set; } = new(0.24f, 0.27f, 0.30f);
+    [Export] public Vector3 HlodScale { get; set; } = Vector3.One;
 }

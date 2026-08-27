@@ -19,6 +19,14 @@ BackdropCenter = Vector3(-20, 0, -55)
 BackdropRadius = 240.0
 BackdropHeight = 52.0
 BackdropCount = 22
+TerrainSeed = 3800
+SurfaceRoughness = 0.96
+DetailRoughness = 0.88
+RoadRoughness = 0.82
+SlopeBlendStart = 0.08
+SlopeBlendEnd = 0.32
+HeightBlendStart = 0.04
+HeightBlendEnd = 0.15
 
 [sub_resource type="Resource" id="Budget_ember_crown"]
 script = ExtResource("5_budget")
@@ -27,11 +35,17 @@ MaxResidentAuthoredNodes = 4800
 MaxResidentRuntimeNodes = 9000
 MaxScatterInstancesPerCell = 256
 MaxResidentScatterInstances = 800
+MaxTerrainVerticesPerCell = 3000
+MaxResidentTerrainVertices = 26000
 MaxDrawCalls = 1800
 MaxNodeCount = 14000
 MaxStaticMemoryMb = 2048.0
 MaxFrameMilliseconds = 25.0
 ConsecutiveSamplesBeforeWarning = 5
+BiomeCullDistance = 320.0
+VisibilityUpdateInterval = 0.25
+MaxConcurrentLoadRequests = 2
+MaxCellInstantiationsPerFrame = 1
 
 [sub_resource type="Resource" id="Presentation_town_hub"]
 script = ExtResource("4_presentation")

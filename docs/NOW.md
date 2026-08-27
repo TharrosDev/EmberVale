@@ -131,8 +131,12 @@ existed the same three lines were maintained in four places and rewritten every 
 - **Out-of-band world-infrastructure foundation ✅ LANDED; it does not advance 41F.** Regions now
   author separate `.tscn`, expanded-runtime, scatter, draw, memory, and frame budgets. Frostfang's
   repeated dead-pine/rock ecology is deterministic MultiMesh output with automatic road clearance
-  and authored landmark exclusions. `--validate` gates sources/counts; F4 and the sustained runtime
-  monitor report live limits. The three Ashfall stations now have real `Entity` owners, and isolated
+  and authored landmark exclusions, detailed/HLOD cross-fade ranges, and camera-distance cosmetic
+  culling. Cell surfaces are indexed CPU heightfields with edge-flat seams and slope/height/road
+  material blending. Loading is queued → threaded → ready → frame-budgeted instancing, with
+  concurrency throttled under memory pressure. `--validate` gates sources/counts/topology; F4 and the sustained runtime
+  monitor report live limits. A 150-frame perceptual baseline now makes world rendering repeatable.
+  The three Ashfall stations now have real `Entity` owners, and isolated
   world QA initializes the same content registry as the game instead of emitting false lair warnings.
 - ⚠️ **A LOCATION'S POSITION IS ITS NODE'S TRANSFORM IN A CELL SCENE, NEVER AN AUTHORED COORDINATE**
   (39.5A). `MapLocationResource` says what a place is; a `MapLocationComponent` parented to the stall
@@ -224,12 +228,12 @@ existed the same three lines were maintained in four places and rewritten every 
 | | |
 | --- | --- |
 | Build | `dotnet build --warnaserror` clean, **0 warnings** |
-| Tests | **1466 passing** (+18 since the prior table: 41E, scenery math, scatter/exclusion planning, and performance-budget boundaries) |
+| Tests | **1476 passing** (+28 since the prior table: 41E, scenery/terrain math, scatter/exclusion planning, streaming pressure, and performance-budget boundaries) |
 | `--validate` | exit 0; **1422** locale strings (+19), **18 quests** (+1), 34 dialogues |
-| **Negative tests** | `python tools/negative_tests.py` — **80/80 broken and restored** (75 → 80: a branch flag nothing writes, a gate that contradicts itself, a gated Stealth objective, `SequentialObjectives` on a one-objective quest, and every objective behind one flag). ⚠️ **Run ONCE, after the content, not twice** — the harness refuses a dirty `data/`, so it ran post-commit. It covers all 75 pre-existing rules against the new code, which is the substance of the before-run. Tree restored clean, `--validate` exit 0 afterwards |
+| **Negative tests** | `python tools/negative_tests.py` — **82/82 broken and restored**, then `--validate` recovered to exit 0 |
 | `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, 34 dialogues, **18 quests**, 64 map locations, 3 companions |
 | **`--panelshots`** | 14 frames (+2). **`11-journal-declared` and `12-journal-hushed` are the pair, and the PAIR is the evidence** — the *same quest instance* under opposite flags. The journal draws the Crossway pair then the Tarn pair, never four rows; the second row of each is **dim and padlocked** (the first ordered quest ever drawn); and the tracker's readout flips **`97 m · N` → `61 m · NW` with no count changing.** That one number is the proof the branch is re-derived rather than frozen — which is the entire justification for adding no save state |
-| **World shots** | **150/150** day/dusk frames rendered through the production streamer; no registry, performance-capture, station-owner, or scatter warnings |
+| **World shots** | **150/150** day/dusk frames rendered through the production threaded streamer and independently matched the committed 12×8 RGB signature baseline |
 | **`--play`** | bounded 600-frame boot, loaded slot1, **33 objects restored**, all 10 Ember cells loaded, 0 errors and 0 component-owner warnings |
 | ⚠️ **Not covered by anything** | **No playthrough held the conversation, walked either road, or reloaded mid-branch.** Proven: the fork renders, re-derives across a frame with no quest event in it, and is gated in five directions. Not proven: that a save reloaded on the hushed path comes back on it. ⚠️ **Three named playthroughs are now owed** — 41B's escort walk, 41C's tally run, 41D's fork — and saying so out loud is the point |
 | Not run, deliberately | ⚠️ **`--economy`** — no price, spread or multiplier touched; the new shop row is a *gated* entry priced by the existing curve. ⚠️ **`map_probe`** — nothing was placed; the quest names four locations that already existed. ⚠️ **`--hudshots`** — the tracker is covered by the panel frames above, which draw it |

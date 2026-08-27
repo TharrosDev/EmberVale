@@ -1,3 +1,4 @@
+using System;
 using Godot;
 
 namespace Embervale.Bootstrap;
@@ -11,4 +12,12 @@ namespace Embervale.Bootstrap;
 public partial class ContentDatabaseLoader : Node
 {
     public override void _EnterTree() => ContentDatabases.InitializeAll();
+
+    /// <summary>QA-only exit hygiene for generated RefCounted meshes/materials held by C# wrappers.</summary>
+    public void CollectManagedResources()
+    {
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+    }
 }

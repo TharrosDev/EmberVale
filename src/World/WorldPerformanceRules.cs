@@ -26,6 +26,9 @@ public readonly record struct WorldPerformanceSnapshot(
 /// <summary>Pure budget comparisons shared by xUnit tests and the Godot runtime monitor.</summary>
 public static class WorldPerformanceRules
 {
+    public static int ThreadedLoadConcurrency(int authoredConcurrency, double currentMemoryMb, double limitMb) =>
+        currentMemoryMb > limitMb ? 1 : System.Math.Max(1, authoredConcurrency);
+
     public static IReadOnlyList<string> Assess(
         WorldPerformanceLimits limits, WorldPerformanceSnapshot sample)
     {
