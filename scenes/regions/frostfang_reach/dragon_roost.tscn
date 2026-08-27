@@ -97,6 +97,40 @@ transform = Transform3D(1, 0, 0, 0, 1.1, 0, 0, 0, 1, 22, 0, 16)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
 shape = SubResource("Shape_pine")
 
+; Sparse windbreak at the territory edge: a clustered ecology rather than isolated identical trees.
+[node name="PineSW" parent="Nav" instance=ExtResource("11_pine")]
+transform = Transform3D(0.8, 0, 0.4, 0, 1.4, 0, -0.4, 0, 0.8, -31, 0, 27)
+[node name="Col" type="StaticBody3D" parent="Nav/PineSW"]
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineSW/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("Shape_pine")
+
+[node name="PineSW2" parent="Nav" instance=ExtResource("11_pine")]
+transform = Transform3D(1, 0, 0, 0, 0.95, 0, 0, 0, 1, -26, 0, 31)
+[node name="Col" type="StaticBody3D" parent="Nav/PineSW2"]
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineSW2/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("Shape_pine")
+
+[node name="PineSE" parent="Nav" instance=ExtResource("11_pine")]
+transform = Transform3D(1, 0, 0, 0, 1.25, 0, 0, 0, 1, 30, 0, 28)
+[node name="Col" type="StaticBody3D" parent="Nav/PineSE"]
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineSE/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("Shape_pine")
+
+[node name="RockShelfSW" parent="Nav" instance=ExtResource("10_rock")]
+transform = Transform3D(2.1, 0, 0, 0, 1.5, 0, 0, 0, 2.1, -33, 0, 17)
+[node name="Col" type="StaticBody3D" parent="Nav/RockShelfSW"]
+[node name="Shape" type="CollisionShape3D" parent="Nav/RockShelfSW/Col"]
+shape = SubResource("Shape_rock")
+
+[node name="RockShelfSE" parent="Nav" instance=ExtResource("10_rock")]
+transform = Transform3D(-1.9, 0, 0, 0, 1.4, 0, 0, 0, -1.9, 34, 0, 19)
+[node name="Col" type="StaticBody3D" parent="Nav/RockShelfSE"]
+[node name="Shape" type="CollisionShape3D" parent="Nav/RockShelfSE/Col"]
+shape = SubResource("Shape_rock")
+
 ; The nest marker persists, not the dragon — it is authored in the scene, so the cell persistence
 ; director is guaranteed to find it, and it simply does not repopulate the lair once Defeated is set.
 [node name="Nest" parent="." index="1"]

@@ -31,6 +31,11 @@ public partial class CellNavBaker : Node
             return;
         }
 
+        // Inherited roost scenes share the base scene's NavigationMesh resource. Baking two of those
+        // cells in the same resident region otherwise asks Godot to mutate one resource twice at the
+        // same time ("NavigationMesh is already baking"). Each cell owns its bake result.
+        region.NavigationMesh = (NavigationMesh)region.NavigationMesh.Duplicate(true);
+
         // ponytail: on-thread bake at cell load — fine for greybox cell sizes; revisit if a cell's
         // geometry grows large enough that the bake stalls a worker noticeably.
         region.BakeNavigationMesh();
