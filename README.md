@@ -75,10 +75,12 @@ anti-mash **stamina & poise economy**. Damage flows through one pipeline
   the player does.
 
 ### The world
-Distance-based **region streaming** (with a settle-gated loading screen), hard region
+Staged, whole-region **cell loading** (with a settle-gated loading screen), hard region
 transitions + **fast travel**, a **world map** and HUD **compass**, a day/night
 **world clock**, **weather** (clear/rain/storm/fog…), ambient **encounters** by time
-of day, and announced **world events** (raids, supply caches, champion hunts).
+of day, announced **world events** (raids, supply caches, champion hunts), deterministic
+MultiMesh biome dressing with HLOD proxies, indexed seam-safe terrain/material blending,
+threaded staged cell loading, and explicit authored/runtime world-performance budgets.
 
 ### Character & loot
 Six playable **races** + character creation, XP / levels with a **perk** tree,
@@ -169,8 +171,10 @@ holds — the boss entrance, the opening narration — take the controls but kee
 - **Content validator** — cross-references, well-formedness, and dialogue/quest graph
   reachability; runs on boot, via `validate-all`, or headless with `--validate`.
 - **Overlays** — `F3` debug HUD (FPS, raw stats, corruption, active event), `F4`
-  profiler.
+  profiler with active-region node/scatter counts and budget status.
 - **World integrity checker** — silently watches runtime invariants (every 5s).
+- **Visual regression** — the 150-frame day/dusk world harness compares compact perceptual
+  signatures and requires explicit baseline approval for intentional appearance changes.
 - **Repro harness** — record a seed + command sequence, replay deterministically.
 - **Unit suite** — pure-logic xUnit tests for the load-bearing math (combat, mastery,
   the Weave, status cadence, save-key policy, dialogue-graph analysis, …).

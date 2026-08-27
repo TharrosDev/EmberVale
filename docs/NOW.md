@@ -128,6 +128,16 @@ existed the same three lines were maintained in four places and rewritten every 
   departure is the honest world change. `FlagVisibilityComponent` hides collision as well as mesh.
   `ValidateStoryFlags` now knows quest completion writers and scene visibility readers; pure tests
   cover one-shot writes and restored presence. **NEXT: 41F — Quest-debug console + validator extension.**
+- **Out-of-band world-infrastructure foundation ✅ LANDED; it does not advance 41F.** Regions now
+  author separate `.tscn`, expanded-runtime, scatter, draw, memory, and frame budgets. Frostfang's
+  repeated dead-pine/rock ecology is deterministic MultiMesh output with automatic road clearance
+  and authored landmark exclusions, detailed/HLOD cross-fade ranges, and camera-distance cosmetic
+  culling. Cell surfaces are indexed CPU heightfields with edge-flat seams and slope/height/road
+  material blending. Loading is queued → threaded → ready → frame-budgeted instancing, with
+  concurrency throttled under memory pressure. `--validate` gates sources/counts/topology; F4 and the sustained runtime
+  monitor report live limits. A 150-frame perceptual baseline now makes world rendering repeatable.
+  The three Ashfall stations now have real `Entity` owners, and isolated
+  world QA initializes the same content registry as the game instead of emitting false lair warnings.
 - ⚠️ **A LOCATION'S POSITION IS ITS NODE'S TRANSFORM IN A CELL SCENE, NEVER AN AUTHORED COORDINATE**
   (39.5A). `MapLocationResource` says what a place is; a `MapLocationComponent` parented to the stall
   or keeper says where. `--validate` scans `.tscn` in **both** directions. Author with
@@ -213,17 +223,18 @@ existed the same three lines were maintained in four places and rewritten every 
 - 📖 Economy: `ARCHITECTURE.md` §2.6m is the mechanism, `DESIGN.md` §6 + §6.1 the intent.
   🎨 `docs/ASSET_POLICY.md` §0.2–§0.3 is the asset authority.
 
-## Last verified (session close, 2026-08-19 — 41D)
+## Last verified (session close, 2026-08-27 — world infrastructure; 41F remains next)
 
 | | |
 | --- | --- |
-| Build | `dotnet build Embervale.sln` clean, **0 warnings** |
-| Tests | **1448 passing** (+8). ⚠️ **41C could add none and 41D could add eight** — the branch/order decision is arithmetic over three arrays, so it lives in `ObjectiveProgress` (Godot-free) rather than on the Godot-typed `QuestProgress`. The step-over case (an ordered quest whose earlier objective is on the other branch) is the one that would silently lock a quest forever |
+| Build | `dotnet build --warnaserror` clean, **0 warnings** |
+| Tests | **1476 passing** (+28 since the prior table: 41E, scenery/terrain math, scatter/exclusion planning, streaming pressure, and performance-budget boundaries) |
 | `--validate` | exit 0; **1422** locale strings (+19), **18 quests** (+1), 34 dialogues |
-| **Negative tests** | `python tools/negative_tests.py` — **80/80 broken and restored** (75 → 80: a branch flag nothing writes, a gate that contradicts itself, a gated Stealth objective, `SequentialObjectives` on a one-objective quest, and every objective behind one flag). ⚠️ **Run ONCE, after the content, not twice** — the harness refuses a dirty `data/`, so it ran post-commit. It covers all 75 pre-existing rules against the new code, which is the substance of the before-run. Tree restored clean, `--validate` exit 0 afterwards |
+| **Negative tests** | `python tools/negative_tests.py` — **87/87 broken and restored**, then `--validate` recovered to exit 0 |
 | `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, 34 dialogues, **18 quests**, 64 map locations, 3 companions |
 | **`--panelshots`** | 14 frames (+2). **`11-journal-declared` and `12-journal-hushed` are the pair, and the PAIR is the evidence** — the *same quest instance* under opposite flags. The journal draws the Crossway pair then the Tarn pair, never four rows; the second row of each is **dim and padlocked** (the first ordered quest ever drawn); and the tracker's readout flips **`97 m · N` → `61 m · NW` with no count changing.** That one number is the proof the branch is re-derived rather than frozen — which is the entire justification for adding no save state |
-| **`--play`** | booted, loaded slot1, **33 objects restored**, 0 errors. ⚠️ The 3 `CraftingStationComponent` warnings are **pre-existing** |
+| **World shots** | **150/150** day/dusk frames rendered through the production threaded streamer and independently matched the committed 12×8 RGB signature baseline |
+| **`--play`** | bounded 600-frame boot, loaded slot1, **33 objects restored**, all 10 Ember cells loaded, 0 errors and 0 component-owner warnings |
 | ⚠️ **Not covered by anything** | **No playthrough held the conversation, walked either road, or reloaded mid-branch.** Proven: the fork renders, re-derives across a frame with no quest event in it, and is gated in five directions. Not proven: that a save reloaded on the hushed path comes back on it. ⚠️ **Three named playthroughs are now owed** — 41B's escort walk, 41C's tally run, 41D's fork — and saying so out loud is the point |
 | Not run, deliberately | ⚠️ **`--economy`** — no price, spread or multiplier touched; the new shop row is a *gated* entry priced by the existing curve. ⚠️ **`map_probe`** — nothing was placed; the quest names four locations that already existed. ⚠️ **`--hudshots`** — the tracker is covered by the panel frames above, which draw it |
 | MCP | ✅ **UP, and brought up mid-session.** The editor was open in **Cloud mode** (the `ai-game.dev` tell in `.claude/skills/*/SKILL.md`) with the relay not running at all — `godot-cli close .` + `godot-cli open . --mode Custom --url http://localhost:23630` fixed it, and the regenerated skill docs now point at localhost. ⚠️ **`mcp__ai-game-developer__*` tools were absent all session** (`.mcp.json` is read at Claude Code startup and the server was down then), so it was driven over HTTP via `godot-cli run-tool`. Not needed: nothing was placed in the world and no model was adopted |

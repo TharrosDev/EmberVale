@@ -1,0 +1,86 @@
+using Godot;
+
+namespace Embervale.World;
+
+/// <summary>Builds an indexed, normal-bearing terrain mesh from the deterministic heightfield.</summary>
+public static class WorldTerrainMeshBuilder
+{
+    public static ArrayMesh Build(
+        WorldEnvironmentProfileResource region,
+        WorldCellPresentationResource cell,
+        Vector3 worldOrigin)
+    {
+        int resolution = Mathf.Clamp(cell.TopologyResolution, 4, 128);
+        int row = resolution + 1;
+        float stepX = cell.Width / resolution;
+        float stepZ = cell.Depth / resolution;
+        var vertices = new Vector3[row * row];
+        var normals = new Vector3[row * row];
+        var uvs = new Vector2[row * row];
+        var indices = new int[resolution * resolution * 6];
+
+        for (int z = 0; z <= resolution; z++)
+        {
+            float localZ = (-cell.Depth * 0.5f) + (z * stepZ);
+            for (int x = 0; x <= resolution; x++)
+            {
+                float localX = (-cell.Width * 0.5f) + (x * stepX);
+                int index = (z * row) + x;
+                float height = Sample(region, cell, worldOrigin, localX, localZ);
+                vertices[index] = new Vector3(localX, height, localZ);
+                uvs[index] = new Vector2(x / (float)resolution, z / (float)resolution);
+
+                if (x == 0 || z == 0 || x == resolution || z == resolution)
+                {
+                    normals[index] = Vector3.Up;
+                }
+                else
+                {
+                    float left = Sample(region, cell, worldOrigin, localX - stepX, localZ);
+                    float right = Sample(region, cell, worldOrigin, localX + stepX, localZ);
+                    float back = Sample(region, cell, worldOrigin, localX, localZ - stepZ);
+                    float forward = Sample(region, cell, worldOrigin, localX, localZ + stepZ);
+                    normals[index] = new Vector3(left - right, stepX + stepZ, back - forward).Normalized();
+                }
+            }
+        }
+
+        int cursor = 0;
+        for (int z = 0; z < resolution; z++)
+        {
+            for (int x = 0; x < resolution; x++)
+            {
+                int topLeft = (z * row) + x;
+                int topRight = topLeft + 1;
+                int bottomLeft = topLeft + row;
+                int bottomRight = bottomLeft + 1;
+                indices[cursor++] = topLeft;
+                indices[cursor++] = bottomLeft;
+                indices[cursor++] = topRight;
+                indices[cursor++] = topRight;
+                indices[cursor++] = bottomLeft;
+                indices[cursor++] = bottomRight;
+            }
+        }
+
+        var arrays = new Godot.Collections.Array();
+        arrays.Resize((int)Mesh.ArrayType.Max);
+        arrays[(int)Mesh.ArrayType.Vertex] = vertices;
+        arrays[(int)Mesh.ArrayType.Normal] = normals;
+        arrays[(int)Mesh.ArrayType.TexUV] = uvs;
+        arrays[(int)Mesh.ArrayType.Index] = indices;
+
+        var mesh = new ArrayMesh();
+        mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays);
+        return mesh;
+    }
+
+    private static float Sample(
+        WorldEnvironmentProfileResource region, WorldCellPresentationResource cell,
+        Vector3 origin, float localX, float localZ) =>
+        WorldTerrainMath.Height(
+            region.TerrainSeed + cell.Seed,
+            origin.X + localX, origin.Z + localZ, localX, localZ,
+            cell.Width, cell.Depth, region.Relief * cell.TopologyHeightScale, region.DetailScale,
+            cell.RoadAxis, cell.RoadWidth, cell.RoadOffset);
+}

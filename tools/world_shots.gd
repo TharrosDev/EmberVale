@@ -8,6 +8,11 @@
 # disposable under tools/shots/world/ and intentionally ignored by Godot/import control.
 extends SceneTree
 
+const BASELINE_PATH := "res://tests/visual_baselines/world_signatures.json"
+const SIGNATURE_WIDTH := 12
+const SIGNATURE_HEIGHT := 8
+const DEFAULT_MEAN_CHANNEL_DELTA := 18.0
+
 const REGIONS := [
 	{
 		"path": "res://data/regions/EmberCrown.tres",
@@ -40,9 +45,17 @@ var _sun: DirectionalLight3D
 var _sky: ProceduralSkyMaterial
 var _environment: Environment
 var _camera: Camera3D
+var _content_loader: Node
+var _signatures: Dictionary = {}
 
 
 func _initialize() -> void:
+	# Isolated tools do not construct GameBootstrap. Use the same centralized content initializer
+	# before the production RegionStreamer so lairs and other registry-backed actors preview honestly.
+	var content_loader_script: Script = load("res://src/Bootstrap/ContentDatabaseLoader.cs")
+	_content_loader = content_loader_script.new()
+	root.add_child(_content_loader)
+
 	_build_light()
 	_camera = Camera3D.new()
 	_camera.fov = 70
@@ -52,21 +65,33 @@ func _initialize() -> void:
 	var streamer_script: Script = load("res://src/World/RegionStreamer.cs")
 	var streamer: Node3D = streamer_script.new()
 	root.add_child(streamer)
+	# Synchronous PNG writes are deliberately frame-blocking and are not performance samples.
+	streamer.call("SetPerformanceSamplingEnabled", false)
 
 	for entry in REGIONS:
 		var region: Resource = load(entry.path)
 		streamer.call("Configure", region)
-		for _frame in range(entry.cells.size() + 8):
+		var settle_frames := 0
+		while not streamer.call("IsSettled") and settle_frames < 600:
 			await process_frame
+			settle_frames += 1
+		if not streamer.call("IsSettled"):
+			printerr("world shots: region failed to settle: %s" % entry.path)
+			quit(2)
+			return
 		for cell in entry.cells:
 			await _render_cell(cell)
 		streamer.call("UnloadAll")
 		streamer.call("Configure", null)
 		await process_frame
 		await process_frame
+		region = null
 
-	print("world shots: complete")
-	quit(0)
+	var regression_ok := _finish_visual_regression()
+	_content_loader.call("CollectManagedResources")
+	await process_frame
+	print("world shots: complete" if regression_ok else "world shots: visual regression failed")
+	quit(0 if regression_ok else 3)
 
 
 func _render_cell(cell: Array) -> void:
@@ -92,8 +117,80 @@ func _render_cell(cell: Array) -> void:
 			for _frame in range(5):
 				await process_frame
 			var path := "%s/%s_%s.png" % [folder, pass_name, shot[0]]
-			var error := root.get_texture().get_image().save_png(path)
+			var image := root.get_texture().get_image()
+			var error := image.save_png(path)
+			var key := "%s/%s_%s" % [cell_id, pass_name, shot[0]]
+			_signatures[key] = _image_signature(image)
 			print("%s -> %s" % [path, "ok" if error == OK else str(error)])
+
+
+func _image_signature(image: Image) -> Array:
+	var thumbnail := image.duplicate()
+	thumbnail.resize(SIGNATURE_WIDTH, SIGNATURE_HEIGHT, Image.INTERPOLATE_LANCZOS)
+	var values: Array = []
+	for y in range(SIGNATURE_HEIGHT):
+		for x in range(SIGNATURE_WIDTH):
+			var colour: Color = thumbnail.get_pixel(x, y)
+			values.append(roundi(colour.r * 255.0))
+			values.append(roundi(colour.g * 255.0))
+			values.append(roundi(colour.b * 255.0))
+	return values
+
+
+func _finish_visual_regression() -> bool:
+	if OS.get_cmdline_user_args().has("--update-world-baseline"):
+		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://tests/visual_baselines"))
+		var file := FileAccess.open(BASELINE_PATH, FileAccess.WRITE)
+		if file == null:
+			printerr("world shots: could not write baseline: %s" % FileAccess.get_open_error())
+			return false
+		file.store_string(JSON.stringify({
+			"version": 1,
+			"signature_width": SIGNATURE_WIDTH,
+			"signature_height": SIGNATURE_HEIGHT,
+			"mean_channel_delta": DEFAULT_MEAN_CHANNEL_DELTA,
+			"signatures": _signatures,
+		}, "  "))
+		print("world shots: updated visual baseline (%d frames)" % _signatures.size())
+		return true
+
+	if not FileAccess.file_exists(BASELINE_PATH):
+		printerr("world shots: missing baseline %s (run with -- --update-world-baseline)" % BASELINE_PATH)
+		return false
+	var baseline_file := FileAccess.open(BASELINE_PATH, FileAccess.READ)
+	var baseline = JSON.parse_string(baseline_file.get_as_text())
+	if not baseline is Dictionary or not baseline.has("signatures"):
+		printerr("world shots: malformed visual baseline")
+		return false
+
+	var expected: Dictionary = baseline.signatures
+	var threshold: float = float(baseline.get("mean_channel_delta", DEFAULT_MEAN_CHANNEL_DELTA))
+	var failures := 0
+	for key in _signatures:
+		if not expected.has(key):
+			printerr("world shots: baseline missing frame %s" % key)
+			failures += 1
+			continue
+		var actual_values: Array = _signatures[key]
+		var expected_values: Array = expected[key]
+		if actual_values.size() != expected_values.size():
+			printerr("world shots: signature size changed for %s" % key)
+			failures += 1
+			continue
+		var delta := 0.0
+		for index in range(actual_values.size()):
+			delta += absf(float(actual_values[index]) - float(expected_values[index]))
+		delta /= actual_values.size()
+		if delta > threshold:
+			printerr("world shots: %s mean channel delta %.2f > %.2f" % [key, delta, threshold])
+			failures += 1
+	for key in expected:
+		if not _signatures.has(key):
+			printerr("world shots: capture missing baseline frame %s" % key)
+			failures += 1
+	print("world shots: visual regression %s (%d frames, threshold %.2f)" % [
+		"PASS" if failures == 0 else "FAIL", _signatures.size(), threshold])
+	return failures == 0
 
 
 func _build_light() -> void:

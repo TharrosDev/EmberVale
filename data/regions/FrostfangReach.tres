@@ -4,6 +4,10 @@
 [ext_resource type="Script" path="res://src/World/RegionCellResource.cs" id="2_cell"]
 [ext_resource type="Script" path="res://src/World/WorldEnvironmentProfileResource.cs" id="3_environment"]
 [ext_resource type="Script" path="res://src/World/WorldCellPresentationResource.cs" id="4_presentation"]
+[ext_resource type="Script" path="res://src/World/WorldPerformanceBudgetResource.cs" id="5_budget"]
+[ext_resource type="Script" path="res://src/World/WorldBiomeScatterResource.cs" id="6_scatter"]
+[ext_resource type="Script" path="res://src/World/BiomeScatterLayerResource.cs" id="7_layer"]
+[ext_resource type="Script" path="res://src/World/BiomeScatterExclusionResource.cs" id="8_exclusion"]
 
 [sub_resource type="Resource" id="Environment_frostfang"]
 script = ExtResource("3_environment")
@@ -18,6 +22,106 @@ BackdropCenter = Vector3(100, 0, -55)
 BackdropRadius = 255.0
 BackdropHeight = 92.0
 BackdropCount = 24
+TerrainSeed = 3800
+SurfaceRoughness = 0.93
+DetailRoughness = 0.84
+RoadRoughness = 0.78
+SlopeBlendStart = 0.06
+SlopeBlendEnd = 0.28
+HeightBlendStart = 0.03
+HeightBlendEnd = 0.13
+
+[sub_resource type="Resource" id="Budget_frostfang"]
+script = ExtResource("5_budget")
+MaxAuthoredNodesPerCell = 220
+MaxResidentAuthoredNodes = 600
+MaxResidentRuntimeNodes = 1200
+MaxScatterInstancesPerCell = 160
+MaxResidentScatterInstances = 700
+MaxTerrainVerticesPerCell = 3000
+MaxResidentTerrainVertices = 13000
+MaxDrawCalls = 1800
+MaxNodeCount = 14000
+MaxStaticMemoryMb = 2048.0
+MaxFrameMilliseconds = 25.0
+ConsecutiveSamplesBeforeWarning = 5
+BiomeCullDistance = 320.0
+VisibilityUpdateInterval = 0.25
+MaxConcurrentLoadRequests = 2
+MaxCellInstantiationsPerFrame = 1
+
+[sub_resource type="Resource" id="Layer_dead_pine"]
+script = ExtResource("7_layer")
+ScenePath = "res://assets/models/props/prp_pine_dead.glb"
+Count = 18
+MinimumScale = 0.68
+MaximumScale = 1.08
+MinimumSpacing = 6.5
+Tint = Color(0.78, 0.84, 0.90, 1)
+TintVariation = 0.10
+VisibilityRangeEnd = 155.0
+VisibilityFadeMargin = 20.0
+HlodShape = 1
+HlodReduction = 4
+HlodRangeBegin = 120.0
+HlodRangeEnd = 300.0
+HlodColor = Color(0.22, 0.24, 0.27, 1)
+HlodScale = Vector3(0.75, 2.8, 0.75)
+
+[sub_resource type="Resource" id="Layer_frost_rock"]
+script = ExtResource("7_layer")
+ScenePath = "res://assets/models/props/prp_rock_cluster.glb"
+Count = 26
+MinimumScale = 0.55
+MaximumScale = 1.15
+MinimumSpacing = 3.2
+Tint = Color(0.72, 0.79, 0.86, 1)
+TintVariation = 0.12
+VisibilityRangeEnd = 135.0
+VisibilityFadeMargin = 18.0
+HlodShape = 2
+HlodReduction = 5
+HlodRangeBegin = 105.0
+HlodRangeEnd = 260.0
+HlodColor = Color(0.34, 0.38, 0.42, 1)
+HlodScale = Vector3(1.4, 0.8, 1.2)
+
+[sub_resource type="Resource" id="Exclusion_roost"]
+script = ExtResource("8_exclusion")
+Center = Vector2(0, 0)
+Radius = 15.0
+
+[sub_resource type="Resource" id="Exclusion_aerie"]
+script = ExtResource("8_exclusion")
+Center = Vector2(0, 0)
+Radius = 18.0
+
+[sub_resource type="Resource" id="Scatter_glacier"]
+script = ExtResource("6_scatter")
+Seed = 5205
+EdgePadding = 2.0
+Layers = Array[ExtResource("7_layer")]([SubResource("Layer_dead_pine"), SubResource("Layer_frost_rock")])
+
+[sub_resource type="Resource" id="Scatter_dragon_roost"]
+script = ExtResource("6_scatter")
+Seed = 5202
+EdgePadding = 4.0
+Layers = Array[ExtResource("7_layer")]([SubResource("Layer_dead_pine"), SubResource("Layer_frost_rock")])
+Exclusions = Array[ExtResource("8_exclusion")]([SubResource("Exclusion_roost")])
+
+[sub_resource type="Resource" id="Scatter_ash_roost"]
+script = ExtResource("6_scatter")
+Seed = 5203
+EdgePadding = 4.0
+Layers = Array[ExtResource("7_layer")]([SubResource("Layer_dead_pine"), SubResource("Layer_frost_rock")])
+Exclusions = Array[ExtResource("8_exclusion")]([SubResource("Exclusion_roost")])
+
+[sub_resource type="Resource" id="Scatter_aerie"]
+script = ExtResource("6_scatter")
+Seed = 5204
+EdgePadding = 4.0
+Layers = Array[ExtResource("7_layer")]([SubResource("Layer_dead_pine"), SubResource("Layer_frost_rock")])
+Exclusions = Array[ExtResource("8_exclusion")]([SubResource("Exclusion_aerie")])
 
 [sub_resource type="Resource" id="Presentation_clan_hold"]
 script = ExtResource("4_presentation")
@@ -83,6 +187,7 @@ Id = "frostfang_reach.dragon_roost"
 ScenePath = "res://scenes/regions/frostfang_reach/dragon_roost.tscn"
 Center = Vector3(25, 0, -20)
 Presentation = SubResource("Presentation_dragon_roost")
+BiomeScatter = SubResource("Scatter_dragon_roost")
 
 ; The Ash dragon's roost, mirroring the Wild one to the EAST. Its 100 m floor spans x ∈ [130, 230],
 ; butting the clan hold's floor at x = 130 the same way the wild roost butts it at 70 — walkable
@@ -93,6 +198,7 @@ Id = "frostfang_reach.ash_roost"
 ScenePath = "res://scenes/regions/frostfang_reach/ash_roost.tscn"
 Center = Vector3(180, 0, -20)
 Presentation = SubResource("Presentation_ash_roost")
+BiomeScatter = SubResource("Scatter_ash_roost")
 
 ; The Ancient's aerie (35F), NORTH of the Wild dragon's roost and butted against it: its 90 m floor
 ; is z ∈ [-155, -65] where the wild roost's ends at z = -65, so the two abut without overlapping.
@@ -104,6 +210,7 @@ Id = "frostfang_reach.ancient_aerie"
 ScenePath = "res://scenes/regions/frostfang_reach/ancient_aerie.tscn"
 Center = Vector3(25, 0, -110)
 Presentation = SubResource("Presentation_aerie")
+BiomeScatter = SubResource("Scatter_aerie")
 
 [sub_resource type="Resource" id="Cell_glacier"]
 script = ExtResource("2_cell")
@@ -111,6 +218,7 @@ Id = "frostfang_reach.glacier"
 ScenePath = "res://scenes/regions/frostfang_reach/glacier.tscn"
 Center = Vector3(100, 0, -60)
 Presentation = SubResource("Presentation_glacier")
+BiomeScatter = SubResource("Scatter_glacier")
 
 [resource]
 script = ExtResource("1_region")
@@ -121,6 +229,7 @@ SpawnPoint = Vector3(100, 1.2, 0)
 UnlockFlagId = "flag.frostfang.passage_open"
 Cells = Array[ExtResource("2_cell")]([SubResource("Cell_clan_hold"), SubResource("Cell_glacier"), SubResource("Cell_dragon_roost"), SubResource("Cell_ash_roost"), SubResource("Cell_ancient_aerie")])
 EnvironmentProfile = SubResource("Environment_frostfang")
+PerformanceBudget = SubResource("Budget_frostfang")
 Bounds = AABB(-256, -16, -256, 512, 64, 512)
 SafeZoneCenter = Vector3(100, 0, -20)
 SafeZoneRadius = 30.0

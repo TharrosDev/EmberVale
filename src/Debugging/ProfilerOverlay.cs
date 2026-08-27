@@ -1,5 +1,7 @@
 using System.Text;
+using Embervale.Core.Services;
 using Embervale.UI;
+using Embervale.World;
 using Godot;
 
 namespace Embervale.Debugging;
@@ -41,6 +43,12 @@ public partial class ProfilerOverlay : CanvasLayer
         sb.Append($"nodes       {Get(Performance.Monitor.ObjectNodeCount):0}\n");
         sb.Append($"orphans     {Get(Performance.Monitor.ObjectOrphanNodeCount):0}\n");
         sb.Append($"static mem  {Get(Performance.Monitor.MemoryStatic) / (1024d * 1024d):0.0} MB");
+        if (ServiceLocator.Instance is { } locator && locator.TryGet(out RegionStreamer streamer))
+        {
+            WorldPerformanceSnapshot world = streamer.PerformanceSnapshot();
+            sb.Append($"\nworld       {world.ResidentRuntimeNodes:0} nodes · {world.ResidentScatterInstances:0} scatter");
+            sb.Append(streamer.IsWithinPerformanceBudget() ? " · budget OK" : " · OVER BUDGET");
+        }
         _text.Text = sb.ToString();
     }
 

@@ -14,4 +14,6 @@ public partial class WorldCellPresentationResource : Resource
     [Export] public int Seed { get; set; } = 38;
     [Export] public Color Tint { get; set; } = Colors.White;
     [Export(PropertyHint.Range, "0,1,0.05")] public float TintStrength { get; set; }
+    [Export(PropertyHint.Range, "4,128,1")] public int TopologyResolution { get; set; } = 48;
+    [Export(PropertyHint.Range, "0,4,0.05")] public float TopologyHeightScale { get; set; } = 1f;
 }

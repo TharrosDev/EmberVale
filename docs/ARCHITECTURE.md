@@ -672,7 +672,9 @@ fast-travel land in 25E–25G.
   `DisplayName`, `Realm` (the fixed `Realm` enum — the four LORE realms + the Celestial),
   `SpawnPoint` (where the player appears on entry, 25C), `Cells` (an array of `RegionCellResource`
   — the streamable sub-cells), `Bounds` (`Aabb`), an atmosphere bias (`DefaultWeatherId` +
-  `DayPhaseBias`), a `WeavePotency` (the fading-Weave dial, below), and `Neighbours` (region ids —
+  `DayPhaseBias`), a shared `WorldEnvironmentProfileResource`, a
+  `WorldPerformanceBudgetResource`, a `WeavePotency` (the fading-Weave dial, below), and
+  `Neighbours` (region ids —
   the map/fast-travel adjacency). `RegionDatabase` indexes them (mirrors `WeatherDatabase`); the
   save header reads the active region's `DisplayName` by id. New region = a `.tres`, no code.
 - **The fading Weave (Phase 29.5E)** — `RegionResource.WeavePotency` (0..1, dev-tunable) feeds a
@@ -683,23 +685,29 @@ fast-travel land in 25E–25G.
   so it restores with the region on load (no extra save state). The `weave` console command
   inspects/tunes it; the two sandbox regions contrast (Ember Crown 1.0, Frostfang Reach 0.5).
 - **`RegionCellResource`** (`[GlobalClass]`, a sub-resource of the region): `Id` (`<region>.<cell>`),
-  `ScenePath`, `Center` (world position), `SafeRadius`. The lightweight metadata the streamer reads
-  without instancing the scene.
+  `ScenePath`, `Center` (world position), `SafeRadius`, required `WorldCellPresentationResource`,
+  and optional `WorldBiomeScatterResource`. The lightweight metadata the streamer reads without
+  instancing the scene. Scatter layers are deterministic cosmetic MultiMeshes; exclusion circles
+  and the presentation road mask keep gameplay space clear. Each layer can pair its detailed mesh
+  with a reduced cone/box HLOD proxy and overlapping visibility ranges.
 - **`RegionStreamer`** (`Node3D`, `Pausable`, built by the bootstrap): **every cell of the active
   region is resident** (38M2, maintainer direction). Each frame it enqueues any cell not yet in the
   tree; there is no distance test and no unload path during play. Until 38M2 a cell loaded inside its
-  `LoadRadius` and was freed past `LoadRadius + UnloadMargin` through a pure `StreamDecision`; a
-  region is five or six cells and the largest is ~1,000 nodes, so residency costs nothing against the
-  seams distance-streaming bought — a routine walking an unloaded cell, a district popping in as the
+  `LoadRadius` and was freed past `LoadRadius + UnloadMargin` through a pure `StreamDecision`;
+  the current regions remain within explicit authored/runtime node and scatter budgets, so residency
+  costs less than the seams distance-streaming bought — a routine walking an unloaded cell, a district popping in as the
   player crests a road, and a class of bug that only reproduces from one approach direction. The
   radius, the margin, `StreamDecision` and its tests were all deleted with the rule.
   ⚠️ **Both regions cannot be resident together** — Frostfang's `dragon_roost` (25, 0, -20) and
   `ancient_aerie` (25, 0, -110) share coordinate space with the Ember Crown's `arena` (55, 0, -10)
   and `wilds_north` (0, 0, -65), so the two would load inside each other. Whole-realm residency is a
   world-layout decision (Phase 44), not a streaming one.
-  Loads are instanced at
-  most **one per frame** (a queue drains over frames so a wave never hitches; the `PackedScene` is
-  `ResourceLoader`-cached so re-load is cheap). It publishes `RegionCellLoadedEvent`/
+  Loads now pass through explicit **queued → threaded request → ready → instanced** stages. Scene
+  I/O and dependency loading happen through `ResourceLoader.LoadThreadedRequest`; the main thread
+  polls completion and instances only the region budget's `MaxCellInstantiationsPerFrame`.
+  `MaxConcurrentLoadRequests` controls parallel I/O and drops to one when global static memory is
+  above the region limit, preserving forward progress instead of deadlocking the loading screen.
+  It publishes `RegionCellLoadedEvent`/
   `RegionCellUnloadedEvent` — the seam Phase 25D's persistence hooks. The procedural sandbox is the
   always-loaded base; the streamer manages only the region's authored `Cells`. For a hard transition
   (25C) the bootstrap calls `UnloadAll()` (free every loaded cell + clear the queue) then
@@ -707,6 +715,13 @@ fast-travel land in 25E–25G.
   `Configure` is called at **both** places the active region changes, it also records
   `ActiveRegionId` — the cheapest honest answer to "where is the player standing" for systems
   that need it, and what the encounter region gate reads (Phase 34.5B).
+  Each loaded root also receives its seam-neutral presentation skin and optional biome scatter.
+  The presentation is an indexed CPU-built heightfield with edge-flat topology and shader blending
+  driven by world-space noise, height, slope, road, and roughness. `WorldVisibilityManager` leaves
+  gameplay resident but culls cosmetic scatter cells beyond the authored distance; GeometryInstance
+  ranges cross-fade detailed and HLOD batches. `WorldPerformanceMonitor` samples expanded runtime nodes, scatter instances, draw calls, static
+  memory and frame time against the region budget; the validator separately gates authored `.tscn`
+  node counts and requested scatter counts before runtime.
 - **Hard transitions (25C)** — a `RegionTransitionComponent` (an `InteractableComponent` carrying a
   `TargetRegionId`) publishes a `RegionTransitionRequestedEvent`; `GameBootstrap` handles it: enter
   `GameState.Loading` (the `LoadingScreen` overlay shows on that state), re-target the streamer,
