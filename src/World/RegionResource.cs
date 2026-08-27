@@ -58,6 +58,9 @@ public partial class RegionResource : Resource
     /// <summary>Shared terrain/material language consumed by every authored cell presentation.</summary>
     [Export] public WorldEnvironmentProfileResource? EnvironmentProfile { get; set; }
 
+    /// <summary>Shipping limits for the fully resident region, consumed by validation and telemetry.</summary>
+    [Export] public WorldPerformanceBudgetResource? PerformanceBudget { get; set; }
+
     /// <summary>Nominal world-space extents of the region, for the streamer's distance budget and the
     /// map. The flat sandbox uses a generous box (its floor is an infinite plane).</summary>
     [Export] public Aabb Bounds { get; set; } = new(new Vector3(-256f, -16f, -256f), new Vector3(512f, 64f, 512f));

@@ -44,6 +44,7 @@ public sealed partial class RegionStreamer : Node3D
     private readonly HashSet<string> _pendingIds = new();
     private WorldEnvironmentProfileResource? _environmentProfile;
     private WorldRegionBackdrop? _backdrop;
+    private WorldPerformanceMonitor? _performance;
 
     /// <summary>The region currently being streamed, or empty before the first <see cref="Configure"/>.
     /// The streamer is re-configured at both places the active region changes (world build and each
@@ -57,6 +58,8 @@ public sealed partial class RegionStreamer : Node3D
         _cells.Clear();
         ActiveRegionId = region?.Id ?? string.Empty;
         _environmentProfile = region?.EnvironmentProfile;
+        EnsurePerformanceMonitor();
+        _performance!.Configure(ActiveRegionId, region?.PerformanceBudget);
         if (_backdrop != null)
         {
             _backdrop.QueueFree();
@@ -163,8 +166,10 @@ public sealed partial class RegionStreamer : Node3D
         root.Name = cell.Id;
         root.Position = cell.Center;
         WorldCellPresentation.Attach(root, _environmentProfile, cell.Presentation);
+        WorldBiomeScatter? scatter = WorldBiomeScatter.Attach(root, cell.Presentation, cell.BiomeScatter);
         AddChild(root);
         _loaded[cell.Id] = root;
+        _performance?.RecordCellLoaded(cell.Id, root, scatter?.InstanceCount ?? 0);
 
         Log.Info($"RegionStreamer: loaded cell '{cell.Id}'.");
         EventBus.Instance?.Publish(new RegionCellLoadedEvent(cell.Id, root));
@@ -180,7 +185,31 @@ public sealed partial class RegionStreamer : Node3D
         // Announce before freeing so 25D persistence can capture cell state.
         EventBus.Instance?.Publish(new RegionCellUnloadedEvent(cellId));
         _loaded.Remove(cellId);
+        _performance?.RecordCellUnloaded(cellId);
         root.QueueFree();
         Log.Info($"RegionStreamer: unloaded cell '{cellId}'.");
+    }
+
+    private void EnsurePerformanceMonitor()
+    {
+        if (_performance != null)
+        {
+            return;
+        }
+
+        _performance = new WorldPerformanceMonitor { Name = "WorldPerformanceMonitor" };
+        AddChild(_performance);
+    }
+
+    public WorldPerformanceSnapshot PerformanceSnapshot() =>
+        _performance?.LastSnapshot ?? default;
+
+    public bool IsWithinPerformanceBudget() => _performance?.WithinBudget ?? true;
+
+    /// <summary>Visual-capture tools disable timing samples because synchronous PNG writes dominate a frame.</summary>
+    public void SetPerformanceSamplingEnabled(bool enabled)
+    {
+        EnsurePerformanceMonitor();
+        _performance!.SamplingEnabled = enabled;
     }
 }

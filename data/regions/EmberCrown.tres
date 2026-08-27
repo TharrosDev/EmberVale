@@ -4,6 +4,7 @@
 [ext_resource type="Script" path="res://src/World/RegionCellResource.cs" id="2_cell"]
 [ext_resource type="Script" path="res://src/World/WorldEnvironmentProfileResource.cs" id="3_environment"]
 [ext_resource type="Script" path="res://src/World/WorldCellPresentationResource.cs" id="4_presentation"]
+[ext_resource type="Script" path="res://src/World/WorldPerformanceBudgetResource.cs" id="5_budget"]
 
 [sub_resource type="Resource" id="Environment_ember_crown"]
 script = ExtResource("3_environment")
@@ -18,6 +19,19 @@ BackdropCenter = Vector3(-20, 0, -55)
 BackdropRadius = 240.0
 BackdropHeight = 52.0
 BackdropCount = 22
+
+[sub_resource type="Resource" id="Budget_ember_crown"]
+script = ExtResource("5_budget")
+MaxAuthoredNodesPerCell = 700
+MaxResidentAuthoredNodes = 4800
+MaxResidentRuntimeNodes = 9000
+MaxScatterInstancesPerCell = 256
+MaxResidentScatterInstances = 800
+MaxDrawCalls = 1800
+MaxNodeCount = 14000
+MaxStaticMemoryMb = 2048.0
+MaxFrameMilliseconds = 25.0
+ConsecutiveSamplesBeforeWarning = 5
 
 [sub_resource type="Resource" id="Presentation_town_hub"]
 script = ExtResource("4_presentation")
@@ -310,6 +324,7 @@ SpawnPoint = Vector3(0, 1.2, 5)
 PortalPoint = Vector3(0, 0, -72)
 Cells = Array[ExtResource("2_cell")]([SubResource("Cell_town_hub"), SubResource("Cell_embermarket"), SubResource("Cell_crossway_post"), SubResource("Cell_emberdeep_mine"), SubResource("Cell_wilds_north"), SubResource("Cell_tarn_landing"), SubResource("Cell_hollowreach"), SubResource("Cell_wilds_west"), SubResource("Cell_ashfall_homestead"), SubResource("Cell_arena")])
 EnvironmentProfile = SubResource("Environment_ember_crown")
+PerformanceBudget = SubResource("Budget_ember_crown")
 Bounds = AABB(-256, -16, -256, 512, 64, 512)
 SafeZoneCenter = Vector3(0, 0, -10)
 SafeZoneRadius = 34.0

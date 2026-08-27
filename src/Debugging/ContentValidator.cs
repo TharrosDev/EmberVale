@@ -3412,6 +3412,18 @@ public static class ContentValidator
     {
         foreach (RegionResource region in RegionDatabase.All)
         {
+            WorldPerformanceBudgetResource? budget = region.PerformanceBudget;
+            if (budget == null)
+            {
+                issues.Add($"region '{region.Id}' has no world performance budget");
+            }
+            else if (!WorldPerformanceRules.Valid(budget.Limits()))
+            {
+                issues.Add($"region '{region.Id}' has a non-positive world performance limit");
+            }
+
+            int residentAuthoredNodes = 0;
+            int residentScatterInstances = 0;
             if (!string.IsNullOrEmpty(region.DefaultWeatherId) && WeatherDatabase.Get(region.DefaultWeatherId) == null)
             {
                 issues.Add($"region '{region.Id}' has unknown default weather '{region.DefaultWeatherId}'");
@@ -3456,6 +3468,14 @@ public static class ContentValidator
                     continue;
                 }
 
+                int authoredNodes = CountSceneNodes(cell.ScenePath);
+                residentAuthoredNodes += authoredNodes;
+                if (budget != null && authoredNodes > budget.MaxAuthoredNodesPerCell)
+                {
+                    issues.Add($"region '{region.Id}' cell '{cell.Id}' authors {authoredNodes} nodes, " +
+                               $"over its per-cell budget of {budget.MaxAuthoredNodesPerCell}");
+                }
+
                 if (!region.Bounds.HasPoint(cell.Center))
                 {
                     issues.Add($"region '{region.Id}' cell '{cell.Id}' center {cell.Center} is outside region bounds");
@@ -3481,6 +3501,47 @@ public static class ContentValidator
                     issues.Add($"region '{region.Id}' cell '{cell.Id}' has a non-positive presentation envelope");
                 }
 
+                if (cell.BiomeScatter != null)
+                {
+                    int cellScatterInstances = 0;
+                    if (cell.BiomeScatter.EdgePadding < 0f)
+                    {
+                        issues.Add($"region '{region.Id}' cell '{cell.Id}' has negative scatter edge padding");
+                    }
+
+                    foreach (BiomeScatterLayerResource? layer in cell.BiomeScatter.Layers)
+                    {
+                        if (layer == null || layer.Count < 0 || layer.MinimumScale <= 0f ||
+                            layer.MaximumScale < layer.MinimumScale || layer.MinimumSpacing < 0f)
+                        {
+                            issues.Add($"region '{region.Id}' cell '{cell.Id}' has an invalid biome scatter layer");
+                            continue;
+                        }
+
+                        if (string.IsNullOrEmpty(layer.ScenePath) || !ResourceLoader.Exists(layer.ScenePath))
+                        {
+                            issues.Add($"region '{region.Id}' cell '{cell.Id}' scatter source " +
+                                       $"'{layer.ScenePath}' does not exist");
+                        }
+                        cellScatterInstances += layer.Count;
+                    }
+
+                    foreach (BiomeScatterExclusionResource? exclusion in cell.BiomeScatter.Exclusions)
+                    {
+                        if (exclusion == null || exclusion.Radius <= 0f)
+                        {
+                            issues.Add($"region '{region.Id}' cell '{cell.Id}' has a non-positive scatter exclusion");
+                        }
+                    }
+
+                    residentScatterInstances += cellScatterInstances;
+                    if (budget != null && cellScatterInstances > budget.MaxScatterInstancesPerCell)
+                    {
+                        issues.Add($"region '{region.Id}' cell '{cell.Id}' requests {cellScatterInstances} scatter " +
+                                   $"instances, over its per-cell budget of {budget.MaxScatterInstancesPerCell}");
+                    }
+                }
+
                 if (!seenCellIds.Add(cell.Id))
                 {
                     issues.Add(
@@ -3496,7 +3557,29 @@ public static class ContentValidator
                 // validator. Resolving inherited scenes properly needs a real PackedScene walk; do that
                 // if a missing navmesh ever actually ships.
             }
+
+            if (budget != null && residentAuthoredNodes > budget.MaxResidentAuthoredNodes)
+            {
+                issues.Add($"region '{region.Id}' authors {residentAuthoredNodes} resident nodes, " +
+                           $"over its region budget of {budget.MaxResidentAuthoredNodes}");
+            }
+            if (budget != null && residentScatterInstances > budget.MaxResidentScatterInstances)
+            {
+                issues.Add($"region '{region.Id}' requests {residentScatterInstances} resident scatter instances, " +
+                           $"over its region budget of {budget.MaxResidentScatterInstances}");
+            }
         }
+    }
+
+    private static int CountSceneNodes(string path)
+    {
+        using FileAccess? file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
+        if (file == null)
+        {
+            return 0;
+        }
+
+        return System.Text.RegularExpressions.Regex.Matches(file.GetAsText(), @"(?m)^\[node ").Count;
     }
 
     /// <summary>

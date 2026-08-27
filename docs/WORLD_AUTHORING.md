@@ -18,10 +18,13 @@ This is the canonical exterior-region workflow. Read `CLAUDE.md`, `NOW.md`, `ARC
    atmosphere, neighbours, and cells. Never rename a shipped id without a save migration.
 2. Add one `WorldEnvironmentProfileResource` sub-resource. It owns the surface palette, relief,
    road colour, and distant-landscape palette/scale. Ember Crown and Frostfang Reach are examples.
-3. Work out the complete cell lattice on paper. Record every exact shared edge beside the data.
-4. Add a `MapLocationResource` and placed `MapLocationComponent` for every reachable named place,
+3. Add one `WorldPerformanceBudgetResource`. Set authored-node limits from the `.tscn` census and
+   runtime-node/draw/memory/frame limits from a settled representative play capture. Never use the
+   visual screenshot harness for frame timing: synchronous PNG writes intentionally block frames.
+4. Work out the complete cell lattice on paper. Record every exact shared edge beside the data.
+5. Add a `MapLocationResource` and placed `MapLocationComponent` for every reachable named place,
    shop, service, dungeon, landmark, and quest destination. Use `tools/gen_map_locations.py`.
-5. Configure weather, encounters, world events, economy cell ids, and realm travel in existing data.
+6. Configure weather, encounters, world events, economy cell ids, and realm travel in existing data.
 
 ## Create a cell
 
@@ -50,8 +53,14 @@ Never recreate per-cell mountain fences; the visual-QA loop proved they occlude 
 
 ## Ecology and dressing
 
+- Add an optional `WorldBiomeScatterResource` to a cell for repeated, non-interactive ecology.
+  Each `BiomeScatterLayerResource` names one imported scene, count, scale/spacing range, tint,
+  visibility distance, and shadow policy. Runtime output is one MultiMesh source per accepted layer.
+- Scatter is deterministic and cell-local. The planner clears the authored road automatically;
+  add `BiomeScatterExclusionResource` circles around lairs, landmarks, doors, arenas, schedule paths,
+  and deliberate clearings. `--validate` enforces source paths and per-cell/region instance budgets.
 - Use `tools/dress_cell.py` for deterministic clustered ground cover and `gen_cell_props.py` for
-  literal authored prop stanzas. Read generated output before pasting it into a scene.
+  literal authored, colliding prop stanzas. Read generated output before pasting it into a scene.
 - Roads, settlements, encounter centres, doors, stalls, NPC schedule routes, and hero landmarks are
   exclusion zones. Shade species cluster under canopy; shoreline and industrial styles use their
   own profiles. Do not scatter uniformly.
@@ -84,15 +93,20 @@ Run the actual renderer after every environment batch:
 Godot_..._console.exe --path . --script res://tools/world_shots.gd
 ```
 
-The harness streams the real region pipeline and captures, for every cell, entry, centre, landmark,
+The harness initializes the centralized content databases, streams the real region pipeline, and
+captures, for every cell, entry, centre, landmark,
 exit, and overview views in day and dusk lighting under `tools/shots/world/`. Inspect for floating or
 sunken props, scale/rotation errors, gaps, z-fighting, repetition, blocked doors/routes, cell borders,
-lighting discontinuity, and first/third-person occlusion. The harness is a render check, not a full
-game bootstrap; registry-dependent actors warn there and must be checked in `--play`.
+lighting discontinuity, and first/third-person occlusion. It disables performance sampling because
+PNG capture is frame-blocking; profile timing in ordinary gameplay instead.
 
 ## Performance and shipping gates
 
 - A region is resident as a whole. Count every cell node and material as simultaneously live.
+- `WorldPerformanceBudgetResource` separates authored `.tscn` nodes from expanded runtime nodes.
+  `--validate` gates authored nodes and requested scatter counts. `WorldPerformanceMonitor` samples
+  runtime nodes, scatter instances, draw calls, static memory, and frame time once per second and
+  warns only after a sustained violation. F4 shows the current region-budget status.
 - Prefer one shared shader, one region backdrop MultiMesh, baked static nav, and authored colliders.
 - Profile representative settlement, wilds, weather, day, dusk, combat, and mount routes on target
   hardware. Record FPS/frame time, draw calls, node count, and the most expensive cell.

@@ -43,6 +43,12 @@ var _camera: Camera3D
 
 
 func _initialize() -> void:
+	# Isolated tools do not construct GameBootstrap. Use the same centralized content initializer
+	# before the production RegionStreamer so lairs and other registry-backed actors preview honestly.
+	var content_loader_script: Script = load("res://src/Bootstrap/ContentDatabaseLoader.cs")
+	var content_loader: Node = content_loader_script.new()
+	root.add_child(content_loader)
+
 	_build_light()
 	_camera = Camera3D.new()
 	_camera.fov = 70
@@ -52,6 +58,8 @@ func _initialize() -> void:
 	var streamer_script: Script = load("res://src/World/RegionStreamer.cs")
 	var streamer: Node3D = streamer_script.new()
 	root.add_child(streamer)
+	# Synchronous PNG writes are deliberately frame-blocking and are not performance samples.
+	streamer.call("SetPerformanceSamplingEnabled", false)
 
 	for entry in REGIONS:
 		var region: Resource = load(entry.path)

@@ -33,6 +33,12 @@ public partial class RegionCellResource : Resource
     [Export] public WorldCellPresentationResource? Presentation { get; set; }
 
     /// <summary>
+    /// Optional deterministic cosmetic ecology. It is rendered in batches and carries no collision,
+    /// persistence, interaction, or navigation authority; authored scene nodes retain those jobs.
+    /// </summary>
+    [Export] public WorldBiomeScatterResource? BiomeScatter { get; set; }
+
+    /// <summary>
     /// Planar radius around <see cref="Center"/> in which the ambient spawners must not drop enemies
     /// (Phase 38K). <c>0</c> — the default — means this cell is not a safe area, which is every cell
     /// authored before the Embermarket, so the field arrives inert.
