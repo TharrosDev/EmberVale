@@ -230,7 +230,7 @@ existed the same three lines were maintained in four places and rewritten every 
 | Build | `dotnet build --warnaserror` clean, **0 warnings** |
 | Tests | **1476 passing** (+28 since the prior table: 41E, scenery/terrain math, scatter/exclusion planning, streaming pressure, and performance-budget boundaries) |
 | `--validate` | exit 0; **1422** locale strings (+19), **18 quests** (+1), 34 dialogues |
-| **Negative tests** | `python tools/negative_tests.py` — **82/82 broken and restored**, then `--validate` recovered to exit 0 |
+| **Negative tests** | `python tools/negative_tests.py` — **87/87 broken and restored**, then `--validate` recovered to exit 0 |
 | `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, 34 dialogues, **18 quests**, 64 map locations, 3 companions |
 | **`--panelshots`** | 14 frames (+2). **`11-journal-declared` and `12-journal-hushed` are the pair, and the PAIR is the evidence** — the *same quest instance* under opposite flags. The journal draws the Crossway pair then the Tarn pair, never four rows; the second row of each is **dim and padlocked** (the first ordered quest ever drawn); and the tracker's readout flips **`97 m · N` → `61 m · NW` with no count changing.** That one number is the proof the branch is re-derived rather than frozen — which is the entire justification for adding no save state |
 | **World shots** | **150/150** day/dusk frames rendered through the production threaded streamer and independently matched the committed 12×8 RGB signature baseline |
