@@ -40,6 +40,7 @@
 [ext_resource type="Script" path="res://src/Economy/ServiceComponent.cs" id="46_service"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_table_large.gltf" id="47_bones_table"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
+[ext_resource type="Script" path="res://src/World/FlagVisibilityComponent.cs" id="48_flag_visibility"]
 
 ; HOLLOWREACH (Phase 38O) — the wharf down the water from Tarn's Landing, and the realm's FOURTH
 ; market. It is the only place in Embervale that will buy contraband, and that is the whole of its
@@ -370,6 +371,13 @@ FactionId = "faction.villagers"
 [node name="Dialogue" type="Node" parent="Coyle"]
 script = ExtResource("4_dialogue")
 DialogueId = "dialogue.coyle"
+
+[node name="LeavesAfterTally" type="Node" parent="Coyle"]
+script = ExtResource("48_flag_visibility")
+HiddenWhenFlagId = "flag.emberdeep.tally_delivered"
+
+; The Coyle body has no hurtbox — invariant 38 still applies. This is a departure after the tally,
+; not a fake NPC death: both visible mesh and collider re-derive from the persisted completion flag.
 
 [node name="Schedule" type="Node" parent="Coyle"]
 script = ExtResource("7_schedule")

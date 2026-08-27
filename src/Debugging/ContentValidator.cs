@@ -3242,6 +3242,7 @@ public static class ContentValidator
                 }
             }
         }
+
     }
 
     private static bool IsQuestCondition(DialogueCondition condition) => condition switch
@@ -4201,6 +4202,19 @@ public static class ContentValidator
             }
         }
 
+        foreach (QuestResource quest in QuestDatabase.All)
+        {
+            if (!QuestCompletionRules.IsValidFlagId(quest.CompletionFlagId))
+            {
+                issues.Add($"quest '{quest.Id}' completion flag '{quest.CompletionFlagId}' must start with 'flag.'");
+            }
+
+            if (!string.IsNullOrEmpty(quest.CompletionFlagId))
+            {
+                written.Add(quest.CompletionFlagId);
+            }
+        }
+
         foreach (DialogueResource dialogue in DialogueDatabase.All)
         {
             foreach (DialogueNode node in dialogue.NodeList())
@@ -4261,6 +4275,33 @@ public static class ContentValidator
                         $"shop '{shop.Id}' row '{entry.ItemId}' unlocks on flag '{entry.RequiredFlagId}', " +
                         "which nothing ever sets");
                 }
+            }
+        }
+
+        foreach (string flag in CollectSceneVisibilityFlagReaders())
+        {
+            if (!written.Contains(flag))
+            {
+                issues.Add($"world actor hides after flag '{flag}', which nothing ever sets");
+            }
+        }
+    }
+
+    /// <summary>Scene-authored readers used by <see cref="World.FlagVisibilityComponent"/>.</summary>
+    private static IEnumerable<string> CollectSceneVisibilityFlagReaders()
+    {
+        foreach (string path in ScenePaths("res://scenes"))
+        {
+            using FileAccess? file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
+            if (file == null)
+            {
+                continue;
+            }
+
+            foreach (System.Text.RegularExpressions.Match match in
+                     System.Text.RegularExpressions.Regex.Matches(file.GetAsText(), "HiddenWhenFlagId = \"([^\"]+)\""))
+            {
+                yield return match.Groups[1].Value;
             }
         }
     }

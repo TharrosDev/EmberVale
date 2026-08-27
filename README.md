@@ -351,6 +351,12 @@ and the conditions under which they would be built are written down.
 
 ### Phase 41 — quests worth the name
 
+- 41E ✅ and a completed quest can change the world permanently. Finish the warband's final errand
+and the Frostfang passage opens; deliver Coyle Ferrin's sealed tally and he leaves the Locker rather
+than standing there forever as though nothing happened. Those changes are saved as the same story
+flags the world already understands, so loading a game restores the world by replacing its facts,
+not layering a second list of changes over it.
+
 - 41D ✅ and a quest can fork. Sedge Marrow knows where Holt's barrels went — the Crossway post pulled
 the cart and they are sitting in the impound shed — and she offers two ways to get them out. Walk the
 manifest up to the post, pay the duty and settle it with Wren Halloway, and your name goes in a book

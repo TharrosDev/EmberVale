@@ -565,10 +565,21 @@ CASES = [
      [("data/quests/WhatThePostTook.tres",
        'Description = "quest.hollowreach.barrels.obj_landing"\nRequiredFlagId = "flag.hollowreach.barrels_hushed"',
        'Description = "quest.hollowreach.barrels.obj_landing"\nRequiredFlagId = "flag.hollowreach.barrels_declared"'),
-      ("data/quests/WhatThePostTook.tres",
+     ("data/quests/WhatThePostTook.tres",
        'Description = "quest.hollowreach.barrels.obj_odger"\nRequiredFlagId = "flag.hollowreach.barrels_hushed"',
        'Description = "quest.hollowreach.barrels.obj_odger"\nRequiredFlagId = "flag.hollowreach.barrels_declared"')],
      "that is availability, not a branch"),
+    # Phase 41E: completion flags are world-state writers, so an id outside the flag family would
+    # silently produce a consumer nothing can re-derive from. The scene reader is checked too: a
+    # typo there leaves a departed NPC standing forever and looks like ordinary content.
+    ("quest.completion_flag_wrong_family", "ValidateStoryFlags",
+     [("data/quests/WarbandHeart.tres", 'CompletionFlagId = "flag.frostfang.passage_open"',
+       'CompletionFlagId = "quest.frostfang.passage_open"')],
+     "completion flag 'quest.frostfang.passage_open' must start with 'flag.'"),
+    ("world.visibility_flag_never_written", "ValidateStoryFlags",
+     [("scenes/regions/ember_crown/hollowreach.tscn", 'HiddenWhenFlagId = "flag.emberdeep.tally_delivered"',
+       'HiddenWhenFlagId = "flag.emberdeep.tally_delivereed"')],
+     "world actor hides after flag 'flag.emberdeep.tally_delivereed', which nothing ever sets"),
 ]
 
 

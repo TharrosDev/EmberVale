@@ -120,10 +120,14 @@ existed the same three lines were maintained in four places and rewritten every 
   no second home for rewards (invariant 5). `quest.hollowreach.barrels` off Sedge Marrow is the
   caller; its fork is chosen **before the quest starts** (two choices deep) and the fork choices gate
   on each other, so **both flags can never be set**.
-- **NEXT: 41E — Quest-driven world changes.** ⚠️ **41D's carried question:** a new state on the
-  WORLD means the grep is every place that asks whether a thing exists, is alive or is passable —
-  **and the ones written when the answer could never change are the ones that will be wrong.**
-  ⚠️ **The map, the minimap and the compass all CACHE**, so all three need the signature question.
+- **41E — Quest-driven world changes ✅ CLOSED.** A quest now writes one optional
+  `CompletionFlagId` at its normal completion choke point. That flag is already persistent in
+  `StoryFlagsComponent`; a load replaces it, then world consumers re-derive on `GameLoadedEvent`.
+  `quest.warband.heart` opens Frostfang Reach; `quest.emberdeep.tally` makes Coyle leave the Locker.
+  ⚠️ **The NPC did not "die"**: invariant 38 still says no NPC can be hurt, so a flag-driven actor
+  departure is the honest world change. `FlagVisibilityComponent` hides collision as well as mesh.
+  `ValidateStoryFlags` now knows quest completion writers and scene visibility readers; pure tests
+  cover one-shot writes and restored presence. **NEXT: 41F — Quest-debug console + validator extension.**
 - ⚠️ **A LOCATION'S POSITION IS ITS NODE'S TRANSFORM IN A CELL SCENE, NEVER AN AUTHORED COORDINATE**
   (39.5A). `MapLocationResource` says what a place is; a `MapLocationComponent` parented to the stall
   or keeper says where. `--validate` scans `.tscn` in **both** directions. Author with

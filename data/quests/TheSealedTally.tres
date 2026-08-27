@@ -33,6 +33,10 @@
 ; point is that the fast way crosses the wilds where the EncounterDirector spawns, so the stealth
 ; condition and the clock pull against each other. The deadline counts REAL seconds of play and stops
 ; while the tree is paused, so reading the journal costs nothing.
+;
+; Phase 41E: delivery is a persistent world fact. Coyle leaves the Locker after the tally is set;
+; `CompletionFlagId` is written by the quest log, and the scene re-derives Coyle's presence from the
+; player's persisted StoryFlagsComponent. Do not add a second NPC-departure save record.
 
 [sub_resource type="Resource" id="Obj_touch_waystone"]
 script = ExtResource("2_obj")
@@ -62,4 +66,5 @@ RewardItems = []
 FactionRewardId = "faction.villagers"
 FactionRewardAmount = 6
 TimeLimitSeconds = 180.0
+CompletionFlagId = "flag.emberdeep.tally_delivered"
 PrerequisiteQuestId = ""
