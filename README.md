@@ -365,6 +365,14 @@ than standing there forever as though nothing happened. Those changes are saved 
 flags the world already understands, so loading a game restores the world by replacing its facts,
 not layering a second list of changes over it.
 
+### Phase 41.5 — the gods leave something behind
+
+- 41.5A ✅ gives Solaryn a real, persistent blessing for the first time. Pray at the sandbox shrine
+  southeast of spawn and Lightbearer's Guard adds Armor once; the player saves the claimed shrine id,
+  then load clears and re-derives that passive rather than stacking yesterday's blessing over today.
+  The first shrine is deliberately a witnessed core fixture — six fiction-led world placements are
+  the next content pass.
+
 - 41D ✅ and a quest can fork. Sedge Marrow knows where Holt's barrels went — the Crossway post pulled
 the cart and they are sitting in the impound shed — and she offers two ways to get them out. Walk the
 manifest up to the post, pay the duty and settle it with Wren Halloway, and your name goes in a book

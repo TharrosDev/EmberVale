@@ -194,11 +194,12 @@ public partial class GameBootstrap : Node3D
         // editor, where the HUD has not been constructed yet, so nothing else here can see it.
         bool hudShots = HasCmdFlag("--hudshots");
         bool panelShots = HasCmdFlag("--panelshots");
-        if (!_playFlagConsumed && (hudShots || panelShots || HasCmdFlag("--play")) &&
+        bool shrineShots = HasCmdFlag("--shrine-shots");
+        if (!_playFlagConsumed && (hudShots || panelShots || shrineShots || HasCmdFlag("--play")) &&
             MostRecentSlot() is { } slot)
         {
             _playFlagConsumed = true;
-            string mode = hudShots ? "--hudshots" : panelShots ? "--panelshots" : "--play";
+            string mode = hudShots ? "--hudshots" : panelShots ? "--panelshots" : shrineShots ? "--shrine-shots" : "--play";
             Log.Info($"{mode}: continuing most recent save '{slot}'.");
             StartLoadedGame(slot);
 
@@ -215,6 +216,11 @@ public partial class GameBootstrap : Node3D
                     Map = _mapScreen,
                     Journal = _questLogPanel,
                 });
+            }
+
+            if (shrineShots)
+            {
+                AddChild(new Debugging.ShrineShots { Name = "ShrineShots" });
             }
         }
     }

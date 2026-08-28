@@ -807,9 +807,12 @@ more **objective types and branching**.
 LORE devotes a full section to the Seven Gods, but no phase ever gives them an in-game
 presence beyond Morthul-as-villain. This mechanizes the other six.
 
-- **`ShrineResource` + `BlessingComponent`** — a shrine interactable per god (Solaryn,
-  Veyra, Tharos, Nyth, Drakar, Elyndra) granting a persistent passive on first visit,
-  reusing the perk/stat pipeline (no new system, just a god-flavored content wrapper).
+- ✅ **41.5A — `ShrineResource` + `BlessingComponent`** — `shrine.solaryn` now grants a persistent
+  first-visit Armor passive through the real sandbox interactable. The player owns one saved set of
+  shrine ids and re-derives modifiers on load; `--validate`, a zero-bonus negative case, pure
+  replacement tests, and four live front/back shrine frames cover the core.
+- **41.5B — six shrine placements** — author the remaining five god blessings and place all six
+  fiction-led shrines in the world, each with its map location and rendered surroundings.
 - **One shrine per realm, placed to fiction** — e.g. Drakar (war/strength) in
   Frostfang, Nyth (knowledge/magic) in Sunspire's libraries; placement is content.
 - **Corruption interplay** — a high-corruption visit can trigger a refusal/curse
