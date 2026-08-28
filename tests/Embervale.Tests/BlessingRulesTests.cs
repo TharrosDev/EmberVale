@@ -27,6 +27,47 @@ public sealed class BlessingRulesTests
         Assert.Empty(claims);
     }
 
+    [Theory]
+    [InlineData(0, ShrineOutcome.Blessed)]
+    [InlineData(39, ShrineOutcome.Blessed)]
+    [InlineData(40, ShrineOutcome.Refused)]
+    [InlineData(100, ShrineOutcome.Refused)]
+    public void Decide_RefusesAtOrAboveTheAuthoredThreshold(int corruption, ShrineOutcome expected)
+    {
+        var claims = new HashSet<string>();
+
+        Assert.Equal(expected, BlessingRules.Decide(claims, "shrine.solaryn", corruption, 40));
+    }
+
+    [Fact]
+    public void Decide_LeavesTheClaimSetUntouchedOnARefusal()
+    {
+        var claims = new HashSet<string>();
+
+        Assert.Equal(ShrineOutcome.Refused, BlessingRules.Decide(claims, "shrine.solaryn", 90, 40));
+
+        Assert.Empty(claims);
+    }
+
+    /// <summary>Corruption gates the granting, never the granted passive: a player who claimed while
+    /// clean and later fell keeps the blessing and reads the already-visited line, not a refusal.</summary>
+    [Fact]
+    public void Decide_KeepsAClaimedBlessingWhenCorruptionLaterPassesTheThreshold()
+    {
+        var claims = new HashSet<string> { "shrine.solaryn" };
+
+        Assert.Equal(ShrineOutcome.AlreadyClaimed, BlessingRules.Decide(claims, "shrine.solaryn", 90, 40));
+    }
+
+    [Fact]
+    public void Decide_TreatsAnEmptyIdAsNothingToGrant()
+    {
+        var claims = new HashSet<string>();
+
+        Assert.Equal(ShrineOutcome.AlreadyClaimed, BlessingRules.Decide(claims, string.Empty, 0, 40));
+        Assert.Empty(claims);
+    }
+
     [Fact]
     public void ReplaceClaims_ClearsTheLiveRunBeforeRestoring()
     {

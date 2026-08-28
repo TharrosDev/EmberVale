@@ -60,6 +60,7 @@ public partial class Notifications : CanvasLayer
         bus?.Subscribe<MountRefusedEvent>(OnMountRefused);
         bus?.Subscribe<BlessingClaimedEvent>(OnBlessingClaimed);
         bus?.Subscribe<ShrineAlreadyVisitedEvent>(OnShrineAlreadyVisited);
+        bus?.Subscribe<ShrineRefusedEvent>(OnShrineRefused);
     }
 
     public override void _ExitTree()
@@ -90,6 +91,7 @@ public partial class Notifications : CanvasLayer
         bus.Unsubscribe<MountRefusedEvent>(OnMountRefused);
         bus.Unsubscribe<BlessingClaimedEvent>(OnBlessingClaimed);
         bus.Unsubscribe<ShrineAlreadyVisitedEvent>(OnShrineAlreadyVisited);
+        bus.Unsubscribe<ShrineRefusedEvent>(OnShrineRefused);
     }
 
     private void OnLeveledUp(LeveledUpEvent e) => Push(Loc.TF("notify.levelup", e.NewLevel), UiTheme.Accent);
@@ -221,6 +223,10 @@ public partial class Notifications : CanvasLayer
 
     private void OnShrineAlreadyVisited(ShrineAlreadyVisitedEvent e) =>
         Push(Loc.TF("notify.shrine_already_visited", Loc.T(e.Shrine.NameKey)), UiTheme.Dim);
+
+    // The god's own words, not a template around the shrine's name: six refusals in six voices is
+    // the whole point of authoring a key per shrine rather than one shared line.
+    private void OnShrineRefused(ShrineRefusedEvent e) => Push(Loc.T(e.Shrine.RefusalKey), UiTheme.Bad);
 
     private void Push(string text, Color color)
     {

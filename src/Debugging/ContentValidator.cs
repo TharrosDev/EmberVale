@@ -3,6 +3,7 @@ using System.Text;
 using Embervale.Companions;
 using Embervale.Core;
 using Embervale.Core.Diagnostics;
+using Embervale.Corruption;
 using Embervale.Crafting;
 using Embervale.Dialogue;
 using Embervale.Economy;
@@ -2892,7 +2893,8 @@ public static class ContentValidator
     /// <summary>Shrine blessings are persisted by id, so an empty or malformed resource is not a
     /// harmless editor value: it either creates an unclaimable shrine or restores a passive with no
     /// player-readable name. 41.5B closes the set around the six dead gods and links each resource
-    /// to its one generated map location; Morthul is a surviving antagonist, never a blessing.</summary>
+    /// to its one generated map location; Morthul is a surviving antagonist, never a blessing.
+    /// 41.5C adds the corruption gate, whose threshold and refusal line are authored per god.</summary>
     private static void ValidateShrines(List<string> issues)
     {
         var authored = new HashSet<string>();
@@ -2926,6 +2928,22 @@ public static class ContentValidator
             if (Mathf.IsZeroApprox(shrine.Value))
             {
                 issues.Add($"shrine '{shrine.Id}' grants no passive bonus");
+            }
+
+            // 41.5C: the corruption gate is authored, so both ends of it are authorable mistakes that
+            // still load, still render and still let the player walk up to the shrine. At or below
+            // CorruptionTiers.Min the god refuses from a clean start and the blessing is unreachable;
+            // above Max no corruption can ever reach it and the refusal branch is dead content.
+            if (shrine.RefusalCorruption <= CorruptionTiers.Min || shrine.RefusalCorruption > CorruptionTiers.Max)
+            {
+                issues.Add(
+                    $"shrine '{shrine.Id}' refusal corruption {shrine.RefusalCorruption} is outside " +
+                    $"{CorruptionTiers.Min + 1}..{CorruptionTiers.Max}");
+            }
+
+            if (string.IsNullOrEmpty(shrine.RefusalKey) || !Loc.Has(shrine.RefusalKey))
+            {
+                issues.Add($"shrine '{shrine.Id}' refusal key '{shrine.RefusalKey}' is missing from the locale catalogue");
             }
 
             if (!required.Contains(shrine.Id))

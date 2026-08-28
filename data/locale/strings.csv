@@ -1595,3 +1595,13 @@ shrine.drakar.name,"Shrine of Drakar"
 blessing.drakar.name,"Drakar's Resolve"
 shrine.elyndra.name,"Shrine of Elyndra"
 blessing.elyndra.name,"Elyndra's Ward"
+# Shrine refusals (41.5C). One line per god, not a shared template: the refusal is the only
+# moment these six speak, and a system message would waste it. Thresholds live in the .tres and
+# sit on tier boundaries -- Solaryn/Tharos refuse from Marked (40), Nyth/Elyndra from Ashbound
+# (60), Veyra/Drakar only at Embers (80).
+shrine.solaryn.refusal,"The light does not reach you. Solaryn turns away."
+shrine.veyra.refusal,"Veyra would heal you still, but there is more ash in you now than blood."
+shrine.tharos.refusal,"Tharos keeps no law that bends for what you are becoming."
+shrine.nyth.refusal,"Nyth withholds. Some things are known only by those who can survive knowing them."
+shrine.drakar.refusal,"Drakar honours strength, not ruin. Come back with a will of your own."
+shrine.elyndra.refusal,"The balance tilts where you stand. Elyndra will not add her weight to it."

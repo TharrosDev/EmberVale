@@ -11,3 +11,5 @@ MapLocationId = "location.shrine.elyndra"
 Stat = 19
 ModifierType = 0
 Value = 12.0
+RefusalCorruption = 60
+RefusalKey = "shrine.elyndra.refusal"

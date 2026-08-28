@@ -634,6 +634,18 @@ CASES = [
      [("scenes/regions/ember_crown/embermarket.tscn", 'ShrineId = "shrine.nyth"', 'ShrineId = ""')],
      "shrine 'shrine.nyth' has no in-world shrine body"),
 
+    # 41.5C: the corruption gate is authored at both ends, and both ends fail silently in-world.
+    # A threshold at the corruption floor refuses a clean player, so the blessing is unreachable...
+    ("shrine.refusal_always", "ValidateShrines",
+     [("data/shrines/Solaryn.tres", "RefusalCorruption = 40", "RefusalCorruption = 0")],
+     "refusal corruption 0 is outside 1..100"),
+
+    # ...and a threshold past the ceiling can never be reached, so the refusal branch is dead
+    # content that looks authored. The gate must catch the useless value in both directions.
+    ("shrine.refusal_never", "ValidateShrines",
+     [("data/shrines/Solaryn.tres", "RefusalCorruption = 40", "RefusalCorruption = 101")],
+     "refusal corruption 101 is outside 1..100"),
+
     # And a world body must not silently name a resource that does not exist.
     ("shrine.body_names_resource", "ValidateSceneAuthoredIds",
      [("scenes/regions/ember_crown/embermarket.tscn", 'ShrineId = "shrine.nyth"',

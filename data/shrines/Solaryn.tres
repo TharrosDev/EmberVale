@@ -11,3 +11,5 @@ MapLocationId = "location.shrine.solaryn"
 Stat = 8
 ModifierType = 0
 Value = 10.0
+RefusalCorruption = 40
+RefusalKey = "shrine.solaryn.refusal"
