@@ -155,6 +155,23 @@ public class HudReadoutTests
     }
 
     [Fact]
+    public void Select_TrackedDestinationSurvivesDenseSettlementCap()
+    {
+        var all = new List<MapPin>
+        {
+            Pin("town", 20f, MapTier.Primary),
+            Pin("waystone", 12f, MapTier.Secondary),
+            Pin("tracked_shop", 8f, MapTier.Detail),
+        };
+
+        var into = new List<MapPin>();
+        MinimapFilter.Select(all, Vector2.Zero, 48f, 2, into, "tracked_shop");
+
+        Assert.Equal("tracked_shop", into[0].Id);
+        Assert.Contains(into, pin => pin.Id == "town");
+    }
+
+    [Fact]
     public void Select_BreaksTiesWithinATierByDistance()
     {
         var all = new List<MapPin>

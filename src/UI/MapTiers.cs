@@ -17,6 +17,10 @@ namespace Embervale.UI;
 /// </summary>
 public static class MapTiers
 {
+    /// <summary>Distance in pixels-per-metre over which a newly eligible tier settles to full
+    /// opacity. Semantic detail arrives as a controlled transition instead of an icon explosion.</summary>
+    public const float FadeSpan = 1.25f;
+
     /// <summary>Pixels per metre at which regional content (dungeons, mines, gates, waystones)
     /// appears. Below this the map is a realm overview and only settlements are legible.</summary>
     public const float SecondaryZoom = 3.5f;
@@ -27,13 +31,8 @@ public static class MapTiers
     public const float DetailZoom = 9f;
 
     /// <summary>True when a tier should be drawn at this zoom.</summary>
-    public static bool VisibleAt(MapTier tier, float zoom) => tier switch
-    {
-        MapTier.Primary => true,
-        MapTier.Secondary => zoom >= SecondaryZoom,
-        MapTier.Detail => zoom >= DetailZoom,
-        _ => true,
-    };
+    public static bool VisibleAt(MapTier tier, float zoom) =>
+        tier == MapTier.Primary || zoom >= RevealZoom(tier) - FadeSpan;
 
     /// <summary>
     /// The zoom at which a tier first appears — what "zoom in to see shops" needs to know in order
@@ -48,4 +47,18 @@ public static class MapTiers
         MapTier.Detail => DetailZoom,
         _ => MapProjection.MinZoom,
     };
+
+    /// <summary>Opacity for a visible tier. The transition begins before the nominal reveal zoom so
+    /// search and capture states reach full, readable contrast at that documented threshold.</summary>
+    public static float OpacityAt(MapTier tier, float zoom)
+    {
+        float reveal = RevealZoom(tier);
+        if (tier == MapTier.Primary)
+        {
+            return 1f;
+        }
+
+        float progress = System.Math.Clamp((zoom - (reveal - FadeSpan)) / FadeSpan, 0f, 1f);
+        return progress * progress * (3f - (2f * progress));
+    }
 }

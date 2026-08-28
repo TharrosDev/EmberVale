@@ -38,6 +38,19 @@ public class MapTierTests
     }
 
     [Fact]
+    public void TierFadesInBeforeReachingFullContrastAtRevealZoom()
+    {
+        float start = MapTiers.DetailZoom - MapTiers.FadeSpan;
+        float midway = MapTiers.OpacityAt(
+            MapTier.Detail, start + (MapTiers.FadeSpan * 0.5f));
+
+        Assert.Equal(0f, MapTiers.OpacityAt(MapTier.Detail, start - 0.01f));
+        Assert.InRange(midway, 0.45f, 0.55f);
+        Assert.Equal(1f, MapTiers.OpacityAt(MapTier.Detail, MapTiers.DetailZoom), 3);
+        Assert.True(MapTiers.VisibleAt(MapTier.Detail, start));
+    }
+
+    [Fact]
     public void RevealZoom_ActuallyRevealsItsOwnTier()
     {
         // Selecting a search result zooms to RevealZoom. If that zoom did not show the tier, the map
@@ -95,5 +108,13 @@ public class MapTierTests
             MapGroup group = MapCategories.GroupOf(category);
             Assert.Contains(category, MapCategories.InGroup(group));
         }
+    }
+
+    [Fact]
+    public void DiscoveryFeedback_AnnouncesMeaningfulApproachButNotBulkKnowledgeOrShops()
+    {
+        Assert.True(Notifications.ShouldAnnounceDiscovery(false, MapTier.Secondary));
+        Assert.False(Notifications.ShouldAnnounceDiscovery(true, MapTier.Secondary));
+        Assert.False(Notifications.ShouldAnnounceDiscovery(false, MapTier.Detail));
     }
 }

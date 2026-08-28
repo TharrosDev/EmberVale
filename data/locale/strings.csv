@@ -328,6 +328,8 @@ map.travel_empty,No waystones attuned yet.
 map.travel_cost,{0}g
 map.travel_free,free
 map.travel_cannot_afford,You cannot afford the passage.
+map.travel_locked,Waystone not attuned.
+notify.location_discovered,Discovered · {0}
 craft.mode_craft,Craft
 craft.mode_salvage,Salvage
 craft.deconstruct,Deconstruct

@@ -46,6 +46,7 @@ public partial class Notifications : CanvasLayer
         bus?.Subscribe<QuestFailedEvent>(OnQuestFailed);
         bus?.Subscribe<WorldEventStartedEvent>(OnWorldEventStarted);
         bus?.Subscribe<WorldEventEndedEvent>(OnWorldEventEnded);
+        bus?.Subscribe<LocationDiscoveredEvent>(OnLocationDiscovered);
         bus?.Subscribe<GameSavedEvent>(OnGameSaved);
         bus?.Subscribe<CompanionRecruitedEvent>(OnCompanionRecruited);
         bus?.Subscribe<CompanionDismissedEvent>(OnCompanionDismissed);
@@ -73,6 +74,7 @@ public partial class Notifications : CanvasLayer
         bus.Unsubscribe<QuestFailedEvent>(OnQuestFailed);
         bus.Unsubscribe<WorldEventStartedEvent>(OnWorldEventStarted);
         bus.Unsubscribe<WorldEventEndedEvent>(OnWorldEventEnded);
+        bus.Unsubscribe<LocationDiscoveredEvent>(OnLocationDiscovered);
         bus.Unsubscribe<GameSavedEvent>(OnGameSaved);
         bus.Unsubscribe<CompanionRecruitedEvent>(OnCompanionRecruited);
         bus.Unsubscribe<CompanionDismissedEvent>(OnCompanionDismissed);
@@ -134,6 +136,23 @@ public partial class Notifications : CanvasLayer
     private void OnWorldEventEnded(WorldEventEndedEvent e) =>
         Push(Loc.TF(e.Completed ? "notify.event_resolved" : "notify.event_failed", e.DisplayName),
             e.Completed ? UiTheme.Good : UiTheme.Bad);
+
+    /// <summary>Discovery feedback is reserved for places that define the journey: settlements,
+    /// wilds, dungeons, mines and landmarks. Detail-tier counters and services still appear on the
+    /// map, but announcing each one would turn a market arrival into a wall of toast.</summary>
+    private void OnLocationDiscovered(LocationDiscoveredEvent e)
+    {
+        if (ShouldAnnounceDiscovery(e.Location.RevealWithCell, e.Location.EffectiveTier))
+        {
+            Push(Loc.TF("notify.location_discovered", Loc.T(e.Location.NameKey)), UiTheme.Accent);
+        }
+    }
+
+    /// <summary>The discovery-feed noise gate, public so the content-independent rule is pinned by
+    /// tests. Reveal-with-cell records are prior map knowledge (and arrive in a bulk region stream),
+    /// while detail records are counters and services; neither is an arrival worth interrupting.</summary>
+    public static bool ShouldAnnounceDiscovery(bool revealWithCell, MapTier tier) =>
+        !revealWithCell && tier != MapTier.Detail;
 
     // Only the autosave cadence (Phase 24D) toasts; manual quicksaves (F5) stay quiet.
     private void OnGameSaved(GameSavedEvent e)

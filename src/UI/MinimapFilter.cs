@@ -33,7 +33,8 @@ public static class MinimapFilter
     /// is standing in behind three market stalls.
     /// </summary>
     public static void Select(
-        IReadOnlyList<MapPin> all, Vector2 centre, float radius, int max, List<MapPin> into)
+        IReadOnlyList<MapPin> all, Vector2 centre, float radius, int max, List<MapPin> into,
+        string? objectiveId = null)
     {
         into.Clear();
         if (max <= 0)
@@ -52,6 +53,14 @@ public static class MinimapFilter
 
         into.Sort((a, b) =>
         {
+            int aTracked = a.Id == objectiveId ? 0 : 1;
+            int bTracked = b.Id == objectiveId ? 0 : 1;
+            int byTracked = aTracked.CompareTo(bTracked);
+            if (byTracked != 0)
+            {
+                return byTracked;
+            }
+
             int byRank = Rank(a.Tier).CompareTo(Rank(b.Tier));
             return byRank != 0
                 ? byRank

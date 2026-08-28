@@ -575,6 +575,11 @@ Both scripts were written ad hoc and thrown away twice before being committed.
 7. **Run it:** `python tools/gen_map_locations.py`, then `--check` to confirm it is idempotent.
 8. **Gate it:** `godot --headless --path . -- --validate` (both directions of the scene seam) and
    `godot --headless --path . --script res://tools/map_probe.gd` (a distinct, in-cell world position).
+9. **Wire navigation by id, not coordinate.** Reach/Defend objectives put the `location.*` id in
+   `TargetId`; live-target objectives use `LocationId` only as their unloaded geographic fallback.
+   A travel-capable place links the `TravelNodeComponent`'s `travel.*` id. Discovery reveals the
+   place; interacting with the node separately attunes it. Verify unknown/discovered, tracked,
+   unavailable/available travel, and cross-region save/load states.
 
 ⚠️ **A new `MapCategory` is a change to `src/World/MapCategory.cs` AND to the `CATEGORY` list in the
 generator**, which stores the enum's *index*. They are a contract; reordering one without the other

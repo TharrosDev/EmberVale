@@ -127,15 +127,20 @@ public sealed partial class CompassStrip : Control
 
         // Destinations last so nothing draws over them. The objective is the game's mark; the
         // waypoint is the player's own and wins ties by being drawn after it.
+        Vector3? waypoint = ServiceLocator.Instance is { } locator && locator.TryGet(out MapService map)
+            ? map.Waypoint
+            : null;
+
         if (_objectiveTarget is { } target)
         {
-            DrawDestination(font, target, origin, heading, halfWidth, centreX, UiTheme.Good);
+            DrawDestination(font, target, origin, heading, halfWidth, centreX, UiTheme.Good,
+                playerWaypoint: false, showDistance: waypoint == null);
         }
 
-        if (ServiceLocator.Instance is { } locator && locator.TryGet(out MapService map) &&
-            map.Waypoint is { } waypoint)
+        if (waypoint is { } playerMark)
         {
-            DrawDestination(font, waypoint, origin, heading, halfWidth, centreX, UiTheme.AccentHot);
+            DrawDestination(font, playerMark, origin, heading, halfWidth, centreX, UiTheme.AccentHot,
+                playerWaypoint: true, showDistance: true);
         }
     }
 
@@ -202,7 +207,7 @@ public sealed partial class CompassStrip : Control
     /// </summary>
     private void DrawDestination(
         Font font, Vector3 target, Vector3 origin, float heading, float halfWidth, float centreX,
-        Color tint)
+        Color tint, bool playerWaypoint, bool showDistance)
     {
         float dx = target.X - origin.X;
         float dz = target.Z - origin.Z;
@@ -213,34 +218,58 @@ public sealed partial class CompassStrip : Control
         {
             float edgeX = rel > 0f ? Size.X - 6f : 6f;
             float direction = rel > 0f ? 1f : -1f;
-            DrawColoredPolygon(
-                new[]
-                {
-                    new Vector2(edgeX + (direction * 5f), MarkTop + 5f),
-                    new Vector2(edgeX - (direction * 4f), MarkTop),
-                    new Vector2(edgeX - (direction * 4f), MarkTop + 10f),
-                },
-                new Color(mark, 0.85f));
+            Vector2[] arrow =
+            {
+                new(edgeX + (direction * 5f), MarkTop + 5f),
+                new(edgeX - (direction * 4f), MarkTop),
+                new(edgeX - (direction * 4f), MarkTop + 10f),
+            };
+            if (playerWaypoint)
+            {
+                DrawPolyline(new[] { arrow[1], arrow[0], arrow[2] }, new Color(mark, 0.9f), 2f);
+            }
+            else
+            {
+                DrawColoredPolygon(arrow, new Color(mark, 0.85f));
+            }
             return;
         }
 
         float x = centreX + CompassMath.StripOffset(rel, Fov, halfWidth);
         float fade = EdgeFade(x, halfWidth);
 
-        DrawColoredPolygon(
-            new[]
+        if (playerWaypoint)
+        {
+            Vector2[] diamond =
             {
-                new Vector2(x - 6f, MarkTop),
-                new Vector2(x + 6f, MarkTop),
-                new Vector2(x, MarkTop + 9f),
-            },
-            new Color(mark, fade));
+                new(x, MarkTop),
+                new(x + 6f, MarkTop + 5f),
+                new(x, MarkTop + 10f),
+                new(x - 6f, MarkTop + 5f),
+                new(x, MarkTop),
+            };
+            DrawPolyline(diamond, new Color(mark, fade), 2f);
+        }
+        else
+        {
+            DrawColoredPolygon(
+                new[]
+                {
+                    new Vector2(x - 6f, MarkTop),
+                    new Vector2(x + 6f, MarkTop),
+                    new Vector2(x, MarkTop + 9f),
+                },
+                new Color(mark, fade));
+        }
 
         // §16: a distance for the destination that matters, and only that one. Printing it for every
         // marker is the "excessive text" the same section warns against.
-        (string value, string unitKey) = CompassMath.Distance(Mathf.Sqrt((dx * dx) + (dz * dz)));
-        DrawLabel(font, $"{value}{Loc.T(unitKey)}", x, new Color(mark, fade),
-            UiTheme.CaptionFontSize, DistanceBaseline);
+        if (showDistance)
+        {
+            (string value, string unitKey) = CompassMath.Distance(Mathf.Sqrt((dx * dx) + (dz * dz)));
+            DrawLabel(font, $"{value}{Loc.T(unitKey)}", x, new Color(mark, fade),
+                UiTheme.CaptionFontSize, DistanceBaseline);
+        }
     }
 
     /// <summary>Opacity across the strip: solid through the middle, easing to nothing at the ends, so

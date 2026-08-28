@@ -11,7 +11,8 @@ namespace Embervale.UI;
 /// <summary>One drawable marker on the plot. Built by <see cref="MapScreen"/> from discovered
 /// locations, so the view never touches a database or a service.</summary>
 public readonly record struct MapPin(
-    string Id, string Label, Vector2 WorldXz, MapCategory Category, MapTier Tier);
+    string Id, string Label, Vector2 WorldXz, MapCategory Category, MapTier Tier,
+    bool HasTravelNode = false, bool TravelAvailable = false);
 
 /// <summary>A cell's measured ground footprint, in world XZ. The id varies its tone so the realm
 /// does not read as a grid of identical tiles.</summary>
@@ -132,9 +133,12 @@ public partial class MapView : Control
         Projection.Viewport.IsEqualApprox(Size) ? Projection : Projection.Resized(Size);
 
     /// <summary>True when a category passes the filter and its tier is visible at this zoom.</summary>
+    private bool Emphasized(MapPin pin) => pin.Id == SelectedId || pin.Id == ObjectiveId;
+
     private bool Shows(MapPin pin) =>
-        !HiddenCategories.Contains(pin.Category) &&
-        MapTiers.VisibleAt(pin.Tier, TierZoom ?? Projection.Zoom);
+        Emphasized(pin) ||
+        (!HiddenCategories.Contains(pin.Category) &&
+         MapTiers.VisibleAt(pin.Tier, TierZoom ?? Projection.Zoom));
 
     // ── Input ─────────────────────────────────────────────────────────────────────────────────
 
@@ -467,7 +471,10 @@ public partial class MapView : Control
             }
 
             MapGroup group = MapCategories.GroupOf(pin.Category);
-            Color colour = ColourOf(group);
+            float opacity = Emphasized(pin)
+                ? 1f
+                : MapTiers.OpacityAt(pin.Tier, TierZoom ?? Projection.Zoom);
+            Color colour = new(ColourOf(group), opacity);
             float radius = RadiusOf(tier);
             bool selected = pin.Id == SelectedId;
             bool hovered = pin.Id == _hoverId;
@@ -492,6 +499,8 @@ public partial class MapView : Control
             }
 
             DrawShape(group, at, radius, colour);
+            DrawCategoryDetail(pin.Category, at, radius, opacity);
+            DrawTravelState(pin, at, radius, opacity);
 
             // Labels only for what is big enough to earn one: everything at once is the icon soup
             // §50 names. The selection always gets its name; hover gets its own label by the cursor.
@@ -562,6 +571,59 @@ public partial class MapView : Control
             default:
                 DrawCross(at, r, colour);
                 break;
+        }
+    }
+
+    /// <summary>Small interior cuts distinguish the categories players most often confuse while
+    /// preserving the six coarse silhouettes at minimap size.</summary>
+    private void DrawCategoryDetail(MapCategory category, Vector2 at, float r, float opacity)
+    {
+        Color ink = new(UiTheme.Engrave, 0.82f * opacity);
+        switch (category)
+        {
+            case MapCategory.Dungeon:
+                DrawArc(at + new Vector2(0f, 1f), r * 0.48f, Mathf.Pi, Mathf.Tau, 8, ink, 1.5f);
+                DrawLine(at + new Vector2(-r * 0.48f, 1f), at + new Vector2(-r * 0.48f, r * 0.6f), ink, 1.5f);
+                DrawLine(at + new Vector2(r * 0.48f, 1f), at + new Vector2(r * 0.48f, r * 0.6f), ink, 1.5f);
+                break;
+            case MapCategory.Mine:
+                DrawLine(at + new Vector2(-r * 0.42f, -r * 0.35f), at + new Vector2(r * 0.42f, r * 0.45f), ink, 1.4f);
+                DrawLine(at + new Vector2(r * 0.42f, -r * 0.35f), at + new Vector2(-r * 0.42f, r * 0.45f), ink, 1.4f);
+                break;
+            case MapCategory.Landmark:
+                DrawLine(at + new Vector2(0f, -r * 0.55f), at + new Vector2(0f, r * 0.5f), ink, 1.5f);
+                DrawLine(at + new Vector2(-r * 0.32f, -r * 0.2f), at + new Vector2(r * 0.32f, -r * 0.2f), ink, 1.5f);
+                break;
+            case MapCategory.Waystone:
+                DrawColoredPolygon(Regular(at, r * 0.38f, 4, 0f), ink);
+                break;
+            case MapCategory.Gate:
+                DrawLine(at + new Vector2(-r * 0.38f, -r * 0.45f), at + new Vector2(-r * 0.38f, r * 0.45f), ink, 1.5f);
+                DrawLine(at + new Vector2(r * 0.38f, -r * 0.45f), at + new Vector2(r * 0.38f, r * 0.45f), ink, 1.5f);
+                break;
+        }
+    }
+
+    /// <summary>Attunement is a state, not a category: a filled spark means usable travel, while a
+    /// diagonal cut means the discovered waystone is still unavailable. Shape carries the state so
+    /// colour vision is never required.</summary>
+    private void DrawTravelState(MapPin pin, Vector2 at, float radius, float opacity)
+    {
+        if (!pin.HasTravelNode)
+        {
+            return;
+        }
+
+        Vector2 badge = at + new Vector2(radius * 0.78f, radius * 0.78f);
+        Color colour = new(UiTheme.Adapt(UiTheme.ArcaneSilver), opacity);
+        if (pin.TravelAvailable)
+        {
+            DrawCircle(badge, 2.2f, colour);
+            DrawArc(badge, 3.4f, 0f, Mathf.Tau, 12, new Color(UiTheme.Engrave, opacity), 1f);
+        }
+        else
+        {
+            DrawLine(badge + new Vector2(-2.5f, 2.5f), badge + new Vector2(2.5f, -2.5f), colour, 1.7f);
         }
     }
 

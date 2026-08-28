@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Embervale.Core.Events;
 using Embervale.Entities;
+using Embervale.Player;
 using Godot;
 
 namespace Embervale.Magic;
@@ -36,6 +37,15 @@ public partial class StatusEffectVfxComponent : EntityComponent
     {
         if (!ReferenceEquals(e.Target, Entity) || _active.ContainsKey(e.EffectId) ||
             StatusEffectDatabase.Get(e.EffectId) is not { } effect)
+        {
+            return;
+        }
+
+        // The camera lives inside the local player's first-person body. A billboard orbiting that
+        // body inevitably crosses the near plane and becomes a screen-sized translucent square —
+        // especially obvious when several effects are active. The HUD already carries the local
+        // player's effect chips; world swirls are for actors the player is looking at.
+        if (Entity?.Body is PlayerCharacter)
         {
             return;
         }

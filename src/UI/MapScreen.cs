@@ -6,6 +6,7 @@ using Embervale.Dialogue;
 using Embervale.Economy;
 using Embervale.Localization;
 using Embervale.Player;
+using Embervale.Quests;
 using Embervale.World;
 using Godot;
 
@@ -547,7 +548,7 @@ public partial class MapScreen : UiPanel
 
     /// <summary>Shared with the HUD minimap since 39.5B — see <see cref="MapPins"/> for why there is
     /// exactly one pin builder.</summary>
-    private void RebuildPins() => MapPins.Rebuild(_pins, _map);
+    private void RebuildPins() => MapPins.Rebuild(_pins, _map, _travel);
 
     /// <summary>How far the waypoint is and which way, on the footer beside the button that
     /// clears it — so the mark is answerable without selecting anything.</summary>
@@ -747,6 +748,10 @@ public partial class MapScreen : UiPanel
     {
         if (TravelNodeFor(location) is not { } node)
         {
+            if (TravelNodeIdFor(location).Length > 0)
+            {
+                _info.AddChild(UiTheme.Body(Loc.T("map.travel_locked"), UiTheme.Disabled));
+            }
             return;
         }
 
@@ -767,32 +772,37 @@ public partial class MapScreen : UiPanel
     /// </summary>
     private TravelNode? TravelNodeFor(MapLocationResource location)
     {
-        if (_travel == null)
+        string travelNodeId = TravelNodeIdFor(location);
+        if (_travel == null || travelNodeId.Length == 0)
         {
             return null;
         }
 
-        if (location.TravelNodeId.Length > 0 &&
-            _travel.TryGetNode(location.TravelNodeId, out TravelNode own))
+        return _travel.TryGetNode(travelNodeId, out TravelNode node) ? node : null;
+    }
+
+    private static string TravelNodeIdFor(MapLocationResource location)
+    {
+        if (location.TravelNodeId.Length > 0)
         {
-            return own;
+            return location.TravelNodeId;
         }
 
         if (location.CellId.Length == 0)
         {
-            return null;
+            return string.Empty;
         }
 
         foreach (MapLocationResource candidate in MapLocationDatabase.All)
         {
             if (candidate.CellId == location.CellId && candidate.TravelNodeId.Length > 0 &&
-                _travel.TryGetNode(candidate.TravelNodeId, out TravelNode neighbour))
+                candidate.TravelNodeId.Length > 0)
             {
-                return neighbour;
+                return candidate.TravelNodeId;
             }
         }
 
-        return null;
+        return string.Empty;
     }
 
     /// <summary>
@@ -1037,27 +1047,9 @@ public partial class MapScreen : UiPanel
     /// tracker and the compass strip read since 39.5B. The map showing one quest while the tracker
     /// shows another is the exact class of drift that authority was created to make impossible.
     /// </summary>
-    private static string? TrackedObjectiveLocationId()
-    {
-        if (Resolve<PlayerCharacter>()?.GetComponent<Quests.QuestLogComponent>()?.Tracked
-            is not { } progress)
-        {
-            return null;
-        }
-
-        var objectives = progress.Quest.ObjectiveList();
-        for (int i = 0; i < objectives.Count; i++)
-        {
-            // Active rather than incomplete (41D) — see CompassStrip.ResolveObjectiveTarget.
-            if (!progress.IsObjectiveComplete(i) && progress.IsObjectiveActive(i) &&
-                objectives[i].LocationId.Length > 0)
-            {
-                return objectives[i].LocationId;
-            }
-        }
-
-        return null;
-    }
+    private static string? TrackedObjectiveLocationId() =>
+        ObjectiveNavigation.ActiveLocationId(
+            Resolve<PlayerCharacter>()?.GetComponent<QuestLogComponent>()?.Tracked);
 
     private static Vector3? PlayerPosition() => Resolve<PlayerCharacter>()?.GlobalPosition;
 

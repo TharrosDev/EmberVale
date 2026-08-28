@@ -12,6 +12,35 @@ This is the canonical exterior-region workflow. Read `CLAUDE.md`, `NOW.md`, `ARC
 - Keep hero composition authored. Automation may dress repetition, never decide why a place exists.
 - Use the four Quaternius MegaKits first and adapt through `assets/models/`; do not mix styles casually.
 
+## Location authority: one place, every surface
+
+The placed `MapLocationComponent` is the world-position authority for a named place. Its
+`MapLocationResource` supplies identity, category, semantic tier, discovery rules, and links to
+existing shop/service/dialogue/property/travel records; it never supplies another coordinate.
+`MapService` derives discovery, search, full-map, minimap, compass fallback, and saved cross-region
+positions from that pair. Keep this chain intact:
+
+`cell scene anchor -> MapLocationComponent -> MapLocationResource id -> MapService -> UI/quest/travel`
+
+For a new dungeon entrance or other reachable POI:
+
+1. Build and frame the physical entrance in the cell scene. Keep its interaction front and approach
+   clear with an authored scatter exclusion; do not rely on deleting generated instances.
+2. Add one row to `tools/gen_map_locations.py`, anchored to the entrance/building node itself. Choose
+   category for what it is and tier for how far out it matters. Hidden exploration POIs leave
+   `RevealWithCell` false; prominent skyline landmarks may reveal with the cell.
+3. Run the generator, then `--check`. Do not add X/Z to a resource, quest, map widget, or travel list.
+4. A Reach/Defend objective uses the canonical `location.*` id as `TargetId`. A live Kill/Collect/
+   Talk/Interact objective may set `LocationId` as the geographic fallback; the live target wins while
+   loaded. Completed or inactive branch objectives are never navigation targets.
+5. If the POI owns fast travel, put `TravelNodeComponent` at the real landing point and link its
+   `travel.*` id from the map location. Discovery and attunement remain separate: discovering the
+   place may reveal the unavailable waystone, while interacting with it enables travel.
+6. Run `--validate` and `map_probe.gd`. Validate the unknown state, discovered state, search result,
+   selected/tracked marker, minimap, compass, unattuned waystone, and attuned travel action in the
+   renderer. A static location must remain resolvable when its region is not resident through the
+   saved `MapService` position; never keep the scene loaded just for navigation.
+
 ## Create a region
 
 1. Author `data/regions/Xxx.tres` with a stable `region.*` id, bounds, spawn/safe-zone data,

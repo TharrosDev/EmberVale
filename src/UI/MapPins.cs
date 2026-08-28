@@ -21,7 +21,7 @@ public static class MapPins
     /// <summary>Every location the player has discovered, as drawable pins. Empty when the map
     /// service is unavailable — a map with no pins, never a crash (39.5A's "a nameless map is a
     /// degraded map, a crashed one is no map").</summary>
-    public static void Rebuild(List<MapPin> into, MapService? map)
+    public static void Rebuild(List<MapPin> into, MapService? map, FastTravelService? travel = null)
     {
         into.Clear();
         if (map == null)
@@ -36,7 +36,9 @@ public static class MapPins
                 Loc.T(view.Location.NameKey),
                 new Vector2(view.Position.X, view.Position.Z),
                 view.Location.Category,
-                view.Location.EffectiveTier));
+                view.Location.EffectiveTier,
+                view.Location.TravelNodeId.Length > 0,
+                travel?.HasNode(view.Location.TravelNodeId) == true));
         }
     }
 }

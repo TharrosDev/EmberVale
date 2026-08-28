@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Embervale.Core.Services;
 using Embervale.Localization;
 using Embervale.Player;
+using Embervale.Quests;
 using Embervale.World;
 using Godot;
 
@@ -44,6 +45,7 @@ public sealed partial class MinimapHud : PanelContainer
 
     private MapView _view = null!;
     private MapService? _map;
+    private FastTravelService? _travel;
 
     private readonly List<MapPin> _all = new();
     private readonly List<MapPin> _near = new();
@@ -54,6 +56,7 @@ public sealed partial class MinimapHud : PanelContainer
     // database lookup, and at 60 fps that is a per-frame database walk to draw markers that only
     // move when the player discovers something.
     private int _builtRevision = -1;
+    private int _builtTravelRevision = -1;
     private float _rebuildTimer;
 
     public override void _Ready()
@@ -95,6 +98,9 @@ public sealed partial class MinimapHud : PanelContainer
         _map ??= ServiceLocator.Instance is { } locator && locator.TryGet(out MapService resolved)
             ? resolved
             : null;
+        _travel ??= ServiceLocator.Instance is { } services && services.TryGet(out FastTravelService resolvedTravel)
+            ? resolvedTravel
+            : null;
 
         if (ResolvePlayerXz() is not { } centre)
         {
@@ -114,6 +120,7 @@ public sealed partial class MinimapHud : PanelContainer
         // 39.5A value-type-carrying-layout-state trap is already handled one level down.
         _view.Projection = new MapProjection(centre, ZoomFor(_view.Size), _view.Size);
         _view.Waypoint = _map?.Waypoint;
+        _view.ObjectiveId = TrackedLocationId();
         _view.QueueRedraw();
     }
 
@@ -133,13 +140,16 @@ public sealed partial class MinimapHud : PanelContainer
     /// <summary>Rebuilds the discovered pins and the known land, but only when discovery changed.</summary>
     private void RefreshDiscovered()
     {
-        if (_map == null || _builtRevision == _map.Revision)
+        int travelRevision = _travel?.Revision ?? -1;
+        if (_map == null ||
+            (_builtRevision == _map.Revision && _builtTravelRevision == travelRevision))
         {
             return;
         }
 
         _builtRevision = _map.Revision;
-        MapPins.Rebuild(_all, _map);
+        _builtTravelRevision = travelRevision;
+        MapPins.Rebuild(_all, _map, _travel);
 
         var land = new List<MapLandTile>();
         foreach ((string cellId, Rect2 rect) in _map.KnownFootprints())
@@ -155,9 +165,15 @@ public sealed partial class MinimapHud : PanelContainer
     /// <see cref="MinimapFilter"/>.</summary>
     private void RefreshNear(Vector2 centre)
     {
-        MinimapFilter.Select(_all, centre, RadiusMetres, MaxPins, _near);
+        MinimapFilter.Select(_all, centre, RadiusMetres, MaxPins, _near, TrackedLocationId());
         _view.Pins = _near;
     }
+
+    private static string? TrackedLocationId() =>
+        ObjectiveNavigation.ActiveLocationId(
+            ServiceLocator.Instance is { } locator && locator.TryGet(out PlayerCharacter player)
+                ? player.GetComponent<QuestLogComponent>()?.Tracked
+                : null);
 
     private static Vector2? ResolvePlayerXz() =>
         ServiceLocator.Instance is { } locator && locator.TryGet(out PlayerCharacter player)

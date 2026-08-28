@@ -27,9 +27,16 @@ const REGIONS_DIR := "res://data/regions"
 const SCENES_DIR := "res://scenes/regions"
 
 var _failures: Array[String] = []
+var _content_loader: Node
 
 
 func _initialize() -> void:
+	# Cell scenes can contain registry-backed occupants (the Frostfang lairs do). Seed the same
+	# databases production streaming uses so the placement probe stays warning-clean and does not
+	# falsely report missing templates merely because it was launched outside GameBootstrap.
+	var loader_script: Script = load("res://src/Bootstrap/ContentDatabaseLoader.cs")
+	_content_loader = loader_script.new()
+	root.add_child(_content_loader)
 	_run.call_deferred()
 
 
@@ -101,6 +108,8 @@ func _run() -> void:
 			_fail("'%s' is authored but no cell scene places it" % id)
 
 	print("\nmap_probe: %d marker(s) across %d cell(s)" % [total, centres.size()])
+	_content_loader.call("CollectManagedResources")
+	await process_frame
 	if _failures.is_empty():
 		print("map_probe: PASS")
 		quit(0)

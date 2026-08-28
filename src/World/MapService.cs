@@ -201,6 +201,7 @@ public partial class MapService : Node, ISaveable
         if (_locations.Add(id))
         {
             Revision++;
+            EventBus.Instance?.Publish(new LocationDiscoveredEvent(location));
         }
     }
 
