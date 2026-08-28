@@ -372,6 +372,13 @@ not layering a second list of changes over it.
   map-marked, interactive world bodies with distinct domain bonuses. The player saves only claimed
   shrine ids and load clears then re-derives every modifier; shrine bodies hold no save state.
 
+- 41.5C ✅ and the gods can now say no. Each shrine carries its own tolerance for corruption, and
+  walking up past it gets you turned away in that god's own words rather than blessed. Solaryn's
+  justice and Tharos's law close first, at Marked; Nyth and Elyndra hold out to Ashbound; Veyra's
+  mercy and Drakar's respect for strength last until the Embers. A refusal costs nothing and leaves
+  nothing behind: burn the taint off and come back, and the blessing is still there for you. What
+  you have already been given is never taken back.
+
 - 41D ✅ and a quest can fork. Sedge Marrow knows where Holt's barrels went — the Crossway post pulled
 the cart and they are sitting in the impound shed — and she offers two ways to get them out. Walk the
 manifest up to the post, pay the duty and settle it with Wren Halloway, and your name goes in a book
