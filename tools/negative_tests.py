@@ -601,6 +601,16 @@ CASES = [
      [("data/quests/WarbandHeart.tres", 'CompletionFlagId = "flag.frostfang.passage_open"',
        'CompletionFlagId = "quest.frostfang.passage_open"')],
      "completion flag 'quest.frostfang.passage_open' must start with 'flag.'"),
+
+    # 41F: both ids are individually valid, but a completion flag lands only after this quest's
+    # live objectives are done. Making an objective wait on it is a self-locked branch that passes
+    # every ordinary cross-reference check and can never be reached in play.
+    ("quest.completion_flag_self_gates_objective", "ValidateQuestCompletionFlagsDoNotSelfGate",
+     [("data/quests/WarbandHeart.tres",
+       'Description = "quest.warband.heart.obj"',
+       'Description = "quest.warband.heart.obj"\nRequiredFlagId = "flag.frostfang.passage_open"')],
+     "requires its own completion flag"),
+
     ("world.visibility_flag_never_written", "ValidateStoryFlags",
      [("scenes/regions/ember_crown/hollowreach.tscn", 'HiddenWhenFlagId = "flag.emberdeep.tally_delivered"',
        'HiddenWhenFlagId = "flag.emberdeep.tally_delivereed"')],

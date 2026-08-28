@@ -16,13 +16,13 @@ public readonly record struct WeatherChangedEvent(WeatherType Previous, WeatherT
 public readonly record struct EncounterTriggeredEvent(string EncounterId, Vector3 Position, int Count) : IGameEvent;
 
 /// <summary>Raised by the <see cref="WorldEventDirector"/> when a named world event begins.</summary>
-public readonly record struct WorldEventStartedEvent(string EventId, string DisplayName, Vector3 Position) : IGameEvent;
+public readonly record struct WorldEventStartedEvent(string EventId, string NameKey, Vector3 Position) : IGameEvent;
 
 /// <summary>Raised when an active world event's objective advances.</summary>
 public readonly record struct WorldEventProgressEvent(string EventId, int Progress, int Required) : IGameEvent;
 
 /// <summary>Raised when a world event ends, either resolved (<paramref name="Completed"/>) or expired.</summary>
-public readonly record struct WorldEventEndedEvent(string EventId, string DisplayName, bool Completed) : IGameEvent;
+public readonly record struct WorldEventEndedEvent(string EventId, string NameKey, bool Completed) : IGameEvent;
 
 /// <summary>Raised by the <see cref="RegionStreamer"/> when a sub-cell scene is streamed in
 /// (Phase 25B). <paramref name="Root"/> is the instanced cell node — the seam Phase 25D's

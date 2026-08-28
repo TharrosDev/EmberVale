@@ -12,10 +12,8 @@
 ; file, and DialogueEffect.RecruitCompanion already puts it beside the player, so the whole of the
 ; escort mechanic is this .tres plus two dialogue choices.
 ;
-; ⚠️ RecruitQuestId IS SET AND LoyaltyQuestId IS NOT, which is the opposite of both existing
-; companions. Kael has both (sworn, then deepened); Wren has neither (bought). Tessa is recruited by
-; one errand and has no second act — authoring an id for one would be a broken reference dressed as a
-; promise, which is the trap Wren's header records.
+; Tessa is recruited by one errand and has no second act — authoring a loyalty quest id would be a
+; broken reference dressed as a promise, which is the trap Wren's header records.
 ;
 ; StartingLoyalty 50, above Kael's 40: she is not weighing whether to trust you, she is a girl who was
 ; told to walk with you by her employer and is glad of the company.
@@ -43,6 +41,5 @@ AttackRange = 1.9
 LeashRadius = 16.0
 StartingLoyalty = 50
 LoyaltyQuestReward = 0
-RecruitQuestId = "quest.hollowreach.ledger"
 LoyaltyQuestId = ""
 DialogueId = "dialogue.tessa"

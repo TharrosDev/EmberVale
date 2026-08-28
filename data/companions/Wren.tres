@@ -5,10 +5,10 @@
 ; Wren Halloway, the caravan yard's hired sword (Phase 38R) — the second companion in the game and
 ; the first who joins for money rather than for a reason.
 ;
-; ⚠️ NO RecruitQuestId AND NO LoyaltyQuestId, and both absences are the design. Kael is recruited by
-; an oath and deepened by his brother's quest; a mercenary is recruited by a purse and has no story to
-; be owed. Authoring empty quest ids is what says so — --validate checks each only if it is set, so a
-; hopeful placeholder id would be a broken reference rather than a promise.
+; ⚠️ NO LoyaltyQuestId is the design. Kael is deepened by his brother's quest; a mercenary is
+; recruited by a purse and has no story to be owed. Authoring an empty loyalty quest id says so —
+; --validate checks it only if it is set, so a hopeful placeholder would be a broken reference rather
+; than a promise.
 ;
 ; StartingLoyalty 25 against Kael's 40, and that is the whole characterisation in one number: she is
 ; bought, not sworn, so she starts colder than the man who volunteered. Nothing in 38R spends it —
@@ -37,6 +37,5 @@ AttackRange = 2.1
 LeashRadius = 18.0
 StartingLoyalty = 25
 LoyaltyQuestReward = 0
-RecruitQuestId = ""
 LoyaltyQuestId = ""
 DialogueId = "dialogue.wren"

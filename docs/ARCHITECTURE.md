@@ -863,7 +863,8 @@ The richer *named-event* layer over the ambient `EncounterDirector` (§2.6h): di
 announced events with an objective, time limit and rewards.
 
 - **Event content** — `WorldEventResource` (`[GlobalClass]`, `data/world_events/*.tres`): a
-  `WorldEventKind` (`0` Raid / `1` Cache / `2` Hunt), `SelectionWeight`, `CooldownSeconds`,
+  locale `NameKey`, `WorldEventKind` (`0` Raid / `1` Cache / `2` Hunt), `SelectionWeight`,
+  `CooldownSeconds`,
   `TimeLimitSeconds`, per-`DayPhase` allow flags, spawn knobs (`EnemyTemplateId`, `MinCount`/
   `MaxCount`, `HealthMultiplier` for a champion, or `CacheItemId`/`CacheQuantity`), and rewards
   (`XpReward`, `GoldReward`, `RewardItemId`/`Quantity`, `FactionRewardId`/`Amount`).
@@ -888,7 +889,7 @@ standing, and persist. Built entirely on the existing character stack — a comp
   (`AttributesPath`/`WeaponPath`/`ModelPath`), `FactionId`, `KnownSpellIds` (non-empty ⇒ the
   actor gets a `SpellcastingComponent`, i.e. a caster companion), the follower envelope
   (`FollowDistance`/`EngageRadius`/`AttackRange`/`LeashRadius`), and the loyalty/content ids
-  (`StartingLoyalty`, `LoyaltyQuestReward`, `RecruitQuestId`, `LoyaltyQuestId`, `DialogueId`).
+  (`StartingLoyalty`, `LoyaltyQuestReward`, `LoyaltyQuestId`, `DialogueId`).
   `CompanionDatabase` indexes them; `CompanionRegistry` seeds its id→builder archetypes straight
   from the database (mirroring `EnemyTemplateRegistry`), so **a new companion is a `.tres`**.
 - **`CompanionFactory`** builds the actor from the resource: collision, model, `NavigationAgent3D`,
@@ -1205,7 +1206,7 @@ Developer tooling behind function keys (Phase 20); all run `ProcessMode.Always`.
 
 - **`DevConsole`** (`F1`) — an in-game command line: scrollback (`RichTextLabel`) + `LineEdit`
   that dispatches to a `Dictionary<string, ConsoleCommand>`. `DevCommands.RegisterAll` ships the
-  built-ins (`spawn`/`give`/`xp`/`heal`/`rep`/`time`/`weather`/`event`/`seed`/`repro`/
+  built-ins (`spawn`/`give`/`xp`/`heal`/`rep`/`quest`/`time`/`weather`/`event`/`seed`/`repro`/
   `invariants`/`stats`/`help`/`clear`); they reach systems via the `ServiceLocator` (player +
   the registered world directors). Opening it frees the mouse + sets `UiState.MenuOpen`.
   `Execute(line)` runs a command and returns its output (reused by the repro harness).
@@ -1216,8 +1217,9 @@ Developer tooling behind function keys (Phase 20); all run `ProcessMode.Always`.
   `NodePoolCensus.Parked` count so a pool's intentionally-detached working set is not flagged).
 - **`ContentValidator`** — boot + on-demand content checks: `validate` (cross-references +
   well-formedness — no dangling ids, unique ids per domain, non-empty loot) and `validate-all`
-  (adds graph reachability — dialogue orphans/dead-ends, quest completability, prerequisite
-  cycles). Also runnable headless: `godot --headless --path . -- --validate` (exit 0/1).
+  (adds graph reachability — dialogue orphans/dead-ends, quest completability, completion-flag
+  self-gates, prerequisite cycles). Also runnable headless: `godot --headless --path . -- --validate`
+  (exit 0/1).
 - **`ProfilerOverlay`** (`F4`) — reads Godot `Performance` monitors (FPS, frame/physics ms, draw
   calls, node/orphan counts, static memory). Idle when hidden.
 - **`ReproHarness`** — named scenarios that `GD.Seed` the global RNG then replay a fixed command

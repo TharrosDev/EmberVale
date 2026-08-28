@@ -355,6 +355,10 @@ and the conditions under which they would be built are written down.
 
 ### Phase 41 — quests worth the name
 
+- 41F ✅ gives content QA a real way to drive quests: the F1 console can start, advance, complete,
+  and reset an authored quest through the same journal, reward, and world-change path the player uses.
+  Resetting a quest never pretends to undo a persistent story flag; that consequence belongs to the world.
+
 - 41E ✅ and a completed quest can change the world permanently. Finish the warband's final errand
 and the Frostfang passage opens; deliver Coyle Ferrin's sealed tally and he leaves the Locker rather
 than standing there forever as though nothing happened. Those changes are saved as the same story

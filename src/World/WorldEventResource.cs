@@ -16,10 +16,8 @@ public partial class WorldEventResource : Resource
 {
     [Export] public string Id { get; set; } = "event.unknown";
 
-    [Export] public string DisplayName { get; set; } = "World Event";
-
-    [Export(PropertyHint.MultilineText)]
-    public string Description { get; set; } = string.Empty;
+    /// <summary>The locale key for the event's player-facing name.</summary>
+    [Export] public string NameKey { get; set; } = string.Empty;
 
     [Export] public WorldEventKind Kind { get; set; } = WorldEventKind.Raid;
 

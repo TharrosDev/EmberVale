@@ -173,10 +173,10 @@
     across a frame with no quest event in it, and is gated in five directions. Owed alongside 41B's
     escort walk and 41C's tally run — **three named playthroughs now, and that is the debt to say out
     loud rather than let accumulate quietly.**
-- [ ] **41E — Quest-driven world changes** `[F]`
+- [x] **41E — Quest-driven world changes** `[F]` ✅
   - **Done when:** a quest can change the world (an NPC dies, a region opens),
     persistently.
-- [ ] **41F — Quest-debug console + `ContentValidator` extension** `[F]`
+- [x] **41F — Quest-debug console + `ContentValidator` extension** `[F]` ✅ *(2026-08-28)*
   - **Done when:** `quest start/advance/complete/reset` exist and `validate-all`
     covers the new objective/branch types.
 
@@ -424,3 +424,25 @@ writes and the visibility decision.
 2. ⚠️ **HIDING A BODY IS NOT ONLY VISUAL.** Any state-driven world removal must account for collision
    and prompts, and must refresh after a wholesale load because loads do not replay individual flag
    events.
+
+---
+
+## 41F — debug uses the real quest path
+
+`quest start/advance/complete/reset` now reaches `QuestLogComponent`, not a parallel debug ledger.
+Advancement publishes the normal objective event; completion takes the normal reward and completion-flag
+path; reset publishes a journal refresh but deliberately does **not** clear a completion flag, because a
+world consequence is a persistent fact with other possible writers. The pure refusal boundary covers
+inert, complete, malformed and inactive objectives.
+
+`validate-all` now catches a completion flag required by an objective in the quest that writes it. Both
+strings resolve, so a cross-reference pass cannot see the error; graph order can. The negative-test case
+is registered, but this combined session's existing authored-data changes correctly made the destructive
+harness refuse to run.
+
+### Two things worth carrying into the next sub-phase
+
+1. ⚠️ **A DEBUG COMMAND MUST EXERCISE THE REAL CHOKE POINT.** A console that edits quest counts would
+   prove neither events nor rewards nor world changes; developer tooling is a caller, not an exemption.
+2. ⚠️ **RESETTING A VIEW IS NOT RESETTING ITS WORLD FACT.** A completion flag belongs to the persistent
+   story state, not to the log entry; clearing it from a quest command would make a second authority.

@@ -127,7 +127,13 @@ existed the same three lines were maintained in four places and rewritten every 
   ⚠️ **The NPC did not "die"**: invariant 38 still says no NPC can be hurt, so a flag-driven actor
   departure is the honest world change. `FlagVisibilityComponent` hides collision as well as mesh.
   `ValidateStoryFlags` now knows quest completion writers and scene visibility readers; pure tests
-  cover one-shot writes and restored presence. **NEXT: 41F — Quest-debug console + validator extension.**
+  cover one-shot writes and restored presence.
+- **41F — Quest-debug console + validator extension ✅ CLOSED. Phase 41 is closed.** F1 now drives
+  the real quest-log choke points with `quest start/advance/complete/reset`; `reset` removes only
+  the log attempt, never a completion flag or its world consequence. `validate-all` rejects an
+  objective gated on its own quest's completion flag — both ids resolve, but the flag is only
+  written after that objective finishes, so the branch could never be entered. **NEXT: Phase 41.5
+  — Divine Shrines & Blessings.**
 - **Out-of-band world-infrastructure foundation ✅ LANDED; it does not advance 41F.** Regions now
   author separate `.tscn`, expanded-runtime, scatter, draw, memory, and frame budgets. Frostfang's
   repeated dead-pine/rock ecology is deterministic MultiMesh output with automatic road clearance
@@ -223,18 +229,18 @@ existed the same three lines were maintained in four places and rewritten every 
 - 📖 Economy: `ARCHITECTURE.md` §2.6m is the mechanism, `DESIGN.md` §6 + §6.1 the intent.
   🎨 `docs/ASSET_POLICY.md` §0.2–§0.3 is the asset authority.
 
-## Last verified (session close, 2026-08-27 — world infrastructure; 41F remains next)
+## Last verified (session close, 2026-08-28 — 41F + combined infrastructure batch)
 
 | | |
 | --- | --- |
-| Build | `dotnet build --warnaserror` clean, **0 warnings** |
-| Tests | **1476 passing** (+28 since the prior table: 41E, scenery/terrain math, scatter/exclusion planning, streaming pressure, and performance-budget boundaries) |
-| `--validate` | exit 0; **1422** locale strings (+19), **18 quests** (+1), 34 dialogues |
+| Build | `dotnet build Embervale.sln` completed; `dotnet test` rebuilt both projects |
+| Tests | **1493 passing** (includes the 41F pure console-rule cases) |
+| `--validate` | exit 0; **1432** locale strings, **18 quests**, 34 dialogues |
 | **Negative tests** | `python tools/negative_tests.py` — **87/87 broken and restored**, then `--validate` recovered to exit 0 |
 | `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, 34 dialogues, **18 quests**, 64 map locations, 3 companions |
 | **`--panelshots`** | 14 frames (+2). **`11-journal-declared` and `12-journal-hushed` are the pair, and the PAIR is the evidence** — the *same quest instance* under opposite flags. The journal draws the Crossway pair then the Tarn pair, never four rows; the second row of each is **dim and padlocked** (the first ordered quest ever drawn); and the tracker's readout flips **`97 m · N` → `61 m · NW` with no count changing.** That one number is the proof the branch is re-derived rather than frozen — which is the entire justification for adding no save state |
 | **World shots** | **150/150** day/dusk frames rendered through the production threaded streamer and independently matched the committed 12×8 RGB signature baseline |
-| **`--play`** | bounded 600-frame boot, loaded slot1, **33 objects restored**, all 10 Ember cells loaded, 0 errors and 0 component-owner warnings |
+| **`--play`** | bounded boot loaded `auto1`, **33 objects restored**, all 10 Ember cells loaded. ⚠️ The pre-existing world performance monitor emitted 26–109 ms budget warnings; no quest-console failure appeared. |
 | ⚠️ **Not covered by anything** | **No playthrough held the conversation, walked either road, or reloaded mid-branch.** Proven: the fork renders, re-derives across a frame with no quest event in it, and is gated in five directions. Not proven: that a save reloaded on the hushed path comes back on it. ⚠️ **Three named playthroughs are now owed** — 41B's escort walk, 41C's tally run, 41D's fork — and saying so out loud is the point |
 | Not run, deliberately | ⚠️ **`--economy`** — no price, spread or multiplier touched; the new shop row is a *gated* entry priced by the existing curve. ⚠️ **`map_probe`** — nothing was placed; the quest names four locations that already existed. ⚠️ **`--hudshots`** — the tracker is covered by the panel frames above, which draw it |
 | MCP | ✅ **UP, and brought up mid-session.** The editor was open in **Cloud mode** (the `ai-game.dev` tell in `.claude/skills/*/SKILL.md`) with the relay not running at all — `godot-cli close .` + `godot-cli open . --mode Custom --url http://localhost:23630` fixed it, and the regenerated skill docs now point at localhost. ⚠️ **`mcp__ai-game-developer__*` tools were absent all session** (`.mcp.json` is read at Claude Code startup and the server was down then), so it was driven over HTTP via `godot-cli run-tool`. Not needed: nothing was placed in the world and no model was adopted |
@@ -368,11 +374,7 @@ existed the same three lines were maintained in four places and rewritten every 
     failure or drama depends on a villager being hurt has no honest event to ride, and building one
     means building a damageable body. **The damageable ally already exists and is pure data:**
     `CompanionFactory` assembles health, combat, follow AI, a leash and persistence from a
-    `CompanionResource`, and `DialogueEffect.RecruitCompanion` places one. ⚠️ **`RecruitQuestId` on
-    that resource is validated and read by nothing** — invariant 37's shape, named here rather than
-    fixed. ⚠️ **And `WorldEvent.ObjectiveLabel()` / `WorldEventResource.DisplayName` are literal
-    English on the HUD banner** (`GameHud.cs:1054`) — invariant 34's family, live today, found by
-    41B and deliberately not folded into it.
+    `CompanionResource`, and `DialogueEffect.RecruitCompanion` places one.
 39. ⚠️ **AN EVENT THAT FIRES CONDITIONALLY IS NOT AN EVENT THAT MEANS THE THING** (41C).
     `EnemyAlertedEvent` looks like "the player was spotted" and is published **only when the AI
     profile's `AlertRadius > 0`** — an ambusher authors 0 so the pack is not given away. Before

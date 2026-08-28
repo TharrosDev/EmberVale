@@ -740,6 +740,14 @@ notify.quest_failed,Quest failed:  {0}
 notify.event_started,★ {0}
 notify.event_resolved,{0} resolved!
 notify.event_failed,{0} failed
+event.supply_cache.name,Lost Cache
+event.goblin_raid.name,Goblin Raid
+event.goblin_champion.name,Goblin Champion
+event.drake_champion.name,Elder Drake
+event.dragon_hoard.name,Spilled Hoard
+event.objective.cache,Collect the cache ({0}/{1})
+event.objective.hunt,Slay the champion ({0}/{1})
+event.objective.raid,Defeat the raiders ({0}/{1})
 notify.autosaved,Autosaved
 notify.companion_joined,{0} joins you
 notify.companion_left,{0} parts ways

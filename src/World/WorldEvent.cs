@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Embervale.Enemies;
+using Embervale.Localization;
 using Godot;
 
 namespace Embervale.World;
@@ -41,14 +42,17 @@ public sealed class WorldEvent
 
     public bool IsComplete => Progress >= Required;
 
+    /// <summary>The event name resolved for the active locale.</summary>
+    public string Name => Loc.T(Resource.NameKey);
+
     /// <summary>A short objective line for the HUD.</summary>
     public string ObjectiveLabel()
     {
         return Resource.Kind switch
         {
-            WorldEventKind.Cache => $"Collect the cache ({Progress}/{Required})",
-            WorldEventKind.Hunt => $"Slay the champion ({Progress}/{Required})",
-            _ => $"Defeat the raiders ({Progress}/{Required})",
+            WorldEventKind.Cache => Loc.TF("event.objective.cache", Progress, Required),
+            WorldEventKind.Hunt => Loc.TF("event.objective.hunt", Progress, Required),
+            _ => Loc.TF("event.objective.raid", Progress, Required),
         };
     }
 }

@@ -131,10 +131,10 @@ public partial class Notifications : CanvasLayer
     private void OnQuestFailed(QuestFailedEvent e) =>
         Push(Loc.TF("notify.quest_failed", Loc.T(e.Quest.Title)), UiTheme.Bad);
 
-    private void OnWorldEventStarted(WorldEventStartedEvent e) => Push(Loc.TF("notify.event_started", e.DisplayName), UiTheme.Accent);
+    private void OnWorldEventStarted(WorldEventStartedEvent e) => Push(Loc.TF("notify.event_started", Loc.T(e.NameKey)), UiTheme.Accent);
 
     private void OnWorldEventEnded(WorldEventEndedEvent e) =>
-        Push(Loc.TF(e.Completed ? "notify.event_resolved" : "notify.event_failed", e.DisplayName),
+        Push(Loc.TF(e.Completed ? "notify.event_resolved" : "notify.event_failed", Loc.T(e.NameKey)),
             e.Completed ? UiTheme.Good : UiTheme.Bad);
 
     /// <summary>Discovery feedback is reserved for places that define the journey: settlements,

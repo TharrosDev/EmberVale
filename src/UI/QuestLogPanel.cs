@@ -50,6 +50,7 @@ public partial class QuestLogPanel : UiPanel
         // already moved on. Three surfaces, two answers. A new state has to reach every surface that
         // draws the old one.
         EventBus.Instance?.Subscribe<QuestFailedEvent>(OnQuestFailed);
+        EventBus.Instance?.Subscribe<QuestResetEvent>(OnQuestReset);
         EventBus.Instance?.Subscribe<GameLoadedEvent>(OnGameLoaded);
 
         // ⚠️ 41D, and this line exists because 41B shipped its absence. A quest's BRANCH changes on a
@@ -66,6 +67,7 @@ public partial class QuestLogPanel : UiPanel
         EventBus.Instance?.Unsubscribe<QuestObjectiveAdvancedEvent>(OnObjectiveAdvanced);
         EventBus.Instance?.Unsubscribe<QuestCompletedEvent>(OnQuestCompleted);
         EventBus.Instance?.Unsubscribe<QuestFailedEvent>(OnQuestFailed);
+        EventBus.Instance?.Unsubscribe<QuestResetEvent>(OnQuestReset);
         EventBus.Instance?.Unsubscribe<GameLoadedEvent>(OnGameLoaded);
         EventBus.Instance?.Unsubscribe<Dialogue.StoryFlagChangedEvent>(OnStoryFlagChanged);
     }
@@ -83,6 +85,8 @@ public partial class QuestLogPanel : UiPanel
     private void OnQuestCompleted(QuestCompletedEvent e) => MarkDirty();
 
     private void OnQuestFailed(QuestFailedEvent e) => MarkDirty();
+
+    private void OnQuestReset(QuestResetEvent e) => MarkDirty();
 
     private void OnGameLoaded(GameLoadedEvent e) => MarkDirty();
 

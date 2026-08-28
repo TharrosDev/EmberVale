@@ -186,8 +186,8 @@ public partial class WorldEventDirector : Node3D
         }
 
         _active = worldEvent;
-        EventBus.Instance?.Publish(new WorldEventStartedEvent(resource.Id, resource.DisplayName, origin));
-        Log.Info($"World event: {resource.DisplayName} — {worldEvent.ObjectiveLabel()}.");
+        EventBus.Instance?.Publish(new WorldEventStartedEvent(resource.Id, resource.NameKey, origin));
+        Log.Info($"World event: {worldEvent.Name} — {worldEvent.ObjectiveLabel()}.");
     }
 
     private void SpawnCombat(WorldEvent worldEvent, int count)
@@ -264,7 +264,7 @@ public partial class WorldEventDirector : Node3D
     {
         active.Status = WorldEventStatus.Completed;
         GrantRewards(active.Resource);
-        Log.Info($"World event complete: {active.Resource.DisplayName}.");
+        Log.Info($"World event complete: {active.Name}.");
         End(active, completed: true);
     }
 
@@ -281,7 +281,7 @@ public partial class WorldEventDirector : Node3D
             }
         }
 
-        Log.Info($"World event failed: {active.Resource.DisplayName}.");
+        Log.Info($"World event failed: {active.Name}.");
         End(active, completed: false);
     }
 
@@ -290,7 +290,7 @@ public partial class WorldEventDirector : Node3D
         _cooldowns[active.Resource.Id] = active.Resource.CooldownSeconds;
         _active = null;
         _timer = NextInterval();
-        EventBus.Instance?.Publish(new WorldEventEndedEvent(active.Resource.Id, active.Resource.DisplayName, completed));
+        EventBus.Instance?.Publish(new WorldEventEndedEvent(active.Resource.Id, active.Resource.NameKey, completed));
     }
 
     private void GrantRewards(WorldEventResource r)

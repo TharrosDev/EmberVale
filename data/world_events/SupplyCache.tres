@@ -5,8 +5,7 @@
 [resource]
 script = ExtResource("1_event")
 Id = "event.supply_cache"
-DisplayName = "Lost Cache"
-Description = "A cache of goods was spotted nearby. Reach it before it's gone."
+NameKey = "event.supply_cache.name"
 Kind = 1
 SelectionWeight = 1.5
 CooldownSeconds = 120.0

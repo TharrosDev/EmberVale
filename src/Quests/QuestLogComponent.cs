@@ -212,6 +212,108 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
         return true;
     }
 
+    /// <summary>
+    /// Advances one named objective from the quest-debug console (41F). It uses the same count,
+    /// event, completion, reward, and world-change path as gameplay; the console is an exerciser,
+    /// not a second quest implementation.
+    /// </summary>
+    public QuestDebugAdvanceResult DebugAdvance(string questId, int objectiveIndex, int amount = 1)
+    {
+        if (!_quests.TryGetValue(questId, out QuestProgress? progress))
+        {
+            return QuestDebugAdvanceResult.MissingQuest;
+        }
+
+        List<ObjectiveResource> objectives = progress.Quest.ObjectiveList();
+        bool validIndex = objectiveIndex >= 0 && objectiveIndex < objectives.Count;
+        QuestDebugAdvanceResult result = QuestDebugRules.CanAdvance(
+            progress.Status, validIndex, validIndex && progress.IsObjectiveActive(objectiveIndex),
+            validIndex && progress.IsObjectiveComplete(objectiveIndex), amount);
+        if (result != QuestDebugAdvanceResult.Advanced)
+        {
+            return result;
+        }
+
+        SetObjectiveCount(progress, objectiveIndex,
+            Mathf.Min(progress.Counts[objectiveIndex] + amount, objectives[objectiveIndex].RequiredCount));
+        TryComplete(progress);
+        return QuestDebugAdvanceResult.Advanced;
+    }
+
+    /// <summary>
+    /// Completes every currently-live objective through <see cref="DebugAdvance"/>. Sequential
+    /// objectives become live as their predecessors complete; branch-shut objectives remain inert,
+    /// and a quest with no live branch is refused rather than rewarded by vacuous truth.
+    /// </summary>
+    public QuestDebugCompleteResult DebugComplete(string questId)
+    {
+        if (!_quests.TryGetValue(questId, out QuestProgress? progress) || progress.Status != QuestStatus.Active)
+        {
+            return IsCompleted(questId) ? QuestDebugCompleteResult.AlreadyCompleted : QuestDebugCompleteResult.NotActive;
+        }
+
+        bool sawLiveObjective = false;
+        bool advanced;
+        do
+        {
+            advanced = false;
+            List<ObjectiveResource> objectives = progress.Quest.ObjectiveList();
+            for (int i = 0; i < objectives.Count; i++)
+            {
+                if (!progress.IsObjectiveActive(i))
+                {
+                    continue;
+                }
+
+                sawLiveObjective = true;
+                if (progress.IsObjectiveComplete(i))
+                {
+                    continue;
+                }
+
+                int remaining = objectives[i].RequiredCount - progress.Counts[i];
+                if (DebugAdvance(questId, i, remaining) == QuestDebugAdvanceResult.Advanced)
+                {
+                    advanced = true;
+                }
+
+                if (progress.Status != QuestStatus.Active)
+                {
+                    return QuestDebugCompleteResult.Completed;
+                }
+            }
+        }
+        while (advanced);
+
+        return sawLiveObjective ? QuestDebugCompleteResult.NotActive : QuestDebugCompleteResult.NoLiveObjectives;
+    }
+
+    /// <summary>
+    /// Removes one quest attempt from the live journal. Completion flags deliberately stay put:
+    /// they are persistent world facts with other possible writers, so reset cannot safely clear one
+    /// without inventing a second authority over the world.
+    /// </summary>
+    public bool Reset(string questId)
+    {
+        if (!_quests.Remove(questId, out QuestProgress? progress))
+        {
+            return false;
+        }
+
+        if (TrackedQuestId == questId)
+        {
+            TrackedQuestId = string.Empty;
+        }
+
+        _defendHeld.Clear();
+        if (Entity != null)
+        {
+            EventBus.Instance?.Publish(new QuestResetEvent(Entity, progress.Quest));
+        }
+
+        return true;
+    }
+
     private void OnEntityDied(EntityDiedEvent e)
     {
         if (Entity == null)
@@ -578,19 +680,26 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
                     continue;
                 }
 
-                progress.Counts[i] = Mathf.Min(progress.Counts[i] + amount, objective.RequiredCount);
+                SetObjectiveCount(progress, i, Mathf.Min(progress.Counts[i] + amount, objective.RequiredCount));
                 changed = true;
-                if (Entity != null)
-                {
-                    EventBus.Instance?.Publish(new QuestObjectiveAdvancedEvent(
-                        Entity, progress.Quest, i, progress.Counts[i], objective.RequiredCount));
-                }
             }
 
             if (changed)
             {
                 TryComplete(progress);
             }
+        }
+    }
+
+    /// <summary>Writes one objective count and announces the exact normal progress event.</summary>
+    private void SetObjectiveCount(QuestProgress progress, int index, int count)
+    {
+        ObjectiveResource objective = progress.Quest.ObjectiveList()[index];
+        progress.Counts[index] = count;
+        if (Entity != null)
+        {
+            EventBus.Instance?.Publish(new QuestObjectiveAdvancedEvent(
+                Entity, progress.Quest, index, count, objective.RequiredCount));
         }
     }
 

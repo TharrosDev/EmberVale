@@ -16,6 +16,7 @@ using Embervale.Magic;
 using Embervale.Movement;
 using Embervale.Player;
 using Embervale.Progression;
+using Embervale.Quests;
 using Embervale.Races;
 using Embervale.Save;
 using Embervale.Settings;
@@ -61,6 +62,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("companion", "companion <list|recruit <id>|dismiss <id>|stance <id> <follow|hold|engage>|order|loyalty <id> [delta]>", "Inspect and drive the companion party (Phase 32A).", Companion));
         console.Register(new ConsoleCommand("shop", "shop [id|restock <id>|invest <id>]", "List shops, open one's trade window, force a restock, or buy a stake (Phase 38A/B/I).", Shop));
         console.Register(new ConsoleCommand("service", "service [id]", "List services, or use one on the player (Phase 38D).", Service));
+        console.Register(new ConsoleCommand("quest", "quest <start|advance|complete|reset> <questId> [objectiveIndex] [amount]", "Drive a quest through its real log, reward, event, and world-change paths (Phase 41F).", Quest));
         console.Register(new ConsoleCommand("savecheck", "savecheck", "Audit registered saveables for volatile (would-orphan) keys (Phase 25.5A).", SaveCheck));
 
         console.Register(new ConsoleCommand("seed", "seed <n>", "Seed the global RNG (for repro).", Seed));
@@ -283,6 +285,75 @@ public static class DevCommands
         }
 
         return $"'{service.Id}' is authored but no ServiceComponent in the loaded world offers it";
+    }
+
+    /// <summary>
+    /// Drives authored quests through <see cref="QuestLogComponent"/>, not by editing its save
+    /// data. That keeps console exercise on the player-facing path: objective events refresh the
+    /// journal, completion grants normal rewards, and a completion flag reaches its ordinary world
+    /// consumers. Reset deliberately removes only the log entry; a quest completion's story flag is
+    /// a separate persistent world fact and this command must not guess that it owns it.
+    /// </summary>
+    private static string Quest(DevConsole console, string[] args)
+    {
+        if (args.Length < 2)
+        {
+            return "usage: quest <start|advance|complete|reset> <questId> [objectiveIndex] [amount]";
+        }
+
+        if (!TryPlayer(out PlayerCharacter player) || player.GetComponent<QuestLogComponent>() is not { } log)
+        {
+            return "no player quest log";
+        }
+
+        string action = args[0].ToLowerInvariant();
+        string questId = args[1];
+        QuestResource? quest = QuestDatabase.Get(questId);
+        if (quest == null)
+        {
+            return $"unknown quest '{questId}'";
+        }
+
+        return action switch
+        {
+            "start" => log.StartQuest(quest)
+                ? $"started {quest.Id}"
+                : $"cannot start {quest.Id} (already active/completed, or prerequisite unfinished)",
+            "advance" => AdvanceQuest(log, quest, args),
+            "complete" => CompleteQuest(log, quest),
+            "reset" => log.Reset(quest.Id)
+                ? $"reset {quest.Id} (persistent story flags and world changes are unchanged)"
+                : $"{quest.Id} is not in the log",
+            _ => "usage: quest <start|advance|complete|reset> <questId> [objectiveIndex] [amount]",
+        };
+    }
+
+    private static string AdvanceQuest(QuestLogComponent log, QuestResource quest, string[] args)
+    {
+        if (args.Length < 3 || !int.TryParse(args[2], NumberStyles.Integer, CultureInfo.InvariantCulture, out int index))
+        {
+            return "usage: quest advance <questId> <objectiveIndex> [amount]";
+        }
+
+        int amount = ParseInt(args, 3, 1);
+        QuestDebugAdvanceResult result = log.DebugAdvance(quest.Id, index, amount);
+        return result == QuestDebugAdvanceResult.Advanced
+            ? $"advanced {quest.Id} objective {index}"
+            : QuestDebugRules.Describe(result, quest.Id, index);
+    }
+
+    private static string CompleteQuest(QuestLogComponent log, QuestResource quest)
+    {
+        QuestDebugCompleteResult result = log.DebugComplete(quest.Id);
+        return result switch
+        {
+            QuestDebugCompleteResult.Completed => $"completed {quest.Id}",
+            QuestDebugCompleteResult.AlreadyCompleted => $"{quest.Id} is already completed",
+            QuestDebugCompleteResult.NoLiveObjectives =>
+                $"cannot complete {quest.Id}: no live objectives (choose its branch through play first)",
+            QuestDebugCompleteResult.NotActive => $"{quest.Id} is not active",
+            _ => $"cannot complete {quest.Id}",
+        };
     }
 
     /// <summary>Every placed service in the tree. Walked rather than registered: services are ordinary

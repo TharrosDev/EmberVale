@@ -207,7 +207,7 @@ public partial class DebugHud : CanvasLayer
 
         if (_worldEvents is { } director && IsInstanceValid(director) && director.Active is { } worldEvent)
         {
-            sb.Append($"\n★ {worldEvent.Resource.DisplayName} — {worldEvent.ObjectiveLabel()}");
+            sb.Append($"\n★ {worldEvent.Name} — {worldEvent.ObjectiveLabel()}");
             if (worldEvent.IsTimed)
             {
                 sb.Append($"  [{worldEvent.TimeLeft:0}s]");
