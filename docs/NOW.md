@@ -1,413 +1,69 @@
 # NOW — where the project is
 
-**This file is the single source of truth for project state.** `CLAUDE.md`, `README.md`,
-`PRODUCTION_ROADMAP.md` and the playbook index link here instead of repeating it — before this file
-existed the same three lines were maintained in four places and rewritten every sub-phase.
-
-**Rewrite it, do not append to it.** It should never grow past a screen.
-
----
+**This is the single source of project state. Rewrite it; do not append to it.**
 
 ## Where we are
 
-- **Stage C. Phase 38 (economy) ✅ CLOSED. Phase 39 (Mounts & Traversal) ✅ CLOSED.**
-  ⚠️ **The mount is a state of the rider, not a second body.** ⚠️ **CLIMB AND SWIM ARE CUT, NOT
-  DEFERRED**, each with a condition (39C). **Do not build either speculatively.**
-- **Phase 39.5 (World Map & Location Intelligence) ✅ CLOSED — 39.5A, 39.5B, 39.5C. There is no
-  39.5D**; the remaining table is condition-gated, not scheduled, and inventing a sub-phase to hold
-  unripe items is what 38G did wrong. ⚠️ **`docs/playbook/phase-39_5.md` records what each deferred
-  item MEASURED AT**, so the next session checks whether the world changed rather than re-deriving it.
-- ❌ **PHASE 40 (Survival & Needs) AND PHASE 40.5 (Dungeon & Puzzle Framework) ARE STRUCK — NOT
-  WANTED** (maintainer direction, 2026-08-12). **This game has no survival needs**: no durability or
-  repair, no hunger, no thirst, no temperature, no encumbrance. **And no puzzle, trap or vault
-  tooling.** Neither is deferred and neither is condition-gated — **there is no condition that
-  revives them**, so do not propose any of them as a fix for anything. ⚠️ **The trap arm of 40.5 was
-  offered as a partial keep and declined**; that is recorded so the cheapest-looking piece is not
-  re-proposed next session.
-- ⚠️ **STRIKING A PHASE IS WORK, AND MOST OF IT IS OUTSIDE THE PHASE.** The build had zero survival
-  code, so the cut looked like two checkboxes — but Phase 40 had **two live stubs and seven files
-  pointing at a decision it would make**, and a struck phase with dangling pointers is worse than an
-  open one, because they now name something that will never resolve. Both stubs are gone:
-  1. **`CraftingStationType.Cooking`** — orphan #3 of the 2026-08-11 audit, which `NOW.md` had
-     reserved for 40A with *"do not delete it blind."* Zero recipes, zero stations, zero scenes, and
-     the **last** member of an append-only enum, so nothing shifted. ⚠️ **Ordinal 4 stays retired;
-     the next station appends at 5**, and being last-and-unauthored is the only reason it was safe.
-  2. **`InventoryComponent.MaxWeight` / `IsOverEncumbered`** — shipped Phase 5 as *"not yet enforced
-     (drives encumbrance later)"* and sat with **zero readers for thirty-five phases**. `later` never
-     comes now. ⚠️ **`TotalWeight` STAYS** and the character sheet still prints it: a weight readout
-     is an item fact, not a budget.
-- ⚠️ **"40B's rule" — a cut system leaves no stub — SURVIVES ITS PHASE BEING STRUCK.** It is cited by
-  name in ~10 files (`RECIPES.md`, `MapService.cs`, `MapLocationResource.cs`, `HudVisibility.cs`,
-  `PRODUCTION_ROADMAP.md`, the 38/39/39.5 entries) and **those citations were deliberately not
-  rewritten** — `docs/playbook/phase-40.md` is kept as a struck entry that preserves the provenance,
-  and **invariant 28 below is the rule's home.**
-- **Two phases were written against 40.5 and now owe their own answer**, named rather than discovered
-  later: **Phase 50** authors dungeons as rooms with encounters and loot on existing tooling (⚠️ **do
-  not reinvent hazards there**), and **Phase 51E** has a guardian (`LairSpawnComponent`) but no trial.
-- **Phase 41 (Quest Authoring at Scale & Branching) — 41A ✅ CLOSED.** `ObjectiveType.Reach` (2) and
-  `Talk` (3) join `Kill` and `Collect` through the same `QuestLogComponent.Advance` choke point. Talk
-  rides `DialogueEndedEvent` — **no new event type**; Reach polls at 4 Hz. `quest.hollowreach.word`
-  is the caller: Holt sends the player to Hollowreach to ask Sedge Marrow about the barrels, and it
-  is **the first quest in the game that is neither a cull nor a fetch.**
-- ⚠️ **REACH IS PROXIMITY, NOT DISCOVERY** (41A) — **invariant 35 is the whole story**, and
-  `ArrivalRadius` is deliberately its own constant, not `MapService.DiscoveryRadius`.
-- ✅ **All three of the 2026-08-11 audit's orphans are closed** (41A, by deletion).
-- ⚠️ **A DEFECT WAS ALREADY SHIPPED IN TWO QUESTS AND NOTHING COULD SEE IT** (41A) — two quests
-  authored literal English where twelve authored keys, invisible because `Loc.T` returns the key on a
-  miss. `ValidateQuestStringsAreKeys` is the rule; **invariant 34 is the whole story** and is not
-  repeated here.
-- **41B — Escort + Defend/Survive ✅ CLOSED.** `Escort` (4) and `Defend` (5) join the same `Advance`
-  choke point, and the quest log gained the state it never had: **`QuestStatus.Failed` (2)**, with
-  `QuestFailedEvent`, a journal FAILED section and a toast. ⚠️ **A FAILED QUEST IS RETAKEABLE** —
-  `CanStart` admits it, so every `QuestAvailable` dialogue gate reopens with no authoring change.
-- ⚠️ **THE ESCORTEE IS A COMPANION BECAUSE NOTHING ELSE IN THIS GAME CAN BE HURT** (41B, and this is
-  invariant 38 below). 41A's question — *which event means fail* — was answered with *there is no
-  such event and there cannot be*: all seventeen NPCs are `Entity` nodes with a static collider, no
-  stats and no hurtbox. `CompanionFactory` already builds a damageable ally **from a `.tres`**, so
-  `companion.tessa` + two dialogue choices is the whole escort mechanic, and `CompanionDownedEvent`
-  is the fail. **Defend's fail is the player's own death**; leaving the site stops the hold's clock
-  and keeps what it earned, because a count that silently rewinds is a fail state wearing no label.
-- ⚠️ **A QUEST-STARTED WORLD EVENT WAS REFUSED, AND IT IS 41A'S TRAP ONE TYPE LATER** (41B).
-  `ForceStart` exists and a `TriggerWorldEvent` effect was eight lines — but `WorldEventEndedEvent`
-  names an event **id, not an instance**, so a randomly rolled raid would fail the player's quest.
-  The hold's pressure is **geography**: `location.wilds.north` is far outside the 34 m safe zone,
-  which is exactly where the `EncounterDirector` already spawns.
-- ⚠️ **TWO `ObjectiveResource` FIELDS NOW CHANGE MEANING WITH THE TYPE, AND BOTH ARE GATED** (41B).
-  `LocationId` is **forbidden** on Reach and **required** on Escort; `RequiredCount` is a tally
-  everywhere except Defend, where it is **seconds** — the authoring default of 1 would be a
-  quarter-second hold, so `--validate` refuses anything under ten.
-- **41C — Interact/Use + Timed + Stealth ✅ CLOSED. The objective vocabulary is complete.**
-  `Interact` (6) rides `InteractionPerformedEvent`, which already carried the component used;
-  `Stealth` (7) is a **condition seeded ALREADY MET** that can only be lost. **Timed is a quest-level
-  `TimeLimitSeconds`, deliberately NOT an objective type** — `QuestProgress` stores one int per
-  objective and two ways to express a deadline is invariant 5 waiting to happen. It stops while the
-  tree is paused, so reading the journal costs nothing; do not "fix" that into a wall clock.
-- ⚠️ **THREE 41C TRAPS, KEPT SHORT — the full versions are `docs/playbook/phase-41.md`.**
-  **(a)** An event that fires **conditionally** is not an event that means the thing: `EnemyAlertedEvent`
-  is published only when the AI profile's `AlertRadius > 0`, which an ambusher authors as 0
-  (**invariant 39**). **(b)** A **seeded** state is invisible to every rule written for an earned one —
-  a Stealth objective starts met, so 41B's `FailQuestsWith` stepped over the whole type. **(c)** A gate
-  only a human can open is a gate **no instrument sees behind**: `quest.emberdeep.tally` was authored
-  behind a prerequisite, and every 41C mechanic was unreachable by `--panelshots` through five green
-  gates. ⚠️ **`InteractId` is the second scene-authored id with no database behind it**, validated
-  both ways — **the duplicate arm is the half a one-way check misses.**
-- **41D — Choice/Branch objectives + quest state graphs ✅ CLOSED. Quests branch and quests order.**
-  `ObjectiveResource.RequiredFlagId`/`ForbiddenFlagId` make an objective **inert**;
-  `QuestResource.SequentialObjectives` orders them. ⚠️ **NO NEW SAVE STATE, BY DESIGN** — the branch
-  is **re-derived** from a story flag `StoryFlagsComponent` has persisted since Phase 10, so
-  `SAVE_FORMAT.md` needed no edit and every old save loads as an unbranched quest by construction.
-  The ordering debt three `.tres` headers named is **paid**, and those notes are rewritten rather
-  than left dangling.
-- ⚠️ **AN INERT OBJECTIVE IS A THIRD STATE AND SIX SURFACES WERE WRITTEN WITHOUT IT** (41D).
-  Every filter spelled `!IsObjectiveComplete(i)` — correct for two states, wrong for three. **Three
-  of the six answer "where next?"** (compass needle, map pin, tracker distance) and would have
-  agreed with each other while pointing the player **down the branch they had just declined**.
-  **Invariant 39 is the whole story**; one predicate, `QuestProgress.IsObjectiveActive`, is now the
-  single answer.
-- ⚠️ **A CACHE KEY IS A SUBSCRIPTION, AND IT IS THE ONE NO `Subscribe<>` GREP FINDS** (41D).
-  `QuestLogPanel` missed `StoryFlagChangedEvent` — 41B's defect in the same file one sub-phase later
-  — but `GameHud`'s tracker was staler and stranger: it rebuilds on a **signature of quest id +
-  counts**, and a flag change moves no count. Both fixed. **Any sub-phase adding a fact a surface
-  draws must ask whether that fact is in the signature.**
-- ⚠️ **ZERO LIVE OBJECTIVES IS NOT COMPLETION** (41D). A fully-branched quest has nothing live
-  until a flag lands, and `AllObjectivesMet` over an empty set is vacuously true — the natural
-  one-line filter completes it with rewards on the frame it is accepted. `AllLiveMet` refuses.
-  **41C's only-stealth trap is the same bug with a different empty set.** ⚠️ **And the sequential
-  scan STEPS OVER shut gates**, which is the one line that lets ordering and branching compose.
-- ⚠️ **PER-OUTCOME REWARDS WERE DECLINED (maintainer call) AND THE ENDING IS THE FLAG.**
-  `flag.hollowreach.barrels_hushed` opens a gated shelf on `shop.hollowreach.hull` through
-  `ShopStockEntry.RequiredFlagId`, live since 38I — a consequence the player can walk back to, and
-  no second home for rewards (invariant 5). `quest.hollowreach.barrels` off Sedge Marrow is the
-  caller; its fork is chosen **before the quest starts** (two choices deep) and the fork choices gate
-  on each other, so **both flags can never be set**.
-- **41E — Quest-driven world changes ✅ CLOSED.** A quest now writes one optional
-  `CompletionFlagId` at its normal completion choke point. That flag is already persistent in
-  `StoryFlagsComponent`; a load replaces it, then world consumers re-derive on `GameLoadedEvent`.
-  `quest.warband.heart` opens Frostfang Reach; `quest.emberdeep.tally` makes Coyle leave the Locker.
-  ⚠️ **The NPC did not "die"**: invariant 38 still says no NPC can be hurt, so a flag-driven actor
-  departure is the honest world change. `FlagVisibilityComponent` hides collision as well as mesh.
-  `ValidateStoryFlags` now knows quest completion writers and scene visibility readers; pure tests
-  cover one-shot writes and restored presence.
-- **41F — Quest-debug console + validator extension ✅ CLOSED. Phase 41 is closed.** F1 now drives
-  the real quest-log choke points with `quest start/advance/complete/reset`; `reset` removes only
-  the log attempt, never a completion flag or its world consequence. `validate-all` rejects an
-  objective gated on its own quest's completion flag — both ids resolve, but the flag is only
-  written after that objective finishes, so the branch could never be entered. **NEXT: Phase 41.5
-  — Divine Shrines & Blessings.**
-- **Out-of-band world-infrastructure foundation ✅ LANDED; it does not advance 41F.** Regions now
-  author separate `.tscn`, expanded-runtime, scatter, draw, memory, and frame budgets. Frostfang's
-  repeated dead-pine/rock ecology is deterministic MultiMesh output with automatic road clearance
-  and authored landmark exclusions, detailed/HLOD cross-fade ranges, and camera-distance cosmetic
-  culling. Cell surfaces are indexed CPU heightfields with edge-flat seams and slope/height/road
-  material blending. Loading is queued → threaded → ready → frame-budgeted instancing, with
-  concurrency throttled under memory pressure. `--validate` gates sources/counts/topology; F4 and the sustained runtime
-  monitor report live limits. A 150-frame perceptual baseline now makes world rendering repeatable.
-  The three Ashfall stations now have real `Entity` owners, and isolated
-  world QA initializes the same content registry as the game instead of emitting false lair warnings.
-- ⚠️ **A LOCATION'S POSITION IS ITS NODE'S TRANSFORM IN A CELL SCENE, NEVER AN AUTHORED COORDINATE**
-  (39.5A). `MapLocationResource` says what a place is; a `MapLocationComponent` parented to the stall
-  or keeper says where. `--validate` scans `.tscn` in **both** directions. Author with
-  `tools/gen_map_locations.py`; `--check` is a gate.
-- ⚠️ **IF THE PLAYER CAN GO THERE, IT GOES ON THE MAP, IN THE SAME SUB-PHASE THAT ADDS IT.**
-  **This is a gate:** `ValidateEverythingIsOnTheMap` fails `--validate` for any shop or service no
-  map location names; coverage ships at 23/23 and 15/15. ⚠️ **Quest destinations landed in 39.5C and
-  exactly ONE objective in the game earned one** — every hostile is a region-scoped
-  `EncounterResource` and every quest material comes off a loot table, so **this world needs search
-  AREAS, not points**, and that stays a measured condition rather than a guess. ✅ **41A changed the
-  arithmetic in one direction only: a `Reach` objective's `TargetId` IS a location id, so every Reach
-  objective is its own destination by construction** — and `--validate` refuses a `LocationId`
-  authored beside one, because that would be two answers to a question that has one (invariant 5).
-  **Reach is the one objective shape a point genuinely fits**; it does not help the other nineteen.
-- ⚠️ **DYING WHILE MOUNTED IS A KNOWN GAP, NAMED RATHER THAN FIXED (39B).** Death plays a full-body
-  clip on a seated offset, and nothing dismounts on death.
-- ⚠️ **Five of 38R's seven briefed services were struck, not deferred.** Two already existed under
-  another name. **Do not rebuild them.**
-- ✅ **A FULL-REPO AUDIT RAN 2026-08-15 AND ITS WAVE 1 IS LANDED** — no feature work.
-  Two save-path P0s (invariant 36), the inert boss AI knob (invariant 37), and three per-frame
-  allocation sites, and **CI: `dotnet build --warnaserror` + 1426 tests + `--validate` now run on
-  every push** (`.github/workflows/ci.yml`). ⚠️ **CI had been declined before and that was reversed
-  deliberately** — do not "restore" the no-CI note as drift. ⚠️ **Editing that workflow needs a token
-  with `workflow` scope**, which the session OAuth token lacks; it went in through the GitHub API.
-- ✅ **WAVE 2 (foundation) IS ALSO LANDED** — five commits, still no feature work. One
-  `ResourceDirectory.Load<T>` replaced **25 copied `*Database.Initialize` bodies** (−930 lines, and
-  `ItemDatabase` was the one that had already drifted out of a directory guard);
-  `ValidateSceneAuthoredIds` closes the `.tscn` hole `ServiceComponent`'s header had named for
-  phases (8 id families, 96 values, **negative battery now 66/66**); a `CellPersistenceDirector`
-  closure leak; the `header.json` mirror is deleted rather than left stale; and `TryMigrate` now
-  **refuses** an unmigratable save instead of best-efforting it. 📖 **`docs/SAVE_FORMAT.md` is new
-  and is the contract** — read it before touching anything that saves, and note its "what is
-  deliberately NOT saved" list before filing a bug against a decision.
-- ✅ **WAVE 3 (structure) IS PARTLY LANDED — `GameBootstrap` 1501 → 1266 lines and 8 fields gone.**
-  Three commits, taken at the 41A/41B boundary: `WorldEnvironmentBuilder` (sun/sky/tonemap/ground),
-  six write-only panel fields deleted, and `RegionSetup` (safe zones, portals, toll).
-  ⚠️ **TWO EXTRACTIONS WERE REFUSED WITH REASONS, AND THE REASONS ARE THE USEFUL PART:**
-  1. **`DebugHotkeys`** — the roadmap called it easy because it is already behind
-     `BuildProfile.ShowDeveloperTools`. It is not: the block reaches `_dummy`, `_respawnCountdown`,
-     `_player`, `_console`, `_hud`, `_profiler` and `AbortToTitle`, so extracting it **relocates**
-     coupling. `SandboxProps` already ruled on that exact state and wrote down why.
-  2. **The region-transition state machine** (~290 lines: streamer swap, fast travel,
-     `PerformRegionLoad`, `_currentRegionId`). ⚠️ **NOTHING HERE EXERCISES A REGION TRANSITION** —
-     `--play` never walks a portal, `--panelshots` never travels — so it would ship verified by
-     reading. **It waits for a session with a playthrough in it.**
-  ⚠️ **A refactor of code no gate covers is a refactor that needs a human, and saying so is cheaper
-  than a regression found three phases later.**
-- ✅ **WAVE 4 IS CLOSED — THREE COMMITS AND FOUR REFUSALS, AND THE REFUSALS ARE THE LONGER HALF.**
-  It was scheduled against its own "opportunistic, never as scheduled work" classification, on the
-  instruction to push back where that was right. Done: **L-14** — `EnemyArchetypeFactory` decided
-  flight from `AIProfileDatabase` while the brain it built one line earlier resolved through
-  `ResolveProfile`; both now go through one static `EnemyAIComponent.Resolve`. ⚠️ **LATENT, NOT
-  LIVE** — the factory never sets an inline `Profile` and all four boss `.tres` author every phase
-  `AiProfileId = ""`, so no data reaches the divergence; **this removed a second answer, it did not
-  fix a symptom.** **L-15a** — `MapService`'s twin 14-line lookups became one `FindCell` with two
-  projections. **L-15c** — `EnemyScaling.ApplyHealthMultiplier` now holds the champion-scaling rule
-  `WorldEventDirector` and `BossController` each carried a copy of.
-  ⚠️ **FOUR THINGS WERE REFUSED, WITH REASONS:**
-  1. **L-12 (~40 balance constants → data) — declined entire, not deferred.** `ShakeMath` and
-     `HitStop` say in their own headers that they are Godot-free *so the feel curve is
-     unit-testable*, and the test project's csproj forbids `GodotObject` construction. **The
-     constants are not a workaround for that limit; they are the shape it correctly produced.**
-     Moving them to `.tres` would delete the tests that pin the curves to serve an audience of one
-     who edits C# here every session.
-  2. **L-15b (`HorizontalDistance` ×3) — skipped.** Four pure lines carrying **no rule**: no
-     invariant, no balance decision, nothing that can drift. A shared home means a new file plus a
-     dependency edge from `Enemies`, `Companions` and `Housing` to delete eight lines — addition
-     dressed as deletion. ⚠️ **And the same files flatten Y inline in twelve other places**, so
-     consolidating three of fifteen sites is a new inconsistency, not consolidation. **This is the
-     line between L-15b and L-15c: duplication that encodes a decision gets one home, duplication
-     that encodes a formula does not.**
-  3. **`AshenAffliction` was not folded into `EnemyScaling`** though it names itself a third mirror —
-     it scales health, power and XP under one removable tag, a different rule that shares a line.
-  4. ~~**L-17**~~ — the "53 raw content ids in `VendorPanel`" finding was **retracted 2026-08-15 as
-     wrong**: all 47 literals are `Loc.T` **locale keys**, which correctly live in the UI. Moving
-     them to `GameIds` would be actively harmful. Recorded so it is not rediscovered and "fixed".
-  ⚠️ **A KNOWN BOUND, NAMED RATHER THAN BUILT FOR** (invariant 28): `FlightComponent` is attached at
-  build time, so a boss phase that switched to a flying profile at runtime still could not gain
-  flight. **Flight is structural, not a knob a phase can turn.**
-  📖 The report is the plan file from the audit session, and its §N "DO NOT TOUCH" list is still the
-  important half — `CombatMath`, `ShopPricing`/`PriceBreakdown`, `EventBus`, the `.tres` pipeline and
-  the UI/gameplay boundary are healthy, and **refactoring them is how the audit does harm.**
-- 📖 Economy: `ARCHITECTURE.md` §2.6m is the mechanism, `DESIGN.md` §6 + §6.1 the intent.
-  🎨 `docs/ASSET_POLICY.md` §0.2–§0.3 is the asset authority.
+- **Stage C.** Economy (38), mounts/traversal (39), map intelligence (39.5), and quest authoring
+  (41) are closed. **Phases 40 and 40.5 are struck, not deferred:** this game has no survival
+  needs, durability, hunger, encumbrance, puzzle, trap, or vault system. A cut system leaves no stub.
+- **41.5A — Divine Shrines & Blessings core ✅ CLOSED.** `shrine.solaryn` gives Lightbearer's Guard
+  (+10 Armor) on the first interaction with the sandbox shrine southeast of spawn. The player's
+  `BlessingComponent` saves claimed shrine ids under `blessings:player`, clears old modifiers before
+  load, and re-derives every restored modifier from `ShrineResource` data.
+- **NEXT: 41.5B — author the five remaining blessings and place all six gods' shrines.** The Solaryn
+  sandbox fixture is a real caller, not a final location. 41.5B owns the fiction-led cell placements,
+  map locations, surrounding composition, and renders.
+- The former Phase 40 dependencies are settled: `CraftingStationType.Cooking` is gone (ordinal 4
+  retired; append future stations at 5), and inventory has no max-weight/encumbrance state. Weight is
+  still an item fact. The deferred 39.5 table remains measured, not scheduled.
 
-## Last verified (session close, 2026-08-28 — 41F + combined infrastructure batch)
+## Last verified (2026-08-28 — 41.5A)
 
-| | |
+| Check | Result |
 | --- | --- |
-| Build | `dotnet build Embervale.sln` completed; `dotnet test` rebuilt both projects |
-| Tests | **1493 passing** (includes the 41F pure console-rule cases) |
-| `--validate` | exit 0; **1432** locale strings, **18 quests**, 34 dialogues |
-| **Negative tests** | `python tools/negative_tests.py` — **87/87 broken and restored**, then `--validate` recovered to exit 0 |
-| `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, 34 dialogues, **18 quests**, 64 map locations, 3 companions |
-| **`--panelshots`** | 14 frames (+2). **`11-journal-declared` and `12-journal-hushed` are the pair, and the PAIR is the evidence** — the *same quest instance* under opposite flags. The journal draws the Crossway pair then the Tarn pair, never four rows; the second row of each is **dim and padlocked** (the first ordered quest ever drawn); and the tracker's readout flips **`97 m · N` → `61 m · NW` with no count changing.** That one number is the proof the branch is re-derived rather than frozen — which is the entire justification for adding no save state |
-| **World shots** | **150/150** day/dusk frames rendered through the production threaded streamer and independently matched the committed 12×8 RGB signature baseline |
-| **`--play`** | bounded boot loaded `auto1`, **33 objects restored**, all 10 Ember cells loaded. ⚠️ The pre-existing world performance monitor emitted 26–109 ms budget warnings; no quest-console failure appeared. |
-| ⚠️ **Not covered by anything** | **No playthrough held the conversation, walked either road, or reloaded mid-branch.** Proven: the fork renders, re-derives across a frame with no quest event in it, and is gated in five directions. Not proven: that a save reloaded on the hushed path comes back on it. ⚠️ **Three named playthroughs are now owed** — 41B's escort walk, 41C's tally run, 41D's fork — and saying so out loud is the point |
-| Not run, deliberately | ⚠️ **`--economy`** — no price, spread or multiplier touched; the new shop row is a *gated* entry priced by the existing curve. ⚠️ **`map_probe`** — nothing was placed; the quest names four locations that already existed. ⚠️ **`--hudshots`** — the tracker is covered by the panel frames above, which draw it |
-| MCP | ✅ **UP, and brought up mid-session.** The editor was open in **Cloud mode** (the `ai-game.dev` tell in `.claude/skills/*/SKILL.md`) with the relay not running at all — `godot-cli close .` + `godot-cli open . --mode Custom --url http://localhost:23630` fixed it, and the regenerated skill docs now point at localhost. ⚠️ **`mcp__ai-game-developer__*` tools were absent all session** (`.mcp.json` is read at Claude Code startup and the server was down then), so it was driven over HTTP via `godot-cli run-tool`. Not needed: nothing was placed in the world and no model was adopted |
+| Build | `dotnet build Embervale.sln` — 0 warnings, 0 errors |
+| Tests | `dotnet test tests/Embervale.Tests` — **1496 passing** |
+| `--validate` | exit 0; **1 shrine**, 1438 locale strings, 18 quests, 34 dialogues |
+| Negative rule | `tools/negative_tests.py --only shrine.grants_no_bonus` — broken, caught, restored; recovered `--validate` exit 0 |
+| `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, 34 dialogues, 18 quests, 64 map locations, 3 companions |
+| `--play` | loaded newest `auto2`, restored 34 objects, all 10 Ember Crown cells; it booted successfully with the new blessing saveable present |
+| Shrine render | `--shrine-shots`: four 1280×720 eye-level front/back day/dusk frames; first frame drove the real interaction and displayed the blessing toast |
+| Not run | `--economy` (no price touched); full world baseline (the shrine-specific live captures cover this placement) |
 
-## Live invariants — the things that will bite you
+## Live invariants
 
-1. **A region loads whole.** Every cell of the active region is resident; no distance test, no unload
-   during play. ⚠️ Both *regions* cannot be resident together (Phase 44).
-   ⚠️ **So `RevealWithCell` on a map location means "known on entering the REGION"** (39.5A).
-2. ⚠️ **`sell <= LOCAL value <= buy` holds at every shop by construction.** Treat `sell > buy` **at
-   one shop** as a defect.
-3. ⚠️ **A DEMAND TABLE IS A FLOOR UNDER OTHER PEOPLE'S RULES.** ⚠️ `ShopResource.CellId` is empty by
-   default and empty means par.
-4. ⚠️ **WHEN A NEW PRICE APPEARS, ASK WHAT IT IS A SPREAD OVER** — every new multiplier joins
-   `NoCombinationOfMultipliersLetsSellingBeatBuying` or it does not ship.
-5. ⚠️ **THE EXPLANATION IS THE CHARGE** (38U). ⚠️ **AND ONE SURFACE OWNS EACH FACT** (39.5B): the map,
-   the minimap and the compass share **one** `MapPins` builder and **one** resolved objective target.
-   Two surfaces computing the same answer agree until the day one of them gains a filter.
-6. ⚠️ **A RULE PROVEN ONCE IS NOT A RULE PROVEN TODAY** (38V). `tools/negative_tests.py` is the
-   answer. ⚠️ **It cannot reach a rule that lives in a code constant.**
-7. ⚠️ **A STATEFUL COMPONENT TURNS ONE BAD FRAME INTO A PERMANENT FAULT** (37F); **A CACHED POSE IS
-   THE SAME BUG WEARING VISUALS** (39B); **A VALUE TYPE CARRYING LAYOUT STATE IS THE SAME BUG WITH NO
-   CACHE IN IT** (39.5A — `MapProjection`'s viewport is `(1,1)` until `Resized`). **When a sub-phase
-   adds a state, ask what every existing thing does IN that state.** ⚠️ **39.5B is the corollary: the
-   HUD had never been asked what it does in the "a menu is open" state.** ⚠️ **41B is the sharper
-   one: a new state must reach every surface that draws the old one, and the surface you are editing
-   is the one you will miss.** The journal got a FAILED *section* and no FAILED *refresh*, so a quest
-   that failed while it was open stayed under ERRANDS marked TRACKED while the toast and the tracker
-   both said otherwise. **The grep is not "who draws this" but "who subscribes to the sibling event".**
-8. ✅ **THE UI HAS A SEAT TO RENDER FROM — USE IT.** `--hudshots` (12 states) and `--panelshots` (9)
-   found **six** shipped defects across 39.5B/C. ⚠️ **A UI change that has not been captured is not
-   verified**, and "reviewed against the API" is the phrase that preceded every one of them. ⚠️ **AND
-   A RUNNING EDITOR IS NOT A WORKING MCP** (39.5B): the tell is `.claude/skills/*/SKILL.md` showing
-   `ai-game.dev` URLs — that means Cloud mode and every call 503s. `godot-cli close .` then
-   `godot-cli open . --mode Custom --url http://localhost:23630 --editor-path <console-LESS .exe>`.
-9. ⚠️ **A GODOT PROPERTY WHOSE DEFAULT DIFFERS FROM ITS BASE CLASS'S IS THE DEFECT CLASS THAT PASSES
-   EVERY REVIEW** — a `Label` defaults `mouse_filter` to Ignore (38U); a public `Hidden` on a
-   `Control` shadows `CanvasItem.Hidden` (39.5A); **a `Button` in a NON-MODAL `UiPanel` is unreachable
-   by mouse** (39.5B), because `UiPanel` only frees the cursor for modal panels.
-10. ⚠️ **DERIVE, THEN BOUND.** ⚠️ `string.GetHashCode()` is randomised per process; `StableRoll` is a
-    hand-written FNV-1a. ⚠️ **GDScript can only call methods whose signatures marshal.**
-11. ⚠️ **A SERVICE CAN BE FIRED FROM A CONVERSATION, EXCEPT A BANK.** ⚠️ **An entity still gets one
-    interactable.**
-12. **A broker fronts nothing**, so no purse and no saturation apply to her.
-13. **`contraband` is the one trade tag that fails CLOSED.** The Crossway toll is charged in
-    `GameBootstrap.PayToll`.
-14. ⚠️ **RENDER THE THING, AND RENDER IT WITH THE PEOPLE AND FURNITURE AROUND IT.** Seven firings.
-    ⚠️ **A body's facing is not knowable from a file.** ⚠️ **When no pack model fits, primitives are
-    a legitimate answer.**
-15. ⚠️ **A DECISION CAN LIVE IN A `.tres` HEADER, AND NOTHING GREPS THOSE.** **Before authoring
-    content of a kind that already exists, read the existing one's header.**
-16. ⚠️ **`CharacterBody3D` STILL has no step-up; `LocomotionComponent` does** (39C). Every walking
-    actor climbs to **0.5 m**, pinned by a `--validate` rule. ⚠️ **The step is simulated, never
-    computed** — `tools/stepup_probe.gd` is the check.
-17. **A retargeted rig is marked by its skeleton being named `GeneralSkeleton`.** ⚠️ **An unresolved
-    clip slot is silent**, so a slot whose *choice* matters is pinned by test.
-18. **Check what is already vendored before pulling from the web.**
-19. ⚠️ **MEASURING A MODEL'S ACCESSORS IS NOT MEASURING THE MODEL.** ⚠️ **`global_transform` returns
-    IDENTITY with an error for a node added during `_initialize`** — `await process_frame` twice.
-20. ⚠️ **The nature megakit's ground cover is 4–10× life size while its trees are 1:1.**
-21. ⚠️ **A generic wall kit composes generic buildings well and special-purpose ones badly.**
-22. ⚠️ **A schedule carries a copy of its cell's `Center` as `Origin`** — moving a cell is never a
-    one-line edit. ⚠️ **A cell has no authored size at all** (39.5A).
-23. ⚠️ **A MOUNTED BODY MAY NOT PLAY A FULL-BODY CLIP** (39B). **Death is the known remaining hole.**
-24. ⚠️ **TWO FUNCTIONS THAT ORDER THE SAME BRANCHES MUST AGREE.** ⚠️ **A price lookup fails CLOSED.**
-25. ⚠️ **A RESTORED FILE WITH AN OLD TIMESTAMP DOES NOT REBUILD** (39A). `touch` before `dotnet build`.
-26. ⚠️ **A COMPUTED LOCALE KEY IS INVISIBLE TO EVERY DATA-DRIVEN CHECK** (39.5A/B). `map.category.*`,
-    `hud.compass.*` and `hud.unit.*` are picked from a value, not authored at a call site.
-    `ValidateMapTaxonomyIsNamed` and `ValidateHudComputedKeys` are the pattern: **enumerate the
-    declared set, not the set today's data happens to reach.**
-27. ⚠️ **MOVING A FEATURE IS INDISTINGUISHABLE FROM DELETING IT** (39.5A). **Ask what state the player
-    is in when the new path does not exist yet.** ⚠️ **This is also why 39.5B did not build the
-    brief's idle auto-hide.**
-28. ⚠️ **A CUT SYSTEM LEAVES NO STUB, AND "THE GAME HAS NO SUCH STATE" IS A LEGITIMATE ANSWER.**
-    **This is the rule the repo cites as "40B's rule", and this is its home now that Phase 40 is
-    struck** — the ~10 citations elsewhere still resolve, to a preserved entry. Worked examples:
-    39C's climb/swim, 39.5A's districts, 39.5B's cut `HudMode.Dead` (respawn is synchronous, so there
-    is no window for a death HUD) and its cut combat HUD (**there is no `InCombat` flag anywhere in
-    `src/`** and the HUD may not invent one). ⚠️ **Phase 40 is the largest worked example**: striking
-    a phase means deleting its stubs and settling every pointer at it, and **the grep is the
-    deliverable**. **Check whether the state exists before building the presentation of it.**
-29. ⚠️ **"ALREADY SHIPPED AND CHECKED" IS NOT "GOOD", AND AN AUDIT THAT ONLY READS CODE CANNOT TELL
-    THE DIFFERENCE** (39.5B, maintainer direction). ~60 of 80 HUD sections were marked satisfied,
-    correctly — **four defects were sitting in them anyway**, every one a *presentation* fact, and
-    presentation facts are invisible to builds, tests, validators and code review alike. **When the
-    question is quality rather than correctness, render it and look.**
-30. ⚠️ **A DEFERRED CONDITION IS A HYPOTHESIS, AND IT CAN BE WRONG IN THE RIGHT NEIGHBOURHOOD**
-    (39.5C). Clustering was gated on "two `Detail` markers overlap"; the closest pair is 2.13 m and
-    they never do — while their **labels** collided badly enough to render seven names as one pile.
-    **Measure the condition, then look at the area anyway.**
-31. ⚠️ **WHEN A NEW SURFACE ANSWERS AN OLD SURFACE'S QUESTION, TAKE THE QUESTION AWAY FROM THE OLD
-    ONE** (39.5C). The compass carried discovered-place ticks for two sub-phases after the minimap
-    made that job redundant, and **both surfaces got worse**. Adding a widget is the moment to ask
-    what it makes unnecessary elsewhere.
-32. ⚠️ **A `VBoxContainer` RESOLVES OVERFLOW BY CRUSHING WHOEVER HAS `ExpandFill`** (39.5C). **Bound
-    the section that grows, and give anything with `ExpandFill` a `CustomMinimumSize` floor too.**
-33. ⚠️ **A COLOUR TOKEN CAN BE WRONG AND NOTHING WILL EVER SAY SO.** `Trough` sat within a rounding
-    error of `CardBg` for multiple phases, making every bar in the game unreadable, and it passed the
-    contrast tests because those check *text* pairs. ⚠️ **When two tokens are used together, the pair
-    is the thing to check** — the depth scale (`WellBg`/`PanelBg`/`CardBg`) already encodes which
-    pairs are meant to be distinguishable.
-34. ⚠️ **A MISSING LOCALE KEY WHOSE NAME READS AS ENGLISH IS SILENT IN EVERY INSTRUMENT** (41A).
-    `Loc.T` returns the key unchanged on a miss, so a `.tres` authoring `Title = "Gather Iron"`
-    renders "Gather Iron" — correct on screen, in the journal, on the tracker and in a captured
-    frame — and breaks on the first non-English locale. Two live quests carried this for twenty-nine
-    phases. **The only rule that catches it asks *is this string a key*, not *does this string
-    render*, and it must check presence in the catalogue** (which also catches a mistyped key, the
-    failure that survives a rename). ⚠️ **Its sibling: a fallback nothing reaches is a defect nothing
-    reports** — `ShortLabel()` was one line from putting `enemy.goblin` on screen.
-35. ⚠️ **WHEN A NEW STATE ARRIVES, ASK WHICH EXISTING EVENT ACTUALLY MEANS IT** (41A). A new objective
-    type is a few lines, because `Advance` is one choke point and the events already exist; the whole
-    job is the semantics. "Discovered" is not "arrived" — `RevealWithCell` means *entered the region*
-    — so the free-looking reuse would have shipped a quest that completes itself on region entry.
-    **The cheap implementation and the correct one differ by a question nobody is forced to ask.**
-36. ⚠️ **A ROUTE THAT SKIPS THE RESTORE IS STILL A LOAD, AND NOTHING SAID SO** (audit 2026-08-15).
-    Position and region came back in `StartLoadedGame` only — **F9 and the pause menu called
-    `SaveManager.LoadGame` directly and got the world rewound around a player who never moved.**
-    The restore now lives *inside* the load (`SaveManager.LocationApplier`), so a fourth route
-    inherits it. **⚠️ AND A PARTIAL RESTORE IS A FAILED LOAD:** `LoadGame` caught each saveable's
-    exception and still returned `true`, so all-34-threw was indistinguishable from clean and the
-    next autosave wrote it over the good file. It returns `false` now and **every caller drops to
-    the title** — a half-restored world is not a world to resume into.
-37. ⚠️ **A KNOB YOU VALIDATE IS A CLAIM THAT THE KNOB WORKS** (audit 2026-08-15).
-    `BossPhaseResource.AiProfileId` was authored, validated by `ContentValidator`, and **inert** —
-    `EnemyAIComponent` resolved its profile once in `OnInitialize` and cached it, so the phase-change
-    write landed on a field nothing read again. Masked only because all nine authored phases set it
-    to `""`. **Verify the read path exists before writing the validator rule**, or the first author to
-    use the field gets a green gate and no behaviour.
-38. ⚠️ **NOTHING IN THIS GAME CAN DAMAGE AN NPC** (41B). All seventeen authored NPCs are `Entity`
-    nodes with a static collider, **no `StatsComponent` and no hurtbox** — so any feature whose
-    failure or drama depends on a villager being hurt has no honest event to ride, and building one
-    means building a damageable body. **The damageable ally already exists and is pure data:**
-    `CompanionFactory` assembles health, combat, follow AI, a leash and persistence from a
-    `CompanionResource`, and `DialogueEffect.RecruitCompanion` places one.
-39. ⚠️ **AN EVENT THAT FIRES CONDITIONALLY IS NOT AN EVENT THAT MEANS THE THING** (41C).
-    `EnemyAlertedEvent` looks like "the player was spotted" and is published **only when the AI
-    profile's `AlertRadius > 0`** — an ambusher authors 0 so the pack is not given away. Before
-    riding an event, read the line that publishes it and ask **what has to be true for it to fire at
-    all**; the answer is sometimes authored in a `.tres` a hundred files away.
-    ⚠️ **Its sibling: a SEEDED state is invisible to every rule written for an EARNED one.** A
-    `Stealth` objective starts already met, so a helper that correctly skips completed objectives
-    skipped the entire type. **Every filter on *unmet* / *not yet done* is a candidate to be wrong
-    about a state that begins in the finished position.**
-40. ⚠️ **A STATE THAT IS NEITHER MET NOR PENDING IS INVISIBLE TO EVERY RULE THAT KNOWS ONLY THOSE
-    TWO** (41D — invariant 39's mirror). A branch-gated or order-locked objective is **inert**, and
-    six surfaces asked `!IsObjectiveComplete(i)`, which had been exactly right for thirty phases.
-    **The productive grep was the negation, not the feature** — not "quest" or "branch" but
-    `!IsObjectiveComplete` and `Counts`. ⚠️ **And two of the six were caches, not subscriptions:**
-    `GameHud`'s tracker rebuilds on a signature of quest id + counts and a flag change moves no
-    count, so it would have cached the fork forever. **A cache key is an opinion about what can
-    change, and it is the only kind of listener nothing lists.**
-
+1. **Gameplay state persists, and Load REPLACES live collections.** Save ids are stable primary
+   keys; clear before restore, including every false/empty branch. A partial restore is a failed load.
+2. **One surface owns each fact.** A shrine body is a caller; the player's claimed-id set is the only
+   blessing authority. Never add per-shrine flags or a second blessing ledger.
+3. **All player-facing text uses `Loc.T()` and a `strings.csv` key.** Literal English can render
+   correctly while silently breaking localization.
+4. **If the player can go there, map it in the same sub-phase.** A map location's position is the
+   transform of its `MapLocationComponent` parent in a cell scene, never a resource coordinate.
+5. **Render world changes at eye level, front and back, with people and furniture around them.**
+   Reading a transform is not a placement review.
+6. **Before authoring content of an existing kind, read an existing `.tres` header.** Decisions hide
+   there. Before adopting a model, inspect the four Quaternius packs and `assets/library/manifest.json`.
+   Use primitives only when no pack model fits; never introduce a fifth style.
+7. **An event that fires conditionally is not automatically the event that means the thing.** Read its
+   publisher before using it as a mechanic trigger; seeded state also defeats "not yet done" filters.
+8. **A cache key is a subscription.** Any newly drawn fact must be part of every cache/signature that
+   renders it, not merely an event listener.
 
 ## Commands worth knowing
 
-```
-dotnet build Embervale.sln                      # ALWAYS before running — nothing else recompiles C#
+```text
+dotnet build Embervale.sln
 dotnet test tests/Embervale.Tests
-godot --headless --path . -- --validate         # content gate, exit 0/1
-python tools/negative_tests.py                  # proves the gate still bites (58 cases, >2 min)
-python tools/gen_map_locations.py [--check]     # author map locations; --check is a gate
-godot --headless --path . -- --economy          # the realm's price landscape
-godot --headless --path . -- --state            # the content census
-godot --path . -- --play                        # boot into the newest save
-godot --path . -- --hudshots                    # render 12 HUD states to PNG. ⚠️ NOT --headless
-godot --path . -- --panelshots                  # render 9 map/journal states. ⚠️ NOT --headless
-godot --headless --path . --script res://tools/map_probe.gd     # map placement gate, exit 0/1
-godot --headless --path . --script res://tools/stepup_probe.gd  # step-up gate, exit 0/1
-godot-cli status .                              # the Godot MCP probe — it is DOWN every session start
+godot --headless --path . -- --validate
+python tools/negative_tests.py
+godot --headless --path . -- --state
+godot --path . -- --play
+godot --path . -- --shrine-shots
 ```
+
+`godot`/`python` are not on this shell PATH. The 4.7.1 console executable at
+`C:\Users\magnu\Downloads\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64_console.exe`
+and Codex's bundled Python work when launched with the elevated project environment. The configured
+Godot MCP relay (`localhost:23630`) is still down; do not confuse an open editor with a live MCP.

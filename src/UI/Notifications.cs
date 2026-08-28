@@ -5,6 +5,7 @@ using Embervale.Localization;
 using Embervale.Movement;
 using Embervale.Progression;
 using Embervale.Quests;
+using Embervale.Shrines;
 using Embervale.World;
 using Godot;
 
@@ -57,6 +58,8 @@ public partial class Notifications : CanvasLayer
         bus?.Subscribe<SupplyShockRelievedEvent>(OnShockRelieved);
         bus?.Subscribe<MountChangedEvent>(OnMountChanged);
         bus?.Subscribe<MountRefusedEvent>(OnMountRefused);
+        bus?.Subscribe<BlessingClaimedEvent>(OnBlessingClaimed);
+        bus?.Subscribe<ShrineAlreadyVisitedEvent>(OnShrineAlreadyVisited);
     }
 
     public override void _ExitTree()
@@ -85,6 +88,8 @@ public partial class Notifications : CanvasLayer
         bus.Unsubscribe<SupplyShockRelievedEvent>(OnShockRelieved);
         bus.Unsubscribe<MountChangedEvent>(OnMountChanged);
         bus.Unsubscribe<MountRefusedEvent>(OnMountRefused);
+        bus.Unsubscribe<BlessingClaimedEvent>(OnBlessingClaimed);
+        bus.Unsubscribe<ShrineAlreadyVisitedEvent>(OnShrineAlreadyVisited);
     }
 
     private void OnLeveledUp(LeveledUpEvent e) => Push(Loc.TF("notify.levelup", e.NewLevel), UiTheme.Accent);
@@ -210,6 +215,12 @@ public partial class Notifications : CanvasLayer
     }
 
     private void OnMountRefused(MountRefusedEvent e) => Push(Loc.T(e.ReasonKey), UiTheme.Bad);
+
+    private void OnBlessingClaimed(BlessingClaimedEvent e) =>
+        Push(Loc.TF("notify.blessing_received", Loc.T(e.Shrine.BlessingNameKey)), UiTheme.Good);
+
+    private void OnShrineAlreadyVisited(ShrineAlreadyVisitedEvent e) =>
+        Push(Loc.TF("notify.shrine_already_visited", Loc.T(e.Shrine.NameKey)), UiTheme.Dim);
 
     private void Push(string text, Color color)
     {

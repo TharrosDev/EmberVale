@@ -615,6 +615,12 @@ CASES = [
      [("scenes/regions/ember_crown/hollowreach.tscn", 'HiddenWhenFlagId = "flag.emberdeep.tally_delivered"',
        'HiddenWhenFlagId = "flag.emberdeep.tally_delivereed"')],
      "world actor hides after flag 'flag.emberdeep.tally_delivereed', which nothing ever sets"),
+
+    # 41.5A: a shrine whose modifier is zero looks complete in the world but grants no blessing.
+    # The resource still loads and the interaction still fires, so only the authored-data gate sees it.
+    ("shrine.grants_no_bonus", "ValidateShrines",
+     [("data/shrines/Solaryn.tres", "Value = 10.0", "Value = 0.0")],
+     "grants no passive bonus"),
 ]
 
 

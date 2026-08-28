@@ -170,6 +170,13 @@ public static class GameIds
         public const string FrostfangReach = "region.frostfang_reach";
     }
 
+    /// <summary>Shrine blessings authored under <c>data/shrines/</c>. Only the sandbox exercise
+    /// shrine is code-named; later world placements resolve their ids from authored scene data.</summary>
+    public static class Shrines
+    {
+        public const string Solaryn = "shrine.solaryn";
+    }
+
     public static class Spells
     {
         public const string Firebolt = "spell.firebolt";
