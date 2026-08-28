@@ -39,6 +39,8 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_a.glb" id="41_pebble_a"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_b.glb" id="42_pebble_b"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
+[ext_resource type="PackedScene" path="res://scenes/props/shrine_waystone.tscn" id="shrine_body_41_5b"]
+[ext_resource type="Script" path="res://src/Shrines/ShrineComponent.cs" id="shrine_41_5b"]
 
 ; THE CROSSWAY POST (Phase 38M2) — the wardens' gate on the road north, and the place 38M's toll is
 ; actually about. 38M built the toll, the permit and the bribe and left them standing in the town
@@ -1501,3 +1503,25 @@ LocationId = "location.crossway.impound"
 [node name="MapPin" type="Node3D" parent="Mercenary"]
 script = ExtResource("maploc_39_5a")
 LocationId = "location.crossway.mercenary"
+
+; Tharos faces the wardens' compound and its queues: law has a place on the crossing, among the
+; benches, gate papers and people it is meant to order.
+[node name="ShrineTharos" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, 0, 11)
+script = ExtResource("2_entity")
+
+[node name="Body" parent="Nav/ShrineTharos" instance=ExtResource("shrine_body_41_5b")]
+
+[node name="Aura" type="OmniLight3D" parent="Nav/ShrineTharos"]
+position = Vector3(0, 2.1, 0)
+light_color = Color(0.38, 0.62, 1, 1)
+light_energy = 1.5
+omni_range = 6.0
+
+[node name="Shrine" type="Node" parent="Nav/ShrineTharos"]
+script = ExtResource("shrine_41_5b")
+ShrineId = "shrine.tharos"
+
+[node name="MapPin" type="Node3D" parent="Nav/ShrineTharos"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.shrine.tharos"

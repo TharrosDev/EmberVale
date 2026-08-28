@@ -20,6 +20,10 @@ public partial class ShrineResource : Resource
     /// <summary>Locale key for the blessing named in the acquired-toast.</summary>
     [Export] public string BlessingNameKey { get; set; } = "blessing.unknown.name";
 
+    /// <summary>The single map record for this shrine's final in-world body. It carries no
+    /// coordinate: the cell scene's child MapLocationComponent owns that transform.</summary>
+    [Export] public string MapLocationId { get; set; } = "location.shrine.unknown";
+
     /// <summary>The one stat this blessing changes. Later blessings remain data additions.</summary>
     [Export] public StatType Stat { get; set; } = StatType.Health;
 

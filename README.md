@@ -367,11 +367,10 @@ not layering a second list of changes over it.
 
 ### Phase 41.5 — the gods leave something behind
 
-- 41.5A ✅ gives Solaryn a real, persistent blessing for the first time. Pray at the sandbox shrine
-  southeast of spawn and Lightbearer's Guard adds Armor once; the player saves the claimed shrine id,
-  then load clears and re-derives that passive rather than stacking yesterday's blessing over today.
-  The first shrine is deliberately a witnessed core fixture — six fiction-led world placements are
-  the next content pass.
+- 41.5A–B ✅ gives all six dead gods real, persistent shrine blessings. Solaryn (town hub), Veyra
+  (Ashfall), Tharos (Crossway), Nyth (Embermarket), Drakar (arena), and Elyndra (Tarn's Landing) are
+  map-marked, interactive world bodies with distinct domain bonuses. The player saves only claimed
+  shrine ids and load clears then re-derives every modifier; shrine bodies hold no save state.
 
 - 41D ✅ and a quest can fork. Sedge Marrow knows where Holt's barrels went — the Crossway post pulled
 the cart and they are sitting in the impound shed — and she offers two ways to get them out. Walk the

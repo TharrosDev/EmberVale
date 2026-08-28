@@ -19,6 +19,10 @@
 [ext_resource type="Texture2D" path="res://assets/models/architecture/T_Brick_BaseColor.png" id="17_brick"]
 [ext_resource type="Texture2D" path="res://assets/models/architecture/T_Brick_Normal.png" id="18_brick_n"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
+[ext_resource type="PackedScene" path="res://scenes/props/shrine_waystone.tscn" id="shrine_body_41_5b"]
+[ext_resource type="Script" path="res://src/Shrines/ShrineComponent.cs" id="shrine_41_5b"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_bench.glb" id="shrine_bench_41_5b"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_guild_rep.glb" id="shrine_spectator_41_5b"]
 
 [sub_resource type="NavigationMesh" id="NavMesh_ar"]
 geometry_parsed_geometry_type = 1
@@ -955,3 +959,39 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.25, 0, -13.84)
 [node name="MapPin" type="Node3D" parent="."]
 script = ExtResource("maploc_39_5a")
 LocationId = "location.ember_crown.arena"
+
+; Drakar's marker is set in the ring, framed by braziers and the ruin wall. It remains a shrine,
+; not an arena mechanic: the component gives exactly one blessing and holds no local state.
+[node name="ShrineDrakar" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 10)
+script = ExtResource("2_entity")
+
+[node name="Body" parent="Nav/ShrineDrakar" instance=ExtResource("shrine_body_41_5b")]
+
+[node name="Aura" type="OmniLight3D" parent="Nav/ShrineDrakar"]
+position = Vector3(0, 2.1, 0)
+light_color = Color(1, 0.32, 0.2, 1)
+light_energy = 1.7
+omni_range = 6.0
+
+[node name="Shrine" type="Node" parent="Nav/ShrineDrakar"]
+script = ExtResource("shrine_41_5b")
+ShrineId = "shrine.drakar"
+
+; Two seated-side spectators turn the ring into a lived-in place of trial without adding a second
+; interactable or a new arena state. Their position frames Drakar's shrine in both eye-level shots.
+[node name="DrakarBenchW" parent="Nav" instance=ExtResource("shrine_bench_41_5b")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -4, 0, 13)
+
+[node name="DrakarBenchE" parent="Nav" instance=ExtResource("shrine_bench_41_5b")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 4, 0, 13)
+
+[node name="DrakarSpectatorW" parent="Nav" instance=ExtResource("shrine_spectator_41_5b")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, 12.4)
+
+[node name="DrakarSpectatorE" parent="Nav" instance=ExtResource("shrine_spectator_41_5b")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 4, 0, 12.4)
+
+[node name="MapPin" type="Node3D" parent="Nav/ShrineDrakar"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.shrine.drakar"

@@ -37,6 +37,8 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_b.glb" id="41_pebble_b"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_modular.tscn" id="42_cottage_modular"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
+[ext_resource type="PackedScene" path="res://scenes/props/shrine_waystone.tscn" id="shrine_body_41_5b"]
+[ext_resource type="Script" path="res://src/Shrines/ShrineComponent.cs" id="shrine_41_5b"]
 
 ; TARN'S LANDING (Phase 38N2) — the fishing hamlet on the western water, and the realm's THIRD market.
 ;
@@ -1580,3 +1582,25 @@ LocationId = "location.tarn.curer"
 [node name="MapPin" type="Node3D" parent="Odger"]
 script = ExtResource("maploc_39_5a")
 LocationId = "location.tarn.chandler"
+
+; Elyndra's waystone sits at the landing edge among the docks, nets and shore plants: a working
+; waterside place where seasons and wildlife have a visible daily consequence.
+[node name="ShrineElyndra" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0, -2)
+script = ExtResource("2_entity")
+
+[node name="Body" parent="Nav/ShrineElyndra" instance=ExtResource("shrine_body_41_5b")]
+
+[node name="Aura" type="OmniLight3D" parent="Nav/ShrineElyndra"]
+position = Vector3(0, 2.1, 0)
+light_color = Color(0.25, 0.88, 0.7, 1)
+light_energy = 1.5
+omni_range = 6.0
+
+[node name="Shrine" type="Node" parent="Nav/ShrineElyndra"]
+script = ExtResource("shrine_41_5b")
+ShrineId = "shrine.elyndra"
+
+[node name="MapPin" type="Node3D" parent="Nav/ShrineElyndra"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.shrine.elyndra"

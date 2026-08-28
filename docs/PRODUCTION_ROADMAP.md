@@ -157,7 +157,7 @@ authoring recipes that turn them into content with no new code, see docs/RECIPES
 | ~~40~~ | ~~Survival & Needs~~ | ❌ | **NOT WANTED — struck 2026-08-12.** No durability, hunger, thirst, temperature or encumbrance. Ever |
 | ~~40.5~~ | ~~Dungeon & Puzzle Framework~~ | ❌ | **NOT WANTED — struck 2026-08-12.** No puzzle, trap or vault tooling. Phases 50 and 51E owe their own answers |
 | 41 | Quest Authoring at Scale & Branching | F/C | Beyond Kill/Collect: escort, defend, choice/branch, timed, faction-gated objective types |
-| 41.5 | Divine Shrines & Blessings | F/C | The Seven Gods, mechanized — shrine blessings tied to each god's domain |
+| 41.5 ✅ | Divine Shrines & Blessings | F/C | The Seven Gods, mechanized — shrine blessings tied to each god's domain |
 | 42 | Guild & Faction Questlines | C | The five LORE guilds as joinable factions with multi-quest arcs and ranks |
 | 42.5 | The Crimson Cult | F/C | The Crimson Prophet's "empire of worshippers" as a real hostile/infiltrable faction |
 | 43 | Cinematics & Scripted Sequences | F | In-engine cutscene tooling, camera tracks, scripted set-pieces, dialogue staging |
@@ -811,10 +811,12 @@ presence beyond Morthul-as-villain. This mechanizes the other six.
   first-visit Armor passive through the real sandbox interactable. The player owns one saved set of
   shrine ids and re-derives modifiers on load; `--validate`, a zero-bonus negative case, pure
   replacement tests, and four live front/back shrine frames cover the core.
-- **41.5B — six shrine placements** — author the remaining five god blessings and place all six
-  fiction-led shrines in the world, each with its map location and rendered surroundings.
-- **One shrine per realm, placed to fiction** — e.g. Drakar (war/strength) in
-  Frostfang, Nyth (knowledge/magic) in Sunspire's libraries; placement is content.
+- ✅ **41.5B — six shrine placements** — the remaining five blessings and Solaryn's final world body
+  are live in six fiction-led, generated-map placements. The validator closes the resource set and
+  requires exactly one caller per shrine; twelve eye-level front/back captures review the final cells.
+- **Current playable-world placement** — the only complete realm is Ember Crown, so 41.5B places
+  the fixed six callers across its fiction-led cells. When Phase 44 blocks out later realms, relocate
+  (never duplicate) these map-linked callers as world layout demands.
 - **Corruption interplay** — a high-corruption visit can trigger a refusal/curse
   variant instead of the blessing (a `CorruptionComponent` condition check), tying the
   gods back into the defining mechanic.

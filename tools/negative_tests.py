@@ -621,6 +621,24 @@ CASES = [
     ("shrine.grants_no_bonus", "ValidateShrines",
      [("data/shrines/Solaryn.tres", "Value = 10.0", "Value = 0.0")],
      "grants no passive bonus"),
+
+    # 41.5B: the six dead-god blessings are a closed, map-linked set. A renamed resource still
+    # loads and might leave a plausible shrine body in the world, so the data gate must name the
+    # missing canonical shrine rather than relying on an interaction to discover it.
+    ("shrine.required_six", "ValidateShrines",
+     [("data/shrines/Elyndra.tres", 'Id = "shrine.elyndra"', 'Id = "shrine.elyndra_missing"')],
+     "missing required shrine 'shrine.elyndra'"),
+
+    # The reverse seam: an otherwise valid blessing with no body has no caller and is dead content.
+    ("shrine.body_required", "ValidateShrineWorldBodies",
+     [("scenes/regions/ember_crown/embermarket.tscn", 'ShrineId = "shrine.nyth"', 'ShrineId = ""')],
+     "shrine 'shrine.nyth' has no in-world shrine body"),
+
+    # And a world body must not silently name a resource that does not exist.
+    ("shrine.body_names_resource", "ValidateSceneAuthoredIds",
+     [("scenes/regions/ember_crown/embermarket.tscn", 'ShrineId = "shrine.nyth"',
+       'ShrineId = "shrine.nyth.misspelled"')],
+     "authors ShrineId = 'shrine.nyth.misspelled', which no shrine declares"),
 ]
 
 

@@ -45,6 +45,8 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_table_large.gltf" id="54_order_bench"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_waystone.glb" id="50_waystone"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
+[ext_resource type="PackedScene" path="res://scenes/props/shrine_waystone.tscn" id="shrine_body_41_5b"]
+[ext_resource type="Script" path="res://src/Shrines/ShrineComponent.cs" id="shrine_41_5b"]
 
 [sub_resource type="NavigationMesh" id="NavMesh_hub"]
 geometry_parsed_geometry_type = 1
@@ -1437,3 +1439,25 @@ LocationId = "location.ember_crown.traveller"
 [node name="MapPin" type="Node3D" parent="StationForge"]
 script = ExtResource("maploc_39_5a")
 LocationId = "location.ember_crown.crafting"
+
+; Solaryn watches the civic square from the trade road: a public, staffed landmark rather than the
+; disposable sandbox witness. Its body deliberately has no persistent flag; the player owns claims.
+[node name="ShrineSolaryn" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -12)
+script = ExtResource("1_entity")
+
+[node name="Body" parent="Nav/ShrineSolaryn" instance=ExtResource("shrine_body_41_5b")]
+
+[node name="Aura" type="OmniLight3D" parent="Nav/ShrineSolaryn"]
+position = Vector3(0, 2.1, 0)
+light_color = Color(1, 0.73, 0.3, 1)
+light_energy = 1.8
+omni_range = 6.0
+
+[node name="Shrine" type="Node" parent="Nav/ShrineSolaryn"]
+script = ExtResource("shrine_41_5b")
+ShrineId = "shrine.solaryn"
+
+[node name="MapPin" type="Node3D" parent="Nav/ShrineSolaryn"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.shrine.solaryn"
