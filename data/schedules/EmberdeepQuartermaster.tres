@@ -5,7 +5,7 @@
 
 ; Marta Quill, the Emberdeep quartermaster (Phase 38N1).
 ;
-; ⚠️ Cell-local destinations against Origin (99, 0, -10), and hours kept in step with
+; ⚠️ Cell-local destinations against Origin (56, 0, -10), and hours kept in step with
 ; shop.emberdeep.quartermaster (6:00-20:00) by hand — see the factor's file for why nothing validates
 ; that pairing.
 ;
@@ -16,19 +16,19 @@
 script = ExtResource("2_entry")
 StartHour = 6
 Activity = "Keeping the store"
-Destination = Vector3(-4, 0, 6)
+Destination = Vector3(-6, 0, 13.5)
 
 [sub_resource type="Resource" id="e_stock"]
 script = ExtResource("2_entry")
 StartHour = 13
 Activity = "Checking the stores against the ledger"
-Destination = Vector3(-8, 0, 9)
+Destination = Vector3(-8, 0, 17)
 
 [sub_resource type="Resource" id="e_shut"]
 script = ExtResource("2_entry")
 StartHour = 20
 Activity = "Locking the strongbox"
-Destination = Vector3(-4, 0, 6)
+Destination = Vector3(-6, 0, 13.5)
 
 [resource]
 script = ExtResource("1_sched")

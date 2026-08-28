@@ -12,6 +12,9 @@ new stanzas back in at the same place in the file.
     python tools/redress_cell.py <cell.tscn> <style> <first_ext_id> [--seed=N] [--keep=1/2]
                                  [--drop=50_mushrooms,53_rockpath_wide]
 
+Rows naming an ext id the cell does not declare are dropped automatically, and the run says which —
+if that list is long, `first_ext_id` is wrong.
+
 ⚠️ `--keep` throws away rows. A dense settlement cell can be within a few dozen nodes of the
 region's per-cell budget before any dressing at all, and `verge` emits ~100 props (200 nodes). Pass
 `--keep=1/2` to take every second row. `--drop` names ext ids the cell does not import — the
@@ -59,8 +62,25 @@ def main(argv):
         cmd.append(f"--seed={opt['--seed']}")
     table = subprocess.run(cmd, capture_output=True, text=True, check=True).stdout
 
-    rows = [r for r in table.splitlines()
-            if r.strip() and not r.startswith(";") and not any(d in r for d in drop)]
+    # ⚠️ A ROW NAMING AN EXT ID THE CELL DOES NOT DECLARE IS A SCENE THAT WILL NOT LOAD, and the
+    # scatter offers twelve species while most cells import eight or nine. dress_cell numbers from
+    # first_ext_id, so passing the wrong first id silently emits a hundred references to nothing —
+    # and in town_hub the collision is worse than a miss: "53_rockpath_wide" is 53_workbench there,
+    # so a bad id plants a joiner's bench in the grass. Declared ids are read from the file rather
+    # than listed by hand, because a hand-written list is the thing that goes stale.
+    declared = set(re.findall(r'^\[ext_resource[^\]]*id="([^"]+)"',
+                              open(path, encoding="utf-8").read(), re.M))
+    rows, skipped = [], set()
+    for r in table.splitlines():
+        if not r.strip() or r.startswith(";"):
+            continue
+        ext = r.split()[1]
+        if ext in drop or ext not in declared:
+            skipped.add(ext)
+            continue
+        rows.append(r)
+    if skipped:
+        print(f"  skipped species this cell does not declare: {', '.join(sorted(skipped))}")
     rows = [r for n, r in enumerate(rows) if n % keep_d < keep_n]
 
     stanzas = subprocess.run(

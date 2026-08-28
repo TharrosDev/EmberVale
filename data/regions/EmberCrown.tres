@@ -215,65 +215,151 @@ Seed = 102
 Paths = Array[ExtResource("6_path")]([SubResource("Path_market_gate"), SubResource("Path_market_crook"), SubResource("Path_market_caravan"), SubResource("Path_market_dock"), SubResource("Path_market_alley"), SubResource("Path_market_sump")])
 GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_market_yard"), SubResource("Area_market_terrace"), SubResource("Area_market_timber"), SubResource("Area_market_sump")])
 
-[sub_resource type="Resource" id="Path_crossway_yard"]
+; ⚠️ THE CROSSWAY'S ROAD IS NO LONGER A CARDINAL STRIP (Phase 44). RoadAxis was 1 and the shader drew
+; a 7 m north-south road straight through the cell — which meant the gate could be RUN, and a toll you
+; can run is scenery. The road now enters at x = -6 (aligned with the town hub's Kingsway across the
+; seam at world z = -40), is turned east by the palisade line, crosses the whole Holding Yard, passes a
+; gate gap at x = 7.5, and dog-legs back to x = 0 to meet wilds_north's road at the northern seam.
+; Five segments, and they match crossway_post.tscn's ground skins one for one.
+[sub_resource type="Resource" id="Path_crossway_south"]
 script = ExtResource("6_path")
-Start = Vector2(0, 4)
-End = Vector2(15, 7)
-Width = 4.5
+Start = Vector2(-6, 26)
+End = Vector2(-6, 14)
+Width = 7.0
+Shoulder = 2.0
+
+[sub_resource type="Resource" id="Path_crossway_turn"]
+script = ExtResource("6_path")
+Start = Vector2(-6, 14)
+End = Vector2(3, 9)
+Width = 7.0
+Shoulder = 2.0
+
+[sub_resource type="Resource" id="Path_crossway_gate"]
+script = ExtResource("6_path")
+Start = Vector2(3, 9)
+End = Vector2(7.5, 0)
+Width = 7.0
+Shoulder = 2.0
+
+[sub_resource type="Resource" id="Path_crossway_dogleg"]
+script = ExtResource("6_path")
+Start = Vector2(7.5, 0)
+End = Vector2(0, -8)
+Width = 7.0
+Shoulder = 2.0
+
+[sub_resource type="Resource" id="Path_crossway_north"]
+script = ExtResource("6_path")
+Start = Vector2(0, -8)
+End = Vector2(0, -26)
+Width = 7.0
+Shoulder = 2.0
+
+[sub_resource type="Resource" id="Path_crossway_compound"]
+script = ExtResource("6_path")
+Start = Vector2(-10, 14)
+End = Vector2(-20, 14)
+Width = 4.0
 Shoulder = 1.5
+
+[sub_resource type="Resource" id="Area_crossway_hold"]
+script = ExtResource("7_area")
+Center = Vector2(6, 9)
+Radius = Vector2(9, 5.5)
+Feather = 2.5
+SurfaceBlend = 0.82
+
+[sub_resource type="Resource" id="Area_crossway_compound"]
+script = ExtResource("7_area")
+Center = Vector2(-17, 13)
+Radius = Vector2(7, 6)
+Feather = 2.0
+SurfaceBlend = 0.68
 
 [sub_resource type="Resource" id="Area_crossway_gate"]
 script = ExtResource("7_area")
-Center = Vector2(0, 1)
-Radius = Vector2(13, 8)
-Feather = 2.5
-SurfaceBlend = 0.72
-
-[sub_resource type="Resource" id="Area_crossway_yard"]
-script = ExtResource("7_area")
-Center = Vector2(13, 7)
-Radius = Vector2(8, 9)
-Feather = 2.0
-SurfaceBlend = 0.80
+Center = Vector2(7.5, 2)
+Radius = Vector2(5, 4)
+Feather = 1.5
+SurfaceBlend = 0.90
 
 [sub_resource type="Resource" id="Presentation_crossway"]
 script = ExtResource("4_presentation")
-RoadAxis = 1
-RoadWidth = 7.0
+RoadAxis = 0
 Seed = 103
-Paths = Array[ExtResource("6_path")]([SubResource("Path_crossway_yard")])
-GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_crossway_gate"), SubResource("Area_crossway_yard")])
+Paths = Array[ExtResource("6_path")]([SubResource("Path_crossway_south"), SubResource("Path_crossway_turn"), SubResource("Path_crossway_gate"), SubResource("Path_crossway_dogleg"), SubResource("Path_crossway_north"), SubResource("Path_crossway_compound")])
+GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_crossway_hold"), SubResource("Area_crossway_compound"), SubResource("Area_crossway_gate")])
 
-[sub_resource type="Resource" id="Path_mine_head"]
+; ⚠️ THE MINE ROAD IS A LOOP NOW, NOT A STRIP (Phase 44). RoadAxis was 2 and the shader drew a 6 m
+; east-west road across the whole cell under a single 34 x 16 yard — everything the mine had was in
+; one band and visible from the gate. The circulation is now defile -> Weighing Yard -> haul road ->
+; the Cut -> Pit Head -> spoil track -> back to the yard, so the walk out is not the walk in. The
+; segments below match emberdeep_mine.tscn's ground skins one for one.
+[sub_resource type="Resource" id="Path_mine_defile"]
 script = ExtResource("6_path")
-Start = Vector2(-26, 0)
-End = Vector2(-7, -1)
+Start = Vector2(-26, -2)
+End = Vector2(-14, -2)
 Width = 6.0
 Shoulder = 2.0
 
-[sub_resource type="Resource" id="Path_mine_store"]
+[sub_resource type="Resource" id="Path_mine_haul"]
 script = ExtResource("6_path")
-Start = Vector2(-4, 0)
-End = Vector2(13, 9)
-Width = 4.0
+Start = Vector2(-4, 8)
+End = Vector2(8, -4)
+Width = 6.0
+Shoulder = 2.0
+
+[sub_resource type="Resource" id="Path_mine_cut"]
+script = ExtResource("6_path")
+Start = Vector2(3, -6)
+End = Vector2(15, -6)
+Width = 6.0
+Shoulder = 1.5
+
+[sub_resource type="Resource" id="Path_mine_spoil"]
+script = ExtResource("6_path")
+Start = Vector2(14, -1)
+End = Vector2(14, 19)
+Width = 6.0
+Shoulder = 2.0
+
+[sub_resource type="Resource" id="Path_mine_link"]
+script = ExtResource("6_path")
+Start = Vector2(11, 17)
+End = Vector2(-1, 17)
+Width = 5.0
 Shoulder = 1.5
 
 [sub_resource type="Resource" id="Area_mine_yard"]
 script = ExtResource("7_area")
-Center = Vector2(-3, 0)
-Radius = Vector2(15, 13)
+Center = Vector2(-8, 9.5)
+Radius = Vector2(9, 9.5)
 Feather = 3.0
 SurfaceBlend = 0.92
 
+[sub_resource type="Resource" id="Area_mine_pithead"]
+script = ExtResource("7_area")
+Center = Vector2(18, -9)
+Radius = Vector2(8, 9)
+Feather = 3.5
+SurfaceBlend = 0.88
+
+[sub_resource type="Resource" id="Area_mine_rest"]
+script = ExtResource("7_area")
+Center = Vector2(-19, 15)
+Radius = Vector2(4, 5)
+Feather = 1.5
+SurfaceBlend = 0.60
+
 [sub_resource type="Resource" id="Presentation_mine"]
 script = ExtResource("4_presentation")
-RoadAxis = 2
-RoadWidth = 6.0
+RoadAxis = 0
 Seed = 104
 Tint = Color(0.58, 0.45, 0.33, 1)
 TintStrength = 0.15
-Paths = Array[ExtResource("6_path")]([SubResource("Path_mine_head"), SubResource("Path_mine_store")])
-GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_mine_yard")])
+Paths = Array[ExtResource("6_path")]([SubResource("Path_mine_defile"), SubResource("Path_mine_haul"), SubResource("Path_mine_cut"), SubResource("Path_mine_spoil"), SubResource("Path_mine_link")])
+GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_mine_yard"), SubResource("Area_mine_pithead"), SubResource("Area_mine_rest")])
 
 [sub_resource type="Resource" id="Path_wilds_north_ruin"]
 script = ExtResource("6_path")
