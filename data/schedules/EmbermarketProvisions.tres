@@ -6,7 +6,7 @@
 ; Corvin the provisioner (Phase 38L).
 ;
 ; ⚠️ DESTINATIONS ARE CELL-LOCAL. Origin carries the Embermarket's Center (0, 0, 46), so these read
-; straight out of embermarket.tscn without anyone doing the arithmetic by hand thirty times. A raw
+; straight out of embermarket.tscn (re-read from the Phase 44 Coilyard rebuild — the stall rows are gone) without anyone doing the arithmetic by hand thirty times. A raw
 ; world destination copied from a cell .tscn lands a cell's width away and nothing reports it.
 ;
 ; ⚠️ These hours track shop.embermarket.provisions (5:00-19:00) and are kept in step BY HAND. A ScheduleId lives
@@ -20,19 +20,19 @@
 script = ExtResource("2_entry")
 StartHour = 4
 Activity = "Setting out the trays"
-Destination = Vector3(-7.9, 0, -14)
+Destination = Vector3(-7.62, 0, -11.69)
 
 [sub_resource type="Resource" id="e_trade"]
 script = ExtResource("2_entry")
 StartHour = 5
 Activity = "Selling bread"
-Destination = Vector3(-7.9, 0, -14)
+Destination = Vector3(-7.62, 0, -11.69)
 
 [sub_resource type="Resource" id="e_close"]
 script = ExtResource("2_entry")
 StartHour = 19
 Activity = "Shuttering the stall"
-Destination = Vector3(-11.5, 0, -14)
+Destination = Vector3(-7.29, 0, -8.61)
 
 [resource]
 script = ExtResource("1_sched")

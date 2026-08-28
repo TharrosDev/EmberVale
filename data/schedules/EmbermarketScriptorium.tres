@@ -6,7 +6,7 @@
 ; Tam Quillfellow (Phase 38L).
 ;
 ; ⚠️ DESTINATIONS ARE CELL-LOCAL. Origin carries the Embermarket's Center (0, 0, 46), so these read
-; straight out of embermarket.tscn without anyone doing the arithmetic by hand thirty times. A raw
+; straight out of embermarket.tscn (re-read from the Phase 44 Coilyard rebuild — the stall rows are gone) without anyone doing the arithmetic by hand thirty times. A raw
 ; world destination copied from a cell .tscn lands a cell's width away and nothing reports it.
 ;
 ; ⚠️ These hours track shop.embermarket.scriptorium (9:00-17:00) and are kept in step BY HAND. A ScheduleId lives
@@ -20,19 +20,19 @@
 script = ExtResource("2_entry")
 StartHour = 8
 Activity = "Unchaining the stall"
-Destination = Vector3(7.9, 0, -14)
+Destination = Vector3(8.51, 0, -4.11)
 
 [sub_resource type="Resource" id="e_trade"]
 script = ExtResource("2_entry")
 StartHour = 9
 Activity = "Selling books"
-Destination = Vector3(7.9, 0, -14)
+Destination = Vector3(8.51, 0, -4.11)
 
 [sub_resource type="Resource" id="e_close"]
 script = ExtResource("2_entry")
 StartHour = 17
 Activity = "Chaining the stall"
-Destination = Vector3(11.5, 0, -14)
+Destination = Vector3(8.19, 0, -7.19)
 
 [resource]
 script = ExtResource("1_sched")

@@ -49,72 +49,171 @@ VisibilityUpdateInterval = 0.25
 MaxConcurrentLoadRequests = 2
 MaxCellInstantiationsPerFrame = 1
 
-[sub_resource type="Resource" id="Path_town_cross"]
+; ⚠️ THE TOWN HUB HAS NO ROAD AXIS ANY MORE (Phase 44). RoadAxis was 1 and the shader drew a 6.5 m
+; strip straight through the middle of the square — which is exactly what the rebuild removed. The
+; Kingsway is an S: in from the south at x = -11 (lined up with the Embermarket's Gate Lane across
+; the seam), east to the road head the player spawns on at (0, 15), north past the square's flank,
+; then north-west out to the Crossway at x = -6. The three segments below ARE that road, and they
+; match the ground skins in town_hub.tscn one for one.
+;
+; ⚠️ THE CELL CENTRE, SpawnPoint AND SafeZoneCenter ARE UNCHANGED and this rebuild was laid out
+; around them rather than the other way round: the spawn at world (0, 1.2, 5) is cell-local (0, 15),
+; and Path_town_kingsway_s is drawn so the player wakes up standing ON the road with the inn on the
+; left and nothing yet visible of the square. Move the road and that first second stops working.
+[sub_resource type="Resource" id="Path_town_kingsway_s"]
 script = ExtResource("6_path")
-Start = Vector2(-30, 0)
-End = Vector2(30, 0)
-Width = 5.5
+Start = Vector2(-11, 30)
+End = Vector2(1, 14)
+Width = 4.5
 Shoulder = 1.5
 
-[sub_resource type="Resource" id="Path_town_craft"]
+[sub_resource type="Resource" id="Path_town_kingsway_m"]
 script = ExtResource("6_path")
-Start = Vector2(0, 0)
-End = Vector2(-13, 13)
-Width = 4.0
-Shoulder = 1.25
+Start = Vector2(1, 14)
+End = Vector2(2, -8)
+Width = 5.0
+Shoulder = 1.5
 
-[sub_resource type="Resource" id="Path_town_inn"]
+[sub_resource type="Resource" id="Path_town_kingsway_n"]
 script = ExtResource("6_path")
-Start = Vector2(0, 0)
-End = Vector2(14, 11)
-Width = 4.0
+Start = Vector2(2, -8)
+End = Vector2(-6, -30)
+Width = 4.5
+Shoulder = 1.5
+
+[sub_resource type="Resource" id="Path_town_west"]
+script = ExtResource("6_path")
+Start = Vector2(-30, -4)
+End = Vector2(-18, -4)
+Width = 5.0
+Shoulder = 2.0
+
+[sub_resource type="Resource" id="Path_town_east"]
+script = ExtResource("6_path")
+Start = Vector2(30, -2)
+End = Vector2(18, -2)
+Width = 5.0
+Shoulder = 2.0
+
+[sub_resource type="Resource" id="Path_town_green"]
+script = ExtResource("6_path")
+Start = Vector2(-4, -20)
+End = Vector2(16, -20)
+Width = 3.5
 Shoulder = 1.25
 
 [sub_resource type="Resource" id="Area_town_square"]
 script = ExtResource("7_area")
-Center = Vector2(0, 0)
-Radius = Vector2(11, 10)
+Center = Vector2(-14, -2)
+Radius = Vector2(9, 10)
+Feather = 3.0
+SurfaceBlend = 0.85
+
+[sub_resource type="Resource" id="Area_town_craft"]
+script = ExtResource("7_area")
+Center = Vector2(16, 1)
+Radius = Vector2(8, 8)
 Feather = 2.5
-SurfaceBlend = 0.82
+SurfaceBlend = 0.78
+
+[sub_resource type="Resource" id="Area_town_green"]
+script = ExtResource("7_area")
+Center = Vector2(6, -21)
+Radius = Vector2(11, 5)
+Feather = 3.0
+SurfaceBlend = 0.35
 
 [sub_resource type="Resource" id="Presentation_town_hub"]
 script = ExtResource("4_presentation")
 Width = 60.0
 Depth = 60.0
-RoadAxis = 1
-RoadWidth = 6.5
+RoadAxis = 0
 Seed = 101
-Paths = Array[ExtResource("6_path")]([SubResource("Path_town_cross"), SubResource("Path_town_craft"), SubResource("Path_town_inn")])
-GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_town_square")])
+Paths = Array[ExtResource("6_path")]([SubResource("Path_town_kingsway_s"), SubResource("Path_town_kingsway_m"), SubResource("Path_town_kingsway_n"), SubResource("Path_town_west"), SubResource("Path_town_east"), SubResource("Path_town_green")])
+GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_town_square"), SubResource("Area_town_craft"), SubResource("Area_town_green")])
 
-[sub_resource type="Resource" id="Path_market_cross"]
+; ⚠️ THE EMBERMARKET HAS NO ROAD AXIS ANY MORE (Phase 44). RoadAxis was 1 (north-south) and the
+; shader drew a 6 m strip straight down the middle of the cell, under the old central spine. The
+; Coilyard's route bends four times and never crosses the cell centre, so a cardinal strip would be a
+; road painted where nobody walks. The six segments below ARE the circulation, and they match the
+; ground skins authored in embermarket.tscn one for one — change one and change the other, or the
+; terrain says a street is somewhere the geometry says it is not.
+[sub_resource type="Resource" id="Path_market_gate"]
 script = ExtResource("6_path")
-Start = Vector2(-26, 1)
-End = Vector2(26, 1)
+Start = Vector2(-11, -26)
+End = Vector2(-11, -13)
 Width = 4.5
+Shoulder = 1.0
+
+[sub_resource type="Resource" id="Path_market_crook"]
+script = ExtResource("6_path")
+Start = Vector2(-11, -13)
+End = Vector2(2, -7.5)
+Width = 5.0
 Shoulder = 1.5
 
 [sub_resource type="Resource" id="Path_market_caravan"]
 script = ExtResource("6_path")
-Start = Vector2(0, 0)
-End = Vector2(17, 16)
-Width = 4.0
+Start = Vector2(26, 3.5)
+End = Vector2(16, 3.5)
+Width = 7.0
+Shoulder = 2.0
+
+[sub_resource type="Resource" id="Path_market_dock"]
+script = ExtResource("6_path")
+Start = Vector2(-26, 12)
+End = Vector2(-18, 12)
+Width = 3.5
 Shoulder = 1.5
 
-[sub_resource type="Resource" id="Area_market_plaza"]
+[sub_resource type="Resource" id="Path_market_alley"]
+script = ExtResource("6_path")
+Start = Vector2(-18, -15)
+End = Vector2(-18, 15)
+Width = 3.2
+Shoulder = 1.0
+
+[sub_resource type="Resource" id="Path_market_sump"]
+script = ExtResource("6_path")
+Start = Vector2(-16, 17)
+End = Vector2(-9, 17)
+Width = 3.0
+Shoulder = 1.0
+
+[sub_resource type="Resource" id="Area_market_yard"]
 script = ExtResource("7_area")
-Center = Vector2(0, 2)
-Radius = Vector2(16, 13)
-Feather = 2.5
+Center = Vector2(7, 2)
+Radius = Vector2(11, 10)
+Feather = 3.0
+SurfaceBlend = 0.90
+
+[sub_resource type="Resource" id="Area_market_terrace"]
+script = ExtResource("7_area")
+Center = Vector2(16, 14)
+Radius = Vector2(5.5, 5)
+Feather = 1.5
 SurfaceBlend = 0.88
+
+[sub_resource type="Resource" id="Area_market_timber"]
+script = ExtResource("7_area")
+Center = Vector2(3, 16.5)
+Radius = Vector2(7, 4.5)
+Feather = 2.0
+SurfaceBlend = 0.60
+
+[sub_resource type="Resource" id="Area_market_sump"]
+script = ExtResource("7_area")
+Center = Vector2(-11.5, 17)
+Radius = Vector2(4.5, 4)
+Feather = 1.5
+SurfaceBlend = 0.55
 
 [sub_resource type="Resource" id="Presentation_embermarket"]
 script = ExtResource("4_presentation")
-RoadAxis = 1
-RoadWidth = 6.0
+RoadAxis = 0
 Seed = 102
-Paths = Array[ExtResource("6_path")]([SubResource("Path_market_cross"), SubResource("Path_market_caravan")])
-GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_market_plaza")])
+Paths = Array[ExtResource("6_path")]([SubResource("Path_market_gate"), SubResource("Path_market_crook"), SubResource("Path_market_caravan"), SubResource("Path_market_dock"), SubResource("Path_market_alley"), SubResource("Path_market_sump")])
+GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_market_yard"), SubResource("Area_market_terrace"), SubResource("Area_market_timber"), SubResource("Area_market_sump")])
 
 [sub_resource type="Resource" id="Path_crossway_yard"]
 script = ExtResource("6_path")

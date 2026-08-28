@@ -33,7 +33,7 @@ Each non-blank, non-`#` line is:
     x, z      LOCAL position in the cell (the streamer places the cell at its Center)
     shape_id  the SubResource id of the collider shape, e.g. Shape_boulder
     y_centre  collider centre height — normally half the model's measured height
-    yaw       0 | 90 | 180 | 270 | 30, default 0
+    yaw       rotation about Y in degrees, any value, default 0
     y_offset  vertical nudge on the node itself, default 0 (used to sink docks/jetties flush)
 
 Pass `--no-collider` for scenery that must not carve the navmesh or block the player.
@@ -46,22 +46,19 @@ Conventions this encodes, so they stop being retyped per prop
   with 2.4 m of its depth uncollided by guessing)
 """
 
+import math
 import sys
 
-# Godot basis rows for the yaws this project actually uses.
-YAW = {
-    0: "1, 0, 0, 0, 1, 0, 0, 0, 1",
-    30: "0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87",
-    90: "0, 0, 1, 0, 1, 0, -1, 0, 0",
-    180: "-1, 0, 0, 0, 1, 0, 0, 0, -1",
-    270: "0, 0, -1, 0, 1, 0, 1, 0, 0",
-}
+# Godot basis rows, computed for any yaw in degrees. Phase 44 needs the off-cardinal angles an
+# organically-grown district is made of; the five-entry table this replaces refused anything else.
+def _yaw_basis(yaw):
+    c, s = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
+    return ", ".join(
+        (lambda v: str(int(v)) if v == int(v) else str(v))(round(x, 4) + 0.0)
+        for x in (c, 0.0, s, 0.0, 1.0, 0.0, -s, 0.0, c))
 
 
 def stanza(name, ext_id, x, z, shape_id, y_centre, yaw=0, y_offset=0.0, collider=True, parent="Nav"):
-    if yaw not in YAW:
-        raise SystemExit(f"{name}: yaw {yaw} not in {sorted(YAW)} — add its basis to YAW if you need it")
-
     # Godot writes a root-level node's children as parent="Name", not parent="./Name" — the "."
     # form is only ever the root itself. Emitting "./Name" produces a scene that loads with every
     # child silently missing.
@@ -70,7 +67,7 @@ def stanza(name, ext_id, x, z, shape_id, y_centre, yaw=0, y_offset=0.0, collider
     out = [
         "",
         f'[node name="{name}" type="Node3D" parent="{parent}"]',
-        f"transform = Transform3D({YAW[yaw]}, {x}, {y_offset}, {z})",
+        f"transform = Transform3D({_yaw_basis(yaw)}, {x}, {y_offset}, {z})",
         "",
         f'[node name="Model" parent="{under}" instance=ExtResource("{ext_id}")]',
     ]
@@ -108,7 +105,7 @@ def main(argv):
         if len(f) < 6:
             raise SystemExit(f"line {lineno}: need at least 6 fields, got {len(f)}: {line}")
         name, ext_id, x, z, shape_id, y_centre = f[:6]
-        yaw = int(f[6]) if len(f) > 6 else 0
+        yaw = float(f[6]) if len(f) > 6 else 0.0
         y_offset = f[7] if len(f) > 7 else 0
         print(stanza(name, ext_id, x, z, shape_id, y_centre, yaw, y_offset, collider, parent))
         count += 1

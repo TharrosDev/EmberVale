@@ -6,7 +6,7 @@
 ; Ash Dunmore the collier (Phase 38L).
 ;
 ; ⚠️ DESTINATIONS ARE CELL-LOCAL. Origin carries the Embermarket's Center (0, 0, 46), so these read
-; straight out of embermarket.tscn without anyone doing the arithmetic by hand thirty times. A raw
+; straight out of embermarket.tscn (re-read from the Phase 44 Coilyard rebuild — the stall rows are gone) without anyone doing the arithmetic by hand thirty times. A raw
 ; world destination copied from a cell .tscn lands a cell's width away and nothing reports it.
 ;
 ; ⚠️ These hours track shop.embermarket.collier (6:00-16:00) and are kept in step BY HAND. A ScheduleId lives
@@ -20,19 +20,19 @@
 script = ExtResource("2_entry")
 StartHour = 5
 Activity = "Hauling in sacks"
-Destination = Vector3(7.9, 0, -3)
+Destination = Vector3(-0.11, 0, 2.75)
 
 [sub_resource type="Resource" id="e_trade"]
 script = ExtResource("2_entry")
 StartHour = 6
 Activity = "Selling charcoal"
-Destination = Vector3(7.9, 0, -3)
+Destination = Vector3(-0.11, 0, 2.75)
 
 [sub_resource type="Resource" id="e_close"]
 script = ExtResource("2_entry")
 StartHour = 16
 Activity = "Roping down the tarpaulin"
-Destination = Vector3(11.5, 0, -3)
+Destination = Vector3(-3.18, 0, 2.32)
 
 [resource]
 script = ExtResource("1_sched")

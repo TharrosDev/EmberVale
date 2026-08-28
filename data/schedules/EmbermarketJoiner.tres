@@ -6,7 +6,7 @@
 ; Halvard the joiner (Phase 38L).
 ;
 ; ⚠️ DESTINATIONS ARE CELL-LOCAL. Origin carries the Embermarket's Center (0, 0, 46), so these read
-; straight out of embermarket.tscn without anyone doing the arithmetic by hand thirty times. A raw
+; straight out of embermarket.tscn (re-read from the Phase 44 Coilyard rebuild — the stall rows are gone) without anyone doing the arithmetic by hand thirty times. A raw
 ; world destination copied from a cell .tscn lands a cell's width away and nothing reports it.
 ;
 ; ⚠️ These hours track shop.embermarket.joiner (7:00-18:00) and are kept in step BY HAND. A ScheduleId lives
@@ -20,19 +20,19 @@
 script = ExtResource("2_entry")
 StartHour = 6
 Activity = "Fanning out the planks"
-Destination = Vector3(13, 0, -5.6)
+Destination = Vector3(5.05, 0, 15.05)
 
 [sub_resource type="Resource" id="e_trade"]
 script = ExtResource("2_entry")
 StartHour = 7
 Activity = "Selling timber"
-Destination = Vector3(13, 0, -5.6)
+Destination = Vector3(5.05, 0, 15.05)
 
 [sub_resource type="Resource" id="e_close"]
 script = ExtResource("2_entry")
 StartHour = 18
 Activity = "Chaining the planks"
-Destination = Vector3(13, 0, -2.5)
+Destination = Vector3(3.5, 0, 17.73)
 
 [resource]
 script = ExtResource("1_sched")

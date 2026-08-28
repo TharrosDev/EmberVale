@@ -6,7 +6,7 @@
 ; Odo Greenhand (Phase 38L).
 ;
 ; ⚠️ DESTINATIONS ARE CELL-LOCAL. Origin carries the Embermarket's Center (0, 0, 46), so these read
-; straight out of embermarket.tscn without anyone doing the arithmetic by hand thirty times. A raw
+; straight out of embermarket.tscn (re-read from the Phase 44 Coilyard rebuild — the stall rows are gone) without anyone doing the arithmetic by hand thirty times. A raw
 ; world destination copied from a cell .tscn lands a cell's width away and nothing reports it.
 ;
 ; ⚠️ These hours track shop.embermarket.herbalist (8:00-20:00) and are kept in step BY HAND. A ScheduleId lives
@@ -20,19 +20,19 @@
 script = ExtResource("2_entry")
 StartHour = 7
 Activity = "Hanging the bundles"
-Destination = Vector3(-13, 0, -5.6)
+Destination = Vector3(2.44, 0, 11.49)
 
 [sub_resource type="Resource" id="e_trade"]
 script = ExtResource("2_entry")
 StartHour = 8
 Activity = "Selling herbs"
-Destination = Vector3(-13, 0, -5.6)
+Destination = Vector3(2.44, 0, 11.49)
 
 [sub_resource type="Resource" id="e_close"]
 script = ExtResource("2_entry")
 StartHour = 20
 Activity = "Taking the bundles in"
-Destination = Vector3(-13, 0, -2.5)
+Destination = Vector3(0.07, 0, 13.49)
 
 [resource]
 script = ExtResource("1_sched")

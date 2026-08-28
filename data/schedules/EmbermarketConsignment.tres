@@ -6,7 +6,7 @@
 ; Mirelle Vantry (Phase 38P).
 ;
 ; ⚠️ DESTINATIONS ARE CELL-LOCAL. Origin carries the Embermarket's Center (0, 0, 46), so these read
-; straight out of embermarket.tscn without anyone doing the arithmetic by hand. A raw world destination
+; straight out of embermarket.tscn (re-read from the Phase 44 Coilyard rebuild — the stall rows are gone) without anyone doing the arithmetic by hand. A raw world destination
 ; copied from a cell .tscn lands a cell's width away and nothing reports it.
 ;
 ; ⚠️ These hours track shop.embermarket.consignment (9:00-18:00) and are kept in step BY HAND. A
@@ -24,19 +24,19 @@
 script = ExtResource("2_entry")
 StartHour = 9
 Activity = "Opening the ledger"
-Destination = Vector3(14.2, 0, 3.5)
+Destination = Vector3(18.5, 0, -0.1)
 
 [sub_resource type="Resource" id="e_trade"]
 script = ExtResource("2_entry")
 StartHour = 10
 Activity = "Taking listings"
-Destination = Vector3(14.2, 0, 3.5)
+Destination = Vector3(18.5, 0, -0.1)
 
 [sub_resource type="Resource" id="e_close"]
 script = ExtResource("2_entry")
 StartHour = 18
 Activity = "Locking the ledger away"
-Destination = Vector3(15.4, 0, 4.6)
+Destination = Vector3(18.5, 0, -3.2)
 
 [resource]
 script = ExtResource("1_sched")

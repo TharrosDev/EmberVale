@@ -6,7 +6,7 @@
 ; Perrin the tanner (Phase 38L).
 ;
 ; ⚠️ DESTINATIONS ARE CELL-LOCAL. Origin carries the Embermarket's Center (0, 0, 46), so these read
-; straight out of embermarket.tscn without anyone doing the arithmetic by hand thirty times. A raw
+; straight out of embermarket.tscn (re-read from the Phase 44 Coilyard rebuild — the stall rows are gone) without anyone doing the arithmetic by hand thirty times. A raw
 ; world destination copied from a cell .tscn lands a cell's width away and nothing reports it.
 ;
 ; ⚠️ These hours track shop.embermarket.tannery (7:00-17:00) and are kept in step BY HAND. A ScheduleId lives
@@ -20,19 +20,19 @@
 script = ExtResource("2_entry")
 StartHour = 6
 Activity = "Hanging the frames"
-Destination = Vector3(-13, 0, -11.4)
+Destination = Vector3(-13.12, 0, -11.23)
 
 [sub_resource type="Resource" id="e_trade"]
 script = ExtResource("2_entry")
 StartHour = 7
 Activity = "Selling hides"
-Destination = Vector3(-13, 0, -11.4)
+Destination = Vector3(-13.12, 0, -11.23)
 
 [sub_resource type="Resource" id="e_close"]
 script = ExtResource("2_entry")
 StartHour = 17
 Activity = "Covering the vats"
-Destination = Vector3(-13, 0, -14.5)
+Destination = Vector3(-12.82, 0, -8.32)
 
 [resource]
 script = ExtResource("1_sched")
