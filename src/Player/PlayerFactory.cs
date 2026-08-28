@@ -10,6 +10,7 @@ using Embervale.Magic;
 using Embervale.Movement;
 using Embervale.Progression;
 using Embervale.Quests;
+using Embervale.Shrines;
 using Embervale.Stats;
 using Godot;
 
@@ -163,6 +164,10 @@ public static class PlayerFactory
         // Progression before perks: perks spend the skill points progression awards.
         player.AddChild(new ProgressionComponent { Name = "Progression", CurvePath = ProgressionPath });
         player.AddChild(new PerksComponent { Name = "Perks" });
+
+        // 41.5A: shrine visits persist as ids and re-derive their stat passives on load; shrines
+        // themselves remain world callers, never a second save record.
+        player.AddChild(new BlessingComponent { Name = "Blessings" });
 
         // Quest log after progression + inventory so it resolves both for rewards.
         player.AddChild(new QuestLogComponent { Name = "QuestLog" });

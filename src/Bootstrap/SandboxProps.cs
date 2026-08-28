@@ -4,6 +4,7 @@ using Embervale.Entities;
 using Embervale.Enemies;
 using Embervale.Items;
 using Embervale.Loot;
+using Embervale.Shrines;
 using Godot;
 
 namespace Embervale.Bootstrap;
@@ -32,6 +33,7 @@ internal static class SandboxProps
         SeedEnemyCamp(root);
         SeedLoot(root);
         SeedSpellTome(root);
+        SeedShrine(root);
     }
 
     private static void SeedEnemyCamp(Node root)
@@ -132,5 +134,14 @@ internal static class SandboxProps
         tome.AddChild(new Magic.SpellTomeComponent { Name = "Tome", SpellId = GameIds.Spells.EmberSiphon });
         root.AddChild(tome);
         Log.Info("An Ashen Tome rests west of spawn — recover its lost spellcraft (corruption-gated).");
+    }
+
+    /// <summary>41.5A's intentional exercise caller. It is not one of 41.5B's final placements;
+    /// the fixture makes the persistent blessing path reachable while the six shrine locations wait
+    /// for their own authored world pass.</summary>
+    private static void SeedShrine(Node root)
+    {
+        root.AddChild(ShrineFactory.Create(GameIds.Shrines.Solaryn, new Vector3(5.5f, 0f, 4.0f)));
+        Log.Info("A small shrine of Solaryn stands southeast of spawn — offer a prayer with E.");
     }
 }

@@ -19,6 +19,7 @@ using Embervale.Player;
 using Embervale.Progression;
 using Embervale.Quests;
 using Embervale.Races;
+using Embervale.Shrines;
 using Embervale.World;
 using Godot;
 
@@ -100,6 +101,7 @@ public static class ContentValidator
         ValidateWorldEvents(issues);
         ValidateRegions(issues);
         ValidateRaces(issues);
+        ValidateShrines(issues);
         ValidateLocale(issues);
         ValidateBreakdownKeys(issues);
         ValidateCompanions(issues);
@@ -2624,6 +2626,7 @@ public static class ContentValidator
         CheckDuplicateIds<ItemResource>("res://data/items", "item", r => r.Id, issues);
         CheckDuplicateIds<AffixDefinition>("res://data/affixes", "affix", r => r.Id, issues);
         CheckDuplicateIds<PerkResource>("res://data/perks", "perk", r => r.Id, issues);
+        CheckDuplicateIds<ShrineResource>("res://data/shrines", "shrine", r => r.Id, issues);
         CheckDuplicateIds<QuestResource>("res://data/quests", "quest", r => r.Id, issues);
         CheckDuplicateIds<DialogueResource>("res://data/dialogue", "dialogue", r => r.Id, issues);
         CheckDuplicateIds<ScheduleResource>("res://data/schedules", "schedule", r => r.Id, issues);
@@ -2881,6 +2884,41 @@ public static class ContentValidator
                 {
                     issues.Add($"race '{race.Id}' reputation tweak references unknown faction '{tweak.FactionId}'");
                 }
+            }
+        }
+    }
+
+    /// <summary>Shrine blessings are persisted by id, so an empty or malformed resource is not a
+    /// harmless editor value: it either creates an unclaimable shrine or restores a passive with no
+    /// player-readable name. The resource is intentionally self-contained in 41.5A; 41.5B adds the
+    /// separate world-placement coverage once all six shrines exist.</summary>
+    private static void ValidateShrines(List<string> issues)
+    {
+        foreach (ShrineResource shrine in ShrineDatabase.All)
+        {
+            if (!shrine.Id.StartsWith("shrine.", System.StringComparison.Ordinal))
+            {
+                issues.Add($"shrine '{shrine.Id}' must use the shrine.* id family");
+            }
+
+            if (string.IsNullOrEmpty(shrine.NameKey) || !Loc.Has(shrine.NameKey))
+            {
+                issues.Add($"shrine '{shrine.Id}' name key '{shrine.NameKey}' is missing from the locale catalogue");
+            }
+
+            if (string.IsNullOrEmpty(shrine.BlessingNameKey) || !Loc.Has(shrine.BlessingNameKey))
+            {
+                issues.Add($"shrine '{shrine.Id}' blessing key '{shrine.BlessingNameKey}' is missing from the locale catalogue");
+            }
+
+            if (!System.Enum.IsDefined(shrine.Stat) || !System.Enum.IsDefined(shrine.ModifierType))
+            {
+                issues.Add($"shrine '{shrine.Id}' has an unknown stat or modifier type");
+            }
+
+            if (Mathf.IsZeroApprox(shrine.Value))
+            {
+                issues.Add($"shrine '{shrine.Id}' grants no passive bonus");
             }
         }
     }

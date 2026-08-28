@@ -11,6 +11,7 @@ using Embervale.Npc;
 using Embervale.Progression;
 using Embervale.Quests;
 using Embervale.Races;
+using Embervale.Shrines;
 using Embervale.World;
 
 namespace Embervale.Bootstrap;
@@ -31,6 +32,7 @@ public static class ContentDatabases
         ItemDatabase.Initialize();
         AffixDatabase.Initialize();
         PerkDatabase.Initialize();
+        ShrineDatabase.Initialize();
         QuestDatabase.Initialize();
         DialogueDatabase.Initialize();
         ScheduleDatabase.Initialize();
