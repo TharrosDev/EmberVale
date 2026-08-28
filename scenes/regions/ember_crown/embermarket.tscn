@@ -55,6 +55,8 @@
 [ext_resource type="Script" path="res://src/Economy/ServiceComponent.cs" id="56_service"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_table_large.gltf" id="57_assay_table"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
+[ext_resource type="PackedScene" path="res://scenes/props/shrine_waystone.tscn" id="shrine_body_41_5b"]
+[ext_resource type="Script" path="res://src/Shrines/ShrineComponent.cs" id="shrine_41_5b"]
 
 ; THE EMBERMARKET (Phase 38K, second pass) — the Ember Crown's market district, one street south of
 ; the town square.
@@ -2475,3 +2477,25 @@ LocationId = "location.embermarket.appraisal"
 [node name="MapPin" type="Node3D" parent="MarketNotice"]
 script = ExtResource("maploc_39_5a")
 LocationId = "location.embermarket.board"
+
+; Nyth is kept beside the market's book and curiosity trade, where a discovered truth can become a
+; useful thing and the surrounding stalls make the landmark part of the district's daily traffic.
+[node name="ShrineNyth" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.6, 0, -14)
+script = ExtResource("2_entity")
+
+[node name="Body" parent="Nav/ShrineNyth" instance=ExtResource("shrine_body_41_5b")]
+
+[node name="Aura" type="OmniLight3D" parent="Nav/ShrineNyth"]
+position = Vector3(0, 2.1, 0)
+light_color = Color(0.74, 0.43, 1, 1)
+light_energy = 1.5
+omni_range = 6.0
+
+[node name="Shrine" type="Node" parent="Nav/ShrineNyth"]
+script = ExtResource("shrine_41_5b")
+ShrineId = "shrine.nyth"
+
+[node name="MapPin" type="Node3D" parent="Nav/ShrineNyth"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.shrine.nyth"

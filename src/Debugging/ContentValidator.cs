@@ -121,6 +121,7 @@ public static class ContentValidator
         ValidatePlaceables(issues);
         ValidateMapLocations(issues);
         ValidateSceneAuthoredIds(issues);
+        ValidateShrineWorldBodies(issues);
         ValidateBestiary(issues);
         ValidateResourcePaths(issues);
         ValidateUiAssets(issues);
@@ -2890,12 +2891,18 @@ public static class ContentValidator
 
     /// <summary>Shrine blessings are persisted by id, so an empty or malformed resource is not a
     /// harmless editor value: it either creates an unclaimable shrine or restores a passive with no
-    /// player-readable name. The resource is intentionally self-contained in 41.5A; 41.5B adds the
-    /// separate world-placement coverage once all six shrines exist.</summary>
+    /// player-readable name. 41.5B closes the set around the six dead gods and links each resource
+    /// to its one generated map location; Morthul is a surviving antagonist, never a blessing.</summary>
     private static void ValidateShrines(List<string> issues)
     {
+        var authored = new HashSet<string>();
+        var locations = new HashSet<string>();
+        var required = new HashSet<string>(GameIds.Shrines.All);
+
         foreach (ShrineResource shrine in ShrineDatabase.All)
         {
+            authored.Add(shrine.Id);
+
             if (!shrine.Id.StartsWith("shrine.", System.StringComparison.Ordinal))
             {
                 issues.Add($"shrine '{shrine.Id}' must use the shrine.* id family");
@@ -2919,6 +2926,29 @@ public static class ContentValidator
             if (Mathf.IsZeroApprox(shrine.Value))
             {
                 issues.Add($"shrine '{shrine.Id}' grants no passive bonus");
+            }
+
+            if (!required.Contains(shrine.Id))
+            {
+                issues.Add($"shrine '{shrine.Id}' is not one of the six authored dead-god blessings");
+            }
+
+            if (string.IsNullOrEmpty(shrine.MapLocationId) ||
+                MapLocationDatabase.Get(shrine.MapLocationId) == null)
+            {
+                issues.Add($"shrine '{shrine.Id}' map location '{shrine.MapLocationId}' does not exist");
+            }
+            else if (!locations.Add(shrine.MapLocationId))
+            {
+                issues.Add($"shrine '{shrine.Id}' shares map location '{shrine.MapLocationId}' with another shrine");
+            }
+        }
+
+        foreach (string id in GameIds.Shrines.All)
+        {
+            if (!authored.Contains(id))
+            {
+                issues.Add($"missing required shrine '{id}'");
             }
         }
     }
@@ -4260,6 +4290,7 @@ public static class ContentValidator
             ["FactionId"] = (id => Factions.FactionDatabase.Get(id) != null, "faction"),
             ["SpellId"] = (id => Magic.SpellDatabase.Get(id) != null, "spell"),
             ["CompanionId"] = (id => Companions.CompanionDatabase.Get(id) != null, "companion"),
+            ["ShrineId"] = (id => ShrineDatabase.Get(id) != null, "shrine"),
         };
 
         // Anchored to the start of a line: a .tscn header is prose in the same file, and an
@@ -4290,6 +4321,54 @@ public static class ContentValidator
                     issues.Add($"scene '{path}' authors {property} = '{id}', which no {noun} declares — " +
                                $"the component would find nothing at runtime and fail silently");
                 }
+            }
+        }
+    }
+
+    /// <summary>
+    /// The shrine resource is a player-owned persistent claim, not a placement flag. The opposite
+    /// side still has to exist exactly once in the world: an authored blessing without a body is
+    /// impossible to receive, while a stray body points at a blessing nobody defined. Map marker
+    /// placement itself is checked by <see cref="ValidateMapMarkersArePlaced"/>; the resource's
+    /// MapLocationId above binds each of these bodies into that coverage.
+    /// </summary>
+    private static void ValidateShrineWorldBodies(List<string> issues)
+    {
+        var counts = new Dictionary<string, int>();
+        foreach (string id in GameIds.Shrines.All)
+        {
+            counts[id] = 0;
+        }
+
+        foreach (string path in ScenePaths("res://scenes/regions"))
+        {
+            using FileAccess? file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
+            if (file == null)
+            {
+                continue;
+            }
+
+            foreach (System.Text.RegularExpressions.Match match in
+                     System.Text.RegularExpressions.Regex.Matches(
+                         file.GetAsText(), @"(?m)^ShrineId = ""([^""]*)"""))
+            {
+                string id = match.Groups[1].Value;
+                if (counts.ContainsKey(id))
+                {
+                    counts[id]++;
+                }
+            }
+        }
+
+        foreach ((string id, int count) in counts)
+        {
+            if (count == 0)
+            {
+                issues.Add($"shrine '{id}' has no in-world shrine body");
+            }
+            else if (count > 1)
+            {
+                issues.Add($"shrine '{id}' has {count} in-world bodies; each blessing needs exactly one caller");
             }
         }
     }

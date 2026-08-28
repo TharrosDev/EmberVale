@@ -4,10 +4,10 @@
 
 [resource]
 script = ExtResource("1_shrine")
-Id = "shrine.solaryn"
-NameKey = "shrine.solaryn.name"
-BlessingNameKey = "blessing.solaryn.name"
-MapLocationId = "location.shrine.solaryn"
-Stat = 8
+Id = "shrine.veyra"
+NameKey = "shrine.veyra.name"
+BlessingNameKey = "blessing.veyra.name"
+MapLocationId = "location.shrine.veyra"
+Stat = 0
 ModifierType = 0
-Value = 10.0
+Value = 25.0

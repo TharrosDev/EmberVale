@@ -7,28 +7,28 @@
 - **Stage C.** Economy (38), mounts/traversal (39), map intelligence (39.5), and quest authoring
   (41) are closed. **Phases 40 and 40.5 are struck, not deferred:** this game has no survival
   needs, durability, hunger, encumbrance, puzzle, trap, or vault system. A cut system leaves no stub.
-- **41.5A — Divine Shrines & Blessings core ✅ CLOSED.** `shrine.solaryn` gives Lightbearer's Guard
-  (+10 Armor) on the first interaction with the sandbox shrine southeast of spawn. The player's
-  `BlessingComponent` saves claimed shrine ids under `blessings:player`, clears old modifiers before
-  load, and re-derives every restored modifier from `ShrineResource` data.
-- **NEXT: 41.5B — author the five remaining blessings and place all six gods' shrines.** The Solaryn
-  sandbox fixture is a real caller, not a final location. 41.5B owns the fiction-led cell placements,
-  map locations, surrounding composition, and renders.
+- **41.5A–B — Divine Shrines & Blessings core + placements ✅ CLOSED.** The six dead gods have
+  stat-distinct, map-linked shrine callers in the Ember Crown. The player's `BlessingComponent` owns
+  the sole `blessings:player` claim set, clears old modifiers before load, then re-derives every
+  blessing from the canonical `ShrineResource` data; no shrine body saves state.
+- **NEXT: 41.5C — corruption-gated blessing refusal/curse.** A high-corruption visit must select a
+  refusal/curse outcome before it claims the shrine, so the player set remains the only authority.
 - The former Phase 40 dependencies are settled: `CraftingStationType.Cooking` is gone (ordinal 4
   retired; append future stations at 5), and inventory has no max-weight/encumbrance state. Weight is
   still an item fact. The deferred 39.5 table remains measured, not scheduled.
 
-## Last verified (2026-08-28 — 41.5A)
+## Last verified (2026-08-28 — 41.5B)
 
 | Check | Result |
 | --- | --- |
 | Build | `dotnet build Embervale.sln` — 0 warnings, 0 errors |
 | Tests | `dotnet test tests/Embervale.Tests` — **1496 passing** |
-| `--validate` | exit 0; **1 shrine**, 1438 locale strings, 18 quests, 34 dialogues |
-| Negative rule | `tools/negative_tests.py --only shrine.grants_no_bonus` — broken, caught, restored; recovered `--validate` exit 0 |
-| `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, 34 dialogues, 18 quests, 64 map locations, 3 companions |
-| `--play` | loaded newest `auto2`, restored 34 objects, all 10 Ember Crown cells; it booted successfully with the new blessing saveable present |
-| Shrine render | `--shrine-shots`: four 1280×720 eye-level front/back day/dusk frames; first frame drove the real interaction and displayed the blessing toast |
+| `--validate` | exit 0; **6 shrines**, 1454 locale strings, 70 map locations, 18 quests, 34 dialogues |
+| Map generator | `python tools/gen_map_locations.py --check` — 70 locations, 0 files out of date |
+| Shrine render | `--shrine-shots`: 12 live 1280×720 eye-level front/back frames; final Solaryn caller claimed its blessing and proved replacement-load semantics |
+| Negative rules | `python tools/negative_tests.py --only shrine` — 4 cases broken, caught, restored; recovered `--validate` exit 0 |
+| `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, 34 dialogues, 18 quests, 70 map locations, 3 companions |
+| `--play` | newest `auto1` booted, restored 34 objects, and loaded all 10 Ember Crown cells successfully |
 | Not run | `--economy` (no price touched); full world baseline (the shrine-specific live captures cover this placement) |
 
 ## Live invariants

@@ -8,10 +8,9 @@ using Godot;
 namespace Embervale.Debugging;
 
 /// <summary>
-/// Live-world visual proof for 41.5A — <c>godot --path . -- --shrine-shots</c>. It drives the
-/// actual shrine interactable, then frames the spawned shrine from eye level front and back while
-/// the player, training dummy, tomes, pickups and streamed town remain around it. The six final
-/// authored shrine locations belong to 41.5B; this verifies the core's real caller now.
+/// Live-world visual proof for 41.5B — <c>godot --path . -- --shrine-shots</c>. It drives the
+/// real Solaryn placement, proves the persistent claim still replaces on load, then captures every
+/// final shrine from eye level on both sides in its populated cell.
 /// </summary>
 public sealed partial class ShrineShots : ShotHarness
 {
@@ -21,19 +20,27 @@ public sealed partial class ShrineShots : ShotHarness
 
     protected override void BuildShotList()
     {
-        Shot("01-day-front-claimed", () => Frame(front: true, hour: 12, claim: true));
-        Shot("02-day-back", () => Frame(front: false, hour: 12, claim: false));
-        Shot("03-dusk-front", () => Frame(front: true, hour: 19, claim: false));
-        Shot("04-dusk-back", () => Frame(front: false, hour: 19, claim: false));
+        AddPair("01-solaryn", "ShrineSolaryn", claim: true);
+        AddPair("02-veyra", "ShrineVeyra");
+        AddPair("03-tharos", "ShrineTharos");
+        AddPair("04-nyth", "ShrineNyth");
+        AddPair("05-drakar", "ShrineDrakar");
+        AddPair("06-elyndra", "ShrineElyndra");
     }
 
-    private static void Frame(bool front, int hour, bool claim)
+    private void AddPair(string prefix, string shrineNodeName, bool claim = false)
+    {
+        Shot($"{prefix}-front", () => Frame(shrineNodeName, front: true, claim: claim));
+        Shot($"{prefix}-back", () => Frame(shrineNodeName, front: false, claim: false));
+    }
+
+    private static void Frame(string shrineNodeName, bool front, bool claim)
     {
         if (ServiceLocator.Instance is not { } locator ||
             !locator.TryGet(out PlayerCharacter player) ||
             player.GetComponent<PlayerController>() is not { } controller ||
             controller.Camera is not { } camera ||
-            FindShrine() is not { } shrine)
+            FindShrine(shrineNodeName) is not { } shrine)
         {
             return;
         }
@@ -46,21 +53,21 @@ public sealed partial class ShrineShots : ShotHarness
 
         if (locator.TryGet(out WorldClock clock))
         {
-            clock.SetTimeOfDay(hour);
+            clock.SetTimeOfDay(12);
         }
 
         // Freeze only the player's input rig; the live streamed world, people and effects continue
         // to update while the harness holds the frame. The vector is intentionally close and at an
         // eye-level camera height, not a catalogue orbit that would hide collision/scale problems.
         controller.ProcessMode = ProcessModeEnum.Disabled;
-        Vector3 offset = front ? new Vector3(2.7f, 1.7f, 2.6f) : new Vector3(-2.7f, 1.7f, -2.6f);
+        Vector3 offset = front ? new Vector3(4.6f, 1.9f, 4.4f) : new Vector3(-4.6f, 1.9f, -4.4f);
         camera.GlobalPosition = shrine.GlobalPosition + offset;
         camera.LookAt(shrine.GlobalPosition + new Vector3(0f, 0.85f, 0f), Vector3.Up);
     }
 
-    private static Entity? FindShrine() =>
+    private static Entity? FindShrine(string shrineNodeName) =>
         Engine.GetMainLoop() is SceneTree tree
-            ? tree.Root.FindChild("SolarynShrine", recursive: true, owned: false) as Entity
+            ? tree.Root.FindChild(shrineNodeName, recursive: true, owned: false) as Entity
             : null;
 
     /// <summary>Runs the actual component load path without touching a user save slot: claim the

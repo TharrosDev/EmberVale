@@ -82,6 +82,7 @@ add("ember_crown/town_hub", "ember_crown.traveller", "Merchant", "WanderingTrade
 # One pin for three stations standing within two metres of each other: three near-identical
 # markers on top of one another is the icon soup §50 names, and it is one place to a player.
 add("ember_crown/town_hub", "ember_crown.crafting", "Crafting", "StationForge", "The Crafting Yard")
+add("ember_crown/town_hub", "shrine.solaryn", "Landmark", "Nav/ShrineSolaryn", "Shrine of Solaryn")
 
 # The market. Its display name is REUSED from the waystone's key rather than authored again —
 # one place, one name, and renaming the waystone renames the map pin with it.
@@ -123,6 +124,7 @@ add("ember_crown/embermarket", "embermarket.appraisal", "Jeweller", "BrightcutSc
     service="service.embermarket.appraisal")
 add("ember_crown/embermarket", "embermarket.board", "Contracts", "MarketNotice", "The Market Notice",
     dialogue="dialogue.market_board")
+add("ember_crown/embermarket", "shrine.nyth", "Landmark", "Nav/ShrineNyth", "Shrine of Nyth")
 
 # The tolled crossing.
 add("ember_crown/crossway_post", "crossway.post", "Outpost", ".", "", reveal=True,
@@ -143,6 +145,7 @@ add("ember_crown/crossway_post", "crossway.impound", "Gate", "ImpoundClerk", "Th
     service="service.crossway.impound")
 add("ember_crown/crossway_post", "crossway.mercenary", "Contracts", "Mercenary", "The Hiring Post",
     service="service.crossway.mercenary", dialogue="dialogue.wren")
+add("ember_crown/crossway_post", "shrine.tharos", "Landmark", "Nav/ShrineTharos", "Shrine of Tharos")
 
 # The mine.
 add("ember_crown/emberdeep_mine", "emberdeep.mine", "Mine", ".", "", reveal=True,
@@ -166,6 +169,7 @@ add("ember_crown/tarn_landing", "tarn.curer", "Provisioner", "Wenna", "Wenna's S
     shop="shop.tarn.curer", dialogue="dialogue.wenna")
 add("ember_crown/tarn_landing", "tarn.chandler", "Outfitter", "Odger", "Odger's Chandlery",
     shop="shop.tarn.chandler", dialogue="dialogue.odger")
+add("ember_crown/tarn_landing", "shrine.elyndra", "Landmark", "Nav/ShrineElyndra", "Shrine of Elyndra")
 
 # The hollow.
 add("ember_crown/hollowreach", "hollowreach.reach", "Village", ".", "", reveal=True,
@@ -191,8 +195,10 @@ add("ember_crown/ashfall_homestead", "ashfall.bed", "Inn", "AshfallBed", "The As
 # again, the same rule the five waystone settlements follow: one place, one name.
 add("ember_crown/ashfall_homestead", "ashfall.cottage", "Home", "CottageDeed", "",
     name_key="property.cottage.name", prop="property.ember_crown.cottage")
+add("ember_crown/ashfall_homestead", "shrine.veyra", "Landmark", "Nav/ShrineVeyra", "Shrine of Veyra")
 add("ember_crown/arena", "ember_crown.arena", "Arena", ".", "The Ember Arena", reveal=True,
     desc="A ring of tiered stone past the north gate, well outside the walls.")
+add("ember_crown/arena", "shrine.drakar", "Landmark", "Nav/ShrineDrakar", "Shrine of Drakar")
 add("ember_crown/wilds_north", "wilds.north", "Wilds", ".", "The Northern Wilds", reveal=True,
     desc="Open country north of the city. Goblins range here.")
 add("ember_crown/wilds_west", "wilds.west", "Wilds", ".", "The Western Wilds", reveal=True,

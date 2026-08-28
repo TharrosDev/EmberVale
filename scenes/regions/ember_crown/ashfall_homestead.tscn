@@ -41,6 +41,8 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_timber_stack.glb" id="39_timber"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_lamp_post.glb" id="40_lamp"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
+[ext_resource type="PackedScene" path="res://scenes/props/shrine_waystone.tscn" id="shrine_body_41_5b"]
+[ext_resource type="Script" path="res://src/Shrines/ShrineComponent.cs" id="shrine_41_5b"]
 
 [sub_resource type="NavigationMesh" id="NavMesh_home"]
 vertices = PackedVector3Array()
@@ -1168,3 +1170,25 @@ LocationId = "location.ashfall.bed"
 [node name="MapPin" type="Node3D" parent="CottageDeed"]
 script = ExtResource("maploc_39_5a")
 LocationId = "location.ashfall.cottage"
+
+; Veyra's shrine stands by the homestead garden, close to the bed and working household rather than
+; in untouched wilderness: mercy and growth should read as part of ordinary life.
+[node name="ShrineVeyra" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 8)
+script = ExtResource("1_entity")
+
+[node name="Body" parent="Nav/ShrineVeyra" instance=ExtResource("shrine_body_41_5b")]
+
+[node name="Aura" type="OmniLight3D" parent="Nav/ShrineVeyra"]
+position = Vector3(0, 2.1, 0)
+light_color = Color(0.42, 1, 0.5, 1)
+light_energy = 1.5
+omni_range = 6.0
+
+[node name="Shrine" type="Node" parent="Nav/ShrineVeyra"]
+script = ExtResource("shrine_41_5b")
+ShrineId = "shrine.veyra"
+
+[node name="MapPin" type="Node3D" parent="Nav/ShrineVeyra"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.shrine.veyra"

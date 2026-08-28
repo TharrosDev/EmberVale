@@ -1496,6 +1496,7 @@ location.ember_crown.guild_board.name,The Guild Board
 location.ember_crown.commission.name,The Order Bench
 location.ember_crown.traveller.name,The Wandering Trader
 location.ember_crown.crafting.name,The Crafting Yard
+location.shrine.solaryn.name,Shrine of Solaryn
 location.embermarket.market.desc,"Rows of stalls under awnings, a plaza at the north end, and the realm's densest run of trades — twelve merchants between the aisles and the forecourt."
 location.embermarket.waystone.name,Embermarket Waystone
 location.embermarket.provisions.name,Corvin's Provisions
@@ -1514,6 +1515,7 @@ location.embermarket.curios.name,Quill's Curios
 location.embermarket.collect.name,The Collection Desk
 location.embermarket.appraisal.name,The Brightcut Scales
 location.embermarket.board.name,The Market Notice
+location.shrine.nyth.name,Shrine of Nyth
 location.crossway.post.desc,"The wardens' post on the road between the realms. Nothing crosses here without the toll, a permit, or a word with the man at the side of the gate."
 location.crossway.waystone.name,Crossway Waystone
 location.crossway.board.name,The Caravan Board
@@ -1522,6 +1524,7 @@ location.crossway.bribe.name,The Gate Hand
 location.crossway.search.name,The Search Table
 location.crossway.impound.name,The Impound Counter
 location.crossway.mercenary.name,The Hiring Post
+location.shrine.tharos.name,Shrine of Tharos
 location.emberdeep.mine.desc,"Ore out of the hill and food in at any price. The factor sells the realm's cheapest metal; the quartermaster pays its best coin for a full pack of provisions."
 location.emberdeep.waystone.name,Emberdeep Waystone
 location.emberdeep.factor.name,The Factor's Office
@@ -1530,6 +1533,7 @@ location.tarn.landing.desc,"A jetty, a smokehouse and a chandlery on the tarn's 
 location.tarn.waystone.name,Landing Waystone
 location.tarn.curer.name,Wenna's Smokehouse
 location.tarn.chandler.name,Odger's Chandlery
+location.shrine.elyndra.name,Shrine of Elyndra
 location.hollowreach.reach.desc,"Boat-builders and salvagers in the low ground, and a bones table that will take your coin on a throw."
 location.hollowreach.waystone.name,Hollowreach Waystone
 location.hollowreach.hull.name,Sedge's Hull Works
@@ -1538,8 +1542,10 @@ location.hollowreach.bones.name,The Bones Table
 location.ashfall.homestead.name,Ashfall Homestead
 location.ashfall.homestead.desc,"A farmstead on the ash flats east of the city, with a bed for anyone caught out after dark."
 location.ashfall.bed.name,The Ashfall Bed
+location.shrine.veyra.name,Shrine of Veyra
 location.ember_crown.arena.name,The Ember Arena
 location.ember_crown.arena.desc,"A ring of tiered stone past the north gate, well outside the walls."
+location.shrine.drakar.name,Shrine of Drakar
 location.wilds.north.name,The Northern Wilds
 location.wilds.north.desc,"Open country north of the city. Goblins range here."
 location.wilds.west.name,The Western Wilds
@@ -1579,3 +1585,13 @@ notify.blessing_received,"Blessing received: {0}"
 notify.shrine_already_visited,"The blessing at {0} already rests with you."
 shrine.solaryn.name,"Shrine of Solaryn"
 blessing.solaryn.name,"Lightbearer's Guard"
+shrine.veyra.name,"Shrine of Veyra"
+blessing.veyra.name,"Veyra's Mercy"
+shrine.tharos.name,"Shrine of Tharos"
+blessing.tharos.name,"Edict of Stone"
+shrine.nyth.name,"Shrine of Nyth"
+blessing.nyth.name,"Nyth's Insight"
+shrine.drakar.name,"Shrine of Drakar"
+blessing.drakar.name,"Drakar's Resolve"
+shrine.elyndra.name,"Shrine of Elyndra"
+blessing.elyndra.name,"Elyndra's Ward"

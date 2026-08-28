@@ -170,11 +170,18 @@ public static class GameIds
         public const string FrostfangReach = "region.frostfang_reach";
     }
 
-    /// <summary>Shrine blessings authored under <c>data/shrines/</c>. Only the sandbox exercise
-    /// shrine is code-named; later world placements resolve their ids from authored scene data.</summary>
+    /// <summary>Shrine blessings authored under <c>data/shrines/</c>. These six dead gods are a
+    /// closed authored set; Morthul is the surviving antagonist, not a blessing shrine.</summary>
     public static class Shrines
     {
         public const string Solaryn = "shrine.solaryn";
+        public const string Veyra = "shrine.veyra";
+        public const string Tharos = "shrine.tharos";
+        public const string Nyth = "shrine.nyth";
+        public const string Drakar = "shrine.drakar";
+        public const string Elyndra = "shrine.elyndra";
+
+        public static readonly string[] All = { Solaryn, Veyra, Tharos, Nyth, Drakar, Elyndra };
     }
 
     public static class Spells
