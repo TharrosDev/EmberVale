@@ -5,8 +5,7 @@
 [resource]
 script = ExtResource("1_event")
 Id = "event.goblin_raid"
-DisplayName = "Goblin Raid"
-Description = "A warband descends on the area. Drive them off."
+NameKey = "event.goblin_raid.name"
 Kind = 0
 SelectionWeight = 2.0
 CooldownSeconds = 100.0

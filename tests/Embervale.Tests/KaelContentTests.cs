@@ -137,7 +137,6 @@ public class KaelContentTests
     {
         string companion = File.ReadAllText(Path.Combine(Root, "data/companions/Kael.tres"));
 
-        Assert.Contains(@"RecruitQuestId = ""quest.kael.oath""", companion);
         Assert.Contains(@"LoyaltyQuestId = ""quest.kael.brother""", companion);
         Assert.Contains(@"DialogueId = ""dialogue.kael""", companion);
         Assert.Contains(@"NameKey = ""companion.kael.name""", companion);

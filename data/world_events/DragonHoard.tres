@@ -11,8 +11,7 @@
 [resource]
 script = ExtResource("1_event")
 Id = "event.dragon_hoard"
-DisplayName = "Spilled Hoard"
-Description = "Scale and coin scattered across the snow, still warm. Gather it before something comes back for it."
+NameKey = "event.dragon_hoard.name"
 Kind = 1
 SelectionWeight = 1.2
 CooldownSeconds = 300.0

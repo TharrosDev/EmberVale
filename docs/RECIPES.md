@@ -1106,8 +1106,9 @@ cell sat far from the origin). `EnemySpawnDirector` had the same latent bug.
 
 ## A new world event
 
-1. Author `data/world_events/Xxx.tres` (`script_class="WorldEventResource"`): unique `Id`,
-   `Kind` (`0`=Raid / `1`=Cache / `2`=Hunt), `SelectionWeight`, `CooldownSeconds`,
+1. Author `data/world_events/Xxx.tres` (`script_class="WorldEventResource"`): unique `Id` and
+   `NameKey` (a row in `data/locale/strings.csv`), `Kind` (`0`=Raid / `1`=Cache / `2`=Hunt),
+   `SelectionWeight`, `CooldownSeconds`,
    `TimeLimitSeconds`, `RegionIds` (Phase 35G — `Array[String]` of `region.*` ids;
    **empty means anywhere**, exactly as for encounters, so author it whenever the event
    belongs to one realm or it rolls in every region — that is how goblin raids reached
@@ -1228,8 +1229,8 @@ cell sat far from the origin). `EnemySpawnDirector` had the same latent bug.
    validator fails without them), the build paths (`AttributesPath`/`WeaponPath`/`ModelPath`),
    `FactionId`, optional `KnownSpellIds` (non-empty ⇒ it gets a `SpellcastingComponent`, i.e. a
    caster companion), the follower envelope (`FollowDistance`/`EngageRadius`/`AttackRange`/
-   `LeashRadius`), and the loyalty knobs (`StartingLoyalty`, `LoyaltyQuestReward`,
-   `RecruitQuestId`/`LoyaltyQuestId`/`DialogueId`).
+   `LeashRadius`), and the loyalty/content knobs (`StartingLoyalty`, `LoyaltyQuestReward`,
+   `LoyaltyQuestId`/`DialogueId`).
 2. It is auto-indexed by `CompanionDatabase` and auto-registered in `CompanionRegistry` — **no code
    change**. Recruit it *by id*: a `DialogueChoice` (`Effect` `5`=RecruitCompanion), a quest hook,
    `ServiceLocator.Get<CompanionRoster>().Recruit("companion.x")`, or `companion recruit <id>` in the

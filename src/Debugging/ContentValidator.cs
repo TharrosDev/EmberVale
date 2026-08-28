@@ -2529,7 +2529,6 @@ public static class ContentValidator
                 issues.Add($"companion '{id}' StartingLoyalty {companion.StartingLoyalty} is outside 0-100");
             }
 
-            RequireQuestIfSet(companion.RecruitQuestId, $"companion '{id}' recruit quest", issues);
             RequireQuestIfSet(companion.LoyaltyQuestId, $"companion '{id}' loyalty quest", issues);
 
             if (!string.IsNullOrEmpty(companion.DialogueId) && DialogueDatabase.Get(companion.DialogueId) == null)
@@ -2588,6 +2587,7 @@ public static class ContentValidator
         ValidateDialogueReachability(issues);
         ValidateStoryFlags(issues);
         ValidateQuestCompletability(issues);
+        ValidateQuestCompletionFlagsDoNotSelfGate(issues);
         ValidatePrerequisiteCycles(issues);
     }
 
@@ -3374,6 +3374,11 @@ public static class ContentValidator
     {
         foreach (WorldEventResource worldEvent in WorldEventDatabase.All)
         {
+            if (string.IsNullOrEmpty(worldEvent.NameKey) || !Loc.Has(worldEvent.NameKey))
+            {
+                issues.Add($"event '{worldEvent.Id}' has missing locale name key '{worldEvent.NameKey}'");
+            }
+
             switch (worldEvent.Kind)
             {
                 case WorldEventKind.Cache:
@@ -3838,6 +3843,34 @@ public static class ContentValidator
                         $"quest '{quest.Id}' kills '{objective.TargetId}', which no encounter or world event spawns — " +
                         "it can only be killed once, so the quest is uncompletable if that happens first " +
                         "(set AllowsOneShotTarget once the offering dialogue gates on the target being alive)");
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// A completion flag is written only after every live objective has completed (41E). Requiring
+    /// that same flag on one of the quest's objectives therefore authors a branch the quest can
+    /// never enter: it waits for its own reward before it can earn the reward. This belongs to the
+    /// <c>validate-all</c> graph battery, not the quick cross-reference pass — both ids resolve and
+    /// only their ordering makes the authored route impossible.
+    /// </summary>
+    private static void ValidateQuestCompletionFlagsDoNotSelfGate(List<string> issues)
+    {
+        foreach (QuestResource quest in QuestDatabase.All)
+        {
+            if (string.IsNullOrEmpty(quest.CompletionFlagId))
+            {
+                continue;
+            }
+
+            foreach (ObjectiveResource objective in quest.ObjectiveList())
+            {
+                if (objective.RequiredFlagId == quest.CompletionFlagId)
+                {
+                    issues.Add($"quest '{quest.Id}' objective requires its own completion flag " +
+                               $"'{quest.CompletionFlagId}' — the flag is set only after the " +
+                               "objective completes, so this branch can never be entered");
                 }
             }
         }

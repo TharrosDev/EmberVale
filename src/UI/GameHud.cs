@@ -1107,7 +1107,7 @@ public partial class GameHud : CanvasLayer
     {
         if (_worldEvents is { } director && IsInstanceValid(director) && director.Active is { } worldEvent)
         {
-            _bannerText.Text = $"★ {worldEvent.Resource.DisplayName} — {worldEvent.ObjectiveLabel()}";
+            _bannerText.Text = $"★ {worldEvent.Name} — {worldEvent.ObjectiveLabel()}";
 
             // Separate countdown that heats to ember orange in the final seconds (urgency read).
             _bannerTimer.Visible = worldEvent.IsTimed;

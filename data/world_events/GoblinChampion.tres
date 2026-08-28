@@ -5,8 +5,7 @@
 [resource]
 script = ExtResource("1_event")
 Id = "event.goblin_champion"
-DisplayName = "Goblin Champion"
-Description = "A hulking goblin champion stalks the valley. Hunt it down."
+NameKey = "event.goblin_champion.name"
 Kind = 2
 SelectionWeight = 1.0
 CooldownSeconds = 150.0

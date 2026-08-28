@@ -60,9 +60,6 @@ public partial class CompanionResource : Resource
     /// <summary>Loyalty granted for completing this companion's loyalty quest (Phase 32E).</summary>
     [Export] public int LoyaltyQuestReward { get; set; } = 30;
 
-    /// <summary>The quest that recruits them, if any — authored content, read by the recruit hooks.</summary>
-    [Export] public string RecruitQuestId { get; set; } = string.Empty;
-
     /// <summary>Their loyalty quest id, if any.</summary>
     [Export] public string LoyaltyQuestId { get; set; } = string.Empty;
 

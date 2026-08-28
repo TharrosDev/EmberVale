@@ -20,3 +20,9 @@ public readonly record struct QuestCompletedEvent(IEntity Owner, QuestResource Q
 /// which of the two happened without inspecting the quest's state afterwards.
 /// </summary>
 public readonly record struct QuestFailedEvent(IEntity Owner, QuestResource Quest) : IGameEvent;
+
+/// <summary>
+/// Raised when developer tooling removes a quest from the journal (41F). It has no player-facing
+/// toast: it exists so the journal drops a stale card if reset is issued while the panel is open.
+/// </summary>
+public readonly record struct QuestResetEvent(IEntity Owner, QuestResource Quest) : IGameEvent;

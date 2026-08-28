@@ -14,8 +14,7 @@
 [resource]
 script = ExtResource("1_event")
 Id = "event.drake_champion"
-DisplayName = "Elder Drake"
-Description = "Something bigger than the usual drakes is hunting the Reach. Put it down."
+NameKey = "event.drake_champion.name"
 Kind = 2
 SelectionWeight = 1.0
 CooldownSeconds = 420.0
