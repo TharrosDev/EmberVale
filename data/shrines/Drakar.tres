@@ -11,3 +11,5 @@ MapLocationId = "location.shrine.drakar"
 Stat = 3
 ModifierType = 0
 Value = 3.0
+RefusalCorruption = 80
+RefusalKey = "shrine.drakar.refusal"

@@ -11,3 +11,5 @@ MapLocationId = "location.shrine.tharos"
 Stat = 7
 ModifierType = 0
 Value = 3.0
+RefusalCorruption = 40
+RefusalKey = "shrine.tharos.refusal"

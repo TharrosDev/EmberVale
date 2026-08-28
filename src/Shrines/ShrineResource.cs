@@ -31,4 +31,15 @@ public partial class ShrineResource : Resource
 
     /// <summary>The modifier value; a percentage is expressed as a fraction (0.10 = 10%).</summary>
     [Export] public float Value { get; set; } = 1f;
+
+    /// <summary>Corruption at or above which this god refuses the player outright (41.5C). Authored
+    /// per god rather than shared, because the refusal is fiction: Solaryn's justice turns on a
+    /// tainted supplicant long before Drakar's war-god pragmatism does. Valid range is 1..100 —
+    /// 0 would make the blessing unreachable and 101 would make the refusal branch dead content,
+    /// and <c>ValidateShrines</c> rejects both.</summary>
+    [Export] public int RefusalCorruption { get; set; } = 60;
+
+    /// <summary>Locale key for the line the god turns the player away with. Each shrine authors its
+    /// own; a shared template would flatten six distinct voices into one system message.</summary>
+    [Export] public string RefusalKey { get; set; } = "shrine.unknown.refusal";
 }

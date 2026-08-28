@@ -1,5 +1,4 @@
 using Embervale.Core.Diagnostics;
-using Embervale.Core.Events;
 using Embervale.Entities;
 using Embervale.Interaction;
 using Embervale.Localization;
@@ -32,9 +31,8 @@ public partial class ShrineComponent : InteractableComponent
             return;
         }
 
-        if (!blessings.TryClaim(shrine))
-        {
-            EventBus.Instance?.Publish(new ShrineAlreadyVisitedEvent(shrine));
-        }
+        // The body decides nothing and announces nothing: BlessingComponent owns the corruption
+        // gate, the claim and all three announcements, so every shrine placement behaves alike.
+        blessings.Offer(shrine);
     }
 }

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Embervale.Core.Events;
+using Embervale.Corruption;
 using Embervale.Entities;
 using Embervale.Save;
 using Embervale.Stats;
@@ -17,6 +18,7 @@ public partial class BlessingComponent : EntityComponent, ISaveable
 {
     private readonly HashSet<string> _claimedShrineIds = new();
     private StatsComponent? _stats;
+    private CorruptionComponent? _corruption;
 
     public string SaveId => SaveKey("blessings");
 
@@ -25,6 +27,7 @@ public partial class BlessingComponent : EntityComponent, ISaveable
     protected override void OnInitialize()
     {
         _stats = Entity!.GetComponent<StatsComponent>();
+        _corruption = Entity!.GetComponent<CorruptionComponent>();
         RegisterSaveable();
     }
 
@@ -35,18 +38,42 @@ public partial class BlessingComponent : EntityComponent, ISaveable
 
     public bool HasClaimed(string shrineId) => _claimedShrineIds.Contains(shrineId);
 
-    /// <summary>Claims and applies a shrine exactly once. This is the only mutation path, so every
-    /// caller gets persistence, stat application and player feedback together.</summary>
-    public bool TryClaim(ShrineResource shrine)
+    /// <summary>Resolves one shrine visit — the single mutation path, so every caller gets the
+    /// corruption gate, persistence, stat application and player feedback together rather than
+    /// each shrine body re-deciding. All three outcomes announce themselves from here for the same
+    /// reason: a future caller (a dialogue effect, a quest step) inherits the whole behaviour by
+    /// calling one method.
+    ///
+    /// ⚠️ The refused branch adds no claimed id and applies no modifier — the player's claim set
+    /// stays the only blessing authority, and refusal keeps no state of its own anywhere, so
+    /// lowering corruption and returning simply works (41.5B traps 1 and 2).</summary>
+    public ShrineOutcome Offer(ShrineResource shrine)
     {
-        if (shrine == null || _stats == null || !BlessingRules.TryClaim(_claimedShrineIds, shrine.Id))
+        if (shrine == null || _stats == null)
         {
-            return false;
+            return ShrineOutcome.AlreadyClaimed;
         }
 
-        Apply(shrine);
-        EventBus.Instance?.Publish(new BlessingClaimedEvent(Entity!, shrine));
-        return true;
+        int corruption = _corruption?.Value ?? CorruptionTiers.Min;
+        ShrineOutcome outcome = BlessingRules.Decide(
+            _claimedShrineIds, shrine.Id, corruption, shrine.RefusalCorruption);
+
+        switch (outcome)
+        {
+            case ShrineOutcome.Blessed:
+                BlessingRules.TryClaim(_claimedShrineIds, shrine.Id);
+                Apply(shrine);
+                EventBus.Instance?.Publish(new BlessingClaimedEvent(Entity!, shrine));
+                break;
+            case ShrineOutcome.Refused:
+                EventBus.Instance?.Publish(new ShrineRefusedEvent(shrine, corruption));
+                break;
+            default:
+                EventBus.Instance?.Publish(new ShrineAlreadyVisitedEvent(shrine));
+                break;
+        }
+
+        return outcome;
     }
 
     private void Apply(ShrineResource shrine)

@@ -157,7 +157,7 @@ authoring recipes that turn them into content with no new code, see docs/RECIPES
 | ~~40~~ | ~~Survival & Needs~~ | ❌ | **NOT WANTED — struck 2026-08-12.** No durability, hunger, thirst, temperature or encumbrance. Ever |
 | ~~40.5~~ | ~~Dungeon & Puzzle Framework~~ | ❌ | **NOT WANTED — struck 2026-08-12.** No puzzle, trap or vault tooling. Phases 50 and 51E owe their own answers |
 | 41 | Quest Authoring at Scale & Branching | F/C | Beyond Kill/Collect: escort, defend, choice/branch, timed, faction-gated objective types |
-| 41.5 ✅ | Divine Shrines & Blessings | F/C | The Seven Gods, mechanized — shrine blessings tied to each god's domain |
+| 41.5 ✅ | Divine Shrines & Blessings | F/C | The Seven Gods, mechanized — shrine blessings tied to each god's domain, refused above each god's corruption tolerance |
 | 42 | Guild & Faction Questlines | C | The five LORE guilds as joinable factions with multi-quest arcs and ranks |
 | 42.5 | The Crimson Cult | F/C | The Crimson Prophet's "empire of worshippers" as a real hostile/infiltrable faction |
 | 43 | Cinematics & Scripted Sequences | F | In-engine cutscene tooling, camera tracks, scripted set-pieces, dialogue staging |
@@ -817,9 +817,12 @@ presence beyond Morthul-as-villain. This mechanizes the other six.
 - **Current playable-world placement** — the only complete realm is Ember Crown, so 41.5B places
   the fixed six callers across its fiction-led cells. When Phase 44 blocks out later realms, relocate
   (never duplicate) these map-linked callers as world layout demands.
-- **Corruption interplay** — a high-corruption visit can trigger a refusal/curse
-  variant instead of the blessing (a `CorruptionComponent` condition check), tying the
-  gods back into the defining mechanic.
+- ✅ **41.5C — corruption-gated refusal** — every shrine authors its own `RefusalCorruption`
+  threshold and refusal line, and `BlessingComponent.Offer` is the one place that decides
+  already-claimed → refused → blessed. A refusal claims nothing, applies nothing and persists
+  nothing, so it reverses by lowering corruption; a blessing already granted is never revoked.
+  **Refusal only — no curse:** a lasting curse would need a second persisted set on the player
+  and a second authority for the same fact, which is exactly what 41.5A/B's carried traps forbid.
 
 ### Phase 42 — Guild & Faction Questlines `[C]`
 

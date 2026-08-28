@@ -11,3 +11,5 @@ MapLocationId = "location.shrine.veyra"
 Stat = 0
 ModifierType = 0
 Value = 25.0
+RefusalCorruption = 80
+RefusalKey = "shrine.veyra.refusal"

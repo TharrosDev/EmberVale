@@ -11,3 +11,5 @@ MapLocationId = "location.shrine.nyth"
 Stat = 2
 ModifierType = 0
 Value = 25.0
+RefusalCorruption = 60
+RefusalKey = "shrine.nyth.refusal"
