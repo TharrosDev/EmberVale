@@ -62,6 +62,21 @@ public sealed class WorldScatterPlannerTests
         }
     }
 
+    [Fact]
+    public void AuthoredCirculationAndActivityAreas_RemainClear()
+    {
+        var paths = new[] { new WorldTerrainMath.Path(-24f, 20f, 18f, -16f, 5f, 1.5f) };
+        var areas = new[] { new WorldTerrainMath.GroundArea(9f, 7f, 8f, 6f, 2f, 0.7f) };
+        IReadOnlyList<WorldScatterPlacement> placements = WorldScatterPlanner.Plan(
+            51, 120, 70f, 70f, 2f, 0, 0f, 0f, 1f, null, paths, areas);
+
+        Assert.All(placements, point =>
+        {
+            Assert.False(WorldTerrainMath.InsidePath(point.X, point.Z, paths[0], 0.25f));
+            Assert.False(WorldTerrainMath.InsideGroundArea(point.X, point.Z, areas[0], 0.25f));
+        });
+    }
+
     private static IReadOnlyList<WorldScatterPlacement> Plan(int seed) =>
         WorldScatterPlanner.Plan(seed, 30, 60f, 50f, 3f, 2, 6f, 0f, 2.5f);
 }

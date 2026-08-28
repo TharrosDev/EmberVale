@@ -25,7 +25,9 @@ public static class WorldScatterPlanner
         float roadWidth,
         float roadOffset,
         float minimumSpacing,
-        IReadOnlyList<WorldScatterExclusion>? exclusions = null)
+        IReadOnlyList<WorldScatterExclusion>? exclusions = null,
+        IReadOnlyList<WorldTerrainMath.Path>? paths = null,
+        IReadOnlyList<WorldTerrainMath.GroundArea>? groundAreas = null)
     {
         var accepted = new List<WorldScatterPlacement>(Math.Max(0, requestedCount));
         if (requestedCount <= 0 || width <= 0f || depth <= 0f)
@@ -44,6 +46,8 @@ public static class WorldScatterPlanner
             float z = ((WorldSceneryMath.Unit(seed, (attempt * 4) + 1) * 2f) - 1f) * halfDepth;
 
             if (InsideRoad(x, z, roadAxis, roadWidth, roadOffset) ||
+                InsidePath(x, z, paths, minimumSpacing * 0.25f) ||
+                InsideGroundArea(x, z, groundAreas, minimumSpacing * 0.25f) ||
                 InsideExclusion(x, z, exclusions) || TooClose(x, z, accepted, spacingSquared))
             {
                 continue;
@@ -57,6 +61,40 @@ public static class WorldScatterPlanner
         }
 
         return accepted;
+    }
+
+    private static bool InsidePath(
+        float x, float z, IReadOnlyList<WorldTerrainMath.Path>? paths, float extra)
+    {
+        if (paths == null)
+        {
+            return false;
+        }
+        foreach (WorldTerrainMath.Path path in paths)
+        {
+            if (WorldTerrainMath.InsidePath(x, z, path, extra))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static bool InsideGroundArea(
+        float x, float z, IReadOnlyList<WorldTerrainMath.GroundArea>? areas, float extra)
+    {
+        if (areas == null)
+        {
+            return false;
+        }
+        foreach (WorldTerrainMath.GroundArea area in areas)
+        {
+            if (WorldTerrainMath.InsideGroundArea(x, z, area, extra))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static bool InsideRoad(float x, float z, int axis, float width, float offset)

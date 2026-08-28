@@ -16,4 +16,10 @@ public partial class WorldCellPresentationResource : Resource
     [Export(PropertyHint.Range, "0,1,0.05")] public float TintStrength { get; set; }
     [Export(PropertyHint.Range, "4,128,1")] public int TopologyResolution { get; set; } = 48;
     [Export(PropertyHint.Range, "0,4,0.05")] public float TopologyHeightScale { get; set; } = 1f;
+
+    /// <summary>Authored approach and circulation network in cell-local X/Z metres.</summary>
+    [Export] public Godot.Collections.Array<WorldPathSegmentResource> Paths { get; set; } = new();
+
+    /// <summary>Authored plazas, work yards, encounter bowls, and landmark clearings.</summary>
+    [Export] public Godot.Collections.Array<WorldGroundAreaResource> GroundAreas { get; set; } = new();
 }

@@ -8,6 +8,8 @@
 [ext_resource type="Script" path="res://src/World/WorldBiomeScatterResource.cs" id="6_scatter"]
 [ext_resource type="Script" path="res://src/World/BiomeScatterLayerResource.cs" id="7_layer"]
 [ext_resource type="Script" path="res://src/World/BiomeScatterExclusionResource.cs" id="8_exclusion"]
+[ext_resource type="Script" path="res://src/World/WorldPathSegmentResource.cs" id="9_path"]
+[ext_resource type="Script" path="res://src/World/WorldGroundAreaResource.cs" id="10_area"]
 
 [sub_resource type="Resource" id="Environment_frostfang"]
 script = ExtResource("3_environment")
@@ -123,51 +125,189 @@ EdgePadding = 4.0
 Layers = Array[ExtResource("7_layer")]([SubResource("Layer_dead_pine"), SubResource("Layer_frost_rock")])
 Exclusions = Array[ExtResource("8_exclusion")]([SubResource("Exclusion_aerie")])
 
+[sub_resource type="Resource" id="Path_hold_approach"]
+script = ExtResource("9_path")
+Start = Vector2(0, 30)
+End = Vector2(0, -17)
+Width = 6.5
+Shoulder = 2.5
+
+[sub_resource type="Resource" id="Path_hold_cross"]
+script = ExtResource("9_path")
+Start = Vector2(-23, 5)
+End = Vector2(23, 5)
+Width = 4.5
+Shoulder = 1.5
+
+[sub_resource type="Resource" id="Path_hold_craft"]
+script = ExtResource("9_path")
+Start = Vector2(0, 5)
+End = Vector2(-10, 1)
+Width = 3.5
+Shoulder = 1.25
+
+[sub_resource type="Resource" id="Area_hold_moot"]
+script = ExtResource("10_area")
+Center = Vector2(0, -5)
+Radius = Vector2(13, 14)
+Feather = 3.0
+SurfaceBlend = 0.70
+
+[sub_resource type="Resource" id="Area_hold_craft"]
+script = ExtResource("10_area")
+Center = Vector2(-9, 1)
+Radius = Vector2(6, 5)
+Feather = 1.5
+SurfaceBlend = 0.82
+
 [sub_resource type="Resource" id="Presentation_clan_hold"]
 script = ExtResource("4_presentation")
 Width = 60.0
 Depth = 60.0
-RoadAxis = 2
-RoadWidth = 7.0
+RoadAxis = 0
 Seed = 201
+Paths = Array[ExtResource("9_path")]([SubResource("Path_hold_approach"), SubResource("Path_hold_cross"), SubResource("Path_hold_craft")])
+GroundAreas = Array[ExtResource("10_area")]([SubResource("Area_hold_moot"), SubResource("Area_hold_craft")])
+
+[sub_resource type="Resource" id="Path_dragon_approach"]
+script = ExtResource("9_path")
+Start = Vector2(45, 0)
+End = Vector2(15, 2)
+Width = 6.0
+Shoulder = 3.0
+
+[sub_resource type="Resource" id="Path_dragon_reveal"]
+script = ExtResource("9_path")
+Start = Vector2(15, 2)
+End = Vector2(0, -4)
+Width = 5.0
+Shoulder = 2.0
+
+[sub_resource type="Resource" id="Area_dragon_bowl"]
+script = ExtResource("10_area")
+Center = Vector2(0, 1)
+Radius = Vector2(18, 15)
+Feather = 5.0
+SurfaceBlend = 0.48
 
 [sub_resource type="Resource" id="Presentation_dragon_roost"]
 script = ExtResource("4_presentation")
 Width = 90.0
 Depth = 90.0
-RoadAxis = 2
-RoadWidth = 6.0
+RoadAxis = 0
 Seed = 202
+Paths = Array[ExtResource("9_path")]([SubResource("Path_dragon_approach"), SubResource("Path_dragon_reveal")])
+GroundAreas = Array[ExtResource("10_area")]([SubResource("Area_dragon_bowl")])
+
+[sub_resource type="Resource" id="Path_ash_approach"]
+script = ExtResource("9_path")
+Start = Vector2(-50, 0)
+End = Vector2(-20, 2)
+Width = 6.0
+Shoulder = 3.5
+
+[sub_resource type="Resource" id="Path_ash_bowl"]
+script = ExtResource("9_path")
+Start = Vector2(-20, 2)
+End = Vector2(0, 0)
+Width = 5.0
+Shoulder = 2.5
+
+[sub_resource type="Resource" id="Path_ash_vent"]
+script = ExtResource("9_path")
+Start = Vector2(0, 0)
+End = Vector2(-18, 12)
+Width = 3.5
+Shoulder = 1.5
+
+[sub_resource type="Resource" id="Area_ash_bowl"]
+script = ExtResource("10_area")
+Center = Vector2(0, 2)
+Radius = Vector2(20, 17)
+Feather = 5.0
+SurfaceBlend = 0.68
 
 [sub_resource type="Resource" id="Presentation_ash_roost"]
 script = ExtResource("4_presentation")
 Width = 100.0
 Depth = 100.0
-RoadAxis = 2
-RoadWidth = 6.0
+RoadAxis = 0
 Seed = 203
 Tint = Color(0.20, 0.13, 0.11, 1)
 TintStrength = 0.68
+Paths = Array[ExtResource("9_path")]([SubResource("Path_ash_approach"), SubResource("Path_ash_bowl"), SubResource("Path_ash_vent")])
+GroundAreas = Array[ExtResource("10_area")]([SubResource("Area_ash_bowl")])
+
+[sub_resource type="Resource" id="Path_aerie_approach"]
+script = ExtResource("9_path")
+Start = Vector2(0, 45)
+End = Vector2(0, 20)
+Width = 5.5
+Shoulder = 3.0
+
+[sub_resource type="Resource" id="Path_aerie_procession"]
+script = ExtResource("9_path")
+Start = Vector2(0, 20)
+End = Vector2(0, -24)
+Width = 4.5
+Shoulder = 2.0
+
+[sub_resource type="Resource" id="Path_aerie_hoard"]
+script = ExtResource("9_path")
+Start = Vector2(0, 0)
+End = Vector2(8, 5)
+Width = 3.0
+Shoulder = 1.0
+
+[sub_resource type="Resource" id="Area_aerie_court"]
+script = ExtResource("10_area")
+Center = Vector2(0, 0)
+Radius = Vector2(20, 18)
+Feather = 4.0
+SurfaceBlend = 0.62
 
 [sub_resource type="Resource" id="Presentation_aerie"]
 script = ExtResource("4_presentation")
 Width = 90.0
 Depth = 90.0
-RoadAxis = 1
-RoadWidth = 5.5
+RoadAxis = 0
 Seed = 204
 Tint = Color(0.67, 0.72, 0.82, 1)
 TintStrength = 0.16
+Paths = Array[ExtResource("9_path")]([SubResource("Path_aerie_approach"), SubResource("Path_aerie_procession"), SubResource("Path_aerie_hoard")])
+GroundAreas = Array[ExtResource("10_area")]([SubResource("Area_aerie_court")])
+
+[sub_resource type="Resource" id="Path_glacier_pass"]
+script = ExtResource("9_path")
+Start = Vector2(0, 10)
+End = Vector2(0, -10)
+Width = 7.0
+Shoulder = 2.5
+
+[sub_resource type="Resource" id="Path_glacier_crossing"]
+script = ExtResource("9_path")
+Start = Vector2(-30, 0)
+End = Vector2(30, 0)
+Width = 4.0
+Shoulder = 2.0
+
+[sub_resource type="Resource" id="Area_glacier_saddle"]
+script = ExtResource("10_area")
+Center = Vector2(0, 0)
+Radius = Vector2(11, 7)
+Feather = 2.0
+SurfaceBlend = 0.45
 
 [sub_resource type="Resource" id="Presentation_glacier"]
 script = ExtResource("4_presentation")
 Width = 60.0
 Depth = 20.0
-RoadAxis = 2
-RoadWidth = 8.0
+RoadAxis = 0
 Seed = 205
 Tint = Color(0.70, 0.84, 0.92, 1)
 TintStrength = 0.30
+Paths = Array[ExtResource("9_path")]([SubResource("Path_glacier_pass"), SubResource("Path_glacier_crossing")])
+GroundAreas = Array[ExtResource("10_area")]([SubResource("Area_glacier_saddle")])
 
 [sub_resource type="Resource" id="Cell_clan_hold"]
 script = ExtResource("2_cell")

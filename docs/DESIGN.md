@@ -687,6 +687,36 @@ balanced and all of them are meant to move.** A balancer needs four things and n
 
 ---
 
+## 7. World-space location composition
+
+**A POI is a change in the landscape, not an object placed on it.** Every authored cell must carry a
+readable approach, a circulation hierarchy, a distinct activity or encounter ground, and a deliberate
+transition back into wilderness. Roads may cross cell seams; internal paths should connect the road to
+the entrance, landmark, service cluster, combat bowl, dock, minehead, or other reason the place exists.
+
+**The intended reveal is silhouette → landmark → material/vegetation transition → approach → entrance
+→ interior reveal.** The world itself should answer “where do I go?” before a marker does. Major roads
+lead to major entrances; secondary paths lead to optional services, overlooks, resources, or encounter
+loops. A clearing is authored only where people, work, or danger plausibly keep it clear.
+
+**Terrain and scatter must respect authored use.** `WorldCellPresentationResource.Paths` and
+`GroundAreas` are the single presentation authority for terrain conformance, ground-surface blending,
+and procedural-scatter exclusion. They complement scene-authored navigation, collision, props, NPCs,
+map pins, and quest anchors; they do not replace or duplicate those gameplay authorities. Keep their
+edges feathered and irregular in composition so a cell never reads as a rectangular content pad.
+
+**Regional identity comes from composition before asset count.** Ember Crown uses warmer worked ground,
+trade and craft yards, timber defenses, farms, docks, and legible civic crossroads. Frostfang Reach uses
+snow saddles, ice-framed passes, sparse clan clearings, exposed lair bowls, ash-stained ground, and larger
+negative space. Reused assets must change role, orientation, scale relationship, skyline, and terrain
+framing enough that the location remains recognizable without its map marker.
+
+> Authoring and validation contract: `docs/WORLD_AUTHORING.md`, `data/regions/*.tres`,
+> `src/World/WorldTerrainMath.cs`, `src/World/WorldBiomeScatter.cs`, `tools/world_shots.gd`, and
+> `tools/map_probe.gd`.
+
+---
+
 > **House rules for editing this file** (carry them forward in 22B and beyond): state
 > *decisions* with a one-line rationale, not restatements of LORE; cross-link real paths
 > (`src/...`, `ARCHITECTURE.md`, `CLAUDE.md` §8) so claims are verifiable; mark every

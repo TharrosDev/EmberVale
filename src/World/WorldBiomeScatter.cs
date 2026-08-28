@@ -47,6 +47,8 @@ public sealed partial class WorldBiomeScatter : Node3D
 
         var scatter = new WorldBiomeScatter { Name = "BiomeScatter" };
         List<WorldScatterExclusion> exclusions = BuildExclusions(profile);
+        List<WorldTerrainMath.Path> paths = WorldTerrainMeshBuilder.BuildPaths(presentation);
+        List<WorldTerrainMath.GroundArea> groundAreas = WorldTerrainMeshBuilder.BuildAreas(presentation);
 
         for (int layerIndex = 0; layerIndex < profile.Layers.Count; layerIndex++)
         {
@@ -60,7 +62,7 @@ public sealed partial class WorldBiomeScatter : Node3D
                 profile.Seed + (layerIndex * 1009), layer.Count,
                 presentation.Width, presentation.Depth, profile.EdgePadding,
                 presentation.RoadAxis, presentation.RoadWidth, presentation.RoadOffset,
-                layer.MinimumSpacing, exclusions);
+                layer.MinimumSpacing, exclusions, paths, groundAreas);
             if (placements.Count == 0)
             {
                 continue;

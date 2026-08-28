@@ -53,9 +53,12 @@ void fragment() {
     ground = mix(ground, detail_color.rgb, detail_mask);
     float cross_axis = road_axis == 1 ? metres.x : metres.y;
     float road = road_axis == 0 ? 0.0 : 1.0 - smoothstep(road_width * 0.42, road_width * 0.58, abs(cross_axis - road_offset));
+    road = max(road, COLOR.r);
+    float activity = COLOR.g;
     float ruts = 0.82 + 0.18 * value_noise(metres * vec2(0.7, 0.13));
     ground = mix(ground, road_color.rgb * ruts, road);
+    ground = mix(ground, mix(surface_color.rgb, road_color.rgb, 0.58), activity);
     ground = mix(ground, tint.rgb, tint_strength);
     ALBEDO = ground;
-    ROUGHNESS = mix(mix(surface_roughness, detail_roughness, detail_mask), road_roughness, road);
+    ROUGHNESS = mix(mix(surface_roughness, detail_roughness, detail_mask), road_roughness, max(road, activity));
 }

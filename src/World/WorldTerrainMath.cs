@@ -1,14 +1,20 @@
 using System;
+using System.Collections.Generic;
 
 namespace Embervale.World;
 
 /// <summary>Engine-free, continuous heightfield math used by terrain mesh generation and tests.</summary>
 public static class WorldTerrainMath
 {
+    public readonly record struct Path(float StartX, float StartZ, float EndX, float EndZ, float Width, float Shoulder);
+    public readonly record struct GroundArea(float X, float Z, float RadiusX, float RadiusZ, float Feather, float SurfaceBlend);
+
     public static float Height(
         int seed, float worldX, float worldZ, float localX, float localZ,
         float width, float depth, float relief, float detailScale,
-        int roadAxis, float roadWidth, float roadOffset)
+        int roadAxis, float roadWidth, float roadOffset,
+        IReadOnlyList<Path>? paths = null,
+        IReadOnlyList<GroundArea>? groundAreas = null)
     {
         if (width <= 0f || depth <= 0f || relief <= 0f)
         {
@@ -26,7 +32,80 @@ public static class WorldTerrainMath
         float road = roadAxis == 0
             ? 0f
             : 1f - SmoothStep(roadWidth * 0.42f, roadWidth * 0.62f, MathF.Abs(crossAxis - roadOffset));
-        return height * (1f - (road * 0.88f));
+        road = MathF.Max(road, PathMask(localX, localZ, paths));
+        float activity = GroundAreaMask(localX, localZ, groundAreas);
+        return height * (1f - (MathF.Max(road * 0.88f, activity * 0.94f)));
+    }
+
+    public static float PathMask(float x, float z, IReadOnlyList<Path>? paths)
+    {
+        if (paths == null)
+        {
+            return 0f;
+        }
+
+        float mask = 0f;
+        foreach (Path path in paths)
+        {
+            float halfWidth = MathF.Max(0.1f, path.Width * 0.5f);
+            float feather = MathF.Max(0.1f, path.Shoulder);
+            float distance = DistanceToSegment(x, z, path.StartX, path.StartZ, path.EndX, path.EndZ);
+            mask = MathF.Max(mask, 1f - SmoothStep(halfWidth, halfWidth + feather, distance));
+        }
+        return mask;
+    }
+
+    public static float GroundAreaMask(float x, float z, IReadOnlyList<GroundArea>? areas)
+    {
+        if (areas == null)
+        {
+            return 0f;
+        }
+
+        float mask = 0f;
+        foreach (GroundArea area in areas)
+        {
+            float radiusX = MathF.Max(0.1f, area.RadiusX);
+            float radiusZ = MathF.Max(0.1f, area.RadiusZ);
+            float normalized = MathF.Sqrt(((x - area.X) * (x - area.X) / (radiusX * radiusX)) +
+                                          ((z - area.Z) * (z - area.Z) / (radiusZ * radiusZ)));
+            float feather = MathF.Max(0.01f, area.Feather / MathF.Max(radiusX, radiusZ));
+            mask = MathF.Max(mask, (1f - SmoothStep(1f, 1f + feather, normalized)) *
+                                  Math.Clamp(area.SurfaceBlend, 0f, 1f));
+        }
+        return mask;
+    }
+
+    public static bool InsidePath(float x, float z, Path path, float extra = 0f) =>
+        DistanceToSegment(x, z, path.StartX, path.StartZ, path.EndX, path.EndZ) <
+        MathF.Max(0f, (path.Width * 0.5f) + path.Shoulder + extra);
+
+    public static bool InsideGroundArea(float x, float z, GroundArea area, float extra = 0f)
+    {
+        float radiusX = MathF.Max(0.1f, area.RadiusX + area.Feather + extra);
+        float radiusZ = MathF.Max(0.1f, area.RadiusZ + area.Feather + extra);
+        float dx = (x - area.X) / radiusX;
+        float dz = (z - area.Z) / radiusZ;
+        return (dx * dx) + (dz * dz) < 1f;
+    }
+
+    private static float DistanceToSegment(float x, float z, float ax, float az, float bx, float bz)
+    {
+        float abx = bx - ax;
+        float abz = bz - az;
+        float lengthSquared = (abx * abx) + (abz * abz);
+        if (lengthSquared <= 0.0001f)
+        {
+            float dx = x - ax;
+            float dz = z - az;
+            return MathF.Sqrt((dx * dx) + (dz * dz));
+        }
+        float t = Math.Clamp((((x - ax) * abx) + ((z - az) * abz)) / lengthSquared, 0f, 1f);
+        float px = ax + (abx * t);
+        float pz = az + (abz * t);
+        float offsetX = x - px;
+        float offsetZ = z - pz;
+        return MathF.Sqrt((offsetX * offsetX) + (offsetZ * offsetZ));
     }
 
     public static float ValueNoise(int seed, float x, float z)

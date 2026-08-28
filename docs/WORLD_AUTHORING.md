@@ -61,10 +61,13 @@ For a new dungeon entrance or other reachable POI:
 2. Keep the proven gameplay slab and collider exact. Visible primitive ground may remain only when
    covered by the presentation surface; invisible primitives remain valid collision/nav support.
 3. Add a `WorldCellPresentationResource` to the cell resource with exact `Width`/`Depth`, stable
-   `Seed`, road axis/width/offset, and optional tint. Every cell is required to have one.
+   `Seed`, road axis/width/offset, and optional tint. Every cell is required to have one. The axis
+   road is the cross-cell seam route; author the location's real internal circulation with
+   `WorldPathSegmentResource` and its plazas, work yards, encounter bowls, ruin courts, and landmark
+   clearings with `WorldGroundAreaResource`.
 4. Shared-edge terrain is seam-neutral: `WorldTerrainMeshBuilder` builds indexed vertices and
    normals from continuous `WorldTerrainMath`, flattening topology exactly at every boundary and
-   across the authored road. Never raise a boundary independently. More than cosmetic relief requires a jointly
+   across every authored road, path segment, and activity surface. Never raise a boundary independently. More than cosmetic relief requires a jointly
    authored collision/nav stitch shared by both cells.
 5. Wrap walkable collision under `NavigationRegion3D/Nav`, parse static colliders, and add
    `CellNavBaker`. Inherited cells are safe: the baker duplicates the nav resource before baking.
@@ -75,9 +78,11 @@ For a new dungeon entrance or other reachable POI:
 
 `WorldCellPresentation` adds a centimetre-high indexed terrain mesh over the authored collider.
 Topology is generated on the CPU at the cell's budgeted resolution, with deterministic world-space
-height sampling, road flattening, explicit normals, and exact flat boundary vertices. The shader no
-longer deforms vertices: it blends surface/secondary/detail/road material response by world-space
-noise, height, slope, road mask, tint, and authored roughness. It has no save state or navigation
+height sampling, route/activity flattening, explicit normals, and exact flat boundary vertices. The
+shader no longer deforms vertices: it blends surface/secondary/detail/road material response by
+world-space noise, height, slope, the cardinal road plus freeform path masks, activity-surface masks,
+tint, and authored roughness. Route and area masks are written into terrain vertex colours by the
+mesh builder, so material, terrain softening, and scatter clearance read the same authoring data. It has no save state or navigation
 authority. The underlying scene remains the gameplay truth until a future region deliberately opts
 into jointly authored terrain collision/nav stitches.
 
@@ -90,7 +95,8 @@ Never recreate per-cell mountain fences; the visual-QA loop proved they occlude 
 - Add an optional `WorldBiomeScatterResource` to a cell for repeated, non-interactive ecology.
   Each `BiomeScatterLayerResource` names one imported scene, count, scale/spacing range, tint,
   visibility distance, and shadow policy. Runtime output is one MultiMesh source per accepted layer.
-- Scatter is deterministic and cell-local. The planner clears the authored road automatically;
+- Scatter is deterministic and cell-local. The planner clears the authored cardinal road, every
+  `WorldPathSegmentResource`, and every `WorldGroundAreaResource` automatically;
   add `BiomeScatterExclusionResource` circles around lairs, landmarks, doors, arenas, schedule paths,
   and deliberate clearings. `--validate` enforces source paths and per-cell/region instance budgets.
 - Use `tools/dress_cell.py` for deterministic clustered ground cover and `gen_cell_props.py` for

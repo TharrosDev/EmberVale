@@ -3531,6 +3531,35 @@ public static class ContentValidator
                         issues.Add($"region '{region.Id}' cell '{cell.Id}' builds {terrainVertices} terrain vertices, " +
                                    $"over its per-cell budget of {budget.MaxTerrainVerticesPerCell}");
                     }
+
+                    if (cell.Presentation.Paths.Count > 24 || cell.Presentation.GroundAreas.Count > 12)
+                    {
+                        issues.Add($"region '{region.Id}' cell '{cell.Id}' over-authors its surface " +
+                                   $"network ({cell.Presentation.Paths.Count} paths, " +
+                                   $"{cell.Presentation.GroundAreas.Count} ground areas)");
+                    }
+
+                    float halfWidth = cell.Presentation.Width * 0.5f;
+                    float halfDepth = cell.Presentation.Depth * 0.5f;
+                    foreach (WorldPathSegmentResource? path in cell.Presentation.Paths)
+                    {
+                        if (path == null || path.Width <= 0f || path.Shoulder < 0f ||
+                            !InsideEnvelope(path.Start, halfWidth, halfDepth) ||
+                            !InsideEnvelope(path.End, halfWidth, halfDepth))
+                        {
+                            issues.Add($"region '{region.Id}' cell '{cell.Id}' has an invalid authored path segment");
+                        }
+                    }
+
+                    foreach (WorldGroundAreaResource? area in cell.Presentation.GroundAreas)
+                    {
+                        if (area == null || area.Radius.X <= 0f || area.Radius.Y <= 0f ||
+                            area.Feather < 0f || area.SurfaceBlend is < 0f or > 1f ||
+                            !InsideEnvelope(area.Center, halfWidth, halfDepth))
+                        {
+                            issues.Add($"region '{region.Id}' cell '{cell.Id}' has an invalid authored ground area");
+                        }
+                    }
                 }
 
                 if (cell.BiomeScatter != null)
@@ -3594,8 +3623,7 @@ public static class ContentValidator
                 // ponytail: there is deliberately NO "every cell scene declares a NavigationRegion3D"
                 // rule. 38K wrote one and deleted it the same hour: a text scan cannot see through scene
                 // inheritance, so the three Frostfang roosts — which inherit their Nav from RoostCell —
-                // all reported as unnavigable, and the glacier legitimately has no navmesh because it is
-                // scenery. A check that is wrong three times out of four teaches authors to ignore the
+                // all reported as unnavigable. A check that is wrong three times out of four teaches authors to ignore the
                 // validator. Resolving inherited scenes properly needs a real PackedScene walk; do that
                 // if a missing navmesh ever actually ships.
             }
@@ -3617,6 +3645,9 @@ public static class ContentValidator
             }
         }
     }
+
+    private static bool InsideEnvelope(Vector2 point, float halfWidth, float halfDepth) =>
+        Mathf.Abs(point.X) <= halfWidth + 0.01f && Mathf.Abs(point.Y) <= halfDepth + 0.01f;
 
     private static int CountSceneNodes(string path)
     {

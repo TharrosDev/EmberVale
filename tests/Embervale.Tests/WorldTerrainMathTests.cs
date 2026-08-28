@@ -39,6 +39,27 @@ public sealed class WorldTerrainMathTests
         Assert.InRange(MathF.Abs(left - right), 0f, 0.01f);
     }
 
+    [Fact]
+    public void AuthoredPath_FlattensAFreeformApproach()
+    {
+        var paths = new[] { new WorldTerrainMath.Path(-20f, 18f, 12f, -9f, 5f, 2f) };
+        float natural = WorldTerrainMath.Height(99, 104f, -23f, 4f, -3f,
+            52f, 52f, 0.25f, 2.5f, 0, 0f, 0f);
+        float routed = WorldTerrainMath.Height(99, 104f, -23f, 4f, -3f,
+            52f, 52f, 0.25f, 2.5f, 0, 0f, 0f, paths);
+
+        Assert.True(MathF.Abs(routed) < MathF.Abs(natural));
+        Assert.True(WorldTerrainMath.PathMask(4f, -3f, paths) > 0.8f);
+    }
+
+    [Fact]
+    public void GroundArea_SoftensLandmarkCourtWithoutTouchingDistantTerrain()
+    {
+        var areas = new[] { new WorldTerrainMath.GroundArea(8f, -4f, 7f, 5f, 2f, 0.8f) };
+        Assert.True(WorldTerrainMath.GroundAreaMask(8f, -4f, areas) > 0.75f);
+        Assert.Equal(0f, WorldTerrainMath.GroundAreaMask(-20f, 20f, areas));
+    }
+
     private static float Height(float localX, float localZ, int roadAxis) =>
         WorldTerrainMath.Height(99, 100f + localX, -20f + localZ, localX, localZ,
             52f, 52f, 0.25f, 2.5f, roadAxis, 6f, 0f);
