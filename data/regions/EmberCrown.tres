@@ -661,6 +661,11 @@ Seed = 109
 Paths = Array[ExtResource("6_path")]([SubResource("Path_homestead_lane"), SubResource("Path_homestead_drive"), SubResource("Path_homestead_door")])
 GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_homestead_yard"), SubResource("Area_homestead_garden"), SubResource("Area_homestead_workshop")])
 
+; ⚠️ THE GATE IS ON THE SOUTH AND IT ALWAYS SHOULD HAVE BEEN (Phase 44). This path was already drawn
+; from (0, 18) — the seam with wilds_north at world (0, -142) — but arena.tscn had a full-width
+; collider across that edge and left the WEST side open instead, and there is nothing west of this
+; cell. The scene now matches the path: a 7.2 m gate at x -3.6..3.6 in the south wall, a west wall
+; that exists, and a collapsed BREACH in the north wall at x 6..12 which is the second way out.
 [sub_resource type="Resource" id="Path_arena_gate"]
 script = ExtResource("6_path")
 Start = Vector2(0, 18)
@@ -668,24 +673,37 @@ End = Vector2(0, 9)
 Width = 5.0
 Shoulder = 1.5
 
+[sub_resource type="Resource" id="Path_arena_breach"]
+script = ExtResource("6_path")
+Start = Vector2(9, -18)
+End = Vector2(7, -8)
+Width = 4.0
+Shoulder = 2.5
+
 [sub_resource type="Resource" id="Area_arena_ring"]
 script = ExtResource("7_area")
-Center = Vector2(0, 0)
-Radius = Vector2(15, 15)
+Center = Vector2(0, -1)
+Radius = Vector2(15, 14)
 Feather = 1.5
 SurfaceBlend = 0.95
+
+[sub_resource type="Resource" id="Area_arena_breach"]
+script = ExtResource("7_area")
+Center = Vector2(9, -16)
+Radius = Vector2(4, 3)
+Feather = 2.0
+SurfaceBlend = 0.55
 
 [sub_resource type="Resource" id="Presentation_arena"]
 script = ExtResource("4_presentation")
 Width = 36.0
 Depth = 36.0
-RoadAxis = 1
-RoadWidth = 5.0
+RoadAxis = 0
 Seed = 110
 Tint = Color(0.36, 0.24, 0.20, 1)
 TintStrength = 0.16
-Paths = Array[ExtResource("6_path")]([SubResource("Path_arena_gate")])
-GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_arena_ring")])
+Paths = Array[ExtResource("6_path")]([SubResource("Path_arena_gate"), SubResource("Path_arena_breach")])
+GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_arena_ring"), SubResource("Area_arena_breach")])
 
 ; ====================================================================================================
 ; THE MAP (38F, 2026-08-09). Re-laid at the maintainer's direction after a play-through: the settled
