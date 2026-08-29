@@ -6,7 +6,7 @@
 ; Hana Netmender (Phase 38L).
 ;
 ; ⚠️ DESTINATIONS ARE CELL-LOCAL. Origin carries the Embermarket's Center (0, 0, 46), so these read
-; straight out of embermarket.tscn without anyone doing the arithmetic by hand thirty times. A raw
+; straight out of embermarket.tscn (re-read from the the 2026-08-28 layout rebuild Coilyard rebuild — the stall rows are gone) without anyone doing the arithmetic by hand thirty times. A raw
 ; world destination copied from a cell .tscn lands a cell's width away and nothing reports it.
 ;
 ; ⚠️ These hours track shop.embermarket.fishmonger (5:00-13:00) and are kept in step BY HAND. A ScheduleId lives
@@ -20,19 +20,19 @@
 script = ExtResource("2_entry")
 StartHour = 4
 Activity = "Icing the slab"
-Destination = Vector3(-7.9, 0, -3)
+Destination = Vector3(-2.17, 0, -10.28)
 
 [sub_resource type="Resource" id="e_trade"]
 script = ExtResource("2_entry")
 StartHour = 5
 Activity = "Selling the morning catch"
-Destination = Vector3(-7.9, 0, -3)
+Destination = Vector3(-2.17, 0, -10.28)
 
 [sub_resource type="Resource" id="e_close"]
 script = ExtResource("2_entry")
 StartHour = 13
 Activity = "Scrubbing down"
-Destination = Vector3(-11.5, 0, -3)
+Destination = Vector3(-2.82, 0, -7.24)
 
 [resource]
 script = ExtResource("1_sched")

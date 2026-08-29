@@ -5,7 +5,7 @@
 
 ; Bregan Holt, the Emberdeep ore factor (Phase 38N1).
 ;
-; ⚠️ DESTINATIONS ARE CELL-LOCAL. Origin carries the mine's Center (99, 0, -10), so these read straight
+; ⚠️ DESTINATIONS ARE CELL-LOCAL. Origin carries the mine's Center (56, 0, -10), so these read straight
 ; out of emberdeep_mine.tscn with nobody doing the arithmetic by hand (38L's ScheduleResource.Origin).
 ;
 ; ⚠️ These hours track shop.emberdeep.factor (5:00-19:00) and are kept in step BY HAND — a ScheduleId
@@ -19,19 +19,19 @@
 script = ExtResource("2_entry")
 StartHour = 4
 Activity = "Counting last night's haul"
-Destination = Vector3(8, 0, -8)
+Destination = Vector3(-13, 0, 3)
 
 [sub_resource type="Resource" id="e_trade"]
 script = ExtResource("2_entry")
 StartHour = 5
 Activity = "Weighing ore"
-Destination = Vector3(-2, 0, -6)
+Destination = Vector3(-12, 0, 5.5)
 
 [sub_resource type="Resource" id="e_close"]
 script = ExtResource("2_entry")
 StartHour = 19
 Activity = "Chaining the scales"
-Destination = Vector3(9, 0, -2)
+Destination = Vector3(-15.5, 0, 7)
 
 [resource]
 script = ExtResource("1_sched")

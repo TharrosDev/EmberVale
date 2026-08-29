@@ -6,7 +6,7 @@
 ; Sable the weaver (Phase 38L).
 ;
 ; ⚠️ DESTINATIONS ARE CELL-LOCAL. Origin carries the Embermarket's Center (0, 0, 46), so these read
-; straight out of embermarket.tscn without anyone doing the arithmetic by hand thirty times. A raw
+; straight out of embermarket.tscn (re-read from the the 2026-08-28 layout rebuild Coilyard rebuild — the stall rows are gone) without anyone doing the arithmetic by hand thirty times. A raw
 ; world destination copied from a cell .tscn lands a cell's width away and nothing reports it.
 ;
 ; ⚠️ These hours track shop.embermarket.weaver (8:00-18:00) and are kept in step BY HAND. A ScheduleId lives
@@ -20,19 +20,19 @@
 script = ExtResource("2_entry")
 StartHour = 7
 Activity = "Standing the bolts"
-Destination = Vector3(-7.9, 0, 8)
+Destination = Vector3(2.49, 0, -4.51)
 
 [sub_resource type="Resource" id="e_trade"]
 script = ExtResource("2_entry")
 StartHour = 8
 Activity = "Selling cloth"
-Destination = Vector3(-7.9, 0, 8)
+Destination = Vector3(2.49, 0, -4.51)
 
 [sub_resource type="Resource" id="e_close"]
 script = ExtResource("2_entry")
 StartHour = 18
 Activity = "Sheeting the bolts over"
-Destination = Vector3(-11.5, 0, 8)
+Destination = Vector3(2.81, 0, -7.59)
 
 [resource]
 script = ExtResource("1_sched")
