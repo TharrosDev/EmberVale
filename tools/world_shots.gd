@@ -3,6 +3,9 @@
 # Run:
 #   Godot_..._console.exe --path . --script res://tools/world_shots.gd
 #
+# Do not add --headless: Windows' dummy renderer has no viewport texture to capture. The harness
+# fails explicitly in that mode instead of emitting 150 null-texture errors.
+#
 # It uses RegionStreamer rather than instancing scenes directly, so the same region profile,
 # surface skin and silhouette path exercised in play is what reaches the screenshots. Output is
 # disposable under tools/shots/world/ and intentionally ignored by Godot/import control.
@@ -50,6 +53,11 @@ var _signatures: Dictionary = {}
 
 
 func _initialize() -> void:
+	if DisplayServer.get_name() == "headless":
+		printerr("world shots: a rendering-capable display is required; run without --headless")
+		quit(4)
+		return
+
 	# Isolated tools do not construct GameBootstrap. Use the same centralized content initializer
 	# before the production RegionStreamer so lairs and other registry-backed actors preview honestly.
 	var content_loader_script: Script = load("res://src/Bootstrap/ContentDatabaseLoader.cs")
@@ -80,7 +88,7 @@ func _initialize() -> void:
 			quit(2)
 			return
 		for cell in entry.cells:
-			await _render_cell(cell)
+			await _render_cell(cell, region)
 		streamer.call("UnloadAll")
 		streamer.call("Configure", null)
 		await process_frame
@@ -94,16 +102,18 @@ func _initialize() -> void:
 	quit(0 if regression_ok else 3)
 
 
-func _render_cell(cell: Array) -> void:
+func _render_cell(cell: Array, region: Resource) -> void:
 	var cell_id: String = cell[0]
 	var centre: Vector3 = cell[1]
 	var size: Vector2 = cell[2]
 	var radius: float = max(size.x, size.y) * 0.5
+	var route_views := _route_views(cell_id, centre, size, region)
+	var landmark_view := _landmark_view(centre, radius)
 	var shots := [
-		["01_entry", centre + Vector3(0, 1.75, radius * 0.78), centre + Vector3(0, 1.4, 0)],
-		["02_centre", centre + Vector3(0, 1.75, radius * 0.18), centre + Vector3(0, 1.7, -radius * 0.42)],
-		["03_landmark", centre + Vector3(-radius * 0.42, 2.2, radius * 0.28), centre + Vector3(0, 2.5, 0)],
-		["04_exit", centre + Vector3(0, 1.75, -radius * 0.70), centre + Vector3(0, 1.5, 0)],
+		["01_entry", route_views[0], route_views[1]],
+		["02_centre", route_views[2], route_views[3]],
+		["03_landmark", landmark_view, centre + Vector3(0, 2.5, 0)],
+		["04_exit", route_views[4], route_views[5]],
 		["05_overview", centre + Vector3(-radius * 0.75, radius * 0.72, radius * 0.80), centre],
 	]
 	var folder := "res://tools/shots/world/%s" % cell_id.replace(".", "_")
@@ -122,6 +132,76 @@ func _render_cell(cell: Array) -> void:
 			var key := "%s/%s_%s" % [cell_id, pass_name, shot[0]]
 			_signatures[key] = _image_signature(image)
 			print("%s -> %s" % [path, "ok" if error == OK else str(error)])
+
+
+## First-person shots follow the authored route network, not a generic north/south axis. The old
+## fixed cameras looked into walls in bent layouts and could completely miss a real seam opening.
+func _route_views(cell_id: String, centre: Vector3, size: Vector2, region: Resource) -> Array:
+	var endpoints: Array = []
+	var first_route: Resource = null
+	for authored_cell in region.get("Cells"):
+		if String(authored_cell.get("Id")) != cell_id:
+			continue
+		var presentation: Resource = authored_cell.get("Presentation")
+		if presentation == null:
+			break
+		for route in presentation.get("Paths"):
+			if route == null:
+				continue
+			if first_route == null:
+				first_route = route
+			for pair in [[route.get("Start"), route.get("End")], [route.get("End"), route.get("Start")]]:
+				var local: Vector2 = pair[0]
+				var inward: Vector2 = (pair[1] - pair[0]).normalized()
+				var edge_distance := minf(
+					absf(absf(local.x) - size.x * 0.5),
+					absf(absf(local.y) - size.y * 0.5))
+				if edge_distance <= 1.0:
+					endpoints.append([local, inward])
+		break
+
+	if endpoints.is_empty() and first_route != null:
+		var start: Vector2 = first_route.get("Start")
+		var finish: Vector2 = first_route.get("End")
+		endpoints.append([start, (finish - start).normalized()])
+		endpoints.append([finish, (start - finish).normalized()])
+	if endpoints.is_empty():
+		endpoints.append([Vector2(0, size.y * 0.4), Vector2(0, -1)])
+		endpoints.append([Vector2(0, -size.y * 0.4), Vector2(0, 1)])
+
+	var entry: Array = endpoints[0]
+	var exit: Array = endpoints[endpoints.size() - 1]
+	var entry_at := centre + Vector3(entry[0].x + entry[1].x * 2.0, 1.75, entry[0].y + entry[1].y * 2.0)
+	var entry_look := entry_at + Vector3(entry[1].x * 12.0, -0.15, entry[1].y * 12.0)
+	var exit_at := centre + Vector3(exit[0].x + exit[1].x * 2.0, 1.75, exit[0].y + exit[1].y * 2.0)
+	var exit_look := exit_at + Vector3(exit[1].x * 12.0, -0.15, exit[1].y * 12.0)
+	var middle := (entry_at + exit_at) * 0.5
+	middle.y = 1.75
+	var middle_look := middle + Vector3(entry[1].x * 10.0, -0.05, entry[1].y * 10.0)
+	return [entry_at, entry_look, middle, middle_look, exit_at, exit_look]
+
+
+## Pick a first-person landmark camera that is not embedded in authored collision. A fixed diagonal
+## landed inside the Clan Hold longhouse and produced a full-frame wall that could never review the
+## landmark. The candidates remain deterministic so visual signatures stay stable.
+func _landmark_view(centre: Vector3, radius: float) -> Vector3:
+	var candidates := [
+		Vector2(-0.42, 0.28), Vector2(0.42, 0.28),
+		Vector2(0.42, -0.28), Vector2(-0.42, -0.28),
+		Vector2(0.0, 0.46), Vector2(0.0, -0.46),
+	]
+	var sphere := SphereShape3D.new()
+	sphere.radius = 0.75
+	for offset in candidates:
+		var candidate := centre + Vector3(offset.x * radius, 1.75, offset.y * radius)
+		var query := PhysicsShapeQueryParameters3D.new()
+		query.shape = sphere
+		query.transform = Transform3D(Basis.IDENTITY, candidate)
+		query.collide_with_areas = false
+		query.collide_with_bodies = true
+		if root.world_3d.direct_space_state.intersect_shape(query, 1).is_empty():
+			return candidate
+	return centre + Vector3(0, 6.0, radius * 0.35)
 
 
 func _image_signature(image: Image) -> Array:

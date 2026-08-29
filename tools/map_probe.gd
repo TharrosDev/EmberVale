@@ -44,7 +44,7 @@ func _run() -> void:
 	await process_frame
 	await process_frame
 
-	var known := _authored_location_ids()
+	var known := _authored_locations()
 	print("map_probe: %d authored location(s) in %s" % [known.size(), LOCATIONS_DIR])
 
 	var centres := _cell_centres()
@@ -73,6 +73,7 @@ func _run() -> void:
 		await process_frame
 
 		var found := _collect(root)
+		var ground_bounds: Variant = _ground_bounds(root)
 		var seen := {}
 		for entry in found:
 			total += 1
@@ -84,6 +85,9 @@ func _run() -> void:
 				_fail("%s: a MapLocationComponent at '%s' has no LocationId" % [cell_id, path])
 			elif not known.has(id):
 				_fail("%s: '%s' is not an authored map location" % [cell_id, id])
+			elif String(known[id]) != cell_id:
+				_fail("%s: '%s' is physically placed here but its resource names CellId '%s'"
+					% [cell_id, id, known[id]])
 
 			var key := "%.2f,%.2f" % [at.x, at.z]
 			if seen.has(key):
@@ -97,6 +101,15 @@ func _run() -> void:
 			if path != "." and at.distance_to(centre) < 0.01:
 				_fail("%s: '%s' sits exactly on the cell centre but is parented to '%s' — expected "
 					% [cell_id, id, path] + "an offset from the thing it marks")
+
+			if path == "." and at.distance_to(centre) < 0.01 \
+					and id not in ["location.ember_crown.arena", "location.frostfang.glacier"]:
+				_fail("%s: primary marker '%s' is still center-parked after the layout rebuild"
+					% [cell_id, id])
+
+			if ground_bounds is Rect2 and not ground_bounds.grow(1.0).has_point(Vector2(at.x, at.z)):
+				_fail("%s: '%s' at (%.2f, %.2f) is outside measured cell ground %s"
+					% [cell_id, id, at.x, at.z, ground_bounds])
 
 			placed[id] = true
 			print("    %-40s %-26s (%7.1f, %7.1f)" % [id, path, at.x, at.z])
@@ -146,7 +159,7 @@ func _collect(node: Node, cell_root: Node = null, out: Array = []) -> Array:
 	return out
 
 
-func _authored_location_ids() -> Dictionary:
+func _authored_locations() -> Dictionary:
 	var ids := {}
 	var dir := DirAccess.open(LOCATIONS_DIR)
 	if dir == null:
@@ -157,10 +170,27 @@ func _authored_location_ids() -> Dictionary:
 		if not name.ends_with(".tres"):
 			continue
 		var text := FileAccess.get_file_as_string("%s/%s" % [LOCATIONS_DIR, name])
-		var m := RegEx.create_from_string('Id = "([^"]+)"').search(text)
-		if m:
-			ids[m.get_string(1)] = true
+		var id_match := RegEx.create_from_string('Id = "([^"]+)"').search(text)
+		var cell_match := RegEx.create_from_string('CellId = "([^"]+)"').search(text)
+		if id_match and cell_match:
+			ids[id_match.get_string(1)] = cell_match.get_string(1)
 	return ids
+
+
+## Measured with the same broad-and-flat heuristic as MapService, so distant trees cannot make an
+## out-of-cell marker appear valid.
+func _ground_bounds(node: Node) -> Variant:
+	var bounds: Variant = null
+	for child in node.find_children("*", "VisualInstance3D", true, false):
+		var visual := child as VisualInstance3D
+		if visual == null or not visual.is_inside_tree():
+			continue
+		var box := visual.global_transform * visual.get_aabb()
+		if box.size.y > 2.0 or box.size.x * box.size.z < 100.0:
+			continue
+		var rect := Rect2(box.position.x, box.position.z, box.size.x, box.size.z)
+		bounds = rect if bounds == null else bounds.merge(rect)
+	return bounds
 
 
 ## Cell id -> Center, parsed straight out of the region .tres so this cannot drift from the data the

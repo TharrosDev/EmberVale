@@ -159,6 +159,7 @@ public sealed partial class MinimapHud : PanelContainer
 
         _land = land;
         _view.Land = _land;
+        _view.Roads = MapCartography.Roads(_map);
     }
 
     /// <summary>Distance filter then priority cap (§20) — the rule itself is the pure, tested

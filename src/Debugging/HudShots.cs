@@ -38,6 +38,19 @@ public sealed partial class HudShots : ShotHarness
 
     protected override string OutputDir => "user://hudshots";
 
+    public override void _Ready()
+    {
+        base._Ready();
+
+        // The harness authors exact health/resource states below. Ambient encounters must not race
+        // those writes between drive and capture or two identical runs produce different evidence.
+        // Combat still runs for the world; only the disposable capture player ignores damage.
+        if (Player()?.GetComponent<Combat.CombatComponent>() is { } combat)
+        {
+            combat.IsInvulnerable = true;
+        }
+    }
+
     /// <summary>
     /// The states worth looking at, in the order the brief's §69 asks for them.
     ///
@@ -113,6 +126,10 @@ public sealed partial class HudShots : ShotHarness
             effects.Apply(definition, player);
             if (++applied >= 3)
             {
+                // Some real definitions tick damage or healing. Freeze their timers after the UI
+                // has received the authentic applications so later named resource states are not
+                // silently rewritten by the screenshot fixture itself.
+                effects.ProcessMode = ProcessModeEnum.Disabled;
                 return;
             }
         }

@@ -19,6 +19,16 @@ public partial class CellNavBaker : Node
 {
     public override void _Ready()
     {
+        // A cell root may finish configuring inherited geometry in its own _Ready (RoostCell, for
+        // example, resizes the shared base floor). Child _Ready runs first, so baking immediately
+        // captured the 90 m editor placeholder before an Ash Roost resized it to 100 m and left a
+        // real 5 m navigation gap at its clan-hold seam. Defer one idle turn so authored runtime
+        // geometry and collision are final before parsing them.
+        Callable.From(Bake).CallDeferred();
+    }
+
+    private void Bake()
+    {
         if (GetParent() is not NavigationRegion3D region)
         {
             Log.Warn($"{nameof(CellNavBaker)} must be a child of a NavigationRegion3D; skipping bake.");

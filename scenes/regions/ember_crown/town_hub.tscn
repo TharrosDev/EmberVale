@@ -386,7 +386,7 @@ surface_material_override/0 = SubResource("Mat_road")
 transform = Transform3D(0.9659, 0, 0.2588, 0, 1, 0, -0.2588, 0, 0.9659, -16, 3.75, -15)
 
 [node name="BuildingNE" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(-0.9659, 0, -0.2588, 0, 1, 0, 0.2588, 0, -0.9659, 5, 3.75, 19)
+transform = Transform3D(-0.9659, 0, -0.2588, 0, 1, 0, 0.2588, 0, -0.9659, 9, 3.75, 20)
 
 [node name="BuildingNECol" type="StaticBody3D" parent="Nav/BuildingNE"]
 
@@ -397,7 +397,7 @@ shape = SubResource("Shape_inn")
 transform = Transform3D(-0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, -0.342, -22, 3.4, 11)
 
 [node name="BuildingSE" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, 17, 3.25, -6)
+transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, 21, 3.25, -8)
 
 [node name="BuildingSECol" type="StaticBody3D" parent="Nav/BuildingSE"]
 
@@ -443,19 +443,8 @@ transform = Transform3D(-0.0872, 0, 0.9962, 0, 1, 0, -0.9962, 0, -0.0872, -25, 0
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.4, 0)
 shape = SubResource("Shape_bldgB")
 
-[node name="HouseWestB" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.1736, 0, 0.9848, 0, 1, 0, -0.9848, 0, -0.1736, -24, 0, 6)
-
-[node name="Model" parent="Nav/HouseWestB" instance=ExtResource("10_house_a")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/HouseWestB"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/HouseWestB/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.75, 0)
-shape = SubResource("Shape_bldgA")
-
 [node name="HouseCraftA" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.2588, 0, -0.9659, 0, 1, 0, 0.9659, 0, -0.2588, 23, 0, -12)
+transform = Transform3D(-0.2588, 0, -0.9659, 0, 1, 0, 0.9659, 0, -0.2588, 27, 0, -14)
 
 [node name="Model" parent="Nav/HouseCraftA" instance=ExtResource("10_house_a")]
 
@@ -477,7 +466,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.4, 0)
 shape = SubResource("Shape_bldgB")
 
 [node name="HouseGreenC" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.866, 0, -0.5, 0, 1, 0, 0.5, 0, -0.866, 18, 0, -20)
+transform = Transform3D(-0.866, 0, -0.5, 0, 1, 0, 0.5, 0, -0.866, 21, 0, -23)
 
 [node name="Model" parent="Nav/HouseGreenC" instance=ExtResource("50_townhouse")]
 
@@ -516,21 +505,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
 shape = SubResource("Shape_lamp")
 
 [node name="Light" type="OmniLight3D" parent="Nav/LampSE"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.16, 0.56)
-light_color = Color(1, 0.65, 0.32, 1)
-light_energy = 2.5
-omni_range = 9.0
-
-[node name="LampW" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, 0)
-
-[node name="LampWCol" type="StaticBody3D" parent="Nav/LampW"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/LampW/LampWCol"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
-shape = SubResource("Shape_lamp")
-
-[node name="Light" type="OmniLight3D" parent="Nav/LampW"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.16, 0.56)
 light_color = Color(1, 0.65, 0.32, 1)
 light_energy = 2.5
@@ -1062,8 +1036,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.25, 0)
 
 [node name="Model" parent="Nav/LampSE" instance=ExtResource("21_lamp")]
 
-[node name="Model" parent="Nav/LampW" instance=ExtResource("21_lamp")]
-
 [node name="Model" parent="Nav/LampE" instance=ExtResource("21_lamp")]
 
 [node name="Model" parent="Nav/LampNW" instance=ExtResource("21_lamp")]
@@ -1166,11 +1138,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.11, 0, 8.63)
 
 [node name="Model" parent="Grass3" instance=ExtResource("42_grass_wispy")]
 
-[node name="Grass5" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.36, 0, 9.44)
-
-[node name="Model" parent="Grass5" instance=ExtResource("42_grass_wispy")]
-
 [node name="Grass7" type="Node3D" parent="."]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 19.68, 0, 14.19)
 
@@ -1180,11 +1147,6 @@ transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 19.68, 0, 14.19)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21.22, 0, 14.34)
 
 [node name="Model" parent="Grass9" instance=ExtResource("40_grass_short")]
-
-[node name="Grass11" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.53, 0, 27.22)
-
-[node name="Model" parent="Grass11" instance=ExtResource("42_grass_wispy")]
 
 [node name="Grass13" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.56, 0, 27.39)
@@ -1196,11 +1158,6 @@ transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -6.05, 0, 27.12)
 
 [node name="Model" parent="Grass15" instance=ExtResource("41_grass_tall")]
 
-[node name="Grass17" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -7.95, 0, 26.59)
-
-[node name="Model" parent="Grass17" instance=ExtResource("40_grass_short")]
-
 [node name="Grass19" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.54, 0, 11.02)
 
@@ -1210,11 +1167,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.54, 0, 11.02)
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -11.27, 0, 12.01)
 
 [node name="Model" parent="Grass21" instance=ExtResource("41_grass_tall")]
-
-[node name="Grass23" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -13.44, 0, 8.91)
-
-[node name="Model" parent="Grass23" instance=ExtResource("41_grass_tall")]
 
 [node name="Grass25" type="Node3D" parent="."]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -3.84, 0, -16.80)
@@ -1226,11 +1178,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.15, 0, -19.29)
 
 [node name="Model" parent="Grass27" instance=ExtResource("41_grass_tall")]
 
-[node name="Grass29" type="Node3D" parent="."]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -7.30, 0, -20.71)
-
-[node name="Model" parent="Grass29" instance=ExtResource("42_grass_wispy")]
-
 [node name="Grass31" type="Node3D" parent="."]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 2.62, 0, -16.17)
 
@@ -1240,11 +1187,6 @@ transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 2.62, 0, -16.17)
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 2.67, 0, -16.93)
 
 [node name="Model" parent="Grass33" instance=ExtResource("41_grass_tall")]
-
-[node name="Grass35" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 9.67, 0, -14.47)
-
-[node name="Model" parent="Grass35" instance=ExtResource("40_grass_short")]
 
 [node name="Grass37" type="Node3D" parent="."]
 transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 8.55, 0, -13.68)
@@ -1256,11 +1198,6 @@ transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 10.07, 0, -12.55)
 
 [node name="Model" parent="Grass39" instance=ExtResource("41_grass_tall")]
 
-[node name="Grass41" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -2.31, 0, -23.92)
-
-[node name="Model" parent="Grass41" instance=ExtResource("40_grass_short")]
-
 [node name="Grass43" type="Node3D" parent="."]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -3.47, 0, -23.56)
 
@@ -1270,11 +1207,6 @@ transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -3.47, 0, -23.56)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20.84, 0, 14.55)
 
 [node name="Model" parent="Grass45" instance=ExtResource("40_grass_short")]
-
-[node name="Grass47" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 19.84, 0, 16.00)
-
-[node name="Model" parent="Grass47" instance=ExtResource("40_grass_short")]
 
 [node name="Clover2" type="Node3D" parent="."]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 11.00, 0, 12.62)
@@ -1367,6 +1299,7 @@ transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 14.47, 0, 7.82)
 [node name="Model" parent="Pebble10" instance=ExtResource("48_pebble_a")]
 
 [node name="MapPin" type="Node3D" parent="."]
+position = Vector3(-14, 0, -2)
 script = ExtResource("maploc_39_5a")
 LocationId = "location.ember_crown.town"
 

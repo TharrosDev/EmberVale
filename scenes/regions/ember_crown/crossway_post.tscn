@@ -380,7 +380,7 @@ shape = SubResource("Shape_banner")
 
 ; --- The wardens' compound, west of the road ------------------------------------
 [node name="WardenPost" type="Node3D" parent="Nav"]
-transform = Transform3D(0.0872, 0, 0.9962, 0, 1, 0, -0.9962, 0, 0.0872, -17, 0, 15)
+transform = Transform3D(0.0872, 0, 0.9962, 0, 1, 0, -0.9962, 0, 0.0872, -18, 0, 20)
 
 [node name="Model" parent="Nav/WardenPost" instance=ExtResource("12_post")]
 
@@ -412,18 +412,6 @@ transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, -14, 0, 9)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
 shape = SubResource("Shape_bench")
 
-[node name="BenchB" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -13.5, 0, 17)
-
-[node name="Model" parent="Nav/BenchB" instance=ExtResource("21_bench")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/BenchB"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/BenchB/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
-shape = SubResource("Shape_bench")
-
-; --- The caravan yard, east of the road -----------------------------------------
 [node name="CartA" type="Node3D" parent="Nav"]
 transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 0, 0, 6.5)
 
@@ -432,17 +420,6 @@ transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 0, 0, 6.5)
 [node name="Collider" type="StaticBody3D" parent="Nav/CartA"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/CartA/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
-shape = SubResource("Shape_cart")
-
-[node name="CartB" type="Node3D" parent="Nav"]
-transform = Transform3D(0.2588, 0, -0.9659, 0, 1, 0, 0.9659, 0, 0.2588, 2.5, 0, 12.5)
-
-[node name="Model" parent="Nav/CartB" instance=ExtResource("15_cart")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/CartB"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/CartB/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
 shape = SubResource("Shape_cart")
 
@@ -457,28 +434,6 @@ transform = Transform3D(0.9659, 0, 0.2588, 0, 1, 0, -0.2588, 0, 0.9659, 11, 0, 5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
 shape = SubResource("Shape_crate")
 
-[node name="CrateB" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 12.2, 0, 6.4)
-
-[node name="Model" parent="Nav/CrateB" instance=ExtResource("16_crate")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/CrateB"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/CrateB/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
-shape = SubResource("Shape_crate")
-
-[node name="CrateC" type="Node3D" parent="Nav"]
-transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, 11.1, 1.24, 5.5)
-
-[node name="Model" parent="Nav/CrateC" instance=ExtResource("16_crate")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/CrateC"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/CrateC/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
-shape = SubResource("Shape_crate")
-
 [node name="BarrelA" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.5, 0, 12.5)
 
@@ -487,17 +442,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.5, 0, 12.5)
 [node name="Collider" type="StaticBody3D" parent="Nav/BarrelA"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/BarrelA/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
-shape = SubResource("Shape_barrel")
-
-[node name="BarrelB" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.3, 0, 13.3)
-
-[node name="Model" parent="Nav/BarrelB" instance=ExtResource("17_barrel")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/BarrelB"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/BarrelB/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
 shape = SubResource("Shape_barrel")
 
@@ -523,34 +467,6 @@ transform = Transform3D(-0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, -0.342, 9, 0, 5.
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
 shape = SubResource("Shape_hay")
 
-[node name="HayB" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, 9.8, 0, 6.3)
-
-[node name="Model" parent="Nav/HayB" instance=ExtResource("18_hay")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/HayB"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/HayB/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
-shape = SubResource("Shape_hay")
-
-; The caravan's cook-fire — the yard's own warm point, away from the road's braziers.
-; --- 38Q2: the caravan board ------------------------------------------------------------------
-; Rotating supply contracts, posted where the carts actually load. Same CONTRACT as the Embermarket's
-; notice board and town_hub's guild marker — a prop entity, a collider and ONE component — and the ⚠️
-; on those applies again: an entity gets one interactable, so this carries a ServiceComponent and
-; nothing else, forever.
-;
-; ⚠️ THE THIRD BOARD IN THE REALM AND THEY MUST READ APART. The guild board STARTS A QUEST; the market
-; notice is deliberately effect-free gossip; this one moves goods and never touches the journal. They
-; stand in three different cells and are never in view of one another.
-;
-; ⚠️ NOT prp_banner_guild, which is what the other two use — see the mesh comment above for the two
-; reasons the render gave. Built instead from the cell's own primitive vocabulary, the same BoxMesh +
-; StandardMaterial3D the floor, the road and the yard are made of.
-;
-; ⚠️ Position and yaw are the RENDERED answers, not the reasoned ones. It stands in the working yard
-; between CartB and the fire, face turned south to the walk in from the waystone.
 [node name="CaravanBoard" type="Node3D" parent="Nav"]
 transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 12, 0, 13.5)
 script = ExtResource("2_entity")
@@ -678,7 +594,7 @@ light_energy = 1.5
 omni_range = 10.0
 
 [node name="BrazierGate" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 4.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 5)
 
 [node name="Model" parent="Nav/BrazierGate" instance=ExtResource("14_brazier")]
 
@@ -830,7 +746,7 @@ RegionId = "region.ember_crown"
 ;
 ; They are NOT parented to Nav: only static geometry should carve the navmesh.
 [node name="RoadWarden" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -6, 0, 16)
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -9, 0, 16)
 script = ExtResource("2_entity")
 DisplayName = "Warden Sergeant Alric"
 TemplateId = "npc.road_warden"
@@ -898,7 +814,7 @@ ServiceId = "service.crossway.bribe"
 ;
 ; They are NOT parented to Nav: only static geometry should carve the navmesh.
 [node name="SearchWarden" type="Node3D" parent="."]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 1.5, 0, 9.5)
+transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -2, 0, 9.5)
 script = ExtResource("2_entity")
 DisplayName = "Warden Deryn Colt"
 TemplateId = "npc.search_warden"
@@ -1255,6 +1171,7 @@ transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 15.87, 0, -15.59)
 [node name="Model" parent="Pebble16" instance=ExtResource("42_pebble_b")]
 
 [node name="MapPin" type="Node3D" parent="."]
+position = Vector3(-17, 0, 15)
 script = ExtResource("maploc_39_5a")
 LocationId = "location.crossway.post"
 

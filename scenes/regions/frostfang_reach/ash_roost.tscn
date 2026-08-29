@@ -54,7 +54,7 @@ transform = Transform3D(-1.4, 0, 2.4249, 0, 3.6, 0, -2.4249, 0, -1.4, 32, 0, 4)
 shape = SubResource("Shape_rock")
 
 [node name="CragW" parent="Nav" index="5" instance=ExtResource("10_rock")]
-transform = Transform3D(-0.8551, 0, -2.3492, 0, 3.2, 0, 2.3492, 0, -0.8551, -10, 0, 2)
+transform = Transform3D(-0.8551, 0, -2.3492, 0, 3.2, 0, 2.3492, 0, -0.8551, -10, 0, -8)
 
 [node name="CragWCol" type="StaticBody3D" parent="Nav/CragW"]
 
@@ -131,19 +131,11 @@ shape = SubResource("Shape_rock")
 ; --- across open ground is the fight; the rim is where you get out of it.
 
 [node name="CragNE" parent="Nav" instance=ExtResource("10_rock")]
-transform = Transform3D(-2.0785, 0, 1.2, 0, 3.0, 0, -1.2, 0, -2.0785, 26, 0, -12)
+transform = Transform3D(-2.0785, 0, 1.2, 0, 3.0, 0, -1.2, 0, -2.0785, 30, 0, -15)
 
 [node name="Col" type="StaticBody3D" parent="Nav/CragNE"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/CragNE/Col"]
-shape = SubResource("Shape_rock")
-
-[node name="CragSSE" parent="Nav" instance=ExtResource("10_rock")]
-transform = Transform3D(1.8187, 0, -1.05, 0, 2.5, 0, 1.05, 0, 1.8187, 16, 0, 26)
-
-[node name="Col" type="StaticBody3D" parent="Nav/CragSSE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/CragSSE/Col"]
 shape = SubResource("Shape_rock")
 
 [node name="CragNW" parent="Nav" instance=ExtResource("10_rock")]
@@ -154,28 +146,12 @@ transform = Transform3D(0.7866, 0, 2.1613, 0, 2.8, 0, -2.1613, 0, 0.7866, -6, 0,
 [node name="Shape" type="CollisionShape3D" parent="Nav/CragNW/Col"]
 shape = SubResource("Shape_rock")
 
-[node name="CragES" parent="Nav" instance=ExtResource("10_rock")]
-transform = Transform3D(-1.9053, 0, -1.1, 0, 2.9, 0, 1.1, 0, -1.9053, 34, 0, 14)
-
-[node name="Col" type="StaticBody3D" parent="Nav/CragES"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/CragES/Col"]
-shape = SubResource("Shape_rock")
-
 [node name="RimSpurN" parent="Nav" instance=ExtResource("10_rock")]
 transform = Transform3D(1.8711, 0, 0.3299, 0, 2.2, 0, -0.3299, 0, 1.8711, 18, 0, -22)
 
 [node name="Col" type="StaticBody3D" parent="Nav/RimSpurN"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/RimSpurN/Col"]
-shape = SubResource("Shape_rock")
-
-[node name="RimSpurS" parent="Nav" instance=ExtResource("10_rock")]
-transform = Transform3D(-1.7727, 0, -0.3126, 0, 2.0, 0, 0.3126, 0, -1.7727, -4, 0, 16)
-
-[node name="Col" type="StaticBody3D" parent="Nav/RimSpurS"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RimSpurS/Col"]
 shape = SubResource("Shape_rock")
 
 [node name="PineRimA" parent="Nav" instance=ExtResource("11_pine")]
@@ -185,16 +161,6 @@ surface_material_override/0 = SubResource("Mat_charred")
 [node name="Col" type="StaticBody3D" parent="Nav/PineRimA"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/PineRimA/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
-shape = SubResource("Shape_pine")
-
-[node name="PineRimB" parent="Nav" instance=ExtResource("11_pine")]
-transform = Transform3D(-0.766, 0, -0.6428, 0, 1.05, 0, 0.6428, 0, -0.766, 36, 0, -4)
-surface_material_override/0 = SubResource("Mat_charred")
-
-[node name="Col" type="StaticBody3D" parent="Nav/PineRimB"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineRimB/Col"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
 shape = SubResource("Shape_pine")
 
@@ -235,5 +201,6 @@ TemplateId = "enemy.ash_dragon"
 DefeatFlagId = "flag.ash_dragon_defeated"
 
 [node name="MapPin" type="Node3D" parent="."]
+position = Vector3(10, 0, 6)
 script = ExtResource("maploc_39_5a")
 LocationId = "location.frostfang.ash_roost"
