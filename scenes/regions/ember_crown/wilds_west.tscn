@@ -22,7 +22,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_b.glb" id="20_pebble_b"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 
-; THE WESTERN WILDS (Phase 44 rebuild) — the bandit camp beyond Tarn's Landing.
+; THE WESTERN WILDS (the 2026-08-28 layout rebuild) — the bandit camp beyond Tarn's Landing.
 ;
 ; ⚠️ WHAT THIS REPLACED. Two tents, a campfire and three pickups at the exact centre of a flat
 ; 50 x 40 field, with two rock cubes and two pines scattered around them and a straight 4.5 m track
@@ -248,7 +248,7 @@ script = ExtResource("3_pickup")
 Item = ExtResource("6_herb")
 Quantity = 2
 
-; --- Phase 44: the corrie. Twelve rock clusters and four pines turn a flat 50 x 40 field with two
+; --- The 2026-08-28 layout rebuild: the corrie. Twelve rock clusters and four pines turn a flat 50 x 40 field with two
 ; --- tents in the middle of it into a horseshoe of rock with ONE narrow throat, a camp inside it,
 ; --- and a scramble over the northern lip for anyone who looks. The camp was previously visible and
 ; --- reachable from every direction at once, which is not a camp — it is three props on a floor.

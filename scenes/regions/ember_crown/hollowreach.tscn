@@ -78,7 +78,7 @@
 ; ⚠️ EVERYTHING STATIC PARENTS TO Nav; the two fences deliberately do not (only static geometry should
 ; carve the navmesh). Every transform is LOCAL.
 ;
-; ⚠️ WHAT PHASE 44 REPLACED, AND ONE OF IT WAS A BUG. Four east-west bands — approach, shore road,
+; ⚠️ WHAT THE 2026-08-28 LAYOUT REBUILD REPLACED, AND ONE OF IT WAS A BUG. Four east-west bands — approach, shore road,
 ; wharf, water — with everything the district owns strung along one 44 m boardwalk, and a 20 m strip of
 ; lake down the whole western edge. It read as a diagram, and the road ran along z = 0 while the
 ; Embermarket's Dock Stair leaves the seam at world (-26, 58) — cell-local (26, 12) — so the two
@@ -144,7 +144,7 @@ roughness = 0.08
 albedo_color = Color(0.07, 0.09, 0.1, 1)
 roughness = 0.98
 
-; Phase 44: the water is open sea to the WEST plus two flooded CHANNELS cutting east into the ruin.
+; The 2026-08-28 layout rebuild: the water is open sea to the WEST plus two flooded CHANNELS cutting east into the ruin.
 ; The wharf is the land between them, which is what makes Hollowreach a drowned street rather than a
 ; jetty beside a lake.
 [sub_resource type="BoxMesh" id="BoxMesh_water"]

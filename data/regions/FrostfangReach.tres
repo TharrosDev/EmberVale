@@ -88,7 +88,7 @@ HlodRangeEnd = 260.0
 HlodColor = Color(0.34, 0.38, 0.42, 1)
 HlodScale = Vector3(1.4, 0.8, 1.2)
 
-; WARNING AN EXCLUSION FOLLOWS ITS NEST, AND THE NESTS MOVED (Phase 44). One shared Exclusion_roost
+; WARNING AN EXCLUSION FOLLOWS ITS NEST, AND THE NESTS MOVED (the 2026-08-28 layout rebuild). One shared Exclusion_roost
 ; at (0, 0) worked only while all three lairs sat at the exact centre of their cell, which is
 ; precisely the sameness the rebuild removed. Each roost now names its own, centred on where its Nest
 ; node actually is: the wild dragon at (-14, -20) against the north ice wall, the ash dragon at
@@ -149,7 +149,7 @@ EdgePadding = 4.0
 Layers = Array[ExtResource("7_layer")]([SubResource("Layer_dead_pine"), SubResource("Layer_frost_rock")])
 Exclusions = Array[ExtResource("8_exclusion")]([SubResource("Exclusion_aerie"), SubResource("Exclusion_aerie_hoard")])
 
-; WARNING THE HOLD HAS THREE ROADS AND THEY ARE ITS THREE SEAMS (Phase 44), and none of them crosses
+; WARNING THE HOLD HAS THREE ROADS AND THEY ARE ITS THREE SEAMS (the 2026-08-28 layout rebuild), and none of them crosses
 ; the moot ring. The old cross ran (-23, 5) to (23, 5) straight through where the clan stands, and the
 ; approach ran the full length of the cell down x = 0. Every seam point below is arithmetic, not taste:
 ;   west  (-30, 0)  the wild dragon roost - its approach path starts at roost-local (45, 0), which is
@@ -366,7 +366,7 @@ TintStrength = 0.16
 Paths = Array[ExtResource("9_path")]([SubResource("Path_aerie_approach"), SubResource("Path_aerie_procession"), SubResource("Path_aerie_crescent"), SubResource("Path_aerie_hoard")])
 GroundAreas = Array[ExtResource("10_area")]([SubResource("Area_aerie_court"), SubResource("Area_aerie_hoard")])
 
-; WARNING THE GLACIER IS A DEAD END AND THE OLD CROSSING PATH DENIED IT (Phase 44).
+; WARNING THE GLACIER IS A DEAD END AND THE OLD CROSSING PATH DENIED IT (the 2026-08-28 layout rebuild).
 ; Path_glacier_crossing ran (-30, 0) to (30, 0) - the full width of the cell and out of both ends into
 ; region void, because nothing abuts this cell east or west. The clan hold is its only neighbour, at
 ; the SOUTH edge. The pass is now one entry from there and two pockets that go nowhere, which is what

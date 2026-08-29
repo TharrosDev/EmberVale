@@ -58,7 +58,7 @@
 ; ⚠️ NO RAISED GROUND (38K). CharacterBody3D has no step-up, so the whole cell is flat and its height
 ; comes from a 6 m mine head, 2.2 m boulders and the ore heaps — from props, never from terrain.
 ;
-; ⚠️ WHAT PHASE 44 REPLACED. One 34 x 16 yard band across the middle of the cell with the mine head at
+; ⚠️ WHAT THE 2026-08-28 LAYOUT REBUILD REPLACED. One 34 x 16 yard band across the middle of the cell with the mine head at
 ; the east end of it: every building, merchant, cart and ore heap the mine had was inside that band and
 ; the whole place was legible from the gate. A mine that reads at a glance is a diagram of a mine.
 ;
@@ -119,7 +119,7 @@ radial_segments = 8
 rings = 4
 
 ; Ground skin. NO COLLIDER (see the step-up note above): a 6 cm lip is something the player catches on.
-; Phase 44: seven worked surfaces instead of one 34 x 16 band. Together they form a LOOP — yard,
+; The 2026-08-28 layout rebuild: seven worked surfaces instead of one 34 x 16 band. Together they form a LOOP — yard,
 ; haul road, cut, pit head, spoil track, spoil link, back to the yard — so the mine is somewhere you
 ; go round rather than a corridor you go up and come back down.
 [sub_resource type="BoxMesh" id="BoxMesh_yard"]

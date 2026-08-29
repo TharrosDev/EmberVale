@@ -31,7 +31,7 @@ FloorSize = 90.0
 FloorColor = Color(0.55, 0.58, 0.62, 1)
 
 ; Standing stones rather than crags - cover, but arranged, because something that thinks has lived
-; here for eight hundred years. Phase 44 arranged them into a CRESCENT open to the west rather than
+; here for eight hundred years. The 2026-08-28 layout rebuild arranged them into a CRESCENT open to the west rather than
 ; a ring: a perfect circle is a diagram, and it was also the same plan the other two roosts had.
 [node name="StoneN" parent="Nav" index="3" instance=ExtResource("10_rock")]
 transform = Transform3D(-1.5588, 0, -0.9, 0, 4.2, 0, 0.9, 0, -1.5588, 8, 0, -22)
@@ -113,7 +113,7 @@ transform = Transform3D(0.9397, 0, 0.342, 0, 1.6, 0, -0.342, 0, 0.9397, -7, 0, 3
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 shape = SubResource("Shape_pillar")
 
-; --- Phase 44: the procession BENDS and the ring becomes a CRESCENT. Six markers on a 28 m circle
+; --- The 2026-08-28 layout rebuild: the procession BENDS and the ring becomes a CRESCENT. Six markers on a 28 m circle
 ; --- around a nest at the exact centre was the third rock ring in a row - the Wild roost and the ash
 ; --- roost had the same plan - and a perfect circle is not what eight hundred years of one mind
 ; --- living somewhere looks like. The avenue now runs north from the southern seam in an irregular

@@ -66,7 +66,7 @@
 ; invisible wall the navmesh happily paths NPCs over. The road is a 6 cm skin with NO COLLIDER; the
 ; height in this cell comes from an 8 m tower and a 5.5 m palisade, from props and never from terrain.
 ;
-; ⚠️ THE GATE COULD BE RUN AND NOW IT CANNOT (Phase 44). Until this rebuild the road was one straight
+; ⚠️ THE GATE COULD BE RUN AND NOW IT CANNOT (the 2026-08-28 layout rebuild). Until this rebuild the road was one straight
 ; 8 m strip down the cell's spine, the palisades sat symmetrically at x = ±11.9, and the wardens stood
 ; in two mirrored pairs beside it. A player who did not want to pay simply walked. The crossing is now
 ; a DOG-LEG, and the toll is a consequence of the geometry rather than a prompt attached to it.
@@ -162,7 +162,7 @@ roughness = 0.92
 [sub_resource type="BoxShape3D" id="Shape_board"]
 size = Vector3(1.7, 1.9, 0.35)
 
-; Phase 44: the road is five segments and a dog-leg, not one strip. Sizes are the segment LENGTHS;
+; The 2026-08-28 layout rebuild: the road is five segments and a dog-leg, not one strip. Sizes are the segment LENGTHS;
 ; the bearings are on the nodes.
 [sub_resource type="BoxMesh" id="BoxMesh_road_south"]
 size = Vector3(7, 0.06, 12)

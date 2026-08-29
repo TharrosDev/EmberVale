@@ -26,7 +26,7 @@
 [ext_resource type="PackedScene" path="res://scenes/props/bld_townhouse.tscn" id="26_townhouse"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 
-; THE CLAN HOLD (Phase 44 rebuild) - Frostfang Reach's only settlement.
+; THE CLAN HOLD (the 2026-08-28 layout rebuild) - Frostfang Reach's only settlement.
 ;
 ; WARNING WHAT THIS REPLACED. Two longhouses mirrored at x = +/-12, a moot hall centred on the axis
 ; behind them, three tents, four braziers in two mirrored pairs, and the three crafting stations in a
@@ -323,7 +323,7 @@ transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 27, 0, -
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
 shape = SubResource("Shape_glacier")
 
-; --- Phase 44: fourteen more tents, ice masses, rocks and pines. The hold used to be three buildings
+; --- The 2026-08-28 layout rebuild: fourteen more tents, ice masses, rocks and pines. The hold used to be three buildings
 ; --- and three tents on a 3,600 m2 plate, so it read as a diagram of a settlement rather than a place
 ; --- with an inside and an outside. These close the moot ring on its south and east, wall the north
 ; --- approach from the glacier, and build the beast runs along the western road.

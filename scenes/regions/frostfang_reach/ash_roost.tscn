@@ -1,4 +1,4 @@
-; The Ash dragon's roost, east of the hold. It no longer mirrors the Wild one - Phase 44 made it a
+; The Ash dragon's roost, east of the hold. It no longer mirrors the Wild one - The 2026-08-28 layout rebuild made it a
 ; crater reached down a long exposed causeway, against the Wild roost's ice shelf and splinter
 ; field, because two dragon fights that share a floor plan are one fight held twice. Inherits scenes/regions/roost.tscn
 ; (Phase 35F). 100 m of floor, wider than the Wild dragon's, because ai.ash_dragon holds 60 m of
@@ -36,7 +36,7 @@ EmberEnergy = 0.06
 
 ; The crater rim. Fewer and further out than the Wild roost's cover: an 80 degree breath cone leaves
 ; less to hide behind by design, and the cover that is here should not make the harder fight the
-; easier one. Phase 44 moved all of it ONTO the rim, so the basin floor is genuinely open.
+; easier one. The 2026-08-28 layout rebuild moved all of it ONTO the rim, so the basin floor is genuinely open.
 [node name="CragN" parent="Nav" index="3" instance=ExtResource("10_rock")]
 transform = Transform3D(1.9917, 0, 1.6712, 0, 3.4, 0, -1.6712, 0, 1.9917, 8, 0, -18)
 
@@ -123,7 +123,7 @@ transform = Transform3D(1, 0, 1.7321, 0, 2.4, 0, -1.7321, 0, 1, 0, 0, 24)
 [node name="Shape" type="CollisionShape3D" parent="Nav/CragSW/Col"]
 shape = SubResource("Shape_rock")
 
-; --- Phase 44: the crater rim and the causeway. This roost was three crags in a ring around a nest
+; --- The 2026-08-28 layout rebuild: the crater rim and the causeway. This roost was three crags in a ring around a nest
 ; --- at the exact centre of a 100 m plate - the same shape as the Wild roost and the Aerie, and the
 ; --- reason all three read alike from the ground. It is a BASIN now: a long exposed causeway in from
 ; --- the west, marked by three burnt pines standing in a line, then a crater whose rim is the only

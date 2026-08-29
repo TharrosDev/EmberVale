@@ -56,7 +56,7 @@ size = Vector3(1, 4, 36)
 [sub_resource type="BoxShape3D" id="Shape_wall_z"]
 size = Vector3(36, 4, 1)
 
-; Phase 44: the south wall is split around the GATE and the north wall around the BREACH, so the two
+; The 2026-08-28 layout rebuild: the south wall is split around the GATE and the north wall around the BREACH, so the two
 ; runs are no longer one 36 m box each. Sizes are the run lengths.
 [sub_resource type="BoxShape3D" id="Shape_wall_south_run"]
 size = Vector3(14.4, 4, 1)
@@ -105,7 +105,7 @@ size = Vector3(2.26, 1.41, 1.84)
 ; that an add appears to path around, is worse than a bare floor. The ground cover at the bottom of
 ; this file is dress_cell.py's "edges" style for the same reason, and must stay that way.
 ;
-; ⚠️ THE WEST SIDE USED TO BE OPEN "ON PURPOSE" AND IT WAS A BUG (Phase 44). The paragraph this
+; ⚠️ THE WEST SIDE USED TO BE OPEN "ON PURPOSE" AND IT WAS A BUG (the 2026-08-28 layout rebuild). The paragraph this
 ; replaces said the entrance was the west side at x = -18, with the challenge brazier at x = -14 and
 ; the player walking in past it. There is nothing west of this cell. The road into the arena comes
 ; from wilds_north at world (0, -142), which is this cell's local (0, 18) — the SOUTH edge — and
@@ -168,7 +168,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 2, 0)
 [node name="Shape" type="CollisionShape3D" parent="Nav/WallE"]
 shape = SubResource("Shape_wall_x")
 
-; ⚠️ THE WEST WALL EXISTS NOW AND THE SOUTH ONE HAS A HOLE IN IT (Phase 44), AND THAT IS A BUG FIX AS
+; ⚠️ THE WEST WALL EXISTS NOW AND THE SOUTH ONE HAS A HOLE IN IT (the 2026-08-28 layout rebuild), AND THAT IS A BUG FIX AS
 ; MUCH AS A REBUILD. The arena's only opening was the WEST side, at x = -18 — and there is nothing
 ; west of this cell. The road actually arrives from wilds_north at world (0, -142), which is this
 ; cell's local (0, 18): the SOUTH edge, where a full-width 36 m collider stood. The arena's entrance
@@ -729,7 +729,7 @@ omni_range = 7.0
 
 [node name="Summon" type="Node" parent="Brazier"]
 script = ExtResource("3_summon")
-; Phase 44: the brazier moved from the old west entrance to just inside the SOUTH gate the player now
+; The 2026-08-28 layout rebuild: the brazier moved from the old west entrance to just inside the SOUTH gate the player now
 ; actually arrives through. The offset moved with it so the king still rises at the arena's centre,
 ; (0, 0, 0) — brazier (0, 0, 13) plus (0, 0, -13). Change one of these two and the boss spawns off
 ; centre with nothing logging it.

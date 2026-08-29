@@ -49,7 +49,8 @@ Conventions this encodes, so they stop being retyped per prop
 import math
 import sys
 
-# Godot basis rows, computed for any yaw in degrees. Phase 44 needs the off-cardinal angles an
+# Godot basis rows, computed for any yaw in degrees. The 2026-08-28 layout rebuild needs the
+# off-cardinal angles an
 # organically-grown district is made of; the five-entry table this replaces refused anything else.
 def _yaw_basis(yaw):
     c, s = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))

@@ -58,7 +58,7 @@
 [ext_resource type="PackedScene" path="res://scenes/props/shrine_waystone.tscn" id="shrine_body_41_5b"]
 [ext_resource type="Script" path="res://src/Shrines/ShrineComponent.cs" id="shrine_41_5b"]
 
-; THE EMBERMARKET — "the Coilyard" (Phase 44 rebuild). The Ember Crown's trade district, one street
+; THE EMBERMARKET — "the Coilyard" (the 2026-08-28 layout rebuild). The Ember Crown's trade district, one street
 ; south of the town square, and as of this phase a district you navigate rather than a street you walk
 ; down.
 ;
@@ -935,7 +935,7 @@ transform = Transform3D(-0.9781, 0, 0.2079, 0, 1, 0, -0.2079, 0, -0.9781, 8, 0, 
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.1, 0)
 shape = SubResource("Shape_cottage")
 
-; --- Eleven more buildings (Phase 44). The Coilyard is a district hemmed IN rather than a row
+; --- Eleven more buildings (the 2026-08-28 layout rebuild). The Coilyard is a district hemmed IN rather than a row
 ; --- of houses beside a road: these close the north, west, east and south edges into near-continuous
 ; --- frontage, and BlockNorth/BlockSouth/BlockWest are the island the Gate Lane and the alley run
 ; --- either side of. Without the island there is no lane, only an open field with stalls in it.
@@ -2133,7 +2133,7 @@ ShopId = "shop.embermarket.curios"
 ; a merchant. Regenerate with:
 ;     python tools/dress_cell.py scenes/regions/ember_crown/embermarket.tscn verge 43 --seed=44
 ;
-; ⚠️ THE RAW RUN IS TOO BIG FOR THIS CELL AND HALF OF IT IS THROWN AWAY (Phase 44). "verge" emits
+; ⚠️ THE RAW RUN IS TOO BIG FOR THIS CELL AND HALF OF IT IS THROWN AWAY (the 2026-08-28 layout rebuild). "verge" emits
 ; ~101 props; the Coilyard authors 587 nodes before any dressing and the region budget is 700 per
 ; cell, so the table is filtered (drop 50_mushrooms / 53 / 54, which this cell does not import) and
 ; every second row is kept. A paved trade district wants less verge than a wilds cell anyway.

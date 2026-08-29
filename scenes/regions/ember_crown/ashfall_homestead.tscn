@@ -44,7 +44,7 @@
 [ext_resource type="PackedScene" path="res://scenes/props/shrine_waystone.tscn" id="shrine_body_41_5b"]
 [ext_resource type="Script" path="res://src/Shrines/ShrineComponent.cs" id="shrine_41_5b"]
 
-; THE ASHFALL HOMESTEAD (Phase 44 rebuild) — the player's holding, east of the Embermarket.
+; THE ASHFALL HOMESTEAD (the 2026-08-28 layout rebuild) — the player's holding, east of the Embermarket.
 ;
 ; ⚠️ WHAT THIS REPLACED. A rectangle: 41 fence posts around x -19.2..15 / z -12.4..16, a gate in the
 ; middle of the west wall, a straight nine-stone path from that gate to a cottage at the plot's
@@ -1175,7 +1175,7 @@ ShrineId = "shrine.veyra"
 script = ExtResource("maploc_39_5a")
 LocationId = "location.shrine.veyra"
 
-; --- Ground cover, re-scattered for the Phase 44 plot (this cell imports ONE grass model, 37_grass,
+; --- Ground cover, re-scattered for the 2026-08-28 layout-rebuild plot (this cell imports ONE grass model, 37_grass,
 ; --- not the nine-species set the other cells use, so tools/redress_cell.py has nothing to work with
 ; --- here). Tufts sit on the verges: clear of the cottage, the workshop row, the approach path and
 ; --- the 7 m build yard at local (0, 5), which must stay open ground for the placement system.

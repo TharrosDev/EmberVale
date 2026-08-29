@@ -4,7 +4,8 @@
 Why this exists
 ---------------
 `dress_cell.py` reads a cell's node positions as keep-outs, so its output is only correct for the
-layout it was run against. Phase 44 moved every building in every cell, which left ~800 tufts of
+layout it was run against. The 2026-08-28 layout rebuild moved every building in every cell,
+which left ~800 tufts of
 grass standing inside walls and on roads across the realm. This does the three steps that always
 follow a re-lay, in one pass and in the right order: delete the old cover, re-scatter, splice the
 new stanzas back in at the same place in the file.

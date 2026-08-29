@@ -26,7 +26,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_rockpath_small.glb" id="24_rockpath_small"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 
-; THE NORTHERN WILDS (Phase 44 rebuild) — the frontier between the Crossway gate and the arena, and
+; THE NORTHERN WILDS (the 2026-08-28 layout rebuild) — the frontier between the Crossway gate and the arena, and
 ; the cell the EncounterDirector uses more than any other.
 ;
 ; ⚠️ WHAT THIS REPLACED. One 5 m path from the Crossway seam at (0, 25) south to a ruin at (0, -6),
@@ -372,7 +372,7 @@ transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, -1.6, 0, 0)
 [node name="Model" parent="Nav/Crate" instance=ExtResource("12_crate")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
 
-; --- Phase 44: eight more pines, rocks and pillars. The cell had four trees and two rock clusters on
+; --- The 2026-08-28 layout rebuild: eight more pines, rocks and pillars. The cell had four trees and two rock clusters on
 ; --- 2,500 m2, which is not a wilderness — it is a floor with props on it. These build the three
 ; --- places the forked road exists to serve: the Hollow Bowl in the west (encounter ground with a
 ; --- rock rim), the Deadfall in the east (a pine thicket to be ambushed in), and Cairn Rise in the

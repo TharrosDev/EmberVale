@@ -49,7 +49,7 @@ VisibilityUpdateInterval = 0.25
 MaxConcurrentLoadRequests = 2
 MaxCellInstantiationsPerFrame = 1
 
-; ⚠️ THE TOWN HUB HAS NO ROAD AXIS ANY MORE (Phase 44). RoadAxis was 1 and the shader drew a 6.5 m
+; ⚠️ THE TOWN HUB HAS NO ROAD AXIS ANY MORE (the 2026-08-28 layout rebuild). RoadAxis was 1 and the shader drew a 6.5 m
 ; strip straight through the middle of the square — which is exactly what the rebuild removed. The
 ; Kingsway is an S: in from the south at x = -11 (lined up with the Embermarket's Gate Lane across
 ; the seam), east to the road head the player spawns on at (0, 15), north past the square's flank,
@@ -132,7 +132,7 @@ Seed = 101
 Paths = Array[ExtResource("6_path")]([SubResource("Path_town_kingsway_s"), SubResource("Path_town_kingsway_m"), SubResource("Path_town_kingsway_n"), SubResource("Path_town_west"), SubResource("Path_town_east"), SubResource("Path_town_green")])
 GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_town_square"), SubResource("Area_town_craft"), SubResource("Area_town_green")])
 
-; ⚠️ THE EMBERMARKET HAS NO ROAD AXIS ANY MORE (Phase 44). RoadAxis was 1 (north-south) and the
+; ⚠️ THE EMBERMARKET HAS NO ROAD AXIS ANY MORE (the 2026-08-28 layout rebuild). RoadAxis was 1 (north-south) and the
 ; shader drew a 6 m strip straight down the middle of the cell, under the old central spine. The
 ; Coilyard's route bends four times and never crosses the cell centre, so a cardinal strip would be a
 ; road painted where nobody walks. The six segments below ARE the circulation, and they match the
@@ -215,7 +215,7 @@ Seed = 102
 Paths = Array[ExtResource("6_path")]([SubResource("Path_market_gate"), SubResource("Path_market_crook"), SubResource("Path_market_caravan"), SubResource("Path_market_dock"), SubResource("Path_market_alley"), SubResource("Path_market_sump")])
 GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_market_yard"), SubResource("Area_market_terrace"), SubResource("Area_market_timber"), SubResource("Area_market_sump")])
 
-; ⚠️ THE CROSSWAY'S ROAD IS NO LONGER A CARDINAL STRIP (Phase 44). RoadAxis was 1 and the shader drew
+; ⚠️ THE CROSSWAY'S ROAD IS NO LONGER A CARDINAL STRIP (the 2026-08-28 layout rebuild). RoadAxis was 1 and the shader drew
 ; a 7 m north-south road straight through the cell — which meant the gate could be RUN, and a toll you
 ; can run is scenery. The road now enters at x = -6 (aligned with the town hub's Kingsway across the
 ; seam at world z = -40), is turned east by the palisade line, crosses the whole Holding Yard, passes a
@@ -291,7 +291,7 @@ Seed = 103
 Paths = Array[ExtResource("6_path")]([SubResource("Path_crossway_south"), SubResource("Path_crossway_turn"), SubResource("Path_crossway_gate"), SubResource("Path_crossway_dogleg"), SubResource("Path_crossway_north"), SubResource("Path_crossway_compound")])
 GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_crossway_hold"), SubResource("Area_crossway_compound"), SubResource("Area_crossway_gate")])
 
-; ⚠️ THE MINE ROAD IS A LOOP NOW, NOT A STRIP (Phase 44). RoadAxis was 2 and the shader drew a 6 m
+; ⚠️ THE MINE ROAD IS A LOOP NOW, NOT A STRIP (the 2026-08-28 layout rebuild). RoadAxis was 2 and the shader drew a 6 m
 ; east-west road across the whole cell under a single 34 x 16 yard — everything the mine had was in
 ; one band and visible from the gate. The circulation is now defile -> Weighing Yard -> haul road ->
 ; the Cut -> Pit Head -> spoil track -> back to the yard, so the walk out is not the walk in. The
@@ -361,7 +361,7 @@ TintStrength = 0.15
 Paths = Array[ExtResource("6_path")]([SubResource("Path_mine_defile"), SubResource("Path_mine_haul"), SubResource("Path_mine_cut"), SubResource("Path_mine_spoil"), SubResource("Path_mine_link")])
 GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_mine_yard"), SubResource("Area_mine_pithead"), SubResource("Area_mine_rest")])
 
-; ⚠️ THE NORTHERN WILDS FORK (Phase 44). The road used to be one 5 m strip from the Crossway seam at
+; ⚠️ THE NORTHERN WILDS FORK (the 2026-08-28 layout rebuild). The road used to be one 5 m strip from the Crossway seam at
 ; (0, 25) to a ruin at (0, -6) and then nothing — a corridor with a dead end, in the cell the
 ; EncounterDirector uses most. It now SPLITS at (0, 16) and rejoins at the arena seam (0, -25), with
 ; the ruin sitting BETWEEN the two branches so the loot is somewhere you turn off the road for. Both
@@ -449,7 +449,7 @@ Seed = 105
 Paths = Array[ExtResource("6_path")]([SubResource("Path_wn_stem"), SubResource("Path_wn_west_a"), SubResource("Path_wn_west_b"), SubResource("Path_wn_west_c"), SubResource("Path_wn_east_a"), SubResource("Path_wn_east_b"), SubResource("Path_wn_east_c")])
 GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_wilds_north_ruin"), SubResource("Area_wn_bowl"), SubResource("Area_wn_deadfall")])
 
-; ⚠️ THE WESTERN SEAM WAS UNDER WATER AND NOW IS NOT (Phase 44). The tarn used to be a 20 m band down
+; ⚠️ THE WESTERN SEAM WAS UNDER WATER AND NOW IS NOT (the 2026-08-28 layout rebuild). The tarn used to be a 20 m band down
 ; the whole west edge of the cell, so the seam with wilds_west — which meets this cell at local
 ; (-26, 0) — was open lake. The bay is now an L that leaves a shore road along the north, and the two
 ; road segments below run from the town seam at local z = -8 to the wilds seam at local z = 0.
@@ -498,7 +498,7 @@ Seed = 106
 Paths = Array[ExtResource("6_path")]([SubResource("Path_tarn_road_east"), SubResource("Path_tarn_road_shore"), SubResource("Path_tarn_neck")])
 GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_tarn_spit"), SubResource("Area_tarn_yard")])
 
-; ⚠️ HOLLOWREACH ENTERS FROM THE EAST AT z = 12, NOT z = 0 (Phase 44). The Embermarket's Dock Stair
+; ⚠️ HOLLOWREACH ENTERS FROM THE EAST AT z = 12, NOT z = 0 (the 2026-08-28 layout rebuild). The Embermarket's Dock Stair
 ; leaves that cell at market-local (-26, 12) — world (-26, 58) — so the wharf's boardwalk has to meet
 ; it there or the two districts do not join. The old road ran along z ≈ 0 and the two cells simply did
 ; not connect on the ground; nothing anywhere said so.
@@ -557,7 +557,7 @@ TintStrength = 0.12
 Paths = Array[ExtResource("6_path")]([SubResource("Path_hollowreach_east"), SubResource("Path_hollowreach_turn"), SubResource("Path_hollowreach_spine")])
 GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_hollowreach_hollow"), SubResource("Area_hollowreach_street"), SubResource("Area_hollowreach_spine")])
 
-; ⚠️ THE WEST WILDS ARE A CORRIE NOW (Phase 44). The camp used to sit at the cell's centre on a
+; ⚠️ THE WEST WILDS ARE A CORRIE NOW (the 2026-08-28 layout rebuild). The camp used to sit at the cell's centre on a
 ; straight 4.5 m track from the Tarn seam, visible and reachable from every direction — three props on
 ; a floor. It is now inside a horseshoe of rock with ONE five-metre throat at (-5, 0) and one
 ; deliberate scramble gap over the northern lip at about (-6, -12). The track ends at the throat; the
@@ -609,7 +609,7 @@ Seed = 108
 Paths = Array[ExtResource("6_path")]([SubResource("Path_wilds_west_track"), SubResource("Path_wilds_west_throat"), SubResource("Path_wilds_west_scramble")])
 GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_wilds_west_camp"), SubResource("Area_wilds_west_apron")])
 
-; ⚠️ THE HOMESTEAD'S BOUNDARY IS A HEXAGON NOW (Phase 44), not the x -19..15 / z -12..16 rectangle it
+; ⚠️ THE HOMESTEAD'S BOUNDARY IS A HEXAGON NOW (the 2026-08-28 layout rebuild), not the x -19..15 / z -12..16 rectangle it
 ; was, and the gate moved from the middle of the west wall to the clipped NORTH-WEST corner. The
 ; approach curves from that gate to the cottage's south door instead of running straight across the
 ; plot. The lane below is the outside road; the drive is the two segments after it.
@@ -661,7 +661,7 @@ Seed = 109
 Paths = Array[ExtResource("6_path")]([SubResource("Path_homestead_lane"), SubResource("Path_homestead_drive"), SubResource("Path_homestead_door")])
 GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_homestead_yard"), SubResource("Area_homestead_garden"), SubResource("Area_homestead_workshop")])
 
-; ⚠️ THE GATE IS ON THE SOUTH AND IT ALWAYS SHOULD HAVE BEEN (Phase 44). This path was already drawn
+; ⚠️ THE GATE IS ON THE SOUTH AND IT ALWAYS SHOULD HAVE BEEN (the 2026-08-28 layout rebuild). This path was already drawn
 ; from (0, 18) — the seam with wilds_north at world (0, -142) — but arena.tscn had a full-width
 ; collider across that edge and left the WEST side open instead, and there is nothing west of this
 ; cell. The scene now matches the path: a 7.2 m gate at x -3.6..3.6 in the south wall, a west wall

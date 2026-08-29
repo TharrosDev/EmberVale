@@ -1,4 +1,4 @@
-; THE GLACIER PASS (Phase 44 rebuild) - a 60 x 20 corridor north of the clan hold, and a DEAD END:
+; THE GLACIER PASS (the 2026-08-28 layout rebuild) - a 60 x 20 corridor north of the clan hold, and a DEAD END:
 ; the hold is the only cell that touches it, at its southern edge. It is somewhere you climb into and
 ; come back out of, so it is built as one route with two pockets rather than as a through-road.
 ;
@@ -82,7 +82,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
 shape = SubResource("Shape_glacier")
 
 ; The far shards, and they are the OUTER pair of the chicane rather than a frame either side of a
-; straight lane (Phase 44). Read the block at the top of this file before moving one: the route is
+; straight lane (the 2026-08-28 layout rebuild). Read the block at the top of this file before moving one: the route is
 ; the gaps BETWEEN these, not a corridor with these beside it.
 [node name="IceWestN" parent="Nav" instance=ExtResource("1_glacier")]
 transform = Transform3D(0.6718, 0, 0.6718, 0, 1.7, 0, -0.6718, 0, 0.6718, -24, 0, 5)

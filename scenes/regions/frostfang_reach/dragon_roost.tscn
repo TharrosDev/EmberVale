@@ -5,7 +5,7 @@
 ; territory radius (ai.dragon) plus the run-up a player needs to get out of it, and it must not box
 ; in a creature that climbs to 12 m.
 ;
-; Phase 44 gave it a shape: an ice wall along the north, a splinter field in the east where the
+; The 2026-08-28 layout rebuild gave it a shape: an ice wall along the north, a splinter field in the east where the
 ; player enters, a five-metre narrows at x = 6, and the nest against the wall at (-14, -20) instead
 ; of at the exact centre. See the block above GlacierWallA. The scatter exclusion in
 ; data/regions/FrostfangReach.tres moved with the nest.
@@ -34,7 +34,7 @@ FloorColor = Color(0.46, 0.48, 0.53, 1)
 
 ; The splinter field: tilted cover in the EAST, where the player enters, thinning westward toward
 ; the nest. Cover is what breaks a 55 degree breath cone and it is the only counterplay a grounded
-; player has, so where it runs out is where the fight is. Phase 44 stopped distributing it evenly.
+; player has, so where it runs out is where the fight is. The 2026-08-28 layout rebuild stopped distributing it evenly.
 [node name="CragN" parent="Nav" index="3" instance=ExtResource("10_rock")]
 transform = Transform3D(1.6853, 0, 1.4141, 0, 2.8, 0, -1.4141, 0, 1.6853, 18, 0, -6)
 
@@ -137,7 +137,7 @@ transform = Transform3D(0.95, 0, -1.6454, 0, 1.4, 0, 1.6454, 0, 0.95, 26, 0, 14)
 [node name="Shape" type="CollisionShape3D" parent="Nav/RockShelfSE/Col"]
 shape = SubResource("Shape_rock")
 
-; --- Phase 44: the north ice wall and the splinter field. The roost used to be four crags in a ring
+; --- The 2026-08-28 layout rebuild: the north ice wall and the splinter field. The roost used to be four crags in a ring
 ; --- around a nest at the exact centre of a 90 m plate, which is the same shape as the other two
 ; --- roosts and reads identically from the ground. It is now a SHELF: an unbroken wall of glacier
 ; --- ice along the north, dense tilted cover in the east where the player enters, a five-metre

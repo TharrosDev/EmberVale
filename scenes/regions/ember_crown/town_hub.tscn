@@ -48,7 +48,7 @@
 [ext_resource type="PackedScene" path="res://scenes/props/shrine_waystone.tscn" id="shrine_body_41_5b"]
 [ext_resource type="Script" path="res://src/Shrines/ShrineComponent.cs" id="shrine_41_5b"]
 
-; THE EMBER CROWN TOWN HUB (Phase 44 rebuild) — the realm's heart, and no longer a plan drawn on a
+; THE EMBER CROWN TOWN HUB (the 2026-08-28 layout rebuild) — the realm's heart, and no longer a plan drawn on a
 ; drawing board.
 ;
 ; ⚠️ WHAT THIS REPLACED. Four buildings at the corners of a 24 x 16 rectangle, six lamps in three
@@ -276,7 +276,7 @@ size = Vector3(0.93, 1.07, 0.82)
 [sub_resource type="BoxShape3D" id="Shape_workbench"]
 size = Vector3(2.02, 0.89, 1.02)
 
-; --- Phase 44: the Kingsway and the two yards. -------------------------------------------------------
+; --- The 2026-08-28 layout rebuild: the Kingsway and the two yards. -------------------------------------------------------
 ; Ground skins only — 6 cm slabs with NO collider, exactly as embermarket authors them (a 6 cm lip is
 ; something the player catches on rather than climbs, and a collider here would be carved into the
 ; navmesh as a step NPCs path around for no visible reason). They exist so the road the player walks
@@ -405,7 +405,7 @@ transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, 17, 3.25
 shape = SubResource("Shape_smith")
 
 
-; --- Nine more houses (Phase 44). The square used to be four buildings at the corners of a 24 x 16
+; --- Nine more houses (the 2026-08-28 layout rebuild). The square used to be four buildings at the corners of a 24 x 16
 ; --- rectangle with everything else in the middle of it — a plan, not a village. These close the
 ; --- Long Green along the north, wall the Warband Yard on its west, and give the Craft Yard and the
 ; --- road head frontage to stand against. The village now has a silhouette from every approach.

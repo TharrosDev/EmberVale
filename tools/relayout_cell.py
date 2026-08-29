@@ -3,7 +3,8 @@
 
 Why this exists
 ---------------
-Phase 44 rebuilds the physical layout of every explorable cell. A cell is 1,000-2,500 lines of
+The 2026-08-28 layout rebuild redesigned the physical layout of every explorable cell. A cell is
+1,000-2,500 lines of
 `.tscn` in which the *composition* — where each stall, house, wall and lamp stands — is a single
 `transform =` line per node, surrounded by component properties, colliders, particles and comments
 that must survive untouched. Rewriting the files by hand retypes the parts that are correct in

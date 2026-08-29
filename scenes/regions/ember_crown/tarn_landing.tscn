@@ -65,7 +65,7 @@
 ; ⚠️ EVERYTHING STATIC PARENTS TO Nav; the two merchants deliberately do not (only static geometry
 ; should carve the navmesh).
 ;
-; ⚠️ WHAT PHASE 44 REPLACED, AND ONE OF IT WAS A BUG. The cell was four east-west bands: road, hamlet,
+; ⚠️ WHAT THE 2026-08-28 LAYOUT REBUILD REPLACED, AND ONE OF IT WAS A BUG. The cell was four east-west bands: road, hamlet,
 ; shingle, and a 20 m strip of tarn down the whole western edge. Two problems. It read as a diagram —
 ; every building on one line beside one track — and the water covered the ENTIRE western seam, which
 ; is where wilds_west meets this cell at local (-26, 0). There was no walkable ground between the two
@@ -132,7 +132,7 @@ roughness = 0.08
 albedo_color = Color(0.09, 0.11, 0.12, 1)
 roughness = 0.98
 
-; Phase 44: the tarn is an L-shaped BAY in two boxes rather than one 20 m band down the west edge.
+; The 2026-08-28 layout rebuild: the tarn is an L-shaped BAY in two boxes rather than one 20 m band down the west edge.
 ; The band was why nothing could walk from wilds_west into this cell — the whole western seam was
 ; water. The bay now leaves a shore road along the north, and the land it wraps is the spit.
 [sub_resource type="BoxMesh" id="BoxMesh_water_west"]

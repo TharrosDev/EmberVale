@@ -27,7 +27,7 @@ TravelNodeId = "travel.ember_crown.cottage"
 ; market square. The number to trust is the Center in data/regions/EmberCrown.tres, never this
 ; comment's arithmetic.
 ;
-; ⚠️ THE BUILD YARD MOVED WITH THE PLOT (Phase 44). It was seven metres of ground south-east of the
+; ⚠️ THE BUILD YARD MOVED WITH THE PLOT (the 2026-08-28 layout rebuild). It was seven metres of ground south-east of the
 ; house at local (6, 8); the rebuild put the cottage in the plot's north-east corner and the workshop
 ; along the east wall, so that circle now sits half on top of the workshop row. It is the SOUTH LAWN
 ; instead: local (0, 5), world (52, 0, 51), a 7 m circle bounded by the south fence at z = 12 and

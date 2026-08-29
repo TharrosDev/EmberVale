@@ -3,7 +3,8 @@
 
 Why this exists
 ---------------
-Phase 44 re-laid every cell by moving transforms. A stall pushed into a building, or two houses on
+The 2026-08-28 layout rebuild re-laid every cell by moving transforms. A stall pushed into a
+building, or two houses on
 the same ground, is invisible in the `.tscn`, invisible to `--validate` (which checks references,
 not geometry) and only shows up by walking there.
 
