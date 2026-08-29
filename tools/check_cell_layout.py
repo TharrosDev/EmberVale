@@ -29,6 +29,10 @@ BIG = 3.0
 # Ground skins are flat slabs the props are MEANT to stand on. Their names collide with the prop
 # vocabulary ("GateLane" contains "gate", "TimberYard" contains "timber"), so they are named out
 # rather than inferred.
+# Things that are SUPPOSED to touch. Fence panels abut at corners by design; a chest, a stand or a
+# bed is furniture standing inside the building whose footprint the checker would otherwise flag.
+TOUCHING = ("fence", "chest", "stand", "bed", "deed", "pin")
+
 SKIN = ("lane", "yard", "road", "walk", "court", "steps", "stair", "spine", "crookway",
         "forecourt", "plaza", "aisle", "floor", "apron", "ring", "path")
 
@@ -45,7 +49,8 @@ def structure(path):
         elif pending and line.startswith("transform = Transform3D("):
             v = [float(x) for x in line[len("transform = Transform3D("):-1].split(",")]
             r = footprint(pending)
-            if r >= BIG and not any(w in pending.lower() for w in SKIN):
+            low = pending.lower()
+            if r >= BIG and not any(w in low for w in SKIN + TOUCHING):
                 out.append((pending, v[9], v[11], r))
             pending = None
     return out

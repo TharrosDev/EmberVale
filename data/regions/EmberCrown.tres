@@ -609,39 +609,57 @@ Seed = 108
 Paths = Array[ExtResource("6_path")]([SubResource("Path_wilds_west_track"), SubResource("Path_wilds_west_throat"), SubResource("Path_wilds_west_scramble")])
 GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_wilds_west_camp"), SubResource("Area_wilds_west_apron")])
 
-[sub_resource type="Resource" id="Path_homestead_gate"]
+; ⚠️ THE HOMESTEAD'S BOUNDARY IS A HEXAGON NOW (Phase 44), not the x -19..15 / z -12..16 rectangle it
+; was, and the gate moved from the middle of the west wall to the clipped NORTH-WEST corner. The
+; approach curves from that gate to the cottage's south door instead of running straight across the
+; plot. The lane below is the outside road; the drive is the two segments after it.
+[sub_resource type="Resource" id="Path_homestead_lane"]
 script = ExtResource("6_path")
-Start = Vector2(-26, 3)
-End = Vector2(-6, 0)
-Width = 4.0
+Start = Vector2(-26, -16)
+End = Vector2(-13, -10)
+Width = 4.5
 Shoulder = 2.0
 
-[sub_resource type="Resource" id="Path_homestead_house"]
+[sub_resource type="Resource" id="Path_homestead_drive"]
 script = ExtResource("6_path")
-Start = Vector2(-6, 0)
-End = Vector2(0, -6)
+Start = Vector2(-13, -10)
+End = Vector2(-3, -3.6)
+Width = 3.5
+Shoulder = 1.5
+
+[sub_resource type="Resource" id="Path_homestead_door"]
+script = ExtResource("6_path")
+Start = Vector2(-3, -3.6)
+End = Vector2(7, -1.5)
 Width = 3.5
 Shoulder = 1.25
 
 [sub_resource type="Resource" id="Area_homestead_yard"]
 script = ExtResource("7_area")
-Center = Vector2(0, -4)
-Radius = Vector2(14, 11)
+Center = Vector2(0, 5)
+Radius = Vector2(8, 7)
 Feather = 3.0
 SurfaceBlend = 0.58
 
 [sub_resource type="Resource" id="Area_homestead_garden"]
 script = ExtResource("7_area")
-Center = Vector2(6, 10)
-Radius = Vector2(8, 5)
+Center = Vector2(-13, 4)
+Radius = Vector2(5, 7)
 Feather = 1.5
 SurfaceBlend = 0.35
+
+[sub_resource type="Resource" id="Area_homestead_workshop"]
+script = ExtResource("7_area")
+Center = Vector2(13.5, -6)
+Radius = Vector2(3.5, 6)
+Feather = 1.5
+SurfaceBlend = 0.72
 
 [sub_resource type="Resource" id="Presentation_homestead"]
 script = ExtResource("4_presentation")
 Seed = 109
-Paths = Array[ExtResource("6_path")]([SubResource("Path_homestead_gate"), SubResource("Path_homestead_house")])
-GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_homestead_yard"), SubResource("Area_homestead_garden")])
+Paths = Array[ExtResource("6_path")]([SubResource("Path_homestead_lane"), SubResource("Path_homestead_drive"), SubResource("Path_homestead_door")])
+GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_homestead_yard"), SubResource("Area_homestead_garden"), SubResource("Area_homestead_workshop")])
 
 [sub_resource type="Resource" id="Path_arena_gate"]
 script = ExtResource("6_path")
