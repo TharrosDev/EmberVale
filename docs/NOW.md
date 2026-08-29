@@ -47,6 +47,7 @@
 | Step-up gate | `stepup_probe.gd` — migrated to the Salt Steps and green: rose 0.301 on the terrace, 0.001 into the bell tower |
 | Map placement | `map_probe.gd` — 70 markers across 15 cells, no duplicate or centre-parked pin |
 | Layout overlap | `python tools/check_cell_layout.py <cell>` — 0 overlapping structures in all 15 |
+| ⚠️ World perf | **Over budget, and it was BEFORE this work too.** `--play` on the Ember Crown warns `draw calls … > 1800` and `frame ms … > 25`; measured on `79755be` (pre-rebuild) it warned the same way, peaking at 2895 draw calls / 75 ms against 3214 / 60 ms after. `tools/cell_mesh_census.gd` gives the deterministic half: the region's rendered meshes went **2054 → 2155 (+4.9%)**, so the rebuild is a marginal contributor to a pre-existing ~60% overrun, not its cause. The real lever is ground cover — ~1,100 of those meshes are one `Node3D` + one `MeshInstance3D` per tuft, and a `MultiMeshInstance3D` per species would collapse them (the `ponytail:` note at the bottom of `wilds_north.tscn` already names it). **Unfixed and unscheduled.** |
 | Not run | `--economy` (no price touched); the Frostfang portal crossing still needs keyboard input no CLI here can inject, so it is exercised only through `world_shots.gd` streaming both regions |
 
 ## Live invariants
