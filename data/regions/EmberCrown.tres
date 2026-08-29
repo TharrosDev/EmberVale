@@ -361,29 +361,93 @@ TintStrength = 0.15
 Paths = Array[ExtResource("6_path")]([SubResource("Path_mine_defile"), SubResource("Path_mine_haul"), SubResource("Path_mine_cut"), SubResource("Path_mine_spoil"), SubResource("Path_mine_link")])
 GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_mine_yard"), SubResource("Area_mine_pithead"), SubResource("Area_mine_rest")])
 
-[sub_resource type="Resource" id="Path_wilds_north_ruin"]
+; ⚠️ THE NORTHERN WILDS FORK (Phase 44). The road used to be one 5 m strip from the Crossway seam at
+; (0, 25) to a ruin at (0, -6) and then nothing — a corridor with a dead end, in the cell the
+; EncounterDirector uses most. It now SPLITS at (0, 16) and rejoins at the arena seam (0, -25), with
+; the ruin sitting BETWEEN the two branches so the loot is somewhere you turn off the road for. Both
+; seam points are unchanged: crossway_post leaves at world (0, -92) and the arena's gate path begins
+; at world (0, -142), which are this cell's (0, 25) and (0, -25).
+;
+; RoadAxis is 0. A cardinal north-south strip would paint a road straight through the ruin the fork
+; exists to go around.
+[sub_resource type="Resource" id="Path_wn_stem"]
 script = ExtResource("6_path")
 Start = Vector2(0, 25)
-End = Vector2(-1, -6)
+End = Vector2(0, 16)
+Width = 5.0
+Shoulder = 2.5
+
+[sub_resource type="Resource" id="Path_wn_west_a"]
+script = ExtResource("6_path")
+Start = Vector2(0, 16)
+End = Vector2(-11, 4)
 Width = 4.0
+Shoulder = 2.5
+
+[sub_resource type="Resource" id="Path_wn_west_b"]
+script = ExtResource("6_path")
+Start = Vector2(-11, 4)
+End = Vector2(-12, -10)
+Width = 4.0
+Shoulder = 2.5
+
+[sub_resource type="Resource" id="Path_wn_west_c"]
+script = ExtResource("6_path")
+Start = Vector2(-12, -10)
+End = Vector2(0, -25)
+Width = 4.0
+Shoulder = 2.5
+
+[sub_resource type="Resource" id="Path_wn_east_a"]
+script = ExtResource("6_path")
+Start = Vector2(0, 16)
+End = Vector2(11, 6)
+Width = 3.5
+Shoulder = 2.0
+
+[sub_resource type="Resource" id="Path_wn_east_b"]
+script = ExtResource("6_path")
+Start = Vector2(11, 6)
+End = Vector2(13, -6)
+Width = 3.5
+Shoulder = 2.0
+
+[sub_resource type="Resource" id="Path_wn_east_c"]
+script = ExtResource("6_path")
+Start = Vector2(13, -6)
+End = Vector2(0, -25)
+Width = 3.5
 Shoulder = 2.0
 
 [sub_resource type="Resource" id="Area_wilds_north_ruin"]
 script = ExtResource("7_area")
-Center = Vector2(0, -6)
-Radius = Vector2(11, 9)
+Center = Vector2(0, -5)
+Radius = Vector2(7, 7)
 Feather = 3.5
 SurfaceBlend = 0.42
+
+[sub_resource type="Resource" id="Area_wn_bowl"]
+script = ExtResource("7_area")
+Center = Vector2(-17, 8)
+Radius = Vector2(6, 7)
+Feather = 4.0
+SurfaceBlend = 0.30
+
+[sub_resource type="Resource" id="Area_wn_deadfall"]
+script = ExtResource("7_area")
+Center = Vector2(18, -12)
+Radius = Vector2(6, 7)
+Feather = 4.5
+SurfaceBlend = 0.22
 
 [sub_resource type="Resource" id="Presentation_wilds_north"]
 script = ExtResource("4_presentation")
 Width = 50.0
 Depth = 50.0
-RoadAxis = 1
-RoadWidth = 5.0
+RoadAxis = 0
 Seed = 105
-Paths = Array[ExtResource("6_path")]([SubResource("Path_wilds_north_ruin")])
-GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_wilds_north_ruin")])
+Paths = Array[ExtResource("6_path")]([SubResource("Path_wn_stem"), SubResource("Path_wn_west_a"), SubResource("Path_wn_west_b"), SubResource("Path_wn_west_c"), SubResource("Path_wn_east_a"), SubResource("Path_wn_east_b"), SubResource("Path_wn_east_c")])
+GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_wilds_north_ruin"), SubResource("Area_wn_bowl"), SubResource("Area_wn_deadfall")])
 
 ; ⚠️ THE WESTERN SEAM WAS UNDER WATER AND NOW IS NOT (Phase 44). The tarn used to be a 20 m band down
 ; the whole west edge of the cell, so the seam with wilds_west — which meets this cell at local
@@ -493,29 +557,57 @@ TintStrength = 0.12
 Paths = Array[ExtResource("6_path")]([SubResource("Path_hollowreach_east"), SubResource("Path_hollowreach_turn"), SubResource("Path_hollowreach_spine")])
 GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_hollowreach_hollow"), SubResource("Area_hollowreach_street"), SubResource("Area_hollowreach_spine")])
 
-[sub_resource type="Resource" id="Path_wilds_west_camp"]
+; ⚠️ THE WEST WILDS ARE A CORRIE NOW (Phase 44). The camp used to sit at the cell's centre on a
+; straight 4.5 m track from the Tarn seam, visible and reachable from every direction — three props on
+; a floor. It is now inside a horseshoe of rock with ONE five-metre throat at (-5, 0) and one
+; deliberate scramble gap over the northern lip at about (-6, -12). The track ends at the throat; the
+; camp is what is behind it.
+;
+; The east seam is FIXED at local (25, 0): Tarn's Landing's shore road reaches its western edge at
+; world (-82, -6), which is this cell's (25, 0).
+[sub_resource type="Resource" id="Path_wilds_west_track"]
 script = ExtResource("6_path")
 Start = Vector2(25, 0)
-End = Vector2(0, 0)
+End = Vector2(2, -1)
 Width = 3.5
-Shoulder = 2.0
+Shoulder = 2.5
+
+[sub_resource type="Resource" id="Path_wilds_west_throat"]
+script = ExtResource("6_path")
+Start = Vector2(2, -1)
+End = Vector2(-8, 0)
+Width = 5.0
+Shoulder = 1.5
+
+[sub_resource type="Resource" id="Path_wilds_west_scramble"]
+script = ExtResource("6_path")
+Start = Vector2(-2, -18)
+End = Vector2(-8, -10)
+Width = 2.5
+Shoulder = 1.5
 
 [sub_resource type="Resource" id="Area_wilds_west_camp"]
 script = ExtResource("7_area")
-Center = Vector2(0, 0)
-Radius = Vector2(10, 8)
-Feather = 3.0
+Center = Vector2(-14, -1)
+Radius = Vector2(7, 8)
+Feather = 3.5
 SurfaceBlend = 0.38
+
+[sub_resource type="Resource" id="Area_wilds_west_apron"]
+script = ExtResource("7_area")
+Center = Vector2(10, -1)
+Radius = Vector2(9, 6)
+Feather = 4.0
+SurfaceBlend = 0.20
 
 [sub_resource type="Resource" id="Presentation_wilds_west"]
 script = ExtResource("4_presentation")
 Width = 50.0
 Depth = 40.0
-RoadAxis = 2
-RoadWidth = 4.5
+RoadAxis = 0
 Seed = 108
-Paths = Array[ExtResource("6_path")]([SubResource("Path_wilds_west_camp")])
-GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_wilds_west_camp")])
+Paths = Array[ExtResource("6_path")]([SubResource("Path_wilds_west_track"), SubResource("Path_wilds_west_throat"), SubResource("Path_wilds_west_scramble")])
+GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_wilds_west_camp"), SubResource("Area_wilds_west_apron")])
 
 [sub_resource type="Resource" id="Path_homestead_gate"]
 script = ExtResource("6_path")
