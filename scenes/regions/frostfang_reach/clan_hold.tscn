@@ -26,6 +26,44 @@
 [ext_resource type="PackedScene" path="res://scenes/props/bld_townhouse.tscn" id="26_townhouse"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 
+; THE CLAN HOLD (Phase 44 rebuild) - Frostfang Reach's only settlement.
+;
+; WARNING WHAT THIS REPLACED. Two longhouses mirrored at x = +/-12, a moot hall centred on the axis
+; behind them, three tents, four braziers in two mirrored pairs, and the three crafting stations in a
+; huddle at (-8, 1). Everything the hold had stood inside one rectangle and the road ran through it.
+;
+; THE LAYOUT NOW - a ring, not a row, and the roads go ROUND it rather than through it:
+;   THE MOOT RING    an oval of open ground centred (-4, 2), about 22 x 18. The moot fire is at its
+;                    heart and the chief stands beside it. Three buildings close it in a broken arc:
+;                    the moot hall at (2, -12) on the north, the two longhouses angled at 55 and 115
+;                    degrees on the west. Nothing in the ring is parallel to anything else.
+;   THE WORK TERRACE x 8..24, z -8..8, off the EAST road: forge, workbench, alchemy bench, the
+;                    quartermaster and the hearthkeeper. The road runs along its south edge, so a
+;                    trader reaches trade without entering the ring at all.
+;   THE BEAST RUNS   x -28..-18, z -6..10, along the WEST road: three tents, a brazier and the beast
+;                    tamer. The same idea on the other side and deliberately a different shape - a
+;                    strip rather than a court.
+;   THE NORTH GATE   the glacier road comes in at (0, -30) and has to bend EAST round the back of the
+;                    moot hall before it reaches the ring, so the hold is never visible from the pass.
+;   THE EXILE        (18, 22), his fire at (20, 24) - outside everything, in the south-east, with no
+;                    road to him. He is not part of the hold and the layout now says so.
+;   ice and rock     four glacier masses and four rock clusters wall the south and the north-east; the
+;                    pines stand outside them. The hold has an inside and an outside for the first
+;                    time.
+;
+; WARNING THREE SEAMS, AND THEY ARE ARITHMETIC. West (-30, 0) meets the wild dragon roost, east
+; (30, 0) the ash roost, north (0, -30) the glacier pass. The region spawn at world (100, 1.2, 0) is
+; cell-local (0, 20). The block above Presentation_clan_hold in data/regions/FrostfangReach.tres
+; carries the arithmetic for all three.
+;
+; WARNING FOUR SCHEDULES WERE MIGRATED WITH THIS REBUILD (ClanChief, ClanQuartermaster,
+; ClanBeastTamer, ClanHearthkeeper). They author RAW WORLD destinations - Origin is zero on all four,
+; unlike the Embermarket's - and this cell sits at world (100, 0, -20), so a point read out of this
+; file is world = local + (100, 0, -20). Getting that backwards is the 37C placement bug in miniature.
+;
+; WARNING EVERYTHING STATIC PARENTS TO Nav; the NPCs, the waystone, the stations and the exile's fire
+; do not. A body inside the NavigationRegion3D is a hole in the navmesh where a person is standing.
+
 [sub_resource type="NavigationMesh" id="NavMesh_hold"]
 geometry_parsed_geometry_type = 1
 cell_size = 0.25
@@ -100,16 +138,16 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
 shape = SubResource("Shape_floor")
 
 [node name="LonghouseW" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 3.75, -6)
+transform = Transform3D(0.5736, 0, 0.8192, 0, 1, 0, -0.8192, 0, 0.5736, -14, 3.75, -9)
 
 [node name="LonghouseE" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 3.75, -6)
+transform = Transform3D(-0.4226, 0, 0.9063, 0, 1, 0, -0.9063, 0, -0.4226, -15, 3.75, 10)
 
 [node name="MootHall" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.4, -18)
+transform = Transform3D(-0.9848, 0, -0.1736, 0, 1, 0, 0.1736, 0, -0.9848, 2, 3.4, -12)
 
 [node name="TentSW" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 0, 6)
+transform = Transform3D(-0.1736, 0, 0.9848, 0, 1, 0, -0.9848, 0, -0.1736, -24, 0, 2)
 
 [node name="TentSWCol" type="StaticBody3D" parent="Nav/TentSW"]
 
@@ -118,7 +156,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
 shape = SubResource("Shape_tent")
 
 [node name="TentSE" type="Node3D" parent="Nav"]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 16, 0, 6)
+transform = Transform3D(-0.1736, 0, -0.9848, 0, 1, 0, 0.9848, 0, -0.1736, -24, 0, 8)
 
 [node name="TentSECol" type="StaticBody3D" parent="Nav/TentSE"]
 
@@ -127,7 +165,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
 shape = SubResource("Shape_tent")
 
 [node name="TentNW" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -18, 0, -16)
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -22, 0, -14)
 
 [node name="TentNWCol" type="StaticBody3D" parent="Nav/TentNW"]
 
@@ -136,7 +174,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
 shape = SubResource("Shape_tent")
 
 [node name="BrazierSW" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, 8)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 0, -3)
 
 [node name="BrazierSWCol" type="StaticBody3D" parent="Nav/BrazierSW"]
 
@@ -151,7 +189,7 @@ light_energy = 2.2
 omni_range = 10.0
 
 [node name="BrazierSE" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 8)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 3)
 
 [node name="BrazierSECol" type="StaticBody3D" parent="Nav/BrazierSE"]
 
@@ -166,7 +204,7 @@ light_energy = 2.2
 omni_range = 10.0
 
 [node name="BrazierNW" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, -8)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, 2)
 
 [node name="BrazierNWCol" type="StaticBody3D" parent="Nav/BrazierNW"]
 
@@ -181,7 +219,7 @@ light_energy = 2.2
 omni_range = 10.0
 
 [node name="BrazierNE" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, -8)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 6)
 
 [node name="BrazierNECol" type="StaticBody3D" parent="Nav/BrazierNE"]
 
@@ -196,7 +234,7 @@ light_energy = 2.2
 omni_range = 10.0
 
 [node name="PineSW" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -24, 0, 20)
+transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, -27, 0, 24)
 
 [node name="PineSWCol" type="StaticBody3D" parent="Nav/PineSW"]
 
@@ -205,7 +243,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
 shape = SubResource("Shape_pine")
 
 [node name="PineSE" type="Node3D" parent="Nav"]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 24, 0, 18)
+transform = Transform3D(-0.766, 0, -0.6428, 0, 1, 0, 0.6428, 0, -0.766, 26, 0, 22)
 
 [node name="PineSECol" type="StaticBody3D" parent="Nav/PineSE"]
 
@@ -214,7 +252,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
 shape = SubResource("Shape_pine")
 
 [node name="PineW" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -26, 0, -4)
+transform = Transform3D(-0.6428, 0, 0.766, 0, 1, 0, -0.766, 0, -0.6428, -28, 0, -8)
 
 [node name="PineWCol" type="StaticBody3D" parent="Nav/PineW"]
 
@@ -223,7 +261,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
 shape = SubResource("Shape_pine")
 
 [node name="PineE" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 26, 0, -10)
+transform = Transform3D(0.6428, 0, -0.766, 0, 1, 0, 0.766, 0, 0.6428, 28, 0, 8)
 
 [node name="PineECol" type="StaticBody3D" parent="Nav/PineE"]
 
@@ -232,7 +270,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
 shape = SubResource("Shape_pine")
 
 [node name="PineN" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -22, 0, -24)
+transform = Transform3D(0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, 0.342, -14, 0, -26)
 
 [node name="PineNCol" type="StaticBody3D" parent="Nav/PineN"]
 
@@ -241,7 +279,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
 shape = SubResource("Shape_pine")
 
 [node name="RockS" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, 24)
+transform = Transform3D(0.6428, 0, 0.766, 0, 1, 0, -0.766, 0, 0.6428, -12, 0, 24)
 
 [node name="RockSCol" type="StaticBody3D" parent="Nav/RockS"]
 
@@ -250,7 +288,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
 shape = SubResource("Shape_rock")
 
 [node name="RockNW" type="Node3D" parent="Nav"]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -20, 0, -28)
+transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, -22, 0, -20)
 
 [node name="RockNWCol" type="StaticBody3D" parent="Nav/RockNW"]
 
@@ -259,7 +297,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
 shape = SubResource("Shape_rock")
 
 [node name="RockNE" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 0, -24)
+transform = Transform3D(-0.9848, 0, 0.1736, 0, 1, 0, -0.1736, 0, -0.9848, 22, 0, -26)
 
 [node name="RockNECol" type="StaticBody3D" parent="Nav/RockNE"]
 
@@ -268,7 +306,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
 shape = SubResource("Shape_rock")
 
 [node name="GlacierW" parent="Nav" instance=ExtResource("20_glacier")]
-transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, -27, 0, 10)
+transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, -27, 0, 14)
 
 [node name="Col" type="StaticBody3D" parent="Nav/GlacierW"]
 
@@ -277,7 +315,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
 shape = SubResource("Shape_glacier")
 
 [node name="GlacierE" parent="Nav" instance=ExtResource("20_glacier")]
-transform = Transform3D(-0.9, 0, 0.6, 0, 1, 0, -0.6, 0, -0.9, 27, 0, -2)
+transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 27, 0, -14)
 
 [node name="Col" type="StaticBody3D" parent="Nav/GlacierE"]
 
@@ -285,8 +323,167 @@ transform = Transform3D(-0.9, 0, 0.6, 0, 1, 0, -0.6, 0, -0.9, 27, 0, -2)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
 shape = SubResource("Shape_glacier")
 
+; --- Phase 44: fourteen more tents, ice masses, rocks and pines. The hold used to be three buildings
+; --- and three tents on a 3,600 m2 plate, so it read as a diagram of a settlement rather than a place
+; --- with an inside and an outside. These close the moot ring on its south and east, wall the north
+; --- approach from the glacier, and build the beast runs along the western road.
+
+[node name="TentN" type="Node3D" parent="Nav"]
+transform = Transform3D(-0.766, 0, 0.6428, 0, 1.0, 0, -0.6428, 0, -0.766, -20, 0, -6)
+
+[node name="Model" parent="Nav/TentN" instance=ExtResource("16_tent")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/TentN"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/TentN/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+shape = SubResource("Shape_tent")
+
+[node name="TentE" type="Node3D" parent="Nav"]
+transform = Transform3D(0.9397, 0, 0.342, 0, 1.0, 0, -0.342, 0, 0.9397, 20, 0, 15)
+
+[node name="Model" parent="Nav/TentE" instance=ExtResource("16_tent")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/TentE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/TentE/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+shape = SubResource("Shape_tent")
+
+[node name="TentRun1" type="Node3D" parent="Nav"]
+transform = Transform3D(-0.342, 0, -0.9397, 0, 1.0, 0, 0.9397, 0, -0.342, 16, 0, -14)
+
+[node name="Model" parent="Nav/TentRun1" instance=ExtResource("16_tent")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/TentRun1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/TentRun1/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+shape = SubResource("Shape_tent")
+
+[node name="TentRun2" type="Node3D" parent="Nav"]
+transform = Transform3D(0.5, 0, 0.866, 0, 1.0, 0, -0.866, 0, 0.5, -6, 0, 20)
+
+[node name="Model" parent="Nav/TentRun2" instance=ExtResource("16_tent")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/TentRun2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/TentRun2/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+shape = SubResource("Shape_tent")
+
+[node name="GlacierS1" type="Node3D" parent="Nav"]
+transform = Transform3D(0.9659, 0, 0.2588, 0, 1.0, 0, -0.2588, 0, 0.9659, -2, 0, 27)
+
+[node name="Model" parent="Nav/GlacierS1" instance=ExtResource("20_glacier")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/GlacierS1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/GlacierS1/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.48, 0)
+shape = SubResource("Shape_glacier")
+
+[node name="GlacierS2" type="Node3D" parent="Nav"]
+transform = Transform3D(-0.9397, 0, -0.342, 0, 1.0, 0, 0.342, 0, -0.9397, 16, 0, 26)
+
+[node name="Model" parent="Nav/GlacierS2" instance=ExtResource("20_glacier")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/GlacierS2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/GlacierS2/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.48, 0)
+shape = SubResource("Shape_glacier")
+
+[node name="GlacierNW" type="Node3D" parent="Nav"]
+transform = Transform3D(-0.342, 0, 0.9397, 0, 1.0, 0, -0.9397, 0, -0.342, -25, 0, -24)
+
+[node name="Model" parent="Nav/GlacierNW" instance=ExtResource("20_glacier")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/GlacierNW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/GlacierNW/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.48, 0)
+shape = SubResource("Shape_glacier")
+
+[node name="GlacierNE" type="Node3D" parent="Nav"]
+transform = Transform3D(0.342, 0, -0.9397, 0, 1.0, 0, 0.9397, 0, 0.342, 24, 0, -20)
+
+[node name="Model" parent="Nav/GlacierNE" instance=ExtResource("20_glacier")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/GlacierNE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/GlacierNE/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.48, 0)
+shape = SubResource("Shape_glacier")
+
+[node name="RockRing1" type="Node3D" parent="Nav"]
+transform = Transform3D(0.866, 0, 0.5, 0, 1.0, 0, -0.5, 0, 0.866, -17, 0, 17)
+
+[node name="Model" parent="Nav/RockRing1" instance=ExtResource("19_rock")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/RockRing1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RockRing1/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("Shape_rock")
+
+[node name="RockRing2" type="Node3D" parent="Nav"]
+transform = Transform3D(-0.866, 0, -0.5, 0, 1.0, 0, 0.5, 0, -0.866, 7, 0, 19)
+
+[node name="Model" parent="Nav/RockRing2" instance=ExtResource("19_rock")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/RockRing2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RockRing2/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("Shape_rock")
+
+[node name="RockN" type="Node3D" parent="Nav"]
+transform = Transform3D(0.0, 0, 1.0, 0, 1.0, 0, -1.0, 0, 0.0, -7, 0, -25)
+
+[node name="Model" parent="Nav/RockN" instance=ExtResource("19_rock")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/RockN"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RockN/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("Shape_rock")
+
+[node name="RockE" type="Node3D" parent="Nav"]
+transform = Transform3D(-0.0, 0, -1.0, 0, 1.0, 0, 1.0, 0, -0.0, 26, 0, -6)
+
+[node name="Model" parent="Nav/RockE" instance=ExtResource("19_rock")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/RockE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RockE/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("Shape_rock")
+
+[node name="PineRing1" type="Node3D" parent="Nav"]
+transform = Transform3D(0.7071, 0, 0.7071, 0, 1.0, 0, -0.7071, 0, 0.7071, -19, 0, 12)
+
+[node name="Model" parent="Nav/PineRing1" instance=ExtResource("18_pine")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/PineRing1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineRing1/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("Shape_pine")
+
+[node name="PineRing2" type="Node3D" parent="Nav"]
+transform = Transform3D(-0.7071, 0, -0.7071, 0, 1.0, 0, 0.7071, 0, -0.7071, 11, 0, -22)
+
+[node name="Model" parent="Nav/PineRing2" instance=ExtResource("18_pine")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/PineRing2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineRing2/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("Shape_pine")
+
 [node name="Waystone" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 14)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 8)
 script = ExtResource("1_entity")
 DisplayName = "Clan Hold Waystone"
 
@@ -303,7 +500,7 @@ TravelName = "Frostfang Clan Hold"
 RegionId = "region.frostfang_reach"
 
 [node name="ClanChief" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -10)
+transform = Transform3D(-0.9848, 0, 0.1736, 0, 1, 0, -0.1736, 0, -0.9848, -4, 0, -2)
 script = ExtResource("1_entity")
 DisplayName = "Hjalvar Stormbound"
 TemplateId = "npc.clan_chief"
@@ -331,7 +528,7 @@ script = ExtResource("6_schedule")
 ScheduleId = "schedule.clan_chief"
 
 [node name="Quartermaster" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, -2)
+transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, 18, 0, 3)
 script = ExtResource("1_entity")
 DisplayName = "Sigrun Ironhand"
 TemplateId = "npc.clan_quartermaster"
@@ -359,7 +556,7 @@ script = ExtResource("6_schedule")
 ScheduleId = "schedule.clan_quartermaster"
 
 [node name="BeastTamer" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0, 4)
+transform = Transform3D(0.1736, 0, 0.9848, 0, 1, 0, -0.9848, 0, 0.1736, -22, 0, 3)
 script = ExtResource("1_entity")
 DisplayName = "Yrsa Houndmother"
 TemplateId = "npc.clan_beast_tamer"
@@ -387,7 +584,7 @@ script = ExtResource("6_schedule")
 ScheduleId = "schedule.clan_beast_tamer"
 
 [node name="Hearthkeeper" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 6)
+transform = Transform3D(-0.9848, 0, -0.1736, 0, 1, 0, 0.1736, 0, -0.9848, 10, 0, 8)
 script = ExtResource("1_entity")
 DisplayName = "Old Vetle"
 TemplateId = "npc.clan_hearthkeeper"
@@ -415,7 +612,7 @@ script = ExtResource("6_schedule")
 ScheduleId = "schedule.clan_hearthkeeper"
 
 [node name="Exile" type="Node3D" parent="."]
-transform = Transform3D(0.71, 0, 0.71, 0, 1, 0, -0.71, 0, 0.71, -24, 0, 22)
+transform = Transform3D(0.5, 0, -0.866, 0, 1, 0, 0.866, 0, 0.5, 18, 0, 22)
 script = ExtResource("1_entity")
 DisplayName = "Halvar One-Hand"
 TemplateId = "npc.clan_exile"
@@ -435,7 +632,7 @@ script = ExtResource("5_dialogue")
 DialogueId = "dialogue.clan_exile"
 
 [node name="StationForge" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0, 0)
+transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 14, 0, -5)
 script = ExtResource("1_entity")
 DisplayName = "Clan Forge"
 TemplateId = "station.forge"
@@ -452,7 +649,7 @@ Station = 1
 StationName = "Forge"
 
 [node name="StationWorkbench" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.4, 0, 0.6)
+transform = Transform3D(-0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, -0.9397, 17, 0, -4)
 script = ExtResource("1_entity")
 DisplayName = "Bone Workbench"
 TemplateId = "station.workbench"
@@ -469,7 +666,7 @@ Station = 2
 StationName = "Workbench"
 
 [node name="StationAlchemy" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, 2.4)
+transform = Transform3D(-0.766, 0, -0.6428, 0, 1, 0, 0.6428, 0, -0.766, 11, 0, -4)
 script = ExtResource("1_entity")
 DisplayName = "Shaman's Table"
 TemplateId = "station.alchemy"
@@ -537,7 +734,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.4, 0)
 [node name="Model" parent="Exile" instance=ExtResource("23_npc_inn")]
 
 [node name="ExileFire" parent="." instance=ExtResource("24_campfire")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -22, 0, 23.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, 24)
 
 [node name="ExileFireLight" type="OmniLight3D" parent="ExileFire"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)

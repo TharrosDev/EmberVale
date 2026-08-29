@@ -88,15 +88,39 @@ HlodRangeEnd = 260.0
 HlodColor = Color(0.34, 0.38, 0.42, 1)
 HlodScale = Vector3(1.4, 0.8, 1.2)
 
-[sub_resource type="Resource" id="Exclusion_roost"]
+; WARNING AN EXCLUSION FOLLOWS ITS NEST, AND THE NESTS MOVED (Phase 44). One shared Exclusion_roost
+; at (0, 0) worked only while all three lairs sat at the exact centre of their cell, which is
+; precisely the sameness the rebuild removed. Each roost now names its own, centred on where its Nest
+; node actually is: the wild dragon at (-14, -20) against the north ice wall, the ash dragon at
+; (10, 6) in the crater, the Ancient at (-6, -18) inside the crescent. A scatter that kept clear of
+; (0, 0) instead would grow dead pines through all three of them.
+[sub_resource type="Resource" id="Exclusion_dragon_roost"]
 script = ExtResource("8_exclusion")
-Center = Vector2(0, 0)
+Center = Vector2(-14, -20)
 Radius = 15.0
+
+[sub_resource type="Resource" id="Exclusion_ash_roost"]
+script = ExtResource("8_exclusion")
+Center = Vector2(10, 6)
+Radius = 15.0
+
+; The ash roost causeway is the other thing nothing may grow in: it is a 34 m exposed approach, and a
+; line of trees across it would hand the player cover the fight is designed not to offer.
+[sub_resource type="Resource" id="Exclusion_ash_causeway"]
+script = ExtResource("8_exclusion")
+Center = Vector2(-32, 1)
+Radius = 12.0
 
 [sub_resource type="Resource" id="Exclusion_aerie"]
 script = ExtResource("8_exclusion")
-Center = Vector2(0, 0)
+Center = Vector2(-6, -18)
 Radius = 18.0
+
+; The hoard alcove behind the crescent east horn, kept clear so the tome stand reads as a made place.
+[sub_resource type="Resource" id="Exclusion_aerie_hoard"]
+script = ExtResource("8_exclusion")
+Center = Vector2(12, -12)
+Radius = 7.0
 
 [sub_resource type="Resource" id="Scatter_glacier"]
 script = ExtResource("6_scatter")
@@ -109,56 +133,85 @@ script = ExtResource("6_scatter")
 Seed = 5202
 EdgePadding = 4.0
 Layers = Array[ExtResource("7_layer")]([SubResource("Layer_dead_pine"), SubResource("Layer_frost_rock")])
-Exclusions = Array[ExtResource("8_exclusion")]([SubResource("Exclusion_roost")])
+Exclusions = Array[ExtResource("8_exclusion")]([SubResource("Exclusion_dragon_roost")])
 
 [sub_resource type="Resource" id="Scatter_ash_roost"]
 script = ExtResource("6_scatter")
 Seed = 5203
 EdgePadding = 4.0
 Layers = Array[ExtResource("7_layer")]([SubResource("Layer_dead_pine"), SubResource("Layer_frost_rock")])
-Exclusions = Array[ExtResource("8_exclusion")]([SubResource("Exclusion_roost")])
+Exclusions = Array[ExtResource("8_exclusion")]([SubResource("Exclusion_ash_roost"), SubResource("Exclusion_ash_causeway")])
 
 [sub_resource type="Resource" id="Scatter_aerie"]
 script = ExtResource("6_scatter")
 Seed = 5204
 EdgePadding = 4.0
 Layers = Array[ExtResource("7_layer")]([SubResource("Layer_dead_pine"), SubResource("Layer_frost_rock")])
-Exclusions = Array[ExtResource("8_exclusion")]([SubResource("Exclusion_aerie")])
+Exclusions = Array[ExtResource("8_exclusion")]([SubResource("Exclusion_aerie"), SubResource("Exclusion_aerie_hoard")])
 
-[sub_resource type="Resource" id="Path_hold_approach"]
+; WARNING THE HOLD HAS THREE ROADS AND THEY ARE ITS THREE SEAMS (Phase 44), and none of them crosses
+; the moot ring. The old cross ran (-23, 5) to (23, 5) straight through where the clan stands, and the
+; approach ran the full length of the cell down x = 0. Every seam point below is arithmetic, not taste:
+;   west  (-30, 0)  the wild dragon roost - its approach path starts at roost-local (45, 0), which is
+;                   world (70, -20), which is this cell local (-30, 0).
+;   east  (30, 0)   the ash roost - its approach starts at ash-local (-50, 0) = world (130, -20).
+;   north (0, -30)  the glacier pass - its pass path starts at glacier-local (0, 10) = world (100, -50).
+; The spawn at world (100, 1.2, 0) is cell-local (0, 20): the open southern ground below the ring.
+[sub_resource type="Resource" id="Path_hold_west"]
 script = ExtResource("9_path")
-Start = Vector2(0, 30)
-End = Vector2(0, -17)
-Width = 6.5
+Start = Vector2(-30, 0)
+End = Vector2(-14, 1)
+Width = 5.5
 Shoulder = 2.5
 
-[sub_resource type="Resource" id="Path_hold_cross"]
+[sub_resource type="Resource" id="Path_hold_east"]
 script = ExtResource("9_path")
-Start = Vector2(-23, 5)
-End = Vector2(23, 5)
-Width = 4.5
-Shoulder = 1.5
+Start = Vector2(30, 0)
+End = Vector2(8, 0)
+Width = 5.5
+Shoulder = 2.5
 
-[sub_resource type="Resource" id="Path_hold_craft"]
+[sub_resource type="Resource" id="Path_hold_north"]
 script = ExtResource("9_path")
-Start = Vector2(0, 5)
-End = Vector2(-10, 1)
-Width = 3.5
-Shoulder = 1.25
+Start = Vector2(0, -30)
+End = Vector2(7, -15)
+Width = 5.0
+Shoulder = 2.5
+
+[sub_resource type="Resource" id="Path_hold_ring"]
+script = ExtResource("9_path")
+Start = Vector2(7, -15)
+End = Vector2(4, -6)
+Width = 4.5
+Shoulder = 2.0
+
+[sub_resource type="Resource" id="Path_hold_south"]
+script = ExtResource("9_path")
+Start = Vector2(0, 20)
+End = Vector2(-2, 9)
+Width = 4.0
+Shoulder = 2.0
 
 [sub_resource type="Resource" id="Area_hold_moot"]
 script = ExtResource("10_area")
-Center = Vector2(0, -5)
-Radius = Vector2(13, 14)
+Center = Vector2(-4, 2)
+Radius = Vector2(11, 9)
 Feather = 3.0
 SurfaceBlend = 0.70
 
 [sub_resource type="Resource" id="Area_hold_craft"]
 script = ExtResource("10_area")
-Center = Vector2(-9, 1)
-Radius = Vector2(6, 5)
+Center = Vector2(15, -1)
+Radius = Vector2(7, 6)
 Feather = 1.5
 SurfaceBlend = 0.82
+
+[sub_resource type="Resource" id="Area_hold_runs"]
+script = ExtResource("10_area")
+Center = Vector2(-23, 2)
+Radius = Vector2(5, 7)
+Feather = 2.0
+SurfaceBlend = 0.55
 
 [sub_resource type="Resource" id="Presentation_clan_hold"]
 script = ExtResource("4_presentation")
@@ -166,29 +219,46 @@ Width = 60.0
 Depth = 60.0
 RoadAxis = 0
 Seed = 201
-Paths = Array[ExtResource("9_path")]([SubResource("Path_hold_approach"), SubResource("Path_hold_cross"), SubResource("Path_hold_craft")])
-GroundAreas = Array[ExtResource("10_area")]([SubResource("Area_hold_moot"), SubResource("Area_hold_craft")])
+Paths = Array[ExtResource("9_path")]([SubResource("Path_hold_west"), SubResource("Path_hold_east"), SubResource("Path_hold_north"), SubResource("Path_hold_ring"), SubResource("Path_hold_south")])
+GroundAreas = Array[ExtResource("10_area")]([SubResource("Area_hold_moot"), SubResource("Area_hold_craft"), SubResource("Area_hold_runs")])
 
+; The Splintered Shelf. In from the clan hold at (45, 0), through the splinter field, through a five
+; metre narrows between two ice masses at x = 6, and out onto the shelf. The nest is at (-14, -20)
+; against the north ice wall, not at the centre of the cell.
 [sub_resource type="Resource" id="Path_dragon_approach"]
 script = ExtResource("9_path")
 Start = Vector2(45, 0)
-End = Vector2(15, 2)
+End = Vector2(14, 1)
 Width = 6.0
 Shoulder = 3.0
 
-[sub_resource type="Resource" id="Path_dragon_reveal"]
+[sub_resource type="Resource" id="Path_dragon_narrows"]
 script = ExtResource("9_path")
-Start = Vector2(15, 2)
-End = Vector2(0, -4)
+Start = Vector2(14, 1)
+End = Vector2(4, -4)
 Width = 5.0
 Shoulder = 2.0
 
+[sub_resource type="Resource" id="Path_dragon_shelf"]
+script = ExtResource("9_path")
+Start = Vector2(4, -4)
+End = Vector2(-14, -16)
+Width = 6.0
+Shoulder = 4.0
+
 [sub_resource type="Resource" id="Area_dragon_bowl"]
 script = ExtResource("10_area")
-Center = Vector2(0, 1)
-Radius = Vector2(18, 15)
+Center = Vector2(-14, -14)
+Radius = Vector2(18, 13)
 Feather = 5.0
 SurfaceBlend = 0.48
+
+[sub_resource type="Resource" id="Area_dragon_splinter"]
+script = ExtResource("10_area")
+Center = Vector2(26, 0)
+Radius = Vector2(14, 12)
+Feather = 5.0
+SurfaceBlend = 0.30
 
 [sub_resource type="Resource" id="Presentation_dragon_roost"]
 script = ExtResource("4_presentation")
@@ -196,33 +266,36 @@ Width = 90.0
 Depth = 90.0
 RoadAxis = 0
 Seed = 202
-Paths = Array[ExtResource("9_path")]([SubResource("Path_dragon_approach"), SubResource("Path_dragon_reveal")])
-GroundAreas = Array[ExtResource("10_area")]([SubResource("Area_dragon_bowl")])
+Paths = Array[ExtResource("9_path")]([SubResource("Path_dragon_approach"), SubResource("Path_dragon_narrows"), SubResource("Path_dragon_shelf")])
+GroundAreas = Array[ExtResource("10_area")]([SubResource("Area_dragon_bowl"), SubResource("Area_dragon_splinter")])
 
-[sub_resource type="Resource" id="Path_ash_approach"]
+; The Cinder Basin. A 34 m exposed causeway in from the clan hold at (-50, 0) - three burnt pines
+; standing in a line are the only things on it - then a crater with the nest off centre to the EAST
+; at (10, 6). The vent track is the only cover route round the fight.
+[sub_resource type="Resource" id="Path_ash_causeway"]
 script = ExtResource("9_path")
 Start = Vector2(-50, 0)
-End = Vector2(-20, 2)
+End = Vector2(-16, 2)
 Width = 6.0
-Shoulder = 3.5
+Shoulder = 4.0
 
 [sub_resource type="Resource" id="Path_ash_bowl"]
 script = ExtResource("9_path")
-Start = Vector2(-20, 2)
-End = Vector2(0, 0)
+Start = Vector2(-16, 2)
+End = Vector2(10, 6)
 Width = 5.0
-Shoulder = 2.5
+Shoulder = 3.0
 
 [sub_resource type="Resource" id="Path_ash_vent"]
 script = ExtResource("9_path")
-Start = Vector2(0, 0)
-End = Vector2(-18, 12)
+Start = Vector2(10, 6)
+End = Vector2(26, -8)
 Width = 3.5
-Shoulder = 1.5
+Shoulder = 2.0
 
 [sub_resource type="Resource" id="Area_ash_bowl"]
 script = ExtResource("10_area")
-Center = Vector2(0, 2)
+Center = Vector2(12, 5)
 Radius = Vector2(20, 17)
 Feather = 5.0
 SurfaceBlend = 0.68
@@ -235,7 +308,7 @@ RoadAxis = 0
 Seed = 203
 Tint = Color(0.20, 0.13, 0.11, 1)
 TintStrength = 0.68
-Paths = Array[ExtResource("9_path")]([SubResource("Path_ash_approach"), SubResource("Path_ash_bowl"), SubResource("Path_ash_vent")])
+Paths = Array[ExtResource("9_path")]([SubResource("Path_ash_causeway"), SubResource("Path_ash_bowl"), SubResource("Path_ash_vent")])
 GroundAreas = Array[ExtResource("10_area")]([SubResource("Area_ash_bowl")])
 
 [sub_resource type="Resource" id="Path_aerie_approach"]
@@ -245,26 +318,42 @@ End = Vector2(0, 20)
 Width = 5.5
 Shoulder = 3.0
 
+; The procession BENDS at (0, 6) - it used to run the full 44 m of the cell dead straight - and the
+; hoard spur leaves it behind the crescent east horn, where nothing on the avenue can see it.
 [sub_resource type="Resource" id="Path_aerie_procession"]
 script = ExtResource("9_path")
 Start = Vector2(0, 20)
-End = Vector2(0, -24)
+End = Vector2(0, 6)
 Width = 4.5
 Shoulder = 2.0
 
+[sub_resource type="Resource" id="Path_aerie_crescent"]
+script = ExtResource("9_path")
+Start = Vector2(0, 6)
+End = Vector2(-6, -16)
+Width = 4.5
+Shoulder = 3.0
+
 [sub_resource type="Resource" id="Path_aerie_hoard"]
 script = ExtResource("9_path")
-Start = Vector2(0, 0)
-End = Vector2(8, 5)
+Start = Vector2(2, -6)
+End = Vector2(12, -12)
 Width = 3.0
 Shoulder = 1.0
 
 [sub_resource type="Resource" id="Area_aerie_court"]
 script = ExtResource("10_area")
-Center = Vector2(0, 0)
-Radius = Vector2(20, 18)
+Center = Vector2(-6, -16)
+Radius = Vector2(16, 14)
 Feather = 4.0
 SurfaceBlend = 0.62
+
+[sub_resource type="Resource" id="Area_aerie_hoard"]
+script = ExtResource("10_area")
+Center = Vector2(12, -12)
+Radius = Vector2(5, 5)
+Feather = 2.0
+SurfaceBlend = 0.72
 
 [sub_resource type="Resource" id="Presentation_aerie"]
 script = ExtResource("4_presentation")
@@ -274,27 +363,39 @@ RoadAxis = 0
 Seed = 204
 Tint = Color(0.67, 0.72, 0.82, 1)
 TintStrength = 0.16
-Paths = Array[ExtResource("9_path")]([SubResource("Path_aerie_approach"), SubResource("Path_aerie_procession"), SubResource("Path_aerie_hoard")])
-GroundAreas = Array[ExtResource("10_area")]([SubResource("Area_aerie_court")])
+Paths = Array[ExtResource("9_path")]([SubResource("Path_aerie_approach"), SubResource("Path_aerie_procession"), SubResource("Path_aerie_crescent"), SubResource("Path_aerie_hoard")])
+GroundAreas = Array[ExtResource("10_area")]([SubResource("Area_aerie_court"), SubResource("Area_aerie_hoard")])
 
-[sub_resource type="Resource" id="Path_glacier_pass"]
+; WARNING THE GLACIER IS A DEAD END AND THE OLD CROSSING PATH DENIED IT (Phase 44).
+; Path_glacier_crossing ran (-30, 0) to (30, 0) - the full width of the cell and out of both ends into
+; region void, because nothing abuts this cell east or west. The clan hold is its only neighbour, at
+; the SOUTH edge. The pass is now one entry from there and two pockets that go nowhere, which is what
+; the map has always said.
+[sub_resource type="Resource" id="Path_glacier_entry"]
 script = ExtResource("9_path")
 Start = Vector2(0, 10)
-End = Vector2(0, -10)
+End = Vector2(0, 0)
 Width = 7.0
 Shoulder = 2.5
 
-[sub_resource type="Resource" id="Path_glacier_crossing"]
+[sub_resource type="Resource" id="Path_glacier_west"]
 script = ExtResource("9_path")
-Start = Vector2(-30, 0)
-End = Vector2(30, 0)
-Width = 4.0
+Start = Vector2(0, 0)
+End = Vector2(-28, -2)
+Width = 6.0
+Shoulder = 2.0
+
+[sub_resource type="Resource" id="Path_glacier_east"]
+script = ExtResource("9_path")
+Start = Vector2(0, 0)
+End = Vector2(28, 2)
+Width = 6.0
 Shoulder = 2.0
 
 [sub_resource type="Resource" id="Area_glacier_saddle"]
 script = ExtResource("10_area")
 Center = Vector2(0, 0)
-Radius = Vector2(11, 7)
+Radius = Vector2(8, 6)
 Feather = 2.0
 SurfaceBlend = 0.45
 
@@ -306,7 +407,7 @@ RoadAxis = 0
 Seed = 205
 Tint = Color(0.70, 0.84, 0.92, 1)
 TintStrength = 0.30
-Paths = Array[ExtResource("9_path")]([SubResource("Path_glacier_pass"), SubResource("Path_glacier_crossing")])
+Paths = Array[ExtResource("9_path")]([SubResource("Path_glacier_entry"), SubResource("Path_glacier_west"), SubResource("Path_glacier_east")])
 GroundAreas = Array[ExtResource("10_area")]([SubResource("Area_glacier_saddle")])
 
 [sub_resource type="Resource" id="Cell_clan_hold"]

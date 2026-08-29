@@ -1,4 +1,6 @@
-; The Ash dragon's roost, mirroring the Wild one to the east. Inherits scenes/regions/roost.tscn
+; The Ash dragon's roost, east of the hold. It no longer mirrors the Wild one - Phase 44 made it a
+; crater reached down a long exposed causeway, against the Wild roost's ice shelf and splinter
+; field, because two dragon fights that share a floor plan are one fight held twice. Inherits scenes/regions/roost.tscn
 ; (Phase 35F). 100 m of floor, wider than the Wild dragon's, because ai.ash_dragon holds 60 m of
 ; territory to its 45.
 ;
@@ -32,10 +34,11 @@ FloorSize = 100.0
 FloorColor = Color(0.24, 0.21, 0.2, 1)
 EmberEnergy = 0.06
 
-; Charred crags. Fewer and further out than the Wild roost's: an 80° breath cone leaves less to
-; hide behind by design, and the cover that is here should not make the harder fight the easier one.
+; The crater rim. Fewer and further out than the Wild roost's cover: an 80 degree breath cone leaves
+; less to hide behind by design, and the cover that is here should not make the harder fight the
+; easier one. Phase 44 moved all of it ONTO the rim, so the basin floor is genuinely open.
 [node name="CragN" parent="Nav" index="3" instance=ExtResource("10_rock")]
-transform = Transform3D(2.6, 0, 0, 0, 3.4, 0, 0, 0, 2.6, 6, 0, -21)
+transform = Transform3D(1.9917, 0, 1.6712, 0, 3.4, 0, -1.6712, 0, 1.9917, 8, 0, -18)
 
 [node name="CragNCol" type="StaticBody3D" parent="Nav/CragN"]
 
@@ -43,7 +46,7 @@ transform = Transform3D(2.6, 0, 0, 0, 3.4, 0, 0, 0, 2.6, 6, 0, -21)
 shape = SubResource("Shape_rock")
 
 [node name="CragE" parent="Nav" index="4" instance=ExtResource("10_rock")]
-transform = Transform3D(2.8, 0, 0, 0, 3.6, 0, 0, 0, 2.8, 22, 0, 6)
+transform = Transform3D(-1.4, 0, 2.4249, 0, 3.6, 0, -2.4249, 0, -1.4, 32, 0, 4)
 
 [node name="CragECol" type="StaticBody3D" parent="Nav/CragE"]
 
@@ -51,7 +54,7 @@ transform = Transform3D(2.8, 0, 0, 0, 3.6, 0, 0, 0, 2.8, 22, 0, 6)
 shape = SubResource("Shape_rock")
 
 [node name="CragW" parent="Nav" index="5" instance=ExtResource("10_rock")]
-transform = Transform3D(-2.5, 0, 0, 0, 3.2, 0, 0, 0, -2.5, -21, 0, 9)
+transform = Transform3D(-0.8551, 0, -2.3492, 0, 3.2, 0, 2.3492, 0, -0.8551, -10, 0, 2)
 
 [node name="CragWCol" type="StaticBody3D" parent="Nav/CragW"]
 
@@ -59,7 +62,7 @@ transform = Transform3D(-2.5, 0, 0, 0, 3.2, 0, 0, 0, -2.5, -21, 0, 9)
 shape = SubResource("Shape_rock")
 
 [node name="PineN" parent="Nav" index="6" instance=ExtResource("11_pine")]
-transform = Transform3D(1, 0, 0, 0, 1.3, 0, 0, 0, 1, -12, 0, -26)
+transform = Transform3D(0.9397, 0, 0.342, 0, 1.3, 0, -0.342, 0, 0.9397, -38, 0, -4)
 surface_material_override/0 = SubResource("Mat_charred")
 
 [node name="PineNCol" type="StaticBody3D" parent="Nav/PineN"]
@@ -69,7 +72,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
 shape = SubResource("Shape_pine")
 
 [node name="PineS" parent="Nav" index="7" instance=ExtResource("11_pine")]
-transform = Transform3D(1, 0, 0, 0, 1.1, 0, 0, 0, 1, 15, 0, 24)
+transform = Transform3D(-0.9397, 0, -0.342, 0, 1.1, 0, 0.342, 0, -0.9397, -30, 0, 6)
 surface_material_override/0 = SubResource("Mat_charred")
 
 [node name="PineSCol" type="StaticBody3D" parent="Nav/PineS"]
@@ -79,7 +82,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
 shape = SubResource("Shape_pine")
 
 [node name="PineW" parent="Nav" index="8" instance=ExtResource("11_pine")]
-transform = Transform3D(1, 0, 0, 0, 1.2, 0, 0, 0, 1, -26, 0, 18)
+transform = Transform3D(-0.342, 0, 0.9397, 0, 1.2, 0, -0.9397, 0, -0.342, -22, 0, -2)
 surface_material_override/0 = SubResource("Mat_charred")
 
 [node name="PineWCol" type="StaticBody3D" parent="Nav/PineW"]
@@ -91,38 +94,136 @@ shape = SubResource("Shape_pine")
 ; Three low ember vents pull the eye toward the nest at dusk and repeat the region's corruption
 ; language without adding a second world-state system. They are light only: no collision or nav cost.
 [node name="EmberVentN" type="OmniLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0.25, -14)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0.25, -8)
 light_color = Color(1, 0.25, 0.06, 1)
 light_energy = 2.2
 omni_range = 8.0
 
 [node name="EmberVentE" type="OmniLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0.25, 5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 0.25, 12)
 light_color = Color(1, 0.22, 0.04, 1)
 light_energy = 2.0
 omni_range = 7.0
 
 [node name="EmberVentW" type="OmniLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18, 0.25, 12)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -26, 0.25, 0)
 light_color = Color(1, 0.3, 0.07, 1)
 light_energy = 1.8
 omni_range = 7.0
 
 [node name="CragSE" parent="Nav" instance=ExtResource("10_rock")]
-transform = Transform3D(2.2, 0, 0, 0, 2.7, 0, 0, 0, 2.2, 31, 0, 28)
+transform = Transform3D(1.1, 0, -1.9053, 0, 2.7, 0, 1.9053, 0, 1.1, 28, 0, 22)
 [node name="Col" type="StaticBody3D" parent="Nav/CragSE"]
 [node name="Shape" type="CollisionShape3D" parent="Nav/CragSE/Col"]
 shape = SubResource("Shape_rock")
 
 [node name="CragSW" parent="Nav" instance=ExtResource("10_rock")]
-transform = Transform3D(-2, 0, 0, 0, 2.4, 0, 0, 0, -2, -32, 0, 27)
+transform = Transform3D(1, 0, 1.7321, 0, 2.4, 0, -1.7321, 0, 1, 0, 0, 24)
 [node name="Col" type="StaticBody3D" parent="Nav/CragSW"]
 [node name="Shape" type="CollisionShape3D" parent="Nav/CragSW/Col"]
 shape = SubResource("Shape_rock")
 
+; --- Phase 44: the crater rim and the causeway. This roost was three crags in a ring around a nest
+; --- at the exact centre of a 100 m plate - the same shape as the Wild roost and the Aerie, and the
+; --- reason all three read alike from the ground. It is a BASIN now: a long exposed causeway in from
+; --- the west, marked by three burnt pines standing in a line, then a crater whose rim is the only
+; --- cover there is, with the nest off centre to the EAST at (10, 6). An 80 degree breath cone
+; --- across open ground is the fight; the rim is where you get out of it.
+
+[node name="CragNE" parent="Nav" instance=ExtResource("10_rock")]
+transform = Transform3D(-2.0785, 0, 1.2, 0, 3.0, 0, -1.2, 0, -2.0785, 26, 0, -12)
+
+[node name="Col" type="StaticBody3D" parent="Nav/CragNE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CragNE/Col"]
+shape = SubResource("Shape_rock")
+
+[node name="CragSSE" parent="Nav" instance=ExtResource("10_rock")]
+transform = Transform3D(1.8187, 0, -1.05, 0, 2.5, 0, 1.05, 0, 1.8187, 16, 0, 26)
+
+[node name="Col" type="StaticBody3D" parent="Nav/CragSSE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CragSSE/Col"]
+shape = SubResource("Shape_rock")
+
+[node name="CragNW" parent="Nav" instance=ExtResource("10_rock")]
+transform = Transform3D(0.7866, 0, 2.1613, 0, 2.8, 0, -2.1613, 0, 0.7866, -6, 0, -12)
+
+[node name="Col" type="StaticBody3D" parent="Nav/CragNW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CragNW/Col"]
+shape = SubResource("Shape_rock")
+
+[node name="CragES" parent="Nav" instance=ExtResource("10_rock")]
+transform = Transform3D(-1.9053, 0, -1.1, 0, 2.9, 0, 1.1, 0, -1.9053, 34, 0, 14)
+
+[node name="Col" type="StaticBody3D" parent="Nav/CragES"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CragES/Col"]
+shape = SubResource("Shape_rock")
+
+[node name="RimSpurN" parent="Nav" instance=ExtResource("10_rock")]
+transform = Transform3D(1.8711, 0, 0.3299, 0, 2.2, 0, -0.3299, 0, 1.8711, 18, 0, -22)
+
+[node name="Col" type="StaticBody3D" parent="Nav/RimSpurN"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RimSpurN/Col"]
+shape = SubResource("Shape_rock")
+
+[node name="RimSpurS" parent="Nav" instance=ExtResource("10_rock")]
+transform = Transform3D(-1.7727, 0, -0.3126, 0, 2.0, 0, 0.3126, 0, -1.7727, -4, 0, 16)
+
+[node name="Col" type="StaticBody3D" parent="Nav/RimSpurS"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RimSpurS/Col"]
+shape = SubResource("Shape_rock")
+
+[node name="PineRimA" parent="Nav" instance=ExtResource("11_pine")]
+transform = Transform3D(0.766, 0, 0.6428, 0, 1.15, 0, -0.6428, 0, 0.766, -14, 0, -20)
+surface_material_override/0 = SubResource("Mat_charred")
+
+[node name="Col" type="StaticBody3D" parent="Nav/PineRimA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineRimA/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("Shape_pine")
+
+[node name="PineRimB" parent="Nav" instance=ExtResource("11_pine")]
+transform = Transform3D(-0.766, 0, -0.6428, 0, 1.05, 0, 0.6428, 0, -0.766, 36, 0, -4)
+surface_material_override/0 = SubResource("Mat_charred")
+
+[node name="Col" type="StaticBody3D" parent="Nav/PineRimB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineRimB/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("Shape_pine")
+
+[node name="PineCauseA" parent="Nav" instance=ExtResource("11_pine")]
+transform = Transform3D(-0.6428, 0, 0.766, 0, 1.25, 0, -0.766, 0, -0.6428, -44, 0, 4)
+surface_material_override/0 = SubResource("Mat_charred")
+
+[node name="Col" type="StaticBody3D" parent="Nav/PineCauseA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PineCauseA/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("Shape_pine")
+
+[node name="EmberVentS" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0.25, 20)
+light_color = Color(1, 0.28, 0.05, 1)
+light_energy = 2.1
+omni_range = 8.0
+
+[node name="EmberVentCauseway" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -36, 0.25, 2)
+light_color = Color(1, 0.24, 0.05, 1)
+light_energy = 1.6
+omni_range = 7.0
+
 ; Its own PersistentId — LairSpawnComponent.SaveId derives from it, so sharing one with the Wild
 ; dragon's nest would make killing either mark both defeated.
 [node name="Nest" parent="." index="1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 6)
 DisplayName = "Ash Roost"
 PersistentId = "lair.frostfang_ash_roost"
 

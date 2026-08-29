@@ -7,25 +7,25 @@
 script = ExtResource("2_entry")
 StartHour = 6
 Activity = "Banking the fires"
-Destination = Vector3(106, 0, -14)
+Destination = Vector3(96, 0, -18)
 
 [sub_resource type="Resource" id="e_hearth"]
 script = ExtResource("2_entry")
 StartHour = 8
 Activity = "Tending the hearth"
-Destination = Vector3(105, 0, -12)
+Destination = Vector3(98, 0, -16)
 
 [sub_resource type="Resource" id="e_hall"]
 script = ExtResource("2_entry")
 StartHour = 20
 Activity = "Serving the hall"
-Destination = Vector3(100, 0, -30)
+Destination = Vector3(102, 0, -29)
 
 [sub_resource type="Resource" id="e_sleep"]
 script = ExtResource("2_entry")
 StartHour = 23
 Activity = "Asleep"
-Destination = Vector3(88, 0, -26)
+Destination = Vector3(86, 0, -10)
 
 [resource]
 script = ExtResource("1_sched")

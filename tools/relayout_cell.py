@@ -106,9 +106,18 @@ def apply(path, spec_path):
             b = find(blocks, old)
             lines[b[0]] = lines[b[0]].replace(f'name="{old}"', f'name="{new}"', 1)
             old_path, new_path = b[3], (b[3].rsplit("/", 1)[0] + "/" + new if "/" in b[3] else new)
+            # ⚠️ MATCH THE WHOLE PATH SEGMENT, NEVER A PREFIX. Renaming PillarN with a bare prefix
+            # test also rewrote PillarNE's children to "Nav/AvenueAE" — a parent path pointing at no
+            # node, which Godot loads as a scene silently missing every collider under it. Only
+            # `parent="OLD"` and `parent="OLD/...` are this node's.
             for i, l in enumerate(lines):
-                if l.startswith("[node ") and f'parent="{old_path}' in l:
-                    lines[i] = l.replace(f'parent="{old_path}', f'parent="{new_path}', 1)
+                if not l.startswith("[node "):
+                    continue
+                for suffix in ('"', "/"):
+                    if f'parent="{old_path}{suffix}' in l:
+                        lines[i] = l.replace(f'parent="{old_path}{suffix}',
+                                             f'parent="{new_path}{suffix}', 1)
+                        break
 
         elif kind == "pos":
             b = find(blocks, op[1])

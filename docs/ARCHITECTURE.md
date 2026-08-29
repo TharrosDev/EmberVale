@@ -779,16 +779,21 @@ fast-travel land in 25E–25G.
   Keep each cell self-contained (its own static geometry, navmesh, props, spawn markers) at local
   origin (the streamer places the instance at the cell `Center`), positioned within the region's
   `Bounds`. Persistent actors in a cell carry a `PersistentId` so they restore via the
-  `PersistentSpawnDirector` when the cell reloads (25D). The sandbox region `region.ember_crown` is
-  now a five-cell greybox: `town_hub` (plaza floor + greybox buildings + the waystone/relic),
-  `embermarket` (38K — the market district, one street south, its floor abutting the hub's exactly at
-  `z = 20`: a crossroads of ten stalls carrying **twelve merchants** (38L — ten residents reached by
+  `PersistentSpawnDirector` when the cell reloads (25D). `region.ember_crown` is **ten cells** and
+  `region.frostfang_reach` five; every one of the fifteen had its physical layout rebuilt in Phase 44
+  and each now has a distinct spatial identity rather than a shared road-and-plaza formula:
+  `town_hub` (the Kingsway, an S-curve the square hangs off rather than a road through it),
+  `embermarket` (the Coilyard — a compressed gate, a bent lane, a reveal into an off-centre yard, a
+  cart-scaled east gate and a service alley, carrying **twelve merchants**: ten residents reached by
   conversation and two travellers on `VendorComponent`s, since only that route hides an away
-  merchant), a plaza off the aisle to the west, a bell tower terminating it to the south, three
-  braziers, two positional ambience emitters, a notice board and its own waystone),
-  `wilds_north` (ruin + rocks), `wilds_west` (rocks) and
-  `arena` (36D), with overlapping or abutting floors so navmesh patches edge-connect, around the
-  always-loaded base.
+  merchant), `crossway_post` (a dog-leg crossing that cannot be run), `emberdeep_mine` (a loop —
+  defile, weighing yard, cut, pit head, spoil track), `tarn_landing` (a spit inside an L-shaped bay),
+  `hollowreach` (a street between two flooded channels with a walled Hollow off it),
+  `ashfall_homestead` (a hexagonal plot entered at a clipped corner), `wilds_north` (a forked road
+  with the ruin between the branches), `wilds_west` (a rock corrie with one throat) and `arena` (a
+  south gate where the road actually arrives, plus a collapsed north breach). Floors abut exactly so
+  navmesh patches edge-connect; ⚠️ **the seam arithmetic is in the region `.tres` comments and it is
+  arithmetic, not taste** — Phase 44 found three seams a road pointed at and no cell opened onto.
 - **Safe areas are a list** (38K). `SafeZones` holds the region's own `SafeZoneCenter`/`SafeZoneRadius`
   bubble plus one per cell that authors a `RegionCellResource.SafeRadius` (`0` = not a safe area),
   rebuilt by `GameBootstrap.ApplySafeZones` on world build and on every region transition. It exists

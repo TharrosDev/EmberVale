@@ -1,5 +1,5 @@
 # Step-up verification harness (Phase 39C). Builds a real CharacterEntity with the real
-# LocomotionComponent in the real Embermarket cell, walks it at the plaza dais, and reports whether it
+# LocomotionComponent in the real Embermarket cell, walks it at the Salt Steps, and reports whether it
 # ended up on top.
 #
 # It exists because the alternative was shipping "reviewed against the API". The step is three
@@ -15,14 +15,21 @@ extends SceneTree
 
 const CELL := "res://scenes/regions/ember_crown/embermarket.tscn"
 
-# The dais spans x -18..-6, z +9.5..+21.5 and stands 0.3 m proud. Start east of its edge on open
-# ground and walk west into it.
-# East of the dais edge (the dais spans x -18..-6, z +9.5..+21.5) on open ground, walking west into it.
-const DAIS_START := Vector3(-4.0, 0.2, 15.5)
+# ⚠️ THESE MOVED IN PHASE 44 AND THE PROBE IS THE ONLY THING THAT KNEW WHERE THEY WERE. The 0.3 m
+# dais is now the SALT STEPS terrace at (16, 0.15, 14), spanning x 10.5..21.5 / z 9..19, and the bell
+# tower stands ON it at (16.5, 0.3, 14) instead of on flat ground at the end of a central aisle. The
+# old constants pointed at the Embermarket's west plaza, which no longer exists — the run still
+# executed, still measured a real body against real collision, and reported a clean FAIL for the
+# right reason. If this file starts failing again, check embermarket.tscn's SaltSteps before the
+# step-up code.
 
-# In the aisle south of the bell tower (z +20, dead centre), walking north into 11 m of stone. The
+# West of the terrace edge on the flat Timber Yard, walking EAST into it.
+const DAIS_START := Vector3(7.0, 0.2, 14.0)
+
+# On the terrace, two metres west of the bell tower's collider, walking east into 11 m of stone. The
 # negative case: this must NOT be climbable, or the step-up has turned the realm into a staircase.
-const TOWER_START := Vector3(0.0, 0.2, 16.0)
+# Its start y clears the 0.3 m terrace it stands on, unlike the positive case's.
+const TOWER_START := Vector3(12.0, 0.5, 14.0)
 
 const CLIMB_EPSILON := 0.1  # comfortably above floor_snap_length, comfortably below the 0.3 dais
 const STEPS := 240          # 4 seconds at 60 Hz — far longer than either walk needs
@@ -39,11 +46,11 @@ func _initialize() -> void:
 	# ⚠️ BOTH DIRECTIONS OR IT PROVES NOTHING. A step-up that climbs everything passes the first case
 	# and turns every wall in the game into a staircase — which is the failure mode the third engine
 	# move exists to prevent, and the only one a positive-only harness would ship.
-	var climbed_dais := await _walk("the plaza dais", DAIS_START, Vector3(-1, 0, 0), true)
-	var climbed_tower := await _walk("the bell tower", TOWER_START, Vector3(0, 0, 1), false)
+	var climbed_dais := await _walk("the salt steps", DAIS_START, Vector3(1, 0, 0), true)
+	var climbed_tower := await _walk("the bell tower", TOWER_START, Vector3(1, 0, 0), false)
 
 	if climbed_dais and climbed_tower:
-		print("PASS: the body climbs the 0.3 m dais and does not climb an 11 m tower")
+		print("PASS: the body climbs the 0.3 m terrace and does not climb an 11 m tower")
 		quit(0)
 	else:
 		print("FAIL: see above")
