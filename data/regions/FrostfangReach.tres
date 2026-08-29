@@ -467,7 +467,26 @@ Id = "region.frostfang_reach"
 DisplayName = "Frostfang Reach"
 Realm = 1
 SpawnPoint = Vector3(100, 1.2, 0)
-UnlockFlagId = "flag.frostfang.passage_open"
+; ⚠️ FROSTFANG IS NO LONGER QUEST-GATED (maintainer direction, 2026-08-28). UnlockFlagId held
+; "flag.frostfang.passage_open" — written by quest.warband.heart — and RegionSetup fed it to the
+; portal's RequiredFlagId, so the door was hidden and its collider disabled until that quest closed.
+; It is EMPTY now, which is the same state the Ember Crown has always been in, and the portal is
+; visible and usable from the first minute.
+;
+; ⚠️ THE ARGUMENT THE GATE WAS ORIGINALLY MADE FOR IS ALREADY DEAD, and this is why removing it is
+; not a regression. RegionTransitionComponent's own note says the gate existed because portals stand
+; at the region's spawn point, so an ungated link "puts the next region four metres in front of a
+; brand-new character". 38M2 fixed that a different way: the Ember Crown authors PortalPoint
+; (0, 0, -72), the far side of the Crossway gate, 62 m north of the square and past the wardens.
+;
+; ⚠️ THE CROSSWAY TOLL STILL STANDS and is a separate thing. TollGold below is 25, and RegionSetup.
+; PayToll fails closed on it — no gold, no permit and no pass means no crossing. Removing the quest
+; gate did not make the crossing free; it made it a price rather than a prerequisite.
+;
+; quest.warband.heart keeps its CompletionFlagId. Nothing reads that flag now, which no validator
+; refuses, and it stays as the record that the warband line is finished — a main quest that stopped
+; writing its completion flag would be a quieter change than this one.
+UnlockFlagId = ""
 Cells = Array[ExtResource("2_cell")]([SubResource("Cell_clan_hold"), SubResource("Cell_glacier"), SubResource("Cell_dragon_roost"), SubResource("Cell_ash_roost"), SubResource("Cell_ancient_aerie")])
 EnvironmentProfile = SubResource("Environment_frostfang")
 PerformanceBudget = SubResource("Budget_frostfang")

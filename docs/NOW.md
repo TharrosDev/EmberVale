@@ -19,6 +19,12 @@
   mirrored-row / centred-plaza formula is gone from the realm. Three seam defects fell out of it and
   were fixed with it (see invariant 11). ⚠️ **This is NOT Phase 44** — that phase blocks out all five
   realms and is still ahead; nothing here has been done against its scope.
+- **Frostfang Reach is no longer gated (2026-08-28, maintainer direction).**
+  `FrostfangReach.UnlockFlagId` is empty, so the portal at the Crossway gate is visible and usable
+  from the first minute instead of waiting on `quest.warband.heart`. ⚠️ **The toll is untouched** —
+  25 gold, a permit or a pass, and `RegionSetup.PayToll` still fails closed: the crossing is a price
+  now, not a prerequisite. `quest.warband.heart` still writes `flag.frostfang.passage_open`; nothing
+  reads it, deliberately (see the header in that `.tres`). `--state` prints each region's door.
 - **NEXT: 42A — membership/rank flag framework + a small rank UI**, reusing the existing story
   flags and `FactionResource`. It is the gate the five guild questlines (42B–F) all sit behind.
 - The former Phase 40 dependencies are settled: `CraftingStationType.Cooking` is gone (ordinal 4
@@ -35,12 +41,13 @@
 | Negative rules | `python tools/negative_tests.py` — **94 cases** broken, caught, restored; tree restored clean and recovered `--validate` exit 0 |
 | Corruption gate (live) | `--shrine-shots`: `shrine.solaryn` refused at corruption 45 (no claim, Armor unchanged at 57.5) and blessed at 35 (Armor 67.5) |
 | Shrine render | `--shrine-shots`: 12 live 1280×720 eye-level front/back frames; the Solaryn pair shows the refusal and blessing toasts stacked in-world |
-| `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, 34 dialogues, 18 quests, 70 map locations, 3 companions |
+| `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, 34 dialogues, 18 quests, 70 map locations, 3 companions; **both regions' portals report OPEN from the start** |
 | `--play` | newest `auto1` booted, restored 34 objects, loaded all 10 Ember Crown cells, 0 errors over 60 s with the integrity checker running |
 | World render | `world_shots.gd` — all 15 cells streamed, settled and rendered, 150 day/dusk frames, **visual baseline regenerated** (every frame of it changed, which is the point) |
 | Step-up gate | `stepup_probe.gd` — migrated to the Salt Steps and green: rose 0.301 on the terrace, 0.001 into the bell tower |
 | Map placement | `map_probe.gd` — 70 markers across 15 cells, no duplicate or centre-parked pin |
 | Layout overlap | `python tools/check_cell_layout.py <cell>` — 0 overlapping structures in all 15 |
+| ⚠️ World perf | **Over budget, and it was BEFORE this work too.** `--play` on the Ember Crown warns `draw calls … > 1800` and `frame ms … > 25`; measured on `79755be` (pre-rebuild) it warned the same way, peaking at 2895 draw calls / 75 ms against 3214 / 60 ms after. `tools/cell_mesh_census.gd` gives the deterministic half: the region's rendered meshes went **2054 → 2155 (+4.9%)**, so the rebuild is a marginal contributor to a pre-existing ~60% overrun, not its cause. The real lever is ground cover — ~1,100 of those meshes are one `Node3D` + one `MeshInstance3D` per tuft, and a `MultiMeshInstance3D` per species would collapse them (the `ponytail:` note at the bottom of `wilds_north.tscn` already names it). **Unfixed and unscheduled.** |
 | Not run | `--economy` (no price touched); the Frostfang portal crossing still needs keyboard input no CLI here can inject, so it is exercised only through `world_shots.gd` streaming both regions |
 
 ## Live invariants
