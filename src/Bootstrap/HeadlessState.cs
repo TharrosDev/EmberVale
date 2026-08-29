@@ -65,8 +65,14 @@ public static class HeadlessState
 
         foreach (RegionResource region in RegionDatabase.All)
         {
+            // The door, printed with the region rather than reasoned about. RegionSetup feeds
+            // UnlockFlagId straight to the portal's RequiredFlagId, and an empty one is an open
+            // portal — so this line is the census's answer to "can the player get there yet".
             text.AppendLine($"{region.Id}  ({region.Cells.Count} cells" +
-                (region.TollGold > 0 ? $", {region.TollGold}g toll" : string.Empty) + ")");
+                (region.TollGold > 0 ? $", {region.TollGold}g toll" : string.Empty) +
+                (string.IsNullOrEmpty(region.UnlockFlagId)
+                    ? ", portal OPEN from the start"
+                    : $", portal gated on '{region.UnlockFlagId}'") + ")");
             foreach (RegionCellResource cell in region.Cells)
             {
                 if (cell != null)

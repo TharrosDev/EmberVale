@@ -19,6 +19,12 @@
   mirrored-row / centred-plaza formula is gone from the realm. Three seam defects fell out of it and
   were fixed with it (see invariant 11). ⚠️ **This is NOT Phase 44** — that phase blocks out all five
   realms and is still ahead; nothing here has been done against its scope.
+- **Frostfang Reach is no longer gated (2026-08-28, maintainer direction).**
+  `FrostfangReach.UnlockFlagId` is empty, so the portal at the Crossway gate is visible and usable
+  from the first minute instead of waiting on `quest.warband.heart`. ⚠️ **The toll is untouched** —
+  25 gold, a permit or a pass, and `RegionSetup.PayToll` still fails closed: the crossing is a price
+  now, not a prerequisite. `quest.warband.heart` still writes `flag.frostfang.passage_open`; nothing
+  reads it, deliberately (see the header in that `.tres`). `--state` prints each region's door.
 - **NEXT: 42A — membership/rank flag framework + a small rank UI**, reusing the existing story
   flags and `FactionResource`. It is the gate the five guild questlines (42B–F) all sit behind.
 - The former Phase 40 dependencies are settled: `CraftingStationType.Cooking` is gone (ordinal 4
@@ -35,7 +41,7 @@
 | Negative rules | `python tools/negative_tests.py` — **94 cases** broken, caught, restored; tree restored clean and recovered `--validate` exit 0 |
 | Corruption gate (live) | `--shrine-shots`: `shrine.solaryn` refused at corruption 45 (no claim, Armor unchanged at 57.5) and blessed at 35 (Armor 67.5) |
 | Shrine render | `--shrine-shots`: 12 live 1280×720 eye-level front/back frames; the Solaryn pair shows the refusal and blessing toasts stacked in-world |
-| `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, 34 dialogues, 18 quests, 70 map locations, 3 companions |
+| `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, 34 dialogues, 18 quests, 70 map locations, 3 companions; **both regions' portals report OPEN from the start** |
 | `--play` | newest `auto1` booted, restored 34 objects, loaded all 10 Ember Crown cells, 0 errors over 60 s with the integrity checker running |
 | World render | `world_shots.gd` — all 15 cells streamed, settled and rendered, 150 day/dusk frames, **visual baseline regenerated** (every frame of it changed, which is the point) |
 | Step-up gate | `stepup_probe.gd` — migrated to the Salt Steps and green: rose 0.301 on the terrace, 0.001 into the bell tower |

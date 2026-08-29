@@ -123,8 +123,13 @@ internal static class RegionSetup
                 Name = "Transition",
                 TargetRegionId = neighbourId,
 
-                // The destination decides what unlocks it (33D). Frostfang carries the Iron King's
-                // defeat flag, which keeps the slice's cliffhanger door out of the starting square.
+                // The destination decides what unlocks it (33D), and as of 2026-08-28 NOTHING DOES:
+                // both regions author an empty UnlockFlagId, so every portal is open from the start.
+                // ⚠️ The older comment here said Frostfang "carries the Iron King's defeat flag",
+                // which was wrong twice over — the flag it carried was quest.warband.heart's, and it
+                // carries none at all now (maintainer direction; see the block above UnlockFlagId in
+                // data/regions/FrostfangReach.tres). The mechanism stays: set a destination's
+                // UnlockFlagId and its door hides and goes inert again with no code change.
                 RequiredFlagId = neighbour.UnlockFlagId,
             });
             root.AddChild(portal);

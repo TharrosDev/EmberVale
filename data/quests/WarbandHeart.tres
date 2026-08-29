@@ -4,9 +4,14 @@
 [ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
 [ext_resource type="Script" path="res://src/Quests/QuestItemReward.cs" id="3_reward"]
 
-; Phase 41E: completing the last warband errand opens the Frostfang passage. The region gate reads
-; this completion flag directly, so a load re-derives the portal from StoryFlagsComponent rather than
-; merging a second world-state collection over the current run.
+; Phase 41E: completing the last warband errand opened the Frostfang passage.
+;
+; ⚠️ IT NO LONGER DOES (maintainer direction, 2026-08-28). FrostfangReach.tres authors an empty
+; UnlockFlagId, so nothing reads flag.frostfang.passage_open any more and the portal is open from the
+; first minute. The flag is still WRITTEN here on purpose — it is the record that the warband line is
+; finished, it costs nothing, and it is what a future reader (a dialogue line, a faction rank) would
+; hang off. Do not delete it to tidy up; deleting a main quest's completion flag is a bigger change
+; than the one that made it unread.
 
 [sub_resource type="Resource" id="Obj_kill"]
 script = ExtResource("2_obj")
