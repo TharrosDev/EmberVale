@@ -205,7 +205,7 @@ add("ember_crown/wilds_west", "wilds.west", "Wilds", ".", "The Western Wilds", r
     desc="Broken ground west of the tarn.")
 
 # ── Frostfang Reach ──────────────────────────────────────────────────────────────────────────
-# Settlement-tier coverage only. Frostfang's interiors are a the 2026-08-28 layout rebuild world-layout question, and
+# Settlement-tier coverage only. Frostfang's interiors are a Phase 44 world-layout question, and
 # ⚠️ the three roosts deliberately do NOT reveal with their cell: a lair you have not found should
 # not appear the moment you cross the border.
 add("frostfang_reach/clan_hold", "frostfang.clan_hold", "Town", ".", "The Frostfang Clan Hold", reveal=True,
