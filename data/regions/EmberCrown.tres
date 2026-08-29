@@ -385,65 +385,113 @@ Seed = 105
 Paths = Array[ExtResource("6_path")]([SubResource("Path_wilds_north_ruin")])
 GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_wilds_north_ruin")])
 
-[sub_resource type="Resource" id="Path_tarn_shore"]
+; ⚠️ THE WESTERN SEAM WAS UNDER WATER AND NOW IS NOT (Phase 44). The tarn used to be a 20 m band down
+; the whole west edge of the cell, so the seam with wilds_west — which meets this cell at local
+; (-26, 0) — was open lake. The bay is now an L that leaves a shore road along the north, and the two
+; road segments below run from the town seam at local z = -8 to the wilds seam at local z = 0.
+;
+; The hamlet is NOT on that road: it sits on a spit the bay wraps on three sides, reached by a 6 m
+; neck at (-6, 1). Walking past a place before you can walk into it is the whole shape of the cell.
+[sub_resource type="Resource" id="Path_tarn_road_east"]
 script = ExtResource("6_path")
-Start = Vector2(26, 0)
-End = Vector2(-18, 1)
-Width = 5.0
-Shoulder = 1.75
+Start = Vector2(26, -8)
+End = Vector2(6, -7)
+Width = 6.0
+Shoulder = 2.0
 
-[sub_resource type="Resource" id="Path_tarn_fire"]
+[sub_resource type="Resource" id="Path_tarn_road_shore"]
 script = ExtResource("6_path")
-Start = Vector2(0, 0)
-End = Vector2(0, 12)
-Width = 3.5
-Shoulder = 1.25
+Start = Vector2(6, -3)
+End = Vector2(-26, -1)
+Width = 7.0
+Shoulder = 2.0
 
-[sub_resource type="Resource" id="Area_tarn_wharf"]
+[sub_resource type="Resource" id="Path_tarn_neck"]
+script = ExtResource("6_path")
+Start = Vector2(-6, -2)
+End = Vector2(-6, 4)
+Width = 6.0
+Shoulder = 1.5
+
+[sub_resource type="Resource" id="Area_tarn_spit"]
 script = ExtResource("7_area")
-Center = Vector2(-8, 2)
-Radius = Vector2(15, 12)
-Feather = 3.0
-SurfaceBlend = 0.70
+Center = Vector2(-7, 8)
+Radius = Vector2(8, 6)
+Feather = 2.5
+SurfaceBlend = 0.74
+
+[sub_resource type="Resource" id="Area_tarn_yard"]
+script = ExtResource("7_area")
+Center = Vector2(11, -14)
+Radius = Vector2(7, 6)
+Feather = 2.0
+SurfaceBlend = 0.66
 
 [sub_resource type="Resource" id="Presentation_tarn"]
 script = ExtResource("4_presentation")
-RoadAxis = 2
-RoadWidth = 5.5
+RoadAxis = 0
 Seed = 106
-Paths = Array[ExtResource("6_path")]([SubResource("Path_tarn_shore"), SubResource("Path_tarn_fire")])
-GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_tarn_wharf")])
+Paths = Array[ExtResource("6_path")]([SubResource("Path_tarn_road_east"), SubResource("Path_tarn_road_shore"), SubResource("Path_tarn_neck")])
+GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_tarn_spit"), SubResource("Area_tarn_yard")])
 
-[sub_resource type="Resource" id="Path_hollowreach_dock"]
+; ⚠️ HOLLOWREACH ENTERS FROM THE EAST AT z = 12, NOT z = 0 (Phase 44). The Embermarket's Dock Stair
+; leaves that cell at market-local (-26, 12) — world (-26, 58) — so the wharf's boardwalk has to meet
+; it there or the two districts do not join. The old road ran along z ≈ 0 and the two cells simply did
+; not connect on the ground; nothing anywhere said so.
+;
+; The street then turns south of the flooded north channel and becomes the spine, which is the strip
+; of land between the two channels. RoadAxis is 0 — an east-west cardinal strip would be painted
+; across both channels.
+[sub_resource type="Resource" id="Path_hollowreach_east"]
 script = ExtResource("6_path")
-Start = Vector2(26, 0)
-End = Vector2(-17, 2)
-Width = 4.5
+Start = Vector2(26, 12)
+End = Vector2(6, 12)
+Width = 8.0
 Shoulder = 2.0
 
-[sub_resource type="Resource" id="Path_hollowreach_bones"]
+[sub_resource type="Resource" id="Path_hollowreach_turn"]
 script = ExtResource("6_path")
-Start = Vector2(-5, 1)
-End = Vector2(-13, 15)
-Width = 3.0
-Shoulder = 1.0
+Start = Vector2(6, 12)
+End = Vector2(6, 2)
+Width = 8.0
+Shoulder = 2.0
 
-[sub_resource type="Resource" id="Area_hollowreach_docks"]
+[sub_resource type="Resource" id="Path_hollowreach_spine"]
+script = ExtResource("6_path")
+Start = Vector2(6, 1)
+End = Vector2(-16, 1)
+Width = 12.0
+Shoulder = 2.0
+
+[sub_resource type="Resource" id="Area_hollowreach_hollow"]
 script = ExtResource("7_area")
-Center = Vector2(-7, 3)
-Radius = Vector2(16, 13)
-Feather = 3.0
+Center = Vector2(-9, 1)
+Radius = Vector2(5, 5)
+Feather = 1.5
+SurfaceBlend = 0.85
+
+[sub_resource type="Resource" id="Area_hollowreach_street"]
+script = ExtResource("7_area")
+Center = Vector2(16, 12)
+Radius = Vector2(10, 4)
+Feather = 2.5
+SurfaceBlend = 0.72
+
+[sub_resource type="Resource" id="Area_hollowreach_spine"]
+script = ExtResource("7_area")
+Center = Vector2(-5, 1)
+Radius = Vector2(11, 7)
+Feather = 2.5
 SurfaceBlend = 0.78
 
 [sub_resource type="Resource" id="Presentation_hollowreach"]
 script = ExtResource("4_presentation")
-RoadAxis = 2
-RoadWidth = 5.0
+RoadAxis = 0
 Seed = 107
 Tint = Color(0.38, 0.42, 0.38, 1)
 TintStrength = 0.12
-Paths = Array[ExtResource("6_path")]([SubResource("Path_hollowreach_dock"), SubResource("Path_hollowreach_bones")])
-GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_hollowreach_docks")])
+Paths = Array[ExtResource("6_path")]([SubResource("Path_hollowreach_east"), SubResource("Path_hollowreach_turn"), SubResource("Path_hollowreach_spine")])
+GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_hollowreach_hollow"), SubResource("Area_hollowreach_street"), SubResource("Area_hollowreach_spine")])
 
 [sub_resource type="Resource" id="Path_wilds_west_camp"]
 script = ExtResource("6_path")

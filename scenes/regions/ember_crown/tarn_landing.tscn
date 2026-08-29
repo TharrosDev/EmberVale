@@ -65,12 +65,32 @@
 ; ⚠️ EVERYTHING STATIC PARENTS TO Nav; the two merchants deliberately do not (only static geometry
 ; should carve the navmesh).
 ;
-; LAYOUT, east (the road) to west (the tarn):
-;   x +26..+12  the approach: the waystone, dead pines, rock.
-;   x +12..0    the hamlet: Odger's chandlery and cottage north of the track, Wenna's curing hut and
-;               racks south of it, with the shore fire between them.
-;   x  0..-6    the shingle: barrels, drying racks, the two jetties running out.
-;   x -6..-26   the tarn itself, with the dock complex standing in it.
+; ⚠️ WHAT PHASE 44 REPLACED, AND ONE OF IT WAS A BUG. The cell was four east-west bands: road, hamlet,
+; shingle, and a 20 m strip of tarn down the whole western edge. Two problems. It read as a diagram —
+; every building on one line beside one track — and the water covered the ENTIRE western seam, which
+; is where wilds_west meets this cell at local (-26, 0). There was no walkable ground between the two
+; cells at all, and nothing anywhere says so.
+;
+; THE LAYOUT NOW — a shore road the hamlet is NOT on, and a spit it is:
+;   z -10..-1     THE SHORE ROAD, in from the town seam at local z = -8 (world z = -14, which is where
+;                 town_hub's west spur leaves) and west along the bay's north edge to the wilds_west
+;                 seam at local z = 0. Both seams are now dry ground.
+;   x 4..18,      THE CHANDLER'S YARD, north of the road: Odger's chandlery, the carts, the cordage
+;   z -20..-8     and the waystone. The trading half, and the only part visible from the road.
+;   (-6, -2..4)   THE NECK — six metres wide, the only way down onto the spit.
+;   x -15..1,     THE SPIT. Wenna's curing hut and six drying racks, the shore fire, the dock complex
+;   z 2..14       standing off its south tip and Elyndra's shrine facing the water at its west point.
+;                 The bay wraps it on three sides.
+;   x -26..-16    THE WEST ARM of the tarn, z -6..26, with the west jetty running out into it.
+;   x -16..2      THE SOUTH ARM, z 14..26, with the south jetty and the dock complex.
+;
+; ⚠️ THE WATER IS TWO VISUAL BOXES AND HAS NO COLLIDER, which is the convention this cell already
+; used: Lakebed/Tarn (and now LakebedSouth/TarnSouth) are MeshInstance3Ds parented OUTSIDE Nav at
+; y = 0.02 / 0.05 over the same flat 52 m floor everything else stands on. The player can walk on the
+; tarn. That was true before this rebuild too; it is greybox, not a regression.
+;
+; ⚠️ EVERYTHING STATIC PARENTS TO Nav. Geometry outside the NavigationRegion3D is not carved into the
+; navmesh. The two merchants deliberately do not.
 
 [sub_resource type="NavigationMesh" id="NavMesh_tarn"]
 geometry_parsed_geometry_type = 1
@@ -112,11 +132,32 @@ roughness = 0.08
 albedo_color = Color(0.09, 0.11, 0.12, 1)
 roughness = 0.98
 
-[sub_resource type="BoxMesh" id="BoxMesh_water"]
-size = Vector3(20, 0.05, 52)
+; Phase 44: the tarn is an L-shaped BAY in two boxes rather than one 20 m band down the west edge.
+; The band was why nothing could walk from wilds_west into this cell — the whole western seam was
+; water. The bay now leaves a shore road along the north, and the land it wraps is the spit.
+[sub_resource type="BoxMesh" id="BoxMesh_water_west"]
+size = Vector3(10, 0.05, 32)
+
+[sub_resource type="BoxMesh" id="BoxMesh_water_south"]
+size = Vector3(18, 0.05, 12)
+
+[sub_resource type="BoxMesh" id="BoxMesh_road_east"]
+size = Vector3(20, 0.06, 6)
+
+[sub_resource type="BoxMesh" id="BoxMesh_road_shore"]
+size = Vector3(32, 0.06, 7)
+
+[sub_resource type="BoxMesh" id="BoxMesh_neck"]
+size = Vector3(6, 0.06, 6)
+
+[sub_resource type="BoxMesh" id="BoxMesh_spit"]
+size = Vector3(16, 0.06, 12)
+
+[sub_resource type="BoxMesh" id="BoxMesh_chandler_yard"]
+size = Vector3(14, 0.06, 12)
 
 [sub_resource type="BoxMesh" id="BoxMesh_shore"]
-size = Vector3(8, 0.06, 40)
+size = Vector3(4, 0.06, 14)
 
 ; The ONE warm accent (ART_STYLE §7).
 [sub_resource type="StandardMaterial3D" id="Mat_ember"]
@@ -202,26 +243,65 @@ surface_material_override/0 = SubResource("Mat_floor")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
 shape = SubResource("Shape_floor")
 
-[node name="Shore" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0.03, 0)
+;                        T A R N ' S   L A N D I N G   —   T H E   S P I T
+; The road runs along the NORTH shore, from the town road at z = -8 to the wilds_west seam at z = 0,
+; and the hamlet is not on it: it is on a spit of land the bay wraps on three sides, reached by a 6 m
+; neck. You walk past the place before you can walk into it.
+[node name="RoadEast" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0.03, -7)
+mesh = SubResource("BoxMesh_road_east")
+surface_material_override/0 = SubResource("Mat_shore")
+
+[node name="RoadShore" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0.03, -2.5)
+mesh = SubResource("BoxMesh_road_shore")
+surface_material_override/0 = SubResource("Mat_shore")
+
+[node name="Neck" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0.03, 1)
+mesh = SubResource("BoxMesh_neck")
+surface_material_override/0 = SubResource("Mat_shore")
+
+[node name="Spit" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0.03, 8)
+mesh = SubResource("BoxMesh_spit")
+surface_material_override/0 = SubResource("Mat_shore")
+
+[node name="ChandlerYard" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0.03, -14)
+mesh = SubResource("BoxMesh_chandler_yard")
+surface_material_override/0 = SubResource("Mat_shore")
+
+[node name="Shingle" type="MeshInstance3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 0.03, 9)
 mesh = SubResource("BoxMesh_shore")
 surface_material_override/0 = SubResource("Mat_shore")
 
 ; The tarn. NOT under Nav — it carves nothing and blocks nothing; it is the only thing in the cell
 ; that is purely a picture.
+[node name="LakebedSouth" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0.02, 20)
+mesh = SubResource("BoxMesh_water_south")
+surface_material_override/0 = SubResource("Mat_lakebed")
+
+[node name="TarnSouth" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0.05, 20)
+mesh = SubResource("BoxMesh_water_south")
+surface_material_override/0 = SubResource("Mat_water")
+
 [node name="Lakebed" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 0.02, 0)
-mesh = SubResource("BoxMesh_water")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21, 0.02, 10)
+mesh = SubResource("BoxMesh_water_west")
 surface_material_override/0 = SubResource("Mat_lakebed")
 
 [node name="Tarn" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 0.05, 0)
-mesh = SubResource("BoxMesh_water")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21, 0.05, 10)
+mesh = SubResource("BoxMesh_water_west")
 surface_material_override/0 = SubResource("Mat_water")
 
 ; --- The water's edge -----------------------------------------------------------
 [node name="DockComplex" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, -4)
+transform = Transform3D(0.9848, 0, 0.1736, 0, 1, 0, -0.1736, 0, 0.9848, -6, 0, 17)
 
 [node name="Model" parent="Nav/DockComplex" instance=ExtResource("10_docks")]
 
@@ -233,18 +313,18 @@ shape = SubResource("Shape_dock_house")
 
 ; Sunk 0.30 m so the deck lands flush — see the header note about step-up.
 [node name="JettyNorth" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -3, -0.3, -12)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18, -0.3, 6)
 
 [node name="Model" parent="Nav/JettyNorth" instance=ExtResource("11_jetty")]
 
 [node name="JettySouth" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -3, -0.3, 10)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -1, -0.3, 16)
 
 [node name="Model" parent="Nav/JettySouth" instance=ExtResource("11_jetty")]
 
 ; --- Wenna's curing sheds, south of the track ------------------------------------
 [node name="CuringHut" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, 6)
+transform = Transform3D(-0.1736, 0, -0.9848, 0, 1, 0, 0.9848, 0, -0.1736, -2, 0, 6)
 
 [node name="Model" parent="Nav/CuringHut" instance=ExtResource("12_hut")]
 
@@ -257,7 +337,7 @@ shape = SubResource("Shape_hut")
 ; The drying racks: a fence line is exactly what a rack of split fish looks like from ten feet, and it
 ; is already in the kit. Three of them make the row read as work rather than as a boundary.
 [node name="RackA" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -2, 0, 1)
+transform = Transform3D(0.9962, 0, 0.0872, 0, 1, 0, -0.0872, 0, 0.9962, -9, 0, 4)
 
 [node name="Model" parent="Nav/RackA" instance=ExtResource("20_fence")]
 
@@ -268,7 +348,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="RackB" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -2, 0, 4)
+transform = Transform3D(0.9848, 0, -0.1736, 0, 1, 0, 0.1736, 0, 0.9848, -9, 0, 7)
 
 [node name="Model" parent="Nav/RackB" instance=ExtResource("20_fence")]
 
@@ -279,7 +359,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="RackC" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -2, 0, 7)
+transform = Transform3D(0.9903, 0, 0.1392, 0, 1, 0, -0.1392, 0, 0.9903, -9, 0, 10)
 
 [node name="Model" parent="Nav/RackC" instance=ExtResource("20_fence")]
 
@@ -291,12 +371,12 @@ shape = SubResource("Shape_fence")
 
 ; --- Odger's chandlery, north of the track ---------------------------------------
 [node name="Chandlery" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 8)
+transform = Transform3D(-0.9848, 0, -0.1736, 0, 1, 0, 0.1736, 0, -0.9848, 11, 0, -15)
 
 [node name="Model" parent="Nav/Chandlery" instance=ExtResource("42_cottage_modular")]
 
 [node name="CartA" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 4, 0, 2)
+transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 13, 0, -10)
 
 [node name="Model" parent="Nav/CartA" instance=ExtResource("21_cart")]
 
@@ -307,7 +387,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
 shape = SubResource("Shape_cart")
 
 [node name="BarrelA" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.5, 0, 5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, -11)
 
 [node name="Model" parent="Nav/BarrelA" instance=ExtResource("17_barrel")]
 
@@ -318,7 +398,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
 shape = SubResource("Shape_barrel")
 
 [node name="BarrelB" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.3, 0, 5.8)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.8, 0, -10.2)
 
 [node name="Model" parent="Nav/BarrelB" instance=ExtResource("17_barrel")]
 
@@ -329,7 +409,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
 shape = SubResource("Shape_barrel")
 
 [node name="BarrelC" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 0, -3)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, 3)
 
 [node name="Model" parent="Nav/BarrelC" instance=ExtResource("17_barrel")]
 
@@ -340,7 +420,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
 shape = SubResource("Shape_barrel")
 
 [node name="CrateA" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 3)
+transform = Transform3D(0.9063, 0, 0.4226, 0, 1, 0, -0.4226, 0, 0.9063, 7, 0, -12)
 
 [node name="Model" parent="Nav/CrateA" instance=ExtResource("18_crate")]
 
@@ -351,7 +431,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
 shape = SubResource("Shape_crate")
 
 [node name="CrateB" type="Node3D" parent="Nav"]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 7, 1.24, 3)
+transform = Transform3D(0.5, 0, 0.866, 0, 1, 0, -0.866, 0, 0.5, 7, 1.24, -12)
 
 [node name="Model" parent="Nav/CrateB" instance=ExtResource("18_crate")]
 
@@ -362,7 +442,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
 shape = SubResource("Shape_crate")
 
 [node name="SacksA" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, 9)
+transform = Transform3D(0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, 0.342, -5, 0, 13)
 
 [node name="Model" parent="Nav/SacksA" instance=ExtResource("19_sacks")]
 
@@ -373,7 +453,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.22, 0)
 shape = SubResource("Shape_sacks")
 
 [node name="HayA" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, 4)
+transform = Transform3D(-0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, -0.342, 12, 0, -19)
 
 [node name="Model" parent="Nav/HayA" instance=ExtResource("25_hay")]
 
@@ -384,7 +464,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
 shape = SubResource("Shape_hay")
 
 [node name="BenchA" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, -6)
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -11, 0, 12)
 
 [node name="Model" parent="Nav/BenchA" instance=ExtResource("22_bench")]
 
@@ -396,7 +476,7 @@ shape = SubResource("Shape_bench")
 
 ; The shore fire, between the two trades — the Landing's one gathering point.
 [node name="ShoreFire" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, 11)
 
 [node name="Model" parent="Nav/ShoreFire" instance=ExtResource("16_campfire")]
 
@@ -412,7 +492,7 @@ light_energy = 1.6
 omni_range = 11.0
 
 [node name="BrazierJetty" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 0, -11)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 0, 8.5)
 
 [node name="Model" parent="Nav/BrazierJetty" instance=ExtResource("15_brazier")]
 
@@ -434,7 +514,7 @@ light_energy = 1.6
 omni_range = 11.0
 
 [node name="BrazierRoad" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, -5)
 
 [node name="Model" parent="Nav/BrazierRoad" instance=ExtResource("15_brazier")]
 
@@ -457,7 +537,7 @@ omni_range = 10.0
 
 ; --- The verges ------------------------------------------------------------------
 [node name="PineA" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, -12)
+transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 22, 0, -20)
 
 [node name="Model" parent="Nav/PineA" instance=ExtResource("24_pine")]
 
@@ -468,7 +548,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
 shape = SubResource("Shape_pine")
 
 [node name="PineB" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17, 0, 14)
+transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 24, 0, 4)
 
 [node name="Model" parent="Nav/PineB" instance=ExtResource("24_pine")]
 
@@ -479,7 +559,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
 shape = SubResource("Shape_pine")
 
 [node name="PineC" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, -18)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 18, 0, -2)
 
 [node name="Model" parent="Nav/PineC" instance=ExtResource("24_pine")]
 
@@ -490,7 +570,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
 shape = SubResource("Shape_pine")
 
 [node name="PineD" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 19)
+transform = Transform3D(0.5, 0, -0.866, 0, 1, 0, 0.866, 0, 0.5, 20, 0, 16)
 
 [node name="Model" parent="Nav/PineD" instance=ExtResource("24_pine")]
 
@@ -501,7 +581,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
 shape = SubResource("Shape_pine")
 
 [node name="RocksA" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, -16)
+transform = Transform3D(0.6428, 0, 0.766, 0, 1, 0, -0.766, 0, 0.6428, -20, 0, -14)
 
 [node name="Model" parent="Nav/RocksA" instance=ExtResource("23_rocks")]
 
@@ -512,7 +592,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
 shape = SubResource("Shape_rocks")
 
 [node name="RocksB" type="Node3D" parent="Nav"]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, -6, 0, 15)
+transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, -24, 0, -20)
 
 [node name="Model" parent="Nav/RocksB" instance=ExtResource("23_rocks")]
 
@@ -523,7 +603,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
 shape = SubResource("Shape_rocks")
 
 [node name="RocksC" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19, 0, 6)
+transform = Transform3D(-0.9848, 0, 0.1736, 0, 1, 0, -0.1736, 0, -0.9848, 23, 0, 10)
 
 [node name="Model" parent="Nav/RocksC" instance=ExtResource("23_rocks")]
 
@@ -535,7 +615,7 @@ shape = SubResource("Shape_rocks")
 
 ; --- The waystone. ⚠️ TravelName is a LOCALE KEY, not prose (38K).
 [node name="LandingWaystone" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, -3)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, -12)
 script = ExtResource("2_entity")
 DisplayName = "Landing Waystone"
 
@@ -558,7 +638,7 @@ RegionId = "region.ember_crown"
 ; from the whole game in 38N2. One interactable each (a DialogueComponent), trade behind
 ; DialogueEffect.OpenShop (38E).
 [node name="Wenna" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, 2)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -3.5, 0, 5.5)
 script = ExtResource("2_entity")
 DisplayName = "Wenna Tarn"
 TemplateId = "npc.wenna"
@@ -588,7 +668,7 @@ ScheduleId = "schedule.tarn.curer"
 [node name="Model" parent="Wenna" instance=ExtResource("30_wenna")]
 
 [node name="Odger" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 4)
+transform = Transform3D(-0.9848, 0, 0.1736, 0, 1, 0, -0.1736, 0, -0.9848, 9, 0, -11.5)
 script = ExtResource("2_entity")
 DisplayName = "Odger Vane"
 TemplateId = "npc.odger"
@@ -623,7 +703,7 @@ ScheduleId = "schedule.tarn.chandler"
 ; --- the boats' gear where the boats land, and the east approach closed in.
 
 [node name="RackD" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -2, 0, -4)
+transform = Transform3D(0.9962, 0, -0.0872, 0, 1, 0, 0.0872, 0, 0.9962, -12, 0, 5)
 
 [node name="Model" parent="Nav/RackD" instance=ExtResource("20_fence")]
 
@@ -634,7 +714,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="RackE" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -2, 0, -7)
+transform = Transform3D(0.9986, 0, 0.0523, 0, 1, 0, -0.0523, 0, 0.9986, -12, 0, 9)
 
 [node name="Model" parent="Nav/RackE" instance=ExtResource("20_fence")]
 
@@ -645,7 +725,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="RackF" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 1, 0, 11)
+transform = Transform3D(-0.0872, 0, 0.9962, 0, 1, 0, -0.9962, 0, -0.0872, -4, 0, 12)
 
 [node name="Model" parent="Nav/RackF" instance=ExtResource("20_fence")]
 
@@ -656,7 +736,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="BarrelD" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 0, -4)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13.8, 0, 3.8)
 
 [node name="Model" parent="Nav/BarrelD" instance=ExtResource("17_barrel")]
 
@@ -667,7 +747,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
 shape = SubResource("Shape_barrel")
 
 [node name="BarrelE" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.3, 0, -4.8)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 9)
 
 [node name="Model" parent="Nav/BarrelE" instance=ExtResource("17_barrel")]
 
@@ -678,7 +758,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
 shape = SubResource("Shape_barrel")
 
 [node name="BarrelF" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, 11)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0, 10)
 
 [node name="Model" parent="Nav/BarrelF" instance=ExtResource("17_barrel")]
 
@@ -689,7 +769,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
 shape = SubResource("Shape_barrel")
 
 [node name="BarrelG" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.8, 0, 11.6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, -17)
 
 [node name="Model" parent="Nav/BarrelG" instance=ExtResource("17_barrel")]
 
@@ -700,7 +780,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
 shape = SubResource("Shape_barrel")
 
 [node name="CrateC" type="Node3D" parent="Nav"]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, -5, 0, -9)
+transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -1, 0, 3)
 
 [node name="Model" parent="Nav/CrateC" instance=ExtResource("18_crate")]
 
@@ -711,7 +791,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
 shape = SubResource("Shape_crate")
 
 [node name="CrateD" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 1)
+transform = Transform3D(-0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, -0.766, 17, 0, -13)
 
 [node name="Model" parent="Nav/CrateD" instance=ExtResource("18_crate")]
 
@@ -722,7 +802,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
 shape = SubResource("Shape_crate")
 
 [node name="SacksB" type="Node3D" parent="Nav"]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, -6, 0, -10)
+transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 6, 0, -16)
 
 [node name="Model" parent="Nav/SacksB" instance=ExtResource("19_sacks")]
 
@@ -733,7 +813,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.22, 0)
 shape = SubResource("Shape_sacks")
 
 [node name="SacksC" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 6)
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 15, 0, -19)
 
 [node name="Model" parent="Nav/SacksC" instance=ExtResource("19_sacks")]
 
@@ -744,7 +824,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.22, 0)
 shape = SubResource("Shape_sacks")
 
 [node name="HayB" type="Node3D" parent="Nav"]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 12, 0, 7)
+transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, 8, 0, -18)
 
 [node name="Model" parent="Nav/HayB" instance=ExtResource("25_hay")]
 
@@ -755,7 +835,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
 shape = SubResource("Shape_hay")
 
 [node name="CartB" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -1, 0, 0)
+transform = Transform3D(-0.1736, 0, 0.9848, 0, 1, 0, -0.9848, 0, -0.1736, -10, 0, -0.5)
 
 [node name="Model" parent="Nav/CartB" instance=ExtResource("21_cart")]
 
@@ -766,7 +846,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
 shape = SubResource("Shape_cart")
 
 [node name="BenchB" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 3, 0, 3)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 4, 0, -8)
 
 [node name="Model" parent="Nav/BenchB" instance=ExtResource("22_bench")]
 
@@ -777,7 +857,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
 shape = SubResource("Shape_bench")
 
 [node name="PineE" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 0, 8)
+transform = Transform3D(-0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, -0.766, 10, 0, 8)
 
 [node name="Model" parent="Nav/PineE" instance=ExtResource("24_pine")]
 
@@ -788,7 +868,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
 shape = SubResource("Shape_pine")
 
 [node name="PineF" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, -16)
+transform = Transform3D(0.5, 0, 0.866, 0, 1, 0, -0.866, 0, 0.5, 24, 0, -12)
 
 [node name="Model" parent="Nav/PineF" instance=ExtResource("24_pine")]
 
@@ -799,7 +879,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
 shape = SubResource("Shape_pine")
 
 [node name="PineG" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, 20)
+transform = Transform3D(-0.5, 0, -0.866, 0, 1, 0, 0.866, 0, -0.5, 6, 0, 20)
 
 [node name="Model" parent="Nav/PineG" instance=ExtResource("24_pine")]
 
@@ -810,7 +890,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
 shape = SubResource("Shape_pine")
 
 [node name="PineH" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, -22)
+transform = Transform3D(-0.5, 0, 0.866, 0, 1, 0, -0.866, 0, -0.5, 16, 0, 22)
 
 [node name="Model" parent="Nav/PineH" instance=ExtResource("24_pine")]
 
@@ -821,7 +901,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
 shape = SubResource("Shape_pine")
 
 [node name="RocksD" type="Node3D" parent="Nav"]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 13, 0, -8)
+transform = Transform3D(0.1736, 0, 0.9848, 0, 1, 0, -0.9848, 0, 0.1736, 2, 0, -20)
 
 [node name="Model" parent="Nav/RocksD" instance=ExtResource("23_rocks")]
 
@@ -832,7 +912,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
 shape = SubResource("Shape_rocks")
 
 [node name="RocksE" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, 20)
+transform = Transform3D(0.766, 0, -0.6428, 0, 1, 0, 0.6428, 0, 0.766, -2, 0, 22)
 
 [node name="Model" parent="Nav/RocksE" instance=ExtResource("23_rocks")]
 
@@ -843,7 +923,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
 shape = SubResource("Shape_rocks")
 
 [node name="RocksF" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 21, 0, -2)
+transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 14, 0, 14)
 
 [node name="Model" parent="Nav/RocksF" instance=ExtResource("23_rocks")]
 
@@ -854,7 +934,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
 shape = SubResource("Shape_rocks")
 
 [node name="RocksG" type="Node3D" parent="Nav"]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, -7, 0, -20)
+transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, -10, 0, -16)
 
 [node name="Model" parent="Nav/RocksG" instance=ExtResource("23_rocks")]
 
@@ -882,690 +962,7 @@ shape = SubResource("Shape_rocks")
 ; it, never in a transform here. docs/ASSET_POLICY.md section 0.3.
 ; ====================================================================================================
 
-[node name="Grass1" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 7.53, 0, -3.66)
 
-[node name="Model" parent="Grass1" instance=ExtResource("34_grass_wispy")]
-
-[node name="Grass2" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.02, 0, -3.38)
-
-[node name="Model" parent="Grass2" instance=ExtResource("33_grass_tall")]
-
-[node name="Grass3" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.79, 0, -3.45)
-
-[node name="Model" parent="Grass3" instance=ExtResource("32_grass_short")]
-
-[node name="Grass4" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 6.26, 0, -3.50)
-
-[node name="Model" parent="Grass4" instance=ExtResource("34_grass_wispy")]
-
-[node name="Grass5" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 6.01, 0, -3.07)
-
-[node name="Model" parent="Grass5" instance=ExtResource("32_grass_short")]
-
-[node name="Grass6" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -0.13, 0, 23.33)
-
-[node name="Model" parent="Grass6" instance=ExtResource("32_grass_short")]
-
-[node name="Grass7" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -0.60, 0, 21.60)
-
-[node name="Model" parent="Grass7" instance=ExtResource("33_grass_tall")]
-
-[node name="Grass8" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -1.63, 0, 22.96)
-
-[node name="Model" parent="Grass8" instance=ExtResource("32_grass_short")]
-
-[node name="Grass9" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -2.12, 0, 22.85)
-
-[node name="Model" parent="Grass9" instance=ExtResource("33_grass_tall")]
-
-[node name="Grass10" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.99, 0, 22.91)
-
-[node name="Model" parent="Grass10" instance=ExtResource("33_grass_tall")]
-
-[node name="Grass11" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -22.01, 0, -2.45)
-
-[node name="Model" parent="Grass11" instance=ExtResource("34_grass_wispy")]
-
-[node name="Grass12" type="Node3D" parent="."]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, -23.70, 0, 0.07)
-
-[node name="Model" parent="Grass12" instance=ExtResource("34_grass_wispy")]
-
-[node name="Grass13" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -22.15, 0, -1.74)
-
-[node name="Model" parent="Grass13" instance=ExtResource("34_grass_wispy")]
-
-[node name="Grass14" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -22.22, 0, -0.14)
-
-[node name="Model" parent="Grass14" instance=ExtResource("32_grass_short")]
-
-[node name="Grass15" type="Node3D" parent="."]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, -22.54, 0, -0.35)
-
-[node name="Model" parent="Grass15" instance=ExtResource("32_grass_short")]
-
-[node name="Grass16" type="Node3D" parent="."]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, -21.32, 0, 10.87)
-
-[node name="Model" parent="Grass16" instance=ExtResource("32_grass_short")]
-
-[node name="Grass17" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -19.00, 0, 9.27)
-
-[node name="Model" parent="Grass17" instance=ExtResource("33_grass_tall")]
-
-[node name="Grass18" type="Node3D" parent="."]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, -21.23, 0, 10.70)
-
-[node name="Model" parent="Grass18" instance=ExtResource("32_grass_short")]
-
-[node name="Grass19" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -19.51, 0, 10.40)
-
-[node name="Model" parent="Grass19" instance=ExtResource("33_grass_tall")]
-
-[node name="Grass20" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20.57, 0, 9.09)
-
-[node name="Model" parent="Grass20" instance=ExtResource("32_grass_short")]
-
-[node name="Grass21" type="Node3D" parent="."]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 1.11, 0, 20.99)
-
-[node name="Model" parent="Grass21" instance=ExtResource("32_grass_short")]
-
-[node name="Grass22" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 1.14, 0, 22.53)
-
-[node name="Model" parent="Grass22" instance=ExtResource("32_grass_short")]
-
-[node name="Grass23" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 1.09, 0, 22.91)
-
-[node name="Model" parent="Grass23" instance=ExtResource("32_grass_short")]
-
-[node name="Grass24" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 1.90, 0, 20.70)
-
-[node name="Model" parent="Grass24" instance=ExtResource("33_grass_tall")]
-
-[node name="Grass25" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.01, 0, 21.94)
-
-[node name="Model" parent="Grass25" instance=ExtResource("32_grass_short")]
-
-[node name="Grass26" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -21.89, 0, 9.94)
-
-[node name="Model" parent="Grass26" instance=ExtResource("32_grass_short")]
-
-[node name="Grass27" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -20.38, 0, 10.69)
-
-[node name="Model" parent="Grass27" instance=ExtResource("32_grass_short")]
-
-[node name="Grass28" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -19.88, 0, 8.41)
-
-[node name="Model" parent="Grass28" instance=ExtResource("34_grass_wispy")]
-
-[node name="Grass29" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21.39, 0, 9.23)
-
-[node name="Model" parent="Grass29" instance=ExtResource("33_grass_tall")]
-
-[node name="Grass30" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -20.15, 0, 8.78)
-
-[node name="Model" parent="Grass30" instance=ExtResource("33_grass_tall")]
-
-[node name="Grass31" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 5.62, 0, -10.47)
-
-[node name="Model" parent="Grass31" instance=ExtResource("32_grass_short")]
-
-[node name="Grass32" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.52, 0, -11.15)
-
-[node name="Model" parent="Grass32" instance=ExtResource("34_grass_wispy")]
-
-[node name="Grass33" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 6.60, 0, -11.49)
-
-[node name="Model" parent="Grass33" instance=ExtResource("32_grass_short")]
-
-[node name="Grass34" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 5.25, 0, -10.36)
-
-[node name="Model" parent="Grass34" instance=ExtResource("34_grass_wispy")]
-
-[node name="Grass35" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 6.77, 0, -10.41)
-
-[node name="Model" parent="Grass35" instance=ExtResource("34_grass_wispy")]
-
-[node name="Grass36" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 4.94, 0, -2.35)
-
-[node name="Model" parent="Grass36" instance=ExtResource("33_grass_tall")]
-
-[node name="Grass37" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 5.62, 0, -1.81)
-
-[node name="Model" parent="Grass37" instance=ExtResource("32_grass_short")]
-
-[node name="Grass38" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 5.13, 0, -3.21)
-
-[node name="Model" parent="Grass38" instance=ExtResource("32_grass_short")]
-
-[node name="Grass39" type="Node3D" parent="."]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 6.47, 0, -2.54)
-
-[node name="Model" parent="Grass39" instance=ExtResource("32_grass_short")]
-
-[node name="Grass40" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 7.22, 0, -3.27)
-
-[node name="Model" parent="Grass40" instance=ExtResource("34_grass_wispy")]
-
-[node name="Grass41" type="Node3D" parent="."]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, -15.10, 0, 9.40)
-
-[node name="Model" parent="Grass41" instance=ExtResource("32_grass_short")]
-
-[node name="Grass42" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16.15, 0, 9.25)
-
-[node name="Model" parent="Grass42" instance=ExtResource("33_grass_tall")]
-
-[node name="Grass43" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -16.92, 0, 9.14)
-
-[node name="Model" parent="Grass43" instance=ExtResource("34_grass_wispy")]
-
-[node name="Grass44" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -16.53, 0, 7.47)
-
-[node name="Model" parent="Grass44" instance=ExtResource("33_grass_tall")]
-
-[node name="Grass45" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -15.28, 0, 8.73)
-
-[node name="Model" parent="Grass45" instance=ExtResource("34_grass_wispy")]
-
-[node name="Grass46" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -22.66, 0, 1.17)
-
-[node name="Model" parent="Grass46" instance=ExtResource("33_grass_tall")]
-
-[node name="Grass47" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -21.16, 0, -0.90)
-
-[node name="Model" parent="Grass47" instance=ExtResource("33_grass_tall")]
-
-[node name="Grass48" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -21.92, 0, 1.52)
-
-[node name="Model" parent="Grass48" instance=ExtResource("33_grass_tall")]
-
-[node name="Grass49" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -22.15, 0, 0.76)
-
-[node name="Model" parent="Grass49" instance=ExtResource("32_grass_short")]
-
-[node name="Grass50" type="Node3D" parent="."]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, -20.73, 0, 0.99)
-
-[node name="Model" parent="Grass50" instance=ExtResource("34_grass_wispy")]
-
-[node name="Grass51" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -1.21, 0, 23.01)
-
-[node name="Model" parent="Grass51" instance=ExtResource("33_grass_tall")]
-
-[node name="Grass52" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -1.97, 0, 23.06)
-
-[node name="Model" parent="Grass52" instance=ExtResource("34_grass_wispy")]
-
-[node name="Grass53" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.39, 0, 22.92)
-
-[node name="Model" parent="Grass53" instance=ExtResource("32_grass_short")]
-
-[node name="Grass54" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -2.25, 0, 22.26)
-
-[node name="Model" parent="Grass54" instance=ExtResource("33_grass_tall")]
-
-[node name="Grass55" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -2.07, 0, 22.02)
-
-[node name="Model" parent="Grass55" instance=ExtResource("33_grass_tall")]
-
-[node name="Grass56" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -13.11, 0, -14.50)
-
-[node name="Model" parent="Grass56" instance=ExtResource("32_grass_short")]
-
-[node name="Grass57" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -11.36, 0, -12.30)
-
-[node name="Model" parent="Grass57" instance=ExtResource("33_grass_tall")]
-
-[node name="Grass58" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -12.58, 0, -12.94)
-
-[node name="Model" parent="Grass58" instance=ExtResource("32_grass_short")]
-
-[node name="Grass59" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -11.11, 0, -12.91)
-
-[node name="Model" parent="Grass59" instance=ExtResource("32_grass_short")]
-
-[node name="Grass60" type="Node3D" parent="."]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, -11.50, 0, -13.13)
-
-[node name="Model" parent="Grass60" instance=ExtResource("32_grass_short")]
-
-[node name="Grass61" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 2.59, 0, -23.34)
-
-[node name="Model" parent="Grass61" instance=ExtResource("33_grass_tall")]
-
-[node name="Grass62" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 1.59, 0, -24.11)
-
-[node name="Model" parent="Grass62" instance=ExtResource("33_grass_tall")]
-
-[node name="Grass63" type="Node3D" parent="."]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 1.00, 0, -23.52)
-
-[node name="Model" parent="Grass63" instance=ExtResource("32_grass_short")]
-
-[node name="Grass64" type="Node3D" parent="."]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 1.44, 0, -23.99)
-
-[node name="Model" parent="Grass64" instance=ExtResource("32_grass_short")]
-
-[node name="Grass65" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -23.10, 0, -0.22)
-
-[node name="Model" parent="Grass65" instance=ExtResource("32_grass_short")]
-
-[node name="Grass66" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -24.19, 0, 1.28)
-
-[node name="Model" parent="Grass66" instance=ExtResource("34_grass_wispy")]
-
-[node name="Grass67" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.61, 0, -15.97)
-
-[node name="Model" parent="Grass67" instance=ExtResource("33_grass_tall")]
-
-[node name="Grass68" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -15.03, 0, -14.88)
-
-[node name="Model" parent="Grass68" instance=ExtResource("33_grass_tall")]
-
-[node name="Grass69" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -14.95, 0, -16.50)
-
-[node name="Model" parent="Grass69" instance=ExtResource("34_grass_wispy")]
-
-[node name="Grass70" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15.68, 0, -15.16)
-
-[node name="Model" parent="Grass70" instance=ExtResource("32_grass_short")]
-
-[node name="Grass71" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15.08, 0, -15.14)
-
-[node name="Model" parent="Grass71" instance=ExtResource("33_grass_tall")]
-
-[node name="Grass72" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12.99, 0, -18.48)
-
-[node name="Model" parent="Grass72" instance=ExtResource("33_grass_tall")]
-
-[node name="Grass73" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -14.20, 0, -17.43)
-
-[node name="Model" parent="Grass73" instance=ExtResource("32_grass_short")]
-
-[node name="Grass74" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -13.11, 0, -17.83)
-
-[node name="Model" parent="Grass74" instance=ExtResource("33_grass_tall")]
-
-[node name="Grass75" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -14.96, 0, -18.10)
-
-[node name="Model" parent="Grass75" instance=ExtResource("32_grass_short")]
-
-[node name="Grass76" type="Node3D" parent="."]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, -15.40, 0, -17.42)
-
-[node name="Model" parent="Grass76" instance=ExtResource("32_grass_short")]
-
-[node name="Fern1" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.31, 0, -21.79)
-
-[node name="Model" parent="Fern1" instance=ExtResource("38_fern")]
-
-[node name="Fern2" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.77, 0, -18.03)
-
-[node name="Model" parent="Fern2" instance=ExtResource("38_fern")]
-
-[node name="Fern3" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 14.58, 0, -14.92)
-
-[node name="Model" parent="Fern3" instance=ExtResource("38_fern")]
-
-[node name="Fern4" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.64, 0, 16.37)
-
-[node name="Model" parent="Fern4" instance=ExtResource("38_fern")]
-
-[node name="Fern5" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 17.55, 0, 16.08)
-
-[node name="Model" parent="Fern5" instance=ExtResource("38_fern")]
-
-[node name="Mushroom1" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 6.99, 0, -21.80)
-
-[node name="Model" parent="Mushroom1" instance=ExtResource("39_mushrooms")]
-
-[node name="Mushroom2" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.06, 0, -16.04)
-
-[node name="Model" parent="Mushroom2" instance=ExtResource("39_mushrooms")]
-
-[node name="Mushroom3" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 13.97, 0, -15.17)
-
-[node name="Model" parent="Mushroom3" instance=ExtResource("39_mushrooms")]
-
-[node name="Clover1" type="Node3D" parent="."]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 10.24, 0, -1.97)
-
-[node name="Model" parent="Clover1" instance=ExtResource("35_clover")]
-
-[node name="Clover2" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 7.47, 0, -1.33)
-
-[node name="Model" parent="Clover2" instance=ExtResource("35_clover")]
-
-[node name="Clover3" type="Node3D" parent="."]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 9.69, 0, -4.09)
-
-[node name="Model" parent="Clover3" instance=ExtResource("35_clover")]
-
-[node name="Clover4" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 8.96, 0, -2.86)
-
-[node name="Model" parent="Clover4" instance=ExtResource("35_clover")]
-
-[node name="Clover5" type="Node3D" parent="."]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 8.09, 0, -3.67)
-
-[node name="Model" parent="Clover5" instance=ExtResource("35_clover")]
-
-[node name="Clover6" type="Node3D" parent="."]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 10.11, 0, -2.57)
-
-[node name="Model" parent="Clover6" instance=ExtResource("35_clover")]
-
-[node name="Clover7" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 7.66, 0, -2.01)
-
-[node name="Model" parent="Clover7" instance=ExtResource("35_clover")]
-
-[node name="Clover8" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -12.84, 0, 18.44)
-
-[node name="Model" parent="Clover8" instance=ExtResource("35_clover")]
-
-[node name="Clover9" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -13.68, 0, 18.30)
-
-[node name="Model" parent="Clover9" instance=ExtResource("35_clover")]
-
-[node name="Clover10" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -13.34, 0, 15.76)
-
-[node name="Model" parent="Clover10" instance=ExtResource("35_clover")]
-
-[node name="Clover11" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -13.11, 0, 18.26)
-
-[node name="Model" parent="Clover11" instance=ExtResource("35_clover")]
-
-[node name="Clover12" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -15.92, 0, 15.52)
-
-[node name="Model" parent="Clover12" instance=ExtResource("35_clover")]
-
-[node name="Clover13" type="Node3D" parent="."]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, -14.49, 0, 18.69)
-
-[node name="Model" parent="Clover13" instance=ExtResource("35_clover")]
-
-[node name="Clover14" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -14.76, 0, 17.69)
-
-[node name="Model" parent="Clover14" instance=ExtResource("35_clover")]
-
-[node name="FlowerA1" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 4.89, 0, 21.71)
-
-[node name="Model" parent="FlowerA1" instance=ExtResource("36_flowers_a")]
-
-[node name="FlowerA2" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 4.71, 0, 21.44)
-
-[node name="Model" parent="FlowerA2" instance=ExtResource("36_flowers_a")]
-
-[node name="FlowerA3" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 2.15, 0, 20.04)
-
-[node name="Model" parent="FlowerA3" instance=ExtResource("36_flowers_a")]
-
-[node name="FlowerA4" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 3.91, 0, 21.18)
-
-[node name="Model" parent="FlowerA4" instance=ExtResource("36_flowers_a")]
-
-[node name="FlowerA5" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -16.60, 0, 14.04)
-
-[node name="Model" parent="FlowerA5" instance=ExtResource("36_flowers_a")]
-
-[node name="FlowerA6" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -18.17, 0, 14.79)
-
-[node name="Model" parent="FlowerA6" instance=ExtResource("36_flowers_a")]
-
-[node name="FlowerA7" type="Node3D" parent="."]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, -16.99, 0, 15.94)
-
-[node name="Model" parent="FlowerA7" instance=ExtResource("36_flowers_a")]
-
-[node name="FlowerB1" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12.55, 0, 18.02)
-
-[node name="Model" parent="FlowerB1" instance=ExtResource("37_flowers_b")]
-
-[node name="FlowerB2" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -13.80, 0, 18.99)
-
-[node name="Model" parent="FlowerB2" instance=ExtResource("37_flowers_b")]
-
-[node name="FlowerB3" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -11.83, 0, 17.06)
-
-[node name="Model" parent="FlowerB3" instance=ExtResource("37_flowers_b")]
-
-[node name="FlowerB4" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -12.71, 0, 17.09)
-
-[node name="Model" parent="FlowerB4" instance=ExtResource("37_flowers_b")]
-
-[node name="Pebble1" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 7.98, 0, -7.87)
-
-[node name="Model" parent="Pebble1" instance=ExtResource("41_pebble_b")]
-
-[node name="Pebble2" type="Node3D" parent="."]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 7.94, 0, -7.98)
-
-[node name="Model" parent="Pebble2" instance=ExtResource("40_pebble_a")]
-
-[node name="Pebble3" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 5.90, 0, -6.47)
-
-[node name="Model" parent="Pebble3" instance=ExtResource("40_pebble_a")]
-
-[node name="Pebble4" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 6.47, 0, -6.72)
-
-[node name="Model" parent="Pebble4" instance=ExtResource("41_pebble_b")]
-
-[node name="Pebble5" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 5.16, 0, -7.09)
-
-[node name="Model" parent="Pebble5" instance=ExtResource("40_pebble_a")]
-
-[node name="Pebble6" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 5.66, 0, -7.22)
-
-[node name="Model" parent="Pebble6" instance=ExtResource("40_pebble_a")]
-
-[node name="Pebble7" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 7.40, 0, -9.90)
-
-[node name="Model" parent="Pebble7" instance=ExtResource("41_pebble_b")]
-
-[node name="Pebble8" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 7.17, 0, -9.47)
-
-[node name="Model" parent="Pebble8" instance=ExtResource("41_pebble_b")]
-
-[node name="Pebble9" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -14.64, 0, -16.93)
-
-[node name="Model" parent="Pebble9" instance=ExtResource("40_pebble_a")]
-
-[node name="Pebble10" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -14.92, 0, -16.77)
-
-[node name="Model" parent="Pebble10" instance=ExtResource("40_pebble_a")]
-
-[node name="Pebble11" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -23.14, 0, -2.89)
-
-[node name="Model" parent="Pebble11" instance=ExtResource("41_pebble_b")]
-
-[node name="Pebble12" type="Node3D" parent="."]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, -23.46, 0, -2.59)
-
-[node name="Model" parent="Pebble12" instance=ExtResource("41_pebble_b")]
-
-[node name="Pebble13" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -16.48, 0, 14.53)
-
-[node name="Model" parent="Pebble13" instance=ExtResource("40_pebble_a")]
-
-[node name="Pebble14" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -16.47, 0, 14.16)
-
-[node name="Model" parent="Pebble14" instance=ExtResource("40_pebble_a")]
-
-[node name="Pebble15" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -18.53, 0, 3.70)
-
-[node name="Model" parent="Pebble15" instance=ExtResource("41_pebble_b")]
-
-[node name="Pebble16" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18.54, 0, 3.59)
-
-[node name="Model" parent="Pebble16" instance=ExtResource("41_pebble_b")]
-
-[node name="Pebble17" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -22.93, 0, 1.32)
-
-[node name="Model" parent="Pebble17" instance=ExtResource("41_pebble_b")]
-
-[node name="Pebble18" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -23.13, 0, 1.24)
-
-[node name="Model" parent="Pebble18" instance=ExtResource("40_pebble_a")]
-
-[node name="Pebble19" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.77, 0, -15.55)
-
-[node name="Model" parent="Pebble19" instance=ExtResource("40_pebble_a")]
-
-[node name="Pebble20" type="Node3D" parent="."]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 1.23, 0, -15.72)
-
-[node name="Model" parent="Pebble20" instance=ExtResource("41_pebble_b")]
-
-[node name="Pebble21" type="Node3D" parent="."]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, 0.97, 0, -24.44)
-
-[node name="Model" parent="Pebble21" instance=ExtResource("41_pebble_b")]
-
-[node name="Pebble22" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.82, 0, -24.27)
-
-[node name="Model" parent="Pebble22" instance=ExtResource("40_pebble_a")]
-
-[node name="Pebble23" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -11.71, 0, 13.90)
-
-[node name="Model" parent="Pebble23" instance=ExtResource("41_pebble_b")]
-
-[node name="Pebble24" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -11.93, 0, 15.06)
-
-[node name="Model" parent="Pebble24" instance=ExtResource("41_pebble_b")]
-
-[node name="Pebble25" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.02, 0, -2.83)
-
-[node name="Model" parent="Pebble25" instance=ExtResource("41_pebble_b")]
-
-[node name="Pebble26" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 6.17, 0, -3.20)
-
-[node name="Model" parent="Pebble26" instance=ExtResource("40_pebble_a")]
-
-[node name="Pebble27" type="Node3D" parent="."]
-transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, -0.08, 0, -18.71)
-
-[node name="Model" parent="Pebble27" instance=ExtResource("41_pebble_b")]
-
-[node name="Pebble28" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.33, 0, -18.24)
-
-[node name="Model" parent="Pebble28" instance=ExtResource("40_pebble_a")]
 
 [node name="MapPin" type="Node3D" parent="."]
 script = ExtResource("maploc_39_5a")
@@ -1586,7 +983,7 @@ LocationId = "location.tarn.chandler"
 ; Elyndra's waystone sits at the landing edge among the docks, nets and shore plants: a working
 ; waterside place where seasons and wildlife have a visible daily consequence.
 [node name="ShrineElyndra" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0, -2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, 13)
 script = ExtResource("2_entity")
 
 [node name="Body" parent="Nav/ShrineElyndra" instance=ExtResource("shrine_body_41_5b")]
@@ -1604,3 +1001,369 @@ ShrineId = "shrine.elyndra"
 [node name="MapPin" type="Node3D" parent="Nav/ShrineElyndra"]
 script = ExtResource("maploc_39_5a")
 LocationId = "location.shrine.elyndra"
+
+
+[node name="Grass1" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -17.99, 0, 1.66)
+
+[node name="Model" parent="Grass1" instance=ExtResource("32_grass_short")]
+
+[node name="Grass3" type="Node3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -17.29, 0, 0.92)
+
+[node name="Model" parent="Grass3" instance=ExtResource("32_grass_short")]
+
+[node name="Grass5" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17.62, 0, -0.20)
+
+[node name="Model" parent="Grass5" instance=ExtResource("32_grass_short")]
+
+[node name="Grass7" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -5.44, 0, -5.24)
+
+[node name="Model" parent="Grass7" instance=ExtResource("32_grass_short")]
+
+[node name="Grass9" type="Node3D" parent="."]
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -5.25, 0, -3.96)
+
+[node name="Model" parent="Grass9" instance=ExtResource("32_grass_short")]
+
+[node name="Grass11" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -6.03, 0, -3.90)
+
+[node name="Model" parent="Grass11" instance=ExtResource("33_grass_tall")]
+
+[node name="Grass13" type="Node3D" parent="."]
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -22.57, 0, -6.24)
+
+[node name="Model" parent="Grass13" instance=ExtResource("32_grass_short")]
+
+[node name="Grass15" type="Node3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -21.63, 0, -5.76)
+
+[node name="Model" parent="Grass15" instance=ExtResource("32_grass_short")]
+
+[node name="Grass17" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -22.37, 0, -5.24)
+
+[node name="Model" parent="Grass17" instance=ExtResource("34_grass_wispy")]
+
+[node name="Grass19" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16.12, 0, -12.56)
+
+[node name="Model" parent="Grass19" instance=ExtResource("33_grass_tall")]
+
+[node name="Grass21" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16.43, 0, -11.34)
+
+[node name="Model" parent="Grass21" instance=ExtResource("32_grass_short")]
+
+[node name="Grass23" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16.49, 0, -12.94)
+
+[node name="Model" parent="Grass23" instance=ExtResource("33_grass_tall")]
+
+[node name="Grass25" type="Node3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -4.13, 0, -22.54)
+
+[node name="Model" parent="Grass25" instance=ExtResource("32_grass_short")]
+
+[node name="Grass27" type="Node3D" parent="."]
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -2.76, 0, -23.65)
+
+[node name="Model" parent="Grass27" instance=ExtResource("33_grass_tall")]
+
+[node name="Grass29" type="Node3D" parent="."]
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -3.41, 0, -21.54)
+
+[node name="Model" parent="Grass29" instance=ExtResource("33_grass_tall")]
+
+[node name="Grass31" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 16.91, 0, 5.44)
+
+[node name="Model" parent="Grass31" instance=ExtResource("32_grass_short")]
+
+[node name="Grass33" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.12, 0, 6.43)
+
+[node name="Model" parent="Grass33" instance=ExtResource("33_grass_tall")]
+
+[node name="Grass35" type="Node3D" parent="."]
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 15.93, 0, 5.13)
+
+[node name="Model" parent="Grass35" instance=ExtResource("32_grass_short")]
+
+[node name="Grass37" type="Node3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 8.18, 0, 1.83)
+
+[node name="Model" parent="Grass37" instance=ExtResource("32_grass_short")]
+
+[node name="Grass39" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.15, 0, 2.09)
+
+[node name="Model" parent="Grass39" instance=ExtResource("33_grass_tall")]
+
+[node name="Grass41" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.37, 0, 2.20)
+
+[node name="Model" parent="Grass41" instance=ExtResource("32_grass_short")]
+
+[node name="Grass43" type="Node3D" parent="."]
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -14.67, 0, -18.05)
+
+[node name="Model" parent="Grass43" instance=ExtResource("32_grass_short")]
+
+[node name="Grass45" type="Node3D" parent="."]
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -15.42, 0, -18.15)
+
+[node name="Model" parent="Grass45" instance=ExtResource("33_grass_tall")]
+
+[node name="Grass47" type="Node3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -2.00, 0, -22.42)
+
+[node name="Model" parent="Grass47" instance=ExtResource("33_grass_tall")]
+
+[node name="Grass49" type="Node3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -4.37, 0, -23.33)
+
+[node name="Model" parent="Grass49" instance=ExtResource("32_grass_short")]
+
+[node name="Grass51" type="Node3D" parent="."]
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -3.66, 0, -20.97)
+
+[node name="Model" parent="Grass51" instance=ExtResource("32_grass_short")]
+
+[node name="Grass53" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 17.18, 0, 5.98)
+
+[node name="Model" parent="Grass53" instance=ExtResource("32_grass_short")]
+
+[node name="Grass55" type="Node3D" parent="."]
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 16.82, 0, 5.76)
+
+[node name="Model" parent="Grass55" instance=ExtResource("34_grass_wispy")]
+
+[node name="Grass57" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 17.37, 0, 5.30)
+
+[node name="Model" parent="Grass57" instance=ExtResource("33_grass_tall")]
+
+[node name="Grass59" type="Node3D" parent="."]
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -11.95, 0, -20.61)
+
+[node name="Model" parent="Grass59" instance=ExtResource("33_grass_tall")]
+
+[node name="Grass61" type="Node3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -12.54, 0, -20.73)
+
+[node name="Model" parent="Grass61" instance=ExtResource("32_grass_short")]
+
+[node name="Grass63" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12.19, 0, -20.83)
+
+[node name="Model" parent="Grass63" instance=ExtResource("34_grass_wispy")]
+
+[node name="Grass65" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.16, 0, -9.46)
+
+[node name="Model" parent="Grass65" instance=ExtResource("32_grass_short")]
+
+[node name="Grass67" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -1.43, 0, -11.54)
+
+[node name="Model" parent="Grass67" instance=ExtResource("33_grass_tall")]
+
+[node name="Grass69" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -0.28, 0, -9.29)
+
+[node name="Model" parent="Grass69" instance=ExtResource("33_grass_tall")]
+
+[node name="Grass71" type="Node3D" parent="."]
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -20.94, 0, -2.76)
+
+[node name="Model" parent="Grass71" instance=ExtResource("33_grass_tall")]
+
+[node name="Grass73" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -20.87, 0, -4.04)
+
+[node name="Model" parent="Grass73" instance=ExtResource("32_grass_short")]
+
+[node name="Grass75" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -20.24, 0, -2.73)
+
+[node name="Model" parent="Grass75" instance=ExtResource("32_grass_short")]
+
+[node name="Grass77" type="Node3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -7.81, 0, -7.96)
+
+[node name="Model" parent="Grass77" instance=ExtResource("32_grass_short")]
+
+[node name="Grass79" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.40, 0, -8.80)
+
+[node name="Model" parent="Grass79" instance=ExtResource("32_grass_short")]
+
+[node name="Grass81" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.79, 0, -9.74)
+
+[node name="Model" parent="Grass81" instance=ExtResource("34_grass_wispy")]
+
+[node name="Grass83" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.54, 0, -2.10)
+
+[node name="Model" parent="Grass83" instance=ExtResource("34_grass_wispy")]
+
+[node name="Grass85" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 10.41, 0, -3.43)
+
+[node name="Model" parent="Grass85" instance=ExtResource("32_grass_short")]
+
+[node name="Grass87" type="Node3D" parent="."]
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 8.66, 0, -1.90)
+
+[node name="Model" parent="Grass87" instance=ExtResource("32_grass_short")]
+
+[node name="Grass89" type="Node3D" parent="."]
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -17.65, 0, -5.60)
+
+[node name="Model" parent="Grass89" instance=ExtResource("33_grass_tall")]
+
+[node name="Grass91" type="Node3D" parent="."]
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -18.85, 0, -5.11)
+
+[node name="Model" parent="Grass91" instance=ExtResource("32_grass_short")]
+
+[node name="Grass93" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -17.97, 0, -4.70)
+
+[node name="Model" parent="Grass93" instance=ExtResource("32_grass_short")]
+
+[node name="Mushroom1" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.19, 0, 14.87)
+
+[node name="Model" parent="Mushroom1" instance=ExtResource("39_mushrooms")]
+
+[node name="Mushroom3" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 23.26, 0, 3.44)
+
+[node name="Model" parent="Mushroom3" instance=ExtResource("39_mushrooms")]
+
+[node name="Clover1" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -13.83, 0, -7.60)
+
+[node name="Model" parent="Clover1" instance=ExtResource("35_clover")]
+
+[node name="Clover3" type="Node3D" parent="."]
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -13.98, 0, -5.78)
+
+[node name="Model" parent="Clover3" instance=ExtResource("35_clover")]
+
+[node name="Clover5" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -14.49, 0, -6.70)
+
+[node name="Model" parent="Clover5" instance=ExtResource("35_clover")]
+
+[node name="Clover7" type="Node3D" parent="."]
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -15.53, 0, -6.06)
+
+[node name="Model" parent="Clover7" instance=ExtResource("35_clover")]
+
+[node name="Clover9" type="Node3D" parent="."]
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -5.90, 0, -22.85)
+
+[node name="Model" parent="Clover9" instance=ExtResource("35_clover")]
+
+[node name="FlowerA2" type="Node3D" parent="."]
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 11.72, 0, 3.31)
+
+[node name="Model" parent="FlowerA2" instance=ExtResource("36_flowers_a")]
+
+[node name="FlowerA4" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 14.64, 0, 0.98)
+
+[node name="Model" parent="FlowerA4" instance=ExtResource("36_flowers_a")]
+
+[node name="FlowerA6" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20.21, 0, -7.51)
+
+[node name="Model" parent="FlowerA6" instance=ExtResource("36_flowers_a")]
+
+[node name="FlowerA8" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -20.51, 0, -8.19)
+
+[node name="Model" parent="FlowerA8" instance=ExtResource("36_flowers_a")]
+
+[node name="FlowerB2" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 15.59, 0, 4.91)
+
+[node name="Model" parent="FlowerB2" instance=ExtResource("37_flowers_b")]
+
+[node name="FlowerB4" type="Node3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 15.79, 0, 6.58)
+
+[node name="Model" parent="FlowerB4" instance=ExtResource("37_flowers_b")]
+
+[node name="Pebble2" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -19.07, 0, -3.41)
+
+[node name="Model" parent="Pebble2" instance=ExtResource("40_pebble_a")]
+
+[node name="Pebble4" type="Node3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -23.29, 0, -1.28)
+
+[node name="Model" parent="Pebble4" instance=ExtResource("41_pebble_b")]
+
+[node name="Pebble6" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -18.23, 0, -9.25)
+
+[node name="Model" parent="Pebble6" instance=ExtResource("40_pebble_a")]
+
+[node name="Pebble8" type="Node3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 13.87, 0, 3.12)
+
+[node name="Model" parent="Pebble8" instance=ExtResource("41_pebble_b")]
+
+[node name="Pebble10" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -4.98, 0, -11.08)
+
+[node name="Model" parent="Pebble10" instance=ExtResource("40_pebble_a")]
+
+[node name="Pebble12" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.20, 0, 0.37)
+
+[node name="Model" parent="Pebble12" instance=ExtResource("40_pebble_a")]
+
+[node name="Pebble14" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 6.68, 0, 14.38)
+
+[node name="Model" parent="Pebble14" instance=ExtResource("41_pebble_b")]
+
+[node name="Pebble16" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.96, 0, -17.67)
+
+[node name="Model" parent="Pebble16" instance=ExtResource("40_pebble_a")]
+
+[node name="Pebble18" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 17.51, 0, 3.21)
+
+[node name="Model" parent="Pebble18" instance=ExtResource("40_pebble_a")]
+
+[node name="Pebble20" type="Node3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -9.28, 0, -21.80)
+
+[node name="Model" parent="Pebble20" instance=ExtResource("40_pebble_a")]
+
+[node name="Pebble22" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 14.33, 0, 4.92)
+
+[node name="Model" parent="Pebble22" instance=ExtResource("40_pebble_a")]
+
+[node name="Pebble24" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -18.40, 0, -7.09)
+
+[node name="Model" parent="Pebble24" instance=ExtResource("41_pebble_b")]
+
+[node name="Pebble26" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.47, 0, 9.50)
+
+[node name="Model" parent="Pebble26" instance=ExtResource("40_pebble_a")]
