@@ -364,7 +364,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, -0.3, 11)
 
 ; --- The waystone: the travel node, and the only signpost the district gets ------
 [node name="ReachWaystone" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 0, 12)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 0, 16)
 script = ExtResource("2_entity")
 DisplayName = "Hollowreach Waystone"
 
@@ -423,7 +423,7 @@ ScheduleId = "schedule.hollowreach.hull"
 [node name="Model" parent="Sedge" instance=ExtResource("30_sedge")]
 
 [node name="Coyle" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -9, 0, 1)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -9, 0, 5)
 script = ExtResource("2_entity")
 DisplayName = "Coyle Ferrin"
 TemplateId = "npc.coyle"
@@ -645,7 +645,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 shape = SubResource("Shape_tent")
 
 [node name="CartA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.1736, 0, 0.9848, 0, 1, 0, -0.9848, 0, 0.1736, 10, 0, 13)
+transform = Transform3D(0.1736, 0, 0.9848, 0, 1, 0, -0.9848, 0, 0.1736, 10, 0, 16)
 
 [node name="Model" parent="Nav/CartA" instance=ExtResource("20_cart")]
 
@@ -711,7 +711,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="Harbourshed" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.1736, 0, 0.9848, 0, 1, 0, -0.9848, 0, -0.1736, 2, 0, -3)
+transform = Transform3D(-0.1736, 0, 0.9848, 0, 1, 0, -0.9848, 0, -0.1736, -4, 0, -8)
 
 [node name="Model" parent="Nav/Harbourshed" instance=ExtResource("12_hut")]
 
@@ -743,17 +743,6 @@ transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, -6, 0, -3)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
 shape = SubResource("Shape_crate")
 
-[node name="CrateB" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -6, 0, -1.8)
-
-[node name="Model" parent="Nav/CrateB" instance=ExtResource("17_crate")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/CrateB"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/CrateB/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
-shape = SubResource("Shape_crate")
-
 [node name="CrateC" type="Node3D" parent="Nav"]
 transform = Transform3D(0.5, 0, 0.866, 0, 1, 0, -0.866, 0, 0.5, -12.5, 0, 4.2)
 
@@ -762,17 +751,6 @@ transform = Transform3D(0.5, 0, 0.866, 0, 1, 0, -0.866, 0, 0.5, -12.5, 0, 4.2)
 [node name="Collider" type="StaticBody3D" parent="Nav/CrateC"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/CrateC/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
-shape = SubResource("Shape_crate")
-
-[node name="CrateD" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, -0.766, -5.5, 0, 4.5)
-
-[node name="Model" parent="Nav/CrateD" instance=ExtResource("17_crate")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/CrateD"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/CrateD/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
 shape = SubResource("Shape_crate")
 
@@ -787,39 +765,6 @@ transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -13, 0, -4)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
 shape = SubResource("Shape_crate")
 
-[node name="CrateF" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, -7, 0, -4.5)
-
-[node name="Model" parent="Nav/CrateF" instance=ExtResource("17_crate")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/CrateF"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/CrateF/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
-shape = SubResource("Shape_crate")
-
-[node name="CrateG" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9848, 0, 0.1736, 0, 1, 0, -0.1736, 0, -0.9848, -4.5, 0, 1)
-
-[node name="Model" parent="Nav/CrateG" instance=ExtResource("17_crate")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/CrateG"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/CrateG/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
-shape = SubResource("Shape_crate")
-
-[node name="CrateH" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -4.5, 0, 2.2)
-
-[node name="Model" parent="Nav/CrateH" instance=ExtResource("17_crate")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/CrateH"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/CrateH/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
-shape = SubResource("Shape_crate")
-
 [node name="BarrelA" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0, -3.5)
 
@@ -828,17 +773,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0, -3.5)
 [node name="Collider" type="StaticBody3D" parent="Nav/BarrelA"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/BarrelA/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
-shape = SubResource("Shape_barrel")
-
-[node name="BarrelB" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.8, 0, -3)
-
-[node name="Model" parent="Nav/BarrelB" instance=ExtResource("16_barrel")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/BarrelB"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/BarrelB/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
 shape = SubResource("Shape_barrel")
 
@@ -853,28 +787,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, 2)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
 shape = SubResource("Shape_barrel")
 
-[node name="BarrelD" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, 5.5)
-
-[node name="Model" parent="Nav/BarrelD" instance=ExtResource("16_barrel")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/BarrelD"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/BarrelD/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
-shape = SubResource("Shape_barrel")
-
-[node name="BarrelE" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13.5, 0, 0)
-
-[node name="Model" parent="Nav/BarrelE" instance=ExtResource("16_barrel")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/BarrelE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/BarrelE/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
-shape = SubResource("Shape_barrel")
-
 [node name="BarrelF" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -4)
 
@@ -886,17 +798,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -4)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
 shape = SubResource("Shape_barrel")
 
-[node name="BarrelG" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 0, -4.5)
-
-[node name="Model" parent="Nav/BarrelG" instance=ExtResource("16_barrel")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/BarrelG"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/BarrelG/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
-shape = SubResource("Shape_barrel")
-
 [node name="SacksA" type="Node3D" parent="Nav"]
 transform = Transform3D(0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, 0.342, -10, 0, 4.5)
 
@@ -905,28 +806,6 @@ transform = Transform3D(0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, 0.342, -10, 0, 4.
 [node name="Collider" type="StaticBody3D" parent="Nav/SacksA"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/SacksA/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.22, 0)
-shape = SubResource("Shape_sacks")
-
-[node name="SacksB" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -8, 0, -4)
-
-[node name="Model" parent="Nav/SacksB" instance=ExtResource("18_sacks")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/SacksB"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/SacksB/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.22, 0)
-shape = SubResource("Shape_sacks")
-
-[node name="SacksC" type="Node3D" parent="Nav"]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -4.8, 0, -1)
-
-[node name="Model" parent="Nav/SacksC" instance=ExtResource("18_sacks")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/SacksC"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/SacksC/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.22, 0)
 shape = SubResource("Shape_sacks")
 
@@ -975,7 +854,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
 shape = SubResource("Shape_ruin")
 
 [node name="RuinWallE" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -4, 0, 3)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 4, 0, 7)
 
 [node name="Model" parent="Nav/RuinWallE" instance=ExtResource("23_ruinwall")]
 
@@ -1046,17 +925,6 @@ transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, 18, 0, 1
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
 shape = SubResource("Shape_cart")
 
-[node name="CartC" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, -0.9397, 24, 0, 8)
-
-[node name="Model" parent="Nav/CartC" instance=ExtResource("20_cart")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/CartC"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/CartC/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
-shape = SubResource("Shape_cart")
-
 [node name="CrateI" type="Node3D" parent="Nav"]
 transform = Transform3D(0.9659, 0, 0.2588, 0, 1, 0, -0.2588, 0, 0.9659, 20, 0, 14)
 
@@ -1065,17 +933,6 @@ transform = Transform3D(0.9659, 0, 0.2588, 0, 1, 0, -0.2588, 0, 0.9659, 20, 0, 1
 [node name="Collider" type="StaticBody3D" parent="Nav/CrateI"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/CrateI/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
-shape = SubResource("Shape_crate")
-
-[node name="CrateJ" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9659, 0, -0.2588, 0, 1, 0, 0.2588, 0, -0.9659, 20, 0, 15.2)
-
-[node name="Model" parent="Nav/CrateJ" instance=ExtResource("17_crate")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/CrateJ"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/CrateJ/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
 shape = SubResource("Shape_crate")
 
@@ -1101,28 +958,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17, 0, 9)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
 shape = SubResource("Shape_barrel")
 
-[node name="BarrelI" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 23, 0, 12)
-
-[node name="Model" parent="Nav/BarrelI" instance=ExtResource("16_barrel")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/BarrelI"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/BarrelI/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
-shape = SubResource("Shape_barrel")
-
-[node name="SacksD" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, 19, 0, 11)
-
-[node name="Model" parent="Nav/SacksD" instance=ExtResource("18_sacks")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/SacksD"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/SacksD/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.22, 0)
-shape = SubResource("Shape_sacks")
-
 [node name="HayA" type="Node3D" parent="Nav"]
 transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, 24, 0, 17)
 
@@ -1131,17 +966,6 @@ transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, 24, 0, 17)
 [node name="Collider" type="StaticBody3D" parent="Nav/HayA"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/HayA/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
-shape = SubResource("Shape_hay")
-
-[node name="HayB" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.766, 0, -0.6428, 0, 1, 0, 0.6428, 0, -0.766, 24.8, 0, 16)
-
-[node name="Model" parent="Nav/HayB" instance=ExtResource("33_hay")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/HayB"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/HayB/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
 shape = SubResource("Shape_hay")
 
@@ -1211,17 +1035,6 @@ transform = Transform3D(-0.5, 0, -0.866, 0, 1, 0, 0.866, 0, -0.5, 12, 0, 22)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
 shape = SubResource("Shape_pine")
 
-[node name="PineH" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.5, 0, 0.866, 0, 1, 0, -0.866, 0, -0.5, -8, 0, 22)
-
-[node name="Model" parent="Nav/PineH" instance=ExtResource("22_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineH"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineH/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
-shape = SubResource("Shape_pine")
-
 [node name="RocksE" type="Node3D" parent="Nav"]
 transform = Transform3D(0.766, 0, -0.6428, 0, 1, 0, 0.6428, 0, 0.766, 24, 0, 20)
 
@@ -1233,19 +1046,8 @@ transform = Transform3D(0.766, 0, -0.6428, 0, 1, 0, 0.6428, 0, 0.766, 24, 0, 20)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
 shape = SubResource("Shape_rocks")
 
-[node name="RocksF" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 4, 0, 20)
-
-[node name="Model" parent="Nav/RocksF" instance=ExtResource("21_rocks")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/RocksF"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RocksF/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-shape = SubResource("Shape_rocks")
-
 [node name="StandC" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, -0.342, 12, 0, 12)
+transform = Transform3D(-0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, -0.342, 12, 0, 16)
 
 [node name="Model" parent="Nav/StandC" instance=ExtResource("28_stand")]
 
@@ -1266,17 +1068,6 @@ transform = Transform3D(0.7071, 0, 0.7071, 0, 1, 0, -0.7071, 0, 0.7071, 9, 0, 15
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
 shape = SubResource("Shape_crate")
 
-[node name="CrateM" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.7071, 0, -0.7071, 0, 1, 0, 0.7071, 0, -0.7071, 9, 0, 16.2)
-
-[node name="Model" parent="Nav/CrateM" instance=ExtResource("17_crate")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/CrateM"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/CrateM/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
-shape = SubResource("Shape_crate")
-
 [node name="BarrelJ" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, 10)
 
@@ -1287,28 +1078,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, 10)
 [node name="Shape" type="CollisionShape3D" parent="Nav/BarrelJ/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
 shape = SubResource("Shape_barrel")
-
-[node name="BarrelK" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, -3)
-
-[node name="Model" parent="Nav/BarrelK" instance=ExtResource("16_barrel")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/BarrelK"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/BarrelK/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
-shape = SubResource("Shape_barrel")
-
-[node name="SacksE" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.5, 0, 0.866, 0, 1, 0, -0.866, 0, -0.5, 7, 0, 14)
-
-[node name="Model" parent="Nav/SacksE" instance=ExtResource("18_sacks")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/SacksE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/SacksE/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.22, 0)
-shape = SubResource("Shape_sacks")
 
 [node name="TimberC" type="Node3D" parent="Nav"]
 transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, 0, 0, 6)
@@ -1354,17 +1123,6 @@ transform = Transform3D(0.866, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866, -14, 0, 20)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
 shape = SubResource("Shape_pine")
 
-[node name="PineJ" type="Node3D" parent="Nav"]
-transform = Transform3D(0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, 0.342, 20, 0, -16)
-
-[node name="Model" parent="Nav/PineJ" instance=ExtResource("22_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineJ"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineJ/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
-shape = SubResource("Shape_pine")
-
 [node name="RocksG" type="Node3D" parent="Nav"]
 transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, -4, 0, -16)
 
@@ -1387,28 +1145,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24, 0, 14)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
 shape = SubResource("Shape_pillar")
 
-[node name="CrateN" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, -0.342, 3, 0, -4)
-
-[node name="Model" parent="Nav/CrateN" instance=ExtResource("17_crate")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/CrateN"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/CrateN/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
-shape = SubResource("Shape_crate")
-
-[node name="BarrelL" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 5)
-
-[node name="Model" parent="Nav/BarrelL" instance=ExtResource("16_barrel")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/BarrelL"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/BarrelL/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
-shape = SubResource("Shape_barrel")
-
 [node name="HayC" type="Node3D" parent="Nav"]
 transform = Transform3D(-0.866, 0, 0.5, 0, 1, 0, -0.5, 0, -0.866, 22, 0, 2)
 
@@ -1428,17 +1164,6 @@ transform = Transform3D(-0.866, 0, -0.5, 0, 1, 0, 0.5, 0, -0.866, -2, 0, -19)
 [node name="Collider" type="StaticBody3D" parent="Nav/PineK"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/PineK/Collider"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
-shape = SubResource("Shape_pine")
-
-[node name="PineL" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, -0.9397, 6, 0, 25)
-
-[node name="Model" parent="Nav/PineL" instance=ExtResource("22_pine")]
-
-[node name="Collider" type="StaticBody3D" parent="Nav/PineL"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineL/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
 shape = SubResource("Shape_pine")
 
@@ -1789,6 +1514,7 @@ transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 1.23, 0, -15.16)
 [node name="Model" parent="Pebble27" instance=ExtResource("43_pebble_a")]
 
 [node name="MapPin" type="Node3D" parent="."]
+position = Vector3(-21, 0, 2)
 script = ExtResource("maploc_39_5a")
 LocationId = "location.hollowreach.reach"
 

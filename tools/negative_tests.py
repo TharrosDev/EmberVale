@@ -16,13 +16,11 @@ So: each entry below mutates authored data, runs `--validate`, and asserts BOTH 
 AND that the expected refusal is the one that fired. The exit code alone is not evidence — it proves
 that *some* rule tripped, and a mutation that trips the wrong rule looks identical to one that works.
 
-⚠️ THIS EDITS `data/` AND `scenes/` IN PLACE, and that makes it the most dangerous script in the
-repo. Three guards, all required and none of them optional:
-  1. it refuses to start unless git reports `data/` AND `scenes/` clean, so it can never eat
-     uncommitted authoring or level work (39C added the second directory with the first scene case —
-     the restore is a `git checkout --`, so anything this can mutate it can also destroy);
-  2. every mutation is undone in a `finally`, so Ctrl-C and a crash both restore;
-  3. it re-asserts a clean tree before exiting, and shouts if it cannot.
+⚠️ THIS EDITS `data/` AND `scenes/` IN PLACE. Before the first mutation it snapshots the exact bytes
+of every possible target, including uncommitted authoring, and every case restores from that
+snapshot in a `finally`. It also compares the final git state with the initial state. Never replace
+this with `git checkout --`: that would silently destroy the level work this battery is meant to
+protect while validating it.
 
 ⚠️ COVERAGE IS ONE MUTATION PER VALIDATOR FUNCTION, not one per refusal. Phase 38 has roughly 110
 `issues.Add` sites; this proves that each rule FIRES and RECOVERS, which is the gate's question.
@@ -658,12 +656,9 @@ def run(cmd, **kwargs):
     return subprocess.run(cmd, cwd=REPO, capture_output=True, text=True, **kwargs)
 
 
-def tree_is_clean():
-    """⚠️ `scenes/` joined `data/` here in 39C, and the reason is worth the line: the restore is a
-    `git checkout --`, so any directory this script MUTATES it can also DESTROY. A case that edits a
-    cell scene while the guard watches only data/ would silently discard uncommitted level work."""
-    out = run(["git", "status", "--porcelain", "data/", "scenes/"]).stdout.strip()
-    return out == "", out
+def tree_state():
+    """Exact relevant git state, used to prove dirty authoring survives the battery unchanged."""
+    return run(["git", "status", "--porcelain", "data/", "scenes/"]).stdout.strip()
 
 
 def validate():
@@ -672,8 +667,13 @@ def validate():
     return result.returncode, result.stdout + result.stderr
 
 
-def restore(paths):
-    run(["git", "checkout", "--"] + sorted(paths))
+def snapshot(paths):
+    return {rel: (REPO / rel).read_bytes() for rel in paths}
+
+
+def restore(saved, paths=None):
+    for rel in (paths if paths is not None else saved):
+        (REPO / rel).write_bytes(saved[rel])
 
 
 def apply_case(edits):
@@ -712,12 +712,9 @@ def main():
         print(f"\n{len(CASES)} cases.")
         return 0
 
-    clean, dirty = tree_is_clean()
-    if not clean:
-        print("REFUSING TO RUN: data/ or scenes/ has uncommitted changes.\n"
-              "This script edits authored data in place and restores with `git checkout`, which "
-              "would discard the work below.\n" + dirty)
-        return 2
+    all_targets = {rel for _, _, edits, _ in CASES for rel, _, _ in edits}
+    initial_state = tree_state()
+    saved = snapshot(all_targets)
 
     print(f"{len(cases)} case(s). Each one breaks a rule, proves the right rule fired, "
           "and puts the data back.\n")
@@ -735,7 +732,7 @@ def main():
                 continue
 
             code, output = validate()
-            restore(touched)
+            restore(saved, touched)
             touched = set()
 
             if code == 0:
@@ -748,18 +745,19 @@ def main():
                 print("caught")
     finally:
         if touched:
-            restore(touched)
+            restore(saved, touched)
 
     print("\nrestoring and re-checking the tree ... ", end="", flush=True)
-    restore({rel for _, _, edits, _ in CASES for rel, _, _ in edits})
-    clean, dirty = tree_is_clean()
-    print("clean" if clean else f"DIRTY\n{dirty}")
+    restore(saved)
+    final_state = tree_state()
+    preserved = final_state == initial_state
+    print("preserved" if preserved else f"CHANGED\nBefore:\n{initial_state}\nAfter:\n{final_state}")
 
     print("proving the battery recovers: --validate on restored data ... ", end="", flush=True)
     code, _ = validate()
     print("exit 0" if code == 0 else f"EXIT {code} — the restore did not restore")
 
-    if failures or not clean or code != 0:
+    if failures or not preserved or code != 0:
         print(f"\nFAILED: {len(failures)} case(s): {', '.join(failures) or '-'}")
         return 1
 

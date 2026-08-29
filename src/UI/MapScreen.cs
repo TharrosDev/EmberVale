@@ -489,6 +489,7 @@ public partial class MapScreen : UiPanel
         _view.Waypoint = _map?.Waypoint;
         _view.Regions = _map != null ? new List<MapMarker>(_map.RegionMarkers()) : new List<MapMarker>();
         _view.Land = BuildLand();
+        _view.Roads = MapCartography.Roads(_map);
         _view.QueueRedraw();
 
         RebuildBreadcrumb();

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Report STRUCTURE that overlaps in a region cell `.tscn`.
+"""Report major overlaps and out-of-bounds structure in cells or an entire region.
 
 Why this exists
 ---------------
@@ -9,6 +9,7 @@ the same ground, is invisible in the `.tscn`, invisible to `--validate` (which c
 not geometry) and only shows up by walking there.
 
     python tools/check_cell_layout.py scenes/regions/ember_crown/embermarket.tscn [--slack=0.0]
+    python tools/check_cell_layout.py data/regions/EmberCrown.tres
 
 ⚠️ IT ONLY LOOKS AT BIG THINGS, AND THAT IS THE WHOLE DESIGN. It compares top-level nodes whose
 `dress_cell.py` footprint is >= 3 m — buildings, stalls, towers, carts, trees, walls — and ignores
@@ -20,10 +21,12 @@ a world position is meaningless. A checker nobody reads is worse than no checker
 
 import math
 import os
+from pathlib import Path
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from dress_cell import footprint  # noqa: E402
+from check_region_seams import cell_for_scene, find_repo, parse_region, validate_region  # noqa: E402
 
 BIG = 3.0
 
@@ -34,7 +37,7 @@ BIG = 3.0
 # bed is furniture standing inside the building whose footprint the checker would otherwise flag.
 TOUCHING = ("fence", "chest", "stand", "bed", "deed", "pin")
 
-SKIN = ("lane", "yard", "road", "walk", "court", "steps", "stair", "spine", "crookway",
+SKIN = ("lane", "yard", "road", "walk", "court", "steps", "stair", "spine", "turn", "crookway",
         "forecourt", "plaza", "aisle", "floor", "apron", "ring", "path")
 
 
@@ -54,12 +57,17 @@ def structure(path):
             if r >= BIG and not any(w in low for w in SKIN + TOUCHING):
                 out.append((pending, v[9], v[11], r))
             pending = None
+        elif pending and line.startswith("position = Vector3("):
+            v = [float(x) for x in line[len("position = Vector3("):-1].split(",")]
+            r = footprint(pending)
+            low = pending.lower()
+            if r >= BIG and not any(w in low for w in SKIN + TOUCHING):
+                out.append((pending, v[0], v[2], r))
+            pending = None
     return out
 
 
-def main(argv):
-    path = argv[0]
-    slack = next((float(a.split("=")[1]) for a in argv if a.startswith("--slack=")), 0.0)
+def validate_scene(path: Path, slack: float = 0.0) -> int:
     props = structure(path)
     hits = 0
     for i, (n1, x1, z1, r1) in enumerate(props):
@@ -72,8 +80,34 @@ def main(argv):
             if d < want:
                 print(f"  OVERLAP {n1} ({x1}, {z1}) x {n2} ({x2}, {z2}): {d:.2f} m, want {want:.2f}")
                 hits += 1
-    print(f"{path}: {len(props)} structures, {hits} overlapping pair(s)")
-    return 1 if hits else 0
+
+    # The presentation dimensions are the cell's actual authored ground. A major prop may extend
+    # over an edge for silhouette, but its centre outside the ground means the placement drifted.
+    if (cell := cell_for_scene(Path(path))) is not None:
+        half_width, half_depth = cell.width * 0.5, cell.depth * 0.5
+        for name, x, z, _radius in props:
+            if abs(x) > half_width + 0.25 or abs(z) > half_depth + 0.25:
+                print(f"  OUTSIDE {name} centre ({x}, {z}) outside {cell.width} x {cell.depth} m bounds")
+                hits += 1
+
+    print(f"{path}: {len(props)} structures, {hits} issue(s)")
+    return hits
+
+
+def main(argv):
+    if not argv:
+        raise SystemExit(__doc__)
+    path = Path(argv[0])
+    slack = next((float(a.split("=")[1]) for a in argv if a.startswith("--slack=")), 0.0)
+    if path.suffix == ".tres":
+        failures = validate_region(path)
+        repo = find_repo(path)
+        if repo is None:
+            return 1
+        for cell in parse_region(path):
+            failures += validate_scene(repo / cell.scene_path.removeprefix("res://"), slack)
+        return 1 if failures else 0
+    return 1 if validate_scene(path, slack) else 0
 
 
 if __name__ == "__main__":

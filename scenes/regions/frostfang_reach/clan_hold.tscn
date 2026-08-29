@@ -146,15 +146,6 @@ transform = Transform3D(-0.4226, 0, 0.9063, 0, 1, 0, -0.9063, 0, -0.4226, -15, 3
 [node name="MootHall" type="MeshInstance3D" parent="Nav"]
 transform = Transform3D(-0.9848, 0, -0.1736, 0, 1, 0, 0.1736, 0, -0.9848, 2, 3.4, -12)
 
-[node name="TentSW" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.1736, 0, 0.9848, 0, 1, 0, -0.9848, 0, -0.1736, -24, 0, 2)
-
-[node name="TentSWCol" type="StaticBody3D" parent="Nav/TentSW"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/TentSW/TentSWCol"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
-shape = SubResource("Shape_tent")
-
 [node name="TentSE" type="Node3D" parent="Nav"]
 transform = Transform3D(-0.1736, 0, -0.9848, 0, 1, 0, 0.9848, 0, -0.1736, -24, 0, 8)
 
@@ -183,21 +174,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_brazier")
 
 [node name="Light" type="OmniLight3D" parent="Nav/BrazierSW"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
-light_color = Color(0.74, 0.86, 1, 1)
-light_energy = 2.2
-omni_range = 10.0
-
-[node name="BrazierSE" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 3)
-
-[node name="BrazierSECol" type="StaticBody3D" parent="Nav/BrazierSE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/BrazierSE/BrazierSECol"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-shape = SubResource("Shape_brazier")
-
-[node name="Light" type="OmniLight3D" parent="Nav/BrazierSE"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
 light_color = Color(0.74, 0.86, 1, 1)
 light_energy = 2.2
@@ -383,17 +359,6 @@ transform = Transform3D(0.9659, 0, 0.2588, 0, 1.0, 0, -0.2588, 0, 0.9659, -2, 0,
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.48, 0)
 shape = SubResource("Shape_glacier")
 
-[node name="GlacierS2" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1.0, 0, 0.342, 0, -0.9397, 16, 0, 26)
-
-[node name="Model" parent="Nav/GlacierS2" instance=ExtResource("20_glacier")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/GlacierS2"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/GlacierS2/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.48, 0)
-shape = SubResource("Shape_glacier")
-
 [node name="GlacierNW" type="Node3D" parent="Nav"]
 transform = Transform3D(-0.342, 0, 0.9397, 0, 1.0, 0, -0.9397, 0, -0.342, -25, 0, -24)
 
@@ -405,17 +370,6 @@ transform = Transform3D(-0.342, 0, 0.9397, 0, 1.0, 0, -0.9397, 0, -0.342, -25, 0
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.48, 0)
 shape = SubResource("Shape_glacier")
 
-[node name="GlacierNE" type="Node3D" parent="Nav"]
-transform = Transform3D(0.342, 0, -0.9397, 0, 1.0, 0, 0.9397, 0, 0.342, 24, 0, -20)
-
-[node name="Model" parent="Nav/GlacierNE" instance=ExtResource("20_glacier")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/GlacierNE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/GlacierNE/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.48, 0)
-shape = SubResource("Shape_glacier")
-
 [node name="RockRing1" type="Node3D" parent="Nav"]
 transform = Transform3D(0.866, 0, 0.5, 0, 1.0, 0, -0.5, 0, 0.866, -17, 0, 17)
 
@@ -424,17 +378,6 @@ transform = Transform3D(0.866, 0, 0.5, 0, 1.0, 0, -0.5, 0, 0.866, -17, 0, 17)
 [node name="Col" type="StaticBody3D" parent="Nav/RockRing1"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/RockRing1/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
-shape = SubResource("Shape_rock")
-
-[node name="RockRing2" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.866, 0, -0.5, 0, 1.0, 0, 0.5, 0, -0.866, 7, 0, 19)
-
-[node name="Model" parent="Nav/RockRing2" instance=ExtResource("19_rock")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/RockRing2"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/RockRing2/Col"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
 shape = SubResource("Shape_rock")
 
@@ -468,17 +411,6 @@ transform = Transform3D(0.7071, 0, 0.7071, 0, 1.0, 0, -0.7071, 0, 0.7071, -19, 0
 [node name="Col" type="StaticBody3D" parent="Nav/PineRing1"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/PineRing1/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
-shape = SubResource("Shape_pine")
-
-[node name="PineRing2" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.7071, 0, -0.7071, 0, 1.0, 0, 0.7071, 0, -0.7071, 11, 0, -22)
-
-[node name="Model" parent="Nav/PineRing2" instance=ExtResource("18_pine")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/PineRing2"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/PineRing2/Col"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
 shape = SubResource("Shape_pine")
 
@@ -666,7 +598,7 @@ Station = 2
 StationName = "Workbench"
 
 [node name="StationAlchemy" type="Node3D" parent="."]
-transform = Transform3D(-0.766, 0, -0.6428, 0, 1, 0, 0.6428, 0, -0.766, 11, 0, -4)
+transform = Transform3D(-0.766, 0, -0.6428, 0, 1, 0, 0.6428, 0, -0.766, 17, 0, -7)
 script = ExtResource("1_entity")
 DisplayName = "Shaman's Table"
 TemplateId = "station.alchemy"
@@ -691,15 +623,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.75, 0)
 [node name="Model" parent="Nav/MootHall" instance=ExtResource("26_townhouse")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.4, 0)
 
-[node name="Model" parent="Nav/TentSW" instance=ExtResource("16_tent")]
-
 [node name="Model" parent="Nav/TentSE" instance=ExtResource("16_tent")]
 
 [node name="Model" parent="Nav/TentNW" instance=ExtResource("16_tent")]
 
 [node name="Model" parent="Nav/BrazierSW" instance=ExtResource("17_brazier")]
-
-[node name="Model" parent="Nav/BrazierSE" instance=ExtResource("17_brazier")]
 
 [node name="Model" parent="Nav/BrazierNW" instance=ExtResource("17_brazier")]
 
@@ -749,6 +677,7 @@ omni_range = 6.0
 [node name="Model" parent="StationAlchemy" instance=ExtResource("15_alchemy")]
 
 [node name="MapPin" type="Node3D" parent="."]
+position = Vector3(2, 0, -12)
 script = ExtResource("maploc_39_5a")
 LocationId = "location.frostfang.clan_hold"
 

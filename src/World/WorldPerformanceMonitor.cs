@@ -15,7 +15,8 @@ public sealed partial class WorldPerformanceMonitor : Node
     private string _regionId = string.Empty;
     private double _timer;
     private int _consecutiveFailures;
-    private string _lastWarning = string.Empty;
+    private int _consecutiveSuccesses;
+    private string _lastWarningSignature = string.Empty;
 
     public WorldPerformanceSnapshot LastSnapshot { get; private set; }
     public bool WithinBudget { get; private set; } = true;
@@ -28,7 +29,8 @@ public sealed partial class WorldPerformanceMonitor : Node
         _cells.Clear();
         _timer = 0d;
         _consecutiveFailures = 0;
-        _lastWarning = string.Empty;
+        _consecutiveSuccesses = 0;
+        _lastWarningSignature = string.Empty;
         WithinBudget = true;
     }
 
@@ -69,10 +71,18 @@ public sealed partial class WorldPerformanceMonitor : Node
         if (WithinBudget)
         {
             _consecutiveFailures = 0;
-            _lastWarning = string.Empty;
+            _consecutiveSuccesses++;
+            // One lucky frame inside an otherwise sustained overage is not a recovery. Only let
+            // the same incident warn again after the region has remained healthy for as long as a
+            // new failure must persist before its first warning.
+            if (_consecutiveSuccesses >= _budget.ConsecutiveSamplesBeforeWarning)
+            {
+                _lastWarningSignature = string.Empty;
+            }
             return;
         }
 
+        _consecutiveSuccesses = 0;
         _consecutiveFailures++;
         if (_consecutiveFailures < _budget.ConsecutiveSamplesBeforeWarning)
         {
@@ -80,9 +90,10 @@ public sealed partial class WorldPerformanceMonitor : Node
         }
 
         string warning = string.Join(", ", issues);
-        if (warning != _lastWarning)
+        string signature = WorldPerformanceRules.FailureSignature(_budget.Limits(), LastSnapshot);
+        if (signature != _lastWarningSignature)
         {
-            _lastWarning = warning;
+            _lastWarningSignature = signature;
             Log.Warn($"World performance budget exceeded in '{_regionId}': {warning}.");
         }
     }

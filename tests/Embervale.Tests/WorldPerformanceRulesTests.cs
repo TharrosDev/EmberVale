@@ -34,6 +34,28 @@ public sealed class WorldPerformanceRulesTests
         Assert.Equal(6, WorldPerformanceRules.Assess(Limits, snapshot).Count);
     }
 
+    [Fact]
+    public void FailureSignature_IgnoresChangingMeasurementsForTheSameDimensions()
+    {
+        var first = new WorldPerformanceSnapshot(9000, 800, 1800, 14000, 2048d, 26d);
+        var later = first with { FrameMilliseconds = 41.75d };
+
+        Assert.Equal("frame-time", WorldPerformanceRules.FailureSignature(Limits, first));
+        Assert.Equal(
+            WorldPerformanceRules.FailureSignature(Limits, first),
+            WorldPerformanceRules.FailureSignature(Limits, later));
+    }
+
+    [Fact]
+    public void FailureSignature_ChangesWhenAnotherBudgetDimensionStartsFailing()
+    {
+        var frameOnly = new WorldPerformanceSnapshot(9000, 800, 1800, 14000, 2048d, 26d);
+        var frameAndDrawCalls = frameOnly with { DrawCalls = 1801 };
+
+        Assert.Equal("frame-time", WorldPerformanceRules.FailureSignature(Limits, frameOnly));
+        Assert.Equal("draw-calls,frame-time", WorldPerformanceRules.FailureSignature(Limits, frameAndDrawCalls));
+    }
+
     [Theory]
     [InlineData(4, 1024d, 2048d, 4)]
     [InlineData(4, 2049d, 2048d, 1)]

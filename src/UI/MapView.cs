@@ -18,6 +18,9 @@ public readonly record struct MapPin(
 /// does not read as a grid of identical tiles.</summary>
 public readonly record struct MapLandTile(string CellId, Rect2 Rect);
 
+/// <summary>An authored traversal route in world XZ, derived from a cell presentation path.</summary>
+public readonly record struct MapRoadSegment(Vector2 Start, Vector2 End, float Width);
+
 /// <summary>
 /// The map plot (Phase 39.5A): the drawing surface and every mouse interaction on it — drag to pan,
 /// wheel to zoom, click to select, double-click to zoom in, right-click to drop a waypoint.
@@ -67,6 +70,10 @@ public partial class MapView : Control
     /// <summary>Footprints of the cells the player has seen. Drawn as land, so the plot reads as a
     /// place rather than markers floating on a void.</summary>
     public IReadOnlyList<MapLandTile> Land { get; set; } = Array.Empty<MapLandTile>();
+
+    /// <summary>Roads and trails from the actual cell presentation data, never a second map-only
+    /// approximation of the world.</summary>
+    public IReadOnlyList<MapRoadSegment> Roads { get; set; } = Array.Empty<MapRoadSegment>();
 
     public string? SelectedId { get; set; }
 
@@ -285,6 +292,7 @@ public partial class MapView : Control
 
         DrawRect(new Rect2(Vector2.Zero, Size), Deep);
         DrawLand();
+        DrawRoads();
         DrawGraticule();
         DrawCoastline();
 
@@ -340,6 +348,21 @@ public partial class MapView : Control
                 Ground.R + shade, Ground.G + (shade * 0.9f), Ground.B + (shade * 0.7f));
 
             DrawRect(ScreenRect(tile.Rect), tone);
+        }
+    }
+
+    /// <summary>Draws the physical route network over known land. A dark shoulder and pale core keep
+    /// adjoining segments legible at both world-map and minimap zoom without turning them into UI
+    /// lines disconnected from the terrain underneath.</summary>
+    private void DrawRoads()
+    {
+        foreach (MapRoadSegment road in Roads)
+        {
+            Vector2 start = Projection.WorldToScreen(road.Start);
+            Vector2 end = Projection.WorldToScreen(road.End);
+            float core = Mathf.Clamp(road.Width * Projection.Zoom * 0.55f, 1.25f, 7f);
+            DrawLine(start, end, new Color(UiTheme.Engrave, 0.62f), core + 2f, true);
+            DrawLine(start, end, new Color(UiTheme.Brass, 0.34f), core, true);
         }
     }
 

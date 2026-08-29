@@ -203,6 +203,14 @@ public partial class GameBootstrap : Node3D
             Log.Info($"{mode}: continuing most recent save '{slot}'.");
             StartLoadedGame(slot);
 
+            // Synchronous viewport readback and PNG compression dominate capture frames. Keep those
+            // tool costs out of the world's sustained-performance telemetry; ordinary --play runs
+            // continue to sample the exact same budgets.
+            if (hudShots || panelShots || shrineShots)
+            {
+                _streamer?.SetPerformanceSamplingEnabled(false);
+            }
+
             if (hudShots)
             {
                 AddChild(new Debugging.HudShots { Name = "HudShots" });

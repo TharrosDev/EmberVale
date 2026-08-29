@@ -26,6 +26,28 @@ public readonly record struct WorldPerformanceSnapshot(
 /// <summary>Pure budget comparisons shared by xUnit tests and the Godot runtime monitor.</summary>
 public static class WorldPerformanceRules
 {
+    /// <summary>
+    /// Stable identity for the set of exceeded dimensions. Runtime values deliberately do not
+    /// participate: frame time and memory fluctuate every sample and would otherwise turn one
+    /// sustained problem into a new log warning every second.
+    /// </summary>
+    public static string FailureSignature(
+        WorldPerformanceLimits limits, WorldPerformanceSnapshot sample)
+    {
+        var dimensions = new List<string>();
+        AddDimensionIfOver(
+            dimensions, "resident-runtime-nodes",
+            sample.ResidentRuntimeNodes, limits.MaxResidentRuntimeNodes);
+        AddDimensionIfOver(
+            dimensions, "resident-scatter-instances",
+            sample.ResidentScatterInstances, limits.MaxResidentScatterInstances);
+        AddDimensionIfOver(dimensions, "draw-calls", sample.DrawCalls, limits.MaxDrawCalls);
+        AddDimensionIfOver(dimensions, "node-count", sample.NodeCount, limits.MaxNodeCount);
+        AddDimensionIfOver(dimensions, "static-memory", sample.StaticMemoryMb, limits.MaxStaticMemoryMb);
+        AddDimensionIfOver(dimensions, "frame-time", sample.FrameMilliseconds, limits.MaxFrameMilliseconds);
+        return string.Join(",", dimensions);
+    }
+
     public static int ThreadedLoadConcurrency(int authoredConcurrency, double currentMemoryMb, double limitMb) =>
         currentMemoryMb > limitMb ? 1 : System.Math.Max(1, authoredConcurrency);
 
@@ -54,6 +76,15 @@ public static class WorldPerformanceRules
         if (actual > limit)
         {
             issues.Add($"{label} {actual:0.##} > {limit:0.##}");
+        }
+    }
+
+    private static void AddDimensionIfOver(
+        List<string> dimensions, string dimension, double actual, double limit)
+    {
+        if (actual > limit)
+        {
+            dimensions.Add(dimension);
         }
     }
 }

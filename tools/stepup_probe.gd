@@ -74,7 +74,9 @@ func _walk(label: String, start: Vector3, direction: Vector3, expect_climb: bool
 	locomotion.name = "Locomotion"
 	body.add_child(locomotion)
 	root.add_child(body)
-	body.global_position = start
+	# The probe root is identity, so local position is the same coordinate and avoids asking for a
+	# global transform during CharacterEntity's first tree-notification frame.
+	body.position = start
 
 	await process_frame
 	await process_frame

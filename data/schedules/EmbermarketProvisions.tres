@@ -20,19 +20,19 @@
 script = ExtResource("2_entry")
 StartHour = 4
 Activity = "Setting out the trays"
-Destination = Vector3(-7.62, 0, -11.69)
+Destination = Vector3(-3.2, 0, -12.8)
 
 [sub_resource type="Resource" id="e_trade"]
 script = ExtResource("2_entry")
 StartHour = 5
 Activity = "Selling bread"
-Destination = Vector3(-7.62, 0, -11.69)
+Destination = Vector3(-3.2, 0, -12.8)
 
 [sub_resource type="Resource" id="e_close"]
 script = ExtResource("2_entry")
 StartHour = 19
 Activity = "Shuttering the stall"
-Destination = Vector3(-7.29, 0, -8.61)
+Destination = Vector3(-1.8, 0, -12.2)
 
 [resource]
 script = ExtResource("1_sched")

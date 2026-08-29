@@ -42,7 +42,7 @@ transform = Transform3D(-1.5588, 0, -0.9, 0, 4.2, 0, 0.9, 0, -1.5588, 8, 0, -22)
 shape = SubResource("Shape_rock")
 
 [node name="StoneE" parent="Nav" index="4" instance=ExtResource("10_rock")]
-transform = Transform3D(1.5588, 0, 0.9, 0, 4, 0, -0.9, 0, 1.5588, 6, 0, -10)
+transform = Transform3D(1.5588, 0, 0.9, 0, 4, 0, -0.9, 0, 1.5588, 18, 0, -12)
 
 [node name="StoneECol" type="StaticBody3D" parent="Nav/StoneE"]
 
@@ -85,24 +85,10 @@ transform = Transform3D(1.1818, 0, 0.2084, 0, 1.8, 0, -0.2084, 0, 1.1818, -5, 0,
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 shape = SubResource("Shape_pillar")
 
-[node name="AvenueB" parent="Nav" instance=ExtResource("14_pillar")]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1.35, 0, 0.342, 0, -0.9397, 6, 0, 24)
-[node name="Col" type="StaticBody3D" parent="Nav/AvenueB"]
-[node name="Shape" type="CollisionShape3D" parent="Nav/AvenueB/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
-shape = SubResource("Shape_pillar")
-
 [node name="AvenueC" parent="Nav" instance=ExtResource("14_pillar")]
 transform = Transform3D(1.0337, 0, -0.3762, 0, 1.55, 0, 0.3762, 0, 1.0337, -6, 0, 17)
 [node name="Col" type="StaticBody3D" parent="Nav/AvenueC"]
 [node name="Shape" type="CollisionShape3D" parent="Nav/AvenueC/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
-shape = SubResource("Shape_pillar")
-
-[node name="AvenueD" parent="Nav" instance=ExtResource("14_pillar")]
-transform = Transform3D(-0.7794, 0, 0.45, 0, 1.25, 0, -0.45, 0, -0.7794, 5, 0, 10)
-[node name="Col" type="StaticBody3D" parent="Nav/AvenueD"]
-[node name="Shape" type="CollisionShape3D" parent="Nav/AvenueD/Col"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 shape = SubResource("Shape_pillar")
 
@@ -122,15 +108,6 @@ shape = SubResource("Shape_pillar")
 ; --- EAST HORN at (12, -12), with two more stones screening it: there is no sightline to it from any
 ; --- point on the avenue, so the tome is something you go round the back to find rather than the
 ; --- second thing you see on arrival.
-
-[node name="AvenueF" parent="Nav" instance=ExtResource("14_pillar")]
-transform = Transform3D(0.3591, 0, -0.9867, 0, 1.4, 0, 0.9867, 0, 0.3591, 4, 0, -2)
-
-[node name="Col" type="StaticBody3D" parent="Nav/AvenueF"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/AvenueF/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
-shape = SubResource("Shape_pillar")
 
 [node name="AvenueG" parent="Nav" instance=ExtResource("14_pillar")]
 transform = Transform3D(0.165, 0, 0.9356, 0, 1.7, 0, -0.9356, 0, 0.165, -11, 0, -4)
@@ -163,14 +140,6 @@ transform = Transform3D(-1.0285, 0, 1.2257, 0, 3.2, 0, -1.2257, 0, -1.0285, 16, 
 [node name="Col" type="StaticBody3D" parent="Nav/HoardStoneA"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/HoardStoneA/Col"]
-shape = SubResource("Shape_rock")
-
-[node name="HoardStoneB" parent="Nav" instance=ExtResource("10_rock")]
-transform = Transform3D(0.9642, 0, -1.1491, 0, 2.8, 0, 1.1491, 0, 0.9642, 14, 0, -6)
-
-[node name="Col" type="StaticBody3D" parent="Nav/HoardStoneB"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/HoardStoneB/Col"]
 shape = SubResource("Shape_rock")
 
 [node name="GlacierE" parent="Nav" instance=ExtResource("12_glacier")]
@@ -222,5 +191,6 @@ TemplateId = "enemy.ancient_dragon"
 DefeatFlagId = "flag.ancient_dragon_defeated"
 
 [node name="MapPin" type="Node3D" parent="."]
+position = Vector3(-6, 0, -16)
 script = ExtResource("maploc_39_5a")
 LocationId = "location.frostfang.ancient_aerie"

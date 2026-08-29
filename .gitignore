@@ -30,6 +30,10 @@ Thumbs.db
 .vs/
 .vscode/
 
+# Python tooling caches are generated locally and never belong in source control.
+__pycache__/
+*.pyc
+
 # Claude Code personal settings
 .claude/settings.local.json
 
