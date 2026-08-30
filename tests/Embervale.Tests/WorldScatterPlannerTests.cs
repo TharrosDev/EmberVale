@@ -22,10 +22,12 @@ public sealed class WorldScatterPlannerTests
     }
 
     [Fact]
-    public void NorthSouthRoad_RemainsClear()
+    public void AuthoredRoad_RemainsClear()
     {
+        // The cardinal road strip was deleted with the 2026-08-29 overhaul; a road is a Path now.
+        var road = new[] { new WorldTerrainMath.Path(3f, -30f, 3f, 30f, 8f, 0f) };
         IReadOnlyList<WorldScatterPlacement> placements = WorldScatterPlanner.Plan(
-            9, 80, 60f, 60f, 2f, 1, 8f, 3f, 0f);
+            9, 80, 60f, 60f, 2f, 0f, null, road);
 
         Assert.All(placements, point => Assert.True(System.MathF.Abs(point.X - 3f) >= 4f));
     }
@@ -35,7 +37,7 @@ public sealed class WorldScatterPlannerTests
     {
         var exclusions = new[] { new WorldScatterExclusion(4f, -3f, 9f) };
         IReadOnlyList<WorldScatterPlacement> placements = WorldScatterPlanner.Plan(
-            19, 90, 80f, 80f, 2f, 0, 0f, 0f, 0f, exclusions);
+            19, 90, 80f, 80f, 2f, 0f, exclusions);
 
         Assert.All(placements, point =>
         {
@@ -49,7 +51,7 @@ public sealed class WorldScatterPlannerTests
     public void MinimumSpacing_IsEnforced()
     {
         IReadOnlyList<WorldScatterPlacement> placements = WorldScatterPlanner.Plan(
-            31, 60, 90f, 90f, 3f, 0, 0f, 0f, 5f);
+            31, 60, 90f, 90f, 3f, 5f);
 
         for (int i = 0; i < placements.Count; i++)
         {
@@ -68,7 +70,7 @@ public sealed class WorldScatterPlannerTests
         var paths = new[] { new WorldTerrainMath.Path(-24f, 20f, 18f, -16f, 5f, 1.5f) };
         var areas = new[] { new WorldTerrainMath.GroundArea(9f, 7f, 8f, 6f, 2f, 0.7f) };
         IReadOnlyList<WorldScatterPlacement> placements = WorldScatterPlanner.Plan(
-            51, 120, 70f, 70f, 2f, 0, 0f, 0f, 1f, null, paths, areas);
+            51, 120, 70f, 70f, 2f, 1f, null, paths, areas);
 
         Assert.All(placements, point =>
         {
@@ -78,5 +80,5 @@ public sealed class WorldScatterPlannerTests
     }
 
     private static IReadOnlyList<WorldScatterPlacement> Plan(int seed) =>
-        WorldScatterPlanner.Plan(seed, 30, 60f, 50f, 3f, 2, 6f, 0f, 2.5f);
+        WorldScatterPlanner.Plan(seed, 30, 60f, 50f, 3f, 2.5f);
 }

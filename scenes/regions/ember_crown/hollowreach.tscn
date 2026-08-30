@@ -31,11 +31,6 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_bench.glb" id="34_bench"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_hooded.glb" id="30_sedge"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_merchant_m.glb" id="31_coyle"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_grass_short.glb" id="35_grass_short"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_grass_tall.glb" id="36_grass_tall"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_grass_wispy.glb" id="37_grass_wispy"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_a.glb" id="43_pebble_a"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_b.glb" id="44_pebble_b"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_modular.tscn" id="45_cottage_modular"]
 [ext_resource type="Script" path="res://src/Economy/ServiceComponent.cs" id="46_service"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_table_large.gltf" id="47_bones_table"]
@@ -108,30 +103,18 @@
 ; navmesh. The two fences deliberately do NOT enclose the Hollow — the ruin walls do, and a fence
 ; there would have read as a farmyard.
 
+; ⚠️ THE NAV VOXEL GRID COARSENED WITH THE WORLD (the 2026-08-29 geography overhaul). Cells
+; went from 52 m squares on a flat slab to 90-200 m of real terrain, and a 0.25 m voxel over
+; five times the area is twenty-five times the columns to rasterise — the traversal probe timed
+; out waiting for the bake. agent_* dims still sit on the voxel grid to avoid precision warnings.
 [sub_resource type="NavigationMesh" id="NavMesh_hollow"]
 geometry_parsed_geometry_type = 1
-cell_size = 0.25
-cell_height = 0.25
+cell_size = 0.3
+cell_height = 0.3
 agent_height = 1.75
 agent_radius = 0.5
 agent_max_climb = 0.5
-
-[sub_resource type="BoxMesh" id="BoxMesh_floor"]
-size = Vector3(52, 0.5, 52)
-
-[sub_resource type="BoxShape3D" id="Shape_floor"]
-size = Vector3(52, 0.5, 52)
-
-; Darker and browner than the Landing's shingle — tidal mud rather than washed stone. The two coasts
-; must not read as the same beach seen twice.
-[sub_resource type="StandardMaterial3D" id="Mat_floor"]
-albedo_color = Color(0.24, 0.23, 0.2, 1)
-roughness = 0.96
-
-; The wharf boards: the one lighter surface, so the route from the road to the water is legible.
-[sub_resource type="StandardMaterial3D" id="Mat_boards"]
-albedo_color = Color(0.38, 0.34, 0.28, 1)
-roughness = 0.88
+agent_max_slope = 42.0
 
 [sub_resource type="StandardMaterial3D" id="Mat_water"]
 transparency = 1
@@ -140,33 +123,6 @@ metallic = 0.35
 roughness = 0.08
 
 ; The lakebed. See the header: without it the water is grey ground.
-[sub_resource type="StandardMaterial3D" id="Mat_lakebed"]
-albedo_color = Color(0.07, 0.09, 0.1, 1)
-roughness = 0.98
-
-; The 2026-08-28 layout rebuild: the water is open sea to the WEST plus two flooded CHANNELS cutting east into the ruin.
-; The wharf is the land between them, which is what makes Hollowreach a drowned street rather than a
-; jetty beside a lake.
-[sub_resource type="BoxMesh" id="BoxMesh_water"]
-size = Vector3(10, 0.05, 52)
-
-[sub_resource type="BoxMesh" id="BoxMesh_channel_n"]
-size = Vector3(32, 0.05, 8)
-
-[sub_resource type="BoxMesh" id="BoxMesh_channel_s"]
-size = Vector3(28, 0.05, 10)
-
-[sub_resource type="BoxMesh" id="BoxMesh_street_east"]
-size = Vector3(20, 0.06, 8)
-
-[sub_resource type="BoxMesh" id="BoxMesh_street_turn"]
-size = Vector3(8, 0.06, 10)
-
-[sub_resource type="BoxMesh" id="BoxMesh_boards"]
-size = Vector3(22, 0.06, 14)
-
-; The ONE warm accent (ART_STYLE §7), and here it is doing a second job: two braziers on an otherwise
-; unlit wharf are the only reason the place reads as occupied after dark, which is when Sedge trades.
 [sub_resource type="StandardMaterial3D" id="Mat_ember"]
 albedo_color = Color(0.62, 0.22, 0.08, 1)
 emission_enabled = true
@@ -186,9 +142,6 @@ size = Vector3(6.0, 4.6, 6.0)
 
 [sub_resource type="BoxShape3D" id="Shape_hut"]
 size = Vector3(8.35, 4.51, 8.68)
-
-[sub_resource type="BoxShape3D" id="Shape_house"]
-size = Vector3(4.3, 6.8, 5.1)
 
 [sub_resource type="BoxShape3D" id="Shape_crate"]
 size = Vector3(1.24, 1.24, 1.24)
@@ -264,6 +217,26 @@ size = Vector3(2.848, 0.813, 1.097)
 radius = 0.4
 height = 1.8
 
+; ⚠️ THE GROUND SKINS ARE GONE (the 2026-08-29 geography overhaul). Every road, yard and court in
+; this cell used to be a 6 cm BoxMesh slab laid on the floor — forty of them across the realm, and
+; they are the literal "flat rectangular floors positioned edge to edge" the overhaul was called to
+; remove. The terrain paints them now: WorldTerrainMeshBuilder writes the path mask into vertex
+; colour R and the ground-area mask into G, and world_surface.gdshader blends road and activity
+; response from those. One authored WorldPathSegmentResource is the road, the shader's colour, the
+; terrain's levelling AND the scatter's clearance, instead of a slab that had to agree with three
+; other files by hand.
+[sub_resource type="BoxMesh" id="BoxMesh_channel_n"]
+size = Vector3(46, 0.05, 17)
+
+[sub_resource type="BoxMesh" id="BoxMesh_channel_s"]
+size = Vector3(42, 0.05, 19)
+
+; ⚠️ SIZED TO SIT INSIDE THE CARVED BASIN, NOT OVER IT. The terrain basin is an ellipse and a
+; water box larger than the rectangle inscribed in it puts four corners of open water on dry
+; land — a rectangle of sea, which is the artefact the whole overhaul is about.
+[sub_resource type="BoxMesh" id="BoxMesh_water"]
+size = Vector3(70, 0.05, 92)
+
 [node name="Hollowreach" type="Node3D"]
 
 [node name="Nav" type="NavigationRegion3D" parent="."]
@@ -272,66 +245,18 @@ navigation_mesh = SubResource("NavMesh_hollow")
 [node name="NavBaker" type="Node" parent="Nav"]
 script = ExtResource("1_navbaker")
 
-[node name="Floor" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
-mesh = SubResource("BoxMesh_floor")
-surface_material_override/0 = SubResource("Mat_floor")
-
-[node name="FloorCol" type="StaticBody3D" parent="Nav"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/FloorCol"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
-shape = SubResource("Shape_floor")
-
-;                     H O L L O W R E A C H   —   T H E   D R O W N E D   S T R E E T
-; In from the EAST at z = 12, which is where the Embermarket's Dock Stair leaves the seam at world
-; (-26, 58). The boardwalk runs west, turns south of the north channel, and becomes the spine — a
-; 14 m strip of land with flooded ruin either side of it. The Hollow, the only place anything is
-; traded here, is a walled chamber off the spine that cannot be seen from the street.
-[node name="StreetEast" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0.03, 12)
-mesh = SubResource("BoxMesh_street_east")
-surface_material_override/0 = SubResource("Mat_boards")
-
-[node name="StreetTurn" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0.03, 7)
-mesh = SubResource("BoxMesh_street_turn")
-surface_material_override/0 = SubResource("Mat_boards")
-
-[node name="StreetSpine" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0.03, 1)
-mesh = SubResource("BoxMesh_boards")
-surface_material_override/0 = SubResource("Mat_boards")
-
-; The water. NOT under Nav — it carves nothing and blocks nothing; it is the only thing in the cell
-; that is purely a picture.
-[node name="ChannelNorthBed" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0.02, -10)
-mesh = SubResource("BoxMesh_channel_n")
-surface_material_override/0 = SubResource("Mat_lakebed")
-
-[node name="ChannelNorth" type="MeshInstance3D" parent="."]
+[node name="ChannelNorth" type="MeshInstance3D" parent="." groups=["terrain_absolute"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0.05, -10)
 mesh = SubResource("BoxMesh_channel_n")
 surface_material_override/0 = SubResource("Mat_water")
 
-[node name="ChannelSouthBed" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0.02, 13)
-mesh = SubResource("BoxMesh_channel_s")
-surface_material_override/0 = SubResource("Mat_lakebed")
-
-[node name="ChannelSouth" type="MeshInstance3D" parent="."]
+[node name="ChannelSouth" type="MeshInstance3D" parent="." groups=["terrain_absolute"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0.05, 13)
 mesh = SubResource("BoxMesh_channel_s")
 surface_material_override/0 = SubResource("Mat_water")
 
-[node name="Lakebed" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21, 0.02, 0)
-mesh = SubResource("BoxMesh_water")
-surface_material_override/0 = SubResource("Mat_lakebed")
-
-[node name="Water" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21, 0.05, 0)
+[node name="Water" type="MeshInstance3D" parent="." groups=["terrain_absolute"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -50, 0.05, 0)
 mesh = SubResource("BoxMesh_water")
 surface_material_override/0 = SubResource("Mat_water")
 
@@ -1257,261 +1182,6 @@ shape = SubResource("Shape_barrel")
 ; it, never in a transform here. docs/ASSET_POLICY.md section 0.3.
 ; ====================================================================================================
 
-
-[node name="Grass1" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15.82, 0, -11.35)
-
-[node name="Model" parent="Grass1" instance=ExtResource("37_grass_wispy")]
-
-[node name="Grass3" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.81, 0, -10.72)
-
-[node name="Model" parent="Grass3" instance=ExtResource("35_grass_short")]
-
-[node name="Grass5" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -16.09, 0, -12.80)
-
-[node name="Model" parent="Grass5" instance=ExtResource("36_grass_tall")]
-
-[node name="Grass7" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -16.47, 0, -12.28)
-
-[node name="Model" parent="Grass7" instance=ExtResource("36_grass_tall")]
-
-[node name="Grass9" type="Node3D" parent="."]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -16.88, 0, -13.47)
-
-[node name="Model" parent="Grass9" instance=ExtResource("36_grass_tall")]
-
-[node name="Grass11" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.02, 0, -18.42)
-
-[node name="Model" parent="Grass11" instance=ExtResource("36_grass_tall")]
-
-[node name="Grass13" type="Node3D" parent="."]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -8.76, 0, 17.62)
-
-[node name="Model" parent="Grass13" instance=ExtResource("36_grass_tall")]
-
-[node name="Grass15" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.37, 0, 16.32)
-
-[node name="Model" parent="Grass15" instance=ExtResource("35_grass_short")]
-
-[node name="Grass17" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.76, 0, 15.38)
-
-[node name="Model" parent="Grass17" instance=ExtResource("37_grass_wispy")]
-
-[node name="Grass19" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.58, 0, -14.67)
-
-[node name="Model" parent="Grass19" instance=ExtResource("37_grass_wispy")]
-
-[node name="Grass21" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 7.46, 0, -15.99)
-
-[node name="Model" parent="Grass21" instance=ExtResource("35_grass_short")]
-
-[node name="Grass23" type="Node3D" parent="."]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -12.13, 0, -20.72)
-
-[node name="Model" parent="Grass23" instance=ExtResource("35_grass_short")]
-
-[node name="Grass25" type="Node3D" parent="."]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -11.06, 0, -20.41)
-
-[node name="Model" parent="Grass25" instance=ExtResource("36_grass_tall")]
-
-[node name="Grass27" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20.21, 0, -12.62)
-
-[node name="Model" parent="Grass27" instance=ExtResource("36_grass_tall")]
-
-[node name="Grass29" type="Node3D" parent="."]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -19.87, 0, -11.84)
-
-[node name="Model" parent="Grass29" instance=ExtResource("35_grass_short")]
-
-[node name="Grass31" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 13.07, 0, -11.02)
-
-[node name="Model" parent="Grass31" instance=ExtResource("36_grass_tall")]
-
-[node name="Grass33" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 13.03, 0, -9.65)
-
-[node name="Model" parent="Grass33" instance=ExtResource("35_grass_short")]
-
-[node name="Grass35" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -14.34, 0, -18.40)
-
-[node name="Model" parent="Grass35" instance=ExtResource("36_grass_tall")]
-
-[node name="Grass37" type="Node3D" parent="."]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -13.06, 0, -17.31)
-
-[node name="Model" parent="Grass37" instance=ExtResource("36_grass_tall")]
-
-[node name="Grass39" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -12.89, 0, -16.89)
-
-[node name="Model" parent="Grass39" instance=ExtResource("36_grass_tall")]
-
-[node name="Grass41" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16.40, 0, -10.54)
-
-[node name="Model" parent="Grass41" instance=ExtResource("36_grass_tall")]
-
-[node name="Grass43" type="Node3D" parent="."]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -16.30, 0, -12.44)
-
-[node name="Model" parent="Grass43" instance=ExtResource("37_grass_wispy")]
-
-[node name="Grass45" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -10.58, 0, -15.51)
-
-[node name="Model" parent="Grass45" instance=ExtResource("35_grass_short")]
-
-[node name="Grass47" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -10.51, 0, -16.74)
-
-[node name="Model" parent="Grass47" instance=ExtResource("35_grass_short")]
-
-[node name="Grass49" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -9.78, 0, -15.78)
-
-[node name="Model" parent="Grass49" instance=ExtResource("35_grass_short")]
-
-[node name="Grass51" type="Node3D" parent="."]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -14.26, 0, -11.64)
-
-[node name="Model" parent="Grass51" instance=ExtResource("35_grass_short")]
-
-[node name="Grass53" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -13.25, 0, -11.62)
-
-[node name="Model" parent="Grass53" instance=ExtResource("35_grass_short")]
-
-[node name="Grass55" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 13.20, 0, -12.23)
-
-[node name="Model" parent="Grass55" instance=ExtResource("35_grass_short")]
-
-[node name="Grass57" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.74, 0, -13.80)
-
-[node name="Model" parent="Grass57" instance=ExtResource("36_grass_tall")]
-
-[node name="Grass59" type="Node3D" parent="."]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 12.35, 0, -13.40)
-
-[node name="Model" parent="Grass59" instance=ExtResource("35_grass_short")]
-
-[node name="Grass61" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.73, 0, -14.43)
-
-[node name="Model" parent="Grass61" instance=ExtResource("35_grass_short")]
-
-[node name="Grass63" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -11.92, 0, -16.30)
-
-[node name="Model" parent="Grass63" instance=ExtResource("37_grass_wispy")]
-
-[node name="Grass65" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -19.37, 0, -11.06)
-
-[node name="Model" parent="Grass65" instance=ExtResource("35_grass_short")]
-
-[node name="Grass67" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -19.06, 0, -10.45)
-
-[node name="Model" parent="Grass67" instance=ExtResource("35_grass_short")]
-
-[node name="Grass69" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -19.54, 0, -10.02)
-
-[node name="Model" parent="Grass69" instance=ExtResource("35_grass_short")]
-
-[node name="Grass71" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 3.96, 0, -11.98)
-
-[node name="Model" parent="Grass71" instance=ExtResource("36_grass_tall")]
-
-[node name="Grass73" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.50, 0, -13.66)
-
-[node name="Model" parent="Grass73" instance=ExtResource("35_grass_short")]
-
-[node name="Pebble1" type="Node3D" parent="."]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 13.56, 0, -14.03)
-
-[node name="Model" parent="Pebble1" instance=ExtResource("43_pebble_a")]
-
-[node name="Pebble3" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.35, 0, -11.23)
-
-[node name="Model" parent="Pebble3" instance=ExtResource("43_pebble_a")]
-
-[node name="Pebble5" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -1.19, 0, 21.82)
-
-[node name="Model" parent="Pebble5" instance=ExtResource("44_pebble_b")]
-
-[node name="Pebble7" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 14.27, 0, -11.92)
-
-[node name="Model" parent="Pebble7" instance=ExtResource("43_pebble_a")]
-
-[node name="Pebble9" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -16.62, 0, 12.63)
-
-[node name="Model" parent="Pebble9" instance=ExtResource("44_pebble_b")]
-
-[node name="Pebble11" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.16, 0, 24.32)
-
-[node name="Model" parent="Pebble11" instance=ExtResource("44_pebble_b")]
-
-[node name="Pebble13" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -18.62, 0, -14.08)
-
-[node name="Model" parent="Pebble13" instance=ExtResource("44_pebble_b")]
-
-[node name="Pebble15" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -1.76, 0, 17.13)
-
-[node name="Model" parent="Pebble15" instance=ExtResource("44_pebble_b")]
-
-[node name="Pebble17" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18.20, 0, 11.85)
-
-[node name="Model" parent="Pebble17" instance=ExtResource("43_pebble_a")]
-
-[node name="Pebble19" type="Node3D" parent="."]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 2.49, 0, 14.34)
-
-[node name="Model" parent="Pebble19" instance=ExtResource("43_pebble_a")]
-
-[node name="Pebble21" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -16.67, 0, -12.67)
-
-[node name="Model" parent="Pebble21" instance=ExtResource("44_pebble_b")]
-
-[node name="Pebble23" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 3.87, 0, -15.15)
-
-[node name="Model" parent="Pebble23" instance=ExtResource("43_pebble_a")]
-
-[node name="Pebble25" type="Node3D" parent="."]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 1.61, 0, 12.48)
-
-[node name="Model" parent="Pebble25" instance=ExtResource("43_pebble_a")]
-
-[node name="Pebble27" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 1.23, 0, -15.16)
-
-[node name="Model" parent="Pebble27" instance=ExtResource("43_pebble_a")]
 
 [node name="MapPin" type="Node3D" parent="."]
 position = Vector3(-21, 0, 2)

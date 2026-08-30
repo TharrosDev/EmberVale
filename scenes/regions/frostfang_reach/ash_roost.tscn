@@ -30,9 +30,6 @@ radius = 0.4
 height = 5.0
 
 [node name="AshRoostCell" instance=ExtResource("1_roost")]
-FloorSize = 100.0
-FloorColor = Color(0.24, 0.21, 0.2, 1)
-EmberEnergy = 0.06
 
 ; The crater rim. Fewer and further out than the Wild roost's cover: an 80 degree breath cone leaves
 ; less to hide behind by design, and the cover that is here should not make the harder fight the

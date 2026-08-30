@@ -20,19 +20,18 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pine_dead.glb" id="4_pine"]
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="5_navbaker"]
 
+; ⚠️ THE NAV VOXEL GRID COARSENED WITH THE WORLD (the 2026-08-29 geography overhaul). Cells
+; went from 52 m squares on a flat slab to 90-200 m of real terrain, and a 0.25 m voxel over
+; five times the area is twenty-five times the columns to rasterise — the traversal probe timed
+; out waiting for the bake. agent_* dims still sit on the voxel grid to avoid precision warnings.
 [sub_resource type="NavigationMesh" id="NavMesh_glacier"]
 geometry_parsed_geometry_type = 1
-cell_size = 0.25
-cell_height = 0.25
+cell_size = 0.5
+cell_height = 0.4
 agent_height = 1.75
 agent_radius = 0.5
 agent_max_climb = 0.5
-
-[sub_resource type="BoxMesh" id="Mesh_floor"]
-size = Vector3(60, 0.5, 20)
-
-[sub_resource type="BoxShape3D" id="Shape_floor"]
-size = Vector3(60, 0.5, 20)
+agent_max_slope = 42.0
 
 [sub_resource type="BoxShape3D" id="Shape_glacier"]
 size = Vector3(8.43, 4.96, 6.02)
@@ -52,16 +51,6 @@ navigation_mesh = SubResource("NavMesh_glacier")
 
 [node name="NavBaker" type="Node" parent="Nav"]
 script = ExtResource("5_navbaker")
-
-[node name="Floor" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
-mesh = SubResource("Mesh_floor")
-
-[node name="FloorCol" type="StaticBody3D" parent="Nav"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/FloorCol"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
-shape = SubResource("Shape_floor")
 
 [node name="Ice" parent="Nav" instance=ExtResource("1_glacier")]
 transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -6, 0, -6)
@@ -92,7 +81,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
 shape = SubResource("Shape_glacier")
 
 [node name="IceWestS" parent="Nav" instance=ExtResource("1_glacier")]
-transform = Transform3D(-0.601, 0, -0.601, 0, 1.4, 0, 0.601, 0, -0.601, -16, 0, -6)
+transform = Transform3D(-0.601, 0, -0.601, 0, 1.4, 0, 0.601, 0, -0.601, -17, 0, -14)
 [node name="Col" type="StaticBody3D" parent="Nav/IceWestS"]
 [node name="Shape" type="CollisionShape3D" parent="Nav/IceWestS/Col"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)

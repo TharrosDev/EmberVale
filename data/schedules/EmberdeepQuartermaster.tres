@@ -33,5 +33,8 @@ Destination = Vector3(-6, 0, 13.5)
 [resource]
 script = ExtResource("1_sched")
 Id = "schedule.emberdeep.quartermaster"
-Origin = Vector3(56, 0, -10)
+; ⚠️ Origin moved with the cell in the 2026-08-29 geography overhaul. Destinations below are
+; CELL-LOCAL and did not change; only the cell's world Center did. Read the local point, never
+; the old world number.
+Origin = Vector3(95, 0, -10)
 Entries = Array[Resource]([SubResource("e_open"), SubResource("e_stock"), SubResource("e_shut")])

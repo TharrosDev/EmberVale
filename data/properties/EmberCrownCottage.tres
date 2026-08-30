@@ -40,5 +40,9 @@ TravelNodeId = "travel.ember_crown.cottage"
 ; data/regions/EmberCrown.tres, never a comment's arithmetic — an earlier note here said "add -10 on
 ; z" from when this holding was in the town square, and read against the new cell that lands every
 ; placed prop 52 m west in a market.
-PlacementCenter = Vector3(52, 0, 51)
+; ⚠️ MOVED WITH THE CELL (the 2026-08-29 geography overhaul). The homestead's Center went from
+; (52, 0, 46) to (95, 0, 85) when the realm's lattice grew; the SOUTH LAWN is still cell-local
+; (0, 5), which is world (95, 0, 90). Read the local offset, never the old world number — that is
+; the third time this exact line has had to be corrected and the second time for the same reason.
+PlacementCenter = Vector3(95, 0, 90)
 PlacementRadius = 7.0

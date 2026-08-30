@@ -4,51 +4,62 @@
 
 ## Where we are
 
-- **Stage C.** Economy (38), mounts/traversal (39), map intelligence (39.5), and quest authoring
-  (41) are closed. **Phases 40 and 40.5 are struck, not deferred:** this game has no survival
-  needs, durability, hunger, encumbrance, puzzle, trap, or vault system. A cut system leaves no stub.
-- **41.5A–C — Divine Shrines & Blessings ✅ CLOSED.** The six dead gods have stat-distinct,
-  map-linked shrine callers in the Ember Crown, and each now refuses a supplicant whose corruption
-  has reached its authored tolerance. `BlessingComponent.Offer` is the sole decision point —
-  already-claimed → refused → blessed — and the player's claim set stays the only blessing
-  authority; refusal keeps no state anywhere and no shrine body saves anything.
-- **The level-layout rebuild (2026-08-28) ✅ CLOSED — out of band, maintainer-directed, and not a
-  roadmap phase.** All **fifteen** explorable cells had their physical layout redesigned, not
-  redecorated: footprints, entrances, circulation, building placement, landmarks, sightlines and
-  encounter space. Every cell now has a spatial identity of its own; the shared central-road /
-  mirrored-row / centred-plaza formula is gone from the realm. Three seam defects fell out of it and
-  were fixed with it (see invariant 11). ⚠️ **This is NOT Phase 44** — that phase blocks out all five
-  realms and is still ahead; nothing here has been done against its scope.
-- **Frostfang Reach is no longer gated (2026-08-28, maintainer direction).**
-  `FrostfangReach.UnlockFlagId` is empty, so the portal at the Crossway gate is visible and usable
-  from the first minute instead of waiting on `quest.warband.heart`. ⚠️ **The toll is untouched** —
-  25 gold, a permit or a pass, and `RegionSetup.PayToll` still fails closed: the crossing is a price
-  now, not a prerequisite. `quest.warband.heart` still writes `flag.frostfang.passage_open`; nothing
-  reads it, deliberately (see the header in that `.tres`). `--state` prints each region's door.
-- **NEXT: 42A — membership/rank flag framework + a small rank UI**, reusing the existing story
-  flags and `FactionResource`. It is the gate the five guild questlines (42B–F) all sit behind.
-- The former Phase 40 dependencies are settled: `CraftingStationType.Cooking` is gone (ordinal 4
-  retired; append future stations at 5), and inventory has no max-weight/encumbrance state. Weight is
-  still an item fact. The deferred 39.5 table remains measured, not scheduled.
+- **Stage C.** Economy (38), mounts/traversal (39), map intelligence (39.5), quest authoring (41)
+  and divine shrines (41.5A–C) are closed. **Phases 40 and 40.5 are struck, not deferred:** this game
+  has no survival needs, durability, hunger, encumbrance, puzzle, trap, or vault system. A cut system
+  leaves no stub.
+- **The world-geography overhaul (2026-08-29) ✅ CLOSED — out of band, maintainer-directed, and not a
+  roadmap phase.** The 2026-08-28 layout rebuild fixed every POI's internal design and left the realm
+  still reading as *cell → POI → cell → POI*: fifteen locations packed edge-to-edge inside 210 × 250
+  metres, on flat 0.5 m slabs, under a 4 cm decorative wobble that faded to exactly zero at every
+  boundary. **The ground is now one continuous heightfield per region with real elevation, real
+  collision and real navigation, and there is no seam fade anywhere.** Every POI's interior
+  circulation is the layout rebuild's, lifted verbatim. ⚠️ **This is still NOT Phase 44** — that phase
+  blocks out all five realms and is ahead of us.
+- **NEXT: 42A — membership/rank flag framework + a small rank UI**, reusing the existing story flags
+  and `FactionResource`. It is the gate the five guild questlines (42B–F) all sit behind.
 
-## Last verified (2026-08-28 — the level-layout rebuild)
+### What the overhaul actually changed
+
+| | Was | Is |
+| --- | --- | --- |
+| Ember Crown | 10 cells, 210 × 250 m | **16 cells, 330 × 440 m** (6 of them empty transitional country) |
+| Frostfang Reach | 5 cells, 250 × 200 m, **overlapping the Ember Crown** | **10 cells, 340 × 380 m, x 260..600** — disjoint |
+| Ground | one flat `BoxMesh` + `BoxShape3D` per cell | one region `WorldHeightfield`; terrain mesh **is** the collider and the navmesh source |
+| Relief | 0.055 m (five centimetres) | 1.4 m of countryside noise + authored landforms to ±30 m |
+| Seams | height forced to 0 in the outer 24% of every cell | both cells evaluate the same world function — matched by construction |
+| Roads/yards | 40 flat 6 cm slabs | painted by the terrain shader from the path/activity masks |
+| Ground cover | 1,277 individual `Node3D`s | MultiMesh scatter, `Count` as a density per 100 × 100 m |
+| Town → market | 56 m | 95 m | 
+| Town square → arena | 150 m | **285 m**, through the gate, the wilds and an empty frontier |
+
+Read [`docs/WORLD_AUTHORING.md`](WORLD_AUTHORING.md) before touching a cell. `data/regions/*.tres`
+is **generated** — edit `tools/region_spec_<region>.py` and run `python tools/gen_regions.py`.
+
+## Last verified (2026-08-29 — the world-geography overhaul)
 
 | Check | Result |
 | --- | --- |
 | Build | `dotnet build Embervale.sln` — 0 warnings, 0 errors |
-| Tests | `dotnet test tests/Embervale.Tests` — **1503 passing** |
-| `--validate` | exit 0; 6 shrines, **1460 locale strings**, 70 map locations, 18 quests, 34 dialogues |
-| Negative rules | `python tools/negative_tests.py` — **94 cases** broken, caught, restored; tree restored clean and recovered `--validate` exit 0 |
-| Corruption gate (live) | `--shrine-shots`: `shrine.solaryn` refused at corruption 45 (no claim, Armor unchanged at 57.5) and blessed at 35 (Armor 67.5) |
-| Shrine render | `--shrine-shots`: 12 live 1280×720 eye-level front/back frames; the Solaryn pair shows the refusal and blessing toasts stacked in-world |
-| `--state` | 2 regions, 15 cells, 63 items, 23 shops, 15 services, 8 contracts, 34 dialogues, 18 quests, 70 map locations, 3 companions; **both regions' portals report OPEN from the start** |
-| `--play` | newest `auto1` booted, restored 34 objects, loaded all 10 Ember Crown cells, 0 errors over 60 s with the integrity checker running |
-| World render | `world_shots.gd` — all 15 cells streamed, settled and rendered, 150 day/dusk frames, **visual baseline regenerated** (every frame of it changed, which is the point) |
-| Step-up gate | `stepup_probe.gd` — migrated to the Salt Steps and green: rose 0.301 on the terrace, 0.001 into the bell tower |
-| Map placement | `map_probe.gd` — 70 markers across 15 cells, no duplicate or centre-parked pin |
-| Layout overlap | `python tools/check_cell_layout.py <cell>` — 0 overlapping structures in all 15 |
-| ⚠️ World perf | **Over budget, and it was BEFORE this work too.** `--play` on the Ember Crown warns `draw calls … > 1800` and `frame ms … > 25`; measured on `79755be` (pre-rebuild) it warned the same way, peaking at 2895 draw calls / 75 ms against 3214 / 60 ms after. `tools/cell_mesh_census.gd` gives the deterministic half: the region's rendered meshes went **2054 → 2155 (+4.9%)**, so the rebuild is a marginal contributor to a pre-existing ~60% overrun, not its cause. The real lever is ground cover — ~1,100 of those meshes are one `Node3D` + one `MeshInstance3D` per tuft, and a `MultiMeshInstance3D` per species would collapse them (the `ponytail:` note at the bottom of `wilds_north.tscn` already names it). **Unfixed and unscheduled.** |
-| Not run | `--economy` (no price touched); the Frostfang portal crossing still needs keyboard input no CLI here can inject, so it is exercised only through `world_shots.gd` streaming both regions |
+| Tests | `dotnet test tests/Embervale.Tests` — **1510 passing** |
+| `--validate` | exit 0; 70 map locations, 26 cells, 1460 locale strings |
+| `--state` | 2 regions, **26 cells**, 63 items, 23 shops, 15 services, 70 map locations; both portals OPEN |
+| Region seams | `check_region_seams.py` — PASS on both regions, every crossing 0.00 m |
+| Cell layout | `check_cell_layout.py` — 0 overlapping structures in all 26 |
+| Route grades | new `--validate` arm walks all authored routes against the heightfield; **22 unwalkable routes found and fixed**, now 0 |
+| Traversal | `world_traversal_probe.gd` — **PASS, 142 authored route segments**, real navmesh + real terrain collision, capsule steps and drops like the player |
+| Step-up | `stepup_probe.gd` — PASS: climbs the 0.45 m Salt Steps terrace, does not climb the bell tower |
+| Map placement | `map_probe.gd` — PASS, 70 markers across 26 cells |
+| Map generator | `gen_map_locations.py --check` — 0 files out of date |
+| Save migration | v1 → v2 exercised on a real `auto1`: migrated, 34 objects restored, player landed at the region spawn, 0 errors |
+| `--play` | all 16 Ember Crown cells streamed; **75 s with zero warnings and zero errors** — no draw-call or frame-time budget breach |
+| World render | `world_shots.gd` — 26 cells, **260 frames**, inspected at eye level before the baseline was regenerated |
+| Mesh census | Ember Crown **2155 → 1292** rendered meshes (−40%) across 5.4× the area; realm 1580 |
+
+⚠️ **The perf overrun NOW.md carried for two revisions is gone.** `--play` on the Ember Crown warned
+`draw calls … > 1800` and `frame ms … > 25` before this work (peaking 3214 / 60 ms) and warns
+nothing now, because the lever that entry named was finally pulled: 1,277 ground-cover `Node3D`s and
+40 road slabs became MultiMesh layers and one terrain draw per cell.
 
 ## Live invariants
 
@@ -56,60 +67,63 @@
    keys; clear before restore, including every false/empty branch. A partial restore is a failed load.
 2. **One surface owns each fact.** A shrine body is a caller; the player's claimed-id set is the only
    blessing authority. Never add per-shrine flags or a second blessing ledger.
-3. **A gate belongs at the choke point, not in the caller.** The corruption refusal lives in the
-   player's `BlessingComponent`, so no seventh shrine placement can forget it. Put the next
-   condition where the mutation already funnels.
-4. **All player-facing text uses `Loc.T()` and a `strings.csv` key.** Literal English can render
-   correctly while silently breaking localization.
+3. **A gate belongs at the choke point, not in the caller.** Put the next condition where the
+   mutation already funnels — `SafeLanding` is the newest example: every teleport in the game goes
+   through two functions, so the "never put the player under the ground" rule lives in those two.
+4. **All player-facing text uses `Loc.T()` and a `strings.csv` key.**
 5. **If the player can go there, map it in the same sub-phase.** A map location's position is the
    transform of its `MapLocationComponent` parent in a cell scene, never a resource coordinate.
 6. **Render world changes at eye level, front and back, with people and furniture around them.**
-   Reading a transform is not a placement review.
-7. **Before authoring content of an existing kind, read an existing `.tres` header.** Decisions hide
-   there. Before adopting a model, inspect the four Quaternius packs and `assets/library/manifest.json`.
-   Use primitives only when no pack model fits; never introduce a fifth style.
-8. **An authored numeric range fails silently at both ends.** Below the floor the reward is
-   unreachable; above the ceiling the branch is dead content. Both load and render fine, so every new
-   range needs a validator arm and a negative case in *each* direction.
-9. **An event that fires conditionally is not automatically the event that means the thing.** Read its
-   publisher before using it as a mechanic trigger; seeded state also defeats "not yet done" filters.
-10. **A cache key is a subscription.** Any newly drawn fact must be part of every cache/signature that
-    renders it, not merely an event listener.
-11. **A seam is arithmetic, and a road that points at a wall says nothing.** A cell's neighbours meet
-    it at exact coordinates derived from the two Centers and floor sizes, and a region path may be
-    drawn to a seam the cell scene does not open onto — the two are authored in different files and
-    nothing cross-checks them. Three shipped that way and were found only by walking the numbers:
-    **the arena** was sealed on its southern seam and open on its western side, which faces region
-    void; **Hollowreach's** road ran along z ≈ 0 while the Embermarket's stair arrives at z = 12;
-    **Tarn's Landing** had 20 m of lake over the whole western seam that `wilds_west` connects to.
-    When you move a road, walk it into the neighbouring cell's file.
-12. **A layout constraint written as a coordinate outlives its reason.** "The stall transforms do not
-    move" was a real contract in 38K and a cage by 2026-08-28; what was actually load-bearing was the
-    *relative* shape of it (a Counter at local (2.2, 0, 0), a merchant 1.1 m along the stall's own
-    +X), which survives any move. Author dependencies as offsets and ids, never as absolute points —
-    and when a comment forbids a change, find what it is protecting before believing it.
+   Reading a transform is not a placement review. ⚠️ **And the render harness must stand on the real
+   ground** — `world_shots.gd` raycasts every camera onto terrain now, because a literal 1.75 m eye
+   height photographs the inside of a hill and the baseline passes.
+7. **Before authoring content of an existing kind, read an existing `.tres` header.**
+8. **An authored numeric range fails silently at both ends.** Every new range needs a validator arm
+   and a negative case in *each* direction.
+9. **An event that fires conditionally is not automatically the event that means the thing.**
+10. **A cache key is a subscription.** Any newly drawn fact must be part of every cache/signature
+    that renders it, not merely an event listener.
+11. ⚠️ **A SEAM IS NO LONGER ARITHMETIC — IT IS GENERATED, AND THAT REPLACED THIS RULE.** Cells used
+    to meet at coordinates two files had to agree about by hand, and three defects shipped that way.
+    `tools/gen_regions.py` now refuses to write a region whose row bands do not tile its extent
+    exactly, and every seam route is authored ONCE as a world point both cells derive their local
+    endpoint from — half a seam cannot be authored. The ground matches because both cells evaluate
+    the same `WorldHeightfield`, not because anything is flattened.
+12. **A layout constraint written as a coordinate outlives its reason.** Author dependencies as
+    offsets and ids, never as absolute points. ⚠️ The overhaul moved thirteen cells and every single
+    thing that broke was an absolute world number someone had written down: nine schedule
+    destinations, a property's placement centre, a portal point, a step-up probe, a screenshot
+    harness's cell table and a probe's eye height. The town hub's centre was deliberately left at
+    (0, 0, -10) purely to avoid a fourteenth.
+13. ⚠️ **TERRAIN MAKES GEOGRAPHY; PROPS ONLY DETAIL IT.** A corrie built from scaled rock clusters, a
+    crater from a ring of boulders, a glacier pass from six alternating ice models — all three
+    shipped, all three are landforms now. If a shape needs to exist, it goes in
+    `WorldLandformResource` and the props dress what the terrain already says.
+14. ⚠️ **SOME OF THE WORLD MUST CONTAIN NOTHING.** Eleven of the realm's twenty-six cells carry a
+    road, weather, vegetation and landform and no gameplay beat at all; three are dead ends. That is
+    the feature. A world where every thirty metres has a purpose advertises on every step that it was
+    designed. Do not fill them in.
 
 ## Commands worth knowing
 
 ```text
 dotnet build Embervale.sln
 dotnet test tests/Embervale.Tests
+python tools/gen_regions.py            # data/regions/*.tres is GENERATED; --check gates it
 godot --headless --path . -- --validate
-python tools/negative_tests.py          # refuses to run while data/ or scenes/ is dirty — commit first
 godot --headless --path . -- --state
 godot --path . -- --play
-godot --path . -- --shrine-shots
-godot --path . --script res://tools/world_shots.gd      # renders all 15 cells; add -- --update-world-baseline after a layout change
+python tools/negative_tests.py          # refuses to run while data/ or scenes/ is dirty — commit first
+python tools/check_region_seams.py data/regions/EmberCrown.tres
+python tools/check_cell_layout.py data/regions/EmberCrown.tres
+godot --headless --path . --script res://tools/world_traversal_probe.gd
 godot --headless --path . --script res://tools/map_probe.gd
 godot --headless --path . --script res://tools/stepup_probe.gd
-python tools/relayout_cell.py <cell.tscn> <spec>        # move/rotate/delete/rename authored nodes
-python tools/check_cell_layout.py <cell.tscn>           # gross structural overlaps
-python tools/redress_cell.py <cell.tscn> <style> <first_ext_id>
+godot --headless --path . --script res://tools/cell_mesh_census.gd
+godot --path . --script res://tools/world_shots.gd      # add -- --update-world-baseline AFTER inspecting
 ```
 
 `godot`/`python` are not on this shell PATH. The 4.7.1 console executable at
 `C:\Users\magnu\Downloads\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64_console.exe`
 and Codex's bundled Python work when launched with the elevated project environment. The configured
-Godot MCP relay (`localhost:23630`) is still down — `godot-cli status .` reports no editor and a
-refused connection. Do not confuse an open editor with a live MCP, and note the whole verification
-spine above runs without it.
+Godot MCP relay (`localhost:23630`) is still down; the whole verification spine above runs without it.

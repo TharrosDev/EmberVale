@@ -55,6 +55,10 @@ public partial class ScheduleComponent : EntityComponent
     private bool _talking;
     private double _sleepTimer;
 
+    /// <summary>How far the body's origin sits above the ground, captured where it was authored.
+    /// Almost every NPC is 0 (origin at the feet); a body placed on a plinth keeps its plinth.</summary>
+    private float _groundClearance;
+
     private bool Panicking => _panicTimer > 0d;
 
     protected override void OnInitialize()
@@ -62,6 +66,8 @@ public partial class ScheduleComponent : EntityComponent
         _body = Entity!.Body;
         _schedule = ScheduleDatabase.Get(ScheduleId);
         _target = _body.GlobalPosition;
+        Vector3 here = _body.GlobalPosition;
+        _groundClearance = here.Y - WorldGround.HeightAt(here.X, here.Z);
 
         EventBus.Instance?.Subscribe<TimeOfDayChangedEvent>(OnTimeChanged);
         EventBus.Instance?.Subscribe<EnemyAlertedEvent>(OnEnemyAlerted);
@@ -210,15 +216,17 @@ public partial class ScheduleComponent : EntityComponent
             return;
         }
 
+        // ⚠️ THIS SLIDE KEEPS Y, AND THAT WAS ONLY EVER RIGHT ON A FLAT WORLD. An NPC here is moved
+        // by writing GlobalPosition, so it has no gravity and no floor: before the 2026-08-29
+        // overhaul it held whatever height it spawned at, which was 0 everywhere. Now the routine
+        // has to follow the ground, or the Hollowreach fence walks under his own boardwalk and the
+        // clan quartermaster walks over the beast runs.
         float step = WalkSpeed * (float)delta;
-        if (step >= dist)
-        {
-            _body.GlobalPosition = new Vector3(target.X, pos.Y, target.Z);
-        }
-        else
-        {
-            _body.GlobalPosition = pos + (to / dist * step);
-        }
+        Vector3 next = step >= dist
+            ? new Vector3(target.X, pos.Y, target.Z)
+            : pos + (to / dist * step);
+        _body.GlobalPosition = new Vector3(
+            next.X, WorldGround.HeightAt(next.X, next.Z) + _groundClearance, next.Z);
 
         Face(target);
     }

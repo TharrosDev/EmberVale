@@ -179,22 +179,70 @@ CASES = [
 
     ("world.terrain_vertex_budget_exceeded", "ValidateRegions",
      [("data/regions/EmberCrown.tres",
-       "MaxTerrainVerticesPerCell = 3000", "MaxTerrainVerticesPerCell = 2000")],
+       "MaxTerrainVerticesPerCell = 7000", "MaxTerrainVerticesPerCell = 2000")],
      "terrain vertices, over its per-cell budget"),
 
     ("world.terrain_blend_inverted", "ValidateRegions",
-     [("data/regions/EmberCrown.tres", "SlopeBlendEnd = 0.32", "SlopeBlendEnd = 0.04")],
+     [("data/regions/EmberCrown.tres", "SlopeBlendEnd = 0.62", "SlopeBlendEnd = 0.04")],
      "invalid terrain material-blending thresholds"),
 
     ("world.scatter_source_missing", "ValidateRegions",
      [("data/regions/FrostfangReach.tres",
-       'ScenePath = "res://assets/models/props/prp_pine_dead.glb"',
+       # ⚠️ prp_pine_dead is in TWO layers since the 2026-08-29 overhaul (the roosts' and the
+       # bare high-altitude one) and apply_case refuses an ambiguous find. The snow tuft is unique.
+       'ScenePath = "res://assets/models/props/prp_grass_short.glb"',
        'ScenePath = "res://assets/models/props/prp_missing.glb"')],
      "scatter source 'res://assets/models/props/prp_missing.glb' does not exist"),
 
     ("world.hlod_reduction_invalid", "ValidateRegions",
      [("data/regions/FrostfangReach.tres", "HlodReduction = 4", "HlodReduction = 1")],
      "invalid HLOD scatter tier"),
+
+    # ---- Geography (the 2026-08-29 overhaul) ----------------------------------------------------
+    # ⚠️ These two mutate a GENERATED file. data/regions/*.tres comes out of tools/gen_regions.py,
+    # so a real fix goes in tools/region_spec_<region>.py — the battery only needs the .tres to be
+    # briefly wrong, and it restores from its own byte snapshot either way.
+    #
+    # A road nobody can climb is emergent between the landform file and the route file and invisible
+    # in both, which is the entire reason ValidateRouteGrades exists: this raises the rise north out
+    # of the town square from three metres to sixty, under the Kingsway.
+    ("world.route_grade_unwalkable", "ValidateRegions",
+     [("data/regions/EmberCrown.tres",
+       """[sub_resource type="Resource" id="Land_town_hub_4"]
+script = ExtResource("8_landform")
+Shape = 0
+Center = Vector2(-6, -46)
+Extent = Vector2(32, 17)
+Height = 3.0
+Falloff = 0.9""",
+       """[sub_resource type="Resource" id="Land_town_hub_4"]
+script = ExtResource("8_landform")
+Shape = 0
+Center = Vector2(-6, -46)
+Extent = Vector2(32, 17)
+Height = 60.0
+Falloff = 0.9""")],
+     "a walking player can hold"),
+
+    # A landform whose falloff is outside (0, 1] produces a mask that is either a step or nothing,
+    # and neither reads as a defect from the .tres.
+    ("world.landform_falloff_invalid", "ValidateRegions",
+     [("data/regions/EmberCrown.tres",
+       """[sub_resource type="Resource" id="Land_town_hub_4"]
+script = ExtResource("8_landform")
+Shape = 0
+Center = Vector2(-6, -46)
+Extent = Vector2(32, 17)
+Height = 3.0
+Falloff = 0.9""",
+       """[sub_resource type="Resource" id="Land_town_hub_4"]
+script = ExtResource("8_landform")
+Shape = 0
+Center = Vector2(-6, -46)
+Extent = Vector2(32, 17)
+Height = 3.0
+Falloff = 1.8""")],
+     "invalid authored landform"),
 
     # ---- The contract board ------------------------------------------------------------------
     ("contract.nothing_to_deliver", "ValidateContracts",

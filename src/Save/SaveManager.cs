@@ -22,7 +22,7 @@ namespace Embervale.Save;
 /// </summary>
 public sealed partial class SaveManager : Node
 {
-    private const int SaveFormatVersion = 1;
+    private const int SaveFormatVersion = 2;
     private const string SaveDirectory = "user://saves";
 
     public static SaveManager Instance { get; private set; } = null!;
@@ -629,21 +629,91 @@ public sealed partial class SaveManager : Node
             return false;
         }
 
-        // version < SaveFormatVersion: walk forward one step at a time. This is the seam where those
-        // steps go, and it is empty because v1 is the first format this game has ever written.
-        //
-        // ⚠️ THAT EMPTINESS IS WHY THIS REFUSES RATHER THAN BEST-EFFORTS. There is no such thing as a
-        // legitimate v0 Embervale save — nothing ever wrote one. A document that declares a version
-        // below the first one is a hand-edited file, a foreign file that happens to carry an integer
-        // "version", or a corrupted one, and the old branch waved all three through with a warning and
-        // started feeding their fragments to live components. Refusing costs nothing today (no real
-        // save can reach here) and is the correct default the moment a v2 exists: an unmigratable save
-        // must fail loudly, not load in pieces.
-        //
-        // When a step IS registered, upgrade `root` in place here and fall through to `return true`.
+        // version < SaveFormatVersion: walk forward one step at a time.
+        if (version == 1)
+        {
+            MigrateV1ToV2(slot, root);
+            version = 2;
+        }
+
+        if (version == SaveFormatVersion)
+        {
+            return true;
+        }
+
+        // ⚠️ ANYTHING STILL BELOW THE FIRST FORMAT IS REFUSED RATHER THAN BEST-EFFORTED. There is no
+        // such thing as a legitimate v0 Embervale save — nothing ever wrote one. A document that
+        // declares a version below the first is hand-edited, foreign, or corrupt, and the old branch
+        // waved all three through with a warning and started feeding their fragments to live
+        // components. An unmigratable save must fail loudly, not load in pieces.
         Log.Error($"Save slot '{slot}' is version {version}, older than the first format this game " +
-                  $"wrote ({SaveFormatVersion}), and no migration step covers it; refusing to load " +
+                  $"wrote (1), and no migration step covers it; refusing to load " +
                   "rather than feeding a partial document to live components.");
         return false;
+    }
+
+    /// <summary>
+    /// v1 -> v2: THE WORLD MOVED UNDER THE SAVE (the 2026-08-29 geography overhaul).
+    ///
+    /// Every world coordinate a v1 document holds was written against a lattice that no longer
+    /// exists: the Ember Crown's cells all moved except the town hub, Frostfang Reach was lifted
+    /// out of the Ember Crown's coordinate space entirely (its old points are now inside the arena
+    /// and the northern wilds), and the ground stopped being flat, so even an unmoved X/Z can have
+    /// eight metres of hillside over it. A saved position is therefore not merely stale — it can
+    /// put the player inside terrain or in the void, which is exactly the failure this step exists
+    /// to make impossible.
+    ///
+    /// Three things carry world coordinates that a player can be TELEPORTED to, and all three are
+    /// discarded rather than guessed at:
+    ///   the header transform  — dropped, so <c>ApplySavedLocation</c> falls through to the region's
+    ///                           own SpawnPoint, which is authored, on the ground, and always valid;
+    ///   the fast-travel net   — dropped, because a jump to a v1 landing point is a jump into a hill
+    ///                           (the posts themselves are unmoved and can be re-attuned by walking
+    ///                            to them, and <c>FastTravelService.Refresh</c> keeps them honest
+    ///                            from here on);
+    ///   the map's saved pins  — dropped, because they are the positions of cells that have moved.
+    ///                           Every one of them re-registers the moment its cell loads.
+    ///
+    /// ⚠️ EVERYTHING ELSE IS KEPT ON PURPOSE. Quests, flags, inventory, perks, reputation, the
+    /// economy, blessings and companion rosters carry no coordinates and a player's progress is not
+    /// a casualty of a terrain change. Persistent actor positions are kept too: they are dropped
+    /// loot and world caches inside cells that mostly did not move relative to their own contents,
+    /// and losing a chest is worse than a chest sitting a metre low.
+    /// </summary>
+    private static void MigrateV1ToV2(string slot, Godot.Collections.Dictionary root)
+    {
+        int cleared = 0;
+        if (root.TryGetValue("header", out Variant headerV) &&
+            headerV.VariantType == Variant.Type.Dictionary)
+        {
+            var header = headerV.AsGodotDictionary();
+            foreach (string key in new[] { "player_x", "player_y", "player_z", "player_yaw" })
+            {
+                if (header.ContainsKey(key))
+                {
+                    header.Remove(key);
+                    cleared++;
+                }
+            }
+        }
+
+        if (root.TryGetValue("state", out Variant stateV) &&
+            stateV.VariantType == Variant.Type.Dictionary)
+        {
+            var state = stateV.AsGodotDictionary();
+            foreach (string key in new[] { "fasttravel", "map" })
+            {
+                if (state.ContainsKey(key))
+                {
+                    state.Remove(key);
+                    cleared++;
+                }
+            }
+        }
+
+        root["version"] = 2;
+        Log.Info($"Save slot '{slot}': migrated v1 -> v2, discarding {cleared} pre-overhaul " +
+                 "coordinate record(s). The player lands at the region's spawn point and " +
+                 "fast-travel posts need re-attuning; nothing else was touched.");
     }
 }

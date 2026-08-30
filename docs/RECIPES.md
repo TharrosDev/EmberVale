@@ -597,11 +597,13 @@ world does not keep, which is the empty-heading problem 37.5E refused for the jo
 ⚠️ **This recipe did not exist until 37E**, and the settlement recipe below pointed at it ("the cell
 recipe above"). Everything here had been rediscovered four times from other cells' comments.
 
-1. **Pick the centre by arithmetic, not by eye.** Cells share one coordinate space and abut exactly.
-   A 52 m floor centred at x = 52 runs x 26..78, so it abuts a 52 m floor centred at x = 0 (which ends
-   at 26) precisely. ⚠️ **A gap is a hole the player falls through; an overlap is two coplanar floors
-   z-fighting along the seam. Neither is visible from the `.tres` or the `.tscn`** — write the sum
-   into the cell's comment, which is what every cell since 38K does.
+1. ⚠️ **DO NOT AUTHOR A CELL BY HAND ANY MORE — EDIT `tools/region_spec_<region>.py` AND RUN
+   `python tools/gen_regions.py`** (the 2026-08-29 geography overhaul). The lattice is declared as row
+   bands split into columns and the generator *checks it tiles exactly* before it writes a byte: a gap
+   is a hole the player falls through, an overlap is two coplanar surfaces fighting along a seam, and
+   neither was ever visible from the `.tres`. Every seam route is likewise authored ONCE, as a world
+   point both cells derive their local endpoint from, so half a seam cannot be authored. `--check`
+   fails if the committed `.tres` is out of date.
 2. **Author the cell** in `data/regions/<Region>.tres`: a `sub_resource` with `Id`, `ScenePath`,
    `Center`, a `WorldCellPresentationResource`, and optional `WorldBiomeScatterResource`, then add
    it to the region's `Cells` array. Scatter is cosmetic only: layer scenes become MultiMeshes and
@@ -617,10 +619,19 @@ recipe above"). Everything here had been rediscovered four times from other cell
    refuses trade tags with no counter to read them — a half-authored settlement is invisible (38G),
    and a cell that sells nothing (a homestead, a wilds, an arena) authors none.
    ⚠️ A shockable cell also needs a `cell.<id>` locale row, or the caravan board posts the raw key.
-5. **The scene** (`scenes/regions/<region>/<cell>.tscn`): a `NavigationRegion3D` named `Nav`, a floor
-   mesh + `StaticBody3D`, then the content. ⚠️ **Everything with a collider parents under `Nav`** —
-   geometry outside it is not carved into the bake (27A) and the failure is invisible until you watch
-   an NPC walk through a wall. Interactable `Entity`s parent to the cell root.
+5. **The scene** (`scenes/regions/<region>/<cell>.tscn`): a `NavigationRegion3D` named `Nav` with a
+   `CellNavBaker`, then the content. ⚠️ **THERE IS NO FLOOR IN A CELL SCENE ANY MORE.** The ground is
+   the region heightfield: `WorldCellPresentation` builds the terrain mesh AND its collider and
+   parents the collider into `Nav`, so the navmesh bakes off real elevation. A transitional cell is
+   a `Nav`, a baker and nothing else — see `scenes/regions/ember_crown/west_downs.tscn`.
+   ⚠️ **Everything with a collider parents under `Nav`** — geometry outside it is not carved into the
+   bake (27A) and the failure is invisible until you watch an NPC walk through a wall. Interactable
+   `Entity`s parent to the cell root.
+   ⚠️ **An authored node's Y is now its clearance ABOVE the ground, not a world height.**
+   `WorldTerrainConform` adds the terrain height under each direct child of the cell root and of
+   `Nav` at load. Anything whose Y is a real world height — a water surface — joins the
+   `terrain_absolute` group to opt out. A building wants a `WorldGroundAreaResource` pad under it;
+   only the node's own origin is sampled, so a twelve-metre wall on a hillside sinks one corner.
 6. **A schedule in the cell carries a COPY of the cell's `Center` as `Origin`** so destinations stay
    cell-local. Moving a cell is never a one-line edit.
 7. **Props: measure, never guess.** `python tools/gen_cell_props.py` expands a table into stanzas;
@@ -816,20 +827,21 @@ exists because the ordinary tag rules are wrong for a prohibition.
    boss spawned in that frame races the walk and a deferred one misses it entirely —
    either way the boss resurrects every time the cell reloads. The authored spawner is
    always found, so it holds the "defeated" bit instead.
-4. **The cell carries its own floor** (see 34.5A). Size it for the fight: the roost's
-   floor is 90 m because the territory radius is 45. Butt it against a neighbouring
-   cell's floor rather than overlapping — co-planar floors z-fight — and keep it clear
-   of other cells' props and the region's safe zone.
+4. **The cell's fight space is a landform, not a floor** (the 2026-08-29 overhaul deleted
+   `RoostCell` and every box floor with it). Size the *cell* for the territory in
+   `tools/region_spec_<region>.py` and shape the lair with `WorldLandformResource`: the
+   Wild roost is a 10 m flat-topped shelf with 50-degree sides, the Ash roost a 3.5 m
+   crater floor inside an 8 m rim. Ground colour is the region profile plus the cell's
+   `Tint`, which the shader fades out at the cell edge so it is not a rectangle.
 5. **Give each lair its own `PersistentId`.** `LairSpawnComponent.SaveId` derives from
    it, so two lairs sharing one means killing either marks both defeated.
 6. **Inherit `scenes/regions/roost.tscn`** (Phase 35F paid the debt the two hand-authored
-   roosts flagged). The base owns the nav region + baker, the floor mesh/collider and the
-   `Nest`/`Lair` markers; a roost overrides the `RoostCell` script's `FloorSize`/
-   `FloorColor`/`EmberColor`/`EmberEnergy`, the `Nest`'s `PersistentId`, the `Lair`'s
-   `TemplateId`, and adds its props **as children of `Nav`** (geometry outside the
-   navigation region is not carved into the bake). Floor mesh, shape and material are
-   base-scene sub-resources and therefore shared by every roost — `RoostCell` `Duplicate()`s
-   each before touching it, and anything else you vary must do the same.
+   roosts flagged). The base owns the nav region + baker and the `Nest`/`Lair` markers; a
+   roost overrides the `Nest`'s `PersistentId` and the `Lair`'s `TemplateId` and adds its
+   props **as children of `Nav`** (geometry outside the navigation region is not carved
+   into the bake). ⚠️ The base scene no longer owns a floor or a `RoostCell` script — both
+   went with the flat slabs, and the shared-sub-resource `Duplicate()` trap they carried
+   went with them.
 7. **Set `DefeatFlagId` if anything needs to know the boss is dead** (35F). It is the only
    thing in the game that turns a kill into a story flag, so it is what a dialogue
    condition or a gated interactable (e.g. `SpellTomeComponent.RequiredFlagId`) can ask.
@@ -1028,10 +1040,12 @@ cell sat far from the origin). `EnemySpawnDirector` had the same latent bug.
    **Navmesh (Phase 27A):** wrap the cell's walkable geometry in a `NavigationRegion3D` "Nav" with a
    `NavigationMesh` whose `geometry_parsed_geometry_type = 1` (**static colliders** — never visual
    meshes; runtime mesh parsing forces a GPU→CPU readback hitch), and add a `CellNavBaker`
-   (`src/World/CellNavBaker.cs`) as its child so the navmesh **bakes at stream-in**. Give the cell a
-   floor `StaticBody3D`+`CollisionShape3D` (the bake's walkable surface) and a collider on every
-   obstacle (they carve the mesh). Keep `agent_*` dims on the 0.25 voxel grid (`agent_height = 1.75`,
-   `agent_max_climb = 0.5`) to avoid precision warnings. Enemy `NavigationAgent3D`s path on it
+   (`src/World/CellNavBaker.cs`) as its child so the navmesh **bakes at stream-in**. ⚠️ **The walkable surface is the terrain collider `WorldCellPresentation` parents into `Nav`,
+   not an authored floor** — put a collider on every obstacle (they carve the mesh) and nothing under
+   the cell. Keep `agent_*` dims on the voxel grid (`agent_height = 1.75`, `agent_max_climb = 0.5`,
+   `agent_max_slope = 40..42`) to avoid precision warnings; `cell_size`/`cell_height` are 0.3 in
+   settlements and 0.5/0.4 in the large wilderness cells, because a 0.25 m voxel over a 200 m cell is
+   twenty-five times the columns to rasterise and the bake times out. Enemy `NavigationAgent3D`s path on it
    automatically; with no Nav region they fall back to straight-line steering, so a navmesh is
    optional per cell but expected for any space enemies fight in.
 2. Auto-indexed by `RegionDatabase`; the save header resolves the active region's name, and the
@@ -1044,10 +1058,10 @@ cell sat far from the origin). `EnemySpawnDirector` had the same latent bug.
    No code change for a new region.
    **Adding a cell to an existing region (Phase 38K)** is the same `.tres` sub-resource plus a
    `.tscn`, and four things are worth doing deliberately:
-   - ⚠️ **Work out where the floors meet on paper.** The Embermarket's 52 m square abuts the hub's
-     60 m one exactly (hub floor ends at `z = 20`; a 52-wide floor centred at `z = 46` starts there).
-     A gap is a hole the player falls through and an overlap is two coplanar floors z-fighting along
-     a seam — neither is visible from the `.tres`, so the arithmetic goes in a comment beside it.
+   - ⚠️ **The lattice is checked by `tools/gen_regions.py`, not worked out on paper.** Declare the
+     cell in `tools/region_spec_<region>.py`'s row bands; the generator refuses to write a `.tres`
+     whose bands do not tile the region's extent exactly. This replaced four rounds of hand
+     arithmetic and the three seam defects they shipped.
    - **`SafeRadius` (38K) makes a cell its own no-spawn area.** `0` — the default — means it is not
      one. A settlement can be more than one cell, and stretching the region's single
      `SafeZoneRadius` to reach a district a street away also smothers the encounters around the
@@ -1064,9 +1078,11 @@ cell sat far from the origin). `EnemySpawnDirector` had the same latent bug.
      loaded set by id, so one can never be instanced).
    - ⚠️ There is deliberately **no** "every cell declares a `NavigationRegion3D`" rule. 38K wrote one
      and deleted it the same hour: a text scan cannot see through scene inheritance, so the three
-     Frostfang roosts — which inherit their `Nav` from `RoostCell` — all reported as unnavigable, and
-     the glacier legitimately has none because it is scenery. A check that is wrong three times out
-     of four teaches authors to ignore the validator.
+     Frostfang roosts — which inherit their `Nav` from the base roost scene — all reported as
+     unnavigable. A check that is wrong three times out of four teaches authors to ignore the
+     validator. What `--validate` *does* own geometrically is `ValidateRouteGrades`: every authored
+     route is walked against the region heightfield and refused over a 0.80 grade, because a road
+     nobody can climb is emergent between two files and invisible in both.
 3. **Hard transitions (Phase 25C):** declaring a region in another's `Neighbours` makes the
    bootstrap spawn a travel portal between them automatically (a `RegionTransitionComponent` a few
    metres in front of the region's `SpawnPoint`, or at **`RegionResource.PortalPoint`** when the

@@ -30,7 +30,7 @@ Slots are just directory names. `quick` is the default; `auto1`/`auto2`/`auto3` 
 
 ```json
 {
-  "version":   1,
+  "version":   2,
   "timestamp": 1755270000.0,
   "header":    { ... },
   "objects":   { "<SaveId>": { ...component state... } }
@@ -106,7 +106,19 @@ The rules, in the order a load applies them:
 1. **No `version` field → refuse.** Every envelope this game has written carries one. Its absence
    means a truncated write, a hand-edit, or some other JSON document entirely.
 2. **`version` > current → refuse.** A newer save cannot be read by an older build.
-3. **`version` < current with no migration step → refuse.** ⚠️ This used to warn and load at best
+3. **`version` < current WITH a migration step → migrate forward.** ⚠️ There is one now:
+   **v1 → v2 (the 2026-08-29 geography overhaul)**. Every world coordinate a v1 document holds was
+   written against a lattice that no longer exists — the Ember Crown's cells all moved except the
+   town hub, Frostfang Reach was lifted out of the Ember Crown's coordinate space entirely, and the
+   ground stopped being flat, so even an unmoved X/Z can have eight metres of hillside over it. The
+   step **discards the three records a player can be teleported to**: the header transform (the load
+   falls through to the region's authored `SpawnPoint`), the fast-travel network (a jump to a v1
+   landing point is a jump into a hill; the posts are unmoved and re-attune by walking to them), and
+   `MapService`'s saved pins (they re-register the moment their cell loads). Everything else — quests,
+   flags, inventory, perks, reputation, the economy, blessings, companions — carries no coordinates
+   and is kept: a player's progress is not a casualty of a terrain change.
+
+4. **`version` < current with no migration step → refuse.** ⚠️ This used to warn and load at best
    effort. v1 is the first format that ever existed, so there is no legitimate older save — the
    branch only ever caught corrupt or foreign files, and waved them through into live components.
    When a v2 arrives, register a step that upgrades `root` in place; **an unmigratable save must fail

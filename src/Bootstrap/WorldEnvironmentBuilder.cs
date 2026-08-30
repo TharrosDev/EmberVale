@@ -83,21 +83,15 @@ internal static class WorldEnvironmentBuilder
         worldEnv.Environment = environment;
         root.AddChild(worldEnv);
 
-        // A generous ground plane so dynamic encounters (spawned ~14–20m out) land on
-        // visible terrain; the collider below is an infinite plane regardless. Sits 5 cm below
-        // y=0 so authored region greybox floors (top at y=0, Phase 27A) render cleanly on top of
-        // it instead of z-fighting; the WorldBoundary collider stays at y=0 so standing is unchanged.
-        var floor = new MeshInstance3D
-        {
-            Mesh = new PlaneMesh { Size = new Vector2(80f, 80f) },
-            MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.18f, 0.22f, 0.20f) },
-            Position = new Vector3(0f, -0.05f, 0f),
-        };
-        root.AddChild(floor);
-
-        // Physics collider for the ground so the player can stand on it.
+        // ⚠️ NOT THE GROUND ANY MORE (the 2026-08-29 geography overhaul). This used to be an 80 m
+        // plane at y = -0.05 over an INFINITE WorldBoundaryShape3D at y = 0, and that infinite plane
+        // was a hard ceiling on the whole overhaul: every mining cut, crater floor, flooded channel
+        // and lake bed the terrain now digs would have been floored at zero, invisibly, with the
+        // player standing on nothing a metre above the pit. Region terrain carries the collision.
+        // What survives is a catcher 120 m down so a fall through a gap is a walk home rather than
+        // an endless drop, and it is deliberately far below the deepest authored basin.
         var floorBody = new StaticBody3D { Name = "FloorBody" };
-        floorBody.AddChild(new CollisionShape3D { Shape = new WorldBoundaryShape3D() });
+        floorBody.AddChild(new CollisionShape3D { Shape = new WorldBoundaryShape3D { Plane = new Plane(Vector3.Up, -120f) } });
         root.AddChild(floorBody);
 
         return new Result(sun, environment);

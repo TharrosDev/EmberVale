@@ -64,29 +64,18 @@
 ; WARNING EVERYTHING STATIC PARENTS TO Nav; the NPCs, the waystone, the stations and the exile's fire
 ; do not. A body inside the NavigationRegion3D is a hole in the navmesh where a person is standing.
 
+; ⚠️ THE NAV VOXEL GRID COARSENED WITH THE WORLD (the 2026-08-29 geography overhaul). Cells
+; went from 52 m squares on a flat slab to 90-200 m of real terrain, and a 0.25 m voxel over
+; five times the area is twenty-five times the columns to rasterise — the traversal probe timed
+; out waiting for the bake. agent_* dims still sit on the voxel grid to avoid precision warnings.
 [sub_resource type="NavigationMesh" id="NavMesh_hold"]
 geometry_parsed_geometry_type = 1
-cell_size = 0.25
-cell_height = 0.25
+cell_size = 0.3
+cell_height = 0.3
 agent_height = 1.75
 agent_radius = 0.5
 agent_max_climb = 0.5
-
-[sub_resource type="BoxMesh" id="BoxMesh_floor"]
-size = Vector3(60, 0.5, 60)
-
-[sub_resource type="BoxShape3D" id="Shape_floor"]
-size = Vector3(60, 0.5, 60)
-
-[sub_resource type="StandardMaterial3D" id="Mat_floor"]
-albedo_color = Color(0.62, 0.66, 0.7, 1)
-roughness = 0.85
-
-[sub_resource type="BoxShape3D" id="Shape_bldgA"]
-size = Vector3(4.74, 7.5, 5.88)
-
-[sub_resource type="BoxShape3D" id="Shape_bldgB"]
-size = Vector3(4.26, 6.8, 5.03)
+agent_max_slope = 42.0
 
 [sub_resource type="CapsuleShape3D" id="Shape_npc"]
 radius = 0.4
@@ -125,17 +114,6 @@ navigation_mesh = SubResource("NavMesh_hold")
 
 [node name="NavBaker" type="Node" parent="Nav"]
 script = ExtResource("3_navbaker")
-
-[node name="Floor" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
-mesh = SubResource("BoxMesh_floor")
-surface_material_override/0 = SubResource("Mat_floor")
-
-[node name="FloorCol" type="StaticBody3D" parent="Nav"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/FloorCol"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
-shape = SubResource("Shape_floor")
 
 [node name="LonghouseW" type="MeshInstance3D" parent="Nav"]
 transform = Transform3D(0.5736, 0, 0.8192, 0, 1, 0, -0.8192, 0, 0.5736, -14, 3.75, -9)
@@ -349,7 +327,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
 shape = SubResource("Shape_tent")
 
 [node name="GlacierS1" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9659, 0, 0.2588, 0, 1.0, 0, -0.2588, 0, 0.9659, -2, 0, 27)
+transform = Transform3D(0.9659, 0, 0.2588, 0, 1.0, 0, -0.2588, 0, 0.9659, -10, 0, 29)
 
 [node name="Model" parent="Nav/GlacierS1" instance=ExtResource("20_glacier")]
 

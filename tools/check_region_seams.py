@@ -71,12 +71,15 @@ def parse_region(path: Path) -> list[Cell]:
                 float(width.group(1)) if width else 4.0)
 
     for resource_id, body in resources.items():
-        authored = re.search(r"^Paths = .*?\(\[(.*?)\]\)", body, re.M)
-        if not authored:
+        # A presentation is identified by its script, not by having roads: since the 2026-08-29
+        # overhaul a cell may legitimately author none (ash_approach is deliberately unroaded), and
+        # keying on `Paths =` made the parser KeyError on the first one that did.
+        if not resource_id.startswith("Presentation_"):
             continue
+        authored = re.search(r"^Paths = .*?\(\[(.*?)\]\)", body, re.M)
         width = re.search(r"^Width = ([\d.\-]+)", body, re.M)
         depth = re.search(r"^Depth = ([\d.\-]+)", body, re.M)
-        route_ids = tuple(re.findall(r'SubResource\("([^"]+)"\)', authored.group(1)))
+        route_ids = tuple(re.findall(r'SubResource\("([^"]+)"\)', authored.group(1))) if authored else ()
         presentations[resource_id] = (
             float(width.group(1)) if width else 52.0,
             float(depth.group(1)) if depth else 52.0,

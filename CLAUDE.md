@@ -642,9 +642,16 @@ immediately before it usually name the thing that will bite you.
 - **A region loads whole** (maintainer direction, 38M2). Every cell of the active region is resident
   from the moment it is entered; `RegionStreamer` has no distance test and no unload path during
   play, and `RegionCellResource.LoadRadius`, `StreamDecision` and its tests were deleted with the
-  rule. ⚠️ **Both regions cannot be resident at once** — Frostfang's roosts share coordinate space
-  with the Ember Crown's arena and northern wilds, so that is a Phase 44 world-layout question and
-  not a streaming one. A new cell is therefore permanently in the tree: author accordingly.
+  rule. A new cell is therefore permanently in the tree: author accordingly. ⚠️ **The two regions no
+  longer share coordinate space** (the 2026-08-29 geography overhaul): Frostfang moved to x 260..600
+  and the "both regions cannot be resident at once" limitation went with the overlap.
+- ⚠️ **THE GROUND IS ONE GENERATED SURFACE PER REGION AND CELL SCENES CARRY NO FLOOR** (the
+  2026-08-29 geography overhaul). `data/regions/*.tres` is **generated** from
+  `tools/region_spec_<region>.py` by `tools/gen_regions.py`, which checks the cell lattice tiles
+  exactly and that every seam route is authored from both sides of one world point. Terrain, its
+  collider and the navmesh source all come from `WorldHeightfield`; an authored node's Y is a
+  clearance above the ground, not a world height. Read `docs/WORLD_AUTHORING.md` before touching a
+  cell — the traps there are the ones that cost this overhaul its afternoons.
 - ⚠️ **The `rts` library pack is roughly 1/6 scale** and nothing in the files says so (38M2). Measure
   any candidate against a 1.8 m reference before authoring around it, and adapt through
   `nodes/root_scale` in the `.import` rather than a Blender round-trip.

@@ -3630,6 +3630,25 @@ public static class ContentValidator
                                    $"{cell.Presentation.GroundAreas.Count} ground areas)");
                     }
 
+                    // ⚠️ A LANDFORM IS THE ONLY AUTHORING IN A CELL THAT MAY LEAVE ITS ENVELOPE, and
+                    // that is deliberate (a ridge that stops dead at a seam re-draws the rectangle
+                    // the 2026-08-29 overhaul removed). So it gets no bounds check — only sanity.
+                    if (cell.Presentation.Landforms.Count > 24)
+                    {
+                        issues.Add($"region '{region.Id}' cell '{cell.Id}' authors " +
+                                   $"{cell.Presentation.Landforms.Count} landforms, over the cap of 24");
+                    }
+
+                    foreach (WorldLandformResource? form in cell.Presentation.Landforms)
+                    {
+                        if (form == null || form.Extent.X <= 0f || form.Extent.Y <= 0f ||
+                            form.Falloff is <= 0f or > 1f || form.Flatten is < 0f or > 1f ||
+                            form.Shape is < 0 or > 1)
+                        {
+                            issues.Add($"region '{region.Id}' cell '{cell.Id}' has an invalid authored landform");
+                        }
+                    }
+
                     float halfWidth = cell.Presentation.Width * 0.5f;
                     float halfDepth = cell.Presentation.Depth * 0.5f;
                     foreach (WorldPathSegmentResource? path in cell.Presentation.Paths)
@@ -3675,7 +3694,11 @@ public static class ContentValidator
                             issues.Add($"region '{region.Id}' cell '{cell.Id}' scatter source " +
                                        $"'{layer.ScenePath}' does not exist");
                         }
-                        cellScatterInstances += layer.Count;
+                        // Count is a density per 100 x 100 m; the cell's footprint scales it, so
+                        // the budget has to scale the same way or a 200 m cell is never measured.
+                        int scaled = cell.Presentation == null ? layer.Count : Mathf.RoundToInt(
+                            layer.Count * cell.Presentation.Width * cell.Presentation.Depth / 10000f);
+                        cellScatterInstances += scaled;
                         if (layer.HlodShape is < 0 or > 2 ||
                             (layer.HlodShape != 0 && (layer.HlodReduction < 2 ||
                              layer.HlodRangeBegin < 0f || layer.HlodRangeEnd <= layer.HlodRangeBegin)))
@@ -3684,7 +3707,7 @@ public static class ContentValidator
                         }
                         else if (layer.HlodShape != 0)
                         {
-                            cellScatterInstances += Mathf.CeilToInt(layer.Count / (float)layer.HlodReduction);
+                            cellScatterInstances += Mathf.CeilToInt(scaled / (float)layer.HlodReduction);
                         }
                     }
 
@@ -3719,6 +3742,15 @@ public static class ContentValidator
                 // if a missing navmesh ever actually ships.
             }
 
+            // ⚠️ A ROAD NOBODY CAN WALK UP IS THE FAILURE MODE OF GIVING THE WORLD ELEVATION, and it
+            // is invisible from every file: the landforms are authored in one place, the route in
+            // another, and the grade between them is emergent. CharacterBody3D's floor limit is 45
+            // degrees (slope 1.0); a walking route wants to stay well under it, so this refuses
+            // anything over 0.80 (about 39 degrees) along an authored path's own centreline.
+            // Sampled against the whole region field — a road grades between its endpoints, but a
+            // neighbouring landform can still push a hump into the middle of it.
+            issues.AddRange(ValidateRouteGrades(region));
+
             if (budget != null && residentAuthoredNodes > budget.MaxResidentAuthoredNodes)
             {
                 issues.Add($"region '{region.Id}' authors {residentAuthoredNodes} resident nodes, " +
@@ -3739,6 +3771,63 @@ public static class ContentValidator
 
     private static bool InsideEnvelope(Vector2 point, float halfWidth, float halfDepth) =>
         Mathf.Abs(point.X) <= halfWidth + 0.01f && Mathf.Abs(point.Y) <= halfDepth + 0.01f;
+
+    /// <summary>Walks every authored route of a region and reports any that climbs faster than a
+    /// player can. The one geometric rule <c>--validate</c> owns; the rest are in <c>tools/</c>.</summary>
+    private static System.Collections.Generic.List<string> ValidateRouteGrades(RegionResource region)
+    {
+        const float MaxGrade = 0.80f;
+        const float Step = 2f;
+        var issues = new System.Collections.Generic.List<string>();
+        WorldHeightfield field = WorldTerrainMeshBuilder.HeightfieldFor(region);
+
+        foreach (RegionCellResource cell in region.Cells)
+        {
+            if (cell?.Presentation == null)
+            {
+                continue;
+            }
+
+            for (int index = 0; index < cell.Presentation.Paths.Count; index++)
+            {
+                WorldPathSegmentResource? path = cell.Presentation.Paths[index];
+                if (path == null)
+                {
+                    continue;
+                }
+
+                var start = new Vector2(cell.Center.X + path.Start.X, cell.Center.Z + path.Start.Y);
+                var end = new Vector2(cell.Center.X + path.End.X, cell.Center.Z + path.End.Y);
+                float length = start.DistanceTo(end);
+                if (length < Step)
+                {
+                    continue;
+                }
+
+                int steps = Mathf.CeilToInt(length / Step);
+                float previous = field.Height(start.X, start.Y);
+                float worst = 0f;
+                for (int i = 1; i <= steps; i++)
+                {
+                    Vector2 point = start.Lerp(end, i / (float)steps);
+                    float here = field.Height(point.X, point.Y);
+                    worst = Mathf.Max(worst, Mathf.Abs(here - previous) / (length / steps));
+                    previous = here;
+                }
+
+                if (worst > MaxGrade)
+                {
+                    issues.Add($"region '{region.Id}' cell '{cell.Id}' path[{index}] " +
+                               $"{path.Start}({field.Height(start.X, start.Y):F1}m)->" +
+                               $"{path.End}({field.Height(end.X, end.Y):F1}m) climbs at a {worst:F2} grade " +
+                               $"({Mathf.RadToDeg(Mathf.Atan(worst)):F0} degrees), over the " +
+                               $"{MaxGrade:F2} a walking player can hold");
+                }
+            }
+        }
+
+        return issues;
+    }
 
     private static int CountSceneNodes(string path)
     {

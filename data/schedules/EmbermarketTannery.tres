@@ -37,5 +37,8 @@ Destination = Vector3(-12.82, 0, -8.32)
 [resource]
 script = ExtResource("1_sched")
 Id = "schedule.embermarket.tannery"
-Origin = Vector3(0, 0, 46)
+; ⚠️ Origin moved with the cell in the 2026-08-29 geography overhaul. Destinations below are
+; CELL-LOCAL and did not change; only the cell's world Center did. Read the local point, never
+; the old world number.
+Origin = Vector3(0, 0, 85)
 Entries = Array[Resource]([SubResource("e_setup"), SubResource("e_trade"), SubResource("e_close")])

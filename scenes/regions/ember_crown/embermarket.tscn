@@ -40,15 +40,6 @@
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_merchant_m.glb" id="40_merchant_m"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_woman_dress.glb" id="41_woman_dress"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_adventurer_f.glb" id="42_adventurer_f"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_grass_short.glb" id="43_grass_short"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_grass_tall.glb" id="44_grass_tall"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_grass_wispy.glb" id="45_grass_wispy"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_clover.glb" id="46_clover"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_flowers_a.glb" id="47_flowers_a"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_flowers_b.glb" id="48_flowers_b"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_fern.glb" id="49_fern"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_a.glb" id="51_pebble_a"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_pebble_b.glb" id="52_pebble_b"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_townhouse.tscn" id="53_townhouse"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_modular.tscn" id="54_cottage_modular"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_stall_empty.gltf" id="55_stall_empty"]
@@ -131,48 +122,44 @@
 ; and there is no lane — only an open field with stalls in it, which is the layout this rebuild
 ; replaced.
 
-[sub_resource type="NavigationMesh" id="NavMesh_market"]
-geometry_parsed_geometry_type = 1
-cell_size = 0.25
-cell_height = 0.25
-agent_height = 1.75
-agent_radius = 0.5
-agent_max_climb = 0.5
+; ⚠️ THE NAV VOXEL GRID COARSENED WITH THE WORLD (the 2026-08-29 geography overhaul). Cells
+; went from 52 m squares on a flat slab to 90-200 m of real terrain, and a 0.25 m voxel over
+; five times the area is twenty-five times the columns to rasterise — the traversal probe timed
+; out waiting for the bake. agent_* dims still sit on the voxel grid to avoid precision warnings.
+[sub_resource type="BoxMesh" id="BoxMesh_salt_steps"]
+size = Vector3(11, 0.3, 10)
 
-[sub_resource type="BoxMesh" id="BoxMesh_floor"]
-size = Vector3(52, 0.5, 52)
+[sub_resource type="StandardMaterial3D" id="Mat_particle_ember"]
+transparency = 1
+shading_mode = 0
+blend_mode = 1
+albedo_color = Color(1, 0.55, 0.2, 1)
+emission_enabled = true
+emission = Color(1, 0.5, 0.15, 1)
+emission_energy_multiplier = 2.5
+billboard_mode = 3
+disable_receive_shadows = true
 
-[sub_resource type="BoxShape3D" id="Shape_floor"]
-size = Vector3(52, 0.5, 52)
+[sub_resource type="StandardMaterial3D" id="Mat_particle_smoke"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.54, 0.52, 0.5, 0.16)
+billboard_mode = 3
+disable_receive_shadows = true
 
-; Paler and warmer than the square's packed earth — flagstones a market has been swept across for years.
-[sub_resource type="StandardMaterial3D" id="Mat_floor"]
-albedo_color = Color(0.33, 0.3, 0.26, 1)
-roughness = 0.95
-
-; Three ground materials, all inside ART_STYLE's ~40% saturation ceiling for environment albedo. The
-; aisle is the lightest so it reads as the swept route; the plaza is a colder grey so the well corner
-; reads as a different room; the forecourt sits between them at the threshold.
-[sub_resource type="StandardMaterial3D" id="Mat_aisle"]
-albedo_color = Color(0.47, 0.44, 0.4, 1)
-roughness = 0.9
-
-; 39C: ⚠️ THIS COLOUR IS LOAD-BEARING NOW AND IT WAS NOT BEFORE. As a 6 cm skin the plaza was a subtle
-; tonal shift off the earth floor (0.3,0.29,0.28 against 0.33,0.3,0.26) and that was right. As a 0.3 m
-; dais the same colour made the edge INVISIBLE from a metre away — rendered, and the kerb simply was
-; not there — which is a trip hazard rather than a platform. Cool grey against the warm floor, so the
-; dais separates by HUE and not only by value: a shadow line alone does not survive overcast light.
 [sub_resource type="StandardMaterial3D" id="Mat_plaza"]
 albedo_color = Color(0.44, 0.45, 0.48, 1)
 roughness = 0.85
 
-[sub_resource type="StandardMaterial3D" id="Mat_forecourt"]
-albedo_color = Color(0.38, 0.34, 0.29, 1)
-roughness = 0.9
+[sub_resource type="NavigationMesh" id="NavMesh_market"]
+geometry_parsed_geometry_type = 1
+cell_size = 0.3
+cell_height = 0.3
+agent_height = 1.75
+agent_radius = 0.5
+agent_max_climb = 0.5
+agent_max_slope = 42.0
 
-; The ONE warm accent (ART_STYLE §7: at most one, it glows and nothing else does). A coal ball inside
-; each brazier bowl and one under the cauldron; the OmniLight and the ember particles are the same
-; accent doing the other two jobs.
 [sub_resource type="StandardMaterial3D" id="Mat_ember"]
 albedo_color = Color(0.62, 0.22, 0.08, 1)
 emission_enabled = true
@@ -191,37 +178,6 @@ rings = 4
 ; ---   spine      z -18 .. +17   ( 7 wide, centred z = -0.5)
 ; ---   cross-lane x -17 .. -3.5 and +3.5 .. +17, split around the spine for the same reason
 ; ---   plaza      x -18 .. -6, z +9.5 .. +21.5, joined to the spine by a 2.5 m path
-[sub_resource type="BoxMesh" id="BoxMesh_gate_lane"]
-size = Vector3(4.5, 0.06, 13)
-
-[sub_resource type="BoxMesh" id="BoxMesh_crookway"]
-size = Vector3(14, 0.05, 5)
-
-[sub_resource type="BoxMesh" id="BoxMesh_yard"]
-size = Vector3(22, 0.06, 20)
-
-[sub_resource type="BoxMesh" id="BoxMesh_caravan_road"]
-size = Vector3(10, 0.06, 6.5)
-
-[sub_resource type="BoxMesh" id="BoxMesh_salt_steps"]
-size = Vector3(11, 0.3, 10)
-
-[sub_resource type="BoxMesh" id="BoxMesh_alley"]
-size = Vector3(3.2, 0.06, 30)
-
-[sub_resource type="BoxMesh" id="BoxMesh_dock_stair"]
-size = Vector3(8, 0.06, 3.5)
-
-[sub_resource type="BoxMesh" id="BoxMesh_sump_court"]
-size = Vector3(9, 0.06, 8)
-
-[sub_resource type="BoxMesh" id="BoxMesh_timber_yard"]
-size = Vector3(14, 0.06, 9)
-
-; --- Colliders. Every one of these is sized from the model's real bounding box, read out of the
-; --- written .glb rather than guessed. The first pass's Shape_stall (3.2 x 2.4 x 3.2) was authored for
-; --- a tent that is actually 3.29 x 2.33 x 5.61, so 2.4 m of the tent's depth had no collision at all
-; --- and neither the navmesh nor the player knew it was there.
 [sub_resource type="BoxShape3D" id="Shape_stand_a"]
 size = Vector3(1.4, 2.6, 3.0)
 
@@ -318,27 +274,9 @@ size = Vector3(4.9, 4.2, 4.8)
 ; --- Authored here rather than built in code (SkyController.BuildRain / StatusEffectVfxComponent
 ; --- do theirs in C#) because these are scenery, and a cell that carries its own particles stays
 ; --- self-contained the way ARCHITECTURE §2.6h-2 asks cells to be.
-[sub_resource type="StandardMaterial3D" id="Mat_particle_ember"]
-transparency = 1
-shading_mode = 0
-blend_mode = 1
-albedo_color = Color(1, 0.55, 0.2, 1)
-emission_enabled = true
-emission = Color(1, 0.5, 0.15, 1)
-emission_energy_multiplier = 2.5
-billboard_mode = 3
-disable_receive_shadows = true
-
 [sub_resource type="QuadMesh" id="Mesh_particle_ember"]
 material = SubResource("Mat_particle_ember")
 size = Vector2(0.075, 0.075)
-
-[sub_resource type="StandardMaterial3D" id="Mat_particle_smoke"]
-transparency = 1
-shading_mode = 0
-albedo_color = Color(0.54, 0.52, 0.5, 0.16)
-billboard_mode = 3
-disable_receive_shadows = true
 
 [sub_resource type="QuadMesh" id="Mesh_particle_smoke"]
 material = SubResource("Mat_particle_smoke")
@@ -378,6 +316,14 @@ size = Vector3(2.848, 0.813, 1.097)
 [sub_resource type="BoxShape3D" id="Shape_stall_empty"]
 size = Vector3(1.84, 2.63, 0.93)
 
+; ⚠️ THE GROUND SKINS ARE GONE (the 2026-08-29 geography overhaul). Every road, yard and court in
+; this cell used to be a 6 cm BoxMesh slab laid on the floor — forty of them across the realm, and
+; they are the literal "flat rectangular floors positioned edge to edge" the overhaul was called to
+; remove. The terrain paints them now: WorldTerrainMeshBuilder writes the path mask into vertex
+; colour R and the ground-area mask into G, and world_surface.gdshader blends road and activity
+; response from those. One authored WorldPathSegmentResource is the road, the shader's colour, the
+; terrain's levelling AND the scatter's clearance, instead of a slab that had to agree with three
+; other files by hand.
 [node name="EmbermarketCell" type="Node3D"]
 
 [node name="Nav" type="NavigationRegion3D" parent="."]
@@ -385,39 +331,6 @@ navigation_mesh = SubResource("NavMesh_market")
 
 [node name="NavBaker" type="Node" parent="Nav"]
 script = ExtResource("1_navbaker")
-
-[node name="Floor" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
-mesh = SubResource("BoxMesh_floor")
-surface_material_override/0 = SubResource("Mat_floor")
-
-[node name="FloorCol" type="StaticBody3D" parent="Nav"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/FloorCol"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
-shape = SubResource("Shape_floor")
-
-; --- Ground skins. NONE of these has a collider: a 6 cm lip is something the player catches on, and a
-; --- collider here would be carved into the navmesh as a step NPCs path around for no visible reason.
-[node name="GateLane" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0.03, -19.5)
-mesh = SubResource("BoxMesh_gate_lane")
-surface_material_override/0 = SubResource("Mat_aisle")
-
-[node name="Crookway" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(0.9135, 0, -0.4067, 0, 1, 0, 0.4067, 0, 0.9135, -4.5, 0.025, -10.5)
-mesh = SubResource("BoxMesh_crookway")
-surface_material_override/0 = SubResource("Mat_forecourt")
-
-[node name="CoilYard" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0.03, 2)
-mesh = SubResource("BoxMesh_yard")
-surface_material_override/0 = SubResource("Mat_aisle")
-
-[node name="CaravanRoad" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21, 0.03, 3.5)
-mesh = SubResource("BoxMesh_caravan_road")
-surface_material_override/0 = SubResource("Mat_aisle")
 
 [node name="SaltSteps" type="MeshInstance3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0.15, 14)
@@ -429,31 +342,6 @@ surface_material_override/0 = SubResource("Mat_plaza")
 [node name="Shape" type="CollisionShape3D" parent="Nav/SaltStepsCol"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0.15, 14)
 shape = SubResource("Shape_salt_steps")
-
-[node name="AlleyWalk" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18, 0.03, 0)
-mesh = SubResource("BoxMesh_alley")
-surface_material_override/0 = SubResource("Mat_plaza")
-
-[node name="DockStair" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -22, 0.03, 12)
-mesh = SubResource("BoxMesh_dock_stair")
-surface_material_override/0 = SubResource("Mat_plaza")
-
-[node name="SumpCourt" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.5, 0.03, 17)
-mesh = SubResource("BoxMesh_sump_court")
-surface_material_override/0 = SubResource("Mat_forecourt")
-
-[node name="TimberYard" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0.03, 16.5)
-mesh = SubResource("BoxMesh_timber_yard")
-surface_material_override/0 = SubResource("Mat_forecourt")
-
-; --- The west row: three stalls facing east across the aisle. The stall models all face their own
-; --- local +X, which is why the west row needs no rotation and the east row keeps the 180° yaw the
-; --- first pass already used. Each stall is a different model and carries a different Counter and a
-; --- different piece of dressing behind it, so no two read the same at a glance.
 
 [node name="StallW1" type="Node3D" parent="Nav"]
 transform = Transform3D(-0.1045, 0, -0.9945, 0, 1, 0, 0.9945, 0, -0.1045, -2, 0, -14)
@@ -760,7 +648,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0)
 shape = SubResource("Shape_bench")
 
 [node name="Cauldron" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -14, 0, 18)
+transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -14, 0, 21)
 
 [node name="Model" parent="Nav/Cauldron" instance=ExtResource("27_cauldron")]
 
@@ -1958,256 +1846,6 @@ ShopId = "shop.embermarket.curios"
 ; it, never in a transform here. docs/ASSET_POLICY.md section 0.3.
 ; ====================================================================================================
 
-
-[node name="Grass1" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 4.15, 0, 21.89)
-
-[node name="Model" parent="Grass1" instance=ExtResource("43_grass_short")]
-
-[node name="Grass3" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 4.48, 0, 21.98)
-
-[node name="Model" parent="Grass3" instance=ExtResource("44_grass_tall")]
-
-[node name="Grass5" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.99, 0, 22.10)
-
-[node name="Model" parent="Grass5" instance=ExtResource("43_grass_short")]
-
-[node name="Grass7" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -13.35, 0, 5.82)
-
-[node name="Model" parent="Grass7" instance=ExtResource("43_grass_short")]
-
-[node name="Grass9" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15.60, 0, 4.03)
-
-[node name="Model" parent="Grass9" instance=ExtResource("43_grass_short")]
-
-[node name="Grass11" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -13.88, 0, 3.70)
-
-[node name="Model" parent="Grass11" instance=ExtResource("43_grass_short")]
-
-[node name="Grass13" type="Node3D" parent="."]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -15.37, 0, 3.92)
-
-[node name="Model" parent="Grass13" instance=ExtResource("43_grass_short")]
-
-[node name="Grass15" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -14.23, 0, -0.18)
-
-[node name="Model" parent="Grass15" instance=ExtResource("43_grass_short")]
-
-[node name="Grass17" type="Node3D" parent="."]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -13.93, 0, -4.78)
-
-[node name="Model" parent="Grass17" instance=ExtResource("44_grass_tall")]
-
-[node name="Grass19" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -13.31, 0, -4.44)
-
-[node name="Model" parent="Grass19" instance=ExtResource("44_grass_tall")]
-
-[node name="Grass21" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -13.64, 0, -4.40)
-
-[node name="Model" parent="Grass21" instance=ExtResource("43_grass_short")]
-
-[node name="Grass23" type="Node3D" parent="."]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -14.04, 0, -5.97)
-
-[node name="Model" parent="Grass23" instance=ExtResource("45_grass_wispy")]
-
-[node name="Grass25" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 6.07, 0, -12.98)
-
-[node name="Model" parent="Grass25" instance=ExtResource("44_grass_tall")]
-
-[node name="Grass27" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 8.88, 0, -10.71)
-
-[node name="Model" parent="Grass27" instance=ExtResource("44_grass_tall")]
-
-[node name="Grass29" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 7.72, 0, -12.56)
-
-[node name="Model" parent="Grass29" instance=ExtResource("43_grass_short")]
-
-[node name="Grass31" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 8.01, 0, -12.48)
-
-[node name="Model" parent="Grass31" instance=ExtResource("43_grass_short")]
-
-[node name="Grass33" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 17.71, 0, -15.24)
-
-[node name="Model" parent="Grass33" instance=ExtResource("45_grass_wispy")]
-
-[node name="Grass35" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 17.17, 0, -14.98)
-
-[node name="Model" parent="Grass35" instance=ExtResource("43_grass_short")]
-
-[node name="Grass37" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.08, 0, -16.18)
-
-[node name="Model" parent="Grass37" instance=ExtResource("44_grass_tall")]
-
-[node name="Grass39" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 17.27, 0, -15.21)
-
-[node name="Model" parent="Grass39" instance=ExtResource("43_grass_short")]
-
-[node name="Grass41" type="Node3D" parent="."]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 15.96, 0, -12.34)
-
-[node name="Model" parent="Grass41" instance=ExtResource("43_grass_short")]
-
-[node name="Grass43" type="Node3D" parent="."]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 14.22, 0, -12.91)
-
-[node name="Model" parent="Grass43" instance=ExtResource("45_grass_wispy")]
-
-[node name="Grass45" type="Node3D" parent="."]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 14.64, 0, -13.18)
-
-[node name="Model" parent="Grass45" instance=ExtResource("43_grass_short")]
-
-[node name="Grass47" type="Node3D" parent="."]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 16.42, 0, -15.83)
-
-[node name="Model" parent="Grass47" instance=ExtResource("44_grass_tall")]
-
-[node name="Grass49" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 16.52, 0, -13.84)
-
-[node name="Model" parent="Grass49" instance=ExtResource("43_grass_short")]
-
-[node name="Grass51" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -13.12, 0, 5.86)
-
-[node name="Model" parent="Grass51" instance=ExtResource("45_grass_wispy")]
-
-[node name="Grass53" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.71, 0, 7.56)
-
-[node name="Model" parent="Grass53" instance=ExtResource("45_grass_wispy")]
-
-[node name="Grass55" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -11.94, 0, 7.68)
-
-[node name="Model" parent="Grass55" instance=ExtResource("44_grass_tall")]
-
-[node name="Grass57" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 15.33, 0, -13.43)
-
-[node name="Model" parent="Grass57" instance=ExtResource("45_grass_wispy")]
-
-[node name="Grass59" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.71, 0, -13.75)
-
-[node name="Model" parent="Grass59" instance=ExtResource("43_grass_short")]
-
-[node name="Fern1" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -6.69, 0, 19.87)
-
-[node name="Model" parent="Fern1" instance=ExtResource("49_fern")]
-
-[node name="Fern3" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 8.84, 0, 17.50)
-
-[node name="Model" parent="Fern3" instance=ExtResource("49_fern")]
-
-[node name="Clover1" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -15.26, 0, 1.24)
-
-[node name="Model" parent="Clover1" instance=ExtResource("46_clover")]
-
-[node name="Clover3" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -14.96, 0, 1.25)
-
-[node name="Model" parent="Clover3" instance=ExtResource("46_clover")]
-
-[node name="Clover5" type="Node3D" parent="."]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 18.56, 0, -14.76)
-
-[node name="Model" parent="Clover5" instance=ExtResource("46_clover")]
-
-[node name="Clover7" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.09, 0, -15.21)
-
-[node name="Model" parent="Clover7" instance=ExtResource("46_clover")]
-
-[node name="Clover9" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 17.54, 0, -15.93)
-
-[node name="Model" parent="Clover9" instance=ExtResource("46_clover")]
-
-[node name="Clover11" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.39, 0, -15.26)
-
-[node name="Model" parent="Clover11" instance=ExtResource("46_clover")]
-
-[node name="FlowerA2" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.69, 0, -1.12)
-
-[node name="Model" parent="FlowerA2" instance=ExtResource("47_flowers_a")]
-
-[node name="FlowerA4" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 16.90, 0, -12.62)
-
-[node name="Model" parent="FlowerA4" instance=ExtResource("47_flowers_a")]
-
-[node name="FlowerA6" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 16.48, 0, -12.73)
-
-[node name="Model" parent="FlowerA6" instance=ExtResource("47_flowers_a")]
-
-[node name="FlowerB2" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.18, 0, -17.17)
-
-[node name="Model" parent="FlowerB2" instance=ExtResource("48_flowers_b")]
-
-[node name="Pebble1" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13.30, 0, 8.63)
-
-[node name="Model" parent="Pebble1" instance=ExtResource("52_pebble_b")]
-
-[node name="Pebble3" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13.91, 0, 2.62)
-
-[node name="Model" parent="Pebble3" instance=ExtResource("51_pebble_a")]
-
-[node name="Pebble5" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -14.47, 0, -1.33)
-
-[node name="Model" parent="Pebble5" instance=ExtResource("52_pebble_b")]
-
-[node name="Pebble7" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -13.01, 0, -3.52)
-
-[node name="Model" parent="Pebble7" instance=ExtResource("52_pebble_b")]
-
-[node name="Pebble9" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.56, 0, -11.85)
-
-[node name="Model" parent="Pebble9" instance=ExtResource("51_pebble_a")]
-
-[node name="Pebble11" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 18.77, 0, -15.57)
-
-[node name="Model" parent="Pebble11" instance=ExtResource("51_pebble_a")]
-
-[node name="Pebble13" type="Node3D" parent="."]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -14.08, 0, 6.96)
-
-[node name="Model" parent="Pebble13" instance=ExtResource("51_pebble_a")]
-
-[node name="Pebble15" type="Node3D" parent="."]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -14.13, 0, 8.40)
-
-[node name="Model" parent="Pebble15" instance=ExtResource("52_pebble_b")]
 
 [node name="StallConsign" type="Node3D" parent="Nav"]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 18.5, 0, -1.2)
