@@ -224,10 +224,25 @@ public partial class LocomotionComponent : EntityComponent
             return;
         }
 
+        // ⚠️ ONLY WHEN THE LAST MoveAndSlide ACTUALLY HIT A WALL, AND THIS IS A BUG FIX AS MUCH AS
+        // A SAVING. TestMove against the *terrain soup* answers true for any micro-bump in a 2.5 m
+        // triangle ahead of the capsule, so the three engine moves below fired on ordinary open
+        // ground and StepUp.Accept took them: measured, a body walking near-flat terrain travelled
+        // 7.83 m/s against a BaseSpeed of 5, because every frame teleported it ProbeReach forward on
+        // top of its own MoveAndSlide. IsOnWall is the engine's own classification from last frame's
+        // slide — free to read, false for walkable ground and true for the vertical face of a step,
+        // which is the only thing this is for. The cost is that a step is climbed on the frame after
+        // first contact rather than on it; at 60 Hz that is invisible, and MoveAndSlide has already
+        // stopped the body against the face either way.
+        if (!_body.IsOnWall())
+        {
+            return;
+        }
+
         Transform3D start = _body.GlobalTransform;
         if (!_body.TestMove(start, motion))
         {
-            return; // nothing in the way: the overwhelmingly common case, and it costs one probe
+            return; // the wall is not in *this* direction: strafing along it, not into it
         }
 
         // The forward leg is at least a body's width, not one frame's motion. A single frame at

@@ -78,28 +78,7 @@ public partial class CompanionRecruiterComponent : EntityComponent
         body.Visible = present;
 
         // Hiding a Node3D does not disable its collision, and an invisible body the player can still
-        // raycast into would leave a ghost interaction prompt hanging in the street. The authored
-        // layer is remembered on the way out so showing the NPC again restores it exactly.
-        foreach (Node child in body.GetChildren())
-        {
-            if (child is not CollisionObject3D collider)
-            {
-                continue;
-            }
-
-            if (present)
-            {
-                if (_hiddenLayers.TryGetValue(collider, out uint layer))
-                {
-                    collider.SetDeferred(CollisionObject3D.PropertyName.CollisionLayer, layer);
-                    _hiddenLayers.Remove(collider);
-                }
-            }
-            else if (collider.CollisionLayer != 0u)
-            {
-                _hiddenLayers[collider] = collider.CollisionLayer;
-                collider.SetDeferred(CollisionObject3D.PropertyName.CollisionLayer, 0u);
-            }
-        }
+        // raycast into would leave a ghost interaction prompt hanging in the street.
+        EntityNode.SetCollisionEnabled(body, present, _hiddenLayers);
     }
 }

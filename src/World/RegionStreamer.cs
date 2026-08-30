@@ -46,6 +46,14 @@ public sealed partial class RegionStreamer : Node3D
     private readonly HashSet<string> _pendingIds = new();
     private readonly Dictionary<string, RegionCellResource> _requests = new();
     private readonly List<ReadyCell> _ready = new();
+
+    /// <summary>Cells whose scene could not be requested, loaded or found. ⚠️ WITHOUT THIS THE
+    /// STREAMER NEVER STOPS RETRYING ONE. A failed cell is removed from the pending set but is still
+    /// absent from <c>_loaded</c>, so the sweep in <see cref="_Process"/> re-queued it, re-issued the
+    /// threaded request and re-logged the same warning EVERY FRAME — and <see cref="IsSettled"/>
+    /// could never come true, which is what gates the post-transition loading screen. One warning
+    /// per cell, and the region settles without it.</summary>
+    private readonly HashSet<string> _failed = new();
     private WorldEnvironmentProfileResource? _environmentProfile;
     private WorldHeightfield? _heightfield;
     private WorldPerformanceBudgetResource? _streamingBudget;
@@ -73,6 +81,7 @@ public sealed partial class RegionStreamer : Node3D
         EnsureRecovery();
         _streamingBudget = region?.PerformanceBudget;
         ClearLoadStages();
+        SetProcess(true);
         EnsurePerformanceMonitor();
         _performance!.Configure(ActiveRegionId, region?.PerformanceBudget);
         EnsureVisibilityManager();
@@ -112,10 +121,8 @@ public sealed partial class RegionStreamer : Node3D
             Unload(cellId);
         }
 
-        _pending.Clear();
-        _pendingIds.Clear();
-        _requests.Clear();
-        _ready.Clear();
+        ClearLoadStages();
+        SetProcess(true);
         WorldBiomeScatter.ClearSourceCache();
     }
 
@@ -125,7 +132,7 @@ public sealed partial class RegionStreamer : Node3D
     /// longer. Since 38M2 that means <em>all</em> of them rather than the ones near the landing point,
     /// which is a few extra frames and the whole point of the change.</summary>
     public bool IsSettled() => _pending.Count == 0 && _requests.Count == 0 && _ready.Count == 0 &&
-                               _loaded.Count == _cells.Count;
+                               _loaded.Count + _failed.Count == _cells.Count;
 
     public override void _Process(double delta)
     {
@@ -133,7 +140,7 @@ public sealed partial class RegionStreamer : Node3D
         // the tree, so the only question left is whether it is there yet.
         foreach (RegionCellResource cell in _cells)
         {
-            if (!_loaded.ContainsKey(cell.Id))
+            if (!_loaded.ContainsKey(cell.Id) && !_failed.Contains(cell.Id))
             {
                 Enqueue(cell);
             }
@@ -142,6 +149,15 @@ public sealed partial class RegionStreamer : Node3D
         StartThreadedRequests();
         PollThreadedRequests();
         InstantiateReadyCells();
+
+        // The region is whole: stop the sweep until something re-targets the streamer. It is not a
+        // free callback — it walks every cell, and StartThreadedRequests reads the static-memory
+        // performance monitor — and residency (38M2) means there is nothing left for it to decide.
+        // Configure and UnloadAll are the only two things that create work, and both re-arm it.
+        if (IsSettled())
+        {
+            SetProcess(false);
+        }
     }
 
     private void Enqueue(RegionCellResource cell)
@@ -170,8 +186,7 @@ public sealed partial class RegionStreamer : Node3D
 
             if (string.IsNullOrEmpty(cell.ScenePath))
             {
-                _pendingIds.Remove(cell.Id);
-                Log.Warn($"RegionStreamer: cell '{cell.Id}' has no scene path.");
+                Fail(cell.Id, "has no scene path");
                 continue;
             }
 
@@ -179,8 +194,7 @@ public sealed partial class RegionStreamer : Node3D
                 cell.ScenePath, "PackedScene", useSubThreads: true, ResourceLoader.CacheMode.Ignore);
             if (error is not Error.Ok and not Error.AlreadyInUse)
             {
-                _pendingIds.Remove(cell.Id);
-                Log.Warn($"RegionStreamer: threaded request for cell '{cell.Id}' failed to start ({error}).");
+                Fail(cell.Id, $"threaded request failed to start ({error})");
                 continue;
             }
             _requests[cell.Id] = cell;
@@ -206,8 +220,7 @@ public sealed partial class RegionStreamer : Node3D
                 continue;
             }
 
-            _pendingIds.Remove(cellId);
-            Log.Warn($"RegionStreamer: threaded load for cell '{cell.Id}' failed ({status}).");
+            Fail(cellId, $"threaded load failed ({status})");
         }
     }
 
@@ -259,12 +272,21 @@ public sealed partial class RegionStreamer : Node3D
         EventBus.Instance?.Publish(new RegionCellLoadedEvent(cell.Id, root));
     }
 
+    /// <summary>Retires a cell that cannot be brought in, once. See <see cref="_failed"/>.</summary>
+    private void Fail(string cellId, string reason)
+    {
+        _pendingIds.Remove(cellId);
+        _failed.Add(cellId);
+        Log.Warn($"RegionStreamer: cell '{cellId}' {reason}; it will not be retried.");
+    }
+
     private void ClearLoadStages()
     {
         _pending.Clear();
         _pendingIds.Clear();
         _requests.Clear();
         _ready.Clear();
+        _failed.Clear();
     }
 
     private void Unload(string cellId)

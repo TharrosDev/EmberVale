@@ -29,6 +29,11 @@ public partial class Hitbox : Area3D
         Monitorable = false;
         Monitoring = false;
 
+        // Inert means inert: without this every hitbox in the world (one per melee actor, three on
+        // the dragon) pays a managed _PhysicsProcess dispatch 60 times a second to return on its
+        // first line. Activate/Deactivate are the only two things that change the answer.
+        SetPhysicsProcess(false);
+
         _ownerEntity = EntityNode.FindOwner(this);
         _ownerTeam = _ownerEntity?.GetComponent<CombatComponent>()?.Team ?? 0;
     }
@@ -40,6 +45,7 @@ public partial class Hitbox : Area3D
         _alreadyHit.Clear();
         _active = true;
         Monitoring = true;
+        SetPhysicsProcess(true);
     }
 
     /// <summary>Closes the damage window.</summary>
@@ -47,6 +53,7 @@ public partial class Hitbox : Area3D
     {
         _active = false;
         Monitoring = false;
+        SetPhysicsProcess(false);
         _alreadyHit.Clear();
     }
 
