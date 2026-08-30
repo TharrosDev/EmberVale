@@ -52,6 +52,12 @@ public partial class MeleeWeaponComponent : EntityComponent
         _stats = Entity!.GetComponent<StatsComponent>();
         _combat = Entity.GetComponent<CombatComponent>();
         _mount = Entity.GetComponent<MountComponent>();
+
+        // Idle is the state a melee actor is in nearly all of the time, and the state machine below
+        // has nothing to advance there. Every enemy, companion and the player carries one of these,
+        // so the dispatch is paid per actor per physics frame for a method that returns immediately.
+        // TryAttack re-arms it; _PhysicsProcess parks it again once the swing and its buffer are done.
+        SetPhysicsProcess(false);
     }
 
     /// <summary>True during the committed window (wind-up + active) — no new swing or dodge can start
@@ -68,6 +74,7 @@ public partial class MeleeWeaponComponent : EntityComponent
             return false;
         }
 
+        SetPhysicsProcess(true);
         if (IsCommitted)
         {
             _buffer = BufferWindow; // queue it — released when the commit ends, so an early press still lands
@@ -104,6 +111,18 @@ public partial class MeleeWeaponComponent : EntityComponent
     }
 
     public override void _PhysicsProcess(double delta)
+    {
+        Tick(delta);
+
+        // Back to rest: nothing to advance until the next TryAttack. Checked here rather than at each
+        // of Tick's four exits so there is one place that decides it.
+        if (_phase == Phase.Idle && _buffer <= 0d)
+        {
+            SetPhysicsProcess(false);
+        }
+    }
+
+    private void Tick(double delta)
     {
         if (_buffer > 0d)
         {

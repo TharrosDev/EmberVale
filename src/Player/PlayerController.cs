@@ -100,6 +100,17 @@ public partial class PlayerController : EntityComponent
     private Vector3 _cameraRest = Vector3.Zero;
 
     private Node3D _yaw = null!;
+
+    // ⚠️ THESE ARE REUSED, NOT REBUILT PER FRAME. UpdateFocus and UpdateAim each fire a ray and the
+    // third-person rig sweeps a sphere, so the old build-per-call cost five native RefCounted objects
+    // (two queries, two exclusion arrays, one shape) every physics frame — 300/s of pure churn on the
+    // hottest path in the game. They are owned here and disposed in OnTeardown, which is the answer to
+    // the disposal-order worry the previous comment raised: the component outlives every frame that
+    // uses them and nothing else holds a reference.
+    private PhysicsRayQueryParameters3D? _rayQuery;
+    private PhysicsShapeQueryParameters3D? _cameraQuery;
+    private PhysicsShapeQueryParameters3D? _pickupQuery;
+    private Godot.Collections.Array<Rid>? _selfExclusion;
     private LocomotionComponent? _locomotion;
     private MeleeWeaponComponent? _weapon;
     private CombatComponent? _combat;
@@ -284,23 +295,19 @@ public partial class PlayerController : EntityComponent
             return desired;
         }
 
-        // Built per call, like every other query site in this codebase (AutoPickupNearby,
-        // SpellResolver, …). A cached RefCounted field would save the churn but keeps a native
-        // object alive on the component across shutdown, which is not worth the disposal-order
-        // risk for one small sphere cast a frame.
-        var query = new PhysicsShapeQueryParameters3D
+        // ponytail: actor bodies share the World layer, so a companion stepping between the
+        // player and the camera pulls it in too. Honest (it *is* in the way) if slightly
+        // twitchy; a dedicated camera-blocker layer is the upgrade if it ever annoys.
+        PhysicsShapeQueryParameters3D query = _cameraQuery ??= new PhysicsShapeQueryParameters3D
         {
             Shape = new SphereShape3D { Radius = CameraProbeRadius },
-            Transform = new Transform3D(Basis.Identity, CameraPivot.GlobalPosition),
-            Motion = CameraPivot.GlobalTransform.Basis * ThirdPersonRest,
-            // ponytail: actor bodies share the World layer, so a companion stepping between the
-            // player and the camera pulls it in too. Honest (it *is* in the way) if slightly
-            // twitchy; a dedicated camera-blocker layer is the upgrade if it ever annoys.
             CollisionMask = CombatLayers.World,
             CollideWithAreas = false,
             CollideWithBodies = true,
-            Exclude = new Godot.Collections.Array<Rid> { body.GetRid() },
+            Exclude = SelfExclusion(body),
         };
+        query.Transform = new Transform3D(Basis.Identity, CameraPivot.GlobalPosition);
+        query.Motion = CameraPivot.GlobalTransform.Basis * ThirdPersonRest;
 
         // CastMotion returns [safe, unsafe] fractions of the motion; the safe one is the last
         // position the sphere occupies without overlapping anything.
@@ -331,7 +338,20 @@ public partial class PlayerController : EntityComponent
     {
         EventBus.Instance?.Unsubscribe<GameStateChangedEvent>(OnGameStateChanged);
         EventBus.Instance?.Unsubscribe<SettingsAppliedEvent>(OnSettingsApplied);
+
+        _rayQuery?.Dispose();
+        _cameraQuery?.Dispose();
+        _pickupQuery?.Dispose();
+        _rayQuery = null;
+        _cameraQuery = null;
+        _pickupQuery = null;
+        _selfExclusion = null;
     }
+
+    /// <summary>The player's own body, as the one-element exclusion list every query here shares. The
+    /// RID is stable for the life of the body, so this is built once.</summary>
+    private Godot.Collections.Array<Rid> SelfExclusion(CharacterBody3D body) =>
+        _selfExclusion ??= new Godot.Collections.Array<Rid> { body.GetRid() };
 
     public override void _PhysicsProcess(double delta)
     {
@@ -499,14 +519,14 @@ public partial class PlayerController : EntityComponent
         }
 
         PhysicsDirectSpaceState3D space = body.GetWorld3D().DirectSpaceState;
-        var query = new PhysicsShapeQueryParameters3D
+        PhysicsShapeQueryParameters3D query = _pickupQuery ??= new PhysicsShapeQueryParameters3D
         {
             Shape = new SphereShape3D { Radius = AutoPickupRadius },
-            Transform = new Transform3D(Basis.Identity, body.GlobalPosition),
             CollideWithAreas = false,
             CollideWithBodies = true,
-            Exclude = new Godot.Collections.Array<Rid> { body.GetRid() },
+            Exclude = SelfExclusion(body),
         };
+        query.Transform = new Transform3D(Basis.Identity, body.GlobalPosition);
 
         foreach (Godot.Collections.Dictionary hit in space.IntersectShape(query, maxResults: 24))
         {
@@ -588,12 +608,17 @@ public partial class PlayerController : EntityComponent
         AimNode.LookAt(AimNode.GlobalPosition + direction, Vector3.Up);
     }
 
-    /// <summary>One ray against everything the player can look at, excluding their own body.</summary>
-    private static (Node? Collider, Vector3 Point)? RaycastWorld(
+    /// <summary>One ray against everything the player can look at, excluding their own body. Called
+    /// twice a physics frame (focus and aim) off one reused query — see the field block above.</summary>
+    private (Node? Collider, Vector3 Point)? RaycastWorld(
         CharacterBody3D body, Vector3 from, Vector3 direction, float distance)
     {
-        var query = PhysicsRayQueryParameters3D.Create(from, from + (direction * distance));
-        query.Exclude = new Godot.Collections.Array<Rid> { body.GetRid() };
+        PhysicsRayQueryParameters3D query = _rayQuery ??= new PhysicsRayQueryParameters3D
+        {
+            Exclude = SelfExclusion(body),
+        };
+        query.From = from;
+        query.To = from + (direction * distance);
 
         Godot.Collections.Dictionary hit = body.GetWorld3D().DirectSpaceState.IntersectRay(query);
         return hit.Count == 0

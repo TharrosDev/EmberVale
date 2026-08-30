@@ -327,7 +327,7 @@ pass / **1** on any issue. ⚠️ **It also now walks the whole region lattice f
 terrain traps** (the 2026-08-30 quality pass) - ground the player can walk into and cannot climb out
 of - so this arm is slower than it used to be and catches a class of defect no file could show.
 
-**The whole world battery, in one command:** `python tools/world_quality_check.py` runs all sixteen
+**The whole world battery, in one command:** `python tools/world_quality_check.py` runs all eighteen
 gates in the order they have to run and prints one verdict; `--fast` skips the in-engine half and
 `--list` shows what it covers without running anything. Reach for it rather than the individual
 commands below whenever the change touched a region.
@@ -660,12 +660,12 @@ immediately before it usually name the thing that will bite you.
   clearance above the ground, not a world height. Read `docs/WORLD_AUTHORING.md` before touching a
   cell — the traps there are the ones that cost this overhaul its afternoons.
 - ⚠️ **ONE COMMAND SAYS WHETHER A REGION IS HEALTHY: `python tools/world_quality_check.py`** (the
-  2026-08-30 quality pass). It orchestrates all sixteen world gates in the order they have to run —
+  2026-08-30 quality pass). It orchestrates all eighteen world gates in the order they have to run —
   generation, build, tests, `--validate`, the negative battery, the starter template, seams, layout,
-  map markers, step-up, the mesh census, a real capsule on every route, the screenshot regression and
-  a per-cell performance sample. `--fast` skips the in-engine half. It ORCHESTRATES; every rule lives
-  in the tool that owns it, and adding a check there that is not implemented elsewhere is how two
-  validators start disagreeing.
+  map markers, step-up, the mesh census, a region swap, a melee swing, a real capsule on every route,
+  the screenshot regression and a per-cell performance sample. `--fast` skips the in-engine half. It
+  ORCHESTRATES; every rule lives in the tool that owns it, and adding a check there that is not
+  implemented elsewhere is how two validators start disagreeing.
 - ⚠️ **A NEW REGION STARTS FROM `tools/region_spec_template.py`, NOT FROM A COPY OF THE EMBER
   CROWN.** Copying the shipped spec drags eight hundred lines of one realm's history along and
   inherits its cell sizes, noise seed and road widths as though they were physics. The template is a

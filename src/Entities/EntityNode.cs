@@ -45,6 +45,44 @@ internal static class EntityNode
         }
     }
 
+    /// <summary>
+    /// Turns every collider at or under <paramref name="root"/> on or off, remembering each authored
+    /// layer in <paramref name="remembered"/> so re-enabling restores it exactly rather than assuming
+    /// one. Used by anything that hides an actor without freeing it (a flag-gated portal, an
+    /// unrecruited companion) — hiding a Node3D does not disable its collision, and an invisible body
+    /// the interact ray still hits leaves a ghost prompt in the world.
+    ///
+    /// ⚠️ <b>IT WALKS THE WHOLE SUBTREE AND TESTS THE ROOT ITSELF.</b> Both callers used to look only
+    /// at <c>Body.GetChildren()</c>, which sees a collider only when it is a direct child and the body
+    /// is not one — so a body that IS a <c>CollisionObject3D</c>, or one whose collider sits under an
+    /// imported model node, stayed fully solid and interactable while invisible.
+    /// </summary>
+    public static void SetCollisionEnabled(
+        Node root, bool enabled, Dictionary<CollisionObject3D, uint> remembered)
+    {
+        if (root is CollisionObject3D collider)
+        {
+            if (enabled)
+            {
+                if (remembered.TryGetValue(collider, out uint layer))
+                {
+                    collider.SetDeferred(CollisionObject3D.PropertyName.CollisionLayer, layer);
+                    remembered.Remove(collider);
+                }
+            }
+            else if (collider.CollisionLayer != 0u)
+            {
+                remembered[collider] = collider.CollisionLayer;
+                collider.SetDeferred(CollisionObject3D.PropertyName.CollisionLayer, 0u);
+            }
+        }
+
+        foreach (Node child in root.GetChildren())
+        {
+            SetCollisionEnabled(child, enabled, remembered);
+        }
+    }
+
     /// <summary>Walks up the tree from <paramref name="node"/> to the first <see cref="IEntity"/>.</summary>
     public static IEntity? FindOwner(Node? node)
     {

@@ -182,14 +182,15 @@ public static class WorldTerrainMeshBuilder
     /// grid is 0.3–0.5 m and a walking capsule cannot feel a 2.5 m triangle, so paying render
     /// tessellation twice would multiply the physics broadphase for nothing.
     ///
-    /// ⚠️ <b>THE WINDING HERE IS THE OPPOSITE OF THE RENDER MESH'S, AND THAT IS NOT A TYPO.</b> The
-    /// renderer's front face and the navmesh baker's "which way is up" disagree about triangle order,
-    /// and physics does not care either way — so a collision soup wound like the visual mesh gives a
-    /// world that looks right, collides right, and bakes a navmesh of NOTHING BUT ROOFTOPS. That is
-    /// exactly what shipped for an afternoon: six transitional cells baked zero navigation polygons
-    /// and the town hub baked 59 (its buildings), while every terrain triangle in the realm was read
-    /// as a ceiling. Flipping this one loop took the town hub to 576. If nav ever comes back empty on
-    /// a cell with no props in it, look here first.
+    /// ⚠️ <b>THE WINDING MATCHES THE RENDER MESH'S EXACTLY, AND IT HAS TO.</b> The comment that stood
+    /// here said the two were deliberately opposite; they are not, and had not been since the flip it
+    /// describes. Both loops emit (topLeft, topRight, bottomLeft) + (topRight, bottomRight,
+    /// bottomLeft) over the same lattice, which is Godot's own <c>PlaneMesh</c> order and faces +Y.
+    /// That is what the navmesh baker needs: a soup wound the other way is read as NOTHING BUT
+    /// ROOFTOPS, which is what shipped for an afternoon — six transitional cells baked zero
+    /// navigation polygons and the town hub baked 59 (its buildings) instead of 576. Physics does not
+    /// care either way, so nothing but the bake will tell you. If nav ever comes back empty on a cell
+    /// with no props in it, compare this loop against <see cref="Build"/>'s: they must agree.
     /// </summary>
     public static ConcavePolygonShape3D BuildCollision(
         WorldHeightfield field, WorldCellPresentationResource cell, Vector3 worldOrigin)

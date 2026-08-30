@@ -82,27 +82,7 @@ public partial class RegionTransitionComponent : InteractableComponent
         }
 
         body.Visible = open;
-        foreach (Node child in body.GetChildren())
-        {
-            if (child is not CollisionObject3D collider)
-            {
-                continue;
-            }
-
-            if (open)
-            {
-                if (_hiddenLayers.TryGetValue(collider, out uint layer))
-                {
-                    collider.SetDeferred(CollisionObject3D.PropertyName.CollisionLayer, layer);
-                    _hiddenLayers.Remove(collider);
-                }
-            }
-            else if (collider.CollisionLayer != 0u)
-            {
-                _hiddenLayers[collider] = collider.CollisionLayer;
-                collider.SetDeferred(CollisionObject3D.PropertyName.CollisionLayer, 0u);
-            }
-        }
+        EntityNode.SetCollisionEnabled(body, open, _hiddenLayers);
     }
 
     public override string Prompt
