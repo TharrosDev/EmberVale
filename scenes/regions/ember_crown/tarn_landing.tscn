@@ -177,8 +177,10 @@ height = 1.8
 [sub_resource type="BoxMesh" id="BoxMesh_water_south"]
 size = Vector3(18, 0.05, 12)
 
+; ⚠️ SIZED TO SIT INSIDE THE CARVED BASIN. The terrain basin is an ellipse; a water box
+; wider than the rectangle inscribed in it puts corners of open water on dry land.
 [sub_resource type="BoxMesh" id="BoxMesh_water_west"]
-size = Vector3(10, 0.05, 32)
+size = Vector3(50, 0.05, 44)
 
 [node name="TarnLanding" type="Node3D"]
 
@@ -194,7 +196,7 @@ mesh = SubResource("BoxMesh_water_south")
 surface_material_override/0 = SubResource("Mat_water")
 
 [node name="Tarn" type="MeshInstance3D" parent="." groups=["terrain_absolute"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21, 0.05, 10)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0.05, 16)
 mesh = SubResource("BoxMesh_water_west")
 surface_material_override/0 = SubResource("Mat_water")
 

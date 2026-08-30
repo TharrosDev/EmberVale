@@ -341,7 +341,7 @@ script = ExtResource("8_landform")
 Shape = 0
 Center = Vector2(0, 0)
 Extent = Vector2(48, 46)
-Height = -1.2
+Height = 0.8
 Falloff = 0.8
 
 [sub_resource type="Resource" id="Land_hollowreach_1"]
@@ -392,7 +392,7 @@ Flatten = 1.0
 script = ExtResource("8_landform")
 Shape = 1
 Center = Vector2(-31, 13)
-End = Vector2(6, 13)
+End = Vector2(-2, 13)
 Extent = Vector2(6.5, 6.5)
 Height = -3.2
 Falloff = 0.2
@@ -984,37 +984,36 @@ Falloff = 0.9
 [sub_resource type="Resource" id="Land_tarn_landing_3"]
 script = ExtResource("8_landform")
 Shape = 0
-Center = Vector2(-20, 11)
-Extent = Vector2(15, 23)
-Height = -0.7
-Falloff = 0.5
-Flatten = 0.9
+Center = Vector2(-14, 16)
+Extent = Vector2(32, 30)
+Height = 2.2
+Falloff = 0.9
 
 [sub_resource type="Resource" id="Land_tarn_landing_4"]
 script = ExtResource("8_landform")
 Shape = 0
-Center = Vector2(-7, 20)
-Extent = Vector2(13, 9)
+Center = Vector2(-16, 17)
+Extent = Vector2(17, 15)
 Height = -0.7
-Falloff = 0.5
-Flatten = 0.9
+Falloff = 0.7
+Flatten = 0.85
 
 [sub_resource type="Resource" id="Land_tarn_landing_5"]
 script = ExtResource("8_landform")
 Shape = 0
-Center = Vector2(-21, 10)
-Extent = Vector2(5.5, 16)
+Center = Vector2(-21, 15)
+Extent = Vector2(7, 15)
 Height = -4.2
-Falloff = 0.16
+Falloff = 0.2
 Flatten = 1.0
 
 [sub_resource type="Resource" id="Land_tarn_landing_6"]
 script = ExtResource("8_landform")
 Shape = 0
 Center = Vector2(-7, 20)
-Extent = Vector2(9, 6)
+Extent = Vector2(13, 9)
 Height = -4.2
-Falloff = 0.16
+Falloff = 0.2
 Flatten = 1.0
 
 [sub_resource type="Resource" id="Path_tarn_road_east"]

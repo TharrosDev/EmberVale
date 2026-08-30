@@ -361,7 +361,14 @@ def cells() -> list[Cell]:
             area_elevation={"Area_hollowreach_hollow": 0.9, "Area_hollowreach_street": 1.4,
                             "Area_hollowreach_spine": 0.9},
             landforms=(
-                Mound(at=(0, 0), ext=(48, 46), h=-1.2, fall=0.8),
+                # ⚠️ THE DISTRICT STANDS JUST ABOVE THE WATERLINE AND THE CHANNELS ARE CUT BELOW
+                # IT. It used to sit 1.2 m UNDER it, which meant every water plane had to stop
+                # exactly at its own carved edge or it flooded the streets — and a plane that
+                # stops at its own edge is a rectangle of water lying on the ground, which is
+                # the artefact this whole overhaul exists to remove. At +0.8 the planes can be
+                # drawn generously larger than the wet ground and bury their borders in the
+                # banks, so what the player sees is the terrain's own 0.05 m contour.
+                Mound(at=(0, 0), ext=(48, 46), h=0.8, fall=0.8),
                 Mound(at=(34, -30), ext=(30, 24), h=5.0, fall=0.85),
                 Mound(at=(2, 34), ext=(34, 14), h=2.2, fall=0.9),
                 # The open water west, out past the cell edge and under the fen's eastern margin —
@@ -374,7 +381,7 @@ def cells() -> list[Cell]:
                 # 0.2 across a 5 m half-width is a 3:1 retaining face: these are channels carved
                 # into a district, not decals laid on top of one.
                 Ridge(a=(-31, -10), b=(10, -10), half=5.5, h=-3.2, fall=0.2, flat=1.0),
-                Ridge(a=(-31, 13), b=(6, 13), half=6.5, h=-3.2, fall=0.2, flat=1.0),
+                Ridge(a=(-31, 13), b=(-2, 13), half=6.5, h=-3.2, fall=0.2, flat=1.0),
             ),
             routes=(Route((33, -14), (27, 12), 4.0, 2.0),),
         ),
@@ -491,14 +498,25 @@ def cells() -> list[Cell]:
                 Mound(at=(26, -6), ext=(23, 44), h=4.0, fall=0.9),
                 Mound(at=(6, -36), ext=(27, 17), h=3.0, fall=0.9),
                 Mound(at=(-2, 40), ext=(30, 14), h=2.0, fall=0.9),
-                # The wadeable shelf. 70 cm of water over a gentle slope: the player may paddle here.
-                Mound(at=(-20, 11), ext=(15, 23), h=-0.7, fall=0.5, flat=0.9),
-                Mound(at=(-7, 20), ext=(13, 9), h=-0.7, fall=0.5, flat=0.9),
-                # ...and the drop-off, matched to the two authored water boxes. Falloff 0.16 across a
-                # 5.5 m half-extent is 53 degrees, past CharacterBody3D's 45 degree floor limit, so
-                # the player slides off it instead of strolling out over four metres of open water.
-                Mound(at=(-21, 10), ext=(5.5, 16), h=-4.2, fall=0.16, flat=1.0),
-                Mound(at=(-7, 20), ext=(9, 6), h=-4.2, fall=0.16, flat=1.0),
+                # ⚠️ A SHORELINE IS WHERE THE LAND CROSSES THE WATER LEVEL, NOT WHERE THE WATER MESH
+                # ENDS. Two rounds of this cell were spent shrinking water boxes to fit carved
+                # basins, and both read as a rectangle of sea lying on flat ground — because the
+                # visible edge was still the mesh's own edge. The plane is now deliberately LARGER
+                # than the wet ground and its border is buried in the bank: what the player sees is
+                # the terrain's own 0.05 m contour, which is a coastline.
+                #
+                # A low bank around the bay, so the land visibly falls toward the water.
+                Mound(at=(-14, 16), ext=(32, 30), h=2.2, fall=0.9),
+                # The wadeable shelf: 70 cm over a gentle slope. The player may paddle here, and it
+                # stops three metres short of the shore road at z = -2 — a basin that reaches the
+                # road floods the only way into the district.
+                Mound(at=(-16, 17), ext=(17, 15), h=-0.7, fall=0.7, flat=0.85),
+                # ...and the two deep lobes. Falloff 0.2 across a 7 m half-extent is past
+                # CharacterBody3D's 45 degree floor limit, so the player slides off the edge of the
+                # shelf instead of strolling out over four metres of open water. No swimming was
+                # added and no invisible wall was needed: the LAND says no.
+                Mound(at=(-21, 15), ext=(7, 15), h=-4.2, fall=0.2, flat=1.0),
+                Mound(at=(-7, 20), ext=(13, 9), h=-4.2, fall=0.2, flat=1.0),
             ),
             routes=(Route((10, -8), (20, 18), 4.0, 2.0),),
         ),

@@ -226,16 +226,16 @@ height = 1.8
 ; terrain's levelling AND the scatter's clearance, instead of a slab that had to agree with three
 ; other files by hand.
 [sub_resource type="BoxMesh" id="BoxMesh_channel_n"]
-size = Vector3(32, 0.05, 8)
+size = Vector3(46, 0.05, 17)
 
 [sub_resource type="BoxMesh" id="BoxMesh_channel_s"]
-size = Vector3(28, 0.05, 10)
+size = Vector3(42, 0.05, 19)
 
 ; ⚠️ SIZED TO SIT INSIDE THE CARVED BASIN, NOT OVER IT. The terrain basin is an ellipse and a
 ; water box larger than the rectangle inscribed in it puts four corners of open water on dry
 ; land — a rectangle of sea, which is the artefact the whole overhaul is about.
 [sub_resource type="BoxMesh" id="BoxMesh_water"]
-size = Vector3(48, 0.05, 64)
+size = Vector3(70, 0.05, 92)
 
 [node name="Hollowreach" type="Node3D"]
 
@@ -256,7 +256,7 @@ mesh = SubResource("BoxMesh_channel_s")
 surface_material_override/0 = SubResource("Mat_water")
 
 [node name="Water" type="MeshInstance3D" parent="." groups=["terrain_absolute"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -46, 0.05, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -50, 0.05, 0)
 mesh = SubResource("BoxMesh_water")
 surface_material_override/0 = SubResource("Mat_water")
 

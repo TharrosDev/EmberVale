@@ -92,9 +92,13 @@ internal static class RegionSetup
             {
                 Name = $"Portal_{neighbourId}",
                 DisplayName = neighbour.DisplayName,
-                Position = region.PortalPoint != Vector3.Zero
+                // ⚠️ ON THE GROUND, NOT AT AN AUTHORED Y (the 2026-08-29 geography overhaul). Both
+                // branches produce a point whose height was only ever right because every cell floor
+                // was flat at y = 0 — the fallback literally subtracts the player's 1.2 m eye offset
+                // to get there. A door half-sunk in a hillside is not something anyone reviews.
+                Position = World.WorldGround.OnGround(region.PortalPoint != Vector3.Zero
                     ? region.PortalPoint
-                    : region.SpawnPoint + new Vector3(0f, -1.2f, -4f),
+                    : region.SpawnPoint + new Vector3(0f, -1.2f, -4f)),
             };
 
             portal.AddChild(new MeshInstance3D
