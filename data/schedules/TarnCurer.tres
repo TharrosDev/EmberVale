@@ -37,5 +37,8 @@ Destination = Vector3(-3.5, 0, 5.5)
 [resource]
 script = ExtResource("1_sched")
 Id = "schedule.tarn.curer"
-Origin = Vector3(-56, 0, -6)
+; ⚠️ Origin moved with the cell in the 2026-08-29 geography overhaul. Destinations below are
+; CELL-LOCAL and did not change; only the cell's world Center did. Read the local point, never
+; the old world number.
+Origin = Vector3(-90, 0, -10)
 Entries = Array[Resource]([SubResource("e_0"), SubResource("e_1"), SubResource("e_2")])

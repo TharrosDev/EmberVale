@@ -13,35 +13,48 @@
 # Exits 0 when the body climbed the dais, 1 when it did not — so it is a gate, not a report.
 extends SceneTree
 
-const CELL := "res://scenes/regions/ember_crown/embermarket.tscn"
+const REGION := "res://data/regions/EmberCrown.tres"
 
-# ⚠️ THESE MOVED IN PHASE 44 AND THE PROBE IS THE ONLY THING THAT KNEW WHERE THEY WERE. The 0.3 m
-# dais is now the SALT STEPS terrace at (16, 0.15, 14), spanning x 10.5..21.5 / z 9..19, and the bell
-# tower stands ON it at (16.5, 0.3, 14) instead of on flat ground at the end of a central aisle. The
-# old constants pointed at the Embermarket's west plaza, which no longer exists — the run still
-# executed, still measured a real body against real collision, and reported a clean FAIL for the
-# right reason. If this file starts failing again, check embermarket.tscn's SaltSteps before the
-# step-up code.
+# ⚠️ THESE ARE WORLD COORDINATES AND THE PROBE STREAMS THE REGION (the 2026-08-29 geography
+# overhaul). It used to instance embermarket.tscn on its own, which worked while every cell carried
+# its own 0.5 m box floor; the floors are gone and the ground is built by RegionStreamer from the
+# region heightfield, so a bare cell instance is a market suspended over nothing and the body fell
+# ninety-nine metres. The Embermarket's centre is (0, 0, 85), so cell-local (16, 14) is world
+# (16, 99) — read the local offset out of the .tres, never a remembered world number.
+#
+# The Salt Steps terrace is a 0.45 m landform now rather than a 15 cm slab. It is deliberately under
+# StepUp.MaxHeight (0.5 m, the navmesh's agent_max_climb): raised ground the player cannot step onto
+# is a wall, and this probe is the only thing that would notice.
 
 # West of the terrace edge on the flat Timber Yard, walking EAST into it.
-const DAIS_START := Vector3(7.0, 0.2, 14.0)
+const DAIS_START := Vector3(7.0, 0.2, 99.0)
 
 # On the terrace, two metres west of the bell tower's collider, walking east into 11 m of stone. The
 # negative case: this must NOT be climbable, or the step-up has turned the realm into a staircase.
 # Its start y clears the 0.3 m terrace it stands on, unlike the positive case's.
-const TOWER_START := Vector3(12.0, 0.5, 14.0)
+const TOWER_START := Vector3(12.0, 0.8, 99.0)
 
-const CLIMB_EPSILON := 0.1  # comfortably above floor_snap_length, comfortably below the 0.3 dais
+const CLIMB_EPSILON := 0.1  # comfortably above floor_snap_length, comfortably below the terrace
 const STEPS := 240          # 4 seconds at 60 Hz — far longer than either walk needs
 
 
 func _initialize() -> void:
-	var packed: PackedScene = load(CELL)
-	if packed == null:
-		print("FAIL: cell did not load")
+	root.add_child(load("res://src/Bootstrap/ContentDatabaseLoader.cs").new())
+	await process_frame
+	var streamer: Node3D = load("res://src/World/RegionStreamer.cs").new()
+	root.add_child(streamer)
+	streamer.call("SetPerformanceSamplingEnabled", false)
+	streamer.call("Configure", load(REGION))
+	var frames := 0
+	while not streamer.call("IsSettled") and frames < 600:
+		await process_frame
+		frames += 1
+	if not streamer.call("IsSettled"):
+		print("FAIL: region did not stream")
 		quit(1)
 		return
-	root.add_child(packed.instantiate())
+	for _settle in 5:
+		await physics_frame
 
 	# ⚠️ BOTH DIRECTIONS OR IT PROVES NOTHING. A step-up that climbs everything passes the first case
 	# and turns every wall in the game into a staircase — which is the failure mode the third engine
@@ -50,7 +63,7 @@ func _initialize() -> void:
 	var climbed_tower := await _walk("the bell tower", TOWER_START, Vector3(1, 0, 0), false)
 
 	if climbed_dais and climbed_tower:
-		print("PASS: the body climbs the 0.3 m terrace and does not climb an 11 m tower")
+		print("PASS: the body climbs the 0.45 m terrace and does not climb an 11 m tower")
 		quit(0)
 	else:
 		print("FAIL: see above")

@@ -13,6 +13,10 @@ const REGIONS := [
 	"res://data/regions/EmberCrown.tres",
 	"res://data/regions/FrostfangReach.tres",
 ]
+## The agent_max_climb every cell's NavigationMesh authors, so the probe steps exactly as high as
+## the navmesh promises an NPC can.
+const MAX_STEP := 0.5
+const FALL_ALLOWANCE := 3.0
 const ENDPOINT_TOLERANCE := 2.0
 const CAPSULE_RADIUS := 0.4
 const CAPSULE_HEIGHT := 1.8
@@ -42,7 +46,7 @@ func _run() -> void:
 		var region: Resource = load(region_path)
 		streamer.call("Configure", region)
 		var settle_frames := 0
-		while not streamer.call("IsSettled") and settle_frames < 600:
+		while not streamer.call("IsSettled") and settle_frames < 1800:
 			await process_frame
 			settle_frames += 1
 		if not streamer.call("IsSettled"):
@@ -52,7 +56,7 @@ func _run() -> void:
 		# CellNavBaker is asynchronous. Wait for every resident NavigationRegion3D to contain baked
 		# vertices instead of assuming a fixed frame count that passes on a fast machine only.
 		var bake_frames := 0
-		while not _navigation_ready(streamer) and bake_frames < 600:
+		while not _navigation_ready(streamer) and bake_frames < 3600:
 			await physics_frame
 			bake_frames += 1
 		if not _navigation_ready(streamer):
@@ -92,14 +96,27 @@ func _run() -> void:
 		quit(1)
 
 
+## The ground under a world point, from the real terrain collider.
+func _on_ground(point: Vector3) -> Vector3:
+	var space := root.world_3d.direct_space_state
+	var query := PhysicsRayQueryParameters3D.create(
+		Vector3(point.x, 400.0, point.z), Vector3(point.x, -200.0, point.z))
+	query.collide_with_areas = false
+	var hit := space.intersect_ray(query)
+	return Vector3(point.x, hit.position.y if hit.has("position") else 0.0, point.z)
+
+
 func _probe_route(cell_id: String, centre: Vector3, local_start: Vector2, local_end: Vector2) -> void:
 	var nav_region := _find_navigation_region(cell_id)
 	if nav_region == null:
 		_fail("%s has no resident NavigationRegion3D" % cell_id)
 		return
 	var navigation_mesh := nav_region.navigation_mesh
-	var wanted_start := centre + Vector3(local_start.x, 0.2, local_start.y)
-	var wanted_end := centre + Vector3(local_end.x, 0.2, local_end.y)
+	# ⚠️ THE ROUTE'S HEIGHT COMES FROM THE GROUND, NOT FROM THE CELL CENTRE (the 2026-08-29 geography
+	# overhaul). A route endpoint used to be centre.y + 0.2 because every cell floor's top face was
+	# exactly y = 0; the realm has real elevation now and a literal Y puts the endpoint inside a hill.
+	var wanted_start := _on_ground(centre + Vector3(local_start.x, 0.0, local_start.y))
+	var wanted_end := _on_ground(centre + Vector3(local_end.x, 0.0, local_end.y))
 	# Inspect the baked polygons directly. NavigationServer closest-point queries are order-dependent
 	# when many disconnected streamed regions share one map; the baked mesh is the authoritative,
 	# deterministic geometry an NPC actually receives for this cell.
@@ -134,16 +151,19 @@ func _probe_route(cell_id: String, centre: Vector3, local_start: Vector2, local_
 	# the approach points, not the final reach into a chest, hoard or dragon nest.
 	var probe_start := wanted_start + direction * minf(0.75, direct_length * 0.2)
 	var probe_end := wanted_end - direction * minf(0.75, direct_length * 0.2)
-	# Some authored floors bake their navigation surface a fraction below the presentation plane.
-	# Spawn the capsule above both endpoints so the horizontal sweep does not begin embedded in a
-	# floor collider and report the floor itself as a route obstruction.
-	var feet_y := maxf(wanted_start.y, wanted_end.y) + 0.4
-	body.position = Vector3(probe_start.x, feet_y, probe_start.z)
+	# ⚠️ THIS IS A WALK, NOT A FLAT SWEEP. It used to pick one Y for the whole route and slide the
+	# capsule along it, which was a faithful test of a world whose floors were all at y = 0 and is a
+	# test of tunnelling through hillsides in one that is not: fifty-seven "snags" on the first run
+	# after the overhaul were all the probe walking into the ground it was standing on. Each step now
+	# lifts by the agent's climb allowance, moves, and drops back onto whatever is under it — which
+	# is what MoveAndSlide does for the player, so a failure here is a failure there.
+	body.position = _on_ground(Vector3(probe_start.x, 0.0, probe_start.z)) + Vector3(0, 0.05, 0)
 	await physics_frame
 
-	var remaining := body.position.distance_to(Vector3(probe_end.x, body.position.y, probe_end.z))
+	var remaining := Vector2(body.position.x - probe_end.x, body.position.z - probe_end.z).length()
 	while remaining > 0.05:
 		var motion := direction * minf(0.5, remaining)
+		body.move_and_collide(Vector3(0, MAX_STEP, 0))
 		var collision := body.move_and_collide(motion)
 		if collision != null:
 			var collider: Object = collision.get_collider()
@@ -156,7 +176,12 @@ func _probe_route(cell_id: String, centre: Vector3, local_start: Vector2, local_
 			_fail("%s player capsule snagged on authored route at %s on %s" % [
 				cell_id, body.position, collider_name])
 			break
-		remaining -= motion.length()
+		body.move_and_collide(Vector3(0, -(MAX_STEP + FALL_ALLOWANCE), 0))
+		var next_remaining := Vector2(body.position.x - probe_end.x, body.position.z - probe_end.z).length()
+		if next_remaining >= remaining - 0.01:
+			_fail("%s player capsule stopped advancing on authored route at %s" % [cell_id, body.position])
+			break
+		remaining = next_remaining
 	body.free()
 	await process_frame
 

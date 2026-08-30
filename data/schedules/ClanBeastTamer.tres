@@ -31,3 +31,10 @@ Destination = Vector3(78, 0, -33)
 script = ExtResource("1_sched")
 Id = "schedule.clan_beast_tamer"
 Entries = Array[Resource]([SubResource("e_feed"), SubResource("e_kennels"), SubResource("e_fires"), SubResource("e_sleep")])
+
+; ⚠️ ORIGIN IS A MIGRATION, NOT A CELL CENTRE (the 2026-08-29 geography overhaul). The four clan
+; routines author RAW WORLD destinations — they predate ScheduleResource.Origin — and the Clan Hold
+; moved from (100, 0, -20) to (430, 0, -55) when Frostfang was lifted out of the Ember Crown's
+; coordinate space. This is that delta. Rewriting thirty-odd destinations by hand was the other
+; option and it is the one that ships a typo.
+Origin = Vector3(330, 0, -35)

@@ -25,13 +25,22 @@ public readonly record struct MapProjection
 {
     /// <summary>Closest the view may zoom out, in pixels per world metre. At 1.2 px/m the Ember
     /// Crown's ~300 m span sits inside a 400 px plot, which is the whole-realm view.</summary>
-    public const float MinZoom = 1.2f;
+    // ⚠️ THE REALM GOT FIVE TIMES BIGGER AND THESE DID NOT (the 2026-08-29 geography overhaul).
+    // The Ember Crown was 210 x 250 m and both regions shared one coordinate space; it is 330 x 440
+    // now and Frostfang sits in its own band, so the two together span nearly 800 m of world. At the
+    // old floor of 1.2 px/m the whole world no longer fits on a screen, which is the one thing a
+    // fully-zoomed-out map has to do.
+    public const float MinZoom = 0.7f;
 
     /// <summary>Closest the view may zoom in. At 40 px/m a market stall is a thumb's width.</summary>
     public const float MaxZoom = 40f;
 
     /// <summary>The zoom a freshly opened map starts at — a settlement and its neighbours.</summary>
-    public const float DefaultZoom = 6f;
+    // Dropped 6 -> 4 for the same reason: at 6 px/m the map opened showing about a third of one
+    // district. 4 frames a location together with the country it is approached through, which is
+    // what the overhaul made worth looking at — and it is still above MapTiers.SecondaryZoom, so
+    // shops and services are visible on open exactly as they were.
+    public const float DefaultZoom = 4f;
 
     /// <summary>World-space point (X, Z) at the centre of the viewport.</summary>
     public Vector2 Center { get; init; }

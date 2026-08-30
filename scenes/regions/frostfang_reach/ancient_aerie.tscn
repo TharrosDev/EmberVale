@@ -27,8 +27,6 @@ radius = 0.75
 height = 4.0
 
 [node name="AncientAerieCell" instance=ExtResource("1_roost")]
-FloorSize = 90.0
-FloorColor = Color(0.55, 0.58, 0.62, 1)
 
 ; Standing stones rather than crags - cover, but arranged, because something that thinks has lived
 ; here for eight hundred years. The 2026-08-28 layout rebuild arranged them into a CRESCENT open to the west rather than

@@ -70,10 +70,12 @@ public static class SafeZones
         {
             float angle = GD.Randf() * Mathf.Tau;
             float distance = Mathf.Lerp(min, max, GD.Randf());
-            point = new Vector3(
-                center.X + (Mathf.Cos(angle) * distance),
-                0.5f,
-                center.Z + (Mathf.Sin(angle) * distance));
+            // ⚠️ y = 0.5 was correct only while every cell floor's top face was exactly y = 0.
+            // On real terrain a literal spawn height is inside a hillside as often as above one,
+            // and an enemy spawned inside terrain never gets out. Ask the ground.
+            float x = center.X + (Mathf.Cos(angle) * distance);
+            float z = center.Z + (Mathf.Sin(angle) * distance);
+            point = new Vector3(x, WorldGround.HeightAt(x, z) + 0.5f, z);
             if (!Contains(point))
             {
                 return true;

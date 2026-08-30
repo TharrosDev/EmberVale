@@ -48,6 +48,7 @@ func _run() -> void:
 	print("map_probe: %d authored location(s) in %s" % [known.size(), LOCATIONS_DIR])
 
 	var centres := _cell_centres()
+	var sizes := _cell_sizes()
 	print("map_probe: %d cell centre(s) from %s" % [centres.size(), REGIONS_DIR])
 
 	var placed := {}
@@ -73,7 +74,7 @@ func _run() -> void:
 		await process_frame
 
 		var found := _collect(root)
-		var ground_bounds: Variant = _ground_bounds(root)
+		var ground_bounds: Variant = _cell_rect(cell_id, centre, sizes)
 		var seen := {}
 		for entry in found:
 			total += 1
@@ -108,7 +109,7 @@ func _run() -> void:
 					% [cell_id, id])
 
 			if ground_bounds is Rect2 and not ground_bounds.grow(1.0).has_point(Vector2(at.x, at.z)):
-				_fail("%s: '%s' at (%.2f, %.2f) is outside measured cell ground %s"
+				_fail("%s: '%s' at (%.2f, %.2f) is outside its authored cell envelope %s"
 					% [cell_id, id, at.x, at.z, ground_bounds])
 
 			placed[id] = true
@@ -179,18 +180,17 @@ func _authored_locations() -> Dictionary:
 
 ## Measured with the same broad-and-flat heuristic as MapService, so distant trees cannot make an
 ## out-of-cell marker appear valid.
-func _ground_bounds(node: Node) -> Variant:
-	var bounds: Variant = null
-	for child in node.find_children("*", "VisualInstance3D", true, false):
-		var visual := child as VisualInstance3D
-		if visual == null or not visual.is_inside_tree():
-			continue
-		var box := visual.global_transform * visual.get_aabb()
-		if box.size.y > 2.0 or box.size.x * box.size.z < 100.0:
-			continue
-		var rect := Rect2(box.position.x, box.position.z, box.size.x, box.size.z)
-		bounds = rect if bounds == null else bounds.merge(rect)
-	return bounds
+## ⚠️ THE CELL'S GROUND IS ITS AUTHORED ENVELOPE, NOT WHATEVER FLAT MESH IS LYING ABOUT (the
+## 2026-08-29 geography overhaul). This used to measure every VisualInstance3D under 2 m tall with a
+## footprint over 100 m² and merge their AABBs, which worked only because every cell carried one
+## 0.5 m box floor covering itself exactly. Those floors are gone — the ground is a generated terrain
+## mesh that is metres tall — so the old measurement latched onto road skins and reported half the
+## Embermarket as "outside the cell". The envelope in the region resource IS the contract; read it.
+func _cell_rect(cell_id: String, centre: Vector3, sizes: Dictionary) -> Variant:
+	if not sizes.has(cell_id):
+		return null
+	var size: Vector2 = sizes[cell_id]
+	return Rect2(centre.x - size.x * 0.5, centre.z - size.y * 0.5, size.x, size.y)
 
 
 ## Cell id -> Center, parsed straight out of the region .tres so this cannot drift from the data the
@@ -250,3 +250,26 @@ func _scene_paths(directory: String) -> Array:
 		out.append_array(_scene_paths("%s/%s" % [directory, sub]))
 	out.sort()
 	return out
+
+
+## Cell id -> Vector2(Width, Depth), from the cell's WorldCellPresentationResource. Loaded rather
+## than text-scraped: a presentation is a sub-resource and its Width/Depth default when unauthored,
+## which a regex cannot know.
+func _cell_sizes() -> Dictionary:
+	var sizes := {}
+	var dir := DirAccess.open(REGIONS_DIR)
+	if dir == null:
+		return sizes
+	for file in dir.get_files():
+		var name := file.trim_suffix(".remap")
+		if not name.ends_with(".tres"):
+			continue
+		var region: Resource = load("%s/%s" % [REGIONS_DIR, name])
+		if region == null:
+			continue
+		for cell in region.get("Cells"):
+			if cell == null or cell.get("Presentation") == null:
+				continue
+			var presentation: Resource = cell.get("Presentation")
+			sizes[String(cell.get("Id"))] = Vector2(presentation.get("Width"), presentation.get("Depth"))
+	return sizes

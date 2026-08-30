@@ -1,0 +1,38 @@
+[gd_scene format=3 uid="uid://cmbrvlnthsnow01"]
+
+[ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="1_navbaker"]
+
+; THE NORTH SNOWFIELD — a transitional cell (the 2026-08-29 geography overhaul).
+;
+; ⚠️ IT IS ALMOST EMPTY AND THAT IS THE WHOLE POINT. Everything the player sees here — the ground,
+; its elevation, its collision, the vegetation on it and the road across it — is authored in
+; data/regions/FrostfangReach.tres and built at load: the terrain mesh from the region heightfield,
+; the ecology from the cell's biome scatter profile, the route from its path segments. A
+; transitional cell costs one terrain draw and a handful of MultiMesh draws, which is what makes
+; making the world five times larger cheaper per square metre rather than more expensive.
+;
+; The shoulder between the glacier pass and the aerie road. A swell, a hollow and a long ridge.
+;
+; ⚠️ DO NOT FILL THIS IN. If a beat wants to happen here, the honest question is whether the realm
+; needs another beat or whether this stretch is doing its job.
+
+; ⚠️ THE NAV VOXEL GRID COARSENED WITH THE WORLD (the 2026-08-29 geography overhaul). Cells
+; went from 52 m squares on a flat slab to 90-200 m of real terrain, and a 0.25 m voxel over
+; five times the area is twenty-five times the columns to rasterise — the traversal probe timed
+; out waiting for the bake. agent_* dims still sit on the voxel grid to avoid precision warnings.
+[sub_resource type="NavigationMesh" id="NavMesh_north_snowfield"]
+geometry_parsed_geometry_type = 1
+cell_size = 0.4
+cell_height = 0.3
+agent_height = 1.75
+agent_radius = 0.5
+agent_max_climb = 0.5
+agent_max_slope = 40.0
+
+[node name="NorthSnowfieldCell" type="Node3D"]
+
+[node name="Nav" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("NavMesh_north_snowfield")
+
+[node name="NavBaker" type="Node" parent="Nav"]
+script = ExtResource("1_navbaker")

@@ -22,11 +22,15 @@ namespace Embervale.World;
 /// "it only happens when you approach from the north" bug. The unload path survives only in
 /// <see cref="UnloadAll"/>, which is what a region transition calls.
 ///
-/// ⚠️ <b>Both regions cannot be resident at once</b> and this is not the code's fault: Frostfang's
-/// <c>dragon_roost</c> (25, 0, -20) and <c>ancient_aerie</c> (25, 0, -110) share coordinate space
-/// with the Ember Crown's <c>arena</c> (55, 0, -10) and <c>wilds_north</c> (0, 0, -65). Two regions
-/// loaded together would be two worlds inside each other. Whole-realm residency needs the world
-/// re-laid-out first, which is a Phase 44 (region design) decision and not this node's.
+/// <b>The two regions no longer overlap in world space (the 2026-08-29 geography overhaul).</b> They
+/// used to: Frostfang's roosts sat inside the Ember Crown's arena and northern wilds, so residency
+/// was mutually exclusive for a reason that was a coordinate accident rather than a design. Frostfang
+/// now occupies its own band east of the Ember Crown. Only one region is streamed at a time anyway —
+/// a transition still calls <see cref="UnloadAll"/> — but the ambiguity is gone from the numbers.
+///
+/// ⚠️ <b>The streamer owns the region's <see cref="WorldHeightfield"/>.</b> It is built once in
+/// <see cref="Configure"/> from every cell's authored geography and handed to each cell as a clipped
+/// view, which is what makes neighbouring cells agree about the ground at their shared edge.
 ///
 /// Pausable (default process mode), so loading halts while the game is paused. The procedural
 /// sandbox is the always-loaded base — only the region's authored <see cref="RegionResource.Cells"/>
@@ -43,6 +47,7 @@ public sealed partial class RegionStreamer : Node3D
     private readonly Dictionary<string, RegionCellResource> _requests = new();
     private readonly List<ReadyCell> _ready = new();
     private WorldEnvironmentProfileResource? _environmentProfile;
+    private WorldHeightfield? _heightfield;
     private WorldPerformanceBudgetResource? _streamingBudget;
     private WorldRegionBackdrop? _backdrop;
     private WorldPerformanceMonitor? _performance;
@@ -60,6 +65,8 @@ public sealed partial class RegionStreamer : Node3D
         _cells.Clear();
         ActiveRegionId = region?.Id ?? string.Empty;
         _environmentProfile = region?.EnvironmentProfile;
+        _heightfield = region == null ? null : WorldTerrainMeshBuilder.HeightfieldFor(region);
+        WorldGround.Set(_heightfield);
         _streamingBudget = region?.PerformanceBudget;
         ClearLoadStages();
         EnsurePerformanceMonitor();
@@ -224,8 +231,20 @@ public sealed partial class RegionStreamer : Node3D
         }
         root.Name = cell.Id;
         root.Position = cell.Center;
-        WorldCellPresentation.Attach(root, _environmentProfile, cell.Presentation);
-        WorldBiomeScatter? scatter = WorldBiomeScatter.Attach(root, cell.Presentation, cell.BiomeScatter);
+
+        // Order matters and each step reads the one before it: clip the region field to this cell,
+        // drop the authored nodes onto the ground (before the terrain collider exists, so the
+        // conformer cannot try to lift it), then build terrain, then scatter on top of terrain.
+        WorldHeightfield? view = _heightfield != null && cell.Presentation != null
+            ? WorldTerrainMeshBuilder.ViewFor(_heightfield, cell.Presentation, cell.Center)
+            : _heightfield;
+        if (view != null)
+        {
+            WorldTerrainConform.Apply(root, view, cell.Center);
+        }
+        WorldCellPresentation.Attach(root, _environmentProfile, cell.Presentation, view, cell.Center);
+        WorldBiomeScatter? scatter = WorldBiomeScatter.Attach(
+            root, cell.Presentation, cell.BiomeScatter, view, cell.Center);
         AddChild(root);
         _loaded[cell.Id] = root;
         _performance?.RecordCellLoaded(cell.Id, root, scatter?.InstanceCount ?? 0);

@@ -29,8 +29,6 @@ height = 5.0
 size = Vector3(8.43, 4.96, 6.02)
 
 [node name="DragonRoostCell" instance=ExtResource("1_roost")]
-FloorSize = 90.0
-FloorColor = Color(0.46, 0.48, 0.53, 1)
 
 ; The splinter field: tilted cover in the EAST, where the player enters, thinning westward toward
 ; the nest. Cover is what breaks a 55 degree breath cone and it is the only counterplay a grounded

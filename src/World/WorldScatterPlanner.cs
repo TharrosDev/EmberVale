@@ -21,9 +21,6 @@ public static class WorldScatterPlanner
         float width,
         float depth,
         float edgePadding,
-        int roadAxis,
-        float roadWidth,
-        float roadOffset,
         float minimumSpacing,
         IReadOnlyList<WorldScatterExclusion>? exclusions = null,
         IReadOnlyList<WorldTerrainMath.Path>? paths = null,
@@ -45,8 +42,7 @@ public static class WorldScatterPlanner
             float x = ((WorldSceneryMath.Unit(seed, attempt * 4) * 2f) - 1f) * halfWidth;
             float z = ((WorldSceneryMath.Unit(seed, (attempt * 4) + 1) * 2f) - 1f) * halfDepth;
 
-            if (InsideRoad(x, z, roadAxis, roadWidth, roadOffset) ||
-                InsidePath(x, z, paths, minimumSpacing * 0.25f) ||
+            if (InsidePath(x, z, paths, minimumSpacing * 0.25f) ||
                 InsideGroundArea(x, z, groundAreas, minimumSpacing * 0.25f) ||
                 InsideExclusion(x, z, exclusions) || TooClose(x, z, accepted, spacingSquared))
             {
@@ -95,17 +91,6 @@ public static class WorldScatterPlanner
             }
         }
         return false;
-    }
-
-    private static bool InsideRoad(float x, float z, int axis, float width, float offset)
-    {
-        float half = MathF.Max(0f, width * 0.5f);
-        return axis switch
-        {
-            1 => MathF.Abs(x - offset) < half, // north/south road varies along Z
-            2 => MathF.Abs(z - offset) < half, // east/west road varies along X
-            _ => false,
-        };
     }
 
     private static bool InsideExclusion(

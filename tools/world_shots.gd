@@ -16,32 +16,13 @@ const SIGNATURE_WIDTH := 12
 const SIGNATURE_HEIGHT := 8
 const DEFAULT_MEAN_CHANNEL_DELTA := 18.0
 
-const REGIONS := [
-	{
-		"path": "res://data/regions/EmberCrown.tres",
-		"cells": [
-			["ember_crown.town_hub", Vector3(0, 0, -10), Vector2(60, 60)],
-			["ember_crown.embermarket", Vector3(0, 0, 46), Vector2(52, 52)],
-			["ember_crown.crossway_post", Vector3(0, 0, -66), Vector2(52, 52)],
-			["ember_crown.emberdeep_mine", Vector3(56, 0, -10), Vector2(52, 52)],
-			["ember_crown.wilds_north", Vector3(0, 0, -117), Vector2(50, 50)],
-			["ember_crown.tarn_landing", Vector3(-56, 0, -6), Vector2(52, 52)],
-			["ember_crown.hollowreach", Vector3(-52, 0, 46), Vector2(52, 52)],
-			["ember_crown.wilds_west", Vector3(-107, 0, -6), Vector2(50, 40)],
-			["ember_crown.ashfall_homestead", Vector3(52, 0, 46), Vector2(52, 52)],
-			["ember_crown.arena", Vector3(0, 0, -160), Vector2(36, 36)],
-		],
-	},
-	{
-		"path": "res://data/regions/FrostfangReach.tres",
-		"cells": [
-			["frostfang_reach.clan_hold", Vector3(100, 0, -20), Vector2(60, 60)],
-			["frostfang_reach.glacier", Vector3(100, 0, -60), Vector2(60, 20)],
-			["frostfang_reach.dragon_roost", Vector3(25, 0, -20), Vector2(90, 90)],
-			["frostfang_reach.ash_roost", Vector3(180, 0, -20), Vector2(100, 100)],
-			["frostfang_reach.ancient_aerie", Vector3(25, 0, -110), Vector2(90, 90)],
-		],
-	},
+# ⚠️ THE CELL TABLE IS READ OUT OF THE REGION RESOURCE, NOT COPIED HERE (the 2026-08-29 geography
+# overhaul). It used to be sixteen hand-written centres and envelopes in this file, which is the
+# second copy of a number NOW.md invariant 12 spends a paragraph forbidding — and the copy that
+# would have silently framed every shot at the OLD lattice while the baseline "passed".
+const REGION_PATHS := [
+	"res://data/regions/EmberCrown.tres",
+	"res://data/regions/FrostfangReach.tres",
 ]
 
 var _sun: DirectionalLight3D
@@ -76,19 +57,26 @@ func _initialize() -> void:
 	# Synchronous PNG writes are deliberately frame-blocking and are not performance samples.
 	streamer.call("SetPerformanceSamplingEnabled", false)
 
-	for entry in REGIONS:
-		var region: Resource = load(entry.path)
+	for region_path in REGION_PATHS:
+		var region: Resource = load(region_path)
 		streamer.call("Configure", region)
 		var settle_frames := 0
 		while not streamer.call("IsSettled") and settle_frames < 600:
 			await process_frame
 			settle_frames += 1
 		if not streamer.call("IsSettled"):
-			printerr("world shots: region failed to settle: %s" % entry.path)
+			printerr("world shots: region failed to settle: %s" % region_path)
 			quit(2)
 			return
-		for cell in entry.cells:
-			await _render_cell(cell, region)
+		for authored_cell in region.get("Cells"):
+			if authored_cell == null or authored_cell.get("Presentation") == null:
+				continue
+			var presentation: Resource = authored_cell.get("Presentation")
+			await _render_cell([
+				String(authored_cell.get("Id")),
+				authored_cell.get("Center"),
+				Vector2(presentation.get("Width"), presentation.get("Depth")),
+			], region)
 		streamer.call("UnloadAll")
 		streamer.call("Configure", null)
 		await process_frame
@@ -102,6 +90,20 @@ func _initialize() -> void:
 	quit(0 if regression_ok else 3)
 
 
+## The ground under a world X/Z, from the real terrain collider the streamer just built. Every
+## camera in this harness used to assume y = 0 and would now be underground on half the realm.
+func _ground_at(x: float, z: float) -> float:
+	var space := root.world_3d.direct_space_state
+	var query := PhysicsRayQueryParameters3D.create(Vector3(x, 400.0, z), Vector3(x, -200.0, z))
+	query.collide_with_areas = false
+	var hit := space.intersect_ray(query)
+	return hit.position.y if hit.has("position") else 0.0
+
+
+func _on_ground(point: Vector3, clearance: float) -> Vector3:
+	return Vector3(point.x, _ground_at(point.x, point.z) + clearance, point.z)
+
+
 func _render_cell(cell: Array, region: Resource) -> void:
 	var cell_id: String = cell[0]
 	var centre: Vector3 = cell[1]
@@ -109,12 +111,14 @@ func _render_cell(cell: Array, region: Resource) -> void:
 	var radius: float = max(size.x, size.y) * 0.5
 	var route_views := _route_views(cell_id, centre, size, region)
 	var landmark_view := _landmark_view(centre, radius)
+	var overview := centre + Vector3(-radius * 0.75, 0.0, radius * 0.80)
+	overview.y = _ground_at(overview.x, overview.z) + radius * 0.72
 	var shots := [
 		["01_entry", route_views[0], route_views[1]],
 		["02_centre", route_views[2], route_views[3]],
-		["03_landmark", landmark_view, centre + Vector3(0, 2.5, 0)],
+		["03_landmark", landmark_view, _on_ground(centre, 2.5)],
 		["04_exit", route_views[4], route_views[5]],
-		["05_overview", centre + Vector3(-radius * 0.75, radius * 0.72, radius * 0.80), centre],
+		["05_overview", overview, _on_ground(centre, 1.0)],
 	]
 	var folder := "res://tools/shots/world/%s" % cell_id.replace(".", "_")
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(folder))
@@ -171,13 +175,12 @@ func _route_views(cell_id: String, centre: Vector3, size: Vector2, region: Resou
 
 	var entry: Array = endpoints[0]
 	var exit: Array = endpoints[endpoints.size() - 1]
-	var entry_at := centre + Vector3(entry[0].x + entry[1].x * 2.0, 1.75, entry[0].y + entry[1].y * 2.0)
-	var entry_look := entry_at + Vector3(entry[1].x * 12.0, -0.15, entry[1].y * 12.0)
-	var exit_at := centre + Vector3(exit[0].x + exit[1].x * 2.0, 1.75, exit[0].y + exit[1].y * 2.0)
-	var exit_look := exit_at + Vector3(exit[1].x * 12.0, -0.15, exit[1].y * 12.0)
-	var middle := (entry_at + exit_at) * 0.5
-	middle.y = 1.75
-	var middle_look := middle + Vector3(entry[1].x * 10.0, -0.05, entry[1].y * 10.0)
+	var entry_at := _on_ground(centre + Vector3(entry[0].x + entry[1].x * 2.0, 0.0, entry[0].y + entry[1].y * 2.0), 1.75)
+	var exit_at := _on_ground(centre + Vector3(exit[0].x + exit[1].x * 2.0, 0.0, exit[0].y + exit[1].y * 2.0), 1.75)
+	var entry_look := _on_ground(entry_at + Vector3(entry[1].x * 12.0, 0.0, entry[1].y * 12.0), 1.6)
+	var exit_look := _on_ground(exit_at + Vector3(exit[1].x * 12.0, 0.0, exit[1].y * 12.0), 1.6)
+	var middle := _on_ground((entry_at + exit_at) * 0.5, 1.75)
+	var middle_look := _on_ground(middle + Vector3(entry[1].x * 10.0, 0.0, entry[1].y * 10.0), 1.7)
 	return [entry_at, entry_look, middle, middle_look, exit_at, exit_look]
 
 
@@ -193,7 +196,7 @@ func _landmark_view(centre: Vector3, radius: float) -> Vector3:
 	var sphere := SphereShape3D.new()
 	sphere.radius = 0.75
 	for offset in candidates:
-		var candidate := centre + Vector3(offset.x * radius, 1.75, offset.y * radius)
+		var candidate := _on_ground(centre + Vector3(offset.x * radius, 0.0, offset.y * radius), 1.75)
 		var query := PhysicsShapeQueryParameters3D.new()
 		query.shape = sphere
 		query.transform = Transform3D(Basis.IDENTITY, candidate)

@@ -726,7 +726,10 @@ public partial class GameBootstrap : Node3D
         }
 
         _player!.Velocity = Vector3.Zero;
-        _player.GlobalPosition = landing;
+        // After Configure, so WorldGround is the DESTINATION region's field rather than the one the
+        // player is leaving — a cross-region jump clamped against the wrong heightfield is worse
+        // than not clamping at all.
+        _player.GlobalPosition = SafeLanding(landing);
 
         // The band comes with you (Phase 32D). Walking companions across a region boundary is not a
         // thing they can do, so they are cut to formation the moment the player lands.
@@ -765,7 +768,7 @@ public partial class GameBootstrap : Node3D
             return;
         }
 
-        var landing = new Vector3(header.PlayerX, header.PlayerY, header.PlayerZ);
+        Vector3 landing = SafeLanding(new Vector3(header.PlayerX, header.PlayerY, header.PlayerZ));
 
         // Cross-region: reuse the streamer swap + loading-screen settle the portal path already uses.
         // StartLoadedGame set _currentRegionId from this same header before BuildWorld, so a load
@@ -782,6 +785,30 @@ public partial class GameBootstrap : Node3D
         }
 
         _player.Rotation = new Vector3(_player.Rotation.X, header.PlayerYaw, _player.Rotation.Z);
+    }
+
+    /// <summary>
+    /// ⚠️ <b>NEVER PUT THE PLAYER UNDER THE GROUND (the 2026-08-29 geography overhaul).</b> Every
+    /// teleport in the game — a portal, a fast-travel jump, a save restore, the <c>region</c> dev
+    /// command — writes an absolute Y that was safe for exactly as long as every cell floor's top
+    /// face was y = 0. The world has real elevation now, so a point that has drifted below the
+    /// surface leaves the player inside a hillside with no way out and no error anywhere.
+    ///
+    /// The v1 -> v2 save migration throws pre-overhaul transforms away, but this covers the routes
+    /// a migration cannot: a hand-edited save, a fast-travel point recorded before a cell was
+    /// re-cut, a landform edit under someone's autosave. It lifts and never lowers, so a legitimate
+    /// jump onto a terrace or a rooftop is untouched.
+    /// </summary>
+    private static Vector3 SafeLanding(Vector3 landing)
+    {
+        float ground = WorldGround.HeightAt(landing.X, landing.Z);
+        if (landing.Y >= ground + 0.05f)
+        {
+            return landing;
+        }
+
+        Log.Warn($"Landing {landing} is below the ground at {ground:F2} m; lifting the player onto it.");
+        return new Vector3(landing.X, ground + 0.1f, landing.Z);
     }
 
     /// <summary>

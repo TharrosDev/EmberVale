@@ -7,9 +7,6 @@ uniform vec4 detail_color : source_color;
 uniform vec4 road_color : source_color;
 uniform vec2 cell_size = vec2(52.0);
 uniform float detail_scale : hint_range(0.25, 8.0) = 2.5;
-uniform int road_axis = 0;
-uniform float road_width = 5.0;
-uniform float road_offset = 0.0;
 uniform vec4 tint : source_color = vec4(1.0);
 uniform float tint_strength : hint_range(0.0, 1.0) = 0.0;
 uniform vec2 world_origin = vec2(0.0);
@@ -51,14 +48,18 @@ void fragment() {
     float height_mask = smoothstep(height_blend.x, height_blend.y, terrain_height);
     float detail_mask = max(slope_mask, height_mask * smoothstep(0.42, 0.78, micro));
     ground = mix(ground, detail_color.rgb, detail_mask);
-    float cross_axis = road_axis == 1 ? metres.x : metres.y;
-    float road = road_axis == 0 ? 0.0 : 1.0 - smoothstep(road_width * 0.42, road_width * 0.58, abs(cross_axis - road_offset));
-    road = max(road, COLOR.r);
+    float road = COLOR.r;
     float activity = COLOR.g;
     float ruts = 0.82 + 0.18 * value_noise(metres * vec2(0.7, 0.13));
     ground = mix(ground, road_color.rgb * ruts, road);
     ground = mix(ground, mix(surface_color.rgb, road_color.rgb, 0.58), activity);
-    ground = mix(ground, tint.rgb, tint_strength);
+    // ⚠️ THE CELL TINT FADES OUT AT THE CELL EDGE. Applied flat it is a rectangle of different-
+    // coloured ground with a hard border — the exact artefact the 2026-08-29 overhaul exists to
+    // remove, drawn by the one part of the pipeline that still knew where a cell ended. The
+    // Emberdeep's ochre and the Ash Roost's soot now bleed out into their neighbours instead.
+    float tint_edge = smoothstep(0.0, 0.22, UV.x) * smoothstep(0.0, 0.22, 1.0 - UV.x)
+        * smoothstep(0.0, 0.22, UV.y) * smoothstep(0.0, 0.22, 1.0 - UV.y);
+    ground = mix(ground, tint.rgb, tint_strength * tint_edge);
     ALBEDO = ground;
     ROUGHNESS = mix(mix(surface_roughness, detail_roughness, detail_mask), road_roughness, max(road, activity));
 }

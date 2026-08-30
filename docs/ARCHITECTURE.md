@@ -791,8 +791,11 @@ fast-travel land in 25E–25G.
   `hollowreach` (a street between two flooded channels with a walled Hollow off it),
   `ashfall_homestead` (a hexagonal plot entered at a clipped corner), `wilds_north` (a forked road
   with the ruin between the branches), `wilds_west` (a rock corrie with one throat) and `arena` (a
-  south gate where the road actually arrives, plus a collapsed north breach). Floors abut exactly so
-  navmesh patches edge-connect; ⚠️ **the seam arithmetic is in the region `.tres` comments and it is
+  south gate where the road actually arrives, plus a collapsed north breach). Cells abut exactly so
+  navmesh patches edge-connect; ⚠️ **the lattice is generated and checked by `tools/gen_regions.py`
+  from `tools/region_spec_<region>.py` since the 2026-08-29 geography overhaul, and the ground is one
+  region-wide `WorldHeightfield` rather than a slab per cell — two abutting cells sample the same
+  continuous function, so seams match by construction instead of by flattening. The old arithmetic is
   arithmetic, not taste** — The 2026-08-28 layout rebuild found three seams a road pointed at and no cell opened onto.
 - **Safe areas are a list** (38K). `SafeZones` holds the region's own `SafeZoneCenter`/`SafeZoneRadius`
   bubble plus one per cell that authors a `RegionCellResource.SafeRadius` (`0` = not a safe area),
