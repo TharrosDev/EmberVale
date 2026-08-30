@@ -18,7 +18,7 @@ opens any more — through the context window.
 
 # Embervale — Session Playbook (the day-by-day breakdown)
 
-> **What this is.** [`PRODUCTION_ROADMAP.md`](PRODUCTION_ROADMAP.md) lays out the
+> **What this is.** [`PRODUCTION_ROADMAP.md`](../PRODUCTION_ROADMAP.md) lays out the
 > *phases* (22–66) and the five gates. Each of those phases is far too large to
 > finish in a single Claude Code session — they were written as milestones, not
 > work units. **This document breaks every phase into lettered sub-phases
@@ -120,46 +120,46 @@ no code) — batch them when momentum is good.
 | [Phase 33 — Vertical Slice Assembly & Onboarding `[C/P]`](./phase-33.md) | 81 |
 | [Phase 34 — Enemy & Creature Roster `[F/C]` ✅ **complete**](./phase-34.md) | 107 |
 | [Phase 34.5 — Frostfang Clans & Beast-Race Factions `[F/C]` ✅ **complete**](./phase-34_5.md) | 199 |
-| [Phase 35 — Dragons `[F/C]`](./phase-35.md) | 392 |
-| [Phase 36 — Boss Framework & Encounter Design `[F]`](./phase-36.md) | 185 |
-| [Phase 37 — Housing & Player Property `[F]`](./phase-37.md) | 194 |
-| [Phase 37.5 — AAA Fantasy UI Overhaul `[F/C]`](./phase-37_5.md) | 355 |
-| [Phase 38 — Economy, Vendors & Services `[F/C]`](./phase-38.md) | 367 |
-| [Phase 39 — Mounts & Traversal `[F]`](./phase-39.md) | 12 |
-| [Phase 39.5 — World Map & Location Intelligence `[F/C]`](./phase-39_5.md) | 2 |
+| [Phase 35 — Dragons `[F/C]` ✅ **complete (A–G)**](./phase-35.md) | 392 |
+| [Phase 36 — Boss Framework & Encounter Design `[F]` ✅ **complete (A–E)**](./phase-36.md) | 185 |
+| [Phase 37 — Housing & Player Property `[F]` ✅ **complete**](./phase-37.md) | 194 |
+| [Phase 37.5 — AAA Fantasy UI Overhaul `[F/C]` ✅ **complete (A–G)**](./phase-37_5.md) | 355 |
+| [Phase 38 — Economy, Vendors & Services `[F/C]` ✅ **complete (A–V)**](./phase-38.md) | 367 |
+| [Phase 39 — Mounts & Traversal `[F]` ✅ **complete**](./phase-39.md) | 12 |
+| [Phase 39.5 — World Map & Location Intelligence `[F/C]` ✅ **complete (A–C)**](./phase-39_5.md) | 2 |
 | [~~Phase 40 — Survival & Needs~~ ❌ **NOT WANTED**](./phase-40.md) | 74 |
 | [~~Phase 40.5 — Dungeon & Puzzle Framework~~ ❌ **NOT WANTED**](./phase-40_5.md) | 62 |
-| [Phase 41 — Quest Authoring at Scale & Branching `[F/C]`](./phase-41.md) | 21 |
-| [Phase 41.5 — Divine Shrines & Blessings `[F/C]`](./phase-41_5.md) | 17 |
-| [Phase 42 — Guild & Faction Questlines `[C]`](./phase-42.md) | 15 |
-| [Phase 42.5 — The Crimson Cult `[F/C]`](./phase-42_5.md) | 16 |
-| [Phase 43 — Cinematics & Scripted Sequences `[F]`](./phase-43.md) | 15 |
-| [Phase 43.5 — Flamebearer Vision Sequences `[F/C]`](./phase-43_5.md) | 17 |
-| [Phase 44 — Alpha Content Pass: all five realms blocked out `[C]`](./phase-44.md) | 34 |
-| [Phase 44.5 — World State: Realm Decay & Restoration `[F]`](./phase-44_5.md) | 21 |
-| [Phase 45 — Alpha Hardening & Feature Freeze `[F/P]`](./phase-45.md) | 27 |
-| [Phase 46 — Main Story, Act I: Awakening `[C]`](./phase-46.md) | 12 |
-| [Phase 47 — Main Story, Act II: Gathering the Flame `[C]`](./phase-47.md) | 20 |
-| [Phase 47.5 — The Ashen Knight: Rival Duels `[C]`](./phase-47_5.md) | 14 |
-| [Phase 48 — Main Story, Act III: Truth of the Gods `[C]`](./phase-48.md) | 11 |
-| [Phase 49 — Main Story, Act IV: The Celestial War + Endings `[C]`](./phase-49.md) | 14 |
-| [Phase 50 — Side Content, Activities & World Density `[C]`](./phase-50.md) | 15 |
-| [Phase 50.5 — Lore Codex & Compendium `[F/C]`](./phase-50_5.md) | 17 |
-| [Phase 51 — Itemization, Loot & Reward Economy Pass `[C]`](./phase-51.md) | 19 |
-| [Phase 51.5 — Enchanting & Relic Socketing `[F/C]`](./phase-51_5.md) | 14 |
-| [Phase 52 — Full Audio & Music Production `[P]`](./phase-52.md) | 12 |
-| [Phase 53 — Art Complete & World Beautification `[P]`](./phase-53.md) | 13 |
-| [Phase 53.5 — Photo Mode `[P]`](./phase-53_5.md) | 13 |
-| [Phase 54 — Accessibility & Input `[F/P]`](./phase-54.md) | 13 |
-| [Phase 55 — Content-Complete Integration & First Full Playthrough `[C/P]`](./phase-55.md) | 21 |
-| [Phase 56 — Balance & Difficulty Tuning `[C/P]`](./phase-56.md) | 13 |
-| [Phase 57 — Performance & Memory Cert `[P]`](./phase-57.md) | 13 |
-| [Phase 58 — Save/Load Hardening & Migration `[F]`](./phase-58.md) | 11 |
-| [Phase 59 — Bug Triage, QA & Soak `[P]`](./phase-59.md) | 12 |
-| [Phase 60 — Localization Completion & Culturalization `[C/P]`](./phase-60.md) | 11 |
-| [Phase 61 — Platform Compliance & Storefront `[P]`](./phase-61.md) | 12 |
-| [Phase 62 — Release Candidate & Gold Master `[P]`](./phase-62.md) | 15 |
-| [Phase 63 — Launch `[P]`](./phase-63.md) | 13 |
-| [Phase 64 — Launch Response & Stabilization `[P]`](./phase-64.md) | 6 |
-| [Phase 65 — Post-Launch Content (the long tail) `[C/F]`](./phase-65.md) | 8 |
-| [Phase 66 — Expansion / DLC Framework `[F/C]`](./phase-66.md) | 65 |
+| [Phase 41 — Quest Authoring at Scale & Branching `[F/C]` ✅ **complete (A–F)**](./phase-41.md) | 21 |
+| [Phase 41.5 — Divine Shrines & Blessings `[F/C]` ✅ **complete (A–C)**](./phase-41_5.md) | 17 |
+| [Phase 42 — Guild & Faction Questlines `[C]`](./phase-42.md) | 134 |
+| [Phase 42.5 — The Crimson Cult `[F/C]`](./phase-42_5.md) | 54 |
+| [Phase 43 — Cinematics & Scripted Sequences `[F]`](./phase-43.md) | 70 |
+| [Phase 43.5 — Flamebearer Vision Sequences `[F/C]`](./phase-43_5.md) | 34 |
+| [Phase 44 — Alpha Content Pass: all five realms blocked out `[C]`](./phase-44.md) | 155 |
+| [Phase 44.5 — World State: Realm Decay & Restoration `[F]`](./phase-44_5.md) | 43 |
+| [Phase 45 — TRUE Feature-Complete Audit & Freeze `[F/P]`](./phase-45.md) | 111 |
+| [Phase 46 — Main Story, Act I: Awakening `[C]`](./phase-46.md) | 44 |
+| [Phase 47 — Main Story, Act II: Gathering the Flame `[C]`](./phase-47.md) | 81 |
+| [Phase 47.5 — The Ashen Knight: Rival Duels `[C]`](./phase-47_5.md) | 22 |
+| [Phase 48 — Main Story, Act III: Truth of the Gods `[C]`](./phase-48.md) | 33 |
+| [Phase 49 — Main Story, Act IV: The Celestial War + Endings `[C]`](./phase-49.md) | 55 |
+| [Phase 50 — Side Content, Activities & Wilderness Pacing `[C]`](./phase-50.md) | 77 |
+| [Phase 50.5 — Lore Codex & Compendium `[C/P]`](./phase-50_5.md) | 34 |
+| [Phase 51 — Itemization, Loot & Reward Economy Pass `[C]`](./phase-51.md) | 70 |
+| [Phase 51.5 — Enchanting & Relic Socketing `[F/C]`](./phase-51_5.md) | 22 |
+| [Phase 52 — Full Audio & Music Production `[P]`](./phase-52.md) | 56 |
+| [Phase 53 — Art Complete & World Beautification `[P]`](./phase-53.md) | 67 |
+| [Phase 53.5 — Photo Mode `[P]`](./phase-53_5.md) | 21 |
+| [Phase 54 — Accessibility & Input `[F/P]`](./phase-54.md) | 59 |
+| [Phase 55 — G3 Content-Complete Acceptance Campaign `[C/P]`](./phase-55.md) | 55 |
+| [Phase 56 — Balance & Difficulty Tuning `[C/P]`](./phase-56.md) | 49 |
+| [Phase 57 — Performance & Memory Cert `[P]`](./phase-57.md) | 44 |
+| [Phase 58 — Save/Load Hardening & Migration `[F]`](./phase-58.md) | 48 |
+| [Phase 59 — Bug Triage, QA & Soak `[P]`](./phase-59.md) | 39 |
+| [Phase 60 — Localization Completion & Culturalization `[C/P]`](./phase-60.md) | 40 |
+| [Phase 61 — Platform Compliance & Storefront `[P]`](./phase-61.md) | 45 |
+| [Phase 62 — Release Candidate & Gold Master `[P]`](./phase-62.md) | 38 |
+| [Phase 63 — Launch `[P]`](./phase-63.md) | 27 |
+| [Phase 64 — Launch Response & Stabilization `[P]`](./phase-64.md) | 29 |
+| [Phase 65 — Post-Launch Content (the long tail) `[C/F]`](./phase-65.md) | 39 |
+| [Phase 66 — Expansion / DLC Framework `[F/C]`](./phase-66.md) | 48 |

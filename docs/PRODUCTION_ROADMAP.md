@@ -164,7 +164,7 @@ authoring recipes that turn them into content with no new code, see docs/RECIPES
 | 43.5 | Flamebearer Vision Sequences | F/C | A flashback-cutscene type showing how each fallen Flamebearer fell, triggered on their defeat |
 | 44 | Alpha Content Pass — all five realms blocked out | C | Greybox + first-pass content for every realm (incl. the hidden Pale Concord), every fallen Flamebearer |
 | 44.5 | World State: Realm Decay & Restoration | F | A per-realm decay/restoration tier so the world visibly reflects story progress and the ending choice |
-| 45 | Alpha Hardening & Feature Freeze | F/P | Stabilize, profile, integration test the whole feature set; declare feature complete |
+| 45 | TRUE Feature-Complete Audit & Freeze | F/P | Matrix-audit every mechanic, close feature holes (including physical ranged combat), then freeze |
 
 ### Stage D — Beta / Content Complete → **G3**
 
@@ -175,33 +175,33 @@ authoring recipes that turn them into content with no new code, see docs/RECIPES
 | 47.5 | The Ashen Knight: Rival Duels | C | Recurring non-final duels across Acts II–III so the "greatest rival" has a real arc, not one Act IV reveal |
 | 48 | The Main Story — Act III: Truth of the Gods | C | The mid-game turn, lore reveals, the Ash Throne |
 | 49 | The Main Story — Act IV: The Celestial War + Endings | C | The Ashen Knight, Morthul, both endings (Dawnfire / Lord of Embers) |
-| 50 | Side Content, Activities & World Density | C | Side quests, POIs, dungeons, world events, collectibles, ambient life |
-| 50.5 | Lore Codex & Compendium | F/C | An in-game compendium of gods/Flamebearers/realms/guilds, populated by the Phase 50 lore-book collectibles |
+| 50 | Side Content, Activities & Wilderness Pacing | C | Measured realm-specific content distribution without filling intentional empty country |
+| 50.5 | Lore Codex & Compendium | C/P | Populate and finish the pre-G2 Codex foundation; skip entirely if G2 cuts it |
 | 51 | Itemization, Loot & Reward Economy Pass | C | The full item/affix/set/relic catalogue; the divine relics; reward curves |
 | 51.5 | Enchanting & Relic Socketing | F/C | Optional itemization deepener — sockets + enchant consumables on rare+ gear |
-| 52 | Full Audio & Music Production | P | The complete score, VO direction, full SFX/ambience coverage |
+| 52 | Full Audio & Music Production | P | Coverage-matrix score/SFX/ambience production; VO scope decided before recording |
 | 53 | Art Complete & World Beautification | P | Final art pass across all regions; lighting; set dressing; the dying-world identity |
 | 53.5 | Photo Mode | P | Optional polish-tier feature — free camera, hide-HUD, dying-world filters |
-| 54 | Accessibility & Input | F/P | Remapping, subtitles, colorblind, difficulty options, controller, Steam Deck |
-| 55 | Content-Complete Integration & First Full Playthrough | C/P | The whole game start→finish, both endings, no placeholders |
+| 54 | Accessibility & Input | F/P | Complete remapping/subtitles/assists/difficulty and audit the accessibility/controller work already shipped |
+| 55 | G3 Content-Complete Acceptance Campaign | C/P | Campaign both endings, all branches/realms/systems, reachability and placeholder closure |
 
 ### Stage E — Release Candidate → **G4**
 
 | #  | Phase | Tag | One-liner |
 | -- | ----- | --- | --------- |
 | 56 | Balance & Difficulty Tuning | C/P | Combat math, economy, XP curve, encounter pacing, the corruption pacing |
-| 57 | Performance & Memory Cert | P | Frame budget on min-spec + Steam Deck; streaming hitches; load times; memory |
+| 57 | Performance & Memory Cert | P | Derive budgets on approved target hardware; certify frame pacing, world loads, memory and shaders |
 | 58 | Save/Load Hardening & Migration | F | Long-playthrough saves, migration, corruption recovery, slot integrity |
 | 59 | Bug Triage, QA & Soak | P | Full test matrix, soak/longevity, telemetry, crash-free target |
 | 60 | Localization Completion & Culturalization | C/P | Full string coverage, fonts/glyphs, LQA in shipped languages |
-| 61 | Platform Compliance & Storefront | P | Steam/console cert (TRC/XR/lotcheck), achievements, store page, builds |
+| 61 | Platform Compliance & Storefront | P | Approve targets first; reproducible builds, required services, compliance and storefront |
 | 62 | Release Candidate & Gold Master | P | Lock, RC builds, final cert pass, day-one patch plan |
 
 ### Stage F — Launch → **G5**
 
 | #  | Phase | Tag | One-liner |
 | -- | ----- | --- | --------- |
-| 63 | Launch | P | Ship. Day-one patch ready. Live monitoring on. |
+| 63 | Launch | P | Ship approved targets with verified artifacts, monitoring, support and rollback ready |
 
 ### Stage G — Live / Post-launch → **G6**
 
@@ -837,6 +837,10 @@ Emberbound) as joinable factions with rank progression and multi-quest arcs.
   knowledge to restore spellcraft, rewarding recovered spells + mastery. Pure content on
   the 29.5 systems (quest + dialogue + tome rewards).
 
+The playbook splits each guild into recruitment/identity and senior-rank/finale sessions, plus
+shared hub and integration passes. Membership/rank/refusal reuses story flags; public attitude
+remains faction reputation. There is no parallel guild progression or quest runtime.
+
 ### Phase 42.5 — The Crimson Cult `[F/C]`
 
 The Crimson Prophet "built an empire of worshippers" (LORE) — currently that's only a
@@ -878,7 +882,7 @@ corruption theme experiential, not narrated.
 Greybox + first-pass content for the **whole game's shape**: Ember Crown (Iron King),
 Frostfang Reach (Storm Tyrant), Ashen Wilds (Beast Lord), Sunspire Dominion (Crimson
 Prophet) and the **Pale Concord** (Hollow Queen) — each with its hub(s), key POIs,
-encounter sets, the resident fallen Flamebearer's lair/boss stub, and the
+encounter sets, the resident fallen Flamebearer's Alpha boss encounter, and the
 main-quest spine connecting them. Rough but **complete in extent** — every realm,
 every boss, every guild reachable.
 
@@ -891,6 +895,12 @@ region — **candidate rules, none of them built yet:** no natural health regene
 bounds, a `WorldClock` that does not advance, corpses that never despawn, and NPCs whose only
 request is to be released. Each is a real system change (`StatsComponent`, `WorldClock`, the
 despawn path), so they are scoped decisions for 44E, not assumptions.
+
+Phase 44 follows the generated modern world pipeline: atlas/budget first, then macro specification,
+routes/intentional wilderness, settlements/POIs, population/ecology/boss territory, and full
+world-quality/performance closure. Ember Crown and Frostfang are reconciled without rewriting their
+closed geography. New realms begin from `tools/region_spec_template.py`; generated region data is
+never hand-edited.
 
 ### Phase 44.5 — World State: Realm Decay & Restoration `[F]`
 
@@ -906,12 +916,17 @@ gives the macro "return changed" arrow (DESIGN §2.1) a world-scale half.
 - **Ending payoff seam** — Phase 49's endings write a final realm-wide state (healed
   for Dawnfire, ashen for Lord of Embers) that Phase 53/65 content reads.
 
-### Phase 45 — Alpha Hardening & Feature Freeze `[F/P]`
+### Phase 45 — TRUE Feature-Complete Audit & Freeze `[F/P]`
 
-- Full integration test of the entire feature set; fix system interaction bugs;
-  profile the streaming world under load; lock the feature list.
-- **Feature freeze declared.** From here, no new mechanics without an explicit,
-  recorded exception — only content and fixes.
+- Build a feature-completeness matrix against DESIGN, LORE, live code/data and the roadmap, covering
+  every player verb, system, UI/audio/cinematic and persistence owner with actual evidence.
+- **Close the confirmed physical-ranged-combat hole before G2.** The current tree has no bow item,
+  firing path or ranged weapon component; the old Phase 51 note claiming a placeholder bow exists is
+  stale. Phase 45 builds/proves the bow mechanic; Phase 51 authors catalogue breadth only.
+- Run cross-system, sequence-break, save/load and five-realm performance matrices; burn all
+  Blocker/Critical defects and any High that invalidates a gate row.
+- **Feature freeze is signed only after the matrix has zero feature holes.** Later exceptions require
+  explicit impact/rollback/test approval and invalidate affected evidence until rerun.
 
 > **🚩 Gate G2 — Alpha / Feature Complete.** Every mechanic in the shipped game
 > exists and works together: corruption, races, companions, dragons, bosses,
@@ -979,25 +994,21 @@ endings authored and reachable:
 The corruption system (Phase 23) and companion loyalty (Phase 32) feed ending
 eligibility and variations. Epilogues per ending + per major choice.
 
-### Phase 50 — Side Content, Activities & World Density `[C]`
+### Phase 50 — Side Content, Activities & Wilderness Pacing `[C]`
 
-Side quests across all realms, dungeons/lairs, the full world-event/encounter
-tables, collectibles (lore books for the Veiled Archive fantasy), bounties (Iron
-Syndicate / Ash Hunters), companion loyalty quests, ambient NPC life, and the
-density that makes an open world feel alive.
+Measured, realm-specific side quests, lairs, events, exploration rewards, environmental stories,
+guild bounties, companion loyalty quests, collectibles and ambient behavior. A distribution matrix
+derives category ranges and discovery spacing from each realm's size/travel rhythm. Phase 44's
+intentional empty cells remain protected. Lairs use existing rooms/combat/loot/doors; no puzzle,
+trap or vault framework returns.
 
-### Phase 50.5 — Lore Codex & Compendium `[F/C]`
+### Phase 50.5 — Lore Codex & Compendium `[C/P]`
 
-Phase 50G authors lore-book collectibles, but nothing builds the UI to read or track
-them against the gods/Flamebearers/realms/guilds they reference — distinct from the
-combat bestiary (34G).
-
-- **`CodexEntryResource` + `CodexDatabase`** — entries unlock on a flag/collectible
-  pickup, `ISaveable`.
-- **A Codex panel** built on the Phase 30.5F panel framework; locked entries show as
-  teasers, unlocked ones are fully readable.
-- **Seed entries for every god, fallen Flamebearer, realm, and guild** so the
-  compendium is complete in *shape* even before every collectible is placed.
+Phase 45A decides whether the compendium is launch scope; if retained, Phase 45E builds/proves its
+schema, unlock/persistence authority, panel foundation, validation and debug seam **before G2**.
+Phase 50.5 then authors the catalogue, collectible/story placements, localized presentation and
+coverage acceptance, distinct from the combat Bestiary. If the feature is cut at G2, the phase is
+skipped and lore books remain ordinary readable/quest content—no stub.
 
 ### Phase 51 — Itemization, Loot & Reward Economy Pass `[C]`
 
@@ -1012,6 +1023,11 @@ quests/bosses/dungeons; the loot tables of the whole game authored and curated.
   **relic spells** (divine-relic-tier). This is the magic content *bulk*, and it lives here
   because it is data on frozen systems (G2-safe) — no new mechanics, only authoring.
 
+**Live catalogue audit (planning overhaul):** 63 item templates exist; nine equipment slots work,
+but authored gear covers only MainHand, Head, Chest and Ring. OffHand, Hands, Legs, Feet and Amulet
+are empty. The old note claiming a placeholder bow exists is stale. Phase 45 owns the physical
+ranged mechanic and proof bow; Phase 51 owns catalogue breadth and placement.
+
 ### Phase 51.5 — Enchanting & Relic Socketing `[F/C]`
 
 Not LORE-mandated — an optional itemization deepener beyond the existing affix system.
@@ -1025,8 +1041,9 @@ Cut cleanly if it doesn't clear playtest; flagged here so it isn't lost.
 ### Phase 52 — Full Audio & Music Production `[P]`
 
 The complete adaptive score (per realm/boss/theme), full SFX coverage, ambience
-for every region/weather/time, and **voice-over** (at minimum key story/companion
-beats) recorded and integrated through the `AudioDirector`.
+for every region/weather/time, and approved dialogue/VO integration through `AudioDirector`.
+A coverage census distinguishes real assets from the procedural fallback. VO scope, recording
+language(s), casting and text-only coverage are an explicit decision gate before recording.
 
 ### Phase 53 — Art Complete & World Beautification `[P]`
 
@@ -1044,12 +1061,13 @@ art pass.
 
 ### Phase 54 — Accessibility & Input `[F/P]`
 
-Full input remapping (KB/M + controller), subtitles + speaker names + sizing,
-colorblind options, scalable difficulty (per LORE "easy to learn, hard to
-master" — difficulty options, not class locks), aim/lock-on assists, and
-**Steam Deck** input/UI verification. A ship requirement, not a nicety.
+Complete input remapping, subtitle/caption coverage, aim/lock-on assists and scalable difficulty,
+then run an end-to-end accessibility campaign. This extends rather than recreates shipped text/UI
+scale, high contrast, color-vision adaptation, reduced motion, controller bindings and device-aware
+prompts. Phase 45 must freeze the launch-required remapping/difficulty/assist foundations before G2;
+Phase 54 completes their UX/coverage/acceptance. Hardware verification is conditional on approved targets.
 
-### Phase 55 — Content-Complete Integration & First Full Playthrough `[C/P]`
+### Phase 55 — G3 Content-Complete Acceptance Campaign `[C/P]`
 
 A complete, no-placeholder playthrough start→finish→**both endings**; fix
 narrative/flag/sequence breaks; confirm every quest, region, boss, companion, and
@@ -1076,10 +1094,9 @@ resources; informed by playtest + telemetry (Phase 22).
 
 ### Phase 57 — Performance & Memory Cert `[P]`
 
-Hit the frame budget on **min-spec PC and Steam Deck** (LORE target): streaming
-hitch elimination, draw-call/LOD/shadow budgets (extends Phase 19), memory
-ceilings, load-time targets, and shader pre-compilation. Profile-guided, not
-guessed.
+Approve target hardware/resolution/quality first, then derive—not invent—frame-time/frame-pacing,
+draw/primitive, RAM/VRAM, region build/load and shader first-use budgets from repeatable measurements.
+Use Embervale's existing world/performance harnesses across representative and worst-case scenes.
 
 ### Phase 58 — Save/Load Hardening & Migration `[F]`
 
@@ -1097,15 +1114,17 @@ zero blockers.
 
 ### Phase 60 — Localization Completion & Culturalization `[C/P]`
 
-Full string extraction and translation in the shipped languages, font/glyph
-coverage (CJK as scoped), text-fit/overflow LQA, and culturalization review. Made
-cheap because everything went through the Phase 24 `Loc` layer from the start.
+Choose launch locales from audience/budget/font/LQA/support evidence, then complete extraction,
+translation import, font/glyph/shaping coverage, pseudo-localized overflow testing and native
+in-context LQA for those approved languages. No language or script is assumed before the decision
+gate. Phase 24's `Loc` discipline keeps the pipeline bounded.
 
 ### Phase 61 — Platform Compliance & Storefront `[P]`
 
-Steam (and any console) cert: TRC/XR/lotcheck requirements, achievements/trophies,
-cloud saves, controller glyphs, the store page (capsule, screenshots, trailer cut
-from the slice), age ratings, EULA/credits, and reproducible release builds.
+First approve the target OS/store/platform/service matrix. Then build reproducible signed artifacts,
+implement only required store/cloud/achievement/controller/compliance work, produce rights-cleared
+store assets/legal/credits, and rehearse packaging/submission. Console and other platform work stays
+conditional until chosen.
 
 ### Phase 62 — Release Candidate & Gold Master `[P]`
 
@@ -1121,9 +1140,9 @@ master sign-off against the G4 bar (**zero known crash/blocker bugs**).
 
 ### Phase 63 — Launch `[P]`
 
-Ship to Steam (+ any console) on the target platforms (Windows, Linux, Steam
-Deck). Day-one patch live, store page up, monitoring and crash telemetry on,
-community/support channels staffed.
+Ship the exact signed artifacts to the explicitly approved targets. Verify independent acquisition/
+install/launch, stage the day-one-patch decision against live thresholds, keep save-compatible
+rollback ready, and operate monitoring/support/escalation.
 
 > **🚩 Gate G5 — Launch.** Embervale is live.
 
@@ -1142,11 +1161,15 @@ respond to community, and stabilize the live build.
 higher difficulty tiers, additional regions/dungeons/bosses, more companions and
 loyalty content, seasonal world events — all riding the data pipeline.
 
+These are separately approved initiatives, not launch promises. New Game+ starts with an explicit
+carry/reset/rederive table; every content drop proves launch-save compatibility and base behavior
+when absent.
+
 ### Phase 66 — Expansion / DLC Framework `[F/C]`
 
-Entitlement/DLC content loading, a new-realm-sized expansion seam, and the tooling
-to ship paid expansions without forking the base game. The bridge to Embervale's
-future.
+Namespaced pack manifests, entitlement/offline behavior, isolated loading/validation, pack-owned save
+migrations, missing-pack recovery and the modern new-realm production seam. A small test pack proves
+base-game isolation; hypothetical expansion fiction is deliberately not designed here.
 
 > **🚩 Gate G6 — Live.** A shipped game with a sustainable content cadence.
 
@@ -1217,15 +1240,15 @@ The ordering is driven by hard dependencies, not preference:
 | ----- | ---- | ------ | ------ |
 | A — Pre-production & First Playable | G0 | 22–28 | ✅ Complete (22–28 + 25.5 hardening; G0 First Playable reached) |
 | B — Vertical Slice | G1 | 29–33 | ⏳ All phases built (29–32 ✅, 33A–33E ✅); **G1 needs a maintainer play-through + one export** |
-| C — Alpha / Feature Complete | G2 | 34–45 | ⏳ In progress (**34, 34.5, 35, 36 and 37 complete**; next: 38 economy & vendors) |
+| C — Alpha / Feature Complete | G2 | 34–45 | ⏳ In progress (**34–39.5, 41 and 41.5 complete; 40/40.5 struck**; next: 42A) |
 | D — Beta / Content Complete | G3 | 46–55 | ⬜ Planned |
 | E — Release Candidate | G4 | 56–62 | ⬜ Planned |
 | F — Launch | G5 | 63 | ⬜ Planned |
 | G — Live / Post-launch | G6 | 64–66 | ⬜ Planned |
 
-**Where we are.** Stage A is complete and **Gate G0 (First Playable) is reached**. Stage B's phases
-are all built. Stage C is under way in parallel, because the enemy roster is front-loadable content
-that doesn't touch the slice.
+**Where we are.** `docs/NOW.md` is authoritative: Stage C is active and **42A is next**. Phases
+40/40.5 are struck, not deferred. The out-of-band world-geography and world-quality passes are
+closed and are not Phase 44; future realm work uses their generated authoring/quality pipeline.
 
 | Phase | | What it delivered |
 | --- | --- | --- |
@@ -1235,7 +1258,7 @@ that doesn't touch the slice.
 | 33 | ⏳ | Vertical slice assembly — 33A–33C ✅, 33D/33E **built but never played** |
 | 34 | ✅ | The enemy & creature roster (34A–34G): AI profiles, 26 creatures as data, per-school resistances, every magic school's on-hit identity, Ashen corruption variants, the bestiary |
 | 34.5 | ✅ | The Frostfang clans (34.5A–34.5C): `faction.frostfang_clans` and the clan hold — Frostfang's first settlement; raider/beast-tamer/shaman archetypes that stay neutral until provoked; and a three-link rank chain with a betrayal branch. Encounters gained a region filter and quests gained a faction reward along the way |
-| 35 | ⏳ | Dragons (35A–35G) — hit zones, flight, breath weapons, lairs, a creature that talks — sub-phase detail in [Phase 35 — what shipped, sub-phase by sub-phase](#phase-35--what-shipped-sub-phase-by-sub-phase) below |
+| 35 | ✅ | Dragons (35A–35G) — hit zones, flight, breath weapons, lairs, a creature that talks — sub-phase detail in [Phase 35 — what shipped, sub-phase by sub-phase](#phase-35--what-shipped-sub-phase-by-sub-phase) below |
 | 36 | ✅ | The boss kit (36A–36E): a boss is authored data now (`data/bosses/*.tres` — phases, enrage, granted spells, telegraph colours), the Iron King lost his bespoke factory so there is **one** path through the pipeline, wind-ups are telegraphed by a model-independent ground ring and interruptible by a stagger **for every actor including the player**, phases summon capped add waves, an arena binds its own spawn points and phase reactions declaratively in its `.tscn`, and each boss's intro lock, defeat slow-mo, guaranteed reward and corruption-choice dialogue come from its own resource |
 | 37 | ✅ | Housing (37A–37D): a holding can be bought and/or earned, ownership persists and registers a fast-travel node; it has a stash (the game's **first two-way container**); you can craft kits and set stations and decoration down in its yard (the game's **first world-editing verb**, with a ghost that names *which* refusal applies); and display stands show off Epic-or-better trophies. Persistence came free all four times — ownership is a service, the stash and the stands **are** inventories keyed by `PersistentId`, and placed props ride `PersistentSpawnDirector`. The Ashfall Cottage is authored end to end as the one playable property **37E (out of band, 2026-08-10)** rebuilt the holding entirely: `compose_building.py --hollow` makes a house with per-wall colliders and an open doorway, so the Ashfall Cottage is now an **enterable, furnished home in its own cell** (`ember_crown.ashfall_homestead`) with a workshop, a garden and an ownership-gated free bed |
 | 37.5 | ✅ | **The UI overhaul** (37.5A–G) — an original AAA-fantasy interface language across every screen — sub-phase detail in [Phase 37.5 — what shipped, sub-phase by sub-phase](#phase-375--what-shipped-sub-phase-by-sub-phase) below |
