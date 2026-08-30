@@ -81,4 +81,21 @@ public sealed class WorldScatterPlannerTests
 
     private static IReadOnlyList<WorldScatterPlacement> Plan(int seed) =>
         WorldScatterPlanner.Plan(seed, 30, 60f, 50f, 3f, 2.5f);
+
+    [Fact]
+    public void TheTerrainGateRejectsEverySamplePastItsLimit()
+    {
+        // ⚠️ This is the rule that stops trees growing sideways out of a cliff. The predicate stands
+        // in for "slope here is over MaxSlope"; the planner must honour it absolutely, not thin the
+        // layer, because a species half-placed on a 60-degree face still reads as a bug.
+        System.Collections.Generic.IReadOnlyList<WorldScatterPlacement> open =
+            WorldScatterPlanner.Plan(11, 60, 60f, 60f, 0f, 1f);
+        System.Collections.Generic.IReadOnlyList<WorldScatterPlacement> gated =
+            WorldScatterPlanner.Plan(11, 60, 60f, 60f, 0f, 1f, null, null, null, (x, _) => x < 0f);
+
+        Assert.NotEmpty(open);
+        Assert.NotEmpty(gated);
+        Assert.All(gated, p => Assert.True(p.X < 0f));
+        Assert.Contains(open, p => p.X >= 0f);
+    }
 }

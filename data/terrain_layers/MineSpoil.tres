@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WorldTerrainLayerResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldTerrainLayerResource.cs" id="1_layer"]
+
+; Excavated waste rock and ore-stained earth. Fine and high-contrast; a tip is rubble.
+[resource]
+script = ExtResource("1_layer")
+Id = "terrain.mine_spoil"
+Low = Color(0.278, 0.235, 0.172, 1)
+High = Color(0.372, 0.322, 0.238, 1)
+Grain = 2.4
+Breakup = 0.7
+Relief = 0.55
+Roughness = 0.93
+Specular = 0.28

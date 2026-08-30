@@ -47,7 +47,7 @@ public sealed partial class WorldCellPresentation : Node3D
         ArrayMesh topology = WorldTerrainMeshBuilder.Build(field, cell, worldOrigin);
 
         var presentation = new WorldCellPresentation { Name = "WorldPresentation" };
-        presentation._surface = BuildSurface(region, cell, topology, worldOrigin);
+        presentation._surface = BuildSurface(region, cell, topology);
         presentation.AddChild(presentation._surface);
         cellRoot.AddChild(presentation);
 
@@ -88,25 +88,53 @@ public sealed partial class WorldCellPresentation : Node3D
 
     private static MeshInstance3D BuildSurface(
         WorldEnvironmentProfileResource region, WorldCellPresentationResource cell,
-        ArrayMesh topology, Vector3 worldOrigin)
+        ArrayMesh topology)
     {
         Shader? shader = GD.Load<Shader>(ShaderPath);
         var material = new ShaderMaterial { Shader = shader };
-        material.SetShaderParameter("surface_color", region.SurfaceColor);
-        material.SetShaderParameter("secondary_color", region.SecondaryColor);
-        material.SetShaderParameter("detail_color", region.DetailColor);
-        material.SetShaderParameter("road_color", region.RoadColor);
-        material.SetShaderParameter("cell_size", new Vector2(cell.Width, cell.Depth));
-        material.SetShaderParameter("detail_scale", region.DetailScale);
+        WorldBiomeProfileResource biome = cell.Biome ?? region.Biome ?? FallbackBiome(region);
+
+        // ⚠️ SIX SLOTS, ALWAYS, AND A NULL SLOT FALLS BACK TO Ground. The shader indexes fixed
+        // positions; a biome that leaves Cap or Shore unauthored (most lowland ones do) must still
+        // hand it six valid entries or the layer reads whatever was in the buffer last.
+        WorldTerrainLayerResource?[] slots =
+        {
+            biome.Ground, biome.Sparse, biome.Rock, biome.Cap, biome.Road, biome.Shore,
+        };
+        var low = new Vector3[slots.Length];
+        var high = new Vector3[slots.Length];
+        var parameters = new Vector4[slots.Length];
+        var specular = new float[slots.Length];
+        for (int i = 0; i < slots.Length; i++)
+        {
+            WorldTerrainLayerResource resolved =
+                slots[i] ?? biome.Ground ?? new WorldTerrainLayerResource();
+            Color lowLinear = resolved.Low.SrgbToLinear();
+            Color highLinear = resolved.High.SrgbToLinear();
+            low[i] = new Vector3(lowLinear.R, lowLinear.G, lowLinear.B);
+            high[i] = new Vector3(highLinear.R, highLinear.G, highLinear.B);
+            parameters[i] = new Vector4(
+                resolved.Grain, resolved.Breakup, resolved.Relief, resolved.Roughness);
+            specular[i] = resolved.Specular;
+        }
+
+        material.SetShaderParameter("layer_low", low);
+        material.SetShaderParameter("layer_high", high);
+        material.SetShaderParameter("layer_params", parameters);
+        material.SetShaderParameter("layer_specular", specular);
+        material.SetShaderParameter("slope_band", biome.SlopeBand);
+        material.SetShaderParameter("height_band", biome.HeightBand);
+        material.SetShaderParameter("cap_slope_shed", biome.CapSlopeShed);
+        material.SetShaderParameter("sparse_coverage", biome.SparseCoverage);
+        material.SetShaderParameter("macro_scale", biome.MacroScale);
+        material.SetShaderParameter("macro_strength", biome.MacroStrength);
+        material.SetShaderParameter("shore_level", biome.ShoreLevel);
+        material.SetShaderParameter("shore_band", biome.ShoreBand);
+        material.SetShaderParameter("strata_scale", biome.StrataScale);
+        material.SetShaderParameter("strata_strength", biome.StrataStrength);
+        material.SetShaderParameter("terrain_seed", (float)region.TerrainSeed);
         material.SetShaderParameter("tint", cell.Tint);
         material.SetShaderParameter("tint_strength", cell.TintStrength);
-        material.SetShaderParameter("world_origin", new Vector2(worldOrigin.X, worldOrigin.Z));
-        material.SetShaderParameter("terrain_seed", (float)region.TerrainSeed);
-        material.SetShaderParameter("surface_roughness", region.SurfaceRoughness);
-        material.SetShaderParameter("detail_roughness", region.DetailRoughness);
-        material.SetShaderParameter("road_roughness", region.RoadRoughness);
-        material.SetShaderParameter("slope_blend", new Vector2(region.SlopeBlendStart, region.SlopeBlendEnd));
-        material.SetShaderParameter("height_blend", new Vector2(region.HeightBlendStart, region.HeightBlendEnd));
 
         return new MeshInstance3D
         {
@@ -114,6 +142,37 @@ public sealed partial class WorldCellPresentation : Node3D
             Mesh = topology,
             MaterialOverride = material,
             CastShadow = GeometryInstance3D.ShadowCastingSetting.On,
+        };
+    }
+
+    /// <summary>
+    /// The pre-biome look, rebuilt as six layers so a region with no authored biome still renders.
+    /// ⚠️ It is a compatibility path and it looks like the compatibility path: flat tones with no
+    /// grain worth the name. If a region reaches a screenshot through here, the fix is to author a
+    /// <see cref="WorldBiomeProfileResource"/>, not to tune these numbers.
+    /// </summary>
+    private static WorldBiomeProfileResource FallbackBiome(WorldEnvironmentProfileResource region)
+    {
+        static WorldTerrainLayerResource Layer(Color low, Color high, float grain, float roughness) =>
+            new()
+            {
+                Low = low, High = high, Grain = grain, Breakup = 0.6f, Relief = 0.2f,
+                Roughness = roughness, Specular = 0.35f,
+            };
+
+        return new WorldBiomeProfileResource
+        {
+            Id = "biome.fallback",
+            Ground = Layer(region.SurfaceColor, region.SecondaryColor, 6f, region.SurfaceRoughness),
+            Sparse = Layer(region.SecondaryColor, region.SurfaceColor, 9f, region.SurfaceRoughness),
+            Rock = Layer(region.DetailColor, region.DetailColor * 1.4f, 3.5f, region.DetailRoughness),
+            Cap = Layer(region.DetailColor * 1.2f, region.SecondaryColor, 5f, region.DetailRoughness),
+            Road = Layer(region.RoadColor * 0.85f, region.RoadColor, 2.5f, region.RoadRoughness),
+            Shore = Layer(region.SurfaceColor * 0.7f, region.SecondaryColor * 0.8f, 3f, 0.55f),
+            SlopeBand = new Vector2(region.SlopeBlendStart, region.SlopeBlendEnd),
+            HeightBand = new Vector2(region.HeightBlendStart, region.HeightBlendEnd),
+            MacroScale = 90f,
+            MacroStrength = 0.18f,
         };
     }
 }

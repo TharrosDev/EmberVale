@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WorldTerrainLayerResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldTerrainLayerResource.cs" id="1_layer"]
+
+; Straw-gone grass. The realm's most-used Sparse layer and most of its warmth.
+[resource]
+script = ExtResource("1_layer")
+Id = "terrain.dead_grass"
+Low = Color(0.33, 0.318, 0.208, 1)
+High = Color(0.452, 0.425, 0.29, 1)
+Grain = 3.0
+Breakup = 0.6
+Relief = 0.28
+Roughness = 0.97
+Specular = 0.18

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WorldTerrainLayerResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldTerrainLayerResource.cs" id="1_layer"]
+
+; Damp shade cover under canopy and on north faces.
+[resource]
+script = ExtResource("1_layer")
+Id = "terrain.moss"
+Low = Color(0.175, 0.238, 0.152, 1)
+High = Color(0.262, 0.318, 0.205, 1)
+Grain = 2.4
+Breakup = 0.6
+Relief = 0.35
+Roughness = 0.95
+Specular = 0.22

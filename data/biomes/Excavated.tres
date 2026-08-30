@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="WorldBiomeProfileResource" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldBiomeProfileResource.cs" id="1_biome"]
+[ext_resource type="Resource" path="res://data/terrain_layers/MineSpoil.tres" id="2_minespoil"]
+[ext_resource type="Resource" path="res://data/terrain_layers/Gravel.tres" id="3_gravel"]
+[ext_resource type="Resource" path="res://data/terrain_layers/CliffRock.tres" id="4_cliffrock"]
+[ext_resource type="Resource" path="res://data/terrain_layers/Stone.tres" id="5_stone"]
+[ext_resource type="Resource" path="res://data/terrain_layers/PackedDirt.tres" id="6_packeddirt"]
+[ext_resource type="Resource" path="res://data/terrain_layers/Mud.tres" id="7_mud"]
+
+; THE EMBERDEEP. Spoil and ore-stained waste rock through gravel, roads of packed dirt rather than
+; earth because everything here is driven over. The Rock slot does the real work: a mining cut is
+; almost all slope, so the pit walls come out as bedded stone with no authoring beyond the landform.
+[resource]
+script = ExtResource("1_biome")
+Id = "biome.excavated"
+Ground = ExtResource("2_minespoil")
+Sparse = ExtResource("3_gravel")
+Rock = ExtResource("4_cliffrock")
+Cap = ExtResource("5_stone")
+Road = ExtResource("6_packeddirt")
+Shore = ExtResource("7_mud")
+SlopeBand = Vector2(0.28, 0.72)
+HeightBand = Vector2(12, 26)
+CapSlopeShed = 0.3
+SparseCoverage = 0.5
+MacroScale = 55.0
+MacroStrength = 0.2
+StrataScale = 3.8
+StrataStrength = 0.26

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WorldTerrainLayerResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldTerrainLayerResource.cs" id="1_layer"]
+
+; The dark wet band a waterline leaves. Darker AND shinier than the dry ground above it - both, or it reads as a stain.
+[resource]
+script = ExtResource("1_layer")
+Id = "terrain.wet_shore"
+Low = Color(0.185, 0.17, 0.145, 1)
+High = Color(0.278, 0.255, 0.215, 1)
+Grain = 2.4
+Breakup = 0.55
+Relief = 0.28
+Roughness = 0.58
+Specular = 0.34

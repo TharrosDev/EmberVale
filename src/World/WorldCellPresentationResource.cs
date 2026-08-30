@@ -23,6 +23,15 @@ public partial class WorldCellPresentationResource : Resource
     [Export(PropertyHint.Range, "8,400,1")] public float Width { get; set; } = 52f;
     [Export(PropertyHint.Range, "8,400,1")] public float Depth { get; set; } = 52f;
     [Export] public int Seed { get; set; } = 38;
+    /// <summary>
+    /// Ground identity for this cell, overriding the region's. This is how the Emberdeep's spoil,
+    /// the Ash Roost's burn and Hollowreach's marsh differ from the country they sit in — and it
+    /// replaces <see cref="Tint"/>, which could only ever apply a flat wash and had to be faded at
+    /// the cell edge to stop it drawing the lattice back on the ground. Leave null to inherit.
+    /// </summary>
+    [Export] public WorldBiomeProfileResource? Biome { get; set; }
+
+    /// <summary>⚠️ Legacy flat wash. Prefer <see cref="Biome"/>; see its remark.</summary>
     [Export] public Color Tint { get; set; } = Colors.White;
     [Export(PropertyHint.Range, "0,1,0.05")] public float TintStrength { get; set; }
 
@@ -47,4 +56,11 @@ public partial class WorldCellPresentationResource : Resource
 
     /// <summary>Authored plazas, work yards, building pads, pit floors and landmark clearings.</summary>
     [Export] public Godot.Collections.Array<WorldGroundAreaResource> GroundAreas { get; set; } = new();
+
+    /// <summary>
+    /// Standing water on this cell. ⚠️ Declaring it here is what puts it under
+    /// <see cref="WorldWater"/>'s non-swimming safety contract — a water surface authored as a mesh
+    /// in the .tscn is invisible to every system that has to keep the player out of it.
+    /// </summary>
+    [Export] public Godot.Collections.Array<WorldWaterResource> Water { get; set; } = new();
 }

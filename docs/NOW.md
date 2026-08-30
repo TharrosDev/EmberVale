@@ -33,33 +33,66 @@
 | Town → market | 56 m | 95 m | 
 | Town square → arena | 150 m | **285 m**, through the gate, the wilds and an empty frontier |
 
+- **The world-quality pass (2026-08-30) CLOSED - out of band, maintainer-directed, and not a
+  roadmap phase.** The geography overhaul gave the realm real shape; this one made it look, feel and
+  validate like it. **Terrain materials, region atmosphere, water, off-route safety and the region
+  authoring framework are the five things it added**, and the last of those is the point: a future
+  region now starts from `tools/region_spec_template.py`, and one command,
+  `python tools/world_quality_check.py <region>`, says whether it is healthy.
+
+### What the quality pass actually changed
+
+| | Was | Is |
+| --- | --- | --- |
+| Terrain surface | 3 flat colours lerped by one octave of noise | **six semantic layers** - ground, sparse, rock by slope, cap by height, road, shore - from `data/terrain_layers/` grouped by `data/biomes/`: **20 substances, 10 biomes, still zero texture files** |
+| Landform shape | exact ellipses and swept capsules | boundaries warped by `Irregularity` (0.26 on natural forms, 0 on anything levelling) |
+| Distant landscape | 26 grey cylinder-cones on a circle | a **picture frame of real terrain** that samples the region field, so the horizon is the same surface continued |
+| HLOD proxies | five-sided cones and unit cubes, visibly black crates at 92 m | the **same mesh** at 1/N density |
+| Scatter | uniform over anything, including 60-degree faces | `MaxSlope`, `HeightRange`, `Clumping`, `Saturation`; instances lean with the ground |
+| Water | 6 translucent `BoxMesh` planes, invisible to every system | **declared `WorldWaterResource` data**: shoreline taken from the terrain, and covered by `WorldWater`'s non-swimming recovery contract |
+| Region light | one warm sun and one ash haze for every realm | `SunTint`/`SunEnergyScale`/`HazeColor`/`HazeScale` per region. **Frostfang reads alpine because its LIGHT is cold**, which no palette change could do |
+| Off-route QA | nothing looked anywhere but the roads | `WorldTraversalAnalysis` sweeps the lattice as a **directed** graph and fails a build on ground you can walk into and not out of |
+| The gates | eleven commands in two languages | **one**: `python tools/world_quality_check.py` |
+| A new region | copy Ember Crown's spec and edit coordinates | `tools/region_spec_template.py`, which self-checks and is gated |
+
 Read [`docs/WORLD_AUTHORING.md`](WORLD_AUTHORING.md) before touching a cell. `data/regions/*.tres`
 is **generated** — edit `tools/region_spec_<region>.py` and run `python tools/gen_regions.py`.
 
-## Last verified (2026-08-29 — the world-geography overhaul)
+## Last verified (2026-08-30 - the world-quality pass)
+
+`python tools/world_quality_check.py` - **all 16 gates PASS**. Individually:
 
 | Check | Result |
 | --- | --- |
-| Build | `dotnet build Embervale.sln` — 0 warnings, 0 errors |
-| Tests | `dotnet test tests/Embervale.Tests` — **1510 passing** |
-| `--validate` | exit 0; 70 map locations, 26 cells, 1460 locale strings |
-| `--state` | 2 regions, **26 cells**, 63 items, 23 shops, 15 services, 70 map locations; both portals OPEN |
-| Region seams | `check_region_seams.py` — PASS on both regions, every crossing 0.00 m |
-| Cell layout | `check_cell_layout.py` — 0 overlapping structures in all 26 |
-| Route grades | new `--validate` arm walks all authored routes against the heightfield; **22 unwalkable routes found and fixed**, now 0 |
-| Traversal | `world_traversal_probe.gd` — **PASS, 142 authored route segments**, real navmesh + real terrain collision, capsule steps and drops like the player |
-| Step-up | `stepup_probe.gd` — PASS: climbs the 0.45 m Salt Steps terrace, does not climb the bell tower |
-| Map placement | `map_probe.gd` — PASS, 70 markers across 26 cells |
-| Map generator | `gen_map_locations.py --check` — 0 files out of date |
-| Save migration | v1 → v2 exercised on a real `auto1`: migrated, 34 objects restored, player landed at the region spawn, 0 errors |
-| `--play` | all 16 Ember Crown cells streamed; **75 s with zero warnings and zero errors** — no draw-call or frame-time budget breach |
-| World render | `world_shots.gd` — 26 cells, **260 frames**, inspected at eye level before the baseline was regenerated |
-| Mesh census | Ember Crown **2155 → 1292** rendered meshes (−40%) across 5.4× the area; realm 1580 |
+| Build | `dotnet build Embervale.sln` - 0 warnings, 0 errors |
+| Tests | `dotnet test tests/Embervale.Tests` - **1525 passing** (+15: traversal analysis, water, landform irregularity, the scatter terrain gate) |
+| `--validate` | exit 0 - now also walks the whole lattice for off-route traps |
+| `--state` | 2 regions, 26 cells, 70 map locations; both portals OPEN |
+| `--play` | boots, restores `auto1`, streams all 16 Ember Crown cells, 0 errors |
+| Generation | `gen_regions.py --check` - clean |
+| Negative battery | `negative_tests.py` - every rule still fails when broken |
+| Starter template | `region_spec_template.py` - builds, lattice sound |
+| Seams / layout | PASS on both regions |
+| Traversal | `world_traversal_probe.gd` - PASS, 142 route segments. ⚠️ it caught the two dead-end prop clusters this pass added sitting **in** the road corridor; they were moved |
+| Off-route traps | 2 real traps found in Frostfang (the Aerie's north precipice floor, a Glacier Pass crevasse). Both are deep, authored hazards, so `WorldRecovery` owns them and only *shallow* traps fail the build |
+| Step-up / map / mesh census | PASS |
+| World render | `world_shots.gd` - 260 frames, **lit by each region's own atmosphere for the first time**, inspected at eye level before the baseline was regenerated |
 
-⚠️ **The perf overrun NOW.md carried for two revisions is gone.** `--play` on the Ember Crown warned
-`draw calls … > 1800` and `frame ms … > 25` before this work (peaking 3214 / 60 ms) and warns
-nothing now, because the lever that entry named was finally pulled: 1,277 ground-cover `Node3D`s and
-40 road slabs became MultiMesh layers and one terrain draw per cell.
+**Measured cost, same machine (Intel Iris Xe), `world_perf_probe.gd`, median frame time:**
+
+| | Ember Crown before -> after | Frostfang before -> after |
+| --- | --- | --- |
+| Draw calls (mean/cell) | 622 -> **634** | 161 -> **158** |
+| Primitives (mean/cell) | 1.17 M -> **1.05 M** | 214 k -> **219 k** |
+| Frame time (mean/cell) | 17.6 ms -> **14.0 ms** | 13.4 ms -> **11.9 ms** |
+| Frame time (worst cell) | 28.6 ms -> **20.0 ms** | 37.0 ms -> **16.7 ms** |
+| Video memory | 483 MB -> **379 MB** | 413 MB -> **305 MB** |
+| Region build (streamed+settled) | 2.2 s -> **3.4 s** | 0.9 s -> **1.9 s** |
+
+⚠️ **The one regression is region BUILD time, and it is on a loading screen.** It was 5.2 s
+before three fixes: the irregularity warp now early-outs outside a landform's transition band, the
+backdrop samples the real field only within 45 m of the lattice, and the scatter spacing test is
+bucketed rather than O(n-squared). Everything the player sees per frame got cheaper.
 
 ## Live invariants
 
@@ -104,6 +137,23 @@ nothing now, because the lever that entry named was finally pulled: 1,277 ground
     the feature. A world where every thirty metres has a purpose advertises on every step that it was
     designed. Do not fill them in.
 
+15. ⚠️ **DEEP WATER IS NOT A TRAP BECAUSE IT IS DECLARED, NOT BECAUSE IT IS SHALLOW.** There is
+    no swimming. Under 1.1 m the player walks; above it the LAND refuses them with a bank past the
+    45-degree floor limit, never an invisible wall; above 1.9 m `WorldRecovery` puts them back on the
+    last dry ground. A water surface authored as a mesh in a `.tscn` is invisible to all three and is
+    forbidden - declare a `WorldWaterResource` on the cell.
+16. ⚠️ **A SHALLOW HOLE IS A BUG; A DEEP ONE IS A HAZARD.** `--validate` sweeps the whole
+    lattice as a directed graph - walking down and walking up are different edges - and fails on
+    ground the player can WALK into and not climb out of. It deliberately does not fail on the ones
+    they FELL into: those are authored drama and the recovery service owns them.
+17. ⚠️ **A SPECIES DECLARES THE GROUND IT STANDS ON.** `MaxSlope` defaults to 0.7 for a reason:
+    once the world had 60-degree faces in it, a uniform scatter grew trees and boulders sideways out
+    of every cliff in two regions. `Clumping` is the companion rule - even spacing is the most
+    recognisable pattern there is, and the eye finds it long before it finds a repeated model.
+18. ⚠️ **AN HLOD TIER IS A SILHOUETTE CONTRACT.** The proxy is the same mesh at a fraction of
+    the density. Cones and boxes keep the mass and throw away the outline, which is the half that
+    matters at the range they engage - from the town square they read as black crates on a hillside.
+
 ## Commands worth knowing
 
 ```text
@@ -121,6 +171,9 @@ godot --headless --path . --script res://tools/map_probe.gd
 godot --headless --path . --script res://tools/stepup_probe.gd
 godot --headless --path . --script res://tools/cell_mesh_census.gd
 godot --path . --script res://tools/world_shots.gd      # add -- --update-world-baseline AFTER inspecting
+godot --path . --script res://tools/world_perf_probe.gd # draws, primitives, frame time, video memory
+python tools/world_quality_check.py                     # ALL of the above, in order, one verdict
+python tools/region_spec_template.py                    # the new-region starter, self-checking
 ```
 
 `godot`/`python` are not on this shell PATH. The 4.7.1 console executable at

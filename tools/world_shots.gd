@@ -124,7 +124,7 @@ func _render_cell(cell: Array, region: Resource) -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(folder))
 
 	for pass_name in ["day", "dusk"]:
-		_set_pass(pass_name)
+		_set_pass(pass_name, region.get("EnvironmentProfile"))
 		for shot in shots:
 			_camera.global_position = shot[1]
 			_camera.look_at(shot[2], Vector3.UP)
@@ -295,7 +295,15 @@ func _build_light() -> void:
 	root.add_child(_sun)
 
 
-func _set_pass(pass_name: String) -> void:
+## Apply one lighting pass, COLOURED BY THE REGION.
+##
+## ⚠️ THE HARNESS USED TO LIGHT EVERY REGION THE SAME WAY, AND THAT MADE IT LIE ABOUT THE ONE THING
+## it exists for. Two fixed passes with a warm sun and an ash haze meant Frostfang Reach was
+## reviewed and signed off under the Ember Crown's golden hour: its cold bedrock rendered as warm
+## tan sand, its thick air was not in the frame at all, and no amount of palette work in the region
+## spec could show up here. A screenshot gate blind to a region's own atmosphere approves the
+## wrong world.
+func _set_pass(pass_name: String, profile: Resource = null) -> void:
 	if pass_name == "day":
 		_sun.light_energy = 1.35
 		_sun.light_color = Color(1, 0.9, 0.76)
@@ -303,6 +311,9 @@ func _set_pass(pass_name: String) -> void:
 		_sky.sky_horizon_color = Color(0.72, 0.63, 0.50)
 		_environment.ambient_light_energy = 0.65
 		_environment.fog_density = 0.004
+		# ⚠️ Reset per pass. The region blend below is a lerp, so without a fresh base it
+		# compounds every time _set_pass runs and the realm drifts to the haze colour.
+		_environment.fog_light_color = Color(0.52, 0.55, 0.61)
 	else:
 		_sun.light_energy = 0.16
 		_sun.light_color = Color(0.48, 0.52, 0.78)
@@ -310,3 +321,19 @@ func _set_pass(pass_name: String) -> void:
 		_sky.sky_horizon_color = Color(0.22, 0.14, 0.13)
 		_environment.ambient_light_energy = 0.16
 		_environment.fog_density = 0.008
+		_environment.fog_light_color = Color(0.20, 0.21, 0.28)
+
+	if profile == null:
+		return
+	var tint: Color = profile.get("SunTint")
+	_sun.light_color = Color(
+		_sun.light_color.r * tint.r, _sun.light_color.g * tint.g, _sun.light_color.b * tint.b)
+	_sun.light_energy *= float(profile.get("SunEnergyScale"))
+	var haze: Color = profile.get("HazeColor")
+	# Blend toward the region's haze rather than replacing the pass colour, exactly as
+	# SkyController does. Replacing it outright put the Ember Crown's warm ash at full
+	# strength on every frame and turned the whole realm sepia.
+	_environment.fog_light_color = _environment.fog_light_color.lerp(haze, 0.5)
+	_environment.fog_density *= float(profile.get("HazeScale"))
+	# The sky is part of a region's air too: a cold realm under a warm horizon reads as a repaint.
+	_sky.sky_horizon_color = _sky.sky_horizon_color.lerp(haze, 0.4)

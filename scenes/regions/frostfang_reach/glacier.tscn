@@ -53,7 +53,7 @@ navigation_mesh = SubResource("NavMesh_glacier")
 script = ExtResource("5_navbaker")
 
 [node name="Ice" parent="Nav" instance=ExtResource("1_glacier")]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -6, 0, -6)
+transform = Transform3D(0.5863, 0, 0.3385, 0, 0.4736, 0, -0.3866, 0, 0.6696, -6, 0, -6)
 
 [node name="Col" type="StaticBody3D" parent="Nav/Ice"]
 
@@ -62,7 +62,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
 shape = SubResource("Shape_glacier")
 
 [node name="Ice2" parent="Nav" instance=ExtResource("1_glacier")]
-transform = Transform3D(-0.8457, 0, -0.3078, 0, 0.9, 0, 0.3078, 0, -0.8457, 4, 0, 6)
+transform = Transform3D(-0.4617, 0, -0.168, 0, 0.3785, 0, 0.2135, 0, -0.5867, 4, 0, 6)
 
 [node name="Col" type="StaticBody3D" parent="Nav/Ice2"]
 
@@ -74,28 +74,28 @@ shape = SubResource("Shape_glacier")
 ; straight lane (the 2026-08-28 layout rebuild). Read the block at the top of this file before moving one: the route is
 ; the gaps BETWEEN these, not a corridor with these beside it.
 [node name="IceWestN" parent="Nav" instance=ExtResource("1_glacier")]
-transform = Transform3D(0.6718, 0, 0.6718, 0, 1.7, 0, -0.6718, 0, 0.6718, -24, 0, 5)
+transform = Transform3D(0.4295, 0, 0.4295, 0, 0.9895, 0, -0.3141, 0, 0.3141, -24, 0, 5)
 [node name="Col" type="StaticBody3D" parent="Nav/IceWestN"]
 [node name="Shape" type="CollisionShape3D" parent="Nav/IceWestN/Col"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
 shape = SubResource("Shape_glacier")
 
 [node name="IceWestS" parent="Nav" instance=ExtResource("1_glacier")]
-transform = Transform3D(-0.601, 0, -0.601, 0, 1.4, 0, 0.601, 0, -0.601, -17, 0, -14)
+transform = Transform3D(-0.33, 0, -0.33, 0, 0.6865, 0, 0.2499, 0, -0.2499, -17, 0, -14)
 [node name="Col" type="StaticBody3D" parent="Nav/IceWestS"]
 [node name="Shape" type="CollisionShape3D" parent="Nav/IceWestS/Col"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
 shape = SubResource("Shape_glacier")
 
 [node name="IceEastN" parent="Nav" instance=ExtResource("1_glacier")]
-transform = Transform3D(-0.5657, 0, 0.5657, 0, 1.55, 0, -0.5657, 0, -0.5657, 16, 0, 6)
+transform = Transform3D(-0.3612, 0, 0.3612, 0, 0.7971, 0, -0.4071, 0, -0.4071, 16, 0, 6)
 [node name="Col" type="StaticBody3D" parent="Nav/IceEastN"]
 [node name="Shape" type="CollisionShape3D" parent="Nav/IceEastN/Col"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
 shape = SubResource("Shape_glacier")
 
 [node name="IceEastS" parent="Nav" instance=ExtResource("1_glacier")]
-transform = Transform3D(0.6364, 0, -0.6364, 0, 1.8, 0, 0.6364, 0, 0.6364, 24, 0, -5)
+transform = Transform3D(0.4124, 0, -0.4124, 0, 0.9231, 0, 0.2974, 0, 0.2974, 24, 0, -5)
 [node name="Col" type="StaticBody3D" parent="Nav/IceEastS"]
 [node name="Shape" type="CollisionShape3D" parent="Nav/IceEastS/Col"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)

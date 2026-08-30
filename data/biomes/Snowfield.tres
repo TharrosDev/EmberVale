@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="WorldBiomeProfileResource" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldBiomeProfileResource.cs" id="1_biome"]
+[ext_resource type="Resource" path="res://data/terrain_layers/Snow.tres" id="2_snow"]
+[ext_resource type="Resource" path="res://data/terrain_layers/Scree.tres" id="3_scree"]
+[ext_resource type="Resource" path="res://data/terrain_layers/CliffRock.tres" id="4_cliffrock"]
+[ext_resource type="Resource" path="res://data/terrain_layers/RoadStone.tres" id="5_roadstone"]
+[ext_resource type="Resource" path="res://data/terrain_layers/Ice.tres" id="6_ice"]
+
+; ABOVE THE LINE. Snow is the Ground itself and scree shows through where wind has stripped it; the
+; HeightBand is low so the cap re-covers almost everything, and only real faces stay dark. The Rock
+; slot still shows on anything past 0.3 grade, which is what stops a snowfield being a white plane.
+[resource]
+script = ExtResource("1_biome")
+Id = "biome.snowfield"
+Ground = ExtResource("2_snow")
+Sparse = ExtResource("3_scree")
+Rock = ExtResource("4_cliffrock")
+Cap = ExtResource("2_snow")
+Road = ExtResource("5_roadstone")
+Shore = ExtResource("6_ice")
+SlopeBand = Vector2(0.28, 0.7)
+HeightBand = Vector2(4, 16)
+CapSlopeShed = 0.75
+SparseCoverage = 0.38
+MacroScale = 100.0
+MacroStrength = 0.14
+StrataScale = 4.5
+StrataStrength = 0.46

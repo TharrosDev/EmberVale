@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WorldTerrainLayerResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldTerrainLayerResource.cs" id="1_layer"]
+
+; Settled ash - grey-violet, flat, and almost specular-free. ART_STYLE's second layer made literal.
+[resource]
+script = ExtResource("1_layer")
+Id = "terrain.ash"
+Low = Color(0.3, 0.288, 0.29, 1)
+High = Color(0.402, 0.385, 0.392, 1)
+Grain = 3.5
+Breakup = 0.45
+Relief = 0.22
+Roughness = 0.98
+Specular = 0.12

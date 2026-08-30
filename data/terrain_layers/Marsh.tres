@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WorldTerrainLayerResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldTerrainLayerResource.cs" id="1_layer"]
+
+; Sodden fen ground: green-grey, half-wet, never dry.
+[resource]
+script = ExtResource("1_layer")
+Id = "terrain.marsh"
+Low = Color(0.205, 0.222, 0.16, 1)
+High = Color(0.288, 0.3, 0.212, 1)
+Grain = 2.2
+Breakup = 0.6
+Relief = 0.25
+Roughness = 0.7
+Specular = 0.3

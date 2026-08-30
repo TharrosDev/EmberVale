@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="WorldBiomeProfileResource" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldBiomeProfileResource.cs" id="1_biome"]
+[ext_resource type="Resource" path="res://data/terrain_layers/Grass.tres" id="2_grass"]
+[ext_resource type="Resource" path="res://data/terrain_layers/DeadGrass.tres" id="3_deadgrass"]
+[ext_resource type="Resource" path="res://data/terrain_layers/Stone.tres" id="4_stone"]
+[ext_resource type="Resource" path="res://data/terrain_layers/RoadEarth.tres" id="5_roadearth"]
+[ext_resource type="Resource" path="res://data/terrain_layers/WetShore.tres" id="6_wetshore"]
+
+; Grazed and walled ground around a settlement - the market's fields, Ashfall's holding. The one
+; Ember Crown biome whose Ground is living grass rather than soil, which is what makes the inhabited
+; belt read as greener than the wilds without a single extra prop.
+[resource]
+script = ExtResource("1_biome")
+Id = "biome.pasture"
+Ground = ExtResource("2_grass")
+Sparse = ExtResource("3_deadgrass")
+Rock = ExtResource("4_stone")
+Cap = ExtResource("4_stone")
+Road = ExtResource("5_roadearth")
+Shore = ExtResource("6_wetshore")
+SlopeBand = Vector2(0.36, 0.85)
+HeightBand = Vector2(14, 30)
+CapSlopeShed = 0.3
+SparseCoverage = 0.45
+MacroScale = 80.0
+MacroStrength = 0.18
+StrataScale = 3.0
+StrataStrength = 0.36

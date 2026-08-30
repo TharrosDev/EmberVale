@@ -48,4 +48,22 @@ public partial class WorldLandformResource : Resource
 
     /// <summary>0 adds to whatever is there; 1 replaces it (a terrace, a pit floor, a shelf).</summary>
     [Export(PropertyHint.Range, "0,1,0.05")] public float Flatten { get; set; }
+
+    /// <summary>
+    /// How far this landform's own boundary is bent out of shape by noise, as a fraction of its
+    /// extent. 0 is the exact ellipse or swept capsule; 0.25 is a natural hill; 0.45 is a broken,
+    /// lobed ridgeline.
+    ///
+    /// ⚠️ <b>WITHOUT IT EVERY HILL IN THE REALM IS AN ELLIPSE AND EVERY RIDGE IS A CAPSULE, AND FROM
+    /// ANY HEIGHT YOU CAN SEE IT.</b> The mask is a smooth function of a normalised radius, so its
+    /// contours are perfect concentric ellipses — which is exactly right for a terrace or a building
+    /// pad and exactly wrong for a moor. This warps the radius by a deterministic noise field scaled
+    /// to the landform's own size, so the shape keeps its authored place, height and grade while its
+    /// EDGE stops being drawable with a compass.
+    ///
+    /// ⚠️ <b>KEEP IT AT 0 ON ANYTHING LEVELLING (<see cref="Flatten"/> near 1).</b> A pit floor, a
+    /// terrace or a market pad is a made thing and should look made; warping one puts a wobble in the
+    /// edge of a paved surface. The generator's default follows that rule on its own.
+    /// </summary>
+    [Export(PropertyHint.Range, "0,0.6,0.01")] public float Irregularity { get; set; }
 }

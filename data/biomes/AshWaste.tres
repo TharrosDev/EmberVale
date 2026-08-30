@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="WorldBiomeProfileResource" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldBiomeProfileResource.cs" id="1_biome"]
+[ext_resource type="Resource" path="res://data/terrain_layers/Ash.tres" id="2_ash"]
+[ext_resource type="Resource" path="res://data/terrain_layers/BurntSoil.tres" id="3_burntsoil"]
+[ext_resource type="Resource" path="res://data/terrain_layers/CliffRock.tres" id="4_cliffrock"]
+[ext_resource type="Resource" path="res://data/terrain_layers/PackedDirt.tres" id="5_packeddirt"]
+[ext_resource type="Resource" path="res://data/terrain_layers/Mud.tres" id="6_mud"]
+
+; THE ASH ROOST AND ITS CRATER. Ash over char, and ash again on top: whatever the slope, whatever
+; the height, this ground is grey and dead. Specular is near zero on both layers, which is why the
+; crater reads as powder rather than as pale stone.
+[resource]
+script = ExtResource("1_biome")
+Id = "biome.ash_waste"
+Ground = ExtResource("2_ash")
+Sparse = ExtResource("3_burntsoil")
+Rock = ExtResource("4_cliffrock")
+Cap = ExtResource("2_ash")
+Road = ExtResource("5_packeddirt")
+Shore = ExtResource("6_mud")
+SlopeBand = Vector2(0.3, 0.78)
+HeightBand = Vector2(8, 22)
+CapSlopeShed = 0.2
+SparseCoverage = 0.55
+MacroScale = 75.0
+MacroStrength = 0.24
+StrataScale = 3.0
+StrataStrength = 0.42

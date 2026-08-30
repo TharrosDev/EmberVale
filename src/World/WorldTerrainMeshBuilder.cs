@@ -52,7 +52,8 @@ public static class WorldTerrainMeshBuilder
                     form.Shape == 1 ? WorldTerrainMath.LandformShape.Ridge : WorldTerrainMath.LandformShape.Mound,
                     cell.Center.X + form.Center.X, cell.Center.Z + form.Center.Y,
                     cell.Center.X + form.End.X, cell.Center.Z + form.End.Y,
-                    form.Extent.X, form.Extent.Y, form.Rotation, form.Height, form.Falloff, form.Flatten));
+                    form.Extent.X, form.Extent.Y, form.Rotation, form.Height, form.Falloff, form.Flatten,
+                    form.Irregularity));
             }
 
             foreach (WorldPathSegmentResource? path in presentation.Paths)

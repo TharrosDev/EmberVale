@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WorldTerrainLayerResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldTerrainLayerResource.cs" id="1_layer"]
+
+; Churned wet ground. Low roughness is the point: mud is the one dirt that shines.
+[resource]
+script = ExtResource("1_layer")
+Id = "terrain.mud"
+Low = Color(0.15, 0.125, 0.098, 1)
+High = Color(0.215, 0.18, 0.14, 1)
+Grain = 2.6
+Breakup = 0.5
+Relief = 0.3
+Roughness = 0.66
+Specular = 0.36

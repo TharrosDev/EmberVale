@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="WorldBiomeProfileResource" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldBiomeProfileResource.cs" id="1_biome"]
+[ext_resource type="Resource" path="res://data/terrain_layers/Stone.tres" id="2_stone"]
+[ext_resource type="Resource" path="res://data/terrain_layers/AlpineTurf.tres" id="3_alpineturf"]
+[ext_resource type="Resource" path="res://data/terrain_layers/CliffRock.tres" id="4_cliffrock"]
+[ext_resource type="Resource" path="res://data/terrain_layers/Snow.tres" id="5_snow"]
+[ext_resource type="Resource" path="res://data/terrain_layers/RoadStone.tres" id="6_roadstone"]
+[ext_resource type="Resource" path="res://data/terrain_layers/Ice.tres" id="7_ice"]
+
+; FROSTFANG REACH'S DEFAULT, AND THE REASON IT LOOKS LIKE A DIFFERENT COUNTRY. Ground is STONE, not
+; soil - the mountain is bedrock with turf clinging to it, the inverse of the Ember Crown. Cap is
+; snow with a high CapSlopeShed, so the white lies on shelves and benches and slides off every face
+; steeper than a walk: that shed is the single term that makes the massif read as alpine rather than
+; as a brown region painted white.
+[resource]
+script = ExtResource("1_biome")
+Id = "biome.alpine"
+Ground = ExtResource("2_stone")
+Sparse = ExtResource("3_alpineturf")
+Rock = ExtResource("4_cliffrock")
+Cap = ExtResource("5_snow")
+Road = ExtResource("6_roadstone")
+Shore = ExtResource("7_ice")
+SlopeBand = Vector2(0.3, 0.75)
+HeightBand = Vector2(20, 40)
+CapSlopeShed = 0.82
+SparseCoverage = 0.4
+MacroScale = 120.0
+MacroStrength = 0.16
+StrataScale = 4.2
+StrataStrength = 0.52

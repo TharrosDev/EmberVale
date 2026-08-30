@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WorldTerrainLayerResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldTerrainLayerResource.cs" id="1_layer"]
+
+; Turned, root-broken earth. The Ember Crown's default under everything.
+[resource]
+script = ExtResource("1_layer")
+Id = "terrain.soil"
+Low = Color(0.235, 0.19, 0.14, 1)
+High = Color(0.32, 0.262, 0.192, 1)
+Grain = 3.2
+Breakup = 0.55
+Relief = 0.35
+Roughness = 0.95
+Specular = 0.25

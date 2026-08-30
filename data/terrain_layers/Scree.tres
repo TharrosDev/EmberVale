@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WorldTerrainLayerResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldTerrainLayerResource.cs" id="1_layer"]
+
+; Frost-shattered slope debris. The alpine equivalent of gravel.
+[resource]
+script = ExtResource("1_layer")
+Id = "terrain.scree"
+Low = Color(0.33, 0.318, 0.298, 1)
+High = Color(0.462, 0.442, 0.408, 1)
+Grain = 2.6
+Breakup = 0.8
+Relief = 0.62
+Roughness = 0.92
+Specular = 0.3

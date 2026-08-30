@@ -1,6 +1,9 @@
 [gd_scene format=3 uid="uid://cmbrvlfenedge01"]
 
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="1_navbaker"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="2_pillar"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_wall.glb" id="3_ruinwall"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_boulder.glb" id="4_boulder"]
 
 ; THE FEN EDGE — a transitional cell (the 2026-08-29 geography overhaul).
 ;
@@ -14,6 +17,21 @@
 ; Sodden dead ground west of the wharf. A causeway crosses the marsh and stops. No loot, no
 ; encounter marker, no NPC, no map pin.
 ;
+; ⚠️ THE DROWNED MARKER, AND WHY A CELL WITH "NOTHING TO FIND" HAS SIX NODES IN IT NOW.
+;
+; This causeway runs out into the marsh and stops. It stopped at nothing at all, which is a
+; different thing from being empty: a road is a promise, and a strong visible path that leads to
+; literally no acknowledgement teaches the player that following one is not worth the walk. Once
+; they have learned that, every road in the realm is worth less.
+;
+; So the end of the causeway is a PLACE without being a REWARD. Two pillars and a broken wall stand
+; half in the water where something used to be - the far end of a crossing the fen took back - and
+; the ground under them is the one rise on this side, so a player who walks out here is looking back
+; across open water at Hollowreach's wharf and tower. There is no loot, no interactable, no enemy,
+; no map pin and no dialogue. Curiosity is answered with a view and a story, and nothing else.
+;
+; ⚠️ DO NOT ADD A CHEST HERE. The moment a dead end pays out, every dead end has to.
+
 ; ⚠️ DO NOT FILL THIS IN. If a beat wants to happen here, the honest question is whether the realm
 ; needs another beat or whether this stretch is doing its job.
 
@@ -21,6 +39,16 @@
 ; went from 52 m squares on a flat slab to 90-200 m of real terrain, and a 0.25 m voxel over
 ; five times the area is twenty-five times the columns to rasterise — the traversal probe timed
 ; out waiting for the bake. agent_* dims still sit on the voxel grid to avoid precision warnings.
+; ⚠️ prp_ruin_pillar STANDS UP - the 4 m box is the pillar, not a fallen one lying on its side.
+[sub_resource type="BoxShape3D" id="Shape_pillar"]
+size = Vector3(0.8, 4.0, 0.8)
+
+[sub_resource type="BoxShape3D" id="Shape_ruin"]
+size = Vector3(4, 5, 1)
+
+[sub_resource type="SphereShape3D" id="Shape_boulder"]
+radius = 1.3
+
 [sub_resource type="NavigationMesh" id="NavMesh_fen_edge"]
 geometry_parsed_geometry_type = 1
 cell_size = 0.4
@@ -37,3 +65,58 @@ navigation_mesh = SubResource("NavMesh_fen_edge")
 
 [node name="NavBaker" type="Node" parent="Nav"]
 script = ExtResource("1_navbaker")
+
+[node name="MarkerPillarW" type="Node3D" parent="Nav"]
+transform = Transform3D(0.861399, 0.115776, -0.38352, -0.105767, 0.942919, 0.0470903, 0.3864, 0, 0.867868, -15, 0, 11)
+
+[node name="Model" parent="Nav/MarkerPillarW" instance=ExtResource("2_pillar")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/MarkerPillarW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/MarkerPillarW/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
+shape = SubResource("Shape_pillar")
+
+[node name="MarkerPillarE" type="Node3D" parent="Nav"]
+transform = Transform3D(0.378802, -0.162188, 0.743441, 0.0736317, 0.834383, 0.14451, -0.757356, 0, 0.385892, -11.5, 0, 14.5)
+
+[node name="Model" parent="Nav/MarkerPillarE" instance=ExtResource("2_pillar")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/MarkerPillarE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/MarkerPillarE/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
+shape = SubResource("Shape_pillar")
+
+[node name="MarkerWall" type="Node3D" parent="Nav"]
+transform = Transform3D(0.25982, 0.0558052, -0.754572, -0.0181684, 0.798051, 0.0527648, 0.756415, 0, 0.260455, -17.5, 0, 7.5)
+
+[node name="Model" parent="Nav/MarkerWall" instance=ExtResource("3_ruinwall")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/MarkerWall"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/MarkerWall/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("Shape_ruin")
+
+[node name="MarkerStoneA" type="Node3D" parent="Nav"]
+transform = Transform3D(-0.766044, 0, -0.642788, 0, 1, 0, 0.642788, 0, -0.766044, -13, 0, 5.5)
+
+[node name="Model" parent="Nav/MarkerStoneA" instance=ExtResource("4_boulder")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/MarkerStoneA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/MarkerStoneA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_boulder")
+
+[node name="MarkerStoneB" type="Node3D" parent="Nav"]
+transform = Transform3D(0.573406, 0, -0.401504, -0, 0.7, 0, 0.401504, 0, 0.573406, -18.5, 0, 13)
+
+[node name="Model" parent="Nav/MarkerStoneB" instance=ExtResource("4_boulder")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/MarkerStoneB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/MarkerStoneB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_boulder")

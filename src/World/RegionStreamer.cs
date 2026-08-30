@@ -50,6 +50,7 @@ public sealed partial class RegionStreamer : Node3D
     private WorldHeightfield? _heightfield;
     private WorldPerformanceBudgetResource? _streamingBudget;
     private WorldRegionBackdrop? _backdrop;
+    private WorldRecovery? _recovery;
     private WorldPerformanceMonitor? _performance;
     private WorldVisibilityManager? _visibility;
 
@@ -67,6 +68,9 @@ public sealed partial class RegionStreamer : Node3D
         _environmentProfile = region?.EnvironmentProfile;
         _heightfield = region == null ? null : WorldTerrainMeshBuilder.HeightfieldFor(region);
         WorldGround.Set(_heightfield);
+        SkyController.RegionAtmosphere = _environmentProfile;
+        WorldWater.Set(region == null ? null : WorldWater.BodiesFor(region));
+        EnsureRecovery();
         _streamingBudget = region?.PerformanceBudget;
         ClearLoadStages();
         EnsurePerformanceMonitor();
@@ -85,7 +89,7 @@ public sealed partial class RegionStreamer : Node3D
 
         if (_environmentProfile != null)
         {
-            _backdrop = WorldRegionBackdrop.Create(_environmentProfile);
+            _backdrop = WorldRegionBackdrop.Create(_environmentProfile, region, _heightfield!);
             AddChild(_backdrop);
         }
 
@@ -243,6 +247,7 @@ public sealed partial class RegionStreamer : Node3D
             WorldTerrainConform.Apply(root, view, cell.Center);
         }
         WorldCellPresentation.Attach(root, _environmentProfile, cell.Presentation, view, cell.Center);
+        WorldCellWater.Attach(root, cell.Presentation, view, cell.Center);
         WorldBiomeScatter? scatter = WorldBiomeScatter.Attach(
             root, cell.Presentation, cell.BiomeScatter, view, cell.Center);
         AddChild(root);
@@ -287,6 +292,22 @@ public sealed partial class RegionStreamer : Node3D
 
         _performance = new WorldPerformanceMonitor { Name = "WorldPerformanceMonitor" };
         AddChild(_performance);
+    }
+
+    /// <summary>
+    /// ⚠️ ONE PER STREAMER, NOT ONE PER REGION. The recovery contract is realm-wide: a region with
+    /// no water and no pits still wants the node resident, because the player can cross a seam into
+    /// one that has both and the safe point must already be remembered when they do.
+    /// </summary>
+    private void EnsureRecovery()
+    {
+        if (_recovery != null)
+        {
+            return;
+        }
+
+        _recovery = new WorldRecovery { Name = "WorldRecovery" };
+        AddChild(_recovery);
     }
 
     private void EnsureVisibilityManager()

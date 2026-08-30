@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="WorldBiomeProfileResource" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldBiomeProfileResource.cs" id="1_biome"]
+[ext_resource type="Resource" path="res://data/terrain_layers/BurntSoil.tres" id="2_burntsoil"]
+[ext_resource type="Resource" path="res://data/terrain_layers/DeadGrass.tres" id="3_deadgrass"]
+[ext_resource type="Resource" path="res://data/terrain_layers/CliffRock.tres" id="4_cliffrock"]
+[ext_resource type="Resource" path="res://data/terrain_layers/Ash.tres" id="5_ash"]
+[ext_resource type="Resource" path="res://data/terrain_layers/RoadEarth.tres" id="6_roadearth"]
+[ext_resource type="Resource" path="res://data/terrain_layers/Mud.tres" id="7_mud"]
+
+; THE NORTHERN FRONTIER. Char under dead grass, ash collecting on the tops. Cap is ash rather than
+; stone and CapSlopeShed is low, so the grey settles on ridgelines and reads as fallout rather than
+; as altitude - the further north the player walks, the more of the ground is ash.
+[resource]
+script = ExtResource("1_biome")
+Id = "biome.burned_heath"
+Ground = ExtResource("2_burntsoil")
+Sparse = ExtResource("3_deadgrass")
+Rock = ExtResource("4_cliffrock")
+Cap = ExtResource("5_ash")
+Road = ExtResource("6_roadearth")
+Shore = ExtResource("7_mud")
+SlopeBand = Vector2(0.33, 0.8)
+HeightBand = Vector2(9, 24)
+CapSlopeShed = 0.25
+SparseCoverage = 0.48
+MacroScale = 110.0
+MacroStrength = 0.26
+StrataScale = 3.4
+StrataStrength = 0.46

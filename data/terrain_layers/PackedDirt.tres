@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WorldTerrainLayerResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldTerrainLayerResource.cs" id="1_layer"]
+
+; Trodden yard and work-floor: harder and paler than the field beside it.
+[resource]
+script = ExtResource("1_layer")
+Id = "terrain.packed_dirt"
+Low = Color(0.3, 0.258, 0.198, 1)
+High = Color(0.395, 0.345, 0.268, 1)
+Grain = 2.4
+Breakup = 0.45
+Relief = 0.28
+Roughness = 0.9
+Specular = 0.3

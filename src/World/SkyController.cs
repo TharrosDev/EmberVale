@@ -36,7 +36,18 @@ public partial class SkyController : Node3D
     private static readonly Color NoonLight = new(0.92f, 0.86f, 0.76f); // noon sun — muted warm-grey, not white
     private const float NoonSunEnergy = 0.9f;                            // dimmer sun ceiling (was 1.15)
     private const float HazeFloor = 0.006f;                              // air is never perfectly clear
-    private static readonly Color AshFog = new(0.70f, 0.66f, 0.60f);     // ever-present haze tint
+    private static readonly Color AshFog = new(0.70f, 0.66f, 0.60f);     // the default haze tint
+
+    /// <summary>
+    /// The resident region's atmosphere, or null in the sandbox.
+    ///
+    /// ⚠️ <b>A STATIC, LIKE <see cref="WorldGround"/>, AND FOR THE SAME REASON.</b> The sky node is
+    /// built by the bootstrap and the region is chosen by the streamer; neither owns the other, and
+    /// wiring a node reference between them means one more thing to get null on a hard transition.
+    /// <see cref="RegionStreamer.Configure"/> sets this and clears it, and every read falls back to
+    /// the realm defaults above.
+    /// </summary>
+    public static WorldEnvironmentProfileResource? RegionAtmosphere { get; set; }
 
     private WorldClock? _clock;
     private WeatherDirector? _weather;
@@ -89,8 +100,16 @@ public partial class SkyController : Node3D
         Sun.RotationDegrees = new Vector3(pitch, azimuth, 0f);
 
         Sun.Visible = dayFactor > 0.01f;
-        Sun.LightEnergy = Mathf.Lerp(0f, NoonSunEnergy, dayFactor) * _lightScale;
-        Sun.LightColor = WarmLight.Lerp(NoonLight, dayFactor);
+        WorldEnvironmentProfileResource? region = RegionAtmosphere;
+        Sun.LightEnergy = Mathf.Lerp(0f, NoonSunEnergy, dayFactor) * _lightScale *
+                          (region?.SunEnergyScale ?? 1f);
+        Color colour = WarmLight.Lerp(NoonLight, dayFactor);
+        if (region != null)
+        {
+            colour = new Color(
+                colour.R * region.SunTint.R, colour.G * region.SunTint.G, colour.B * region.SunTint.B);
+        }
+        Sun.LightColor = colour;
     }
 
     private void UpdateEnvironment(float time)
@@ -108,12 +127,15 @@ public partial class SkyController : Node3D
         Environment.BackgroundEnergyMultiplier = skyEnergy;
 
         // A dying-world haze floor: the air is never perfectly clear, so even "clear" weather keeps a
-        // faint ashen veil. Weather fog blends above this floor.
-        float density = Mathf.Max(_fogDensity, HazeFloor);
+        // faint veil. Weather fog blends above this floor; the region scales the result.
+        WorldEnvironmentProfileResource? region = RegionAtmosphere;
+        Color haze = region?.HazeColor ?? AshFog;
+        float density = Mathf.Max(_fogDensity, HazeFloor) * (region?.HazeScale ?? 1f);
         Environment.FogEnabled = true;
         Environment.FogDensity = density;
-        // Bias the (weather-blended) fog colour toward ash so the veil reads as dust, not rain-mist.
-        Environment.FogLightColor = _fogColor.Lerp(AshFog, 0.5f);
+        // Bias the (weather-blended) fog colour toward the region's haze so the veil reads as this
+        // realm's air — dust in the Ember Crown, blown snow in Frostfang — rather than as rain-mist.
+        Environment.FogLightColor = _fogColor.Lerp(haze, 0.6f);
     }
 
     // --- Weather blending ---------------------------------------------------

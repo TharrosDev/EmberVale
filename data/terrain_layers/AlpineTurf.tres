@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WorldTerrainLayerResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldTerrainLayerResource.cs" id="1_layer"]
+
+; The thin sheep-bitten turf that survives below the snowline.
+[resource]
+script = ExtResource("1_layer")
+Id = "terrain.alpine_turf"
+Low = Color(0.24, 0.268, 0.198, 1)
+High = Color(0.338, 0.352, 0.262, 1)
+Grain = 2.6
+Breakup = 0.6
+Relief = 0.28
+Roughness = 0.96
+Specular = 0.2

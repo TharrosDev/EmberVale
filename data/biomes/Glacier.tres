@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="WorldBiomeProfileResource" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldBiomeProfileResource.cs" id="1_biome"]
+[ext_resource type="Resource" path="res://data/terrain_layers/Ice.tres" id="2_ice"]
+[ext_resource type="Resource" path="res://data/terrain_layers/Snow.tres" id="3_snow"]
+[ext_resource type="Resource" path="res://data/terrain_layers/CliffRock.tres" id="4_cliffrock"]
+
+; THE PASS. Ice as the ground - roughness 0.28 against the realm's usual 0.9, which is the whole
+; difference and cannot be got from colour. Snow drifts over it as the Sparse layer and again as the
+; Cap; the walls stay bedded rock so the pass reads as a cut through a mountain rather than a trench
+; in a snowdrift.
+[resource]
+script = ExtResource("1_biome")
+Id = "biome.glacier"
+Ground = ExtResource("2_ice")
+Sparse = ExtResource("3_snow")
+Rock = ExtResource("4_cliffrock")
+Cap = ExtResource("3_snow")
+Road = ExtResource("3_snow")
+Shore = ExtResource("2_ice")
+SlopeBand = Vector2(0.32, 0.8)
+HeightBand = Vector2(10, 26)
+CapSlopeShed = 0.7
+SparseCoverage = 0.5
+MacroScale = 85.0
+MacroStrength = 0.15
+StrataScale = 5.0
+StrataStrength = 0.35

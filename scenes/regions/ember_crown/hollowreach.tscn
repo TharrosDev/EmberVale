@@ -95,9 +95,11 @@
 ;                      into both channels.
 ;   x 16..20, z -8     THE BONE TABLE, in a ruin north-east of the street. Nothing points at it.
 ;
-; ⚠️ THE WATER IS SIX VISUAL BOXES AND HAS NO COLLIDER — Lakebed/Water plus the two channel pairs,
-; parented OUTSIDE Nav at y = 0.02 / 0.05 over the same flat floor. The player can walk on it. That
-; was true before this rebuild; it is greybox, not a regression.
+; ⚠️ THE WATER IS NOT IN THIS FILE ANY MORE. It was six translucent BoxMeshes over a flat floor that
+; the player could walk on top of; it is now three WorldWaterResource bodies declared on the cell in
+; tools/region_spec_ember.py, drawn by WorldCellWater with a shoreline taken from the terrain, and
+; covered by WorldWater's non-swimming recovery contract. Do not add a water mesh here: a surface
+; authored in a scene is invisible to the system whose job is keeping the player out of it.
 ;
 ; ⚠️ EVERYTHING STATIC PARENTS TO Nav. Geometry outside the NavigationRegion3D is not carved into the
 ; navmesh. The two fences deliberately do NOT enclose the Hollow — the ruin walls do, and a fence
@@ -116,13 +118,6 @@ agent_radius = 0.5
 agent_max_climb = 0.5
 agent_max_slope = 42.0
 
-[sub_resource type="StandardMaterial3D" id="Mat_water"]
-transparency = 1
-albedo_color = Color(0.08, 0.21, 0.26, 0.84)
-metallic = 0.35
-roughness = 0.08
-
-; The lakebed. See the header: without it the water is grey ground.
 [sub_resource type="StandardMaterial3D" id="Mat_ember"]
 albedo_color = Color(0.62, 0.22, 0.08, 1)
 emission_enabled = true
@@ -225,18 +220,6 @@ height = 1.8
 ; response from those. One authored WorldPathSegmentResource is the road, the shader's colour, the
 ; terrain's levelling AND the scatter's clearance, instead of a slab that had to agree with three
 ; other files by hand.
-[sub_resource type="BoxMesh" id="BoxMesh_channel_n"]
-size = Vector3(46, 0.05, 17)
-
-[sub_resource type="BoxMesh" id="BoxMesh_channel_s"]
-size = Vector3(42, 0.05, 19)
-
-; ⚠️ SIZED TO SIT INSIDE THE CARVED BASIN, NOT OVER IT. The terrain basin is an ellipse and a
-; water box larger than the rectangle inscribed in it puts four corners of open water on dry
-; land — a rectangle of sea, which is the artefact the whole overhaul is about.
-[sub_resource type="BoxMesh" id="BoxMesh_water"]
-size = Vector3(70, 0.05, 92)
-
 [node name="Hollowreach" type="Node3D"]
 
 [node name="Nav" type="NavigationRegion3D" parent="."]
@@ -245,26 +228,6 @@ navigation_mesh = SubResource("NavMesh_hollow")
 [node name="NavBaker" type="Node" parent="Nav"]
 script = ExtResource("1_navbaker")
 
-[node name="ChannelNorth" type="MeshInstance3D" parent="." groups=["terrain_absolute"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0.05, -10)
-mesh = SubResource("BoxMesh_channel_n")
-surface_material_override/0 = SubResource("Mat_water")
-
-[node name="ChannelSouth" type="MeshInstance3D" parent="." groups=["terrain_absolute"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0.05, 13)
-mesh = SubResource("BoxMesh_channel_s")
-surface_material_override/0 = SubResource("Mat_water")
-
-[node name="Water" type="MeshInstance3D" parent="." groups=["terrain_absolute"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -50, 0.05, 0)
-mesh = SubResource("BoxMesh_water")
-surface_material_override/0 = SubResource("Mat_water")
-
-; --- The Wet Hull at her berth ---------------------------------------------------
-; The dock complex IS the shop: Sedge trades out of the hull moored against it, which is why she
-; stands at the shore end of the pier rather than in a building. It reads at a glance as the one
-; structure on the water, and 38K's rule that a merchant needs a place to be standing is answered
-; without a single new model.
 [node name="DockComplex" type="Node3D" parent="Nav"]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -21, 0, 2)
 

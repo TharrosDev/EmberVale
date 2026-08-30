@@ -17,7 +17,6 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="17_brazier"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pine_dead.glb" id="18_pine"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="19_rock"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_glacier.glb" id="20_glacier"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_guild_rep.glb" id="21_npc_chief"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_vendor.glb" id="22_npc_vendor"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_innkeeper.glb" id="23_npc_inn"]
@@ -47,9 +46,12 @@
 ;                    moot hall before it reaches the ring, so the hold is never visible from the pass.
 ;   THE EXILE        (18, 22), his fire at (20, 24) - outside everything, in the south-east, with no
 ;                    road to him. He is not part of the hold and the layout now says so.
-;   ice and rock     four glacier masses and four rock clusters wall the south and the north-east; the
-;                    pines stand outside them. The hold has an inside and an outside for the first
-;                    time.
+;   rock and pine    four rock clusters and the pines wall the south and the north-east. WARNING FOUR
+;                    prp_glacier masses used to stand here too, two of them beside the west road at
+;                    the hold's own entrance, and they were the first thing a player saw on arriving:
+;                    five-metre pale blue slabs of one repeated model, reading as crates. The terrain
+;                    walls the hold now - that is what the ridges either side of it are for - so the
+;                    ice went. Ice belongs in the pass, where it is the subject rather than the wall.
 ;
 ; WARNING THREE SEAMS, AND THEY ARE ARITHMETIC. West (-30, 0) meets the wild dragon roost, east
 ; (30, 0) the ash roost, north (0, -30) the glacier pass. The region spawn at world (100, 1.2, 0) is
@@ -103,9 +105,6 @@ height = 1.6
 [sub_resource type="CylinderShape3D" id="Shape_brazier"]
 radius = 0.5
 height = 1.2
-
-[sub_resource type="BoxShape3D" id="Shape_glacier"]
-size = Vector3(8.43, 4.96, 6.02)
 
 [node name="ClanHoldCell" type="Node3D"]
 
@@ -259,29 +258,6 @@ transform = Transform3D(-0.9848, 0, 0.1736, 0, 1, 0, -0.1736, 0, -0.9848, 22, 0,
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
 shape = SubResource("Shape_rock")
 
-[node name="GlacierW" parent="Nav" instance=ExtResource("20_glacier")]
-transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, -27, 0, 14)
-
-[node name="Col" type="StaticBody3D" parent="Nav/GlacierW"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/GlacierW/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
-shape = SubResource("Shape_glacier")
-
-[node name="GlacierE" parent="Nav" instance=ExtResource("20_glacier")]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 27, 0, -14)
-
-[node name="Col" type="StaticBody3D" parent="Nav/GlacierE"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/GlacierE/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
-shape = SubResource("Shape_glacier")
-
-; --- The 2026-08-28 layout rebuild: fourteen more tents, ice masses, rocks and pines. The hold used to be three buildings
-; --- and three tents on a 3,600 m2 plate, so it read as a diagram of a settlement rather than a place
-; --- with an inside and an outside. These close the moot ring on its south and east, wall the north
-; --- approach from the glacier, and build the beast runs along the western road.
-
 [node name="TentN" type="Node3D" parent="Nav"]
 transform = Transform3D(-0.766, 0, 0.6428, 0, 1.0, 0, -0.6428, 0, -0.766, -20, 0, -6)
 
@@ -325,28 +301,6 @@ transform = Transform3D(0.5, 0, 0.866, 0, 1.0, 0, -0.866, 0, 0.5, -6, 0, 20)
 [node name="Shape" type="CollisionShape3D" parent="Nav/TentRun2/Col"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
 shape = SubResource("Shape_tent")
-
-[node name="GlacierS1" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9659, 0, 0.2588, 0, 1.0, 0, -0.2588, 0, 0.9659, -10, 0, 29)
-
-[node name="Model" parent="Nav/GlacierS1" instance=ExtResource("20_glacier")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/GlacierS1"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/GlacierS1/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.48, 0)
-shape = SubResource("Shape_glacier")
-
-[node name="GlacierNW" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.342, 0, 0.9397, 0, 1.0, 0, -0.9397, 0, -0.342, -25, 0, -24)
-
-[node name="Model" parent="Nav/GlacierNW" instance=ExtResource("20_glacier")]
-
-[node name="Col" type="StaticBody3D" parent="Nav/GlacierNW"]
-
-[node name="Shape" type="CollisionShape3D" parent="Nav/GlacierNW/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.48, 0)
-shape = SubResource("Shape_glacier")
 
 [node name="RockRing1" type="Node3D" parent="Nav"]
 transform = Transform3D(0.866, 0, 0.5, 0, 1.0, 0, -0.5, 0, 0.866, -17, 0, 17)

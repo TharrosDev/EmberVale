@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="WorldBiomeProfileResource" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldBiomeProfileResource.cs" id="1_biome"]
+[ext_resource type="Resource" path="res://data/terrain_layers/Marsh.tres" id="2_marsh"]
+[ext_resource type="Resource" path="res://data/terrain_layers/Mud.tres" id="3_mud"]
+[ext_resource type="Resource" path="res://data/terrain_layers/Stone.tres" id="4_stone"]
+[ext_resource type="Resource" path="res://data/terrain_layers/DeadGrass.tres" id="5_deadgrass"]
+[ext_resource type="Resource" path="res://data/terrain_layers/RoadEarth.tres" id="6_roadearth"]
+[ext_resource type="Resource" path="res://data/terrain_layers/WetShore.tres" id="7_wetshore"]
+
+; HOLLOWREACH, THE FEN AND TARN'S SHORE. Marsh ground over churned mud, and - the part that matters -
+; a real ShoreBand: everything under y = 1.0 goes to the dark, half-specular wet layer and fades out
+; 1.8 m above it. That is the waterline drawn by the TERRAIN rather than by the edge of a water box,
+; which is what lets the water planes be drawn generously larger than the wet ground and bury their
+; own borders in the banks.
+[resource]
+script = ExtResource("1_biome")
+Id = "biome.wetland"
+Ground = ExtResource("2_marsh")
+Sparse = ExtResource("3_mud")
+Rock = ExtResource("4_stone")
+Cap = ExtResource("5_deadgrass")
+Road = ExtResource("6_roadearth")
+Shore = ExtResource("7_wetshore")
+SlopeBand = Vector2(0.38, 0.9)
+HeightBand = Vector2(6, 16)
+CapSlopeShed = 0.25
+SparseCoverage = 0.5
+MacroScale = 60.0
+MacroStrength = 0.24
+ShoreLevel = 1.0
+ShoreBand = 1.8
+StrataScale = 2.4
+StrataStrength = 0.3

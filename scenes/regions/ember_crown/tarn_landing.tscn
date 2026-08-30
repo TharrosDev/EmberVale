@@ -74,10 +74,11 @@
 ;   x -26..-16    THE WEST ARM of the tarn, z -6..26, with the west jetty running out into it.
 ;   x -16..2      THE SOUTH ARM, z 14..26, with the south jetty and the dock complex.
 ;
-; ⚠️ THE WATER IS TWO VISUAL BOXES AND HAS NO COLLIDER, which is the convention this cell already
-; used: Lakebed/Tarn (and now LakebedSouth/TarnSouth) are MeshInstance3Ds parented OUTSIDE Nav at
-; y = 0.02 / 0.05 over the same flat 52 m floor everything else stands on. The player can walk on the
-; tarn. That was true before this rebuild too; it is greybox, not a regression.
+; ⚠️ THE WATER IS NOT IN THIS FILE ANY MORE. Two translucent BoxMeshes hand-sized to sit inside the
+; carved basin became one WorldWaterResource declared on the cell in tools/region_spec_ember.py.
+; WorldCellWater fades it out wherever the ground rises through the waterline, so the coastline is
+; the terrain's own contour, and WorldWater's recovery contract covers anyone who ends up in the
+; deep lobes. Do not add a water mesh here.
 ;
 ; ⚠️ EVERYTHING STATIC PARENTS TO Nav. Geometry outside the NavigationRegion3D is not carved into the
 ; navmesh. The two merchants deliberately do not.
@@ -95,16 +96,6 @@ agent_radius = 0.5
 agent_max_climb = 0.5
 agent_max_slope = 42.0
 
-[sub_resource type="StandardMaterial3D" id="Mat_water"]
-transparency = 1
-albedo_color = Color(0.1, 0.26, 0.3, 0.82)
-metallic = 0.35
-roughness = 0.08
-
-; ⚠️ The first pass had water at alpha 0.62 over the SAME shingle the shore is made of, and at eye
-; level it read as flat grey ground — a transparent surface needs something dark underneath it to be
-; transparent against. This is the lakebed: a near-black skin under the tarn, no collider, so the
-; shallows read as depth and the waterline reads as an edge.
 [sub_resource type="StandardMaterial3D" id="Mat_ember"]
 albedo_color = Color(0.62, 0.22, 0.08, 1)
 emission_enabled = true
@@ -174,14 +165,6 @@ height = 1.8
 ; response from those. One authored WorldPathSegmentResource is the road, the shader's colour, the
 ; terrain's levelling AND the scatter's clearance, instead of a slab that had to agree with three
 ; other files by hand.
-[sub_resource type="BoxMesh" id="BoxMesh_water_south"]
-size = Vector3(18, 0.05, 12)
-
-; ⚠️ SIZED TO SIT INSIDE THE CARVED BASIN. The terrain basin is an ellipse; a water box
-; wider than the rectangle inscribed in it puts corners of open water on dry land.
-[sub_resource type="BoxMesh" id="BoxMesh_water_west"]
-size = Vector3(50, 0.05, 44)
-
 [node name="TarnLanding" type="Node3D"]
 
 [node name="Nav" type="NavigationRegion3D" parent="."]
@@ -190,17 +173,6 @@ navigation_mesh = SubResource("NavMesh_tarn")
 [node name="NavBaker" type="Node" parent="Nav"]
 script = ExtResource("1_navbaker")
 
-[node name="TarnSouth" type="MeshInstance3D" parent="." groups=["terrain_absolute"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0.05, 20)
-mesh = SubResource("BoxMesh_water_south")
-surface_material_override/0 = SubResource("Mat_water")
-
-[node name="Tarn" type="MeshInstance3D" parent="." groups=["terrain_absolute"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0.05, 16)
-mesh = SubResource("BoxMesh_water_west")
-surface_material_override/0 = SubResource("Mat_water")
-
-; --- The water's edge -----------------------------------------------------------
 [node name="DockComplex" type="Node3D" parent="Nav"]
 transform = Transform3D(0.9848, 0, 0.1736, 0, 1, 0, -0.1736, 0, 0.9848, -6, 0, 17)
 

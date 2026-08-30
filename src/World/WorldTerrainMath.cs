@@ -59,15 +59,23 @@ public static class WorldTerrainMath
     /// </summary>
     public readonly record struct Landform(
         LandformShape Shape, float X, float Z, float EndX, float EndZ,
-        float RadiusX, float RadiusZ, float Rotation, float Height, float Falloff, float Flatten)
+        float RadiusX, float RadiusZ, float Rotation, float Height, float Falloff, float Flatten,
+        float Irregularity = 0f)
     {
-        /// <summary>Half-extent of the landform's influence, for cheap per-cell culling.</summary>
+        /// <summary>Half-extent of the authored shape. Also the wavelength <see cref="Irregularity"/>
+        /// bends it at, so a big ridge gets big lobes rather than the same gravel as a knoll.</summary>
         public float Reach => MathF.Max(RadiusX, RadiusZ);
 
-        public float MinX => MathF.Min(X, Shape == LandformShape.Ridge ? EndX : X) - Reach;
-        public float MaxX => MathF.Max(X, Shape == LandformShape.Ridge ? EndX : X) + Reach;
-        public float MinZ => MathF.Min(Z, Shape == LandformShape.Ridge ? EndZ : Z) - Reach;
-        public float MaxZ => MathF.Max(Z, Shape == LandformShape.Ridge ? EndZ : Z) + Reach;
+        /// <summary>⚠️ Culling half-extent, which is <see cref="Reach"/> GROWN BY THE WARP. A warped
+        /// boundary can push past the authored radius, and a cull box drawn at the authored radius
+        /// would clip the landform off at exactly the cells it was reaching into — the one artefact
+        /// the world-space field exists to remove, reintroduced by an optimisation.</summary>
+        public float Influence => Reach * (1f + Math.Clamp(Irregularity, 0f, 0.6f));
+
+        public float MinX => MathF.Min(X, Shape == LandformShape.Ridge ? EndX : X) - Influence;
+        public float MaxX => MathF.Max(X, Shape == LandformShape.Ridge ? EndX : X) + Influence;
+        public float MinZ => MathF.Min(Z, Shape == LandformShape.Ridge ? EndZ : Z) - Influence;
+        public float MaxZ => MathF.Max(Z, Shape == LandformShape.Ridge ? EndZ : Z) + Influence;
     }
 
     /// <summary>The countryside wobble alone: two octaves of world-space value noise, in metres.</summary>
@@ -224,6 +232,38 @@ public static class WorldTerrainMath
             float radiusX = MathF.Max(0.1f, form.RadiusX);
             float radiusZ = MathF.Max(0.1f, form.RadiusZ);
             normalized = MathF.Sqrt(((dx * dx) / (radiusX * radiusX)) + ((dz * dz) / (radiusZ * radiusZ)));
+        }
+
+        // ⚠️ THE EDGE IS BENT HERE, AND ONLY THE EDGE. Warping the normalised radius moves the
+        // landform's boundary without moving its centre, its height or its grade — so a hill stays
+        // exactly as tall and as walkable as it was authored while ceasing to be an ellipse. Two
+        // octaves, at a wavelength derived from the form's OWN size, so a 40 m knoll gets 40 m lobes
+        // and a 90 m ridge gets 90 m ones rather than both getting the same gravel.
+        //
+        // ⚠️ It is deliberately seeded from the form's own position, not from a global seed: a
+        // landform's shape must not change because a neighbouring one was edited, or every
+        // regenerated .tres would move ground the author never touched.
+        float irregularity = Math.Clamp(form.Irregularity, 0f, 0.6f);
+        // ⚠️ THE EARLY-OUT IS NOT AN OPTIMISATION, IT IS THE DIFFERENCE BETWEEN A ONE-SECOND AND A
+        // FOUR-SECOND REGION LOAD. Height() is evaluated something over a hundred thousand times per
+        // cell — render vertices, the collision grid, every conformed prop, every scatter candidate,
+        // every water vertex — and each call walks every landform reaching that cell. Two extra
+        // noise octaves on all of them costs a hundred million samples across the realm. Only the
+        // TRANSITION BAND can change its mask when the boundary moves: deep inside the form the mask
+        // is 1 whatever the warp does, and well outside it is 0. Both are the common case.
+        // ⚠️ The band is widened by 1.6x the irregularity, not 1x. The warp multiplies the radius by
+        // up to (1 +/- 1.085 * irregularity), and PULLING a point in from outside needs more headroom
+        // than pushing one out: 1 / (1 - 1.085 * 0.26) is about 1.39, not 1.26. A band drawn at 1x
+        // would silently clip the outermost lobes of every warped landform in the realm.
+        float band = irregularity * 1.6f;
+        if (irregularity > 0f &&
+            normalized > (1f - falloff) - band && normalized < 1f + band)
+        {
+            int seed = unchecked((int)(form.X * 37f) ^ ((int)(form.Z * 91f) << 8) ^ 0x5F3B);
+            float wavelength = MathF.Max(6f, form.Reach * 0.55f);
+            float warp = (ValueNoise(seed, x / wavelength, z / wavelength) - 0.5f) * 1.55f;
+            warp += (ValueNoise(seed + 613, x / (wavelength * 0.36f), z / (wavelength * 0.36f)) - 0.5f) * 0.62f;
+            normalized *= 1f + (warp * irregularity);
         }
 
         return 1f - SmoothStep(1f - falloff, 1f, normalized);

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WorldTerrainLayerResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldTerrainLayerResource.cs" id="1_layer"]
+
+; The Rock slot of nearly every biome. Coarse grain and high relief because a cliff read at 60 m is silhouette and shadow, not colour.
+[resource]
+script = ExtResource("1_layer")
+Id = "terrain.cliff_rock"
+Low = Color(0.228, 0.216, 0.2, 1)
+High = Color(0.452, 0.43, 0.392, 1)
+Grain = 6.5
+Breakup = 0.75
+Relief = 0.7
+Roughness = 0.84
+Specular = 0.38

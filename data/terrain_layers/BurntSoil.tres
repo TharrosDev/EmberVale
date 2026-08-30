@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WorldTerrainLayerResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldTerrainLayerResource.cs" id="1_layer"]
+
+; Charred ground. Nearly the darkest thing in the realm; it should read as burnt, not as shadow.
+[resource]
+script = ExtResource("1_layer")
+Id = "terrain.burnt_soil"
+Low = Color(0.115, 0.1, 0.098, 1)
+High = Color(0.192, 0.168, 0.158, 1)
+Grain = 2.6
+Breakup = 0.6
+Relief = 0.38
+Roughness = 0.97
+Specular = 0.15

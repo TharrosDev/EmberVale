@@ -323,7 +323,14 @@ godot --headless --path . -- --validate
 The `--` forwards `--validate` as a user argument; `GameBootstrap` detects it
 (`HeadlessValidation`), loads every database, runs `ContentValidator.RunAll()` (cross-
 references + well-formedness + graph reachability), prints the report, and exits **0** on
-pass / **1** on any issue.
+pass / **1** on any issue. ⚠️ **It also now walks the whole region lattice for off-route
+terrain traps** (the 2026-08-30 quality pass) - ground the player can walk into and cannot climb out
+of - so this arm is slower than it used to be and catches a class of defect no file could show.
+
+**The whole world battery, in one command:** `python tools/world_quality_check.py` runs all sixteen
+gates in the order they have to run and prints one verdict; `--fast` skips the in-engine half and
+`--list` shows what it covers without running anything. Reach for it rather than the individual
+commands below whenever the change touched a region.
 
 **Headless content census (no gameplay):** `godot --headless --path . -- --state` prints how many
 regions, cells, items, shops, services, dialogues and quests exist, and every cell with its centre.
@@ -652,6 +659,27 @@ immediately before it usually name the thing that will bite you.
   collider and the navmesh source all come from `WorldHeightfield`; an authored node's Y is a
   clearance above the ground, not a world height. Read `docs/WORLD_AUTHORING.md` before touching a
   cell — the traps there are the ones that cost this overhaul its afternoons.
+- ⚠️ **ONE COMMAND SAYS WHETHER A REGION IS HEALTHY: `python tools/world_quality_check.py`** (the
+  2026-08-30 quality pass). It orchestrates all sixteen world gates in the order they have to run —
+  generation, build, tests, `--validate`, the negative battery, the starter template, seams, layout,
+  map markers, step-up, the mesh census, a real capsule on every route, the screenshot regression and
+  a per-cell performance sample. `--fast` skips the in-engine half. It ORCHESTRATES; every rule lives
+  in the tool that owns it, and adding a check there that is not implemented elsewhere is how two
+  validators start disagreeing.
+- ⚠️ **A NEW REGION STARTS FROM `tools/region_spec_template.py`, NOT FROM A COPY OF THE EMBER
+  CROWN.** Copying the shipped spec drags eight hundred lines of one realm's history along and
+  inherits its cell sizes, noise seed and road widths as though they were physics. The template is a
+  real spec — running it directly builds a four-cell region and checks its lattice — and its numbered
+  comments are the workflow.
+- ⚠️ **THERE ARE NO GROUND TEXTURES AND THERE MUST NOT BE.** The terrain material is six painted
+  layers of noise from `data/terrain_layers/` grouped by `data/biomes/`; `docs/ART_STYLE.md` §4/§6.3
+  forbid photo texturing, and the model set the terrain sits under ships with zero texture images. A
+  CC0 PBR ground pack is the reflex here and it would make the terrain the only photographed thing in
+  a hand-painted world.
+- ⚠️ **DEEP WATER IS DECLARED DATA, NOT A MESH.** `WorldWaterResource` on a cell puts a body under
+  `WorldWater`'s non-swimming recovery contract and lets `WorldCellWater` take its shoreline from the
+  terrain. A translucent plane authored in a `.tscn` is invisible to the system whose whole job is
+  keeping the player out of it — six of them shipped that way, over basins 4.5 m deep.
 - ⚠️ **The `rts` library pack is roughly 1/6 scale** and nothing in the files says so (38M2). Measure
   any candidate against a 1.8 m reference before authoring around it, and adapt through
   `nodes/root_scale` in the `.import` rather than a Blender round-trip.

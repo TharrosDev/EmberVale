@@ -779,8 +779,10 @@ fast-travel land in 25E–25G.
   Keep each cell self-contained (its own static geometry, navmesh, props, spawn markers) at local
   origin (the streamer places the instance at the cell `Center`), positioned within the region's
   `Bounds`. Persistent actors in a cell carry a `PersistentId` so they restore via the
-  `PersistentSpawnDirector` when the cell reloads (25D). `region.ember_crown` is **ten cells** and
-  `region.frostfang_reach` five; every one of the fifteen had its physical layout rebuilt in the 2026-08-28 layout rebuild
+  `PersistentSpawnDirector` when the cell reloads (25D). `region.ember_crown` is **sixteen cells** and
+  `region.frostfang_reach` **ten** (they were ten and five before the 2026-08-29 geography overhaul;
+  eleven of the twenty-six are transitional country with no gameplay beat in them at all). Every one
+  of the original fifteen had its physical layout rebuilt in the 2026-08-28 layout rebuild
   and each now has a distinct spatial identity rather than a shared road-and-plaza formula:
   `town_hub` (the Kingsway, an S-curve the square hangs off rather than a road through it),
   `embermarket` (the Coilyard — a compressed gate, a bent lane, a reveal into an off-centre yard, a
@@ -814,6 +816,58 @@ fast-travel land in 25E–25G.
   **falls back to straight-line steering** when no navmesh is reachable, so the navmesh-less
   procedural sandbox and any cell without a Nav region still work. Bake is async (`bake_finished`);
   until it lands, agents simply straight-line, so there is no hard ordering dependency.
+
+### 2.6h-3 Terrain surface, water and world QA (`src/World`, the 2026-08-30 quality pass)
+
+Everything here reads the one region `WorldHeightfield` described above; none of it is a second
+source of truth about the ground.
+
+- **Terrain material** — `WorldTerrainLayerResource` (`data/terrain_layers/`, 20 of them) is a
+  *substance*: two palette tones, the grain they vary at, contrast, micro-relief and roughness.
+  `WorldBiomeProfileResource` (`data/biomes/`, 10) is a *place*: six semantic slots — `Ground`,
+  `Sparse`, `Rock` (by slope), `Cap` (by height, shed off steep faces), `Road` (from the path mask in
+  vertex red) and `Shore` (below a waterline) — plus the bands that place them. A region names a
+  default; a cell overrides it. `assets/shaders/world/world_surface.gdshader` blends the six.
+  ⚠️ **There are no ground textures and that is `docs/ART_STYLE.md` §4/§6.3, not a shortcut** — the
+  model set this sits under ships with zero texture images, so a PBR ground pack would make the
+  terrain the only photographed thing in a hand-painted world. Consequences worth knowing: there is
+  no tile, so no anti-tiling work and no VRAM; and every frequency in the shader needs a distance
+  fade, because a sub-metre field at a grazing angle aliases into moiré rather than reading as detail.
+- **Landform naturalisation** — `WorldLandformResource.Irregularity` warps a form's *boundary* by a
+  noise field scaled to its own size, keeping its authored place, height and grade. The generator
+  applies it to natural geography and never to anything levelling. ⚠️ It early-outs outside the
+  transition band; without that it is three seconds of region load, because `Height()` runs a hundred
+  thousand times per cell.
+- **Distant landscape** — `WorldRegionBackdrop` is one non-colliding mesh that continues the region
+  field outward into ridged mountains. It replaced 26 cylinder-cones on a circle, which were visible
+  in every wide shot and did not solve the problem they existed for: the terrain still *ended* at the
+  lattice edge.
+- **Water** — `WorldWaterResource` on a cell declares a body; `WorldWater` pools them in world space
+  and owns **Embervale's non-swimming safety contract** (wade under 1.1 m, the land refuses above it,
+  `WorldRecovery` retrieves above 1.9 m); `WorldCellWater` draws the surface as a grid whose
+  per-vertex depth comes from the heightfield, so the shoreline is the terrain's own contour.
+  ⚠️ **A water surface authored as a mesh in a `.tscn` is invisible to the safety system** and is
+  forbidden.
+- **`WorldRecovery`** (one node on the streamer, all regions) — the standing promise that no ground
+  is a dead end: deep water, or a pit whose local flood fill finds no walkable exit, puts the player
+  back on the last dry ground they stood on. It recovers; it does not kill.
+- **`WorldTraversalAnalysis`** — engine-free. Sweeps a region's lattice on a 3 m grid as a
+  **directed** graph (descending within a survivable fall is a different edge from climbing within
+  the 0.7 grade) and reports ground the player can reach and cannot leave. `--validate` fails only on
+  *shallow* traps; a deep one is authored drama that `WorldRecovery` owns.
+- **Scatter placement** — `BiomeScatterLayerResource` gained `MaxSlope`, `HeightRange`, `Clumping`
+  and `Saturation`, and the HLOD proxy tier is now the source mesh at a fraction of the density
+  rather than a cone or a box. `WorldScatterPlanner`'s spacing test is bucketed, and its test order
+  is a performance decision: the O(accepted) one goes last.
+- **Region atmosphere** — `WorldEnvironmentProfileResource.SunTint`/`SunEnergyScale`/`HazeColor`/
+  `HazeScale`, applied by `SkyController` on top of the day/night and weather curves.
+  ⚠️ **Palette alone cannot make a region look like a different place**: neutral-grey bedrock under a
+  golden-hour sun *is* warm tan sand, which is what the Clan Hold rendered as while every colour in
+  its spec was cold.
+- **Tools** — `tools/world_quality_check.py` orchestrates all sixteen gates;
+  `tools/world_perf_probe.gd` measures draw calls, primitives, median frame time and video memory per
+  cell; `tools/region_spec_template.py` is the self-checking starter for a new region.
+  `docs/WORLD_AUTHORING.md` is the authority.
 
 ### 2.6i Crafting (`src/Crafting`)
 

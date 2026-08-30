@@ -112,6 +112,39 @@ public sealed class WorldHeightfield
     }
 
     /// <summary>
+    /// The local grade at one point, as rise over run — the same measure the route validator, the
+    /// traversal probe and the terrain shader's rock band all use, so "0.7" means one thing realm-wide.
+    /// </summary>
+    public float SlopeAt(float worldX, float worldZ, float step = 1f) =>
+        SlopeAt(worldX, worldZ, Height(worldX, worldZ), step);
+
+    /// <summary>The same, when the caller already has the height here. The scatter planner asks for
+    /// both on every candidate placement and there can be a third of a million of those in a region,
+    /// so re-sampling the centre is a measurable share of a cell's load.</summary>
+    public float SlopeAt(float worldX, float worldZ, float here, float step = 1f)
+    {
+        step = MathF.Max(0.1f, step);
+        float dx = (Height(worldX + step, worldZ) - here) / step;
+        float dz = (Height(worldX, worldZ + step) - here) / step;
+        return MathF.Sqrt((dx * dx) + (dz * dz));
+    }
+
+    /// <summary>The upward surface normal at a point, for standing a prop on the ground it is on.</summary>
+    public (float X, float Y, float Z) NormalAt(float worldX, float worldZ, float step = 1f)
+    {
+        step = MathF.Max(0.1f, step);
+        float left = Height(worldX - step, worldZ);
+        float right = Height(worldX + step, worldZ);
+        float back = Height(worldX, worldZ - step);
+        float forward = Height(worldX, worldZ + step);
+        float nx = left - right;
+        float ny = 2f * step;
+        float nz = back - forward;
+        float length = MathF.Sqrt((nx * nx) + (ny * ny) + (nz * nz));
+        return length <= 0f ? (0f, 1f, 0f) : (nx / length, ny / length, nz / length);
+    }
+
+    /// <summary>
     /// The steepest grade, as a slope ratio (rise over run), sampled on a grid across a rectangle.
     /// The traversal probes and <c>--validate</c> use it to catch terrain a player or an NPC cannot
     /// walk without anyone having to look at it: 1.0 is 45°, which is the engine's floor limit.

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WorldTerrainLayerResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldTerrainLayerResource.cs" id="1_layer"]
+
+; The upland route: stone chippings and frost-heaved gravel rather than earth.
+[resource]
+script = ExtResource("1_layer")
+Id = "terrain.road_stone"
+Low = Color(0.385, 0.378, 0.36, 1)
+High = Color(0.48, 0.47, 0.448, 1)
+Grain = 1.6
+Breakup = 0.45
+Relief = 0.35
+Roughness = 0.84
+Specular = 0.34

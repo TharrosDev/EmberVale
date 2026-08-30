@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WorldTerrainLayerResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldTerrainLayerResource.cs" id="1_layer"]
+
+; Surviving pasture. Dead green (#5c6b4f) territory - never lush; nothing here is.
+[resource]
+script = ExtResource("1_layer")
+Id = "terrain.grass"
+Low = Color(0.215, 0.268, 0.17, 1)
+High = Color(0.32, 0.372, 0.24, 1)
+Grain = 2.8
+Breakup = 0.65
+Relief = 0.3
+Roughness = 0.96
+Specular = 0.2

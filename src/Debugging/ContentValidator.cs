@@ -3750,6 +3750,7 @@ public static class ContentValidator
             // Sampled against the whole region field — a road grades between its endpoints, but a
             // neighbouring landform can still push a hump into the middle of it.
             issues.AddRange(ValidateRouteGrades(region));
+            issues.AddRange(ValidateOffRouteTraversal(region));
 
             if (budget != null && residentAuthoredNodes > budget.MaxResidentAuthoredNodes)
             {
@@ -3824,6 +3825,55 @@ public static class ContentValidator
                                $"{MaxGrade:F2} a walking player can hold");
                 }
             }
+        }
+
+        return issues;
+    }
+
+    /// <summary>
+    /// Sweeps the whole region — not just its roads — for ground the player can walk into and
+    /// cannot walk out of. See <see cref="WorldTraversalAnalysis"/> for the model; this arm only
+    /// decides what is worth failing a build over.
+    ///
+    /// ⚠️ <b>POCKETS ARE NOT REPORTED.</b> Unreachable ground is usually deliberate — the top of a
+    /// cliff, the far side of the corrie wall, the ledges of a roost — and a rule that failed on it
+    /// would teach an author to flatten the world until the validator went quiet.
+    ///
+    /// ⚠️ <b>AND ONLY THE SHALLOW TRAPS FAIL, WHICH IS THE WHOLE JUDGEMENT IN THIS ARM.</b> A deep
+    /// one is a HAZARD the author meant: Glacier Pass's crevasses are ten metres wide and eight deep
+    /// at a 3:1 falloff, the Ancient Aerie's north face drops thirty metres onto a trench floor, and
+    /// both are on the "do not redesign" list because the drama is the point. The player who ends up
+    /// down one FELL, which the world told them was going to happen, and <see cref="WorldRecovery"/>
+    /// is what gets them out. A SHALLOW trap tells the player nothing: they stroll into a dish under
+    /// <see cref="ShallowTrapDrop"/> deep whose rim they cannot re-climb, with no fall and no
+    /// warning, and that is always an accident of two landforms overlapping.
+    /// </summary>
+    private static System.Collections.Generic.List<string> ValidateOffRouteTraversal(RegionResource region)
+    {
+        // Below this rim height a trap is something the player walked into; above it, something they
+        // fell down. See the remark: the two want opposite treatment.
+        const float ShallowTrapDrop = 3f;
+
+        var issues = new System.Collections.Generic.List<string>();
+        WorldHeightfield field = WorldTerrainMeshBuilder.HeightfieldFor(region);
+        WorldTraversalAnalysis.Result result = WorldTraversalAnalysis.Analyse(
+            field,
+            WorldTraversalAnalysis.LatticeOf(region),
+            (region.SpawnPoint.X, region.SpawnPoint.Z),
+            WorldWater.BodiesFor(region));
+
+        foreach (WorldTraversalAnalysis.Patch trap in result.Traps)
+        {
+            if (trap.DeepestDrop >= ShallowTrapDrop)
+            {
+                continue;
+            }
+
+            issues.Add($"region '{region.Id}' has a shallow terrain trap: {trap} — a player can " +
+                       $"WALK into it (its rim is only {trap.DeepestDrop:F1} m) and cannot climb " +
+                       "out. Break the rim with a ramp under a 0.70 grade, declare it as water so " +
+                       "the recovery contract covers it, or deepen the wall past " +
+                       $"{ShallowTrapDrop:F0} m so it reads as a drop the player chose.");
         }
 
         return issues;

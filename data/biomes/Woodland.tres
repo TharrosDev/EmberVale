@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="WorldBiomeProfileResource" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldBiomeProfileResource.cs" id="1_biome"]
+[ext_resource type="Resource" path="res://data/terrain_layers/Soil.tres" id="2_soil"]
+[ext_resource type="Resource" path="res://data/terrain_layers/Moss.tres" id="3_moss"]
+[ext_resource type="Resource" path="res://data/terrain_layers/CliffRock.tres" id="4_cliffrock"]
+[ext_resource type="Resource" path="res://data/terrain_layers/Stone.tres" id="5_stone"]
+[ext_resource type="Resource" path="res://data/terrain_layers/RoadEarth.tres" id="6_roadearth"]
+[ext_resource type="Resource" path="res://data/terrain_layers/WetShore.tres" id="7_wetshore"]
+
+; Under canopy: damp soil going to moss, rock close to the surface. Used where the scatter is dense
+; enough that the ground is read in patches between trunks rather than as open country.
+[resource]
+script = ExtResource("1_biome")
+Id = "biome.woodland"
+Ground = ExtResource("2_soil")
+Sparse = ExtResource("3_moss")
+Rock = ExtResource("4_cliffrock")
+Cap = ExtResource("5_stone")
+Road = ExtResource("6_roadearth")
+Shore = ExtResource("7_wetshore")
+SlopeBand = Vector2(0.32, 0.78)
+HeightBand = Vector2(13, 29)
+CapSlopeShed = 0.4
+SparseCoverage = 0.58
+MacroScale = 70.0
+MacroStrength = 0.22
+StrataScale = 2.6
+StrataStrength = 0.44

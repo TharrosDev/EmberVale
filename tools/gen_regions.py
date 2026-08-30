@@ -46,24 +46,31 @@ LEGACY_REV = "f5bde08"
 
 @dataclass(frozen=True)
 class Mound:
-    """Radial landform. `flat` 0 adds `h`; 1 levels the ground to it."""
+    """Radial landform. `flat` 0 adds `h`; 1 levels the ground to it.
+
+    `irr` bends the boundary out of its ellipse. Leave it None and the generator applies the house
+    rule: NATURAL geography (flat == 0) gets DEFAULT_IRREGULARITY, MADE surfaces (flat > 0.5 - pit
+    floors, terraces, pads) get none, because a made thing should look made.
+    """
     at: tuple[float, float]
     ext: tuple[float, float]
     h: float
     fall: float = 0.7
     flat: float = 0.0
     rot: float = 0.0
+    irr: float | None = None
 
 
 @dataclass(frozen=True)
 class Ridge:
-    """Swept landform: a ridgeline, scarp, embankment, gully or channel."""
+    """Swept landform: a ridgeline, scarp, embankment, gully or channel. See Mound for `irr`."""
     a: tuple[float, float]
     b: tuple[float, float]
     half: float
     h: float
     fall: float = 0.6
     flat: float = 0.0
+    irr: float | None = None
 
 
 @dataclass(frozen=True)
@@ -85,6 +92,19 @@ class Yard:
     elevation: float = 0.0
 
 
+@dataclass(frozen=True)
+class Water:
+    """A declared body of standing water. See WorldWaterResource: the extent may be drawn
+    generously larger than the basin, because the shoreline comes from the terrain."""
+    at: tuple[float, float]
+    ext: tuple[float, float]
+    y: float = 0.05
+    ident: str = "Water"
+    shallow: tuple[float, float, float] = (0.22, 0.34, 0.33)
+    deep: tuple[float, float, float] = (0.05, 0.13, 0.17)
+    opaque: float = 2.2
+
+
 @dataclass
 class Cell:
     key: str                      # short id used for sub-resource names
@@ -104,10 +124,12 @@ class Cell:
     landforms: tuple = ()
     routes: tuple[Route, ...] = ()
     yards: tuple[Yard, ...] = ()
+    waters: tuple[Water, ...] = ()
     legacy_paths: tuple[str, ...] = ()     # sub-resource ids lifted from LEGACY_REV
     legacy_areas: tuple[str, ...] = ()
     area_elevation: dict[str, float] = field(default_factory=dict)
     scatter: str | None = None             # id of a shared scatter profile
+    biome: str | None = None               # data/biomes/<name>.tres, overriding the region default
     new_scene: str | None = None           # body of a transitional cell scene to create
 
     @property
@@ -222,9 +244,48 @@ def color(rgb: tuple[float, float, float]) -> str:
     return f"Color({rgb[0]}, {rgb[1]}, {rgb[2]}, 1)"
 
 
+BIOME_DIR = "res://data/biomes"
+
+# How far a NATURAL landform's boundary is bent out of its ellipse by default. See
+# WorldLandformResource.Irregularity: 0 is a compass-drawn shape, 0.45 is a broken ridgeline. A
+# MADE surface (flat > 0.5) gets none, and any landform may override with irr=.
+DEFAULT_IRREGULARITY = 0.26
+NEWLINE = chr(10)
+
+
+def wire_biomes(header: str, environment: str, cells: list[Cell], default: str) -> tuple[str, str]:
+    """Splice a [ext_resource] line per referenced biome into the header and reference them.
+
+    ⚠️ THE HEADER'S load_steps IS REWRITTEN, NOT HAND-COUNTED. Godot treats load_steps as a hint and
+    survives a wrong one, which is exactly why a hand-maintained count rots silently — the file loads,
+    the editor renumbers it on the next save, and the generated output stops matching --check.
+    """
+    used: dict[str, str] = {}
+    for name in [default] + [c.biome for c in cells if c.biome]:
+        if name and name not in used:
+            used[name] = f"{20 + len(used)}_biome_{name.lower()}"
+
+    lines = header.splitlines()
+    last = max(i for i, line in enumerate(lines) if line.startswith("[ext_resource"))
+    injected = [f'[ext_resource type="Resource" path="{BIOME_DIR}/{n}.tres" id="{i}"]'
+                for n, i in used.items()]
+    lines[last + 1:last + 1] = injected
+    steps = sum(1 for line in lines if line.startswith("[ext_resource")) + 1
+    lines = [re.sub(r"load_steps=\d+", f"load_steps={steps}", line, count=1)
+             if line.startswith("[gd_resource") else line for line in lines]
+
+    marker = 'script = ExtResource("3_environment")'
+    environment = environment.replace(
+        marker,
+        marker + NEWLINE + 'Biome = ExtResource("%s")' % used[default])
+    for cell in cells:
+        cell.biome_ref = used[cell.biome] if cell.biome else None
+    return NEWLINE.join(lines), environment
+
+
 def emit(region_key: str, header: str, cells: list[Cell], seams: list[Seam],
          legacy: dict[str, str], environment: str, budget: str, resource: str,
-         scatter_blocks: str) -> str:
+         scatter_blocks: str, default_biome: str = "TemperateLowland") -> str:
     routed: dict[str, list[Route]] = {c.key: list(c.routes) for c in cells}
     by_key = {c.key: c for c in cells}
     for seam in seams:
@@ -232,6 +293,7 @@ def emit(region_key: str, header: str, cells: list[Cell], seams: list[Seam],
         routed[seam.a].append(Route(seam.reach_a, local(a, seam.at), seam.width, seam.shoulder))
         routed[seam.b].append(Route(local(b, seam.at), seam.reach_b, seam.width, seam.shoulder))
 
+    header, environment = wire_biomes(header, environment, cells, default_biome)
     out: list[str] = [header, ""]
     out.append(environment)
     out.append(budget)
@@ -269,6 +331,10 @@ def emit(region_key: str, header: str, cells: list[Cell], seams: list[Seam],
             out.append(f"Falloff = {form.fall}")
             if form.flat:
                 out.append(f"Flatten = {form.flat}")
+            irregularity = form.irr if form.irr is not None else (
+                0.0 if form.flat > 0.5 else DEFAULT_IRREGULARITY)
+            if irregularity:
+                out.append(f"Irregularity = {irregularity}")
             out.append("")
 
         path_ids: list[str] = []
@@ -309,11 +375,28 @@ def emit(region_key: str, header: str, cells: list[Cell], seams: list[Seam],
             out.append(f"Elevation = {yard.elevation}")
             out.append("")
 
+        water_ids: list[str] = []
+        for i, body in enumerate(cell.waters):
+            wid = f"Water_{cell.key}_{i}"
+            water_ids.append(wid)
+            out.append(f'[sub_resource type="Resource" id="{wid}"]')
+            out.append('script = ExtResource("12_water")')
+            out.append(f'Id = "{body.ident}"')
+            out.append(f"Center = Vector2({body.at[0]}, {body.at[1]})")
+            out.append(f"Extent = Vector2({body.ext[0]}, {body.ext[1]})")
+            out.append(f"SurfaceY = {body.y}")
+            out.append(f"ShallowColor = {color(body.shallow)}")
+            out.append(f"DeepColor = {color(body.deep)}")
+            out.append(f"OpaqueDepth = {body.opaque}")
+            out.append("")
+
         out.append(f'[sub_resource type="Resource" id="Presentation_{cell.key}"]')
         out.append('script = ExtResource("4_presentation")')
         out.append(f"Width = {cell.size[0]}")
         out.append(f"Depth = {cell.size[1]}")
         out.append(f"Seed = {cell.seed}")
+        if getattr(cell, "biome_ref", None):
+            out.append(f'Biome = ExtResource("{cell.biome_ref}")')
         if cell.tint:
             out.append(f"Tint = {color(cell.tint)}")
             out.append(f"TintStrength = {cell.tint_strength}")
@@ -327,6 +410,9 @@ def emit(region_key: str, header: str, cells: list[Cell], seams: list[Seam],
         if area_ids:
             out.append('GroundAreas = Array[ExtResource("7_area")]([' +
                        ", ".join(f'SubResource("{i}")' for i in area_ids) + "])")
+        if water_ids:
+            out.append('Water = Array[ExtResource("12_water")]([' +
+                       ", ".join(f'SubResource("{i}")' for i in water_ids) + "])")
         out.append("")
 
         out.append(f'[sub_resource type="Resource" id="Cell_{cell.key}"]')

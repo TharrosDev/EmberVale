@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WorldTerrainLayerResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldTerrainLayerResource.cs" id="1_layer"]
+
+; Weathered bedrock lying flat - a pavement, a shelf, a summit.
+[resource]
+script = ExtResource("1_layer")
+Id = "terrain.stone"
+Low = Color(0.34, 0.332, 0.31, 1)
+High = Color(0.455, 0.442, 0.412, 1)
+Grain = 4.0
+Breakup = 0.5
+Relief = 0.4
+Roughness = 0.88
+Specular = 0.35

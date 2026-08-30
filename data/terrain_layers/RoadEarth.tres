@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WorldTerrainLayerResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldTerrainLayerResource.cs" id="1_layer"]
+
+; The lowland carriageway. Paler and greyer than the field either side of it, because that is what boots and cartwheels do.
+[resource]
+script = ExtResource("1_layer")
+Id = "terrain.road_earth"
+Low = Color(0.395, 0.34, 0.255, 1)
+High = Color(0.49, 0.428, 0.325, 1)
+Grain = 2.2
+Breakup = 0.4
+Relief = 0.3
+Roughness = 0.86
+Specular = 0.3
