@@ -467,9 +467,11 @@ public partial class PlayerController : EntityComponent
 
         if (Godot.Input.IsActionJustPressed(GameInput.Interact))
         {
-            if (FocusedInteractable is { } focused)
+            if (FocusedInteractable is { } focused && focused.Interact(Entity!))
             {
-                focused.Interact(Entity!);
+                // Published on success alone (see InteractionPerformedEvent): a refused shop, an
+                // unaffordable deed or a pickup into a full pack is not a verb the player performed,
+                // and quest/onboarding progress rides this event.
                 EventBus.Instance?.Publish(new InteractionPerformedEvent(Entity!, focused));
             }
 
@@ -684,8 +686,16 @@ public partial class PlayerController : EntityComponent
 
     public override void _Input(InputEvent @event)
     {
+        // ⚠️ A CINEMATIC LOCK HAS TO STOP MOUSE-LOOK HERE, NOT IN _PhysicsProcess. Movement, guard,
+        // attacks, casting, interaction and dodge are all suspended by the UiState.MenuOpen branch
+        // in _PhysicsProcess — but mouse-look is event-driven and this method never asked. A
+        // cinematic lock (boss intro, prologue) leaves GameState.Playing and the mouse captured, so
+        // the one input the player was supposedly not holding was the one that still worked: they
+        // could spin the camera, and the yaw node they were spinning is the body's.
         if (@event is InputEventMouseMotion motion &&
-            Godot.Input.MouseMode == Godot.Input.MouseModeEnum.Captured)
+            Godot.Input.MouseMode == Godot.Input.MouseModeEnum.Captured &&
+            GameManager.Instance is not { IsPlaying: false } &&
+            !UiState.MenuOpen)
         {
             float multiplier = _settings?.Current.MouseSensitivity ?? 1f;
             bool invertY = _settings?.Current.InvertY ?? false;

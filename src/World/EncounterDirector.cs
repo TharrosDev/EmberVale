@@ -48,18 +48,18 @@ public partial class EncounterDirector : Node3D
     {
         ProcessMode = ProcessModeEnum.Pausable;
         _timer = NextInterval();
-        EventBus.Instance?.Subscribe<RegionTransitionRequestedEvent>(OnRegionTransition);
+        EventBus.Instance?.Subscribe<RegionChangedEvent>(OnRegionTransition);
     }
 
     public override void _ExitTree()
     {
-        EventBus.Instance?.Unsubscribe<RegionTransitionRequestedEvent>(OnRegionTransition);
+        EventBus.Instance?.Unsubscribe<RegionChangedEvent>(OnRegionTransition);
     }
 
     /// <summary>Encounter spawns are parented to the persistent world root, not the streamed cells, so a
     /// region transition would orphan them in the new region. Free them on the boundary; <c>_alive</c>
     /// self-heals through the same <c>TreeExited</c> path each free fires.</summary>
-    private void OnRegionTransition(RegionTransitionRequestedEvent e)
+    private void OnRegionTransition(RegionChangedEvent e)
     {
         foreach (Node3D spawn in _spawns.ToArray())
         {
@@ -127,8 +127,13 @@ public partial class EncounterDirector : Node3D
 
         for (int i = 0; i < count; i++)
         {
+            // Per member, not per band: the jitter moves each one off the validated origin, so each
+            // one is placed on walkable ground of its own. See SpawnPlacement.
             Vector3 jitter = new(GD.Randf() * 2f - 1f, 0f, GD.Randf() * 2f - 1f);
-            SpawnEnemy(encounter.EnemyTemplateId, origin + jitter, encounter.CorruptionChance);
+            SpawnEnemy(
+                encounter.EnemyTemplateId,
+                SpawnPlacement.Resolve(this, origin + jitter),
+                encounter.CorruptionChance);
         }
 
         EventBus.Instance?.Publish(new EncounterTriggeredEvent(encounter.Id, origin, count));

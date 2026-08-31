@@ -36,6 +36,28 @@ public partial class EnemyAIComponent : EntityComponent
     /// pre-34A <c>CastRange</c> default, so an unconverted caster fights exactly as it used to.</summary>
     private const float DefaultCastRange = 14f;
 
+    /// <summary>How far off the navmesh an actor may stand and still be considered navigable. Wide
+    /// enough for the gap between a capsule's feet and the baked surface under a doorway or a ramp,
+    /// narrow enough that an actor genuinely off the mesh (or on a map with nothing baked, which
+    /// answers the origin) reads as off it.</summary>
+    private const float NavAnchorTolerance = 3f;
+
+    /// <summary>How often the navmesh anchor test above is actually run.</summary>
+    private const double NavAnchorInterval = 0.25d;
+
+    /// <summary>How long an actor tries for one patrol point before choosing another.</summary>
+    private const double PatrolGiveUpSeconds = 12d;
+
+    /// <summary>The vertical separation beyond which a walking creature does not engage a target it
+    /// can technically see. Roughly a two-storey drop: far enough that a terrace, a boardwalk or a
+    /// stair landing still reads as the same fight, short enough that a clifftop does not.
+    /// ponytail: a constant rather than a per-profile export — every walking archetype wants the
+    /// same answer, and a field nobody varies is a number the next author tunes to no effect.</summary>
+    private const float VerticalVisionLimit = 8f;
+
+    /// <summary>How far above or below a melee swing reaches. A capsule plus a step.</summary>
+    private const float AttackVerticalReach = 2.5f;
+
     /// <summary>How often a support caster may scan its team for someone to heal. A constant rather
     /// than a profile knob for the same reason <c>CompanionAIComponent.ScanInterval</c> is one: it
     /// paces a cost, it does not express a personality. Short enough that a heal still lands inside
@@ -100,6 +122,13 @@ public partial class EnemyAIComponent : EntityComponent
     private Vector3 _home;
     private Vector3 _lastKnownPos;
     private Vector3 _patrolTarget;
+
+    /// <summary>Seconds spent on the current patrol target. See <see cref="TickPatrol"/>.</summary>
+    private double _patrolElapsed;
+
+    /// <summary>Cached answer to "is this actor on the navmesh", and its countdown.</summary>
+    private bool _navAnchored;
+    private double _navAnchorTimer;
 
     // Guard rhythm (shielded profiles) + this actor's slot in the pack fan-out.
     private double _combatElapsed;
@@ -332,6 +361,18 @@ public partial class EnemyAIComponent : EntityComponent
         if (HorizontalDistance(_body.GlobalPosition, _patrolTarget) < 1f)
         {
             PickPatrolTarget();
+            return;
+        }
+
+        // ⚠️ A PATROL TARGET THAT CANNOT BE REACHED IS A PERMANENT STALL. The point is a random spot
+        // in a disc around home, so it lands inside a building, on a rooftop or off the navmesh
+        // often enough to matter — and the only exit from Patrol used to be arriving at it. With the
+        // straight-line fallback gone (see NextPathPoint) the actor would simply stand there for the
+        // rest of the session. Give up after PatrolGiveUpSeconds of not arriving and pick another.
+        _patrolElapsed += delta;
+        if (_patrolElapsed >= PatrolGiveUpSeconds)
+        {
+            PickPatrolTarget();
         }
     }
 
@@ -455,7 +496,10 @@ public partial class EnemyAIComponent : EntityComponent
             SetGuard(guard);
             // Range here is horizontal, so a flier hovering directly overhead reads as "in reach"
             // and would swing at empty air the whole time it is up (35B).
-            if (!guard && !Airborne)
+            // …and a target on a ledge two metres up is out of reach in exactly the same way, which
+            // the Airborne test alone does not cover: it only asks whether THIS actor is flying.
+            if (!guard && !Airborne &&
+                Mathf.Abs(pos.Y - _body.GlobalPosition.Y) <= AttackVerticalReach)
             {
                 _weapon?.TryAttack();
             }
@@ -723,7 +767,8 @@ public partial class EnemyAIComponent : EntityComponent
         // A silent profile (AlertRadius 0 — the ambusher's default) doesn't give the pack away.
         if (_profile.AlertRadius > 0f)
         {
-            EventBus.Instance?.Publish(new EnemyAlertedEvent(Entity!, pos));
+            EventBus.Instance?.Publish(
+                new EnemyAlertedEvent(Entity!, pos, _profile.AlertRadius, _factionId));
         }
 
         // A coward's answer to being seen is to run, not to fight.
@@ -758,6 +803,18 @@ public partial class EnemyAIComponent : EntityComponent
         if (dist > _profile.VisionRange || dist < 0.001f)
         {
             return dist <= _profile.VisionRange; // standing on the player still counts as seen
+        }
+
+        // ⚠️ RANGE WAS PURELY HORIZONTAL, AND THE WORLD HAS THIRTY-METRE CLIFFS IN IT. A player on
+        // the Ancient Aerie's rim is a couple of metres from the trench floor in plan and thirty
+        // metres up in fact; the line of sight is clear open air, so every creature below engaged,
+        // could not path to them (an unreachable goal), and stood there provoked for the rest of the
+        // session. Anything with a FlightComponent is exempt in both directions: closing the
+        // vertical gap is exactly what it does, whether or not it is off the ground this instant.
+        if (!Airborne && _flight == null &&
+            Mathf.Abs(playerPos.Y - selfPos.Y) > VerticalVisionLimit)
+        {
+            return false;
         }
 
         // Outside the proximity bubble the target must be within the view cone.
@@ -857,8 +914,25 @@ public partial class EnemyAIComponent : EntityComponent
             return;
         }
 
+        // Only the shouter's own kind answers. Without this a goblin's yell put the town guard,
+        // the Ashen and every other faction's actors in earshot onto the player's position.
+        if (!string.Equals(_factionId, e.FactionId, System.StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        // An actor that has no quarrel with the player does not go looking for one because a
+        // neighbour shouted. Provocation is personal; standing is what decides the rest.
+        if (!PlayerIsTarget())
+        {
+            return;
+        }
+
+        // Measured in three dimensions against the SHOUTER's radius. Horizontal distance let a
+        // shout carry up a thirty-metre cliff face, and the listener's own radius is what it uses
+        // when it is the one shouting — see EnemyAlertedEvent.
         if (_state is EnemyState.Idle or EnemyState.Patrol &&
-            HorizontalDistance(_body.GlobalPosition, e.Position) <= _profile.AlertRadius)
+            _body.GlobalPosition.DistanceTo(e.Position) <= e.Radius)
         {
             _lastKnownPos = e.Position;
             EnterState(EnemyState.Investigate);
@@ -871,7 +945,14 @@ public partial class EnemyAIComponent : EntityComponent
     {
         // Steer toward the next navmesh path corner (Phase 27A) when one is available; arrival is
         // judged against the FINAL target, never the corner, so the actor doesn't stop short at bends.
-        Vector3 corner = NextPathPoint(target);
+        if (NextPathPoint(target) is not { } corner)
+        {
+            // Navigation is not usable here yet. Hold rather than walk: the alternative was steering
+            // straight at the goal, which is a line through whatever is between.
+            Stand(delta);
+            return;
+        }
+
         Vector3 toCorner = corner - _body.GlobalPosition;
         toCorner.Y = 0f;
         float cornerDist = toCorner.Length();
@@ -883,12 +964,28 @@ public partial class EnemyAIComponent : EntityComponent
     }
 
     /// <summary>
-    /// The next waypoint to steer toward. With a baked navmesh under the agent this is the next path
-    /// corner around obstacles; with no navmesh (the procedural sandbox) or an unreachable target the
-    /// path query yields nothing, so we fall back to steering straight at the target — the pre-27A
-    /// behaviour. Re-targets the agent only when the goal actually moves, to avoid needless repaths.
+    /// The next waypoint to steer toward, or <c>null</c> when there is no safe one and the actor
+    /// should hold still.
+    ///
+    /// ⚠️ <b>THERE IS NO STRAIGHT-LINE FALLBACK ANY MORE, AND REMOVING IT IS THE POINT.</b> This
+    /// used to return the target itself whenever the path query came back empty — which is the case
+    /// both while a cell's navmesh is still baking (<see cref="World.CellNavBaker"/> defers a frame
+    /// and bakes on a worker) and whenever a goal sits off the mesh. The result was every enemy in a
+    /// freshly streamed cell walking the shortest line to the player: through market stalls, through
+    /// the smithy, through the arena wall. It read as a physics bug and it was a navigation one.
+    ///
+    /// Three answers now, and each is honest about what it knows:
+    /// <list type="bullet">
+    /// <item>No agent at all, or airborne — no navigation was ever intended for this actor (the
+    /// sandbox dummy) or the mesh is the wrong map for it (35B). Steer at the target.</item>
+    /// <item>An agent whose map cannot place the actor — the bake has not landed, or the actor is
+    /// off-mesh. Hold. The next tick asks again and it costs nothing.</item>
+    /// <item>An unreachable goal on a usable mesh — steer to the closest point the mesh does have,
+    /// which is as far as the actor can honestly get, instead of through the wall between.</item>
+    /// </list>
+    /// Re-targets the agent only when the goal actually moves, to avoid needless repaths.
     /// </summary>
-    private Vector3 NextPathPoint(Vector3 target)
+    private Vector3? NextPathPoint(Vector3 target)
     {
         // Airborne, the navmesh is the wrong map: its corners route around ground obstacles this
         // actor is currently flying over. Steer straight (35B).
@@ -897,12 +994,59 @@ public partial class EnemyAIComponent : EntityComponent
             return target;
         }
 
-        if (_agent.TargetPosition.DistanceSquaredTo(target) > 0.01f)
+        Rid map = _agent.GetNavigationMap();
+        if (!map.IsValid)
         {
-            _agent.TargetPosition = target;
+            return null;
         }
 
-        return _agent.IsTargetReachable() ? _agent.GetNextPathPosition() : target;
+        // Is this actor standing on navigable ground at all? An empty map (nothing baked yet)
+        // answers Vector3.Zero, and an off-mesh actor answers somewhere far away; both mean the
+        // path this frame would be a guess.
+        //
+        // Paced rather than asked every frame: MapGetClosestPoint is a server query and this runs
+        // for every moving actor, while the answer only changes when the actor walks off the mesh
+        // or a bake lands. NavAnchorInterval is a fraction of a second, so a stale "yes" costs at
+        // most a few frames of steering the last good corner.
+        Vector3 here = _body.GlobalPosition;
+        _navAnchorTimer -= _frameDelta;
+        if (_navAnchorTimer <= 0d)
+        {
+            _navAnchorTimer = NavAnchorInterval;
+            _navAnchored = NavigationServer3D.MapGetClosestPoint(map, here)
+                .DistanceSquaredTo(here) <= NavAnchorTolerance * NavAnchorTolerance;
+        }
+
+        if (!_navAnchored)
+        {
+            return null;
+        }
+
+        Vector3 goal = target;
+        if (_agent.TargetPosition.DistanceSquaredTo(goal) > 0.01f)
+        {
+            _agent.TargetPosition = goal;
+        }
+
+        if (_agent.IsTargetReachable())
+        {
+            return _agent.GetNextPathPosition();
+        }
+
+        // Unreachable: aim for the nearest place on the mesh that exists. Re-target rather than
+        // returning it directly, so the actor still walks a path to it rather than a line.
+        Vector3 nearest = NavigationServer3D.MapGetClosestPoint(map, goal);
+        if (nearest.DistanceSquaredTo(here) <= 0.04f)
+        {
+            return null; // already as close as the mesh goes
+        }
+
+        if (_agent.TargetPosition.DistanceSquaredTo(nearest) > 0.01f)
+        {
+            _agent.TargetPosition = nearest;
+        }
+
+        return _agent.IsTargetReachable() ? _agent.GetNextPathPosition() : null;
     }
 
     private void Stand(double delta)
@@ -1005,9 +1149,17 @@ public partial class EnemyAIComponent : EntityComponent
 
     private void PickPatrolTarget()
     {
+        _patrolElapsed = 0d;
         float angle = GD.Randf() * Mathf.Tau;
         float radius = Mathf.Sqrt(GD.Randf()) * _profile.PatrolRadius;
-        _patrolTarget = _home + new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius);
+        Vector3 candidate = _home + new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius);
+
+        // Snapped onto walkable ground rather than taken raw. A raw disc point sits inside the
+        // smithy about as often as it sits on the road.
+        Rid map = _agent?.GetNavigationMap() ?? default;
+        _patrolTarget = map.IsValid
+            ? NavigationServer3D.MapGetClosestPoint(map, candidate)
+            : World.WorldGround.OnGround(candidate);
     }
 
     private bool LowHealth()

@@ -107,15 +107,16 @@ public partial class VendorComponent : InteractableComponent
         }
     }
 
-    public override void Interact(IEntity instigator)
+    public override bool Interact(IEntity instigator)
     {
         if (ShopDatabase.Get(ShopId) is not { } shop ||
             !IsInTown(shop) || !WillTrade(shop) || !IsOpenNow(shop))
         {
-            return; // the prompt has already said why
+            return false; // the prompt has already said why
         }
 
         EventBus.Instance?.Publish(new ShopOpenedEvent(instigator, shop));
+        return true;
     }
 
     protected override void OnInitialize()

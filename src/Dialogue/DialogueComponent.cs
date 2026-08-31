@@ -63,21 +63,22 @@ public partial class DialogueComponent : InteractableComponent
         }
     }
 
-    public override void Interact(IEntity instigator)
+    public override bool Interact(IEntity instigator)
     {
         DialogueResource? dialogue = Dialogue;
         if (dialogue == null)
         {
             Log.Warn($"DialogueComponent: unknown dialogue id '{DialogueId}'.");
-            return;
+            return false;
         }
 
         if (Entity == null || !CanTalk())
         {
-            return;
+            return false;
         }
 
         EventBus.Instance?.Publish(new DialogueStartedEvent(instigator, Entity, dialogue));
+        return true;
     }
 
     /// <summary>

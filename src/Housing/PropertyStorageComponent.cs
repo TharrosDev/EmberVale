@@ -63,17 +63,18 @@ public partial class PropertyStorageComponent : InteractableComponent
         }
     }
 
-    public override void Interact(IEntity instigator)
+    public override bool Interact(IEntity instigator)
     {
         if (PropertyDatabase.Get(PropertyId) is not { } property ||
             Evaluate(property) != StorageOutcome.Open ||
             Entity?.GetComponent<InventoryComponent>() is not { } storage)
         {
-            return; // the prompt has already said why
+            return false; // the prompt has already said why
         }
 
         EventBus.Instance?.Publish(
             new StorageOpenedEvent(instigator, storage, Loc.T(property.NameKey)));
+        return true;
     }
 
     private static StorageOutcome Evaluate(PropertyResource? property) => PropertyStorage.Resolve(

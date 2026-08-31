@@ -44,25 +44,25 @@ public partial class ItemPickupComponent : InteractableComponent
         }
     }
 
-    public override void Interact(IEntity instigator)
+    public override bool Interact(IEntity instigator)
     {
         ItemInstance? instance = Resolved;
         if (instance == null)
         {
-            return;
+            return false;
         }
 
         InventoryComponent? inventory = instigator.GetComponent<InventoryComponent>();
         if (inventory == null)
         {
-            return;
+            return false;
         }
 
         int added = inventory.AddInstance(instance, Quantity);
         if (added <= 0)
         {
             Log.Info($"{instigator.DisplayName}'s inventory is full.");
-            return;
+            return false;
         }
 
         EventBus.Instance?.Publish(new ItemPickedUpEvent(instigator, instance.Template, added));
@@ -73,5 +73,7 @@ public partial class ItemPickupComponent : InteractableComponent
         {
             ((Node)Entity.Body).QueueFree();
         }
+
+        return true;
     }
 }

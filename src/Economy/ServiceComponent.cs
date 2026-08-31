@@ -126,21 +126,24 @@ public partial class ServiceComponent : InteractableComponent
         }
     }
 
-    public override void Interact(IEntity instigator)
+    public override bool Interact(IEntity instigator)
     {
         // ⚠️ Re-checked on the press, not trusted from the prompt — the same rule every Phase 37
         // refusal follows. A prompt is a frame old and ownership can change between the two.
         if (NotMine)
         {
-            return;
+            return false;
         }
 
-        if (ServiceDatabase.Get(ServiceId) is { } service)
+        if (ServiceDatabase.Get(ServiceId) is not { } service)
         {
-            // The vault is the host entity's own inventory (38D), which is the one thing a service
-            // needs that only the component standing in the world can supply — see TryUse.
-            TryUse(service, instigator, Entity?.GetComponent<InventoryComponent>());
+            return false;
         }
+
+        // The vault is the host entity's own inventory (38D), which is the one thing a service
+        // needs that only the component standing in the world can supply — see TryUse.
+        // TryUse itself refuses on price, cooldown and stock, so its answer is the interaction's.
+        return TryUse(service, instigator, Entity?.GetComponent<InventoryComponent>());
     }
 
     /// <summary>
@@ -153,12 +156,14 @@ public partial class ServiceComponent : InteractableComponent
     /// invent a vault at runtime, the parameter is nullable, a bank without one logs and does nothing,
     /// and <c>--validate</c> refuses the authoring that would reach it.
     /// </summary>
-    public static void TryUse(ServiceResource service, IEntity instigator, InventoryComponent? vault)
+    /// <returns>True when the service was actually rendered; false on every refusal (not
+    /// granted, no pack, the fee could not be taken). The interaction publishes on that answer.</returns>
+    public static bool TryUse(ServiceResource service, IEntity instigator, InventoryComponent? vault)
     {
         if (Evaluate(service) != ServiceOutcome.Granted ||
             instigator.GetComponent<InventoryComponent>() is not { } pack)
         {
-            return; // the prompt has already said why
+            return false; // the prompt has already said why
         }
 
         // Charged before the verb, and both halves are separate conditions for the reason
@@ -178,7 +183,7 @@ public partial class ServiceComponent : InteractableComponent
             service.Kind is not (ServiceKind.Commission or ServiceKind.Mercenary);
         if (chargedAtTheCounter && price > 0 && !pack.RemoveItem(GameIds.Currency.Gold, price))
         {
-            return; // the gold went somewhere between the prompt and the press; deliver nothing
+            return false; // the gold went somewhere between the prompt and the press; deliver nothing
         }
 
         switch (service.Kind)
@@ -232,6 +237,8 @@ public partial class ServiceComponent : InteractableComponent
         Log.Info(chargedAtTheCounter
             ? $"Service '{service.Id}' used for {price} gold."
             : $"Service '{service.Id}' opened at {price} gold a piece.");
+
+        return true;
     }
 
     // --- the four verbs -----------------------------------------------------

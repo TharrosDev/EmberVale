@@ -48,11 +48,11 @@ public partial class ContainerLootComponent : InteractableComponent, ISaveable
         SaveManager.Instance?.Unregister(this);
     }
 
-    public override void Interact(IEntity instigator)
+    public override bool Interact(IEntity instigator)
     {
         if (Entity?.Body is not Node3D body || body.GetParent() is not { } parent)
         {
-            return;
+            return false;
         }
 
         Vector3 origin = body.GlobalPosition;
@@ -89,6 +89,10 @@ public partial class ContainerLootComponent : InteractableComponent, ISaveable
             RollLegendaries(parent, origin, ref index);
             SwapToOpenVisual();
         }
+
+        // Something came out, or the lid came off for the first time. An already-empty, already-open
+        // container is a press against a prop and advances nothing.
+        return index > 0;
     }
 
     private void RollLegendaries(Node parent, Vector3 origin, ref int index)

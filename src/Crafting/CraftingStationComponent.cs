@@ -20,14 +20,15 @@ public partial class CraftingStationComponent : InteractableComponent
 
     public override string Prompt => $"Use {StationName}";
 
-    public override void Interact(IEntity instigator)
+    public override bool Interact(IEntity instigator)
     {
         // Only actors that can craft open the station.
         if (instigator.GetComponent<CraftingComponent>() == null)
         {
-            return;
+            return false;
         }
 
         EventBus.Instance?.Publish(new CraftingStationOpenedEvent(instigator, Station, StationName));
+        return true;
     }
 }

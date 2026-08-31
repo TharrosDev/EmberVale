@@ -72,17 +72,18 @@ public partial class TrophyStandComponent : InteractableComponent
         }
     }
 
-    public override void Interact(IEntity instigator)
+    public override bool Interact(IEntity instigator)
     {
         if (PropertyDatabase.Get(ResolvedPropertyId) is not { } property ||
             Evaluate(property) != TrophyOutcome.Open ||
             Entity?.GetComponent<InventoryComponent>() is not { } slot)
         {
-            return; // the prompt has already said why
+            return false; // the prompt has already said why
         }
 
         EventBus.Instance?.Publish(new StorageOpenedEvent(
             instigator, slot, Loc.T("trophy.stand_name"), TrophyDisplay.MinimumRarity));
+        return true;
     }
 
     protected override void OnInitialize()

@@ -5,7 +5,14 @@ namespace Embervale.Interaction;
 /// <summary>Raised when an actor actually uses an interactable — a door opened, an NPC talked to, a
 /// pickup taken. Published by the player controller at the moment the interaction fires, so systems
 /// that care whether the verb was <em>performed</em> (onboarding, analytics) don't have to guess
-/// from a keypress that may have hit nothing.</summary>
+/// from a keypress that may have hit nothing.
+///
+/// ⚠️ <b>PERFORMED MEANS IT SUCCEEDED.</b> It used to mean "the player pressed E while looking at
+/// something", because <see cref="InteractableComponent.Interact"/> returned <c>void</c> and the
+/// controller published unconditionally. Every refusal in the game — a shop that is shut, a deed
+/// the player cannot afford, a tome behind a story flag, a pickup into a full pack — therefore
+/// advanced an <c>Interact</c> quest objective and taught the tutorial that the verb had been
+/// learned. <see cref="InteractableComponent.Interact"/> now reports whether it did anything.</summary>
 public readonly record struct InteractionPerformedEvent(
     Embervale.Entities.IEntity Instigator, InteractableComponent Target) : Embervale.Core.Events.IGameEvent;
 
@@ -38,5 +45,8 @@ public abstract partial class InteractableComponent : EntityComponent
     public abstract string Prompt { get; }
 
     /// <summary>Performs the interaction on behalf of <paramref name="instigator"/>.</summary>
-    public abstract void Interact(IEntity instigator);
+    /// <summary>Perform the interaction. <b>Returns true only when it actually did something</b> —
+    /// every refusal path returns false, and the caller publishes
+    /// <see cref="InteractionPerformedEvent"/> on true alone.</summary>
+    public abstract bool Interact(IEntity instigator);
 }

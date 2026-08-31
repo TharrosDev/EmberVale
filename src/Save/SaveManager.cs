@@ -524,6 +524,7 @@ public sealed partial class SaveManager : Node
 
         var objects = objectsVariant.AsGodotDictionary();
         int restored = 0;
+        int reset = 0;
         int failures = 0;
         var claimed = new HashSet<string>();
         var deferred = new HashSet<string>();
@@ -547,7 +548,33 @@ public sealed partial class SaveManager : Node
 
                 if (!objects.TryGetValue(id, out Variant state) || state.VariantType != Variant.Type.Dictionary)
                 {
-                    Log.Warn($"Save slot '{slot}' has no usable entry for '{id}'; it keeps its current state.");
+                    // ⚠️ A MISSING ENTRY IS A RESET, NOT A SKIP. Leaving the saveable "at its current
+                    // state" is only harmless when a load builds a fresh world — and a quickload does
+                    // not: every live actor and component survives it. So loading a save written
+                    // BEFORE a system existed (or before its SaveId was assigned) carried that
+                    // system's state over from the timeline the player just abandoned: a companion
+                    // still in the party, a shop still emptied, a shock still running, a holding
+                    // still claimed. Nothing about the symptom points at the save.
+                    //
+                    // The reset is Load() with an empty document, which needs no new interface
+                    // method and no per-component work: ISaveable.Load is already contractually
+                    // required to REPLACE state rather than merge over it (CLAUDE.md §7), so an
+                    // empty document is exactly "restore nothing" for every correct implementation.
+                    // An implementation that throws on it is one that does not honour that contract,
+                    // which is worth a warning of its own.
+                    claimed.Add(id);
+                    try
+                    {
+                        saveable.Load(new Godot.Collections.Dictionary());
+                        reset++;
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error($"Saveable '{id}' has no entry in slot '{slot}' and threw while " +
+                                  $"being reset to empty; it may keep state from the abandoned " +
+                                  $"timeline. Its Load() must tolerate an empty document: {ex}");
+                    }
+
                     continue;
                 }
 
@@ -584,7 +611,9 @@ public sealed partial class SaveManager : Node
             _activeDeferred = null;
         }
 
-        Log.Info($"Loaded slot '{slot}'; restored {restored} object(s)" + (failures > 0 ? $" ({failures} failed)." : "."));
+        Log.Info($"Loaded slot '{slot}'; restored {restored} object(s)" +
+                 (reset > 0 ? $", reset {reset} the save did not carry" : string.Empty) +
+                 (failures > 0 ? $" ({failures} failed)." : "."));
 
         // ⚠️ A PARTIAL RESTORE IS A FAILED LOAD, NOT A LOAD. Each saveable's exception is caught so
         // one bad entry cannot abort the other thirty-three, but this used to then return true and

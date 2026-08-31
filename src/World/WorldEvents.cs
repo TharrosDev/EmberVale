@@ -43,6 +43,19 @@ public readonly record struct LocationDiscoveredEvent(MapLocationResource Locati
 /// spawn, and shows the loading screen for the transition.</summary>
 public readonly record struct RegionTransitionRequestedEvent(string RegionId) : IGameEvent;
 
+/// <summary>
+/// Raised once the active region has <b>actually</b> changed — after the streamer has been
+/// re-targeted and the player moved, from <c>GameBootstrap.PerformRegionLoad</c>.
+///
+/// ⚠️ <b>IT EXISTS BECAUSE FOUR SYSTEMS WERE TREATING THE REQUEST AS THE EVENT.</b>
+/// <see cref="RegionTransitionRequestedEvent"/> is a request and the bootstrap refuses several of
+/// them: an unknown region, a destination the player is already in, and — the one that bites — a
+/// toll they cannot pay. Every subscriber ran anyway. Walking up to the Crossway gate without the
+/// fee despawned every encounter in the region, failed the world event in progress and, once the
+/// Iron King was down, marked the vertical slice complete, all without the player going anywhere.
+/// </summary>
+public readonly record struct RegionChangedEvent(string FromRegionId, string RegionId) : IGameEvent;
+
 /// <summary>Raised from the map screen (or the <c>travel goto</c> dev command) to fast-travel to a
 /// discovered <see cref="FastTravelService"/> node (Phase 25G). The bootstrap reuses the 25C hard-load
 /// path, landing the player at the node's position within its region.</summary>

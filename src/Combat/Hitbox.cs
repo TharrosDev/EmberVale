@@ -18,9 +18,19 @@ public partial class Hitbox : Area3D
     // Keyed on the owning entity, not the hurtbox — a multi-zone body (35A) is still one target.
     private readonly HitDedupe _alreadyHit = new();
     private IEntity? _ownerEntity;
-    private int _ownerTeam;
+
+    /// <summary>The owner's combat brain, resolved once. ⚠️ ITS <c>Team</c> IS READ LIVE, NOT
+    /// CACHED. The team used to be copied into a field in <see cref="_Ready"/>, which is wrong twice:
+    /// a hitbox added to a body before its <see cref="CombatComponent"/> resolved no component at all
+    /// and defaulted to team 0 — the player's — so that actor could never hit the player and could
+    /// hit its own allies; and an actor whose team legitimately changes (a companion recruited out of
+    /// a hostile faction) kept swinging with the team it was built with.</summary>
+    private CombatComponent? _ownerCombat;
     private DamagePacket _packet;
     private bool _active;
+
+    /// <summary>Which side this hitbox swings for, asked fresh each time.</summary>
+    private int OwnerTeam => (_ownerCombat ??= _ownerEntity?.GetComponent<CombatComponent>())?.Team ?? 0;
 
     public override void _Ready()
     {
@@ -35,7 +45,6 @@ public partial class Hitbox : Area3D
         SetPhysicsProcess(false);
 
         _ownerEntity = EntityNode.FindOwner(this);
-        _ownerTeam = _ownerEntity?.GetComponent<CombatComponent>()?.Team ?? 0;
     }
 
     /// <summary>Opens the damage window with the given packet, clearing prior hits.</summary>
@@ -78,7 +87,7 @@ public partial class Hitbox : Area3D
             }
 
             // Skip allies on the same team (friendly fire off).
-            if (hurtbox.Combat != null && hurtbox.Combat.Team == _ownerTeam)
+            if (hurtbox.Combat != null && hurtbox.Combat.Team == OwnerTeam)
             {
                 continue;
             }

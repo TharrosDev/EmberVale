@@ -1,4 +1,5 @@
 using Embervale.Combat;
+using Embervale.Core.Diagnostics;
 using Embervale.Entities;
 using Godot;
 
@@ -13,6 +14,17 @@ namespace Embervale.Magic;
 /// </summary>
 public static class SpellResolver
 {
+    /// <summary>
+    /// Most hurtboxes one burst will examine.
+    ///
+    /// ⚠️ <b>IT IS A HURTBOX CAP, NOT AN ACTOR CAP, AND IT USED TO BE SILENT.</b> A 35A multi-zone
+    /// body spends four of these on its own, so 32 was closer to eight actors than to thirty-two —
+    /// and when a blast saturated it, the overflow was simply not hit, with no trace anywhere and no
+    /// rule about which ones survived (the physics server's order is arbitrary). Raised, and
+    /// <see cref="Resolve"/> now says so when it fills.
+    /// </summary>
+    private const int MaxHurtboxesPerBurst = 64;
+
     /// <summary>Delivers a single-target hit (damage + school identity + status) to one hurtbox.</summary>
     public static void HitOne(
         Node3D context, Hurtbox hurtbox, DamagePacket packet, SpellResource spell, IEntity? caster, int casterTeam)
@@ -85,7 +97,14 @@ public static class SpellResolver
             CollisionMask = CombatLayers.Hurtbox,
         };
 
-        Godot.Collections.Array<Godot.Collections.Dictionary> hits = space.IntersectShape(query, 32);
+        Godot.Collections.Array<Godot.Collections.Dictionary> hits =
+            space.IntersectShape(query, MaxHurtboxesPerBurst);
+        if (hits.Count >= MaxHurtboxesPerBurst)
+        {
+            Log.Warn($"Spell '{spell.Id}' filled its {MaxHurtboxesPerBurst}-hurtbox burst budget at " +
+                     $"{center}; targets beyond it were not hit.");
+        }
+
         // Per-actor, not per-hurtbox: a blast clipping three zones of one dragon is still one hit (35A).
         var struck = new HitDedupe();
         foreach (Godot.Collections.Dictionary hit in hits)
@@ -104,8 +123,22 @@ public static class SpellResolver
                 continue;
             }
 
-            if (!IsHostileTarget(hurtbox, caster, casterTeam) ||
-                !struck.TryHit(hurtbox.OwnerEntity, hurtbox))
+            if (!IsHostileTarget(hurtbox, caster, casterTeam))
+            {
+                continue;
+            }
+
+            // ⚠️ A BLAST DOES NOT GO THROUGH WALLS. The query is a sphere on the hurtbox layer and
+            // nothing else, so a fireball bursting against one face of the smithy damaged everyone
+            // standing on the other side of it — and the cone version reached through the arena wall
+            // for its whole length. Tested before the dedupe, so a zone hidden behind cover cannot
+            // spend the actor's one hit and shadow a zone that is exposed.
+            if (IsOccluded(space, center, VolumeCentre(hurtbox)))
+            {
+                continue;
+            }
+
+            if (!struck.TryHit(hurtbox.OwnerEntity, hurtbox))
             {
                 continue;
             }
@@ -115,6 +148,26 @@ public static class SpellResolver
             SpellCombo.OnHit(spell, caster, hurtbox);
             ApplyStatus(hurtbox.OwnerEntity, spell, caster);
         }
+    }
+
+    /// <summary>
+    /// Is there solid world geometry between the blast's centre and a target?
+    ///
+    /// World layer only: an actor's own body never shields another (a crowd is not cover), and the
+    /// ray does not report a shape it starts inside, so a burst that detonated against a wall is not
+    /// blocked by that same wall.
+    /// </summary>
+    private static bool IsOccluded(PhysicsDirectSpaceState3D space, Vector3 center, Vector3 target)
+    {
+        if (center.DistanceSquaredTo(target) < 0.0001f)
+        {
+            return false;
+        }
+
+        PhysicsRayQueryParameters3D ray =
+            PhysicsRayQueryParameters3D.Create(center, target, CombatLayers.World);
+        ray.CollideWithAreas = false;
+        return space.IntersectRay(ray).Count > 0;
     }
 
     /// <summary>

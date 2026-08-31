@@ -37,35 +37,36 @@ public partial class SpellTomeComponent : InteractableComponent
         }
     }
 
-    public override void Interact(IEntity instigator)
+    public override bool Interact(IEntity instigator)
     {
         SpellResource? spell = Spell;
         if (spell == null || instigator.GetComponent<SpellcastingComponent>() is not { } casting)
         {
-            return;
+            return false;
         }
 
         if (RequiredFlagId.Length > 0 && instigator.GetComponent<Dialogue.StoryFlagsComponent>()?.Has(RequiredFlagId) != true)
         {
             Log.Info("The tome is sealed — whatever guards it is still guarding it.");
-            return;
+            return false;
         }
 
         if (casting.IsKnown(spell))
         {
             Log.Info($"The tome of {spell.DisplayName} holds nothing new — you already know it.");
-            return;
+            return false;
         }
 
         // The 23H gate: a corrupted spell's words writhe out of reach until the reader is Marked enough.
         if (!casting.MeetsCorruption(spell))
         {
             Log.Info($"The tome of {spell.DisplayName} resists you — its power lies behind corruption you have not yet taken.");
-            return;
+            return false;
         }
 
         casting.Learn(spell.Id);
         EventBus.Instance?.Publish(new SpellsChangedEvent(instigator));
         Log.Info($"You recover lost spellcraft: {spell.DisplayName}.");
+        return true;
     }
 }

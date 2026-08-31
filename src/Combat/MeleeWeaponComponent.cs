@@ -1,4 +1,5 @@
 using Embervale.Core.Events;
+using Embervale.Core.Diagnostics;
 using Embervale.Entities;
 using Embervale.Movement;
 using Embervale.Stats;
@@ -52,6 +53,18 @@ public partial class MeleeWeaponComponent : EntityComponent
         _stats = Entity!.GetComponent<StatsComponent>();
         _combat = Entity.GetComponent<CombatComponent>();
         _mount = Entity.GetComponent<MountComponent>();
+
+        // ⚠️ A WEAPON WITH NO HITBOX SWINGS FOREVER AND HITS NOTHING, IN SILENCE. OpenHitbox ends in
+        // `Hitbox?.Activate(packet)`, so an actor authored without one plays the whole animation,
+        // spends the stamina, opens and closes a window that does not exist, and deals no damage for
+        // the life of the session. Nothing anywhere says why. Said once, at build time, where the
+        // authoring that caused it is still on screen.
+        if (Weapon != null && Hitbox == null)
+        {
+            Log.Error($"{Entity.DisplayName}: {nameof(MeleeWeaponComponent)} has a weapon " +
+                      $"('{Weapon.ResourceName}') but no Hitbox assigned. Every swing will deal no " +
+                      "damage. Assign the actor's Hitbox node to this component.");
+        }
 
         // Idle is the state a melee actor is in nearly all of the time, and the state machine below
         // has nothing to advance there. Every enemy, companion and the player carries one of these,
