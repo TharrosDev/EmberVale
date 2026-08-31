@@ -47,27 +47,27 @@ public partial class BossSummonComponent : InteractableComponent
         : GateMet() ? Loc.T("boss.challenge_prompt")
         : Loc.T("boss.challenge_locked");
 
-    public override void Interact(IEntity instigator)
+    public override bool Interact(IEntity instigator)
     {
         if (AlreadyDefeated())
         {
-            return; // his defeat persists — the brazier is cold
+            return false; // his defeat persists — the brazier is cold
         }
 
         if (_boss != null && IsInstanceValid(_boss))
         {
-            return; // already fighting him
+            return false; // already fighting him
         }
 
         if (!GateMet())
         {
-            return; // not yet earned — the prompt has already told the player why
+            return false; // not yet earned — the prompt has already told the player why
         }
 
         if (Entity?.Body is not { } brazier || brazier.GetParent() is not Node arena)
         {
             Log.Warn("BossSummonComponent: no arena parent to spawn the Iron King into.");
-            return;
+            return false;
         }
 
         // Through the registry (36B): he is an authored archetype now, not a bespoke factory. The
@@ -78,7 +78,7 @@ public partial class BossSummonComponent : InteractableComponent
         if (EnemyTemplateRegistry.Create(GameIds.Enemies.IronKing, Vector3.Zero) is not BossEntity boss)
         {
             Log.Error($"'{GameIds.Enemies.IronKing}' did not build a BossEntity; the brazier stays cold.");
-            return;
+            return false;
         }
 
         arena.AddChild(boss);
@@ -90,6 +90,7 @@ public partial class BossSummonComponent : InteractableComponent
         // BeginEncounter is idempotent, so the controller's own first-damage call is a no-op after it.
         boss.GetComponent<BossController>()?.BeginEncounter();
         Log.Info("The Iron King rises to meet your challenge.");
+        return true;
     }
 
     /// <summary>Clears the held reference so the brazier re-arms. Nothing is unregistered because

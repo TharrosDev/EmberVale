@@ -122,19 +122,20 @@ public partial class RegionTransitionComponent : InteractableComponent
     private static PlayerCharacter? Player() =>
         ServiceLocator.Instance is { } locator && locator.TryGet(out PlayerCharacter player) ? player : null;
 
-    public override void Interact(IEntity instigator)
+    public override bool Interact(IEntity instigator)
     {
         if (!_revealed)
         {
-            return;
+            return false;
         }
 
         if (RegionDatabase.Get(TargetRegionId) == null)
         {
             Log.Warn($"RegionTransitionComponent: unknown region id '{TargetRegionId}'.");
-            return;
+            return false;
         }
 
         EventBus.Instance?.Publish(new RegionTransitionRequestedEvent(TargetRegionId));
+        return true;
     }
 }

@@ -68,6 +68,9 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
     /// </summary>
     private readonly Dictionary<string, float> _defendHeld = new();
 
+    /// <summary>Scratch buffer for pruning <see cref="_defendHeld"/> in place.</summary>
+    private readonly List<string> _staleHolds = new();
+
     private float _sinceReachTick;
 
     private ProgressionComponent? _progression;
@@ -423,15 +426,22 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
     /// </summary>
     public override void _Process(double delta)
     {
+        // ⚠️ THE DEADLINE TICK IS ABOVE THE 4 Hz GATE, AND IT HAS TO BE. It used to sit below the
+        // early return, so it ran once every ReachTickSeconds but was handed *one frame's* delta —
+        // a timed quest lost about a sixtieth of a second per quarter-second of play and ran roughly
+        // fifteen times slower than the wall clock. The comment on TickDeadlines said it was
+        // deliberately outside the gate; the code had it inside.
+        TickDeadlines((float)delta);
+
         _sinceReachTick += (float)delta;
         if (_sinceReachTick < ReachTickSeconds)
         {
             return;
         }
 
-        TickDeadlines((float)delta);
-
-        _sinceReachTick = 0f;
+        // Carry the overshoot rather than zeroing it: a frame that lands at 0.26 s would otherwise
+        // throw 0.01 s away every tick, and the poll would drift slower than its own cadence.
+        _sinceReachTick -= ReachTickSeconds;
         CheckPositionalObjectives();
     }
 
@@ -508,7 +518,12 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
 
                 switch (objective.Type)
                 {
-                    case ObjectiveType.Reach:
+                    // ⚠️ Deduped. Advance() fans one call out to EVERY active objective naming the
+                    // target, so two quests asking for the same place put the id in here twice and
+                    // the poll then advanced each of them twice per tick. For Defend, whose unit is
+                    // a second, that ran the hold at double speed the moment a second quest wanted
+                    // the same site — and at triple with a third.
+                    case ObjectiveType.Reach when !_reachTargets.Contains(objective.TargetId):
                         _reachTargets.Add(objective.TargetId);
                         break;
 
@@ -518,7 +533,7 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
                         _escortObjectives.Add(objective);
                         break;
 
-                    case ObjectiveType.Defend:
+                    case ObjectiveType.Defend when !_defendTargets.Contains(objective.TargetId):
                         _defendTargets.Add(objective.TargetId);
                         break;
                 }
@@ -532,6 +547,27 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
             // failed attempt left it.
             _defendHeld.Clear();
             return;
+        }
+
+        // ⚠️ Drop the remainder of any site that is no longer being defended. Clearing only on the
+        // all-quiet branch above meant a hold abandoned while ANOTHER positional objective stayed
+        // live kept its partial second indefinitely — and handed it back to the next quest, or the
+        // next attempt at the same one, as free progress. The branch above is now only the fast path.
+        if (_defendHeld.Count > 0)
+        {
+            _staleHolds.Clear();
+            foreach (string held in _defendHeld.Keys)
+            {
+                if (!_defendTargets.Contains(held))
+                {
+                    _staleHolds.Add(held);
+                }
+            }
+
+            foreach (string stale in _staleHolds)
+            {
+                _defendHeld.Remove(stale);
+            }
         }
 
         if (ServiceLocator.Instance is not { } locator || !locator.TryGet(out World.MapService map))
@@ -831,14 +867,12 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
             Entity?.GetComponent<ReputationComponent>()?.Add(quest.FactionRewardId, quest.FactionRewardAmount);
         }
 
-        if (quest.GoldReward > 0 && _inventory != null && ItemDatabase.Get(quest.GoldItemId) is { } gold)
+        // ⚠️ Through ItemGrant, never AddItem directly. A full pack silently discarded the whole
+        // reward — the quest completed, the toast fired, and nothing arrived. ItemGrant drops the
+        // overflow at the player's feet instead. See Items/ItemGrant.cs.
+        if (quest.GoldReward > 0 && ItemDatabase.Get(quest.GoldItemId) is { } gold)
         {
-            _inventory.AddItem(gold, quest.GoldReward);
-        }
-
-        if (_inventory == null)
-        {
-            return;
+            ItemGrant.Give(_inventory, gold, quest.GoldReward, Entity);
         }
 
         foreach (Variant element in quest.RewardItems)
@@ -850,7 +884,7 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
 
             if (ItemDatabase.Get(reward.ItemId) is { } item)
             {
-                _inventory.AddItem(item, reward.Quantity);
+                ItemGrant.Give(_inventory, item, reward.Quantity, Entity);
             }
         }
     }

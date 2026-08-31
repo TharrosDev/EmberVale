@@ -209,7 +209,11 @@ public partial class WorldEventDirector : Node3D
         WorldEventResource r = worldEvent.Resource;
         if (ItemDatabase.Get(r.CacheItemId) is { } item)
         {
-            GetParent().AddChild(ItemPickupFactory.Create(item, Mathf.Max(1, r.CacheQuantity), worldEvent.Origin));
+            // On the ground, not at the event's authored Y: an event origin is a planar point and
+            // WorldEvents places it from a safe-zone ring at a fixed height (see SafeZones), which on
+            // real terrain is inside a hillside as often as above it.
+            GetParent().AddChild(ItemPickupFactory.Create(
+                item, Mathf.Max(1, r.CacheQuantity), WorldGround.OnGround(worldEvent.Origin)));
         }
     }
 
@@ -307,20 +311,19 @@ public partial class WorldEventDirector : Node3D
             player.GetComponent<ProgressionComponent>()?.AddXp(r.XpReward);
         }
 
+        // Through ItemGrant so a full pack spills the payout at the player's feet instead of
+        // destroying it — the same reason quest rewards go that way. See Items/ItemGrant.cs.
         InventoryComponent? inventory = player.GetComponent<InventoryComponent>();
-        if (inventory != null)
+        if (r.GoldReward > 0 && ItemDatabase.Get(GameIds.Currency.Gold) is { } gold)
         {
-            if (r.GoldReward > 0 && ItemDatabase.Get(GameIds.Currency.Gold) is { } gold)
-            {
-                inventory.AddItem(gold, r.GoldReward);
-            }
+            ItemGrant.Give(inventory, gold, r.GoldReward, player);
+        }
 
-            if (!string.IsNullOrEmpty(r.RewardItemId) &&
-                r.RewardItemQuantity > 0 &&
-                ItemDatabase.Get(r.RewardItemId) is { } item)
-            {
-                inventory.AddItem(item, r.RewardItemQuantity);
-            }
+        if (!string.IsNullOrEmpty(r.RewardItemId) &&
+            r.RewardItemQuantity > 0 &&
+            ItemDatabase.Get(r.RewardItemId) is { } item)
+        {
+            ItemGrant.Give(inventory, item, r.RewardItemQuantity, player);
         }
 
         if (!string.IsNullOrEmpty(r.FactionRewardId) && r.FactionRewardAmount != 0)

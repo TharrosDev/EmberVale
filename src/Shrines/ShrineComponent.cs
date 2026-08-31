@@ -21,18 +21,19 @@ public partial class ShrineComponent : InteractableComponent
         ? Loc.TF("interact.shrine.pray", Loc.T(shrine.NameKey))
         : Loc.T("interact.shrine.unavailable");
 
-    public override void Interact(IEntity instigator)
+    public override bool Interact(IEntity instigator)
     {
         ShrineResource? shrine = Shrine;
         BlessingComponent? blessings = instigator.GetComponent<BlessingComponent>();
         if (shrine == null || blessings == null)
         {
             Log.Warn($"Shrine '{ShrineId}' could not offer a blessing: resource or player component missing.");
-            return;
+            return false;
         }
 
         // The body decides nothing and announces nothing: BlessingComponent owns the corruption
         // gate, the claim and all three announcements, so every shrine placement behaves alike.
-        blessings.Offer(shrine);
+        // A refusal or an already-claimed shrine is not an interaction that happened.
+        return blessings.Offer(shrine) == ShrineOutcome.Blessed;
     }
 }

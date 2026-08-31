@@ -91,14 +91,18 @@ public partial class LootComponent : EntityComponent
     }
 
     /// <summary>Spirals drop positions outward from <paramref name="origin"/> so multiple items
-    /// don't stack on one spot (shared with container looting).</summary>
+    /// don't stack on one spot (shared with container looting and quest/event reward overflow).
+    ///
+    /// ⚠️ <b>The Y comes from the ground, not from zero.</b> It used to be a literal <c>0f</c>, which
+    /// was every drop's correct height for exactly as long as the world was flat. On real terrain a
+    /// kill on a terrace buried its loot and a kill in a basin left it floating out of reach —
+    /// silently, because a pickup does not complain about where it is.</summary>
     internal static Vector3 ScatterAround(Vector3 origin, int index)
     {
         float angle = index * 2.39996f; // golden angle for an even spread
         float radius = 0.4f + (index * 0.25f);
-        return new Vector3(
-            origin.X + (Mathf.Cos(angle) * radius),
-            0f,
-            origin.Z + (Mathf.Sin(angle) * radius));
+        float x = origin.X + (Mathf.Cos(angle) * radius);
+        float z = origin.Z + (Mathf.Sin(angle) * radius);
+        return new Vector3(x, Embervale.World.WorldGround.HeightAt(x, z), z);
     }
 }

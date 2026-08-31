@@ -47,13 +47,27 @@ public sealed partial class RegionStreamer : Node3D
     private readonly Dictionary<string, RegionCellResource> _requests = new();
     private readonly List<ReadyCell> _ready = new();
 
-    /// <summary>Cells whose scene could not be requested, loaded or found. ⚠️ WITHOUT THIS THE
-    /// STREAMER NEVER STOPS RETRYING ONE. A failed cell is removed from the pending set but is still
-    /// absent from <c>_loaded</c>, so the sweep in <see cref="_Process"/> re-queued it, re-issued the
-    /// threaded request and re-logged the same warning EVERY FRAME — and <see cref="IsSettled"/>
-    /// could never come true, which is what gates the post-transition loading screen. One warning
-    /// per cell, and the region settles without it.</summary>
+    /// <summary>Cells whose scene could not be requested, loaded or found, and that have used up
+    /// <see cref="MaxAttempts"/>. ⚠️ WITHOUT THIS THE STREAMER NEVER STOPS RETRYING ONE. A failed
+    /// cell is removed from the pending set but is still absent from <c>_loaded</c>, so the sweep in
+    /// <see cref="_Process"/> re-queued it, re-issued the threaded request and re-logged the same
+    /// warning EVERY FRAME. One warning per cell, and the sweep gives up on it.
+    ///
+    /// ⚠️ <b>A cell in here is a BROKEN REGION, not a settled one.</b> <see cref="IsSettled"/> used
+    /// to count these towards the region being whole, so a region that had lost a cell — its terrain
+    /// collider with it — reported itself ready and the loading screen cleared onto a hole in the
+    /// world. <see cref="HasFailedCells"/> is the honest answer and the bootstrap refuses to enter
+    /// <c>Playing</c> on it.</summary>
     private readonly HashSet<string> _failed = new();
+
+    /// <summary>Attempts spent per cell. A threaded request can fail for reasons that do not repeat
+    /// (a transient I/O error, memory pressure at the moment the request went out), and retiring a
+    /// cell forever on the first of those loses a district for the session. Bounded, so the
+    /// every-frame retry loop the <see cref="_failed"/> set exists to stop cannot come back.</summary>
+    private readonly Dictionary<string, int> _attempts = new();
+
+    /// <summary>Tries a cell gets before it is retired for the session.</summary>
+    private const int MaxAttempts = 3;
     private WorldEnvironmentProfileResource? _environmentProfile;
     private WorldHeightfield? _heightfield;
     private WorldPerformanceBudgetResource? _streamingBudget;
@@ -132,7 +146,19 @@ public sealed partial class RegionStreamer : Node3D
     /// longer. Since 38M2 that means <em>all</em> of them rather than the ones near the landing point,
     /// which is a few extra frames and the whole point of the change.</summary>
     public bool IsSettled() => _pending.Count == 0 && _requests.Count == 0 && _ready.Count == 0 &&
-                               _loaded.Count + _failed.Count == _cells.Count;
+                               _loaded.Count == _cells.Count;
+
+    /// <summary>True when at least one cell has exhausted its retries. The region can never settle
+    /// while this holds; the caller decides what an unbuildable world means (the bootstrap refuses
+    /// to leave the loading screen for it).</summary>
+    public bool HasFailedCells => _failed.Count > 0;
+
+    /// <summary>The ids of the cells that could not be brought in, for the error the player sees.</summary>
+    public IReadOnlyCollection<string> FailedCellIds => _failed;
+
+    /// <summary>Is this specific cell in the tree? Used by the load gate to require the cell the
+    /// player is about to stand in, ahead of the rest of the region.</summary>
+    public bool IsCellLoaded(string cellId) => _loaded.ContainsKey(cellId);
 
     public override void _Process(double delta)
     {
@@ -154,7 +180,7 @@ public sealed partial class RegionStreamer : Node3D
         // free callback — it walks every cell, and StartThreadedRequests reads the static-memory
         // performance monitor — and residency (38M2) means there is nothing left for it to decide.
         // Configure and UnloadAll are the only two things that create work, and both re-arm it.
-        if (IsSettled())
+        if (IsSettled() || (_pending.Count == 0 && _requests.Count == 0 && _ready.Count == 0))
         {
             SetProcess(false);
         }
@@ -272,12 +298,24 @@ public sealed partial class RegionStreamer : Node3D
         EventBus.Instance?.Publish(new RegionCellLoadedEvent(cell.Id, root));
     }
 
-    /// <summary>Retires a cell that cannot be brought in, once. See <see cref="_failed"/>.</summary>
+    /// <summary>Retires a cell that cannot be brought in — after <see cref="MaxAttempts"/> tries.
+    /// See <see cref="_failed"/> and <see cref="_attempts"/>.</summary>
     private void Fail(string cellId, string reason)
     {
         _pendingIds.Remove(cellId);
+        _attempts.TryGetValue(cellId, out int spent);
+        spent++;
+        _attempts[cellId] = spent;
+        if (spent < MaxAttempts)
+        {
+            // Left out of _failed, so the sweep in _Process re-queues it on the next frame.
+            Log.Warn($"RegionStreamer: cell '{cellId}' {reason}; retrying ({spent}/{MaxAttempts}).");
+            return;
+        }
+
         _failed.Add(cellId);
-        Log.Warn($"RegionStreamer: cell '{cellId}' {reason}; it will not be retried.");
+        Log.Error($"RegionStreamer: cell '{cellId}' {reason}; giving up after {spent} attempts. " +
+                  "The region cannot settle and gameplay must not resume into it.");
     }
 
     private void ClearLoadStages()
@@ -287,6 +325,7 @@ public sealed partial class RegionStreamer : Node3D
         _requests.Clear();
         _ready.Clear();
         _failed.Clear();
+        _attempts.Clear();
     }
 
     private void Unload(string cellId)

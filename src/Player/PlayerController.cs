@@ -467,9 +467,11 @@ public partial class PlayerController : EntityComponent
 
         if (Godot.Input.IsActionJustPressed(GameInput.Interact))
         {
-            if (FocusedInteractable is { } focused)
+            if (FocusedInteractable is { } focused && focused.Interact(Entity!))
             {
-                focused.Interact(Entity!);
+                // Published on success alone (see InteractionPerformedEvent): a refused shop, an
+                // unaffordable deed or a pickup into a full pack is not a verb the player performed,
+                // and quest/onboarding progress rides this event.
                 EventBus.Instance?.Publish(new InteractionPerformedEvent(Entity!, focused));
             }
 

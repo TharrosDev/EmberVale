@@ -47,6 +47,9 @@ public partial class GameBootstrap : Node3D
 {
     private const string DummyAttributesPath = "res://data/attributes/DummyAttributes.tres";
     private const float RespawnDelaySeconds = 3f;
+    /// <summary>Where the player is built, before any region is known. SpawnRegionStreamer moves
+    /// them to the active region's own <see cref="RegionResource.SpawnPoint"/>, on the ground, as
+    /// soon as there is a heightfield to ask — this is a placeholder, not a location.</summary>
     private static readonly Vector3 PlayerSpawn = new(0f, 1.2f, 5f);
 
     private GameHud _gameHud = null!;
@@ -97,10 +100,27 @@ public partial class GameBootstrap : Node3D
     private readonly System.Collections.Generic.List<Entity> _portals = new();
     // Post-transition settle (Phase 25.5B): time spent on the loading screen since a region load
     // began (-1 = not loading). Play resumes when the streamer reports the destination has finished
-    // streaming in (no pop-in), bounded by a min show time and a safety cap so a failed cell can't hang.
+    // streaming in AND there is real terrain collision under the player.
+    //
+    // ⚠️ THE CAP NO LONGER RESUMES PLAY. It used to: after LoadingMaxSeconds the gate entered
+    // Playing whether or not the world was there, which is the same defect as counting a failed cell
+    // as settled — the player was handed control of a character standing on nothing and fell through
+    // the world. A world that cannot be assembled is not a world to play in, so the cap now aborts
+    // to the title screen with the reason in the log.
     private double _loadingElapsed = -1d;
     private const double LoadingMinSeconds = 0.15d;
-    private const double LoadingMaxSeconds = 3.0d;
+    private const double LoadingMaxSeconds = 30.0d;
+
+    /// <summary>How far below the player's origin the load gate looks for standable collision, and
+    /// how far above it starts the ray. The player capsule is 1.8 m; a metre of slack above and
+    /// three below covers a landing that the terrain conform nudged without accepting a void.</summary>
+    private const float GroundProbeUp = 1.0f;
+    private const float GroundProbeDown = 3.0f;
+
+    /// <summary>Runs once the loading gate opens — the prologue on a new game, nothing on a
+    /// transition. Held rather than run at request time because the whole point of the gate is that
+    /// nothing gameplay-facing happens until the world is actually under the player.</summary>
+    private System.Action? _onLoadingSettled;
 
     // The region the sandbox represents (Phase 25A). Until streaming (25B) the world is this one
     // region; the save header reads its display name from the RegionDatabase.
@@ -284,13 +304,22 @@ public partial class GameBootstrap : Node3D
 
         SaveManager.Instance?.ResetPlaytime();
         BuildWorld();
-        GameManager.Instance?.ChangeState(GameState.Playing);
 
-        // The prologue (Phase 33A) plays over the already-built world, so creation flows into the
-        // narration and the narration lifts on the Ember Crown with nothing left to load. It holds
-        // player input until it ends; a load skips it entirely.
-        _opening?.Play(_activeProfile);
-        Log.Info($"New game started in slot '{slot}'. Prologue playing; the Ember Crown is built behind it.");
+        // ⚠️ THE SAME GATE THE PORTALS USE, AND IT WAS MISSING HERE. BuildWorld spawns the player
+        // and *then* creates the streamer, so on the frame this method used to call
+        // ChangeState(Playing) not one cell — and therefore not one terrain collider — was in the
+        // tree. The player was handed control standing over a hole and fell out of the world; the
+        // prologue's camera hid it for exactly as long as the prologue ran. Hold Loading until the
+        // region has actually come in, then start the game.
+        CharacterProfile started = _activeProfile;
+        BeginLoadingGate($"Entering {RegionDatabase.Get(_currentRegionId)?.DisplayName ?? "Embervale"}...", () =>
+        {
+            // The prologue (Phase 33A) plays over the already-built world, so creation flows into the
+            // narration and the narration lifts on the Ember Crown with nothing left to load. It holds
+            // player input until it ends; a load skips it entirely.
+            _opening?.Play(started);
+            Log.Info($"New game started in slot '{slot}'. Prologue playing; the Ember Crown is built behind it.");
+        });
     }
 
     /// <summary>Loads an existing save into a freshly-built world (Phase 24C): builds the sandbox,
@@ -335,8 +364,14 @@ public partial class GameBootstrap : Node3D
             return;
         }
 
-        GameManager.Instance?.ChangeState(GameState.Playing);
-        Log.Info($"Loaded game from slot '{slot}' as {_activeProfile.CharacterName} ({_activeProfile.RaceId}). Sandbox ready.");
+        // Same gate as a new game and a portal: LoadGame has already put the player at their saved
+        // transform, but the cells carrying the collision under it are still streaming. Note that
+        // ApplySavedLocation may have opened a gate of its own for a cross-region restore — this
+        // call is idempotent on the timer and only replaces the completion action.
+        string name = _activeProfile.CharacterName;
+        string race = _activeProfile.RaceId;
+        BeginLoadingGate($"Loading {name}...", () =>
+            Log.Info($"Loaded game from slot '{slot}' as {name} ({race}). Sandbox ready."));
     }
 
     /// <summary>Common entry for the New/Load paths: guards single-build, tears down the menu, makes
@@ -635,6 +670,19 @@ public partial class GameBootstrap : Node3D
         _streamer = new RegionStreamer { Name = "RegionStreamer" };
         RegionResource? region = RegionDatabase.Get(_currentRegionId);
         _streamer.Configure(region);
+
+        // ⚠️ THE PLAYER'S SPAWN IS THE REGION'S, AND IT IS ONLY KNOWABLE HERE. SpawnPlayer runs
+        // earlier in BuildWorld and had no region to ask, so it used a literal (0, 1.2, 5) that was
+        // the Ember Crown's SpawnPoint copied by hand — correct for one region by coincidence, and
+        // an absolute Y on a world that has real elevation. Configure has just published the
+        // region's heightfield to WorldGround, so this is the first point at which the ground under
+        // the spawn is a knowable number. A loaded game overwrites this again from its header.
+        if (region != null && _player != null && IsInstanceValid(_player))
+        {
+            _player.Velocity = Vector3.Zero;
+            _player.GlobalPosition = SafeLanding(region.SpawnPoint);
+        }
+
         AddChild(_streamer);
         ServiceLocator.Instance?.Register(_streamer);
         RegionSetup.RebuildPortals(this, _portals, region);
@@ -745,11 +793,9 @@ public partial class GameBootstrap : Node3D
             autosaveService.RequestRegionChangeAutosave();
         }
 
-        // Hold the loading screen until the streamer reports the destination settled (Phase 25.5B);
-        // resumes in _Process. Replaces the old fixed delay so big regions don't pop in after the
-        // screen clears, and small ones don't wait needlessly.
-        _loadingElapsed = 0d;
-        Log.Info(message);
+        // Hold the loading screen until the streamer reports the destination settled (Phase 25.5B)
+        // and there is collision under the landing; resumes in _PhysicsProcess.
+        BeginLoadingGate(message, null);
     }
 
     /// <summary>
@@ -859,18 +905,125 @@ public partial class GameBootstrap : Node3D
             }
         }
 
-        // Hard region transition (Phase 25C/25.5B): hold GameState.Loading until the streamer has
-        // finished streaming the destination in around the player (no pop-in), bounded by a minimum
-        // show time and a safety cap so a cell that fails to load can never hang the loading screen.
-        if (_loadingElapsed >= 0d)
+    }
+
+    /// <summary>
+    /// Opens the loading gate: shows the loading screen and holds <see cref="GameState.Loading"/>
+    /// until the world under the player is real. <paramref name="onSettled"/> runs once, on the
+    /// frame play resumes.
+    ///
+    /// ⚠️ <b>EVERY ROUTE INTO THE WORLD GOES THROUGH HERE.</b> New game, load, portal and fast
+    /// travel. Three of the four used to; the new-game path — the one every first-time player
+    /// takes — entered <c>Playing</c> the instant <see cref="BuildWorld"/> returned, which is
+    /// before the streamer has instanced a single cell.
+    /// </summary>
+    private void BeginLoadingGate(string message, System.Action? onSettled)
+    {
+        GameManager.Instance?.ChangeState(GameState.Loading);
+        _loadingElapsed = 0d;
+        _onLoadingSettled = onSettled;
+        SetPhysicsProcess(true);
+        Log.Info(message);
+    }
+
+    /// <summary>
+    /// The gate's tick. In <c>_PhysicsProcess</c> rather than <c>_Process</c> because it casts a
+    /// ray, and the direct space state may only be queried inside a physics step.
+    /// </summary>
+    public override void _PhysicsProcess(double delta)
+    {
+        if (_loadingElapsed < 0d)
         {
-            _loadingElapsed += delta;
-            bool settled = _streamer == null || _streamer.IsSettled();
-            if ((settled && _loadingElapsed >= LoadingMinSeconds) || _loadingElapsed >= LoadingMaxSeconds)
-            {
-                _loadingElapsed = -1d;
-                GameManager.Instance?.ChangeState(GameState.Playing);
-            }
+            return;
+        }
+
+        _loadingElapsed += delta;
+
+        // A cell that has exhausted its retries means the region can never be whole. Waiting out
+        // the cap would only delay the same verdict, so say it now.
+        if (_streamer is { HasFailedCells: true })
+        {
+            _loadingElapsed = -1d;
+            _onLoadingSettled = null;
+            AbortToTitle(
+                "The world could not be assembled: " +
+                $"cell(s) {string.Join(", ", _streamer.FailedCellIds)} failed to load. " +
+                "Returning to the title screen rather than resuming into an incomplete world.");
+            return;
+        }
+
+        if (_loadingElapsed >= LoadingMaxSeconds)
+        {
+            _loadingElapsed = -1d;
+            _onLoadingSettled = null;
+            AbortToTitle(
+                $"The world did not finish loading within {LoadingMaxSeconds:0} s " +
+                $"(streamer settled: {_streamer?.IsSettled()}, ground under the player: {HasGroundUnderPlayer()}). " +
+                "Returning to the title screen rather than resuming into an incomplete world.");
+            return;
+        }
+
+        if (_loadingElapsed < LoadingMinSeconds || (_streamer != null && !_streamer.IsSettled()) ||
+            !HasGroundUnderPlayer())
+        {
+            return;
+        }
+
+        _loadingElapsed = -1d;
+
+        // Everything the world put down is on the ground now, so anything the load moved can be
+        // re-seated against real collision rather than the heightfield alone.
+        SettleActorsOnGround();
+
+        GameManager.Instance?.ChangeState(GameState.Playing);
+        System.Action? settled = _onLoadingSettled;
+        _onLoadingSettled = null;
+        settled?.Invoke();
+    }
+
+    /// <summary>
+    /// Is there standable collision under the player right now?
+    ///
+    /// ⚠️ <b>THE HEIGHTFIELD IS NOT AN ANSWER TO THIS.</b> <see cref="WorldGround"/> is a pure
+    /// function of the region resource and returns a height whether or not a single collider has
+    /// been instanced — which is exactly why a spawn validated against it could still be standing
+    /// over a void. This asks the physics server, which can only answer yes once the cell carrying
+    /// the terrain collider is in the tree.
+    /// </summary>
+    private bool HasGroundUnderPlayer()
+    {
+        if (_player == null || !IsInstanceValid(_player))
+        {
+            return true; // nothing to protect; the gate is not the place to invent a player
+        }
+
+        Vector3 origin = _player.GlobalPosition;
+        var query = PhysicsRayQueryParameters3D.Create(
+            origin + (Vector3.Up * GroundProbeUp),
+            origin + (Vector3.Down * GroundProbeDown),
+            Combat.CombatLayers.World);
+        query.Exclude = new Godot.Collections.Array<Rid> { _player.GetRid() };
+        return GetWorld3D().DirectSpaceState.IntersectRay(query).Count > 0;
+    }
+
+    /// <summary>
+    /// Puts the player and the party back on the ground once the region is resident. The teleport
+    /// that started the load clamped against <see cref="WorldGround"/> — the analytic field — which
+    /// is the only thing available before the cells exist; a metre of disagreement between that
+    /// field and the collision mesh it generates leaves the player embedded or hovering.
+    /// </summary>
+    private void SettleActorsOnGround()
+    {
+        if (_player != null && IsInstanceValid(_player))
+        {
+            _player.Velocity = Vector3.Zero;
+            _player.GlobalPosition = SafeLanding(_player.GlobalPosition);
+        }
+
+        if (ServiceLocator.Instance != null &&
+            ServiceLocator.Instance.TryGet(out Embervale.Companions.CompanionRoster party))
+        {
+            party.RegroupNow();
         }
     }
 
@@ -1130,7 +1283,10 @@ public partial class GameBootstrap : Node3D
         }
 
         _player.Velocity = Vector3.Zero;
-        _player.GlobalPosition = PlayerSpawn;
+        // The active region's spawn, on the ground — not the literal below, which is one region's
+        // spawn point frozen at the elevation the world had before it had any.
+        _player.GlobalPosition = SafeLanding(
+            RegionDatabase.Get(_currentRegionId)?.SpawnPoint ?? PlayerSpawn);
         _player.GetComponent<StatsComponent>()?.RefillResources();
         Log.Info("You were slain — respawning at the start.");
     }

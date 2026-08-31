@@ -52,14 +52,14 @@ public partial class PropertyDeedComponent : InteractableComponent
         }
     }
 
-    public override void Interact(IEntity instigator)
+    public override bool Interact(IEntity instigator)
     {
         if (PropertyDatabase.Get(PropertyId) is not { } property ||
             Evaluate(property) != ClaimOutcome.Granted ||
             Player() is not { } player ||
             Resolve<HousingService>() is not { } housing)
         {
-            return; // the prompt has already said why
+            return false; // the prompt has already said why
         }
 
         int price = PropertyClaim.PriceToCharge(property.PriceGold);
@@ -72,17 +72,18 @@ public partial class PropertyDeedComponent : InteractableComponent
             if (player.GetComponent<InventoryComponent>() is not { } inventory ||
                 !inventory.RemoveItem(GameIds.Currency.Gold, price))
             {
-                return; // the gold went somewhere between the prompt and the press; charge nothing
+                return false; // the gold went somewhere between the prompt and the press; charge nothing
             }
         }
 
         if (!housing.Claim(property.Id))
         {
-            return; // already held — never charge twice
+            return false; // already held — never charge twice
         }
 
         DiscoverTravelNode(property, instigator);
         Log.Info($"Claimed {Loc.T(property.NameKey)} for {price} gold.");
+        return true;
     }
 
     /// <summary>Registers the holding as somewhere the player can return to.</summary>

@@ -45,11 +45,11 @@ public partial class TravelNodeComponent : InteractableComponent
         }
     }
 
-    public override void Interact(IEntity instigator)
+    public override bool Interact(IEntity instigator)
     {
         if (Resolve() is not { } svc || instigator.Body is not { } playerBody)
         {
-            return;
+            return false;
         }
 
         // Record where the PLAYER stands to attune — a known-walkable spot beside the post — not the
@@ -59,6 +59,10 @@ public partial class TravelNodeComponent : InteractableComponent
         {
             Log.Info($"Attuned to {DisplayName}.");
         }
+
+        // Attuning again to a node already known is still a use of the waystone — the player did
+        // the thing the prompt offered. Only an unresolvable service above is a failure.
+        return true;
     }
 
     private static FastTravelService? Resolve() =>
