@@ -66,6 +66,17 @@ public partial class LocomotionComponent : EntityComponent
 
     public bool IsDashing => _dashing;
 
+    /// <summary>
+    /// Ends a dash early.
+    ///
+    /// ⚠️ <b>A CANCELLED ROLL HAD TO BE CANCELLED IN TWO PLACES AND ONLY EVER WAS IN ONE.</b> A
+    /// stagger landing mid-roll cleared <c>DodgeComponent</c>'s own flag and its i-frames, but the
+    /// burst it had started here ran to its full duration: the owner kept sliding at roll speed
+    /// through a stagger they were supposed to be locked in, invulnerable for none of it. Two
+    /// components disagreeing about whether the same roll is happening is the whole defect.
+    /// </summary>
+    public void CancelDash() => _dashing = false;
+
     /// <summary>Begins a fixed-velocity burst (a dodge roll, Phase 29E): <see cref="Move"/> drives the body
     /// along <paramref name="dir"/> at <paramref name="speed"/> for <paramref name="duration"/> seconds,
     /// ignoring movement input (gravity still applies).</summary>

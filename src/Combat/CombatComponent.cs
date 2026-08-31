@@ -1,3 +1,4 @@
+using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Entities;
 using Embervale.Stats;
@@ -56,6 +57,19 @@ public partial class CombatComponent : EntityComponent
     [Export]
     public float BlockPoiseFactor { get; set; } = 0.5f;
 
+    /// <summary>
+    /// Half-width of the arc a guard covers, in degrees from the defender's facing.
+    ///
+    /// ⚠️ <b>A GUARD USED TO COVER EVERY DIRECTION AT ONCE.</b> <see cref="IsBlocking"/> is a plain
+    /// bool and <see cref="ReceiveDamage"/> asked nothing else, so a held block absorbed — and could
+    /// parry — a blow landing squarely in the defender's back. That removes the whole point of pack
+    /// flanking (34A) and of the boss's own repositioning, and it applies to the player and every
+    /// enemy alike. 100° each way is a shield's honest cover: generous enough that a hit from the
+    /// side quarter still counts, narrow enough that being surrounded is a real problem.
+    /// </summary>
+    [Export]
+    public float GuardArcDegrees { get; set; } = 100f;
+
     private StatsComponent? _stats;
     private float _poise;
     private double _staggerTimer;
@@ -86,7 +100,79 @@ public partial class CombatComponent : EntityComponent
     protected override void OnInitialize()
     {
         _stats = Entity!.GetComponent<StatsComponent>();
+        ValidateAuthoring();
         _poise = MaxPoise;
+    }
+
+    /// <summary>
+    /// Shouts about knobs that are outside the range the pipeline can honour.
+    ///
+    /// ⚠️ <b>EVERY ONE OF THESE USED TO PRODUCE BROKEN GAMEPLAY IN SILENCE.</b> A
+    /// <see cref="BlockMitigation"/> over 1 makes <c>amount *= 1 - BlockMitigation</c> negative, and
+    /// negative damage is healing — an enemy authored at 1.2 heals itself by guarding. A
+    /// <see cref="MaxPoise"/> of 0 or less means <c>_poise &lt;= 0</c> on the first hit, so the actor
+    /// staggers on every blow forever. Neither shows up as an error anywhere; they show up as a
+    /// fight that feels wrong. The values are also clamped where they are used, so a bad
+    /// <c>.tres</c> is loud AND survivable rather than loud and broken.
+    /// </summary>
+    private void ValidateAuthoring()
+    {
+        string who = Entity?.DisplayName ?? "an actor";
+        if (BlockMitigation is < 0f or > 1f)
+        {
+            Log.Error($"{who}: BlockMitigation is {BlockMitigation}, outside 0..1. " +
+                      "Over 1 would heal on block; clamped.");
+        }
+
+        if (BlockPoiseFactor < 0f)
+        {
+            Log.Error($"{who}: BlockPoiseFactor is {BlockPoiseFactor}; a negative factor restores " +
+                      "poise on a blocked hit. Clamped to 0.");
+        }
+
+        if (MaxPoise <= 0f)
+        {
+            Log.Error($"{who}: MaxPoise is {MaxPoise}. Poise starts empty, so the actor would " +
+                      "stagger on every hit for the rest of its life. Poise breaks are disabled " +
+                      "for it instead.");
+        }
+
+        if (GuardArcDegrees is <= 0f or > 360f)
+        {
+            Log.Error($"{who}: GuardArcDegrees is {GuardArcDegrees}; a guard covers nothing at or " +
+                      "below 0. Clamped to 1..360.");
+        }
+    }
+
+    /// <summary>
+    /// Is <paramref name="source"/> inside the arc a raised guard covers? An attacker with no body
+    /// (a trap, a status tick, a scripted hit) counts as in front: there is no direction to judge,
+    /// and refusing the block for that reason would be a worse guess than allowing it.
+    /// </summary>
+    private bool IsInGuardArc(IEntity? source)
+    {
+        if (Entity?.Body is not Node3D self || source?.Body is not Node3D attacker)
+        {
+            return true;
+        }
+
+        Vector3 toAttacker = attacker.GlobalPosition - self.GlobalPosition;
+        toAttacker.Y = 0f;
+        if (toAttacker.LengthSquared() < 1e-4f)
+        {
+            return true; // standing inside the defender; no meaningful bearing
+        }
+
+        Vector3 forward = -self.GlobalTransform.Basis.Z;
+        forward.Y = 0f;
+        if (forward.LengthSquared() < 1e-4f)
+        {
+            return true;
+        }
+
+        float arc = Mathf.Clamp(GuardArcDegrees, 1f, 360f);
+        return forward.Normalized().Dot(toAttacker.Normalized()) >=
+               Mathf.Cos(Mathf.DegToRad(arc));
     }
 
     public override void _Process(double delta)
@@ -145,10 +231,11 @@ public partial class CombatComponent : EntityComponent
             return default;
         }
 
-        float amount = packet.Amount;
+        float amount = Mathf.Max(0f, packet.Amount);
         bool blocked = false;
 
-        if (IsBlocking)
+        // A guard covers the front, not a sphere. See GuardArcDegrees.
+        if (IsBlocking && IsInGuardArc(packet.Source))
         {
             // Timed block within the parry window: negate the hit and stagger the attacker (riposte opening).
             // Costs stamina and fires at most once per guard-raise, so tap-block spam can't parry for free.
@@ -166,12 +253,14 @@ public partial class CombatComponent : EntityComponent
             if (_stats.GetCurrent(StatType.Stamina) >= BlockStaminaCost)
             {
                 _stats.ModifyCurrent(StatType.Stamina, -BlockStaminaCost);
-                amount *= 1f - BlockMitigation;
+                amount *= 1f - Mathf.Clamp(BlockMitigation, 0f, 1f);
                 blocked = true;
             }
         }
 
-        float final = CombatMath.Mitigate(amount, packet.Type, _stats);
+        // Never negative: a mitigation that over-reduced would otherwise heal the defender, which
+        // is what an out-of-range BlockMitigation used to do (see ValidateAuthoring).
+        float final = Mathf.Max(0f, CombatMath.Mitigate(amount, packet.Type, _stats));
         _stats.ApplyDamage(final, packet.Source);
 
         // A kill blow doesn't also stagger the corpse — only poise-check a survivor (avoids a
@@ -181,8 +270,9 @@ public partial class CombatComponent : EntityComponent
             // A block still chips poise (BlockPoiseFactor) so a held guard can be broken into a
             // stagger; a defender caught in its own wind-up takes more (36C).
             _poise -= CombatMath.PoiseDamage(
-                packet.PoiseDamage, blocked, BlockPoiseFactor, InWindup ? WindupPoiseMultiplier : 1f);
-            if (_poise <= 0f)
+                packet.PoiseDamage, blocked, Mathf.Max(0f, BlockPoiseFactor),
+                InWindup ? WindupPoiseMultiplier : 1f);
+            if (MaxPoise > 0f && _poise <= 0f)
             {
                 _poise = MaxPoise;
                 _staggerTimer = StaggerDuration;

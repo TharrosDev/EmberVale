@@ -40,10 +40,17 @@ public partial class DodgeComponent : EntityComponent
 
     protected override void OnTeardown()
     {
-        // Never leave the owner stranded invulnerable if the component is torn down mid-roll.
+        // Never leave the owner stranded invulnerable — or sliding — if the component is torn down
+        // mid-roll.
         if (_combat != null)
         {
             _combat.IsInvulnerable = false;
+        }
+
+        if (_rolling)
+        {
+            _rolling = false;
+            _locomotion?.CancelDash();
         }
     }
 
@@ -90,12 +97,22 @@ public partial class DodgeComponent : EntityComponent
         _elapsed += (float)delta;
 
         // A stagger landing mid-roll cancels it — i-frames don't persist into a stagger-lock.
-        if (_elapsed >= RollDuration || _combat is { IsStaggered: true })
+        bool staggered = _combat is { IsStaggered: true };
+        if (_elapsed >= RollDuration || staggered)
         {
             _rolling = false;
             if (_combat != null)
             {
                 _combat.IsInvulnerable = false;
+            }
+
+            // …and the burst goes with it. Clearing this component's flag alone left the locomotion
+            // still dashing for the rest of RollDuration: a staggered owner sliding at roll speed
+            // with no i-frames. Only on the cancel — a roll that ran its course has already ended
+            // its own dash on the same clock.
+            if (staggered)
+            {
+                _locomotion?.CancelDash();
             }
 
             return;
