@@ -15,6 +15,14 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_rockpath_wide.glb" id="23_rockpath_wide"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_rockpath_small.glb" id="24_rockpath_small"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
+[ext_resource type="PackedScene" path="res://scenes/props/bld_deadfall_lodge.tscn" id="42b_bld_deadfall_lodge"]
+[ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="42b_characteranimationcomponent"]
+[ext_resource type="Script" path="res://src/Factions/FactionComponent.cs" id="42b_factioncomponent"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="42b_dialoguecomponent"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_adventurer_f.glb" id="42b_npc_adventurer_f"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleComponent.cs" id="42b_schedulecomponent"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_townsman.glb" id="42b_npc_townsman"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_hooded.glb" id="42b_npc_hooded"]
 
 ; THE NORTHERN WILDS (the 2026-08-28 layout rebuild) — the frontier between the Crossway gate and the arena, and
 ; the cell the EncounterDirector uses more than any other.
@@ -113,6 +121,10 @@ size = Vector3(2.26, 1.41, 1.84)
 [sub_resource type="BoxShape3D" id="Shape_ruin_pillar"]
 size = Vector3(1.0, 3.13, 1.0)
 
+
+[sub_resource type="CapsuleShape3D" id="Shape_npc"]
+radius = 0.4
+height = 1.8
 [node name="WildsNorthCell" type="Node3D"]
 
 [node name="Nav" type="NavigationRegion3D" parent="."]
@@ -504,3 +516,99 @@ transform = Transform3D(0.9848, 0, -0.1736, 0, 1, 0, 0.1736, 0, 0.9848, 12, 0, 1
 position = Vector3(0, 0, -8)
 script = ExtResource("maploc_39_5a")
 LocationId = "location.wilds.north"
+
+; ── THE DEADFALL LODGE (Phase 42B) ────────────────────────────────────────────────────────────────
+; The Ash Hunters' hub, on the deadfall pad under the scarp (Area_wn_deadfall, centre (18, -12),
+; radius (6, 7), levelled to y = 0). An OPEN HALL — three walls, no front run, the terrain for a
+; floor — so it reads as a hunting camp that has been there a while rather than as a house someone
+; built in a wood. It is the only hub the player finds instead of arriving at.
+; ⚠️ This cell had no NPCs before, so Shape_npc, the Entity script and the actor components below
+; are new ext/sub resources here rather than existing ones being reused.
+[node name="DeadfallLodge" parent="Nav" instance=ExtResource("42b_bld_deadfall_lodge")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, -9)
+
+[node name="HunterMaster" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, -10)
+script = ExtResource("2_entity")
+DisplayName = "Huntmaster Yrsa Kesk"
+TemplateId = "npc.hunter_master"
+
+[node name="Animation" type="Node" parent="HunterMaster"]
+script = ExtResource("42b_characteranimationcomponent")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="HunterMaster"]
+
+[node name="Shape" type="CollisionShape3D" parent="HunterMaster/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="HunterMaster"]
+script = ExtResource("42b_factioncomponent")
+FactionId = "faction.ash_hunters"
+
+[node name="Dialogue" type="Node" parent="HunterMaster"]
+script = ExtResource("42b_dialoguecomponent")
+DialogueId = "dialogue.hunter_master"
+
+[node name="Schedule" type="Node" parent="HunterMaster"]
+script = ExtResource("42b_schedulecomponent")
+ScheduleId = "schedule.hunter_master"
+
+[node name="Model" parent="HunterMaster" instance=ExtResource("42b_npc_adventurer_f")]
+
+[node name="HunterSkinner" type="Node3D" parent="."]
+transform = Transform3D(0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, 0.9397, 17.5, 0, -6.5)
+script = ExtResource("2_entity")
+DisplayName = "Fell Ardan"
+TemplateId = "npc.hunter_skinner"
+
+[node name="Animation" type="Node" parent="HunterSkinner"]
+script = ExtResource("42b_characteranimationcomponent")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="HunterSkinner"]
+
+[node name="Shape" type="CollisionShape3D" parent="HunterSkinner/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="HunterSkinner"]
+script = ExtResource("42b_factioncomponent")
+FactionId = "faction.ash_hunters"
+
+[node name="Dialogue" type="Node" parent="HunterSkinner"]
+script = ExtResource("42b_dialoguecomponent")
+DialogueId = "dialogue.hunter_skinner"
+
+[node name="Model" parent="HunterSkinner" instance=ExtResource("42b_npc_townsman")]
+
+[node name="HunterTracker" type="Node3D" parent="."]
+transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 21.5, 0, -5.5)
+script = ExtResource("2_entity")
+DisplayName = "Halda Rieve"
+TemplateId = "npc.hunter_tracker"
+
+[node name="Animation" type="Node" parent="HunterTracker"]
+script = ExtResource("42b_characteranimationcomponent")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="HunterTracker"]
+
+[node name="Shape" type="CollisionShape3D" parent="HunterTracker/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="HunterTracker"]
+script = ExtResource("42b_factioncomponent")
+FactionId = "faction.ash_hunters"
+
+[node name="Dialogue" type="Node" parent="HunterTracker"]
+script = ExtResource("42b_dialoguecomponent")
+DialogueId = "dialogue.hunter_tracker"
+
+[node name="Model" parent="HunterTracker" instance=ExtResource("42b_npc_hooded")]
+
+[node name="MapPin" type="Node3D" parent="Nav/DeadfallLodge"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.wilds.lodge"

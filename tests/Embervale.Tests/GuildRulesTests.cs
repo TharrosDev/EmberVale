@@ -210,4 +210,107 @@ public sealed class GuildRulesTests
         Assert.Equal(GuildState.Offered, restored.State);
         Assert.Equal(0, restored.Rank);
     }
+
+    // ── Phase 42B: the dialogue-condition seam ───────────────────────────────────────────────────
+
+    private static bool Meets(int minRank, params string[] flags)
+    {
+        var set = new HashSet<string>(flags);
+        return GuildRules.MeetsRank(set.Contains, Dawnwardens, Ranks, minRank);
+    }
+
+    [Fact]
+    public void MeetsRank_ZeroIsAnyMember()
+    {
+        Assert.True(Meets(0, GuildRules.JoinedFlag(Dawnwardens)));
+        Assert.False(Meets(0));
+        Assert.False(Meets(0, GuildRules.OfferedFlag(Dawnwardens)));
+        Assert.False(Meets(0, GuildRules.RefusedFlag(Dawnwardens)));
+    }
+
+    [Fact]
+    public void MeetsRank_ComparesBothDirectionsAroundTheThreshold()
+    {
+        string[] rankTwo =
+        {
+            GuildRules.JoinedFlag(Dawnwardens),
+            GuildRules.RankFlag(Dawnwardens, 1),
+            GuildRules.RankFlag(Dawnwardens, 2),
+        };
+
+        Assert.True(Meets(2, rankTwo));
+        Assert.True(Meets(1, rankTwo));
+        Assert.False(Meets(3, rankTwo));
+    }
+
+    [Fact]
+    public void MeetsRank_LeavingEndsMembershipHoweverManyRankFlagsSurvive()
+    {
+        // The reason a guild condition asks GuildRules rather than reading the rank flag itself:
+        // leaving does not clear the ranks that were earned, so a raw flag read would still greet a
+        // departed member as one of the order.
+        Assert.False(Meets(0,
+            GuildRules.JoinedFlag(Dawnwardens),
+            GuildRules.RankFlag(Dawnwardens, 1),
+            GuildRules.LeftFlag(Dawnwardens)));
+    }
+
+    [Fact]
+    public void MeetsRank_AGapDoesNotSatisfyTheRankItSkipped()
+    {
+        // rank3 without rank2 resolves to rank 1, so a rank-2 gate stays shut.
+        string[] gapped =
+        {
+            GuildRules.JoinedFlag(Dawnwardens),
+            GuildRules.RankFlag(Dawnwardens, 1),
+            GuildRules.RankFlag(Dawnwardens, 3),
+        };
+
+        Assert.True(Meets(1, gapped));
+        Assert.False(Meets(2, gapped));
+    }
+
+    [Fact]
+    public void MeetsRank_AFinishedArcIsStillAMember()
+    {
+        Assert.True(Meets(0,
+            GuildRules.JoinedFlag(Dawnwardens),
+            GuildRules.FinaleFlag(Dawnwardens)));
+    }
+
+    [Theory]
+    [InlineData("faction.dawnwardens", "faction.dawnwardens", 0)]
+    [InlineData("faction.dawnwardens:0", "faction.dawnwardens", 0)]
+    [InlineData("faction.dawnwardens:3", "faction.dawnwardens", 3)]
+    [InlineData(" faction.dawnwardens : 2 ", "faction.dawnwardens", 2)]
+    public void TryParseRankArg_AcceptsTheAuthoredForms(string arg, string faction, int rank)
+    {
+        Assert.True(GuildRules.TryParseRankArg(arg, out string parsed, out int parsedRank));
+        Assert.Equal(faction, parsed);
+        Assert.Equal(rank, parsedRank);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(":2")]
+    [InlineData("faction.dawnwardens:")]
+    [InlineData("faction.dawnwardens:two")]
+    // ⚠️ BOTH ENDS OF THE RANGE (NOW.md invariant 8). A negative rank is a gate every member passes
+    // and a rank above the vocabulary is one nobody can, and neither logs a thing at runtime.
+    [InlineData("faction.dawnwardens:-1")]
+    [InlineData("faction.dawnwardens:6")]
+    public void TryParseRankArg_RejectsWhatCannotBeAGate(string? arg)
+    {
+        Assert.False(GuildRules.TryParseRankArg(arg, out _, out _));
+    }
+
+    [Fact]
+    public void TryParseRankArg_AcceptsExactlyTheDeclaredCeiling()
+    {
+        Assert.True(GuildRules.TryParseRankArg($"{Dawnwardens}:{GuildRules.MaxRanks}", out _, out int rank));
+        Assert.Equal(GuildRules.MaxRanks, rank);
+        Assert.False(GuildRules.TryParseRankArg($"{Dawnwardens}:{GuildRules.MaxRanks + 1}", out _, out _));
+    }
 }

@@ -104,6 +104,7 @@ public static class ContentValidator
         ValidateRaces(issues);
         ValidateShrines(issues);
         ValidateGuilds(issues);
+        ValidateGuildHubs(issues);
         ValidateLocale(issues);
         ValidateBreakdownKeys(issues);
         ValidateCompanions(issues);
@@ -3066,6 +3067,189 @@ public static class ContentValidator
             if (!authored.Contains(id) && FactionDatabase.Get(id) == null)
             {
                 issues.Add($"missing required guild faction '{id}'");
+            }
+        }
+    }
+
+    /// <summary>
+    /// A guild's home and officers (Phase 42B), closed from both sides the way
+    /// <see cref="ValidateGuilds"/> closes the guild set itself.
+    ///
+    /// The forward half is that every guild names a hub location and three placeable officers. The
+    /// reverse half is the one worth having: <b>a roster id no cell scene places is an officer the
+    /// player can never meet</b>, and every arc from 42C on is gated behind talking to one of them,
+    /// so the failure is a guild that simply cannot be joined and nothing at runtime that says why.
+    /// <b>A roster id placed twice is worse</b> - two bodies claiming the same office, both
+    /// answering, both advancing the same arc.
+    ///
+    /// The reverse check is on the ROSTER-to-SCENE seam, not on faction membership. Scanning for
+    /// actors that merely carry a guild's <c>FactionComponent</c> and reporting the ones no roster
+    /// names would be the wrong rule: 42D places Dawnwarden patrols and 42I places Syndicate muscle,
+    /// and none of those are officers. What must be exact is the office.
+    /// </summary>
+    private static void ValidateGuildHubs(List<string> issues)
+    {
+        var owners = new Dictionary<string, string>();
+        var rosterIds = new List<string>();
+
+        foreach (FactionResource faction in FactionDatabase.All)
+        {
+            (string Role, string Id, bool Required)[] roster =
+            {
+                ("leader", faction.LeaderNpcId, true),
+                ("quartermaster", faction.QuartermasterNpcId, true),
+                ("contact", faction.ContactNpcId, true),
+                ("rank peer", faction.RankPeerNpcId, false),
+            };
+
+            if (!faction.IsGuild)
+            {
+                // A hub or an officer on a faction that declares no ranks is a half-authored guild:
+                // GuildRules would never resolve it, the Guilds tab would never list it, and the
+                // actor would stand in the world speaking for an organization nothing can join.
+                if (!string.IsNullOrEmpty(faction.HubLocationId))
+                {
+                    issues.Add($"faction '{faction.Id}' declares a hub location but no ranks, so nothing treats it as a guild");
+                }
+
+                foreach ((string role, string id, _) in roster)
+                {
+                    if (!string.IsNullOrEmpty(id))
+                    {
+                        issues.Add($"faction '{faction.Id}' declares a {role} '{id}' but no ranks, so nothing treats it as a guild");
+                    }
+                }
+
+                continue;
+            }
+
+            if (string.IsNullOrEmpty(faction.HubLocationId))
+            {
+                issues.Add($"guild '{faction.Id}' declares no hub location, so it has nowhere the player can go");
+            }
+            else if (World.MapLocationDatabase.Get(faction.HubLocationId) == null)
+            {
+                issues.Add($"guild '{faction.Id}' hub location '{faction.HubLocationId}' is not an authored map location");
+            }
+
+            foreach ((string role, string id, bool required) in roster)
+            {
+                if (string.IsNullOrEmpty(id))
+                {
+                    if (required)
+                    {
+                        issues.Add($"guild '{faction.Id}' declares no {role}");
+                    }
+
+                    continue;
+                }
+
+                if (owners.TryGetValue(id, out string? owner))
+                {
+                    issues.Add($"npc '{id}' is the {role} of guild '{faction.Id}' and is already on the " +
+                               $"roster of guild '{owner}' - one actor, one owner");
+                    continue;
+                }
+
+                owners[id] = faction.Id;
+                rosterIds.Add(id);
+            }
+        }
+
+        ValidateGuildRosterIsPlaced(rosterIds, owners, issues);
+        ValidateGuildDialogueConditions(issues);
+    }
+
+    /// <summary>Each declared officer stands in exactly one cell scene. The id is authored on the
+    /// entity's <c>TemplateId</c>, which is a string in a <c>.tscn</c> with no database behind it -
+    /// the same blind spot <see cref="ValidateMapMarkersArePlaced"/> and
+    /// <see cref="ValidateInteractIdsArePlaced"/> exist to cover.</summary>
+    private static void ValidateGuildRosterIsPlaced(
+        List<string> rosterIds, Dictionary<string, string> owners, List<string> issues)
+    {
+        if (rosterIds.Count == 0)
+        {
+            return;
+        }
+
+        var counts = new Dictionary<string, int>();
+        foreach (string id in rosterIds)
+        {
+            counts[id] = 0;
+        }
+
+        foreach (string path in ScenePaths("res://scenes/regions"))
+        {
+            using FileAccess? file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
+            if (file == null)
+            {
+                continue;
+            }
+
+            foreach (System.Text.RegularExpressions.Match match in
+                     System.Text.RegularExpressions.Regex.Matches(
+                         file.GetAsText(), @"(?m)^TemplateId = ""([^""]*)"""))
+            {
+                string id = match.Groups[1].Value;
+                if (counts.ContainsKey(id))
+                {
+                    counts[id]++;
+                }
+            }
+        }
+
+        foreach ((string id, int count) in counts)
+        {
+            string guild = owners[id];
+            if (count == 0)
+            {
+                issues.Add($"guild '{guild}' officer '{id}' is declared but no cell scene places an " +
+                           "entity with that TemplateId - the player can never meet them");
+            }
+            else if (count > 1)
+            {
+                issues.Add($"guild '{guild}' officer '{id}' is placed {count} times; an office has one holder");
+            }
+        }
+    }
+
+    /// <summary>
+    /// The guild dialogue conditions carry a factionId:rank argument, and both ends of that rank fail
+    /// silently in authored data (NOW.md invariant 8): a rank below zero is a gate open to every
+    /// member, and a rank above the ones the guild declares is a gate that can never open - and
+    /// neither logs anything, the line is simply always or never there.
+    /// </summary>
+    private static void ValidateGuildDialogueConditions(List<string> issues)
+    {
+        foreach (DialogueResource dialogue in DialogueDatabase.All)
+        {
+            foreach (DialogueNode node in dialogue.NodeList())
+            {
+                foreach (DialogueChoice choice in node.ChoiceList())
+                {
+                    if (choice.Condition is not (DialogueCondition.GuildRankAtLeast or DialogueCondition.GuildNotMember))
+                    {
+                        continue;
+                    }
+
+                    string where = $"dialogue '{dialogue.Id}' {choice.Condition} condition";
+                    if (!GuildRules.TryParseRankArg(choice.ConditionArg, out string factionId, out int rank))
+                    {
+                        issues.Add($"{where} argument '{choice.ConditionArg}' is not a faction id, " +
+                                   $"optionally followed by ':<rank 0..{GuildRules.MaxRanks}>'");
+                        continue;
+                    }
+
+                    if (FactionDatabase.Get(factionId) is not { } faction || !faction.IsGuild)
+                    {
+                        issues.Add($"{where} names '{factionId}', which is not a guild");
+                    }
+                    else if (rank > faction.RankNameKeys.Count)
+                    {
+                        issues.Add($"{where} requires rank {rank} of guild '{factionId}', which declares " +
+                                   $"only {faction.RankNameKeys.Count} - the choice can never be offered");
+                    }
+                }
             }
         }
     }

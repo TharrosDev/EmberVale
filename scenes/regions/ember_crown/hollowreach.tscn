@@ -36,6 +36,8 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_table_large.gltf" id="47_bones_table"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 [ext_resource type="Script" path="res://src/World/FlagVisibilityComponent.cs" id="48_flag_visibility"]
+[ext_resource type="PackedScene" path="res://scenes/props/bld_ledger_house.tscn" id="42b_bld_ledger_house"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_townsman.glb" id="42b_npc_townsman"]
 
 ; HOLLOWREACH (Phase 38O) — the wharf down the water from Tarn's Landing, and the realm's FOURTH
 ; market. It is the only place in Embervale that will buy contraband, and that is the whole of its
@@ -1179,3 +1181,71 @@ LocationId = "location.hollowreach.locker"
 [node name="MapPin" type="Node3D" parent="Nav/BonesTable"]
 script = ExtResource("maploc_39_5a")
 LocationId = "location.hollowreach.bones"
+
+; ── THE LEDGER HOUSE (Phase 42B) ──────────────────────────────────────────────────────────────────
+; The Iron Syndicate's hub, at the dry east end of the street where the market road comes in — on
+; Area_hollowreach_street (centre (16, 12), radius (10, 4), levelled to y = 1.4), so it stands above
+; the channels rather than in them. A 4.4 m square on two storeys: the narrowest and tallest of the
+; five hubs, which is what a counting house is.
+[node name="LedgerHouse" parent="Nav" instance=ExtResource("42b_bld_ledger_house")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 24, 0, 11.5)
+
+[node name="SyndicateBroker" type="Node3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 27, 0, 11.5)
+script = ExtResource("2_entity")
+DisplayName = "Broker Ilder Vance"
+TemplateId = "npc.syndicate_broker"
+
+[node name="Animation" type="Node" parent="SyndicateBroker"]
+script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="SyndicateBroker"]
+
+[node name="Shape" type="CollisionShape3D" parent="SyndicateBroker/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="SyndicateBroker"]
+script = ExtResource("6_faction")
+FactionId = "faction.iron_syndicate"
+
+[node name="Dialogue" type="Node" parent="SyndicateBroker"]
+script = ExtResource("4_dialogue")
+DialogueId = "dialogue.syndicate_broker"
+
+[node name="Schedule" type="Node" parent="SyndicateBroker"]
+script = ExtResource("7_schedule")
+ScheduleId = "schedule.syndicate_broker"
+
+[node name="Model" parent="SyndicateBroker" instance=ExtResource("31_coyle")]
+
+[node name="SyndicateFixer" type="Node3D" parent="."]
+transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, 26, 0, 14.8)
+script = ExtResource("2_entity")
+DisplayName = "Dallow Grieve"
+TemplateId = "npc.syndicate_fixer"
+
+[node name="Animation" type="Node" parent="SyndicateFixer"]
+script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="SyndicateFixer"]
+
+[node name="Shape" type="CollisionShape3D" parent="SyndicateFixer/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="SyndicateFixer"]
+script = ExtResource("6_faction")
+FactionId = "faction.iron_syndicate"
+
+[node name="Dialogue" type="Node" parent="SyndicateFixer"]
+script = ExtResource("4_dialogue")
+DialogueId = "dialogue.syndicate_fixer"
+
+[node name="Model" parent="SyndicateFixer" instance=ExtResource("42b_npc_townsman")]
+
+[node name="MapPin" type="Node3D" parent="Nav/LedgerHouse"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.hollowreach.ledger"

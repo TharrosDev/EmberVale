@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="ScheduleResource" format=3]
+
+[ext_resource type="Script" path="res://src/Npc/ScheduleResource.cs" id="1_sched"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleEntry.cs" id="2_entry"]
+
+; Hierarch Selane Ott (Phase 42B).
+; ⚠️ Destinations are CELL-LOCAL and Origin is ember_crown.emberdeep_mine's centre; see the header of
+; ScheduleResource.Origin. A raw WORLD destination copied out of a .tscn lands a cell's width from
+; where it was read, which is what broke nine routines in the 2026-08-29 overhaul.
+; ⚠️ Nothing here enters the hub building: its shell is one box collider, so its footprint is a hole
+; in the navmesh and a routine that ended inside it would be a leader who never arrives.
+
+[sub_resource type="Resource" id="e_chamber"]
+script = ExtResource("2_entry")
+StartHour = 6
+Activity = "Among the pillars"
+Destination = Vector3(12, 0, -7)
+
+[sub_resource type="Resource" id="e_pedestal"]
+script = ExtResource("2_entry")
+StartHour = 14
+Activity = "At the pedestal"
+Destination = Vector3(12, 0, -9.5)
+
+[sub_resource type="Resource" id="e_lamp"]
+script = ExtResource("2_entry")
+StartHour = 20
+Activity = "By the lamp"
+Destination = Vector3(12, 0, -7)
+
+[sub_resource type="Resource" id="e_sleep"]
+script = ExtResource("2_entry")
+StartHour = 23
+Activity = "Asleep"
+Destination = Vector3(10.5, 0, -7)
+
+[resource]
+script = ExtResource("1_sched")
+Id = "schedule.emberbound_hierarch"
+Entries = Array[Resource]([SubResource("e_chamber"), SubResource("e_pedestal"), SubResource("e_lamp"), SubResource("e_sleep")])
+Origin = Vector3(95, 0, -10)

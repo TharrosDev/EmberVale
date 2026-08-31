@@ -32,6 +32,9 @@
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 [ext_resource type="PackedScene" path="res://scenes/props/shrine_waystone.tscn" id="shrine_body_41_5b"]
 [ext_resource type="Script" path="res://src/Shrines/ShrineComponent.cs" id="shrine_41_5b"]
+[ext_resource type="PackedScene" path="res://scenes/props/bld_wardens_watch.tscn" id="42b_bld_wardens_watch"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleComponent.cs" id="42b_schedulecomponent"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_townsman.glb" id="42b_npc_townsman"]
 
 ; THE CROSSWAY POST (Phase 38M2) — the wardens' gate on the road north, and the place 38M's toll is
 ; actually about. 38M built the toll, the permit and the bribe and left them standing in the town
@@ -905,3 +908,98 @@ ShrineId = "shrine.tharos"
 [node name="MapPin" type="Node3D" parent="Nav/ShrineTharos"]
 script = ExtResource("maploc_39_5a")
 LocationId = "location.shrine.tharos"
+
+; ── THE WARDENS' WATCH (Phase 42B) ────────────────────────────────────────────────────────────────
+; The Dawnwardens' hub. It stands INSIDE the existing compound pad (Area_crossway_compound, centre
+; (-17, 13), radius (7, 6), levelled to y = 0) rather than on a new one of its own: the ground there
+; is already flat and already reached, so the keep needs no pad, no route and no grade of its own.
+; ⚠️ Sited west of the well so the compound is still crossed on the way to the gate. The guild does
+; not get its own approach; it gets the one the toll already built.
+[node name="WardensWatch" parent="Nav" instance=ExtResource("42b_bld_wardens_watch")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -20.5, 0, 12)
+
+[node name="DawnwardenCaptain" type="Node3D" parent="."]
+transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -15.5, 0, 16.5)
+script = ExtResource("2_entity")
+DisplayName = "Captain Aldric Fenn"
+TemplateId = "npc.dawnwarden_captain"
+
+[node name="Animation" type="Node" parent="DawnwardenCaptain"]
+script = ExtResource("4_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="DawnwardenCaptain"]
+
+[node name="Shape" type="CollisionShape3D" parent="DawnwardenCaptain/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="DawnwardenCaptain"]
+script = ExtResource("5_faction")
+FactionId = "faction.dawnwardens"
+
+[node name="Dialogue" type="Node" parent="DawnwardenCaptain"]
+script = ExtResource("43_dialogue")
+DialogueId = "dialogue.dawnwarden_captain"
+
+[node name="Schedule" type="Node" parent="DawnwardenCaptain"]
+script = ExtResource("42b_schedulecomponent")
+ScheduleId = "schedule.dawnwarden_captain"
+
+[node name="Model" parent="DawnwardenCaptain" instance=ExtResource("30_guild_rep")]
+
+[node name="DawnwardenArmourer" type="Node3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -14.8, 0, 12.8)
+script = ExtResource("2_entity")
+DisplayName = "Maera Colt"
+TemplateId = "npc.dawnwarden_armourer"
+
+[node name="Animation" type="Node" parent="DawnwardenArmourer"]
+script = ExtResource("4_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="DawnwardenArmourer"]
+
+[node name="Shape" type="CollisionShape3D" parent="DawnwardenArmourer/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="DawnwardenArmourer"]
+script = ExtResource("5_faction")
+FactionId = "faction.dawnwardens"
+
+[node name="Dialogue" type="Node" parent="DawnwardenArmourer"]
+script = ExtResource("43_dialogue")
+DialogueId = "dialogue.dawnwarden_armourer"
+
+[node name="Model" parent="DawnwardenArmourer" instance=ExtResource("32_townswoman")]
+
+[node name="DawnwardenSerjeant" type="Node3D" parent="."]
+transform = Transform3D(-0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, -0.9397, -14.5, 0, 18.5)
+script = ExtResource("2_entity")
+DisplayName = "Serjeant Rook Danhal"
+TemplateId = "npc.dawnwarden_serjeant"
+
+[node name="Animation" type="Node" parent="DawnwardenSerjeant"]
+script = ExtResource("4_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="DawnwardenSerjeant"]
+
+[node name="Shape" type="CollisionShape3D" parent="DawnwardenSerjeant/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="DawnwardenSerjeant"]
+script = ExtResource("5_faction")
+FactionId = "faction.dawnwardens"
+
+[node name="Dialogue" type="Node" parent="DawnwardenSerjeant"]
+script = ExtResource("43_dialogue")
+DialogueId = "dialogue.dawnwarden_serjeant"
+
+[node name="Model" parent="DawnwardenSerjeant" instance=ExtResource("42b_npc_townsman")]
+
+[node name="MapPin" type="Node3D" parent="Nav/WardensWatch"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.crossway.watch"

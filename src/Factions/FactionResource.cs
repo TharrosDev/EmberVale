@@ -65,6 +65,47 @@ public partial class FactionResource : Resource
     /// </summary>
     [Export] public bool RejoinAllowed { get; set; } = true;
 
+    // --- Guild hub and roster (Phase 42B) -----------------------------------
+    //
+    // A HUB IS A MAP LOCATION AND A ROSTER ENTRY IS A PLACED ACTOR. 42A's lesson was that the cheap
+    // answer to "what kind of thing is this" is usually a kind that already exists, and it holds
+    // twice here: a guild's home needs a name, a category, a pin, a cell and discovery rules, which
+    // is a `MapLocationResource` entire; and a guild's officer needs a body, a collider, a schedule,
+    // a faction and a conversation, which is an authored `Entity` in a cell scene. So there is no
+    // `GuildHubResource` and no `GuildHubComponent` — these five strings are the only new surface,
+    // and every one of them is an id into a register that already validates itself.
+    //
+    // ⚠️ THE POSITION IS NOT HERE, FOR THE REASON `MapLocationResource` HAS NO COORDINATES EITHER.
+    // Where the hub stands is the placed `MapLocationComponent`'s transform in the cell scene.
+
+    /// <summary>
+    /// The <c>location.*</c> id of this guild's home. Empty on an ordinary faction; required on a
+    /// guild. Map coverage, the breadcrumb, the pin and any future Reach objective all come free
+    /// through <see cref="World.MapLocationResource"/> rather than being restated here.
+    /// </summary>
+    [Export] public string HubLocationId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The <c>npc.*</c> <see cref="Entities.Entity.TemplateId"/> of the officer who speaks for the
+    /// guild — the one membership is offered and granted through. Required on a guild, and placed
+    /// exactly once in a cell scene (<c>ContentValidator.ValidateGuildHubs</c> checks both sides).
+    /// </summary>
+    [Export] public string LeaderNpcId { get; set; } = string.Empty;
+
+    /// <summary>The officer who equips and pays members. Required on a guild.</summary>
+    [Export] public string QuartermasterNpcId { get; set; } = string.Empty;
+
+    /// <summary>The officer who hands out the guild's work. Required on a guild.</summary>
+    [Export] public string ContactNpcId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// A member of the player's own standing — the peer whose reaction is how rank reads in the
+    /// world rather than on a screen. ⚠️ <b>Optional on purpose:</b> a peer only means anything once
+    /// there is a rank to be a peer of, so it is DECLARED here and PLACED by the arc sub-phase that
+    /// first grants rank one (42C/E/G/I). Left empty it is skipped; set it must resolve like the rest.
+    /// </summary>
+    [Export] public string RankPeerNpcId { get; set; } = string.Empty;
+
     /// <summary>True when this faction is one of Phase 42's guilds — it declares ranks.</summary>
     public bool IsGuild => RankNameKeys.Count > 0;
 }

@@ -239,5 +239,59 @@ public static class GuildRules
         _ => true,
     };
 
+    /// <summary>
+    /// Whether the player is a member of this guild at or above <paramref name="minRank"/>.
+    /// <c>minRank</c> 0 means "a member at all", which is the common case — a hub greeting usually
+    /// only cares that the player is one of us.
+    ///
+    /// ⚠️ It asks <see cref="Resolve"/> rather than reading the rank flag, so it inherits the two
+    /// rules a direct flag read would skip: a player who LEFT is not a member however many rank
+    /// flags survive, and a rank gap does not promote.
+    /// </summary>
+    public static bool MeetsRank(Predicate<string> has, string factionId, int rankCount, int minRank)
+    {
+        GuildStanding standing = Resolve(has, factionId, rankCount);
+        return standing.IsMember && standing.Rank >= minRank;
+    }
+
+    /// <summary>
+    /// Parses the <c>&lt;factionId&gt;:&lt;rank&gt;</c> argument the guild dialogue conditions take
+    /// — <c>faction.dawnwardens:2</c>, or a bare <c>faction.dawnwardens</c> for rank 0. One parser
+    /// so the runtime condition, the content validator and the tests cannot disagree about what an
+    /// authored argument means.
+    ///
+    /// The rank must be in <c>0..</c><see cref="MaxRanks"/>: a negative rank is a condition that is
+    /// always true for any member and a rank above the vocabulary is one that can never be true, and
+    /// <b>both ends fail silently in authored data</b> (NOW.md invariant 8), so both are rejected
+    /// here and reported by the validator.
+    /// </summary>
+    public static bool TryParseRankArg(string? arg, out string factionId, out int rank)
+    {
+        factionId = string.Empty;
+        rank = 0;
+        if (string.IsNullOrWhiteSpace(arg))
+        {
+            return false;
+        }
+
+        // Faction ids are dotted (faction.dawnwardens) and never contain a colon, so the LAST colon
+        // is the separator — the same reading CompanionArg takes of its own pairs.
+        int colon = arg.LastIndexOf(':');
+        if (colon < 0)
+        {
+            factionId = arg.Trim();
+            return factionId.Length > 0;
+        }
+
+        factionId = arg[..colon].Trim();
+        if (factionId.Length == 0 || !int.TryParse(arg[(colon + 1)..].Trim(), out rank))
+        {
+            rank = 0;
+            return false;
+        }
+
+        return rank >= 0 && rank <= MaxRanks;
+    }
+
     private static bool Has(Predicate<string> has, string flag) => flag.Length > 0 && has(flag);
 }
