@@ -525,10 +525,10 @@ LocationId = "location.wilds.north"
 ; ⚠️ This cell had no NPCs before, so Shape_npc, the Entity script and the actor components below
 ; are new ext/sub resources here rather than existing ones being reused.
 [node name="DeadfallLodge" parent="Nav" instance=ExtResource("42b_bld_deadfall_lodge")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, -9)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21.5, 0, -9.0)
 
 [node name="HunterMaster" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, -10)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21.5, 0, -10.0)
 script = ExtResource("2_entity")
 DisplayName = "Huntmaster Yrsa Kesk"
 TemplateId = "npc.hunter_master"
@@ -558,7 +558,7 @@ ScheduleId = "schedule.hunter_master"
 [node name="Model" parent="HunterMaster" instance=ExtResource("42b_npc_adventurer_f")]
 
 [node name="HunterSkinner" type="Node3D" parent="."]
-transform = Transform3D(0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, 0.9397, 17.5, 0, -6.5)
+transform = Transform3D(0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, 0.9397, 19.0, 0, -3.5)
 script = ExtResource("2_entity")
 DisplayName = "Fell Ardan"
 TemplateId = "npc.hunter_skinner"
@@ -584,7 +584,7 @@ DialogueId = "dialogue.hunter_skinner"
 [node name="Model" parent="HunterSkinner" instance=ExtResource("42b_npc_townsman")]
 
 [node name="HunterTracker" type="Node3D" parent="."]
-transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 21.5, 0, -5.5)
+transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 23.5, 0, -4.0)
 script = ExtResource("2_entity")
 DisplayName = "Halda Rieve"
 TemplateId = "npc.hunter_tracker"

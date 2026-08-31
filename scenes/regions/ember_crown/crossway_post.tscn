@@ -916,10 +916,10 @@ LocationId = "location.shrine.tharos"
 ; ⚠️ Sited west of the well so the compound is still crossed on the way to the gate. The guild does
 ; not get its own approach; it gets the one the toll already built.
 [node name="WardensWatch" parent="Nav" instance=ExtResource("42b_bld_wardens_watch")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -20.5, 0, 12)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -19.5, 0, 6.5)
 
 [node name="DawnwardenCaptain" type="Node3D" parent="."]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -15.5, 0, 16.5)
+transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -13.5, 0, 5.0)
 script = ExtResource("2_entity")
 DisplayName = "Captain Aldric Fenn"
 TemplateId = "npc.dawnwarden_captain"
@@ -949,7 +949,7 @@ ScheduleId = "schedule.dawnwarden_captain"
 [node name="Model" parent="DawnwardenCaptain" instance=ExtResource("30_guild_rep")]
 
 [node name="DawnwardenArmourer" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -14.8, 0, 12.8)
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -15.5, 0, 2.5)
 script = ExtResource("2_entity")
 DisplayName = "Maera Colt"
 TemplateId = "npc.dawnwarden_armourer"
@@ -975,7 +975,7 @@ DialogueId = "dialogue.dawnwarden_armourer"
 [node name="Model" parent="DawnwardenArmourer" instance=ExtResource("32_townswoman")]
 
 [node name="DawnwardenSerjeant" type="Node3D" parent="."]
-transform = Transform3D(-0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, -0.9397, -14.5, 0, 18.5)
+transform = Transform3D(-0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, -0.9397, -11.5, 0, 3.5)
 script = ExtResource("2_entity")
 DisplayName = "Serjeant Rook Danhal"
 TemplateId = "npc.dawnwarden_serjeant"

@@ -29,7 +29,6 @@
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="42b_prp_ruin_pillar"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_wall.glb" id="42b_prp_ruin_wall"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_banner_guild.glb" id="42b_prp_banner_guild"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_tome_stand.glb" id="42b_prp_tome_stand"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_hooded.glb" id="42b_npc_hooded"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_townsman.glb" id="42b_npc_townsman"]
@@ -896,7 +895,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
 shape = SubResource("Shape_pillar_42b")
 
 [node name="UndercroftWallW" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, -12.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.0, 0, -13.2)
 
 [node name="Model" parent="Nav/UndercroftWallW" instance=ExtResource("42b_prp_ruin_wall")]
 
@@ -907,7 +906,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
 shape = SubResource("Shape_ruin_42b")
 
 [node name="UndercroftWallE" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, -12.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.0, 0, -13.2)
 
 [node name="Model" parent="Nav/UndercroftWallE" instance=ExtResource("42b_prp_ruin_wall")]
 
@@ -916,11 +915,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, -12.5)
 [node name="Shape" type="CollisionShape3D" parent="Nav/UndercroftWallE/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
 shape = SubResource("Shape_ruin_42b")
-
-[node name="UndercroftBanner" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, -12.1)
-
-[node name="Model" parent="Nav/UndercroftBanner" instance=ExtResource("42b_prp_banner_guild")]
 
 [node name="UndercroftPedestal" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, -11)

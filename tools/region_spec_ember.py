@@ -390,6 +390,11 @@ def cells() -> list[Cell]:
             legacy_areas=("Area_hollowreach_hollow", "Area_hollowreach_street", "Area_hollowreach_spine"),
             area_elevation={"Area_hollowreach_hollow": 0.9, "Area_hollowreach_street": 1.4,
                             "Area_hollowreach_spine": 0.9},
+            # 42B: the Ledger House stands on this. Area_hollowreach_street is 8 m of road plus 2 m
+            # of shoulder in an 8 m deep pad — the pad is the street — so the counting house sits on
+            # a bench cut north of it, at the street's own 1.4 rather than at the district's 0.9:
+            # the point of the Syndicate's house is that it is the dry building above the channels.
+            yards=(Yard(at=(20.0, 23.0), ext=(5.0, 5.0), feather=2.5, blend=0.8, elevation=1.4),),
             landforms=(
                 # ⚠️ THE DISTRICT STANDS JUST ABOVE THE WATERLINE AND THE CHANNELS ARE CUT BELOW
                 # IT. It used to sit 1.2 m UNDER it, which meant every water surface had to stop
@@ -696,6 +701,13 @@ def cells() -> list[Cell]:
             legacy_areas=("Area_crossway_hold", "Area_crossway_compound", "Area_crossway_gate"),
             area_elevation={"Area_crossway_hold": 0.0, "Area_crossway_compound": 0.0,
                             "Area_crossway_gate": 0.0},
+            # 42B: the Wardens' Watch stands on this. ⚠️ IT IS NOT INSIDE THE COMPOUND, AND IT
+            # CANNOT BE: Path_crossway_compound runs east-west along z = 14 with a 4 m road and a
+            # 1.5 m shoulder, so the compound pad IS the track for all but three metres of its
+            # depth. The keep went there first and the traversal probe found what that means — two
+            # authored routes with no navigation path through them. This apron sits south of the
+            # track, between it and the palisade, and is levelled to the compound's own 0.0.
+            yards=(Yard(at=(-19.5, 6.5), ext=(6.0, 5.0), feather=2.5, blend=0.8, elevation=0.0),),
             landforms=(
                 Mound(at=(0, 4), ext=(32, 26), h=0.0, fall=0.5, flat=0.9),
                 # THE NECK IS NORTH OF THE POST, NOT ACROSS IT. Drawn east-west through the

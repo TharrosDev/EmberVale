@@ -505,6 +505,14 @@ Feather = 2.5
 SurfaceBlend = 0.78
 Elevation = 0.9
 
+[sub_resource type="Resource" id="Area_hollowreach_y0"]
+script = ExtResource("7_area")
+Center = Vector2(20.0, 23.0)
+Radius = Vector2(5.0, 5.0)
+Feather = 2.5
+SurfaceBlend = 0.8
+Elevation = 1.4
+
 [sub_resource type="Resource" id="Water_hollowreach_0"]
 script = ExtResource("12_water")
 Id = "OpenWater"
@@ -546,7 +554,7 @@ TintStrength = 0.12
 TopologyResolution = 60
 Landforms = Array[ExtResource("8_landform")]([SubResource("Land_hollowreach_0"), SubResource("Land_hollowreach_1"), SubResource("Land_hollowreach_2"), SubResource("Land_hollowreach_3"), SubResource("Land_hollowreach_4"), SubResource("Land_hollowreach_5"), SubResource("Land_hollowreach_6")])
 Paths = Array[ExtResource("6_path")]([SubResource("Path_hollowreach_east"), SubResource("Path_hollowreach_turn"), SubResource("Path_hollowreach_spine"), SubResource("Path_hollowreach_ap0"), SubResource("Path_hollowreach_ap1"), SubResource("Path_hollowreach_ap2")])
-GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_hollowreach_hollow"), SubResource("Area_hollowreach_street"), SubResource("Area_hollowreach_spine")])
+GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_hollowreach_hollow"), SubResource("Area_hollowreach_street"), SubResource("Area_hollowreach_spine"), SubResource("Area_hollowreach_y0")])
 Water = Array[ExtResource("12_water")]([SubResource("Water_hollowreach_0"), SubResource("Water_hollowreach_1"), SubResource("Water_hollowreach_2")])
 
 [sub_resource type="Resource" id="Cell_hollowreach"]
@@ -1808,6 +1816,14 @@ Feather = 1.5
 SurfaceBlend = 0.90
 Elevation = 0.0
 
+[sub_resource type="Resource" id="Area_crossway_post_y0"]
+script = ExtResource("7_area")
+Center = Vector2(-19.5, 6.5)
+Radius = Vector2(6.0, 5.0)
+Feather = 2.5
+SurfaceBlend = 0.8
+Elevation = 0.0
+
 [sub_resource type="Resource" id="Presentation_crossway_post"]
 script = ExtResource("4_presentation")
 Width = 100.0
@@ -1816,7 +1832,7 @@ Seed = 103
 TopologyResolution = 56
 Landforms = Array[ExtResource("8_landform")]([SubResource("Land_crossway_post_0"), SubResource("Land_crossway_post_1"), SubResource("Land_crossway_post_2"), SubResource("Land_crossway_post_3")])
 Paths = Array[ExtResource("6_path")]([SubResource("Path_crossway_south"), SubResource("Path_crossway_turn"), SubResource("Path_crossway_gate"), SubResource("Path_crossway_dogleg"), SubResource("Path_crossway_north"), SubResource("Path_crossway_compound"), SubResource("Path_crossway_post_ap0"), SubResource("Path_crossway_post_ap1"), SubResource("Path_crossway_post_ap2"), SubResource("Path_crossway_post_ap3"), SubResource("Path_crossway_post_ap4")])
-GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_crossway_hold"), SubResource("Area_crossway_compound"), SubResource("Area_crossway_gate")])
+GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_crossway_hold"), SubResource("Area_crossway_compound"), SubResource("Area_crossway_gate"), SubResource("Area_crossway_post_y0")])
 
 [sub_resource type="Resource" id="Cell_crossway_post"]
 script = ExtResource("2_cell")

@@ -917,7 +917,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
 shape = SubResource("Shape_bench")
 
 [node name="PineF" type="Node3D" parent="Nav"]
-transform = Transform3D(0.5, 0, 0.866, 0, 1, 0, -0.866, 0, 0.5, 24, 0, 24)
+transform = Transform3D(0.5, 0, 0.866, 0, 1, 0, -0.866, 0, 0.5, 27, 0, 27)
 
 [node name="Model" parent="Nav/PineF" instance=ExtResource("22_pine")]
 
@@ -1188,10 +1188,10 @@ LocationId = "location.hollowreach.bones"
 ; the channels rather than in them. A 4.4 m square on two storeys: the narrowest and tallest of the
 ; five hubs, which is what a counting house is.
 [node name="LedgerHouse" parent="Nav" instance=ExtResource("42b_bld_ledger_house")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 0, 11.5)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 20.0, 0, 23.0)
 
 [node name="SyndicateBroker" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 27, 0, 11.5)
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 24.5, 0, 22.5)
 script = ExtResource("2_entity")
 DisplayName = "Broker Ilder Vance"
 TemplateId = "npc.syndicate_broker"
@@ -1221,7 +1221,7 @@ ScheduleId = "schedule.syndicate_broker"
 [node name="Model" parent="SyndicateBroker" instance=ExtResource("31_coyle")]
 
 [node name="SyndicateFixer" type="Node3D" parent="."]
-transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, 26, 0, 14.8)
+transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, 24.0, 0, 25.0)
 script = ExtResource("2_entity")
 DisplayName = "Dallow Grieve"
 TemplateId = "npc.syndicate_fixer"
