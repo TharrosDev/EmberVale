@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="FactionResource" load_steps=2 format=3 uid="uid://cmbrvlfacembrbnd"]
+
+[ext_resource type="Script" path="res://src/Factions/FactionResource.cs" id="1_faction"]
+
+[resource]
+script = ExtResource("1_faction")
+Id = "faction.emberbound"
+DisplayName = "Emberbound"
+Description = "A concealed order studying Flamebearers and the ethics of divine relics. It has no public standing to lose, no allies to name and no enemies who know it exists."
+DefaultReputation = 0
+HostileThreshold = 2
+KillReputationPenalty = 10
+Enemies = Array[String]([])
+Allies = Array[String]([])
+RankNameKeys = Array[String](["guild.emberbound.rank1", "guild.emberbound.rank2", "guild.emberbound.rank3"])
+RejoinAllowed = false

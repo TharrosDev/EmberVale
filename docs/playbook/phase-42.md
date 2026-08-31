@@ -6,7 +6,7 @@
 > or second save ledger. Every hub actor needs a stable `PersistentId`, schedule, localized dialogue
 > and canonical map location. Unique rewards need an inventory-full/duplicate answer.
 
-- [ ] **42A — Shared membership/rank contract + small guild UI** `[F/C]`
+- [x] **42A — Shared membership/rank contract + small guild UI** `[F/C]` ✅
   - **Goal:** one inspectable shape for all five guilds.
   - **Build / Author:** audit the live faction/flag/quest/journal seams; register five guild ids and a
     stable flag vocabulary (`offered`, `joined`, `left`, `refused`, named rank flags, `finale`);
@@ -18,6 +18,10 @@
     save→mutate→load replacement, and panel captures at 854×534 through ultrawide.
   - **Done when:** one resolver/UI/report names every guild state, invalid chains fail, and reload
     restores exact membership and rank.
+  - **Done:** a guild IS a `FactionResource` with ranks. `GuildRules` derives the flag vocabulary
+    and resolves state; the character screen's Guilds tab and the `guild` console command both
+    derive from it; `ValidateGuilds` closes the five-guild set from both sides. Zero new save
+    surface — see the retrospective below.
 
 - [ ] **42B — Guild hubs, rosters and Phase 44 placement handoff** `[C]`
   - **Goal:** give each organization a credible home before quest content depends on it.
@@ -130,5 +134,78 @@
     full pack, region transitions, every terminal save/load, `validate-all`, map and panel/hub captures.
   - **Done when:** every matrix cell has an authored result, no guild or reward can orphan another arc,
     and Phase 45 can enumerate the whole layer without exceptions.
+
+---
+
+---
+
+## 42A — a guild is a faction with ranks
+
+The question that decided the whole sub-phase was **what a guild IS**, and the cheap answer turned
+out to be the right one. Every one of the five already needed a `FactionResource` for public
+standing, so a `GuildResource` beside it would have been a second registry, a second loader, a
+second validator surface and a second thing to keep in step — for five rows of data. Instead
+`FactionResource` gained `RankNameKeys` (ordered locale keys, lowest first) and `RejoinAllowed`,
+and `IsGuild` is `RankNameKeys.Count > 0`. Four new `.tres` beside `IronSyndicate.tres`, which
+already existed and only needed its ranks.
+
+**The flag vocabulary is derived, never authored.** `GuildRules` builds
+`guild.<slug>.offered/refused/joined/left/rankN/finale` from the faction id, so a flag id is not a
+string two files have to agree about (invariant 12). Nothing anywhere authors one by hand.
+
+`GuildRules.Resolve` is the whole rule as one ordered function — **finale → left → joined →
+refused → offered → unknown** — the same shape as `BlessingRules.Decide`, and for the same reason:
+the order is the design. Ranks are cumulative, and **a gap does not promote**: rank 3 without rank 2
+resolves to rank 1 and reports `RankGap`, because the alternative is a hand-written flag silently
+awarding seniority no arc granted. Contradictions are reported, never thrown — a bad save still has
+to render.
+
+Persistence cost **nothing**, which was the point. `StoryFlagsComponent` is already an `ISaveable`
+whose `Load` clears before restoring, so membership replaces on load for free — and only while no
+second ledger exists. `--panelshots` now proves it rather than asserting it: shot 15 saves the five
+staged states, promotes the Dawnwardens to rank 3 and joins the Emberbound, loads the save back, and
+photographs the tab. A merging load would show both mutations; the frame is identical to shot 14.
+
+The UI is a fourth tab on the character screen, and adding it exposed a live bug in a panel nobody
+had touched: **the character screen had no `GameLoadedEvent` subscription at all.** Every other
+rebuilding panel has one. It never mattered while the screen drew only components whose own state
+was restored in place; it would have mattered the moment it drew a fact that arrives as a flag.
+
+### Retrospective + traps
+
+`ValidateGuilds` checks the closed set **from both sides**, and that is the arm worth having: a
+listed guild that stops declaring ranks silently becomes an ordinary faction and every quest gated
+on membership goes dead, while an unlisted faction that starts declaring them silently becomes a
+sixth guild `GameIds.Guilds`, the rank vocabulary and the UI know nothing about. Both load. Both
+render. The rank count is an authored range (1..`GuildRules.MaxRanks`) with a negative case in each
+direction, per invariant 8.
+
+⚠️ **The rejoin policy is a GATE, not a state, and there is nothing to detect after the fact.** A
+rejoin clears the `left` flag at the choke point, so a guild that forbids rejoining and a guild that
+allows it look identical in the flags afterwards. `GuildRules.CanJoin` is therefore the only place
+the policy can be enforced, and every future join path — 42C's dialogue, 42I's contract board — has
+to route through it. A contradiction enum member for "rejoined against policy" was written and then
+deleted, because nothing could ever set it.
+
+⚠️ **The `guild` console command was reviewed, not driven.** The `F1` console needs keyboard input
+and no CLI reaches it, which is true of every console command in this repo — but it means the
+mutator's argument parsing has no automated caller. What IS driven is the path it writes through:
+`--panelshots` stages all five states through `StoryFlagsComponent` exactly as the command does.
+
+### Two things worth carrying into the next sub-phase
+
+1. ⚠️ **THE CHEAP ANSWER TO "WHAT KIND OF THING IS THIS" IS USUALLY A KIND THAT ALREADY EXISTS.**
+   A guild needed a name, a description, public standing, an enemy web and a hostile threshold —
+   which is a `FactionResource`, entire. Two exported fields made it a guild, and the loader, the
+   database, the reputation seeding, the character screen and four validator arms all came along for
+   nothing. **42B places hubs, rosters and contacts, and the same question is waiting there**: a
+   guild hub needs a name, a position, a map pin and interactable residents — ask what that already
+   is before authoring a hub kind.
+2. ⚠️ **A NEW FACT ON A SURFACE REVEALS WHAT THAT SURFACE NEVER SUBSCRIBED TO.** The character
+   screen had listened to seven events for thirty phases and to `GameLoadedEvent` never, and only a
+   fact that arrives as a *flag* could expose it — everything else it drew was restored in place by
+   its own component. 42B adds actors whose greeting depends on membership: **the grep before
+   shipping is not "does it update when the flag changes" but "what happens after a wholesale load,
+   which replays no events at all".**
 
 ---

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="FactionResource" load_steps=2 format=3 uid="uid://cmbrvlfacashhunt"]
+
+[ext_resource type="Script" path="res://src/Factions/FactionResource.cs" id="1_faction"]
+
+[resource]
+script = ExtResource("1_faction")
+Id = "faction.ash_hunters"
+DisplayName = "Ash Hunters"
+Description = "A hunting order that tracks dragons and corrupted beasts. They keep field notes the way other orders keep relics, and they measure a hunter by what they knew before the kill."
+DefaultReputation = 0
+HostileThreshold = 2
+KillReputationPenalty = 10
+Enemies = Array[String](["faction.beasts", "faction.dragons"])
+Allies = Array[String]([])
+RankNameKeys = Array[String](["guild.ash_hunters.rank1", "guild.ash_hunters.rank2", "guild.ash_hunters.rank3"])
+RejoinAllowed = true

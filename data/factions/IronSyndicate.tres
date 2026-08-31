@@ -12,3 +12,5 @@ HostileThreshold = 2
 KillReputationPenalty = 8
 Enemies = Array[String]([])
 Allies = Array[String]([])
+RankNameKeys = Array[String](["guild.iron_syndicate.rank1", "guild.iron_syndicate.rank2", "guild.iron_syndicate.rank3"])
+RejoinAllowed = true

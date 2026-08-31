@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="FactionResource" load_steps=2 format=3 uid="uid://cmbrvlfacveilarc"]
+
+[ext_resource type="Script" path="res://src/Factions/FactionResource.cs" id="1_faction"]
+
+[resource]
+script = ExtResource("1_faction")
+Id = "faction.veiled_archive"
+DisplayName = "Veiled Archive"
+Description = "Scholars who seek forgotten knowledge and preserve what the world would rather lose. Admission is by contribution, and it is granted once."
+DefaultReputation = 0
+HostileThreshold = 2
+KillReputationPenalty = 10
+Enemies = Array[String](["faction.hollow"])
+Allies = Array[String]([])
+RankNameKeys = Array[String](["guild.veiled_archive.rank1", "guild.veiled_archive.rank2", "guild.veiled_archive.rank3"])
+RejoinAllowed = false

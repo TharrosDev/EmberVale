@@ -16,8 +16,14 @@
   collision and real navigation, and there is no seam fade anywhere.** Every POI's interior
   circulation is the layout rebuild's, lifted verbatim. ⚠️ **This is still NOT Phase 44** — that phase
   blocks out all five realms and is ahead of us.
-- **NEXT: 42A — membership/rank flag framework + a small rank UI**, reusing the existing story flags
-  and `FactionResource`. It is the gate the five guild questlines (42B–F) all sit behind.
+- **42A ✅ CLOSED (2026-08-30).** A guild is a `FactionResource` with ranks — no `GuildResource`, no
+  `GuildComponent`, no guild save record. `GuildRules` derives the whole flag vocabulary from the
+  faction id and resolves state in one ordered function; the character screen grew a **Guilds** tab;
+  the `guild` console command drives membership through the same story-flag choke point a dialogue
+  effect will. Nine factions became thirteen. **Membership persists for free** — `StoryFlagsComponent`
+  was already the authority and its `Load` already clears before restoring.
+- **NEXT: 42B — guild hubs, rosters and the Phase 44 placement handoff.** Give each of the five a
+  credible home, a leader, a quartermaster and a quest contact, mapped in the same sub-phase.
 
 ### What the overhaul actually changed
 
@@ -58,41 +64,23 @@
 Read [`docs/WORLD_AUTHORING.md`](WORLD_AUTHORING.md) before touching a cell. `data/regions/*.tres`
 is **generated** — edit `tools/region_spec_<region>.py` and run `python tools/gen_regions.py`.
 
-## Last verified (2026-08-30 - the world-quality pass)
-
-`python tools/world_quality_check.py` - **all 16 gates PASS**. Individually:
+## Last verified (2026-08-30 — 42A, the guild contract)
 
 | Check | Result |
 | --- | --- |
-| Build | `dotnet build Embervale.sln` - 0 warnings, 0 errors |
-| Tests | `dotnet test tests/Embervale.Tests` - **1525 passing** (+15: traversal analysis, water, landform irregularity, the scatter terrain gate) |
-| `--validate` | exit 0 - now also walks the whole lattice for off-route traps |
-| `--state` | 2 regions, 26 cells, 70 map locations; both portals OPEN |
-| `--play` | boots, restores `auto1`, streams all 16 Ember Crown cells, 0 errors |
-| Generation | `gen_regions.py --check` - clean |
-| Negative battery | `negative_tests.py` - every rule still fails when broken |
-| Starter template | `region_spec_template.py` - builds, lattice sound |
-| Seams / layout | PASS on both regions |
-| Traversal | `world_traversal_probe.gd` - PASS, 142 route segments. ⚠️ it caught the two dead-end prop clusters this pass added sitting **in** the road corridor; they were moved |
-| Off-route traps | 2 real traps found in Frostfang (the Aerie's north precipice floor, a Glacier Pass crevasse). Both are deep, authored hazards, so `WorldRecovery` owns them and only *shallow* traps fail the build |
-| Step-up / map / mesh census | PASS |
-| World render | `world_shots.gd` - 260 frames, **lit by each region's own atmosphere for the first time**, inspected at eye level before the baseline was regenerated |
+| Build | `dotnet build Embervale.sln` — 0 warnings, 0 errors |
+| Tests | `dotnet test tests/Embervale.Tests` — **1546 passing** (+21: `GuildRulesTests`) |
+| `--validate` | exit 0, with the new `ValidateGuilds` arm |
+| `--state` | 2 regions, 26 cells, 70 map locations, **13 factions** (was 9) |
+| Negative battery | `negative_tests.py` — **100/100 caught**, including four new guild cases |
+| `--panelshots` | 17 shots; **14-guilds** carries all five states at once (ranked member, finished arc, departure, refusal, untouched order), inspected at 1280×720, **854×534** and **2560×1080** |
+| Persistence | **shot 15** saves those states, promotes and joins after the save, loads back, and photographs an unchanged tab — a merging `Load` would show both mutations |
+| `--play` | boots, restores `auto1`, 0 errors. The harness deletes its own save slot so it never becomes the newest |
 
-**Measured cost, same machine (Intel Iris Xe), `world_perf_probe.gd`, median frame time:**
-
-| | Ember Crown before -> after | Frostfang before -> after |
-| --- | --- | --- |
-| Draw calls (mean/cell) | 622 -> **634** | 161 -> **158** |
-| Primitives (mean/cell) | 1.17 M -> **1.05 M** | 214 k -> **219 k** |
-| Frame time (mean/cell) | 17.6 ms -> **14.0 ms** | 13.4 ms -> **11.9 ms** |
-| Frame time (worst cell) | 28.6 ms -> **20.0 ms** | 37.0 ms -> **16.7 ms** |
-| Video memory | 483 MB -> **379 MB** | 413 MB -> **305 MB** |
-| Region build (streamed+settled) | 2.2 s -> **3.4 s** | 0.9 s -> **1.9 s** |
-
-⚠️ **The one regression is region BUILD time, and it is on a loading screen.** It was 5.2 s
-before three fixes: the irregularity warp now early-outs outside a landform's transition band, the
-backdrop samples the real field only within 45 m of the lattice, and the scatter spacing test is
-bucketed rather than O(n-squared). Everything the player sees per frame got cheaper.
+Not re-run, because nothing here touches price, terrain or world placement: `--economy` and the
+world battery (`tools/world_quality_check.py`). **Reviewed but not driven:** the `guild` console
+command's argument parsing — the `F1` console needs keyboard input and no CLI reaches it, which is
+true of every console command in this repo. The path it writes through *is* driven by `--panelshots`.
 
 ## Live invariants
 
@@ -150,7 +138,14 @@ bucketed rather than O(n-squared). Everything the player sees per frame got chea
     once the world had 60-degree faces in it, a uniform scatter grew trees and boulders sideways out
     of every cliff in two regions. `Clumping` is the companion rule - even spacing is the most
     recognisable pattern there is, and the eye finds it long before it finds a repeated model.
-18. ⚠️ **AN HLOD TIER IS A SILHOUETTE CONTRACT.** The proxy is the same mesh at a fraction of
+18. ⚠️ **A GUILD IS A FACTION WITH RANKS, AND ITS FLAGS ARE DERIVED, NEVER AUTHORED.** Membership,
+    rank, refusal and departure are `guild.<slug>.*` story flags built by `GuildRules` from the
+    faction id — never written by hand into a `.tres`, never a second ledger, never a
+    `GuildComponent`. `GuildRules.Resolve` is the only reader and `StoryFlagsComponent` the only
+    writer. Ranks are cumulative and **a gap does not promote**; `CanJoin` is where the rejoin
+    policy is enforced, because after a rejoin there is nothing left to detect.
+
+19. ⚠️ **AN HLOD TIER IS A SILHOUETTE CONTRACT.** The proxy is the same mesh at a fraction of
     the density. Cones and boxes keep the mass and throw away the outline, which is the half that
     matters at the range they engage - from the town square they read as black crates on a hillside.
 
@@ -172,6 +167,8 @@ godot --headless --path . --script res://tools/stepup_probe.gd
 godot --headless --path . --script res://tools/cell_mesh_census.gd
 godot --path . --script res://tools/world_shots.gd      # add -- --update-world-baseline AFTER inspecting
 godot --path . --script res://tools/world_perf_probe.gd # draws, primitives, frame time, video memory
+                                                        # baseline: docs/WORLD_AUTHORING.md §15
+godot --path . -- --panelshots                          # every screen, incl. the Guilds tab
 python tools/world_quality_check.py                     # ALL of the above, in order, one verdict
 python tools/region_spec_template.py                    # the new-region starter, self-checking
 ```

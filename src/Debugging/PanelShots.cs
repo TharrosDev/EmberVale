@@ -1,4 +1,7 @@
+using Embervale.Core;
 using Embervale.Core.Services;
+using Embervale.Factions;
+using Embervale.Save;
 using Embervale.Player;
 using Embervale.Quests;
 using Embervale.UI;
@@ -37,6 +40,9 @@ public sealed partial class PanelShots : ShotHarness
     public MapScreen? Map { get; set; }
 
     public QuestLogPanel? Journal { get; set; }
+
+    /// <summary>The character screen — added in 42A for the Guilds tab.</summary>
+    public InventoryPanel? Character { get; set; }
 
     protected override void BuildShotList()
     {
@@ -146,6 +152,102 @@ public sealed partial class PanelShots : ShotHarness
         });
 
         Shot("13-journal-closed", () => Journal?.SetOpen(false));
+
+        // ⚠️ 42A, AND THE STATES ARE THE POINT — a Guilds tab where all five read "Unaffiliated" is
+        // what the panel draws before anything happens, so it proves the tab exists and nothing
+        // else (41A's trap: a harness shot is only evidence if it drives the thing you changed).
+        // This frame is staged through the SAME story flags a dialogue effect writes, so every one
+        // of the five states below is one a player can actually reach.
+        Shot("14-guilds", () =>
+        {
+            StageGuildStates();
+            Journal?.SetOpen(false);
+            Character?.SetOpen(true);
+            Character?.ShowGuilds();
+        });
+
+        // ⚠️ 42A'S PERSISTENCE EVIDENCE, AND IT IS A FRAME RATHER THAN AN ASSERTION BECAUSE THE
+        // FAILURE IS VISIBLE: this saves the staged states, then promotes the Dawnwardens to rank 3
+        // and joins the Emberbound, then loads the save back. A `Load` that MERGED over live state
+        // would leave both mutations standing — the tab would read "Dawnblade — rank 3 of 3" and an
+        // Emberbound membership that the save does not contain. It must read exactly like 14.
+        Shot("15-guilds-reloaded", () =>
+        {
+            SaveManager.Instance?.SaveGame(GuildShotSlot);
+            MutateGuildsAfterSaving();
+            SaveManager.Instance?.LoadGame(GuildShotSlot);
+            Character?.ShowGuilds();
+        });
+
+        // ⚠️ And the slot is deleted again. A shot list that leaves a real save behind makes ITSELF
+        // the newest slot, so the next `--play` boots into the harness's staged world rather than
+        // the maintainer's game — a side effect nobody would think to look for here.
+        Shot("16-guilds-closed", () =>
+        {
+            Character?.SetOpen(false);
+            SaveManager.Instance?.DeleteSlot(GuildShotSlot);
+        });
+    }
+
+    /// <summary>
+    /// Puts each of the five guilds in a different state (42A), so one frame carries the whole
+    /// vocabulary: a ranked member, a finished arc, a departure, a refusal and an untouched order.
+    ///
+    /// ⚠️ Ranks are set as the cumulative run 1..N, exactly as the dialogue effect and the `guild`
+    /// console command do. Setting rank 2 alone would photograph a `RankGap` contradiction and call
+    /// it a promotion.
+    /// </summary>
+    private const string GuildShotSlot = "guildshots";
+
+    /// <summary>Promotes and joins AFTER the save, so the reload has something to undo. Nothing here
+    /// is a state the shot list wants — it exists only to be discarded by the load.</summary>
+    private static void MutateGuildsAfterSaving()
+    {
+        if (Flags() is not { } flags)
+        {
+            return;
+        }
+
+        flags.Set(GuildRules.RankFlag(GameIds.Factions.Dawnwardens, 3));
+        flags.Set(GuildRules.OfferedFlag(GameIds.Factions.Emberbound));
+        flags.Set(GuildRules.JoinedFlag(GameIds.Factions.Emberbound));
+    }
+
+    private static Dialogue.StoryFlagsComponent? Flags() =>
+        ServiceLocator.Instance is { } locator && locator.TryGet(out PlayerCharacter player)
+            ? player.GetComponent<Dialogue.StoryFlagsComponent>()
+            : null;
+
+    private static void StageGuildStates()
+    {
+        if (Flags() is not { } flags)
+        {
+            return;
+        }
+
+        void Join(string guild, int rank)
+        {
+            flags.Set(GuildRules.OfferedFlag(guild));
+            flags.Set(GuildRules.JoinedFlag(guild));
+            for (int i = 1; i <= rank; i++)
+            {
+                flags.Set(GuildRules.RankFlag(guild, i));
+            }
+        }
+
+        Join(GameIds.Factions.Dawnwardens, 2);
+
+        Join(GameIds.Factions.AshHunters, 3);
+        flags.Set(GuildRules.FinaleFlag(GameIds.Factions.AshHunters));
+
+        Join(GameIds.Factions.IronSyndicate, 1);
+        flags.Set(GuildRules.LeftFlag(GameIds.Factions.IronSyndicate));
+
+        flags.Set(GuildRules.OfferedFlag(GameIds.Factions.VeiledArchive));
+        flags.Set(GuildRules.RefusedFlag(GameIds.Factions.VeiledArchive));
+
+        // The Emberbound are deliberately left untouched — the concealed order the player has never
+        // met is a real state, and it is the one the empty tab is made of.
     }
 
     /// <summary>Starts the sealed-tally errand (41C) and tracks it, so the HUD tracker draws its

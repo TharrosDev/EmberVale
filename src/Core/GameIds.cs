@@ -149,6 +149,30 @@ public static class GameIds
 
         // Phase 34.5A — the warrior clans and beast-kin of Frostfang Reach.
         public const string FrostfangClans = "faction.frostfang_clans";
+
+        // Phase 42A — the four guilds that had no faction. IronSyndicate above is the fifth.
+        public const string Dawnwardens = "faction.dawnwardens";
+        public const string AshHunters = "faction.ash_hunters";
+        public const string VeiledArchive = "faction.veiled_archive";
+        public const string Emberbound = "faction.emberbound";
+    }
+
+    /// <summary>
+    /// The five guilds of Phase 42 — a CLOSED authored set. A guild is a
+    /// <c>FactionResource</c> with ranks (there is no separate guild resource), so these ids are
+    /// <see cref="Factions"/> ids and `ContentValidator.ValidateGuilds` fails on both a missing one
+    /// and a sixth faction that declares ranks without being listed here.
+    /// </summary>
+    public static class Guilds
+    {
+        public static readonly string[] All =
+        {
+            Factions.Dawnwardens,
+            Factions.AshHunters,
+            Factions.VeiledArchive,
+            Factions.IronSyndicate,
+            Factions.Emberbound,
+        };
     }
 
     public static class Npcs

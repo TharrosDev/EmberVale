@@ -425,3 +425,27 @@ Godot_..._console.exe --headless --path . -- --play
 
 The automated gates establish structural correctness. A human traversal still owns interaction,
 camera, mount, quest and subjective composition sign-off.
+
+---
+
+## 15. The measured baseline (2026-08-30 world-quality pass)
+
+Kept here rather than in `docs/NOW.md`, which stays one screen and carries only the CURRENT
+sub-phase's numbers. Re-measure with `godot --path . --script res://tools/world_perf_probe.gd`
+before claiming a region got cheaper or dearer than this.
+
+**Measured cost, same machine (Intel Iris Xe), `world_perf_probe.gd`, median frame time:**
+
+| | Ember Crown before -> after | Frostfang before -> after |
+| --- | --- | --- |
+| Draw calls (mean/cell) | 622 -> **634** | 161 -> **158** |
+| Primitives (mean/cell) | 1.17 M -> **1.05 M** | 214 k -> **219 k** |
+| Frame time (mean/cell) | 17.6 ms -> **14.0 ms** | 13.4 ms -> **11.9 ms** |
+| Frame time (worst cell) | 28.6 ms -> **20.0 ms** | 37.0 ms -> **16.7 ms** |
+| Video memory | 483 MB -> **379 MB** | 413 MB -> **305 MB** |
+| Region build (streamed+settled) | 2.2 s -> **3.4 s** | 0.9 s -> **1.9 s** |
+
+⚠️ **The one regression is region BUILD time, and it is on a loading screen.** It was 5.2 s
+before three fixes: the irregularity warp now early-outs outside a landform's transition band, the
+backdrop samples the real field only within 45 m of the lattice, and the scatter spacing test is
+bucketed rather than O(n-squared). Everything the player sees per frame got cheaper.

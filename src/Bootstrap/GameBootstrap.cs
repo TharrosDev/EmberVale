@@ -223,6 +223,7 @@ public partial class GameBootstrap : Node3D
                     Name = "PanelShots",
                     Map = _mapScreen,
                     Journal = _questLogPanel,
+                    Character = _inventoryPanel,
                 });
             }
 
@@ -1044,6 +1045,7 @@ public partial class GameBootstrap : Node3D
         _inventoryPanel.SetReputation(_player.GetComponent<ReputationComponent>());
         _inventoryPanel.SetCorruption(_player.GetComponent<CorruptionComponent>());
         _inventoryPanel.SetStats(_player.GetComponent<StatsComponent>());
+        _inventoryPanel.SetStoryFlags(_player.GetComponent<Dialogue.StoryFlagsComponent>());
 
         QuestLogComponent? questLog = _player.GetComponent<QuestLogComponent>();
         _questLogPanel.SetQuestLog(questLog);

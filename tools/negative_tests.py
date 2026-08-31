@@ -697,6 +697,37 @@ Falloff = 1.8""")],
      [("scenes/regions/ember_crown/embermarket.tscn", 'ShrineId = "shrine.nyth"',
        'ShrineId = "shrine.nyth.misspelled"')],
      "authors ShrineId = 'shrine.nyth.misspelled', which no shrine declares"),
+
+    # 42A: a guild IS a faction with ranks, so the closed set fails in BOTH directions and neither
+    # direction shows up anywhere else. Drop the ranks and a listed guild quietly becomes an
+    # ordinary faction: it still loads, still draws its standing line, and every quest gated on
+    # membership goes dead with nothing to point at.
+    ("guild.declares_no_ranks", "ValidateGuilds",
+     [("data/factions/Dawnwardens.tres",
+       'RankNameKeys = Array[String](["guild.dawnwardens.rank1", "guild.dawnwardens.rank2", "guild.dawnwardens.rank3"])',
+       'RankNameKeys = Array[String]([])')],
+     "declares no ranks, so nothing treats it as a guild"),
+
+    # ...and the reverse: an ordinary faction that starts declaring ranks becomes a sixth guild the
+    # rank vocabulary, GameIds.Guilds and the character screen know nothing about.
+    ("guild.unlisted_faction_declares_ranks", "ValidateGuilds",
+     [("data/factions/Outlaws.tres", 'Allies = Array[String]([])',
+       'Allies = Array[String]([])\nRankNameKeys = Array[String]([\"guild.dawnwardens.rank1\"])')],
+     "declares ranks but is not one of the five authored guilds"),
+
+    # The rank count is an authored range (invariant 8). Above GuildRules.MaxRanks the flag
+    # vocabulary and the UI cannot express the ranks, and the .tres loads perfectly.
+    ("guild.too_many_ranks", "ValidateGuilds",
+     [("data/factions/Dawnwardens.tres",
+       '"guild.dawnwardens.rank3"])',
+       '"guild.dawnwardens.rank3", "guild.dawnwardens.rank4", "guild.dawnwardens.rank5", "guild.dawnwardens.rank6"])')],
+     "above the 5 the flag vocabulary and UI support"),
+
+    # A rank name key that is not in the catalogue renders the raw key as the player's rank —
+    # Loc.T returns the key on a miss, so the screen looks authored and reads "guild.x.rank2".
+    ("guild.rank_key_missing", "ValidateGuilds",
+     [("data/factions/AshHunters.tres", '"guild.ash_hunters.rank2"', '"guild.ash_hunters.rank2_missing"')],
+     "rank key 'guild.ash_hunters.rank2_missing' is missing from the locale catalogue"),
 ]
 
 

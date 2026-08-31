@@ -374,6 +374,38 @@ char.tab_gear,Gear
 char.tab_spells,Spells
 char.tab_progression,Progression
 char.tab_perks,Perks
+char.tab_guilds,Guilds
+# Guilds (Phase 42A). A guild is a faction with ranks; membership lives in story flags and is
+# resolved by GuildRules, so these strings NAME states — they never store one.
+guild.header,ALLEGIANCES
+guild.none,No order has approached you yet.
+guild.state.unknown,Unaffiliated
+guild.state.offered,Invited
+guild.state.refused,Declined
+guild.state.member,Member
+guild.state.left,Departed
+guild.state.finale,Sworn
+guild.rank_line,{0} — rank {1} of {2}
+guild.rank_none,No rank earned
+guild.standing_line,Standing: {0} ({1})
+guild.contradiction,Inconsistent membership record ({0})
+# Rank names, lowest first. A rank's FLAG is derived from the guild id and this number, so these
+# are free to be renamed in any locale without touching a save.
+guild.dawnwardens.rank1,Aspirant
+guild.dawnwardens.rank2,Warden
+guild.dawnwardens.rank3,Dawnblade
+guild.ash_hunters.rank1,Tracker
+guild.ash_hunters.rank2,Hunter
+guild.ash_hunters.rank3,Ashbane
+guild.veiled_archive.rank1,Reader
+guild.veiled_archive.rank2,Archivist
+guild.veiled_archive.rank3,Keeper of the Veil
+guild.iron_syndicate.rank1,Runner
+guild.iron_syndicate.rank2,Contractor
+guild.iron_syndicate.rank3,Ironhand
+guild.emberbound.rank1,Kindled
+guild.emberbound.rank2,Ember-Sworn
+guild.emberbound.rank3,Flamekeeper
 char.equipment,EQUIPMENT
 char.spells,SPELLS
 char.spell_rank,{0}  ({1}/{2})
