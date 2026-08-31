@@ -223,11 +223,42 @@ def check_envelopes(name: str, cells: list[Cell], routed: dict[str, list[Route]]
 _BLOCK = re.compile(r'^\[sub_resource[^\]]*id="([^"]+)"\]\n(.*?)(?=^\[|\Z)', re.M | re.S)
 
 
-def legacy_blocks(filename: str) -> dict[str, str]:
-    text = subprocess.run(
-        ["git", "show", f"{LEGACY_REV}:data/regions/{filename}"],
-        cwd=ROOT, capture_output=True, text=True, encoding="utf-8", check=True).stdout
+def _blocks(text: str) -> dict[str, str]:
     return {m.group(1): m.group(2).rstrip() + "\n" for m in _BLOCK.finditer(text)}
+
+
+def legacy_blocks(filename: str) -> dict[str, str]:
+    """The sub-resources this generator lifts verbatim out of LEGACY_REV.
+
+    ⚠️ CI CHECKS OUT ONE COMMIT. `actions/checkout` defaults to `fetch-depth: 1`, so
+    `git show f5bde08:...` exits 128 on a runner and takes the whole `generation` gate — and with it
+    every PR — down with it. It was doing so on `main` before this fallback existed, which reads as
+    a broken PR rather than a broken checkout.
+
+    So: try the pinned revision, fetch it once if it is simply not present, and otherwise fall back
+    to the COMMITTED `.tres`. That last step is honest rather than a shrug — these blocks are lifted
+    byte for byte, so on a healthy tree the fallback produces identical output, and `--check` keeps
+    catching drift in everything the spec actually computes.
+    """
+    path = f"data/regions/{filename}"
+
+    def show() -> str | None:
+        result = subprocess.run(["git", "show", f"{LEGACY_REV}:{path}"],
+                                cwd=ROOT, capture_output=True, text=True, encoding="utf-8")
+        return result.stdout if result.returncode == 0 else None
+
+    text = show()
+    if text is None:
+        subprocess.run(["git", "fetch", "--depth=1", "origin", LEGACY_REV],
+                       cwd=ROOT, capture_output=True, text=True)
+        text = show()
+    if text is None:
+        # ⚠️ The committed file is the generator's OWN output, so the one line this generator appends
+        # to a lifted area block — `Elevation`, from `Cell.area_elevation` — is already in it. Left
+        # in, the fallback emits it twice and `--check` reports every region as drifted, which is a
+        # worse failure than the one it is recovering from.
+        text = re.sub(r"^Elevation = .*\n", "", (ROOT / path).read_text(encoding="utf-8"), flags=re.M)
+    return _blocks(text)
 
 
 def retype(block: str, script_id: str) -> str:
