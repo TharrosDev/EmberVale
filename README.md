@@ -365,6 +365,17 @@ than standing there forever as though nothing happened. Those changes are saved 
 flags the world already understands, so loading a game restores the world by replacing its facts,
 not layering a second list of changes over it.
 
+### Phase 42 — the orders that claim you
+
+- 42A ✅ and the realm's five orders exist as something you can belong to. The Dawnwardens, the Ash
+  Hunters, the Veiled Archive, the Iron Syndicate and the concealed Emberbound each have their own
+  standing, their own three ranks with their own names, and their own answer to whether they would
+  ever take you back. The character screen has a Guilds tab that tells you where you stand with all
+  five at once — invited, declined, a member of some rank, departed, or sworn at the end of their
+  story. None of that is stored twice: membership is the same persistent record the rest of the
+  world already keeps, so loading a game restores exactly the allegiances the save holds and
+  discards anything that happened after it.
+
 ### Phase 41.5 — the gods leave something behind
 
 - 41.5A–B ✅ gives all six dead gods real, persistent shrine blessings. Solaryn (town hub), Veyra

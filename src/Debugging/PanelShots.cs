@@ -1,6 +1,7 @@
 using Embervale.Core;
 using Embervale.Core.Services;
 using Embervale.Factions;
+using Embervale.Save;
 using Embervale.Player;
 using Embervale.Quests;
 using Embervale.UI;
@@ -165,7 +166,27 @@ public sealed partial class PanelShots : ShotHarness
             Character?.ShowGuilds();
         });
 
-        Shot("15-guilds-closed", () => Character?.SetOpen(false));
+        // ⚠️ 42A'S PERSISTENCE EVIDENCE, AND IT IS A FRAME RATHER THAN AN ASSERTION BECAUSE THE
+        // FAILURE IS VISIBLE: this saves the staged states, then promotes the Dawnwardens to rank 3
+        // and joins the Emberbound, then loads the save back. A `Load` that MERGED over live state
+        // would leave both mutations standing — the tab would read "Dawnblade — rank 3 of 3" and an
+        // Emberbound membership that the save does not contain. It must read exactly like 14.
+        Shot("15-guilds-reloaded", () =>
+        {
+            SaveManager.Instance?.SaveGame(GuildShotSlot);
+            MutateGuildsAfterSaving();
+            SaveManager.Instance?.LoadGame(GuildShotSlot);
+            Character?.ShowGuilds();
+        });
+
+        // ⚠️ And the slot is deleted again. A shot list that leaves a real save behind makes ITSELF
+        // the newest slot, so the next `--play` boots into the harness's staged world rather than
+        // the maintainer's game — a side effect nobody would think to look for here.
+        Shot("16-guilds-closed", () =>
+        {
+            Character?.SetOpen(false);
+            SaveManager.Instance?.DeleteSlot(GuildShotSlot);
+        });
     }
 
     /// <summary>
@@ -176,11 +197,30 @@ public sealed partial class PanelShots : ShotHarness
     /// console command do. Setting rank 2 alone would photograph a `RankGap` contradiction and call
     /// it a promotion.
     /// </summary>
+    private const string GuildShotSlot = "guildshots";
+
+    /// <summary>Promotes and joins AFTER the save, so the reload has something to undo. Nothing here
+    /// is a state the shot list wants — it exists only to be discarded by the load.</summary>
+    private static void MutateGuildsAfterSaving()
+    {
+        if (Flags() is not { } flags)
+        {
+            return;
+        }
+
+        flags.Set(GuildRules.RankFlag(GameIds.Factions.Dawnwardens, 3));
+        flags.Set(GuildRules.OfferedFlag(GameIds.Factions.Emberbound));
+        flags.Set(GuildRules.JoinedFlag(GameIds.Factions.Emberbound));
+    }
+
+    private static Dialogue.StoryFlagsComponent? Flags() =>
+        ServiceLocator.Instance is { } locator && locator.TryGet(out PlayerCharacter player)
+            ? player.GetComponent<Dialogue.StoryFlagsComponent>()
+            : null;
+
     private static void StageGuildStates()
     {
-        if (ServiceLocator.Instance is not { } locator ||
-            !locator.TryGet(out PlayerCharacter player) ||
-            player.GetComponent<Dialogue.StoryFlagsComponent>() is not { } flags)
+        if (Flags() is not { } flags)
         {
             return;
         }
