@@ -354,10 +354,24 @@ Falloff = 1.8""")],
     # header DISCUSSES agent_max_climb in prose as well as setting it, so the bare string lands twice.
     # The same run proved the validator regex had the mirror-image bug and was reading those comments
     # as settings — a rule that fails a cell over a sentence. Both are anchored to a line start now.
+    # ⚠️ The mutation is 0.3 -> 0.6, not the old 0.5 -> 0.8, and both numbers moved for a reason.
+    # The cells author the FLOORED climb since the 2026-08-31 quantisation pass (0.3 on this cell's
+    # 0.3 grid), so the old `find` no longer lands. And 0.6 is two whole voxels, which keeps this
+    # case about the rule it is named for: 0.8 would also trip the voxel-grid rule below, and a
+    # mutation that fires two refusals cannot prove which one is doing the work.
     ("stepup.navmesh_out_of_reach", "ValidateStepUp",
      [("scenes/regions/ember_crown/embermarket.tscn",
-       "\nagent_max_climb = 0.5\n", "\nagent_max_climb = 0.8\n")],
+       "\nagent_max_climb = 0.3\n", "\nagent_max_climb = 0.6\n")],
      "above the"),
+
+    # The other half of the same seam (the 2026-08-31 pass): Recast quantises the agent dims to the
+    # voxel grid — height and radius CEIL, climb FLOORS — and says so only in a bake warning. 1.75 on
+    # a 0.3 cell_height is what every cell in the realm carried for two months while three headers
+    # claimed the dims were on the grid; it bakes as 1.8 and the file reads as 1.75.
+    ("stepup.agent_off_voxel_grid", "ValidateStepUp",
+     [("scenes/regions/ember_crown/embermarket.tscn",
+       "\nagent_height = 1.8\n", "\nagent_height = 1.75\n")],
+     "is not a whole number of voxels"),
 
     # ---- ValidateBreakdownKeys, the 39B travel line ---------------------------------------
     # 38U's rule is that the EXPLANATION IS THE CHARGE: a price the player is shown has to say why.

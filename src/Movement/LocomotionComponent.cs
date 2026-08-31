@@ -31,8 +31,9 @@ public partial class LocomotionComponent : EntityComponent
     public float SprintMultiplier { get; set; } = 1.6f;
 
     /// <summary>Tallest step this body climbs, in metres (Phase 39C). Defaults to
-    /// <see cref="StepUp.MaxHeight"/>, which is the navmesh's own <c>agent_max_climb</c> — so every
-    /// actor that walks can reach everywhere the navmesh paths one. Set to 0 to opt a body out.</summary>
+    /// <see cref="StepUp.MaxHeight"/>, which is a ceiling over every cell's <c>agent_max_climb</c> — so
+    /// every actor that walks can reach everywhere the navmesh paths one, and a little further (the bake
+    /// floors climb to a voxel; see <see cref="StepUp"/>). Set to 0 to opt a body out.</summary>
     [Export]
     public float StepHeight { get; set; } = StepUp.MaxHeight;
 

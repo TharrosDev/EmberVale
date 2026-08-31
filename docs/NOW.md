@@ -175,6 +175,14 @@ true of every console command in this repo. The path it writes through *is* driv
     the density. Cones and boxes keep the mass and throw away the outline, which is the half that
     matters at the range they engage - from the town square they read as black crates on a hillside.
 
+20. ⚠️ **A CELL'S `agent_*` DIMS ARE DERIVED FROM ITS VOXEL GRID, NEVER COPIED.** Recast quantises
+    all three at bake time and only says so in a warning: `agent_height` and `agent_radius` CEIL
+    (to `cell_height` / `cell_size`), `agent_max_climb` FLOORS. Every cell carried `1.75` / `0.5`
+    from the 2026-08-29 overhaul to 2026-08-31 while three headers claimed they were on the grid -
+    they baked as `1.8` / `0.3` and warned on every load. `--validate` now fails an off-grid dim.
+    **The player steps 0.5 m and an NPC is pathed up the cell's floored climb (0.3, or 0.4 in the
+    0.5/0.4 wilderness cells), so raised ground taller than that is player-only ground.**
+
 ## Commands worth knowing
 
 ```text

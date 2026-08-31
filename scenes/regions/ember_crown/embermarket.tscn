@@ -111,8 +111,8 @@
 ; from where it was authored — is the same mistake in the other direction.
 ;
 ; ⚠️ THE SALT STEPS ARE THE ONLY RAISED GROUND IN THE REALM (39C, moved here in 44). 0.3 m, inside
-; StepUp.MaxHeight (0.5) and inside the navmesh's agent_max_climb (0.5), so the player and every NPC
-; reach it by the same rule. The well, the three benches and the bell tower ride 0.3 m up with it — a
+; StepUp.MaxHeight (0.5) and exactly ON the navmesh's agent_max_climb (0.3 — one voxel of this
+; cell's 0.3 cell_height), so the player and every NPC reach it by the same rule. The well, the three benches and the bell tower ride 0.3 m up with it — a
 ; prop left at y = 0 would be sunk to its ankles. EVERY OTHER GROUND SLAB HERE IS A 5-6 CM SKIN WITH NO
 ; COLLIDER: a 6 cm lip is beneath the step-up's minimum and is something the player catches on rather
 ; than climbs. Raised ground is possible; it is not therefore free.
@@ -125,7 +125,11 @@
 ; ⚠️ THE NAV VOXEL GRID COARSENED WITH THE WORLD (the 2026-08-29 geography overhaul). Cells
 ; went from 52 m squares on a flat slab to 90-200 m of real terrain, and a 0.25 m voxel over
 ; five times the area is twenty-five times the columns to rasterise — the traversal probe timed
-; out waiting for the bake. agent_* dims still sit on the voxel grid to avoid precision warnings.
+; out waiting for the bake. ⚠️ AND THE agent_* DIMS DID NOT FOLLOW. On the 0.25 grid 1.75 and
+; 0.5 were whole voxels; on this one they are not, so every bake quantised them and warned. The
+; values below are the QUANTISED ones, so the file now says what the bake does: agent_height and
+; agent_radius CEIL to a voxel (cell_height / cell_size), agent_max_climb FLOORS to cell_height.
+; ⚠️ They encode this grid — change cell_size or cell_height and recompute all three with it.
 [sub_resource type="BoxMesh" id="BoxMesh_salt_steps"]
 size = Vector3(11, 0.3, 10)
 
@@ -155,9 +159,9 @@ roughness = 0.85
 geometry_parsed_geometry_type = 1
 cell_size = 0.3
 cell_height = 0.3
-agent_height = 1.75
-agent_radius = 0.5
-agent_max_climb = 0.5
+agent_height = 1.8
+agent_radius = 0.6
+agent_max_climb = 0.3
 agent_max_slope = 42.0
 
 [sub_resource type="StandardMaterial3D" id="Mat_ember"]
@@ -204,8 +208,10 @@ size = Vector3(0.95, 1.6, 1.9)
 size = Vector3(1.8, 0.85, 0.66)
 
 ; 39C: the dais is the one ground skin in the realm WITH a collider, because it is the one that is
-; meant to be climbed rather than walked over. 0.3 m, inside StepUp.MaxHeight (0.5) and inside the
-; navmesh's agent_max_climb (0.5), so the player and every NPC reach it by the same rule.
+; meant to be climbed rather than walked over. 0.3 m, inside StepUp.MaxHeight (0.5) and exactly on
+; the navmesh's agent_max_climb (0.3 — one voxel), so the player and every NPC reach it by the same
+; rule. ⚠️ A RAISED SKIN ANY TALLER THAN THIS IS PLAYER-ONLY GROUND: the step-up would carry the
+; player up it and the bake would refuse to path an NPC after them.
 [sub_resource type="BoxShape3D" id="Shape_salt_steps"]
 size = Vector3(11, 0.3, 10)
 

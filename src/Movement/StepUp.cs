@@ -11,10 +11,18 @@ namespace Embervale.Movement;
 /// skin with no collider. So this is not a traversal flourish — it is what lets the world have raised
 /// ground at all, which Phase 44 needs before it can block out five realms.
 ///
-/// ⚠️ <b><see cref="MaxHeight"/> is 0.5 m because the navmesh already says 0.5.</b> Every cell authors
-/// <c>agent_max_climb = 0.5</c>, so NPCs have always been pathed over ground the player could not
-/// follow them onto — the mismatch was live, not theoretical. A <c>--validate</c> rule now pins the two
-/// together, because the day someone raises a cell's <c>agent_max_climb</c> the bug returns silently.
+/// ⚠️ <b><see cref="MaxHeight"/> is 0.5 m because that is what the navmesh was authored to say.</b>
+/// Every cell asked for <c>agent_max_climb = 0.5</c>, so NPCs were pathed over ground the player could
+/// not follow them onto — the mismatch was live, not theoretical. A <c>--validate</c> rule now pins the
+/// two together, because the day someone raises a cell's <c>agent_max_climb</c> the bug returns silently.
+///
+/// ⚠️ <b>WHAT THE BAKE ACTUALLY USES IS SMALLER, AND IT IS SMALLER IN THE SAFE DIRECTION.</b> Recast
+/// FLOORS <c>agent_max_climb</c> to whole <c>cell_height</c> voxels (it CEILS height and radius), so an
+/// authored 0.5 on a 0.3 grid baked as <b>0.3</b> and nothing said so. The cells now author the floored
+/// value, which changes no bake — it makes the file honest. The live rule is therefore: the player
+/// climbs 0.5, an NPC is pathed up 0.3 (0.4 in the 0.5/0.4 wilderness cells), and raised ground taller
+/// than that is <em>player-only</em> ground. Keep new raised ground at or under the cell's baked climb
+/// unless somewhere is meant to be unreachable by NPCs.
 ///
 /// ⚠️ <b>THIS TYPE USED TO DO THE ARITHMETIC ITSELF AND THE ARITHMETIC WAS WRONG.</b> The first version
 /// computed the lift as <c>maxHeight - dropDistance</c> from a downward probe. Against a real capsule
@@ -26,9 +34,10 @@ namespace Embervale.Movement;
 /// </summary>
 public static class StepUp
 {
-    /// <summary>The tallest step a body will climb, in metres. ⚠️ Matched to the navmesh's
-    /// <c>agent_max_climb</c> by a content rule — change one and <c>--validate</c> fails until the
-    /// other follows.</summary>
+    /// <summary>The tallest step a body will climb, in metres. ⚠️ A CEILING over every cell's
+    /// <c>agent_max_climb</c>, held by a content rule — raise a cell's climb above this and
+    /// <c>--validate</c> fails until this follows. It is not an equality: the baked climb is the
+    /// authored one floored to a voxel, so it sits at or below this by design.</summary>
     public const float MaxHeight = 0.5f;
 
     /// <summary>Below this a step is not worth taking — it is inside what <c>floor_snap_length</c>

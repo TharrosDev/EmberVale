@@ -650,8 +650,11 @@ crafting stations, trophies, and customization.
   longer a pure sink**; `docs/DESIGN.md` §6's table says so. ⚠️ 39B also fixed two defects 39A
   shipped, one of which (a cached mesh rest pose dropping the rider through the horse on the first
   hit) passed every check 39A ran.
-- **Traversal verbs the world needs** ✅ **(39C)** — **step-up only, at 0.5 m**, matched to every
-  cell's `agent_max_climb` and pinned to it by a `--validate` rule. That mismatch was live for the
+- **Traversal verbs the world needs** ✅ **(39C)** — **step-up only, at 0.5 m**, a ceiling over every
+  cell's `agent_max_climb` and pinned to it by a `--validate` rule. ⚠️ **The baked climb is smaller
+  still** (the 2026-08-31 nav-quantisation pass): Recast floors climb to a `cell_height` voxel, so the
+  cells author 0.3 (0.4 in the 0.5/0.4 wilderness cells) — the number they always baked — and raised
+  ground above that is player-only ground. That mismatch was live for the
   whole project: the navmesh routed NPCs over ground a body could not follow them onto, and cells
   were authored around it (`embermarket.tscn` deleted a 0.3 m dais over exactly this). The dais is
   back as the realm's only raised ground and the verb's in-world caller.
