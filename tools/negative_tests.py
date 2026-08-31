@@ -712,8 +712,7 @@ Falloff = 1.8""")],
     # rank vocabulary, GameIds.Guilds and the character screen know nothing about.
     ("guild.unlisted_faction_declares_ranks", "ValidateGuilds",
      [("data/factions/Outlaws.tres", 'Allies = Array[String]([])',
-       'Allies = Array[String]([])
-RankNameKeys = Array[String](["guild.dawnwardens.rank1"])')],
+       'Allies = Array[String]([])\nRankNameKeys = Array[String]([\"guild.dawnwardens.rank1\"])')],
      "declares ranks but is not one of the five authored guilds"),
 
     # The rank count is an authored range (invariant 8). Above GuildRules.MaxRanks the flag
