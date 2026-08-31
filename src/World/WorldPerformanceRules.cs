@@ -14,14 +14,24 @@ public readonly record struct WorldPerformanceLimits(
     double MaxStaticMemoryMb,
     double MaxFrameMilliseconds);
 
-/// <summary>A single runtime sample after the active region has settled.</summary>
+/// <summary>
+/// A single runtime sample after the active region has settled.
+///
+/// ⚠️ <b><paramref name="WorstFrameMilliseconds"/> IS THE ONE THAT CATCHES A HITCH.</b>
+/// <paramref name="FrameMilliseconds"/> is one instantaneous reading taken once a second, so it sees
+/// about 1.7% of the frames in a 60 Hz session — a 300 ms stall that happens between two readings
+/// leaves no trace at all, which is exactly the class of problem a player notices and this monitor
+/// was supposed to find. The worst frame observed since the previous sample sees all of them.
+/// Defaulted so a caller that has no per-frame history (a test, a probe) can still build a snapshot.
+/// </summary>
 public readonly record struct WorldPerformanceSnapshot(
     int ResidentRuntimeNodes,
     int ResidentScatterInstances,
     int DrawCalls,
     int NodeCount,
     double StaticMemoryMb,
-    double FrameMilliseconds);
+    double FrameMilliseconds,
+    double WorstFrameMilliseconds = 0d);
 
 /// <summary>Pure budget comparisons shared by xUnit tests and the Godot runtime monitor.</summary>
 public static class WorldPerformanceRules
@@ -45,6 +55,8 @@ public static class WorldPerformanceRules
         AddDimensionIfOver(dimensions, "node-count", sample.NodeCount, limits.MaxNodeCount);
         AddDimensionIfOver(dimensions, "static-memory", sample.StaticMemoryMb, limits.MaxStaticMemoryMb);
         AddDimensionIfOver(dimensions, "frame-time", sample.FrameMilliseconds, limits.MaxFrameMilliseconds);
+        AddDimensionIfOver(
+            dimensions, "worst-frame-time", sample.WorstFrameMilliseconds, limits.MaxFrameMilliseconds);
         return string.Join(",", dimensions);
     }
 
@@ -61,6 +73,7 @@ public static class WorldPerformanceRules
         AddIfOver(issues, "node count", sample.NodeCount, limits.MaxNodeCount);
         AddIfOver(issues, "static memory MB", sample.StaticMemoryMb, limits.MaxStaticMemoryMb);
         AddIfOver(issues, "frame ms", sample.FrameMilliseconds, limits.MaxFrameMilliseconds);
+        AddIfOver(issues, "worst frame ms", sample.WorstFrameMilliseconds, limits.MaxFrameMilliseconds);
         return issues;
     }
 

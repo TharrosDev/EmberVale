@@ -42,6 +42,9 @@ public partial class EnemyAIComponent : EntityComponent
     /// answers the origin) reads as off it.</summary>
     private const float NavAnchorTolerance = 3f;
 
+    /// <summary>How often the navmesh anchor test above is actually run.</summary>
+    private const double NavAnchorInterval = 0.25d;
+
     /// <summary>How long an actor tries for one patrol point before choosing another.</summary>
     private const double PatrolGiveUpSeconds = 12d;
 
@@ -122,6 +125,10 @@ public partial class EnemyAIComponent : EntityComponent
 
     /// <summary>Seconds spent on the current patrol target. See <see cref="TickPatrol"/>.</summary>
     private double _patrolElapsed;
+
+    /// <summary>Cached answer to "is this actor on the navmesh", and its countdown.</summary>
+    private bool _navAnchored;
+    private double _navAnchorTimer;
 
     // Guard rhythm (shielded profiles) + this actor's slot in the pack fan-out.
     private double _combatElapsed;
@@ -996,9 +1003,21 @@ public partial class EnemyAIComponent : EntityComponent
         // Is this actor standing on navigable ground at all? An empty map (nothing baked yet)
         // answers Vector3.Zero, and an off-mesh actor answers somewhere far away; both mean the
         // path this frame would be a guess.
+        //
+        // Paced rather than asked every frame: MapGetClosestPoint is a server query and this runs
+        // for every moving actor, while the answer only changes when the actor walks off the mesh
+        // or a bake lands. NavAnchorInterval is a fraction of a second, so a stale "yes" costs at
+        // most a few frames of steering the last good corner.
         Vector3 here = _body.GlobalPosition;
-        Vector3 anchor = NavigationServer3D.MapGetClosestPoint(map, here);
-        if (anchor.DistanceSquaredTo(here) > NavAnchorTolerance * NavAnchorTolerance)
+        _navAnchorTimer -= _frameDelta;
+        if (_navAnchorTimer <= 0d)
+        {
+            _navAnchorTimer = NavAnchorInterval;
+            _navAnchored = NavigationServer3D.MapGetClosestPoint(map, here)
+                .DistanceSquaredTo(here) <= NavAnchorTolerance * NavAnchorTolerance;
+        }
+
+        if (!_navAnchored)
         {
             return null;
         }

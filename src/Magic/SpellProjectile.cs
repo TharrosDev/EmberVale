@@ -40,6 +40,9 @@ public partial class SpellProjectile : Area3D
     private double _life;
     private bool _resolved = true; // inert until Launch arms it
 
+    /// <summary>The reused sweep query. See <see cref="SweepHit"/>.</summary>
+    private PhysicsShapeQueryParameters3D? _sweepQuery;
+
     private StandardMaterial3D _material = null!;
     private OmniLight3D _light = null!;
 
@@ -143,14 +146,19 @@ public partial class SpellProjectile : Area3D
     private bool SweepHit(out Hurtbox? target)
     {
         target = null;
-        var query = new PhysicsShapeQueryParameters3D
+
+        // Built once and re-aimed per sub-step: a bolt sweeps several times a frame and there may be
+        // a dozen in the air, so allocating a query object and a SphereShape3D per test would churn
+        // more than the sweep costs.
+        _sweepQuery ??= new PhysicsShapeQueryParameters3D
         {
             Shape = new SphereShape3D { Radius = Radius },
-            Transform = new Transform3D(Basis.Identity, GlobalPosition),
             CollideWithAreas = true,
             CollideWithBodies = true,
             CollisionMask = CombatLayers.Hurtbox | CombatLayers.World,
         };
+        _sweepQuery.Transform = new Transform3D(Basis.Identity, GlobalPosition);
+        PhysicsShapeQueryParameters3D query = _sweepQuery;
 
         bool blocked = false;
         foreach (Godot.Collections.Dictionary hit in

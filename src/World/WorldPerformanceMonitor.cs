@@ -14,6 +14,9 @@ public sealed partial class WorldPerformanceMonitor : Node
     private WorldPerformanceBudgetResource? _budget;
     private string _regionId = string.Empty;
     private double _timer;
+
+    /// <summary>Longest frame seen since the last sample. See <see cref="_Process"/>.</summary>
+    private double _worstFrameMs;
     private int _consecutiveFailures;
     private int _consecutiveSuccesses;
     private string _lastWarningSignature = string.Empty;
@@ -28,6 +31,7 @@ public sealed partial class WorldPerformanceMonitor : Node
         _budget = budget;
         _cells.Clear();
         _timer = 0d;
+        _worstFrameMs = 0d;
         _consecutiveFailures = 0;
         _consecutiveSuccesses = 0;
         _lastWarningSignature = string.Empty;
@@ -43,12 +47,25 @@ public sealed partial class WorldPerformanceMonitor : Node
 
     public override void _Process(double delta)
     {
+        // ⚠️ EVERY FRAME IS MEASURED, EVEN THOUGH ONLY ONE IN SIXTY IS REPORTED. The sample below
+        // reads Performance.Monitor.TimeProcess, which is the cost of the frame it happens to run
+        // on — so the monitor saw about one frame in sixty and a hitch that landed on any of the
+        // other fifty-nine was invisible. This carries the worst frame of the window into the
+        // snapshot, which is the number a player actually feels.
+        double frameMs = delta * 1000d;
+        if (frameMs > _worstFrameMs)
+        {
+            _worstFrameMs = frameMs;
+        }
+
         _timer += delta;
         if (_timer < 1d || _budget == null || !SamplingEnabled)
         {
             return;
         }
         _timer = 0d;
+        double worstFrameMs = _worstFrameMs;
+        _worstFrameMs = 0d;
 
         int authoredNodes = 0;
         int scatterInstances = 0;
@@ -64,7 +81,8 @@ public sealed partial class WorldPerformanceMonitor : Node
             (int)Performance.GetMonitor(Performance.Monitor.RenderTotalDrawCallsInFrame),
             (int)Performance.GetMonitor(Performance.Monitor.ObjectNodeCount),
             Performance.GetMonitor(Performance.Monitor.MemoryStatic) / (1024d * 1024d),
-            Performance.GetMonitor(Performance.Monitor.TimeProcess) * 1000d);
+            Performance.GetMonitor(Performance.Monitor.TimeProcess) * 1000d,
+            worstFrameMs);
 
         IReadOnlyList<string> issues = WorldPerformanceRules.Assess(_budget.Limits(), LastSnapshot);
         WithinBudget = issues.Count == 0;
