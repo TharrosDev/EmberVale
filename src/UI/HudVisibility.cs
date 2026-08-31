@@ -10,6 +10,9 @@ public enum HudMode
     /// paused underneath, so every widget on the HUD is reporting a world that is not moving.</summary>
     Menu,
 
+    /// <summary>A non-pausing authored lock such as a boss entrance.</summary>
+    Cinematic,
+
     /// <summary>Not in a play session at all — the main menu, a load, a teardown.</summary>
     Inactive,
 }
@@ -47,8 +50,13 @@ public static class HudVisibility
         : menuOpen ? HudMode.Menu
         : HudMode.Exploration;
 
+    public static HudMode ModeFor(bool playing, bool menuOpen, bool worldPaused) =>
+        !playing ? HudMode.Inactive
+        : menuOpen ? worldPaused ? HudMode.Menu : HudMode.Cinematic
+        : HudMode.Exploration;
+
     /// <summary>The HUD as a whole — true only during live play.</summary>
-    public static bool ShowsHud(HudMode mode) => mode == HudMode.Exploration;
+    public static bool ShowsHud(HudMode mode) => mode is HudMode.Exploration or HudMode.Cinematic;
 
     /// <summary>
     /// Vitals, spell and status — the "am I alive and what am I holding" group.
@@ -57,11 +65,14 @@ public static class HudVisibility
     /// where a player drinks a potion, and hiding the health bar at the moment they are deciding
     /// whether to is the interface losing the plot. Everything else in a menu is noise.
     /// </summary>
-    public static bool ShowsVitals(HudMode mode) => mode is HudMode.Exploration or HudMode.Menu;
+    public static bool ShowsVitals(HudMode mode) => mode is HudMode.Exploration or HudMode.Menu or HudMode.Cinematic;
 
     /// <summary>Navigation: compass, minimap, quest tracker, clock. Exploration only — none of it is
     /// answering a question the player has while a blocking menu is up.</summary>
     public static bool ShowsNavigation(HudMode mode) => mode == HudMode.Exploration;
+
+    /// <summary>The boss-owned stage remains during non-pausing cinematic locks.</summary>
+    public static bool ShowsTopCentre(HudMode mode) => mode is HudMode.Exploration or HudMode.Cinematic;
 
     /// <summary>
     /// The interaction prompt.

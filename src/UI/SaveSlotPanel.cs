@@ -55,10 +55,7 @@ public partial class SaveSlotPanel : CanvasLayer
         AddChild(backdrop);
 
         PanelContainer panel = UiTheme.Panel();
-        panel.SetAnchorsPreset(Control.LayoutPreset.Center);
-        panel.GrowHorizontal = Control.GrowDirection.Both;
-        panel.GrowVertical = Control.GrowDirection.Both;
-        panel.CustomMinimumSize = new Vector2(540, 0);
+        UiTheme.ApplyWorkspace(panel, 0.58f);
         AddChild(panel);
 
         MarginContainer pad = UiTheme.Padding(18);

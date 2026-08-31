@@ -42,18 +42,21 @@ public partial class BossFrame : PanelContainer
         MouseFilter = MouseFilterEnum.Ignore;
         Visible = false;
         SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
-        AddThemeStyleboxOverride("panel", UiTheme.PanelStyle());
-        UiTheme.ApplyGrain(this);
+        StyleBoxFlat frame = UiTheme.PanelStyle();
+        frame.BgColor = UiTheme.PanelBg with { A = 0.97f };
+        frame.BorderColor = UiTheme.AccentHot with { A = 0.48f };
+        AddThemeStyleboxOverride("panel", frame);
 
         MarginContainer pad = UiTheme.Padding(UiTheme.SpaceMd);
         var col = new VBoxContainer();
         col.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
 
-        _name = UiTheme.Title(Loc.T("boss.name"));
+        _name = UiTheme.Display(Loc.T("boss.name"), UiTheme.Text);
         _name.HorizontalAlignment = HorizontalAlignment.Center;
         col.AddChild(_name);
 
-        _bar = JuicedBar.Create(UiTheme.Health, 360f);
+        _bar = JuicedBar.Create(UiTheme.Health, 520f);
+        _bar.CustomMinimumSize = new Vector2(520f, 16f);
         col.AddChild(_bar);
 
         // Pips carry the phase at a glance; the line below keeps it in words. Redundant on
@@ -75,8 +78,13 @@ public partial class BossFrame : PanelContainer
         pad.AddChild(col);
         AddChild(pad);
 
-        // Last child, so the brackets draw over the content.
-        AddChild(UiOrnament.CornerBrass(arm: 16f, thickness: 2f, inset: 3f));
+        var emberRule = new ColorRect
+        {
+            Color = UiTheme.AccentHot with { A = 0.72f },
+            CustomMinimumSize = new Vector2(0f, 2f),
+            MouseFilter = MouseFilterEnum.Ignore,
+        };
+        col.AddChild(emberRule);
     }
 
     /// <summary>Builds the defeat fade into the HUD's full-screen overlay slot. Separate from the

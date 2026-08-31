@@ -44,44 +44,69 @@ public partial class MainMenu : CanvasLayer
 
     private void Build()
     {
-        var backdrop = UiTheme.Scrim(1f);
+        Texture2D? art = GD.Load<Texture2D>("res://assets/ui/backgrounds/menu_ashen_causeway.png");
+        var image = new TextureRect
+        {
+            Texture = art,
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered,
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+        };
+        image.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        AddChild(image);
+
+        var backdrop = UiTheme.Scrim(0.46f);
         backdrop.MouseFilter = Control.MouseFilterEnum.Stop;
         AddChild(backdrop);
 
         PanelContainer panel = UiTheme.Panel();
-        panel.SetAnchorsPreset(Control.LayoutPreset.Center);
+        panel.AnchorLeft = 0.64f;
+        panel.AnchorRight = 0.94f;
+        panel.AnchorTop = 0.15f;
+        panel.AnchorBottom = 0.85f;
         panel.GrowHorizontal = Control.GrowDirection.Both;
         panel.GrowVertical = Control.GrowDirection.Both;
-        panel.CustomMinimumSize = new Vector2(320, 0);
+        panel.CustomMinimumSize = new Vector2(360, 420);
         AddChild(panel);
         _panel = panel;
 
-        MarginContainer pad = UiTheme.Padding(20);
+        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceXl);
         panel.AddChild(pad);
-        panel.AddChild(UiOrnament.CornerBrass(arm: 20f, thickness: 2f, inset: 5f));
 
         var col = new VBoxContainer();
-        col.AddThemeConstantOverride("separation", 8);
+        col.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         pad.AddChild(col);
+
+        TextureRect seal = new()
+        {
+            Texture = GD.Load<Texture2D>("res://assets/ui/emblems/embervale_seal.png"),
+            CustomMinimumSize = new Vector2(96f, 96f),
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+            SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin,
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+        };
+        col.AddChild(seal);
 
         // The title screen and the spellbook are the only two surfaces that get the shimmer (see
         // the ornament budget in UiOrnament). The label and the sweep are stacked in a fixed-height
         // Control so the sweep spans the title rather than the whole column.
         var titleStack = new Control { CustomMinimumSize = new Vector2(0f, 40f) };
         Label title = UiTheme.Display(Loc.T("menu.title"));
-        title.HorizontalAlignment = HorizontalAlignment.Center;
+        title.HorizontalAlignment = HorizontalAlignment.Left;
         title.VerticalAlignment = VerticalAlignment.Center;
         title.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         titleStack.AddChild(title);
         titleStack.AddChild(UiOrnament.InkShimmer(UiTheme.Accent, period: 8f, intensity: 0.45f));
         col.AddChild(titleStack);
 
-        Label subtitle = UiTheme.Body(Loc.T("menu.subtitle"), UiTheme.Dim);
-        subtitle.HorizontalAlignment = HorizontalAlignment.Center;
+        Label subtitle = UiTheme.Prose(Loc.T("menu.subtitle"), UiTheme.Dim);
+        subtitle.HorizontalAlignment = HorizontalAlignment.Left;
         subtitle.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         col.AddChild(subtitle);
 
         col.AddChild(UiTheme.Divider());
+        col.AddChild(new Control { CustomMinimumSize = new Vector2(0f, UiTheme.SpaceSm) });
 
         bool hasSaves = (SaveManager.Instance?.ListSlots().Count ?? 0) > 0;
 
@@ -123,6 +148,9 @@ public partial class MainMenu : CanvasLayer
         SettingsPanel.Open(this, () => Visible = true);
     }
 
+    /// <summary>Deterministic screenshot entry point; follows the same settings path as the menu button.</summary>
+    public void OpenSettingsForCapture() => OpenSettings();
+
     private void ContinueMostRecent()
     {
         if (SaveManager.Instance is not { } manager)
@@ -148,7 +176,7 @@ public partial class MainMenu : CanvasLayer
     private static Button MenuButton(string text, System.Action? onPressed)
     {
         Button button = UiTheme.Action(text);
-        button.CustomMinimumSize = new Vector2(0, 36);
+        button.CustomMinimumSize = new Vector2(0, 46);
         button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         if (onPressed == null)
         {

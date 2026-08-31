@@ -227,6 +227,11 @@ public class HudReadoutTests
         Assert.Equal(HudMode.Exploration, HudVisibility.ModeFor(playing: true, menuOpen: false));
 
     [Fact]
+    public void ModeFor_NonPausingLockIsCinematic() =>
+        Assert.Equal(HudMode.Cinematic,
+            HudVisibility.ModeFor(playing: true, menuOpen: true, worldPaused: false));
+
+    [Fact]
     public void Inactive_ShowsNothing()
     {
         // The strongest single guarantee here: outside a session no group is on, so nothing from the
@@ -269,7 +274,7 @@ public class HudReadoutTests
         // locale keys follow (invariant 26).
         foreach (HudMode mode in Enum.GetValues<HudMode>())
         {
-            Assert.Equal(mode == HudMode.Exploration, HudVisibility.ShowsHud(mode));
+            Assert.Equal(mode is HudMode.Exploration or HudMode.Cinematic, HudVisibility.ShowsHud(mode));
             Assert.Equal(mode != HudMode.Inactive, HudVisibility.ShowsVitals(mode));
         }
     }

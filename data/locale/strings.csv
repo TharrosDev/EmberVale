@@ -128,6 +128,7 @@ shop.title,{0}   (E to close)
 shop.wares,WARES
 shop.your_pack,YOUR PACK
 shop.purse,Purse: {0}
+shop.inspect_hint,Select an item to inspect it
 shop.price,{0}g
 shop.buy,Buy
 shop.sell,Sell
@@ -508,6 +509,9 @@ questlog.failed,FAILED
 # Quest tracking (39.5B) — chooses which quest the HUD tracker and compass follow
 questlog.track,TRACK
 questlog.tracked,TRACKED
+questlog.untrack,UNTRACK
+questlog.rewards,REWARDS
+questlog.reward_xp,{0} XP
 questlog.track_tip,Follow this quest on the HUD
 # Dialogue window (DialoguePanel)
 dialogue.leave,(Leave)
@@ -1061,6 +1065,7 @@ enemy.iron_king.name,The Iron King
 
 # Bestiary (BestiaryPanel) — the Ash Hunters' field journal
 bestiary.tab_beasts,Beasts
+bestiary.title,ASH HUNTERS' FIELD JOURNAL
 bestiary.tab_humanoids,Humanoids
 bestiary.tab_undead,Undead
 bestiary.tab_constructs,Constructs

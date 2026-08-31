@@ -102,6 +102,15 @@ public partial class InventoryPanel : UiPanel
         column.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         margin.AddChild(column);
 
+        var identity = new HBoxContainer();
+        identity.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        identity.AddChild(UiIcon.Create(UiIcon.Kind.Inventory, 28f, UiTheme.Accent));
+        Label screenTitle = UiTheme.Title(Loc.T("char.title"));
+        screenTitle.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        identity.AddChild(screenTitle);
+        column.AddChild(identity);
+        column.AddChild(UiTheme.Divider());
+
         // Tab row (Gear · Spells · Progression · Perks) — built once; only _list rebuilds per tab.
         _tabs = new UiTabs();
         foreach ((CharTab _, string key) in TabDefs)
@@ -132,6 +141,17 @@ public partial class InventoryPanel : UiPanel
                 return;
             }
         }
+    }
+
+    /// <summary>Opens the authored equipment / backpack / inspection composition through the real tab strip.</summary>
+    public void ShowGear()
+    {
+        if (_selected == null && _inventory?.Stacks.Count > 0)
+        {
+            _selected = _inventory.Stacks[0].Instance;
+        }
+
+        _tabs.Select(0);
     }
 
     protected override void OnReady()

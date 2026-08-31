@@ -40,6 +40,7 @@ public partial class MapScreen : UiPanel
     private LineEdit _search = null!;
     private Label _breadcrumb = null!;
     private VBoxContainer _results = null!;
+    private ScrollContainer _resultsScroll = null!;
     private VBoxContainer _info = null!;
     private VBoxContainer _filters = null!;
     private VBoxContainer _legend = null!;
@@ -140,6 +141,8 @@ public partial class MapScreen : UiPanel
 
         (ScrollContainer scroll, VBoxContainer list) = UiTheme.ScrollList();
         scroll.CustomMinimumSize = new Vector2(0f, 120f);
+        scroll.Visible = false;
+        _resultsScroll = scroll;
         _results = list;
         rail.AddChild(scroll);
 
@@ -457,6 +460,8 @@ public partial class MapScreen : UiPanel
                 : _projection.Zoom);
 
         SetProjection((_projection with { Zoom = zoom }).CenteredOn(new Vector2(position.X, position.Z)));
+        _view.SelectedId = _selectedId;
+        MarkDirty();
     }
 
     /// <summary>Sets the zoom, keeping the centre — the other half of what a capture harness needs
@@ -600,8 +605,11 @@ public partial class MapScreen : UiPanel
 
         if (_query.Trim().Length == 0)
         {
+            _resultsScroll.Visible = false;
             return;
         }
+
+        _resultsScroll.Visible = true;
 
         IReadOnlyList<MapSearchHit> hits = MapSearch.Rank(_query, SearchEntries());
         if (hits.Count == 0)
@@ -907,15 +915,19 @@ public partial class MapScreen : UiPanel
         return button;
     }
 
-    private Button FilterToggle(MapCategory category)
+    private Control FilterToggle(MapCategory category)
     {
         bool shown = !_hidden.Contains(category);
-        Button button = UiTheme.Action($"{(shown ? "☑" : "☐")}  {Loc.T(MapCategories.NameKey(category))}");
-        button.Alignment = HorizontalAlignment.Left;
+        CheckButton button = UiTheme.Toggle(shown);
+        button.Text = Loc.T(MapCategories.NameKey(category));
         button.AddThemeColorOverride("font_color", shown ? UiTheme.Text : UiTheme.Disabled);
-        button.Pressed += () =>
+        button.Toggled += value =>
         {
-            if (!_hidden.Remove(category))
+            if (value)
+            {
+                _hidden.Remove(category);
+            }
+            else
             {
                 _hidden.Add(category);
             }
@@ -945,27 +957,26 @@ public partial class MapScreen : UiPanel
 
             if (any)
             {
-                _legend.AddChild(UiTheme.Caption(
-                    $"{GlyphOf(group)}  {Loc.T(MapCategories.NameKey(group))}", LegendColour(group)));
+                _legend.AddChild(UiTheme.IconLabel(
+                    IconOf(group), Loc.T(MapCategories.NameKey(group)), tint: LegendColour(group)));
             }
         }
 
-        _legend.AddChild(UiTheme.Caption($"➤  {Loc.T("map.legend_player")}", UiTheme.Text));
+        _legend.AddChild(UiTheme.IconLabel(UiIcon.Kind.Waypoint, Loc.T("map.legend_player"), tint: UiTheme.Text));
         if (_map?.Waypoint != null)
         {
-            _legend.AddChild(UiTheme.Caption($"✕  {Loc.T("map.legend_waypoint")}", UiTheme.AccentHot));
+            _legend.AddChild(UiTheme.IconLabel(UiIcon.Kind.Waypoint, Loc.T("map.legend_waypoint"), tint: UiTheme.AccentHot));
         }
     }
 
-    /// <summary>The legend's stand-in for each silhouette <see cref="MapView"/> draws.</summary>
-    private static string GlyphOf(MapGroup group) => group switch
+    private static UiIcon.Kind IconOf(MapGroup group) => group switch
     {
-        MapGroup.Settlement => "●",
-        MapGroup.Trade => "■",
-        MapGroup.Service => "◆",
-        MapGroup.Exploration => "▲",
-        MapGroup.Travel => "⬢",
-        _ => "✕",
+        MapGroup.Settlement => UiIcon.Kind.Settlement,
+        MapGroup.Trade => UiIcon.Kind.Currency,
+        MapGroup.Service => UiIcon.Kind.Service,
+        MapGroup.Exploration => UiIcon.Kind.Waypoint,
+        MapGroup.Travel => UiIcon.Kind.Travel,
+        _ => UiIcon.Kind.Waypoint,
     };
 
     private static Color LegendColour(MapGroup group) => UiTheme.Adapt(group switch

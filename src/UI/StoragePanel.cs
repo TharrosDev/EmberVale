@@ -36,12 +36,7 @@ public partial class StoragePanel : UiPanel
 
     protected override void BuildShell(PanelContainer shell)
     {
-        shell.AnchorLeft = 0.5f;
-        shell.AnchorRight = 0.5f;
-        shell.OffsetLeft = -320;
-        shell.OffsetRight = 320;
-        shell.OffsetTop = 60;
-        shell.GrowHorizontal = Control.GrowDirection.Both;
+        UiTheme.ApplyWorkspace(shell, 0.82f);
 
         MarginContainer margin = UiTheme.Padding(12);
         shell.AddChild(margin);
@@ -57,7 +52,8 @@ public partial class StoragePanel : UiPanel
         var columns = new HBoxContainer
         {
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            CustomMinimumSize = new Vector2(0, 500),
+            CustomMinimumSize = new Vector2(0, 300),
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
         };
         columns.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
         column.AddChild(columns);

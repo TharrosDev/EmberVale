@@ -41,12 +41,7 @@ public partial class AppraisalPanel : UiPanel
 
     protected override void BuildShell(PanelContainer shell)
     {
-        shell.AnchorLeft = 0.5f;
-        shell.AnchorRight = 0.5f;
-        shell.OffsetLeft = -300;
-        shell.OffsetRight = 300;
-        shell.OffsetTop = 60;
-        shell.GrowHorizontal = Control.GrowDirection.Both;
+        UiTheme.ApplyWorkspace(shell, 0.70f);
 
         MarginContainer margin = UiTheme.Padding(12);
         shell.AddChild(margin);
@@ -63,7 +58,8 @@ public partial class AppraisalPanel : UiPanel
         column.AddChild(_header);
 
         (ScrollContainer scroll, VBoxContainer list) = UiTheme.ScrollList();
-        scroll.CustomMinimumSize = new Vector2(0, 460);
+        scroll.CustomMinimumSize = new Vector2(0, 280);
+        scroll.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
         column.AddChild(scroll);
         _list = list;
     }

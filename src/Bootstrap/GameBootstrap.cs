@@ -62,6 +62,8 @@ public partial class GameBootstrap : Node3D
     private HotbarPanel _hotbarPanel = null!;
     private QuestLogPanel _questLogPanel = null!;
     private MapScreen _mapScreen = null!;
+    private VendorPanel _vendorPanel = null!;
+    private DialoguePanel _dialoguePanel = null!;
     private Housing.PlacementDirector _placement = null!;
     private WorldClock _clock = null!;
     private WeatherDirector _weather = null!;
@@ -201,6 +203,11 @@ public partial class GameBootstrap : Node3D
         GameManager.Instance?.ChangeState(GameState.MainMenu);
         Log.Info("Main menu ready. New Game to enter the world.");
 
+        if (HasCmdFlag("--shellshots"))
+        {
+            AddChild(new Debugging.ShellShots { Name = "ShellShots", Menu = _mainMenu });
+        }
+
         // Dev convenience (parallels --validate): launching with `-- --play` boots straight into the
         // most recent save, so gameplay — and the systems that only init on world build (audio
         // directors, spawners) — can be launched deterministically from the command line / MCP:
@@ -244,6 +251,8 @@ public partial class GameBootstrap : Node3D
                     Map = _mapScreen,
                     Journal = _questLogPanel,
                     Character = _inventoryPanel,
+                    Vendor = _vendorPanel,
+                    Dialogue = _dialoguePanel,
                 });
             }
 
@@ -473,13 +482,15 @@ public partial class GameBootstrap : Node3D
         // world — so once it is in the tree nothing ever calls back into it. They used to be stored
         // in fields that were assigned and never read again: object state describing nothing.
         // A new panel earns a field when something reads it, not because its neighbours have one.
-        AddChild(new DialoguePanel());
+        _dialoguePanel = new DialoguePanel();
+        AddChild(_dialoguePanel);
         AddChild(new CraftingPanel());
         // The stash window (37B) — event-driven like the crafting panel, one instance for every
         // container in the world.
         AddChild(new StoragePanel());
         // The shop window (38A) — same one-instance-for-every-merchant shape as the two above.
-        AddChild(new VendorPanel());
+        _vendorPanel = new VendorPanel();
+        AddChild(_vendorPanel);
         // The appraiser's window (38P2) — the first panel that only reads. Same one instance for
         // every appraiser, answered off an event, so the service knows nothing about the UI.
         AddChild(new AppraisalPanel());

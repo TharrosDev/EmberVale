@@ -61,6 +61,10 @@ public partial class BestiaryPanel : UiPanel
         column.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         margin.AddChild(column);
 
+        column.AddChild(UiTheme.IconLabel(
+            UiIcon.Kind.Quest, Loc.T("bestiary.title"), tint: UiTheme.Accent));
+        column.AddChild(UiTheme.Divider());
+
         _tabs = new UiTabs();
         foreach ((BestiaryCategory _, string key) in TabDefs)
         {

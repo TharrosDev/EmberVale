@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using Embervale.Companions;
+using Embervale.Core;
 using Embervale.Core.Events;
 using Embervale.Economy;
 using Embervale.Localization;
@@ -19,10 +21,27 @@ namespace Embervale.UI;
 /// </summary>
 public partial class Notifications : CanvasLayer
 {
+    private const int MaxVisible = 3;
+    private const int MaxQueued = 12;
+
+    private enum NoticeCategory { Minor, Reward, Quest, Warning, Major }
+
+    private sealed class Notice
+    {
+        public required string Text { get; init; }
+        public required Color Accent { get; init; }
+        public required NoticeCategory Category { get; init; }
+        public int Count { get; set; } = 1;
+    }
+
     private VBoxContainer _stack = null!;
+    private readonly Queue<Notice> _queue = new();
+    private readonly Dictionary<string, Notice> _coalesced = new();
+    private int _visible;
 
     public override void _Ready()
     {
+        ProcessMode = ProcessModeEnum.Always;
         // Top-right, below the quest tracker — the top-centre column belongs to the boss bar /
         // event banner / nameplate stack (30.5B), which toasts used to overlap.
         _stack = new VBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
@@ -63,6 +82,16 @@ public partial class Notifications : CanvasLayer
         bus?.Subscribe<ShrineRefusedEvent>(OnShrineRefused);
     }
 
+    public override void _Process(double delta)
+    {
+        bool protectedState = UiState.MenuOpen || GameManager.Instance?.State != GameState.Playing;
+        _stack.Visible = !protectedState;
+        if (!protectedState)
+        {
+            PresentQueued();
+        }
+    }
+
     public override void _ExitTree()
     {
         EventBus? bus = EventBus.Instance;
@@ -94,11 +123,12 @@ public partial class Notifications : CanvasLayer
         bus.Unsubscribe<ShrineRefusedEvent>(OnShrineRefused);
     }
 
-    private void OnLeveledUp(LeveledUpEvent e) => Push(Loc.TF("notify.levelup", e.NewLevel), UiTheme.Accent);
+    private void OnLeveledUp(LeveledUpEvent e) =>
+        Push(Loc.TF("notify.levelup", e.NewLevel), UiTheme.Accent, NoticeCategory.Major);
 
     // Quest.Title is a Loc key (data-authored), so it must be resolved before display.
     private void OnQuestStarted(QuestStartedEvent e) =>
-        Push(Loc.TF("notify.quest_started", Loc.T(e.Quest.Title)), UiTheme.Text);
+        Push(Loc.TF("notify.quest_started", Loc.T(e.Quest.Title)), UiTheme.Text, NoticeCategory.Quest);
 
     /// <summary>
     /// An objective ticking over (§24). Reuses this feed rather than adding a second notification
@@ -126,23 +156,25 @@ public partial class Notifications : CanvasLayer
 
         Push(
             Loc.TF("hud.quest.objective_done", Loc.T(objectives[e.ObjectiveIndex].ShortLabel())),
-            UiTheme.QuestComplete);
+            UiTheme.QuestComplete, NoticeCategory.Quest);
     }
 
     private void OnQuestCompleted(QuestCompletedEvent e) =>
-        Push(Loc.TF("notify.quest_complete", Loc.T(e.Quest.Title)), UiTheme.Good);
+        Push(Loc.TF("notify.quest_complete", Loc.T(e.Quest.Title)), UiTheme.Good, NoticeCategory.Major);
 
     /// <summary>A quest lost (41B). It shares the world event's failure colour rather than the
     /// companion-downed one: what the player needs told apart here is "this ended badly" from "this
     /// ended well", and the downed toast that caused an escort failure has already fired beside it.</summary>
     private void OnQuestFailed(QuestFailedEvent e) =>
-        Push(Loc.TF("notify.quest_failed", Loc.T(e.Quest.Title)), UiTheme.Bad);
+        Push(Loc.TF("notify.quest_failed", Loc.T(e.Quest.Title)), UiTheme.Bad, NoticeCategory.Warning);
 
-    private void OnWorldEventStarted(WorldEventStartedEvent e) => Push(Loc.TF("notify.event_started", Loc.T(e.NameKey)), UiTheme.Accent);
+    private void OnWorldEventStarted(WorldEventStartedEvent e) =>
+        Push(Loc.TF("notify.event_started", Loc.T(e.NameKey)), UiTheme.Accent, NoticeCategory.Warning);
 
     private void OnWorldEventEnded(WorldEventEndedEvent e) =>
         Push(Loc.TF(e.Completed ? "notify.event_resolved" : "notify.event_failed", Loc.T(e.NameKey)),
-            e.Completed ? UiTheme.Good : UiTheme.Bad);
+            e.Completed ? UiTheme.Good : UiTheme.Bad,
+            e.Completed ? NoticeCategory.Reward : NoticeCategory.Warning);
 
     /// <summary>Discovery feedback is reserved for places that define the journey: settlements,
     /// wilds, dungeons, mines and landmarks. Detail-tier counters and services still appear on the
@@ -151,7 +183,7 @@ public partial class Notifications : CanvasLayer
     {
         if (ShouldAnnounceDiscovery(e.Location.RevealWithCell, e.Location.EffectiveTier))
         {
-            Push(Loc.TF("notify.location_discovered", Loc.T(e.Location.NameKey)), UiTheme.Accent);
+            Push(Loc.TF("notify.location_discovered", Loc.T(e.Location.NameKey)), UiTheme.Accent, NoticeCategory.Reward);
         }
     }
 
@@ -219,7 +251,7 @@ public partial class Notifications : CanvasLayer
     private void OnMountRefused(MountRefusedEvent e) => Push(Loc.T(e.ReasonKey), UiTheme.Bad);
 
     private void OnBlessingClaimed(BlessingClaimedEvent e) =>
-        Push(Loc.TF("notify.blessing_received", Loc.T(e.Shrine.BlessingNameKey)), UiTheme.Good);
+        Push(Loc.TF("notify.blessing_received", Loc.T(e.Shrine.BlessingNameKey)), UiTheme.Good, NoticeCategory.Reward);
 
     private void OnShrineAlreadyVisited(ShrineAlreadyVisitedEvent e) =>
         Push(Loc.TF("notify.shrine_already_visited", Loc.T(e.Shrine.NameKey)), UiTheme.Dim);
@@ -228,24 +260,94 @@ public partial class Notifications : CanvasLayer
     // the whole point of authoring a key per shrine rather than one shared line.
     private void OnShrineRefused(ShrineRefusedEvent e) => Push(Loc.T(e.Shrine.RefusalKey), UiTheme.Bad);
 
-    private void Push(string text, Color color)
+    private void Push(string text, Color color, NoticeCategory category = NoticeCategory.Minor)
     {
-        // The colour moves to the spine and the text goes back to Text (37.5F). Colouring the words
-        // themselves meant a Dim autosave notice was Dim *text* on a dark chip - the least readable
-        // thing on screen carrying information the player might actually want. The spine says which
-        // kind of thing happened; the words stay legible regardless.
+        if (_coalesced.TryGetValue(text, out Notice? existing))
+        {
+            existing.Count++;
+            return;
+        }
+
+        // Burst protection keeps warnings and major beats, dropping the oldest minor fact first.
+        if (_queue.Count >= MaxQueued && category == NoticeCategory.Minor)
+        {
+            return;
+        }
+
+        var notice = new Notice { Text = text, Accent = color, Category = category };
+        _queue.Enqueue(notice);
+        _coalesced[text] = notice;
+        PresentQueued();
+    }
+
+    private void PresentQueued()
+    {
+        // Menus and conversations already own the player's attention. Preserve the event and reveal
+        // it after the protected state closes instead of drawing over prose or critical choices.
+        if (UiState.MenuOpen || GameManager.Instance?.State != GameState.Playing)
+        {
+            return;
+        }
+
+        while (_visible < MaxVisible && _queue.Count > 0)
+        {
+            Notice notice = _queue.Dequeue();
+            _coalesced.Remove(notice.Text);
+            Present(notice);
+        }
+    }
+
+    private void Present(Notice notice)
+    {
         var toast = new Toast
         {
             SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter,
-            Accent = color,
+            Accent = notice.Accent,
+            Life = notice.Category switch
+            {
+                NoticeCategory.Minor => 3.2,
+                NoticeCategory.Warning => 5.5,
+                NoticeCategory.Major => 6.0,
+                _ => 4.5,
+            },
         };
 
-        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceSm);
-        Label label = UiTheme.Body(text);
-        label.HorizontalAlignment = HorizontalAlignment.Center;
-        pad.AddChild(label);
+        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceMd);
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        row.AddChild(UiIcon.Create(IconFor(notice.Category), 22f, notice.Accent));
+
+        var copy = new VBoxContainer();
+        copy.AddThemeConstantOverride("separation", 0);
+        Label label = notice.Category is NoticeCategory.Major or NoticeCategory.Quest
+            ? UiTheme.Header(notice.Text)
+            : UiTheme.Body(notice.Text);
+        label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        label.CustomMinimumSize = new Vector2(220f, 0f);
+        copy.AddChild(label);
+        if (notice.Count > 1)
+        {
+            copy.AddChild(UiTheme.Caption($"×{notice.Count}", UiTheme.Dim));
+        }
+        row.AddChild(copy);
+        pad.AddChild(row);
         toast.AddContent(pad);
 
+        _visible++;
+        toast.TreeExited += () =>
+        {
+            _visible = Mathf.Max(0, _visible - 1);
+            PresentQueued();
+        };
         _stack.AddChild(toast);
     }
+
+    private static UiIcon.Kind IconFor(NoticeCategory category) => category switch
+    {
+        NoticeCategory.Quest => UiIcon.Kind.Quest,
+        NoticeCategory.Warning => UiIcon.Kind.Warning,
+        NoticeCategory.Reward => UiIcon.Kind.Currency,
+        NoticeCategory.Major => UiIcon.Kind.Spell,
+        _ => UiIcon.Kind.Waypoint,
+    };
 }

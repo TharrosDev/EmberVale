@@ -25,9 +25,9 @@ public static class UiTheme
     // Surfaces: warm charcoal ash, never blue-black. Three depths, and the ordering is the
     // whole point — a control is understood by whether it sits *in* the panel (a well: slots,
     // troughs, input fields) or *on* it (a card: an item row, a spell, a save slot).
-    private static readonly Color WellBase = new(0.055f, 0.052f, 0.048f, 0.95f);
-    private static readonly Color PanelBase = new(0.09f, 0.085f, 0.075f, 0.92f);
-    private static readonly Color CardBase = new(0.135f, 0.126f, 0.112f, 0.95f);
+    private static readonly Color WellBase = new(0.030f, 0.031f, 0.030f, 0.97f);
+    private static readonly Color PanelBase = new(0.060f, 0.058f, 0.052f, 0.96f);
+    private static readonly Color CardBase = new(0.098f, 0.092f, 0.081f, 0.94f);
 
     // Properties rather than fields since 37.5G: high contrast makes the surfaces fully opaque, and
     // a translucent panel over a bright, busy world is where this UI is least readable. Source-
@@ -38,7 +38,10 @@ public static class UiTheme
 
     private static Color Opaque(Color surface) => HighContrast ? surface with { A = 1f } : surface;
 
-    public static readonly Color PanelBorder = new(0.42f, 0.40f, 0.35f, 0.80f);
+    public static readonly Color PanelBorder = new(0.34f, 0.36f, 0.34f, 0.84f);
+    public static readonly Color Iron = new(0.28f, 0.30f, 0.29f);
+    public static readonly Color IronLit = new(0.46f, 0.47f, 0.43f);
+    public static readonly Color Ash = new(0.36f, 0.34f, 0.30f);
 
     /// <summary>
     /// The empty part of every bar in the game.
@@ -58,8 +61,8 @@ public static class UiTheme
 
     // Text: bone pale primary, ash-grey secondary. Dim is tuned to hold WCAG AA (≥4.5:1)
     // on every surface it labels, including button faces (30.5K; pinned by UiContrastTests).
-    public static readonly Color Text = new(0.79f, 0.75f, 0.68f);
-    public static readonly Color Dim = new(0.58f, 0.56f, 0.50f);
+    public static readonly Color Text = new(0.84f, 0.80f, 0.72f);
+    public static readonly Color Dim = new(0.62f, 0.60f, 0.54f);
 
     /// <summary>Unavailable controls and unmet requirements. **Deliberately not contrast-pinned:**
     /// WCAG exempts disabled controls, and a disabled row that reads as strongly as an enabled one
@@ -177,10 +180,10 @@ public static class UiTheme
     // Caption is the legibility floor — 12 px at reference scale (30.5K; was 11, raised in
     // the min-spec/Steam Deck readability audit). Nothing renders smaller.
     public const int CaptionFontSize = 12;
-    public const int BodyFontSize = 14;
-    public const int HeaderFontSize = 16;
-    public const int TitleFontSize = 20;
-    public const int DisplayFontSize = 26;
+    public const int BodyFontSize = 15;
+    public const int HeaderFontSize = 18;
+    public const int TitleFontSize = 24;
+    public const int DisplayFontSize = 32;
 
     /// <summary>The top of the scale — a word thrown across the middle of the screen (PARRY, the
     /// combat feedback overlay). Added in 37.5B to retire a hard-coded 40; nothing but a
@@ -205,18 +208,18 @@ public static class UiTheme
     }
 
     // --- Spacing scale (px at reference scale) ---------------------------------
-    public const int SpaceXs = 4;
-    public const int SpaceSm = 6;
-    public const int SpaceMd = 10;
-    public const int SpaceLg = 16;
-    public const int SpaceXl = 24;
+    public const int SpaceXs = 5;
+    public const int SpaceSm = 8;
+    public const int SpaceMd = 12;
+    public const int SpaceLg = 18;
+    public const int SpaceXl = 28;
 
     // --- Radii -----------------------------------------------------------------
     // Tight radii throughout: this world's surfaces are cut and bound, not moulded. A large
     // radius is the fastest way to make a fantasy panel read as a web app.
-    public const int RadiusSm = 3;
-    public const int RadiusMd = 4;
-    public const int RadiusLg = 6;
+    public const int RadiusSm = 1;
+    public const int RadiusMd = 2;
+    public const int RadiusLg = 2;
 
     // --- Motion tokens -----------------------------------------------------------
     // Durations in seconds; always route through Duration() so the reduced-motion
@@ -395,6 +398,38 @@ public static class UiTheme
         return card;
     }
 
+    /// <summary>A low-chrome authored band for HUD readouts and dense list rows. It carries
+    /// hierarchy through a semantic edge and baseline instead of enclosing every fact in a box.</summary>
+    public static PanelContainer Band(Color? edge = null)
+    {
+        var band = new PanelContainer();
+        StyleBoxFlat style = CardStyle(edge);
+        style.BgColor = CardBg with { A = 0.72f };
+        style.BorderColor = edge ?? (IronLit with { A = 0.32f });
+        style.BorderWidthBottom = 1;
+        band.AddThemeStyleboxOverride("panel", style);
+        return band;
+    }
+
+    /// <summary>An icon and two-level text lockup used by HUD facts, transactions and alerts.</summary>
+    public static HBoxContainer IconLabel(UiIcon.Kind icon, string primary, string? secondary = null, Color? tint = null)
+    {
+        Color color = tint ?? Text;
+        var row = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+        row.AddThemeConstantOverride("separation", SpaceSm);
+        row.AddChild(UiIcon.Create(icon, 20f, color));
+
+        var copy = new VBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+        copy.AddThemeConstantOverride("separation", 0);
+        copy.AddChild(Body(primary));
+        if (!string.IsNullOrEmpty(secondary))
+        {
+            copy.AddChild(Caption(secondary, Dim));
+        }
+        row.AddChild(copy);
+        return row;
+    }
+
     /// <summary>
     /// The ground a full-screen overlay dims the world with. **Warm charcoal, not black and not
     /// blue-black** — 37.5B found seven hand-rolled scrims across the shell (main menu, pause,
@@ -438,6 +473,23 @@ public static class UiTheme
         shell.OffsetTop = gutter;
         shell.OffsetRight = -gutter;
         shell.OffsetBottom = -gutter;
+    }
+
+    /// <summary>A responsive authored workspace: wider than a dialog, quieter than full-screen.</summary>
+    public static void ApplyWorkspace(Control shell, float widthFraction = 0.72f)
+    {
+        float side = (1f - Mathf.Clamp(widthFraction, 0.55f, 0.92f)) * 0.5f;
+        shell.AnchorLeft = side;
+        shell.AnchorRight = 1f - side;
+        shell.AnchorTop = 0.08f;
+        shell.AnchorBottom = 0.92f;
+        shell.OffsetLeft = 0f;
+        shell.OffsetRight = 0f;
+        shell.OffsetTop = 0f;
+        shell.OffsetBottom = 0f;
+        shell.GrowHorizontal = Control.GrowDirection.Both;
+        shell.GrowVertical = Control.GrowDirection.Both;
+        shell.CustomMinimumSize = new Vector2(0f, 360f);
     }
 
     /// <summary>The logical width a full-screen panel has to lay out inside, after its gutter and
@@ -711,7 +763,12 @@ public static class UiTheme
 
     public static Button Action(string text)
     {
-        var button = new Button { Text = text };
+        var button = new Button
+        {
+            Text = text,
+            Alignment = HorizontalAlignment.Left,
+            CustomMinimumSize = new Vector2(0f, 38f),
+        };
         ApplyInteractiveStyle(button);
         ApplyType(button, FontRole.Display, BodyFontSize);
         button.Pressed += PlayUiClick; // Phase 31C: one seam gives every menu button its click
@@ -871,14 +928,16 @@ public static class UiTheme
         var box = new StyleBoxFlat
         {
             BgColor = PanelBg,
-            BorderColor = HighContrast ? BrassLit : Brass with { A = 0.85f },
+            BorderColor = HighContrast ? IronLit : PanelBorder,
         };
-        box.SetBorderWidthAll(HighContrast ? 3 : 2);
+        box.SetBorderWidthAll(HighContrast ? 2 : 1);
+        box.BorderWidthTop = HighContrast ? 4 : 2;
         box.SetCornerRadiusAll(RadiusLg);
 
-        // The groove: a hard, un-blurred dark ring just outside the brass.
-        box.ShadowColor = Engrave;
-        box.ShadowSize = 1;
+        // A weighted hanging shadow makes the surface feel like forged plate instead of a web card.
+        box.ShadowColor = new Color(0f, 0f, 0f, HighContrast ? 0.74f : 0.55f);
+        box.ShadowSize = HighContrast ? 8 : 14;
+        box.ShadowOffset = new Vector2(0f, 6f);
         return box;
     }
 
@@ -886,9 +945,9 @@ public static class UiTheme
     /// the light reads as falling into a cut rather than off a raised lip.</summary>
     public static StyleBoxFlat WellStyle()
     {
-        var box = new StyleBoxFlat { BgColor = WellBg, BorderColor = Engrave with { A = 0.85f } };
+        var box = new StyleBoxFlat { BgColor = WellBg, BorderColor = Iron with { A = 0.92f } };
         box.SetBorderWidthAll(1);
-        box.BorderWidthBottom = 0;
+        box.BorderWidthTop = 2;
         box.SetCornerRadiusAll(RadiusSm);
         return box;
     }
@@ -897,12 +956,13 @@ public static class UiTheme
     /// carries a row's category colour.</summary>
     public static StyleBoxFlat CardStyle(Color? edge = null)
     {
-        var box = new StyleBoxFlat { BgColor = CardBg, BorderColor = edge ?? (BrassLit with { A = 0.22f }) };
+        var box = new StyleBoxFlat { BgColor = CardBg, BorderColor = edge ?? (IronLit with { A = 0.26f }) };
         box.SetBorderWidthAll(0);
-        box.BorderWidthLeft = edge is null ? 1 : HighContrast ? 5 : 3;
+        box.BorderWidthLeft = edge is null ? 0 : HighContrast ? 4 : 2;
+        box.BorderWidthBottom = 1;
         box.SetCornerRadiusAll(RadiusSm);
-        box.SetContentMarginAll(SpaceSm);
-        box.ContentMarginLeft = SpaceMd;
+        box.SetContentMarginAll(SpaceMd);
+        box.ContentMarginLeft = SpaceLg;
         return box;
     }
 
@@ -914,13 +974,14 @@ public static class UiTheme
         button.AddThemeColorOverride("font_hover_color", Accent);
         button.AddThemeColorOverride("font_focus_color", Accent);
         button.AddThemeColorOverride("font_disabled_color", Disabled);
-        button.AddThemeStyleboxOverride("normal", ButtonStyle(new Color(0.16f, 0.15f, 0.13f, 0.95f)));
-        button.AddThemeStyleboxOverride("hover", ButtonStyle(new Color(0.23f, 0.21f, 0.18f, 0.98f)));
-        button.AddThemeStyleboxOverride("pressed", ButtonStyle(new Color(0.11f, 0.10f, 0.09f, 0.98f)));
+        button.AddThemeStyleboxOverride("normal", ButtonStyle(new Color(0.10f, 0.095f, 0.085f, 0.82f)));
+        button.AddThemeStyleboxOverride("hover", ButtonStyle(new Color(0.18f, 0.155f, 0.115f, 0.96f), Accent));
+        button.AddThemeStyleboxOverride("pressed", ButtonStyle(new Color(0.07f, 0.065f, 0.06f, 0.98f), AccentHot));
 
-        StyleBoxFlat focus = ButtonStyle(new Color(0.16f, 0.15f, 0.13f, 0.95f));
+        StyleBoxFlat focus = ButtonStyle(new Color(0.15f, 0.13f, 0.10f, 0.98f), Accent);
         focus.BorderColor = Accent;
-        focus.SetBorderWidthAll(1);
+        focus.BorderWidthLeft = 3;
+        focus.BorderWidthBottom = 1;
         button.AddThemeStyleboxOverride("focus", focus);
 
         // Hover/press/focus microinteraction (30.5I): a brief modulate ease layered over the
@@ -965,13 +1026,15 @@ public static class UiTheme
         control.SetMeta(ModulateTweenMeta, tween);
     }
 
-    private static StyleBoxFlat ButtonStyle(Color color)
+    private static StyleBoxFlat ButtonStyle(Color color, Color? edge = null)
     {
-        var box = new StyleBoxFlat { BgColor = color };
+        var box = new StyleBoxFlat { BgColor = color, BorderColor = edge ?? (Iron with { A = 0.7f }) };
         box.SetCornerRadiusAll(RadiusMd);
-        box.SetContentMarginAll(SpaceXs);
-        box.ContentMarginLeft = 9;
-        box.ContentMarginRight = 9;
+        box.BorderWidthLeft = edge is null ? 1 : 3;
+        box.BorderWidthBottom = 1;
+        box.SetContentMarginAll(SpaceSm);
+        box.ContentMarginLeft = SpaceMd;
+        box.ContentMarginRight = SpaceMd;
         return box;
     }
 

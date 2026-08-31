@@ -65,10 +65,7 @@ public partial class CharacterCreator : CanvasLayer
         AddChild(backdrop);
 
         PanelContainer panel = UiTheme.Panel();
-        panel.SetAnchorsPreset(Control.LayoutPreset.Center);
-        panel.GrowHorizontal = Control.GrowDirection.Both;
-        panel.GrowVertical = Control.GrowDirection.Both;
-        panel.CustomMinimumSize = new Vector2(660, 0);
+        UiTheme.ApplyWorkspace(panel, 0.72f);
         AddChild(panel);
         _panel = panel;
 

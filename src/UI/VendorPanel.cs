@@ -28,6 +28,7 @@ namespace Embervale.UI;
 public partial class VendorPanel : UiPanel
 {
     private Label _title = null!;
+    private Label _purse = null!;
     private Label _standing = null!;
     private Label _localTrade = null!;
     private Label _localShock = null!;
@@ -41,6 +42,8 @@ public partial class VendorPanel : UiPanel
     private Label _packHeader = null!;
     private VBoxContainer _waresList = null!;
     private VBoxContainer _packList = null!;
+    private VBoxContainer _tradeDetail = null!;
+    private ItemInstance? _selectedTrade;
 
     private IEntity? _player;
     private InventoryComponent? _pack;
@@ -49,39 +52,54 @@ public partial class VendorPanel : UiPanel
 
     protected override void BuildShell(PanelContainer shell)
     {
-        shell.AnchorLeft = 0.5f;
-        shell.AnchorRight = 0.5f;
-        shell.OffsetLeft = -320;
-        shell.OffsetRight = 320;
-        shell.OffsetTop = 60;
-        shell.GrowHorizontal = Control.GrowDirection.Both;
+        UiTheme.ApplyScreenInset(shell);
 
         MarginContainer margin = UiTheme.Padding(12);
         shell.AddChild(margin);
 
-        var column = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        column.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        var column = new VBoxContainer
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+        };
+        column.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
         margin.AddChild(column);
 
-        _title = UiTheme.Header(string.Empty);
-        column.AddChild(_title);
+        var identity = new HBoxContainer();
+        identity.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        identity.AddChild(UiIcon.Create(UiIcon.Kind.Service, 30f, UiTheme.Accent));
+        _title = UiTheme.Title(string.Empty);
+        _title.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        identity.AddChild(_title);
+        var purseLockup = new HBoxContainer { SizeFlagsVertical = Control.SizeFlags.ShrinkCenter };
+        purseLockup.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        purseLockup.AddChild(UiIcon.Create(UiIcon.Kind.Currency, 20f, UiTheme.Accent));
+        _purse = UiTheme.Body(string.Empty, UiTheme.Accent);
+        purseLockup.AddChild(_purse);
+        identity.AddChild(purseLockup);
+        column.AddChild(identity);
+
+        PanelContainer context = UiTheme.Band(UiTheme.IronLit);
+        var contextCopy = new VBoxContainer();
+        contextCopy.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+        context.AddChild(contextCopy);
 
         // A price that moved must say why it moved. Without this line the discount is invisible and
         // reads as the shop being mispriced — the same reason every Phase 37 refusal names itself.
         _standing = UiTheme.Caption(string.Empty);
-        column.AddChild(_standing);
+        contextCopy.AddChild(_standing);
 
         // What the place itself does to the prices (38G), directly under what the merchant thinks of
         // you — two different reasons a number moved, in the order the player meets them.
         _localTrade = UiTheme.Caption(string.Empty);
         _localTrade.AddThemeColorOverride("font_color", UiTheme.Dim);
-        column.AddChild(_localTrade);
+        contextCopy.AddChild(_localTrade);
 
         // The event, under the standing state of the trade (38T): the line above says what this place
         // is normally like, this one says what has happened to it this week. Two lines rather than one
         // sentence because the first is a fact about the place and the second expires.
         _localShock = UiTheme.Caption(string.Empty);
-        column.AddChild(_localShock);
+        contextCopy.AddChild(_localShock);
 
         // The stake line (38I). It sits with the standing caption rather than in the wares column
         // because it is a fact about the merchant, not a ware: what it buys is her purse and the rows
@@ -98,7 +116,7 @@ public partial class VendorPanel : UiPanel
         _investButton.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         _investButton.Pressed += OnInvestPressed;
         _investRow.AddChild(_investButton);
-        column.AddChild(_investRow);
+        contextCopy.AddChild(_investRow);
 
         // The haggle line (38S), directly under the stake and for the same reason: it is a fact about
         // the merchant rather than a ware. Hidden entirely on a merchant who will not negotiate, which
@@ -116,29 +134,46 @@ public partial class VendorPanel : UiPanel
         _haggleButton.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         _haggleButton.Pressed += OnHagglePressed;
         _haggleRow.AddChild(_haggleButton);
-        column.AddChild(_haggleRow);
+        contextCopy.AddChild(_haggleRow);
+        column.AddChild(context);
+
+        PanelContainer detail = UiTheme.Band(UiTheme.Accent);
+        detail.CustomMinimumSize = new Vector2(0f, 118f);
+        _tradeDetail = new VBoxContainer();
+        _tradeDetail.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        detail.AddChild(_tradeDetail);
+        column.AddChild(detail);
 
         column.AddChild(UiTheme.Divider());
 
         var columns = new HBoxContainer
         {
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            CustomMinimumSize = new Vector2(0, 500),
+            CustomMinimumSize = new Vector2(0, 360),
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
         };
         columns.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
         column.AddChild(columns);
 
         (_waresHeader, _waresList) = BuildColumn(columns);
-        columns.AddChild(new VSeparator());
         (_packHeader, _packList) = BuildColumn(columns);
     }
 
     /// <summary>One titled scroll column; both sides are the same shape.</summary>
     private static (Label Header, VBoxContainer List) BuildColumn(Node parent)
     {
-        var side = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        PanelContainer frame = UiTheme.Band();
+        frame.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        frame.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        parent.AddChild(frame);
+
+        var side = new VBoxContainer
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+        };
         side.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
-        parent.AddChild(side);
+        frame.AddChild(side);
 
         Label header = UiTheme.Header(string.Empty);
         side.AddChild(header);
@@ -171,6 +206,7 @@ public partial class VendorPanel : UiPanel
         _player = e.Player;
         _pack = pack;
         _shop = e.Shop;
+        _selectedTrade = null;
 
         SetOpen(true);
 
@@ -565,7 +601,8 @@ public partial class VendorPanel : UiPanel
             return;
         }
 
-        _title.Text = $"{Loc.TF("shop.title", Loc.T(shop.NameKey))}   {Loc.TF("shop.purse", Purse())}";
+        _title.Text = Loc.TF("shop.title", Loc.T(shop.NameKey));
+        _purse.Text = Loc.TF("shop.purse", Purse());
 
         ReputationTier tier = StandingWith(shop);
 
@@ -579,6 +616,7 @@ public partial class VendorPanel : UiPanel
         BuildHaggle(shop, haggled);
         BuildWares(shop, tier, haggled);
         BuildPack(shop, haggled);
+        RebuildTradeDetail();
     }
 
     /// <summary>
@@ -828,6 +866,10 @@ public partial class VendorPanel : UiPanel
         }
 
         int purse = Purse();
+        if (_selectedTrade == null && offers.Count > 0)
+        {
+            _selectedTrade = offers[0].Instance;
+        }
         foreach (ShopOffer offer in offers)
         {
             bool specialty = IsSpecialty(shop, offer.Instance);
@@ -990,7 +1032,7 @@ public partial class VendorPanel : UiPanel
     /// that every refusal names itself, and UI_STYLE §2's that <c>Disabled</c> always carries a
     /// second channel.
     /// </summary>
-    private static void AddRow(
+    private void AddRow(
         VBoxContainer list,
         ItemInstance instance,
         int quantity,
@@ -1009,8 +1051,13 @@ public partial class VendorPanel : UiPanel
         row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 
         Button slot = ItemSlot.Build(instance, quantity, selected: false, size: 34f);
-        slot.FocusMode = Control.FocusModeEnum.None; // the action button is the row's focus target
-        slot.MouseFilter = Control.MouseFilterEnum.Ignore;
+        slot.FocusMode = Control.FocusModeEnum.All;
+        slot.TooltipText = Loc.T("shop.inspect_hint");
+        slot.Pressed += () =>
+        {
+            _selectedTrade = instance;
+            MarkDirty();
+        };
         row.AddChild(slot);
 
         var text = new VBoxContainer
@@ -1088,5 +1135,18 @@ public partial class VendorPanel : UiPanel
         pad.AddChild(row);
         card.AddChild(pad);
         list.AddChild(card);
+    }
+
+    private void RebuildTradeDetail()
+    {
+        UiTheme.ClearChildren(_tradeDetail);
+        if (_selectedTrade is not { } item)
+        {
+            _tradeDetail.AddChild(UiTheme.IconLabel(
+                UiIcon.Kind.Inventory, Loc.T("shop.inspect_hint"), tint: UiTheme.Dim));
+            return;
+        }
+
+        _tradeDetail.AddChild(ItemSlot.Detail(item));
     }
 }

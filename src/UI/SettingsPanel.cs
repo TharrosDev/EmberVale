@@ -70,10 +70,7 @@ public partial class SettingsPanel : CanvasLayer
         AddChild(backdrop);
 
         PanelContainer panel = UiTheme.Panel();
-        panel.SetAnchorsPreset(Control.LayoutPreset.Center);
-        panel.GrowHorizontal = Control.GrowDirection.Both;
-        panel.GrowVertical = Control.GrowDirection.Both;
-        panel.CustomMinimumSize = new Vector2(660, 0);
+        UiTheme.ApplyWorkspace(panel, 0.68f);
         AddChild(panel);
 
         MarginContainer pad = UiTheme.Padding(18);
@@ -91,7 +88,9 @@ public partial class SettingsPanel : CanvasLayer
         // what a Steam Deck reports at UI scale 1.5.
         var scroll = new ScrollContainer
         {
-            CustomMinimumSize = new Vector2(600, Mathf.Clamp(UiTheme.UsableHeight(panel) - 110f, 220f, 460f)),
+            CustomMinimumSize = new Vector2(0f, Mathf.Clamp(UiTheme.UsableHeight(panel) - 110f, 220f, 560f)),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
             FollowFocus = true, // keep the focused row in view under gamepad/keyboard nav (30.5J)
         };

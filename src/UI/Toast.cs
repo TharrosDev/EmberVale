@@ -36,7 +36,14 @@ public partial class Toast : MarginContainer
         // ShaderMaterial - a full framed screen's worth of chrome for one line of text that lives
         // four seconds. This is the third instance of the same pattern (status chips in 37.5B, save
         // rows in this same phase): a small widget that reused Panel() as a generic box.
-        _chip.AddThemeStyleboxOverride("panel", UiTheme.CardStyle(Accent));
+        StyleBoxFlat style = UiTheme.CardStyle(Accent);
+        style.BgColor = UiTheme.PanelBg with { A = 0.98f };
+        style.BorderWidthBottom = 1;
+        style.BorderColor = Accent with { A = 0.58f };
+        style.ShadowColor = new Color(0f, 0f, 0f, 0.5f);
+        style.ShadowSize = 8;
+        style.ShadowOffset = new Vector2(0f, 3f);
+        _chip.AddThemeStyleboxOverride("panel", style);
         AddChild(_chip);
         ApplySlide(UiTheme.Duration(UiTheme.DurationBase) > 0f ? SlideDistance : 0f);
     }

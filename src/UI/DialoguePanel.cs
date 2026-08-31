@@ -26,6 +26,7 @@ public partial class DialoguePanel : UiPanel
     protected override bool CloseOnCancel => false;
 
     private VBoxContainer _list = null!;
+    private ColorRect _scrim = null!;
 
     private DialogueSession? _session;
     private IEntity? _player;
@@ -33,34 +34,67 @@ public partial class DialoguePanel : UiPanel
 
     protected override void BuildShell(PanelContainer shell)
     {
+        _scrim = UiTheme.Scrim(0.40f);
+        _scrim.Visible = false;
+        _scrim.MouseFilter = Control.MouseFilterEnum.Ignore;
+        AddChild(_scrim);
+        MoveChild(_scrim, 0);
+
         shell.AnchorLeft = 0.5f;
         shell.AnchorRight = 0.5f;
         shell.AnchorTop = 1f;
         shell.AnchorBottom = 1f;
-        shell.OffsetLeft = -300;
-        shell.OffsetRight = 300;
-        shell.OffsetTop = -260;
-        shell.OffsetBottom = -24;
         shell.GrowHorizontal = Control.GrowDirection.Both;
         shell.GrowVertical = Control.GrowDirection.Begin;
+        LayoutShell();
 
-        MarginContainer margin = UiTheme.Padding(14);
+        MarginContainer margin = UiTheme.Padding(UiTheme.SpaceLg);
         shell.AddChild(margin);
 
+        var scroll = new ScrollContainer
+        {
+            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
+            FollowFocus = true,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+        };
+        margin.AddChild(scroll);
+
         _list = new VBoxContainer();
-        _list.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-        margin.AddChild(_list);
+        _list.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        _list.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
+        scroll.AddChild(_list);
     }
 
     protected override void OnReady()
     {
         EventBus.Instance?.Subscribe<DialogueStartedEvent>(OnDialogueStarted);
+        GetViewport().SizeChanged += LayoutShell;
     }
 
     public override void _ExitTree()
     {
         EventBus.Instance?.Unsubscribe<DialogueStartedEvent>(OnDialogueStarted);
+        GetViewport().SizeChanged -= LayoutShell;
     }
+
+    protected override void OnOpenChanged(bool open)
+    {
+        _scrim.Visible = open;
+    }
+
+    private void LayoutShell()
+    {
+        Vector2 viewport = GetViewport().GetVisibleRect().Size;
+        float width = Mathf.Clamp(viewport.X * 0.68f, 560f, 920f);
+        float height = Mathf.Clamp(viewport.Y * 0.42f, 260f, 430f);
+        ShellOrFallback().OffsetLeft = -width * 0.5f;
+        ShellOrFallback().OffsetRight = width * 0.5f;
+        ShellOrFallback().OffsetTop = -height - UiTheme.SpaceLg;
+        ShellOrFallback().OffsetBottom = -UiTheme.SpaceLg;
+    }
+
+    private PanelContainer ShellOrFallback() => Shell;
 
     private void OnDialogueStarted(DialogueStartedEvent e)
     {
@@ -159,6 +193,9 @@ public partial class DialoguePanel : UiPanel
 
             _list.AddChild(ChoiceCard(Loc.T(choice.Text), spine, () => Choose(captured)));
         }
+
+        _list.Modulate = UiTheme.MotionEnabled ? new Color(1f, 1f, 1f, 0.28f) : Colors.White;
+        UiTheme.AnimateModulate(_list, Colors.White, UiTheme.DurationBase);
     }
 
     /// <summary>One dialogue choice as an engraved card. The whole card is the button, so the

@@ -8,34 +8,54 @@ using Godot;
 namespace Embervale.UI;
 
 /// <summary>
-/// The quest journal: a read-only overlay toggled with the <c>journal</c> action (J), built on
-/// the 30.5F <see cref="UiPanel"/> framework. Unlike the character screen it is non-modal — it
-/// neither captures the mouse nor sets <c>UiState.MenuOpen</c>, so it can be left up while
-/// playing. It lists active quests with per-objective progress and a completed section.
+/// The quest journal: a modal, fully interactive list/detail workspace. It owns focus and the mouse
+/// while open so track/untrack is equally reachable by mouse, keyboard and controller.
 /// </summary>
 public partial class QuestLogPanel : UiPanel
 {
     private QuestLogComponent? _log;
     private VBoxContainer _list = null!;
-
-    protected override bool Modal => false;
+    private VBoxContainer _detail = null!;
+    private string? _selectedId;
 
     protected override string? ToggleAction => GameInput.Journal;
 
     protected override void BuildShell(PanelContainer shell)
     {
-        // Top-left, below the HUD's clock/weather widget (30.5B placement sweep).
-        shell.SetAnchorsPreset(Control.LayoutPreset.TopLeft);
-        shell.OffsetLeft = 16;
-        shell.OffsetTop = 64;
-        shell.CustomMinimumSize = new Vector2(360, 0);
+        shell.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        UiTheme.ApplyScreenInset(shell);
 
-        MarginContainer margin = UiTheme.Padding(12);
+        MarginContainer margin = UiTheme.Padding(UiTheme.SpaceLg);
         shell.AddChild(margin);
 
-        _list = new VBoxContainer();
-        _list.AddThemeConstantOverride("separation", 3);
-        margin.AddChild(_list);
+        var root = new VBoxContainer();
+        root.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
+        root.AddChild(UiTheme.Title(Loc.T("questlog.title")));
+        root.AddChild(UiTheme.Divider());
+        margin.AddChild(root);
+
+        var body = new HBoxContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
+        body.AddThemeConstantOverride("separation", UiTheme.SpaceLg);
+        root.AddChild(body);
+
+        PanelContainer indexWell = UiTheme.Well();
+        indexWell.CustomMinimumSize = new Vector2(330f, 0f);
+        body.AddChild(indexWell);
+        (ScrollContainer indexScroll, VBoxContainer indexList) = UiTheme.ScrollList();
+        _list = indexList;
+        MarginContainer indexPad = UiTheme.Padding(UiTheme.SpaceSm);
+        indexPad.AddChild(indexScroll);
+        indexWell.AddChild(indexPad);
+
+        PanelContainer detailBand = UiTheme.Band(UiTheme.QuestMain);
+        detailBand.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        detailBand.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        body.AddChild(detailBand);
+        (ScrollContainer detailScroll, VBoxContainer detailList) = UiTheme.ScrollList();
+        _detail = detailList;
+        MarginContainer detailPad = UiTheme.Padding(UiTheme.SpaceLg);
+        detailPad.AddChild(detailScroll);
+        detailBand.AddChild(detailPad);
     }
 
     protected override void OnReady()
@@ -95,13 +115,27 @@ public partial class QuestLogPanel : UiPanel
     protected override void Rebuild()
     {
         UiTheme.ClearChildren(_list);
-
-        _list.AddChild(UiTheme.Title(Loc.T("questlog.title")));
+        UiTheme.ClearChildren(_detail);
 
         if (_log == null || _log.Quests.Count == 0)
         {
             _list.AddChild(UiTheme.Body(Loc.T("questlog.none"), UiTheme.Dim));
+            _detail.AddChild(UiTheme.IconLabel(UiIcon.Kind.Quest, Loc.T("questlog.none"), tint: UiTheme.Dim));
             return;
+        }
+
+        QuestProgress? selected = FindSelected();
+        if (selected == null)
+        {
+            foreach (QuestProgress candidate in _log.Quests)
+            {
+                selected = candidate;
+                _selectedId = candidate.Quest.Id;
+                if (candidate.Status == QuestStatus.Active)
+                {
+                    break;
+                }
+            }
         }
 
         // Main / Side / Completed / Failed.
@@ -123,6 +157,10 @@ public partial class QuestLogPanel : UiPanel
 
         BuildCompleted();
         BuildFailed();
+        if (selected != null)
+        {
+            BuildDetail(selected);
+        }
     }
 
     /// <summary>Builds one active-quest section, returning how many it drew so the caller can tell
@@ -146,7 +184,7 @@ public partial class QuestLogPanel : UiPanel
         _list.AddChild(UiTheme.SectionRule(title));
         foreach (QuestProgress progress in matching)
         {
-            _list.AddChild(BuildQuestCard(progress, tint));
+            _list.AddChild(QuestRow(progress, tint));
         }
 
         return matching.Count;
@@ -171,11 +209,7 @@ public partial class QuestLogPanel : UiPanel
         _list.AddChild(UiTheme.SectionRule(Loc.T("questlog.completed")));
         foreach (QuestProgress progress in done)
         {
-            PanelContainer card = UiTheme.Card(UiTheme.QuestComplete);
-            MarginContainer pad = UiTheme.Padding(UiTheme.SpaceXs);
-            pad.AddChild(UiTheme.Body($"✓ {Loc.T(progress.Quest.Title)}", UiTheme.QuestComplete));
-            card.AddChild(pad);
-            _list.AddChild(card);
+            _list.AddChild(QuestRow(progress, UiTheme.QuestComplete));
         }
     }
 
@@ -208,11 +242,112 @@ public partial class QuestLogPanel : UiPanel
         _list.AddChild(UiTheme.SectionRule(Loc.T("questlog.failed")));
         foreach (QuestProgress progress in lost)
         {
-            PanelContainer card = UiTheme.Card(UiTheme.QuestFailed);
-            MarginContainer pad = UiTheme.Padding(UiTheme.SpaceXs);
-            pad.AddChild(UiTheme.Body($"✗ {Loc.T(progress.Quest.Title)}", UiTheme.QuestFailed));
-            card.AddChild(pad);
-            _list.AddChild(card);
+            _list.AddChild(QuestRow(progress, UiTheme.QuestFailed));
+        }
+    }
+
+    private QuestProgress? FindSelected()
+    {
+        if (_selectedId == null || _log == null)
+        {
+            return null;
+        }
+
+        foreach (QuestProgress progress in _log.Quests)
+        {
+            if (progress.Quest.Id == _selectedId)
+            {
+                return progress;
+            }
+        }
+        return null;
+    }
+
+    private Control QuestRow(QuestProgress progress, Color tint)
+    {
+        bool selected = progress.Quest.Id == _selectedId;
+        Button row = UiTheme.Action(Loc.T(progress.Quest.Title));
+        row.Alignment = HorizontalAlignment.Left;
+        row.AddThemeColorOverride("font_color", selected ? tint : UiTheme.Text);
+        StyleBoxFlat style = UiTheme.CardStyle(tint);
+        if (selected)
+        {
+            style.BgColor = UiTheme.CardBg with { A = 1f };
+            style.BorderWidthLeft = 4;
+        }
+        row.AddThemeStyleboxOverride("normal", style);
+        row.Pressed += () =>
+        {
+            _selectedId = progress.Quest.Id;
+            MarkDirty();
+        };
+        return row;
+    }
+
+    private void BuildDetail(QuestProgress progress)
+    {
+        Color tint = progress.Status == QuestStatus.Completed ? UiTheme.QuestComplete
+            : progress.Status == QuestStatus.Failed ? UiTheme.QuestFailed
+            : progress.Quest.IsMainQuest ? UiTheme.QuestMain : UiTheme.QuestSide;
+
+        _detail.AddChild(UiTheme.IconLabel(UiIcon.Kind.Quest, Loc.T(progress.Quest.Title), tint: tint));
+        if (progress.Quest.Summary.Length > 0)
+        {
+            Label summary = UiTheme.Prose(Loc.T(progress.Quest.Summary), UiTheme.Text);
+            summary.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            _detail.AddChild(summary);
+        }
+
+        if (progress.Status == QuestStatus.Active)
+        {
+            _detail.AddChild(TrackButton(progress));
+        }
+
+        _detail.AddChild(UiTheme.SectionRule(Loc.T("hud.quest")));
+        List<ObjectiveResource> objectives = progress.Quest.ObjectiveList();
+        for (int i = 0; i < objectives.Count; i++)
+        {
+            if (!progress.IsObjectiveInBranch(i))
+            {
+                continue;
+            }
+
+            ObjectiveResource objective = objectives[i];
+            bool locked = !progress.IsObjectiveActive(i);
+            bool done = progress.IsObjectiveComplete(i);
+            int have = progress.Counts[i];
+            int required = Mathf.Max(1, objective.RequiredCount);
+
+            PanelContainer objectiveBand = UiTheme.Band(done ? UiTheme.QuestComplete : locked ? UiTheme.Dim : tint);
+            var objectiveCopy = new VBoxContainer();
+            objectiveCopy.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+            objectiveCopy.AddChild(UiTheme.IconLabel(
+                locked ? UiIcon.Kind.Lock : done ? UiIcon.Kind.Quest : UiIcon.Kind.Waypoint,
+                Loc.T(objective.ShortLabel()), $"{have}/{objective.RequiredCount}",
+                done ? UiTheme.QuestComplete : locked ? UiTheme.Dim : UiTheme.Text));
+            if (objective.RequiredCount > 1)
+            {
+                ProgressBar bar = UiTheme.Bar(done ? UiTheme.QuestComplete : tint, 360f);
+                bar.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+                bar.Value = Mathf.Clamp(have / (double)required, 0d, 1d);
+                objectiveCopy.AddChild(bar);
+            }
+            objectiveBand.AddChild(objectiveCopy);
+            _detail.AddChild(objectiveBand);
+        }
+
+        if (progress.Quest.XpReward > 0 || progress.Quest.GoldReward > 0)
+        {
+            _detail.AddChild(UiTheme.SectionRule(Loc.T("questlog.rewards")));
+            if (progress.Quest.XpReward > 0)
+            {
+                _detail.AddChild(UiTheme.IconLabel(UiIcon.Kind.Spell,
+                    Loc.TF("questlog.reward_xp", progress.Quest.XpReward), tint: UiTheme.Accent));
+            }
+            if (progress.Quest.GoldReward > 0)
+            {
+                _detail.AddChild(UiTheme.IconLabel(UiIcon.Kind.Currency, $"{progress.Quest.GoldReward}", tint: UiTheme.Accent));
+            }
         }
     }
 
@@ -227,91 +362,19 @@ public partial class QuestLogPanel : UiPanel
     {
         bool tracked = ReferenceEquals(_log?.Tracked, progress);
 
-        var button = new Button
-        {
-            Text = Loc.T(tracked ? "questlog.tracked" : "questlog.track"),
-            Disabled = tracked,
-            TooltipText = Loc.T("questlog.track_tip"),
-        };
-        UiTheme.ApplyType(button, UiTheme.FontRole.Interface, UiTheme.CaptionFontSize);
-        button.AddThemeColorOverride("font_color", tracked ? UiTheme.Accent : UiTheme.Dim);
+        Button button = UiTheme.Action(Loc.T(tracked ? "questlog.untrack" : "questlog.track"));
+        button.TooltipText = Loc.T("questlog.track_tip");
+        button.AddThemeColorOverride("font_color", tracked ? UiTheme.Accent : UiTheme.Text);
 
         // Never rebuild inside a button signal (CLAUDE.md §8 / UiPanel) — flag it and let the
         // panel's own dirty loop redraw on the next frame.
         button.Pressed += () =>
         {
-            _log?.Track(progress.Quest.Id);
+            _log?.Track(tracked ? null : progress.Quest.Id);
             MarkDirty();
         };
 
         return button;
     }
 
-    /// <summary>One active quest: title on a coloured spine, then an objective row per goal with a
-    /// progress bar for anything counting past one.</summary>
-    private Control BuildQuestCard(QuestProgress progress, Color tint)
-    {
-        PanelContainer card = UiTheme.Card(tint);
-        var col = new VBoxContainer();
-        col.AddThemeConstantOverride("separation", 2);
-
-        // Title row: the name, and the control that chooses which quest the HUD follows (39.5B).
-        //
-        // ⚠️ This is the ONLY caller of QuestLogComponent.Track, and it exists because a tracked-quest
-        // field with no way to set it is exactly the CraftingComponent.Learn failure the working
-        // agreement names. It is reachable by keyboard and gamepad through the focus navigation
-        // UiPanel already grabs on open — NOT by mouse, because the journal is non-modal and so leaves
-        // the cursor captured by the player controller. That is the journal's existing contract, not
-        // something introduced here, and making it modal would be redesigning a screen this sub-phase
-        // is scoped out of touching.
-        var titleRow = new HBoxContainer();
-        titleRow.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
-
-        Label title = UiTheme.Body(Loc.T(progress.Quest.Title), tint);
-        UiTheme.ApplyType(title, UiTheme.FontRole.Display, UiTheme.BodyFontSize);
-        title.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        titleRow.AddChild(title);
-        titleRow.AddChild(TrackButton(progress));
-        col.AddChild(titleRow);
-
-        List<ObjectiveResource> objectives = progress.Quest.ObjectiveList();
-        for (int i = 0; i < objectives.Count; i++)
-        {
-            ObjectiveResource objective = objectives[i];
-
-            // ⚠️ 41D. An objective on the branch the player did not take is not drawn here at all —
-            // the journal is where a quest's shape is read, and listing an unreachable step is worse
-            // than listing nothing. A LOCKED one (SequentialObjectives, earlier step outstanding) is
-            // drawn dim and padlocked, because a quest whose rows appear one at a time reads as the
-            // journal losing them.
-            if (!progress.IsObjectiveInBranch(i))
-            {
-                continue;
-            }
-
-            bool locked = !progress.IsObjectiveActive(i);
-            bool done = progress.IsObjectiveComplete(i);
-            int have = progress.Counts[i];
-            int required = Mathf.Max(1, objective.RequiredCount);
-
-            col.AddChild(UiTheme.Caption(
-                $"{(done ? "✓" : locked ? "🔒" : "•")} {Loc.T(objective.ShortLabel())}  {have}/{objective.RequiredCount}",
-                done ? UiTheme.QuestComplete : locked ? UiTheme.Dim : UiTheme.Text));
-
-            // A bar only where there is something to fill. "1/1" is a tick, not a gauge.
-            if (objective.RequiredCount > 1)
-            {
-                ProgressBar bar = UiTheme.Bar(done ? UiTheme.QuestComplete : tint, 300f);
-                bar.CustomMinimumSize = new Vector2(0f, 3f);
-                bar.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-                bar.Value = Mathf.Clamp(have / (double)required, 0d, 1d);
-                col.AddChild(bar);
-            }
-        }
-
-        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceXs);
-        pad.AddChild(col);
-        card.AddChild(pad);
-        return card;
-    }
 }

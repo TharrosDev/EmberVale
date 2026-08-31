@@ -43,12 +43,7 @@ public partial class ContractBoardPanel : UiPanel
 
     protected override void BuildShell(PanelContainer shell)
     {
-        shell.AnchorLeft = 0.5f;
-        shell.AnchorRight = 0.5f;
-        shell.OffsetLeft = -290;
-        shell.OffsetRight = 290;
-        shell.OffsetTop = 60;
-        shell.GrowHorizontal = Control.GrowDirection.Both;
+        UiTheme.ApplyWorkspace(shell, 0.68f);
 
         MarginContainer margin = UiTheme.Padding(12);
         shell.AddChild(margin);
@@ -62,7 +57,8 @@ public partial class ContractBoardPanel : UiPanel
         column.AddChild(new HSeparator());
 
         (ScrollContainer scroll, VBoxContainer list) = UiTheme.ScrollList();
-        scroll.CustomMinimumSize = new Vector2(0, 360);
+        scroll.CustomMinimumSize = new Vector2(0, 260);
+        scroll.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
         column.AddChild(scroll);
         _list = list;
 

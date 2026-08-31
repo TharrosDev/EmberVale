@@ -62,7 +62,11 @@ public sealed partial class MinimapHud : PanelContainer
     public override void _Ready()
     {
         MouseFilter = MouseFilterEnum.Ignore;
-        AddThemeStyleboxOverride("panel", UiTheme.CardStyle());
+        StyleBoxFlat frame = UiTheme.PanelStyle();
+        frame.BgColor = UiTheme.Engrave with { A = 0.84f };
+        frame.BorderColor = UiTheme.IronLit with { A = 0.74f };
+        frame.BorderWidthTop = 2;
+        AddThemeStyleboxOverride("panel", frame);
 
         // MouseFilter.Ignore is the whole of "no interaction": MapView's drag, wheel-zoom, pick and
         // right-click-waypoint all live in _GuiInput, which never fires on an ignored control. No
@@ -75,7 +79,9 @@ public sealed partial class MinimapHud : PanelContainer
             TierZoom = MapTiers.DetailZoom,
             CustomMinimumSize = new Vector2(PlotSize, PlotSize),
         };
-        AddChild(_view);
+        MarginContainer inset = UiTheme.Padding(UiTheme.SpaceXs);
+        inset.AddChild(_view);
+        AddChild(inset);
 
         // The one thing north-up owes the player: which way north is. Parented INTO the plot so it
         // draws over MapView's opaque background rather than under it.

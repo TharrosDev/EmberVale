@@ -1,6 +1,10 @@
 using Embervale.Core;
 using Embervale.Core.Services;
+using Embervale.Core.Events;
+using Embervale.Dialogue;
+using Embervale.Economy;
 using Embervale.Factions;
+using Embervale.Items;
 using Embervale.Save;
 using Embervale.Player;
 using Embervale.Quests;
@@ -43,6 +47,10 @@ public sealed partial class PanelShots : ShotHarness
 
     /// <summary>The character screen — added in 42A for the Guilds tab.</summary>
     public InventoryPanel? Character { get; set; }
+
+    public VendorPanel? Vendor { get; set; }
+
+    public DialoguePanel? Dialogue { get; set; }
 
     protected override void BuildShotList()
     {
@@ -153,12 +161,39 @@ public sealed partial class PanelShots : ShotHarness
 
         Shot("13-journal-closed", () => Journal?.SetOpen(false));
 
+        Shot("14-inventory-full", () =>
+        {
+            StageInventory();
+            Character?.SetOpen(true);
+            Character?.ShowGear();
+        });
+
+        Shot("15-shop", () =>
+        {
+            Character?.SetOpen(false);
+            if (Player() is { } player && ShopDatabase.All.Count > 0)
+            {
+                EventBus.Instance?.Publish(new ShopOpenedEvent(player, ShopDatabase.All[0]));
+            }
+        });
+
+        Shot("16-dialogue", () =>
+        {
+            Vendor?.SetOpen(false);
+            if (Player() is { } player && DialogueFixture() is { } dialogue)
+            {
+                EventBus.Instance?.Publish(new DialogueStartedEvent(player, player, dialogue));
+            }
+        });
+
+        Shot("17-dialogue-closed", () => Dialogue?.SetOpen(false));
+
         // ⚠️ 42A, AND THE STATES ARE THE POINT — a Guilds tab where all five read "Unaffiliated" is
         // what the panel draws before anything happens, so it proves the tab exists and nothing
         // else (41A's trap: a harness shot is only evidence if it drives the thing you changed).
         // This frame is staged through the SAME story flags a dialogue effect writes, so every one
         // of the five states below is one a player can actually reach.
-        Shot("14-guilds", () =>
+        Shot("18-guilds", () =>
         {
             StageGuildStates();
             Journal?.SetOpen(false);
@@ -171,7 +206,7 @@ public sealed partial class PanelShots : ShotHarness
         // and joins the Emberbound, then loads the save back. A `Load` that MERGED over live state
         // would leave both mutations standing — the tab would read "Dawnblade — rank 3 of 3" and an
         // Emberbound membership that the save does not contain. It must read exactly like 14.
-        Shot("15-guilds-reloaded", () =>
+        Shot("19-guilds-reloaded", () =>
         {
             SaveManager.Instance?.SaveGame(GuildShotSlot);
             MutateGuildsAfterSaving();
@@ -182,11 +217,50 @@ public sealed partial class PanelShots : ShotHarness
         // ⚠️ And the slot is deleted again. A shot list that leaves a real save behind makes ITSELF
         // the newest slot, so the next `--play` boots into the harness's staged world rather than
         // the maintainer's game — a side effect nobody would think to look for here.
-        Shot("16-guilds-closed", () =>
+        Shot("20-guilds-closed", () =>
         {
             Character?.SetOpen(false);
             SaveManager.Instance?.DeleteSlot(GuildShotSlot);
         });
+    }
+
+    private static PlayerCharacter? Player() =>
+        ServiceLocator.Instance is { } locator && locator.TryGet(out PlayerCharacter player) ? player : null;
+
+    private static void StageInventory()
+    {
+        if (Player()?.GetComponent<InventoryComponent>() is not { } pack)
+        {
+            return;
+        }
+
+        foreach (ItemResource item in ItemDatabase.All.Values)
+        {
+            pack.AddItem(item, item.MaxStack > 1 ? Mathf.Min(item.MaxStack, 12) : 1);
+            if (pack.UsedSlots >= Mathf.Min(pack.Capacity, 18))
+            {
+                break;
+            }
+        }
+    }
+
+    private static DialogueResource? DialogueFixture()
+    {
+        DialogueResource? best = null;
+        int score = -1;
+        foreach (DialogueResource dialogue in DialogueDatabase.All)
+        {
+            DialogueNode? node = dialogue.StartNode();
+            int candidate = node?.Text.Length ?? 0;
+            candidate += (node?.ChoiceList().Count ?? 0) * 80;
+            if (candidate > score)
+            {
+                score = candidate;
+                best = dialogue;
+            }
+        }
+
+        return best;
     }
 
     /// <summary>

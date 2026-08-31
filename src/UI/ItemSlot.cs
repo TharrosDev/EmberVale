@@ -64,8 +64,8 @@ public static class ItemSlot
 
         slot.TooltipText = Tooltip(instance, quantity);
 
-        // A real icon wins whenever one is finally authored; the glyph is the fallback. Wiring it
-        // now means the art phase is a data drop with no code change (ItemPresentation.Glyph).
+        // Authored item art wins. Data without bespoke art still uses the shared Embervale vector
+        // family rather than platform-dependent Unicode symbols.
         if (instance.Template.Icon is { } icon)
         {
             var art = new TextureRect
@@ -80,12 +80,12 @@ public static class ItemSlot
         }
         else
         {
-            Label glyph = UiTheme.Body(ItemPresentation.Glyph(instance.Type), UiTheme.RarityColor(rarity));
-            UiTheme.ApplyType(glyph, UiTheme.FontRole.Interface, UiTheme.TitleFontSize);
-            glyph.HorizontalAlignment = HorizontalAlignment.Center;
-            glyph.VerticalAlignment = VerticalAlignment.Center;
-            glyph.MouseFilter = Control.MouseFilterEnum.Ignore;
-            glyph.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+            TextureRect glyph = UiIcon.Create(IconOf(instance.Type), size * 0.52f, UiTheme.RarityColor(rarity));
+            glyph.SetAnchorsPreset(Control.LayoutPreset.Center);
+            glyph.OffsetLeft = -size * 0.26f;
+            glyph.OffsetTop = -size * 0.26f;
+            glyph.OffsetRight = size * 0.26f;
+            glyph.OffsetBottom = size * 0.26f;
             slot.AddChild(glyph);
         }
 
@@ -164,7 +164,7 @@ public static class ItemSlot
     /// The equipped-vs-candidate stat block, or null when the two are identical (in which case
     /// there is nothing to say and a "no change" line would be clutter).
     ///
-    /// Every row is prefixed with ▲/▼ as well as coloured, so the comparison survives the 37.5G
+    /// Every row is prefixed with +/- as well as coloured, so the comparison survives the 37.5G
     /// colourblind modes — this is the one place in the UI where getting a colour wrong means
     /// equipping the worse item.
     /// </summary>
@@ -184,7 +184,7 @@ public static class ItemSlot
         {
             bool up = delta > 0f;
             col.AddChild(UiTheme.Caption(
-                $"{(up ? "▲" : "▼")} {StatNames.Label(stat)}  {delta:+0.##;-0.##}",
+                $"{(up ? "+" : "−")} {StatNames.Label(stat)}  {delta:+0.##;-0.##}",
                 up ? UiTheme.Good : UiTheme.Bad));
         }
 
@@ -208,5 +208,15 @@ public static class ItemSlot
         ItemType.Material => "item.type_material",
         ItemType.Quest => "item.type_quest",
         _ => "item.type_misc",
+    };
+
+    private static UiIcon.Kind IconOf(ItemType type) => type switch
+    {
+        ItemType.Consumable => UiIcon.Kind.Consumable,
+        ItemType.Weapon => UiIcon.Kind.Weapon,
+        ItemType.Armor => UiIcon.Kind.Armor,
+        ItemType.Material => UiIcon.Kind.Material,
+        ItemType.Quest => UiIcon.Kind.Quest,
+        _ => UiIcon.Kind.Misc,
     };
 }

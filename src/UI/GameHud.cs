@@ -76,7 +76,7 @@ public partial class GameHud : CanvasLayer
     private string _statusSignature = string.Empty;
 
     private Label _context = null!;
-    private Label _phaseGlyph = null!;
+    private TextureRect _phaseGlyph = null!;
     private Label _phaseText = null!;
     private Label _weatherText = null!;
 
@@ -96,7 +96,7 @@ public partial class GameHud : CanvasLayer
     private Label _promptText = null!;
     private Label _promptCap = null!;
 
-    private Label _lockReticle = null!;
+    private TextureRect _lockReticle = null!;
 
     private CompassStrip _compass = null!;
 
@@ -217,17 +217,17 @@ public partial class GameHud : CanvasLayer
         // grain ShaderMaterials** simultaneously, which is more framing than the character screen
         // uses. The ornament budget says a HUD widget earns none of it; the boss frame is the sole
         // exception and it has its own class.
-        PanelContainer panel = Ignore(UiTheme.Card());
-        panel.CustomMinimumSize = new Vector2(250, 0);
+        PanelContainer panel = Ignore(UiTheme.Band());
+        panel.CustomMinimumSize = new Vector2(286, 0);
         _layout.BottomLeft.AddChild(panel);
 
         var col = new VBoxContainer();
         col.AddThemeConstantOverride("separation", 4);
         WrapPadded(panel, col);
 
-        (_hpBar, _hpText) = AddVital(col, Loc.T("hud.hp"), UiTheme.Health, primary: true);
-        (_staBar, _staText) = AddVital(col, Loc.T("hud.sta"), UiTheme.Stamina, primary: false);
-        (_mpBar, _mpText) = AddVital(col, Loc.T("hud.mp"), UiTheme.Mana, primary: false);
+        (_hpBar, _hpText) = AddVital(col, UiIcon.Kind.Health, Loc.T("hud.hp"), UiTheme.Health, primary: true);
+        (_staBar, _staText) = AddVital(col, UiIcon.Kind.Stamina, Loc.T("hud.sta"), UiTheme.Stamina, primary: false);
+        (_mpBar, _mpText) = AddVital(col, UiIcon.Kind.Mana, Loc.T("hud.mp"), UiTheme.Mana, primary: false);
 
         _footer = UiTheme.Body("", UiTheme.Dim);
         col.AddChild(_footer);
@@ -306,7 +306,7 @@ public partial class GameHud : CanvasLayer
     /// </summary>
     private void BuildContext()
     {
-        PanelContainer panel = Ignore(UiTheme.Card());
+        PanelContainer panel = Ignore(UiTheme.Band());
         _layout.TopLeft.AddChild(panel);
 
         var row = new HBoxContainer();
@@ -314,8 +314,7 @@ public partial class GameHud : CanvasLayer
 
         // Shape AND colour carry the phase, so it survives ColorVision (§40) — and it is never the
         // only channel, because the phase name is on the same row.
-        _phaseGlyph = UiTheme.Body("", UiTheme.Accent);
-        _phaseGlyph.VerticalAlignment = VerticalAlignment.Center;
+        _phaseGlyph = UiIcon.Create(UiIcon.Kind.Sun, 18f, UiTheme.Accent);
         row.AddChild(_phaseGlyph);
 
         _context = UiTheme.Body("", UiTheme.Text);
@@ -335,18 +334,18 @@ public partial class GameHud : CanvasLayer
 
     /// <summary>The phase's glyph and tint. Warm at midday, cold at night, ember at the edges of the
     /// day — the same palette language the rest of the UI uses.</summary>
-    private static (string Glyph, Color Tint) PhaseMark(DayPhase phase) => phase switch
+    private static (UiIcon.Kind Icon, Color Tint) PhaseMark(DayPhase phase) => phase switch
     {
-        DayPhase.Dawn => ("◑", UiTheme.Accent),
-        DayPhase.Day => ("☀", UiTheme.Accent),
-        DayPhase.Dusk => ("◐", UiTheme.AccentHot),
-        _ => ("☾", UiTheme.ArcaneSilver),
+        DayPhase.Dawn => (UiIcon.Kind.Sun, UiTheme.Accent),
+        DayPhase.Day => (UiIcon.Kind.Sun, UiTheme.Accent),
+        DayPhase.Dusk => (UiIcon.Kind.Moon, UiTheme.AccentHot),
+        _ => (UiIcon.Kind.Moon, UiTheme.ArcaneSilver),
     };
 
     private void BuildQuestTracker()
     {
         // The spine carries the tracked quest's priority, matching the journal.
-        _questPanel = Ignore(UiTheme.Card(UiTheme.QuestMain));
+        _questPanel = Ignore(UiTheme.Band(UiTheme.QuestMain));
         _questPanel.Visible = false;
         _questPanel.CustomMinimumSize = new Vector2(210, 0);
         _layout.TopRight.AddChild(_questPanel);
@@ -390,13 +389,14 @@ public partial class GameHud : CanvasLayer
 
     private void BuildBanner()
     {
-        _bannerPanel = Ignore(UiTheme.Card(UiTheme.AccentHot));
+        _bannerPanel = Ignore(UiTheme.Band(UiTheme.AccentHot));
         _bannerPanel.Visible = false;
         _bannerPanel.SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter;
         _layout.TopCenter.AddChild(_bannerPanel);
 
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
+        row.AddChild(UiIcon.Create(UiIcon.Kind.Warning, 18f, UiTheme.Accent));
         _bannerText = UiTheme.Body("", UiTheme.Accent);
         row.AddChild(_bannerText);
         _bannerTimer = UiTheme.Body("", UiTheme.Dim);
@@ -413,17 +413,9 @@ public partial class GameHud : CanvasLayer
     /// <summary>A diamond marker (Phase 29H) tracked onto the locked-on target's screen position.</summary>
     private void BuildLockReticle()
     {
-        _lockReticle = new Label
-        {
-            Text = "◆",
-            Visible = false,
-            Size = new Vector2(28, 28),
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            MouseFilter = Control.MouseFilterEnum.Ignore,
-        };
-        UiTheme.ApplyType(_lockReticle, UiTheme.FontRole.Interface, UiTheme.TitleFontSize);
-        _lockReticle.AddThemeColorOverride("font_color", UiTheme.Accent);
+        _lockReticle = UiIcon.Create(UiIcon.Kind.Waypoint, 28f, UiTheme.AccentHot);
+        _lockReticle.Visible = false;
+        _lockReticle.Size = new Vector2(28f, 28f);
         _layout.Overlay.AddChild(_lockReticle);
     }
 
@@ -532,7 +524,7 @@ public partial class GameHud : CanvasLayer
 
     private void BuildPrompt()
     {
-        _promptPanel = Ignore(UiTheme.Card());
+        _promptPanel = Ignore(UiTheme.Band(UiTheme.Accent));
         _promptPanel.Visible = false;
         _promptPanel.SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter;
         _layout.BottomCenter.AddChild(_promptPanel);
@@ -593,7 +585,7 @@ public partial class GameHud : CanvasLayer
         // version of this that subscribes to both and keeps a bool is the one that gets stuck showing
         // a HUD over a menu when the two disagree by a frame.
         ApplyMode(HudVisibility.ModeFor(
-            GameManager.Instance is { IsPlaying: true }, UiState.MenuOpen));
+            GameManager.Instance is { IsPlaying: true }, UiState.MenuOpen, UiState.WorldPaused));
 
         if (!HudVisibility.ShowsVitals(_mode))
         {
@@ -611,8 +603,31 @@ public partial class GameHud : CanvasLayer
         UpdateQuest();
         UpdateBanner();
         UpdateFocus();
+        ResolveTopCentrePriority();
         UpdateVignette(delta);
         UpdateProgressionPops(delta);
+    }
+
+    /// <summary>Top-centre suppression contract: boss owns the region; an event banner outranks an
+    /// aimed target; the compass is the quiet fallback. This prevents independent widgets from
+    /// becoming a vertical alert stack during hostile combinations.</summary>
+    private void ResolveTopCentrePriority()
+    {
+        bool boss = _bossFrame.Visible;
+        bool eventBanner = _bannerPanel.Visible;
+
+        _compass.Visible = !boss;
+        if (boss)
+        {
+            _bannerPanel.Visible = false;
+            _nameplate.Visible = false;
+            return;
+        }
+
+        if (eventBanner)
+        {
+            _nameplate.Visible = false;
+        }
     }
 
     /// <summary>
@@ -640,7 +655,7 @@ public partial class GameHud : CanvasLayer
         _layout.BottomDock.Visible = HudVisibility.ShowsVitals(mode);   // quick-use hotbar
         _layout.TopLeft.Visible = HudVisibility.ShowsNavigation(mode);  // clock + weather
         _layout.TopRight.Visible = HudVisibility.ShowsNavigation(mode); // quest tracker
-        _layout.TopCenter.Visible = HudVisibility.ShowsNavigation(mode); // compass, boss, banner, nameplate
+        _layout.TopCenter.Visible = HudVisibility.ShowsTopCentre(mode); // boss survives cinematic locks
         _layout.BottomRight.Visible = HudVisibility.ShowsNavigation(mode); // minimap
         _layout.BottomCenter.Visible = HudVisibility.ShowsPrompt(mode); // interaction prompt, tutorial hint
         _layout.Overlay.Visible = HudVisibility.ShowsHud(mode);         // crosshair, vignette, reticle, arcs
@@ -865,16 +880,17 @@ public partial class GameHud : CanvasLayer
         {
             // Graceful empty state (§53): the widget goes away rather than showing an empty frame or
             // a placeholder time the player might believe.
-            _phaseGlyph.Text = string.Empty;
+            _phaseGlyph.Visible = false;
             _context.Text = string.Empty;
             _phaseText.Text = string.Empty;
             _weatherText.Text = string.Empty;
             return;
         }
 
-        (string glyph, Color tint) = PhaseMark(clock.Phase);
-        _phaseGlyph.Text = glyph;
-        _phaseGlyph.AddThemeColorOverride("font_color", UiTheme.Adapt(tint));
+        (UiIcon.Kind icon, Color tint) = PhaseMark(clock.Phase);
+        _phaseGlyph.Visible = true;
+        _phaseGlyph.Texture = UiIcon.Texture(icon);
+        _phaseGlyph.Modulate = UiTheme.Adapt(tint);
 
         _context.Text = clock.Clock();
         _phaseText.Text = Loc.T(DayPhases.NameKey(clock.Phase));
@@ -1067,10 +1083,10 @@ public partial class GameHud : CanvasLayer
             var line = new HBoxContainer();
             line.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
 
-            Label bullet = UiTheme.Caption(
-                done ? "✓" : locked ? "🔒" : "•",
-                done ? UiTheme.QuestComplete : UiTheme.Dim);
-            bullet.CustomMinimumSize = new Vector2(10f, 0f);
+            TextureRect bullet = UiIcon.Create(
+                locked ? UiIcon.Kind.Lock : done ? UiIcon.Kind.Quest : UiIcon.Kind.Waypoint,
+                12f,
+                done ? UiTheme.QuestComplete : locked ? UiTheme.Dim : UiTheme.Text);
             line.AddChild(bullet);
 
             Label text = UiTheme.Caption(
@@ -1107,7 +1123,7 @@ public partial class GameHud : CanvasLayer
     {
         if (_worldEvents is { } director && IsInstanceValid(director) && director.Active is { } worldEvent)
         {
-            _bannerText.Text = $"★ {worldEvent.Name} — {worldEvent.ObjectiveLabel()}";
+            _bannerText.Text = $"{worldEvent.Name} — {worldEvent.ObjectiveLabel()}";
 
             // Separate countdown that heats to ember orange in the final seconds (urgency read).
             _bannerTimer.Visible = worldEvent.IsTimed;
@@ -1199,13 +1215,15 @@ public partial class GameHud : CanvasLayer
     /// <see cref="ColorVision"/> (§40).
     /// </summary>
     private static (JuicedBar Bar, Label Value) AddVital(
-        VBoxContainer col, string caption, Color fill, bool primary)
+        VBoxContainer col, UiIcon.Kind icon, string caption, Color fill, bool primary)
     {
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", UiTheme.SpaceSm);
 
+        row.AddChild(UiIcon.Create(icon, primary ? 20f : 17f, fill));
+
         Label cap = UiTheme.Caption(caption, primary ? UiTheme.Text : UiTheme.Dim);
-        cap.CustomMinimumSize = new Vector2(30, 0);
+        cap.CustomMinimumSize = new Vector2(34, 0);
         cap.VerticalAlignment = VerticalAlignment.Center;
         row.AddChild(cap);
 

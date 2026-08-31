@@ -40,12 +40,7 @@ public partial class CraftingPanel : UiPanel
 
     protected override void BuildShell(PanelContainer shell)
     {
-        shell.AnchorLeft = 0.5f;
-        shell.AnchorRight = 0.5f;
-        shell.OffsetLeft = -230;
-        shell.OffsetRight = 230;
-        shell.OffsetTop = 60;
-        shell.GrowHorizontal = Control.GrowDirection.Both;
+        UiTheme.ApplyWorkspace(shell, 0.66f);
 
         MarginContainer margin = UiTheme.Padding(12);
         shell.AddChild(margin);
@@ -73,7 +68,9 @@ public partial class CraftingPanel : UiPanel
         {
             // Height is viewport-relative since 37.5G; a fixed 500 overflowed the Steam Deck's
             // 533 px logical viewport at UI scale 1.5.
-            CustomMinimumSize = new Vector2(436, 360),
+            CustomMinimumSize = new Vector2(0f, 240f),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
         };
         column.AddChild(scroll);

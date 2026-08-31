@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using Embervale.Core;
 using Embervale.Core.Diagnostics;
+using Embervale.Core.Events;
 using Embervale.Core.Services;
+using Embervale.Enemies;
 using Embervale.Entities;
 using Embervale.Magic;
 using Embervale.Player;
@@ -87,6 +89,10 @@ public sealed partial class HudShots : ShotHarness
         Shot("06-night", () => SetHour(23));
 
         Shot("07-dawn", () => SetHour(6));
+
+        // Hostile convergence: low resources + statuses + tracked quest + boss priority + queued
+        // quest notice. This is the frame that proves the top-centre suppression contract under load.
+        Shot("07b-boss-hostile", StageBossPressure);
 
         // The visibility rule this sub-phase added — the one shot that proves a HUD is ABSENT.
         Shot("08-menu-open", () => UiState.Open(this));
@@ -176,5 +182,17 @@ public sealed partial class HudShots : ShotHarness
         {
             clock.SetTimeOfDay(hour);
         }
+    }
+
+    private static void StageBossPressure()
+    {
+        if (Player() is not { } player)
+        {
+            return;
+        }
+
+        SetFraction(StatType.Health, 0.12f);
+        EventBus.Instance?.Publish(new BossEncounterStartedEvent(player, "THE ASHEN REGENT", 4));
+        EventBus.Instance?.Publish(new BossPhaseChangedEvent(player, 2, 4));
     }
 }

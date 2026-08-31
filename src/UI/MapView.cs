@@ -38,6 +38,8 @@ public readonly record struct MapRoadSegment(Vector2 Start, Vector2 End, float W
 /// </summary>
 public partial class MapView : Control
 {
+    private static Texture2D? _mapMaterial;
+
     /// <summary>How near a click must land to select a pin, in pixels.</summary>
     private const float PickRadius = 18f;
 
@@ -122,6 +124,7 @@ public partial class MapView : Control
         SizeFlagsHorizontal = SizeFlags.ExpandFill;
         SizeFlagsVertical = SizeFlags.ExpandFill;
         Resized += QueueRedraw;
+        _mapMaterial ??= GD.Load<Texture2D>("res://assets/ui/materials/map_ash_vellum.png");
     }
 
     /// <summary>
@@ -279,10 +282,10 @@ public partial class MapView : Control
     // ── Drawing ───────────────────────────────────────────────────────────────────────────────
 
     /// <summary>Unmapped ground — the colour under everything.</summary>
-    private static Color Deep => new(0.058f, 0.054f, 0.049f);
+    private static Color Deep => new(0.030f, 0.030f, 0.027f);
 
     /// <summary>Ground the player has walked, before its per-cell tone variation.</summary>
-    private static Color Ground => new(0.148f, 0.132f, 0.108f);
+    private static Color Ground => new(0.24f, 0.215f, 0.174f, 0.74f);
 
     public override void _Draw()
     {
@@ -291,6 +294,10 @@ public partial class MapView : Control
         Projection = Fitted;
 
         DrawRect(new Rect2(Vector2.Zero, Size), Deep);
+        if (_mapMaterial is { } material)
+        {
+            DrawTextureRect(material, new Rect2(Vector2.Zero, Size), true, new Color(0.72f, 0.67f, 0.58f, 0.72f));
+        }
         DrawLand();
         DrawRoads();
         DrawGraticule();
@@ -345,7 +352,7 @@ public partial class MapView : Control
             // hand-drawn-map cue that keeps a large area from reading as a single grey rectangle.
             float shade = (((StableRoll.Seed(tile.CellId) % 100u) / 100f) - 0.5f) * 0.035f;
             var tone = new Color(
-                Ground.R + shade, Ground.G + (shade * 0.9f), Ground.B + (shade * 0.7f));
+                Ground.R + shade, Ground.G + (shade * 0.9f), Ground.B + (shade * 0.7f), Ground.A);
 
             DrawRect(ScreenRect(tile.Rect), tone);
         }
@@ -361,8 +368,8 @@ public partial class MapView : Control
             Vector2 start = Projection.WorldToScreen(road.Start);
             Vector2 end = Projection.WorldToScreen(road.End);
             float core = Mathf.Clamp(road.Width * Projection.Zoom * 0.55f, 1.25f, 7f);
-            DrawLine(start, end, new Color(UiTheme.Engrave, 0.62f), core + 2f, true);
-            DrawLine(start, end, new Color(UiTheme.Brass, 0.34f), core, true);
+            DrawLine(start, end, new Color(UiTheme.Engrave, 0.78f), core + 3f, true);
+            DrawLine(start, end, new Color(UiTheme.Text, road.Width >= 4f ? 0.42f : 0.27f), core, true);
         }
     }
 
@@ -374,7 +381,7 @@ public partial class MapView : Control
     /// </summary>
     private void DrawCoastline()
     {
-        var ink = new Color(UiTheme.Brass, 0.45f);
+        var ink = new Color(UiTheme.IronLit, 0.72f);
 
         foreach (MapLandTile tile in Land)
         {
@@ -447,7 +454,7 @@ public partial class MapView : Control
     private void DrawGraticule()
     {
         const float spacing = 50f;
-        var ink = new Color(UiTheme.PanelBorder, 0.20f);
+        var ink = new Color(UiTheme.PanelBorder, 0.12f);
 
         Vector2 topLeft = Projection.ScreenToWorld(Vector2.Zero);
         Vector2 bottomRight = Projection.ScreenToWorld(Size);
@@ -565,35 +572,28 @@ public partial class MapView : Control
     /// <summary>The group's silhouette. Shape carries the meaning; colour agrees with it.</summary>
     private void DrawShape(MapGroup group, Vector2 at, float r, Color colour)
     {
-        // A dark seat under every marker, so a pin on pale ground still reads as a pin.
-        DrawCircle(at, r + 1.5f, new Color(UiTheme.Engrave, 0.55f));
+        // A dark seal under every marker keeps the authored SVG readable on pale and dark ink.
+        DrawCircle(at, r + 3f, new Color(UiTheme.Engrave, 0.78f));
+        DrawArc(at, r + 3f, 0f, Mathf.Tau, 20, new Color(colour, 0.42f), 1f);
 
-        switch (group)
+        UiIcon.Kind kind = group switch
         {
-            case MapGroup.Settlement:
-                DrawCircle(at, r, colour);
-                DrawArc(at, r + 2.5f, 0f, Mathf.Tau, 20, new Color(colour, 0.45f), 1.5f);
-                break;
+            MapGroup.Settlement => UiIcon.Kind.Settlement,
+            MapGroup.Trade => UiIcon.Kind.Currency,
+            MapGroup.Service => UiIcon.Kind.Service,
+            MapGroup.Exploration => UiIcon.Kind.Waypoint,
+            MapGroup.Travel => UiIcon.Kind.Travel,
+            _ => UiIcon.Kind.Waypoint,
+        };
 
-            case MapGroup.Trade:
-                DrawRect(new Rect2(at - new Vector2(r, r), new Vector2(r * 2f, r * 2f)), colour);
-                break;
-
-            case MapGroup.Service:
-                DrawColoredPolygon(Regular(at, r * 1.25f, 4, Mathf.Pi / 4f), colour);
-                break;
-
-            case MapGroup.Exploration:
-                DrawColoredPolygon(Regular(at, r * 1.3f, 3, 0f), colour);
-                break;
-
-            case MapGroup.Travel:
-                DrawColoredPolygon(Regular(at, r * 1.15f, 6, 0f), colour);
-                break;
-
-            default:
-                DrawCross(at, r, colour);
-                break;
+        if (UiIcon.Texture(kind) is { } texture)
+        {
+            float size = Mathf.Max(12f, r * 2.4f);
+            DrawTextureRect(texture, new Rect2(at - new Vector2(size * 0.5f, size * 0.5f), new Vector2(size, size)), false, colour);
+        }
+        else
+        {
+            DrawCircle(at, r, colour);
         }
     }
 
