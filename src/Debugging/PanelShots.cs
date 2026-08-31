@@ -52,6 +52,29 @@ public sealed partial class PanelShots : ShotHarness
 
     public DialoguePanel? Dialogue { get; set; }
 
+    protected override string? ValidateShotState(string name)
+    {
+        if (Map is null || Journal is null || Character is null || Vendor is null || Dialogue is null)
+            return "bootstrap did not provide every required panel";
+        if ((name.StartsWith("00-") || name.StartsWith("01-") || name.StartsWith("02-") ||
+             name.StartsWith("03-") || name.StartsWith("04-") || name.StartsWith("05-")) && !Map.IsOpen)
+            return "map did not open";
+        if (name.StartsWith("07-") || name.StartsWith("08-") || name.StartsWith("09-") ||
+            name.StartsWith("10-") || name.StartsWith("11-") || name.StartsWith("12-"))
+            return Journal.IsOpen ? null : "journal did not open";
+        if (name == "13-journal-closed" && Journal.IsOpen)
+            return "journal did not close";
+        if ((name.StartsWith("14-") || name.StartsWith("18-") || name.StartsWith("19-")) && !Character.IsOpen)
+            return "character/inventory panel did not open";
+        if (name == "15-shop" && !Vendor.IsOpen)
+            return "vendor panel did not open";
+        if (name == "16-dialogue" && !Dialogue.IsOpen)
+            return "dialogue panel did not open";
+        if (name.EndsWith("-closed") && (Map.IsOpen || Journal.IsOpen || Dialogue.IsOpen))
+            return "a panel expected to be closed remains open";
+        return null;
+    }
+
     protected override void BuildShotList()
     {
         // ⚠️ Discover everything first. The map draws only what the player has found, and a save that

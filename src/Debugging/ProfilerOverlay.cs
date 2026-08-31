@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Embervale.Core.Services;
 using Embervale.UI;
@@ -17,6 +19,7 @@ public partial class ProfilerOverlay : CanvasLayer
     private PanelContainer _panel = null!;
     private Label _text = null!;
     private bool _shown;
+    private readonly Queue<double> _frameWindow = new();
 
     public override void _Ready()
     {
@@ -35,9 +38,18 @@ public partial class ProfilerOverlay : CanvasLayer
             return;
         }
 
+        _frameWindow.Enqueue(delta * 1000d);
+        while (_frameWindow.Count > 120)
+            _frameWindow.Dequeue();
+        double[] frames = _frameWindow.OrderBy(value => value).ToArray();
+        double median = frames.Length == 0 ? 0d : frames[frames.Length / 2];
+        double worst = frames.Length == 0 ? 0d : frames[^1];
+
         var sb = new StringBuilder();
         sb.Append($"FPS         {Engine.GetFramesPerSecond()}\n");
-        sb.Append($"frame       {Ms(Performance.Monitor.TimeProcess)} ms\n");
+        sb.Append($"frame med   {median:0.00} ms\n");
+        sb.Append($"frame worst {worst:0.00} ms (120f)\n");
+        sb.Append($"scripts     {Ms(Performance.Monitor.TimeProcess)} ms\n");
         sb.Append($"physics     {Ms(Performance.Monitor.TimePhysicsProcess)} ms\n");
         sb.Append($"draw calls  {Get(Performance.Monitor.RenderTotalDrawCallsInFrame):0}\n");
         sb.Append($"nodes       {Get(Performance.Monitor.ObjectNodeCount):0}\n");

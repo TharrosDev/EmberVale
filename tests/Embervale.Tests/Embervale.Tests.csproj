@@ -11,7 +11,7 @@
     fine against the managed GodotSharp assembly. Engine/Node-dependent behaviour
     (combat against a live StatsComponent, RNG-driven rolls via Godot's
     RandomNumberGenerator, save round-trips through Godot.Collections.Dictionary)
-    must be tested in-engine with GUT on the maintainer's machine — see README.md.
+    is tested by the repo's existing in-engine regression/probe harnesses — see ../README.md.
   -->
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>

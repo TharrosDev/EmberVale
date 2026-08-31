@@ -20,6 +20,7 @@ dist/
 # Crash & log dumps
 mono_crash.*.json
 logs/
+artifacts/
 
 # OS / editor cruft
 .DS_Store

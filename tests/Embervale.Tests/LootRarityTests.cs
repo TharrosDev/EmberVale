@@ -6,7 +6,7 @@ namespace Embervale.Tests;
 
 /// <summary>
 /// Covers the pure parts of loot rarity. <see cref="LootRarity.Roll"/> itself is driven by
-/// Godot's native <c>RandomNumberGenerator</c> and so is exercised in-engine (GUT), but the
+/// Godot's native <c>RandomNumberGenerator</c> and so is exercised by an in-engine regression, but the
 /// affix-count mapping is pure and load-bearing for gear generation, so it is pinned here.
 /// </summary>
 public class LootRarityTests

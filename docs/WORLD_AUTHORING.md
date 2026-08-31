@@ -295,12 +295,16 @@ the player found it. A pin is for somewhere the player can go *back* to and need
 ## 9. Automated quality gates
 
 ```text
-python tools/world_quality_check.py            # every region, every gate  (~9 min)
-python tools/world_quality_check.py --fast     # skip the in-engine probes (~7 min)
+python tools/world_quality_check.py --mode full        # every gate + reports
+python tools/world_quality_check.py --mode fast        # engine/rendering-free deterministic gates
+python tools/world_quality_check.py --mode engine      # content + Godot runtime regressions
+python tools/world_quality_check.py --mode visual      # deterministic captures + localized diffs
+python tools/world_quality_check.py --mode performance # structured machine-sensitive report
 python tools/world_quality_check.py --list     # what it runs
 ```
 
-Fourteen gates in one command. It **orchestrates**; every rule lives in the tool that owns it.
+One runner, with per-process timeouts and structured artifacts. It **orchestrates**; every rule lives
+in the specialist tool that owns it. See `tests/README.md` for the authoritative matrix.
 
 | Gate | Proves |
 | ---- | ------ |
@@ -343,8 +347,10 @@ region's own atmosphere profile**. ⚠️ It used to light every region identica
 Frostfang Reach was reviewed and signed off under the Ember Crown's golden hour — a screenshot gate
 blind to a region's own air approves the wrong world.
 
-Every capture generates a 12×8 perceptual signature compared against
-`tests/visual_baselines/world_signatures.json`. Inspect for floating or sunken props, scale and
+Every capture generates a localized 32×18 perceptual grid compared against
+`tests/visual_baselines/world_signatures.json`. The gate limits both whole-frame drift and the
+number of locally changed blocks, so a missing prop cannot be averaged away. Failures keep current
+PNGs and red heatmaps under `tools/shots/world_diffs/`. Inspect for floating or sunken props, scale and
 rotation errors, gaps, z-fighting, repetition, blocked doors, cell borders, lighting discontinuity
 and first/third-person occlusion.
 

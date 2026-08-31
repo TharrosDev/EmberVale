@@ -31,12 +31,16 @@ const WARMUP_FRAMES := 24
 const REGION_WARMUP_FRAMES := 180
 const SAMPLE_FRAMES := 40
 const EYE_HEIGHT := 1.7
+const BASELINE_PATH := "res://tests/performance_baselines/world_performance.json"
 
 var _camera: Camera3D
 var _content_loader: Node
 var _rows: Array = []
 var _json := false
+var _json_path := ""
 var _region_id := ""
+var _failures: Array[String] = []
+var _summaries: Array = []
 
 
 func _initialize() -> void:
@@ -44,7 +48,16 @@ func _initialize() -> void:
 		printerr("world perf: a rendering-capable display is required; run without --headless")
 		quit(4)
 		return
-	_json = "--json" in OS.get_cmdline_user_args()
+	var args := OS.get_cmdline_user_args()
+	_json = "--json" in args or "--json-file" in args
+	var path_index := args.find("--json-file")
+	if path_index >= 0:
+		if path_index + 1 >= args.size():
+			printerr("world perf: --json-file requires a path")
+			quit(2)
+			return
+		_json_path = args[path_index + 1]
+	seed(0x50455246454d4245)
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 
 	var loader_script: Script = load("res://src/Bootstrap/ContentDatabaseLoader.cs")
@@ -75,6 +88,9 @@ func _run() -> void:
 			await process_frame
 			settle += 1
 		var configure_ms := (Time.get_ticks_usec() - configure_started) / 1000.0
+		if not streamer.call("IsSettled") or streamer.call("HasFailedCells"):
+			_failures.append("region failed to settle: %s (%d frames)" % [region_path, settle])
+			continue
 		# ⚠️ A REGION-WIDE WARM-UP BEFORE THE FIRST CELL, not just a per-cell one. Every material in
 		# the region compiles its pipeline on the frame it is first drawn, and the navmesh bakes on
 		# worker threads for a second or two after IsSettled; without this the FIRST cell sampled
@@ -99,6 +115,17 @@ func _run() -> void:
 				worst = sample
 
 		var memory := Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1048576.0
+		_summaries.append({
+			"region": _region_id,
+			"cells": int(totals.cells),
+			"configure_ms": configure_ms,
+			"mean_draws": totals.draws / totals.cells,
+			"mean_prims": totals.prims / totals.cells,
+			"mean_ms": totals.ms / totals.cells,
+			"worst_cell": worst.cell,
+			"worst_ms": worst.ms,
+			"video_memory_mb": memory,
+		})
 		if not _json:
 			print("")
 			print("%s  (%d cells, streamed+built in %.0f ms)" % [
@@ -120,10 +147,44 @@ func _run() -> void:
 		await process_frame
 
 	if _json:
-		print(JSON.stringify(_rows, "  "))
+		var historical = null
+		var comparisons: Array = []
+		if FileAccess.file_exists(BASELINE_PATH):
+			historical = JSON.parse_string(FileAccess.get_file_as_string(BASELINE_PATH))
+			if historical is Dictionary and historical.has("regions"):
+				for current in _summaries:
+					var old = historical.regions.get(current.region)
+					if old is Dictionary:
+						comparisons.append({"region": current.region,
+							"mean_draws_percent": _percent_delta(current.mean_draws, old.mean_draws),
+							"mean_prims_percent": _percent_delta(current.mean_prims, old.mean_prims),
+							"mean_ms_percent": _percent_delta(current.mean_ms, old.mean_ms),
+							"worst_ms_percent": _percent_delta(current.worst_ms, old.worst_ms),
+							"video_memory_percent": _percent_delta(current.video_memory_mb, old.video_memory_mb),
+							"configure_ms_percent": _percent_delta(current.configure_ms, old.configure_ms)})
+		var report := {"schema": 1, "kind": "machine-sensitive-report",
+			"engine": Engine.get_version_info(), "renderer": RenderingServer.get_video_adapter_name(),
+			"os": OS.get_name(), "summaries": _summaries, "samples": _rows,
+			"historical_baseline": historical, "historical_comparisons": comparisons,
+			"failures": _failures}
+		var encoded := JSON.stringify(report, "  ")
+		if _json_path.is_empty():
+			print(encoded)
+		else:
+			var file := FileAccess.open(_json_path, FileAccess.WRITE)
+			if file == null:
+				_failures.append("could not write JSON report %s: %s" % [_json_path, FileAccess.get_open_error()])
+			else:
+				file.store_string(encoded)
 	_content_loader.call("CollectManagedResources")
 	await process_frame
-	quit(0)
+	for failure in _failures:
+		printerr("world perf: %s" % failure)
+	quit(0 if _failures.is_empty() else 1)
+
+
+func _percent_delta(current: float, baseline: float) -> float:
+	return 0.0 if is_zero_approx(baseline) else ((current - baseline) / baseline) * 100.0
 
 
 ## ⚠️ A WARNING, NOT A FAILURE, AND DELIBERATELY SO. A budget overrun on this machine is a fact about
@@ -206,7 +267,10 @@ func _ground_at(x: float, z: float) -> float:
 	var query := PhysicsRayQueryParameters3D.create(Vector3(x, 400.0, z), Vector3(x, -200.0, z))
 	query.collide_with_areas = false
 	var hit := space.intersect_ray(query)
-	return hit.position.y if hit.has("position") else 0.0
+	if not hit.has("position"):
+		_failures.append("no collision under sample x=%.2f z=%.2f" % [x, z])
+		return 0.0
+	return hit.position.y
 
 
 func _build_light() -> void:

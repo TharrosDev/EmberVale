@@ -17,6 +17,9 @@ on:
     branches: ['**']
   pull_request:
     branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '23 5 * * 1'
 
 # A new push to the same branch makes the previous run's answer irrelevant.
 concurrency:
@@ -48,14 +51,15 @@ jobs:
           key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
           restore-keys: nuget-${{ runner.os }}-
 
-      # The repo holds a 0-warning standard and reports it every session, so warnings fail here.
-      # Note CS0618 is suppressed assembly-wide in Embervale.csproj for the vendored Godot-MCP addon;
-      # if that addon is ever removed, drop the NoWarn and this stays honest.
-      - name: Build
-        run: dotnet build --warnaserror
+      - name: Fast deterministic quality gates
+        run: python tools/world_quality_check.py --mode fast --artifacts artifacts/quality/fast
 
-      - name: Test
-        run: dotnet test tests/Embervale.Tests --no-build --verbosity normal
+      - name: Upload fast-gate failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-fast-${{ github.run_id }}
+          path: artifacts/quality/fast
 
   validate-content:
     name: Validate content
@@ -112,12 +116,30 @@ jobs:
       - name: Build game assembly
         run: dotnet build
 
-      # Import first, separately, so an asset-pipeline failure is not reported as a content failure.
-      # Godot exits non-zero on some import warnings that are not errors, hence the `|| true`; the
-      # validate step below is the one whose exit code means something.
+      # Import first and preserve its own evidence. A non-zero importer is never silently converted
+      # to green; known harmless warnings remain warnings in the log, actual importer failures stop.
       - name: Import assets
-        run: xvfb-run -a "$GODOT_BIN" --headless --path . --import || true
+        run: |
+          mkdir -p artifacts/quality/import
+          set -o pipefail
+          timeout 20m xvfb-run -a "$GODOT_BIN" --headless --path . --import 2>&1 | tee artifacts/quality/import/godot-import.log
 
-      # ContentValidator.RunAll — exits 0 on PASS, 1 on FAIL (see HeadlessValidation.Run).
-      - name: Validate content
-        run: xvfb-run -a "$GODOT_BIN" --headless --path . -- --validate
+      - name: Engine and runtime regression gates
+        run: EMBERVALE_GODOT="$GODOT_BIN" xvfb-run -a python tools/world_quality_check.py --mode engine --artifacts artifacts/quality/engine
+
+      - name: Visual regression gates
+        run: EMBERVALE_GODOT="$GODOT_BIN" xvfb-run -a python tools/world_quality_check.py --mode visual --artifacts artifacts/quality/visual
+
+      - name: Weekly full mutation and performance battery
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: EMBERVALE_GODOT="$GODOT_BIN" xvfb-run -a python tools/world_quality_check.py --mode full --artifacts artifacts/quality/full
+
+      - name: Upload quality evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-engine-visual-${{ github.run_id }}
+          if-no-files-found: warn
+          path: |
+            artifacts/quality
+            tools/shots/world_diffs

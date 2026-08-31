@@ -146,7 +146,10 @@ godot-cli open . --mode Custom --url http://localhost:23630 \
 godot-cli wait-for-ready .
 ```
 
-**Check it with one command before planning any work that needs it** — `godot-cli status .` reports
+**Check it with one repo command before planning screenshot work** —
+`python tools/godot_mcp_check.py --probe` proves `.mcp.json` is loopback-only, then runs
+`godot-cli status .` and a real editor tool with timeouts. A relay without an editor, a cloud URL,
+a missing CLI, or a failed editor round trip is an explicit non-zero failure. It reports
 both processes, and its "everything is off" answer looks like this (**captured 2026-08-10**):
 
 ```
@@ -279,20 +282,19 @@ stdout, so you lose the log you ran it for.
 **CI runs in GitHub Actions** (`.github/workflows/ci.yml`, added by the 2026-08-15 audit —
 CI had been declined earlier, and the maintainer reversed that once the audit showed 1426
 tests and the whole `ContentValidator` battery depended on someone remembering two commands).
-Two jobs on every push:
+Two jobs on every push/PR, plus a weekly/manual full battery:
 
-- **Build & test** — `dotnet build --warnaserror` then `dotnet test`. This is the gate, and it
-  has no external dependency beyond NuGet. Red here means the code.
-- **Validate content** — downloads Godot and runs `-- --validate`, which exits non-zero on a
-  content failure. Slower (it imports `assets/`, cached on the `.import` hashes) and has more
-  moving parts, so it is deliberately a separate job.
+- **Fast deterministic** — generation, warning-free build, xUnit, template, seams and layout.
+- **Engine + visual** — strict asset import, runtime regressions, deterministic visual comparison,
+  and uploaded failure evidence. Import failures are not swallowed.
+- **Weekly/manual full** — exact negative mutations and structured performance history.
 
 ⚠️ **`.github/workflows/` needs a token with `workflow` scope.** The session OAuth token does
 not have it; that file was pushed through the GitHub API instead. If a workflow edit is ever
 rejected on push, that is why — it is not a repo permission problem.
 
 ⚠️ The green **Vercel** check that also appears on every PR is still a meaningless no-op —
-Vercel is trying to deploy a Godot game as a web app. Ignore that one; the two CI jobs above
+Vercel is trying to deploy a Godot game as a web app. Ignore that one; the Codex quality jobs above
 are the build signal.
 
 ---
@@ -327,10 +329,12 @@ pass / **1** on any issue. ⚠️ **It also now walks the whole region lattice f
 terrain traps** (the 2026-08-30 quality pass) - ground the player can walk into and cannot climb out
 of - so this arm is slower than it used to be and catches a class of defect no file could show.
 
-**The whole world battery, in one command:** `python tools/world_quality_check.py` runs all eighteen
-gates in the order they have to run and prints one verdict; `--fast` skips the in-engine half and
-`--list` shows what it covers without running anything. Reach for it rather than the individual
-commands below whenever the change touched a region.
+**The canonical quality runner:** `python tools/world_quality_check.py --mode full` orchestrates the
+specialist gates in dependency order. `fast` is engine/rendering-free; `engine` adds `--validate`
+and live Godot regressions; `visual` runs deterministic captures and localized comparisons;
+`performance` emits a structured machine-sensitive report; `full` adds the exact negative mutation
+battery. Every subprocess has a timeout and each run writes summary, logs and reproduction commands
+under `artifacts/quality/`. `--fast` remains an alias for `--mode fast`; `--list` prints the matrix.
 
 **Headless content census (no gameplay):** `godot --headless --path . -- --state` prints how many
 regions, cells, items, shops, services, dialogues and quests exist, and every cell with its centre.
@@ -659,11 +663,11 @@ immediately before it usually name the thing that will bite you.
   collider and the navmesh source all come from `WorldHeightfield`; an authored node's Y is a
   clearance above the ground, not a world height. Read `docs/WORLD_AUTHORING.md` before touching a
   cell — the traps there are the ones that cost this overhaul its afternoons.
-- ⚠️ **ONE COMMAND SAYS WHETHER A REGION IS HEALTHY: `python tools/world_quality_check.py`** (the
-  2026-08-30 quality pass). It orchestrates all eighteen world gates in the order they have to run —
+- ⚠️ **ONE RUNNER SAYS WHETHER A REGION IS HEALTHY: `python tools/world_quality_check.py --mode full`**.
+  It orchestrates the specialist gates in the order they have to run —
   generation, build, tests, `--validate`, the negative battery, the starter template, seams, layout,
   map markers, step-up, the mesh census, a region swap, a melee swing, a real capsule on every route,
-  the screenshot regression and a per-cell performance sample. `--fast` skips the in-engine half. It
+  the screenshot regression and a per-cell performance sample. Use the explicit modes in §3. It
   ORCHESTRATES; every rule lives in the tool that owns it, and adding a check there that is not
   implemented elsewhere is how two validators start disagreeing.
 - ⚠️ **A NEW REGION STARTS FROM `tools/region_spec_template.py`, NOT FROM A COPY OF THE EMBER

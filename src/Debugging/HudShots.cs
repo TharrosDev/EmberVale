@@ -40,6 +40,36 @@ public sealed partial class HudShots : ShotHarness
 
     protected override string OutputDir => "user://hudshots";
 
+    protected override string? ValidateShotState(string name)
+    {
+        if (Player() is not { } player)
+            return "player is not registered";
+        if (player.GetComponent<StatsComponent>() is not { } stats)
+            return "player has no StatsComponent";
+        if (player.GetComponent<PlayerController>()?.Camera is not { Current: true })
+            return "player has no current gameplay camera";
+        if (GetTree().Root.FindChild("GameHud", recursive: true, owned: false) is null)
+            return "GameHud is missing";
+        if (name == "02-health-low" && stats.GetCurrent(StatType.Health) > stats.GetMax(StatType.Health) * 0.2f)
+            return "low-health state was not reached";
+        if (name == "03-mana-low" && stats.GetCurrent(StatType.Mana) > stats.GetMax(StatType.Mana) * 0.1f)
+            return "low-mana state was not reached";
+        if (name == "04-endurance-empty" && stats.GetCurrent(StatType.Stamina) > 0.01f)
+            return "empty-stamina state was not reached";
+        if (name == "05b-quest-tracked" && player.GetComponent<QuestLogComponent>()?.Tracked is null)
+            return "no active tracked quest";
+        if (name.StartsWith("05c-") || name.StartsWith("05d-"))
+        {
+            if (ServiceLocator.Instance is not { } locator || !locator.TryGet(out MapService map) || map.Waypoint is null)
+                return "requested waypoint was not set";
+        }
+        if (name == "08-menu-open" && !UiState.MenuOpen)
+            return "menu-open state was not reached";
+        if (name == "09-menu-closed" && UiState.MenuOpen)
+            return "menu-closed state was not reached";
+        return null;
+    }
+
     public override void _Ready()
     {
         base._Ready();

@@ -13,6 +13,7 @@
 extends SceneTree
 
 const EMBER := "res://data/regions/EmberCrown.tres"
+const REGIONS := [EMBER, "res://data/regions/FrostfangReach.tres"]
 const WORLD_LAYER := 1  # CombatLayers.World
 
 var _failures: Array[String] = []
@@ -26,6 +27,7 @@ func _initialize() -> void:
 	await _case_failed_cell_is_not_settled()
 	await _case_spawn_has_collision_under_it()
 	await _case_streaming_retries_a_transient_failure()
+	await _case_streamed_world_integrity()
 	_case_town_hub_has_its_buildings()
 	_case_quest_timer_tracks_real_time()
 	_case_worst_frame_is_reported()
@@ -128,6 +130,42 @@ func _has_ground(point: Vector3) -> bool:
 	var query := PhysicsRayQueryParameters3D.create(
 		point + Vector3.UP * 1.0, point + Vector3.DOWN * 3.0, WORLD_LAYER)
 	return not space.intersect_ray(query).is_empty()
+
+
+# Every shipped region must assemble into finite, collidable runtime state. This catches corrupt
+# transforms, a missing terrain body, and a streamer that claims success with no resident geometry.
+func _case_streamed_world_integrity() -> void:
+	for region_path in REGIONS:
+		var streamer: Node3D = load("res://src/World/RegionStreamer.cs").new()
+		root.add_child(streamer)
+		streamer.call("SetPerformanceSamplingEnabled", false)
+		var region: Resource = load(region_path)
+		streamer.call("Configure", region)
+		var frames := 0
+		while frames < 1800 and not streamer.call("IsSettled") and not streamer.call("HasFailedCells"):
+			await process_frame
+			frames += 1
+		_check("%s settles without failed cells" % region.Id,
+			streamer.call("IsSettled") and not streamer.call("HasFailedCells"), "%d frames" % frames)
+		for _physics in 4:
+			await physics_frame
+		_check("%s spawn has runtime collision" % region.Id, _has_ground(region.SpawnPoint))
+		if region.PortalPoint != Vector3.ZERO:
+			_check("%s portal has runtime collision" % region.Id, _has_ground(region.PortalPoint))
+		var invalid: Array[String] = []
+		var collision_shapes := 0
+		for node in _descendants(streamer):
+			if node is Node3D and not node.global_transform.is_finite():
+				invalid.append(str(node.get_path()))
+			if node is CollisionShape3D and node.shape != null and not node.disabled:
+				collision_shapes += 1
+		_check("%s has only finite runtime transforms" % region.Id, invalid.is_empty(), str(invalid.slice(0, 8)))
+		_check("%s has resident collision shapes" % region.Id, collision_shapes >= region.Cells.size(),
+			"%d shapes for %d cells" % [collision_shapes, region.Cells.size()])
+		streamer.call("UnloadAll")
+		streamer.call("Configure", null)
+		streamer.queue_free()
+		await process_frame
 
 
 # ---------------------------------------------------------------------------------------------

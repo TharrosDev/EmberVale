@@ -34,6 +34,7 @@ public abstract partial class ShotHarness : Node
     private const int HoldFrames = 30;
 
     private readonly List<(string Name, Action Drive)> _shots = new();
+    private readonly List<string> _failures = new();
     private int _index = -1;
     private int _countdown = SettleFrames;
     private bool _capturePending;
@@ -47,6 +48,10 @@ public abstract partial class ShotHarness : Node
     /// <summary>Registers the states to capture, in order, via <see cref="Shot"/>.</summary>
     protected abstract void BuildShotList();
 
+    /// <summary>Subclasses prove the requested gameplay/UI state exists before its pixels become
+    /// evidence. Return a diagnostic when a player, panel, camera, model or driven state is absent.</summary>
+    protected virtual string? ValidateShotState(string name) => null;
+
     /// <summary>Adds one named state and the action that drives it.</summary>
     protected void Shot(string name, Action drive) => _shots.Add((name, drive));
 
@@ -57,8 +62,26 @@ public abstract partial class ShotHarness : Node
         // advance past them (CLAUDE.md §7's pause deadlock, from the other side).
         ProcessMode = ProcessModeEnum.Always;
 
-        DirAccess.MakeDirRecursiveAbsolute(OutputDir);
+        if (DisplayServer.GetName() == "headless")
+        {
+            Fail("rendering-capable display required; do not use --headless");
+            GetTree().Quit(2);
+            return;
+        }
+        DisplayServer.WindowSetSize(new Vector2I(1280, 720));
+        if (DirAccess.MakeDirRecursiveAbsolute(OutputDir) != Error.Ok)
+        {
+            Fail($"could not create output directory {ProjectSettings.GlobalizePath(OutputDir)}");
+            GetTree().Quit(2);
+            return;
+        }
         BuildShotList();
+        if (_shots.Count == 0)
+        {
+            Fail("no capture states were registered");
+            GetTree().Quit(2);
+            return;
+        }
         Log.Info($"{Flag}: {_shots.Count} state(s) queued; output -> {ProjectSettings.GlobalizePath(OutputDir)}");
     }
 
@@ -78,12 +101,30 @@ public abstract partial class ShotHarness : Node
         if (_capturePending)
         {
             _capturePending = false;
-            Capture(_shots[_index].Name);
+            string shotName = _shots[_index].Name;
+            string? invalid = ValidateShotState(shotName);
+            if (invalid is not null)
+            {
+                Fail($"'{shotName}' prerequisite failed: {invalid}");
+            }
+            else
+            {
+                Capture(shotName);
+            }
 
             if (_index + 1 >= _shots.Count)
             {
-                Log.Info($"{Flag}: wrote {_shots.Count} image(s) to {ProjectSettings.GlobalizePath(OutputDir)}");
-                GetTree().Quit(0);
+                if (_failures.Count > 0)
+                {
+                    Log.Error($"{Flag}: FAILED with {_failures.Count} capture error(s):\n  " +
+                              string.Join("\n  ", _failures));
+                    GetTree().Quit(1);
+                }
+                else
+                {
+                    Log.Info($"{Flag}: wrote {_shots.Count} verified image(s) to {ProjectSettings.GlobalizePath(OutputDir)}");
+                    GetTree().Quit(0);
+                }
                 return;
             }
 
@@ -105,8 +146,18 @@ public abstract partial class ShotHarness : Node
     {
         if (GetViewport()?.GetTexture()?.GetImage() is not { } image)
         {
-            Log.Warn($"{Flag}: no viewport image for '{name}' — is this a headless run? " +
-                     "This harness needs a real window; run it WITHOUT --headless.");
+            Fail($"no viewport image for '{name}'");
+            return;
+        }
+
+        if (image.IsEmpty() || image.GetWidth() != 1280 || image.GetHeight() != 720)
+        {
+            Fail($"'{name}' returned {image.GetWidth()}x{image.GetHeight()}, expected 1280x720");
+            return;
+        }
+        if (IsBlank(image))
+        {
+            Fail($"'{name}' is blank/flat-colour; it is not valid visual evidence");
             return;
         }
 
@@ -114,10 +165,37 @@ public abstract partial class ShotHarness : Node
         Error error = image.SavePng(path);
         if (error != Error.Ok)
         {
-            Log.Warn($"{Flag}: could not write '{path}' ({error}).");
+            Fail($"could not write '{path}' ({error})");
+            return;
+        }
+
+        if (!FileAccess.FileExists(path))
+        {
+            Fail($"SavePng reported success but '{path}' is missing");
             return;
         }
 
         Log.Info($"{Flag}: wrote {ProjectSettings.GlobalizePath(path)} ({image.GetWidth()}x{image.GetHeight()})");
+    }
+
+    private static bool IsBlank(Image image)
+    {
+        float min = 1f;
+        float max = 0f;
+        for (int y = 0; y < image.GetHeight(); y += 36)
+        for (int x = 0; x < image.GetWidth(); x += 40)
+        {
+            Color c = image.GetPixel(x, y);
+            float value = (c.R + c.G + c.B) / 3f;
+            min = Mathf.Min(min, value);
+            max = Mathf.Max(max, value);
+        }
+        return max - min < 0.01f;
+    }
+
+    private void Fail(string message)
+    {
+        _failures.Add(message);
+        Log.Error($"{Flag}: {message}");
     }
 }

@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "captured": "2026-08-30",
+  "machine": "Intel Iris Xe reference laptop",
+  "note": "Machine-sensitive history only; deterministic authored budgets gate in --validate.",
+  "regions": {
+    "region.ember_crown": {"mean_draws": 634, "mean_prims": 1050000, "mean_ms": 14.0,
+      "worst_ms": 20.0, "video_memory_mb": 379, "configure_ms": 3400},
+    "region.frostfang_reach": {"mean_draws": 158, "mean_prims": 219000, "mean_ms": 11.9,
+      "worst_ms": 16.7, "video_memory_mb": 305, "configure_ms": 1900}
+  }
+}

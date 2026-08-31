@@ -12,9 +12,12 @@
 extends SceneTree
 
 const BASELINE_PATH := "res://tests/visual_baselines/world_signatures.json"
-const SIGNATURE_WIDTH := 12
-const SIGNATURE_HEIGHT := 8
-const DEFAULT_MEAN_CHANNEL_DELTA := 18.0
+const SIGNATURE_WIDTH := 32
+const SIGNATURE_HEIGHT := 18
+const DEFAULT_MEAN_CHANNEL_DELTA := 8.0
+const DEFAULT_LOCAL_CHANNEL_DELTA := 28.0
+const DEFAULT_CHANGED_BLOCK_FRACTION := 0.04
+const DEFAULT_STRUCTURAL_PEAK_DELTA := 70.0
 
 # ⚠️ THE CELL TABLE IS READ OUT OF THE REGION RESOURCE, NOT COPIED HERE (the 2026-08-29 geography
 # overhaul). It used to be sixteen hand-written centres and envelopes in this file, which is the
@@ -31,6 +34,7 @@ var _environment: Environment
 var _camera: Camera3D
 var _content_loader: Node
 var _signatures: Dictionary = {}
+var _capture_errors: Array[String] = []
 
 
 func _initialize() -> void:
@@ -38,6 +42,8 @@ func _initialize() -> void:
 		printerr("world shots: a rendering-capable display is required; run without --headless")
 		quit(4)
 		return
+	seed(0x454d42455256414c)
+	DisplayServer.window_set_size(Vector2i(1280, 720))
 
 	# Isolated tools do not construct GameBootstrap. Use the same centralized content initializer
 	# before the production RegionStreamer so lairs and other registry-backed actors preview honestly.
@@ -59,17 +65,21 @@ func _initialize() -> void:
 
 	for region_path in REGION_PATHS:
 		var region: Resource = load(region_path)
+		if region == null or region.get("EnvironmentProfile") == null:
+			_capture_errors.append("region or environment profile missing: %s" % region_path)
+			continue
 		streamer.call("Configure", region)
 		var settle_frames := 0
 		while not streamer.call("IsSettled") and settle_frames < 600:
 			await process_frame
 			settle_frames += 1
-		if not streamer.call("IsSettled"):
+		if not streamer.call("IsSettled") or streamer.call("HasFailedCells"):
 			printerr("world shots: region failed to settle: %s" % region_path)
 			quit(2)
 			return
 		for authored_cell in region.get("Cells"):
 			if authored_cell == null or authored_cell.get("Presentation") == null:
+				_capture_errors.append("region %s has a null cell/presentation" % region_path)
 				continue
 			var presentation: Resource = authored_cell.get("Presentation")
 			await _render_cell([
@@ -83,7 +93,9 @@ func _initialize() -> void:
 		await process_frame
 		region = null
 
-	var regression_ok := _finish_visual_regression()
+	var regression_ok := _capture_errors.is_empty() and _finish_visual_regression()
+	for error in _capture_errors:
+		printerr("world shots: %s" % error)
 	_content_loader.call("CollectManagedResources")
 	await process_frame
 	print("world shots: complete" if regression_ok else "world shots: visual regression failed")
@@ -97,7 +109,10 @@ func _ground_at(x: float, z: float) -> float:
 	var query := PhysicsRayQueryParameters3D.create(Vector3(x, 400.0, z), Vector3(x, -200.0, z))
 	query.collide_with_areas = false
 	var hit := space.intersect_ray(query)
-	return hit.position.y if hit.has("position") else 0.0
+	if not hit.has("position"):
+		_capture_errors.append("no terrain collision at x=%.2f z=%.2f" % [x, z])
+		return 0.0
+	return hit.position.y
 
 
 func _on_ground(point: Vector3, clearance: float) -> Vector3:
@@ -111,8 +126,10 @@ func _render_cell(cell: Array, region: Resource) -> void:
 	var radius: float = max(size.x, size.y) * 0.5
 	var route_views := _route_views(cell_id, centre, size, region)
 	var landmark_view := _landmark_view(centre, radius)
-	var overview := centre + Vector3(-radius * 0.75, 0.0, radius * 0.80)
-	overview.y = _ground_at(overview.x, overview.z) + radius * 0.72
+	# Per-axis placement keeps long rectangular cells from putting the camera beyond their narrow
+	# edge (the old max-radius formula silently sampled the backdrop and had no terrain collision).
+	var overview := centre + Vector3(-size.x * 0.35, 0.0, size.y * 0.35)
+	overview.y = _ground_at(overview.x, overview.z) + minf(size.x, size.y) * 0.36
 	var shots := [
 		["01_entry", route_views[0], route_views[1]],
 		["02_centre", route_views[2], route_views[3]],
@@ -128,13 +145,27 @@ func _render_cell(cell: Array, region: Resource) -> void:
 		for shot in shots:
 			_camera.global_position = shot[1]
 			_camera.look_at(shot[2], Vector3.UP)
-			for _frame in range(5):
+			for _frame in range(12):
 				await process_frame
 			var path := "%s/%s_%s.png" % [folder, pass_name, shot[0]]
 			var image := root.get_texture().get_image()
+			if image == null or image.is_empty():
+				_capture_errors.append("%s: viewport returned no image" % path)
+				continue
+			if image.get_width() != 1280 or image.get_height() != 720:
+				_capture_errors.append("%s: expected 1280x720, got %dx%d" % [
+					path, image.get_width(), image.get_height()])
+				continue
 			var error := image.save_png(path)
 			var key := "%s/%s_%s" % [cell_id, pass_name, shot[0]]
-			_signatures[key] = _image_signature(image)
+			var signature := _image_signature(image)
+			if signature.is_empty():
+				_capture_errors.append("%s: blank/flat-colour capture" % path)
+				continue
+			if error != OK or not FileAccess.file_exists(path):
+				_capture_errors.append("%s: PNG write failed (%s)" % [path, error])
+				continue
+			_signatures[key] = signature
 			print("%s -> %s" % [path, "ok" if error == OK else str(error)])
 
 
@@ -211,13 +242,17 @@ func _image_signature(image: Image) -> Array:
 	var thumbnail := image.duplicate()
 	thumbnail.resize(SIGNATURE_WIDTH, SIGNATURE_HEIGHT, Image.INTERPOLATE_LANCZOS)
 	var values: Array = []
+	var minimum := 255
+	var maximum := 0
 	for y in range(SIGNATURE_HEIGHT):
 		for x in range(SIGNATURE_WIDTH):
 			var colour: Color = thumbnail.get_pixel(x, y)
 			values.append(roundi(colour.r * 255.0))
 			values.append(roundi(colour.g * 255.0))
 			values.append(roundi(colour.b * 255.0))
-	return values
+			minimum = mini(minimum, roundi(minf(colour.r, minf(colour.g, colour.b)) * 255.0))
+			maximum = maxi(maximum, roundi(maxf(colour.r, maxf(colour.g, colour.b)) * 255.0))
+	return values if maximum - minimum >= 3 else []
 
 
 func _finish_visual_regression() -> bool:
@@ -228,12 +263,15 @@ func _finish_visual_regression() -> bool:
 			printerr("world shots: could not write baseline: %s" % FileAccess.get_open_error())
 			return false
 		file.store_string(JSON.stringify({
-			"version": 1,
+			"version": 2,
 			"signature_width": SIGNATURE_WIDTH,
 			"signature_height": SIGNATURE_HEIGHT,
 			"mean_channel_delta": DEFAULT_MEAN_CHANNEL_DELTA,
+			"local_channel_delta": DEFAULT_LOCAL_CHANNEL_DELTA,
+			"changed_block_fraction": DEFAULT_CHANGED_BLOCK_FRACTION,
+			"structural_peak_delta": DEFAULT_STRUCTURAL_PEAK_DELTA,
 			"signatures": _signatures,
-		}, "  "))
+		}))
 		print("world shots: updated visual baseline (%d frames)" % _signatures.size())
 		return true
 
@@ -247,8 +285,17 @@ func _finish_visual_regression() -> bool:
 		return false
 
 	var expected: Dictionary = baseline.signatures
-	var threshold: float = float(baseline.get("mean_channel_delta", DEFAULT_MEAN_CHANNEL_DELTA))
+	if int(baseline.get("version", 0)) != 2 or int(baseline.get("signature_width", 0)) != SIGNATURE_WIDTH \
+			or int(baseline.get("signature_height", 0)) != SIGNATURE_HEIGHT:
+		printerr("world shots: baseline schema/resolution is obsolete; inspect current PNGs, then use the guarded update command")
+		return false
+	var mean_threshold: float = float(baseline.get("mean_channel_delta", DEFAULT_MEAN_CHANNEL_DELTA))
+	var local_threshold: float = float(baseline.get("local_channel_delta", DEFAULT_LOCAL_CHANNEL_DELTA))
+	var changed_fraction: float = float(baseline.get("changed_block_fraction", DEFAULT_CHANGED_BLOCK_FRACTION))
+	var peak_threshold: float = float(baseline.get("structural_peak_delta", DEFAULT_STRUCTURAL_PEAK_DELTA))
 	var failures := 0
+	var diff_dir := "res://tools/shots/world_diffs"
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(diff_dir))
 	for key in _signatures:
 		if not expected.has(key):
 			printerr("world shots: baseline missing frame %s" % key)
@@ -261,19 +308,54 @@ func _finish_visual_regression() -> bool:
 			failures += 1
 			continue
 		var delta := 0.0
-		for index in range(actual_values.size()):
-			delta += absf(float(actual_values[index]) - float(expected_values[index]))
-		delta /= actual_values.size()
-		if delta > threshold:
-			printerr("world shots: %s mean channel delta %.2f > %.2f" % [key, delta, threshold])
+		var changed_blocks := 0
+		var structural_peak := 0.0
+		var block_deltas: Array[float] = []
+		for block in range(SIGNATURE_WIDTH * SIGNATURE_HEIGHT):
+			var offset := block * 3
+			var block_delta := (absf(float(actual_values[offset]) - float(expected_values[offset])) + \
+				absf(float(actual_values[offset + 1]) - float(expected_values[offset + 1])) + \
+				absf(float(actual_values[offset + 2]) - float(expected_values[offset + 2]))) / 3.0
+			block_deltas.append(block_delta)
+			delta += block_delta
+			if block_delta > local_threshold:
+				changed_blocks += 1
+			# The bottom two rows carry wind-animated ground cover. Count their aggregate drift, but
+			# reserve the single-block peak gate for static scene structure above that band.
+			if block / SIGNATURE_WIDTH < SIGNATURE_HEIGHT - 2:
+				structural_peak = maxf(structural_peak, block_delta)
+		delta /= block_deltas.size()
+		block_deltas.sort()
+		var p95: float = block_deltas[int(floor((block_deltas.size() - 1) * 0.95))]
+		var allowed_blocks := maxi(2, ceili(block_deltas.size() * changed_fraction))
+		if delta > mean_threshold or changed_blocks > allowed_blocks or structural_peak > peak_threshold:
+			printerr("world shots: %s mean %.2f/%.2f, localized blocks %d/%d, p95 %.2f, static peak %.2f/%.2f" % [
+				key, delta, mean_threshold, changed_blocks, allowed_blocks, p95, structural_peak, peak_threshold])
+			_write_diff(key, block_deltas, local_threshold, diff_dir)
 			failures += 1
 	for key in expected:
 		if not _signatures.has(key):
 			printerr("world shots: capture missing baseline frame %s" % key)
 			failures += 1
-	print("world shots: visual regression %s (%d frames, threshold %.2f)" % [
-		"PASS" if failures == 0 else "FAIL", _signatures.size(), threshold])
+	print("world shots: visual regression %s (%d frames; mean<=%.2f, local<=%.2f in %.1f%% blocks)" % [
+		"PASS" if failures == 0 else "FAIL", _signatures.size(), mean_threshold,
+		local_threshold, changed_fraction * 100.0])
 	return failures == 0
+
+
+func _write_diff(key: String, block_deltas: Array[float], threshold: float, folder: String) -> void:
+	var diff := Image.create(SIGNATURE_WIDTH, SIGNATURE_HEIGHT, false, Image.FORMAT_RGB8)
+	for y in range(SIGNATURE_HEIGHT):
+		for x in range(SIGNATURE_WIDTH):
+			var value: float = block_deltas[y * SIGNATURE_WIDTH + x]
+			var strength := clampf(value / maxf(1.0, threshold * 2.0), 0.0, 1.0)
+			diff.set_pixel(x, y, Color(strength, 0.08 if value > threshold else 0.0, 0.0))
+	diff.resize(640, 360, Image.INTERPOLATE_NEAREST)
+	var safe := key.replace("/", "__").replace(".", "_")
+	var path := "%s/%s_diff.png" % [folder, safe]
+	var error := diff.save_png(path)
+	if error != OK:
+		_capture_errors.append("could not write diff evidence %s (%s)" % [path, error])
 
 
 func _build_light() -> void:

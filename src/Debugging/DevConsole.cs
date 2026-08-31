@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Embervale.Core;
+using Embervale.Core.Diagnostics;
 using Embervale.UI;
 using Godot;
 
@@ -38,7 +39,11 @@ public partial class DevConsole : CanvasLayer
         Print("Embervale dev console. Type 'help'. F1 closes.");
     }
 
-    public void Register(ConsoleCommand command) => _commands[command.Name] = command;
+    public void Register(ConsoleCommand command)
+    {
+        if (!_commands.TryAdd(command.Name, command))
+            throw new InvalidOperationException($"duplicate dev-console command '{command.Name}'");
+    }
 
     public bool IsOpen => _open;
 
@@ -76,6 +81,7 @@ public partial class DevConsole : CanvasLayer
         }
         catch (Exception e)
         {
+            Log.Error($"dev command '{line}' threw: {e}");
             return $"error: {e.Message}";
         }
     }

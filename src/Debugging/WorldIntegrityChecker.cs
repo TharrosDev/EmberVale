@@ -5,6 +5,7 @@ using Embervale.Core.Services;
 using Embervale.Items;
 using Embervale.Player;
 using Embervale.Stats;
+using Embervale.World;
 using Godot;
 
 namespace Embervale.Debugging;
@@ -49,6 +50,7 @@ public partial class WorldIntegrityChecker : Node
         int before = Invariant.Violations;
 
         CheckPlayer(sb);
+        CheckStreaming(sb);
         CheckOrphans(sb);
 
         int found = Invariant.Violations - before;
@@ -82,12 +84,48 @@ public partial class WorldIntegrityChecker : Node
             sb.Append("• player position not finite\n");
         }
 
+        Vector3 velocity = player.Velocity;
+        bool velocityFinite = IsFinite(velocity);
+        if (!Invariant.Check(velocityFinite, $"player velocity is not finite ({velocity})"))
+            sb.Append("• player velocity not finite\n");
+        else if (!Invariant.Check(velocity.LengthSquared() < 250000f,
+                     $"player velocity is impossible ({velocity.Length():0.0} m/s)"))
+            sb.Append($"• impossible player velocity ({velocity.Length():0.0} m/s)\n");
+
+        if (!Invariant.Check(player.GetComponent<PlayerController>()?.Camera is { Current: true },
+                             "player has no current gameplay camera"))
+            sb.Append("• player camera missing/not current\n");
+
+        if (ServiceLocator.Instance.TryGet(out RegionStreamer streamer) && streamer.IsSettled())
+        {
+            var query = PhysicsRayQueryParameters3D.Create(pos + Vector3.Up, pos + Vector3.Down * 4f, 1u);
+            query.Exclude = new Godot.Collections.Array<Rid> { player.GetRid() };
+            bool grounded = player.GetWorld3D().DirectSpaceState.IntersectRay(query).Count > 0;
+            if (!Invariant.Check(grounded, $"settled world has no collision within 4 m under player at {pos}"))
+                sb.Append("• no collision under player in settled world\n");
+        }
+
         if (player.GetComponent<StatsComponent>() is { } stats)
         {
             CheckResource(sb, stats, StatType.Health);
             CheckResource(sb, stats, StatType.Stamina);
             CheckResource(sb, stats, StatType.Mana);
         }
+    }
+
+    private static bool IsFinite(Vector3 value) =>
+        float.IsFinite(value.X) && float.IsFinite(value.Y) && float.IsFinite(value.Z);
+
+    private static void CheckStreaming(StringBuilder sb)
+    {
+        if (ServiceLocator.Instance is null || !ServiceLocator.Instance.TryGet(out RegionStreamer streamer))
+            return; // Main menu and validation runs have no active world by design.
+        if (!Invariant.Check(!streamer.HasFailedCells(),
+                             $"active region '{streamer.ActiveRegionId}' has failed streaming cells"))
+            sb.Append($"• failed cells in {streamer.ActiveRegionId}\n");
+        if (streamer.IsSettled() && !Invariant.Check(!string.IsNullOrWhiteSpace(streamer.ActiveRegionId),
+                                                     "streamer settled without an active region id"))
+            sb.Append("• settled streamer has no active region\n");
     }
 
     private static void CheckResource(StringBuilder sb, StatsComponent stats, StatType type)

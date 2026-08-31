@@ -1116,8 +1116,8 @@ breaks at launch, breaks trust.
 ### Phase 59 — Bug Triage, QA & Soak `[P]`
 
 The full QA matrix: functional passes per region/quest/system, soak/longevity
-tests, edge-case and regression suites (grow `Embervale.Tests` + GUT in-engine
-tests), a crash-free-session target, and a triaged bug database burned down to
+tests, edge-case and regression suites (grow pure `Embervale.Tests` logic plus the existing
+in-engine regression/probe harnesses), a crash-free-session target, and a triaged bug database burned down to
 zero blockers.
 
 ### Phase 60 — Localization Completion & Culturalization `[C/P]`
@@ -1198,7 +1198,7 @@ Some work isn't a phase — it's a discipline maintained continuously:
   strings.
 - **Performance budget** — keep the Phase 19 LOD/pooling discipline as the world
   and content grow; don't let it rot before the Phase 57 cert.
-- **Testing** — grow `Embervale.Tests` (pure logic) + in-engine GUT (systems);
+- **Testing** — grow `Embervale.Tests` (pure logic) + the established in-engine regression harnesses;
   a new system ships with coverage of its load-bearing math/flow.
 - **Accessibility & input** — design for remap/subtitle/scalable difficulty from
   the start; Phase 54 *completes* rather than *invents* it.

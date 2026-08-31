@@ -30,21 +30,14 @@ named in `docs/playbook/phase-38.md` rather than left implied.
 """
 
 import argparse
-import os
-import subprocess
 import sys
 from pathlib import Path
 
+from quality_common import discover_godot, run_process
+
 REPO = Path(__file__).resolve().parent.parent
 
-# ⚠️ `godot` is not on PATH (CLAUDE.md §2) and the plain .exe detaches without printing, so the
-# console variant is the only one whose output can be read back. Override with GODOT= for a
-# different install rather than editing this.
-GODOT = os.environ.get(
-    "GODOT",
-    r"C:\Users\magnu\Downloads\Godot_v4.7.1-stable_mono_win64"
-    r"\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64_console.exe",
-)
+GODOT = discover_godot()
 
 # (name, rule, [(file, find, replace), ...], expected substring of the refusal)
 #
@@ -745,8 +738,8 @@ Falloff = 1.8""")],
 ]
 
 
-def run(cmd, **kwargs):
-    return subprocess.run(cmd, cwd=REPO, capture_output=True, text=True, **kwargs)
+def run(cmd, timeout=30):
+    return run_process(cmd, cwd=REPO, timeout=timeout)
 
 
 def tree_state():
@@ -756,8 +749,12 @@ def tree_state():
 
 def validate():
     """Run the content gate. Returns (exit_code, combined output)."""
-    result = run([GODOT, "--headless", "--path", ".", "--", "--validate"])
-    return result.returncode, result.stdout + result.stderr
+    result = run([str(GODOT), "--headless", "--path", ".", "--", "--validate"], timeout=900)
+    if result.timed_out:
+        return 124, result.output + "\nnegative_tests: validation timed out after 900s"
+    if result.launch_error:
+        return 127, result.output + f"\nnegative_tests: could not launch Godot: {result.launch_error}"
+    return result.returncode, result.output
 
 
 def snapshot(paths):
@@ -790,6 +787,11 @@ def main():
     parser.add_argument("--only", help="run cases whose name or rule contains this text")
     parser.add_argument("--list", action="store_true", help="print the battery and exit")
     args = parser.parse_args()
+
+    if GODOT is None:
+        print("negative_tests: Godot .NET console executable not found. Set EMBERVALE_GODOT "
+              "or GODOT, or put godot on PATH.", file=sys.stderr)
+        return 2
 
     cases = CASES
     if args.only:

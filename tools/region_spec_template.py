@@ -379,7 +379,7 @@ def build_template(legacy: dict[str, str]) -> tuple[str, list[str]]:
 # --------------------------------------------------------------------------------------------------
 #     python tools/world_quality_check.py <region>
 #
-# Fourteen gates in one command: generation, build, unit tests, content (references, route grades and
+# Canonical modes in one runner: generation, build, unit tests, content (references, route grades and
 # off-route traps), the negative battery, seams, layout, map markers, step-up, the mesh census, a
 # real capsule walking every route, and the screenshot regression.
 #

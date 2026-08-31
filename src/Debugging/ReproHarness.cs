@@ -50,8 +50,19 @@ public static class ReproHarness
         {
             string output = exec(command);
             sb.Append($"  {command} → {output}\n");
+            if (Failed(output))
+            {
+                sb.Append("  FAILED: scenario stopped because this step did not reach its prerequisite\n");
+                break;
+            }
         }
 
         return sb.ToString().TrimEnd();
     }
+
+    private static bool Failed(string output) =>
+        string.IsNullOrWhiteSpace(output) || output.StartsWith("error:", StringComparison.OrdinalIgnoreCase) ||
+        output.StartsWith("unknown ", StringComparison.OrdinalIgnoreCase) ||
+        output.StartsWith("no player", StringComparison.OrdinalIgnoreCase) ||
+        output.StartsWith("missing ", StringComparison.OrdinalIgnoreCase);
 }
