@@ -728,8 +728,13 @@ LocationId = "location.tarn.chandler"
 
 ; Elyndra's waystone sits at the landing edge among the docks, nets and shore plants: a working
 ; waterside place where seasons and wildlife have a visible daily consequence.
+;
+; ⚠️ AT THE EDGE, NOT IN IT — IT WAS IN IT. Authored at local (-13, 13) on the old flat floor; the
+; 2026-08-29 overhaul cut the tarn to 4.2 m and conformed the shrine onto the new ground, which put
+; it 0.74 m under the declared surface with its map pin under the water too. The shoreline along
+; this stretch runs at about z = 12 and drops fast: +0.53 at z = 11.5, -0.69 at z = 13.
 [node name="ShrineElyndra" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, 13)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, 11.5)
 script = ExtResource("2_entity")
 
 [node name="Body" parent="Nav/ShrineElyndra" instance=ExtResource("shrine_body_41_5b")]

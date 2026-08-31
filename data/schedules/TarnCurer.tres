@@ -15,12 +15,19 @@
 ; She meets the boats at the jetty before dawn, works the racks through the morning, and is gone by
 ; mid-afternoon. ScheduleComponent walks a straight line with no pathing, so both points are on open
 ; shingle.
+;
+; ⚠️ "MEETING THE BOATS" WAS 2.70 m UNDER THE TARN (2026-08-31). Authored at (-6, 15) beside the dock
+; complex when the water here was a decal on a flat floor; the 2026-08-29 overhaul cut the basin to
+; 4.2 m and she walked into it every morning at 04:00. The point is now (-6, 11) — the shingle at the
+; spit's south edge, where the shoreline actually runs. ⚠️ ALONG THIS STRETCH THE SHORE IS z = 12 AND
+; THE BANK IS STEEP: +0.83 at z = 11, +0.07 at z = 12, -2.65 at z = 15. Author south of it and the
+; next point is in the water again.
 
 [sub_resource type="Resource" id="e_0"]
 script = ExtResource("2_entry")
 StartHour = 4
 Activity = "Meeting the boats"
-Destination = Vector3(-6, 0, 15)
+Destination = Vector3(-6, 0, 11)
 
 [sub_resource type="Resource" id="e_1"]
 script = ExtResource("2_entry")

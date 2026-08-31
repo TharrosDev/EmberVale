@@ -92,7 +92,8 @@
 ;                      traded in a room you have to find.
 ;   x -26..6, z -14..-6   THE NORTH CHANNEL; x -26..2, z 8..18 THE SOUTH CHANNEL; x -26..-16 open
 ;                      water, with the Wet Hull at her berth and the jetties running out of the spine
-;                      into both channels.
+;                      into both channels. ⚠️ THE BERTH IS 4.5 m OF WATER, so Sedge herself stands
+;                      ashore at the spine's west end (-12, -0.5) and the hull is moored off it.
 ;   x 16..20, z -8     THE BONE TABLE, in a ruin north-east of the street. Nothing points at it.
 ;
 ; ⚠️ THE WATER IS NOT IN THIS FILE ANY MORE. It was six translucent BoxMeshes over a flat floor that
@@ -284,8 +285,16 @@ RegionId = "region.ember_crown"
 ; that echo is deliberate: they are the same trade on opposite sides of the same road. Coyle wears
 ; npc_merchant_m. Neither wears npc_townsman (a hi-vis vest and a hard hat) or npc_merchant_f (a
 ; t-shirt and trainers); both are retired, and the second one took three sub-phases to catch.
+; ⚠️ SHE STOOD IN THE LAKE FROM THE 2026-08-29 OVERHAUL TO 2026-08-31. Her berth was local
+; (-17, 3) — authored when this district was a flat floor with translucent boxes on it for water.
+; The overhaul carved the open water into a real 4.5 m basin and conformed every node onto the
+; terrain under it, so she went down with the ground: 2.83 m under a declared surface, in a game
+; with no swimming, with her map pin under it too. She now stands at the spine's west end, the
+; last dry ground before her berth, north of the road and opposite Coyle exactly as the note
+; above says. Ground here is +0.30 against a 0.05 waterline, and the whole district is that flat:
+; ⚠️ A NODE MOVED MORE THAN A METRE WEST OF x = -13 IS IN THE WATER AGAIN.
 [node name="Sedge" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -17, 0, 3)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -12, 0, -0.5)
 script = ExtResource("2_entity")
 DisplayName = "Sedge Marrow"
 TemplateId = "npc.sedge"
