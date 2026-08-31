@@ -103,6 +103,7 @@ public static class ContentValidator
         ValidateRegions(issues);
         ValidateRaces(issues);
         ValidateShrines(issues);
+        ValidateGuilds(issues);
         ValidateLocale(issues);
         ValidateBreakdownKeys(issues);
         ValidateCompanions(issues);
@@ -2895,6 +2896,80 @@ public static class ContentValidator
     /// player-readable name. 41.5B closes the set around the six dead gods and links each resource
     /// to its one generated map location; Morthul is a surviving antagonist, never a blessing.
     /// 41.5C adds the corruption gate, whose threshold and refusal line are authored per god.</summary>
+    /// <summary>
+    /// The five guilds of Phase 42 (42A).
+    ///
+    /// A guild is a <c>FactionResource</c> that declares ranks, so the closed set has to be checked
+    /// from BOTH sides: a listed guild that stopped declaring ranks silently becomes an ordinary
+    /// faction and every quest gated on it goes dead, and an unlisted faction that starts declaring
+    /// them silently becomes a sixth guild the rank vocabulary, the UI and `GameIds.Guilds` know
+    /// nothing about. Neither shows up anywhere else — both load, both render.
+    ///
+    /// ⚠️ The rank count is an authored range and fails silently at both ends (invariant 8): zero
+    /// ranks is a guild the player can join and never rise in, and more than
+    /// <see cref="GuildRules.MaxRanks"/> is ranks the flag vocabulary cannot express.
+    /// </summary>
+    private static void ValidateGuilds(List<string> issues)
+    {
+        var required = new HashSet<string>(GameIds.Guilds.All);
+        var authored = new HashSet<string>();
+        var rankKeys = new HashSet<string>();
+
+        foreach (FactionResource faction in FactionDatabase.All)
+        {
+            if (!faction.IsGuild)
+            {
+                if (required.Contains(faction.Id))
+                {
+                    issues.Add($"guild '{faction.Id}' declares no ranks, so nothing treats it as a guild");
+                }
+
+                continue;
+            }
+
+            authored.Add(faction.Id);
+
+            if (!required.Contains(faction.Id))
+            {
+                issues.Add($"faction '{faction.Id}' declares ranks but is not one of the five authored guilds");
+            }
+
+            if (faction.RankNameKeys.Count > GuildRules.MaxRanks)
+            {
+                issues.Add(
+                    $"guild '{faction.Id}' declares {faction.RankNameKeys.Count} ranks, above the " +
+                    $"{GuildRules.MaxRanks} the flag vocabulary and UI support");
+            }
+
+            foreach (string key in faction.RankNameKeys)
+            {
+                if (string.IsNullOrEmpty(key) || !Loc.Has(key))
+                {
+                    issues.Add($"guild '{faction.Id}' rank key '{key}' is missing from the locale catalogue");
+                }
+                else if (!rankKeys.Add(key))
+                {
+                    issues.Add($"guild '{faction.Id}' rank key '{key}' is already used by another guild");
+                }
+            }
+
+            // The flag vocabulary is derived, so an empty slug would silently produce empty flag ids
+            // that can never be set and a guild that is permanently Unknown.
+            if (GuildRules.Slug(faction.Id).Length == 0)
+            {
+                issues.Add($"guild '{faction.Id}' has no id slug, so its membership flags would be empty");
+            }
+        }
+
+        foreach (string id in GameIds.Guilds.All)
+        {
+            if (!authored.Contains(id) && FactionDatabase.Get(id) == null)
+            {
+                issues.Add($"missing required guild faction '{id}'");
+            }
+        }
+    }
+
     private static void ValidateShrines(List<string> issues)
     {
         var authored = new HashSet<string>();

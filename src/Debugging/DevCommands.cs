@@ -44,6 +44,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("heal", "heal", "Refill the player's resources.", Heal));
         console.Register(new ConsoleCommand("mount", "mount [own]", "Toggle the mount; 'own' grants the stable flag first (Phase 39A).", Mount));
         console.Register(new ConsoleCommand("rep", "rep <factionId> <delta>", "Shift faction standing.", Rep));
+        console.Register(new ConsoleCommand("guild", "guild <list|<guildId> <offer|join|rank N|leave|refuse|finale|clear>>", "Inspect or drive guild membership through the real story-flag path (Phase 42A).", Guild));
         console.Register(new ConsoleCommand("corruption", "corruption <get|set N|add N|tier>", "Inspect or drive the player's corruption.", Corruption));
         console.Register(new ConsoleCommand("learn", "learn <spellId|perkId>", "Learn a spell or perk (respects corruption gating).", Learn));
         console.Register(new ConsoleCommand("race", "race [id]", "Show races, or live-apply one to the player (Phase 26C).", RaceCmd));
@@ -442,6 +443,133 @@ public static class DevCommands
         int delta = ParseInt(args, 1, 0);
         rep.Add(args[0], delta);
         return $"{args[0]}: {rep.Get(args[0])} ({ReputationTiers.Label(rep.TierOf(args[0]))})";
+    }
+
+    /// <summary>
+    /// The guild report and mutator (42A) — the one way to drive membership before 42C authors
+    /// dialogue for it.
+    ///
+    /// ⚠️ <b>Every mutation goes through <c>StoryFlagsComponent.Set/Clear</c>, the same choke point a
+    /// dialogue effect uses.</b> Writing a private field here would give the console a second path
+    /// into membership, and the first thing that would diverge is the very save/UI behaviour this
+    /// sub-phase exists to pin. `rank` sets the whole cumulative run 1..N, because a rank flag on
+    /// its own is exactly the hand-authored gap `GuildRules` reports as a contradiction.
+    /// </summary>
+    private static string Guild(DevConsole console, string[] args)
+    {
+        if (!TryPlayer(out PlayerCharacter player) ||
+            player.GetComponent<Dialogue.StoryFlagsComponent>() is not { } flags)
+        {
+            return "no story flags";
+        }
+
+        System.Predicate<string> has = flags.Has;
+
+        if (args.Length == 0 || args[0].Equals("list", System.StringComparison.OrdinalIgnoreCase))
+        {
+            var report = new System.Text.StringBuilder();
+            foreach (FactionResource g in FactionDatabase.All)
+            {
+                if (g.IsGuild)
+                {
+                    report.AppendLine(Describe(g, GuildRules.Resolve(has, g)));
+                }
+            }
+
+            return report.Length > 0 ? report.ToString().TrimEnd() : "no guilds authored";
+        }
+
+        string id = args[0];
+        if (FactionDatabase.Get(id) is not { } guild || !guild.IsGuild)
+        {
+            return $"'{id}' is not a guild (try: guild list)";
+        }
+
+        string verb = args.Length > 1 ? args[1].ToLowerInvariant() : "state";
+        switch (verb)
+        {
+            case "state":
+                break;
+            case "offer":
+                flags.Set(GuildRules.OfferedFlag(id));
+                break;
+            case "refuse":
+                // A refusal answers an offer, so it clears the join — the two cannot both be true
+                // (GuildContradiction.RefusedAndJoined), and the console must not author the state
+                // it reports as broken.
+                flags.Clear(GuildRules.JoinedFlag(id));
+                flags.Set(GuildRules.RefusedFlag(id));
+                break;
+            case "join":
+            {
+                GuildStanding before = GuildRules.Resolve(has, guild);
+                if (!GuildRules.CanJoin(before, guild.RejoinAllowed))
+                {
+                    return $"{guild.DisplayName} will not take you back (RejoinAllowed = false)";
+                }
+
+                flags.Clear(GuildRules.RefusedFlag(id));
+                flags.Clear(GuildRules.LeftFlag(id));
+                flags.Set(GuildRules.OfferedFlag(id));
+                flags.Set(GuildRules.JoinedFlag(id));
+                break;
+            }
+
+            case "rank":
+            {
+                int rank = ParseInt(args, 2, 1);
+                if (rank < 0 || rank > guild.RankNameKeys.Count)
+                {
+                    return $"rank must be 0..{guild.RankNameKeys.Count}";
+                }
+
+                for (int i = 1; i <= GuildRules.MaxRanks; i++)
+                {
+                    if (i <= rank)
+                    {
+                        flags.Set(GuildRules.RankFlag(id, i));
+                    }
+                    else
+                    {
+                        flags.Clear(GuildRules.RankFlag(id, i));
+                    }
+                }
+
+                break;
+            }
+
+            case "leave":
+                flags.Set(GuildRules.LeftFlag(id));
+                break;
+            case "finale":
+                flags.Set(GuildRules.FinaleFlag(id));
+                break;
+            case "clear":
+                flags.Clear(GuildRules.OfferedFlag(id));
+                flags.Clear(GuildRules.RefusedFlag(id));
+                flags.Clear(GuildRules.JoinedFlag(id));
+                flags.Clear(GuildRules.LeftFlag(id));
+                flags.Clear(GuildRules.FinaleFlag(id));
+                for (int i = 1; i <= GuildRules.MaxRanks; i++)
+                {
+                    flags.Clear(GuildRules.RankFlag(id, i));
+                }
+
+                break;
+            default:
+                return "usage: guild <list|<guildId> <offer|join|rank N|leave|refuse|finale|clear>>";
+        }
+
+        return Describe(guild, GuildRules.Resolve(has, guild));
+    }
+
+    private static string Describe(FactionResource guild, GuildStanding standing)
+    {
+        string rank = standing.Rank > 0 ? $"rank {standing.Rank}/{guild.RankNameKeys.Count}" : "unranked";
+        string problem = standing.Contradiction == GuildContradiction.None
+            ? string.Empty
+            : $"  ⚠ {standing.Contradiction}";
+        return $"{guild.Id,-28} {standing.State,-9} {rank}{problem}";
     }
 
     private static string Corruption(DevConsole console, string[] args)

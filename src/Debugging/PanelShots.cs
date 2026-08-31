@@ -1,4 +1,6 @@
+using Embervale.Core;
 using Embervale.Core.Services;
+using Embervale.Factions;
 using Embervale.Player;
 using Embervale.Quests;
 using Embervale.UI;
@@ -37,6 +39,9 @@ public sealed partial class PanelShots : ShotHarness
     public MapScreen? Map { get; set; }
 
     public QuestLogPanel? Journal { get; set; }
+
+    /// <summary>The character screen — added in 42A for the Guilds tab.</summary>
+    public InventoryPanel? Character { get; set; }
 
     protected override void BuildShotList()
     {
@@ -146,6 +151,63 @@ public sealed partial class PanelShots : ShotHarness
         });
 
         Shot("13-journal-closed", () => Journal?.SetOpen(false));
+
+        // ⚠️ 42A, AND THE STATES ARE THE POINT — a Guilds tab where all five read "Unaffiliated" is
+        // what the panel draws before anything happens, so it proves the tab exists and nothing
+        // else (41A's trap: a harness shot is only evidence if it drives the thing you changed).
+        // This frame is staged through the SAME story flags a dialogue effect writes, so every one
+        // of the five states below is one a player can actually reach.
+        Shot("14-guilds", () =>
+        {
+            StageGuildStates();
+            Journal?.SetOpen(false);
+            Character?.SetOpen(true);
+            Character?.ShowGuilds();
+        });
+
+        Shot("15-guilds-closed", () => Character?.SetOpen(false));
+    }
+
+    /// <summary>
+    /// Puts each of the five guilds in a different state (42A), so one frame carries the whole
+    /// vocabulary: a ranked member, a finished arc, a departure, a refusal and an untouched order.
+    ///
+    /// ⚠️ Ranks are set as the cumulative run 1..N, exactly as the dialogue effect and the `guild`
+    /// console command do. Setting rank 2 alone would photograph a `RankGap` contradiction and call
+    /// it a promotion.
+    /// </summary>
+    private static void StageGuildStates()
+    {
+        if (ServiceLocator.Instance is not { } locator ||
+            !locator.TryGet(out PlayerCharacter player) ||
+            player.GetComponent<Dialogue.StoryFlagsComponent>() is not { } flags)
+        {
+            return;
+        }
+
+        void Join(string guild, int rank)
+        {
+            flags.Set(GuildRules.OfferedFlag(guild));
+            flags.Set(GuildRules.JoinedFlag(guild));
+            for (int i = 1; i <= rank; i++)
+            {
+                flags.Set(GuildRules.RankFlag(guild, i));
+            }
+        }
+
+        Join(GameIds.Factions.Dawnwardens, 2);
+
+        Join(GameIds.Factions.AshHunters, 3);
+        flags.Set(GuildRules.FinaleFlag(GameIds.Factions.AshHunters));
+
+        Join(GameIds.Factions.IronSyndicate, 1);
+        flags.Set(GuildRules.LeftFlag(GameIds.Factions.IronSyndicate));
+
+        flags.Set(GuildRules.OfferedFlag(GameIds.Factions.VeiledArchive));
+        flags.Set(GuildRules.RefusedFlag(GameIds.Factions.VeiledArchive));
+
+        // The Emberbound are deliberately left untouched — the concealed order the player has never
+        // met is a real state, and it is the one the empty tab is made of.
     }
 
     /// <summary>Starts the sealed-tally errand (41C) and tracks it, so the HUD tracker draws its

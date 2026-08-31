@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="FactionResource" load_steps=2 format=3 uid="uid://cmbrvlfacdawnwrd"]
+
+[ext_resource type="Script" path="res://src/Factions/FactionResource.cs" id="1_faction"]
+
+[resource]
+script = ExtResource("1_faction")
+Id = "faction.dawnwardens"
+DisplayName = "Dawnwardens"
+Description = "Knightly protectors sworn to stand between the valley folk and whatever comes for them. They guard civilization, and they argue among themselves about what that word is worth."
+DefaultReputation = 5
+HostileThreshold = 2
+KillReputationPenalty = 15
+Enemies = Array[String](["faction.outlaws", "faction.hollow"])
+Allies = Array[String](["faction.villagers"])
+RankNameKeys = Array[String](["guild.dawnwardens.rank1", "guild.dawnwardens.rank2", "guild.dawnwardens.rank3"])
+RejoinAllowed = true

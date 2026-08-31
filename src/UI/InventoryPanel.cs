@@ -28,6 +28,7 @@ public partial class InventoryPanel : UiPanel
     private ProgressionComponent? _progression;
     private PerksComponent? _perks;
     private ReputationComponent? _reputation;
+    private Dialogue.StoryFlagsComponent? _flags;
     private CorruptionComponent? _corruption;
     private Embervale.Stats.StatsComponent? _stats;
     private UiTabs _tabs = null!;
@@ -69,7 +70,10 @@ public partial class InventoryPanel : UiPanel
     /// <summary>The character screen's tabs. Spells left in 37.5D for <see cref="SpellbookPanel"/> —
     /// magic had been a fourth tab wearing the gear screen's chrome, which is the opposite of the
     /// distinct arcane identity it needed.</summary>
-    private enum CharTab { Gear, Progression, Perks }
+    /// <summary>Guilds joined the strip in 42A: membership, rank and the five orders' standing are
+    /// the one thing the character screen could not answer, and they do not belong under
+    /// Progression — that tab is about the player's own numbers, this one about who claims them.</summary>
+    private enum CharTab { Gear, Progression, Perks, Guilds }
 
     private CharTab _activeTab = CharTab.Gear;
 
@@ -78,6 +82,7 @@ public partial class InventoryPanel : UiPanel
         (CharTab.Gear, "char.tab_gear"),
         (CharTab.Progression, "char.tab_progression"),
         (CharTab.Perks, "char.tab_perks"),
+        (CharTab.Guilds, "char.tab_guilds"),
     };
 
     protected override string? ToggleAction => GameInput.Inventory;
@@ -115,6 +120,20 @@ public partial class InventoryPanel : UiPanel
         column.AddChild(scroll);
     }
 
+    /// <summary>Selects the Guilds tab through the real tab strip (42A), so `--panelshots` drives
+    /// the same path a click does rather than reaching past it into <c>_activeTab</c>.</summary>
+    public void ShowGuilds()
+    {
+        for (int i = 0; i < TabDefs.Length; i++)
+        {
+            if (TabDefs[i].Tab == CharTab.Guilds)
+            {
+                _tabs.Select(i);
+                return;
+            }
+        }
+    }
+
     protected override void OnReady()
     {
         EventBus.Instance?.Subscribe<InventoryChangedEvent>(OnChanged);
@@ -124,6 +143,12 @@ public partial class InventoryPanel : UiPanel
         EventBus.Instance?.Subscribe<PerkChangedEvent>(OnPerkChanged);
         EventBus.Instance?.Subscribe<ReputationChangedEvent>(OnReputationChanged);
         EventBus.Instance?.Subscribe<CorruptionChangedEvent>(OnCorruptionChanged);
+        EventBus.Instance?.Subscribe<Dialogue.StoryFlagChangedEvent>(OnStoryFlagChanged);
+
+        // ⚠️ Invariant 10 — a wholesale load does NOT replay the individual flag events, so a panel
+        // that only listens to StoryFlagChangedEvent would keep drawing the abandoned timeline's
+        // membership after a quickload. This screen had no load subscription at all before 42A.
+        EventBus.Instance?.Subscribe<GameLoadedEvent>(OnGameLoaded);
     }
 
     public override void _ExitTree()
@@ -135,6 +160,8 @@ public partial class InventoryPanel : UiPanel
         EventBus.Instance?.Unsubscribe<PerkChangedEvent>(OnPerkChanged);
         EventBus.Instance?.Unsubscribe<ReputationChangedEvent>(OnReputationChanged);
         EventBus.Instance?.Unsubscribe<CorruptionChangedEvent>(OnCorruptionChanged);
+        EventBus.Instance?.Unsubscribe<Dialogue.StoryFlagChangedEvent>(OnStoryFlagChanged);
+        EventBus.Instance?.Unsubscribe<GameLoadedEvent>(OnGameLoaded);
     }
 
     public void SetInventory(InventoryComponent? inventory)
@@ -173,6 +200,14 @@ public partial class InventoryPanel : UiPanel
         MarkDirty();
     }
 
+    /// <summary>The player's story flags — the only membership authority the Guilds tab reads
+    /// (Phase 42A). The panel derives every guild line from these and never writes one.</summary>
+    public void SetStoryFlags(Dialogue.StoryFlagsComponent? flags)
+    {
+        _flags = flags;
+        MarkDirty();
+    }
+
     public void SetCorruption(CorruptionComponent? corruption)
     {
         _corruption = corruption;
@@ -202,6 +237,10 @@ public partial class InventoryPanel : UiPanel
 
     private void OnCorruptionChanged(CorruptionChangedEvent e) => MarkDirty();
 
+    private void OnStoryFlagChanged(Dialogue.StoryFlagChangedEvent e) => MarkDirty();
+
+    private void OnGameLoaded(GameLoadedEvent e) => MarkDirty();
+
     protected override void Rebuild()
     {
         UiTheme.ClearChildren(_list);
@@ -219,6 +258,9 @@ public partial class InventoryPanel : UiPanel
                 break;
             case CharTab.Perks:
                 BuildPerks();
+                break;
+            case CharTab.Guilds:
+                BuildGuilds();
                 break;
             default:
                 BuildGear();
@@ -252,6 +294,86 @@ public partial class InventoryPanel : UiPanel
                 UiTheme.ReputationColor(tier));
         }
     }
+
+    /// <summary>
+    /// The Guilds tab (42A): one card per guild, every line DERIVED from the player's story flags
+    /// plus the authored <see cref="FactionResource"/>. The panel is not an authority — it holds no
+    /// membership state, and closing it loses nothing.
+    /// </summary>
+    private void BuildGuilds()
+    {
+        _list.AddChild(UiTheme.SectionRule(Loc.T("guild.header")));
+
+        System.Predicate<string> has = _flags != null ? _flags.Has : _ => false;
+        bool any = false;
+
+        foreach (FactionResource guild in FactionDatabase.All)
+        {
+            if (!guild.IsGuild)
+            {
+                continue;
+            }
+
+            any = true;
+            GuildStanding standing = GuildRules.Resolve(has, guild);
+            _list.AddChild(GuildCard(guild, standing));
+        }
+
+        if (!any)
+        {
+            AddLine(Loc.T("guild.none"), UiTheme.Dim);
+        }
+    }
+
+    private PanelContainer GuildCard(FactionResource guild, GuildStanding standing)
+    {
+        PanelContainer card = UiTheme.Card(standing.IsMember ? UiTheme.Accent : UiTheme.Dim);
+        var col = new VBoxContainer();
+        col.AddThemeConstantOverride("separation", UiTheme.SpaceXs);
+
+        var head = new HBoxContainer();
+        head.AddThemeConstantOverride("separation", UiTheme.SpaceMd);
+        head.AddChild(UiTheme.Header(guild.DisplayName));
+        head.AddChild(Centred(UiTheme.Chip(GuildStateName(standing.State),
+            standing.IsMember ? UiTheme.Accent : UiTheme.GlyphLight)));
+        col.AddChild(head);
+
+        // The rank line names the rank the player HOLDS, from the guild's own authored key list —
+        // never a number on its own, which reads as a score rather than a place in an order.
+        col.AddChild(UiTheme.Body(standing.Rank > 0
+            ? Loc.TF("guild.rank_line", Loc.T(guild.RankNameKeys[standing.Rank - 1]), standing.Rank, guild.RankNameKeys.Count)
+            : Loc.T("guild.rank_none"), standing.Rank > 0 ? null : UiTheme.Dim));
+
+        if (_reputation != null)
+        {
+            ReputationTier tier = ReputationTiers.Of(_reputation.Effective(guild.Id));
+            col.AddChild(UiTheme.Caption(Loc.TF("guild.standing_line",
+                ReputationTiers.DisplayName(tier), _reputation.Get(guild.Id).ToString("+0;-0;0")),
+                UiTheme.ReputationColor(tier)));
+        }
+
+        // A contradiction is a bad authored/saved record, not a player state. It is surfaced rather
+        // than hidden: the alternative is a screen that quietly renders a rank nothing awarded.
+        if (standing.Contradiction != GuildContradiction.None)
+        {
+            col.AddChild(UiTheme.Caption(Loc.TF("guild.contradiction", standing.Contradiction), UiTheme.CorruptionText));
+        }
+
+        MarginContainer pad = UiTheme.Padding(UiTheme.SpaceSm);
+        pad.AddChild(col);
+        card.AddChild(pad);
+        return card;
+    }
+
+    private static string GuildStateName(GuildState state) => Loc.T(state switch
+    {
+        GuildState.Offered => "guild.state.offered",
+        GuildState.Refused => "guild.state.refused",
+        GuildState.Member => "guild.state.member",
+        GuildState.Left => "guild.state.left",
+        GuildState.Finale => "guild.state.finale",
+        _ => "guild.state.unknown",
+    });
 
     private void BuildProgression()
     {
