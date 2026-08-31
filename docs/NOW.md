@@ -22,6 +22,32 @@
   the `guild` console command drives membership through the same story-flag choke point a dialogue
   effect will. Nine factions became thirteen. **Membership persists for free** — `StoryFlagsComponent`
   was already the authority and its `Load` already clears before restoring.
+- **The runtime debugging pass (2026-08-30) ✅ CLOSED — out of band, maintainer-directed, and not a
+  roadmap phase.** A deep audit of world startup, streaming, navigation, combat, magic, quests,
+  save/load, world events and telemetry, and the fixes for what it found. **The headline defect: a
+  new game entered `GameState.Playing` the instant `BuildWorld` returned — which is before the
+  streamer had instanced a single cell, and therefore before a single terrain collider existed — so
+  the first thing a new player did was fall through the world.** Every route into the world (new
+  game, load, portal, fast travel) now goes through one loading gate that holds until the region is
+  whole *and* the physics server reports collision under the player, and a world that cannot be
+  assembled aborts to the title rather than resuming into a hole.
+  - ⚠️ **`RegionStreamer.IsSettled()` no longer counts a failed cell as loaded.** It did, so a region
+    that had lost a cell reported itself ready. Failed cells are retried three times, then
+    `HasFailedCells()` says so and the gate refuses.
+  - ⚠️ **There is no straight-line steering fallback in the AI any more.** `NextPathPoint` returns
+    `null` when navigation is unusable and the actor holds; it used to return the target itself, so
+    every enemy in a freshly streamed cell walked the shortest line to the player through whatever
+    was in the way.
+  - ⚠️ **A spell projectile sweeps its flight in sub-steps no longer than its own radius**
+    (`SpellSweep`), and an AoE no longer reaches through walls.
+  - ⚠️ **`InteractableComponent.Interact` returns `bool`.** Only a successful interaction publishes
+    `InteractionPerformedEvent`, so a refusal no longer advances a quest.
+  - ⚠️ **A missing entry in a save is a RESET, not a skip** — quickloading an older save no longer
+    carries state over from the timeline it abandoned — and **an inventory restore ignores
+    `Capacity`**, because a smaller pack used to silently delete the difference.
+  - Two new gates in `tools/world_quality_check.py`: **`scenes`** (`cell_scene_audit.gd`, every
+    cell's authored nodes are visible, solid and correctly placed) and **`regressions`**
+    (`debug_pass_regressions.gd`, 34 checks pinning this pass's defects).
 - **NEXT: 42B — guild hubs, rosters and the Phase 44 placement handoff.** Give each of the five a
   credible home, a leader, a quartermaster and a quest contact, mapped in the same sub-phase.
 
