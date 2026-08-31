@@ -43,7 +43,7 @@ public partial class AnalyticsSink : Node
         bus.Subscribe<QuestCompletedEvent>(OnQuestCompleted);
         bus.Subscribe<LeveledUpEvent>(OnLevelUp);
         // Stage-A actions (Phase 25.5F): region travel, fast travel, corruption-tier shifts, saves.
-        bus.Subscribe<RegionTransitionRequestedEvent>(OnRegionTransition);
+        bus.Subscribe<RegionChangedEvent>(OnRegionTransition);
         bus.Subscribe<FastTravelRequestedEvent>(OnFastTravel);
         bus.Subscribe<CorruptionTierChangedEvent>(OnCorruptionTier);
         bus.Subscribe<GameSavedEvent>(OnGameSaved);
@@ -63,7 +63,7 @@ public partial class AnalyticsSink : Node
             bus.Unsubscribe<QuestStartedEvent>(OnQuestStarted);
             bus.Unsubscribe<QuestCompletedEvent>(OnQuestCompleted);
             bus.Unsubscribe<LeveledUpEvent>(OnLevelUp);
-            bus.Unsubscribe<RegionTransitionRequestedEvent>(OnRegionTransition);
+            bus.Unsubscribe<RegionChangedEvent>(OnRegionTransition);
             bus.Unsubscribe<FastTravelRequestedEvent>(OnFastTravel);
             bus.Unsubscribe<CorruptionTierChangedEvent>(OnCorruptionTier);
             bus.Unsubscribe<GameSavedEvent>(OnGameSaved);
@@ -121,7 +121,7 @@ public partial class AnalyticsSink : Node
     private void OnLevelUp(LeveledUpEvent e) =>
         Record("level_up", new Godot.Collections.Dictionary { { "level", e.NewLevel } });
 
-    private void OnRegionTransition(RegionTransitionRequestedEvent e) =>
+    private void OnRegionTransition(RegionChangedEvent e) =>
         Record("region_transition", new Godot.Collections.Dictionary { { "region", e.RegionId } });
 
     private void OnFastTravel(FastTravelRequestedEvent e) =>

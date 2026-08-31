@@ -765,6 +765,7 @@ public partial class GameBootstrap : Node3D
 
         if (destination.Id != _currentRegionId)
         {
+            string from = _currentRegionId;
             _streamer!.UnloadAll();
             _currentRegionId = destination.Id;
             _streamer.Configure(destination);
@@ -772,6 +773,10 @@ public partial class GameBootstrap : Node3D
             RegionSetup.RebuildPortals(this, _portals, destination);
             RegionSetup.ApplySafeZones(destination);
             Weave.Set(destination.WeavePotency);
+
+            // The seam every "clean up after a region change" subscriber hangs off. Published here
+            // rather than at the request, because the request is refusable — see RegionChangedEvent.
+            EventBus.Instance?.Publish(new RegionChangedEvent(from, destination.Id));
         }
 
         _player!.Velocity = Vector3.Zero;

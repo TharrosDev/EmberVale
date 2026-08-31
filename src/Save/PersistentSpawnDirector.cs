@@ -75,7 +75,7 @@ public partial class PersistentSpawnDirector : Node, ISaveable
         }
 
         AssignIdentity(host, templateId, persistentId);
-        host.Position = position;
+        host.Position = World.WorldGround.Lift(position);
         host.RotationDegrees = new Vector3(host.RotationDegrees.X, yawDegrees, host.RotationDegrees.Z);
 
         GetParent().AddChild(host);
@@ -183,7 +183,9 @@ public partial class PersistentSpawnDirector : Node, ISaveable
         {
             if (_tracked.TryGetValue(kv.Key, out IEntity? live) && live.Body is Node node && IsInstanceValid(node))
             {
-                live.Body.GlobalPosition = kv.Value.Pos;
+                // Lifted, never lowered: a saved position that predates a landform edit otherwise
+                // rebuilds the actor inside the hillside (World.WorldGround.Lift).
+                live.Body.GlobalPosition = World.WorldGround.Lift(kv.Value.Pos);
                 live.Body.RotationDegrees = new Vector3(live.Body.RotationDegrees.X, kv.Value.Yaw, live.Body.RotationDegrees.Z);
             }
             else

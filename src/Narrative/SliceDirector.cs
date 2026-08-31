@@ -30,15 +30,15 @@ public partial class SliceDirector : Node
 
     public override void _Ready()
     {
-        EventBus.Instance?.Subscribe<RegionTransitionRequestedEvent>(OnRegionTransition);
+        EventBus.Instance?.Subscribe<RegionChangedEvent>(OnRegionTransition);
     }
 
     public override void _ExitTree()
     {
-        EventBus.Instance?.Unsubscribe<RegionTransitionRequestedEvent>(OnRegionTransition);
+        EventBus.Instance?.Unsubscribe<RegionChangedEvent>(OnRegionTransition);
     }
 
-    private void OnRegionTransition(RegionTransitionRequestedEvent e)
+    private void OnRegionTransition(RegionChangedEvent e)
     {
         if (Flags() is not { } flags || !flags.Has(BossEncounterDirector.DefeatedFlag) ||
             flags.Has(CompletedFlag))

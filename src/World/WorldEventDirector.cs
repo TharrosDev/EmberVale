@@ -52,7 +52,7 @@ public partial class WorldEventDirector : Node3D
         ServiceLocator.Instance?.Register(this);
         EventBus.Instance?.Subscribe<EntityDiedEvent>(OnEntityDied);
         EventBus.Instance?.Subscribe<ItemPickedUpEvent>(OnItemPickedUp);
-        EventBus.Instance?.Subscribe<RegionTransitionRequestedEvent>(OnRegionTransition);
+        EventBus.Instance?.Subscribe<RegionChangedEvent>(OnRegionTransition);
     }
 
     public override void _ExitTree()
@@ -60,13 +60,13 @@ public partial class WorldEventDirector : Node3D
         ServiceLocator.Instance?.Unregister(this);
         EventBus.Instance?.Unsubscribe<EntityDiedEvent>(OnEntityDied);
         EventBus.Instance?.Unsubscribe<ItemPickedUpEvent>(OnItemPickedUp);
-        EventBus.Instance?.Unsubscribe<RegionTransitionRequestedEvent>(OnRegionTransition);
+        EventBus.Instance?.Unsubscribe<RegionChangedEvent>(OnRegionTransition);
     }
 
     /// <summary>A region transition leaves an in-progress event's raiders behind in the old region.
     /// Abort it through the existing <see cref="Fail"/> path so they're despawned and the cooldown is
     /// stamped — no orphaned spawns or stuck <c>_active</c> carried across the boundary.</summary>
-    private void OnRegionTransition(RegionTransitionRequestedEvent e)
+    private void OnRegionTransition(RegionChangedEvent e)
     {
         if (_active != null)
         {
@@ -194,8 +194,13 @@ public partial class WorldEventDirector : Node3D
     {
         for (int i = 0; i < count; i++)
         {
+            // ⚠️ Each member is placed on the ground it personally lands on, not on the group
+            // origin's. The jitter is up to a metre in each direction and the origin was validated
+            // once for the whole band, so on any slope some of them spawned inside it.
             Vector3 jitter = new(GD.Randf() * 2f - 1f, 0f, GD.Randf() * 2f - 1f);
-            EnemyEntity enemy = EnemyTemplateRegistry.Create(worldEvent.Resource.EnemyTemplateId, worldEvent.Origin + jitter);
+            EnemyEntity enemy = EnemyTemplateRegistry.Create(
+                worldEvent.Resource.EnemyTemplateId,
+                SpawnPlacement.Resolve(this, worldEvent.Origin + jitter));
             GetParent().AddChild(enemy);
 
             EnemyScaling.ApplyHealthMultiplier(enemy, worldEvent.Resource.HealthMultiplier, "world_event.champion");
@@ -213,7 +218,7 @@ public partial class WorldEventDirector : Node3D
             // WorldEvents places it from a safe-zone ring at a fixed height (see SafeZones), which on
             // real terrain is inside a hillside as often as above it.
             GetParent().AddChild(ItemPickupFactory.Create(
-                item, Mathf.Max(1, r.CacheQuantity), WorldGround.OnGround(worldEvent.Origin)));
+                item, Mathf.Max(1, r.CacheQuantity), SpawnPlacement.Resolve(this, worldEvent.Origin)));
         }
     }
 
@@ -401,14 +406,17 @@ public partial class WorldEventDirector : Node3D
         }
     }
 
+    /// <summary>The cache path's ring point. ⚠️ The Y comes from the ground — the literal 0.5 that
+    /// was here is the same defect <see cref="SafeZones.TryRingPointOutside"/> already carries a
+    /// warning about: on real terrain a fixed spawn height is inside a hillside as often as above
+    /// one, and a loot cache buried in a slope is one the player can see and never reach.</summary>
     private Vector3 RingPointAround(Vector3 center, WorldEventResource r)
     {
         float angle = GD.Randf() * Mathf.Tau;
         float distance = Mathf.Lerp(r.SpawnDistanceMin, r.SpawnDistanceMax, GD.Randf());
-        return new Vector3(
-            center.X + (Mathf.Cos(angle) * distance),
-            0.5f,
-            center.Z + (Mathf.Sin(angle) * distance));
+        float x = center.X + (Mathf.Cos(angle) * distance);
+        float z = center.Z + (Mathf.Sin(angle) * distance);
+        return new Vector3(x, WorldGround.HeightAt(x, z) + 0.5f, z);
     }
 
     private double NextInterval()
