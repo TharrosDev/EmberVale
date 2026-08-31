@@ -151,7 +151,9 @@ public sealed partial class RegionStreamer : Node3D
     /// <summary>True when at least one cell has exhausted its retries. The region can never settle
     /// while this holds; the caller decides what an unbuildable world means (the bootstrap refuses
     /// to leave the loading screen for it).</summary>
-    public bool HasFailedCells => _failed.Count > 0;
+    /// ⚠️ A method, not a property, on purpose: the in-engine probes in <c>tools/</c> reach it
+    /// through GDScript's <c>call()</c>, which only sees methods.
+    public bool HasFailedCells() => _failed.Count > 0;
 
     /// <summary>The ids of the cells that could not be brought in, for the error the player sees.</summary>
     public IReadOnlyCollection<string> FailedCellIds => _failed;
@@ -180,7 +182,12 @@ public sealed partial class RegionStreamer : Node3D
         // free callback — it walks every cell, and StartThreadedRequests reads the static-memory
         // performance monitor — and residency (38M2) means there is nothing left for it to decide.
         // Configure and UnloadAll are the only two things that create work, and both re-arm it.
-        if (IsSettled() || (_pending.Count == 0 && _requests.Count == 0 && _ready.Count == 0))
+        // ⚠️ EVERY CELL RESOLVED, NOT "NOTHING IN FLIGHT". A cell between retries is in none of the
+        // three staging sets for the rest of the frame it failed on, so testing those alone parked
+        // the sweep on the frame the last other cell finished — and nothing re-arms it but Configure
+        // or UnloadAll, so the cell was left with retries it would never take and the region could
+        // never settle. Resolved means loaded, or retired after MaxAttempts.
+        if (_loaded.Count + _failed.Count == _cells.Count)
         {
             SetProcess(false);
         }

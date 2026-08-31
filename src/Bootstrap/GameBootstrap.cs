@@ -946,7 +946,7 @@ public partial class GameBootstrap : Node3D
 
         // A cell that has exhausted its retries means the region can never be whole. Waiting out
         // the cap would only delay the same verdict, so say it now.
-        if (_streamer is { HasFailedCells: true })
+        if (_streamer != null && _streamer.HasFailedCells())
         {
             _loadingElapsed = -1d;
             _onLoadingSettled = null;

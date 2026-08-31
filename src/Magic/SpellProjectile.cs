@@ -117,7 +117,7 @@ public partial class SpellProjectile : Area3D
         // the space state directly fixes both: no gap is larger than the bolt, and every query is
         // for where the bolt is now.
         float distance = _spell.ProjectileSpeed * (float)delta;
-        int steps = Mathf.Clamp(Mathf.CeilToInt(distance / Radius), 1, MaxSubSteps);
+        int steps = SpellSweep.SubStepCount(distance, Radius, MaxSubSteps);
         Vector3 step = _direction * (distance / steps);
         _life -= delta;
 
