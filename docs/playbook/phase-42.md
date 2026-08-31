@@ -23,7 +23,7 @@
     derive from it; `ValidateGuilds` closes the five-guild set from both sides. Zero new save
     surface — see the retrospective below.
 
-- [ ] **42B — Guild hubs, rosters and Phase 44 placement handoff** `[C]`
+- [x] **42B — Guild hubs, rosters and Phase 44 placement handoff** `[C]` ✅
   - **Goal:** give each organization a credible home before quest content depends on it.
   - **Build / Author:** assign a primary hub/territory, leader, quartermaster, quest contact and rank
     peer to each guild. Place only what current regions support; give Phase 44 exact cell/location ids
@@ -33,6 +33,10 @@
   - **Verify:** map generator/probe, schedule destinations, dialogue/flag reachability, travel-node
     approach and eye-level front/back captures.
   - **Done when:** every hub/actor has one owner and all currently reachable hubs are mapped/playable.
+  - **Done:** five structures of five different kinds, fourteen new officers with
+    membership-aware greetings, five leader routines and five map pins — all in the Ember
+    Crown, all mapped, all walkable. `FactionResource` gained a hub id and a four-role
+    roster; nothing else was invented. See the retrospective below.
 
 - [ ] **42C — Dawnwardens recruitment and probation** `[C]`
   - **Goal:** establish protection of civilians and the tension between duty and coercive order.
@@ -207,5 +211,112 @@ mutator's argument parsing has no automated caller. What IS driven is the path i
    its own component. 42B adds actors whose greeting depends on membership: **the grep before
    shipping is not "does it update when the flag changes" but "what happens after a wholesale load,
    which replays no events at all".**
+
+---
+
+---
+
+## 42B — a hub is a map location and an officer is a placed actor
+
+42A's carry-forward said to ask what kind of thing a hub already is before authoring a hub kind, and
+the answer held twice. **A guild's home needs a name, a category, a pin, a cell and discovery rules,
+which is a `MapLocationResource` entire; a guild's officer needs a body, a collider, a schedule, a
+faction and a conversation, which is an authored `Entity` in a cell scene.** So `FactionResource`
+gained five strings — `HubLocationId`, `LeaderNpcId`, `QuartermasterNpcId`, `ContactNpcId`,
+`RankPeerNpcId` — and there is no `GuildHubResource`, no `GuildHubComponent` and no second registry.
+Map coverage came free: the hub IS a map location, so `ValidateMapMarkersArePlaced` already had it.
+
+**The rank peer is declared and not placed, on purpose.** A peer only means anything once there is a
+rank to be a peer of, so the field exists and the four arcs that grant rank one (42C/E/G/I) fill it.
+`ValidateGuildHubs` requires the other three and accepts an empty peer, which is the difference
+between a deferred role and a stub.
+
+**The Iron Syndicate's contact is Wren Halloway**, who was already standing at the Crossway hiring
+post with a service conversation of her own. A roster entry may name an actor who already exists; it
+is not a licence to rewrite their conversation, and `--guild-shots` skips the greeting assertion for
+an officer whose dialogue declares no guild condition rather than failing on her.
+
+### Membership-aware dialogue without a hand-written flag
+
+`DialogueResource` has one `StartNodeId` and nothing conditions it, so the root line of every officer
+is a neutral hail and the two greetings hang off two mutually exclusive choices — the membership-aware
+greeting is the first *exchange* rather than the first line. Those choices needed a condition, and
+`HasFlag` with a `guild.dawnwardens.joined` argument would have put a DERIVED string into authored
+data, which is exactly what invariant 18 forbids — and it would have read a rank flag raw, skipping
+the two rules only `GuildRules.Resolve` knows (a player who LEFT is not a member however many rank
+flags survive; a rank gap does not promote). So `DialogueCondition` gained **`GuildRankAtLeast` (14)**
+and **`GuildNotMember` (15)**, both resolved through `GuildRules`.
+
+⚠️ **`GuildRankAtLeast` always asks for rank 0 in authored data, and the generator has no rank knob.**
+The pair has to be EXHAUSTIVE: gate the member branch on rank 1 and a player who has joined but not
+yet been promoted matches neither branch, and the root node becomes a dead end for a state the game
+can really be in. A rank-gated line is a THIRD branch for the arc that grants the rank, never a
+narrowing of this one.
+
+### Retrospective + traps
+
+⚠️ **A LEVELLED PAD IS USUALLY A ROAD.** Every hub was first placed inside an existing `GroundArea`,
+on the reasoning that the ground there is already flat and already reached — and it is flat and
+reached *because the settlement's road runs through it*. `Area_crossway_compound` is 12 m deep and
+`Path_crossway_compound` plus its shoulder is 7 m of that; `Area_hollowreach_street` is 8 m deep and
+is 8 m of road plus 2 m of shoulder. Two hubs were built across their cells' roads. **`--validate`
+passed. The layout gate passed. The scene audit passed.** The only thing that said so was
+`world_traversal_probe.gd`, reporting four authored routes with no navigation path through them and a
+capsule snagging on two officers' colliders. Both hubs now stand on their own `Yard` beside the road,
+authored in `tools/region_spec_ember.py`. This is NOW.md invariant 21.
+
+⚠️ **THE RENDER FOUND WHAT NOTHING ELSE COULD, THREE TIMES.** The Wardens' Watch and the Ledger House
+had their **doors facing away from their own approach** — a keep whose entrance opens onto empty
+ground reads as scenery, and no gate has an opinion about which way a door points. A dead pine at
+Hollowreach grew **through** the Ledger House's corner while clearing the layout checker's required
+distance. And the Undercroft camera, dropped at a literal 1.75 m above the hub's own Y, photographed
+**the inside of the pit rim** — invariant 6 from the other side. `GuildShots.OnGround` raycasts every
+camera onto the terrain now, as `world_shots.gd` already did.
+
+⚠️ **`DialogueStartedEvent` IS IGNORED OVER A LIVE SESSION, AND THAT MADE A CONFIDENT WRONG FRAME.**
+The member greeting shot photographed the stranger shot's still-open node under the member shot's
+filename — the exact off-by-one `ShotHarness`'s own header was written about, wearing a different
+hat. The guard is right for gameplay (two NPCs must not talk over each other); `DialoguePanel` gained
+`EndConversation()` and the harness closes between the two shots.
+
+⚠️ **Adopting a raw model from the library is not a file copy, and the Blender MCP is not connected.**
+The `medieval_village` glTFs carry their scale on a **parent node** (`assets/CREDITS.md` records
+this), so `fantasy_barracks.glb` imports at roughly two centimetres. Four adoptions were reverted and
+the hubs are composed from the already-adapted megakit modules instead — step 1 of the asset ladder,
+and cheaper than step 4 was ever going to be. `compose_building.py` gained **`--open`**: three walls,
+no front run, no door and no floor, because the terrain is the floor and a laid one would put a 20 cm
+lip across the very side the building exists to be walked into.
+
+**Observed, not introduced, and left for a future pass:** `ember_crown.wilds_north`'s steep faces show
+concentric chevron banding in the terrain material, and `ember_crown.fen_edge`'s animated water fails
+the `visuals` gate's `static peak` metric under `--mode full` while passing standalone and under
+`--mode visual`. Both cells' generated terrain is byte-identical to `origin/main` on this branch.
+
+### The Phase 44 placement handoff
+
+Two orders have a hub the current world can hold and a greater house it cannot. 44 owns both, with
+these exact ids reserved:
+
+| Guild | Placed now | Phase 44 owes it | Reserved id |
+| --- | --- | --- | --- |
+| Veiled Archive | `location.embermarket.annexe` — a reading room | the great library, in Sunspire | `location.sunspire.library` |
+| Ash Hunters | `location.wilds.lodge` — a field lodge | a field station in the Ashen Wilds | `location.ashen.station` |
+
+Neither is a move: the Annexe and the Deadfall stay where they are and stay owned by their guilds.
+44 adds the second house, and `FactionResource.HubLocationId` keeps naming the PRIMARY one.
+
+### Two things worth carrying into the next sub-phase
+
+1. ⚠️ **THE GATE THAT FINDS A PLACEMENT DEFECT IS ALMOST NEVER THE ONE THAT NAMES THE THING YOU
+   PLACED.** `--validate`, the layout checker and the scene audit all passed on two buildings sitting
+   across roads; the traversal probe found it, and a render found the doors and the tree. 42C places a
+   field partner and a civilian threat: **run `world_traversal_probe.gd` and render the result before
+   believing a placement, and treat a green `--validate` as evidence about DATA, not about ground.**
+2. ⚠️ **AN OFFICER'S GREETING IS DERIVED, SO IT SURVIVES A LOAD FOR FREE — AND ONLY WHILE THAT STAYS
+   TRUE.** `--guild-shots` stages membership on all fourteen, loads a save taken before any of it, and
+   proves every leader is back to the stranger line, because nothing caches the answer. 42C adds a
+   join, a refusal and a probation state: **the moment any surface stores what `GuildRules` can
+   derive, the wholesale-load path stops being free and starts being a bug**, and a load replays no
+   events to correct it.
 
 ---
