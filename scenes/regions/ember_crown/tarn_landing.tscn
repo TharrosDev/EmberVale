@@ -44,9 +44,13 @@
 ; shoreline reads, the player can wade, and nothing has to be built to support it.
 ;
 ; ⚠️ The dock and the jetties are built to stand IN water: their posts run below their own origin
-; (dock min.y = -2.35, jetty min.y = -1.05), measured off the written .glb. The jetties are therefore
-; sunk 0.30 m so their decks land flush at +0.04 rather than as a 34 cm kerb — CharacterBody3D has no
-; step-up (38K), and a deck you catch your feet on is worse than a deck you walk over.
+; (dock min.y = -2.35, jetty min.y = -1.05), measured off the written .glb.
+; ⚠️ THE JETTIES ARE NO LONGER SUNK 0.30 m — THEY ARE terrain_absolute AT Y = 0 (2026-08-31), and the
+; block above them says why at length. A 0.30 m sink was a clearance against a flat floor; once the
+; overhaul cut this basin to -4.20 a clearance became the wrong unit for a thing that stands in water,
+; and both decks went 4.25 m under.
+; ⚠️ THE DOCK COMPLEX HAS NOT BEEN GIVEN THE SAME TREATMENT and is still 4.25 m under, as is the rock
+; cluster RocksE out in the tarn. Same defect, same fix, their own deck heights.
 ;
 ; ⚠️ Cell placed at Center (-106, 0, -10), abutting wilds_west's 50 m floor which ends at x = -80: a
 ; 52 m floor centred at x = -106 starts exactly there. Every transform here is LOCAL. The road in is
@@ -188,14 +192,28 @@ transform = Transform3D(0.9848, 0, 0.1736, 0, 1, 0, -0.1736, 0, 0.9848, -6, 0, 1
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.3, 0)
 shape = SubResource("Shape_dock_house")
 
-; Sunk 0.30 m so the deck lands flush — see the header note about step-up.
-[node name="JettyNorth" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18, -0.3, 6)
+; ⚠️ terrain_absolute: THE ONLY NODES IN THIS CELL WHOSE Y IS A WORLD HEIGHT RATHER THAN A CLEARANCE.
+; Everywhere else WorldTerrainConform adds the ground under the node — and the ground under a jetty
+; standing in the tarn is the BASIN FLOOR at -4.20. Sunk 0.30 m they landed flush on the old flat
+; floor; the 2026-08-29 overhaul cut the basin and took them down with it, decks 4.25 m under a
+; declared water surface, where nothing reported it because a drowned prop breaks no invariant.
+;
+; Y IS NOW ABSOLUTE AND IT IS THE WATERLINE THAT SETS IT, not the ground. The model's deck planks span
+; +0.12..+0.33 above its origin and its posts reach -1.05 (parsed from prp_jetty.glb, whose .import
+; carries root_scale 2.98 — the numbers are not the ones in the raw mesh). So Y = 0 puts the deck top
+; at +0.33, 0.28 m of freeboard over the 0.05 waterline, with the posts 1.10 m into the water.
+; ⚠️ HERE THE DECK SITS BELOW THE BANK, AND THAT IS THE CHOICE. The spit's shore stands +0.8 to +1.1,
+; so you step DOWN half a metre onto these landings instead of walking out level as at Hollowreach.
+; Matching the bank instead would lift the posts nearly clear of the water; freeboard is the constant
+; worth holding across both cells, because it is the one a re-authored bank cannot invalidate.
+; ⚠️ MOVE THE WATER'S SurfaceY AND THESE TWO MUST MOVE WITH IT. Nothing links them.
+[node name="JettyNorth" type="Node3D" parent="Nav" groups=["terrain_absolute"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18, 0, 6)
 
 [node name="Model" parent="Nav/JettyNorth" instance=ExtResource("11_jetty")]
 
-[node name="JettySouth" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -1, -0.3, 16)
+[node name="JettySouth" type="Node3D" parent="Nav" groups=["terrain_absolute"]]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -1, 0, 16)
 
 [node name="Model" parent="Nav/JettySouth" instance=ExtResource("11_jetty")]
 

@@ -62,10 +62,14 @@
 ; the tarn read as flat grey ground, because a transparent surface needs something dark to be
 ; transparent against. That finding is carried here rather than re-earned.
 ;
-; ⚠️ The jetties are sunk 0.30 m so their decks land flush. Their posts run below their own origin
-; (jetty min.y = -1.05, dock min.y = -2.35 — measured off the written .glb, not the viewport), and a
-; deck standing proud is a 34 cm kerb, which with no step-up on CharacterBody3D (38K) is an invisible
-; wall across the one route to the water.
+; ⚠️ THE JETTIES ARE NO LONGER SUNK 0.30 m — THEY ARE terrain_absolute AT Y = 0 (2026-08-31), and
+; the block above them says why at length. The 0.30 m was a clearance against a flat floor; once the
+; overhaul cut the channels 3.20 m down, a clearance is exactly the wrong unit for a thing that
+; stands in water. Their posts still run below their own origin (jetty min.y = -1.05, dock
+; min.y = -2.35 — measured off the written .glb, not the viewport).
+; ⚠️ AND THE DOCK AND THE HARBOURSHED HAVE NOT BEEN GIVEN THE SAME TREATMENT: DockComplex sits 4.55 m
+; under the open water and Harbourshed 3.25 m under the north channel, both still conformed. They are
+; the same defect and want the same fix at their own deck heights.
 ;
 ; ⚠️ Cell placed at Center (-106, 0, 74): a 52 m floor spanning x -132..-80, z 48..100. Tarn's Landing
 ; is the same x band ending at z 16, so the two share a coastline with 32 m of unbuilt water between
@@ -246,14 +250,25 @@ transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -21, 0, 2)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.3, 0)
 shape = SubResource("Shape_dock_house")
 
-; Sunk 0.30 m so the decks land flush — see the header note about step-up.
-[node name="JettyNorth" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, -0.3, -9)
+; ⚠️ terrain_absolute: THE ONLY NODES IN THIS CELL WHOSE Y IS A WORLD HEIGHT RATHER THAN A CLEARANCE.
+; Everywhere else WorldTerrainConform adds the ground under the node — and the ground under a jetty
+; is the CHANNEL FLOOR. Sunk 0.30 m they landed flush on the old flat floor; the 2026-08-29 overhaul
+; cut the channels to -3.20 and took them down with it, decks 3.25 m under a declared water surface,
+; where nothing reported it because a drowned prop breaks no invariant anyone had written.
+;
+; Y IS NOW ABSOLUTE AND IT IS THE WATERLINE THAT SETS IT, not the ground. The model's deck planks span
+; +0.12..+0.33 above its origin and its posts reach -1.05 (parsed from prp_jetty.glb, whose .import
+; carries root_scale 2.98 — the numbers are not the ones in the raw mesh). So Y = 0 puts the deck top
+; at +0.33: 0.28 m of freeboard over the 0.05 waterline, 0.03 m above the spine it runs off — the
+; flush reading the old -0.30 was reaching for — and the posts 1.10 m into the water.
+; ⚠️ MOVE THE WATER'S SurfaceY AND THESE TWO MUST MOVE WITH IT. Nothing links them.
+[node name="JettyNorth" type="Node3D" parent="Nav" groups=["terrain_absolute"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, -9)
 
 [node name="Model" parent="Nav/JettyNorth" instance=ExtResource("11_jetty")]
 
-[node name="JettySouth" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, -0.3, 11)
+[node name="JettySouth" type="Node3D" parent="Nav" groups=["terrain_absolute"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, 11)
 
 [node name="Model" parent="Nav/JettySouth" instance=ExtResource("11_jetty")]
 
