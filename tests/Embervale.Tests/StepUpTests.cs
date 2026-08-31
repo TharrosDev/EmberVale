@@ -87,9 +87,10 @@ public class StepUpTests
     }
 
     /// <summary>
-    /// The number that closes the live mismatch: every cell authors <c>agent_max_climb = 0.5</c>, so a
-    /// body that can climb less than that is being pathed past by NPCs onto ground it cannot reach.
-    /// <c>ContentValidator</c> pins the two together; this pins the constant the rule compares against.
+    /// The number that closes the live mismatch: no cell may ask for an <c>agent_max_climb</c> above
+    /// this, or NPCs are pathed onto ground the player cannot follow them onto. (The bake then FLOORS
+    /// each cell's climb to a <c>cell_height</c> voxel, so what is baked sits at or below it — 0.3 on a
+    /// 0.3 grid.) <c>ContentValidator</c> holds the ceiling; this pins the constant it compares against.
     /// </summary>
     [Fact]
     public void TheStepMatchesTheNavmeshAgentClimb()

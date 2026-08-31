@@ -18,24 +18,33 @@
 ; finds a shut hatch and a woman asleep, which is the shop's OpenHour said in a second language.
 ;
 ; ScheduleComponent walks a straight line with no pathing, so every point is on open board or shingle.
+;
+; ⚠️ ALL THREE POINTS WERE IN THE LAKE, AND A SCHEDULE IS WHY MOVING THE NPC IS NOT THE WHOLE FIX
+; (2026-08-31). They were authored over the old flat floor at (-18, 4), (-14, 2) and (-17, 3); the
+; 2026-08-29 overhaul carved that water into a real 4.5 m basin, so she spent twenty hours a day
+; standing 2.8 to 4.6 m under a declared surface. Moving her .tscn transform alone would have walked
+; her straight back in at 19:00. The points are now the dry equivalents of the same three beats:
+; she sleeps at the spine's west end by her moored hull, walks out to the north jetty's landward
+; head at dusk, and works the dark hours beside BrazierA. ⚠️ THE DRY GROUND IS +0.30 AGAINST A 0.05
+; WATERLINE and it ends at x = -13 — a point west of that is back in the basin.
 
 [sub_resource type="Resource" id="e_0"]
 script = ExtResource("2_entry")
 StartHour = 5
 Activity = "Asleep aboard the hull"
-Destination = Vector3(-18, 0, 4)
+Destination = Vector3(-12, 0, -0.5)
 
 [sub_resource type="Resource" id="e_1"]
 script = ExtResource("2_entry")
 StartHour = 19
 Activity = "Walking out to the pier head"
-Destination = Vector3(-14, 0, 2)
+Destination = Vector3(-7.5, 0, -5)
 
 [sub_resource type="Resource" id="e_2"]
 script = ExtResource("2_entry")
 StartHour = 20
 Activity = "Trading by the brazier"
-Destination = Vector3(-17, 0, 3)
+Destination = Vector3(-9.5, 0, -3.5)
 
 [resource]
 script = ExtResource("1_sched")

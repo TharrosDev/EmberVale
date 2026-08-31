@@ -1217,15 +1217,23 @@ public static class ContentValidator
     /// (Phase 39C).
     ///
     /// ⚠️ <b>This mismatch was live for the whole project and nothing could see it.</b> Every cell
-    /// authors <c>agent_max_climb = 0.5</c>, and before 39C a <c>CharacterBody3D</c> climbed
-    /// <c>floor_snap_length</c> — 0.1 m. So the navmesh happily baked NPC routes over ground the
+    /// asked for <c>agent_max_climb = 0.5</c>, and before 39C a <c>CharacterBody3D</c> climbed
+    /// <c>floor_snap_length</c> — 0.1 m. So the navmesh baked NPC routes over ground the
     /// player could not follow them onto, and the only symptom was a townsman walking somewhere you
     /// could not. The cells were authored around it instead: <c>embermarket.tscn</c> deleted a 0.3 m
     /// dais over exactly this, and every ground slab in the realm is a collider-less skin.
     ///
-    /// Now that <see cref="StepUp.MaxHeight"/> answers the same number, this keeps them answering it.
+    /// Now that <see cref="StepUp.MaxHeight"/> bounds the same number, this keeps it bounded.
     /// The day someone raises a cell's <c>agent_max_climb</c> for a new piece of terrain, the bug
     /// comes back **silently** — a navmesh is not something anyone re-reads.
+    ///
+    /// ⚠️ <b>IT IS A CEILING, NOT AN EQUALITY, AND THE AUTHORED NUMBER IS NOT THE BAKED ONE.</b> Recast
+    /// FLOORS <c>agent_max_climb</c> into whole <c>cell_height</c> voxels (while CEILING agent height
+    /// and radius), so the 0.5 every cell used to author baked as 0.3 on a 0.3 grid and warned about the
+    /// lost precision once per load. The cells now author the floored value — the bake is unchanged, the
+    /// warnings are gone, and this rule still passes because floored climb is *below* the step-up.
+    /// So do not "fix" a cell by raising its climb back to <see cref="StepUp.MaxHeight"/>: unless the
+    /// value divides its <c>cell_height</c> exactly, that only restores the warning.
     ///
     /// ponytail: a regex over the scene text, exactly as <see cref="CollectSceneAuthoredFlags"/> does
     /// and for the same reason — the validator runs headless and must not instantiate cells to answer
@@ -1236,15 +1244,107 @@ public static class ContentValidator
     /// </summary>
     private static void ValidateStepUp(List<string> issues)
     {
-        foreach (string path in ScenePaths("res://scenes/regions/ember_crown"))
+        // ⚠️ The whole tree, not the two region folders: roost.tscn sits at res://scenes/regions and
+        // was outside this gate for its whole life.
+        foreach (string path in ScenePaths("res://scenes/regions"))
         {
             CheckAgentClimb(path, issues);
+            CheckAgentVoxelGrid(path, issues);
+        }
+    }
+
+    /// <summary>
+    /// The agent dims a cell authors against the voxel grid it bakes on (the 2026-08-31 pass).
+    ///
+    /// ⚠️ <b>Recast quantises all three and only says so in a warning nobody reads.</b>
+    /// <c>agent_height</c> and <c>agent_radius</c> CEIL to a voxel, <c>agent_max_climb</c> FLOORS to
+    /// one — so an off-grid value is not honoured, it is rounded, and the file then lies about the
+    /// agent the cell actually bakes. Every cell in the realm carried <c>agent_height = 1.75</c> on a
+    /// 0.3 grid (baked 1.8) and <c>agent_max_climb = 0.5</c> (baked 0.3) from the 2026-08-29 overhaul
+    /// onward, while three headers claimed the dims "still sit on the voxel grid" — prose is not a
+    /// gate, which is why this is one.
+    ///
+    /// It fails on a mismatch rather than rounding for the author, because the two roundings go in
+    /// opposite directions: silently accepting 0.5 would hide that NPCs get 0.3, and that number is
+    /// what decides how tall a piece of raised ground may be (<see cref="Movement.StepUp"/>).
+    ///
+    /// A cell that authors no <c>cell_size</c>/<c>cell_height</c> is skipped — it bakes on the
+    /// <c>NavigationMesh</c> defaults, which its defaults divide exactly.
+    /// </summary>
+    private static void CheckAgentVoxelGrid(string path, List<string> issues)
+    {
+        using FileAccess? file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
+        if (file == null)
+        {
+            return;
         }
 
-        foreach (string path in ScenePaths("res://scenes/regions/frostfang_reach"))
+        // Per NavigationMesh block, not per file: a cell may hold more than one, on different grids.
+        // A block runs to the next '[' header, so trailing prose comes with it — harmless, because
+        // every read below is anchored to the start of a line and a header comment starts with ';'.
+        foreach (System.Text.RegularExpressions.Match block in
+                 System.Text.RegularExpressions.Regex.Matches(
+                     file.GetAsText(),
+                     "(?ms)^\\[sub_resource type=\"NavigationMesh\".*?(?=^\\[|\\z)"))
         {
-            CheckAgentClimb(path, issues);
+            string text = block.Value;
+            if (!TryReadNavFloat(text, "cell_size", out float cellSize) ||
+                !TryReadNavFloat(text, "cell_height", out float cellHeight) ||
+                cellSize <= 0f ||
+                cellHeight <= 0f)
+            {
+                continue;
+            }
+
+            CheckOnGrid(path, text, "agent_height", cellHeight, "cell_height", ceil: true, issues);
+            CheckOnGrid(path, text, "agent_radius", cellSize, "cell_size", ceil: true, issues);
+            CheckOnGrid(path, text, "agent_max_climb", cellHeight, "cell_height", ceil: false, issues);
         }
+    }
+
+    private static void CheckOnGrid(
+        string path,
+        string text,
+        string property,
+        float voxel,
+        string voxelProperty,
+        bool ceil,
+        List<string> issues)
+    {
+        if (!TryReadNavFloat(text, property, out float authored))
+        {
+            return;
+        }
+
+        double voxels = authored / (double)voxel;
+        double baked = (ceil ? System.Math.Ceiling(voxels) : System.Math.Floor(voxels)) * voxel;
+        if (System.Math.Abs(baked - authored) <= 0.0001d)
+        {
+            return;
+        }
+
+        issues.Add(
+            $"cell scene '{path}' authors {property} {authored} on a {voxelProperty} of {voxel}, which " +
+            $"is not a whole number of voxels — the bake {(ceil ? "ceils" : "floors")} it to {baked:0.###} " +
+            $"and warns about the lost precision. Author {baked:0.###}, or change {voxelProperty}");
+    }
+
+    /// <summary>
+    /// ⚠️ <b>Anchored to the start of a line</b>, for the reason
+    /// <see cref="CheckAgentClimb"/> gives: a cell header is prose in the same file and discusses
+    /// these properties by name.
+    /// </summary>
+    private static bool TryReadNavFloat(string text, string property, out float value)
+    {
+        value = 0f;
+        System.Text.RegularExpressions.Match match =
+            System.Text.RegularExpressions.Regex.Match(text, $@"(?m)^{property} = ([0-9.]+)");
+        return match.Success &&
+            float.TryParse(
+                match.Groups[1].Value,
+                System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out value);
     }
 
     private static void CheckAgentClimb(string path, List<string> issues)

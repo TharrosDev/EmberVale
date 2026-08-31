@@ -20,14 +20,18 @@
 ; ⚠️ THE NAV VOXEL GRID COARSENED WITH THE WORLD (the 2026-08-29 geography overhaul). Cells
 ; went from 52 m squares on a flat slab to 90-200 m of real terrain, and a 0.25 m voxel over
 ; five times the area is twenty-five times the columns to rasterise — the traversal probe timed
-; out waiting for the bake. agent_* dims still sit on the voxel grid to avoid precision warnings.
+; out waiting for the bake. ⚠️ AND THE agent_* DIMS DID NOT FOLLOW. On the 0.25 grid 1.75 and
+; 0.5 were whole voxels; on this one they are not, so every bake quantised them and warned. The
+; values below are the QUANTISED ones, so the file now says what the bake does: agent_height and
+; agent_radius CEIL to a voxel (cell_height / cell_size), agent_max_climb FLOORS to cell_height.
+; ⚠️ They encode this grid — change cell_size or cell_height and recompute all three with it.
 [sub_resource type="NavigationMesh" id="NavMesh_north_moor"]
 geometry_parsed_geometry_type = 1
 cell_size = 0.4
 cell_height = 0.3
-agent_height = 1.75
-agent_radius = 0.5
-agent_max_climb = 0.5
+agent_height = 1.8
+agent_radius = 0.8
+agent_max_climb = 0.3
 agent_max_slope = 40.0
 
 [node name="NorthMoorCell" type="Node3D"]

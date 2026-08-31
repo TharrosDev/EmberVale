@@ -1042,10 +1042,19 @@ cell sat far from the origin). `EnemySpawnDirector` had the same latent bug.
    meshes; runtime mesh parsing forces a GPU→CPU readback hitch), and add a `CellNavBaker`
    (`src/World/CellNavBaker.cs`) as its child so the navmesh **bakes at stream-in**. ⚠️ **The walkable surface is the terrain collider `WorldCellPresentation` parents into `Nav`,
    not an authored floor** — put a collider on every obstacle (they carve the mesh) and nothing under
-   the cell. Keep `agent_*` dims on the voxel grid (`agent_height = 1.75`, `agent_max_climb = 0.5`,
-   `agent_max_slope = 40..42`) to avoid precision warnings; `cell_size`/`cell_height` are 0.3 in
-   settlements and 0.5/0.4 in the large wilderness cells, because a 0.25 m voxel over a 200 m cell is
-   twenty-five times the columns to rasterise and the bake times out. Enemy `NavigationAgent3D`s path on it
+   the cell. ⚠️ **Put the `agent_*` dims on the voxel grid by deriving them from it, and never by
+   copying another cell's numbers** — the bake quantises them silently and warns once per load
+   (`Property agent_height is ceiled to cell_height voxel units and loses precision`). `cell_size` /
+   `cell_height` are 0.3 in settlements and 0.5 / 0.4 in the large wilderness cells, because a 0.25 m
+   voxel over a 200 m cell is twenty-five times the columns to rasterise and the bake times out — so
+   pick those two first, then compute, **rounding the way the baker does**:
+   `agent_height` = `ceil(1.75 / cell_height) * cell_height`, `agent_radius` =
+   `ceil(0.5 / cell_size) * cell_size`, `agent_max_climb` = `floor(0.5 / cell_height) * cell_height`
+   (⚠️ **climb FLOORS while the other two CEIL** — so climb is the one that comes out *stricter*
+   than the 0.5 m intent, 0.3 m on a 0.3 grid, and `ContentValidator.ValidateStepUp` only guards the
+   other direction). `agent_max_slope = 40..42` is not quantised.
+   The values that fall out today: **0.3/0.3 cells** 1.8 / 0.6 / 0.3, **0.4/0.3 cells** 1.8 / 0.8 /
+   0.3, **0.5/0.4 cells** 2.0 / 0.5 / 0.4. Enemy `NavigationAgent3D`s path on it
    automatically; with no Nav region they fall back to straight-line steering, so a navmesh is
    optional per cell but expected for any space enemies fight in.
 2. Auto-indexed by `RegionDatabase`; the save header resolves the active region's name, and the
