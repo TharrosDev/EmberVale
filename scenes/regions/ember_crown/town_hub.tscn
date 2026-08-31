@@ -351,9 +351,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 0, -1)
 script = ExtResource("1_entity")
 DisplayName = "Ember Crown Waystone"
 
-[node name="Pillar" type="MeshInstance3D" parent="Waystone"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
-
 [node name="Collider" type="StaticBody3D" parent="Waystone"]
 
 [node name="Shape" type="CollisionShape3D" parent="Waystone/Collider"]
@@ -371,9 +368,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0, 2)
 script = ExtResource("1_entity")
 DisplayName = "Waystone Relic"
 PersistentId = "ember_crown.waystone.relic"
-
-[node name="Mesh" type="MeshInstance3D" parent="Relic"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.35, 0)
 
 [node name="Collider" type="StaticBody3D" parent="Relic"]
 
@@ -395,9 +389,6 @@ TemplateId = "npc.elder"
 [node name="Animation" type="Node" parent="Elder"]
 script = ExtResource("24_charanim")
 BodyMeshPath = "Model"
-
-[node name="Mesh" type="MeshInstance3D" parent="Elder"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 
 [node name="Collider" type="StaticBody3D" parent="Elder"]
 
@@ -427,9 +418,6 @@ TemplateId = "npc.kael"
 script = ExtResource("24_charanim")
 BodyMeshPath = "Model"
 
-[node name="Mesh" type="MeshInstance3D" parent="Kael"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-
 [node name="Collider" type="StaticBody3D" parent="Kael"]
 
 [node name="Shape" type="CollisionShape3D" parent="Kael/Collider"]
@@ -457,9 +445,6 @@ TemplateId = "npc.vendor_goods"
 [node name="Animation" type="Node" parent="VendorGoods"]
 script = ExtResource("24_charanim")
 BodyMeshPath = "Model"
-
-[node name="Mesh" type="MeshInstance3D" parent="VendorGoods"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 
 [node name="Collider" type="StaticBody3D" parent="VendorGoods"]
 
@@ -490,9 +475,6 @@ TemplateId = "npc.vendor_smith"
 script = ExtResource("24_charanim")
 BodyMeshPath = "Model"
 
-[node name="Mesh" type="MeshInstance3D" parent="VendorSmith"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-
 [node name="Collider" type="StaticBody3D" parent="VendorSmith"]
 
 [node name="Shape" type="CollisionShape3D" parent="VendorSmith/Collider"]
@@ -521,9 +503,6 @@ TemplateId = "npc.vendor_alch"
 script = ExtResource("24_charanim")
 BodyMeshPath = "Model"
 
-[node name="Mesh" type="MeshInstance3D" parent="VendorAlch"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-
 [node name="Collider" type="StaticBody3D" parent="VendorAlch"]
 
 [node name="Shape" type="CollisionShape3D" parent="VendorAlch/Collider"]
@@ -551,9 +530,6 @@ TemplateId = "npc.innkeeper"
 [node name="Animation" type="Node" parent="Innkeeper"]
 script = ExtResource("24_charanim")
 BodyMeshPath = "Model"
-
-[node name="Mesh" type="MeshInstance3D" parent="Innkeeper"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 
 [node name="Collider" type="StaticBody3D" parent="Innkeeper"]
 
@@ -599,9 +575,6 @@ TemplateId = "npc.trainer_smith"
 script = ExtResource("24_charanim")
 BodyMeshPath = "Model"
 
-[node name="Mesh" type="MeshInstance3D" parent="Trainer"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-
 [node name="Collider" type="StaticBody3D" parent="Trainer"]
 
 [node name="Shape" type="CollisionShape3D" parent="Trainer/Collider"]
@@ -625,9 +598,6 @@ TemplateId = "npc.stablemaster"
 [node name="Animation" type="Node" parent="Stablemaster"]
 script = ExtResource("24_charanim")
 BodyMeshPath = "Model"
-
-[node name="Mesh" type="MeshInstance3D" parent="Stablemaster"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 
 [node name="Collider" type="StaticBody3D" parent="Stablemaster"]
 
@@ -675,9 +645,6 @@ transform = Transform3D(-0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, -0.9397, -6, 0, 1
 script = ExtResource("1_entity")
 DisplayName = "Adventurers' Guild Notice"
 
-[node name="Mesh" type="MeshInstance3D" parent="GuildMarker"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
-
 [node name="Collider" type="StaticBody3D" parent="GuildMarker"]
 
 [node name="Shape" type="CollisionShape3D" parent="GuildMarker/Collider"]
@@ -693,9 +660,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 0)
 script = ExtResource("1_entity")
 DisplayName = "Forge"
 TemplateId = "station.forge"
-
-[node name="Mesh" type="MeshInstance3D" parent="StationForge"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
 
 [node name="Collider" type="StaticBody3D" parent="StationForge"]
 
@@ -714,9 +678,6 @@ script = ExtResource("1_entity")
 DisplayName = "Workbench"
 TemplateId = "station.workbench"
 
-[node name="Mesh" type="MeshInstance3D" parent="StationWorkbench"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
-
 [node name="Collider" type="StaticBody3D" parent="StationWorkbench"]
 
 [node name="Shape" type="CollisionShape3D" parent="StationWorkbench/Collider"]
@@ -733,9 +694,6 @@ transform = Transform3D(0.5, 0, 0.866, 0, 1, 0, -0.866, 0, 0.5, -19.5, 0, 3.5)
 script = ExtResource("1_entity")
 DisplayName = "Alchemy Table"
 TemplateId = "station.alchemy"
-
-[node name="Mesh" type="MeshInstance3D" parent="StationAlchemy"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
 
 [node name="Collider" type="StaticBody3D" parent="StationAlchemy"]
 
@@ -882,9 +840,6 @@ TemplateId = "npc.traveller"
 [node name="Animation" type="Node" parent="WanderingTrader"]
 script = ExtResource("24_charanim")
 BodyMeshPath = "Model"
-
-[node name="Mesh" type="MeshInstance3D" parent="WanderingTrader"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 
 [node name="Collider" type="StaticBody3D" parent="WanderingTrader"]
 

@@ -614,9 +614,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 13)
 script = ExtResource("2_entity")
 DisplayName = "Challenge Brazier"
 
-[node name="Mesh" type="MeshInstance3D" parent="Brazier"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-
 [node name="Collider" type="StaticBody3D" parent="Brazier"]
 
 [node name="Shape" type="CollisionShape3D" parent="Brazier/Collider"]
