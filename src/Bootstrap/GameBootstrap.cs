@@ -222,18 +222,20 @@ public partial class GameBootstrap : Node3D
         bool hudShots = HasCmdFlag("--hudshots");
         bool panelShots = HasCmdFlag("--panelshots");
         bool shrineShots = HasCmdFlag("--shrine-shots");
-        if (!_playFlagConsumed && (hudShots || panelShots || shrineShots || HasCmdFlag("--play")) &&
+        bool guildShots = HasCmdFlag("--guild-shots");
+        if (!_playFlagConsumed && (hudShots || panelShots || shrineShots || guildShots || HasCmdFlag("--play")) &&
             MostRecentSlot() is { } slot)
         {
             _playFlagConsumed = true;
-            string mode = hudShots ? "--hudshots" : panelShots ? "--panelshots" : shrineShots ? "--shrine-shots" : "--play";
+            string mode = hudShots ? "--hudshots" : panelShots ? "--panelshots"
+                : shrineShots ? "--shrine-shots" : guildShots ? "--guild-shots" : "--play";
             Log.Info($"{mode}: continuing most recent save '{slot}'.");
             StartLoadedGame(slot);
 
             // Synchronous viewport readback and PNG compression dominate capture frames. Keep those
             // tool costs out of the world's sustained-performance telemetry; ordinary --play runs
             // continue to sample the exact same budgets.
-            if (hudShots || panelShots || shrineShots)
+            if (hudShots || panelShots || shrineShots || guildShots)
             {
                 _streamer?.SetPerformanceSamplingEnabled(false);
             }
@@ -259,6 +261,11 @@ public partial class GameBootstrap : Node3D
             if (shrineShots)
             {
                 AddChild(new Debugging.ShrineShots { Name = "ShrineShots" });
+            }
+
+            if (guildShots)
+            {
+                AddChild(new Debugging.GuildShots { Name = "GuildShots", Dialogue = _dialoguePanel });
             }
         }
     }

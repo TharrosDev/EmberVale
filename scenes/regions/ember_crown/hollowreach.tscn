@@ -1188,7 +1188,7 @@ LocationId = "location.hollowreach.bones"
 ; the channels rather than in them. A 4.4 m square on two storeys: the narrowest and tallest of the
 ; five hubs, which is what a counting house is.
 [node name="LedgerHouse" parent="Nav" instance=ExtResource("42b_bld_ledger_house")]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 24, 0, 11.5)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 0, 11.5)
 
 [node name="SyndicateBroker" type="Node3D" parent="."]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 27, 0, 11.5)

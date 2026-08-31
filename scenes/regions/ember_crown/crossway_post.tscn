@@ -916,7 +916,7 @@ LocationId = "location.shrine.tharos"
 ; ⚠️ Sited west of the well so the compound is still crossed on the way to the gate. The guild does
 ; not get its own approach; it gets the one the toll already built.
 [node name="WardensWatch" parent="Nav" instance=ExtResource("42b_bld_wardens_watch")]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -20.5, 0, 12)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -20.5, 0, 12)
 
 [node name="DawnwardenCaptain" type="Node3D" parent="."]
 transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -15.5, 0, 16.5)

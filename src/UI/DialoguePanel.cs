@@ -135,6 +135,19 @@ public partial class DialoguePanel : UiPanel
         }
     }
 
+    /// <summary>
+    /// Ends the open conversation exactly as picking a terminal choice does — the session is
+    /// dropped, the panel closes and <c>DialogueEndedEvent</c> is published.
+    ///
+    /// ⚠️ It exists because <see cref="OnDialogueStarted"/> IGNORES an overlapping start, which is
+    /// right for gameplay (two NPCs must not talk over each other) and is a trap for a harness: a
+    /// second conversation opened over a live one silently shows the FIRST one's node under the
+    /// second one's filename. <c>--guild-shots</c> photographs the same officer twice, as a stranger
+    /// and as a member, and without this the member frame was the stranger frame.
+    /// ⚠️ Not the same as <c>SetOpen(false)</c>, which hides the panel and leaves the session live.
+    /// </summary>
+    public void EndConversation() => Close();
+
     private void Close()
     {
         DialogueResource? dialogue = _dialogue;
