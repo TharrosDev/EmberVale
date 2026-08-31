@@ -22,6 +22,15 @@ public partial class SpellProjectile : Area3D
     /// <summary>Fraction-per-second a homing bolt turns toward its target (Phase 29.5G).</summary>
     private const float HomingTurnRate = 3.5f;
 
+    /// <summary>The bolt's collision radius. Also the longest distance it may travel between two
+    /// collision tests — see <see cref="_PhysicsProcess"/>.</summary>
+    private const float Radius = 0.25f;
+
+    /// <summary>Ceiling on the sub-steps one physics frame may take, so a spell authored with an
+    /// absurd speed (or a frame that hitched for a second) cannot spin here. At the cap the bolt is
+    /// travelling faster than the sweep can honestly resolve and the last sub-step's query stands.</summary>
+    private const int MaxSubSteps = 16;
+
     private SpellResource _spell = null!;
     private DamagePacket _packet;
     private IEntity? _caster;
@@ -95,35 +104,84 @@ public partial class SpellProjectile : Area3D
             _direction = SpellHoming.Steer(_direction, target.GlobalPosition - GlobalPosition, HomingTurnRate, (float)delta);
         }
 
-        GlobalPosition += _direction * _spell.ProjectileSpeed * (float)delta;
+        // ⚠️ THE FLIGHT IS SWEPT, NOT TELEPORTED. It used to be one `GlobalPosition += v * delta`
+        // followed by an overlap test at the arrival point, which is wrong in two compounding ways.
+        // A bolt at 40 m/s covers 0.67 m per frame at 60 Hz and more than two metres in one 30 Hz
+        // hitch, so a thin target — an actor's hurtbox, a fence, a wall — sitting between the two
+        // positions was simply never tested: the shot passed through it and detonated on whatever
+        // was behind. And GetOverlappingAreas/Bodies report the state of the PREVIOUS physics step,
+        // so even the arrival test was a frame stale. Stepping in Radius-sized increments and asking
+        // the space state directly fixes both: no gap is larger than the bolt, and every query is
+        // for where the bolt is now.
+        float distance = _spell.ProjectileSpeed * (float)delta;
+        int steps = Mathf.Clamp(Mathf.CeilToInt(distance / Radius), 1, MaxSubSteps);
+        Vector3 step = _direction * (distance / steps);
         _life -= delta;
 
-        // Prefer a hurtbox we can actually damage.
-        foreach (Area3D area in GetOverlappingAreas())
+        for (int i = 0; i < steps; i++)
         {
-            if (area is Hurtbox hurtbox && SpellResolver.IsHostileTarget(hurtbox, _caster, _casterTeam))
+            GlobalPosition += step;
+            if (SweepHit(out Hurtbox? struck))
             {
-                Resolve(hurtbox);
+                Resolve(struck);
                 return;
             }
-        }
-
-        // Otherwise detonate against world geometry / blocking bodies (but never the caster).
-        foreach (Node3D body in GetOverlappingBodies())
-        {
-            if (_casterBody != null && ReferenceEquals(body, _casterBody))
-            {
-                continue;
-            }
-
-            Resolve(null);
-            return;
         }
 
         if (_life <= 0d)
         {
             Resolve(null);
         }
+    }
+
+    /// <summary>
+    /// Does the bolt's volume touch anything at its current position? Answers with the hurtbox it
+    /// should damage, or with <c>true</c> and a null hurtbox for world geometry it should burst
+    /// against. A hostile hurtbox wins over geometry in the same frame — a bolt that reaches an
+    /// enemy standing against a wall hits the enemy.
+    /// </summary>
+    private bool SweepHit(out Hurtbox? target)
+    {
+        target = null;
+        var query = new PhysicsShapeQueryParameters3D
+        {
+            Shape = new SphereShape3D { Radius = Radius },
+            Transform = new Transform3D(Basis.Identity, GlobalPosition),
+            CollideWithAreas = true,
+            CollideWithBodies = true,
+            CollisionMask = CombatLayers.Hurtbox | CombatLayers.World,
+        };
+
+        bool blocked = false;
+        foreach (Godot.Collections.Dictionary hit in
+                 GetWorld3D().DirectSpaceState.IntersectShape(query, 16))
+        {
+            if (!hit.TryGetValue("collider", out Variant colliderVar))
+            {
+                continue;
+            }
+
+            GodotObject? collider = colliderVar.AsGodotObject();
+            if (collider is Hurtbox hurtbox)
+            {
+                if (SpellResolver.IsHostileTarget(hurtbox, _caster, _casterTeam))
+                {
+                    target = hurtbox;
+                    return true;
+                }
+
+                continue; // the caster's own hurtbox, or an ally's: pass through
+            }
+
+            // World geometry. Never the caster's own body — a bolt launched from inside the
+            // caster's capsule would burst on the frame it was fired.
+            if (collider is Node3D body && (_casterBody == null || !ReferenceEquals(body, _casterBody)))
+            {
+                blocked = true;
+            }
+        }
+
+        return blocked;
     }
 
     /// <summary>The nearest valid hostile hurtbox within <paramref name="radius"/> of the bolt (Phase
