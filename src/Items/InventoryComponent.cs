@@ -31,6 +31,9 @@ public partial class InventoryComponent : EntityComponent, ISaveable
     // (char.backpack_full) as an item fact, not a limit, and nothing about it implies a budget.
     private readonly List<ItemStack> _stacks = new();
 
+    /// <summary>Set only while <see cref="Load"/> is restoring. See its remarks.</summary>
+    private bool _ignoreCapacity;
+
     public IReadOnlyList<ItemStack> Stacks => _stacks;
 
     public int UsedSlots => _stacks.Count;
@@ -118,7 +121,7 @@ public partial class InventoryComponent : EntityComponent, ISaveable
         }
 
         // 2) Consume new slots while there is room.
-        while (remaining > 0 && _stacks.Count < Capacity)
+        while (remaining > 0 && (_ignoreCapacity || _stacks.Count < Capacity))
         {
             int put = Mathf.Min(remaining, instance.MaxStack);
             _stacks.Add(new ItemStack(instance, put));
@@ -292,22 +295,50 @@ public partial class InventoryComponent : EntityComponent, ISaveable
         return new Godot.Collections.Dictionary { ["stacks"] = stacks };
     }
 
+    /// <summary>
+    /// ⚠️ <b>A RESTORE IGNORES <see cref="Capacity"/>, AND IT HAS TO.</b> The contents used to come
+    /// back through the ordinary <see cref="AddInstance"/> path, which stops at the slot limit and
+    /// returns how much it dropped — a number this method discarded. So any change that made the
+    /// pack smaller than the save deleted the difference, permanently and silently, on the next
+    /// load: a rebalance of the default <see cref="Capacity"/>, a save written while a since-removed
+    /// bonus was granting slots, a hand-edited pack. The player's response to "my things are gone"
+    /// is to reload, which does it again.
+    ///
+    /// What the save held is what the player owned. It comes back whole and the pack is allowed to
+    /// be over its limit until they make room — which is exactly what a full pack already does to
+    /// every new pickup, and is recoverable. Deletion is not.
+    /// </summary>
     public void Load(Godot.Collections.Dictionary data)
     {
         _stacks.Clear();
 
-        if (data.TryGetValue("stacks", out Variant stacksVariant))
+        _ignoreCapacity = true;
+        try
         {
-            foreach (Variant entry in stacksVariant.AsGodotArray())
+            if (data.TryGetValue("stacks", out Variant stacksVariant))
             {
-                var dict = entry.AsGodotDictionary();
-                int qty = dict["qty"].AsInt32();
-                ItemInstance? instance = ItemInstance.FromSave(dict["instance"].AsGodotDictionary());
-                if (instance != null)
+                foreach (Variant entry in stacksVariant.AsGodotArray())
                 {
-                    AddInstance(instance, qty);
+                    var dict = entry.AsGodotDictionary();
+                    int qty = dict["qty"].AsInt32();
+                    ItemInstance? instance = ItemInstance.FromSave(dict["instance"].AsGodotDictionary());
+                    if (instance != null)
+                    {
+                        AddInstance(instance, qty);
+                    }
                 }
             }
+        }
+        finally
+        {
+            _ignoreCapacity = false;
+        }
+
+        if (_stacks.Count > Capacity)
+        {
+            Log.Warn($"{Entity?.DisplayName ?? "An inventory"} restored {_stacks.Count} stack(s) into " +
+                     $"{Capacity} slot(s); it is over capacity until the player makes room. Nothing " +
+                     "was discarded.");
         }
 
         NotifyChanged();
