@@ -802,8 +802,7 @@ Falloff = 1.8""")],
     # world speaking for an organization nothing can join.
     ("guild.hub_on_a_non_guild", "ValidateGuildHubs",
      [("data/factions/Villagers.tres", 'DefaultReputation',
-       'HubLocationId = "location.ember_crown.town"
-DefaultReputation')],
+       'HubLocationId = "location.ember_crown.town"\nDefaultReputation')],
      "declares a hub location but no ranks"),
 ]
 
