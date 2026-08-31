@@ -848,14 +848,14 @@ public partial class GameBootstrap : Node3D
     /// </summary>
     private static Vector3 SafeLanding(Vector3 landing)
     {
-        float ground = WorldGround.HeightAt(landing.X, landing.Z);
-        if (landing.Y >= ground + 0.05f)
+        if (!WorldGround.IsBelowGround(landing))
         {
             return landing;
         }
 
-        Log.Warn($"Landing {landing} is below the ground at {ground:F2} m; lifting the player onto it.");
-        return new Vector3(landing.X, ground + 0.1f, landing.Z);
+        Vector3 lifted = WorldGround.Lift(landing);
+        Log.Warn($"Landing {landing} is below the ground at {lifted.Y:F2} m; lifting the player onto it.");
+        return lifted;
     }
 
     /// <summary>

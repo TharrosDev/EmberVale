@@ -197,7 +197,10 @@ public partial class CompanionRoster : Node, ISaveable
             return false;
         }
 
-        CompanionEntity? companion = CompanionRegistry.Create(companionId, position);
+        // Lifted onto the ground for the same reason the Keep branch of the load is: a saved
+        // position from before a landform edit, or a slot derived from a player further up a slope,
+        // otherwise builds the companion inside the hillside.
+        CompanionEntity? companion = CompanionRegistry.Create(companionId, World.WorldGround.Lift(position));
         if (companion == null)
         {
             return false;
@@ -439,7 +442,9 @@ public partial class CompanionRoster : Node, ISaveable
             (CompanionStance _, Vector3 position, float yaw) = desired[id];
             if (TryGet(id, out CompanionEntity survivor))
             {
-                survivor.GlobalPosition = position;
+                // Lifted, not snapped: a companion saved on a terrace or a rooftop keeps that height,
+                // while one whose saved Y predates a landform edit comes back out of the hillside.
+                survivor.GlobalPosition = World.WorldGround.Lift(position);
                 survivor.RotationDegrees = new Vector3(survivor.RotationDegrees.X, yaw, survivor.RotationDegrees.Z);
                 survivor.Velocity = Vector3.Zero;
             }
@@ -522,8 +527,11 @@ public partial class CompanionRoster : Node, ISaveable
 
             if (companion.GlobalPosition.DistanceTo(player.GlobalPosition) > minimumDistance)
             {
-                companion.GlobalPosition = CompanionFormation.Slot(
-                    player.GlobalPosition, -player.GlobalTransform.Basis.Z, slot, FollowDistanceOf(companion));
+                // On the ground, not on the player's plane. CompanionFormation.Slot copies the
+                // player's Y (it is Godot-free and has no terrain to ask), so a catch-up on a slope
+                // put the band four metres behind and a metre inside the hill.
+                companion.GlobalPosition = World.WorldGround.OnGround(CompanionFormation.Slot(
+                    player.GlobalPosition, -player.GlobalTransform.Basis.Z, slot, FollowDistanceOf(companion)));
                 companion.Velocity = Vector3.Zero;
             }
         }
@@ -541,7 +549,8 @@ public partial class CompanionRoster : Node, ISaveable
             return Vector3.Zero;
         }
 
-        return CompanionFormation.Slot(player.GlobalPosition, -player.GlobalTransform.Basis.Z, index, 3f);
+        return World.WorldGround.OnGround(
+            CompanionFormation.Slot(player.GlobalPosition, -player.GlobalTransform.Basis.Z, index, 3f));
     }
 
     private static PlayerCharacter? GetPlayer()

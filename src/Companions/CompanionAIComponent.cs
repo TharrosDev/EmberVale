@@ -77,6 +77,10 @@ public partial class CompanionAIComponent : EntityComponent, ISaveable
     private StatsComponent? _stats;
     private MeleeWeaponComponent? _weapon;
     private CombatComponent? _combat;
+    /// <summary>See <c>EnemyAIComponent.NavAnchorTolerance</c> — how far off the navmesh an actor
+    /// may stand and still be pathable.</summary>
+    private const float NavAnchorTolerance = 3f;
+
     private NavigationAgent3D? _agent;
     private PlayerCharacter? _player;
 
@@ -442,7 +446,15 @@ public partial class CompanionAIComponent : EntityComponent, ISaveable
     {
         // Same navmesh steering rule the enemies use (Phase 27A): steer at the next path corner when a
         // baked navmesh is under the agent, but judge arrival against the final target.
-        Vector3 corner = NextPathPoint(target);
+        if (NextPathPoint(target) is not { } corner)
+        {
+            // No usable navigation this frame — hold rather than walk a straight line through the
+            // buildings between here and the player. The roster's catch-up (CompanionRoster's
+            // CatchUpDistance) is what stops a held companion being lost for good.
+            Stand(delta);
+            return;
+        }
+
         Vector3 toCorner = corner - _body.GlobalPosition;
         toCorner.Y = 0f;
         float cornerDistance = toCorner.Length();
@@ -459,19 +471,53 @@ public partial class CompanionAIComponent : EntityComponent, ISaveable
         GetLocomotion()?.Move(delta, wish, sprint, jump: false);
     }
 
-    private Vector3 NextPathPoint(Vector3 target)
+    /// <summary>The next waypoint, or null when there is no safe one — the same three-answer rule
+    /// <c>EnemyAIComponent.NextPathPoint</c> documents, and for the same reason: the straight-line
+    /// fallback this replaced walked companions through walls whenever a cell's navmesh had not
+    /// finished baking.</summary>
+    private Vector3? NextPathPoint(Vector3 target)
     {
         if (_agent == null)
         {
             return target;
         }
 
-        if (_agent.TargetPosition.DistanceSquaredTo(target) > 0.01f)
+        Rid map = _agent.GetNavigationMap();
+        if (!map.IsValid)
         {
-            _agent.TargetPosition = target;
+            return null;
         }
 
-        return _agent.IsTargetReachable() ? _agent.GetNextPathPosition() : target;
+        Vector3 here = _body.GlobalPosition;
+        if (NavigationServer3D.MapGetClosestPoint(map, here).DistanceSquaredTo(here) >
+            NavAnchorTolerance * NavAnchorTolerance)
+        {
+            return null;
+        }
+
+        Vector3 goal = target;
+        if (_agent.TargetPosition.DistanceSquaredTo(goal) > 0.01f)
+        {
+            _agent.TargetPosition = goal;
+        }
+
+        if (_agent.IsTargetReachable())
+        {
+            return _agent.GetNextPathPosition();
+        }
+
+        Vector3 nearest = NavigationServer3D.MapGetClosestPoint(map, goal);
+        if (nearest.DistanceSquaredTo(here) <= 0.04f)
+        {
+            return null;
+        }
+
+        if (_agent.TargetPosition.DistanceSquaredTo(nearest) > 0.01f)
+        {
+            _agent.TargetPosition = nearest;
+        }
+
+        return _agent.IsTargetReachable() ? _agent.GetNextPathPosition() : null;
     }
 
     private void Stand(double delta)
