@@ -984,6 +984,32 @@ authoring a cell around it.
 
 ---
 
+## Session 5 architecture adoption, 2026-09-01
+
+Twenty-one production modules were adopted without re-authoring geometry from the already approved
+**Quaternius Medieval Village MegaKit (CC0 1.0)** in `assets/library/medieval_megakit/`. They retain
+the pack's coherent plaster, wood-trim, round-tile, uneven-brick, and vine texture families.
+
+| Production family | Source family |
+| --- | --- |
+| `mod_wall_stone*` | `Wall_UnevenBrick_*` |
+| `mod_shutters_*` | `WindowShutters_*` |
+| `mod_chimney_alt` | `Prop_Chimney2` |
+| `mod_roof_dormer`, `mod_roof_awning`, `mod_roof_supports` | `Roof_Dormer_RoundTile`, `Overhang_Roof_*`, `Roof_FrontSupports` |
+| `mod_roof_4x8`, `mod_roof_6x6`, `mod_roof_6x10`, `mod_roof_8x8` | matching `Roof_RoundTiles_*` |
+| `mod_gable_8` | `Roof_Front_Brick8` |
+| `mod_balcony_*` | `Balcony_*` |
+| `mod_stairs_exterior` | `Stairs_Exterior_*` |
+| `mod_floor_stone` | `Floor_UnevenBrick` |
+| `mod_wall_arch` | `Wall_Arch` |
+| `mod_vine` | `Prop_Vine*` |
+
+Shared production textures added in this pass are `T_UnevenBrick_*` and `T_VineLeaf_png.png`.
+The five legacy monolithic `bld_*.glb` buildings were not sourced anew: Session 5 only repaired
+their embedded metallic/roughness values while preserving geometry and binary mesh payloads.
+
+---
+
 ## Known, not fixed
 
 - **`npc_merchant_f` was modern dress and is now retired** (fixed in 38N2). It dressed Hana and

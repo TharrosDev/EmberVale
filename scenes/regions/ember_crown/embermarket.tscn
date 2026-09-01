@@ -42,6 +42,9 @@
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_adventurer_f.glb" id="42_adventurer_f"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_townhouse.tscn" id="53_townhouse"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_modular.tscn" id="54_cottage_modular"]
+[ext_resource type="PackedScene" path="res://scenes/props/bld_shop_awning.tscn" id="60_shop_awning"]
+[ext_resource type="PackedScene" path="res://scenes/props/bld_townhouse_balcony.tscn" id="61_townhouse_balcony"]
+[ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_shuttered.tscn" id="62_cottage_shuttered"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_stall_empty.gltf" id="55_stall_empty"]
 [ext_resource type="Script" path="res://src/Economy/ServiceComponent.cs" id="56_service"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_table_large.gltf" id="57_assay_table"]
@@ -737,12 +740,12 @@ shape = SubResource("Shape_gazebo_post")
 [node name="HouseW1" type="Node3D" parent="Nav"]
 transform = Transform3D(0.9945, 0, 0.1045, 0, 1, 0, -0.1045, 0, 0.9945, -19, 0, -21.5)
 
-[node name="Model" parent="Nav/HouseW1" instance=ExtResource("53_townhouse")]
+[node name="Model" parent="Nav/HouseW1" instance=ExtResource("60_shop_awning")]
 
 [node name="HouseW2" type="Node3D" parent="Nav"]
 transform = Transform3D(0.0349, 0, 0.9994, 0, 1, 0, -0.9994, 0, 0.0349, -22.5, 0, -6)
 
-[node name="Model" parent="Nav/HouseW2" instance=ExtResource("54_cottage_modular")]
+[node name="Model" parent="Nav/HouseW2" instance=ExtResource("62_cottage_shuttered")]
 
 [node name="HouseW3" type="Node3D" parent="Nav"]
 transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, -24.6, 0, -20.2)
@@ -758,7 +761,7 @@ shape = SubResource("Shape_cottage")
 [node name="HouseE1" type="Node3D" parent="Nav"]
 transform = Transform3D(-0.9945, 0, 0.1045, 0, 1, 0, -0.1045, 0, -0.9945, -5, 0, -21.5)
 
-[node name="Model" parent="Nav/HouseE1" instance=ExtResource("53_townhouse")]
+[node name="Model" parent="Nav/HouseE1" instance=ExtResource("61_townhouse_balcony")]
 
 [node name="HouseE2" type="Node3D" parent="Nav"]
 transform = Transform3D(-0.9994, 0, -0.0349, 0, 1, 0, 0.0349, 0, -0.9994, 1.5, 0, -21)

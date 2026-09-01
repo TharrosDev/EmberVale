@@ -23,6 +23,8 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_campfire.glb" id="24_campfire"]
 [ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="25_charanim"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_townhouse.tscn" id="26_townhouse"]
+[ext_resource type="PackedScene" path="res://scenes/props/bld_longhouse_stone.tscn" id="60_longhouse_stone"]
+[ext_resource type="PackedScene" path="res://scenes/props/bld_workshop_open.tscn" id="61_workshop_open"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 
 ; THE CLAN HOLD (the 2026-08-28 layout rebuild) - Frostfang Reach's only settlement.
@@ -550,13 +552,13 @@ script = ExtResource("7_station")
 Station = 3
 StationName = "Alchemy Table"
 
-[node name="Model" parent="Nav/LonghouseW" instance=ExtResource("26_townhouse")]
+[node name="Model" parent="Nav/LonghouseW" instance=ExtResource("60_longhouse_stone")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.75, 0)
 
 [node name="Model" parent="Nav/LonghouseE" instance=ExtResource("26_townhouse")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.75, 0)
 
-[node name="Model" parent="Nav/MootHall" instance=ExtResource("26_townhouse")]
+[node name="Model" parent="Nav/MootHall" instance=ExtResource("61_workshop_open")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.4, 0)
 
 [node name="Model" parent="Nav/TentSE" instance=ExtResource("16_tent")]

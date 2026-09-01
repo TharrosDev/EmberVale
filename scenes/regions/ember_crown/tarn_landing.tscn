@@ -25,7 +25,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_hay.glb" id="25_hay"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_woman_dress.glb" id="30_wenna"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_vendor.glb" id="31_odger"]
-[ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_modular.tscn" id="42_cottage_modular"]
+[ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_shuttered.tscn" id="42_cottage_modular"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 [ext_resource type="PackedScene" path="res://scenes/props/shrine_waystone.tscn" id="shrine_body_41_5b"]
 [ext_resource type="Script" path="res://src/Shrines/ShrineComponent.cs" id="shrine_41_5b"]
@@ -770,5 +770,4 @@ ShrineId = "shrine.elyndra"
 [node name="MapPin" type="Node3D" parent="Nav/ShrineElyndra"]
 script = ExtResource("maploc_39_5a")
 LocationId = "location.shrine.elyndra"
-
 

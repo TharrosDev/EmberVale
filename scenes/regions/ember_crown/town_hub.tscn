@@ -32,6 +32,9 @@
 [ext_resource type="Script" path="res://src/Economy/VendorComponent.cs" id="39_vendor"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_townhouse.tscn" id="50_townhouse"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_modular.tscn" id="51_cottage_modular"]
+[ext_resource type="PackedScene" path="res://scenes/props/bld_shop_awning.tscn" id="60_shop_awning"]
+[ext_resource type="PackedScene" path="res://scenes/props/bld_townhouse_balcony.tscn" id="61_townhouse_balcony"]
+[ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_shuttered.tscn" id="62_cottage_shuttered"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_anvil_log.gltf" id="52_anvil_log"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_workbench.gltf" id="53_workbench"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_table_large.gltf" id="54_order_bench"]
@@ -263,17 +266,17 @@ shape = SubResource("Shape_bldgB")
 [node name="HouseGreenC" type="Node3D" parent="Nav"]
 transform = Transform3D(-0.866, 0, -0.5, 0, 1, 0, 0.5, 0, -0.866, 21, 0, -23)
 
-[node name="Model" parent="Nav/HouseGreenC" instance=ExtResource("50_townhouse")]
+[node name="Model" parent="Nav/HouseGreenC" instance=ExtResource("61_townhouse_balcony")]
 
 [node name="HouseCraftB" type="Node3D" parent="Nav"]
 transform = Transform3D(0.0872, 0, -0.9962, 0, 1, 0, 0.9962, 0, 0.0872, 25, 0, 6)
 
-[node name="Model" parent="Nav/HouseCraftB" instance=ExtResource("50_townhouse")]
+[node name="Model" parent="Nav/HouseCraftB" instance=ExtResource("60_shop_awning")]
 
 [node name="HouseSouthA" type="Node3D" parent="Nav"]
 transform = Transform3D(0.9848, 0, -0.1736, 0, 1, 0, 0.1736, 0, 0.9848, -20, 0, 22)
 
-[node name="Model" parent="Nav/HouseSouthA" instance=ExtResource("51_cottage_modular")]
+[node name="Model" parent="Nav/HouseSouthA" instance=ExtResource("62_cottage_shuttered")]
 
 [node name="LampSW" type="Node3D" parent="Nav"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.5, 0, 25)
