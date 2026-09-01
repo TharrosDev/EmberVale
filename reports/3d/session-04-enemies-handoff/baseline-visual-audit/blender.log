@@ -1,0 +1,1007 @@
+AUDIT_3D_BLENDER [1/156] assets/models/animations/anim_library.glb
+12:20:53 | INFO: Data are loaded, start creating Blender stuff
+12:20:53 | INFO: Blender create Mesh node Mannequin
+12:20:55 | INFO: glTF import finished in 2.09s
+AUDIT_3D_BLENDER [2/156] assets/models/architecture/bld_blacksmith.glb
+12:20:55 | INFO: Data are loaded, start creating Blender stuff
+12:20:55 | INFO: Blender create Mesh node Mesh
+12:20:55 | INFO: glTF import finished in 0.05s
+AUDIT_3D_BLENDER [3/156] assets/models/architecture/bld_cottage.glb
+12:20:55 | INFO: Data are loaded, start creating Blender stuff
+12:20:55 | INFO: Blender create Mesh node Mesh
+12:20:55 | INFO: glTF import finished in 0.03s
+AUDIT_3D_BLENDER [4/156] assets/models/architecture/bld_house_a.glb
+12:20:55 | INFO: Data are loaded, start creating Blender stuff
+12:20:55 | INFO: Blender create Mesh node House_1
+12:20:55 | INFO: glTF import finished in 0.04s
+AUDIT_3D_BLENDER [5/156] assets/models/architecture/bld_house_b.glb
+12:20:55 | INFO: Data are loaded, start creating Blender stuff
+12:20:55 | INFO: Blender create Mesh node Farm_SecondAge_Level3
+12:20:55 | INFO: glTF import finished in 0.03s
+AUDIT_3D_BLENDER [6/156] assets/models/architecture/bld_inn.glb
+12:20:55 | INFO: Data are loaded, start creating Blender stuff
+12:20:55 | INFO: Blender create Mesh node Mesh
+12:20:55 | INFO: glTF import finished in 0.05s
+AUDIT_3D_BLENDER [7/156] assets/models/characters/chr_player_base.glb
+12:20:56 | INFO: Data are loaded, start creating Blender stuff
+12:20:56 | INFO: Blender create Mesh node Adventurer_Body
+12:20:56 | INFO: Blender create Mesh node Adventurer_Feet
+12:20:56 | INFO: Blender create Mesh node Adventurer_Head
+12:20:56 | INFO: Blender create Mesh node Adventurer_Legs
+12:20:56 | INFO: Blender create Mesh node Backpack
+12:20:57 | INFO: glTF import finished in 0.99s
+AUDIT_3D_BLENDER [8/156] assets/models/characters/fp_arm.glb
+12:20:57 | INFO: Data are loaded, start creating Blender stuff
+12:20:57 | INFO: Blender create Mesh node Adventurer_Body.001
+12:20:57 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [9/156] assets/models/characters/fp_arm_left.glb
+12:20:57 | INFO: Data are loaded, start creating Blender stuff
+12:20:57 | INFO: Blender create Mesh node Adventurer_Body.002
+12:20:57 | INFO: Blender create Mesh node Right_SleeveMesh.001
+12:20:57 | INFO: Blender create Mesh node Right_BracerMesh.001
+12:20:57 | INFO: Blender create Mesh node Torus.002
+12:20:57 | INFO: Blender create Mesh node Torus.003
+12:20:57 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [10/156] assets/models/characters/fp_arm_right.glb
+12:20:57 | INFO: Data are loaded, start creating Blender stuff
+12:20:57 | INFO: Blender create Mesh node Adventurer_Body.001
+12:20:57 | INFO: Blender create Mesh node Right_SleeveMesh
+12:20:57 | INFO: Blender create Mesh node Right_BracerMesh
+12:20:57 | INFO: Blender create Mesh node Torus
+12:20:57 | INFO: Blender create Mesh node Torus.001
+12:20:57 | INFO: glTF import finished in 0.03s
+AUDIT_3D_BLENDER [11/156] assets/models/characters/npc_adventurer_f.glb
+12:20:57 | INFO: Data are loaded, start creating Blender stuff
+12:20:57 | INFO: Blender create Mesh node Adventurer_Body
+12:20:57 | INFO: Blender create Mesh node Adventurer_Feet
+12:20:57 | INFO: Blender create Mesh node Adventurer_Head
+12:20:57 | INFO: Blender create Mesh node Adventurer_Legs
+12:20:57 | INFO: glTF import finished in 0.38s
+AUDIT_3D_BLENDER [12/156] assets/models/characters/npc_guild_rep.glb
+12:20:58 | INFO: Data are loaded, start creating Blender stuff
+12:20:58 | INFO: Blender create Mesh node King_Body
+12:20:58 | INFO: Blender create Mesh node King_Feet
+12:20:58 | INFO: Blender create Mesh node King_Head
+12:20:58 | INFO: Blender create Mesh node King_Legs
+12:20:58 | INFO: glTF import finished in 0.66s
+AUDIT_3D_BLENDER [13/156] assets/models/characters/npc_hooded.glb
+12:20:59 | INFO: Data are loaded, start creating Blender stuff
+12:20:59 | INFO: Blender create Mesh node Sword
+12:20:59 | INFO: Blender create Mesh node Medieval_Body
+12:20:59 | INFO: Blender create Mesh node Medieval_Feet
+12:20:59 | INFO: Blender create Mesh node Medieval_Head
+12:20:59 | INFO: Blender create Mesh node Medieval_Legs
+12:20:59 | INFO: glTF import finished in 0.27s
+AUDIT_3D_BLENDER [14/156] assets/models/characters/npc_innkeeper.glb
+12:20:59 | INFO: Data are loaded, start creating Blender stuff
+12:20:59 | INFO: Blender create Mesh node Adventurer_Body
+12:20:59 | INFO: Blender create Mesh node Adventurer_Feet
+12:20:59 | INFO: Blender create Mesh node Adventurer_Head
+12:20:59 | INFO: Blender create Mesh node Adventurer_Legs
+12:21:00 | INFO: glTF import finished in 0.70s
+AUDIT_3D_BLENDER [15/156] assets/models/characters/npc_kael.glb
+12:21:00 | INFO: Data are loaded, start creating Blender stuff
+12:21:00 | INFO: Blender create Mesh node NurbsPath.001
+12:21:00 | INFO: Blender create Mesh node Rogue
+12:21:00 | INFO: Blender create Mesh node Rogue.001
+12:21:00 | INFO: glTF import finished in 0.13s
+AUDIT_3D_BLENDER [16/156] assets/models/characters/npc_merchant_f.glb
+12:21:00 | INFO: Data are loaded, start creating Blender stuff
+12:21:00 | INFO: Blender create Mesh node Casual_Body
+12:21:00 | INFO: Blender create Mesh node Casual_Feet
+12:21:00 | INFO: Blender create Mesh node Casual_Head
+12:21:00 | INFO: Blender create Mesh node Casual_Legs
+12:21:00 | INFO: glTF import finished in 0.30s
+AUDIT_3D_BLENDER [17/156] assets/models/characters/npc_merchant_m.glb
+12:21:01 | INFO: Data are loaded, start creating Blender stuff
+12:21:01 | INFO: Blender create Mesh node Adventurer_Feet
+12:21:01 | INFO: Blender create Mesh node Adventurer_Legs
+12:21:01 | INFO: Blender create Mesh node Adventurer_Body
+12:21:01 | INFO: Blender create Mesh node Adventurer_Head
+12:21:01 | INFO: Blender create Mesh node Backpack
+12:21:01 | INFO: glTF import finished in 0.40s
+AUDIT_3D_BLENDER [18/156] assets/models/characters/npc_townsman.glb
+12:21:01 | INFO: Data are loaded, start creating Blender stuff
+12:21:01 | INFO: Blender create Mesh node Worker_Feet
+12:21:01 | INFO: Blender create Mesh node Worker_Legs
+12:21:01 | INFO: Blender create Mesh node Worker_Body
+12:21:01 | INFO: Blender create Mesh node Worker_Head
+12:21:02 | INFO: glTF import finished in 0.46s
+AUDIT_3D_BLENDER [19/156] assets/models/characters/npc_townswoman.glb
+12:21:02 | INFO: Data are loaded, start creating Blender stuff
+12:21:02 | INFO: Blender create Mesh node Formad_Head
+12:21:02 | INFO: Blender create Mesh node Formal_Body
+12:21:02 | INFO: Blender create Mesh node Formal_Feet
+12:21:02 | INFO: Blender create Mesh node Formal_Legs
+12:21:02 | INFO: glTF import finished in 0.44s
+AUDIT_3D_BLENDER [20/156] assets/models/characters/npc_vendor.glb
+12:21:03 | INFO: Data are loaded, start creating Blender stuff
+12:21:03 | INFO: Blender create Mesh node Farmer_Body
+12:21:03 | INFO: Blender create Mesh node Farmer_Feet
+12:21:03 | INFO: Blender create Mesh node Farmer_Head
+12:21:03 | INFO: Blender create Mesh node Farmer_Pants
+12:21:04 | INFO: glTF import finished in 0.97s
+AUDIT_3D_BLENDER [21/156] assets/models/characters/npc_woman_dress.glb
+12:21:04 | INFO: Data are loaded, start creating Blender stuff
+12:21:04 | INFO: Blender create Mesh node Female
+12:21:04 | INFO: glTF import finished in 0.10s
+AUDIT_3D_BLENDER [22/156] assets/models/creatures/boss_iron_king.glb
+12:21:04 | INFO: Data are loaded, start creating Blender stuff
+12:21:04 | INFO: Blender create Mesh node King_Feet
+12:21:04 | INFO: Blender create Mesh node King_Legs
+12:21:04 | INFO: Blender create Mesh node King_Body
+12:21:04 | INFO: Blender create Mesh node King_Head
+12:21:04 | INFO: glTF import finished in 0.40s
+00:18.813  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\boss_iron_king__front.png'
+00:19.766  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\boss_iron_king__back.png'
+00:20.891  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\boss_iron_king__left.png'
+00:21.891  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\boss_iron_king__right.png'
+00:23.063  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\boss_iron_king__front_3q.png'
+00:24.016  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\boss_iron_king__rear_3q.png'
+00:24.906  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\boss_iron_king__pose_idle.png'
+00:25.797  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\boss_iron_king__pose_movement.png'
+00:26.688  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\boss_iron_king__pose_attack.png'
+AUDIT_3D_BLENDER [23/156] assets/models/creatures/enm_ancient_dragon.glb
+12:21:16 | INFO: Data are loaded, start creating Blender stuff
+12:21:16 | INFO: Blender create Mesh node Dragon
+12:21:16 | INFO: glTF import finished in 0.21s
+00:27.938  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ancient_dragon__front.png'
+00:28.781  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ancient_dragon__back.png'
+00:29.578  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ancient_dragon__left.png'
+00:30.391  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ancient_dragon__right.png'
+00:31.235  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ancient_dragon__front_3q.png'
+00:32.141  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ancient_dragon__rear_3q.png'
+00:33.016  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ancient_dragon__pose_idle.png'
+00:33.938  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ancient_dragon__pose_attack.png'
+AUDIT_3D_POSE_UNRESOLVED enm_ancient_dragon movement
+AUDIT_3D_BLENDER [24/156] assets/models/creatures/enm_arcane_echo.glb
+12:21:23 | INFO: Data are loaded, start creating Blender stuff
+12:21:23 | INFO: Blender create Mesh node Hywirl
+12:21:23 | INFO: glTF import finished in 0.14s
+00:35.125  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_arcane_echo__front.png'
+00:36.235  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_arcane_echo__back.png'
+00:37.188  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_arcane_echo__left.png'
+00:38.141  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_arcane_echo__right.png'
+00:39.047  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_arcane_echo__front_3q.png'
+00:39.953  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_arcane_echo__rear_3q.png'
+00:40.922  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_arcane_echo__pose_idle.png'
+00:41.953  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_arcane_echo__pose_attack.png'
+AUDIT_3D_POSE_UNRESOLVED enm_arcane_echo movement
+AUDIT_3D_BLENDER [25/156] assets/models/creatures/enm_ash_dragon.glb
+12:21:31 | INFO: Data are loaded, start creating Blender stuff
+12:21:31 | INFO: Blender create Mesh node Dragon_Fly
+12:21:31 | INFO: glTF import finished in 0.08s
+00:43.031  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ash_dragon__front.png'
+00:43.922  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ash_dragon__back.png'
+00:44.797  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ash_dragon__left.png'
+00:45.750  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ash_dragon__right.png'
+00:46.703  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ash_dragon__front_3q.png'
+00:47.750  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ash_dragon__rear_3q.png'
+00:48.766  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ash_dragon__pose_idle.png'
+00:49.719  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ash_dragon__pose_attack.png'
+AUDIT_3D_POSE_UNRESOLVED enm_ash_dragon movement
+AUDIT_3D_BLENDER [26/156] assets/models/creatures/enm_ash_maw.glb
+12:21:39 | INFO: Data are loaded, start creating Blender stuff
+12:21:39 | INFO: Blender create Mesh node Cactoro_Blob
+12:21:39 | INFO: Blender create Mesh node Cactoro_Blob.001
+12:21:39 | INFO: glTF import finished in 0.05s
+00:51.672  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ash_maw__front.png'
+00:52.641  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ash_maw__back.png'
+00:53.516  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ash_maw__left.png'
+00:54.453  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ash_maw__right.png'
+00:55.344  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ash_maw__front_3q.png'
+00:56.297  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ash_maw__rear_3q.png'
+00:57.188  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ash_maw__pose_idle.png'
+00:58.235  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ash_maw__pose_movement.png'
+AUDIT_3D_POSE_UNRESOLVED enm_ash_maw attack
+AUDIT_3D_BLENDER [27/156] assets/models/creatures/enm_ashen_acolyte.glb
+12:21:47 | INFO: Data are loaded, start creating Blender stuff
+12:21:47 | INFO: Blender create Mesh node enm_ashen_acolyte
+12:21:47 | INFO: glTF import finished in 0.07s
+00:59.250  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ashen_acolyte__front.png'
+01:00.141  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ashen_acolyte__back.png'
+01:00.985  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ashen_acolyte__left.png'
+01:01.891  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ashen_acolyte__right.png'
+01:02.922  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ashen_acolyte__front_3q.png'
+01:03.860  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ashen_acolyte__rear_3q.png'
+01:04.860  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ashen_acolyte__pose_idle.png'
+01:05.750  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ashen_acolyte__pose_movement.png'
+AUDIT_3D_POSE_UNRESOLVED enm_ashen_acolyte attack
+AUDIT_3D_BLENDER [28/156] assets/models/creatures/enm_ashfall_elk.glb
+12:21:55 | INFO: Data are loaded, start creating Blender stuff
+12:21:55 | INFO: Blender create Mesh node Stag
+12:21:55 | INFO: Blender create Mesh node Stag_Horns
+12:21:56 | INFO: glTF import finished in 0.60s
+01:07.672  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ashfall_elk__front.png'
+01:08.641  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ashfall_elk__back.png'
+01:09.625  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ashfall_elk__left.png'
+01:10.594  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ashfall_elk__right.png'
+01:11.500  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ashfall_elk__front_3q.png'
+01:12.485  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ashfall_elk__rear_3q.png'
+01:13.594  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ashfall_elk__pose_idle.png'
+01:14.563  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ashfall_elk__pose_movement.png'
+01:15.516  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ashfall_elk__pose_attack.png'
+AUDIT_3D_BLENDER [29/156] assets/models/creatures/enm_bandit.glb
+12:22:05 | INFO: Data are loaded, start creating Blender stuff
+12:22:05 | INFO: Blender create Mesh node Casual_Body
+12:22:05 | INFO: Blender create Mesh node Casual_Feet
+12:22:05 | INFO: Blender create Mesh node Casual_Head
+12:22:05 | INFO: Blender create Mesh node Casual_Legs
+12:22:06 | INFO: glTF import finished in 1.34s
+01:18.547  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_bandit__front.png'
+01:19.500  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_bandit__back.png'
+01:20.469  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_bandit__left.png'
+01:21.438  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_bandit__right.png'
+01:22.406  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_bandit__front_3q.png'
+01:23.422  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_bandit__rear_3q.png'
+01:24.313  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_bandit__pose_idle.png'
+01:25.375  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_bandit__pose_movement.png'
+01:26.297  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_bandit__pose_attack.png'
+AUDIT_3D_BLENDER [30/156] assets/models/creatures/enm_barrow_wight.glb
+12:22:16 | INFO: Data are loaded, start creating Blender stuff
+12:22:16 | INFO: Blender create Mesh node Ghost
+12:22:16 | INFO: glTF import finished in 0.16s
+01:27.360  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_barrow_wight__front.png'
+01:28.219  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_barrow_wight__back.png'
+01:29.297  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_barrow_wight__left.png'
+01:30.188  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_barrow_wight__right.png'
+01:31.328  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_barrow_wight__front_3q.png'
+01:32.391  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_barrow_wight__rear_3q.png'
+01:33.735  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_barrow_wight__pose_idle.png'
+01:34.813  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_barrow_wight__pose_attack.png'
+AUDIT_3D_POSE_UNRESOLVED enm_barrow_wight movement
+AUDIT_3D_BLENDER [31/156] assets/models/creatures/enm_bone_knight.glb
+12:22:24 | INFO: Data are loaded, start creating Blender stuff
+12:22:24 | INFO: Blender create Mesh node Ghost_Skull
+12:22:24 | INFO: glTF import finished in 0.31s
+01:36.641  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_bone_knight__front.png'
+01:37.656  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_bone_knight__back.png'
+01:38.641  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_bone_knight__left.png'
+01:39.516  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_bone_knight__right.png'
+01:40.469  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_bone_knight__front_3q.png'
+01:41.422  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_bone_knight__rear_3q.png'
+01:42.360  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_bone_knight__pose_idle.png'
+01:43.469  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_bone_knight__pose_attack.png'
+AUDIT_3D_POSE_UNRESOLVED enm_bone_knight movement
+AUDIT_3D_BLENDER [32/156] assets/models/creatures/enm_cinder_thrall.glb
+12:22:33 | INFO: Data are loaded, start creating Blender stuff
+12:22:33 | INFO: Blender create Mesh node BlueDemon
+12:22:33 | INFO: glTF import finished in 0.35s
+01:45.172  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_cinder_thrall__front.png'
+01:46.078  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_cinder_thrall__back.png'
+01:46.922  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_cinder_thrall__left.png'
+01:47.813  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_cinder_thrall__right.png'
+01:48.969  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_cinder_thrall__front_3q.png'
+01:50.031  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_cinder_thrall__rear_3q.png'
+01:51.047  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_cinder_thrall__pose_idle.png'
+01:52.016  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_cinder_thrall__pose_movement.png'
+01:52.969  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_cinder_thrall__pose_attack.png'
+AUDIT_3D_BLENDER [33/156] assets/models/creatures/enm_cinder_wisp.glb
+12:22:42 | INFO: Data are loaded, start creating Blender stuff
+12:22:42 | INFO: Blender create Mesh node Pink_Blob
+12:22:42 | INFO: Blender create Mesh node Pink_Blob.001
+12:22:42 | INFO: glTF import finished in 0.04s
+01:54.156  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_cinder_wisp__front.png'
+01:55.016  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_cinder_wisp__back.png'
+01:55.813  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_cinder_wisp__left.png'
+01:56.672  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_cinder_wisp__right.png'
+01:57.531  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_cinder_wisp__front_3q.png'
+01:58.531  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_cinder_wisp__rear_3q.png'
+01:59.594  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_cinder_wisp__pose_idle.png'
+02:00.438  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_cinder_wisp__pose_movement.png'
+AUDIT_3D_POSE_UNRESOLVED enm_cinder_wisp attack
+AUDIT_3D_BLENDER [34/156] assets/models/creatures/enm_clan_beast_tamer.glb
+12:22:50 | INFO: Data are loaded, start creating Blender stuff
+12:22:50 | INFO: Blender create Mesh node Tribal_Flying
+12:22:50 | INFO: glTF import finished in 0.16s
+02:01.531  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_clan_beast_tamer__front.png'
+02:02.391  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_clan_beast_tamer__back.png'
+02:03.188  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_clan_beast_tamer__left.png'
+02:04.078  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_clan_beast_tamer__right.png'
+02:05.016  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_clan_beast_tamer__front_3q.png'
+02:05.860  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_clan_beast_tamer__rear_3q.png'
+02:06.688  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_clan_beast_tamer__pose_idle.png'
+02:07.516  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_clan_beast_tamer__pose_attack.png'
+AUDIT_3D_POSE_UNRESOLVED enm_clan_beast_tamer movement
+AUDIT_3D_BLENDER [35/156] assets/models/creatures/enm_clan_raider.glb
+12:22:57 | INFO: Data are loaded, start creating Blender stuff
+12:22:57 | INFO: Blender create Mesh node Tribal_Flying
+12:22:57 | INFO: glTF import finished in 0.16s
+02:08.594  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_clan_raider__front.png'
+02:09.360  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_clan_raider__back.png'
+02:10.094  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_clan_raider__left.png'
+02:10.860  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_clan_raider__right.png'
+02:11.688  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_clan_raider__front_3q.png'
+02:12.500  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_clan_raider__rear_3q.png'
+02:13.328  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_clan_raider__pose_idle.png'
+02:14.219  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_clan_raider__pose_attack.png'
+AUDIT_3D_POSE_UNRESOLVED enm_clan_raider movement
+AUDIT_3D_BLENDER [36/156] assets/models/creatures/enm_clan_shaman.glb
+12:23:03 | INFO: Data are loaded, start creating Blender stuff
+12:23:03 | INFO: Blender create Mesh node Wizard_Blob
+12:23:03 | INFO: Blender create Mesh node Wizard_Blob.001
+12:23:03 | INFO: glTF import finished in 0.03s
+02:15.110  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_clan_shaman__front.png'
+02:15.938  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_clan_shaman__back.png'
+02:16.844  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_clan_shaman__left.png'
+02:17.719  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_clan_shaman__right.png'
+02:18.656  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_clan_shaman__front_3q.png'
+02:19.563  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_clan_shaman__rear_3q.png'
+02:20.485  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_clan_shaman__pose_idle.png'
+02:21.422  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_clan_shaman__pose_movement.png'
+AUDIT_3D_POSE_UNRESOLVED enm_clan_shaman attack
+AUDIT_3D_BLENDER [37/156] assets/models/creatures/enm_dire_wolf.glb
+12:23:11 | INFO: Data are loaded, start creating Blender stuff
+12:23:11 | INFO: Blender create Mesh node Wolf
+12:23:11 | INFO: glTF import finished in 0.60s
+02:23.047  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_dire_wolf__front.png'
+02:24.094  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_dire_wolf__back.png'
+02:24.860  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_dire_wolf__left.png'
+02:25.719  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_dire_wolf__right.png'
+02:26.578  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_dire_wolf__front_3q.png'
+02:27.469  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_dire_wolf__rear_3q.png'
+02:28.406  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_dire_wolf__pose_idle.png'
+02:29.313  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_dire_wolf__pose_movement.png'
+02:30.235  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_dire_wolf__pose_attack.png'
+AUDIT_3D_BLENDER [38/156] assets/models/creatures/enm_frost_drake.glb
+12:23:19 | INFO: Data are loaded, start creating Blender stuff
+12:23:19 | INFO: Blender create Mesh node Dragon_Fly
+12:23:20 | INFO: glTF import finished in 0.09s
+02:31.188  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_frost_drake__front.png'
+02:32.031  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_frost_drake__back.png'
+02:32.969  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_frost_drake__left.png'
+02:33.828  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_frost_drake__right.png'
+02:34.750  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_frost_drake__front_3q.png'
+02:35.641  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_frost_drake__rear_3q.png'
+02:36.578  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_frost_drake__pose_idle.png'
+02:37.516  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_frost_drake__pose_attack.png'
+AUDIT_3D_POSE_UNRESOLVED enm_frost_drake movement
+AUDIT_3D_BLENDER [39/156] assets/models/creatures/enm_frost_stalker.glb
+12:23:27 | INFO: Data are loaded, start creating Blender stuff
+12:23:27 | INFO: Blender create Mesh node Cube
+12:23:28 | INFO: glTF import finished in 0.81s
+02:39.531  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_frost_stalker__front.png'
+02:40.391  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_frost_stalker__back.png'
+02:41.266  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_frost_stalker__left.png'
+02:42.188  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_frost_stalker__right.png'
+02:43.110  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_frost_stalker__front_3q.png'
+02:44.094  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_frost_stalker__rear_3q.png'
+02:45.063  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_frost_stalker__pose_idle.png'
+02:46.000  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_frost_stalker__pose_movement.png'
+02:46.953  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_frost_stalker__pose_attack.png'
+AUDIT_3D_BLENDER [40/156] assets/models/creatures/enm_goblin.glb
+12:23:36 | INFO: Data are loaded, start creating Blender stuff
+12:23:36 | INFO: Blender create Mesh node Orc
+12:23:36 | INFO: Blender create Mesh node Orc_Weapon
+12:23:37 | INFO: glTF import finished in 0.46s
+02:48.422  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_goblin__front.png'
+02:49.328  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_goblin__back.png'
+02:50.172  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_goblin__left.png'
+02:51.047  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_goblin__right.png'
+02:51.953  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_goblin__front_3q.png'
+02:52.828  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_goblin__rear_3q.png'
+02:53.735  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_goblin__pose_idle.png'
+02:54.656  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_goblin__pose_movement.png'
+02:55.625  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_goblin__pose_attack.png'
+AUDIT_3D_BLENDER [41/156] assets/models/creatures/enm_grave_shade.glb
+12:23:45 | INFO: Data are loaded, start creating Blender stuff
+12:23:45 | INFO: Blender create Mesh node Ghost
+12:23:45 | INFO: glTF import finished in 0.22s
+02:56.766  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_grave_shade__front.png'
+02:57.641  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_grave_shade__back.png'
+02:58.375  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_grave_shade__left.png'
+02:59.203  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_grave_shade__right.png'
+03:00.094  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_grave_shade__front_3q.png'
+03:01.000  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_grave_shade__rear_3q.png'
+03:01.922  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_grave_shade__pose_idle.png'
+03:02.766  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_grave_shade__pose_attack.png'
+AUDIT_3D_POSE_UNRESOLVED enm_grave_shade movement
+AUDIT_3D_BLENDER [42/156] assets/models/creatures/enm_hollow_husk.glb
+12:23:52 | INFO: Data are loaded, start creating Blender stuff
+12:23:52 | INFO: Blender create Mesh node Ghost_Skull
+12:23:52 | INFO: glTF import finished in 0.17s
+03:03.781  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_hollow_husk__front.png'
+03:04.610  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_hollow_husk__back.png'
+03:05.422  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_hollow_husk__left.png'
+03:06.172  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_hollow_husk__right.png'
+03:07.078  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_hollow_husk__front_3q.png'
+03:08.016  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_hollow_husk__rear_3q.png'
+03:08.875  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_hollow_husk__pose_idle.png'
+03:09.719  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_hollow_husk__pose_attack.png'
+AUDIT_3D_POSE_UNRESOLVED enm_hollow_husk movement
+AUDIT_3D_BLENDER [43/156] assets/models/creatures/enm_hollow_necromancer.glb
+12:23:59 | INFO: Data are loaded, start creating Blender stuff
+12:23:59 | INFO: Blender create Mesh node Wizard_Blob
+12:23:59 | INFO: Blender create Mesh node Wizard_Blob.001
+12:23:59 | INFO: glTF import finished in 0.03s
+03:10.656  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_hollow_necromancer__front.png'
+03:11.500  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_hollow_necromancer__back.png'
+03:12.438  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_hollow_necromancer__left.png'
+03:13.344  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_hollow_necromancer__right.png'
+03:14.250  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_hollow_necromancer__front_3q.png'
+03:15.094  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_hollow_necromancer__rear_3q.png'
+03:15.985  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_hollow_necromancer__pose_idle.png'
+03:16.844  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_hollow_necromancer__pose_movement.png'
+AUDIT_3D_POSE_UNRESOLVED enm_hollow_necromancer attack
+AUDIT_3D_BLENDER [44/156] assets/models/creatures/enm_rime_shard.glb
+12:24:06 | INFO: Data are loaded, start creating Blender stuff
+12:24:06 | INFO: Blender create Mesh node GreenSpiky_Blob
+12:24:06 | INFO: Blender create Mesh node GreenSpiky_Blob.002
+12:24:06 | INFO: glTF import finished in 0.06s
+03:17.828  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_rime_shard__front.png'
+03:18.719  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_rime_shard__back.png'
+03:19.750  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_rime_shard__left.png'
+03:20.797  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_rime_shard__right.png'
+03:21.750  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_rime_shard__front_3q.png'
+03:22.656  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_rime_shard__rear_3q.png'
+03:23.531  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_rime_shard__pose_idle.png'
+03:24.375  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_rime_shard__pose_movement.png'
+AUDIT_3D_POSE_UNRESOLVED enm_rime_shard attack
+AUDIT_3D_BLENDER [45/156] assets/models/creatures/enm_ruin_crawler.glb
+12:24:14 | INFO: Data are loaded, start creating Blender stuff
+12:24:14 | INFO: Blender create Mesh node Squidle.002
+12:24:14 | INFO: glTF import finished in 0.17s
+03:25.453  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ruin_crawler__front.png'
+03:26.281  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ruin_crawler__back.png'
+03:27.156  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ruin_crawler__left.png'
+03:28.000  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ruin_crawler__right.png'
+03:28.938  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ruin_crawler__front_3q.png'
+03:29.875  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ruin_crawler__rear_3q.png'
+03:30.781  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ruin_crawler__pose_idle.png'
+03:31.656  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ruin_crawler__pose_attack.png'
+AUDIT_3D_POSE_UNRESOLVED enm_ruin_crawler movement
+AUDIT_3D_BLENDER [46/156] assets/models/creatures/enm_soldier.glb
+12:24:21 | INFO: Data are loaded, start creating Blender stuff
+12:24:21 | INFO: Blender create Mesh node Ninja_Blob.001
+12:24:21 | INFO: glTF import finished in 0.06s
+03:32.625  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_soldier__front.png'
+03:33.438  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_soldier__back.png'
+03:34.328  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_soldier__left.png'
+03:35.266  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_soldier__right.png'
+03:36.188  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_soldier__front_3q.png'
+03:37.031  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_soldier__rear_3q.png'
+03:37.922  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_soldier__pose_idle.png'
+03:38.735  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_soldier__pose_movement.png'
+AUDIT_3D_POSE_UNRESOLVED enm_soldier attack
+AUDIT_3D_BLENDER [47/156] assets/models/creatures/enm_stone_sentinel.glb
+12:24:28 | INFO: Data are loaded, start creating Blender stuff
+12:24:28 | INFO: Blender create Mesh node Goleling_Evolved
+12:24:28 | INFO: glTF import finished in 0.08s
+03:39.860  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_stone_sentinel__front.png'
+03:40.766  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_stone_sentinel__back.png'
+03:41.563  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_stone_sentinel__left.png'
+03:42.422  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_stone_sentinel__right.png'
+03:43.375  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_stone_sentinel__front_3q.png'
+03:44.313  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_stone_sentinel__rear_3q.png'
+03:45.313  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_stone_sentinel__pose_idle.png'
+03:46.235  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_stone_sentinel__pose_attack.png'
+AUDIT_3D_POSE_UNRESOLVED enm_stone_sentinel movement
+AUDIT_3D_BLENDER [48/156] assets/models/creatures/enm_storm_mote.glb
+12:24:35 | INFO: Data are loaded, start creating Blender stuff
+12:24:35 | INFO: Blender create Mesh node Green_Blob
+12:24:35 | INFO: Blender create Mesh node Green_Blob.001
+12:24:35 | INFO: glTF import finished in 0.03s
+03:47.078  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_storm_mote__front.png'
+03:47.938  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_storm_mote__back.png'
+03:48.813  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_storm_mote__left.png'
+03:49.688  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_storm_mote__right.png'
+03:50.516  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_storm_mote__front_3q.png'
+03:51.360  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_storm_mote__rear_3q.png'
+03:52.235  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_storm_mote__pose_idle.png'
+03:53.063  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_storm_mote__pose_movement.png'
+AUDIT_3D_POSE_UNRESOLVED enm_storm_mote attack
+AUDIT_3D_BLENDER [49/156] assets/models/creatures/enm_syndicate_enforcer.glb
+12:24:42 | INFO: Data are loaded, start creating Blender stuff
+12:24:42 | INFO: Blender create Mesh node Punk_Body
+12:24:42 | INFO: Blender create Mesh node Punk_Feet
+12:24:42 | INFO: Blender create Mesh node Punk_Head
+12:24:43 | INFO: Blender create Mesh node Punk_Legs
+12:24:43 | INFO: glTF import finished in 0.79s
+03:55.047  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_syndicate_enforcer__front.png'
+03:55.938  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_syndicate_enforcer__back.png'
+03:56.781  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_syndicate_enforcer__left.png'
+03:57.656  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_syndicate_enforcer__right.png'
+03:58.516  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_syndicate_enforcer__front_3q.png'
+03:59.360  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_syndicate_enforcer__rear_3q.png'
+04:00.219  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_syndicate_enforcer__pose_idle.png'
+04:01.063  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_syndicate_enforcer__pose_movement.png'
+04:01.875  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_syndicate_enforcer__pose_attack.png'
+AUDIT_3D_BLENDER [50/156] assets/models/creatures/enm_thornback_boar.glb
+12:24:51 | INFO: Data are loaded, start creating Blender stuff
+12:24:51 | INFO: Blender create Mesh node Cow
+12:24:52 | INFO: glTF import finished in 0.52s
+04:03.375  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_thornback_boar__front.png'
+04:04.156  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_thornback_boar__back.png'
+04:05.094  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_thornback_boar__left.png'
+04:06.016  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_thornback_boar__right.png'
+04:06.953  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_thornback_boar__front_3q.png'
+04:07.891  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_thornback_boar__rear_3q.png'
+04:08.797  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_thornback_boar__pose_idle.png'
+04:09.781  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_thornback_boar__pose_movement.png'
+04:10.735  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_thornback_boar__pose_attack.png'
+AUDIT_3D_BLENDER [51/156] assets/models/creatures/enm_ward_golem.glb
+12:25:00 | INFO: Data are loaded, start creating Blender stuff
+12:25:00 | INFO: Blender create Mesh node Goleling
+12:25:00 | INFO: glTF import finished in 0.11s
+04:11.766  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ward_golem__front.png'
+04:12.625  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ward_golem__back.png'
+04:13.422  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ward_golem__left.png'
+04:14.188  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ward_golem__right.png'
+04:15.156  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ward_golem__front_3q.png'
+04:16.094  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ward_golem__rear_3q.png'
+04:16.969  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ward_golem__pose_idle.png'
+04:17.813  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_ward_golem__pose_attack.png'
+AUDIT_3D_POSE_UNRESOLVED enm_ward_golem movement
+AUDIT_3D_BLENDER [52/156] assets/models/creatures/enm_wild_dragon.glb
+12:25:07 | INFO: Data are loaded, start creating Blender stuff
+12:25:07 | INFO: Blender create Mesh node Dragon_Fly
+12:25:07 | INFO: glTF import finished in 0.09s
+04:18.656  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_wild_dragon__front.png'
+04:19.344  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_wild_dragon__back.png'
+04:20.203  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_wild_dragon__left.png'
+04:20.891  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_wild_dragon__right.png'
+04:21.766  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_wild_dragon__front_3q.png'
+04:22.719  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_wild_dragon__rear_3q.png'
+04:23.547  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_wild_dragon__pose_idle.png'
+04:24.375  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_wild_dragon__pose_attack.png'
+AUDIT_3D_POSE_UNRESOLVED enm_wild_dragon movement
+AUDIT_3D_BLENDER [53/156] assets/models/creatures/enm_wolf.glb
+12:25:14 | INFO: Data are loaded, start creating Blender stuff
+12:25:14 | INFO: Blender create Mesh node Wolf
+12:25:14 | INFO: glTF import finished in 0.67s
+04:26.047  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_wolf__front.png'
+04:26.781  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_wolf__back.png'
+04:27.594  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_wolf__left.png'
+04:28.469  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_wolf__right.png'
+04:29.422  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_wolf__front_3q.png'
+04:30.313  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_wolf__rear_3q.png'
+04:31.188  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_wolf__pose_idle.png'
+04:32.031  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_wolf__pose_movement.png'
+04:33.016  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\enm_wolf__pose_attack.png'
+AUDIT_3D_BLENDER [54/156] assets/models/creatures/mnt_horse.glb
+12:25:22 | INFO: Data are loaded, start creating Blender stuff
+12:25:22 | INFO: Blender create Mesh node Horse
+12:25:23 | INFO: glTF import finished in 0.30s
+04:34.453  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\mnt_horse__front.png'
+04:35.297  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\mnt_horse__back.png'
+04:36.110  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\mnt_horse__left.png'
+04:36.906  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\mnt_horse__right.png'
+04:37.719  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\mnt_horse__front_3q.png'
+04:38.563  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\mnt_horse__rear_3q.png'
+04:39.391  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\mnt_horse__pose_idle.png'
+04:40.219  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\mnt_horse__pose_movement.png'
+04:41.110  render           | Saved: 'C:\Users\magnu\Embervale\reports\3d\session-04-enemies-handoff\baseline-visual-audit\renders\mnt_horse__pose_attack.png'
+AUDIT_3D_BLENDER [55/156] assets/models/equipment/eqp_pauldron_embervale.glb
+12:25:30 | INFO: Data are loaded, start creating Blender stuff
+12:25:30 | INFO: Blender create Mesh node Cube
+12:25:30 | INFO: Blender create Mesh node Cube.001
+12:25:30 | INFO: glTF import finished in 0.00s
+AUDIT_3D_BLENDER [56/156] assets/models/equipment/eqp_pouch_embervale.glb
+12:25:30 | INFO: Data are loaded, start creating Blender stuff
+12:25:30 | INFO: Blender create Mesh node Cube
+12:25:30 | INFO: Blender create Mesh node Cube.001
+12:25:30 | INFO: Blender create Mesh node Cube.002
+12:25:30 | INFO: glTF import finished in 0.00s
+AUDIT_3D_BLENDER [57/156] assets/models/equipment/npc_kit_embervale.glb
+12:25:30 | INFO: Data are loaded, start creating Blender stuff
+12:25:30 | INFO: Blender create Mesh node Cube
+12:25:30 | INFO: Blender create Mesh node ApronBib
+12:25:30 | INFO: Blender create Mesh node Front
+12:25:30 | INFO: Blender create Mesh node Front.001
+12:25:30 | INFO: Blender create Mesh node Front.002
+12:25:30 | INFO: Blender create Mesh node Front.003
+12:25:30 | INFO: Blender create Mesh node Front.004
+12:25:30 | INFO: Blender create Mesh node Front.005
+12:25:30 | INFO: Blender create Mesh node Torus
+12:25:30 | INFO: Blender create Mesh node Sphere
+12:25:30 | INFO: Blender create Mesh node Torus.001
+12:25:30 | INFO: Blender create Mesh node Cube.023
+12:25:30 | INFO: Blender create Mesh node Sphere.001
+12:25:30 | INFO: Blender create Mesh node Torus.003
+12:25:30 | INFO: Blender create Mesh node Cube.027
+12:25:30 | INFO: Blender create Mesh node Cylinder.008
+12:25:30 | INFO: Blender create Mesh node Torus.005
+12:25:30 | INFO: Blender create Mesh node Cylinder.009
+12:25:30 | INFO: Blender create Mesh node Cube.029
+12:25:30 | INFO: Blender create Mesh node Cylinder.010
+12:25:30 | INFO: Blender create Mesh node Cylinder.011
+12:25:30 | INFO: Blender create Mesh node Sphere.002
+12:25:30 | INFO: glTF import finished in 0.07s
+AUDIT_3D_BLENDER [58/156] assets/models/props/prp_arena_wall.glb
+12:25:30 | INFO: Data are loaded, start creating Blender stuff
+12:25:30 | INFO: Blender create Mesh node Mesh
+12:25:30 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [59/156] assets/models/props/prp_banner_guild.glb
+12:25:30 | INFO: Data are loaded, start creating Blender stuff
+12:25:30 | INFO: Blender create Mesh node Mesh
+12:25:30 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [60/156] assets/models/props/prp_barrel.glb
+12:25:30 | INFO: Data are loaded, start creating Blender stuff
+12:25:30 | INFO: Blender create Mesh node Mesh.017
+12:25:31 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [61/156] assets/models/props/prp_bell_tower.glb
+12:25:31 | INFO: Data are loaded, start creating Blender stuff
+12:25:31 | INFO: Blender create Mesh node Mesh.022
+12:25:31 | INFO: glTF import finished in 0.06s
+AUDIT_3D_BLENDER [62/156] assets/models/props/prp_bench.glb
+12:25:31 | INFO: Data are loaded, start creating Blender stuff
+12:25:31 | INFO: Blender create Mesh node Mesh.020
+12:25:31 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [63/156] assets/models/props/prp_boulder.glb
+12:25:31 | INFO: Data are loaded, start creating Blender stuff
+12:25:31 | INFO: Blender create Mesh node Cube.002_Retopology.001
+12:25:31 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [64/156] assets/models/props/prp_brazier.glb
+12:25:31 | INFO: Data are loaded, start creating Blender stuff
+12:25:31 | INFO: Blender create Mesh node Mesh
+12:25:31 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [65/156] assets/models/props/prp_bush_flowering.glb
+12:25:31 | INFO: Data are loaded, start creating Blender stuff
+12:25:31 | INFO: Blender create Mesh node Mesh.027
+12:25:31 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [66/156] assets/models/props/prp_cache_chest.glb
+12:25:31 | INFO: Data are loaded, start creating Blender stuff
+12:25:31 | INFO: Blender create Mesh node Mesh
+12:25:31 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [67/156] assets/models/props/prp_cache_chest_open.glb
+12:25:31 | INFO: Data are loaded, start creating Blender stuff
+12:25:31 | INFO: Blender create Mesh node Mesh
+12:25:31 | INFO: glTF import finished in 0.15s
+AUDIT_3D_BLENDER [68/156] assets/models/props/prp_campfire.glb
+12:25:31 | INFO: Data are loaded, start creating Blender stuff
+12:25:31 | INFO: Blender create Mesh node Mesh
+12:25:31 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [69/156] assets/models/props/prp_cart.glb
+12:25:31 | INFO: Data are loaded, start creating Blender stuff
+12:25:31 | INFO: Blender create Mesh node Mesh.016
+12:25:31 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [70/156] assets/models/props/prp_cauldron.glb
+12:25:31 | INFO: Data are loaded, start creating Blender stuff
+12:25:31 | INFO: Blender create Mesh node Mesh.024
+12:25:31 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [71/156] assets/models/props/prp_clover.glb
+12:25:31 | INFO: Data are loaded, start creating Blender stuff
+12:25:31 | INFO: Blender create Mesh node Cylinder.018
+12:25:31 | INFO: glTF import finished in 0.00s
+AUDIT_3D_BLENDER [72/156] assets/models/props/prp_crate.glb
+12:25:31 | INFO: Data are loaded, start creating Blender stuff
+12:25:31 | INFO: Blender create Mesh node Mesh
+12:25:31 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [73/156] assets/models/props/prp_dock_complex.glb
+12:25:31 | INFO: Data are loaded, start creating Blender stuff
+12:25:31 | INFO: Blender create Mesh node Port_SecondAge_Level2
+12:25:31 | INFO: glTF import finished in 0.04s
+AUDIT_3D_BLENDER [74/156] assets/models/props/prp_fence.glb
+12:25:31 | INFO: Data are loaded, start creating Blender stuff
+12:25:31 | INFO: Blender create Mesh node Mesh.025
+12:25:31 | INFO: glTF import finished in 0.00s
+AUDIT_3D_BLENDER [75/156] assets/models/props/prp_fern.glb
+12:25:31 | INFO: Data are loaded, start creating Blender stuff
+12:25:31 | INFO: Blender create Mesh node Plane.023
+12:25:31 | INFO: glTF import finished in 0.00s
+AUDIT_3D_BLENDER [76/156] assets/models/props/prp_fishing_hut.glb
+12:25:31 | INFO: Data are loaded, start creating Blender stuff
+12:25:31 | INFO: Blender create Mesh node Storage_FirstAge_Level1
+12:25:31 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [77/156] assets/models/props/prp_flowers_a.glb
+12:25:31 | INFO: Data are loaded, start creating Blender stuff
+12:25:31 | INFO: Blender create Mesh node Plane.021
+12:25:31 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [78/156] assets/models/props/prp_flowers_b.glb
+12:25:31 | INFO: Data are loaded, start creating Blender stuff
+12:25:31 | INFO: Blender create Mesh node Plane.003
+12:25:31 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [79/156] assets/models/props/prp_gate_palisade.glb
+12:25:31 | INFO: Data are loaded, start creating Blender stuff
+12:25:31 | INFO: Blender create Mesh node WallTowers_DoorClosed_FirstAge
+12:25:31 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [80/156] assets/models/props/prp_gazebo.glb
+12:25:31 | INFO: Data are loaded, start creating Blender stuff
+12:25:31 | INFO: Blender create Mesh node Mesh.023
+12:25:31 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [81/156] assets/models/props/prp_glacier.glb
+12:25:31 | INFO: Data are loaded, start creating Blender stuff
+12:25:31 | INFO: Blender create Mesh node prp_glacier
+12:25:31 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [82/156] assets/models/props/prp_grass_short.glb
+12:25:31 | INFO: Data are loaded, start creating Blender stuff
+12:25:31 | INFO: Blender create Mesh node Plane.014
+12:25:31 | INFO: glTF import finished in 0.00s
+AUDIT_3D_BLENDER [83/156] assets/models/props/prp_grass_tall.glb
+12:25:31 | INFO: Data are loaded, start creating Blender stuff
+12:25:31 | INFO: Blender create Mesh node Plane.013
+12:25:31 | INFO: glTF import finished in 0.00s
+AUDIT_3D_BLENDER [84/156] assets/models/props/prp_grass_wispy.glb
+12:25:31 | INFO: Data are loaded, start creating Blender stuff
+12:25:31 | INFO: Blender create Mesh node Plane.017
+12:25:31 | INFO: glTF import finished in 0.00s
+AUDIT_3D_BLENDER [85/156] assets/models/props/prp_hay.glb
+12:25:31 | INFO: Data are loaded, start creating Blender stuff
+12:25:31 | INFO: Blender create Mesh node Mesh.019
+12:25:31 | INFO: glTF import finished in 0.00s
+AUDIT_3D_BLENDER [86/156] assets/models/props/prp_jetty.glb
+12:25:31 | INFO: Data are loaded, start creating Blender stuff
+12:25:31 | INFO: Blender create Mesh node Dock_FirstAge
+12:25:31 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [87/156] assets/models/props/prp_lamp_post.glb
+12:25:31 | INFO: Data are loaded, start creating Blender stuff
+12:25:31 | INFO: Blender create Mesh node Mesh
+12:25:31 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [88/156] assets/models/props/prp_market_stand.glb
+12:25:31 | INFO: Data are loaded, start creating Blender stuff
+12:25:31 | INFO: Blender create Mesh node Mesh.014
+12:25:31 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [89/156] assets/models/props/prp_market_stand_b.glb
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Mesh.015
+12:25:32 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [90/156] assets/models/props/prp_mine_head.glb
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Mine
+12:25:32 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [91/156] assets/models/props/prp_mushrooms.glb
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Cube.032
+12:25:32 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [92/156] assets/models/props/prp_ore_seam.glb
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Resource_Gold_1
+12:25:32 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [93/156] assets/models/props/prp_pebble_a.glb
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Cube.017_Retopology.008
+12:25:32 | INFO: glTF import finished in 0.00s
+AUDIT_3D_BLENDER [94/156] assets/models/props/prp_pebble_b.glb
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Cube.017_Retopology.004
+12:25:32 | INFO: glTF import finished in 0.00s
+AUDIT_3D_BLENDER [95/156] assets/models/props/prp_pine_dead.glb
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Mesh
+12:25:32 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [96/156] assets/models/props/prp_relic.glb
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Mesh
+12:25:32 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [97/156] assets/models/props/prp_rock_cluster.glb
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Mesh
+12:25:32 | INFO: glTF import finished in 0.00s
+AUDIT_3D_BLENDER [98/156] assets/models/props/prp_rockpath_small.glb
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Cube.017_Retopology.012
+12:25:32 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [99/156] assets/models/props/prp_rockpath_wide.glb
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Cube.017_Retopology.028
+12:25:32 | INFO: glTF import finished in 0.03s
+AUDIT_3D_BLENDER [100/156] assets/models/props/prp_ruin_pillar.glb
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Mesh
+12:25:32 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [101/156] assets/models/props/prp_ruin_wall.glb
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Mesh
+12:25:32 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [102/156] assets/models/props/prp_sacks.glb
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Mesh.018
+12:25:32 | INFO: glTF import finished in 0.00s
+AUDIT_3D_BLENDER [103/156] assets/models/props/prp_station_alchemy.glb
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Mesh
+12:25:32 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [104/156] assets/models/props/prp_station_forge.glb
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node workbench-anvil.001
+12:25:32 | INFO: glTF import finished in 0.00s
+AUDIT_3D_BLENDER [105/156] assets/models/props/prp_station_workbench.glb
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Mesh
+12:25:32 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [106/156] assets/models/props/prp_tent.glb
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Mesh
+12:25:32 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [107/156] assets/models/props/prp_timber_stack.glb
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Logs
+12:25:32 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [108/156] assets/models/props/prp_tome_stand.glb
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Mesh
+12:25:32 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [109/156] assets/models/props/prp_training_dummy.glb
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Dummy.001
+12:25:32 | INFO: glTF import finished in 0.00s
+AUDIT_3D_BLENDER [110/156] assets/models/props/prp_tree_broadleaf.glb
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Mesh.026
+12:25:32 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [111/156] assets/models/props/prp_warden_post.glb
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node WonderWalls_FirstAge
+12:25:32 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [112/156] assets/models/props/prp_watch_tower.glb
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node WatchTower_FirstAge_Level2
+12:25:32 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [113/156] assets/models/props/prp_waystone.glb
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Mesh
+12:25:32 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [114/156] assets/models/props/prp_well.glb
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Mesh.021
+12:25:32 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [115/156] assets/models/weapons/wpn_sword_iron.glb
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Sword
+12:25:32 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [116/156] assets/models/architecture/mod_chimney.gltf
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Cube.017_Retopology.006
+12:25:32 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [117/156] assets/models/architecture/mod_corner.gltf
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Cube.023
+12:25:32 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [118/156] assets/models/architecture/mod_door.gltf
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Cube.235
+12:25:32 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [119/156] assets/models/architecture/mod_floor_wood.gltf
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Plane.032
+12:25:32 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [120/156] assets/models/architecture/mod_gable_4.gltf
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Cube.182
+12:25:32 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [121/156] assets/models/architecture/mod_gable_6.gltf
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Cube.101
+12:25:32 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [122/156] assets/models/architecture/mod_roof_4x4.gltf
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Cube.110
+12:25:32 | INFO: glTF import finished in 0.03s
+AUDIT_3D_BLENDER [123/156] assets/models/architecture/mod_roof_4x6.gltf
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Cube.074
+12:25:32 | INFO: glTF import finished in 0.04s
+AUDIT_3D_BLENDER [124/156] assets/models/architecture/mod_roof_6x8.gltf
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Cube.015
+12:25:32 | INFO: glTF import finished in 0.03s
+AUDIT_3D_BLENDER [125/156] assets/models/architecture/mod_wall_base.gltf
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Cube.192
+12:25:32 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [126/156] assets/models/architecture/mod_wall_door.gltf
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Cube.227
+12:25:32 | INFO: glTF import finished in 0.03s
+AUDIT_3D_BLENDER [127/156] assets/models/architecture/mod_wall_plain.gltf
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Cube.027
+12:25:32 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [128/156] assets/models/architecture/mod_wall_timber.gltf
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Cube.118
+12:25:32 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [129/156] assets/models/architecture/mod_wall_window.gltf
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Cube.220
+12:25:32 | INFO: glTF import finished in 0.03s
+AUDIT_3D_BLENDER [130/156] assets/models/architecture/mod_wall_window_thin.gltf
+12:25:32 | INFO: Data are loaded, start creating Blender stuff
+12:25:32 | INFO: Blender create Mesh node Plane.022
+12:25:33 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [131/156] assets/models/architecture/mod_window_thin.gltf
+12:25:33 | INFO: Data are loaded, start creating Blender stuff
+12:25:33 | INFO: Blender create Mesh node Cube.128
+12:25:33 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [132/156] assets/models/architecture/mod_window_wide.gltf
+12:25:33 | INFO: Data are loaded, start creating Blender stuff
+12:25:33 | INFO: Blender create Mesh node Cube.147
+12:25:33 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [133/156] assets/models/props/prp_anvil.gltf
+12:25:33 | INFO: Data are loaded, start creating Blender stuff
+12:25:33 | INFO: Blender create Mesh node Cube.025
+12:25:33 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [134/156] assets/models/props/prp_anvil_log.gltf
+12:25:33 | INFO: Data are loaded, start creating Blender stuff
+12:25:33 | INFO: Blender create Mesh node Cylinder.036
+12:25:33 | INFO: glTF import finished in 0.04s
+AUDIT_3D_BLENDER [135/156] assets/models/props/prp_bed.gltf
+12:25:33 | INFO: Data are loaded, start creating Blender stuff
+12:25:33 | INFO: Blender create Mesh node Cube.188
+12:25:33 | INFO: glTF import finished in 0.03s
+AUDIT_3D_BLENDER [136/156] assets/models/props/prp_book_stand.gltf
+12:25:33 | INFO: Data are loaded, start creating Blender stuff
+12:25:33 | INFO: Blender create Mesh node Cube.169
+12:25:33 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [137/156] assets/models/props/prp_bookcase.gltf
+12:25:33 | INFO: Data are loaded, start creating Blender stuff
+12:25:33 | INFO: Blender create Mesh node Cube.168
+12:25:33 | INFO: glTF import finished in 0.03s
+AUDIT_3D_BLENDER [138/156] assets/models/props/prp_cabinet.gltf
+12:25:33 | INFO: Data are loaded, start creating Blender stuff
+12:25:33 | INFO: Blender create Mesh node Cube.098
+12:25:33 | INFO: glTF import finished in 0.04s
+AUDIT_3D_BLENDER [139/156] assets/models/props/prp_candles.gltf
+12:25:33 | INFO: Data are loaded, start creating Blender stuff
+12:25:33 | INFO: Blender create Mesh node Cylinder.091
+12:25:33 | INFO: glTF import finished in 0.03s
+AUDIT_3D_BLENDER [140/156] assets/models/props/prp_chair.gltf
+12:25:33 | INFO: Data are loaded, start creating Blender stuff
+12:25:33 | INFO: Blender create Mesh node Cube.180
+12:25:33 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [141/156] assets/models/props/prp_chandelier.gltf
+12:25:33 | INFO: Data are loaded, start creating Blender stuff
+12:25:33 | INFO: Blender create Mesh node Cylinder.092
+12:25:33 | INFO: glTF import finished in 0.04s
+AUDIT_3D_BLENDER [142/156] assets/models/props/prp_chest_wood.gltf
+12:25:33 | INFO: Data are loaded, start creating Blender stuff
+12:25:33 | INFO: Blender create Mesh node Cube.010
+12:25:33 | INFO: Blender create Mesh node Cube.024
+12:25:33 | INFO: glTF import finished in 0.05s
+AUDIT_3D_BLENDER [143/156] assets/models/props/prp_crate_wood.gltf
+12:25:33 | INFO: Data are loaded, start creating Blender stuff
+12:25:33 | INFO: Blender create Mesh node Cube.017
+12:25:33 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [144/156] assets/models/props/prp_lantern_wall.gltf
+12:25:33 | INFO: Data are loaded, start creating Blender stuff
+12:25:33 | INFO: Blender create Mesh node Cube.018
+12:25:33 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [145/156] assets/models/props/prp_nightstand.gltf
+12:25:33 | INFO: Data are loaded, start creating Blender stuff
+12:25:33 | INFO: Blender create Mesh node Cube.131
+12:25:33 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [146/156] assets/models/props/prp_pot.gltf
+12:25:33 | INFO: Data are loaded, start creating Blender stuff
+12:25:33 | INFO: Blender create Mesh node Cube.049
+12:25:33 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [147/156] assets/models/props/prp_rope.gltf
+12:25:33 | INFO: Data are loaded, start creating Blender stuff
+12:25:33 | INFO: Blender create Mesh node BezierCurve.004
+12:25:33 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [148/156] assets/models/props/prp_shelf.gltf
+12:25:33 | INFO: Data are loaded, start creating Blender stuff
+12:25:33 | INFO: Blender create Mesh node Cube.103
+12:25:33 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [149/156] assets/models/props/prp_shelf_arch.gltf
+12:25:33 | INFO: Data are loaded, start creating Blender stuff
+12:25:33 | INFO: Blender create Mesh node Cylinder.032
+12:25:33 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [150/156] assets/models/props/prp_stall_cart.gltf
+12:25:33 | INFO: Data are loaded, start creating Blender stuff
+12:25:33 | INFO: Blender create Mesh node Cylinder.094
+12:25:33 | INFO: glTF import finished in 0.04s
+AUDIT_3D_BLENDER [151/156] assets/models/props/prp_stall_empty.gltf
+12:25:33 | INFO: Data are loaded, start creating Blender stuff
+12:25:33 | INFO: Blender create Mesh node Cube.212
+12:25:33 | INFO: glTF import finished in 0.03s
+AUDIT_3D_BLENDER [152/156] assets/models/props/prp_stool.gltf
+12:25:33 | INFO: Data are loaded, start creating Blender stuff
+12:25:33 | INFO: Blender create Mesh node Cube.097
+12:25:33 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [153/156] assets/models/props/prp_table_large.gltf
+12:25:33 | INFO: Data are loaded, start creating Blender stuff
+12:25:33 | INFO: Blender create Mesh node Cube.084
+12:25:33 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [154/156] assets/models/props/prp_weapon_rack.gltf
+12:25:33 | INFO: Data are loaded, start creating Blender stuff
+12:25:33 | INFO: Blender create Mesh node Cube.081
+12:25:33 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [155/156] assets/models/props/prp_weapon_stand.gltf
+12:25:33 | INFO: Data are loaded, start creating Blender stuff
+12:25:33 | INFO: Blender create Mesh node Cube.081
+12:25:33 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [156/156] assets/models/props/prp_workbench.gltf
+12:25:33 | INFO: Data are loaded, start creating Blender stuff
+12:25:33 | INFO: Blender create Mesh node Cube.163
+12:25:33 | INFO: glTF import finished in 0.01s
+Blender 5.1.2 (hash ec6e62d40fa9 built 2026-05-19 01:37:34)

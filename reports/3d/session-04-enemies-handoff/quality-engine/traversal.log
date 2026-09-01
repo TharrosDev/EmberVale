@@ -1,0 +1,346 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+
+[INFO]  Loaded 63 items from res://data/items.
+[INFO]  Loaded 11 affixes from res://data/affixes.
+[INFO]  Loaded 6 perks from res://data/perks.
+[INFO]  Loaded 6 shrines from res://data/shrines.
+[INFO]  Loaded 18 quests from res://data/quests.
+[INFO]  Loaded 48 dialogues from res://data/dialogue.
+[INFO]  Loaded 31 schedules from res://data/schedules.
+[INFO]  Loaded 6 status effects from res://data/status_effects.
+[INFO]  Loaded 19 spells from res://data/spells.
+[INFO]  Loaded 5 weathers from res://data/weather.
+[INFO]  Loaded 2 regions from res://data/regions.
+[INFO]  Loaded 32 encounters from res://data/encounters.
+[INFO]  Loaded 15 recipes from res://data/recipes.
+[INFO]  Loaded 13 factions from res://data/factions.
+[INFO]  Loaded 5 world events from res://data/world_events.
+[INFO]  Loaded 6 races from res://data/races.
+[INFO]  Loaded 16 AI profiles from res://data/ai_profiles.
+[INFO]  Loaded 4 bosses from res://data/bosses.
+[INFO]  Loaded 31 enemy archetypes from res://data/enemies.
+[INFO]  EnemyTemplateRegistry seeded 33 archetype(s).
+[INFO]  Loaded 33 bestiary entries from res://data/bestiary.
+[INFO]  Loaded 1 property from res://data/properties.
+[INFO]  Loaded 23 shops from res://data/shops.
+[INFO]  Loaded 15 services from res://data/services.
+[INFO]  Loaded 8 contracts from res://data/contracts.
+[INFO]  Loaded 75 map locations from res://data/map_locations.
+[INFO]  Loaded 3 companions from res://data/companions.
+[INFO]  CompanionRegistry seeded 3 companion(s).
+[INFO]  GameManager online.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.fen_edge'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.hollowreach'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.embermarket'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.ashfall_homestead'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.wilds_west'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.tarn_landing'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.town_hub'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.emberdeep_mine'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.west_downs'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.crossway_post'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.mine_road'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.north_moor'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.wilds_north'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.ashen_reach'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.frontier_waste'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.arena'.
+  nav ember_crown_fen_edge                         223 vertices  x -24.2..24.2 z -44.2..44.2
+  nav ember_crown_hollowreach                      705 vertices  x -44.4..44.4 z -44.4..44.4
+  nav ember_crown_embermarket                      933 vertices  x -49.4..49.3 z -44.4..44.4
+  nav ember_crown_ashfall_homestead                357 vertices  x -44.4..44.4 z -44.4..44.4
+  nav ember_crown_wilds_west                       442 vertices  x -29.5..29.5 z -49.5..49.5
+  nav ember_crown_tarn_landing                     515 vertices  x -39.4..39.5 z -49.4..49.3
+  nav ember_crown_town_hub                         605 vertices  x -49.4..49.3 z -49.4..49.3
+  nav ember_crown_emberdeep_mine                   786 vertices  x -44.4..44.4 z -49.4..49.3
+  nav ember_crown_west_downs                       427 vertices  x -69.2..69.2 z -34.2..34.2
+  nav ember_crown_crossway_post                    514 vertices  x -49.4..49.3 z -34.4..34.3
+  nav ember_crown_mine_road                        438 vertices  x -44.2..44.2 z -34.2..34.2
+  nav ember_crown_north_moor                       583 vertices  x -69.2..69.2 z -44.2..44.2
+  nav ember_crown_wilds_north                      527 vertices  x -49.5..49.5 z -44.5..44.5
+  nav ember_crown_ashen_reach                      275 vertices  x -44.2..44.2 z -44.2..44.2
+  nav ember_crown_frontier_waste                   832 vertices  x -99.2..99.2 z -44.2..44.2
+  nav ember_crown_arena                            614 vertices  x -64.4..64.3 z -44.4..44.4
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.fen_edge'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.hollowreach'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.embermarket'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.ashfall_homestead'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.wilds_west'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.tarn_landing'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.town_hub'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.emberdeep_mine'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.west_downs'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.crossway_post'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.mine_road'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.north_moor'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.wilds_north'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.ashen_reach'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.frontier_waste'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.arena'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.frost_march_w'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.frost_march_e'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.clan_hold'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.dragon_roost'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.north_snowfield'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.ash_roost'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.ash_approach'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.glacier'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.ancient_aerie'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.aerie_ascent'.
+  nav frostfang_reach_frost_march_w                493 vertices  x -84.2..84.2 z -39.2..39.2
+  nav frostfang_reach_frost_march_e                545 vertices  x -84.2..84.2 z -39.2..39.2
+  nav frostfang_reach_clan_hold                    825 vertices  x -59.4..59.4 z -44.4..44.4
+  nav frostfang_reach_dragon_roost                 858 vertices  x -54.4..54.5 z -44.4..44.4
+  nav frostfang_reach_north_snowfield              634 vertices  x -59.2..59.2 z -44.2..44.2
+  nav frostfang_reach_ash_roost                   1014 vertices  x -54.4..54.5 z -44.4..44.4
+  nav frostfang_reach_ash_approach                 332 vertices  x -49.2..49.2 z -44.2..44.2
+  nav frostfang_reach_glacier                      709 vertices  x -59.5..59.5 z -44.5..44.5
+  nav frostfang_reach_ancient_aerie               1015 vertices  x -69.4..69.5 z -54.4..54.5
+  nav frostfang_reach_aerie_ascent                1193 vertices  x -99.2..99.2 z -54.2..54.2
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.aerie_ascent'.
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.ancient_aerie'.
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.glacier'.
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.ash_approach'.
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.ash_roost'.
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.north_snowfield'.
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.dragon_roost'.
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.clan_hold'.
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.frost_march_e'.
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.frost_march_w'.
+world traversal: PASS (142 authored route segments)
+ERROR: 1 RID allocations of type 'N13RendererDummy15MaterialStorage13DummyMaterialE' were leaked at exit.
+ERROR: Attempting to initialize the wrong RID
+   at: get_or_null (./core/templates/rid_owner.h:240)
+   C# backtrace (most recent call first):
+       [0] Godot.GodotObject Godot.NativeCalls.godot_icall_1_363(nint, nint, int) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/NativeCalls.cs:3348)
+       [1] Godot.Node Godot.PackedScene.Instantiate(Godot.PackedScene+GenEditState) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/PackedScene.cs:132)
+       [2] void Embervale.World.RegionStreamer.Instantiate(Embervale.World.RegionCellResource, Godot.PackedScene) (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:277)
+       [3] void Embervale.World.RegionStreamer.InstantiateReadyCells() (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:270)
+       [4] void Embervale.World.RegionStreamer._Process(double) (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:179)
+       [5] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2654)
+       [6] bool Godot.Node3D.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node3D.cs:1127)
+       [7] bool Embervale.World.RegionStreamer.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (C:\Users\magnu\Embervale\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\Embervale.World.RegionStreamer_ScriptMethods.generated.cs:220)
+       [8] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+ERROR: Parameter "mem" is null.
+   at: initialize_rid (./core/templates/rid_owner.h:284)
+   C# backtrace (most recent call first):
+       [0] Godot.GodotObject Godot.NativeCalls.godot_icall_1_363(nint, nint, int) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/NativeCalls.cs:3348)
+       [1] Godot.Node Godot.PackedScene.Instantiate(Godot.PackedScene+GenEditState) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/PackedScene.cs:132)
+       [2] void Embervale.World.RegionStreamer.Instantiate(Embervale.World.RegionCellResource, Godot.PackedScene) (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:277)
+       [3] void Embervale.World.RegionStreamer.InstantiateReadyCells() (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:270)
+       [4] void Embervale.World.RegionStreamer._Process(double) (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:179)
+       [5] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2654)
+       [6] bool Godot.Node3D.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node3D.cs:1127)
+       [7] bool Embervale.World.RegionStreamer.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (C:\Users\magnu\Embervale\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\Embervale.World.RegionStreamer_ScriptMethods.generated.cs:220)
+       [8] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+ERROR: Attempting to use an uninitialized RID
+   at: get_or_null (./core/templates/rid_owner.h:247)
+   C# backtrace (most recent call first):
+       [0] Godot.GodotObject Godot.NativeCalls.godot_icall_1_363(nint, nint, int) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/NativeCalls.cs:3348)
+       [1] Godot.Node Godot.PackedScene.Instantiate(Godot.PackedScene+GenEditState) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/PackedScene.cs:132)
+       [2] void Embervale.World.RegionStreamer.Instantiate(Embervale.World.RegionCellResource, Godot.PackedScene) (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:277)
+       [3] void Embervale.World.RegionStreamer.InstantiateReadyCells() (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:270)
+       [4] void Embervale.World.RegionStreamer._Process(double) (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:179)
+       [5] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2654)
+       [6] bool Godot.Node3D.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node3D.cs:1127)
+       [7] bool Embervale.World.RegionStreamer.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (C:\Users\magnu\Embervale\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\Embervale.World.RegionStreamer_ScriptMethods.generated.cs:220)
+       [8] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+ERROR: Parameter "material" is null.
+   at: material_set_next_pass (servers/rendering/dummy/storage/material_storage.cpp:257)
+   C# backtrace (most recent call first):
+       [0] Godot.GodotObject Godot.NativeCalls.godot_icall_1_363(nint, nint, int) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/NativeCalls.cs:3348)
+       [1] Godot.Node Godot.PackedScene.Instantiate(Godot.PackedScene+GenEditState) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/PackedScene.cs:132)
+       [2] void Embervale.World.RegionStreamer.Instantiate(Embervale.World.RegionCellResource, Godot.PackedScene) (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:277)
+       [3] void Embervale.World.RegionStreamer.InstantiateReadyCells() (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:270)
+       [4] void Embervale.World.RegionStreamer._Process(double) (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:179)
+       [5] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2654)
+       [6] bool Godot.Node3D.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node3D.cs:1127)
+       [7] bool Embervale.World.RegionStreamer.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (C:\Users\magnu\Embervale\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\Embervale.World.RegionStreamer_ScriptMethods.generated.cs:220)
+       [8] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+ERROR: Attempting to use an uninitialized RID
+   at: get_or_null (./core/templates/rid_owner.h:247)
+   C# backtrace (most recent call first):
+       [0] Godot.GodotObject Godot.NativeCalls.godot_icall_1_363(nint, nint, int) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/NativeCalls.cs:3348)
+       [1] Godot.Node Godot.PackedScene.Instantiate(Godot.PackedScene+GenEditState) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/PackedScene.cs:132)
+       [2] void Embervale.World.RegionStreamer.Instantiate(Embervale.World.RegionCellResource, Godot.PackedScene) (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:277)
+       [3] void Embervale.World.RegionStreamer.InstantiateReadyCells() (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:270)
+       [4] void Embervale.World.RegionStreamer._Process(double) (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:179)
+       [5] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2654)
+       [6] bool Godot.Node3D.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node3D.cs:1127)
+       [7] bool Embervale.World.RegionStreamer.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (C:\Users\magnu\Embervale\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\Embervale.World.RegionStreamer_ScriptMethods.generated.cs:220)
+       [8] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+ERROR: Parameter "material" is null.
+   at: material_set_shader (servers/rendering/dummy/storage/material_storage.cpp:250)
+   C# backtrace (most recent call first):
+       [0] Godot.GodotObject Godot.NativeCalls.godot_icall_1_363(nint, nint, int) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/NativeCalls.cs:3348)
+       [1] Godot.Node Godot.PackedScene.Instantiate(Godot.PackedScene+GenEditState) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/PackedScene.cs:132)
+       [2] void Embervale.World.RegionStreamer.Instantiate(Embervale.World.RegionCellResource, Godot.PackedScene) (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:277)
+       [3] void Embervale.World.RegionStreamer.InstantiateReadyCells() (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:270)
+       [4] void Embervale.World.RegionStreamer._Process(double) (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:179)
+       [5] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2654)
+       [6] bool Godot.Node3D.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node3D.cs:1127)
+       [7] bool Embervale.World.RegionStreamer.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (C:\Users\magnu\Embervale\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\Embervale.World.RegionStreamer_ScriptMethods.generated.cs:220)
+       [8] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (servers/rendering/dummy/storage/material_storage.cpp:264)
+   C# backtrace (most recent call first):
+       [0] Godot.Variant Godot.NativeCalls.godot_icall_2_923(nint, nint, Godot.NativeInterop.godot_string_name, System.ReadOnlySpan`1[Godot.Variant], Godot.NativeInterop.godot_string_name) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/NativeCalls.cs:8222)
+       [1] Godot.Variant Godot.GodotObject.Call(Godot.StringName, Godot.Variant[]) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/GodotObject.cs:749)
+       [2] void Godot.GodotObject.Free() (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/GodotObject.cs:371)
+       [3] bool Embervale.World.WorldBiomeScatter.TryLoadMesh(string, Godot.Mesh&, Godot.Material&, System.Int32&) (C:\Users\magnu\Embervale\src\World\WorldBiomeScatter.cs:363)
+       [4] Embervale.World.WorldBiomeScatter Embervale.World.WorldBiomeScatter.Attach(Godot.Node3D, Embervale.World.WorldCellPresentationResource, Embervale.World.WorldBiomeScatterResource, Embervale.World.WorldHeightfield, Godot.Vector3) (C:\Users\magnu\Embervale\src\World\WorldBiomeScatter.cs:77)
+       [5] void Embervale.World.RegionStreamer.Instantiate(Embervale.World.RegionCellResource, Godot.PackedScene) (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:297)
+       [6] void Embervale.World.RegionStreamer.InstantiateReadyCells() (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:270)
+       [7] void Embervale.World.RegionStreamer._Process(double) (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:179)
+       [8] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2654)
+       [9] bool Godot.Node3D.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node3D.cs:1127)
+       [10] bool Embervale.World.RegionStreamer.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (C:\Users\magnu\Embervale\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\Embervale.World.RegionStreamer_ScriptMethods.generated.cs:220)
+       [11] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (servers/rendering/dummy/storage/material_storage.cpp:264)
+   C# backtrace (most recent call first):
+       [0] Godot.Variant Godot.NativeCalls.godot_icall_2_923(nint, nint, Godot.NativeInterop.godot_string_name, System.ReadOnlySpan`1[Godot.Variant], Godot.NativeInterop.godot_string_name) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/NativeCalls.cs:8222)
+       [1] Godot.Variant Godot.GodotObject.Call(Godot.StringName, Godot.Variant[]) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/GodotObject.cs:749)
+       [2] void Godot.GodotObject.Free() (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/GodotObject.cs:371)
+       [3] bool Embervale.World.WorldBiomeScatter.TryLoadMesh(string, Godot.Mesh&, Godot.Material&, System.Int32&) (C:\Users\magnu\Embervale\src\World\WorldBiomeScatter.cs:363)
+       [4] Embervale.World.WorldBiomeScatter Embervale.World.WorldBiomeScatter.Attach(Godot.Node3D, Embervale.World.WorldCellPresentationResource, Embervale.World.WorldBiomeScatterResource, Embervale.World.WorldHeightfield, Godot.Vector3) (C:\Users\magnu\Embervale\src\World\WorldBiomeScatter.cs:77)
+       [5] void Embervale.World.RegionStreamer.Instantiate(Embervale.World.RegionCellResource, Godot.PackedScene) (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:297)
+       [6] void Embervale.World.RegionStreamer.InstantiateReadyCells() (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:270)
+       [7] void Embervale.World.RegionStreamer._Process(double) (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:179)
+       [8] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2654)
+       [9] bool Godot.Node3D.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node3D.cs:1127)
+       [10] bool Embervale.World.RegionStreamer.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (C:\Users\magnu\Embervale\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\Embervale.World.RegionStreamer_ScriptMethods.generated.cs:220)
+       [11] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (servers/rendering/dummy/storage/material_storage.cpp:264)
+   C# backtrace (most recent call first):
+       [0] Godot.Variant Godot.NativeCalls.godot_icall_2_923(nint, nint, Godot.NativeInterop.godot_string_name, System.ReadOnlySpan`1[Godot.Variant], Godot.NativeInterop.godot_string_name) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/NativeCalls.cs:8222)
+       [1] Godot.Variant Godot.GodotObject.Call(Godot.StringName, Godot.Variant[]) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/GodotObject.cs:749)
+       [2] void Godot.GodotObject.Free() (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/GodotObject.cs:371)
+       [3] bool Embervale.World.WorldBiomeScatter.TryLoadMesh(string, Godot.Mesh&, Godot.Material&, System.Int32&) (C:\Users\magnu\Embervale\src\World\WorldBiomeScatter.cs:363)
+       [4] Embervale.World.WorldBiomeScatter Embervale.World.WorldBiomeScatter.Attach(Godot.Node3D, Embervale.World.WorldCellPresentationResource, Embervale.World.WorldBiomeScatterResource, Embervale.World.WorldHeightfield, Godot.Vector3) (C:\Users\magnu\Embervale\src\World\WorldBiomeScatter.cs:77)
+       [5] void Embervale.World.RegionStreamer.Instantiate(Embervale.World.RegionCellResource, Godot.PackedScene) (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:297)
+       [6] void Embervale.World.RegionStreamer.InstantiateReadyCells() (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:270)
+       [7] void Embervale.World.RegionStreamer._Process(double) (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:179)
+       [8] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2654)
+       [9] bool Godot.Node3D.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node3D.cs:1127)
+       [10] bool Embervale.World.RegionStreamer.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (C:\Users\magnu\Embervale\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\Embervale.World.RegionStreamer_ScriptMethods.generated.cs:220)
+       [11] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (servers/rendering/dummy/storage/material_storage.cpp:264)
+   C# backtrace (most recent call first):
+       [0] Godot.Variant Godot.NativeCalls.godot_icall_2_923(nint, nint, Godot.NativeInterop.godot_string_name, System.ReadOnlySpan`1[Godot.Variant], Godot.NativeInterop.godot_string_name) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/NativeCalls.cs:8222)
+       [1] Godot.Variant Godot.GodotObject.Call(Godot.StringName, Godot.Variant[]) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/GodotObject.cs:749)
+       [2] void Godot.GodotObject.Free() (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/GodotObject.cs:371)
+       [3] bool Embervale.World.WorldBiomeScatter.TryLoadMesh(string, Godot.Mesh&, Godot.Material&, System.Int32&) (C:\Users\magnu\Embervale\src\World\WorldBiomeScatter.cs:363)
+       [4] Embervale.World.WorldBiomeScatter Embervale.World.WorldBiomeScatter.Attach(Godot.Node3D, Embervale.World.WorldCellPresentationResource, Embervale.World.WorldBiomeScatterResource, Embervale.World.WorldHeightfield, Godot.Vector3) (C:\Users\magnu\Embervale\src\World\WorldBiomeScatter.cs:77)
+       [5] void Embervale.World.RegionStreamer.Instantiate(Embervale.World.RegionCellResource, Godot.PackedScene) (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:297)
+       [6] void Embervale.World.RegionStreamer.InstantiateReadyCells() (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:270)
+       [7] void Embervale.World.RegionStreamer._Process(double) (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:179)
+       [8] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2654)
+       [9] bool Godot.Node3D.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node3D.cs:1127)
+       [10] bool Embervale.World.RegionStreamer.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (C:\Users\magnu\Embervale\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\Embervale.World.RegionStreamer_ScriptMethods.generated.cs:220)
+       [11] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (servers/rendering/dummy/storage/material_storage.cpp:264)
+   C# backtrace (most recent call first):
+       [0] Godot.Variant Godot.NativeCalls.godot_icall_2_923(nint, nint, Godot.NativeInterop.godot_string_name, System.ReadOnlySpan`1[Godot.Variant], Godot.NativeInterop.godot_string_name) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/NativeCalls.cs:8222)
+       [1] Godot.Variant Godot.GodotObject.Call(Godot.StringName, Godot.Variant[]) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/GodotObject.cs:749)
+       [2] void Godot.GodotObject.Free() (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/GodotObject.cs:371)
+       [3] void Embervale.Npc.NpcVisualKit.Attach(Embervale.Entities.IEntity, Godot.Skeleton3D) (C:\Users\magnu\Embervale\src\Npc\NpcVisualKit.cs:231)
+       [4] void Embervale.Animation.CharacterAnimationComponent.OnInitialize() (C:\Users\magnu\Embervale\src\Animation\CharacterAnimationComponent.cs:82)
+       [5] void Embervale.Entities.EntityComponent._Ready() (C:\Users\magnu\Embervale\src\Entities\EntityComponent.cs:37)
+       [6] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2660)
+       [7] bool Embervale.Entities.EntityComponent.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (C:\Users\magnu\Embervale\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\Embervale.Entities.EntityComponent_ScriptMethods.generated.cs:90)
+       [8] bool Embervale.Animation.CharacterAnimationComponent.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (C:\Users\magnu\Embervale\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\Embervale.Animation.CharacterAnimationComponent_ScriptMethods.generated.cs:130)
+       [9] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+       [10] void Godot.NativeInterop.NativeFuncs.godotsharp_method_bind_ptrcall(nint, nint, System.Void**, System.Void*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Godot.SourceGenerators.Internal/Godot.SourceGenerators.Internal.UnmanagedCallbacksGenerator/Godot.NativeInterop.NativeFuncs.generated.cs:380)
+       [11] void Godot.NativeCalls.godot_icall_3_912(nint, nint, nint, Godot.NativeInterop.godot_bool, int) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/NativeCalls.cs:8061)
+       [12] void Godot.Node.AddChild(Godot.Node, bool, Godot.Node+InternalMode) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:848)
+       [13] void Embervale.World.RegionStreamer.Instantiate(Embervale.World.RegionCellResource, Godot.PackedScene) (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:299)
+       [14] void Embervale.World.RegionStreamer.InstantiateReadyCells() (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:270)
+       [15] void Embervale.World.RegionStreamer._Process(double) (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:179)
+       [16] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2654)
+       [17] bool Godot.Node3D.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node3D.cs:1127)
+       [18] bool Embervale.World.RegionStreamer.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (C:\Users\magnu\Embervale\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\Embervale.World.RegionStreamer_ScriptMethods.generated.cs:220)
+       [19] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (servers/rendering/dummy/storage/material_storage.cpp:264)
+   C# backtrace (most recent call first):
+       [0] Godot.Variant Godot.NativeCalls.godot_icall_2_923(nint, nint, Godot.NativeInterop.godot_string_name, System.ReadOnlySpan`1[Godot.Variant], Godot.NativeInterop.godot_string_name) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/NativeCalls.cs:8222)
+       [1] Godot.Variant Godot.GodotObject.Call(Godot.StringName, Godot.Variant[]) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/GodotObject.cs:749)
+       [2] void Godot.GodotObject.Free() (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/GodotObject.cs:371)
+       [3] void Embervale.Npc.NpcVisualKit.Attach(Embervale.Entities.IEntity, Godot.Skeleton3D) (C:\Users\magnu\Embervale\src\Npc\NpcVisualKit.cs:231)
+       [4] void Embervale.Animation.CharacterAnimationComponent.OnInitialize() (C:\Users\magnu\Embervale\src\Animation\CharacterAnimationComponent.cs:82)
+       [5] void Embervale.Entities.EntityComponent._Ready() (C:\Users\magnu\Embervale\src\Entities\EntityComponent.cs:37)
+       [6] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2660)
+       [7] bool Embervale.Entities.EntityComponent.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (C:\Users\magnu\Embervale\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\Embervale.Entities.EntityComponent_ScriptMethods.generated.cs:90)
+       [8] bool Embervale.Animation.CharacterAnimationComponent.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (C:\Users\magnu\Embervale\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\Embervale.Animation.CharacterAnimationComponent_ScriptMethods.generated.cs:130)
+       [9] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+       [10] void Godot.NativeInterop.NativeFuncs.godotsharp_method_bind_ptrcall(nint, nint, System.Void**, System.Void*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Godot.SourceGenerators.Internal/Godot.SourceGenerators.Internal.UnmanagedCallbacksGenerator/Godot.NativeInterop.NativeFuncs.generated.cs:380)
+       [11] void Godot.NativeCalls.godot_icall_3_912(nint, nint, nint, Godot.NativeInterop.godot_bool, int) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/NativeCalls.cs:8061)
+       [12] void Godot.Node.AddChild(Godot.Node, bool, Godot.Node+InternalMode) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:848)
+       [13] void Embervale.World.RegionStreamer.Instantiate(Embervale.World.RegionCellResource, Godot.PackedScene) (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:299)
+       [14] void Embervale.World.RegionStreamer.InstantiateReadyCells() (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:270)
+       [15] void Embervale.World.RegionStreamer._Process(double) (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:179)
+       [16] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2654)
+       [17] bool Godot.Node3D.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node3D.cs:1127)
+       [18] bool Embervale.World.RegionStreamer.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (C:\Users\magnu\Embervale\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\Embervale.World.RegionStreamer_ScriptMethods.generated.cs:220)
+       [19] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (servers/rendering/dummy/storage/material_storage.cpp:264)
+   C# backtrace (most recent call first):
+       [0] Godot.Variant Godot.NativeCalls.godot_icall_2_923(nint, nint, Godot.NativeInterop.godot_string_name, System.ReadOnlySpan`1[Godot.Variant], Godot.NativeInterop.godot_string_name) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/NativeCalls.cs:8222)
+       [1] Godot.Variant Godot.GodotObject.Call(Godot.StringName, Godot.Variant[]) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/GodotObject.cs:749)
+       [2] void Godot.GodotObject.Free() (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/GodotObject.cs:371)
+       [3] void Embervale.Npc.NpcVisualKit.Attach(Embervale.Entities.IEntity, Godot.Skeleton3D) (C:\Users\magnu\Embervale\src\Npc\NpcVisualKit.cs:231)
+       [4] void Embervale.Animation.CharacterAnimationComponent.OnInitialize() (C:\Users\magnu\Embervale\src\Animation\CharacterAnimationComponent.cs:82)
+       [5] void Embervale.Entities.EntityComponent._Ready() (C:\Users\magnu\Embervale\src\Entities\EntityComponent.cs:37)
+       [6] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2660)
+       [7] bool Embervale.Entities.EntityComponent.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (C:\Users\magnu\Embervale\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\Embervale.Entities.EntityComponent_ScriptMethods.generated.cs:90)
+       [8] bool Embervale.Animation.CharacterAnimationComponent.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (C:\Users\magnu\Embervale\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\Embervale.Animation.CharacterAnimationComponent_ScriptMethods.generated.cs:130)
+       [9] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+       [10] void Godot.NativeInterop.NativeFuncs.godotsharp_method_bind_ptrcall(nint, nint, System.Void**, System.Void*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Godot.SourceGenerators.Internal/Godot.SourceGenerators.Internal.UnmanagedCallbacksGenerator/Godot.NativeInterop.NativeFuncs.generated.cs:380)
+       [11] void Godot.NativeCalls.godot_icall_3_912(nint, nint, nint, Godot.NativeInterop.godot_bool, int) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/NativeCalls.cs:8061)
+       [12] void Godot.Node.AddChild(Godot.Node, bool, Godot.Node+InternalMode) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:848)
+       [13] void Embervale.World.RegionStreamer.Instantiate(Embervale.World.RegionCellResource, Godot.PackedScene) (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:299)
+       [14] void Embervale.World.RegionStreamer.InstantiateReadyCells() (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:270)
+       [15] void Embervale.World.RegionStreamer._Process(double) (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:179)
+       [16] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2654)
+       [17] bool Godot.Node3D.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node3D.cs:1127)
+       [18] bool Embervale.World.RegionStreamer.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (C:\Users\magnu\Embervale\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\Embervale.World.RegionStreamer_ScriptMethods.generated.cs:220)
+       [19] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (servers/rendering/dummy/storage/material_storage.cpp:264)
+   C# backtrace (most recent call first):
+       [0] Godot.Variant Godot.NativeCalls.godot_icall_2_923(nint, nint, Godot.NativeInterop.godot_string_name, System.ReadOnlySpan`1[Godot.Variant], Godot.NativeInterop.godot_string_name) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/NativeCalls.cs:8222)
+       [1] Godot.Variant Godot.GodotObject.Call(Godot.StringName, Godot.Variant[]) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/GodotObject.cs:749)
+       [2] void Godot.GodotObject.Free() (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/GodotObject.cs:371)
+       [3] void Embervale.Npc.NpcVisualKit.Attach(Embervale.Entities.IEntity, Godot.Skeleton3D) (C:\Users\magnu\Embervale\src\Npc\NpcVisualKit.cs:231)
+       [4] void Embervale.Animation.CharacterAnimationComponent.OnInitialize() (C:\Users\magnu\Embervale\src\Animation\CharacterAnimationComponent.cs:82)
+       [5] void Embervale.Entities.EntityComponent._Ready() (C:\Users\magnu\Embervale\src\Entities\EntityComponent.cs:37)
+       [6] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2660)
+       [7] bool Embervale.Entities.EntityComponent.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (C:\Users\magnu\Embervale\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\Embervale.Entities.EntityComponent_ScriptMethods.generated.cs:90)
+       [8] bool Embervale.Animation.CharacterAnimationComponent.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (C:\Users\magnu\Embervale\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\Embervale.Animation.CharacterAnimationComponent_ScriptMethods.generated.cs:130)
+       [9] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+       [10] void Godot.NativeInterop.NativeFuncs.godotsharp_method_bind_ptrcall(nint, nint, System.Void**, System.Void*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Godot.SourceGenerators.Internal/Godot.SourceGenerators.Internal.UnmanagedCallbacksGenerator/Godot.NativeInterop.NativeFuncs.generated.cs:380)
+       [11] void Godot.NativeCalls.godot_icall_3_912(nint, nint, nint, Godot.NativeInterop.godot_bool, int) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/NativeCalls.cs:8061)
+       [12] void Godot.Node.AddChild(Godot.Node, bool, Godot.Node+InternalMode) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:848)
+       [13] void Embervale.World.RegionStreamer.Instantiate(Embervale.World.RegionCellResource, Godot.PackedScene) (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:299)
+       [14] void Embervale.World.RegionStreamer.InstantiateReadyCells() (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:270)
+       [15] void Embervale.World.RegionStreamer._Process(double) (C:\Users\magnu\Embervale\src\World\RegionStreamer.cs:179)
+       [16] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2654)
+       [17] bool Godot.Node3D.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node3D.cs:1127)
+       [18] bool Embervale.World.RegionStreamer.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (C:\Users\magnu\Embervale\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\Embervale.World.RegionStreamer_ScriptMethods.generated.cs:220)
+       [19] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+ERROR: Parameter "material" is null.
+   at: material_set_shader (servers/rendering/dummy/storage/material_storage.cpp:250)
+WARNING: Navigation region synchronization had 2 edge error(s).
+More than 2 edges tried to occupy the same map rasterization space.
+This causes a logical error in the navigation mesh geometry and is commonly caused by overlap or too densely placed edges.
+Consider baking with a higher 'cell_size', greater geometry margin, and less detailed bake objects to cause fewer edges.
+Consider lowering the 'navigation/3d/merge_rasterizer_cell_scale' in the project settings.
+This warning can be toggled under 'navigation/3d/warnings/navmesh_edge_merge_errors' in the project settings.
+   at: _build_step_find_edge_connection_pairs (modules/navigation_3d/3d/nav_region_builder_3d.cpp:219)
+WARNING: 52 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

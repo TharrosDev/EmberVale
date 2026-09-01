@@ -4893,5 +4893,31 @@
    "source": "Quaternius Ultimate Animated Character Pack / tools/build_npc_kit.py",
    "note": "Material-only glTF JSON repair across 11 existing NPC GLBs. Binary mesh, skin, inverse-bind and animation payloads are preserved; original source assets remain in their canonical library locations."
   }
+ ],
+ "session_04_enemy_identity": [
+  {
+   "title": "enemy_identity_kit",
+   "pack": "Embervale Session 4 enemy identity kit",
+   "licence": "CC0 1.0",
+   "file": "assets/models/equipment/enemy_identity_kit.glb",
+   "source": "tools/build_enemy_identity_assets.py",
+   "note": "Repository-authored burial armour, spectral forms, faction equipment, animal anatomy, dragon variation, construct details and Iron King hero-boss pieces; deterministic per-enemy profiles."
+  },
+  {
+   "title": "Grounded elemental and construct replacements",
+   "pack": "Embervale Session 4 repository-authored creatures",
+   "licence": "CC0 1.0",
+   "file": "assets/models/creatures/enm_{cinder_wisp,storm_mote,rime_shard,ash_maw,ruin_crawler,ward_golem,stone_sentinel}.glb",
+   "source": "tools/build_enemy_identity_assets.py",
+   "note": "Seven Blender-authored low-poly grounded fantasy replacements with idle, locomotion, attack, hit and death clips. They replace incompatible slime, cactus and mascot source silhouettes."
+  },
+  {
+   "title": "Session 4 production creature material repair",
+   "pack": "Approved-source Embervale production creatures",
+   "licence": "CC0 1.0",
+   "file": "assets/models/creatures/{enm_*,boss_*}.glb",
+   "source": "tools/build_enemy_identity_assets.py",
+   "note": "Material-only glTF JSON repair on retained source assets. Geometry, skin, inverse-bind and animation binary payloads are preserved."
+  }
  ]
 }

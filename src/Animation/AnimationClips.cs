@@ -57,7 +57,8 @@ public static class AnimationClips
             "slash", "sword_slash", "sword_attack", "sword", "dagger", "bite", "swing", "attack",
             "punch", "melee",
         },
-        ["hit"] = new[] { "hit", "damage", "impact", "recieve", "receive" },
+        // Quaternius animals prefix both reactions with Idle_; they are reactions, not idle loops.
+        ["hit"] = new[] { "hit", "hitreact", "idle_hitreact", "damage", "impact", "recieve", "receive" },
         ["death"] = new[] { "death", "die", "dead" },
         // Spell_Simple_Shoot is the release; Spell_Simple_Enter/Exit are the transitions into and
         // out of the sustained Spell_Simple_Idle. Bare "spell" would take Enter (it sorts first)

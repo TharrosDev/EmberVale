@@ -223,11 +223,12 @@ public class AnimationClipsTests
         string[] wolf =
         {
             "AnimalArmature|Attack", "AnimalArmature|Death", "AnimalArmature|Gallop",
-            "AnimalArmature|Idle", "AnimalArmature|Walk",
+            "AnimalArmature|Idle", "AnimalArmature|Idle_HitReact_Left", "AnimalArmature|Walk",
         };
         Assert.Equal("AnimalArmature|Idle", AnimationClips.Resolve(wolf, "idle"));
         Assert.Equal("AnimalArmature|Walk", AnimationClips.Resolve(wolf, "run"));
         Assert.Equal("AnimalArmature|Attack", AnimationClips.Resolve(wolf, "attack"));
+        Assert.Equal("AnimalArmature|Idle_HitReact_Left", AnimationClips.Resolve(wolf, "hit"));
     }
 
     [Fact]

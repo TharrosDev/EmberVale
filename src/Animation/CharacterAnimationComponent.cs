@@ -1,4 +1,5 @@
 using Embervale.Combat;
+using Embervale.Enemies;
 using Embervale.Core.Events;
 using Embervale.Entities;
 using Embervale.Magic;
@@ -79,6 +80,7 @@ public partial class CharacterAnimationComponent : EntityComponent
         if (_skeleton != null)
         {
             NpcVisualKit.Attach(Entity, _skeleton);
+            EnemyVisualKit.Attach(Entity, _skeleton);
         }
 
         if (_player != null)

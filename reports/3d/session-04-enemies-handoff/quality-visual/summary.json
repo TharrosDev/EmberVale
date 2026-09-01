@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "run_id": "20260901T210846Z",
+  "mode": "visual",
+  "regions": [
+    "ember_crown",
+    "frostfang_reach"
+  ],
+  "status": "passed",
+  "machine": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "machine": "AMD64",
+    "python": "3.12.13"
+  },
+  "godot": "C:\\Users\\magnu\\Downloads\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64_console.exe",
+  "evidence": {
+    "logs": "C:\\Users\\magnu\\Embervale\\reports\\3d\\session-04-enemies-handoff\\quality-visual",
+    "world_current": "C:\\Users\\magnu\\Embervale\\tools\\shots\\world",
+    "world_diffs": "C:\\Users\\magnu\\Embervale\\tools\\shots\\world_diffs",
+    "visual_baseline": "C:\\Users\\magnu\\Embervale\\tests\\visual_baselines\\world_signatures.json",
+    "performance": "C:\\Users\\magnu\\Embervale\\reports\\3d\\session-04-enemies-handoff\\quality-visual\\performance.json"
+  },
+  "results": [
+    {
+      "name": "visuals",
+      "status": "PASS",
+      "what": "the approach shots render and match the approved baseline",
+      "expected": "exit code 0",
+      "actual": "exit code 0",
+      "exit_code": 0,
+      "elapsed_seconds": 102.76600000000326,
+      "reproduction": "C:\\Users\\magnu\\Downloads\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64_console.exe --path . --resolution 1280x720 --script res://tools/world_shots.gd",
+      "log": "visuals.log"
+    }
+  ]
+}

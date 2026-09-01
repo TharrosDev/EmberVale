@@ -1,0 +1,812 @@
+AUDIT_3D_BLENDER [1/157] assets/models/animations/anim_library.glb
+16:58:54 | INFO: Data are loaded, start creating Blender stuff
+16:58:54 | INFO: Blender create Mesh node Mannequin
+16:58:56 | INFO: glTF import finished in 2.52s
+AUDIT_3D_BLENDER [2/157] assets/models/architecture/bld_blacksmith.glb
+16:58:56 | INFO: Data are loaded, start creating Blender stuff
+16:58:56 | INFO: Blender create Mesh node Mesh
+16:58:57 | INFO: glTF import finished in 0.05s
+AUDIT_3D_BLENDER [3/157] assets/models/architecture/bld_cottage.glb
+16:58:57 | INFO: Data are loaded, start creating Blender stuff
+16:58:57 | INFO: Blender create Mesh node Mesh
+16:58:57 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [4/157] assets/models/architecture/bld_house_a.glb
+16:58:57 | INFO: Data are loaded, start creating Blender stuff
+16:58:57 | INFO: Blender create Mesh node House_1
+16:58:57 | INFO: glTF import finished in 0.04s
+AUDIT_3D_BLENDER [5/157] assets/models/architecture/bld_house_b.glb
+16:58:57 | INFO: Data are loaded, start creating Blender stuff
+16:58:57 | INFO: Blender create Mesh node Farm_SecondAge_Level3
+16:58:57 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [6/157] assets/models/architecture/bld_inn.glb
+16:58:57 | INFO: Data are loaded, start creating Blender stuff
+16:58:57 | INFO: Blender create Mesh node Mesh
+16:58:57 | INFO: glTF import finished in 0.04s
+AUDIT_3D_BLENDER [7/157] assets/models/characters/chr_player_base.glb
+16:58:57 | INFO: Data are loaded, start creating Blender stuff
+16:58:57 | INFO: Blender create Mesh node Adventurer_Body
+16:58:57 | INFO: Blender create Mesh node Adventurer_Feet
+16:58:57 | INFO: Blender create Mesh node Adventurer_Head
+16:58:57 | INFO: Blender create Mesh node Adventurer_Legs
+16:58:57 | INFO: Blender create Mesh node Backpack
+16:58:58 | INFO: glTF import finished in 0.81s
+AUDIT_3D_BLENDER [8/157] assets/models/characters/fp_arm.glb
+16:58:58 | INFO: Data are loaded, start creating Blender stuff
+16:58:58 | INFO: Blender create Mesh node Adventurer_Body.001
+16:58:58 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [9/157] assets/models/characters/fp_arm_left.glb
+16:58:58 | INFO: Data are loaded, start creating Blender stuff
+16:58:58 | INFO: Blender create Mesh node Adventurer_Body.002
+16:58:58 | INFO: Blender create Mesh node Right_SleeveMesh.001
+16:58:58 | INFO: Blender create Mesh node Right_BracerMesh.001
+16:58:58 | INFO: Blender create Mesh node Torus.002
+16:58:58 | INFO: Blender create Mesh node Torus.003
+16:58:58 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [10/157] assets/models/characters/fp_arm_right.glb
+16:58:58 | INFO: Data are loaded, start creating Blender stuff
+16:58:58 | INFO: Blender create Mesh node Adventurer_Body.001
+16:58:58 | INFO: Blender create Mesh node Right_SleeveMesh
+16:58:58 | INFO: Blender create Mesh node Right_BracerMesh
+16:58:58 | INFO: Blender create Mesh node Torus
+16:58:58 | INFO: Blender create Mesh node Torus.001
+16:58:58 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [11/157] assets/models/characters/npc_adventurer_f.glb
+16:58:58 | INFO: Data are loaded, start creating Blender stuff
+16:58:58 | INFO: Blender create Mesh node Adventurer_Body
+16:58:58 | INFO: Blender create Mesh node Adventurer_Feet
+16:58:58 | INFO: Blender create Mesh node Adventurer_Head
+16:58:58 | INFO: Blender create Mesh node Adventurer_Legs
+16:58:59 | INFO: glTF import finished in 0.42s
+AUDIT_3D_BLENDER [12/157] assets/models/characters/npc_guild_rep.glb
+16:58:59 | INFO: Data are loaded, start creating Blender stuff
+16:58:59 | INFO: Blender create Mesh node King_Body
+16:58:59 | INFO: Blender create Mesh node King_Feet
+16:58:59 | INFO: Blender create Mesh node King_Head
+16:58:59 | INFO: Blender create Mesh node King_Legs
+16:59:00 | INFO: glTF import finished in 1.23s
+AUDIT_3D_BLENDER [13/157] assets/models/characters/npc_hooded.glb
+16:59:00 | INFO: Data are loaded, start creating Blender stuff
+16:59:00 | INFO: Blender create Mesh node Sword
+16:59:00 | INFO: Blender create Mesh node Medieval_Body
+16:59:01 | INFO: Blender create Mesh node Medieval_Feet
+16:59:01 | INFO: Blender create Mesh node Medieval_Head
+16:59:01 | INFO: Blender create Mesh node Medieval_Legs
+16:59:01 | INFO: glTF import finished in 0.37s
+AUDIT_3D_BLENDER [14/157] assets/models/characters/npc_innkeeper.glb
+16:59:01 | INFO: Data are loaded, start creating Blender stuff
+16:59:01 | INFO: Blender create Mesh node Adventurer_Body
+16:59:01 | INFO: Blender create Mesh node Adventurer_Feet
+16:59:01 | INFO: Blender create Mesh node Adventurer_Head
+16:59:01 | INFO: Blender create Mesh node Adventurer_Legs
+16:59:02 | INFO: glTF import finished in 0.99s
+AUDIT_3D_BLENDER [15/157] assets/models/characters/npc_kael.glb
+16:59:02 | INFO: Data are loaded, start creating Blender stuff
+16:59:02 | INFO: Blender create Mesh node NurbsPath.001
+16:59:02 | INFO: Blender create Mesh node Rogue
+16:59:02 | INFO: Blender create Mesh node Rogue.001
+16:59:02 | INFO: glTF import finished in 0.19s
+AUDIT_3D_BLENDER [16/157] assets/models/characters/npc_merchant_f.glb
+16:59:03 | INFO: Data are loaded, start creating Blender stuff
+16:59:03 | INFO: Blender create Mesh node Casual_Body
+16:59:03 | INFO: Blender create Mesh node Casual_Feet
+16:59:03 | INFO: Blender create Mesh node Casual_Head
+16:59:03 | INFO: Blender create Mesh node Casual_Legs
+16:59:03 | INFO: glTF import finished in 0.41s
+AUDIT_3D_BLENDER [17/157] assets/models/characters/npc_merchant_m.glb
+16:59:03 | INFO: Data are loaded, start creating Blender stuff
+16:59:03 | INFO: Blender create Mesh node Adventurer_Feet
+16:59:03 | INFO: Blender create Mesh node Adventurer_Legs
+16:59:03 | INFO: Blender create Mesh node Adventurer_Body
+16:59:03 | INFO: Blender create Mesh node Adventurer_Head
+16:59:03 | INFO: Blender create Mesh node Backpack
+16:59:04 | INFO: glTF import finished in 0.38s
+AUDIT_3D_BLENDER [18/157] assets/models/characters/npc_townsman.glb
+16:59:04 | INFO: Data are loaded, start creating Blender stuff
+16:59:04 | INFO: Blender create Mesh node Worker_Feet
+16:59:04 | INFO: Blender create Mesh node Worker_Legs
+16:59:04 | INFO: Blender create Mesh node Worker_Body
+16:59:04 | INFO: Blender create Mesh node Worker_Head
+16:59:04 | INFO: glTF import finished in 0.38s
+AUDIT_3D_BLENDER [19/157] assets/models/characters/npc_townswoman.glb
+16:59:04 | INFO: Data are loaded, start creating Blender stuff
+16:59:04 | INFO: Blender create Mesh node Formad_Head
+16:59:04 | INFO: Blender create Mesh node Formal_Body
+16:59:04 | INFO: Blender create Mesh node Formal_Feet
+16:59:04 | INFO: Blender create Mesh node Formal_Legs
+16:59:05 | INFO: glTF import finished in 0.31s
+AUDIT_3D_BLENDER [20/157] assets/models/characters/npc_vendor.glb
+16:59:05 | INFO: Data are loaded, start creating Blender stuff
+16:59:05 | INFO: Blender create Mesh node Farmer_Body
+16:59:05 | INFO: Blender create Mesh node Farmer_Feet
+16:59:05 | INFO: Blender create Mesh node Farmer_Head
+16:59:05 | INFO: Blender create Mesh node Farmer_Pants
+16:59:06 | INFO: glTF import finished in 0.98s
+AUDIT_3D_BLENDER [21/157] assets/models/characters/npc_woman_dress.glb
+16:59:06 | INFO: Data are loaded, start creating Blender stuff
+16:59:06 | INFO: Blender create Mesh node Female
+16:59:06 | INFO: glTF import finished in 0.10s
+AUDIT_3D_BLENDER [22/157] assets/models/creatures/boss_iron_king.glb
+16:59:06 | INFO: Data are loaded, start creating Blender stuff
+16:59:06 | INFO: Blender create Mesh node King_Feet
+16:59:06 | INFO: Blender create Mesh node King_Legs
+16:59:06 | INFO: Blender create Mesh node King_Body
+16:59:06 | INFO: Blender create Mesh node King_Head
+16:59:07 | INFO: glTF import finished in 0.42s
+AUDIT_3D_BLENDER [23/157] assets/models/creatures/enm_ancient_dragon.glb
+16:59:07 | INFO: Data are loaded, start creating Blender stuff
+16:59:07 | INFO: Blender create Mesh node Dragon
+16:59:07 | INFO: glTF import finished in 0.28s
+AUDIT_3D_BLENDER [24/157] assets/models/creatures/enm_arcane_echo.glb
+16:59:07 | INFO: Data are loaded, start creating Blender stuff
+16:59:07 | INFO: Blender create Mesh node Hywirl
+16:59:07 | INFO: glTF import finished in 0.16s
+AUDIT_3D_BLENDER [25/157] assets/models/creatures/enm_ash_dragon.glb
+16:59:07 | INFO: Data are loaded, start creating Blender stuff
+16:59:07 | INFO: Blender create Mesh node Dragon_Fly
+16:59:08 | INFO: glTF import finished in 0.09s
+AUDIT_3D_BLENDER [26/157] assets/models/creatures/enm_ash_maw.glb
+16:59:08 | INFO: Data are loaded, start creating Blender stuff
+16:59:08 | INFO: Blender create Mesh node Cone.008
+16:59:08 | INFO: Blender create Mesh node Cone.009
+16:59:08 | INFO: Blender create Mesh node Cone.010
+16:59:08 | INFO: Blender create Mesh node Cone.004
+16:59:08 | INFO: Blender create Mesh node Cone.005
+16:59:08 | INFO: Blender create Mesh node Cone.006
+16:59:08 | INFO: Blender create Mesh node Cone.007
+16:59:08 | INFO: Blender create Mesh node Icosphere.001
+16:59:08 | INFO: Blender create Mesh node Torus
+16:59:08 | INFO: Blender create Mesh node Icosphere
+16:59:08 | INFO: Blender create Mesh node Cone
+16:59:08 | INFO: Blender create Mesh node Cone.001
+16:59:08 | INFO: Blender create Mesh node Cone.002
+16:59:08 | INFO: Blender create Mesh node Cone.003
+16:59:08 | INFO: glTF import finished in 0.06s
+AUDIT_3D_BLENDER [27/157] assets/models/creatures/enm_ashen_acolyte.glb
+16:59:08 | INFO: Data are loaded, start creating Blender stuff
+16:59:08 | INFO: Blender create Mesh node enm_ashen_acolyte
+16:59:08 | INFO: glTF import finished in 0.06s
+AUDIT_3D_BLENDER [28/157] assets/models/creatures/enm_ashfall_elk.glb
+16:59:08 | INFO: Data are loaded, start creating Blender stuff
+16:59:08 | INFO: Blender create Mesh node Stag
+16:59:08 | INFO: Blender create Mesh node Stag_Horns
+16:59:09 | INFO: glTF import finished in 0.80s
+AUDIT_3D_BLENDER [29/157] assets/models/creatures/enm_bandit.glb
+16:59:09 | INFO: Data are loaded, start creating Blender stuff
+16:59:09 | INFO: Blender create Mesh node Casual_Body
+16:59:09 | INFO: Blender create Mesh node Casual_Feet
+16:59:09 | INFO: Blender create Mesh node Casual_Head
+16:59:09 | INFO: Blender create Mesh node Casual_Legs
+16:59:10 | INFO: glTF import finished in 1.28s
+AUDIT_3D_BLENDER [30/157] assets/models/creatures/enm_barrow_wight.glb
+16:59:10 | INFO: Data are loaded, start creating Blender stuff
+16:59:10 | INFO: Blender create Mesh node Ghost
+16:59:11 | INFO: glTF import finished in 0.21s
+AUDIT_3D_BLENDER [31/157] assets/models/creatures/enm_bone_knight.glb
+16:59:11 | INFO: Data are loaded, start creating Blender stuff
+16:59:11 | INFO: Blender create Mesh node Ghost_Skull
+16:59:11 | INFO: glTF import finished in 0.19s
+AUDIT_3D_BLENDER [32/157] assets/models/creatures/enm_cinder_thrall.glb
+16:59:11 | INFO: Data are loaded, start creating Blender stuff
+16:59:11 | INFO: Blender create Mesh node BlueDemon
+16:59:12 | INFO: glTF import finished in 0.48s
+AUDIT_3D_BLENDER [33/157] assets/models/creatures/enm_cinder_wisp.glb
+16:59:12 | INFO: Data are loaded, start creating Blender stuff
+16:59:12 | INFO: Blender create Mesh node Icosphere.001
+16:59:12 | INFO: Blender create Mesh node Icosphere.002
+16:59:12 | INFO: Blender create Mesh node Icosphere.003
+16:59:12 | INFO: Blender create Mesh node Icosphere.004
+16:59:12 | INFO: Blender create Mesh node Icosphere.005
+16:59:12 | INFO: Blender create Mesh node Icosphere
+16:59:12 | INFO: Blender create Mesh node Cone
+16:59:12 | INFO: Blender create Mesh node Cone.001
+16:59:12 | INFO: Blender create Mesh node Cone.002
+16:59:12 | INFO: glTF import finished in 0.05s
+AUDIT_3D_BLENDER [34/157] assets/models/creatures/enm_clan_beast_tamer.glb
+16:59:12 | INFO: Data are loaded, start creating Blender stuff
+16:59:12 | INFO: Blender create Mesh node Tribal_Flying
+16:59:12 | INFO: glTF import finished in 0.26s
+AUDIT_3D_BLENDER [35/157] assets/models/creatures/enm_clan_raider.glb
+16:59:12 | INFO: Data are loaded, start creating Blender stuff
+16:59:12 | INFO: Blender create Mesh node Tribal_Flying
+16:59:12 | INFO: glTF import finished in 0.22s
+AUDIT_3D_BLENDER [36/157] assets/models/creatures/enm_clan_shaman.glb
+16:59:12 | INFO: Data are loaded, start creating Blender stuff
+16:59:12 | INFO: Blender create Mesh node Wizard_Blob
+16:59:12 | INFO: Blender create Mesh node Wizard_Blob.001
+16:59:12 | INFO: glTF import finished in 0.04s
+AUDIT_3D_BLENDER [37/157] assets/models/creatures/enm_dire_wolf.glb
+16:59:13 | INFO: Data are loaded, start creating Blender stuff
+16:59:13 | INFO: Blender create Mesh node Wolf
+16:59:13 | INFO: glTF import finished in 0.78s
+AUDIT_3D_BLENDER [38/157] assets/models/creatures/enm_frost_drake.glb
+16:59:13 | INFO: Data are loaded, start creating Blender stuff
+16:59:13 | INFO: Blender create Mesh node Dragon_Fly
+16:59:14 | INFO: glTF import finished in 0.11s
+AUDIT_3D_BLENDER [39/157] assets/models/creatures/enm_frost_stalker.glb
+16:59:14 | INFO: Data are loaded, start creating Blender stuff
+16:59:14 | INFO: Blender create Mesh node Cube
+16:59:15 | INFO: glTF import finished in 0.90s
+AUDIT_3D_BLENDER [40/157] assets/models/creatures/enm_goblin.glb
+16:59:15 | INFO: Data are loaded, start creating Blender stuff
+16:59:15 | INFO: Blender create Mesh node Orc
+16:59:15 | INFO: Blender create Mesh node Orc_Weapon
+16:59:15 | INFO: glTF import finished in 0.45s
+AUDIT_3D_BLENDER [41/157] assets/models/creatures/enm_grave_shade.glb
+16:59:15 | INFO: Data are loaded, start creating Blender stuff
+16:59:15 | INFO: Blender create Mesh node Ghost
+16:59:16 | INFO: glTF import finished in 0.12s
+AUDIT_3D_BLENDER [42/157] assets/models/creatures/enm_hollow_husk.glb
+16:59:16 | INFO: Data are loaded, start creating Blender stuff
+16:59:16 | INFO: Blender create Mesh node Ghost_Skull
+16:59:16 | INFO: glTF import finished in 0.14s
+AUDIT_3D_BLENDER [43/157] assets/models/creatures/enm_hollow_necromancer.glb
+16:59:16 | INFO: Data are loaded, start creating Blender stuff
+16:59:16 | INFO: Blender create Mesh node Wizard_Blob
+16:59:16 | INFO: Blender create Mesh node Wizard_Blob.001
+16:59:16 | INFO: glTF import finished in 0.04s
+AUDIT_3D_BLENDER [44/157] assets/models/creatures/enm_rime_shard.glb
+16:59:16 | INFO: Data are loaded, start creating Blender stuff
+16:59:16 | INFO: Blender create Mesh node Icosphere
+16:59:16 | INFO: Blender create Mesh node Cone
+16:59:16 | INFO: Blender create Mesh node Cone.001
+16:59:16 | INFO: Blender create Mesh node Cone.002
+16:59:16 | INFO: Blender create Mesh node Cone.003
+16:59:16 | INFO: Blender create Mesh node Cone.004
+16:59:16 | INFO: Blender create Mesh node Cone.005
+16:59:16 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [45/157] assets/models/creatures/enm_ruin_crawler.glb
+16:59:16 | INFO: Data are loaded, start creating Blender stuff
+16:59:16 | INFO: Blender create Mesh node Cylinder
+16:59:16 | INFO: Blender create Mesh node Cylinder.001
+16:59:16 | INFO: Blender create Mesh node Cylinder.002
+16:59:16 | INFO: Blender create Mesh node Cylinder.003
+16:59:16 | INFO: Blender create Mesh node Cylinder.004
+16:59:16 | INFO: Blender create Mesh node Cylinder.005
+16:59:16 | INFO: Blender create Mesh node Cone
+16:59:16 | INFO: Blender create Mesh node Cone.001
+16:59:16 | INFO: Blender create Mesh node Icosphere
+16:59:16 | INFO: Blender create Mesh node Cube
+16:59:16 | INFO: glTF import finished in 0.13s
+AUDIT_3D_BLENDER [46/157] assets/models/creatures/enm_soldier.glb
+16:59:16 | INFO: Data are loaded, start creating Blender stuff
+16:59:16 | INFO: Blender create Mesh node Ninja_Blob.001
+16:59:16 | INFO: glTF import finished in 0.04s
+AUDIT_3D_BLENDER [47/157] assets/models/creatures/enm_stone_sentinel.glb
+16:59:16 | INFO: Data are loaded, start creating Blender stuff
+16:59:16 | INFO: Blender create Mesh node Cube.002
+16:59:16 | INFO: Blender create Mesh node Cube.003
+16:59:16 | INFO: Blender create Mesh node Icosphere
+16:59:16 | INFO: Blender create Mesh node Cube.001
+16:59:16 | INFO: Blender create Mesh node Cube.004
+16:59:16 | INFO: Blender create Mesh node Cube.005
+16:59:16 | INFO: Blender create Mesh node Icosphere.001
+16:59:16 | INFO: Blender create Mesh node Icosphere.002
+16:59:16 | INFO: Blender create Mesh node Cube.006
+16:59:16 | INFO: Blender create Mesh node Cube.007
+16:59:16 | INFO: Blender create Mesh node Cube
+16:59:16 | INFO: glTF import finished in 0.05s
+AUDIT_3D_BLENDER [48/157] assets/models/creatures/enm_storm_mote.glb
+16:59:16 | INFO: Data are loaded, start creating Blender stuff
+16:59:16 | INFO: Blender create Mesh node Torus
+16:59:16 | INFO: Blender create Mesh node Torus.001
+16:59:16 | INFO: Blender create Mesh node Cone
+16:59:16 | INFO: Blender create Mesh node Cone.001
+16:59:16 | INFO: Blender create Mesh node Cone.002
+16:59:16 | INFO: Blender create Mesh node Cone.003
+16:59:16 | INFO: Blender create Mesh node Cone.004
+16:59:16 | INFO: Blender create Mesh node Cone.005
+16:59:16 | INFO: Blender create Mesh node Icosphere
+16:59:16 | INFO: glTF import finished in 0.03s
+AUDIT_3D_BLENDER [49/157] assets/models/creatures/enm_syndicate_enforcer.glb
+16:59:16 | INFO: Data are loaded, start creating Blender stuff
+16:59:16 | INFO: Blender create Mesh node Punk_Body
+16:59:16 | INFO: Blender create Mesh node Punk_Feet
+16:59:16 | INFO: Blender create Mesh node Punk_Head
+16:59:16 | INFO: Blender create Mesh node Punk_Legs
+16:59:17 | INFO: glTF import finished in 0.71s
+AUDIT_3D_BLENDER [50/157] assets/models/creatures/enm_thornback_boar.glb
+16:59:17 | INFO: Data are loaded, start creating Blender stuff
+16:59:17 | INFO: Blender create Mesh node Cow
+16:59:18 | INFO: glTF import finished in 0.49s
+AUDIT_3D_BLENDER [51/157] assets/models/creatures/enm_ward_golem.glb
+16:59:18 | INFO: Data are loaded, start creating Blender stuff
+16:59:18 | INFO: Blender create Mesh node Cube.002
+16:59:18 | INFO: Blender create Mesh node Cube.003
+16:59:18 | INFO: Blender create Mesh node Icosphere
+16:59:18 | INFO: Blender create Mesh node Cube.001
+16:59:18 | INFO: Blender create Mesh node Cube.004
+16:59:18 | INFO: Blender create Mesh node Cube.005
+16:59:18 | INFO: Blender create Mesh node Cube.006
+16:59:18 | INFO: Blender create Mesh node Cube.007
+16:59:18 | INFO: Blender create Mesh node Cube
+16:59:18 | INFO: Blender create Mesh node Torus
+16:59:18 | INFO: glTF import finished in 0.04s
+AUDIT_3D_BLENDER [52/157] assets/models/creatures/enm_wild_dragon.glb
+16:59:18 | INFO: Data are loaded, start creating Blender stuff
+16:59:18 | INFO: Blender create Mesh node Dragon_Fly
+16:59:18 | INFO: glTF import finished in 0.07s
+AUDIT_3D_BLENDER [53/157] assets/models/creatures/enm_wolf.glb
+16:59:18 | INFO: Data are loaded, start creating Blender stuff
+16:59:18 | INFO: Blender create Mesh node Wolf
+16:59:19 | INFO: glTF import finished in 0.57s
+AUDIT_3D_BLENDER [54/157] assets/models/creatures/mnt_horse.glb
+16:59:19 | INFO: Data are loaded, start creating Blender stuff
+16:59:19 | INFO: Blender create Mesh node Horse
+16:59:19 | INFO: glTF import finished in 0.25s
+AUDIT_3D_BLENDER [55/157] assets/models/equipment/enemy_identity_kit.glb
+16:59:19 | INFO: Data are loaded, start creating Blender stuff
+16:59:19 | INFO: Blender create Mesh node Sphere
+16:59:19 | INFO: Blender create Mesh node Cone.002
+16:59:19 | INFO: Blender create Mesh node Cube.001
+16:59:19 | INFO: Blender create Mesh node Cone.010
+16:59:19 | INFO: Blender create Mesh node Torus
+16:59:19 | INFO: Blender create Mesh node Torus.001
+16:59:19 | INFO: Blender create Mesh node Cube.005
+16:59:19 | INFO: Blender create Mesh node Cube.006
+16:59:19 | INFO: Blender create Mesh node staff
+16:59:19 | INFO: Blender create Mesh node rib_0
+16:59:19 | INFO: Blender create Mesh node Torus.003
+16:59:19 | INFO: Blender create Mesh node Sphere.001
+16:59:19 | INFO: Blender create Mesh node Cube.008
+16:59:19 | INFO: Blender create Mesh node Cylinder.002
+16:59:19 | INFO: Blender create Mesh node Cube.010
+16:59:19 | INFO: Blender create Mesh node Cube.011
+16:59:19 | INFO: Blender create Mesh node Cube.012
+16:59:19 | INFO: Blender create Mesh node Cube.015
+16:59:19 | INFO: Blender create Mesh node Cone.022
+16:59:19 | INFO: Blender create Mesh node Cone.027
+16:59:19 | INFO: Blender create Mesh node Cone.029
+16:59:19 | INFO: Blender create Mesh node Cube.019
+16:59:19 | INFO: Blender create Mesh node Cube.020
+16:59:19 | INFO: Blender create Mesh node Torus.005
+16:59:19 | INFO: Blender create Mesh node Cone.041
+16:59:19 | INFO: Blender create Mesh node Cone.045
+16:59:19 | INFO: Blender create Mesh node Cone.050
+16:59:19 | INFO: Blender create Mesh node chain_l
+16:59:19 | INFO: Blender create Mesh node Cone.053
+16:59:19 | INFO: Blender create Mesh node Cone.056
+16:59:19 | INFO: Blender create Mesh node Torus.007
+16:59:19 | INFO: Blender create Mesh node Cube.022
+16:59:19 | INFO: Blender create Mesh node Cylinder.006
+16:59:19 | INFO: Blender create Mesh node king_chain_l
+16:59:19 | INFO: Blender create Mesh node Cube.025
+16:59:19 | INFO: Blender create Mesh node king_haft
+16:59:19 | INFO: Blender create Mesh node Cube.027
+16:59:19 | INFO: Blender create Mesh node Cube.028
+16:59:19 | INFO: Blender create Mesh node Torus.009
+16:59:19 | INFO: Blender create Mesh node Torus.010
+16:59:19 | INFO: glTF import finished in 0.14s
+AUDIT_3D_BLENDER [56/157] assets/models/equipment/eqp_pauldron_embervale.glb
+16:59:19 | INFO: Data are loaded, start creating Blender stuff
+16:59:19 | INFO: Blender create Mesh node Cube
+16:59:19 | INFO: Blender create Mesh node Cube.001
+16:59:19 | INFO: glTF import finished in 0.00s
+AUDIT_3D_BLENDER [57/157] assets/models/equipment/eqp_pouch_embervale.glb
+16:59:19 | INFO: Data are loaded, start creating Blender stuff
+16:59:19 | INFO: Blender create Mesh node Cube
+16:59:19 | INFO: Blender create Mesh node Cube.001
+16:59:19 | INFO: Blender create Mesh node Cube.002
+16:59:19 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [58/157] assets/models/equipment/npc_kit_embervale.glb
+16:59:19 | INFO: Data are loaded, start creating Blender stuff
+16:59:19 | INFO: Blender create Mesh node Cube
+16:59:19 | INFO: Blender create Mesh node ApronBib
+16:59:19 | INFO: Blender create Mesh node Front
+16:59:19 | INFO: Blender create Mesh node Front.001
+16:59:19 | INFO: Blender create Mesh node Front.002
+16:59:19 | INFO: Blender create Mesh node Front.003
+16:59:19 | INFO: Blender create Mesh node Front.004
+16:59:19 | INFO: Blender create Mesh node Front.005
+16:59:19 | INFO: Blender create Mesh node Torus
+16:59:19 | INFO: Blender create Mesh node Sphere
+16:59:19 | INFO: Blender create Mesh node Torus.001
+16:59:19 | INFO: Blender create Mesh node Cube.023
+16:59:19 | INFO: Blender create Mesh node Sphere.001
+16:59:19 | INFO: Blender create Mesh node Torus.003
+16:59:19 | INFO: Blender create Mesh node Cube.027
+16:59:19 | INFO: Blender create Mesh node Cylinder.008
+16:59:19 | INFO: Blender create Mesh node Torus.005
+16:59:19 | INFO: Blender create Mesh node Cylinder.009
+16:59:19 | INFO: Blender create Mesh node Cube.029
+16:59:19 | INFO: Blender create Mesh node Cylinder.010
+16:59:19 | INFO: Blender create Mesh node Cylinder.011
+16:59:19 | INFO: Blender create Mesh node Sphere.002
+16:59:19 | INFO: glTF import finished in 0.11s
+AUDIT_3D_BLENDER [59/157] assets/models/props/prp_arena_wall.glb
+16:59:19 | INFO: Data are loaded, start creating Blender stuff
+16:59:19 | INFO: Blender create Mesh node Mesh
+16:59:19 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [60/157] assets/models/props/prp_banner_guild.glb
+16:59:19 | INFO: Data are loaded, start creating Blender stuff
+16:59:19 | INFO: Blender create Mesh node Mesh
+16:59:19 | INFO: glTF import finished in 0.00s
+AUDIT_3D_BLENDER [61/157] assets/models/props/prp_barrel.glb
+16:59:19 | INFO: Data are loaded, start creating Blender stuff
+16:59:19 | INFO: Blender create Mesh node Mesh.017
+16:59:19 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [62/157] assets/models/props/prp_bell_tower.glb
+16:59:19 | INFO: Data are loaded, start creating Blender stuff
+16:59:19 | INFO: Blender create Mesh node Mesh.022
+16:59:20 | INFO: glTF import finished in 0.06s
+AUDIT_3D_BLENDER [63/157] assets/models/props/prp_bench.glb
+16:59:20 | INFO: Data are loaded, start creating Blender stuff
+16:59:20 | INFO: Blender create Mesh node Mesh.020
+16:59:20 | INFO: glTF import finished in 0.00s
+AUDIT_3D_BLENDER [64/157] assets/models/props/prp_boulder.glb
+16:59:20 | INFO: Data are loaded, start creating Blender stuff
+16:59:20 | INFO: Blender create Mesh node Cube.002_Retopology.001
+16:59:20 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [65/157] assets/models/props/prp_brazier.glb
+16:59:20 | INFO: Data are loaded, start creating Blender stuff
+16:59:20 | INFO: Blender create Mesh node Mesh
+16:59:20 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [66/157] assets/models/props/prp_bush_flowering.glb
+16:59:20 | INFO: Data are loaded, start creating Blender stuff
+16:59:20 | INFO: Blender create Mesh node Mesh.027
+16:59:20 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [67/157] assets/models/props/prp_cache_chest.glb
+16:59:20 | INFO: Data are loaded, start creating Blender stuff
+16:59:20 | INFO: Blender create Mesh node Mesh
+16:59:20 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [68/157] assets/models/props/prp_cache_chest_open.glb
+16:59:20 | INFO: Data are loaded, start creating Blender stuff
+16:59:20 | INFO: Blender create Mesh node Mesh
+16:59:20 | INFO: glTF import finished in 0.14s
+AUDIT_3D_BLENDER [69/157] assets/models/props/prp_campfire.glb
+16:59:20 | INFO: Data are loaded, start creating Blender stuff
+16:59:20 | INFO: Blender create Mesh node Mesh
+16:59:20 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [70/157] assets/models/props/prp_cart.glb
+16:59:20 | INFO: Data are loaded, start creating Blender stuff
+16:59:20 | INFO: Blender create Mesh node Mesh.016
+16:59:20 | INFO: glTF import finished in 0.03s
+AUDIT_3D_BLENDER [71/157] assets/models/props/prp_cauldron.glb
+16:59:20 | INFO: Data are loaded, start creating Blender stuff
+16:59:20 | INFO: Blender create Mesh node Mesh.024
+16:59:20 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [72/157] assets/models/props/prp_clover.glb
+16:59:20 | INFO: Data are loaded, start creating Blender stuff
+16:59:20 | INFO: Blender create Mesh node Cylinder.018
+16:59:20 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [73/157] assets/models/props/prp_crate.glb
+16:59:20 | INFO: Data are loaded, start creating Blender stuff
+16:59:20 | INFO: Blender create Mesh node Mesh
+16:59:20 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [74/157] assets/models/props/prp_dock_complex.glb
+16:59:20 | INFO: Data are loaded, start creating Blender stuff
+16:59:20 | INFO: Blender create Mesh node Port_SecondAge_Level2
+16:59:20 | INFO: glTF import finished in 0.05s
+AUDIT_3D_BLENDER [75/157] assets/models/props/prp_fence.glb
+16:59:20 | INFO: Data are loaded, start creating Blender stuff
+16:59:20 | INFO: Blender create Mesh node Mesh.025
+16:59:20 | INFO: glTF import finished in 0.00s
+AUDIT_3D_BLENDER [76/157] assets/models/props/prp_fern.glb
+16:59:20 | INFO: Data are loaded, start creating Blender stuff
+16:59:20 | INFO: Blender create Mesh node Plane.023
+16:59:20 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [77/157] assets/models/props/prp_fishing_hut.glb
+16:59:20 | INFO: Data are loaded, start creating Blender stuff
+16:59:20 | INFO: Blender create Mesh node Storage_FirstAge_Level1
+16:59:20 | INFO: glTF import finished in 0.04s
+AUDIT_3D_BLENDER [78/157] assets/models/props/prp_flowers_a.glb
+16:59:20 | INFO: Data are loaded, start creating Blender stuff
+16:59:20 | INFO: Blender create Mesh node Plane.021
+16:59:20 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [79/157] assets/models/props/prp_flowers_b.glb
+16:59:20 | INFO: Data are loaded, start creating Blender stuff
+16:59:20 | INFO: Blender create Mesh node Plane.003
+16:59:20 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [80/157] assets/models/props/prp_gate_palisade.glb
+16:59:20 | INFO: Data are loaded, start creating Blender stuff
+16:59:20 | INFO: Blender create Mesh node WallTowers_DoorClosed_FirstAge
+16:59:20 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [81/157] assets/models/props/prp_gazebo.glb
+16:59:20 | INFO: Data are loaded, start creating Blender stuff
+16:59:20 | INFO: Blender create Mesh node Mesh.023
+16:59:20 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [82/157] assets/models/props/prp_glacier.glb
+16:59:20 | INFO: Data are loaded, start creating Blender stuff
+16:59:20 | INFO: Blender create Mesh node prp_glacier
+16:59:20 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [83/157] assets/models/props/prp_grass_short.glb
+16:59:20 | INFO: Data are loaded, start creating Blender stuff
+16:59:20 | INFO: Blender create Mesh node Plane.014
+16:59:20 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [84/157] assets/models/props/prp_grass_tall.glb
+16:59:20 | INFO: Data are loaded, start creating Blender stuff
+16:59:20 | INFO: Blender create Mesh node Plane.013
+16:59:20 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [85/157] assets/models/props/prp_grass_wispy.glb
+16:59:20 | INFO: Data are loaded, start creating Blender stuff
+16:59:20 | INFO: Blender create Mesh node Plane.017
+16:59:20 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [86/157] assets/models/props/prp_hay.glb
+16:59:20 | INFO: Data are loaded, start creating Blender stuff
+16:59:20 | INFO: Blender create Mesh node Mesh.019
+16:59:20 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [87/157] assets/models/props/prp_jetty.glb
+16:59:20 | INFO: Data are loaded, start creating Blender stuff
+16:59:20 | INFO: Blender create Mesh node Dock_FirstAge
+16:59:20 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [88/157] assets/models/props/prp_lamp_post.glb
+16:59:20 | INFO: Data are loaded, start creating Blender stuff
+16:59:20 | INFO: Blender create Mesh node Mesh
+16:59:20 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [89/157] assets/models/props/prp_market_stand.glb
+16:59:20 | INFO: Data are loaded, start creating Blender stuff
+16:59:20 | INFO: Blender create Mesh node Mesh.014
+16:59:21 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [90/157] assets/models/props/prp_market_stand_b.glb
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node Mesh.015
+16:59:21 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [91/157] assets/models/props/prp_mine_head.glb
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node Mine
+16:59:21 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [92/157] assets/models/props/prp_mushrooms.glb
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node Cube.032
+16:59:21 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [93/157] assets/models/props/prp_ore_seam.glb
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node Resource_Gold_1
+16:59:21 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [94/157] assets/models/props/prp_pebble_a.glb
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node Cube.017_Retopology.008
+16:59:21 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [95/157] assets/models/props/prp_pebble_b.glb
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node Cube.017_Retopology.004
+16:59:21 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [96/157] assets/models/props/prp_pine_dead.glb
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node Mesh
+16:59:21 | INFO: glTF import finished in 0.04s
+AUDIT_3D_BLENDER [97/157] assets/models/props/prp_relic.glb
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node Mesh
+16:59:21 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [98/157] assets/models/props/prp_rock_cluster.glb
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node Mesh
+16:59:21 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [99/157] assets/models/props/prp_rockpath_small.glb
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node Cube.017_Retopology.012
+16:59:21 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [100/157] assets/models/props/prp_rockpath_wide.glb
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node Cube.017_Retopology.028
+16:59:21 | INFO: glTF import finished in 0.03s
+AUDIT_3D_BLENDER [101/157] assets/models/props/prp_ruin_pillar.glb
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node Mesh
+16:59:21 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [102/157] assets/models/props/prp_ruin_wall.glb
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node Mesh
+16:59:21 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [103/157] assets/models/props/prp_sacks.glb
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node Mesh.018
+16:59:21 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [104/157] assets/models/props/prp_station_alchemy.glb
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node Mesh
+16:59:21 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [105/157] assets/models/props/prp_station_forge.glb
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node workbench-anvil.001
+16:59:21 | INFO: glTF import finished in 0.00s
+AUDIT_3D_BLENDER [106/157] assets/models/props/prp_station_workbench.glb
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node Mesh
+16:59:21 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [107/157] assets/models/props/prp_tent.glb
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node Mesh
+16:59:21 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [108/157] assets/models/props/prp_timber_stack.glb
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node Logs
+16:59:21 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [109/157] assets/models/props/prp_tome_stand.glb
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node Mesh
+16:59:21 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [110/157] assets/models/props/prp_training_dummy.glb
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node Dummy.001
+16:59:21 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [111/157] assets/models/props/prp_tree_broadleaf.glb
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node Mesh.026
+16:59:21 | INFO: glTF import finished in 0.03s
+AUDIT_3D_BLENDER [112/157] assets/models/props/prp_warden_post.glb
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node WonderWalls_FirstAge
+16:59:21 | INFO: glTF import finished in 0.03s
+AUDIT_3D_BLENDER [113/157] assets/models/props/prp_watch_tower.glb
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node WatchTower_FirstAge_Level2
+16:59:21 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [114/157] assets/models/props/prp_waystone.glb
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node Mesh
+16:59:21 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [115/157] assets/models/props/prp_well.glb
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node Mesh.021
+16:59:21 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [116/157] assets/models/weapons/wpn_sword_iron.glb
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node Sword
+16:59:21 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [117/157] assets/models/architecture/mod_chimney.gltf
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node Cube.017_Retopology.006
+16:59:21 | INFO: glTF import finished in 0.11s
+AUDIT_3D_BLENDER [118/157] assets/models/architecture/mod_corner.gltf
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node Cube.023
+16:59:21 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [119/157] assets/models/architecture/mod_door.gltf
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node Cube.235
+16:59:21 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [120/157] assets/models/architecture/mod_floor_wood.gltf
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node Plane.032
+16:59:21 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [121/157] assets/models/architecture/mod_gable_4.gltf
+16:59:21 | INFO: Data are loaded, start creating Blender stuff
+16:59:21 | INFO: Blender create Mesh node Cube.182
+16:59:22 | INFO: glTF import finished in 0.03s
+AUDIT_3D_BLENDER [122/157] assets/models/architecture/mod_gable_6.gltf
+16:59:22 | INFO: Data are loaded, start creating Blender stuff
+16:59:22 | INFO: Blender create Mesh node Cube.101
+16:59:22 | INFO: glTF import finished in 0.03s
+AUDIT_3D_BLENDER [123/157] assets/models/architecture/mod_roof_4x4.gltf
+16:59:22 | INFO: Data are loaded, start creating Blender stuff
+16:59:22 | INFO: Blender create Mesh node Cube.110
+16:59:22 | INFO: glTF import finished in 0.04s
+AUDIT_3D_BLENDER [124/157] assets/models/architecture/mod_roof_4x6.gltf
+16:59:22 | INFO: Data are loaded, start creating Blender stuff
+16:59:22 | INFO: Blender create Mesh node Cube.074
+16:59:22 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [125/157] assets/models/architecture/mod_roof_6x8.gltf
+16:59:22 | INFO: Data are loaded, start creating Blender stuff
+16:59:22 | INFO: Blender create Mesh node Cube.015
+16:59:22 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [126/157] assets/models/architecture/mod_wall_base.gltf
+16:59:22 | INFO: Data are loaded, start creating Blender stuff
+16:59:22 | INFO: Blender create Mesh node Cube.192
+16:59:22 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [127/157] assets/models/architecture/mod_wall_door.gltf
+16:59:22 | INFO: Data are loaded, start creating Blender stuff
+16:59:22 | INFO: Blender create Mesh node Cube.227
+16:59:22 | INFO: glTF import finished in 0.03s
+AUDIT_3D_BLENDER [128/157] assets/models/architecture/mod_wall_plain.gltf
+16:59:22 | INFO: Data are loaded, start creating Blender stuff
+16:59:22 | INFO: Blender create Mesh node Cube.027
+16:59:22 | INFO: glTF import finished in 0.03s
+AUDIT_3D_BLENDER [129/157] assets/models/architecture/mod_wall_timber.gltf
+16:59:22 | INFO: Data are loaded, start creating Blender stuff
+16:59:22 | INFO: Blender create Mesh node Cube.118
+16:59:22 | INFO: glTF import finished in 0.03s
+AUDIT_3D_BLENDER [130/157] assets/models/architecture/mod_wall_window.gltf
+16:59:22 | INFO: Data are loaded, start creating Blender stuff
+16:59:22 | INFO: Blender create Mesh node Cube.220
+16:59:22 | INFO: glTF import finished in 0.03s
+AUDIT_3D_BLENDER [131/157] assets/models/architecture/mod_wall_window_thin.gltf
+16:59:22 | INFO: Data are loaded, start creating Blender stuff
+16:59:22 | INFO: Blender create Mesh node Plane.022
+16:59:22 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [132/157] assets/models/architecture/mod_window_thin.gltf
+16:59:22 | INFO: Data are loaded, start creating Blender stuff
+16:59:22 | INFO: Blender create Mesh node Cube.128
+16:59:22 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [133/157] assets/models/architecture/mod_window_wide.gltf
+16:59:22 | INFO: Data are loaded, start creating Blender stuff
+16:59:22 | INFO: Blender create Mesh node Cube.147
+16:59:22 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [134/157] assets/models/props/prp_anvil.gltf
+16:59:22 | INFO: Data are loaded, start creating Blender stuff
+16:59:22 | INFO: Blender create Mesh node Cube.025
+16:59:22 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [135/157] assets/models/props/prp_anvil_log.gltf
+16:59:22 | INFO: Data are loaded, start creating Blender stuff
+16:59:22 | INFO: Blender create Mesh node Cylinder.036
+16:59:22 | INFO: glTF import finished in 0.05s
+AUDIT_3D_BLENDER [136/157] assets/models/props/prp_bed.gltf
+16:59:22 | INFO: Data are loaded, start creating Blender stuff
+16:59:22 | INFO: Blender create Mesh node Cube.188
+16:59:22 | INFO: glTF import finished in 0.03s
+AUDIT_3D_BLENDER [137/157] assets/models/props/prp_book_stand.gltf
+16:59:22 | INFO: Data are loaded, start creating Blender stuff
+16:59:22 | INFO: Blender create Mesh node Cube.169
+16:59:22 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [138/157] assets/models/props/prp_bookcase.gltf
+16:59:22 | INFO: Data are loaded, start creating Blender stuff
+16:59:22 | INFO: Blender create Mesh node Cube.168
+16:59:22 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [139/157] assets/models/props/prp_cabinet.gltf
+16:59:22 | INFO: Data are loaded, start creating Blender stuff
+16:59:22 | INFO: Blender create Mesh node Cube.098
+16:59:22 | INFO: glTF import finished in 0.03s
+AUDIT_3D_BLENDER [140/157] assets/models/props/prp_candles.gltf
+16:59:22 | INFO: Data are loaded, start creating Blender stuff
+16:59:22 | INFO: Blender create Mesh node Cylinder.091
+16:59:22 | INFO: glTF import finished in 0.03s
+AUDIT_3D_BLENDER [141/157] assets/models/props/prp_chair.gltf
+16:59:22 | INFO: Data are loaded, start creating Blender stuff
+16:59:22 | INFO: Blender create Mesh node Cube.180
+16:59:22 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [142/157] assets/models/props/prp_chandelier.gltf
+16:59:22 | INFO: Data are loaded, start creating Blender stuff
+16:59:22 | INFO: Blender create Mesh node Cylinder.092
+16:59:22 | INFO: glTF import finished in 0.05s
+AUDIT_3D_BLENDER [143/157] assets/models/props/prp_chest_wood.gltf
+16:59:22 | INFO: Data are loaded, start creating Blender stuff
+16:59:22 | INFO: Blender create Mesh node Cube.010
+16:59:22 | INFO: Blender create Mesh node Cube.024
+16:59:22 | INFO: glTF import finished in 0.06s
+AUDIT_3D_BLENDER [144/157] assets/models/props/prp_crate_wood.gltf
+16:59:22 | INFO: Data are loaded, start creating Blender stuff
+16:59:22 | INFO: Blender create Mesh node Cube.017
+16:59:22 | INFO: glTF import finished in 0.03s
+AUDIT_3D_BLENDER [145/157] assets/models/props/prp_lantern_wall.gltf
+16:59:22 | INFO: Data are loaded, start creating Blender stuff
+16:59:22 | INFO: Blender create Mesh node Cube.018
+16:59:23 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [146/157] assets/models/props/prp_nightstand.gltf
+16:59:23 | INFO: Data are loaded, start creating Blender stuff
+16:59:23 | INFO: Blender create Mesh node Cube.131
+16:59:23 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [147/157] assets/models/props/prp_pot.gltf
+16:59:23 | INFO: Data are loaded, start creating Blender stuff
+16:59:23 | INFO: Blender create Mesh node Cube.049
+16:59:23 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [148/157] assets/models/props/prp_rope.gltf
+16:59:23 | INFO: Data are loaded, start creating Blender stuff
+16:59:23 | INFO: Blender create Mesh node BezierCurve.004
+16:59:23 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [149/157] assets/models/props/prp_shelf.gltf
+16:59:23 | INFO: Data are loaded, start creating Blender stuff
+16:59:23 | INFO: Blender create Mesh node Cube.103
+16:59:23 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [150/157] assets/models/props/prp_shelf_arch.gltf
+16:59:23 | INFO: Data are loaded, start creating Blender stuff
+16:59:23 | INFO: Blender create Mesh node Cylinder.032
+16:59:23 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [151/157] assets/models/props/prp_stall_cart.gltf
+16:59:23 | INFO: Data are loaded, start creating Blender stuff
+16:59:23 | INFO: Blender create Mesh node Cylinder.094
+16:59:23 | INFO: glTF import finished in 0.04s
+AUDIT_3D_BLENDER [152/157] assets/models/props/prp_stall_empty.gltf
+16:59:23 | INFO: Data are loaded, start creating Blender stuff
+16:59:23 | INFO: Blender create Mesh node Cube.212
+16:59:23 | INFO: glTF import finished in 0.04s
+AUDIT_3D_BLENDER [153/157] assets/models/props/prp_stool.gltf
+16:59:23 | INFO: Data are loaded, start creating Blender stuff
+16:59:23 | INFO: Blender create Mesh node Cube.097
+16:59:23 | INFO: glTF import finished in 0.01s
+AUDIT_3D_BLENDER [154/157] assets/models/props/prp_table_large.gltf
+16:59:23 | INFO: Data are loaded, start creating Blender stuff
+16:59:23 | INFO: Blender create Mesh node Cube.084
+16:59:23 | INFO: glTF import finished in 0.03s
+AUDIT_3D_BLENDER [155/157] assets/models/props/prp_weapon_rack.gltf
+16:59:23 | INFO: Data are loaded, start creating Blender stuff
+16:59:23 | INFO: Blender create Mesh node Cube.081
+16:59:23 | INFO: glTF import finished in 0.03s
+AUDIT_3D_BLENDER [156/157] assets/models/props/prp_weapon_stand.gltf
+16:59:23 | INFO: Data are loaded, start creating Blender stuff
+16:59:23 | INFO: Blender create Mesh node Cube.081
+16:59:23 | INFO: glTF import finished in 0.02s
+AUDIT_3D_BLENDER [157/157] assets/models/props/prp_workbench.gltf
+16:59:23 | INFO: Data are loaded, start creating Blender stuff
+16:59:23 | INFO: Blender create Mesh node Cube.163
+16:59:23 | INFO: glTF import finished in 0.03s
+Blender 5.1.2 (hash ec6e62d40fa9 built 2026-05-19 01:37:34)
