@@ -726,3 +726,29 @@ Alpha → Beta → Release Candidate → Launch.
 Terms are defined where they are used: `IEntity`/`EntityComponent` in `src/Entities`, `DamagePacket`
 in `src/Combat`, hurt/hitboxes in `docs/ARCHITECTURE.md` §2. It lived here as a list and cost tokens
 every session to answer questions nobody was asking.
+## 12. Session-independent 3D model quality contract (2026-08-31)
+
+Every model task starts with `docs/3D_AUDIT_PIPELINE.md` and the latest committed
+`reports/3d/` audit. Run `tools/audit_3d.py` before planning a broad model pass and again after
+important changes. Compilation, import, and tests are necessary but do not constitute visual
+validation.
+
+- Embervale targets one cohesive, grounded fantasy world; obvious mixed-pack silhouettes,
+  materials, or proportions are defects even when each asset is individually competent.
+- Search the approved Quaternius/open-source library in the policy order before authoring. Prefer
+  adapting a sound existing organic or rigged asset over generating complex organic topology from
+  nothing. Preserve functional rigs and animation unless a concrete, documented defect requires a
+  change. Custom-build geometric and hard-surface assets when that is the cleaner fit.
+- Preserve source assets. Adapt/export production copies through reproducible scripts; never make
+  an irreversible edit in `assets/library/`.
+- Never blindly normalize root scales. Measure the imported scene in real world-space metres and
+  preserve intentional per-model import corrections.
+- Treat render geometry, navigation, physics collision, hurtboxes, and hitboxes as related but
+  separate contracts. A model swap does not authorize reusing its predecessor's collision.
+- Trace every dependent scene, resource, factory, and data reference before editing a shared
+  model. The audit's usage list is the starting point, not the whole review.
+- Every important changed model receives truthful visual QA from front, back, both sides and both
+  three-quarter views, plus relevant idle/movement/attack or equipment poses for rigged actors.
+- Maintain machine-readable provenance/licence data even where attribution is not legally
+  required. Optimize triangles, materials, textures, collision and LODs for an open-world game,
+  with stricter budgets for repeated assets.

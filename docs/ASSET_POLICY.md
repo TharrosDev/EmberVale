@@ -516,3 +516,16 @@ nineteenth pass. That failure was at least loud; a smaller factor would have sil
 subtly wrong rig.
 
 **Result: 12 of 12 skinned bodies retarget.** The player now has block, cast and channel.
+## 9. 3D audit and visual-QA gate (Session 1 foundation, 2026-08-31)
+
+`docs/3D_AUDIT_PIPELINE.md` and `tools/audit_3d.py` are the permanent inspection entry point. The
+latest committed report under `reports/3d/` is required reading before an overhaul session.
+
+The audit is deliberately read-only. It inventories production glTF/GLB payloads, Godot import
+configuration and real imported bounds, repository usage, provenance, materials, textures, rigs,
+animations, collision evidence, duplicate hashes, and evaluated Blender geometry. It can render
+six diagnostic angles with a ground plane, human scale reference, bounds and origin axes.
+
+Automated flags are triage evidence rather than edit authorization. Confirm them in actual renders,
+trace dependents, and evaluate gameplay collision separately. Important changed assets must be
+re-audited and visually reviewed; a clean build/import/test run cannot prove a model looks correct.
