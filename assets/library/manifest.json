@@ -4843,5 +4843,37 @@
    "clips": 46,
    "note": "Rigify-style skeleton (root/DEF-*), 53 bones. Shares ZERO bone names with the adopted Quaternius character rigs (Root/Hips/Abdomen, 62 bones) - needs retargeting."
   }
+ ],
+ "session_02_player_weapons": [
+  {
+   "title": "fp_arm_right",
+   "pack": "Embervale Session 2 player-facing derivatives",
+   "licence": "CC0 1.0",
+   "file": "assets/models/characters/fp_arm_right.glb",
+   "source": "Quaternius Ultimate Animated Character Pack / existing fp_arm.glb",
+   "note": "Animation-safe static viewmodel anatomy preserved; sleeve, bracer and corrected material response rebuilt by tools/build_player_weapon_assets.py."
+  },
+  {
+   "title": "fp_arm_left",
+   "pack": "Embervale Session 2 player-facing derivatives",
+   "licence": "CC0 1.0",
+   "file": "assets/models/characters/fp_arm_left.glb",
+   "source": "Quaternius Ultimate Animated Character Pack / existing fp_arm.glb",
+   "note": "True applied mirror with corrected winding and normals; no negative runtime scale."
+  },
+  {
+   "title": "eqp_pauldron_embervale",
+   "pack": "Embervale repository-authored equipment",
+   "licence": "CC0 1.0",
+   "file": "assets/models/equipment/eqp_pauldron_embervale.glb",
+   "source": "tools/build_player_weapon_assets.py"
+  },
+  {
+   "title": "eqp_pouch_embervale",
+   "pack": "Embervale repository-authored equipment",
+   "licence": "CC0 1.0",
+   "file": "assets/models/equipment/eqp_pouch_embervale.glb",
+   "source": "tools/build_player_weapon_assets.py"
+  }
  ]
 }

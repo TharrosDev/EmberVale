@@ -1,29 +1,36 @@
 using Embervale.Combat;
 using Embervale.Core.Events;
 using Embervale.Entities;
+using Embervale.Interaction;
+using Embervale.Magic;
 using Godot;
 
 namespace Embervale.Player;
 
 /// <summary>
-/// The first-person viewmodel (Phase 30L): a pair of <c>fp_arm.glb</c> arms parented to the
+/// The first-person viewmodel (Phase 30L/Session 2 art pass): authored left and right arm assets
+/// parented to the
 /// player camera, the right hand holding the sword model. All motion is procedural — the arm
 /// mesh has no baked clips — so this component drives a walk bob off the body's velocity, a
 /// slash arc on <see cref="AttackPerformedEvent"/> (direction alternates with the combo index),
-/// and a raised guard pose while blocking. Purely cosmetic: hit timing/damage stay with
+/// a raised guard pose while blocking, and short interaction/cast presentation beats. Purely
+/// cosmetic: hit timing/damage stay with
 /// <see cref="MeleeWeaponComponent"/>. Visible only while <see cref="PlayerController.IsFirstPerson"/>;
 /// the retained third-person rig (cutscenes) shows the full body instead.
 /// </summary>
 [GlobalClass]
 public partial class FirstPersonArmsComponent : EntityComponent
 {
-    private const string ArmModelPath = "res://assets/models/characters/fp_arm.glb";
+    private const string RightArmModelPath = "res://assets/models/characters/fp_arm_right.glb";
+    private const string LeftArmModelPath = "res://assets/models/characters/fp_arm_left.glb";
 
     /// <summary>The player camera the arms ride (injected by <see cref="PlayerFactory"/>).</summary>
     public Node3D? Camera { get; set; }
 
-    private static readonly Vector3 RightRest = new(0.26f, -0.34f, -0.48f);
-    private static readonly Vector3 LeftRest = new(-0.26f, -0.34f, -0.48f);
+    private static readonly Vector3 RightRest = new(0.30f, -0.49f, -0.74f);
+    private static readonly Vector3 LeftRest = new(-0.30f, -0.49f, -0.74f);
+    private static readonly Vector3 RightRestRotation = new(26f, -8f, -8f);
+    private static readonly Vector3 LeftRestRotation = new(18f, 8f, 8f);
     private const float SwingSeconds = 0.35f;
 
     /// <summary>
@@ -39,33 +46,46 @@ public partial class FirstPersonArmsComponent : EntityComponent
     private Node3D? _root;
     private Node3D? _rightArm;
     private Node3D? _leftArm;
+    private Node3D? _weaponSocket;
+    private Node3D? _spellSocket;
+    private Node3D? _interactionSocket;
     private CombatComponent? _combat;
+    private SpellcastingComponent? _spellcasting;
     private PlayerController? _controller;
     private float _bobTime;
     private float _swing;      // 1 → 0 while a slash plays
     private int _swingDir = 1; // alternates per combo hit
     private float _blockBlend; // 0 → 1 guard pose
+    private float _castBeat;
+    private float _interactionBeat;
     private float _scaledForFov; // camera FOV the arms were last sized for
 
     protected override void OnInitialize()
     {
         IEntity owner = Entity!;
         _combat = owner.GetComponent<CombatComponent>();
+        _spellcasting = owner.GetComponent<SpellcastingComponent>();
         _controller = owner.GetComponent<PlayerController>();
         BuildArms();
         EventBus.Instance?.Subscribe<AttackPerformedEvent>(OnAttack);
         EventBus.Instance?.Subscribe<AttackInterruptedEvent>(OnInterrupted);
+        EventBus.Instance?.Subscribe<SpellCastEvent>(OnSpellCast);
+        EventBus.Instance?.Subscribe<InteractionPerformedEvent>(OnInteraction);
     }
 
     protected override void OnTeardown()
     {
         EventBus.Instance?.Unsubscribe<AttackPerformedEvent>(OnAttack);
         EventBus.Instance?.Unsubscribe<AttackInterruptedEvent>(OnInterrupted);
+        EventBus.Instance?.Unsubscribe<SpellCastEvent>(OnSpellCast);
+        EventBus.Instance?.Unsubscribe<InteractionPerformedEvent>(OnInteraction);
     }
 
     private void BuildArms()
     {
-        if (Camera == null || GD.Load<PackedScene>(ArmModelPath) is not { } armScene)
+        if (Camera == null ||
+            GD.Load<PackedScene>(RightArmModelPath) is not { } rightArmScene ||
+            GD.Load<PackedScene>(LeftArmModelPath) is not { } leftArmScene)
         {
             return;
         }
@@ -74,15 +94,13 @@ public partial class FirstPersonArmsComponent : EntityComponent
         Camera.AddChild(_root);
 
         _rightArm = new Node3D { Name = "RightArm", Position = RightRest };
-        _rightArm.AddChild(armScene.Instantiate());
+        _rightArm.AddChild(rightArmScene.Instantiate());
         _root.AddChild(_rightArm);
 
-        // The arm is now an actual right forearm and hand with fingers and a thumb, so the left
-        // side has to be mirrored — an unmirrored copy reads as two right hands. Godot flips face
-        // winding for a negative-determinant basis, so the mesh renders correctly; this was not
-        // worth doing while the arm was a featureless 448-tri stub.
+        // Session 2 replaced the runtime negative-scale mirror with an authored left mesh.  A
+        // positive determinant keeps normals, tangent space and future arm animation predictable.
         _leftArm = new Node3D { Name = "LeftArm", Position = LeftRest };
-        _leftArm.AddChild(armScene.Instantiate());
+        _leftArm.AddChild(leftArmScene.Instantiate());
         _root.AddChild(_leftArm);
 
         ApplyViewmodelScale();
@@ -94,11 +112,19 @@ public partial class FirstPersonArmsComponent : EntityComponent
         // the posed rig and carried through the same fit the mesh went through. The old
         // hand-tuned offset put the hilt in front of the fingers rather than through them, which
         // a straight-on view hides completely — it only shows side-on.
+        _weaponSocket = new Node3D { Name = "WeaponSocket", Transform = GripTransform() };
+        _rightArm.AddChild(_weaponSocket);
         if (GD.Load<PackedScene>(PlayerFactory.WeaponModelPath)?.Instantiate() is Node3D sword)
         {
-            sword.Transform = GripTransform();
-            _rightArm.AddChild(sword);
+            sword.Name = "IronSword";
+            _weaponSocket.AddChild(sword);
         }
+
+        // Stable semantic sockets let interaction/spell VFX attach without knowing mesh paths.
+        _spellSocket = new Node3D { Name = "SpellSocket", Position = MirrorGripPoint };
+        _interactionSocket = new Node3D { Name = "InteractionSocket", Position = MirrorGripPoint };
+        _leftArm.AddChild(_spellSocket);
+        _leftArm.AddChild(_interactionSocket);
     }
 
     /// <summary>Sizes both arms for the camera's current FOV and records what it was sized for.
@@ -117,7 +143,7 @@ public partial class FirstPersonArmsComponent : EntityComponent
 
         if (_leftArm != null)
         {
-            _leftArm.Scale = new Vector3(-k, k, k);
+            _leftArm.Scale = Vector3.One * k;
         }
     }
 
@@ -138,9 +164,10 @@ public partial class FirstPersonArmsComponent : EntityComponent
 
     /// <summary>Centre of the closed fist, in the arm mesh's local space.</summary>
     private static readonly Vector3 GripPoint = new(0.0595f, 0.1526f, -0.1343f);
+    private static readonly Vector3 MirrorGripPoint = new(-0.0595f, 0.1526f, -0.1343f);
 
     /// <summary>Where the blade points out of that fist — up and forward.</summary>
-    private static readonly Vector3 BladeDirection = new(-0.0874f, 0.3498f, -0.9327f);
+    private static readonly Vector3 BladeDirection = new(-0.10f, 0.82f, -0.56f);
 
     /// <summary>Height along the sword's own +Y of the middle of its wrapped grip.</summary>
     private const float SwordGripHeight = 0.03f;
@@ -180,6 +207,22 @@ public partial class FirstPersonArmsComponent : EntityComponent
         }
     }
 
+    private void OnSpellCast(SpellCastEvent e)
+    {
+        if (ReferenceEquals(e.Caster, Entity) && _spellcasting is not { IsChanneling: true })
+        {
+            _castBeat = 1f;
+        }
+    }
+
+    private void OnInteraction(InteractionPerformedEvent e)
+    {
+        if (ReferenceEquals(e.Instigator, Entity))
+        {
+            _interactionBeat = 1f;
+        }
+    }
+
     public override void _Process(double delta)
     {
         if (_root == null || _rightArm == null || _leftArm == null)
@@ -203,6 +246,8 @@ public partial class FirstPersonArmsComponent : EntityComponent
         }
 
         float dt = (float)delta;
+        _castBeat = Mathf.Max(_castBeat - (dt / 0.38f), 0f);
+        _interactionBeat = Mathf.Max(_interactionBeat - (dt / 0.28f), 0f);
 
         // Walk bob: phase advances with ground speed, amplitude fades in with it.
         Vector3 velocity = Entity?.Body is CharacterBody3D body ? body.Velocity : Vector3.Zero;
@@ -217,19 +262,27 @@ public partial class FirstPersonArmsComponent : EntityComponent
         // Guard pose: both arms rise and pull in while the block is held.
         float blockTarget = _combat?.IsBlocking == true ? 1f : 0f;
         _blockBlend = Mathf.MoveToward(_blockBlend, blockTarget, dt * 6f);
-        var guard = new Vector3(-0.08f * _blockBlend, 0.14f * _blockBlend, 0.06f * _blockBlend);
+        var guard = new Vector3(-0.06f * _blockBlend, 0.10f * _blockBlend, -0.02f * _blockBlend);
+        float sustainedCast = _spellcasting is { IsCharging: true } or { IsChanneling: true } ? 1f : 0f;
+        float cast = Mathf.Max(sustainedCast, Mathf.Sin((1f - _castBeat) * Mathf.Pi) * (_castBeat > 0f ? 1f : 0f));
+        float interact = Mathf.Sin((1f - _interactionBeat) * Mathf.Pi) * (_interactionBeat > 0f ? 1f : 0f);
 
         // Slash arc: a smooth out-and-back curve over the swing window.
         _swing = Mathf.Max(_swing - (dt / SwingSeconds), 0f);
         float arc = Mathf.Sin((1f - _swing) * Mathf.Pi) * (_swing > 0f ? 1f : 0f);
 
         _rightArm.Position = RightRest + bob + guard + new Vector3(0f, 0f, -0.16f * arc);
-        _rightArm.RotationDegrees = new Vector3(
-            (-55f * arc) + (35f * _blockBlend),
-            _swingDir * 35f * arc,
-            (-20f * _blockBlend) + (_swingDir * -15f * arc));
+        _rightArm.RotationDegrees = RightRestRotation + new Vector3(
+            (-40f * arc) + (16f * _blockBlend),
+            _swingDir * 30f * arc,
+            (-15f * _blockBlend) + (_swingDir * -12f * arc));
 
-        _leftArm.Position = LeftRest + bob + new Vector3(-guard.X, guard.Y, guard.Z);
-        _leftArm.RotationDegrees = new Vector3(35f * _blockBlend, 0f, 20f * _blockBlend);
+        _leftArm.Position = LeftRest + bob + new Vector3(-guard.X, guard.Y, guard.Z)
+            + new Vector3(0.05f * cast, 0.08f * cast, -0.08f * cast)
+            + new Vector3(0.035f * interact, 0.025f * interact, -0.06f * interact);
+        _leftArm.RotationDegrees = LeftRestRotation + new Vector3(
+            (16f * _blockBlend) - (18f * cast) - (12f * interact),
+            -14f * cast,
+            (15f * _blockBlend) - (30f * cast) - (10f * interact));
     }
 }

@@ -9,6 +9,10 @@
 > scratch in Blender via the MCP. That is no longer the default. **Search first, adapt
 > second, create last.**
 
+Weapon and first-person asset orientation, socket, scale, pivot, material, naming, collision, and
+export rules are defined in `docs/WEAPON_ART_CONVENTIONS.md`. That contract is mandatory for every
+new weapon even when its source comes from an approved Quaternius bundle.
+
 ---
 
 ## 0. Standing direction — the art set is Quaternius (2026-08-05)

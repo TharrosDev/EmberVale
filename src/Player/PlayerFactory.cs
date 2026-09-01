@@ -30,6 +30,8 @@ public static class PlayerFactory
     internal const string ProgressionPath = "res://data/progression/PlayerProgression.tres";
     internal const string PlayerModelPath = "res://assets/models/characters/chr_player_base.glb";
     internal const string WeaponModelPath = "res://assets/models/weapons/wpn_sword_iron.glb";
+    internal const string PauldronModelPath = "res://assets/models/equipment/eqp_pauldron_embervale.glb";
+    internal const string PouchModelPath = "res://assets/models/equipment/eqp_pouch_embervale.glb";
     private const int PlayerTeam = 0;
     private const float CapsuleRadius = 0.4f;
     private const float CapsuleHeight = 1.8f;
@@ -80,6 +82,7 @@ public static class PlayerFactory
             bodyVisual.RotateY(Mathf.Pi);
             player.AddChild(bodyVisual);
             AttachWeaponVisual(bodyVisual);
+            AttachEmbervaleGear(bodyVisual);
         }
         else
         {
@@ -269,9 +272,64 @@ public static class PlayerFactory
             return;
         }
 
-        var attachment = new BoneAttachment3D { Name = "WeaponSocket", BoneName = handBone };
+        // The normalized right-hand basis maps weapon +Y sideways.  This fixed local basis maps
+        // the canonical weapon +Y axis up, slightly outward, and slightly forward instead.
+        var blade = new Vector3(-0.30f, 0.25f, -0.90f).Normalized();
+        var across = blade.Cross(Vector3.Up).Normalized();
+        var face = across.Cross(blade);
+        var attachment = new BoneAttachment3D
+        {
+            Name = "WeaponSocket",
+            BoneName = handBone,
+            Basis = new Basis(across, blade, face),
+        };
         skeleton.AddChild(attachment);
         attachment.AddChild(sword);
+    }
+
+    /// <summary>
+    /// Session 2's protagonist layer.  These are rigid, modular pieces on stable humanoid bones,
+    /// so the normalized skin and its 24 source clips remain untouched while future equipment can
+    /// replace individual slots.  Pauldrons follow their upper-arm bones and the utility pouch
+    /// follows the hips. The drawn sword remains the right-hand socket's concern. Socket nodes
+    /// themselves have no render geometry.
+    /// </summary>
+    private static void AttachEmbervaleGear(Node bodyVisual)
+    {
+        if (FindSkeleton(bodyVisual) is not { } skeleton)
+        {
+            return;
+        }
+
+        AttachGear(skeleton, "LeftUpperArm", PauldronModelPath, "PauldronLeft",
+            new Vector3(0f, 0.015f, 0f), Vector3.Zero, Vector3.One);
+        AttachGear(skeleton, "RightUpperArm", PauldronModelPath, "PauldronRight",
+            new Vector3(0f, 0.015f, 0f), new Vector3(0f, 180f, 0f), Vector3.One);
+        AttachGear(skeleton, "Hips", PouchModelPath, "UtilityPouch",
+            new Vector3(-0.22f, 0.02f, 0.13f), new Vector3(5f, -8f, -8f), Vector3.One);
+    }
+
+    private static void AttachGear(
+        Skeleton3D skeleton, string boneName, string scenePath, string socketName,
+        Vector3 position, Vector3 rotationDegrees, Vector3 scale)
+    {
+        if (skeleton.FindBone(boneName) < 0 ||
+            GD.Load<PackedScene>(scenePath)?.Instantiate() is not Node3D visual)
+        {
+            return;
+        }
+
+        var socket = new BoneAttachment3D
+        {
+            Name = socketName + "Socket",
+            BoneName = boneName,
+            Position = position,
+            RotationDegrees = rotationDegrees,
+            Scale = scale,
+        };
+        skeleton.AddChild(socket);
+        visual.Name = socketName;
+        socket.AddChild(visual);
     }
 
     private static Skeleton3D? FindSkeleton(Node node)

@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://ba7uw80ksk3jm"
+
+[deps]
+
+files=["res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.category.translation", "res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.file.translation", "res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.mesh.translation", "res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.vertex.translation", "res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.triangle.translation", "res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.primitive.translation", "res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.material.translation", "res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.texture.translation", "res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.texture.translation", "res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.skin.translation", "res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.bone.translation", "res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.animation.translation", "res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.usage.translation", "res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.recommendation.translation", "res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.flag.translation"]
+
+source_file="res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.csv"
+dest_files=["res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.category.translation", "res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.file.translation", "res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.mesh.translation", "res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.vertex.translation", "res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.triangle.translation", "res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.primitive.translation", "res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.material.translation", "res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.texture.translation", "res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.texture.translation", "res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.skin.translation", "res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.bone.translation", "res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.animation.translation", "res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.usage.translation", "res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.recommendation.translation", "res://reports/3d/session-02-player-weapons-handoff/baseline-audit/inventory.flag.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true
