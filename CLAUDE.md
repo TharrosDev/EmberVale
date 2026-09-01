@@ -299,9 +299,10 @@ Two jobs on every push/PR, plus a weekly/manual full battery:
   where every real defect in 42B was actually found.
 - **Weekly/manual full** — exact negative mutations and structured performance history.
 
-⚠️ **`.github/workflows/` needs a token with `workflow` scope.** The session OAuth token does
-not have it; that file was pushed through the GitHub API instead. If a workflow edit is ever
-rejected on push, that is why — it is not a repo permission problem.
+**`.github/workflows/` edits push normally** (verified 2026-08-31, making `ci.yml`'s
+`validate-content` job advisory). The session token carries `workflow` scope. ⚠️ It did NOT when the
+file was first added, and that edit went through the GitHub API instead — so if a workflow push is
+ever rejected, the scope is the reason and it is not a repo permission problem.
 
 ⚠️ The green **Vercel** check that also appears on every PR is still a meaningless no-op —
 Vercel is trying to deploy a Godot game as a web app. Ignore that one; the Codex quality jobs above
