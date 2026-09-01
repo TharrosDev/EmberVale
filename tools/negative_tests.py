@@ -735,6 +735,75 @@ Falloff = 1.8""")],
     ("guild.rank_key_missing", "ValidateGuilds",
      [("data/factions/AshHunters.tres", '"guild.ash_hunters.rank2"', '"guild.ash_hunters.rank2_missing"')],
      "rank key 'guild.ash_hunters.rank2_missing' is missing from the locale catalogue"),
+
+    # ---- 42B: the hub and the roster -------------------------------------------------------
+    # A guild with no hub has nowhere the player can go, and every arc from 42C on begins by walking
+    # to one. The .tres loads, the Guilds tab still lists the order, and the failure is a membership
+    # that can never be offered because nobody is standing anywhere to offer it.
+    ("guild.hub_missing", "ValidateGuildHubs",
+     [("data/factions/AshHunters.tres", 'HubLocationId = "location.wilds.lodge"',
+       'HubLocationId = ""')],
+     "declares no hub location, so it has nowhere the player can go"),
+
+    ("guild.hub_names_no_location", "ValidateGuildHubs",
+     [("data/factions/AshHunters.tres", 'HubLocationId = "location.wilds.lodge"',
+       'HubLocationId = "location.wilds.lodge_moved"')],
+     "hub location 'location.wilds.lodge_moved' is not an authored map location"),
+
+    ("guild.officer_missing", "ValidateGuildHubs",
+     [("data/factions/VeiledArchive.tres", 'QuartermasterNpcId = "npc.archive_steward"',
+       'QuartermasterNpcId = ""')],
+     "declares no quartermaster"),
+
+    # ⚠️ THE REVERSE SIDE, AND THE ONE WORTH HAVING. A roster id no cell scene places is an officer
+    # the player can never meet: nothing at runtime looks for them, so there is no warning, no
+    # missing-node error and no broken pin — just a guild whose door is not attached to anybody.
+    ("guild.officer_not_placed", "ValidateGuildHubs",
+     [("scenes/regions/ember_crown/emberdeep_mine.tscn",
+       'TemplateId = "npc.emberbound_warder"', 'TemplateId = "npc.emberbound_warder_moved"')],
+     "is declared but no cell scene places an entity with that TemplateId"),
+
+    # ...and its twin: two bodies holding one office BOTH answer, so a 42C join would be offered
+    # twice and completed twice, and the second one is somewhere else in the cell.
+    ("guild.officer_placed_twice", "ValidateGuildHubs",
+     [("scenes/regions/ember_crown/emberdeep_mine.tscn",
+       'TemplateId = "npc.marta"', 'TemplateId = "npc.emberbound_warder"')],
+     "is placed 2 times; an office has one holder"),
+
+    # One actor, one owner — across guilds, which is where it would actually happen: a shared
+    # contact reads as two orders sending the player to the same person and neither one owning them.
+    ("guild.officer_owned_twice", "ValidateGuildHubs",
+     [("data/factions/Dawnwardens.tres", 'ContactNpcId = "npc.dawnwarden_serjeant"',
+       'ContactNpcId = "npc.hunter_tracker"')],
+     "one actor, one owner"),
+
+    # The dialogue conditions carry an authored rank, and BOTH ENDS fail silently (invariant 8):
+    # below zero the gate is open to every member, above the declared ranks it can never open, and
+    # in neither case does anything log — the line is simply always or never there.
+    ("guild.condition_rank_negative", "ValidateGuildDialogueConditions",
+     [("data/dialogue/HunterMaster.tres", 'ConditionArg = "faction.ash_hunters:0"',
+       'ConditionArg = "faction.ash_hunters:-1"')],
+     "is not a faction id, optionally followed by"),
+
+    ("guild.condition_rank_above_declared", "ValidateGuildDialogueConditions",
+     [("data/dialogue/HunterMaster.tres", 'ConditionArg = "faction.ash_hunters:0"',
+       'ConditionArg = "faction.ash_hunters:4"')],
+     "the choice can never be offered"),
+
+    # A condition pointed at a faction that is not a guild resolves to "not a member" forever, so
+    # the member branch is never offered and the recruiting branch always is.
+    ("guild.condition_names_a_non_guild", "ValidateGuildDialogueConditions",
+     [("data/dialogue/HunterMaster.tres", 'ConditionArg = "faction.ash_hunters:0"',
+       'ConditionArg = "faction.villagers:0"')],
+     "which is not a guild"),
+
+    # A hub or an officer on a faction that declares no ranks is a half-authored guild: GuildRules
+    # would never resolve it and the Guilds tab would never list it, while the actor stands in the
+    # world speaking for an organization nothing can join.
+    ("guild.hub_on_a_non_guild", "ValidateGuildHubs",
+     [("data/factions/Villagers.tres", 'DefaultReputation',
+       'HubLocationId = "location.ember_crown.town"\nDefaultReputation')],
+     "declares a hub location but no ranks"),
 ]
 
 

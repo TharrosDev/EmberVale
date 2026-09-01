@@ -29,6 +29,7 @@
 - [Generators — do not hand-write boilerplate](#generators--do-not-hand-write-boilerplate-agent-ergonomics-pass)
 - [A new region cell (Phases 25, 38K/N1/N2/O, 37E)](#a-new-region-cell-phases-25-38kn1n2o-37e)
 - [A new map location (Phase 39.5A)](#a-new-map-location-phase-395a)
+- [A guild hub and its officers (Phase 42B)](#a-guild-hub-and-its-officers-phase-42b)
 - [A production settlement (Phase 38N1)](#a-production-settlement-phase-38n1)
 - [A tolled crossing — toll, permit, bribe (Phase 38M)](#a-tolled-crossing--toll-permit-bribe-phase-38m)
 - [A fence and contraband (Phase 38O)](#a-fence-and-contraband-phase-38o)
@@ -641,6 +642,64 @@ recipe above"). Everything here had been rediscovered four times from other cell
    the cell, and shoot at **eye level** from where the player actually arrives. Every 37E defect was a
    correctly-authored model in a position that ruined the shot: a 3 m waystone that reads fine on a
    road stood as a monolith blocking a front door at 4 m. **A `.tscn` reads fine while looking wrong.**
+
+## A guild hub and its officers (Phase 42B)
+
+A guild's home and the people who speak for it. **No new resource kind is involved**: a hub IS a
+`MapLocationResource` and an officer IS an authored `Entity` in a cell scene, so all this recipe
+adds is five id fields on the guild's `FactionResource` and the things those ids point at.
+
+1. **Pick the cell, then pick the ground — in that order, and do not put the building on a pad.**
+   ⚠️ **A levelled `GroundArea` is usually a road.** Settlement pads exist because the settlement's
+   road needed flat ground, so the pad and the road corridor are frequently the same rectangle:
+   `Area_crossway_compound` is 12 m deep and 7 m of that is `Path_crossway_compound` plus shoulder.
+   Read the cell's paths out of `data/regions/<Region>.tres` (`Start`, `End`, `Width`, `Shoulder`),
+   and site the building so its footprint clears `Width/2 + Shoulder` from every centreline.
+   ⚠️ Never site it in one of the deliberately empty cells (NOW.md invariant 14).
+2. **Author its pad in the region spec, not in the cell.** Add a `Yard(at=..., ext=..., feather=,
+   blend=, elevation=)` to that cell in `tools/region_spec_<region>.py` and run
+   `python tools/gen_regions.py`. `Elevation` is an **absolute world Y**, so take it from the
+   adjacent pad the new one abuts — that is the only value you can be sure of without measuring.
+3. **Compose the building** with `python tools/compose_building.py <name> <wide> <deep> <storeys>`
+   (`--hollow` for one the player enters, `--open` for a hall with no front wall). ⚠️ **Give each
+   guild a different shell**: same footprint plus same storeys is the "one hall cloned five times"
+   the phase brief forbids, and it is visible from thirty metres.
+   ⚠️ **Do not adopt a raw `assets/library/` model as a file copy.** The `medieval_village` glTFs
+   carry their scale on a parent node and import at ~1/200 (`assets/CREDITS.md`); rescaling one is a
+   Blender step, which is asset-ladder step 4 and a conversation with the maintainer.
+4. **Instance it under `Nav`** in the cell scene (static geometry has to carve the navmesh) and
+   **rotate the door to face the approach.** ⚠️ A wall module's outer face is its local `-Z` and the
+   composed door is on the shell's `+Z` run, so the yaw that points it at the road is not obvious
+   from the file — the only way to know is to render it.
+5. **Author the officers as top-level entities** (`parent="."`, never under `Nav` — an actor must not
+   carve navigation). Copy an existing stanza:
+   `Entity` script + `DisplayName` + `TemplateId` (`npc.*`, and this id is the roster key) + an
+   `Animation` node with `BodyMeshPath = "Model"` + a `Collider`/`Shape` on the cell's `Shape_npc` +
+   a `Faction` node on the guild + a `Dialogue` node + the `Model` instance last.
+   ⚠️ Keep every officer clear of the route corridors too: a capsule that snags on an NPC's collider
+   fails `world_traversal_probe.gd` exactly as a wall does.
+6. **Generate each conversation** with
+   `python tools/gen_guild_dialogue.py <key> <dialogue.id> <faction.id> "<Speaker>"`, then hand-write
+   the nine `dlg.<key>.*` rows in `data/locale/strings.csv`. The scaffold's membership branches use
+   `GuildRankAtLeast` / `GuildNotMember`; ⚠️ **never `HasFlag` with a `guild.*` argument** — those
+   flags are derived by `GuildRules` and hand-writing one is NOW.md invariant 18.
+7. **Give the leader a routine** in `data/schedules/`: set `Origin` to the cell's centre and author
+   every `Destination` cell-local. ⚠️ No destination inside the hub building — a solid shell is one
+   box collider, so its footprint is a hole in the navmesh.
+8. **Map it in this sub-phase.** Add one `add(...)` row to `tools/gen_map_locations.py` anchored to
+   the building node, and run the generator and `--check`. Pick the nearest EXISTING `MapCategory`;
+   a new member for "guild" would say less than `Outpost`, `Contracts`, `Camp`, `Scriptorium` and
+   `Landmark` already do. Pass `reveal=False` for a hub the player is meant to find.
+9. **Declare it on the guild**: `HubLocationId`, `LeaderNpcId`, `QuartermasterNpcId`, `ContactNpcId`
+   on its `data/factions/*.tres`. Leave `RankPeerNpcId` empty until an arc grants a rank to be a peer
+   of — `ValidateGuildHubs` accepts an empty peer and refuses a declared one nobody placed.
+10. **Verify in this order, because the cheap gates do not see placement.**
+    `godot --headless --path . -- --validate` (ids, both sides of the roster);
+    `python tools/check_cell_layout.py data/regions/<Region>.tres` (overlaps);
+    `godot --headless --path . --script res://tools/world_traversal_probe.gd` (**the one that finds a
+    building on a road**); then `godot --path . -- --guild-shots` and *look at the frames* — front,
+    back, at eye level, with the officers in them. ⚠️ Every placement defect 42B shipped and fixed was
+    invisible to the first two and obvious in the fourth.
 
 ## A production settlement (Phase 38N1)
 

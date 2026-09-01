@@ -297,6 +297,10 @@ public class EnumStabilityTests
         Assert.Equal(6, (int)DialogueCondition.MissingFlag);
         Assert.Equal(7, (int)DialogueCondition.CorruptionAtLeast);
         Assert.Equal(8, (int)DialogueCondition.CorruptionBelow);
+
+        // Phase 42B appended these two; every guild-officer .tres on disk stores them as 14 and 15.
+        Assert.Equal(14, (int)DialogueCondition.GuildRankAtLeast);
+        Assert.Equal(15, (int)DialogueCondition.GuildNotMember);
     }
 
     [Fact]

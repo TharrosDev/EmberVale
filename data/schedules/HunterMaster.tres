@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="ScheduleResource" format=3]
+
+[ext_resource type="Script" path="res://src/Npc/ScheduleResource.cs" id="1_sched"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleEntry.cs" id="2_entry"]
+
+; Huntmaster Yrsa Kesk (Phase 42B).
+; ⚠️ Destinations are CELL-LOCAL and Origin is ember_crown.wilds_north's centre; see the header of
+; ScheduleResource.Origin. A raw WORLD destination copied out of a .tscn lands a cell's width from
+; where it was read, which is what broke nine routines in the 2026-08-29 overhaul.
+; ⚠️ Nothing here enters the hub building: its shell is one box collider, so its footprint is a hole
+; in the navmesh and a routine that ended inside it would be a leader who never arrives.
+
+[sub_resource type="Resource" id="e_sign"]
+script = ExtResource("2_entry")
+StartHour = 5
+Activity = "Reading sign"
+Destination = Vector3(21.5, 0, -10)
+
+[sub_resource type="Resource" id="e_scarp"]
+script = ExtResource("2_entry")
+StartHour = 11
+Activity = "Out under the scarp"
+Destination = Vector3(14, 0, -18)
+
+[sub_resource type="Resource" id="e_lodge"]
+script = ExtResource("2_entry")
+StartHour = 18
+Activity = "At the lodge"
+Destination = Vector3(21.5, 0, -10)
+
+[sub_resource type="Resource" id="e_sleep"]
+script = ExtResource("2_entry")
+StartHour = 22
+Activity = "Asleep"
+Destination = Vector3(20.5, 0, -11)
+
+[resource]
+script = ExtResource("1_sched")
+Id = "schedule.hunter_master"
+Entries = Array[Resource]([SubResource("e_sign"), SubResource("e_scarp"), SubResource("e_lodge"), SubResource("e_sleep")])
+Origin = Vector3(0, 0, -175)

@@ -6,6 +6,7 @@ using Embervale.Core.Services;
 using Embervale.Corruption;
 using Embervale.Economy;
 using Embervale.Entities;
+using Embervale.Factions;
 using Embervale.Magic;
 using Embervale.Quests;
 
@@ -127,9 +128,38 @@ public sealed class DialogueSession
                 return ShopIsOpen(arg);
             case DialogueCondition.ShopClosed:
                 return !ShopIsOpen(arg);
+
+            // Also spelled out rather than defaulted, for the ShopOpen reason above: a guild line
+            // shown by accident is a stranger being greeted as a sworn member.
+            case DialogueCondition.GuildRankAtLeast:
+                return GuildMeets(arg, member: true);
+            case DialogueCondition.GuildNotMember:
+                return GuildMeets(arg, member: false);
             default:
                 return true;
         }
+    }
+
+    /// <summary>
+    /// Resolves a guild membership condition (Phase 42B). <paramref name="member"/> picks which side
+    /// of the pair is being asked — <c>true</c> for <see cref="DialogueCondition.GuildRankAtLeast"/>,
+    /// <c>false</c> for <see cref="DialogueCondition.GuildNotMember"/>.
+    ///
+    /// ⚠️ <b>A malformed or unknown argument answers "not a member".</b> That is the safe direction
+    /// for both members of the pair: a mis-authored rank gate hides guild-only content rather than
+    /// offering it to a stranger, and a mis-authored recruiting gate shows a line that only ever
+    /// offers to let the player in. The validator reports the typo separately.
+    /// </summary>
+    private bool GuildMeets(string arg, bool member)
+    {
+        bool isMember =
+            _flags != null &&
+            GuildRules.TryParseRankArg(arg, out string factionId, out int minRank) &&
+            FactionDatabase.Get(factionId) is { } guild &&
+            guild.IsGuild &&
+            GuildRules.MeetsRank(_flags.Has, guild.Id, guild.RankNameKeys.Count, minRank);
+
+        return isMember == member;
     }
 
     /// <summary>

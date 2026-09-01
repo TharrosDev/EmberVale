@@ -286,6 +286,16 @@ For a new reachable POI:
 5. If the POI owns fast travel, put `TravelNodeComponent` at the real landing point.
 6. `--validate` and `map_probe.gd`.
 
+⚠️ **A LEVELLED PAD IS USUALLY A ROAD, SO DO NOT BUILD ON ONE (42B).** A `GroundArea` exists where a
+settlement needed flat ground, which is where its road already runs: `Area_crossway_compound` is 12 m
+deep and `Path_crossway_compound` plus its shoulder is 7 m of that, and `Area_hollowreach_street` is
+8 m of road and 2 m of shoulder in an 8 m pad. Two guild hubs were placed on their pads for the good
+reason that the ground was flat and reached, and both blocked their cells' routes. Read the cell's
+paths out of the generated `.tres` (`Width`, `Shoulder`), clear `Width/2 + Shoulder` from every
+centreline, and author a new `Yard` beside the road with the abutting pad's own `Elevation`.
+⚠️ `--validate`, `check_cell_layout.py` and `cell_scene_audit.gd` all pass on a building sitting
+across a road. **`world_traversal_probe.gd` is the gate that finds it.**
+
 ⚠️ **Scenery is not a place.** The drowned pillars at the Fen Edge and the sheepfold on the West Downs
 have no map pin *on purpose*: a pin would advertise them, and the point of a dead-end feature is that
 the player found it. A pin is for somewhere the player can go *back* to and needs to.

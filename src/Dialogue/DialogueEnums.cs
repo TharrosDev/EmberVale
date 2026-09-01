@@ -129,4 +129,27 @@ public enum DialogueCondition
     /// same way <see cref="MissingFlag"/> pairs with <see cref="HasFlag"/>. It is what lets a merchant
     /// say she is closed in her own words rather than the game swallowing the choice.</summary>
     ShopClosed,
+
+    /// <summary>
+    /// Shown only while the player is a member of the guild at or above a rank:
+    /// <c>ConditionArg</c> is <c>&lt;factionId&gt;:&lt;rank&gt;</c> (e.g.
+    /// <c>faction.dawnwardens:2</c>), and <c>:0</c> — or a bare id — means a member of any rank.
+    ///
+    /// ⚠️ <b>This exists so that no conversation ever authors a guild flag by hand</b> (Phase 42B).
+    /// Membership is <c>guild.&lt;slug&gt;.*</c> story-flag state that <see cref="Factions.GuildRules"/>
+    /// DERIVES from the faction id; writing <c>guild.dawnwardens.rank2</c> into a <c>.tres</c> as a
+    /// <see cref="HasFlag"/> argument would put a derived string in authored data where a typo
+    /// becomes a branch that is simply never offered and nothing ever says so. It would also read a
+    /// rank flag directly, which skips the cumulative-rank rule — a hand-set <c>rank3</c> with no
+    /// <c>rank2</c> does not promote, and only <c>GuildRules.Resolve</c> knows that.
+    /// </summary>
+    GuildRankAtLeast,
+
+    /// <summary>
+    /// Shown only while the player is <em>not</em> a member of the guild named by
+    /// <c>ConditionArg</c> — the pair to <see cref="GuildRankAtLeast"/>, and the condition a
+    /// recruiting line hangs off. A player who left or was refused is not a member, so this is what
+    /// re-offers the door; <c>GuildRules.CanJoin</c> remains the gate on whether it opens.
+    /// </summary>
+    GuildNotMember,
 }

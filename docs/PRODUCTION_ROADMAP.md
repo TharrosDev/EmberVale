@@ -840,6 +840,13 @@ Emberbound) as joinable factions with rank progression and multi-quest arcs.
   vocabulary from the faction id and resolves state in one ordered function; the
   character screen grew a Guilds tab; `ValidateGuilds` closes the five-guild set from
   both sides. No `GuildComponent`, no guild save record.
+- **42B ✅ closed the hubs and rosters.** A hub is a `MapLocationResource` and an officer is a
+  placed `Entity`, so `FactionResource` gained `HubLocationId` and a four-role roster of `npc.*`
+  template ids and nothing else was invented. Five structures of five kinds — the Wardens' Watch,
+  the Ledger House, the Deadfall Lodge, the Annexe and the Undercroft — fourteen officers with
+  membership-aware greetings, and `DialogueCondition.GuildRankAtLeast` / `GuildNotMember` so a
+  conversation never hand-writes a derived guild flag. The Veiled Archive's great library and the
+  Ash Hunters' Ashen field station are handed to Phase 44 with reserved ids.
 - **Veiled Archive = the spell-recovery questline (woven, Phase 29.5)** — the scholar
   guild's arc *is* the Weave-recovery loop: hunting lost tomes, ley sites, and Ancient
   knowledge to restore spellcraft, rewarding recovered spells + mastery. Pure content on
@@ -1248,13 +1255,13 @@ The ordering is driven by hard dependencies, not preference:
 | ----- | ---- | ------ | ------ |
 | A — Pre-production & First Playable | G0 | 22–28 | ✅ Complete (22–28 + 25.5 hardening; G0 First Playable reached) |
 | B — Vertical Slice | G1 | 29–33 | ⏳ All phases built (29–32 ✅, 33A–33E ✅); **G1 needs a maintainer play-through + one export** |
-| C — Alpha / Feature Complete | G2 | 34–45 | ⏳ In progress (**34–39.5, 41, 41.5 and 42A complete; 40/40.5 struck**; next: 42B) |
+| C — Alpha / Feature Complete | G2 | 34–45 | ⏳ In progress (**34–39.5, 41, 41.5, 42A and 42B complete; 40/40.5 struck**; next: 42C) |
 | D — Beta / Content Complete | G3 | 46–55 | ⬜ Planned |
 | E — Release Candidate | G4 | 56–62 | ⬜ Planned |
 | F — Launch | G5 | 63 | ⬜ Planned |
 | G — Live / Post-launch | G6 | 64–66 | ⬜ Planned |
 
-**Where we are.** `docs/NOW.md` is authoritative: Stage C is active, **42A is closed and 42B is next**. Phases
+**Where we are.** `docs/NOW.md` is authoritative: Stage C is active, **42A and 42B are closed and 42C is next**. Phases
 40/40.5 are struck, not deferred. The out-of-band world-geography and world-quality passes are
 closed and are not Phase 44; future realm work uses their generated authoring/quality pipeline.
 

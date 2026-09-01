@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="ScheduleResource" format=3]
+
+[ext_resource type="Script" path="res://src/Npc/ScheduleResource.cs" id="1_sched"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleEntry.cs" id="2_entry"]
+
+; Broker Ilder Vance (Phase 42B).
+; ⚠️ Destinations are CELL-LOCAL and Origin is ember_crown.hollowreach's centre; see the header of
+; ScheduleResource.Origin. A raw WORLD destination copied out of a .tscn lands a cell's width from
+; where it was read, which is what broke nine routines in the 2026-08-29 overhaul.
+; ⚠️ Nothing here enters the hub building: its shell is one box collider, so its footprint is a hole
+; in the navmesh and a routine that ended inside it would be a leader who never arrives.
+
+[sub_resource type="Resource" id="e_door"]
+script = ExtResource("2_entry")
+StartHour = 8
+Activity = "In the doorway"
+Destination = Vector3(24.5, 0, 22.5)
+
+[sub_resource type="Resource" id="e_wharf"]
+script = ExtResource("2_entry")
+StartHour = 13
+Activity = "Down at the wharf"
+Destination = Vector3(8, 0, 0)
+
+[sub_resource type="Resource" id="e_terms"]
+script = ExtResource("2_entry")
+StartHour = 19
+Activity = "Reading terms"
+Destination = Vector3(24.5, 0, 22.5)
+
+[sub_resource type="Resource" id="e_sleep"]
+script = ExtResource("2_entry")
+StartHour = 23
+Activity = "Asleep"
+Destination = Vector3(23, 0, 24)
+
+[resource]
+script = ExtResource("1_sched")
+Id = "schedule.syndicate_broker"
+Entries = Array[Resource]([SubResource("e_door"), SubResource("e_wharf"), SubResource("e_terms"), SubResource("e_sleep")])
+Origin = Vector3(-95, 0, 85)

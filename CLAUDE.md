@@ -284,14 +284,25 @@ CI had been declined earlier, and the maintainer reversed that once the audit sh
 tests and the whole `ContentValidator` battery depended on someone remembering two commands).
 Two jobs on every push/PR, plus a weekly/manual full battery:
 
-- **Fast deterministic** — generation, warning-free build, xUnit, template, seams and layout.
-- **Engine + visual** — strict asset import, runtime regressions, deterministic visual comparison,
-  and uploaded failure evidence. Import failures are not swallowed.
+- **Fast deterministic (`Build & test`) — REQUIRED.** Generation, warning-free build, xUnit,
+  template, seams and layout. About a minute. This is the one that earns its keep: it proves the
+  repo builds, tests and validates **from a clean checkout by someone who is not the maintainer** —
+  an unstaged `.tres`, an asset that only imports because the local `.godot/` cache already has it,
+  a test that passes on local state. A local run structurally cannot catch that class of bug.
+- **Engine + visual (`Validate content`) — ADVISORY since 2026-08-31** (maintainer direction). Strict
+  asset import, runtime regressions, deterministic visual comparison, uploaded failure evidence. It
+  still runs and still uploads; it no longer blocks a merge (`continue-on-error: true`).
+  ⚠️ **Why:** it renders the game on a GPU-less runner under xvfb, which is not the renderer its
+  baselines were captured on. It failed thirteen Frostfang frames on ground shading alone, and the
+  step-up probe aborted with SIGABRT *after* printing PASS — neither about the repository. **Run
+  `python tools/world_quality_check.py` locally instead**, where a frame can be looked at, which is
+  where every real defect in 42B was actually found.
 - **Weekly/manual full** — exact negative mutations and structured performance history.
 
-⚠️ **`.github/workflows/` needs a token with `workflow` scope.** The session OAuth token does
-not have it; that file was pushed through the GitHub API instead. If a workflow edit is ever
-rejected on push, that is why — it is not a repo permission problem.
+**`.github/workflows/` edits push normally** (verified 2026-08-31, making `ci.yml`'s
+`validate-content` job advisory). The session token carries `workflow` scope. ⚠️ It did NOT when the
+file was first added, and that edit went through the GitHub API instead — so if a workflow push is
+ever rejected, the scope is the reason and it is not a repo permission problem.
 
 ⚠️ The green **Vercel** check that also appears on every PR is still a meaningless no-op —
 Vercel is trying to deploy a Godot game as a web app. Ignore that one; the Codex quality jobs above

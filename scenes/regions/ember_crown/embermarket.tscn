@@ -48,6 +48,8 @@
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 [ext_resource type="PackedScene" path="res://scenes/props/shrine_waystone.tscn" id="shrine_body_41_5b"]
 [ext_resource type="Script" path="res://src/Shrines/ShrineComponent.cs" id="shrine_41_5b"]
+[ext_resource type="PackedScene" path="res://scenes/props/bld_archive_annexe.tscn" id="42b_bld_archive_annexe"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_townsman.glb" id="42b_npc_townsman"]
 
 ; THE EMBERMARKET — "the Coilyard" (the 2026-08-28 layout rebuild). The Ember Crown's trade district, one street
 ; south of the town square, and as of this phase a district you navigate rather than a street you walk
@@ -2114,3 +2116,97 @@ ShrineId = "shrine.nyth"
 [node name="MapPin" type="Node3D" parent="Nav/ShrineNyth"]
 script = ExtResource("maploc_39_5a")
 LocationId = "location.shrine.nyth"
+
+; ── THE ANNEXE (Phase 42B) ────────────────────────────────────────────────────────────────────────
+; The Veiled Archive's hub, on the market's north side on Area_market_timber (centre (3, 16.5),
+; radius (7, 4.5), levelled to y = 0). One low storey with its door facing -Z, back down the market:
+; a reading room among the timber yards, not a hall. The Archive has no shopfront on purpose.
+; ⚠️ Its great library is Sunspire's and is Phase 44's — see the 42B retrospective for the handoff.
+[node name="ArchiveAnnexe" parent="Nav" instance=ExtResource("42b_bld_archive_annexe")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -2.5, 0, 16.5)
+
+[node name="ArchiveKeeper" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.5, 0, 12.5)
+script = ExtResource("2_entity")
+DisplayName = "Keeper Ysolde Marr"
+TemplateId = "npc.archive_keeper"
+
+[node name="Animation" type="Node" parent="ArchiveKeeper"]
+script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="ArchiveKeeper"]
+
+[node name="Shape" type="CollisionShape3D" parent="ArchiveKeeper/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="ArchiveKeeper"]
+script = ExtResource("6_faction")
+FactionId = "faction.veiled_archive"
+
+[node name="Dialogue" type="Node" parent="ArchiveKeeper"]
+script = ExtResource("4_dialogue")
+DialogueId = "dialogue.archive_keeper"
+
+[node name="Schedule" type="Node" parent="ArchiveKeeper"]
+script = ExtResource("8_schedule")
+ScheduleId = "schedule.archive_keeper"
+
+[node name="Model" parent="ArchiveKeeper" instance=ExtResource("41_woman_dress")]
+
+[node name="ArchiveSteward" type="Node3D" parent="."]
+transform = Transform3D(-0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, -0.342, -5.5, 0, 14)
+script = ExtResource("2_entity")
+DisplayName = "Steward Coran Vey"
+TemplateId = "npc.archive_steward"
+
+[node name="Animation" type="Node" parent="ArchiveSteward"]
+script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="ArchiveSteward"]
+
+[node name="Shape" type="CollisionShape3D" parent="ArchiveSteward/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="ArchiveSteward"]
+script = ExtResource("6_faction")
+FactionId = "faction.veiled_archive"
+
+[node name="Dialogue" type="Node" parent="ArchiveSteward"]
+script = ExtResource("4_dialogue")
+DialogueId = "dialogue.archive_steward"
+
+[node name="Model" parent="ArchiveSteward" instance=ExtResource("40_merchant_m")]
+
+[node name="ArchiveReader" type="Node3D" parent="."]
+transform = Transform3D(0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, 0.9397, 0.5, 0, 14.5)
+script = ExtResource("2_entity")
+DisplayName = "Ferris Vail"
+TemplateId = "npc.archive_reader"
+
+[node name="Animation" type="Node" parent="ArchiveReader"]
+script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="ArchiveReader"]
+
+[node name="Shape" type="CollisionShape3D" parent="ArchiveReader/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="ArchiveReader"]
+script = ExtResource("6_faction")
+FactionId = "faction.veiled_archive"
+
+[node name="Dialogue" type="Node" parent="ArchiveReader"]
+script = ExtResource("4_dialogue")
+DialogueId = "dialogue.archive_reader"
+
+[node name="Model" parent="ArchiveReader" instance=ExtResource("42b_npc_townsman")]
+
+[node name="MapPin" type="Node3D" parent="Nav/ArchiveAnnexe"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.embermarket.annexe"

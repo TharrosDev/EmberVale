@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="ScheduleResource" format=3]
+
+[ext_resource type="Script" path="res://src/Npc/ScheduleResource.cs" id="1_sched"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleEntry.cs" id="2_entry"]
+
+; Captain Aldric Fenn (Phase 42B).
+; ⚠️ Destinations are CELL-LOCAL and Origin is ember_crown.crossway_post's centre; see the header of
+; ScheduleResource.Origin. A raw WORLD destination copied out of a .tscn lands a cell's width from
+; where it was read, which is what broke nine routines in the 2026-08-29 overhaul.
+; ⚠️ Nothing here enters the hub building: its shell is one box collider, so its footprint is a hole
+; in the navmesh and a routine that ended inside it would be a leader who never arrives.
+
+[sub_resource type="Resource" id="e_muster"]
+script = ExtResource("2_entry")
+StartHour = 6
+Activity = "At the muster"
+Destination = Vector3(-13.5, 0, 5)
+
+[sub_resource type="Resource" id="e_gate"]
+script = ExtResource("2_entry")
+StartHour = 10
+Activity = "Walking the gate"
+Destination = Vector3(2, 0, 6)
+
+[sub_resource type="Resource" id="e_ledger"]
+script = ExtResource("2_entry")
+StartHour = 16
+Activity = "At the gate ledger"
+Destination = Vector3(-13.5, 0, 5)
+
+[sub_resource type="Resource" id="e_sleep"]
+script = ExtResource("2_entry")
+StartHour = 22
+Activity = "Asleep"
+Destination = Vector3(-14.5, 0, 4)
+
+[resource]
+script = ExtResource("1_sched")
+Id = "schedule.dawnwarden_captain"
+Entries = Array[Resource]([SubResource("e_muster"), SubResource("e_gate"), SubResource("e_ledger"), SubResource("e_sleep")])
+Origin = Vector3(0, 0, -95)

@@ -1,0 +1,70 @@
+[gd_resource type="Resource" script_class="DialogueResource" format=3]
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+; Huntmaster Yrsa Kesk (faction.ash_hunters). Scaffold from tools/gen_guild_dialogue.py; prose is hand-written in
+; data/locale/strings.csv. Phase 42B.
+;
+; The standard guild-officer shape:
+;   - the ROOT line is a neutral hail. A DialogueResource has one StartNodeId and nothing
+;     conditions it, so the membership-aware greeting is the first EXCHANGE rather than the first
+;     line: exactly one of the two choices below is ever offered.
+;   - Condition = 14 is GuildRankAtLeast ("faction.ash_hunters:0" - a member of ANY rank), Condition = 15
+;     is GuildNotMember. Rank 0 keeps the pair exhaustive; see the generator header.
+;     Never Condition = 5 (HasFlag) with a guild.* flag: those flags are DERIVED by GuildRules from
+;     the faction id, and hand-writing one into a .tres is NOW.md invariant 18's whole subject.
+;   - the two are exhaustive and disjoint, so root is never a dead end.
+
+[sub_resource type="Resource" id="ch_member"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_master.c_member"
+Condition = 14
+ConditionArg = "faction.ash_hunters:0"
+Goto = "member"
+
+[sub_resource type="Resource" id="ch_stranger"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_master.c_stranger"
+Condition = 15
+ConditionArg = "faction.ash_hunters"
+Goto = "stranger"
+
+[sub_resource type="Resource" id="ch_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_master.c_bye"
+
+[sub_resource type="Resource" id="ch_back"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_master.c_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_end"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_master.c_end"
+
+[sub_resource type="Resource" id="node_root"]
+script = ExtResource("2_node")
+Id = "root"
+Text = "dlg.hunter_master.root"
+Choices = Array[Resource]([SubResource("ch_member"), SubResource("ch_stranger"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_member"]
+script = ExtResource("2_node")
+Id = "member"
+Text = "dlg.hunter_master.member"
+Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_stranger"]
+script = ExtResource("2_node")
+Id = "stranger"
+Text = "dlg.hunter_master.stranger"
+Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "dialogue.hunter_master"
+SpeakerName = "dlg.hunter_master.speaker"
+StartNodeId = "root"
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger")])

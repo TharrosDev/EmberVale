@@ -375,6 +375,14 @@ not layering a second list of changes over it.
   story. None of that is stored twice: membership is the same persistent record the rest of the
   world already keeps, so loading a game restores exactly the allegiances the save holds and
   discards anything that happened after it.
+- 42B ✅ and all five now have somewhere to go and someone to meet. The Dawnwardens keep a watch
+  beside the toll gate on the north road; the Iron Syndicate runs a shuttered counting house on the
+  dry edge of Hollowreach; the Ash Hunters keep an open lodge under the scarp where the wilds come
+  down; the Veiled Archive holds one low reading room on the market's north side and admits nobody
+  who has not brought them something; and the Emberbound are three and a half metres down in the
+  Emberdeep workings, in a chamber the map will not show you until you have stood in it. Each has a
+  leader, a quartermaster and someone who hands out the work, and every one of them greets a member
+  differently from a stranger — including after you load a save from before you joined.
 
 ### Phase 41.5 — the gods leave something behind
 

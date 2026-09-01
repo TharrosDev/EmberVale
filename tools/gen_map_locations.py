@@ -204,6 +204,26 @@ add("ember_crown/wilds_north", "wilds.north", "Wilds", ".", "The Northern Wilds"
 add("ember_crown/wilds_west", "wilds.west", "Wilds", ".", "The Western Wilds", reveal=True,
     desc="Broken ground west of the tarn.")
 
+# ── The five guild hubs (Phase 42B) ──────────────────────────────────────────────────────────
+# Each is the `HubLocationId` of a FactionResource with ranks, and `ContentValidator.ValidateGuildHubs`
+# fails on a guild whose hub names no location here. The category is the nearest EXISTING one rather
+# than a new MapCategory member: an Outpost, a contract house, a camp, a scriptorium and a landmark is
+# what these five actually are, and a sixth glyph for "guild" would say less than those do.
+add("ember_crown/crossway_post", "crossway.watch", "Outpost", "Nav/WardensWatch", "The Wardens' Watch",
+    dialogue="dialogue.dawnwarden_captain")
+add("ember_crown/hollowreach", "hollowreach.ledger", "Contracts", "Nav/LedgerHouse", "The Ledger House",
+    dialogue="dialogue.syndicate_broker")
+add("ember_crown/wilds_north", "wilds.lodge", "Camp", "Nav/DeadfallLodge", "The Deadfall Lodge",
+    dialogue="dialogue.hunter_master")
+add("ember_crown/embermarket", "embermarket.annexe", "Scriptorium", "Nav/ArchiveAnnexe", "The Annexe",
+    dialogue="dialogue.archive_keeper")
+# ⚠️ THE ONE HUB THAT DOES NOT REVEAL WITH ITS CELL. A concealed order whose pin arrives with the
+# region is not concealed; this one is found by standing in it. 42K owns the initiation, and the
+# RequiredFlagId gate that goes with it — naming a flag here that nothing can set would hide the
+# hub from a player who has no way to reveal it.
+add("ember_crown/emberdeep_mine", "emberdeep.undercroft", "Landmark", "Nav/UndercroftPedestal",
+    "The Undercroft", dialogue="dialogue.emberbound_hierarch")
+
 # ── Frostfang Reach ──────────────────────────────────────────────────────────────────────────
 # Settlement-tier coverage only. Frostfang's interiors are a Phase 44 world-layout question, and
 # ⚠️ the three roosts deliberately do NOT reveal with their cell: a lair you have not found should

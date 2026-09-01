@@ -15,6 +15,14 @@ transitional country; distinct biome/atmosphere/ecology; NPC/encounter plan; map
 a measured resident performance budget. This is Alpha extent, not Beta density or final art. Phase 50
 fills approved categories and Phase 53 replaces presentation placeholders. Never fill every cell.
 
+> **Inherited from 42B — two guild houses this phase owes.** The Veiled Archive and the Ash
+> Hunters each have a hub the current world can hold and a greater house it cannot. Neither is a
+> move: `location.embermarket.annexe` and `location.wilds.lodge` stay where they are and stay their
+> guilds' PRIMARY `HubLocationId`. 44 adds the second house at these reserved ids —
+> **`location.sunspire.library`** (the Archive's great library, in Sunspire) and
+> **`location.ashen.station`** (the Hunters' field station in the Ashen Wilds) — and 42G and 42E
+> respectively depend on them existing. ⚠️ Both are hooks 44A's inventory must own.
+
 - [ ] **44A — Five-realm atlas, coordinate bands and content budget** `[C/P]`
   - **Goal:** freeze the macro atlas and ownership before adding new generated realms.
   - **Build / Author:** region extents/portals/hidden entry/horizons, travel-distance bands, provisional

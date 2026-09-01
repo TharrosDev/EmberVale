@@ -61,9 +61,23 @@ jobs:
           name: quality-fast-${{ github.run_id }}
           path: artifacts/quality/fast
 
+  # ⚠️ ADVISORY, NOT REQUIRED (2026-08-31, maintainer direction). This job renders the game on a
+  # GPU-less runner under xvfb, and that is a different renderer from the one its baselines were
+  # captured on: the visual gate failed thirteen Frostfang frames purely on ground shading, the
+  # stepup probe aborted with SIGABRT *after* printing PASS, and neither had anything to do with the
+  # repository. Meanwhile every real defect this quarter was caught by running
+  # `python tools/world_quality_check.py` locally, where a frame can actually be LOOKED at.
+  #
+  # So it still runs, still uploads its evidence, and no longer blocks a merge. `continue-on-error`
+  # keeps the job's own steps honest — a failure is still red inside the job and in its artifacts —
+  # while reporting success to the branch protection that gates the PR.
+  # ⚠️ `Build & test` REMAINS REQUIRED. It is the one that proves the repo builds, tests and
+  # validates from a clean checkout by someone who is not the maintainer, which is the class of bug
+  # a local run structurally cannot catch, and it costs about a minute.
   validate-content:
     name: Validate content
     runs-on: ubuntu-latest
+    continue-on-error: true
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4

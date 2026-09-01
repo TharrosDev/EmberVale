@@ -307,16 +307,12 @@ func _finish_visual_regression() -> bool:
 			printerr("world shots: signature size changed for %s" % key)
 			failures += 1
 			continue
+		var block_deltas := _row_normalized_deltas(actual_values, expected_values)
 		var delta := 0.0
 		var changed_blocks := 0
 		var structural_peak := 0.0
-		var block_deltas: Array[float] = []
-		for block in range(SIGNATURE_WIDTH * SIGNATURE_HEIGHT):
-			var offset := block * 3
-			var block_delta := (absf(float(actual_values[offset]) - float(expected_values[offset])) + \
-				absf(float(actual_values[offset + 1]) - float(expected_values[offset + 1])) + \
-				absf(float(actual_values[offset + 2]) - float(expected_values[offset + 2]))) / 3.0
-			block_deltas.append(block_delta)
+		for block in block_deltas.size():
+			var block_delta: float = block_deltas[block]
 			delta += block_delta
 			if block_delta > local_threshold:
 				changed_blocks += 1
@@ -325,8 +321,13 @@ func _finish_visual_regression() -> bool:
 			if block / SIGNATURE_WIDTH < SIGNATURE_HEIGHT - 2:
 				structural_peak = maxf(structural_peak, block_delta)
 		delta /= block_deltas.size()
-		block_deltas.sort()
-		var p95: float = block_deltas[int(floor((block_deltas.size() - 1) * 0.95))]
+		# ⚠️ SORT A COPY. `block_deltas` is a SPATIAL map and `_write_diff` paints it as one, so
+		# sorting it in place published a monotonic ramp as every diff image this gate has ever
+		# written — a picture of the sort order rather than of the frame. Two of them were read as
+		# evidence about the world before anyone noticed.
+		var ranked := block_deltas.duplicate()
+		ranked.sort()
+		var p95: float = ranked[int(floor((ranked.size() - 1) * 0.95))]
 		var allowed_blocks := maxi(2, ceili(block_deltas.size() * changed_fraction))
 		if delta > mean_threshold or changed_blocks > allowed_blocks or structural_peak > peak_threshold:
 			printerr("world shots: %s mean %.2f/%.2f, localized blocks %d/%d, p95 %.2f, static peak %.2f/%.2f" % [
@@ -341,6 +342,46 @@ func _finish_visual_regression() -> bool:
 		"PASS" if failures == 0 else "FAIL", _signatures.size(), mean_threshold,
 		local_threshold, changed_fraction * 100.0])
 	return failures == 0
+
+
+# Per-block difference, after removing each block-ROW's median signed difference per channel.
+#
+# ⚠️ WHY THE GATE SUBTRACTS ANYTHING AT ALL. This baseline is captured on a developer machine and
+# compared on a CI runner rendering under xvfb, and the two do not agree on ground shading: every
+# frame carries a broad, moderate, diffuse difference that no single block dominates (the static
+# peak passed on all thirteen frames that failed the mean). Comparing absolute channel values across
+# two renderers therefore fails a gate that has found nothing wrong.
+#
+# Removing a per-row median cancels exactly the difference that is CONSTANT ALONG A ROW — a global
+# tone shift, or one that varies only with screen height — and cancels nothing else. A change worth
+# catching is localized: a building, a moved prop or a new actor occupies a few blocks of a
+# thirty-two block row, so it barely moves that row's median and its own delta survives intact.
+# ⚠️ The one thing this deliberately cannot see is a change that alters an ENTIRE row uniformly,
+# which is the price of comparing two renderers at all.
+func _row_normalized_deltas(actual_values: Array, expected_values: Array) -> Array[float]:
+	var deltas: Array[float] = []
+	deltas.resize(SIGNATURE_WIDTH * SIGNATURE_HEIGHT)
+	for row in range(SIGNATURE_HEIGHT):
+		var signed := []
+		for channel in range(3):
+			var column: Array[float] = []
+			for x in range(SIGNATURE_WIDTH):
+				var offset := ((row * SIGNATURE_WIDTH) + x) * 3 + channel
+				column.append(float(actual_values[offset]) - float(expected_values[offset]))
+			signed.append(column)
+
+		var medians: Array[float] = []
+		for channel in range(3):
+			var sorted_column: Array[float] = signed[channel].duplicate()
+			sorted_column.sort()
+			medians.append(sorted_column[sorted_column.size() / 2])
+
+		for x in range(SIGNATURE_WIDTH):
+			var total := 0.0
+			for channel in range(3):
+				total += absf(signed[channel][x] - medians[channel])
+			deltas[(row * SIGNATURE_WIDTH) + x] = total / 3.0
+	return deltas
 
 
 func _write_diff(key: String, block_deltas: Array[float], threshold: float, folder: String) -> void:

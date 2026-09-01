@@ -27,6 +27,11 @@
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_townswoman.glb" id="31_townswoman"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_stall_cart.gltf" id="42_stall_cart"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="42b_prp_ruin_pillar"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_wall.glb" id="42b_prp_ruin_wall"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_tome_stand.glb" id="42b_prp_tome_stand"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_hooded.glb" id="42b_npc_hooded"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_townsman.glb" id="42b_npc_townsman"]
 
 ; THE EMBERDEEP MINE (Phase 38N1) — the realm's first PRODUCTION settlement, and the second market the
 ; economy has been waiting for since 38F.
@@ -165,6 +170,12 @@ size = Vector3(3.02, 2.63, 1.06)
 ; response from those. One authored WorldPathSegmentResource is the road, the shader's colour, the
 ; terrain's levelling AND the scatter's clearance, instead of a slab that had to agree with three
 ; other files by hand.
+
+[sub_resource type="BoxShape3D" id="Shape_pillar_42b"]
+size = Vector3(0.8, 4.0, 0.8)
+
+[sub_resource type="BoxShape3D" id="Shape_ruin_42b"]
+size = Vector3(4, 5, 1)
 [node name="EmberdeepMine" type="Node3D"]
 
 [node name="Nav" type="NavigationRegion3D" parent="."]
@@ -830,3 +841,168 @@ LocationId = "location.emberdeep.factor"
 [node name="MapPin" type="Node3D" parent="Marta"]
 script = ExtResource("maploc_39_5a")
 LocationId = "location.emberdeep.quartermaster"
+
+; ── THE UNDERCROFT (Phase 42B) ────────────────────────────────────────────────────────────────────
+; The Emberbound's hub, and the one that is NOT a building. A pillared chamber cut off the pithead
+; floor (Area_mine_pithead, centre (18, -9), radius (8, 9), levelled to y = -3.5), so reaching it
+; means going DOWN three and a half metres into the workings — which is the whole of its concealment
+; and cost nothing to build, because the pit was already there.
+; ⚠️ Its map pin does NOT reveal with the cell. Every other hub in the realm does; this one has to be
+; walked to. The flag gate a concealed order eventually wants is 42K's, along with the initiation
+; that would set it — RequiredFlagId stays empty here rather than naming a flag nothing can set.
+[node name="UndercroftPillarNW" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, -5)
+
+[node name="Model" parent="Nav/UndercroftPillarNW" instance=ExtResource("42b_prp_ruin_pillar")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/UndercroftPillarNW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/UndercroftPillarNW/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
+shape = SubResource("Shape_pillar_42b")
+
+[node name="UndercroftPillarNE" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, -5)
+
+[node name="Model" parent="Nav/UndercroftPillarNE" instance=ExtResource("42b_prp_ruin_pillar")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/UndercroftPillarNE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/UndercroftPillarNE/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
+shape = SubResource("Shape_pillar_42b")
+
+[node name="UndercroftPillarSW" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, -11)
+
+[node name="Model" parent="Nav/UndercroftPillarSW" instance=ExtResource("42b_prp_ruin_pillar")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/UndercroftPillarSW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/UndercroftPillarSW/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
+shape = SubResource("Shape_pillar_42b")
+
+[node name="UndercroftPillarSE" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, -11)
+
+[node name="Model" parent="Nav/UndercroftPillarSE" instance=ExtResource("42b_prp_ruin_pillar")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/UndercroftPillarSE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/UndercroftPillarSE/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
+shape = SubResource("Shape_pillar_42b")
+
+[node name="UndercroftWallW" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.0, 0, -13.2)
+
+[node name="Model" parent="Nav/UndercroftWallW" instance=ExtResource("42b_prp_ruin_wall")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/UndercroftWallW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/UndercroftWallW/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("Shape_ruin_42b")
+
+[node name="UndercroftWallE" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.0, 0, -13.2)
+
+[node name="Model" parent="Nav/UndercroftWallE" instance=ExtResource("42b_prp_ruin_wall")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/UndercroftWallE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/UndercroftWallE/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("Shape_ruin_42b")
+
+[node name="UndercroftPedestal" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, -11)
+
+[node name="Model" parent="Nav/UndercroftPedestal" instance=ExtResource("42b_prp_tome_stand")]
+
+[node name="EmberboundHierarch" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 12, 0, -7)
+script = ExtResource("2_entity")
+DisplayName = "Hierarch Selane Ott"
+TemplateId = "npc.emberbound_hierarch"
+
+[node name="Animation" type="Node" parent="EmberboundHierarch"]
+script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="EmberboundHierarch"]
+
+[node name="Shape" type="CollisionShape3D" parent="EmberboundHierarch/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="EmberboundHierarch"]
+script = ExtResource("6_faction")
+FactionId = "faction.emberbound"
+
+[node name="Dialogue" type="Node" parent="EmberboundHierarch"]
+script = ExtResource("4_dialogue")
+DialogueId = "dialogue.emberbound_hierarch"
+
+[node name="Schedule" type="Node" parent="EmberboundHierarch"]
+script = ExtResource("7_schedule")
+ScheduleId = "schedule.emberbound_hierarch"
+
+[node name="Model" parent="EmberboundHierarch" instance=ExtResource("42b_npc_hooded")]
+
+[node name="EmberboundWarder" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, -10)
+script = ExtResource("2_entity")
+DisplayName = "Warder Cass Vollen"
+TemplateId = "npc.emberbound_warder"
+
+[node name="Animation" type="Node" parent="EmberboundWarder"]
+script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="EmberboundWarder"]
+
+[node name="Shape" type="CollisionShape3D" parent="EmberboundWarder/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="EmberboundWarder"]
+script = ExtResource("6_faction")
+FactionId = "faction.emberbound"
+
+[node name="Dialogue" type="Node" parent="EmberboundWarder"]
+script = ExtResource("4_dialogue")
+DialogueId = "dialogue.emberbound_warder"
+
+[node name="Model" parent="EmberboundWarder" instance=ExtResource("42b_npc_townsman")]
+
+[node name="EmberboundSeeker" type="Node3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 9.5, 0, -8.5)
+script = ExtResource("2_entity")
+DisplayName = "Seeker Bren Ilvo"
+TemplateId = "npc.emberbound_seeker"
+
+[node name="Animation" type="Node" parent="EmberboundSeeker"]
+script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="EmberboundSeeker"]
+
+[node name="Shape" type="CollisionShape3D" parent="EmberboundSeeker/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="EmberboundSeeker"]
+script = ExtResource("6_faction")
+FactionId = "faction.emberbound"
+
+[node name="Dialogue" type="Node" parent="EmberboundSeeker"]
+script = ExtResource("4_dialogue")
+DialogueId = "dialogue.emberbound_seeker"
+
+[node name="Model" parent="EmberboundSeeker" instance=ExtResource("42b_npc_hooded")]
+
+[node name="MapPin" type="Node3D" parent="Nav/UndercroftPedestal"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.emberdeep.undercroft"
