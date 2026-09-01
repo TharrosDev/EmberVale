@@ -1,0 +1,34 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+
+region.ember_crown
+  ember_crown.fen_edge                       5 meshes
+  ember_crown.hollowreach                  173 meshes
+  ember_crown.embermarket                  465 meshes
+  ember_crown.ashfall_homestead            136 meshes
+  ember_crown.wilds_west                    31 meshes
+  ember_crown.tarn_landing                  76 meshes
+  ember_crown.town_hub                     318 meshes
+  ember_crown.emberdeep_mine                78 meshes
+  ember_crown.west_downs                     5 meshes
+  ember_crown.crossway_post                149 meshes
+  ember_crown.mine_road                      0 meshes
+  ember_crown.north_moor                     0 meshes
+  ember_crown.wilds_north                   85 meshes
+  ember_crown.ashen_reach                    0 meshes
+  ember_crown.frontier_waste                 0 meshes
+  ember_crown.arena                         69 meshes
+  TOTAL                                   1590 meshes
+region.frostfang_reach
+  frostfang_reach.frost_march_w              0 meshes
+  frostfang_reach.frost_march_e              0 meshes
+  frostfang_reach.dragon_roost              18 meshes
+  frostfang_reach.clan_hold                181 meshes
+  frostfang_reach.ash_roost                 13 meshes
+  frostfang_reach.north_snowfield            0 meshes
+  frostfang_reach.glacier                    9 meshes
+  frostfang_reach.ash_approach               0 meshes
+  frostfang_reach.ancient_aerie             15 meshes
+  frostfang_reach.aerie_ascent               0 meshes
+  TOTAL                                    236 meshes
+grand total 1826 meshes
+[INFO]  GameManager online.

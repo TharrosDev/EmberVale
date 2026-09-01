@@ -35,33 +35,38 @@
 - **The runtime debugging pass (2026-08-30) ✅ CLOSED — out of band.** Every route into the world now
   goes through one loading gate that holds until the region is whole *and* the physics server reports
   collision under the player.
+- **The architecture-kit pass (2026-09-01) ✅ CLOSED — out of band.** The useful existing cottage,
+  inn, blacksmith, houses and first modular kit were retained; 21 compatible shared modules and ten
+  structurally distinct authored prefabs now cover cottages, farms, shops, workshops, townhouses,
+  inns, longhouses and ruins. Five live settlements use the new forms. See
+  `docs/ARCHITECTURE_KIT.md` and `reports/3d/session-05-architecture-handoff/`.
 - **NEXT: 42C — Dawnwardens recruitment and probation.** The first arc to walk through a door 42B
   built: join/refuse dialogue plus a Defend/Reach probation pair, and rank one earned.
 
 Read [`docs/WORLD_AUTHORING.md`](WORLD_AUTHORING.md) before touching a cell. `data/regions/*.tres`
 is **generated** — edit `tools/region_spec_<region>.py` and run `python tools/gen_regions.py`.
 
-## Last verified (2026-08-31 — 42B, the guild hubs)
+## Last verified (2026-09-01 — Session 5 architecture kit)
 
 | Check | Result |
 | --- | --- |
 | Build | `dotnet build Embervale.sln` — 0 warnings, 0 errors |
-| Tests | `dotnet test tests/Embervale.Tests` — **1687 passing** (+18: `MeetsRank`, `TryParseRankArg`, the two new condition ordinals) |
+| Tests | `dotnet test tests/Embervale.Tests` — **1713 passing** |
 | `--validate` | exit 0, with the new `ValidateGuildHubs` and `ValidateGuildDialogueConditions` arms |
 | `--state` | 2 regions, 26 cells, **48 dialogues**, **31 schedules**, **75 map locations**, 13 factions |
 | Negative battery | `negative_tests.py` — **110/110 caught**, including ten new hub cases and both ends of an authored condition rank |
-| `world_quality_check.py --mode engine` | all 17 gates PASS (generation, build, tests, content, template, seams, layout, map, stepup, meshes, scenes, regressions, transition, melee, traversal) |
-| `--mode visual` | PASS, after inspecting every changed frame and updating the baseline |
+| `world_quality_check.py --mode engine` | all **19** gates PASS, including architecture structure/material/reference validation and real-capsule building collision |
+| `--mode visual` | PASS, 260/260 world frames after inspecting and merging only the five intentionally changed settlement cells |
+| Architecture views | PASS, 15 important buildings × six required angles = **90/90 frames** |
+| Permanent 3D audit | self-test PASS; **178 assets**, 175 advisory findings inventoried in the Session 5 final audit |
 | `--guild-shots` | 12 frames: five hubs front and back at eye level with their officers, plus the same captain greeting a stranger and a member |
 | Persistence | the harness stages membership on every officer, then **loads a save taken before any of it** and proves every leader is back to the stranger greeting — a load replays no events |
 | `--play` | boots, restores `auto1`, reaches `Playing`, 0 errors |
 
-**Not run:** `--economy` (nothing here touches price or trade). ⚠️ **`--mode full` fails its
-`visuals` gate on `ember_crown.fen_edge`, a water cell 42B never touched** — it passes standalone and
-in `--mode visual`, and fails only when the visuals gate runs after the heavy engine gates, on the
-`static peak` metric of animated water. CI's PR path runs `engine` and `visual` as separate jobs and
-is green; `full` is the weekly battery. This is a pre-existing harness flake, recorded rather than
-papered over.
+`--mode full` passes all 21 pass/fail gates after the implementation commit; the negative battery
+catches and restores **111/111** deliberately broken rules, and the performance report is recorded
+in the Session 5 handoff. `--economy` remains out of scope because this pass touches neither prices
+nor trade.
 
 ## Live invariants
 
@@ -115,6 +120,9 @@ papered over.
     hubs on their pads, `--validate` and the layout gate both passed, and the **traversal probe** was
     the only thing that said four authored routes had no navigation path through them. Author a new
     `Yard` beside the road; do not build on the pad because the pad is flat.
+22. ⚠️ **A BUILDING VARIANT CHANGES STRUCTURE, NOT JUST DRESSING.** Footprint, floor count, roof
+    direction/form, access, wall family, porch/awning/balcony or ruin state must change. Use shared
+    material families and authored prefabs; a cosmetic prop swap is not a new building.
 
 ## Commands worth knowing
 
@@ -133,7 +141,10 @@ godot --path . --script res://tools/world_perf_probe.gd
 python tools/world_quality_check.py --mode engine       # what CI runs on a PR
 python tools/world_quality_check.py --mode visual       # ditto, second job
 python tools/world_quality_check.py --mode full         # + the negative battery; weekly
-python tools/compose_building.py <name> <w> <d> <storeys> [--hollow | --open]
+python tools/compose_building.py <name> <w> <d> <storeys> [--hollow | --open | --ruined] [kit options]
+python tools/check_architecture_kit.py
+godot --headless --path . --script res://tools/building_collision_probe.gd
+godot --path . --resolution 960x720 --script res://tools/architecture_shots.gd -- --output <dir>
 python tools/gen_guild_dialogue.py <key> <dialogue.id> <faction.id> "<Speaker>"
 ```
 

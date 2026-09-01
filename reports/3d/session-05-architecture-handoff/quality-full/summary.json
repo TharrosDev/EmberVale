@@ -1,0 +1,267 @@
+{
+  "schema": 1,
+  "run_id": "20260901T220725Z",
+  "mode": "full",
+  "regions": [
+    "ember_crown",
+    "frostfang_reach"
+  ],
+  "status": "passed",
+  "machine": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "machine": "AMD64",
+    "python": "3.12.13"
+  },
+  "godot": "C:\\Users\\magnu\\Downloads\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64_console.exe",
+  "evidence": {
+    "logs": "C:\\Users\\magnu\\Embervale\\reports\\3d\\session-05-architecture-handoff\\quality-full",
+    "world_current": "C:\\Users\\magnu\\Embervale\\tools\\shots\\world",
+    "world_diffs": "C:\\Users\\magnu\\Embervale\\tools\\shots\\world_diffs",
+    "visual_baseline": "C:\\Users\\magnu\\Embervale\\tests\\visual_baselines\\world_signatures.json",
+    "performance": "C:\\Users\\magnu\\Embervale\\reports\\3d\\session-05-architecture-handoff\\quality-full\\performance.json"
+  },
+  "results": [
+    {
+      "name": "generation",
+      "status": "PASS",
+      "what": "the committed .tres match their region specs",
+      "expected": "exit code 0",
+      "actual": "exit code 0",
+      "exit_code": 0,
+      "elapsed_seconds": 0.5,
+      "reproduction": "C:\\Users\\magnu\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe tools/gen_regions.py --check",
+      "log": "generation.log"
+    },
+    {
+      "name": "build",
+      "status": "PASS",
+      "what": "the C# compiles",
+      "expected": "exit code 0",
+      "actual": "exit code 0",
+      "exit_code": 0,
+      "elapsed_seconds": 17.75,
+      "reproduction": "dotnet build Embervale.sln -v q --nologo",
+      "log": "build.log"
+    },
+    {
+      "name": "tests",
+      "status": "PASS",
+      "what": "the pure-logic suite",
+      "expected": "exit code 0",
+      "actual": "exit code 0",
+      "exit_code": 0,
+      "elapsed_seconds": 5.375,
+      "reproduction": "dotnet test tests/Embervale.Tests -v q --nologo",
+      "log": "tests.log"
+    },
+    {
+      "name": "architecture",
+      "status": "PASS",
+      "what": "building prefabs, collision modes, materials and live callers agree",
+      "expected": "exit code 0",
+      "actual": "exit code 0",
+      "exit_code": 0,
+      "elapsed_seconds": 0.125,
+      "reproduction": "C:\\Users\\magnu\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe tools/check_architecture_kit.py",
+      "log": "architecture.log"
+    },
+    {
+      "name": "content",
+      "status": "PASS",
+      "what": "references, well-formedness, reachability, route grades, off-route traps",
+      "expected": "exit code 0",
+      "actual": "exit code 0",
+      "exit_code": 0,
+      "elapsed_seconds": 4.5310000000172295,
+      "reproduction": "C:\\Users\\magnu\\Downloads\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64_console.exe --headless --path . -- --validate",
+      "log": "content.log"
+    },
+    {
+      "name": "building-collision",
+      "status": "PASS",
+      "what": "a real player capsule enters doors/breaches but not walls",
+      "expected": "exit code 0",
+      "actual": "exit code 0",
+      "exit_code": 0,
+      "elapsed_seconds": 1.4369999999762513,
+      "reproduction": "C:\\Users\\magnu\\Downloads\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64_console.exe --headless --path . --script res://tools/building_collision_probe.gd",
+      "log": "building-collision.log"
+    },
+    {
+      "name": "negative",
+      "status": "PASS",
+      "what": "the content rules still FAIL when deliberately broken",
+      "expected": "exit code 0",
+      "actual": "exit code 0",
+      "exit_code": 0,
+      "elapsed_seconds": 440.14100000000326,
+      "reproduction": "C:\\Users\\magnu\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe tools/negative_tests.py",
+      "log": "negative.log"
+    },
+    {
+      "name": "template",
+      "status": "PASS",
+      "what": "the new-region starter still builds and its lattice is sound",
+      "expected": "exit code 0",
+      "actual": "exit code 0",
+      "exit_code": 0,
+      "elapsed_seconds": 0.1720000000204891,
+      "reproduction": "C:\\Users\\magnu\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe tools/region_spec_template.py",
+      "log": "template.log"
+    },
+    {
+      "name": "seams:ember",
+      "status": "PASS",
+      "what": "every road reaching a cell edge meets its opposite number",
+      "expected": "exit code 0",
+      "actual": "exit code 0",
+      "exit_code": 0,
+      "elapsed_seconds": 0.13999999995576218,
+      "reproduction": "C:\\Users\\magnu\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe tools/check_region_seams.py C:\\Users\\magnu\\Embervale\\data\\regions\\EmberCrown.tres",
+      "log": "seams-ember.log"
+    },
+    {
+      "name": "seams:frostfang",
+      "status": "PASS",
+      "what": "every road reaching a cell edge meets its opposite number",
+      "expected": "exit code 0",
+      "actual": "exit code 0",
+      "exit_code": 0,
+      "elapsed_seconds": 0.14100000000325963,
+      "reproduction": "C:\\Users\\magnu\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe tools/check_region_seams.py C:\\Users\\magnu\\Embervale\\data\\regions\\FrostfangReach.tres",
+      "log": "seams-frostfang.log"
+    },
+    {
+      "name": "layout:ember",
+      "status": "PASS",
+      "what": "no structure overlaps or leaves its cell envelope",
+      "expected": "exit code 0",
+      "actual": "exit code 0",
+      "exit_code": 0,
+      "elapsed_seconds": 0.3130000000237487,
+      "reproduction": "C:\\Users\\magnu\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe tools/check_cell_layout.py C:\\Users\\magnu\\Embervale\\data\\regions\\EmberCrown.tres",
+      "log": "layout-ember.log"
+    },
+    {
+      "name": "layout:frostfang",
+      "status": "PASS",
+      "what": "no structure overlaps or leaves its cell envelope",
+      "expected": "exit code 0",
+      "actual": "exit code 0",
+      "exit_code": 0,
+      "elapsed_seconds": 0.26500000001396984,
+      "reproduction": "C:\\Users\\magnu\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe tools/check_cell_layout.py C:\\Users\\magnu\\Embervale\\data\\regions\\FrostfangReach.tres",
+      "log": "layout-frostfang.log"
+    },
+    {
+      "name": "map",
+      "status": "PASS",
+      "what": "every marker sits on the thing it names, in the right region",
+      "expected": "exit code 0",
+      "actual": "exit code 0",
+      "exit_code": 0,
+      "elapsed_seconds": 5.452999999979511,
+      "reproduction": "C:\\Users\\magnu\\Downloads\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64_console.exe --headless --path . --script res://tools/map_probe.gd",
+      "log": "map.log"
+    },
+    {
+      "name": "stepup",
+      "status": "PASS",
+      "what": "the player can still climb the realm's raised ground",
+      "expected": "exit code 0",
+      "actual": "exit code 0",
+      "exit_code": 0,
+      "elapsed_seconds": 14.23499999998603,
+      "reproduction": "C:\\Users\\magnu\\Downloads\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64_console.exe --headless --path . --script res://tools/stepup_probe.gd",
+      "log": "stepup.log"
+    },
+    {
+      "name": "meshes",
+      "status": "PASS",
+      "what": "the rendered mesh census against the per-cell budgets",
+      "expected": "exit code 0",
+      "actual": "exit code 0",
+      "exit_code": 0,
+      "elapsed_seconds": 3.672000000020489,
+      "reproduction": "C:\\Users\\magnu\\Downloads\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64_console.exe --headless --path . --script res://tools/cell_mesh_census.gd",
+      "log": "meshes.log"
+    },
+    {
+      "name": "scenes",
+      "status": "PASS",
+      "what": "every cell's authored nodes are visible, solid and correctly placed",
+      "expected": "exit code 0",
+      "actual": "exit code 0",
+      "exit_code": 0,
+      "elapsed_seconds": 5.061999999976251,
+      "reproduction": "C:\\Users\\magnu\\Downloads\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64_console.exe --headless --path . --script res://tools/cell_scene_audit.gd",
+      "log": "scenes.log"
+    },
+    {
+      "name": "regressions",
+      "status": "PASS",
+      "what": "the 2026-08-30 debugging pass's defects stay fixed",
+      "expected": "exit code 0",
+      "actual": "exit code 0",
+      "exit_code": 0,
+      "elapsed_seconds": 18.48399999999674,
+      "reproduction": "C:\\Users\\magnu\\Downloads\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64_console.exe --headless --path . --script res://tools/debug_pass_regressions.gd",
+      "log": "regressions.log"
+    },
+    {
+      "name": "transition",
+      "status": "PASS",
+      "what": "a region swap leaves no orphaned, duplicated or missing cell",
+      "expected": "exit code 0",
+      "actual": "exit code 0",
+      "exit_code": 0,
+      "elapsed_seconds": 10.813000000023749,
+      "reproduction": "C:\\Users\\magnu\\Downloads\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64_console.exe --headless --path . --script res://tools/region_transition_probe.gd",
+      "log": "transition.log"
+    },
+    {
+      "name": "melee",
+      "status": "PASS",
+      "what": "a swing still opens its hitbox and lands, twice in a row",
+      "expected": "exit code 0",
+      "actual": "exit code 0",
+      "exit_code": 0,
+      "elapsed_seconds": 6.0939999999827705,
+      "reproduction": "C:\\Users\\magnu\\Downloads\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64_console.exe --headless --path . --script res://tools/melee_probe.gd",
+      "log": "melee.log"
+    },
+    {
+      "name": "traversal",
+      "status": "PASS",
+      "what": "a real capsule walks every authored route in the real collision world",
+      "expected": "exit code 0",
+      "actual": "exit code 0",
+      "exit_code": 0,
+      "elapsed_seconds": 13.01500000001397,
+      "reproduction": "C:\\Users\\magnu\\Downloads\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64_console.exe --headless --path . --script res://tools/world_traversal_probe.gd",
+      "log": "traversal.log"
+    },
+    {
+      "name": "visuals",
+      "status": "PASS",
+      "what": "the approach shots render and match the approved baseline",
+      "expected": "exit code 0",
+      "actual": "exit code 0",
+      "exit_code": 0,
+      "elapsed_seconds": 103.64100000000326,
+      "reproduction": "C:\\Users\\magnu\\Downloads\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64_console.exe --path . --resolution 1280x720 --script res://tools/world_shots.gd",
+      "log": "visuals.log"
+    },
+    {
+      "name": "performance",
+      "status": "REPORT",
+      "what": "draw calls, primitives, frame time and video memory, per cell",
+      "expected": "exit code 0",
+      "actual": "exit code 0",
+      "exit_code": 0,
+      "elapsed_seconds": 41.03100000001723,
+      "reproduction": "C:\\Users\\magnu\\Downloads\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64_console.exe --path . --resolution 1280x720 --script res://tools/world_perf_probe.gd -- --json-file C:\\Users\\magnu\\Embervale\\reports\\3d\\session-05-architecture-handoff\\quality-full/performance.json",
+      "log": "performance.log"
+    }
+  ]
+}

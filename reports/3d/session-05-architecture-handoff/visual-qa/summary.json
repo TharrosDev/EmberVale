@@ -1,0 +1,180 @@
+{
+  "buildings": [
+    {
+      "bounds": [
+        5.5130763053894,
+        9.30052185058594,
+        5.56147480010986
+      ],
+      "collision_shapes": 1,
+      "frames": 6,
+      "path": "res://scenes/props/bld_cottage_shuttered.tscn",
+      "slug": "cottage_shuttered"
+    },
+    {
+      "bounds": [
+        7.5722804069519,
+        9.47839736938477,
+        7.63104724884033
+      ],
+      "collision_shapes": 1,
+      "frames": 6,
+      "path": "res://scenes/props/bld_farmhouse_long.tscn",
+      "slug": "farmhouse_long"
+    },
+    {
+      "bounds": [
+        5.5130763053894,
+        10.4182634353638,
+        9.66054344177246
+      ],
+      "collision_shapes": 1,
+      "frames": 6,
+      "path": "res://scenes/props/bld_shop_awning.tscn",
+      "slug": "shop_awning"
+    },
+    {
+      "bounds": [
+        5.5130763053894,
+        12.5983991622925,
+        7.65554857254028
+      ],
+      "collision_shapes": 1,
+      "frames": 6,
+      "path": "res://scenes/props/bld_townhouse_balcony.tscn",
+      "slug": "townhouse_balcony"
+    },
+    {
+      "bounds": [
+        8.24978351593018,
+        10.1305665969849,
+        8.03218936920166
+      ],
+      "collision_shapes": 9,
+      "frames": 6,
+      "path": "res://scenes/props/bld_workshop_open.tscn",
+      "slug": "workshop_open"
+    },
+    {
+      "bounds": [
+        8.24978351593018,
+        8.12830638885498,
+        11.7032623291016
+      ],
+      "collision_shapes": 1,
+      "frames": 6,
+      "path": "res://scenes/props/bld_longhouse_stone.tscn",
+      "slug": "longhouse_stone"
+    },
+    {
+      "bounds": [
+        9.6827392578125,
+        12.5983991622925,
+        5.5130763053894
+      ],
+      "collision_shapes": 1,
+      "frames": 6,
+      "path": "res://scenes/props/bld_townhouse_wide.tscn",
+      "slug": "townhouse_wide"
+    },
+    {
+      "bounds": [
+        9.95199489593506,
+        12.3596296310425,
+        11.95924949646
+      ],
+      "collision_shapes": 1,
+      "frames": 6,
+      "path": "res://scenes/props/bld_inn_courtyard.tscn",
+      "slug": "inn_courtyard"
+    },
+    {
+      "bounds": [
+        4.62807083129883,
+        3.23945331573486,
+        4.62807083129883
+      ],
+      "collision_shapes": 3,
+      "frames": 6,
+      "path": "res://scenes/props/bld_ruin_house.tscn",
+      "slug": "ruin_house"
+    },
+    {
+      "bounds": [
+        4.62807083129883,
+        6.35945320129395,
+        4.62807083129883
+      ],
+      "collision_shapes": 3,
+      "frames": 6,
+      "path": "res://scenes/props/bld_ruin_tower.tscn",
+      "slug": "ruin_tower"
+    },
+    {
+      "bounds": [
+        8.24978351593018,
+        8.12680816650391,
+        9.9525032043457
+      ],
+      "collision_shapes": 14,
+      "frames": 6,
+      "path": "res://scenes/props/bld_ashfall_house.tscn",
+      "slug": "ashfall_house"
+    },
+    {
+      "bounds": [
+        4.84134435653687,
+        4.2007999420166,
+        4.70268297195435
+      ],
+      "collision_shapes": 0,
+      "frames": 6,
+      "path": "res://assets/models/architecture/bld_cottage.glb",
+      "slug": "cottage"
+    },
+    {
+      "bounds": [
+        4.74318742752075,
+        7.5,
+        5.88235139846802
+      ],
+      "collision_shapes": 0,
+      "frames": 6,
+      "path": "res://assets/models/architecture/bld_house_a.glb",
+      "slug": "house_a"
+    },
+    {
+      "bounds": [
+        8.65556907653809,
+        7.49999904632568,
+        8.63891983032227
+      ],
+      "collision_shapes": 0,
+      "frames": 6,
+      "path": "res://assets/models/architecture/bld_inn.glb",
+      "slug": "inn"
+    },
+    {
+      "bounds": [
+        8.41880416870117,
+        6.49999904632568,
+        7.10615539550781
+      ],
+      "collision_shapes": 0,
+      "frames": 6,
+      "path": "res://assets/models/architecture/bld_blacksmith.glb",
+      "slug": "blacksmith"
+    }
+  ],
+  "failures": [],
+  "required_views": [
+    "front",
+    "back",
+    "left",
+    "right",
+    "front_3q",
+    "rear_3q"
+  ],
+  "schema": 1,
+  "status": "passed"
+}

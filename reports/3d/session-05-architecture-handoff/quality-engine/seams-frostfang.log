@@ -1,0 +1,10 @@
+  SEAM_OK frostfang_reach.frost_march_w:Path_frost_march_w_ap1.end <-> frostfang_reach.frost_march_e:Path_frost_march_e_ap1.start (0.00 m)
+  SEAM_OK frostfang_reach.frost_march_w:Path_frost_march_w_ap2.end <-> frostfang_reach.clan_hold:Path_clan_hold_ap0.start (0.00 m)
+  SEAM_OK frostfang_reach.dragon_roost:Path_dragon_roost_ap0.start <-> frostfang_reach.clan_hold:Path_clan_hold_ap1.end (0.00 m)
+  SEAM_OK frostfang_reach.clan_hold:Path_clan_hold_ap2.end <-> frostfang_reach.ash_roost:Path_ash_roost_ap0.start (0.00 m)
+  SEAM_OK frostfang_reach.clan_hold:Path_clan_hold_ap3.end <-> frostfang_reach.glacier:Path_glacier_ap2.start (0.00 m)
+  SEAM_OK frostfang_reach.north_snowfield:Path_north_snowfield_ap1.start <-> frostfang_reach.glacier:Path_glacier_ap3.end (0.00 m)
+  SEAM_OK frostfang_reach.north_snowfield:Path_north_snowfield_ap2.end <-> frostfang_reach.ancient_aerie:Path_ancient_aerie_ap0.start (0.00 m)
+  SEAM_OK frostfang_reach.glacier:Path_glacier_ap4.end <-> frostfang_reach.aerie_ascent:Path_aerie_ascent_ap1.start (0.00 m)
+  SEAM_OK frostfang_reach.ancient_aerie:Path_ancient_aerie_ap6.start <-> frostfang_reach.aerie_ascent:Path_aerie_ascent_ap2.end (0.00 m)
+C:\Users\magnu\Embervale\data\regions\FrostfangReach.tres: PASS

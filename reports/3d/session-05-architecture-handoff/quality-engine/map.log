@@ -1,0 +1,111 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+
+[INFO]  Loaded 63 items from res://data/items.
+[INFO]  Loaded 11 affixes from res://data/affixes.
+[INFO]  Loaded 6 perks from res://data/perks.
+[INFO]  Loaded 6 shrines from res://data/shrines.
+[INFO]  Loaded 18 quests from res://data/quests.
+[INFO]  Loaded 48 dialogues from res://data/dialogue.
+[INFO]  Loaded 31 schedules from res://data/schedules.
+[INFO]  Loaded 6 status effects from res://data/status_effects.
+[INFO]  Loaded 19 spells from res://data/spells.
+[INFO]  Loaded 5 weathers from res://data/weather.
+[INFO]  Loaded 2 regions from res://data/regions.
+[INFO]  Loaded 32 encounters from res://data/encounters.
+[INFO]  Loaded 15 recipes from res://data/recipes.
+[INFO]  Loaded 13 factions from res://data/factions.
+[INFO]  Loaded 5 world events from res://data/world_events.
+[INFO]  Loaded 6 races from res://data/races.
+[INFO]  Loaded 16 AI profiles from res://data/ai_profiles.
+[INFO]  Loaded 4 bosses from res://data/bosses.
+[INFO]  Loaded 31 enemy archetypes from res://data/enemies.
+[INFO]  EnemyTemplateRegistry seeded 33 archetype(s).
+[INFO]  Loaded 33 bestiary entries from res://data/bestiary.
+[INFO]  Loaded 1 property from res://data/properties.
+[INFO]  Loaded 23 shops from res://data/shops.
+[INFO]  Loaded 15 services from res://data/services.
+[INFO]  Loaded 8 contracts from res://data/contracts.
+[INFO]  Loaded 75 map locations from res://data/map_locations.
+[INFO]  Loaded 3 companions from res://data/companions.
+[INFO]  CompanionRegistry seeded 3 companion(s).
+[INFO]  GameManager online.
+map_probe: 75 authored location(s) in res://data/map_locations
+map_probe: 26 cell centre(s) from res://data/regions
+    location.shrine.drakar                   ShrineDrakar               (   61.0,  -278.0)
+    location.ember_crown.arena               .                          (   75.0,  -265.0)
+    location.shrine.veyra                    ShrineVeyra                (  107.0,    89.0)
+    location.ashfall.cottage                 CottageDeed                (   85.4,    79.6)
+    location.ashfall.bed                     AshfallBed                 (  101.9,    78.1)
+    location.ashfall.homestead               .                          (  104.0,    81.0)
+    location.crossway.board                  CaravanBoard               (   12.0,   -81.5)
+    location.shrine.tharos                   ShrineTharos               (   18.0,   -89.0)
+    location.crossway.watch                  WardensWatch               (  -19.5,   -88.5)
+    location.crossway.waystone               CrosswayWaystone           (   -8.5,   -82.0)
+    location.crossway.permit                 RoadWarden                 (   -9.0,   -79.0)
+    location.crossway.bribe                  GateHand                   (    7.5,   -92.0)
+    location.crossway.search                 SearchWarden               (   -2.0,   -85.5)
+    location.crossway.impound                ImpoundClerk               (   13.5,   -86.0)
+    location.crossway.mercenary              Mercenary                  (   10.5,   -82.0)
+    location.crossway.post                   .                          (  -17.0,   -80.0)
+    location.emberdeep.undercroft            UndercroftPedestal         (  107.0,   -21.0)
+    location.emberdeep.waystone              MineWaystone               (   73.0,    -8.0)
+    location.emberdeep.factor                Bregan                     (   83.0,    -4.5)
+    location.emberdeep.quartermaster         Marta                      (   89.0,     3.5)
+    location.emberdeep.mine                  .                          (  115.0,   -24.0)
+    location.shrine.nyth                     ShrineNyth                 (   17.5,    77.5)
+    location.embermarket.annexe              ArchiveAnnexe              (   -2.5,   101.5)
+    location.embermarket.waystone            MarketWaystone             (   -2.5,    79.0)
+    location.embermarket.board               MarketNotice               (   -8.2,    68.0)
+    location.embermarket.provisions          MerchantCorvin             (   -3.2,    72.2)
+    location.embermarket.fishmonger          MerchantHana               (    2.0,    73.5)
+    location.embermarket.weaver              MerchantSable              (    2.5,    80.5)
+    location.embermarket.scriptorium         MerchantTam                (    8.5,    80.9)
+    location.embermarket.collier             MerchantDunmore            (   -0.1,    87.8)
+    location.embermarket.ironmonger          MerchantGilda              (   -0.1,    92.8)
+    location.embermarket.tannery             MerchantPerrin             (  -13.1,    73.8)
+    location.embermarket.jeweller            MerchantNessa              (   13.4,    80.5)
+    location.embermarket.herbalist           MerchantOdo                (    2.4,    96.5)
+    location.embermarket.joiner              MerchantHalvard            (    5.1,   100.1)
+    location.embermarket.caravan             TraderSera                 (   23.5,    90.5)
+    location.embermarket.curios              TraderQuill                (   15.5,    79.0)
+    location.embermarket.consignment         MerchantMirelle            (   18.5,    84.9)
+    location.embermarket.collect             ClerkHalder                (   22.0,    84.9)
+    location.embermarket.appraisal           BrightcutScales            (   15.0,    84.0)
+    location.embermarket.market              .                          (    7.0,    87.0)
+    location.hollowreach.bones               BonesTable                 (  -77.0,    77.0)
+    location.hollowreach.ledger              LedgerHouse                (  -75.0,   108.0)
+    location.hollowreach.waystone            ReachWaystone              (  -73.0,   101.0)
+    location.hollowreach.hull                Sedge                      ( -107.0,    84.5)
+    location.hollowreach.locker              Coyle                      ( -104.0,    90.0)
+    location.hollowreach.reach               .                          ( -116.0,    87.0)
+    location.shrine.elyndra                  ShrineElyndra              ( -103.0,     1.5)
+    location.tarn.waystone                   LandingWaystone            (  -74.0,   -22.0)
+    location.tarn.curer                      Wenna                      (  -93.5,    -4.5)
+    location.tarn.chandler                   Odger                      (  -81.0,   -21.5)
+    location.tarn.landing                    .                          (  -96.0,     7.0)
+    location.ember_crown.commission          OrderBench                 (   11.5,    -5.5)
+    location.shrine.solaryn                  ShrineSolaryn              (  -14.0,   -18.0)
+    location.ember_crown.waystone            Waystone                   (  -14.0,   -11.0)
+    location.ember_crown.goods               VendorGoods                (   -9.0,     7.0)
+    location.ember_crown.smith               VendorSmith                (   12.5,    -8.0)
+    location.ember_crown.apothecary          VendorAlch                 (  -20.0,    -9.0)
+    location.ember_crown.inn                 Innkeeper                  (    6.0,     5.0)
+    location.ember_crown.trainer             Trainer                    (  -21.0,   -21.0)
+    location.ember_crown.stable              Stablemaster               (   14.0,    11.0)
+    location.ember_crown.vault               GuildVault                 (  -21.0,   -16.0)
+    location.ember_crown.guild_board         GuildMarker                (   -6.0,     6.0)
+    location.ember_crown.crafting            StationForge               (   12.0,   -10.0)
+    location.ember_crown.traveller           WanderingTrader            (   10.0,   -28.0)
+    location.ember_crown.town                .                          (  -14.0,   -12.0)
+    location.wilds.lodge                     DeadfallLodge              (   21.5,  -184.0)
+    location.wilds.north                     .                          (    0.0,  -183.0)
+    location.wilds.west                      .                          ( -175.0,   -10.0)
+    location.frostfang.ancient_aerie         .                          (  324.0,  -261.0)
+    location.frostfang.ash_roost             .                          (  555.0,   -49.0)
+    location.frostfang.waystone              Waystone                   (  436.0,   -47.0)
+    location.frostfang.clan_hold             .                          (  432.0,   -67.0)
+    location.frostfang.dragon_roost          .                          (  301.0,   -75.0)
+    location.frostfang.glacier               .                          (  440.0,  -145.0)
+
+map_probe: 75 marker(s) across 26 cell(s)
+map_probe: PASS

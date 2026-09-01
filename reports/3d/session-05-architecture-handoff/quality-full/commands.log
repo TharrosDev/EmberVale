@@ -1,0 +1,22 @@
+C:\Users\magnu\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe tools/gen_regions.py --check
+dotnet build Embervale.sln -v q --nologo
+dotnet test tests/Embervale.Tests -v q --nologo
+C:\Users\magnu\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe tools/check_architecture_kit.py
+C:\Users\magnu\Downloads\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64_console.exe --headless --path . -- --validate
+C:\Users\magnu\Downloads\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64_console.exe --headless --path . --script res://tools/building_collision_probe.gd
+C:\Users\magnu\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe tools/negative_tests.py
+C:\Users\magnu\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe tools/region_spec_template.py
+C:\Users\magnu\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe tools/check_region_seams.py C:\Users\magnu\Embervale\data\regions\EmberCrown.tres
+C:\Users\magnu\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe tools/check_region_seams.py C:\Users\magnu\Embervale\data\regions\FrostfangReach.tres
+C:\Users\magnu\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe tools/check_cell_layout.py C:\Users\magnu\Embervale\data\regions\EmberCrown.tres
+C:\Users\magnu\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe tools/check_cell_layout.py C:\Users\magnu\Embervale\data\regions\FrostfangReach.tres
+C:\Users\magnu\Downloads\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64_console.exe --headless --path . --script res://tools/map_probe.gd
+C:\Users\magnu\Downloads\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64_console.exe --headless --path . --script res://tools/stepup_probe.gd
+C:\Users\magnu\Downloads\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64_console.exe --headless --path . --script res://tools/cell_mesh_census.gd
+C:\Users\magnu\Downloads\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64_console.exe --headless --path . --script res://tools/cell_scene_audit.gd
+C:\Users\magnu\Downloads\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64_console.exe --headless --path . --script res://tools/debug_pass_regressions.gd
+C:\Users\magnu\Downloads\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64_console.exe --headless --path . --script res://tools/region_transition_probe.gd
+C:\Users\magnu\Downloads\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64_console.exe --headless --path . --script res://tools/melee_probe.gd
+C:\Users\magnu\Downloads\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64_console.exe --headless --path . --script res://tools/world_traversal_probe.gd
+C:\Users\magnu\Downloads\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64_console.exe --path . --resolution 1280x720 --script res://tools/world_shots.gd
+C:\Users\magnu\Downloads\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64_console.exe --path . --resolution 1280x720 --script res://tools/world_perf_probe.gd -- --json-file C:\Users\magnu\Embervale\reports\3d\session-05-architecture-handoff\quality-full/performance.json

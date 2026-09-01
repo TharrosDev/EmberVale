@@ -1,0 +1,355 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+Vulkan 1.3.280 - Forward+ - Using Device #0: Intel - Intel(R) Iris(R) Xe Graphics
+
+[INFO]  Loaded 63 items from res://data/items.
+[INFO]  Loaded 11 affixes from res://data/affixes.
+[INFO]  Loaded 6 perks from res://data/perks.
+[INFO]  Loaded 6 shrines from res://data/shrines.
+[INFO]  Loaded 18 quests from res://data/quests.
+[INFO]  Loaded 48 dialogues from res://data/dialogue.
+[INFO]  Loaded 31 schedules from res://data/schedules.
+[INFO]  Loaded 6 status effects from res://data/status_effects.
+[INFO]  Loaded 19 spells from res://data/spells.
+[INFO]  Loaded 5 weathers from res://data/weather.
+[INFO]  Loaded 2 regions from res://data/regions.
+[INFO]  Loaded 32 encounters from res://data/encounters.
+[INFO]  Loaded 15 recipes from res://data/recipes.
+[INFO]  Loaded 13 factions from res://data/factions.
+[INFO]  Loaded 5 world events from res://data/world_events.
+[INFO]  Loaded 6 races from res://data/races.
+[INFO]  Loaded 16 AI profiles from res://data/ai_profiles.
+[INFO]  Loaded 4 bosses from res://data/bosses.
+[INFO]  Loaded 31 enemy archetypes from res://data/enemies.
+[INFO]  EnemyTemplateRegistry seeded 33 archetype(s).
+[INFO]  Loaded 33 bestiary entries from res://data/bestiary.
+[INFO]  Loaded 1 property from res://data/properties.
+[INFO]  Loaded 23 shops from res://data/shops.
+[INFO]  Loaded 15 services from res://data/services.
+[INFO]  Loaded 8 contracts from res://data/contracts.
+[INFO]  Loaded 75 map locations from res://data/map_locations.
+[INFO]  Loaded 3 companions from res://data/companions.
+[INFO]  CompanionRegistry seeded 3 companion(s).
+[INFO]  GameManager online.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.fen_edge'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.embermarket'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.hollowreach'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.wilds_west'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.ashfall_homestead'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.town_hub'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.tarn_landing'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.west_downs'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.emberdeep_mine'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.mine_road'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.crossway_post'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.wilds_north'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.north_moor'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.frontier_waste'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.ashen_reach'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.arena'.
+res://tools/shots/world/ember_crown_fen_edge/day_01_entry.png -> ok
+res://tools/shots/world/ember_crown_fen_edge/day_02_centre.png -> ok
+res://tools/shots/world/ember_crown_fen_edge/day_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_fen_edge/day_04_exit.png -> ok
+res://tools/shots/world/ember_crown_fen_edge/day_05_overview.png -> ok
+res://tools/shots/world/ember_crown_fen_edge/dusk_01_entry.png -> ok
+res://tools/shots/world/ember_crown_fen_edge/dusk_02_centre.png -> ok
+res://tools/shots/world/ember_crown_fen_edge/dusk_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_fen_edge/dusk_04_exit.png -> ok
+res://tools/shots/world/ember_crown_fen_edge/dusk_05_overview.png -> ok
+res://tools/shots/world/ember_crown_hollowreach/day_01_entry.png -> ok
+res://tools/shots/world/ember_crown_hollowreach/day_02_centre.png -> ok
+res://tools/shots/world/ember_crown_hollowreach/day_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_hollowreach/day_04_exit.png -> ok
+res://tools/shots/world/ember_crown_hollowreach/day_05_overview.png -> ok
+res://tools/shots/world/ember_crown_hollowreach/dusk_01_entry.png -> ok
+res://tools/shots/world/ember_crown_hollowreach/dusk_02_centre.png -> ok
+res://tools/shots/world/ember_crown_hollowreach/dusk_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_hollowreach/dusk_04_exit.png -> ok
+res://tools/shots/world/ember_crown_hollowreach/dusk_05_overview.png -> ok
+res://tools/shots/world/ember_crown_embermarket/day_01_entry.png -> ok
+res://tools/shots/world/ember_crown_embermarket/day_02_centre.png -> ok
+res://tools/shots/world/ember_crown_embermarket/day_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_embermarket/day_04_exit.png -> ok
+res://tools/shots/world/ember_crown_embermarket/day_05_overview.png -> ok
+res://tools/shots/world/ember_crown_embermarket/dusk_01_entry.png -> ok
+res://tools/shots/world/ember_crown_embermarket/dusk_02_centre.png -> ok
+res://tools/shots/world/ember_crown_embermarket/dusk_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_embermarket/dusk_04_exit.png -> ok
+res://tools/shots/world/ember_crown_embermarket/dusk_05_overview.png -> ok
+res://tools/shots/world/ember_crown_ashfall_homestead/day_01_entry.png -> ok
+res://tools/shots/world/ember_crown_ashfall_homestead/day_02_centre.png -> ok
+res://tools/shots/world/ember_crown_ashfall_homestead/day_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_ashfall_homestead/day_04_exit.png -> ok
+res://tools/shots/world/ember_crown_ashfall_homestead/day_05_overview.png -> ok
+res://tools/shots/world/ember_crown_ashfall_homestead/dusk_01_entry.png -> ok
+res://tools/shots/world/ember_crown_ashfall_homestead/dusk_02_centre.png -> ok
+res://tools/shots/world/ember_crown_ashfall_homestead/dusk_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_ashfall_homestead/dusk_04_exit.png -> ok
+res://tools/shots/world/ember_crown_ashfall_homestead/dusk_05_overview.png -> ok
+res://tools/shots/world/ember_crown_wilds_west/day_01_entry.png -> ok
+res://tools/shots/world/ember_crown_wilds_west/day_02_centre.png -> ok
+res://tools/shots/world/ember_crown_wilds_west/day_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_wilds_west/day_04_exit.png -> ok
+res://tools/shots/world/ember_crown_wilds_west/day_05_overview.png -> ok
+res://tools/shots/world/ember_crown_wilds_west/dusk_01_entry.png -> ok
+res://tools/shots/world/ember_crown_wilds_west/dusk_02_centre.png -> ok
+res://tools/shots/world/ember_crown_wilds_west/dusk_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_wilds_west/dusk_04_exit.png -> ok
+res://tools/shots/world/ember_crown_wilds_west/dusk_05_overview.png -> ok
+res://tools/shots/world/ember_crown_tarn_landing/day_01_entry.png -> ok
+res://tools/shots/world/ember_crown_tarn_landing/day_02_centre.png -> ok
+res://tools/shots/world/ember_crown_tarn_landing/day_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_tarn_landing/day_04_exit.png -> ok
+res://tools/shots/world/ember_crown_tarn_landing/day_05_overview.png -> ok
+res://tools/shots/world/ember_crown_tarn_landing/dusk_01_entry.png -> ok
+res://tools/shots/world/ember_crown_tarn_landing/dusk_02_centre.png -> ok
+res://tools/shots/world/ember_crown_tarn_landing/dusk_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_tarn_landing/dusk_04_exit.png -> ok
+res://tools/shots/world/ember_crown_tarn_landing/dusk_05_overview.png -> ok
+res://tools/shots/world/ember_crown_town_hub/day_01_entry.png -> ok
+res://tools/shots/world/ember_crown_town_hub/day_02_centre.png -> ok
+res://tools/shots/world/ember_crown_town_hub/day_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_town_hub/day_04_exit.png -> ok
+res://tools/shots/world/ember_crown_town_hub/day_05_overview.png -> ok
+res://tools/shots/world/ember_crown_town_hub/dusk_01_entry.png -> ok
+res://tools/shots/world/ember_crown_town_hub/dusk_02_centre.png -> ok
+res://tools/shots/world/ember_crown_town_hub/dusk_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_town_hub/dusk_04_exit.png -> ok
+res://tools/shots/world/ember_crown_town_hub/dusk_05_overview.png -> ok
+res://tools/shots/world/ember_crown_emberdeep_mine/day_01_entry.png -> ok
+res://tools/shots/world/ember_crown_emberdeep_mine/day_02_centre.png -> ok
+res://tools/shots/world/ember_crown_emberdeep_mine/day_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_emberdeep_mine/day_04_exit.png -> ok
+res://tools/shots/world/ember_crown_emberdeep_mine/day_05_overview.png -> ok
+res://tools/shots/world/ember_crown_emberdeep_mine/dusk_01_entry.png -> ok
+res://tools/shots/world/ember_crown_emberdeep_mine/dusk_02_centre.png -> ok
+res://tools/shots/world/ember_crown_emberdeep_mine/dusk_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_emberdeep_mine/dusk_04_exit.png -> ok
+res://tools/shots/world/ember_crown_emberdeep_mine/dusk_05_overview.png -> ok
+res://tools/shots/world/ember_crown_west_downs/day_01_entry.png -> ok
+res://tools/shots/world/ember_crown_west_downs/day_02_centre.png -> ok
+res://tools/shots/world/ember_crown_west_downs/day_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_west_downs/day_04_exit.png -> ok
+res://tools/shots/world/ember_crown_west_downs/day_05_overview.png -> ok
+res://tools/shots/world/ember_crown_west_downs/dusk_01_entry.png -> ok
+res://tools/shots/world/ember_crown_west_downs/dusk_02_centre.png -> ok
+res://tools/shots/world/ember_crown_west_downs/dusk_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_west_downs/dusk_04_exit.png -> ok
+res://tools/shots/world/ember_crown_west_downs/dusk_05_overview.png -> ok
+res://tools/shots/world/ember_crown_crossway_post/day_01_entry.png -> ok
+res://tools/shots/world/ember_crown_crossway_post/day_02_centre.png -> ok
+res://tools/shots/world/ember_crown_crossway_post/day_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_crossway_post/day_04_exit.png -> ok
+res://tools/shots/world/ember_crown_crossway_post/day_05_overview.png -> ok
+res://tools/shots/world/ember_crown_crossway_post/dusk_01_entry.png -> ok
+res://tools/shots/world/ember_crown_crossway_post/dusk_02_centre.png -> ok
+res://tools/shots/world/ember_crown_crossway_post/dusk_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_crossway_post/dusk_04_exit.png -> ok
+res://tools/shots/world/ember_crown_crossway_post/dusk_05_overview.png -> ok
+res://tools/shots/world/ember_crown_mine_road/day_01_entry.png -> ok
+res://tools/shots/world/ember_crown_mine_road/day_02_centre.png -> ok
+res://tools/shots/world/ember_crown_mine_road/day_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_mine_road/day_04_exit.png -> ok
+res://tools/shots/world/ember_crown_mine_road/day_05_overview.png -> ok
+res://tools/shots/world/ember_crown_mine_road/dusk_01_entry.png -> ok
+res://tools/shots/world/ember_crown_mine_road/dusk_02_centre.png -> ok
+res://tools/shots/world/ember_crown_mine_road/dusk_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_mine_road/dusk_04_exit.png -> ok
+res://tools/shots/world/ember_crown_mine_road/dusk_05_overview.png -> ok
+res://tools/shots/world/ember_crown_north_moor/day_01_entry.png -> ok
+res://tools/shots/world/ember_crown_north_moor/day_02_centre.png -> ok
+res://tools/shots/world/ember_crown_north_moor/day_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_north_moor/day_04_exit.png -> ok
+res://tools/shots/world/ember_crown_north_moor/day_05_overview.png -> ok
+res://tools/shots/world/ember_crown_north_moor/dusk_01_entry.png -> ok
+res://tools/shots/world/ember_crown_north_moor/dusk_02_centre.png -> ok
+res://tools/shots/world/ember_crown_north_moor/dusk_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_north_moor/dusk_04_exit.png -> ok
+res://tools/shots/world/ember_crown_north_moor/dusk_05_overview.png -> ok
+res://tools/shots/world/ember_crown_wilds_north/day_01_entry.png -> ok
+res://tools/shots/world/ember_crown_wilds_north/day_02_centre.png -> ok
+res://tools/shots/world/ember_crown_wilds_north/day_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_wilds_north/day_04_exit.png -> ok
+res://tools/shots/world/ember_crown_wilds_north/day_05_overview.png -> ok
+res://tools/shots/world/ember_crown_wilds_north/dusk_01_entry.png -> ok
+res://tools/shots/world/ember_crown_wilds_north/dusk_02_centre.png -> ok
+res://tools/shots/world/ember_crown_wilds_north/dusk_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_wilds_north/dusk_04_exit.png -> ok
+res://tools/shots/world/ember_crown_wilds_north/dusk_05_overview.png -> ok
+res://tools/shots/world/ember_crown_ashen_reach/day_01_entry.png -> ok
+res://tools/shots/world/ember_crown_ashen_reach/day_02_centre.png -> ok
+res://tools/shots/world/ember_crown_ashen_reach/day_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_ashen_reach/day_04_exit.png -> ok
+res://tools/shots/world/ember_crown_ashen_reach/day_05_overview.png -> ok
+res://tools/shots/world/ember_crown_ashen_reach/dusk_01_entry.png -> ok
+res://tools/shots/world/ember_crown_ashen_reach/dusk_02_centre.png -> ok
+res://tools/shots/world/ember_crown_ashen_reach/dusk_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_ashen_reach/dusk_04_exit.png -> ok
+res://tools/shots/world/ember_crown_ashen_reach/dusk_05_overview.png -> ok
+res://tools/shots/world/ember_crown_frontier_waste/day_01_entry.png -> ok
+res://tools/shots/world/ember_crown_frontier_waste/day_02_centre.png -> ok
+res://tools/shots/world/ember_crown_frontier_waste/day_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_frontier_waste/day_04_exit.png -> ok
+res://tools/shots/world/ember_crown_frontier_waste/day_05_overview.png -> ok
+res://tools/shots/world/ember_crown_frontier_waste/dusk_01_entry.png -> ok
+res://tools/shots/world/ember_crown_frontier_waste/dusk_02_centre.png -> ok
+res://tools/shots/world/ember_crown_frontier_waste/dusk_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_frontier_waste/dusk_04_exit.png -> ok
+res://tools/shots/world/ember_crown_frontier_waste/dusk_05_overview.png -> ok
+res://tools/shots/world/ember_crown_arena/day_01_entry.png -> ok
+res://tools/shots/world/ember_crown_arena/day_02_centre.png -> ok
+res://tools/shots/world/ember_crown_arena/day_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_arena/day_04_exit.png -> ok
+res://tools/shots/world/ember_crown_arena/day_05_overview.png -> ok
+res://tools/shots/world/ember_crown_arena/dusk_01_entry.png -> ok
+res://tools/shots/world/ember_crown_arena/dusk_02_centre.png -> ok
+res://tools/shots/world/ember_crown_arena/dusk_03_landmark.png -> ok
+res://tools/shots/world/ember_crown_arena/dusk_04_exit.png -> ok
+res://tools/shots/world/ember_crown_arena/dusk_05_overview.png -> ok
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.fen_edge'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.embermarket'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.hollowreach'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.wilds_west'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.ashfall_homestead'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.town_hub'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.tarn_landing'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.west_downs'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.emberdeep_mine'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.mine_road'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.crossway_post'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.wilds_north'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.north_moor'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.frontier_waste'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.ashen_reach'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.arena'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.frost_march_w'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.frost_march_e'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.dragon_roost'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.clan_hold'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.ash_roost'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.north_snowfield'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.glacier'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.ash_approach'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.ancient_aerie'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.aerie_ascent'.
+res://tools/shots/world/frostfang_reach_frost_march_w/day_01_entry.png -> ok
+res://tools/shots/world/frostfang_reach_frost_march_w/day_02_centre.png -> ok
+res://tools/shots/world/frostfang_reach_frost_march_w/day_03_landmark.png -> ok
+res://tools/shots/world/frostfang_reach_frost_march_w/day_04_exit.png -> ok
+res://tools/shots/world/frostfang_reach_frost_march_w/day_05_overview.png -> ok
+res://tools/shots/world/frostfang_reach_frost_march_w/dusk_01_entry.png -> ok
+res://tools/shots/world/frostfang_reach_frost_march_w/dusk_02_centre.png -> ok
+res://tools/shots/world/frostfang_reach_frost_march_w/dusk_03_landmark.png -> ok
+res://tools/shots/world/frostfang_reach_frost_march_w/dusk_04_exit.png -> ok
+res://tools/shots/world/frostfang_reach_frost_march_w/dusk_05_overview.png -> ok
+res://tools/shots/world/frostfang_reach_frost_march_e/day_01_entry.png -> ok
+res://tools/shots/world/frostfang_reach_frost_march_e/day_02_centre.png -> ok
+res://tools/shots/world/frostfang_reach_frost_march_e/day_03_landmark.png -> ok
+res://tools/shots/world/frostfang_reach_frost_march_e/day_04_exit.png -> ok
+res://tools/shots/world/frostfang_reach_frost_march_e/day_05_overview.png -> ok
+res://tools/shots/world/frostfang_reach_frost_march_e/dusk_01_entry.png -> ok
+res://tools/shots/world/frostfang_reach_frost_march_e/dusk_02_centre.png -> ok
+res://tools/shots/world/frostfang_reach_frost_march_e/dusk_03_landmark.png -> ok
+res://tools/shots/world/frostfang_reach_frost_march_e/dusk_04_exit.png -> ok
+res://tools/shots/world/frostfang_reach_frost_march_e/dusk_05_overview.png -> ok
+res://tools/shots/world/frostfang_reach_dragon_roost/day_01_entry.png -> ok
+res://tools/shots/world/frostfang_reach_dragon_roost/day_02_centre.png -> ok
+res://tools/shots/world/frostfang_reach_dragon_roost/day_03_landmark.png -> ok
+res://tools/shots/world/frostfang_reach_dragon_roost/day_04_exit.png -> ok
+res://tools/shots/world/frostfang_reach_dragon_roost/day_05_overview.png -> ok
+res://tools/shots/world/frostfang_reach_dragon_roost/dusk_01_entry.png -> ok
+res://tools/shots/world/frostfang_reach_dragon_roost/dusk_02_centre.png -> ok
+res://tools/shots/world/frostfang_reach_dragon_roost/dusk_03_landmark.png -> ok
+res://tools/shots/world/frostfang_reach_dragon_roost/dusk_04_exit.png -> ok
+res://tools/shots/world/frostfang_reach_dragon_roost/dusk_05_overview.png -> ok
+res://tools/shots/world/frostfang_reach_clan_hold/day_01_entry.png -> ok
+res://tools/shots/world/frostfang_reach_clan_hold/day_02_centre.png -> ok
+res://tools/shots/world/frostfang_reach_clan_hold/day_03_landmark.png -> ok
+res://tools/shots/world/frostfang_reach_clan_hold/day_04_exit.png -> ok
+res://tools/shots/world/frostfang_reach_clan_hold/day_05_overview.png -> ok
+res://tools/shots/world/frostfang_reach_clan_hold/dusk_01_entry.png -> ok
+res://tools/shots/world/frostfang_reach_clan_hold/dusk_02_centre.png -> ok
+res://tools/shots/world/frostfang_reach_clan_hold/dusk_03_landmark.png -> ok
+res://tools/shots/world/frostfang_reach_clan_hold/dusk_04_exit.png -> ok
+res://tools/shots/world/frostfang_reach_clan_hold/dusk_05_overview.png -> ok
+res://tools/shots/world/frostfang_reach_ash_roost/day_01_entry.png -> ok
+res://tools/shots/world/frostfang_reach_ash_roost/day_02_centre.png -> ok
+res://tools/shots/world/frostfang_reach_ash_roost/day_03_landmark.png -> ok
+res://tools/shots/world/frostfang_reach_ash_roost/day_04_exit.png -> ok
+res://tools/shots/world/frostfang_reach_ash_roost/day_05_overview.png -> ok
+res://tools/shots/world/frostfang_reach_ash_roost/dusk_01_entry.png -> ok
+res://tools/shots/world/frostfang_reach_ash_roost/dusk_02_centre.png -> ok
+res://tools/shots/world/frostfang_reach_ash_roost/dusk_03_landmark.png -> ok
+res://tools/shots/world/frostfang_reach_ash_roost/dusk_04_exit.png -> ok
+res://tools/shots/world/frostfang_reach_ash_roost/dusk_05_overview.png -> ok
+res://tools/shots/world/frostfang_reach_north_snowfield/day_01_entry.png -> ok
+res://tools/shots/world/frostfang_reach_north_snowfield/day_02_centre.png -> ok
+res://tools/shots/world/frostfang_reach_north_snowfield/day_03_landmark.png -> ok
+res://tools/shots/world/frostfang_reach_north_snowfield/day_04_exit.png -> ok
+res://tools/shots/world/frostfang_reach_north_snowfield/day_05_overview.png -> ok
+res://tools/shots/world/frostfang_reach_north_snowfield/dusk_01_entry.png -> ok
+res://tools/shots/world/frostfang_reach_north_snowfield/dusk_02_centre.png -> ok
+res://tools/shots/world/frostfang_reach_north_snowfield/dusk_03_landmark.png -> ok
+res://tools/shots/world/frostfang_reach_north_snowfield/dusk_04_exit.png -> ok
+res://tools/shots/world/frostfang_reach_north_snowfield/dusk_05_overview.png -> ok
+res://tools/shots/world/frostfang_reach_glacier/day_01_entry.png -> ok
+res://tools/shots/world/frostfang_reach_glacier/day_02_centre.png -> ok
+res://tools/shots/world/frostfang_reach_glacier/day_03_landmark.png -> ok
+res://tools/shots/world/frostfang_reach_glacier/day_04_exit.png -> ok
+res://tools/shots/world/frostfang_reach_glacier/day_05_overview.png -> ok
+res://tools/shots/world/frostfang_reach_glacier/dusk_01_entry.png -> ok
+res://tools/shots/world/frostfang_reach_glacier/dusk_02_centre.png -> ok
+res://tools/shots/world/frostfang_reach_glacier/dusk_03_landmark.png -> ok
+res://tools/shots/world/frostfang_reach_glacier/dusk_04_exit.png -> ok
+res://tools/shots/world/frostfang_reach_glacier/dusk_05_overview.png -> ok
+res://tools/shots/world/frostfang_reach_ash_approach/day_01_entry.png -> ok
+res://tools/shots/world/frostfang_reach_ash_approach/day_02_centre.png -> ok
+res://tools/shots/world/frostfang_reach_ash_approach/day_03_landmark.png -> ok
+res://tools/shots/world/frostfang_reach_ash_approach/day_04_exit.png -> ok
+res://tools/shots/world/frostfang_reach_ash_approach/day_05_overview.png -> ok
+res://tools/shots/world/frostfang_reach_ash_approach/dusk_01_entry.png -> ok
+res://tools/shots/world/frostfang_reach_ash_approach/dusk_02_centre.png -> ok
+res://tools/shots/world/frostfang_reach_ash_approach/dusk_03_landmark.png -> ok
+res://tools/shots/world/frostfang_reach_ash_approach/dusk_04_exit.png -> ok
+res://tools/shots/world/frostfang_reach_ash_approach/dusk_05_overview.png -> ok
+res://tools/shots/world/frostfang_reach_ancient_aerie/day_01_entry.png -> ok
+res://tools/shots/world/frostfang_reach_ancient_aerie/day_02_centre.png -> ok
+res://tools/shots/world/frostfang_reach_ancient_aerie/day_03_landmark.png -> ok
+res://tools/shots/world/frostfang_reach_ancient_aerie/day_04_exit.png -> ok
+res://tools/shots/world/frostfang_reach_ancient_aerie/day_05_overview.png -> ok
+res://tools/shots/world/frostfang_reach_ancient_aerie/dusk_01_entry.png -> ok
+res://tools/shots/world/frostfang_reach_ancient_aerie/dusk_02_centre.png -> ok
+res://tools/shots/world/frostfang_reach_ancient_aerie/dusk_03_landmark.png -> ok
+res://tools/shots/world/frostfang_reach_ancient_aerie/dusk_04_exit.png -> ok
+res://tools/shots/world/frostfang_reach_ancient_aerie/dusk_05_overview.png -> ok
+res://tools/shots/world/frostfang_reach_aerie_ascent/day_01_entry.png -> ok
+res://tools/shots/world/frostfang_reach_aerie_ascent/day_02_centre.png -> ok
+res://tools/shots/world/frostfang_reach_aerie_ascent/day_03_landmark.png -> ok
+res://tools/shots/world/frostfang_reach_aerie_ascent/day_04_exit.png -> ok
+res://tools/shots/world/frostfang_reach_aerie_ascent/day_05_overview.png -> ok
+res://tools/shots/world/frostfang_reach_aerie_ascent/dusk_01_entry.png -> ok
+res://tools/shots/world/frostfang_reach_aerie_ascent/dusk_02_centre.png -> ok
+res://tools/shots/world/frostfang_reach_aerie_ascent/dusk_03_landmark.png -> ok
+res://tools/shots/world/frostfang_reach_aerie_ascent/dusk_04_exit.png -> ok
+res://tools/shots/world/frostfang_reach_aerie_ascent/dusk_05_overview.png -> ok
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.aerie_ascent'.
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.ancient_aerie'.
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.ash_approach'.
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.glacier'.
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.north_snowfield'.
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.ash_roost'.
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.clan_hold'.
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.dragon_roost'.
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.frost_march_e'.
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.frost_march_w'.
+world shots: visual regression PASS (260 frames; mean<=8.00, local<=28.00 in 4.0% blocks)
+world shots: complete
+WARNING: Navigation region synchronization had 2 edge error(s).
+More than 2 edges tried to occupy the same map rasterization space.
+This causes a logical error in the navigation mesh geometry and is commonly caused by overlap or too densely placed edges.
+Consider baking with a higher 'cell_size', greater geometry margin, and less detailed bake objects to cause fewer edges.
+Consider lowering the 'navigation/3d/merge_rasterizer_cell_scale' in the project settings.
+This warning can be toggled under 'navigation/3d/warnings/navmesh_edge_merge_errors' in the project settings.
+   at: _build_step_find_edge_connection_pairs (modules/navigation_3d/3d/nav_region_builder_3d.cpp:219)
+WARNING: 37 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

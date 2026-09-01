@@ -1,0 +1,119 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+
+[INFO]  Loaded 63 items from res://data/items.
+[INFO]  Loaded 11 affixes from res://data/affixes.
+[INFO]  Loaded 6 perks from res://data/perks.
+[INFO]  Loaded 6 shrines from res://data/shrines.
+[INFO]  Loaded 18 quests from res://data/quests.
+[INFO]  Loaded 48 dialogues from res://data/dialogue.
+[INFO]  Loaded 31 schedules from res://data/schedules.
+[INFO]  Loaded 6 status effects from res://data/status_effects.
+[INFO]  Loaded 19 spells from res://data/spells.
+[INFO]  Loaded 5 weathers from res://data/weather.
+[INFO]  Loaded 2 regions from res://data/regions.
+[INFO]  Loaded 32 encounters from res://data/encounters.
+[INFO]  Loaded 15 recipes from res://data/recipes.
+[INFO]  Loaded 13 factions from res://data/factions.
+[INFO]  Loaded 5 world events from res://data/world_events.
+[INFO]  Loaded 6 races from res://data/races.
+[INFO]  Loaded 16 AI profiles from res://data/ai_profiles.
+[INFO]  Loaded 4 bosses from res://data/bosses.
+[INFO]  Loaded 31 enemy archetypes from res://data/enemies.
+[INFO]  EnemyTemplateRegistry seeded 33 archetype(s).
+[INFO]  Loaded 33 bestiary entries from res://data/bestiary.
+[INFO]  Loaded 1 property from res://data/properties.
+[INFO]  Loaded 23 shops from res://data/shops.
+[INFO]  Loaded 15 services from res://data/services.
+[INFO]  Loaded 8 contracts from res://data/contracts.
+[INFO]  Loaded 75 map locations from res://data/map_locations.
+[INFO]  Loaded 3 companions from res://data/companions.
+[INFO]  CompanionRegistry seeded 3 companion(s).
+[INFO]  GameManager online.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.fen_edge'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.hollowreach'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.embermarket'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.ashfall_homestead'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.wilds_west'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.tarn_landing'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.town_hub'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.emberdeep_mine'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.west_downs'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.crossway_post'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.mine_road'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.north_moor'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.wilds_north'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.ashen_reach'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.frontier_waste'.
+[INFO]  RegionStreamer: loaded cell 'ember_crown.arena'.
+  nav ember_crown_fen_edge                         223 vertices  x -24.2..24.2 z -44.2..44.2
+  nav ember_crown_hollowreach                      705 vertices  x -44.4..44.4 z -44.4..44.4
+  nav ember_crown_embermarket                      933 vertices  x -49.4..49.3 z -44.4..44.4
+  nav ember_crown_ashfall_homestead                357 vertices  x -44.4..44.4 z -44.4..44.4
+  nav ember_crown_wilds_west                       442 vertices  x -29.5..29.5 z -49.5..49.5
+  nav ember_crown_tarn_landing                     515 vertices  x -39.4..39.5 z -49.4..49.3
+  nav ember_crown_town_hub                         605 vertices  x -49.4..49.3 z -49.4..49.3
+  nav ember_crown_emberdeep_mine                   786 vertices  x -44.4..44.4 z -49.4..49.3
+  nav ember_crown_west_downs                       427 vertices  x -69.2..69.2 z -34.2..34.2
+  nav ember_crown_crossway_post                    514 vertices  x -49.4..49.3 z -34.4..34.3
+  nav ember_crown_mine_road                        438 vertices  x -44.2..44.2 z -34.2..34.2
+  nav ember_crown_north_moor                       583 vertices  x -69.2..69.2 z -44.2..44.2
+  nav ember_crown_wilds_north                      527 vertices  x -49.5..49.5 z -44.5..44.5
+  nav ember_crown_ashen_reach                      275 vertices  x -44.2..44.2 z -44.2..44.2
+  nav ember_crown_frontier_waste                   832 vertices  x -99.2..99.2 z -44.2..44.2
+  nav ember_crown_arena                            614 vertices  x -64.4..64.3 z -44.4..44.4
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.fen_edge'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.hollowreach'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.embermarket'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.ashfall_homestead'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.wilds_west'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.tarn_landing'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.town_hub'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.emberdeep_mine'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.west_downs'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.crossway_post'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.mine_road'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.north_moor'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.wilds_north'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.ashen_reach'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.frontier_waste'.
+[INFO]  RegionStreamer: unloaded cell 'ember_crown.arena'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.frost_march_w'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.frost_march_e'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.dragon_roost'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.clan_hold'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.ash_roost'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.north_snowfield'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.glacier'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.ash_approach'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.ancient_aerie'.
+[INFO]  RegionStreamer: loaded cell 'frostfang_reach.aerie_ascent'.
+  nav frostfang_reach_frost_march_w                493 vertices  x -84.2..84.2 z -39.2..39.2
+  nav frostfang_reach_frost_march_e                545 vertices  x -84.2..84.2 z -39.2..39.2
+  nav frostfang_reach_dragon_roost                 858 vertices  x -54.4..54.5 z -44.4..44.4
+  nav frostfang_reach_clan_hold                    827 vertices  x -59.4..59.4 z -44.4..44.4
+  nav frostfang_reach_ash_roost                   1014 vertices  x -54.4..54.5 z -44.4..44.4
+  nav frostfang_reach_north_snowfield              634 vertices  x -59.2..59.2 z -44.2..44.2
+  nav frostfang_reach_glacier                      709 vertices  x -59.5..59.5 z -44.5..44.5
+  nav frostfang_reach_ash_approach                 332 vertices  x -49.2..49.2 z -44.2..44.2
+  nav frostfang_reach_ancient_aerie               1015 vertices  x -69.4..69.5 z -54.4..54.5
+  nav frostfang_reach_aerie_ascent                1193 vertices  x -99.2..99.2 z -54.2..54.2
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.aerie_ascent'.
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.ancient_aerie'.
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.ash_approach'.
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.glacier'.
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.north_snowfield'.
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.ash_roost'.
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.clan_hold'.
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.dragon_roost'.
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.frost_march_e'.
+[INFO]  RegionStreamer: unloaded cell 'frostfang_reach.frost_march_w'.
+world traversal: PASS (142 authored route segments)
+WARNING: Navigation region synchronization had 2 edge error(s).
+More than 2 edges tried to occupy the same map rasterization space.
+This causes a logical error in the navigation mesh geometry and is commonly caused by overlap or too densely placed edges.
+Consider baking with a higher 'cell_size', greater geometry margin, and less detailed bake objects to cause fewer edges.
+Consider lowering the 'navigation/3d/merge_rasterizer_cell_scale' in the project settings.
+This warning can be toggled under 'navigation/3d/warnings/navmesh_edge_merge_errors' in the project settings.
+   at: _build_step_find_edge_connection_pairs (modules/navigation_3d/3d/nav_region_builder_3d.cpp:219)
+WARNING: 63 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)
