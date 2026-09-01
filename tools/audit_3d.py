@@ -399,7 +399,7 @@ def write_reports(records: list[dict[str, Any]], output: Path, metadata: dict[st
     findings.sort(key=lambda item: (severity_order.get(item["severity"], 9), -next(r["usage"]["count"] for r in records if r["path"] == item["path"]), item["path"], item["code"]))
     categories = Counter(item["category"] for item in records)
     recs = Counter(item["recommendation"] for item in records)
-    overview = ["# Embervale 3D audit — Session 1 foundation", "", "This folder is the required starting point for every later model-overhaul session.", "",
+    overview = ["# Embervale 3D audit", "", "This folder records a point-in-time production-model audit for its containing work session.", "",
                 "## Scope and run", "", f"- Production assets audited: **{len(records)}** (`assets/models/**/*.glb|gltf`)",
                 f"- Categories: {', '.join(f'{k} {v}' for k,v in sorted(categories.items()))}",
                 f"- Findings: {len(findings)} ({', '.join(f'{k} {v}' for k,v in sorted(Counter(f['severity'] for f in findings).items()))})",
@@ -454,7 +454,7 @@ def write_reports(records: list[dict[str, Any]], output: Path, metadata: dict[st
 
     render_groups=defaultdict(list)
     for path in render_files: render_groups[path.stem.split("__",1)[0]].append(path)
-    visual=["# Visual QA render index", "", "These PNGs were rendered from the actual production assets by Blender. The selected Session 1 set exercises the renderer and records representative high-priority assets; run `--render all` for a complete image batch or `--render selected` after an important model change.", ""]
+    visual=["# Visual QA render index", "", "These PNGs were rendered from the actual production assets by Blender. A selected set exercises the renderer and records representative high-priority assets; run `--render all` for a complete image batch or `--render selected` after an important model change.", ""]
     for stem, paths in sorted(render_groups.items()):
         visual += [f"## {stem}", "", " · ".join(f"[{path.stem.split('__',1)[-1]}](renders/{path.name})" for path in paths), ""]
     if not render_groups: visual.append("No renders were requested for this run.\n")

@@ -1,6 +1,6 @@
 # Visual QA render index
 
-These PNGs were rendered from the actual production assets by Blender. The selected Session 1 set exercises the renderer and records representative high-priority assets; run `--render all` for a complete image batch or `--render selected` after an important model change.
+These PNGs were rendered from the actual production assets by Blender. This selected final set records the changed Session 2 player-facing assets from the required six inspection angles.
 
 ## chr_player_base
 

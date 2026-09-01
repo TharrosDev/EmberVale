@@ -1,6 +1,6 @@
-# Embervale 3D audit — Session 1 foundation
+# Embervale 3D audit
 
-This folder is the required starting point for every later model-overhaul session.
+This folder records the fresh Session 2 baseline before player-facing assets were changed.
 
 ## Scope and run
 

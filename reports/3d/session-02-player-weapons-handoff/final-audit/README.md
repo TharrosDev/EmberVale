@@ -1,6 +1,6 @@
-# Embervale 3D audit — Session 1 foundation
+# Embervale 3D audit
 
-This folder is the required starting point for every later model-overhaul session.
+This folder records the final validated Session 2 production-model state.
 
 ## Scope and run
 
