@@ -1,0 +1,54 @@
+scene,node,display,template,base_model,profile,build
+scenes/regions/ember_crown/crossway_post.tscn,RoadWarden,Warden Sergeant Alric,npc.road_warden,npc_guild_rep.glb,road_warden,Broad
+scenes/regions/ember_crown/crossway_post.tscn,GateHand,A Gate-Hand,npc.gate_hand,npc_hooded.glb,gate_hand,Standard
+scenes/regions/ember_crown/crossway_post.tscn,SearchWarden,Warden Deryn Colt,npc.search_warden,npc_guild_rep.glb,search_warden,Standard
+scenes/regions/ember_crown/crossway_post.tscn,ImpoundClerk,The Impound Clerk,npc.impound_clerk,npc_townswoman.glb,impound_clerk,Slim
+scenes/regions/ember_crown/crossway_post.tscn,Mercenary,Wren Halloway,npc.mercenary,npc_adventurer_f.glb,wren_halloway,Standard
+scenes/regions/ember_crown/crossway_post.tscn,DawnwardenCaptain,Captain Aldric Fenn,npc.dawnwarden_captain,npc_guild_rep.glb,dawnwarden_captain,Broad
+scenes/regions/ember_crown/crossway_post.tscn,DawnwardenArmourer,Maera Colt,npc.dawnwarden_armourer,npc_townswoman.glb,dawnwarden_armourer,Standard
+scenes/regions/ember_crown/crossway_post.tscn,DawnwardenSerjeant,Serjeant Rook Danhal,npc.dawnwarden_serjeant,npc_townsman.glb,dawnwarden_serjeant,Broad
+scenes/regions/ember_crown/emberdeep_mine.tscn,Bregan,Bregan Holt,npc.bregan,npc_vendor.glb,mine_foreman,Broad
+scenes/regions/ember_crown/emberdeep_mine.tscn,Marta,Marta Quill,npc.marta,npc_townswoman.glb,mine_clerk,Slim
+scenes/regions/ember_crown/emberdeep_mine.tscn,EmberboundHierarch,Hierarch Selane Ott,npc.emberbound_hierarch,npc_hooded.glb,emberbound_hierarch,Standard
+scenes/regions/ember_crown/emberdeep_mine.tscn,EmberboundWarder,Warder Cass Vollen,npc.emberbound_warder,npc_townsman.glb,emberbound_warder,Broad
+scenes/regions/ember_crown/emberdeep_mine.tscn,EmberboundSeeker,Seeker Bren Ilvo,npc.emberbound_seeker,npc_hooded.glb,emberbound_seeker,Slim
+scenes/regions/ember_crown/embermarket.tscn,MerchantCorvin,"Corvin, Provisioner",npc.corvin,npc_vendor.glb,provisioner,Standard
+scenes/regions/ember_crown/embermarket.tscn,MerchantHana,Hana Netmender,npc.hana,npc_woman_dress.glb,netmender,Slim
+scenes/regions/ember_crown/embermarket.tscn,MerchantSable,"Sable, Weaver",npc.sable,npc_townswoman.glb,weaver,Slim
+scenes/regions/ember_crown/embermarket.tscn,MerchantTam,Tam Quillfellow,npc.tam,npc_merchant_m.glb,quillfellow,Standard
+scenes/regions/ember_crown/embermarket.tscn,MerchantDunmore,"Ash Dunmore, Collier",npc.ash_dunmore,npc_hooded.glb,collier,Broad
+scenes/regions/ember_crown/embermarket.tscn,MerchantGilda,Gilda Ironmonger,npc.gilda,npc_innkeeper.glb,ironmonger,Broad
+scenes/regions/ember_crown/embermarket.tscn,MerchantPerrin,Perrin the Tanner,npc.perrin,npc_merchant_m.glb,tanner,Broad
+scenes/regions/ember_crown/embermarket.tscn,MerchantNessa,Nessa Brightcut,npc.nessa,npc_guild_rep.glb,brightcut,Standard
+scenes/regions/ember_crown/embermarket.tscn,MerchantOdo,Odo Greenhand,npc.odo,npc_hooded.glb,greenhand,Standard
+scenes/regions/ember_crown/embermarket.tscn,MerchantHalvard,"Halvard, Joiner",npc.halvard,npc_vendor.glb,joiner,Standard
+scenes/regions/ember_crown/embermarket.tscn,TraderSera,Sera of the Long Road,npc.sera,npc_adventurer_f.glb,long_road,Standard
+scenes/regions/ember_crown/embermarket.tscn,TraderQuill,Quill the Curioseller,npc.quill,npc_townswoman.glb,curioseller,Slim
+scenes/regions/ember_crown/embermarket.tscn,MerchantMirelle,Mirelle Vantry,npc.mirelle,npc_woman_dress.glb,cloth_merchant,Slim
+scenes/regions/ember_crown/embermarket.tscn,ClerkHalder,Halder Vantry,npc.halder,npc_merchant_m.glb,market_clerk,Standard
+scenes/regions/ember_crown/embermarket.tscn,ArchiveKeeper,Keeper Ysolde Marr,npc.archive_keeper,npc_woman_dress.glb,archive_keeper,Slim
+scenes/regions/ember_crown/embermarket.tscn,ArchiveSteward,Steward Coran Vey,npc.archive_steward,npc_merchant_m.glb,archive_steward,Broad
+scenes/regions/ember_crown/embermarket.tscn,ArchiveReader,Ferris Vail,npc.archive_reader,npc_townsman.glb,archive_reader,Standard
+scenes/regions/ember_crown/hollowreach.tscn,Sedge,Sedge Marrow,npc.sedge,npc_hooded.glb,dockside_sedge,Standard
+scenes/regions/ember_crown/hollowreach.tscn,Coyle,Coyle Ferrin,npc.coyle,npc_merchant_m.glb,dockside_coyle,Broad
+scenes/regions/ember_crown/hollowreach.tscn,SyndicateBroker,Broker Ilder Vance,npc.syndicate_broker,npc_merchant_m.glb,syndicate_broker,Broad
+scenes/regions/ember_crown/hollowreach.tscn,SyndicateFixer,Dallow Grieve,npc.syndicate_fixer,npc_townsman.glb,syndicate_fixer,Broad
+scenes/regions/ember_crown/tarn_landing.tscn,Wenna,Wenna Tarn,npc.wenna,npc_woman_dress.glb,landing_netmender,Standard
+scenes/regions/ember_crown/tarn_landing.tscn,Odger,Odger Vane,npc.odger,npc_vendor.glb,landing_chandler,Broad
+scenes/regions/ember_crown/town_hub.tscn,Elder,Village Elder,npc.elder,npc_guild_rep.glb,village_elder,Standard
+scenes/regions/ember_crown/town_hub.tscn,Kael,Kael Aldemar,npc.kael,npc_kael.glb,kael,Slim
+scenes/regions/ember_crown/town_hub.tscn,VendorGoods,"Aldreth, General Goods",npc.vendor_goods,npc_vendor.glb,general_goods,Standard
+scenes/regions/ember_crown/town_hub.tscn,VendorSmith,Bryn the Smith,npc.vendor_smith,npc_vendor.glb,smith,Broad
+scenes/regions/ember_crown/town_hub.tscn,VendorAlch,"Mirela, Apothecary",npc.vendor_alch,npc_vendor.glb,apothecary,Slim
+scenes/regions/ember_crown/town_hub.tscn,Innkeeper,Innkeeper Holt,npc.innkeeper,npc_innkeeper.glb,innkeeper,Broad
+scenes/regions/ember_crown/town_hub.tscn,Trainer,Bryn's Apprentice,npc.trainer_smith,npc_vendor.glb,smith_apprentice,Standard
+scenes/regions/ember_crown/town_hub.tscn,Stablemaster,Stablemaster Wend,npc.stablemaster,npc_vendor.glb,stablemaster,Broad
+scenes/regions/ember_crown/town_hub.tscn,WanderingTrader,Hesk the Wayfarer,npc.traveller,npc_vendor.glb,wayfarer,Standard
+scenes/regions/ember_crown/wilds_north.tscn,HunterMaster,Huntmaster Yrsa Kesk,npc.hunter_master,npc_adventurer_f.glb,hunter_master,Broad
+scenes/regions/ember_crown/wilds_north.tscn,HunterSkinner,Fell Ardan,npc.hunter_skinner,npc_townsman.glb,hunter_skinner,Broad
+scenes/regions/ember_crown/wilds_north.tscn,HunterTracker,Halda Rieve,npc.hunter_tracker,npc_hooded.glb,hunter_tracker,Slim
+scenes/regions/frostfang_reach/clan_hold.tscn,ClanChief,Hjalvar Stormbound,npc.clan_chief,npc_guild_rep.glb,clan_chief,Broad
+scenes/regions/frostfang_reach/clan_hold.tscn,Quartermaster,Sigrun Ironhand,npc.clan_quartermaster,npc_vendor.glb,clan_quartermaster,Broad
+scenes/regions/frostfang_reach/clan_hold.tscn,BeastTamer,Yrsa Houndmother,npc.clan_beast_tamer,npc_vendor.glb,clan_beast_tamer,Standard
+scenes/regions/frostfang_reach/clan_hold.tscn,Hearthkeeper,Old Vetle,npc.clan_hearthkeeper,npc_innkeeper.glb,clan_hearthkeeper,Broad
+scenes/regions/frostfang_reach/clan_hold.tscn,Exile,Halvar One-Hand,npc.clan_exile,npc_innkeeper.glb,clan_exile,Slim

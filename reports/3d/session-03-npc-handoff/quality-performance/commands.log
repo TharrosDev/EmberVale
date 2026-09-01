@@ -1,0 +1,1 @@
+C:\Users\magnu\Downloads\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64_console.exe --path . --resolution 1280x720 --script res://tools/world_perf_probe.gd -- --json-file C:\Users\magnu\Embervale\reports\3d\session-03-npc-handoff\quality-performance/performance.json

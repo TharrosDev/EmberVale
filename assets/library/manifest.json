@@ -4875,5 +4875,23 @@
    "file": "assets/models/equipment/eqp_pouch_embervale.glb",
    "source": "tools/build_player_weapon_assets.py"
   }
+ ],
+ "session_03_npc_kit": [
+  {
+   "title": "npc_kit_embervale",
+   "pack": "Embervale Session 3 modular human kit",
+   "licence": "CC0 1.0",
+   "file": "assets/models/equipment/npc_kit_embervale.glb",
+   "source": "tools/build_npc_kit.py",
+   "note": "Repository-authored shared rigid clothing and profession accessories; 22 reusable pieces, one common material library, deterministic attachment profiles."
+  },
+  {
+   "title": "Session 3 production human material repair",
+   "pack": "Quaternius-derived Embervale production humans",
+   "licence": "CC0 1.0",
+   "file": "assets/models/characters/npc_*.glb",
+   "source": "Quaternius Ultimate Animated Character Pack / tools/build_npc_kit.py",
+   "note": "Material-only glTF JSON repair across 11 existing NPC GLBs. Binary mesh, skin, inverse-bind and animation payloads are preserved; original source assets remain in their canonical library locations."
+  }
  ]
 }

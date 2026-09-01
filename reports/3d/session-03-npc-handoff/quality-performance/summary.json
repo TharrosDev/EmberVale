@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "run_id": "20260901T061051Z",
+  "mode": "performance",
+  "regions": [
+    "ember_crown",
+    "frostfang_reach"
+  ],
+  "status": "passed",
+  "machine": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "machine": "AMD64",
+    "python": "3.12.13"
+  },
+  "godot": "C:\\Users\\magnu\\Downloads\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64_console.exe",
+  "evidence": {
+    "logs": "C:\\Users\\magnu\\Embervale\\reports\\3d\\session-03-npc-handoff\\quality-performance",
+    "world_current": "C:\\Users\\magnu\\Embervale\\tools\\shots\\world",
+    "world_diffs": "C:\\Users\\magnu\\Embervale\\tools\\shots\\world_diffs",
+    "visual_baseline": "C:\\Users\\magnu\\Embervale\\tests\\visual_baselines\\world_signatures.json",
+    "performance": "C:\\Users\\magnu\\Embervale\\reports\\3d\\session-03-npc-handoff\\quality-performance\\performance.json"
+  },
+  "results": [
+    {
+      "name": "performance",
+      "status": "REPORT",
+      "what": "draw calls, primitives, frame time and video memory, per cell",
+      "expected": "exit code 0",
+      "actual": "exit code 0",
+      "exit_code": 0,
+      "elapsed_seconds": 37.09399999998277,
+      "reproduction": "C:\\Users\\magnu\\Downloads\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64\\Godot_v4.7.1-stable_mono_win64_console.exe --path . --resolution 1280x720 --script res://tools/world_perf_probe.gd -- --json-file C:\\Users\\magnu\\Embervale\\reports\\3d\\session-03-npc-handoff\\quality-performance/performance.json",
+      "log": "performance.log"
+    }
+  ]
+}

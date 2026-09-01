@@ -1,0 +1,35 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+
+[INFO]  GameManager online.
+[INFO]  === Embervale content validation (--validate) ===
+[INFO]  Loaded 63 items from res://data/items.
+[INFO]  Loaded 11 affixes from res://data/affixes.
+[INFO]  Loaded 6 perks from res://data/perks.
+[INFO]  Loaded 6 shrines from res://data/shrines.
+[INFO]  Loaded 18 quests from res://data/quests.
+[INFO]  Loaded 48 dialogues from res://data/dialogue.
+[INFO]  Loaded 31 schedules from res://data/schedules.
+[INFO]  Loaded 6 status effects from res://data/status_effects.
+[INFO]  Loaded 19 spells from res://data/spells.
+[INFO]  Loaded 5 weathers from res://data/weather.
+[INFO]  Loaded 2 regions from res://data/regions.
+[INFO]  Loaded 32 encounters from res://data/encounters.
+[INFO]  Loaded 15 recipes from res://data/recipes.
+[INFO]  Loaded 13 factions from res://data/factions.
+[INFO]  Loaded 5 world events from res://data/world_events.
+[INFO]  Loaded 6 races from res://data/races.
+[INFO]  Loaded 16 AI profiles from res://data/ai_profiles.
+[INFO]  Loaded 4 bosses from res://data/bosses.
+[INFO]  Loaded 31 enemy archetypes from res://data/enemies.
+[INFO]  EnemyTemplateRegistry seeded 33 archetype(s).
+[INFO]  Loaded 33 bestiary entries from res://data/bestiary.
+[INFO]  Loaded 1 property from res://data/properties.
+[INFO]  Loaded 23 shops from res://data/shops.
+[INFO]  Loaded 15 services from res://data/services.
+[INFO]  Loaded 8 contracts from res://data/contracts.
+[INFO]  Loaded 75 map locations from res://data/map_locations.
+[INFO]  Loaded 3 companions from res://data/companions.
+[INFO]  CompanionRegistry seeded 3 companion(s).
+[INFO]  Localization: loaded 1624 string(s) across 1 locale(s); locale 'en'.
+ContentValidator: OK (all references resolve, content is well-formed, and graphs are reachable).
+validate: PASS

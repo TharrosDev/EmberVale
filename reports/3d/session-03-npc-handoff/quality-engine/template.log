@@ -1,0 +1,5 @@
+self-check: the template builds (12516 bytes) and its lattice is sound
+
+region_spec_template.py is a starter to COPY, not a region to generate.
+  cp tools/region_spec_template.py tools/region_spec_<yourregion>.py
+then register build_<yourregion> in tools/gen_regions.py's main().

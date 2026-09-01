@@ -533,3 +533,10 @@ six diagnostic angles with a ground plane, human scale reference, bounds and ori
 Automated flags are triage evidence rather than edit authorization. Confirm them in actual renders,
 trace dependents, and evaluate gameplay collision separately. Important changed assets must be
 re-audited and visually reviewed; a clean build/import/test run cannot prove a model looks correct.
+
+## 10. Modular human population kit (Session 3, 2026-09-01)
+
+`docs/NPC_VISUAL_KIT.md` is the canonical compatibility and rebuild contract for civilian, worker,
+merchant, guild, guard, traveller, and named-human presentation. The kit is cosmetic: do not deform
+or replace a production skeleton merely to add population variety, and do not introduce random
+profession/faction combinations outside its controlled profile table.
