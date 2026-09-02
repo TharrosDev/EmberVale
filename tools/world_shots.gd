@@ -147,6 +147,20 @@ func _render_cell(cell: Array, region: Resource) -> void:
 			_camera.look_at(shot[2], Vector3.UP)
 			for _frame in range(12):
 				await process_frame
+			# ⚠️ `process_frame` IS NOT A DRAWN FRAME, AND WITHOUT THIS LINE THE CAPTURE IS STALE.
+			# It fires when the SceneTree has stepped, which can be ahead of what the GPU has
+			# actually resolved into the viewport texture — so `get_texture().get_image()` returns
+			# whatever was last drawn, which is frequently the PREVIOUS shot. On the Iris Xe
+			# reference machine that produced 92 duplicate frames out of 260, including whole
+			# cells captured as ten copies of one camera position.
+			#
+			# ⚠️ AND IT POISONS BOTH OUTPUTS AT ONCE. The signature is computed from this same
+			# image, so a stale capture writes a stale PNG *and* records a stale signature into
+			# the baseline — a cell can then "pass" the visual gate forever against evidence of a
+			# different cell. Twelve process_frames looked like more than enough patience, which
+			# is exactly why nobody suspected the wait was the wrong KIND of wait.
+			# architecture_shots.gd, environment_shots.gd and npc_kit_shots.gd all await this.
+			await RenderingServer.frame_post_draw
 			var path := "%s/%s_%s.png" % [folder, pass_name, shot[0]]
 			var image := root.get_texture().get_image()
 			if image == null or image.is_empty():

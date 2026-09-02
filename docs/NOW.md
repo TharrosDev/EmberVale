@@ -40,6 +40,17 @@
   structurally distinct authored prefabs now cover cottages, farms, shops, workshops, townhouses,
   inns, longhouses and ruins. Five live settlements use the new forms. See
   `docs/ARCHITECTURE_KIT.md` and `reports/3d/session-05-architecture-handoff/`.
+- **The environment/props pass (2026-09-02) ✅ CLOSED — out of band.** The vegetation system was
+  judged good and **kept**; what was wrong was underneath it. Every prop GLB embedded its own copy
+  of a shared texture *and* the importer extracted a second copy beside it, so `assets/models/props`
+  was **84 MiB and is now 49 MiB** with zero embedded images. 138 prop materials sat at the pack's
+  0.4 metallic with no metallic map — wood, hay, bark, leaves and fire — which `ART_STYLE.md`
+  forbids; real metal now goes up and everything else down. The realm's entire stone cover was one
+  pebble at 210/100 m²; it is four species at 191. Eleven new rock and ice assets plus a rebuilt
+  brazier fill the gap no vendored bundle covers, and `prp_glacier` — one mesh instanced fifteen
+  times across three cells — is retired. See `reports/3d/session-06-environment-handoff/`.
+  ⚠️ **The world visual gate is nondeterministic and its result is advisory until the capture clock
+  is pinned** — the handoff's "Unresolved" section is the diagnosis and the fix.
 - **NEXT: 42C — Dawnwardens recruitment and probation.** The first arc to walk through a door 42B
   built: join/refuse dialogue plus a Defend/Reach probation pair, and rank one earned.
 

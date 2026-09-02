@@ -1,0 +1,263 @@
+{
+  "failures": [],
+  "required_views": [
+    "front",
+    "back",
+    "left",
+    "right",
+    "front_3q",
+    "rear_3q",
+    "eye"
+  ],
+  "schema": 1,
+  "status": "passed",
+  "subjects": [
+    {
+      "base_y": 0.0,
+      "bounds": [
+        5.6,
+        3.93,
+        5.07
+      ],
+      "frames": 7,
+      "grounded": true,
+      "path": "res://assets/models/props/prp_boulder_large.glb",
+      "slug": "boulder_large",
+      "surfaces": 1
+    },
+    {
+      "base_y": 0.0,
+      "bounds": [
+        5.25,
+        2.1,
+        4.23
+      ],
+      "frames": 7,
+      "grounded": true,
+      "path": "res://assets/models/props/prp_rock_cluster_a.glb",
+      "slug": "rock_cluster_a",
+      "surfaces": 1
+    },
+    {
+      "base_y": 0.0,
+      "bounds": [
+        6.22,
+        1.44,
+        5.12
+      ],
+      "frames": 7,
+      "grounded": true,
+      "path": "res://assets/models/props/prp_rock_scree.glb",
+      "slug": "rock_scree",
+      "surfaces": 1
+    },
+    {
+      "base_y": 0.0,
+      "bounds": [
+        8.21,
+        0.82,
+        1.68
+      ],
+      "frames": 7,
+      "grounded": true,
+      "path": "res://assets/models/props/prp_rock_edging.glb",
+      "slug": "rock_edging",
+      "surfaces": 1
+    },
+    {
+      "base_y": 0.0,
+      "bounds": [
+        10.89,
+        6.01,
+        5.43
+      ],
+      "frames": 7,
+      "grounded": true,
+      "path": "res://assets/models/props/prp_cliff_face.glb",
+      "slug": "cliff_face",
+      "surfaces": 1
+    },
+    {
+      "base_y": 0.0,
+      "bounds": [
+        10.01,
+        6.99,
+        5.51
+      ],
+      "frames": 7,
+      "grounded": true,
+      "path": "res://assets/models/props/prp_cliff_face_tall.glb",
+      "slug": "cliff_face_tall",
+      "surfaces": 1
+    },
+    {
+      "base_y": -0.271,
+      "bounds": [
+        3.23,
+        2.26,
+        2.99
+      ],
+      "frames": 7,
+      "grounded": false,
+      "path": "res://assets/models/props/prp_rock_medium.glb",
+      "slug": "rock_medium",
+      "surfaces": 1
+    },
+    {
+      "base_y": -0.002,
+      "bounds": [
+        0.45,
+        0.1,
+        0.48
+      ],
+      "frames": 7,
+      "grounded": true,
+      "path": "res://assets/models/props/prp_pebble_c.glb",
+      "slug": "pebble_c",
+      "surfaces": 1
+    },
+    {
+      "base_y": -0.008,
+      "bounds": [
+        0.35,
+        0.15,
+        0.45
+      ],
+      "frames": 7,
+      "grounded": true,
+      "path": "res://assets/models/props/prp_pebble_d.glb",
+      "slug": "pebble_d",
+      "surfaces": 1
+    },
+    {
+      "base_y": 0.0,
+      "bounds": [
+        1.3,
+        0.95,
+        1.1
+      ],
+      "frames": 7,
+      "grounded": true,
+      "path": "res://assets/models/props/prp_ice_chunk.glb",
+      "slug": "ice_chunk",
+      "surfaces": 1
+    },
+    {
+      "base_y": 0.0,
+      "bounds": [
+        1.04,
+        2.5,
+        1.11
+      ],
+      "frames": 7,
+      "grounded": true,
+      "path": "res://assets/models/props/prp_ice_shard.glb",
+      "slug": "ice_shard",
+      "surfaces": 1
+    },
+    {
+      "base_y": 0.0,
+      "bounds": [
+        4.4,
+        0.55,
+        4.0
+      ],
+      "frames": 7,
+      "grounded": true,
+      "path": "res://assets/models/props/prp_ice_slab.glb",
+      "slug": "ice_slab",
+      "surfaces": 1
+    },
+    {
+      "base_y": 0.0,
+      "bounds": [
+        8.0,
+        6.4,
+        3.2
+      ],
+      "frames": 7,
+      "grounded": true,
+      "path": "res://assets/models/props/prp_glacier_wall.glb",
+      "slug": "glacier_wall",
+      "surfaces": 1
+    },
+    {
+      "base_y": 0.0,
+      "bounds": [
+        12.24,
+        9.49,
+        7.41
+      ],
+      "frames": 7,
+      "grounded": true,
+      "path": "res://assets/models/props/prp_glacier_face.glb",
+      "slug": "glacier_face",
+      "surfaces": 1
+    },
+    {
+      "base_y": -0.282,
+      "bounds": [
+        8.43,
+        4.96,
+        6.02
+      ],
+      "frames": 7,
+      "grounded": false,
+      "path": "res://assets/models/props/prp_glacier.glb",
+      "slug": "glacier",
+      "surfaces": 1
+    },
+    {
+      "base_y": -0.316,
+      "bounds": [
+        3.42,
+        2.32,
+        3.48
+      ],
+      "frames": 7,
+      "grounded": false,
+      "path": "res://assets/models/props/prp_boulder.glb",
+      "slug": "boulder",
+      "surfaces": 1
+    },
+    {
+      "base_y": 0.0,
+      "bounds": [
+        2.26,
+        1.41,
+        1.84
+      ],
+      "frames": 7,
+      "grounded": true,
+      "path": "res://assets/models/props/prp_rock_cluster.glb",
+      "slug": "rock_cluster",
+      "surfaces": 1
+    },
+    {
+      "base_y": 0.0,
+      "bounds": [
+        0.3,
+        0.46,
+        0.3
+      ],
+      "frames": 7,
+      "grounded": true,
+      "path": "res://assets/models/props/prp_relic.glb",
+      "slug": "relic",
+      "surfaces": 1
+    },
+    {
+      "base_y": 0.0,
+      "bounds": [
+        0.62,
+        1.3,
+        0.62
+      ],
+      "frames": 7,
+      "grounded": true,
+      "path": "res://assets/models/props/prp_brazier.glb",
+      "slug": "brazier",
+      "surfaces": 3
+    }
+  ]
+}

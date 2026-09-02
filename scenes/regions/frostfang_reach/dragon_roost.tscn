@@ -14,7 +14,7 @@
 [ext_resource type="PackedScene" path="res://scenes/regions/roost.tscn" id="1_roost"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="10_rock"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_pine_dead.glb" id="11_pine"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_glacier.glb" id="12_glacier"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_glacier_wall.glb" id="12_glacier"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 
 [sub_resource type="CylinderShape3D" id="Shape_rock"]
@@ -25,8 +25,20 @@ height = 1.6
 radius = 0.4
 height = 5.0
 
-[sub_resource type="BoxShape3D" id="Shape_glacier"]
-size = Vector3(8.43, 4.96, 6.02)
+[sub_resource type="BoxShape3D" id="Shape_ice_GlacierNW"]
+size = Vector3(8.000, 6.400, 3.200)
+
+[sub_resource type="BoxShape3D" id="Shape_ice_GlacierNE"]
+size = Vector3(8.000, 6.400, 3.200)
+
+[sub_resource type="BoxShape3D" id="Shape_ice_GlacierWallA"]
+size = Vector3(8.000, 6.400, 3.200)
+
+[sub_resource type="BoxShape3D" id="Shape_ice_GlacierWallB"]
+size = Vector3(8.000, 6.400, 3.200)
+
+[sub_resource type="BoxShape3D" id="Shape_ice_GlacierWallD"]
+size = Vector3(8.000, 6.400, 3.200)
 
 [node name="DragonRoostCell" instance=ExtResource("1_roost")]
 
@@ -66,22 +78,22 @@ transform = Transform3D(-1.9696, 0, -0.3473, 0, 2.4, 0, 0.3473, 0, -1.9696, 34, 
 shape = SubResource("Shape_rock")
 
 [node name="GlacierNW" parent="Nav" index="7" instance=ExtResource("12_glacier")]
-transform = Transform3D(0.6921, 0, 0.2519, 0, 0.9542, 0, -0.2573, 0, 0.707, 6, 0, -14)
+transform = Transform3D(0.9825, 0, 0.3653, 0, 1.0482, 0, -0.3653, 0, 0.9825, 6, 0, -14)
 
 [node name="Col" type="StaticBody3D" parent="Nav/GlacierNW"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/GlacierNW/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
-shape = SubResource("Shape_glacier")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.200, 0)
+shape = SubResource("Shape_ice_GlacierNW")
 
 [node name="GlacierNE" parent="Nav" index="8" instance=ExtResource("12_glacier")]
-transform = Transform3D(-0.8068, 0, -0.2936, 0, 1.0274, 0, 0.3777, 0, -1.0377, 6, 0, 8)
+transform = Transform3D(-1.2556, 0, -0.5878, 0, 1.3863, 0, 0.5878, 0, -1.2556, 6, 0, 8)
 
 [node name="Col" type="StaticBody3D" parent="Nav/GlacierNE"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/GlacierNE/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
-shape = SubResource("Shape_glacier")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.200, 0)
+shape = SubResource("Shape_ice_GlacierNE")
 
 [node name="PineW" parent="Nav" index="9" instance=ExtResource("11_pine")]
 transform = Transform3D(0.866, 0, 0.5, 0, 1.2, 0, -0.5, 0, 0.866, -30, 0, 12)
@@ -136,31 +148,31 @@ shape = SubResource("Shape_rock")
 ; --- the north wall at (-14, -20). Cover thins as you advance, so the fight pushes you forward.
 
 [node name="GlacierWallA" parent="Nav" instance=ExtResource("12_glacier")]
-transform = Transform3D(1.0315, 0, 0.2764, 0, 1.0038, 0, -0.289, 0, 1.0785, -30, 0, -32)
+transform = Transform3D(1.4809, 0, 0.4149, 0, 1.5379, 0, -0.4149, 0, 1.4809, -30, 0, -32)
 
 [node name="Col" type="StaticBody3D" parent="Nav/GlacierWallA"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/GlacierWallA/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
-shape = SubResource("Shape_glacier")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.200, 0)
+shape = SubResource("Shape_ice_GlacierWallA")
 
 [node name="GlacierWallB" parent="Nav" instance=ExtResource("12_glacier")]
-transform = Transform3D(-0.8637, 0, -0.2314, 0, 1.1714, 0, 0.2266, 0, -0.8457, -18, 0, -33)
+transform = Transform3D(-1.2051, 0, -0.3162, 0, 1.2459, 0, 0.3162, 0, -1.2051, -18, 0, -33)
 
 [node name="Col" type="StaticBody3D" parent="Nav/GlacierWallB"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/GlacierWallB/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
-shape = SubResource("Shape_glacier")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.200, 0)
+shape = SubResource("Shape_ice_GlacierWallB")
 
 [node name="GlacierWallD" parent="Nav" instance=ExtResource("12_glacier")]
-transform = Transform3D(0.4584, 0, 0.7939, 0, 0.8902, 0, -0.9047, 0, 0.5223, -38, 0, -28)
+transform = Transform3D(0.6251, 0, 1.2337, 0, 1.3830, 0, -1.2337, 0, 0.6251, -38, 0, -28)
 
 [node name="Col" type="StaticBody3D" parent="Nav/GlacierWallD"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/GlacierWallD/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
-shape = SubResource("Shape_glacier")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.200, 0)
+shape = SubResource("Shape_ice_GlacierWallD")
 
 [node name="CragSplA" parent="Nav" instance=ExtResource("10_rock")]
 transform = Transform3D(1.4784, 0, 1.7619, 0, 2.9, 0, -1.7619, 0, 1.4784, 20, 0, -18)

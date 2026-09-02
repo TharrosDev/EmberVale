@@ -4,7 +4,8 @@
 [ext_resource type="Script" path="res://src/Entities/Entity.cs" id="2_entity"]
 [ext_resource type="Script" path="res://src/Magic/SpellTomeComponent.cs" id="3_tome"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_rock_cluster.glb" id="10_rock"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_glacier.glb" id="12_glacier"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_glacier_face.glb" id="12_glacier"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_glacier_wall.glb" id="12_ice_wall"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_tome_stand.glb" id="13_tome"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="14_pillar"]
@@ -19,8 +20,17 @@ height = 1.6
 [sub_resource type="BoxShape3D" id="Shape_tome"]
 size = Vector3(0.919, 1.220, 0.919)
 
-[sub_resource type="BoxShape3D" id="Shape_glacier"]
-size = Vector3(8.43, 4.96, 6.02)
+[sub_resource type="BoxShape3D" id="Shape_ice_GlacierNW"]
+size = Vector3(12.240, 9.490, 7.410)
+
+[sub_resource type="BoxShape3D" id="Shape_ice_GlacierNE"]
+size = Vector3(8.000, 6.400, 3.200)
+
+[sub_resource type="BoxShape3D" id="Shape_ice_GlacierE"]
+size = Vector3(8.000, 6.400, 3.200)
+
+[sub_resource type="BoxShape3D" id="Shape_ice_GlacierW"]
+size = Vector3(12.240, 9.490, 7.410)
 
 [sub_resource type="CylinderShape3D" id="Shape_pillar"]
 radius = 0.75
@@ -56,22 +66,22 @@ transform = Transform3D(-0.6156, 0, 1.6914, 0, 4.4, 0, -1.6914, 0, -0.6156, -2, 
 shape = SubResource("Shape_rock")
 
 [node name="GlacierNW" parent="Nav" index="6" instance=ExtResource("12_glacier")]
-transform = Transform3D(1.0988, 0, 0.5124, 0, 0.908, 0, -0.5307, 0, 1.1382, -34, 0, -30)
+transform = Transform3D(0.8313, 0, 0.4015, 0, 0.9232, 0, -0.4015, 0, 0.8313, -34, 0, -30)
 
 [node name="Col" type="StaticBody3D" parent="Nav/GlacierNW"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/GlacierNW/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
-shape = SubResource("Shape_glacier")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.745, 0)
+shape = SubResource("Shape_ice_GlacierNW")
 
-[node name="GlacierNE" parent="Nav" index="7" instance=ExtResource("12_glacier")]
-transform = Transform3D(-0.8532, 0, -0.3978, 0, 1.1294, 0, 0.3433, 0, -0.7362, 30, 0, -28)
+[node name="GlacierNE" parent="Nav" index="7" instance=ExtResource("12_ice_wall")]
+transform = Transform3D(-1.1472, 0, -0.4616, 0, 1.2365, 0, 0.4616, 0, -1.1472, 30, 0, -28)
 
 [node name="Col" type="StaticBody3D" parent="Nav/GlacierNE"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/GlacierNE/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
-shape = SubResource("Shape_glacier")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.200, 0)
+shape = SubResource("Shape_ice_GlacierNE")
 
 ; The avenue: seven broken markers in an irregular double file running north from the southern seam,
 ; turning north-west at (0, 6). They were six markers on a 28 m circle, which read as a ring around
@@ -140,23 +150,23 @@ transform = Transform3D(-1.0285, 0, 1.2257, 0, 3.2, 0, -1.2257, 0, -1.0285, 16, 
 [node name="Shape" type="CollisionShape3D" parent="Nav/HoardStoneA/Col"]
 shape = SubResource("Shape_rock")
 
-[node name="GlacierE" parent="Nav" instance=ExtResource("12_glacier")]
-transform = Transform3D(-0.93, 0, 0.5369, 0, 0.9714, 0, -0.6251, 0, -1.0826, 26, 0, -6)
+[node name="GlacierE" parent="Nav" instance=ExtResource("12_ice_wall")]
+transform = Transform3D(-1.3607, 0, 0.9146, 0, 1.6396, 0, -0.9146, 0, -1.3607, 26, 0, -6)
 
 [node name="Col" type="StaticBody3D" parent="Nav/GlacierE"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/GlacierE/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
-shape = SubResource("Shape_glacier")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.200, 0)
+shape = SubResource("Shape_ice_GlacierE")
 
 [node name="GlacierW" parent="Nav" instance=ExtResource("12_glacier")]
-transform = Transform3D(0.7126, 0, -0.4115, 0, 1.1743, 0, 0.3419, 0, 0.5922, -30, 0, 6)
+transform = Transform3D(0.5097, 0, -0.2445, 0, 0.5653, 0, 0.2445, 0, 0.5097, -30, 0, 6)
 
 [node name="Col" type="StaticBody3D" parent="Nav/GlacierW"]
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/GlacierW/Col"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
-shape = SubResource("Shape_glacier")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.745, 0)
+shape = SubResource("Shape_ice_GlacierW")
 
 ; The hoard. An Ancient's treasure is one word on a stand, and the tome will not open until the thing
 ; that has been keeping it is dead — RequiredFlagId is raised by the lair below on the kill. That is

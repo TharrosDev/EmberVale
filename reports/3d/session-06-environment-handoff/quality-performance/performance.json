@@ -1,0 +1,270 @@
+{
+  "engine": {
+    "build": "official",
+    "hash": "a13da4feb8d8aefc283c3763d33a2f170a18d541",
+    "hex": 263937,
+    "major": 4,
+    "minor": 7,
+    "patch": 1,
+    "status": "stable",
+    "string": "4.7.1-stable (official)",
+    "timestamp": 0
+  },
+  "failures": [],
+  "historical_baseline": {
+    "captured": "2026-08-30",
+    "machine": "Intel Iris Xe reference laptop",
+    "note": "Machine-sensitive history only; deterministic authored budgets gate in --validate.",
+    "regions": {
+      "region.ember_crown": {
+        "configure_ms": 3400.0,
+        "mean_draws": 634.0,
+        "mean_ms": 14.0,
+        "mean_prims": 1050000.0,
+        "video_memory_mb": 379.0,
+        "worst_ms": 20.0
+      },
+      "region.frostfang_reach": {
+        "configure_ms": 1900.0,
+        "mean_draws": 158.0,
+        "mean_ms": 11.9,
+        "mean_prims": 219000.0,
+        "video_memory_mb": 305.0,
+        "worst_ms": 16.7
+      }
+    },
+    "schema": 1.0
+  },
+  "historical_comparisons": [
+    {
+      "configure_ms_percent": 11.9505294117647,
+      "mean_draws_percent": 42.3994479495268,
+      "mean_ms_percent": 17.8123767364695,
+      "mean_prims_percent": 6.93545833333333,
+      "region": "region.ember_crown",
+      "video_memory_percent": 28.3306514367579,
+      "worst_ms_percent": 16.2790697674419
+    },
+    {
+      "configure_ms_percent": 5.0047894736842,
+      "mean_draws_percent": 28.2911392405063,
+      "mean_ms_percent": 20.5116558794583,
+      "mean_prims_percent": 11.7338812785388,
+      "region": "region.frostfang_reach",
+      "video_memory_percent": 35.2295922451332,
+      "worst_ms_percent": 17.4122343548198
+    }
+  ],
+  "kind": "machine-sensitive-report",
+  "os": "Windows",
+  "renderer": "Intel(R) Iris(R) Xe Graphics",
+  "samples": [
+    {
+      "cell": "ember_crown.fen_edge",
+      "draws": 1515.0,
+      "ms": 11.1111111111111,
+      "prims": 1260164.0,
+      "region": "region.ember_crown"
+    },
+    {
+      "cell": "ember_crown.hollowreach",
+      "draws": 1975.0,
+      "ms": 12.3456790123457,
+      "prims": 1416480.0,
+      "region": "region.ember_crown"
+    },
+    {
+      "cell": "ember_crown.embermarket",
+      "draws": 2204.0,
+      "ms": 12.5,
+      "prims": 1034444.0,
+      "region": "region.ember_crown"
+    },
+    {
+      "cell": "ember_crown.ashfall_homestead",
+      "draws": 570.0,
+      "ms": 12.5,
+      "prims": 783902.0,
+      "region": "region.ember_crown"
+    },
+    {
+      "cell": "ember_crown.wilds_west",
+      "draws": 1050.0,
+      "ms": 10.6382978723404,
+      "prims": 1019137.0,
+      "region": "region.ember_crown"
+    },
+    {
+      "cell": "ember_crown.tarn_landing",
+      "draws": 1379.0,
+      "ms": 19.6078431372549,
+      "prims": 1535301.0,
+      "region": "region.ember_crown"
+    },
+    {
+      "cell": "ember_crown.town_hub",
+      "draws": 1444.0,
+      "ms": 15.8730158730159,
+      "prims": 830597.0,
+      "region": "region.ember_crown"
+    },
+    {
+      "cell": "ember_crown.emberdeep_mine",
+      "draws": 473.0,
+      "ms": 14.7058823529412,
+      "prims": 945894.0,
+      "region": "region.ember_crown"
+    },
+    {
+      "cell": "ember_crown.west_downs",
+      "draws": 1131.0,
+      "ms": 18.5185185185185,
+      "prims": 1606185.0,
+      "region": "region.ember_crown"
+    },
+    {
+      "cell": "ember_crown.crossway_post",
+      "draws": 906.0,
+      "ms": 19.2307692307692,
+      "prims": 1057367.0,
+      "region": "region.ember_crown"
+    },
+    {
+      "cell": "ember_crown.mine_road",
+      "draws": 129.0,
+      "ms": 16.3934426229508,
+      "prims": 932454.0,
+      "region": "region.ember_crown"
+    },
+    {
+      "cell": "ember_crown.north_moor",
+      "draws": 499.0,
+      "ms": 18.8679245283019,
+      "prims": 1188720.0,
+      "region": "region.ember_crown"
+    },
+    {
+      "cell": "ember_crown.wilds_north",
+      "draws": 407.0,
+      "ms": 23.2558139534884,
+      "prims": 872446.0,
+      "region": "region.ember_crown"
+    },
+    {
+      "cell": "ember_crown.ashen_reach",
+      "draws": 225.0,
+      "ms": 20.4081632653061,
+      "prims": 1023047.0,
+      "region": "region.ember_crown"
+    },
+    {
+      "cell": "ember_crown.frontier_waste",
+      "draws": 270.0,
+      "ms": 16.6666666666667,
+      "prims": 1437746.0,
+      "region": "region.ember_crown"
+    },
+    {
+      "cell": "ember_crown.arena",
+      "draws": 268.0,
+      "ms": 21.2765957446809,
+      "prims": 1021273.0,
+      "region": "region.ember_crown"
+    },
+    {
+      "cell": "frostfang_reach.frost_march_w",
+      "draws": 277.0,
+      "ms": 5.12820512820513,
+      "prims": 224353.0,
+      "region": "region.frostfang_reach"
+    },
+    {
+      "cell": "frostfang_reach.frost_march_e",
+      "draws": 74.0,
+      "ms": 16.6666666666667,
+      "prims": 183348.0,
+      "region": "region.frostfang_reach"
+    },
+    {
+      "cell": "frostfang_reach.dragon_roost",
+      "draws": 344.0,
+      "ms": 14.9253731343284,
+      "prims": 352512.0,
+      "region": "region.frostfang_reach"
+    },
+    {
+      "cell": "frostfang_reach.clan_hold",
+      "draws": 590.0,
+      "ms": 19.6078431372549,
+      "prims": 398281.0,
+      "region": "region.frostfang_reach"
+    },
+    {
+      "cell": "frostfang_reach.ash_roost",
+      "draws": 117.0,
+      "ms": 16.9491525423729,
+      "prims": 252969.0,
+      "region": "region.frostfang_reach"
+    },
+    {
+      "cell": "frostfang_reach.north_snowfield",
+      "draws": 280.0,
+      "ms": 16.6666666666667,
+      "prims": 282878.0,
+      "region": "region.frostfang_reach"
+    },
+    {
+      "cell": "frostfang_reach.glacier",
+      "draws": 89.0,
+      "ms": 15.8730158730159,
+      "prims": 190367.0,
+      "region": "region.frostfang_reach"
+    },
+    {
+      "cell": "frostfang_reach.ash_approach",
+      "draws": 80.0,
+      "ms": 11.1111111111111,
+      "prims": 172671.0,
+      "region": "region.frostfang_reach"
+    },
+    {
+      "cell": "frostfang_reach.ancient_aerie",
+      "draws": 106.0,
+      "ms": 14.2857142857143,
+      "prims": 218013.0,
+      "region": "region.frostfang_reach"
+    },
+    {
+      "cell": "frostfang_reach.aerie_ascent",
+      "draws": 70.0,
+      "ms": 12.1951219512195,
+      "prims": 171580.0,
+      "region": "region.frostfang_reach"
+    }
+  ],
+  "schema": 1,
+  "summaries": [
+    {
+      "cells": 16,
+      "configure_ms": 3806.318,
+      "mean_draws": 902.8125,
+      "mean_ms": 16.4937327431057,
+      "mean_prims": 1122822.3125,
+      "region": "region.ember_crown",
+      "video_memory_mb": 486.373168945313,
+      "worst_cell": "ember_crown.wilds_north",
+      "worst_ms": 23.2558139534884
+    },
+    {
+      "cells": 10,
+      "configure_ms": 1995.091,
+      "mean_draws": 202.7,
+      "mean_ms": 14.3408870496555,
+      "mean_prims": 244697.2,
+      "region": "region.frostfang_reach",
+      "video_memory_mb": 412.450256347656,
+      "worst_cell": "frostfang_reach.clan_hold",
+      "worst_ms": 19.6078431372549
+    }
+  ]
+}
