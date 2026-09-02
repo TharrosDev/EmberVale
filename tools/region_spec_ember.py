@@ -211,10 +211,21 @@ TintVariation = 0.20
 VisibilityRangeEnd = 70.0
 VisibilityFadeMargin = 14.0
 
+; ⚠️ THE REALM'S ENTIRE STONE COVER WAS ONE PEBBLE. `Layer_stone` scattered `prp_pebble_a` at 210
+; instances per 100 x 100 m across FIVE of the six biome profiles, and a MultiMesh varies only yaw,
+; uniform scale and tint — so every stone in the Ember Crown was the same 136-triangle silhouette
+; seen from a different angle. That is the "obvious repetition" the visual-QA checklist names, and
+; at 3.4 m spacing there is always another one of them in frame.
+;
+; ⚠️ THE FIX SPLITS THE EXISTING DENSITY, IT DOES NOT ADD TO IT. `MaxScatterInstancesPerCell` is
+; 2400 and the seven layers already sat near it; four species at 90 + 70 + 26 + 5 = 191 is LESS
+; ground cover than the 210 it replaces, and four distinct silhouettes instead of one. Read the
+; instance budget as the memory limit it is (see BUDGET above) and the draw budget as the tight
+; one: this is four MultiMeshInstance3Ds where there was one, which is three extra draws per cell.
 [sub_resource type="Resource" id="Layer_stone"]
 script = ExtResource("10_layer")
 ScenePath = "res://assets/models/props/prp_pebble_a.glb"
-Count = 210
+Count = 90
 MinimumScale = 0.8
 MaximumScale = 1.9
 MinimumSpacing = 3.4
@@ -225,6 +236,65 @@ Tint = Color(0.68, 0.65, 0.60, 1)
 TintVariation = 0.16
 VisibilityRangeEnd = 55.0
 VisibilityFadeMargin = 12.0
+
+[sub_resource type="Resource" id="Layer_stone_b"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/props/prp_pebble_c.glb"
+Count = 70
+MinimumScale = 0.85
+MaximumScale = 2.05
+MinimumSpacing = 3.1
+Clumping = 0.46
+ClumpScale = 21.0
+MaxSlope = 1.1
+Tint = Color(0.66, 0.64, 0.61, 1)
+TintVariation = 0.18
+VisibilityRangeEnd = 55.0
+VisibilityFadeMargin = 12.0
+
+; The knee-to-waist tier the realm had nothing in: `prp_pebble_a` tops out around 0.9 m even at
+; MaximumScale, and the next thing up was an authored boulder placed by hand. Sparse and widely
+; spaced, so it reads as an outcrop breaking the turf rather than as litter.
+[sub_resource type="Resource" id="Layer_rock_medium"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/props/prp_rock_medium.glb"
+Count = 26
+MinimumScale = 0.42
+MaximumScale = 0.86
+MinimumSpacing = 9.5
+Clumping = 0.58
+ClumpScale = 34.0
+MaxSlope = 0.85
+Tint = Color(0.70, 0.67, 0.62, 1)
+TintVariation = 0.14
+VisibilityRangeEnd = 120.0
+VisibilityFadeMargin = 18.0
+CastShadows = true
+
+; ⚠️ A BOULDER LAYER IS AN HLOD LAYER FOR THE SAME REASON A TREE LAYER IS, and it needs one more
+; than a tree does: at five per 100 x 100 m the detailed tier is nearly free, but a 5.6 m mass
+; that pops out of existence at its visibility range is the most obvious cull in the realm.
+[sub_resource type="Resource" id="Layer_boulder"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/props/prp_boulder_large.glb"
+Count = 5
+MinimumScale = 0.55
+MaximumScale = 1.05
+MinimumSpacing = 26.0
+Clumping = 0.5
+ClumpScale = 60.0
+MaxSlope = 0.6
+Tint = Color(0.71, 0.68, 0.63, 1)
+TintVariation = 0.12
+VisibilityRangeEnd = 165.0
+VisibilityFadeMargin = 22.0
+CastShadows = true
+HlodShape = 1
+HlodReduction = 2
+HlodRangeBegin = 145.0
+HlodRangeEnd = 340.0
+HlodColor = Color(0.88, 0.9, 0.92, 1)
+HlodScale = Vector3(1.1, 1.1, 1.1)
 
 ; ⚠️ A TREE LAYER IS AN HLOD LAYER OR IT IS A DRAW CALL STORM AT DISTANCE. The proxy cone carries the
 ; silhouette past 130 m; the detailed instance fades out before it.
@@ -278,7 +348,7 @@ HlodScale = Vector3(1.15, 1.15, 1.15)
 script = ExtResource("9_scatter")
 Seed = 5101
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass_short"), SubResource("Layer_clover"), SubResource("Layer_stone")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass_short"), SubResource("Layer_clover"), SubResource("Layer_stone"), SubResource("Layer_stone_b")])
 
 [sub_resource type="Resource" id="Scatter_pasture"]
 script = ExtResource("9_scatter")
@@ -290,25 +360,25 @@ Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource
 script = ExtResource("9_scatter")
 Seed = 5103
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_bracken"), SubResource("Layer_pine"), SubResource("Layer_scrub"), SubResource("Layer_stone")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_bracken"), SubResource("Layer_pine"), SubResource("Layer_scrub"), SubResource("Layer_stone"), SubResource("Layer_stone_b"), SubResource("Layer_rock_medium")])
 
 [sub_resource type="Resource" id="Scatter_upland"]
 script = ExtResource("9_scatter")
 Seed = 5104
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_bracken"), SubResource("Layer_stone"), SubResource("Layer_scrub")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_bracken"), SubResource("Layer_stone"), SubResource("Layer_stone_b"), SubResource("Layer_rock_medium"), SubResource("Layer_boulder"), SubResource("Layer_scrub")])
 
 [sub_resource type="Resource" id="Scatter_waste"]
 script = ExtResource("9_scatter")
 Seed = 5105
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_stone"), SubResource("Layer_bracken"), SubResource("Layer_grass_short"), SubResource("Layer_scrub")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_stone"), SubResource("Layer_stone_b"), SubResource("Layer_rock_medium"), SubResource("Layer_boulder"), SubResource("Layer_bracken"), SubResource("Layer_grass_short"), SubResource("Layer_scrub")])
 
 [sub_resource type="Resource" id="Scatter_shore"]
 script = ExtResource("9_scatter")
 Seed = 5106
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass_short"), SubResource("Layer_stone"), SubResource("Layer_scrub")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass_short"), SubResource("Layer_stone"), SubResource("Layer_stone_b"), SubResource("Layer_scrub")])
 
 '''
 

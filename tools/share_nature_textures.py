@@ -69,9 +69,6 @@ FAMILIES: dict[str, tuple[str, list[tuple[str, str]]]] = {
     # file — and deleting the sidecar does nothing, because the next import writes it back.
     # Externalising the image is what actually ends the duplication: the sidecar becomes the
     # only copy and the importer has nothing left to extract.
-    "T_Nature_Rocks2K.png": ("prp_boulder_Rocks_Diffuse.png", [
-        ("prp_boulder.glb", "Rocks_Diffuse"),
-    ]),
     "T_Nature_Rocks.png": ("prp_rock_cluster_Rocks_Diffuse.png", [
         ("prp_rock_cluster.glb", "Rocks_Diffuse"),
     ]),
@@ -96,6 +93,37 @@ FAMILIES: dict[str, tuple[str, list[tuple[str, str]]]] = {
     "T_Prop_Colormap.png": ("prp_station_forge_colormap.png", [
         ("prp_station_forge.glb", "colormap"),
     ]),
+}
+
+# ⚠️ THE STONE FAMILY SHIPPED THE SAME IMAGE AT TWO RESOLUTIONS AND NEITHER FILE SAID SO.
+# `prp_boulder` and the pack rocks embed the megakit's 2048x2048 `Rocks_Diffuse`; `prp_rock_cluster`
+# was adapted at some point and embeds a 1024 downsample of it (verified: max channel delta 8/255
+# against a Lanczos reduction, so it is the same art, not different art). Two files meant two
+# imported textures for one material family and four times the VRAM on the boulder.
+#
+# These members are REPOINTED at the family's canonical file and their own payload is discarded,
+# which the byte-identity assertion above correctly refuses to do on its own — a different
+# resolution is exactly the case where "the bytes differ" is not evidence of a mistake.
+# 1024 is the right size: these are 78-to-522-triangle rocks in a hand-painted world, and the
+# cluster has shipped at 1024 since it was adopted.
+REPOINTED: dict[str, list[tuple[str, str]]] = {
+    # The composed boulders, clusters and cliffs from tools/build_environment_assets.py.
+    # Blender's exporter re-embeds the atlas on every export, so this repoint is not a one-off
+    # cleanup — it is the step that has to run after every rebuild, and rerunning it is cheap.
+    "T_Nature_Rocks.png": [
+        ("prp_boulder.glb", "Rocks_Diffuse"),
+        ("prp_rock_medium.glb", "Rocks_Diffuse"),
+        ("prp_boulder_large.glb", "Rocks_Diffuse"),
+        ("prp_rock_cluster_a.glb", "Rocks_Diffuse"),
+        ("prp_rock_scree.glb", "Rocks_Diffuse"),
+        ("prp_rock_edging.glb", "Rocks_Diffuse"),
+        ("prp_cliff_face.glb", "Rocks_Diffuse"),
+        ("prp_cliff_face_tall.glb", "Rocks_Diffuse"),
+    ],
+    "T_Nature_PathRocks.png": [
+        ("prp_pebble_c.glb", "PathRocks_Diffuse"),
+        ("prp_pebble_d.glb", "PathRocks_Diffuse"),
+    ],
 }
 
 JSON_CHUNK = 0x4E4F534A
@@ -258,6 +286,41 @@ def main() -> int:
         target.write_bytes(blob)
         print(f"  wrote {canonical} ({target.stat().st_size / 1024:.0f}K, {len(users)} users)")
 
+    for canonical, users in REPOINTED.items():
+        if not (PROPS / canonical).exists():
+            raise SystemExit(f"{canonical}: repoint target does not exist")
+        for filename, image_name in users:
+            path = PROPS / filename
+            document, binary = read_glb(path)
+            image = next((i for i in document.get("images", []) if i.get("name") == image_name), None)
+            if image is None:
+                raise SystemExit(f"{filename}: no image named {image_name!r}")
+            if image.get("uri") == canonical:
+                continue
+            if "uri" in image:
+                # Already external, just aimed at the wrong file: this is a one-line edit and
+                # must NOT go through externalise(), which requires an embedded bufferView.
+                stale = image["uri"]
+                image["uri"] = canonical
+                if args.check:
+                    pending.append(f"{filename}: {stale} -> {canonical} (repointed)")
+                    continue
+                write_glb(path, document, binary)
+                print(f"  {filename}: {stale} -> {canonical} (repointed)")
+                continue
+            before_geometry = structural(document, binary)
+            before_size = path.stat().st_size
+            document, binary, _ = externalise(document, binary, image_name, canonical)
+            if structural(document, binary) != before_geometry:
+                raise SystemExit(f"{filename}: structural payload changed — refusing to write")
+            if args.check:
+                pending.append(f"{filename}: {image_name} -> {canonical} (repointed)")
+                continue
+            write_glb(path, document, binary)
+            saved += before_size - path.stat().st_size
+            print(f"  {filename}: {image_name} -> {canonical} (repointed, payload discarded) "
+                  f"({before_size / 1024:.0f}K -> {path.stat().st_size / 1024:.0f}K)")
+
     if args.check:
         for line in pending:
             print(f"WOULD SHARE {line}")
@@ -275,12 +338,21 @@ def main() -> int:
             "refusing to remove sidecars: these props still embed an image, so the importer "
             f"would extract it again — {', '.join(still_embedded)}")
 
-    for path in sorted(PROPS.glob("prp_*.png")):
+    referenced = {
+        image["uri"] for path in sorted(PROPS.glob("*.glb"))
+        for image in read_glb(path)[0].get("images", []) if "uri" in image
+    }
+    referenced |= {
+        image["uri"] for path in sorted(PROPS.glob("*.gltf"))
+        for image in json.loads(path.read_text(encoding="utf-8")).get("images", []) if "uri" in image
+    }
+    dead = [p for p in sorted(PROPS.glob("*.png")) if p.name not in referenced]
+    for path in dead:
         size = path.stat().st_size
         path.unlink()
         (PROPS / (path.name + ".import")).unlink(missing_ok=True)
         saved += size
-        print(f"  removed unreferenced sidecar {path.name}")
+        print(f"  removed unreferenced texture {path.name}")
 
     print(f"share_nature_textures: {saved / (1024 * 1024):.1f} MiB removed from the build")
     return 0

@@ -127,10 +127,18 @@ HlodRangeEnd = 320.0
 HlodColor = Color(0.88, 0.9, 0.92, 1)
 HlodScale = Vector3(1.15, 1.15, 1.15)
 
+; ⚠️ `prp_rock_cluster` IS ONE 244-TRIANGLE ROCK UNDER A PLURAL NAME, and both of Frostfang's stone
+; layers scattered it — 120 and 95 instances per 100 x 100 m of the same silhouette. The name is why
+; nobody looked: a layer called "cluster" reads as though it already carries variety.
+;
+; ⚠️ THE DENSITY IS SPLIT, NOT ADDED TO. 70 + 40 here against the 120 it replaces, and the ice tier
+; below is genuinely new cover rather than a substitution — Frostfang is a glacial realm whose only
+; ice was twelve hand-placed copies of one prop, so the ground between them had nothing frozen on it
+; at all.
 [sub_resource type="Resource" id="Layer_frost_rock"]
 script = ExtResource("10_layer")
 ScenePath = "res://assets/models/props/prp_rock_cluster.glb"
-Count = 120
+Count = 70
 MinimumScale = 0.55
 MaximumScale = 1.15
 MinimumSpacing = 3.2
@@ -165,6 +173,60 @@ TintVariation = 0.14
 VisibilityRangeEnd = 52.0
 VisibilityFadeMargin = 10.0
 
+[sub_resource type="Resource" id="Layer_frost_rock_b"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/props/prp_rock_cluster_a.glb"
+Count = 40
+MinimumScale = 0.34
+MaximumScale = 0.72
+MinimumSpacing = 7.0
+Saturation = 0.3
+Clumping = 0.55
+ClumpScale = 30.0
+MaxSlope = 0.95
+Tint = Color(0.73, 0.79, 0.86, 1)
+TintVariation = 0.13
+VisibilityRangeEnd = 135.0
+VisibilityFadeMargin = 18.0
+CastShadows = true
+
+; Shed ice. Small, common and low, so it dresses the ground a glacier has ground over rather than
+; competing with the authored ice masses. No HLOD: at 1.3 m it is gone well before the range where
+; a proxy would earn its draw call.
+[sub_resource type="Resource" id="Layer_ice_chunk"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/props/prp_ice_chunk.glb"
+Count = 55
+MinimumScale = 0.55
+MaximumScale = 1.5
+MinimumSpacing = 5.2
+Clumping = 0.62
+ClumpScale = 26.0
+MaxSlope = 0.7
+Tint = Color(0.88, 0.93, 0.98, 1)
+TintVariation = 0.09
+VisibilityRangeEnd = 78.0
+VisibilityFadeMargin = 14.0
+
+; ⚠️ THE SHARD STANDS 2.5 m AND IT IS THE ONE THAT NEEDS A SLOPE GATE. Ice that has been shoved
+; upright belongs on the flat of a snowfield, not canted out of a 40-degree corrie wall — which is
+; exactly the failure the terrain gate was added for (see WorldBiomeScatter's MaxSlope comment).
+[sub_resource type="Resource" id="Layer_ice_shard"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/props/prp_ice_shard.glb"
+Count = 12
+MinimumScale = 0.6
+MaximumScale = 1.35
+MinimumSpacing = 13.0
+Clumping = 0.66
+ClumpScale = 40.0
+MaxSlope = 0.32
+Tint = Color(0.88, 0.93, 0.98, 1)
+TintVariation = 0.07
+VisibilityRangeEnd = 130.0
+VisibilityFadeMargin = 18.0
+CastShadows = true
+
 ; ⚠️ AN EXCLUSION FOLLOWS ITS NEST AND THE NESTS DID NOT MOVE WITHIN THEIR CELLS. Each roost names
 ; its own, centred on where its Nest node actually sits in cell-local metres.
 [sub_resource type="Resource" id="Exclusion_dragon_roost"]
@@ -198,33 +260,33 @@ Radius = 7.0
 script = ExtResource("9_scatter")
 Seed = 5205
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_frost_rock"), SubResource("Layer_snow_tuft")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_frost_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_chunk"), SubResource("Layer_ice_shard"), SubResource("Layer_snow_tuft")])
 
 [sub_resource type="Resource" id="Scatter_dragon_roost"]
 script = ExtResource("9_scatter")
 Seed = 5202
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_dead_pine"), SubResource("Layer_frost_rock"), SubResource("Layer_snow_tuft")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_dead_pine"), SubResource("Layer_frost_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_chunk"), SubResource("Layer_snow_tuft")])
 Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_dragon_roost")])
 
 [sub_resource type="Resource" id="Scatter_ash_roost"]
 script = ExtResource("9_scatter")
 Seed = 5203
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_dead_pine"), SubResource("Layer_frost_rock")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_dead_pine"), SubResource("Layer_frost_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_chunk")])
 Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_ash_roost"), SubResource("Exclusion_ash_causeway")])
 
 [sub_resource type="Resource" id="Scatter_aerie"]
 script = ExtResource("9_scatter")
 Seed = 5204
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_dead_pine"), SubResource("Layer_frost_rock")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_dead_pine"), SubResource("Layer_frost_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_chunk")])
 Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_aerie"), SubResource("Exclusion_aerie_hoard")])
 
 [sub_resource type="Resource" id="Layer_high_rock"]
 script = ExtResource("10_layer")
 ScenePath = "res://assets/models/props/prp_rock_cluster.glb"
-Count = 95
+Count = 55
 MinimumScale = 0.5
 MaximumScale = 1.45
 MinimumSpacing = 4.0
@@ -266,26 +328,26 @@ VisibilityFadeMargin = 20.0
 script = ExtResource("9_scatter")
 Seed = 5209
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_high_rock"), SubResource("Layer_high_pine")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_high_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_shard"), SubResource("Layer_high_pine")])
 Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_aerie"), SubResource("Exclusion_aerie_hoard")])
 
 [sub_resource type="Resource" id="Scatter_snowfield"]
 script = ExtResource("9_scatter")
 Seed = 5206
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_snow_tuft"), SubResource("Layer_frost_rock"), SubResource("Layer_dead_pine")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_snow_tuft"), SubResource("Layer_frost_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_chunk"), SubResource("Layer_dead_pine")])
 
 [sub_resource type="Resource" id="Scatter_march"]
 script = ExtResource("9_scatter")
 Seed = 5207
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_snow_tuft"), SubResource("Layer_dead_pine"), SubResource("Layer_frost_rock")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_snow_tuft"), SubResource("Layer_dead_pine"), SubResource("Layer_frost_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_chunk")])
 
 [sub_resource type="Resource" id="Scatter_hold"]
 script = ExtResource("9_scatter")
 Seed = 5208
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_snow_tuft"), SubResource("Layer_frost_rock")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_snow_tuft"), SubResource("Layer_frost_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_chunk")])
 
 
 ; ---------------------------------------------------------------------------------
