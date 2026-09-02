@@ -46,3 +46,40 @@ scoped out for this wave.
 
 Meshy clips are in-place -- measured hips translation is a few centimetres of bob and sway per
 cycle, not forward travel -- so no root-motion strip is needed.
+
+## The prompt stem (maintainer-confirmed 2026-09-02)
+
+Characters are **semi-realistic**, matching the four models the maintainer generated before this
+migration (player, Kael, goblin, Iron King). This deliberately departs from `docs/ART_STYLE.md`
+§1's "low-poly but detailed / carved, not sculpted" direction, which still governs environment
+art. The first pilot image was generated faceted, per the art bible, and was rejected for that
+reason -- it would not have sat beside the player and the Iron King as one world.
+
+Every character prompt is this stem plus a per-entity clause:
+
+> Full-body front view of <SUBJECT>, T-pose, arms straight out to the sides, plain flat grey
+> background. <SILHOUETTE, GARMENTS, ROLE AND FACTION DETAIL>. Muted desaturated ash-grey and
+> faded-earth-brown palette, cold iron buckles, one small ember-orange accent. Semi-realistic AAA
+> fantasy game character, grounded weathered Skyrim-like realism, physically based materials,
+> believable cloth folds, worn leather and edge-worn metal. Adult proportions, 7.5 heads tall.
+> No weapon, no scenery.
+
+Keep it under 600 characters (the API limit). `pose_mode: "t-pose"`, `aspect_ratio: "3:4"`.
+The ember-orange accent is the one warm colour in the palette (`ART_STYLE.md` §2) and is what
+makes a roster of separately generated characters read as one faction set -- keep it in every
+prompt, and keep it small.
+
+Per-entity clauses carry role, faction and region, not just clothing: the point is that
+`npc_hooded` serves seven roles (Emberbound hierarch and seeker, hunter tracker, gate hand,
+Ash Dunmore, Odo, Sedge) and has to read as plausible for all of them.
+
+## Costs actually incurred
+
+| Step | Model | Credits |
+| --- | --- | --- |
+| `text_to_image` | nano-banana | 3 |
+| `image_to_3d` | meshy-t2 smart-topology, textured, 3.5k tris | 15 |
+| `meshy_rig` | includes walk + run | 5 |
+| **per character** | | **23** |
+
+The first `npc_hooded` image (faceted, rejected on art direction) cost 3 credits and is sunk.

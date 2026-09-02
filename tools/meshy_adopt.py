@@ -79,6 +79,29 @@ def shrink_images(doc: dict, binary: bytes, max_size: int) -> dict[int, bytes]:
     return replacements
 
 
+def normalise_clip_names(doc: dict) -> list[str]:
+    """Rename "Armature|running|baselayer" to "Running".
+
+    AnimationClips.Bare() strips "CharacterArmature|", "lib/" and the gendered prefixes, but not
+    the "Armature|...|baselayer" wrapper the Meshy API returns -- so the clip would never match the
+    'run' alias and locomotion would silently fall through to the shared library. The web exporter
+    already emits clean names, so normalising here keeps API-generated models consistent with the
+    four the maintainer exported by hand.
+    """
+    renamed = []
+    for animation in doc.get("animations", []):
+        name = animation.get("name", "")
+        parts = [p for p in name.split("|") if p and p.lower() != "baselayer"]
+        if parts and parts[0].lower() == "armature":
+            parts = parts[1:]
+        if parts:
+            clean = parts[-1].capitalize()
+            if clean != name:
+                animation["name"] = clean
+                renamed.append(f"{name} -> {clean}")
+    return renamed
+
+
 def rebuild_buffer(doc: dict, binary: bytes, replacements: dict[int, bytes]) -> bytes:
     """Repack every bufferView in order, substituting the shrunk images."""
     out = bytearray()
@@ -163,6 +186,7 @@ def main() -> int:
     args = parser.parse_args()
 
     doc, binary = read_glb(args.source)
+    renamed = normalise_clip_names(doc)
     replacements = shrink_images(doc, binary, args.max_texture)
     binary = rebuild_buffer(doc, binary, replacements)
     args.dest.parent.mkdir(parents=True, exist_ok=True)
@@ -172,6 +196,8 @@ def main() -> int:
     after = args.dest.stat().st_size
     print(f"{args.source.name} -> {args.dest} : {before//1024} KB -> {after//1024} KB "
           f"({len(replacements)} texture(s) capped at {args.max_texture})")
+    for entry in renamed:
+        print(f"  clip {entry}")
     if args.patch_import:
         print("  " + patch_import(args.dest, args.root_scale))
     return 0
