@@ -141,6 +141,10 @@ def patch_import(dest: Path, root_scale: float | None) -> str:
                           block, text, count=1, flags=re.S)
     if count != 1:
         return f"FAILED to locate _subresources in {sidecar.name}"
+    # 1 = extract the embedded albedo to a sidecar .png, which then gets VRAM-compressed by its own
+    # importer. Mode 3 (embed uncompressed) ships the texture straight to VRAM at full cost, and
+    # boss_iron_king inherited it from its predecessor -- normalise so the roster is consistent.
+    text = re.sub(r"gltf/embedded_image_handling=\d+", "gltf/embedded_image_handling=1", text, count=1)
     if root_scale is not None:
         text = re.sub(r"nodes/root_scale=[0-9.]+", f"nodes/root_scale={root_scale}", text, count=1)
     sidecar.write_text(text, encoding="utf-8")
