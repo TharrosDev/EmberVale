@@ -2,21 +2,21 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dxeigcqd1jcal"
-path.s3tc="res://.godot/imported/chr_player_base_texture_0.png-12e00c3789bb8271c44d970099126c14.s3tc.ctex"
-path.etc2="res://.godot/imported/chr_player_base_texture_0.png-12e00c3789bb8271c44d970099126c14.etc2.ctex"
+uid="uid://b8xmjd12ftmej"
+path.s3tc="res://.godot/imported/npc_guild_rep_texture_0.png-3eb1ab29fc12fa81da25a217629632b3.s3tc.ctex"
+path.etc2="res://.godot/imported/npc_guild_rep_texture_0.png-3eb1ab29fc12fa81da25a217629632b3.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
-"md5": "3ac1e81c5f3a3083a675fd4f2256e2e8"
+"md5": "23835cab269298a4543211b1f25569d8"
 }
 
 [deps]
 
-source_file="res://assets/models/characters/chr_player_base_texture_0.png"
-dest_files=["res://.godot/imported/chr_player_base_texture_0.png-12e00c3789bb8271c44d970099126c14.s3tc.ctex", "res://.godot/imported/chr_player_base_texture_0.png-12e00c3789bb8271c44d970099126c14.etc2.ctex"]
+source_file="res://assets/models/characters/npc_guild_rep_texture_0.png"
+dest_files=["res://.godot/imported/npc_guild_rep_texture_0.png-3eb1ab29fc12fa81da25a217629632b3.s3tc.ctex", "res://.godot/imported/npc_guild_rep_texture_0.png-3eb1ab29fc12fa81da25a217629632b3.etc2.ctex"]
 
 [params]
 

@@ -2,21 +2,21 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dxeigcqd1jcal"
-path.s3tc="res://.godot/imported/chr_player_base_texture_0.png-12e00c3789bb8271c44d970099126c14.s3tc.ctex"
-path.etc2="res://.godot/imported/chr_player_base_texture_0.png-12e00c3789bb8271c44d970099126c14.etc2.ctex"
+uid="uid://c2820d7x4a7rv"
+path.s3tc="res://.godot/imported/npc_merchant_f_texture_0.png-934d8648c447761123f2549a4a888a0b.s3tc.ctex"
+path.etc2="res://.godot/imported/npc_merchant_f_texture_0.png-934d8648c447761123f2549a4a888a0b.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
-"md5": "3ac1e81c5f3a3083a675fd4f2256e2e8"
+"md5": "f2b4f3f383064bd1ae247c7cebd445c9"
 }
 
 [deps]
 
-source_file="res://assets/models/characters/chr_player_base_texture_0.png"
-dest_files=["res://.godot/imported/chr_player_base_texture_0.png-12e00c3789bb8271c44d970099126c14.s3tc.ctex", "res://.godot/imported/chr_player_base_texture_0.png-12e00c3789bb8271c44d970099126c14.etc2.ctex"]
+source_file="res://assets/models/characters/npc_merchant_f_texture_0.png"
+dest_files=["res://.godot/imported/npc_merchant_f_texture_0.png-934d8648c447761123f2549a4a888a0b.s3tc.ctex", "res://.godot/imported/npc_merchant_f_texture_0.png-934d8648c447761123f2549a4a888a0b.etc2.ctex"]
 
 [params]
 

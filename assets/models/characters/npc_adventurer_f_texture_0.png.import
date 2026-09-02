@@ -2,21 +2,21 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dxeigcqd1jcal"
-path.s3tc="res://.godot/imported/chr_player_base_texture_0.png-12e00c3789bb8271c44d970099126c14.s3tc.ctex"
-path.etc2="res://.godot/imported/chr_player_base_texture_0.png-12e00c3789bb8271c44d970099126c14.etc2.ctex"
+uid="uid://cl0wtg3siesny"
+path.s3tc="res://.godot/imported/npc_adventurer_f_texture_0.png-5f4b2a6eec6caf07d86e91f70b919db8.s3tc.ctex"
+path.etc2="res://.godot/imported/npc_adventurer_f_texture_0.png-5f4b2a6eec6caf07d86e91f70b919db8.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
-"md5": "3ac1e81c5f3a3083a675fd4f2256e2e8"
+"md5": "b109d3c80e3fac59361965d703cf7d76"
 }
 
 [deps]
 
-source_file="res://assets/models/characters/chr_player_base_texture_0.png"
-dest_files=["res://.godot/imported/chr_player_base_texture_0.png-12e00c3789bb8271c44d970099126c14.s3tc.ctex", "res://.godot/imported/chr_player_base_texture_0.png-12e00c3789bb8271c44d970099126c14.etc2.ctex"]
+source_file="res://assets/models/characters/npc_adventurer_f_texture_0.png"
+dest_files=["res://.godot/imported/npc_adventurer_f_texture_0.png-5f4b2a6eec6caf07d86e91f70b919db8.s3tc.ctex", "res://.godot/imported/npc_adventurer_f_texture_0.png-5f4b2a6eec6caf07d86e91f70b919db8.etc2.ctex"]
 
 [params]
 

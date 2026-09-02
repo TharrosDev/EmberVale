@@ -2,21 +2,21 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dxeigcqd1jcal"
-path.s3tc="res://.godot/imported/chr_player_base_texture_0.png-12e00c3789bb8271c44d970099126c14.s3tc.ctex"
-path.etc2="res://.godot/imported/chr_player_base_texture_0.png-12e00c3789bb8271c44d970099126c14.etc2.ctex"
+uid="uid://dy46uqwv0700x"
+path.s3tc="res://.godot/imported/npc_townswoman_texture_0.png-daa385e5ad7f0157e6635684b3937f77.s3tc.ctex"
+path.etc2="res://.godot/imported/npc_townswoman_texture_0.png-daa385e5ad7f0157e6635684b3937f77.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
-"md5": "3ac1e81c5f3a3083a675fd4f2256e2e8"
+"md5": "7795f54a9e7fd78d1fc1c137145f1401"
 }
 
 [deps]
 
-source_file="res://assets/models/characters/chr_player_base_texture_0.png"
-dest_files=["res://.godot/imported/chr_player_base_texture_0.png-12e00c3789bb8271c44d970099126c14.s3tc.ctex", "res://.godot/imported/chr_player_base_texture_0.png-12e00c3789bb8271c44d970099126c14.etc2.ctex"]
+source_file="res://assets/models/characters/npc_townswoman_texture_0.png"
+dest_files=["res://.godot/imported/npc_townswoman_texture_0.png-daa385e5ad7f0157e6635684b3937f77.s3tc.ctex", "res://.godot/imported/npc_townswoman_texture_0.png-daa385e5ad7f0157e6635684b3937f77.etc2.ctex"]
 
 [params]
 

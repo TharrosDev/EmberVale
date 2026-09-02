@@ -2,21 +2,21 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dxeigcqd1jcal"
-path.s3tc="res://.godot/imported/chr_player_base_texture_0.png-12e00c3789bb8271c44d970099126c14.s3tc.ctex"
-path.etc2="res://.godot/imported/chr_player_base_texture_0.png-12e00c3789bb8271c44d970099126c14.etc2.ctex"
+uid="uid://b3j7jp8ptb236"
+path.s3tc="res://.godot/imported/npc_innkeeper_texture_0.png-791ef39c1715eefdbad5f688d8d6d15b.s3tc.ctex"
+path.etc2="res://.godot/imported/npc_innkeeper_texture_0.png-791ef39c1715eefdbad5f688d8d6d15b.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
-"md5": "3ac1e81c5f3a3083a675fd4f2256e2e8"
+"md5": "6aa5f070eda5b01ae6751d4fa10e24ee"
 }
 
 [deps]
 
-source_file="res://assets/models/characters/chr_player_base_texture_0.png"
-dest_files=["res://.godot/imported/chr_player_base_texture_0.png-12e00c3789bb8271c44d970099126c14.s3tc.ctex", "res://.godot/imported/chr_player_base_texture_0.png-12e00c3789bb8271c44d970099126c14.etc2.ctex"]
+source_file="res://assets/models/characters/npc_innkeeper_texture_0.png"
+dest_files=["res://.godot/imported/npc_innkeeper_texture_0.png-791ef39c1715eefdbad5f688d8d6d15b.s3tc.ctex", "res://.godot/imported/npc_innkeeper_texture_0.png-791ef39c1715eefdbad5f688d8d6d15b.etc2.ctex"]
 
 [params]
 

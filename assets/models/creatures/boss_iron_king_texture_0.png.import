@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bddkl5ajkm1tk"
-path="res://.godot/imported/boss_iron_king_texture_0.png-03a71ab7edebbdeb443ff5db4a51c9cc.ctex"
+path.s3tc="res://.godot/imported/boss_iron_king_texture_0.png-03a71ab7edebbdeb443ff5db4a51c9cc.s3tc.ctex"
+path.etc2="res://.godot/imported/boss_iron_king_texture_0.png-03a71ab7edebbdeb443ff5db4a51c9cc.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "7996f2bd12c37676c386099ab85fd1a7"
@@ -14,11 +16,11 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/models/creatures/boss_iron_king_texture_0.png"
-dest_files=["res://.godot/imported/boss_iron_king_texture_0.png-03a71ab7edebbdeb443ff5db4a51c9cc.ctex"]
+dest_files=["res://.godot/imported/boss_iron_king_texture_0.png-03a71ab7edebbdeb443ff5db4a51c9cc.s3tc.ctex", "res://.godot/imported/boss_iron_king_texture_0.png-03a71ab7edebbdeb443ff5db4a51c9cc.etc2.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -40,4 +42,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0
