@@ -218,10 +218,17 @@ def run_gates(gates: list[Gate], engine: str | None, verbose: bool) -> int:
     artifacts = RUNS / dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     artifacts.mkdir(parents=True, exist_ok=True)
     failures, blocked = [], []
+    # A fresh clone has no .godot/imported, so every engine gate would fail on "cannot load
+    # resource" - which reads as broken art rather than an unimported checkout. "Could not check"
+    # and "checked and it is broken" must never look alike.
+    imported = (ROOT / ".godot" / "imported").is_dir()
     print("-" * 78)
     for gate in gates:
-        if gate.needs == "godot" and engine is None:
+        if gate.needs == "godot" and (engine is None or not imported):
+            reason = ("no Godot: set EMBERVALE_GODOT" if engine is None else
+                      "assets not imported yet: godot --headless --path . --import")
             print(f"  {gate.name:<16} BLOCKED   0.0s  {gate.what}")
+            print(f"      {reason}")
             blocked.append(gate.name)
             continue
         result = run_process(gate.command, timeout=gate.timeout, cwd=ROOT)
