@@ -636,8 +636,8 @@ recipe above"). Everything here had been rediscovered four times from other cell
 6. **A schedule in the cell carries a COPY of the cell's `Center` as `Origin`** so destinations stay
    cell-local. Moving a cell is never a one-line edit.
 7. **Props: measure, never guess.** `python tools/gen_cell_props.py` expands a table into stanzas;
-   collider sizes come from the model's measured bounding box (`ASSET_POLICY.md` §0.6 — accessor
-   bounds ignore node scale and will lie to you).
+   collider sizes come from the model's measured bounding box (`docs/3D_ASSETS.md` → Adopting —
+   accessor bounds ignore node scale and will lie to you).
 8. ⚠️ **RENDER IT — the approach, not just the objects.** Copy `tools/market_shots.gd`, point it at
    the cell, and shoot at **eye level** from where the player actually arrives. Every 37E defect was a
    correctly-authored model in a position that ruined the shot: a 3 m waystone that reads fine on a
