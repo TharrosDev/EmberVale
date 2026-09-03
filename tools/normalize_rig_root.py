@@ -50,6 +50,7 @@ Usage
 """
 
 import json
+import argparse
 import os
 import struct
 import sys
@@ -201,10 +202,18 @@ def normalize(src, dest):
     return True
 
 
+# Windows consoles default to cp1252, and every tool here prints the repo's warning glyphs. Without
+# this a plain `--help` dies with UnicodeEncodeError before it prints anything useful.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
+
 if __name__ == "__main__":
-    args = [a for a in sys.argv[1:] if not a.startswith("--")]
-    if len(args) != 1:
-        raise SystemExit(__doc__)
-    out = next((a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--out=")), args[0])
-    print(os.path.basename(args[0]))
-    normalize(args[0], out)
+    parser = argparse.ArgumentParser(description=__doc__,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("file", help="the .glb whose root node should be collapsed into the rig")
+    parser.add_argument("--out", default=None, help="write here instead of editing in place")
+    options = parser.parse_args()
+    print(os.path.basename(options.file))
+    normalize(options.file, options.out or options.file)

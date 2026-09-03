@@ -208,6 +208,11 @@ def parse_import(path: Path) -> dict[str, Any]:
             raw = match.group(1).strip()
             result[key] = raw.strip('"') if raw.startswith('"') else ({"true": True, "false": False}.get(raw, float(raw) if re.fullmatch(r"-?\d+(\.\d+)?", raw) else raw))
     result["has_bone_map"] = "retarget/bone_map" in text or "bone_map" in text
+    # The retarget's two identifying facts, which tools/assets.py classifies rig families from.
+    bone_map = re.search(r'"retarget/bone_map":\s*Resource\("([^"]+)"\)', text)
+    result["bone_map"] = Path(bone_map.group(1)).stem if bone_map else None
+    skeleton = re.search(r'"retarget/bone_renamer/unique_node/skeleton_name":\s*"([^"]+)"', text)
+    result["skeleton_name"] = skeleton.group(1) if skeleton else None
     result["subresource_count"] = len(re.findall(r"(?m)^\w.+?=\{", text))
     return result
 

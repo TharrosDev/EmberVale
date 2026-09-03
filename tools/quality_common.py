@@ -8,6 +8,7 @@ import os
 import platform
 import shutil
 import subprocess
+import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -15,6 +16,13 @@ from typing import Sequence
 
 ROOT = Path(__file__).resolve().parent.parent
 GODOT_ENV_VARS = ("EMBERVALE_GODOT", "GODOT")
+
+# Windows consoles default to cp1252, and every tool here prints the repo's warning glyphs. Without
+# this a plain `--help` dies with UnicodeEncodeError before it prints anything useful.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
 
 
 def discover_godot() -> Path | None:
