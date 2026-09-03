@@ -1,0 +1,62 @@
+{
+  "Bandit": {
+    "img": "01a0643e-0945-7690-a171-06a0cdab87e8",
+    "mesh": "01a06441-47c3-711e-bbc7-4f0c49ecf07e",
+    "rig": "01a06444-daab-7242-8e80-76938a042cb9"
+  },
+  "BarrowWight": {
+    "img": "01a0643e-24e9-75e5-9961-d3fae378d204",
+    "mesh": "01a06441-5f0b-73ce-a4e6-f4938cb48678",
+    "rig": "01a06445-170f-752f-9962-22d2857a4adb"
+  },
+  "BoneKnight": {
+    "img": "01a0643e-42aa-772d-902c-2179f9baf0f3",
+    "mesh": "01a06441-76e1-7074-92f2-0e957f8221ca",
+    "rig": "01a06445-52fb-73e6-a411-5086c3b73306"
+  },
+  "CinderThrall": {
+    "img": "01a0643e-5ee7-73e5-b285-bbbbe3b3b67b",
+    "mesh": "01a06441-8e34-7635-820d-61ab7cb8e5c6",
+    "rig": "01a06445-8f85-749a-84b3-8b89e2670750"
+  },
+  "ClanBeastTamer": {
+    "img": "01a0643e-7ced-75b2-b369-817c690cf364",
+    "mesh": "01a06441-a5c7-70d3-b18e-0668d4f22295",
+    "rig": "01a06445-dac2-7056-bd86-85d358a08c29"
+  },
+  "ClanRaider": {
+    "img": "01a0643e-9940-7275-bfd6-cc3597cf8dab",
+    "mesh": "01a06441-bf45-7619-a0cd-ec5f226c78c7",
+    "rig": "01a06446-1842-7463-8676-c962f5be2951"
+  },
+  "ClanShaman": {
+    "img": "01a0643e-b5e5-77bd-85a8-472a2ef0ad75",
+    "mesh": "01a06441-d65c-763f-8484-a900efa0b836",
+    "rig": "01a06446-4544-7262-a55c-1e444fca968e"
+  },
+  "Cultist": {
+    "img": "01a0643e-d461-709e-94c1-a2ca4211ee96",
+    "mesh": "01a06441-edd5-719b-81a7-5a2b8fa890d4",
+    "rig": "01a06446-6756-7145-b083-7529b9ab4858"
+  },
+  "HollowHusk": {
+    "img": "01a0643e-f1d0-76b5-b1e8-c1adbb42787c",
+    "mesh": "01a06442-0547-732d-a258-a2e55af6343e",
+    "rig": "01a06446-88b1-7786-b3fb-39cee897e4fe"
+  },
+  "HollowNecromancer": {
+    "img": "01a0643f-0e13-7323-b175-8aa8f70ae96d",
+    "mesh": "01a06442-1ce8-73b0-a16a-ad14dd2dbb11",
+    "rig": "01a06446-aa33-707d-82aa-e0dad202901c"
+  },
+  "Soldier": {
+    "img": "01a0643f-2bf1-7445-af8d-1ef9bde09f72",
+    "mesh": "01a06442-d27a-77ce-852b-216191e728ad",
+    "rig": "01a06446-e92a-764e-a2e3-7855c60ee5df"
+  },
+  "SyndicateEnforcer": {
+    "img": "01a0643f-48ef-7508-b0e1-c35493c12550",
+    "mesh": "01a06442-e8ed-7454-856b-48050707bf86",
+    "rig": "01a06447-09cd-719a-8b8c-2caac2b52f04"
+  }
+}
