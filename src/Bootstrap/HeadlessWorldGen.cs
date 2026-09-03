@@ -237,6 +237,34 @@ public static class HeadlessWorldGen
                 }
             }
 
+            // ⚠️ EVERY PLACED ELEMENT, NOT JUST THE ANCHORS THE REGION DATA KNOWS ABOUT. The pads and
+            // route ends above are what the .tres can see; a POI is a SCENE, and its door, its
+            // stalls, its shrine and the spot an NPC stands on are nodes in it. Those are conformed
+            // onto the ground at load, so they are dry exactly when the ground under them is dry -
+            // which is a thing to verify rather than assume, because the whole point of generated
+            // hydrology is that it decides where the water goes without asking anybody.
+            var wetNodes = new List<string>();
+            foreach (RegionCellResource? sceneCell in region.Cells)
+            {
+                if (sceneCell == null || string.IsNullOrEmpty(sceneCell.ScenePath) ||
+                    GD.Load<PackedScene>(sceneCell.ScenePath) is not { } packed ||
+                    packed.Instantiate() is not Node3D root)
+                {
+                    continue;
+                }
+
+                CheckPlaced(root, sceneCell, field, wetNodes);
+                root.QueueFree();
+            }
+
+            text.AppendLine(wetNodes.Count == 0
+                ? "placed scene elements under generated water: none"
+                : $"placed scene elements under generated water: {wetNodes.Count}");
+            foreach (string line in wetNodes)
+            {
+                text.AppendLine(line);
+            }
+
             text.AppendLine("generated water by cell (share of cell area | max depth):");
             foreach (RegionCellResource? wetCell in region.Cells)
             {
@@ -354,6 +382,56 @@ public static class HeadlessWorldGen
             text.Append(FormattableString.Invariant($" {values[index],5:F2}"));
         }
         return text.ToString();
+    }
+
+    /// <summary>
+    /// Walks one instantiated cell scene and reports any node standing in generated water deeper
+    /// than a player can wade.
+    ///
+    /// ⚠️ It tests the node's authored X/Z against the ground, not its authored Y.
+    /// <see cref="WorldTerrainConform"/> drops every authored node onto the terrain at load, so an
+    /// authored Y is a clearance above the ground rather than a world height — comparing it to a
+    /// water surface directly would report every rooftop in the realm as dry and every doorstep on a
+    /// hillside as drowned.
+    /// </summary>
+    private static void CheckPlaced(
+        Node node, RegionCellResource cell, WorldHeightfield field, List<string> into,
+        Vector3 inherited = default)
+    {
+        // ⚠️ ACCUMULATE THE PARENT OFFSETS. A scene is a tree, and a mesh or a collider hanging off a
+        // placed prop sits at a local origin of roughly zero - so reading its own Position alone maps
+        // every one of them to the cell centre and reports a cell with a pond in the middle of it as
+        // having two dozen drowned elements. The first run of this check did exactly that.
+        Vector3 offset = inherited;
+        if (node is Node3D transformed)
+        {
+            offset += transformed.Position;
+        }
+
+        // The cell root and its NavigationRegion3D both sit at the cell origin, so a pond anywhere
+        // near the middle of a cell reports them forever and buries the elements that matter.
+        bool container = node is NavigationRegion3D || node.GetParent() == null ||
+                         (offset.X == 0f && offset.Z == 0f && node.GetParent()?.GetParent() == null);
+        if (!container && node is Node3D placed &&
+            node is not WorldCellPresentation && node is not WorldBiomeScatter)
+        {
+            float x = cell.Center.X + offset.X;
+            float z = cell.Center.Z + offset.Z;
+            if (field.GeneratedWaterSurface(x, z) is { } surface)
+            {
+                float depth = surface - field.Height(x, z);
+                if (depth > WorldWater.WadeDepth)
+                {
+                    into.Add(FormattableString.Invariant(
+                        $"  {cell.Id}/{placed.Name} at ({x:F0}, {z:F0}) under {depth:F2} m"));
+                }
+            }
+        }
+
+        foreach (Node child in node.GetChildren())
+        {
+            CheckPlaced(child, cell, field, into, offset);
+        }
     }
 
     /// <summary>The generated ground plus landforms under a point — the field a pad is levelled
