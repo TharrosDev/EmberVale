@@ -36,7 +36,8 @@ Read `reports/3d/meshy-migration/README.md` first — it is the standing procedu
 
 ## Budget
 
-**937 credits** (1,213 at the start of the Group A session, 276 spent on Group A). 23 per character:
+**811 credits** (829 before the Group C pilot, 18 spent on it — see `groupC/FINDINGS.md`). 23 per
+character:
 `meshy_text_to_image` (nano-banana, 3) → `meshy_image_to_3d` (smart-topology, textured, 15) →
 `meshy_rig` (5, walk + run included). Check with `meshy_check_balance` between batches.
 **Present the cost and get confirmation before any batch that spends credits.**
@@ -86,15 +87,27 @@ Landed in `4db3071`. The auto-rig coped on all six, including the two stone cons
 Group A. Human-proportioned characters land on the requested height to the millimetre. Budget a
 re-adopt with `--root-scale` for anything that is not 7.5 heads tall — which is most of C, D and E.
 
-### Group C — quadrupeds (5)
+### Group C — quadrupeds (5) — ❌ CLOSED, NOT MIGRATED
 
 `Wolf` (0.35/0.9), `DireWolf` (0.5/1.3), `FrostStalker` (0.4/1.0), `AshfallElk` (0.5/1.6),
-`ThornbackBoar` (0.55/1.0). **Meshy's auto-rig is humanoid** — verify it produces anything sane
-before spending the whole group. Their current models carry 24–26 `AnimalArmature|*` clips of
-their own; if the Meshy rig fails, keeping the legacy quadrupeds is the honest outcome to report,
-not a failure to hide.
+`ThornbackBoar` (0.55/1.0). **All five stay on their legacy models.**
+
+**`meshy_rig` cannot rig a quadruped.** The Wolf pilot's mesh was refused with HTTP **422 —
+"Pose estimation failed, please provide a valid model"**, reproduced via both `input_task_id` and
+`model_url`. The pose estimator is humanoid and never reaches the point of producing a bad rig, so
+there is nothing to inspect and nothing to work around: an unrigged mesh cannot carry the legacy
+`AnimalArmature` clips, which are bound to the legacy skeleton. Pilot cost **18 credits**, not 23 —
+the rig never charged. **Do not re-attempt this group.**
+
+Full write-up, including the animation-slot analysis showing the swap would have been a downgrade
+even with a working rig: `groupC/FINDINGS.md`.
 
 ✅ `ThornbackBoar`'s `enm_wolf.glb` defect is fixed (`af1b34c`).
+⚠️ **`ThornbackBoar` is still wrong, differently: `enm_thornback_boar.glb` IS the Quaternius bull.**
+Its mesh is named `Cow` and it carries `assets/library/animals/bull.glb`'s exact 25-clip set. A
+third shipped model-path defect, and **unfixed** — the library has no boar, Meshy cannot rig one,
+and the remaining routes (a CC0 web pull, or renaming the archetype) are maintainer calls. See
+`groupC/FINDINGS.md`.
 
 ### Group D — dragons (4)
 
@@ -112,8 +125,8 @@ These are in-house 5-clip models (`idle-loop, run-loop, attack, hit, death`). Ri
 pointless; consider generating the mesh only (`should_texture: true`, no `meshy_rig`) and keeping
 static or legacy animation. Ask before spending.
 
-**A and B are done. Next is C/D/E**, because those three groups are
-where the humanoid auto-rig is most likely to fail and the maintainer should decide with evidence.
+**A and B are done. C is closed as not-migratable.** D and E remain, and C's 422 is strong evidence
+for how D will go — see the carry-forward in `groupC/FINDINGS.md` before spending on dragons.
 
 ## The pipeline
 
@@ -203,3 +216,32 @@ exist for the rest of that session even after the editor comes up. The fallback 
 `godot-cli run-tool <name> . --url http://localhost:23630 --input '{...}'`, and `godot-cli status .`
 confirms both halves are live. Blender covers the visual QA the procedure above specifies, so this
 never blocked the wave.
+
+
+## Findings from the Group C session (2026-09-02)
+
+1. **`meshy_rig` refuses quadrupeds with a 422 and charges nothing.** "Pose estimation failed,
+   please provide a valid model". It is a rejection at the input, not a bad rig you can inspect —
+   so the cost of proving a non-humanoid group is unmigratable is 18 credits (image + mesh), not 23.
+2. **Meshy's `image_to_3d` returns a mesh normalised to a unit box, not to metres.** The wolf came
+   back X 0.291 / Y 0.961 / Z 1.000 with the longest side exactly 1.0. The Group A/B
+   "`height_meters` under-delivers" finding is about the *rig* step, which is where the real-world
+   scale is applied — an unrigged mesh has no scale at all, so `--root-scale` is not optional for
+   any mesh-only adoption.
+3. **`smart-topology` at 3.5k tris terraces fur.** The wolf's neck ruff came back as visible
+   stair-steps. Budget more tris for a furred silhouette, or accept it.
+4. ⚠️ **Two of the three Godot MCP screenshot tools are unusable for model QA, and both fail
+   silently.** `screenshot-isolated` returns a flat 1891-byte fill of the background colour for
+   every skinned model tried (target the node, its `RootNode`, or the `Skeleton3D` — same blank).
+   `screenshot-camera` **ignores transform changes made through `node-modify`**: three different
+   camera positions returned a byte-identical PNG, so a camera you never actually moved renders a
+   plausible-looking image from the origin, which reads as a working QA pass. **Only
+   `screenshot-viewport` is live.** The rig that works is: `node-create` with `instanceScenePath`,
+   then rotate the *model* with `node-modify` and capture `screenshot-viewport` per rotation.
+5. **`node-modify` needs C# PascalCase property names** — `Position`, `RotationDegrees`, and
+   `X`/`Y`/`Z` inside a `Vector3`. The Godot snake_case names (`position`, `rotation_degrees`, `x`)
+   are rejected, but the tool still returns `"status": "success"` with the rejection buried in a
+   nested `result` array, so an unchecked call looks like it worked.
+6. **Godot will not import from `reports/`** — it carries a `.gdignore`, as does `assets/library/`.
+   Stage a QA model under `assets/models/` and delete it, its `.import`, and the `_0.jpg` +
+   `_0.jpg.import` the importer extracts alongside it.
