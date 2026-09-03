@@ -77,17 +77,19 @@ is **generated** — edit `tools/region_spec_<region>.py` and run `python tools/
 | Check | Result |
 | --- | --- |
 | Build | `dotnet build Embervale.sln` — 0 warnings, 0 errors |
-| Tests | `dotnet test tests/Embervale.Tests` — **1713 passing** |
-| `--validate` | exit 0, with the new `ValidateGuildHubs` and `ValidateGuildDialogueConditions` arms |
+| Tests | `dotnet test tests/Embervale.Tests` — **1713 passing**, from a clean checkout |
+| `--validate` | exit 0, with the new `ValidateModelAssets` arm |
 | `--state` | 2 regions, 26 cells, **48 dialogues**, **31 schedules**, **75 map locations**, 13 factions |
-| Negative battery | `negative_tests.py` — **110/110 caught**, including ten new hub cases and both ends of an authored condition rank |
+| Negative battery | `negative_tests.py` — **112/112 caught**, including the model-manifest drift rule |
 | `world_quality_check.py --mode engine` | all **19** gates PASS, including architecture structure/material/reference validation and real-capsule building collision |
 | `--mode visual` | PASS, 260/260 world frames after inspecting and merging only the five intentionally changed settlement cells |
 | Architecture views | PASS, 15 important buildings × six required angles = **90/90 frames** |
 | Permanent 3D audit | self-test PASS; **193 models** classified into five rig families, manifest matches disk |
 | `--guild-shots` | 12 frames: five hubs front and back at eye level with their officers, plus the same captain greeting a stranger and a member |
 | Persistence | the harness stages membership on every officer, then **loads a save taken before any of it** and proves every leader is back to the stranger greeting — a load replays no events |
-| `--play` | boots, restores `auto1`, reaches `Playing`, 0 errors |
+| `--play` | boots, restores `auto1`, reaches `Playing` and live combat, 0 errors |
+| `assets.py validate` | 5/5 gates PASS, incl. the retarget probe over all **33** humanoids |
+| `assets.py audit` | 193 models, **118 findings — down from 147**; the 5 not in the last archived run are all Meshy-wave assets it predates |
 
 `--mode full` passes all 21 pass/fail gates after the implementation commit; the negative battery
 catches and restores **111/111** deliberately broken rules, and the performance report is recorded
