@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="RegionResource" load_steps=19 format=3 uid="uid://crgnembrcrown0"]
+[gd_resource type="Resource" script_class="RegionResource" load_steps=20 format=3 uid="uid://crgnembrcrown0"]
 
 [ext_resource type="Script" path="res://src/World/RegionResource.cs" id="1_region"]
 [ext_resource type="Script" path="res://src/World/RegionCellResource.cs" id="2_cell"]
@@ -12,6 +12,7 @@
 [ext_resource type="Script" path="res://src/World/BiomeScatterLayerResource.cs" id="10_layer"]
 [ext_resource type="Script" path="res://src/World/BiomeScatterExclusionResource.cs" id="11_exclusion"]
 [ext_resource type="Script" path="res://src/World/WorldWaterResource.cs" id="12_water"]
+[ext_resource type="Resource" path="res://data/world_gen/EmberCrown.tres" id="13_generation"]
 [ext_resource type="Resource" path="res://data/biomes/TemperateLowland.tres" id="20_biome_temperatelowland"]
 [ext_resource type="Resource" path="res://data/biomes/Wetland.tres" id="21_biome_wetland"]
 [ext_resource type="Resource" path="res://data/biomes/Pasture.tres" id="22_biome_pasture"]
@@ -557,7 +558,8 @@ Center = Vector2(-9, 1)
 Radius = Vector2(5, 5)
 Feather = 1.5
 SurfaceBlend = 0.85
-Elevation = 0.9
+ElevationMode = 1
+Elevation = 0.62
 
 [sub_resource type="Resource" id="Area_hollowreach_street"]
 script = ExtResource("7_area")
@@ -565,7 +567,8 @@ Center = Vector2(16, 12)
 Radius = Vector2(10, 4)
 Feather = 2.5
 SurfaceBlend = 0.72
-Elevation = 1.4
+ElevationMode = 1
+Elevation = 1.16
 
 [sub_resource type="Resource" id="Area_hollowreach_spine"]
 script = ExtResource("7_area")
@@ -573,7 +576,8 @@ Center = Vector2(-5, 1)
 Radius = Vector2(11, 7)
 Feather = 2.5
 SurfaceBlend = 0.78
-Elevation = 0.9
+ElevationMode = 1
+Elevation = 0.61
 
 [sub_resource type="Resource" id="Area_hollowreach_y0"]
 script = ExtResource("7_area")
@@ -581,7 +585,8 @@ Center = Vector2(20.0, 23.0)
 Radius = Vector2(5.0, 5.0)
 Feather = 2.5
 SurfaceBlend = 0.8
-Elevation = 1.4
+Elevation = 1.17
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Water_hollowreach_0"]
 script = ExtResource("12_water")
@@ -761,6 +766,7 @@ Center = Vector2(7, 2)
 Radius = Vector2(11, 10)
 Feather = 3.0
 SurfaceBlend = 0.90
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Area_market_terrace"]
 script = ExtResource("7_area")
@@ -768,7 +774,8 @@ Center = Vector2(16, 14)
 Radius = Vector2(5.5, 5)
 Feather = 1.5
 SurfaceBlend = 0.88
-Elevation = 0.45
+ElevationMode = 1
+Elevation = 0.0
 
 [sub_resource type="Resource" id="Area_market_timber"]
 script = ExtResource("7_area")
@@ -776,6 +783,7 @@ Center = Vector2(3, 16.5)
 Radius = Vector2(7, 4.5)
 Feather = 2.0
 SurfaceBlend = 0.60
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Area_market_sump"]
 script = ExtResource("7_area")
@@ -783,6 +791,7 @@ Center = Vector2(-11.5, 17)
 Radius = Vector2(4.5, 4)
 Feather = 1.5
 SurfaceBlend = 0.55
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Presentation_embermarket"]
 script = ExtResource("4_presentation")
@@ -907,6 +916,7 @@ Center = Vector2(0, 5)
 Radius = Vector2(8, 7)
 Feather = 3.0
 SurfaceBlend = 0.58
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Area_homestead_garden"]
 script = ExtResource("7_area")
@@ -914,6 +924,7 @@ Center = Vector2(-13, 4)
 Radius = Vector2(5, 7)
 Feather = 1.5
 SurfaceBlend = 0.35
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Area_homestead_workshop"]
 script = ExtResource("7_area")
@@ -921,6 +932,7 @@ Center = Vector2(13.5, -6)
 Radius = Vector2(3.5, 6)
 Feather = 1.5
 SurfaceBlend = 0.72
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Presentation_ashfall_homestead"]
 script = ExtResource("4_presentation")
@@ -1086,7 +1098,8 @@ Center = Vector2(-14, -1)
 Radius = Vector2(7, 8)
 Feather = 3.5
 SurfaceBlend = 0.38
-Elevation = -1.5
+ElevationMode = 1
+Elevation = 0.0
 
 [sub_resource type="Resource" id="Area_wilds_west_apron"]
 script = ExtResource("7_area")
@@ -1094,6 +1107,8 @@ Center = Vector2(10, -1)
 Radius = Vector2(9, 6)
 Feather = 4.0
 SurfaceBlend = 0.20
+ElevationMode = 1
+Elevation = -2.33
 
 [sub_resource type="Resource" id="Presentation_wilds_west"]
 script = ExtResource("4_presentation")
@@ -1246,7 +1261,8 @@ Center = Vector2(-7, 8)
 Radius = Vector2(8, 6)
 Feather = 2.5
 SurfaceBlend = 0.74
-Elevation = 0.8
+ElevationMode = 1
+Elevation = -0.31
 
 [sub_resource type="Resource" id="Area_tarn_yard"]
 script = ExtResource("7_area")
@@ -1254,7 +1270,8 @@ Center = Vector2(11, -14)
 Radius = Vector2(7, 6)
 Feather = 2.0
 SurfaceBlend = 0.66
-Elevation = 1.6
+ElevationMode = 1
+Elevation = 0.81
 
 [sub_resource type="Resource" id="Water_tarn_landing_0"]
 script = ExtResource("12_water")
@@ -1423,6 +1440,7 @@ Center = Vector2(-14, -2)
 Radius = Vector2(9, 10)
 Feather = 3.0
 SurfaceBlend = 0.85
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Area_town_craft"]
 script = ExtResource("7_area")
@@ -1430,6 +1448,7 @@ Center = Vector2(16, 1)
 Radius = Vector2(8, 8)
 Feather = 2.5
 SurfaceBlend = 0.78
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Area_town_green"]
 script = ExtResource("7_area")
@@ -1437,6 +1456,7 @@ Center = Vector2(6, -21)
 Radius = Vector2(11, 5)
 Feather = 3.0
 SurfaceBlend = 0.35
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Presentation_town_hub"]
 script = ExtResource("4_presentation")
@@ -1621,6 +1641,7 @@ Center = Vector2(-8, 9.5)
 Radius = Vector2(9, 9.5)
 Feather = 3.0
 SurfaceBlend = 0.92
+ElevationMode = 1
 Elevation = 0.0
 
 [sub_resource type="Resource" id="Area_mine_pithead"]
@@ -1629,7 +1650,8 @@ Center = Vector2(18, -9)
 Radius = Vector2(8, 9)
 Feather = 3.5
 SurfaceBlend = 0.88
-Elevation = -3.5
+ElevationMode = 1
+Elevation = 0.0
 
 [sub_resource type="Resource" id="Area_mine_rest"]
 script = ExtResource("7_area")
@@ -1637,6 +1659,7 @@ Center = Vector2(-19, 15)
 Radius = Vector2(4, 5)
 Feather = 1.5
 SurfaceBlend = 0.60
+ElevationMode = 1
 Elevation = 0.0
 
 [sub_resource type="Resource" id="Presentation_emberdeep_mine"]
@@ -1868,6 +1891,7 @@ Center = Vector2(6, 9)
 Radius = Vector2(9, 5.5)
 Feather = 2.5
 SurfaceBlend = 0.82
+ElevationMode = 1
 Elevation = 0.0
 
 [sub_resource type="Resource" id="Area_crossway_compound"]
@@ -1876,6 +1900,7 @@ Center = Vector2(-17, 13)
 Radius = Vector2(7, 6)
 Feather = 2.0
 SurfaceBlend = 0.68
+ElevationMode = 1
 Elevation = 0.0
 
 [sub_resource type="Resource" id="Area_crossway_gate"]
@@ -1884,6 +1909,7 @@ Center = Vector2(7.5, 2)
 Radius = Vector2(5, 4)
 Feather = 1.5
 SurfaceBlend = 0.90
+ElevationMode = 1
 Elevation = 0.0
 
 [sub_resource type="Resource" id="Area_crossway_post_y0"]
@@ -1893,6 +1919,7 @@ Radius = Vector2(6.0, 5.0)
 Feather = 2.5
 SurfaceBlend = 0.8
 Elevation = 0.0
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Presentation_crossway_post"]
 script = ExtResource("4_presentation")
@@ -2231,7 +2258,8 @@ Center = Vector2(0, -5)
 Radius = Vector2(7, 7)
 Feather = 3.5
 SurfaceBlend = 0.42
-Elevation = -2.0
+ElevationMode = 1
+Elevation = -0.3
 
 [sub_resource type="Resource" id="Area_wn_bowl"]
 script = ExtResource("7_area")
@@ -2239,7 +2267,8 @@ Center = Vector2(-17, 8)
 Radius = Vector2(6, 7)
 Feather = 4.0
 SurfaceBlend = 0.30
-Elevation = -3.5
+ElevationMode = 1
+Elevation = 0.61
 
 [sub_resource type="Resource" id="Area_wn_deadfall"]
 script = ExtResource("7_area")
@@ -2247,6 +2276,8 @@ Center = Vector2(18, -12)
 Radius = Vector2(6, 7)
 Feather = 4.5
 SurfaceBlend = 0.22
+ElevationMode = 1
+Elevation = -5.39
 
 [sub_resource type="Resource" id="Presentation_wilds_north"]
 script = ExtResource("4_presentation")
@@ -2507,7 +2538,8 @@ Center = Vector2(0, -1)
 Radius = Vector2(15, 14)
 Feather = 1.5
 SurfaceBlend = 0.95
-Elevation = 3.0
+ElevationMode = 1
+Elevation = 0.0
 
 [sub_resource type="Resource" id="Area_arena_breach"]
 script = ExtResource("7_area")
@@ -2515,7 +2547,8 @@ Center = Vector2(9, -16)
 Radius = Vector2(4, 3)
 Feather = 2.0
 SurfaceBlend = 0.55
-Elevation = 3.0
+ElevationMode = 1
+Elevation = 0.0
 
 [sub_resource type="Resource" id="Presentation_arena"]
 script = ExtResource("4_presentation")
@@ -2552,6 +2585,7 @@ SpawnPoint = Vector3(0, 1.2, 5)
 PortalPoint = Vector3(0, 0, -101)
 Cells = Array[ExtResource("2_cell")]([SubResource("Cell_fen_edge"), SubResource("Cell_hollowreach"), SubResource("Cell_embermarket"), SubResource("Cell_ashfall_homestead"), SubResource("Cell_wilds_west"), SubResource("Cell_tarn_landing"), SubResource("Cell_town_hub"), SubResource("Cell_emberdeep_mine"), SubResource("Cell_west_downs"), SubResource("Cell_crossway_post"), SubResource("Cell_mine_road"), SubResource("Cell_north_moor"), SubResource("Cell_wilds_north"), SubResource("Cell_ashen_reach"), SubResource("Cell_frontier_waste"), SubResource("Cell_arena")])
 EnvironmentProfile = SubResource("Environment_ember_crown")
+GenerationProfile = ExtResource("13_generation")
 PerformanceBudget = SubResource("Budget_ember_crown")
 
 ; The lattice is x -190..140, z -310..130. Bounds are that plus a margin, and the Y range is real

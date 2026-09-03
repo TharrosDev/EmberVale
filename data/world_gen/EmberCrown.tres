@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="WorldGenerationProfileResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldGenerationProfileResource.cs" id="1_generation"]
+
+; THE EMBER CROWN'S GEOGRAPHY RECIPE.
+;
+; One generator, one profile per realm - never a forked generator. Every number here is art
+; direction, and the same code reads this file and Frostfang's to produce two realms that do not
+; look like each other.
+;
+; The Ember Crown is LOWLAND with weather in it: broad continental tilt, a few real hills that
+; belong to one system rather than standing alone, eroded and rounded rather than rugged, valleys
+; that carry water down to the fen in the south-west. MountainPrevalence is deliberately HIGH
+; (0.55) because it is a threshold, not a dial: raising it means fewer places qualify as mountain
+; at all, which is what a lowland realm wants.
+;
+; SnowLine sits at 90 m, far above anything this realm generates, because there is no snow in the
+; Ember Crown and a snowline that can be reached is a snowline that will be.
+;
+; MasterSeed is shared with Frostfang ON PURPOSE. There is one world seed; the two realms occupy
+; disjoint x bands (Ember -190..140, Frostfang 260..600), so world coordinates already give them
+; different ground. A second seed would say they are different worlds, and they are not.
+
+[resource]
+script = ExtResource("1_generation")
+MasterSeed = 3800
+GeneratorVersion = 2
+BaseElevation = 0.0
+MacroScale = 300.0
+MacroRelief = 9.0
+MountainScale = 150.0
+MountainPrevalence = 0.92
+MountainHeight = 22.0
+ValleyStrength = 6.0
+ErosionStrength = 0.7
+LocalRelief = 1.4
+DetailScale = 2.75
+RouteCalm = 45.0
+Temperature = 0.58
+Moisture = 0.44
+SnowLine = 90.0
+HydrologyCellSize = 10.0
+RiverThreshold = 45.0
+RiverWidth = 3.2
+RiverDepth = 1.6

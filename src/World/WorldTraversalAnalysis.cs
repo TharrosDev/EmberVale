@@ -72,6 +72,8 @@ public static class WorldTraversalAnalysis
     /// <param name="water">Declared water, so flooded basins are labelled rather than failed.</param>
     /// <param name="step">Sample spacing. 3 m resolves anything a player's 0.8 m capsule cares about
     /// while keeping a 330 x 440 m realm to about sixteen thousand samples.</param>
+    private static readonly System.Collections.Generic.List<WorldWater.Body> EmptyWater = new();
+
     public static Result Analyse(
         WorldHeightfield field, Region area, (float X, float Z) origin,
         IReadOnlyList<WorldWater.Body>? water = null, float step = 3f)
@@ -91,12 +93,12 @@ public static class WorldTraversalAnalysis
                 float worldX = area.MinX + (x * step);
                 int index = (z * columns) + x;
                 height[index] = field.Height(worldX, worldZ);
-                if (water != null)
-                {
-                    float? surface = WorldWater.SurfaceAt(worldX, worldZ, water);
-                    flooded[index] = surface != null &&
-                                     surface.Value - height[index] > WorldWater.WadeDepth;
-                }
+                // Authored bodies AND generated rivers: a river bed the sweep did not know was
+                // flooded is a trap it would fail the build over, and the one thing a river bed
+                // never is, is a trap - the player wades it or the recovery contract lifts them out.
+                float? surface = WorldWater.SurfaceAt(worldX, worldZ, water ?? EmptyWater, field);
+                flooded[index] = surface != null &&
+                                 surface.Value - height[index] > WorldWater.WadeDepth;
             }
         }
 

@@ -1,0 +1,43 @@
+[gd_resource type="Resource" script_class="WorldGenerationProfileResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldGenerationProfileResource.cs" id="1_generation"]
+
+; FROSTFANG REACH'S GEOGRAPHY RECIPE.
+;
+; The same generator as the Ember Crown, the same master seed, and a realm that reads as nowhere
+; near it - which is the whole point of the profile being data.
+;
+; Frostfang is MOUNTAIN. MountainPrevalence drops to 0.40 so far more of the realm qualifies as
+; mountain at all, MountainHeight triples, ValleyStrength doubles to cut real passes between the
+; ranges, and ErosionStrength DROPS: erosion rounds ground off, and a rugged realm is one where
+; less of that has happened. LocalRelief and DetailScale carry over the values the region already
+; authored, so the small-scale texture of the ground does not change under the new macro shape.
+;
+; Temperature 0.16 and SnowLine 26 are what make the alpine and barren biome weights actually fire
+; here and never in the Ember Crown, from the identical classifier.
+;
+; Hydrology is deliberately thin: a higher RiverThreshold and a narrower channel, because water in
+; this realm is mostly ice and the drainage that does run is meltwater in a handful of throats.
+
+[resource]
+script = ExtResource("1_generation")
+MasterSeed = 3800
+GeneratorVersion = 2
+BaseElevation = 4.0
+MacroScale = 280.0
+MacroRelief = 11.0
+MountainScale = 135.0
+MountainPrevalence = 0.18
+MountainHeight = 48.0
+ValleyStrength = 12.0
+ErosionStrength = 0.45
+LocalRelief = 2.2
+DetailScale = 3.5
+RouteCalm = 85.0
+Temperature = 0.16
+Moisture = 0.42
+SnowLine = 26.0
+HydrologyCellSize = 12.0
+RiverThreshold = 55.0
+RiverWidth = 2.6
+RiverDepth = 1.4

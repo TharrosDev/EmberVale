@@ -58,6 +58,18 @@ public partial class RegionResource : Resource
     /// <summary>Shared terrain/material language consumed by every authored cell presentation.</summary>
     [Export] public WorldEnvironmentProfileResource? EnvironmentProfile { get; set; }
 
+    /// <summary>
+    /// The versioned, art-directable recipe the region's geography is generated from — macro relief,
+    /// mountain character, erosion, climate and hydrology.
+    ///
+    /// ⚠️ <b>A REGION WITHOUT ONE FALLS BACK TO THE PRE-GENERATOR NOISE FIELD</b>, which is two
+    /// octaves of value noise and no geography at all. That fallback exists so a legacy region
+    /// reproduces its exact old ground rather than silently moving under its own buildings; it is
+    /// not a default anybody should ship, and <c>ValidateRegions</c> fails a region that omits this.
+    /// One generator, one profile per region — never a forked generator per realm.
+    /// </summary>
+    [Export] public WorldGenerationProfileResource? GenerationProfile { get; set; }
+
     /// <summary>Shipping limits for the fully resident region, consumed by validation and telemetry.</summary>
     [Export] public WorldPerformanceBudgetResource? PerformanceBudget { get; set; }
 

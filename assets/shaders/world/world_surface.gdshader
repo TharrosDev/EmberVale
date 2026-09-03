@@ -53,8 +53,26 @@ uniform float terrain_seed = 3800.0;
 uniform vec4 tint : source_color = vec4(1.0);
 uniform float tint_strength : hint_range(0.0, 1.0) = 0.0;
 
+// --- the generated environment, straight off the mesh ---------------------------------------------
+// COLOR.r road mask - COLOR.g yard mask - COLOR.b wetness - COLOR.a alpine weight
+// UV2.x moisture - UV2.y mountain
+//
+// THIS IS WHAT MAKES A BIOME BORDER AN ECOTONE. Until this pass every placement decision in this
+// shader came from world Y and the surface gradient alone, so "where does snow start" was a contour
+// line at a constant height and "where is the ground wet" was a single per-cell waterline constant.
+// Both are per-cell scalars pretending to be geography, and the second one could not describe a
+// river at all. They are continuous fields now, sampled per vertex out of the same generator the
+// ground itself came from, so a snowline drifts with exposure and moisture, a wet margin follows a
+// channel across a cell boundary, and the patchy second surface thins out where the country is dry.
+//
+// The cell's authored biome still chooses WHICH six layers are in play. These choose how much of
+// each is showing. That split is deliberate: art direction stays authored, distribution is generated.
+uniform float environment_strength : hint_range(0.0, 1.0) = 1.0;
+
 varying vec3 world_pos;
 varying vec3 world_normal;
+varying vec4 environment;
+varying vec2 environment_uv;
 
 float hash21(vec2 p) {
 	p = fract(p * vec2(123.34, 345.45) + terrain_seed * 0.0013);
@@ -115,6 +133,8 @@ void eval_layer(vec3 low, vec3 high, vec4 params, vec2 flat_uv, vec2 side_uv, fl
 void vertex() {
 	world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	world_normal = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
+	environment = COLOR;
+	environment_uv = UV2;
 }
 
 void fragment() {
@@ -148,8 +168,11 @@ void fragment() {
 	float near_fade = 1.0 - smoothstep(9.0, 32.0, view_distance);
 
 	float macro = grain2(flat_uv / max(20.0, macro_scale));
-	float road = clamp(COLOR.r, 0.0, 1.0);
-	float activity = clamp(COLOR.g, 0.0, 1.0);
+	float road = clamp(environment.r, 0.0, 1.0);
+	float activity = clamp(environment.g, 0.0, 1.0);
+	float wetness = clamp(environment.b, 0.0, 1.0) * environment_strength;
+	float alpine = clamp(environment.a, 0.0, 1.0) * environment_strength;
+	float moisture = mix(0.5, clamp(environment_uv.x, 0.0, 1.0), environment_strength);
 
 	vec3 albedo;
 	float rough;
@@ -163,7 +186,14 @@ void fragment() {
 		vec3 a; float r; float h;
 		eval_layer(layer_low[1], layer_high[1], layer_params[1], flat_uv, side_uv, sideness,
 			detail_fade, near_fade, view_distance, a, r, h);
-		float m = smoothstep(0.5 - sparse_coverage * 0.5, 0.95 - sparse_coverage * 0.5, macro);
+		// Dry country shows more of its second surface and wet country less: the sparse layer is
+		// bare soil, dead grass, scree or ash in every biome that authors one, and all four are what
+		// is left where the green did not hold. Moisture shifts the macro field's threshold rather
+		// than scaling the result, so the PATCHES move and change shape instead of fading uniformly -
+		// a fade would read as a haze over the ground rather than as different ground.
+		float dryness = 1.0 - moisture;
+		float coverage = clamp(sparse_coverage * (0.55 + dryness * 0.9), 0.0, 1.0);
+		float m = smoothstep(0.5 - coverage * 0.5, 0.95 - coverage * 0.5, macro);
 		m *= 1.0 - slope_mask * 0.7;
 		albedo = mix(albedo, a, m);
 		rough = mix(rough, r, m);
@@ -209,9 +239,14 @@ void fragment() {
 		vec3 a; float r; float h;
 		eval_layer(layer_low[3], layer_high[3], layer_params[3], flat_uv, side_uv, sideness,
 			detail_fade, near_fade, view_distance, a, r, h);
+		// A SNOWLINE IS NOT A CONTOUR LINE, AND THE HEIGHT BAND ALONE COULD ONLY DRAW ONE.
+		// The authored band is still the floor of the effect - a biome that says "snow above 30 m"
+		// gets snow above 30 m - but the generator's alpine weight already knows about exposure,
+		// mountain strength and the realm's own lapse rate, so a cold north face carries the cap
+		// lower than a sheltered shoulder at the same altitude. The macro field keeps its few metres
+		// of wobble on top, which is what stops the transition reading as a line at all.
 		float m = smoothstep(height_band.x, height_band.y, world_pos.y);
-		// Drift: the snowline is not a contour line. The macro field lifts and drops it several
-		// metres over a hillside, which is the whole difference between "alpine" and "a stripe".
+		m = max(m, alpine);
 		m = clamp(m + (macro - 0.5) * 0.45, 0.0, 1.0);
 		m *= 1.0 - cap_slope_shed * slope_mask;
 		albedo = mix(albedo, a, m);
@@ -220,12 +255,21 @@ void fragment() {
 		spec = mix(spec, layer_specular[3], m);
 	}
 
-	// --- the wet margin. shore_band 0 means dry country and this costs one compare. ---------------
-	if (shore_band > 0.0) {
+	// --- the wet margin ---------------------------------------------------------------------------
+	// TWO SOURCES, AND THE SECOND ONE IS WHY A RIVER HAS BANKS. shore_level/shore_band describe one
+	// authored waterline per cell, which is all a lake needs and all a lake ever was. A generated
+	// river runs downhill across four cells and has no single Y, so a height-banded shore cannot see
+	// it: it would draw a horizontal stripe across the valley and nothing along the channel. The
+	// generator's wetness field is the channel, so the two are taken together and the riparian
+	// margin appears wherever the water actually is.
+	if (shore_band > 0.0 || wetness > 0.0) {
 		vec3 a; float r; float h;
 		eval_layer(layer_low[5], layer_high[5], layer_params[5], flat_uv, side_uv, sideness,
 			detail_fade, near_fade, view_distance, a, r, h);
-		float m = 1.0 - smoothstep(shore_level, shore_level + shore_band, world_pos.y);
+		float authored_shore = shore_band > 0.0
+			? 1.0 - smoothstep(shore_level, shore_level + shore_band, world_pos.y)
+			: 0.0;
+		float m = max(authored_shore, smoothstep(0.35, 0.85, wetness));
 		m *= 1.0 - slope_mask * 0.5;
 		albedo = mix(albedo, a, m);
 		rough = mix(rough, r, m);
@@ -263,13 +307,13 @@ void fragment() {
 	// --- macro tone. The one term applied to everything, and the reason a wide shot has depth. ----
 	albedo *= 1.0 + (macro - 0.5) * macro_strength * 2.0;
 
-	// ⚠️ THE CELL TINT FADES OUT AT THE CELL EDGE. Applied flat it is a rectangle of different-
-	// coloured ground with a hard border — the exact artefact the 2026-08-29 overhaul exists to
-	// remove, drawn by the one part of the pipeline that still knew where a cell ended. Prefer a
-	// per-cell BIOME override to a tint now; this stays for the cells authored before there was one.
-	float tint_edge = smoothstep(0.0, 0.22, UV.x) * smoothstep(0.0, 0.22, 1.0 - UV.x)
-		* smoothstep(0.0, 0.22, UV.y) * smoothstep(0.0, 0.22, 1.0 - UV.y);
-	albedo = mix(albedo, albedo * tint.rgb * 1.6, tint_strength * tint_edge);
+	// THE CELL TINT IS GONE AND IT IS NOT COMING BACK. It could only apply a flat wash over a
+	// rectangle, so it had to be faded out at the cell edge to stop it drawing the lattice back onto
+	// the ground - a per-cell constant working against the whole point of a world-space field. Every
+	// job it was doing is now done by the generated environment above, which varies continuously and
+	// does not know where a cell ends. tint/tint_strength are retained as uniforms so the authored
+	// resources that still carry them load without complaint; nothing reads them.
+	albedo *= 1.0 + (moisture - 0.5) * 0.10;
 
 	// --- micro-relief into the normal -------------------------------------------------------------
 	// Derived from the same scalar field the albedo used, sampled twice more at a 12 cm offset. This

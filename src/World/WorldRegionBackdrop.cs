@@ -261,9 +261,15 @@ public sealed partial class WorldRegionBackdrop : MultiMeshInstance3D
         // Climb over the first ~38% of the reach and then hold: relief that keeps rising to the far
         // edge reads as a bowl the player is standing at the bottom of.
         float ramp = Mathf.SmoothStep(0f, reach * 0.38f, outside);
+        // ⚠️ BEYOND THE MARGIN THE HORIZON IS THE SAME GEOGRAPHY, JUST CHEAPER. This used to fall
+        // back to two octaves of value noise, so the far country was flat wobble while the ground
+        // the player stood on had mountain systems in it — a visible line at the lattice edge where
+        // the realm stopped having shape. PreliminaryElevation is the generator's own macro pipeline
+        // without the hydrology carve or the authored stamps: the same continents, the same ranges,
+        // at a fraction of the cost and with nothing out there to carve or stamp anyway.
         float ground = outside <= FieldMargin
             ? field.Height(x, z)
-            : WorldTerrainMath.BaseNoise(profile.TerrainSeed, x, z, profile.Relief, profile.DetailScale);
+            : WorldGenerator.PreliminaryElevation(field.Settings, x, z);
         return ground - InnerDrop + (profile.BackdropHeight * ridge * ramp);
     }
 

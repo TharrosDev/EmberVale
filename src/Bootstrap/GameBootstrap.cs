@@ -147,6 +147,14 @@ public partial class GameBootstrap : Node3D
             return;
         }
 
+        // And the world-generation report: `-- --worldgen` prints what the generator actually makes
+        // of each region, plus every authored pad's offset from the ground under it. Exit 0.
+        if (HeadlessWorldGen.Requested())
+        {
+            HeadlessWorldGen.Run(GetTree());
+            return;
+        }
+
         // And a content census: `-- --state` prints what is on disk and quits (agent-ergonomics
         // pass). It replaces a handful of greps at the start of a session and cannot drift from
         // reality, because it reads the same databases the game loads.
