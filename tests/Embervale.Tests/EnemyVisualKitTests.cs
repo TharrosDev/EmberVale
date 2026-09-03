@@ -6,7 +6,10 @@ namespace Embervale.Tests;
 public sealed class EnemyVisualKitTests
 {
     [Theory]
-    [InlineData("enemy.thornback_boar", "AshMawCarapace")]
+    // BoarHead, not AshMawCarapace: the carapace is shared bulk and its presence never proved the
+    // boar had a silhouette of its own. It did not — the Head slot wore the AshMaw's jaws and the
+    // archetype read as the bull underneath it. Assert the piece that makes it a boar.
+    [InlineData("enemy.thornback_boar", "BoarHead")]
     [InlineData("enemy.barrow_wight", "WightBurialArmor")]
     [InlineData("enemy.grave_shade", "ShadeVeil")]
     [InlineData("enemy.clan_shaman", "ShamanMask")]

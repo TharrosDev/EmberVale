@@ -103,11 +103,20 @@ Full write-up, including the animation-slot analysis showing the swap would have
 even with a working rig: `groupC/FINDINGS.md`.
 
 ✅ `ThornbackBoar`'s `enm_wolf.glb` defect is fixed (`af1b34c`).
-⚠️ **`ThornbackBoar` is still wrong, differently: `enm_thornback_boar.glb` IS the Quaternius bull.**
-Its mesh is named `Cow` and it carries `assets/library/animals/bull.glb`'s exact 25-clip set. A
-third shipped model-path defect, and **unfixed** — the library has no boar, Meshy cannot rig one,
-and the remaining routes (a CC0 web pull, or renaming the archetype) are maintainer calls. See
-`groupC/FINDINGS.md`.
+⚠️ **`ThornbackBoar` is NOT a third defect — an earlier version of this brief said it was, wrongly.**
+`enm_thornback_boar.glb` is the Quaternius bull *on purpose*: `assets/CREDITS.md:375` records
+`enemy.thornback_boar → animals/Bull`, and the whole non-humanoid roster works this way — a sound
+vendored animal rig plus identity pieces from `enemy_identity_kit.glb` via `EnemyVisualKit`.
+`FrostStalker` is a husky; `DireWolf` is the same wolf with a Mane and Fangs. **Judged from the bare
+GLB every one of them is "the wrong animal"; judged in game they are not.** The real defect was one
+line: `BoarHead` was the only one of the kit's 40 pieces no profile referenced, so the boar's Head
+slot borrowed `AshMawJaws`. Fixed. See `groupC/FINDINGS.md`.
+
+⚠️ **Render the ASSEMBLED actor, never the raw GLB.** `godot --path . -- --enemy-shots` (no
+`--headless`; it needs a framebuffer) builds real archetypes through `EnemyArchetypeFactory` and
+writes 10 views each to `user://enemy_shots`. Skipping it is what produced the false defect report
+above — the fifth firing of this repo's "RENDER IT" trap and the first to invent a defect rather
+than miss one.
 
 ### Group D — dragons (4)
 
