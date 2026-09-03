@@ -92,12 +92,23 @@ re-adopt with `--root-scale` for anything that is not 7.5 heads tall — which i
 `Wolf` (0.35/0.9), `DireWolf` (0.5/1.3), `FrostStalker` (0.4/1.0), `AshfallElk` (0.5/1.6),
 `ThornbackBoar` (0.55/1.0). **All five stay on their legacy models.**
 
-**`meshy_rig` cannot rig a quadruped.** The Wolf pilot's mesh was refused with HTTP **422 —
-"Pose estimation failed, please provide a valid model"**, reproduced via both `input_task_id` and
-`model_url`. The pose estimator is humanoid and never reaches the point of producing a bad rig, so
-there is nothing to inspect and nothing to work around: an unrigged mesh cannot carry the legacy
-`AnimalArmature` clips, which are bound to the legacy skeleton. Pilot cost **18 credits**, not 23 —
-the rig never charged. **Do not re-attempt this group.**
+**The rigging API is humanoid-only; the web app can rig a quadruped but ships only a walk cycle
+for one.** `meshy_rig` refused the Wolf pilot's mesh with HTTP **422 — "Pose estimation failed,
+please provide a valid model"**, via both `input_task_id` and `model_url`. That is documented: the
+endpoint takes no character-type parameter and the docs say programmatic rigging "only works well
+with standard humanoid (bipedal) assets", listing "Non-humanoid assets" as unsupported.
+
+⚠️ **The web app is different and this brief previously overstated the limit.** Its rigging flow
+offers **Humanoid / Quadruped / Smart Rig (Beta)** as a manual choice, so these meshes *can* be
+rigged by hand. It still does not help: Meshy's docs state **"walking is the only animation we
+support for quadrupeds"**, the 600+ presets are humanoid-only, and a quadruped rig cannot borrow
+`anim_library.res` because that retarget runs through `GeneralSkeleton`/`SkeletonProfileHumanoid`.
+A web-rigged wolf would arrive with **one clip** against the five slots the legacy model already
+fills — it would walk at the player, then stand in bind pose through the fight and its own death.
+
+Pilot cost **18 credits**, not 23 — the rig never charged. **Do not re-attempt this group** unless
+someone is prepared to author a custom quadruped `SkeletonProfile` and retarget the existing
+`AnimalArmature` clips onto a new rig, which is the only route that ends with a better wolf.
 
 Full write-up, including the animation-slot analysis showing the swap would have been a downgrade
 even with a working rig: `groupC/FINDINGS.md`.
@@ -223,6 +234,10 @@ never blocked the wave.
 1. **`meshy_rig` refuses quadrupeds with a 422 and charges nothing.** "Pose estimation failed,
    please provide a valid model". It is a rejection at the input, not a bad rig you can inspect —
    so the cost of proving a non-humanoid group is unmigratable is 18 credits (image + mesh), not 23.
+   ⚠️ **Do not generalise this to "Meshy cannot rig animals" — that was this session's first, wrong
+   conclusion.** The *API* is humanoid-only and has no character-type parameter; the *web app* has a
+   Quadruped option and a Smart Rig (Beta). What actually blocks the group is that Meshy supports
+   **only a walk cycle for quadrupeds**, so the rig is reachable and still useless.
 2. **Meshy's `image_to_3d` returns a mesh normalised to a unit box, not to metres.** The wolf came
    back X 0.291 / Y 0.961 / Z 1.000 with the longest side exactly 1.0. The Group A/B
    "`height_meters` under-delivers" finding is about the *rig* step, which is where the real-world
