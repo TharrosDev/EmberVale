@@ -1,4 +1,24 @@
-# Enemy wave — session brief
+# Enemy wave — CLOSED (2026-09-02)
+
+> ## ⛔ THE MESHY MIGRATION IS FINISHED. DO NOT CONTINUE IT.
+>
+> Maintainer direction, 2026-09-02. The wave closed at **32 characters** — the 4 web-app models,
+> 10 NPC bodies, enemy Group A (12) and Group B (6). **Groups C, D and E are deliberately NOT
+> migrated and are not pending work.** Balance stopped at **811 credits**; spend none of it here.
+>
+> **The reason is not that Meshy failed.** It is that the non-humanoid roster already uses a better
+> approach — a sound vendored animal rig plus bolt-on identity pieces from `enemy_identity_kit.glb`
+> via `EnemyVisualKit` — and Meshy gives a quadruped exactly one walk cycle, with no attack, hit or
+> death. Migrating would have traded five species-correct clips for a prettier mesh that stands
+> still in combat. Group C proved this for 18 credits; D and E follow from it.
+>
+> **This file is history now.** Read it for the traps — they are all still true, and several are
+> about the Godot MCP and this repo's own tooling rather than about Meshy — not as a task list.
+> Nothing below is outstanding work.
+
+---
+
+# Enemy wave — session brief (historical)
 
 Continue the Meshy 3D migration in `C:\Users\magnu\Embervale` (Godot 4.7.1 / C# .NET 8).
 Branch `claude/meshy-migration-wave1`. Waves 1 and 2 are committed; this is the enemy wave.
@@ -129,7 +149,7 @@ writes 10 views each to `user://enemy_shots`. Skipping it is what produced the f
 above — the fifth firing of this repo's "RENDER IT" trap and the first to invent a defect rather
 than miss one.
 
-### Group D — dragons (4)
+### Group D — dragons (4) — ❌ CLOSED, NOT MIGRATED
 
 `AncientDragon` (2.0/5.0, boss), `AshDragon` (1.9/4.6, boss), `WildDragon` (1.6/4.0, boss),
 `FrostDrake` (0.9/2.2). ✅ The shared-`enm_ancient_dragon.glb` defect is fixed (`af1b34c`) — all
@@ -138,15 +158,15 @@ Dragons use `DragonMeleeComponent` with three hitboxes (Bite / Wing / Tail) and 
 their clips are `Flying_Idle`, `Fast_Flying`, `Headbutt`, `HitReact`, `Death` and the alias table
 maps `idle`→`flying_idle` and `run`→`fast_flying`. A humanoid rig will not serve these.
 
-### Group E — formless / small (4)
+### Group E — formless / small (4) — ❌ CLOSED, NOT MIGRATED
 
 `AshMaw` (0.45/1.1), `CinderWisp` (0.3/1.0), `RuinCrawler` (0.35/0.8), `StormMote` (0.3/1.1).
 These are in-house 5-clip models (`idle-loop, run-loop, attack, hit, death`). Rigging is likely
 pointless; consider generating the mesh only (`should_texture: true`, no `meshy_rig`) and keeping
 static or legacy animation. Ask before spending.
 
-**A and B are done. C is closed as not-migratable.** D and E remain, and C's 422 is strong evidence
-for how D will go — see the carry-forward in `groupC/FINDINGS.md` before spending on dragons.
+**A and B are done. C, D and E are closed unmigrated by maintainer direction** — see the banner at
+the top of this file. No group is outstanding.
 
 ## The pipeline
 
