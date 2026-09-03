@@ -38,6 +38,6 @@ Temperature = 0.16
 Moisture = 0.42
 SnowLine = 26.0
 HydrologyCellSize = 12.0
-RiverThreshold = 55.0
+RiverThreshold = 70.0
 RiverWidth = 2.6
 RiverDepth = 1.4

@@ -113,9 +113,37 @@ void eval_layer(vec3 low, vec3 high, vec4 params, vec2 flat_uv, vec2 side_uv, fl
 	// wood grain. Holding the cycle to roughly a pixel and a half is a mip bias by another name: the
 	// pattern is no longer resolvable at that range, so the only thing lost is the aliasing.
 	float scale = 1.0 / max(0.4, max(params.x, view_distance * 0.022));
-	vec2 uv = mix(flat_uv, side_uv, sideness) * scale;
-	float n = grain2(uv);
-	float fine = vnoise(uv * 4.1 + 5.3);
+
+	// ⚠️ BLEND THE RESULTS, NEVER THE COORDINATES. THIS ONE LINE DREW A CONTOUR MAP ON THE REALM.
+	//
+	// mix(flat_uv, side_uv, sideness) interpolates between two DIFFERENT coordinate systems, and a
+	// noise field read at an interpolated coordinate is not an interpolation of that field — it is
+	// the field evaluated along a path that sweeps sideways through it as the blend factor changes.
+	// Across the slope band that factor varies smoothly over the whole of a hillside, so the pattern
+	// smears into closed loops that follow the surface: the West Downs rendered as a topographic map
+	// and the cliffs above the Emberdeep as fingerprints. It was invisible before real geography
+	// arrived only because the terrain had almost no slope in it to blend across.
+	//
+	// Sampling both projections and mixing what comes back is the correct operation and the only one
+	// that has no artefact of its own. The two early-outs matter: nearly all of the realm is walkable
+	// ground that never reaches the side projection at all, and paying for two noise evaluations
+	// everywhere to serve the cliffs would be most of a millisecond for nothing.
+	float n;
+	float fine;
+	if (sideness <= 0.01) {
+		vec2 uv = flat_uv * scale;
+		n = grain2(uv);
+		fine = vnoise(uv * 4.1 + 5.3);
+	} else if (sideness >= 0.99) {
+		vec2 uv = side_uv * scale;
+		n = grain2(uv);
+		fine = vnoise(uv * 4.1 + 5.3);
+	} else {
+		vec2 uv_flat = flat_uv * scale;
+		vec2 uv_side = side_uv * scale;
+		n = mix(grain2(uv_flat), grain2(uv_side), sideness);
+		fine = mix(vnoise(uv_flat * 4.1 + 5.3), vnoise(uv_side * 4.1 + 5.3), sideness);
+	}
 	// ⚠️ THE 2.6 IS DOING REAL WORK. At 1.0 the mix only ever reaches Low and High at the noise
 	// field's own extremes, which it hits on perhaps a percent of a hillside — so a two-tone layer
 	// rendered as one tone and the first pass of this shader still produced flat brown countryside.
@@ -145,18 +173,48 @@ void fragment() {
 	float slope_mask = smoothstep(slope_band.x, slope_band.y, slope);
 
 	vec2 flat_uv = world_pos.xz;
-	// ⚠️ THE SIDE PROJECTION IS (ALONG THE FACE, UP THE FACE) — NOT (x + z, y).
-	// (x + z, y) was the first cut and it drew herringbone across every hillside in the realm: the
-	// y term makes bands that follow contours, the x + z term makes bands that run diagonally, and
-	// a curved slope crosses the two into chevrons. Projecting onto the face's own horizontal
-	// tangent instead gives a coordinate that varies smoothly with the surface, so the detail runs
-	// down a cliff the way rock does and has no second family of bands to interfere with.
-	vec2 tangent = normalize(vec2(-wn.z, wn.x) + vec2(1e-4));
-	vec2 side_uv = vec2(dot(world_pos.xz, tangent), world_pos.y * 1.35);
+	// ⚠️ THE SIDE PROJECTION USES FIXED WORLD PLANES. IT MUST NOT BE DERIVED FROM THE NORMAL.
+	//
+	// This has now been wrong twice, in opposite directions, and both versions drew a pattern on
+	// every hillside in the realm. (x + z, y) was the first cut: two families of bands crossing into
+	// herringbone. Projecting onto the face's own horizontal TANGENT was the second, and it is worse
+	// in a way that only showed up once the terrain had real curvature in it — the tangent rotates
+	// as the surface turns, so walking a coordinate around a dome sweeps it through 360 degrees and
+	// the noise closes into concentric rings. The West Downs came out looking like a contour map,
+	// and the Ember Crown's cliffs like fingerprints. A projection that depends on the surface is a
+	// projection that spirals on a curved surface; there is no amount of warping that fixes it.
+	//
+	// So: the two vertical world planes, XY and ZY, chosen by which one the face is more nearly
+	// parallel to. Both are FIXED — they cannot rotate, so nothing can wind around anything — and
+	// the blend between them only happens on ground facing within a few degrees of the diagonal,
+	// where the two coordinates are nearly interchangeable anyway. This is the standard triplanar
+	// answer with the top plane already handled by flat_uv.
+	float axis_x = abs(wn.x);
+	float axis_z = abs(wn.z);
+	// ⚠️ A NARROW BAND, BECAUSE THIS ONE IS STILL A COORDINATE MIX. Blending the two vertical
+	// planes properly would mean a third noise evaluation for the sake of ground facing within a few
+	// degrees of the diagonal. Keeping the cross-fade tight shrinks the residual swirl to a band a
+	// metre or two wide on a curved face, and both planes carry the same field at the same scale, so
+	// there is nothing on either side of it for the eye to catch on.
+	float axis_blend = smoothstep(0.47, 0.53, axis_x / max(1e-4, axis_x + axis_z));
+	vec2 side_uv = mix(
+		vec2(world_pos.z, world_pos.y * 1.35),
+		vec2(world_pos.x, world_pos.y * 1.35),
+		axis_blend);
 	// ⚠️ And it only engages on ground that is genuinely a face. Any projection change is visible
 	// while it is happening, so doing it across the walkable band puts an artefact on exactly the
 	// ground the player spends their time on.
+	// ⚠️ ONLY THE ROCK LAYER TAKES THE SIDE PROJECTION, AND THAT IS A PERFORMANCE FACT AS WELL AS AN
+	// ART ONE. Evaluating a layer in two projections and mixing the results is the only way to blend
+	// them without smearing the field (see eval_layer), but it doubles the noise cost of every layer
+	// that does it — and handing `sideness` to all six put the Ember Crown's mean frame at 20.6 ms
+	// against a 15.5 ms baseline and its worst at 28.6, over the authored budget. Rock is the only
+	// layer that has anything to say on a face steep enough to reach the side projection: the cap is
+	// shed by slope, roads and yards do not exist on cliffs, and the ground and sparse layers are
+	// already being replaced by rock there. So the other five stay top-down, which costs nothing and
+	// looks identical.
 	float sideness = smoothstep(0.8, 1.5, slope);
+	float flat_sideness = 0.0;
 
 	// Distance damping. High-frequency relief on a 300 m vista is aliasing, not detail.
 	float view_distance = length(VERTEX);
@@ -177,14 +235,14 @@ void fragment() {
 	vec3 albedo;
 	float rough;
 	float height;   // the blended layers' micro-relief AMPLITUDE, not a noise sample
-	eval_layer(layer_low[0], layer_high[0], layer_params[0], flat_uv, side_uv, sideness, detail_fade,
+	eval_layer(layer_low[0], layer_high[0], layer_params[0], flat_uv, side_uv, flat_sideness, detail_fade,
 		near_fade, view_distance, albedo, rough, height);
 	float spec = layer_specular[0];
 
 	// --- the patchy second surface, placed by the macro field so it is never uniform -------------
 	{
 		vec3 a; float r; float h;
-		eval_layer(layer_low[1], layer_high[1], layer_params[1], flat_uv, side_uv, sideness,
+		eval_layer(layer_low[1], layer_high[1], layer_params[1], flat_uv, side_uv, flat_sideness,
 			detail_fade, near_fade, view_distance, a, r, h);
 		// Dry country shows more of its second surface and wet country less: the sparse layer is
 		// bare soil, dead grass, scree or ash in every biome that authors one, and all four are what
@@ -222,12 +280,32 @@ void fragment() {
 		// banks resolved to well under a pixel at twenty metres and the whole excavation came out
 		// looking like polished wood grain. This is the one term in the shader whose apparent
 		// frequency depends on the SLOPE as well as the distance, which is why it aliased first.
+		// ⚠️ TWO THINGS KEEP BEDDING FROM DRAWING CONTOUR RINGS, AND BOTH OF THEM ARE LOAD-BEARING.
+		//
+		// A band field read off world Y is, by construction, a set of horizontal planes. Where those
+		// planes cut a curved hill they trace its contours, so a dome comes out ringed like a tree
+		// stump and a spur comes out as nested chevrons. The existing warp - about a metre and a
+		// third against a three-metre bed - was sized for terrain that barely curved, and the moment
+		// real geography arrived the whole of the West Downs was drawing a maze pattern on itself.
+		// The warp now runs to several times a bed thickness and carries a second, shorter octave,
+		// so consecutive beds are displaced by different amounts and the rings cannot close.
+		//
+		// ⚠️ AND BEDDING ONLY SHOWS WHERE ROCK IS ACTUALLY EXPOSED. The rock layer starts blending in
+		// at the biome's slope band - around 0.34, which is grassy downland - and strata rode in with
+		// it at full strength. Real bedding is a feature of a cut face, not of a hillside with soil
+		// on it, so it now fades in over a much steeper band of its own. Between them the pattern
+		// went from the most visible thing in a wide shot to something you have to walk up to a
+		// cliff to see, which is where it was always meant to be.
 		float bed_scale = max(0.5, max(strata_scale, view_distance * 0.022));
-		float bed_warp = (grain2(flat_uv / 26.0) - 0.5) * 2.6;
+		// One octave, scaled to the bed thickness. A second short octave was tried and reverted: it
+		// bought nothing the slope gate below had not already fixed, and it cost two more noise
+		// evaluations on every pixel with any rock in it.
+		float bed_warp = (grain2(flat_uv / 26.0) - 0.5) * bed_scale * 2.6;
 		float strata = vnoise(vec2((world_pos.y + bed_warp) / bed_scale,
 			grain2(flat_uv / 30.0) * 5.0));
-		a *= 1.0 - strata_strength * (0.5 - strata) * 0.9;
-		h *= 1.0 + strata_strength * 0.6;
+		float bedding = strata_strength * smoothstep(0.75, 1.45, slope);
+		a *= 1.0 - bedding * (0.5 - strata) * 0.9;
+		h *= 1.0 + bedding * 0.6;
 		albedo = mix(albedo, a, slope_mask);
 		rough = mix(rough, r, slope_mask);
 		height = mix(height, h, slope_mask);
@@ -237,7 +315,7 @@ void fragment() {
 	// --- the altitude cap, shed off anything steep -----------------------------------------------
 	{
 		vec3 a; float r; float h;
-		eval_layer(layer_low[3], layer_high[3], layer_params[3], flat_uv, side_uv, sideness,
+		eval_layer(layer_low[3], layer_high[3], layer_params[3], flat_uv, side_uv, flat_sideness,
 			detail_fade, near_fade, view_distance, a, r, h);
 		// A SNOWLINE IS NOT A CONTOUR LINE, AND THE HEIGHT BAND ALONE COULD ONLY DRAW ONE.
 		// The authored band is still the floor of the effect - a biome that says "snow above 30 m"
@@ -262,9 +340,14 @@ void fragment() {
 	// it: it would draw a horizontal stripe across the valley and nothing along the channel. The
 	// generator's wetness field is the channel, so the two are taken together and the riparian
 	// margin appears wherever the water actually is.
-	if (shore_band > 0.0 || wetness > 0.0) {
+	// ⚠️ THE THRESHOLD IS 0.35 BECAUSE THAT IS WHERE THE LAYER STARTS CONTRIBUTING, AND A `> 0.0`
+	// HERE COSTS A MILLISECOND. The mask below is smoothstep(0.35, 0.85, wetness), so anything drier
+	// than 0.35 mixes in exactly nothing — but testing `wetness > 0.0` still ran a full extra layer
+	// evaluation over every acre of the realm with any trace of moisture in it, which is most of it.
+	// The original `shore_band > 0.0` comment called this "one compare" for a reason.
+	if (shore_band > 0.0 || wetness > 0.35) {
 		vec3 a; float r; float h;
-		eval_layer(layer_low[5], layer_high[5], layer_params[5], flat_uv, side_uv, sideness,
+		eval_layer(layer_low[5], layer_high[5], layer_params[5], flat_uv, side_uv, flat_sideness,
 			detail_fade, near_fade, view_distance, a, r, h);
 		float authored_shore = shore_band > 0.0
 			? 1.0 - smoothstep(shore_level, shore_level + shore_band, world_pos.y)
@@ -280,7 +363,7 @@ void fragment() {
 	// --- the road. It is last because a road is cut THROUGH whatever is there. --------------------
 	{
 		vec3 a; float r; float h;
-		eval_layer(layer_low[4], layer_high[4], layer_params[4], flat_uv, side_uv, sideness,
+		eval_layer(layer_low[4], layer_high[4], layer_params[4], flat_uv, side_uv, flat_sideness,
 			detail_fade, near_fade, view_distance, a, r, h);
 		// Wheel ruts and a worn crown: a strongly anisotropic field so the wear reads as travel
 		// down a line rather than as a differently-coloured stripe.
@@ -323,7 +406,12 @@ void fragment() {
 	// field gives it its tooth. Sampled by finite difference off the same noise the albedo used, so
 	// the shading and the paint agree about where a stone is.
 	if (detail_fade > 0.01) {
-		vec2 duv = mix(flat_uv, side_uv, sideness);
+		// The bump gradient reads the same field the albedo did, so it takes the same projection
+		// rather than an interpolated one. Picking the dominant projection instead of mixing keeps
+		// this to one evaluation: a normal perturbation of a couple of centimetres does not need a
+		// cross-fade, and a hard switch inside the slope band is invisible where the albedo is
+		// already blending across it.
+		vec2 duv = sideness > 0.5 ? side_uv : flat_uv;
 		float amp = clamp(height, 0.0, 1.5);
 		vec2 g = vec2(0.0);
 		{

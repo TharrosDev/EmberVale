@@ -45,7 +45,8 @@ public sealed partial class WorldCellWater : Node3D
     }
 
     public static WorldCellWater? Attach(
-        Node3D cellRoot, WorldCellPresentationResource? cell, WorldHeightfield? field, Vector3 worldOrigin)
+        Node3D cellRoot, WorldCellPresentationResource? cell, WorldHeightfield? field,
+        Vector3 worldOrigin, WorldWaterResource? regionPalette = null)
     {
         if (cell == null || field == null)
         {
@@ -70,7 +71,7 @@ public sealed partial class WorldCellWater : Node3D
             }
         }
 
-        if (BuildGeneratedSurface(cell, field, worldOrigin) is { } rivers)
+        if (BuildGeneratedSurface(cell, field, worldOrigin, regionPalette) is { } rivers)
         {
             node.AddChild(rivers);
         }
@@ -89,7 +90,11 @@ public sealed partial class WorldCellWater : Node3D
     /// <see cref="SampleStep"/> on purpose: this grid covers a whole cell rather than one authored
     /// rectangle, and a river is several metres wide, so sampling it at a metre would cost ten
     /// thousand heightfield queries per cell to find the one percent of ground that is wet.</summary>
-    private const float RiverSampleStep = 2f;
+    /// ⚠️ It is also what the SHORELINE is drawn at, which is why it is not coarser still. At two
+    /// metres the outer edge of a generated body came out as a visible staircase of squares: the
+    /// mesh can only drop whole quads, so the coastline is quantised to this grid no matter what the
+    /// depth fade does inside it. At 1.2 m the steps are below what the eye picks out of a shoreline.
+    private const float RiverSampleStep = 1.2f;
 
     /// <summary>
     /// The rivers and lakes the drainage solve put in this cell, drawn with the same grid, the same
@@ -100,12 +105,16 @@ public sealed partial class WorldCellWater : Node3D
     /// channel. That is the only structural difference between the two paths, and it is why this
     /// cannot simply call <see cref="BuildSurface"/> with a synthetic rectangle.
     ///
-    /// ponytail: colours are borrowed from the cell's own authored water when it has any, and fall
-    /// back to a neutral cold water otherwise. Give rivers their own palette on the generation
-    /// profile if a realm ever needs water that reads differently from its lakes.
+    /// ⚠️ <b>THE PALETTE COMES FROM THE REALM, NOT FROM A CONSTANT.</b> It reads the cell's own
+    /// authored water first and the region's otherwise, because a generated river that does not
+    /// match the lakes it flows into stops reading as water and starts reading as a different
+    /// material laid over the ground — which is exactly how Embermarket's river came out, a sheet of
+    /// teal beside a realm whose every other body is dark peat. The literal fallback below is only
+    /// for a realm that has authored no water at all anywhere.
     /// </summary>
     private static MeshInstance3D? BuildGeneratedSurface(
-        WorldCellPresentationResource cell, WorldHeightfield field, Vector3 worldOrigin)
+        WorldCellPresentationResource cell, WorldHeightfield field, Vector3 worldOrigin,
+        WorldWaterResource? regionPalette)
     {
         // Ask the coarse drainage grid before building anything. Most cells in both realms have no
         // channel in them at all, and without this every one of them paid for several thousand full
@@ -136,7 +145,16 @@ public sealed partial class WorldCellWater : Node3D
                 float worldX = worldOrigin.X + localX;
                 float worldZ = worldOrigin.Z + localZ;
                 float ground = field.Height(worldX, worldZ);
-                float? surface = field.GeneratedWaterSurface(worldX, worldZ);
+                // ⚠️ AUTHORED WATER WINS, AND NOT DRAWING OVER IT IS THE WHOLE OF THE RULE.
+                // A generated channel that happens to run into an authored fen was being drawn as a
+                // second surface a few centimetres off the first: two transparent sheets stacked,
+                // the seam of one visible through the other, and the generated one's quantised
+                // shoreline drawn as a staircase in the middle of a lake that already had a coast.
+                // Where a designer has declared the water, the generator has nothing to add.
+                float? authored = WorldWater.SurfaceAt(worldX, worldZ, WorldWater.Bodies);
+                float? surface = authored != null
+                    ? null
+                    : field.GeneratedWaterSurface(worldX, worldZ);
                 // A dry vertex still carries the GROUND height, so the fading margin has somewhere
                 // to fade to. Giving it the waterline instead lays a flat lip of surface on the bank.
                 depths[index] = surface == null ? 0f : surface.Value - ground;
@@ -177,7 +195,7 @@ public sealed partial class WorldCellWater : Node3D
             return null;
         }
 
-        WorldWaterResource? palette = null;
+        WorldWaterResource? palette = regionPalette;
         foreach (WorldWaterResource? water in cell.Water)
         {
             if (water != null)
@@ -253,6 +271,7 @@ public sealed partial class WorldCellWater : Node3D
     private static MeshInstance3D? BuildSurface(
         WorldWaterResource water, WorldHeightfield field, Vector3 worldOrigin)
     {
+        float surfaceY = water.ResolveSurface(field, worldOrigin);
         int columns = Mathf.Clamp(Mathf.CeilToInt(water.Extent.X * 2f / SampleStep), 2, 160);
         int rows = Mathf.Clamp(Mathf.CeilToInt(water.Extent.Y * 2f / SampleStep), 2, 160);
         float stepX = water.Extent.X * 2f / columns;
@@ -268,8 +287,8 @@ public sealed partial class WorldCellWater : Node3D
                 float localX = water.Center.X - water.Extent.X + (x * stepX);
                 int index = (z * (columns + 1)) + x;
                 float ground = field.Height(worldOrigin.X + localX, worldOrigin.Z + localZ);
-                depths[index] = water.SurfaceY - ground;
-                vertices[index] = new Vector3(localX, water.SurfaceY, localZ);
+                depths[index] = surfaceY - ground;
+                vertices[index] = new Vector3(localX, surfaceY, localZ);
             }
         }
 

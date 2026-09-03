@@ -4153,6 +4153,7 @@ public static class ContentValidator
             // Sampled against the whole region field — a road grades between its endpoints, but a
             // neighbouring landform can still push a hump into the middle of it.
             issues.AddRange(ValidateRouteGrades(region));
+            issues.AddRange(ValidateAuthoredGroundIsDry(region));
             issues.AddRange(ValidateOffRouteTraversal(region));
 
             if (budget != null && residentAuthoredNodes > budget.MaxResidentAuthoredNodes)
@@ -4251,6 +4252,80 @@ public static class ContentValidator
     /// <see cref="ShallowTrapDrop"/> deep whose rim they cannot re-climb, with no fall and no
     /// warning, and that is always an accident of two landforms overlapping.
     /// </summary>
+    /// <summary>
+    /// Nothing the author placed is under generated water.
+    ///
+    /// ⚠️ <b>THIS IS THE ONE FAILURE THE REST OF THE WORLD BATTERY CANNOT SEE.</b> Generated
+    /// hydrology can put a settlement at the bottom of a pond while every other gate stays green:
+    /// the terrain is continuous, the routes hold their grade, the navmesh bakes, the traversal
+    /// probe walks a capsule straight through it because wading is walking. The first thing that
+    /// notices is a player arriving at a market under two metres of water. That is exactly what
+    /// happened - the drainage solve was reading the un-calmed ground while the world used the
+    /// calmed one, and six authored anchors in the Ember Crown came out submerged, the Fen Edge's
+    /// causeway among them.
+    ///
+    /// ⚠️ <b>THE TOLERANCE IS THE WADE DEPTH, NOT ZERO.</b> A road crossing a stream is a ford and
+    /// a fen is meant to be damp; what is forbidden is authored ground the player cannot simply walk
+    /// through. Anything deeper than that on a pad, a route end or an arrival point is a defect
+    /// whoever authored the place never agreed to.
+    /// </summary>
+    private static System.Collections.Generic.List<string> ValidateAuthoredGroundIsDry(RegionResource region)
+    {
+        var issues = new System.Collections.Generic.List<string>();
+        WorldHeightfield field = WorldTerrainMeshBuilder.HeightfieldFor(region);
+
+        void Check(string what, float worldX, float worldZ)
+        {
+            if (field.GeneratedWaterSurface(worldX, worldZ) is not { } surface)
+            {
+                return;
+            }
+
+            float depth = surface - field.Height(worldX, worldZ);
+            if (depth > WorldWater.WadeDepth)
+            {
+                issues.Add($"region '{region.Id}' {what} at ({worldX:F0}, {worldZ:F0}) sits under " +
+                           $"{depth:F2} m of generated water, over the {WorldWater.WadeDepth:F2} m " +
+                           "a player can wade — authored ground must not be drowned by hydrology");
+            }
+        }
+
+        Check("spawn point", region.SpawnPoint.X, region.SpawnPoint.Z);
+        Check("portal point", region.PortalPoint.X, region.PortalPoint.Z);
+
+        foreach (RegionCellResource cell in region.Cells)
+        {
+            if (cell?.Presentation == null)
+            {
+                continue;
+            }
+
+            foreach (WorldGroundAreaResource? area in cell.Presentation.GroundAreas)
+            {
+                if (area != null)
+                {
+                    Check($"cell '{cell.Id}' ground area",
+                        cell.Center.X + area.Center.X, cell.Center.Z + area.Center.Y);
+                }
+            }
+
+            foreach (WorldPathSegmentResource? path in cell.Presentation.Paths)
+            {
+                if (path == null)
+                {
+                    continue;
+                }
+
+                Check($"cell '{cell.Id}' route start",
+                    cell.Center.X + path.Start.X, cell.Center.Z + path.Start.Y);
+                Check($"cell '{cell.Id}' route end",
+                    cell.Center.X + path.End.X, cell.Center.Z + path.End.Y);
+            }
+        }
+
+        return issues;
+    }
+
     private static System.Collections.Generic.List<string> ValidateOffRouteTraversal(RegionResource region)
     {
         // Below this rim height a trap is something the player walked into; above it, something they
@@ -4263,7 +4338,7 @@ public static class ContentValidator
             field,
             WorldTraversalAnalysis.LatticeOf(region),
             (region.SpawnPoint.X, region.SpawnPoint.Z),
-            WorldWater.BodiesFor(region));
+            WorldWater.BodiesFor(region, field));
 
         foreach (WorldTraversalAnalysis.Patch trap in result.Traps)
         {

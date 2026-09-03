@@ -49,7 +49,12 @@ public static class WorldWater
 
     /// <summary>Every body of a region, pooled into world space. Pure — the streamer and the
     /// validators both call it, so they can never disagree about where the water is.</summary>
-    public static List<Body> BodiesFor(RegionResource region)
+    public static List<Body> BodiesFor(RegionResource region) => BodiesFor(region, null);
+
+    /// <summary>Every body of a region, pooled into world space, with relative waterlines resolved
+    /// against <paramref name="field"/>. Pure — the streamer and the validators both call it, so
+    /// they can never disagree about where the water is.</summary>
+    public static List<Body> BodiesFor(RegionResource region, WorldHeightfield? field)
     {
         var bodies = new List<Body>();
         foreach (RegionCellResource cell in region.Cells)
@@ -66,7 +71,7 @@ public static class WorldWater
                 }
                 bodies.Add(new Body(
                     cell.Center.X + water.Center.X, cell.Center.Z + water.Center.Y,
-                    water.Extent.X, water.Extent.Y, water.SurfaceY));
+                    water.Extent.X, water.Extent.Y, water.ResolveSurface(field, cell.Center)));
             }
         }
         return bodies;

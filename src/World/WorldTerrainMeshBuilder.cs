@@ -26,8 +26,7 @@ public static class WorldTerrainMeshBuilder
         // target are measured against the ground beneath them - so the calming has to already be in
         // the field those samples come out of. Attaching it afterwards measures everything against a
         // mountain the finished world does not have.
-        WorldHeightfield world = WorldFor(region)
-            .WithCorridors(CorridorPaths(region), CorridorAreas(region));
+        WorldHeightfield world = WorldFor(region);
 
         var landforms = new List<WorldTerrainMath.Landform>();
         var pathSources = new List<(WorldPathSegmentResource Path, Vector3 Origin)>();
@@ -146,7 +145,10 @@ public static class WorldTerrainMeshBuilder
 
         if (region.GenerationProfile is { } generation)
         {
-            return new WorldHeightfield(generation.Settings(), minX, minZ, maxX, maxZ);
+            // Corridors up front: the drainage solve inside the constructor needs them.
+            return new WorldHeightfield(
+                generation.Settings(), minX, minZ, maxX, maxZ,
+                CorridorPaths(region), CorridorAreas(region));
         }
 
         WorldEnvironmentProfileResource? profile = region.EnvironmentProfile;

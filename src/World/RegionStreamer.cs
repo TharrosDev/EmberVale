@@ -71,6 +71,10 @@ public sealed partial class RegionStreamer : Node3D
     private WorldEnvironmentProfileResource? _environmentProfile;
     private WorldHeightfield? _heightfield;
     private WorldTerrainJobs? _terrainJobs;
+
+    /// <summary>The first authored water body in the region, used to colour GENERATED water so a
+    /// river reads as the same substance as the lake it runs into.</summary>
+    private WorldWaterResource? _waterPalette;
     private WorldPerformanceBudgetResource? _streamingBudget;
     private WorldRegionBackdrop? _backdrop;
     private WorldRecovery? _recovery;
@@ -98,9 +102,10 @@ public sealed partial class RegionStreamer : Node3D
         _terrainJobs = region == null || _heightfield == null
             ? null
             : WorldTerrainJobs.Start(region, _heightfield);
+        _waterPalette = FirstAuthoredWater(region);
         WorldGround.Set(_heightfield);
         SkyController.RegionAtmosphere = _environmentProfile;
-        WorldWater.Set(region == null ? null : WorldWater.BodiesFor(region));
+        WorldWater.Set(region == null ? null : WorldWater.BodiesFor(region, _heightfield));
         EnsureRecovery();
         _streamingBudget = region?.PerformanceBudget;
         ClearLoadStages();
@@ -207,6 +212,32 @@ public sealed partial class RegionStreamer : Node3D
         }
     }
 
+    private static WorldWaterResource? FirstAuthoredWater(RegionResource? region)
+    {
+        if (region == null)
+        {
+            return null;
+        }
+
+        foreach (RegionCellResource? cell in region.Cells)
+        {
+            if (cell?.Presentation == null)
+            {
+                continue;
+            }
+
+            foreach (WorldWaterResource? water in cell.Presentation.Water)
+            {
+                if (water != null)
+                {
+                    return water;
+                }
+            }
+        }
+
+        return null;
+    }
+
     private void Enqueue(RegionCellResource cell)
     {
         if (_pendingIds.Add(cell.Id))
@@ -309,7 +340,7 @@ public sealed partial class RegionStreamer : Node3D
         WorldCellPresentation.Attach(
             root, _environmentProfile, cell.Presentation, view, cell.Center,
             _terrainJobs?.Take(cell.Id));
-        WorldCellWater.Attach(root, cell.Presentation, view, cell.Center);
+        WorldCellWater.Attach(root, cell.Presentation, view, cell.Center, _waterPalette);
         WorldBiomeScatter? scatter = WorldBiomeScatter.Attach(
             root, cell.Presentation, cell.BiomeScatter, view, cell.Center);
         AddChild(root);

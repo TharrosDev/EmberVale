@@ -181,6 +181,106 @@ public static class HeadlessWorldGen
             }
 
             routes.Sort((a, b) => b.Grade.CompareTo(a.Grade));
+            // ⚠️ AUTHORED GROUND THAT ENDED UP UNDER WATER. Generated hydrology is the one stage of
+            // the pipeline that can put a settlement at the bottom of a lake without anything else
+            // noticing: the terrain is fine, the routes are fine, the navmesh bakes, and the player
+            // arrives to find the market under two metres of water. Nothing else in the report
+            // answers this, so it is asked directly, of every anchor the region data knows about.
+            var drowned = new List<string>();
+            void CheckWet(string what, float wx, float wz)
+            {
+                float? surface = field.GeneratedWaterSurface(wx, wz);
+                if (surface == null)
+                {
+                    return;
+                }
+
+                float depth = surface.Value - field.Height(wx, wz);
+                if (depth > 0.05f)
+                {
+                    drowned.Add(FormattableString.Invariant($"  {what} under {depth:F2} m of water"));
+                }
+            }
+
+            CheckWet("region spawn point", region.SpawnPoint.X, region.SpawnPoint.Z);
+            CheckWet("region portal point", region.PortalPoint.X, region.PortalPoint.Z);
+            CheckWet("safe zone centre", region.SafeZoneCenter.X, region.SafeZoneCenter.Z);
+            foreach (RegionCellResource? wetCell in region.Cells)
+            {
+                WorldCellPresentationResource? wetPresentation = wetCell?.Presentation;
+                if (wetCell == null || wetPresentation == null)
+                {
+                    continue;
+                }
+
+                CheckWet($"{wetCell.Id} centre", wetCell.Center.X, wetCell.Center.Z);
+                foreach (WorldGroundAreaResource? area in wetPresentation.GroundAreas)
+                {
+                    if (area != null)
+                    {
+                        CheckWet($"{wetCell.Id} pad",
+                            wetCell.Center.X + area.Center.X, wetCell.Center.Z + area.Center.Y);
+                    }
+                }
+
+                foreach (WorldPathSegmentResource? path in wetPresentation.Paths)
+                {
+                    if (path == null)
+                    {
+                        continue;
+                    }
+
+                    CheckWet($"{wetCell.Id} route end",
+                        wetCell.Center.X + path.Start.X, wetCell.Center.Z + path.Start.Y);
+                    CheckWet($"{wetCell.Id} route end",
+                        wetCell.Center.X + path.End.X, wetCell.Center.Z + path.End.Y);
+                }
+            }
+
+            text.AppendLine("generated water by cell (share of cell area | max depth):");
+            foreach (RegionCellResource? wetCell in region.Cells)
+            {
+                WorldCellPresentationResource? pres = wetCell?.Presentation;
+                if (wetCell == null || pres == null)
+                {
+                    continue;
+                }
+
+                int wetSamples = 0;
+                int total = 0;
+                float deepest = 0f;
+                for (float dz = -pres.Depth * 0.5f; dz <= pres.Depth * 0.5f; dz += 3f)
+                for (float dx = -pres.Width * 0.5f; dx <= pres.Width * 0.5f; dx += 3f)
+                {
+                    float px = wetCell.Center.X + dx;
+                    float pz = wetCell.Center.Z + dz;
+                    total++;
+                    if (field.GeneratedWaterSurface(px, pz) is { } surf)
+                    {
+                        float d = surf - field.Height(px, pz);
+                        if (d > 0.05f)
+                        {
+                            wetSamples++;
+                            deepest = Mathf.Max(deepest, d);
+                        }
+                    }
+                }
+
+                if (wetSamples > 0)
+                {
+                    text.AppendLine(FormattableString.Invariant(
+                        $"  {wetCell.Id,-34} {100f * wetSamples / Mathf.Max(1, total),5:F1}%  max {deepest,5:F2} m"));
+                }
+            }
+
+            text.AppendLine(drowned.Count == 0
+                ? "authored anchors under generated water: none"
+                : $"authored anchors under generated water: {drowned.Count}");
+            foreach (string line in drowned)
+            {
+                text.AppendLine(line);
+            }
+
             text.AppendLine("steepest authored routes (walk limit 0.80):");
             foreach ((string cellId, int index, float grade) in routes.GetRange(0, Math.Min(8, routes.Count)))
             {

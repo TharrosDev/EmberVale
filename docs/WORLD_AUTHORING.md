@@ -13,8 +13,23 @@ The canonical exterior-region workflow. Read `CLAUDE.md`, `NOW.md`, `ARCHITECTUR
 
 ## 1. The one-paragraph model
 
-**Terrain creates geography. Props reinforce geography.** A region is one continuous ground function
-(`WorldHeightfield`) pooled from every cell's authored landforms, roads and yards in world space.
+**The generator creates geography. Authoring constrains it. Props reinforce it.** A region is one
+continuous ground function (`WorldHeightfield`): a staged procedural pipeline — domain-warped
+continentalness, mountain systems, erosion and valley response, rolling relief, micro detail, then a
+cached drainage solve that carves rivers — with every cell's authored landforms, roads and yards
+stamped over it in that fixed order, in world space.
+
+⚠️ **A region without a `WorldGenerationProfileResource` has no geography.** The profile in
+`data/world_gen/<Region>.tres` is the whole art direction: macro relief, mountain prevalence and
+height, valley strength, erosion character, climate, snow line, hydrology and the route-calm radius.
+One generator serves every realm; the Ember Crown and Frostfang Reach share a seed and differ only in
+their profile. `--validate` fails a region that omits one. **Do not fork the generator per region.**
+
+⚠️ **AUTHORED CIRCULATION CALMS THE GENERATOR AROUND ITSELF.** Roads and yards fade the mountain,
+valley and local-relief terms over `RouteCalm` metres while the continental tilt runs straight
+through, so a town still sits on a hillside and a road still climbs — but neither can meet a peak.
+This is why authored routes stayed walkable when real geography arrived under them, and it is
+art-directable per region rather than a constant.
 That function is the rendered mesh, the collider, the navigation source, the surface the props are
 conformed onto, and the surface the scatter is planted on. Nothing else in the world is allowed to
 *be* the shape of the land: a corrie built from scaled rock clusters, a crater built from a ring of
@@ -131,6 +146,24 @@ own seam behaviour, their own culling and their own validator.
 | road | PathSegment, not a landform | a road is a *cut*: at full mask its centreline is the graded line between its own endpoints |
 | river corridor | Ridge (negative, `flat` 1) plus a Water body over it | |
 
+⚠️ **A HEIGHT THAT LEVELS GROUND IS AN OFFSET, NOT A WORLD Y — ALL THREE OF THEM.**
+`WorldGroundAreaResource.Elevation`, a `WorldLandformResource.Height` with `Flatten` over 0.5, and
+`WorldWaterResource.SurfaceY` all state a TARGET, and all three carry an `ElevationMode` that is
+`RelativeToBase` by default: metres above the generated country under their own centre, resolved once
+per region load. Author them that way and they follow their hillside forever.
+
+**This is the single most expensive lesson of the generator pass, and it was learned three times.**
+Every one of those numbers was originally an absolute world Y authored against a field that never
+left −1.5..1.5 m, and each failed differently once the ground moved:
+
+| Authored as | Became |
+| --- | --- |
+| a pad at `y = 0` | a step with a cliff on its uphill side |
+| a 12 m shelf at `y = 10` | a 16.5 m shelf whose path climbed at 0.79, right at the walk limit |
+| a fen waterline at `y = 0.05` | a flood that swallowed its own shoreline and the next cell — the ground under Hollowreach is 8.4 m lower than that number was written against |
+
+Use `Absolute` only where a specific world height genuinely is the point.
+
 **Naturalisation.** `Irregularity` warps a landform's boundary by a noise field scaled to its own
 size, so it keeps its authored place, height and grade while its *edge* stops being drawable with a
 compass. The generator applies **0.26 to every natural landform and 0 to anything levelling**
@@ -173,8 +206,21 @@ Ten profiles ship: `TemperateLowland` `Pasture` `Woodland` `Wetland` `BurnedHeat
 than forking it.** A new profile is warranted when a region needs a ground identity none of the ten
 has; build it out of the existing layers so the *next* region can use it too.
 
-The per-cell `Tint` is legacy. It can only apply a flat wash and has to be faded at the cell edge to
-stop it drawing the lattice back onto the ground; a per-cell **biome override** is the replacement.
+The per-cell `Tint` is **retired** — it could only apply a flat wash over a rectangle and had to be
+edge-faded to stop it drawing the lattice back onto the ground. The fields below replaced it.
+
+### Biome borders are ecotones, not rectangles
+
+The cell's biome profile chooses **which** six layers are in play; the generator chooses **how much**
+of each is showing, continuously, across a cell boundary as smoothly as within one. The terrain mesh
+carries four generated fields to the shader — wetness, alpine weight, moisture and mountain, beside
+the road and yard masks — so:
+
+- the **snow line drifts** with exposure and moisture instead of being a contour at a fixed height;
+- the **wet margin follows a channel** across cell boundaries instead of being one waterline per cell;
+- the **sparse layer thins** where the country is wet and spreads where it is dry.
+
+Author the palette. Do not author the distribution.
 
 ### Atmosphere is part of the material
 
@@ -218,6 +264,26 @@ edge of open water short of its own shore — which is what two rounds of hand-s
 ⚠️ **Never author a water surface as a mesh in a `.tscn`.** It is invisible to the system whose job is
 keeping the player out of it.
 
+### Generated water
+
+The drainage solve produces rivers and ponds of its own, drawn with the same grid, depth encoding and
+shader as an authored body, and `WorldWater.SurfaceAt` consults both — so wade depth, drown depth,
+`WorldRecovery` and the traversal sweep's flooded-basin rule cover a generated river with no second
+water system in existence. Three rules keep it out of the designer's way:
+
+1. ⚠️ **Generated water is a channel, not an ocean.** Its depth is capped below `DrownDepth`, so it
+   can wet your boots and never needs rescuing from. **Anything deeper is authored** — that is what
+   `WorldWaterResource` is for, and why it is the thing every safety rule already knows about.
+2. ⚠️ **Authored surfaces are dry.** No generated water appears on a road carriageway or a yard.
+   A river crossing a road at wading depth is a ford; a settlement in a pond is a defect.
+3. ⚠️ **Authored water wins where it exists.** The generator does not draw a second surface over a
+   declared body.
+
+`--validate` fails if any pad, route end, spawn or portal ends up under more than `WadeDepth` of
+generated water. That arm exists because it is the one world failure every other gate passes: the
+terrain is continuous, the routes hold their grade, the navmesh bakes, and the traversal probe walks
+straight through it, because wading is walking.
+
 `WorldRecovery` also covers **pits with no walkable exit**, by the same mechanism: well below the
 surrounding ground, no progress, and a local flood fill finds no way out.
 
@@ -237,6 +303,15 @@ surrounding ground, no progress, and a local flood fill finds no way out.
   - `Clumping` / `ClumpScale` — how hard it gathers into stands. ⚠️ **Even spacing is the most
     recognisable pattern there is**; the eye finds the regularity long before it finds a repeated
     model.
+  - `MoistureRange` / `TemperatureRange` — the climate band the species survives in, from the
+    generator's own 0..1 fields. ⚠️ **This is what makes a woodland EDGE**, and it is the thing
+    `MaxSlope` and `HeightRange` cannot fake: those carve vegetation by shape alone, so every flat
+    mid-altitude acre got identical planting whatever the country was doing.
+  - `RiparianAffinity` — −1 to 1, toward or away from water. It biases rather than gates, so a belt
+    thins out through a scatter of individuals the way a real one does.
+  - `MaxCurvature` — keeps big species off knife ridges and out of gully bottoms while leaving them
+    on the open slope between, which a slope test cannot do because both a ridge line and a valley
+    floor are locally flat.
   - `Saturation` — under 1 drains the source model's colour. The only way to make one shared asset
     read as two regions' worth of material: a tint *multiplies*, so it can darken a hue but never
     drain it.

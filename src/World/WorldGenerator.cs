@@ -127,9 +127,10 @@ internal static class WorldGenerator
     }
 
     public static float PreliminaryElevation(
-        WorldGenerationSettings settings, float x, float z, WorldMacroField? macro = null)
+        WorldGenerationSettings settings, float x, float z, WorldMacroField? macro = null,
+        float calm = 0f)
     {
-        Preliminary(settings, macro, x, z, 0f, out float elevation,
+        Preliminary(settings, macro, x, z, calm, out float elevation,
             out _, out _, out _, out _, out _, out _);
         return elevation;
     }
@@ -488,13 +489,19 @@ internal sealed class WorldHydrologyMap
         _nearChannel.Length;
 
     private readonly WorldMacroField? _macro;
+    private readonly IReadOnlyList<WorldTerrainMath.Path>? _corridorPaths;
+    private readonly IReadOnlyList<WorldTerrainMath.GroundArea>? _corridorAreas;
 
     private WorldHydrologyMap(
         WorldGenerationSettings settings, WorldMacroField? macro,
+        IReadOnlyList<WorldTerrainMath.Path>? corridorPaths,
+        IReadOnlyList<WorldTerrainMath.GroundArea>? corridorAreas,
         float minX, float minZ, float maxX, float maxZ)
     {
         _settings = settings;
         _macro = macro;
+        _corridorPaths = corridorPaths;
+        _corridorAreas = corridorAreas;
         _step = MathF.Max(6f, settings.HydrologyCellSize);
         _originX = MathF.Floor(minX / _step) * _step - _step * 2f;
         _originZ = MathF.Floor(minZ / _step) * _step - _step * 2f;
@@ -516,8 +523,10 @@ internal sealed class WorldHydrologyMap
 
     public static WorldHydrologyMap Build(
         WorldGenerationSettings settings, WorldMacroField? macro,
+        IReadOnlyList<WorldTerrainMath.Path>? corridorPaths,
+        IReadOnlyList<WorldTerrainMath.GroundArea>? corridorAreas,
         float minX, float minZ, float maxX, float maxZ) =>
-        new(settings, macro, minX, minZ, maxX, maxZ);
+        new(settings, macro, corridorPaths, corridorAreas, minX, minZ, maxX, maxZ);
 
     private void Build()
     {
@@ -525,8 +534,21 @@ internal sealed class WorldHydrologyMap
         for (int x = 0; x < _width; x++)
         {
             int i = Index(x, z);
+            // ⚠️ THE DRAINAGE SOLVES THE GROUND THE WORLD ACTUALLY HAS, CALM AND ALL.
+            // Route calm lowers and gentles the terrain around authored circulation, so a solve run
+            // on the un-calmed field is solving a different world: it finds spill heights and flow
+            // directions for a landscape that does not exist, and then the water surface it derives
+            // sits above ground that was calmed out from under it. That is not a subtle error - it
+            // put the Fen Edge's cell centre under 3.8 metres of water and drowned three of its
+            // route ends, on a causeway whose whole purpose is to be walked.
+            float sampleX = _originX + (x * _step);
+            float sampleZ = _originZ + (z * _step);
+            float calm = _corridorPaths == null && _corridorAreas == null
+                ? 0f
+                : WorldTerrainMath.RouteCalm(
+                    sampleX, sampleZ, _settings.RouteCalm, _corridorPaths, _corridorAreas);
             _elevation[i] = WorldGenerator.PreliminaryElevation(
-                _settings, _originX + (x * _step), _originZ + (z * _step), _macro);
+                _settings, sampleX, sampleZ, _macro, calm);
             _filled[i] = _elevation[i];
             _flow[i] = 1f;
             _downstream[i] = -1;

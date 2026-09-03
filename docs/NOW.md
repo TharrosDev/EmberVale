@@ -66,35 +66,52 @@
   and a new `ContentValidator` arm fails `--validate` when one stops resolving or drifts out of the
   manifest. `reports/3d/` is now `reports/3d/archive/` and is **not required reading**.
 
+- **The world-generation replacement (2026-09-03) ✅ CLOSED — out of band.** The ground stopped being
+  two octaves of value noise with hand-authored mounds on it. `WorldHeightfield` is now a staged
+  generator — warped continentalness, mountain systems, erosion and valley shaping, rolling relief,
+  micro detail — carved by a cached D8 drainage solve, with the authored landforms, roads and yards
+  stamped over it in that fixed order. **Ember Crown gains 43 m of relief and Frostfang 98 m**, from
+  ONE generator and two art-directed profiles in `data/world_gen/`. Biome borders are ecotones driven
+  by generated moisture, wetness and alpine weight rather than per-cell rectangles; scatter layers
+  can declare a climate band, a riparian affinity and a curvature limit; rivers are real and come
+  under the existing non-swimming safety contract.
+  - ⚠️ **THE LESSON, AND IT COST THREE SEPARATE DEBUGGING ROUNDS: an authored TARGET height must be
+    an offset, not a world Y.** A ground area's elevation, a levelling landform's height and a
+    waterline were all absolute, all authored against a field that never left −1.5..1.5 m, and each
+    broke differently once the ground moved — a pad became a step, a 12 m shelf became 16.5 m and
+    failed the walk limit, and a fen waterline flooded its own shoreline and the next cell along.
+    All three now carry `ElevationMode`, default relative. `docs/WORLD_AUTHORING.md` §3 and §5.
+  - ⚠️ **Authored circulation calms the generator around itself** over an art-directable radius,
+    which is why 142 authored routes stayed walkable. The continental tilt is deliberately NOT
+    calmed, so a town still sits on a hillside rather than in a flat disc.
+  - Region load costs more and frame time does not: the macro fields are cached on a grid derived
+    from their own finest octave, and every cell's vertices, normals and collision faces are built on
+    worker threads under an epoch stamp.
+
 - **NEXT: 42C — Dawnwardens recruitment and probation.** The first arc to walk through a door 42B
   built: join/refuse dialogue plus a Defend/Reach probation pair, and rank one earned.
 
 Read [`docs/WORLD_AUTHORING.md`](WORLD_AUTHORING.md) before touching a cell. `data/regions/*.tres`
 is **generated** — edit `tools/region_spec_<region>.py` and run `python tools/gen_regions.py`.
 
-## Last verified (2026-09-01 — Session 5 architecture kit)
+## Last verified (2026-09-03 — the world-generation replacement)
 
 | Check | Result |
 | --- | --- |
 | Build | `dotnet build Embervale.sln` — 0 warnings, 0 errors |
-| Tests | `dotnet test tests/Embervale.Tests` — **1713 passing**, from a clean checkout |
-| `--validate` | exit 0, with the new `ValidateModelAssets` arm |
-| `--state` | 2 regions, 26 cells, **48 dialogues**, **31 schedules**, **75 map locations**, 13 factions |
-| Negative battery | `negative_tests.py` — **112/112 caught**, including the model-manifest drift rule |
-| `world_quality_check.py --mode engine` | all **19** gates PASS, including architecture structure/material/reference validation and real-capsule building collision |
-| `--mode visual` | PASS, 260/260 world frames after inspecting and merging only the five intentionally changed settlement cells |
-| Architecture views | PASS, 15 important buildings × six required angles = **90/90 frames** |
-| Permanent 3D audit | self-test PASS; **193 models** classified into five rig families, manifest matches disk |
-| `--guild-shots` | 12 frames: five hubs front and back at eye level with their officers, plus the same captain greeting a stranger and a member |
-| Persistence | the harness stages membership on every officer, then **loads a save taken before any of it** and proves every leader is back to the stranger greeting — a load replays no events |
-| `--play` | boots, restores `auto1`, reaches `Playing` and live combat, 0 errors |
-| `assets.py validate` | 5/5 gates PASS, incl. the retarget probe over all **33** humanoids |
-| `assets.py audit` | 193 models, **118 findings — down from 147**; the 5 not in the last archived run are all Meshy-wave assets it predates |
+| Tests | `dotnet test tests/Embervale.Tests` — **1743 passing** (1713 before this pass + 30 generator facts) |
+| `--validate` | exit 0, including the new `ValidateAuthoredGroundIsDry` arm |
+| `--state` | 2 regions, 26 cells, 75 map locations — unchanged |
+| `--worldgen` | Ember Crown **42.8 m relief**, 19% mountain / 22% valley / 5% wetland / 2.4% generated water; Frostfang **98.3 m relief**, 42% mountain / 10% alpine. Steepest authored route **0.56** against a 0.80 limit. No pad, route end, spawn or portal under water |
+| `gen_regions.py --check` | clean; template, seams and layout all PASS on both regions |
+| `world_traversal_probe.gd` | PASS — a real capsule over all **142** authored route segments |
+| `world_shots.gd` | 260 frames captured and baseline updated after inspecting the section-22 viewpoints by eye |
+| `world_perf_probe.gd` | frame time **unchanged** (Ember 15.5 → 15.5 ms mean, worst 20.8 → 21.7 against a 25 ms budget); draws, primitives and VRAM flat or better; **region configure 4.6 → 7.5 s**, which is loading-screen time behind the existing gate |
 
-`--mode full` passes all 21 pass/fail gates after the implementation commit; the negative battery
-catches and restores **111/111** deliberately broken rules, and the performance report is recorded
-in the Session 5 handoff. `--economy` remains out of scope because this pass touches neither prices
-nor trade.
+⚠️ **The perf probe swings about ±25% run to run on this machine** — the same build measured between
+14.5 and 23.1 ms mean across the session. Numbers above are from a settled run, and the shader
+changes were confirmed free by an A/B against the previous shader in one sitting rather than by
+comparing across runs. Treat any single reading from it as advisory, exactly as `tests/README.md` says.
 
 ## Live invariants
 
@@ -121,7 +138,19 @@ nor trade.
     offsets and ids, never as absolute points. A schedule uses `ScheduleResource.Origin` and
     cell-local destinations.
 13. ⚠️ **TERRAIN MAKES GEOGRAPHY; PROPS ONLY DETAIL IT.** If a shape needs to exist it goes in
-    `WorldLandformResource` and the props dress what the terrain already says.
+    `WorldLandformResource` and the props dress what the terrain already says. ⚠️ **And the GENERATOR
+    makes the geography the landforms sit on** — a region without a `WorldGenerationProfileResource`
+    has none, and `--validate` fails it. One generator, one profile per realm, never a fork.
+23. ⚠️ **AN AUTHORED TARGET HEIGHT IS AN OFFSET, NOT A WORLD Y.** `GroundArea.Elevation`, a
+    `Landform.Height` with `Flatten` over 0.5, and `WorldWaterResource.SurfaceY` all carry
+    `ElevationMode`, default `RelativeToBase`. Absolute is for the rare case where a specific world
+    height is genuinely the point. This rule was learned three times in one pass, and the waterline
+    was the expensive one: eight metres of generated ground under Hollowreach turned a 0.05 m fen
+    surface into a flood across two cells.
+24. ⚠️ **GENERATED WATER WETS YOUR BOOTS; AUTHORED WATER DROWNS YOU.** The generator's depth is
+    capped under `DrownDepth`, never appears on a road or a yard, and never draws over a declared
+    body. Anything deeper or more dangerous is a `WorldWaterResource` a designer wrote down.
+    `--validate` fails a pad, route end, spawn or portal under more than `WadeDepth`.
 14. ⚠️ **SOME OF THE WORLD MUST CONTAIN NOTHING.** Eleven of the realm's twenty-six cells carry a
     road, weather, vegetation and landform and no gameplay beat at all. Do not fill them in.
 15. ⚠️ **DEEP WATER IS NOT A TRAP BECAUSE IT IS DECLARED, NOT BECAUSE IT IS SHALLOW.** Declare a
@@ -159,6 +188,8 @@ dotnet build Embervale.sln
 dotnet test tests/Embervale.Tests
 python tools/gen_regions.py            # data/regions/*.tres is GENERATED; --check gates it
 godot --headless --path . -- --validate
+godot --headless --path . -- --worldgen   # what the generator makes: relief, regimes, field
+                                          # deciles, steepest routes, wet authored anchors
 godot --headless --path . -- --state
 godot --path . -- --play
 python tools/negative_tests.py          # refuses to run while data/ or scenes/ is dirty — commit first

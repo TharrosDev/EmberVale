@@ -444,6 +444,12 @@ def emit(region_key: str, header: str, cells: list[Cell], seams: list[Seam],
             out.append(f"Center = Vector2({body.at[0]}, {body.at[1]})")
             out.append(f"Extent = Vector2({body.ext[0]}, {body.ext[1]})")
             out.append(f"SurfaceY = {body.y}")
+            # A waterline is a target height, so it is metres above the generated country under the
+            # body rather than an absolute world Y - see WorldWaterResource.ElevationMode. Authored
+            # as an absolute it drowned Hollowreach's own shoreline the moment the realm got real
+            # elevation, because the ground under the fen is eight metres lower than the number was
+            # written against.
+            out.append("ElevationMode = 1")
             out.append(f"ShallowColor = {color(body.shallow)}")
             out.append(f"DeepColor = {color(body.deep)}")
             out.append(f"OpaqueDepth = {body.opaque}")

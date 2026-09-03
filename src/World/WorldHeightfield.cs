@@ -48,7 +48,24 @@ public sealed class WorldHeightfield
     /// </summary>
     public WorldHeightfield(
         WorldGenerationSettings settings, float minX, float minZ, float maxX, float maxZ)
-        : this(settings, minX, minZ, maxX, maxZ, BuildMacro(settings, minX, minZ, maxX, maxZ))
+        : this(settings, minX, minZ, maxX, maxZ, null, null)
+    {
+    }
+
+    /// <summary>
+    /// A region's field, with the authored circulation already known.
+    ///
+    /// ⚠️ <b>THE CORRIDORS HAVE TO BE PASSED HERE, NOT ATTACHED AFTERWARDS.</b> They calm the macro
+    /// relief, and the drainage solve reads elevations at every one of its own grid cells — so a map
+    /// built before the corridors are known solves a landscape the finished world does not have, and
+    /// derives water surfaces for ground that was about to be calmed out from under them.
+    /// </summary>
+    public WorldHeightfield(
+        WorldGenerationSettings settings, float minX, float minZ, float maxX, float maxZ,
+        IReadOnlyList<WorldTerrainMath.Path>? corridorPaths,
+        IReadOnlyList<WorldTerrainMath.GroundArea>? corridorAreas)
+        : this(settings, minX, minZ, maxX, maxZ,
+            BuildMacro(settings, minX, minZ, maxX, maxZ), corridorPaths, corridorAreas)
     {
     }
 
@@ -59,9 +76,12 @@ public sealed class WorldHeightfield
     /// so a river would sit a few centimetres off the valley it carved.</summary>
     private WorldHeightfield(
         WorldGenerationSettings settings, float minX, float minZ, float maxX, float maxZ,
-        WorldMacroField macro)
-        : this(settings, macro, WorldHydrologyMap.Build(settings, macro, minX, minZ, maxX, maxZ),
-            null, null, null, null, null)
+        WorldMacroField macro,
+        IReadOnlyList<WorldTerrainMath.Path>? corridorPaths,
+        IReadOnlyList<WorldTerrainMath.GroundArea>? corridorAreas)
+        : this(settings, macro,
+            WorldHydrologyMap.Build(settings, macro, corridorPaths, corridorAreas, minX, minZ, maxX, maxZ),
+            null, null, null, corridorPaths, corridorAreas)
     {
     }
 
@@ -182,11 +202,63 @@ public sealed class WorldHeightfield
             return null;
         }
 
+        // ⚠️ AN AUTHORED SURFACE IS DRY, FULL STOP. A road and a yard are the two things in the
+        // realm that exist because somebody decided a person stands there, and a generated lake over
+        // either of them is a settlement at the bottom of a pond - which is exactly what the Fen
+        // Edge became. The drainage now solves the calmed ground so this rarely fires, but "rarely"
+        // is not a contract: a metre of water on a market square is not a thing to leave to tuning.
+        //
+        // ⚠️ It suppresses water on the CARRIAGEWAY AND PAD ONLY, not across the whole calm radius.
+        // Roads follow valleys, so a rule that dried out every metre within the calm distance would
+        // delete most of the realm's drainage to protect its verges. A river crossing a road at
+        // wading depth is a ford, and a ford is a feature.
+        float authored = MathF.Max(PathMask(worldX, worldZ), AreaMask(worldX, worldZ));
+        if (authored > 0.5f)
+        {
+            return null;
+        }
+
         float? surface = WorldGenerator.Sample(
             _settings, _macro, _hydrology, worldX, worldZ, RouteCalmAt(worldX, worldZ)).WaterSurface;
+        if (surface == null)
+        {
+            return null;
+        }
+
         // A river carved into ground an author then raised — a causeway, a bridge pier, a levelled
         // pad — is not water any more. Compare against the FINISHED ground, not the carved one.
-        return surface != null && surface.Value > Height(worldX, worldZ) ? surface : null;
+        float ground = Height(worldX, worldZ);
+        float depth = surface.Value - ground;
+        if (depth <= 0f)
+        {
+            return null;
+        }
+
+        // ⚠️ GENERATED WATER IS A CHANNEL, NOT AN OCEAN, AND THE DEPTH CAP IS WHAT SAYS SO.
+        //
+        // The drainage solve derives a water surface from the GENERATED ground, and it is applied
+        // over the FINISHED ground with every authored landform stamped into it. Any authored
+        // excavation that happens to lie within a channel's influence therefore fills to the level
+        // of ground it has nothing to do with: the Fen Edge came out with a third of its area under
+        // water up to 5.9 m deep, the Ancient Aerie grew a 6.8 m lake on a mountain summit, and the
+        // Clan Hold a 4.5 m one in the middle of a settlement. Nothing was wrong with the drainage;
+        // it was answering a question about a landscape that the author had since dug a hole in.
+        //
+        // A generated channel is as deep as the channel, so beyond about one and a half times the
+        // profile's own RiverDepth the water is not the river any more and stops. Everything deeper
+        // than that in Embervale is AUTHORED - WorldWaterResource exists precisely so a designer can
+        // say "this basin is drowning depth" and have every safety rule know about it. That split
+        // also keeps generated water at or near the wading depth by construction, which is the
+        // friendliest possible default for a realm with no swimming in it.
+        // ⚠️ AND THE CAP IS ALSO HELD UNDER THE DROWNING DEPTH, WHICH IS A GAMEPLAY RULE RATHER THAN
+        // A GEOMETRIC ONE. WorldRecovery lifts a player out of anything deeper than DrownDepth, and
+        // it works - but a wilderness the generator has sprinkled with ponds that teleport you is a
+        // realm that feels broken even though nothing is. Water deep enough to need rescuing from is
+        // a thing a designer should have decided, so it lives in WorldWaterResource where it is
+        // declared, drawn, validated and known to every safety rule. Generated water wets your boots.
+        float cap = MathF.Max(0.5f, MathF.Min(
+            _settings.RiverDepth * 1.5f, WorldWater.DrownDepth - 0.1f));
+        return ground + MathF.Min(depth, cap);
     }
 
     /// <summary>

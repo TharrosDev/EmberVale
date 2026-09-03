@@ -47,4 +47,36 @@ public partial class WorldWaterResource : Resource
 
     /// <summary>Depth in metres at which the water reads fully opaque.</summary>
     [Export(PropertyHint.Range, "0.2,12,0.1")] public float OpaqueDepth { get; set; } = 2.2f;
+
+    /// <summary>
+    /// How <see cref="SurfaceY"/> is read. <b>0 Absolute</b> — a world Y. <b>1 RelativeToBase</b> —
+    /// metres above the GENERATED ground under this body's own centre, resolved once per region load.
+    ///
+    /// ⚠️ <b>THIS IS THE THIRD TIME THE SAME BUG HAS BEEN FOUND IN THIS PASS AND IT WAS BY FAR THE
+    /// WORST.</b> A ground area's elevation, a levelling landform's height and a waterline are all
+    /// targets stated as an absolute world Y, and all three were authored against a field that never
+    /// left the range -1.5..1.5. Give the realm real geography and each of them stops meaning what
+    /// it said — but a pad becomes a step and a shelf becomes a climb, whereas a waterline becomes a
+    /// FLOOD. The generated ground under Hollowreach sits at about -8.4 m; its fen was authored at a
+    /// surface of 0.05, so the same rectangle that used to be a wharf-side channel swallowed its own
+    /// shoreline, the whole basin, and the neighbouring Fen Edge cell with it.
+    ///
+    /// As an offset the waterline follows its basin: the floor is dug by landforms that also follow
+    /// the country, so the depth an author chose is the depth they keep.
+    /// </summary>
+    [Export(PropertyHint.Enum, "Absolute:0,RelativeToBase:1")]
+    public int ElevationMode { get; set; }
+
+    /// <summary>
+    /// This body's waterline in world Y, resolving <see cref="ElevationMode"/> against the generated
+    /// ground beneath its centre.
+    ///
+    /// ⚠️ It reads <see cref="WorldHeightfield.GeneratedElevation"/>, never <c>Height</c>: a lake
+    /// levelled against the landforms in its own basin would sit on the bottom of the hole it is
+    /// supposed to fill.
+    /// </summary>
+    public float ResolveSurface(WorldHeightfield? field, Vector3 cellCenter) =>
+        ElevationMode == 1 && field != null
+            ? field.GeneratedElevation(cellCenter.X + Center.X, cellCenter.Z + Center.Y) + SurfaceY
+            : SurfaceY;
 }
