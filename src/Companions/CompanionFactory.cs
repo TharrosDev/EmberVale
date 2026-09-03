@@ -24,7 +24,7 @@ public static class CompanionFactory
 {
     internal const string DefaultAttributesPath = "res://data/attributes/CompanionAttributes.tres";
     internal const string DefaultWeaponPath = "res://data/weapons/IronSword.tres";
-    internal const string DefaultModelPath = "res://assets/models/characters/chr_player_base.glb";
+    internal const string DefaultModelPath = ModelAssets.PlayerBody;
     private const float CapsuleRadius = 0.4f;
     private const float CapsuleHeight = 1.8f;
 

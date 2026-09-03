@@ -208,6 +208,11 @@ def parse_import(path: Path) -> dict[str, Any]:
             raw = match.group(1).strip()
             result[key] = raw.strip('"') if raw.startswith('"') else ({"true": True, "false": False}.get(raw, float(raw) if re.fullmatch(r"-?\d+(\.\d+)?", raw) else raw))
     result["has_bone_map"] = "retarget/bone_map" in text or "bone_map" in text
+    # The retarget's two identifying facts, which tools/assets.py classifies rig families from.
+    bone_map = re.search(r'"retarget/bone_map":\s*Resource\("([^"]+)"\)', text)
+    result["bone_map"] = Path(bone_map.group(1)).stem if bone_map else None
+    skeleton = re.search(r'"retarget/bone_renamer/unique_node/skeleton_name":\s*"([^"]+)"', text)
+    result["skeleton_name"] = skeleton.group(1) if skeleton else None
     result["subresource_count"] = len(re.findall(r"(?m)^\w.+?=\{", text))
     return result
 
@@ -246,10 +251,19 @@ def provenance_for(record: dict[str, Any], credits: str, manifest: list[dict[str
     return {"source": source, "licence": licence, "manifest_candidates": matches[:5], "credit_mentions": credit_lines[:5]}
 
 
+# The derived production manifest names every asset by path, so counting it as a *use* of one makes
+# every model look referenced. That is not cosmetic: `architecture-no-collision` is a critical flag
+# that only fires on a used asset, so four unreferenced wall modules were reported as shipped
+# architecture with no collider.
+NOT_A_USAGE = {"assets/models/manifest.json"}
+
+
 def repository_texts() -> dict[str, str]:
     result = {}
     for path in ROOT.rglob("*"):
         if not path.is_file() or path.suffix.lower() not in TEXT_EXTENSIONS or any(part in IGNORED_PARTS for part in path.parts):
+            continue
+        if rel(path) in NOT_A_USAGE:
             continue
         try:
             result[rel(path)] = path.read_text(encoding="utf-8", errors="replace")

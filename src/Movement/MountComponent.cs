@@ -6,6 +6,7 @@ using Embervale.Entities;
 using Embervale.Save;
 using Embervale.Stats;
 using Godot;
+using Embervale.Core;
 
 namespace Embervale.Movement;
 
@@ -40,7 +41,7 @@ public partial class MountComponent : EntityComponent, ISaveable
     /// ⚠️ <c>ContentValidator</c> asserts the two are the same string — see the class remarks.</summary>
     public const string OwnedFlagId = "flag.stable.mount_owned";
 
-    internal const string MountModelPath = "res://assets/models/creatures/mnt_horse.glb";
+    internal const string MountModelPath = ModelAssets.Horse;
 
     /// <summary>Where the rider sits, measured against the imported model in the engine and then
     /// rendered from four angles with the market behind it (<c>tools/mount_shots.gd</c>).

@@ -14,6 +14,13 @@
 **Low-poly but detailed — Skyrim's grounded, weathered fantasy realism rendered in
 clean, faceted geometry.** (Maintainer-pinned direction, 2026-07-01.)
 
+⚠️ **This governs the WORLD, not the cast** (maintainer direction, 2026-09-03). **Characters and
+creatures are semi-realistic** and deliberately depart from the faceted clause — they are generated
+against the stem in [`docs/3D_ASSETS.md`](3D_ASSETS.md), matching the player, Kael, the goblin and
+the Iron King. A faceted body will not sit beside them as one world; the first pilot was generated
+per this section and was rejected for exactly that. Everything below still governs environment,
+architecture, props and nature, where it is unchanged.
+
 Two references triangulate it:
 
 - **Skyrim** for *what things are and how they feel*: muted Nordic-medieval
@@ -165,8 +172,9 @@ the silhouette collapses — only then hand-author an LOD.
   2048² only for the player and bosses. Trim sheets encouraged for architecture.
 - **Painted wear, not noise:** edge highlights, ash settling on up-facing
   surfaces (a top-down gradient or vertex-color mask), soot around openings.
-- **Roughness bands, not maps** where possible: cloth 0.9, wood 0.8, stone 0.75,
-  leather 0.6, worn iron 0.45, polished steel 0.3.
+- **Roughness bands, not maps** where possible. ⚠️ The numbers live in
+  [`docs/3D_ASSETS.md`](3D_ASSETS.md) → Materials and nowhere else; a second set of bands
+  here drifted from it and the two disagreed on every surface.
 - **Vertex color** is the cheap detail channel: bake ash-dusting, moss, and char
   masks into vertex colors on environment meshes and blend two albedo tones in a
   shared shader — one material serves a whole kit.
@@ -239,8 +247,9 @@ pieces into one mesh before scaling — parented children otherwise compound the
 scale. A photo-realistic texture would still be wrong here; that part of the visual contract
 holds.
 
-Record source + license in `assets/CREDITS.md` (CC-BY requires the entry; CC0 gets
-one anyway for provenance) — an asset with no entry is not finished.
+⚠️ **Do not record anything in `assets/CREDITS.md`** — it is frozen as history (maintainer
+direction, 2026-08-08). Provenance is the derived `assets/models/manifest.json`; see
+[`docs/ASSET_POLICY.md`](ASSET_POLICY.md) §7.
 
 > **Superseded:** this section used to end *"if adapting costs more than modeling
 > clean — model clean."* Modelling clean is now the rare exception, gated on the

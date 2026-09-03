@@ -58,3 +58,8 @@ assets/library/_source_textures_nature/
 # binary and a credential file have no business in the history.
 .ai-game-dev/
 .godot-mcp/
+
+# Local 3D audit output. `python tools/assets.py audit` writes a timestamped run here; it is
+# regenerable evidence for the working tree in front of you, not repository history. Committing
+# these is what grew reports/3d/ to 400 MB across nine near-identical snapshots.
+reports/3d/runs/

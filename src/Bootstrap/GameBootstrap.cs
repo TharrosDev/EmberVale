@@ -1161,7 +1161,7 @@ public partial class GameBootstrap : Node3D
 
         // 30J: the wooden training-dummy model (origin at feet; the dummy entity's origin is
         // its capsule CENTRE, so the visual sits 1 m down). Capsule fallback if unimported.
-        if (GD.Load<PackedScene>("res://assets/models/props/prp_training_dummy.glb")?.Instantiate() is Node3D dummyVisual)
+        if (GD.Load<PackedScene>(ModelAssets.TrainingDummy)?.Instantiate() is Node3D dummyVisual)
         {
             dummyVisual.Name = "Mesh";
             dummyVisual.Position = new Vector3(0f, -1f, 0f);
@@ -1261,7 +1261,7 @@ public partial class GameBootstrap : Node3D
         };
 
         // 30J: the banded cache-chest model (origin at feet), box fallback if unimported.
-        if (GD.Load<PackedScene>("res://assets/models/props/prp_cache_chest.glb")?.Instantiate() is Node3D chestVisual)
+        if (GD.Load<PackedScene>(ModelAssets.CacheChest)?.Instantiate() is Node3D chestVisual)
         {
             chestVisual.Name = "Mesh";
             cache.AddChild(chestVisual);

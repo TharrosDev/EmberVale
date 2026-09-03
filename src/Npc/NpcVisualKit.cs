@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Embervale.Entities;
 using Godot;
+using Embervale.Core;
 
 namespace Embervale.Npc;
 
@@ -12,7 +13,7 @@ namespace Embervale.Npc;
 /// </summary>
 public static class NpcVisualKit
 {
-    public const string KitPath = "res://assets/models/equipment/npc_kit_embervale.glb";
+    public const string KitPath = ModelAssets.NpcKit;
     private const float AttachmentScale = 0.78f;
 
     public enum Build

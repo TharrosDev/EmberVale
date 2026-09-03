@@ -48,17 +48,18 @@ You are the lead engineer building this game incrementally. The non-negotiables:
   resources, not new inheritance chains or hard-coded values.
 - **Respect existing architecture.** Inspect before adding; don't duplicate
   systems; refactor when it lowers long-term cost.
-- **3D models: THE FOUR PACKS FIRST, ALWAYS** (maintainer direction, 2026-08-08 — this
-  supersedes the older "search the web first" rule, which is now step 3). The art set is
-  four Quaternius CC0 MegaKits vendored under `assets/library/`, and **the near-entirety of
-  the game is to be built from them**:
+- **3D models: TWO LANES** (maintainer direction, 2026-09-03). **Characters and creatures are
+  generated with Meshy** — semi-realistic, per the prompt stem in `docs/3D_ASSETS.md`. **Props,
+  architecture and nature come from the four packs first, always** (2026-08-08 — this supersedes
+  the older "search the web first" rule, which is now step 3): four Quaternius CC0 MegaKits
+  vendored under `assets/library/`, from which the near-entirety of the *world* is built:
 
   | Bundle | Covers | Models |
   | --- | --- | --- |
   | `medieval_megakit/` | modular architecture — walls, roofs, doors, windows, floors, stairs | 176 |
   | `medieval_interiors/` | interiors, furniture, containers, tools, market stalls | 94 |
   | `nature_megakit/` | trees, pines, bushes, grass, flowers, rocks, pebbles, rock paths | 68 |
-  | `animations/` | 46-clip universal animation library (retargeted — `ASSET_POLICY.md` §0.2) | 1 |
+  | `animations/` | 46-clip universal animation library (retargeted — `docs/3D_ASSETS.md`) | 1 |
 
   **The order is fixed. Stop at the first step that works:**
   1. **The four packs.** `ls assets/library/<pack>/` and read `manifest.json`. Do not skip this
@@ -84,8 +85,9 @@ You are the lead engineer building this game incrementally. The non-negotiables:
   entry as unfinished work. `assets/library/manifest.json` stays, because it is an *index* rather
   than a credit: it is what makes step 1 above cheap, and searching it costs one `grep`.
 
-  **Full policy: [`docs/ASSET_POLICY.md`](docs/ASSET_POLICY.md)** — mandatory, and it supersedes
-  any older build-from-scratch or attribution guidance in this repo.
+  **The contract is [`docs/3D_ASSETS.md`](docs/3D_ASSETS.md)** — rig families, adoption, the traps,
+  validation. `docs/ASSET_POLICY.md` covers sourcing and licence only. Both supersede any older
+  build-from-scratch or attribution guidance in this repo.
 - **Code, plugins and tools: check the Godot Asset Library before reinventing.**
   Distinct from the art rule above. Fetch from the asset's linked GitHub repo (the
   connected Godot MCP has no one-click install) and adapt it to our architecture.
@@ -443,8 +445,9 @@ file) is free.
 | Check a phase's scope or gate | [`PRODUCTION_ROADMAP.md`](docs/PRODUCTION_ROADMAP.md) | ~22k |
 | Make a design call (economy, difficulty, systems cut) | [`DESIGN.md`](docs/DESIGN.md) | ~9k |
 | Write or place anything the player reads | [`LORE.md`](docs/LORE.md) | ~3k |
-| Add or adapt a model | [`ASSET_POLICY.md`](docs/ASSET_POLICY.md) + `assets/CREDITS.md` | ~2k |
-| Build or restyle a model / a screen | [`ART_STYLE.md`](docs/ART_STYLE.md) / [`UI_STYLE.md`](docs/UI_STYLE.md) | ~4k / ~7k |
+| **Add, replace or adapt a model** | **[`3D_ASSETS.md`](docs/3D_ASSETS.md)** — the whole contract, then `python tools/assets.py status` | ~6k |
+| Decide where a model should come from | [`ASSET_POLICY.md`](docs/ASSET_POLICY.md) — sourcing and licence only | ~2k |
+| Restyle a model / a screen | [`ART_STYLE.md`](docs/ART_STYLE.md) / [`UI_STYLE.md`](docs/UI_STYLE.md) | ~4k / ~7k |
 
 **Start every session at [`docs/NOW.md`](docs/NOW.md)** — where the project is, the live invariants,
 and the commands, in about a screen. It is the only place project state is maintained; everything
@@ -639,10 +642,10 @@ immediately before it usually name the thing that will bite you.
 
 ### Standing constraints (these are rules, not history)
 
-- **The art set is four Quaternius CC0 MegaKits** (maintainer direction, 2026-08-08 — the priority
-  order is §1, the detail is [`docs/ASSET_POLICY.md`](docs/ASSET_POLICY.md) §0). **746** models are
-  vendored at `assets/library/` behind a `.gdignore`; a model enters the game by being **adapted
-  into `assets/models/`**, and that is now the only step — **crediting is not required and
+- **The world's art set is four Quaternius CC0 MegaKits; the cast is generated** (§1, and
+  [`docs/3D_ASSETS.md`](docs/3D_ASSETS.md)). 1,136 models are vendored at `assets/library/` behind a
+  `.gdignore`; a model enters the game by being **adopted into `assets/models/`** via
+  `python tools/assets.py adopt`, and that is the only step — **crediting is not required and
   `assets/CREDITS.md` is frozen as history.** Everything is CC0 and the build is personal, never
   published and never sold.
 - **Four asset traps, each of which shipped a defect before it was written down:** judge a
@@ -726,29 +729,19 @@ Alpha → Beta → Release Candidate → Launch.
 Terms are defined where they are used: `IEntity`/`EntityComponent` in `src/Entities`, `DamagePacket`
 in `src/Combat`, hurt/hitboxes in `docs/ARCHITECTURE.md` §2. It lived here as a list and cost tokens
 every session to answer questions nobody was asking.
-## 12. Session-independent 3D model quality contract (2026-08-31)
 
-Every model task starts with `docs/3D_AUDIT_PIPELINE.md` and the latest committed
-`reports/3d/` audit. Run `tools/audit_3d.py` before planning a broad model pass and again after
-important changes. Compilation, import, and tests are necessary but do not constitute visual
-validation.
+---
 
-- Embervale targets one cohesive, grounded fantasy world; obvious mixed-pack silhouettes,
-  materials, or proportions are defects even when each asset is individually competent.
-- Search the approved Quaternius/open-source library in the policy order before authoring. Prefer
-  adapting a sound existing organic or rigged asset over generating complex organic topology from
-  nothing. Preserve functional rigs and animation unless a concrete, documented defect requires a
-  change. Custom-build geometric and hard-surface assets when that is the cleaner fit.
-- Preserve source assets. Adapt/export production copies through reproducible scripts; never make
-  an irreversible edit in `assets/library/`.
-- Never blindly normalize root scales. Measure the imported scene in real world-space metres and
-  preserve intentional per-model import corrections.
-- Treat render geometry, navigation, physics collision, hurtboxes, and hitboxes as related but
-  separate contracts. A model swap does not authorize reusing its predecessor's collision.
-- Trace every dependent scene, resource, factory, and data reference before editing a shared
-  model. The audit's usage list is the starting point, not the whole review.
-- Every important changed model receives truthful visual QA from front, back, both sides and both
-  three-quarter views, plus relevant idle/movement/attack or equipment poses for rigged actors.
-- Maintain machine-readable provenance/licence data even where attribution is not legally
-  required. Optimize triangles, materials, textures, collision and LODs for an open-world game,
-  with stricter budgets for repeated assets.
+## 12. 3D assets
+
+**[`docs/3D_ASSETS.md`](docs/3D_ASSETS.md) is the contract. `python tools/assets.py status` is the
+state.** Those two answer everything: the five rig families, where models come from, how to adopt
+one, and every trap that has shipped a defect. Nothing under `reports/3d/archive/` is required
+reading, and this section deliberately does not restate the rules — it used to, and the copy drifted.
+
+Replacing a model is `python tools/assets.py adopt <src> <dest>` then `python tools/assets.py
+validate`. Rig mapping, textures, retargeting, `.import` configuration and the ordering are handled;
+re-fitting the collision capsule is the one part that still needs judgement.
+
+⚠️ **Compilation, import, tests and `--validate` are not visual validation.** Every 3D trap this
+repo has recorded was invisible in a log and visible only in a render.

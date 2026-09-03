@@ -6,6 +6,7 @@ using Embervale.Magic;
 using Embervale.Npc;
 using Embervale.Stats;
 using Godot;
+using Embervale.Core;
 
 namespace Embervale.Animation;
 
@@ -33,7 +34,7 @@ public partial class CharacterAnimationComponent : EntityComponent
     /// <c>SkeletonProfileHumanoid</c> so its tracks address <c>%GeneralSkeleton</c> by profile bone
     /// name. Extracted from the .glb by <c>tools/extract_anim_library.gd</c> so the library's
     /// Mannequin mesh never reaches a build.</summary>
-    private const string LibraryPath = "res://assets/models/animations/anim_library.res";
+    private const string LibraryPath = ModelAssets.AnimationLibrary;
 
     /// <summary>The library name the clips are added under; it becomes their <c>lib/Name</c> prefix,
     /// which <see cref="AnimationClips"/> strips.</summary>

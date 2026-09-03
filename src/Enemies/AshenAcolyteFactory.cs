@@ -26,7 +26,7 @@ public static class AshenAcolyteFactory
     private const string AttributesPath = "res://data/attributes/CultistAttributes.tres";
     // ponytail: reuses the goblin loot table until a Fallen/cultist table is authored (content, Phase 35).
     private const string LootTablePath = "res://data/loot/GoblinLoot.tres";
-    private const string ModelPath = "res://assets/models/creatures/enm_ashen_acolyte.glb";
+    private const string ModelPath = ModelAssets.AshenAcolyte;
     private const float CapsuleRadius = 0.36f;
     private const float CapsuleHeight = 1.75f;
     private const int HostileTeam = 1;

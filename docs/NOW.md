@@ -39,7 +39,7 @@
   inn, blacksmith, houses and first modular kit were retained; 21 compatible shared modules and ten
   structurally distinct authored prefabs now cover cottages, farms, shops, workshops, townhouses,
   inns, longhouses and ruins. Five live settlements use the new forms. See
-  `docs/ARCHITECTURE_KIT.md` and `reports/3d/session-05-architecture-handoff/`.
+  `docs/3D_ASSETS.md` → ARCHITECTURE.
 - **The environment/props pass (2026-09-02) ✅ CLOSED — out of band.** The vegetation system was
   judged good and **kept**; what was wrong was underneath it. Every prop GLB embedded its own copy
   of a shared texture *and* the importer extracted a second copy beside it, so `assets/models/props`
@@ -48,9 +48,24 @@
   forbids; real metal now goes up and everything else down. The realm's entire stone cover was one
   pebble at 210/100 m²; it is four species at 191. Eleven new rock and ice assets plus a rebuilt
   brazier fill the gap no vendored bundle covers, and `prp_glacier` — one mesh instanced fifteen
-  times across three cells — is retired. See `reports/3d/session-06-environment-handoff/`.
+  times across three cells — is retired.
   ⚠️ **The world visual gate is nondeterministic and its result is advisory until the capture clock
-  is pinned** — the handoff's "Unresolved" section is the diagnosis and the fix.
+  is pinned.** It renders on a GPU-less runner under xvfb, which is not the renderer its baselines
+  were captured on — it failed thirteen Frostfang frames on ground shading alone and the step-up
+  probe aborted with SIGABRT *after* printing PASS, neither about the repository. Run
+  `python tools/world_quality_check.py` locally, where a frame can be looked at.
+- **The 3D pipeline consolidation (2026-09-03) ✅ CLOSED — out of band.** No model changed and no
+  visual changed; what changed is that the pipeline is now knowable. `docs/3D_ASSETS.md` is the one
+  contract (it absorbed four documents and the pipeline half of `ASSET_POLICY.md`, and resolved five
+  contradictions between them); `python tools/assets.py` is the one entry point —
+  `status`/`validate`/`adopt`/`audit`/`build`, with the two orderings that were previously source
+  comments now encoded. `assets/models/manifest.json` is derived from the files on disk and names
+  the five rig families that were always there but never written down: **33 HUMANOID** retargeted to
+  `GeneralSkeleton`, **15 QUADRUPED** that keep their own rigs and clips, **3 VIEWMODEL**,
+  **43 ARCHITECTURE**, **99 STATIC PROP**. `src/Core/ModelAssets.cs` holds the paths gameplay names,
+  and a new `ContentValidator` arm fails `--validate` when one stops resolving or drifts out of the
+  manifest. `reports/3d/` is now `reports/3d/archive/` and is **not required reading**.
+
 - **NEXT: 42C — Dawnwardens recruitment and probation.** The first arc to walk through a door 42B
   built: join/refuse dialogue plus a Defend/Reach probation pair, and rank one earned.
 
@@ -62,17 +77,19 @@ is **generated** — edit `tools/region_spec_<region>.py` and run `python tools/
 | Check | Result |
 | --- | --- |
 | Build | `dotnet build Embervale.sln` — 0 warnings, 0 errors |
-| Tests | `dotnet test tests/Embervale.Tests` — **1713 passing** |
-| `--validate` | exit 0, with the new `ValidateGuildHubs` and `ValidateGuildDialogueConditions` arms |
+| Tests | `dotnet test tests/Embervale.Tests` — **1713 passing**, from a clean checkout |
+| `--validate` | exit 0, with the new `ValidateModelAssets` arm |
 | `--state` | 2 regions, 26 cells, **48 dialogues**, **31 schedules**, **75 map locations**, 13 factions |
-| Negative battery | `negative_tests.py` — **110/110 caught**, including ten new hub cases and both ends of an authored condition rank |
+| Negative battery | `negative_tests.py` — **112/112 caught**, including the model-manifest drift rule |
 | `world_quality_check.py --mode engine` | all **19** gates PASS, including architecture structure/material/reference validation and real-capsule building collision |
 | `--mode visual` | PASS, 260/260 world frames after inspecting and merging only the five intentionally changed settlement cells |
 | Architecture views | PASS, 15 important buildings × six required angles = **90/90 frames** |
-| Permanent 3D audit | self-test PASS; **178 assets**, 175 advisory findings inventoried in the Session 5 final audit |
+| Permanent 3D audit | self-test PASS; **193 models** classified into five rig families, manifest matches disk |
 | `--guild-shots` | 12 frames: five hubs front and back at eye level with their officers, plus the same captain greeting a stranger and a member |
 | Persistence | the harness stages membership on every officer, then **loads a save taken before any of it** and proves every leader is back to the stranger greeting — a load replays no events |
-| `--play` | boots, restores `auto1`, reaches `Playing`, 0 errors |
+| `--play` | boots, restores `auto1`, reaches `Playing` and live combat, 0 errors |
+| `assets.py validate` | 5/5 gates PASS, incl. the retarget probe over all **33** humanoids |
+| `assets.py audit` | 193 models, **118 findings — down from 147**; the 5 not in the last archived run are all Meshy-wave assets it predates |
 
 `--mode full` passes all 21 pass/fail gates after the implementation commit; the negative battery
 catches and restores **111/111** deliberately broken rules, and the performance report is recorded
@@ -152,6 +169,10 @@ godot --path . --script res://tools/world_perf_probe.gd
 python tools/world_quality_check.py --mode engine       # what CI runs on a PR
 python tools/world_quality_check.py --mode visual       # ditto, second job
 python tools/world_quality_check.py --mode full         # + the negative battery; weekly
+python tools/assets.py status           # 3D: what exists, which rig family, what drifted
+python tools/assets.py validate         # 3D: every hard gate, in the required order
+python tools/assets.py adopt <src> <dest>               # source model -> validated production asset
+python tools/assets.py audit            # full Blender + Godot inspection -> reports/3d/runs/
 python tools/compose_building.py <name> <w> <d> <storeys> [--hollow | --open | --ruined] [kit options]
 python tools/check_architecture_kit.py
 godot --headless --path . --script res://tools/building_collision_probe.gd

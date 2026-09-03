@@ -34,6 +34,7 @@ IMPORTED scene in-engine -- accessor bounds ignore node scale and will lie to yo
 """
 
 import json
+import argparse
 import os
 import shutil
 import struct
@@ -126,12 +127,24 @@ def share(src, dest):
     print(f"{os.path.basename(src)} -> {dest}  (+{shared} new shared texture(s))")
 
 
+# Windows consoles default to cp1252, and every tool here prints the repo's warning glyphs. Without
+# this a plain `--help` dies with UnicodeEncodeError before it prints anything useful.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
+
 if __name__ == "__main__":
-    args = [a for a in sys.argv[1:] if not a.startswith("--")]
-    flags = {a.split("=")[0]: a.split("=")[1] for a in sys.argv[1:] if "=" in a and a.startswith("--")}
-    if len(args) != 2:
-        raise SystemExit(__doc__)
-    if "--shared" in sys.argv[1:]:
-        share(args[0], args[1])
+    parser = argparse.ArgumentParser(description=__doc__,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("source", help="the pack .gltf to adopt")
+    parser.add_argument("dest", help="destination under assets/models/")
+    parser.add_argument("--scale", type=float, default=None,
+                        help="nodes/root_scale correction to write into the .import")
+    parser.add_argument("--shared", action="store_true",
+                        help="copy .gltf/.bin/textures alongside so many models share one set")
+    options = parser.parse_args()
+    if options.shared:
+        share(options.source, options.dest)
     else:
-        pack(args[0], args[1], float(flags["--scale"]) if "--scale" in flags else None)
+        pack(options.source, options.dest, options.scale)

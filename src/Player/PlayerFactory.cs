@@ -28,10 +28,10 @@ public static class PlayerFactory
     internal const string PlayerAttributesPath = "res://data/attributes/PlayerAttributes.tres";
     internal const string StartingWeaponPath = "res://data/weapons/IronSword.tres";
     internal const string ProgressionPath = "res://data/progression/PlayerProgression.tres";
-    internal const string PlayerModelPath = "res://assets/models/characters/chr_player_base.glb";
-    internal const string WeaponModelPath = "res://assets/models/weapons/wpn_sword_iron.glb";
-    internal const string PauldronModelPath = "res://assets/models/equipment/eqp_pauldron_embervale.glb";
-    internal const string PouchModelPath = "res://assets/models/equipment/eqp_pouch_embervale.glb";
+    internal const string PlayerModelPath = ModelAssets.PlayerBody;
+    internal const string WeaponModelPath = ModelAssets.IronSword;
+    internal const string PauldronModelPath = ModelAssets.Pauldron;
+    internal const string PouchModelPath = ModelAssets.Pouch;
     private const int PlayerTeam = 0;
     private const float CapsuleRadius = 0.4f;
     private const float CapsuleHeight = 1.8f;

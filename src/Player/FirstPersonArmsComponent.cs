@@ -4,6 +4,7 @@ using Embervale.Entities;
 using Embervale.Interaction;
 using Embervale.Magic;
 using Godot;
+using Embervale.Core;
 
 namespace Embervale.Player;
 
@@ -21,8 +22,8 @@ namespace Embervale.Player;
 [GlobalClass]
 public partial class FirstPersonArmsComponent : EntityComponent
 {
-    private const string RightArmModelPath = "res://assets/models/characters/fp_arm_right.glb";
-    private const string LeftArmModelPath = "res://assets/models/characters/fp_arm_left.glb";
+    private const string RightArmModelPath = ModelAssets.FirstPersonArmRight;
+    private const string LeftArmModelPath = ModelAssets.FirstPersonArmLeft;
 
     /// <summary>The player camera the arms ride (injected by <see cref="PlayerFactory"/>).</summary>
     public Node3D? Camera { get; set; }

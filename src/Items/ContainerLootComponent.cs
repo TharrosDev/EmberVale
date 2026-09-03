@@ -6,6 +6,7 @@ using Embervale.Localization;
 using Embervale.Loot;
 using Embervale.Save;
 using Godot;
+using Embervale.Core;
 
 namespace Embervale.Items;
 
@@ -24,8 +25,8 @@ namespace Embervale.Items;
 [GlobalClass]
 public partial class ContainerLootComponent : InteractableComponent, ISaveable
 {
-    private const string OpenModelPath = "res://assets/models/props/prp_cache_chest_open.glb";
-    private const string ClosedModelPath = "res://assets/models/props/prp_cache_chest.glb";
+    private const string OpenModelPath = ModelAssets.CacheChestOpen;
+    private const string ClosedModelPath = ModelAssets.CacheChest;
 
     /// <summary>Guaranteed legendary equippables rolled on the first open (inclusive range).</summary>
     [Export] public int MinLegendaryRolls { get; set; } = 2;
