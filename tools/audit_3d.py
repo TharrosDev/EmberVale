@@ -251,10 +251,19 @@ def provenance_for(record: dict[str, Any], credits: str, manifest: list[dict[str
     return {"source": source, "licence": licence, "manifest_candidates": matches[:5], "credit_mentions": credit_lines[:5]}
 
 
+# The derived production manifest names every asset by path, so counting it as a *use* of one makes
+# every model look referenced. That is not cosmetic: `architecture-no-collision` is a critical flag
+# that only fires on a used asset, so four unreferenced wall modules were reported as shipped
+# architecture with no collider.
+NOT_A_USAGE = {"assets/models/manifest.json"}
+
+
 def repository_texts() -> dict[str, str]:
     result = {}
     for path in ROOT.rglob("*"):
         if not path.is_file() or path.suffix.lower() not in TEXT_EXTENSIONS or any(part in IGNORED_PARTS for part in path.parts):
+            continue
+        if rel(path) in NOT_A_USAGE:
             continue
         try:
             result[rel(path)] = path.read_text(encoding="utf-8", errors="replace")

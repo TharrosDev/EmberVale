@@ -113,8 +113,7 @@ def measured_heights() -> dict[str, float]:
 
 def build_manifest() -> dict[str, Any]:
     """Derive the whole production manifest from what is on disk. Runs in about two seconds."""
-    texts = audit_3d.repository_texts()
-    texts.pop(audit_3d.rel(MANIFEST), None)   # it names every asset; it is not a use of one
+    texts = audit_3d.repository_texts()   # already excludes the manifest itself
     heights = measured_heights()
     assets = []
     for path in sorted(p for p in MODELS.rglob("*") if p.suffix.lower() in MODEL_EXTENSIONS):
