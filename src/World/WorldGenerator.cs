@@ -164,10 +164,20 @@ internal static class WorldGenerator
         valley = macro.Valley;
 
         float erosionResponse = 1f - Clamp01(erosion * s.ErosionStrength);
-        float rolling = (Fbm(s.Salt(ReliefSalt), macro.WarpedX / 92f, macro.WarpedZ / 92f, 3) - 0.5f) * 2f;
+
+        // ⚠️ THE GAIN IS UNDONE FOR THESE TWO, AND ONLY FOR THESE TWO. FbmGain exists so that a
+        // field COMPARED AGAINST A THRESHOLD reaches the range those thresholds are written for.
+        // Rolling relief and micro detail are not compared against anything — they are multiplied by
+        // LocalRelief and added to the ground in METRES — so spreading them does not fix a threshold,
+        // it silently triples the realm's small-scale relief and makes LocalRelief mean something
+        // other than what its name and its range hint say. It also put a sixty-centimetre crest on a
+        // four-metre wavelength, which is finer than the collision lattice can resolve: the collider
+        // interpolated straight over it and handed the player ground 59 cm from the ground it draws.
+        // Dividing the gain back out is what makes "1.4 metres of local relief" mean 1.4 metres.
+        float rolling = ((Fbm(s.Salt(ReliefSalt), macro.WarpedX / 92f, macro.WarpedZ / 92f, 3) - 0.5f) * 2f) / FbmGain;
         float fineScale = MathF.Max(0.25f, s.DetailScale);
-        float fine = (Fbm(s.Salt(ReliefSalt + 43), x * 0.045f * fineScale,
-            z * 0.045f * fineScale, 2) - 0.5f) * 0.24f;
+        float fine = ((Fbm(s.Salt(ReliefSalt + 43), x * 0.045f * fineScale,
+            z * 0.045f * fineScale, 2) - 0.5f) * 0.24f) / FbmGain;
         float depositionalCalm = 1f - (valley * 0.78f);
 
         // ⚠️ THE CONTINENTAL TERM IS NOT CALMED AND THAT IS THE WHOLE POINT. Fading everything
@@ -225,10 +235,15 @@ internal static class WorldGenerator
         // thirty-metre road. Seventeen authored routes failed the 0.80 grade gate at once and every
         // one of them looked like a road-authoring problem rather than a smoothstep.
         // A fixed-width band means "fewer mountains" and "gentler mountains" stay separate ideas.
+        // ⚠️ AND THE UPPER BOUND IS ALLOWED PAST 1. Clamping it looks harmless and is the same bug
+        // wearing a smaller hat: at a prevalence of 0.86 a band clamped to 0.995 is 0.135 wide, not
+        // 0.34, so the ramp steepens again exactly where a lowland realm sets its dial. Letting the
+        // bound run past the field's own ceiling means a high prevalence produces mountains that are
+        // both RARER and LOWER - which is what "this realm is not very mountainous" should mean, and
+        // is the property WorldGeneratorFieldTests checks by comparing two settings of the dial.
         const float mountainBand = 0.34f;
         float potential = SmoothStep(
-            s.MountainPrevalence,
-            MathF.Min(0.995f, s.MountainPrevalence + mountainBand), ridge);
+            s.MountainPrevalence, s.MountainPrevalence + mountainBand, ridge);
         float chain = SmoothStep(0.34f, 0.72f,
             Fbm(s.Salt(MountainSalt + 37), wx / (mountainScale * 1.9f), wz / (mountainScale * 1.9f), 3));
         float mountain = Clamp01(potential * (0.38f + (chain * 0.82f)));
@@ -382,8 +397,17 @@ internal sealed class WorldMacroField
         int z0 = Math.Clamp((int)MathF.Floor(gz), 0, _height - 1);
         int x1 = Math.Min(x0 + 1, _width - 1);
         int z1 = Math.Min(z0 + 1, _height - 1);
-        float tx = Math.Clamp(gx - x0, 0f, 1f);
-        float tz = Math.Clamp(gz - z0, 0f, 1f);
+        // ⚠️ SMOOTHSTEPPED WEIGHTS, NOT RAW ONES, AND THAT IS NOT A COSMETIC CHOICE.
+        // Plain bilinear interpolation is continuous in VALUE but not in SLOPE: the gradient jumps
+        // at every grid line, so a cached field reconstructed this way is a lattice of flat facets
+        // meeting at creases. Multiplied by MountainHeight those creases became sixty-centimetre
+        // tent-shaped ridges on a five-and-a-half-metre spacing - fine enough that the collision
+        // lattice interpolated straight over them and handed the player ground 59 cm away from the
+        // ground being drawn, and regular enough that they would eventually have read as a grid on
+        // the hillsides. Smoothstepping the weights forces the derivative to zero at each node, so
+        // the reconstruction is smooth everywhere and the cache stops being visible.
+        float tx = SmoothCurve(Math.Clamp(gx - x0, 0f, 1f));
+        float tz = SmoothCurve(Math.Clamp(gz - z0, 0f, 1f));
 
         WorldGenerator.MacroFields a = _cells[(z0 * _width) + x0];
         WorldGenerator.MacroFields b = _cells[(z0 * _width) + x1];
@@ -402,6 +426,8 @@ internal sealed class WorldMacroField
             Mix(a.MoistureNoise, b.MoistureNoise, c.MoistureNoise, d.MoistureNoise, tx, tz),
             Mix(a.RainShadow, b.RainShadow, c.RainShadow, d.RainShadow, tx, tz));
     }
+
+    private static float SmoothCurve(float t) => t * t * (3f - (2f * t));
 
     private static float Mix(float p, float q, float r, float s, float tx, float tz)
     {
@@ -440,6 +466,21 @@ internal sealed class WorldHydrologyMap
     /// zero. One array read now answers for them.
     /// </summary>
     private readonly bool[] _nearChannel;
+
+    /// <summary>
+    /// How many grid cells out <see cref="Sample"/> has to look, derived from the furthest a channel
+    /// can still influence a point rather than fixed.
+    ///
+    /// ⚠️ <b>IT WAS A HARD-CODED TWO, AND THAT PUT A STEP IN THE WETLAND FIELD.</b> Water proximity
+    /// falls off over the channel width plus twenty-two metres, so at a ten-metre grid a river could
+    /// still be reaching a point two and a half cells away — and the scan stopped at two. Proximity
+    /// therefore dropped from a smooth value to exactly zero at a grid line, moisture dropped with
+    /// it, and the wetland weight jumped by six tenths across one metre of ground. That is a visible
+    /// line on the ground drawn by the coordinate system, which is precisely the artefact generated
+    /// biomes exist to remove; it took a continuity test to find it, because nothing about it looks
+    /// wrong in the source.
+    /// </summary>
+    private readonly int _reach;
     private readonly WorldGenerationSettings _settings;
 
     public long ApproximateBytes =>
@@ -465,6 +506,11 @@ internal sealed class WorldHydrologyMap
         _flow = new float[count];
         _downstream = new int[count];
         _nearChannel = new bool[count];
+        // The widest a channel gets is RiverWidth * (0.75 + 2.2 * 0.55), and its influence fades out
+        // over twice that plus the twenty-two metre proximity band. Round out, and keep a floor of
+        // two so a coarse grid never scans less than the old behaviour.
+        float influence = (settings.RiverWidth * 3.9f) + 22f;
+        _reach = Math.Clamp((int)MathF.Ceiling(influence / _step), 2, 8);
         Build();
     }
 
@@ -536,8 +582,8 @@ internal sealed class WorldHydrologyMap
         {
             if (_downstream[Index(x, z)] < 0 || _flow[Index(x, z)] < _settings.RiverThreshold)
                 continue;
-            for (int dz = -2; dz <= 2; dz++)
-            for (int dx = -2; dx <= 2; dx++)
+            for (int dz = -_reach; dz <= _reach; dz++)
+            for (int dx = -_reach; dx <= _reach; dx++)
             {
                 int nx = x + dx;
                 int nz = z + dz;
@@ -547,8 +593,8 @@ internal sealed class WorldHydrologyMap
         }
     }
 
-    /// <summary>Whether any grid cell inside the rectangle — plus the two-cell reach
-    /// <see cref="Sample"/> uses — carries enough flow to be a channel.</summary>
+    /// <summary>Whether any grid cell inside the rectangle — plus the reach <see cref="Sample"/>
+    /// uses — carries enough flow to be a channel.</summary>
     public bool HasChannel(float minX, float minZ, float maxX, float maxZ)
     {
         int x0 = Math.Clamp((int)MathF.Floor((minX - _originX) / _step), 0, _width - 1);
@@ -580,8 +626,8 @@ internal sealed class WorldHydrologyMap
         float river = 0f;
         float proximity = 0f;
         float? surface = null;
-        for (int dz = -2; dz <= 2; dz++)
-        for (int dx = -2; dx <= 2; dx++)
+        for (int dz = -_reach; dz <= _reach; dz++)
+        for (int dx = -_reach; dx <= _reach; dx++)
         {
             int gx = cx + dx;
             int gz = cz + dz;
@@ -595,7 +641,15 @@ internal sealed class WorldHydrologyMap
             float bz = _originZ + (down / _width) * _step;
             float distance = WorldTerrainMath.DistanceToSegment(x, z, ax, az, bx, bz);
             float width = _settings.RiverWidth * (0.75f + MathF.Min(2.2f, MathF.Sqrt(_flow[i] / _settings.RiverThreshold) * 0.55f));
-            float influence = 1f - SmoothStep(width, width * 2.1f, distance);
+            // ⚠️ A BANK IS WIDER THAN THE CHANNEL IT BELONGS TO, AND A NARROW ONE IS A TRENCH.
+            // Fading the carve from the water's edge to twice its width put the whole of a river's
+            // relief into about three metres of ground: believable enough in a screenshot and not
+            // resolvable by anything that samples the world at two metres. The collision lattice
+            // interpolated straight across it and put the ground it hands the player up to 59 cm
+            // from the ground it draws them - more than they can step. Starting the fade inside the
+            // channel and carrying it out to two and a half widths spreads the same depth over
+            // roughly eight metres, which is both a gentler bank and one a collider can see.
+            float influence = 1f - SmoothStep(width * 0.55f, width * 2.6f, distance);
             river = MathF.Max(river, influence);
             proximity = MathF.Max(proximity, 1f - SmoothStep(width, width + 22f, distance));
             if (influence > 0.04f)

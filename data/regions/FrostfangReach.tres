@@ -585,6 +585,7 @@ Extent = Vector2(22, 19)
 Height = 10.0
 Falloff = 0.45
 Flatten = 1.0
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Path_dragon_approach"]
 script = ExtResource("6_path")
@@ -716,6 +717,7 @@ Extent = Vector2(32, 26)
 Height = 0.0
 Falloff = 0.5
 Flatten = 0.85
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Land_clan_hold_6"]
 script = ExtResource("8_landform")
@@ -725,6 +727,7 @@ Extent = Vector2(9, 8)
 Height = 2.2
 Falloff = 0.35
 Flatten = 1.0
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Land_clan_hold_7"]
 script = ExtResource("8_landform")
@@ -734,6 +737,7 @@ Extent = Vector2(8, 10)
 Height = -1.6
 Falloff = 0.4
 Flatten = 1.0
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Path_hold_west"]
 script = ExtResource("6_path")
@@ -926,6 +930,7 @@ Extent = Vector2(21, 18)
 Height = -4.0
 Falloff = 0.3
 Flatten = 1.0
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Path_ash_causeway"]
 script = ExtResource("6_path")
@@ -1155,6 +1160,7 @@ Extent = Vector2(5.0, 5.0)
 Height = -7.0
 Falloff = 0.32
 Flatten = 1.0
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Land_glacier_9"]
 script = ExtResource("8_landform")
@@ -1165,6 +1171,7 @@ Extent = Vector2(4.5, 4.5)
 Height = -8.0
 Falloff = 0.32
 Flatten = 1.0
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Land_glacier_10"]
 script = ExtResource("8_landform")
@@ -1174,6 +1181,7 @@ Extent = Vector2(17, 15)
 Height = -5.0
 Falloff = 0.55
 Flatten = 0.7
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Land_glacier_11"]
 script = ExtResource("8_landform")
@@ -1183,6 +1191,7 @@ Extent = Vector2(19, 16)
 Height = -4.0
 Falloff = 0.55
 Flatten = 0.7
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Land_glacier_12"]
 script = ExtResource("8_landform")
@@ -1192,6 +1201,7 @@ Extent = Vector2(13, 11)
 Height = -1.5
 Falloff = 0.8
 Flatten = 0.8
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Path_glacier_entry"]
 script = ExtResource("6_path")
@@ -1375,6 +1385,7 @@ Extent = Vector2(23, 19)
 Height = 20.0
 Falloff = 0.3
 Flatten = 1.0
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Land_ancient_aerie_3"]
 script = ExtResource("8_landform")
@@ -1384,6 +1395,7 @@ Extent = Vector2(9, 8)
 Height = 19.0
 Falloff = 0.3
 Flatten = 1.0
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Land_ancient_aerie_4"]
 script = ExtResource("8_landform")

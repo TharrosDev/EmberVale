@@ -66,4 +66,26 @@ public partial class WorldLandformResource : Resource
     /// edge of a paved surface. The generator's default follows that rule on its own.
     /// </summary>
     [Export(PropertyHint.Range, "0,0.6,0.01")] public float Irregularity { get; set; }
+
+    /// <summary>
+    /// How <c>Height</c> is read when this landform LEVELS ground (<c>Flatten</c> over 0.5).
+    /// <b>0 Absolute</b> — a world Y. <b>1 RelativeToBase</b> — metres above the generated ground
+    /// under this landform's own centre, resolved once per region load.
+    ///
+    /// ⚠️ <b>A LEVELLING LANDFORM IS A PAD BY ANOTHER NAME AND IT HAD THE SAME BUG.</b> A terrace,
+    /// a shelf, a pit floor and a plateau all REPLACE the ground rather than adding to it, so their
+    /// Height is a target, and every one of them in the realm was authored as an absolute world Y
+    /// against a field that never left the range -1.5..1.5. The Splintered Shelf is the case that
+    /// caught it: authored as "a twelve-metre platform, the steepest walkable ground in the realm on
+    /// purpose", it sat at a fixed 10 m while the generator put the country around it at -6.6, so
+    /// the shelf path climbed sixteen and a half metres over eighteen instead of twelve. Everything
+    /// downstream reported that honestly and none of it pointed here: the route grade validator saw
+    /// 0.79 and passed it, and the traversal probe snagged a real capsule on ground the author had
+    /// deliberately built at the edge of walkable.
+    ///
+    /// ⚠️ It has no effect on an ADDITIVE landform (<c>Flatten</c> 0) — a hill that adds eight
+    /// metres already follows whatever it is sitting on, which is why hills never needed migrating.
+    /// </summary>
+    [Export(PropertyHint.Enum, "Absolute:0,RelativeToBase:1")]
+    public int ElevationMode { get; set; }
 }

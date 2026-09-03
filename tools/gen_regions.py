@@ -370,6 +370,16 @@ def emit(region_key: str, header: str, cells: list[Cell], seams: list[Seam],
             out.append(f"Falloff = {form.fall}")
             if form.flat:
                 out.append(f"Flatten = {form.flat}")
+                # A landform that LEVELS ground states a target height, and a target authored as an
+                # absolute world Y stops meaning what it said the moment real geography appears under
+                # it. `h` on a levelling form is therefore metres above the generated country at its
+                # own centre - "a twelve-metre shelf", not "a shelf whose top is at y=12". Additive
+                # forms (flat 0) already follow their ground and are untouched.
+                #
+                # The same test that decides irregularity below decides this, and for the same
+                # reason: over 0.5 is a made thing, under it is a piece of landscape.
+                if form.flat > 0.5:
+                    out.append("ElevationMode = 1")
             irregularity = form.irr if form.irr is not None else (
                 0.0 if form.flat > 0.5 else DEFAULT_IRREGULARITY)
             if irregularity:

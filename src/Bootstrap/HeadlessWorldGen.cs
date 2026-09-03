@@ -137,6 +137,56 @@ public static class HeadlessWorldGen
             text.AppendLine(Percentiles("temperature", temperatures));
             text.AppendLine(Percentiles("moisture", moistures));
 
+            // ⚠️ THE STEEPEST ROUTES, ALWAYS, NOT ONLY THE FAILING ONES. `--validate` names a route
+            // once it is over 0.80, which tells you nothing about the one sitting at 0.79 — and a
+            // route at 0.79 is exactly the one that a re-tuned region profile, or a finer collision
+            // lattice, will push over. Ranking them is how a marginal route is found before it fails.
+            var routes = new List<(string Cell, int Index, float Grade)>();
+            foreach (RegionCellResource? routeCell in region.Cells)
+            {
+                WorldCellPresentationResource? routePresentation = routeCell?.Presentation;
+                if (routeCell == null || routePresentation == null)
+                {
+                    continue;
+                }
+
+                for (int i = 0; i < routePresentation.Paths.Count; i++)
+                {
+                    WorldPathSegmentResource? path = routePresentation.Paths[i];
+                    if (path == null)
+                    {
+                        continue;
+                    }
+
+                    var from = new Vector2(routeCell.Center.X + path.Start.X, routeCell.Center.Z + path.Start.Y);
+                    var to = new Vector2(routeCell.Center.X + path.End.X, routeCell.Center.Z + path.End.Y);
+                    float length = from.DistanceTo(to);
+                    if (length < 2f)
+                    {
+                        continue;
+                    }
+
+                    int steps = Mathf.CeilToInt(length / 2f);
+                    float previous = field.Height(from.X, from.Y);
+                    float worst = 0f;
+                    for (int step2 = 1; step2 <= steps; step2++)
+                    {
+                        Vector2 point = from.Lerp(to, step2 / (float)steps);
+                        float here = field.Height(point.X, point.Y);
+                        worst = Mathf.Max(worst, Mathf.Abs(here - previous) / (length / steps));
+                        previous = here;
+                    }
+                    routes.Add((routeCell.Id, i, worst));
+                }
+            }
+
+            routes.Sort((a, b) => b.Grade.CompareTo(a.Grade));
+            text.AppendLine("steepest authored routes (walk limit 0.80):");
+            foreach ((string cellId, int index, float grade) in routes.GetRange(0, Math.Min(8, routes.Count)))
+            {
+                text.AppendLine(FormattableString.Invariant($"  {cellId,-34} path[{index}]  {grade,5:F2}"));
+            }
+
             text.AppendLine("pads (authored elevation | generated ground | offset):");
             foreach (RegionCellResource? cell in region.Cells)
             {

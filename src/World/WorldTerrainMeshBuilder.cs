@@ -21,6 +21,14 @@ public static class WorldTerrainMeshBuilder
     /// </summary>
     public static WorldHeightfield HeightfieldFor(RegionResource region)
     {
+        // ⚠️ CORRIDORS FIRST, AND BEFORE ANY HEIGHT IS RESOLVED. Authored routes and yards calm the
+        // generated macro relief around themselves, and both a road grade and a levelling landform's
+        // target are measured against the ground beneath them - so the calming has to already be in
+        // the field those samples come out of. Attaching it afterwards measures everything against a
+        // mountain the finished world does not have.
+        WorldHeightfield world = WorldFor(region)
+            .WithCorridors(CorridorPaths(region), CorridorAreas(region));
+
         var landforms = new List<WorldTerrainMath.Landform>();
         var pathSources = new List<(WorldPathSegmentResource Path, Vector3 Origin)>();
         var areaSources = new List<(WorldGroundAreaResource Area, Vector3 Origin)>();
@@ -43,11 +51,21 @@ public static class WorldTerrainMeshBuilder
                 {
                     continue;
                 }
+                float centreX = cell.Center.X + form.Center.X;
+                float centreZ = cell.Center.Z + form.Center.Y;
+                // ⚠️ AGAINST THE GENERATED GROUND, NOT BaseHeight. A levelling landform's target has
+                // to be measured against the country the generator made, with no landforms applied —
+                // including this one. Measuring against BaseHeight would resolve each landform
+                // against the ones already stamped, so the order they happen to be authored in would
+                // change the shape of the world.
+                float height = form.ElevationMode == 1 && form.Flatten > 0.5f
+                    ? world.GeneratedElevation(centreX, centreZ) + form.Height
+                    : form.Height;
                 landforms.Add(new WorldTerrainMath.Landform(
                     form.Shape == 1 ? WorldTerrainMath.LandformShape.Ridge : WorldTerrainMath.LandformShape.Mound,
-                    cell.Center.X + form.Center.X, cell.Center.Z + form.Center.Y,
+                    centreX, centreZ,
                     cell.Center.X + form.End.X, cell.Center.Z + form.End.Y,
-                    form.Extent.X, form.Extent.Y, form.Rotation, form.Height, form.Falloff, form.Flatten,
+                    form.Extent.X, form.Extent.Y, form.Rotation, height, form.Falloff, form.Flatten,
                     form.Irregularity));
             }
 
@@ -72,13 +90,6 @@ public static class WorldTerrainMeshBuilder
         // first and knows nothing about authoring; landforms are stamped onto it; only then can a
         // road or a pad be levelled, because both are levelled AGAINST the ground beneath them.
         // Resolving those samples here rather than recursing is what keeps Height() non-recursive.
-        // WARNING: CORRIDORS FIRST, AND BEFORE ANY HEIGHT IS RESOLVED. Authored routes and yards
-        // calm the generated macro relief around themselves, and a road grade is measured against
-        // the ground at its own endpoints - so the calming has to already be in the field those two
-        // samples come out of. Attaching it afterwards grades every road against a mountain the
-        // finished world does not have, which is how the realm gets eighteen 45-degree roads.
-        WorldHeightfield world = WorldFor(region)
-            .WithCorridors(CorridorPaths(region), CorridorAreas(region));
         WorldHeightfield baseField = world.WithAuthored(landforms, null, null);
 
         var paths = new List<WorldTerrainMath.Path>(pathSources.Count);
@@ -400,7 +411,18 @@ public static class WorldTerrainMeshBuilder
     private static Vector3[] BuildCollisionFaces(
         WorldHeightfield field, WorldCellPresentationResource cell, Vector3 worldOrigin)
     {
-        int resolution = Mathf.Clamp(Mathf.CeilToInt(Mathf.Max(cell.Width, cell.Depth) / 2.5f), 4, 96);
+        // ⚠️ 1.5 m, NOT THE 2.5 m THIS SHIPPED WITH, AND THE OLD NUMBER WAS RIGHT FOR THE OLD WORLD.
+        // The comment above still holds - a walking capsule cannot feel a triangle - but what it can
+        // feel is the ground being in a different place from the picture of it. A collision lattice
+        // interpolates across its own quads, so its disagreement with the rendered surface is set by
+        // how much the terrain moves between collision vertices. Over a field that was two octaves
+        // of noise and never a metre and a half from zero, 2.5 m of spacing cost centimetres. Over
+        // real relief it cost up to 72 cm on ground the player can WALK, which is more than the half
+        // metre they can step: they float over a rise and sink into a dip, and it reads as the
+        // terrain being wrong rather than the collider being coarse. The test that found it is
+        // CollisionSamplesAgreeWithRenderedGround, and it only checks ground under the walk limit
+        // because a coarse lattice cutting the corner off a cliff is a true statement about cliffs.
+        int resolution = Mathf.Clamp(Mathf.CeilToInt(Mathf.Max(cell.Width, cell.Depth) / 2.0f), 4, 128);
         int row = resolution + 1;
         float stepX = cell.Width / resolution;
         float stepZ = cell.Depth / resolution;
