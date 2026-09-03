@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ddlid8whuu88y"
-path="res://.godot/imported/enm_barrow_wight_texture_0.png-3d6ffd1be2efb6a1fc64cd0b1f9e9184.ctex"
+path.s3tc="res://.godot/imported/enm_barrow_wight_texture_0.png-3d6ffd1be2efb6a1fc64cd0b1f9e9184.s3tc.ctex"
+path.etc2="res://.godot/imported/enm_barrow_wight_texture_0.png-3d6ffd1be2efb6a1fc64cd0b1f9e9184.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "bac449a32ca4b4b5f2d41dc55748bc81"
@@ -14,11 +16,11 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/models/creatures/enm_barrow_wight_texture_0.png"
-dest_files=["res://.godot/imported/enm_barrow_wight_texture_0.png-3d6ffd1be2efb6a1fc64cd0b1f9e9184.ctex"]
+dest_files=["res://.godot/imported/enm_barrow_wight_texture_0.png-3d6ffd1be2efb6a1fc64cd0b1f9e9184.s3tc.ctex", "res://.godot/imported/enm_barrow_wight_texture_0.png-3d6ffd1be2efb6a1fc64cd0b1f9e9184.etc2.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -40,4 +42,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0
