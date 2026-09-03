@@ -30,8 +30,14 @@ public static class EnemyVisualKit
 
     private static readonly Dictionary<string, Profile> Profiles = new(StringComparer.Ordinal)
     {
+        // The head piece is the boar's OWN: snout, paired tusks and brow, authored against the
+        // retained cattle rig (`tools/build_enemy_identity_assets.py`, "Thornback: the retained
+        // cattle rig gains a low snout, paired tusks and a thorned back ridge"). It was built and
+        // then never wired here — `BoarHead` was the only one of the kit's 40 pieces no profile
+        // referenced — so the Head slot borrowed `AshMawJaws` and the archetype read as the bull it
+        // is built from, straight horns and all. The carapace stays: it is bulk, not identity.
         ["enemy.thornback_boar"] = P("thornback_boar",
-            At("AshMawCarapace", "Torso", 0.92f), At("AshMawJaws", "Head", 0.90f),
+            At("AshMawCarapace", "Torso", 0.92f), At("BoarHead", "Head", 0.90f),
             At("BoarThornback", "Back", 0.82f, z: 0.05f)),
 
         ["enemy.barrow_wight"] = P("barrow_wight",

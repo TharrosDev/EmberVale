@@ -129,25 +129,45 @@ decision rather than changing it.
 - **The rig gate is only reachable for humanoids.** `tools/meshy_rig_probe.gd` was never run this
   session because no rigged asset existed to run it on.
 
-## Second finding: `ThornbackBoar` is the Quaternius bull
+## Retracted: `ThornbackBoar` is NOT a shipped defect
 
-Confirmed, and not a matter of stylisation. `assets/models/creatures/enm_thornback_boar.glb`:
+⚠️ **An earlier version of this report called `enm_thornback_boar.glb` a third shipped model-path
+defect. That was wrong, and the error is worth recording because it is a repeatable one: the bare
+GLB was rendered instead of the assembled actor.**
 
-- its single mesh is named **`Cow`**;
-- it carries the same 25 clips as `assets/library/animals/bull.glb` and `cow.glb`
-  (`Attack_Headbutt`, `Attack_Kick`, `Eating`, `Gallop`, `Gallop_Jump`, …);
-- rendered in Godot at eye level it is a black bovine — long straight back, tufted cow tail, cloven
-  hooves, short straight horns from the crown of the skull. No tusks, no wedge snout, no dorsal
-  bristle ridge, no shoulder hump.
+The bull base is deliberate and documented. `assets/CREDITS.md:375` records
+`enemy.thornback_boar → animals/Bull`, and `tools/build_enemy_identity_assets.py:234` states the
+intent in a comment:
 
-**This is a third shipped model-path defect** alongside the two fixed in `af1b34c`. It is *not*
-fixed here, because every route to fixing it is blocked or is the maintainer's call:
+> "Thornback: the retained cattle rig gains a low snout, paired tusks and a thorned back ridge."
 
-1. The vendored library has no boar. `assets/library/animals/` is 12 models
-   (alpaca, bull, cow, deer, donkey, fox, horse, husky, shiba_inu, stag, white_horse, wolf) and the
-   Poly Pizza manifest's only near-hit is "Pigeon".
-2. Meshy cannot produce a rigged one — this session's finding.
-3. Re-pointing the archetype at another vendored animal does not produce a boar either.
-4. A CC0 web pull (`ASSET_POLICY` step 3) would work, but this wave was scoped
-   **custom-generation-only**, so it needs the maintainer to reopen sourcing.
-5. Renaming the archetype to match the model is a content decision, not an engineering one.
+This is the standing strategy for the **whole** non-humanoid roster, not a one-off: keep a sound
+vendored animal rig and bolt species identity onto it from `enemy_identity_kit.glb` via
+`EnemyVisualKit`. `DireWolf` is the same wolf with a Mane and Fangs; `FrostStalker` is a **husky**
+with a Ridge and Mask; `AshfallElk` is a Stag. Judged from the bare mesh, every one of them is
+"the wrong animal". Judged in game, they are not.
+
+**The lesson: `--enemy-shots` is the tool, not a raw-GLB render.** `src/Debugging/EnemyShots.cs`
+builds real archetypes through `EnemyArchetypeFactory`, so it exercises the authored model path,
+the identity attachments, gameplay scale and the animation resolver. Run
+`godot --path . -- --enemy-shots` (**without `--headless`** — it needs a framebuffer) and read
+`user://enemy_shots`. It is the fifth instance of this repo's standing "RENDER IT" trap, and the
+first where the wrong render produced a confident false defect report.
+
+## The real defect, and it is one line
+
+`BoarHead` — a snout, paired tusks and a brow, authored specifically for this archetype — was
+**the only one of the identity kit's 40 pieces that no profile referenced.** It was built and never
+wired up. The boar's Head slot borrowed `AshMawJaws` instead, so the archetype wore the AshMaw's
+plating and read as a generic armoured beast with the bull's horns showing through.
+
+Fixed in `src/Enemies/EnemyVisualKit.cs` by putting the boar's own head piece in its own Head slot.
+`AshMawCarapace` stays on the Torso — that is shared bulk, not identity. `EnemyVisualKitTests` now
+asserts `BoarHead` rather than `AshMawCarapace`, because the carapace's presence never proved the
+archetype had a silhouette of its own; it did not.
+
+Zero credits. No new assets.
+
+`boar_before_left.png` and `boar_after_left.png` are the `--enemy-shots` left views either side of the
+change: before, a bovine muzzle inside the AshMaw's curved jaw band; after, the crown mass, blunt
+snout and tusks of the piece that was always meant to be there.
