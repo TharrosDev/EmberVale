@@ -5,17 +5,68 @@ Spent: **18 credits** (829 → 811). Budgeted 23; the rig never charged.
 
 ## Verdict
 
-**Meshy cannot rig a quadruped. Group C stays on its legacy models.**
+**Group C stays on its legacy models.** Not because a quadruped cannot be rigged at all — it can,
+in the web app — but because Meshy ships **only a walk cycle** for one, which is fewer clips than
+these five already have.
 
-`meshy_rig` rejects the wolf mesh outright with HTTP **422 — "Pose estimation failed, please
-provide a valid model"**. Reproduced twice, once via `input_task_id` and once via `model_url`, so it
-is the model that is refused and not the plumbing. The auto-rig's pose estimator is humanoid and
-finds no pose on a four-legged body; it never reaches the point of producing a bad rig, which is why
-this cost 5 credits less than budgeted.
+### What the API does
 
-This is a **hard stop, not a quality judgement**. There was no wolf-with-arms to photograph and no
-bent spine to measure — the service declines the input. The remaining four quadrupeds would fail
-identically and were not attempted, per the brief.
+`meshy_rig` rejects the wolf mesh with HTTP **422 — "Pose estimation failed, please provide a valid
+model"**. Reproduced twice, once via `input_task_id` and once via `model_url`, so it is the model
+that is refused and not the plumbing. It never charged, which is why the pilot cost 5 credits less
+than budgeted.
+
+This is documented behaviour, not a bug. The Rigging API's request body is exactly
+`input_task_id` / `model_url` / `height_meters` / `texture_image_url` — **there is no character-type,
+rig-type or skeleton parameter to set** — and the docs state:
+
+> "Please note that programmatic rigging currently only works well with standard humanoid (bipedal)
+> assets with clearly defined limbs and body structure at this time."
+
+listing "Non-humanoid assets" among the unsupported inputs.
+
+### What the web app does, and why it still does not help
+
+⚠️ **The web app is not limited the same way, and an earlier draft of this report was wrong to say
+Meshy cannot rig a quadruped.** The web rigging flow offers a manual character-type choice —
+**Humanoid**, **Quadruped** (four-legged animals), or **Smart Rig (Beta)** — so the wolf mesh
+generated here *can* be rigged by hand, exactly the way the maintainer produced `chr_player_base`,
+`npc_kael`, `enm_goblin` and `boss_iron_king` before this migration. The mesh is sitting in the
+workspace as task `01a06532-e29d-7664-bcdb-5d82fed2321c`.
+
+**The blocker is animation coverage, not rigging.** Meshy's help documentation states:
+
+> "Currently, walking is the only animation we support for quadrupeds."
+
+The 600+ motion presets are humanoid-only. So a web-app-rigged wolf would arrive with **one clip**,
+and it could not borrow the shared 46-clip `anim_library.res` either, because that retarget runs
+through `GeneralSkeleton` / `SkeletonProfileHumanoid` and a quadruped rig is not one.
+
+Measured against what these archetypes already have, that is a straight loss:
+
+| | Legacy `AnimalArmature` | Web-app quadruped rig |
+| --- | --- | --- |
+| idle | `Idle` | *(empty — bind pose)* |
+| run | `Walk` | `Walk` |
+| attack | `Attack` | *(empty — never bites)* |
+| hit | `Idle_HitReact_Left` | *(empty)* |
+| death | `Death` | *(empty — never falls)* |
+
+`AnimationClips.Resolve` returns empty for a slot with no match, and callers guard on length, so
+this fails silently: the wolf would walk at you and then stand in its bind pose through the entire
+fight and its own death.
+
+### The one path that would actually work
+
+Retarget the **legacy `AnimalArmature` clips onto a new Meshy quadruped rig**. Both are quadruped
+skeletons, so the motion is compatible in principle. It needs a custom `SkeletonProfile` for a
+four-legged body plus a hand-checked `BoneMap` per species — `bonemap_meshy.tres` and
+`meshy_adopt.py`'s hierarchy-walking derivation are both built around the humanoid profile and
+would not carry over. That is a real engineering task, not a pipeline flag, and it buys a better
+mesh on the same five animations these models already play. **Not recommended without a specific
+reason to want the new silhouettes.**
+
+The remaining four quadrupeds were not attempted, per the brief.
 
 ## What the 18 credits bought
 
@@ -38,7 +89,7 @@ Z 1.000 — not metres, so `height_meters` never got a chance to under-deliver h
 **smart-topology at 3.5k tris terraces the neck ruff** into visible stair-steps, because the budget
 cannot hold a fur silhouette. The GLB was not kept; the task id above still resolves it.
 
-## Why this is the right outcome, not a workaround
+## Why the mesh alone is not adoptable
 
 An unrigged mesh cannot inherit the legacy `AnimalArmature` clips — those are bound to the legacy
 skeleton. Adopting the mesh alone would make the wolf a static prop. There is no partial adoption.
@@ -66,10 +117,12 @@ decision rather than changing it.
 
 ## Carried forward for Groups D and E
 
-- **Group D (dragons) will hit the same 422.** Four-legged winged bodies are further from a humanoid
-  pose than a wolf is. Their clips (`Flying_Idle`, `Fast_Flying`, `Headbutt`) and
-  `DragonMeleeComponent`'s three hitboxes have no humanoid equivalent. Do not spend 92 credits to
-  confirm this; spend 23 on one drake if evidence is wanted.
+- **Group D (dragons) will hit the same 422 on the API**, and the web app will not save them either:
+  a winged quadruped is not covered by the Humanoid or Quadruped rig, and "walking is the only
+  animation we support for quadrupeds" is fatal for creatures whose locomotion clips are
+  `Flying_Idle` and `Fast_Flying`. `DragonMeleeComponent`'s three hitboxes (Bite / Wing / Tail) have
+  no Meshy equivalent at all. **Smart Rig (Beta) is the only untested option** — if the maintainer
+  wants evidence, it is one web-app rig on one existing mesh, not 92 credits of new generation.
 - **Group E (formless) may still work as mesh-only.** `AshMaw`, `CinderWisp`, `RuinCrawler` and
   `StormMote` carry in-house 5-clip sets. If a Meshy mesh were adopted it would lose them the same
   way, so the same objection applies unless the maintainer accepts static creatures.
