@@ -804,6 +804,17 @@ Falloff = 1.8""")],
      [("data/factions/Villagers.tres", 'DefaultReputation',
        'HubLocationId = "location.ember_crown.town"\nDefaultReputation')],
      "declares a hub location but no ranks"),
+
+    # ---- ValidateModelAssets ---------------------------------------------------------------
+    #
+    # The manifest is derived (`python tools/assets.py status --write`), so the way it goes wrong is
+    # not a bad edit but a missing regeneration after an adopt. A model gameplay loads that the
+    # manifest has never heard of means `assets.py validate` has quietly stopped covering it — which
+    # is the one failure that makes every other 3D gate less true than it looks.
+    ("model.asset_missing_from_manifest", "ValidateModelAssets",
+     [("assets/models/manifest.json", '"res://assets/models/characters/chr_player_base.glb"',
+       '"res://assets/models/characters/chr_player_base_UNADOPTED.glb"')],
+     "is not in the manifest"),
 ]
 
 
@@ -813,7 +824,7 @@ def run(cmd, timeout=30):
 
 def tree_state():
     """Exact relevant git state, used to prove dirty authoring survives the battery unchanged."""
-    return run(["git", "status", "--porcelain", "data/", "scenes/"]).stdout.strip()
+    return run(["git", "status", "--porcelain", "data/", "scenes/", "assets/models/manifest.json"]).stdout.strip()
 
 
 def validate():

@@ -3,6 +3,7 @@ using Embervale.Crafting;
 using Embervale.Entities;
 using Embervale.Save;
 using Godot;
+using Embervale.Core;
 
 namespace Embervale.Housing;
 
@@ -42,7 +43,7 @@ public static class PlaceableTemplates
         DisplayStand,
     };
 
-    private const string ModelRoot = "res://assets/models/props/";
+    private const string ModelRoot = ModelAssets.PropRoot;
 
     /// <summary>Installs a builder per <see cref="Ids"/> entry. Called once by the bootstrap, after
     /// <c>PersistentActorRegistry.Clear()</c>.</summary>

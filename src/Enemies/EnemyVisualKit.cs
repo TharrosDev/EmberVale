@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Embervale.Entities;
 using Godot;
+using Embervale.Core;
 
 namespace Embervale.Enemies;
 
@@ -13,7 +14,7 @@ namespace Embervale.Enemies;
 /// </summary>
 public static class EnemyVisualKit
 {
-    public const string KitPath = "res://assets/models/equipment/enemy_identity_kit.glb";
+    public const string KitPath = ModelAssets.EnemyIdentityKit;
 
     public readonly record struct Piece(string Name, string Bone, Vector3 Offset,
         Vector3 RotationDegrees, Vector3 Scale);

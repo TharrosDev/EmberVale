@@ -99,7 +99,7 @@ internal static class SandboxProps
 
         // 30J: the tome-stand model (lectern + open book with ember glyphs, origin at feet);
         // glowing box fallback if unimported.
-        if (GD.Load<PackedScene>("res://assets/models/props/prp_tome_stand.glb")?.Instantiate() is Node3D tomeVisual)
+        if (GD.Load<PackedScene>(ModelAssets.TomeStand)?.Instantiate() is Node3D tomeVisual)
         {
             tomeVisual.Name = "Mesh";
             tome.AddChild(tomeVisual);

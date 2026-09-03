@@ -22,7 +22,7 @@ public static class EnemyFactory
     internal const string AttributesPath = "res://data/attributes/GoblinAttributes.tres";
     internal const string WeaponPath = "res://data/weapons/GoblinClaw.tres";
     internal const string LootTablePath = "res://data/loot/GoblinLoot.tres";
-    internal const string ModelPath = "res://assets/models/creatures/enm_goblin.glb";
+    internal const string ModelPath = ModelAssets.Goblin;
     private const float CapsuleRadius = 0.4f;
     private const float CapsuleHeight = 1.7f;
     private const int HostileTeam = 1;

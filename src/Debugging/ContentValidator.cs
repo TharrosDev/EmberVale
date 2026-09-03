@@ -128,6 +128,50 @@ public static class ContentValidator
         ValidateBestiary(issues);
         ValidateResourcePaths(issues);
         ValidateUiAssets(issues);
+        ValidateModelAssets(issues);
+    }
+
+    /// <summary>
+    /// Every model gameplay names resolves, and the derived manifest knows about it (2026-09-03).
+    ///
+    /// The failure this catches is quiet by construction. <c>GD.Load</c> returns null for a path
+    /// that no longer resolves, and every caller of one falls back to a greybox capsule rather than
+    /// throwing — so a renamed or moved model compiles, boots, passes the tests, and shows the
+    /// player a grey box. The enemy archetypes and the mount already had this check; the fifteen
+    /// paths in <see cref="ModelAssets"/> did not.
+    ///
+    /// The manifest half is the drift guard: <c>assets/models/manifest.json</c> is derived from the
+    /// files on disk by <c>python tools/assets.py status --write</c>, so a model that gameplay uses
+    /// but the manifest has never heard of means the manifest was not regenerated after an adopt —
+    /// and an out-of-date manifest is what makes `assets.py validate` stop covering that asset.
+    /// A missing manifest is reported once rather than fifteen times: it is one mistake.
+    /// </summary>
+    private static void ValidateModelAssets(List<string> issues)
+    {
+        foreach (string path in ModelAssets.All)
+        {
+            if (!ResourceLoader.Exists(path))
+            {
+                issues.Add($"model asset '{path}' does not resolve — gameplay that loads it would silently greybox.");
+            }
+        }
+
+        string manifestText = FileAccess.GetFileAsString(ModelAssets.Manifest);
+        if (manifestText.Length == 0)
+        {
+            issues.Add($"model manifest '{ModelAssets.Manifest}' is missing or empty — run: python tools/assets.py status --write");
+            return;
+        }
+
+        foreach (string path in ModelAssets.All)
+        {
+            // The manifest stores the same res:// path verbatim, so a substring test is enough and
+            // avoids parsing 190 entries of JSON to answer a membership question.
+            if (!manifestText.Contains($"\"{path}\""))
+            {
+                issues.Add($"model asset '{path}' is not in the manifest — run: python tools/assets.py status --write");
+            }
+        }
     }
 
     /// <summary>
