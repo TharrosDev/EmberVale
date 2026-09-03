@@ -114,13 +114,56 @@ public sealed partial class WorldBiomeScatter : Node3D
                     }
                 }
 
-                float height = gate.Height(worldX, worldZ);
-                if (height < gateLayer.HeightRange.X || height > gateLayer.HeightRange.Y)
+                // ONE SAMPLE, NOT SIX. Height, slope, curvature, moisture, temperature and water
+                // distance all come out of a single WorldSample, which costs about what the old
+                // Height + SlopeAt pair did on its own - the expensive part of a query is walking
+                // the landforms that reach this cell, and that happens once either way. Asking the
+                // generator six separate questions would have made ecology the most expensive thing
+                // in a region load; asking it one makes it free.
+                WorldSample sample = gate.Sample(worldX, worldZ);
+                if (sample.Elevation < gateLayer.HeightRange.X ||
+                    sample.Elevation > gateLayer.HeightRange.Y)
                 {
                     return false;
                 }
-                return gateLayer.MaxSlope <= 0f ||
-                       gate.SlopeAt(worldX, worldZ, height) <= gateLayer.MaxSlope;
+
+                if (gateLayer.MaxSlope > 0f && sample.Slope > gateLayer.MaxSlope)
+                {
+                    return false;
+                }
+
+                if (gateLayer.MaxCurvature > 0f &&
+                    Mathf.Abs(sample.Curvature) > gateLayer.MaxCurvature)
+                {
+                    return false;
+                }
+
+                if (sample.Moisture < gateLayer.MoistureRange.X ||
+                    sample.Moisture > gateLayer.MoistureRange.Y ||
+                    sample.Temperature < gateLayer.TemperatureRange.X ||
+                    sample.Temperature > gateLayer.TemperatureRange.Y)
+                {
+                    return false;
+                }
+
+                if (gateLayer.RiparianAffinity != 0f)
+                {
+                    // A BIAS, NOT A FENCE. Thresholding on water distance draws a hard edge along
+                    // the riparian belt, and a hard edge is the one thing vegetation never has. The
+                    // species' own deterministic noise decides each candidate, so the belt thins out
+                    // through a scatter of individuals the way a real one does.
+                    float want = Mathf.Clamp(
+                        0.5f + (gateLayer.RiparianAffinity * (sample.WaterProximity - 0.35f) * 1.6f),
+                        0f, 1f);
+                    float roll = WorldTerrainMath.ValueNoise(
+                        profile.Seed + 7717, worldX * 0.41f, worldZ * 0.41f);
+                    if (roll > want)
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
             };
 
             IReadOnlyList<WorldScatterPlacement> placements = WorldScatterPlanner.Plan(

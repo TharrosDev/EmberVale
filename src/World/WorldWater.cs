@@ -49,7 +49,12 @@ public static class WorldWater
 
     /// <summary>Every body of a region, pooled into world space. Pure — the streamer and the
     /// validators both call it, so they can never disagree about where the water is.</summary>
-    public static List<Body> BodiesFor(RegionResource region)
+    public static List<Body> BodiesFor(RegionResource region) => BodiesFor(region, null);
+
+    /// <summary>Every body of a region, pooled into world space, with relative waterlines resolved
+    /// against <paramref name="field"/>. Pure — the streamer and the validators both call it, so
+    /// they can never disagree about where the water is.</summary>
+    public static List<Body> BodiesFor(RegionResource region, WorldHeightfield? field)
     {
         var bodies = new List<Body>();
         foreach (RegionCellResource cell in region.Cells)
@@ -66,7 +71,7 @@ public static class WorldWater
                 }
                 bodies.Add(new Body(
                     cell.Center.X + water.Center.X, cell.Center.Z + water.Center.Y,
-                    water.Extent.X, water.Extent.Y, water.SurfaceY));
+                    water.Extent.X, water.Extent.Y, water.ResolveSurface(field, cell.Center)));
             }
         }
         return bodies;
@@ -93,13 +98,38 @@ public static class WorldWater
     }
 
     /// <summary>
+    /// The highest water surface at a point counting BOTH authored bodies and the rivers and lakes
+    /// the drainage solve generated, or null where there is neither.
+    ///
+    /// ⚠️ <b>THIS OVERLOAD IS THE WHOLE REASON GENERATED WATER IS SAFE.</b> Embervale has no
+    /// swimming, and every rule that keeps a player out of deep water — the wade depth, the drown
+    /// depth, <see cref="WorldRecovery"/>'s return to the last dry ground, and the traversal
+    /// sweep's "flooded, therefore a basin rather than a trap" classification — is written against
+    /// one question: how deep is the water here. Answering it with authored rectangles alone would
+    /// have made every generated river a hole in that contract, and the contract would have looked
+    /// intact right up until somebody walked into one. There is no second water system; there is
+    /// one question with two sources.
+    /// </summary>
+    public static float? SurfaceAt(
+        float worldX, float worldZ, IReadOnlyList<Body> bodies, WorldHeightfield? field)
+    {
+        float? authored = SurfaceAt(worldX, worldZ, bodies);
+        float? generated = field?.GeneratedWaterSurface(worldX, worldZ);
+        if (authored == null)
+        {
+            return generated;
+        }
+        return generated == null ? authored : MathF.Max(authored.Value, generated.Value);
+    }
+
+    /// <summary>
     /// Water depth over the ground at a point: 0 on dry land and everywhere outside a body.
     /// A body whose surface lies below the terrain inside it contributes nothing, which is how a
     /// generously-drawn rectangle costs nothing where it overhangs the bank.
     /// </summary>
     public static float DepthAt(float worldX, float worldZ, WorldHeightfield? field)
     {
-        float? surface = SurfaceAt(worldX, worldZ);
+        float? surface = SurfaceAt(worldX, worldZ, _bodies, field);
         return surface == null || field == null
             ? 0f
             : MathF.Max(0f, surface.Value - field.Height(worldX, worldZ));

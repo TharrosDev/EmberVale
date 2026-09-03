@@ -66,6 +66,46 @@ public partial class BiomeScatterLayerResource : Resource
     /// </summary>
     [Export(PropertyHint.Range, "0,1,0.01")] public float Saturation { get; set; } = 1f;
 
+    [ExportGroup("Ecology")]
+
+    /// <summary>
+    /// The moisture band this species survives in, as the generator's 0..1 field. The default spans
+    /// everything, so an unauthored layer behaves exactly as it did before ecology existed.
+    ///
+    /// WARNING: THIS IS THE FIELD THAT MAKES A WOODLAND EDGE, AND IT IS THE ONE MaxSlope CANNOT
+    /// FAKE. Slope and altitude alone can only carve vegetation by SHAPE - a tree line is a height,
+    /// a cliff is a gradient - so every flat, mid-altitude acre in a region got exactly the same
+    /// planting whatever the country was doing. Moisture varies with drainage, rain shadow and
+    /// distance to water, so a reed bed can be told to want the wet end of the realm and a heath the
+    /// dry end, and the boundary between them lands wherever the ground actually changes rather than
+    /// on the cell edge where somebody swapped the profile.
+    /// </summary>
+    [Export] public Vector2 MoistureRange { get; set; } = new(0f, 1f);
+
+    /// <summary>The temperature band this species survives in, same 0..1 field. This is how one
+    /// scatter profile shared between two realms stops planting the Ember Crown's broadleaf on
+    /// Frostfang's snowfields without either region forking the profile.</summary>
+    [Export] public Vector2 TemperatureRange { get; set; } = new(0f, 1f);
+
+    /// <summary>
+    /// How much this species wants to be near water, -1 to 1. Positive gathers it into the riparian
+    /// belt along rivers and lake margins; negative pushes it out onto dry ground; 0 is indifferent.
+    ///
+    /// It biases rather than gates, so a positive value thins a species away from water instead of
+    /// cutting it off at a line - a willow does not stop at a fixed distance from a bank.
+    /// </summary>
+    [Export(PropertyHint.Range, "-1,1,0.05")] public float RiparianAffinity { get; set; }
+
+    /// <summary>
+    /// The most sharply convex ground this species will stand on, as the generator's curvature
+    /// (positive is a bowl, negative is a crest). 0 disables the test.
+    ///
+    /// It is what keeps big trees off knife ridges and out of the bottom of gullies while leaving
+    /// them on the open slope between - the two places a slope test cannot tell apart, because both
+    /// a ridge line and a valley floor are locally FLAT.
+    /// </summary>
+    [Export(PropertyHint.Range, "0,2,0.05")] public float MaxCurvature { get; set; }
+
     [ExportGroup("HLOD proxy")]
     [Export(PropertyHint.Enum, "None,Cone,Box")] public int HlodShape { get; set; }
     [Export(PropertyHint.Range, "2,32,1")] public int HlodReduction { get; set; } = 4;

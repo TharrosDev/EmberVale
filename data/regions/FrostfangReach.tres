@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="RegionResource" load_steps=17 format=3 uid="uid://crgnfrostfng0"]
+[gd_resource type="Resource" script_class="RegionResource" load_steps=18 format=3 uid="uid://crgnfrostfng0"]
 
 [ext_resource type="Script" path="res://src/World/RegionResource.cs" id="1_region"]
 [ext_resource type="Script" path="res://src/World/RegionCellResource.cs" id="2_cell"]
@@ -12,6 +12,7 @@
 [ext_resource type="Script" path="res://src/World/BiomeScatterLayerResource.cs" id="10_layer"]
 [ext_resource type="Script" path="res://src/World/BiomeScatterExclusionResource.cs" id="11_exclusion"]
 [ext_resource type="Script" path="res://src/World/WorldWaterResource.cs" id="12_water"]
+[ext_resource type="Resource" path="res://data/world_gen/FrostfangReach.tres" id="13_generation"]
 [ext_resource type="Resource" path="res://data/biomes/Alpine.tres" id="20_biome_alpine"]
 [ext_resource type="Resource" path="res://data/biomes/Snowfield.tres" id="21_biome_snowfield"]
 [ext_resource type="Resource" path="res://data/biomes/AshWaste.tres" id="22_biome_ashwaste"]
@@ -584,6 +585,7 @@ Extent = Vector2(22, 19)
 Height = 10.0
 Falloff = 0.45
 Flatten = 1.0
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Path_dragon_approach"]
 script = ExtResource("6_path")
@@ -619,7 +621,8 @@ Center = Vector2(-14, -14)
 Radius = Vector2(18, 13)
 Feather = 5.0
 SurfaceBlend = 0.48
-Elevation = 10.0
+ElevationMode = 1
+Elevation = 0.0
 
 [sub_resource type="Resource" id="Area_dragon_splinter"]
 script = ExtResource("7_area")
@@ -627,6 +630,8 @@ Center = Vector2(26, 0)
 Radius = Vector2(14, 12)
 Feather = 5.0
 SurfaceBlend = 0.30
+ElevationMode = 1
+Elevation = -5.16
 
 [sub_resource type="Resource" id="Presentation_dragon_roost"]
 script = ExtResource("4_presentation")
@@ -712,6 +717,7 @@ Extent = Vector2(32, 26)
 Height = 0.0
 Falloff = 0.5
 Flatten = 0.85
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Land_clan_hold_6"]
 script = ExtResource("8_landform")
@@ -721,6 +727,7 @@ Extent = Vector2(9, 8)
 Height = 2.2
 Falloff = 0.35
 Flatten = 1.0
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Land_clan_hold_7"]
 script = ExtResource("8_landform")
@@ -730,6 +737,7 @@ Extent = Vector2(8, 10)
 Height = -1.6
 Falloff = 0.4
 Flatten = 1.0
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Path_hold_west"]
 script = ExtResource("6_path")
@@ -807,6 +815,7 @@ Center = Vector2(-4, 2)
 Radius = Vector2(11, 9)
 Feather = 3.0
 SurfaceBlend = 0.70
+ElevationMode = 1
 Elevation = 0.0
 
 [sub_resource type="Resource" id="Area_hold_craft"]
@@ -815,7 +824,8 @@ Center = Vector2(15, -1)
 Radius = Vector2(7, 6)
 Feather = 1.5
 SurfaceBlend = 0.82
-Elevation = 2.2
+ElevationMode = 1
+Elevation = 0.0
 
 [sub_resource type="Resource" id="Area_hold_runs"]
 script = ExtResource("7_area")
@@ -823,7 +833,8 @@ Center = Vector2(-23, 2)
 Radius = Vector2(5, 7)
 Feather = 2.0
 SurfaceBlend = 0.55
-Elevation = -1.6
+ElevationMode = 1
+Elevation = 0.0
 
 [sub_resource type="Resource" id="Presentation_clan_hold"]
 script = ExtResource("4_presentation")
@@ -919,6 +930,7 @@ Extent = Vector2(21, 18)
 Height = -4.0
 Falloff = 0.3
 Flatten = 1.0
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Path_ash_causeway"]
 script = ExtResource("6_path")
@@ -954,7 +966,8 @@ Center = Vector2(12, 5)
 Radius = Vector2(20, 17)
 Feather = 5.0
 SurfaceBlend = 0.68
-Elevation = -4.0
+ElevationMode = 1
+Elevation = 0.0
 
 [sub_resource type="Resource" id="Presentation_ash_roost"]
 script = ExtResource("4_presentation")
@@ -1147,6 +1160,7 @@ Extent = Vector2(5.0, 5.0)
 Height = -7.0
 Falloff = 0.32
 Flatten = 1.0
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Land_glacier_9"]
 script = ExtResource("8_landform")
@@ -1157,6 +1171,7 @@ Extent = Vector2(4.5, 4.5)
 Height = -8.0
 Falloff = 0.32
 Flatten = 1.0
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Land_glacier_10"]
 script = ExtResource("8_landform")
@@ -1166,6 +1181,7 @@ Extent = Vector2(17, 15)
 Height = -5.0
 Falloff = 0.55
 Flatten = 0.7
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Land_glacier_11"]
 script = ExtResource("8_landform")
@@ -1175,6 +1191,7 @@ Extent = Vector2(19, 16)
 Height = -4.0
 Falloff = 0.55
 Flatten = 0.7
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Land_glacier_12"]
 script = ExtResource("8_landform")
@@ -1184,6 +1201,7 @@ Extent = Vector2(13, 11)
 Height = -1.5
 Falloff = 0.8
 Flatten = 0.8
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Path_glacier_entry"]
 script = ExtResource("6_path")
@@ -1254,7 +1272,8 @@ Center = Vector2(0, 0)
 Radius = Vector2(8, 6)
 Feather = 2.0
 SurfaceBlend = 0.45
-Elevation = -1.5
+ElevationMode = 1
+Elevation = -0.9
 
 [sub_resource type="Resource" id="Presentation_glacier"]
 script = ExtResource("4_presentation")
@@ -1366,6 +1385,7 @@ Extent = Vector2(23, 19)
 Height = 20.0
 Falloff = 0.3
 Flatten = 1.0
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Land_ancient_aerie_3"]
 script = ExtResource("8_landform")
@@ -1375,6 +1395,7 @@ Extent = Vector2(9, 8)
 Height = 19.0
 Falloff = 0.3
 Flatten = 1.0
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Land_ancient_aerie_4"]
 script = ExtResource("8_landform")
@@ -1472,7 +1493,8 @@ Center = Vector2(-6, -16)
 Radius = Vector2(16, 14)
 Feather = 4.0
 SurfaceBlend = 0.62
-Elevation = 20.0
+ElevationMode = 1
+Elevation = 0.0
 
 [sub_resource type="Resource" id="Area_aerie_hoard"]
 script = ExtResource("7_area")
@@ -1480,7 +1502,8 @@ Center = Vector2(12, -12)
 Radius = Vector2(5, 5)
 Feather = 2.0
 SurfaceBlend = 0.72
-Elevation = 19.0
+ElevationMode = 1
+Elevation = 0.0
 
 [sub_resource type="Resource" id="Presentation_ancient_aerie"]
 script = ExtResource("4_presentation")
@@ -1614,6 +1637,7 @@ SpawnPoint = Vector3(415, 1.2, 55)
 UnlockFlagId = ""
 Cells = Array[ExtResource("2_cell")]([SubResource("Cell_frost_march_w"), SubResource("Cell_frost_march_e"), SubResource("Cell_dragon_roost"), SubResource("Cell_clan_hold"), SubResource("Cell_ash_roost"), SubResource("Cell_north_snowfield"), SubResource("Cell_glacier"), SubResource("Cell_ash_approach"), SubResource("Cell_ancient_aerie"), SubResource("Cell_aerie_ascent")])
 EnvironmentProfile = SubResource("Environment_frostfang")
+GenerationProfile = ExtResource("13_generation")
 PerformanceBudget = SubResource("Budget_frostfang")
 
 ; The lattice is x 260..600, z -300..70, disjoint from the Ember Crown's x -190..140. The Y range

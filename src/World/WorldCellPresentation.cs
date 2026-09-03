@@ -37,14 +37,18 @@ public sealed partial class WorldCellPresentation : Node3D
         WorldEnvironmentProfileResource? region,
         WorldCellPresentationResource? cell,
         WorldHeightfield? field,
-        Vector3 worldOrigin)
+        Vector3 worldOrigin,
+        WorldTerrainData? prebuilt = null)
     {
         if (region == null || cell == null || field == null)
         {
             return;
         }
 
-        ArrayMesh topology = WorldTerrainMeshBuilder.Build(field, cell, worldOrigin);
+        // Prefer the worker's result. The fallback recomputes inline and is what tests, tools and
+        // any cell that outran its own job get - it is the same arithmetic either way.
+        WorldTerrainData data = prebuilt ?? WorldTerrainMeshBuilder.BuildData(field, cell, worldOrigin);
+        ArrayMesh topology = WorldTerrainMeshBuilder.Assemble(data);
 
         var presentation = new WorldCellPresentation { Name = "WorldPresentation" };
         presentation._surface = BuildSurface(region, cell, topology);
@@ -55,7 +59,7 @@ public sealed partial class WorldCellPresentation : Node3D
         collider.AddChild(new CollisionShape3D
         {
             Name = "Shape",
-            Shape = WorldTerrainMeshBuilder.BuildCollision(field, cell, worldOrigin),
+            Shape = WorldTerrainMeshBuilder.AssembleCollision(data),
         });
         presentation._collider = collider;
         (cellRoot.GetNodeOrNull<NavigationRegion3D>("Nav") ?? (Node)cellRoot).AddChild(collider);
@@ -90,6 +94,25 @@ public sealed partial class WorldCellPresentation : Node3D
         WorldEnvironmentProfileResource region, WorldCellPresentationResource cell,
         ArrayMesh topology)
     {
+        // The world-generation visualiser replaces the whole terrain material with a flat unlit
+        // ramp so a field can be READ off the ground rather than guessed at through six blended
+        // layers, three noise octaves and a sun. Turn it on with `worldgen <field>` in the F1
+        // console and reload the region; `worldgen none` puts the realm back.
+        if (WorldGenerationDebug.Mode != WorldGenerationDebugMode.None)
+        {
+            return new MeshInstance3D
+            {
+                Name = "SurfaceSkin",
+                Mesh = topology,
+                MaterialOverride = new StandardMaterial3D
+                {
+                    ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+                    VertexColorUseAsAlbedo = true,
+                },
+                CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+            };
+        }
+
         Shader? shader = GD.Load<Shader>(ShaderPath);
         var material = new ShaderMaterial { Shader = shader };
         WorldBiomeProfileResource biome = cell.Biome ?? region.Biome ?? FallbackBiome(region);
@@ -133,6 +156,8 @@ public sealed partial class WorldCellPresentation : Node3D
         material.SetShaderParameter("strata_scale", biome.StrataScale);
         material.SetShaderParameter("strata_strength", biome.StrataStrength);
         material.SetShaderParameter("terrain_seed", (float)region.TerrainSeed);
+        // Retained so authored cells that still carry them load cleanly. Nothing reads them: the
+        // per-cell tint was a flat wash over a rectangle and the generated environment replaced it.
         material.SetShaderParameter("tint", cell.Tint);
         material.SetShaderParameter("tint_strength", cell.TintStrength);
 

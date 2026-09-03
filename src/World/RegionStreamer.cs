@@ -70,6 +70,11 @@ public sealed partial class RegionStreamer : Node3D
     private const int MaxAttempts = 3;
     private WorldEnvironmentProfileResource? _environmentProfile;
     private WorldHeightfield? _heightfield;
+    private WorldTerrainJobs? _terrainJobs;
+
+    /// <summary>The first authored water body in the region, used to colour GENERATED water so a
+    /// river reads as the same substance as the lake it runs into.</summary>
+    private WorldWaterResource? _waterPalette;
     private WorldPerformanceBudgetResource? _streamingBudget;
     private WorldRegionBackdrop? _backdrop;
     private WorldRecovery? _recovery;
@@ -89,9 +94,18 @@ public sealed partial class RegionStreamer : Node3D
         ActiveRegionId = region?.Id ?? string.Empty;
         _environmentProfile = region?.EnvironmentProfile;
         _heightfield = region == null ? null : WorldTerrainMeshBuilder.HeightfieldFor(region);
+        // WARNING: CANCEL BEFORE STARTING, NOT AFTER. Configure is what fast travel and a region
+        // change both go through, and the previous region's terrain jobs are still running when it
+        // is called. Starting first and cancelling second leaves a window in which a mesh cut from
+        // the realm being left could be handed to a cell of the realm being entered.
+        _terrainJobs?.Cancel();
+        _terrainJobs = region == null || _heightfield == null
+            ? null
+            : WorldTerrainJobs.Start(region, _heightfield);
+        _waterPalette = FirstAuthoredWater(region);
         WorldGround.Set(_heightfield);
         SkyController.RegionAtmosphere = _environmentProfile;
-        WorldWater.Set(region == null ? null : WorldWater.BodiesFor(region));
+        WorldWater.Set(region == null ? null : WorldWater.BodiesFor(region, _heightfield));
         EnsureRecovery();
         _streamingBudget = region?.PerformanceBudget;
         ClearLoadStages();
@@ -138,6 +152,11 @@ public sealed partial class RegionStreamer : Node3D
         ClearLoadStages();
         SetProcess(true);
         WorldBiomeScatter.ClearSourceCache();
+        // A region the player has left stops burning cores behind them. Configure cancels too, but
+        // a transition unloads first and may sit on a loading screen for a while before it targets
+        // the next realm - that gap is exactly when the old realm should not still be generating.
+        _terrainJobs?.Cancel();
+        _terrainJobs = null;
     }
 
     /// <summary>True when nothing is queued and every one of the region's cells is loaded — the world
@@ -191,6 +210,32 @@ public sealed partial class RegionStreamer : Node3D
         {
             SetProcess(false);
         }
+    }
+
+    private static WorldWaterResource? FirstAuthoredWater(RegionResource? region)
+    {
+        if (region == null)
+        {
+            return null;
+        }
+
+        foreach (RegionCellResource? cell in region.Cells)
+        {
+            if (cell?.Presentation == null)
+            {
+                continue;
+            }
+
+            foreach (WorldWaterResource? water in cell.Presentation.Water)
+            {
+                if (water != null)
+                {
+                    return water;
+                }
+            }
+        }
+
+        return null;
     }
 
     private void Enqueue(RegionCellResource cell)
@@ -292,8 +337,10 @@ public sealed partial class RegionStreamer : Node3D
         {
             WorldTerrainConform.Apply(root, view, cell.Center);
         }
-        WorldCellPresentation.Attach(root, _environmentProfile, cell.Presentation, view, cell.Center);
-        WorldCellWater.Attach(root, cell.Presentation, view, cell.Center);
+        WorldCellPresentation.Attach(
+            root, _environmentProfile, cell.Presentation, view, cell.Center,
+            _terrainJobs?.Take(cell.Id));
+        WorldCellWater.Attach(root, cell.Presentation, view, cell.Center, _waterPalette);
         WorldBiomeScatter? scatter = WorldBiomeScatter.Attach(
             root, cell.Presentation, cell.BiomeScatter, view, cell.Center);
         AddChild(root);

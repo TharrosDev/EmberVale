@@ -16,7 +16,10 @@ namespace Embervale.World;
 /// A ridge authored in one cell runs into its neighbour, and that is the point.
 ///
 /// The evaluation order is fixed and each stage may only see the one before it:
-///   1. two octaves of value noise scaled by <c>relief</c> (metres) — the countryside wobble;
+///   1. the generated ground handed in from <see cref="WorldGenerator"/> — macro continentalness,
+///      mountain systems, erosion and valley response, rolling relief, micro detail, then the
+///      hydrology carve. ⚠️ This stage used to be <see cref="BaseNoise"/> and nothing else, which
+///      is why every readable landform in the realm had to be authored by hand;
 ///   2. authored <see cref="Landform"/>s in order — hills, ridges, cuts, terraces, basins, cliffs;
 ///   3. authored <see cref="Path"/>s — a road grades between the base heights at its own endpoints,
 ///      so it climbs a hill instead of levelling it;
@@ -78,7 +81,12 @@ public static class WorldTerrainMath
         public float MaxZ => MathF.Max(Z, Shape == LandformShape.Ridge ? EndZ : Z) + Influence;
     }
 
-    /// <summary>The countryside wobble alone: two octaves of world-space value noise, in metres.</summary>
+    /// <summary>
+    /// The countryside wobble alone: two octaves of world-space value noise, in metres.
+    /// ⚠️ This is no longer the realm's geography — it is the <c>Version &lt;= 1</c> compatibility
+    /// path inside <see cref="WorldGenerator"/>, which is what keeps a legacy seed reproducing the
+    /// exact ground it always did. New work goes through the staged generator.
+    /// </summary>
     public static float BaseNoise(int seed, float worldX, float worldZ, float relief, float detailScale)
     {
         if (relief <= 0f)
@@ -92,12 +100,21 @@ public static class WorldTerrainMath
         return (((macro - 0.5f) * 1.35f) + ((detail - 0.5f) * 0.28f)) * relief;
     }
 
-    /// <summary>Noise plus every authored landform — the field a road or yard is levelled against.</summary>
+    /// <summary>
+    /// The generated ground plus every authored landform — the field a road or yard is levelled
+    /// against.
+    ///
+    /// ⚠️ <paramref name="generated"/> is the whole of stage 1 and this function does not compute it.
+    /// It used to be <see cref="BaseNoise"/> called from here, which quietly made two octaves of
+    /// value noise the definition of Embervale's geography; it is now
+    /// <see cref="WorldGenerator"/>'s staged macro pipeline carved by hydrology, handed down by
+    /// <see cref="WorldHeightfield"/>. Everything below this line — the stamps — is unchanged,
+    /// because the stamps were never the problem.
+    /// </summary>
     public static float BaseHeight(
-        int seed, float worldX, float worldZ, float relief, float detailScale,
-        IReadOnlyList<Landform>? landforms)
+        float generated, float worldX, float worldZ, IReadOnlyList<Landform>? landforms)
     {
-        float height = BaseNoise(seed, worldX, worldZ, relief, detailScale);
+        float height = generated;
         if (landforms == null)
         {
             return height;
@@ -120,14 +137,15 @@ public static class WorldTerrainMath
         return height;
     }
 
-    /// <summary>The finished ground height at a world point: noise, landforms, roads, then yards.</summary>
+    /// <summary>The finished ground height at a world point: generated ground, landforms, roads,
+    /// then yards. The order is the priority model and it is fixed.</summary>
     public static float Height(
-        int seed, float worldX, float worldZ, float relief, float detailScale,
+        float generated, float worldX, float worldZ,
         IReadOnlyList<Landform>? landforms = null,
         IReadOnlyList<Path>? paths = null,
         IReadOnlyList<GroundArea>? areas = null)
     {
-        float height = BaseHeight(seed, worldX, worldZ, relief, detailScale, landforms);
+        float height = BaseHeight(generated, worldX, worldZ, landforms);
 
         // ⚠️ ROADS: MASK-WEIGHTED, NOT WINNER-TAKES-ALL. Taking the strongest mask's target alone
         // looked simpler and put a step at every junction: two segments meeting at a shared point
@@ -164,7 +182,21 @@ public static class WorldTerrainMath
                 float overshoot = MathF.Max(0f, MathF.Max(-raw, raw - 1f)) *
                                   MathF.Sqrt(((path.EndX - path.StartX) * (path.EndX - path.StartX)) +
                                              ((path.EndZ - path.StartZ) * (path.EndZ - path.StartZ)));
-                float w = mask * mask * (1f - SmoothStep(0f, feather + halfWidth, overshoot));
+                // ⚠️ AND THE ROAD YOU ARE STANDING ON HAS TO WIN, WHICH THE MASK ALONE CANNOT SAY.
+                // Inside a carriageway the mask is 1, and it is 1 for every other route whose width
+                // reaches the same point — so two roads meeting at an angle both scored ~1 two
+                // metres from their junction, and the blend gave each of them half of the OTHER's
+                // gradient. On the old near-flat field that was centimetres and nobody saw it. Under
+                // real geography a flat road leaving a junction with a steep one inherited half of
+                // 0.74, and three of Frostfang's routes failed the walkable-grade gate at a corner
+                // whose own two segments were both fine. Distance to the centreline is the thing the
+                // mask has already saturated away, so the weight has to carry it explicitly.
+                //
+                // ⚠️ It does NOT reintroduce the junction step this weighting was built to remove:
+                // AT the shared point both distances are zero and both targets are the same base
+                // sample, so the blend is between two identical numbers however it is weighted.
+                float w = mask * mask * (1f - SmoothStep(0f, feather + halfWidth, overshoot)) /
+                          (0.25f + (distance * distance));
                 if (w <= 0f)
                 {
                     continue;
@@ -267,6 +299,66 @@ public static class WorldTerrainMath
         }
 
         return 1f - SmoothStep(1f - falloff, 1f, normalized);
+    }
+
+    /// <summary>
+    /// How strongly authored circulation calms the generated macro relief at a point, 0..1.
+    ///
+    /// ⚠️ <b>THIS IS GEOMETRY ONLY AND IT MUST STAY THAT WAY.</b> It reads a route's line and a
+    /// yard's ellipse and nothing else — never their heights. A road's own height is graded from the
+    /// ground at its endpoints, so if the calm mask depended on road heights, resolving a road would
+    /// need the field the road is about to change and the whole evaluation would be circular.
+    ///
+    /// The reach is deliberately far wider than the road: see <c>WorldGenerationSettings.RouteCalm</c>.
+    /// </summary>
+    public static float RouteCalm(
+        float x, float z, float reach,
+        IReadOnlyList<Path>? paths, IReadOnlyList<GroundArea>? areas)
+    {
+        if (reach <= 0f)
+        {
+            return 0f;
+        }
+
+        float calm = 0f;
+        if (paths != null)
+        {
+            for (int i = 0; i < paths.Count; i++)
+            {
+                Path path = paths[i];
+                float core = (path.Width * 0.5f) + path.Shoulder;
+                float distance = DistanceToSegment(x, z, path.StartX, path.StartZ, path.EndX, path.EndZ);
+                calm = MathF.Max(calm, 1f - SmoothStep(core, core + reach, distance));
+                if (calm >= 1f)
+                {
+                    return 1f;
+                }
+            }
+        }
+
+        if (areas != null)
+        {
+            for (int i = 0; i < areas.Count; i++)
+            {
+                GroundArea area = areas[i];
+                float radiusX = MathF.Max(0.1f, area.RadiusX + area.Feather);
+                float radiusZ = MathF.Max(0.1f, area.RadiusZ + area.Feather);
+                // Normalised distance turned back into metres by the ellipse's own smaller radius,
+                // so a long thin yard calms a band around itself rather than a disc.
+                float dx = (x - area.X) / radiusX;
+                float dz = (z - area.Z) / radiusZ;
+                float normalized = MathF.Sqrt((dx * dx) + (dz * dz));
+                float scale = MathF.Min(radiusX, radiusZ);
+                float distance = MathF.Max(0f, (normalized - 1f) * scale);
+                calm = MathF.Max(calm, 1f - SmoothStep(0f, reach, distance));
+                if (calm >= 1f)
+                {
+                    return 1f;
+                }
+            }
+        }
+
+        return calm;
     }
 
     public static float PathMask(float x, float z, IReadOnlyList<Path>? paths)

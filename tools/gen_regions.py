@@ -89,6 +89,9 @@ class Yard:
     ext: tuple[float, float]
     feather: float = 2.5
     blend: float = 0.8
+    # WARNING: METRES ABOVE THE GENERATED GROUND UNDER THIS YARD'S OWN CENTRE, never an
+    # absolute world Y. 0 means "level with the country here", which is what almost every
+    # yard wants and what makes a settlement follow its hillside instead of stepping off it.
     elevation: float = 0.0
 
 
@@ -127,6 +130,11 @@ class Cell:
     waters: tuple[Water, ...] = ()
     legacy_paths: tuple[str, ...] = ()     # sub-resource ids lifted from LEGACY_REV
     legacy_areas: tuple[str, ...] = ()
+    # WARNING: OFFSETS IN METRES from the generated ground under each lifted area's own
+    # centre, keyed by its sub-resource id. Absent means 0, which is what most pads want.
+    # These were absolute world Y before the generator landed and were migrated once by
+    # measuring the old field with `-- --worldgen`, rather than by a second implementation
+    # of the generator in Python that would have drifted from the real one within a week.
     area_elevation: dict[str, float] = field(default_factory=dict)
     scatter: str | None = None             # id of a shared scatter profile
     biome: str | None = None               # data/biomes/<name>.tres, overriding the region default
@@ -362,6 +370,16 @@ def emit(region_key: str, header: str, cells: list[Cell], seams: list[Seam],
             out.append(f"Falloff = {form.fall}")
             if form.flat:
                 out.append(f"Flatten = {form.flat}")
+                # A landform that LEVELS ground states a target height, and a target authored as an
+                # absolute world Y stops meaning what it said the moment real geography appears under
+                # it. `h` on a levelling form is therefore metres above the generated country at its
+                # own centre - "a twelve-metre shelf", not "a shelf whose top is at y=12". Additive
+                # forms (flat 0) already follow their ground and are untouched.
+                #
+                # The same test that decides irregularity below decides this, and for the same
+                # reason: over 0.5 is a made thing, under it is a piece of landscape.
+                if form.flat > 0.5:
+                    out.append("ElevationMode = 1")
             irregularity = form.irr if form.irr is not None else (
                 0.0 if form.flat > 0.5 else DEFAULT_IRREGULARITY)
             if irregularity:
@@ -389,6 +407,15 @@ def emit(region_key: str, header: str, cells: list[Cell], seams: list[Seam],
         for aid in cell.legacy_areas:
             area_ids.append(aid)
             body = retype(legacy[aid], "7_area").rstrip()
+            # WARNING: EVERY PAD IS RELATIVE NOW, AND THE ELEVATION IS AN OFFSET IN METRES.
+            # These numbers were authored as an absolute world Y against a ground field that
+            # was two octaves of noise and never a metre and a half from zero. The day the
+            # generator put real hillsides under the realm, every one of them became a step
+            # with a cliff on its uphill side. As an offset from the ground the generator
+            # puts underneath the pad, the authored intent survives re-tuning a region
+            # profile: "cut five metres into this knoll" stays five metres into the knoll
+            # wherever the knoll ends up, and no re-anchoring pass is ever needed again.
+            body += "\nElevationMode = 1"
             if aid in cell.area_elevation:
                 body += f"\nElevation = {cell.area_elevation[aid]}"
             out.append(f'[sub_resource type="Resource" id="{aid}"]')
@@ -404,6 +431,7 @@ def emit(region_key: str, header: str, cells: list[Cell], seams: list[Seam],
             out.append(f"Feather = {yard.feather}")
             out.append(f"SurfaceBlend = {yard.blend}")
             out.append(f"Elevation = {yard.elevation}")
+            out.append("ElevationMode = 1")
             out.append("")
 
         water_ids: list[str] = []
@@ -416,6 +444,12 @@ def emit(region_key: str, header: str, cells: list[Cell], seams: list[Seam],
             out.append(f"Center = Vector2({body.at[0]}, {body.at[1]})")
             out.append(f"Extent = Vector2({body.ext[0]}, {body.ext[1]})")
             out.append(f"SurfaceY = {body.y}")
+            # A waterline is a target height, so it is metres above the generated country under the
+            # body rather than an absolute world Y - see WorldWaterResource.ElevationMode. Authored
+            # as an absolute it drowned Hollowreach's own shoreline the moment the realm got real
+            # elevation, because the ground under the fen is eight metres lower than the number was
+            # written against.
+            out.append("ElevationMode = 1")
             out.append(f"ShallowColor = {color(body.shallow)}")
             out.append(f"DeepColor = {color(body.deep)}")
             out.append(f"OpaqueDepth = {body.opaque}")

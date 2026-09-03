@@ -56,6 +56,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("event", "event <id>", "Force a world event.", Event));
         console.Register(new ConsoleCommand("region", "region <list|goto <id>>", "List regions or hard-load into one (Phase 25C).", Region));
         console.Register(new ConsoleCommand("travel", "travel <list|goto <id>>", "List attuned travel nodes or fast-travel to one (Phase 25G).", Travel));
+        console.Register(new ConsoleCommand("worldgen", "worldgen [field]", "Paint one generated world field onto the terrain, or 'none' to restore it.", WorldGen));
         console.Register(new ConsoleCommand("economy", "economy [arbitrage]", "Print the realm's best buy-low/sell-high routes (Phase 38N1).", Economy));
         console.Register(new ConsoleCommand("shock", "shock [list|force <cellId> <tag> <shortage|glut|fair> [days]|clear <cellId>]", "Inspect or drive supply shocks (Phase 38T).", Shock));
         console.Register(new ConsoleCommand("tutorial", "tutorial <status|skip|restart>", "Inspect or drive the onboarding hints (Phase 33B).", Tutorial));
@@ -862,6 +863,31 @@ public static class DevCommands
         }
 
         return director.ForceStart(args[0]) ? $"started {args[0]}" : $"could not start '{args[0]}' (already active / unknown)";
+    }
+
+    /// <summary>
+    /// The world-generation visualiser. `worldgen` names the fields, `worldgen mountains` paints one
+    /// onto the ground as an unlit ramp, `worldgen none` restores the terrain material.
+    ///
+    /// WARNING: IT TAKES EFFECT WHEN A CELL'S MESH IS BUILT, NOT WHEN YOU TYPE IT. Vertex colour is
+    /// baked into the terrain mesh, so the realm has to be rebuilt to repaint it - reload the region
+    /// (`region goto &lt;id&gt;`) after switching. Setting the mode and seeing nothing change is the
+    /// expected behaviour and not a broken command, which is exactly why this says so out loud.
+    /// </summary>
+    private static string WorldGen(DevConsole console, string[] args)
+    {
+        if (args.Length == 0)
+        {
+            return $"worldgen: {WorldGenerationDebug.Mode}\nfields: {WorldGenerationDebug.Modes}\n" +
+                   "reload the region after changing it (region goto <id>).";
+        }
+
+        if (!WorldGenerationDebug.TrySet(args[0]))
+        {
+            return $"worldgen: unknown field '{args[0]}'. fields: {WorldGenerationDebug.Modes}";
+        }
+
+        return $"worldgen: {WorldGenerationDebug.Mode} — reload the region to repaint the ground.";
     }
 
     private static string Region(DevConsole console, string[] args)
