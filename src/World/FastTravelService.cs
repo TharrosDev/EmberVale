@@ -37,14 +37,13 @@ public partial class FastTravelService : Node, ISaveable
 
     public override void _EnterTree()
     {
-        ServiceLocator.Instance?.Register(this);
+        ServiceScope.RegisterOwned(this, this);
         SaveManager.Instance?.Register(this);
     }
 
     public override void _ExitTree()
     {
         SaveManager.Instance?.Unregister(this);
-        ServiceLocator.Instance?.Unregister(this);
     }
 
     /// <summary>Records a newly-attuned node. No-op (returns false) if the id is empty or already known.</summary>

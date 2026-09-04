@@ -67,7 +67,7 @@ public partial class TutorialDirector : Node, ISaveable
 
     public override void _EnterTree()
     {
-        ServiceLocator.Instance?.Register(this);
+        ServiceScope.RegisterOwned(this, this);
         SaveManager.Instance?.Register(this);
     }
 
@@ -82,7 +82,6 @@ public partial class TutorialDirector : Node, ISaveable
         }
 
         SaveManager.Instance?.Unregister(this);
-        ServiceLocator.Instance?.Unregister(this);
     }
 
     public override void _Ready()

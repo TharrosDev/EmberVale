@@ -76,7 +76,7 @@ public partial class MapService : Node, ISaveable
 
     public override void _EnterTree()
     {
-        ServiceLocator.Instance?.Register(this);
+        ServiceScope.RegisterOwned(this, this);
         SaveManager.Instance?.Register(this);
         EventBus.Instance?.Subscribe<RegionCellLoadedEvent>(OnCellLoaded);
     }
@@ -85,7 +85,6 @@ public partial class MapService : Node, ISaveable
     {
         EventBus.Instance?.Unsubscribe<RegionCellLoadedEvent>(OnCellLoaded);
         SaveManager.Instance?.Unregister(this);
-        ServiceLocator.Instance?.Unregister(this);
     }
 
     /// <summary>Marks a region discovered (called on entry). No-op if already known.</summary>

@@ -36,14 +36,13 @@ public partial class HaggleLedger : Node, ISaveable
 
     public override void _EnterTree()
     {
-        ServiceLocator.Instance?.Register(this);
+        ServiceScope.RegisterOwned(this, this);
         SaveManager.Instance?.Register(this);
     }
 
     public override void _ExitTree()
     {
         SaveManager.Instance?.Unregister(this);
-        ServiceLocator.Instance?.Unregister(this);
     }
 
     /// <summary>Whether the player has already tried this merchant today. A stored row from another day

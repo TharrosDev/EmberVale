@@ -43,7 +43,7 @@ namespace Embervale.Bootstrap;
 /// This is the "playable ugly prototype" that proves the architecture runs and
 /// the seam later phases (combat, AI, loot) plug into.
 /// </summary>
-public partial class GameBootstrap : Node3D
+public partial class GameBootstrap : Node3D, IServiceScopeHost
 {
     private const string DummyAttributesPath = "res://data/attributes/DummyAttributes.tres";
     private const float RespawnDelaySeconds = 3f;
@@ -73,6 +73,19 @@ public partial class GameBootstrap : Node3D
     private Entity? _dummy;
     private PlayerCharacter? _player;
     private MainMenu? _mainMenu;
+    private ServiceScope? _applicationScope;
+
+    /// <summary>Application lifetime: what exists from process start to process exit. Settings and
+    /// input configuration live here; nothing a save file owns does.</summary>
+    public ServiceScope Scope => _applicationScope ??= new ServiceScope(ServiceLifetime.Application);
+
+    /// <summary>The live session, or null at the title screen. Its node owns the session scope and,
+    /// through <see cref="GameSession.World"/>, the world scope — so which lifetime a service gets
+    /// is decided by which of these three it is parented under, and by nothing else.</summary>
+    private GameSession? _session;
+
+    private WorldHost? World => _session?.World;
+
     private bool _sandboxBuilt;
 
     /// <summary>Whether the dev `--play` flag has already been acted on this process.</summary>
@@ -187,7 +200,7 @@ public partial class GameBootstrap : Node3D
         // service is registered so the menu/pause settings panel (24F) can mutate and re-apply it.
         var settings = new SettingsService();
         settings.LoadAndApply();
-        ServiceLocator.Instance?.Register(settings);
+        Scope.Register(settings);
 
         // With every database + the enemy registry populated, validate that the authored
         // content cross-references resolve (item/enemy/quest/spell ids). Broken references
@@ -438,37 +451,42 @@ public partial class GameBootstrap : Node3D
     /// session paths.</summary>
     private void BuildWorld()
     {
-        // Sun, sky, tonemap and ground. The two handles come back rather than living in fields:
-        // the SkyController below is their only other reader, and it is in this same method.
-        WorldEnvironmentBuilder.Result env = WorldEnvironmentBuilder.Build(this);
+        // The two ownership boundaries, opened before anything that belongs inside them. Every
+        // AddChild below is a lifetime decision: under `this` is application, under _session is the
+        // save file's, under World is the loaded world's.
+        _session = new GameSession();
+        AddChild(_session);
+
+        // Sun, sky, tonemap and ground — the world's, not the session's.
+        WorldEnvironmentBuilder.Result env = WorldEnvironmentBuilder.Build(World!);
 
         // The purpose-built game HUD is the default overlay; the DebugHud is now a
         // developer panel toggled with F3. Toasts and the pause menu round out the game UI.
         _gameHud = new GameHud();
-        AddChild(_gameHud);
+        _session.AddChild(_gameHud);
 
         // The DebugHud is a developer overlay (F3), not part of the game's UI — a capture build
         // never builds it (Phase 33E).
         if (BuildProfile.ShowDeveloperTools)
         {
             _hud = new DebugHud();
-            AddChild(_hud);
+            _session.AddChild(_hud);
         }
-        AddChild(new Notifications());
-        AddChild(new CombatFeedbackOverlay()); // Phase 29D: crit/block/stagger/parry screen flash
-        AddChild(new PauseMenu());
-        AddChild(new LoadingScreen());
+        _session.AddChild(new Notifications());
+        _session.AddChild(new CombatFeedbackOverlay()); // Phase 29D: crit/block/stagger/parry screen flash
+        _session.AddChild(new PauseMenu());
+        _session.AddChild(new LoadingScreen());
 
         // The new-game prologue (33A). Built with the rest of the shell so it can play the moment
         // the world is assembled; it stays hidden unless StartNewGame asks for it.
         _opening = new OpeningSequence();
-        AddChild(_opening);
-        ServiceLocator.Instance?.Register(_opening);
+        _session.AddChild(_opening);
+        ServiceScope.RegisterOwned(_opening, _opening);
 
         // The slice's ending (33D): the director watches for the player leaving through the
         // Frostfang door after the Iron King has fallen, and the closing card answers it.
-        AddChild(new Embervale.Narrative.SliceDirector { Name = "Slice" });
-        AddChild(new ClosingSequence());
+        _session.AddChild(new Embervale.Narrative.SliceDirector { Name = "Slice" });
+        _session.AddChild(new ClosingSequence());
 
         // Deep-debugging tools (Phase 20): dev console (F1), profiler (F4), and a standing
         // world-integrity checker that periodically validates runtime invariants. All three are
@@ -477,69 +495,69 @@ public partial class GameBootstrap : Node3D
         if (BuildProfile.ShowDeveloperTools)
         {
             _console = new DevConsole();
-            AddChild(_console);
+            _session.AddChild(_console);
             _profiler = new ProfilerOverlay();
-            AddChild(_profiler);
-            AddChild(new WorldIntegrityChecker());
+            _session.AddChild(_profiler);
+            _session.AddChild(new WorldIntegrityChecker());
         }
 
         // Autosave cadence (Phase 24D) on top of the slot system: rotates through auto1..auto3 on a
         // timer / quest-completion / level-up, never touching the player's manual slot. Registered so
         // the `autosave` dev command can reach it.
         var autosave = new AutosaveService { Name = "Autosave" };
-        AddChild(autosave);
-        ServiceLocator.Instance?.Register(autosave);
+        _session.AddChild(autosave);
+        ServiceScope.RegisterOwned(autosave, autosave);
 
         // Dev-only telemetry: logs deaths/quests/level-ups to user://analytics/ for later
         // balance/QA. A no-op in retail builds (gated on OS.IsDebugBuild). Added before the
         // player/quest spawn below so it captures the seeded starter quest.
-        AddChild(new AnalyticsSink());
+        _session.AddChild(new AnalyticsSink());
         _inventoryPanel = new InventoryPanel();
-        AddChild(_inventoryPanel);
+        _session.AddChild(_inventoryPanel);
 
         _spellbookPanel = new SpellbookPanel();
-        AddChild(_spellbookPanel);
+        _session.AddChild(_spellbookPanel);
         _hotbarPanel = new HotbarPanel { Dock = _gameHud.BottomDock };
-        AddChild(_hotbarPanel);
+        _session.AddChild(_hotbarPanel);
         _questLogPanel = new QuestLogPanel();
-        AddChild(_questLogPanel);
+        _session.AddChild(_questLogPanel);
         // ⚠️ The six panels below are added WITHOUT a field, and that is deliberate. Each is
         // event-driven — one instance answering every merchant, container, appraiser or board in the
         // world — so once it is in the tree nothing ever calls back into it. They used to be stored
         // in fields that were assigned and never read again: object state describing nothing.
         // A new panel earns a field when something reads it, not because its neighbours have one.
         _dialoguePanel = new DialoguePanel();
-        AddChild(_dialoguePanel);
-        AddChild(new CraftingPanel());
+        _session.AddChild(_dialoguePanel);
+        _session.AddChild(new CraftingPanel());
         // The stash window (37B) — event-driven like the crafting panel, one instance for every
         // container in the world.
-        AddChild(new StoragePanel());
+        _session.AddChild(new StoragePanel());
         // The shop window (38A) — same one-instance-for-every-merchant shape as the two above.
         _vendorPanel = new VendorPanel();
-        AddChild(_vendorPanel);
+        _session.AddChild(_vendorPanel);
         // The appraiser's window (38P2) — the first panel that only reads. Same one instance for
         // every appraiser, answered off an event, so the service knows nothing about the UI.
-        AddChild(new AppraisalPanel());
+        _session.AddChild(new AppraisalPanel());
         // The caravan board (38Q2) — one instance for every board, answered off an event. It reads the
         // clock rather than a snapshot, so what it shows cannot go stale while it is open.
-        AddChild(new ContractBoardPanel());
+        _session.AddChild(new ContractBoardPanel());
 
         // The world clock drives NPC routines; create it before the NPCs below so it is
         // registered in the ServiceLocator when their schedules first read the time.
         _clock = new WorldClock { Name = "WorldClock" };
-        AddChild(_clock);
+        _session.AddChild(_clock);
         _hud?.SetClock(_clock);
         _gameHud.SetClock(_clock);
 
         // Weather before the sky so the SkyController can read the active state on its
         // first frame; the sky drives the (already-built) sun + environment.
         _weather = new WeatherDirector { Name = "Weather" };
-        AddChild(_weather);
+        World!.AddChild(_weather);
         _hud?.SetWeather(_weather);
         _gameHud.SetWeather(_weather);
 
         _sky = new SkyController { Name = "Sky", Sun = env.Sun, Environment = env.Environment };
-        AddChild(_sky);
+        World!.AddChild(_sky);
 
         // Persistent spawned actors: a director that recreates saved named actors/containers on
         // load (the SaveManager alone only restores components of actors already in the scene).
@@ -549,7 +567,7 @@ public partial class GameBootstrap : Node3D
         // rebuilds itself on load through exactly the same path a saved container does.
         Housing.PlaceableTemplates.RegisterAll();
         _persistentSpawns = new PersistentSpawnDirector { Name = "PersistentSpawns" };
-        AddChild(_persistentSpawns);
+        _session.AddChild(_persistentSpawns);
 
         SubscribeEvents();
 
@@ -566,7 +584,7 @@ public partial class GameBootstrap : Node3D
 
         if (BuildProfile.SpawnSandboxContent)
         {
-            SandboxProps.Seed(this);
+            SandboxProps.Seed(World!);
         }
 
         SpawnEncounterDirector();
@@ -575,97 +593,97 @@ public partial class GameBootstrap : Node3D
         // Onboarding (Phase 33B): watches the player perform the basic verbs and shows one hint at a
         // time. Never blocks input; honours the Settings toggle; persists so a reload doesn't
         // re-teach. Added after the player spawn so its first hint has someone to watch.
-        AddChild(new Embervale.Onboarding.TutorialDirector { Name = "Tutorial" });
+        _session.AddChild(new Embervale.Onboarding.TutorialDirector { Name = "Tutorial" });
 
         // Companions (Phase 32A): the party roster. Added after the player spawn so a recruit can be
         // placed in formation immediately, and before the load overlay lands so a saved party
         // reconciles itself back into the world. (The archetypes are seeded in ContentDatabases.)
-        AddChild(new Embervale.Companions.CompanionRoster { Name = "Companions" });
+        _session.AddChild(new Embervale.Companions.CompanionRoster { Name = "Companions" });
 
         // Boss fight flow beats (Phase 28C): intro lock on summon, slow-mo on the boss's defeat. The
         // GameHud reacts to the same events for the healthbar/title/defeat banner.
-        AddChild(new Embervale.Enemies.BossEncounterDirector { Name = "BossEncounter" });
+        _session.AddChild(new Embervale.Enemies.BossEncounterDirector { Name = "BossEncounter" });
 
         // Hit-stop (Phase 29A): a brief freeze-frame on landed hits so blows read with weight.
-        AddChild(new Embervale.Combat.HitStopDirector { Name = "HitStop" });
+        _session.AddChild(new Embervale.Combat.HitStopDirector { Name = "HitStop" });
 
         // Combat feedback (Phase 29C): pooled impact sparks + sound-cue hooks on every hit.
-        AddChild(new Embervale.Combat.CombatFeedbackDirector { Name = "CombatFeedback" });
+        _session.AddChild(new Embervale.Combat.CombatFeedbackDirector { Name = "CombatFeedback" });
 
         // Audio (Phase 31A): the AudioDirector consumes the sound/music cue events combat & bosses
         // already publish, playing them on the mixer buses. Registered so any system can request cues.
         var audio = new Embervale.Audio.AudioDirector { Name = "Audio" };
-        AddChild(audio);
-        ServiceLocator.Instance?.Register(audio);
+        _session.AddChild(audio);
+        ServiceScope.RegisterOwned(audio, audio);
 
         // Adaptive music (Phase 31B): explore/safe/combat/boss music state machine, crossfading on the
         // Music bus. Added after Audio so it reuses the shared AudioLibrary the AudioDirector registers.
-        AddChild(new Embervale.Audio.MusicDirector { Name = "Music" });
+        _session.AddChild(new Embervale.Audio.MusicDirector { Name = "Music" });
 
         // Environmental ambience (Phase 31D): weather/locale/time looping bed on the Ambience bus.
-        AddChild(new Embervale.Audio.AmbienceDirector { Name = "Ambience" });
+        _session.AddChild(new Embervale.Audio.AmbienceDirector { Name = "Ambience" });
 
         // Streamed-cell persistence (Phase 25D): remembers per-actor state across cell unload/reload
         // (dead enemies stay dead, looted pickups stay gone). Added before the streamer so it is
         // subscribed to the cell load/unload events before the first cell streams in.
-        AddChild(new CellPersistenceDirector { Name = "CellPersistence" });
+        _session.AddChild(new CellPersistenceDirector { Name = "CellPersistence" });
 
         // World-map discovery (Phase 25E): tracks visited regions/POIs and persists them. Created
         // before the streamer so it catches the first cell-load POIs; the map screen reads it.
         _mapService = new MapService { Name = "MapService" };
-        AddChild(_mapService);
+        _session.AddChild(_mapService);
         _mapService.DiscoverRegion(_currentRegionId); // the starting region is known immediately
 
         // The map waypoint, standing in the world (39.5A). A mark you can only see by opening the
         // map is a mark you have to keep opening the map to follow.
-        AddChild(new WaypointBeacon { Name = "WaypointBeacon" });
+        _session.AddChild(new WaypointBeacon { Name = "WaypointBeacon" });
 
         // Fast-travel network (Phase 25G): the set of attuned travel nodes; persists, read by the map.
         _fastTravel = new FastTravelService { Name = "FastTravel" };
-        AddChild(_fastTravel);
+        _session.AddChild(_fastTravel);
 
         // Property ownership (Phase 37A): what the player holds, persisted. Built beside fast travel
         // because claiming a holding registers it as a travel destination.
         _housing = new Housing.HousingService { Name = "Housing" };
-        AddChild(_housing);
+        _session.AddChild(_housing);
 
         // Shop stock (38B): remaining counts, restock stamps and the wares a leveled pool rolled.
         // ShopResource is shared and not ISaveable, so this is where depletion can both live and
         // persist. Restock is lazy-on-open, so there is nothing here that ticks.
         _shopStock = new Economy.ShopStockService { Name = "ShopStock" };
-        AddChild(_shopStock);
+        _session.AddChild(_shopStock);
 
         // Confiscated contraband (38O): what the Crossway wardens have taken and not yet given back.
         // Its own node rather than a field on the shop service, because it is the player's property in
         // someone else's keeping — nothing about it is a shop, and it outlives every shop it touches.
         _impound = new Economy.ContrabandImpound { Name = "ContrabandImpound" };
-        AddChild(_impound);
+        _session.AddChild(_impound);
 
         // Consignment listings (38P): what the player has left with a broker and what it has earned.
         // Beside the impound and not inside the shop service for the same reason that one is out: the
         // goods are the player's, held by someone else, and the listing outlives every visit to the shop.
         _consignment = new Economy.ConsignmentLedger { Name = "Consignment" };
-        AddChild(_consignment);
+        _session.AddChild(_consignment);
 
         // Filled supply contracts (38Q2). Beside the two above and for a narrower reason: the board
         // itself is derived from the day and needs no storage at all, so the only thing here is the
         // record of what the player has already delivered — which is also the only thing stopping a
         // posting being filled twice in one rotation.
         _contracts = new Economy.ContractLedger { Name = "Contracts" };
-        AddChild(_contracts);
+        _session.AddChild(_contracts);
 
         // Throws taken at the gambling tables (38R2). The fourth of these and the one holding the most
         // weight for its size: the outcome of a throw is derived from the day, so nothing about the
         // result needs storing — but the day's allowance is the ONLY bound on a house that pays out,
         // and it is this node.
         _wagers = new Economy.WagerLedger { Name = "Wagers" };
-        AddChild(_wagers);
+        _session.AddChild(_wagers);
 
         // Merchants already talked down today (38S). The fifth, and the same division of labour as the
         // fourth: the outcome is a function of the day and needs no storage, while the one attempt a day
         // is the only thing stopping the player asking until the answer changes.
         _haggles = new Economy.HaggleLedger { Name = "Haggles" };
-        AddChild(_haggles);
+        _session.AddChild(_haggles);
 
         // Supply shocks (38T). The sixth, and the first whose state is not a record of what the player
         // did to a price but of what happened to one: the roll is a pure function of the day, so nothing
@@ -673,28 +691,28 @@ public partial class GameBootstrap : Node3D
         // can derive that. It is a node rather than something inside WorldEventDirector for the reason
         // the gate names — that director is not ISaveable, so a shock in it would end at every reload.
         _shocks = new Economy.SupplyShockService { Name = "SupplyShocks" };
-        AddChild(_shocks);
+        _session.AddChild(_shocks);
 
         // Placement mode (37C): the ghost and the commit. Not ISaveable — a placed prop persists
         // through the PersistentSpawnDirector above, which already records template, position and yaw.
         _placement = new Housing.PlacementDirector { Name = "Placement" };
-        AddChild(_placement);
-        AddChild(new PlacementHud());
+        _session.AddChild(_placement);
+        _session.AddChild(new PlacementHud());
 
         // Held in a field since 39.5C so `--panelshots` can open and drive it — the map screen is
         // where all three of 39.5A's shipped defects lived, and nothing here could photograph it.
         _mapScreen = new MapScreen();
-        AddChild(_mapScreen);
+        _session.AddChild(_mapScreen);
         _mapScreen.SetMapService(_mapService);
         _mapScreen.SetFastTravel(_fastTravel);
 
         // The Ash Hunters' field journal (Phase 34G): counts every creature the party puts down and
         // persists it. Service-backed like the map — it documents the world, not the player.
         var bestiary = new BestiaryService { Name = "Bestiary" };
-        AddChild(bestiary);
+        _session.AddChild(bestiary);
 
         var bestiaryPanel = new BestiaryPanel();
-        AddChild(bestiaryPanel);
+        _session.AddChild(bestiaryPanel);
         bestiaryPanel.SetBestiary(bestiary);
 
         SpawnRegionStreamer();
@@ -720,9 +738,9 @@ public partial class GameBootstrap : Node3D
             _player.GlobalPosition = SafeLanding(region.SpawnPoint);
         }
 
-        AddChild(_streamer);
-        ServiceLocator.Instance?.Register(_streamer);
-        RegionSetup.RebuildPortals(this, _portals, region);
+        World!.AddChild(_streamer);
+        ServiceScope.RegisterOwned(_streamer, _streamer);
+        RegionSetup.RebuildPortals(World, _portals, region);
         RegionSetup.ApplySafeZones(region);
         Weave.Set(region?.WeavePotency ?? Weave.DefaultPotency);
     }
@@ -921,6 +939,8 @@ public partial class GameBootstrap : Node3D
     public override void _ExitTree()
     {
         UnsubscribeEvents();
+        _applicationScope?.Dispose();
+        _applicationScope = null;
 
         // Safety net for scene reloads: every gameplay node unsubscribes in its own
         // OnTeardown, but if any leaked a handler it would keep the freed object alive and
@@ -1138,11 +1158,11 @@ public partial class GameBootstrap : Node3D
 
     private void SpawnEncounterDirector()
     {
-        AddChild(new EncounterDirector { Name = "Encounters" });
+        World!.AddChild(new EncounterDirector { Name = "Encounters" });
         Log.Info("Encounter director online — patrols by day, warbands by night, more in storms.");
 
         var events = new WorldEventDirector { Name = "WorldEvents" };
-        AddChild(events);
+        World.AddChild(events);
         _hud?.SetWorldEvents(events);
         _gameHud.SetWorldEvents(events);
         Log.Info("World-event director online — raids, caches and champion hunts with rewards.");
@@ -1207,7 +1227,7 @@ public partial class GameBootstrap : Node3D
         });
         dummy.AddChild(hurtbox);
 
-        AddChild(dummy);
+        _session!.AddChild(dummy);
 
         // Demonstrate the modifier pipeline: a "blessing" raises max health 20%.
         stats.GetStat(StatType.Health).AddModifier(
@@ -1215,7 +1235,7 @@ public partial class GameBootstrap : Node3D
         stats.RefillResources();
 
         _dummy = dummy;
-        ServiceLocator.Instance?.Register(dummy);
+        ServiceScope.RegisterOwned(dummy, dummy);
         _hud?.SetTarget(dummy);
 
         Log.Info($"Spawned '{dummy.DisplayName}' — max health {stats.GetValue(StatType.Health):0} (base 100 +20% blessing).");
@@ -1224,8 +1244,8 @@ public partial class GameBootstrap : Node3D
     private void SpawnPlayer()
     {
         _player = PlayerFactory.Create(PlayerSpawn, _activeProfile, _applyStartingGrants);
-        AddChild(_player);
-        ServiceLocator.Instance?.Register(_player);
+        _session!.AddChild(_player);
+        ServiceScope.RegisterOwned(_player, _player);
         _hud?.SetPlayer(_player);
         _gameHud.SetPlayer(_player);
         _inventoryPanel.SetInventory(_player.GetComponent<InventoryComponent>());
@@ -1370,7 +1390,7 @@ public partial class GameBootstrap : Node3D
     {
         if (_dummy != null && IsInstanceValid(_dummy))
         {
-            ServiceLocator.Instance?.Unregister(_dummy);
+            // No unregister: the registration is owned by the node, and goes with it.
             _dummy.QueueFree();
         }
 

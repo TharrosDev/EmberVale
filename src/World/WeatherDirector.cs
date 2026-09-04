@@ -37,7 +37,7 @@ public partial class WeatherDirector : Node, ISaveable
         // Weather should freeze with the game (it is measured against the clock).
         ProcessMode = ProcessModeEnum.Pausable;
 
-        ServiceLocator.Instance?.Register(this);
+        ServiceScope.RegisterOwned(this, this);
         SaveManager.Instance?.Register(this);
 
         _current = WeatherDatabase.Get(StartWeatherId)
@@ -48,7 +48,6 @@ public partial class WeatherDirector : Node, ISaveable
 
     public override void _ExitTree()
     {
-        ServiceLocator.Instance?.Unregister(this);
         SaveManager.Instance?.Unregister(this);
     }
 

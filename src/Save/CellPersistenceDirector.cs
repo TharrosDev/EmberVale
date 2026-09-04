@@ -50,7 +50,7 @@ public partial class CellPersistenceDirector : Node, ISaveable
 
     public override void _EnterTree()
     {
-        ServiceLocator.Instance?.Register(this);
+        ServiceScope.RegisterOwned(this, this);
         SaveManager.Instance?.Register(this);
         EventBus bus = EventBus.Instance;
         bus?.Subscribe<RegionCellLoadedEvent>(OnCellLoaded);
@@ -63,7 +63,6 @@ public partial class CellPersistenceDirector : Node, ISaveable
         bus?.Unsubscribe<RegionCellLoadedEvent>(OnCellLoaded);
         bus?.Unsubscribe<RegionCellUnloadedEvent>(OnCellUnloaded);
         SaveManager.Instance?.Unregister(this);
-        ServiceLocator.Instance?.Unregister(this);
     }
 
     private void OnCellLoaded(RegionCellLoadedEvent e)

@@ -62,9 +62,7 @@ public partial class PlacementDirector : Node
     public int Remaining =>
         Kit != null && Player()?.GetComponent<InventoryComponent>() is { } pack ? pack.CountOf(Kit.Id) : 0;
 
-    public override void _EnterTree() => ServiceLocator.Instance?.Register(this);
-
-    public override void _ExitTree() => ServiceLocator.Instance?.Unregister(this);
+    public override void _EnterTree() => ServiceScope.RegisterOwned(this, this);
 
     /// <summary>Enters placement mode holding <paramref name="kit"/>. Called from the inventory's
     /// Place button — placement is entered from the item, not from a keybind, because every letter
