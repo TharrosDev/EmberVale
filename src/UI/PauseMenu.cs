@@ -97,39 +97,56 @@ public partial class PauseMenu : CanvasLayer
 	}
 
 	/// <summary>
-	/// Leaves the session and returns to the title screen (37.5H). Until now the only way out of a
-	/// game was closing the process.
+	/// Leaves the session and returns to the title screen.
 	///
-	/// It **reloads the whole scene** rather than tearing the world down in place, and that is the
-	/// safe choice rather than the lazy one. `GameBootstrap` builds the world as its own children
-	/// behind a one-shot `_sandboxBuilt` guard with no teardown path, and CLAUDE.md §7 records why
-	/// unpicking that by hand is dangerous: several services register with `ServiceLocator` and
-	/// never unregister, and dereferencing a freed registrant is a hard `gchandle.is_released`
-	/// crash rather than something a null check catches. A reload rebuilds from boot, and the
-	/// autoloads (EventBus, ServiceLocator, GameManager, SaveManager) survive it by design.
+	/// It used to reload the whole scene, and the comment here used to explain at length why that
+	/// was the safe choice rather than the lazy one: the bootstrap built the world as its own
+	/// children behind a one-shot guard with no teardown path, several services registered with the
+	/// locator and never unregistered, and dereferencing a freed registrant is a hard
+	/// `gchandle.is_released` crash rather than something a null check catches.
 	///
-	/// ⚠️ **The two process-lifetime statics must be cleared first.** A scene reload does not touch
-	/// them, so the pause menu that triggered this would still be registered in `UiState` — and a
-	/// registered owner is also a world-pauser, so the title screen would come back with the tree
-	/// paused and nothing on screen able to unpause it. Ordering matters too: state goes back to
-	/// `MainMenu` *before* the reload so `GameManager.RefreshPause` settles on an unpaused tree.
+	/// None of that is true any more. A session is a node; freeing it disposes the session and world
+	/// scopes, which take every registration with them, and the coordinator resets the
+	/// process-lifetime statics the reload used to clear as a side effect. So the pause menu now asks
+	/// for what it actually wants -- end this session -- and the title screen comes back in the same
+	/// process, with the next New Game able to start immediately.
 	///
-	/// The reload is deferred because this runs inside a button signal, and freeing the node that
-	/// owns the running signal handler mid-emit is exactly the crash `call_deferred` exists for.
-	///
-	/// Note this makes `UiPanel._Notification`'s modal-release guard reachable for the first time.
-	/// It was written as "nothing reaches this today — the game has no quit-to-menu path", and
-	/// documented as correct regardless. It now earns its place.
+	/// It is still deferred: this runs inside a button signal, and this menu is a child of the
+	/// session being destroyed. Freeing the node that owns the running signal handler mid-emit is
+	/// exactly the crash `call_deferred` exists for.
 	/// </summary>
 	private void ReturnToMainMenu()
 	{
 		SetPanelVisible(false);
 
-		UiState.ClearAll();
-		Godot.Input.MouseMode = Godot.Input.MouseModeEnum.Visible;
-		GameManager.Instance?.ChangeState(GameState.MainMenu);
+		Callable.From(() =>
+		{
+			if (SessionHost() is { } lifecycle)
+			{
+				lifecycle.DestroySession();
+				return;
+			}
 
-		Callable.From(() => GetTree().ReloadCurrentScene()).CallDeferred();
+			// No session above us: nothing to destroy, so just make sure the shell is usable.
+			UiState.ClearAll();
+			Godot.Input.MouseMode = Godot.Input.MouseModeEnum.Visible;
+			GameManager.Instance?.ChangeState(GameState.MainMenu);
+		}).CallDeferred();
+	}
+
+	/// <summary>The coordinator that owns the session this menu is inside, found by walking up the
+	/// tree rather than through a global -- the menu belongs to exactly one session.</summary>
+	private Bootstrap.SessionLifecycleCoordinator? SessionHost()
+	{
+		for (Node? node = GetParent(); node != null; node = node.GetParent())
+		{
+			if (node is Bootstrap.SessionLifecycleCoordinator host)
+			{
+				return host;
+			}
+		}
+
+		return null;
 	}
 
 	private static Button MenuButton(string text, System.Action onPressed)
