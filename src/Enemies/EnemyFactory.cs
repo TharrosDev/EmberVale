@@ -85,6 +85,7 @@ public static class EnemyFactory
         enemy.AddChild(new HitReactionComponent { Name = "HitReaction" });
         // 30F: plays the goblin rig's idle/run/attack/hit/death clips off combat/locomotion state.
         enemy.AddChild(new Embervale.Animation.CharacterAnimationComponent { Name = "Animation", BodyMeshPath = "Mesh" });
+        enemy.AddChild(new Embervale.Animation.EquipmentPresentationComponent { Name = "EquipmentVisuals", BodyMeshPath = "Mesh" });
         enemy.AddChild(new WeaponTrailComponent { Name = "WeaponTrail" });
         enemy.AddChild(BuildHurtbox());
 

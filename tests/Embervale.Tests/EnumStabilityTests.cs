@@ -1,4 +1,5 @@
 using Embervale.Combat;
+using Embervale.Animation;
 using Embervale.Combat.Actions;
 using Embervale.Corruption;
 using Embervale.Crafting;
@@ -28,6 +29,32 @@ namespace Embervale.Tests;
 /// </summary>
 public class EnumStabilityTests
 {
+    [Fact]
+    public void EquipmentSocket_Ordinals()
+    {
+        Assert.Equal(0, (int)EquipmentSocket.HandR);
+        Assert.Equal(1, (int)EquipmentSocket.HandL);
+        Assert.Equal(2, (int)EquipmentSocket.BackPrimary);
+        Assert.Equal(3, (int)EquipmentSocket.BackSecondary);
+        Assert.Equal(4, (int)EquipmentSocket.HipR);
+        Assert.Equal(5, (int)EquipmentSocket.HipL);
+        Assert.Equal(6, (int)EquipmentSocket.Shield);
+        Assert.Equal(7, (int)EquipmentSocket.Bow);
+        Assert.Equal(8, (int)EquipmentSocket.Quiver);
+        Assert.Equal(9, (int)EquipmentSocket.Head);
+        Assert.Equal(10, (int)EquipmentSocket.Chest);
+        Assert.Equal(11, (int)EquipmentSocket.Hips);
+        Assert.Equal(12, (int)EquipmentSocket.ShoulderR);
+        Assert.Equal(13, (int)EquipmentSocket.ShoulderL);
+    }
+
+    [Fact]
+    public void SocketSpace_Ordinals()
+    {
+        Assert.Equal(0, (int)SocketSpace.BoneLocal);
+        Assert.Equal(1, (int)SocketSpace.BodyAligned);
+    }
+
     [Fact]
     public void ActionKind_Ordinals()
     {

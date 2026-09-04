@@ -1,5 +1,6 @@
 using Embervale.Combat.Actions;
 using System.Collections.Generic;
+using Embervale.Animation;
 using Embervale.Combat;
 using Embervale.Core.Events;
 using Embervale.Entities;
@@ -29,7 +30,12 @@ public partial class EquipmentComponent : EntityComponent, ISaveable
     private StatsComponent? _stats;
     private InventoryComponent? _inventory;
     private CharacterActionComponent? _weapon;
+    private EquipmentPresentationComponent? _presentation;
     private WeaponResource? _defaultWeapon;
+
+    /// <summary>The name the drawn main-hand weapon hangs under, so a swap replaces it rather than
+    /// stacking a second sword in the same fist.</summary>
+    private const string MainHandVisual = "MainHand";
 
     public string SaveId => SaveKey("equipment");
 
@@ -38,6 +44,7 @@ public partial class EquipmentComponent : EntityComponent, ISaveable
         _stats = Entity!.GetComponent<StatsComponent>();
         _inventory = Entity.GetComponent<InventoryComponent>();
         _weapon = Entity.GetComponent<CharacterActionComponent>();
+        _presentation = Entity.GetComponent<EquipmentPresentationComponent>();
         _defaultWeapon = _weapon?.Weapon;
         RegisterSaveable();
     }
@@ -177,19 +184,58 @@ public partial class EquipmentComponent : EntityComponent, ISaveable
 
     private void ApplyWeapon(ItemInstance instance)
     {
-        if (instance.Equippable?.Weapon is { } weapon && _weapon != null)
+        if (instance.Equippable?.Weapon is not { } weapon)
+        {
+            return;
+        }
+
+        if (_weapon != null)
         {
             _weapon.Weapon = weapon;
         }
+
+        ShowWeapon(instance.Equippable.WorldModelPath);
     }
 
     private void RestoreWeapon(ItemInstance instance)
     {
-        if (instance.Equippable?.Weapon != null && _weapon != null)
+        if (instance.Equippable?.Weapon == null)
+        {
+            return;
+        }
+
+        if (_weapon != null)
         {
             _weapon.Weapon = _defaultWeapon;
         }
+
+        ShowWeapon(DefaultWeaponModelPath);
     }
+
+    /// <summary>
+    /// Puts a weapon in the hand, or takes it out.
+    ///
+    /// ⚠️ <b>Equipping used to change the numbers and nothing else.</b> This component had zero
+    /// visual code: swapping a rusted blade for a steel sword moved the damage and left the same
+    /// iron sword in the fist, because the only weapon mesh in the game was hung once by
+    /// <c>PlayerFactory</c> and never touched again. An item without a
+    /// <c>WorldModelPath</c> keeps whatever is already there rather than emptying the hand, so
+    /// unauthored weapons degrade to the old behaviour instead of to nothing.
+    /// </summary>
+    private void ShowWeapon(string modelPath)
+    {
+        if (_presentation is not { HasRig: true } presentation || modelPath.Length == 0)
+        {
+            return;
+        }
+
+        presentation.Attach(EquipmentSocket.HandR, modelPath, MainHandVisual,
+            rotationDegrees: WeaponGrip.HandRotationDegrees);
+    }
+
+    /// <summary>The model restored when a weapon is unequipped — the actor's starting weapon.
+    /// Set by the actor's factory before this component enters the tree.</summary>
+    [Export] public string DefaultWeaponModelPath { get; set; } = "";
 
     private void NotifyChanged()
     {

@@ -5,6 +5,7 @@
 [ext_resource type="Script" path="res://src/World/TravelNodeComponent.cs" id="3_travel"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="4_dialogue"]
 [ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="5_charanim"]
+[ext_resource type="Script" path="res://src/Animation/EquipmentPresentationComponent.cs" id="90_equipment"]
 [ext_resource type="Script" path="res://src/Factions/FactionComponent.cs" id="6_faction"]
 [ext_resource type="Script" path="res://src/Npc/ScheduleComponent.cs" id="7_schedule"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_dock_complex.glb" id="10_docks"]
@@ -509,6 +510,10 @@ TemplateId = "npc.wenna"
 script = ExtResource("5_charanim")
 BodyMeshPath = "Model"
 
+[node name="EquipmentVisuals" type="Node" parent="Wenna"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="Wenna"]
 
 [node name="Shape" type="CollisionShape3D" parent="Wenna/Collider"]
@@ -537,6 +542,10 @@ TemplateId = "npc.odger"
 
 [node name="Animation" type="Node" parent="Odger"]
 script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="Odger"]
+script = ExtResource("90_equipment")
 BodyMeshPath = "Model"
 
 [node name="Collider" type="StaticBody3D" parent="Odger"]

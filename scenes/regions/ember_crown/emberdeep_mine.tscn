@@ -5,6 +5,7 @@
 [ext_resource type="Script" path="res://src/World/TravelNodeComponent.cs" id="3_travel"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="4_dialogue"]
 [ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="5_charanim"]
+[ext_resource type="Script" path="res://src/Animation/EquipmentPresentationComponent.cs" id="90_equipment"]
 [ext_resource type="Script" path="res://src/Factions/FactionComponent.cs" id="6_faction"]
 [ext_resource type="Script" path="res://src/Npc/ScheduleComponent.cs" id="7_schedule"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_mine_head.glb" id="10_minehead"]
@@ -538,6 +539,10 @@ TemplateId = "npc.bregan"
 script = ExtResource("5_charanim")
 BodyMeshPath = "Model"
 
+[node name="EquipmentVisuals" type="Node" parent="Bregan"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="Bregan"]
 
 [node name="Shape" type="CollisionShape3D" parent="Bregan/Collider"]
@@ -566,6 +571,10 @@ TemplateId = "npc.marta"
 
 [node name="Animation" type="Node" parent="Marta"]
 script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="Marta"]
+script = ExtResource("90_equipment")
 BodyMeshPath = "Model"
 
 [node name="Collider" type="StaticBody3D" parent="Marta"]
@@ -931,6 +940,10 @@ TemplateId = "npc.emberbound_hierarch"
 script = ExtResource("5_charanim")
 BodyMeshPath = "Model"
 
+[node name="EquipmentVisuals" type="Node" parent="EmberboundHierarch"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="EmberboundHierarch"]
 
 [node name="Shape" type="CollisionShape3D" parent="EmberboundHierarch/Collider"]
@@ -961,6 +974,10 @@ TemplateId = "npc.emberbound_warder"
 script = ExtResource("5_charanim")
 BodyMeshPath = "Model"
 
+[node name="EquipmentVisuals" type="Node" parent="EmberboundWarder"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="EmberboundWarder"]
 
 [node name="Shape" type="CollisionShape3D" parent="EmberboundWarder/Collider"]
@@ -985,6 +1002,10 @@ TemplateId = "npc.emberbound_seeker"
 
 [node name="Animation" type="Node" parent="EmberboundSeeker"]
 script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="EmberboundSeeker"]
+script = ExtResource("90_equipment")
 BodyMeshPath = "Model"
 
 [node name="Collider" type="StaticBody3D" parent="EmberboundSeeker"]

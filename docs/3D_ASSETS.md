@@ -232,10 +232,36 @@ authoritative. Kit pieces are rigid followers of `Chest` or `Hips` using the ani
 while preserving the model's world axes — required because the retargeted bodies do not share
 identical bone-local axes.
 
-⚠️ **Do not replace `NpcKitFollower` with a plain `BoneAttachment3D` without repeating the complete
-motion review.** (`NpcKitFollower`, `EnemyKitFollower` and `PlayerFactory.AttachGear` are three
-implementations of nearly the same thing. That duplication is known and deliberately left alone,
-because collapsing it needs that same full motion review.)
+**Attachment is one system now** (2026-09-04, the combat/animation overhaul). `EquipmentSockets`
+is the contract — a socket vocabulary (`HandR`, `HandL`, `BackPrimary`, `Shield`, `Bow`, `Quiver`,
+`Head`, `Chest`, `Hips`, `ShoulderL/R`, …), the bone names each accepts in preference order, and the
+space a piece on it is oriented in. `EquipmentPresentationComponent` is the only thing that hangs
+anything on a body: player, NPC, enemy, companion and boss. The five implementations it replaced —
+`PlayerFactory.AttachWeaponVisual`, `PlayerFactory.AttachGear`, `NpcKitFollower`, `EnemyKitFollower`
+and their bone-name guessing — are deleted.
+
+⚠️ **The motion review that had been deferred was done, and its answer is `SocketSpace`.** Both
+behaviours were correct and genuinely different, which is why one could not simply replace the other:
+
+| Space | Basis | For |
+| --- | --- | --- |
+| `BoneLocal` | the bone's own — a native `BoneAttachment3D`, no per-frame script | held things: a sword rolls with the wrist |
+| `BodyAligned` | `pose · rest⁻¹` applied to the character's axes | worn things: the retargeted bodies do not share bone-local axes, so a pauldron authored upright on one chest lies on its side on the next |
+
+Every kit piece passes `BodyAligned` **explicitly** and names its authored bone as the *preferred*
+one, so nothing moved in the migration — the socket's own candidate list is only the fallback for a
+rig that lacks that exact bone. Several kit pieces sit on quadruped rigs carrying both a `Spine` and
+a `Torso`, and resolving those purely through the humanoid preference order would walk a carapace up
+the animal's back.
+
+`WeaponGrip.Hand` holds the one grip correction, derived from the basis that used to live privately
+inside `PlayerFactory` — which is why every companion, NPC and enemy that carried a weapon carried it
+unrotated.
+
+Two gates keep it honest: `EquipmentSocketTests` pins the alias table without an engine, and
+`tools/equipment_socket_probe.gd` proves it against **all 32 humanoid rigs on disk** plus one real
+attachment that has to end up on the hand bone. A bone-name miss used to be completely silent — the
+player's visual sword was `QueueFree`d on every spawn for an entire phase — and it now warns.
 
 `Build.Slim/Standard/Broad` alter cosmetic width only — they never scale a skeleton or move
 vertices in a skinned body. Profiles are deterministic, authored from profession, wealth, faction,

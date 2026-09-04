@@ -5,6 +5,7 @@
 [ext_resource type="Script" path="res://src/World/TravelNodeComponent.cs" id="3_travel"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="4_dialogue"]
 [ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="5_charanim"]
+[ext_resource type="Script" path="res://src/Animation/EquipmentPresentationComponent.cs" id="90_equipment"]
 [ext_resource type="Script" path="res://src/Factions/FactionComponent.cs" id="6_faction"]
 [ext_resource type="Script" path="res://src/Npc/ScheduleComponent.cs" id="7_schedule"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_dock_complex.glb" id="10_docks"]
@@ -320,6 +321,10 @@ TemplateId = "npc.sedge"
 script = ExtResource("5_charanim")
 BodyMeshPath = "Model"
 
+[node name="EquipmentVisuals" type="Node" parent="Sedge"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="Sedge"]
 
 [node name="Shape" type="CollisionShape3D" parent="Sedge/Collider"]
@@ -348,6 +353,10 @@ TemplateId = "npc.coyle"
 
 [node name="Animation" type="Node" parent="Coyle"]
 script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="Coyle"]
+script = ExtResource("90_equipment")
 BodyMeshPath = "Model"
 
 [node name="Collider" type="StaticBody3D" parent="Coyle"]
@@ -1215,6 +1224,10 @@ TemplateId = "npc.syndicate_broker"
 script = ExtResource("5_charanim")
 BodyMeshPath = "Model"
 
+[node name="EquipmentVisuals" type="Node" parent="SyndicateBroker"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="SyndicateBroker"]
 
 [node name="Shape" type="CollisionShape3D" parent="SyndicateBroker/Collider"]
@@ -1243,6 +1256,10 @@ TemplateId = "npc.syndicate_fixer"
 
 [node name="Animation" type="Node" parent="SyndicateFixer"]
 script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="SyndicateFixer"]
+script = ExtResource("90_equipment")
 BodyMeshPath = "Model"
 
 [node name="Collider" type="StaticBody3D" parent="SyndicateFixer"]

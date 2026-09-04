@@ -29,6 +29,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_lamp_post.glb" id="21_lamp"]
 [ext_resource type="Script" path="res://src/Companions/CompanionRecruiterComponent.cs" id="22_recruiter"]
 [ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="24_charanim"]
+[ext_resource type="Script" path="res://src/Animation/EquipmentPresentationComponent.cs" id="90_equipment"]
 [ext_resource type="Script" path="res://src/Economy/VendorComponent.cs" id="39_vendor"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_townhouse.tscn" id="50_townhouse"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_modular.tscn" id="51_cottage_modular"]
@@ -397,6 +398,10 @@ TemplateId = "npc.elder"
 script = ExtResource("24_charanim")
 BodyMeshPath = "Model"
 
+[node name="EquipmentVisuals" type="Node" parent="Elder"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="Elder"]
 
 [node name="Shape" type="CollisionShape3D" parent="Elder/Collider"]
@@ -425,6 +430,10 @@ TemplateId = "npc.kael"
 script = ExtResource("24_charanim")
 BodyMeshPath = "Model"
 
+[node name="EquipmentVisuals" type="Node" parent="Kael"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="Kael"]
 
 [node name="Shape" type="CollisionShape3D" parent="Kael/Collider"]
@@ -451,6 +460,10 @@ TemplateId = "npc.vendor_goods"
 
 [node name="Animation" type="Node" parent="VendorGoods"]
 script = ExtResource("24_charanim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="VendorGoods"]
+script = ExtResource("90_equipment")
 BodyMeshPath = "Model"
 
 [node name="Collider" type="StaticBody3D" parent="VendorGoods"]
@@ -482,6 +495,10 @@ TemplateId = "npc.vendor_smith"
 script = ExtResource("24_charanim")
 BodyMeshPath = "Model"
 
+[node name="EquipmentVisuals" type="Node" parent="VendorSmith"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="VendorSmith"]
 
 [node name="Shape" type="CollisionShape3D" parent="VendorSmith/Collider"]
@@ -510,6 +527,10 @@ TemplateId = "npc.vendor_alch"
 script = ExtResource("24_charanim")
 BodyMeshPath = "Model"
 
+[node name="EquipmentVisuals" type="Node" parent="VendorAlch"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="VendorAlch"]
 
 [node name="Shape" type="CollisionShape3D" parent="VendorAlch/Collider"]
@@ -536,6 +557,10 @@ TemplateId = "npc.innkeeper"
 
 [node name="Animation" type="Node" parent="Innkeeper"]
 script = ExtResource("24_charanim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="Innkeeper"]
+script = ExtResource("90_equipment")
 BodyMeshPath = "Model"
 
 [node name="Collider" type="StaticBody3D" parent="Innkeeper"]
@@ -582,6 +607,10 @@ TemplateId = "npc.trainer_smith"
 script = ExtResource("24_charanim")
 BodyMeshPath = "Model"
 
+[node name="EquipmentVisuals" type="Node" parent="Trainer"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="Trainer"]
 
 [node name="Shape" type="CollisionShape3D" parent="Trainer/Collider"]
@@ -604,6 +633,10 @@ TemplateId = "npc.stablemaster"
 
 [node name="Animation" type="Node" parent="Stablemaster"]
 script = ExtResource("24_charanim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="Stablemaster"]
+script = ExtResource("90_equipment")
 BodyMeshPath = "Model"
 
 [node name="Collider" type="StaticBody3D" parent="Stablemaster"]
@@ -846,6 +879,10 @@ TemplateId = "npc.traveller"
 
 [node name="Animation" type="Node" parent="WanderingTrader"]
 script = ExtResource("24_charanim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="WanderingTrader"]
+script = ExtResource("90_equipment")
 BodyMeshPath = "Model"
 
 [node name="Collider" type="StaticBody3D" parent="WanderingTrader"]

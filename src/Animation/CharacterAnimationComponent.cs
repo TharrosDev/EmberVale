@@ -4,7 +4,6 @@ using Embervale.Enemies;
 using Embervale.Core.Events;
 using Embervale.Entities;
 using Embervale.Magic;
-using Embervale.Npc;
 using Embervale.Stats;
 using Godot;
 using Embervale.Core;
@@ -81,12 +80,6 @@ public partial class CharacterAnimationComponent : EntityComponent
         {
             _player = FindAnimationPlayer(bodyRoot);
             _skeleton = FindSkeleton(bodyRoot);
-        }
-
-        if (_skeleton != null)
-        {
-            NpcVisualKit.Attach(Entity, _skeleton);
-            EnemyVisualKit.Attach(Entity, _skeleton);
         }
 
         if (_player != null)
