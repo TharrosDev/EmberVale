@@ -27,18 +27,19 @@ they run in; you should not have to know which is which.
 
 ---
 
-## The five families
+## The six families
 
 Every model is exactly one of these. The family is **derived**, not declared — `assets.py` reads
 the glTF and its `.import` sidecar and works it out, so it cannot drift from the files.
 
 | Family | What it is | Rig | Animation |
 | --- | --- | --- | --- |
-| [HUMANOID](#humanoid) | People and people-shaped enemies | Retargeted to `GeneralSkeleton` | Shared 46-clip library + its own clips |
+| [HUMANOID](#humanoid) | People and people-shaped enemies | Retargeted to `GeneralSkeleton` | Two shared libraries + its own clips |
 | [QUADRUPED](#quadruped) | Beasts, mounts, dragons | Its own, untouched | Its own clips only |
 | [STATIC PROP](#static-prop) | Furniture, containers, nature | None | None |
 | [ARCHITECTURE](#architecture) | Buildings and wall modules | None | None |
 | [FIRST-PERSON / VIEWMODEL](#first-person--viewmodel) | The arms you see in first person | None | Procedural, written in C# |
+| ANIMATION | `anim_*` clip sources — a skeleton and its clips, no mesh at all | Retargeted to `GeneralSkeleton` | *is* the animation |
 
 **Naming is the family's first signal and it is enforced.** `chr_` player · `npc_` NPC bodies ·
 `enm_` enemies · `boss_` bosses · `mnt_` mounts · `fp_` viewmodel · `prp_` props · `bld_` buildings
@@ -169,9 +170,28 @@ That name is the whole contract. `CharacterAnimationComponent.AddSharedLibrary` 
 is the retarget's own marker, and it is why an unretargeted body gets no library rather than a
 broken one.
 
-**What the library actually buys is three slots, not animation.** Every adopted body already ships
-its own clips, and `idle`, `run`, `attack`, `hit` and `death` resolve from them. Only `block`,
-`cast` and `channel` come from the library. Do not plan work assuming characters are unanimated.
+**There are TWO shared libraries and they are different things, not two sizes of one.**
+
+| Library | Built by | Holds | Why |
+| --- | --- | --- | --- |
+| `anim_library.res` | `tools/extract_anim_library.gd` | 46 Quaternius clips, **upper body only, rotation only** | Its Rigify source is `root → Hips`; the Quaternius bodies are `Root → Body → Hips`, so hip translation lands on top of a lift the body already has and stands the actor 1.63 m in the air with its legs strung out below. Its extractor therefore strips every position/scale track and all eight leg bones. In practice it buys three slots — `block`, `cast`, `channel`. |
+| `anim_meshy.res` | `tools/build_meshy_anim_library.gd` | 24 Meshy clips, **full body**, named for Embervale's own gameplay slots | Generated on an existing Meshy character rig, which `meshy_adopt.py` fingerprints to the same shape hash (`s3_c188e7a9`) — and therefore the same bone map — as 31 of the 33 humanoid bodies. There is no hierarchy mismatch to compensate for, so **nothing is stripped and it drives legs.** |
+
+⚠️ **The old library cannot be made to do what the new one does**, and that is worth knowing before
+anyone tries: its stripping is a fix for a real defect, not tidying. If you need legs, hips, or
+locomotion, the answer is `anim_meshy.res`.
+
+**Its clips are named for gameplay slots, not for Meshy actions** — `idle`, `run`, `attack1`,
+`parry` — so `AnimationClips.Resolve` matches them exactly instead of guessing through an alias
+table. `AnimationClips.SharedSlots` is the required set and `--validate` fails a build that loses
+one, because a missing clip is otherwise completely silent: `Resolve` returns empty, every caller
+reads that as "this body has no such animation", and the actor stands in its bind pose.
+
+**Regenerating it costs no credits and no character.** The clips come from `meshy_animate` against a
+**rig task that already exists** (`reports/3d/archive/meshy-migration/manifest.csv` carries 28 of
+them), so nothing is regenerated and no rig is re-paid for. `tools/strip_anim_glb.py` then throws the
+body away — Meshy returns a whole skinned character per clip, and a 24-clip set is 190 MB of the same
+townsman in 24 poses; stripped, it is 1.4 MB.
 
 `AnimationClips.Resolve` offers a model's **own** clips first and lets the library answer only what
 it alone can. It strips armature prefixes and a leading `Female_`/`Male_`, and recognises
@@ -181,6 +201,8 @@ it alone can. It strips armature prefixes and a leading `Female_`/`Male_`, and r
 
 ```powershell
 godot --headless --path . --script res://tools/meshy_rig_probe.gd -- --asset res://path.glb
+godot --headless --path . --script res://tools/anim_library_probe.gd
+godot --headless --path . --script res://tools/equipment_socket_probe.gd
 ```
 
 **This is a gate, not a spot check**, and `assets.py validate` runs it over every humanoid. It

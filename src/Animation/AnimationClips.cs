@@ -28,6 +28,22 @@ public static class AnimationClips
 {
     /// <summary>Accepted spellings per slot, best match first. A slot always lists its own name
     /// first so this project's own models keep winning outright.</summary>
+    /// <summary>
+    /// The clips the shared full-body library is required to carry, by the exact name it stores them
+    /// under. These are Embervale's own gameplay slots rather than Meshy's action names, so they
+    /// resolve on the exact-match pass instead of through an alias guess.
+    ///
+    /// <c>ContentValidator.ValidateAnimationLibraries</c> fails a build that loses one, because a
+    /// missing clip is otherwise completely silent — the actor just stands in its bind pose.
+    /// </summary>
+    public static readonly string[] SharedSlots =
+    {
+        "idle", "walk", "run", "sprint", "walk_back", "combat_walk_fwd", "combat_walk_back",
+        "turn_left", "turn_right", "jump", "fall",
+        "attack1", "attack2", "attack3", "heavy", "heavy_overhead",
+        "block", "parry", "dodge", "hit", "knockdown", "getup", "death",
+    };
+
     private static readonly Dictionary<string, string[]> Aliases = new(StringComparer.OrdinalIgnoreCase)
     {
         // "flying_idle" is listed for idle, and "fast_flying" for run, because the Quaternius

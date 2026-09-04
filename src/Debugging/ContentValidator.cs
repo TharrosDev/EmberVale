@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Text;
+using Embervale.Animation;
 using Embervale.Combat;
 using Embervale.Combat.Actions;
 using Embervale.Companions;
@@ -132,8 +133,56 @@ public static class ContentValidator
         ValidateUiAssets(issues);
         ValidateModelAssets(issues);
         ValidateAttackDefinitions(issues);
+        ValidateAnimationLibraries(issues);
     }
 
+
+    /// <summary>
+    /// The shared animation libraries resolve and hold the slots gameplay names (the 2026-09-04
+    /// combat/animation overhaul).
+    ///
+    /// ⚠️ <b>A missing clip is the quietest defect in the whole asset pipeline.</b>
+    /// <c>AnimationClips.Resolve</c> returns an empty string for a slot it cannot find, every caller
+    /// treats empty as "this body has no such animation", and the actor simply stands in its bind
+    /// pose. It imports cleanly, compiles, passes the tests, and T-poses in the market —
+    /// <c>docs/3D_ASSETS.md</c> names that as the only symptom an unresolved rig ever has, and
+    /// <c>npc_woman_dress</c> shipped exactly it. Nothing logs a thing.
+    ///
+    /// Only the paths and the slot list are checked here; whether the clips actually MOVE a rig
+    /// needs an engine and belongs to <c>tools/anim_library_probe.gd</c>.
+    /// </summary>
+    private static void ValidateAnimationLibraries(List<string> issues)
+    {
+        foreach (string path in new[] { ModelAssets.AnimationLibrary, ModelAssets.MeshyAnimationLibrary })
+        {
+            if (!ResourceLoader.Exists(path))
+            {
+                issues.Add($"animation library '{path}' does not resolve — every character would fall " +
+                           "back to its own clips or to a bind pose. Rebuild it with " +
+                           "tools/build_meshy_anim_library.gd.");
+            }
+        }
+
+        if (GD.Load<AnimationLibrary>(ModelAssets.MeshyAnimationLibrary) is not { } library)
+        {
+            return;
+        }
+
+        var have = new HashSet<string>();
+        foreach (StringName name in library.GetAnimationList())
+        {
+            have.Add(name.ToString());
+        }
+
+        foreach (string slot in AnimationClips.SharedSlots)
+        {
+            if (!have.Contains(slot))
+            {
+                issues.Add($"the shared animation library has no '{slot}' clip; gameplay names that " +
+                           "slot and an actor without it stands in its bind pose.");
+            }
+        }
+    }
 
     /// <summary>
     /// Every authored attack window is ordered and in range (the 2026-09-04 combat/animation

@@ -36,9 +36,19 @@ public partial class CharacterAnimationComponent : EntityComponent
     /// Mannequin mesh never reaches a build.</summary>
     private const string LibraryPath = ModelAssets.AnimationLibrary;
 
+    /// <summary>The full-body Meshy library (the 2026-09-04 overhaul). See
+    /// <see cref="ModelAssets.MeshyAnimationLibrary"/> for why it is a different thing from the
+    /// upper-body one above rather than a bigger one.</summary>
+    private const string MeshyLibraryPath = ModelAssets.MeshyAnimationLibrary;
+
     /// <summary>The library name the clips are added under; it becomes their <c>lib/Name</c> prefix,
     /// which <see cref="AnimationClips"/> strips.</summary>
     private static readonly StringName LibraryName = "lib";
+
+    /// <summary>Prefix the Meshy clips are addressed by. Its clips are named for Embervale's own
+    /// gameplay slots ("idle", "run", "attack1"), so once <c>AnimationClips.Bare</c> strips this
+    /// prefix they match a slot exactly rather than through an alias guess.</summary>
+    private static readonly StringName MeshyLibraryName = "meshy";
 
     /// <summary>What the importer's bone renamer names a retargeted skeleton. It doubles as the
     /// marker that a rig speaks the shared library's bone vocabulary — see
@@ -48,6 +58,7 @@ public partial class CharacterAnimationComponent : EntityComponent
     /// <summary>Loaded once for the whole cast — every character shares the one resource, and its
     /// clips are only ever read.</summary>
     private static AnimationLibrary? _sharedLibrary;
+    private static AnimationLibrary? _meshyLibrary;
 
     private AnimationPlayer? _player;
     private CombatComponent? _combat;
@@ -127,6 +138,15 @@ public partial class CharacterAnimationComponent : EntityComponent
         if (_sharedLibrary != null)
         {
             _player.AddAnimationLibrary(LibraryName, _sharedLibrary);
+        }
+
+        // The full-body library rides the same gate. Both are keyed on the skeleton literally being
+        // called GeneralSkeleton, which is the retarget's own marker — an unretargeted rig gets
+        // neither rather than a broken one.
+        _meshyLibrary ??= GD.Load<AnimationLibrary>(MeshyLibraryPath);
+        if (_meshyLibrary != null && !_player.HasAnimationLibrary(MeshyLibraryName))
+        {
+            _player.AddAnimationLibrary(MeshyLibraryName, _meshyLibrary);
         }
     }
 

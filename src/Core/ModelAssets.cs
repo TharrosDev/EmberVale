@@ -68,6 +68,18 @@ public static class ModelAssets
     /// mesh never ships. Regenerate with <c>python tools/assets.py build anim-library</c>.</summary>
     public const string AnimationLibrary = "res://assets/models/animations/anim_library.res";
 
+    /// <summary>
+    /// The full-body shared library (the 2026-09-04 combat/animation overhaul), built from Meshy
+    /// clips by <c>tools/build_meshy_anim_library.gd</c>.
+    ///
+    /// ⚠️ <b>It is a different thing from <see cref="AnimationLibrary"/>, not a bigger one.</b> That
+    /// one is upper-body and rotation-only by construction — its extractor strips every position
+    /// track and all eight leg bones, because its Rigify source and the Quaternius bodies disagree
+    /// about where the hips sit. This one comes off the same Meshy rig family as 31 of the 33
+    /// humanoid bodies, so nothing has to be stripped and it can actually drive legs.
+    /// </summary>
+    public const string MeshyAnimationLibrary = "res://assets/models/animations/anim_meshy.res";
+
     /// <summary>The derived production manifest. Written by
     /// <c>python tools/assets.py status --write</c>; never edited by hand.</summary>
     public const string Manifest = "res://assets/models/manifest.json";
