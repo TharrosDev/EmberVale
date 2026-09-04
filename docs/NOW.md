@@ -147,6 +147,14 @@ comparing across runs. Treat any single reading from it as advisory, exactly as 
     height is genuinely the point. This rule was learned three times in one pass, and the waterline
     was the expensive one: eight metres of generated ground under Hollowreach turned a 0.05 m fen
     surface into a flood across two cells.
+25. ⚠️ **A BUILDING IS RIGID; THE GROUND UNDER IT MUST BE LEVEL.** `WorldTerrainConform` is already
+    load-time gravity - an authored Y is a clearance and the ground is added back - but it samples a
+    node's OWN origin, and a structure's walls inherit that one sample because bending a building to
+    a hillside would tilt its walls and split its roof. So a level `GroundArea` is the fix, its
+    `SurfaceBlend` has to be high enough to actually be a floor, and two pads over one footprint must
+    agree on elevation. ⚠️ **A building on a road cannot be levelled at all** - road beats yard, so
+    the pad is suppressed where the road runs and a pad there makes it worse. Move the building.
+    `--worldgen` ranks every structure and prints the pad to author; `--validate` fails one over 1 m.
 24. ⚠️ **GENERATED WATER WETS YOUR BOOTS; AUTHORED WATER DROWNS YOU.** The generator's depth is
     capped under `DrownDepth`, never appears on a road or a yard, and never draws over a declared
     body. Anything deeper or more dangerous is a `WorldWaterResource` a designer wrote down.

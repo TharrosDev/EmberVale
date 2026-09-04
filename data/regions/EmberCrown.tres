@@ -802,6 +802,24 @@ Feather = 1.5
 SurfaceBlend = 0.55
 ElevationMode = 1
 
+[sub_resource type="Resource" id="Area_embermarket_y0"]
+script = ExtResource("7_area")
+Center = Vector2(-2.0, 22.5)
+Radius = Vector2(5.0, 5.0)
+Feather = 3.0
+SurfaceBlend = 0.9
+Elevation = 0.0
+ElevationMode = 1
+
+[sub_resource type="Resource" id="Area_embermarket_y1"]
+script = ExtResource("7_area")
+Center = Vector2(-2.5, 16.6)
+Radius = Vector2(4.5, 5.6)
+Feather = 3.0
+SurfaceBlend = 0.9
+Elevation = 0.0
+ElevationMode = 1
+
 [sub_resource type="Resource" id="Presentation_embermarket"]
 script = ExtResource("4_presentation")
 Width = 100.0
@@ -811,7 +829,7 @@ Biome = ExtResource("22_biome_pasture")
 TopologyResolution = 64
 Landforms = Array[ExtResource("8_landform")]([SubResource("Land_embermarket_0"), SubResource("Land_embermarket_1"), SubResource("Land_embermarket_2"), SubResource("Land_embermarket_3"), SubResource("Land_embermarket_4")])
 Paths = Array[ExtResource("6_path")]([SubResource("Path_market_gate"), SubResource("Path_market_crook"), SubResource("Path_market_caravan"), SubResource("Path_market_dock"), SubResource("Path_market_alley"), SubResource("Path_market_sump"), SubResource("Path_embermarket_ap0"), SubResource("Path_embermarket_ap1"), SubResource("Path_embermarket_ap2")])
-GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_market_yard"), SubResource("Area_market_terrace"), SubResource("Area_market_timber"), SubResource("Area_market_sump")])
+GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_market_yard"), SubResource("Area_market_terrace"), SubResource("Area_market_timber"), SubResource("Area_market_sump"), SubResource("Area_embermarket_y0"), SubResource("Area_embermarket_y1")])
 
 [sub_resource type="Resource" id="Cell_embermarket"]
 script = ExtResource("2_cell")
@@ -1474,6 +1492,33 @@ Feather = 3.0
 SurfaceBlend = 0.35
 ElevationMode = 1
 
+[sub_resource type="Resource" id="Area_town_hub_y0"]
+script = ExtResource("7_area")
+Center = Vector2(-20.0, 22.0)
+Radius = Vector2(6.0, 6.0)
+Feather = 3.0
+SurfaceBlend = 0.9
+Elevation = 0.0
+ElevationMode = 1
+
+[sub_resource type="Resource" id="Area_town_hub_y1"]
+script = ExtResource("7_area")
+Center = Vector2(25.0, 6.0)
+Radius = Vector2(6.0, 7.0)
+Feather = 3.0
+SurfaceBlend = 0.9
+Elevation = 0.0
+ElevationMode = 1
+
+[sub_resource type="Resource" id="Area_town_hub_y2"]
+script = ExtResource("7_area")
+Center = Vector2(-22.0, 11.1)
+Radius = Vector2(4.5, 4.6)
+Feather = 3.0
+SurfaceBlend = 0.9
+Elevation = 0.0
+ElevationMode = 1
+
 [sub_resource type="Resource" id="Presentation_town_hub"]
 script = ExtResource("4_presentation")
 Width = 100.0
@@ -1482,7 +1527,7 @@ Seed = 101
 TopologyResolution = 64
 Landforms = Array[ExtResource("8_landform")]([SubResource("Land_town_hub_0"), SubResource("Land_town_hub_1"), SubResource("Land_town_hub_2"), SubResource("Land_town_hub_3"), SubResource("Land_town_hub_4")])
 Paths = Array[ExtResource("6_path")]([SubResource("Path_town_kingsway_s"), SubResource("Path_town_kingsway_m"), SubResource("Path_town_kingsway_n"), SubResource("Path_town_west"), SubResource("Path_town_east"), SubResource("Path_town_green"), SubResource("Path_town_hub_ap0"), SubResource("Path_town_hub_ap1"), SubResource("Path_town_hub_ap2"), SubResource("Path_town_hub_ap3")])
-GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_town_square"), SubResource("Area_town_craft"), SubResource("Area_town_green")])
+GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_town_square"), SubResource("Area_town_craft"), SubResource("Area_town_green"), SubResource("Area_town_hub_y0"), SubResource("Area_town_hub_y1"), SubResource("Area_town_hub_y2")])
 
 [sub_resource type="Resource" id="Cell_town_hub"]
 script = ExtResource("2_cell")
@@ -2295,9 +2340,18 @@ script = ExtResource("7_area")
 Center = Vector2(18, -12)
 Radius = Vector2(6, 7)
 Feather = 4.5
-SurfaceBlend = 0.22
+SurfaceBlend = 0.9
 ElevationMode = 1
 Elevation = -5.39
+
+[sub_resource type="Resource" id="Area_wilds_north_y0"]
+script = ExtResource("7_area")
+Center = Vector2(21.5, -15.0)
+Radius = Vector2(5.5, 6.5)
+Feather = 3.0
+SurfaceBlend = 0.9
+Elevation = -5.39
+ElevationMode = 1
 
 [sub_resource type="Resource" id="Presentation_wilds_north"]
 script = ExtResource("4_presentation")
@@ -2308,7 +2362,7 @@ Biome = ExtResource("23_biome_woodland")
 TopologyResolution = 48
 Landforms = Array[ExtResource("8_landform")]([SubResource("Land_wilds_north_0"), SubResource("Land_wilds_north_1"), SubResource("Land_wilds_north_2"), SubResource("Land_wilds_north_3"), SubResource("Land_wilds_north_4"), SubResource("Land_wilds_north_5"), SubResource("Land_wilds_north_6")])
 Paths = Array[ExtResource("6_path")]([SubResource("Path_wn_stem"), SubResource("Path_wn_west_a"), SubResource("Path_wn_west_b"), SubResource("Path_wn_west_c"), SubResource("Path_wn_east_a"), SubResource("Path_wn_east_b"), SubResource("Path_wn_east_c"), SubResource("Path_wilds_north_ap0"), SubResource("Path_wilds_north_ap1"), SubResource("Path_wilds_north_ap2"), SubResource("Path_wilds_north_ap3")])
-GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_wilds_north_ruin"), SubResource("Area_wn_bowl"), SubResource("Area_wn_deadfall")])
+GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_wilds_north_ruin"), SubResource("Area_wn_bowl"), SubResource("Area_wn_deadfall"), SubResource("Area_wilds_north_y0")])
 
 [sub_resource type="Resource" id="Cell_wilds_north"]
 script = ExtResource("2_cell")
