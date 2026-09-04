@@ -15,7 +15,7 @@ namespace Embervale.Combat;
 ///
 /// Takes plain <c>object</c>s rather than <c>Hurtbox</c>/<c>IEntity</c> so it stays Godot-free and
 /// unit-testable. The hurtbox itself is the fallback key for an owner-less hurtbox (the training
-/// dummy in <c>GameBootstrap</c> is one), which preserves the old behaviour exactly.
+/// dummy in <c>DeveloperToolsHost</c> is one), which preserves the old behaviour exactly.
 /// </summary>
 public sealed class HitDedupe
 {

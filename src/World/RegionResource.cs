@@ -111,7 +111,7 @@ public partial class RegionResource : Resource
     ///
     /// Declared on the <em>destination</em> for the same reason <see cref="UnlockFlagId"/> is: one
     /// gate on one road, charged from whichever side the player approaches, and no per-link table for
-    /// the bootstrap to special-case. It is charged in <c>GameBootstrap.OnRegionTransitionRequested</c>
+    /// the bootstrap to special-case. It is charged in <c>WorldSessionDirector.OnRegionTransitionRequested</c>
     /// — the one place the portal and the <c>region</c> dev command both arrive — and <b>never</b> on
     /// fast travel, which pays <see cref="Economy.TravelFee"/> instead. See <see cref="Economy.TollFee"/>.
     /// </summary>

@@ -8,7 +8,7 @@ namespace Embervale.Bootstrap;
 /// against — the dying-world palette of Phase 27F — so it is worth being able to read it without
 /// scrolling past a session state machine to find it.
 ///
-/// <b>Why it lives here rather than in <see cref="GameBootstrap"/>.</b> The same reason
+/// <b>Why it lives here rather than in <see cref="WorldSessionDirector"/>.</b> The same reason
 /// <see cref="SandboxProps"/> does, and the 2026-08-15 audit picked it as the first extraction for a
 /// specific reason: <b>it was the only one with no coupling to unwind.</b> Everything in here is
 /// authored constants and four <c>AddChild</c> calls; nothing reads the bootstrap's session state,

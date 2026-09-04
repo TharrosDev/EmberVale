@@ -88,30 +88,82 @@
     from their own finest octave, and every cell's vertices, normals and collision faces are built on
     worker threads under an epoch stamp.
 
+- **The infrastructure overhaul (2026-09-04) ✅ CLOSED — out of band, maintainer-directed.** No
+  gameplay changed. What changed is that the application layer now has owners, and a session can
+  end.
+  - **`GameBootstrap` is gone** — 1503 lines and twenty-three responsibilities, replaced by
+    `ApplicationRoot`, `GameShellController`, `SessionLifecycleCoordinator`, `GameSession`,
+    `WorldHost`/`WorldSessionDirector`, `UICompositionRoot`, `PlayerHost`, `LoadingCoordinator`,
+    `DeveloperToolsHost` and `SaveHeaderComposer`. `GameSession.Build()` stays ONE ordered list
+    because the order always was load-bearing.
+  - ⚠️ **QUITTING TO THE TITLE NO LONGER RELOADS THE SCENE.** It used to, and the pause menu's own
+    comment said why: there was no way to dismantle a world in place, several services registered
+    and never unregistered, and a freed registrant is a hard `gchandle.is_released` crash.
+    `DestroySession()` removes the session node synchronously, so every `_ExitTree` has run before
+    it returns. **A second New Game now starts in the same process, which it could not before.**
+  - **Services have lifetimes, and a lifetime is a place in the tree.** `ServiceScope` holds one
+    lifetime's services (Application / Session / World) and `ServiceScope.For` finds a node's owner
+    by walking its ancestors, so *where a service is parented decides how long it may live*.
+    `RegisterOwned` ties the registration to the node's own `TreeExiting`, which deleted all 21
+    hand-written `Unregister` calls. **A stale registration has nowhere to survive**; the locator's
+    silent freed-object drop became an `Invariant` violation.
+  - **`PlayerController` (729 lines) is six components** — `PlayerPhysicsQueries`,
+    `PlayerCameraRig`, `PlayerLookInput`, `InteractionSensor`, `AimController`,
+    `PlayerInputRouter` — and is deleted. The router keeps one `_PhysicsProcess` because the order
+    is load-bearing and Godot would otherwise make it a consequence of child order.
+  - **`EnemyAIComponent` 1229 → 712 lines**, with `EnemySenses`, `EnemyCasterTactics` and a
+    `AiNavigator` **shared with the companion brain** — which had its own drifted copy that ran a
+    navigation-server query every frame where the enemy paced it to 4 Hz. `AIProfileResource` and
+    all 16 `.tres` are unchanged: the AI was already data-driven and that was never the problem.
+  - **The shipping build carries no tooling.** `EmbervaleTooling` (false under `ExportRelease`)
+    excludes the Godot-MCP addon, its two NuGet packages and the `*Shots` harnesses — and with them
+    the assembly-wide `CS0618` suppression. `TreatWarningsAsErrors` is now on unconditionally.
+  - **New gate: `godot --headless -- --lifecycle`.** Three New Game → Playing → save → destroy →
+    Load → Playing → destroy round trips, asserting after every teardown that no session, service
+    registration, event subscription, `ISaveable` or unfreed node survives.
+  - ⚠️ **THE LESSON, AND THE PROBE FOUND IT: NEW GAME COULD NOT REACH PLAYING AT ALL.** A region's
+    `SpawnPoint.Y` is an offset, not a world Y (invariant 23, learned yet again). Both authored
+    spawns are `y = 1.2`, the capsule's resting height from when every floor's top face was y = 0;
+    the generator put the ground under Ember Crown's spawn at **−1.81 m**, so the player hung
+    **3.01 m** in the air — one centimetre outside the loading gate's 3 m ground probe.
+    `SafeLanding` could not catch it, because it lifts and never lowers and the player was *above*
+    the ground. `tools/debug_pass_regressions.gd` had been failing this check on `main` and nothing
+    was reading it: no headless route had ever taken the New Game path, because `--play` loads a
+    save. `WorldSessionDirector.RegionSpawn` now reads the authored Y as the clearance it meant.
+
 - **NEXT: 42C — Dawnwardens recruitment and probation.** The first arc to walk through a door 42B
   built: join/refuse dialogue plus a Defend/Reach probation pair, and rank one earned.
 
 Read [`docs/WORLD_AUTHORING.md`](WORLD_AUTHORING.md) before touching a cell. `data/regions/*.tres`
 is **generated** — edit `tools/region_spec_<region>.py` and run `python tools/gen_regions.py`.
 
-## Last verified (2026-09-03 — the world-generation replacement)
+## Last verified (2026-09-04 — the infrastructure overhaul)
 
 | Check | Result |
 | --- | --- |
-| Build | `dotnet build Embervale.sln` — 0 warnings, 0 errors |
-| Tests | `dotnet test tests/Embervale.Tests` — **1743 passing** (1713 before this pass + 30 generator facts) |
-| `--validate` | exit 0, including the new `ValidateAuthoredGroundIsDry` arm |
+| Build | `dotnet build Embervale.sln` — **0 warnings, 0 errors, `TreatWarningsAsErrors=true`** |
+| Shipping build | `dotnet build Embervale.csproj -c ExportRelease` — 0 warnings, 0 errors |
+| Shipping contents | `python tools/check_shipping_assembly.py` — PASS; no MCP addon, no `*Shots`, no `ReproHarness` |
+| Tests | `dotnet test tests/Embervale.Tests` — **1807 passing** (1743 before this pass + 64: 9 service-scope, 2 session-reset, 53 AI rules) |
+| `--validate` | exit 0 |
+| `--lifecycle` | **exit 0 — 3 new-game + load round trips, 0 surviving services, 0 surviving subscriptions, 0 stranded saveables, 0 orphan nodes, 0 invariant violations** |
 | `--state` | 2 regions, 26 cells, 75 map locations — unchanged |
-| `--worldgen` | Ember Crown **42.8 m relief**, 19% mountain / 22% valley / 5% wetland / 2.4% generated water; Frostfang **98.3 m relief**, 42% mountain / 10% alpine. Steepest authored route **0.56** against a 0.80 limit. No pad, route end, spawn or portal under water |
-| `gen_regions.py --check` | clean; template, seams and layout all PASS on both regions |
-| `world_traversal_probe.gd` | PASS — a real capsule over all **142** authored route segments |
-| `world_shots.gd` | 260 frames captured and baseline updated after inspecting the section-22 viewpoints by eye |
-| `world_perf_probe.gd` | frame time **unchanged** (Ember 15.5 → 15.5 ms mean, worst 20.8 → 21.7 against a 25 ms budget); draws, primitives and VRAM flat or better; **region configure 4.6 → 7.5 s**, which is loading-screen time behind the existing gate |
+| `--worldgen` | Ember Crown **42.8 m relief**, Frostfang **98.3 m** — unchanged |
+| `gen_regions.py --check` | clean |
+| `debug_pass_regressions.gd` | **44/44** — including two that were FAILING on `main` (the spawn-ground pair above) |
+| `negative_tests.py` | 112 rules broken and restored, each caught |
+| `--play` | boots to Playing, restores 34 objects, streams all 16 Ember Crown cells, no errors, no invariant violations |
 
-⚠️ **The perf probe swings about ±25% run to run on this machine** — the same build measured between
-14.5 and 23.1 ms mean across the session. Numbers above are from a settled run, and the shader
-changes were confirmed free by an A/B against the previous shader in one sitting rather than by
-comparing across runs. Treat any single reading from it as advisory, exactly as `tests/README.md` says.
+⚠️ **GODOTMCP was not available for this pass** — the server was running but no Godot editor was
+open, so no `mcp__ai-game-developer__*` tools registered. Verification was the shell spine, which
+CLAUDE.md §2 already names as the real one. **No visual check was made**, and none was needed: no
+scene, model, material or shader changed.
+
+⚠️ **There is still no `export_presets.cfg`.** "The shipping build" is proved by `ExportRelease`
+compiling clean plus the assembly scan, not by a real export artifact.
+
+⚠️ **`ai.skirmisher` has zero archetype users** and is left alone deliberately — deleting authored
+content is a designer's call, not a refactor's. It is a profile waiting for an archetype.
 
 ## Live invariants
 
@@ -185,6 +237,16 @@ comparing across runs. Treat any single reading from it as advisory, exactly as 
     hubs on their pads, `--validate` and the layout gate both passed, and the **traversal probe** was
     the only thing that said four authored routes had no navigation path through them. Author a new
     `Yard` beside the road; do not build on the pad because the pad is flat.
+26. ⚠️ **A SERVICE LIVES AS LONG AS THE NODE IT IS PARENTED UNDER, AND NOT ONE FRAME LONGER.**
+    `ServiceScope.For` finds a node's owner by walking its ancestors, so moving a service to a
+    different host in the tree is the whole of changing its lifetime. Register with
+    `ServiceScope.RegisterOwned(this, this)`; never write an `Unregister` — the node's own
+    `TreeExiting` does it. A freed service found in a live scope is an `Invariant` violation, not
+    something to absorb.
+27. ⚠️ **ANYTHING IN A `static` THAT DESCRIBES A SESSION MUST BE IN `ResetSessionStatics`.** The
+    scene reload used to clear them for free and nothing does now. `SessionResetTests` finds every
+    static class with a parameterless `Clear`/`Reset`/`ClearAll` by reflection and fails on one the
+    list does not name, so this cannot be forgotten quietly.
 22. ⚠️ **A BUILDING VARIANT CHANGES STRUCTURE, NOT JUST DRESSING.** Footprint, floor count, roof
     direction/form, access, wall family, porch/awning/balcony or ruin state must change. Use shared
     material families and authored prefabs; a cosmetic prop swap is not a new building.
@@ -196,11 +258,14 @@ dotnet build Embervale.sln
 dotnet test tests/Embervale.Tests
 python tools/gen_regions.py            # data/regions/*.tres is GENERATED; --check gates it
 godot --headless --path . -- --validate
+godot --headless --path . -- --lifecycle  # session/world teardown; a gate, exit 1 on any leak
 godot --headless --path . -- --worldgen   # what the generator makes: relief, regimes, field
                                           # deciles, steepest routes, wet authored anchors
 godot --headless --path . -- --state
 godot --path . -- --play
 python tools/negative_tests.py          # refuses to run while data/ or scenes/ is dirty — commit first
+godot --headless --path . --script res://tools/debug_pass_regressions.gd   # 44 runtime checks
+dotnet build Embervale.csproj -c ExportRelease && python tools/check_shipping_assembly.py
 godot --path . -- --guild-shots         # the five guild hubs, front and back, plus both greetings
 godot --path . -- --panelshots          # every screen, incl. the Guilds tab
 godot --path . --script res://tools/world_shots.gd      # add -- --update-world-baseline AFTER inspecting

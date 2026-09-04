@@ -45,7 +45,7 @@ public readonly record struct RegionTransitionRequestedEvent(string RegionId) : 
 
 /// <summary>
 /// Raised once the active region has <b>actually</b> changed — after the streamer has been
-/// re-targeted and the player moved, from <c>GameBootstrap.PerformRegionLoad</c>.
+/// re-targeted and the player moved, from <c>WorldSessionDirector.PerformRegionLoad</c>.
 ///
 /// ⚠️ <b>IT EXISTS BECAUSE FOUR SYSTEMS WERE TREATING THE REQUEST AS THE EVENT.</b>
 /// <see cref="RegionTransitionRequestedEvent"/> is a request and the bootstrap refuses several of

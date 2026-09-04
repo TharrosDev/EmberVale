@@ -33,7 +33,7 @@ var _content_loader: Node
 func _initialize() -> void:
 	# Cell scenes can contain registry-backed occupants (the Frostfang lairs do). Seed the same
 	# databases production streaming uses so the placement probe stays warning-clean and does not
-	# falsely report missing templates merely because it was launched outside GameBootstrap.
+	# falsely report missing templates merely because it was launched outside the application root.
 	var loader_script: Script = load("res://src/Bootstrap/ContentDatabaseLoader.cs")
 	_content_loader = loader_script.new()
 	root.add_child(_content_loader)

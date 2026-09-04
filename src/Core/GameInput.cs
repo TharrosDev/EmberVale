@@ -29,7 +29,7 @@ public static class GameInput
     public const string Inventory = "inventory";
 
     /// <summary>Opens the spellbook (37.5D). Bound to T for "tome" — K, the usual "skills" key, is
-    /// already taken by the dev reputation control in GameBootstrap, and a player-facing action
+    /// already taken by the dev reputation control in DeveloperToolsHost, and a player-facing action
     /// sharing it would fire both.</summary>
     public const string Spellbook = "spellbook";
     public const string Journal = "journal";

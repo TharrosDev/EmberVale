@@ -22,12 +22,12 @@ public sealed class AiNavigator
 {
     /// <summary>How far off the navmesh an actor may be and still be considered standing on it.
     /// Generous, because an agent's own radius keeps its closest point at arm's length from a wall.</summary>
-    public const float NavAnchorTolerance = 3f;
+    private const float NavAnchorTolerance = 3f;
 
     /// <summary>Seconds between "am I on the navmesh at all" checks. The answer only changes when
     /// the actor walks off the mesh or a bake lands, and the query is a server round trip that would
     /// otherwise run for every moving actor every frame.</summary>
-    public const double NavAnchorInterval = 0.25d;
+    private const double NavAnchorInterval = 0.25d;
 
     private readonly IEntity _owner;
     private readonly Node3D _body;

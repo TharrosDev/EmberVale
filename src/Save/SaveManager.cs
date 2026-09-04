@@ -54,7 +54,7 @@ public sealed partial class SaveManager : Node
     /// <see cref="HeaderProvider"/> and invoked at the end of a successful <see cref="LoadGame"/>.
     ///
     /// ⚠️ <b>This exists because the restore used to live in ONE of the three load routes.</b> The
-    /// slot browser went through <c>GameBootstrap.StartLoadedGame</c>, which applied the header's
+    /// slot browser went through <c>SessionLifecycleCoordinator.StartLoadedGame</c>, which applied the header's
     /// region and transform after its overlay — but F9 and the pause menu call
     /// <see cref="LoadGame"/> directly, so they rewound inventory, quests, stats, the economy and
     /// the world to the save point and left the player standing wherever they happened to be, in

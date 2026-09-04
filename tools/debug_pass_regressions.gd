@@ -88,7 +88,7 @@ func _case_failed_cell_is_not_settled() -> void:
 # ---------------------------------------------------------------------------------------------
 # 2. New Game must not put the player over a void.
 #
-# GameBootstrap spawned the player and entered Playing before the streamer had instanced a single
+# The session spawned the player and entered Playing before the streamer had instanced a single
 # cell, so the very first thing a new player did was fall through the world. The invariant is that
 # the region's spawn point has real collision under it ONCE THE REGION IS RESIDENT — which is what
 # the loading gate now waits for.

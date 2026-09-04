@@ -750,7 +750,7 @@ public partial class MapScreen : UiPanel
     /// Fast travel, moved from a flat list into the selected place (Phase 25G rules unchanged).
     ///
     /// ⚠️ The fee shown is <see cref="TravelCosts.QuoteFor"/> — the same call
-    /// <c>GameBootstrap.OnFastTravelRequested</c> charges — so a button can never promise a price the
+    /// <c>WorldSessionDirector.OnFastTravelRequested</c> charges — so a button can never promise a price the
     /// jump does not take (invariant 5).
     /// </summary>
     private void AddTravelButton(MapLocationResource location)
@@ -818,7 +818,7 @@ public partial class MapScreen : UiPanel
     /// A jump button for one waypoint (Phase 25G rules unchanged).
     ///
     /// ⚠️ The fee shown is <see cref="TravelCosts.QuoteFor"/> — the same call
-    /// <c>GameBootstrap.OnFastTravelRequested</c> charges — so a button can never promise a price the
+    /// <c>WorldSessionDirector.OnFastTravelRequested</c> charges — so a button can never promise a price the
     /// jump does not take (invariant 5).
     /// </summary>
     private Button TravelButton(TravelNode node)

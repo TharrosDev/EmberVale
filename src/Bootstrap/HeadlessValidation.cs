@@ -12,7 +12,7 @@ namespace Embervale.Bootstrap;
 /// non-zero if anything is broken. This lets the maintainer (and, later, CI) check content from
 /// the command line:
 /// <code>godot --headless --path . -- --validate</code>
-/// (the <c>--</c> forwards <c>--validate</c> as a user argument). <see cref="GameBootstrap"/>
+/// (the <c>--</c> forwards <c>--validate</c> as a user argument). <see cref="ApplicationRoot"/>
 /// defers to this before building the sandbox.
 /// </summary>
 public static class HeadlessValidation

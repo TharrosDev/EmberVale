@@ -107,7 +107,7 @@ You are the lead engineer building this game incrementally. The non-negotiables:
 | Language         | C# targeting `net8.0`, `Nullable` enabled, `ImplicitUsings` off |
 | SDK              | `Godot.NET.Sdk/4.7.0` (see `Embervale.csproj`)                  |
 | Assembly / root ns | `Embervale`                                                   |
-| Entry scene      | `scenes/Main.tscn` → `GameBootstrap` (`src/Bootstrap`)          |
+| Entry scene      | `scenes/Main.tscn` → `ApplicationRoot` (`src/Bootstrap`)        |
 | Target platforms | Windows, Linux, Steam Deck (Forward+ renderer)                  |
 
 **The Godot MCP is [IvanMurzak/Godot-MCP](https://github.com/IvanMurzak/Godot-MCP) v0.20.1**
@@ -115,6 +115,15 @@ You are the lead engineer building this game incrementally. The non-negotiables:
 in February and whose npm build is missing its own upstream RCE fix). It is a **C# editor addon
 vendored into this repo** at `addons/godot_mcp/`, wired by `.mcp.json` (project-scoped) and declared
 in `Embervale.csproj` — see the comments there before touching either.
+
+⚠️ **IT IS EXCLUDED FROM A SHIPPING BUILD (2026-09-03).** `Embervale.csproj` has an
+`EmbervaleTooling` property — true by default, false under `ExportRelease` — and when it is false
+the addon, its two NuGet packages and the `src/Debugging/*Shots.cs` harnesses are not compiled, and
+neither is the assembly-wide `CS0618` suppression the addon required. `TreatWarningsAsErrors` is on
+unconditionally. Check it with `dotnet build Embervale.csproj -c ExportRelease && python
+tools/check_shipping_assembly.py`. Godot compiles every `.cs` under the project into ONE assembly,
+so this per-configuration exclusion is the only separation available — a separate tooling *project*
+is not reachable for anything a scene attaches a script to.
 
 ⚠️ **IT IS EDITOR-BOUND, AND THE OLD ONE WAS NOT.** Its ~42 tools drive a **running Godot editor**;
 they cannot launch a headless run. So the verification spine of this repo is unchanged and is still

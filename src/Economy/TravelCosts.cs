@@ -11,7 +11,7 @@ namespace Embervale.Economy;
 /// is deliberate: the *price* is pure and unit-tested in <see cref="TravelFee"/>, while the lookups that
 /// answer "is this somewhere I own" and "is this another realm" need the world's services and cannot be.
 ///
-/// Both the map screen's button state and <c>GameBootstrap.OnFastTravelRequested</c>'s charge call this
+/// Both the map screen's button state and <c>WorldSessionDirector.OnFastTravelRequested</c>'s charge call this
 /// one function, so the price shown and the price taken are the same number by construction — the Phase
 /// 37 rule that a prompt and the action behind it are one decision.
 /// </summary>
@@ -28,7 +28,7 @@ public static class TravelCosts
     /// realm boundary.
     ///
     /// <see cref="FeeFor"/> is this function's <c>Total</c>, so the button's label, its tooltip and
-    /// <c>GameBootstrap</c>'s charge remain one decision — which is the reason this type exists.
+    /// <c>WorldSessionDirector</c>'s charge remain one decision — which is the reason this type exists.
     /// </summary>
     public static PriceQuote QuoteFor(TravelNode node, string currentRegionId) => PriceBreakdown.Travel(
         ownedHolding: IsOwnedHolding(node.Id),

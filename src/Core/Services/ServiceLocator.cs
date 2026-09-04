@@ -52,17 +52,6 @@ public sealed partial class ServiceLocator : Node
         }
     }
 
-    public T Get<T>()
-        where T : class
-    {
-        if (TryGet(out T service))
-        {
-            return service;
-        }
-
-        throw new InvalidOperationException($"No service registered for {typeof(T).Name}.");
-    }
-
     public bool TryGet<T>(out T service)
         where T : class
     {
