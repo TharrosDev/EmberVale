@@ -86,7 +86,7 @@ public partial class CombatComponent : EntityComponent
     public bool IsStaggered => _staggerTimer > 0d;
 
     /// <summary>True while this actor is in its own attack wind-up (written by
-    /// <see cref="MeleeWeaponComponent"/>, which owns that window). Read here because incoming poise
+    /// <see cref="CharacterActionComponent"/>, which owns that window). Read here because incoming poise
     /// damage is resolved here — see <see cref="WindupPoiseMultiplier"/>.</summary>
     public bool InWindup { get; set; }
 

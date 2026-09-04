@@ -16,7 +16,7 @@ namespace Embervale.Player;
 /// slash arc on <see cref="AttackPerformedEvent"/> (direction alternates with the combo index),
 /// a raised guard pose while blocking, and short interaction/cast presentation beats. Purely
 /// cosmetic: hit timing/damage stay with
-/// <see cref="MeleeWeaponComponent"/>. Visible only while <see cref="PlayerCameraRig.IsFirstPerson"/>;
+/// <see cref="CharacterActionComponent"/>. Visible only while <see cref="PlayerCameraRig.IsFirstPerson"/>;
 /// the retained third-person rig (cutscenes) shows the full body instead.
 /// </summary>
 [GlobalClass]

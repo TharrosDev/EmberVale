@@ -1,3 +1,4 @@
+using Embervale.Combat.Actions;
 using Embervale.Combat;
 using Embervale.Core.Services;
 using Embervale.Entities;
@@ -9,11 +10,11 @@ namespace Embervale.Enemies;
 /// <summary>
 /// Gives a large body three melee arcs instead of one (Phase 35A): jaws in front, a wing sweep to
 /// either flank, the tail behind. Which one is armed is chosen every frame from the target's bearing
-/// (<see cref="DragonMelee"/>) by swapping the <see cref="MeleeWeaponComponent"/>'s hitbox — one
+/// (<see cref="DragonMelee"/>) by swapping the <see cref="CharacterActionComponent"/>'s hitbox — one
 /// weapon component, three volumes.
 ///
 /// A component rather than three weapons because <see cref="EnemyAIComponent"/> drives exactly one
-/// <see cref="MeleeWeaponComponent"/> per actor (<c>Entity.GetComponent&lt;T&gt;</c> returns one), so
+/// <see cref="CharacterActionComponent"/> per actor (<c>Entity.GetComponent&lt;T&gt;</c> returns one), so
 /// three weapons would mean teaching the AI to pick between them. Swapping the volume underneath the
 /// existing swing needs nothing from the AI at all.
 ///
@@ -28,7 +29,7 @@ public partial class DragonMeleeComponent : EntityComponent
     public const string WingNode = "WingHitbox";
     public const string TailNode = "TailHitbox";
 
-    private MeleeWeaponComponent? _weapon;
+    private CharacterActionComponent? _weapon;
     private EnemyAIComponent? _ai;
     private Hitbox? _bite;
     private Hitbox? _wing;
@@ -61,7 +62,7 @@ public partial class DragonMeleeComponent : EntityComponent
 
     protected override void OnInitialize()
     {
-        _weapon = Entity!.GetComponent<MeleeWeaponComponent>();
+        _weapon = Entity!.GetComponent<CharacterActionComponent>();
         _ai = Entity.GetComponent<EnemyAIComponent>();
         _bite = Entity.Body.GetNodeOrNull<Hitbox>(BiteNode);
         _wing = Entity.Body.GetNodeOrNull<Hitbox>(WingNode);

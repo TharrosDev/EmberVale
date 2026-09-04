@@ -1,3 +1,4 @@
+using Embervale.Combat.Actions;
 using System.Collections.Generic;
 using Embervale.Combat;
 using Embervale.Core.Events;
@@ -15,7 +16,7 @@ namespace Embervale.Items;
 /// <see cref="StatsComponent"/> as <see cref="StatModifier"/>s sourced to the
 /// instance (so they're removed cleanly on unequip), and — for weapon slots —
 /// swaps the active <see cref="WeaponResource"/> on the
-/// <see cref="MeleeWeaponComponent"/>. Unequipping reverses all of that and returns
+/// <see cref="CharacterActionComponent"/>. Unequipping reverses all of that and returns
 /// the instance (with its affixes intact) to the inventory.
 ///
 /// Persists the full equipped instance per slot via <see cref="ISaveable"/>.
@@ -27,7 +28,7 @@ public partial class EquipmentComponent : EntityComponent, ISaveable
 
     private StatsComponent? _stats;
     private InventoryComponent? _inventory;
-    private MeleeWeaponComponent? _weapon;
+    private CharacterActionComponent? _weapon;
     private WeaponResource? _defaultWeapon;
 
     public string SaveId => SaveKey("equipment");
@@ -36,7 +37,7 @@ public partial class EquipmentComponent : EntityComponent, ISaveable
     {
         _stats = Entity!.GetComponent<StatsComponent>();
         _inventory = Entity.GetComponent<InventoryComponent>();
-        _weapon = Entity.GetComponent<MeleeWeaponComponent>();
+        _weapon = Entity.GetComponent<CharacterActionComponent>();
         _defaultWeapon = _weapon?.Weapon;
         RegisterSaveable();
     }

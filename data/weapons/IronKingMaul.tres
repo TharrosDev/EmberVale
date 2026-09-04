@@ -1,17 +1,89 @@
-[gd_resource type="Resource" script_class="WeaponResource" load_steps=2 format=3 uid="uid://cmbrvlironmaul"]
+[gd_resource type="Resource" script_class="WeaponResource" load_steps=5 format=3 uid="uid://cmbrvlironmaul"]
 
 [ext_resource type="Script" path="res://src/Combat/WeaponResource.cs" id="1_weapon"]
+[ext_resource type="Script" path="res://src/Combat/Actions/ActionDefinitionResource.cs" id="2_action"]
+
+; The first weapon to author its own chain rather than inherit the synthesised one (the 2026-09-04
+; combat/animation overhaul). It is the right one to do first because it is the weapon the old
+; system flattered least: under the stopwatch FSM the Iron King's two-metre maul and a dagger played
+; the same Sword_Slash at the same speed, and both of its links used one set of timings.
+;
+; Two links, and they are genuinely different blows:
+;
+;   1. A LATERAL SWEEP. Interruptible, the shorter of the two, and the one that is safe to open with.
+;      A well-timed stagger during its wind-up still stops it dead — the punish window this fight has
+;      always had.
+;   2. AN OVERHEAD SLAM. Uninterruptible: once the King commits to raising it, nothing stops it
+;      landing. That is what the poise system was for and what no authored content had ever used.
+;      It is slower, roots him completely (MoveScale 0), and hits for nearly twice the sweep.
+;
+; ⚠️ THE SLAM'S HYPERARMOR IS A REAL DIFFICULTY CHANGE, NOT A PRESENTATION ONE. It is deliberately
+; paired with the longest wind-up in the game (0.62 of a 2.1 s action ≈ 1.3 s of raised maul) so the
+; answer is to leave rather than to trade. Telegraph, then commitment; a boss that cannot be
+; interrupted out of a fast attack would just be unfair.
+
+[sub_resource type="Resource" id="Sweep"]
+script = ExtResource("2_action")
+Id = "ironking.sweep"
+Kind = 0
+AnimationSlot = "attack"
+Duration = 1.45
+FallbackDuration = 1.45
+ActiveFrom = 0.38
+ActiveTo = 0.52
+CancelFrom = 0.52
+ComboFrom = 0.52
+ComboTo = 1.0
+NextActionId = "ironking.slam"
+Interruptible = true
+MoveScale = 0.25
+TurnDegreesPerSecond = 60.0
+StaminaCost = 20.0
+DamageScale = 1.0
+PoiseScale = 1.0
+HitStopScale = 1.0
+CameraImpulse = 0.25
+AiWeight = 1.0
+AiMaxRange = 2.8
+AiRecoverySeconds = 0.55
+
+[sub_resource type="Resource" id="Slam"]
+script = ExtResource("2_action")
+Id = "ironking.slam"
+Kind = 1
+AnimationSlot = "attack"
+Duration = 2.1
+FallbackDuration = 2.1
+ActiveFrom = 0.62
+ActiveTo = 0.72
+CancelFrom = 0.86
+ComboFrom = 0.86
+ComboTo = 1.0
+NextActionId = ""
+Interruptible = false
+MoveScale = 0.0
+TurnDegreesPerSecond = 25.0
+StaminaCost = 26.0
+DamageScale = 1.75
+PoiseScale = 1.6
+Knockback = 6.0
+HitStopScale = 1.6
+CameraImpulse = 0.8
+AiWeight = 0.7
+AiMaxRange = 2.6
+AiRecoverySeconds = 0.9
 
 [resource]
 script = ExtResource("1_weapon")
 DisplayName = "Iron King's Maul"
 DamageType = 0
 BaseDamage = 26.0
-PoiseDamage = 40.0
-StaminaCost = 18.0
+PoiseDamage = 55.0
+StaminaCost = 20.0
+Attacks = Array[ExtResource("2_action")]([SubResource("Sweep"), SubResource("Slam")])
 WindupTime = 0.55
 ActiveTime = 0.2
 RecoveryTime = 0.7
 AttackSpeed = 0.7
 ComboLength = 2
-FinisherMultiplier = 1.6
+FinisherMultiplier = 1.5

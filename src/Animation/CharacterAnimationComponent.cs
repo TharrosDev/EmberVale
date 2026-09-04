@@ -1,4 +1,5 @@
 using Embervale.Combat;
+using Embervale.Combat.Actions;
 using Embervale.Enemies;
 using Embervale.Core.Events;
 using Embervale.Entities;
@@ -18,7 +19,7 @@ namespace Embervale.Animation;
 /// and <c>death</c> (loop clips are authored with Godot's <c>-loop</c> suffix); any humanoid using
 /// those names gets animation for free (the 30F enemy sets reuse this component).
 ///
-/// Gameplay timing is untouched: hit/attack windows stay owned by <see cref="MeleeWeaponComponent"/>
+/// Gameplay timing is untouched: hit/attack windows stay owned by <see cref="CharacterActionComponent"/>
 /// and friends — this component only watches events and per-frame state and plays clips.
 /// </summary>
 [GlobalClass]
@@ -54,7 +55,7 @@ public partial class CharacterAnimationComponent : EntityComponent
     private StatsComponent? _stats;
     private SpellcastingComponent? _spellcasting;
     private Skeleton3D? _skeleton;
-    private string _idle = "", _run = "", _block = "", _attack = "", _hit = "", _death = "";
+    private string _idle = "", _run = "", _block = "", _hit = "", _death = "";
     private string _cast = "", _channel = "", _ride = "";
 
     /// <summary>Set by <see cref="Movement.MountComponent"/> while the owner is on a mount. It sits
@@ -62,6 +63,10 @@ public partial class CharacterAnimationComponent : EntityComponent
     /// the body plays the run loop while the horse carries it, which reads as sprinting on the spot
     /// four feet off the ground.</summary>
     public bool Riding { get; set; }
+
+    /// <summary>The clip the running action is being clocked by, or empty when the fallback timer
+    /// is doing it instead.</summary>
+    private string _actionClip = "";
 
     private bool _deathPlayed;
     private Vector3? _lastPosition;
@@ -90,7 +95,6 @@ public partial class CharacterAnimationComponent : EntityComponent
             _idle = ResolveClip("idle");
             _run = ResolveClip("run");
             _block = ResolveClip("block");
-            _attack = ResolveClip("attack");
             _hit = ResolveClip("hit");
             _death = ResolveClip("death");
             _cast = ResolveClip("cast");
@@ -100,14 +104,12 @@ public partial class CharacterAnimationComponent : EntityComponent
 
         _spellcasting = Entity.GetComponent<SpellcastingComponent>();
 
-        EventBus.Instance?.Subscribe<AttackPerformedEvent>(OnAttack);
         EventBus.Instance?.Subscribe<EntityDamagedEvent>(OnDamaged);
         EventBus.Instance?.Subscribe<SpellCastEvent>(OnSpellCast);
     }
 
     protected override void OnTeardown()
     {
-        EventBus.Instance?.Unsubscribe<AttackPerformedEvent>(OnAttack);
         EventBus.Instance?.Unsubscribe<EntityDamagedEvent>(OnDamaged);
         EventBus.Instance?.Unsubscribe<SpellCastEvent>(OnSpellCast);
     }
@@ -210,15 +212,21 @@ public partial class CharacterAnimationComponent : EntityComponent
     /// importer keeping or stripping the authored <c>-loop</c> suffix, of an exporter's
     /// <c>Armature|</c> prefix, and of a pack that calls the beat something else. See
     /// <see cref="AnimationClips"/> for why both of those matter.</summary>
-    private string ResolveClip(string slot) => AnimationClips.Resolve(_player!.GetAnimationList(), slot);
-
-    private void OnAttack(AttackPerformedEvent e)
+    private string ResolveClip(string slot)
     {
-        if (ReferenceEquals(e.Attacker, Entity))
+        if (_resolved.TryGetValue(slot, out string? cached))
         {
-            PlayOneShot(_attack);
+            return cached;
         }
+
+        // Resolve walks the model's whole clip list; an action asks per swing, so the answer is
+        // cached. The clip list cannot change after import, so the cache never goes stale.
+        string clip = AnimationClips.Resolve(_player!.GetAnimationList(), slot);
+        _resolved[slot] = clip;
+        return clip;
     }
+
+    private readonly System.Collections.Generic.Dictionary<string, string> _resolved = new();
 
     private void OnDamaged(EntityDamagedEvent e)
     {
@@ -250,6 +258,71 @@ public partial class CharacterAnimationComponent : EntityComponent
         }
     }
 
+    /// <summary>
+    /// Starts the clip that shows an action and <b>hands the action its clock</b>.
+    ///
+    /// <para>Returns how many seconds the action will actually take, or <c>-1</c> when this body has
+    /// no clip for the slot. Those are the two halves of the contract:</para>
+    /// <list type="bullet">
+    /// <item><paramref name="desiredSeconds"/> of <c>0</c> means <b>the clip decides</b> — its own
+    /// length is returned and becomes the action's duration. This is the animation-authoritative
+    /// case and the default for anything with a real clip.</item>
+    /// <item>A positive <paramref name="desiredSeconds"/> means the designer decides, and the clip
+    /// is played at the speed that makes it span exactly that long. A dagger's flick and the Iron
+    /// King's heave are then visibly different swings rather than the same clip twice.</item>
+    /// <item><c>-1</c> means the caller must run its own timer. The blow still lands, still rolls
+    /// damage, still reads — a missing animation is a smaller defect than a wrong one, which is the
+    /// same trade <see cref="PlayOneShot"/> already makes for a rider (39B).</item>
+    /// </list>
+    /// </summary>
+    public float StartAction(string slot, float desiredSeconds)
+    {
+        // A rider gets no full-body one-shot for the reason PlayOneShot documents at length: the
+        // standing clip lifts the hips half a metre out of the saddle. Refusing here rather than
+        // silently playing it hands the action its fallback timer instead.
+        if (_player == null || _deathPlayed || Riding)
+        {
+            return -1f;
+        }
+
+        string clip = ResolveClip(slot);
+        if (clip.Length == 0)
+        {
+            return -1f;
+        }
+
+        float clipSeconds = (float)_player.GetAnimation(clip).Length;
+        if (clipSeconds <= 0f)
+        {
+            return -1f;
+        }
+
+        float actual = desiredSeconds > 0f ? desiredSeconds : clipSeconds;
+        _actionClip = clip;
+        _player.Play(clip, customBlend: 0.08, customSpeed: ActionTimeline.ClipSpeedFor(clipSeconds, actual));
+        return actual;
+    }
+
+    /// <summary>How far through its clip the running action is (<c>0..1</c>), or <c>-1</c> when no
+    /// action clip is playing. This is what makes the animation the clock rather than a follower:
+    /// the hit window is read off this number, not off a stopwatch beside it.</summary>
+    public float ActionProgress
+    {
+        get
+        {
+            if (_player == null || _actionClip.Length == 0 || _player.CurrentAnimation != _actionClip)
+            {
+                return -1f;
+            }
+
+            double length = _player.CurrentAnimationLength;
+            return length <= 0d ? 1f : (float)(_player.CurrentAnimationPosition / length);
+        }
+    }
+
+    /// <summary>Releases the clip back to locomotion. Called when the action ends or is cancelled.</summary>
+    public void StopAction() => _actionClip = "";
+
     public override void _Process(double delta)
     {
         _lastDelta = (float)delta;
@@ -273,10 +346,16 @@ public partial class CharacterAnimationComponent : EntityComponent
 
         _deathPlayed = false;
 
-        // Let one-shots (attack/hit/cast) finish before locomotion reclaims the player.
+        // A running action owns the body outright — the ladder below may not reclaim it, or
+        // locomotion would blend the swing away halfway through its own hit window.
+        if (_actionClip.Length > 0 && _player.CurrentAnimation == _actionClip && _player.IsPlaying())
+        {
+            return;
+        }
+
+        // Let the remaining one-shots (hit/cast) finish before locomotion reclaims the player.
         if (_player.IsPlaying() &&
-            (_player.CurrentAnimation == _attack || _player.CurrentAnimation == _hit ||
-             _player.CurrentAnimation == _cast))
+            (_player.CurrentAnimation == _hit || _player.CurrentAnimation == _cast))
         {
             return;
         }

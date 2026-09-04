@@ -1,3 +1,4 @@
+using Embervale.Combat.Actions;
 using Embervale.Combat;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
@@ -17,7 +18,7 @@ namespace Embervale.Companions;
 /// The decision-making brain for a recruited <see cref="CompanionEntity"/> (Phase 32A) — the ally
 /// mirror of <see cref="Enemies.EnemyAIComponent"/>. It drives the <em>same</em> shared parts the
 /// player and the enemies use: <see cref="LocomotionComponent"/> to move (via the same
-/// <see cref="PathSteering"/> navmesh rule), <see cref="MeleeWeaponComponent"/> to attack, and
+/// <see cref="PathSteering"/> navmesh rule), <see cref="CharacterActionComponent"/> to attack, and
 /// <see cref="CombatComponent"/>'s team to decide who counts as a hostile. There is no parallel
 /// follower movement or combat system.
 ///
@@ -75,7 +76,7 @@ public partial class CompanionAIComponent : EntityComponent, ISaveable
 
     private CharacterBody3D _body = null!;
     private StatsComponent? _stats;
-    private MeleeWeaponComponent? _weapon;
+    private CharacterActionComponent? _weapon;
     private CombatComponent? _combat;
     /// <summary>Navmesh steering, arrival and facing. ⚠️ <b>Shared with the enemy brain</b>, which
     /// is the fix for a real divergence rather than a tidy-up: this file used to carry its own copy
@@ -133,7 +134,7 @@ public partial class CompanionAIComponent : EntityComponent, ISaveable
 
         _body = body;
         _stats = Entity.GetComponent<StatsComponent>();
-        _weapon = Entity.GetComponent<MeleeWeaponComponent>();
+        _weapon = Entity.GetComponent<CharacterActionComponent>();
         _combat = Entity.GetComponent<CombatComponent>();
         _nav = new Enemies.AiNavigator(Entity, _body, _body.GetNodeOrNull<NavigationAgent3D>("NavAgent"));
         _holdAnchor = _body.GlobalPosition;
@@ -245,7 +246,15 @@ public partial class CompanionAIComponent : EntityComponent, ISaveable
                 EnterState(CompanionState.Combat);
                 FaceTowards(targetPos);
                 Stand(delta);
-                _weapon?.TryAttack();
+                // ⚠️ GATED ON THE ACTION'S OWN RECOVERY, WHICH IS WHAT THIS CALL NEVER HAD.
+                // This runs every physics frame, and the only thing that ever rate-limited it was
+                // the weapon FSM rejecting a call while committed — so an enemy attacked at the
+                // maximum cadence its weapon allowed, forever, with no pause between combos.
+                // AiRecoveryRemaining is the authored breath between decisions.
+                if (_weapon is { AiRecoveryRemaining: <= 0f })
+                {
+                    _weapon.TryAttack();
+                }
                 break;
 
             case CompanionAction.Chase:

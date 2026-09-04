@@ -1,3 +1,4 @@
+using Embervale.Combat.Actions;
 using Embervale.Combat;
 using Embervale.Core;
 using Embervale.Factions;
@@ -99,7 +100,7 @@ public static class EnemyFactory
         enemy.AddChild(hitbox);
 
         WeaponResource? weapon = GD.Load<WeaponResource>(WeaponPath);
-        enemy.AddChild(new MeleeWeaponComponent
+        enemy.AddChild(new CharacterActionComponent
         {
             Name = "Weapon",
             Weapon = weapon,

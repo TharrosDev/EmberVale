@@ -11,7 +11,7 @@ namespace Embervale.Enemies;
 
 /// <summary>
 /// Runs a boss fight's <b>phases</b>, <b>per-phase abilities</b>, <b>enrage</b> and <b>telegraphs</b>
-/// on top of the shared <see cref="EnemyAIComponent"/> + <see cref="Combat.MeleeWeaponComponent"/> —
+/// on top of the shared <see cref="EnemyAIComponent"/> + <see cref="Combat.CharacterActionComponent"/> —
 /// no AI rewrite, the boss fights with the same brain everything else does.
 ///
 /// <b>Phase 36A:</b> all of it is now authored data. A <see cref="BossResource"/> named by

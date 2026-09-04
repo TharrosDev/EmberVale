@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Text;
+using Embervale.Combat;
+using Embervale.Combat.Actions;
 using Embervale.Companions;
 using Embervale.Core;
 using Embervale.Core.Diagnostics;
@@ -129,6 +131,124 @@ public static class ContentValidator
         ValidateResourcePaths(issues);
         ValidateUiAssets(issues);
         ValidateModelAssets(issues);
+        ValidateAttackDefinitions(issues);
+    }
+
+
+    /// <summary>
+    /// Every authored attack window is ordered and in range (the 2026-09-04 combat/animation
+    /// overhaul).
+    ///
+    /// ⚠️ <b>Invariant 8: an authored numeric range fails silently at both ends.</b> These are
+    /// fractions of an action's own duration, and every way of getting them wrong is invisible
+    /// everywhere else. <c>ActiveTo</c> below <c>ActiveFrom</c> gives a hit window that never opens —
+    /// the whole attack plays, the stamina is spent, and nothing is ever damaged. <c>CancelFrom</c>
+    /// below <c>ActiveTo</c> makes an attack cancellable while its own blade is live, which is
+    /// exactly the "instant animation cancellation" the rebuild exists to prevent. A fraction above
+    /// 1 sits past the end of the action and simply never happens. None of it throws, none of it
+    /// logs, and none of it is visible in a render either — you would have to notice that a
+    /// particular enemy has stopped hurting you.
+    ///
+    /// <c>NextActionId</c> is checked against the ids the same weapon declares, because a chain that
+    /// names a link nobody authored is a combo that silently ends one blow early.
+    /// </summary>
+    private static void ValidateAttackDefinitions(List<string> issues)
+    {
+        const string dir = "res://data/weapons";
+        using DirAccess? weapons = DirAccess.Open(dir);
+        if (weapons == null)
+        {
+            issues.Add($"weapon folder '{dir}' does not resolve.");
+            return;
+        }
+
+        foreach (string file in weapons.GetFiles())
+        {
+            // The importer leaves a .remap beside a .tres in an exported build; the resource path is
+            // the one without it, and Load resolves both.
+            if (!file.EndsWith(".tres", System.StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            string path = $"{dir}/{file}";
+            if (GD.Load<WeaponResource>(path) is not { } weapon)
+            {
+                issues.Add($"weapon '{path}' failed to load as a WeaponResource.");
+                continue;
+            }
+
+            var ids = new HashSet<string>();
+            foreach (ActionDefinitionResource? action in weapon.Attacks)
+            {
+                if (action != null && action.Id.Length > 0)
+                {
+                    ids.Add(action.Id);
+                }
+            }
+
+            for (int i = 0; i < weapon.Attacks.Count; i++)
+            {
+                ActionDefinitionResource? action = weapon.Attacks[i];
+                if (action == null)
+                {
+                    issues.Add($"weapon '{file}' attack #{i} is null.");
+                    continue;
+                }
+
+                string where = $"weapon '{file}' attack '{(action.Id.Length > 0 ? action.Id : $"#{i}")}'";
+
+                if (action.Id.Length == 0)
+                {
+                    issues.Add($"{where} has no Id — a chain cannot name it and nothing can log it.");
+                }
+
+                CheckFraction(where, nameof(action.ActiveFrom), action.ActiveFrom, issues);
+                CheckFraction(where, nameof(action.ActiveTo), action.ActiveTo, issues);
+                CheckFraction(where, nameof(action.CancelFrom), action.CancelFrom, issues);
+                CheckFraction(where, nameof(action.ComboFrom), action.ComboFrom, issues);
+                CheckFraction(where, nameof(action.ComboTo), action.ComboTo, issues);
+
+                if (action.ActiveTo <= action.ActiveFrom)
+                {
+                    issues.Add($"{where} has ActiveTo ({action.ActiveTo}) at or before ActiveFrom " +
+                               $"({action.ActiveFrom}) — its hit window never opens and it can never deal damage.");
+                }
+
+                if (action.CancelFrom < action.ActiveTo)
+                {
+                    issues.Add($"{where} has CancelFrom ({action.CancelFrom}) before ActiveTo " +
+                               $"({action.ActiveTo}) — it can be cancelled while its own blow is live.");
+                }
+
+                if (action.ComboTo < action.ComboFrom)
+                {
+                    issues.Add($"{where} has ComboTo ({action.ComboTo}) before ComboFrom " +
+                               $"({action.ComboFrom}) — its combo window never opens.");
+                }
+
+                if (action.Duration <= 0f && action.FallbackDuration <= 0f)
+                {
+                    issues.Add($"{where} has neither a Duration nor a FallbackDuration — an actor " +
+                               "without a clip for its slot would finish it instantly.");
+                }
+
+                if (action.NextActionId.Length > 0 && !ids.Contains(action.NextActionId))
+                {
+                    issues.Add($"{where} chains to '{action.NextActionId}', which this weapon does " +
+                               "not author — the combo would end one blow early.");
+                }
+            }
+        }
+    }
+
+    private static void CheckFraction(string where, string field, float value, List<string> issues)
+    {
+        if (value < 0f || value > 1f)
+        {
+            issues.Add($"{where} has {field} = {value}; action windows are fractions of the " +
+                       "action's own duration and must be within 0..1.");
+        }
     }
 
     /// <summary>

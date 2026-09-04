@@ -1,3 +1,4 @@
+using Embervale.Combat.Actions;
 using Embervale.Combat;
 using Embervale.Factions;
 using Embervale.Localization;
@@ -87,7 +88,7 @@ public static class EnemyArchetypeFactory
         });
         enemy.AddChild(hitbox);
 
-        enemy.AddChild(new MeleeWeaponComponent
+        enemy.AddChild(new CharacterActionComponent
         {
             Name = "Weapon",
             Weapon = GD.Load<WeaponResource>(archetype.WeaponPath),

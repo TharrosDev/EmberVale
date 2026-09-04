@@ -15,7 +15,7 @@ namespace Embervale.Magic;
 /// <summary>
 /// The spellcasting brain for an entity: the spells it knows, which one is prepared,
 /// per-spell cooldowns, and the cast itself (mana spend → deliver). It is the magic
-/// analogue of <see cref="MeleeWeaponComponent"/> and is deliberately input-agnostic —
+/// analogue of <see cref="CharacterActionComponent"/> and is deliberately input-agnostic —
 /// the player controller (and later enemy AI) decides <em>when</em> to call
 /// <see cref="TryCast"/> / <see cref="Cycle"/>.
 ///

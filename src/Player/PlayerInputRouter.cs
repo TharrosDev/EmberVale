@@ -1,3 +1,4 @@
+using Embervale.Combat.Actions;
 using Embervale.Combat;
 using Embervale.Core;
 using Embervale.Entities;
@@ -29,7 +30,7 @@ public partial class PlayerInputRouter : EntityComponent
     private InteractionSensor? _interaction;
     private AimController? _aim;
     private LocomotionComponent? _locomotion;
-    private MeleeWeaponComponent? _weapon;
+    private CharacterActionComponent? _weapon;
     private CombatComponent? _combat;
     private DodgeComponent? _dodge;
     private LockOnComponent? _lockOn;
@@ -45,7 +46,7 @@ public partial class PlayerInputRouter : EntityComponent
         _interaction = owner.GetComponent<InteractionSensor>();
         _aim = owner.GetComponent<AimController>();
         _locomotion = owner.GetComponent<LocomotionComponent>();
-        _weapon = owner.GetComponent<MeleeWeaponComponent>();
+        _weapon = owner.GetComponent<CharacterActionComponent>();
         _combat = owner.GetComponent<CombatComponent>();
         _dodge = owner.GetComponent<DodgeComponent>();
         _lockOn = owner.GetComponent<LockOnComponent>();
@@ -97,6 +98,12 @@ public partial class PlayerInputRouter : EntityComponent
         // Orient input by the body's yaw so "forward" is where the player faces.
         Vector3 wishDir = _yaw.GlobalBasis * new Vector3(input.X, 0f, input.Y);
 
+        // A committed action scales movement down (ActionDefinitionResource.MoveScale). The old
+        // FSM restricted movement not at all, which is why every swing read as a float rather than
+        // as a commitment. Applied to the wish direction rather than to the speed stat so it lasts
+        // exactly as long as the action and needs no cleanup.
+        Vector3 actionMove = wishDir * (_weapon?.MoveScale ?? 1f);
+
         if (Godot.Input.IsActionJustPressed(GameInput.Mount))
         {
             _mount?.Toggle();
@@ -108,7 +115,7 @@ public partial class PlayerInputRouter : EntityComponent
         // answers — Tick returns the input unchanged when not mounted, so there is no branch here.
         bool sprint = _mount?.Tick(delta, Godot.Input.IsActionPressed(GameInput.Sprint))
             ?? Godot.Input.IsActionPressed(GameInput.Sprint);
-        _locomotion?.Move(delta, wishDir, sprint, jump);
+        _locomotion?.Move(delta, actionMove, sprint, jump);
 
         // Dodge can't interrupt a committed swing (the attack commit window); it cancels
         // recovery/idle.

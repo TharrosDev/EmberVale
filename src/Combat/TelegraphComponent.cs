@@ -17,7 +17,7 @@ namespace Embervale.Combat;
 /// the exported default stands.
 ///
 /// Purely cosmetic. The wind-up window, the interrupt and the damage all live in
-/// <see cref="MeleeWeaponComponent"/> and <see cref="CombatComponent"/>.
+/// <see cref="CharacterActionComponent"/> and <see cref="CombatComponent"/>.
 /// </summary>
 [GlobalClass]
 public partial class TelegraphComponent : EntityComponent

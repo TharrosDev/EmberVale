@@ -1,3 +1,4 @@
+using Embervale.Combat.Actions;
 using Embervale.Combat;
 using Embervale.Core;
 using Embervale.Corruption;
@@ -143,7 +144,7 @@ public static class PlayerFactory
         player.AddChild(hitbox);
 
         WeaponResource? weapon = GD.Load<WeaponResource>(StartingWeaponPath);
-        player.AddChild(new MeleeWeaponComponent
+        player.AddChild(new CharacterActionComponent
         {
             Name = "Weapon",
             Weapon = weapon,
@@ -265,7 +266,7 @@ public static class PlayerFactory
 
     /// <summary>Hangs the visual sword (30C) off the rig's right-hand bone via a
     /// <see cref="BoneAttachment3D"/>, so it follows every animation clip. Purely cosmetic —
-    /// hit timing/damage stay with <see cref="MeleeWeaponComponent"/> and its hitbox.</summary>
+    /// hit timing/damage stay with <see cref="CharacterActionComponent"/> and its hitbox.</summary>
     private static void AttachWeaponVisual(Node bodyVisual)
     {
         if (FindSkeleton(bodyVisual) is not { } skeleton ||

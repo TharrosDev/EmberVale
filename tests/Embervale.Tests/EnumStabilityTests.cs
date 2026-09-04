@@ -1,4 +1,5 @@
 using Embervale.Combat;
+using Embervale.Combat.Actions;
 using Embervale.Corruption;
 using Embervale.Crafting;
 using Embervale.Dialogue;
@@ -27,6 +28,31 @@ namespace Embervale.Tests;
 /// </summary>
 public class EnumStabilityTests
 {
+    [Fact]
+    public void ActionKind_Ordinals()
+    {
+        Assert.Equal(0, (int)ActionKind.Attack);
+        Assert.Equal(1, (int)ActionKind.HeavyAttack);
+        Assert.Equal(2, (int)ActionKind.Block);
+        Assert.Equal(3, (int)ActionKind.Parry);
+        Assert.Equal(4, (int)ActionKind.Dodge);
+        Assert.Equal(5, (int)ActionKind.Cast);
+        Assert.Equal(6, (int)ActionKind.Ranged);
+        Assert.Equal(7, (int)ActionKind.Equip);
+        Assert.Equal(8, (int)ActionKind.UseItem);
+        Assert.Equal(9, (int)ActionKind.Stagger);
+        Assert.Equal(10, (int)ActionKind.Death);
+        Assert.Equal(11, (int)ActionKind.Contextual);
+    }
+
+    [Fact]
+    public void RootMotionMode_Ordinals()
+    {
+        Assert.Equal(0, (int)RootMotionMode.None);
+        Assert.Equal(1, (int)RootMotionMode.Horizontal);
+        Assert.Equal(2, (int)RootMotionMode.WarpToTarget);
+    }
+
     [Fact]
     public void ItemType_Ordinals()
     {
