@@ -37,10 +37,6 @@ __pycache__/
 
 # Claude Code personal settings
 .claude/settings.local.json
-# Godot-MCP generates a SKILL.md per tool under .claude/skills/ when the editor connects.
-# They are a local mirror of the addon's tool list, regenerated on demand, and they churn on
-# every connect -- not repository content.
-.claude/skills/
 
 # Throwaway render output from tools/*.gd harnesses (agent-ergonomics pass).
 # The .gdignore inside keeps Godot from importing stray PNGs as textures and IS tracked;
