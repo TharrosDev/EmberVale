@@ -57,7 +57,7 @@ public static class GameInput
     public const string Place = "place";
 
     /// <summary>Right-stick look (Phase 54). Mouse-look stays event-driven in
-    /// <c>PlayerController._Input</c>; a stick is a held axis, so it is polled per frame instead.</summary>
+    /// <c>PlayerLookInput._Input</c>; a stick is a held axis, so it is polled per frame instead.</summary>
     public const string LookLeft = "look_left";
     public const string LookRight = "look_right";
     public const string LookUp = "look_up";

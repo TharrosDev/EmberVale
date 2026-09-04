@@ -16,7 +16,7 @@ namespace Embervale.Player;
 /// slash arc on <see cref="AttackPerformedEvent"/> (direction alternates with the combo index),
 /// a raised guard pose while blocking, and short interaction/cast presentation beats. Purely
 /// cosmetic: hit timing/damage stay with
-/// <see cref="MeleeWeaponComponent"/>. Visible only while <see cref="PlayerController.IsFirstPerson"/>;
+/// <see cref="MeleeWeaponComponent"/>. Visible only while <see cref="PlayerCameraRig.IsFirstPerson"/>;
 /// the retained third-person rig (cutscenes) shows the full body instead.
 /// </summary>
 [GlobalClass]
@@ -52,7 +52,7 @@ public partial class FirstPersonArmsComponent : EntityComponent
     private Node3D? _interactionSocket;
     private CombatComponent? _combat;
     private SpellcastingComponent? _spellcasting;
-    private PlayerController? _controller;
+    private PlayerCameraRig? _rig;
     private float _bobTime;
     private float _swing;      // 1 → 0 while a slash plays
     private int _swingDir = 1; // alternates per combo hit
@@ -66,7 +66,7 @@ public partial class FirstPersonArmsComponent : EntityComponent
         IEntity owner = Entity!;
         _combat = owner.GetComponent<CombatComponent>();
         _spellcasting = owner.GetComponent<SpellcastingComponent>();
-        _controller = owner.GetComponent<PlayerController>();
+        _rig = owner.GetComponent<PlayerCameraRig>();
         BuildArms();
         EventBus.Instance?.Subscribe<AttackPerformedEvent>(OnAttack);
         EventBus.Instance?.Subscribe<AttackInterruptedEvent>(OnInterrupted);
@@ -231,7 +231,7 @@ public partial class FirstPersonArmsComponent : EntityComponent
             return;
         }
 
-        bool visible = _controller?.IsFirstPerson ?? true;
+        bool visible = _rig?.IsFirstPerson ?? true;
         _root.Visible = visible;
         if (!visible)
         {

@@ -46,7 +46,7 @@ public sealed partial class HudShots : ShotHarness
             return "player is not registered";
         if (player.GetComponent<StatsComponent>() is not { } stats)
             return "player has no StatsComponent";
-        if (player.GetComponent<PlayerController>()?.Camera is not { Current: true })
+        if (player.GetComponent<PlayerCameraRig>()?.Camera is not { Current: true })
             return "player has no current gameplay camera";
         if (GetTree().Root.FindChild("GameHud", recursive: true, owned: false) is null)
             return "GameHud is missing";

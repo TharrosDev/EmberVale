@@ -223,7 +223,7 @@ public partial class PlacementDirector : Node
 
     /// <summary>
     /// A ray at the ground and the props on it. Deliberately not shared with
-    /// <c>PlayerController.RaycastWorld</c>: that one takes every layer and excludes the player, which
+    /// <c>PlayerPhysicsQueries.Raycast</c>: that one takes every layer and excludes the player, which
     /// is right for "what am I looking at" and wrong here — placement needs the world layer only, or
     /// it would happily sit a workbench on a goblin's head.
     /// </summary>

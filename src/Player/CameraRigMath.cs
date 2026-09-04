@@ -8,7 +8,7 @@ namespace Embervale.Player;
 /// (Godot structs only — no <c>GodotObject</c>, no <c>GD.*</c>) so the load-bearing parts, the
 /// mode blend and the wall-collision spring, are unit-testable headlessly, the same way
 /// <see cref="Settings.SettingsMath"/> and <see cref="UI.CompassMath"/> are. The physics queries
-/// and node writes stay in <see cref="PlayerController"/>.
+/// and node writes stay in <see cref="PlayerCameraRig"/>.
 /// </summary>
 public static class CameraRigMath
 {

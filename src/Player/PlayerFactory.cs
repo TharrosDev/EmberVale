@@ -18,7 +18,7 @@ namespace Embervale.Player;
 
 /// <summary>
 /// Builds a fully-assembled player actor in code (hybrid first/third-person rig — the camera
-/// mode is a live setting <see cref="PlayerController"/> owns). Constructing it
+/// mode is a live setting <see cref="PlayerCameraRig"/> owns). Constructing it
 /// here (rather than a hand-authored <c>.tscn</c>) keeps the node graph, its
 /// collision shape and its components in one reviewable place while the project
 /// is young; it can be promoted to a packed scene later without changing callers.
@@ -37,7 +37,7 @@ public static class PlayerFactory
     private const float CapsuleHeight = 1.8f;
 
     // Hybrid camera: the pitch pivot sits at eye height, and the camera rides it directly in first
-    // person or swings out behind-and-over-the-right-shoulder in third. PlayerController owns the
+    // person or swings out behind-and-over-the-right-shoulder in third. PlayerCameraRig owns the
     // blend between the two and the wall spring; these are the third-person seat at full extension.
     // The shoulder offset is what keeps the body off the crosshair. The Phase 43 cutscene director
     // frames the same rig.
@@ -123,7 +123,7 @@ public static class PlayerFactory
         var shake = new Embervale.Combat.CameraShake { Name = "Shake" };
         camera.AddChild(shake);
 
-        // Spells aim along this node rather than the pivot. It sits at the eye but PlayerController
+        // Spells aim along this node rather than the pivot. It sits at the eye but AimController
         // re-aims it each frame at whatever the crosshair converges on, so a bolt goes where the
         // reticle is in third person too — from the pivot's raw forward it would miss by the
         // camera's pullback and shoulder offset. In first person the two are identical.
@@ -224,18 +224,28 @@ public static class PlayerFactory
             },
         });
 
-        var controller = new PlayerController
+        // ⚠️ THE SIX COMPONENTS BELOW ARE ONE SYSTEM AND THEIR ORDER MATTERS. The shared physics
+        // queries go first because the rig, the sensor and the aim controller all resolve them; the
+        // router goes last because it resolves all of the others. Each resolves its siblings in
+        // OnInitialize, which runs as children become ready, so an earlier sibling is always there.
+        player.AddChild(new PlayerPhysicsQueries { Name = "PhysicsQueries" });
+
+        player.AddChild(new PlayerCameraRig
         {
-            Name = "Controller",
+            Name = "CameraRig",
             CameraPivot = cameraPivot,
             Camera = camera,
-            AimNode = aimNode,
-        };
-        player.AddChild(controller);
+        });
 
-        // The shake offsets around the controller's mode-aware rest pose — a fixed rest would
-        // snap the camera back into the head after a crit while playing third-person.
-        shake.RestPosition = () => controller.CameraRestPosition;
+        player.AddChild(new PlayerLookInput { Name = "LookInput" });
+        player.AddChild(new InteractionSensor { Name = "Interaction" });
+        player.AddChild(new AimController { Name = "Aim", AimNode = aimNode });
+        player.AddChild(new PlayerInputRouter { Name = "InputRouter" });
+
+        // The shake offsets around the rig's mode-aware rest pose — a fixed rest would snap the
+        // camera back into the head after a crit while playing third-person. Looked up through the
+        // player rather than captured, so the delegate cannot outlive the component it reads.
+        shake.RestPosition = () => player.GetComponent<PlayerCameraRig>()?.CameraRestPosition ?? Vector3.Zero;
 
         // First-person viewmodel arms (30L): ride the camera, swing with attacks, guard on block.
         player.AddChild(new FirstPersonArmsComponent { Name = "FpArms", Camera = camera });

@@ -69,6 +69,34 @@ public partial class LockOnComponent : EntityComponent
         }
     }
 
+    /// <summary>
+    /// While locked on, yaws the owner's body to face the target (look input only pitches). The
+    /// level look — the target sampled at the body's own height — keeps it a pure yaw, so attacks
+    /// and strafing orient at the foe rather than tilting the character at a taller or shorter one.
+    ///
+    /// <para>It lives here rather than in the player's input router because the rule is about the
+    /// lock, not about the player: whoever holds a target faces it.</para>
+    /// </summary>
+    public void FaceTarget()
+    {
+        if (Target is not { } target || target.Body is not Node3D targetBody ||
+            Entity?.Body is not Node3D body)
+        {
+            return;
+        }
+
+        Vector3 to = targetBody.GlobalPosition - body.GlobalPosition;
+        to.Y = 0f;
+        if (to.LengthSquared() < 0.01f)
+        {
+            return;
+        }
+
+        body.LookAt(
+            new Vector3(targetBody.GlobalPosition.X, body.GlobalPosition.Y, targetBody.GlobalPosition.Z),
+            Vector3.Up);
+    }
+
     private IEntity? Nearest()
     {
         List<IEntity> targets = Acquire();
