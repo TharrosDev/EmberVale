@@ -1144,20 +1144,20 @@ public partial class GameHud : CanvasLayer
 
     private void UpdateFocus()
     {
-        PlayerController? controller = _player?.GetComponent<PlayerController>();
+        InteractionSensor? focusSensor = _player?.GetComponent<InteractionSensor>();
 
         // The locked-on target (Phase 29H) takes nameplate priority over the aimed-at focus, and is
         // reticled at its projected screen position.
-        IEntity? locked = controller?.LockedTarget;
+        IEntity? locked = _player?.GetComponent<Combat.LockOnComponent>()?.Target;
         UpdateLockReticle(locked);
-        IEntity? focus = (locked is Node lockNode && IsInstanceValid(lockNode)) ? locked : controller?.FocusedEntity;
+        IEntity? focus = (locked is Node lockNode && IsInstanceValid(lockNode)) ? locked : focusSensor?.FocusedEntity;
 
         // Nameplate for an aimed-at damageable that isn't the player. The widget owns the
         // validity guard, the snap-on-target-change and the disposition tint (37.5B).
         _nameplate.Show(focus, _player);
 
         // Interaction prompt for an aimed-at interactable.
-        string? prompt = controller?.FocusPrompt;
+        string? prompt = focusSensor?.FocusPrompt;
         if (!string.IsNullOrEmpty(prompt))
         {
             _promptText.Text = prompt;

@@ -77,11 +77,11 @@ public partial class CompanionAIComponent : EntityComponent, ISaveable
     private StatsComponent? _stats;
     private MeleeWeaponComponent? _weapon;
     private CombatComponent? _combat;
-    /// <summary>See <c>EnemyAIComponent.NavAnchorTolerance</c> — how far off the navmesh an actor
-    /// may stand and still be pathable.</summary>
-    private const float NavAnchorTolerance = 3f;
-
-    private NavigationAgent3D? _agent;
+    /// <summary>Navmesh steering, arrival and facing. ⚠️ <b>Shared with the enemy brain</b>, which
+    /// is the fix for a real divergence rather than a tidy-up: this file used to carry its own copy
+    /// of the same three-answer rule, and the copy ran <c>MapGetClosestPoint</c> — a navigation-server
+    /// query — every single frame where the enemy's paced it to four times a second.</summary>
+    private Enemies.AiNavigator _nav = null!;
     private PlayerCharacter? _player;
 
     private CompanionState _state = CompanionState.Idle;
@@ -135,7 +135,7 @@ public partial class CompanionAIComponent : EntityComponent, ISaveable
         _stats = Entity.GetComponent<StatsComponent>();
         _weapon = Entity.GetComponent<MeleeWeaponComponent>();
         _combat = Entity.GetComponent<CombatComponent>();
-        _agent = _body.GetNodeOrNull<NavigationAgent3D>("NavAgent");
+        _nav = new Enemies.AiNavigator(Entity, _body, _body.GetNodeOrNull<NavigationAgent3D>("NavAgent"));
         _holdAnchor = _body.GlobalPosition;
 
         EventBus.Instance?.Subscribe<DamageDealtEvent>(OnDamageDealt);
@@ -442,98 +442,19 @@ public partial class CompanionAIComponent : EntityComponent, ISaveable
             player.GlobalPosition, -player.GlobalTransform.Basis.Z, SlotIndex, FollowDistance);
     }
 
-    private void MoveTowards(Vector3 target, double delta, bool sprint, float stopDistance)
-    {
-        // Same navmesh steering rule the enemies use (Phase 27A): steer at the next path corner when a
-        // baked navmesh is under the agent, but judge arrival against the final target.
-        if (NextPathPoint(target) is not { } corner)
-        {
-            // No usable navigation this frame — hold rather than walk a straight line through the
-            // buildings between here and the player. The roster's catch-up (CompanionRoster's
-            // CatchUpDistance) is what stops a held companion being lost for good.
-            Stand(delta);
-            return;
-        }
+    /// <summary>Walks toward a point through the navmesh — the same steering the enemies use, from
+    /// the same code. A companion faces where it is walking unless it is fighting, which is what the
+    /// callback is for.</summary>
+    private void MoveTowards(Vector3 target, double delta, bool sprint, float stopDistance) =>
+        _nav.MoveTowards(
+            target, delta, sprint, stopDistance,
+            faceWish: _state == CompanionState.Combat
+                ? null
+                : wish => FaceTowards(_body.GlobalPosition + wish));
 
-        Vector3 toCorner = corner - _body.GlobalPosition;
-        toCorner.Y = 0f;
-        float cornerDistance = toCorner.Length();
-        float finalDistance = HorizontalDistance(_body.GlobalPosition, target);
-        Vector3 wish = PathSteering.ShouldSteer(cornerDistance, finalDistance, stopDistance)
-            ? toCorner.Normalized()
-            : Vector3.Zero;
+    private void Stand(double delta) => _nav.Stand(delta);
 
-        if (wish != Vector3.Zero && _state != CompanionState.Combat)
-        {
-            FaceTowards(_body.GlobalPosition + wish);
-        }
-
-        GetLocomotion()?.Move(delta, wish, sprint, jump: false);
-    }
-
-    /// <summary>The next waypoint, or null when there is no safe one — the same three-answer rule
-    /// <c>EnemyAIComponent.NextPathPoint</c> documents, and for the same reason: the straight-line
-    /// fallback this replaced walked companions through walls whenever a cell's navmesh had not
-    /// finished baking.</summary>
-    private Vector3? NextPathPoint(Vector3 target)
-    {
-        if (_agent == null)
-        {
-            return target;
-        }
-
-        Rid map = _agent.GetNavigationMap();
-        if (!map.IsValid)
-        {
-            return null;
-        }
-
-        Vector3 here = _body.GlobalPosition;
-        if (NavigationServer3D.MapGetClosestPoint(map, here).DistanceSquaredTo(here) >
-            NavAnchorTolerance * NavAnchorTolerance)
-        {
-            return null;
-        }
-
-        Vector3 goal = target;
-        if (_agent.TargetPosition.DistanceSquaredTo(goal) > 0.01f)
-        {
-            _agent.TargetPosition = goal;
-        }
-
-        if (_agent.IsTargetReachable())
-        {
-            return _agent.GetNextPathPosition();
-        }
-
-        Vector3 nearest = NavigationServer3D.MapGetClosestPoint(map, goal);
-        if (nearest.DistanceSquaredTo(here) <= 0.04f)
-        {
-            return null;
-        }
-
-        if (_agent.TargetPosition.DistanceSquaredTo(nearest) > 0.01f)
-        {
-            _agent.TargetPosition = nearest;
-        }
-
-        return _agent.IsTargetReachable() ? _agent.GetNextPathPosition() : null;
-    }
-
-    private void Stand(double delta)
-    {
-        GetLocomotion()?.Move(delta, Vector3.Zero, sprint: false, jump: false);
-    }
-
-    private void FaceTowards(Vector3 target)
-    {
-        Vector3 pos = _body.GlobalPosition;
-        var flat = new Vector3(target.X, pos.Y, target.Z);
-        if (flat.DistanceSquaredTo(pos) > 0.0004f)
-        {
-            _body.LookAt(flat, Vector3.Up);
-        }
-    }
+    private void FaceTowards(Vector3 target) => _nav.FaceTowards(target);
 
     /// <summary>Idling in formation, a companion looks the way the player does — standing nose-to-nose
     /// with whoever it last walked toward reads as broken.</summary>
@@ -547,7 +468,6 @@ public partial class CompanionAIComponent : EntityComponent, ISaveable
         FaceTowards(_body.GlobalPosition + (-player.GlobalTransform.Basis.Z));
     }
 
-    private LocomotionComponent? GetLocomotion() => Entity?.GetComponent<LocomotionComponent>();
 
     // --- Misc helpers --------------------------------------------------------
 
@@ -578,10 +498,6 @@ public partial class CompanionAIComponent : EntityComponent, ISaveable
         return _player;
     }
 
-    private static float HorizontalDistance(Vector3 a, Vector3 b)
-    {
-        a.Y = 0f;
-        b.Y = 0f;
-        return a.DistanceTo(b);
-    }
+    private static float HorizontalDistance(Vector3 a, Vector3 b) =>
+        Enemies.AiNavigator.HorizontalDistance(a, b);
 }

@@ -92,7 +92,7 @@ public partial class WorldIntegrityChecker : Node
                      $"player velocity is impossible ({velocity.Length():0.0} m/s)"))
             sb.Append($"• impossible player velocity ({velocity.Length():0.0} m/s)\n");
 
-        if (!Invariant.Check(player.GetComponent<PlayerController>()?.Camera is { Current: true },
+        if (!Invariant.Check(player.GetComponent<PlayerCameraRig>()?.Camera is { Current: true },
                              "player has no current gameplay camera"))
             sb.Append("• player camera missing/not current\n");
 

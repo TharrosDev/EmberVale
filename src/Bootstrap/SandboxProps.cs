@@ -14,7 +14,7 @@ namespace Embervale.Bootstrap;
 /// before there was content, and it is still the fastest way to reach a pickup, a crafting material or
 /// a fight from a cold boot.
 ///
-/// <b>Why it lives here rather than in <see cref="GameBootstrap"/>.</b> Not for deletability — that
+/// <b>Why it lives here rather than in <see cref="GameSession"/>.</b> Not for deletability — that
 /// already existed, and still does: every call is behind <c>BuildProfile.SpawnSandboxContent</c>, so a
 /// capture build places none of it. This is purely about the bootstrap being the project's largest file
 /// and its coupling hotspot. Demo furniture is the part least likely to survive contact with real

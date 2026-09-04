@@ -20,7 +20,7 @@ namespace Embervale.Bootstrap;
 /// Loads every authored-content database (and the enemy/companion registries) in one place, so the
 /// sandbox bootstrap and the headless validation path stay in lockstep — neither can validate or
 /// run against a different set of initialized content than the other. Order matches the original
-/// <see cref="GameBootstrap"/> sequence; the databases are independent, so the order is not
+/// <see cref="ApplicationRoot"/> sequence; the databases are independent, so the order is not
 /// load-bearing, but kept stable for readability.
 /// </summary>
 public static class ContentDatabases

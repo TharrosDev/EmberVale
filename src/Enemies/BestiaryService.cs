@@ -35,7 +35,7 @@ public partial class BestiaryService : Node, ISaveable
 
     public override void _EnterTree()
     {
-        ServiceLocator.Instance?.Register(this);
+        ServiceScope.RegisterOwned(this, this);
         SaveManager.Instance?.Register(this);
         EventBus.Instance?.Subscribe<EntityDiedEvent>(OnEntityDied);
     }
@@ -44,7 +44,6 @@ public partial class BestiaryService : Node, ISaveable
     {
         EventBus.Instance?.Unsubscribe<EntityDiedEvent>(OnEntityDied);
         SaveManager.Instance?.Unregister(this);
-        ServiceLocator.Instance?.Unregister(this);
     }
 
     /// <summary>Total kills recorded for a creature.</summary>

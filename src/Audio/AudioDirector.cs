@@ -33,7 +33,9 @@ public partial class AudioDirector : Node
         _sfxPool = new NodePool<PositionalSfxPlayer>(() => new PositionalSfxPlayer { Released = p => _sfxPool.Return(p) }, prewarm: 6);
         _flatPool = new NodePool<OneShotAudioPlayer>(() => new OneShotAudioPlayer { Released = p => _flatPool.Return(p) }, prewarm: 2);
 
-        ServiceLocator.Instance?.Register(_library); // shared so MusicDirector reuses the built streams
+        // Shared so MusicDirector reuses the built streams. Owned by this node: the registration
+        // goes when the director does, without _ExitTree having to remember it.
+        ServiceScope.RegisterOwned(this, _library);
         EventBus.Instance?.Subscribe<SoundCueRequestedEvent>(OnSoundCue);
         EventBus.Instance?.Subscribe<MusicCueRequestedEvent>(OnMusicCue);
         EventBus.Instance?.Subscribe<ItemPickedUpEvent>(OnItemPickedUp);
@@ -49,7 +51,6 @@ public partial class AudioDirector : Node
         EventBus.Instance?.Unsubscribe<ItemPickedUpEvent>(OnItemPickedUp);
         EventBus.Instance?.Unsubscribe<SpellCastEvent>(OnSpellCast);
         EventBus.Instance?.Unsubscribe<LeveledUpEvent>(OnLeveledUp);
-        ServiceLocator.Instance?.Unregister(_library);
         _sfxPool?.Clear();
         _flatPool?.Clear();
     }

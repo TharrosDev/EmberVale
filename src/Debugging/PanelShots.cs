@@ -23,7 +23,7 @@ namespace Embervale.Debugging;
 /// half-pixel origin, a correct plot on a black rectangle that read as a failed load, and fast travel
 /// relocated behind a discovery gate. The maintainer found every one by opening the map, because
 /// nothing here could: <c>--play</c> boots the world but cannot press <c>M</c>, and the Godot MCP
-/// drives the <i>editor</i>, where these panels do not exist — <see cref="Bootstrap.GameBootstrap"/>
+/// drives the <i>editor</i>, where these panels do not exist — <see cref="Bootstrap.UICompositionRoot"/>
 /// constructs them at runtime.
 ///
 /// <see cref="UiPanel.SetOpen"/> is public, so a panel can be opened from code with no key injection

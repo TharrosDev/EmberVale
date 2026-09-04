@@ -11,7 +11,7 @@ namespace Embervale.Housing;
 /// Everything the player can set down (Phase 37C), and the builders that make each one.
 ///
 /// <b>Why the id list and the builders live in one file.</b> The builders go into
-/// <see cref="PersistentActorRegistry"/>, which is populated in <c>GameBootstrap.BuildWorld</c> —
+/// <see cref="PersistentActorRegistry"/>, which is populated in <c>GameSession.Build</c> —
 /// code <c>--validate</c> never runs. So the validator cannot ask the registry what exists, and a
 /// kit pointing at an unregistered template would be uncheckable: craftable, stackable, carryable,
 /// and silently inert the moment it is placed. <see cref="Ids"/> is a plain Godot-free set the

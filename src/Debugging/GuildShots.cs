@@ -110,7 +110,7 @@ public sealed partial class GuildShots : ShotHarness
         (string node, _, Vector3 ahead, Vector3 behind) = Hubs[index];
         if (ServiceLocator.Instance is not { } locator ||
             !locator.TryGet(out PlayerCharacter player) ||
-            player.GetComponent<PlayerController>() is not { } controller ||
+            player.GetComponent<PlayerCameraRig>() is not { } controller ||
             controller.Camera is not { } camera ||
             Find(node) is not { } hub)
         {
@@ -323,7 +323,7 @@ public sealed partial class GuildShots : ShotHarness
     {
         if (ServiceLocator.Instance is not { } locator ||
             !locator.TryGet(out PlayerCharacter player) ||
-            player.GetComponent<PlayerController>() is not { } controller ||
+            player.GetComponent<PlayerCameraRig>() is not { } controller ||
             controller.Camera is not { } camera ||
             FactionDatabase.Get(Core.GameIds.Factions.Dawnwardens) is not { } guild ||
             OfficerOf(guild.LeaderNpcId) is not { } captain ||

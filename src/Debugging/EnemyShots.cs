@@ -59,13 +59,18 @@ public sealed partial class EnemyShots : ShotHarness
     {
         if (ServiceLocator.Instance is not { } locator ||
             !locator.TryGet(out PlayerCharacter player) ||
-            player.GetComponent<PlayerController>() is not { Camera: { } camera } controller ||
+            player.GetComponent<PlayerCameraRig>() is not { Camera: { } camera } ||
             EnemyArchetypeDatabase.Get(id) is not { } archetype)
         {
             return;
         }
 
-        controller.ProcessMode = ProcessModeEnum.Disabled;
+        // Freeze the player: the router is the one component that reads input every frame.
+        if (player.GetComponent<PlayerInputRouter>() is { } router)
+        {
+            router.ProcessMode = ProcessModeEnum.Disabled;
+        }
+
         if (_subject != null && IsInstanceValid(_subject))
         {
             _subject.QueueFree();

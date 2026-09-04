@@ -45,7 +45,7 @@ func _initialize() -> void:
 
 
 func _enter(region_path: String, expected_id: String) -> void:
-	# The real order GameBootstrap.PerformRegionLoad uses.
+	# The real order WorldSessionDirector.PerformRegionLoad uses.
 	_streamer.call("UnloadAll")
 	var region: Resource = load(region_path)
 	_streamer.call("Configure", region)

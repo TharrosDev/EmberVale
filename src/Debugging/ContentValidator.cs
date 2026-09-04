@@ -2472,7 +2472,7 @@ public static class ContentValidator
     /// <summary>
     /// The kits the player sets down (Phase 37C). One rule, and it is the whole reason
     /// <see cref="PlaceableTemplates.Ids"/> exists as a plain set: the builders themselves are
-    /// registered in <c>GameBootstrap.BuildWorld</c>, which <c>--validate</c> never runs, so without
+    /// registered in <c>GameSession.Build</c>, which <c>--validate</c> never runs, so without
     /// this a kit could craft, stack, carry and preview perfectly and then do nothing whatsoever when
     /// the player pressed the key — a failure with no error and no symptom but a wasted kit.
     /// </summary>

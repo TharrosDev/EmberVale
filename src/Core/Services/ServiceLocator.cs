@@ -1,24 +1,36 @@
 using System;
-using System.Collections.Generic;
 using Embervale.Core.Diagnostics;
 using Godot;
 
 namespace Embervale.Core.Services;
 
 /// <summary>
-/// Lightweight registry for long-lived systems that are not Godot autoloads
-/// (e.g. the active player, world manager, spawn director). Autoloads cover
-/// engine singletons; this covers gameplay singletons whose lifetime is tied
-/// to a loaded world rather than the whole process.
+/// Read side of the service registry: resolution across the three live
+/// <see cref="ServiceScope"/>s, innermost first (World, then Session, then Application).
 ///
-/// Registered as the <c>ServiceLocator</c> autoload. Resolution is by concrete
-/// type or interface; only one instance per type is held.
+/// <para>It no longer owns any storage. A scope does, and a scope is owned by the node that made it
+/// — see <see cref="ServiceScope"/> for why that is the whole point. What remains here is the one
+/// thing that genuinely is process-wide: knowing which scopes are currently open, so a leaf
+/// component can ask for "the player" or "the clock" without being handed a reference through six
+/// constructors it does not otherwise need.</para>
+///
+/// <para><b>Prefer an explicit reference where one is natural.</b> A composition root that builds a
+/// service should hand it to the things it builds; a component should reach its siblings through
+/// <c>Entity.GetComponent</c>. This exists for the genuinely late-bound case — an actor spawned by
+/// the world asking the session a question — and its shrinking call count is a health metric.</para>
+///
+/// <para>Registered as the <c>ServiceLocator</c> autoload so it outlives every scope.</para>
 /// </summary>
 public sealed partial class ServiceLocator : Node
 {
-    public static ServiceLocator Instance { get; private set; } = null!;
+    private const int LifetimeCount = 3;
 
-    private readonly Dictionary<Type, object> _services = new();
+    /// <summary>One scope per lifetime, indexed by <see cref="ServiceLifetime"/>. A second scope of
+    /// the same lifetime opening while one is live is the duplicate-session/world bug, and
+    /// <see cref="Attach"/> refuses it loudly.</summary>
+    private readonly ServiceScope?[] _scopes = new ServiceScope?[LifetimeCount];
+
+    public static ServiceLocator Instance { get; private set; } = null!;
 
     public override void _EnterTree()
     {
@@ -35,55 +47,9 @@ public sealed partial class ServiceLocator : Node
     {
         if (Instance == this)
         {
-            _services.Clear();
+            Array.Clear(_scopes);
             Instance = null!;
         }
-    }
-
-    public void Register<T>(T service)
-        where T : class
-    {
-        ArgumentNullException.ThrowIfNull(service);
-
-        Type key = typeof(T);
-        if (_services.ContainsKey(key))
-        {
-            Log.Warn($"Service {key.Name} is being replaced.");
-        }
-
-        _services[key] = service;
-    }
-
-    /// <summary>
-    /// Removes the registration for <typeparamref name="T"/> only if it still points at
-    /// <paramref name="instance"/>. A replaced/respawned actor tearing down must not evict
-    /// a newer instance that already took its slot.
-    ///
-    /// This is the only unregister, deliberately. A blind <c>Unregister&lt;T&gt;()</c> used to sit
-    /// beside it and four call sites had drifted onto it against twenty-seven on this one — every
-    /// one of them holding the instance it meant to remove, so none of them needed it. Removing the
-    /// overload rather than the call sites means the hazard it existed to describe cannot come back.
-    /// </summary>
-    public void Unregister<T>(T instance)
-        where T : class
-    {
-        ArgumentNullException.ThrowIfNull(instance);
-
-        if (_services.TryGetValue(typeof(T), out object? current) && ReferenceEquals(current, instance))
-        {
-            _services.Remove(typeof(T));
-        }
-    }
-
-    public T Get<T>()
-        where T : class
-    {
-        if (TryGet(out T service))
-        {
-            return service;
-        }
-
-        throw new InvalidOperationException($"No service registered for {typeof(T).Name}.");
     }
 
     public bool TryGet<T>(out T service)
@@ -105,28 +71,59 @@ public sealed partial class ServiceLocator : Node
         return Resolve(typeof(T)) != null;
     }
 
-    /// <summary>
-    /// The one read path, and the one place a dead registration is caught. Most services here are
-    /// Godot <see cref="Node"/>s whose lifetime is a loaded world's, and several register without
-    /// ever unregistering — so a freed registrant would otherwise be handed out as a live service
-    /// and dereferenced, which in .NET Godot is a hard <c>gchandle.is_released</c> crash rather than
-    /// a null check away. Dropping it here fixes every caller at once instead of asking two dozen
-    /// call sites to remember <c>IsInstanceValid</c> (eleven of them did not).
-    /// </summary>
-    private object? Resolve(Type key)
+    /// <summary>Total live registrations across all open scopes. The lifecycle probe reads it to
+    /// prove a teardown left nothing behind.</summary>
+    public int RegisteredCount
     {
-        if (!_services.TryGetValue(key, out object? service))
+        get
         {
-            return null;
-        }
+            int total = 0;
+            foreach (ServiceScope? scope in _scopes)
+            {
+                total += scope?.Count ?? 0;
+            }
 
-        if (service is GodotObject godot && !GodotObject.IsInstanceValid(godot))
-        {
-            _services.Remove(key);
-            Log.Warn($"Service {key.Name} was freed without unregistering; dropped.");
-            return null;
+            return total;
         }
-
-        return service;
     }
+
+    internal void Attach(ServiceScope scope)
+    {
+        int index = (int)scope.Lifetime;
+        if (_scopes[index] is { } live && live != scope)
+        {
+            Invariant.Check(false, $"A second {scope.Lifetime} service scope opened while one was still live.");
+        }
+
+        _scopes[index] = scope;
+    }
+
+    internal void Detach(ServiceScope scope)
+    {
+        int index = (int)scope.Lifetime;
+        if (ReferenceEquals(_scopes[index], scope))
+        {
+            _scopes[index] = null;
+        }
+    }
+
+    /// <summary>
+    /// Innermost scope wins: a world service shadows a session service of the same type, which
+    /// shadows an application one. Static and taking the array so the ordering rule can be tested
+    /// without a running engine — it is the one piece of behaviour here that is not bookkeeping.
+    /// </summary>
+    public static object? ResolveFrom(ServiceScope?[] scopes, Type key)
+    {
+        for (int i = scopes.Length - 1; i >= 0; i--)
+        {
+            if (scopes[i] is { } scope && scope.TryResolveLocal(key, out object? service))
+            {
+                return service;
+            }
+        }
+
+        return null;
+    }
+
+    private object? Resolve(Type key) => ResolveFrom(_scopes, key);
 }

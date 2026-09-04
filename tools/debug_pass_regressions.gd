@@ -88,7 +88,7 @@ func _case_failed_cell_is_not_settled() -> void:
 # ---------------------------------------------------------------------------------------------
 # 2. New Game must not put the player over a void.
 #
-# GameBootstrap spawned the player and entered Playing before the streamer had instanced a single
+# The session spawned the player and entered Playing before the streamer had instanced a single
 # cell, so the very first thing a new player did was fall through the world. The invariant is that
 # the region's spawn point has real collision under it ONCE THE REGION IS RESIDENT — which is what
 # the loading gate now waits for.
@@ -111,13 +111,24 @@ func _case_spawn_has_collision_under_it() -> void:
 	for _f in 4:
 		await physics_frame
 
+	# ⚠️ REWRITTEN 2026-09-04, and the failure it used to report was REAL. It probed 3 m below the
+	# AUTHORED spawn and had been failing on main: SpawnPoint.y is 1.2, the capsule's resting height
+	# from when every floor's top face was y = 0, and the generator put the ground under Ember Crown's
+	# spawn at -1.81 m. The player hung 3.01 m up, one centimetre outside the loading gate's probe,
+	# and New Game could not reach Playing at all.
+	#
+	# WorldSessionDirector.RegionSpawn now reads the authored Y as the offset it always meant (live
+	# invariant 23), so a new game cannot drop the player and "is the authored Y within 3 m of the
+	# ground" is no longer the question. What is still worth asking, and is not tautological, is
+	# whether the spawn's COLUMN has any world collision in it at all - a hole in the terrain, or a
+	# cell that never baked.
 	var spawn: Vector3 = region.SpawnPoint
-	_check("the region spawn point has ground under it", _has_ground(spawn),
-		"no world collision within 3 m below %s — a new game would drop the player" % spawn)
+	_check("the region spawn column has ground in it", _column_has_ground(spawn),
+		"no world collision anywhere under %s — a new game would drop the player" % spawn)
 
 	# Every travel arrival point the player can land on, for the same reason.
-	_check("the portal point has ground under it",
-		_has_ground(region.PortalPoint if region.PortalPoint != Vector3.ZERO else spawn))
+	_check("the portal column has ground in it",
+		_column_has_ground(region.PortalPoint if region.PortalPoint != Vector3.ZERO else spawn))
 
 	streamer.call("UnloadAll")
 	streamer.call("Configure", null)
@@ -129,6 +140,17 @@ func _has_ground(point: Vector3) -> bool:
 	var space := root.world_3d.direct_space_state
 	var query := PhysicsRayQueryParameters3D.create(
 		point + Vector3.UP * 1.0, point + Vector3.DOWN * 3.0, WORLD_LAYER)
+	return not space.intersect_ray(query).is_empty()
+
+
+# Is there world collision anywhere in this point's column? An authored arrival point carries a
+# clearance rather than a world Y, so its exact height is not the question - whether the terrain
+# under it exists at all is.
+func _column_has_ground(point: Vector3) -> bool:
+	var space := root.world_3d.direct_space_state
+	var query := PhysicsRayQueryParameters3D.create(
+		Vector3(point.x, point.y + 200.0, point.z),
+		Vector3(point.x, point.y - 200.0, point.z), WORLD_LAYER)
 	return not space.intersect_ray(query).is_empty()
 
 
@@ -149,9 +171,9 @@ func _case_streamed_world_integrity() -> void:
 			streamer.call("IsSettled") and not streamer.call("HasFailedCells"), "%d frames" % frames)
 		for _physics in 4:
 			await physics_frame
-		_check("%s spawn has runtime collision" % region.Id, _has_ground(region.SpawnPoint))
+		_check("%s spawn has runtime collision" % region.Id, _column_has_ground(region.SpawnPoint))
 		if region.PortalPoint != Vector3.ZERO:
-			_check("%s portal has runtime collision" % region.Id, _has_ground(region.PortalPoint))
+			_check("%s portal has runtime collision" % region.Id, _column_has_ground(region.PortalPoint))
 		var invalid: Array[String] = []
 		var collision_shapes := 0
 		for node in _descendants(streamer):
@@ -309,24 +331,31 @@ func _case_worst_frame_is_reported() -> void:
 func _case_contracts_that_have_no_runtime_probe() -> void:
 	# Load and fast travel go through the same gate the portals do, and the gate waits for real
 	# collision under the player rather than for the heightfield's opinion of where the ground is.
-	var boot := FileAccess.get_file_as_string("res://src/Bootstrap/GameBootstrap.cs")
+	# Repointed 2026-09-04: GameBootstrap was split into composition roots. The invariants are
+	# unchanged; only the file holding each one moved.
+	var lifecycle := FileAccess.get_file_as_string("res://src/Bootstrap/SessionLifecycleCoordinator.cs")
 	_check("new game waits for the world before it starts playing",
-		boot.find("BeginLoadingGate($\"Entering ") >= 0,
+		lifecycle.find("session.Loading.Begin(") >= 0 and
+		lifecycle.find("ChangeState(GameState.Playing)") < 0,
 		"StartNewGame is entering Playing directly again — the player will fall through the world")
+
+	var gate := FileAccess.get_file_as_string("res://src/Bootstrap/LoadingCoordinator.cs")
 	_check("the gate asks the physics server, not the heightfield",
-		boot.find("HasGroundUnderPlayer") >= 0 and boot.find("IntersectRay") >= 0)
+		gate.find("HasGroundUnderPlayer") >= 0 and gate.find("IntersectRay") >= 0)
 	_check("the load timeout aborts instead of resuming into an incomplete world",
-		boot.find("LoadingMaxSeconds") >= 0 and
-		boot.find("Returning to the title screen rather than resuming into an incomplete world") >= 0,
+		gate.find("MaxSeconds") >= 0 and
+		gate.find("Returning to the title screen rather than resuming into an incomplete world") >= 0,
 		"the cap is entering Playing again")
 
 	# A refused interaction must not advance a quest.
-	var player := FileAccess.get_file_as_string("res://src/Player/PlayerController.cs")
+	var sensor := FileAccess.get_file_as_string("res://src/Player/InteractionSensor.cs")
 	_check("only a successful interaction publishes InteractionPerformedEvent",
-		player.find("focused.Interact(Entity!))") >= 0,
+		sensor.find("!focused.Interact(Entity!)") >= 0,
 		"the publish is unconditional again — every refusal advances Interact objectives")
+
+	var look := FileAccess.get_file_as_string("res://src/Player/PlayerLookInput.cs")
 	_check("a cinematic lock suppresses mouse look",
-		player.find("!UiState.MenuOpen") >= 0 and player.find("InputEventMouseMotion") >= 0,
+		look.find("UiState.MenuOpen") >= 0 and look.find("InputEventMouseMotion") >= 0,
 		"_Input is back to gating on MouseMode alone; the player can spin the camera mid-cinematic")
 
 	# A region-change autosave is requested from inside GameState.Loading and must not be refused.
@@ -360,7 +389,13 @@ func _case_contracts_that_have_no_runtime_probe() -> void:
 		"the bolt moves its whole frame in one go again and can tunnel")
 
 	# AI does not walk through walls when navigation is unavailable.
-	var ai := FileAccess.get_file_as_string("res://src/Enemies/EnemyAIComponent.cs")
+	# Repointed 2026-09-04: the rule moved to AiNavigator, which the companion brain now SHARES - it
+	# used to carry its own drifted copy that ran the anchor query every frame and had no turn slew.
+	var nav := FileAccess.get_file_as_string("res://src/Enemies/AiNavigator.cs")
 	_check("there is no straight-line steering fallback",
-		ai.find("private Vector3? NextPathPoint") >= 0,
+		nav.find("public Vector3? NextPathPoint") >= 0 and nav.find("_navAnchored") >= 0,
 		"NextPathPoint returns the target again when the path query fails")
+	var companion := FileAccess.get_file_as_string("res://src/Companions/CompanionAIComponent.cs")
+	_check("the companion brain shares that navigator rather than copying it",
+		companion.find("AiNavigator") >= 0 and companion.find("NextPathPoint") < 0,
+		"a second copy of the navigation rule is back")

@@ -13,7 +13,7 @@ namespace Embervale.UI;
 /// the moment Phase 34.5 landed, and the HUD never said.
 ///
 /// It does **not** know how the target was chosen. Lock-on priority lives in <c>GameHud</c>
-/// beside the <c>PlayerController</c> that owns it; this widget is told what to show.
+/// beside the <c>InteractionSensor</c> that owns it; this widget is told what to show.
 /// </summary>
 public partial class Nameplate : PanelContainer
 {

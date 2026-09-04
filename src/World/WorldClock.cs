@@ -52,14 +52,13 @@ public partial class WorldClock : Node, ISaveable
         ProcessMode = ProcessModeEnum.Pausable;
 
         TimeOfDay = Mathf.PosMod(StartHour, 24f);
-        ServiceLocator.Instance?.Register(this);
+        ServiceScope.RegisterOwned(this, this);
         SaveManager.Instance?.Register(this);
         Announce();
     }
 
     public override void _ExitTree()
     {
-        ServiceLocator.Instance?.Unregister(this);
         SaveManager.Instance?.Unregister(this);
     }
 

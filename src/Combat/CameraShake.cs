@@ -14,7 +14,7 @@ namespace Embervale.Combat;
 public partial class CameraShake : Node
 {
     /// <summary>Live source of the camera's rest position (the mode-aware pose owned by
-    /// <c>PlayerController.CameraRestPosition</c>). Without it the shake snaps back to a rest
+    /// <c>PlayerCameraRig.CameraRestPosition</c>). Without it the shake snaps back to a rest
     /// captured at ready time — wrong the moment the player toggles third person.</summary>
     public System.Func<Vector3>? RestPosition { get; set; }
 

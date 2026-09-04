@@ -97,7 +97,7 @@ public partial class RegionTransitionComponent : InteractableComponent
                 return Loc.TF("region.travel_prompt", where);
             }
 
-            // The price is quoted from the same TollFee.Resolve that GameBootstrap charges, so the
+            // The price is quoted from the same TollFee.Resolve that WorldSessionDirector charges, so the
             // number at the gate and the number taken are one decision — 38C's finding, where the
             // travel fee's first draft resolved the region two different ways and would have shown a
             // price it did not charge.

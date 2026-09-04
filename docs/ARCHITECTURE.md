@@ -22,24 +22,85 @@ step-by-step recipes and the development workflow, see
 
 Three small ideas carry everything:
 
-### 1.1 Autoload services (the spine)
+### 1.1 Four lifetimes, and who owns each
 
-Registered in `project.godot` `[autoload]`, in this order (order matters — later
-ones may use earlier ones):
+**This is the load-bearing idea in the codebase.** Everything else — the composition
+roots, the service registry, the scene tree — is a consequence of it.
+
+| Lifetime | Owner node | Created | Destroyed | Holds |
+| --- | --- | --- | --- | --- |
+| **Application** | `ApplicationRoot` (`Main.tscn` root) | process start | process exit | settings, input actions, localization, the content databases, save-file IO |
+| **Session** | `GameSession` | New Game / Load | quit to title, failed load | clock, autosave, the six economy ledgers, map discovery, companions, housing, bestiary, persistence directors, audio, the UI, the player |
+| **World** | `WorldHost` (child of the session) | with the session's world | before the session | region streamer, weather, sky, encounter and world-event directors, portals, safe zones, the Weave |
+| **Entity** | the entity node itself | spawn | `QueueFree` | components, via `EntityComponent.OnInitialize`/`OnTeardown` |
+
+⚠️ **Which lifetime a service gets is decided by WHERE IT IS PARENTED, and by nothing
+else.** `ServiceScope.For(node)` walks a node's ancestors to the nearest
+`IServiceScopeHost`, so moving a service to a different host in the tree is the whole
+of changing its lifetime. There is no second declaration to keep in sync.
+
+The lifecycle runs, and repeats, without a scene reload:
+
+```text
+application start → application services → GameSession created → session services
+  → world loaded → world services → gameplay
+  → world destroyed → session destroyed → back to the title, ready for another
+```
+
+`SessionLifecycleCoordinator.DestroySession()` removes the session node
+**synchronously**, so every `_ExitTree` beneath it has run before it returns, then
+resets the five process-lifetime statics (`SafeZones`, `Weave`,
+`PersistentActorRegistry`, `UiState`, `Invariant`). `SessionResetTests` finds those
+five by reflection rather than trusting the list, so a sixth one fails a test rather
+than leaking into the next playthrough.
+
+**The gate on all of it is `godot --headless -- --lifecycle`**: three New Game →
+Playing → save → destroy → Load → Playing → destroy round trips, asserting after
+every teardown that no session, service registration, event subscription, `ISaveable`
+or unfreed node survives. Exit 1 on any failure.
+
+### 1.1b Services: scoped, not global
+
+`ServiceScope` (`src/Core/Services/ServiceScope.cs`) holds one lifetime's services.
+`ServiceLocator` is the **read** side only — `TryGet<T>` walks World → Session →
+Application, so an inner scope shadows an outer one.
+
+```csharp
+// A node service registers itself into whatever scope owns it, and the registration
+// goes when the node does — no _ExitTree line to forget.
+public override void _EnterTree() => ServiceScope.RegisterOwned(this, this);
+```
+
+Before the 2026-09-03 overhaul this was one process-wide dictionary that outlived
+everything in it. Services had to remember to unregister, eleven call sites forgot
+`IsInstanceValid`, and the locator ended up silently dropping freed registrants to
+stay upright. **A stale registration now has nowhere to survive**: disposing a scope
+removes exactly its own entries, and a freed service found in a live scope is an
+`Invariant` violation rather than something absorbed quietly.
+
+**Prefer an explicit reference.** A composition root that builds a service hands it
+to what it builds; a component reaches its siblings through `Entity.GetComponent`.
+The locator is for the genuinely late-bound case — an actor the world spawned asking
+the session a question — and its call count is a health metric, not a budget.
+
+### 1.1c Autoloads
+
+Four, in `project.godot` `[autoload]`, in this order (later ones may use earlier):
 
 | Autoload         | File                               | Responsibility                          |
 | ---------------- | ---------------------------------- | --------------------------------------- |
 | `EventBus`       | `src/Core/Events/EventBus.cs`      | Typed publish/subscribe message hub.    |
-| `ServiceLocator` | `src/Core/Services/ServiceLocator.cs` | Registry for world-scoped systems.   |
+| `ServiceLocator` | `src/Core/Services/ServiceLocator.cs` | Resolves across the open scopes.     |
 | `GameManager`    | `src/Core/GameManager.cs`          | Owns the `GameState` machine.           |
 | `SaveManager`    | `src/Save/SaveManager.cs`          | Serializes `ISaveable`s to `user://`.   |
 
-Each exposes a static `Instance` (set in `_EnterTree`, pattern below). They never
-reference gameplay-specific types, so they stay stable as content grows.
+They outlive every scope, which is why they are autoloads and the scopes are not.
+Each exposes a static `Instance` (set in `_EnterTree`). They never reference
+gameplay-specific types, so they stay stable as content grows.
 
-`Log` (`src/Core/Diagnostics/Log.cs`) and `GameInput` (`src/Core/GameInput.cs`)
-are **static classes, not autoloads**. Use `Log.Info/Warn/Error`, never raw
-`GD.Print`. `GameInput.EnsureActions()` is called once by the bootstrap.
+`Log` (`src/Core/Diagnostics/Log.cs`), `Invariant`
+(`src/Core/Diagnostics/Invariant.cs`) and `GameInput` (`src/Core/GameInput.cs`) are
+**static classes, not autoloads**. Use `Log.Info/Warn/Error`, never raw `GD.Print`.
 
 ### 1.2 EventBus — typed pub/sub (prefer over Godot signals)
 
@@ -196,40 +257,56 @@ direct children of the host. `Hitbox`/`Hurtbox` are `Area3D` (not
 
 ### 2.4 Player (`src/Player`)
 
-- **`PlayerCharacter : CharacterEntity`** — marker type registered in the
-  `ServiceLocator`, so enemies resolve the player by a distinct type.
-- **`PlayerController : EntityComponent`** — input + the hybrid camera rig. Reads
-  `GameInput` actions, drives `LocomotionComponent`, mouse-look (body yaw +
-  camera-pivot pitch), routes `attack`→`MeleeWeaponComponent.TryAttack()` and
-  `block`→`CombatComponent.IsBlocking`. Subscribes to `GameStateChangedEvent` to
-  capture/release the mouse. Camera pivot is **injected** by the factory.
-- **The camera is hybrid, and the mode is a setting.** `SetFirstPerson` is driven by
-  `SettingsAppliedEvent` off `Settings.ThirdPersonCamera` — the settings panel's toggle and
-  the `toggle_camera` key (`V`) both flip *that*, so there is one path into the mode and it
-  persists. First person seats the camera on the eye pivot with the body shadows-only and the
-  `FirstPersonArmsComponent` viewmodel visible; third person is over-the-shoulder, body shown,
-  arms hidden. Body yaw equals camera yaw in **both**, so combat, lock-on, dodge and melee reach
-  are mode-agnostic. **Camera distance (2–6 m) and shoulder side (right/left/centred) are player
-  settings**, read live off `_settings.Current` each frame so the sliders move the camera while
-  they are being dragged; `PlayerFactory.ThirdPerson*` are their defaults and the rise, which is
-  not exposed.
-- **FOV is a setting too, applied here rather than by `SettingsService`** — it is a property of the
-  player's `Camera3D`, not of the engine, so the service's graphics pass cannot reach it.
-  `FirstPersonArmsComponent` re-derives its viewmodel scale whenever the camera's FOV changes;
-  without that, moving the FOV slider silently undoes the scale trick and the hands read
-  undersized again.
-- **`CameraRigMath`** (pure, unit-tested) owns the three things that make third person playable:
-  the eased mode blend, the wall spring (a sphere `CastMotion` from pivot to camera clamps the
-  distance — instant pull-in, eased push-out, so the camera is never inside geometry), and the
-  aim direction. `CameraRestPosition` returns the *live* blended+sprung offset and is what
-  `CameraShake` offsets around.
-- **Aim comes from the camera, not the head.** The interact raycast starts at the camera and its
-  reach is then measured from the *character*, so third person can never reach further than first.
-  Spells aim along a dedicated `AimPoint` node the controller re-aims each frame at the crosshair's
-  convergence point — in first person the camera sits on the pivot, so both are exact no-ops.
-- **`PlayerFactory.Create(pos)`** — assembles the player (collision capsule,
-  stats from `PlayerAttributes.tres`, locomotion, combat `Team 0`, hurtbox,
-  camera pivot + camera, aim point, melee hitbox, weapon from `IronSword.tres`, controller).
+The player is **six components**, not one controller. Each owns one job; the router
+owns the order they run in. `PlayerController` (729 lines, ten jobs) was split on
+2026-09-03 and deleted.
+
+| Component | Owns |
+| --- | --- |
+| `PlayerPhysicsQueries` | the reused ray / sweep / overlap queries and the one exclusion list |
+| `PlayerCameraRig` | the camera, the two view modes, the blend, the wall spring, FOV |
+| `PlayerLookInput` | mouse and stick turning, and mouse capture |
+| `InteractionSensor` | what `E` acts on, the prompt the HUD shows, the hold-`E` pickup sweep |
+| `AimController` | where a bolt goes — the `AimPoint` node |
+| `PlayerInputRouter` | input → sibling calls, in one documented order |
+
+- **`PlayerCharacter : CharacterEntity`** — marker type registered in the session
+  scope, so anything can resolve the player by a distinct type.
+- ⚠️ **The router keeps a single `_PhysicsProcess` rather than each component ticking
+  itself.** The order is load-bearing: the camera rig runs inside the not-playing
+  guard because it dereferences nodes a world teardown is freeing; focus resolves
+  before lock-on can be toggled onto it; the mount answers the sprint request before
+  locomotion consumes it; dodge is refused during a committed swing. Godot orders
+  sibling ticks by child order, which would make all of that an invisible consequence
+  of the order `PlayerFactory` happens to add nodes in.
+- ⚠️ **The queries are pooled once, for all three readers.** The sensor and the aim
+  controller each fire a ray every physics frame and the rig sweeps a sphere;
+  building them per call cost five native `RefCounted` objects a frame. Pooling them
+  per component would undo the optimisation the pooling exists for.
+- **The camera is hybrid, and the mode is a setting.** `PlayerCameraRig.SetFirstPerson`
+  is driven by `SettingsAppliedEvent` off `Settings.ThirdPersonCamera` — the settings
+  panel's toggle and the `toggle_camera` key (`V`) both flip *that*, so there is one
+  path into the mode and it persists. First person seats the camera on the eye pivot
+  with the body shadows-only and the `FirstPersonArmsComponent` viewmodel visible;
+  third person is over-the-shoulder, body shown, arms hidden. Body yaw equals camera
+  yaw in **both**, so combat, lock-on, dodge and melee reach are mode-agnostic.
+  **Camera distance (2–6 m) and shoulder side are player settings**, read live each
+  frame so the sliders move the camera while they are being dragged.
+- **FOV is a setting too, applied by the rig rather than by `SettingsService`** — it is
+  a property of the player's `Camera3D`, not of the engine.
+  `FirstPersonArmsComponent` re-derives its viewmodel scale whenever the FOV changes.
+- **`CameraRigMath`** (pure, unit-tested) owns the eased mode blend, the wall spring
+  and the aim direction. `PlayerCameraRig.CameraRestPosition` returns the *live*
+  blended-and-sprung offset and is what `CameraShake` offsets around.
+- **Aim comes from the camera, not the head.** The interact raycast starts at the
+  camera and its reach is measured from the *character*, so third person can never
+  reach further than first. In first person the camera sits on the pivot, so both are
+  exact no-ops.
+- **Lock-on facing lives on `LockOnComponent.FaceTarget()`**, not on the player: the
+  rule is about the lock, so whoever holds a target faces it.
+- **`PlayerFactory.Create(...)`** assembles the actor. The six components above are
+  added last and in order — queries first (three siblings resolve them), router last
+  (it resolves all the others).
 
 ### 2.4c Bosses (`src/Enemies`, Phase 36A)
 
@@ -296,6 +373,32 @@ what a monster spell needs), and a wind-up flare on the body's claimed emissive 
 ---
 
 ### 2.5 Enemies (`src/Enemies`)
+
+**The brain is four pieces, not one class.** `EnemyAIComponent` was 1229 lines; it is
+712 and coordinates rather than implements. Every archetype is still pure data — 16
+`AIProfileResource` `.tres` files, unchanged by the 2026-09-03 split.
+
+| Piece | Owns |
+| --- | --- |
+| `EnemyAIComponent` | profile resolution, the LOD clock, the seven-state tick, patrol/retreat/return/despawn |
+| `EnemySenses` | sight (cached at the profile's interval, one reused ray per actor), faction standing, provocation memory |
+| `EnemyCasterTactics` | standoff banding, kiting, the heal → attack → ward cast priority, the throttled group heal scan |
+| `AiNavigator` | navmesh steering, arrival, facing, patrol snapping — ⚠️ **shared with `CompanionAIComponent`** |
+
+Three engine-free rule cores carry what used to be untestable branches, and are:
+`AiSenseRules` (the vertical vision gate and its flier exemption, the melee reach
+gates, the four alert filters, the 3D shout radius, the ambush hold),
+`CombatTransition` (the five combat guards **in order** — the territory leash before
+the health check — plus where a coward goes and where an ambusher rests) and
+`AiLodClock` (banked wall time for memory and cooldowns, raw frame delta for
+movement). `AiSenseRulesTests`, `AiStateRulesTests` and `AiLodClockTests` pin them.
+
+⚠️ **`AiNavigator` is shared for a reason, not for tidiness.** The companion brain
+carried its own copy of the same three-answer navigation rule and the copies had
+drifted: the companion's ran `MapGetClosestPoint` — a navigation-server query — every
+frame where the enemy's paced it to 4 Hz, and it had no turn-rate slew at all.
+`debug_pass_regressions.gd` now asserts a second copy has not come back.
+
 
 - **`EnemyEntity : CharacterEntity`** — marker type for hostiles.
 - **`EnemyState`** — `Idle, Patrol, Investigate, Combat, Retreat, Dead`.
@@ -369,7 +472,7 @@ only three of them have a factory**; the rest are `.tres` files.
   (`inventory:{RuntimeId}`; saves ids+quantities, resolves via `ItemDatabase`).
   Raises `InventoryChangedEvent`/`ItemPickedUpEvent`.
 - **`InteractableComponent`** (`src/Interaction`, abstract) — base for things the
-  player can interact with. `PlayerController` raycasts from the camera on the
+  player can interact with. `InteractionSensor` raycasts from the camera on the
   `interact` action and calls `Interact(player)`.
 - **`ItemPickupComponent`** (an interactable) + **`ItemPickupFactory`** — world
   pickups (rarity-tinted cube + collider). Goblins drop hide/gold on death.
@@ -596,7 +699,7 @@ system — the same `SpellcastingComponent` still drives everything:
   layered on the Projectile/Area/Self *shape*. `SpellcastingComponent` grows a cast state
   machine (`BeginCast`/`UpdateCast`/`EndCast`/`CancelCast`): charged scales power by hold time
   (pure `SpellCharge.PowerMultiplier`), channeled ticks at `ChannelTickInterval` for
-  `ChannelManaPerSecond`. `PlayerController` drives press/hold/release.
+  `ChannelManaPerSecond`. `PlayerInputRouter` drives press/hold/release.
 - **School identities (29.5B)** — a shared on-hit seam, `SchoolIdentity.OnSpellHit`, invoked by
   `SpellResolver` after damage and *before* the spell's own status: **Fire** stacking ignite
   (`StatusEffectResource.MaxStacks`, DoT × stacks), **Frost** chill→freeze (`Frozen.tres` when
@@ -633,7 +736,7 @@ persists). Three pieces:
   built by the bootstrap and **injected** (`Sun`/`Environment` properties). It also blends in
   the active weather and drives a rain `GpuParticles3D` that follows the player.
   - **Dying-world palette (Phase 27F) — the reference bar for every region.** The base mood is a
-    shared, ashen, ever-hazy "dying world": `GameBootstrap.BuildEnvironment` sets the Environment
+    shared, ashen, ever-hazy "dying world": `WorldSessionDirector.BuildEnvironment` sets the Environment
     base (ACES tonemap + muted exposure, an overcast-leaning desaturated `ProceduralSkyMaterial`,
     warm-grey ambient fill, soft glow), and `SkyController`'s labelled *Dying-world palette*
     constants set the day/night tuning (ashier sun tints, a dimmer noon ceiling, and a **haze
@@ -723,7 +826,7 @@ fast-travel land in 25E–25G.
   memory and frame time against the region budget; the validator separately gates authored `.tscn`
   node counts and requested scatter counts before runtime.
 - **Hard transitions (25C)** — a `RegionTransitionComponent` (an `InteractableComponent` carrying a
-  `TargetRegionId`) publishes a `RegionTransitionRequestedEvent`; `GameBootstrap` handles it: enter
+  `TargetRegionId`) publishes a `RegionTransitionRequestedEvent`; `WorldSessionDirector` handles it: enter
   `GameState.Loading` (the `LoadingScreen` overlay shows on that state), re-target the streamer,
   teleport the player to the destination `SpawnPoint`, rebuild the neighbour portals, request a
   region-boundary autosave (`AutosaveService.RequestRegionChangeAutosave`), then hold Loading for a
@@ -732,7 +835,7 @@ fast-travel land in 25E–25G.
   per-scene authoring — at `RegionResource.PortalPoint` when the region authors one (38M2, which is
   how the Ember Crown's door stands at the Crossway gate rather than beside the player's spawn),
   otherwise a few metres in front of `SpawnPoint`. **The Crossway toll (38M) is charged here**, in
-  `GameBootstrap.PayToll`, because this handler is where the portal and `region goto` converge.
+  `RegionSetup.PayToll`, because this handler is where the portal and `region goto` converge.
   Drive it from F1 with `region goto <id>`.
 - **Cell persistence (25D)** — `CellPersistenceDirector` (`Node`, `ISaveable`, built before the
   streamer) keeps streamed-in actors that carry a `PersistentId` remembering themselves across cell
@@ -769,7 +872,7 @@ fast-travel land in 25E–25G.
   the current time. The `travel` dev command drives jumps headlessly.
   **A jump costs gold since 38C** (`Economy.TravelFee` / `Economy.TravelCosts`): free to a holding the
   player owns — matched through `PropertyResource.TravelNodeId` — a small fee within a region and a
-  larger one across realms. ⚠️ It is charged in `GameBootstrap.OnFastTravelRequested`, **not** at the
+  larger one across realms. ⚠️ It is charged in `WorldSessionDirector.OnFastTravelRequested`, **not** at the
   map screen, because that handler is where the map button and the `travel goto` command converge;
   gating only the UI would leave the console a free ride. `MapScreen` labels each button with the same
   `TravelCosts.FeeFor` call and greys an unaffordable one, so the price shown is the price taken.
@@ -801,7 +904,7 @@ fast-travel land in 25E–25G.
   arithmetic, not taste** — The 2026-08-28 layout rebuild found three seams a road pointed at and no cell opened onto.
 - **Safe areas are a list** (38K). `SafeZones` holds the region's own `SafeZoneCenter`/`SafeZoneRadius`
   bubble plus one per cell that authors a `RegionCellResource.SafeRadius` (`0` = not a safe area),
-  rebuilt by `GameBootstrap.ApplySafeZones` on world build and on every region transition. It exists
+  rebuilt by `WorldSessionDirector` on world build and on every region transition. It exists
   because a settlement can be more than one cell: widening the single bubble to cover a district a
   street away also smothers the encounters around the wilds cells. ⚠️ `SafeZones.Set` **replaces** and
   runs before the per-cell `Add`s, so a transition cannot leave the previous realm's districts
@@ -1077,7 +1180,7 @@ expressions of one number; `PriceTooltip` renders it, and lives in `src/UI` beca
 `--validate` walks — deliberately the declared set rather than the reachable one, because a shock
 line and a glutted stack are unreachable at the town square.
 
-**The seven economy nodes, all `ISaveable`, built in `GameBootstrap`:**
+**The seven economy nodes, all `ISaveable`, built in `GameSession.Build`:**
 
 | Node | Holds | Derives |
 | --- | --- | --- |
@@ -1227,40 +1330,77 @@ settings that drive it:
   snow}` (stone default). Emitted as a positional `SoundCueRequestedEvent`. Tag a floor `StaticBody3D`
   with a `surface` string to vary it; untagged floors play stone.
 
-### 2.9 Bootstrap & UI
+### 2.9 Composition roots (`src/Bootstrap`) & UI
 
-- **`GameBootstrap : Node3D`** (`scenes/Main.tscn` root) — assembles the sandbox:
-  registers input, initializes the databases, builds the world (sun, sky, floor), the
-  UI (`GameHud`, `DebugHud`, `Notifications`, `PauseMenu`, the modal panels), the
-  directors (clock, weather, sky, encounters, world events), the training dummy, the
-  player, the goblin camp, the crafting yard and scattered pickups. Runs with
-  `ProcessMode.Always` so debug keys work while paused (`F3` toggles `DebugHud`; `Esc` is
-  the `PauseMenu`). Routes player/dummy/enemy deaths.
-- **`GameHud : CanvasLayer`** — the **default in-game HUD** (Phase 18): anchored widgets —
-  vitals bars (bottom-left), prepared spell + cooldown + status line, quest tracker
-  (top-right), time/weather (top-left), a world-event banner + aimed-target nameplate
-  (top-centre), an interaction prompt (bottom-centre), and the `Crosshair`. Persistent nodes
-  updated each frame from the player (`SetPlayer`) + the world directors (`Set*`). The
-  nameplate/prompt read `PlayerController.FocusedEntity`/`FocusPrompt` (a per-frame raycast).
-- **`PauseMenu : CanvasLayer`** — modal pause menu on `Esc` (Resume / Quick Save / Quick Load /
-  Quit), `ProcessMode.Always` so it works while paused; drives `GameManager` pause + dims the
-  scene. Owns `Esc` (the bootstrap no longer toggles pause directly).
-- **`Notifications` + `Toast`** — top-centre toast feed: subscribes to discrete events
-  (level-up, quest start/complete, world-event start/end) and spawns self-fading `Toast`s.
-- **`InventoryPanel`/`QuestLogPanel`/`DialoguePanel`/`CraftingPanel`** — the modal/overlay
-  panels (character screen `I`, journal `J`, dialogue, crafting). Item rows carry hover
-  tooltips (`TooltipText`).
-- **`DebugHud : CanvasLayer`** — now a **developer overlay hidden by default, toggled with
-  `F3`** (FPS, raw stats, target internals, active world event). No longer the primary HUD.
-- **`UiTheme`** (`src/UI/UiTheme.cs`) — the shared look for all UI: palette + builders for
-  framed panels (`PanelStyle` is public for transient widgets like toasts), padded containers,
-  accent headers, body lines, styled buttons and coloured resource bars. **Build new UI through
-  it.** `Crosshair` (`src/UI/Crosshair.cs`) is the code-drawn aim marker (owned by `GameHud`).
+`scenes/Main.tscn` is one node with `ApplicationRoot` on it. Everything else is built
+in C# under the three roots below. `GameBootstrap` — 1503 lines and twenty-three
+responsibilities — was dismantled on 2026-09-03 and deleted.
 
-> **UI altitude:** the game HUD (`GameHud`), pause menu and toasts are the real in-game UI;
-> `DebugHud` is the F3 dev overlay. Build new gameplay UI through `UiTheme`, not hand-styled
-> controls. The meta/shell (title screen, settings, save-slot flow) is the separate
-> content/production roadmap.
+| Type | Owns |
+| --- | --- |
+| `ApplicationRoot : Node3D` | the process: the CLI report modes, input actions, localization, the content databases, the audio bus layout, settings, the content validator |
+| `GameShellController` | the title screen, and the command-line flags that drive a session for a tool (`--play` and the five capture flags) |
+| `SessionLifecycleCoordinator` | New Game, Load, **`DestroySession`**, abort-to-title; the static reset list |
+| `GameSession : Node3D` | one playthrough: its scope, and the ordered build of everything in it |
+| `WorldHost` / `WorldSessionDirector` | the loaded world: environment, weather, sky, streamer, encounters, portals, region transitions, fast travel |
+| `UICompositionRoot` | the HUD and the panels, and binding the player's components into them |
+| `PlayerHost` | player spawn, respawn, the persistent world actors |
+| `LoadingCoordinator` | the gate every route into the world goes through |
+| `DeveloperToolsHost` | console, debug HUD, profiler, integrity checker, the training dummy, the cheats — one gate, one place |
+| `SaveHeaderComposer` | the two seams between `SaveManager` and live gameplay |
+
+⚠️ **`GameSession.Build()` is deliberately one ordered list**, not several installers
+called in an arbitrary order. The order is load-bearing and always was: the clock
+before the NPCs that read it, weather before the sky that reads weather, the audio
+director before the music director that reuses its library, cell persistence before
+the streamer whose events it wants, the player before the tutorial that watches them.
+Splitting it into per-layer installers would hide exactly the constraint that matters,
+so each step delegates to the host that owns the thing being built and the sequence
+stays readable in one place.
+
+⚠️ **Quitting to the title no longer reloads the scene.** It used to, and `PauseMenu`'s
+comment explained why: there was no way to dismantle a world in place. `DestroySession`
+is that way now, so a second New Game can start in the same process.
+
+**Scene tree at runtime:**
+
+```text
+ApplicationRoot                  (Main.tscn root, Application scope)
+├── SessionHost                  SessionLifecycleCoordinator
+│   └── GameSession              [per New Game / Load, Session scope]
+│       ├── WorldHost            [World scope]
+│       │   ├── WorldDirector    streamer, weather, sky, encounters, portals
+│       │   └── …world services
+│       ├── UIRoot               GameHud + panels
+│       ├── PlayerHost           the player actor
+│       ├── Loading              the gate
+│       ├── DeveloperTools       [dev builds only]
+│       └── …session services    clock, autosave, ledgers, map, companions
+└── Shell                        GameShellController → MainMenu
+```
+
+**UI**
+
+- **`GameHud : CanvasLayer`** — the default in-game HUD: vitals bars, prepared spell +
+  cooldown + status line, quest tracker, time/weather, a world-event banner + aimed-target
+  nameplate, an interaction prompt, and the `Crosshair`. It reads `InteractionSensor`
+  for the nameplate and prompt and `LockOnComponent` for the reticle.
+- **`PauseMenu : CanvasLayer`** — `Esc`. Resume / Quick Save / Quick Load / Quit to
+  title / Quit. `ProcessMode.Always`; drives `GameManager` pause. Quit-to-title walks
+  up to its `SessionLifecycleCoordinator` and asks it to destroy the session.
+- **`Notifications` + `Toast`** — top-centre toast feed off discrete events.
+- **The panels** — `InventoryPanel`, `SpellbookPanel`, `HotbarPanel`, `QuestLogPanel`,
+  `DialoguePanel`, `VendorPanel`, `MapScreen` are held in fields by
+  `UICompositionRoot` because something reads them. `CraftingPanel`, `StoragePanel`,
+  `AppraisalPanel` and `ContractBoardPanel` are not: each is one instance answering an
+  event from anywhere in the world, and a field that is assigned and never read is
+  state describing nothing.
+- **`UiTheme`** — the shared look. Build new UI through it.
+
+> **UI altitude:** the UI observes gameplay and sends intents; it is never the
+> authority. Everything in `UICompositionRoot` is handed its references by the
+> session's build order — none of it reaches into the service registry to find
+> gameplay for itself.
 
 ### 2.10 Debugging tools (`src/Debugging`)
 
@@ -1291,9 +1431,56 @@ Developer tooling behind function keys (Phase 20); all run `ProcessMode.Always`.
   (deaths by location, quest start/complete, level-ups), plus any `AnalyticsEvent` a system
   publishes for ad-hoc instrumentation. One file per session. Gated on `OS.IsDebugBuild()` — a
   complete no-op in retail builds — and deliberately not `ISaveable` (it is a log, not state).
-- Wired in the bootstrap; `F1`/`F4` toggles sit alongside the `F3` `DebugHud`. Console commands
-  rely on `WorldClock.SetTimeOfDay`, `WeatherDirector.Force`, `WorldEventDirector.ForceStart`
-  (registered in the `ServiceLocator`).
+- All of it is built by **`DeveloperToolsHost`**, and the gate is one `if` in
+  `GameSession.Build()`: a capture or exported build never constructs that node at
+  all, so there is nothing to accidentally respond to a stray keypress. Quick save and
+  quick load are the exception and stay in every build — they are player conveniences,
+  so the host processes keys unconditionally and filters the cheats itself.
+
+#### The production / tooling boundary
+
+⚠️ **Godot compiles every `.cs` under the project into ONE assembly.** Any script a
+`.tscn` or `.tres` attaches must live there, so a separate `Embervale.EditorTools`
+project is not reachable for gameplay code. The separation that *is* reachable is per
+build configuration, and `Embervale.csproj` does it with an `EmbervaleTooling`
+property — true by default, **false under `ExportRelease`**:
+
+| Excluded when tooling is off | Why |
+| --- | --- |
+| `addons/godot_mcp/**` and its two NuGet packages | third-party, editor-bound |
+| `src/Debugging/*Shots.cs`, `ShotHarness`, `ReproHarness` | screenshot/repro harnesses with no gameplay caller |
+| the assembly-wide `NoWarn CS0618` | it only ever existed for three deprecated `EditorPlugin` calls in that addon |
+
+`TreatWarningsAsErrors` is **true unconditionally**, so an obsolete-API call in our own
+code is a build error in the shipping configuration rather than being invisible
+everywhere. `ContentValidator`, `Invariant`, `DevConsole`, `DevCommands`,
+`WorldIntegrityChecker` and `ProfilerOverlay` deliberately **stay**: `--validate` runs
+from the game executable and is a required CI gate, and the overlays are already gated
+at runtime by `BuildProfile`.
+
+`python tools/check_shipping_assembly.py` proves the gate held rather than assuming
+it, by scanning the `ExportRelease` assembly for the excluded type names.
+
+⚠️ **There is no `export_presets.cfg` and this project has never been exported**, so
+"the shipping build" is currently proved by `dotnet build -c ExportRelease` compiling
+clean plus that scan — not by a real export artifact.
+
+#### Layer ownership rules
+
+Dependencies point **down** this list, never up, and never in a cycle:
+
+| Layer | Owns | Must not |
+| --- | --- | --- |
+| Application | process services, startup/shutdown | know about a session, a world or a player |
+| Session | the current save's runtime | outlive a quit to title |
+| World | the loaded world and its regions | outlive the session that loaded it |
+| Entity/component | actor behaviour | reach past its own entity except through a scope |
+| Presentation | visual and audio representation | decide gameplay state |
+| UI | observing gameplay, sending intents | become gameplay authority |
+| Developer/tooling | dev surfaces and harnesses | be reachable from shipping gameplay |
+
+`Core` may not depend on `Debugging` — which is why `Invariant` lives in
+`Core.Diagnostics`: the service scopes assert with it.
 
 ---
 
@@ -1303,7 +1490,7 @@ Developer tooling behind function keys (Phase 20); all run `ProcessMode.Always`.
 question: is the game state `Paused`, **or** is a world-pausing menu open? It runs on `ChangeState`
 and on `UiState.Changed`.
 
-`UiState` counts two sets. `MenuOpen` is "the player's controls are suspended" — `PlayerController`
+`UiState` counts two sets. `MenuOpen` is "the player's controls are suspended" — `PlayerInputRouter`
 holds position, drops the guard and cancels casts. `WorldPaused` is the subset that should also stop
 the simulation, and it is what the pause flag reads. Every modal `UiPanel` pauses (the default);
 the boss-intro lock, the opening narration and the dev console pass `pausesWorld: false` because the
@@ -1446,7 +1633,7 @@ A melee hit is resolved entirely through the spine — no system references anot
 directly; they meet at the `EventBus`:
 
 ```
-Input ─▶ PlayerController ─▶ MeleeWeaponComponent ─▶ Hitbox
+Input ─▶ PlayerInputRouter ─▶ MeleeWeaponComponent ─▶ Hitbox
                                                        │ (physics overlap)
                                             CombatComponent.ReceiveDamage
                                                        │  block → armor → ApplyDamage

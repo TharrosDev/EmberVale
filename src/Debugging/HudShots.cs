@@ -22,7 +22,7 @@ namespace Embervale.Debugging;
 /// a HUD slot, an overlay and a visibility system with no way to look at any of them. The reason is
 /// structural and neither half of the toolchain closes it: <c>--play</c> boots the world but cannot
 /// press a key, and the Godot MCP drives the <b>editor</b>, where the HUD does not exist at all
-/// because <see cref="Bootstrap.GameBootstrap"/> constructs it at runtime.
+/// because <see cref="Bootstrap.UICompositionRoot"/> constructs it at runtime.
 ///
 /// So this drives the real HUD, in a real session, through real state, and renders each state to a
 /// PNG an agent can actually open. It is <b>not</b> a test: it asserts nothing and gates nothing.
@@ -46,7 +46,7 @@ public sealed partial class HudShots : ShotHarness
             return "player is not registered";
         if (player.GetComponent<StatsComponent>() is not { } stats)
             return "player has no StatsComponent";
-        if (player.GetComponent<PlayerController>()?.Camera is not { Current: true })
+        if (player.GetComponent<PlayerCameraRig>()?.Camera is not { Current: true })
             return "player has no current gameplay camera";
         if (GetTree().Root.FindChild("GameHud", recursive: true, owned: false) is null)
             return "GameHud is missing";

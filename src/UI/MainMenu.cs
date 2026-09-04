@@ -7,7 +7,7 @@ namespace Embervale.UI;
 
 /// <summary>
 /// The title / main menu (Phase 24A): the first thing shown on launch, before any world is
-/// built. <see cref="GameBootstrap"/> boots into <see cref="GameState.MainMenu"/> and shows this
+/// built. <see cref="Bootstrap.GameShellController"/> boots into <see cref="GameState.MainMenu"/> and shows this
 /// instead of constructing the sandbox. <b>New Game</b> and <b>Load Game</b> open the
 /// <see cref="SaveSlotPanel"/> to pick a slot (24C), <b>Continue</b> resumes the most-recent save,
 /// and <b>Quit</b> exits. <b>Settings</b> opens the <see cref="SettingsPanel"/> (24F). Built in code

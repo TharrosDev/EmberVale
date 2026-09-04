@@ -49,7 +49,7 @@ public partial class WorldEventDirector : Node3D
         ProcessMode = ProcessModeEnum.Pausable;
         _timer = NextInterval();
 
-        ServiceLocator.Instance?.Register(this);
+        ServiceScope.RegisterOwned(this, this);
         EventBus.Instance?.Subscribe<EntityDiedEvent>(OnEntityDied);
         EventBus.Instance?.Subscribe<ItemPickedUpEvent>(OnItemPickedUp);
         EventBus.Instance?.Subscribe<RegionChangedEvent>(OnRegionTransition);
@@ -57,7 +57,6 @@ public partial class WorldEventDirector : Node3D
 
     public override void _ExitTree()
     {
-        ServiceLocator.Instance?.Unregister(this);
         EventBus.Instance?.Unsubscribe<EntityDiedEvent>(OnEntityDied);
         EventBus.Instance?.Unsubscribe<ItemPickedUpEvent>(OnItemPickedUp);
         EventBus.Instance?.Unsubscribe<RegionChangedEvent>(OnRegionTransition);

@@ -32,37 +32,8 @@ public partial class EnemyAIComponent : EntityComponent
     /// <summary>The default personality: straight-ahead melee, i.e. the pre-34A behaviour.</summary>
     public const string DefaultProfileId = "ai.brute";
 
-    /// <summary>Band a caster falls back to when its profile authors no standoff range — the
-    /// pre-34A <c>CastRange</c> default, so an unconverted caster fights exactly as it used to.</summary>
-    private const float DefaultCastRange = 14f;
-
-    /// <summary>How far off the navmesh an actor may stand and still be considered navigable. Wide
-    /// enough for the gap between a capsule's feet and the baked surface under a doorway or a ramp,
-    /// narrow enough that an actor genuinely off the mesh (or on a map with nothing baked, which
-    /// answers the origin) reads as off it.</summary>
-    private const float NavAnchorTolerance = 3f;
-
-    /// <summary>How often the navmesh anchor test above is actually run.</summary>
-    private const double NavAnchorInterval = 0.25d;
-
     /// <summary>How long an actor tries for one patrol point before choosing another.</summary>
     private const double PatrolGiveUpSeconds = 12d;
-
-    /// <summary>The vertical separation beyond which a walking creature does not engage a target it
-    /// can technically see. Roughly a two-storey drop: far enough that a terrace, a boardwalk or a
-    /// stair landing still reads as the same fight, short enough that a clifftop does not.
-    /// ponytail: a constant rather than a per-profile export — every walking archetype wants the
-    /// same answer, and a field nobody varies is a number the next author tunes to no effect.</summary>
-    private const float VerticalVisionLimit = 8f;
-
-    /// <summary>How far above or below a melee swing reaches. A capsule plus a step.</summary>
-    private const float AttackVerticalReach = 2.5f;
-
-    /// <summary>How often a support caster may scan its team for someone to heal. A constant rather
-    /// than a profile knob for the same reason <c>CompanionAIComponent.ScanInterval</c> is one: it
-    /// paces a cost, it does not express a personality. Short enough that a heal still lands inside
-    /// a swing, long enough that the scan stops being per-frame.</summary>
-    private const double SupportScanInterval = 0.3d;
 
     /// <summary>Which <see cref="AIProfileResource"/> drives this actor (see <c>data/ai_profiles/</c>).
     /// An unknown id falls back to a default brute profile with a warning, so a content typo degrades
@@ -110,10 +81,7 @@ public partial class EnemyAIComponent : EntityComponent
     private CombatComponent? _combat;
     private PlayerCharacter? _player;
     private MeshInstance3D? _mesh;
-    private NavigationAgent3D? _agent;
     private string _factionId = string.Empty;
-    private bool _provoked;
-    private double _provokeTimer;
 
     private EnemyState _state = EnemyState.Idle;
     private double _stateTimer;
@@ -126,38 +94,33 @@ public partial class EnemyAIComponent : EntityComponent
     /// <summary>Seconds spent on the current patrol target. See <see cref="TickPatrol"/>.</summary>
     private double _patrolElapsed;
 
-    /// <summary>Cached answer to "is this actor on the navmesh", and its countdown.</summary>
-    private bool _navAnchored;
-    private double _navAnchorTimer;
-
     // Guard rhythm (shielded profiles) + this actor's slot in the pack fan-out.
     private double _combatElapsed;
     private int _packSlot;
 
-    // LOD bookkeeping.
-    private double _sleepTimer;
-
-    /// <summary>Real time this brain has slept through since it last thought, so wall-clock timers
-    /// stay on wall-clock even while the actor is ticking at the far-LOD rate.</summary>
-    private double _sleptSeconds;
+    /// <summary>Level of detail: when this actor may next think, and how much real time it has
+    /// slept through since it last did. See <see cref="AiLodClock"/> for the six-minute provoke
+    /// memory that made the banking necessary.</summary>
+    private AiLodClock _lod;
 
     /// <summary>Seconds before a wounded actor may break off again. Without it, the re-engage at the
     /// end of a retreat walks straight back into the same low-health check that started it.</summary>
     private double _retreatCooldown;
 
-    private double _perceptionTimer;
 
-    /// <summary>Paces <see cref="FindWoundedAlly"/>. Ticked on wall-clock time (so LOD sleep is
-    /// accounted for) beside the state and retreat timers.</summary>
-    private double _supportScanTimer;
-    private bool _cachedCanSee;
-    private Vector3 _cachedSeenPos;
     private bool _shadowOn = true;
 
-    // Reused line-of-sight query: perception fires every PerceptionInterval per enemy, so the
-    // ray params + single-element exclude list are built once and only From/To change per cast.
-    private PhysicsRayQueryParameters3D? _losQuery;
-    private Godot.Collections.Array<Rid>? _losExclude;
+    /// <summary>Navmesh steering, arrival and facing — shared with the companion brain, which used
+    /// to carry its own drifted copy of the same three-answer rule.</summary>
+    private AiNavigator _nav = null!;
+
+    /// <summary>Sight, faction standing and provocation memory — the actor's whole picture of the
+    /// world, cached at the profile's perception interval rather than recomputed per frame.</summary>
+    private EnemySenses _senses = null!;
+
+    /// <summary>How a standoff fighter fights. Built for every actor but only ticked by one whose
+    /// profile stands off.</summary>
+    private EnemyCasterTactics _tactics = null!;
 
     // This frame's delta, cached for FaceTowards' turn-rate slew (35A).
     private double _frameDelta;
@@ -193,7 +156,9 @@ public partial class EnemyAIComponent : EntityComponent
         _combat = Entity.GetComponent<CombatComponent>();
         _flight = Entity.GetComponent<FlightComponent>();
         _mesh = _body.GetNodeOrNull<MeshInstance3D>("Mesh");
-        _agent = _body.GetNodeOrNull<NavigationAgent3D>("NavAgent");
+        _nav = new AiNavigator(Entity, _body, _body.GetNodeOrNull<NavigationAgent3D>("NavAgent"));
+        _tactics = new EnemyCasterTactics(Entity, _body, _nav, GetTree());
+        _senses = new EnemySenses(Entity, _body);
         _factionId = Entity.GetComponent<FactionComponent>()?.FactionId ?? string.Empty;
         _home = _body.GlobalPosition;
         _lastKnownPos = _home;
@@ -207,6 +172,7 @@ public partial class EnemyAIComponent : EntityComponent
     {
         EventBus.Instance?.Unsubscribe<EnemyAlertedEvent>(OnEnemyAlerted);
         EventBus.Instance?.Unsubscribe<DamageDealtEvent>(OnDamaged);
+        _senses?.Dispose();
     }
 
     /// <summary>An inline <see cref="Profile"/> wins; otherwise the id is looked up in the database.
@@ -250,7 +216,7 @@ public partial class EnemyAIComponent : EntityComponent
             return;
         }
 
-        _perceptionTimer -= delta;
+        _senses.TickPerception(delta);
         // Cached so FaceTowards can slew at a profile's turn rate without threading delta through
         // the four state ticks that call it (35A).
         _frameDelta = delta;
@@ -259,48 +225,23 @@ public partial class EnemyAIComponent : EntityComponent
         // shadow. The dead state always runs so corpses still despawn on schedule.
         bool far = IsFarFromPlayer();
         SetShadow(!far);
-        if (far && _state != EnemyState.Dead)
+        if (far && _state != EnemyState.Dead && _lod.ShouldSleep(delta, _profile.SleepInterval))
         {
-            _sleepTimer -= delta;
-            if (_sleepTimer > 0d)
-            {
-                // Bank the skipped time. Without this the wall-clock timers below advance by one
-                // *frame* per sleep interval instead of by the interval, so a distant enemy's
-                // 12 s provoke memory ran for six real minutes and it never stood down.
-                _sleptSeconds += delta;
-                return;
-            }
-
-            _sleepTimer = _profile.SleepInterval;
+            return;
         }
 
-        // Real time since this brain last thought. Wall-clock timers (state duration, provoke
-        // memory, retreat cooldown) use it; movement and turn slew keep using `delta`, because
-        // stepping a sleeping actor by half a second of motion would teleport it.
-        double wall = delta + _sleptSeconds;
-        _sleptSeconds = 0d;
+        // Real time since this brain last thought, including anything it slept through. Wall-clock
+        // timers (state duration, provoke memory, retreat cooldown) use it; movement and turn slew
+        // keep using `delta`, because stepping a sleeping actor by half a second would teleport it.
+        double wall = _lod.ConsumeWallSeconds(delta);
 
         _stateTimer += wall;
         _retreatCooldown -= wall;
-        _supportScanTimer -= wall;
+        _tactics.TickTimers(wall);
 
-        // Provoke memory: a struck enemy hunts the player, but forgets after a calm spell so it stands
-        // down once reputation is no longer hostile (it never forgets mid-fight).
-        if (_provoked)
-        {
-            if (_state == EnemyState.Combat)
-            {
-                _provokeTimer = _profile.ProvokeMemory;
-            }
-            else
-            {
-                _provokeTimer -= wall;
-                if (_provokeTimer <= 0d)
-                {
-                    _provoked = false;
-                }
-            }
-        }
+        // Provoke memory: a struck enemy hunts the player, but forgets after a calm spell so it
+        // stands down once reputation is no longer hostile (it never forgets mid-fight).
+        _senses.TickProvocation(wall, _state == EnemyState.Combat, _profile.ProvokeMemory);
 
         if (_state != EnemyState.Dead && (_stats == null || !_stats.IsAlive))
         {
@@ -378,7 +319,7 @@ public partial class EnemyAIComponent : EntityComponent
 
     private void TickInvestigate(double delta)
     {
-        PlayerCharacter? player = GetLivePlayer();
+        PlayerCharacter? player = _senses.LivePlayer();
         if (player != null && CanSeePlayer(player, out Vector3 pos))
         {
             _lastKnownPos = pos;
@@ -396,7 +337,7 @@ public partial class EnemyAIComponent : EntityComponent
             Stand(delta);
             if (_stateTimer >= _profile.InvestigateDuration)
             {
-                EnterState(_profile.IsAmbusher ? EnemyState.Idle : EnemyState.Patrol);
+                EnterState(CombatTransition.Resting(_profile.IsAmbusher));
             }
         }
     }
@@ -415,9 +356,9 @@ public partial class EnemyAIComponent : EntityComponent
         {
             // Home ground. Forget the fight entirely: a lingering provoke or a remembered last-known
             // position would put it straight back into combat with whoever it just walked away from.
-            _provoked = false;
+            _senses.ForgetProvocation();
             _lastKnownPos = _home;
-            EnterState(_profile.IsAmbusher ? EnemyState.Idle : EnemyState.Patrol);
+            EnterState(CombatTransition.Resting(_profile.IsAmbusher));
             return;
         }
 
@@ -427,45 +368,31 @@ public partial class EnemyAIComponent : EntityComponent
 
     private void TickCombat(double delta)
     {
-        PlayerCharacter? player = GetLivePlayer();
-        if (player == null)
-        {
-            EnterState(EnemyState.Idle);
-            return;
-        }
+        PlayerCharacter? player = _senses.LivePlayer();
+        Vector3 pos = _lastKnownPos;
+        bool canSee = player != null && CanSeePlayer(player, out pos);
 
-        // Standing down (e.g. reputation rose to neutral) ends the fight unless provoked.
-        if (!PlayerIsTarget())
-        {
-            EnterState(EnemyState.Idle);
-            return;
-        }
+        // Should this fight still be happening at all? The five guards and, more importantly, the
+        // ORDER of them -- the leash before the health check, so a territorial creature cannot be
+        // walked out of its valley one swing at a time -- are in CombatTransition, where they are
+        // testable.
+        EnemyState next = CombatTransition.Next(
+            hasLiveTarget: player != null,
+            targetIsHostile: _senses.PlayerIsTarget(_factionId),
+            canSeeTarget: canSee,
+            distanceFromHome: HorizontalDistance(_body.GlobalPosition, _home),
+            territoryRadius: _profile.TerritoryRadius,
+            lowHealth: LowHealth(),
+            retreatCooldownRemaining: _retreatCooldown);
 
-        if (!CanSeePlayer(player, out Vector3 pos))
+        if (next != EnemyState.Combat)
         {
-            EnterState(EnemyState.Investigate);
-            return;
-        }
-
-        // Drawn too far from its ground: break off (35D). Checked before anything else in the fight
-        // so a territorial creature cannot be walked out of its valley one swing at a time.
-        if (TerritoryLeash.ShouldBreakOff(
-                HorizontalDistance(_body.GlobalPosition, _home), _profile.TerritoryRadius, returning: false))
-        {
-            EnterState(EnemyState.Returning);
+            EnterState(next);
             return;
         }
 
         _lastKnownPos = pos;
         _combatElapsed += delta;
-
-        // The cooldown is what stops a wounded actor ping-ponging Combat->Retreat forever: nothing
-        // heals it, so the re-engage that ends a retreat would otherwise trip this same check.
-        if (LowHealth() && _retreatCooldown <= 0d)
-        {
-            EnterState(EnemyState.Retreat);
-            return;
-        }
 
         // A standoff fighter (caster now, archer later) holds a band and kites instead of charging
         // into melee (Phase 29.5F, generalized in 34A). The rule is the *profile*, not the presence
@@ -498,8 +425,9 @@ public partial class EnemyAIComponent : EntityComponent
             // and would swing at empty air the whole time it is up (35B).
             // …and a target on a ledge two metres up is out of reach in exactly the same way, which
             // the Airborne test alone does not cover: it only asks whether THIS actor is flying.
-            if (!guard && !Airborne &&
-                Mathf.Abs(pos.Y - _body.GlobalPosition.Y) <= AttackVerticalReach)
+            // Range here is otherwise horizontal, so a flier hovering directly overhead reads as
+            // "in reach" and a target on a ledge two metres up reads the same way.
+            if (!guard && AiSenseRules.CanSwing(Airborne, pos.Y - _body.GlobalPosition.Y))
             {
                 _weapon?.TryAttack();
             }
@@ -539,7 +467,7 @@ public partial class EnemyAIComponent : EntityComponent
 
     private void TickRetreat(double delta)
     {
-        PlayerCharacter? player = GetLivePlayer();
+        PlayerCharacter? player = _senses.LivePlayer();
         Vector3 threat = player != null ? player.GlobalPosition : _lastKnownPos;
 
         Vector3 away = _body.GlobalPosition - threat;
@@ -551,178 +479,22 @@ public partial class EnemyAIComponent : EntityComponent
         MoveTowards(fleeTarget, delta, sprint: true, stopDistance: 0.1f);
         FaceTowards(threat);
 
-        // A wounded caster heals/wards itself (and lobs spells) as it falls back (Phase 29.5F).
-        if (_casting != null)
-        {
-            TryCasterCast();
-        }
+        // A wounded caster heals/wards itself (and lobs spells) as it falls back.
+        _tactics.TryCast(_profile, _casting, _combat);
 
         if (_stateTimer >= _profile.MaxRetreatTime)
         {
-            // A coward never rallies: it goes back to its business and flees again on the next
-            // sighting. Everyone else re-engages once the panic passes.
-            if (_profile.FleeOnSight)
-            {
-                EnterState(_profile.IsAmbusher ? EnemyState.Idle : EnemyState.Patrol);
-                return;
-            }
-
-            EnterState(player != null ? EnemyState.Combat : EnemyState.Investigate);
+            // A coward never rallies; everyone else re-engages once the panic passes.
+            EnterState(CombatTransition.AfterRetreat(
+                _profile.FleeOnSight, _profile.IsAmbusher, hasLiveTarget: player != null));
         }
     }
 
-    // --- Standoff behaviour (Phase 29.5F, generalized 34A) ------------------
-
-    /// <summary>Standoff combat: hold the band (approach when too far, kite when too close), face the
-    /// target so the attack aims true, and fire whatever's ready. Reuses the player's
-    /// <see cref="SpellcastingComponent"/> — no parallel casting system.</summary>
-    private void TickStandoffCombat(Vector3 targetPos, double delta)
-    {
-        SetGuard(false);
-        FaceTowards(targetPos);
-        float dist = HorizontalDistance(_body.GlobalPosition, targetPos);
-        float band = _profile.StandoffRange > 0f ? _profile.StandoffRange : DefaultCastRange;
-        switch (CasterDecision.Move(dist, _profile.KiteDistance, band))
-        {
-            case CasterMove.Kite:
-                Vector3 away = _body.GlobalPosition - targetPos;
-                away.Y = 0f;
-                Vector3 flee = away.LengthSquared() > 0.01f
-                    ? _body.GlobalPosition + (away.Normalized() * 5f)
-                    : _home;
-                MoveTowards(flee, delta, sprint: true, stopDistance: 0.1f);
-                break;
-            case CasterMove.Approach:
-                MoveTowards(targetPos, delta, sprint: false, stopDistance: band * 0.9f);
-                break;
-            default:
-                Stand(delta);
-                break;
-        }
-
-        TryCasterCast();
-    }
-
-    /// <summary>One cast action per tick, by priority: heal/buff a wounded ally, else attack, else ward
-    /// itself. Per-spell cooldowns naturally pace it. Returns once something is cast.</summary>
-    private void TryCasterCast()
-    {
-        if (_casting == null)
-        {
-            return;
-        }
-
-        // 1. Support: heal the most-wounded ally (or itself) that has fallen below the heal threshold.
-        SpellResource? heal = ReadySupport(healing: true);
-        if (heal != null && FindWoundedAlly() is { } ally && _casting.TryCastSupportOn(ally, heal))
-        {
-            return;
-        }
-
-        // 2. Offensive: the hardest-hitting ready damage spell, aimed down the body's facing.
-        SpellResource? attack = ReadyOffensive();
-        if (attack != null && _casting.TryCastById(attack.Id))
-        {
-            return;
-        }
-
-        // 3. Ward itself when nothing better to do and the buff isn't already up.
-        SpellResource? ward = ReadySupport(healing: false);
-        if (ward != null && Entity != null && !HasStatus(Entity, ward.StatusEffectId))
-        {
-            _casting.TryCastSupportOn(Entity, ward);
-        }
-    }
-
-    /// <summary>The strongest ready offensive (non-Self, damaging) spell the caster knows, or null.</summary>
-    private SpellResource? ReadyOffensive()
-    {
-        SpellResource? best = null;
-        foreach (SpellResource spell in _casting!.Spells)
-        {
-            if (spell.Delivery != SpellDelivery.Self && spell.BaseDamage > 0f && _casting.CanCast(spell) &&
-                (best == null || spell.BaseDamage > best.BaseDamage))
-            {
-                best = spell;
-            }
-        }
-
-        return best;
-    }
-
-    /// <summary>A ready Self-delivery support spell: a heal (<paramref name="healing"/> true) or a
-    /// beneficial ward (false), or null when none is castable.</summary>
-    private SpellResource? ReadySupport(bool healing)
-    {
-        foreach (SpellResource spell in _casting!.Spells)
-        {
-            bool isHeal = spell.Healing > 0f;
-            if (spell.Delivery == SpellDelivery.Self && isHeal == healing && _casting.CanCast(spell) &&
-                (healing || spell.HasStatusEffect))
-            {
-                return spell;
-            }
-        }
-
-        return null;
-    }
-
-    /// <summary>The most-wounded ally (or itself) within <see cref="AllySupportRange"/> on the caster's
-    /// team whose health is below <see cref="AllyHealThreshold"/>, or null when none needs healing.
-    ///
-    /// ⚠️ <b>Throttled, because this is a group-wide scan inside the combat tick.</b> It walks every
-    /// node in the enemy group — a freshly marshalled Godot array each call — and does an owner lookup
-    /// plus two GetComponent calls per candidate. It ran unthrottled on every physics frame for every
-    /// caster with a heal ready, so the cost was O(casters × live enemies) per frame: invisible with
-    /// ten enemies, real in a boss arena where Summon has built a crowd. Perception (PerceptionInterval)
-    /// and the companion's target scan (ScanInterval) were already behind timers; this was the one
-    /// group scan that was not.
-    ///
-    /// A throttled tick returns null and the caster falls through to attacking instead, rather than
-    /// caching an ally reference that could be freed before the next tick reads it.
-    /// </summary>
-    private IEntity? FindWoundedAlly()
-    {
-        if (_supportScanTimer > 0d)
-        {
-            return null;
-        }
-
-        _supportScanTimer = SupportScanInterval;
-
-        int team = _combat?.Team ?? 0;
-        IEntity? best = null;
-        float lowest = _profile.AllyHealThreshold;
-
-        foreach (Node node in GetTree().GetNodesInGroup(Quests.ObjectiveLocator.EnemyGroup))
-        {
-            if (node is not Node3D body ||
-                HorizontalDistance(_body.GlobalPosition, body.GlobalPosition) > _profile.AllySupportRange ||
-                EntityNode.FindOwner(node) is not { } ally ||
-                ally.GetComponent<CombatComponent>()?.Team != team)
-            {
-                continue;
-            }
-
-            StatsComponent? stats = ally.GetComponent<StatsComponent>();
-            if (stats is not { IsAlive: true })
-            {
-                continue;
-            }
-
-            float fraction = stats.GetNormalized(StatType.Health);
-            if (fraction < lowest)
-            {
-                lowest = fraction;
-                best = ally;
-            }
-        }
-
-        return best;
-    }
-
-    private static bool HasStatus(IEntity entity, string statusId) =>
-        !string.IsNullOrEmpty(statusId) && entity.GetComponent<StatusEffectsComponent>()?.Has(statusId) == true;
+    /// <summary>Standoff combat: hold the band, kite when crowded, cast one thing. The whole of it
+    /// is in <see cref="EnemyCasterTactics"/>, because it is a self-contained way of fighting that
+    /// most archetypes never use.</summary>
+    private void TickStandoffCombat(Vector3 targetPos, double delta) =>
+        _tactics.TickCombat(_profile, _casting, _combat, targetPos, _home, delta, _frameDelta, Airborne);
 
     private void TickDead(double delta)
     {
@@ -744,20 +516,20 @@ public partial class EnemyAIComponent : EntityComponent
 
     private bool DetectAndEngage()
     {
-        if (!PlayerIsTarget())
+        if (!_senses.PlayerIsTarget(_factionId))
         {
             return false;
         }
 
-        PlayerCharacter? player = GetLivePlayer();
+        PlayerCharacter? player = _senses.LivePlayer();
         if (player == null || !CanSeePlayer(player, out Vector3 pos))
         {
             return false;
         }
 
         // An ambusher sees the target long before it springs: it holds until they walk into the trap.
-        if (_profile.IsAmbusher &&
-            HorizontalDistance(_body.GlobalPosition, pos) > _profile.AmbushRange)
+        if (!AiSenseRules.SpringsAmbush(
+                _profile.IsAmbusher, HorizontalDistance(_body.GlobalPosition, pos), _profile.AmbushRange))
         {
             return false;
         }
@@ -765,7 +537,7 @@ public partial class EnemyAIComponent : EntityComponent
         _lastKnownPos = pos;
 
         // A silent profile (AlertRadius 0 — the ambusher's default) doesn't give the pack away.
-        if (_profile.AlertRadius > 0f)
+        if (AiSenseRules.ShoutsOnEngage(_profile.AlertRadius))
         {
             EventBus.Instance?.Publish(
                 new EnemyAlertedEvent(Entity!, pos, _profile.AlertRadius, _factionId));
@@ -776,112 +548,16 @@ public partial class EnemyAIComponent : EntityComponent
         return true;
     }
 
-    /// <summary>Perception, throttled: the (relatively costly) sight check — FOV + line-of-sight
-    /// raycast — runs at most once per <see cref="PerceptionInterval"/> and is cached between,
-    /// so a crowd of enemies doesn't raycast every physics frame.</summary>
-    private bool CanSeePlayer(PlayerCharacter player, out Vector3 seenPosition)
-    {
-        if (_perceptionTimer <= 0d)
-        {
-            _cachedCanSee = ComputeCanSeePlayer(player, out _cachedSeenPos);
-            _perceptionTimer = _profile.PerceptionInterval;
-        }
-
-        seenPosition = _cachedSeenPos;
-        return _cachedCanSee;
-    }
-
-    private bool ComputeCanSeePlayer(PlayerCharacter player, out Vector3 seenPosition)
-    {
-        Vector3 selfPos = _body.GlobalPosition;
-        Vector3 playerPos = player.GlobalPosition;
-        seenPosition = playerPos;
-
-        Vector3 flat = playerPos - selfPos;
-        flat.Y = 0f;
-        float dist = flat.Length();
-        if (dist > _profile.VisionRange || dist < 0.001f)
-        {
-            return dist <= _profile.VisionRange; // standing on the player still counts as seen
-        }
-
-        // ⚠️ RANGE WAS PURELY HORIZONTAL, AND THE WORLD HAS THIRTY-METRE CLIFFS IN IT. A player on
-        // the Ancient Aerie's rim is a couple of metres from the trench floor in plan and thirty
-        // metres up in fact; the line of sight is clear open air, so every creature below engaged,
-        // could not path to them (an unreachable goal), and stood there provoked for the rest of the
-        // session. Anything with a FlightComponent is exempt in both directions: closing the
-        // vertical gap is exactly what it does, whether or not it is off the ground this instant.
-        if (!Airborne && _flight == null &&
-            Mathf.Abs(playerPos.Y - selfPos.Y) > VerticalVisionLimit)
-        {
-            return false;
-        }
-
-        // Outside the proximity bubble the target must be within the view cone.
-        if (dist > _profile.ProximityRange)
-        {
-            Vector3 forward = -_body.GlobalTransform.Basis.Z;
-            forward.Y = 0f;
-            if (!EnemyPerception.InViewCone(forward, flat, _profile.FovDegrees))
-            {
-                return false;
-            }
-        }
-
-        return HasLineOfSight(player, selfPos + (Vector3.Up * 1.6f), playerPos + (Vector3.Up * 1.2f));
-    }
-
-    private bool HasLineOfSight(PlayerCharacter player, Vector3 from, Vector3 to)
-    {
-        PhysicsDirectSpaceState3D space = _body.GetWorld3D().DirectSpaceState;
-
-        // Build the query + exclude list once; the excluded RID (this body) never changes.
-        if (_losQuery == null)
-        {
-            _losExclude = new Godot.Collections.Array<Rid> { _body.GetRid() };
-            _losQuery = PhysicsRayQueryParameters3D.Create(from, to);
-            _losQuery.Exclude = _losExclude;
-        }
-
-        _losQuery.From = from;
-        _losQuery.To = to;
-
-        Godot.Collections.Dictionary hit = space.IntersectRay(_losQuery);
-        if (hit.Count == 0)
-        {
-            return true; // nothing in the way
-        }
-
-        // Visible only if the first thing the ray hits is the player.
-        if (hit["collider"].AsGodotObject() is Node node)
-        {
-            return ReferenceEquals(EntityNode.FindOwner(node), player);
-        }
-
-        return true;
-    }
+    /// <summary>Sight, throttled and cached — see <see cref="EnemySenses"/>. A flier is exempt from
+    /// the vertical vision gate in both directions, whether or not it is off the ground right now.</summary>
+    private bool CanSeePlayer(PlayerCharacter player, out Vector3 seenPosition) =>
+        _senses.CanSeePlayer(_profile, player, canFly: Airborne || _flight != null, out seenPosition);
 
     /// <summary>Whether this actor currently treats the player as a target — the public read of
     /// <see cref="PlayerIsTarget"/>. A creature that can hold a conversation (35F) is the first thing
     /// that needs to ask this from outside the brain: talking to something mid-swing has to be
     /// refused, and "is it hostile" is a question only the AI can answer (standing *or* provocation).</summary>
-    public bool IsHostileToPlayer => PlayerIsTarget();
-
-    /// <summary>
-    /// Whether this actor currently treats the player as a target. A faction member
-    /// engages only while the player's standing with its faction is hostile (or it has
-    /// been provoked by a direct attack); an unfactioned actor is hostile by default.
-    /// </summary>
-    private bool PlayerIsTarget()
-    {
-        if (_provoked || string.IsNullOrEmpty(_factionId))
-        {
-            return true;
-        }
-
-        ReputationComponent? reputation = GetPlayer()?.GetComponent<ReputationComponent>();
-        return reputation == null || reputation.IsHostile(_factionId);
-    }
+    public bool IsHostileToPlayer => _senses.PlayerIsTarget(_factionId);
 
     private void OnDamaged(DamageDealtEvent e)
     {
@@ -891,8 +567,7 @@ public partial class EnemyAIComponent : EntityComponent
             return;
         }
 
-        _provoked = true;
-        _provokeTimer = _profile.ProvokeMemory;
+        _senses.Provoke(_profile.ProvokeMemory);
         if (_state is EnemyState.Idle or EnemyState.Patrol or EnemyState.Investigate)
         {
             _lastKnownPos = attacker.GlobalPosition;
@@ -902,37 +577,21 @@ public partial class EnemyAIComponent : EntityComponent
 
     private void OnEnemyAlerted(EnemyAlertedEvent e)
     {
-        if (ReferenceEquals(e.Source, Entity) || _body == null)
+        if (_body == null)
         {
             return;
         }
 
-        // An ambusher holds its trap even when the pack starts shouting — walking to the noise is
-        // exactly what would give the ambush away.
-        if (_profile.IsAmbusher)
+        // The four filters -- own shout, ambusher, exact faction, personal quarrel -- and why each
+        // exists are in AiSenseRules, where they are testable.
+        if (!AiSenseRules.AnswersAlert(
+                ReferenceEquals(e.Source, Entity), _profile.IsAmbusher, _factionId, e.FactionId, _senses.PlayerIsTarget(_factionId)))
         {
             return;
         }
 
-        // Only the shouter's own kind answers. Without this a goblin's yell put the town guard,
-        // the Ashen and every other faction's actors in earshot onto the player's position.
-        if (!string.Equals(_factionId, e.FactionId, System.StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        // An actor that has no quarrel with the player does not go looking for one because a
-        // neighbour shouted. Provocation is personal; standing is what decides the rest.
-        if (!PlayerIsTarget())
-        {
-            return;
-        }
-
-        // Measured in three dimensions against the SHOUTER's radius. Horizontal distance let a
-        // shout carry up a thirty-metre cliff face, and the listener's own radius is what it uses
-        // when it is the one shouting — see EnemyAlertedEvent.
         if (_state is EnemyState.Idle or EnemyState.Patrol &&
-            _body.GlobalPosition.DistanceTo(e.Position) <= e.Radius)
+            AiSenseRules.HearsAlert(_body.GlobalPosition, e.Position, e.Radius))
         {
             _lastKnownPos = e.Position;
             EnterState(EnemyState.Investigate);
@@ -941,165 +600,23 @@ public partial class EnemyAIComponent : EntityComponent
 
     // --- Movement helpers ---------------------------------------------------
 
-    private void MoveTowards(Vector3 target, double delta, bool sprint, float stopDistance)
-    {
-        // Steer toward the next navmesh path corner (Phase 27A) when one is available; arrival is
-        // judged against the FINAL target, never the corner, so the actor doesn't stop short at bends.
-        if (NextPathPoint(target) is not { } corner)
-        {
-            // Navigation is not usable here yet. Hold rather than walk: the alternative was steering
-            // straight at the goal, which is a line through whatever is between.
-            Stand(delta);
-            return;
-        }
+    /// <summary>Walks toward a point through the navmesh. Arrival is judged against the final
+    /// target, never the corner, so the actor does not stop short at a bend.</summary>
+    private void MoveTowards(Vector3 target, double delta, bool sprint, float stopDistance) =>
+        _nav.MoveTowards(target, delta, sprint, stopDistance, Airborne);
 
-        Vector3 toCorner = corner - _body.GlobalPosition;
-        toCorner.Y = 0f;
-        float cornerDist = toCorner.Length();
-        float finalDist = HorizontalDistance(_body.GlobalPosition, target);
-        Vector3 wish = PathSteering.ShouldSteer(cornerDist, finalDist, stopDistance)
-            ? toCorner.Normalized()
-            : Vector3.Zero;
-        GetLocomotion()?.Move(delta, wish, sprint, jump: false);
-    }
-
-    /// <summary>
-    /// The next waypoint to steer toward, or <c>null</c> when there is no safe one and the actor
-    /// should hold still.
-    ///
-    /// ⚠️ <b>THERE IS NO STRAIGHT-LINE FALLBACK ANY MORE, AND REMOVING IT IS THE POINT.</b> This
-    /// used to return the target itself whenever the path query came back empty — which is the case
-    /// both while a cell's navmesh is still baking (<see cref="World.CellNavBaker"/> defers a frame
-    /// and bakes on a worker) and whenever a goal sits off the mesh. The result was every enemy in a
-    /// freshly streamed cell walking the shortest line to the player: through market stalls, through
-    /// the smithy, through the arena wall. It read as a physics bug and it was a navigation one.
-    ///
-    /// Three answers now, and each is honest about what it knows:
-    /// <list type="bullet">
-    /// <item>No agent at all, or airborne — no navigation was ever intended for this actor (the
-    /// sandbox dummy) or the mesh is the wrong map for it (35B). Steer at the target.</item>
-    /// <item>An agent whose map cannot place the actor — the bake has not landed, or the actor is
-    /// off-mesh. Hold. The next tick asks again and it costs nothing.</item>
-    /// <item>An unreachable goal on a usable mesh — steer to the closest point the mesh does have,
-    /// which is as far as the actor can honestly get, instead of through the wall between.</item>
-    /// </list>
-    /// Re-targets the agent only when the goal actually moves, to avoid needless repaths.
-    /// </summary>
-    private Vector3? NextPathPoint(Vector3 target)
-    {
-        // Airborne, the navmesh is the wrong map: its corners route around ground obstacles this
-        // actor is currently flying over. Steer straight (35B).
-        if (_agent == null || Airborne)
-        {
-            return target;
-        }
-
-        Rid map = _agent.GetNavigationMap();
-        if (!map.IsValid)
-        {
-            return null;
-        }
-
-        // Is this actor standing on navigable ground at all? An empty map (nothing baked yet)
-        // answers Vector3.Zero, and an off-mesh actor answers somewhere far away; both mean the
-        // path this frame would be a guess.
-        //
-        // Paced rather than asked every frame: MapGetClosestPoint is a server query and this runs
-        // for every moving actor, while the answer only changes when the actor walks off the mesh
-        // or a bake lands. NavAnchorInterval is a fraction of a second, so a stale "yes" costs at
-        // most a few frames of steering the last good corner.
-        Vector3 here = _body.GlobalPosition;
-        _navAnchorTimer -= _frameDelta;
-        if (_navAnchorTimer <= 0d)
-        {
-            _navAnchorTimer = NavAnchorInterval;
-            _navAnchored = NavigationServer3D.MapGetClosestPoint(map, here)
-                .DistanceSquaredTo(here) <= NavAnchorTolerance * NavAnchorTolerance;
-        }
-
-        if (!_navAnchored)
-        {
-            return null;
-        }
-
-        Vector3 goal = target;
-        if (_agent.TargetPosition.DistanceSquaredTo(goal) > 0.01f)
-        {
-            _agent.TargetPosition = goal;
-        }
-
-        if (_agent.IsTargetReachable())
-        {
-            return _agent.GetNextPathPosition();
-        }
-
-        // Unreachable: aim for the nearest place on the mesh that exists. Re-target rather than
-        // returning it directly, so the actor still walks a path to it rather than a line.
-        Vector3 nearest = NavigationServer3D.MapGetClosestPoint(map, goal);
-        if (nearest.DistanceSquaredTo(here) <= 0.04f)
-        {
-            return null; // already as close as the mesh goes
-        }
-
-        if (_agent.TargetPosition.DistanceSquaredTo(nearest) > 0.01f)
-        {
-            _agent.TargetPosition = nearest;
-        }
-
-        return _agent.IsTargetReachable() ? _agent.GetNextPathPosition() : null;
-    }
-
-    private void Stand(double delta)
-    {
-        GetLocomotion()?.Move(delta, Vector3.Zero, sprint: false, jump: false);
-    }
+    private void Stand(double delta) => _nav.Stand(delta);
 
     /// <summary>Turns to face a point — instantly, or slewed at the profile's
     /// <see cref="AIProfileResource.TurnSpeedDegrees"/> for a body too heavy to pivot on the spot.</summary>
-    private void FaceTowards(Vector3 target)
-    {
-        Vector3 pos = _body.GlobalPosition;
-        var flat = new Vector3(target.X, pos.Y, target.Z);
-        if (flat.DistanceSquaredTo(pos) <= 0.0004f)
-        {
-            return;
-        }
-
-        if (_profile.TurnSpeedDegrees <= 0f)
-        {
-            _body.LookAt(flat, Vector3.Up);
-            return;
-        }
-
-        float desired = Mathf.Atan2(pos.X - flat.X, pos.Z - flat.Z);
-        float step = Mathf.DegToRad(_profile.TurnSpeedDegrees) * (float)_frameDelta;
-        _body.Rotation = _body.Rotation with { Y = Mathf.RotateToward(_body.Rotation.Y, desired, step) };
-    }
+    private void FaceTowards(Vector3 target) =>
+        _nav.FaceTowards(target, _profile.TurnSpeedDegrees, _frameDelta);
 
     /// <summary>Signed angle from this actor's facing to a point, in degrees — 0 dead ahead, ±180
-    /// directly behind. Drives the directional attack set (35A).</summary>
-    public float BearingTo(Vector3 target)
-    {
-        if (_body == null)
-        {
-            return 0f;
-        }
+    /// directly behind. Drives the directional attack sets (the dragon's bite/wing/tail arcs and the
+    /// breath cone), which is why it is public.</summary>
+    public float BearingTo(Vector3 target) => _body == null ? 0f : _nav.BearingTo(target);
 
-        Vector3 pos = _body.GlobalPosition;
-        var flat = new Vector3(target.X, pos.Y, target.Z);
-        if (flat.DistanceSquaredTo(pos) <= 0.0004f)
-        {
-            return 0f;
-        }
-
-        float desired = Mathf.Atan2(pos.X - flat.X, pos.Z - flat.Z);
-        return Mathf.RadToDeg(Mathf.AngleDifference(_body.Rotation.Y, desired));
-    }
-
-    private LocomotionComponent? GetLocomotion()
-    {
-        return Entity?.GetComponent<LocomotionComponent>();
-    }
 
     // --- Misc helpers -------------------------------------------------------
 
@@ -1154,12 +671,7 @@ public partial class EnemyAIComponent : EntityComponent
         float radius = Mathf.Sqrt(GD.Randf()) * _profile.PatrolRadius;
         Vector3 candidate = _home + new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius);
 
-        // Snapped onto walkable ground rather than taken raw. A raw disc point sits inside the
-        // smithy about as often as it sits on the road.
-        Rid map = _agent?.GetNavigationMap() ?? default;
-        _patrolTarget = map.IsValid
-            ? NavigationServer3D.MapGetClosestPoint(map, candidate)
-            : World.WorldGround.OnGround(candidate);
+        _patrolTarget = _nav.SnapToWalkable(candidate);
     }
 
     private bool LowHealth()
@@ -1170,7 +682,7 @@ public partial class EnemyAIComponent : EntityComponent
     /// <summary>True when no player exists or the player is beyond <see cref="ActiveDistance"/>.</summary>
     private bool IsFarFromPlayer()
     {
-        PlayerCharacter? player = GetPlayer();
+        PlayerCharacter? player = _senses.AnyPlayer();
         if (player == null)
         {
             return true;
@@ -1190,34 +702,6 @@ public partial class EnemyAIComponent : EntityComponent
         _mesh.CastShadow = on
             ? GeometryInstance3D.ShadowCastingSetting.On
             : GeometryInstance3D.ShadowCastingSetting.Off;
-    }
-
-    private PlayerCharacter? GetLivePlayer()
-    {
-        PlayerCharacter? player = GetPlayer();
-        if (player == null)
-        {
-            return null;
-        }
-
-        StatsComponent? stats = player.GetComponent<StatsComponent>();
-        return stats == null || stats.IsAlive ? player : null;
-    }
-
-    private PlayerCharacter? GetPlayer()
-    {
-        if (_player != null && IsInstanceValid(_player))
-        {
-            return _player;
-        }
-
-        _player = null;
-        if (ServiceLocator.Instance != null && ServiceLocator.Instance.TryGet(out PlayerCharacter found))
-        {
-            _player = found;
-        }
-
-        return _player;
     }
 
     private static float HorizontalDistance(Vector3 a, Vector3 b)

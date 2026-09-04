@@ -40,7 +40,7 @@ public sealed partial class ShrineShots : ShotHarness
     {
         if (ServiceLocator.Instance is not { } locator ||
             !locator.TryGet(out PlayerCharacter player) ||
-            player.GetComponent<PlayerController>() is not { } controller ||
+            player.GetComponent<PlayerCameraRig>() is not { } controller ||
             controller.Camera is not { } camera ||
             FindShrine(shrineNodeName) is not { } shrine)
         {

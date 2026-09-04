@@ -17,7 +17,7 @@ public static class CraftingStationFactory
     /// <summary>
     /// Builds a station. <paramref name="modelPath"/> is an optional <c>.glb</c>; when it is absent
     /// or fails to load the emissive box is used instead, the same first-a-model-then-a-box order
-    /// <c>GameBootstrap.BuildPersistentCache</c> uses. <paramref name="position"/> is <b>local</b> to
+    /// <c>PlayerHost.BuildPersistentCache</c> uses. <paramref name="position"/> is <b>local</b> to
     /// the parent it will be added to.
     /// </summary>
     public static Entity Create(

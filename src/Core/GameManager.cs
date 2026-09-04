@@ -48,7 +48,7 @@ public sealed partial class GameManager : Node
     /// <b>or</b> while a blocking menu is open.
     ///
     /// The menu half is not cosmetic. A modal panel suspends the player's movement, guard, dodge and
-    /// casts (see <c>PlayerController</c>), and before this it suspended nothing else — so reading
+    /// casts (see <c>PlayerInputRouter</c>), and before this it suspended nothing else — so reading
     /// the inventory mid-fight left a frozen, un-blocking player being hit by enemies that never
     /// stopped, with damage-over-time still ticking. Suspending the world here covers every system
     /// at once instead of relying on each to remember a <c>UiState.MenuOpen</c> check (only two of

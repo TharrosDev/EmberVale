@@ -65,7 +65,7 @@ public abstract partial class NarrationSequence : CanvasLayer
         Visible = true;
         _skipHint.Text = Loc.TF("opening.skip", GameInput.PromptLabel(GameInput.Interact));
         // Cinematic lock, not a menu: the prologue plays over the already-built world (see
-        // GameBootstrap), so it suspends the player's controls without stopping the simulation.
+        // the application root), so it suspends the player's controls without stopping the simulation.
         UiState.Open(this, pausesWorld: false);
         Refresh(OpeningTimeline.At(0f, _cards.Length));
     }

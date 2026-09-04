@@ -42,14 +42,13 @@ public partial class ContractLedger : Node, ISaveable
 
     public override void _EnterTree()
     {
-        ServiceLocator.Instance?.Register(this);
+        ServiceScope.RegisterOwned(this, this);
         SaveManager.Instance?.Register(this);
     }
 
     public override void _ExitTree()
     {
         SaveManager.Instance?.Unregister(this);
-        ServiceLocator.Instance?.Unregister(this);
     }
 
     /// <summary>Whether this posting has already been filled in this rotation. Read by both the board's

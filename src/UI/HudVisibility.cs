@@ -27,7 +27,7 @@ public enum HudMode
 /// player could not take, because a blocking menu pauses the tree.
 ///
 /// ⚠️ <b>There is deliberately no Dead mode</b> (§54, and 40B's "a cut system leaves no stub").
-/// Embervale's player death has no duration to transition into: <c>GameBootstrap.OnEntityDied</c>
+/// Embervale's player death has no duration to transition into: <c>PlayerHost.OnEntityDied</c>
 /// calls <c>RespawnPlayer</c> synchronously, so the player is repositioned and refilled in the same
 /// frame they die. There is no death screen, no respawn countdown and no window in which a death HUD
 /// could be seen. What death DOES need is transient overlays cleared so a hit taken on the way down

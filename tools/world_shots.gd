@@ -45,7 +45,7 @@ func _initialize() -> void:
 	seed(0x454d42455256414c)
 	DisplayServer.window_set_size(Vector2i(1280, 720))
 
-	# Isolated tools do not construct GameBootstrap. Use the same centralized content initializer
+	# Isolated tools do not construct the application root. Use the same centralized content initializer
 	# before the production RegionStreamer so lairs and other registry-backed actors preview honestly.
 	var content_loader_script: Script = load("res://src/Bootstrap/ContentDatabaseLoader.cs")
 	_content_loader = content_loader_script.new()

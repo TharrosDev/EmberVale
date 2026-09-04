@@ -31,7 +31,7 @@ public partial class SkyController : Node3D
     // The reference mood bar for every region: an ashen, dimmed, ever-hazy world. "Moderate"
     // intensity — clearly melancholy but readable, night dim-not-black. These are the tunable
     // knobs; per-realm variation gets lifted into data at Phase 44. The Environment base (sky
-    // colours, tonemap, glow) lives in GameBootstrap.BuildEnvironment.
+    // colours, tonemap, glow) lives in WorldSessionDirector.BuildEnvironment.
     private static readonly Color WarmLight = new(0.95f, 0.58f, 0.38f); // dawn/dusk sun — ashier warm
     private static readonly Color NoonLight = new(0.92f, 0.86f, 0.76f); // noon sun — muted warm-grey, not white
     private const float NoonSunEnergy = 0.9f;                            // dimmer sun ceiling (was 1.15)

@@ -38,14 +38,13 @@ public partial class WagerLedger : Node, ISaveable
 
     public override void _EnterTree()
     {
-        ServiceLocator.Instance?.Register(this);
+        ServiceScope.RegisterOwned(this, this);
         SaveManager.Instance?.Register(this);
     }
 
     public override void _ExitTree()
     {
         SaveManager.Instance?.Unregister(this);
-        ServiceLocator.Instance?.Unregister(this);
     }
 
     /// <summary>Throws already taken at this house today. A stored row from another day answers zero
