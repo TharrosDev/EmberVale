@@ -7,28 +7,58 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <RootNamespace>Embervale</RootNamespace>
     <AssemblyName>Embervale</AssemblyName>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <!--
-      ⚠️ CS0618 (obsolete API) IS SUPPRESSED ASSEMBLY-WIDE, AND IT COSTS SOMETHING. The Godot-MCP
-      addon under addons/godot_mcp/ calls three EditorPlugin dock methods Godot 4.7 deprecated, and
-      Godot compiles every .cs in the project into ONE assembly — csc has no per-file suppression, so
-      there is no way to silence the addon without silencing src/ too. The alternatives were worse: a
-      `#pragma` in a vendored file is clobbered by the next addon update (silently), and living with
-      three warnings retires this repo's 0-warning standard, which is reported every session and is
-      how a real defect gets noticed.
-
-      What it costs: an obsolete-API call in OUR code is now invisible at build time. If the addon is
-      ever removed or fixed upstream, DELETE THIS LINE and check the build is still clean.
-    -->
-    <NoWarn>$(NoWarn);CS0618</NoWarn>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
+
   <!--
-    Safety guard: the Godot .NET SDK globs every *.cs file recursively under the
-    project directory. A stray nested copy of the source tree (e.g. an accidental
-    Embervale/ subfolder) would compile every class twice, producing hundreds of
-    duplicate-definition errors. Exclude any such nested copies from compilation.
+    ============================================================================
+    THE TOOLING GATE (2026-09-03 infrastructure overhaul)
+    ============================================================================
+    Godot compiles EVERY *.cs under the project directory into ONE assembly, so
+    a literal Embervale.Game / Embervale.EditorTools / Embervale.GodotMcpIntegration
+    project split is impossible for anything a .tscn or .tres attaches a script to.
+    The achievable separation is per build CONFIGURATION, which is what this is.
+
+    EmbervaleTooling = true   -> editor/dev build: the Godot-MCP addon and the
+                                screenshot harnesses compile, exactly as before.
+    EmbervaleTooling = false  -> shipping build: neither does, the addon's two
+                                NuGet packages are not referenced, and the
+                                assembly-wide CS0618 suppression they require is
+                                not applied.
+
+    It is FALSE for ExportRelease automatically. Override on any build with
+    `dotnet build -p:EmbervaleTooling=false` to see what the shipping assembly
+    compiles to without exporting.
+
+    NOTE: this project has no export_presets.cfg and has never been exported, so
+    "the shipping build" is currently proved by `dotnet build -c ExportRelease`
+    compiling clean, not by a real export artifact.
   -->
+  <PropertyGroup>
+    <EmbervaleTooling Condition="'$(EmbervaleTooling)' == '' And '$(Configuration)' == 'ExportRelease'">false</EmbervaleTooling>
+    <EmbervaleTooling Condition="'$(EmbervaleTooling)' == ''">true</EmbervaleTooling>
+  </PropertyGroup>
+
+  <!--
+    CS0618 (obsolete API) is suppressed ONLY while the third-party Godot-MCP addon
+    is being compiled: it calls three EditorPlugin dock methods Godot 4.7 deprecated,
+    and csc has no per-file suppression. A #pragma in a vendored file is clobbered
+    silently by the next addon update, so the suppression lives here beside the
+    condition that scopes it. In a shipping build the addon is gone and so is this,
+    which means an obsolete-API call in OUR code is a build ERROR there.
+  -->
+  <PropertyGroup Condition="'$(EmbervaleTooling)' == 'true'">
+    <NoWarn>$(NoWarn);CS0618</NoWarn>
+    <DefineConstants>$(DefineConstants);EMBERVALE_TOOLING</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
+    <!--
+      Safety guard: the Godot .NET SDK globs every *.cs file recursively under the
+      project directory. A stray nested copy of the source tree (e.g. an accidental
+      Embervale/ subfolder) would compile every class twice, producing hundreds of
+      duplicate-definition errors. Exclude any such nested copies from compilation.
+    -->
     <Compile Remove="Embervale/**/*.cs" />
     <!--
       The headless xUnit project lives under tests/ and is a separate
@@ -37,20 +67,33 @@
     -->
     <Compile Remove="tests/**/*.cs" />
   </ItemGroup>
-  <!--
-    Godot-MCP (IvanMurzak/Godot-MCP v0.20.1), added by `godot-cli install-plugin`. The addon is C#
-    under addons/godot_mcp/ and Godot compiles EVERY .cs in the project into this one assembly, so
-    its NuGet dependencies have to be declared here or the addon does not build.
 
-    ⚠️ THE ADDON IS THIRD-PARTY CODE IN OUR ASSEMBLY. A broken release breaks the game build, not
-    just the tooling. If it ever does, back it out with the three edits this comment sits beside plus
-    `rm -r addons/godot_mcp` — nothing in src/ references it.
+  <!--
+    Godot-MCP (IvanMurzak/Godot-MCP v0.20.1), added by `godot-cli install-plugin`.
+    Third-party C# in our assembly: a broken release breaks the GAME build, not just
+    the tooling. Back it out with `rm -r addons/godot_mcp` plus this whole ItemGroup —
+    nothing in src/ references it.
   -->
-  <ItemGroup>
+  <ItemGroup Condition="'$(EmbervaleTooling)' == 'true'">
     <PackageReference Include="com.IvanMurzak.ReflectorNet" Version="5.4.0" />
     <PackageReference Include="com.IvanMurzak.McpPlugin" Version="7.5.2" />
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="addons/godot_mcp/extensions.catalog.json" LogicalName="Godot-MCP.extensions.catalog.json" />
+  </ItemGroup>
+
+  <!--
+    Development-only source, excluded from a shipping build. Two families:
+      * the vendored Godot-MCP editor addon (third-party, editor-bound);
+      * the screenshot/repro harnesses under src/Debugging, which exist to drive
+        the `panelshots` capture flag and friends and have no gameplay caller.
+    ContentValidator, Invariant, DevConsole, DevCommands, WorldIntegrityChecker and
+    ProfilerOverlay deliberately STAY in the shipping assembly: the `validate` headless mode runs
+    from the game executable and is a required CI gate, and the dev overlays are
+    already gated at runtime by BuildProfile.ShowDeveloperTools.
+  -->
+  <ItemGroup Condition="'$(EmbervaleTooling)' != 'true'">
+    <Compile Remove="addons/**/*.cs" />
+    <Compile Remove="src/Debugging/*Shots.cs" />
+    <Compile Remove="src/Debugging/ShotHarness.cs" />
+    <Compile Remove="src/Debugging/ReproHarness.cs" />
   </ItemGroup>
 </Project>

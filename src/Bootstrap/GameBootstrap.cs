@@ -211,10 +211,12 @@ public partial class GameBootstrap : Node3D
         GameManager.Instance?.ChangeState(GameState.MainMenu);
         Log.Info("Main menu ready. New Game to enter the world.");
 
+#if EMBERVALE_TOOLING
         if (HasCmdFlag("--shellshots"))
         {
             AddChild(new Debugging.ShellShots { Name = "ShellShots", Menu = _mainMenu });
         }
+#endif
 
         // Dev convenience (parallels --validate): launching with `-- --play` boots straight into the
         // most recent save, so gameplay — and the systems that only init on world build (audio
@@ -250,6 +252,7 @@ public partial class GameBootstrap : Node3D
                 _streamer?.SetPerformanceSamplingEnabled(false);
             }
 
+#if EMBERVALE_TOOLING
             if (hudShots)
             {
                 AddChild(new Debugging.HudShots { Name = "HudShots" });
@@ -282,6 +285,7 @@ public partial class GameBootstrap : Node3D
             {
                 AddChild(new Debugging.EnemyShots { Name = "EnemyShots" });
             }
+#endif
         }
     }
 

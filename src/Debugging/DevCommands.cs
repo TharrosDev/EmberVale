@@ -1183,12 +1183,19 @@ public static class DevCommands
 
     private static string Repro(DevConsole console, string[] args)
     {
+#if EMBERVALE_TOOLING
         if (args.Length < 1)
         {
             return "scenarios: " + string.Join(", ", ReproHarness.Names);
         }
 
         return ReproHarness.Run(args[0], console.Execute);
+#else
+        // ReproHarness is development-only source (see Embervale.csproj -> the tooling gate).
+        _ = console;
+        _ = args;
+        return "repro is unavailable in a shipping build";
+#endif
     }
 
     private static string StatsCmd(DevConsole console, string[] args)
