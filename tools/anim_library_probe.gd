@@ -41,7 +41,7 @@ func _initialize() -> void:
 		return
 
 	_check_library(library)
-	_check_every_humanoid_is_retargeted()
+	await _check_every_humanoid_is_retargeted()
 	await _check_it_moves_a_real_body(library)
 
 	print("---")
@@ -113,16 +113,23 @@ func _check_every_humanoid_is_retargeted() -> void:
 			_failures.append("%s: '%s' does not resolve" % [entry.get("id", "?"), path])
 			continue
 		var scene := (load(path) as PackedScene).instantiate()
+		# ⚠️ IN THE TREE, or the arms check below proves nothing. An AnimationPlayer that is not
+		# inside the scene tree cannot resolve its root_node and advance() poses no bones at all —
+		# so every body silently "passed". Caught by negative-testing the gate itself.
+		root.add_child(scene)
+		await process_frame
 		var skeletons := scene.find_children("*", "Skeleton3D", true, false)
 		if skeletons.is_empty():
 			_failures.append("%s: no Skeleton3D but the manifest calls it HUMANOID" % entry.get("id", "?"))
+		elif not _hands_stay_on_their_own_side(scene, skeletons[0], entry.get("id", "?")):
+			pass
 		elif str(skeletons[0].name) != "GeneralSkeleton":
 			# This is the T-pose bug, caught at build time instead of by someone looking at a market.
 			_failures.append("%s: skeleton is '%s', not GeneralSkeleton — it receives NO shared library and will T-pose"
 				% [entry.get("id", "?"), skeletons[0].name])
 		else:
 			checked += 1
-		scene.free()
+		scene.queue_free()
 	print("%d humanoid rig(s) are retargeted and will receive the library" % checked)
 
 
@@ -166,3 +173,53 @@ func _check_it_moves_a_real_body(library: AnimationLibrary) -> void:
 
 	body.queue_free()
 	await process_frame
+
+
+# ⚠️ THE ARMS-CROSSED GATE. A shared clip is authored against the profile's T-pose rest. A body whose
+# own rest is an A-pose — which is how several of this cast were generated — keeps that A-pose unless
+# `retarget/rest_fixer/fix_silhouette` is enabled, and the difference between the two rests is applied
+# to every clip as a rotation. The visible result is both arms swinging THROUGH the torso and crossing
+# in front of the chest like an X.
+#
+# It hid for a long time because the old shared library only ever supplied block/cast/channel, which
+# almost never play; locomotion came from each body's own clip. The moment the library started driving
+# locomotion it was on screen constantly, on the player, on Kael and on the goblin.
+#
+# Nothing else catches it: the rig gate passes (the skeleton IS GeneralSkeleton and has every bone),
+# the clips resolve, --validate passes, and the only symptom is in a render. So it is measured here:
+# play a clip and check each hand stayed on the side of the body it rests on.
+func _hands_stay_on_their_own_side(scene: Node, sk: Skeleton3D, id: String) -> bool:
+	var lh := sk.find_bone("LeftHand")
+	var rh := sk.find_bone("RightHand")
+	if lh < 0 or rh < 0:
+		return true   # not a defect: some rigs have no hands, and the socket probe owns that.
+
+	var aps := scene.find_children("*", "AnimationPlayer", true, false)
+	var ap: AnimationPlayer
+	if aps.is_empty():
+		ap = AnimationPlayer.new()
+		scene.add_child(ap)
+		ap.root_node = ap.get_path_to(scene)
+	else:
+		ap = aps[0]
+	ap.add_animation_library("probe", load(LIBRARY))
+
+	var rest_left: float = sk.get_bone_global_pose(lh).origin.x
+	var rest_right: float = sk.get_bone_global_pose(rh).origin.x
+	if absf(rest_left - rest_right) < 0.05:
+		return true   # the rest itself has the hands together; nothing to compare against.
+
+	var ok := true
+	for slot in ["idle", "walk"]:
+		if not ap.has_animation("probe/%s" % slot):
+			continue
+		ap.play("probe/%s" % slot)
+		ap.advance(0.5)
+		var left: float = sk.get_bone_global_pose(lh).origin.x
+		var right: float = sk.get_bone_global_pose(rh).origin.x
+		if signf(left) != signf(rest_left) or signf(right) != signf(rest_right):
+			_failures.append(
+				"%s: '%s' crosses the arms — left hand rests at x=%+.3f and plays at x=%+.3f. Its rest is not the profile silhouette; enable retarget/rest_fixer/fix_silhouette in its .import."
+				% [id, slot, rest_left, left])
+			ok = false
+	return ok

@@ -36,9 +36,10 @@ const CASES := [
 		# were deliberately authored to the shape the legacy timings produced so the fight did not
 		# change feel the day it stopped being synthesised.
 		"windup": 0.551, "active": 0.203, "recovery": 0.696, "speed": 0.7,
-		# Link 2, reached only by chaining inside the combo window: the uninterruptible overhead
-		# slam. 1.75x damage is the claim the chain test checks.
-		"chain_damage_ratio": 1.75,
+		# Link 2 is reached only by chaining inside the combo window: the uninterruptible overhead
+		# slam. The ids are the claim, because they are deterministic and damage is not.
+		"chain_first_id": "ironking.sweep",
+		"chain_next_id": "ironking.slam",
 	},
 ]
 
@@ -109,7 +110,7 @@ func _run_case(case: Dictionary) -> void:
 	else:
 		await _swing(action, stats, case, "first")
 		await _swing(action, stats, case, "second")
-		if case.has("chain_damage_ratio"):
+		if case.has("chain_next_id"):
 			await _chain(action, stats, case)
 
 	attacker.queue_free()
@@ -196,48 +197,41 @@ func _swing(action, stats, case: Dictionary, label: String) -> void:
 # WeaponResource.Attacks (the authored chain); every other weapon still synthesises its chain from
 # the legacy timings.
 func _chain(action, stats, case: Dictionary) -> void:
+	# ⚠️ ASSERTS THE ACTION ID, NOT THE DAMAGE. This first compared link 2's damage to link 1's and
+	# expected the authored 1.75x, which is not a deterministic number: CombatMath.RollAttack rolls a
+	# crit, so one lucky link turns 1.75x into 2.23x and one on the other side turns it into 1.17x.
+	# The claim worth making is "the chain advanced to the link the data names", and the running
+	# definition's own Id says that exactly.
 	var speed: float = case["speed"]
-	var link1_total: float = (case["windup"] + case["active"] + case["recovery"]) / speed
-	# ⚠️ TOP THE TARGET UP FIRST. The two swings above have already taken most of its health, and a
-	# dying target absorbs only what is left — which reads exactly like the chain failing to advance.
-	# That is what this line is for and it cost a debugging round to find.
 	stats.ModifyCurrent(HEALTH, 500.0)
-
-	var link1_damage: float = 0.0
-	var before: float = stats.GetCurrent(HEALTH)
 
 	if not action.TryAttack():
 		_failures.append("%s: chain link 1 did not start" % case["label"])
 		return
 
-	# Run to just past the end of the active window, then press again — that is inside the combo
-	# window and out of commitment, which is exactly when a chain is supposed to be reachable.
+	var first_id: String = action.Current.Id if action.Current != null else ""
+
+	# Run to just past the end of the active window, then press again — inside the combo window and
+	# out of commitment, which is exactly when a chain is supposed to be reachable.
 	var until: float = ((case["windup"] + case["active"]) / speed) + (3.0 * STEP)
 	var elapsed := 0.0
 	while elapsed < until:
 		await physics_frame
 		elapsed += STEP
-	link1_damage = before - stats.GetCurrent(HEALTH)
 
 	if not action.TryAttack():
 		_failures.append("%s: the combo window refused a chained press at %.3fs"
 			% [case["label"], elapsed])
 		return
 
-	var mid: float = stats.GetCurrent(HEALTH)
-	var frames := int(ceil((link1_total + 3.0) / STEP))
-	for _f in frames:
-		await physics_frame
-	var link2_damage: float = mid - stats.GetCurrent(HEALTH)
+	await physics_frame
+	var second_id: String = action.Current.Id if action.Current != null else ""
+	print("%-16s chain : '%s' -> '%s' (expected -> '%s')"
+		% [case["label"], first_id, second_id, case["chain_next_id"]])
 
-	var ratio: float = link2_damage / link1_damage if link1_damage > 0.0 else 0.0
-	print("%-16s chain : link1 %.1f, link2 %.1f (ratio %.2f, expected ~%.2f)"
-		% [case["label"], link1_damage, link2_damage, ratio, case["chain_damage_ratio"]])
-
-	if link1_damage <= 0.0:
-		_failures.append("%s: chain link 1 dealt no damage" % case["label"])
-	elif abs(ratio - case["chain_damage_ratio"]) > 0.35:
-		# Wide tolerance: CombatMath.RollAttack rolls a crit, so this asserts the SECOND LINK RAN
-		# rather than pinning a damage number.
-		_failures.append("%s: chained link dealt %.2fx link 1, expected ~%.2fx — the authored chain did not advance"
-			% [case["label"], ratio, case["chain_damage_ratio"]])
+	if first_id != case["chain_first_id"]:
+		_failures.append("%s: the chain opened on '%s', expected '%s'"
+			% [case["label"], first_id, case["chain_first_id"]])
+	if second_id != case["chain_next_id"]:
+		_failures.append("%s: the chained press ran '%s', expected '%s' — the authored chain did not advance"
+			% [case["label"], second_id, case["chain_next_id"]])

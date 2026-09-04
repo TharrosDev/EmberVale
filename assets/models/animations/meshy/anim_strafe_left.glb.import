@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://b0bej4m5xtttt"
-path="res://.godot/imported/enm_hollow_husk.glb-4c33d2daeb86bb7ea05c51087d467746.scn"
+uid="uid://dl17e33ramqis"
+path="res://.godot/imported/anim_strafe_left.glb-921c2cef750190f74c8277e7d74fe88a.scn"
 
 [deps]
 
-source_file="res://assets/models/creatures/enm_hollow_husk.glb"
-dest_files=["res://.godot/imported/enm_hollow_husk.glb-4c33d2daeb86bb7ea05c51087d467746.scn"]
+source_file="res://assets/models/animations/meshy/anim_strafe_left.glb"
+dest_files=["res://.godot/imported/anim_strafe_left.glb-921c2cef750190f74c8277e7d74fe88a.scn"]
 
 [params]
 

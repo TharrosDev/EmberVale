@@ -1,3 +1,4 @@
+using Embervale.Core.Diagnostics;
 using Embervale.Combat;
 using Embervale.Combat.Actions;
 using Embervale.Enemies;
@@ -78,6 +79,12 @@ public partial class CharacterAnimationComponent : EntityComponent
     /// is doing it instead.</summary>
     private string _actionClip = "";
 
+    /// <summary>The tree, when this body could support one. Null means the simple fallback below is
+    /// driving instead — see <see cref="LocomotionTree.Build"/> for when that happens.</summary>
+    private AnimationTree? _tree;
+    private AnimationNodeStateMachinePlayback? _playback;
+    private readonly System.Collections.Generic.Dictionary<string, string> _slots = new();
+
     private bool _deathPlayed;
     private Vector3? _lastPosition;
     private float _lastDelta;
@@ -91,6 +98,7 @@ public partial class CharacterAnimationComponent : EntityComponent
         {
             _player = FindAnimationPlayer(bodyRoot);
             _skeleton = FindSkeleton(bodyRoot);
+            _player ??= AdoptPlayerlessBody(bodyRoot);
         }
 
         if (_player != null)
@@ -105,6 +113,8 @@ public partial class CharacterAnimationComponent : EntityComponent
             _channel = ResolveClip("channel");
             _ride = ResolveClip("ride");
         }
+
+        BuildTree();
 
         _spellcasting = Entity.GetComponent<SpellcastingComponent>();
 
@@ -148,6 +158,45 @@ public partial class CharacterAnimationComponent : EntityComponent
         {
             _player.AddAnimationLibrary(MeshyLibraryName, _meshyLibrary);
         }
+    }
+
+    /// <summary>
+    /// Gives a rigged body that ships no clips of its own an <see cref="AnimationPlayer"/>, so it can
+    /// still receive the shared library.
+    ///
+    /// ⚠️ <b>This is the fix for a body that could never animate at all.</b> Godot creates no
+    /// AnimationPlayer for a glTF with zero animations, and every path in this component — including
+    /// <see cref="AddSharedLibrary"/> — is gated on having one. <c>npc_innkeeper.glb</c> has exactly
+    /// zero, so Gilda Ironmonger has stood in the Embermarket in her bind pose since she was placed:
+    /// no clips of her own, and no library because there was nothing to attach one to. She imports
+    /// cleanly, validates, and looks like a statue — the same silent failure
+    /// <c>docs/3D_ASSETS.md</c> records for <c>npc_woman_dress</c>.
+    ///
+    /// It is only worth doing now because the shared library became self-sufficient: a full-body
+    /// 24-clip set is a complete animation set on its own, where the old upper-body one would have
+    /// given her three slots and no legs.
+    ///
+    /// The player is parented to this component rather than to the body — the body is still setting
+    /// up its children during a component's _Ready and Godot refuses an AddChild there (CLAUDE.md
+    /// §7) — with its root pointed back at the model, which is where the library's
+    /// <c>%GeneralSkeleton</c> track paths resolve.
+    /// </summary>
+    private AnimationPlayer? AdoptPlayerlessBody(Node3D bodyRoot)
+    {
+        if (_skeleton == null)
+        {
+            return null;
+        }
+
+        var player = new AnimationPlayer
+        {
+            Name = "SharedAnimationPlayer",
+            RootNode = bodyRoot.GetPath(),
+        };
+        AddChild(player);
+        Log.Info($"{Entity?.DisplayName}: '{bodyRoot.Name}' ships no clips of its own; " +
+                 "attaching the shared library to a created AnimationPlayer.");
+        return player;
     }
 
     private static Skeleton3D? FindSkeleton(Node node)
@@ -225,6 +274,23 @@ public partial class CharacterAnimationComponent : EntityComponent
     /// importer keeping or stripping the authored <c>-loop</c> suffix, of an exporter's
     /// <c>Armature|</c> prefix, and of a pack that calls the beat something else. See
     /// <see cref="AnimationClips"/> for why both of those matter.</summary>
+    /// <summary>
+    /// The clip the tree and the action system should use for a slot — <b>the shared full-body
+    /// library first, by exact name.</b>
+    ///
+    /// ⚠️ <b>Do not route this through <see cref="ResolveClip"/>.</b> That resolver is fuzzy by
+    /// design and picks the first match in the player's clip list, which puts the OLD upper-body
+    /// library ahead of the full-body one purely because it was registered first. The blend space
+    /// came up holding <c>lib/Idle</c>, <c>lib/Walk</c> and <c>lib/Sprint</c> — clips with no leg
+    /// tracks at all — so locomotion ran with the legs perfectly still and nothing logged a word.
+    /// A body without the shared library (every quadruped) still falls through to its own clips.
+    /// </summary>
+    private string SharedClip(string slot)
+    {
+        string direct = $"{MeshyLibraryName}/{slot}";
+        return _player != null && _player.HasAnimation(direct) ? direct : ResolveClip(slot);
+    }
+
     private string ResolveClip(string slot)
     {
         if (_resolved.TryGetValue(slot, out string? cached))
@@ -244,10 +310,27 @@ public partial class CharacterAnimationComponent : EntityComponent
     private void OnDamaged(EntityDamagedEvent e)
     {
         // A blocked/absorbed poke shouldn't flinch through a block pose; death owns the rest.
-        if (ReferenceEquals(e.Entity, Entity) && e.RemainingHealth > 0f && _combat is not { IsBlocking: true })
+        if (!ReferenceEquals(e.Entity, Entity) || e.RemainingHealth <= 0f ||
+            _combat is { IsBlocking: true })
         {
-            PlayOneShot(_hit);
+            return;
         }
+
+        if (_tree != null && _playback != null)
+        {
+            // ⚠️ A flinch must not steal a committed swing. The action owns the body until it says
+            // otherwise, and interrupting it here would reopen exactly the desync Stage 1 closed:
+            // the hitbox would still be following the action's timeline while the visible body had
+            // moved on to a flinch. Poise decides whether a hit interrupts, not the presentation.
+            if (_actionClip.Length == 0)
+            {
+                _playback.Travel(LocomotionTree.HitState);
+            }
+
+            return;
+        }
+
+        PlayOneShot(_hit);
     }
 
     /// <summary>
@@ -291,14 +374,15 @@ public partial class CharacterAnimationComponent : EntityComponent
     public float StartAction(string slot, float desiredSeconds)
     {
         // A rider gets no full-body one-shot for the reason PlayOneShot documents at length: the
-        // standing clip lifts the hips half a metre out of the saddle. Refusing here rather than
-        // silently playing it hands the action its fallback timer instead.
-        if (_player == null || _deathPlayed || Riding)
+        // standing clip lifts the hips half a metre out of the saddle. ⚠️ This refusal is now
+        // FALLBACK-ONLY — a tree-driven body plays the swing on its upper-body layer instead, with
+        // the legs holding the ride pose, which is what 39B's comment said the real fix would be.
+        if (_player == null || _deathPlayed || (Riding && _tree == null))
         {
             return -1f;
         }
 
-        string clip = ResolveClip(slot);
+        string clip = SharedClip(slot);
         if (clip.Length == 0)
         {
             return -1f;
@@ -311,30 +395,156 @@ public partial class CharacterAnimationComponent : EntityComponent
         }
 
         float actual = desiredSeconds > 0f ? desiredSeconds : clipSeconds;
+        float speed = ActionTimeline.ClipSpeedFor(clipSeconds, actual);
         _actionClip = clip;
-        _player.Play(clip, customBlend: 0.08, customSpeed: ActionTimeline.ClipSpeedFor(clipSeconds, actual));
+
+        if (_tree != null && _playback != null)
+        {
+            if (Riding)
+            {
+                // Upper body only: the arms swing, the seat holds. Nothing travels, so locomotion
+                // keeps the legs — which is the animation 39B had to give up entirely.
+                SetUpperBodyClip(clip);
+                return actual;
+            }
+
+            SetActionClip(clip, speed);
+            _playback.Travel(LocomotionTree.ActionState);
+            return actual;
+        }
+
+        _player.Play(clip, customBlend: 0.08, customSpeed: speed);
         return actual;
     }
 
-    /// <summary>How far through its clip the running action is (<c>0..1</c>), or <c>-1</c> when no
-    /// action clip is playing. This is what makes the animation the clock rather than a follower:
-    /// the hit window is read off this number, not off a stopwatch beside it.</summary>
+    private void SetActionClip(string clip, float speed)
+    {
+        if (_tree?.TreeRoot is not AnimationNodeBlendTree root ||
+            root.GetNode(LocomotionTree.StateMachineNode) is not AnimationNodeStateMachine machine ||
+            machine.GetNode(LocomotionTree.ActionState) is not AnimationNodeBlendTree action ||
+            action.GetNode("Anim") is not AnimationNodeAnimation anim)
+        {
+            return;
+        }
+
+        anim.Animation = clip;
+        _tree.Set(LocomotionTree.ActionScaleParam, speed);
+    }
+
+    private void SetUpperBodyClip(string clip)
+    {
+        if (_tree?.TreeRoot is AnimationNodeBlendTree root &&
+            root.GetNode("UpperBody") is AnimationNodeAnimation anim)
+        {
+            anim.Animation = clip;
+            _tree.Set(LocomotionTree.UpperBodyBlendParam, 1f);
+        }
+    }
+
     public float ActionProgress
     {
         get
         {
-            if (_player == null || _actionClip.Length == 0 || _player.CurrentAnimation != _actionClip)
+            if (_actionClip.Length == 0)
             {
                 return -1f;
             }
 
-            double length = _player.CurrentAnimationLength;
-            return length <= 0d ? 1f : (float)(_player.CurrentAnimationPosition / length);
+            if (_tree != null && _playback != null)
+            {
+                // ⚠️ The TREE's playback position, not the AnimationPlayer's. An active
+                // AnimationTree drives the player, so CurrentAnimation and
+                // CurrentAnimationPosition stop tracking what is on screen — reading them here
+                // would hand the action a clock that has quietly stopped, which is the exact class
+                // of defect this whole rebuild exists to end.
+                if (_playback.GetCurrentNode() != LocomotionTree.ActionState)
+                {
+                    return -1f;
+                }
+
+                double length = _playback.GetCurrentLength();
+                return length <= 0d ? 1f : (float)(_playback.GetCurrentPlayPosition() / length);
+            }
+
+            if (_player == null || _player.CurrentAnimation != _actionClip)
+            {
+                return -1f;
+            }
+
+            double playerLength = _player.CurrentAnimationLength;
+            return playerLength <= 0d ? 1f : (float)(_player.CurrentAnimationPosition / playerLength);
         }
     }
 
     /// <summary>Releases the clip back to locomotion. Called when the action ends or is cancelled.</summary>
-    public void StopAction() => _actionClip = "";
+    public void StopAction()
+    {
+        _actionClip = "";
+        if (_tree != null && _playback?.GetCurrentNode() == LocomotionTree.ActionState)
+        {
+            _playback.Travel(LocomotionTree.LocomotionState);
+        }
+    }
+
+    /// <summary>
+    /// Stands the <see cref="AnimationTree"/> up, or leaves it null and lets the fallback ladder
+    /// drive.
+    ///
+    /// ⚠️ The tree is added as a child of THIS component rather than of the body. The body is still
+    /// setting up its own children while a component's _Ready runs, and Godot refuses an AddChild
+    /// there — it logs and carries on, leaving a live node that is not in the tree, whose _Ready
+    /// never fires and which leaks as an orphan (CLAUDE.md §7). The component itself is not busy.
+    /// </summary>
+    private void BuildTree()
+    {
+        if (_player == null)
+        {
+            return;
+        }
+
+        foreach (string slot in new[]
+                 { "idle", "walk", "run", "sprint", "walk_back", "block", "hit", "death" })
+        {
+            _slots[slot] = SharedClip(slot);
+        }
+
+        if (LocomotionTree.Build(_slots, _skeleton) is not { } root)
+        {
+            return;
+        }
+
+        var tree = new AnimationTree
+        {
+            Name = "AnimationTree",
+            TreeRoot = root,
+            AnimPlayer = _player.GetPath(),
+            // The clips are authored at 30 fps and blended per frame, so the tree ticks with the
+            // frame rather than with physics; a physics-stepped tree visibly stutters at high
+            // refresh rates.
+            CallbackModeProcess = AnimationMixer.AnimationCallbackModeProcess.Idle,
+        };
+        AddChild(tree);
+        tree.Active = true;
+
+        _tree = tree;
+        _playback = tree.Get(LocomotionTree.PlaybackParam).As<AnimationNodeStateMachinePlayback>();
+    }
+
+    /// <summary>Signed forward speed in m/s — negative when backing up. The blend space's only
+    /// input, and the reason walking no longer pops into a run at a threshold.</summary>
+    private float ForwardSpeed()
+    {
+        float speed = HorizontalSpeed();
+        if (Entity?.Body is not CharacterBody3D body || speed < 0.05f)
+        {
+            return speed;
+        }
+
+        Vector3 v = body.Velocity;
+        Vector3 facing = -body.GlobalBasis.Z;
+        float along = (v.X * facing.X) + (v.Z * facing.Z);
+        return along < 0f ? -speed : speed;
+    }
 
     public override void _Process(double delta)
     {
@@ -342,6 +552,12 @@ public partial class CharacterAnimationComponent : EntityComponent
 
         if (_player == null)
         {
+            return;
+        }
+
+        if (_tree != null)
+        {
+            TickTree();
             return;
         }
 
@@ -385,6 +601,63 @@ public partial class CharacterAnimationComponent : EntityComponent
             _player.Play(next, customBlend: 0.15);
         }
     }
+
+    /// <summary>The whole per-frame job when a tree is driving: feed it the speed, and put it in the
+    /// right state. Clip selection is the tree's problem now, not a ladder's.</summary>
+    private void TickTree()
+    {
+        if (_tree == null || _playback == null)
+        {
+            return;
+        }
+
+        if (_stats is { IsAlive: false })
+        {
+            if (!_deathPlayed)
+            {
+                _playback.Travel(LocomotionTree.DeathState);
+                _deathPlayed = true;
+            }
+
+            return;
+        }
+
+        if (_deathPlayed)
+        {
+            // Respawned. Travelling back is not enough — the death state is deliberately terminal —
+            // so the machine is restarted from its entry.
+            _playback.Start(LocomotionTree.LocomotionState);
+            _deathPlayed = false;
+        }
+
+        _tree.Set(LocomotionTree.SpeedParam, ForwardSpeed());
+
+        // The upper-body layer carries the guard and channel poses. Blending rather than switching
+        // is what lets a blocking character keep walking, and a mounted one keep its seat (39B).
+        bool upperBody = _combat is { IsBlocking: true } ||
+                         _spellcasting is { IsCharging: true } or { IsChanneling: true };
+        float target = upperBody ? 1f : 0f;
+        float current = (float)_tree.Get(LocomotionTree.UpperBodyBlendParam);
+        _tree.Set(LocomotionTree.UpperBodyBlendParam,
+            Mathf.MoveToward(current, target, _lastDelta / UpperBodyBlendSeconds));
+
+        if (_actionClip.Length == 0 && _playback.GetCurrentNode() == LocomotionTree.ActionState)
+        {
+            _playback.Travel(LocomotionTree.LocomotionState);
+        }
+
+        // The flinch is a one-shot state with no exit condition of its own; locomotion reclaims the
+        // body once the clip has run. Without this the actor stays bent over its wound forever.
+        if (_playback.GetCurrentNode() == LocomotionTree.HitState &&
+            _playback.GetCurrentPlayPosition() >= _playback.GetCurrentLength() - 0.05d)
+        {
+            _playback.Travel(LocomotionTree.LocomotionState);
+        }
+    }
+
+    /// <summary>Seconds the guard pose takes to blend in or out. Long enough to read as raising a
+    /// weapon rather than snapping to it.</summary>
+    private const float UpperBodyBlendSeconds = 0.18f;
 
     private float HorizontalSpeed()
     {
