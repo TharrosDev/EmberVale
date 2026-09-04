@@ -136,6 +136,12 @@ class Cell:
     # measuring the old field with `-- --worldgen`, rather than by a second implementation
     # of the generator in Python that would have drifted from the real one within a week.
     area_elevation: dict[str, float] = field(default_factory=dict)
+    # SurfaceBlend overrides for lifted areas, keyed the same way. A pad only levels ground in
+    # proportion to its blend, so a pad authored at 0.22 is a suggestion rather than a floor -
+    # fine on the near-flat field these were written against, useless once the realm has real
+    # relief. Area_wn_deadfall is the case that found it: the Deadfall Lodge is placed ON that
+    # pad by design and stood on 4.96 m of variation because the pad levelled almost nothing.
+    area_blend: dict[str, float] = field(default_factory=dict)
     scatter: str | None = None             # id of a shared scatter profile
     biome: str | None = None               # data/biomes/<name>.tres, overriding the region default
     new_scene: str | None = None           # body of a transitional cell scene to create
@@ -416,6 +422,10 @@ def emit(region_key: str, header: str, cells: list[Cell], seams: list[Seam],
             # profile: "cut five metres into this knoll" stays five metres into the knoll
             # wherever the knoll ends up, and no re-anchoring pass is ever needed again.
             body += "\nElevationMode = 1"
+            if aid in cell.area_blend:
+                body = re.sub(r"^SurfaceBlend = .*$",
+                              f"SurfaceBlend = {cell.area_blend[aid]}",
+                              body, count=1, flags=re.M)
             if aid in cell.area_elevation:
                 body += f"\nElevation = {cell.area_elevation[aid]}"
             out.append(f'[sub_resource type="Resource" id="{aid}"]')

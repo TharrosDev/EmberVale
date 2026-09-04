@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from gen_regions import (Cell, Mound, Ridge, Route, Seam, check_envelopes, check_seams,
+from gen_regions import (Cell, Mound, Ridge, Route, Seam, Yard, check_envelopes, check_seams,
                          check_tiling, emit, local)
 
 EXTENT_X = (260.0, 600.0)
@@ -495,6 +495,8 @@ def cells() -> list[Cell]:
             """,
             legacy_paths=("Path_hold_west", "Path_hold_east", "Path_hold_north", "Path_hold_ring",
                           "Path_hold_moot_access", "Path_hold_south"),
+            # The east longhouse sits across 0.66 m of the hold's own slope.
+            yards=(Yard(at=(-15.0, 10.1), ext=(4.5, 5.6), feather=3.0, blend=0.9),),
             legacy_areas=("Area_hold_moot", "Area_hold_craft", "Area_hold_runs"),
             area_elevation={"Area_hold_moot": 0.0, "Area_hold_craft": 0.0, "Area_hold_runs": 0.0},
             landforms=(

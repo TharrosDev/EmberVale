@@ -521,6 +521,16 @@ def cells() -> list[Cell]:
             """,
             legacy_paths=("Path_market_gate", "Path_market_crook", "Path_market_caravan",
                           "Path_market_dock", "Path_market_alley", "Path_market_sump"),
+            # The salt steps colonnade spreads 16 m and the south wall runs across the
+            # market slope; both came out over half a metre off their own ground.
+            # ⚠️ NO PAD UNDER THE SALT STEPS. Its colonnade straddles the market's own roads, and a
+            # yard there makes the ground range WORSE rather than better: the pad levels everything
+            # the road does not cover while the road holds its own grade, so the two meet in a step
+            # across the footprint. Road beats yard by design (NOW.md invariant 21) and this is what
+            # that rule looks like from the other side - a structure on a road wants moving, not
+            # levelling. Measured: 0.77 m without a pad, 0.77 m with one.
+            yards=(Yard(at=(-2.0, 22.5), ext=(5.0, 5.0), feather=3.0, blend=0.9),
+                   Yard(at=(-2.5, 16.6), ext=(4.5, 5.6), feather=3.0, blend=0.9)),
             legacy_areas=("Area_market_yard", "Area_market_terrace", "Area_market_timber",
                           "Area_market_sump"),
             area_elevation={"Area_market_terrace": 0.0},
@@ -667,6 +677,12 @@ def cells() -> list[Cell]:
             """,
             legacy_paths=("Path_town_kingsway_s", "Path_town_kingsway_m", "Path_town_kingsway_n",
                           "Path_town_west", "Path_town_east", "Path_town_green"),
+            # Two houses on the town's own slope, 0.87 m and 0.75 m out across their
+            # footprints. The square, craft yard and green already have pads; these two sit
+            # outside all three.
+            yards=(Yard(at=(-20.0, 22.0), ext=(6.0, 6.0), feather=3.0, blend=0.9),
+                   Yard(at=(25.0, 6.0), ext=(6.0, 7.0), feather=3.0, blend=0.9),
+                   Yard(at=(-22.0, 11.1), ext=(4.5, 4.6), feather=3.0, blend=0.9)),
             legacy_areas=("Area_town_square", "Area_town_craft", "Area_town_green"),
             landforms=(
                 Mound(at=(-4, -6), ext=(40, 36), h=0.0, fall=0.55, flat=0.9),
@@ -850,8 +866,25 @@ def cells() -> list[Cell]:
             legacy_paths=("Path_wn_stem", "Path_wn_west_a", "Path_wn_west_b", "Path_wn_west_c",
                           "Path_wn_east_a", "Path_wn_east_b", "Path_wn_east_c"),
             legacy_areas=("Area_wilds_north_ruin", "Area_wn_bowl", "Area_wn_deadfall"),
+            # ⚠️ The deadfall hollow was a 5.4 m cut, and the Deadfall Lodge stands on its
+            # LIP - 2.8 m from Path_wilds_north_ap2 as well, so a building pad there is
+            # cancelled by the road (road beats yard, deliberately). With real relief the
+            # hollow's own edge put 2.6 m of slope across the lodge's footprint. Two metres
+            # is still a deadfall and leaves the lodge somewhere to stand.
             area_elevation={"Area_wilds_north_ruin": -0.3, "Area_wn_bowl": 0.61,
                             "Area_wn_deadfall": -5.39},
+            # ⚠️ The Deadfall Lodge is placed ON this pad by design ("the Ash Hunters' hub, on the
+            # deadfall pad under the scarp"), and the pad was authored at a blend of 0.22 — which
+            # levelled almost nothing, so the lodge stood on 4.96 m of variation and its lower storey
+            # disappeared into the hillside. A pad a building sits on has to actually be a floor.
+            area_blend={"Area_wn_deadfall": 0.9},
+            # ⚠️ AND THE SUPPLEMENTARY PAD SHARES THE HOLLOW'S ELEVATION, WHICH IS THE WHOLE TRICK.
+            # Area_wn_deadfall reaches most of the lodge but not its eastern side. A yard added there
+            # at elevation 0 made things WORSE - 4.96 m became 5.68 - because two pads at different
+            # heights over one footprint meet in a step, and strongest-mask-wins picks a side. Giving
+            # this one the hollow's own offset makes the two agree instead of compete.
+            yards=(Yard(at=(21.5, -15.0), ext=(5.5, 6.5), feather=3.0, blend=0.9,
+                        elevation=-5.39),),
             landforms=(
                 Mound(at=(0, -38), ext=(62, 27), h=9.0, fall=0.9),
                 Mound(at=(-17, 8), ext=(15, 16), h=-3.5, fall=0.7),

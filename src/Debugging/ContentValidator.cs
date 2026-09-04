@@ -4154,6 +4154,7 @@ public static class ContentValidator
             // neighbouring landform can still push a hump into the middle of it.
             issues.AddRange(ValidateRouteGrades(region));
             issues.AddRange(ValidateAuthoredGroundIsDry(region));
+            issues.AddRange(ValidateStructuresAreLevel(region));
             issues.AddRange(ValidateOffRouteTraversal(region));
 
             if (budget != null && residentAuthoredNodes > budget.MaxResidentAuthoredNodes)
@@ -4252,6 +4253,119 @@ public static class ContentValidator
     /// <see cref="ShallowTrapDrop"/> deep whose rim they cannot re-climb, with no fall and no
     /// warning, and that is always an accident of two landforms overlapping.
     /// </summary>
+    /// <summary>
+    /// A multi-part structure stands on ground level enough for it to stand on.
+    ///
+    /// ⚠️ <b>A BUILDING IS RIGID AND THAT IS DELIBERATE.</b> <see cref="WorldTerrainConform"/> lifts
+    /// a node by the ground under its own ORIGIN and its walls come along unchanged, because bending
+    /// a building to a hillside would tilt its walls and split its roof. So the terrain's range
+    /// across a footprint IS the gap under one corner, or the buried lower storey — and the fix is a
+    /// level pad, which is what <see cref="WorldGroundAreaResource"/> is for. The Deadfall Lodge is
+    /// the case that found this: its lower storey disappeared into a hillside because the pad it was
+    /// deliberately placed on had a <c>SurfaceBlend</c> of 0.22 and levelled almost nothing.
+    ///
+    /// ⚠️ <b>A STRUCTURE CROSSED BY A ROAD IS EXEMPT, AND NOT BECAUSE THE RULE IS INCONVENIENT.</b>
+    /// A road beats a yard by design, so a pad under a building that straddles one is suppressed
+    /// exactly where the road runs — authoring a pad there measurably makes the ground range WORSE,
+    /// because the levelled part and the road's own grade meet in a step. Demanding a pad there
+    /// would be demanding something the terrain rules forbid. That case is a placement conflict
+    /// (NOW.md invariant 21) and belongs to the traversal probe and a human, not to this arm.
+    /// </summary>
+    private static System.Collections.Generic.List<string> ValidateStructuresAreLevel(RegionResource region)
+    {
+        const float MaxRange = 1.0f;
+        var issues = new System.Collections.Generic.List<string>();
+        WorldHeightfield field = WorldTerrainMeshBuilder.HeightfieldFor(region);
+
+        foreach (RegionCellResource cell in region.Cells)
+        {
+            if (cell?.Presentation == null || string.IsNullOrEmpty(cell.ScenePath) ||
+                GD.Load<PackedScene>(cell.ScenePath) is not { } scene ||
+                scene.Instantiate() is not Node3D root)
+            {
+                continue;
+            }
+
+            var anchors = new System.Collections.Generic.List<Node>(root.GetChildren());
+            if (root.GetNodeOrNull<NavigationRegion3D>("Nav") is { } nav)
+            {
+                anchors.AddRange(nav.GetChildren());
+            }
+
+            foreach (Node candidate in anchors)
+            {
+                if (candidate is not Node3D anchor || candidate is NavigationRegion3D ||
+                    candidate is WorldCellPresentation || candidate is WorldBiomeScatter ||
+                    anchor.IsInGroup(WorldTerrainConform.AbsoluteGroup))
+                {
+                    continue;
+                }
+
+                float minX = anchor.Position.X;
+                float maxX = minX;
+                float minZ = anchor.Position.Z;
+                float maxZ = minZ;
+                StructureFootprint(anchor, anchor.Position, ref minX, ref minZ, ref maxX, ref maxZ);
+
+                // One prop has one origin and conforms exactly; it is not a structure.
+                if (maxX - minX < 2f && maxZ - minZ < 2f)
+                {
+                    continue;
+                }
+
+                float low = float.MaxValue;
+                float high = float.MinValue;
+                bool onRoad = false;
+                for (float z = minZ; z <= maxZ + 0.01f; z += 0.5f)
+                {
+                    for (float x = minX; x <= maxX + 0.01f; x += 0.5f)
+                    {
+                        float worldX = cell.Center.X + x;
+                        float worldZ = cell.Center.Z + z;
+                        float ground = field.Height(worldX, worldZ);
+                        low = Mathf.Min(low, ground);
+                        high = Mathf.Max(high, ground);
+                        onRoad |= field.PathMask(worldX, worldZ) > 0.15f;
+                    }
+                }
+
+                if (!onRoad && high - low > MaxRange)
+                {
+                    issues.Add($"region '{region.Id}' cell '{cell.Id}' structure '{anchor.Name}' " +
+                               $"stands on ground varying {high - low:F2} m across its own footprint, " +
+                               $"over the {MaxRange:F2} m a rigid building can hide — author a " +
+                               $"GroundArea under it: Yard(at=({(minX + maxX) * 0.5f:F1}, " +
+                               $"{(minZ + maxZ) * 0.5f:F1}), ext=({((maxX - minX) * 0.5f) + 1.5f:F1}, " +
+                               $"{((maxZ - minZ) * 0.5f) + 1.5f:F1}))");
+                }
+            }
+
+            root.QueueFree();
+        }
+
+        return issues;
+    }
+
+    /// <summary>The XZ box a structure's descendants occupy, in cell-local coordinates.</summary>
+    private static void StructureFootprint(
+        Node node, Vector3 here, ref float minX, ref float minZ, ref float maxX, ref float maxZ)
+    {
+        foreach (Node child in node.GetChildren())
+        {
+            if (child is not Node3D placed)
+            {
+                continue;
+            }
+
+            Vector3 at = here + placed.Position;
+            minX = Mathf.Min(minX, at.X);
+            maxX = Mathf.Max(maxX, at.X);
+            minZ = Mathf.Min(minZ, at.Z);
+            maxZ = Mathf.Max(maxZ, at.Z);
+            StructureFootprint(placed, at, ref minX, ref minZ, ref maxX, ref maxZ);
+        }
+    }
+
     /// <summary>
     /// Nothing the author placed is under generated water.
     ///

@@ -836,6 +836,15 @@ SurfaceBlend = 0.55
 ElevationMode = 1
 Elevation = 0.0
 
+[sub_resource type="Resource" id="Area_clan_hold_y0"]
+script = ExtResource("7_area")
+Center = Vector2(-15.0, 10.1)
+Radius = Vector2(4.5, 5.6)
+Feather = 3.0
+SurfaceBlend = 0.9
+Elevation = 0.0
+ElevationMode = 1
+
 [sub_resource type="Resource" id="Presentation_clan_hold"]
 script = ExtResource("4_presentation")
 Width = 120.0
@@ -845,7 +854,7 @@ Biome = ExtResource("20_biome_alpine")
 TopologyResolution = 56
 Landforms = Array[ExtResource("8_landform")]([SubResource("Land_clan_hold_0"), SubResource("Land_clan_hold_1"), SubResource("Land_clan_hold_2"), SubResource("Land_clan_hold_3"), SubResource("Land_clan_hold_4"), SubResource("Land_clan_hold_5"), SubResource("Land_clan_hold_6"), SubResource("Land_clan_hold_7")])
 Paths = Array[ExtResource("6_path")]([SubResource("Path_hold_west"), SubResource("Path_hold_east"), SubResource("Path_hold_north"), SubResource("Path_hold_ring"), SubResource("Path_hold_moot_access"), SubResource("Path_hold_south"), SubResource("Path_clan_hold_ap0"), SubResource("Path_clan_hold_ap1"), SubResource("Path_clan_hold_ap2"), SubResource("Path_clan_hold_ap3")])
-GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_hold_moot"), SubResource("Area_hold_craft"), SubResource("Area_hold_runs")])
+GroundAreas = Array[ExtResource("7_area")]([SubResource("Area_hold_moot"), SubResource("Area_hold_craft"), SubResource("Area_hold_runs"), SubResource("Area_clan_hold_y0")])
 
 [sub_resource type="Resource" id="Cell_clan_hold"]
 script = ExtResource("2_cell")

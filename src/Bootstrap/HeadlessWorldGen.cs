@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 using Embervale.Core.Diagnostics;
 using Embervale.World;
@@ -243,6 +244,85 @@ public static class HeadlessWorldGen
             // onto the ground at load, so they are dry exactly when the ground under them is dry -
             // which is a thing to verify rather than assume, because the whole point of generated
             // hydrology is that it decides where the water goes without asking anybody.
+            // ⚠️ HOW FAR THE GROUND MOVES ACROSS A STRUCTURE'S OWN FOOTPRINT.
+            //
+            // WorldTerrainConform lifts a node by the ground under its ORIGIN, and a building's
+            // walls are children that come along unchanged — correctly, because a building is rigid
+            // and bending one to a hillside would tilt its walls and split its roof. So a gap under
+            // one corner, or a buried lower storey, is simply the terrain's own range across the
+            // footprint. That range is the measurement, and it needs no guess about whether the
+            // author meant a given node to touch the ground.
+            //
+            // ⚠️ It is measured over the box the structure ACTUALLY occupies, taken from the spread
+            // of its own descendants, rather than over a fixed radius. A lodge is 6 × 8 m and a
+            // market colonnade is 16 m across; one radius for both flags the wrong things.
+            var structures = new List<(string Where, float Range, float X, float Z, float EX, float EZ)>();
+            foreach (RegionCellResource? shapeCell in region.Cells)
+            {
+                if (shapeCell == null || string.IsNullOrEmpty(shapeCell.ScenePath) ||
+                    GD.Load<PackedScene>(shapeCell.ScenePath) is not { } shapeScene ||
+                    shapeScene.Instantiate() is not Node3D shapeRoot)
+                {
+                    continue;
+                }
+
+                var anchors = new List<Node>(shapeRoot.GetChildren());
+                if (shapeRoot.GetNodeOrNull<NavigationRegion3D>("Nav") is { } shapeNav)
+                {
+                    anchors.AddRange(shapeNav.GetChildren());
+                }
+
+                foreach (Node candidate in anchors)
+                {
+                    if (candidate is not Node3D anchor || candidate is NavigationRegion3D ||
+                        candidate is WorldCellPresentation || candidate is WorldBiomeScatter ||
+                        anchor.IsInGroup(WorldTerrainConform.AbsoluteGroup))
+                    {
+                        continue;
+                    }
+
+                    float boxMinX = anchor.Position.X;
+                    float boxMaxX = boxMinX;
+                    float boxMinZ = anchor.Position.Z;
+                    float boxMaxZ = boxMinZ;
+                    Footprint(anchor, anchor.Position, ref boxMinX, ref boxMinZ, ref boxMaxX, ref boxMaxZ);
+
+                    // A single prop has one origin and conforms exactly; it is not a structure.
+                    if (boxMaxX - boxMinX < 2f && boxMaxZ - boxMinZ < 2f)
+                    {
+                        continue;
+                    }
+
+                    float low = float.MaxValue;
+                    float high = float.MinValue;
+                    for (float gz = boxMinZ; gz <= boxMaxZ + 0.01f; gz += 0.5f)
+                    {
+                        for (float gx = boxMinX; gx <= boxMaxX + 0.01f; gx += 0.5f)
+                        {
+                            float g = field.Height(shapeCell.Center.X + gx, shapeCell.Center.Z + gz);
+                            low = MathF.Min(low, g);
+                            high = MathF.Max(high, g);
+                        }
+                    }
+
+                    structures.Add(($"{shapeCell.Id}/{anchor.Name}", high - low,
+                        (boxMinX + boxMaxX) * 0.5f, (boxMinZ + boxMaxZ) * 0.5f,
+                        ((boxMaxX - boxMinX) * 0.5f) + 1.5f, ((boxMaxZ - boxMinZ) * 0.5f) + 1.5f));
+                }
+
+                shapeRoot.QueueFree();
+            }
+
+            structures.Sort((a, b) => b.Range.CompareTo(a.Range));
+            text.AppendLine($"structures on unlevelled ground: " +
+                            $"{structures.Count(x => x.Range > 0.5f)} over 0.5 m " +
+                            $"(of {structures.Count} measured)");
+            foreach ((string where, float range, float x, float z, float ex, float ez) in structures.Take(8))
+            {
+                text.AppendLine(FormattableString.Invariant(
+                    $"  {where,-44} ground varies {range:F2} m  Yard(at=({x:F1}, {z:F1}), ext=({ex:F1}, {ez:F1}))"));
+            }
+
             var wetNodes = new List<string>();
             foreach (RegionCellResource? sceneCell in region.Cells)
             {
@@ -431,6 +511,26 @@ public static class HeadlessWorldGen
         foreach (Node child in node.GetChildren())
         {
             CheckPlaced(child, cell, field, into, offset);
+        }
+    }
+
+    /// <summary>The XZ box a structure's descendants occupy, in cell-local coordinates.</summary>
+    private static void Footprint(
+        Node node, Vector3 here, ref float minX, ref float minZ, ref float maxX, ref float maxZ)
+    {
+        foreach (Node child in node.GetChildren())
+        {
+            if (child is not Node3D placed)
+            {
+                continue;
+            }
+
+            Vector3 at = here + placed.Position;
+            minX = MathF.Min(minX, at.X);
+            maxX = MathF.Max(maxX, at.X);
+            minZ = MathF.Min(minZ, at.Z);
+            maxZ = MathF.Max(maxZ, at.Z);
+            Footprint(placed, at, ref minX, ref minZ, ref maxX, ref maxZ);
         }
     }
 

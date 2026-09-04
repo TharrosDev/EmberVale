@@ -164,6 +164,32 @@ left −1.5..1.5 m, and each failed differently once the ground moved:
 
 Use `Absolute` only where a specific world height genuinely is the point.
 
+### A structure needs a level pad, and the pad has to be a floor
+
+`WorldTerrainConform` lifts a node by the ground under its **own origin**, and a building's walls are
+children that come along unchanged. That is deliberate: a building is rigid, and per-part gravity
+would tilt its walls and split its roof. So the terrain's range across a footprint IS the gap under
+one corner or the buried lower storey, and the fix is always a `GroundArea`.
+
+⚠️ **A pad only levels in proportion to its `SurfaceBlend`.** A pad authored at 0.22 is a suggestion,
+not a floor - fine on the near-flat field the realm used to have, useless with real relief. The
+Deadfall Lodge is placed ON its pad by design and its lower storey still disappeared into a hillside,
+because the pad was barely levelling anything. Override a lifted pad's blend with `area_blend` in the
+region spec.
+
+⚠️ **DO NOT PUT A BUILDING ON A ROAD, AND THE MEASUREMENT SAYS SO OUT LOUD.** A road beats a yard, so
+a pad under a structure that straddles one is suppressed exactly where the road runs - authoring a
+pad there makes the ground range *worse*, because the levelled part and the road's own grade meet in
+a step. The Deadfall Lodge went 4.96 m -> 5.68 m when given a pad and 4.96 m -> 0.62 m when moved six
+metres clear of the track. This is NOW.md invariant 21 from the other side.
+
+⚠️ **Two pads over one footprint must agree on their elevation.** Strongest-mask-wins picks a side,
+so a yard at 0 laid over a hollow at -5.4 puts a five-metre step through the middle of a building.
+
+`godot --headless --path . -- --worldgen` ranks every structure by the ground range across its own
+footprint and prints the `Yard(...)` line to author for each. `--validate` fails a structure over
+1.0 m that is not crossed by a road.
+
 **Naturalisation.** `Irregularity` warps a landform's boundary by a noise field scaled to its own
 size, so it keeps its authored place, height and grade while its *edge* stops being drawable with a
 compass. The generator applies **0.26 to every natural landform and 0 to anything levelling**

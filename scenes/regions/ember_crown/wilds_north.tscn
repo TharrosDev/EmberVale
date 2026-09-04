@@ -524,11 +524,18 @@ LocationId = "location.wilds.north"
 ; built in a wood. It is the only hub the player finds instead of arriving at.
 ; ⚠️ This cell had no NPCs before, so Shape_npc, the Entity script and the actor components below
 ; are new ext/sub resources here rather than existing ones being reused.
+; WARNING: THE LODGE SITS AT z = -15, NOT z = -9, AND THE SIX METRES ARE LOAD-BEARING.
+; At -9 its footprint straddled Path_wilds_north_ap2 (centreline z about -6.2, reach 4.0),
+; which is NOW.md invariant 21 exactly: a pad under a building on a road is suppressed where
+; the road runs, so the lodge could neither be levelled nor keep out of the way - its own
+; colliders snagged a real capsule in world_traversal_probe. Moved clear, it is levelled by
+; its own pad and the track runs past its door, which is what a hunting camp on a trail
+; should look like anyway. Its MapPin is a child, so the map location moved with it.
 [node name="DeadfallLodge" parent="Nav" instance=ExtResource("42b_bld_deadfall_lodge")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21.5, 0, -9.0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21.5, 0, -15.0)
 
 [node name="HunterMaster" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21.5, 0, -10.0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21.5, 0, -11.5)
 script = ExtResource("2_entity")
 DisplayName = "Huntmaster Yrsa Kesk"
 TemplateId = "npc.hunter_master"
