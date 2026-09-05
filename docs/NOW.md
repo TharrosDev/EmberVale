@@ -131,39 +131,108 @@
     was reading it: no headless route had ever taken the New Game path, because `--play` loads a
     save. `WorldSessionDirector.RegionSpawn` now reads the authored Y as the clearance it meant.
 
+- **The combat, animation, camera and player-presentation overhaul (2026-09-05) - CLOSED, out of
+  band, maintainer-directed.** Ten stages on one branch. The through-line: **gameplay owned time and
+  animation only watched**, and everything else followed from that.
+  - **ONE AUTHORITATIVE TIMELINE.** `MeleeWeaponComponent`'s `double` stopwatch is deleted.
+    `ActionDefinitionResource` authors gameplay windows as **fractions of the action's own
+    duration**; `CharacterActionComponent` reads its progress off the AnimationTree's playback
+    position. A `Duration` of 0 means the clip decides; a positive one warps the clip to fit. Proved
+    on `chr_player_base`: a 1.533 s clip warped to 0.90 s runs in 0.933 s and to 0.35 s in 0.383 s,
+    with the hit inside the window the animation shows each time.
+  - **A FULL-BODY SHARED LIBRARY.** `anim_meshy.res` - 25 clips, full body, named for Embervale's own
+    gameplay slots. The old `anim_library.res` **cannot** do this: its extractor strips every position
+    track and all eight leg bones, because its Rigify source and the Quaternius bodies disagree about
+    where the hips sit. Both are kept and both are needed - the old one still owns `ride`, `sitting`,
+    `interact` and `swim`. Cost 72 credits: `meshy_animate` ran against an EXISTING rig task, so no
+    character was regenerated and no rig re-paid for. `strip_anim_glb.py` took the set from 190 MB to
+    1.4 MB.
+  - **A REAL ANIMATIONTREE.** Blend space over signed speed, state machine, and a bone-masked
+    upper-body layer that retires 39B's mounted-attack workaround (the rider used to stand up inside
+    the horse, so the swing had its animation removed entirely).
+  - **TRUE FIRST PERSON.** The camera rides the body's own head bone and the body stays visible.
+    `FirstPersonArmsComponent` and all three `fp_arm_*.glb` are deleted, along with the VIEWMODEL rig
+    family. One skeleton, one action state, one set of equipment.
+  - **ONE SOCKET CONTRACT.** `EquipmentSockets` + `EquipmentPresentationComponent` replace five
+    attachment implementations. Equipping a weapon now changes what is in the hand, which it never
+    did.
+  - **RANGED EXISTS.** `EquipmentSlot.Ammo` appended, a Hunting Bow and Arrows stocked at the smith,
+    and an `Arrow` that sub-steps its flight - at 42 m/s it covers 0.7 m a frame against a 0.12 m
+    radius, so a single-step projectile passes through bodies and it reads as unreliable hit
+    detection.
+  - **MAGIC WAITS FOR ITS OWN ANIMATION.** A cast used to fire on key-down, so the bolt was across
+    the room before the arm moved.
+  - **FEET, AND WARPING.** `FootIkComponent` plants feet on real terrain (on a 12 degree slope they
+    sit at 0.121 and 0.194 rather than level). `MotionWarp` closes the last of a committed attack's
+    gap, bounded and **swept**, so it can never pass a wall. It is NOT root motion: the Meshy clips
+    carry none - a walk's hips travel 0.4 cm in 4.2 s.
+  - **THE CAMERA STOPPED FIGHTING ITSELF.** `CameraBlocker` is its own layer, so walls retract the
+    camera and people no longer do. `CameraProfile` gives five contexts a shape each, as multipliers
+    on the player's own settings. One impulse queue; `CameraShake._restRotation` no longer stale.
+  - **POISE IS A MODEL, NOT A DURATION.** `PoiseReaction` resolves flinch/stagger/heavy/knockdown by
+    `ReactionClass`; a flinch does not interrupt, and a boss is never knocked down or pushed.
+  - WARNING: **THE ARMS-CROSSED BUG WAS PRE-EXISTING AND THIS WORK EXPOSED IT.** Player, Kael and the
+    goblin swung both arms through the torso into an X. `chr_player_base` does it on the OLD library
+    too: several bodies were generated in an A-pose while the shared clips are authored against the
+    profile's T-pose, and `fix_silhouette` was off on every import. It hid while the library only
+    supplied block/cast/channel; the moment it drove locomotion it was on screen constantly. Enabled
+    on all 31 bodies and 25 animation sources, and gated.
+  - WARNING: **`npc_innkeeper.glb` SHIPS ZERO ANIMATIONS**, so Godot made no AnimationPlayer and it
+    could never receive the library - Gilda Ironmonger stood in the Embermarket in her bind pose
+    since she was placed. A rigged body with no clips now gets a created player. Embermarket:
+    16/17 -> 17/17.
+  - WARNING: **THE LESSON, AND IT COST FOUR FALSE PASSES: A PROBE THAT CANNOT FAIL IS NOT A GATE.**
+    Four separate probes reported PASS while testing nothing - a `Vector3?` that does not marshal
+    aborted a script mid-function; an arrow parented to a null `CurrentScene` was never in the tree;
+    bodies instantiated but never added to the tree posed no bones; and a wall test passed because
+    the warp it was measuring never fired. Every one was found by adding a **control case** or by
+    negative-testing the gate itself. Do that first, not last.
+  - WARNING: **A GODOT `Resource` CANNOT BE CONSTRUCTED IN THE PURE SUITE**, and a test that tries
+    does not fail - it takes the whole run down and reports 27 passing tests instead of 1892, looking
+    green. Pure helpers take primitives; that is why.
+
 - **NEXT: 42C — Dawnwardens recruitment and probation.** The first arc to walk through a door 42B
   built: join/refuse dialogue plus a Defend/Reach probation pair, and rank one earned.
 
 Read [`docs/WORLD_AUTHORING.md`](WORLD_AUTHORING.md) before touching a cell. `data/regions/*.tres`
 is **generated** — edit `tools/region_spec_<region>.py` and run `python tools/gen_regions.py`.
 
-## Last verified (2026-09-04 — the infrastructure overhaul)
+## Last verified (2026-09-05 - the combat/animation/camera overhaul)
 
 | Check | Result |
 | --- | --- |
-| Build | `dotnet build Embervale.sln` — **0 warnings, 0 errors, `TreatWarningsAsErrors=true`** |
-| Shipping build | `dotnet build Embervale.csproj -c ExportRelease` — 0 warnings, 0 errors |
-| Shipping contents | `python tools/check_shipping_assembly.py` — PASS; no MCP addon, no `*Shots`, no `ReproHarness` |
-| Tests | `dotnet test tests/Embervale.Tests` — **1807 passing** (1743 before this pass + 64: 9 service-scope, 2 session-reset, 53 AI rules) |
-| `--validate` | exit 0 |
-| `--lifecycle` | **exit 0 — 3 new-game + load round trips, 0 surviving services, 0 surviving subscriptions, 0 stranded saveables, 0 orphan nodes, 0 invariant violations** |
-| `--state` | 2 regions, 26 cells, 75 map locations — unchanged |
-| `--worldgen` | Ember Crown **42.8 m relief**, Frostfang **98.3 m** — unchanged |
-| `gen_regions.py --check` | clean |
-| `debug_pass_regressions.gd` | **44/44** — including two that were FAILING on `main` (the spawn-ground pair above) |
-| `negative_tests.py` | 112 rules broken and restored, each caught |
-| `--play` | boots to Playing, restores 34 objects, streams all 16 Ember Crown cells, no errors, no invariant violations |
+| Build | `dotnet build Embervale.sln` - **0 warnings, 0 errors, `TreatWarningsAsErrors=true`** |
+| Shipping build | `dotnet build Embervale.csproj -c ExportRelease` - 0 warnings, 0 errors |
+| Shipping contents | `python tools/check_shipping_assembly.py` - PASS, 2329 KiB, no dev tooling |
+| Tests | `dotnet test tests/Embervale.Tests` - **1916 passing** (1807 before this pass + 109) |
+| `--validate` | exit 0 - new arms over attack windows (weapons AND boss phases) and both animation libraries, each negative-tested |
+| `--lifecycle` | exit 0 - 0 surviving services, 0 subscriptions, 0 orphans, 0 invariant violations |
+| `debug_pass_regressions.gd` | **44/44** |
+| `python tools/assets.py validate` | all gates, 218 models |
+| `--state` | 2 regions, 26 cells, 75 map locations - unchanged |
+| `--play` | boots to Playing, **0 errors**, 0 invariant violations |
 
-⚠️ **GODOTMCP was not available for this pass** — the server was running but no Godot editor was
-open, so no `mcp__ai-game-developer__*` tools registered. Verification was the shell spine, which
-CLAUDE.md §2 already names as the real one. **No visual check was made**, and none was needed: no
-scene, model, material or shader changed.
+**Nine new engine gates**, all registered in `tools/world_quality_check.py`:
 
-⚠️ **There is still no `export_presets.cfg`.** "The shipping build" is proved by `ExportRelease`
-compiling clean plus the assembly scan, not by a real export artifact.
+| Probe | Proves |
+| --- | --- |
+| `melee_probe.gd` | the hit opens inside its own active window, once per swing, and the authored chain advances by id |
+| `action_clip_probe.gd` | on a real rigged body the CLIP is the clock, warped or natural |
+| `equipment_socket_probe.gd` | all six humanoid sockets resolve on all 31 rigs, and a hung weapon lands on the hand bone |
+| `anim_library_probe.gd` | the library is whole, keeps its legs, moves a real body - and no rig crosses its arms |
+| `locomotion_tree_probe.gd` | the blend space interpolates, the upper-body mask holds, the action clock survives the tree |
+| `view_switch_probe.gd` | a first/third swap preserves the action, combo and equipment |
+| `grounding_probe.gd` | feet meet a 12 degree slope; a warp closes 1.585 m of its 1.6 m budget and stops at a wall |
+| `ranged_probe.gd` | arrows leave on the release frame, hit once, spare allies, and do not tunnel |
+| `camera_probe.gd` | a wall retracts the camera and restores it; a companion does not |
 
-⚠️ **`ai.skirmisher` has zero archetype users** and is left alone deliberately — deleting authored
-content is a designer's call, not a refactor's. It is a profile waiting for an archetype.
+WARNING: **GODOTMCP was available at the start of this pass and not at the end** - the editor was
+closed partway through. The visual checks that mattered were made with the repo's own
+`--enemy-shots` harness (230 frames), which needs no MCP. The arms-crossed fix was confirmed both
+numerically and in a render.
+
+WARNING: **There is still no `export_presets.cfg`.** "The shipping build" is proved by
+`ExportRelease` compiling clean plus the assembly scan, not by a real export artifact.
 
 ## Live invariants
 

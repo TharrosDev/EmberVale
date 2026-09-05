@@ -32,5 +32,6 @@ IsBoss = true
 BossId = "boss.iron_king"
 DirectionalMelee = false
 MaxPoise = 150.0
+Reaction = 4
 StaminaRegen = 16.0
 XpValue = 500

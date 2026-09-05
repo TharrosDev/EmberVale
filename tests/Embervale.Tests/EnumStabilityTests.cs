@@ -57,6 +57,26 @@ public class EnumStabilityTests
     }
 
     [Fact]
+    public void ReactionClass_Ordinals()
+    {
+        Assert.Equal(0, (int)ReactionClass.Small);
+        Assert.Equal(1, (int)ReactionClass.Humanoid);
+        Assert.Equal(2, (int)ReactionClass.Armored);
+        Assert.Equal(3, (int)ReactionClass.Large);
+        Assert.Equal(4, (int)ReactionClass.Boss);
+    }
+
+    [Fact]
+    public void StaggerResponse_Ordinals()
+    {
+        Assert.Equal(0, (int)StaggerResponse.None);
+        Assert.Equal(1, (int)StaggerResponse.Flinch);
+        Assert.Equal(2, (int)StaggerResponse.Stagger);
+        Assert.Equal(3, (int)StaggerResponse.Heavy);
+        Assert.Equal(4, (int)StaggerResponse.Knockdown);
+    }
+
+    [Fact]
     public void CameraContext_Ordinals()
     {
         Assert.Equal(0, (int)CameraContext.Exploration);

@@ -65,6 +65,7 @@ IsBoss = true
 BossId = "boss.ancient_dragon"
 DirectionalMelee = true
 MaxPoise = 300.0
+Reaction = 3
 StaminaRegen = 16.0
 ManaRegen = 14.0
 XpValue = 1800

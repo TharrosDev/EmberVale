@@ -80,7 +80,16 @@ public static class EnemyFactory
 
         AttributeSet attributes = GD.Load<AttributeSet>(AttributesPath) ?? AttributeSet.CreateDefault();
         enemy.AddChild(new StatsComponent { Name = "Stats", Attributes = attributes, StaminaRegen = 12f });
-        enemy.AddChild(new CombatComponent { Name = "Combat", Team = HostileTeam, MaxPoise = 40f });
+        enemy.AddChild(new CombatComponent
+        {
+            Name = "Combat",
+            Team = HostileTeam,
+            MaxPoise = 40f,
+
+            // The goblin is the game's small body: everything staggers it, and a real blow puts it
+            // down. It has no archetype resource to author this on — this factory predates them.
+            Reaction = Combat.ReactionClass.Small,
+        });
         enemy.AddChild(new LocomotionComponent { Name = "Locomotion" });
         enemy.AddChild(new HitReactionComponent { Name = "HitReaction" });
         // 30F: plays the goblin rig's idle/run/attack/hit/death clips off combat/locomotion state.

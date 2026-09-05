@@ -17,6 +17,7 @@ KnownSpellIds = Array[String](["spell.frost_nova", "spell.blizzard"])
 CapsuleRadius = 0.4
 CapsuleHeight = 1.6
 MaxPoise = 35.0
+Reaction = 0
 StaminaRegen = 10.0
 ManaRegen = 8.0
 XpValue = 70

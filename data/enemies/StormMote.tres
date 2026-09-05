@@ -17,6 +17,7 @@ KnownSpellIds = Array[String](["spell.ball_lightning"])
 CapsuleRadius = 0.3
 CapsuleHeight = 1.1
 MaxPoise = 14.0
+Reaction = 0
 StaminaRegen = 16.0
 ManaRegen = 9.0
 XpValue = 55

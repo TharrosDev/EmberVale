@@ -58,5 +58,6 @@ IsBoss = true
 BossId = "boss.wild_dragon"
 DirectionalMelee = true
 MaxPoise = 200.0
+Reaction = 3
 StaminaRegen = 18.0
 XpValue = 900

@@ -27,6 +27,24 @@ public partial class LocomotionComponent : EntityComponent
     [Export]
     public float JumpVelocity { get; set; } = 4.5f;
 
+    /// <summary>
+    /// How hard the body slows when the player lets go, in m/s².
+    ///
+    /// Lower than <see cref="Acceleration"/> on purpose: a character that decelerates as fast as it
+    /// accelerates stops dead the instant the stick is released, which is the single clearest tell
+    /// that a body has no mass. Not so low that stopping feels like ice.
+    /// </summary>
+    [Export] public float Friction { get; set; } = 34f;
+
+    /// <summary>
+    /// Fraction of ground acceleration available while airborne.
+    ///
+    /// ⚠️ A value of 1 — which is what a single acceleration term meant — lets a jump be re-aimed
+    /// mid-flight, so a leap is a decision that can be taken back and there is no commitment in it.
+    /// Enough to correct, not enough to change your mind.
+    /// </summary>
+    [Export(PropertyHint.Range, "0,1,0.05")] public float AirControl { get; set; } = 0.35f;
+
     [Export]
     public float SprintMultiplier { get; set; } = 1.6f;
 
@@ -199,8 +217,17 @@ public partial class LocomotionComponent : EntityComponent
         // Sanitised here rather than in CurrentSpeed so a bad stat cannot reach the motor by any route.
         Vector3 target = MotionSafety.Sanitize(horizontal * speed);
 
-        velocity.X = Mathf.MoveToward(velocity.X, target.X, Acceleration * dt);
-        velocity.Z = Mathf.MoveToward(velocity.Z, target.Z, Acceleration * dt);
+        // ⚠️ ACCELERATING, SLOWING AND BEING AIRBORNE ARE THREE DIFFERENT RATES, and they were one.
+        // A single Acceleration meant a character stopped exactly as sharply as it started (so
+        // letting go of the stick was a handbrake) and steered in mid-air exactly as well as on the
+        // ground (so a jump could be turned into a different jump). Both read as weightless.
+        bool wantsToMove = target.LengthSquared() > 0.0001f;
+        float rate = _body.IsOnFloor()
+            ? (wantsToMove ? Acceleration : Friction)
+            : Acceleration * AirControl;
+
+        velocity.X = Mathf.MoveToward(velocity.X, target.X, rate * dt);
+        velocity.Z = Mathf.MoveToward(velocity.Z, target.Z, rate * dt);
 
         TryStepUp(new Vector3(velocity.X, 0f, velocity.Z) * dt);
 

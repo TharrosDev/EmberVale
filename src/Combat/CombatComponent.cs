@@ -33,6 +33,14 @@ public partial class CombatComponent : EntityComponent
     [Export]
     public float StaggerDuration { get; set; } = 0.6f;
 
+    /// <summary>What kind of body this is, for the purposes of being hit. Authored per archetype;
+    /// the default is what the game is balanced around.</summary>
+    [Export] public ReactionClass Reaction { get; set; } = ReactionClass.Humanoid;
+
+    /// <summary>How this body last reacted to a broken guard. Read by presentation — the reaction
+    /// clip, the knockback — so nothing has to re-derive it from the numbers.</summary>
+    public StaggerResponse LastResponse { get; private set; } = StaggerResponse.None;
+
     /// <summary>Fraction of damage negated while blocking (0..1).</summary>
     [Export]
     public float BlockMitigation { get; set; } = 0.7f;
@@ -269,14 +277,29 @@ public partial class CombatComponent : EntityComponent
         {
             // A block still chips poise (BlockPoiseFactor) so a held guard can be broken into a
             // stagger; a defender caught in its own wind-up takes more (36C).
-            _poise -= CombatMath.PoiseDamage(
+            float poiseDamage = CombatMath.PoiseDamage(
                 packet.PoiseDamage, blocked, Mathf.Max(0f, BlockPoiseFactor),
                 InWindup ? WindupPoiseMultiplier : 1f);
+            float overkill = PoiseReaction.Overkill(poiseDamage, _poise, MaxPoise);
+            _poise -= poiseDamage;
+
             if (MaxPoise > 0f && _poise <= 0f)
             {
                 _poise = MaxPoise;
-                _staggerTimer = StaggerDuration;
-                EventBus.Instance?.Publish(new EntityStaggeredEvent(Entity));
+
+                // ⚠️ WHAT HAPPENS NOW DEPENDS ON WHAT THIS BODY IS. Every actor used to take the
+                // same 0.6 s stagger from every broken guard, so a goblin and the Iron King reacted
+                // identically once their numbers were spent — the "weightless ragdoll" the brief
+                // names. A flinch does not interrupt, which is what makes an armoured enemy feel
+                // armoured rather than merely slower, and a boss is never knocked off its feet
+                // because a boss that can be knocked over can be chain-knocked.
+                LastResponse = PoiseReaction.Resolve(Reaction, overkill);
+                _staggerTimer = PoiseReaction.Duration(LastResponse, StaggerDuration);
+
+                if (PoiseReaction.Interrupts(LastResponse))
+                {
+                    EventBus.Instance?.Publish(new EntityStaggeredEvent(Entity));
+                }
             }
         }
 

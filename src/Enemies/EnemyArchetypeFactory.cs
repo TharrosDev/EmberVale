@@ -66,7 +66,13 @@ public static class EnemyArchetypeFactory
             StaminaRegen = archetype.StaminaRegen,
             ManaRegen = archetype.ManaRegen,
         });
-        enemy.AddChild(new CombatComponent { Name = "Combat", Team = HostileTeam, MaxPoise = archetype.MaxPoise });
+        enemy.AddChild(new CombatComponent
+        {
+            Name = "Combat",
+            Team = HostileTeam,
+            MaxPoise = archetype.MaxPoise,
+            Reaction = archetype.Reaction,
+        });
         enemy.AddChild(new LocomotionComponent { Name = "Locomotion" });
         enemy.AddChild(new HitReactionComponent { Name = "HitReaction" });
         enemy.AddChild(new Animation.CharacterAnimationComponent { Name = "Animation", BodyMeshPath = "Mesh" });

@@ -229,12 +229,42 @@ direct children of the host. `Hitbox`/`Hurtbox` are `Area3D` (not
   block → armor → `StatsComponent.ApplyDamage`, manages poise (raises
   `EntityStaggeredEvent`), and raises `DamageDealtEvent`.
 - **`WeaponResource`** — `[GlobalClass] Resource`: damage type, base/poise damage,
-  stamina cost, wind-up/active/recovery times, attack-speed multiplier, combo
-  length, finisher multiplier.
-- **`MeleeWeaponComponent`** — attacker FSM Idle→Windup→Active→Recovery. `TryAttack()`
-  starts a swing (costs stamina, blocked while staggered); during Active it opens
-  the assigned `Hitbox` with a freshly rolled packet; chaining during Recovery
-  advances the combo (final hit = finisher). Scaled by weapon × `AttackSpeed` stat.
+  stamina cost, an authored `Attacks` chain, and the legacy wind-up/active/recovery
+  floats that are **synthesised into a chain** when `Attacks` is empty (which is most
+  weapons). `IsRanged` plus the projectile fields make it a bow; nothing else differs.
+
+### The action timeline (the 2026-09-04 combat/animation overhaul)
+
+⚠️ **`MeleeWeaponComponent` is gone, and with it the second clock.** It ran a `double`
+stopwatch through Windup→Active→Recovery while `CharacterAnimationComponent` separately
+fired a clip at whatever speed it was exported at, so the hitbox opened on a clock the
+visible swing had never heard of — the Iron King's 0.55 s heave and a dagger's 0.15 s
+flick played the same `Sword_Slash` identically.
+
+- **`ActionDefinitionResource`** is the authored unit: animation slot, duration, the
+  gameplay windows **as fractions of that duration**, commitment, cost, damage and poise
+  scale, named hit volume, root motion, presentation and AI metadata.
+- **`ActionTimeline`** is the pure arithmetic — phase, hit window, cancel window, combo
+  window, stagger rules, and the clip speed that makes an animation span exactly the
+  action.
+- **`CharacterActionComponent`** is the one executor for every actor. It reads its
+  progress off the animation (`CharacterAnimationComponent.ActionProgress`, which is the
+  AnimationTree's own playback position); a `Duration` of 0 lets the clip decide outright,
+  a positive one warps the clip to fit. A body with no clip runs the identical fractions
+  on a fallback timer, so an unanimated actor fights correctly rather than not at all.
+- **`ActionReleasedEvent`** fires on the rising edge of the active window. A melee action
+  opens its volume there; a cast delivers its spell there; a bow looses its arrow there.
+  One instant, one event.
+- **`ActionSelection`** is what an AI is allowed to know: "hit the thing that is this far
+  away". Which blow that is belongs to the weapon's authored actions; when it lands
+  belongs to the animation.
+- **`MotionWarp`** closes the last of the gap during a committed attack's wind-up,
+  bounded in distance and angle and **swept** through the physics world, so an attack can
+  never warp through a wall. It is not root motion: the Meshy clips carry no displacement
+  at all.
+- **`PoiseReaction`** decides what a broken guard actually does to a body —
+  flinch/stagger/heavy/knockdown by `ReactionClass`. A boss is never knocked down and
+  never pushed.
 
 ### 2.3 Movement (`src/Movement`)
 
@@ -283,6 +313,16 @@ owns the order they run in. `PlayerController` (729 lines, ten jobs) was split o
   controller each fire a ray every physics frame and the rig sweeps a sphere;
   building them per call cost five native `RefCounted` objects a frame. Pooling them
   per component would undo the optimisation the pooling exists for.
+- **First person is TRUE first person** (2026-09-05). The camera rides the body's own
+  head bone — position only; taking the head's rotation would hand the player every head
+  turn in every clip — and the body stays visible. `FirstPersonArmsComponent` and both
+  `fp_arm_*.glb` are deleted: one skeleton, one action state, one set of equipment.
+- **The camera has profiles** (`CameraProfile`): exploration, sprint, combat, target-lock
+  and aim, resolved from gameplay in that priority order and eased between. Every field is
+  a multiplier on the player's own distance/FOV settings, never a replacement — those are
+  accessibility choices.
+- **`CombatLayers.CameraBlocker`** is what the spring sweeps. Actors share the World layer,
+  so sweeping World meant a companion walking behind the player yanked the camera in.
 - **The camera is hybrid, and the mode is a setting.** `PlayerCameraRig.SetFirstPerson`
   is driven by `SettingsAppliedEvent` off `Settings.ThirdPersonCamera` — the settings
   panel's toggle and the `toggle_camera` key (`V`) both flip *that*, so there is one
