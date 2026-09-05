@@ -17,6 +17,12 @@ namespace Embervale.Player;
 /// world geometry) and that third person aims from the camera rather than the head so the crosshair
 /// still means something.</para>
 ///
+/// <para><b>First person is TRUE first person.</b> The camera rides the body's own head bone and the
+/// body stays visible; you see its arms, its weapon and its equipment because they are the same
+/// arms, weapon and equipment the world sees. What this replaced was a rigless viewmodel with its
+/// own procedural swing — a second skeleton, a second action state and a second weapon that had to
+/// be kept in step with the first, which is the duplication the overhaul's §18 is about.</para>
+///
 /// <para>This component owns the camera and nothing else does. The pure geometry it needs is in
 /// <see cref="CameraRigMath"/>, which is engine-free and unit-tested; what is left here is the node
 /// writes and the one physics sweep.</para>
@@ -47,6 +53,26 @@ public partial class PlayerCameraRig : EntityComponent
     /// <summary>Camera distance from the pivot after the collision spring, in metres.</summary>
     private float _springDistance;
 
+    /// <summary>Seconds of smoothing on the eye anchor. The head bone is animated, so following it
+    /// raw hands the player every footfall and every swing as camera shake.</summary>
+    private const float EyeSmoothSeconds = 0.06f;
+
+    /// <summary>How far the eye sits in front of the head bone's origin, in metres. Big enough that
+    /// the skull falls behind the camera's near plane and clips away on its own — which is why there
+    /// is no head-hiding code anywhere in this file.</summary>
+    private const float EyeForward = 0.14f;
+
+    /// <summary>How far above the head bone's origin the eye sits.</summary>
+    private const float EyeRise = 0.04f;
+
+    /// <summary>The furthest the eye may be dragged from the fixed pivot. A clip that throws the
+    /// head — a knockdown, a death — must not throw the camera with it.</summary>
+    private const float MaxEyeOffset = 0.45f;
+
+    private Skeleton3D? _skeleton;
+    private int _headBone = -1;
+    private Vector3 _eyeLocal;
+    private bool _eyeSeeded;
     private Vector3 _cameraRest = Vector3.Zero;
     private float _pitch;
     private PlayerPhysicsQueries? _queries;
@@ -115,10 +141,10 @@ public partial class PlayerCameraRig : EntityComponent
             ApplyCameraRest(ResolveRestOffset());
         }
 
-        if (Entity?.Body.GetNodeOrNull<Node3D>("BodyMesh") is { } bodyVisual)
-        {
-            SetShadowOnly(bodyVisual, firstPerson);
-        }
+        // ⚠️ THE BODY IS VISIBLE IN BOTH VIEWS NOW, and that is the whole of "true first person".
+        // It used to be shadows-only in first person while a separate rigless viewmodel drew a pair
+        // of arms with its own procedural swing — two skeletons, two action states and two weapons
+        // to keep in step. There is one body; you look out of its head and see its own arms.
     }
 
     /// <summary>Flips the camera mode through the <em>setting</em>, so the toggle key and the
@@ -145,13 +171,87 @@ public partial class PlayerCameraRig : EntityComponent
     public void Tick(double delta)
     {
         float dt = (float)delta;
+        ResolveHead();
         _modeBlend = CameraRigMath.StepBlend(_modeBlend, _modeTarget, dt, ModeBlendSeconds);
 
         float desired = ThirdPersonRest.Length();
         _springDistance = CameraRigMath.SpringDistance(
             _springDistance, desired, AllowedCameraDistance(desired), dt, CameraPushOutSpeed);
 
-        ApplyCameraRest(ResolveRestOffset());
+        ApplyCameraRest(ResolveRestOffset() + EyeOffset(dt));
+    }
+
+    /// <summary>
+    /// Where the eye sits relative to the pivot, in pivot space — the head bone, smoothed, clamped,
+    /// and faded out as the camera leaves first person.
+    ///
+    /// ⚠️ <b>Position only. The head's ROTATION is deliberately ignored.</b> Taking it would hand
+    /// the player every head turn in every clip as an involuntary camera movement, which is the
+    /// single fastest way to make a first-person game unplayable. Aim stays exactly where the player
+    /// pointed it; only the viewpoint rides the body.
+    /// </summary>
+    private Vector3 EyeOffset(float dt)
+    {
+        if (_skeleton == null || _headBone < 0 || CameraPivot == null || _modeBlend >= 1f)
+        {
+            _eyeSeeded = false;
+            return Vector3.Zero;
+        }
+
+        Transform3D head = _skeleton.GlobalTransform * _skeleton.GetBoneGlobalPose(_headBone);
+        Vector3 forward = -CameraPivot.GlobalTransform.Basis.Z;
+        Vector3 world = head.Origin + (forward * EyeForward) + (Vector3.Up * EyeRise);
+        Vector3 target = CameraPivot.ToLocal(world);
+
+        if (target.Length() > MaxEyeOffset)
+        {
+            target = target.Normalized() * MaxEyeOffset;
+        }
+
+        // Seeded rather than lerped from zero, so entering first person does not swoop from the
+        // pivot up to the head over the first few frames.
+        _eyeLocal = _eyeSeeded
+            ? _eyeLocal.Lerp(target, CameraRigMath.Damp(dt, EyeSmoothSeconds))
+            : target;
+        _eyeSeeded = true;
+
+        // Faded out by the mode blend so the third-person orbit is measured from the fixed pivot and
+        // does not inherit a bobbing origin.
+        return _eyeLocal * (1f - CameraRigMath.Ease(_modeBlend));
+    }
+
+    /// <summary>Finds the head bone once the body exists. Deferred rather than done in
+    /// <c>OnInitialize</c> because the visual is added to the tree after the components are.</summary>
+    private void ResolveHead()
+    {
+        if (_skeleton != null || Entity?.Body.GetNodeOrNull<Node3D>("BodyMesh") is not { } visual)
+        {
+            return;
+        }
+
+        _skeleton = FindSkeleton(visual);
+        if (_skeleton != null)
+        {
+            _headBone = Animation.EquipmentSockets.Resolve(_skeleton, Animation.EquipmentSocket.Head);
+        }
+    }
+
+    private static Skeleton3D? FindSkeleton(Node node)
+    {
+        if (node is Skeleton3D skeleton)
+        {
+            return skeleton;
+        }
+
+        foreach (Node child in node.GetChildren())
+        {
+            if (FindSkeleton(child) is { } found)
+            {
+                return found;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>Applies one look step to the pitch and writes it to the pivot. The look components
@@ -246,21 +346,4 @@ public partial class PlayerCameraRig : EntityComponent
         return desired * safe;
     }
 
-    /// <summary>Sets every mesh under <paramref name="node"/> to shadows-only (or restores it).
-    /// Includes the skeleton-held weapon — in first person the viewmodel arms
-    /// (<see cref="FirstPersonArmsComponent"/>) carry their own visible sword instead.</summary>
-    private static void SetShadowOnly(Node node, bool shadowOnly)
-    {
-        if (node is GeometryInstance3D geometry)
-        {
-            geometry.CastShadow = shadowOnly
-                ? GeometryInstance3D.ShadowCastingSetting.ShadowsOnly
-                : GeometryInstance3D.ShadowCastingSetting.On;
-        }
-
-        foreach (Node child in node.GetChildren())
-        {
-            SetShadowOnly(child, shadowOnly);
-        }
-    }
 }

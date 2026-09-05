@@ -271,7 +271,6 @@ public static class PlayerFactory
         shake.RestPosition = () => player.GetComponent<PlayerCameraRig>()?.CameraRestPosition ?? Vector3.Zero;
 
         // First-person viewmodel arms (30L): ride the camera, swing with attacks, guard on block.
-        player.AddChild(new FirstPersonArmsComponent { Name = "FpArms", Camera = camera });
 
         // Race applies LAST so Stats/Perks/Spellcasting/Reputation have initialized when its
         // OnInitialize runs: the chosen race's stat deltas become modifiers and (on New Game) its

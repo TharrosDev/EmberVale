@@ -43,8 +43,6 @@ public static class ModelAssets
     public const string Horse = "res://assets/models/creatures/mnt_horse.glb";
 
     // FIRST-PERSON / VIEWMODEL — cosmetic, no collision, motion is procedural not baked.
-    public const string FirstPersonArmRight = "res://assets/models/characters/fp_arm_right.glb";
-    public const string FirstPersonArmLeft = "res://assets/models/characters/fp_arm_left.glb";
 
     // Equipment and weapons — rigid followers and hand-socket meshes.
     public const string IronSword = "res://assets/models/weapons/wpn_sword_iron.glb";
@@ -90,7 +88,6 @@ public static class ModelAssets
     public static readonly string[] All =
     {
         PlayerBody, Goblin, AshenAcolyte, Horse,
-        FirstPersonArmRight, FirstPersonArmLeft,
         IronSword, Pauldron, Pouch, NpcKit, EnemyIdentityKit,
         TrainingDummy, CacheChest, CacheChestOpen, TomeStand,
     };

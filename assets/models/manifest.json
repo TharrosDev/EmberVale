@@ -843,42 +843,6 @@
       "status": "active"
     },
     {
-      "id": "fp_arm",
-      "path": "res://assets/models/characters/fp_arm.glb",
-      "type": "VIEWMODEL",
-      "rig": "none",
-      "anim": "procedural",
-      "bone_map": null,
-      "root_scale": 1.0,
-      "height_m": 0.425,
-      "refs": 0,
-      "status": "unreferenced"
-    },
-    {
-      "id": "fp_arm_left",
-      "path": "res://assets/models/characters/fp_arm_left.glb",
-      "type": "VIEWMODEL",
-      "rig": "none",
-      "anim": "procedural",
-      "bone_map": null,
-      "root_scale": 1.0,
-      "height_m": 0.439,
-      "refs": 2,
-      "status": "active"
-    },
-    {
-      "id": "fp_arm_right",
-      "path": "res://assets/models/characters/fp_arm_right.glb",
-      "type": "VIEWMODEL",
-      "rig": "none",
-      "anim": "procedural",
-      "bone_map": null,
-      "root_scale": 1.0,
-      "height_m": 0.439,
-      "refs": 2,
-      "status": "active"
-    },
-    {
       "id": "npc_adventurer_f",
       "path": "res://assets/models/characters/npc_adventurer_f.glb",
       "type": "HUMANOID",

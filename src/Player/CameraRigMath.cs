@@ -90,4 +90,23 @@ public static class CameraRigMath
         Vector3 to = focusPoint - origin;
         return to.LengthSquared() < 0.000001f ? Vector3.Forward : to.Normalized();
     }
+
+    /// <summary>
+    /// A frame-rate-independent smoothing factor: the fraction of the way to a target to move this
+    /// frame so that the remaining error decays by ~63% every <paramref name="seconds"/>.
+    ///
+    /// ⚠️ <b>A raw <c>Lerp(a, b, 0.1f)</c> is not frame-rate independent</b> — it converges twice as
+    /// fast at 120 fps as at 60, so a camera tuned on one machine is wrong on another. This is the
+    /// exponential form, which converges at the same rate in seconds whatever the frame rate.
+    /// </summary>
+    public static float Damp(float delta, float seconds)
+    {
+        if (seconds <= 0f)
+        {
+            return 1f;
+        }
+
+        float t = 1f - Mathf.Exp(-delta / seconds);
+        return t < 0f ? 0f : t > 1f ? 1f : t;
+    }
 }

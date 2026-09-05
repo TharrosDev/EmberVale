@@ -167,4 +167,50 @@ public class CameraRigMathTests
     {
         Assert.Equal(Vector3.Forward, CameraRigMath.AimDirection(Vector3.Zero, Vector3.Zero));
     }
+
+    [Fact]
+    public void DampConvergesAtTheSameRateWhateverTheFrameRate()
+    {
+        // ⚠️ THE POINT OF Damp, and the bug it prevents: a raw Lerp(a, b, 0.1f) converges twice as
+        // fast at 120 fps as at 60, so a camera tuned on one machine is wrong on another. Stepping
+        // the same half-second in 30 slices and in 120 must land in the same place.
+        float coarse = 1f;
+        for (int i = 0; i < 30; i++)
+        {
+            coarse -= coarse * CameraRigMath.Damp(0.5f / 30f, 0.06f);
+        }
+
+        float fine = 1f;
+        for (int i = 0; i < 120; i++)
+        {
+            fine -= fine * CameraRigMath.Damp(0.5f / 120f, 0.06f);
+        }
+
+        Assert.Equal(coarse, fine, 4);
+    }
+
+    [Fact]
+    public void DampDecaysMostOfTheErrorInOneTimeConstant()
+    {
+        // One time constant should remove ~63% of the remaining distance; that is what makes the
+        // "seconds" argument mean something a designer can reason about.
+        Assert.Equal(0.632f, CameraRigMath.Damp(0.06f, 0.06f), 3);
+    }
+
+    [Theory]
+    [InlineData(0f)]
+    [InlineData(-1f)]
+    public void DampWithNoSmoothingSnaps(float seconds) =>
+        Assert.Equal(1f, CameraRigMath.Damp(0.016f, seconds), 4);
+
+    [Fact]
+    public void DampIsAlwaysAUsableFraction()
+    {
+        // A factor outside 0..1 would overshoot or reverse the lerp it feeds.
+        foreach (float delta in new[] { 0f, 0.001f, 0.016f, 1f, 100f })
+        {
+            float t = CameraRigMath.Damp(delta, 0.06f);
+            Assert.InRange(t, 0f, 1f);
+        }
+    }
 }

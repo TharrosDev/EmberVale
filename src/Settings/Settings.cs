@@ -34,7 +34,7 @@ public partial class Settings : Resource
     /// <summary>Vertical field of view, in degrees. Applied to the player camera by
     /// <c>PlayerCameraRig</c> (it is a property of that camera, not of the engine, so the
     /// service's graphics pass cannot reach it). The first-person viewmodel
-    /// rescales itself to match — see <c>FirstPersonArmsComponent</c>.</summary>
+    /// is drawn by the same camera as the world, so nothing rescales to match it.</summary>
     [Export(PropertyHint.Range, "60,110")] public float FieldOfView { get; set; } = 75f;
 
     // --- Controls / gameplay ------------------------------------------------

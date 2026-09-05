@@ -27,7 +27,7 @@ they run in; you should not have to know which is which.
 
 ---
 
-## The six families
+## The five families
 
 Every model is exactly one of these. The family is **derived**, not declared — `assets.py` reads
 the glTF and its `.import` sidecar and works it out, so it cannot drift from the files.
@@ -38,11 +38,10 @@ the glTF and its `.import` sidecar and works it out, so it cannot drift from the
 | [QUADRUPED](#quadruped) | Beasts, mounts, dragons | Its own, untouched | Its own clips only |
 | [STATIC PROP](#static-prop) | Furniture, containers, nature | None | None |
 | [ARCHITECTURE](#architecture) | Buildings and wall modules | None | None |
-| [FIRST-PERSON / VIEWMODEL](#first-person--viewmodel) | The arms you see in first person | None | Procedural, written in C# |
 | ANIMATION | `anim_*` clip sources — a skeleton and its clips, no mesh at all | Retargeted to `GeneralSkeleton` | *is* the animation |
 
 **Naming is the family's first signal and it is enforced.** `chr_` player · `npc_` NPC bodies ·
-`enm_` enemies · `boss_` bosses · `mnt_` mounts · `fp_` viewmodel · `prp_` props · `bld_` buildings
+`enm_` enemies · `boss_` bosses · `mnt_` mounts · `prp_` props · `bld_` buildings
 · `mod_` wall modules · `eqp_` equipment · `wpn_` weapons · `anim_` animation.
 
 ### The manifest
@@ -379,30 +378,34 @@ production textures. Do not fork a texture per prefab for cosmetic variation.
 
 ---
 
-## FIRST-PERSON / VIEWMODEL
+## FIRST PERSON
 
-**Structurally separate from world characters, and the separation is the point.** These meshes are
-never seen by anyone but the player holding them, and they follow different rules from every body
-in the world.
+**There is no viewmodel, and that is the contract.** First person is TRUE first person: the camera
+rides the player body's own head bone and the body stays visible. You see its arms, its weapon and
+its equipment because they are the same arms, weapon and equipment the world sees.
 
-`fp_arm_left.glb` and `fp_arm_right.glb` are authored as two real meshes — the left is not a
-negative-scale mirror. They live under a `FpArms` node on the player camera, not in the world.
+What this replaced (2026-09-04) was `fp_arm_left.glb` / `fp_arm_right.glb` — two rigless meshes whose
+every motion was C# arithmetic in `FirstPersonArmsComponent`: walk bob, a slash arc alternating by
+combo index, a guard blend, cast and interaction beats. It meant a second skeleton, a second action
+state and a second weapon to keep in step with the first, plus a fake second FOV that rescaled the
+arms by a half-angle-tangent ratio. All of it is deleted, along with the VIEWMODEL rig family.
 
-- **No rig, no baked clips.** All motion is procedural in `FirstPersonArmsComponent`: walk bob, a
-  slash arc alternating by combo index, guard blend, cast and interaction beats.
-- **No collision.** Cosmetic viewmodel arms and body equipment have none. The melee hitbox stays
-  owned by `MeleeWeaponComponent` and is never inferred from render geometry.
-- **A fake second camera.** `ViewmodelFov = 55` and `ApplyViewmodelScale()` scale the arms by the
-  half-angle tangent ratio rather than rendering a separate pass.
-- **Semantic sockets are the interface**: `WeaponSocket`, `SpellSocket`, `InteractionSocket`. VFX
-  and equipment attach to those names and never to a mesh path.
+**The head is not hidden by code.** The eye sits `EyeForward` (0.14 m) in front of the head bone, so
+the skull falls behind the camera's 0.08 m near plane and clips away on its own. If a future body's
+head is large enough to survive that, the fix is the offset, not a new mesh-hiding system.
 
-### Weapons in the hand
+⚠️ **The eye takes the head bone's POSITION and ignores its ROTATION.** Taking the rotation would
+hand the player every head turn in every clip as an involuntary camera movement, which is the fastest
+way to make a first-person game unplayable. The position is damped
+(`CameraRigMath.Damp`, frame-rate independent) and clamped to 0.45 m from the fixed pivot, so a
+knockdown or a death throws the head without throwing the camera.
 
-First-person and third-person share the same weapon GLB. Build a separate hero version only when
-the world mesh demonstrably fails in gameplay framing.
+**Weapons are shared between views.** One `wpn_*` model, one hand socket, one grip correction
+(`WeaponGrip.Hand`). Build a separate hero version only when the world mesh demonstrably fails in
+gameplay framing — and note that "demonstrably" now means a render, because both views show the same
+mesh.
 
-**The coordinate contract:**
+**The coordinate contract is unchanged and still applies:**
 
 - 1 Blender unit = 1 metre, exported at scale `1.0`, transforms applied. The imported Godot root
   must remain identity scale.
@@ -413,9 +416,8 @@ the world mesh demonstrably fails in gameplay framing.
 - Reference size, the iron sword: `0.223 × 0.960 × 0.051 m`, wrapped grip centre at local
   `Y = 0.03 m`. One-handed grips 28–36 mm in diameter.
 
-⚠️ **Do not add a second compensating transform inside a weapon GLB.** First-person placement is
-derived from a measured fist point in `FirstPersonArmsComponent.GripTransform()`. Class-specific
-offsets belong in equipment data or a socket profile, not in a differently-rotated mesh.
+⚠️ **Do not add a second compensating transform inside a weapon GLB.** The correction belongs at the
+socket, in `WeaponGrip`, where one value serves every wielder in the game.
 
 Scabbards, sheaths and quivers are separate `eqp_*` assets on named body sockets, so a drawn weapon
 and its empty scabbard coexist without duplicating gameplay state.
