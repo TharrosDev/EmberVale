@@ -1,6 +1,7 @@
 using Embervale.Combat;
 using Embervale.Animation;
 using Embervale.Combat.Actions;
+using Embervale.Player;
 using Embervale.Corruption;
 using Embervale.Crafting;
 using Embervale.Dialogue;
@@ -53,6 +54,16 @@ public class EnumStabilityTests
     {
         Assert.Equal(0, (int)SocketSpace.BoneLocal);
         Assert.Equal(1, (int)SocketSpace.BodyAligned);
+    }
+
+    [Fact]
+    public void CameraContext_Ordinals()
+    {
+        Assert.Equal(0, (int)CameraContext.Exploration);
+        Assert.Equal(1, (int)CameraContext.Sprint);
+        Assert.Equal(2, (int)CameraContext.Combat);
+        Assert.Equal(3, (int)CameraContext.TargetLock);
+        Assert.Equal(4, (int)CameraContext.Aim);
     }
 
     [Fact]

@@ -55,7 +55,16 @@ public sealed partial class WorldCellPresentation : Node3D
         presentation.AddChild(presentation._surface);
         cellRoot.AddChild(presentation);
 
-        var collider = new StaticBody3D { Name = "TerrainCollider" };
+        var collider = new StaticBody3D
+        {
+            Name = "TerrainCollider",
+
+            // World, plus CameraBlocker: the ground is one of the things the third-person camera
+            // must not pass through. Actors sit on World too (CharacterEntity defaults to it), so
+            // sweeping World alone is what let a companion walking behind the player yank the
+            // camera in — see CombatLayers.CameraBlocker.
+            CollisionLayer = Combat.CombatLayers.World | Combat.CombatLayers.CameraBlocker,
+        };
         collider.AddChild(new CollisionShape3D
         {
             Name = "Shape",

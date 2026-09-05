@@ -142,6 +142,18 @@ public partial class PlayerInputRouter : EntityComponent
 
         _lockOn?.FaceTarget();
 
+        // What the camera is FOR, derived from gameplay rather than set by it — so nothing can put
+        // the camera in a framing that disagrees with what the player is doing.
+        if (_rig != null)
+        {
+            _rig.Context = CameraProfile.Resolve(
+                aiming: Godot.Input.IsActionPressed(GameInput.Cast) ||
+                        _weapon is { Weapon.IsRanged: true, IsCommitted: true },
+                lockedOn: _lockOn?.Target != null,
+                inCombat: _combat is { IsBlocking: true } || _weapon is { IsCommitted: true },
+                sprinting: sprint && _locomotion is { } loco && loco.IsGrounded);
+        }
+
         // A warping action closes on whatever the player has locked. With no lock there is no
         // target and no warp, which is deliberate: an unlocked swing must not lunge at whatever
         // happens to be nearest.

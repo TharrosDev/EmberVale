@@ -69,6 +69,13 @@ public partial class PlayerCameraRig : EntityComponent
     /// head — a knockdown, a death — must not throw the camera with it.</summary>
     private const float MaxEyeOffset = 0.45f;
 
+    /// <summary>The camera's current shape, eased toward whatever the context asks for.</summary>
+    private CameraProfile _profile = CameraProfile.Neutral;
+
+    /// <summary>Set each frame by the input router from live gameplay state. Held here rather than
+    /// queried so the rig does not have to know about lock-on, aiming or combat components.</summary>
+    public CameraContext Context { get; set; } = CameraContext.Exploration;
+
     private Skeleton3D? _skeleton;
     private int _headBone = -1;
     private Vector3 _eyeLocal;
@@ -174,6 +181,12 @@ public partial class PlayerCameraRig : EntityComponent
         ResolveHead();
         _modeBlend = CameraRigMath.StepBlend(_modeBlend, _modeTarget, dt, ModeBlendSeconds);
 
+        // The profile leans the camera toward what the player is doing. Eased, because a context
+        // change that cut between framings would be worse than having no profiles at all.
+        CameraProfile wanted = CameraProfile.For(Context);
+        _profile = CameraProfile.Blend(_profile, wanted, CameraRigMath.Damp(dt, wanted.BlendSeconds));
+        ApplyFieldOfView(_settings?.Current);
+
         float desired = ThirdPersonRest.Length();
         _springDistance = CameraRigMath.SpringDistance(
             _springDistance, desired, AllowedCameraDistance(desired), dt, CameraPushOutSpeed);
@@ -277,7 +290,10 @@ public partial class PlayerCameraRig : EntityComponent
     {
         if (Camera != null && current != null)
         {
-            Camera.Fov = current.FieldOfView;
+            // Same rule as the distance: the player's FOV is the baseline and the profile leans off
+            // it, clamped to the range the settings panel itself allows so no context can push the
+            // camera somewhere the player could not have chosen.
+            Camera.Fov = Mathf.Clamp(current.FieldOfView + _profile.FovOffset, 55f, 115f);
         }
     }
 
@@ -297,11 +313,14 @@ public partial class PlayerCameraRig : EntityComponent
         get
         {
             Settings.Settings? s = _settings?.Current;
+            // ⚠️ The profile SCALES the player's own settings rather than replacing them. The
+            // distance and shoulder sliders are accessibility choices; a profile that overrode them
+            // would quietly undo one every time the player drew a bow.
             return CameraRigMath.RestOffset(
                 firstPerson: false,
-                s?.ThirdPersonDistance ?? PlayerFactory.ThirdPersonBackDistance,
-                PlayerFactory.ThirdPersonRise,
-                s?.ShoulderOffset() ?? PlayerFactory.ThirdPersonShoulder);
+                (s?.ThirdPersonDistance ?? PlayerFactory.ThirdPersonBackDistance) * _profile.DistanceScale,
+                PlayerFactory.ThirdPersonRise + _profile.RiseOffset,
+                (s?.ShoulderOffset() ?? PlayerFactory.ThirdPersonShoulder) * _profile.ShoulderScale);
         }
     }
 
@@ -334,14 +353,17 @@ public partial class PlayerCameraRig : EntityComponent
             return desired;
         }
 
-        // ponytail: actor bodies share the World layer, so a companion stepping between the
-        // player and the camera pulls it in too. Honest (it *is* in the way) if slightly
-        // twitchy; a dedicated camera-blocker layer is the upgrade if it ever annoys.
+        // ⚠️ CameraBlocker, not World. Actor bodies share the World layer, so sweeping it pulled the
+        // camera in whenever a companion stepped between the player and it — twitchy, and the
+        // previous note here admitted it and left it. Static world geometry declares itself a
+        // blocker (RegionStreamer.MarkCameraBlockers, WorldCellPresentation's terrain collider);
+        // people simply are not on the layer, so the camera passes through them and the obstruction
+        // fade handles the rest.
         float safe = _queries.SafeSweepFraction(
             CameraPivot.GlobalPosition,
             CameraPivot.GlobalTransform.Basis * ThirdPersonRest,
             CameraProbeRadius,
-            CombatLayers.World);
+            CombatLayers.CameraBlocker);
 
         return desired * safe;
     }

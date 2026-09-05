@@ -118,7 +118,7 @@ public static class PlayerFactory
             Near = 0.08f, // tight near plane so world geometry hugs the eye without clipping weirdness
         };
         cameraPivot.AddChild(camera);
-        var shake = new Embervale.Combat.CameraShake { Name = "Shake" };
+        var shake = new Embervale.Combat.CameraShake { Name = "Shake", PlayerBody = player };
         camera.AddChild(shake);
 
         // Spells aim along this node rather than the pivot. It sits at the eye but AimController
@@ -173,7 +173,7 @@ public static class PlayerFactory
         player.AddChild(new Embervale.Animation.FootIkComponent { Name = "FootIk" });
         player.AddChild(new WeaponTrailComponent { Name = "WeaponTrail" });
         player.AddChild(new DodgeComponent { Name = "Dodge" });
-        player.AddChild(new LockOnComponent { Name = "LockOn" });
+        player.AddChild(new LockOnComponent { Name = "LockOn", Camera = camera });
         // 39A: the mount rides ON this body rather than beside it, so it is a component of the
         // player and not an entity of its own. It reads the animation component and the camera
         // pivot, both of which exist by the time any OnInitialize runs.

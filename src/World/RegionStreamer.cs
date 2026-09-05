@@ -1,3 +1,4 @@
+using Embervale.Combat;
 using System.Collections.Generic;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
@@ -317,6 +318,30 @@ public sealed partial class RegionStreamer : Node3D
         }
     }
 
+    /// <summary>
+    /// Adds <see cref="CombatLayers.CameraBlocker"/> to every authored <see cref="StaticBody3D"/> in
+    /// a cell.
+    ///
+    /// ⚠️ <b>Static geometry only, and that is the entire fix.</b> Actors sit on the World layer too
+    /// (<c>CharacterEntity</c> defaults to it), so a camera sweeping World cannot tell a wall from a
+    /// companion — which is why one walking behind the player used to yank the camera in, a defect a
+    /// <c>ponytail:</c> note in <c>PlayerCameraRig</c> recorded and left. Walls block the camera;
+    /// people do not. Done on load rather than in 36 scene files per cell so authoring a wall needs
+    /// no new step.
+    /// </summary>
+    public static void MarkCameraBlockers(Node node)
+    {
+        if (node is StaticBody3D solid && (solid.CollisionLayer & CombatLayers.World) != 0u)
+        {
+            solid.CollisionLayer |= CombatLayers.CameraBlocker;
+        }
+
+        foreach (Node child in node.GetChildren())
+        {
+            MarkCameraBlockers(child);
+        }
+    }
+
     private void Instantiate(RegionCellResource cell, PackedScene scene)
     {
         if (scene.Instantiate() is not Node3D root)
@@ -326,6 +351,7 @@ public sealed partial class RegionStreamer : Node3D
         }
         root.Name = cell.Id;
         root.Position = cell.Center;
+        MarkCameraBlockers(root);
 
         // Order matters and each step reads the one before it: clip the region field to this cell,
         // drop the authored nodes onto the ground (before the terrain collider exists, so the

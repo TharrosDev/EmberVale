@@ -22,6 +22,7 @@ public partial class CameraShake : Node
     private Vector3 _fallbackRestPosition;
     private Vector3 _restRotation;
     private float _trauma;
+    private bool _shaking;
     private readonly RandomNumberGenerator _rng = new();
 
     private Vector3 Rest => RestPosition?.Invoke() ?? _fallbackRestPosition;
@@ -30,17 +31,18 @@ public partial class CameraShake : Node
     {
         _camera = GetParent<Camera3D>();
         _fallbackRestPosition = _camera.Position;
-        _restRotation = _camera.Rotation;
         _rng.Randomize();
 
         EventBus.Instance?.Subscribe<DamageDealtEvent>(OnDamage);
         EventBus.Instance?.Subscribe<EntityStaggeredEvent>(OnStaggered);
+        EventBus.Instance?.Subscribe<ActionReleasedEvent>(OnActionReleased);
     }
 
     public override void _ExitTree()
     {
         EventBus.Instance?.Unsubscribe<DamageDealtEvent>(OnDamage);
         EventBus.Instance?.Unsubscribe<EntityStaggeredEvent>(OnStaggered);
+        EventBus.Instance?.Unsubscribe<ActionReleasedEvent>(OnActionReleased);
     }
 
     private void OnDamage(DamageDealtEvent e)
@@ -58,11 +60,64 @@ public partial class CameraShake : Node
     private void OnStaggered(EntityStaggeredEvent e) =>
         _trauma = ShakeMath.Add(_trauma, ShakeMath.StaggerTrauma);
 
+    /// <summary>
+    /// An action's own authored kick, on the frame it lands.
+    ///
+    /// ⚠️ <b>Only the PLAYER's actions shake the player's camera.</b> Every actor in the region
+    /// publishes this event, and a camera that kicked for all of them would shudder continuously
+    /// during any fight involving more than two people. What an enemy's blow does to the camera is
+    /// already covered: it is a DamageDealtEvent when it connects.
+    /// </summary>
+    private void OnActionReleased(ActionReleasedEvent e)
+    {
+        if (_playerBody != null && ReferenceEquals(e.Actor.Body, _playerBody) &&
+            e.Actor is Entities.IEntity actor &&
+            actor.GetComponent<Actions.CharacterActionComponent>()?.Current is { } action)
+        {
+            Impulse(action.CameraImpulse);
+        }
+    }
+
+    /// <summary>The body whose actions may shake this camera — the player's, injected by the
+    /// factory. Null means no action ever kicks it.</summary>
+    public Node? PlayerBody { get => _playerBody; set => _playerBody = value; }
+
+    private Node? _playerBody;
+
+    /// <summary>
+    /// The one way anything else moves the camera: submit an impulse, in the same 0..1 trauma the
+    /// hit reactions use.
+    ///
+    /// ⚠️ <b>Combat, spells and landings submit; they never write the transform.</b> Before this the
+    /// only camera motion came from the two events above, so an action wanting a knock had nowhere
+    /// to put it but the camera's own position — and two systems writing one transform is how a
+    /// camera ends up fighting itself. <c>ActionDefinitionResource.CameraImpulse</c> is authored per
+    /// action and arrives here.
+    /// </summary>
+    public void Impulse(float trauma)
+    {
+        if (trauma > 0f)
+        {
+            _trauma = ShakeMath.Add(_trauma, trauma);
+        }
+    }
+
     public override void _Process(double delta)
     {
         if (_trauma <= 0f)
         {
             return;
+        }
+
+        // ⚠️ RE-READ EVERY SHAKE, NOT CAPTURED IN _Ready. The rest rotation used to be sampled once
+        // at build time, so a shake wrote `capturedRest + roll` — and anything that had legitimately
+        // changed the camera's rotation since (a view swap, a cutscene) was silently undone the next
+        // time the player took a crit. The position half already re-read its rest through a
+        // delegate; this is the rotation half catching up.
+        if (!_shaking)
+        {
+            _restRotation = _camera.Rotation;
+            _shaking = true;
         }
 
         float amplitude = ShakeMath.Amplitude(_trauma);
@@ -77,6 +132,7 @@ public partial class CameraShake : Node
         {
             _camera.Position = Rest;
             _camera.Rotation = _restRotation;
+            _shaking = false;
         }
     }
 }
