@@ -75,8 +75,21 @@ public partial class WeaponResource : Resource
     /// only thing that changed is that the clip is now warped to span the same duration instead of
     /// playing at whatever speed it was exported at.</para>
     /// </summary>
+    /// <summary>
+    /// Overrides the chain for as long as it is set — a boss phase's own attack set.
+    ///
+    /// Held on the weapon rather than on the actor because the chain IS the weapon's, and a phase
+    /// that swapped the actor's weapon outright would take its damage and identity with it.
+    /// </summary>
+    public ActionDefinitionResource[]? PhaseOverride { get; set; }
+
     public ActionDefinitionResource[] AttackChain()
     {
+        if (PhaseOverride is { Length: > 0 } phase)
+        {
+            return phase;
+        }
+
         if (Attacks.Count > 0)
         {
             var authored = new ActionDefinitionResource[Attacks.Count];
@@ -124,6 +137,15 @@ public partial class WeaponResource : Resource
                 // moves the actor at full speed. The old FSM restricted movement not at all, which
                 // is why every swing read as a float rather than as a commitment.
                 MoveScale = 0.35f,
+
+                // ⚠️ A SYNTHESISED ACTION EXPRESSES NO OPINION ABOUT REACH, and it must not. The
+                // AI's own AIProfileResource.AttackRange already decided the actor was close
+                // enough — a dragon attacks from 6.5 m — so a synthesised action inheriting the
+                // 2.1 m default would silently refuse every dragon's swing and there would be no
+                // error, just three creatures that never attack. An AUTHORED action is where a
+                // designer says "this blow only reaches so far".
+                AiMinRange = 0f,
+                AiMaxRange = 999f,
 
                 // ⚠️ NOT restricted, and the camera is why. This game's body yaw *is* its camera
                 // yaw in both view modes (PlayerCameraRig), so capping the turn rate during an

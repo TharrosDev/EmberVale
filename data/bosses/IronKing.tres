@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://src/Enemies/BossResource.cs" id="1_boss"]
 [ext_resource type="Script" path="res://src/Enemies/BossPhaseResource.cs" id="2_phase"]
 [ext_resource type="Script" path="res://src/Enemies/BossAddWaveResource.cs" id="3_wave"]
+[ext_resource type="Script" path="res://src/Combat/Actions/ActionDefinitionResource.cs" id="4_action"]
 
 ; The Iron King's fight, moved out of BossController's hard-coded table (Phase 28B) without changing
 ; a number: 66% / 33% thresholds, +25%/+15% then +30%/+20%, and the same ember flare burning hotter
@@ -57,6 +58,74 @@ TelegraphEnergy = 3.5
 WindupPoiseMultiplier = 1.0
 AddWaves = Array[Resource]([SubResource("Wave_thralls")])
 
+; ⚠️ PHASE THREE FIGHTS DIFFERENTLY, NOT JUST FASTER (2026-09-05). Every phase before this one only
+; ever scaled numbers — attack speed, move speed, a hotter flare — because there was no way to give a
+; boss a new move that did not mean a branch inside the generic controller. A phase can now carry its
+; own attack set, so at a third of his health the Iron King stops sweeping and commits entirely: the
+; sweep is gone from his menu and both remaining blows are uninterruptible.
+;
+; It is the same maul and the same damage. What changes is that there is no longer a safe blow to
+; bait — you cannot stagger him out of anything, and the answer becomes spacing rather than trading.
+[sub_resource type="Resource" id="P3_Crush"]
+script = ExtResource("4_action")
+Id = "ironking.crush"
+Kind = 1
+AnimationSlot = "attack"
+Duration = 1.8
+FallbackDuration = 1.8
+ActiveFrom = 0.55
+ActiveTo = 0.66
+CancelFrom = 0.8
+ComboFrom = 0.8
+ComboTo = 1.0
+NextActionId = "ironking.p3slam"
+Interruptible = false
+MoveScale = 0.0
+TurnDegreesPerSecond = 35.0
+StaminaCost = 22.0
+DamageScale = 1.3
+PoiseScale = 1.4
+Knockback = 4.0
+RootMotion = 2
+MaxWarpDistance = 2.0
+MaxWarpDegrees = 40.0
+HitStopScale = 1.4
+CameraImpulse = 0.6
+AiWeight = 1.0
+AiMinRange = 0.0
+AiMaxRange = 3.4
+AiRecoverySeconds = 0.7
+
+[sub_resource type="Resource" id="P3_Slam"]
+script = ExtResource("4_action")
+Id = "ironking.p3slam"
+Kind = 1
+AnimationSlot = "attack"
+Duration = 2.1
+FallbackDuration = 2.1
+ActiveFrom = 0.62
+ActiveTo = 0.72
+CancelFrom = 0.86
+ComboFrom = 0.86
+ComboTo = 1.0
+NextActionId = ""
+Interruptible = false
+MoveScale = 0.0
+TurnDegreesPerSecond = 25.0
+StaminaCost = 26.0
+DamageScale = 1.75
+PoiseScale = 1.6
+Knockback = 6.0
+RootMotion = 2
+MaxWarpDistance = 1.6
+MaxWarpDegrees = 30.0
+HitStopScale = 1.6
+CameraImpulse = 0.8
+AiWeight = 0.7
+AiMinRange = 0.0
+AiMaxRange = 2.6
+AiRecoverySeconds = 0.9
+
 [sub_resource type="Resource" id="Phase_3"]
 script = ExtResource("2_phase")
 HealthFraction = 0.33
@@ -67,6 +136,7 @@ AiProfileId = ""
 TelegraphColor = Color(1, 0.25, 0.05, 1)
 TelegraphEnergy = 5.5
 WindupPoiseMultiplier = 1.0
+Attacks = Array[ExtResource("4_action")]([SubResource("P3_Crush"), SubResource("P3_Slam")])
 AddWaves = Array[Resource]([SubResource("Wave_cultists")])
 
 [resource]

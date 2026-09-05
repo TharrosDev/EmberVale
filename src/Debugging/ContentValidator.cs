@@ -227,8 +227,32 @@ public static class ContentValidator
                 continue;
             }
 
+            CheckActions(weapon.Attacks, $"weapon '{file}'", issues);
+        }
+
+        // ⚠️ BOSS PHASES AUTHOR ACTIONS TOO, and they were invisible to this until a phase set was
+        // first used. An inverted window on a boss's third-phase blow is exactly as silent as one on
+        // a weapon: the fight simply stops dealing damage at a third health, and nothing logs.
+        foreach (BossResource boss in BossDatabase.All)
+        {
+            for (int p = 0; p < boss.Phases.Count; p++)
+            {
+                if (boss.Phases[p] is { } phase)
+                {
+                    CheckActions(phase.Attacks, $"boss '{boss.Id}' phase {p + 1}", issues);
+                }
+            }
+        }
+    }
+
+    /// <summary>The per-action rules, over any authored set. See <see cref="ValidateAttackDefinitions"/>
+    /// for why each one is worth failing a build over.</summary>
+    private static void CheckActions(
+        Godot.Collections.Array<ActionDefinitionResource> actions, string source, List<string> issues)
+    {
+        {
             var ids = new HashSet<string>();
-            foreach (ActionDefinitionResource? action in weapon.Attacks)
+            foreach (ActionDefinitionResource? action in actions)
             {
                 if (action != null && action.Id.Length > 0)
                 {
@@ -236,16 +260,16 @@ public static class ContentValidator
                 }
             }
 
-            for (int i = 0; i < weapon.Attacks.Count; i++)
+            for (int i = 0; i < actions.Count; i++)
             {
-                ActionDefinitionResource? action = weapon.Attacks[i];
+                ActionDefinitionResource? action = actions[i];
                 if (action == null)
                 {
-                    issues.Add($"weapon '{file}' attack #{i} is null.");
+                    issues.Add($"{source} attack #{i} is null.");
                     continue;
                 }
 
-                string where = $"weapon '{file}' attack '{(action.Id.Length > 0 ? action.Id : $"#{i}")}'";
+                string where = $"{source} attack '{(action.Id.Length > 0 ? action.Id : $"#{i}")}'";
 
                 if (action.Id.Length == 0)
                 {

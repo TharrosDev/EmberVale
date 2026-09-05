@@ -354,6 +354,20 @@ public partial class BossController : EntityComponent
         {
             _combat.WindupPoiseMultiplier = definition.WindupPoiseMultiplier;
         }
+
+        // A phase may fight with its own moves (§20). Empty clears the override rather than leaving
+        // the previous phase's set in place — a boss that escalates must be able to de-escalate on a
+        // reload, and a stale override would outlive the phase that set it.
+        if (Entity?.GetComponent<Combat.Actions.CharacterActionComponent>()?.Weapon is { } weapon)
+        {
+            var attacks = new Combat.Actions.ActionDefinitionResource[definition.Attacks.Count];
+            for (int i = 0; i < definition.Attacks.Count; i++)
+            {
+                attacks[i] = definition.Attacks[i];
+            }
+
+            weapon.PhaseOverride = attacks.Length > 0 ? attacks : null;
+        }
     }
 
     /// <summary>The boss falling ends the fight, adds included.</summary>

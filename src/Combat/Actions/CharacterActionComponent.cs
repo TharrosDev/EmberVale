@@ -139,6 +139,54 @@ public partial class CharacterActionComponent : EntityComponent
         return StartNext();
     }
 
+    /// <summary>
+    /// The AI's entry point: attack a target at <paramref name="distance"/> metres, choosing which
+    /// of the weapon's actions actually reaches.
+    ///
+    /// ⚠️ <b>This is what an AI is allowed to know.</b> It knows it wants to hit something and how
+    /// far away that is. It does not know what a wind-up is, when a hitbox opens, or how long any of
+    /// it takes — those belong to the action and its animation. Before this, every AI simply called
+    /// TryAttack every physics frame and the weapon's own commitment was the only rate limit.
+    /// </summary>
+    public bool TryAttackAt(float distance)
+    {
+        if (AiRecoveryRemaining > 0f || IsCommitted)
+        {
+            return false;
+        }
+
+        ActionDefinitionResource[] chain = Chain();
+        var candidates = new ActionSelection.Candidate[chain.Length];
+        for (int i = 0; i < chain.Length; i++)
+        {
+            candidates[i] = ActionSelection.Candidate.Of(chain[i]);
+        }
+
+        int pick = ActionSelection.Choose(candidates, distance, GD.Randf());
+        if (pick < 0)
+        {
+            return false;
+        }
+
+        SetPhysicsProcess(true);
+        return Begin(chain[pick], pick);
+    }
+
+    /// <summary>Starts the named action from this weapon's chain, if it has one. How a directional
+    /// attacker (a dragon choosing bite, wing or tail) asks for a specific blow.</summary>
+    public bool TryStartById(string actionId)
+    {
+        foreach (ActionDefinitionResource action in Chain())
+        {
+            if (action.Id == actionId)
+            {
+                return TryStart(action);
+            }
+        }
+
+        return false;
+    }
+
     /// <summary>Starts a specific action, subject to the same commitment, stagger and stamina rules.
     /// This is the entry point AI, spells, dodges and bows use.</summary>
     public bool TryStart(ActionDefinitionResource? definition)
