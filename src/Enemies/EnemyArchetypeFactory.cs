@@ -71,6 +71,7 @@ public static class EnemyArchetypeFactory
         enemy.AddChild(new HitReactionComponent { Name = "HitReaction" });
         enemy.AddChild(new Animation.CharacterAnimationComponent { Name = "Animation", BodyMeshPath = "Mesh" });
         enemy.AddChild(new Embervale.Animation.EquipmentPresentationComponent { Name = "EquipmentVisuals", BodyMeshPath = "Mesh" });
+        enemy.AddChild(new Embervale.Animation.FootIkComponent { Name = "FootIk" });
         enemy.AddChild(new WeaponTrailComponent { Name = "WeaponTrail" });
         AddHurtboxes(enemy, archetype, radius, height);
 

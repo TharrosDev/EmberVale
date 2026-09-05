@@ -77,7 +77,17 @@ public partial class CharacterActionComponent : EntityComponent
     private CombatComponent? _combat;
     private CharacterAnimationComponent? _animation;
     private MountComponent? _mount;
+    /// <summary>What a warping action should close on — the locked target for the player, the AI's
+    /// quarry for everything else. Null disables warping entirely, which is the common case.</summary>
+    public Node3D? WarpTarget { get; set; }
+
+    /// <summary>How far the actor stops short of its target when warping. Roughly a body plus a
+    /// weapon: close enough to land the blow, far enough not to stand inside them.</summary>
+    [Export] public float WarpReach { get; set; } = 1.4f;
+
     private Hitbox? _openHitbox;
+    private float _warpDegreesLeft;
+    private float _warpDistanceLeft;
     private float _progress;
     private double _elapsed;
     private double _duration;
@@ -204,6 +214,8 @@ public partial class CharacterActionComponent : EntityComponent
 
         Phase = ActionPhase.Startup;
         SetWindup(true);
+        _warpDegreesLeft = definition.MaxWarpDegrees;
+        _warpDistanceLeft = definition.MaxWarpDistance;
 
         // The telegraph is told the *effective* startup, not an authored constant: a phase buff or a
         // slow debuff moves the danger window, and a cue that ignores that is worse than none.
@@ -270,6 +282,8 @@ public partial class CharacterActionComponent : EntityComponent
         Phase = ActionTimeline.PhaseAt(_progress, windows);
         SetWindup(Phase == ActionPhase.Startup);
 
+        ApplyWarp(Current, delta);
+
         bool shouldBeOpen = ActionTimeline.IsActive(_progress, windows);
         if (shouldBeOpen && _openHitbox == null)
         {
@@ -292,6 +306,52 @@ public partial class CharacterActionComponent : EntityComponent
         _progress = 0f;
         SetWindup(false);
         _animation?.StopAction();
+    }
+
+    /// <summary>
+    /// Closes the last of the gap to the target during an action's startup.
+    ///
+    /// ⚠️ <b>The translation is SWEPT, not assigned.</b> <c>MoveAndCollide</c> stops the actor at the
+    /// first thing in the way, which is what makes "an attack cannot warp through a wall" true by
+    /// construction rather than by a check somebody has to remember. Assigning the position directly
+    /// would put a lunging enemy inside the geometry the player was hiding behind.
+    /// </summary>
+    private void ApplyWarp(ActionDefinitionResource definition, double delta)
+    {
+        if (definition.RootMotion != RootMotionMode.WarpToTarget ||
+            WarpTarget is not { } target || !GodotObject.IsInstanceValid(target) ||
+            Entity?.Body is not CharacterBody3D body)
+        {
+            return;
+        }
+
+        float fraction = MotionWarp.Fraction(_progress, definition.ActiveFrom, delta, _duration);
+        if (fraction <= 0f)
+        {
+            return;
+        }
+
+        Vector3 here = body.GlobalPosition;
+        Vector3 there = target.GlobalPosition;
+
+        // ⚠️ THE BUDGET IS PER ACTION, NOT PER FRAME, and it is spent as it is used. Passing the
+        // authored maximum every frame caps each STEP rather than the journey: a long wind-up then
+        // closes 3.6 m on a 1.6 m allowance, one frame at a time, and the "lunge" is a chase. Found
+        // by the no-wall control in grounding_probe.gd, which is the only thing that measures the
+        // total rather than the outcome.
+        Vector3 step = MotionWarp.Step(here, there, WarpReach, _warpDistanceLeft, fraction);
+        if (step.LengthSquared() > 0f)
+        {
+            _warpDistanceLeft -= step.Length();
+            body.MoveAndCollide(step);
+        }
+
+        float yaw = MotionWarp.YawStep(body.Rotation.Y, here, there, _warpDegreesLeft, fraction);
+        if (yaw != 0f)
+        {
+            body.Rotation = new Vector3(body.Rotation.X, body.Rotation.Y + yaw, body.Rotation.Z);
+            _warpDegreesLeft -= Mathf.RadToDeg(Mathf.Abs(yaw));
+        }
     }
 
     /// <summary>Mirrors the startup window onto the combat component, which is where incoming poise

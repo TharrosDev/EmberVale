@@ -142,6 +142,14 @@ public partial class PlayerInputRouter : EntityComponent
 
         _lockOn?.FaceTarget();
 
+        // A warping action closes on whatever the player has locked. With no lock there is no
+        // target and no warp, which is deliberate: an unlocked swing must not lunge at whatever
+        // happens to be nearest.
+        if (_weapon != null)
+        {
+            _weapon.WarpTarget = _lockOn?.Target?.Body;
+        }
+
         if (_combat != null)
         {
             _combat.IsBlocking = Godot.Input.IsActionPressed(GameInput.Block);

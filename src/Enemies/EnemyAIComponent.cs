@@ -437,6 +437,10 @@ public partial class EnemyAIComponent : EntityComponent
                 // AiRecoveryRemaining is the authored breath between decisions.
                 if (_weapon is { AiRecoveryRemaining: <= 0f })
                 {
+                    // A committed attack may close the last of the gap on the thing it is aimed at,
+                    // within the limits its definition authors. Set before the swing starts so the
+                    // warp has a target from its first frame.
+                    _weapon.WarpTarget = canSee ? player?.Body : null;
                     _weapon.TryAttack();
                 }
             }

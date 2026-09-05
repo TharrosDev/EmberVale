@@ -86,6 +86,7 @@ public static class CompanionFactory
         companion.AddChild(new HitReactionComponent { Name = "HitReaction" });
         companion.AddChild(new Embervale.Animation.CharacterAnimationComponent { Name = "Animation", BodyMeshPath = "Mesh" });
         companion.AddChild(new Embervale.Animation.EquipmentPresentationComponent { Name = "EquipmentVisuals", BodyMeshPath = "Mesh" });
+        companion.AddChild(new Embervale.Animation.FootIkComponent { Name = "FootIk" });
         companion.AddChild(new WeaponTrailComponent { Name = "WeaponTrail" });
         companion.AddChild(BuildHurtbox());
 

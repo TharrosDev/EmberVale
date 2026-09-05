@@ -170,6 +170,7 @@ public static class PlayerFactory
             Offset: new Vector3(-0.22f, 0.02f, 0.13f),
             RotationDegrees: new Vector3(5f, -8f, -8f)));
         player.AddChild(presentation);
+        player.AddChild(new Embervale.Animation.FootIkComponent { Name = "FootIk" });
         player.AddChild(new WeaponTrailComponent { Name = "WeaponTrail" });
         player.AddChild(new DodgeComponent { Name = "Dodge" });
         player.AddChild(new LockOnComponent { Name = "LockOn" });

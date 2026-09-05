@@ -17,6 +17,13 @@
 ;      landing. That is what the poise system was for and what no authored content had ever used.
 ;      It is slower, roots him completely (MoveScale 0), and hits for nearly twice the sweep.
 ;
+;   The slam also WARPS: over its wind-up it closes up to 1.6 m and corrects up to 30 degrees onto
+;   its target. That is what stops a two-metre maul whistling past a player who took one step back
+;   during a 1.3 s telegraph — the blow lands where it was aimed, or it misses because the player
+;   actually left, not because the animation was authored in place. The limits are the design: more
+;   distance is a teleport, more rotation is a homing missile, and the translation is swept through
+;   the physics world so it can never arrive inside a wall.
+;
 ; ⚠️ THE SLAM'S HYPERARMOR IS A REAL DIFFICULTY CHANGE, NOT A PRESENTATION ONE. It is deliberately
 ; paired with the longest wind-up in the game (0.62 of a 2.1 s action ≈ 1.3 s of raised maul) so the
 ; answer is to leave rather than to trade. Telegraph, then commitment; a boss that cannot be
@@ -63,6 +70,9 @@ NextActionId = ""
 Interruptible = false
 MoveScale = 0.0
 TurnDegreesPerSecond = 25.0
+RootMotion = 2
+MaxWarpDistance = 1.6
+MaxWarpDegrees = 30.0
 StaminaCost = 26.0
 DamageScale = 1.75
 PoiseScale = 1.6
