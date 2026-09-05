@@ -84,13 +84,19 @@ public partial class ApplicationRoot : Node3D, IServiceScopeHost
     }
 
     /// <summary>
-    /// The four command-line report modes. Each loads the content databases, prints, and quits;
+    /// The command-line report and production modes. Each loads the content databases, prints, and quits;
     /// only <c>--validate</c> is a gate (exit 1 on failure). Returns true when one ran, in which
     /// case nothing else should be built.
     /// </summary>
     private bool RunHeadlessModeIfRequested()
     {
         SceneTree tree = GetTree();
+
+        if (HeadlessWorldBake.Requested())
+        {
+            HeadlessWorldBake.Run(tree);
+            return true;
+        }
 
         if (HeadlessValidation.Requested())
         {

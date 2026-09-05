@@ -6,7 +6,8 @@ The canonical exterior-region workflow. Read `CLAUDE.md`, `NOW.md`, `ARCHITECTUR
 > **If you are here to build a new region, the shortest path is:**
 > `cp tools/region_spec_template.py tools/region_spec_<yours>.py`, follow its numbered comments,
 > then `python tools/world_quality_check.py <yours>`. The template is a working spec — running it
-> directly builds a four-cell region in memory and checks its lattice — and every rule on this page
+> directly builds a four-cell region in memory and checks its lattice. Then run
+> `python tools/world_bake.py --bake` to produce the runtime package — and every rule on this page
 > is either enforced by a validator or written into its comments. This page is the long version.
 
 ---
@@ -18,6 +19,11 @@ continuous ground function (`WorldHeightfield`): a staged procedural pipeline �
 continentalness, mountain systems, erosion and valley response, rolling relief, micro detail, then a
 cached drainage solve that carves rivers — with every cell's authored landforms, roads and yards
 stamped over it in that fixed order, in world space.
+
+That function is a **production input**, not a gameplay workload. `tools/world_bake.py --bake`
+evaluates it offline, conforms authored content, prepares terrain/collision/scatter/navigation and
+writes one packed scene per cell plus a sampled region query field and distant backdrop. Runtime
+loads those artifacts and never runs deterministic generation in normal play.
 
 ⚠️ **A region without a `WorldGenerationProfileResource` has no geography.** The profile in
 `data/world_gen/<Region>.tres` is the whole art direction: macro relief, mountain prevalence and
@@ -99,15 +105,16 @@ stopping three metres short of the seam.
 zero at the cell boundary. Roads and yards were 6 cm slabs laid on top. That contract was seam-safe
 and it was also the reason the realm read as fifteen rectangles touching.
 
-- **`WorldHeightfield` is the region's one ground function**, built once by
-  `RegionStreamer.Configure`. Two cells that abut sample the identical function at the shared edge,
+- **`WorldHeightfield` is the region's one source ground function**, evaluated by the world bake.
+  Runtime uses the bake's sampled `PreparedWorldHeightfield`. Two cells that abut were produced from
+  the identical function at the shared edge,
   so **seams match by construction and there is no edge fade anywhere.** A ridge authored on one cell
   runs into its neighbour on purpose.
-- **`WorldCellPresentation` builds the terrain mesh AND its collider**, and parents the collider into
-  the cell's `Nav`, so the navmesh bakes off real elevation with no extra wiring.
-- **`WorldTerrainConform` drops every authored node onto that ground at load**, so a node's authored
+- **`WorldCellPresentation` builds the terrain mesh AND its collider during the bake**, and parents
+  the collider into the cell's `Nav`, so navigation is prepared from the same real elevation.
+- **`WorldTerrainConform` drops every authored node onto that ground during the bake**, so a node's authored
   Y is its clearance *above* the ground. Opt out with the `terrain_absolute` group.
-- **`WorldRegionBackdrop` continues the same function outward** past the lattice into ridged
+- **`WorldRegionBackdrop` is baked from the same function outward** past the lattice into ridged
   mountains — one draw call, no collision. It samples the real heightfield, so the join is not a
   join. (It was twenty-six grey cones on a circle; every wide shot in the repository showed it.)
 - **Grade discipline.** `CharacterBody3D`'s floor limit is 45° and `StepUp.MaxHeight` is 0.5 m, so a
@@ -363,9 +370,13 @@ surrounding ground, no progress, and a local flood fill finds no way out.
   cone or a unit cube in a flat colour, and at the ranges that actually engage — 92 m for scrub —
   a hillside of them read as a scattering of black crates. An HLOD tier is a *silhouette* contract; a
   primitive keeps the mass and throws away the silhouette, which is the half that matters at distance.
-- `WorldVisibilityManager` checks the camera four times a second and hides only cosmetic biome
-  batches beyond `BiomeCullDistance`. Gameplay roots, navigation, schedules, interactables and
-  persistence stay resident.
+- `RegionStreamer` assigns each cell one owner and one predictive tier. **Near** enables gameplay,
+  complete collision, navigation and shadows; **Mid** keeps visuals plus terrain collision while
+  simulation sleeps; **Far** is static visual continuity without collision/navigation; **Backdrop**
+  retains only prepared terrain/landmark/HLOD representation. Beyond the backdrop radius the cell
+  unloads. Velocity projects focus two seconds ahead and tier hysteresis prevents boundary thrash.
+- Activation is staged under `ActivationBudgetMilliseconds`: presentation, collision, navigation,
+  then gameplay. A landing cell is pinned Near until real terrain collision exists.
 
 ---
 
@@ -420,6 +431,7 @@ in the specialist tool that owns it. See `tests/README.md` for the authoritative
 | Gate | Proves |
 | ---- | ------ |
 | `generation` | the committed `.tres` match their region specs |
+| `world-bake` | every prepared output exists, is unmodified, and matches the exact source fingerprint |
 | `build` / `tests` | the C# compiles; the pure-logic suite passes |
 | `content` | references, well-formedness, reachability, **route grades**, **off-route traps** |
 | `negative` | the content rules still *fail* when deliberately broken |
@@ -430,6 +442,7 @@ in the specialist tool that owns it. See `tests/README.md` for the authoritative
 | `stepup` | the player can still climb the realm's raised ground |
 | `meshes` | the rendered mesh census against the per-cell budgets |
 | `traversal` | a real capsule walks every authored route in the real collision world |
+| `streaming-stress` | rapid traversal, teleport cycling, boundary oscillation, collision/nav readiness and unload soak |
 | `visuals` | the approach shots render and match the approved baseline |
 
 ### Off-route traversal
@@ -478,7 +491,12 @@ Godot_..._console.exe --path . --script res://tools/world_shots.gd -- --update-w
 
 ## 11. Performance
 
-- A region is resident as a whole. Count every cell node and material as simultaneously live.
+- The full frame target is **16.67 ms at 60 FPS**. `WorldPerformanceBudgetResource` carries p95
+  targets for main-thread, render CPU, GPU, physics, AI, navigation, streaming and animation, plus a
+  2 ms staged-activation allowance. The runtime monitor reports p50/p95/p99 and meaningful worst
+  frame, not only an average.
+- Count Near/Mid/Far/Backdrop residency separately. Only Near carries full gameplay simulation;
+  prepared cells beyond the backdrop range must unload and return their ownership cleanly.
 - `WorldPerformanceBudgetResource` separates authored `.tscn` nodes from expanded runtime nodes.
   ⚠️ Read `MaxResidentScatterInstances` as a **memory** limit and `MaxDrawCalls` as a **GPU** limit:
   raising the first is nearly free because scatter is MultiMesh, and raising the second usually means
@@ -503,6 +521,8 @@ enforced by the gate named or is a review rule.
 | Never use a flat `BoxMesh` as the primary terrain of an exterior region. | `layout`, review |
 | Never use repeated rock props as the primary shape of a mountain, crater, corrie or pass. | review |
 | Never manually author opposite sides of the same region seam. | `generation` + `seams` — the spec makes it impossible |
+| Never change a world input without rebuilding its production package. | `world-bake` source/output manifest |
+| Never activate an actor before its landing cell's real collision is Near-ready. | `LoadingCoordinator` + `SafePlacementService` + `streaming-stress` |
 | Never let every POI touch the next POI. | review (§2 scale) |
 | Never let every 30 metres contain a gameplay beat. | review (§2 empty space) |
 | Never create an obvious trail without deciding what expectation it creates. | review (§2 path semantics) |
@@ -537,6 +557,7 @@ enforced by the gate named or is a review rule.
 
 ```text
 python tools/world_quality_check.py
+python tools/world_bake.py --check
 Godot_..._console.exe --headless --path . -- --play
 ```
 
@@ -551,7 +572,7 @@ Kept here rather than in `docs/NOW.md`, which stays one screen and carries only 
 sub-phase's numbers. Re-measure with `godot --path . --script res://tools/world_perf_probe.gd`
 before claiming a region got cheaper or dearer than this.
 
-**Measured cost, same machine (Intel Iris Xe), `world_perf_probe.gd`, median frame time:**
+**Historical pre-bake cost, same machine (Intel Iris Xe), `world_perf_probe.gd`, median frame time:**
 
 | | Ember Crown before -> after | Frostfang before -> after |
 | --- | --- | --- |
@@ -562,7 +583,11 @@ before claiming a region got cheaper or dearer than this.
 | Video memory | 483 MB -> **379 MB** | 413 MB -> **305 MB** |
 | Region build (streamed+settled) | 2.2 s -> **3.4 s** | 0.9 s -> **1.9 s** |
 
-⚠️ **The one regression is region BUILD time, and it is on a loading screen.** It was 5.2 s
+This table is retained as the before value for the offline-first migration. Region construction is
+no longer an acceptable loading-screen workload; use the current performance artifact for the
+prepared-cell result.
+
+The old runtime regression was region BUILD time. It was 5.2 s
 before three fixes: the irregularity warp now early-outs outside a landform's transition band, the
 backdrop samples the real field only within 45 m of the lattice, and the scatter spacing test is
 bucketed rather than O(n-squared). Everything the player sees per frame got cheaper.

@@ -24,7 +24,6 @@ namespace Embervale.Bootstrap;
 /// </summary>
 public sealed partial class LoadingCoordinator : Node
 {
-    private const double MinSeconds = 0.15d;
     private const double MaxSeconds = 30.0d;
     private const float GroundProbeUp = 1.0f;
     private const float GroundProbeDown = 3.0f;
@@ -50,6 +49,10 @@ public sealed partial class LoadingCoordinator : Node
         GameManager.Instance?.ChangeState(GameState.Loading);
         _elapsed = 0d;
         _onSettled = onSettled;
+        if (Session.Players.Player is { } player)
+        {
+            Session.WorldDirector.Streamer?.RequirePosition(player.GlobalPosition);
+        }
         SetPhysicsProcess(true);
         Log.Info(message);
     }
@@ -90,7 +93,13 @@ public sealed partial class LoadingCoordinator : Node
             return;
         }
 
-        if (_elapsed < MinSeconds || (streamer != null && !streamer.IsSettled()) || !HasGroundUnderPlayer())
+        PlayerCharacter? landingPlayer = Session.Players.Player;
+        if (streamer != null && landingPlayer != null &&
+            !streamer.IsPositionReady(landingPlayer.GlobalPosition, requireNavigation: false))
+        {
+            return;
+        }
+        if (!HasGroundUnderPlayer())
         {
             return;
         }
@@ -100,6 +109,7 @@ public sealed partial class LoadingCoordinator : Node
         // Everything the world put down is on the ground now, so anything the load moved can be
         // re-seated against real collision rather than the heightfield alone.
         SettleActorsOnGround();
+        streamer?.ReleaseRequiredPosition();
 
         GameManager.Instance?.ChangeState(GameState.Playing);
         Action? settled = _onSettled;
@@ -154,7 +164,14 @@ public sealed partial class LoadingCoordinator : Node
         if (Session.Players.Player is { } player && IsInstanceValid(player))
         {
             player.Velocity = Vector3.Zero;
-            player.GlobalPosition = WorldSessionDirector.SafeLanding(player.GlobalPosition);
+            if (SafePlacementService.TryResolve(player, player.GlobalPosition, out Vector3 resolved))
+            {
+                player.GlobalPosition = resolved;
+            }
+            else
+            {
+                player.GlobalPosition = WorldSessionDirector.SafeLanding(player.GlobalPosition);
+            }
         }
 
         if (ServiceLocator.Instance is { } locator && locator.TryGet(out CompanionRoster party))

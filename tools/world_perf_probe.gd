@@ -41,6 +41,7 @@ var _json_path := ""
 var _region_id := ""
 var _failures: Array[String] = []
 var _summaries: Array = []
+var _streamer: Node3D
 
 
 func _initialize() -> void:
@@ -75,20 +76,20 @@ func _initialize() -> void:
 
 func _run() -> void:
 	var streamer_script: Script = load("res://src/World/RegionStreamer.cs")
-	var streamer: Node3D = streamer_script.new()
-	root.add_child(streamer)
-	streamer.call("SetPerformanceSamplingEnabled", false)
+	_streamer = streamer_script.new()
+	root.add_child(_streamer)
+	_streamer.call("SetPerformanceSamplingEnabled", false)
 
 	for region_path in REGIONS:
 		var region: Resource = load(region_path)
 		var configure_started := Time.get_ticks_usec()
-		streamer.call("Configure", region)
+		_streamer.call("Configure", region)
 		var settle := 0
-		while not streamer.call("IsSettled") and settle < 900:
+		while not _streamer.call("IsSettled") and settle < 900:
 			await process_frame
 			settle += 1
 		var configure_ms := (Time.get_ticks_usec() - configure_started) / 1000.0
-		if not streamer.call("IsSettled") or streamer.call("HasFailedCells"):
+		if not _streamer.call("IsSettled") or _streamer.call("HasFailedCells"):
 			_failures.append("region failed to settle: %s (%d frames)" % [region_path, settle])
 			continue
 		# ⚠️ A REGION-WIDE WARM-UP BEFORE THE FIRST CELL, not just a per-cell one. Every material in
@@ -141,8 +142,8 @@ func _run() -> void:
 			print("  resident video memory: %.0f MB" % memory)
 			_check_budget(region, totals, memory)
 
-		streamer.call("UnloadAll")
-		streamer.call("Configure", null)
+		_streamer.call("UnloadAll")
+		_streamer.call("Configure", null)
 		await process_frame
 		await process_frame
 
@@ -209,6 +210,14 @@ func _check_budget(region: Resource, totals: Dictionary, memory: float) -> void:
 
 func _sample_cell(authored_cell: Resource) -> Dictionary:
 	var centre: Vector3 = authored_cell.get("Center")
+	_streamer.call("SetStreamingFocus", centre)
+	var settle := 0
+	while (not _streamer.call("IsPositionReady", centre, false) or
+			not _streamer.call("IsSettled")) and settle < 900:
+		await process_frame
+		settle += 1
+	if settle >= 900:
+		_failures.append("cell failed to activate for sample: %s" % authored_cell.get("Id"))
 	var presentation: Resource = authored_cell.get("Presentation")
 	# ⚠️ PER-AXIS, NOT max(width, depth). A single reach put the camera for the 170 x 80 frost_march_w
 	# nineteen metres OUTSIDE the region, standing on the backdrop looking in with nothing occluding

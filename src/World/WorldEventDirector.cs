@@ -8,6 +8,7 @@ using Embervale.Factions;
 using Embervale.Items;
 using Embervale.Player;
 using Embervale.Progression;
+using Embervale.Save;
 using Embervale.Stats;
 using Godot;
 
@@ -23,12 +24,12 @@ namespace Embervale.World;
 /// existing components. One event runs at a time so the world reads as a sequence of
 /// discrete happenings rather than noise.
 ///
-/// Reuses <see cref="EnemyFactory"/> and <see cref="ItemPickupFactory"/>. Like the
-/// ambient <see cref="EncounterDirector"/> it is emergent/transient and not persisted —
-/// only the rewards it grants (which flow through saved components) survive a reload.
+/// Reuses <see cref="EnemyFactory"/> and <see cref="ItemPickupFactory"/>. Its compact objective and
+/// cooldown state is session/save owned; its actors are materialized under the active streaming
+/// cell only while their origin is Near.
 /// </summary>
 [GlobalClass]
-public partial class WorldEventDirector : Node3D
+public partial class WorldEventDirector : Node3D, ISaveable
 {
     /// <summary>Average real seconds between world-event rolls (events are occasional).</summary>
     [Export] public float BaseIntervalSeconds { get; set; } = 75f;
@@ -42,6 +43,8 @@ public partial class WorldEventDirector : Node3D
     private double _timer;
     private WorldEvent? _active;
 
+    public string SaveId => "world_events";
+
     public WorldEvent? Active => _active;
 
     public override void _Ready()
@@ -50,6 +53,7 @@ public partial class WorldEventDirector : Node3D
         _timer = NextInterval();
 
         ServiceScope.RegisterOwned(this, this);
+        SaveManager.Instance?.Register(this);
         EventBus.Instance?.Subscribe<EntityDiedEvent>(OnEntityDied);
         EventBus.Instance?.Subscribe<ItemPickedUpEvent>(OnItemPickedUp);
         EventBus.Instance?.Subscribe<RegionChangedEvent>(OnRegionTransition);
@@ -57,6 +61,7 @@ public partial class WorldEventDirector : Node3D
 
     public override void _ExitTree()
     {
+        SaveManager.Instance?.Unregister(this);
         EventBus.Instance?.Unsubscribe<EntityDiedEvent>(OnEntityDied);
         EventBus.Instance?.Unsubscribe<ItemPickedUpEvent>(OnItemPickedUp);
         EventBus.Instance?.Unsubscribe<RegionChangedEvent>(OnRegionTransition);
@@ -119,6 +124,13 @@ public partial class WorldEventDirector : Node3D
     private void TickActive(double delta)
     {
         WorldEvent active = _active!;
+        RemoveInvalidActors(active);
+        if (active.Actors.Count == 0 && !active.IsComplete && OriginIsNear(active.Origin))
+        {
+            active.Enemies.Clear();
+            active.EnemyIds.Clear();
+            Materialize(active);
+        }
         if (active.IsTimed)
         {
             active.TimeLeft -= delta;
@@ -175,13 +187,9 @@ public partial class WorldEventDirector : Node3D
         int required = isCache ? Mathf.Max(1, resource.CacheQuantity) : Mathf.Max(1, resource.RollCount());
 
         var worldEvent = new WorldEvent(resource, origin, required, limit);
-        if (isCache)
+        if (!OriginIsNear(origin) || !Materialize(worldEvent))
         {
-            SpawnCache(worldEvent);
-        }
-        else
-        {
-            SpawnCombat(worldEvent, required);
+            return;
         }
 
         _active = worldEvent;
@@ -189,8 +197,22 @@ public partial class WorldEventDirector : Node3D
         Log.Info($"World event: {worldEvent.Name} — {worldEvent.ObjectiveLabel()}.");
     }
 
-    private void SpawnCombat(WorldEvent worldEvent, int count)
+    private bool Materialize(WorldEvent worldEvent)
     {
+        int remaining = Mathf.Max(0, worldEvent.Required - worldEvent.Progress);
+        bool complete = worldEvent.Resource.Kind == WorldEventKind.Cache
+            ? SpawnCache(worldEvent, remaining)
+            : SpawnCombat(worldEvent, remaining);
+        if (!complete)
+        {
+            ClearMaterialized(worldEvent);
+        }
+        return complete;
+    }
+
+    private bool SpawnCombat(WorldEvent worldEvent, int count)
+    {
+        int spawned = 0;
         for (int i = 0; i < count; i++)
         {
             // ⚠️ Each member is placed on the ground it personally lands on, not on the group
@@ -200,25 +222,43 @@ public partial class WorldEventDirector : Node3D
             EnemyEntity enemy = EnemyTemplateRegistry.Create(
                 worldEvent.Resource.EnemyTemplateId,
                 SpawnPlacement.Resolve(this, worldEvent.Origin + jitter));
-            GetParent().AddChild(enemy);
+            if (!TryOwnActor(enemy, enemy.Position))
+            {
+                enemy.Free();
+                continue;
+            }
 
             EnemyScaling.ApplyHealthMultiplier(enemy, worldEvent.Resource.HealthMultiplier, "world_event.champion");
             worldEvent.Enemies.Add(enemy);
+            worldEvent.Actors.Add(enemy);
             worldEvent.EnemyIds.Add(enemy.RuntimeId);
+            spawned++;
         }
+        return spawned == count;
     }
 
-    private void SpawnCache(WorldEvent worldEvent)
+    private bool SpawnCache(WorldEvent worldEvent, int count)
     {
         WorldEventResource r = worldEvent.Resource;
-        if (ItemDatabase.Get(r.CacheItemId) is { } item)
+        if (count > 0 && ItemDatabase.Get(r.CacheItemId) is { } item)
         {
             // On the ground, not at the event's authored Y: an event origin is a planar point and
             // WorldEvents places it from a safe-zone ring at a fixed height (see SafeZones), which on
             // real terrain is inside a hillside as often as above it.
-            GetParent().AddChild(ItemPickupFactory.Create(
-                item, Mathf.Max(1, r.CacheQuantity), SpawnPlacement.Resolve(this, worldEvent.Origin)));
+            Vector3 pickupPosition = SafePlacementService.TryResolve(
+                this, worldEvent.Origin, out Vector3 resolved,
+                capsuleRadius: 0.25f, capsuleHeight: 0.5f)
+                ? resolved
+                : WorldGround.OnGround(worldEvent.Origin, 0.31f);
+            var pickup = ItemPickupFactory.Create(item, count, pickupPosition);
+            if (TryOwnActor(pickup, pickup.Position))
+            {
+                worldEvent.Actors.Add(pickup);
+                return true;
+            }
+            pickup.Free();
         }
+        return false;
     }
 
     // --- Objective tracking -------------------------------------------------
@@ -281,11 +321,11 @@ public partial class WorldEventDirector : Node3D
         active.Status = WorldEventStatus.Failed;
 
         // Tidy up any raiders the player never dealt with so they don't linger forever.
-        foreach (EnemyEntity enemy in active.Enemies)
+        foreach (Node3D actor in active.Actors)
         {
-            if (IsInstanceValid(enemy))
+            if (IsInstanceValid(actor))
             {
-                enemy.QueueFree();
+                actor.QueueFree();
             }
         }
 
@@ -429,5 +469,143 @@ public partial class WorldEventDirector : Node3D
         return ServiceLocator.Instance != null && ServiceLocator.Instance.TryGet(out WorldClock clock)
             ? clock.Phase
             : DayPhase.Day;
+    }
+
+    private static bool OriginIsNear(Vector3 origin) =>
+        ServiceLocator.Instance is { } locator && locator.TryGet(out RegionStreamer streamer) &&
+        streamer.IsPositionReady(origin);
+
+    private static bool TryOwnActor(Node3D actor, Vector3 position) =>
+        ServiceLocator.Instance is { } locator && locator.TryGet(out RegionStreamer streamer) &&
+        streamer.TryAddCellOwnedActor(actor, position);
+
+    private static void RemoveInvalidActors(WorldEvent worldEvent)
+    {
+        worldEvent.Actors.RemoveAll(actor => !IsInstanceValid(actor) || !actor.IsInsideTree());
+        worldEvent.Enemies.RemoveAll(enemy => !IsInstanceValid(enemy) || !enemy.IsInsideTree());
+    }
+
+    private static void ClearMaterialized(WorldEvent worldEvent)
+    {
+        foreach (Node3D actor in worldEvent.Actors)
+        {
+            if (IsInstanceValid(actor))
+            {
+                actor.QueueFree();
+            }
+        }
+        worldEvent.Actors.Clear();
+        worldEvent.Enemies.Clear();
+        worldEvent.EnemyIds.Clear();
+    }
+
+    // --- ISaveable ----------------------------------------------------------
+
+    public Godot.Collections.Dictionary Save()
+    {
+        var cooldowns = new Godot.Collections.Array();
+        foreach (KeyValuePair<string, double> cooldown in _cooldowns)
+        {
+            cooldowns.Add(new Godot.Collections.Dictionary
+            {
+                ["id"] = cooldown.Key,
+                ["remaining"] = cooldown.Value,
+            });
+        }
+
+        var data = new Godot.Collections.Dictionary
+        {
+            ["timer"] = _timer,
+            ["cooldowns"] = cooldowns,
+        };
+        if (_active is { } active)
+        {
+            data["active"] = new Godot.Collections.Dictionary
+            {
+                ["id"] = active.Resource.Id,
+                ["x"] = active.Origin.X,
+                ["y"] = active.Origin.Y,
+                ["z"] = active.Origin.Z,
+                ["required"] = active.Required,
+                ["progress"] = active.Progress,
+                ["time_left"] = active.IsTimed ? active.TimeLeft : -1d,
+            };
+        }
+        return data;
+    }
+
+    public void Load(Godot.Collections.Dictionary data)
+    {
+        if (_active != null)
+        {
+            foreach (Node3D actor in _active.Actors)
+            {
+                if (IsInstanceValid(actor))
+                {
+                    actor.QueueFree();
+                }
+            }
+            _active = null;
+        }
+
+        _cooldowns.Clear();
+        if (data.TryGetValue("cooldowns", out Variant cooldownVariant) &&
+            cooldownVariant.VariantType == Variant.Type.Array)
+        {
+            foreach (Variant element in cooldownVariant.AsGodotArray())
+            {
+                if (element.VariantType != Variant.Type.Dictionary)
+                {
+                    continue;
+                }
+                Godot.Collections.Dictionary entry = element.AsGodotDictionary();
+                string id = entry.TryGetValue("id", out Variant idValue) ? idValue.AsString() : string.Empty;
+                double remaining = entry.TryGetValue("remaining", out Variant remainingValue)
+                    ? remainingValue.AsDouble()
+                    : 0d;
+                if (!string.IsNullOrEmpty(id) && remaining > 0d)
+                {
+                    _cooldowns[id] = remaining;
+                }
+            }
+        }
+        _timer = data.TryGetValue("timer", out Variant timerValue)
+            ? timerValue.AsDouble()
+            : NextInterval();
+
+        if (!data.TryGetValue("active", out Variant activeVariant) ||
+            activeVariant.VariantType != Variant.Type.Dictionary)
+        {
+            return;
+        }
+        Godot.Collections.Dictionary saved = activeVariant.AsGodotDictionary();
+        string eventId = saved.TryGetValue("id", out Variant eventIdValue)
+            ? eventIdValue.AsString()
+            : string.Empty;
+        if (WorldEventDatabase.Get(eventId) is not { } resource)
+        {
+            return;
+        }
+        var origin = new Vector3(
+            saved.TryGetValue("x", out Variant x) ? x.AsSingle() : 0f,
+            saved.TryGetValue("y", out Variant y) ? y.AsSingle() : 0f,
+            saved.TryGetValue("z", out Variant z) ? z.AsSingle() : 0f);
+        int required = saved.TryGetValue("required", out Variant requiredValue)
+            ? requiredValue.AsInt32()
+            : 1;
+        double savedTime = saved.TryGetValue("time_left", out Variant timeValue)
+            ? timeValue.AsDouble()
+            : -1d;
+        var restored = new WorldEvent(
+            resource, origin, required, savedTime < 0d ? double.PositiveInfinity : savedTime)
+        {
+            Progress = saved.TryGetValue("progress", out Variant progressValue)
+                ? progressValue.AsInt32()
+                : 0,
+        };
+        _active = restored;
+        // TickActive materializes after the destination cell's collision is Near. Loading never
+        // creates actors into a region that has not finished streaming.
+        EventBus.Instance?.Publish(new WorldEventStartedEvent(resource.Id, resource.NameKey, origin));
     }
 }

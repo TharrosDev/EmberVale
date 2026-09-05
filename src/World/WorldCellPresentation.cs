@@ -3,7 +3,7 @@ using Godot;
 namespace Embervale.World;
 
 /// <summary>
-/// Builds one cell's ground: the rendered terrain surface and the static collider under it.
+/// Builds one cell's ground for the offline world package: rendered terrain and static collision.
 ///
 /// ⚠️ <b>THIS IS THE GROUND NOW, NOT A SKIN OVER IT (the 2026-08-29 geography overhaul).</b> Every
 /// cell used to carry a 60×0.5×60 <c>BoxMesh</c> floor with a matching <c>BoxShape3D</c>, and this

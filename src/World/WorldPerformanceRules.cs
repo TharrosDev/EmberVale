@@ -31,11 +31,39 @@ public readonly record struct WorldPerformanceSnapshot(
     int NodeCount,
     double StaticMemoryMb,
     double FrameMilliseconds,
-    double WorstFrameMilliseconds = 0d);
+    double WorstFrameMilliseconds = 0d,
+    double P50FrameMilliseconds = 0d,
+    double P95FrameMilliseconds = 0d,
+    double P99FrameMilliseconds = 0d);
+
+public readonly record struct WorldFrameDistribution(
+    double Average, double P50, double P95, double P99, double Worst);
 
 /// <summary>Pure budget comparisons shared by xUnit tests and the Godot runtime monitor.</summary>
 public static class WorldPerformanceRules
 {
+    public static WorldFrameDistribution Distribution(IReadOnlyList<double> samples)
+    {
+        if (samples.Count == 0)
+        {
+            return default;
+        }
+        var ordered = new double[samples.Count];
+        double sum = 0d;
+        for (int i = 0; i < samples.Count; i++)
+        {
+            ordered[i] = samples[i];
+            sum += samples[i];
+        }
+        System.Array.Sort(ordered);
+        return new WorldFrameDistribution(
+            sum / ordered.Length,
+            Percentile(ordered, 0.50d),
+            Percentile(ordered, 0.95d),
+            Percentile(ordered, 0.99d),
+            ordered[^1]);
+    }
+
     /// <summary>
     /// Stable identity for the set of exceeded dimensions. Runtime values deliberately do not
     /// participate: frame time and memory fluctuate every sample and would otherwise turn one
@@ -99,5 +127,11 @@ public static class WorldPerformanceRules
         {
             dimensions.Add(dimension);
         }
+    }
+
+    private static double Percentile(double[] ordered, double percentile)
+    {
+        int index = (int)System.Math.Ceiling(percentile * ordered.Length) - 1;
+        return ordered[System.Math.Clamp(index, 0, ordered.Length - 1)];
     }
 }

@@ -4,14 +4,13 @@ namespace Embervale.World;
 
 /// <summary>
 /// One sub-cell of a <see cref="RegionResource"/> (Phase 25B): a scene the
-/// <see cref="RegionStreamer"/> instances at <see cref="Center"/> when the player enters the region,
-/// and keeps resident until they leave it. Authored as a sub-resource inside the region's
+/// offline bake prepares and <see cref="RegionStreamer"/> tiers around <see cref="Center"/>.
+/// Authored as a sub-resource inside the region's
 /// <c>.tres</c>.
 ///
-/// ⚠️ <b>There is no <c>LoadRadius</c> any more (38M2).</b> It was the distance at which the streamer
-/// brought the cell in, and it went with the distance rule itself — a field the streamer no longer
-/// reads is a number the next author would tune to no effect, which is the failure mode this repo
-/// keeps writing down. <see cref="SafeRadius"/> below is a different field and is still live.
+/// Tier radii live in the region's performance/streaming budget rather than per cell; one coherent
+/// policy owns terrain, collision, navigation, visuals and gameplay. <see cref="SafeRadius"/> below
+/// is unrelated encounter-authoring data.
 /// </summary>
 [GlobalClass]
 public partial class RegionCellResource : Resource
@@ -37,6 +36,9 @@ public partial class RegionCellResource : Resource
     /// persistence, interaction, or navigation authority; authored scene nodes retain those jobs.
     /// </summary>
     [Export] public WorldBiomeScatterResource? BiomeScatter { get; set; }
+
+    /// <summary>Capability-gated off-mesh links included in the prepared navigation package.</summary>
+    [Export] public Godot.Collections.Array<WorldTraversalLinkResource> TraversalLinks { get; set; } = new();
 
     /// <summary>
     /// Planar radius around <see cref="Center"/> in which the ambient spawners must not drop enemies

@@ -38,6 +38,13 @@ public sealed class WorldEvent
 
     public List<EnemyEntity> Enemies { get; } = new();
 
+    /// <summary>
+    /// Materialized actors are cell-owned. This list can become empty when the owning cell leaves
+    /// Near; the director keeps this lightweight event state and rematerializes the remaining
+    /// objective when the origin becomes relevant again.
+    /// </summary>
+    public List<Node3D> Actors { get; } = new();
+
     public bool IsTimed => !double.IsPositiveInfinity(TimeLeft);
 
     public bool IsComplete => Progress >= Required;
