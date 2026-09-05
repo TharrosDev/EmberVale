@@ -1,5 +1,8 @@
 using System.Collections.Generic;
 using System.Text;
+using Embervale.Animation;
+using Embervale.Combat;
+using Embervale.Combat.Actions;
 using Embervale.Companions;
 using Embervale.Core;
 using Embervale.Core.Diagnostics;
@@ -129,6 +132,205 @@ public static class ContentValidator
         ValidateResourcePaths(issues);
         ValidateUiAssets(issues);
         ValidateModelAssets(issues);
+        ValidateAttackDefinitions(issues);
+        ValidateAnimationLibraries(issues);
+    }
+
+
+    /// <summary>
+    /// The shared animation libraries resolve and hold the slots gameplay names (the 2026-09-04
+    /// combat/animation overhaul).
+    ///
+    /// ⚠️ <b>A missing clip is the quietest defect in the whole asset pipeline.</b>
+    /// <c>AnimationClips.Resolve</c> returns an empty string for a slot it cannot find, every caller
+    /// treats empty as "this body has no such animation", and the actor simply stands in its bind
+    /// pose. It imports cleanly, compiles, passes the tests, and T-poses in the market —
+    /// <c>docs/3D_ASSETS.md</c> names that as the only symptom an unresolved rig ever has, and
+    /// <c>npc_woman_dress</c> shipped exactly it. Nothing logs a thing.
+    ///
+    /// Only the paths and the slot list are checked here; whether the clips actually MOVE a rig
+    /// needs an engine and belongs to <c>tools/anim_library_probe.gd</c>.
+    /// </summary>
+    private static void ValidateAnimationLibraries(List<string> issues)
+    {
+        foreach (string path in new[] { ModelAssets.AnimationLibrary, ModelAssets.MeshyAnimationLibrary })
+        {
+            if (!ResourceLoader.Exists(path))
+            {
+                issues.Add($"animation library '{path}' does not resolve — every character would fall " +
+                           "back to its own clips or to a bind pose. Rebuild it with " +
+                           "tools/build_meshy_anim_library.gd.");
+            }
+        }
+
+        if (GD.Load<AnimationLibrary>(ModelAssets.MeshyAnimationLibrary) is not { } library)
+        {
+            return;
+        }
+
+        var have = new HashSet<string>();
+        foreach (StringName name in library.GetAnimationList())
+        {
+            have.Add(name.ToString());
+        }
+
+        foreach (string slot in AnimationClips.SharedSlots)
+        {
+            if (!have.Contains(slot))
+            {
+                issues.Add($"the shared animation library has no '{slot}' clip; gameplay names that " +
+                           "slot and an actor without it stands in its bind pose.");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Every authored attack window is ordered and in range (the 2026-09-04 combat/animation
+    /// overhaul).
+    ///
+    /// ⚠️ <b>Invariant 8: an authored numeric range fails silently at both ends.</b> These are
+    /// fractions of an action's own duration, and every way of getting them wrong is invisible
+    /// everywhere else. <c>ActiveTo</c> below <c>ActiveFrom</c> gives a hit window that never opens —
+    /// the whole attack plays, the stamina is spent, and nothing is ever damaged. <c>CancelFrom</c>
+    /// below <c>ActiveTo</c> makes an attack cancellable while its own blade is live, which is
+    /// exactly the "instant animation cancellation" the rebuild exists to prevent. A fraction above
+    /// 1 sits past the end of the action and simply never happens. None of it throws, none of it
+    /// logs, and none of it is visible in a render either — you would have to notice that a
+    /// particular enemy has stopped hurting you.
+    ///
+    /// <c>NextActionId</c> is checked against the ids the same weapon declares, because a chain that
+    /// names a link nobody authored is a combo that silently ends one blow early.
+    /// </summary>
+    private static void ValidateAttackDefinitions(List<string> issues)
+    {
+        const string dir = "res://data/weapons";
+        using DirAccess? weapons = DirAccess.Open(dir);
+        if (weapons == null)
+        {
+            issues.Add($"weapon folder '{dir}' does not resolve.");
+            return;
+        }
+
+        foreach (string file in weapons.GetFiles())
+        {
+            // The importer leaves a .remap beside a .tres in an exported build; the resource path is
+            // the one without it, and Load resolves both.
+            if (!file.EndsWith(".tres", System.StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            string path = $"{dir}/{file}";
+            if (GD.Load<WeaponResource>(path) is not { } weapon)
+            {
+                issues.Add($"weapon '{path}' failed to load as a WeaponResource.");
+                continue;
+            }
+
+            CheckActions(weapon.Attacks, $"weapon '{file}'", issues);
+        }
+
+        // ⚠️ BOSS PHASES AUTHOR ACTIONS TOO, and they were invisible to this until a phase set was
+        // first used. An inverted window on a boss's third-phase blow is exactly as silent as one on
+        // a weapon: the fight simply stops dealing damage at a third health, and nothing logs.
+        foreach (BossResource boss in BossDatabase.All)
+        {
+            for (int p = 0; p < boss.Phases.Count; p++)
+            {
+                if (boss.Phases[p] is { } phase)
+                {
+                    CheckActions(phase.Attacks, $"boss '{boss.Id}' phase {p + 1}", issues);
+                }
+            }
+        }
+    }
+
+    /// <summary>The per-action rules, over any authored set. See <see cref="ValidateAttackDefinitions"/>
+    /// for why each one is worth failing a build over.</summary>
+    private static void CheckActions(
+        Godot.Collections.Array<ActionDefinitionResource> actions, string source, List<string> issues)
+    {
+        {
+            var ids = new HashSet<string>();
+            foreach (ActionDefinitionResource? action in actions)
+            {
+                if (action != null && action.Id.Length > 0)
+                {
+                    ids.Add(action.Id);
+                }
+            }
+
+            for (int i = 0; i < actions.Count; i++)
+            {
+                ActionDefinitionResource? action = actions[i];
+                if (action == null)
+                {
+                    issues.Add($"{source} attack #{i} is null.");
+                    continue;
+                }
+
+                string where = $"{source} attack '{(action.Id.Length > 0 ? action.Id : $"#{i}")}'";
+
+                if (action.Id.Length == 0)
+                {
+                    issues.Add($"{where} has no Id — a chain cannot name it and nothing can log it.");
+                }
+
+                CheckFraction(where, nameof(action.ActiveFrom), action.ActiveFrom, issues);
+                CheckFraction(where, nameof(action.ActiveTo), action.ActiveTo, issues);
+                CheckFraction(where, nameof(action.CancelFrom), action.CancelFrom, issues);
+                CheckFraction(where, nameof(action.ComboFrom), action.ComboFrom, issues);
+                CheckFraction(where, nameof(action.ComboTo), action.ComboTo, issues);
+
+                if (action.ActiveTo <= action.ActiveFrom)
+                {
+                    issues.Add($"{where} has ActiveTo ({action.ActiveTo}) at or before ActiveFrom " +
+                               $"({action.ActiveFrom}) — its hit window never opens and it can never deal damage.");
+                }
+
+                if (action.CancelFrom < action.ActiveTo)
+                {
+                    issues.Add($"{where} has CancelFrom ({action.CancelFrom}) before ActiveTo " +
+                               $"({action.ActiveTo}) — it can be cancelled while its own blow is live.");
+                }
+
+                if (action.ComboTo < action.ComboFrom)
+                {
+                    issues.Add($"{where} has ComboTo ({action.ComboTo}) before ComboFrom " +
+                               $"({action.ComboFrom}) — its combo window never opens.");
+                }
+
+                if (action.Duration <= 0f && action.FallbackDuration <= 0f)
+                {
+                    issues.Add($"{where} has neither a Duration nor a FallbackDuration — an actor " +
+                               "without a clip for its slot would finish it instantly.");
+                }
+
+                // ⚠️ A RANGED ACTION MUST NOT CLOSE DISTANCE. Warping is for committed melee; a bow
+                // that walks its wielder toward the target is not a bow, it is a charge with an
+                // arrow at the end, and the mistake is one enum value away in the editor.
+                if (action.Kind == ActionKind.Ranged && action.RootMotion != RootMotionMode.None)
+                {
+                    issues.Add($"{where} is Ranged but sets RootMotion to {action.RootMotion}; a " +
+                               "ranged action must never close distance on its target.");
+                }
+
+                if (action.NextActionId.Length > 0 && !ids.Contains(action.NextActionId))
+                {
+                    issues.Add($"{where} chains to '{action.NextActionId}', which this weapon does " +
+                               "not author — the combo would end one blow early.");
+                }
+            }
+        }
+    }
+
+    private static void CheckFraction(string where, string field, float value, List<string> issues)
+    {
+        if (value < 0f || value > 1f)
+        {
+            issues.Add($"{where} has {field} = {value}; action windows are fractions of the " +
+                       "action's own duration and must be within 0..1.");
+        }
     }
 
     /// <summary>

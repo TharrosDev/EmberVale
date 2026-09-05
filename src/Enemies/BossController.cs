@@ -11,7 +11,7 @@ namespace Embervale.Enemies;
 
 /// <summary>
 /// Runs a boss fight's <b>phases</b>, <b>per-phase abilities</b>, <b>enrage</b> and <b>telegraphs</b>
-/// on top of the shared <see cref="EnemyAIComponent"/> + <see cref="Combat.MeleeWeaponComponent"/> —
+/// on top of the shared <see cref="EnemyAIComponent"/> + <see cref="Combat.CharacterActionComponent"/> —
 /// no AI rewrite, the boss fights with the same brain everything else does.
 ///
 /// <b>Phase 36A:</b> all of it is now authored data. A <see cref="BossResource"/> named by
@@ -353,6 +353,20 @@ public partial class BossController : EntityComponent
         if (_combat != null)
         {
             _combat.WindupPoiseMultiplier = definition.WindupPoiseMultiplier;
+        }
+
+        // A phase may fight with its own moves (§20). Empty clears the override rather than leaving
+        // the previous phase's set in place — a boss that escalates must be able to de-escalate on a
+        // reload, and a stale override would outlive the phase that set it.
+        if (Entity?.GetComponent<Combat.Actions.CharacterActionComponent>()?.Weapon is { } weapon)
+        {
+            var attacks = new Combat.Actions.ActionDefinitionResource[definition.Attacks.Count];
+            for (int i = 0; i < definition.Attacks.Count; i++)
+            {
+                attacks[i] = definition.Attacks[i];
+            }
+
+            weapon.PhaseOverride = attacks.Length > 0 ? attacks : null;
         }
     }
 

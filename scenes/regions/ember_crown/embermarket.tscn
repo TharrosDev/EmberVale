@@ -5,6 +5,7 @@
 [ext_resource type="Script" path="res://src/World/TravelNodeComponent.cs" id="3_travel"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="4_dialogue"]
 [ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="5_charanim"]
+[ext_resource type="Script" path="res://src/Animation/EquipmentPresentationComponent.cs" id="90_equipment"]
 [ext_resource type="Script" path="res://src/Factions/FactionComponent.cs" id="6_faction"]
 [ext_resource type="Script" path="res://src/Audio/AmbientEmitterComponent.cs" id="7_ambient"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_crate.glb" id="11_crate"]
@@ -1496,6 +1497,10 @@ TemplateId = "npc.corvin"
 script = ExtResource("5_charanim")
 BodyMeshPath = "Model"
 
+[node name="EquipmentVisuals" type="Node" parent="MerchantCorvin"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="MerchantCorvin"]
 
 [node name="Shape" type="CollisionShape3D" parent="MerchantCorvin/Collider"]
@@ -1524,6 +1529,10 @@ TemplateId = "npc.hana"
 
 [node name="Animation" type="Node" parent="MerchantHana"]
 script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="MerchantHana"]
+script = ExtResource("90_equipment")
 BodyMeshPath = "Model"
 
 [node name="Collider" type="StaticBody3D" parent="MerchantHana"]
@@ -1558,6 +1567,10 @@ TemplateId = "npc.sable"
 script = ExtResource("5_charanim")
 BodyMeshPath = "Model"
 
+[node name="EquipmentVisuals" type="Node" parent="MerchantSable"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="MerchantSable"]
 
 [node name="Shape" type="CollisionShape3D" parent="MerchantSable/Collider"]
@@ -1586,6 +1599,10 @@ TemplateId = "npc.tam"
 
 [node name="Animation" type="Node" parent="MerchantTam"]
 script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="MerchantTam"]
+script = ExtResource("90_equipment")
 BodyMeshPath = "Model"
 
 [node name="Collider" type="StaticBody3D" parent="MerchantTam"]
@@ -1618,6 +1635,10 @@ TemplateId = "npc.ash_dunmore"
 script = ExtResource("5_charanim")
 BodyMeshPath = "Model"
 
+[node name="EquipmentVisuals" type="Node" parent="MerchantDunmore"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="MerchantDunmore"]
 
 [node name="Shape" type="CollisionShape3D" parent="MerchantDunmore/Collider"]
@@ -1646,6 +1667,10 @@ TemplateId = "npc.gilda"
 
 [node name="Animation" type="Node" parent="MerchantGilda"]
 script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="MerchantGilda"]
+script = ExtResource("90_equipment")
 BodyMeshPath = "Model"
 
 [node name="Collider" type="StaticBody3D" parent="MerchantGilda"]
@@ -1678,6 +1703,10 @@ TemplateId = "npc.perrin"
 script = ExtResource("5_charanim")
 BodyMeshPath = "Model"
 
+[node name="EquipmentVisuals" type="Node" parent="MerchantPerrin"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="MerchantPerrin"]
 
 [node name="Shape" type="CollisionShape3D" parent="MerchantPerrin/Collider"]
@@ -1706,6 +1735,10 @@ TemplateId = "npc.nessa"
 
 [node name="Animation" type="Node" parent="MerchantNessa"]
 script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="MerchantNessa"]
+script = ExtResource("90_equipment")
 BodyMeshPath = "Model"
 
 [node name="Collider" type="StaticBody3D" parent="MerchantNessa"]
@@ -1738,6 +1771,10 @@ TemplateId = "npc.odo"
 script = ExtResource("5_charanim")
 BodyMeshPath = "Model"
 
+[node name="EquipmentVisuals" type="Node" parent="MerchantOdo"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="MerchantOdo"]
 
 [node name="Shape" type="CollisionShape3D" parent="MerchantOdo/Collider"]
@@ -1766,6 +1803,10 @@ TemplateId = "npc.halvard"
 
 [node name="Animation" type="Node" parent="MerchantHalvard"]
 script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="MerchantHalvard"]
+script = ExtResource("90_equipment")
 BodyMeshPath = "Model"
 
 [node name="Collider" type="StaticBody3D" parent="MerchantHalvard"]
@@ -1798,6 +1839,10 @@ TemplateId = "npc.sera"
 script = ExtResource("5_charanim")
 BodyMeshPath = "Model"
 
+[node name="EquipmentVisuals" type="Node" parent="TraderSera"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="TraderSera"]
 
 [node name="Shape" type="CollisionShape3D" parent="TraderSera/Collider"]
@@ -1819,6 +1864,10 @@ TemplateId = "npc.quill"
 
 [node name="Animation" type="Node" parent="TraderQuill"]
 script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="TraderQuill"]
+script = ExtResource("90_equipment")
 BodyMeshPath = "Model"
 
 [node name="Collider" type="StaticBody3D" parent="TraderQuill"]
@@ -1941,6 +1990,10 @@ TemplateId = "npc.mirelle"
 script = ExtResource("5_charanim")
 BodyMeshPath = "Model"
 
+[node name="EquipmentVisuals" type="Node" parent="MerchantMirelle"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="MerchantMirelle"]
 
 [node name="Shape" type="CollisionShape3D" parent="MerchantMirelle/Collider"]
@@ -1973,6 +2026,10 @@ TemplateId = "npc.halder"
 
 [node name="Animation" type="Node" parent="ClerkHalder"]
 script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="ClerkHalder"]
+script = ExtResource("90_equipment")
 BodyMeshPath = "Model"
 
 [node name="Collider" type="StaticBody3D" parent="ClerkHalder"]
@@ -2138,6 +2195,10 @@ TemplateId = "npc.archive_keeper"
 script = ExtResource("5_charanim")
 BodyMeshPath = "Model"
 
+[node name="EquipmentVisuals" type="Node" parent="ArchiveKeeper"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="ArchiveKeeper"]
 
 [node name="Shape" type="CollisionShape3D" parent="ArchiveKeeper/Collider"]
@@ -2168,6 +2229,10 @@ TemplateId = "npc.archive_steward"
 script = ExtResource("5_charanim")
 BodyMeshPath = "Model"
 
+[node name="EquipmentVisuals" type="Node" parent="ArchiveSteward"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="ArchiveSteward"]
 
 [node name="Shape" type="CollisionShape3D" parent="ArchiveSteward/Collider"]
@@ -2192,6 +2257,10 @@ TemplateId = "npc.archive_reader"
 
 [node name="Animation" type="Node" parent="ArchiveReader"]
 script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="ArchiveReader"]
+script = ExtResource("90_equipment")
 BodyMeshPath = "Model"
 
 [node name="Collider" type="StaticBody3D" parent="ArchiveReader"]

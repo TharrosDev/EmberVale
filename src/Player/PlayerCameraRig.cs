@@ -17,6 +17,12 @@ namespace Embervale.Player;
 /// world geometry) and that third person aims from the camera rather than the head so the crosshair
 /// still means something.</para>
 ///
+/// <para><b>First person is TRUE first person.</b> The camera rides the body's own head bone and the
+/// body stays visible; you see its arms, its weapon and its equipment because they are the same
+/// arms, weapon and equipment the world sees. What this replaced was a rigless viewmodel with its
+/// own procedural swing — a second skeleton, a second action state and a second weapon that had to
+/// be kept in step with the first, which is the duplication the overhaul's §18 is about.</para>
+///
 /// <para>This component owns the camera and nothing else does. The pure geometry it needs is in
 /// <see cref="CameraRigMath"/>, which is engine-free and unit-tested; what is left here is the node
 /// writes and the one physics sweep.</para>
@@ -47,6 +53,33 @@ public partial class PlayerCameraRig : EntityComponent
     /// <summary>Camera distance from the pivot after the collision spring, in metres.</summary>
     private float _springDistance;
 
+    /// <summary>Seconds of smoothing on the eye anchor. The head bone is animated, so following it
+    /// raw hands the player every footfall and every swing as camera shake.</summary>
+    private const float EyeSmoothSeconds = 0.06f;
+
+    /// <summary>How far the eye sits in front of the head bone's origin, in metres. Big enough that
+    /// the skull falls behind the camera's near plane and clips away on its own — which is why there
+    /// is no head-hiding code anywhere in this file.</summary>
+    private const float EyeForward = 0.14f;
+
+    /// <summary>How far above the head bone's origin the eye sits.</summary>
+    private const float EyeRise = 0.04f;
+
+    /// <summary>The furthest the eye may be dragged from the fixed pivot. A clip that throws the
+    /// head — a knockdown, a death — must not throw the camera with it.</summary>
+    private const float MaxEyeOffset = 0.45f;
+
+    /// <summary>The camera's current shape, eased toward whatever the context asks for.</summary>
+    private CameraProfile _profile = CameraProfile.Neutral;
+
+    /// <summary>Set each frame by the input router from live gameplay state. Held here rather than
+    /// queried so the rig does not have to know about lock-on, aiming or combat components.</summary>
+    public CameraContext Context { get; set; } = CameraContext.Exploration;
+
+    private Skeleton3D? _skeleton;
+    private int _headBone = -1;
+    private Vector3 _eyeLocal;
+    private bool _eyeSeeded;
     private Vector3 _cameraRest = Vector3.Zero;
     private float _pitch;
     private PlayerPhysicsQueries? _queries;
@@ -115,10 +148,10 @@ public partial class PlayerCameraRig : EntityComponent
             ApplyCameraRest(ResolveRestOffset());
         }
 
-        if (Entity?.Body.GetNodeOrNull<Node3D>("BodyMesh") is { } bodyVisual)
-        {
-            SetShadowOnly(bodyVisual, firstPerson);
-        }
+        // ⚠️ THE BODY IS VISIBLE IN BOTH VIEWS NOW, and that is the whole of "true first person".
+        // It used to be shadows-only in first person while a separate rigless viewmodel drew a pair
+        // of arms with its own procedural swing — two skeletons, two action states and two weapons
+        // to keep in step. There is one body; you look out of its head and see its own arms.
     }
 
     /// <summary>Flips the camera mode through the <em>setting</em>, so the toggle key and the
@@ -145,13 +178,93 @@ public partial class PlayerCameraRig : EntityComponent
     public void Tick(double delta)
     {
         float dt = (float)delta;
+        ResolveHead();
         _modeBlend = CameraRigMath.StepBlend(_modeBlend, _modeTarget, dt, ModeBlendSeconds);
+
+        // The profile leans the camera toward what the player is doing. Eased, because a context
+        // change that cut between framings would be worse than having no profiles at all.
+        CameraProfile wanted = CameraProfile.For(Context);
+        _profile = CameraProfile.Blend(_profile, wanted, CameraRigMath.Damp(dt, wanted.BlendSeconds));
+        ApplyFieldOfView(_settings?.Current);
 
         float desired = ThirdPersonRest.Length();
         _springDistance = CameraRigMath.SpringDistance(
             _springDistance, desired, AllowedCameraDistance(desired), dt, CameraPushOutSpeed);
 
-        ApplyCameraRest(ResolveRestOffset());
+        ApplyCameraRest(ResolveRestOffset() + EyeOffset(dt));
+    }
+
+    /// <summary>
+    /// Where the eye sits relative to the pivot, in pivot space — the head bone, smoothed, clamped,
+    /// and faded out as the camera leaves first person.
+    ///
+    /// ⚠️ <b>Position only. The head's ROTATION is deliberately ignored.</b> Taking it would hand
+    /// the player every head turn in every clip as an involuntary camera movement, which is the
+    /// single fastest way to make a first-person game unplayable. Aim stays exactly where the player
+    /// pointed it; only the viewpoint rides the body.
+    /// </summary>
+    private Vector3 EyeOffset(float dt)
+    {
+        if (_skeleton == null || _headBone < 0 || CameraPivot == null || _modeBlend >= 1f)
+        {
+            _eyeSeeded = false;
+            return Vector3.Zero;
+        }
+
+        Transform3D head = _skeleton.GlobalTransform * _skeleton.GetBoneGlobalPose(_headBone);
+        Vector3 forward = -CameraPivot.GlobalTransform.Basis.Z;
+        Vector3 world = head.Origin + (forward * EyeForward) + (Vector3.Up * EyeRise);
+        Vector3 target = CameraPivot.ToLocal(world);
+
+        if (target.Length() > MaxEyeOffset)
+        {
+            target = target.Normalized() * MaxEyeOffset;
+        }
+
+        // Seeded rather than lerped from zero, so entering first person does not swoop from the
+        // pivot up to the head over the first few frames.
+        _eyeLocal = _eyeSeeded
+            ? _eyeLocal.Lerp(target, CameraRigMath.Damp(dt, EyeSmoothSeconds))
+            : target;
+        _eyeSeeded = true;
+
+        // Faded out by the mode blend so the third-person orbit is measured from the fixed pivot and
+        // does not inherit a bobbing origin.
+        return _eyeLocal * (1f - CameraRigMath.Ease(_modeBlend));
+    }
+
+    /// <summary>Finds the head bone once the body exists. Deferred rather than done in
+    /// <c>OnInitialize</c> because the visual is added to the tree after the components are.</summary>
+    private void ResolveHead()
+    {
+        if (_skeleton != null || Entity?.Body.GetNodeOrNull<Node3D>("BodyMesh") is not { } visual)
+        {
+            return;
+        }
+
+        _skeleton = FindSkeleton(visual);
+        if (_skeleton != null)
+        {
+            _headBone = Animation.EquipmentSockets.Resolve(_skeleton, Animation.EquipmentSocket.Head);
+        }
+    }
+
+    private static Skeleton3D? FindSkeleton(Node node)
+    {
+        if (node is Skeleton3D skeleton)
+        {
+            return skeleton;
+        }
+
+        foreach (Node child in node.GetChildren())
+        {
+            if (FindSkeleton(child) is { } found)
+            {
+                return found;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>Applies one look step to the pitch and writes it to the pivot. The look components
@@ -177,7 +290,10 @@ public partial class PlayerCameraRig : EntityComponent
     {
         if (Camera != null && current != null)
         {
-            Camera.Fov = current.FieldOfView;
+            // Same rule as the distance: the player's FOV is the baseline and the profile leans off
+            // it, clamped to the range the settings panel itself allows so no context can push the
+            // camera somewhere the player could not have chosen.
+            Camera.Fov = Mathf.Clamp(current.FieldOfView + _profile.FovOffset, 55f, 115f);
         }
     }
 
@@ -197,11 +313,14 @@ public partial class PlayerCameraRig : EntityComponent
         get
         {
             Settings.Settings? s = _settings?.Current;
+            // ⚠️ The profile SCALES the player's own settings rather than replacing them. The
+            // distance and shoulder sliders are accessibility choices; a profile that overrode them
+            // would quietly undo one every time the player drew a bow.
             return CameraRigMath.RestOffset(
                 firstPerson: false,
-                s?.ThirdPersonDistance ?? PlayerFactory.ThirdPersonBackDistance,
-                PlayerFactory.ThirdPersonRise,
-                s?.ShoulderOffset() ?? PlayerFactory.ThirdPersonShoulder);
+                (s?.ThirdPersonDistance ?? PlayerFactory.ThirdPersonBackDistance) * _profile.DistanceScale,
+                PlayerFactory.ThirdPersonRise + _profile.RiseOffset,
+                (s?.ShoulderOffset() ?? PlayerFactory.ThirdPersonShoulder) * _profile.ShoulderScale);
         }
     }
 
@@ -234,33 +353,25 @@ public partial class PlayerCameraRig : EntityComponent
             return desired;
         }
 
-        // ponytail: actor bodies share the World layer, so a companion stepping between the
-        // player and the camera pulls it in too. Honest (it *is* in the way) if slightly
-        // twitchy; a dedicated camera-blocker layer is the upgrade if it ever annoys.
+        // ⚠️ CameraBlocker, not World. Actor bodies share the World layer, so sweeping it pulled the
+        // camera in whenever a companion stepped between the player and it — twitchy, and the
+        // previous note here admitted it and left it. Static world geometry declares itself a
+        // blocker (RegionStreamer.MarkCameraBlockers, WorldCellPresentation's terrain collider);
+        //
+        // ⚠️ NOT CombatLayers.CameraObstruction, which is CameraBlocker PLUS WorldStatic — and
+        // CharacterEntity still defaults to WorldStatic, so that mask puts actors back in the
+        // sweep and the companion problem returns exactly as it was. Measured:
+        // camera_probe.gd reports 0.60 m with a companion behind the player on that mask, 3.87 m
+        // on this one.
+        // people simply are not on the layer, so the camera passes through them and the obstruction
+        // fade handles the rest.
         float safe = _queries.SafeSweepFraction(
             CameraPivot.GlobalPosition,
             CameraPivot.GlobalTransform.Basis * ThirdPersonRest,
             CameraProbeRadius,
-            CombatLayers.CameraObstruction);
+            CombatLayers.CameraBlocker);
 
         return desired * safe;
     }
 
-    /// <summary>Sets every mesh under <paramref name="node"/> to shadows-only (or restores it).
-    /// Includes the skeleton-held weapon — in first person the viewmodel arms
-    /// (<see cref="FirstPersonArmsComponent"/>) carry their own visible sword instead.</summary>
-    private static void SetShadowOnly(Node node, bool shadowOnly)
-    {
-        if (node is GeometryInstance3D geometry)
-        {
-            geometry.CastShadow = shadowOnly
-                ? GeometryInstance3D.ShadowCastingSetting.ShadowsOnly
-                : GeometryInstance3D.ShadowCastingSetting.On;
-        }
-
-        foreach (Node child in node.GetChildren())
-        {
-            SetShadowOnly(child, shadowOnly);
-        }
-    }
 }

@@ -4,6 +4,7 @@
 [ext_resource type="Script" path="res://src/Entities/Entity.cs" id="2_entity"]
 [ext_resource type="Script" path="res://src/World/TravelNodeComponent.cs" id="3_travel"]
 [ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="4_charanim"]
+[ext_resource type="Script" path="res://src/Animation/EquipmentPresentationComponent.cs" id="90_equipment"]
 [ext_resource type="Script" path="res://src/Factions/FactionComponent.cs" id="5_faction"]
 [ext_resource type="Script" path="res://src/Economy/ServiceComponent.cs" id="6_service"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_gate_palisade.glb" id="10_gate"]
@@ -664,6 +665,10 @@ TemplateId = "npc.road_warden"
 script = ExtResource("4_charanim")
 BodyMeshPath = "Model"
 
+[node name="EquipmentVisuals" type="Node" parent="RoadWarden"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="RoadWarden"]
 
 [node name="Shape" type="CollisionShape3D" parent="RoadWarden/Collider"]
@@ -688,6 +693,10 @@ TemplateId = "npc.gate_hand"
 
 [node name="Animation" type="Node" parent="GateHand"]
 script = ExtResource("4_charanim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="GateHand"]
+script = ExtResource("90_equipment")
 BodyMeshPath = "Model"
 
 [node name="Collider" type="StaticBody3D" parent="GateHand"]
@@ -732,6 +741,10 @@ TemplateId = "npc.search_warden"
 script = ExtResource("4_charanim")
 BodyMeshPath = "Model"
 
+[node name="EquipmentVisuals" type="Node" parent="SearchWarden"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="SearchWarden"]
 
 [node name="Shape" type="CollisionShape3D" parent="SearchWarden/Collider"]
@@ -756,6 +769,10 @@ TemplateId = "npc.impound_clerk"
 
 [node name="Animation" type="Node" parent="ImpoundClerk"]
 script = ExtResource("4_charanim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="ImpoundClerk"]
+script = ExtResource("90_equipment")
 BodyMeshPath = "Model"
 
 [node name="Collider" type="StaticBody3D" parent="ImpoundClerk"]
@@ -811,6 +828,10 @@ TemplateId = "npc.mercenary"
 
 [node name="Animation" type="Node" parent="Mercenary"]
 script = ExtResource("4_charanim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="Mercenary"]
+script = ExtResource("90_equipment")
 BodyMeshPath = "Model"
 
 [node name="Collider" type="StaticBody3D" parent="Mercenary"]
@@ -928,6 +949,10 @@ TemplateId = "npc.dawnwarden_captain"
 script = ExtResource("4_charanim")
 BodyMeshPath = "Model"
 
+[node name="EquipmentVisuals" type="Node" parent="DawnwardenCaptain"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="DawnwardenCaptain"]
 
 [node name="Shape" type="CollisionShape3D" parent="DawnwardenCaptain/Collider"]
@@ -958,6 +983,10 @@ TemplateId = "npc.dawnwarden_armourer"
 script = ExtResource("4_charanim")
 BodyMeshPath = "Model"
 
+[node name="EquipmentVisuals" type="Node" parent="DawnwardenArmourer"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="DawnwardenArmourer"]
 
 [node name="Shape" type="CollisionShape3D" parent="DawnwardenArmourer/Collider"]
@@ -982,6 +1011,10 @@ TemplateId = "npc.dawnwarden_serjeant"
 
 [node name="Animation" type="Node" parent="DawnwardenSerjeant"]
 script = ExtResource("4_charanim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="DawnwardenSerjeant"]
+script = ExtResource("90_equipment")
 BodyMeshPath = "Model"
 
 [node name="Collider" type="StaticBody3D" parent="DawnwardenSerjeant"]

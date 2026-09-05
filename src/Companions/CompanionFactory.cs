@@ -1,3 +1,4 @@
+using Embervale.Combat.Actions;
 using Embervale.Combat;
 using Embervale.Core;
 using Embervale.Core.Diagnostics;
@@ -84,6 +85,8 @@ public static class CompanionFactory
         companion.AddChild(new LocomotionComponent { Name = "Locomotion" });
         companion.AddChild(new HitReactionComponent { Name = "HitReaction" });
         companion.AddChild(new Embervale.Animation.CharacterAnimationComponent { Name = "Animation", BodyMeshPath = "Mesh" });
+        companion.AddChild(new Embervale.Animation.EquipmentPresentationComponent { Name = "EquipmentVisuals", BodyMeshPath = "Mesh" });
+        companion.AddChild(new Embervale.Animation.FootIkComponent { Name = "FootIk" });
         companion.AddChild(new WeaponTrailComponent { Name = "WeaponTrail" });
         companion.AddChild(BuildHurtbox());
 
@@ -105,7 +108,7 @@ public static class CompanionFactory
             weapon = GD.Load<WeaponResource>(DefaultWeaponPath);
         }
 
-        companion.AddChild(new MeleeWeaponComponent { Name = "Weapon", Weapon = weapon, Hitbox = hitbox });
+        companion.AddChild(new CharacterActionComponent { Name = "Weapon", Weapon = weapon, Hitbox = hitbox });
 
         // Spells can burn/chill/ward a companion like any other character.
         companion.AddChild(new StatusEffectsComponent { Name = "StatusEffects" });

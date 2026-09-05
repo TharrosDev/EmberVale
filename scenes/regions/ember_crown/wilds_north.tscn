@@ -17,6 +17,7 @@
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_deadfall_lodge.tscn" id="42b_bld_deadfall_lodge"]
 [ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="42b_characteranimationcomponent"]
+[ext_resource type="Script" path="res://src/Animation/EquipmentPresentationComponent.cs" id="90_equipment"]
 [ext_resource type="Script" path="res://src/Factions/FactionComponent.cs" id="42b_factioncomponent"]
 [ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="42b_dialoguecomponent"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_adventurer_f.glb" id="42b_npc_adventurer_f"]
@@ -544,6 +545,10 @@ TemplateId = "npc.hunter_master"
 script = ExtResource("42b_characteranimationcomponent")
 BodyMeshPath = "Model"
 
+[node name="EquipmentVisuals" type="Node" parent="HunterMaster"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="HunterMaster"]
 
 [node name="Shape" type="CollisionShape3D" parent="HunterMaster/Collider"]
@@ -574,6 +579,10 @@ TemplateId = "npc.hunter_skinner"
 script = ExtResource("42b_characteranimationcomponent")
 BodyMeshPath = "Model"
 
+[node name="EquipmentVisuals" type="Node" parent="HunterSkinner"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="HunterSkinner"]
 
 [node name="Shape" type="CollisionShape3D" parent="HunterSkinner/Collider"]
@@ -598,6 +607,10 @@ TemplateId = "npc.hunter_tracker"
 
 [node name="Animation" type="Node" parent="HunterTracker"]
 script = ExtResource("42b_characteranimationcomponent")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="HunterTracker"]
+script = ExtResource("90_equipment")
 BodyMeshPath = "Model"
 
 [node name="Collider" type="StaticBody3D" parent="HunterTracker"]

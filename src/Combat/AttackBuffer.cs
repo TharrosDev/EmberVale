@@ -2,7 +2,7 @@ namespace Embervale.Combat;
 
 /// <summary>
 /// Pure input-buffer logic for the melee FSM (Phase 29G). Godot-free so it's unit-testable;
-/// <see cref="MeleeWeaponComponent"/> applies it. A buffered attack is released only once the swing is out
+/// <see cref="CharacterActionComponent"/> applies it. A buffered attack is released only once the swing is out
 /// of its committed (un-cancellable) window, turning an early press into a landed combo hit instead of a
 /// dropped input.
 /// </summary>

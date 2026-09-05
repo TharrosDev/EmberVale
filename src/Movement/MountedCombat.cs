@@ -2,7 +2,7 @@ namespace Embervale.Movement;
 
 /// <summary>
 /// What being on a horse does to a blow (Phase 39B) — pure, Godot-free, and unit-tested, because
-/// <see cref="Combat.MeleeWeaponComponent"/> asks it on <b>every</b> swing in the game and a wrong
+/// <see cref="Combat.CharacterActionComponent"/> asks it on <b>every</b> swing in the game and a wrong
 /// answer for an actor with no mount would be a silent, world-wide damage change.
 ///
 /// <b>The rule is the gait, not the mount.</b> Sitting still on a horse is worth nothing — the

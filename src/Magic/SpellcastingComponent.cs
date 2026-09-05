@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Embervale.Combat;
+using Embervale.Combat.Actions;
 using Embervale.Core.Events;
 using Embervale.Core.Pooling;
 using Embervale.Corruption;
@@ -15,7 +16,7 @@ namespace Embervale.Magic;
 /// <summary>
 /// The spellcasting brain for an entity: the spells it knows, which one is prepared,
 /// per-spell cooldowns, and the cast itself (mana spend → deliver). It is the magic
-/// analogue of <see cref="MeleeWeaponComponent"/> and is deliberately input-agnostic —
+/// analogue of <see cref="CharacterActionComponent"/> and is deliberately input-agnostic —
 /// the player controller (and later enemy AI) decides <em>when</em> to call
 /// <see cref="TryCast"/> / <see cref="Cycle"/>.
 ///
@@ -58,6 +59,12 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
     // Active charged/channeled cast (Phase 29.5A); null for instant casts and when idle.
     private SpellResource? _activeCast;
     private float _chargeElapsed;
+
+    /// <summary>The spell waiting for its cast action to reach the release frame, and how strong the
+    /// charge made it. Null whenever nothing is in flight.</summary>
+    private SpellResource? _pending;
+    private float _pendingPower = 1f;
+    private CharacterActionComponent? _actions;
     private double _channelTickTimer;
 
     /// <summary>True while a charged cast is being held (drives charge-meter UI later).</summary>
@@ -90,6 +97,8 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         _combat = Entity.GetComponent<CombatComponent>();
         _progression = Entity.GetComponent<Progression.ProgressionComponent>();
         _mastery = Entity.GetComponent<SchoolMasteryComponent>();
+        _actions = Entity.GetComponent<CharacterActionComponent>();
+        EventBus.Instance?.Subscribe<ActionReleasedEvent>(OnActionReleased);
         _projectilePool = new NodePool<SpellProjectile>(
             () => new SpellProjectile { Released = ReturnProjectile }, prewarm: 4);
         RebuildSpells();
@@ -98,6 +107,7 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
 
     protected override void OnTeardown()
     {
+        EventBus.Instance?.Unsubscribe<ActionReleasedEvent>(OnActionReleased);
         _projectilePool?.Clear();
         SaveManager.Instance?.Unregister(this);
     }
@@ -273,8 +283,20 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         return CooldownOf(spell) <= 0f && _stats.GetCurrent(StatType.Mana) >= EffectiveManaCost(spell);
     }
 
-    /// <summary>Casts the prepared spell instantly. Returns false if none is ready/affordable. Charged and
-    /// channeled spells route through <see cref="BeginCast"/> instead.</summary>
+    /// <summary>
+    /// Casts the prepared spell. Returns false if none is ready/affordable. Charged and channeled
+    /// spells route through <see cref="BeginCast"/> instead.
+    ///
+    /// <para>⚠️ <b>"Instantly" is no longer true, and that is the fix.</b> The spell used to leave
+    /// the caster on the same frame the key went down, while the cast animation played on its own
+    /// clock beside it — so the bolt was already across the room before the arm had moved. The cast
+    /// now runs as an action on the shared timeline and the spell is delivered on that action's
+    /// release, which is the frame the animation shows it leaving the hand. Mana and cooldown are
+    /// still spent up front, so a cast cannot be started twice while the first is in the air.</para>
+    ///
+    /// <para>An actor with no action component (a turret, a bare test harness) delivers immediately,
+    /// which is the old behaviour and the correct degradation.</para>
+    /// </summary>
     public bool TryCast()
     {
         SpellResource? spell = Selected;
@@ -285,7 +307,16 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
 
         _stats!.ModifyCurrent(StatType.Mana, -EffectiveManaCost(spell));
         _cooldowns[spell.Id] = spell.Cooldown;
-        Deliver(spell, 1f);
+
+        if (_actions != null && _actions.TryStart(SpellActions.For(spell)))
+        {
+            _pending = spell;
+            _pendingPower = 1f;
+        }
+        else
+        {
+            Deliver(spell, 1f);
+        }
 
         if (Entity != null)
         {
@@ -293,6 +324,19 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
         }
 
         return true;
+    }
+
+    /// <summary>Delivers a spell whose cast action has reached its release. The action timeline
+    /// decides when that is; this only has to happen once per cast, which the null-out enforces.</summary>
+    private void OnActionReleased(ActionReleasedEvent e)
+    {
+        if (!ReferenceEquals(e.Actor, Entity) || e.Kind != ActionKind.Cast || _pending is not { } spell)
+        {
+            return;
+        }
+
+        _pending = null;
+        Deliver(spell, _pendingPower);
     }
 
     /// <summary>Begins a cast on key-down (Phase 29.5A): Instant fires now; Charged starts charging;
@@ -352,7 +396,18 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
             float power = SpellCharge.PowerMultiplier(_chargeElapsed, spell.ChargeTime, spell.MaxChargeMultiplier);
             _stats!.ModifyCurrent(StatType.Mana, -EffectiveManaCost(spell));
             _cooldowns[spell.Id] = spell.Cooldown;
-            Deliver(spell, power);
+
+            // The release of a charged spell is the same beat as an instant one: the charge decided
+            // how strong it is, the action decides when it leaves.
+            if (_actions != null && _actions.TryStart(SpellActions.For(spell)))
+            {
+                _pending = spell;
+                _pendingPower = power;
+            }
+            else
+            {
+                Deliver(spell, power);
+            }
             if (Entity != null)
             {
                 EventBus.Instance?.Publish(new SpellCastEvent(Entity, spell.Id));
@@ -366,7 +421,16 @@ public partial class SpellcastingComponent : EntityComponent, ISaveable
 
     /// <summary>Abandons an in-progress charged/channeled cast without firing (e.g. a menu opens or the
     /// game pauses) — no damage, no mana spent on release, no cooldown.</summary>
-    public void CancelCast() => _activeCast = null;
+    public void CancelCast()
+    {
+        _activeCast = null;
+
+        // ⚠️ A cast interrupted between its start and its release must not still go off. The mana is
+        // already spent and the cooldown already set — that is deliberate — but the bolt does not
+        // leave, which is what makes interrupting a caster worth doing.
+        _pending = null;
+        _actions?.Cancel();
+    }
 
     private void TickChannel(double delta)
     {

@@ -17,6 +17,10 @@ public enum EquipmentSlot
     Feet,
     Ring,
     Amulet,
+
+    /// <summary>Arrows and bolts. Appended 2026-09-05 with the ranged system; every ordinal above it
+    /// was already in shipped saves and must not move.</summary>
+    Ammo,
 }
 
 /// <summary>
@@ -41,7 +45,7 @@ public static class EquipmentSlots
     {
         return slot switch
         {
-            EquipmentSlot.MainHand or EquipmentSlot.OffHand => GearFamily.Weapon,
+            EquipmentSlot.MainHand or EquipmentSlot.OffHand or EquipmentSlot.Ammo => GearFamily.Weapon,
             EquipmentSlot.Head or EquipmentSlot.Chest or EquipmentSlot.Hands
                 or EquipmentSlot.Legs or EquipmentSlot.Feet => GearFamily.Armor,
             EquipmentSlot.Ring or EquipmentSlot.Amulet => GearFamily.Accessory,
@@ -61,6 +65,7 @@ public static class EquipmentSlots
         EquipmentSlot.Feet,
         EquipmentSlot.Ring,
         EquipmentSlot.Amulet,
+        EquipmentSlot.Ammo,
     };
 
     public static string Label(EquipmentSlot slot)
@@ -69,6 +74,7 @@ public static class EquipmentSlots
         {
             EquipmentSlot.MainHand => "Main Hand",
             EquipmentSlot.OffHand => "Off Hand",
+            EquipmentSlot.Ammo => "Ammo",
             _ => slot.ToString(),
         };
     }

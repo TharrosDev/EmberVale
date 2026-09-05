@@ -54,8 +54,8 @@ MODEL_EXTENSIONS = {".glb", ".gltf"}
 # a HUMANOID from every other rigged thing in the repo.
 RETARGET_SKELETON = "GeneralSkeleton"
 
-HUMANOID, QUADRUPED, VIEWMODEL, ARCHITECTURE, STATIC_PROP = (
-    "HUMANOID", "QUADRUPED", "VIEWMODEL", "ARCHITECTURE", "STATIC_PROP")
+HUMANOID, QUADRUPED, VIEWMODEL, ARCHITECTURE, STATIC_PROP, ANIMATION = (
+    "HUMANOID", "QUADRUPED", "VIEWMODEL", "ARCHITECTURE", "STATIC_PROP", "ANIMATION")
 
 
 # --------------------------------------------------------------------------- classification
@@ -69,6 +69,12 @@ def classify(path: Path, document: dict[str, Any], import_config: dict[str, Any]
     """
     name, folder = path.name, path.parent.name
     skinned = bool(document.get("skins"))
+    # An animation source carries a skeleton and a bone map but is not a character: it has no mesh
+    # at all (tools/strip_anim_glb.py takes it out), and nothing in the game instantiates one. Left
+    # in HUMANOID it would be counted as part of the cast and swept by every character gate.
+    if name.startswith("anim_"):
+        return {"type": ANIMATION, "rig": "general_skeleton" if skinned else "none",
+                "anim": "library_source"}
     if name.startswith("fp_"):
         return {"type": VIEWMODEL, "rig": "native" if skinned else "none", "anim": "procedural"}
     if skinned:
@@ -277,7 +283,7 @@ def cmd_status(args: argparse.Namespace) -> int:
         families.setdefault(asset["type"], []).append(asset)
     print(f"Embervale 3D assets - {len(current['assets'])} production models")
     print("-" * 78)
-    for family in (HUMANOID, QUADRUPED, VIEWMODEL, ARCHITECTURE, STATIC_PROP, "UNREADABLE"):
+    for family in (HUMANOID, QUADRUPED, VIEWMODEL, ARCHITECTURE, STATIC_PROP, ANIMATION, "UNREADABLE"):
         assets = families.get(family)
         if not assets:
             continue

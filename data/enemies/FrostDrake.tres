@@ -29,6 +29,7 @@ BreathDuration = 1.2
 CapsuleRadius = 0.9
 CapsuleHeight = 2.2
 MaxPoise = 90.0
+Reaction = 3
 StaminaRegen = 14.0
 ManaRegen = 6.0
 XpValue = 180

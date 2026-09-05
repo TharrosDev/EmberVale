@@ -24,6 +24,16 @@ public static class CombatLayers
     public const uint Npc = 1u << 6;
     public const uint Projectile = 1u << 7;
     public const uint Interaction = 1u << 8;
+
+    /// <summary>
+    /// Geometry the third-person camera may not pass through.
+    ///
+    /// ⚠️ <b>A separate layer from the actor layers, and that separation is the whole point.</b> The
+    /// camera spring used to sweep <see cref="World"/>, which actor bodies also occupied — so a
+    /// companion walking between the player and the camera yanked it in, and a <c>ponytail:</c> note
+    /// in <c>PlayerCameraRig</c> admitted it and left it. Walls block the camera; people do not.
+    /// Sweep <see cref="CameraObstruction"/>, which is this plus static world.
+    /// </summary>
     public const uint CameraBlocker = 1u << 9;
     public const uint NavigationObstacle = 1u << 10;
     public const uint Water = 1u << 11;

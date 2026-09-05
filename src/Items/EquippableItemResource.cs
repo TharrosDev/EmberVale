@@ -22,6 +22,13 @@ public partial class EquippableItemResource : ItemResource
     /// <summary>For weapon slots: the weapon swapped onto the wielder while equipped.</summary>
     [Export] public WeaponResource? Weapon { get; set; }
 
+    /// <summary>
+    /// The model this shows in the world when equipped, hung on the actor's hand socket by
+    /// <c>EquipmentComponent</c>. Empty leaves whatever is already in the hand, so an unauthored
+    /// weapon degrades to the actor's default rather than to an empty fist.
+    /// </summary>
+    [Export] public string WorldModelPath { get; set; } = "";
+
     [ExportGroup("Stat Bonuses (flat, while equipped)")]
     [Export] public float BonusArmor { get; set; }
     [Export] public float BonusPhysicalPower { get; set; }

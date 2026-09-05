@@ -31,6 +31,10 @@ public partial class SpellResource : Resource
     [Export] public SpellDelivery Delivery { get; set; } = SpellDelivery.Projectile;
 
     /// <summary>How the cast plays out over time (Phase 29.5A): Instant, Charged or Channeled.</summary>
+    /// <summary>An authored cast timeline, when this spell wants one. Empty derives a shape from
+    /// <see cref="CastMode"/> — see <c>SpellActions.For</c>.</summary>
+    [Export] public Embervale.Combat.Actions.ActionDefinitionResource? CastAction { get; set; }
+
     [Export] public CastMode CastMode { get; set; } = CastMode.Instant;
 
     /// <summary>Minimum corruption tier the caster must have reached to learn this spell

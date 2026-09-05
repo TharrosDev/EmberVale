@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="EquippableItemResource" load_steps=2 format=3 uid="uid://cmbrvlitemarrows"]
+
+[ext_resource type="Script" path="res://src/Items/EquippableItemResource.cs" id="1_eq"]
+
+; Ammunition, in the slot appended for it. It carries no weapon and no bonuses: what it is for is
+; occupying EquipmentSlot.Ammo, so a quiver is a thing the player can have and a bow is a thing that
+; can later require one.
+[resource]
+script = ExtResource("1_eq")
+Id = "item.ammo.arrows"
+DisplayName = "Arrows"
+Description = "A bundle of straight ash shafts, fletched grey. Twenty to a wrap, and you will lose half of them."
+Type = 2
+Rarity = 0
+MaxStack = 60
+Weight = 0.05
+Value = 2
+Slot = 10
+TradeTags = Array[String](["weapon"])

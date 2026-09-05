@@ -1,4 +1,7 @@
 using Embervale.Combat;
+using Embervale.Animation;
+using Embervale.Combat.Actions;
+using Embervale.Player;
 using Embervale.Corruption;
 using Embervale.Crafting;
 using Embervale.Dialogue;
@@ -27,6 +30,87 @@ namespace Embervale.Tests;
 /// </summary>
 public class EnumStabilityTests
 {
+    [Fact]
+    public void EquipmentSocket_Ordinals()
+    {
+        Assert.Equal(0, (int)EquipmentSocket.HandR);
+        Assert.Equal(1, (int)EquipmentSocket.HandL);
+        Assert.Equal(2, (int)EquipmentSocket.BackPrimary);
+        Assert.Equal(3, (int)EquipmentSocket.BackSecondary);
+        Assert.Equal(4, (int)EquipmentSocket.HipR);
+        Assert.Equal(5, (int)EquipmentSocket.HipL);
+        Assert.Equal(6, (int)EquipmentSocket.Shield);
+        Assert.Equal(7, (int)EquipmentSocket.Bow);
+        Assert.Equal(8, (int)EquipmentSocket.Quiver);
+        Assert.Equal(9, (int)EquipmentSocket.Head);
+        Assert.Equal(10, (int)EquipmentSocket.Chest);
+        Assert.Equal(11, (int)EquipmentSocket.Hips);
+        Assert.Equal(12, (int)EquipmentSocket.ShoulderR);
+        Assert.Equal(13, (int)EquipmentSocket.ShoulderL);
+    }
+
+    [Fact]
+    public void SocketSpace_Ordinals()
+    {
+        Assert.Equal(0, (int)SocketSpace.BoneLocal);
+        Assert.Equal(1, (int)SocketSpace.BodyAligned);
+    }
+
+    [Fact]
+    public void ReactionClass_Ordinals()
+    {
+        Assert.Equal(0, (int)ReactionClass.Small);
+        Assert.Equal(1, (int)ReactionClass.Humanoid);
+        Assert.Equal(2, (int)ReactionClass.Armored);
+        Assert.Equal(3, (int)ReactionClass.Large);
+        Assert.Equal(4, (int)ReactionClass.Boss);
+    }
+
+    [Fact]
+    public void StaggerResponse_Ordinals()
+    {
+        Assert.Equal(0, (int)StaggerResponse.None);
+        Assert.Equal(1, (int)StaggerResponse.Flinch);
+        Assert.Equal(2, (int)StaggerResponse.Stagger);
+        Assert.Equal(3, (int)StaggerResponse.Heavy);
+        Assert.Equal(4, (int)StaggerResponse.Knockdown);
+    }
+
+    [Fact]
+    public void CameraContext_Ordinals()
+    {
+        Assert.Equal(0, (int)CameraContext.Exploration);
+        Assert.Equal(1, (int)CameraContext.Sprint);
+        Assert.Equal(2, (int)CameraContext.Combat);
+        Assert.Equal(3, (int)CameraContext.TargetLock);
+        Assert.Equal(4, (int)CameraContext.Aim);
+    }
+
+    [Fact]
+    public void ActionKind_Ordinals()
+    {
+        Assert.Equal(0, (int)ActionKind.Attack);
+        Assert.Equal(1, (int)ActionKind.HeavyAttack);
+        Assert.Equal(2, (int)ActionKind.Block);
+        Assert.Equal(3, (int)ActionKind.Parry);
+        Assert.Equal(4, (int)ActionKind.Dodge);
+        Assert.Equal(5, (int)ActionKind.Cast);
+        Assert.Equal(6, (int)ActionKind.Ranged);
+        Assert.Equal(7, (int)ActionKind.Equip);
+        Assert.Equal(8, (int)ActionKind.UseItem);
+        Assert.Equal(9, (int)ActionKind.Stagger);
+        Assert.Equal(10, (int)ActionKind.Death);
+        Assert.Equal(11, (int)ActionKind.Contextual);
+    }
+
+    [Fact]
+    public void RootMotionMode_Ordinals()
+    {
+        Assert.Equal(0, (int)RootMotionMode.None);
+        Assert.Equal(1, (int)RootMotionMode.Horizontal);
+        Assert.Equal(2, (int)RootMotionMode.WarpToTarget);
+    }
+
     [Fact]
     public void ItemType_Ordinals()
     {

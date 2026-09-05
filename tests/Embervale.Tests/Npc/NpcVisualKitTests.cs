@@ -1,4 +1,5 @@
 using System.Linq;
+using Embervale.Animation;
 using Embervale.Npc;
 using Xunit;
 
@@ -40,7 +41,11 @@ public sealed class NpcVisualKitTests
             NpcVisualKit.Profile profile = Assert.IsType<NpcVisualKit.Profile>(NpcVisualKit.Resolve(template));
             Assert.InRange(profile.Pieces.Count, 1, 4);
             Assert.Equal(profile.Pieces.Count, profile.Pieces.Select(piece => piece.Name).Distinct().Count());
-            Assert.All(profile.Pieces, piece => Assert.Contains(piece.Bone, new[] { "Chest", "Head", "Hips" }));
+            // The kit speaks the canonical socket vocabulary now (EquipmentSockets), not raw bone
+            // names. These three are the only sockets an NPC outfit is authored against.
+            Assert.All(profile.Pieces, piece => Assert.Contains(
+                piece.Socket,
+                new[] { EquipmentSocket.Chest, EquipmentSocket.Head, EquipmentSocket.Hips }));
         }
     }
 

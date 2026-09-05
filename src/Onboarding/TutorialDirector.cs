@@ -1,3 +1,4 @@
+using Embervale.Combat.Actions;
 using Embervale.Combat;
 using Embervale.Core;
 using Embervale.Core.Diagnostics;
@@ -180,7 +181,7 @@ public partial class TutorialDirector : Node, ISaveable
 
             case TutorialStep.Attack:
                 // A real swing, not a keypress: a click with no stamina teaches nothing.
-                if (Player()?.GetComponent<MeleeWeaponComponent>()?.IsCommitted == true)
+                if (Player()?.GetComponent<CharacterActionComponent>()?.IsCommitted == true)
                 {
                     Complete(TutorialStep.Attack);
                 }

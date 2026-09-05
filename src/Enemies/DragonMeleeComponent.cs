@@ -1,3 +1,4 @@
+using Embervale.Combat.Actions;
 using Embervale.Combat;
 using Embervale.Core.Services;
 using Embervale.Entities;
@@ -9,11 +10,11 @@ namespace Embervale.Enemies;
 /// <summary>
 /// Gives a large body three melee arcs instead of one (Phase 35A): jaws in front, a wing sweep to
 /// either flank, the tail behind. Which one is armed is chosen every frame from the target's bearing
-/// (<see cref="DragonMelee"/>) by swapping the <see cref="MeleeWeaponComponent"/>'s hitbox — one
+/// (<see cref="DragonMelee"/>) by naming which of its three authored actions to run — one
 /// weapon component, three volumes.
 ///
 /// A component rather than three weapons because <see cref="EnemyAIComponent"/> drives exactly one
-/// <see cref="MeleeWeaponComponent"/> per actor (<c>Entity.GetComponent&lt;T&gt;</c> returns one), so
+/// <see cref="CharacterActionComponent"/> per actor (<c>Entity.GetComponent&lt;T&gt;</c> returns one), so
 /// three weapons would mean teaching the AI to pick between them. Swapping the volume underneath the
 /// existing swing needs nothing from the AI at all.
 ///
@@ -28,7 +29,7 @@ public partial class DragonMeleeComponent : EntityComponent
     public const string WingNode = "WingHitbox";
     public const string TailNode = "TailHitbox";
 
-    private MeleeWeaponComponent? _weapon;
+    private CharacterActionComponent? _weapon;
     private EnemyAIComponent? _ai;
     private Hitbox? _bite;
     private Hitbox? _wing;
@@ -61,12 +62,18 @@ public partial class DragonMeleeComponent : EntityComponent
 
     protected override void OnInitialize()
     {
-        _weapon = Entity!.GetComponent<MeleeWeaponComponent>();
+        _weapon = Entity!.GetComponent<CharacterActionComponent>();
         _ai = Entity.GetComponent<EnemyAIComponent>();
         _bite = Entity.Body.GetNodeOrNull<Hitbox>(BiteNode);
         _wing = Entity.Body.GetNodeOrNull<Hitbox>(WingNode);
         _tail = Entity.Body.GetNodeOrNull<Hitbox>(TailNode);
-        Arm(DragonAttack.Bite);
+
+        // The three volumes are registered by name ONCE. The authored actions name which one they
+        // open, so nothing has to reassign a hitbox per frame any more.
+        Register("BiteArc", _bite);
+        Register("WingArc", _wing);
+        Register("TailArc", _tail);
+        Armed = DragonAttack.Bite;
     }
 
     public override void _PhysicsProcess(double delta)
@@ -83,24 +90,24 @@ public partial class DragonMeleeComponent : EntityComponent
             return;
         }
 
-        Arm(DragonMelee.Choose(_ai.BearingTo(player.GlobalPosition)));
+        Armed = DragonMelee.Choose(_ai.BearingTo(player.GlobalPosition));
     }
 
-    private void Arm(DragonAttack attack)
+    /// <summary>The action id for the blow currently armed by bearing. The AI asks for this rather
+    /// than for "an attack", which is how a directional creature keeps its choice while the action
+    /// system keeps the timing.</summary>
+    public string ArmedActionId => Armed switch
     {
-        Armed = attack;
-        Hitbox? arc = attack switch
-        {
-            DragonAttack.Wing => _wing,
-            DragonAttack.Tail => _tail,
-            _ => _bite,
-        };
+        DragonAttack.Wing => "dragon.wing",
+        DragonAttack.Tail => "dragon.tail",
+        _ => "dragon.bite",
+    };
 
-        // A missing arc leaves the factory's default hitbox in place rather than disarming the
-        // dragon — a greybox that still fights beats a decorative one.
+    private void Register(string name, Hitbox? arc)
+    {
         if (_weapon != null && arc != null)
         {
-            _weapon.Hitbox = arc;
+            _weapon.NamedHitboxes[name] = arc;
         }
     }
 

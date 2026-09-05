@@ -1,3 +1,4 @@
+using Embervale.Combat.Actions;
 using Embervale.Combat;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
@@ -16,7 +17,7 @@ namespace Embervale.Enemies;
 /// The decision-making brain for an <see cref="EnemyEntity"/>. A perception-driven
 /// finite state machine (Idle → Patrol → Investigate → Combat → Retreat) that
 /// reuses the shared <see cref="LocomotionComponent"/> to move and the
-/// <see cref="MeleeWeaponComponent"/> to attack — the same systems the player
+/// <see cref="CharacterActionComponent"/> to attack — the same systems the player
 /// uses. Sight is a range + field-of-view cone gated by a line-of-sight raycast,
 /// with a short-range proximity sense. Spotting the target broadcasts an
 /// <see cref="EnemyAlertedEvent"/> so nearby allies converge (group coordination).
@@ -76,7 +77,11 @@ public partial class EnemyAIComponent : EntityComponent
 
     private CharacterBody3D _body = null!;
     private StatsComponent? _stats;
-    private MeleeWeaponComponent? _weapon;
+    private CharacterActionComponent? _weapon;
+
+    /// <summary>Set for a creature that chooses its blow by bearing rather than by range. Null for
+    /// every humanoid, and <c>MountedCombat.DamageScale</c>-style: the null case is the common one.</summary>
+    private DragonMeleeComponent? _directional;
     private SpellcastingComponent? _casting;
     private CombatComponent? _combat;
     private PlayerCharacter? _player;
@@ -151,7 +156,8 @@ public partial class EnemyAIComponent : EntityComponent
 
         _body = body;
         _stats = Entity.GetComponent<StatsComponent>();
-        _weapon = Entity.GetComponent<MeleeWeaponComponent>();
+        _weapon = Entity.GetComponent<CharacterActionComponent>();
+        _directional = Entity.GetComponent<DragonMeleeComponent>();
         _casting = Entity.GetComponent<SpellcastingComponent>();
         _combat = Entity.GetComponent<CombatComponent>();
         _flight = Entity.GetComponent<FlightComponent>();
@@ -429,7 +435,34 @@ public partial class EnemyAIComponent : EntityComponent
             // "in reach" and a target on a ledge two metres up reads the same way.
             if (!guard && AiSenseRules.CanSwing(Airborne, pos.Y - _body.GlobalPosition.Y))
             {
-                _weapon?.TryAttack();
+                // ⚠️ GATED ON THE ACTION'S OWN RECOVERY, WHICH IS WHAT THIS CALL NEVER HAD.
+                // This runs every physics frame, and the only thing that ever rate-limited it was
+                // the weapon FSM rejecting a call while committed — so an enemy attacked at the
+                // maximum cadence its weapon allowed, forever, with no pause between combos.
+                // AiRecoveryRemaining is the authored breath between decisions.
+                if (_weapon != null)
+                {
+                    // A committed attack may close the last of the gap on the thing it is aimed at,
+                    // within the limits its definition authors. Set before the swing starts so the
+                    // warp has a target from its first frame.
+                    _weapon.WarpTarget = canSee ? player?.Body : null;
+                    _weapon.AimPoint = canSee ? pos : null;
+
+                    // Intent, not timing: "hit the thing that is this far away". Which blow that is
+                    // belongs to the weapon's authored actions, and when it lands belongs to the
+                    // animation.
+                    //
+                    // A directional attacker (a dragon) has already chosen WHICH blow by bearing, so
+                    // it names one; everything else lets range decide.
+                    if (_directional is { } directional)
+                    {
+                        _weapon.TryStartById(directional.ArmedActionId);
+                    }
+                    else
+                    {
+                        _weapon.TryAttackAt(_body.GlobalPosition.DistanceTo(pos));
+                    }
+                }
             }
         }
     }

@@ -58,6 +58,18 @@ public partial class BossPhaseResource : Resource
     /// </summary>
     [Export] public float WindupPoiseMultiplier { get; set; } = 1f;
 
+    [ExportGroup("Attacks")]
+    /// <summary>
+    /// The attacks this phase fights with. Empty keeps whatever the weapon authors, which is what
+    /// every phase did before this existed.
+    ///
+    /// <para>⚠️ <b>This is how a boss gets new moves without a branch inside the generic controller
+    /// (§20).</b> A later phase can be slower and heavier, or gain an uninterruptible blow it did
+    /// not have, purely as authored data — and <c>ActionSelection</c> then picks among them by
+    /// range exactly as it does for any other actor.</para>
+    /// </summary>
+    [Export] public Godot.Collections.Array<Combat.Actions.ActionDefinitionResource> Attacks { get; set; } = new();
+
     [ExportGroup("Adds")]
 
     /// <summary>Minion waves this phase brings into the fight (36D). Empty on a phase the boss

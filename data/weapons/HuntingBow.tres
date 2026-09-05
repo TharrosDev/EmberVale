@@ -1,0 +1,63 @@
+[gd_resource type="Resource" script_class="WeaponResource" load_steps=4 format=3 uid="uid://cmbrvlhuntingbow"]
+
+[ext_resource type="Script" path="res://src/Combat/WeaponResource.cs" id="1_weapon"]
+[ext_resource type="Script" path="res://src/Combat/Actions/ActionDefinitionResource.cs" id="2_action"]
+
+; The first ranged weapon in the game (2026-09-05). Everything structural about it is shared with a
+; sword — the same resource type, the same action timeline, the same equipment socket — and the only
+; difference is what happens on the release frame: an arrow leaves instead of a volume opening.
+;
+; ONE link, not a chain. A bow does not combo: each shot is drawn, loosed and recovered on its own,
+; and the pressure comes from the draw being long enough that you have to choose when to start it.
+; 0.86 s of draw out of a 1.35 s shot is deliberate — long enough to be committed to, short enough
+; that a second shot is a real option when something is running at you.
+;
+; ⚠️ NO WARP. A ranged action must never close distance on its target; that is the whole difference
+; between a bow and a charge, and RootMotion stays None for every ranged definition.
+
+[sub_resource type="Resource" id="Loose"]
+script = ExtResource("2_action")
+Id = "bow.loose"
+Kind = 6
+AnimationSlot = "attack"
+Duration = 1.35
+FallbackDuration = 1.35
+ActiveFrom = 0.64
+ActiveTo = 0.7
+CancelFrom = 0.78
+ComboFrom = 1.0
+ComboTo = 1.0
+NextActionId = ""
+Interruptible = true
+MoveScale = 0.45
+TurnDegreesPerSecond = -1.0
+StaminaCost = 9.0
+DamageScale = 1.0
+PoiseScale = 1.0
+RootMotion = 0
+HitStopScale = 0.6
+CameraImpulse = 0.15
+SwingCueId = "sfx.combat.swing"
+AiWeight = 1.0
+AiMinRange = 4.0
+AiMaxRange = 26.0
+AiRecoverySeconds = 0.9
+
+[resource]
+script = ExtResource("1_weapon")
+DisplayName = "Hunting Bow"
+DamageType = 0
+BaseDamage = 17.0
+PoiseDamage = 12.0
+StaminaCost = 9.0
+Attacks = Array[ExtResource("2_action")]([SubResource("Loose")])
+WindupTime = 0.86
+ActiveTime = 0.08
+RecoveryTime = 0.41
+AttackSpeed = 1.0
+IsRanged = true
+ProjectileSpeed = 42.0
+ProjectileRange = 65.0
+ProjectileModelPath = "res://assets/models/weapons/wpn_arrow.glb"
+ComboLength = 1
+FinisherMultiplier = 1.0

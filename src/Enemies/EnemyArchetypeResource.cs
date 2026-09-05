@@ -85,6 +85,10 @@ public partial class EnemyArchetypeResource : Resource
 
     [ExportGroup("Combat")]
     [Export] public float MaxPoise { get; set; } = 40f;
+
+    /// <summary>What kind of body this is when it is hit — how far a broken guard actually moves it.
+    /// See <c>PoiseReaction</c>; the default is the humanoid the game is balanced around.</summary>
+    [Export] public Combat.ReactionClass Reaction { get; set; } = Combat.ReactionClass.Humanoid;
     [Export] public float StaminaRegen { get; set; } = 12f;
 
     /// <summary>Mana regenerated per second — the pacing dial for a caster archetype. The default

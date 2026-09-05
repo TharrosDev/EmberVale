@@ -22,6 +22,7 @@
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_innkeeper.glb" id="23_npc_inn"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_campfire.glb" id="24_campfire"]
 [ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="25_charanim"]
+[ext_resource type="Script" path="res://src/Animation/EquipmentPresentationComponent.cs" id="90_equipment"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_townhouse.tscn" id="26_townhouse"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_longhouse_stone.tscn" id="60_longhouse_stone"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_workshop_open.tscn" id="61_workshop_open"]
@@ -379,6 +380,10 @@ TemplateId = "npc.clan_chief"
 script = ExtResource("25_charanim")
 BodyMeshPath = "Model"
 
+[node name="EquipmentVisuals" type="Node" parent="ClanChief"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="ClanChief"]
 
 [node name="Shape" type="CollisionShape3D" parent="ClanChief/Collider"]
@@ -405,6 +410,10 @@ TemplateId = "npc.clan_quartermaster"
 
 [node name="Animation" type="Node" parent="Quartermaster"]
 script = ExtResource("25_charanim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="Quartermaster"]
+script = ExtResource("90_equipment")
 BodyMeshPath = "Model"
 
 [node name="Collider" type="StaticBody3D" parent="Quartermaster"]
@@ -435,6 +444,10 @@ TemplateId = "npc.clan_beast_tamer"
 script = ExtResource("25_charanim")
 BodyMeshPath = "Model"
 
+[node name="EquipmentVisuals" type="Node" parent="BeastTamer"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="BeastTamer"]
 
 [node name="Shape" type="CollisionShape3D" parent="BeastTamer/Collider"]
@@ -463,6 +476,10 @@ TemplateId = "npc.clan_hearthkeeper"
 script = ExtResource("25_charanim")
 BodyMeshPath = "Model"
 
+[node name="EquipmentVisuals" type="Node" parent="Hearthkeeper"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
 [node name="Collider" type="StaticBody3D" parent="Hearthkeeper"]
 
 [node name="Shape" type="CollisionShape3D" parent="Hearthkeeper/Collider"]
@@ -489,6 +506,10 @@ TemplateId = "npc.clan_exile"
 
 [node name="Animation" type="Node" parent="Exile"]
 script = ExtResource("25_charanim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="Exile"]
+script = ExtResource("90_equipment")
 BodyMeshPath = "Model"
 
 [node name="Collider" type="StaticBody3D" parent="Exile"]

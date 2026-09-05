@@ -17,6 +17,7 @@ KnownSpellIds = Array[String](["spell.firebolt"])
 CapsuleRadius = 0.3
 CapsuleHeight = 1.0
 MaxPoise = 12.0
+Reaction = 0
 StaminaRegen = 14.0
 ManaRegen = 9.0
 XpValue = 45

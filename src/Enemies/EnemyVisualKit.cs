@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Embervale.Animation;
 using Embervale.Entities;
 using Godot;
 using Embervale.Core;
@@ -17,7 +18,27 @@ public static class EnemyVisualKit
     public const string KitPath = ModelAssets.EnemyIdentityKit;
 
     public readonly record struct Piece(string Name, string Bone, Vector3 Offset,
-        Vector3 RotationDegrees, Vector3 Scale);
+        Vector3 RotationDegrees, Vector3 Scale)
+    {
+        /// <summary>
+        /// The canonical socket this piece's authored bone belongs to.
+        ///
+        /// ⚠️ The authored bone name is still passed to the presentation component as the PREFERRED
+        /// bone, so nothing here moves. This mapping only supplies the fallback chain for a rig that
+        /// does not have the exact bone — which is the half these profiles never had. Several of
+        /// these sit on quadruped rigs carrying both a Spine and a Torso, and resolving them purely
+        /// through the humanoid preference order would walk a carapace up the animal's back.
+        /// </summary>
+        public EquipmentSocket Socket => Bone switch
+        {
+            "Head" => EquipmentSocket.Head,
+            "Back" => EquipmentSocket.BackPrimary,
+            "Wrist.R" or "Hand.R" => EquipmentSocket.HandR,
+            "Wrist.L" or "Hand.L" => EquipmentSocket.HandL,
+            "Hips" => EquipmentSocket.Hips,
+            _ => EquipmentSocket.Chest,
+        };
+    }
 
     public sealed record Profile(string Id, IReadOnlyList<Piece> Pieces, Color? BodyTint = null);
 
@@ -91,9 +112,11 @@ public static class EnemyVisualKit
     public static Profile? Resolve(string templateId) =>
         Profiles.TryGetValue(templateId, out Profile? profile) ? profile : null;
 
-    public static void Attach(IEntity entity, Skeleton3D skeleton)
+    public static void Attach(IEntity entity, EquipmentPresentationComponent presentation)
     {
-        if (skeleton.HasMeta("embervale_enemy_identity") || Resolve(entity.TemplateId) is not { } profile)
+        if (presentation.Skeleton is not { } skeleton ||
+            skeleton.HasMeta("embervale_enemy_identity") ||
+            Resolve(entity.TemplateId) is not { } profile)
         {
             return;
         }
@@ -107,25 +130,17 @@ public static class EnemyVisualKit
         skeleton.SetMeta("embervale_enemy_identity", profile.Id);
         foreach (Piece spec in profile.Pieces)
         {
-            int bone = FindBone(skeleton, spec.Bone);
-            Node3D? visual = FindNode(source, spec.Name);
-            if (bone < 0 || visual == null)
+            if (FindNode(source, spec.Name) is not { } visual)
             {
-                GD.PushWarning($"Enemy kit profile '{profile.Id}' cannot attach {spec.Name} to {spec.Bone}.");
+                GD.PushWarning($"Enemy kit profile '{profile.Id}' has no piece named {spec.Name}.");
                 continue;
             }
 
-            var follower = new EnemyKitFollower
-            {
-                Name = $"Identity_{spec.Name}", Skeleton = skeleton, BoneIndex = bone,
-                Offset = spec.Offset, AuthoredRotation = spec.RotationDegrees * (Mathf.Pi / 180f),
-                VisualScale = spec.Scale,
-            };
-            skeleton.AddChild(follower);
-            visual.Owner = null;
-            visual.Reparent(follower, keepGlobalTransform: false);
-            visual.Transform = Transform3D.Identity;
-            visual.Name = spec.Name;
+            // Body-aligned, explicitly, and with the authored bone preferred — the two things that
+            // make this refactor a no-op on screen. See Piece.Socket.
+            presentation.Attach(
+                spec.Socket, visual, $"Identity_{spec.Name}", spec.Offset, spec.RotationDegrees,
+                spec.Scale, SocketSpace.BodyAligned, spec.Bone);
         }
         source.Free();
         if (profile.BodyTint is { } tint)
@@ -133,40 +148,6 @@ public static class EnemyVisualKit
             TintBody(skeleton.GetParent(), tint);
         }
     }
-
-    private static int FindBone(Skeleton3D skeleton, string requested)
-    {
-        string[] candidates = requested switch
-        {
-            "Wrist.L" => new[] { "Wrist.L", "Hand.L", "Hand_L", "LeftHand", "mixamorig_LeftHand" },
-            "Wrist.R" => new[] { "Wrist.R", "Hand.R", "Hand_R", "RightHand", "mixamorig_RightHand" },
-            _ => new[] { requested },
-        };
-        foreach (string candidate in candidates)
-        {
-            int bone = skeleton.FindBone(candidate);
-            if (bone >= 0)
-            {
-                return bone;
-            }
-        }
-        string normalized = NormalizeBone(requested);
-        for (int index = 0; index < skeleton.GetBoneCount(); index++)
-        {
-            if (NormalizeBone(skeleton.GetBoneName(index)) == normalized)
-            {
-                return index;
-            }
-        }
-        return -1;
-    }
-
-    private static string NormalizeBone(string value) => value
-        .Replace(".", string.Empty, StringComparison.Ordinal)
-        .Replace("_", string.Empty, StringComparison.Ordinal)
-        .Replace(":", string.Empty, StringComparison.Ordinal)
-        .Replace("-", string.Empty, StringComparison.Ordinal)
-        .ToLowerInvariant();
 
     private static void TintBody(Node? node, Color tint)
     {
@@ -206,32 +187,3 @@ public static class EnemyVisualKit
     }
 }
 
-/// <summary>Applies the animated pose delta while retaining Embervale-authored model axes.</summary>
-internal sealed partial class EnemyKitFollower : Node3D
-{
-    public required Skeleton3D Skeleton { get; init; }
-    public int BoneIndex { get; init; }
-    public Vector3 Offset { get; init; }
-    public Vector3 AuthoredRotation { get; init; }
-    public Vector3 VisualScale { get; init; } = Vector3.One;
-
-    public override void _Ready()
-    {
-        TopLevel = true;
-        Follow();
-    }
-
-    public override void _Process(double delta) => Follow();
-
-    private void Follow()
-    {
-        Transform3D rest = Skeleton.GetBoneGlobalRest(BoneIndex);
-        Transform3D pose = Skeleton.GetBoneGlobalPose(BoneIndex);
-        Basis skeletonBasis = Skeleton.GlobalTransform.Basis.Orthonormalized();
-        Basis delta = (pose.Basis * rest.Basis.Inverse()).Orthonormalized();
-        Basis authored = Basis.FromEuler(AuthoredRotation);
-        Basis finalBasis = (skeletonBasis * delta * authored).Scaled(VisualScale);
-        Vector3 origin = (Skeleton.GlobalTransform * pose).Origin + skeletonBasis * (delta * Offset);
-        GlobalTransform = new Transform3D(finalBasis, origin);
-    }
-}

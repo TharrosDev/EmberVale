@@ -43,8 +43,6 @@ public static class ModelAssets
     public const string Horse = "res://assets/models/creatures/mnt_horse.glb";
 
     // FIRST-PERSON / VIEWMODEL — cosmetic, no collision, motion is procedural not baked.
-    public const string FirstPersonArmRight = "res://assets/models/characters/fp_arm_right.glb";
-    public const string FirstPersonArmLeft = "res://assets/models/characters/fp_arm_left.glb";
 
     // Equipment and weapons — rigid followers and hand-socket meshes.
     public const string IronSword = "res://assets/models/weapons/wpn_sword_iron.glb";
@@ -68,6 +66,18 @@ public static class ModelAssets
     /// mesh never ships. Regenerate with <c>python tools/assets.py build anim-library</c>.</summary>
     public const string AnimationLibrary = "res://assets/models/animations/anim_library.res";
 
+    /// <summary>
+    /// The full-body shared library (the 2026-09-04 combat/animation overhaul), built from Meshy
+    /// clips by <c>tools/build_meshy_anim_library.gd</c>.
+    ///
+    /// ⚠️ <b>It is a different thing from <see cref="AnimationLibrary"/>, not a bigger one.</b> That
+    /// one is upper-body and rotation-only by construction — its extractor strips every position
+    /// track and all eight leg bones, because its Rigify source and the Quaternius bodies disagree
+    /// about where the hips sit. This one comes off the same Meshy rig family as 31 of the 33
+    /// humanoid bodies, so nothing has to be stripped and it can actually drive legs.
+    /// </summary>
+    public const string MeshyAnimationLibrary = "res://assets/models/animations/anim_meshy.res";
+
     /// <summary>The derived production manifest. Written by
     /// <c>python tools/assets.py status --write</c>; never edited by hand.</summary>
     public const string Manifest = "res://assets/models/manifest.json";
@@ -78,7 +88,6 @@ public static class ModelAssets
     public static readonly string[] All =
     {
         PlayerBody, Goblin, AshenAcolyte, Horse,
-        FirstPersonArmRight, FirstPersonArmLeft,
         IronSword, Pauldron, Pouch, NpcKit, EnemyIdentityKit,
         TrainingDummy, CacheChest, CacheChestOpen, TomeStand,
     };

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Embervale.Animation;
 using Embervale.Entities;
 using Godot;
 using Embervale.Core;
@@ -23,21 +24,20 @@ public static class NpcVisualKit
         Broad,
     }
 
-    public readonly record struct Piece(string Name, string Bone, Vector3 Offset, Vector3 RotationDegrees,
-        Vector3 Scale);
+    public readonly record struct Piece(string Name, EquipmentSocket Socket, Vector3 Offset,
+        Vector3 RotationDegrees, Vector3 Scale);
 
     public sealed record Profile(string Id, Build BodyBuild, IReadOnlyList<Piece> Pieces);
 
-    private static readonly Vector3 Zero = Vector3.Zero;
     private static readonly Vector3 One = Vector3.One;
 
     private static Piece Chest(string name, float x = 0f, float y = 0f, float z = 0f,
         float yaw = 0f, float scale = 1f) =>
-        new(name, "Chest", new Vector3(x, y, z), new Vector3(0f, yaw, 0f), Vector3.One * scale);
+        new(name, EquipmentSocket.Chest, new Vector3(x, y, z), new Vector3(0f, yaw, 0f), Vector3.One * scale);
 
     private static Piece Hips(string name, float x = 0f, float y = 0f, float z = 0f,
         float yaw = 0f, float scale = 1f) =>
-        new(name, "Hips", new Vector3(x, y, z), new Vector3(0f, yaw, 0f), Vector3.One * scale);
+        new(name, EquipmentSocket.Hips, new Vector3(x, y, z), new Vector3(0f, yaw, 0f), Vector3.One * scale);
 
     private static Profile P(string id, Build build, params Piece[] pieces) => new(id, build, pieces);
 
@@ -178,9 +178,11 @@ public static class NpcVisualKit
 
     /// <summary>Attaches one profile to a live retargeted humanoid. Missing kit/bones degrade to the
     /// original body; gameplay and animation never depend on cosmetic attachments.</summary>
-    public static void Attach(IEntity entity, Skeleton3D skeleton)
+    public static void Attach(IEntity entity, EquipmentPresentationComponent presentation)
     {
-        if (skeleton.HasMeta("modular_npc_kit") || Resolve(entity.TemplateId) is not { } profile)
+        if (presentation.Skeleton is not { } skeleton ||
+            skeleton.HasMeta("modular_npc_kit") ||
+            Resolve(entity.TemplateId) is not { } profile)
         {
             return;
         }
@@ -204,29 +206,21 @@ public static class NpcVisualKit
 
         foreach (Piece spec in profile.Pieces)
         {
-            int bone = skeleton.FindBone(spec.Bone);
-            Node3D? visual = FindNode(source, spec.Name);
-            if (bone < 0 || visual == null)
+            if (FindNode(source, spec.Name) is not { } visual)
             {
-                GD.PushWarning($"NPC kit profile '{profile.Id}' cannot attach {spec.Name} to {spec.Bone}.");
+                GD.PushWarning($"NPC kit profile '{profile.Id}' has no piece named {spec.Name}.");
                 continue;
             }
 
-            var follower = new NpcKitFollower
-            {
-                Name = $"Kit_{spec.Name}",
-                Skeleton = skeleton,
-                BoneIndex = bone,
-                Offset = spec.Offset,
-                AuthoredRotation = spec.RotationDegrees * (Mathf.Pi / 180f),
-                VisualScale = new Vector3(spec.Scale.X * width, spec.Scale.Y, spec.Scale.Z * width) *
-                    AttachmentScale,
-            };
-            skeleton.AddChild(follower);
-            visual.Owner = null;
-            visual.Reparent(follower, keepGlobalTransform: false);
-            visual.Transform = Transform3D.Identity;
-            visual.Name = spec.Name;
+            // ⚠️ EVERY KIT PIECE IS BODY-ALIGNED, EXPLICITLY. That is what NpcKitFollower did, and
+            // the reason survives the refactor: the retargeted bodies do not share bone-local axes,
+            // so a mantle authored upright on one chest lies on its side on the next. Passing the
+            // space rather than taking the socket's default keeps this a decision rather than an
+            // accident of the table.
+            presentation.Attach(
+                spec.Socket, visual, $"Kit_{spec.Name}", spec.Offset, spec.RotationDegrees,
+                new Vector3(spec.Scale.X * width, spec.Scale.Y, spec.Scale.Z * width) * AttachmentScale,
+                SocketSpace.BodyAligned);
         }
 
         source.Free();
@@ -251,33 +245,3 @@ public static class NpcVisualKit
     }
 }
 
-/// <summary>Follows a bone's animated delta while keeping repository-authored rigid equipment in
-/// character/model axes. This avoids treating differing retargeted bone-local axes as garment axes.</summary>
-internal sealed partial class NpcKitFollower : Node3D
-{
-    public required Skeleton3D Skeleton { get; init; }
-    public int BoneIndex { get; init; }
-    public Vector3 Offset { get; init; }
-    public Vector3 AuthoredRotation { get; init; }
-    public Vector3 VisualScale { get; init; } = Vector3.One;
-
-    public override void _Ready()
-    {
-        TopLevel = true;
-        Follow();
-    }
-
-    public override void _Process(double delta) => Follow();
-
-    private void Follow()
-    {
-        Transform3D rest = Skeleton.GetBoneGlobalRest(BoneIndex);
-        Transform3D pose = Skeleton.GetBoneGlobalPose(BoneIndex);
-        Basis skeletonBasis = Skeleton.GlobalTransform.Basis.Orthonormalized();
-        Basis delta = (pose.Basis * rest.Basis.Inverse()).Orthonormalized();
-        Basis authored = Basis.FromEuler(AuthoredRotation);
-        Basis finalBasis = (skeletonBasis * delta * authored).Scaled(VisualScale);
-        Vector3 origin = (Skeleton.GlobalTransform * pose).Origin + skeletonBasis * (delta * Offset);
-        GlobalTransform = new Transform3D(finalBasis, origin);
-    }
-}

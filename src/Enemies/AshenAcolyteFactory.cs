@@ -91,6 +91,8 @@ public static class AshenAcolyteFactory
         enemy.AddChild(new HitReactionComponent { Name = "HitReaction" });
         // 30J: plays the acolyte rig's idle/run/cast/hit/death clips off combat/locomotion state.
         enemy.AddChild(new Embervale.Animation.CharacterAnimationComponent { Name = "Animation", BodyMeshPath = "Mesh" });
+        enemy.AddChild(new Embervale.Animation.EquipmentPresentationComponent { Name = "EquipmentVisuals", BodyMeshPath = "Mesh" });
+        enemy.AddChild(new Embervale.Animation.FootIkComponent { Name = "FootIk" });
         enemy.AddChild(BuildHurtbox());
 
         // The player's spells can burn/chill/freeze it; its own casts also push statuses onto it.

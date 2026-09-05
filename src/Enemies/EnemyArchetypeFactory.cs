@@ -1,3 +1,4 @@
+using Embervale.Combat.Actions;
 using Embervale.Combat;
 using Embervale.Factions;
 using Embervale.Localization;
@@ -65,10 +66,18 @@ public static class EnemyArchetypeFactory
             StaminaRegen = archetype.StaminaRegen,
             ManaRegen = archetype.ManaRegen,
         });
-        enemy.AddChild(new CombatComponent { Name = "Combat", Team = HostileTeam, MaxPoise = archetype.MaxPoise });
+        enemy.AddChild(new CombatComponent
+        {
+            Name = "Combat",
+            Team = HostileTeam,
+            MaxPoise = archetype.MaxPoise,
+            Reaction = archetype.Reaction,
+        });
         enemy.AddChild(new LocomotionComponent { Name = "Locomotion" });
         enemy.AddChild(new HitReactionComponent { Name = "HitReaction" });
         enemy.AddChild(new Animation.CharacterAnimationComponent { Name = "Animation", BodyMeshPath = "Mesh" });
+        enemy.AddChild(new Embervale.Animation.EquipmentPresentationComponent { Name = "EquipmentVisuals", BodyMeshPath = "Mesh" });
+        enemy.AddChild(new Embervale.Animation.FootIkComponent { Name = "FootIk" });
         enemy.AddChild(new WeaponTrailComponent { Name = "WeaponTrail" });
         AddHurtboxes(enemy, archetype, radius, height);
 
@@ -87,7 +96,7 @@ public static class EnemyArchetypeFactory
         });
         enemy.AddChild(hitbox);
 
-        enemy.AddChild(new MeleeWeaponComponent
+        enemy.AddChild(new CharacterActionComponent
         {
             Name = "Weapon",
             Weapon = GD.Load<WeaponResource>(archetype.WeaponPath),

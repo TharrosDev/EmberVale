@@ -17,5 +17,6 @@ KnownSpellIds = Array[String]([])
 CapsuleRadius = 0.35
 CapsuleHeight = 0.8
 MaxPoise = 18.0
+Reaction = 0
 StaminaRegen = 20.0
 XpValue = 30

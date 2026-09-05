@@ -5,14 +5,314 @@
     {
       "id": "anim_library",
       "path": "res://assets/models/animations/anim_library.glb",
-      "type": "HUMANOID",
+      "type": "ANIMATION",
       "rig": "general_skeleton",
-      "anim": "shared_library",
+      "anim": "library_source",
       "bone_map": "bonemap_rigify",
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.829,
       "refs": 1,
       "status": "active"
+    },
+    {
+      "id": "anim_attack1",
+      "path": "res://assets/models/animations/meshy/anim_attack1.glb",
+      "type": "ANIMATION",
+      "rig": "general_skeleton",
+      "anim": "library_source",
+      "bone_map": "bonemap_meshy_s3_c188e7a9",
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 0,
+      "status": "unreferenced"
+    },
+    {
+      "id": "anim_attack2",
+      "path": "res://assets/models/animations/meshy/anim_attack2.glb",
+      "type": "ANIMATION",
+      "rig": "general_skeleton",
+      "anim": "library_source",
+      "bone_map": "bonemap_meshy_s3_c188e7a9",
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 0,
+      "status": "unreferenced"
+    },
+    {
+      "id": "anim_attack3",
+      "path": "res://assets/models/animations/meshy/anim_attack3.glb",
+      "type": "ANIMATION",
+      "rig": "general_skeleton",
+      "anim": "library_source",
+      "bone_map": "bonemap_meshy_s3_c188e7a9",
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 0,
+      "status": "unreferenced"
+    },
+    {
+      "id": "anim_attack_slash_r",
+      "path": "res://assets/models/animations/meshy/anim_attack_slash_r.glb",
+      "type": "ANIMATION",
+      "rig": "general_skeleton",
+      "anim": "library_source",
+      "bone_map": "bonemap_meshy_s3_c188e7a9",
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 0,
+      "status": "unreferenced"
+    },
+    {
+      "id": "anim_block",
+      "path": "res://assets/models/animations/meshy/anim_block.glb",
+      "type": "ANIMATION",
+      "rig": "general_skeleton",
+      "anim": "library_source",
+      "bone_map": "bonemap_meshy_s3_c188e7a9",
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 0,
+      "status": "unreferenced"
+    },
+    {
+      "id": "anim_combat_walk_back",
+      "path": "res://assets/models/animations/meshy/anim_combat_walk_back.glb",
+      "type": "ANIMATION",
+      "rig": "general_skeleton",
+      "anim": "library_source",
+      "bone_map": "bonemap_meshy_s3_c188e7a9",
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 0,
+      "status": "unreferenced"
+    },
+    {
+      "id": "anim_combat_walk_fwd",
+      "path": "res://assets/models/animations/meshy/anim_combat_walk_fwd.glb",
+      "type": "ANIMATION",
+      "rig": "general_skeleton",
+      "anim": "library_source",
+      "bone_map": "bonemap_meshy_s3_c188e7a9",
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 0,
+      "status": "unreferenced"
+    },
+    {
+      "id": "anim_death",
+      "path": "res://assets/models/animations/meshy/anim_death.glb",
+      "type": "ANIMATION",
+      "rig": "general_skeleton",
+      "anim": "library_source",
+      "bone_map": "bonemap_meshy_s3_c188e7a9",
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 0,
+      "status": "unreferenced"
+    },
+    {
+      "id": "anim_dodge",
+      "path": "res://assets/models/animations/meshy/anim_dodge.glb",
+      "type": "ANIMATION",
+      "rig": "general_skeleton",
+      "anim": "library_source",
+      "bone_map": "bonemap_meshy_s3_c188e7a9",
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 0,
+      "status": "unreferenced"
+    },
+    {
+      "id": "anim_fall",
+      "path": "res://assets/models/animations/meshy/anim_fall.glb",
+      "type": "ANIMATION",
+      "rig": "general_skeleton",
+      "anim": "library_source",
+      "bone_map": "bonemap_meshy_s3_c188e7a9",
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 0,
+      "status": "unreferenced"
+    },
+    {
+      "id": "anim_getup",
+      "path": "res://assets/models/animations/meshy/anim_getup.glb",
+      "type": "ANIMATION",
+      "rig": "general_skeleton",
+      "anim": "library_source",
+      "bone_map": "bonemap_meshy_s3_c188e7a9",
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 0,
+      "status": "unreferenced"
+    },
+    {
+      "id": "anim_heavy",
+      "path": "res://assets/models/animations/meshy/anim_heavy.glb",
+      "type": "ANIMATION",
+      "rig": "general_skeleton",
+      "anim": "library_source",
+      "bone_map": "bonemap_meshy_s3_c188e7a9",
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 0,
+      "status": "unreferenced"
+    },
+    {
+      "id": "anim_heavy_overhead",
+      "path": "res://assets/models/animations/meshy/anim_heavy_overhead.glb",
+      "type": "ANIMATION",
+      "rig": "general_skeleton",
+      "anim": "library_source",
+      "bone_map": "bonemap_meshy_s3_c188e7a9",
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 0,
+      "status": "unreferenced"
+    },
+    {
+      "id": "anim_hit",
+      "path": "res://assets/models/animations/meshy/anim_hit.glb",
+      "type": "ANIMATION",
+      "rig": "general_skeleton",
+      "anim": "library_source",
+      "bone_map": "bonemap_meshy_s3_c188e7a9",
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 0,
+      "status": "unreferenced"
+    },
+    {
+      "id": "anim_idle",
+      "path": "res://assets/models/animations/meshy/anim_idle.glb",
+      "type": "ANIMATION",
+      "rig": "general_skeleton",
+      "anim": "library_source",
+      "bone_map": "bonemap_meshy_s3_c188e7a9",
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 0,
+      "status": "unreferenced"
+    },
+    {
+      "id": "anim_jump",
+      "path": "res://assets/models/animations/meshy/anim_jump.glb",
+      "type": "ANIMATION",
+      "rig": "general_skeleton",
+      "anim": "library_source",
+      "bone_map": "bonemap_meshy_s3_c188e7a9",
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 0,
+      "status": "unreferenced"
+    },
+    {
+      "id": "anim_knockdown",
+      "path": "res://assets/models/animations/meshy/anim_knockdown.glb",
+      "type": "ANIMATION",
+      "rig": "general_skeleton",
+      "anim": "library_source",
+      "bone_map": "bonemap_meshy_s3_c188e7a9",
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 0,
+      "status": "unreferenced"
+    },
+    {
+      "id": "anim_parry",
+      "path": "res://assets/models/animations/meshy/anim_parry.glb",
+      "type": "ANIMATION",
+      "rig": "general_skeleton",
+      "anim": "library_source",
+      "bone_map": "bonemap_meshy_s3_c188e7a9",
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 0,
+      "status": "unreferenced"
+    },
+    {
+      "id": "anim_run",
+      "path": "res://assets/models/animations/meshy/anim_run.glb",
+      "type": "ANIMATION",
+      "rig": "general_skeleton",
+      "anim": "library_source",
+      "bone_map": "bonemap_meshy_s3_c188e7a9",
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 0,
+      "status": "unreferenced"
+    },
+    {
+      "id": "anim_sprint",
+      "path": "res://assets/models/animations/meshy/anim_sprint.glb",
+      "type": "ANIMATION",
+      "rig": "general_skeleton",
+      "anim": "library_source",
+      "bone_map": "bonemap_meshy_s3_c188e7a9",
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 0,
+      "status": "unreferenced"
+    },
+    {
+      "id": "anim_strafe_left",
+      "path": "res://assets/models/animations/meshy/anim_strafe_left.glb",
+      "type": "ANIMATION",
+      "rig": "general_skeleton",
+      "anim": "library_source",
+      "bone_map": "bonemap_meshy_s3_c188e7a9",
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 0,
+      "status": "unreferenced"
+    },
+    {
+      "id": "anim_turn_left",
+      "path": "res://assets/models/animations/meshy/anim_turn_left.glb",
+      "type": "ANIMATION",
+      "rig": "general_skeleton",
+      "anim": "library_source",
+      "bone_map": "bonemap_meshy_s3_c188e7a9",
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 0,
+      "status": "unreferenced"
+    },
+    {
+      "id": "anim_turn_right",
+      "path": "res://assets/models/animations/meshy/anim_turn_right.glb",
+      "type": "ANIMATION",
+      "rig": "general_skeleton",
+      "anim": "library_source",
+      "bone_map": "bonemap_meshy_s3_c188e7a9",
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 0,
+      "status": "unreferenced"
+    },
+    {
+      "id": "anim_walk",
+      "path": "res://assets/models/animations/meshy/anim_walk.glb",
+      "type": "ANIMATION",
+      "rig": "general_skeleton",
+      "anim": "library_source",
+      "bone_map": "bonemap_meshy_s3_c188e7a9",
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 0,
+      "status": "unreferenced"
+    },
+    {
+      "id": "anim_walk_back",
+      "path": "res://assets/models/animations/meshy/anim_walk_back.glb",
+      "type": "ANIMATION",
+      "rig": "general_skeleton",
+      "anim": "library_source",
+      "bone_map": "bonemap_meshy_s3_c188e7a9",
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 0,
+      "status": "unreferenced"
     },
     {
       "id": "bld_blacksmith",
@@ -22,7 +322,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 6.5,
       "refs": 2,
       "status": "active"
     },
@@ -34,7 +334,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 4.201,
       "refs": 2,
       "status": "active"
     },
@@ -46,7 +346,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 7.5,
       "refs": 4,
       "status": "active"
     },
@@ -58,7 +358,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 6.8,
       "refs": 5,
       "status": "active"
     },
@@ -70,7 +370,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 7.5,
       "refs": 2,
       "status": "active"
     },
@@ -82,7 +382,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.23,
       "refs": 3,
       "status": "active"
     },
@@ -94,7 +394,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.23,
       "refs": 3,
       "status": "active"
     },
@@ -106,7 +406,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 3.178,
       "refs": 17,
       "status": "active"
     },
@@ -118,7 +418,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 3.0,
       "refs": 4,
       "status": "active"
     },
@@ -130,7 +430,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 3.0,
       "refs": 17,
       "status": "active"
     },
@@ -142,7 +442,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 2.318,
       "refs": 17,
       "status": "active"
     },
@@ -154,7 +454,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.02,
       "refs": 0,
       "status": "unreferenced"
     },
@@ -166,7 +466,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.02,
       "refs": 1,
       "status": "active"
     },
@@ -178,7 +478,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 3.069,
       "refs": 11,
       "status": "active"
     },
@@ -190,7 +490,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 4.516,
       "refs": 5,
       "status": "active"
     },
@@ -202,7 +502,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 5.446,
       "refs": 1,
       "status": "active"
     },
@@ -214,7 +514,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 4.249,
       "refs": 5,
       "status": "active"
     },
@@ -226,7 +526,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 4.234,
       "refs": 5,
       "status": "active"
     },
@@ -238,7 +538,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 4.229,
       "refs": 1,
       "status": "active"
     },
@@ -250,7 +550,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 5.672,
       "refs": 0,
       "status": "unreferenced"
     },
@@ -262,7 +562,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 5.672,
       "refs": 1,
       "status": "active"
     },
@@ -274,7 +574,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 5.672,
       "refs": 4,
       "status": "active"
     },
@@ -286,7 +586,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 6.781,
       "refs": 1,
       "status": "active"
     },
@@ -298,7 +598,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 2.666,
       "refs": 4,
       "status": "active"
     },
@@ -310,7 +610,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 2.673,
       "refs": 3,
       "status": "active"
     },
@@ -322,7 +622,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.231,
       "refs": 4,
       "status": "active"
     },
@@ -334,7 +634,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.518,
       "refs": 7,
       "status": "active"
     },
@@ -346,7 +646,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.647,
       "refs": 7,
       "status": "active"
     },
@@ -358,7 +658,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.0,
       "refs": 0,
       "status": "unreferenced"
     },
@@ -370,7 +670,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 2.603,
       "refs": 7,
       "status": "active"
     },
@@ -382,7 +682,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 3.0,
       "refs": 0,
       "status": "unreferenced"
     },
@@ -394,7 +694,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.238,
       "refs": 17,
       "status": "active"
     },
@@ -406,7 +706,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 3.123,
       "refs": 17,
       "status": "active"
     },
@@ -418,7 +718,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 3.125,
       "refs": 17,
       "status": "active"
     },
@@ -430,7 +730,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 3.123,
       "refs": 9,
       "status": "active"
     },
@@ -442,7 +742,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 3.123,
       "refs": 9,
       "status": "active"
     },
@@ -454,7 +754,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 3.123,
       "refs": 9,
       "status": "active"
     },
@@ -466,7 +766,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 3.123,
       "refs": 9,
       "status": "active"
     },
@@ -478,7 +778,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 3.123,
       "refs": 17,
       "status": "active"
     },
@@ -490,7 +790,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 3.123,
       "refs": 17,
       "status": "active"
     },
@@ -502,7 +802,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 3.123,
       "refs": 17,
       "status": "active"
     },
@@ -514,7 +814,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.605,
       "refs": 17,
       "status": "active"
     },
@@ -526,7 +826,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.726,
       "refs": 17,
       "status": "active"
     },
@@ -538,44 +838,8 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0,
-      "height_m": null,
-      "refs": 4,
-      "status": "active"
-    },
-    {
-      "id": "fp_arm",
-      "path": "res://assets/models/characters/fp_arm.glb",
-      "type": "VIEWMODEL",
-      "rig": "none",
-      "anim": "procedural",
-      "bone_map": null,
-      "root_scale": 1.0,
-      "height_m": null,
-      "refs": 0,
-      "status": "unreferenced"
-    },
-    {
-      "id": "fp_arm_left",
-      "path": "res://assets/models/characters/fp_arm_left.glb",
-      "type": "VIEWMODEL",
-      "rig": "none",
-      "anim": "procedural",
-      "bone_map": null,
-      "root_scale": 1.0,
-      "height_m": null,
-      "refs": 2,
-      "status": "active"
-    },
-    {
-      "id": "fp_arm_right",
-      "path": "res://assets/models/characters/fp_arm_right.glb",
-      "type": "VIEWMODEL",
-      "rig": "none",
-      "anim": "procedural",
-      "bone_map": null,
-      "root_scale": 1.0,
-      "height_m": null,
-      "refs": 2,
+      "height_m": 1.598,
+      "refs": 11,
       "status": "active"
     },
     {
@@ -586,7 +850,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.65,
       "refs": 4,
       "status": "active"
     },
@@ -598,7 +862,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.672,
       "refs": 5,
       "status": "active"
     },
@@ -610,7 +874,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.682,
       "refs": 5,
       "status": "active"
     },
@@ -622,7 +886,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_29d868a1",
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.65,
       "refs": 3,
       "status": "active"
     },
@@ -634,7 +898,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.676,
       "refs": 2,
       "status": "active"
     },
@@ -646,7 +910,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.615,
       "refs": 0,
       "status": "unreferenced"
     },
@@ -658,7 +922,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.638,
       "refs": 2,
       "status": "active"
     },
@@ -670,7 +934,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.664,
       "refs": 5,
       "status": "active"
     },
@@ -682,7 +946,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.588,
       "refs": 3,
       "status": "active"
     },
@@ -694,7 +958,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.646,
       "refs": 5,
       "status": "active"
     },
@@ -706,7 +970,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.638,
       "refs": 3,
       "status": "active"
     },
@@ -718,7 +982,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.53,
-      "height_m": null,
+      "height_m": 2.531,
       "refs": 1,
       "status": "active"
     },
@@ -730,7 +994,7 @@
       "anim": "own_clips",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 5.0,
       "refs": 1,
       "status": "active"
     },
@@ -742,7 +1006,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.777,
       "refs": 1,
       "status": "active"
     },
@@ -754,7 +1018,7 @@
       "anim": "own_clips",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 4.6,
       "refs": 1,
       "status": "active"
     },
@@ -766,7 +1030,7 @@
       "anim": "own_clips",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.271,
       "refs": 1,
       "status": "active"
     },
@@ -778,7 +1042,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.669,
       "refs": 1,
       "status": "active"
     },
@@ -790,7 +1054,7 @@
       "anim": "own_clips",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.664,
       "refs": 1,
       "status": "active"
     },
@@ -802,7 +1066,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.734,
       "refs": 1,
       "status": "active"
     },
@@ -814,7 +1078,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.636,
       "refs": 1,
       "status": "active"
     },
@@ -826,7 +1090,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.727,
       "refs": 1,
       "status": "active"
     },
@@ -838,7 +1102,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.753,
       "refs": 1,
       "status": "active"
     },
@@ -850,7 +1114,7 @@
       "anim": "own_clips",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.71,
       "refs": 1,
       "status": "active"
     },
@@ -862,7 +1126,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.762,
       "refs": 1,
       "status": "active"
     },
@@ -874,7 +1138,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.032,
-      "height_m": null,
+      "height_m": 1.806,
       "refs": 1,
       "status": "active"
     },
@@ -886,7 +1150,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.76,
       "refs": 1,
       "status": "active"
     },
@@ -898,7 +1162,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.712,
       "refs": 1,
       "status": "active"
     },
@@ -910,7 +1174,7 @@
       "anim": "own_clips",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.303,
       "refs": 1,
       "status": "active"
     },
@@ -922,7 +1186,7 @@
       "anim": "own_clips",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 2.2,
       "refs": 1,
       "status": "active"
     },
@@ -934,7 +1198,7 @@
       "anim": "own_clips",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.003,
       "refs": 1,
       "status": "active"
     },
@@ -946,7 +1210,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.637,
       "refs": 1,
       "status": "active"
     },
@@ -958,7 +1222,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.617,
       "refs": 1,
       "status": "active"
     },
@@ -970,7 +1234,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.685,
       "refs": 1,
       "status": "active"
     },
@@ -982,7 +1246,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.729,
       "refs": 1,
       "status": "active"
     },
@@ -994,7 +1258,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.551,
       "refs": 1,
       "status": "active"
     },
@@ -1006,7 +1270,7 @@
       "anim": "own_clips",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.5,
       "refs": 1,
       "status": "active"
     },
@@ -1018,7 +1282,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.737,
       "refs": 1,
       "status": "active"
     },
@@ -1030,7 +1294,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0471,
-      "height_m": null,
+      "height_m": 2.303,
       "refs": 1,
       "status": "active"
     },
@@ -1042,7 +1306,7 @@
       "anim": "own_clips",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.81,
       "refs": 1,
       "status": "active"
     },
@@ -1054,7 +1318,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.709,
       "refs": 1,
       "status": "active"
     },
@@ -1066,7 +1330,7 @@
       "anim": "own_clips",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.0,
       "refs": 1,
       "status": "active"
     },
@@ -1078,7 +1342,7 @@
       "anim": "shared_library",
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0427,
-      "height_m": null,
+      "height_m": 2.008,
       "refs": 1,
       "status": "active"
     },
@@ -1090,7 +1354,7 @@
       "anim": "own_clips",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 4.0,
       "refs": 1,
       "status": "active"
     },
@@ -1102,7 +1366,7 @@
       "anim": "own_clips",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.902,
       "refs": 1,
       "status": "active"
     },
@@ -1114,7 +1378,7 @@
       "anim": "own_clips",
       "bone_map": null,
       "root_scale": 0.5,
-      "height_m": null,
+      "height_m": 2.381,
       "refs": 2,
       "status": "active"
     },
@@ -1126,7 +1390,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.524,
       "refs": 1,
       "status": "active"
     },
@@ -1138,7 +1402,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.133,
       "refs": 2,
       "status": "active"
     },
@@ -1150,9 +1414,21 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.22,
       "refs": 2,
       "status": "active"
+    },
+    {
+      "id": "eqp_shield_round",
+      "path": "res://assets/models/equipment/eqp_shield_round.glb",
+      "type": "STATIC_PROP",
+      "rig": "none",
+      "anim": "none",
+      "bone_map": null,
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 0,
+      "status": "unreferenced"
     },
     {
       "id": "npc_kit_embervale",
@@ -1162,7 +1438,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.171,
       "refs": 1,
       "status": "active"
     },
@@ -1174,7 +1450,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.556,
       "refs": 0,
       "status": "unreferenced"
     },
@@ -1186,7 +1462,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.073,
       "refs": 1,
       "status": "active"
     },
@@ -1198,7 +1474,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 3.5,
       "refs": 1,
       "status": "active"
     },
@@ -1210,7 +1486,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 3.36,
       "refs": 4,
       "status": "active"
     },
@@ -1222,7 +1498,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.85,
       "refs": 5,
       "status": "active"
     },
@@ -1234,7 +1510,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.805,
       "refs": 1,
       "status": "active"
     },
@@ -1246,7 +1522,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 11.0,
       "refs": 1,
       "status": "active"
     },
@@ -1258,7 +1534,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.85,
       "refs": 5,
       "status": "active"
     },
@@ -1270,7 +1546,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.447,
       "refs": 1,
       "status": "active"
     },
@@ -1282,7 +1558,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 2.545,
       "refs": 1,
       "status": "active"
     },
@@ -1294,7 +1570,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 2.316,
       "refs": 4,
       "status": "active"
     },
@@ -1306,7 +1582,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 3.929,
       "refs": 3,
       "status": "active"
     },
@@ -1318,7 +1594,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.297,
       "refs": 8,
       "status": "active"
     },
@@ -1330,7 +1606,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.1,
       "refs": 4,
       "status": "active"
     },
@@ -1342,7 +1618,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.997,
       "refs": 1,
       "status": "active"
     },
@@ -1354,8 +1630,8 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
-      "refs": 3,
+      "height_m": 0.68,
+      "refs": 2,
       "status": "active"
     },
     {
@@ -1366,7 +1642,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.78,
       "refs": 1,
       "status": "active"
     },
@@ -1378,7 +1654,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.53,
       "refs": 5,
       "status": "active"
     },
@@ -1390,7 +1666,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.463,
       "refs": 1,
       "status": "active"
     },
@@ -1402,7 +1678,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.6,
       "refs": 5,
       "status": "active"
     },
@@ -1414,7 +1690,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.8,
       "refs": 2,
       "status": "active"
     },
@@ -1426,7 +1702,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.123,
       "refs": 1,
       "status": "active"
     },
@@ -1438,7 +1714,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.458,
       "refs": 1,
       "status": "active"
     },
@@ -1450,7 +1726,7 @@
       "anim": "own_clips",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.083,
       "refs": 1,
       "status": "active"
     },
@@ -1462,7 +1738,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 6.013,
       "refs": 1,
       "status": "active"
     },
@@ -1474,7 +1750,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 6.993,
       "refs": 1,
       "status": "active"
     },
@@ -1486,7 +1762,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 0.105,
-      "height_m": null,
+      "height_m": 0.12,
       "refs": 2,
       "status": "active"
     },
@@ -1498,7 +1774,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.24,
       "refs": 6,
       "status": "active"
     },
@@ -1510,7 +1786,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.931,
       "refs": 1,
       "status": "active"
     },
@@ -1522,7 +1798,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 5.6,
-      "height_m": null,
+      "height_m": 7.006,
       "refs": 2,
       "status": "active"
     },
@@ -1534,7 +1810,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.2,
       "refs": 6,
       "status": "active"
     },
@@ -1546,7 +1822,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 0.35,
-      "height_m": null,
+      "height_m": 0.294,
       "refs": 2,
       "status": "active"
     },
@@ -1558,7 +1834,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 5.92,
-      "height_m": null,
+      "height_m": 4.505,
       "refs": 2,
       "status": "active"
     },
@@ -1570,7 +1846,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 0.22,
-      "height_m": null,
+      "height_m": 0.452,
       "refs": 0,
       "status": "unreferenced"
     },
@@ -1582,7 +1858,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 0.2,
-      "height_m": null,
+      "height_m": 0.497,
       "refs": 0,
       "status": "unreferenced"
     },
@@ -1594,7 +1870,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 8.2,
-      "height_m": null,
+      "height_m": 5.519,
       "refs": 1,
       "status": "active"
     },
@@ -1606,7 +1882,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 3.6,
       "refs": 2,
       "status": "active"
     },
@@ -1618,7 +1894,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 4.963,
       "refs": 2,
       "status": "active"
     },
@@ -1630,7 +1906,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 9.487,
       "refs": 3,
       "status": "active"
     },
@@ -1642,7 +1918,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 6.4,
       "refs": 4,
       "status": "active"
     },
@@ -1654,7 +1930,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 0.225,
-      "height_m": null,
+      "height_m": 0.3,
       "refs": 5,
       "status": "active"
     },
@@ -1666,7 +1942,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 0.375,
-      "height_m": null,
+      "height_m": 0.702,
       "refs": 3,
       "status": "active"
     },
@@ -1678,7 +1954,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 0.33,
-      "height_m": null,
+      "height_m": 0.552,
       "refs": 0,
       "status": "unreferenced"
     },
@@ -1690,7 +1966,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.9,
       "refs": 4,
       "status": "active"
     },
@@ -1702,7 +1978,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.95,
       "refs": 3,
       "status": "active"
     },
@@ -1714,7 +1990,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 2.499,
       "refs": 3,
       "status": "active"
     },
@@ -1726,7 +2002,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.55,
       "refs": 1,
       "status": "active"
     },
@@ -1738,7 +2014,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 2.98,
-      "height_m": null,
+      "height_m": 1.389,
       "refs": 2,
       "status": "active"
     },
@@ -1750,7 +2026,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 3.66,
       "refs": 4,
       "status": "active"
     },
@@ -1762,7 +2038,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.337,
       "refs": 1,
       "status": "active"
     },
@@ -1774,7 +2050,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 2.6,
       "refs": 1,
       "status": "active"
     },
@@ -1786,7 +2062,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 2.62,
       "refs": 3,
       "status": "active"
     },
@@ -1798,7 +2074,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 5.13,
-      "height_m": null,
+      "height_m": 5.997,
       "refs": 1,
       "status": "active"
     },
@@ -1810,7 +2086,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 0.3,
-      "height_m": null,
+      "height_m": 0.139,
       "refs": 0,
       "status": "unreferenced"
     },
@@ -1822,7 +2098,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.216,
       "refs": 1,
       "status": "active"
     },
@@ -1834,7 +2110,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 3.79,
-      "height_m": null,
+      "height_m": 1.599,
       "refs": 1,
       "status": "active"
     },
@@ -1846,7 +2122,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 0.3,
-      "height_m": null,
+      "height_m": 0.028,
       "refs": 2,
       "status": "active"
     },
@@ -1858,7 +2134,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 0.31,
-      "height_m": null,
+      "height_m": 0.043,
       "refs": 0,
       "status": "unreferenced"
     },
@@ -1870,7 +2146,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.099,
       "refs": 3,
       "status": "active"
     },
@@ -1882,7 +2158,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.152,
       "refs": 1,
       "status": "active"
     },
@@ -1894,7 +2170,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 4.9,
       "refs": 15,
       "status": "active"
     },
@@ -1906,7 +2182,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.224,
       "refs": 1,
       "status": "active"
     },
@@ -1918,7 +2194,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.46,
       "refs": 2,
       "status": "active"
     },
@@ -1930,7 +2206,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.41,
       "refs": 18,
       "status": "active"
     },
@@ -1942,7 +2218,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 2.102,
       "refs": 3,
       "status": "active"
     },
@@ -1954,7 +2230,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.821,
       "refs": 1,
       "status": "active"
     },
@@ -1966,7 +2242,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 2.26,
       "refs": 3,
       "status": "active"
     },
@@ -1978,7 +2254,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.436,
       "refs": 1,
       "status": "active"
     },
@@ -1990,7 +2266,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.113,
       "refs": 1,
       "status": "active"
     },
@@ -2002,7 +2278,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.113,
       "refs": 2,
       "status": "active"
     },
@@ -2014,7 +2290,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.098,
       "refs": 1,
       "status": "active"
     },
@@ -2026,7 +2302,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 3.13,
       "refs": 6,
       "status": "active"
     },
@@ -2038,7 +2314,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 4.009,
       "refs": 6,
       "status": "active"
     },
@@ -2050,7 +2326,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.45,
       "refs": 5,
       "status": "active"
     },
@@ -2062,7 +2338,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.309,
       "refs": 1,
       "status": "active"
     },
@@ -2074,7 +2350,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.589,
       "refs": 1,
       "status": "active"
     },
@@ -2086,7 +2362,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 2.632,
       "refs": 1,
       "status": "active"
     },
@@ -2098,7 +2374,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 2.627,
       "refs": 1,
       "status": "active"
     },
@@ -2110,7 +2386,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.01,
       "refs": 3,
       "status": "active"
     },
@@ -2122,7 +2398,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.875,
       "refs": 3,
       "status": "active"
     },
@@ -2134,7 +2410,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.32,
       "refs": 3,
       "status": "active"
     },
@@ -2146,7 +2422,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.589,
       "refs": 1,
       "status": "active"
     },
@@ -2158,7 +2434,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 0.813,
       "refs": 4,
       "status": "active"
     },
@@ -2170,7 +2446,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 2.33,
       "refs": 3,
       "status": "active"
     },
@@ -2182,7 +2458,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 4.88,
-      "height_m": null,
+      "height_m": 1.2,
       "refs": 3,
       "status": "active"
     },
@@ -2194,7 +2470,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.22,
       "refs": 4,
       "status": "active"
     },
@@ -2206,7 +2482,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.8,
       "refs": 1,
       "status": "active"
     },
@@ -2218,7 +2494,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 8.0,
       "refs": 5,
       "status": "active"
     },
@@ -2230,7 +2506,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 3.74,
-      "height_m": null,
+      "height_m": 3.994,
       "refs": 1,
       "status": "active"
     },
@@ -2242,7 +2518,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 5.48,
-      "height_m": null,
+      "height_m": 8.017,
       "refs": 2,
       "status": "active"
     },
@@ -2254,7 +2530,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 3.01,
       "refs": 10,
       "status": "active"
     },
@@ -2266,7 +2542,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.109,
       "refs": 1,
       "status": "active"
     },
@@ -2278,7 +2554,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.109,
       "refs": 0,
       "status": "unreferenced"
     },
@@ -2290,13 +2566,37 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 2.75,
       "refs": 3,
       "status": "active"
     },
     {
       "id": "prp_workbench",
       "path": "res://assets/models/props/prp_workbench.gltf",
+      "type": "STATIC_PROP",
+      "rig": "none",
+      "anim": "none",
+      "bone_map": null,
+      "root_scale": 1.0,
+      "height_m": 0.895,
+      "refs": 1,
+      "status": "active"
+    },
+    {
+      "id": "wpn_arrow",
+      "path": "res://assets/models/weapons/wpn_arrow.glb",
+      "type": "STATIC_PROP",
+      "rig": "none",
+      "anim": "none",
+      "bone_map": null,
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 1,
+      "status": "active"
+    },
+    {
+      "id": "wpn_bow_hunting",
+      "path": "res://assets/models/weapons/wpn_bow_hunting.glb",
       "type": "STATIC_PROP",
       "rig": "none",
       "anim": "none",
@@ -2314,8 +2614,8 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
-      "refs": 2,
+      "height_m": 0.96,
+      "refs": 4,
       "status": "active"
     }
   ]

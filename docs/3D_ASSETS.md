@@ -34,14 +34,14 @@ the glTF and its `.import` sidecar and works it out, so it cannot drift from the
 
 | Family | What it is | Rig | Animation |
 | --- | --- | --- | --- |
-| [HUMANOID](#humanoid) | People and people-shaped enemies | Retargeted to `GeneralSkeleton` | Shared 46-clip library + its own clips |
+| [HUMANOID](#humanoid) | People and people-shaped enemies | Retargeted to `GeneralSkeleton` | Two shared libraries + its own clips |
 | [QUADRUPED](#quadruped) | Beasts, mounts, dragons | Its own, untouched | Its own clips only |
 | [STATIC PROP](#static-prop) | Furniture, containers, nature | None | None |
 | [ARCHITECTURE](#architecture) | Buildings and wall modules | None | None |
-| [FIRST-PERSON / VIEWMODEL](#first-person--viewmodel) | The arms you see in first person | None | Procedural, written in C# |
+| ANIMATION | `anim_*` clip sources — a skeleton and its clips, no mesh at all | Retargeted to `GeneralSkeleton` | *is* the animation |
 
 **Naming is the family's first signal and it is enforced.** `chr_` player · `npc_` NPC bodies ·
-`enm_` enemies · `boss_` bosses · `mnt_` mounts · `fp_` viewmodel · `prp_` props · `bld_` buildings
+`enm_` enemies · `boss_` bosses · `mnt_` mounts · `prp_` props · `bld_` buildings
 · `mod_` wall modules · `eqp_` equipment · `wpn_` weapons · `anim_` animation.
 
 ### The manifest
@@ -169,9 +169,28 @@ That name is the whole contract. `CharacterAnimationComponent.AddSharedLibrary` 
 is the retarget's own marker, and it is why an unretargeted body gets no library rather than a
 broken one.
 
-**What the library actually buys is three slots, not animation.** Every adopted body already ships
-its own clips, and `idle`, `run`, `attack`, `hit` and `death` resolve from them. Only `block`,
-`cast` and `channel` come from the library. Do not plan work assuming characters are unanimated.
+**There are TWO shared libraries and they are different things, not two sizes of one.**
+
+| Library | Built by | Holds | Why |
+| --- | --- | --- | --- |
+| `anim_library.res` | `tools/extract_anim_library.gd` | 46 Quaternius clips, **upper body only, rotation only** | Its Rigify source is `root → Hips`; the Quaternius bodies are `Root → Body → Hips`, so hip translation lands on top of a lift the body already has and stands the actor 1.63 m in the air with its legs strung out below. Its extractor therefore strips every position/scale track and all eight leg bones. In practice it buys three slots — `block`, `cast`, `channel`. |
+| `anim_meshy.res` | `tools/build_meshy_anim_library.gd` | 24 Meshy clips, **full body**, named for Embervale's own gameplay slots | Generated on an existing Meshy character rig, which `meshy_adopt.py` fingerprints to the same shape hash (`s3_c188e7a9`) — and therefore the same bone map — as 31 of the 33 humanoid bodies. There is no hierarchy mismatch to compensate for, so **nothing is stripped and it drives legs.** |
+
+⚠️ **The old library cannot be made to do what the new one does**, and that is worth knowing before
+anyone tries: its stripping is a fix for a real defect, not tidying. If you need legs, hips, or
+locomotion, the answer is `anim_meshy.res`.
+
+**Its clips are named for gameplay slots, not for Meshy actions** — `idle`, `run`, `attack1`,
+`parry` — so `AnimationClips.Resolve` matches them exactly instead of guessing through an alias
+table. `AnimationClips.SharedSlots` is the required set and `--validate` fails a build that loses
+one, because a missing clip is otherwise completely silent: `Resolve` returns empty, every caller
+reads that as "this body has no such animation", and the actor stands in its bind pose.
+
+**Regenerating it costs no credits and no character.** The clips come from `meshy_animate` against a
+**rig task that already exists** (`reports/3d/archive/meshy-migration/manifest.csv` carries 28 of
+them), so nothing is regenerated and no rig is re-paid for. `tools/strip_anim_glb.py` then throws the
+body away — Meshy returns a whole skinned character per clip, and a 24-clip set is 190 MB of the same
+townsman in 24 poses; stripped, it is 1.4 MB.
 
 `AnimationClips.Resolve` offers a model's **own** clips first and lets the library answer only what
 it alone can. It strips armature prefixes and a leading `Female_`/`Male_`, and recognises
@@ -181,6 +200,8 @@ it alone can. It strips armature prefixes and a leading `Female_`/`Male_`, and r
 
 ```powershell
 godot --headless --path . --script res://tools/meshy_rig_probe.gd -- --asset res://path.glb
+godot --headless --path . --script res://tools/anim_library_probe.gd
+godot --headless --path . --script res://tools/equipment_socket_probe.gd
 ```
 
 **This is a gate, not a spot check**, and `assets.py validate` runs it over every humanoid. It
@@ -232,10 +253,36 @@ authoritative. Kit pieces are rigid followers of `Chest` or `Hips` using the ani
 while preserving the model's world axes — required because the retargeted bodies do not share
 identical bone-local axes.
 
-⚠️ **Do not replace `NpcKitFollower` with a plain `BoneAttachment3D` without repeating the complete
-motion review.** (`NpcKitFollower`, `EnemyKitFollower` and `PlayerFactory.AttachGear` are three
-implementations of nearly the same thing. That duplication is known and deliberately left alone,
-because collapsing it needs that same full motion review.)
+**Attachment is one system now** (2026-09-04, the combat/animation overhaul). `EquipmentSockets`
+is the contract — a socket vocabulary (`HandR`, `HandL`, `BackPrimary`, `Shield`, `Bow`, `Quiver`,
+`Head`, `Chest`, `Hips`, `ShoulderL/R`, …), the bone names each accepts in preference order, and the
+space a piece on it is oriented in. `EquipmentPresentationComponent` is the only thing that hangs
+anything on a body: player, NPC, enemy, companion and boss. The five implementations it replaced —
+`PlayerFactory.AttachWeaponVisual`, `PlayerFactory.AttachGear`, `NpcKitFollower`, `EnemyKitFollower`
+and their bone-name guessing — are deleted.
+
+⚠️ **The motion review that had been deferred was done, and its answer is `SocketSpace`.** Both
+behaviours were correct and genuinely different, which is why one could not simply replace the other:
+
+| Space | Basis | For |
+| --- | --- | --- |
+| `BoneLocal` | the bone's own — a native `BoneAttachment3D`, no per-frame script | held things: a sword rolls with the wrist |
+| `BodyAligned` | `pose · rest⁻¹` applied to the character's axes | worn things: the retargeted bodies do not share bone-local axes, so a pauldron authored upright on one chest lies on its side on the next |
+
+Every kit piece passes `BodyAligned` **explicitly** and names its authored bone as the *preferred*
+one, so nothing moved in the migration — the socket's own candidate list is only the fallback for a
+rig that lacks that exact bone. Several kit pieces sit on quadruped rigs carrying both a `Spine` and
+a `Torso`, and resolving those purely through the humanoid preference order would walk a carapace up
+the animal's back.
+
+`WeaponGrip.Hand` holds the one grip correction, derived from the basis that used to live privately
+inside `PlayerFactory` — which is why every companion, NPC and enemy that carried a weapon carried it
+unrotated.
+
+Two gates keep it honest: `EquipmentSocketTests` pins the alias table without an engine, and
+`tools/equipment_socket_probe.gd` proves it against **all 32 humanoid rigs on disk** plus one real
+attachment that has to end up on the hand bone. A bone-name miss used to be completely silent — the
+player's visual sword was `QueueFree`d on every spawn for an entire phase — and it now warns.
 
 `Build.Slim/Standard/Broad` alter cosmetic width only — they never scale a skeleton or move
 vertices in a skinned body. Profiles are deterministic, authored from profession, wealth, faction,
@@ -331,30 +378,34 @@ production textures. Do not fork a texture per prefab for cosmetic variation.
 
 ---
 
-## FIRST-PERSON / VIEWMODEL
+## FIRST PERSON
 
-**Structurally separate from world characters, and the separation is the point.** These meshes are
-never seen by anyone but the player holding them, and they follow different rules from every body
-in the world.
+**There is no viewmodel, and that is the contract.** First person is TRUE first person: the camera
+rides the player body's own head bone and the body stays visible. You see its arms, its weapon and
+its equipment because they are the same arms, weapon and equipment the world sees.
 
-`fp_arm_left.glb` and `fp_arm_right.glb` are authored as two real meshes — the left is not a
-negative-scale mirror. They live under a `FpArms` node on the player camera, not in the world.
+What this replaced (2026-09-04) was `fp_arm_left.glb` / `fp_arm_right.glb` — two rigless meshes whose
+every motion was C# arithmetic in `FirstPersonArmsComponent`: walk bob, a slash arc alternating by
+combo index, a guard blend, cast and interaction beats. It meant a second skeleton, a second action
+state and a second weapon to keep in step with the first, plus a fake second FOV that rescaled the
+arms by a half-angle-tangent ratio. All of it is deleted, along with the VIEWMODEL rig family.
 
-- **No rig, no baked clips.** All motion is procedural in `FirstPersonArmsComponent`: walk bob, a
-  slash arc alternating by combo index, guard blend, cast and interaction beats.
-- **No collision.** Cosmetic viewmodel arms and body equipment have none. The melee hitbox stays
-  owned by `MeleeWeaponComponent` and is never inferred from render geometry.
-- **A fake second camera.** `ViewmodelFov = 55` and `ApplyViewmodelScale()` scale the arms by the
-  half-angle tangent ratio rather than rendering a separate pass.
-- **Semantic sockets are the interface**: `WeaponSocket`, `SpellSocket`, `InteractionSocket`. VFX
-  and equipment attach to those names and never to a mesh path.
+**The head is not hidden by code.** The eye sits `EyeForward` (0.14 m) in front of the head bone, so
+the skull falls behind the camera's 0.08 m near plane and clips away on its own. If a future body's
+head is large enough to survive that, the fix is the offset, not a new mesh-hiding system.
 
-### Weapons in the hand
+⚠️ **The eye takes the head bone's POSITION and ignores its ROTATION.** Taking the rotation would
+hand the player every head turn in every clip as an involuntary camera movement, which is the fastest
+way to make a first-person game unplayable. The position is damped
+(`CameraRigMath.Damp`, frame-rate independent) and clamped to 0.45 m from the fixed pivot, so a
+knockdown or a death throws the head without throwing the camera.
 
-First-person and third-person share the same weapon GLB. Build a separate hero version only when
-the world mesh demonstrably fails in gameplay framing.
+**Weapons are shared between views.** One `wpn_*` model, one hand socket, one grip correction
+(`WeaponGrip.Hand`). Build a separate hero version only when the world mesh demonstrably fails in
+gameplay framing — and note that "demonstrably" now means a render, because both views show the same
+mesh.
 
-**The coordinate contract:**
+**The coordinate contract is unchanged and still applies:**
 
 - 1 Blender unit = 1 metre, exported at scale `1.0`, transforms applied. The imported Godot root
   must remain identity scale.
@@ -365,9 +416,8 @@ the world mesh demonstrably fails in gameplay framing.
 - Reference size, the iron sword: `0.223 × 0.960 × 0.051 m`, wrapped grip centre at local
   `Y = 0.03 m`. One-handed grips 28–36 mm in diameter.
 
-⚠️ **Do not add a second compensating transform inside a weapon GLB.** First-person placement is
-derived from a measured fist point in `FirstPersonArmsComponent.GripTransform()`. Class-specific
-offsets belong in equipment data or a socket profile, not in a differently-rotated mesh.
+⚠️ **Do not add a second compensating transform inside a weapon GLB.** The correction belongs at the
+socket, in `WeaponGrip`, where one value serves every wielder in the game.
 
 Scabbards, sheaths and quivers are separate `eqp_*` assets on named body sockets, so a drawn weapon
 and its empty scabbard coexist without duplicating gameplay state.

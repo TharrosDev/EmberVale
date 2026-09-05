@@ -34,7 +34,13 @@ public sealed class WorldGeneratorTests
         WorldHeightfield forwardField = Field();
         WorldSample[] forward = points.Select(p => forwardField.Sample(p.Item1, p.Item2)).ToArray();
         WorldHeightfield reverseField = Field();
-        WorldSample[] reverse = points.Reverse().Select(p => reverseField.Sample(p.Item1, p.Item2)).Reverse().ToArray();
+        // ⚠️ Enumerable.Reverse EXPLICITLY. `points.Reverse()` on an array is ambiguous across SDKs:
+        // newer ones bind it to MemoryExtensions.Reverse (arrays convert to Span, and that overload
+        // returns void), so `.Select` after it is a compile error on CI and fine locally.
+        WorldSample[] reverse = Enumerable.Reverse(points)
+            .Select(p => reverseField.Sample(p.Item1, p.Item2))
+            .Reverse()
+            .ToArray();
         Assert.Equal(forward, reverse);
     }
 
