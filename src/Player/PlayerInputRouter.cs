@@ -148,6 +148,11 @@ public partial class PlayerInputRouter : EntityComponent
         if (_weapon != null)
         {
             _weapon.WarpTarget = _lockOn?.Target?.Body;
+
+            // Where a bow shoots. The aim node is already the converged crosshair point that the
+            // interaction ray and spell targeting use, so a ranged shot goes exactly where the
+            // player is looking rather than where the body happens to face.
+            _weapon.AimPoint = _aim?.AimNode?.GlobalPosition;
         }
 
         if (_combat != null)

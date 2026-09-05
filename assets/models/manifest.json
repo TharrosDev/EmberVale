@@ -839,7 +839,7 @@
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0,
       "height_m": 1.598,
-      "refs": 9,
+      "refs": 11,
       "status": "active"
     },
     {
@@ -1417,6 +1417,18 @@
       "height_m": 0.22,
       "refs": 2,
       "status": "active"
+    },
+    {
+      "id": "eqp_shield_round",
+      "path": "res://assets/models/equipment/eqp_shield_round.glb",
+      "type": "STATIC_PROP",
+      "rig": "none",
+      "anim": "none",
+      "bone_map": null,
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 0,
+      "status": "unreferenced"
     },
     {
       "id": "npc_kit_embervale",
@@ -2571,6 +2583,30 @@
       "status": "active"
     },
     {
+      "id": "wpn_arrow",
+      "path": "res://assets/models/weapons/wpn_arrow.glb",
+      "type": "STATIC_PROP",
+      "rig": "none",
+      "anim": "none",
+      "bone_map": null,
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 1,
+      "status": "active"
+    },
+    {
+      "id": "wpn_bow_hunting",
+      "path": "res://assets/models/weapons/wpn_bow_hunting.glb",
+      "type": "STATIC_PROP",
+      "rig": "none",
+      "anim": "none",
+      "bone_map": null,
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 1,
+      "status": "active"
+    },
+    {
       "id": "wpn_sword_iron",
       "path": "res://assets/models/weapons/wpn_sword_iron.glb",
       "type": "STATIC_PROP",
@@ -2579,7 +2615,7 @@
       "bone_map": null,
       "root_scale": 1.0,
       "height_m": 0.96,
-      "refs": 3,
+      "refs": 4,
       "status": "active"
     }
   ]

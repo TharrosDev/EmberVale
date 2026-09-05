@@ -33,6 +33,7 @@ public class SessionResetTests
         "Invariant",                // violation counter — a new session starts at zero
         "PersistentActorRegistry",  // template factories, re-registered by the next session's build
         "SafeZones",                // per-region sanctuary set
+        "SpellActions",             // cast timelines derived per spell id; the database is rebuilt on a new game
         "UiState",                  // open panels and world pausers; a stale pauser locks the title
         "Weave",                    // the active region's magic potency
     };

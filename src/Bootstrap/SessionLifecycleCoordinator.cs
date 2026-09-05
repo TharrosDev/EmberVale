@@ -182,6 +182,7 @@ public sealed partial class SessionLifecycleCoordinator : Node
         Weave.Reset();
         PersistentActorRegistry.Clear();
         UiState.ClearAll();
+        Magic.SpellActions.Clear();
         Invariant.Reset();
     }
 

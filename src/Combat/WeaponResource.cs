@@ -37,6 +37,26 @@ public partial class WeaponResource : Resource
     /// <summary>Animation/feel speed multiplier; combines with the wielder's AttackSpeed stat.</summary>
     [Export] public float AttackSpeed { get; set; } = 1f;
 
+    [ExportGroup("Ranged")]
+    /// <summary>
+    /// True for a bow or crossbow: the swing spawns a projectile instead of opening a hitbox.
+    ///
+    /// A flag on the existing resource rather than a second weapon type, because everything else
+    /// about a ranged weapon — damage, poise, stamina, the action chain, the equipment socket — is
+    /// identical to a melee one. What differs is what happens at the release, and that is one
+    /// branch in one place.
+    /// </summary>
+    [Export] public bool IsRanged { get; set; }
+
+    /// <summary>Metres per second the projectile travels.</summary>
+    [Export] public float ProjectileSpeed { get; set; } = 38f;
+
+    /// <summary>How far it flies before giving up, in metres.</summary>
+    [Export] public float ProjectileRange { get; set; } = 60f;
+
+    /// <summary>The model the projectile wears. Empty draws the small default bolt shape.</summary>
+    [Export] public string ProjectileModelPath { get; set; } = "";
+
     [ExportGroup("Combo")]
     [Export] public int ComboLength { get; set; } = 3;
 

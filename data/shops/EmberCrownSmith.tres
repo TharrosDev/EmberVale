@@ -63,6 +63,19 @@ script = ExtResource("2_entry")
 ItemId = "item.weapon.steel_sword"
 Quantity = 1
 
+; The realm's first bow, and a wrap of arrows to go with it (2026-09-05, the ranged system). Stocked
+; at the smith rather than a dedicated fletcher because a smith is where the player already goes for
+; a weapon, and a ranged option nobody can find is a system with no caller.
+[sub_resource type="Resource" id="Stock_bow"]
+script = ExtResource("2_entry")
+ItemId = "item.weapon.hunting_bow"
+Quantity = 1
+
+[sub_resource type="Resource" id="Stock_arrows"]
+script = ExtResource("2_entry")
+ItemId = "item.ammo.arrows"
+Quantity = 40
+
 [sub_resource type="Resource" id="Stock_cap"]
 script = ExtResource("2_entry")
 ItemId = "item.armor.leather_cap"
@@ -122,7 +135,7 @@ NameKey = "shop.ember_crown.smith.name"
 FactionId = "faction.villagers"
 AcceptedTags = Array[String](["metal", "ore", "weapon", "armor", "tool"])
 Specialties = Array[String](["metal", "weapon", "armor"])
-Stock = Array[Resource]([SubResource("Stock_ingot"), SubResource("Stock_strips"), SubResource("Stock_scrap"), SubResource("Stock_sword"), SubResource("Stock_cap"), SubResource("Stock_vest"), SubResource("Stock_ring"), SubResource("Stock_mail")])
+Stock = Array[Resource]([SubResource("Stock_ingot"), SubResource("Stock_strips"), SubResource("Stock_scrap"), SubResource("Stock_sword"), SubResource("Stock_cap"), SubResource("Stock_vest"), SubResource("Stock_ring"), SubResource("Stock_mail"), SubResource("Stock_bow"), SubResource("Stock_arrows")])
 RestockDays = 2
 BuyMarkup = 1.5
 SellFraction = 0.45

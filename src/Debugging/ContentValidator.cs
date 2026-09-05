@@ -282,6 +282,15 @@ public static class ContentValidator
                                "without a clip for its slot would finish it instantly.");
                 }
 
+                // ⚠️ A RANGED ACTION MUST NOT CLOSE DISTANCE. Warping is for committed melee; a bow
+                // that walks its wielder toward the target is not a bow, it is a charge with an
+                // arrow at the end, and the mistake is one enum value away in the editor.
+                if (action.Kind == ActionKind.Ranged && action.RootMotion != RootMotionMode.None)
+                {
+                    issues.Add($"{where} is Ranged but sets RootMotion to {action.RootMotion}; a " +
+                               "ranged action must never close distance on its target.");
+                }
+
                 if (action.NextActionId.Length > 0 && !ids.Contains(action.NextActionId))
                 {
                     issues.Add($"{where} chains to '{action.NextActionId}', which this weapon does " +

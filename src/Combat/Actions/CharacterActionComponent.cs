@@ -87,6 +87,7 @@ public partial class CharacterActionComponent : EntityComponent
 
     private Hitbox? _openHitbox;
     private float _warpDegreesLeft;
+    private bool _released;
     private float _warpDistanceLeft;
     private float _progress;
     private double _elapsed;
@@ -105,7 +106,11 @@ public partial class CharacterActionComponent : EntityComponent
         // plays, the stamina is spent, a window that does not exist opens and closes, and no damage
         // is dealt for the life of the session. Said once, at build time, where the authoring that
         // caused it is still on screen.
-        if (Weapon != null && Hitbox == null)
+        // ⚠️ A RANGED WEAPON HAS NO SWING VOLUME AND MUST NOT BE SCOLDED FOR IT. Without the
+        // IsRanged arm, every archer in the game logs a hard error on spawn saying its attacks will
+        // deal no damage — which is both false and exactly the sort of noise that trains people to
+        // ignore the message when a real melee weapon is misconfigured.
+        if (Weapon is { IsRanged: false } && Hitbox == null)
         {
             Log.Error($"{Entity.DisplayName}: {nameof(CharacterActionComponent)} has a weapon " +
                       $"('{Weapon.ResourceName}') but no Hitbox assigned. Every swing will deal no " +
@@ -215,6 +220,7 @@ public partial class CharacterActionComponent : EntityComponent
         Phase = ActionPhase.Startup;
         SetWindup(true);
         _warpDegreesLeft = definition.MaxWarpDegrees;
+        _released = false;
         _warpDistanceLeft = definition.MaxWarpDistance;
 
         // The telegraph is told the *effective* startup, not an authored constant: a phase buff or a
@@ -285,9 +291,16 @@ public partial class CharacterActionComponent : EntityComponent
         ApplyWarp(Current, delta);
 
         bool shouldBeOpen = ActionTimeline.IsActive(_progress, windows);
-        if (shouldBeOpen && _openHitbox == null)
+        if (shouldBeOpen && !_released)
         {
+            _released = true;
+
+            // The rising edge of the active window is "now", for everything. A melee action opens
+            // its volume; a cast and a bow have no volume and listen for this instead. One instant,
+            // one event, so nothing needs a second clock to decide when a thing happens.
             OpenHitbox(Current);
+            EventBus.Instance?.Publish(
+                new ActionReleasedEvent(Entity!, Current.Id, Current.Kind));
         }
         else if (!shouldBeOpen && _openHitbox != null)
         {
@@ -364,8 +377,75 @@ public partial class CharacterActionComponent : EntityComponent
         }
     }
 
+    /// <summary>Where a ranged shot is aimed. Set by the player's aim controller or by AI; falls
+    /// back to the actor's facing.</summary>
+    public Vector3? AimPoint { get; set; }
+
+    /// <summary>Sets <see cref="AimPoint"/> from GDScript. ⚠️ The property itself is
+    /// <c>Vector3?</c>, which does not marshal — assigning it from a <c>.gd</c> probe fails with
+    /// "invalid assignment" and the script aborts mid-function, which reads as the test passing.
+    /// That happened; this exists so it cannot happen again.</summary>
+    public void AimAt(Vector3 point) => AimPoint = point;
+
+    /// <summary>Pooled arrows, built on first use so a melee actor never pays for one.</summary>
+    private Core.Pooling.NodePool<Arrow>? _arrows;
+
+    /// <summary>
+    /// Sends an arrow instead of opening a volume.
+    ///
+    /// ⚠️ It spawns on the action's release frame like everything else — the string is drawn, and the
+    /// arrow leaves when the animation shows it leaving. A bow that fired on key-down would put the
+    /// arrow across the room before the draw finished, which is the melee desync all over again in a
+    /// system that never had it.
+    /// </summary>
+    private void Shoot(ActionDefinitionResource definition)
+    {
+        if (Weapon is not { IsRanged: true } bow || Entity?.Body is not Node3D body)
+        {
+            return;
+        }
+
+        _arrows ??= new Core.Pooling.NodePool<Arrow>(() => new Arrow { Released = a => _arrows?.Return(a) }, prewarm: 2);
+
+        float mounted = MountedCombat.DamageScale(
+            _mount is { IsMounted: true }, _mount is { IsGalloping: true });
+        (float amount, bool isCrit) = CombatMath.RollAttack(
+            bow.BaseDamage * definition.DamageScale * mounted, _stats);
+
+        Vector3 from = body.GlobalPosition + (Vector3.Up * 1.4f);
+        Vector3 direction = AimPoint is { } aim && aim.DistanceSquaredTo(from) > 0.04f
+            ? (aim - from).Normalized()
+            : -body.GlobalBasis.Z;
+
+        Arrow arrow = _arrows.Get();
+        if (arrow.GetParent() == null)
+        {
+            // ⚠️ CurrentScene is null outside a normal game boot — every `--script` harness runs with
+            // no current scene — and `CurrentScene?.AddChild` then silently does nothing. The arrow
+            // is a live object that is not in the tree: no physics, no overlaps, no hit, no error.
+            // Falling back to the tree root keeps it in the WORLD (never parented to the shooter,
+            // which would carry it along) and keeps the probes honest.
+            SceneTree tree = body.GetTree();
+            (tree.CurrentScene ?? tree.Root).AddChild(arrow);
+        }
+
+        arrow.GlobalPosition = from;
+        arrow.Launch(
+            new DamagePacket(amount, bow.DamageType, Entity, isCrit,
+                bow.PoiseDamage * definition.PoiseScale),
+            Entity, _combat?.Team ?? 0, direction,
+            bow.ProjectileSpeed, bow.ProjectileRange, bow.ProjectileModelPath);
+    }
+
     private void OpenHitbox(ActionDefinitionResource definition)
     {
+        // A bow has no swing volume; its release sends an arrow instead.
+        if (Weapon is { IsRanged: true })
+        {
+            Shoot(definition);
+            return;
+        }
+
         Hitbox? box = definition.HitboxName.Length > 0 &&
                       NamedHitboxes.TryGetValue(definition.HitboxName, out Hitbox? named)
             ? named
