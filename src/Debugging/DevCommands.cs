@@ -58,6 +58,7 @@ public static class DevCommands
         console.Register(new ConsoleCommand("region", "region <list|goto <id>>", "List regions or hard-load into one (Phase 25C).", Region));
         console.Register(new ConsoleCommand("travel", "travel <list|goto <id>>", "List attuned travel nodes or fast-travel to one (Phase 25G).", Travel));
         console.Register(new ConsoleCommand("worldgen", "worldgen [field]", "Paint one generated world field onto the terrain, or 'none' to restore it.", WorldGen));
+        console.Register(new ConsoleCommand("worldcells", "worldcells <on|off>", "Show streaming boundaries and near/mid/far/backdrop tiers.", WorldCells));
         console.Register(new ConsoleCommand("economy", "economy [arbitrage]", "Print the realm's best buy-low/sell-high routes (Phase 38N1).", Economy));
         console.Register(new ConsoleCommand("shock", "shock [list|force <cellId> <tag> <shortage|glut|fair> [days]|clear <cellId>]", "Inspect or drive supply shocks (Phase 38T).", Shock));
         console.Register(new ConsoleCommand("tutorial", "tutorial <status|skip|restart>", "Inspect or drive the onboarding hints (Phase 33B).", Tutorial));
@@ -135,6 +136,18 @@ public static class DevCommands
         int qty = ParseInt(args, 1, 1);
         int added = inventory.AddItem(item, qty);
         return $"gave {added}x {item.DisplayName}";
+    }
+
+    private static string WorldCells(DevConsole console, string[] args)
+    {
+        if (!TryService(out RegionStreamer streamer))
+        {
+            return "no region streamer";
+        }
+        bool enabled = args.Length > 0 && args[0].Equals("on", System.StringComparison.OrdinalIgnoreCase);
+        streamer.SetDebugVisualization(enabled);
+        return $"worldcells: {(enabled ? "on" : "off")} — " +
+               $"{streamer.ActiveCellCount()} active, {streamer.ResidentCellCount()} resident";
     }
 
     /// <summary>

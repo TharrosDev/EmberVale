@@ -357,6 +357,12 @@ public partial class PlayerCameraRig : EntityComponent
         // camera in whenever a companion stepped between the player and it — twitchy, and the
         // previous note here admitted it and left it. Static world geometry declares itself a
         // blocker (RegionStreamer.MarkCameraBlockers, WorldCellPresentation's terrain collider);
+        //
+        // ⚠️ NOT CombatLayers.CameraObstruction, which is CameraBlocker PLUS WorldStatic — and
+        // CharacterEntity still defaults to WorldStatic, so that mask puts actors back in the
+        // sweep and the companion problem returns exactly as it was. Measured:
+        // camera_probe.gd reports 0.60 m with a companion behind the player on that mask, 3.87 m
+        // on this one.
         // people simply are not on the layer, so the camera passes through them and the obstruction
         // fade handles the rest.
         float safe = _queries.SafeSweepFraction(

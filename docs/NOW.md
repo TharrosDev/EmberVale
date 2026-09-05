@@ -190,12 +190,31 @@
   - WARNING: **A GODOT `Resource` CANNOT BE CONSTRUCTED IN THE PURE SUITE**, and a test that tries
     does not fail - it takes the whole run down and reports 27 passing tests instead of 1892, looking
     green. Pure helpers take primitives; that is why.
+- **The world-production overhaul (2026-09-05) ⛔ NOT CLOSED.** The branch
+  `codex/world-production-overhaul` now has a deterministic offline bake (`tools/world_bake.py`),
+  28 hash-verified prepared artifacts, predictive Near/Mid/Far/Backdrop cell residency, staged
+  activation, one collision/navigation contract, one safe-placement service, cell-owned actors and
+  abstract persisted world events. Runtime terrain, collision, navigation and biome scatter all read
+  the prepared field instead of rebuilding separate versions of the world.
+  - **The source/generated authority is mechanical.** `tools/world_bake.py --check` fingerprints the
+    region specs, generator profiles, authored resources, scenes, relevant world code and import
+    metadata; it reports each stale, missing, unexpected or modified output. The fast quality suite
+    runs this gate and is green.
+  - **Do not merge this branch yet.** The 2026-09-05 engine suite passed content, transition, mesh,
+    scene, map, collision and streaming-stress gates, but failed lifecycle, step-up, regression and
+    traversal. Prepared terrain colliders currently report a missing `WorldStatic` layer at runtime;
+    the Salt Steps player falls instead of climbing; failed-cell settlement semantics regressed; and
+    three authored traversal probes fail (Wilds West capsule snag plus Ash Roost and Aerie Ascent NPC
+    paths). The engine also reports the existing two-edge navigation raster warning. Per maintainer
+    direction, testing stopped after this repeated failure instead of beginning another repair loop.
 
 - **NEXT: 42C — Dawnwardens recruitment and probation.** The first arc to walk through a door 42B
   built: join/refuse dialogue plus a Defend/Reach probation pair, and rank one earned.
 
 Read [`docs/WORLD_AUTHORING.md`](WORLD_AUTHORING.md) before touching a cell. `data/regions/*.tres`
 is **generated** — edit `tools/region_spec_<region>.py` and run `python tools/gen_regions.py`.
+
+⚠️ **TWO PASSES LANDED ON THE SAME DAY AND THEY DID NOT VERIFY THE SAME THINGS.** The character overhaul below is closed and its gates are green. The world-production overhaul that merged alongside it is **not** closed and four of its gates are red. Neither table supersedes the other; a green character suite does not make the world suite green, and the world failures are not caused by the character work.
 
 ## Last verified (2026-09-05 - the combat/animation/camera overhaul)
 
@@ -213,6 +232,29 @@ is **generated** — edit `tools/region_spec_<region>.py` and run `python tools/
 | `--play` | boots to Playing, **0 errors**, 0 invariant violations |
 
 **Nine new engine gates**, all registered in `tools/world_quality_check.py`:
+## Last verified (2026-09-05 — world-production branch, required gates red)
+
+| Check | Result |
+| --- | --- |
+| Build | `dotnet build Embervale.sln` — **0 warnings, 0 errors, `TreatWarningsAsErrors=true`** |
+| Shipping build | `dotnet build Embervale.csproj --no-restore -p:EmbervaleTooling=false` — 0 warnings, 0 errors |
+| Shipping contents | `python tools/check_shipping_assembly.py` — PASS; no MCP addon, no `*Shots`, no `ReproHarness` |
+| Tests | `dotnet test tests/Embervale.Tests -p:EmbervaleTooling=false` — **1818 passing** |
+| World bake | **PASS** — 28 artifacts; `tools/world_bake.py --check` reports source `403b67636e53` current |
+| Fast quality | **PASS** — `artifacts/quality/20260905T004533Z/summary.json` |
+| `--validate` | exit 0 |
+| Engine quality | **FAIL** — lifecycle, step-up, regression and traversal; `artifacts/quality/20260905T004618Z/summary.json` |
+| Streaming stress | **PASS** — rapid traversal, boundary oscillation, readiness and unload soak |
+| `--lifecycle` | **FAIL** — Playing reached with an unsettled streamer in all three New Game cycles |
+| `gen_regions.py --check` | clean |
+| `debug_pass_regressions.gd` | **FAIL** — failed-cell reporting/settlement semantics regressed |
+| `stepup_probe.gd` | **FAIL** — Salt Steps falls below terrain |
+| `world_traversal_probe.gd` | **FAIL** — one collision snag and two missing NPC paths |
+
+⚠️ **GODOTMCP was not available for this pass** — the editor/relay probe could not establish a live
+connection, so no `mcp__ai-game-developer__*` tools registered. Verification used the shell spine.
+**No live-editor or human visual sign-off was made.** Prepared `.scn` world artifacts did change, so
+that sign-off remains required before this branch can close.
 
 | Probe | Proves |
 | --- | --- |
@@ -319,6 +361,15 @@ WARNING: **There is still no `export_presets.cfg`.** "The shipping build" is pro
 22. ⚠️ **A BUILDING VARIANT CHANGES STRUCTURE, NOT JUST DRESSING.** Footprint, floor count, roof
     direction/form, access, wall family, porch/awning/balcony or ruin state must change. Use shared
     material families and authored prefabs; a cosmetic prop swap is not a new building.
+28. ⚠️ **A PRODUCTION WORLD CELL IS BAKED, HASHED AND OWNED.** Region specifications and authored
+    resources are inputs; `data/world_bake/` is output; `manifest.json` is the exact bridge between
+    them. Normal gameplay may load prepared cells but may not silently regenerate them.
+29. ⚠️ **RESIDENCY IS NOT GAMEPLAY ACTIVATION.** Backdrop/Far/Mid/Near are one streamer's decision.
+    Only Near owns full actors, physics and navigation; a cell-owned actor is destroyed or abstracted
+    with its cell unless it is deliberately promoted to persistent session ownership.
+30. ⚠️ **AN ACTOR ENTERS A WORLD POSITION ONLY AFTER REAL COLLISION IS READY.** Loading, New Game,
+    respawn, fast travel and teleports use `SafePlacementService`; an arbitrary timer or a second
+    spawn-correction implementation is not an acceptable substitute.
 
 ## Commands worth knowing
 
@@ -326,6 +377,8 @@ WARNING: **There is still no `export_presets.cfg`.** "The shipping build" is pro
 dotnet build Embervale.sln
 dotnet test tests/Embervale.Tests
 python tools/gen_regions.py            # data/regions/*.tres is GENERATED; --check gates it
+python tools/world_bake.py --bake       # rebuild deterministic prepared cells and manifest
+python tools/world_bake.py --check      # fail on stale, missing, unexpected or modified outputs
 godot --headless --path . -- --validate
 godot --headless --path . -- --lifecycle  # session/world teardown; a gate, exit 1 on any leak
 godot --headless --path . -- --worldgen   # what the generator makes: relief, regimes, field
@@ -334,6 +387,7 @@ godot --headless --path . -- --state
 godot --path . -- --play
 python tools/negative_tests.py          # refuses to run while data/ or scenes/ is dirty — commit first
 godot --headless --path . --script res://tools/debug_pass_regressions.gd   # 44 runtime checks
+godot --headless --path . --script res://tools/world_streaming_stress_probe.gd
 dotnet build Embervale.csproj -c ExportRelease && python tools/check_shipping_assembly.py
 godot --path . -- --guild-shots         # the five guild hubs, front and back, plus both greetings
 godot --path . -- --panelshots          # every screen, incl. the Guilds tab

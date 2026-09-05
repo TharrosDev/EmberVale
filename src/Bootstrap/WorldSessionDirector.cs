@@ -241,7 +241,9 @@ public sealed partial class WorldSessionDirector : Node
             return;
         }
 
-        PerformRegionLoad(destination, destination.SpawnPoint, $"Entering {destination.DisplayName}...");
+        // A region spawn's Y is authored clearance, not world height. Convert it before opening
+        // the shared load gate; fast-travel nodes below are already world-space transforms.
+        PerformRegionLoad(destination, RegionSpawn(destination), $"Entering {destination.DisplayName}...");
     }
 
     /// <summary>

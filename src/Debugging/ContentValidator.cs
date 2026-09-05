@@ -4132,6 +4132,22 @@ public static class ContentValidator
             {
                 issues.Add($"region '{region.Id}' has an invalid visibility or staged-loading budget");
             }
+            else if (budget.MaxFrameMilliseconds > 16.67f || budget.ActivationBudgetMilliseconds <= 0f ||
+                     budget.NearDistance <= 0f || budget.MidDistance <= budget.NearDistance ||
+                     budget.FarDistance <= budget.MidDistance ||
+                     budget.BackdropDistance <= budget.FarDistance ||
+                     budget.PredictionSeconds <= 0f || budget.PredictionDistanceWeight is <= 0f or > 1f)
+            {
+                issues.Add($"region '{region.Id}' has invalid 60 FPS or near/mid/far/backdrop streaming limits");
+            }
+
+            WorldPreparedRegionResource? prepared =
+                GD.Load<WorldPreparedRegionResource>(WorldBakePaths.Region(region.Id));
+            if (prepared == null || !prepared.IsValidFor(region))
+            {
+                issues.Add($"region '{region.Id}' has no valid prepared runtime field at " +
+                           $"'{WorldBakePaths.Region(region.Id)}' — run tools/world_bake.py --bake");
+            }
 
             int residentAuthoredNodes = 0;
             int residentScatterInstances = 0;
@@ -4178,6 +4194,37 @@ public static class ContentValidator
                         "not load — the streamer would log it and carry on, and the cell would simply " +
                         "never appear");
                     continue;
+                }
+
+                string preparedCellPath = WorldBakePaths.Cell(region.Id, cell.Id);
+                PackedScene? preparedCell = GD.Load<PackedScene>(preparedCellPath);
+                if (!ResourceLoader.Exists(preparedCellPath) || preparedCell == null)
+                {
+                    issues.Add($"region '{region.Id}' cell '{cell.Id}' has no loadable prepared cell " +
+                               $"'{preparedCellPath}' — run tools/world_bake.py --bake");
+                }
+                else if (preparedCell.Instantiate() is Node3D preparedRoot)
+                {
+                    foreach (string collisionIssue in WorldPhysicsContract.Validate(preparedRoot))
+                    {
+                        issues.Add($"region '{region.Id}' cell '{cell.Id}' collision: {collisionIssue}");
+                    }
+                    preparedRoot.Free();
+                }
+
+                var traversalIds = new HashSet<string>();
+                foreach (WorldTraversalLinkResource? link in cell.TraversalLinks)
+                {
+                    if (link == null || string.IsNullOrWhiteSpace(link.Id) || !traversalIds.Add(link.Id))
+                    {
+                        issues.Add($"region '{region.Id}' cell '{cell.Id}' has a null, blank or duplicate traversal link");
+                        continue;
+                    }
+                    if (link.Start.DistanceTo(link.End) < 0.25f || link.NavigationLayers == 0u)
+                    {
+                        issues.Add($"region '{region.Id}' cell '{cell.Id}' traversal link '{link.Id}' " +
+                                   "has no span or no supported agent layer");
+                    }
                 }
 
                 int authoredNodes = CountSceneNodes(cell.ScenePath);
@@ -4430,6 +4477,20 @@ public static class ContentValidator
                                $"{path.End}({field.Height(end.X, end.Y):F1}m) climbs at a {worst:F2} grade " +
                                $"({Mathf.RadToDeg(Mathf.Atan(worst)):F0} degrees), over the " +
                                $"{MaxGrade:F2} a walking player can hold");
+                }
+
+                // Player, ordinary and small humanoid envelopes must fit every authored road. A
+                // large enemy is intentionally not required on every footpath; its profile still
+                // lets encounters/POIs opt into a wider capability check without pretending all
+                // creatures share one theoretical radius.
+                for (int profileIndex = 0; profileIndex < 3; profileIndex++)
+                {
+                    WorldNavigationAgentProfile profile = WorldNavigationContract.Profiles[profileIndex];
+                    if (!WorldNavigationContract.RouteSupports(path.Width, worst, profile))
+                    {
+                        issues.Add($"region '{region.Id}' cell '{cell.Id}' path[{index}] does not support " +
+                                   $"navigation profile '{profile.Id}' (width {path.Width:F2}, grade {worst:F2})");
+                    }
                 }
             }
         }

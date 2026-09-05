@@ -4,21 +4,24 @@ using Godot;
 namespace Embervale.World;
 
 /// <summary>
-/// Bakes a streamed cell's navmesh at load time (Phase 27A). A greybox cell can't ship a pre-baked
-/// <see cref="NavigationMesh"/> (the geometry is authored as plain meshes, not hand-tessellated
-/// polygons), so the parent <see cref="NavigationRegion3D"/> bakes from the cell's mesh geometry the
-/// moment the <see cref="RegionStreamer"/> instances it. The bake runs on a worker thread and applies
-/// itself when finished; until then enemy <c>NavigationAgent3D</c>s simply fall back to straight-line
-/// steering (see <c>EnemyAIComponent.NextPathPoint</c>), so there is never a hard dependency on the
-/// bake having completed.
+/// Compatibility baker for source scenes and world-authoring debug mode. Production cell scenes
+/// contain navigation prepared by <c>tools/world_bake.py</c>, and this node exits immediately when
+/// polygons already exist. Runtime activation never rebuilds prepared navigation.
 ///
 /// Attach this as a child of the cell's <see cref="NavigationRegion3D"/> in the cell scene.
 /// </summary>
 [GlobalClass]
 public partial class CellNavBaker : Node
 {
+    /// <summary>The offline packer owns navigation while set; scene-authored bakers stay inert.</summary>
+    public static bool RuntimeBakeSuppressed { get; set; }
+
     public override void _Ready()
     {
+        if (RuntimeBakeSuppressed)
+        {
+            return;
+        }
         // A cell root may finish configuring inherited geometry in its own _Ready (RoostCell, for
         // example, resizes the shared base floor). Child _Ready runs first, so baking immediately
         // captured the 90 m editor placeholder before an Ash Roost resized it to 100 m and left a
@@ -38,6 +41,13 @@ public partial class CellNavBaker : Node
         if (region.NavigationMesh == null)
         {
             Log.Warn($"{nameof(CellNavBaker)}: region '{region.Name}' has no NavigationMesh; skipping bake.");
+            return;
+        }
+
+        // Production cell scenes already contain navigation polygons. Re-baking them would turn an
+        // offline artifact back into a runtime workload and briefly remove navigation at activation.
+        if (region.NavigationMesh.GetPolygonCount() > 0)
+        {
             return;
         }
 

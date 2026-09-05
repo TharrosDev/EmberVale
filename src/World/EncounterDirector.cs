@@ -18,7 +18,8 @@ namespace Embervale.World;
 ///
 /// Reuses <see cref="EnemyFactory"/> and the same death/despawn flow as the static camp;
 /// it tracks its spawns via <c>TreeExited</c> to keep the live count honest. Emergent and
-/// transient, so (like <see cref="Enemies.EnemySpawnDirector"/>) it is not persisted.
+/// transient, so (like <see cref="Enemies.EnemySpawnDirector"/>) it is not persisted; each spawn
+/// is owned by its active streaming cell and disappears when that cell leaves Near.
 /// </summary>
 [GlobalClass]
 public partial class EncounterDirector : Node3D
@@ -56,9 +57,8 @@ public partial class EncounterDirector : Node3D
         EventBus.Instance?.Unsubscribe<RegionChangedEvent>(OnRegionTransition);
     }
 
-    /// <summary>Encounter spawns are parented to the persistent world root, not the streamed cells, so a
-    /// region transition would orphan them in the new region. Free them on the boundary; <c>_alive</c>
-    /// self-heals through the same <c>TreeExited</c> path each free fires.</summary>
+    /// <summary>A hard region transition also clears any remaining tracked references; cell unload
+    /// already owns their normal retirement. <c>_alive</c> self-heals through TreeExited.</summary>
     private void OnRegionTransition(RegionChangedEvent e)
     {
         foreach (Node3D spawn in _spawns.ToArray())
@@ -125,25 +125,40 @@ public partial class EncounterDirector : Node3D
             return;
         }
 
+        int spawned = 0;
         for (int i = 0; i < count; i++)
         {
             // Per member, not per band: the jitter moves each one off the validated origin, so each
             // one is placed on walkable ground of its own. See SpawnPlacement.
             Vector3 jitter = new(GD.Randf() * 2f - 1f, 0f, GD.Randf() * 2f - 1f);
-            SpawnEnemy(
+            if (SpawnEnemy(
                 encounter.EnemyTemplateId,
                 SpawnPlacement.Resolve(this, origin + jitter),
-                encounter.CorruptionChance);
+                encounter.CorruptionChance))
+            {
+                spawned++;
+            }
         }
 
-        EventBus.Instance?.Publish(new EncounterTriggeredEvent(encounter.Id, origin, count));
-        Log.Info($"Encounter: {encounter.DisplayName} ({count}) appeared near the player.");
+        if (spawned > 0)
+        {
+            EventBus.Instance?.Publish(new EncounterTriggeredEvent(encounter.Id, origin, spawned));
+            Log.Info($"Encounter: {encounter.DisplayName} ({spawned}) appeared near the player.");
+        }
     }
 
-    private void SpawnEnemy(string templateId, Vector3 position, float corruptionChance)
+    private bool SpawnEnemy(string templateId, Vector3 position, float corruptionChance)
     {
         EnemyEntity enemy = EnemyTemplateRegistry.Create(templateId, position);
-        GetParent().AddChild(enemy);
+        if (ServiceLocator.Instance is not { } locator ||
+            !locator.TryGet(out RegionStreamer streamer) ||
+            !streamer.TryAddCellOwnedActor(enemy, position))
+        {
+            // No active owner means the predicted cell changed under the spawn. Refuse the
+            // materialization instead of leaking a transient encounter into session ownership.
+            enemy.Free();
+            return false;
+        }
 
         // Rolled per enemy, not per encounter, so a warband can come up part-corrupted. Afflict only
         // after AddChild — the stat modifiers need StatsComponent to have built its base values.
@@ -155,6 +170,7 @@ public partial class EncounterDirector : Node3D
         _alive++;
         _spawns.Add(enemy);
         enemy.TreeExited += () => OnEnemyRemoved(enemy);
+        return true;
     }
 
     private void OnEnemyRemoved(Node3D enemy)

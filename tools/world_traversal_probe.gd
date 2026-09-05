@@ -53,25 +53,21 @@ func _run() -> void:
 			_fail("%s did not settle" % region_path)
 			continue
 
-		# CellNavBaker is asynchronous. Wait for every resident NavigationRegion3D to contain baked
-		# vertices instead of assuming a fixed frame count that passes on a fast machine only.
-		var bake_frames := 0
-		while not _navigation_ready(streamer) and bake_frames < 3600:
-			await physics_frame
-			bake_frames += 1
-		if not _navigation_ready(streamer):
-			_fail("%s navigation did not finish baking" % region_path)
-			continue
-		_print_navigation(streamer)
-		for _frame in 3:
-			await physics_frame
-		NavigationServer3D.map_force_update(root.world_3d.navigation_map)
-
 		for cell in region.get("Cells"):
 			var presentation: Resource = cell.get("Presentation")
 			if presentation == null:
 				continue
 			var centre: Vector3 = cell.get("Center")
+			streamer.call("SetStreamingFocus", centre)
+			var activation_frames := 0
+			while (not streamer.call("IsPositionReady", centre, true) or
+					not streamer.call("IsSettled")) and activation_frames < 900:
+				await physics_frame
+				activation_frames += 1
+			if activation_frames >= 900:
+				_fail("%s did not activate collision/navigation" % cell.get("Id"))
+				continue
+			NavigationServer3D.map_force_update(root.world_3d.navigation_map)
 			for route in presentation.get("Paths"):
 				if route == null:
 					continue

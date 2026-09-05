@@ -13,8 +13,13 @@
 # Run:  Godot_..._console.exe --headless --path . --script res://tools/camera_probe.gd
 extends SceneTree
 
-const WORLD := 1        # CombatLayers.World
-const BLOCKER := 16     # CombatLayers.CameraBlocker
+# ⚠️ MIRRORS CombatLayers, AND THAT IS A LIABILITY. These moved once already — the world-production
+# pass renumbered CameraBlocker from bit 4 to bit 9 — and a stale copy here does not fail loudly: the
+# probe reports "a wall did not retract the camera" and "0 of 36 solids marked", which reads as the
+# feature being broken rather than as the test being wrong. Check these against CombatLayers.cs
+# before believing a failure.
+const WORLD := 1          # CombatLayers.WorldStatic
+const BLOCKER := 1 << 9   # CombatLayers.CameraBlocker
 
 var _failures: Array[String] = []
 

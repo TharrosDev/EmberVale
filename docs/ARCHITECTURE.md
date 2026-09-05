@@ -811,6 +811,36 @@ The world is divided into authored **regions** (one per area; many per `Realm`).
 established the data + convention; 25B adds the streamer; 25C adds hard transitions; the map and
 fast-travel land in 25E–25G.
 
+**Production-world pipeline (2026-09-04).** `python tools/world_bake.py --bake` evaluates the
+deterministic region source offline, conforms authored nodes, constructs terrain and collision,
+plans MultiMesh scatter/HLOD, prepares navigation and explicit traversal links, and writes one
+packed scene per cell plus a sampled `WorldPreparedRegionResource` and distant backdrop.
+`data/world_bake/manifest.json` fingerprints every relevant generator/spec/resource/scene input
+and hashes every output. `tools/world_bake.py --check` names every changed input, missing output,
+modified output or obsolete artifact and is a required fast CI gate. Normal gameplay has no
+live-generation fallback: missing production data marks the region failed and the loading gate
+refuses activation.
+
+`RegionStreamer` owns every part of a cell and selects one predictive tier from player position
+and velocity: **Near** enables full gameplay, collision and navigation; **Mid** keeps visuals and
+terrain collision while simulation sleeps; **Far** is static visual/HLOD continuity without
+physics or nav; **Backdrop** keeps only terrain/landmark continuity. Outside the backdrop range the
+cell unloads. A two-second velocity projection preloads the direction of travel and hysteresis
+prevents boundary thrash. Activation runs as bounded stages—resident scene, presentation,
+collision, navigation, gameplay—under `ActivationBudgetMilliseconds`.
+
+`RequirePosition` pins a landing cell Near and `IsPositionReady` remains false until real terrain
+collision (and optional navigation) is active. `LoadingCoordinator` combines that with
+`SafePlacementService` ground, slope, capsule-clearance and optional-nav checks; no arbitrary
+settle timer authorizes a player spawn. Cell loaded/unloaded events now describe gameplay ownership,
+so persistence snapshots on Near deactivation even when a Far visual remains resident. Ambient
+encounters are cell-owned; persistent/session actors are explicitly promoted.
+
+Performance telemetry reports p50/p95/p99/worst frames against the 16.67 ms target. F1
+`worldcells on` draws cell boundaries and color-coded tiers, and
+`world_streaming_stress_probe.gd` exercises rapid traversal, distant cycling, boundary
+oscillation, collision/nav readiness and unload soak.
+
 - **`RegionResource`** (`[GlobalClass]`, `data/regions/*.tres`): `Id` (`region.*`),
   `DisplayName`, `Realm` (the fixed `Realm` enum — the four LORE realms + the Celestial),
   `SpawnPoint` (where the player appears on entry, 25C), `Cells` (an array of `RegionCellResource`
@@ -833,19 +863,13 @@ fast-travel land in 25E–25G.
   instancing the scene. Scatter layers are deterministic cosmetic MultiMeshes; exclusion circles
   and the presentation road mask keep gameplay space clear. Each layer can pair its detailed mesh
   with a reduced cone/box HLOD proxy and overlapping visibility ranges.
-- **`RegionStreamer`** (`Node3D`, `Pausable`, built by the bootstrap): **every cell of the active
-  region is resident** (38M2, maintainer direction). Each frame it enqueues any cell not yet in the
-  tree; there is no distance test and no unload path during play. Until 38M2 a cell loaded inside its
-  `LoadRadius` and was freed past `LoadRadius + UnloadMargin` through a pure `StreamDecision`;
-  the current regions remain within explicit authored/runtime node and scatter budgets, so residency
-  costs less than the seams distance-streaming bought — a routine walking an unloaded cell, a district popping in as the
-  player crests a road, and a class of bug that only reproduces from one approach direction. The
-  radius, the margin, `StreamDecision` and its tests were all deleted with the rule.
-  ⚠️ **Both regions cannot be resident together** — Frostfang's `dragon_roost` (25, 0, -20) and
-  `ancient_aerie` (25, 0, -110) share coordinate space with the Ember Crown's `arena` (55, 0, -10)
-  and `wilds_north` (0, 0, -65), so the two would load inside each other. Whole-realm residency is a
-  world-layout decision (the 2026-08-28 layout rebuild), not a streaming one.
-  Loads now pass through explicit **queued → threaded request → ready → instanced** stages. Scene
+- **`RegionStreamer`** (`Node3D`, `Pausable`, built by the bootstrap): streams only prepared
+  production cells selected by the Near/Mid/Far/Backdrop policy above. Cells preload in the
+  predicted direction, downgrade through hysteresis and unload outside the backdrop range.
+  ⚠️ **Only one region is session-active at a time.** The regions are spatially disjoint, but a
+  hard realm transition retires the former region as a deliberate world/session boundary. Ordinary
+  movement between adjacent cells inside that region is continuous and never uses a loading screen.
+  Loads pass through explicit **queued → threaded request → resident → tier activation** stages. Scene
   I/O and dependency loading happen through `ResourceLoader.LoadThreadedRequest`; the main thread
   polls completion and instances only the region budget's `MaxCellInstantiationsPerFrame`.
   `MaxConcurrentLoadRequests` controls parallel I/O and drops to one when global static memory is
@@ -858,19 +882,15 @@ fast-travel land in 25E–25G.
   `Configure` is called at **both** places the active region changes, it also records
   `ActiveRegionId` — the cheapest honest answer to "where is the player standing" for systems
   that need it, and what the encounter region gate reads (Phase 34.5B).
-  Each loaded root also receives its seam-neutral presentation skin and optional biome scatter.
-  The presentation is an indexed CPU-built heightfield with edge-flat topology and shader blending
-  driven by world-space noise, height, slope, road, and roughness. `WorldVisibilityManager` leaves
-  gameplay resident but culls cosmetic scatter cells beyond the authored distance; GeometryInstance
-  ranges cross-fade detailed and HLOD batches. `WorldPerformanceMonitor` samples expanded runtime nodes, scatter instances, draw calls, static
-  memory and frame time against the region budget; the validator separately gates authored `.tscn`
-  node counts and requested scatter counts before runtime.
+  Prepared roots already contain terrain, collision, conformed content, water, scatter/HLOD and
+  navigation. `WorldPerformanceMonitor` samples frame distributions, expanded runtime nodes,
+  scatter instances, draw calls and static memory; validators gate both source and prepared output.
 - **Hard transitions (25C)** — a `RegionTransitionComponent` (an `InteractableComponent` carrying a
   `TargetRegionId`) publishes a `RegionTransitionRequestedEvent`; `WorldSessionDirector` handles it: enter
   `GameState.Loading` (the `LoadingScreen` overlay shows on that state), re-target the streamer,
   teleport the player to the destination `SpawnPoint`, rebuild the neighbour portals, request a
-  region-boundary autosave (`AutosaveService.RequestRegionChangeAutosave`), then hold Loading for a
-  short settle (so the destination cells stream in) before returning to `Playing`. Portals are spawned
+  region-boundary autosave (`AutosaveService.RequestRegionChangeAutosave`), then hold Loading until
+  the destination cell has active collision and safe placement succeeds. Portals are spawned
   by the bootstrap per `RegionResource.Neighbours`, so a reciprocal link is a two-way door with no
   per-scene authoring — at `RegionResource.PortalPoint` when the region authors one (38M2, which is
   how the Ember Crown's door stands at the Crossway gate rather than beside the player's spawn),
@@ -989,6 +1009,8 @@ source of truth about the ground.
   and owns **Embervale's non-swimming safety contract** (wade under 1.1 m, the land refuses above it,
   `WorldRecovery` retrieves above 1.9 m); `WorldCellWater` draws the surface as a grid whose
   per-vertex depth comes from the heightfield, so the shoreline is the terrain's own contour.
+  Water gameplay queries use this authoritative analytical volume; physics layer `Water` is
+  reserved for deliberate sensor areas and never blocks actors, projectiles or the camera.
   ⚠️ **A water surface authored as a mesh in a `.tscn` is invisible to the safety system** and is
   forbidden.
 - **`WorldRecovery`** (one node on the streamer, all regions) — the standing promise that no ground
@@ -1079,8 +1101,9 @@ announced events with an objective, time limit and rewards.
   `ItemPickupFactory` near the player, tracks the objective off `EntityDiedEvent` (by tracked
   runtime id) / `ItemPickedUpEvent`, enforces the time limit (fail + despawn raiders on
   expiry), and on success grants rewards through the player's `ProgressionComponent` /
-  `InventoryComponent` / `ReputationComponent`. **Not persisted** (emergent, like encounters);
-  the rewards persist via the saved components. `WorldEvent` is the runtime tracker; `Active`
+  `InventoryComponent` / `ReputationComponent`. Cooldowns and compact active-objective state are
+  persisted under `world_events`; materialized actors are owned by the Near cell and return to
+  abstract state when it unloads. `WorldEvent` is the runtime tracker; `Active`
   feeds the HUD. Events: `WorldEventStartedEvent`/`WorldEventProgressEvent`/`WorldEventEndedEvent`.
 
 ### 2.6l Companions (`src/Companions`, Phase 32)
@@ -1569,16 +1592,16 @@ is told and what happens cannot drift apart.
 
 ## 3. Collision layers & teams
 
-| Layer (bit)  | Value | Used by                                   |
-| ------------ | ----- | ----------------------------------------- |
-| World (1)    | 1     | Floor, props; default body layer/mask     |
-| Body (2)     | 2     | Reserved for solid actor bodies           |
-| Hurtbox (3)  | 4     | `Hurtbox` areas (monitorable)             |
-| Hitbox (4)   | 8     | `Hitbox` areas (monitor hurtboxes)        |
+The canonical matrix lives in `CombatLayers`: `WorldStatic`, `WorldDynamic`, `Player`,
+`Enemy`, `NPC`, `Projectile`, `Hitbox`, `Hurtbox`, `Interaction`, `CameraBlocker`,
+`NavigationObstacle`, `Water`, `Trigger`, and `Ragdoll`. `World` and `Body` remain
+compatibility aliases for the first two legacy bits. Camera obstruction deliberately reads only
+`WorldStatic | CameraBlocker`; sensor layers never participate in physical motion.
 
-`CharacterBody3D` actors and the floor use the default layer/mask (1), so they
-collide physically. Hit/hurtboxes are `Area3D`s on their own layers and don't
-affect body movement.
+`WorldPhysicsContract` audits prepared cell trees. It rejects terrain without `WorldStatic`,
+physical hit/hurt volumes, malformed interaction/trigger bodies, named camera blockers without
+their layer, and hitboxes that do not query hurtboxes. This runs in content validation and when a
+cell becomes resident, so incorrect scene checkboxes cannot silently become permanent convention.
 
 **Teams** (`CombatComponent.Team`, honored by `Hitbox`): `0` = player, `1` =
 hostile, `2` = neutral target (dummy). A hitbox never hits its own owner or a
