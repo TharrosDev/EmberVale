@@ -14,6 +14,7 @@ public sealed partial class WorldPerformanceMonitor : Node
     private WorldPerformanceBudgetResource? _budget;
     private string _regionId = string.Empty;
     private double _timer;
+    private readonly List<double> _frameWindow = new(256);
 
     /// <summary>Longest frame seen since the last sample. See <see cref="_Process"/>.</summary>
     private double _worstFrameMs;
@@ -32,6 +33,7 @@ public sealed partial class WorldPerformanceMonitor : Node
         _cells.Clear();
         _timer = 0d;
         _worstFrameMs = 0d;
+        _frameWindow.Clear();
         _consecutiveFailures = 0;
         _consecutiveSuccesses = 0;
         _lastWarningSignature = string.Empty;
@@ -47,6 +49,16 @@ public sealed partial class WorldPerformanceMonitor : Node
 
     public override void _Process(double delta)
     {
+        if (!SamplingEnabled || _budget == null)
+        {
+            // Probes deliberately disable sampling while doing synchronous work. Retaining every
+            // frame during that interval turned the monitor itself into an unbounded soak leak.
+            _frameWindow.Clear();
+            _worstFrameMs = 0d;
+            _timer = 0d;
+            return;
+        }
+
         // ⚠️ EVERY FRAME IS MEASURED, EVEN THOUGH ONLY ONE IN SIXTY IS REPORTED. The sample below
         // reads Performance.Monitor.TimeProcess, which is the cost of the frame it happens to run
         // on — so the monitor saw about one frame in sixty and a hitch that landed on any of the
@@ -57,15 +69,18 @@ public sealed partial class WorldPerformanceMonitor : Node
         {
             _worstFrameMs = frameMs;
         }
+        _frameWindow.Add(frameMs);
 
         _timer += delta;
-        if (_timer < 1d || _budget == null || !SamplingEnabled)
+        if (_timer < 1d)
         {
             return;
         }
         _timer = 0d;
         double worstFrameMs = _worstFrameMs;
         _worstFrameMs = 0d;
+        WorldFrameDistribution distribution = WorldPerformanceRules.Distribution(_frameWindow);
+        _frameWindow.Clear();
 
         int authoredNodes = 0;
         int scatterInstances = 0;
@@ -82,7 +97,10 @@ public sealed partial class WorldPerformanceMonitor : Node
             (int)Performance.GetMonitor(Performance.Monitor.ObjectNodeCount),
             Performance.GetMonitor(Performance.Monitor.MemoryStatic) / (1024d * 1024d),
             Performance.GetMonitor(Performance.Monitor.TimeProcess) * 1000d,
-            worstFrameMs);
+            worstFrameMs,
+            distribution.P50,
+            distribution.P95,
+            distribution.P99);
 
         IReadOnlyList<string> issues = WorldPerformanceRules.Assess(_budget.Limits(), LastSnapshot);
         WithinBudget = issues.Count == 0;

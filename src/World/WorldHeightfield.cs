@@ -30,7 +30,7 @@ namespace Embervale.World;
 /// Engine-free on purpose — <see cref="WorldTerrainMeshBuilder.HeightfieldFor"/> is the Godot-side
 /// factory, and the unit suite constructs one directly.
 /// </summary>
-public sealed class WorldHeightfield
+public class WorldHeightfield
 {
     private readonly WorldGenerationSettings _settings;
     private readonly WorldMacroField? _macro;
@@ -126,6 +126,24 @@ public sealed class WorldHeightfield
         _corridorAreas = corridorAreas ?? Array.Empty<WorldTerrainMath.GroundArea>();
     }
 
+    /// <summary>Construction seam for a prepared runtime field. It deliberately builds no macro or
+    /// hydrology caches; derived fields must override the query methods that consume them.</summary>
+    protected WorldHeightfield(WorldGenerationSettings settings)
+        : this(settings, null, null, null, null, null, null, null)
+    {
+    }
+
+    /// <summary>Prepared-field seam used by the offline baker to retain authored road/area masks
+    /// while replacing all elevation queries with the committed sample grid.</summary>
+    protected WorldHeightfield(
+        WorldGenerationSettings settings,
+        IReadOnlyList<WorldTerrainMath.Landform>? landforms,
+        IReadOnlyList<WorldTerrainMath.Path>? paths,
+        IReadOnlyList<WorldTerrainMath.GroundArea>? areas)
+        : this(settings, null, null, landforms, paths, areas, paths, areas)
+    {
+    }
+
     public WorldGenerationSettings Settings => _settings;
     public IReadOnlyList<WorldTerrainMath.Landform> Landforms => _landforms;
     public IReadOnlyList<WorldTerrainMath.Path> Paths => _paths;
@@ -172,16 +190,16 @@ public sealed class WorldHeightfield
                 worldX, worldZ, _settings.RouteCalm, _corridorPaths, _corridorAreas);
 
     /// <summary>The generated ground before any authoring: macro geography, carved by hydrology.</summary>
-    public float GeneratedElevation(float worldX, float worldZ) =>
+    public virtual float GeneratedElevation(float worldX, float worldZ) =>
         WorldGenerator.Sample(
             _settings, _macro, _hydrology, worldX, worldZ, RouteCalmAt(worldX, worldZ)).Elevation;
 
     /// <summary>Generated ground plus landforms — what a road or yard is graded against.</summary>
-    public float BaseHeight(float worldX, float worldZ) =>
+    public virtual float BaseHeight(float worldX, float worldZ) =>
         WorldTerrainMath.BaseHeight(GeneratedElevation(worldX, worldZ), worldX, worldZ, _landforms);
 
     /// <summary>The finished ground height at a world point.</summary>
-    public float Height(float worldX, float worldZ) =>
+    public virtual float Height(float worldX, float worldZ) =>
         WorldTerrainMath.Height(
             GeneratedElevation(worldX, worldZ), worldX, worldZ, _landforms, _paths, _areas);
 
@@ -195,7 +213,7 @@ public sealed class WorldHeightfield
     /// river or lake found by the drainage solve, NOT an authored <c>WorldWaterResource</c>;
     /// <see cref="WorldWater"/> consults both so the non-swimming safety contract covers each.
     /// </summary>
-    public float? GeneratedWaterSurface(float worldX, float worldZ)
+    public virtual float? GeneratedWaterSurface(float worldX, float worldZ)
     {
         if (_hydrology == null)
         {
@@ -272,7 +290,7 @@ public sealed class WorldHeightfield
     /// have thrown away - and the wrong way round for anything that needs to know where water IS,
     /// which is what GeneratedWaterSurface is for.
     /// </summary>
-    public bool MayHaveGeneratedWater(float minX, float minZ, float maxX, float maxZ) =>
+    public virtual bool MayHaveGeneratedWater(float minX, float minZ, float maxX, float maxZ) =>
         _hydrology?.HasChannel(minX, minZ, maxX, maxZ) ?? false;
 
     /// <summary>
@@ -281,11 +299,11 @@ public sealed class WorldHeightfield
     /// landmark suitability and the debug visualiser all read, so none of them can disagree with
     /// the ground.
     /// </summary>
-    public WorldSample Sample(float worldX, float worldZ) => Build(worldX, worldZ, authored: true);
+    public virtual WorldSample Sample(float worldX, float worldZ) => Build(worldX, worldZ, authored: true);
 
     /// <summary>The generated half alone — no roads, no yards, no landforms in the elevation. What
     /// a suitability test wants when it is asking what KIND of country this is.</summary>
-    public WorldSample SampleEnvironment(float worldX, float worldZ) =>
+    public virtual WorldSample SampleEnvironment(float worldX, float worldZ) =>
         Build(worldX, worldZ, authored: false);
 
     private WorldSample Build(float x, float z, bool authored)
@@ -346,7 +364,7 @@ public sealed class WorldHeightfield
     /// Callers pass the cell envelope plus a margin large enough for the widest shoulder.
     /// ⚠️ The hydrology solution is passed on by reference and is NOT clipped — see the type remarks.
     /// </summary>
-    public WorldHeightfield ForBounds(float minX, float minZ, float maxX, float maxZ, float margin = 24f)
+    public virtual WorldHeightfield ForBounds(float minX, float minZ, float maxX, float maxZ, float margin = 24f)
     {
         minX -= margin;
         minZ -= margin;
@@ -429,13 +447,13 @@ public sealed class WorldHeightfield
     /// The local grade at one point, as rise over run — the same measure the route validator, the
     /// traversal probe and the terrain shader's rock band all use, so "0.7" means one thing realm-wide.
     /// </summary>
-    public float SlopeAt(float worldX, float worldZ, float step = 1f) =>
+    public virtual float SlopeAt(float worldX, float worldZ, float step = 1f) =>
         SlopeAt(worldX, worldZ, Height(worldX, worldZ), step);
 
     /// <summary>The same, when the caller already has the height here. The scatter planner asks for
     /// both on every candidate placement and there can be a third of a million of those in a region,
     /// so re-sampling the centre is a measurable share of a cell's load.</summary>
-    public float SlopeAt(float worldX, float worldZ, float here, float step = 1f)
+    public virtual float SlopeAt(float worldX, float worldZ, float here, float step = 1f)
     {
         step = MathF.Max(0.1f, step);
         float dx = (Height(worldX + step, worldZ) - here) / step;
@@ -444,7 +462,7 @@ public sealed class WorldHeightfield
     }
 
     /// <summary>The upward surface normal at a point, for standing a prop on the ground it is on.</summary>
-    public (float X, float Y, float Z) NormalAt(float worldX, float worldZ, float step = 1f)
+    public virtual (float X, float Y, float Z) NormalAt(float worldX, float worldZ, float step = 1f)
     {
         step = MathF.Max(0.1f, step);
         float left = Height(worldX - step, worldZ);

@@ -65,4 +65,17 @@ public sealed class WorldPerformanceRulesTests
     {
         Assert.Equal(expected, WorldPerformanceRules.ThreadedLoadConcurrency(authored, currentMb, limitMb));
     }
+
+    [Fact]
+    public void DistributionReportsTailPercentiles()
+    {
+        double[] frames = { 1d, 2d, 3d, 4d, 100d };
+        WorldFrameDistribution result = WorldPerformanceRules.Distribution(frames);
+
+        Assert.Equal(22d, result.Average);
+        Assert.Equal(3d, result.P50);
+        Assert.Equal(100d, result.P95);
+        Assert.Equal(100d, result.P99);
+        Assert.Equal(100d, result.Worst);
+    }
 }

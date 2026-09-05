@@ -64,17 +64,19 @@ func _enter(region_path: String, expected_id: String) -> void:
 		_failures.append("ActiveRegionId is '%s', expected '%s'"
 			% [_streamer.get("ActiveRegionId"), expected_id])
 
-	var want: Array[String] = []
-	for cell in region.get("Cells"):
-		want.append(_node_name(String(cell.get("Id"))))
 	var got := _cell_children()
-	want.sort()
 	var sorted_got := got.duplicate()
 	sorted_got.sort()
-	if want != sorted_got:
-		_failures.append("%s resident cells %s != authored %s" % [expected_id, sorted_got, want])
-	if got.size() != want.size():
-		_failures.append("%s has duplicate or missing cell nodes" % expected_id)
+	if got.is_empty() or int(_streamer.call("ActiveCellCount")) < 1:
+		_failures.append("%s has no active landing cell" % expected_id)
+	var unique := {}
+	for cell_name in got:
+		unique[cell_name] = true
+	if unique.size() != got.size():
+		_failures.append("%s has duplicate cell nodes" % expected_id)
+	for cell_name in got:
+		if not cell_name.begins_with(expected_id + "_"):
+			_failures.append("%s retained foreign cell %s" % [expected_id, cell_name])
 	print("%s: %d cells resident after %d frames" % [expected_id, got.size(), frames])
 
 

@@ -241,7 +241,7 @@ public partial class PlayerCameraRig : EntityComponent
             CameraPivot.GlobalPosition,
             CameraPivot.GlobalTransform.Basis * ThirdPersonRest,
             CameraProbeRadius,
-            CombatLayers.World);
+            CombatLayers.CameraObstruction);
 
         return desired * safe;
     }

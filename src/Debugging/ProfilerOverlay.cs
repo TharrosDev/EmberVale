@@ -59,6 +59,9 @@ public partial class ProfilerOverlay : CanvasLayer
         {
             WorldPerformanceSnapshot world = streamer.PerformanceSnapshot();
             sb.Append($"\nworld       {world.ResidentRuntimeNodes:0} nodes · {world.ResidentScatterInstances:0} scatter");
+            sb.Append($"\nworld frame {world.P50FrameMilliseconds:0.00}/{world.P95FrameMilliseconds:0.00}/" +
+                      $"{world.P99FrameMilliseconds:0.00} ms p50/p95/p99");
+            sb.Append($"\ncells       {streamer.ActiveCellCount()} active · {streamer.ResidentCellCount()} resident");
             sb.Append(streamer.IsWithinPerformanceBudget() ? " · budget OK" : " · OVER BUDGET");
         }
         _text.Text = sb.ToString();

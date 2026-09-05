@@ -25,24 +25,15 @@ public static class SpawnPlacement
     /// <summary>How far a spawn point may be nudged onto the navmesh. Beyond this the nearest
     /// walkable ground is somewhere else entirely and moving the actor there would scatter a band
     /// across the map; the point is used as-is on the ground and the actor walks out on its own.</summary>
-    private const float MaxSnapDistance = 6f;
+    private const float MaxSnapDistance = SafePlacementService.DefaultMaxCorrection;
 
     /// <summary>The nearest point an actor can stand at, given a desired one.</summary>
     public static Vector3 Resolve(Node3D context, Vector3 desired)
     {
-        Vector3 point = desired;
-
-        Rid map = context.IsInsideTree() ? context.GetWorld3D().NavigationMap : default;
-        if (map.IsValid)
-        {
-            Vector3 onMesh = NavigationServer3D.MapGetClosestPoint(map, desired);
-            // An empty map answers the origin; that is not a nudge, it is a teleport across the world.
-            if (onMesh.DistanceSquaredTo(desired) <= MaxSnapDistance * MaxSnapDistance)
-            {
-                point = onMesh;
-            }
-        }
-
-        return WorldGround.OnGround(point);
+        return SafePlacementService.TryResolve(
+            context, desired, out Vector3 resolved, maxCorrection: MaxSnapDistance)
+            ? resolved
+            : WorldGround.OnGround(
+                desired, (SafePlacementService.DefaultHeight * 0.5f) + 0.06f);
     }
 }

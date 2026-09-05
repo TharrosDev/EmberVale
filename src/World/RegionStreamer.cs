@@ -8,19 +8,14 @@ using Godot;
 namespace Embervale.World;
 
 /// <summary>
-/// Brings in a region's sub-cells (Phase 25B, rewritten 38M2): requests scenes through Godot's
-/// threaded loader, stages completed resources, and instances them within the authored per-frame
-/// budget. Cells stay resident until the region changes. It publishes
-/// <see cref="RegionCellLoadedEvent"/>/<see cref="RegionCellUnloadedEvent"/> (the seam Phase 25D's
-/// persistence hooks), while memory pressure reduces request concurrency without stalling progress.
+/// Loads prepared region cells through Godot's threaded loader and moves them through predictive
+/// Near/Mid/Far/Backdrop fidelity. Position, velocity and a look-ahead point prioritize I/O; tier
+/// hysteresis prevents boundary thrash. Presentation, terrain collision, navigation and gameplay
+/// activate in bounded stages instead of one frame.
 ///
-/// <b>Distance streaming is gone (maintainer direction, 38M2).</b> Until now a cell loaded when the
-/// player came within its <c>LoadRadius</c> and was freed when they left it plus a hysteresis margin,
-/// with the rule in a pure <c>StreamDecision</c>. A region is five cells and the largest is a
-/// thousand nodes, so residency costs nothing worth the seams it bought: an NPC's routine walking a
-/// cell that is not loaded, a district popping in as the player crests the road, and a whole class of
-/// "it only happens when you approach from the north" bug. The unload path survives only in
-/// <see cref="UnloadAll"/>, which is what a region transition calls.
+/// <see cref="RegionCellLoadedEvent"/>/<see cref="RegionCellUnloadedEvent"/> describe gameplay
+/// ownership (Near activation), not merely whether a visual resource is resident. Persistence can
+/// therefore snapshot a cell while a distant representation remains visible.
 ///
 /// <b>The two regions no longer overlap in world space (the 2026-08-29 geography overhaul).</b> They
 /// used to: Frostfang's roosts sat inside the Ember Crown's arena and northern wilds, so residency
@@ -28,9 +23,8 @@ namespace Embervale.World;
 /// now occupies its own band east of the Ember Crown. Only one region is streamed at a time anyway —
 /// a transition still calls <see cref="UnloadAll"/> — but the ambiguity is gone from the numbers.
 ///
-/// ⚠️ <b>The streamer owns the region's <see cref="WorldHeightfield"/>.</b> It is built once in
-/// <see cref="Configure"/> from every cell's authored geography and handed to each cell as a clipped
-/// view, which is what makes neighbouring cells agree about the ground at their shared edge.
+/// ⚠️ <b>The streamer consumes the region's prepared field and cells.</b> Source generation is an
+/// offline concern owned by <c>tools/world_bake.py</c>. Missing prepared data blocks activation.
 ///
 /// Pausable (default process mode), so loading halts while the game is paused. The procedural
 /// sandbox is the always-loaded base — only the region's authored <see cref="RegionResource.Cells"/>
@@ -42,6 +36,11 @@ public sealed partial class RegionStreamer : Node3D
 
     private readonly List<RegionCellResource> _cells = new();
     private readonly Dictionary<string, Node3D> _loaded = new();
+    private readonly Dictionary<string, WorldCellActivation> _runtime = new();
+    private readonly Dictionary<string, WorldStreamingTier> _desired = new();
+    private readonly Queue<string> _activationQueue = new();
+    private readonly HashSet<string> _activationQueued = new();
+    private readonly HashSet<string> _gameplayActive = new();
     private readonly List<RegionCellResource> _pending = new();
     private readonly HashSet<string> _pendingIds = new();
     private readonly Dictionary<string, RegionCellResource> _requests = new();
@@ -71,6 +70,7 @@ public sealed partial class RegionStreamer : Node3D
     private WorldEnvironmentProfileResource? _environmentProfile;
     private WorldHeightfield? _heightfield;
     private WorldTerrainJobs? _terrainJobs;
+    private WorldPreparedRegionResource? _preparedRegion;
 
     /// <summary>The first authored water body in the region, used to colour GENERATED water so a
     /// river reads as the same substance as the lake it runs into.</summary>
@@ -80,6 +80,11 @@ public sealed partial class RegionStreamer : Node3D
     private WorldRecovery? _recovery;
     private WorldPerformanceMonitor? _performance;
     private WorldVisibilityManager? _visibility;
+    private Vector3 _fallbackFocus;
+    private Vector3? _toolFocus;
+    private string? _requiredCellId;
+    private float _decisionTimer;
+    private WorldStreamingDebugDraw? _debugDraw;
 
     /// <summary>The region currently being streamed, or empty before the first <see cref="Configure"/>.
     /// The streamer is re-configured at both places the active region changes (world build and each
@@ -91,15 +96,35 @@ public sealed partial class RegionStreamer : Node3D
     public void Configure(RegionResource? region)
     {
         _cells.Clear();
+        _desired.Clear();
+        _toolFocus = null;
+        _requiredCellId = null;
         ActiveRegionId = region?.Id ?? string.Empty;
         _environmentProfile = region?.EnvironmentProfile;
-        _heightfield = region == null ? null : WorldTerrainMeshBuilder.HeightfieldFor(region);
+        bool authoringGeneration = WorldGenerationDebug.Mode != WorldGenerationDebugMode.None;
+        _preparedRegion = region == null || authoringGeneration
+            ? null
+            : GD.Load<WorldPreparedRegionResource>(WorldBakePaths.Region(region.Id));
+        bool missingPrepared = region != null &&
+                               !authoringGeneration &&
+                               (_preparedRegion == null || !_preparedRegion.IsValidFor(region));
+        if (missingPrepared)
+        {
+            _preparedRegion = null;
+            Log.Error($"RegionStreamer: prepared production data for '{region!.Id}' is missing or invalid. " +
+                      "Gameplay activation is blocked; run python tools/world_bake.py --bake.");
+        }
+        _heightfield = region == null
+            ? null
+            : authoringGeneration
+                ? WorldTerrainMeshBuilder.HeightfieldFor(region)
+                : _preparedRegion?.CreateRuntimeField(region);
         // WARNING: CANCEL BEFORE STARTING, NOT AFTER. Configure is what fast travel and a region
         // change both go through, and the previous region's terrain jobs are still running when it
         // is called. Starting first and cancelling second leaves a window in which a mesh cut from
         // the realm being left could be handed to a cell of the realm being entered.
         _terrainJobs?.Cancel();
-        _terrainJobs = region == null || _heightfield == null
+        _terrainJobs = region == null || _heightfield == null || _preparedRegion != null
             ? null
             : WorldTerrainJobs.Start(region, _heightfield);
         _waterPalette = FirstAuthoredWater(region);
@@ -109,6 +134,10 @@ public sealed partial class RegionStreamer : Node3D
         EnsureRecovery();
         _streamingBudget = region?.PerformanceBudget;
         ClearLoadStages();
+        if (missingPrepared && WorldGenerationDebug.Mode == WorldGenerationDebugMode.None)
+        {
+            _failed.Add($"{region!.Id}:prepared-data");
+        }
         SetProcess(true);
         EnsurePerformanceMonitor();
         _performance!.Configure(ActiveRegionId, region?.PerformanceBudget);
@@ -124,7 +153,19 @@ public sealed partial class RegionStreamer : Node3D
             return;
         }
 
-        if (_environmentProfile != null)
+        _fallbackFocus = region.SpawnPoint;
+
+        if (_preparedRegion?.Backdrop?.Instantiate() is WorldRegionBackdrop preparedBackdrop)
+        {
+            _backdrop = preparedBackdrop;
+            AddChild(_backdrop);
+        }
+        else if (_preparedRegion?.Backdrop?.Instantiate() is Node3D preparedBackdropRoot)
+        {
+            _backdrop = preparedBackdropRoot.GetNodeOrNull<WorldRegionBackdrop>("PreparedBackdrop");
+            AddChild(preparedBackdropRoot);
+        }
+        else if (_environmentProfile != null)
         {
             _backdrop = WorldRegionBackdrop.Create(_environmentProfile, region, _heightfield!);
             AddChild(_backdrop);
@@ -135,8 +176,10 @@ public sealed partial class RegionStreamer : Node3D
             if (cell != null)
             {
                 _cells.Add(cell);
+                _desired[cell.Id] = WorldStreamingTier.Unloaded;
             }
         }
+        RefreshDesiredTiers(force: true);
     }
 
     /// <summary>Frees every loaded cell and clears the pending queue (Phase 25C hard transitions).
@@ -157,15 +200,31 @@ public sealed partial class RegionStreamer : Node3D
         // the next realm - that gap is exactly when the old realm should not still be generating.
         _terrainJobs?.Cancel();
         _terrainJobs = null;
+        _runtime.Clear();
+        _desired.Clear();
+        _activationQueue.Clear();
+        _activationQueued.Clear();
+        _gameplayActive.Clear();
     }
 
-    /// <summary>True when nothing is queued and every one of the region's cells is loaded — the world
-    /// has finished coming in. The bootstrap gates the post-transition loading screen on this (Phase
-    /// 25.5B) instead of a fixed delay, so the screen holds exactly as long as the cells need and no
-    /// longer. Since 38M2 that means <em>all</em> of them rather than the ones near the landing point,
-    /// which is a few extra frames and the whole point of the change.</summary>
-    public bool IsSettled() => _pending.Count == 0 && _requests.Count == 0 && _ready.Count == 0 &&
-                               _loaded.Count == _cells.Count;
+    /// <summary>True when every currently relevant tier has reached its requested activation state.</summary>
+    public bool IsSettled()
+    {
+        foreach (RegionCellResource cell in _cells)
+        {
+            WorldStreamingTier target = _desired.GetValueOrDefault(cell.Id);
+            if (target == WorldStreamingTier.Unloaded)
+            {
+                continue;
+            }
+            if (!_runtime.TryGetValue(cell.Id, out WorldCellActivation? runtime) || runtime.Tier != target)
+            {
+                return false;
+            }
+        }
+        return _pending.Count == 0 && _requests.Count == 0 && _ready.Count == 0 &&
+               _activationQueue.Count == 0;
+    }
 
     /// <summary>True when at least one cell has exhausted its retries. The region can never settle
     /// while this holds; the caller decides what an unbuildable world means (the bootstrap refuses
@@ -181,35 +240,99 @@ public sealed partial class RegionStreamer : Node3D
     /// player is about to stand in, ahead of the rest of the region.</summary>
     public bool IsCellLoaded(string cellId) => _loaded.ContainsKey(cellId);
 
+    /// <summary>Pins the landing cell to Near until the loading coordinator releases it.</summary>
+    public void RequirePosition(Vector3 position)
+    {
+        _fallbackFocus = position;
+        _requiredCellId = CellAt(position)?.Id;
+        RefreshDesiredTiers(force: true);
+        SetProcess(true);
+    }
+
+    public void ReleaseRequiredPosition() => _requiredCellId = null;
+
+    /// <summary>Tool/probe focus. Production focus comes from the live player.</summary>
+    public void SetStreamingFocus(Vector3 position)
+    {
+        _toolFocus = position;
+        RefreshDesiredTiers(force: true);
+        SetProcess(true);
+    }
+
+    public void ClearStreamingFocus() => _toolFocus = null;
+
+    public bool IsPositionReady(Vector3 position, bool requireNavigation = false)
+    {
+        RegionCellResource? cell = CellAt(position);
+        return cell != null && _runtime.TryGetValue(cell.Id, out WorldCellActivation? runtime) &&
+               runtime.Tier == WorldStreamingTier.Near && runtime.HasTerrainCollision() &&
+               (!requireNavigation || runtime.HasNavigation());
+    }
+
+    public int ActiveCellCount() => _gameplayActive.Count;
+
+    public int ResidentCellCount() => _loaded.Count;
+
+    public void SetDebugVisualization(bool enabled)
+    {
+        _debugDraw ??= new WorldStreamingDebugDraw { Name = "StreamingCells", Visible = false };
+        if (_debugDraw.GetParent() == null)
+        {
+            AddChild(_debugDraw);
+        }
+        _debugDraw.Visible = enabled;
+        if (enabled)
+        {
+            _debugDraw.Rebuild(_cells, _desired);
+        }
+    }
+
+    /// <summary>Parents an emergent actor to the active cell that owns its lifetime.</summary>
+    public bool TryAddCellOwnedActor(Node3D actor, Vector3 position)
+    {
+        RegionCellResource? cell = CellAt(position);
+        if (cell == null || !_gameplayActive.Contains(cell.Id) ||
+            !_loaded.TryGetValue(cell.Id, out Node3D? root))
+        {
+            return false;
+        }
+        root.AddChild(actor);
+        return true;
+    }
+
     public override void _Process(double delta)
     {
-        // No player lookup and no distance test any more: every cell of the active region belongs in
-        // the tree, so the only question left is whether it is there yet.
+        _decisionTimer -= (float)delta;
+        if (_decisionTimer <= 0f)
+        {
+            RefreshDesiredTiers(force: false);
+            _decisionTimer = _streamingBudget?.VisibilityUpdateInterval ?? 0.25f;
+        }
+
         foreach (RegionCellResource cell in _cells)
         {
-            if (!_loaded.ContainsKey(cell.Id) && !_failed.Contains(cell.Id))
+            WorldStreamingTier target = _desired.GetValueOrDefault(cell.Id);
+            if (target != WorldStreamingTier.Unloaded && !_loaded.ContainsKey(cell.Id) &&
+                !_failed.Contains(cell.Id))
             {
                 Enqueue(cell);
             }
+            else if (target == WorldStreamingTier.Unloaded && _loaded.ContainsKey(cell.Id))
+            {
+                Unload(cell.Id);
+            }
+            else if (_runtime.TryGetValue(cell.Id, out WorldCellActivation? runtime) &&
+                     runtime.TargetTier != target)
+            {
+                ScheduleTier(cell.Id, target);
+            }
         }
 
+        SortPendingByPriority();
         StartThreadedRequests();
         PollThreadedRequests();
         InstantiateReadyCells();
-
-        // The region is whole: stop the sweep until something re-targets the streamer. It is not a
-        // free callback — it walks every cell, and StartThreadedRequests reads the static-memory
-        // performance monitor — and residency (38M2) means there is nothing left for it to decide.
-        // Configure and UnloadAll are the only two things that create work, and both re-arm it.
-        // ⚠️ EVERY CELL RESOLVED, NOT "NOTHING IN FLIGHT". A cell between retries is in none of the
-        // three staging sets for the rest of the frame it failed on, so testing those alone parked
-        // the sweep on the frame the last other cell finished — and nothing re-arms it but Configure
-        // or UnloadAll, so the cell was left with retries it would never take and the region could
-        // never settle. Resolved means loaded, or retired after MaxAttempts.
-        if (_loaded.Count + _failed.Count == _cells.Count)
-        {
-            SetProcess(false);
-        }
+        AdvanceActivations();
     }
 
     private static WorldWaterResource? FirstAuthoredWater(RegionResource? region)
@@ -256,7 +379,7 @@ public sealed partial class RegionStreamer : Node3D
         {
             RegionCellResource cell = _pending[0];
             _pending.RemoveAt(0);
-            if (_loaded.ContainsKey(cell.Id))
+            if (_loaded.ContainsKey(cell.Id) || _desired.GetValueOrDefault(cell.Id) == WorldStreamingTier.Unloaded)
             {
                 _pendingIds.Remove(cell.Id);
                 continue;
@@ -268,8 +391,9 @@ public sealed partial class RegionStreamer : Node3D
                 continue;
             }
 
+            string scenePath = ScenePathFor(cell);
             Error error = ResourceLoader.LoadThreadedRequest(
-                cell.ScenePath, "PackedScene", useSubThreads: true, ResourceLoader.CacheMode.Ignore);
+                scenePath, "PackedScene", useSubThreads: true, ResourceLoader.CacheMode.Ignore);
             if (error is not Error.Ok and not Error.AlreadyInUse)
             {
                 Fail(cell.Id, $"threaded request failed to start ({error})");
@@ -284,7 +408,8 @@ public sealed partial class RegionStreamer : Node3D
         foreach (string cellId in new List<string>(_requests.Keys))
         {
             RegionCellResource cell = _requests[cellId];
-            ResourceLoader.ThreadLoadStatus status = ResourceLoader.LoadThreadedGetStatus(cell.ScenePath);
+            string scenePath = ScenePathFor(cell);
+            ResourceLoader.ThreadLoadStatus status = ResourceLoader.LoadThreadedGetStatus(scenePath);
             if (status == ResourceLoader.ThreadLoadStatus.InProgress)
             {
                 continue;
@@ -292,7 +417,7 @@ public sealed partial class RegionStreamer : Node3D
 
             _requests.Remove(cellId);
             if (status == ResourceLoader.ThreadLoadStatus.Loaded &&
-                ResourceLoader.LoadThreadedGet(cell.ScenePath) is PackedScene scene)
+                ResourceLoader.LoadThreadedGet(scenePath) is PackedScene scene)
             {
                 _ready.Add(new ReadyCell(cell, scene));
                 continue;
@@ -310,7 +435,8 @@ public sealed partial class RegionStreamer : Node3D
             ReadyCell ready = _ready[0];
             _ready.RemoveAt(0);
             _pendingIds.Remove(ready.Cell.Id);
-            if (!_loaded.ContainsKey(ready.Cell.Id))
+            if (!_loaded.ContainsKey(ready.Cell.Id) &&
+                _desired.GetValueOrDefault(ready.Cell.Id) != WorldStreamingTier.Unloaded)
             {
                 Instantiate(ready.Cell, ready.Scene);
             }
@@ -330,27 +456,44 @@ public sealed partial class RegionStreamer : Node3D
         // Order matters and each step reads the one before it: clip the region field to this cell,
         // drop the authored nodes onto the ground (before the terrain collider exists, so the
         // conformer cannot try to lift it), then build terrain, then scatter on top of terrain.
-        WorldHeightfield? view = _heightfield != null && cell.Presentation != null
-            ? WorldTerrainMeshBuilder.ViewFor(_heightfield, cell.Presentation, cell.Center)
-            : _heightfield;
-        if (view != null)
+        WorldBiomeScatter? scatter;
+        if (_preparedRegion == null)
         {
-            WorldTerrainConform.Apply(root, view, cell.Center);
+            WorldHeightfield? view = _heightfield != null && cell.Presentation != null
+                ? WorldTerrainMeshBuilder.ViewFor(_heightfield, cell.Presentation, cell.Center)
+                : _heightfield;
+            if (view != null)
+            {
+                WorldTerrainConform.Apply(root, view, cell.Center);
+            }
+            WorldCellPresentation.Attach(
+                root, _environmentProfile, cell.Presentation, view, cell.Center,
+                _terrainJobs?.Take(cell.Id));
+            WorldCellWater.Attach(root, cell.Presentation, view, cell.Center, _waterPalette);
+            scatter = WorldBiomeScatter.Attach(
+                root, cell.Presentation, cell.BiomeScatter, view, cell.Center);
         }
-        WorldCellPresentation.Attach(
-            root, _environmentProfile, cell.Presentation, view, cell.Center,
-            _terrainJobs?.Take(cell.Id));
-        WorldCellWater.Attach(root, cell.Presentation, view, cell.Center, _waterPalette);
-        WorldBiomeScatter? scatter = WorldBiomeScatter.Attach(
-            root, cell.Presentation, cell.BiomeScatter, view, cell.Center);
+        else
+        {
+            scatter = root.GetNodeOrNull<WorldBiomeScatter>("BiomeScatter");
+        }
+        var activation = new WorldCellActivation(root);
         AddChild(root);
+        foreach (string issue in WorldPhysicsContract.Validate(root))
+        {
+            Log.Error($"World collision contract: {issue}");
+        }
         _loaded[cell.Id] = root;
+        _runtime[cell.Id] = activation;
         _performance?.RecordCellLoaded(cell.Id, root, scatter?.InstanceCount ?? 0);
         _visibility?.RecordCellLoaded(cell.Id, scatter);
 
-        Log.Info($"RegionStreamer: loaded cell '{cell.Id}'.");
-        EventBus.Instance?.Publish(new RegionCellLoadedEvent(cell.Id, root));
+        ScheduleTier(cell.Id, _desired.GetValueOrDefault(cell.Id));
+        Log.Info($"RegionStreamer: resident cell '{cell.Id}'.");
     }
+
+    private string ScenePathFor(RegionCellResource cell) =>
+        _preparedRegion != null ? WorldBakePaths.Cell(ActiveRegionId, cell.Id) : cell.ScenePath;
 
     /// <summary>Retires a cell that cannot be brought in — after <see cref="MaxAttempts"/> tries.
     /// See <see cref="_failed"/> and <see cref="_attempts"/>.</summary>
@@ -389,13 +532,152 @@ public sealed partial class RegionStreamer : Node3D
             return;
         }
 
-        // Announce before freeing so 25D persistence can capture cell state.
-        EventBus.Instance?.Publish(new RegionCellUnloadedEvent(cellId));
+        // Announce before freeing so persistence can capture cell-owned state.
+        if (_gameplayActive.Remove(cellId))
+        {
+            EventBus.Instance?.Publish(new RegionCellUnloadedEvent(cellId));
+        }
         _loaded.Remove(cellId);
+        _runtime.Remove(cellId);
         _performance?.RecordCellUnloaded(cellId);
         _visibility?.RecordCellUnloaded(cellId);
         root.QueueFree();
-        Log.Info($"RegionStreamer: unloaded cell '{cellId}'.");
+        Log.Info($"RegionStreamer: unloaded resident cell '{cellId}'.");
+    }
+
+    private void RefreshDesiredTiers(bool force)
+    {
+        if (_cells.Count == 0)
+        {
+            return;
+        }
+
+        Vector3 position = _toolFocus ?? _fallbackFocus;
+        Vector3 velocity = Vector3.Zero;
+        if (_toolFocus == null && ServiceLocator.Instance is { } locator &&
+            locator.TryGet(out PlayerCharacter player) && IsInstanceValid(player))
+        {
+            position = player.GlobalPosition;
+            velocity = player.Velocity;
+        }
+
+        WorldStreamingLimits limits = _streamingBudget?.StreamingLimits() ?? new WorldStreamingLimits(
+            85f, 170f, 300f, 460f, 30f, 2f, 0.65f);
+        foreach (RegionCellResource cell in _cells)
+        {
+            WorldStreamingTier current = _runtime.TryGetValue(cell.Id, out WorldCellActivation? runtime)
+                ? runtime.Tier
+                : WorldStreamingTier.Unloaded;
+            Vector2 halfExtent = cell.Presentation == null
+                ? new Vector2(30f, 30f)
+                : new Vector2(cell.Presentation.Width * 0.5f, cell.Presentation.Depth * 0.5f);
+            WorldStreamingTier target = WorldStreamingPolicy.DesiredTier(
+                position, velocity, cell.Center, halfExtent, current, limits,
+                cell.Id == _requiredCellId);
+            if (force || _desired.GetValueOrDefault(cell.Id) != target)
+            {
+                _desired[cell.Id] = target;
+                if (runtime != null)
+                {
+                    ScheduleTier(cell.Id, target);
+                }
+            }
+        }
+
+        SortPendingByPriority();
+        if (_debugDraw?.Visible == true)
+        {
+            _debugDraw.Rebuild(_cells, _desired);
+        }
+    }
+
+    private RegionCellResource? CellAt(Vector3 position)
+    {
+        RegionCellResource? nearest = null;
+        float nearestDistance = float.MaxValue;
+        foreach (RegionCellResource cell in _cells)
+        {
+            Vector2 half = cell.Presentation == null
+                ? new Vector2(30f, 30f)
+                : new Vector2(cell.Presentation.Width * 0.5f, cell.Presentation.Depth * 0.5f);
+            float distance = WorldStreamingPolicy.DistanceToFootprint(position, cell.Center, half);
+            if (distance <= 0.01f)
+            {
+                return cell;
+            }
+            if (distance < nearestDistance)
+            {
+                nearest = cell;
+                nearestDistance = distance;
+            }
+        }
+        return nearest;
+    }
+
+    private void SortPendingByPriority()
+    {
+        Vector3 focus = _toolFocus ?? _fallbackFocus;
+        _pending.Sort((a, b) =>
+        {
+            if (a.Id == _requiredCellId)
+            {
+                return b.Id == _requiredCellId ? 0 : -1;
+            }
+            if (b.Id == _requiredCellId)
+            {
+                return 1;
+            }
+            int tier = ((int)_desired.GetValueOrDefault(b.Id)).CompareTo(
+                (int)_desired.GetValueOrDefault(a.Id));
+            return tier != 0
+                ? tier
+                : a.Center.DistanceSquaredTo(focus).CompareTo(b.Center.DistanceSquaredTo(focus));
+        });
+    }
+
+    private void ScheduleTier(string cellId, WorldStreamingTier target)
+    {
+        if (!_runtime.TryGetValue(cellId, out WorldCellActivation? runtime))
+        {
+            return;
+        }
+        if (_gameplayActive.Contains(cellId) && target != WorldStreamingTier.Near)
+        {
+            _gameplayActive.Remove(cellId);
+            EventBus.Instance?.Publish(new RegionCellUnloadedEvent(cellId));
+        }
+        runtime.TargetTier = target;
+        runtime.Stage = 0;
+        if (_activationQueued.Add(cellId))
+        {
+            _activationQueue.Enqueue(cellId);
+        }
+    }
+
+    private void AdvanceActivations()
+    {
+        ulong started = Time.GetTicksUsec();
+        double budgetUsec = (_streamingBudget?.ActivationBudgetMilliseconds ?? 2f) * 1000d;
+        while (_activationQueue.Count > 0 && Time.GetTicksUsec() - started < budgetUsec)
+        {
+            string cellId = _activationQueue.Dequeue();
+            _activationQueued.Remove(cellId);
+            if (!_runtime.TryGetValue(cellId, out WorldCellActivation? runtime))
+            {
+                continue;
+            }
+            bool complete = runtime.Advance();
+            if (!complete)
+            {
+                _activationQueued.Add(cellId);
+                _activationQueue.Enqueue(cellId);
+                continue;
+            }
+            if (runtime.Tier == WorldStreamingTier.Near && _gameplayActive.Add(cellId))
+            {
+                EventBus.Instance?.Publish(new RegionCellLoadedEvent(cellId, runtime.Root));
+            }
+        }
     }
 
     private void EnsurePerformanceMonitor()
