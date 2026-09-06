@@ -26,6 +26,7 @@ and breach — is preserved to the metre. What this file adds around them is geo
 from __future__ import annotations
 
 import argparse
+import difflib
 import re
 import subprocess
 from quality_common import legacy_run, legacy_check_output
@@ -242,6 +243,14 @@ def _blocks(text: str) -> dict[str, str]:
     return {m.group(1): m.group(2).rstrip() + "\n" for m in _BLOCK.finditer(text)}
 
 
+# ⚠️ THE KEYS THIS GENERATOR APPENDS TO A LIFTED AREA BLOCK, IN THE ORDER IT APPENDS THEM.
+# The emitter and the shallow-clone fallback below MUST agree on this list, which is why it is a
+# constant rather than a regex written out twice. When they disagreed, the fallback re-appended the
+# key it had forgotten to strip and every region came back drifted — a red required CI job for
+# three days that reproduced on no developer's machine, because a full clone never takes that path.
+APPENDED_AREA_KEYS = ("ElevationMode", "Elevation")
+
+
 def legacy_blocks(filename: str) -> dict[str, str]:
     """The sub-resources this generator lifts verbatim out of LEGACY_REV.
 
@@ -267,12 +276,24 @@ def legacy_blocks(filename: str) -> dict[str, str]:
         legacy_run(["git", "fetch", "--depth=1", "origin", LEGACY_REV],
                        cwd=ROOT, capture_output=True, text=True)
         text = show()
+        if text is not None:
+            print(f"  note: {filename} legacy blocks needed a fetch of {LEGACY_REV}")
     if text is None:
-        # ⚠️ The committed file is the generator's OWN output, so the one line this generator appends
-        # to a lifted area block — `Elevation`, from `Cell.area_elevation` — is already in it. Left
-        # in, the fallback emits it twice and `--check` reports every region as drifted, which is a
-        # worse failure than the one it is recovering from.
-        text = re.sub(r"^Elevation = .*\n", "", (ROOT / path).read_text(encoding="utf-8"), flags=re.M)
+        # ⚠️ SAY SO. Which of the three sources supplied the lifted blocks is the single most useful
+        # fact when this generator disagrees with itself across machines, and it used to be silent —
+        # so a shallow CI clone and a full local clone could produce different files and the only
+        # symptom was an unexplained "would change" on a runner nobody could attach to.
+        print(f"  note: {filename} legacy blocks fell back to the committed .tres "
+              f"({LEGACY_REV} not reachable — expected on a shallow CI clone)")
+        # ⚠️ The committed file is the generator's OWN output, so every line this generator appends
+        # to a lifted area block is already in it. Left in, the fallback emits them twice and
+        # `--check` reports every region as drifted — a worse failure than the one it is recovering
+        # from, and the one that actually shipped: this stripped `Elevation` only, `ElevationMode`
+        # was added to the emitter later, and nothing tied the two together. APPENDED_AREA_KEYS is
+        # now that tie.
+        appended = "|".join(APPENDED_AREA_KEYS)
+        text = re.sub(rf"^(?:{appended}) = .*\n", "",
+                      (ROOT / path).read_text(encoding="utf-8"), flags=re.M)
     return _blocks(text)
 
 
@@ -422,8 +443,12 @@ def emit(region_key: str, header: str, cells: list[Cell], seams: list[Seam],
             # puts underneath the pad, the authored intent survives re-tuning a region
             # profile: "cut five metres into this knoll" stays five metres into the knoll
             # wherever the knoll ends up, and no re-anchoring pass is ever needed again.
+            # ⚠️ ANYTHING APPENDED HERE MUST BE NAMED IN APPENDED_AREA_KEYS, or the shallow-clone
+            # fallback in legacy_blocks() will not strip it back off and every region will report
+            # as drifted on CI while passing on every full clone.
             body += "\nElevationMode = 1"
             if aid in cell.area_blend:
+                # Substituted in place rather than appended, so it needs no entry in that list.
                 body = re.sub(r"^SurfaceBlend = .*$",
                               f"SurfaceBlend = {cell.area_blend[aid]}",
                               body, count=1, flags=re.M)
@@ -517,11 +542,58 @@ def write(path: Path, text: str, check: bool) -> bool:
     if current == text:
         return False
     if check:
+        # ⚠️ "would change" ON ITS OWN IS NOT AN ACTIONABLE FAILURE, and it cost this repo three
+        # days of a red required CI job that nobody could act on: the gate said a generated file
+        # was stale, every local run said it was current, and the message carried nothing to tell
+        # the two apart. A --check that fails on a machine you cannot reach has to say WHAT differs.
         print(f"would change: {path.relative_to(ROOT)}")
+        for line in difflib.unified_diff(
+                current.splitlines(), text.splitlines(),
+                fromfile=f"{path.name} (on disk)", tofile=f"{path.name} (generated)",
+                lineterm="", n=1):
+            print(f"  {line}")
         return True
     path.write_text(text, encoding="utf-8")
     print(f"wrote {path.relative_to(ROOT)}")
     return True
+
+
+def fallback_agrees(builder, filename: str, expected: str) -> bool:
+    """The shallow-clone fallback must produce byte-identical output to the pinned revision.
+
+    ⚠️ THIS IS THE GUARD FOR THE BUG THAT PUT IT HERE, AND IT HAS TO RUN ON A FULL CLONE.
+    `legacy_blocks` has two sources — `git show LEGACY_REV` on a normal checkout, and the committed
+    `.tres` with the appended keys stripped back off when that revision is unreachable. **Only the
+    second one runs on CI**, because `actions/checkout` clones at depth 1, and only the first one
+    runs anywhere a developer works. So the two drifted apart and nothing noticed for three days:
+    every local run took the good path and every CI run took the broken one, and the failure
+    reproduced on nobody's machine.
+
+    A machine that can reach the revision can compute BOTH, so it is the one that must compare them.
+    That inverts the problem: the divergence is caught on a developer's own full clone, before it
+    can reach the shallow one where it is undebuggable. Skipped when the revision is unreachable,
+    because there a fallback is all there is and there is nothing to compare it against.
+    """
+    if legacy_run(["git", "cat-file", "-e", LEGACY_REV],
+                  cwd=ROOT, capture_output=True, text=True).returncode != 0:
+        return True
+
+    stripped = "|".join(APPENDED_AREA_KEYS)
+    source = re.sub(rf"^(?:{stripped}) = .*\n", "",
+                    (REGIONS / filename).read_text(encoding="utf-8"), flags=re.M)
+    text, _ = builder(_blocks(source))
+    if text == expected:
+        return True
+
+    print(f"FALLBACK DRIFT: {filename} generates differently from the committed .tres than from "
+          f"{LEGACY_REV}, so CI's shallow clone would disagree with this machine.", file=sys.stderr)
+    print("  Every key the emitter APPENDS to a lifted area block must be in APPENDED_AREA_KEYS.",
+          file=sys.stderr)
+    for line in difflib.unified_diff(expected.splitlines(), text.splitlines(),
+                                     fromfile=f"{filename} (from {LEGACY_REV})",
+                                     tofile=f"{filename} (from the fallback)", lineterm="", n=1):
+        print(f"  {line}", file=sys.stderr)
+    return False
 
 
 def main() -> int:
@@ -539,6 +611,8 @@ def main() -> int:
         text, problems = builder(legacy_blocks(filename))
         issues += problems
         changed |= write(REGIONS / filename, text, args.check)
+        if args.check and not fallback_agrees(builder, filename, text):
+            changed = True
 
     if issues:
         for issue in issues:
