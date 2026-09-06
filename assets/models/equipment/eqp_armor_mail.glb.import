@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://fflfvnepxgfe"
-path="res://.godot/imported/prp_weapon_stand.gltf-c54f128dd123a1e51fe81b56c4335d85.scn"
+uid="uid://p43a610c31rd"
+path="res://.godot/imported/eqp_armor_mail.glb-b182e355607b9f2f38cc075d0222cf28.scn"
 
 [deps]
 
-source_file="res://assets/models/props/prp_weapon_stand.gltf"
-dest_files=["res://.godot/imported/prp_weapon_stand.gltf-c54f128dd123a1e51fe81b56c4335d85.scn"]
+source_file="res://assets/models/equipment/eqp_armor_mail.glb"
+dest_files=["res://.godot/imported/eqp_armor_mail.glb-b182e355607b9f2f38cc075d0222cf28.scn"]
 
 [params]
 

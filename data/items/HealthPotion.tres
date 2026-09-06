@@ -12,5 +12,6 @@ Rarity = 0
 MaxStack = 10
 Weight = 0.5
 Value = 25
+WorldModelPath = "res://assets/models/props/prp_item_potion.glb"
 HealAmount = 40.0
 TradeTags = Array[String](["potion"])

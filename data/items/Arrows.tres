@@ -15,5 +15,6 @@ Rarity = 0
 MaxStack = 60
 Weight = 0.05
 Value = 2
+WorldModelPath = "res://assets/models/weapons/wpn_arrow.glb"
 Slot = 10
 TradeTags = Array[String](["weapon"])

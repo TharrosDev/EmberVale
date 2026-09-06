@@ -13,6 +13,7 @@ Rarity = 1
 MaxStack = 1
 Weight = 3.5
 Value = 85
+WorldModelPath = "res://assets/models/weapons/wpn_sword_iron.glb"
 Slot = 1
 Weapon = ExtResource("2_wpn")
 BonusPhysicalPower = 3.0

@@ -14,4 +14,5 @@ Rarity = 1
 MaxStack = 5
 Weight = 1.8
 Value = 90
+WorldModelPath = "res://assets/models/props/prp_item_book.glb"
 TradeTags = Array[String](["tome", "arcane"])

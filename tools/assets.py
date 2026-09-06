@@ -34,6 +34,7 @@ import datetime as dt
 import json
 import os
 import shutil
+import re
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -145,11 +146,44 @@ def build_manifest() -> dict[str, Any]:
                               if raw_height is not None else None)
         refs = audit_3d.usage_for(relative, texts)["count"]
         record["refs"] = refs
-        record["status"] = "active" if refs else "unreferenced"
+        record["status"] = ("active" if refs or referenced_by_name(relative)
+                            else "unreferenced")
         assets.append(record)
     return {"schema_version": 1,
             "generated_by": "python tools/assets.py status --write",
             "assets": assets}
+
+
+# ⚠️ A REFERENCE COUNT FOUND BY SEARCHING FOR A LITERAL PATH CANNOT SEE A COMPUTED ONE, and
+# `compose_building.py` computes most of the architecture kit's names. It asks for a roof by size
+# (`roof_{wide*2}x{deep*2}`) and for the optional pieces by flag (`stairs_exterior` under --stairs,
+# `roof_dormer` under --dormer), so the string "mod_roof_6x10" appears nowhere in the repository
+# even though deleting the file breaks every 6x10 shell the composer can build.
+#
+# This bit once: an audit read `mod_stairs_exterior` and `mod_roof_6x10` as dead and proposed
+# deleting both. `src/Core/ModelAssets.cs` carries the same warning for gameplay paths, and for the
+# same reason -- it keeps every path a complete literal so this counter can see it. The composer
+# cannot do that, because the whole point of it is that the name is derived from the geometry.
+COMPOSED_BY_PATTERN = (
+    re.compile(r"^mod_roof_\d+x\d+$"),
+    re.compile(r"^mod_gable_\d+$"),
+    re.compile(r"^mod_(stairs_exterior|roof_dormer|roof_awning|roof_supports|vine)$"),
+)
+
+# The same blind spot, one directory over: `tools/build_meshy_anim_library.gd` reads its whole
+# SOURCE_DIR and takes each clip's gameplay slot from the FILENAME, so all 25 animation sources are
+# referenced by the folder rather than by name. They are the inputs to `anim_meshy.res`, which is
+# what the game actually loads -- deleting one silently drops a gameplay slot out of the shared
+# library, which is `docs/3D_ASSETS.md`'s quietest failure: the actor just stands in its bind pose.
+DIRECTORY_CONSUMED = ("assets/models/animations/meshy/",)
+
+
+def referenced_by_name(relative: str) -> bool:
+    """True when a tool derives this file's name, or reads its whole folder, instead of naming it."""
+    if any(relative.replace("\\", "/").startswith(prefix) for prefix in DIRECTORY_CONSUMED):
+        return True
+    stem = Path(relative).stem
+    return any(pattern.match(stem) for pattern in COMPOSED_BY_PATTERN)
 
 
 def load_manifest() -> dict[str, Any] | None:
@@ -383,7 +417,12 @@ def cmd_adopt(args: argparse.Namespace) -> int:
         if args.strip_animations:
             step += ["--strip-animations"]
     print(f"  -> {command_text(step)}")
-    if run_process(step, cwd=ROOT, timeout=1800).returncode != 0:
+    adopted = run_process(step, cwd=ROOT, timeout=1800)
+    if adopted.returncode != 0:
+        # ⚠️ run_process CAPTURES both streams, so a failing step used to print nothing at all and
+        # the command looked like it had simply decided not to work. The child's own message is the
+        # only thing that says which of the two adoption paths was the wrong one.
+        print(adopted.output.rstrip(), file=sys.stderr)
         return 1
 
     # ⚠️ A replacement inherits its predecessor's .import, including its root_scale. npc_woman_dress
@@ -451,7 +490,8 @@ def main() -> int:
     adopt = sub.add_parser("adopt", help="source model -> validated production asset")
     adopt.add_argument("source")
     adopt.add_argument("dest", help="repo-relative destination, e.g. assets/models/characters/npc_x.glb")
-    adopt.add_argument("--kit", action="store_true", help="adopt a MegaKit .gltf instead of a Meshy .glb")
+    adopt.add_argument("--kit", action="store_true",
+                       help="the source is a STATIC model (.gltf or .glb) rather than a rigged Meshy body")
     adopt.add_argument("--shared", action="store_true", help="kit only: share textures rather than embed")
     adopt.add_argument("--root-scale", type=float, default=None)
     adopt.add_argument("--strip-animations", action="store_true")

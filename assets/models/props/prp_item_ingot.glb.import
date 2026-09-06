@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://5aldw5mx755b"
-path="res://.godot/imported/prp_anvil.gltf-772d6c87da331d2e040e91ba9bbf5d0e.scn"
+uid="uid://bxbe1q85uufke"
+path="res://.godot/imported/prp_item_ingot.glb-1ddff04d3080a58619b458c91faba173.scn"
 
 [deps]
 
-source_file="res://assets/models/props/prp_anvil.gltf"
-dest_files=["res://.godot/imported/prp_anvil.gltf-772d6c87da331d2e040e91ba9bbf5d0e.scn"]
+source_file="res://assets/models/props/prp_item_ingot.glb"
+dest_files=["res://.godot/imported/prp_item_ingot.glb-1ddff04d3080a58619b458c91faba173.scn"]
 
 [params]
 

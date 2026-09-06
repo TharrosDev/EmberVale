@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://bg88h70jnmn1o"
-path="res://.godot/imported/mod_wall_arch.gltf-5ecdf8bb4ad0c7576967793c5b69d1cb.scn"
+uid="uid://dp7rgd40ain5o"
+path="res://.godot/imported/wpn_dagger_iron.glb-d87327ac0556ce08c13eff1b56cff257.scn"
 
 [deps]
 
-source_file="res://assets/models/architecture/mod_wall_arch.gltf"
-dest_files=["res://.godot/imported/mod_wall_arch.gltf-5ecdf8bb4ad0c7576967793c5b69d1cb.scn"]
+source_file="res://assets/models/weapons/wpn_dagger_iron.glb"
+dest_files=["res://.godot/imported/wpn_dagger_iron.glb-d87327ac0556ce08c13eff1b56cff257.scn"]
 
 [params]
 

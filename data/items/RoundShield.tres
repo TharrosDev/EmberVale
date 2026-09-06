@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="EquippableItemResource" load_steps=2 format=3 uid="uid://cmbrvlitemroundshield"]
+
+[ext_resource type="Script" path="res://src/Items/EquippableItemResource.cs" id="1_eq"]
+
+; The realm's first off-hand item, and the reason it exists is that the socket did.
+; EquipmentSocket.Shield, its forearm bone-preference list and eqp_shield_round.glb were all shipped
+; by the 2026-09-05 combat overhaul and no item in the game had EquipmentSlot.OffHand, so the whole
+; path was dead code that passed every gate. A system with no caller is the thing CLAUDE.md §1
+; forbids; this is the caller.
+;
+; Deliberately plain and cheap, for the same reason the Hunting Bow is: an off-hand option nobody can
+; afford is a system with a caller nobody reaches. Blocking is already free with any weapon, so the
+; shield buys armour and a silhouette rather than a new verb.
+[resource]
+script = ExtResource("1_eq")
+Id = "item.armor.round_shield"
+DisplayName = "Round Shield"
+Description = "Banded lime-wood on an iron boss, the face scarred pale where blows have taken the paint off."
+Type = 3
+Rarity = 1
+MaxStack = 1
+Weight = 4.0
+Value = 70
+WorldModelPath = "res://assets/models/equipment/eqp_shield_round.glb"
+Slot = 2
+BonusArmor = 4.0
+TradeTags = Array[String](["armor", "metal"])

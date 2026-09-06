@@ -12,3 +12,4 @@ Rarity = 0
 MaxStack = 9999
 Weight = 0.0
 Value = 1
+WorldModelPath = "res://assets/models/props/prp_item_coin.glb"

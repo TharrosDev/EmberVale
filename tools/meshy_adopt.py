@@ -137,6 +137,12 @@ def build_bone_map(doc: dict) -> tuple[dict[str, str], str]:
     the non-shoulder branch is Neck then Head.
     """
     nodes = doc["nodes"]
+    if not doc.get("skins"):
+        # ⚠️ This path is for a RIGGED body. A static prop reaching it used to die on a bare
+        # `KeyError: 'skins'`, which reads as a broken tool rather than as the wrong command.
+        raise SystemExit(
+            "meshy_adopt: this model has no skin/rig, so it is a static prop, not a character."
+            "  Adopt it with:  python tools/assets.py adopt <src> <dest> --kit")
     joints = {nodes[j].get("name") for j in doc["skins"][0]["joints"]}
     by_name = {node.get("name"): i for i, node in enumerate(nodes)}
     mapping: dict[str, str] = {}

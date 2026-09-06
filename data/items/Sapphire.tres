@@ -14,4 +14,5 @@ Rarity = 2
 MaxStack = 20
 Weight = 0.1
 Value = 140
+WorldModelPath = "res://assets/models/props/prp_item_gem.glb"
 TradeTags = Array[String](["gem", "luxury"])

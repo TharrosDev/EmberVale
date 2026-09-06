@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://csr0iyarul153"
-path="res://.godot/imported/mod_floor_stone.gltf-1412e882003f13ef91d3032f1ef759ee.scn"
+uid="uid://bjwpfu7fxuuml"
+path="res://.godot/imported/prp_item_potion.glb-a23a8a952a4b611ce163409d3bc4bc51.scn"
 
 [deps]
 
-source_file="res://assets/models/architecture/mod_floor_stone.gltf"
-dest_files=["res://.godot/imported/mod_floor_stone.gltf-1412e882003f13ef91d3032f1ef759ee.scn"]
+source_file="res://assets/models/props/prp_item_potion.glb"
+dest_files=["res://.godot/imported/prp_item_potion.glb-a23a8a952a4b611ce163409d3bc4bc51.scn"]
 
 [params]
 

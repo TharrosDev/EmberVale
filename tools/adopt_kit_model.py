@@ -24,7 +24,7 @@ Two modes, and picking the wrong one is expensive
 
 Usage
 -----
-    python tools/adopt_kit_model.py <source.gltf> <dest.glb> [--scale N]
+    python tools/adopt_kit_model.py <source.gltf|source.glb> <dest.glb> [--scale N]
     python tools/adopt_kit_model.py <source.gltf> <dest.gltf> --shared
 
 `--scale` writes a uniform scale onto the scene's root nodes (embed mode only). Prefer it over
@@ -46,16 +46,57 @@ def pad(data: bytes, fill: bytes) -> bytes:
     return data + fill * (-len(data) % 4)
 
 
+def read_glb(src: str) -> tuple[dict, bytearray]:
+    """Split a binary `.glb` into its JSON and BIN chunks.
+
+    ⚠️ **This exists because a static `.glb` had no adoption path at all**, and the two it fell
+    between both failed unhelpfully: `--kit` json.load()s the source and dies on a
+    `UnicodeDecodeError` at whatever byte the binary chunk starts on, while the default Meshy path
+    walks `doc["skins"]` and dies on a `KeyError` because a prop has no rig. Every vendored bundle
+    except the four MegaKits ships `.glb`, so that gap covered most of the library.
+    """
+    raw = open(src, "rb").read()
+    magic, _version, _length = struct.unpack_from("<III", raw, 0)
+    if magic != 0x46546C67:
+        raise SystemExit(f"{src} is not a glTF binary container")
+
+    gltf: dict | None = None
+    blob = bytearray()
+    offset = 12
+    while offset < len(raw):
+        size, kind = struct.unpack_from("<II", raw, offset)
+        chunk = raw[offset + 8:offset + 8 + size]
+        if kind == 0x4E4F534A:
+            gltf = json.loads(chunk.decode("utf-8"))
+        elif kind == 0x004E4942:
+            blob = bytearray(chunk)
+        offset += 8 + size
+
+    if gltf is None:
+        raise SystemExit(f"{src} has no JSON chunk")
+    return gltf, blob
+
+
 def pack(src: str, dest: str, scale: float | None = None) -> None:
     root = os.path.dirname(src)
-    gltf = json.load(open(src, encoding="utf-8"))
 
-    buffers = gltf.get("buffers", [])
-    if len(buffers) != 1:
-        raise SystemExit(f"expected exactly 1 buffer, found {len(buffers)} in {src}")
+    if src.lower().endswith(".glb"):
+        gltf, blob = read_glb(src)
+        buffers = gltf.get("buffers", [])
+        if len(buffers) != 1:
+            raise SystemExit(f"expected exactly 1 buffer, found {len(buffers)} in {src}")
+        # A `.glb`'s buffer is the BIN chunk and carries no URI; an image may still be external,
+        # which the loop below appends exactly as it does for a `.gltf`.
+        buffers[0].pop("uri", None)
+    else:
+        gltf = json.load(open(src, encoding="utf-8"))
 
-    blob = bytearray(open(os.path.join(root, buffers[0]["uri"]), "rb").read())
-    del buffers[0]["uri"]
+        buffers = gltf.get("buffers", [])
+        if len(buffers) != 1:
+            raise SystemExit(f"expected exactly 1 buffer, found {len(buffers)} in {src}")
+
+        blob = bytearray(open(os.path.join(root, buffers[0]["uri"]), "rb").read())
+        del buffers[0]["uri"]
 
     # Each sidecar image becomes a bufferView appended to the same buffer. Appending (rather than
     # rebuilding) is what keeps every existing accessor offset valid without touching one of them.
@@ -137,7 +178,7 @@ for _stream in (sys.stdout, sys.stderr):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("source", help="the pack .gltf to adopt")
+    parser.add_argument("source", help="the pack .gltf or .glb to adopt")
     parser.add_argument("dest", help="destination under assets/models/")
     parser.add_argument("--scale", type=float, default=None,
                         help="nodes/root_scale correction to write into the .import")

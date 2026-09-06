@@ -12,6 +12,7 @@ Rarity = 1
 MaxStack = 1
 Weight = 4.0
 Value = 40
+WorldModelPath = "res://assets/models/equipment/eqp_armor_leather.glb"
 Slot = 4
 BonusArmor = 10.0
 BonusMaxHealth = 15.0

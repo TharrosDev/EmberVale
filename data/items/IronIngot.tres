@@ -12,4 +12,5 @@ Rarity = 0
 MaxStack = 50
 Weight = 1.5
 Value = 12
+WorldModelPath = "res://assets/models/props/prp_item_ingot.glb"
 TradeTags = Array[String](["metal"])
