@@ -35,6 +35,24 @@ public partial class ItemResource : Resource
     [Export] public Texture2D? Icon { get; set; }
 
     /// <summary>
+    /// The model this item shows in the world: hung on the wielder's socket by
+    /// <c>EquipmentComponent</c> when equipped, dropped on the ground by <c>ItemPickupFactory</c>,
+    /// and stood on a plinth by <c>TrophyStandComponent</c>.
+    ///
+    /// ⚠️ <b>It lives on the base template on purpose, and it used to live on
+    /// <see cref="EquippableItemResource"/>.</b> One item has one appearance, and putting the path on
+    /// the equippable subclass meant the two places that show an item the player is NOT wearing — the
+    /// ground pickup and the trophy stand — could not reach it and drew a rarity-tinted primitive
+    /// instead. A potion on the floor was a glowing cube.
+    ///
+    /// <b>Empty is a supported state, and it means something different per consumer.</b> Equipped, it
+    /// leaves whatever is already in the hand, so an unauthored weapon degrades to the actor's default
+    /// rather than to an empty fist; on the ground and on a plinth it falls back to the rarity-tinted
+    /// shape, which still reads across a room.
+    /// </summary>
+    [Export] public string WorldModelPath { get; set; } = "";
+
+    /// <summary>
     /// What trades deal in this (Phase 38F) — words from <see cref="Economy.TradeTags"/>, e.g.
     /// <c>metal</c> + <c>weapon</c> for a sword. A merchant's <c>AcceptedTags</c> and <c>Specialties</c>
     /// are matched against these, so this one field decides who will buy an item and who pays over the

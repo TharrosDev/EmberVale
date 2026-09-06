@@ -90,6 +90,12 @@ def response(name: str) -> tuple[float, float]:
         return 1.0, 0.38
     if "metal" in key:
         return 1.0, 0.45
+    # ⚠️ "Steel" and "Iron" do NOT contain "metal", so before this branch they fell all the way
+    # through to the non-metal default and a sword blade came out matte. The values match the
+    # hand-authored `wpn_sword_iron` (0.82-0.90 / 0.32-0.46) and the kits' ColdIron and DarkIron,
+    # which is the family the rest of the game already renders.
+    if "steel" in key or "iron" in key or "brass" in key or "bronze" in key:
+        return 0.86, 0.40
     if "window" in key or "glass" in key:
         return 0.0, 0.24
     if "roof" in key or "tile" in key:
@@ -153,6 +159,29 @@ def main() -> None:
         if changed:
             print(f"{path.name}: corrected {changed} material(s); geometry payload preserved")
     print(f"props: {total} material(s) corrected across the folder")
+
+    # ⚠️ Weapons and equipment carry the SAME pack default and were never swept. The bow and arrow
+    # that shipped with the ranged system, and the round shield, all stood at 0.4 metallic on their
+    # wood and their cloth alike -- the exact defect this tool exists for, one folder over.
+    #
+    # ⚠️ THE FIVE GENERATED FILES ARE SKIPPED AND MUST STAY SKIPPED. They are `assets.py build`
+    # outputs whose materials are art-directed by their build scripts -- RimeCrystal at 0.26
+    # roughness, EmberRune at 0.42, ShadeGlass at 0.36, WornLeather at three different values on
+    # purpose. `response()` has no branch for any of them, so sweeping these would not correct
+    # them, it would flatten them: the frost enemies' crystal and the runes would come out as
+    # matte stone.
+    generated = {"npc_kit_embervale.glb", "enemy_identity_kit.glb", "eqp_pauldron_embervale.glb",
+                 "eqp_pouch_embervale.glb", "wpn_sword_iron.glb"}
+    total = 0
+    for folder in ("weapons", "equipment"):
+        for path in sorted((models / folder).glob("*.glb")):
+            if path.name in generated:
+                continue
+            changed = repair(path)
+            total += changed
+            if changed:
+                print(f"{path.name}: corrected {changed} material(s); geometry payload preserved")
+    print(f"weapons+equipment: {total} material(s) corrected across the folders")
 
 
 if __name__ == "__main__":

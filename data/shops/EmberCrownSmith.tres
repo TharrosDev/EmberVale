@@ -81,6 +81,13 @@ script = ExtResource("2_entry")
 ItemId = "item.armor.leather_cap"
 Quantity = 2
 
+; The first off-hand item in the game (see data/items/RoundShield.tres for why it exists at all).
+; One on the shelf, like the sword: gear the player can buy is an event, never a supply line.
+[sub_resource type="Resource" id="Stock_shield"]
+script = ExtResource("2_entry")
+ItemId = "item.armor.round_shield"
+Quantity = 1
+
 [sub_resource type="Resource" id="Stock_vest"]
 script = ExtResource("2_entry")
 ItemId = "item.armor.leather_vest"
@@ -135,7 +142,7 @@ NameKey = "shop.ember_crown.smith.name"
 FactionId = "faction.villagers"
 AcceptedTags = Array[String](["metal", "ore", "weapon", "armor", "tool"])
 Specialties = Array[String](["metal", "weapon", "armor"])
-Stock = Array[Resource]([SubResource("Stock_ingot"), SubResource("Stock_strips"), SubResource("Stock_scrap"), SubResource("Stock_sword"), SubResource("Stock_cap"), SubResource("Stock_vest"), SubResource("Stock_ring"), SubResource("Stock_mail"), SubResource("Stock_bow"), SubResource("Stock_arrows")])
+Stock = Array[Resource]([SubResource("Stock_ingot"), SubResource("Stock_strips"), SubResource("Stock_scrap"), SubResource("Stock_sword"), SubResource("Stock_cap"), SubResource("Stock_vest"), SubResource("Stock_ring"), SubResource("Stock_mail"), SubResource("Stock_bow"), SubResource("Stock_arrows"), SubResource("Stock_shield")])
 RestockDays = 2
 BuyMarkup = 1.5
 SellFraction = 0.45

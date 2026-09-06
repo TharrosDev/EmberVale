@@ -195,23 +195,48 @@
   - WARNING: **A GODOT `Resource` CANNOT BE CONSTRUCTED IN THE PURE SUITE**, and a test that tries
     does not fail - it takes the whole run down and reports 27 passing tests instead of 1892, looking
     green. Pure helpers take primitives; that is why.
-- **The world-production overhaul (2026-09-05) ⛔ NOT CLOSED.** The branch
-  `codex/world-production-overhaul` now has a deterministic offline bake (`tools/world_bake.py`),
-  28 hash-verified prepared artifacts, predictive Near/Mid/Far/Backdrop cell residency, staged
-  activation, one collision/navigation contract, one safe-placement service, cell-owned actors and
-  abstract persisted world events. Runtime terrain, collision, navigation and biome scatter all read
-  the prepared field instead of rebuilding separate versions of the world.
-  - **The source/generated authority is mechanical.** `tools/world_bake.py --check` fingerprints the
-    region specs, generator profiles, authored resources, scenes, relevant world code and import
-    metadata; it reports each stale, missing, unexpected or modified output. The fast quality suite
-    runs this gate and is green.
-  - **Do not merge this branch yet.** The 2026-09-05 engine suite passed content, transition, mesh,
-    scene, map, collision and streaming-stress gates, but failed lifecycle, step-up, regression and
-    traversal. Prepared terrain colliders currently report a missing `WorldStatic` layer at runtime;
-    the Salt Steps player falls instead of climbing; failed-cell settlement semantics regressed; and
-    three authored traversal probes fail (Wilds West capsule snag plus Ash Roost and Aerie Ascent NPC
-    paths). The engine also reports the existing two-edge navigation raster warning. Per maintainer
-    direction, testing stopped after this repeated failure instead of beginning another repair loop.
+- **The world-production overhaul (2026-09-05) ✅ MERGED — and the four gates it was held back for
+  were repaired after the merge.** It landed as PR #350 (`4375c1c`), followed by `56f3b3e`,
+  `9165600` and `bcd5796`. The deterministic offline bake (`tools/world_bake.py`), 28 hash-verified
+  artifacts, predictive Near/Mid/Far/Backdrop residency, staged activation, one collision/navigation
+  contract, one safe-placement service, cell-owned actors and abstract persisted world events are
+  all on `main`. ⚠️ **This block used to say "do not merge this branch yet" and it was four days out
+  of date** — read the verification table below, not a remembered warning.
+  - ⚠️ **TWO OF THE 44 `debug_pass_regressions.gd` CHECKS STILL FAIL ON `main`, AND THEY ARE THE
+    LAST OF THAT OVERHAUL.** `RegionStreamer` does not give up on a missing cell scene, so
+    `HasFailedCells` never becomes true and `IsSettled` returns true with a cell missing — the
+    loading gate would open onto a hole in the world. Confirmed reproducing on a clean `main`
+    checkout on 2026-09-06, so do not attribute it to whatever you are working on.
+
+- **The 3D asset gap-closing pass (2026-09-06) ✅ CLOSED — out of band.** No pipeline was rebuilt:
+  Meshy is already this repo's production source and `assets.py validate` was green before this
+  started. What this closed is the gaps around it. **221 models, zero unreferenced.**
+  - **ONE ITEM, ONE MODEL.** `WorldModelPath` moved from `EquippableItemResource` down to
+    `ItemResource`, where the ground pickup and the trophy plinth can reach it. Sixteen items author
+    a model; the rarity tint survives as a ground glow so loot stays readable at distance.
+    `ContentValidator.ValidateItemWorldModels` is the new gate, negative-tested in both directions.
+  - **THE OFF-HAND SLOT HAD NO CALLER.** `EquipmentSocket.Shield`, its forearm bone list and
+    `eqp_shield_round.glb` all shipped on 2026-09-05 and nothing ever put one on the other, because
+    a shield has no `WeaponResource` and fell out of `ApplyWeapon`'s guard. A Round Shield is
+    authored and stocked at the smith. The shield model was **2.0 m across**.
+  - **EVERY ORPHAN RESOLVED, NOT REPORTED.** `npc_merchant_f` (retired by 38N2 for modern dress, and
+    named as a trap in four cell scenes) deleted with four dead kit modules; five nature props that
+    had never been scattered joined the Ember Crown's layers, splitting the donors' density rather
+    than adding to it.
+  - ⚠️ **THREE TOOLS COULD NOT SEE WHAT THEY WERE FOR, AND ALL THREE FAILED QUIETLY.** A static
+    `.glb` had **no adoption path at all** (`--kit` died on a `UnicodeDecodeError`, the Meshy route
+    on a `KeyError`, and `assets.py` discarded both messages). `repair_architecture_materials.py`
+    swept props only, so the bow, arrow and shield shipped at the pack's 0.4 metallic on wood and
+    cloth — and `"Steel"` does not contain `"metal"`, so a blade came out matte. `assets.py` counted
+    references by literal path, calling `mod_roof_6x10`, `mod_stairs_exterior` and all 25 animation
+    sources dead when they are named by computation and by directory.
+  - ⚠️ **THE `rpg_items` PACK IS AUTHORED AT DISPLAY SCALE.** Adopted raw it gives a gold coin
+    **0.74 m across** and a dagger **1.39 m long** — the `rts` trap in the other direction, invisible
+    in every log and visible only in a render against the 1.8 m reference.
+  - **`npc_hooded`'s green-teal cloak is corrected.** The cast was in the TEXTURE, not a material
+    factor, so `docs/3D_ASSETS.md`'s sanctioned JSON edit could not reach it;
+    `tools/neutralize_palette_cast.py` is the repeatable script. ⚠️ **The exposed face is NOT fixed**
+    — it needs a regeneration and remains an accepted defect in the ledger.
 
 - **NEXT: 42C — Dawnwardens recruitment and probation.** The first arc to walk through a door 42B
   built: join/refuse dialogue plus a Defend/Reach probation pair, and rank one earned.
@@ -219,7 +244,7 @@
 Read [`docs/WORLD_AUTHORING.md`](WORLD_AUTHORING.md) before touching a cell. `data/regions/*.tres`
 is **generated** — edit `tools/region_spec_<region>.py` and run `python tools/gen_regions.py`.
 
-⚠️ **TWO PASSES LANDED ON THE SAME DAY AND THEY DID NOT VERIFY THE SAME THINGS.** The character overhaul below is closed and its gates are green. The world-production overhaul that merged alongside it is **not** closed and four of its gates are red. Neither table supersedes the other; a green character suite does not make the world suite green, and the world failures are not caused by the character work.
+⚠️ **THERE ARE THREE VERIFICATION TABLES BELOW AND ONLY THE LAST ONE IS CURRENT.** Read the 2026-09-06 table; the 2026-09-05 world-production table is marked superseded and kept only as history. A green suite in one table never makes another table green, and the failures each one records belong to the work that caused them.
 
 ## Last verified (2026-09-05 - the combat/animation/camera overhaul)
 
@@ -237,7 +262,15 @@ is **generated** — edit `tools/region_spec_<region>.py` and run `python tools/
 | `--play` | boots to Playing, **0 errors**, 0 invariant violations |
 
 **Nine new engine gates**, all registered in `tools/world_quality_check.py`:
-## Last verified (2026-09-05 — world-production branch, required gates red)
+## Superseded (2026-09-05 — the world-production branch's pre-merge red gates)
+
+⚠️ **THIS TABLE IS HISTORY. THE BRANCH MERGED AND TWO OF ITS FOUR RED GATES ARE NOW GREEN.**
+Re-run on 2026-09-06: **`--lifecycle` PASSES** (0 orphans, 0 invariant violations) and
+`debug_pass_regressions.gd` is **42/44** rather than wholesale failing — the two survivors are the
+failed-cell/settlement pair, and they reproduce on a clean `main`, so they belong to this overhaul
+and not to whatever you are working on. ⚠️ **`stepup_probe.gd` and `world_traversal_probe.gd` were
+NOT re-run**, so treat their rows below as unknown rather than as either colour.
+
 
 | Check | Result |
 | --- | --- |
@@ -280,6 +313,37 @@ numerically and in a render.
 
 WARNING: **There is still no `export_presets.cfg`.** "The shipping build" is proved by
 `ExportRelease` compiling clean plus the assembly scan, not by a real export artifact.
+
+## Last verified (2026-09-06 - the 3D asset gap-closing pass)
+
+| Check | Result |
+| --- | --- |
+| Build | `dotnet build Embervale.sln` - **0 warnings, 0 errors** |
+| Tests | `dotnet test tests/Embervale.Tests` - **1927 passing** (1916 + 11) |
+| `python tools/assets.py status` | **221 models, ZERO unreferenced**, manifest matches disk |
+| `python tools/assets.py validate` | **PASS** all 6 gates, exit 0 |
+| `--validate` | exit 0, incl. the new `WorldModelPath` arm, negative-tested in both directions |
+| `--lifecycle` | exit 0 - 0 orphans, 0 invariant violations, 3 round trips |
+| `equipment_socket_probe.gd` | PASS - every humanoid rig carries the socket contract |
+| `gen_regions.py --check` | clean |
+| `world_bake.py --check` | current, 28 artifacts, source `743883e66531` |
+| `world_perf_probe.gd` | mean **8.28 ms/frame**, worst `wilds_north` 10.64 ms, 525 MB video memory |
+| `debug_pass_regressions.gd` | **42/44** - the 2 failures reproduce on clean `main` (see above) |
+| `world_shots.gd` | 134/260 frames drift; **advisory and nondeterministic**, both regions, and it fails on `main` too |
+
+⚠️ **GODOTMCP WAS DOWN FOR THIS WHOLE PASS** - `tools/godot_mcp_check.py --probe` reported the
+editor not running and the relay timed out, and CLAUDE.md 2 forbids starting either half from a
+session. **No live-editor or human visual sign-off was made.** Visual checks used the repo's own
+harnesses, which need no MCP: `assets.py audit --render selected` for every model touched (judged
+front and back at eye level against the 1.8 m reference) and `world_perf_probe.gd` for the scatter.
+
+⚠️ **`world_shots.gd` FRAMES LOOK LIKE THE VEGETATION IS MISSING AND IT IS NOT.** Several Ember
+Crown captures show bare terrain. `world_perf_probe.gd` measures `west_downs` at **576 draws and
+421,083 primitives** in the same build, which is scatter, so the emptiness is a framing artefact of
+that harness rather than a world defect. Do not "fix" the scatter on the strength of those frames.
+
+⚠️ **The `meshy` MCP server failed to connect** (`CONNECT_TIMEOUT`). The REST API with the
+`MESHY_API_KEY` already in the environment worked throughout and is the documented fallback.
 
 ## Live invariants
 
@@ -375,6 +439,15 @@ WARNING: **There is still no `export_presets.cfg`.** "The shipping build" is pro
 30. ⚠️ **AN ACTOR ENTERS A WORLD POSITION ONLY AFTER REAL COLLISION IS READY.** Loading, New Game,
     respawn, fast travel and teleports use `SafePlacementService`; an arbitrary timer or a second
     spawn-correction implementation is not an acceptable substitute.
+
+31. ⚠️ **A MODEL IS "UNREFERENCED" ONLY IF NOTHING COMPUTES ITS NAME.** `assets.py` counts
+    references by searching for a literal path, and `compose_building.py` derives roof and module
+    names from geometry while `build_meshy_anim_library.gd` reads a whole folder. Three separate
+    times that reported live assets as dead. `referenced_by_name` is the allowlist and it must stay
+    narrow enough that a genuinely dead file is still reported.
+32. ⚠️ **ONE ITEM HAS ONE MODEL, AND THE FIELD LIVES ON THE BASE `ItemResource`.** The hand, the
+    ground and the trophy plinth all read `WorldModelPath`. Putting it on a subclass is how a potion
+    on the floor became a glowing cube. Empty is legal and means the rarity-tinted primitive.
 
 ## Commands worth knowing
 

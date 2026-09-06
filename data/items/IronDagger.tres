@@ -20,6 +20,7 @@ Rarity = 0
 MaxStack = 1
 Weight = 1.2
 Value = 35
+WorldModelPath = "res://assets/models/weapons/wpn_dagger_iron.glb"
 Slot = 1
 Weapon = ExtResource("2_wpn")
 BonusPhysicalPower = 1.0

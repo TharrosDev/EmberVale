@@ -24,7 +24,7 @@
       "root_scale": 1.0,
       "height_m": null,
       "refs": 0,
-      "status": "unreferenced"
+      "status": "active"
     },
     {
       "id": "anim_attack2",
@@ -36,7 +36,7 @@
       "root_scale": 1.0,
       "height_m": null,
       "refs": 0,
-      "status": "unreferenced"
+      "status": "active"
     },
     {
       "id": "anim_attack3",
@@ -48,7 +48,7 @@
       "root_scale": 1.0,
       "height_m": null,
       "refs": 0,
-      "status": "unreferenced"
+      "status": "active"
     },
     {
       "id": "anim_attack_slash_r",
@@ -60,7 +60,7 @@
       "root_scale": 1.0,
       "height_m": null,
       "refs": 0,
-      "status": "unreferenced"
+      "status": "active"
     },
     {
       "id": "anim_block",
@@ -72,7 +72,7 @@
       "root_scale": 1.0,
       "height_m": null,
       "refs": 0,
-      "status": "unreferenced"
+      "status": "active"
     },
     {
       "id": "anim_combat_walk_back",
@@ -84,7 +84,7 @@
       "root_scale": 1.0,
       "height_m": null,
       "refs": 0,
-      "status": "unreferenced"
+      "status": "active"
     },
     {
       "id": "anim_combat_walk_fwd",
@@ -96,7 +96,7 @@
       "root_scale": 1.0,
       "height_m": null,
       "refs": 0,
-      "status": "unreferenced"
+      "status": "active"
     },
     {
       "id": "anim_death",
@@ -108,7 +108,7 @@
       "root_scale": 1.0,
       "height_m": null,
       "refs": 0,
-      "status": "unreferenced"
+      "status": "active"
     },
     {
       "id": "anim_dodge",
@@ -120,7 +120,7 @@
       "root_scale": 1.0,
       "height_m": null,
       "refs": 0,
-      "status": "unreferenced"
+      "status": "active"
     },
     {
       "id": "anim_fall",
@@ -132,7 +132,7 @@
       "root_scale": 1.0,
       "height_m": null,
       "refs": 0,
-      "status": "unreferenced"
+      "status": "active"
     },
     {
       "id": "anim_getup",
@@ -144,7 +144,7 @@
       "root_scale": 1.0,
       "height_m": null,
       "refs": 0,
-      "status": "unreferenced"
+      "status": "active"
     },
     {
       "id": "anim_heavy",
@@ -156,7 +156,7 @@
       "root_scale": 1.0,
       "height_m": null,
       "refs": 0,
-      "status": "unreferenced"
+      "status": "active"
     },
     {
       "id": "anim_heavy_overhead",
@@ -168,7 +168,7 @@
       "root_scale": 1.0,
       "height_m": null,
       "refs": 0,
-      "status": "unreferenced"
+      "status": "active"
     },
     {
       "id": "anim_hit",
@@ -180,7 +180,7 @@
       "root_scale": 1.0,
       "height_m": null,
       "refs": 0,
-      "status": "unreferenced"
+      "status": "active"
     },
     {
       "id": "anim_idle",
@@ -192,7 +192,7 @@
       "root_scale": 1.0,
       "height_m": null,
       "refs": 0,
-      "status": "unreferenced"
+      "status": "active"
     },
     {
       "id": "anim_jump",
@@ -204,7 +204,7 @@
       "root_scale": 1.0,
       "height_m": null,
       "refs": 0,
-      "status": "unreferenced"
+      "status": "active"
     },
     {
       "id": "anim_knockdown",
@@ -216,7 +216,7 @@
       "root_scale": 1.0,
       "height_m": null,
       "refs": 0,
-      "status": "unreferenced"
+      "status": "active"
     },
     {
       "id": "anim_parry",
@@ -228,7 +228,7 @@
       "root_scale": 1.0,
       "height_m": null,
       "refs": 0,
-      "status": "unreferenced"
+      "status": "active"
     },
     {
       "id": "anim_run",
@@ -240,7 +240,7 @@
       "root_scale": 1.0,
       "height_m": null,
       "refs": 0,
-      "status": "unreferenced"
+      "status": "active"
     },
     {
       "id": "anim_sprint",
@@ -252,7 +252,7 @@
       "root_scale": 1.0,
       "height_m": null,
       "refs": 0,
-      "status": "unreferenced"
+      "status": "active"
     },
     {
       "id": "anim_strafe_left",
@@ -264,7 +264,7 @@
       "root_scale": 1.0,
       "height_m": null,
       "refs": 0,
-      "status": "unreferenced"
+      "status": "active"
     },
     {
       "id": "anim_turn_left",
@@ -276,7 +276,7 @@
       "root_scale": 1.0,
       "height_m": null,
       "refs": 0,
-      "status": "unreferenced"
+      "status": "active"
     },
     {
       "id": "anim_turn_right",
@@ -288,7 +288,7 @@
       "root_scale": 1.0,
       "height_m": null,
       "refs": 0,
-      "status": "unreferenced"
+      "status": "active"
     },
     {
       "id": "anim_walk",
@@ -300,7 +300,7 @@
       "root_scale": 1.0,
       "height_m": null,
       "refs": 0,
-      "status": "unreferenced"
+      "status": "active"
     },
     {
       "id": "anim_walk_back",
@@ -312,7 +312,7 @@
       "root_scale": 1.0,
       "height_m": null,
       "refs": 0,
-      "status": "unreferenced"
+      "status": "active"
     },
     {
       "id": "bld_blacksmith",
@@ -447,18 +447,6 @@
       "status": "active"
     },
     {
-      "id": "mod_floor_stone",
-      "path": "res://assets/models/architecture/mod_floor_stone.gltf",
-      "type": "ARCHITECTURE",
-      "rig": "none",
-      "anim": "none",
-      "bone_map": null,
-      "root_scale": 1.0,
-      "height_m": 0.02,
-      "refs": 0,
-      "status": "unreferenced"
-    },
-    {
       "id": "mod_floor_wood",
       "path": "res://assets/models/architecture/mod_floor_wood.gltf",
       "type": "ARCHITECTURE",
@@ -552,7 +540,7 @@
       "root_scale": 1.0,
       "height_m": 5.672,
       "refs": 0,
-      "status": "unreferenced"
+      "status": "active"
     },
     {
       "id": "mod_roof_6x6",
@@ -660,7 +648,7 @@
       "root_scale": 1.0,
       "height_m": 1.0,
       "refs": 0,
-      "status": "unreferenced"
+      "status": "active"
     },
     {
       "id": "mod_vine",
@@ -673,18 +661,6 @@
       "height_m": 2.603,
       "refs": 7,
       "status": "active"
-    },
-    {
-      "id": "mod_wall_arch",
-      "path": "res://assets/models/architecture/mod_wall_arch.gltf",
-      "type": "ARCHITECTURE",
-      "rig": "none",
-      "anim": "none",
-      "bone_map": null,
-      "root_scale": 1.0,
-      "height_m": 3.0,
-      "refs": 0,
-      "status": "unreferenced"
     },
     {
       "id": "mod_wall_base",
@@ -839,7 +815,7 @@
       "bone_map": "bonemap_meshy_s3_c188e7a9",
       "root_scale": 1.0,
       "height_m": 1.598,
-      "refs": 11,
+      "refs": 10,
       "status": "active"
     },
     {
@@ -901,18 +877,6 @@
       "height_m": 1.676,
       "refs": 2,
       "status": "active"
-    },
-    {
-      "id": "npc_merchant_f",
-      "path": "res://assets/models/characters/npc_merchant_f.glb",
-      "type": "HUMANOID",
-      "rig": "general_skeleton",
-      "anim": "shared_library",
-      "bone_map": "bonemap_meshy_s3_c188e7a9",
-      "root_scale": 1.0,
-      "height_m": 1.615,
-      "refs": 0,
-      "status": "unreferenced"
     },
     {
       "id": "npc_merchant_m",
@@ -1395,6 +1359,30 @@
       "status": "active"
     },
     {
+      "id": "eqp_armor_leather",
+      "path": "res://assets/models/equipment/eqp_armor_leather.glb",
+      "type": "STATIC_PROP",
+      "rig": "none",
+      "anim": "none",
+      "bone_map": null,
+      "root_scale": 1.0,
+      "height_m": 0.46,
+      "refs": 1,
+      "status": "active"
+    },
+    {
+      "id": "eqp_armor_mail",
+      "path": "res://assets/models/equipment/eqp_armor_mail.glb",
+      "type": "STATIC_PROP",
+      "rig": "none",
+      "anim": "none",
+      "bone_map": null,
+      "root_scale": 1.0,
+      "height_m": 0.429,
+      "refs": 1,
+      "status": "active"
+    },
+    {
       "id": "eqp_pauldron_embervale",
       "path": "res://assets/models/equipment/eqp_pauldron_embervale.glb",
       "type": "STATIC_PROP",
@@ -1403,7 +1391,7 @@
       "bone_map": null,
       "root_scale": 1.0,
       "height_m": 0.133,
-      "refs": 2,
+      "refs": 1,
       "status": "active"
     },
     {
@@ -1415,7 +1403,7 @@
       "bone_map": null,
       "root_scale": 1.0,
       "height_m": 0.22,
-      "refs": 2,
+      "refs": 1,
       "status": "active"
     },
     {
@@ -1426,9 +1414,9 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
-      "refs": 0,
-      "status": "unreferenced"
+      "height_m": 2.0,
+      "refs": 1,
+      "status": "active"
     },
     {
       "id": "npc_kit_embervale",
@@ -1441,18 +1429,6 @@
       "height_m": 1.171,
       "refs": 1,
       "status": "active"
-    },
-    {
-      "id": "prp_anvil",
-      "path": "res://assets/models/props/prp_anvil.gltf",
-      "type": "STATIC_PROP",
-      "rig": "none",
-      "anim": "none",
-      "bone_map": null,
-      "root_scale": 1.0,
-      "height_m": 0.556,
-      "refs": 0,
-      "status": "unreferenced"
     },
     {
       "id": "prp_anvil_log",
@@ -1847,8 +1823,8 @@
       "bone_map": null,
       "root_scale": 0.22,
       "height_m": 0.452,
-      "refs": 0,
-      "status": "unreferenced"
+      "refs": 2,
+      "status": "active"
     },
     {
       "id": "prp_flowers_b",
@@ -1859,8 +1835,8 @@
       "bone_map": null,
       "root_scale": 0.2,
       "height_m": 0.497,
-      "refs": 0,
-      "status": "unreferenced"
+      "refs": 2,
+      "status": "active"
     },
     {
       "id": "prp_gate_palisade",
@@ -1955,8 +1931,8 @@
       "bone_map": null,
       "root_scale": 0.33,
       "height_m": 0.552,
-      "refs": 0,
-      "status": "unreferenced"
+      "refs": 2,
+      "status": "active"
     },
     {
       "id": "prp_hay",
@@ -2004,6 +1980,66 @@
       "root_scale": 1.0,
       "height_m": 0.55,
       "refs": 1,
+      "status": "active"
+    },
+    {
+      "id": "prp_item_book",
+      "path": "res://assets/models/props/prp_item_book.glb",
+      "type": "STATIC_PROP",
+      "rig": "none",
+      "anim": "none",
+      "bone_map": null,
+      "root_scale": 1.0,
+      "height_m": 0.25,
+      "refs": 2,
+      "status": "active"
+    },
+    {
+      "id": "prp_item_coin",
+      "path": "res://assets/models/props/prp_item_coin.glb",
+      "type": "STATIC_PROP",
+      "rig": "none",
+      "anim": "none",
+      "bone_map": null,
+      "root_scale": 1.0,
+      "height_m": 0.03,
+      "refs": 1,
+      "status": "active"
+    },
+    {
+      "id": "prp_item_gem",
+      "path": "res://assets/models/props/prp_item_gem.glb",
+      "type": "STATIC_PROP",
+      "rig": "none",
+      "anim": "none",
+      "bone_map": null,
+      "root_scale": 1.0,
+      "height_m": 0.044,
+      "refs": 3,
+      "status": "active"
+    },
+    {
+      "id": "prp_item_ingot",
+      "path": "res://assets/models/props/prp_item_ingot.glb",
+      "type": "STATIC_PROP",
+      "rig": "none",
+      "anim": "none",
+      "bone_map": null,
+      "root_scale": 1.0,
+      "height_m": 0.158,
+      "refs": 2,
+      "status": "active"
+    },
+    {
+      "id": "prp_item_potion",
+      "path": "res://assets/models/props/prp_item_potion.glb",
+      "type": "STATIC_PROP",
+      "rig": "none",
+      "anim": "none",
+      "bone_map": null,
+      "root_scale": 1.0,
+      "height_m": 0.221,
+      "refs": 2,
       "status": "active"
     },
     {
@@ -2087,8 +2123,8 @@
       "bone_map": null,
       "root_scale": 0.3,
       "height_m": 0.139,
-      "refs": 0,
-      "status": "unreferenced"
+      "refs": 2,
+      "status": "active"
     },
     {
       "id": "prp_nightstand",
@@ -2135,8 +2171,8 @@
       "bone_map": null,
       "root_scale": 0.31,
       "height_m": 0.043,
-      "refs": 0,
-      "status": "unreferenced"
+      "refs": 2,
+      "status": "active"
     },
     {
       "id": "prp_pebble_c",
@@ -2547,18 +2583,6 @@
       "status": "active"
     },
     {
-      "id": "prp_weapon_stand",
-      "path": "res://assets/models/props/prp_weapon_stand.gltf",
-      "type": "STATIC_PROP",
-      "rig": "none",
-      "anim": "none",
-      "bone_map": null,
-      "root_scale": 1.0,
-      "height_m": 1.109,
-      "refs": 0,
-      "status": "unreferenced"
-    },
-    {
       "id": "prp_well",
       "path": "res://assets/models/props/prp_well.glb",
       "type": "STATIC_PROP",
@@ -2590,8 +2614,8 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
-      "refs": 1,
+      "height_m": 1.456,
+      "refs": 2,
       "status": "active"
     },
     {
@@ -2602,7 +2626,19 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": null,
+      "height_m": 1.974,
+      "refs": 1,
+      "status": "active"
+    },
+    {
+      "id": "wpn_dagger_iron",
+      "path": "res://assets/models/weapons/wpn_dagger_iron.glb",
+      "type": "STATIC_PROP",
+      "rig": "none",
+      "anim": "none",
+      "bone_map": null,
+      "root_scale": 1.0,
+      "height_m": 0.375,
       "refs": 1,
       "status": "active"
     },

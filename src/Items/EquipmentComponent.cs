@@ -36,6 +36,7 @@ public partial class EquipmentComponent : EntityComponent, ISaveable
     /// <summary>The name the drawn main-hand weapon hangs under, so a swap replaces it rather than
     /// stacking a second sword in the same fist.</summary>
     private const string MainHandVisual = "MainHand";
+    private const string OffHandVisual = "OffHand";
 
     public string SaveId => SaveKey("equipment");
 
@@ -184,6 +185,16 @@ public partial class EquipmentComponent : EntityComponent, ISaveable
 
     private void ApplyWeapon(ItemInstance instance)
     {
+        // ⚠️ An off-hand piece is not a weapon and must be handled BEFORE the weapon guard below.
+        // A shield has no <see cref="WeaponResource"/>, so it fell straight out of this method and
+        // out of RestoreWeapon too: EquipmentSocket.Shield existed, eqp_shield_round.glb existed,
+        // and nothing in the game ever put one on the other.
+        if (instance.Equippable?.Slot == EquipmentSlot.OffHand)
+        {
+            ShowOffHand(instance.Template.WorldModelPath);
+            return;
+        }
+
         if (instance.Equippable?.Weapon is not { } weapon)
         {
             return;
@@ -194,11 +205,17 @@ public partial class EquipmentComponent : EntityComponent, ISaveable
             _weapon.Weapon = weapon;
         }
 
-        ShowWeapon(instance.Equippable.WorldModelPath);
+        ShowWeapon(instance.Template.WorldModelPath);
     }
 
     private void RestoreWeapon(ItemInstance instance)
     {
+        if (instance.Equippable?.Slot == EquipmentSlot.OffHand)
+        {
+            _presentation?.Detach(OffHandVisual);
+            return;
+        }
+
         if (instance.Equippable?.Weapon == null)
         {
             return;
@@ -210,6 +227,23 @@ public partial class EquipmentComponent : EntityComponent, ISaveable
         }
 
         ShowWeapon(DefaultWeaponModelPath);
+    }
+
+    /// <summary>Straps an off-hand piece to the forearm, or leaves the arm bare when the item
+    /// authors no model. <see cref="EquipmentSocket.Shield"/> owns the bone choice and the space —
+    /// a shield goes on the forearm, not the hand, or it counter-rotates with every grip roll.</summary>
+    private void ShowOffHand(string modelPath)
+    {
+        if (_presentation is not { HasRig: true } presentation)
+        {
+            return;
+        }
+
+        presentation.Detach(OffHandVisual);
+        if (modelPath.Length > 0)
+        {
+            presentation.Attach(EquipmentSocket.Shield, modelPath, OffHandVisual);
+        }
     }
 
     /// <summary>

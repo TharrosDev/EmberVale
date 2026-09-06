@@ -172,7 +172,7 @@ VisibilityFadeMargin = 12.0
 [sub_resource type="Resource" id="Layer_grass_short"]
 script = ExtResource("10_layer")
 ScenePath = "res://assets/models/props/prp_grass_short.glb"
-Count = 520
+Count = 430
 MinimumScale = 0.75
 MaximumScale = 1.3
 MinimumSpacing = 1.4
@@ -185,7 +185,7 @@ VisibilityFadeMargin = 10.0
 [sub_resource type="Resource" id="Layer_clover"]
 script = ExtResource("10_layer")
 ScenePath = "res://assets/models/props/prp_clover.glb"
-Count = 240
+Count = 150
 MinimumScale = 0.7
 MaximumScale = 1.15
 MinimumSpacing = 2.4
@@ -197,10 +197,84 @@ TintVariation = 0.18
 VisibilityRangeEnd = 40.0
 VisibilityFadeMargin = 8.0
 
+; ⚠️ FLOWERS ARE THE ONE LAYER THAT MUST STAY SPARSE. `prp_flowers_a` and `prp_flowers_b` were
+; adopted and never scattered, and the reflex on finding that is to give them a clover-sized count —
+; which turns a dying realm's pasture into a meadow postcard. Fifty-odd per 100 x 100 m, heavily
+; clumped, reads as flowers having come up where the ground was left alone. `Layer_clover` gives up
+; 90 of its 240 to pay for both, so the settled and pasture profiles carry no more instances than
+; they did (docs/ART_STYLE.md: worn, lived-in, restrained).
+[sub_resource type="Resource" id="Layer_flowers"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/props/prp_flowers_a.glb"
+Count = 52
+MinimumScale = 0.72
+MaximumScale = 1.2
+MinimumSpacing = 3.6
+Clumping = 0.72
+ClumpScale = 14.0
+MaxSlope = 0.45
+Tint = Color(0.80, 0.78, 0.66, 1)
+TintVariation = 0.22
+VisibilityRangeEnd = 38.0
+VisibilityFadeMargin = 8.0
+
+[sub_resource type="Resource" id="Layer_flowers_b"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/props/prp_flowers_b.glb"
+Count = 40
+MinimumScale = 0.7
+MaximumScale = 1.15
+MinimumSpacing = 3.9
+Clumping = 0.76
+ClumpScale = 12.0
+MaxSlope = 0.45
+Tint = Color(0.78, 0.76, 0.64, 1)
+TintVariation = 0.24
+VisibilityRangeEnd = 38.0
+VisibilityFadeMargin = 8.0
+
+; Forest floor, and the most heavily clumped layer in the realm on purpose: mushrooms grow in rings
+; and drifts against deadfall, never evenly. Wilds only — a mushroom in a pasture or on a shore is
+; the kind of detail that reads as scatter having been switched on rather than authored.
+; `Layer_bracken` gives up 15 of its 300 to pay for it.
+[sub_resource type="Resource" id="Layer_mushrooms"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/props/prp_mushrooms.glb"
+Count = 18
+MinimumScale = 0.65
+MaximumScale = 1.25
+MinimumSpacing = 5.5
+Clumping = 0.85
+ClumpScale = 9.0
+MaxSlope = 0.5
+Tint = Color(0.72, 0.68, 0.60, 1)
+TintVariation = 0.20
+VisibilityRangeEnd = 34.0
+VisibilityFadeMargin = 8.0
+
+; The thin, dry grass of a shore and a waste, where the short turf has no business growing. It
+; splits `Layer_grass_short` (520 -> 430) rather than thickening the ground: those two profiles are
+; meant to read as sparse, and the point of this layer is a second silhouette in the sparseness, not
+; more of it.
+[sub_resource type="Resource" id="Layer_grass_wispy"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/props/prp_grass_wispy.glb"
+Count = 90
+MinimumScale = 0.7
+MaximumScale = 1.4
+MinimumSpacing = 2.2
+Clumping = 0.55
+ClumpScale = 20.0
+MaxSlope = 0.7
+Tint = Color(0.76, 0.75, 0.62, 1)
+TintVariation = 0.22
+VisibilityRangeEnd = 46.0
+VisibilityFadeMargin = 10.0
+
 [sub_resource type="Resource" id="Layer_bracken"]
 script = ExtResource("10_layer")
 ScenePath = "res://assets/models/props/prp_fern.glb"
-Count = 300
+Count = 285
 MinimumScale = 0.65
 MaximumScale = 1.25
 MinimumSpacing = 3.0
@@ -226,7 +300,7 @@ VisibilityFadeMargin = 14.0
 [sub_resource type="Resource" id="Layer_stone"]
 script = ExtResource("10_layer")
 ScenePath = "res://assets/models/props/prp_pebble_a.glb"
-Count = 90
+Count = 60
 MinimumScale = 0.8
 MaximumScale = 1.9
 MinimumSpacing = 3.4
@@ -241,7 +315,7 @@ VisibilityFadeMargin = 12.0
 [sub_resource type="Resource" id="Layer_stone_b"]
 script = ExtResource("10_layer")
 ScenePath = "res://assets/models/props/prp_pebble_c.glb"
-Count = 70
+Count = 52
 MinimumScale = 0.85
 MaximumScale = 2.05
 MinimumSpacing = 3.1
@@ -250,6 +324,26 @@ ClumpScale = 21.0
 MaxSlope = 1.1
 Tint = Color(0.66, 0.64, 0.61, 1)
 TintVariation = 0.18
+VisibilityRangeEnd = 55.0
+VisibilityFadeMargin = 12.0
+
+; ⚠️ THE THIRD PEBBLE SPECIES, AND IT SPLITS THE DENSITY RATHER THAN ADDING TO IT — the same rule
+; the two-species fix above was made under. `prp_pebble_b` was adopted with the rest of the nature
+; set and then scattered nowhere: it sat in `assets/models/props` sharing the nature atlas, costing
+; disk and carrying zero instances, while the ground cover it belongs to ran on two silhouettes.
+; 90 + 70 becomes 60 + 52 + 48 — the same 160 stones per 100 x 100 m, one more outline in the mix.
+[sub_resource type="Resource" id="Layer_stone_c"]
+script = ExtResource("10_layer")
+ScenePath = "res://assets/models/props/prp_pebble_b.glb"
+Count = 48
+MinimumScale = 0.82
+MaximumScale = 1.95
+MinimumSpacing = 3.2
+Clumping = 0.43
+ClumpScale = 23.0
+MaxSlope = 1.1
+Tint = Color(0.67, 0.65, 0.61, 1)
+TintVariation = 0.17
 VisibilityRangeEnd = 55.0
 VisibilityFadeMargin = 12.0
 
@@ -349,37 +443,37 @@ HlodScale = Vector3(1.15, 1.15, 1.15)
 script = ExtResource("9_scatter")
 Seed = 5101
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass_short"), SubResource("Layer_clover"), SubResource("Layer_stone"), SubResource("Layer_stone_b")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass_short"), SubResource("Layer_clover"), SubResource("Layer_stone"), SubResource("Layer_stone_b"), SubResource("Layer_flowers"), SubResource("Layer_flowers_b"), SubResource("Layer_stone_c")])
 
 [sub_resource type="Resource" id="Scatter_pasture"]
 script = ExtResource("9_scatter")
 Seed = 5102
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_grass_short"), SubResource("Layer_clover"), SubResource("Layer_scrub")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_grass_short"), SubResource("Layer_clover"), SubResource("Layer_scrub"), SubResource("Layer_flowers"), SubResource("Layer_flowers_b")])
 
 [sub_resource type="Resource" id="Scatter_wilds"]
 script = ExtResource("9_scatter")
 Seed = 5103
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_bracken"), SubResource("Layer_pine"), SubResource("Layer_scrub"), SubResource("Layer_stone"), SubResource("Layer_stone_b"), SubResource("Layer_rock_medium")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_bracken"), SubResource("Layer_pine"), SubResource("Layer_scrub"), SubResource("Layer_stone"), SubResource("Layer_stone_b"), SubResource("Layer_rock_medium"), SubResource("Layer_mushrooms"), SubResource("Layer_stone_c")])
 
 [sub_resource type="Resource" id="Scatter_upland"]
 script = ExtResource("9_scatter")
 Seed = 5104
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_bracken"), SubResource("Layer_stone"), SubResource("Layer_stone_b"), SubResource("Layer_rock_medium"), SubResource("Layer_boulder"), SubResource("Layer_scrub")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass"), SubResource("Layer_bracken"), SubResource("Layer_stone"), SubResource("Layer_stone_b"), SubResource("Layer_rock_medium"), SubResource("Layer_boulder"), SubResource("Layer_scrub"), SubResource("Layer_stone_c")])
 
 [sub_resource type="Resource" id="Scatter_waste"]
 script = ExtResource("9_scatter")
 Seed = 5105
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_stone"), SubResource("Layer_stone_b"), SubResource("Layer_rock_medium"), SubResource("Layer_boulder"), SubResource("Layer_bracken"), SubResource("Layer_grass_short"), SubResource("Layer_scrub")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_stone"), SubResource("Layer_stone_b"), SubResource("Layer_rock_medium"), SubResource("Layer_boulder"), SubResource("Layer_bracken"), SubResource("Layer_grass_short"), SubResource("Layer_scrub"), SubResource("Layer_stone_c"), SubResource("Layer_grass_wispy")])
 
 [sub_resource type="Resource" id="Scatter_shore"]
 script = ExtResource("9_scatter")
 Seed = 5106
 EdgePadding = 1.0
-Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass_short"), SubResource("Layer_stone"), SubResource("Layer_stone_b"), SubResource("Layer_scrub")])
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_grass_short"), SubResource("Layer_stone"), SubResource("Layer_stone_b"), SubResource("Layer_scrub"), SubResource("Layer_stone_c"), SubResource("Layer_grass_wispy")])
 
 '''
 

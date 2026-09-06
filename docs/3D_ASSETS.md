@@ -77,6 +77,23 @@ that stops working fails `--validate` instead of silently greyboxing.
 Scene-placed models are the exception and stay that way: the `ext_resource` entries in `scenes/`
 are direct engine references that already fail loudly.
 
+**An ITEM names its model in its own `.tres`, through `ItemResource.WorldModelPath`**, because which
+model a sword uses is content, not code. One field serves all three places an item is seen: the
+wielder's socket (`EquipmentComponent`), the ground (`ItemPickupFactory`) and a trophy plinth
+(`TrophyStandComponent`). ⚠️ **It lives on the base `ItemResource` and used to live on
+`EquippableItemResource`** — where the two places that show an item the player is *not* wearing could
+not reach it, so a potion on the floor was a glowing cube. Empty is legal and means the
+rarity-tinted primitive; `ContentValidator.ValidateItemWorldModels` fails a non-empty path that stops
+resolving or drifts out of the manifest.
+
+⚠️ **A REFERENCE COUNT THAT SEARCHES FOR A LITERAL PATH CANNOT SEE A COMPUTED ONE.** `assets.py
+status` reported `mod_roof_6x10`, `mod_stairs_exterior` and all 25 animation sources as
+**unreferenced** and an audit proposed deleting them — but `compose_building.py` asks for a roof by
+size (`roof_{wide*2}x{deep*2}`) and `build_meshy_anim_library.gd` reads its whole source folder, so
+those names appear nowhere in the repository. `referenced_by_name` in `tools/assets.py` is the
+allowlist; it still reports a genuinely dead file, and that was negative-tested. This is also why
+`ModelAssets.cs` keeps every path a complete literal.
+
 ---
 
 ## Where models come from
@@ -104,6 +121,29 @@ small — it is what makes separately generated characters read as one faction s
 Pipeline: `meshy_text_to_image` (nano-banana, 3cr) → `meshy_image_to_3d` (`smart-topology`,
 textured, 3,000–4,000 tris, 15cr) → `meshy_rig` (5cr, walk + run included). **23 credits per
 character.**
+
+### ⚠️ INVENTORY BEFORE YOU GENERATE, AND THE INVENTORY IS THIS REPOSITORY
+
+**32 characters and creatures are already generated, adopted and in the game.** Before spending a
+credit on a living actor, read `reports/3d/archive/meshy-migration/manifest.csv` — 56 rows, each
+carrying the `meshy_task_id` and `rig_task_id` it came from — and `python tools/assets.py status`.
+The player, Kael, the goblin and the Iron King are `chr_player_base`, `npc_kael`, `enm_goblin` and
+`boss_iron_king`; they do not need making again.
+
+⚠️ **DO NOT GO LOOKING FOR THEM IN THE MESHY ACCOUNT — THEY ARE NOT THERE ANY MORE** (verified
+2026-09-06). Meshy tasks expire, and `GET /openapi/v2/text-to-3d` and `/openapi/v1/image-to-3d` both
+return `[]` for this account: the four hand-exported bodies were made in the web app and were never
+API tasks at all (the ledger says so in its own `prompt` column), and the rest have aged out. Only
+the 25 `/openapi/v1/animations` tasks survive, which is why `anim_meshy.res` can be rebuilt for free.
+**An empty API listing is not an empty library — it means the ledger is the library.** Reading it as
+"nothing exists, generate it" is how the cast gets paid for twice.
+
+The REST API is reachable directly with the `MESHY_API_KEY` already in the environment, and that is
+worth knowing because the `meshy` MCP server does not always connect:
+
+```bash
+curl -s -H "Authorization: Bearer $MESHY_API_KEY" https://api.meshy.ai/openapi/v1/balance
+```
 
 **Props, architecture and nature — the four packs first.** `assets/library/` holds 1,136 vendored
 CC0 models behind a `.gdignore`; the medieval megakit, interiors, nature megakit and the animation
@@ -165,7 +205,7 @@ A skinned mesh's raw AABB is bind-space and can be hundreds of metres.
 
 ## HUMANOID
 
-People and people-shaped enemies. 33 of them, and they are uniform: a bone map in the `.import`
+People and people-shaped enemies. 31 of them, and they are uniform: a bone map in the `.import`
 retargets each onto `SkeletonProfileHumanoid`, and the importer's bone renamer unifies every
 skeleton as **`GeneralSkeleton`**.
 
@@ -330,9 +370,20 @@ derivable from the file** — if you replace the horse, re-measure them.
 ## STATIC PROP
 
 Furniture, containers, nature, everything a scene places and nothing animates. The largest family
-(99) and the simplest.
+(108) and the simplest.
 
-- Adopt as a **container change only** — the buffer is copied byte for byte. `--kit` handles this.
+- Adopt as a **container change only** — the buffer is copied byte for byte. `--kit` handles this,
+  and `--kit` now takes a **`.glb` as well as a `.gltf`**. ⚠️ It used to take only a `.gltf`, which
+  meant a static `.glb` had **no adoption path at all** — and every vendored bundle except the four
+  MegaKits ships `.glb`. Both routes failed unhelpfully: `--kit` `json.load`ed the binary and died on
+  a `UnicodeDecodeError`, the default Meshy route walked `doc["skins"]` and died on a `KeyError`, and
+  `assets.py` discarded the child's stderr so the command printed nothing at all. All three are
+  fixed; **`--kit` means "static model", not "MegaKit `.gltf`".**
+- ⚠️ **THE `rpg_items` PACK IS AUTHORED AT DISPLAY SCALE, NOT IN METRES, AND NOTHING IN THE FILES
+  SAYS SO.** Adopted raw it gives a gold coin **0.74 m across** and a dagger **1.39 m long**. This is
+  the `rts` trap in the other direction, and it is not visible from a filename, an import log or an
+  audit finding — only from a render with the 1.8 m reference in it. Measure, then pass
+  `--root-scale`. The shipped corrections run 0.04 (coin) to 0.56 (leather vest).
 - Import as `StaticBody3D`-ready with **author-time collision** (`-col`/`-convcol` name suffixes),
   never runtime-parsed visual-mesh collision.
 - Scale corrections go in the `.import` as `nodes/root_scale`, never in one cell's node transform —
@@ -447,6 +498,29 @@ to lower a count.
 is the single most common thing a Blender export reintroduces — the exporter resets material
 factors on every write. That is why `assets.py build` runs `repair_architecture_materials.py`
 afterwards and why you should use it rather than calling the build scripts directly.
+
+⚠️ **`repair_architecture_materials.py` SWEEPS `props/`, `weapons/` AND `equipment/` — RUN IT AFTER
+EVERY ADOPTION, NOT ONLY AFTER A BLENDER BUILD.** It swept props alone until 2026-09-06, so the
+Hunting Bow, the arrows and the round shield all shipped at the pack's **0.4 metallic on their wood
+and their cloth**, which is exactly the defect the tool exists for, one folder over. And `"Steel"`
+does not contain the substring `"metal"`: a blade reaching `response()` fell through every metal
+branch to the non-metal default and came out **matte**. There is now a `steel|iron|brass|bronze`
+branch at 0.86 / 0.40, matching the hand-authored `wpn_sword_iron`.
+
+⚠️ **FIVE FILES ARE SKIPPED BY THAT SWEEP AND MUST STAY SKIPPED** — `npc_kit_embervale`,
+`enemy_identity_kit`, `eqp_pauldron_embervale`, `eqp_pouch_embervale`, `wpn_sword_iron`. They are
+`assets.py build` outputs whose materials are art-directed by their build scripts: `RimeCrystal` at
+0.26 roughness, `EmberRune` at 0.42, `ShadeGlass` at 0.36. `response()` has no branch for any of
+them, so sweeping these would not correct them, it would **flatten** them.
+
+**A colour cast baked into a TEXTURE is not a material defect and the material lever cannot reach
+it.** `npc_hooded`'s green-teal cloak was one: the body has a single material with a base-colour
+texture and a white `baseColorFactor`, so the only factor available multiplies the face and the
+leather too. `python tools/neutralize_palette_cast.py <asset.glb>` is the repeatable script for that
+case — it rewrites the embedded PNG, correcting only pixels that are *already* nearly grey and grey
+in the wrong direction, never touching value. It repacks the buffer and verifies every `bufferView`
+survived, because the image is not the last region and a naive resize would move the geometry out
+from under every accessor.
 
 Normal maps use the Godot/glTF tangent convention. Inspect both lit sides after import; **never fix
 inverted normals with a double-sided material.**

@@ -374,6 +374,47 @@ public static class ContentValidator
                 issues.Add($"model asset '{path}' is not in the manifest — run: python tools/assets.py status --write");
             }
         }
+
+        ValidateItemWorldModels(issues, manifestText);
+    }
+
+    /// <summary>
+    /// Every <see cref="Items.ItemResource.WorldModelPath"/> an item authors resolves and is in the
+    /// manifest.
+    ///
+    /// ⚠️ <b>This is the same silent-greybox failure <see cref="ValidateModelAssets"/> exists for,
+    /// one layer out.</b> The path is authored in a <c>.tres</c> rather than named in
+    /// <see cref="ModelAssets"/>, so nothing above sees it — and every consumer of it falls back
+    /// deliberately: <c>EquipmentComponent</c> leaves whatever is already in the hand,
+    /// <c>ItemPickupFactory</c> draws the rarity cube, <c>TrophyStandComponent</c> draws the prism.
+    /// Those fallbacks are correct for an item that authors NO model and are exactly wrong for one
+    /// whose model has been renamed out from under it: the game keeps running and looks like it did
+    /// before the models were ever authored.
+    ///
+    /// Empty is legal and is not reported — most of the realm's 40 crafting materials have no model
+    /// and are not meant to.
+    /// </summary>
+    private static void ValidateItemWorldModels(List<string> issues, string manifestText)
+    {
+        foreach (Items.ItemResource item in Items.ItemDatabase.All.Values)
+        {
+            string path = item.WorldModelPath;
+            if (path.Length == 0)
+            {
+                continue;
+            }
+
+            if (!ResourceLoader.Exists(path))
+            {
+                issues.Add($"item '{item.Id}' names WorldModelPath '{path}', which does not resolve — " +
+                           "it would silently fall back to the rarity-tinted primitive.");
+            }
+            else if (!manifestText.Contains($"\"{path}\""))
+            {
+                issues.Add($"item '{item.Id}' names WorldModelPath '{path}', which is not in the " +
+                           "manifest — run: python tools/assets.py status --write");
+            }
+        }
     }
 
     /// <summary>
