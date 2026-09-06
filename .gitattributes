@@ -13,6 +13,12 @@
 *.godot    text eol=lf
 *.cfg      text eol=lf
 *.gdshader text eol=lf
+# ⚠️ `.uid` was missing from this list and it kept the required CI job red for three days. Godot
+# 4.4+ writes a `.uid` sidecar beside every script and shader, and `tools/world_bake.py`
+# FINGERPRINTS some of them as bake inputs — so a file stored with LF and checked out on Windows as
+# CRLF hashed differently from the same file on a Linux runner. The bake was current on every
+# developer machine and permanently "stale" on CI: a failure that reproduces nowhere.
+*.uid      text eol=lf
 
 # CI workflows run on Linux, and a `run: |` block stored with CRLF fails there with
 # `$'\r': command not found` — the shell treats the carriage return as part of the command. This
