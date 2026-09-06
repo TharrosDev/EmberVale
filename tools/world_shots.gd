@@ -89,6 +89,19 @@ func _initialize() -> void:
 				_capture_errors.append("region %s has a null cell/presentation" % region_path)
 				continue
 			var presentation: Resource = authored_cell.get("Presentation")
+			# A resident staged cell can have collision and detail disabled. The camera is
+			# the probe's focus; bring each photographed cell to Near before ground queries.
+			var centre: Vector3 = authored_cell.get("Center")
+			streamer.call("SetStreamingFocus", centre)
+			var focus_frames := 0
+			while (not streamer.call("IsPositionReady", centre, false) or not streamer.call("IsSettled")) and focus_frames < 600:
+				await process_frame
+				focus_frames += 1
+			if not streamer.call("IsPositionReady", centre, false) or streamer.call("HasFailedCells"):
+				_capture_errors.append("cell failed to activate for capture: %s" % authored_cell.get("Id"))
+				continue
+			await physics_frame
+			await physics_frame
 			await _render_cell([
 				String(authored_cell.get("Id")),
 				authored_cell.get("Center"),
