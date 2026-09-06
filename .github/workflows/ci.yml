@@ -52,21 +52,24 @@ jobs:
           restore-keys: nuget-${{ runner.os }}-
 
       - name: Fast deterministic quality gates
-        run: python tools/world_quality_check.py --mode fast --artifacts artifacts/quality/fast
+        run: python tools/embervale.py world --mode fast --artifacts artifacts/quality/fast
+
+      - name: SDK regression tests
+        run: python tools/embervale.py test
 
       - name: Upload fast-gate failure evidence
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: quality-fast-${{ github.run_id }}
-          path: artifacts/quality/fast
+          path: artifacts/
 
   # ⚠️ ADVISORY, NOT REQUIRED (2026-08-31, maintainer direction). This job renders the game on a
   # GPU-less runner under xvfb, and that is a different renderer from the one its baselines were
   # captured on: the visual gate failed thirteen Frostfang frames purely on ground shading, the
   # stepup probe aborted with SIGABRT *after* printing PASS, and neither had anything to do with the
   # repository. Meanwhile every real defect this quarter was caught by running
-  # `python tools/world_quality_check.py` locally, where a frame can actually be LOOKED at.
+  # `python tools/embervale.py world` locally, where a frame can actually be LOOKED at.
   #
   # So it still runs, still uploads its evidence, and no longer blocks a merge. `continue-on-error`
   # keeps the job's own steps honest — a failure is still red inside the job and in its artifacts —
@@ -100,7 +103,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .godot/imported
-          key: godot-import-${{ env.GODOT_VERSION }}-${{ hashFiles('assets/**/*.import') }}
+          key: godot-import-${{ env.GODOT_VERSION }}-${{ hashFiles('assets/**', 'project.godot') }}
           restore-keys: godot-import-${{ env.GODOT_VERSION }}-
 
       - name: Install Godot ${{ env.GODOT_VERSION }} (mono)
@@ -128,25 +131,31 @@ jobs:
       # The game assembly has to exist before Godot can run the project: --validate boots
       # GameBootstrap, which is C#.
       - name: Build game assembly
-        run: dotnet build
+        run: python tools/embervale.py build
 
       # Import first and preserve its own evidence. A non-zero importer is never silently converted
       # to green; known harmless warnings remain warnings in the log, actual importer failures stop.
+      - name: Doctor
+        run: EMBERVALE_GODOT="$GODOT_BIN" python tools/embervale.py doctor
+
       - name: Import assets
-        run: |
-          mkdir -p artifacts/quality/import
-          set -o pipefail
-          timeout 20m xvfb-run -a "$GODOT_BIN" --headless --path . --import 2>&1 | tee artifacts/quality/import/godot-import.log
+        run: EMBERVALE_GODOT="$GODOT_BIN" python tools/embervale.py import --timeout 1200
+
+      - name: Recursive resource validation
+        run: EMBERVALE_GODOT="$GODOT_BIN" python tools/embervale.py validate
+
+      - name: Representative new game
+        run: EMBERVALE_GODOT="$GODOT_BIN" python tools/embervale.py scenario tools/headless/scenarios/new-game.json
 
       - name: Engine and runtime regression gates
-        run: EMBERVALE_GODOT="$GODOT_BIN" xvfb-run -a python tools/world_quality_check.py --mode engine --artifacts artifacts/quality/engine
+        run: EMBERVALE_GODOT="$GODOT_BIN" xvfb-run -a python tools/embervale.py world --mode engine --artifacts artifacts/quality/engine
 
       - name: Visual regression gates
-        run: EMBERVALE_GODOT="$GODOT_BIN" xvfb-run -a python tools/world_quality_check.py --mode visual --artifacts artifacts/quality/visual
+        run: EMBERVALE_GODOT="$GODOT_BIN" xvfb-run -a python tools/embervale.py world --mode visual --artifacts artifacts/quality/visual
 
       - name: Weekly full mutation and performance battery
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-        run: EMBERVALE_GODOT="$GODOT_BIN" xvfb-run -a python tools/world_quality_check.py --mode full --artifacts artifacts/quality/full
+        run: EMBERVALE_GODOT="$GODOT_BIN" xvfb-run -a python tools/embervale.py world --mode full --artifacts artifacts/quality/full
 
       - name: Upload quality evidence
         if: always()
@@ -155,5 +164,5 @@ jobs:
           name: quality-engine-visual-${{ github.run_id }}
           if-no-files-found: warn
           path: |
-            artifacts/quality
+            artifacts/
             tools/shots/world_diffs

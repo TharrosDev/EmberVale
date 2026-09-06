@@ -1,5 +1,10 @@
 # NOW — where the project is
 
+> **Developer SDK:** [Tooling reference](TOOLING.md). Use `python tools/embervale.py` for local/CI automation,
+> structured results, safe scenarios, screenshots, and shared process/artifact handling.
+> `world_quality_check.py` is now a compatibility entry point to this SDK.
+
+
 **This is the single source of project state. Rewrite it; do not append to it.**
 
 ## Where we are

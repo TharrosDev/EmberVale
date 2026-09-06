@@ -1,0 +1,9 @@
+{
+  "scene": "res://scenes/Main.tscn",
+  "steps": [
+    {"op": "assert", "node": "/root/Main/Shell", "comparison": "exists", "name": "Title shell exists"},
+    {"op": "wait_frames", "frames": 30},
+    {"op": "collect_logs"},
+    {"op": "dump_state"}
+  ]
+}

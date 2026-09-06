@@ -1,5 +1,10 @@
 # Embervale verification matrix
 
+> **Developer SDK:** [Tooling reference](../docs/TOOLING.md). Use `python tools/embervale.py` for local/CI automation,
+> structured results, safe scenarios, screenshots, and shared process/artifact handling.
+> `world_quality_check.py` is now a compatibility entry point to this SDK.
+
+
 `python tools/world_quality_check.py --mode <mode>` is the canonical entry point. It orchestrates
 the existing specialist tools; validation rules remain in their owning C#, GDScript or Python tool.
 Every run has hard process timeouts and writes `artifacts/quality/<UTC run>/summary.json`, per-gate

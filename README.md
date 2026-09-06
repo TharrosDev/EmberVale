@@ -1,5 +1,10 @@
 # Embervale
 
+> **Developer SDK:** [Tooling reference](docs/TOOLING.md). Use `python tools/embervale.py` for local/CI automation,
+> structured results, safe scenarios, screenshots, and shared process/artifact handling.
+> `world_quality_check.py` is now a compatibility entry point to this SDK.
+
+
 > An original hybrid first/third-person, open-world fantasy action-RPG (swap views at any time) built in **Godot 4.7**
 > with **C# (.NET 8)**. A dying world whose magic is failing — explore it, fight
 > with weight, master a deep spell system, and let a **corruption** system reshape

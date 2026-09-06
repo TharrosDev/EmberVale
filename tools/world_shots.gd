@@ -28,6 +28,9 @@ const REGION_PATHS := [
 	"res://data/regions/FrostfangReach.tres",
 ]
 
+var _output := "res://tools/shots/world"
+var _capture_wait := 12
+var _resolution := Vector2i(1280, 720)
 var _sun: DirectionalLight3D
 var _sky: ProceduralSkyMaterial
 var _environment: Environment
@@ -42,8 +45,12 @@ func _initialize() -> void:
 		printerr("world shots: a rendering-capable display is required; run without --headless")
 		quit(4)
 		return
-	seed(0x454d42455256414c)
-	DisplayServer.window_set_size(Vector2i(1280, 720))
+	seed(int(OS.get_environment("EMBERVALE_SEED")) if OS.has_environment("EMBERVALE_SEED") else 0x454d42455256414c)
+	if OS.has_environment("EMBERVALE_ARTIFACTS"):
+		_output = OS.get_environment("EMBERVALE_ARTIFACTS").path_join("world")
+	if OS.has_environment("EMBERVALE_FRAMES"):
+		_capture_wait = maxi(1, int(OS.get_environment("EMBERVALE_FRAMES")))
+	DisplayServer.window_set_size(_resolution)
 
 	# Isolated tools do not construct the application root. Use the same centralized content initializer
 	# before the production RegionStreamer so lairs and other registry-backed actors preview honestly.
@@ -137,7 +144,7 @@ func _render_cell(cell: Array, region: Resource) -> void:
 		["04_exit", route_views[4], route_views[5]],
 		["05_overview", overview, _on_ground(centre, 1.0)],
 	]
-	var folder := "res://tools/shots/world/%s" % cell_id.replace(".", "_")
+	var folder := _output.path_join(cell_id.replace(".", "_"))
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(folder))
 
 	for pass_name in ["day", "dusk"]:
@@ -145,7 +152,7 @@ func _render_cell(cell: Array, region: Resource) -> void:
 		for shot in shots:
 			_camera.global_position = shot[1]
 			_camera.look_at(shot[2], Vector3.UP)
-			for _frame in range(12):
+			for _frame in range(_capture_wait):
 				await process_frame
 			# ⚠️ `process_frame` IS NOT A DRAWN FRAME, AND WITHOUT THIS LINE THE CAPTURE IS STALE.
 			# It fires when the SceneTree has stepped, which can be ahead of what the GPU has
@@ -179,6 +186,12 @@ func _render_cell(cell: Array, region: Resource) -> void:
 			if error != OK or not FileAccess.file_exists(path):
 				_capture_errors.append("%s: PNG write failed (%s)" % [path, error])
 				continue
+			var metadata := FileAccess.open(path + ".json", FileAccess.WRITE)
+			if metadata != null:
+				metadata.store_string(JSON.stringify({"scene": region.resource_path, "viewpoint": key,
+					"position": str(_camera.global_position), "rotation": str(_camera.rotation_degrees),
+					"resolution": [_resolution.x, _resolution.y], "wait_frames": _capture_wait,
+					"seed": OS.get_environment("EMBERVALE_SEED"), "godot": Engine.get_version_info()}, "  "))
 			_signatures[key] = signature
 			print("%s -> %s" % [path, "ok" if error == OK else str(error)])
 
@@ -308,7 +321,7 @@ func _finish_visual_regression() -> bool:
 	var changed_fraction: float = float(baseline.get("changed_block_fraction", DEFAULT_CHANGED_BLOCK_FRACTION))
 	var peak_threshold: float = float(baseline.get("structural_peak_delta", DEFAULT_STRUCTURAL_PEAK_DELTA))
 	var failures := 0
-	var diff_dir := "res://tools/shots/world_diffs"
+	var diff_dir := _output + "_diffs"
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(diff_dir))
 	for key in _signatures:
 		if not expected.has(key):

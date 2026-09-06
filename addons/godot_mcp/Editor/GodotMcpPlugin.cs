@@ -127,6 +127,9 @@ namespace com.IvanMurzak.Godot.MCP
         /// </summary>
         void EnterTreeBoot()
         {
+            // Embervale SDK imports need the filesystem importer, never the editor relay.
+            if (OS.HasEnvironment("EMBERVALE_ARTIFACTS") && DisplayServer.GetName() == "headless")
+                return;
             // Install the process-wide log collector first so every lifecycle line below (resolver
             // probes, plugin-loaded, connection state) is captured for the 'console-get-logs' tool.
             // Godot's C# API exposes no global managed log hook, so the collector is fed explicitly by

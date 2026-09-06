@@ -21,7 +21,7 @@ public readonly record struct SettingsAppliedEvent(Settings Current) : IGameEven
 /// </summary>
 public sealed class SettingsService
 {
-    private const string SettingsPath = "user://settings.tres";
+    private static string SettingsPath => Embervale.Core.UserDataPaths.Resolve("settings.tres");
 
     /// <summary>The live, mutable settings. Mutate fields then call <see cref="Save"/> + <see cref="Apply"/>.</summary>
     public Settings Current { get; private set; } = new();

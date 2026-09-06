@@ -23,7 +23,7 @@ namespace Embervale.Save;
 public sealed partial class SaveManager : Node
 {
     private const int SaveFormatVersion = 2;
-    private const string SaveDirectory = "user://saves";
+    private static string SaveDirectory => Embervale.Core.UserDataPaths.Resolve("saves");
 
     public static SaveManager Instance { get; private set; } = null!;
 
@@ -300,6 +300,12 @@ public sealed partial class SaveManager : Node
     /// Best-effort: any failure is logged and ignored — a missing thumbnail never breaks a save.</summary>
     private void CaptureScreenshot(string slot)
     {
+        // The dummy renderer has no texture. A headless save is valid without a thumbnail;
+        // calling GetImage there emits a native error even though the save itself succeeds.
+        if (DisplayServer.GetName() == "headless")
+        {
+            return;
+        }
         try
         {
             Image? image = GetViewport()?.GetTexture()?.GetImage();

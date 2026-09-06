@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import subprocess
+from quality_common import legacy_run, legacy_check_output
 from pathlib import Path
 
 
@@ -28,7 +29,7 @@ def main() -> int:
 
     current = json.loads(BASELINE.read_text(encoding="utf-8"))
     committed = json.loads(
-        subprocess.check_output(
+        legacy_check_output(
             ["git", "show", f"HEAD:{BASELINE.as_posix()}"], text=True
         )
     )

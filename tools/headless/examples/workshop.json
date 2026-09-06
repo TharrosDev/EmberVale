@@ -1,0 +1,20 @@
+{
+  "name": "SdkWorkshop",
+  "operations": [
+    {"op": "create_resource", "id": "stone", "type": "StandardMaterial3D", "properties": {"albedo_color": [0.26, 0.32, 0.38, 1], "roughness": 0.9}},
+    {"op": "create_resource", "id": "floor_mesh", "type": "BoxMesh", "properties": {"size": [8, 0.3, 8]}},
+    {"op": "create_resource", "id": "floor_shape", "type": "BoxShape3D", "properties": {"size": [8, 0.3, 8]}},
+    {"op": "create_node", "id": "Floor", "type": "StaticBody3D", "properties": {"position": [0, -0.15, 0]}},
+    {"op": "create_node", "id": "FloorVisual", "type": "MeshInstance3D", "parent": "Floor", "properties": {"mesh": {"resource": "floor_mesh"}, "material_override": {"resource": "stone"}}},
+    {"op": "create_node", "id": "FloorCollision", "type": "CollisionShape3D", "parent": "Floor", "properties": {"shape": {"resource": "floor_shape"}}},
+    {"op": "create_resource", "id": "crate_mesh", "type": "BoxMesh", "properties": {"size": [1, 1, 1]}},
+    {"op": "create_resource", "id": "wood", "type": "StandardMaterial3D", "properties": {"albedo_color": [0.5, 0.28, 0.12, 1], "roughness": 0.85}},
+    {"op": "create_node", "id": "Crate", "type": "MeshInstance3D", "properties": {"mesh": {"resource": "crate_mesh"}, "material_override": {"resource": "wood"}, "position": [0, 0.5, 0]}},
+    {"op": "add_group", "target": "Crate", "group": "sdk_props"},
+    {"op": "create_node", "id": "Spawn", "type": "Marker3D", "properties": {"position": [0, 1.2, 2]}},
+    {"op": "create_node", "id": "Camera", "type": "Camera3D", "properties": {"position": [0, 3, 6], "rotation_degrees": [-20, 0, 0], "current": true}},
+    {"op": "create_node", "id": "Sun", "type": "DirectionalLight3D", "properties": {"rotation_degrees": [-45, -25, 0], "light_energy": 1.5}},
+    {"op": "create_resource", "id": "sky", "type": "Environment", "properties": {"background_mode": 1, "background_color": [0.12, 0.16, 0.22, 1], "ambient_light_source": 3, "ambient_light_color": [0.5, 0.6, 0.7, 1], "ambient_light_energy": 0.4}},
+    {"op": "create_node", "id": "Environment", "type": "WorldEnvironment", "properties": {"environment": {"resource": "sky"}}}
+  ]
+}

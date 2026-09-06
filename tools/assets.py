@@ -32,6 +32,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -42,11 +43,11 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import audit_3d
-from quality_common import ROOT, command_text, discover_godot, run_process, write_json
+from quality_common import ROOT, command_text, discover_godot, discover_blender, run_process, write_json
 
 MODELS = ROOT / "assets" / "models"
 MANIFEST = MODELS / "manifest.json"
-RUNS = ROOT / "reports" / "3d" / "runs"
+RUNS = Path(os.environ["EMBERVALE_ARTIFACTS"]) / "assets" if os.environ.get("EMBERVALE_ARTIFACTS") else ROOT / "reports" / "3d" / "runs"
 MODEL_EXTENSIONS = {".glb", ".gltf"}
 
 # The retarget's marker. CharacterAnimationComponent.AddSharedLibrary attaches the shared 46-clip
@@ -221,52 +222,19 @@ def validate_gates(engine: str | None, humanoids: list[str]) -> list[Gate]:
 
 
 def run_gates(gates: list[Gate], engine: str | None, verbose: bool) -> int:
-    artifacts = RUNS / dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    artifacts.mkdir(parents=True, exist_ok=True)
-    failures, blocked = [], []
-    # A fresh clone has no .godot/imported, so every engine gate would fail on "cannot load
-    # resource" - which reads as broken art rather than an unimported checkout. "Could not check"
-    # and "checked and it is broken" must never look alike.
-    imported = (ROOT / ".godot" / "imported").is_dir()
-    print("-" * 78)
+    from embervale_sdk.cli import Run, parser
+    args = parser().parse_args(["assets", "validate", "--artifacts", str(RUNS),
+                                "--timeout", str(max((g.timeout for g in gates), default=900))])
+    run = Run(args)
+    run.version()
+    imported = (ROOT / ".godot/imported").is_dir()
     for gate in gates:
         if gate.needs == "godot" and (engine is None or not imported):
-            reason = ("no Godot: set EMBERVALE_GODOT" if engine is None else
-                      "assets not imported yet: godot --headless --path . --import")
-            print(f"  {gate.name:<16} BLOCKED   0.0s  {gate.what}")
-            print(f"      {reason}")
-            blocked.append(gate.name)
+            run.issue("assets.prerequisite", "Godot and imported assets required: " + gate.name)
+            run.result["steps"].append(dict(name=gate.name, exit_code=2))
             continue
-        result = run_process(gate.command, timeout=gate.timeout, cwd=ROOT)
-        (artifacts / f"{gate.name}.log").write_text(result.output, encoding="utf-8")
-        if result.launch_error:
-            status, detail = "BLOCKED", f"could not start: {result.launch_error}"
-        elif result.timed_out:
-            status, detail = "TIMEOUT", f"exceeded {gate.timeout}s"
-        elif result.returncode != 0:
-            status, detail = "FAIL", f"exit code {result.returncode}"
-        else:
-            status, detail = "PASS", ""
-        print(f"  {gate.name:<16} {status:<9} {result.elapsed_seconds:4.1f}s  {gate.what}")
-        if detail:
-            lines = [line for line in result.output.splitlines() if line.strip()]
-            for line in (lines if verbose else lines[-15:]):
-                print("      " + line)
-            print(f"      reproduce: {command_text(gate.command)}")
-        if status in ("FAIL", "TIMEOUT"):
-            failures.append(gate.name)
-        elif status == "BLOCKED":
-            blocked.append(gate.name)
-    print("-" * 78)
-    print(f"logs: {artifacts}")
-    if blocked:
-        print(f"BLOCKED: {', '.join(blocked)} (could not check - not the same as broken)")
-        return 2
-    if failures:
-        print(f"FAILED: {', '.join(failures)}")
-        return 1
-    print("all gates passed")
-    return 0
+        run.process(gate.name, gate.command, timeout=gate.timeout)
+    return run.finish()
 
 
 # --------------------------------------------------------------------------- commands
@@ -337,7 +305,8 @@ def cmd_audit(args: argparse.Namespace) -> int:
     if args.render != "none":
         command += ["--render", args.render]
     print(f"full audit -> {output}")
-    result = subprocess.run(command, cwd=ROOT, check=False)
+    result = run_process(command, cwd=ROOT, timeout=1800)
+    print(result.output or result.launch_error or "")
     return result.returncode
 
 
@@ -357,11 +326,8 @@ def cmd_build(args: argparse.Namespace) -> int:
     duplicated 200 MB texture set and metallic plaster. That was a comment in one script's header;
     it is a sequence here.
     """
-    blender = shutil.which("blender") or next(
-        (str(path) for path in (
-            Path(r"C:\Program Files\Blender Foundation\Blender 5.1\blender.exe"),
-            Path(r"C:\Program Files\Blender Foundation\Blender 5.0\blender.exe")) if path.is_file()),
-        None)
+    blender_path = discover_blender()
+    blender = str(blender_path) if blender_path else None
     if args.target == "anim-library":
         engine = discover_godot()
         if engine is None:
@@ -379,7 +345,8 @@ def cmd_build(args: argparse.Namespace) -> int:
                  [sys.executable, "tools/repair_architecture_materials.py"]]
     for step in steps:
         print(f"  -> {command_text(step)}")
-        result = subprocess.run(step, cwd=ROOT, check=False)
+        result = run_process(step, cwd=ROOT, timeout=1800)
+        print(result.output or result.launch_error or "")
         if result.returncode != 0:
             print(f"assets build: step failed ({result.returncode}); "
                   f"the remaining steps did NOT run, so the tree is half-built.", file=sys.stderr)
@@ -416,7 +383,7 @@ def cmd_adopt(args: argparse.Namespace) -> int:
         if args.strip_animations:
             step += ["--strip-animations"]
     print(f"  -> {command_text(step)}")
-    if subprocess.run(step, cwd=ROOT, check=False).returncode != 0:
+    if run_process(step, cwd=ROOT, timeout=1800).returncode != 0:
         return 1
 
     # ⚠️ A replacement inherits its predecessor's .import, including its root_scale. npc_woman_dress
@@ -433,7 +400,12 @@ def cmd_adopt(args: argparse.Namespace) -> int:
         print("     Set EMBERVALE_GODOT, then: python tools/assets.py validate")
         return 2
     print("  -> godot --headless --import")
-    run_process([str(engine), "--headless", "--path", ".", "--import"], timeout=1800, cwd=ROOT)
+    imported = run_process([str(engine), "--headless", "--path", ".", "--import"], timeout=1800, cwd=ROOT)
+    from embervale_sdk.contract import diagnostics_from_log
+    if imported.returncode or any(d["severity"] == "error" for d in diagnostics_from_log(imported.output, "import")):
+        print(imported.output or imported.launch_error)
+        print("assets adopt: import failed; manifest and rig checks were not advanced.")
+        return 1
 
     write_json(MANIFEST, build_manifest())
     entry = next((a for a in load_manifest()["assets"] if a["id"] == dest.stem), None)

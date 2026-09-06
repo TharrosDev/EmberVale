@@ -1,0 +1,67 @@
+{
+  "scene": "res://scenes/Main.tscn",
+  "steps": [
+    {
+      "op": "new_game"
+    },
+    {
+      "op": "wait_until",
+      "name": "New game reaches Playing with a spawned player",
+      "node": "/root/Main",
+      "property": "AutomationPlaying",
+      "comparison": "eq",
+      "value": true,
+      "frames": 1800
+    },
+    {
+      "op": "send_action",
+      "action": "interact",
+      "frames": 2
+    },
+    {
+      "op": "wait_frames",
+      "frames": 10
+    },
+    {
+      "op": "wait_frames",
+      "frames": 30
+    },
+    {
+      "op": "scene_tree"
+    },
+    {
+      "op": "collect_metrics"
+    },
+    {
+      "op": "send_action",
+      "action": "move_forward",
+      "frames": 6
+    },
+    {
+      "op": "send_action",
+      "action": "toggle_camera",
+      "frames": 2
+    },
+    {
+      "op": "wait_frames",
+      "frames": 30
+    },
+    {
+      "op": "capture_screenshot",
+      "name": "third-person"
+    },
+    {
+      "op": "send_action",
+      "action": "toggle_camera",
+      "frames": 2
+    },
+    {
+      "op": "wait_frames",
+      "frames": 30
+    },
+    {
+      "op": "capture_screenshot",
+      "name": "first-person"
+    }
+  ]
+}

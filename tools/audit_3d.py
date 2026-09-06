@@ -289,6 +289,9 @@ def usage_for(model_path: str, texts: dict[str, str]) -> dict[str, Any]:
 
 
 def discover_executable(name: str, candidates: list[Path]) -> Path | None:
+    from quality_common import discover_blender, discover_godot
+    if name == "blender": return discover_blender()
+    if name == "godot": return discover_godot()
     found = shutil.which(name)
     if found:
         return Path(found)
@@ -296,12 +299,9 @@ def discover_executable(name: str, candidates: list[Path]) -> Path | None:
 
 
 def run_external(command: list[str], timeout: int) -> tuple[bool, str]:
-    try:
-        completed = subprocess.run(command, cwd=ROOT, text=True, stdout=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT, timeout=timeout, check=False)
-        return completed.returncode == 0, completed.stdout
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        return False, str(exc)
+    from quality_common import run_process
+    completed = run_process(command, cwd=ROOT, timeout=timeout)
+    return completed.returncode == 0, completed.output or completed.launch_error or ""
 
 
 def load_json_if(path: Path) -> dict[str, Any]:

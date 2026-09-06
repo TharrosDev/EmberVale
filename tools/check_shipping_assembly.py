@@ -10,7 +10,7 @@ Usage:  python tools/check_shipping_assembly.py   (it builds ExportRelease itsel
 """
 import pathlib
 import re
-import subprocess
+from quality_common import run_process
 import sys
 
 DLL = pathlib.Path(".godot/mono/temp/bin/ExportRelease/Embervale.dll")
@@ -27,9 +27,9 @@ FORBIDDEN_PREFIXES = ["IvanMurzak", "GodotMCP", "com.IvanMurzak"]
 def main() -> int:
     # Self-contained: build the configuration under test rather than trusting whatever a previous
     # step happened to leave behind. A stale DLL would make this gate pass on the wrong assembly.
-    build = subprocess.run(
+    build = run_process(
         ["dotnet", "build", "Embervale.csproj", "-c", "ExportRelease", "--nologo", "-v", "q"],
-        capture_output=True, text=True)
+        timeout=600)
     if build.returncode != 0:
         print("FAIL: the ExportRelease build did not succeed:")
         print(build.stdout.strip() or build.stderr.strip())

@@ -13,6 +13,9 @@
 # tools/shots/ is DISPOSABLE — regenerate it, do not commit it; the .gdignore there keeps Godot from
 # importing the PNGs as textures if any are left lying about.
 extends SceneTree
+const SdkCapture = preload("res://tools/headless/capture.gd")
+var _capture_failed := false
+var _capture_output := "res://tools/shots"
 
 const SHOTS := [
 	# name, camera position, look-at target
@@ -35,6 +38,13 @@ const SHOTS := [
 ]
 
 func _initialize() -> void:
+	if DisplayServer.get_name() == "headless":
+		printerr("ERROR: market_shots requires a rendering display")
+		quit(2)
+		return
+	if OS.has_environment("EMBERVALE_ARTIFACTS"):
+		_capture_output = OS.get_environment("EMBERVALE_ARTIFACTS").path_join("market_shots")
+	seed(int(OS.get_environment("EMBERVALE_SEED")) if OS.has_environment("EMBERVALE_SEED") else 12345)
 	var packed: PackedScene = load("res://scenes/regions/ember_crown/embermarket.tscn")
 	if packed == null:
 		print("FAIL: embermarket.tscn did not load")
@@ -91,14 +101,15 @@ func _initialize() -> void:
 			cam.look_at(shot[2], Vector3.UP)
 			for _i in range(8):
 				await process_frame
-			var img: Image = root.get_texture().get_image()
-			var path := "res://tools/shots/%s_%s.png" % [pass_name, shot[0]]
-			DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://tools/shots"))
-			var err := img.save_png(path)
-			print("%s -> %s" % [path, "ok" if err == OK else str(err)])
+			var path := _capture_output.path_join("%s_%s.png" % [pass_name, shot[0]])
+			var result: Dictionary = await SdkCapture.capture(root, path, {"viewpoint": shot[0],
+				"pass": pass_name, "position": str(cam.global_position), "seed": OS.get_environment("EMBERVALE_SEED")})
+			if not result.success:
+				printerr("ERROR: " + result.message)
+				_capture_failed = true
 
 	print("done")
-	quit(0)
+	quit(1 if _capture_failed else 0)
 
 func _count(n: Node) -> int:
 	var total := 1

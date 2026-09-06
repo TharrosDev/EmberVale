@@ -25,6 +25,7 @@ scatter offers mushrooms and rock paths that most cells never adopted.
 import os
 import re
 import subprocess
+from quality_common import legacy_run, legacy_check_output
 import sys
 
 TOOLS = os.path.dirname(os.path.abspath(__file__))
@@ -61,7 +62,7 @@ def main(argv):
     cmd = [sys.executable, os.path.join(TOOLS, "dress_cell.py"), path, style, first]
     if "--seed" in opt:
         cmd.append(f"--seed={opt['--seed']}")
-    table = subprocess.run(cmd, capture_output=True, text=True, check=True).stdout
+    table = legacy_run(cmd, capture_output=True, text=True, check=True).stdout
 
     # ⚠️ A ROW NAMING AN EXT ID THE CELL DOES NOT DECLARE IS A SCENE THAT WILL NOT LOAD, and the
     # scatter offers twelve species while most cells import eight or nine. dress_cell numbers from
@@ -84,7 +85,7 @@ def main(argv):
         print(f"  skipped species this cell does not declare: {', '.join(sorted(skipped))}")
     rows = [r for n, r in enumerate(rows) if n % keep_d < keep_n]
 
-    stanzas = subprocess.run(
+    stanzas = legacy_run(
         [sys.executable, os.path.join(TOOLS, "gen_cell_props.py"), "-", "--no-collider", "--parent=."],
         input="\n".join(rows), capture_output=True, text=True, check=True).stdout
 

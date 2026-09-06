@@ -77,7 +77,17 @@ func _rest_aabb(node: Node) -> AABB:
 	var total := AABB()
 	var first := true
 	for mesh in _meshes(node):
-		var box: AABB = mesh.global_transform * mesh.get_aabb()
+		# Imported scenes are deliberately detached: global_transform requires tree entry.
+		# Accumulate native local transforms without running model scripts or animations.
+		var transform := Transform3D.IDENTITY
+		var current: Node = mesh
+		while current != null:
+			if current is Node3D:
+				transform = current.transform * transform
+			if current == node:
+				break
+			current = current.get_parent()
+		var box: AABB = transform * mesh.get_aabb()
 		if first: total = box; first = false
 		else: total = total.merge(box)
 	return total

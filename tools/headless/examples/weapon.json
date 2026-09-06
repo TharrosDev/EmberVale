@@ -1,0 +1,10 @@
+{
+  "source": "res://data/_templates/WeaponTemplate.tres",
+  "operations": [
+    {"op": "customize", "target": "root", "properties": {
+      "DisplayName": "SDK Training Sword",
+      "BaseDamage": 14.0,
+      "StaminaCost": 10.0
+    }}
+  ]
+}

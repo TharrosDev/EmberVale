@@ -34,6 +34,25 @@ public partial class ApplicationRoot : Node3D, IServiceScopeHost
 
     public GameShellController Shell { get; private set; } = null!;
 
+#if EMBERVALE_TOOLING
+    /// <summary>Finite SDK adapter: uses the real new-game path with an isolated slot.</summary>
+    public void AutomationNewGame()
+    {
+        if (string.IsNullOrEmpty(OS.GetEnvironment("EMBERVALE_USER_DIR")))
+        {
+            GD.PushError("Automation requires an isolated EMBERVALE_USER_DIR");
+            return;
+        }
+        Shell.AutomationNewGame();
+    }
+
+    [Export] public bool AutomationPlaying
+    {
+        get => GameManager.Instance is { IsPlaying: true } && Lifecycle.Session?.Players.Player != null;
+        private set { } // Derived diagnostic state; deserialization cannot change it.
+    }
+#endif
+
     public override void _Ready()
     {
         // The tool modes run before anything is built and quit the process: they must be fast and

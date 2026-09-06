@@ -1,5 +1,10 @@
 # CLAUDE.md — Embervale
 
+> **Developer SDK:** [Tooling reference](docs/TOOLING.md). Use `python tools/embervale.py` for local/CI automation,
+> structured results, safe scenarios, screenshots, and shared process/artifact handling.
+> `world_quality_check.py` is now a compatibility entry point to this SDK.
+
+
 Authoritative guide for working in this repository. Read this first. It explains
 what the project is, how it is built, the conventions, the gotchas that will bite
 you, and step-by-step recipes for adding new content without breaking things. The

@@ -26,7 +26,7 @@ public abstract partial class ShotHarness : Node
 {
     /// <summary>Frames to let the world settle before the first capture. A region streams in over
     /// many frames and a shot taken too early photographs a half-loaded world.</summary>
-    private const int SettleFrames = 90;
+    private static int SettleFrames => int.TryParse(OS.GetEnvironment("EMBERVALE_FRAMES"), out int frames) ? Math.Max(1, frames) : 90;
 
     /// <summary>Frames between driving a state and capturing it. UI updates in <c>_Process</c> and
     /// several widgets ease over <see cref="UI.UiTheme"/> durations, so a capture taken too soon
@@ -44,6 +44,9 @@ public abstract partial class ShotHarness : Node
 
     /// <summary>Where the PNGs land, as a <c>user://</c> path.</summary>
     protected abstract string OutputDir { get; }
+
+    private string CaptureDirectory => string.IsNullOrEmpty(OS.GetEnvironment("EMBERVALE_ARTIFACTS"))
+        ? OutputDir : System.IO.Path.Combine(OS.GetEnvironment("EMBERVALE_ARTIFACTS"), Flag.TrimStart('-'));
 
     /// <summary>Registers the states to capture, in order, via <see cref="Shot"/>.</summary>
     protected abstract void BuildShotList();
@@ -69,9 +72,9 @@ public abstract partial class ShotHarness : Node
             return;
         }
         DisplayServer.WindowSetSize(new Vector2I(1280, 720));
-        if (DirAccess.MakeDirRecursiveAbsolute(OutputDir) != Error.Ok)
+        if (DirAccess.MakeDirRecursiveAbsolute(CaptureDirectory) != Error.Ok)
         {
-            Fail($"could not create output directory {ProjectSettings.GlobalizePath(OutputDir)}");
+            Fail($"could not create output directory {ProjectSettings.GlobalizePath(CaptureDirectory)}");
             GetTree().Quit(2);
             return;
         }
@@ -82,7 +85,7 @@ public abstract partial class ShotHarness : Node
             GetTree().Quit(2);
             return;
         }
-        Log.Info($"{Flag}: {_shots.Count} state(s) queued; output -> {ProjectSettings.GlobalizePath(OutputDir)}");
+        Log.Info($"{Flag}: {_shots.Count} state(s) queued; output -> {ProjectSettings.GlobalizePath(CaptureDirectory)}");
     }
 
     public override void _Process(double delta)
@@ -122,7 +125,7 @@ public abstract partial class ShotHarness : Node
                 }
                 else
                 {
-                    Log.Info($"{Flag}: wrote {_shots.Count} verified image(s) to {ProjectSettings.GlobalizePath(OutputDir)}");
+                    Log.Info($"{Flag}: wrote {_shots.Count} verified image(s) to {ProjectSettings.GlobalizePath(CaptureDirectory)}");
                     GetTree().Quit(0);
                 }
                 return;
@@ -161,7 +164,7 @@ public abstract partial class ShotHarness : Node
             return;
         }
 
-        string path = $"{OutputDir}/{name}.png";
+        string path = $"{CaptureDirectory}/{name}.png";
         Error error = image.SavePng(path);
         if (error != Error.Ok)
         {
@@ -173,6 +176,17 @@ public abstract partial class ShotHarness : Node
         {
             Fail($"SavePng reported success but '{path}' is missing");
             return;
+        }
+
+        using (var metadata = FileAccess.Open(path + ".json", FileAccess.ModeFlags.Write))
+        {
+            metadata?.StoreString(System.Text.Json.JsonSerializer.Serialize(new
+            {
+                name, suite = Flag, frame = Engine.GetProcessFrames(),
+                seed = OS.GetEnvironment("EMBERVALE_SEED"),
+                resolution = new[] { image.GetWidth(), image.GetHeight() },
+                godot = Engine.GetVersionInfo()["string"].AsString(),
+            }));
         }
 
         Log.Info($"{Flag}: wrote {ProjectSettings.GlobalizePath(path)} ({image.GetWidth()}x{image.GetHeight()})");

@@ -1,5 +1,10 @@
 # World authoring
 
+> **Developer SDK:** [Tooling reference](TOOLING.md). Use `python tools/embervale.py` for local/CI automation,
+> structured results, safe scenarios, screenshots, and shared process/artifact handling.
+> `world_quality_check.py` is now a compatibility entry point to this SDK.
+
+
 The canonical exterior-region workflow. Read `CLAUDE.md`, `NOW.md`, `ARCHITECTURE.md`,
 `ART_STYLE.md`, `ASSET_POLICY.md` and `SAVE_FORMAT.md` before using it.
 

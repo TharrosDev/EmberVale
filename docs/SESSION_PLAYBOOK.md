@@ -1,5 +1,10 @@
 # Session Playbook — moved
 
+> **Developer SDK:** [Tooling reference](TOOLING.md). Use `python tools/embervale.py` for local/CI automation,
+> structured results, safe scenarios, screenshots, and shared process/artifact handling.
+> `world_quality_check.py` is now a compatibility entry point to this SDK.
+
+
 This file was split into **[`docs/playbook/`](playbook/)**, one file per phase, in the
 agent-ergonomics pass. Nothing was reworded or removed.
 

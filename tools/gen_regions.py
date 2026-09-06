@@ -28,6 +28,7 @@ from __future__ import annotations
 import argparse
 import re
 import subprocess
+from quality_common import legacy_run, legacy_check_output
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -257,13 +258,13 @@ def legacy_blocks(filename: str) -> dict[str, str]:
     path = f"data/regions/{filename}"
 
     def show() -> str | None:
-        result = subprocess.run(["git", "show", f"{LEGACY_REV}:{path}"],
+        result = legacy_run(["git", "show", f"{LEGACY_REV}:{path}"],
                                 cwd=ROOT, capture_output=True, text=True, encoding="utf-8")
         return result.stdout if result.returncode == 0 else None
 
     text = show()
     if text is None:
-        subprocess.run(["git", "fetch", "--depth=1", "origin", LEGACY_REV],
+        legacy_run(["git", "fetch", "--depth=1", "origin", LEGACY_REV],
                        cwd=ROOT, capture_output=True, text=True)
         text = show()
     if text is None:

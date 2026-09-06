@@ -15,7 +15,6 @@ import argparse
 import hashlib
 import json
 import re
-import subprocess
 import sys
 from pathlib import Path
 
@@ -51,7 +50,16 @@ def digest(path: Path) -> str:
 
 
 def source_hashes() -> dict[str, str]:
-    return {path.relative_to(ROOT).as_posix(): digest(path) for path in files_for(SOURCE_GLOBS)}
+    return {path.relative_to(ROOT).as_posix(): source_digest(path) for path in files_for(SOURCE_GLOBS)}
+
+
+def source_digest(path: Path) -> str:
+    # Git checks C#/Python out with platform-native endings. Source identity must survive
+    # that checkout conversion; binary artifacts retain exact byte hashes via digest().
+    payload = path.read_bytes()
+    if path.suffix in {".cs", ".py", ".tres", ".tscn", ".import", ".gdshader", ".gdshaderinc"}:
+        payload = payload.replace(b"\r\n", b"\n")
+    return hashlib.sha256(payload).hexdigest()
 
 
 def aggregate(hashes: dict[str, str]) -> str:
@@ -138,8 +146,9 @@ def check() -> int:
 def bake() -> int:
     before = source_hashes()
     signature = aggregate(before)
-    generation = subprocess.run(
-        [sys.executable, "tools/gen_regions.py", "--check"], cwd=ROOT, check=False)
+    generation = run_process(
+        [sys.executable, "tools/gen_regions.py", "--check"], cwd=ROOT, timeout=120)
+    print(generation.output, end="")
     if generation.returncode != 0:
         print("region resources are stale; run python tools/gen_regions.py before baking", file=sys.stderr)
         return generation.returncode

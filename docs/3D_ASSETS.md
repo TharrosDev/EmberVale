@@ -1,5 +1,10 @@
 # Embervale 3D assets
 
+> **Developer SDK:** [Tooling reference](TOOLING.md). Use `python tools/embervale.py` for local/CI automation,
+> structured results, safe scenarios, screenshots, and shared process/artifact handling.
+> `world_quality_check.py` is now a compatibility entry point to this SDK.
+
+
 The contract for every model in this game. It is the only 3D document you need to read: the rules
 here are current, and nothing under `reports/3d/archive/` is required reading.
 

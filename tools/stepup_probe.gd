@@ -89,7 +89,17 @@ func _walk(label: String, start: Vector3, direction: Vector3, expect_climb: bool
 	root.add_child(body)
 	# The probe root is identity, so local position is the same coordinate and avoids asking for a
 	# global transform during CharacterEntity's first tree-notification frame.
-	body.position = start
+	var query := PhysicsRayQueryParameters3D.create(
+		Vector3(start.x, 400, start.z), Vector3(start.x, -200, start.z))
+	query.collision_mask = 1
+	query.exclude = [body.get_rid()]
+	var ground := root.world_3d.direct_space_state.intersect_ray(query)
+	if ground.is_empty():
+		printerr("ERROR: stepup probe has no ground under " + str(start))
+		body.queue_free()
+		return false
+	# Authored X/Z still target the salt steps; Y follows the real generated terrain.
+	body.position = Vector3(start.x, ground.position.y + 0.05, start.z)
 
 	await process_frame
 	await process_frame

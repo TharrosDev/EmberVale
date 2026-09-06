@@ -11,7 +11,7 @@ public static class WorldPhysicsContract
     public static IReadOnlyList<string> Validate(Node root)
     {
         var issues = new List<string>();
-        Visit(root, issues);
+        Visit(root, root.IsInsideTree() ? root.GetPath().ToString() : root.Name.ToString(), issues);
         return issues;
     }
 
@@ -53,17 +53,17 @@ public static class WorldPhysicsContract
         return issues;
     }
 
-    private static void Visit(Node node, List<string> issues)
+    private static void Visit(Node node, string path, List<string> issues)
     {
         if (node is CollisionObject3D collision)
         {
             issues.AddRange(Validate(
-                collision.GetPath().ToString(), collision.GetType().Name,
+                path, collision.GetType().Name,
                 collision.CollisionLayer, collision.CollisionMask));
         }
         foreach (Node child in node.GetChildren())
         {
-            Visit(child, issues);
+            Visit(child, $"{path}/{child.Name}", issues);
         }
     }
 }

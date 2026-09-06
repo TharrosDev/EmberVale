@@ -56,6 +56,10 @@ public sealed partial class GameShellController : Node
 #endif
     }
 
+#if EMBERVALE_TOOLING
+    public void AutomationNewGame() => StartNewGame("automation", Races.CharacterProfile.Human);
+#endif
+
     private void StartNewGame(string slot, Races.CharacterProfile profile)
     {
         DismissTitle();

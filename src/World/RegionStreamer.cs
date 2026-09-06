@@ -503,12 +503,13 @@ public sealed partial class RegionStreamer : Node3D
         {
             scatter = root.GetNodeOrNull<WorldBiomeScatter>("BiomeScatter");
         }
-        var activation = new WorldCellActivation(root);
-        AddChild(root);
+        // Audit authored collision before staged activation intentionally clears its layers.
         foreach (string issue in WorldPhysicsContract.Validate(root))
         {
             Log.Error($"World collision contract: {issue}");
         }
+        var activation = new WorldCellActivation(root);
+        AddChild(root);
         _loaded[cell.Id] = root;
         _runtime[cell.Id] = activation;
         _performance?.RecordCellLoaded(cell.Id, root, scatter?.InstanceCount ?? 0);

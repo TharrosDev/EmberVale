@@ -1,5 +1,10 @@
 # Embervale agent guide
 
+> **Developer SDK:** [Tooling reference](docs/TOOLING.md). Use `python tools/embervale.py` for local/CI automation,
+> structured results, safe scenarios, screenshots, and shared process/artifact handling.
+> `world_quality_check.py` is now a compatibility entry point to this SDK.
+
+
 This repository is Godot 4.7 / C# .NET 8. Before changing it, read `docs/NOW.md` and the
 documents it links. **For 3D asset work, `docs/3D_ASSETS.md` is the contract and
 `python tools/assets.py status` is the state** — those two, and nothing else. Nothing under

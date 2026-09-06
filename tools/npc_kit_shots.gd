@@ -35,11 +35,18 @@ var camera: Camera3D
 
 
 func _initialize() -> void:
+	if DisplayServer.get_name() == "headless":
+		printerr("ERROR: npc_kit_shots requires a rendering display")
+		quit(2)
+		return
+	if OS.has_environment("EMBERVALE_ARTIFACTS"):
+		output = OS.get_environment("EMBERVALE_ARTIFACTS").path_join("npc_kit_shots")
+	seed(int(OS.get_environment("EMBERVALE_SEED")) if OS.has_environment("EMBERVALE_SEED") else 12345)
 	var args := OS.get_cmdline_user_args()
 	for i in range(args.size() - 1):
 		if args[i] == "--output":
 			output = args[i + 1]
-	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://" + output))
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(output if output.is_absolute_path() else "res://" + output))
 	call_deferred("_run")
 
 
@@ -169,7 +176,7 @@ func capture(label: String, position: Vector3, target: Vector3) -> void:
 	await process_frame
 	await RenderingServer.frame_post_draw
 	var image := root.get_texture().get_image()
-	var path := ProjectSettings.globalize_path("res://" + output + "/" + label + ".png")
+	var path := ProjectSettings.globalize_path((output if output.is_absolute_path() else "res://" + output).path_join(label + ".png"))
 	var error := image.save_png(path)
 	if error != OK:
 		push_error("Could not save " + path + ": " + str(error))
