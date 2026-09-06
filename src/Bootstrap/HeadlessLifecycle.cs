@@ -102,10 +102,7 @@ public static class HeadlessLifecycle
             return;
         }
 
-        // The world is genuinely resident here: the gate only opens once the streamer has settled
-        // and the physics server reports collision under the player.
-        Check(session.WorldDirector.Streamer is { } streamer && streamer.IsSettled(),
-            $"cycle {cycle} new-game: reached Playing with an unsettled streamer.");
+        CheckLandingReady(session, $"cycle {cycle} new-game");
 
         Check(SaveManager.Instance?.SaveGame(slot) == true, $"cycle {cycle} new-game: the session failed to save.");
     }
@@ -130,7 +127,19 @@ public static class HeadlessLifecycle
         if (!await WaitForPlaying(root))
         {
             Failures.Add($"cycle {cycle} load: the world never reached Playing within {LoadFrameBudget} frames.");
+            return;
         }
+        CheckLandingReady(lifecycle.Session!, $"cycle {cycle} load");
+    }
+
+    private static void CheckLandingReady(GameSession session, string label)
+    {
+        // LoadingCoordinator opens play once the landing cell has active collision. Distant
+        // staged cells may still be streaming, so global IsSettled is not the gameplay contract.
+        Check(session.Players.Player is { } player &&
+              session.WorldDirector.Streamer is { } streamer && !streamer.HasFailedCells() &&
+              streamer.IsPositionReady(player.GlobalPosition),
+            $"{label}: reached Playing without a ready landing cell or with failed cells.");
     }
 
     /// <summary>
