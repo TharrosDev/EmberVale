@@ -23,6 +23,10 @@ uniform float depth_range = 12.0;  // must match WorldCellWater.DepthRange
 uniform float wave_scale = 7.0;
 uniform float wave_speed = 0.13;
 
+global uniform vec3 world_wind;
+global uniform float world_rain;
+global uniform float world_visual_time;
+
 varying float depth;
 varying vec3 world_pos;
 
@@ -54,7 +58,8 @@ void fragment() {
 	float tone = smoothstep(0.0, max(0.2, opaque_depth), d);
 
 	vec2 w = world_pos.xz / max(0.5, wave_scale);
-	float t = TIME * wave_speed;
+	float t = world_visual_time * wave_speed;
+	w += world_wind.xz * t * 0.025;
 	float ripple = vnoise(w + vec2(t, t * 0.63)) * 0.6 + vnoise(w * 2.3 - vec2(t * 0.8, t)) * 0.4;
 	float rx = vnoise(w + vec2(0.08 + t, t * 0.63)) * 0.6 + vnoise((w + vec2(0.08, 0.0)) * 2.3 - vec2(t * 0.8, t)) * 0.4;
 	float rz = vnoise(w + vec2(t, 0.08 + t * 0.63)) * 0.6 + vnoise((w + vec2(0.0, 0.08)) * 2.3 - vec2(t * 0.8, t)) * 0.4;
@@ -63,7 +68,7 @@ void fragment() {
 	// ⚠️ KEPT LOW ON PURPOSE. At 0.55 the ripple normal turned a lake into leopard spots from any
 	// height: the specular highlight is far more sensitive to a normal perturbation than the ground
 	// is, so the amplitude that reads as "texture" on soil reads as "boiling" on water.
-	float agitation = 0.22 * smoothstep(0.1, 1.2, d);
+	float agitation = (0.18 + world_rain * 0.10) * smoothstep(0.1, 1.2, d);
 	vec3 bumped = normalize(vec3((ripple - rx) * agitation, 0.06, (ripple - rz) * agitation));
 	NORMAL = normalize((VIEW_MATRIX * vec4(bumped, 0.0)).xyz);
 

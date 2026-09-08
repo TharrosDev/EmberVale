@@ -22,6 +22,9 @@ public partial class Settings : Resource
     /// <summary>Frame cap; 0 = uncapped. Applied via <c>Engine.MaxFps</c>.</summary>
     [Export] public int MaxFps { get; set; } = 0;
 
+    /// <summary>0 Low, 1 Medium, 2 High, 3 Ultra. Palette is identical on every tier.</summary>
+    [Export(PropertyHint.Range, "0,3,1")] public int RenderQuality { get; set; } = 1;
+
     // --- Audio (linear 0..1 per bus; ready for the Phase 31 mixer to consume) ----
 
     [Export(PropertyHint.Range, "0,1")] public float MasterVolume { get; set; } = 1f;

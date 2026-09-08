@@ -393,6 +393,18 @@ public sealed partial class RegionStreamer : Node3D
             }
 
             string scenePath = ScenePathFor(cell);
+            // The dummy renderer allocates resource RIDs during both loading and instantiation.
+            // Concurrent background loads race those allocations in native headless probes.
+            // Load the same full scene on the main thread, at most one per frame, in that backend;
+            // rendered gameplay keeps the normal asynchronous streaming path and its budgets.
+            if (DisplayServer.GetName() == "headless")
+            {
+                if (ResourceLoader.Load<PackedScene>(scenePath, cacheMode: ResourceLoader.CacheMode.Ignore) is { } headlessScene)
+                    _ready.Add(new ReadyCell(cell, headlessScene));
+                else
+                    Fail(cell.Id, "headless scene load failed");
+                return;
+            }
             Error error = ResourceLoader.LoadThreadedRequest(
                 scenePath, "PackedScene", useSubThreads: true, ResourceLoader.CacheMode.Ignore);
             if (error is not Error.Ok and not Error.AlreadyInUse)

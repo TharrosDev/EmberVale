@@ -1791,3 +1791,8 @@ dlg.emberbound_seeker.c_stranger,"What's carved there?"
 dlg.emberbound_seeker.c_bye,"Nothing."
 dlg.emberbound_seeker.c_back,"Something else."
 dlg.emberbound_seeker.c_end,"I'll leave you to the wall."
+settings.render_quality,Graphics quality
+settings.render_quality.low,Low
+settings.render_quality.medium,Medium
+settings.render_quality.high,High
+settings.render_quality.ultra,Ultra

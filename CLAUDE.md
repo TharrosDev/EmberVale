@@ -138,28 +138,29 @@ isolated-node screenshots** — which is aimed squarely at §7's most expensive 
 "RENDER IT" trap that has fired seven times and currently needs a hand-copied `tools/market_shots.gd`.
 
 ⚠️ **It is in Custom (local) mode on purpose.** The server is the `gamedev-mcp-server` binary running
-on **this machine** at `localhost:23630`, under `.ai-game-dev/` (gitignored — a 40 MB binary and a
-credential file do not belong in the history). The vendor default is a hosted cloud at `ai-game.dev`
+on **this machine** at `localhost:23630`. The current installation is under
+`.godot/mcp-server/win-x64/`; older installations used `.ai-game-dev/` (both gitignored — binaries
+and credentials do not belong in history). The vendor default is a hosted cloud at `ai-game.dev`
 that would route this project's scenes and scripts through a third party. **Do not switch modes
 without asking.**
 
-⚠️ **IT IS DOWN AT THE START OF EVERY SESSION AND NOTHING SAYS SO.** Nothing below survives a reboot,
-a closed editor or a restarted Claude Code, and **every failure mode reads as a broken tool rather
-than a stopped process.** Three pieces have to line up, and the middle one is usually the missing one:
+Check current processes at the start of a session: a relay may already be running even when the
+editor is closed. Reuse it when compatible. Three pieces have to line up:
 
 | Half | What it is | Who starts it | Alive when |
 | --- | --- | --- | --- |
-| The server | `.ai-game-dev/server/gamedev-mcp-server.exe --port 23630` | **A human, once per boot** — nothing here spawns it | `gamedev-mcp-server.exe` is in the task list and 23630 is LISTENING |
-| The editor | Godot open **on this project**, in Custom mode, pointed at that URL | **A human, every session** | a `Godot_v4.7.1…` process is running |
+| The server | local `gamedev-mcp-server.exe port=23630` | **Agent or human**, when needed for the task | `gamedev-mcp-server.exe` is in the task list and 23630 is LISTENING |
+| The editor | Godot open **on the task's checkout**, in Custom mode, pointed at that URL | **Agent or human**, when needed for validation | a `Godot_v4.7.1…` process is running |
 | The tools | `.mcp.json` → `http://localhost:23630/p/<pin>` | **Claude Code, at startup only** | `mcp__ai-game-developer__*` appear in the tool list |
 
-**Bringing it up — three commands, in this order, all verified 2026-08-09:**
+**Bringing it up:** start the installed local relay only if it is absent, using a hidden background
+process. The current server's arguments are `port=23630 plugin-timeout=10000
+client-transport=streamableHttp auth=none`. Then run on the task's checkout:
 
 ```
-.ai-game-dev/server/gamedev-mcp-server.exe --port 23630        # leave running; loopback only
 godot-cli open . --mode Custom --url http://localhost:23630 \
   --editor-path <the console-less .exe from §2's path>
-godot-cli wait-for-ready .
+godot-cli wait-for-ready . --url http://localhost:23630
 ```
 
 **Check it with one repo command before planning screenshot work** —
@@ -190,13 +191,13 @@ ERROR: HTTP 503: Service Unavailable
   "error": "Invoke 'RunCallTool': Failed to invoke '…Model.RequestCallTool' after 10 retries."
 ```
 
-⚠️ **Do not start either half yourself, and do not work around it.** Opening a Godot editor is a GUI
-process on the maintainer's desktop; ask them to run the three commands above. And note what is
-*not* blocked meanwhile: `dotnet build`, `dotnet test` and every `--validate` / `--economy` /
-`--state` / `--play` run go through the console exe and **do not touch the MCP at all**, so a session
-with the editor closed can still do the whole verification spine. The one thing genuinely lost is
-screenshots — which is exactly the "RENDER IT" trap, so a sub-phase that places anything in the world
-**needs the editor up before it starts**, not after the placement is done.
+**Agents may start the local server and editor when the task needs them** (maintainer direction,
+2026-09-07). No separate human-start permission is required. Check the exact worktree and existing
+processes first; reuse a compatible local relay, and launch the editor on the task's isolated
+checkout. Do not close or redirect another checkout's editor or server. Keep Custom mode and
+loopback URLs, and prove readiness with an actual editor tool. Start background helpers hidden;
+show the editor when interactive review needs it. Shell builds, tests and rendered automation
+remain available independently; a listening server alone never counts as MCP validation.
 
 ⚠️ **The port has to match in three places or nothing connects**, and the failure is a bare
 "connection refused": the server's `--port`, the editor's `--url` (it reads `GODOT_MCP_HOST` **at

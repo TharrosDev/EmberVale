@@ -9,6 +9,19 @@
 
 ## Where we are
 
+- **Rendering/environment overhaul — implemented on `codex/rendering-environment-overhaul`,
+  validation in progress (2026-09-08).** The existing SkyController now composes the authored day
+  cycle, regional atmosphere, weather, shared wind, wetness/snow and scoped interiors. Four saved
+  quality tiers and actual-game capture coverage are documented in `docs/RENDERING.md`.
+  Prepared ground now samples at 1 m, preserving narrow route grading: all 142 traversal segments
+  pass. Latest engine run: **33/33 gates pass**, `20260908T173028-c7c1906817`; rendered route:
+  **21 captures, zero assertions**, `20260908T173727-bc1462f3b3`, including Ashfall's real interior
+  and outside-doorway shelter recovery. Navigation edge-sync and rendered-exit ObjectDB warnings
+  remain. This is not production sign-off: full/negative and baseline visual gates remain pending,
+  broad hardware/per-effect profiling is incomplete, and wilderness geometry still needs visual
+  review. Source models/rigs remain untouched. Integration was authorized by the maintainer after
+  reviewing these results and remaining limitations.
+
 - **Stage C.** Economy (38), mounts/traversal (39), map intelligence (39.5), quest authoring (41)
   and divine shrines (41.5A–C) are closed. **Phases 40 and 40.5 are struck, not deferred:** this game
   has no survival needs, durability, hunger, encumbrance, puzzle, trap, or vault system. A cut system

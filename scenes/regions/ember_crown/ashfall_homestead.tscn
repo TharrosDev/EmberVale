@@ -1,4 +1,7 @@
-[gd_scene load_steps=45 format=3]
+[gd_scene load_steps=47 format=3]
+
+[ext_resource type="Script" path="res://src/World/EnvironmentVolume.cs" id="environment_volume"]
+[ext_resource type="Resource" path="res://data/rendering/Interior.tres" id="interior_profile"]
 
 [ext_resource type="Script" path="res://src/Entities/Entity.cs" id="1_entity"]
 [ext_resource type="Script" path="res://src/Items/InventoryComponent.cs" id="2_inventory"]
@@ -185,6 +188,15 @@ script = ExtResource("navbaker_cleanup")
 
 [node name="House" parent="Nav" instance=ExtResource("7_house")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, -4)
+
+; The visible roof has no physics collider. Shelter is a presentation volume, not new collision.
+[node name="InteriorEnvironment" type="Node3D" parent="Nav/House"]
+position = Vector3(0, 1.6, 0)
+script = ExtResource("environment_volume")
+Size = Vector3(6, 3.2, 8)
+BlendDistance = 0.5
+Priority = 10
+Profile = ExtResource("interior_profile")
 
 ; --- interior light -------------------------------------------------------------------------------
 ; ⚠️ A ROOF KILLS THE SUN AND THE ROOM GOES BLACK. The chandelier and the wall lantern are meshes;
@@ -1090,4 +1102,3 @@ LocationId = "location.shrine.veyra"
 ; --- not the nine-species set the other cells use, so tools/redress_cell.py has nothing to work with
 ; --- here). Tufts sit on the verges: clear of the cottage, the workshop row, the approach path and
 ; --- the 7 m build yard at local (0, 5), which must stay open ground for the placement system.
-

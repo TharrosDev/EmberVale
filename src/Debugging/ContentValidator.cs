@@ -92,6 +92,7 @@ public static class ContentValidator
     private static void CollectCoreIssues(List<string> issues)
     {
         ValidateDuplicateIds(issues);
+        EnvironmentValidation.Validate(issues);
         ValidateLootTables(issues);
         ValidateRecipes(issues);
         ValidateRecipeReachability(issues);

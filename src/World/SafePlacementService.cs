@@ -59,7 +59,10 @@ public static class SafePlacementService
         World3D world = context.GetWorld3D();
         Rid map = world.NavigationMap;
         Vector3 candidate = desired;
-        if (map.IsValid)
+        // A newly created world has a valid map RID before its first synchronization.
+        // Optional navigation must fall back to real physics until queries are available;
+        // required navigation still rejects the candidate below.
+        if (map.IsValid && NavigationServer3D.MapGetIterationId(map) > 0)
         {
             Vector3 onNavigation = NavigationServer3D.MapGetClosestPoint(map, desired);
             if (onNavigation.DistanceSquaredTo(desired) <= maxCorrection * maxCorrection)

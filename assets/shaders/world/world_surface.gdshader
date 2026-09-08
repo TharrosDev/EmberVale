@@ -165,6 +165,9 @@ void vertex() {
 	environment_uv = UV2;
 }
 
+global uniform float world_wetness;
+global uniform float world_snow;
+
 void fragment() {
 	vec3 wn = normalize(world_normal);
 	// Rise over run — the same grade the C# validators and the traversal probe measure, so "rock
@@ -440,6 +443,10 @@ void fragment() {
 		NORMAL = normalize((VIEW_MATRIX * vec4(bumped, 0.0)).xyz);
 	}
 
+	float rain_wet = world_wetness * smoothstep(0.15, 0.85, wn.y);
+	float snow_mask = world_snow * smoothstep(0.5, 0.95, wn.y) * smoothstep(0.15, 0.65, grain2(world_pos.xz * 0.18));
+	albedo = mix(albedo * (1.0 - rain_wet * 0.22), vec3(0.70, 0.76, 0.80), snow_mask);
+	rough = mix(mix(rough, max(0.24, rough * 0.5), rain_wet), 0.86, snow_mask);
 	ALBEDO = clamp(albedo, vec3(0.0), vec3(1.0));
 	ROUGHNESS = clamp(rough, 0.0, 1.0);
 	SPECULAR = clamp(spec, 0.0, 1.0);

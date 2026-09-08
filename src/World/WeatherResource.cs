@@ -43,6 +43,8 @@ public partial class WeatherResource : Resource
     /// <summary>Rain intensity 0..1 (drives the rain particle effect).</summary>
     [Export] public float Precipitation { get; set; } = 0f;
 
+    [Export(PropertyHint.Range, "0,8,0.1")] public float WindStrength { get; set; } = 1f;
+
     /// <summary>A randomised duration in in-game hours for one spell of this weather.</summary>
     public float RollDuration()
     {

@@ -42,9 +42,11 @@ public static partial class HeadlessWorldBake
     private sealed partial class WorldBakeRunner : Node
     {
         // One committed grid supplies the terrain mesh, collision, navigation, runtime recovery and
-        // pre-activation candidates. Three metres matches the traversal validator's sampling scale
-        // while keeping a full deterministic rebuild practical in CI.
-        private const float GroundSampleStep = 3f;
+        // pre-activation candidates.
+        // Narrow authored trails are 2.5 m wide. A 3 m grid loses their graded centreline and
+        // makes the prepared collision/nav diverge from the source terrain. Keep enough samples
+        // across those corridors; this adds offline data, not runtime procedural work.
+        private const float GroundSampleStep = 1f;
         private const float GroundSampleMargin = 100f;
 
         public async void Begin(SceneTree tree)
@@ -130,6 +132,8 @@ public static partial class HeadlessWorldBake
             int rows = Mathf.CeilToInt((maxZ - minZ) / GroundSampleStep) + 1;
             var heights = new float[columns * rows];
             var water = new float[heights.Length];
+            var temperatures = new float[heights.Length];
+            var moistures = new float[heights.Length];
 
             for (int z = 0; z < rows; z++)
             {
@@ -139,6 +143,9 @@ public static partial class HeadlessWorldBake
                     float worldX = minX + (x * GroundSampleStep);
                     int index = (z * columns) + x;
                     heights[index] = field.Height(worldX, worldZ);
+                    WorldSample climate = field.SampleEnvironment(worldX, worldZ);
+                    temperatures[index] = climate.Temperature;
+                    moistures[index] = climate.Moisture;
                     // Most of a region is dry. The hydrology cache can reject a tiny footprint with
                     // array lookups; only a possible channel pays for the full generated-water query.
                     water[index] = field.MayHaveGeneratedWater(
@@ -161,6 +168,8 @@ public static partial class HeadlessWorldBake
                 Rows = rows,
                 Heights = heights,
                 GeneratedWaterSurfaces = water,
+                Temperatures = temperatures,
+                Moistures = moistures,
             };
 
             PackedScene? backdrop = null;

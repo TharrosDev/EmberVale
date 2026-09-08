@@ -1,0 +1,172 @@
+{
+  "schema": 1,
+  "identity": "Grounded heroic fantasy; a declining world that remains beautiful and hopeful.",
+  "scale": {
+    "metres_per_unit": 1,
+    "door_height_m": 2.2,
+    "storey_height_m": 3,
+    "architecture_grid_m": 0.5
+  },
+  "materials": {
+    "iron_steel": {
+      "metallic": [
+        0.8,
+        1
+      ],
+      "roughness": [
+        0.28,
+        0.55
+      ]
+    },
+    "wood_leather": {
+      "metallic": [
+        0,
+        0
+      ],
+      "roughness": [
+        0.58,
+        0.82
+      ]
+    },
+    "cloth": {
+      "metallic": [
+        0,
+        0
+      ],
+      "roughness": [
+        0.78,
+        0.95
+      ]
+    },
+    "skin": {
+      "metallic": [
+        0,
+        0
+      ],
+      "roughness": [
+        0.58,
+        0.78
+      ]
+    },
+    "stone_plaster": {
+      "metallic": [
+        0,
+        0
+      ],
+      "roughness": [
+        0.68,
+        0.88
+      ]
+    },
+    "foliage": {
+      "metallic": [
+        0,
+        0
+      ],
+      "roughness": [
+        0.7,
+        0.95
+      ]
+    },
+    "terrain": {
+      "metallic": [
+        0,
+        0
+      ],
+      "roughness": [
+        0.65,
+        0.98
+      ]
+    },
+    "water": {
+      "metallic": [
+        0,
+        0
+      ],
+      "roughness": [
+        0.14,
+        0.3
+      ]
+    }
+  },
+  "authoring": {
+    "environment_saturation_max": 0.4,
+    "normal_strength_max": 0.6,
+    "prop_texture_max": 512,
+    "hero_texture_max": 1024,
+    "player_boss_texture_max": 2048,
+    "photographic_terrain": false,
+    "terrain_macro_scale_m": [
+      20,
+      80
+    ],
+    "wear": "Local physical wear; no blanket noise or arbitrary emissive polish."
+  },
+  "lighting": {
+    "day_cycle": "res://data/rendering/DayCycle.tres",
+    "authority": "SkyController",
+    "outdoor_gi": "Sky radiance; no streaming voxel-GI rebuilds",
+    "indoor_gi": "Bounded ambient and practical lights; authored lightmaps may be used for static interiors",
+    "exposure": "Authored bounded multipliers, no automatic exposure pumping",
+    "sun_temperature_kelvin": [
+      3500,
+      6500
+    ],
+    "practical_temperature_kelvin": [
+      1800,
+      2800
+    ],
+    "magic_palette_authority": "SpellSchools.Color"
+  },
+  "weather": {
+    "globals": [
+      "world_wetness",
+      "world_snow",
+      "world_rain",
+      "world_wind",
+      "world_visual_time"
+    ],
+    "wet_darkening_max": 0.22,
+    "wet_roughness_floor": 0.24,
+    "snow": "Temperature-driven, upward-facing and patch-masked",
+    "shelter": "Camera roof ray plus explicit EnvironmentVolume and heightfield particle collision",
+    "audio_event": "EnvironmentVisualStateEvent"
+  },
+  "decals": {
+    "purpose": [
+      "soot",
+      "mud",
+      "grime",
+      "damage",
+      "storytelling"
+    ],
+    "max_visible_target": 24,
+    "fade_end_m": 35,
+    "resolution_max": 256,
+    "placement": "Authored locally at physical causes; never blanket coverage"
+  },
+  "vfx": {
+    "magic": "SpellSchools.Color remains canonical; no ordinary-world magical glow",
+    "fire": "Authored flames and warm practical light; EnvironmentEmitters applies shared wind, distance and quality budgets",
+    "particle_shadow_casting": false
+  },
+  "performance": {
+    "fps_target": 60,
+    "frame_budget_ms": 16.67,
+    "gpu_target_ms": 12,
+    "shadow_target_ms": 2,
+    "atmosphere_target_ms": 1,
+    "ao_ssil_target_ms": 1.2,
+    "water_target_ms": 0.8,
+    "particles_target_ms": 0.7,
+    "post_target_ms": 0.5,
+    "status": "Targets; verify on each supported device. Component costs require GPU profiler attribution."
+  },
+  "quality_profiles": [
+    "Low",
+    "Medium",
+    "High",
+    "Ultra"
+  ],
+  "asset_policy": "Source model, rig, animation and Blender/Meshy pipelines remain untouched."
+}
