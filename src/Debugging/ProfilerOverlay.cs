@@ -64,6 +64,8 @@ public partial class ProfilerOverlay : CanvasLayer
             sb.Append($"\ncells       {streamer.ActiveCellCount()} active · {streamer.ResidentCellCount()} resident");
             sb.Append(streamer.IsWithinPerformanceBudget() ? " · budget OK" : " · OVER BUDGET");
         }
+        if (ServiceLocator.Instance is { } services && services.TryGet(out SkyController visuals))
+            sb.Append($"\nvisuals     {visuals.Diagnostics}");
         _text.Text = sb.ToString();
     }
 

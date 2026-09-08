@@ -38,7 +38,10 @@ def main() -> int:
         print("BLOCKED: godot-cli is not on PATH. Install/use the vendored Godot-MCP CLI; "
               "do not switch to cloud mode.", file=sys.stderr)
         return 2
-    status = run_process([cli, "status", "."], cwd=ROOT, timeout=30)
+    # An isolated worktree hashes to a different default port. Use the configured relay
+    # for both status and the tool call instead of probing two unrelated endpoints.
+    base_url = f"{parsed.scheme}://{parsed.hostname}:{parsed.port or 23630}"
+    status = run_process([cli, "status", ".", "--url", base_url], cwd=ROOT, timeout=30)
     print(status.output, end="")
     if status.timed_out or status.launch_error or status.returncode:
         print("FAIL: local MCP status did not prove both editor and relay ready. "
@@ -46,7 +49,7 @@ def main() -> int:
         return 1
     if args.probe:
         command = [cli, "run-tool", "scene-list-opened", ".", "--url",
-                   f"{parsed.scheme}://{parsed.hostname}:{parsed.port or 23630}", "--input", "{}"]
+                   base_url, "--input", "{}"]
         probe = run_process(command, cwd=ROOT, timeout=45)
         print(probe.output, end="")
         if probe.timed_out or probe.launch_error or probe.returncode:

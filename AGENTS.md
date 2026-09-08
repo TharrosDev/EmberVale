@@ -36,6 +36,11 @@ documents it links. **For 3D asset work, `docs/3D_ASSETS.md` is the contract and
 
 ## Validation spine
 
+Agents may start the local Godot MCP server and the editor for the task's checkout without a
+separate human-start approval. Follow `CLAUDE.md` §2: preserve other worktrees' processes, use
+Custom mode with loopback URLs, and verify a real editor tool round trip before claiming MCP
+validation. Launch background helpers hidden and use the isolated checkout for this task.
+
 `godot` and `python` are not on the default shell PATH on the maintainer machine; `docs/NOW.md`
 records the working absolute executables.
 

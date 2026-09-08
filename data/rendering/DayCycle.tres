@@ -1,0 +1,113 @@
+[gd_resource type="Resource" script_class="EnvironmentCycleResource" load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://src/World/EnvironmentCycleResource.cs" id="1"]
+[ext_resource type="Script" path="res://src/World/EnvironmentKeyframeResource.cs" id="2"]
+
+[sub_resource type="Resource" id="Key0"]
+script = ExtResource("2")
+Hour = 0.0
+SunEnergy = 0.0
+MoonEnergy = 0.14
+AmbientEnergy = 0.45
+SkyEnergy = 0.45
+FogEnergy = 0.28
+Exposure = 1.05
+SunColor = Color(0.68, 0.73, 0.86, 1)
+SkyColor = Color(0.22, 0.29, 0.42, 1)
+HorizonColor = Color(0.40, 0.47, 0.58, 1)
+
+[sub_resource type="Resource" id="Key1"]
+script = ExtResource("2")
+Hour = 5.0
+SunEnergy = 0.0
+MoonEnergy = 0.08
+AmbientEnergy = 0.3
+SkyEnergy = 0.2
+FogEnergy = 0.24
+Exposure = 1.03
+SunColor = Color(0.95, 0.66, 0.48, 1)
+SkyColor = Color(0.13, 0.19, 0.31, 1)
+HorizonColor = Color(0.44, 0.38, 0.38, 1)
+
+[sub_resource type="Resource" id="Key2"]
+script = ExtResource("2")
+Hour = 6.0
+SunEnergy = 0.15
+MoonEnergy = 0.02
+AmbientEnergy = 0.44
+SkyEnergy = 0.55
+FogEnergy = 0.52
+Exposure = 1.0
+SunColor = Color(1, 0.67, 0.43, 1)
+SkyColor = Color(0.24, 0.34, 0.49, 1)
+HorizonColor = Color(0.72, 0.59, 0.48, 1)
+
+[sub_resource type="Resource" id="Key3"]
+script = ExtResource("2")
+Hour = 9.0
+SunEnergy = 0.85
+MoonEnergy = 0.0
+AmbientEnergy = 0.65
+SkyEnergy = 0.95
+FogEnergy = 0.8
+Exposure = 1.0
+SunColor = Color(1, 0.92, 0.82, 1)
+SkyColor = Color(0.28, 0.4, 0.57, 1)
+HorizonColor = Color(0.66, 0.7, 0.73, 1)
+
+[sub_resource type="Resource" id="Key4"]
+script = ExtResource("2")
+Hour = 12.0
+SunEnergy = 1.12
+MoonEnergy = 0.0
+AmbientEnergy = 0.7
+SkyEnergy = 1.0
+FogEnergy = 0.85
+Exposure = 0.98
+SunColor = Color(1, 0.98, 0.93, 1)
+SkyColor = Color(0.25, 0.39, 0.57, 1)
+HorizonColor = Color(0.68, 0.72, 0.75, 1)
+
+[sub_resource type="Resource" id="Key5"]
+script = ExtResource("2")
+Hour = 16.0
+SunEnergy = 0.85
+MoonEnergy = 0.0
+AmbientEnergy = 0.64
+SkyEnergy = 0.92
+FogEnergy = 0.78
+Exposure = 1.0
+SunColor = Color(1, 0.89, 0.76, 1)
+SkyColor = Color(0.28, 0.39, 0.53, 1)
+HorizonColor = Color(0.71, 0.68, 0.61, 1)
+
+[sub_resource type="Resource" id="Key6"]
+script = ExtResource("2")
+Hour = 18.0
+SunEnergy = 0.16
+MoonEnergy = 0.015
+AmbientEnergy = 0.42
+SkyEnergy = 0.5
+FogEnergy = 0.45
+Exposure = 1.0
+SunColor = Color(1, 0.65, 0.4, 1)
+SkyColor = Color(0.25, 0.28, 0.41, 1)
+HorizonColor = Color(0.65, 0.46, 0.39, 1)
+
+[sub_resource type="Resource" id="Key7"]
+script = ExtResource("2")
+Hour = 20.0
+SunEnergy = 0.0
+MoonEnergy = 0.14
+AmbientEnergy = 0.45
+SkyEnergy = 0.45
+FogEnergy = 0.28
+Exposure = 1.05
+SunColor = Color(0.68, 0.73, 0.86, 1)
+SkyColor = Color(0.22, 0.29, 0.42, 1)
+HorizonColor = Color(0.40, 0.47, 0.58, 1)
+
+[resource]
+script = ExtResource("1")
+Keys = Array[ExtResource("2")]([SubResource("Key0"), SubResource("Key1"), SubResource("Key2"), SubResource("Key3"), SubResource("Key4"), SubResource("Key5"), SubResource("Key6"), SubResource("Key7")])
+ClearFogDensity = 0.003

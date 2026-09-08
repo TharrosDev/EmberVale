@@ -24,12 +24,17 @@ public partial class WorldPreparedRegionResource : Resource
     [Export] public int Rows { get; set; }
     [Export] public float[] Heights { get; set; } = Array.Empty<float>();
     [Export] public float[] GeneratedWaterSurfaces { get; set; } = Array.Empty<float>();
+    // Optional in schema 1: legacy packages fall back to the region climate, never zero kelvin.
+    [Export] public float[] Temperatures { get; set; } = Array.Empty<float>();
+    [Export] public float[] Moistures { get; set; } = Array.Empty<float>();
     [Export] public PackedScene? Backdrop { get; set; }
 
     public bool IsValidFor(RegionResource region) =>
         Schema == CurrentSchema && RegionId == region.Id && Columns >= 2 && Rows >= 2 &&
         SourceSignature.Length == 64 && SampleStep > 0f && Heights.Length == Columns * Rows &&
-        GeneratedWaterSurfaces.Length == Heights.Length;
+        GeneratedWaterSurfaces.Length == Heights.Length &&
+        (Temperatures.Length == 0 || Temperatures.Length == Heights.Length) &&
+        (Moistures.Length == 0 || Moistures.Length == Heights.Length);
 
     public WorldHeightfield CreateRuntimeField(RegionResource region)
     {
@@ -48,6 +53,9 @@ public partial class WorldPreparedRegionResource : Resource
     /// not needed by normal runtime queries afterward.</summary>
     public WorldHeightfield CreateBakeField(RegionResource region, WorldHeightfield source) =>
         new PreparedWorldHeightfield(source.Settings, this, source);
+
+    internal (float Temperature, float Moisture) Climate(float x, float z, WorldGenerationSettings settings) =>
+        (Sample(Temperatures, x, z, settings.Temperature), Sample(Moistures, x, z, settings.Moisture));
 
     internal float SampleHeight(float x, float z) => Sample(Heights, x, z, 0f);
 
@@ -161,8 +169,9 @@ internal sealed class PreparedWorldHeightfield : WorldHeightfield
         float slope = SlopeAt(x, z, here);
         float curvature = Height(x - 1f, z) + Height(x + 1f, z) +
                           Height(x, z - 1f) + Height(x, z + 1f) - (4f * here);
+        var climate = _prepared.Climate(x, z, Settings);
         return new WorldSample(
             here, here, nx, ny, nz, slope, curvature,
-            0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f);
+            0f, 0f, 0f, 0f, climate.Temperature, climate.Moisture, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f);
     }
 }

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="RenderQualityResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/RenderQualityResource.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Id = "high"
+ShadowDistance = 130
+AmbientOcclusion = true
+IndirectLighting = true
+VolumetricFog = true
+Reflections = false
+ParticleScale = 0.75
+LocalShadowLights = 2
+LocalLightDistance = 60
+ShadowAtlasSize = 4096

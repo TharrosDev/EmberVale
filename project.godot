@@ -63,3 +63,26 @@ enabled=PackedStringArray("res://addons/godot_mcp/plugin.cfg")
 [rendering]
 
 textures/vram_compression/import_etc2_astc=true
+
+[shader_globals]
+
+world_wetness={
+"type": "float",
+"value": 0.0
+}
+world_snow={
+"type": "float",
+"value": 0.0
+}
+world_rain={
+"type": "float",
+"value": 0.0
+}
+world_visual_time={
+"type": "float",
+"value": 0.0
+}
+world_wind={
+"type": "vec3",
+"value": Vector3(0, 0, 0)
+}

@@ -65,7 +65,10 @@ func _case_failed_cell_is_not_settled() -> void:
 	streamer.call("SetPerformanceSamplingEnabled", false)
 
 	var region: Resource = load(EMBER).duplicate(true)
-	# One cell pointed at a scene that does not exist. Everything else is the shipped region.
+	# Production loads a prepared .scn keyed by cell Id; changing only ScenePath leaves the
+	# healthy prepared cell selected. Corrupt the copied cell's package identity as well.
+	# No authored or generated file is modified by this negative fixture.
+	region.Cells[0].Id = "ember_crown.__does_not_exist"
 	region.Cells[0].ScenePath = "res://scenes/regions/ember_crown/__does_not_exist.tscn"
 
 	streamer.call("Configure", region)

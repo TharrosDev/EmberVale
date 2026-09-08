@@ -15,3 +15,4 @@ SkyEnergyScale = 1.0
 FogDensity = 0.0
 FogColor = Color(0.7, 0.66, 0.6, 1)
 Precipitation = 0.0
+WindStrength = 1

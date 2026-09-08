@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="RenderQualityResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/RenderQualityResource.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Id = "ultra"
+ShadowDistance = 180
+AmbientOcclusion = true
+IndirectLighting = true
+VolumetricFog = true
+Reflections = true
+ParticleScale = 1
+LocalShadowLights = 4
+LocalLightDistance = 75
+ShadowAtlasSize = 4096

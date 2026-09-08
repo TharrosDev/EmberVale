@@ -438,6 +438,22 @@ public partial class CharacterActionComponent : EntityComponent
     /// <summary>Pooled arrows, built on first use so a melee actor never pays for one.</summary>
     private Core.Pooling.NodePool<Arrow>? _arrows;
 
+    protected override void OnTeardown()
+    {
+        // Parked arrows are detached nodes and are not freed with their owner's scene.
+        // Release their render/physics resources when a streamed actor leaves the world.
+        _arrows?.Clear();
+        _arrows = null;
+    }
+
+    private void ReleaseArrow(Arrow arrow)
+    {
+        if (_arrows != null)
+            _arrows.Return(arrow);
+        else
+            arrow.QueueFree(); // A shot may finish after its owner has left the scene.
+    }
+
     /// <summary>
     /// Sends an arrow instead of opening a volume.
     ///
@@ -453,7 +469,7 @@ public partial class CharacterActionComponent : EntityComponent
             return;
         }
 
-        _arrows ??= new Core.Pooling.NodePool<Arrow>(() => new Arrow { Released = a => _arrows?.Return(a) }, prewarm: 2);
+        _arrows ??= new Core.Pooling.NodePool<Arrow>(() => new Arrow { Released = ReleaseArrow }, prewarm: 2);
 
         float mounted = MountedCombat.DamageScale(
             _mount is { IsMounted: true }, _mount is { IsGalloping: true });

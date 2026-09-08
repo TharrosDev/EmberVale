@@ -114,6 +114,10 @@ public partial class SettingsPanel : CanvasLayer
         body.AddChild(DropdownRow(Loc.T("settings.window_mode"),
             new[] { Loc.T("settings.window_mode.windowed"), Loc.T("settings.window_mode.fullscreen"), Loc.T("settings.window_mode.borderless") },
             s.WindowMode, i => { s.WindowMode = i; Persist(); }));
+        body.AddChild(DropdownRow(Loc.T("settings.render_quality"),
+            new[] { Loc.T("settings.render_quality.low"), Loc.T("settings.render_quality.medium"),
+                Loc.T("settings.render_quality.high"), Loc.T("settings.render_quality.ultra") },
+            System.Math.Clamp(s.RenderQuality, 0, 3), i => { s.RenderQuality = i; Persist(); }));
         body.AddChild(ToggleRow(Loc.T("settings.vsync"), s.VSync, v => { s.VSync = v; Persist(); }));
         // Applies live: FOV is only judgeable by watching the world move under it.
         body.AddChild(SliderRow(Loc.T("settings.fov"), 60.0, 110.0, 1.0, s.FieldOfView,

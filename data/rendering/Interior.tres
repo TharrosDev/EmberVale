@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="EnvironmentSpaceProfileResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/EnvironmentSpaceProfileResource.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+AmbientScale = 0.5
+FogScale = 0.15
+ExposureScale = 1.12
+FogTint = Color(1, 1, 1, 1)

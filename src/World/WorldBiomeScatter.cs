@@ -324,39 +324,18 @@ public sealed partial class WorldBiomeScatter : Node3D
         // it surface 0's material back "unchanged" paints a two-surface tree entirely in its BARK,
         // so every broadleaf in the Ember Crown grew salmon-pink foliage. A null override lets each
         // surface keep its own material, which is what the layer had before any of this existed.
-        if (layer.Saturation >= 0.999f || source is not StandardMaterial3D standard)
-        {
-            return null;
-        }
-
-        // Same reason, the other way round: a desaturating override is a single material, so it can
-        // only be applied to a single-surface mesh. Say so rather than silently repainting a tree.
-        if (surfaces > 1)
-        {
-            Log.Warn($"WorldBiomeScatter: '{path}' has {surfaces} surfaces, so Saturation " +
-                     $"{layer.Saturation:0.00} is ignored — a MaterialOverride would repaint every " +
-                     "surface with the first one's material. Desaturate a single-surface source.");
-            return null;
-        }
-
-        string key = $"{standard.GetInstanceId()}|{layer.Saturation:F2}";
-        if (RecolouredCache.TryGetValue(key, out ShaderMaterial? cached))
-        {
-            return cached;
-        }
-
-        var replacement = new ShaderMaterial { Shader = GD.Load<Shader>(ScatterShaderPath) };
-        replacement.SetShaderParameter("albedo_texture", standard.AlbedoTexture);
-        replacement.SetShaderParameter("albedo_color", standard.AlbedoColor);
-        replacement.SetShaderParameter("saturation", layer.Saturation);
-        replacement.SetShaderParameter("roughness_value", standard.Roughness);
-        replacement.SetShaderParameter(
-            "alpha_cut",
-            standard.Transparency == BaseMaterial3D.TransparencyEnum.AlphaScissor
-                ? standard.AlphaScissorThreshold
-                : 0f);
-        RecolouredCache[key] = replacement;
-        return replacement;
+        // Every eligible standard surface was adapted by WeatherMaterial already. A remaining
+        // standard or custom shader has features we preserve; the old saturation fallback would
+        // strip its normals/emission/packed textures after the adapter deliberately retained them.
+        if (surfaces != 1 || source is not ShaderMaterial shaderMaterial ||
+            shaderMaterial.Shader?.ResourcePath != ScatterShaderPath) return null;
+        if (layer.Saturation >= .999f) return null;
+        string key = $"{shaderMaterial.GetInstanceId()}|{layer.Saturation:F2}";
+        if (RecolouredCache.TryGetValue(key, out ShaderMaterial? cached)) return cached;
+        var tinted = (ShaderMaterial)shaderMaterial.Duplicate();
+        tinted.SetShaderParameter("saturation", layer.Saturation);
+        RecolouredCache[key] = tinted;
+        return tinted;
     }
 
     private static List<WorldScatterExclusion> BuildExclusions(WorldBiomeScatterResource profile)
@@ -396,12 +375,17 @@ public sealed partial class WorldBiomeScatter : Node3D
         MeshInstance3D? source = FindMesh(instance);
         if (source?.Mesh != null)
         {
-            mesh = source.Mesh;
+            mesh = (Mesh)source.Mesh.Duplicate();
             surfaces = source.Mesh.GetSurfaceCount();
+            for (int surface = 0; surface < surfaces; surface++)
+            {
+                Material? original = source.GetActiveMaterial(surface);
+                mesh.SurfaceSetMaterial(surface, WeatherMaterial(original, path));
+            }
             // ⚠️ The override is usually NULL on an imported .glb — its material lives on the mesh
             // surface. Reading only the override meant Recolour() had nothing to work from and
             // silently did nothing, which looks exactly like a saturation value that has no effect.
-            material = source.MaterialOverride ?? source.Mesh.SurfaceGetMaterial(0);
+            material = mesh.SurfaceGetMaterial(0);
         }
         instance.Free();
 
@@ -412,6 +396,28 @@ public sealed partial class WorldBiomeScatter : Node3D
         }
         MeshCache[path] = new MeshSource(mesh, material, surfaces);
         return true;
+    }
+
+    private static Material? WeatherMaterial(Material? source, string path)
+    {
+        // Do not approximate advanced material features or replace rigged production models.
+        // This adapter is restricted to the static ecology mesh pipeline.
+        if (source is not StandardMaterial3D m || m.NormalEnabled || m.EmissionEnabled ||
+            m.MetallicTexture != null || m.RoughnessTexture != null ||
+            (m.Transparency != BaseMaterial3D.TransparencyEnum.Disabled &&
+             m.Transparency != BaseMaterial3D.TransparencyEnum.AlphaScissor)) return source;
+        var result = new ShaderMaterial { Shader = GD.Load<Shader>(ScatterShaderPath) };
+        result.SetShaderParameter("has_texture", m.AlbedoTexture != null);
+        if (m.AlbedoTexture is { } texture) result.SetShaderParameter("albedo_texture", texture);
+        result.SetShaderParameter("albedo_color", m.AlbedoColor);
+        result.SetShaderParameter("roughness_value", m.Roughness);
+        result.SetShaderParameter("metallic_value", m.Metallic);
+        result.SetShaderParameter("alpha_cut", m.Transparency == BaseMaterial3D.TransparencyEnum.AlphaScissor ? m.AlphaScissorThreshold : 0f);
+        string family = path.ToLowerInvariant();
+        bool plant = family.Contains("tree") || family.Contains("pine") || family.Contains("grass") ||
+                     family.Contains("bush") || family.Contains("flower") || family.Contains("fern");
+        result.SetShaderParameter("wind_response", plant ? 1f : 0f);
+        return result;
     }
 
     private static MeshInstance3D? FindMesh(Node node)

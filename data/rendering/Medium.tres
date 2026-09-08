@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="RenderQualityResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/RenderQualityResource.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Id = "medium"
+ShadowDistance = 90
+AmbientOcclusion = true
+IndirectLighting = false
+VolumetricFog = false
+Reflections = false
+ParticleScale = 0.5
+LocalShadowLights = 0
+LocalLightDistance = 45
+MeshLodThreshold = 2.0
