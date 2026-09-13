@@ -282,6 +282,11 @@ public partial class Notifications : CanvasLayer
 
     private void PresentQueued()
     {
+        if (!IsInsideTree() || IsQueuedForDeletion())
+        {
+            return;
+        }
+
         // Menus and conversations already own the player's attention. Preserve the event and reveal
         // it after the protected state closes instead of drawing over prose or critical choices.
         if (UiState.MenuOpen || GameManager.Instance?.State != GameState.Playing)
@@ -337,7 +342,9 @@ public partial class Notifications : CanvasLayer
         toast.TreeExited += () =>
         {
             _visible = Mathf.Max(0, _visible - 1);
-            PresentQueued();
+            // Deferred: a toast also leaves the tree when the whole HUD is torn down, and presenting
+            // the next one from inside that exit adds a child to a parent that is mid-teardown.
+            Callable.From(PresentQueued).CallDeferred();
         };
         _stack.AddChild(toast);
     }

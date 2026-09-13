@@ -222,6 +222,11 @@ public static partial class HeadlessWorldBake
             AddChild(root);
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             RecordPlaces(root, cell, prepared);
+            int batched = WorldArchitectureBatcher.Apply(root);
+            if (batched > 0)
+            {
+                Log.Info($"World bake: '{cell.Id}' merged {batched} static surface(s).");
+            }
             foreach (Node node in Descendants(root))
             {
                 if (node is NavigationRegion3D navigation && navigation.NavigationMesh != null)
