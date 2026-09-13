@@ -464,9 +464,15 @@ def cells() -> list[Cell]:
             # pass, so that segment pointed at a snowfield seam nothing opened onto — exactly the
             # "a road that points at a wall says nothing" defect of NOW.md invariant 11. The roost
             # is a dead-end shelf reached from the hold, which is what a lair should be.
-            legacy_paths=("Path_dragon_approach", "Path_dragon_narrows", "Path_dragon_shelf"),
-            legacy_areas=("Area_dragon_bowl", "Area_dragon_splinter"),
-            area_elevation={"Area_dragon_bowl": 0.0, "Area_dragon_splinter": -5.16},
+            yards=(
+                Yard((-14, -14), (18, 13), 5.0, 0.48, elevation=0.0, name="Area_dragon_bowl"),
+                Yard((26, 0), (14, 12), 5.0, 0.30, elevation=-5.16, name="Area_dragon_splinter"),
+            ),
+            routes=(
+                Route((45, 0), (14, 1), 6.0, 3.0, name="Path_dragon_approach"),
+                Route((14, 1), (4, -4), 5.0, 2.0, name="Path_dragon_narrows"),
+                Route((4, -4), (-14, -16), 6.0, 4.0, name="Path_dragon_shelf"),
+            ),
             landforms=(
                 Ridge(a=(-50, -40), b=(20, -42), half=15, h=20.0, fall=0.35),
                 Mound(at=(-44, 0), ext=(21, 35), h=8.0, fall=0.9),
@@ -493,12 +499,20 @@ def cells() -> list[Cell]:
             up, and the beast runs are dug 1.6 m down — a settlement that follows its own ground. The
             land falls four metres south into the march, so the hold is above its own road.
             """,
-            legacy_paths=("Path_hold_west", "Path_hold_east", "Path_hold_north", "Path_hold_ring",
-                          "Path_hold_moot_access", "Path_hold_south"),
             # The east longhouse sits across 0.66 m of the hold's own slope.
-            yards=(Yard(at=(-15.0, 10.1), ext=(4.5, 5.6), feather=3.0, blend=0.9),),
-            legacy_areas=("Area_hold_moot", "Area_hold_craft", "Area_hold_runs"),
-            area_elevation={"Area_hold_moot": 0.0, "Area_hold_craft": 0.0, "Area_hold_runs": 0.0},
+            yards=(
+                    Yard((-4, 2), (11, 9), 3.0, 0.70, elevation=0.0, name="Area_hold_moot"),
+                    Yard((15, -1), (7, 6), 1.5, 0.82, elevation=0.0, name="Area_hold_craft"),
+                    Yard((-23, 2), (5, 7), 2.0, 0.55, elevation=0.0, name="Area_hold_runs"),
+                    Yard(at=(-15.0, 10.1), ext=(4.5, 5.6), feather=3.0, blend=0.9),),
+            routes=(
+                Route((-30, 0), (-14, 1), 5.5, 2.5, name="Path_hold_west"),
+                Route((30, 0), (8, 0), 5.5, 2.5, name="Path_hold_east"),
+                Route((0, -30), (12, -16), 5.0, 2.5, name="Path_hold_north"),
+                Route((12, -16), (12, -5), 4.5, 2.0, name="Path_hold_ring"),
+                Route((12, -5), (4, -4), 4.5, 2.0, name="Path_hold_moot_access"),
+                Route((0, 20), (-2, 9), 4.0, 2.0, name="Path_hold_south"),
+            ),
             landforms=(
                 # THE WALL HAS A PASS IN IT, AND THE PASS IS WHERE THE ROAD IS. Drawn as one
                 # 120 m ridge it buried the glacier road under twenty-two metres of mountain and
@@ -529,9 +543,14 @@ def cells() -> list[Cell]:
             ground dropped six metres on BOTH sides of it — thirty-four metres with nowhere to stand
             except the road, which is what the encounter was always asking the props to do.
             """,
-            legacy_paths=("Path_ash_causeway", "Path_ash_bowl", "Path_ash_vent"),
-            legacy_areas=("Area_ash_bowl",),
-            area_elevation={"Area_ash_bowl": 0.0},
+            yards=(
+                Yard((12, 5), (20, 17), 5.0, 0.68, elevation=0.0, name="Area_ash_bowl"),
+            ),
+            routes=(
+                Route((-50, 0), (-16, 2), 6.0, 4.0, name="Path_ash_causeway"),
+                Route((-16, 2), (10, 6), 5.0, 3.0, name="Path_ash_bowl"),
+                Route((10, 6), (26, -8), 3.5, 2.0, name="Path_ash_vent"),
+            ),
             landforms=(
                 Ridge(a=(30, -40), b=(52, 10), half=13, h=16.0, fall=0.5),
                 Mound(at=(-34, -24), ext=(25, 19), h=-6.0, fall=0.6),
@@ -579,10 +598,9 @@ def cells() -> list[Cell]:
             but they are wider hollows in the ice rather than gaps between models. Movement weaves
             because the land weaves.
             """,
-            legacy_paths=("Path_glacier_entry", "Path_glacier_chicane", "Path_glacier_west",
-                          "Path_glacier_east"),
-            legacy_areas=("Area_glacier_saddle",),
-            area_elevation={"Area_glacier_saddle": -0.9},
+            yards=(
+                Yard((0, 0), (8, 6), 2.0, 0.45, elevation=-0.9, name="Area_glacier_saddle"),
+            ),
             landforms=(
                 # The two walls are gapped where the pass enters and leaves. A pass whose mouths
                 # are buried under its own walls is a wall.
@@ -600,7 +618,12 @@ def cells() -> list[Cell]:
                 Mound(at=(32, 4), ext=(19, 16), h=-4.0, fall=0.55, flat=0.7),
                 Mound(at=(0, 0), ext=(13, 11), h=-1.5, fall=0.8, flat=0.8),
             ),
-            routes=(Route((0, 0), (-40, -12), 4.0, 2.5),
+            routes=(
+                    Route((0, 10), (-4, 4), 7.0, 2.5, name="Path_glacier_entry"),
+                    Route((-4, 4), (0, 0), 7.0, 2.5, name="Path_glacier_chicane"),
+                    Route((0, 0), (-28, -2), 6.0, 2.0, name="Path_glacier_west"),
+                    Route((0, 0), (28, 2), 6.0, 2.0, name="Path_glacier_east"),
+                    Route((0, 0), (-40, -12), 4.0, 2.5),
                     Route((0, 0), (6, -20), 4.0, 2.5)),
         ),
         Cell(
@@ -639,9 +662,10 @@ def cells() -> list[Cell]:
             thirty-nine-degree ramp. The hidden hoard is a notch stepped a metre below the court
             behind the east horn, out of sight from the procession.
             """,
-            legacy_paths=("Path_aerie_crescent", "Path_aerie_hoard"),
-            legacy_areas=("Area_aerie_court", "Area_aerie_hoard"),
-            area_elevation={"Area_aerie_court": 0.0, "Area_aerie_hoard": 0.0},
+            yards=(
+                Yard((-6, -16), (16, 14), 4.0, 0.62, elevation=0.0, name="Area_aerie_court"),
+                Yard((12, -12), (5, 5), 2.0, 0.72, elevation=0.0, name="Area_aerie_hoard"),
+            ),
             landforms=(
                 Mound(at=(0, -10), ext=(58, 54), h=18.0, fall=0.95),
                 Mound(at=(-46, 40), ext=(27, 23), h=4.0, fall=0.9),
@@ -653,7 +677,10 @@ def cells() -> list[Cell]:
             ),
             # The bent procession, re-cut as a switchback. The legacy straight run (0,20)->(0,6)
             # would be a 39-degree ramp against the new massif; these two are 20 degrees.
-            routes=(Route((0, 55), (18, 42), 5.5, 3.0),
+            routes=(
+                    Route((0, 6), (-6, -16), 4.5, 3.0, name="Path_aerie_crescent"),
+                    Route((2, -6), (9, -10), 3.0, 1.0, name="Path_aerie_hoard"),
+                    Route((0, 55), (18, 42), 5.5, 3.0),
                     Route((18, 42), (8, 30), 5.5, 3.0),
                     Route((8, 30), (0, 20), 5.5, 3.0),
                     Route((0, 20), (10, 13), 4.5, 2.0),
@@ -696,7 +723,7 @@ def seams() -> list[Seam]:
     ]
 
 
-def build_frostfang(legacy: dict[str, str]) -> tuple[str, list[str]]:
+def build_frostfang() -> tuple[str, list[str]]:
     spec = cells()
     by_key = {c.key: c for c in spec}
     link = seams()
@@ -710,5 +737,5 @@ def build_frostfang(legacy: dict[str, str]) -> tuple[str, list[str]]:
         routed[seam.b].append(Route(local(by_key[seam.b], seam.at), seam.reach_b))
     issues += check_envelopes("FrostfangReach", spec, routed)
 
-    return emit("frostfang_reach", HEADER, spec, link, legacy,
+    return emit("frostfang_reach", HEADER, spec, link,
                 ENVIRONMENT, BUDGET, RESOURCE, SCATTER, "Alpine"), issues

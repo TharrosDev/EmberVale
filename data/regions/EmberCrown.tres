@@ -868,7 +868,7 @@ script = ExtResource("7_area")
 Center = Vector2(7, 2)
 Radius = Vector2(11, 10)
 Feather = 3.0
-SurfaceBlend = 0.90
+SurfaceBlend = 0.9
 ElevationMode = 1
 
 [sub_resource type="Resource" id="Area_market_terrace"]
@@ -885,7 +885,7 @@ script = ExtResource("7_area")
 Center = Vector2(3, 16.5)
 Radius = Vector2(7, 4.5)
 Feather = 2.0
-SurfaceBlend = 0.60
+SurfaceBlend = 0.6
 ElevationMode = 1
 
 [sub_resource type="Resource" id="Area_market_sump"]
@@ -1229,7 +1229,7 @@ script = ExtResource("7_area")
 Center = Vector2(10, -1)
 Radius = Vector2(9, 6)
 Feather = 4.0
-SurfaceBlend = 0.20
+SurfaceBlend = 0.2
 ElevationMode = 1
 Elevation = -2.33
 
@@ -1816,7 +1816,7 @@ script = ExtResource("7_area")
 Center = Vector2(-19, 15)
 Radius = Vector2(4, 5)
 Feather = 1.5
-SurfaceBlend = 0.60
+SurfaceBlend = 0.6
 ElevationMode = 1
 Elevation = 0.0
 
@@ -2067,7 +2067,7 @@ script = ExtResource("7_area")
 Center = Vector2(7.5, 2)
 Radius = Vector2(5, 4)
 Feather = 1.5
-SurfaceBlend = 0.90
+SurfaceBlend = 0.9
 ElevationMode = 1
 Elevation = 0.0
 
@@ -2425,7 +2425,7 @@ script = ExtResource("7_area")
 Center = Vector2(-17, 8)
 Radius = Vector2(6, 7)
 Feather = 4.0
-SurfaceBlend = 0.30
+SurfaceBlend = 0.3
 ElevationMode = 1
 Elevation = 0.61
 

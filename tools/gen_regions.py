@@ -16,11 +16,10 @@ endpoint from. It is impossible to author half of a seam in this file.
 The prose that used to live in the .tres headers lives in NOTES below and is emitted with the file,
 because the reason a cell is where it is has to survive the next person who wants to move it.
 
-⚠️ THE INTERIOR CIRCULATION OF EVERY EXISTING CELL IS NOT AUTHORED HERE. Paths and ground areas that
-predate this overhaul are lifted verbatim out of the previous revision's .tres (see LEGACY) so the
-2026-08-28 layout rebuild's work — the Coilyard, the Crookway, the Kingsway's S, Emberdeep's working
-loop, the Wilds North fork, Tarn's spit, Hollowreach's channels, the corrie throat, the arena's gate
-and breach — is preserved to the metre. What this file adds around them is geography and approach.
+⚠️ EVERY ROAD AND PAD IS SPEC DATA (2026-09 world rebuild). Interior streets and pads used to be
+lifted byte for byte out of git revision f5bde08, which pinned every settlement to the metre and made
+moving one a git archaeology exercise (plus a shallow-clone fallback that broke CI for three days).
+They are now named `Route`/`Yard` entries in the region specs, so a place moves with its numbers.
 """
 
 from __future__ import annotations
@@ -29,18 +28,12 @@ import argparse
 import difflib
 import re
 import subprocess
-from quality_common import legacy_run, legacy_check_output
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 REGIONS = ROOT / "data" / "regions"
-
-# The revision the untouched interior circulation is lifted from. Bumping this is a deliberate act:
-# it re-imports whatever that commit says the Coilyard and the Crookway are.
-LEGACY_REV = "f5bde08"
-
 
 # --------------------------------------------------------------------------------------------------
 # Spec types
@@ -82,6 +75,9 @@ class Route:
     b: tuple[float, float]
     width: float = 5.0
     shoulder: float = 2.0
+    # The sub-resource id. None takes the positional Path_<cell>_ap<n> id; a name is how an interior
+    # street keeps a stable, greppable identity (and how check_region_seams exempts a "breach").
+    name: str | None = None
 
 
 @dataclass(frozen=True)
@@ -94,7 +90,9 @@ class Yard:
     # WARNING: METRES ABOVE THE GENERATED GROUND UNDER THIS YARD'S OWN CENTRE, never an
     # absolute world Y. 0 means "level with the country here", which is what almost every
     # yard wants and what makes a settlement follow its hillside instead of stepping off it.
-    elevation: float = 0.0
+    elevation: float | None = 0.0
+    # The sub-resource id. None takes the positional Area_<cell>_y<n> id.
+    name: str | None = None
 
 
 @dataclass(frozen=True)
@@ -130,20 +128,6 @@ class Cell:
     routes: tuple[Route, ...] = ()
     yards: tuple[Yard, ...] = ()
     waters: tuple[Water, ...] = ()
-    legacy_paths: tuple[str, ...] = ()     # sub-resource ids lifted from LEGACY_REV
-    legacy_areas: tuple[str, ...] = ()
-    # WARNING: OFFSETS IN METRES from the generated ground under each lifted area's own
-    # centre, keyed by its sub-resource id. Absent means 0, which is what most pads want.
-    # These were absolute world Y before the generator landed and were migrated once by
-    # measuring the old field with `-- --worldgen`, rather than by a second implementation
-    # of the generator in Python that would have drifted from the real one within a week.
-    area_elevation: dict[str, float] = field(default_factory=dict)
-    # SurfaceBlend overrides for lifted areas, keyed the same way. A pad only levels ground in
-    # proportion to its blend, so a pad authored at 0.22 is a suggestion rather than a floor -
-    # fine on the near-flat field these were written against, useless once the realm has real
-    # relief. Area_wn_deadfall is the case that found it: the Deadfall Lodge is placed ON that
-    # pad by design and stood on 4.96 m of variation because the pad levelled almost nothing.
-    area_blend: dict[str, float] = field(default_factory=dict)
     scatter: str | None = None             # id of a shared scatter profile
     biome: str | None = None               # data/biomes/<name>.tres, overriding the region default
     new_scene: str | None = None           # body of a transitional cell scene to create
@@ -233,77 +217,6 @@ def check_envelopes(name: str, cells: list[Cell], routed: dict[str, list[Route]]
 
 
 # --------------------------------------------------------------------------------------------------
-# Legacy import
-# --------------------------------------------------------------------------------------------------
-
-_BLOCK = re.compile(r'^\[sub_resource[^\]]*id="([^"]+)"\]\n(.*?)(?=^\[|\Z)', re.M | re.S)
-
-
-def _blocks(text: str) -> dict[str, str]:
-    return {m.group(1): m.group(2).rstrip() + "\n" for m in _BLOCK.finditer(text)}
-
-
-# ⚠️ THE KEYS THIS GENERATOR APPENDS TO A LIFTED AREA BLOCK, IN THE ORDER IT APPENDS THEM.
-# The emitter and the shallow-clone fallback below MUST agree on this list, which is why it is a
-# constant rather than a regex written out twice. When they disagreed, the fallback re-appended the
-# key it had forgotten to strip and every region came back drifted — a red required CI job for
-# three days that reproduced on no developer's machine, because a full clone never takes that path.
-APPENDED_AREA_KEYS = ("ElevationMode", "Elevation")
-
-
-def legacy_blocks(filename: str) -> dict[str, str]:
-    """The sub-resources this generator lifts verbatim out of LEGACY_REV.
-
-    ⚠️ CI CHECKS OUT ONE COMMIT. `actions/checkout` defaults to `fetch-depth: 1`, so
-    `git show f5bde08:...` exits 128 on a runner and takes the whole `generation` gate — and with it
-    every PR — down with it. It was doing so on `main` before this fallback existed, which reads as
-    a broken PR rather than a broken checkout.
-
-    So: try the pinned revision, fetch it once if it is simply not present, and otherwise fall back
-    to the COMMITTED `.tres`. That last step is honest rather than a shrug — these blocks are lifted
-    byte for byte, so on a healthy tree the fallback produces identical output, and `--check` keeps
-    catching drift in everything the spec actually computes.
-    """
-    path = f"data/regions/{filename}"
-
-    def show() -> str | None:
-        result = legacy_run(["git", "show", f"{LEGACY_REV}:{path}"],
-                                cwd=ROOT, capture_output=True, text=True, encoding="utf-8")
-        return result.stdout if result.returncode == 0 else None
-
-    text = show()
-    if text is None:
-        legacy_run(["git", "fetch", "--depth=1", "origin", LEGACY_REV],
-                       cwd=ROOT, capture_output=True, text=True)
-        text = show()
-        if text is not None:
-            print(f"  note: {filename} legacy blocks needed a fetch of {LEGACY_REV}")
-    if text is None:
-        # ⚠️ SAY SO. Which of the three sources supplied the lifted blocks is the single most useful
-        # fact when this generator disagrees with itself across machines, and it used to be silent —
-        # so a shallow CI clone and a full local clone could produce different files and the only
-        # symptom was an unexplained "would change" on a runner nobody could attach to.
-        print(f"  note: {filename} legacy blocks fell back to the committed .tres "
-              f"({LEGACY_REV} not reachable — expected on a shallow CI clone)")
-        # ⚠️ The committed file is the generator's OWN output, so every line this generator appends
-        # to a lifted area block is already in it. Left in, the fallback emits them twice and
-        # `--check` reports every region as drifted — a worse failure than the one it is recovering
-        # from, and the one that actually shipped: this stripped `Elevation` only, `ElevationMode`
-        # was added to the emitter later, and nothing tied the two together. APPENDED_AREA_KEYS is
-        # now that tie.
-        appended = "|".join(APPENDED_AREA_KEYS)
-        text = re.sub(rf"^(?:{appended}) = .*\n", "",
-                      (ROOT / path).read_text(encoding="utf-8"), flags=re.M)
-    return _blocks(text)
-
-
-def retype(block: str, script_id: str) -> str:
-    """Legacy blocks name their script by ext_resource id; the new files renumber them."""
-    return re.sub(r'^script = ExtResource\("[^"]+"\)$', f'script = ExtResource("{script_id}")',
-                  block, flags=re.M)
-
-
-# --------------------------------------------------------------------------------------------------
 # Emission
 # --------------------------------------------------------------------------------------------------
 
@@ -351,7 +264,7 @@ def wire_biomes(header: str, environment: str, cells: list[Cell], default: str) 
 
 
 def emit(region_key: str, header: str, cells: list[Cell], seams: list[Seam],
-         legacy: dict[str, str], environment: str, budget: str, resource: str,
+         environment: str, budget: str, resource: str,
          scatter_blocks: str, default_biome: str = "TemperateLowland") -> str:
     routed: dict[str, list[Route]] = {c.key: list(c.routes) for c in cells}
     by_key = {c.key: c for c in cells}
@@ -415,13 +328,13 @@ def emit(region_key: str, header: str, cells: list[Cell], seams: list[Seam],
             out.append("")
 
         path_ids: list[str] = []
-        for pid in cell.legacy_paths:
-            path_ids.append(pid)
-            out.append(f'[sub_resource type="Resource" id="{pid}"]')
-            out.append(retype(legacy[pid], "6_path").rstrip())
-            out.append("")
-        for i, route in enumerate(routed[cell.key]):
-            rid = f"Path_{cell.key}_ap{i}"
+        unnamed = 0
+        for route in routed[cell.key]:
+            if route.name:
+                rid = route.name
+            else:
+                rid = f"Path_{cell.key}_ap{unnamed}"
+                unnamed += 1
             path_ids.append(rid)
             out.append(f'[sub_resource type="Resource" id="{rid}"]')
             out.append('script = ExtResource("6_path")')
@@ -432,33 +345,16 @@ def emit(region_key: str, header: str, cells: list[Cell], seams: list[Seam],
             out.append("")
 
         area_ids: list[str] = []
-        for aid in cell.legacy_areas:
-            area_ids.append(aid)
-            body = retype(legacy[aid], "7_area").rstrip()
-            # WARNING: EVERY PAD IS RELATIVE NOW, AND THE ELEVATION IS AN OFFSET IN METRES.
-            # These numbers were authored as an absolute world Y against a ground field that
-            # was two octaves of noise and never a metre and a half from zero. The day the
-            # generator put real hillsides under the realm, every one of them became a step
-            # with a cliff on its uphill side. As an offset from the ground the generator
-            # puts underneath the pad, the authored intent survives re-tuning a region
-            # profile: "cut five metres into this knoll" stays five metres into the knoll
-            # wherever the knoll ends up, and no re-anchoring pass is ever needed again.
-            # ⚠️ ANYTHING APPENDED HERE MUST BE NAMED IN APPENDED_AREA_KEYS, or the shallow-clone
-            # fallback in legacy_blocks() will not strip it back off and every region will report
-            # as drifted on CI while passing on every full clone.
-            body += "\nElevationMode = 1"
-            if aid in cell.area_blend:
-                # Substituted in place rather than appended, so it needs no entry in that list.
-                body = re.sub(r"^SurfaceBlend = .*$",
-                              f"SurfaceBlend = {cell.area_blend[aid]}",
-                              body, count=1, flags=re.M)
-            if aid in cell.area_elevation:
-                body += f"\nElevation = {cell.area_elevation[aid]}"
-            out.append(f'[sub_resource type="Resource" id="{aid}"]')
-            out.append(body)
-            out.append("")
-        for i, yard in enumerate(cell.yards):
-            yid = f"Area_{cell.key}_y{i}"
+        unnamed = 0
+        for yard in cell.yards:
+            # ⚠️ AN ELEVATION IS METRES ABOVE THE GENERATED GROUND UNDER THE PAD'S OWN CENTRE, never a
+            # world Y (NOW.md invariant 23). Every pad is RelativeToBase; `elevation=None` omits the
+            # field, which the resource reads as 0.
+            if yard.name:
+                yid = yard.name
+            else:
+                yid = f"Area_{cell.key}_y{unnamed}"
+                unnamed += 1
             area_ids.append(yid)
             out.append(f'[sub_resource type="Resource" id="{yid}"]')
             out.append('script = ExtResource("7_area")')
@@ -466,8 +362,13 @@ def emit(region_key: str, header: str, cells: list[Cell], seams: list[Seam],
             out.append(f"Radius = Vector2({yard.ext[0]}, {yard.ext[1]})")
             out.append(f"Feather = {yard.feather}")
             out.append(f"SurfaceBlend = {yard.blend}")
-            out.append(f"Elevation = {yard.elevation}")
-            out.append("ElevationMode = 1")
+            if yard.name:
+                out.append("ElevationMode = 1")
+                if yard.elevation is not None:
+                    out.append(f"Elevation = {yard.elevation}")
+            else:
+                out.append(f"Elevation = {yard.elevation}")
+                out.append("ElevationMode = 1")
             out.append("")
 
         water_ids: list[str] = []
@@ -558,44 +459,6 @@ def write(path: Path, text: str, check: bool) -> bool:
     return True
 
 
-def fallback_agrees(builder, filename: str, expected: str) -> bool:
-    """The shallow-clone fallback must produce byte-identical output to the pinned revision.
-
-    ⚠️ THIS IS THE GUARD FOR THE BUG THAT PUT IT HERE, AND IT HAS TO RUN ON A FULL CLONE.
-    `legacy_blocks` has two sources — `git show LEGACY_REV` on a normal checkout, and the committed
-    `.tres` with the appended keys stripped back off when that revision is unreachable. **Only the
-    second one runs on CI**, because `actions/checkout` clones at depth 1, and only the first one
-    runs anywhere a developer works. So the two drifted apart and nothing noticed for three days:
-    every local run took the good path and every CI run took the broken one, and the failure
-    reproduced on nobody's machine.
-
-    A machine that can reach the revision can compute BOTH, so it is the one that must compare them.
-    That inverts the problem: the divergence is caught on a developer's own full clone, before it
-    can reach the shallow one where it is undebuggable. Skipped when the revision is unreachable,
-    because there a fallback is all there is and there is nothing to compare it against.
-    """
-    if legacy_run(["git", "cat-file", "-e", LEGACY_REV],
-                  cwd=ROOT, capture_output=True, text=True).returncode != 0:
-        return True
-
-    stripped = "|".join(APPENDED_AREA_KEYS)
-    source = re.sub(rf"^(?:{stripped}) = .*\n", "",
-                    (REGIONS / filename).read_text(encoding="utf-8"), flags=re.M)
-    text, _ = builder(_blocks(source))
-    if text == expected:
-        return True
-
-    print(f"FALLBACK DRIFT: {filename} generates differently from the committed .tres than from "
-          f"{LEGACY_REV}, so CI's shallow clone would disagree with this machine.", file=sys.stderr)
-    print("  Every key the emitter APPENDS to a lifted area block must be in APPENDED_AREA_KEYS.",
-          file=sys.stderr)
-    for line in difflib.unified_diff(expected.splitlines(), text.splitlines(),
-                                     fromfile=f"{filename} (from {LEGACY_REV})",
-                                     tofile=f"{filename} (from the fallback)", lineterm="", n=1):
-        print(f"  {line}", file=sys.stderr)
-    return False
-
-
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true")
@@ -608,11 +471,9 @@ def main() -> int:
     issues: list[str] = []
     for builder, filename in ((build_ember, "EmberCrown.tres"),
                               (build_frostfang, "FrostfangReach.tres")):
-        text, problems = builder(legacy_blocks(filename))
+        text, problems = builder()
         issues += problems
         changed |= write(REGIONS / filename, text, args.check)
-        if args.check and not fallback_agrees(builder, filename, text):
-            changed = True
 
     if issues:
         for issue in issues:

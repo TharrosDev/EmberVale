@@ -552,15 +552,15 @@ def cells() -> list[Cell]:
             invisible wall either, because the LAND says no. The whole district sits 1.2 m below the
             country around it, so the approach from the market descends into it.
             """,
-            legacy_paths=("Path_hollowreach_east", "Path_hollowreach_turn", "Path_hollowreach_spine"),
-            legacy_areas=("Area_hollowreach_hollow", "Area_hollowreach_street", "Area_hollowreach_spine"),
-            area_elevation={"Area_hollowreach_hollow": 0.62, "Area_hollowreach_street": 1.16,
-                            "Area_hollowreach_spine": 0.61},
             # 42B: the Ledger House stands on this. Area_hollowreach_street is 8 m of road plus 2 m
             # of shoulder in an 8 m deep pad — the pad is the street — so the counting house sits on
             # a bench cut north of it, at the street's own 1.4 rather than at the district's 0.9:
             # the point of the Syndicate's house is that it is the dry building above the channels.
-            yards=(Yard(at=(20.0, 23.0), ext=(5.0, 5.0), feather=2.5, blend=0.8, elevation=1.17),),
+            yards=(
+                    Yard((-9, 1), (5, 5), 1.5, 0.85, elevation=0.62, name="Area_hollowreach_hollow"),
+                    Yard((16, 12), (10, 4), 2.5, 0.72, elevation=1.16, name="Area_hollowreach_street"),
+                    Yard((-5, 1), (11, 7), 2.5, 0.78, elevation=0.61, name="Area_hollowreach_spine"),
+                    Yard(at=(20.0, 23.0), ext=(5.0, 5.0), feather=2.5, blend=0.8, elevation=1.17),),
             landforms=(
                 # ⚠️ THE DISTRICT STANDS JUST ABOVE THE WATERLINE AND THE CHANNELS ARE CUT BELOW
                 # IT. It used to sit 1.2 m UNDER it, which meant every water surface had to stop
@@ -584,7 +584,11 @@ def cells() -> list[Cell]:
                 Ridge(a=(-31, -10), b=(10, -10), half=5.5, h=-3.2, fall=0.2, flat=1.0),
                 Ridge(a=(-31, 13), b=(-2, 13), half=6.5, h=-3.2, fall=0.2, flat=1.0),
             ),
-            routes=(Route((33, -14), (27, 12), 4.0, 2.0),),
+            routes=(
+                    Route((26, 12), (6, 12), 8.0, 2.0, name="Path_hollowreach_east"),
+                    Route((6, 12), (6, 2), 8.0, 2.0, name="Path_hollowreach_turn"),
+                    Route((6, 1), (-7, 1), 12.0, 2.0, name="Path_hollowreach_spine"),
+                    Route((33, -14), (27, 12), 4.0, 2.0),),
             # ⚠️ DRAWN LARGER THAN THE BASINS, ON PURPOSE. The surfaces used to be BoxMeshes hand-
             # sized to sit INSIDE the carved ellipse so their straight edges would not lie on dry
             # land, which left a rectangle of water short of its own shore. WorldCellWater takes the
@@ -613,8 +617,6 @@ def cells() -> list[Cell]:
             StepUp.MaxHeight, so anything taller is a wall), and the ground falls
             away west toward Hollowreach and rises south into pasture.
             """,
-            legacy_paths=("Path_market_gate", "Path_market_crook", "Path_market_caravan",
-                          "Path_market_dock", "Path_market_alley", "Path_market_sump"),
             # The salt steps colonnade spreads 16 m and the south wall runs across the
             # market slope; both came out over half a metre off their own ground.
             # ⚠️ NO PAD UNDER THE SALT STEPS. Its colonnade straddles the market's own roads, and a
@@ -623,11 +625,21 @@ def cells() -> list[Cell]:
             # across the footprint. Road beats yard by design (NOW.md invariant 21) and this is what
             # that rule looks like from the other side - a structure on a road wants moving, not
             # levelling. Measured: 0.77 m without a pad, 0.77 m with one.
-            yards=(Yard(at=(-2.0, 22.5), ext=(5.0, 5.0), feather=3.0, blend=0.9),
+            yards=(
+                    Yard((7, 2), (11, 10), 3.0, 0.90, elevation=None, name="Area_market_yard"),
+                    Yard((16, 14), (5.5, 5), 1.5, 0.88, elevation=0.0, name="Area_market_terrace"),
+                    Yard((3, 16.5), (7, 4.5), 2.0, 0.60, elevation=None, name="Area_market_timber"),
+                    Yard((-11.5, 17), (4.5, 4), 1.5, 0.55, elevation=None, name="Area_market_sump"),
+                    Yard(at=(-2.0, 22.5), ext=(5.0, 5.0), feather=3.0, blend=0.9),
                    Yard(at=(-2.5, 16.6), ext=(4.5, 5.6), feather=3.0, blend=0.9)),
-            legacy_areas=("Area_market_yard", "Area_market_terrace", "Area_market_timber",
-                          "Area_market_sump"),
-            area_elevation={"Area_market_terrace": 0.0},
+            routes=(
+                Route((-11, -26), (-11, -13), 4.5, 1.0, name="Path_market_gate"),
+                Route((-11, -13), (2, -7.5), 5.0, 1.5, name="Path_market_crook"),
+                Route((26, 3.5), (16, 3.5), 7.0, 2.0, name="Path_market_caravan"),
+                Route((-26, 12), (-18, 12), 3.5, 1.5, name="Path_market_dock"),
+                Route((-18, -15), (-18, 15), 3.2, 1.0, name="Path_market_alley"),
+                Route((-16, 17), (-9, 17), 3.0, 1.0, name="Path_market_sump"),
+            ),
             landforms=(
                 Mound(at=(0, -4), ext=(36, 34), h=0.0, fall=0.5, flat=0.92),
                 Mound(at=(16, 14), ext=(9.5, 8.5), h=0.45, fall=0.35, flat=1.0),
@@ -650,9 +662,18 @@ def cells() -> list[Cell]:
             into rough grazing rather than stopping at a floor edge. Nothing inside the hexagon moved.
             ⚠️ PropertyResource.PlacementCenter moved with the cell: local (0, 5) is world (95, 0, 90).
             """,
-            legacy_paths=("Path_homestead_lane", "Path_homestead_gate", "Path_homestead_drive",
-                          "Path_homestead_door", "Path_homestead_entry"),
-            legacy_areas=("Area_homestead_yard", "Area_homestead_garden", "Area_homestead_workshop"),
+            yards=(
+                Yard((0, 5), (8, 7), 3.0, 0.58, elevation=None, name="Area_homestead_yard"),
+                Yard((-13, 4), (5, 7), 1.5, 0.35, elevation=None, name="Area_homestead_garden"),
+                Yard((13.5, -6), (3.5, 6), 1.5, 0.72, elevation=None, name="Area_homestead_workshop"),
+            ),
+            routes=(
+                Route((-26, 3.5), (-21, -5.5), 4.5, 2.0, name="Path_homestead_lane"),
+                Route((-21, -5.5), (-13, -10), 4.5, 2.0, name="Path_homestead_gate"),
+                Route((-13, -10), (-3, -3.6), 3.5, 1.5, name="Path_homestead_drive"),
+                Route((-3, -3.6), (7, 2), 3.5, 1.25, name="Path_homestead_door"),
+                Route((7, 2), (7, 0), 3.5, 1.25, name="Path_homestead_entry"),
+            ),
             landforms=(
                 Mound(at=(0, 0), ext=(26, 24), h=0.0, fall=0.55, flat=0.85),
                 Mound(at=(-32, 26), ext=(21, 19), h=3.5, fall=0.95),
@@ -682,9 +703,10 @@ def cells() -> list[Cell]:
             # northern lip was a 47 degree climb once that lip became a twelve-metre ridge instead
             # of a row of rocks; the same scramble over 23 m is 28 degrees, which is a scramble
             # rather than a wall with a road painted on it.
-            legacy_paths=("Path_wilds_west_track", "Path_wilds_west_throat"),
-            legacy_areas=("Area_wilds_west_camp", "Area_wilds_west_apron"),
-            area_elevation={"Area_wilds_west_camp": 0.0, "Area_wilds_west_apron": -2.33},
+            yards=(
+                Yard((-14, -1), (7, 8), 3.5, 0.38, elevation=0.0, name="Area_wilds_west_camp"),
+                Yard((10, -1), (9, 6), 4.0, 0.20, elevation=-2.33, name="Area_wilds_west_apron"),
+            ),
             landforms=(
                 Mound(at=(0, -42), ext=(38, 18), h=8.0, fall=0.85),
                 Mound(at=(0, 42), ext=(38, 18), h=6.0, fall=0.85),
@@ -696,7 +718,10 @@ def cells() -> list[Cell]:
                 Ridge(a=(-4, 6), b=(-4, 15), half=8, h=12.0, fall=0.4),
                 Mound(at=(-14, -1), ext=(12, 13), h=-1.5, fall=0.5, flat=0.9),
             ),
-            routes=(Route((4, -26), (-10, -8), 2.5, 1.5),
+            routes=(
+                    Route((25, 0), (2, -1), 3.5, 2.5, name="Path_wilds_west_track"),
+                    Route((2, -1), (-8, 0), 5.0, 1.5, name="Path_wilds_west_throat"),
+                    Route((4, -26), (-10, -8), 2.5, 1.5),
                     Route((2, -1), (16, 12), 3.0, 2.0)),
         ),
         Cell(
@@ -719,9 +744,10 @@ def cells() -> list[Cell]:
             where the ground rises through it, and declaring it is what puts the deep lobes under
             WorldWater's non-swimming recovery contract.
             """,
-            legacy_paths=("Path_tarn_road_east", "Path_tarn_road_shore", "Path_tarn_neck"),
-            legacy_areas=("Area_tarn_spit", "Area_tarn_yard"),
-            area_elevation={"Area_tarn_spit": -0.31, "Area_tarn_yard": 0.81},
+            yards=(
+                Yard((-7, 8), (8, 6), 2.5, 0.74, elevation=-0.31, name="Area_tarn_spit"),
+                Yard((11, -14), (7, 6), 2.0, 0.66, elevation=0.81, name="Area_tarn_yard"),
+            ),
             landforms=(
                 Mound(at=(26, -6), ext=(23, 44), h=4.0, fall=0.9),
                 Mound(at=(6, -36), ext=(27, 17), h=3.0, fall=0.9),
@@ -747,7 +773,11 @@ def cells() -> list[Cell]:
                 Mound(at=(-21, 15), ext=(7, 15), h=-4.2, fall=0.2, flat=1.0),
                 Mound(at=(-7, 20), ext=(13, 9), h=-4.2, fall=0.2, flat=1.0),
             ),
-            routes=(Route((10, -8), (20, 18), 4.0, 2.0),),
+            routes=(
+                    Route((26, -8), (6, -7), 6.0, 2.0, name="Path_tarn_road_east"),
+                    Route((6, -3), (-26, -1), 7.0, 2.0, name="Path_tarn_road_shore"),
+                    Route((-6, -2), (-6, 4), 6.0, 1.5, name="Path_tarn_neck"),
+                    Route((10, -8), (20, 18), 4.0, 2.0),),
             # One body, not two. The old TarnSouth box lay entirely inside the main one and existed
             # only to reach a lobe the big rectangle could not cover without spilling onto dry land;
             # a terrain-derived shoreline makes both the split and the careful sizing unnecessary.
@@ -769,15 +799,24 @@ def cells() -> list[Cell]:
             market road bends round, a wooded bank north-east, a hollow east, and a rise north so the
             walk to the Crossway gate is a climb.
             """,
-            legacy_paths=("Path_town_kingsway_s", "Path_town_kingsway_m", "Path_town_kingsway_n",
-                          "Path_town_west", "Path_town_east", "Path_town_green"),
             # Two houses on the town's own slope, 0.87 m and 0.75 m out across their
             # footprints. The square, craft yard and green already have pads; these two sit
             # outside all three.
-            yards=(Yard(at=(-20.0, 22.0), ext=(6.0, 6.0), feather=3.0, blend=0.9),
+            yards=(
+                    Yard((-14, -2), (9, 10), 3.0, 0.85, elevation=None, name="Area_town_square"),
+                    Yard((16, 1), (8, 8), 2.5, 0.78, elevation=None, name="Area_town_craft"),
+                    Yard((6, -21), (11, 5), 3.0, 0.35, elevation=None, name="Area_town_green"),
+                    Yard(at=(-20.0, 22.0), ext=(6.0, 6.0), feather=3.0, blend=0.9),
                    Yard(at=(25.0, 6.0), ext=(6.0, 7.0), feather=3.0, blend=0.9),
                    Yard(at=(-22.0, 11.1), ext=(4.5, 4.6), feather=3.0, blend=0.9)),
-            legacy_areas=("Area_town_square", "Area_town_craft", "Area_town_green"),
+            routes=(
+                Route((-11, 30), (1, 14), 4.5, 1.5, name="Path_town_kingsway_s"),
+                Route((1, 14), (2, -8), 5.0, 1.5, name="Path_town_kingsway_m"),
+                Route((2, -8), (-6, -30), 4.5, 1.5, name="Path_town_kingsway_n"),
+                Route((-30, -4), (-18, -4), 5.0, 2.0, name="Path_town_west"),
+                Route((30, -2), (18, -2), 5.0, 2.0, name="Path_town_east"),
+                Route((-4, -20), (16, -20), 3.5, 1.25, name="Path_town_green"),
+            ),
             landforms=(
                 Mound(at=(-4, -6), ext=(40, 36), h=0.0, fall=0.55, flat=0.9),
                 Mound(at=(-40, 36), ext=(19, 17), h=5.5, fall=0.85),
@@ -812,9 +851,11 @@ def cells() -> list[Cell]:
             Crossway runs up the west side of it, so leaving is a walk under the workings rather than
             over them.
             """,
-            legacy_paths=("Path_mine_defile", "Path_mine_haul", "Path_mine_link"),
-            legacy_areas=("Area_mine_yard", "Area_mine_pithead", "Area_mine_rest"),
-            area_elevation={"Area_mine_yard": 0.0, "Area_mine_pithead": 0.0, "Area_mine_rest": 0.0},
+            yards=(
+                Yard((-8, 9.5), (9, 9.5), 3.0, 0.92, elevation=0.0, name="Area_mine_yard"),
+                Yard((18, -9), (8, 9), 3.5, 0.88, elevation=0.0, name="Area_mine_pithead"),
+                Yard((-19, 15), (4, 5), 1.5, 0.60, elevation=0.0, name="Area_mine_rest"),
+            ),
             landforms=(
                 Ridge(a=(2, -42), b=(44, -34), half=26, h=16.0, fall=0.75),
                 Ridge(a=(-32, -14), b=(-8, -16), half=13, h=8.0, fall=0.7),
@@ -841,7 +882,11 @@ def cells() -> list[Cell]:
             # which is what ValidateRouteGrades kept calling at 48 degrees on a ramp whose average
             # is 9. Starting the Cut back on the haul road makes the two nearly collinear over the
             # overlap, so their targets agree where they are blended.
-            routes=(Route((0, 3), (18, -8), 6.0, 2.5),
+            routes=(
+                    Route((-26, -2), (-14, -2), 6.0, 2.0, name="Path_mine_defile"),
+                    Route((-4, 8), (8, -4), 6.0, 2.0, name="Path_mine_haul"),
+                    Route((11, 17), (-1, 17), 5.0, 1.5, name="Path_mine_link"),
+                    Route((0, 3), (18, -8), 6.0, 2.5),
                     Route((14, -6), (14, 19), 6.0, 2.0),
                     Route((-8, 6), (-6, -26), 4.5, 2.0)),
         ),
@@ -878,18 +923,17 @@ def cells() -> list[Cell]:
             North of the post the ground falls away toward the wilds, so the frontier is visibly
             downhill of the last safe ground.
             """,
-            legacy_paths=("Path_crossway_south", "Path_crossway_turn", "Path_crossway_gate",
-                          "Path_crossway_dogleg", "Path_crossway_north", "Path_crossway_compound"),
-            legacy_areas=("Area_crossway_hold", "Area_crossway_compound", "Area_crossway_gate"),
-            area_elevation={"Area_crossway_hold": 0.0, "Area_crossway_compound": 0.0,
-                            "Area_crossway_gate": 0.0},
             # 42B: the Wardens' Watch stands on this. ⚠️ IT IS NOT INSIDE THE COMPOUND, AND IT
             # CANNOT BE: Path_crossway_compound runs east-west along z = 14 with a 4 m road and a
             # 1.5 m shoulder, so the compound pad IS the track for all but three metres of its
             # depth. The keep went there first and the traversal probe found what that means — two
             # authored routes with no navigation path through them. This apron sits south of the
             # track, between it and the palisade, and is levelled to the compound's own 0.0.
-            yards=(Yard(at=(-19.5, 6.5), ext=(6.0, 5.0), feather=2.5, blend=0.8, elevation=0.0),),
+            yards=(
+                    Yard((6, 9), (9, 5.5), 2.5, 0.82, elevation=0.0, name="Area_crossway_hold"),
+                    Yard((-17, 13), (7, 6), 2.0, 0.68, elevation=0.0, name="Area_crossway_compound"),
+                    Yard((7.5, 2), (5, 4), 1.5, 0.90, elevation=0.0, name="Area_crossway_gate"),
+                    Yard(at=(-19.5, 6.5), ext=(6.0, 5.0), feather=2.5, blend=0.8, elevation=0.0),),
             landforms=(
                 Mound(at=(0, 4), ext=(32, 26), h=0.0, fall=0.5, flat=0.9),
                 # THE NECK IS NORTH OF THE POST, NOT ACROSS IT. Drawn east-west through the
@@ -901,7 +945,14 @@ def cells() -> list[Cell]:
                 Ridge(a=(14, -19), b=(50, -16), half=10, h=9.0, fall=0.55),
                 Mound(at=(0, -32), ext=(30, 12), h=-2.0, fall=0.95),
             ),
-            routes=(Route((6, 9), (18, 12), 4.5, 2.0),),
+            routes=(
+                    Route((-6, 26), (-6, 14), 7.0, 2.0, name="Path_crossway_south"),
+                    Route((-6, 14), (3, 9), 7.0, 2.0, name="Path_crossway_turn"),
+                    Route((3, 9), (7.5, 0), 7.0, 2.0, name="Path_crossway_gate"),
+                    Route((7.5, 0), (0, -8), 7.0, 2.0, name="Path_crossway_dogleg"),
+                    Route((0, -8), (0, -26), 7.0, 2.0, name="Path_crossway_north"),
+                    Route((-10, 14), (-20, 14), 4.0, 1.5, name="Path_crossway_compound"),
+                    Route((6, 9), (18, 12), 4.5, 2.0),),
         ),
         Cell(
             key="mine_road", cell_id="ember_crown.mine_road",
@@ -957,28 +1008,35 @@ def cells() -> list[Cell]:
             branches of the fork now run through quiet forest for thirty metres before they reach
             anything authored.
             """,
-            legacy_paths=("Path_wn_stem", "Path_wn_west_a", "Path_wn_west_b", "Path_wn_west_c",
-                          "Path_wn_east_a", "Path_wn_east_b", "Path_wn_east_c"),
-            legacy_areas=("Area_wilds_north_ruin", "Area_wn_bowl", "Area_wn_deadfall"),
             # ⚠️ The deadfall hollow was a 5.4 m cut, and the Deadfall Lodge stands on its
             # LIP - 2.8 m from Path_wilds_north_ap2 as well, so a building pad there is
             # cancelled by the road (road beats yard, deliberately). With real relief the
             # hollow's own edge put 2.6 m of slope across the lodge's footprint. Two metres
             # is still a deadfall and leaves the lodge somewhere to stand.
-            area_elevation={"Area_wilds_north_ruin": -0.3, "Area_wn_bowl": 0.61,
-                            "Area_wn_deadfall": -5.39},
             # ⚠️ The Deadfall Lodge is placed ON this pad by design ("the Ash Hunters' hub, on the
             # deadfall pad under the scarp"), and the pad was authored at a blend of 0.22 — which
             # levelled almost nothing, so the lodge stood on 4.96 m of variation and its lower storey
             # disappeared into the hillside. A pad a building sits on has to actually be a floor.
-            area_blend={"Area_wn_deadfall": 0.9},
             # ⚠️ AND THE SUPPLEMENTARY PAD SHARES THE HOLLOW'S ELEVATION, WHICH IS THE WHOLE TRICK.
             # Area_wn_deadfall reaches most of the lodge but not its eastern side. A yard added there
             # at elevation 0 made things WORSE - 4.96 m became 5.68 - because two pads at different
             # heights over one footprint meet in a step, and strongest-mask-wins picks a side. Giving
             # this one the hollow's own offset makes the two agree instead of compete.
-            yards=(Yard(at=(21.5, -15.0), ext=(5.5, 6.5), feather=3.0, blend=0.9,
+            yards=(
+                    Yard((0, -5), (7, 7), 3.5, 0.42, elevation=-0.3, name="Area_wilds_north_ruin"),
+                    Yard((-17, 8), (6, 7), 4.0, 0.30, elevation=0.61, name="Area_wn_bowl"),
+                    Yard((18, -12), (6, 7), 4.5, 0.9, elevation=-5.39, name="Area_wn_deadfall"),
+                    Yard(at=(21.5, -15.0), ext=(5.5, 6.5), feather=3.0, blend=0.9,
                         elevation=-5.39),),
+            routes=(
+                Route((0, 25), (0, 16), 5.0, 2.5, name="Path_wn_stem"),
+                Route((0, 16), (-11, 4), 4.0, 2.5, name="Path_wn_west_a"),
+                Route((-11, 4), (-12, -10), 4.0, 2.5, name="Path_wn_west_b"),
+                Route((-12, -10), (0, -25), 4.0, 2.5, name="Path_wn_west_c"),
+                Route((0, 16), (11, 6), 3.5, 2.0, name="Path_wn_east_a"),
+                Route((11, 6), (13, -6), 3.5, 2.0, name="Path_wn_east_b"),
+                Route((13, -6), (0, -25), 3.5, 2.0, name="Path_wn_east_c"),
+            ),
             landforms=(
                 Mound(at=(0, -38), ext=(62, 27), h=9.0, fall=0.9),
                 Mound(at=(-17, 8), ext=(15, 16), h=-3.5, fall=0.7),
@@ -1044,16 +1102,20 @@ def cells() -> list[Cell]:
             drops six metres beyond the breach in the north wall, so the second way out is a way DOWN.
             The corrected south entrance and the asymmetric breach are unchanged.
             """,
-            legacy_paths=("Path_arena_gate", "Path_arena_breach"),
-            legacy_areas=("Area_arena_ring", "Area_arena_breach"),
-            area_elevation={"Area_arena_ring": 0.0, "Area_arena_breach": 0.0},
+            yards=(
+                Yard((0, -1), (15, 14), 1.5, 0.95, elevation=0.0, name="Area_arena_ring"),
+                Yard((9, -16), (4, 3), 2.0, 0.55, elevation=0.0, name="Area_arena_breach"),
+            ),
             landforms=(
                 Mound(at=(0, 0), ext=(32, 30), h=3.0, fall=0.35, flat=1.0),
                 Mound(at=(-50, 4), ext=(32, 36), h=-3.0, fall=0.9),
                 Ridge(a=(30, -30), b=(58, 20), half=15, h=18.0, fall=0.5),
                 Mound(at=(6, -38), ext=(42, 17), h=-6.0, fall=0.6),
             ),
-            routes=(Route((-40, 30), (-16, 27), 5.0, 2.5),
+            routes=(
+                    Route((0, 18), (0, 9), 5.0, 1.5, name="Path_arena_gate"),
+                    Route((9, -18), (7, -8), 4.0, 2.5, name="Path_arena_breach"),
+                    Route((-40, 30), (-16, 27), 5.0, 2.5),
                     Route((-16, 27), (0, 18), 5.0, 2.0)),
         ),
     ]
@@ -1082,7 +1144,7 @@ def seams() -> list[Seam]:
     ]
 
 
-def build_ember(legacy: dict[str, str]) -> tuple[str, list[str]]:
+def build_ember() -> tuple[str, list[str]]:
     spec = cells()
     by_key = {c.key: c for c in spec}
     link = seams()
@@ -1096,5 +1158,5 @@ def build_ember(legacy: dict[str, str]) -> tuple[str, list[str]]:
         routed[seam.b].append(Route(local(by_key[seam.b], seam.at), seam.reach_b))
     issues += check_envelopes("EmberCrown", spec, routed)
 
-    return emit("ember_crown", HEADER, spec, link, legacy,
+    return emit("ember_crown", HEADER, spec, link,
                 ENVIRONMENT, BUDGET, RESOURCE, SCATTER, "TemperateLowland"), issues
