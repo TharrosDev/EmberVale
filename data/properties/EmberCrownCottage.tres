@@ -20,29 +20,17 @@ TravelNodeId = "travel.ember_crown.cottage"
 ; 37C/37D/37E — the yard you may build in. Re-centred by 37E when the holding moved out of the town
 ; square into its own cell.
 ;
-; ⚠️ WORLD COORDINATES, AND THE CORRECTION IS NOW ON BOTH AXES. A point read out of a cell's .tscn is
-; LOCAL; world = local + the cell's Center. The homestead's Center is (52, 0, 46), so the yard at
-; local (6, 8) is world (58, 0, 54). Until 37E this cell was the town hub at (0, 0, -10) and the note
-; here said "add -10 on z" — read that against the new cell and every prop lands 52 m west in a
-; market square. The number to trust is the Center in data/regions/EmberCrown.tres, never this
-; comment's arithmetic.
-;
 ; ⚠️ THE BUILD YARD MOVED WITH THE PLOT (the 2026-08-28 layout rebuild). It was seven metres of ground south-east of the
 ; house at local (6, 8); the rebuild put the cottage in the plot's north-east corner and the workshop
 ; along the east wall, so that circle now sits half on top of the workshop row. It is the SOUTH LAWN
-; instead: local (0, 5), world (52, 0, 51), a 7 m circle bounded by the south fence at z = 12 and
+; instead: local (0, 5), a 7 m circle bounded by the south fence at z = 12 and
 ; clear of the cottage (which ends at local z = -1), the workshop (x = 14), the kitchen garden's
 ; dividing fence at x = -7.2, Veyra's shrine at (12, 4) and every stone of the approach path — a
 ; player who fences their own front drive in has to walk round it.
 ;
-; ⚠️ WORLD COORDINATES. A point read out of a cell's .tscn is LOCAL; world = local + the cell's
-; Center, which is (52, 0, 46) for this cell. The number to trust is the Center in
-; data/regions/EmberCrown.tres, never a comment's arithmetic — an earlier note here said "add -10 on
-; z" from when this holding was in the town square, and read against the new cell that lands every
-; placed prop 52 m west in a market.
-; ⚠️ MOVED WITH THE CELL (the 2026-08-29 geography overhaul). The homestead's Center went from
-; (52, 0, 46) to (95, 0, 85) when the realm's lattice grew; the SOUTH LAWN is still cell-local
-; (0, 5), which is world (95, 0, 90). Read the local offset, never the old world number — that is
-; the third time this exact line has had to be corrected and the second time for the same reason.
-PlacementCenter = Vector3(95, 0, 90)
+; ⚠️ CELL-LOCAL (2026-09 world rebuild). The south lawn is (0, 5) in the homestead cell's own metres,
+; read straight off ashfall_homestead.tscn. It was a world coordinate, hand-corrected three times as
+; the homestead moved; PlacementWorldCenter now adds the cell's Center, so a move changes nothing here.
+PlacementCellId = "ember_crown.ashfall_homestead"
+PlacementCenter = Vector3(0, 0, 5)
 PlacementRadius = 7.0

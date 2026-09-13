@@ -280,6 +280,9 @@ public sealed partial class WorldSessionDirector : Node
             return;
         }
 
-        PerformRegionLoad(destination, node.Position, $"Fast travelling to {node.Label}...");
+        // The baked landing wins over the one this save remembers: the world may have moved since the
+        // player attuned, and a jump to a stale point is a jump into whatever stands there now.
+        Vector3 landing = WorldPlaceIndex.TravelLanding(node.RegionId, node.Id) ?? node.Position;
+        PerformRegionLoad(destination, landing, $"Fast travelling to {node.Label}...");
     }
 }

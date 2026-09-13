@@ -5,8 +5,8 @@
 
 ; Sedge Marrow, the Wet Hull (Phase 38O).
 ;
-; ⚠️ DESTINATIONS ARE CELL-LOCAL against Origin (-106, 0, 74), Hollowreach's Center (38L's
-; ScheduleResource.Origin). A raw world destination copied out of a cell .tscn lands a cell's width
+; ⚠️ DESTINATIONS ARE CELL-LOCAL against the NPC's own streamed cell, Hollowreach's Center (38L's
+; its own cell since the 2026-09 world rebuild). A raw world destination copied out of a cell .tscn lands a cell's width
 ; away and nothing reports it.
 ;
 ; ⚠️ Hours track shop.hollowreach.hull (20:00-05:00) and are kept in step BY HAND — a ScheduleId lives
@@ -49,8 +49,4 @@ Destination = Vector3(-9.5, 0, -3.5)
 [resource]
 script = ExtResource("1_sched")
 Id = "schedule.hollowreach.hull"
-; ⚠️ Origin moved with the cell in the 2026-08-29 geography overhaul. Destinations below are
-; CELL-LOCAL and did not change; only the cell's world Center did. Read the local point, never
-; the old world number.
-Origin = Vector3(-95, 0, 85)
 Entries = Array[Resource]([SubResource("e_0"), SubResource("e_1"), SubResource("e_2")])

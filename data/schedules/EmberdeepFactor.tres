@@ -5,8 +5,8 @@
 
 ; Bregan Holt, the Emberdeep ore factor (Phase 38N1).
 ;
-; ⚠️ DESTINATIONS ARE CELL-LOCAL. Origin carries the mine's Center (56, 0, -10), so these read straight
-; out of emberdeep_mine.tscn with nobody doing the arithmetic by hand (38L's ScheduleResource.Origin).
+; ⚠️ DESTINATIONS ARE CELL-LOCAL. they resolve against the NPC's own streamed cell, so these read straight
+; out of emberdeep_mine.tscn with nobody doing the arithmetic by hand (resolved against the NPC's own cell since the 2026-09 world rebuild).
 ;
 ; ⚠️ These hours track shop.emberdeep.factor (5:00-19:00) and are kept in step BY HAND — a ScheduleId
 ; lives in a .tscn, which ContentValidator cannot scan, so if the shop's hours move, move these too or
@@ -36,8 +36,4 @@ Destination = Vector3(-15.5, 0, 7)
 [resource]
 script = ExtResource("1_sched")
 Id = "schedule.emberdeep.factor"
-; ⚠️ Origin moved with the cell in the 2026-08-29 geography overhaul. Destinations below are
-; CELL-LOCAL and did not change; only the cell's world Center did. Read the local point, never
-; the old world number.
-Origin = Vector3(95, 0, -10)
 Entries = Array[Resource]([SubResource("e_check"), SubResource("e_trade"), SubResource("e_close")])

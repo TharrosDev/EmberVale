@@ -5,7 +5,7 @@
 
 ; Mirelle Vantry (Phase 38P).
 ;
-; ⚠️ DESTINATIONS ARE CELL-LOCAL. Origin carries the Embermarket's Center (0, 0, 46), so these read
+; ⚠️ DESTINATIONS ARE CELL-LOCAL. they resolve against the NPC's own streamed cell, so these read
 ; straight out of embermarket.tscn (re-read from the the 2026-08-28 layout rebuild Coilyard rebuild — the stall rows are gone) without anyone doing the arithmetic by hand. A raw world destination
 ; copied from a cell .tscn lands a cell's width away and nothing reports it.
 ;
@@ -41,8 +41,4 @@ Destination = Vector3(18.5, 0, -3.2)
 [resource]
 script = ExtResource("1_sched")
 Id = "schedule.embermarket.consignment"
-; ⚠️ Origin moved with the cell in the 2026-08-29 geography overhaul. Destinations below are
-; CELL-LOCAL and did not change; only the cell's world Center did. Read the local point, never
-; the old world number.
-Origin = Vector3(0, 0, 85)
 Entries = Array[Resource]([SubResource("e_open"), SubResource("e_trade"), SubResource("e_close")])

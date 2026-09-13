@@ -35,6 +35,14 @@ public partial class TravelNodeComponent : InteractableComponent
     /// <summary>Region this node lives in (a <c>region.*</c> key), resolved on jump.</summary>
     [Export] public string RegionId { get; set; } = string.Empty;
 
+    /// <summary>Where fast travel sets the player down, in the waystone body's own space: a clear,
+    /// walkable spot beside the post rather than on its collider. The bake records the resulting world
+    /// point in <see cref="WorldPlaceIndex"/>, so a moved waystone moves every save's landing too.</summary>
+    [Export] public Vector3 LandingOffset { get; set; } = new(0f, 0f, 2.5f);
+
+    /// <summary>The landing point for a travel node parented to <paramref name="body"/>.</summary>
+    public static Vector3 LandingFor(Node3D body, Vector3 offset) => body.GlobalTransform * offset;
+
     public override string Prompt
     {
         get
@@ -52,10 +60,11 @@ public partial class TravelNodeComponent : InteractableComponent
             return false;
         }
 
-        // Record where the PLAYER stands to attune — a known-walkable spot beside the post — not the
-        // post's own position. Fast travel lands the player at this point; landing on the post's own
-        // collider trapped them inside it.
-        if (svc.Discover(Id, DisplayName, RegionId, playerBody.GlobalPosition))
+        // The authored landing beside the post, never the post's own position: landing on its collider
+        // trapped the player inside it. (It used to be wherever the player happened to stand, which
+        // made a landing a save-local accident rather than a property of the waystone.)
+        Vector3 landing = Entity?.Body is { } body ? LandingFor(body, LandingOffset) : playerBody.GlobalPosition;
+        if (svc.Discover(Id, DisplayName, RegionId, landing))
         {
             Log.Info($"Attuned to {DisplayName}.");
         }

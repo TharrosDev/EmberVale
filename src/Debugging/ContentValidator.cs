@@ -2705,11 +2705,21 @@ public static class ContentValidator
             return; // the unknown-region rule above already said so; don't say it twice
         }
 
-        if (!region.Bounds.HasPoint(property.PlacementCenter))
+        if (RegionDatabase.Cell(property.PlacementCellId) is not { } cell || !region.Cells.Contains(cell))
+        {
+            issues.Add($"property '{id}' names placement cell '{property.PlacementCellId}', which region " +
+                       $"'{region.Id}' does not have — PlacementCenter is cell-local, so it has no place");
+            return;
+        }
+
+        if (cell.Presentation is { } presentation &&
+            (Mathf.Abs(property.PlacementCenter.X) > presentation.Width * 0.5f ||
+             Mathf.Abs(property.PlacementCenter.Z) > presentation.Depth * 0.5f))
         {
             issues.Add(
-                $"property '{id}' centres its placement area at {property.PlacementCenter}, outside " +
-                $"region '{region.Id}' bounds {region.Bounds} — the player could never stand in it");
+                $"property '{id}' centres its placement area at local {property.PlacementCenter}, outside " +
+                $"cell '{cell.Id}' ({presentation.Width} x {presentation.Depth} m) — a world coordinate " +
+                "left over from before placement became cell-local, or the wrong cell");
         }
     }
 
@@ -5137,6 +5147,7 @@ public static class ContentValidator
         }
 
         ValidateMapMarkersArePlaced(issues);
+        ValidateSchedulesStayInTheirCell(issues);
         ValidateEverythingIsOnTheMap(issues);
         ValidateMapTaxonomyIsNamed(issues);
         ValidateHudComputedKeys(issues);
@@ -5462,6 +5473,52 @@ public static class ContentValidator
                 issues.Add($"map location '{location.Id}' is authored but no cell scene places a " +
                            "MapLocationComponent for it — nothing gives it a position, so it can " +
                            "never be discovered or drawn");
+            }
+        }
+    }
+
+    /// <summary>
+    /// ⚠️ A ROUTINE'S DESTINATIONS ARE CELL-LOCAL (2026-09 world rebuild), so every one of them must lie
+    /// inside the footprint of the cell whose scene places the NPC. A destination outside it is either a
+    /// leftover raw world coordinate — the silent drift that stranded nine routines when their cells
+    /// moved — or an NPC walking into a neighbour cell that may not be loaded.
+    /// </summary>
+    private static void ValidateSchedulesStayInTheirCell(List<string> issues)
+    {
+        foreach (RegionResource region in RegionDatabase.All)
+        {
+            foreach (RegionCellResource? cell in region.Cells)
+            {
+                if (cell?.Presentation == null)
+                {
+                    continue;
+                }
+                using FileAccess? file = FileAccess.Open(cell.ScenePath, FileAccess.ModeFlags.Read);
+                if (file == null)
+                {
+                    continue;
+                }
+                float halfW = cell.Presentation.Width * 0.5f;
+                float halfD = cell.Presentation.Depth * 0.5f;
+                foreach (System.Text.RegularExpressions.Match match in
+                         System.Text.RegularExpressions.Regex.Matches(
+                             file.GetAsText(), @"(?m)^ScheduleId = ""([^""]*)"""))
+                {
+                    if (Npc.ScheduleDatabase.Get(match.Groups[1].Value) is not { } schedule)
+                    {
+                        continue;
+                    }
+                    foreach (Npc.ScheduleEntry entry in schedule.EntryList())
+                    {
+                        if (Mathf.Abs(entry.Destination.X) > halfW || Mathf.Abs(entry.Destination.Z) > halfD)
+                        {
+                            issues.Add($"schedule '{schedule.Id}' (placed in '{cell.Id}') sends its NPC to " +
+                                       $"local {entry.Destination}, outside the cell's {cell.Presentation.Width}" +
+                                       $" x {cell.Presentation.Depth} m footprint — destinations are " +
+                                       "cell-local, so this is a raw world coordinate or a neighbour cell");
+                        }
+                    }
+                }
             }
         }
     }

@@ -63,7 +63,11 @@ public sealed partial class PlayerHost : Node3D
     {
         // A persistent supply cache: recreated on load (existence + transform) with its inventory
         // restoring its contents — the spawned-actor persistence path, exercised.
-        director.Spawn(GameIds.Templates.Cache, "cache.world.start", new Vector3(5f, 0f, 0f));
+        // ⚠️ Beside the Ember Crown's spawn, not at a world literal: it stood at (5, 0, 0) and the
+        // 2026-09 world rebuild moved the spawn half a kilometre. SpawnPoint.Y is a clearance, so the
+        // cache is offset on x/z only and dropped to the ground by its own placement.
+        Vector3 spawn = World.RegionDatabase.Get(GameIds.Regions.EmberCrown)?.SpawnPoint ?? Vector3.Zero;
+        director.Spawn(GameIds.Templates.Cache, "cache.world.start", new Vector3(spawn.X + 5f, 0f, spawn.Z - 5f));
         Log.Info("A persistent supply cache sits east of spawn; it survives save/load.");
     }
 

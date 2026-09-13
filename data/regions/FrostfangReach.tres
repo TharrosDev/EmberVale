@@ -1651,7 +1651,7 @@ PerformanceBudget = SubResource("Budget_frostfang")
 
 ; The lattice is x 260..600, z -300..70, disjoint from the Ember Crown's x -190..140. The Y range
 ; carries the aerie summit at +24 and the ash crater floor at -4.
-Bounds = AABB(240, -80, -320, 380, 220, 440)
+Bounds = AABB(240, -80, -320, 380, 220, 410)
 SafeZoneCenter = Vector3(430, 0, -55)
 SafeZoneRadius = 30.0
 WeavePotency = 0.5

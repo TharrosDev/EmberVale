@@ -22,7 +22,7 @@ namespace Embervale.Save;
 /// </summary>
 public sealed partial class SaveManager : Node
 {
-    private const int SaveFormatVersion = 2;
+    private const int SaveFormatVersion = 3;
     private static string SaveDirectory => Embervale.Core.UserDataPaths.Resolve("saves");
 
     public static SaveManager Instance { get; private set; } = null!;
@@ -671,6 +671,12 @@ public sealed partial class SaveManager : Node
             version = 2;
         }
 
+        if (version == 2)
+        {
+            MigrateV2ToV3(slot, root);
+            version = 3;
+        }
+
         if (version == SaveFormatVersion)
         {
             return true;
@@ -732,7 +738,9 @@ public sealed partial class SaveManager : Node
             }
         }
 
-        if (root.TryGetValue("state", out Variant stateV) &&
+        // ⚠️ "objects", not "state": the envelope key was always "objects", so until the 2026-09 world
+        // rebuild this step never actually discarded the records it documents discarding.
+        if (root.TryGetValue("objects", out Variant stateV) &&
             stateV.VariantType == Variant.Type.Dictionary)
         {
             var state = stateV.AsGodotDictionary();
@@ -751,4 +759,109 @@ public sealed partial class SaveManager : Node
                  "coordinate record(s). The player lands at the region's spawn point and " +
                  "fast-travel posts need re-attuning; nothing else was touched.");
     }
+
+    /// <summary>The homestead build-yard centre every v2 save's placed props were written against,
+    /// before the 2026-09 world rebuild moved the holding. History, not configuration.</summary>
+    private static readonly Vector3 V2HomesteadYard = new(95f, 0f, 90f);
+
+    /// <summary>
+    /// v2 -> v3: THE WORLD REBUILD (2026-09). Every settlement moved and the realms grew roughly eight
+    /// times in area, so a v2 world coordinate names a place that is now somewhere else. Progress is
+    /// kept whole; only positions a player could be put back at are dealt with, and none is guessed at:
+    ///   the header transform  — dropped; the player lands at the region's authored SpawnPoint;
+    ///   the map               — saved footprints and the waypoint dropped; pin positions stay but are
+    ///                           outranked by the bake's <c>WorldPlaceIndex</c>, as are travel landings;
+    ///   the party             — every companion set to Follow, so the post-load catch-up brings them
+    ///                           to the player instead of restoring them at a v2 point;
+    ///   a live world event    — dropped (its origin is a v2 point; cooldowns are kept);
+    ///   placed holding props  — moved by exactly the distance the build yard moved, so a player's
+    ///                           furniture stays arranged on their own lawn;
+    ///   the start cache       — re-seated beside the new spawn.
+    /// Flags, quests, inventory, discovery and attunement carry no coordinates and are untouched.
+    /// </summary>
+    private static void MigrateV2ToV3(string slot, Godot.Collections.Dictionary root)
+    {
+        int changed = 0;
+        if (root.TryGetValue("header", out Variant headerV) && headerV.VariantType == Variant.Type.Dictionary)
+        {
+            var header = headerV.AsGodotDictionary();
+            foreach (string key in new[] { "player_x", "player_y", "player_z", "player_yaw" })
+            {
+                changed += header.Remove(key) ? 1 : 0;
+            }
+        }
+
+        if (!root.TryGetValue("objects", out Variant objectsV) || objectsV.VariantType != Variant.Type.Dictionary)
+        {
+            root["version"] = 3;
+            return;
+        }
+        var objects = objectsV.AsGodotDictionary();
+
+        if (Section(objects, "map") is { } map)
+        {
+            changed += map.Remove("footprints") ? 1 : 0;
+            changed += map.Remove("waypoint") ? 1 : 0;
+        }
+
+        if (Section(objects, "world_events") is { } events)
+        {
+            changed += events.Remove("active") ? 1 : 0;
+        }
+
+        if (Section(objects, "companions") is { } companions &&
+            companions.TryGetValue("party", out Variant partyV) && partyV.VariantType == Variant.Type.Array)
+        {
+            foreach (Variant member in partyV.AsGodotArray())
+            {
+                if (member.VariantType == Variant.Type.Dictionary)
+                {
+                    member.AsGodotDictionary()["stance"] = 0; // CompanionStance.Follow
+                    changed++;
+                }
+            }
+        }
+
+        if (Section(objects, "spawns") is { } spawns &&
+            spawns.TryGetValue("actors", out Variant actorsV) && actorsV.VariantType == Variant.Type.Array)
+        {
+            Vector3 spawn = World.RegionDatabase.Get(GameIds.Regions.EmberCrown)?.SpawnPoint ?? Vector3.Zero;
+            foreach (Variant element in actorsV.AsGodotArray())
+            {
+                if (element.VariantType != Variant.Type.Dictionary)
+                {
+                    continue;
+                }
+                var actor = element.AsGodotDictionary();
+                string pid = actor.TryGetValue("pid", out Variant pidV) ? pidV.AsString() : string.Empty;
+                Vector3 shift;
+                if (pid == "cache.world.start")
+                {
+                    actor["x"] = spawn.X + 5f;
+                    actor["y"] = 0f;
+                    actor["z"] = spawn.Z - 5f;
+                    changed++;
+                    continue;
+                }
+                if (!pid.StartsWith("place.", System.StringComparison.Ordinal) ||
+                    Housing.PropertyDatabase.Get(pid.Substring(6).Split('#')[0]) is not { } property)
+                {
+                    continue;
+                }
+                shift = property.PlacementWorldCenter - V2HomesteadYard;
+                actor["x"] = (actor.TryGetValue("x", out Variant x) ? x.AsSingle() : 0f) + shift.X;
+                actor["z"] = (actor.TryGetValue("z", out Variant z) ? z.AsSingle() : 0f) + shift.Z;
+                changed++;
+            }
+        }
+
+        root["version"] = 3;
+        Log.Info($"Save slot '{slot}': migrated v2 -> v3 for the world rebuild, updating {changed} " +
+                 "coordinate record(s). The player lands at the region's spawn point; progress is untouched.");
+    }
+
+    private static Godot.Collections.Dictionary? Section(Godot.Collections.Dictionary objects, string key) =>
+        objects.TryGetValue(key, out Variant value) && value.VariantType == Variant.Type.Dictionary
+            ? value.AsGodotDictionary()
+            : null;
 }

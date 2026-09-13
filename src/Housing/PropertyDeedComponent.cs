@@ -96,10 +96,12 @@ public partial class PropertyDeedComponent : InteractableComponent
             return;
         }
 
-        // The PLAYER's position, not the deed's — fast travel lands the player on this point, and
-        // TravelNodeComponent already paid for landing someone inside a post's own collider.
-        travel.Discover(
-            property.TravelNodeId, Loc.T(property.NameKey), property.RegionId, playerBody.GlobalPosition);
+        // The holding's own yard when it has one (WorldPlaceIndex resolves the same point on every
+        // jump, so a moved homestead moves the landing); otherwise where the player stands — never the
+        // deed's own collider.
+        Vector3 landing = World.WorldPlaceIndex.TravelLanding(property.RegionId, property.TravelNodeId) ??
+                          playerBody.GlobalPosition;
+        travel.Discover(property.TravelNodeId, Loc.T(property.NameKey), property.RegionId, landing);
     }
 
     private ClaimOutcome Evaluate(PropertyResource property) => PropertyClaim.Resolve(

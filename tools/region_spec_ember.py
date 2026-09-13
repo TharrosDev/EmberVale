@@ -482,13 +482,13 @@ script = ExtResource("1_region")
 Id = "region.ember_crown"
 DisplayName = "The Ember Crown"
 Realm = 0
-SpawnPoint = Vector3(0, 1.2, 5)
+SpawnPoint = @CELL(town_hub, 0, 1.2, 15)@
 
 ; ⚠️ THE PORTAL MOVED WITH THE CROSSWAY, NOT WITH THE PLAYER. The gate cell went from (0, 0, -66) to
 ; (0, 0, -95) when the lattice grew, so the portal that stood at world z = -72 — cell-local z = -6,
 ; the gap between the two palisades — is world z = -101 now. Read the local offset, never the old
 ; world number: that is the 37C placement bug and it is completely silent.
-PortalPoint = Vector3(0, 0, -101)
+PortalPoint = @CELL(crossway_post, 0, 0, -6)@
 Cells = Array[ExtResource("2_cell")]([@CELLS@])
 EnvironmentProfile = SubResource("Environment_ember_crown")
 GenerationProfile = ExtResource("13_generation")
@@ -496,8 +496,8 @@ PerformanceBudget = SubResource("Budget_ember_crown")
 
 ; The lattice is x -190..140, z -310..130. Bounds are that plus a margin, and the Y range is real
 ; now: the Emberdeep pit floor is 6 m down and the frontier ridges are 25 m up.
-Bounds = AABB(-210, -80, -330, 370, 200, 480)
-SafeZoneCenter = Vector3(0, 0, -10)
+Bounds = @BOUNDS(20, -80, 200)@
+SafeZoneCenter = @CELL(town_hub, 0, 0, 0)@
 SafeZoneRadius = 34.0
 WeavePotency = 1.0
 DefaultWeatherId = "weather.cloudy"

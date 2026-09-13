@@ -434,8 +434,43 @@ def emit(region_key: str, header: str, cells: list[Cell], seams: list[Seam],
         out.append("")
 
     cell_list = ", ".join(f'SubResource("Cell_{c.key}")' for c in cells)
-    out.append(resource.replace("@CELLS@", cell_list))
+    out.append(anchor_points(resource.replace("@CELLS@", cell_list), cells))
     return "\n".join(out).rstrip() + "\n"
+
+
+def _num(value: float) -> str:
+    value = round(value, 3)
+    return str(int(value)) if float(value).is_integer() else str(value)
+
+
+def anchor_points(text: str, cells: list[Cell]) -> str:
+    """Resolve region-level world points from the cells they belong to.
+
+    ⚠️ A REGION POINT IS AN OFFSET FROM A CELL, NEVER A WORLD LITERAL (2026-09 world rebuild). The
+    spawn, portal and safe-zone centre used to be typed as world Vector3s beside the cells, so moving
+    the town or the Crossway silently left the player spawning in the old place. Write them as
+      @CELL(key, dx, y, dz)@            -> Vector3(center.x + dx, y, center.z + dz)
+      @BOUNDS(margin, y, height)@       -> the lattice's AABB grown by `margin` on x/z
+    """
+    by_key = {c.key: c for c in cells}
+
+    def cell_point(match: re.Match) -> str:
+        key, dx, y, dz = [part.strip() for part in match.group(1).split(",")]
+        cell = by_key[key]
+        return (f"Vector3({_num(cell.center[0] + float(dx))}, {_num(float(y))}, "
+                f"{_num(cell.center[1] + float(dz))})")
+
+    def bounds(match: re.Match) -> str:
+        margin, y, height = (float(part) for part in match.group(1).split(","))
+        left = min(c.left for c in cells) - margin
+        top = min(c.top for c in cells) - margin
+        right = max(c.right for c in cells) + margin
+        bottom = max(c.bottom for c in cells) + margin
+        return (f"AABB({_num(left)}, {_num(y)}, {_num(top)}, {_num(right - left)}, "
+                f"{_num(height)}, {_num(bottom - top)})")
+
+    text = re.sub(r"@CELL\(([^)]*)\)@", cell_point, text)
+    return re.sub(r"@BOUNDS\(([^)]*)\)@", bounds, text)
 
 
 def write(path: Path, text: str, check: bool) -> bool:

@@ -121,6 +121,13 @@ public partial class MapService : Node, ISaveable
             return live;
         }
 
+        // The bake's measurement before the save's memory: a saved position is where the pin stood
+        // when the save was written, and the world can have moved since (2026-09 world rebuild).
+        if (WorldPlaceIndex.Location(locationId) is { } baked)
+        {
+            return baked;
+        }
+
         return _savedPositions.TryGetValue(locationId, out Vector3 saved) ? saved : null;
     }
 

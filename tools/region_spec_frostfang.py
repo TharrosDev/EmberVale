@@ -371,7 +371,7 @@ Realm = 1
 ; twenty metres from the moot ring — a region that began inside its own capital. The portal stands at
 ; SpawnPoint + (0, -1.2, -4) because Frostfang authors no PortalPoint, so both are in the southern
 ; march and the hold is a walk up a road.
-SpawnPoint = Vector3(415, 1.2, 55)
+SpawnPoint = @CELL(frost_march_w, 70, 1.2, 25)@
 
 ; ⚠️ FROSTFANG IS NOT QUEST-GATED (maintainer direction, 2026-08-28). UnlockFlagId held
 ; "flag.frostfang.passage_open" — written by quest.warband.heart — and RegionSetup fed it to the
@@ -386,8 +386,8 @@ PerformanceBudget = SubResource("Budget_frostfang")
 
 ; The lattice is x 260..600, z -300..70, disjoint from the Ember Crown's x -190..140. The Y range
 ; carries the aerie summit at +24 and the ash crater floor at -4.
-Bounds = AABB(240, -80, -320, 380, 220, 440)
-SafeZoneCenter = Vector3(430, 0, -55)
+Bounds = @BOUNDS(20, -80, 220)@
+SafeZoneCenter = @CELL(clan_hold, 0, 0, 0)@
 SafeZoneRadius = 30.0
 WeavePotency = 0.5
 DefaultWeatherId = "weather.clear"

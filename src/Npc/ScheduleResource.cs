@@ -23,25 +23,14 @@ public partial class ScheduleResource : Resource
     [Export] public Godot.Collections.Array Entries { get; set; } = new();
 
     /// <summary>
-    /// World-space offset added to every entry's <see cref="ScheduleEntry.Destination"/> (Phase 38L).
-    /// Zero — the default — is the behaviour every routine authored before 38L already had, so the
-    /// nine existing schedules needed no migration. The same "the default is the ungated case" trick
-    /// 38I's three stock gates play.
-    ///
-    /// <para><b>Why it exists.</b> <see cref="ScheduleEntry.Destination"/> is a raw <em>world</em>
-    /// position, but a region cell is authored at its own origin and moved to the cell's
-    /// <c>Center</c> by the <see cref="World.RegionStreamer"/> — so a destination copied out of a
-    /// cell's <c>.tscn</c> lands a cell's width from where it was read. That is the 37C placement bug
-    /// wearing a different hat, it is silent, and the Embermarket is 46 m south of the origin the
-    /// town square's schedules were written against. Setting <c>Origin</c> once per file lets a
-    /// routine be authored in the coordinates a designer actually has in front of them.</para>
+    /// The world destination of a routine block. ⚠️ <b>A destination is CELL-LOCAL</b> (2026-09 world
+    /// rebuild): <paramref name="cellOrigin"/> is the world position of the streamed cell the NPC
+    /// stands in, which <see cref="ScheduleComponent"/> reads off its own ancestor. The routine used to
+    /// carry a hand-copied <c>Origin</c> per file, and 26 of those copies silently pinned their NPCs to
+    /// wherever the cell had been — moving a cell is now a one-number change again.
     /// </summary>
-    [Export] public Vector3 Origin { get; set; } = Vector3.Zero;
-
-    /// <summary>The world destination of a routine block: its authored point plus this routine's
-    /// <see cref="Origin"/>. The single place the two are combined, so no caller can forget.</summary>
-    public Vector3 DestinationOf(ScheduleEntry entry) =>
-        ScheduleMath.Destination(entry.Destination, Origin);
+    public static Vector3 DestinationOf(ScheduleEntry entry, Vector3 cellOrigin) =>
+        ScheduleMath.Destination(entry.Destination, cellOrigin);
 
     /// <summary>The entries read back as their concrete type, skipping bad elements.</summary>
     public List<ScheduleEntry> EntryList()
