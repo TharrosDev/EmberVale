@@ -9,6 +9,22 @@
 
 ## Where we are
 
+- **The 2026-09 world rebuild — implemented on `claude/world-rebuild` (2026-09-13).** A world layout
+  rebuild, not a systems refactor: geography first, then settlements, routes, POIs. The Ember Crown is
+  1040 x 1160 m in 52 cells (was 330 x 440 m, 16), Frostfang Reach 960 x 1020 m in 36 (was 340 x 380,
+  10), in atlas bands for all five realms (`docs/WORLD_ATLAS.md`, `tools/world_atlas.py --check`).
+  The capital sits under the Iron Citadel; satellite settlements are 330-560 m out by road, frontier
+  and boss territory 540-900 m, with road loops instead of a hub. Discovery is by sight (tiered
+  radii with line of sight), quests reveal their places, the map draws baked relief. Saves migrate
+  v2 -> v3 (`docs/SAVE_FORMAT.md`). ⚠️ **Two defects every earlier bake shipped were fixed on the
+  way:** baked vegetation and the distant backdrop had zeroed MultiMesh transforms (headless dummy
+  renderer), and whole-cell scatter MultiMeshes culled per cell rather than per area.
+  **Verified:** `world --mode engine` 40/40 (`20260914T034032-9f910ae239`); `--mode performance`
+  passes with Ember 18.7 ms mean / 30.3 ms worst / 1.11 M prims / 679 draws and Frostfang 11.4 / 15.4
+  ms (`20260914T034533-2a843d1ade`) — the frame budget is a soft target; 48 journey viewpoints reviewed
+  with `tools/journey_shots.gd`. **Open:** the world visual baseline predates the new lattice and needs
+  a reviewed re-baseline; `view-switch`/`ranged` probes print PASS and occasionally crash at exit.
+
 - **Rendering/environment overhaul — implemented on `codex/rendering-environment-overhaul`,
   validation in progress (2026-09-08).** The existing SkyController now composes the authored day
   cycle, regional atmosphere, weather, shared wind, wetness/snow and scoped interiors. Four saved
@@ -44,8 +60,8 @@
     A roster entry may name an actor who already exists; it is not a licence to rewrite them.
 - **The world-geography overhaul (2026-08-29) ✅ CLOSED — out of band, maintainer-directed.** The
   ground is one continuous heightfield per region with real elevation, real collision and real
-  navigation, and there is no seam fade anywhere. Ember Crown: **16 cells, 330 × 440 m**; Frostfang
-  Reach: **10 cells, 340 × 380 m, x 260..600**, disjoint. ⚠️ **This is still NOT Phase 44** — that
+  navigation, and there is no seam fade anywhere. (Its 16- and 10-cell lattices were replaced by the
+  2026-09 world rebuild above.) ⚠️ **This is still NOT Phase 44** — that
   phase blocks out all five realms and is ahead of us.
 - **The world-quality pass (2026-08-30) ✅ CLOSED — out of band.** Terrain materials, region
   atmosphere, water, off-route safety and the region authoring framework. A future region starts from
@@ -380,8 +396,9 @@ that harness rather than a world defect. Do not "fix" the scatter on the strengt
 11. **A SEAM IS GENERATED, NOT ARITHMETIC.** `tools/gen_regions.py` refuses to write a region whose
     row bands do not tile its extent exactly, and every seam route is authored ONCE as a world point.
 12. **A layout constraint written as a coordinate outlives its reason.** Author dependencies as
-    offsets and ids, never as absolute points. A schedule uses `ScheduleResource.Origin` and
-    cell-local destinations.
+    offsets and ids, never as absolute points. A schedule's destinations are local to the
+    cell its actor stands in (`ScheduleResource.DestinationOf`), and a property names its cell
+    (`PlacementCellId`), so moving a cell moves both. `--validate` fails a schedule that leaves its cell.
 13. ⚠️ **TERRAIN MAKES GEOGRAPHY; PROPS ONLY DETAIL IT.** If a shape needs to exist it goes in
     `WorldLandformResource` and the props dress what the terrain already says. ⚠️ **And the GENERATOR
     makes the geography the landforms sit on** — a region without a `WorldGenerationProfileResource`

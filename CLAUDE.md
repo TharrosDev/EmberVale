@@ -679,12 +679,14 @@ immediately before it usually name the thing that will bite you.
   candidates in 38N2 were unusable (modern dress, a punk with a chainsaw, an ornament that is not a
   person, a four-bone rig), and none of it was visible from a filename. This trap has now fired three
   times: `npc_townsman` (hi-vis, 38K→38L), `npc_merchant_f` (t-shirt and trainers, 38L→38N1).
-- **A region loads whole** (maintainer direction, 38M2). Every cell of the active region is resident
-  from the moment it is entered; `RegionStreamer` has no distance test and no unload path during
-  play, and `RegionCellResource.LoadRadius`, `StreamDecision` and its tests were deleted with the
-  rule. A new cell is therefore permanently in the tree: author accordingly. ⚠️ **The two regions no
-  longer share coordinate space** (the 2026-08-29 geography overhaul): Frostfang moved to x 260..600
-  and the "both regions cannot be resident at once" limitation went with the overlap.
+- **A region streams prepared cells by distance** (Near/Mid/Far/Backdrop radii in the spec's
+  `BUDGET`); collision exists only at Near and Mid, so a probe must focus the streamer on a point
+  before asking about the ground there. ⚠️ **The realms sit in disjoint atlas bands**
+  (`docs/WORLD_ATLAS.md`, checked by `tools/world_atlas.py --check`): the Ember Crown about
+  x −520..520, z −720..440, and Frostfang Reach north of it. ⚠️ **Places live in world space,
+  cells are partitions** (the 2026-09 world rebuild): author geography and roads in the spec's world
+  coordinates and settlements at a content origin; `tools/check_world_composition.py` fails a region
+  whose places line up with its lattice. Schedules are cell-local; a property names its cell.
 - ⚠️ **THE GROUND IS ONE GENERATED SURFACE PER REGION AND CELL SCENES CARRY NO FLOOR** (the
   2026-08-29 geography overhaul). `data/regions/*.tres` is **generated** from
   `tools/region_spec_<region>.py` by `tools/gen_regions.py`, which checks the cell lattice tiles

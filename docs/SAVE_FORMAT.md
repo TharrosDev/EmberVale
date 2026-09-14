@@ -30,7 +30,7 @@ Slots are just directory names. `quick` is the default; `auto1`/`auto2`/`auto3` 
 
 ```json
 {
-  "version":   2,
+  "version":   3,
   "timestamp": 1755270000.0,
   "header":    { ... },
   "objects":   { "<SaveId>": { ...component state... } }
@@ -92,7 +92,7 @@ Everything here resets on load, deliberately. **Check this list before assuming 
 
 | Not saved | Consequence |
 | --- | --- |
-| `EncounterDirector`, `WorldEventDirector` | roaming spawns and world events re-roll. `SupplyShockService` exists as its own saveable node precisely because the director is not one. |
+| `EncounterDirector` | roaming spawns re-roll. `SupplyShockService` exists as its own saveable node precisely because the director is not one. (⚠️ `WorldEventDirector` IS saved, as `world_events`: its cooldowns and the live event's origin — a world coordinate the v2 → v3 step drops.) |
 | `RegionStreamer`, `SliceDirector`, `BossEncounterDirector` | rebuilt from the restored region |
 | `MusicDirector`, `AmbienceDirector`, `AudioDirector` | audio re-derives from world state |
 | `PlacementDirector` | intentional — a placed prop persists through `PersistentSpawnDirector`, which already records template, position and yaw |
@@ -117,6 +117,17 @@ The rules, in the order a load applies them:
    `MapService`'s saved pins (they re-register the moment their cell loads). Everything else — quests,
    flags, inventory, perks, reputation, the economy, blessings, companions — carries no coordinates
    and is kept: a player's progress is not a casualty of a terrain change.
+
+   **v2 → v3 (the 2026-09 world rebuild).** Every settlement moved and the realms grew about eight
+   times in area. The step drops the header transform (the player lands at the region's `SpawnPoint`),
+   `MapService`'s saved footprints and waypoint, and `WorldEventDirector`'s live event; sets every
+   companion in `companions.party` to Follow so the post-load catch-up brings them to the player;
+   shifts every `place.<property>#n` spawn by exactly the distance its property's build yard moved
+   (from the v2 yard at world (95, 0, 90)); and re-seats `cache.world.start` beside the new spawn.
+   Fast-travel entries and map pin positions are KEPT: `WorldPlaceIndex` (the bake's record of every
+   waystone landing and map pin) outranks a saved coordinate wherever the bake has one, so a moved
+   waystone moves every save's landing without a migration. ⚠️ **The v1 → v2 step read a `state` key
+   the envelope never had** and so never discarded what it documented; it reads `objects` now.
 
 4. **`version` < current with no migration step → refuse.** ⚠️ This used to warn and load at best
    effort. v1 is the first format that ever existed, so there is no legitimate older save — the

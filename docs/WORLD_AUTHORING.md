@@ -68,10 +68,18 @@ Every step constrains the next. Doing them out of order means doing some of them
 
 ### Scale
 
-Aim for **90–120 m centre to centre** between neighbouring locations and **150–300 m** to anything
-that should feel remote. Under about 60 m two locations share a property line and the realm reads as
-a corridor of rooms — that was the Ember Crown before the overhaul, at 52 m. Over about 400 m with
-nothing in between, the player is walking to fill a progress bar.
+⚠️ **SUPERSEDED BY THE 2026-09 WORLD REBUILD — use travel time, and `docs/WORLD_ATLAS.md` §2.** The old
+rule here was 90–120 m between neighbouring locations, and it produced a realm where every settlement
+was a sixteen-second walk from the next and fast travel skipped a single street. The bands now are:
+districts of one settlement 60–180 m apart through continuous fabric; a capital to its satellite
+settlements 330–560 m (65–110 s on foot); settlement to settlement 260–500 m; capital to frontier or
+boss territory 540–900 m. Distance between places is only worth having when the country between them
+has something to look at: a ridge to cross, a landmark to steer by, a road that bends for a reason.
+
+**Streaming cells are partitions, not places.** Author the realm's geography and roads in world space
+(`geography()`, `roads()`), place settlements at a content origin that is not their cell's centre, and
+choose the row and column breaks last. `tools/check_world_composition.py` fails a region whose places
+line up with its lattice. The whole workflow is `docs/WORLD_ATLAS.md` §6.
 
 ### Empty space, and why it is the hardest thing to keep
 
@@ -177,6 +185,12 @@ left −1.5..1.5 m, and each failed differently once the ground moved:
 Use `Absolute` only where a specific world height genuinely is the point.
 
 ### A structure needs a level pad, and the pad has to be a floor
+
+⚠️ **A LEVELLING LANDFORM TAKES ITS HEIGHT FROM THE GROUND UNDER ITS FIRST POINT** (`Center`, which
+for a `Ridge` is `a`), then holds it along its whole length. A terrace strip along a sloping street
+therefore holds every house at the level of the first one: the capital's market lane dropped 8.6 m
+under a flat strip and left 5 m berms beside the road. Level one building at a time
+(`district_layouts.frontage` does), with `a` at the building's centre.
 
 `WorldTerrainConform` lifts a node by the ground under its **own origin**, and a building's walls are
 children that come along unchanged. That is deliberate: a building is rigid, and per-part gravity
@@ -329,6 +343,14 @@ surrounding ground, no progress, and a local flood fill finds no way out.
 
 ## 6. Ecology and dressing
 
+⚠️ **THE OFFLINE BAKE SHIPPED EVERY CELL WITHOUT VEGETATION UNTIL 2026-09-13.** The bake runs headless,
+and the dummy renderer silently drops `MultiMesh.SetInstanceTransform` while keeping a buffer assigned
+whole, so every packed scatter layer (and the distant backdrop) saved its instance count with 0x0
+transforms. Nothing failed: counts, budgets and the performance sample all looked right, and only a
+render showed bare earth. Any MultiMesh built for the bake writes `MultiMesh.Buffer` in one assignment
+(`WorldBiomeScatter.WriteInstance`), and a read of the baked `.scn` checks `buffer.size()`, not
+`get_instance_transform`, which reads zero under the dummy renderer either way.
+
 - Add a `WorldBiomeScatterResource` to **every** cell. ⚠️ `Count` is a **density** — instances per
   100 × 100 m, scaled by the cell's own footprint — because cells range from 50 × 90 to 200 × 110 and
   a flat per-cell count draws the lattice back onto the ground in vegetation after the terrain has
@@ -400,8 +422,23 @@ For a new reachable POI:
 2. Add one row to `tools/gen_map_locations.py`, anchored to the entrance node itself.
 3. Run the generator, then `--check`. Do not add X/Z to a resource, quest, map widget or travel list.
 4. A Reach/Defend objective uses the canonical `location.*` id as `TargetId`.
-5. If the POI owns fast travel, put `TravelNodeComponent` at the real landing point.
-6. `--validate` and `map_probe.gd`.
+5. If the POI owns fast travel, put `TravelNodeComponent` on the waystone; `LandingOffset` (default
+   2.5 m in front) is where a jump puts the player. The bake records every landing and pin into
+   `WorldPreparedRegionResource.Places`, and `WorldPlaceIndex` outranks any saved coordinate, so moving
+   a waystone needs a rebake and nothing else.
+6. Pick its tier deliberately (`tools/gen_map_locations.py` `tier=`): Primary is seen from 190 m,
+   Secondary from 80 m, Minor only walked into. Give a Primary a silhouette that actually rises 8 m
+   above its ground, or the line-of-sight test will never see it.
+7. `--validate`, `map_probe.gd` and `python tools/check_world_composition.py`.
+
+### Settlements are composed, not hand-placed
+
+`tools/district_layouts.py` holds every generated building and landmark as world-space rows
+(`P(kind, name, x, z, yaw, scale, landmark, pad)`), with `frontage()` laying a row along a road and
+`TERRACES`/`pads()` levelling the ground under it. `tools/compose_district.py` writes them into their
+cells as `Dx_*` nodes (and `--check` proves the scenes match). Edit the layout, never the `Dx_` nodes.
+⚠️ **The terraces and pads are bake inputs** — the Ember spec reads them — so editing a layout
+means `gen_regions`, compose, then a rebake, in that order.
 
 ⚠️ **A LEVELLED PAD IS USUALLY A ROAD, SO DO NOT BUILD ON ONE (42B).** A `GroundArea` exists where a
 settlement needed flat ground, which is where its road already runs: `Area_crossway_compound` is 12 m
@@ -466,6 +503,11 @@ down and walking up are different edges — and finds ground the player can reac
 ---
 
 ## 10. Visual QA
+
+**Journeys first, cells second.** `tools/journey_shots.gd` renders named world-space viewpoints
+through the production streamer — approaches, reverse views, vistas, boss approaches, off-route —
+from a JSON list (`EMBERVALE_VIEWS`, format in the script header). It is how a layout is judged the way
+a player meets it; `world_shots.gd` below stays the per-cell regression gate.
 
 ```text
 Godot_..._console.exe --path . --script res://tools/world_shots.gd
@@ -548,13 +590,15 @@ enforced by the gate named or is a review rule.
 - **Ember Crown** — temperate dying countryside. Worked timber and ember light against ash, old
   roads, subdued vegetation, brown-green earth, weathered stone; disturbed industrial ground around
   the Emberdeep, wetland at the Tarn and Hollowreach, and a progressively harsher burnt frontier
-  north of the Crossway. **Sixteen cells across 330 × 440 m**, town-centred; six are transitional and
-  two of those are dead ends.
+  north of the Crossway. **Fifty-two cells across 1040 × 1160 m** (2026-09 world rebuild): the Crown
+  Range and its one pass, the Emberwash valley, the Tarn and its fens, the eastern hills, the farm belt
+  and the border hills; the capital under the Iron Citadel; thirty-six cells carry no gameplay beat.
 - **Frostfang Reach** — alpine, and unmistakably a different country. Bedrock as the *ground* rather
   than soil over it, snow that lies on shelves and slides off faces, wind-beaten surfaces, sparse
-  vegetation under a tree line, dramatic vertical silhouettes, cold light and thick air. **Ten cells
-  across 340 × 380 m in its own coordinate band (x 260..600).** Five cells are marches, snowfield and
-  high traverse with nothing in them.
+  vegetation under a tree line, dramatic vertical silhouettes, cold light and thick air. **Thirty-six
+  cells across 960 × 1020 m in its atlas band north of the Ember Crown** (2026-09 world rebuild): the
+  Stormbound Vale, one hold, three dragon territories in their own valleys, the glacier road to the
+  aerie, clan traces between them, and twenty-seven cells of empty high country.
 
 ---
 
