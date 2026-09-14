@@ -388,6 +388,16 @@ not layering a second list of changes over it.
   Emberdeep workings, in a chamber the map will not show you until you have stood in it. Each has a
   leader, a quartermaster and someone who hands out the work, and every one of them greets a member
   differently from a stranger — including after you load a save from before you joined.
+- 42C ✅ and the Dawnwardens are the first order you can actually earn rank in. Join or refuse Serjeant
+  Danhal's watch, then answer a civilian threat on the north road either by rescuing the survivors or
+  by marching them back to the guild's hub — the choice is made before the fight, and the fight's own
+  outcome is what actually earns rank one.
+- 42E ✅ and the Ash Hunters judge knowledge, not kill counts. Two placed clues in the Deadfall's pine
+  thicket lead to a named, territorial boar; spare it or take the kill, and either way the induction
+  ends in rank one.
+- 42I ✅ and the Iron Syndicate pays for varied, pragmatic work: a bounty, a paid escort and a
+  spare/kill judgment, chained through the same contract board you already know, each ending
+  differently for the world depending on how it was resolved.
 
 ### Phase 41.5 — the gods leave something behind
 
