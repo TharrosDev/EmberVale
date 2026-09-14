@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="QuestResource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+
+; Phase 42K — the Emberbound's contact quest. Bren Ilvo (Seeker) has already noticed the player by
+; the time this starts; the "investigation" is the conversation itself, not a separate errand, so
+; there is exactly one objective and it is satisfied by the same visit that creates it.
+;
+; ⚠️ NO RequiredFlagId ON THE OBJECTIVE, AND THAT IS SAFE HERE ONLY BECAUSE OF WHAT STARTS IT.
+; CLAUDE.md's own warning ("a Talk objective completes on ANY end of that dialogue") is usually a
+; trap — but dialogue.emberbound_seeker's stranger node only offers the StartQuest choice once
+; flag.iron_king_defeated is already true (Seeker.tres), so this quest never exists before the
+; conversation that is meant to satisfy it, and there is no earlier visit for it to complete against
+; by surprise.
+;
+; ⚠️ THE INITIATION ITSELF IS NOT AN OBJECTIVE. Whether the player is admitted, and on what terms
+; (relic surrendered / relic kept / refused outright), is guild membership state — GuildRules' own
+; derived flags via JoinGuild/GuildRank (dialogue.emberbound_hierarch) — not a second place the same
+; fact would be recorded (invariant 2). This quest's only job is "the order made contact and the
+; hidden hub is now known"; Hierarch Selane Ott's initiate offer gates on QuestCompleted here and
+; stays open indefinitely afterwards (GuildNotMember), so declining is never terminal.
+;
+; LocationId is the Undercroft: Bren stands in it, and naming it here is what reveals the concealed
+; pin the moment this quest starts (MapService.OnQuestStarted + the RequiredFlagId already being
+; true — EmberdeepUndercroft.tres, tools/gen_map_locations.py).
+
+[sub_resource type="Resource" id="Obj_talk_seeker"]
+script = ExtResource("2_obj")
+Type = 3
+TargetId = "dialogue.emberbound_seeker"
+RequiredCount = 1
+Description = "quest.emberbound.summons.obj_seeker"
+LocationId = "location.emberdeep.undercroft"
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.emberbound.summons"
+Title = "quest.emberbound.summons.title"
+Summary = "quest.emberbound.summons.summary"
+Objectives = Array[Resource]([SubResource("Obj_talk_seeker")])
+XpReward = 90
+GoldReward = 0
+GoldItemId = "item.currency.gold"
+RewardItems = []
+FactionRewardId = ""
+FactionRewardAmount = 0
+TimeLimitSeconds = 0.0
+SequentialObjectives = false
+PrerequisiteQuestId = ""
+IsMainQuest = false

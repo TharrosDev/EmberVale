@@ -44,6 +44,87 @@ Goto = "root"
 script = ExtResource("3_choice")
 Text = "dlg.emberbound_hierarch.c_end"
 
+; ── 42K: the initiation, off the stranger line ──────────────────────────────────────────────────
+; Gated on QuestCompleted (quest.emberbound.summons) rather than a hand-authored contact flag — Bren
+; has already made contact by the time this is reachable, so completion of that one-objective quest
+; IS "the order sent you here". Stays offered indefinitely once true: declining below is never
+; terminal (GuildRules.CanJoin allows re-approaching a Refused guild by default, and Emberbound never
+; overrides that), so a player who says no can come back.
+[sub_resource type="Resource" id="ch_initiate"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.c_initiate"
+Condition = 3
+ConditionArg = "quest.emberbound.summons"
+Goto = "initiate"
+
+; The relic-handling choice. Both accepting branches converge on the same "joined" welcome — the
+; choice is about doctrine, not admission, and is recorded as its own flag (relic_surrendered /
+; relic_kept) for 42L's finale to read, not by gating membership on it. No item leaves the player's
+; pack: the order asks for custody, it does not reach out and take it, so "surrendered" is a spoken
+; vow the Warder will act on later (42L), and nothing here contradicts still holding the relic.
+[sub_resource type="Resource" id="ch_relic_surrender"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.c_relic_surrender"
+Effect = 2
+EffectArg = "flag.emberbound.relic_surrendered"
+Goto = "surrendered"
+
+[sub_resource type="Resource" id="ch_relic_keep"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.c_relic_keep"
+Effect = 2
+EffectArg = "flag.emberbound.relic_kept"
+Goto = "kept"
+
+; A genuine third door: refusing the order outright, not just the relic. guild.emberbound.refused
+; is the WRITE side of invariant 18 (GuildRules reads it back), the same shape Danhal's join/refuse
+; door used in 42C before JoinGuild existed — there is no dedicated "refuse" effect and none is
+; needed, since nothing else ever derives from this flag but GuildRules itself.
+[sub_resource type="Resource" id="ch_refuse"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.c_refuse"
+Effect = 2
+EffectArg = "guild.emberbound.refused"
+Goto = "declined"
+
+[sub_resource type="Resource" id="ch_initiate_wait"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.c_initiate_wait"
+Goto = "root"
+
+; JoinGuild choices: Condition = GuildCanJoin (16) with the matching ConditionArg is required
+; whenever a JoinGuild choice carries a Goto (--validate enforces the pairing, 42I checkpoint fix) —
+; Goto fires even when the effect refuses.
+[sub_resource type="Resource" id="ch_surrendered_confirm"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.c_surrendered_confirm"
+Condition = 16
+ConditionArg = "faction.emberbound"
+Effect = 11
+EffectArg = "faction.emberbound"
+Goto = "joined"
+
+[sub_resource type="Resource" id="ch_kept_confirm"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.c_kept_confirm"
+Condition = 16
+ConditionArg = "faction.emberbound"
+Effect = 11
+EffectArg = "faction.emberbound"
+Goto = "joined"
+
+; GuildRank is idempotent (42I), so a second visit here after promotion re-sets rank 1 rather than
+; erroring — no HasFlag/MissingFlag pair against the derived rank flag is needed.
+[sub_resource type="Resource" id="ch_joined_confirm"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.c_joined_confirm"
+Effect = 12
+EffectArg = "faction.emberbound:1"
+
+[sub_resource type="Resource" id="ch_declined_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_hierarch.c_declined_bye"
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
@@ -60,11 +141,41 @@ Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
 script = ExtResource("2_node")
 Id = "stranger"
 Text = "dlg.emberbound_hierarch.stranger"
-Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+Choices = Array[Resource]([SubResource("ch_initiate"), SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_initiate"]
+script = ExtResource("2_node")
+Id = "initiate"
+Text = "dlg.emberbound_hierarch.initiate"
+Choices = Array[Resource]([SubResource("ch_relic_surrender"), SubResource("ch_relic_keep"), SubResource("ch_refuse"), SubResource("ch_initiate_wait")])
+
+[sub_resource type="Resource" id="node_surrendered"]
+script = ExtResource("2_node")
+Id = "surrendered"
+Text = "dlg.emberbound_hierarch.surrendered"
+Choices = Array[Resource]([SubResource("ch_surrendered_confirm")])
+
+[sub_resource type="Resource" id="node_kept"]
+script = ExtResource("2_node")
+Id = "kept"
+Text = "dlg.emberbound_hierarch.kept"
+Choices = Array[Resource]([SubResource("ch_kept_confirm")])
+
+[sub_resource type="Resource" id="node_joined"]
+script = ExtResource("2_node")
+Id = "joined"
+Text = "dlg.emberbound_hierarch.joined"
+Choices = Array[Resource]([SubResource("ch_joined_confirm")])
+
+[sub_resource type="Resource" id="node_declined"]
+script = ExtResource("2_node")
+Id = "declined"
+Text = "dlg.emberbound_hierarch.declined"
+Choices = Array[Resource]([SubResource("ch_declined_bye")])
 
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.emberbound_hierarch"
 SpeakerName = "dlg.emberbound_hierarch.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_initiate"), SubResource("node_surrendered"), SubResource("node_kept"), SubResource("node_joined"), SubResource("node_declined")])
