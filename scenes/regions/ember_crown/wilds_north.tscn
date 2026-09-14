@@ -24,6 +24,7 @@
 [ext_resource type="Script" path="res://src/Npc/ScheduleComponent.cs" id="42b_schedulecomponent"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_townsman.glb" id="42b_npc_townsman"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_hooded.glb" id="42b_npc_hooded"]
+[ext_resource type="Script" path="res://src/Enemies/LairSpawnComponent.cs" id="42e_lairspawn"]
 
 ; THE NORTHERN WILDS (the 2026-08-28 layout rebuild) — the frontier between the Crossway gate and the arena, and
 ; the cell the EncounterDirector uses more than any other.
@@ -633,3 +634,79 @@ DialogueId = "dialogue.hunter_tracker"
 [node name="MapPin" type="Node3D" parent="Nav/DeadfallLodge"]
 script = ExtResource("maploc_39_5a")
 LocationId = "location.wilds.lodge"
+
+; ── GRIMTUSK'S GROUND (Phase 42E) — quest.ash_hunters.grimtusk. The Deadfall itself, x 12..24 z
+; -18..-4 per this cell's own layout comment: "a pine thicket the east branch runs through, ambush
+; ground" — described from the 2026-08-28 rebuild but never actually furnished. Two placed clues and
+; a den, south-east of the lodge and off the branch, so finding them is a real search rather than a
+; prompt on the path.
+
+[node name="ScrapedPine" parent="Nav" instance=ExtResource("8_pine")]
+transform = Transform3D(0.985, 0, 0.174, 0, 1, 0, -0.174, 0, 0.985, 14, 0, -6)
+
+[node name="Col" type="StaticBody3D" parent="Nav/ScrapedPine"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/ScrapedPine/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 0)
+shape = SubResource("Shape_pine_trunk")
+
+[node name="ClueScrape" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.6, 0, -6.4)
+script = ExtResource("2_entity")
+DisplayName = "Scraped Bark"
+PersistentId = "ember_crown.wilds_north.deadfall.clue_scrape"
+
+[node name="Collider" type="StaticBody3D" parent="ClueScrape"]
+
+[node name="Shape" type="CollisionShape3D" parent="ClueScrape/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+shape = SubResource("Shape_pickup")
+
+[node name="Dialogue" type="Node" parent="ClueScrape"]
+script = ExtResource("42b_dialoguecomponent")
+DialogueId = "dialogue.grimtusk_clue_scrape"
+InteractId = "interact.wilds_north.grimtusk_scrape"
+
+[node name="WallowRocks" parent="Nav" instance=ExtResource("9_rocks")]
+transform = Transform3D(1.3, 0, -0.5, 0, 1.4, 0, 0.5, 0, 1.3, 22, 0, -14)
+
+[node name="Col" type="StaticBody3D" parent="Nav/WallowRocks"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/WallowRocks/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.705, 0)
+shape = SubResource("Shape_rock_cluster")
+
+[node name="ClueWallow" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21.5, 0, -13.2)
+script = ExtResource("2_entity")
+DisplayName = "A Churned Wallow"
+PersistentId = "ember_crown.wilds_north.deadfall.clue_wallow"
+
+[node name="Collider" type="StaticBody3D" parent="ClueWallow"]
+
+[node name="Shape" type="CollisionShape3D" parent="ClueWallow/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("Shape_pickup")
+
+[node name="Dialogue" type="Node" parent="ClueWallow"]
+script = ExtResource("42b_dialoguecomponent")
+DialogueId = "dialogue.grimtusk_clue_wallow"
+InteractId = "interact.wilds_north.grimtusk_wallow"
+
+; The den itself: a lair (35D shape), not an encounter roll — encounter.boar_territory keeps rolling
+; the common population elsewhere in the region; this is one placed, named individual with its own
+; TemplateId, so the two can never be confused for each other or for a quest target.
+[node name="GrimtuskDen" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, -10)
+script = ExtResource("2_entity")
+DisplayName = "Grimtusk's Den"
+PersistentId = "ember_crown.wilds_north.deadfall.grimtusk_den"
+
+[node name="Lair" type="Node" parent="GrimtuskDen"]
+script = ExtResource("42e_lairspawn")
+TemplateId = "enemy.grimtusk"
+DefeatFlagId = "flag.ash_hunters.grimtusk_defeated"
+
+[node name="MapPin" type="Node3D" parent="GrimtuskDen"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.wilds.grimtusk_den"

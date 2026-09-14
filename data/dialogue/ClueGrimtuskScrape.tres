@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="DialogueResource" format=3]
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+; A placed clue, not an NPC (Phase 42E). InteractId lives on the DialogueComponent in
+; wilds_north.tscn ("interact.wilds_north.grimtusk_scrape") — the same seam TheSealedTally's
+; waystone uses, reused here for something read rather than touched. One node, one line out.
+
+[sub_resource type="Resource" id="ch_close"]
+script = ExtResource("3_choice")
+Text = "dlg.grimtusk_scrape.c_close"
+
+[sub_resource type="Resource" id="node_root"]
+script = ExtResource("2_node")
+Id = "root"
+Text = "dlg.grimtusk_scrape.root"
+Choices = Array[Resource]([SubResource("ch_close")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "dialogue.grimtusk_clue_scrape"
+SpeakerName = ""
+StartNodeId = "root"
+Nodes = Array[Resource]([SubResource("node_root")])
