@@ -44,6 +44,31 @@ Goto = "root"
 script = ExtResource("3_choice")
 Text = "dlg.dawnwarden_captain.c_end"
 
+; 42D — THE HUB'S HALF OF THE POST-FINALE VARIANT. Gated "faction.dawnwardens:3" the same way the
+; Serjeant's ch_finale_state is (the guild's declared rank ceiling, reached only once
+; quest.dawnwardens.finale grants it) and additive beside "member"'s existing plain farewell, per
+; 42B's rule: a rank-gated line is a third branch, never a narrowing of the one already there.
+[sub_resource type="Resource" id="ch_finale_state"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_captain.c_finale_state"
+Condition = 14
+ConditionArg = "faction.dawnwardens:3"
+Goto = "finale_state"
+
+[sub_resource type="Resource" id="ch_finale_state_service"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_captain.c_finale_state_service"
+Condition = 5
+ConditionArg = "flag.dawnwardens.finale_service"
+Goto = "finale_state_service"
+
+[sub_resource type="Resource" id="ch_finale_state_authority"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_captain.c_finale_state_authority"
+Condition = 5
+ConditionArg = "flag.dawnwardens.finale_authority"
+Goto = "finale_state_authority"
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
@@ -54,7 +79,7 @@ Choices = Array[Resource]([SubResource("ch_member"), SubResource("ch_stranger"),
 script = ExtResource("2_node")
 Id = "member"
 Text = "dlg.dawnwarden_captain.member"
-Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+Choices = Array[Resource]([SubResource("ch_finale_state"), SubResource("ch_back"), SubResource("ch_end")])
 
 [sub_resource type="Resource" id="node_stranger"]
 script = ExtResource("2_node")
@@ -62,9 +87,27 @@ Id = "stranger"
 Text = "dlg.dawnwarden_captain.stranger"
 Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
 
+[sub_resource type="Resource" id="node_finale_state"]
+script = ExtResource("2_node")
+Id = "finale_state"
+Text = "dlg.dawnwarden_captain.finale_state"
+Choices = Array[Resource]([SubResource("ch_finale_state_service"), SubResource("ch_finale_state_authority"), SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_finale_state_service"]
+script = ExtResource("2_node")
+Id = "finale_state_service"
+Text = "dlg.dawnwarden_captain.finale_state_service"
+Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_finale_state_authority"]
+script = ExtResource("2_node")
+Id = "finale_state_authority"
+Text = "dlg.dawnwarden_captain.finale_state_authority"
+Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.dawnwarden_captain"
 SpeakerName = "dlg.dawnwarden_captain.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_finale_state"), SubResource("node_finale_state_service"), SubResource("node_finale_state_authority")])

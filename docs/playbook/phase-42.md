@@ -59,7 +59,7 @@
     condition. Both Reach targets (`location.tarn.landing`, `location.crossway.watch`) were already
     mapped; zero new map locations, zero new terrain, zero new mechanism. See the retrospective below.
 
-- [ ] **42D — Dawnwardens command arc and payoff** `[C]`
+- [x] **42D — Dawnwardens command arc and payoff** `[C]` ✅
   - **Goal:** resolve service versus authoritarian survival and make final rank world-visible.
   - **Build / Author:** mid-rank escort/defense, Iron King-linked command dispute and two-resolution
     finale; protection/resilience rewards distinct from divine relics; post-finale patrol, service and
@@ -67,6 +67,18 @@
   - **Verify:** both resolutions, Iron King defeated early, companion absent/present, full pack,
     journal/map cleanup and reload immediately before/after choice.
   - **Done when:** finale outcome changes Dawnwarden presence and is independently inspectable.
+  - **Done:** `quest.dawnwardens.command` (Escort Sella Ru, `companion.dawnwarden_witness`, then
+    Defend `location.wilds.north`) grants rank two; `quest.dawnwardens.finale` forks before it exists
+    (`flag.dawnwardens.finale_service`/`finale_authority`, `quest.hollowreach.barrels`'s shape a third
+    time in this one arc) into a Defend-the-corrie or Reach-the-Watch resolution, grants rank three and
+    `guild.dawnwardens.finale`, and pays one reward either way (Dawn's Bulwark). Both rewards
+    (`item.armor.warden_aegis`, `item.armor.dawn_bulwark`) are ordinary `BonusArmor`/`BonusMaxHealth`
+    equippables — ItemGrant's existing full-pack/duplicate handling, no new reward mechanism. Serjeant
+    Danhal and Captain Fenn each gained one more additive `GuildRankAtLeast:3` branch (the guild's
+    declared ceiling) that reads which branch flag is set for a patrol/hub variant; Bram's own
+    post-finale lines carry the third. `dialogue.dawnwarden_partner` reads `flag.iron_king_defeated`
+    once, for flavour only, and never sets or clears it. Zero new map locations, zero new region/world
+    changes, zero new `DialogueCondition`/`ObjectiveType`. See the retrospective below.
 
 - [x] **42E — Ash Hunters field induction** `[C]` ✅
   - **Goal:** make knowledge/preparation—not a kill counter—the hunter identity.
@@ -413,6 +425,59 @@ narrowing" actually means: additive within the branch already reached, not a sec
    authored as its own additive choice inside `member`, not as an edit to `ch_ranked`'s own condition.
    Narrowing an existing rank-gated choice upward is the same mistake invariant 18's own warning was
    written about, one level later.
+
+---
+
+## 42D — a re-visitable choice must never author a clearing effect
+
+The carry-forward above called it exactly: the finale's payoff needed `QuestCompleted` nested outside
+its branch flag, the same trick 42C used. What the carry-forward did not anticipate is that 42D grants
+a rank via a SECOND mechanism 42C never had to worry about — `DialogueEffect.GuildRank` (added in
+42I, after 42C shipped) — and that mechanism has a property `SetFlag` does not: **it clears every
+rank flag above the one it names.** That is exactly right for a one-shot promotion and exactly wrong
+for a choice a player can walk back to.
+
+`ch_command_after` (member → "About the warrant -", gated `QuestCompleted quest.dawnwardens.command`)
+stays visible forever once the command quest is done, the same way `ch_probation_active`'s siblings
+already do — nothing in this dialogue shape ever hides a completed-quest choice again. First authored
+with `Effect = GuildRank "faction.dawnwardens:2"`, it was correct on the FIRST visit and a silent
+demotion on every visit after the finale: a player who finished the command arc, talked to Bram (rank
+two), finished the finale (rank three, via a SEPARATE `GuildRank ":3"` on `ch_finale_done`), and then
+re-opened the same "About the warrant -" line would have `GuildRank ":2"` fire again and **clear rank
+three** — a guild rank silently regressing on a conversational dead end nobody would think to blame.
+Caught before `--validate` (which cannot see this — both effects are individually well-formed) by
+tracing the graph by hand for every choice a completed-quest gate leaves permanently open. The fix:
+`ch_command_after` uses `Effect = SetFlag "guild.dawnwardens.rank2"` instead — the exact write-side
+shape 42C already established for rank one, which only ever ADDS a flag. `ch_finale_done`'s own
+`GuildRank ":3"` stays, because 3 is `faction.dawnwardens`' declared ceiling (`RankNameKeys.Count`)
+and there is nothing above it left to clear — which is also why `GuildRank` back-fills ranks one and
+two on its own the moment the finale is claimed, whether or not the player ever visited
+`ch_command_after` at all: the two grants are redundant on the happy path and neither can leave a gap.
+
+**The Iron King dispute reads a flag it is forbidden to touch, and the read had to happen at the
+front door, not inside the quest.** `flag.iron_king_defeated` has no in-game consumer of its own
+worth spending — the Build note is explicit that this arc must never gate or consume it — so the only
+honest use left is flavour: two node texts (`command_offer_alive`/`command_offer_defeated`), picked by
+`HasFlag`/`MissingFlag` on the SAME node's two exit choices, both landing on the identical
+accept/decline pair beneath them. Nothing about availability, objectives or rewards differs; only
+what Bram calls the warrant-rider's authority does.
+
+### Two things worth carrying into the next sub-phase
+
+1. ⚠️ **A CHOICE A COMPLETED QUEST LEAVES PERMANENTLY OPEN MUST NEVER CARRY A CLEARING EFFECT, ONLY
+   AN ADDITIVE ONE.** `GuildRank` is the right tool exactly once, at the top of a guild's rank
+   ladder where nothing above it can ever be cleared; anywhere a promotion can be reached by more
+   than one route, or revisited after a later promotion, `SetFlag` on the exact `GuildRules`-derived
+   string is the only effect that is safe to fire twice. The next rank-granting arc on a SECOND
+   guild-hub choice (42B's carry-forward already flagged the third-branch slot as reusable) inherits
+   this the moment it grants anything short of the ceiling from a node the player can walk back to.
+2. ⚠️ **A DERIVED-PROSE FLAG (`flag.iron_king_defeated`) STAYS READ-ONLY BY PUTTING THE BRANCH AT THE
+   NODE LEVEL, NOT THE EFFECT LEVEL.** There is no `DialogueEffect` that could safely touch a
+   main-story flag from guild content even if one wanted to, so the only place "vary by an external
+   flag without gating on it" can live is two node TEXTS reached by two mutually exclusive
+   `HasFlag`/`MissingFlag` choices that reconverge immediately. Any future arc that wants to
+   acknowledge an Act I/II main-story fact without spending it should reach for this shape rather than
+   inventing a new condition or effect for a flag that already has an owner.
 
 ---
 
