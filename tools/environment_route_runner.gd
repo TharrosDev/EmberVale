@@ -120,10 +120,13 @@ func _run() -> void:
     # The other region exercises the existing climate/terrain/water data through the real streamer.
     region = load("res://data/regions/FrostfangReach.tres")
     streamer.call("Configure",region)
-    for cell in region.get("Cells"):
-        if String(cell.get("Id")).ends_with("clan_hold") or String(cell.get("Id")).ends_with("glacier") or String(cell.get("Id")).ends_with("ash_roost") or String(cell.get("Id")).ends_with("aerie_ascent"):
-            await visit(cell)
-            await capture(String(cell.get("Id")).replace(".","-"),12,"weather.rain")
+    # A fixed tour, glacier last: snow cover accumulates over simulated time, so lattice order would
+    # decide whether the glacier assertion sees an hour of snowfall or a minute of it.
+    for key in ["clan_hold", "ash_roost", "aerie_ascent", "glacier"]:
+        for cell in region.get("Cells"):
+            if String(cell.get("Id")).ends_with(key):
+                await visit(cell)
+                await capture(String(cell.get("Id")).replace(".","-"),12,"weather.rain")
     # Exercise the explicit dungeon contribution without inventing a second environment or altering content.
     var volume: Node3D = load("res://src/World/EnvironmentVolume.cs").new()
     volume.set("Profile",load("res://data/rendering/Dungeon.tres"))
