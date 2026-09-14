@@ -38,6 +38,21 @@ public sealed partial class WorldBiomeScatter : Node3D
         }
     }
 
+    // ⚠️ WRITE THE WHOLE BUFFER, NEVER SetInstanceTransform. The offline bake runs headless, where
+    // the dummy renderer drops per-instance writes but keeps a buffer assigned whole; every baked
+    // scatter layer shipped with 0x0 transforms (and so no vegetation at all) until 2026-09-13.
+    private const int BufferStride = 16; // Transform3D rows (12) + colour (4)
+
+    private static void WriteInstance(float[] buffer, int index, Transform3D transform, Color color)
+    {
+        int o = index * BufferStride;
+        Basis b = transform.Basis;
+        buffer[o] = b.X.X; buffer[o + 1] = b.Y.X; buffer[o + 2] = b.Z.X; buffer[o + 3] = transform.Origin.X;
+        buffer[o + 4] = b.X.Y; buffer[o + 5] = b.Y.Y; buffer[o + 6] = b.Z.Y; buffer[o + 7] = transform.Origin.Y;
+        buffer[o + 8] = b.X.Z; buffer[o + 9] = b.Y.Z; buffer[o + 10] = b.Z.Z; buffer[o + 11] = transform.Origin.Z;
+        buffer[o + 12] = color.R; buffer[o + 13] = color.G; buffer[o + 14] = color.B; buffer[o + 15] = color.A;
+    }
+
     public static WorldBiomeScatter? Attach(
         Node3D cellRoot, WorldCellPresentationResource? presentation, WorldBiomeScatterResource? profile,
         WorldHeightfield? field, Vector3 worldOrigin)
@@ -184,6 +199,7 @@ public sealed partial class WorldBiomeScatter : Node3D
                 Mesh = mesh,
                 InstanceCount = placements.Count,
             };
+            var buffer = new float[placements.Count * BufferStride];
 
             for (int i = 0; i < placements.Count; i++)
             {
@@ -210,14 +226,13 @@ public sealed partial class WorldBiomeScatter : Node3D
                     }
                 }
                 float ground = field?.Height(worldOrigin.X + placement.X, worldOrigin.Z + placement.Z) ?? 0f;
-                multiMesh.SetInstanceTransform(i,
-                    new Transform3D(basis, new Vector3(placement.X, ground + 0.025f, placement.Z)));
-
                 float tint = 1f - (layer.TintVariation * 0.5f) +
                              (WorldSceneryMath.Unit(profile.Seed + 7301, i + (layerIndex * 521)) * layer.TintVariation);
-                multiMesh.SetInstanceColor(i, new Color(
-                    layer.Tint.R * tint, layer.Tint.G * tint, layer.Tint.B * tint, layer.Tint.A));
+                WriteInstance(buffer, i,
+                    new Transform3D(basis, new Vector3(placement.X, ground + 0.025f, placement.Z)),
+                    new Color(layer.Tint.R * tint, layer.Tint.G * tint, layer.Tint.B * tint, layer.Tint.A));
             }
+            multiMesh.Buffer = buffer;
 
             scatter.AddChild(new MultiMeshInstance3D
             {
@@ -282,6 +297,7 @@ public sealed partial class WorldBiomeScatter : Node3D
             Mesh = mesh,
             InstanceCount = count,
         };
+        var buffer = new float[count * BufferStride];
         for (int proxyIndex = 0; proxyIndex < count; proxyIndex++)
         {
             WorldScatterPlacement placement = placements[Mathf.Min(proxyIndex * reduction, placements.Count - 1)];
@@ -289,10 +305,10 @@ public sealed partial class WorldBiomeScatter : Node3D
             Vector3 mass = layer.HlodScale == Vector3.Zero ? Vector3.One : layer.HlodScale;
             var basis = new Basis(Vector3.Up, placement.Yaw).Scaled(mass * scale);
             float ground = field?.Height(worldOrigin.X + placement.X, worldOrigin.Z + placement.Z) ?? 0f;
-            multiMesh.SetInstanceTransform(proxyIndex, new Transform3D(
-                basis, new Vector3(placement.X, ground + 0.025f, placement.Z)));
-            multiMesh.SetInstanceColor(proxyIndex, layer.HlodColor);
+            WriteInstance(buffer, proxyIndex, new Transform3D(
+                basis, new Vector3(placement.X, ground + 0.025f, placement.Z)), layer.HlodColor);
         }
+        multiMesh.Buffer = buffer;
 
         return new MultiMeshInstance3D
         {

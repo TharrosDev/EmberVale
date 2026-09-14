@@ -184,7 +184,8 @@ public sealed partial class WorldRegionBackdrop : MultiMeshInstance3D
             Mesh = mesh,
             InstanceCount = 1,
         };
-        multiMesh.SetInstanceTransform(0, Transform3D.Identity);
+        // Whole-buffer write: the headless bake drops SetInstanceTransform (see WorldBiomeScatter).
+        multiMesh.Buffer = new float[] { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0 };
 
         return new WorldRegionBackdrop
         {
