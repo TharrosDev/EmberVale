@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BestiaryEntryResource" format=3]
+
+[ext_resource type="Script" path="res://src/Enemies/BestiaryEntryResource.cs" id="1_entry"]
+
+; Grimtusk (Phase 42E). KillsToKnow = 1: this is the point of the sub-phase — the page opens on
+; investigation, not attrition. A player who reads Halda's prints and the deadfall clues before ever
+; seeing it walks in already knowing what the entry would tell them; the entry itself just makes that
+; official once the encounter happens.
+[resource]
+script = ExtResource("1_entry")
+Id = "enemy.grimtusk"
+NameKey = ""
+LoreKey = "enemy.grimtusk.lore"
+Category = 1
+KillsToKnow = 1

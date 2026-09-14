@@ -17,6 +17,18 @@
 ;     the faction id, and hand-writing one into a .tres is NOW.md invariant 18's whole subject.
 ;   - the two are exhaustive and disjoint, so root is never a dead end.
 
+; 42C — THE JOIN/REFUSE DOOR. He is the ContactNpcId, so recruitment hangs off the "stranger" exchange
+; rather than a new root branch: ch_join/ch_refuse fire Effect = 2 (SetFlag) with the exact strings
+; GuildRules.OfferedFlag/JoinedFlag/RefusedFlag derive ("guild.dawnwardens.joined",
+; "guild.dawnwardens.refused") — the WRITE side of invariant 18. StoryFlagsComponent stays the only
+; writer; this is that write, not a second one. RejoinAllowed = true on the faction means a refused or
+; departed member sees this same door again for free — GuildNotMember does not distinguish Refused
+; from Unknown, and it should not have to.
+;
+; 42C — THE RANK-AWARE THIRD BRANCH. ch_ranked does not narrow ch_member (still rank 0, still
+; exhaustive with ch_stranger) - it is an EXTRA choice inside "member", gated on
+; "faction.dawnwardens:1", exactly the shape 42B's header warned the next rank-granting arc to use.
+
 [sub_resource type="Resource" id="ch_member"]
 script = ExtResource("3_choice")
 Text = "dlg.dawnwarden_serjeant.c_member"
@@ -44,6 +56,35 @@ Goto = "root"
 script = ExtResource("3_choice")
 Text = "dlg.dawnwarden_serjeant.c_end"
 
+[sub_resource type="Resource" id="ch_join"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_serjeant.c_join"
+Effect = 2
+EffectArg = "guild.dawnwardens.joined"
+Goto = "joined"
+
+[sub_resource type="Resource" id="ch_refuse"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_serjeant.c_refuse"
+Effect = 2
+EffectArg = "guild.dawnwardens.refused"
+Goto = "refused"
+
+[sub_resource type="Resource" id="ch_joined_end"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_serjeant.c_joined_end"
+
+[sub_resource type="Resource" id="ch_refused_end"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_serjeant.c_refused_end"
+
+[sub_resource type="Resource" id="ch_ranked"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_serjeant.c_ranked"
+Condition = 14
+ConditionArg = "faction.dawnwardens:1"
+Goto = "ranked"
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
@@ -54,12 +95,30 @@ Choices = Array[Resource]([SubResource("ch_member"), SubResource("ch_stranger"),
 script = ExtResource("2_node")
 Id = "member"
 Text = "dlg.dawnwarden_serjeant.member"
-Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+Choices = Array[Resource]([SubResource("ch_ranked"), SubResource("ch_back"), SubResource("ch_end")])
 
 [sub_resource type="Resource" id="node_stranger"]
 script = ExtResource("2_node")
 Id = "stranger"
 Text = "dlg.dawnwarden_serjeant.stranger"
+Choices = Array[Resource]([SubResource("ch_join"), SubResource("ch_refuse"), SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_joined"]
+script = ExtResource("2_node")
+Id = "joined"
+Text = "dlg.dawnwarden_serjeant.joined"
+Choices = Array[Resource]([SubResource("ch_joined_end")])
+
+[sub_resource type="Resource" id="node_refused"]
+script = ExtResource("2_node")
+Id = "refused"
+Text = "dlg.dawnwarden_serjeant.refused"
+Choices = Array[Resource]([SubResource("ch_refused_end")])
+
+[sub_resource type="Resource" id="node_ranked"]
+script = ExtResource("2_node")
+Id = "ranked"
+Text = "dlg.dawnwarden_serjeant.ranked"
 Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
 
 [resource]
@@ -67,4 +126,4 @@ script = ExtResource("1_dlg")
 Id = "dialogue.dawnwarden_serjeant"
 SpeakerName = "dlg.dawnwarden_serjeant.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_joined"), SubResource("node_refused"), SubResource("node_ranked")])

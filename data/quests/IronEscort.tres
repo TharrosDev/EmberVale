@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="QuestResource" format=3]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+
+; Phase 42I — the second rung: escort Netta Vire from the Ledger House to Wren's post at the
+; Crossway. One objective, deliberately, for LedgerRun's reason (41B): the escort IS the quest, and a
+; come-back-and-report step would add a walk rather than a decision.
+;
+; ⚠️ THE FAIL STATE IS HERS, NOT YOURS, exactly as Tessa's escort is (LedgerRun's header). The quest
+; fails on CompanionDownedEvent for companion.iron_client, and CanStart lets a failed quest be
+; retaken, so the offer reopens on its own through the same QuestAvailable gate that offered it the
+; first time — the "failed escort/retry" Verify case needs no separate authoring.
+;
+; ⚠️ FactionRewardId IS faction.villagers, NEGATIVE. This is 42I's second contraband/public-standing
+; hook: what the client is carrying out of Hollowreach is the Syndicate's business, not the town's,
+; and walking it past the crossing costs standing with the people who live along the road — the same
+; automatic-looking consequence 38O's fence pays for a sale, done here through the ordinary
+; QuestResource.FactionRewardId field rather than a new one.
+
+[sub_resource type="Resource" id="Obj_escort"]
+script = ExtResource("2_obj")
+Type = 4
+TargetId = "companion.iron_client"
+RequiredCount = 1
+Description = "quest.iron.escort.obj"
+LocationId = "location.crossway.mercenary"
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.iron.escort"
+Title = "quest.iron.escort.title"
+Summary = "quest.iron.escort.summary"
+Objectives = Array[Resource]([SubResource("Obj_escort")])
+XpReward = 85
+GoldReward = 40
+GoldItemId = "item.currency.gold"
+RewardItems = []
+FactionRewardId = "faction.villagers"
+FactionRewardAmount = -4
+PrerequisiteQuestId = "quest.iron.bounty"
+IsMainQuest = false

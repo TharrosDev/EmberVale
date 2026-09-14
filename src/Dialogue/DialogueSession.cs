@@ -135,6 +135,9 @@ public sealed class DialogueSession
                 return GuildMeets(arg, member: true);
             case DialogueCondition.GuildNotMember:
                 return GuildMeets(arg, member: false);
+            case DialogueCondition.GuildCanJoin:
+                return _flags != null && FactionDatabase.Get(arg) is { IsGuild: true } joinable &&
+                    GuildRules.CanJoin(GuildRules.Resolve(_flags.Has, joinable), joinable.RejoinAllowed);
             default:
                 return true;
         }
@@ -303,6 +306,52 @@ public sealed class DialogueSession
                 else
                 {
                     Log.Warn($"Dialogue effect OpenService: unknown service '{arg}'.");
+                }
+
+                break;
+
+            case DialogueEffect.JoinGuild:
+                if (_flags != null && FactionDatabase.Get(arg) is { IsGuild: true } joiningGuild)
+                {
+                    GuildStanding standing = GuildRules.Resolve(_flags.Has, joiningGuild);
+                    if (GuildRules.CanJoin(standing, joiningGuild.RejoinAllowed))
+                    {
+                        _flags.Clear(GuildRules.RefusedFlag(arg));
+                        _flags.Clear(GuildRules.LeftFlag(arg));
+                        _flags.Set(GuildRules.OfferedFlag(arg));
+                        _flags.Set(GuildRules.JoinedFlag(arg));
+                    }
+                    else
+                    {
+                        Log.Warn($"Dialogue effect JoinGuild: '{arg}' will not take the player back (RejoinAllowed = false).");
+                    }
+                }
+                else
+                {
+                    Log.Warn($"Dialogue effect JoinGuild: unknown or non-guild faction '{arg}'.");
+                }
+
+                break;
+            case DialogueEffect.GuildRank:
+                if (_flags != null && GuildRules.TryParseRankArg(arg, out string rankFactionId, out int rank) &&
+                    FactionDatabase.Get(rankFactionId) is { IsGuild: true } rankGuild &&
+                    rank >= 1 && rank <= rankGuild.RankNameKeys.Count)
+                {
+                    for (int i = 1; i <= GuildRules.MaxRanks; i++)
+                    {
+                        if (i <= rank)
+                        {
+                            _flags.Set(GuildRules.RankFlag(rankFactionId, i));
+                        }
+                        else
+                        {
+                            _flags.Clear(GuildRules.RankFlag(rankFactionId, i));
+                        }
+                    }
+                }
+                else
+                {
+                    Log.Warn($"Dialogue effect GuildRank: malformed argument '{arg}' or rank out of range.");
                 }
 
                 break;

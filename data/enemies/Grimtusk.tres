@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+; Grimtusk (Phase 42E) — the territorial thornback that Halda Rieve has been casting prints of since
+; the deadfall started losing traffic. A distinct archetype from enemy.thornback_boar, not a reskin
+; of the roaming one: encounter.boar_territory rolls the common population anywhere the region allows,
+; and a Kill objective matches by TemplateId alone, so sharing an id would let any roadside boar
+; satisfy a quest about THIS one. Same species, same stats, same everything but the id and the name —
+; the distinction is who it is, not what it is.
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.grimtusk"
+NameKey = "enemy.grimtusk.name"
+AttributesPath = "res://data/attributes/BoarAttributes.tres"
+WeaponPath = "res://data/weapons/BoarTusks.tres"
+LootTablePath = "res://data/loot/BeastLoot.tres"
+ModelPath = "res://assets/models/creatures/enm_thornback_boar.glb"
+PlaceholderTint = Color(0.3, 0.24, 0.2, 1)
+AiProfileId = "ai.territorial"
+FactionId = "faction.beasts"
+KnownSpellIds = Array[String]([])
+CapsuleRadius = 0.55
+CapsuleHeight = 1.0
+MaxPoise = 80.0
+Reaction = 3
+StaminaRegen = 10.0
+XpValue = 60

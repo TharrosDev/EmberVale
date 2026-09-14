@@ -70,6 +70,37 @@ public enum DialogueEffect
     /// letting it warn at runtime.
     /// </summary>
     OpenService,
+
+    /// <summary>
+    /// Joins the guild named by <c>EffectArg</c> (a <c>faction.*</c> id) — the choke point 42B's
+    /// retrospective named in advance: "every future join path — 42C's dialogue, 42I's contract
+    /// board — has to route through" <see cref="Factions.GuildRules.CanJoin"/>, and this is where
+    /// that routing lives. It runs the exact four flag writes the <c>guild join</c> console command
+    /// does (clear refused, clear left, set offered, set joined), through
+    /// <see cref="Factions.GuildRules"/>'s own flag-name builders rather than a literal string, so a
+    /// guild join is never the hand-authored flag NOW.md invariant 18 forbids.
+    ///
+    /// ⚠️ Refuses silently when <see cref="Factions.GuildRules.CanJoin"/> says no (a left member of a
+    /// guild with <c>RejoinAllowed = false</c>) — the same direction every other refusal in this
+    /// enum takes, and the conversation's own text is what tells the player, not a toast.
+    /// </summary>
+    JoinGuild,
+
+    /// <summary>
+    /// Sets the player's rank in a guild to at least the value named by <c>EffectArg</c>
+    /// (<c>&lt;factionId&gt;:&lt;rank&gt;</c>, e.g. <c>faction.iron_syndicate:1</c>) — the dialogue
+    /// half of the <c>guild rank</c> console command, and for the same reason <see cref="JoinGuild"/>
+    /// exists: a rank flag is <see cref="Factions.GuildRules"/>'s to name, never a literal in a
+    /// <c>.tres</c>. Ranks are cumulative, so this sets every rank flag up to and including the
+    /// named one and clears anything above it — the same "no gap" shape
+    /// <see cref="Factions.GuildRules.Resolve"/> reads back.
+    ///
+    /// ⚠️ Idempotent, on purpose: a choice carrying this may be reachable more than once (an author
+    /// gating it on a fresh state via <c>HasFlag</c>/<c>MissingFlag</c> against the rank flag itself
+    /// would be exactly the hand-authored flag this exists to avoid), so re-granting a rank the
+    /// player already holds is a no-op rather than a second promotion.
+    /// </summary>
+    GuildRank,
 }
 
 /// <summary>
@@ -152,4 +183,13 @@ public enum DialogueCondition
     /// re-offers the door; <c>GuildRules.CanJoin</c> remains the gate on whether it opens.
     /// </summary>
     GuildNotMember,
+
+    /// <summary>
+    /// Shown only while <c>GuildRules.CanJoin</c> would accept the player into the guild named by
+    /// <c>ConditionArg</c> (a bare faction id). A <see cref="DialogueEffect.JoinGuild"/> choice that
+    /// navigates to a "you're in" node must carry it: the effect refuses a left member of a guild with
+    /// <c>RejoinAllowed = false</c>, but <c>Goto</c> fires regardless, so without this gate the refused
+    /// player reads the success line with nothing granted. <c>--validate</c> enforces the pairing.
+    /// </summary>
+    GuildCanJoin,
 }

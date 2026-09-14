@@ -3525,6 +3525,17 @@ public static class ContentValidator
             {
                 foreach (DialogueChoice choice in node.ChoiceList())
                 {
+                    if (choice.Condition == DialogueCondition.GuildCanJoin)
+                    {
+                        if (FactionDatabase.Get(choice.ConditionArg) is not { IsGuild: true })
+                        {
+                            issues.Add($"dialogue '{dialogue.Id}' GuildCanJoin condition argument " +
+                                       $"'{choice.ConditionArg}' is not a guild faction id");
+                        }
+
+                        continue;
+                    }
+
                     if (choice.Condition is not (DialogueCondition.GuildRankAtLeast or DialogueCondition.GuildNotMember))
                     {
                         continue;
@@ -3987,6 +3998,44 @@ public static class ContentValidator
                     if (choice.Effect == DialogueEffect.AddCorruption && !int.TryParse(choice.EffectArg, out _))
                     {
                         issues.Add($"dialogue '{dialogue.Id}' AddCorruption effect has non-numeric amount '{choice.EffectArg}'");
+                    }
+
+                    // 42I: JoinGuild/GuildRank route through GuildRules' own flag-name builders at
+                    // runtime, but the faction id (and, for GuildRank, the rank) is still authored
+                    // text here — the same typo class StartQuest/OpenShop/OpenService already guard.
+                    if (choice.Effect == DialogueEffect.JoinGuild &&
+                        FactionDatabase.Get(choice.EffectArg) is not { IsGuild: true })
+                    {
+                        issues.Add($"dialogue '{dialogue.Id}' JoinGuild effect references unknown or non-guild faction '{choice.EffectArg}'");
+                    }
+
+                    // The effect can refuse (RejoinAllowed = false) but Goto fires regardless, so a
+                    // JoinGuild choice that navigates anywhere must be hidden when the join would fail.
+                    if (choice.Effect == DialogueEffect.JoinGuild && choice.Goto.Length > 0 &&
+                        (choice.Condition != DialogueCondition.GuildCanJoin || choice.ConditionArg != choice.EffectArg))
+                    {
+                        issues.Add($"dialogue '{dialogue.Id}' JoinGuild choice goes to '{choice.Goto}' without " +
+                                   $"Condition GuildCanJoin '{choice.EffectArg}' - a refused join would still show that node");
+                    }
+
+                    if (choice.Effect == DialogueEffect.GuildRank)
+                    {
+                        if (!GuildRules.TryParseRankArg(choice.EffectArg, out string rankFactionId, out int rank))
+                        {
+                            issues.Add(
+                                $"dialogue '{dialogue.Id}' GuildRank argument '{choice.EffectArg}' is not a " +
+                                $"faction id followed by ':<rank 1..{GuildRules.MaxRanks}>'");
+                        }
+                        else if (FactionDatabase.Get(rankFactionId) is not { IsGuild: true } rankGuild)
+                        {
+                            issues.Add($"dialogue '{dialogue.Id}' GuildRank effect references unknown or non-guild faction '{rankFactionId}'");
+                        }
+                        else if (rank < 1 || rank > rankGuild.RankNameKeys.Count)
+                        {
+                            issues.Add(
+                                $"dialogue '{dialogue.Id}' GuildRank effect names rank {rank} for '{rankFactionId}', " +
+                                $"which declares only {rankGuild.RankNameKeys.Count}");
+                        }
                     }
                 }
             }

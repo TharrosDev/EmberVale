@@ -38,7 +38,7 @@
     Crown, all mapped, all walkable. `FactionResource` gained a hub id and a four-role
     roster; nothing else was invented. See the retrospective below.
 
-- [ ] **42C — Dawnwardens recruitment and probation** `[C]`
+- [x] **42C — Dawnwardens recruitment and probation** `[C]` ✅
   - **Goal:** establish protection of civilians and the tension between duty and coercive order.
   - **Build / Author:** join/refuse dialogue plus a Defend/Reach probation pair: answer a civilian
     threat, then choose rescue versus punitive expediency. Use villagers/Dawnwardens standing and
@@ -46,6 +46,18 @@
   - **Verify:** join/refuse/leave, failed-defense retry, pre-resolved threat, branch save/load and NPC
     reactions without consuming Iron King story flags.
   - **Done when:** both decisions have honest terminal/continuation states and rank one is earned.
+  - **Done:** Serjeant Danhal's `stranger` exchange grew the join/refuse door
+    (`SetFlag guild.dawnwardens.{joined,refused}` — the WRITE side of invariant 18, matching what
+    `GuildRules` already derives). `FactionResource.RankPeerNpcId` — declared and left empty in 42B
+    for exactly this — now names Bram Corrow, placed beside the Watch's existing officers in the same
+    already-validated yard. His one dialogue graph owns the whole probation arc: the fork
+    (`quest.hollowreach.barrels`'s two-choices-deep, gate-on-each-other shape) picks rescue or
+    punitive expediency *before* `quest.dawnwardens.probation` starts, `SequentialObjectives` keeps
+    the Defend objective (`location.wilds.west`, 60s, `HoldTheNorthRoad`'s shape) first regardless of
+    how early the flag lands, and rank one is `SetFlag guild.dawnwardens.rank1` gated on
+    `QuestCompleted` *inside* the node the branch flag already picked — an AND with no compound
+    condition. Both Reach targets (`location.tarn.landing`, `location.crossway.watch`) were already
+    mapped; zero new map locations, zero new terrain, zero new mechanism. See the retrospective below.
 
 - [ ] **42D — Dawnwardens command arc and payoff** `[C]`
   - **Goal:** resolve service versus authoritarian survival and make final rank world-visible.
@@ -56,7 +68,7 @@
     journal/map cleanup and reload immediately before/after choice.
   - **Done when:** finale outcome changes Dawnwarden presence and is independently inspectable.
 
-- [ ] **42E — Ash Hunters field induction** `[C]`
+- [x] **42E — Ash Hunters field induction** `[C]` ✅
   - **Goal:** make knowledge/preparation—not a kill counter—the hunter identity.
   - **Build / Author:** tracked-beast investigation using placed clues, Bestiary, existing Reach/
     Interact/Kill and encounter/lair data; briefing, trophy hand-in and spare/kill choice for a
@@ -65,6 +77,13 @@
   - **Verify:** target killed early, companion final hit, spare/kill, target reload, bestiary/quest id
     agreement and regional encounter filters.
   - **Done when:** investigation→hunt→judgment works in every target state and grants rank one.
+  - **Done:** two placed clues in the Deadfall's already-yarded, never-furnished eastern pine thicket,
+    a lair-shaped named boar (`enemy.grimtusk`, a DISTINCT template from the roaming
+    `enemy.thornback_boar` so the two can never be confused by a Kill objective), and the whole arc
+    living in `dialogue.hunter_tracker` — recruitment, briefing, verdict and the spare branch's own
+    hand-in — plus `dialogue.hunter_skinner`'s kill-branch hand-in. Zero new objective types, zero new
+    flag family beyond `flag.ash_hunters.*`; `guild.ash_hunters.rank1` is granted by whichever officer
+    actually heard the outcome. See the retrospective below.
 
 - [ ] **42F — Ash Hunters dragon/corruption finale** `[C]`
   - **Goal:** culminate in a prepared hunt that distinguishes Wild, Ancient and Ash dragons.
@@ -93,7 +112,7 @@
     Act III reveal is authored early.
   - **Done when:** every result leaves an explicit playable Act III handoff.
 
-- [ ] **42I — Iron Syndicate contract rank** `[C]`
+- [x] **42I — Iron Syndicate contract rank** `[C]` ✅
   - **Goal:** establish pragmatic mercenary/bounty work, not an assassin reskin.
   - **Build / Author:** recruit through existing contract-board/economy surfaces; author a bounty,
     paid escort and spare/kill target resolution; integrate contraband/public standing and record how
@@ -102,6 +121,11 @@
   - **Verify:** target dead early/spared, rotation overlap, failed escort/retry, poor player/bribe and
     full-pack payout.
   - **Done when:** varied paid work grants rank one and its consequences persist.
+  - **Done:** three contracts off Dallow Grieve's own conversation — a bandit bounty, Netta Vire's
+    paid escort, and Corran Vess's spare/kill judgment — chained by `PrerequisiteQuestId` so "varied
+    paid work" reads left to right, plus the join and the rank-one grant on Broker Ilder Vance's line.
+    Two new `DialogueEffect` members (`JoinGuild`, `GuildRank`) are the only new code; everything else
+    is `.tres`. See the retrospective below.
 
 - [ ] **42J — Iron Syndicate loyalty-for-sale finale** `[C]`
   - **Goal:** choose between contract fidelity, a better offer and protecting a relationship.
@@ -318,5 +342,257 @@ Neither is a move: the Annexe and the Deadfall stay where they are and stay owne
    join, a refusal and a probation state: **the moment any surface stores what `GuildRules` can
    derive, the wholesale-load path stops being free and starts being a bug**, and a load replays no
    events to correct it.
+
+---
+
+## 42C — the fork happens before the fight, not after it
+
+The obvious shape for "defend civilians, then choose their fate" puts the choice AFTER the Defend
+objective — narratively that is when it is actually decided. It was rejected for the same reason
+41D's own header gives: `DialogueCondition` cannot express "objective 0 of this quest is complete",
+only whole-quest `QuestActive`/`QuestCompleted`, so a fork gated on mid-quest progress would need a
+new condition kind for one piece of content. `quest.hollowreach.barrels`'s answer — decide before the
+errand exists — already composes with `SequentialObjectives`: the two Reach objectives that pay off
+each branch are gated behind `location.wilds.west`'s Defend regardless of how early Bram Corrow's
+fork sets the flag, because sequential order still requires it complete first to become live at all.
+Deciding early and letting the mechanism enforce order costs nothing new; inventing a way to ask
+"is objective 0 done yet" would have been a new primitive for exactly one piece of content.
+
+**Rank one needed an AND with no compound condition, and the fix was structural, not a new
+enum member.** `guild.dawnwardens.rank1` must be granted only once the Reach objective is actually
+walked — `QuestCompleted`, not merely the branch flag `HasFlag` already carries from the fork — but a
+`DialogueChoice` has one `Condition`. Nesting solved it for free — but the nesting order matters.
+As first shipped the branch flag was OUTSIDE (routing into `after_rescue`/`after_expedient`) and
+`QuestCompleted` inside; the flag is set at the fork, before the quest starts, so the past-tense node
+text was reachable mid-quest (checkpoint fix). Now `QuestCompleted` is outside (`ch_after` into
+`after`) and the branch-flag claim choices are inside, landing on the past-tense lines. Rule: the
+condition the node TEXT presupposes goes outermost. This is the same trick
+`ch_ledger`/`ch_ledger_resume` used in 41B for "available" vs "active" — sequencing through nodes
+rather than through conditions.
+
+**Both Reach destinations were already on the map, and that was a design constraint honoured rather
+than a shortcut taken.** `location.tarn.landing` (rescue) and `location.crossway.watch` (punitive)
+were picked specifically because escorting survivors home to an existing village and marching them
+back to the guild's own hub are both places the player already knows how to reach — reusing them is
+what makes the consequence legible instead of sending the player to a new pin that means nothing yet.
+Zero new `MapLocationResource`s, zero region edits, zero world bake — the whole sub-phase is dialogue,
+one quest and one placed actor.
+
+### Retrospective + traps
+
+⚠️ **A GUILD'S WRITE PATH IS THE SAME STRING ITS READ PATH DERIVES, AND THAT IS EASY TO GET
+BACKWARDS.** Invariant 18 forbids reading a `guild.*` flag by hand (`HasFlag`/`MissingFlag` with a
+`guild.*` argument skips `GuildRules`' cumulative-rank and left-still-a-member rules) — it does not
+forbid WRITING one, because there is no other way to write it: `StoryFlagsComponent` is the only
+writer and a `DialogueEffect.SetFlag` choice is the only authored path to it. 42C is the first content
+to actually exercise that write side (42A/B built only the resolver and the console mutator). The
+rule that matters going forward: every `guild.<slug>.<suffix>` string written by hand must match
+`GuildRules`' own derivation EXACTLY (`GuildRulesTests` pins the five strings per guild) — a typo
+here is silent forever, the same failure mode `ValidateStoryFlags` already catches for `flag.*` but
+cannot catch for the `guild.*` family, since nothing enumerates what `GuildRules` would have produced.
+⚠️ **THE RANK-GATED THIRD BRANCH GOES INSIDE AN EXISTING NODE, NOT ON ROOT.** 42B's header warned
+the next rank-granting arc to add rank-aware content "as a THIRD branch rather than by narrowing"
+the member/stranger pair — read literally as a third ROOT choice, `GuildRankAtLeast:1` and
+`GuildRankAtLeast:0` are NOT disjoint (a rank-1 member satisfies both), so a third root choice would
+sit permanently alongside the ordinary member greeting rather than replacing it. The Serjeant's
+`ch_ranked` is instead one more choice INSIDE `member`, which is what "third branch, never a
+narrowing" actually means: additive within the branch already reached, not a second gate at the door.
+
+### Two things worth carrying into the next sub-phase
+
+1. ⚠️ **A FORK DECIDED EARLY STILL NEEDS ITS PAYOFF GATED LATE.** Setting a branch flag at an offer
+   node is free and instant; the reward it eventually authorizes is not, and conflating "the flag is
+   set" with "the thing the flag promises has happened" is the gap 42C closed by nesting a
+   `QuestCompleted` check inside the flag-routed node rather than reading the branch flag alone. 42D's
+   finale is a bigger version of the same shape — a command dispute resolved by a choice, paid off by
+   a much later objective — and the fix is the same nesting trick, not a new field.
+2. ⚠️ **TWO RANK-GRANTING ARCS ON ONE GUILD WILL WANT THE SAME "THIRD BRANCH" SLOT.** `ch_ranked` on
+   the Serjeant is gated on rank 1 alone; 42D grants a HIGHER rank on the same faction, and a second
+   rank-aware reaction authored the same way (`GuildRankAtLeast` at the new rank) will sit alongside
+   the first rather than replace it, exactly as the guidance intends — but only if the new one is
+   authored as its own additive choice inside `member`, not as an edit to `ch_ranked`'s own condition.
+   Narrowing an existing rank-gated choice upward is the same mistake invariant 18's own warning was
+   written about, one level later.
+
+---
+
+## 42E — knowledge is the hunter identity, and the ground was already waiting
+
+42E landed as Ash Hunters' join arc as well as its induction quest — nothing in the roadmap before it
+had ever offered `guild.ash_hunters.joined`, so the first question was the same one 42A closed for
+guilds in general: **what kind of thing is "an induction quest with a spare/kill choice", and does it
+already exist?** It does, twice over: a lair boss with a `DefeatFlagId` (35D/35F, the Ash dragon
+shape) and a two-fork dialogue whose choices gate each other on the sibling's absence
+(`quest.hollowreach.barrels`, 41D). `enemy.grimtusk` is a Grimtusk-shaped `EnemyArchetypeResource`
+copy of `enemy.thornback_boar` — same stats, same model, different id — placed once via
+`LairSpawnComponent` in the Deadfall thicket `tools/region_spec_ember.py` had already yarded and
+never furnished (`Area_wn_deadfall`, authored in the 2026-08-28 layout rebuild and empty since). No
+new objective type, no new resource kind, no new flag family beyond `flag.ash_hunters.*`.
+
+**The distinct template id is the load-bearing decision.** `encounter.boar_territory` rolls
+`enemy.thornback_boar` anywhere the region allows, and a Kill objective matches by `TemplateId`
+alone — sharing an id would let any roadside boar the player happens to kill satisfy a quest that is
+supposed to be about one named, placed individual. `enemy.grimtusk` exists so the two populations can
+never be confused for each other, in either direction: the roaming population can't finish the quest,
+and the quest's Kill objective can't be satisfied by a species-wide cull.
+
+### The soft-lock that never shipped
+
+The first draft used `SequentialObjectives = true` to make the objective ORDER read as the
+investigation-then-verdict story: two clues, a debrief, then the kill. It built, it validated, and it
+was wrong. A Kill objective fires off a **one-time `EntityDiedEvent` that never replays**, and
+`QuestProgress.IsObjectiveActive` on a Sequential quest requires every earlier LIVE objective done
+before a later one is even current — so a player who found the den before finishing the clues or the
+debrief would kill Grimtusk while the objective wasn't listening, and nothing afterward could ever
+catch up. The quest would sit open forever with a corpse it could not credit, behind a green
+`--validate` that has no way to simulate an out-of-order kill. ⚠️ **A Kill objective and
+`SequentialObjectives` do not mix unless the kill is authored LAST with nothing live after it** — the
+"target killed early" verify line this sub-phase was given is exactly the case that ordering breaks,
+which is presumably why it was named. The fix was to drop `SequentialObjectives` entirely and let
+`RequiredFlagId`/`ForbiddenFlagId` alone carry the branch, the same shape
+`quest.hollowreach.barrels` already proves: a kill counts whenever it happens, spare-marked or not,
+quest-started or not.
+
+### Two things worth carrying into the next sub-phase
+
+1. ⚠️ **A COMPANION'S KILL DID NOT CREDIT THE PLAYER, AND NOTHING HAD EVER NOTICED.**
+   `QuestLogComponent.OnEntityDied` required `e.Killer` to be `ReferenceEquals` the quest log's own
+   `Entity` — true for the player, never true for a companion, whose `CharacterActionComponent` packets
+   carry the companion as `Source`. Every existing Kill objective in the game has been silently
+   uncompletable by a companion's final hit since Phase 32C, and nothing caught it because no quest
+   before this one was verified against that state on purpose. Fixed at the one choke point
+   (`e.Killer is Companions.CompanionEntity` now also credits), which is the shape 42B's own
+   carry-forward predicted: a new fact on a surface reveals what that surface never subscribed to,
+   and here the surface was an existing rule nobody had exercised rather than a new one. 42F reuses
+   Kill objectives against a dragon a companion may well land the last hit on — the fix already
+   covers it, but **verify it again there rather than assuming this note is enough**.
+2. ⚠️ **A NEVER-FURNISHED YARD IS FREE GROUND, AND IT IS WORTH CHECKING BEFORE AUTHORING A NEW PAD.**
+   `Area_wn_deadfall` and its extension yard were sitting in `region_spec_ember.py` since 42B's own
+   predecessor pass, levelled and clear of every route, with nothing ever placed on them — the cell's
+   own header comment called the Deadfall "ambush ground" and left it at that. Reading the region spec
+   before reaching for `compose_building.py`'s pad-authoring step (the 42B recipe's step 2) saved an
+   entire yard-and-regenerate cycle. **Grep the target cell's `Yard(...)` calls for one already shaped
+   right before authoring a new one** — a levelled pad with nothing on it is not always a road (the
+   42B trap); sometimes it is simply unclaimed.
+
+---
+
+## 42I — Iron Syndicate contract rank
+
+42A and 42B closed off the seams a guild would want; 42I is the first sub-phase to actually WALK one
+of them, and the walk found the one seam that did not exist yet: **nothing could write a guild flag
+from dialogue.** `GuildRules` derives every flag name and `DialogueCondition.GuildRankAtLeast`/
+`GuildNotMember` (42B) already read them safely, but the only code that ever *set* one was the `guild`
+console command — which needs keyboard input no headless path reaches. Two new `DialogueEffect`
+members, `JoinGuild` and `GuildRank`, are the whole of the new code: both call `GuildRules`'s own
+flag-name builders and `GuildRules.CanJoin`, exactly mirroring what `DevCommands` already did, so a
+guild id or a rank number is never a hand-typed string in a `.tres` (invariant 18) on the write side
+either. 42C/E/G will use both unchanged.
+
+**Recruitment routes through the roster, not a new surface.** Broker Ilder Vance's existing
+`GuildNotMember` branch grows an accept/decline pair (`JoinGuild`); rank one is a `QuestCompleted`
+check on the *last* contract in the chain, on his `member` branch. Dallow Grieve's `member` branch
+grows GuildBoard's own offer/active/thanks triple (41B), three times over, for the bounty, the escort
+and the judgment. **No new board, no new panel — the "contract board" the entry asks to recruit
+through IS this conversation graph**, the same shape `dialogue.guild_board` already proved.
+
+**"Varied paid work" is a `PrerequisiteQuestId` chain, not a flag AND.** `quest.iron.bounty` →
+`quest.iron.escort` → `quest.iron.judgment`, each naming the last as its prerequisite. That turns
+"complete all three, in any combination" — which nothing here can express, since a `DialogueChoice`
+carries one `Condition` — into "complete the last one," a single `QuestCompleted` check the rank-grant
+choice already needed. **Rotation is the visible half of the same fact**: only one of the three
+`QuestAvailable` conditions is ever true at once, so the postings visibly advance rung to rung, and
+the "rotation overlap" Verify case is that the two already-closed rungs keep their own `thanks` line
+live rather than vanishing — exactly GuildBoard's existing behaviour, exercised by a chain instead of
+two independent quests.
+
+**The spare/kill/dead-early shape is two objectives, not a state machine.** `Obj_kill` (Kill,
+`ForbiddenFlagId` = the spare flag) is live from the moment the quest starts, so killing Corran Vess
+before ever opening his dialogue satisfies it with zero new code — that is what makes "target dead
+early" free. `Obj_spare` (Talk, `RequiredFlagId` = the same flag) is the ordinary "gated-off objective
+is inert, not incomplete" mirror. `AllowsOneShotTarget = true` is the one field that has to be paid
+for honestly: the promise it makes ("the offering conversation gates on the target still being
+alive") is kept by a `MissingFlag`/`HasFlag` pair on Grieve's offer node, reading Corran's own
+`LairSpawnComponent.DefeatFlagId` — the *only* thing in the game that turns a kill into a flag (35F),
+reused here at one-actor scale instead of dragon scale.
+
+⚠️ **CONTRABAND AND PUBLIC STANDING WERE ALREADY BUILT; THIS SUB-PHASE ONLY HAD TO POINT AT THEM.**
+Corran's `FactionId` is `faction.villagers`, not `faction.outlaws` — he is a private citizen the
+Syndicate wants found, not a criminal the realm is hunting — so killing him costs *public* standing
+automatically through `ReputationComponent.OnEntityDied`, and his loot table is `BanditLoot.tres`
+unchanged, which already carries two contraband entries from 38O. Neither needed a line of new code;
+the entire "contraband/public standing integration" Verify line is two field values. The escort quest
+pays the same idea from the other side: `FactionRewardId = faction.villagers`, negative — running the
+Syndicate's cargo through town costs the same standing a contraband sale would, through the ordinary
+`QuestResource.FactionRewardId` field.
+
+⚠️ **NEITHER SPARE/KILL PATH PAYS DIFFERENTLY, FOR WHATTHEPOSTTOOK'S REASON (41D).** `QuestResource`
+has one `GoldReward`/`XpReward`/`FactionRewardId` for the whole quest, so the ending is the flag
+(`flag.iron.judgment_target_dead` vs `flag.iron.judgment_spared`) and nothing else — a per-branch
+reward table would be invariant 5 waiting to happen, and it is exactly what 42J's finale needs to read
+regardless.
+
+### Retrospective + traps
+
+⚠️ **A `DialogueChoice` CARRYING ONE EFFECT KEEPS SHOWING UP AS THE BINDING CONSTRAINT, AND THE FIX IS
+ALWAYS THE SAME TWO-NODE SPLIT.** The escort's accept-then-recruit (Sedge/Tessa's shape, 41B) and the
+rank-grant's own single-effect confirm both hit it again. There is no AND of two conditions either
+(the "all three contracts done" question), and the chain-via-`PrerequisiteQuestId` answer above is
+the cheap-kind-that-already-exists instance of that same constraint, not a new mechanism.
+
+⚠️ **AN IDEMPOTENT EFFECT LETS A NODE SKIP THE `HasFlag`/`MissingFlag` PAIR IT WOULD OTHERWISE NEED —
+BUT ONLY IF THE TEXT IS WRITTEN TO SURVIVE BEING SHOWN TWICE.** The honest way to gate "not yet rank
+one" against "already rank one" would read the rank flag directly, which is exactly what invariant 18
+forbids doing from a `.tres`. `GuildRank`'s effect is a no-op on a flag that is already set, so the
+Broker's advancement node stays reachable and correct on a second visit; the line it speaks was
+written as a standing statement of respect rather than a one-time announcement, on purpose, so
+repeating it is not a bug. A future rank-grant that wants a genuinely one-time line will need a real
+answer to this, not this shortcut.
+
+⚠️ **THE MARK IS A `LairSpawnComponent` AT ONE-ACTOR SCALE, AND MOST OF 35D'S RECIPE DOES NOT APPLY AT
+THAT SCALE.** No custom landform, no dedicated cell, no `roost.tscn` inheritance — Corran stands a few
+metres off the Ledger House's own already-proven Yard, and `TerritoryRadius` on a new `ai_profiles`
+variant (`ai.mark_guard`) is the only thing 35D's recipe insisted on that still applied (a leash, so a
+fight that starts here does not chase into the next cell). `world_traversal_probe.gd` still passed
+(336 routes) with nothing new on it, since nothing was placed on a road — but this sub-phase did not
+render the placement, which 42B's own carried-forward finding says not to skip. That is this
+sub-phase's own gap to hand forward.
+
+### Two things worth carrying into the next sub-phase
+
+1. ⚠️ **A GUILD'S WRITE PATH DID NOT EXIST UNTIL SOMETHING NEEDED IT, AND 42C IS NEXT.** `JoinGuild`
+   and `GuildRank` are general — any guild id, any rank — precisely because the console command they
+   mirror already was. 42C's probation and 42E/42G's rank ones should call them unchanged rather than
+   re-deriving the same four flag writes a third and fourth time.
+2. ⚠️ **THIS SUB-PHASE DID NOT RENDER ITS OWN PLACEMENT, AND 42B ALREADY SAID WHAT THAT COSTS.**
+   `--validate` and the traversal probe are evidence about data and about routes respectively; neither
+   looks at a door, a lean, or a standing collider the way a camera does. Corran and Rook Sallow sit
+   on ground nothing has photographed. 42C's field partner and civilian threat should get the render
+   42B's own finding asked for, and if this placement turns out to need correcting, that correction is
+   this same trap firing a third time.
+3. ⚠️ **(Checkpoint fix) `Goto` FIRES EVEN WHEN THE EFFECT REFUSES.** `DialogueSession.Choose` applies
+   the effect then navigates unconditionally, so a refused `JoinGuild` (left member, `RejoinAllowed =
+   false`) reached "you're in". Any `JoinGuild` choice with a `Goto` now needs `Condition = 16`
+   (`GuildCanJoin`, same faction id); `--validate` enforces it.
+
+## Integration 1 checkpoint fixes
+
+- **42C:** probation after-lines were gated only on the fork flag (set before the quest starts); now
+  `QuestCompleted` outside, branch flag inside (see 42C retrospective).
+- **42E:** `Obj_debrief` (Talk on Halda) completed on the conversation that STARTS the quest. Gated on
+  `flag.ash_hunters.grimtusk_clues_read`, set by whichever clue dialogue is read second (each clue
+  has two "Note it." choices keyed on the other clue's flag). Known edge: a gate-shut objective is
+  inert, so a player who has done everything else and reads the second clue last completes without
+  the debrief — harmless, the investigation was still done.
+- **42I:** new `DialogueCondition.GuildCanJoin` (16), required by `--validate` on navigating `JoinGuild`.
+- **Lifecycle FATAL `gchandle.is_released()`:** the GC finalizer thread disposed the old session's
+  wrapper of a cached C# Resource (the progression curve — the crash log shows its `GD.Load` failing on
+  the same frame) while the next session's `Build` re-loaded it. `BeginSession` now blocks on
+  `GC.Collect/WaitForPendingFinalizers` after `DestroySession`. 1/3 -> 4/4. Content volume only moved
+  the timing; 42I's data did not cause it.
+
+Two things worth carrying: put the condition the node text presupposes outermost when nesting; and
+any per-session `GD.Load` of a C# Resource is exposed to the finalizer race if session start ever
+stops draining finalizers.
 
 ---

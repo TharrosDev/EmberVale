@@ -334,7 +334,12 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
             return;
         }
 
-        if (e.Killer == null || !ReferenceEquals(e.Killer, Entity))
+        // ⚠️ A COMPANION'S FINAL HIT CREDITS THE PLAYER, NOT THE COMPANION (42E). A companion is
+        // always a recruited party member (CompanionFactory is its only constructor), so its blow
+        // is the player's hunt as surely as the player's own — a tracked-beast quest that only
+        // advances on a player-landed hit would fail the moment the party finished it instead.
+        bool killedByCompanion = e.Killer is Companions.CompanionEntity;
+        if (e.Killer == null || !(ReferenceEquals(e.Killer, Entity) || killedByCompanion))
         {
             return;
         }

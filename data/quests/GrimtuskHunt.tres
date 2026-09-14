@@ -1,0 +1,102 @@
+[gd_resource type="Resource" script_class="QuestResource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+
+; Ash Hunters field induction (Phase 42E). "The kill is the smallest part of it" — Yrsa Kesk's own
+; line from her 42B greeting — is the whole design brief: two placed clues come before the den, and
+; what the player does at the den is a judgment the investigation earns rather than a kill counter.
+;
+; ⚠️ NOT SequentialObjectives, ON PURPOSE, AND IT WAS THE FIRST DRAFT'S BUG. A Kill objective fires
+; off a one-time EntityDiedEvent that never replays — so an obj_kill made "current" only after the
+; clues and the debrief (the tidy story order) misses the death outright the moment a player finds
+; the den before finishing either, and QuestLogComponent.Advance's IsObjectiveActive check then
+; refuses it forever: no later objective in a Sequential quest can go active while an earlier LIVE one
+; sits permanently short, which is a soft-lock with a green --validate. Every objective here is
+; therefore independently gated by RequiredFlagId/ForbiddenFlagId alone, exactly the
+; quest.hollowreach.barrels shape minus the ordering bool — a kill counts whenever it happens.
+;
+; ⚠️ obj_kill CARRIES NO RequiredFlagId. Halda's judgment sets the flag that would gate it, but a
+; player is never blocked from defending themselves or striking first at the den before ever hearing
+; the choice framed — this is a wild boar, not a puzzle lock. What obj_kill DOES carry is
+; ForbiddenFlagId on the spare mark: once you have told Halda you will let it live, going back on
+; that word no longer earns the guild's credit for it, which is the honesty the phase brief asks for.
+;
+; ⚠️ obj_report_kill GATES ON THE DEATH, NOT THE VERDICT. flag.ash_hunters.grimtusk_defeated is set by
+; LairSpawnComponent.DefeatFlagId the instant the boar dies, spare mark or no judgment at all — so a
+; player who stumbles on the den and kills it before ever meeting Halda can still walk the hide to
+; Fell Ardan. This is also what makes "killed early" a real, completable state: the offering dialogue
+; (dlg.hunter_tracker's boar_offer node) checks the same flag before it will even start this quest,
+; and pays the induction outright rather than sending the player after a corpse — the
+; quest.ancient.kin shape, one guild down.
+;
+; ⚠️ obj_debrief GATES ON flag.ash_hunters.grimtusk_clues_read (set by whichever clue is read second).
+; Ungated, it was a Talk on dialogue.hunter_tracker, so the very conversation that STARTS the quest
+; ended on Halda and satisfied "tell her what you found" before anything was found.
+;
+; ⚠️ AllowsOneShotTarget: TRUE. The den is a lair (LairSpawnComponent, not encounter.boar_territory —
+; a DIFFERENT template id, enemy.grimtusk, so the region's roaming thornback boars can never
+; substitute for this one and a dead Grimtusk can never come back to be re-hunted.
+
+[sub_resource type="Resource" id="Obj_clue_scrape"]
+script = ExtResource("2_obj")
+Type = 6
+TargetId = "interact.wilds_north.grimtusk_scrape"
+RequiredCount = 1
+Description = "quest.ash_hunters.grimtusk.obj_scrape"
+
+[sub_resource type="Resource" id="Obj_clue_wallow"]
+script = ExtResource("2_obj")
+Type = 6
+TargetId = "interact.wilds_north.grimtusk_wallow"
+RequiredCount = 1
+Description = "quest.ash_hunters.grimtusk.obj_wallow"
+
+[sub_resource type="Resource" id="Obj_debrief"]
+script = ExtResource("2_obj")
+Type = 3
+TargetId = "dialogue.hunter_tracker"
+RequiredCount = 1
+Description = "quest.ash_hunters.grimtusk.obj_debrief"
+RequiredFlagId = "flag.ash_hunters.grimtusk_clues_read"
+
+[sub_resource type="Resource" id="Obj_kill"]
+script = ExtResource("2_obj")
+Type = 0
+TargetId = "enemy.grimtusk"
+RequiredCount = 1
+Description = "quest.ash_hunters.grimtusk.obj_kill"
+LocationId = "location.wilds.grimtusk_den"
+ForbiddenFlagId = "flag.ash_hunters.grimtusk_marked_spare"
+
+[sub_resource type="Resource" id="Obj_report_kill"]
+script = ExtResource("2_obj")
+Type = 3
+TargetId = "dialogue.hunter_skinner"
+RequiredCount = 1
+Description = "quest.ash_hunters.grimtusk.obj_report_kill"
+RequiredFlagId = "flag.ash_hunters.grimtusk_defeated"
+
+[sub_resource type="Resource" id="Obj_report_spare"]
+script = ExtResource("2_obj")
+Type = 3
+TargetId = "dialogue.hunter_tracker"
+RequiredCount = 1
+Description = "quest.ash_hunters.grimtusk.obj_report_spare"
+RequiredFlagId = "flag.ash_hunters.grimtusk_marked_spare"
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.ash_hunters.grimtusk"
+Title = "quest.ash_hunters.grimtusk.title"
+Summary = "quest.ash_hunters.grimtusk.summary"
+Objectives = Array[Resource]([SubResource("Obj_clue_scrape"), SubResource("Obj_clue_wallow"), SubResource("Obj_debrief"), SubResource("Obj_kill"), SubResource("Obj_report_kill"), SubResource("Obj_report_spare")])
+XpReward = 120
+GoldReward = 50
+GoldItemId = "item.currency.gold"
+RewardItems = Array[Resource]([])
+FactionRewardId = "faction.ash_hunters"
+FactionRewardAmount = 15
+AllowsOneShotTarget = true
+PrerequisiteQuestId = ""
+IsMainQuest = false

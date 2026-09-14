@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="DialogueResource" format=3]
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+; The second placed clue (Phase 42E). See ClueGrimtuskScrape.tres for the shape.
+
+; ⚠️ TWO "Note it." CHOICES, EXACTLY ONE VISIBLE. A choice sets one flag, and quest.ash_hunters.grimtusk's
+; Obj_debrief needs to know BOTH clues were read (else the offer conversation itself satisfies it). So
+; each clue records itself while the other is unread, and the second clue read (whichever it is) sets
+; flag.ash_hunters.grimtusk_clues_read instead, which is the debrief's RequiredFlagId.
+
+[sub_resource type="Resource" id="ch_close"]
+script = ExtResource("3_choice")
+Text = "dlg.grimtusk_wallow.c_close"
+Condition = 6
+ConditionArg = "flag.ash_hunters.grimtusk_scrape_read"
+Effect = 2
+EffectArg = "flag.ash_hunters.grimtusk_wallow_read"
+
+[sub_resource type="Resource" id="ch_close_both"]
+script = ExtResource("3_choice")
+Text = "dlg.grimtusk_wallow.c_close"
+Condition = 5
+ConditionArg = "flag.ash_hunters.grimtusk_scrape_read"
+Effect = 2
+EffectArg = "flag.ash_hunters.grimtusk_clues_read"
+
+[sub_resource type="Resource" id="node_root"]
+script = ExtResource("2_node")
+Id = "root"
+Text = "dlg.grimtusk_wallow.root"
+Choices = Array[Resource]([SubResource("ch_close"), SubResource("ch_close_both")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "dialogue.grimtusk_clue_wallow"
+SpeakerName = ""
+StartNodeId = "root"
+Nodes = Array[Resource]([SubResource("node_root")])

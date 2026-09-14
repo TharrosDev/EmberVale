@@ -1255,13 +1255,13 @@ The ordering is driven by hard dependencies, not preference:
 | ----- | ---- | ------ | ------ |
 | A — Pre-production & First Playable | G0 | 22–28 | ✅ Complete (22–28 + 25.5 hardening; G0 First Playable reached) |
 | B — Vertical Slice | G1 | 29–33 | ⏳ All phases built (29–32 ✅, 33A–33E ✅); **G1 needs a maintainer play-through + one export** |
-| C — Alpha / Feature Complete | G2 | 34–45 | ⏳ In progress (**34–39.5, 41, 41.5, 42A and 42B complete; 40/40.5 struck**; next: 42C) |
+| C — Alpha / Feature Complete | G2 | 34–45 | ⏳ In progress (**34–39.5, 41, 41.5, 42A–42C, 42E, 42I complete; 40/40.5 struck**; next: 42D/42F/42G/42H/42J/42K/42L/42M) |
 | D — Beta / Content Complete | G3 | 46–55 | ⬜ Planned |
 | E — Release Candidate | G4 | 56–62 | ⬜ Planned |
 | F — Launch | G5 | 63 | ⬜ Planned |
 | G — Live / Post-launch | G6 | 64–66 | ⬜ Planned |
 
-**Where we are.** `docs/NOW.md` is authoritative: Stage C is active, **42A and 42B are closed and 42C is next**. Phases
+**Where we are.** `docs/NOW.md` is authoritative: Stage C is active, **42A–42C, 42E and 42I are closed** (integration 1 checkpoint, 2026-09-14); 42D/42F/42G/42H/42J/42K/42L/42M remain open. Phases
 40/40.5 are struck, not deferred. The out-of-band world-geography and world-quality passes are
 closed and are not Phase 44; future realm work uses their generated authoring/quality pipeline.
 

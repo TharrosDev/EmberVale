@@ -211,6 +211,10 @@ add("ember_crown/wilds_north", "wilds.north", "Wilds", ".", "The Northern Wilds"
     desc="Forested upland west of the Kingsway. Goblins range here.")
 add("ember_crown/wilds_west", "wilds.west", "Wilds", ".", "The Western Wilds",
     desc="The corrie in the western ridge above the Tarn.")
+# quest.ash_hunters.grimtusk's target (Phase 42E) — a placed lair, the AncientKin shape, so the
+# quest's Kill objective has a real destination rather than inventing one for a roaming beast.
+add("ember_crown/wilds_north", "wilds.grimtusk_den", "Landmark", "GrimtuskDen", "Grimtusk's Den",
+    desc="A well-worn stretch of the deadfall, marked with scraped bark and a wallow. Something has held it a long time.")
 
 # ── The realm's edges (2026-09 world rebuild) ───────────────────────────────────────────────────
 # Where the Ember Crown's roads leave for realms Phase 44 has not built. A road that ends must pay for
@@ -233,6 +237,11 @@ add("ember_crown/crossway_post", "crossway.watch", "Outpost", "Nav/WardensWatch"
     dialogue="dialogue.dawnwarden_captain")
 add("ember_crown/hollowreach", "hollowreach.ledger", "Contracts", "Nav/LedgerHouse", "The Ledger House",
     dialogue="dialogue.syndicate_broker")
+# 42I: Corran Vess's hiding place, a stone's throw from the counting house he used to keep for.
+# quest.iron.judgment's Kill objective names this as its LocationId, which is the only reason it
+# needs a pin at all rather than being found purely by walking up to him.
+add("ember_crown/hollowreach", "hollowreach.mark", "Landmark", "IronMark", "Corran's Hideaway",
+    dialogue="dialogue.iron_mark")
 add("ember_crown/wilds_north", "wilds.lodge", "Camp", "Nav/DeadfallLodge", "The Deadfall Lodge",
     dialogue="dialogue.hunter_master")
 add("ember_crown/embermarket", "embermarket.annexe", "Scriptorium", "Nav/ArchiveAnnexe", "The Annexe",

@@ -9,6 +9,23 @@
 
 ## Where we are
 
+- **Integration 1 checkpoint (2026-09-14), `claude/integration-1`.** Merged `w1-fixes`, 42C
+  (Dawnwardens recruitment/probation), 42E (Ash Hunters field induction) and 42I (Iron Syndicate
+  contract rank), then rebaked the world. **42C/42E/42I ✅ CLOSED** — see playbook `phase-42.md` for
+  the retrospectives; each landed its rank-one arc with zero new mechanism (dialogue conditions,
+  quest chains and existing map locations only). Three checkpoint fixes on top: 42C's probation
+  after-lines were reachable mid-quest (fixed by nesting `QuestCompleted` outside the branch flag,
+  not inside — the condition the node text presupposes goes outermost); 42I's `Goto` fired even when
+  `JoinGuild` refused a rejoin (`DialogueCondition.GuildCanJoin` (16) now required on it); and an
+  intermittent lifecycle FATAL. **Root cause:** the GC finalizer thread disposed the old session's
+  wrapper of a cached C# `Resource` (the progression curve) on the same frame the next session's
+  `Build()` re-`GD.Load`ed it — a race between `DestroySession` and `BeginSession`, not this
+  content. Fix: `BeginSession` now blocks on `GC.Collect`/`WaitForPendingFinalizers` after
+  `DestroySession`. ⚠️ **Not fully closed** — see the verification table: `--lifecycle` still failed
+  2 of 3 runs after the fix in this checkpoint's own gate pass, though a bisect in a detached
+  worktree found `main` and `w1-fixes` tip both 5/5 and `42i-iron-syndicate` tip 0/4, so the race is
+  real and content-adjacent, not yet fully eliminated.
+
 - **The 2026-09 world rebuild — implemented on `claude/world-rebuild` (2026-09-13).** A world layout
   rebuild, not a systems refactor: geography first, then settlements, routes, POIs. The Ember Crown is
   1040 x 1160 m in 52 cells (was 330 x 440 m, 16), Frostfang Reach 960 x 1020 m in 36 (was 340 x 380,
@@ -267,112 +284,41 @@
     `tools/neutralize_palette_cast.py` is the repeatable script. ⚠️ **The exposed face is NOT fixed**
     — it needs a regeneration and remains an accepted defect in the ledger.
 
-- **NEXT: 42C — Dawnwardens recruitment and probation.** The first arc to walk through a door 42B
-  built: join/refuse dialogue plus a Defend/Reach probation pair, and rank one earned.
+- **NEXT: 42D, 42F, 42G, 42H, 42J, 42K, 42L, 42M.** 42D (Dawnwardens command arc/finale) and 42F
+  (Ash Hunters dragon/corruption finale) are the two open finales for guilds whose rank-one arc just
+  closed; 42G/H (Veiled Archive), 42J (Iron Syndicate finale) and 42K/L (Emberbound) have not started;
+  42M is the five-guild integration pass that closes the whole layer. See `docs/playbook/phase-42.md`
+  for each one's goal/build/verify.
+  ⚠️ Also open, from before this checkpoint: chase the `--lifecycle` finalizer-race intermittency
+  above to a durable fix (not just the mitigation), and give the 2026-09 world rebuild's visual
+  baseline a reviewed re-baseline.
 
 Read [`docs/WORLD_AUTHORING.md`](WORLD_AUTHORING.md) before touching a cell. `data/regions/*.tres`
 is **generated** — edit `tools/region_spec_<region>.py` and run `python tools/gen_regions.py`.
 
-⚠️ **THERE ARE THREE VERIFICATION TABLES BELOW AND ONLY THE LAST ONE IS CURRENT.** Read the 2026-09-06 table; the 2026-09-05 world-production table is marked superseded and kept only as history. A green suite in one table never makes another table green, and the failures each one records belong to the work that caused them.
+⚠️ **Only the table below is current.** Earlier per-pass tables (2026-09-05 combat/animation/camera,
+2026-09-05 world-production pre-merge, 2026-09-06 asset gap-closing) are superseded history and have
+been removed from this file; a green row below never makes an older claim green again.
 
-## Last verified (2026-09-05 - the combat/animation/camera overhaul)
-
-| Check | Result |
-| --- | --- |
-| Build | `dotnet build Embervale.sln` - **0 warnings, 0 errors, `TreatWarningsAsErrors=true`** |
-| Shipping build | `dotnet build Embervale.csproj -c ExportRelease` - 0 warnings, 0 errors |
-| Shipping contents | `python tools/check_shipping_assembly.py` - PASS, 2329 KiB, no dev tooling |
-| Tests | `dotnet test tests/Embervale.Tests` - **1916 passing** (1807 before this pass + 109) |
-| `--validate` | exit 0 - new arms over attack windows (weapons AND boss phases) and both animation libraries, each negative-tested |
-| `--lifecycle` | exit 0 - 0 surviving services, 0 subscriptions, 0 orphans, 0 invariant violations |
-| `debug_pass_regressions.gd` | **44/44** |
-| `python tools/assets.py validate` | all gates, 218 models |
-| `--state` | 2 regions, 26 cells, 75 map locations - unchanged |
-| `--play` | boots to Playing, **0 errors**, 0 invariant violations |
-
-**Nine new engine gates**, all registered in `tools/world_quality_check.py`:
-## Superseded (2026-09-05 — the world-production branch's pre-merge red gates)
-
-⚠️ **THIS TABLE IS HISTORY. THE BRANCH MERGED AND TWO OF ITS FOUR RED GATES ARE NOW GREEN.**
-Re-run on 2026-09-06: **`--lifecycle` PASSES** (0 orphans, 0 invariant violations) and
-`debug_pass_regressions.gd` is **42/44** rather than wholesale failing — the two survivors are the
-failed-cell/settlement pair, and they reproduce on a clean `main`, so they belong to this overhaul
-and not to whatever you are working on. ⚠️ **`stepup_probe.gd` and `world_traversal_probe.gd` were
-NOT re-run**, so treat their rows below as unknown rather than as either colour.
-
+## Last verified (2026-09-14 - integration 1 checkpoint)
 
 | Check | Result |
 | --- | --- |
-| Build | `dotnet build Embervale.sln` — **0 warnings, 0 errors, `TreatWarningsAsErrors=true`** |
-| Shipping build | `dotnet build Embervale.csproj --no-restore -p:EmbervaleTooling=false` — 0 warnings, 0 errors |
-| Shipping contents | `python tools/check_shipping_assembly.py` — PASS; no MCP addon, no `*Shots`, no `ReproHarness` |
-| Tests | `dotnet test tests/Embervale.Tests -p:EmbervaleTooling=false` — **1818 passing** |
-| World bake | **PASS** — 28 artifacts; `tools/world_bake.py --check` reports source `403b67636e53` current |
-| Fast quality | **PASS** — `artifacts/quality/20260905T004533Z/summary.json` |
-| `--validate` | exit 0 |
-| Engine quality | **FAIL** — lifecycle, step-up, regression and traversal; `artifacts/quality/20260905T004618Z/summary.json` |
-| Streaming stress | **PASS** — rapid traversal, boundary oscillation, readiness and unload soak |
-| `--lifecycle` | **FAIL** — Playing reached with an unsettled streamer in all three New Game cycles |
-| `gen_regions.py --check` | clean |
-| `debug_pass_regressions.gd` | **FAIL** — failed-cell reporting/settlement semantics regressed |
-| `stepup_probe.gd` | **FAIL** — Salt Steps falls below terrain |
-| `world_traversal_probe.gd` | **FAIL** — one collision snag and two missing NPC paths |
+| `dotnet build Embervale.sln` | **PASS** — 0 Warning(s), 0 Error(s) |
+| `dotnet test tests/Embervale.Tests` | **PASS** — Passed 1990, Failed 0 |
+| `python tools/gen_regions.py --check` | **PASS** — exit 0 |
+| `python tools/world_bake.py --check` | **PASS** — world bake current: 90 artifacts, source `0ffcdf8d7d9d` |
+| `python tools/world_atlas.py --check` | **PASS** — atlas: PASS |
+| `python tools/assets.py validate` | **PASS** — PASS assets (9.5s), exit 0 |
+| `godot --headless -- --validate` | **PASS** — ContentValidator: OK; validate: PASS; exit 0 |
+| `godot --headless -- --lifecycle` | **FAIL (intermittent)** — 1 pass in 3 runs on `integration-1`; the passing run printed `lifecycle: PASS, orphan nodes 0, invariant violations 0`, the 2 failures exited 132 on `ERROR: FATAL: Condition "gchandle.is_released()" is true` at `mono_object_disposed_baseref` (`csharp_script.cpp:1788`), thrown from `GodotObject.Finalize()` on the GC finalizer thread during a new-game/load cycle. Root cause and mitigation above. Bisect in a temporary detached worktree (since removed): `main` 5/5 pass, `w1-fixes` tip 5/5 pass, `42i-iron-syndicate` tip 0/4 pass |
+| `debug_pass_regressions.gd` | **PASS** — 45/45 regression checks; exit 0 |
+| `world_traversal_probe.gd` | **PASS** — 336 authored route segments; exit 0 |
+| `stepup_probe.gd` | **PASS** — climbs the 0.45 m terrace, does not climb an 11 m tower; exit 0 |
 
-⚠️ **GODOTMCP was not available for this pass** — the editor/relay probe could not establish a live
-connection, so no `mcp__ai-game-developer__*` tools registered. Verification used the shell spine.
-**No live-editor or human visual sign-off was made.** Prepared `.scn` world artifacts did change, so
-that sign-off remains required before this branch can close.
-
-| Probe | Proves |
-| --- | --- |
-| `melee_probe.gd` | the hit opens inside its own active window, once per swing, and the authored chain advances by id |
-| `action_clip_probe.gd` | on a real rigged body the CLIP is the clock, warped or natural |
-| `equipment_socket_probe.gd` | all six humanoid sockets resolve on all 31 rigs, and a hung weapon lands on the hand bone |
-| `anim_library_probe.gd` | the library is whole, keeps its legs, moves a real body - and no rig crosses its arms |
-| `locomotion_tree_probe.gd` | the blend space interpolates, the upper-body mask holds, the action clock survives the tree |
-| `view_switch_probe.gd` | a first/third swap preserves the action, combo and equipment |
-| `grounding_probe.gd` | feet meet a 12 degree slope; a warp closes 1.585 m of its 1.6 m budget and stops at a wall |
-| `ranged_probe.gd` | arrows leave on the release frame, hit once, spare allies, and do not tunnel |
-| `camera_probe.gd` | a wall retracts the camera and restores it; a companion does not |
-
-WARNING: **GODOTMCP was available at the start of this pass and not at the end** - the editor was
-closed partway through. The visual checks that mattered were made with the repo's own
-`--enemy-shots` harness (230 frames), which needs no MCP. The arms-crossed fix was confirmed both
-numerically and in a render.
-
-WARNING: **There is still no `export_presets.cfg`.** "The shipping build" is proved by
-`ExportRelease` compiling clean plus the assembly scan, not by a real export artifact.
-
-## Last verified (2026-09-06 - the 3D asset gap-closing pass)
-
-| Check | Result |
-| --- | --- |
-| Build | `dotnet build Embervale.sln` - **0 warnings, 0 errors** |
-| Tests | `dotnet test tests/Embervale.Tests` - **1927 passing** (1916 + 11) |
-| `python tools/assets.py status` | **221 models, ZERO unreferenced**, manifest matches disk |
-| `python tools/assets.py validate` | **PASS** all 6 gates, exit 0 |
-| `--validate` | exit 0, incl. the new `WorldModelPath` arm, negative-tested in both directions |
-| `--lifecycle` | exit 0 - 0 orphans, 0 invariant violations, 3 round trips |
-| `equipment_socket_probe.gd` | PASS - every humanoid rig carries the socket contract |
-| `gen_regions.py --check` | clean |
-| `world_bake.py --check` | current, 28 artifacts, source `743883e66531` |
-| `world_perf_probe.gd` | mean **8.28 ms/frame**, worst `wilds_north` 10.64 ms, 525 MB video memory |
-| `debug_pass_regressions.gd` | **42/44** - the 2 failures reproduce on clean `main` (see above) |
-| `world_shots.gd` | 134/260 frames drift; **advisory and nondeterministic**, both regions, and it fails on `main` too |
-
-⚠️ **GODOTMCP WAS DOWN FOR THIS WHOLE PASS** - `tools/godot_mcp_check.py --probe` reported the
-editor not running and the relay timed out, and CLAUDE.md 2 forbids starting either half from a
-session. **No live-editor or human visual sign-off was made.** Visual checks used the repo's own
-harnesses, which need no MCP: `assets.py audit --render selected` for every model touched (judged
-front and back at eye level against the 1.8 m reference) and `world_perf_probe.gd` for the scatter.
-
-⚠️ **`world_shots.gd` FRAMES LOOK LIKE THE VEGETATION IS MISSING AND IT IS NOT.** Several Ember
-Crown captures show bare terrain. `world_perf_probe.gd` measures `west_downs` at **576 draws and
-421,083 primitives** in the same build, which is scatter, so the emptiness is a framing artefact of
-that harness rather than a world defect. Do not "fix" the scatter on the strength of those frames.
-
-⚠️ **The `meshy` MCP server failed to connect** (`CONNECT_TIMEOUT`). The REST API with the
-`MESHY_API_KEY` already in the environment worked throughout and is the documented fallback.
+⚠️ **`--lifecycle` is the one open gate.** Everything else in this checkpoint is clean. Treat any
+new-game/load-heavy work on this branch as exercising a real, if intermittent, finalizer race until
+it is fully closed — see the "Where we are" entry above and NEXT.
 
 ## Live invariants
 

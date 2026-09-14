@@ -1,0 +1,72 @@
+[gd_resource type="Resource" script_class="DialogueResource" format=3]
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+; Corran Vess (Phase 42I), the target of quest.iron.judgment. faction.villagers + ai.mark_guard mean
+; he does not attack on sight (docs/RECIPES.md "a creature that talks") — he can be reached, spoken to
+; and walked away from, or killed outright with no conversation at all.
+;
+; ⚠️ THE CONFRONTATION LINE IS GATED ON THE QUEST BEING ACTIVE, ON PURPOSE. Without Condition = 2
+; (QuestActive) a player could spare him before ever hearing of the contract from Dallow Grieve,
+; setting flag.iron.judgment_judgment_spared with no quest to read it and no reason for him to have
+; fled - and Obj_spare (RequiredFlagId) would then need a SECOND, later conversation to actually
+; complete, which he would no longer be standing there to give. Gating the confrontation keeps
+; "walk up and talk" and "walk up and swing" the only two things a stranger can do to him.
+;
+; ⚠️ FIGHT CARRIES NO EFFECT AND NO GOTO. It only closes the conversation - the kill itself is
+; ordinary combat, exactly as "target dead early" (quest.iron.judgment's Verify case) has to be:
+; a player who never opens this dialogue at all can still end him, and the Kill objective does not
+; care which one happened.
+
+[sub_resource type="Resource" id="ch_confront"]
+script = ExtResource("3_choice")
+Text = "dlg.iron_mark.c_confront"
+Condition = 2
+ConditionArg = "quest.iron.judgment"
+Goto = "judgment"
+
+[sub_resource type="Resource" id="ch_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.iron_mark.c_bye"
+
+[sub_resource type="Resource" id="ch_fight"]
+script = ExtResource("3_choice")
+Text = "dlg.iron_mark.c_fight"
+
+[sub_resource type="Resource" id="ch_spare"]
+script = ExtResource("3_choice")
+Text = "dlg.iron_mark.c_spare"
+Effect = 2
+EffectArg = "flag.iron.judgment_spared"
+Goto = "spared"
+
+[sub_resource type="Resource" id="ch_spared_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.iron_mark.c_spared_bye"
+
+[sub_resource type="Resource" id="node_root"]
+script = ExtResource("2_node")
+Id = "root"
+Text = "dlg.iron_mark.root"
+Choices = Array[Resource]([SubResource("ch_confront"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_judgment"]
+script = ExtResource("2_node")
+Id = "judgment"
+Text = "dlg.iron_mark.judgment"
+Choices = Array[Resource]([SubResource("ch_fight"), SubResource("ch_spare")])
+
+[sub_resource type="Resource" id="node_spared"]
+script = ExtResource("2_node")
+Id = "spared"
+Text = "dlg.iron_mark.spared"
+Choices = Array[Resource]([SubResource("ch_spared_bye")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "dialogue.iron_mark"
+SpeakerName = "dlg.iron_mark.speaker"
+StartNodeId = "root"
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_judgment"), SubResource("node_spared")])
