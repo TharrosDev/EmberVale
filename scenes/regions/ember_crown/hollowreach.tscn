@@ -40,6 +40,7 @@
 [ext_resource type="PackedScene" path="res://scenes/props/bld_ledger_house.tscn" id="42b_bld_ledger_house"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_townsman.glb" id="42b_npc_townsman"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_ruin_tower.tscn" id="dx_ruin_tower"]
+[ext_resource type="Script" path="res://src/Enemies/LairSpawnComponent.cs" id="49_lairspawn"]
 
 ; HOLLOWREACH (Phase 38O) — the wharf down the water from Tarn's Landing, and the realm's FOURTH
 ; market. It is the only place in Embervale that will buy contraband, and that is the whole of its
@@ -1284,5 +1285,63 @@ DialogueId = "dialogue.syndicate_fixer"
 script = ExtResource("maploc_39_5a")
 LocationId = "location.hollowreach.ledger"
 
+; ── THE RANK PEER (Phase 42I) ─────────────────────────────────────────────────────────────────────
+; Rook Sallow, declared on FactionResource in 42B and placed now that quest.iron.judgment gives rank
+; one something to be a peer of (42B's retrospective, carried forward twice). On the same Yard as
+; the Broker and Fixer, a couple of metres off each, so nothing about this placement is new ground.
+[node name="SyndicatePeer" type="Node3D" parent="."]
+transform = Transform3D(0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, 0.342, -13.5, 0, 14)
+script = ExtResource("2_entity")
+DisplayName = "Rook Sallow"
+TemplateId = "npc.syndicate_peer"
+
+[node name="Animation" type="Node" parent="SyndicatePeer"]
+script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="SyndicatePeer"]
+script = ExtResource("90_equipment")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="SyndicatePeer"]
+
+[node name="Shape" type="CollisionShape3D" parent="SyndicatePeer/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="SyndicatePeer"]
+script = ExtResource("6_faction")
+FactionId = "faction.iron_syndicate"
+
+[node name="Dialogue" type="Node" parent="SyndicatePeer"]
+script = ExtResource("4_dialogue")
+DialogueId = "dialogue.syndicate_peer"
+
+[node name="Schedule" type="Node" parent="SyndicatePeer"]
+script = ExtResource("7_schedule")
+ScheduleId = "schedule.syndicate_peer"
+
+[node name="Model" parent="SyndicatePeer" instance=ExtResource("30_sedge")]
+
+; ── THE MARK (Phase 42I) ──────────────────────────────────────────────────────────────────────────
+; Corran Vess, quest.iron.judgment's target. LairSpawnComponent (docs/RECIPES.md "placing a world
+; boss in a lair") reused at one-actor scale rather than dragon scale — no custom landform, because
+; the ground here is already the Ledger House's own proven Yard, a few metres round the back of it,
+; and DefeatFlagId is what lets a kill become the fact dialogue.syndicate_fixer's offer gate reads.
+[node name="IronMark" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -19, 0, 18)
+script = ExtResource("2_entity")
+DisplayName = "Corran's Hideaway"
+PersistentId = "lair.hollowreach_iron_mark"
+
+[node name="Lair" type="Node" parent="IronMark"]
+script = ExtResource("49_lairspawn")
+TemplateId = "enemy.iron_mark"
+DefeatFlagId = "flag.iron.judgment_target_dead"
+
 [node name="Dx_DrownedTowerB" parent="Nav" instance=ExtResource("dx_ruin_tower")]
 transform = Transform3D(0.7, 0, -1.2124, 0, 1.4, 0, 1.2124, 0, 0.7, -86, 0, 4)
+
+[node name="MapPin" type="Node3D" parent="IronMark"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.hollowreach.mark"

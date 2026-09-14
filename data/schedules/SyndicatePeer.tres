@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="ScheduleResource" format=3]
+
+[ext_resource type="Script" path="res://src/Npc/ScheduleResource.cs" id="1_sched"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleEntry.cs" id="2_entry"]
+
+; Rook Sallow (Phase 42I), the Iron Syndicate's rank peer — declared on FactionResource in 42B and
+; placed here now that there is a rank to be a peer of (42B's retrospective). Cell-local, like the
+; Broker's routine beside him: ScheduleComponent resolves against the NPC's own streamed cell, so a
+; raw world destination would land a cell's width from where it was authored.
+
+[sub_resource type="Resource" id="e_yard"]
+script = ExtResource("2_entry")
+StartHour = 7
+Activity = "Leaning by the ledger house"
+Destination = Vector3(-13.5, 0, 14)
+
+[sub_resource type="Resource" id="e_sleep"]
+script = ExtResource("2_entry")
+StartHour = 22
+Activity = "Asleep"
+Destination = Vector3(-14.5, 0, 16)
+
+[resource]
+script = ExtResource("1_sched")
+Id = "schedule.syndicate_peer"
+Entries = Array[Resource]([SubResource("e_yard"), SubResource("e_sleep")])

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="AIProfileResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/Enemies/AIProfileResource.cs" id="1_profile"]
+
+; Phase 42I — PackFlanker's numbers, plus a leash. Every other profile authors TerritoryRadius = 0
+; ("no leash", the recipe's default) because a roaming encounter has nowhere it is tethered TO. A
+; contract mark stands in one named place and is meant to be findable there again if the player
+; walks away mid-negotiation; without a radius here the fight, once started, would chase into the
+; next cell exactly as an untethered dragon would (docs/RECIPES.md "Placing a world boss in a lair").
+
+[resource]
+script = ExtResource("1_profile")
+Id = "ai.mark_guard"
+VisionRange = 20.0
+AlertRadius = 18.0
+FlankSpreadDegrees = 40.0
+RetreatHealthFraction = 0.2
+TerritoryRadius = 15.0

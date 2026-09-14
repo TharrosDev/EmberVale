@@ -233,6 +233,11 @@ add("ember_crown/crossway_post", "crossway.watch", "Outpost", "Nav/WardensWatch"
     dialogue="dialogue.dawnwarden_captain")
 add("ember_crown/hollowreach", "hollowreach.ledger", "Contracts", "Nav/LedgerHouse", "The Ledger House",
     dialogue="dialogue.syndicate_broker")
+# 42I: Corran Vess's hiding place, a stone's throw from the counting house he used to keep for.
+# quest.iron.judgment's Kill objective names this as its LocationId, which is the only reason it
+# needs a pin at all rather than being found purely by walking up to him.
+add("ember_crown/hollowreach", "hollowreach.mark", "Landmark", "IronMark", "Corran's Hideaway",
+    dialogue="dialogue.iron_mark")
 add("ember_crown/wilds_north", "wilds.lodge", "Camp", "Nav/DeadfallLodge", "The Deadfall Lodge",
     dialogue="dialogue.hunter_master")
 add("ember_crown/embermarket", "embermarket.annexe", "Scriptorium", "Nav/ArchiveAnnexe", "The Annexe",

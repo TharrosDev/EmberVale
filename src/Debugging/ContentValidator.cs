@@ -3988,6 +3988,35 @@ public static class ContentValidator
                     {
                         issues.Add($"dialogue '{dialogue.Id}' AddCorruption effect has non-numeric amount '{choice.EffectArg}'");
                     }
+
+                    // 42I: JoinGuild/GuildRank route through GuildRules' own flag-name builders at
+                    // runtime, but the faction id (and, for GuildRank, the rank) is still authored
+                    // text here — the same typo class StartQuest/OpenShop/OpenService already guard.
+                    if (choice.Effect == DialogueEffect.JoinGuild &&
+                        FactionDatabase.Get(choice.EffectArg) is not { IsGuild: true })
+                    {
+                        issues.Add($"dialogue '{dialogue.Id}' JoinGuild effect references unknown or non-guild faction '{choice.EffectArg}'");
+                    }
+
+                    if (choice.Effect == DialogueEffect.GuildRank)
+                    {
+                        if (!GuildRules.TryParseRankArg(choice.EffectArg, out string rankFactionId, out int rank))
+                        {
+                            issues.Add(
+                                $"dialogue '{dialogue.Id}' GuildRank argument '{choice.EffectArg}' is not a " +
+                                $"faction id followed by ':<rank 1..{GuildRules.MaxRanks}>'");
+                        }
+                        else if (FactionDatabase.Get(rankFactionId) is not { IsGuild: true } rankGuild)
+                        {
+                            issues.Add($"dialogue '{dialogue.Id}' GuildRank effect references unknown or non-guild faction '{rankFactionId}'");
+                        }
+                        else if (rank < 1 || rank > rankGuild.RankNameKeys.Count)
+                        {
+                            issues.Add(
+                                $"dialogue '{dialogue.Id}' GuildRank effect names rank {rank} for '{rankFactionId}', " +
+                                $"which declares only {rankGuild.RankNameKeys.Count}");
+                        }
+                    }
                 }
             }
         }

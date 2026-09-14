@@ -367,6 +367,11 @@ public class EnumStabilityTests
         // conversation it emits — the generator hard-codes the integer, so this is what keeps the
         // generator honest as much as the data.
         Assert.Equal(10, (int)DialogueEffect.OpenService);
+
+        // 42I: the guild-join and guild-rank choke points, routed through GuildRules the same way
+        // the `guild join`/`guild rank` console commands are.
+        Assert.Equal(11, (int)DialogueEffect.JoinGuild);
+        Assert.Equal(12, (int)DialogueEffect.GuildRank);
     }
 
     [Fact]
