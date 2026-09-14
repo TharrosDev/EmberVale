@@ -676,19 +676,19 @@ transform = Transform3D(1.3, 0, -0.5, 0, 1.4, 0, 0.5, 0, 1.3, 22, 0, -14)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.705, 0)
 shape = SubResource("Shape_rock_cluster")
 
-[node name="ClueWallow" type="Node3D" parent="."]
+[node name="ClueMire" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21.5, 0, -13.2)
 script = ExtResource("2_entity")
 DisplayName = "A Churned Wallow"
 PersistentId = "ember_crown.wilds_north.deadfall.clue_wallow"
 
-[node name="Collider" type="StaticBody3D" parent="ClueWallow"]
+[node name="Collider" type="StaticBody3D" parent="ClueMire"]
 
-[node name="Shape" type="CollisionShape3D" parent="ClueWallow/Collider"]
+[node name="Shape" type="CollisionShape3D" parent="ClueMire/Collider"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
 shape = SubResource("Shape_pickup")
 
-[node name="Dialogue" type="Node" parent="ClueWallow"]
+[node name="Dialogue" type="Node" parent="ClueMire"]
 script = ExtResource("42b_dialoguecomponent")
 DialogueId = "dialogue.grimtusk_clue_wallow"
 InteractId = "interact.wilds_north.grimtusk_wallow"

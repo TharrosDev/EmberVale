@@ -39,8 +39,8 @@
 [ext_resource type="Script" path="res://src/World/FlagVisibilityComponent.cs" id="48_flag_visibility"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_ledger_house.tscn" id="42b_bld_ledger_house"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_townsman.glb" id="42b_npc_townsman"]
-[ext_resource type="PackedScene" path="res://scenes/props/bld_ruin_tower.tscn" id="dx_ruin_tower"]
 [ext_resource type="Script" path="res://src/Enemies/LairSpawnComponent.cs" id="49_lairspawn"]
+[ext_resource type="PackedScene" path="res://scenes/props/bld_ruin_tower.tscn" id="dx_ruin_tower"]
 
 ; HOLLOWREACH (Phase 38O) — the wharf down the water from Tarn's Landing, and the realm's FOURTH
 ; market. It is the only place in Embervale that will buy contraband, and that is the whole of its
@@ -1339,9 +1339,9 @@ script = ExtResource("49_lairspawn")
 TemplateId = "enemy.iron_mark"
 DefeatFlagId = "flag.iron.judgment_target_dead"
 
-[node name="Dx_DrownedTowerB" parent="Nav" instance=ExtResource("dx_ruin_tower")]
-transform = Transform3D(0.7, 0, -1.2124, 0, 1.4, 0, 1.2124, 0, 0.7, -86, 0, 4)
-
 [node name="MapPin" type="Node3D" parent="IronMark"]
 script = ExtResource("maploc_39_5a")
 LocationId = "location.hollowreach.mark"
+
+[node name="Dx_DrownedTowerB" parent="Nav" instance=ExtResource("dx_ruin_tower")]
+transform = Transform3D(0.7, 0, -1.2124, 0, 1.4, 0, 1.2124, 0, 0.7, -86, 0, 4)
