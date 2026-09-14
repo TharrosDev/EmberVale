@@ -361,10 +361,12 @@ Deciding early and letting the mechanism enforce order costs nothing new; invent
 **Rank one needed an AND with no compound condition, and the fix was structural, not a new
 enum member.** `guild.dawnwardens.rank1` must be granted only once the Reach objective is actually
 walked — `QuestCompleted`, not merely the branch flag `HasFlag` already carries from the fork — but a
-`DialogueChoice` has one `Condition`. Nesting solved it for free: the branch flag decides which
-NODE the root routes to (`after_rescue`/`after_expedient`), and only INSIDE that node does a further
-`QuestCompleted`-gated choice grant the rank. By the time that choice is reachable, both are already
-true by construction, without a compound-condition field ever existing. This is the same trick
+`DialogueChoice` has one `Condition`. Nesting solved it for free — but the nesting order matters.
+As first shipped the branch flag was OUTSIDE (routing into `after_rescue`/`after_expedient`) and
+`QuestCompleted` inside; the flag is set at the fork, before the quest starts, so the past-tense node
+text was reachable mid-quest (checkpoint fix). Now `QuestCompleted` is outside (`ch_after` into
+`after`) and the branch-flag claim choices are inside, landing on the past-tense lines. Rule: the
+condition the node TEXT presupposes goes outermost. This is the same trick
 `ch_ledger`/`ch_ledger_resume` used in 41B for "available" vs "active" — sequencing through nodes
 rather than through conditions.
 
@@ -568,5 +570,29 @@ sub-phase's own gap to hand forward.
    on ground nothing has photographed. 42C's field partner and civilian threat should get the render
    42B's own finding asked for, and if this placement turns out to need correcting, that correction is
    this same trap firing a third time.
+3. ⚠️ **(Checkpoint fix) `Goto` FIRES EVEN WHEN THE EFFECT REFUSES.** `DialogueSession.Choose` applies
+   the effect then navigates unconditionally, so a refused `JoinGuild` (left member, `RejoinAllowed =
+   false`) reached "you're in". Any `JoinGuild` choice with a `Goto` now needs `Condition = 16`
+   (`GuildCanJoin`, same faction id); `--validate` enforces it.
+
+## Integration 1 checkpoint fixes
+
+- **42C:** probation after-lines were gated only on the fork flag (set before the quest starts); now
+  `QuestCompleted` outside, branch flag inside (see 42C retrospective).
+- **42E:** `Obj_debrief` (Talk on Halda) completed on the conversation that STARTS the quest. Gated on
+  `flag.ash_hunters.grimtusk_clues_read`, set by whichever clue dialogue is read second (each clue
+  has two "Note it." choices keyed on the other clue's flag). Known edge: a gate-shut objective is
+  inert, so a player who has done everything else and reads the second clue last completes without
+  the debrief — harmless, the investigation was still done.
+- **42I:** new `DialogueCondition.GuildCanJoin` (16), required by `--validate` on navigating `JoinGuild`.
+- **Lifecycle FATAL `gchandle.is_released()`:** the GC finalizer thread disposed the old session's
+  wrapper of a cached C# Resource (the progression curve — the crash log shows its `GD.Load` failing on
+  the same frame) while the next session's `Build` re-loaded it. `BeginSession` now blocks on
+  `GC.Collect/WaitForPendingFinalizers` after `DestroySession`. 1/3 -> 4/4. Content volume only moved
+  the timing; 42I's data did not cause it.
+
+Two things worth carrying: put the condition the node text presupposes outermost when nesting; and
+any per-session `GD.Load` of a C# Resource is exposed to the finalizer race if session start ever
+stops draining finalizers.
 
 ---
