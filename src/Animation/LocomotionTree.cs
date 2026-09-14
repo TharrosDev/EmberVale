@@ -110,7 +110,8 @@ public static class LocomotionTree
             // freezing — which is the correct degradation and needs no branch anywhere else.
             if (clips.TryGetValue(slot, out string? clip) && clip.Length > 0)
             {
-                locomotion.AddBlendPoint(new AnimationNodeAnimation { Animation = clip }, speed);
+                locomotion.AddBlendPoint(new AnimationNodeAnimation { Animation = clip }, speed,
+                    name: slot);
                 points++;
             }
         }
