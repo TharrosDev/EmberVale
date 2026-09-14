@@ -8,15 +8,32 @@
 ; wilds_north.tscn ("interact.wilds_north.grimtusk_scrape") — the same seam TheSealedTally's
 ; waystone uses, reused here for something read rather than touched. One node, one line out.
 
+; ⚠️ TWO "Note it." CHOICES, EXACTLY ONE VISIBLE. A choice sets one flag, and quest.ash_hunters.grimtusk's
+; Obj_debrief needs to know BOTH clues were read (else the offer conversation itself satisfies it). So
+; each clue records itself while the other is unread, and the second clue read (whichever it is) sets
+; flag.ash_hunters.grimtusk_clues_read instead, which is the debrief's RequiredFlagId.
+
 [sub_resource type="Resource" id="ch_close"]
 script = ExtResource("3_choice")
 Text = "dlg.grimtusk_scrape.c_close"
+Condition = 6
+ConditionArg = "flag.ash_hunters.grimtusk_wallow_read"
+Effect = 2
+EffectArg = "flag.ash_hunters.grimtusk_scrape_read"
+
+[sub_resource type="Resource" id="ch_close_both"]
+script = ExtResource("3_choice")
+Text = "dlg.grimtusk_scrape.c_close"
+Condition = 5
+ConditionArg = "flag.ash_hunters.grimtusk_wallow_read"
+Effect = 2
+EffectArg = "flag.ash_hunters.grimtusk_clues_read"
 
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
 Text = "dlg.grimtusk_scrape.root"
-Choices = Array[Resource]([SubResource("ch_close")])
+Choices = Array[Resource]([SubResource("ch_close"), SubResource("ch_close_both")])
 
 [resource]
 script = ExtResource("1_dlg")

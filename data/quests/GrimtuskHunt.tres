@@ -30,6 +30,10 @@
 ; and pays the induction outright rather than sending the player after a corpse — the
 ; quest.ancient.kin shape, one guild down.
 ;
+; ⚠️ obj_debrief GATES ON flag.ash_hunters.grimtusk_clues_read (set by whichever clue is read second).
+; Ungated, it was a Talk on dialogue.hunter_tracker, so the very conversation that STARTS the quest
+; ended on Halda and satisfied "tell her what you found" before anything was found.
+;
 ; ⚠️ AllowsOneShotTarget: TRUE. The den is a lair (LairSpawnComponent, not encounter.boar_territory —
 ; a DIFFERENT template id, enemy.grimtusk, so the region's roaming thornback boars can never
 ; substitute for this one and a dead Grimtusk can never come back to be re-hunted.
@@ -54,6 +58,7 @@ Type = 3
 TargetId = "dialogue.hunter_tracker"
 RequiredCount = 1
 Description = "quest.ash_hunters.grimtusk.obj_debrief"
+RequiredFlagId = "flag.ash_hunters.grimtusk_clues_read"
 
 [sub_resource type="Resource" id="Obj_kill"]
 script = ExtResource("2_obj")
