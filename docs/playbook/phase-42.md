@@ -38,7 +38,7 @@
     Crown, all mapped, all walkable. `FactionResource` gained a hub id and a four-role
     roster; nothing else was invented. See the retrospective below.
 
-- [ ] **42C — Dawnwardens recruitment and probation** `[C]`
+- [x] **42C — Dawnwardens recruitment and probation** `[C]` ✅
   - **Goal:** establish protection of civilians and the tension between duty and coercive order.
   - **Build / Author:** join/refuse dialogue plus a Defend/Reach probation pair: answer a civilian
     threat, then choose rescue versus punitive expediency. Use villagers/Dawnwardens standing and
@@ -46,6 +46,18 @@
   - **Verify:** join/refuse/leave, failed-defense retry, pre-resolved threat, branch save/load and NPC
     reactions without consuming Iron King story flags.
   - **Done when:** both decisions have honest terminal/continuation states and rank one is earned.
+  - **Done:** Serjeant Danhal's `stranger` exchange grew the join/refuse door
+    (`SetFlag guild.dawnwardens.{joined,refused}` — the WRITE side of invariant 18, matching what
+    `GuildRules` already derives). `FactionResource.RankPeerNpcId` — declared and left empty in 42B
+    for exactly this — now names Bram Corrow, placed beside the Watch's existing officers in the same
+    already-validated yard. His one dialogue graph owns the whole probation arc: the fork
+    (`quest.hollowreach.barrels`'s two-choices-deep, gate-on-each-other shape) picks rescue or
+    punitive expediency *before* `quest.dawnwardens.probation` starts, `SequentialObjectives` keeps
+    the Defend objective (`location.wilds.west`, 60s, `HoldTheNorthRoad`'s shape) first regardless of
+    how early the flag lands, and rank one is `SetFlag guild.dawnwardens.rank1` gated on
+    `QuestCompleted` *inside* the node the branch flag already picked — an AND with no compound
+    condition. Both Reach targets (`location.tarn.landing`, `location.crossway.watch`) were already
+    mapped; zero new map locations, zero new terrain, zero new mechanism. See the retrospective below.
 
 - [ ] **42D — Dawnwardens command arc and payoff** `[C]`
   - **Goal:** resolve service versus authoritarian survival and make final rank world-visible.
@@ -318,5 +330,74 @@ Neither is a move: the Annexe and the Deadfall stay where they are and stay owne
    join, a refusal and a probation state: **the moment any surface stores what `GuildRules` can
    derive, the wholesale-load path stops being free and starts being a bug**, and a load replays no
    events to correct it.
+
+---
+
+## 42C — the fork happens before the fight, not after it
+
+The obvious shape for "defend civilians, then choose their fate" puts the choice AFTER the Defend
+objective — narratively that is when it is actually decided. It was rejected for the same reason
+41D's own header gives: `DialogueCondition` cannot express "objective 0 of this quest is complete",
+only whole-quest `QuestActive`/`QuestCompleted`, so a fork gated on mid-quest progress would need a
+new condition kind for one piece of content. `quest.hollowreach.barrels`'s answer — decide before the
+errand exists — already composes with `SequentialObjectives`: the two Reach objectives that pay off
+each branch are gated behind `location.wilds.west`'s Defend regardless of how early Bram Corrow's
+fork sets the flag, because sequential order still requires it complete first to become live at all.
+Deciding early and letting the mechanism enforce order costs nothing new; inventing a way to ask
+"is objective 0 done yet" would have been a new primitive for exactly one piece of content.
+
+**Rank one needed an AND with no compound condition, and the fix was structural, not a new
+enum member.** `guild.dawnwardens.rank1` must be granted only once the Reach objective is actually
+walked — `QuestCompleted`, not merely the branch flag `HasFlag` already carries from the fork — but a
+`DialogueChoice` has one `Condition`. Nesting solved it for free: the branch flag decides which
+NODE the root routes to (`after_rescue`/`after_expedient`), and only INSIDE that node does a further
+`QuestCompleted`-gated choice grant the rank. By the time that choice is reachable, both are already
+true by construction, without a compound-condition field ever existing. This is the same trick
+`ch_ledger`/`ch_ledger_resume` used in 41B for "available" vs "active" — sequencing through nodes
+rather than through conditions.
+
+**Both Reach destinations were already on the map, and that was a design constraint honoured rather
+than a shortcut taken.** `location.tarn.landing` (rescue) and `location.crossway.watch` (punitive)
+were picked specifically because escorting survivors home to an existing village and marching them
+back to the guild's own hub are both places the player already knows how to reach — reusing them is
+what makes the consequence legible instead of sending the player to a new pin that means nothing yet.
+Zero new `MapLocationResource`s, zero region edits, zero world bake — the whole sub-phase is dialogue,
+one quest and one placed actor.
+
+### Retrospective + traps
+
+⚠️ **A GUILD'S WRITE PATH IS THE SAME STRING ITS READ PATH DERIVES, AND THAT IS EASY TO GET
+BACKWARDS.** Invariant 18 forbids reading a `guild.*` flag by hand (`HasFlag`/`MissingFlag` with a
+`guild.*` argument skips `GuildRules`' cumulative-rank and left-still-a-member rules) — it does not
+forbid WRITING one, because there is no other way to write it: `StoryFlagsComponent` is the only
+writer and a `DialogueEffect.SetFlag` choice is the only authored path to it. 42C is the first content
+to actually exercise that write side (42A/B built only the resolver and the console mutator). The
+rule that matters going forward: every `guild.<slug>.<suffix>` string written by hand must match
+`GuildRules`' own derivation EXACTLY (`GuildRulesTests` pins the five strings per guild) — a typo
+here is silent forever, the same failure mode `ValidateStoryFlags` already catches for `flag.*` but
+cannot catch for the `guild.*` family, since nothing enumerates what `GuildRules` would have produced.
+⚠️ **THE RANK-GATED THIRD BRANCH GOES INSIDE AN EXISTING NODE, NOT ON ROOT.** 42B's header warned
+the next rank-granting arc to add rank-aware content "as a THIRD branch rather than by narrowing"
+the member/stranger pair — read literally as a third ROOT choice, `GuildRankAtLeast:1` and
+`GuildRankAtLeast:0` are NOT disjoint (a rank-1 member satisfies both), so a third root choice would
+sit permanently alongside the ordinary member greeting rather than replacing it. The Serjeant's
+`ch_ranked` is instead one more choice INSIDE `member`, which is what "third branch, never a
+narrowing" actually means: additive within the branch already reached, not a second gate at the door.
+
+### Two things worth carrying into the next sub-phase
+
+1. ⚠️ **A FORK DECIDED EARLY STILL NEEDS ITS PAYOFF GATED LATE.** Setting a branch flag at an offer
+   node is free and instant; the reward it eventually authorizes is not, and conflating "the flag is
+   set" with "the thing the flag promises has happened" is the gap 42C closed by nesting a
+   `QuestCompleted` check inside the flag-routed node rather than reading the branch flag alone. 42D's
+   finale is a bigger version of the same shape — a command dispute resolved by a choice, paid off by
+   a much later objective — and the fix is the same nesting trick, not a new field.
+2. ⚠️ **TWO RANK-GRANTING ARCS ON ONE GUILD WILL WANT THE SAME "THIRD BRANCH" SLOT.** `ch_ranked` on
+   the Serjeant is gated on rank 1 alone; 42D grants a HIGHER rank on the same faction, and a second
+   rank-aware reaction authored the same way (`GuildRankAtLeast` at the new rank) will sit alongside
+   the first rather than replace it, exactly as the guidance intends — but only if the new one is
+   authored as its own additive choice inside `member`, not as an edit to `ch_ranked`'s own condition.
+   Narrowing an existing rank-gated choice upward is the same mistake invariant 18's own warning was
+   written about, one level later.
 
 ---

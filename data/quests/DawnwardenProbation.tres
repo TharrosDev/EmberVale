@@ -1,0 +1,65 @@
+[gd_resource type="Resource" script_class="QuestResource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+
+; Phase 42C — the Dawnwardens' probation. Bram Corrow (RankPeerNpcId, dialogue.dawnwarden_partner)
+; owns the whole arc; see that file's header for the fork shape (WhatThePostTook's, 41D).
+;
+; ⚠️ THREE OBJECTIVES, SEQUENTIAL, AND THE ORDER IS THE SAFETY. Obj 0 (Defend) is ungated and always
+; live; Obj 1/2 (Reach) are each behind a branch flag AND, because SequentialObjectives is true,
+; neither can complete before Obj 0 does regardless of how early the branch was chosen at Bram - the
+; fight at location.wilds.west has to actually happen. Obj 0 reuses quest.warband.hold_north's answer
+; to "what does a Defend target": an outdoor location outside the region's SafeZoneRadius where the
+; EncounterDirector already spawns, not a bespoke attacker knob.
+;
+; ⚠️ BOTH REACH TARGETS ALREADY EXIST AND NEITHER NEEDED A NEW MapLocationResource. Rescue reaches
+; location.tarn.landing - the village the corrie threatens, escorted home. Expedient reaches
+; location.crossway.watch - the Dawnwardens' own hub, where the guild's own justice is meted out
+; rather than the village's. Reusing two already-mapped, already-validated places is the point: the
+; consequence is where the player already knows how to walk to, which is what makes it land.
+;
+; ⚠️ NEITHER PATH PAYS DIFFERENTLY, for WhatThePostTook's reason: a second place rewards live is
+; invariant 5 waiting to happen. faction.villagers moves either way - the corrie is quiet either way -
+; and what differs is what Bram says about how it got quiet, and rank one either way (42C's
+; Done-when).
+
+[sub_resource type="Resource" id="Obj_defend"]
+script = ExtResource("2_obj")
+Type = 5
+TargetId = "location.wilds.west"
+RequiredCount = 60
+Description = "quest.dawnwardens.probation.obj_defend"
+
+[sub_resource type="Resource" id="Obj_rescue"]
+script = ExtResource("2_obj")
+Type = 2
+TargetId = "location.tarn.landing"
+RequiredCount = 1
+Description = "quest.dawnwardens.probation.obj_rescue"
+RequiredFlagId = "flag.dawnwardens.probation_rescue"
+
+[sub_resource type="Resource" id="Obj_expedient"]
+script = ExtResource("2_obj")
+Type = 2
+TargetId = "location.crossway.watch"
+RequiredCount = 1
+Description = "quest.dawnwardens.probation.obj_expedient"
+RequiredFlagId = "flag.dawnwardens.probation_expedient"
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.dawnwardens.probation"
+Title = "quest.dawnwardens.probation.title"
+Summary = "quest.dawnwardens.probation.summary"
+Objectives = Array[Resource]([SubResource("Obj_defend"), SubResource("Obj_rescue"), SubResource("Obj_expedient")])
+XpReward = 90
+GoldReward = 35
+GoldItemId = "item.currency.gold"
+RewardItems = []
+FactionRewardId = "faction.villagers"
+FactionRewardAmount = 10
+TimeLimitSeconds = 0.0
+SequentialObjectives = true
+PrerequisiteQuestId = ""
+IsMainQuest = false
