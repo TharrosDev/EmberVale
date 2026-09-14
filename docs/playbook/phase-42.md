@@ -56,7 +56,7 @@
     journal/map cleanup and reload immediately before/after choice.
   - **Done when:** finale outcome changes Dawnwarden presence and is independently inspectable.
 
-- [ ] **42E — Ash Hunters field induction** `[C]`
+- [x] **42E — Ash Hunters field induction** `[C]` ✅
   - **Goal:** make knowledge/preparation—not a kill counter—the hunter identity.
   - **Build / Author:** tracked-beast investigation using placed clues, Bestiary, existing Reach/
     Interact/Kill and encounter/lair data; briefing, trophy hand-in and spare/kill choice for a
@@ -65,6 +65,13 @@
   - **Verify:** target killed early, companion final hit, spare/kill, target reload, bestiary/quest id
     agreement and regional encounter filters.
   - **Done when:** investigation→hunt→judgment works in every target state and grants rank one.
+  - **Done:** two placed clues in the Deadfall's already-yarded, never-furnished eastern pine thicket,
+    a lair-shaped named boar (`enemy.grimtusk`, a DISTINCT template from the roaming
+    `enemy.thornback_boar` so the two can never be confused by a Kill objective), and the whole arc
+    living in `dialogue.hunter_tracker` — recruitment, briefing, verdict and the spare branch's own
+    hand-in — plus `dialogue.hunter_skinner`'s kill-branch hand-in. Zero new objective types, zero new
+    flag family beyond `flag.ash_hunters.*`; `guild.ash_hunters.rank1` is granted by whichever officer
+    actually heard the outcome. See the retrospective below.
 
 - [ ] **42F — Ash Hunters dragon/corruption finale** `[C]`
   - **Goal:** culminate in a prepared hunt that distinguishes Wild, Ancient and Ash dragons.
@@ -318,5 +325,68 @@ Neither is a move: the Annexe and the Deadfall stay where they are and stay owne
    join, a refusal and a probation state: **the moment any surface stores what `GuildRules` can
    derive, the wholesale-load path stops being free and starts being a bug**, and a load replays no
    events to correct it.
+
+---
+
+---
+
+## 42E — knowledge is the hunter identity, and the ground was already waiting
+
+42E landed as Ash Hunters' join arc as well as its induction quest — nothing in the roadmap before it
+had ever offered `guild.ash_hunters.joined`, so the first question was the same one 42A closed for
+guilds in general: **what kind of thing is "an induction quest with a spare/kill choice", and does it
+already exist?** It does, twice over: a lair boss with a `DefeatFlagId` (35D/35F, the Ash dragon
+shape) and a two-fork dialogue whose choices gate each other on the sibling's absence
+(`quest.hollowreach.barrels`, 41D). `enemy.grimtusk` is a Grimtusk-shaped `EnemyArchetypeResource`
+copy of `enemy.thornback_boar` — same stats, same model, different id — placed once via
+`LairSpawnComponent` in the Deadfall thicket `tools/region_spec_ember.py` had already yarded and
+never furnished (`Area_wn_deadfall`, authored in the 2026-08-28 layout rebuild and empty since). No
+new objective type, no new resource kind, no new flag family beyond `flag.ash_hunters.*`.
+
+**The distinct template id is the load-bearing decision.** `encounter.boar_territory` rolls
+`enemy.thornback_boar` anywhere the region allows, and a Kill objective matches by `TemplateId`
+alone — sharing an id would let any roadside boar the player happens to kill satisfy a quest that is
+supposed to be about one named, placed individual. `enemy.grimtusk` exists so the two populations can
+never be confused for each other, in either direction: the roaming population can't finish the quest,
+and the quest's Kill objective can't be satisfied by a species-wide cull.
+
+### The soft-lock that never shipped
+
+The first draft used `SequentialObjectives = true` to make the objective ORDER read as the
+investigation-then-verdict story: two clues, a debrief, then the kill. It built, it validated, and it
+was wrong. A Kill objective fires off a **one-time `EntityDiedEvent` that never replays**, and
+`QuestProgress.IsObjectiveActive` on a Sequential quest requires every earlier LIVE objective done
+before a later one is even current — so a player who found the den before finishing the clues or the
+debrief would kill Grimtusk while the objective wasn't listening, and nothing afterward could ever
+catch up. The quest would sit open forever with a corpse it could not credit, behind a green
+`--validate` that has no way to simulate an out-of-order kill. ⚠️ **A Kill objective and
+`SequentialObjectives` do not mix unless the kill is authored LAST with nothing live after it** — the
+"target killed early" verify line this sub-phase was given is exactly the case that ordering breaks,
+which is presumably why it was named. The fix was to drop `SequentialObjectives` entirely and let
+`RequiredFlagId`/`ForbiddenFlagId` alone carry the branch, the same shape
+`quest.hollowreach.barrels` already proves: a kill counts whenever it happens, spare-marked or not,
+quest-started or not.
+
+### Two things worth carrying into the next sub-phase
+
+1. ⚠️ **A COMPANION'S KILL DID NOT CREDIT THE PLAYER, AND NOTHING HAD EVER NOTICED.**
+   `QuestLogComponent.OnEntityDied` required `e.Killer` to be `ReferenceEquals` the quest log's own
+   `Entity` — true for the player, never true for a companion, whose `CharacterActionComponent` packets
+   carry the companion as `Source`. Every existing Kill objective in the game has been silently
+   uncompletable by a companion's final hit since Phase 32C, and nothing caught it because no quest
+   before this one was verified against that state on purpose. Fixed at the one choke point
+   (`e.Killer is Companions.CompanionEntity` now also credits), which is the shape 42B's own
+   carry-forward predicted: a new fact on a surface reveals what that surface never subscribed to,
+   and here the surface was an existing rule nobody had exercised rather than a new one. 42F reuses
+   Kill objectives against a dragon a companion may well land the last hit on — the fix already
+   covers it, but **verify it again there rather than assuming this note is enough**.
+2. ⚠️ **A NEVER-FURNISHED YARD IS FREE GROUND, AND IT IS WORTH CHECKING BEFORE AUTHORING A NEW PAD.**
+   `Area_wn_deadfall` and its extension yard were sitting in `region_spec_ember.py` since 42B's own
+   predecessor pass, levelled and clear of every route, with nothing ever placed on them — the cell's
+   own header comment called the Deadfall "ambush ground" and left it at that. Reading the region spec
+   before reaching for `compose_building.py`'s pad-authoring step (the 42B recipe's step 2) saved an
+   entire yard-and-regenerate cycle. **Grep the target cell's `Yard(...)` calls for one already shaped
+   right before authoring a new one** — a levelled pad with nothing on it is not always a road (the
+   42B trap); sometimes it is simply unclaimed.
 
 ---

@@ -44,6 +44,30 @@ Goto = "root"
 script = ExtResource("3_choice")
 Text = "dlg.hunter_skinner.c_end"
 
+; ── quest.ash_hunters.grimtusk's kill-branch hand-in (Phase 42E). Gated on the DEATH flag, not on
+; Halda's verdict flag: LairSpawnComponent.DefeatFlagId fires the instant Grimtusk dies, spare mark,
+; kill mark or no judgment made at all, so a player who kills it before ever hearing the choice
+; framed can still walk the hide to Fell Ardan. He is the one who grants rank1 here — Halda grants
+; it on her own hand-in for the spare branch, so it is authored once per branch and never twice.
+[sub_resource type="Resource" id="ch_grimtusk_report"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_skinner.c_grimtusk_report"
+Condition = 5
+ConditionArg = "flag.ash_hunters.grimtusk_defeated"
+Goto = "grimtusk_report"
+
+[sub_resource type="Resource" id="ch_grimtusk_credit"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_skinner.c_grimtusk_credit"
+Effect = 2
+EffectArg = "guild.ash_hunters.rank1"
+
+[sub_resource type="Resource" id="node_grimtusk_report"]
+script = ExtResource("2_node")
+Id = "grimtusk_report"
+Text = "dlg.hunter_skinner.grimtusk_report"
+Choices = Array[Resource]([SubResource("ch_grimtusk_credit")])
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
@@ -54,7 +78,7 @@ Choices = Array[Resource]([SubResource("ch_member"), SubResource("ch_stranger"),
 script = ExtResource("2_node")
 Id = "member"
 Text = "dlg.hunter_skinner.member"
-Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+Choices = Array[Resource]([SubResource("ch_grimtusk_report"), SubResource("ch_back"), SubResource("ch_end")])
 
 [sub_resource type="Resource" id="node_stranger"]
 script = ExtResource("2_node")
@@ -67,4 +91,4 @@ script = ExtResource("1_dlg")
 Id = "dialogue.hunter_skinner"
 SpeakerName = "dlg.hunter_skinner.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_grimtusk_report")])

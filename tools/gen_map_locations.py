@@ -211,6 +211,10 @@ add("ember_crown/wilds_north", "wilds.north", "Wilds", ".", "The Northern Wilds"
     desc="Forested upland west of the Kingsway. Goblins range here.")
 add("ember_crown/wilds_west", "wilds.west", "Wilds", ".", "The Western Wilds",
     desc="The corrie in the western ridge above the Tarn.")
+# quest.ash_hunters.grimtusk's target (Phase 42E) — a placed lair, the AncientKin shape, so the
+# quest's Kill objective has a real destination rather than inventing one for a roaming beast.
+add("ember_crown/wilds_north", "wilds.grimtusk_den", "Landmark", "GrimtuskDen", "Grimtusk's Den",
+    desc="A well-worn stretch of the deadfall, marked with scraped bark and a wallow. Something has held it a long time.")
 
 # ── The realm's edges (2026-09 world rebuild) ───────────────────────────────────────────────────
 # Where the Ember Crown's roads leave for realms Phase 44 has not built. A road that ends must pay for

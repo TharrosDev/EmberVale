@@ -1033,6 +1033,7 @@ enemy.wolf.name,Grey Wolf
 enemy.dire_wolf.name,Dire Wolf
 enemy.frost_stalker.name,Frost Stalker
 enemy.thornback_boar.name,Thornback Boar
+enemy.grimtusk.name,Grimtusk
 enemy.ashfall_elk.name,Ashfall Elk
 
 enemy.hollow_husk.name,Hollow Husk
@@ -1089,6 +1090,7 @@ enemy.wolf.lore,"They do not charge. They fan wide, take the flanks, and wait fo
 enemy.dire_wolf.lore,"Twice the mass of the pack it leads and slower for it, which matters less than you would hope. Ash Hunters price a dire wolf pelt at four ordinary ones and still consider it cheap."
 enemy.frost_stalker.lore,"Frostfang's cats do not stalk so much as wait, buried to the eyes, for a week if need be. Struck first it dies easily. It is rarely struck first."
 enemy.thornback_boar.lore,"Blind past ten paces and entirely uninterested in you until you are inside that ten. Then it does not stop, does not tire, and does not recognise a wound as an argument."
+enemy.grimtusk.lore,"An old thornback, three-legged since some earlier argument it won at a cost. It has held the same stretch of the deadfall for longer than the lodge has stood, and it has never once followed anyone out of it."
 enemy.ashfall_elk.lore,"Grazes the grey meadows where nothing else will. It runs long before it is threatened and cannot be caught on foot — the hide is worth the arrow it costs."
 enemy.hollow_husk.lore,"What the Hollow Queen leaves when she is finished. It notices you late, and then it simply does not stop coming. There is no fear left in it to work with."
 enemy.bone_knight.lore,"It still keeps the guard rhythm it was drilled in — up, down, up — long after the flesh that learned it went. Wait out the cycle. It cannot break the habit and it will not retreat."
@@ -1126,6 +1128,14 @@ spell.elder_word.name,Elder Word
 quest.ancient.kin.title,"What Is Wearing My Kin"
 quest.ancient.kin.summary,"The Ancient in the northern aerie will not go east itself. It says the thing in the ash roost was a dragon once, and that this is the sort of errand younger, shorter-lived things are for."
 quest.ancient.kin.obj,"Kill the Ash dragon in the eastern roost"
+quest.ash_hunters.grimtusk.title,"The Deadfall Print"
+quest.ash_hunters.grimtusk.summary,"Halda Rieve has been casting the same print for four nights running: something heavy, favouring three legs, working the deadfall east of the lodge. Find what it is before you decide what to do about it."
+quest.ash_hunters.grimtusk.obj_scrape,"Read the scraped bark in the deadfall"
+quest.ash_hunters.grimtusk.obj_wallow,"Read the wallow in the deadfall"
+quest.ash_hunters.grimtusk.obj_debrief,"Tell Halda Rieve what you found"
+quest.ash_hunters.grimtusk.obj_kill,"Deal with Grimtusk, if that is the judgment"
+quest.ash_hunters.grimtusk.obj_report_kill,"Bring word of the kill to Fell Ardan"
+quest.ash_hunters.grimtusk.obj_report_spare,"Tell Halda Rieve the den is marked"
 dlg.ancient.speaker,Vharyx
 dlg.ancient.root,"The head comes down slowly, until one eye is level with you and considerably larger. 'You climbed all of that to look at me. Speak, then, small thing, and be interesting about it.'"
 dlg.ancient.c_what,"What are you?"
@@ -1586,6 +1596,8 @@ location.wilds.north.name,The Northern Wilds
 location.wilds.north.desc,"Forested upland west of the Kingsway. Goblins range here."
 location.wilds.west.name,The Western Wilds
 location.wilds.west.desc,"The corrie in the western ridge above the Tarn."
+location.wilds.grimtusk_den.name,Grimtusk's Den
+location.wilds.grimtusk_den.desc,"A well-worn stretch of the deadfall, marked with scraped bark and a wallow. Something has held it a long time."
 location.ember_crown.southmarch_gate.name,The Southmarch Gate
 location.ember_crown.southmarch_gate.desc,"The broken border gate at the end of the old caravan road south."
 location.ember_crown.iron_citadel.name,The Iron Citadel
@@ -1731,6 +1743,13 @@ dlg.hunter_skinner.c_stranger,"Would you work a hide for me?"
 dlg.hunter_skinner.c_bye,"Another time."
 dlg.hunter_skinner.c_back,"Something else."
 dlg.hunter_skinner.c_end,"Back to the frame."
+dlg.hunter_skinner.c_grimtusk_report,"About the deadfall boar."
+dlg.hunter_skinner.grimtusk_report,"He runs a hand along the hide you bring in, unhurried. ""Old wound on the foreleg, half-healed and scarred hard — that's your three-legged track, and it explains the temper. Clean kill, by the look of it. Halda will want to know that part as much as the rest."""
+dlg.hunter_skinner.c_grimtusk_credit,"Then I'm one of yours properly now."
+dlg.grimtusk_scrape.root,"Bark stripped shoulder-high in a ragged band, on the uphill side of the trunk only. Whatever did it favours one side — the same side, going by the wear, every time it's come through here."
+dlg.grimtusk_scrape.c_close,"Note it."
+dlg.grimtusk_wallow.root,"A wallow churned into the black earth, wide enough for something heavy, and a print at its rim gone soft at the edges — old, but not old enough to have washed out in this year's rain. Three-legged, like Halda said. The fourth print never sets."
+dlg.grimtusk_wallow.c_close,"Note it."
 dlg.hunter_tracker.speaker,"Halda Rieve"
 dlg.hunter_tracker.root,"She is crouched at the edge of the lodge floor with a cast of something's foot in front of her, and she turns it a quarter-turn as you come up."
 dlg.hunter_tracker.member,"""Something big came through the deadfall four nights ago and went back up the scarp on three legs."" She sets the cast down. ""That's the shape of the work here. It starts with a print and it ends a long way from one."""
@@ -1740,6 +1759,31 @@ dlg.hunter_tracker.c_stranger,"What is that?"
 dlg.hunter_tracker.c_bye,"Nothing."
 dlg.hunter_tracker.c_back,"Something else."
 dlg.hunter_tracker.c_end,"I'll get out of your light."
+dlg.hunter_tracker.c_recruit_ask,"Give me a reason, then."
+dlg.hunter_tracker.recruit,"""Fair enough."" She sets the cast down properly this time. ""We don't take you on your word. Go find what's making a print, work out what it's worth doing about, and come back and tell me straight. That's the whole trial. No parade, no oath."""
+dlg.hunter_tracker.c_recruit_accept,"I'll do the work."
+dlg.hunter_tracker.c_recruit_decline,"Not what I came for."
+dlg.hunter_tracker.recruited,"""Then you're one of ours as of now, not as of you finish something."" She nods once, like that settles a private question. ""Ask me what's moving. I'll tell you."""
+dlg.hunter_tracker.declined,"""Your business."" She goes back to the cast without looking up again."
+dlg.hunter_tracker.c_boar_offer,"About that print."
+dlg.hunter_tracker.boar_offer,"""Something big came through the deadfall and went back up the scarp on three legs, like I said. I've had four nights of it since and no cleaner a read."" She taps the cast. ""I'm not asking you to kill it. I'm asking you to find out what it is and what it's costing anyone, and then decide. That's the whole of the induction — knowing before you draw."""
+dlg.hunter_tracker.c_boar_already,"I've already dealt with it."
+dlg.hunter_tracker.boar_offer_already,"She turns the cast over once, unsurprised. ""Word travels ahead of you, then. That's not the same as doing it right, but it's done, and I won't pretend otherwise. You're one of ours."""
+dlg.hunter_tracker.c_boar_accept,"I'll go look."
+dlg.hunter_tracker.boar_offer_accepted,"""Deadfall's east of the lodge, past where the pines close in. Don't go in blind — read the ground before you read the animal."""
+dlg.hunter_tracker.c_boar_not_yet,"Not yet."
+dlg.hunter_tracker.c_boar_judge,"I've seen enough of it."
+dlg.hunter_tracker.boar_judge,"She sets the cast down and looks at you properly for the first time. ""Then tell me. Is it a danger worth ending, or a territory worth marking off and leaving be? I'll back either. I want to hear which."""
+dlg.hunter_tracker.c_judge_kill,"It's caused enough trouble. I'll finish it."
+dlg.hunter_tracker.boar_judged_kill,"""Then finish it clean, not angry. Fell will want to see what's left of it after."""
+dlg.hunter_tracker.c_judge_spare,"Let it be. I'll mark the den and warn people off."
+dlg.hunter_tracker.boar_judged_spare,"She almost smiles. ""That's the harder answer to give, and the one I hoped for less than half the time I ask it. Come back when the marker's up. I'll want to hear that too."""
+dlg.hunter_tracker.c_boar_done,"About the deadfall boar."
+dlg.hunter_tracker.boar_done,"""Settled, then."""
+dlg.hunter_tracker.c_boar_done_kill,"It's done. Fell has the hide."
+dlg.hunter_tracker.boar_done_kill,"""Good. That was the harder path and you took it clean — I heard as much from Fell before you got here."""
+dlg.hunter_tracker.c_boar_done_spare,"The den's marked. I told people to keep clear."
+dlg.hunter_tracker.boar_done_spare,"""Then it's off my list, and you've earned your rank the way I'd rather see it earned — by knowing when not to draw."""
 
 # The Veiled Archive — the Annexe, on the Embermarket's north side.
 dlg.archive_keeper.speaker,"Keeper Ysolde Marr"

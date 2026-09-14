@@ -44,6 +44,194 @@ Goto = "root"
 script = ExtResource("3_choice")
 Text = "dlg.hunter_tracker.c_end"
 
+; ── Recruitment (Phase 42E — Ash Hunters field induction is also the join arc). Offered only to
+; GuildNotMember; RejoinAllowed = true on the faction, so a refused or left player gets the same
+; door back rather than a second gate to author.
+[sub_resource type="Resource" id="ch_recruit_ask"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_tracker.c_recruit_ask"
+Goto = "recruit"
+
+[sub_resource type="Resource" id="ch_recruit_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_tracker.c_recruit_accept"
+Effect = 2
+EffectArg = "guild.ash_hunters.joined"
+Goto = "recruited"
+
+[sub_resource type="Resource" id="ch_recruit_decline"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_tracker.c_recruit_decline"
+Effect = 2
+EffectArg = "guild.ash_hunters.refused"
+Goto = "declined"
+
+[sub_resource type="Resource" id="ch_recruit_back"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_tracker.c_back"
+Goto = "stranger"
+
+[sub_resource type="Resource" id="node_recruit"]
+script = ExtResource("2_node")
+Id = "recruit"
+Text = "dlg.hunter_tracker.recruit"
+Choices = Array[Resource]([SubResource("ch_recruit_accept"), SubResource("ch_recruit_decline"), SubResource("ch_recruit_back")])
+
+[sub_resource type="Resource" id="node_recruited"]
+script = ExtResource("2_node")
+Id = "recruited"
+Text = "dlg.hunter_tracker.recruited"
+Choices = Array[Resource]([SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_declined"]
+script = ExtResource("2_node")
+Id = "declined"
+Text = "dlg.hunter_tracker.declined"
+Choices = Array[Resource]([SubResource("ch_end")])
+
+; ── quest.ash_hunters.grimtusk (Phase 42E). Halda is the contact who offers it, the ear the
+; investigation reports to, and the one who hears the verdict — she is already the one casting the
+; print (see her .member line above), so the whole arc stays in her hands rather than inventing a
+; reason for a fourth conversation.
+[sub_resource type="Resource" id="ch_boar_offer"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_tracker.c_boar_offer"
+Condition = 1
+ConditionArg = "quest.ash_hunters.grimtusk"
+Goto = "boar_offer"
+
+[sub_resource type="Resource" id="ch_boar_judge"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_tracker.c_boar_judge"
+Condition = 2
+ConditionArg = "quest.ash_hunters.grimtusk"
+Goto = "boar_judge"
+
+[sub_resource type="Resource" id="ch_boar_done"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_tracker.c_boar_done"
+Condition = 3
+ConditionArg = "quest.ash_hunters.grimtusk"
+Goto = "boar_done"
+
+[sub_resource type="Resource" id="ch_boar_already"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_tracker.c_boar_already"
+Condition = 5
+ConditionArg = "flag.ash_hunters.grimtusk_defeated"
+Effect = 2
+EffectArg = "guild.ash_hunters.rank1"
+Goto = "boar_offer_already"
+
+; Accepting is gated on Grimtusk still being alive, the quest.ancient.kin shape one guild down — a
+; player who cleared the den before ever finding the lodge would otherwise take an errand that can
+; never complete.
+[sub_resource type="Resource" id="ch_boar_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_tracker.c_boar_accept"
+Condition = 6
+ConditionArg = "flag.ash_hunters.grimtusk_defeated"
+Effect = 1
+EffectArg = "quest.ash_hunters.grimtusk"
+Goto = "boar_offer_accepted"
+
+[sub_resource type="Resource" id="ch_boar_not_yet"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_tracker.c_boar_not_yet"
+
+[sub_resource type="Resource" id="node_boar_offer"]
+script = ExtResource("2_node")
+Id = "boar_offer"
+Text = "dlg.hunter_tracker.boar_offer"
+Choices = Array[Resource]([SubResource("ch_boar_already"), SubResource("ch_boar_accept"), SubResource("ch_boar_not_yet")])
+
+[sub_resource type="Resource" id="node_boar_offer_already"]
+script = ExtResource("2_node")
+Id = "boar_offer_already"
+Text = "dlg.hunter_tracker.boar_offer_already"
+Choices = Array[Resource]([SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_boar_offer_accepted"]
+script = ExtResource("2_node")
+Id = "boar_offer_accepted"
+Text = "dlg.hunter_tracker.boar_offer_accepted"
+Choices = Array[Resource]([SubResource("ch_end")])
+
+; The verdict. Each fork is gated on the OTHER fork's absence — the quest.hollowreach.barrels
+; safety — so a player cannot set both marks, and once either is set that is the only choice still
+; offered on a later visit.
+[sub_resource type="Resource" id="ch_judge_kill"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_tracker.c_judge_kill"
+Condition = 6
+ConditionArg = "flag.ash_hunters.grimtusk_marked_spare"
+Effect = 2
+EffectArg = "flag.ash_hunters.grimtusk_marked_kill"
+Goto = "boar_judged_kill"
+
+[sub_resource type="Resource" id="ch_judge_spare"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_tracker.c_judge_spare"
+Condition = 6
+ConditionArg = "flag.ash_hunters.grimtusk_marked_kill"
+Effect = 2
+EffectArg = "flag.ash_hunters.grimtusk_marked_spare"
+Goto = "boar_judged_spare"
+
+[sub_resource type="Resource" id="node_boar_judge"]
+script = ExtResource("2_node")
+Id = "boar_judge"
+Text = "dlg.hunter_tracker.boar_judge"
+Choices = Array[Resource]([SubResource("ch_judge_kill"), SubResource("ch_judge_spare"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_boar_judged_kill"]
+script = ExtResource("2_node")
+Id = "boar_judged_kill"
+Text = "dlg.hunter_tracker.boar_judged_kill"
+Choices = Array[Resource]([SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_boar_judged_spare"]
+script = ExtResource("2_node")
+Id = "boar_judged_spare"
+Text = "dlg.hunter_tracker.boar_judged_spare"
+Choices = Array[Resource]([SubResource("ch_end")])
+
+; The spare branch's own hand-in: nothing to carry back but the word, so it is Halda a second time
+; rather than Fell Ardan (his side only starts once there is a hide to look at).
+[sub_resource type="Resource" id="ch_boar_done_kill"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_tracker.c_boar_done_kill"
+Condition = 5
+ConditionArg = "flag.ash_hunters.grimtusk_marked_kill"
+Goto = "boar_done_kill"
+
+[sub_resource type="Resource" id="ch_boar_done_spare"]
+script = ExtResource("3_choice")
+Text = "dlg.hunter_tracker.c_boar_done_spare"
+Condition = 5
+ConditionArg = "flag.ash_hunters.grimtusk_marked_spare"
+Effect = 2
+EffectArg = "guild.ash_hunters.rank1"
+Goto = "boar_done_spare"
+
+[sub_resource type="Resource" id="node_boar_done"]
+script = ExtResource("2_node")
+Id = "boar_done"
+Text = "dlg.hunter_tracker.boar_done"
+Choices = Array[Resource]([SubResource("ch_boar_done_kill"), SubResource("ch_boar_done_spare")])
+
+[sub_resource type="Resource" id="node_boar_done_kill"]
+script = ExtResource("2_node")
+Id = "boar_done_kill"
+Text = "dlg.hunter_tracker.boar_done_kill"
+Choices = Array[Resource]([SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_boar_done_spare"]
+script = ExtResource("2_node")
+Id = "boar_done_spare"
+Text = "dlg.hunter_tracker.boar_done_spare"
+Choices = Array[Resource]([SubResource("ch_end")])
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
@@ -54,17 +242,17 @@ Choices = Array[Resource]([SubResource("ch_member"), SubResource("ch_stranger"),
 script = ExtResource("2_node")
 Id = "member"
 Text = "dlg.hunter_tracker.member"
-Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+Choices = Array[Resource]([SubResource("ch_boar_offer"), SubResource("ch_boar_judge"), SubResource("ch_boar_done"), SubResource("ch_back"), SubResource("ch_end")])
 
 [sub_resource type="Resource" id="node_stranger"]
 script = ExtResource("2_node")
 Id = "stranger"
 Text = "dlg.hunter_tracker.stranger"
-Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+Choices = Array[Resource]([SubResource("ch_recruit_ask"), SubResource("ch_back"), SubResource("ch_end")])
 
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.hunter_tracker"
 SpeakerName = "dlg.hunter_tracker.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_recruit"), SubResource("node_recruited"), SubResource("node_declined"), SubResource("node_boar_offer"), SubResource("node_boar_offer_already"), SubResource("node_boar_offer_accepted"), SubResource("node_boar_judge"), SubResource("node_boar_judged_kill"), SubResource("node_boar_judged_spare"), SubResource("node_boar_done"), SubResource("node_boar_done_kill"), SubResource("node_boar_done_spare")])
