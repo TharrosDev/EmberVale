@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="CompanionResource" format=3]
+
+[ext_resource type="Script" path="res://src/Companions/CompanionResource.cs" id="1_companion"]
+
+; Netta Vire, the Iron Syndicate's paid escort contract (Phase 42I) — the third companion who exists
+; to be PROTECTED rather than to fight beside you, after Tessa's shape (41B): CompanionFactory builds
+; a body with health, combat, follow AI, a leash and persistence straight off this file, and
+; RecruitCompanion puts it beside the player, so the escort mechanic is this .tres plus two dialogue
+; choices, exactly as Tessa's header records. She has no world body before she is hired — she is
+; recruited directly out of dialogue.syndicate_fixer, the same way Tessa is recruited out of Sedge's
+; conversation rather than her own.
+;
+; She carries her firm's own ledgers, not a fighting reputation, so FactionId is faction.iron_syndicate
+; and StartingLoyalty sits low (30) — she is cargo the Syndicate is paying to move, not a friend yet.
+; npc_townswoman is unused by every other companion (Tessa: npc_woman_dress, Wren: npc_adventurer_f,
+; Kael: npc_kael) — one body per party member, per Tessa's own note.
+;
+; LoyaltyQuestId is deliberately empty, for Tessa's reason: this is one errand with no second act.
+
+[resource]
+script = ExtResource("1_companion")
+Id = "companion.iron_client"
+NameKey = "companion.iron_client.name"
+TitleKey = "companion.iron_client.title"
+AttributesPath = "res://data/attributes/CompanionAttributes.tres"
+WeaponPath = "res://data/weapons/IronDagger.tres"
+ModelPath = "res://assets/models/characters/npc_townswoman.glb"
+FactionId = "faction.iron_syndicate"
+KnownSpellIds = Array[String]([])
+FollowDistance = 2.5
+EngageRadius = 9.0
+AttackRange = 1.9
+LeashRadius = 16.0
+StartingLoyalty = 30
+LoyaltyQuestReward = 0
+LoyaltyQuestId = ""
+DialogueId = "dialogue.iron_client"

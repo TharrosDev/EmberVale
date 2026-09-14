@@ -44,6 +44,168 @@ Goto = "root"
 script = ExtResource("3_choice")
 Text = "dlg.syndicate_fixer.c_end"
 
+; ── 42I: three postings, GuildBoard's offer/active/thanks triple (41B) three times over. Each
+; contract's own PrerequisiteQuestId already keeps only one "offer" true at a time — bounty first,
+; then escort, then judgment — so what "rotates" here is which posting is current, and the
+; already-closed ones stay readable as their own "thanks" line rather than vanishing.
+
+[sub_resource type="Resource" id="ch_bounty_offer"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_fixer.c_bounty_offer"
+Condition = 1
+ConditionArg = "quest.iron.bounty"
+Goto = "bounty_offer"
+
+[sub_resource type="Resource" id="ch_bounty_active"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_fixer.c_bounty_active"
+Condition = 2
+ConditionArg = "quest.iron.bounty"
+Goto = "bounty_active"
+
+[sub_resource type="Resource" id="ch_bounty_thanks"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_fixer.c_bounty_thanks"
+Condition = 3
+ConditionArg = "quest.iron.bounty"
+Goto = "bounty_thanks"
+
+[sub_resource type="Resource" id="ch_bounty_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_fixer.c_bounty_accept"
+Effect = 1
+EffectArg = "quest.iron.bounty"
+Goto = "bounty_accepted"
+
+[sub_resource type="Resource" id="ch_bounty_decline"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_fixer.c_bounty_decline"
+
+[sub_resource type="Resource" id="ch_bounty_accepted_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_fixer.c_end"
+
+[sub_resource type="Resource" id="ch_bounty_active_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_fixer.c_end"
+
+[sub_resource type="Resource" id="ch_bounty_thanks_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_fixer.c_end"
+
+[sub_resource type="Resource" id="ch_escort_offer"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_fixer.c_escort_offer"
+Condition = 1
+ConditionArg = "quest.iron.escort"
+Goto = "escort_offer"
+
+[sub_resource type="Resource" id="ch_escort_active"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_fixer.c_escort_active"
+Condition = 2
+ConditionArg = "quest.iron.escort"
+Goto = "escort_active"
+
+[sub_resource type="Resource" id="ch_escort_thanks"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_fixer.c_escort_thanks"
+Condition = 3
+ConditionArg = "quest.iron.escort"
+Goto = "escort_thanks"
+
+; ⚠️ Two effects, two nodes — a DialogueChoice carries ONE, exactly as Sedge's ledger-run fork does
+; (41B): accepting starts the quest, and the NEXT node's only choice recruits Netta into the party.
+[sub_resource type="Resource" id="ch_escort_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_fixer.c_escort_accept"
+Effect = 1
+EffectArg = "quest.iron.escort"
+Goto = "escort_accepted"
+
+[sub_resource type="Resource" id="ch_escort_decline"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_fixer.c_escort_decline"
+
+[sub_resource type="Resource" id="ch_escort_recruit"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_fixer.c_escort_recruit"
+Effect = 5
+EffectArg = "companion.iron_client"
+
+[sub_resource type="Resource" id="ch_escort_active_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_fixer.c_end"
+
+[sub_resource type="Resource" id="ch_escort_thanks_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_fixer.c_end"
+
+[sub_resource type="Resource" id="ch_judgment_offer"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_fixer.c_judgment_offer"
+Condition = 1
+ConditionArg = "quest.iron.judgment"
+Goto = "judgment_gate"
+
+[sub_resource type="Resource" id="ch_judgment_active"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_fixer.c_judgment_active"
+Condition = 2
+ConditionArg = "quest.iron.judgment"
+Goto = "judgment_active"
+
+[sub_resource type="Resource" id="ch_judgment_thanks"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_fixer.c_judgment_thanks"
+Condition = 3
+ConditionArg = "quest.iron.judgment"
+Goto = "judgment_thanks"
+
+; ⚠️ THE GATE AllowsOneShotTarget PROMISES (quest.iron.judgment's header). MissingFlag/HasFlag on
+; Corran's own DefeatFlagId — the one thing that turns "someone already killed him" into a fact this
+; conversation can read, with no new state of its own.
+[sub_resource type="Resource" id="ch_judgment_open"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_fixer.c_judgment_open"
+Condition = 6
+ConditionArg = "flag.iron.judgment_target_dead"
+Goto = "judgment_offer"
+
+[sub_resource type="Resource" id="ch_judgment_closed"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_fixer.c_judgment_closed"
+Condition = 5
+ConditionArg = "flag.iron.judgment_target_dead"
+Goto = "judgment_closed"
+
+[sub_resource type="Resource" id="ch_judgment_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_fixer.c_judgment_accept"
+Effect = 1
+EffectArg = "quest.iron.judgment"
+Goto = "judgment_accepted"
+
+[sub_resource type="Resource" id="ch_judgment_decline"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_fixer.c_judgment_decline"
+
+[sub_resource type="Resource" id="ch_judgment_closed_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_fixer.c_end"
+
+[sub_resource type="Resource" id="ch_judgment_accepted_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_fixer.c_end"
+
+[sub_resource type="Resource" id="ch_judgment_active_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_fixer.c_end"
+
+[sub_resource type="Resource" id="ch_judgment_thanks_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_fixer.c_end"
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
@@ -54,7 +216,7 @@ Choices = Array[Resource]([SubResource("ch_member"), SubResource("ch_stranger"),
 script = ExtResource("2_node")
 Id = "member"
 Text = "dlg.syndicate_fixer.member"
-Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+Choices = Array[Resource]([SubResource("ch_bounty_offer"), SubResource("ch_bounty_active"), SubResource("ch_bounty_thanks"), SubResource("ch_escort_offer"), SubResource("ch_escort_active"), SubResource("ch_escort_thanks"), SubResource("ch_judgment_offer"), SubResource("ch_judgment_active"), SubResource("ch_judgment_thanks"), SubResource("ch_back"), SubResource("ch_end")])
 
 [sub_resource type="Resource" id="node_stranger"]
 script = ExtResource("2_node")
@@ -62,9 +224,93 @@ Id = "stranger"
 Text = "dlg.syndicate_fixer.stranger"
 Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
 
+[sub_resource type="Resource" id="node_bounty_offer"]
+script = ExtResource("2_node")
+Id = "bounty_offer"
+Text = "dlg.syndicate_fixer.bounty_offer"
+Choices = Array[Resource]([SubResource("ch_bounty_accept"), SubResource("ch_bounty_decline")])
+
+[sub_resource type="Resource" id="node_bounty_accepted"]
+script = ExtResource("2_node")
+Id = "bounty_accepted"
+Text = "dlg.syndicate_fixer.bounty_accepted"
+Choices = Array[Resource]([SubResource("ch_bounty_accepted_bye")])
+
+[sub_resource type="Resource" id="node_bounty_active"]
+script = ExtResource("2_node")
+Id = "bounty_active"
+Text = "dlg.syndicate_fixer.bounty_active"
+Choices = Array[Resource]([SubResource("ch_bounty_active_bye")])
+
+[sub_resource type="Resource" id="node_bounty_thanks"]
+script = ExtResource("2_node")
+Id = "bounty_thanks"
+Text = "dlg.syndicate_fixer.bounty_thanks"
+Choices = Array[Resource]([SubResource("ch_bounty_thanks_bye")])
+
+[sub_resource type="Resource" id="node_escort_offer"]
+script = ExtResource("2_node")
+Id = "escort_offer"
+Text = "dlg.syndicate_fixer.escort_offer"
+Choices = Array[Resource]([SubResource("ch_escort_accept"), SubResource("ch_escort_decline")])
+
+[sub_resource type="Resource" id="node_escort_accepted"]
+script = ExtResource("2_node")
+Id = "escort_accepted"
+Text = "dlg.syndicate_fixer.escort_accepted"
+Choices = Array[Resource]([SubResource("ch_escort_recruit")])
+
+[sub_resource type="Resource" id="node_escort_active"]
+script = ExtResource("2_node")
+Id = "escort_active"
+Text = "dlg.syndicate_fixer.escort_active"
+Choices = Array[Resource]([SubResource("ch_escort_active_bye")])
+
+[sub_resource type="Resource" id="node_escort_thanks"]
+script = ExtResource("2_node")
+Id = "escort_thanks"
+Text = "dlg.syndicate_fixer.escort_thanks"
+Choices = Array[Resource]([SubResource("ch_escort_thanks_bye")])
+
+[sub_resource type="Resource" id="node_judgment_gate"]
+script = ExtResource("2_node")
+Id = "judgment_gate"
+Text = "dlg.syndicate_fixer.judgment_gate"
+Choices = Array[Resource]([SubResource("ch_judgment_open"), SubResource("ch_judgment_closed")])
+
+[sub_resource type="Resource" id="node_judgment_closed"]
+script = ExtResource("2_node")
+Id = "judgment_closed"
+Text = "dlg.syndicate_fixer.judgment_closed"
+Choices = Array[Resource]([SubResource("ch_judgment_closed_bye")])
+
+[sub_resource type="Resource" id="node_judgment_offer"]
+script = ExtResource("2_node")
+Id = "judgment_offer"
+Text = "dlg.syndicate_fixer.judgment_offer"
+Choices = Array[Resource]([SubResource("ch_judgment_accept"), SubResource("ch_judgment_decline")])
+
+[sub_resource type="Resource" id="node_judgment_accepted"]
+script = ExtResource("2_node")
+Id = "judgment_accepted"
+Text = "dlg.syndicate_fixer.judgment_accepted"
+Choices = Array[Resource]([SubResource("ch_judgment_accepted_bye")])
+
+[sub_resource type="Resource" id="node_judgment_active"]
+script = ExtResource("2_node")
+Id = "judgment_active"
+Text = "dlg.syndicate_fixer.judgment_active"
+Choices = Array[Resource]([SubResource("ch_judgment_active_bye")])
+
+[sub_resource type="Resource" id="node_judgment_thanks"]
+script = ExtResource("2_node")
+Id = "judgment_thanks"
+Text = "dlg.syndicate_fixer.judgment_thanks"
+Choices = Array[Resource]([SubResource("ch_judgment_thanks_bye")])
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.syndicate_fixer"
 SpeakerName = "dlg.syndicate_fixer.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_bounty_offer"), SubResource("node_bounty_accepted"), SubResource("node_bounty_active"), SubResource("node_bounty_thanks"), SubResource("node_escort_offer"), SubResource("node_escort_accepted"), SubResource("node_escort_active"), SubResource("node_escort_thanks"), SubResource("node_judgment_gate"), SubResource("node_judgment_closed"), SubResource("node_judgment_offer"), SubResource("node_judgment_accepted"), SubResource("node_judgment_active"), SubResource("node_judgment_thanks")])

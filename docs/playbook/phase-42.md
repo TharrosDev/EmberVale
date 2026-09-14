@@ -112,7 +112,7 @@
     Act III reveal is authored early.
   - **Done when:** every result leaves an explicit playable Act III handoff.
 
-- [ ] **42I — Iron Syndicate contract rank** `[C]`
+- [x] **42I — Iron Syndicate contract rank** `[C]` ✅
   - **Goal:** establish pragmatic mercenary/bounty work, not an assassin reskin.
   - **Build / Author:** recruit through existing contract-board/economy surfaces; author a bounty,
     paid escort and spare/kill target resolution; integrate contraband/public standing and record how
@@ -121,6 +121,11 @@
   - **Verify:** target dead early/spared, rotation overlap, failed escort/retry, poor player/bribe and
     full-pack payout.
   - **Done when:** varied paid work grants rank one and its consequences persist.
+  - **Done:** three contracts off Dallow Grieve's own conversation — a bandit bounty, Netta Vire's
+    paid escort, and Corran Vess's spare/kill judgment — chained by `PrerequisiteQuestId` so "varied
+    paid work" reads left to right, plus the join and the rank-one grant on Broker Ilder Vance's line.
+    Two new `DialogueEffect` members (`JoinGuild`, `GuildRank`) are the only new code; everything else
+    is `.tres`. See the retrospective below.
 
 - [ ] **42J — Iron Syndicate loyalty-for-sale finale** `[C]`
   - **Goal:** choose between contract fidelity, a better offer and protecting a relationship.
@@ -467,5 +472,101 @@ quest-started or not.
    entire yard-and-regenerate cycle. **Grep the target cell's `Yard(...)` calls for one already shaped
    right before authoring a new one** — a levelled pad with nothing on it is not always a road (the
    42B trap); sometimes it is simply unclaimed.
+
+---
+
+## 42I — Iron Syndicate contract rank
+
+42A and 42B closed off the seams a guild would want; 42I is the first sub-phase to actually WALK one
+of them, and the walk found the one seam that did not exist yet: **nothing could write a guild flag
+from dialogue.** `GuildRules` derives every flag name and `DialogueCondition.GuildRankAtLeast`/
+`GuildNotMember` (42B) already read them safely, but the only code that ever *set* one was the `guild`
+console command — which needs keyboard input no headless path reaches. Two new `DialogueEffect`
+members, `JoinGuild` and `GuildRank`, are the whole of the new code: both call `GuildRules`'s own
+flag-name builders and `GuildRules.CanJoin`, exactly mirroring what `DevCommands` already did, so a
+guild id or a rank number is never a hand-typed string in a `.tres` (invariant 18) on the write side
+either. 42C/E/G will use both unchanged.
+
+**Recruitment routes through the roster, not a new surface.** Broker Ilder Vance's existing
+`GuildNotMember` branch grows an accept/decline pair (`JoinGuild`); rank one is a `QuestCompleted`
+check on the *last* contract in the chain, on his `member` branch. Dallow Grieve's `member` branch
+grows GuildBoard's own offer/active/thanks triple (41B), three times over, for the bounty, the escort
+and the judgment. **No new board, no new panel — the "contract board" the entry asks to recruit
+through IS this conversation graph**, the same shape `dialogue.guild_board` already proved.
+
+**"Varied paid work" is a `PrerequisiteQuestId` chain, not a flag AND.** `quest.iron.bounty` →
+`quest.iron.escort` → `quest.iron.judgment`, each naming the last as its prerequisite. That turns
+"complete all three, in any combination" — which nothing here can express, since a `DialogueChoice`
+carries one `Condition` — into "complete the last one," a single `QuestCompleted` check the rank-grant
+choice already needed. **Rotation is the visible half of the same fact**: only one of the three
+`QuestAvailable` conditions is ever true at once, so the postings visibly advance rung to rung, and
+the "rotation overlap" Verify case is that the two already-closed rungs keep their own `thanks` line
+live rather than vanishing — exactly GuildBoard's existing behaviour, exercised by a chain instead of
+two independent quests.
+
+**The spare/kill/dead-early shape is two objectives, not a state machine.** `Obj_kill` (Kill,
+`ForbiddenFlagId` = the spare flag) is live from the moment the quest starts, so killing Corran Vess
+before ever opening his dialogue satisfies it with zero new code — that is what makes "target dead
+early" free. `Obj_spare` (Talk, `RequiredFlagId` = the same flag) is the ordinary "gated-off objective
+is inert, not incomplete" mirror. `AllowsOneShotTarget = true` is the one field that has to be paid
+for honestly: the promise it makes ("the offering conversation gates on the target still being
+alive") is kept by a `MissingFlag`/`HasFlag` pair on Grieve's offer node, reading Corran's own
+`LairSpawnComponent.DefeatFlagId` — the *only* thing in the game that turns a kill into a flag (35F),
+reused here at one-actor scale instead of dragon scale.
+
+⚠️ **CONTRABAND AND PUBLIC STANDING WERE ALREADY BUILT; THIS SUB-PHASE ONLY HAD TO POINT AT THEM.**
+Corran's `FactionId` is `faction.villagers`, not `faction.outlaws` — he is a private citizen the
+Syndicate wants found, not a criminal the realm is hunting — so killing him costs *public* standing
+automatically through `ReputationComponent.OnEntityDied`, and his loot table is `BanditLoot.tres`
+unchanged, which already carries two contraband entries from 38O. Neither needed a line of new code;
+the entire "contraband/public standing integration" Verify line is two field values. The escort quest
+pays the same idea from the other side: `FactionRewardId = faction.villagers`, negative — running the
+Syndicate's cargo through town costs the same standing a contraband sale would, through the ordinary
+`QuestResource.FactionRewardId` field.
+
+⚠️ **NEITHER SPARE/KILL PATH PAYS DIFFERENTLY, FOR WHATTHEPOSTTOOK'S REASON (41D).** `QuestResource`
+has one `GoldReward`/`XpReward`/`FactionRewardId` for the whole quest, so the ending is the flag
+(`flag.iron.judgment_target_dead` vs `flag.iron.judgment_spared`) and nothing else — a per-branch
+reward table would be invariant 5 waiting to happen, and it is exactly what 42J's finale needs to read
+regardless.
+
+### Retrospective + traps
+
+⚠️ **A `DialogueChoice` CARRYING ONE EFFECT KEEPS SHOWING UP AS THE BINDING CONSTRAINT, AND THE FIX IS
+ALWAYS THE SAME TWO-NODE SPLIT.** The escort's accept-then-recruit (Sedge/Tessa's shape, 41B) and the
+rank-grant's own single-effect confirm both hit it again. There is no AND of two conditions either
+(the "all three contracts done" question), and the chain-via-`PrerequisiteQuestId` answer above is
+the cheap-kind-that-already-exists instance of that same constraint, not a new mechanism.
+
+⚠️ **AN IDEMPOTENT EFFECT LETS A NODE SKIP THE `HasFlag`/`MissingFlag` PAIR IT WOULD OTHERWISE NEED —
+BUT ONLY IF THE TEXT IS WRITTEN TO SURVIVE BEING SHOWN TWICE.** The honest way to gate "not yet rank
+one" against "already rank one" would read the rank flag directly, which is exactly what invariant 18
+forbids doing from a `.tres`. `GuildRank`'s effect is a no-op on a flag that is already set, so the
+Broker's advancement node stays reachable and correct on a second visit; the line it speaks was
+written as a standing statement of respect rather than a one-time announcement, on purpose, so
+repeating it is not a bug. A future rank-grant that wants a genuinely one-time line will need a real
+answer to this, not this shortcut.
+
+⚠️ **THE MARK IS A `LairSpawnComponent` AT ONE-ACTOR SCALE, AND MOST OF 35D'S RECIPE DOES NOT APPLY AT
+THAT SCALE.** No custom landform, no dedicated cell, no `roost.tscn` inheritance — Corran stands a few
+metres off the Ledger House's own already-proven Yard, and `TerritoryRadius` on a new `ai_profiles`
+variant (`ai.mark_guard`) is the only thing 35D's recipe insisted on that still applied (a leash, so a
+fight that starts here does not chase into the next cell). `world_traversal_probe.gd` still passed
+(336 routes) with nothing new on it, since nothing was placed on a road — but this sub-phase did not
+render the placement, which 42B's own carried-forward finding says not to skip. That is this
+sub-phase's own gap to hand forward.
+
+### Two things worth carrying into the next sub-phase
+
+1. ⚠️ **A GUILD'S WRITE PATH DID NOT EXIST UNTIL SOMETHING NEEDED IT, AND 42C IS NEXT.** `JoinGuild`
+   and `GuildRank` are general — any guild id, any rank — precisely because the console command they
+   mirror already was. 42C's probation and 42E/42G's rank ones should call them unchanged rather than
+   re-deriving the same four flag writes a third and fourth time.
+2. ⚠️ **THIS SUB-PHASE DID NOT RENDER ITS OWN PLACEMENT, AND 42B ALREADY SAID WHAT THAT COSTS.**
+   `--validate` and the traversal probe are evidence about data and about routes respectively; neither
+   looks at a door, a lean, or a standing collider the way a camera does. Corran and Rook Sallow sit
+   on ground nothing has photographed. 42C's field partner and civilian threat should get the render
+   42B's own finding asked for, and if this placement turns out to need correcting, that correction is
+   this same trap firing a third time.
 
 ---

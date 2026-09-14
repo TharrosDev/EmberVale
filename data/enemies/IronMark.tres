@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" format=3]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+; Phase 42I — the Iron Syndicate's contract mark, Corran Vess. A skimming account-holder gone to
+; ground, not a monster; enm_bandit.glb, IronSword and BanditAttributes are reused wholesale (the
+; docs/RECIPES.md "creature that talks" recipe) because a debtor in hiding needs no new silhouette,
+; and BanditLoot already carries the two contraband entries (dreamsmoke, untaxed fur) that make him a
+; source for the fence system rather than a second one.
+;
+; ⚠️ FactionId IS faction.villagers, DELIBERATELY, NOT faction.outlaws. He is not a criminal the
+; realm is hunting; he is a private citizen the Syndicate wants found. Villagers' DefaultReputation
+; (10) sits above its own HostileThreshold (2), so he starts neutral rather than attacking on sight —
+; docs/RECIPES.md "a creature that talks" — and it is what makes killing him cost PUBLIC standing
+; through the ordinary ReputationComponent.OnEntityDied path (FactionResource.KillReputationPenalty),
+; with no new mechanic: this is 42I's "contraband/public standing integration" line, paid for
+; entirely by data already in Villagers.tres.
+;
+; ai.mark_guard is PackFlanker plus a leash (see that file) — he does not chase past his own ground.
+
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.iron_mark"
+NameKey = "enemy.iron_mark.name"
+AttributesPath = "res://data/attributes/BanditAttributes.tres"
+WeaponPath = "res://data/weapons/IronSword.tres"
+LootTablePath = "res://data/loot/BanditLoot.tres"
+ModelPath = "res://assets/models/creatures/enm_bandit.glb"
+PlaceholderTint = Color(0.3, 0.28, 0.32, 1)
+AiProfileId = "ai.mark_guard"
+FactionId = "faction.villagers"
+KnownSpellIds = Array[String]([])
+DialogueId = "dialogue.iron_mark"
+CapsuleRadius = 0.4
+CapsuleHeight = 1.8
+MaxPoise = 35.0
+StaminaRegen = 14.0
+XpValue = 45

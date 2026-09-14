@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BestiaryEntryResource" format=3]
+
+[ext_resource type="Script" path="res://src/Enemies/BestiaryEntryResource.cs" id="1_entry"]
+
+; Phase 42I — KillsToKnow = 1, AncientDragon's reason: the one page in the book that may be filled in
+; by a conversation instead of a kill (quest.iron.judgment's spare path never triggers EntityDiedEvent
+; at all).
+
+[resource]
+script = ExtResource("1_entry")
+Id = "enemy.iron_mark"
+NameKey = ""
+LoreKey = "enemy.iron_mark.lore"
+Category = 0
+KillsToKnow = 1

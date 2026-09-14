@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="DialogueResource" format=3]
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+; Netta Vire (Phase 42I), the escortee of quest.iron.escort. Copies Tessa's shape (dialogue.tessa,
+; 41B) exactly, for the reason that file gives: the parting choice is gated Condition = 3
+; (QuestCompleted) so it cannot be taken to strand her halfway, and carries Effect = 6
+; (DismissCompanion) with no Goto — dismissing while the roster frees her body must not then try to
+; walk a Goto into a node on a session that has just ended.
+
+[sub_resource type="Resource" id="ch_hold"]
+script = ExtResource("3_choice")
+Text = "dlg.iron_client.c_hold"
+
+[sub_resource type="Resource" id="ch_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.iron_client.c_bye"
+
+[sub_resource type="Resource" id="ch_arrived"]
+script = ExtResource("3_choice")
+Text = "dlg.iron_client.c_part"
+Condition = 3
+ConditionArg = "quest.iron.escort"
+Goto = "arrived"
+
+[sub_resource type="Resource" id="ch_part"]
+script = ExtResource("3_choice")
+Text = "dlg.iron_client.c_part"
+Effect = 6
+EffectArg = "companion.iron_client"
+
+[sub_resource type="Resource" id="node_root"]
+script = ExtResource("2_node")
+Id = "root"
+Text = "dlg.iron_client.root"
+Choices = Array[Resource]([SubResource("ch_arrived"), SubResource("ch_hold"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_arrived"]
+script = ExtResource("2_node")
+Id = "arrived"
+Text = "dlg.iron_client.arrived"
+Choices = Array[Resource]([SubResource("ch_part")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "dialogue.iron_client"
+SpeakerName = "dlg.iron_client.speaker"
+StartNodeId = "root"
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_arrived")])

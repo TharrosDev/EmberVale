@@ -44,6 +44,52 @@ Goto = "root"
 script = ExtResource("3_choice")
 Text = "dlg.syndicate_broker.c_end"
 
+; ── 42I: recruitment off the stranger line ──────────────────────────────────────────────────────
+; Two honest terminal states off one node, exactly as the ledger run's fork is (41B/41D): accept
+; joins outright (Effect = 11, JoinGuild — the choke point that also enforces RejoinAllowed, so a
+; console-driven refusal to take a left member back is never bypassed from dialogue), decline closes
+; the conversation with nothing written. There is no separate "offered" flag: GuildNotMember (15)
+; already re-opens this same door on the next visit, so nothing is lost by not recording the ask.
+[sub_resource type="Resource" id="ch_join"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.c_join"
+Goto = "joined_now"
+Effect = 11
+EffectArg = "faction.iron_syndicate"
+
+[sub_resource type="Resource" id="ch_join_decline"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.c_join_decline"
+Goto = "declined"
+
+[sub_resource type="Resource" id="ch_joined_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.c_end"
+
+[sub_resource type="Resource" id="ch_declined_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.c_end"
+
+; ── 42I: rank one, off the member line ──────────────────────────────────────────────────────────
+; Reachable only once all three of Grieve's postings are behind you (QuestCompleted on the last of
+; the chain, quest.iron.judgment — PrerequisiteQuestId already makes that "all three", not "any
+; one"). Effect = 12 (GuildRank) is idempotent, so a second visit after promotion re-sets the same
+; rank flags rather than erroring; the text is written to read fine either way rather than as a
+; one-time announcement, which is what let this skip a HasFlag/MissingFlag pair on the derived rank
+; flag itself (NOW.md invariant 18).
+[sub_resource type="Resource" id="ch_advance"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.c_advance"
+Condition = 3
+ConditionArg = "quest.iron.judgment"
+Goto = "advance"
+
+[sub_resource type="Resource" id="ch_advance_confirm"]
+script = ExtResource("3_choice")
+Text = "dlg.syndicate_broker.c_advance_confirm"
+Effect = 12
+EffectArg = "faction.iron_syndicate:1"
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
@@ -54,17 +100,35 @@ Choices = Array[Resource]([SubResource("ch_member"), SubResource("ch_stranger"),
 script = ExtResource("2_node")
 Id = "member"
 Text = "dlg.syndicate_broker.member"
-Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+Choices = Array[Resource]([SubResource("ch_advance"), SubResource("ch_back"), SubResource("ch_end")])
 
 [sub_resource type="Resource" id="node_stranger"]
 script = ExtResource("2_node")
 Id = "stranger"
 Text = "dlg.syndicate_broker.stranger"
-Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+Choices = Array[Resource]([SubResource("ch_join"), SubResource("ch_join_decline"), SubResource("ch_back")])
+
+[sub_resource type="Resource" id="node_joined_now"]
+script = ExtResource("2_node")
+Id = "joined_now"
+Text = "dlg.syndicate_broker.joined_now"
+Choices = Array[Resource]([SubResource("ch_joined_bye")])
+
+[sub_resource type="Resource" id="node_declined"]
+script = ExtResource("2_node")
+Id = "declined"
+Text = "dlg.syndicate_broker.declined"
+Choices = Array[Resource]([SubResource("ch_declined_bye")])
+
+[sub_resource type="Resource" id="node_advance"]
+script = ExtResource("2_node")
+Id = "advance"
+Text = "dlg.syndicate_broker.advance"
+Choices = Array[Resource]([SubResource("ch_advance_confirm")])
 
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.syndicate_broker"
 SpeakerName = "dlg.syndicate_broker.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_joined_now"), SubResource("node_declined"), SubResource("node_advance")])

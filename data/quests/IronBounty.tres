@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="QuestResource" format=3]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+
+; Phase 42I — the plainest of the Ledger House's three postings: a straight bounty on the bandits
+; already working the roads the Syndicate protects. No PrerequisiteQuestId of its own, so it is the
+; first rung of quest.iron.escort's chain and the one Dallow Grieve offers the moment you are a
+; member at all (docs/RECIPES.md "a new quest" — WarbandBounty is the shape this copies, down to the
+; count of three).
+
+[sub_resource type="Resource" id="Obj_kill"]
+script = ExtResource("2_obj")
+Type = 0
+TargetId = "enemy.bandit"
+RequiredCount = 3
+Description = "quest.iron.bounty.obj"
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.iron.bounty"
+Title = "quest.iron.bounty.title"
+Summary = "quest.iron.bounty.summary"
+Objectives = Array[Resource]([SubResource("Obj_kill")])
+XpReward = 65
+GoldReward = 35
+GoldItemId = "item.currency.gold"
+RewardItems = []
+FactionRewardId = "faction.iron_syndicate"
+FactionRewardAmount = 6
+PrerequisiteQuestId = ""
+IsMainQuest = false
