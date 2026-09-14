@@ -1,0 +1,198 @@
+[gd_resource type="Resource" script_class="DialogueResource" format=3]
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+; Bram Corrow (faction.dawnwardens, RankPeerNpcId). Phase 42C.
+;
+; He carries the whole probation arc so no fact about it has two owners: the offer, the fork, the
+; objectives (quest.dawnwardens.probation) and the rank-one grant are all one conversation graph.
+; The root keeps the standard member/stranger split (Condition 14/15, rank 0, exhaustive) exactly as
+; every other officer's does — he will not discuss guild work with someone who has not joined.
+;
+; ⚠️ THE FORK IS DECIDED BEFORE THE QUEST EXISTS, the barrels shape (41D / quest.hollowreach.barrels):
+; ch_fork_rescue/ch_fork_expedient each set ONE flag and go to a "_go" node whose one choice starts
+; the quest (Effect = 1). The two fork choices gate on EACH OTHER (Condition 6, MissingFlag) so a
+; player who picks a side and walks off without accepting still has only one door open on return.
+; SequentialObjectives on the quest means neither Reach objective can complete before the Defend does,
+; regardless of how early the flag is set - the fight is still the fight.
+;
+; ⚠️ RANK ONE IS GRANTED ONLY ON COMPLETION, NOT ON THE FORK. The branch flag says which way the
+; player chose; the rank comes from ch_claim_rescue/ch_claim_expedient, each gated on Condition 3
+; (QuestCompleted) INSIDE the after-node the branch flag already picked - QuestCompleted is
+; therefore true by construction wherever those two choices can be reached, without a compound
+; condition existing anywhere. Neither branch pays a different reward (the quest's own
+; FactionRewardId/Amount, faction.villagers, is one field) - Sedge's header already made that call
+; for the same reason: a second place rewards live is invariant 5 waiting to happen. What differs is
+; what Bram says, which is the consequence a player actually feels.
+;
+; ⚠️ NEITHER BRANCH TOUCHES THE IRON KING. The tension is the Dawnwardens' own - civilians first or
+; the order kept, Danhal's silent argument with the world - and 42D is the one that gets to spend the
+; Iron King's flags on it.
+
+[sub_resource type="Resource" id="ch_member"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_member"
+Condition = 14
+ConditionArg = "faction.dawnwardens:0"
+Goto = "member"
+
+[sub_resource type="Resource" id="ch_stranger"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_stranger"
+Condition = 15
+ConditionArg = "faction.dawnwardens"
+Goto = "stranger"
+
+[sub_resource type="Resource" id="ch_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_bye"
+
+[sub_resource type="Resource" id="ch_back"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_end"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_end"
+
+[sub_resource type="Resource" id="ch_probation"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_probation"
+Condition = 1
+ConditionArg = "quest.dawnwardens.probation"
+Goto = "probation"
+
+[sub_resource type="Resource" id="ch_probation_active"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_probation_active"
+Condition = 2
+ConditionArg = "quest.dawnwardens.probation"
+Goto = "probation_active"
+
+[sub_resource type="Resource" id="ch_after_rescue"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_after_rescue"
+Condition = 5
+ConditionArg = "flag.dawnwardens.probation_rescue"
+Goto = "after_rescue"
+
+[sub_resource type="Resource" id="ch_after_expedient"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_after_expedient"
+Condition = 5
+ConditionArg = "flag.dawnwardens.probation_expedient"
+Goto = "after_expedient"
+
+[sub_resource type="Resource" id="ch_fork_rescue"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_fork_rescue"
+Condition = 6
+ConditionArg = "flag.dawnwardens.probation_expedient"
+Effect = 2
+EffectArg = "flag.dawnwardens.probation_rescue"
+Goto = "rescue_go"
+
+[sub_resource type="Resource" id="ch_fork_expedient"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_fork_expedient"
+Condition = 6
+ConditionArg = "flag.dawnwardens.probation_rescue"
+Effect = 2
+EffectArg = "flag.dawnwardens.probation_expedient"
+Goto = "expedient_go"
+
+[sub_resource type="Resource" id="ch_probation_decline"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_probation_decline"
+
+[sub_resource type="Resource" id="ch_rescue_go"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_rescue_go"
+Effect = 1
+EffectArg = "quest.dawnwardens.probation"
+
+[sub_resource type="Resource" id="ch_expedient_go"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_expedient_go"
+Effect = 1
+EffectArg = "quest.dawnwardens.probation"
+
+[sub_resource type="Resource" id="ch_claim_rescue"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_claim_rescue"
+Condition = 3
+ConditionArg = "quest.dawnwardens.probation"
+Effect = 2
+EffectArg = "guild.dawnwardens.rank1"
+
+[sub_resource type="Resource" id="ch_claim_expedient"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_claim_expedient"
+Condition = 3
+ConditionArg = "quest.dawnwardens.probation"
+Effect = 2
+EffectArg = "guild.dawnwardens.rank1"
+
+[sub_resource type="Resource" id="node_root"]
+script = ExtResource("2_node")
+Id = "root"
+Text = "dlg.dawnwarden_partner.root"
+Choices = Array[Resource]([SubResource("ch_member"), SubResource("ch_stranger"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_stranger"]
+script = ExtResource("2_node")
+Id = "stranger"
+Text = "dlg.dawnwarden_partner.stranger"
+Choices = Array[Resource]([SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_member"]
+script = ExtResource("2_node")
+Id = "member"
+Text = "dlg.dawnwarden_partner.member"
+Choices = Array[Resource]([SubResource("ch_probation"), SubResource("ch_probation_active"), SubResource("ch_after_rescue"), SubResource("ch_after_expedient"), SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_probation"]
+script = ExtResource("2_node")
+Id = "probation"
+Text = "dlg.dawnwarden_partner.probation"
+Choices = Array[Resource]([SubResource("ch_fork_rescue"), SubResource("ch_fork_expedient"), SubResource("ch_probation_decline")])
+
+[sub_resource type="Resource" id="node_rescue_go"]
+script = ExtResource("2_node")
+Id = "rescue_go"
+Text = "dlg.dawnwarden_partner.rescue_go"
+Choices = Array[Resource]([SubResource("ch_rescue_go")])
+
+[sub_resource type="Resource" id="node_expedient_go"]
+script = ExtResource("2_node")
+Id = "expedient_go"
+Text = "dlg.dawnwarden_partner.expedient_go"
+Choices = Array[Resource]([SubResource("ch_expedient_go")])
+
+[sub_resource type="Resource" id="node_probation_active"]
+script = ExtResource("2_node")
+Id = "probation_active"
+Text = "dlg.dawnwarden_partner.probation_active"
+Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_after_rescue"]
+script = ExtResource("2_node")
+Id = "after_rescue"
+Text = "dlg.dawnwarden_partner.after_rescue"
+Choices = Array[Resource]([SubResource("ch_claim_rescue"), SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_after_expedient"]
+script = ExtResource("2_node")
+Id = "after_expedient"
+Text = "dlg.dawnwarden_partner.after_expedient"
+Choices = Array[Resource]([SubResource("ch_claim_expedient"), SubResource("ch_back"), SubResource("ch_end")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "dialogue.dawnwarden_partner"
+SpeakerName = "dlg.dawnwarden_partner.speaker"
+StartNodeId = "root"
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_stranger"), SubResource("node_member"), SubResource("node_probation"), SubResource("node_rescue_go"), SubResource("node_expedient_go"), SubResource("node_probation_active"), SubResource("node_after_rescue"), SubResource("node_after_expedient")])
