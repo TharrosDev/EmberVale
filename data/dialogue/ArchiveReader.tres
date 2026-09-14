@@ -16,6 +16,16 @@
 ;     Never Condition = 5 (HasFlag) with a guild.* flag: those flags are DERIVED by GuildRules from
 ;     the faction id, and hand-writing one into a .tres is NOW.md invariant 18's whole subject.
 ;   - the two are exhaustive and disjoint, so root is never a dead end.
+;
+; ── 42G: the member's fieldwork ──────────────────────────────────────────────────────────────────
+; His own 42B member line — "there is a thing to go and settle, and settling things is what the Keeper
+; sends us out to do" — is the contact role 42B declared and left empty; this is what he sends a member
+; out to do, twice. Both offers are QuestAvailable/QuestActive pairs (ch_survey_*/ch_lead_*), exhaustive
+; the same way dlg.syndicate_broker's rotation is: quest.veiled_archive.ancient_lead's own
+; PrerequisiteQuestId keeps its QuestAvailable false until ley_survey is complete, so at most one pair
+; is ever live — the visible rotation IS the reading order, same as 42I's three contracts.
+; Admission itself is NOT here — that is Keeper Ysolde Marr's own door (ArchiveKeeper.tres), and the
+; stranger branch below is untouched from 42B on purpose: a non-member gets nothing from Ferris.
 
 [sub_resource type="Resource" id="ch_member"]
 script = ExtResource("3_choice")
@@ -44,6 +54,82 @@ Goto = "root"
 script = ExtResource("3_choice")
 Text = "dlg.archive_reader.c_end"
 
+[sub_resource type="Resource" id="ch_survey_offer"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_reader.c_survey_offer"
+Condition = 1
+ConditionArg = "quest.veiled_archive.ley_survey"
+Goto = "survey_offer"
+
+[sub_resource type="Resource" id="ch_survey_active"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_reader.c_survey_active"
+Condition = 2
+ConditionArg = "quest.veiled_archive.ley_survey"
+Goto = "survey_active"
+
+[sub_resource type="Resource" id="ch_survey_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_reader.c_survey_accept"
+Goto = "survey_accepted"
+Effect = 1
+EffectArg = "quest.veiled_archive.ley_survey"
+
+[sub_resource type="Resource" id="ch_survey_decline"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_reader.c_survey_decline"
+Goto = "survey_declined"
+
+[sub_resource type="Resource" id="ch_survey_accepted_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_reader.c_end"
+
+[sub_resource type="Resource" id="ch_survey_declined_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_reader.c_end"
+
+[sub_resource type="Resource" id="ch_survey_active_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_reader.c_end"
+
+[sub_resource type="Resource" id="ch_lead_offer"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_reader.c_lead_offer"
+Condition = 1
+ConditionArg = "quest.veiled_archive.ancient_lead"
+Goto = "lead_offer"
+
+[sub_resource type="Resource" id="ch_lead_active"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_reader.c_lead_active"
+Condition = 2
+ConditionArg = "quest.veiled_archive.ancient_lead"
+Goto = "lead_active"
+
+[sub_resource type="Resource" id="ch_lead_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_reader.c_lead_accept"
+Goto = "lead_accepted"
+Effect = 1
+EffectArg = "quest.veiled_archive.ancient_lead"
+
+[sub_resource type="Resource" id="ch_lead_decline"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_reader.c_lead_decline"
+Goto = "lead_declined"
+
+[sub_resource type="Resource" id="ch_lead_accepted_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_reader.c_end"
+
+[sub_resource type="Resource" id="ch_lead_declined_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_reader.c_end"
+
+[sub_resource type="Resource" id="ch_lead_active_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_reader.c_end"
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
@@ -54,7 +140,7 @@ Choices = Array[Resource]([SubResource("ch_member"), SubResource("ch_stranger"),
 script = ExtResource("2_node")
 Id = "member"
 Text = "dlg.archive_reader.member"
-Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+Choices = Array[Resource]([SubResource("ch_survey_offer"), SubResource("ch_survey_active"), SubResource("ch_lead_offer"), SubResource("ch_lead_active"), SubResource("ch_back"), SubResource("ch_end")])
 
 [sub_resource type="Resource" id="node_stranger"]
 script = ExtResource("2_node")
@@ -62,9 +148,57 @@ Id = "stranger"
 Text = "dlg.archive_reader.stranger"
 Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
 
+[sub_resource type="Resource" id="node_survey_offer"]
+script = ExtResource("2_node")
+Id = "survey_offer"
+Text = "dlg.archive_reader.survey_offer"
+Choices = Array[Resource]([SubResource("ch_survey_accept"), SubResource("ch_survey_decline")])
+
+[sub_resource type="Resource" id="node_survey_accepted"]
+script = ExtResource("2_node")
+Id = "survey_accepted"
+Text = "dlg.archive_reader.survey_accepted"
+Choices = Array[Resource]([SubResource("ch_survey_accepted_bye")])
+
+[sub_resource type="Resource" id="node_survey_declined"]
+script = ExtResource("2_node")
+Id = "survey_declined"
+Text = "dlg.archive_reader.survey_declined"
+Choices = Array[Resource]([SubResource("ch_survey_declined_bye")])
+
+[sub_resource type="Resource" id="node_survey_active"]
+script = ExtResource("2_node")
+Id = "survey_active"
+Text = "dlg.archive_reader.survey_active"
+Choices = Array[Resource]([SubResource("ch_survey_active_bye")])
+
+[sub_resource type="Resource" id="node_lead_offer"]
+script = ExtResource("2_node")
+Id = "lead_offer"
+Text = "dlg.archive_reader.lead_offer"
+Choices = Array[Resource]([SubResource("ch_lead_accept"), SubResource("ch_lead_decline")])
+
+[sub_resource type="Resource" id="node_lead_accepted"]
+script = ExtResource("2_node")
+Id = "lead_accepted"
+Text = "dlg.archive_reader.lead_accepted"
+Choices = Array[Resource]([SubResource("ch_lead_accepted_bye")])
+
+[sub_resource type="Resource" id="node_lead_declined"]
+script = ExtResource("2_node")
+Id = "lead_declined"
+Text = "dlg.archive_reader.lead_declined"
+Choices = Array[Resource]([SubResource("ch_lead_declined_bye")])
+
+[sub_resource type="Resource" id="node_lead_active"]
+script = ExtResource("2_node")
+Id = "lead_active"
+Text = "dlg.archive_reader.lead_active"
+Choices = Array[Resource]([SubResource("ch_lead_active_bye")])
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.archive_reader"
 SpeakerName = "dlg.archive_reader.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_survey_offer"), SubResource("node_survey_accepted"), SubResource("node_survey_declined"), SubResource("node_survey_active"), SubResource("node_lead_offer"), SubResource("node_lead_accepted"), SubResource("node_lead_declined"), SubResource("node_lead_active")])

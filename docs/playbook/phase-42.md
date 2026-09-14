@@ -106,7 +106,7 @@
     overflow and every Phase 47 realm-arc hook flag.
   - **Done when:** final rank records judgment rather than raw kills and feeds Frostfang/Ashen arcs.
 
-- [ ] **42G — Veiled Archive admission and recovered knowledge** `[C]`
+- [x] **42G — Veiled Archive admission and recovered knowledge** `[C]` ✅
   - **Goal:** turn the fading-Weave/recovered-spell systems into the scholar guild's play loop.
   - **Build / Author:** lost-tome admission, ley-site survey and Ancient-knowledge lead using tomes,
     `LearnSpell`, Weave potency and existing objectives; establish Sunspire library placement handoff.
@@ -114,6 +114,25 @@
   - **Verify:** tome already learned, Ancient spared/killed, low/high-potency regions, duplicate spell
     reward, save after learning and canonical map targets.
   - **Done when:** rank one plus a recovered spell are completable for every Ancient outcome.
+  - **Done:** three `PrerequisiteQuestId`-chained quests off the two officers 42B already placed and
+    zero new placement, item or spell. `quest.veiled_archive.lost_tome` (admission) sends a candidate
+    to ask Tam Quillfellow about the Treatise on Wardings his Scriptorium was never meant to sell
+    (38L's own lore, finally used) and report to Keeper Ysolde Marr, whose 42B stranger line — "a
+    person joins us by bringing us something we did not have" — is admission's whole brief, made
+    playable; `JoinGuild` fires on the revisit after report, gated `Condition = 16` per the 42I
+    checkpoint fix. `quest.veiled_archive.ley_survey` sends a member to the Ember Crown and Frostfang
+    waystones — already-mapped 39.5A travel nodes sitting at opposite ends of `RegionResource.
+    WeavePotency` (1.0 / 0.5) — off Ferris Vail's own 42B line about a ley line "somebody walked."
+    `quest.veiled_archive.ancient_lead` sends a member to `dialogue.ancient_dragon` (35F) and reuses
+    its two existing outcome flags untouched — `flag.ancient.taught` (spared) and
+    `flag.ancient_dragon_defeated` (killed) — as the `RequiredFlagId` pair on two Talk objectives,
+    the exact shape `quest.ash_hunters.grimtusk`'s report pair already proved (41D: only one is ever
+    live, the other stays inert, no `ForbiddenFlagId` cross-gate needed since the flags are already
+    mutually exclusive). Rank one and the recovered spell (`spell.elder_word`, already teachable from
+    both outcomes since 35F) are granted together on Ysolde Marr's `member` branch, gated on
+    `QuestCompleted` for `ancient_lead` — the two-node split (`LearnSpell` on the branch choice,
+    `GuildRank` on the node it converges to) is 42I's own trick for "one choice, one effect." See the
+    retrospective below.
 
 - [ ] **42H — Veiled Archive truth-custody finale** `[C]`
   - **Goal:** decide whether dangerous knowledge is preserved, shared or sealed, feeding Act III.
@@ -539,6 +558,71 @@ quest-started or not.
    entire yard-and-regenerate cycle. **Grep the target cell's `Yard(...)` calls for one already shaped
    right before authoring a new one** — a levelled pad with nothing on it is not always a road (the
    42B trap); sometimes it is simply unclaimed.
+
+---
+
+## 42G — the seams were all already there
+
+42G is the sub-phase where the "cheap kind that already exists" question (42A's own carry-forward)
+paid off hardest: every noun the entry asked for — a lost tome, a ley site, the Ancient's knowledge —
+turned out to be something the repo already had, half-written into 42B's own flavour text or 35F's
+own dragon content, waiting for a quest to point at it. **Zero new scenes, zero new items, zero new
+spells, zero new flags, zero new C#.** The whole sub-phase is three `.tres` quests, two edited
+dialogue graphs and one `strings.csv` block.
+
+**The admission trial is Tam Quillfellow's own shop comment, read literally.** `EmbermarketScriptorium.
+tres` has carried this line since 38L: "The Treatise on Wardings sits behind Honored... a book the
+Veiled Archive would rather nobody had copied." Nothing before 42G ever spent it. `quest.veiled_
+archive.lost_tome` is that line turned into an errand, and Keeper Ysolde Marr's own 42B stranger
+greeting — "a person joins us by bringing us something we did not have" — is quoted almost verbatim
+in the offer node, because it already said exactly what the trial needed to say.
+
+**The ley-site survey is Ferris Vail's own 42B member line, and it named its own destinations.**
+"Two of these say the ley line under the market runs north. The third was written by somebody who
+walked it" was authored in 42B with no quest behind it. `quest.veiled_archive.ley_survey` is that
+walk: two Reach objectives at the Ember Crown and Frostfang waystones (39.5A travel nodes, already
+mapped, needing no new placement) which happen to sit at opposite ends of `RegionResource.
+WeavePotency` (1.0 and 0.5) — the "low/high-potency regions" Verify line is two existing field
+values on two existing `.tres` files, not new content.
+
+**The Ancient-knowledge lead adds no dragon content because 35F already built both outcomes.**
+`dialogue.ancient_dragon` teaches `spell.elder_word` whether the Ancient is spared (the favour,
+closed by `flag.ancient.taught`) or killed (the hoard `SpellTomeComponent`, gated on
+`flag.ancient_dragon_defeated` — raised by `LairSpawnComponent.DefeatFlagId` the instant it dies,
+independent of whether the tome is ever actually read). `quest.veiled_archive.ancient_lead`'s two
+report objectives read those same two flags as `RequiredFlagId`, unmodified — the
+`quest.ash_hunters.grimtusk` shape (41D: two Talk objectives on one dialogue, each behind a different
+flag, only one ever live) applied to content two guilds does not own. This is also what makes
+"duplicate spell reward" free: the Archive's own `LearnSpell` grant on rank one is a safety net for a
+player who never revisited the hoard tome, and a no-op for one who already knows the word from the
+Ancient directly — `SpellcastingComponent.Learn`'s existing idempotency, exercised, not extended.
+
+⚠️ **A REPORT OBJECTIVE ON THE SAME NPC WHO OFFERS THE QUEST NEEDS `SequentialObjectives`, EVEN WHEN
+NEITHER OBJECTIVE IS Kill.** 42E's soft-lock was Kill-plus-Sequential; this sub-phase's near-miss was
+the opposite shape. `lost_tome` and `ley_survey` both report to the same officer who hands them out
+(Ysolde Marr and Ferris Vail respectively), and a Talk objective completes on *any* end of its
+dialogue (the repo-wide rule, not new to 42G) — so an unordered report objective would have ticked
+the instant the *offering* conversation itself ended, crediting a report for work never done.
+`ancient_lead`'s two report objectives sit on a *different* NPC from the one who offers the quest
+(Ferris offers, Ysolde hears it), which is exactly why that one needed no ordering bool at all —
+matching `quest.ash_hunters.grimtusk`'s own report pair, which has the same property for the same
+reason. **The question worth asking before reaching for `SequentialObjectives` on a report objective
+is not "is there a Kill in this quest" but "is the report on the same dialogue as the offer."**
+
+### Two things worth carrying into the next sub-phase
+
+1. ⚠️ **BEFORE AUTHORING A NEW PLACE, ITEM OR SPELL FOR A GUILD ARC, GREP THE PRIOR SUB-PHASES' OWN
+   FLAVOUR TEXT FOR THE THING THE BRIEF IS ASKING FOR.** 42B's officer greetings and 38L's shop
+   comment both named exactly what 42G needed two phases early, in plain prose, because a writer who
+   already knew the guild's shape wrote lines that assumed the payoff existed. 42H's finale should
+   grep `dlg.archive_keeper.*`/`dlg.archive_reader.*` and this sub-phase's own new nodes before
+   inventing a location or an item — the seam is very often already sitting in `strings.csv`.
+2. ⚠️ **TWO EXISTING OUTCOME FLAGS FROM AN UNRELATED SYSTEM ARE A COMPLETE BRANCH, AND REUSING THEM
+   UNMODIFIED IS THE POINT.** `flag.ancient.taught` and `flag.ancient_dragon_defeated` were authored
+   for 35F's own dragon-favour content with no guild in mind; 42G read them as `RequiredFlagId` and
+   changed neither. 42H's truth-custody finale will want to know what the player ultimately DID with
+   `spell.elder_word` and the Ancient's fate — the answer is almost certainly already sitting in these
+   same two flags rather than a new one, exactly as this sub-phase's own reuse was.
 
 ---
 
