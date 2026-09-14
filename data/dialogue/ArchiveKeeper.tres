@@ -16,6 +16,26 @@
 ;     Never Condition = 5 (HasFlag) with a guild.* flag: those flags are DERIVED by GuildRules from
 ;     the faction id, and hand-writing one into a .tres is NOW.md invariant 18's whole subject.
 ;   - the two are exhaustive and disjoint, so root is never a dead end.
+;
+; ── 42G: admission off the stranger line ─────────────────────────────────────────────────────────
+; The Keeper's own 42B line — "A person joins us by bringing us something we did not have" — is the
+; whole brief, so admission hangs off HER stranger branch rather than the contact's: ch_trial_offer /
+; ch_trial_active / ch_trial_ready mirror dlg.ancient.root's own QuestAvailable/QuestActive/
+; QuestCompleted triple on quest.veiled_archive.lost_tome, and are exhaustive for exactly the same
+; reason that one is. ch_trial_admit carries Condition = 16 (GuildCanJoin) because Goto fires even
+; when JoinGuild refuses (42I checkpoint fix; RejoinAllowed = false on this faction makes the refusal
+; real, not theoretical) — --validate enforces the pairing.
+;
+; ── 42G: rank one and a recovered spell, off the member line ────────────────────────────────────
+; ch_advance is a THIRD branch inside `member`, never a narrowing of ch_member's own condition (42B/
+; 42C's own carried-forward warning). It is reachable once quest.veiled_archive.ancient_lead is
+; QuestCompleted; the two choices in `advance` read whichever of the mutually exclusive outcome flags
+; the quest's own report objectives already required (spared: flag.ancient.taught; killed:
+; flag.ancient_dragon_defeated) and both carry Effect = 8 (LearnSpell, spell.elder_word) — idempotent
+; if the player already knows it from dialogue.ancient_dragon directly, which is how "duplicate spell
+; reward" is handled for free. `advance_ranked`'s one choice carries Effect = 12 (GuildRank), the
+; two-node split 42I's own retrospective named: a DialogueChoice carries one Effect, so the spell and
+; the rank cannot both fire from the same choice.
 
 [sub_resource type="Resource" id="ch_member"]
 script = ExtResource("3_choice")
@@ -44,6 +64,95 @@ Goto = "root"
 script = ExtResource("3_choice")
 Text = "dlg.archive_keeper.c_end"
 
+[sub_resource type="Resource" id="ch_trial_offer"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.c_trial_offer"
+Condition = 1
+ConditionArg = "quest.veiled_archive.lost_tome"
+Goto = "trial_offer"
+
+[sub_resource type="Resource" id="ch_trial_active"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.c_trial_active"
+Condition = 2
+ConditionArg = "quest.veiled_archive.lost_tome"
+Goto = "trial_active"
+
+[sub_resource type="Resource" id="ch_trial_ready"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.c_trial_ready"
+Condition = 3
+ConditionArg = "quest.veiled_archive.lost_tome"
+Goto = "trial_ready"
+
+[sub_resource type="Resource" id="ch_trial_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.c_trial_accept"
+Goto = "trial_accepted"
+Effect = 1
+EffectArg = "quest.veiled_archive.lost_tome"
+
+[sub_resource type="Resource" id="ch_trial_decline"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.c_trial_decline"
+Goto = "trial_declined"
+
+[sub_resource type="Resource" id="ch_trial_accepted_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.c_end"
+
+[sub_resource type="Resource" id="ch_trial_declined_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.c_end"
+
+[sub_resource type="Resource" id="ch_trial_active_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.c_end"
+
+[sub_resource type="Resource" id="ch_trial_admit"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.c_trial_admit"
+Goto = "admitted"
+Condition = 16
+ConditionArg = "faction.veiled_archive"
+Effect = 11
+EffectArg = "faction.veiled_archive"
+
+[sub_resource type="Resource" id="ch_admitted_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.c_end"
+
+[sub_resource type="Resource" id="ch_advance"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.c_advance"
+Condition = 3
+ConditionArg = "quest.veiled_archive.ancient_lead"
+Goto = "advance"
+
+[sub_resource type="Resource" id="ch_advance_taught"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.c_advance_taught"
+Condition = 5
+ConditionArg = "flag.ancient.taught"
+Goto = "advance_ranked"
+Effect = 8
+EffectArg = "spell.elder_word"
+
+[sub_resource type="Resource" id="ch_advance_defeated"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.c_advance_defeated"
+Condition = 5
+ConditionArg = "flag.ancient_dragon_defeated"
+Goto = "advance_ranked"
+Effect = 8
+EffectArg = "spell.elder_word"
+
+[sub_resource type="Resource" id="ch_advance_confirm"]
+script = ExtResource("3_choice")
+Text = "dlg.archive_keeper.c_advance_confirm"
+Effect = 12
+EffectArg = "faction.veiled_archive:1"
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
@@ -54,17 +163,65 @@ Choices = Array[Resource]([SubResource("ch_member"), SubResource("ch_stranger"),
 script = ExtResource("2_node")
 Id = "member"
 Text = "dlg.archive_keeper.member"
-Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+Choices = Array[Resource]([SubResource("ch_advance"), SubResource("ch_back"), SubResource("ch_end")])
 
 [sub_resource type="Resource" id="node_stranger"]
 script = ExtResource("2_node")
 Id = "stranger"
 Text = "dlg.archive_keeper.stranger"
-Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+Choices = Array[Resource]([SubResource("ch_trial_offer"), SubResource("ch_trial_active"), SubResource("ch_trial_ready"), SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_trial_offer"]
+script = ExtResource("2_node")
+Id = "trial_offer"
+Text = "dlg.archive_keeper.trial_offer"
+Choices = Array[Resource]([SubResource("ch_trial_accept"), SubResource("ch_trial_decline")])
+
+[sub_resource type="Resource" id="node_trial_accepted"]
+script = ExtResource("2_node")
+Id = "trial_accepted"
+Text = "dlg.archive_keeper.trial_accepted"
+Choices = Array[Resource]([SubResource("ch_trial_accepted_bye")])
+
+[sub_resource type="Resource" id="node_trial_declined"]
+script = ExtResource("2_node")
+Id = "trial_declined"
+Text = "dlg.archive_keeper.trial_declined"
+Choices = Array[Resource]([SubResource("ch_trial_declined_bye")])
+
+[sub_resource type="Resource" id="node_trial_active"]
+script = ExtResource("2_node")
+Id = "trial_active"
+Text = "dlg.archive_keeper.trial_active"
+Choices = Array[Resource]([SubResource("ch_trial_active_bye")])
+
+[sub_resource type="Resource" id="node_trial_ready"]
+script = ExtResource("2_node")
+Id = "trial_ready"
+Text = "dlg.archive_keeper.trial_ready"
+Choices = Array[Resource]([SubResource("ch_trial_admit")])
+
+[sub_resource type="Resource" id="node_admitted"]
+script = ExtResource("2_node")
+Id = "admitted"
+Text = "dlg.archive_keeper.admitted"
+Choices = Array[Resource]([SubResource("ch_admitted_bye")])
+
+[sub_resource type="Resource" id="node_advance"]
+script = ExtResource("2_node")
+Id = "advance"
+Text = "dlg.archive_keeper.advance"
+Choices = Array[Resource]([SubResource("ch_advance_taught"), SubResource("ch_advance_defeated")])
+
+[sub_resource type="Resource" id="node_advance_ranked"]
+script = ExtResource("2_node")
+Id = "advance_ranked"
+Text = "dlg.archive_keeper.advance_ranked"
+Choices = Array[Resource]([SubResource("ch_advance_confirm")])
 
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.archive_keeper"
 SpeakerName = "dlg.archive_keeper.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_trial_offer"), SubResource("node_trial_accepted"), SubResource("node_trial_declined"), SubResource("node_trial_active"), SubResource("node_trial_ready"), SubResource("node_admitted"), SubResource("node_advance"), SubResource("node_advance_ranked")])

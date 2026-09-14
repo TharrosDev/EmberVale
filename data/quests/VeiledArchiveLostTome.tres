@@ -1,0 +1,48 @@
+[gd_resource type="Resource" script_class="QuestResource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+
+; The Veiled Archive's admission trial (Phase 42G). "A person joins us by bringing us something we
+; did not have" is Keeper Ysolde Marr's own line from her 42B stranger greeting — the whole brief for
+; this quest is that line, made playable. Tam Quillfellow's Scriptorium (38L) already sells a copy of
+; the Treatise on Wardings "the Veiled Archive would rather nobody had copied" (his shop file's own
+; comment); this quest is the seam that finally uses it. No new item, no new prop, no new cell.
+;
+; ⚠️ BOTH OBJECTIVES TARGET dialogue.tam THEN dialogue.archive_keeper, AND THE SECOND ONE NEEDS
+; SEQUENTIAL. Talk objectives complete on ANY end of their dialogue, and this quest is OFFERED by the
+; Keeper herself (her stranger branch) — so without ordering, ending the very conversation that starts
+; the quest would also satisfy the report half in the same breath. SequentialObjectives is the safe
+; answer here precisely because neither objective is Kill (42E's own trap): Talk repeats forever, so
+; requiring obj_ask before obj_report live can never soft-lock, only ever ask the player to go first.
+[sub_resource type="Resource" id="Obj_ask_tam"]
+script = ExtResource("2_obj")
+Type = 3
+TargetId = "dialogue.tam"
+RequiredCount = 1
+Description = "quest.veiled_archive.lost_tome.obj_ask"
+LocationId = "location.embermarket.scriptorium"
+
+[sub_resource type="Resource" id="Obj_report"]
+script = ExtResource("2_obj")
+Type = 3
+TargetId = "dialogue.archive_keeper"
+RequiredCount = 1
+Description = "quest.veiled_archive.lost_tome.obj_report"
+LocationId = "location.embermarket.annexe"
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.veiled_archive.lost_tome"
+Title = "quest.veiled_archive.lost_tome.title"
+Summary = "quest.veiled_archive.lost_tome.summary"
+Objectives = Array[Resource]([SubResource("Obj_ask_tam"), SubResource("Obj_report")])
+XpReward = 80
+GoldReward = 40
+GoldItemId = "item.currency.gold"
+RewardItems = Array[Resource]([])
+FactionRewardId = "faction.veiled_archive"
+FactionRewardAmount = 10
+SequentialObjectives = true
+PrerequisiteQuestId = ""
+IsMainQuest = false

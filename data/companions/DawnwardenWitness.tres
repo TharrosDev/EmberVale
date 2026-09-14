@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="CompanionResource" format=3]
+
+[ext_resource type="Script" path="res://src/Companions/CompanionResource.cs" id="1_companion"]
+
+; Sella Ru, the witness at the heart of quest.dawnwardens.command (Phase 42D). Copies Netta Vire's
+; shape (data/companions/IronClient.tres, 42I) exactly, for the same reason: she has no world body
+; before she is hired, is recruited straight out of dialogue.dawnwarden_partner rather than her own
+; conversation, and exists to be PROTECTED rather than to fight beside you.
+;
+; She is what makes the escort objective the Iron King's warrant-rider is actually arguing about: her
+; testimony is what the Dawnwardens would need to refuse his demand on the record rather than on
+; principle alone. npc_hooded is unused by every other companion or officer (Tessa: npc_woman_dress,
+; Wren: npc_adventurer_f, Kael: npc_kael, Netta: npc_townswoman) — one body per party member.
+;
+; LoyaltyQuestId is deliberately empty, for Netta's reason: one errand, no second act.
+
+[resource]
+script = ExtResource("1_companion")
+Id = "companion.dawnwarden_witness"
+NameKey = "companion.dawnwarden_witness.name"
+TitleKey = "companion.dawnwarden_witness.title"
+AttributesPath = "res://data/attributes/CompanionAttributes.tres"
+WeaponPath = "res://data/weapons/IronDagger.tres"
+ModelPath = "res://assets/models/characters/npc_hooded.glb"
+FactionId = "faction.villagers"
+KnownSpellIds = Array[String]([])
+FollowDistance = 2.5
+EngageRadius = 9.0
+AttackRange = 1.9
+LeashRadius = 16.0
+StartingLoyalty = 30
+LoyaltyQuestReward = 0
+LoyaltyQuestId = ""
+DialogueId = "dialogue.dawnwarden_witness"

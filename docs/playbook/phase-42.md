@@ -59,7 +59,7 @@
     condition. Both Reach targets (`location.tarn.landing`, `location.crossway.watch`) were already
     mapped; zero new map locations, zero new terrain, zero new mechanism. See the retrospective below.
 
-- [ ] **42D — Dawnwardens command arc and payoff** `[C]`
+- [x] **42D — Dawnwardens command arc and payoff** `[C]` ✅
   - **Goal:** resolve service versus authoritarian survival and make final rank world-visible.
   - **Build / Author:** mid-rank escort/defense, Iron King-linked command dispute and two-resolution
     finale; protection/resilience rewards distinct from divine relics; post-finale patrol, service and
@@ -67,6 +67,18 @@
   - **Verify:** both resolutions, Iron King defeated early, companion absent/present, full pack,
     journal/map cleanup and reload immediately before/after choice.
   - **Done when:** finale outcome changes Dawnwarden presence and is independently inspectable.
+  - **Done:** `quest.dawnwardens.command` (Escort Sella Ru, `companion.dawnwarden_witness`, then
+    Defend `location.wilds.north`) grants rank two; `quest.dawnwardens.finale` forks before it exists
+    (`flag.dawnwardens.finale_service`/`finale_authority`, `quest.hollowreach.barrels`'s shape a third
+    time in this one arc) into a Defend-the-corrie or Reach-the-Watch resolution, grants rank three and
+    `guild.dawnwardens.finale`, and pays one reward either way (Dawn's Bulwark). Both rewards
+    (`item.armor.warden_aegis`, `item.armor.dawn_bulwark`) are ordinary `BonusArmor`/`BonusMaxHealth`
+    equippables — ItemGrant's existing full-pack/duplicate handling, no new reward mechanism. Serjeant
+    Danhal and Captain Fenn each gained one more additive `GuildRankAtLeast:3` branch (the guild's
+    declared ceiling) that reads which branch flag is set for a patrol/hub variant; Bram's own
+    post-finale lines carry the third. `dialogue.dawnwarden_partner` reads `flag.iron_king_defeated`
+    once, for flavour only, and never sets or clears it. Zero new map locations, zero new region/world
+    changes, zero new `DialogueCondition`/`ObjectiveType`. See the retrospective below.
 
 - [x] **42E — Ash Hunters field induction** `[C]` ✅
   - **Goal:** make knowledge/preparation—not a kill counter—the hunter identity.
@@ -94,7 +106,7 @@
     overflow and every Phase 47 realm-arc hook flag.
   - **Done when:** final rank records judgment rather than raw kills and feeds Frostfang/Ashen arcs.
 
-- [ ] **42G — Veiled Archive admission and recovered knowledge** `[C]`
+- [x] **42G — Veiled Archive admission and recovered knowledge** `[C]` ✅
   - **Goal:** turn the fading-Weave/recovered-spell systems into the scholar guild's play loop.
   - **Build / Author:** lost-tome admission, ley-site survey and Ancient-knowledge lead using tomes,
     `LearnSpell`, Weave potency and existing objectives; establish Sunspire library placement handoff.
@@ -102,6 +114,25 @@
   - **Verify:** tome already learned, Ancient spared/killed, low/high-potency regions, duplicate spell
     reward, save after learning and canonical map targets.
   - **Done when:** rank one plus a recovered spell are completable for every Ancient outcome.
+  - **Done:** three `PrerequisiteQuestId`-chained quests off the two officers 42B already placed and
+    zero new placement, item or spell. `quest.veiled_archive.lost_tome` (admission) sends a candidate
+    to ask Tam Quillfellow about the Treatise on Wardings his Scriptorium was never meant to sell
+    (38L's own lore, finally used) and report to Keeper Ysolde Marr, whose 42B stranger line — "a
+    person joins us by bringing us something we did not have" — is admission's whole brief, made
+    playable; `JoinGuild` fires on the revisit after report, gated `Condition = 16` per the 42I
+    checkpoint fix. `quest.veiled_archive.ley_survey` sends a member to the Ember Crown and Frostfang
+    waystones — already-mapped 39.5A travel nodes sitting at opposite ends of `RegionResource.
+    WeavePotency` (1.0 / 0.5) — off Ferris Vail's own 42B line about a ley line "somebody walked."
+    `quest.veiled_archive.ancient_lead` sends a member to `dialogue.ancient_dragon` (35F) and reuses
+    its two existing outcome flags untouched — `flag.ancient.taught` (spared) and
+    `flag.ancient_dragon_defeated` (killed) — as the `RequiredFlagId` pair on two Talk objectives,
+    the exact shape `quest.ash_hunters.grimtusk`'s report pair already proved (41D: only one is ever
+    live, the other stays inert, no `ForbiddenFlagId` cross-gate needed since the flags are already
+    mutually exclusive). Rank one and the recovered spell (`spell.elder_word`, already teachable from
+    both outcomes since 35F) are granted together on Ysolde Marr's `member` branch, gated on
+    `QuestCompleted` for `ancient_lead` — the two-node split (`LearnSpell` on the branch choice,
+    `GuildRank` on the node it converges to) is 42I's own trick for "one choice, one effect." See the
+    retrospective below.
 
 - [ ] **42H — Veiled Archive truth-custody finale** `[C]`
   - **Goal:** decide whether dangerous knowledge is preserved, shared or sealed, feeding Act III.
@@ -136,7 +167,7 @@
     handoff save/load and reward protection.
   - **Done when:** final rank or expulsion is economically/world visibly distinct and main-story safe.
 
-- [ ] **42K — Emberbound secret initiation** `[C]`
+- [x] **42K — Emberbound secret initiation** `[C]` ✅
   - **Goal:** introduce a hidden order studying Flamebearers and relic ethics.
   - **Build / Author:** gate contact on legitimate Phase 23/28 state, not level; discreet investigation
     and relic-handling choice using corruption/boss/relic flags; concealed location undiscovered until
@@ -144,6 +175,19 @@
   - **Verify:** before/after Iron King, every corruption tier, relic accepted/refused, hidden/revealed
     map, refusal policy and save across initiation.
   - **Done when:** initiation is distinct from public guilds and reveals no future twist prematurely.
+  - **Done:** Seeker Bren Ilvo's own stranger line gates on `flag.iron_king_defeated` alone (a
+    legitimate Phase 28 boss-defeat event, `BossResource.DefeatFlagId`, never level) and starts
+    `quest.emberbound.summons` — a single Talk objective that completes on the same visit that
+    creates it, which is what reveals the Undercroft's map pin (`MapService.OnQuestStarted` reading
+    the objective's `LocationId`, gated by the same `RequiredFlagId` 42B left named but empty).
+    Hierarch Selane Ott's initiation gates on that quest's completion and offers the relic-handling
+    fork — surrender (`flag.emberbound.relic_surrendered`) or keep (`flag.emberbound.relic_kept`),
+    both converging on `JoinGuild`+`GuildRank` rank one — plus a genuine third door,
+    `guild.emberbound.refused`, non-terminal by the engine's existing `GuildRules.CanJoin` default.
+    Zero new mechanism: `tools/gen_map_locations.py` grew one generator parameter
+    (`required_flag`) to thread `RequiredFlagId` through, and everything else is `.tres` +
+    `strings.csv` on top of `DialogueCondition`/`DialogueEffect` and `MapLocationResource` fields
+    42I and the 2026-09 rebuild already shipped. See the retrospective below.
 
 - [ ] **42L — Emberbound reckoning and payoff** `[C]`
   - **Goal:** resolve whether divine power is safeguarded, destroyed or instrumentalized.
@@ -416,6 +460,59 @@ narrowing" actually means: additive within the branch already reached, not a sec
 
 ---
 
+## 42D — a re-visitable choice must never author a clearing effect
+
+The carry-forward above called it exactly: the finale's payoff needed `QuestCompleted` nested outside
+its branch flag, the same trick 42C used. What the carry-forward did not anticipate is that 42D grants
+a rank via a SECOND mechanism 42C never had to worry about — `DialogueEffect.GuildRank` (added in
+42I, after 42C shipped) — and that mechanism has a property `SetFlag` does not: **it clears every
+rank flag above the one it names.** That is exactly right for a one-shot promotion and exactly wrong
+for a choice a player can walk back to.
+
+`ch_command_after` (member → "About the warrant -", gated `QuestCompleted quest.dawnwardens.command`)
+stays visible forever once the command quest is done, the same way `ch_probation_active`'s siblings
+already do — nothing in this dialogue shape ever hides a completed-quest choice again. First authored
+with `Effect = GuildRank "faction.dawnwardens:2"`, it was correct on the FIRST visit and a silent
+demotion on every visit after the finale: a player who finished the command arc, talked to Bram (rank
+two), finished the finale (rank three, via a SEPARATE `GuildRank ":3"` on `ch_finale_done`), and then
+re-opened the same "About the warrant -" line would have `GuildRank ":2"` fire again and **clear rank
+three** — a guild rank silently regressing on a conversational dead end nobody would think to blame.
+Caught before `--validate` (which cannot see this — both effects are individually well-formed) by
+tracing the graph by hand for every choice a completed-quest gate leaves permanently open. The fix:
+`ch_command_after` uses `Effect = SetFlag "guild.dawnwardens.rank2"` instead — the exact write-side
+shape 42C already established for rank one, which only ever ADDS a flag. `ch_finale_done`'s own
+`GuildRank ":3"` stays, because 3 is `faction.dawnwardens`' declared ceiling (`RankNameKeys.Count`)
+and there is nothing above it left to clear — which is also why `GuildRank` back-fills ranks one and
+two on its own the moment the finale is claimed, whether or not the player ever visited
+`ch_command_after` at all: the two grants are redundant on the happy path and neither can leave a gap.
+
+**The Iron King dispute reads a flag it is forbidden to touch, and the read had to happen at the
+front door, not inside the quest.** `flag.iron_king_defeated` has no in-game consumer of its own
+worth spending — the Build note is explicit that this arc must never gate or consume it — so the only
+honest use left is flavour: two node texts (`command_offer_alive`/`command_offer_defeated`), picked by
+`HasFlag`/`MissingFlag` on the SAME node's two exit choices, both landing on the identical
+accept/decline pair beneath them. Nothing about availability, objectives or rewards differs; only
+what Bram calls the warrant-rider's authority does.
+
+### Two things worth carrying into the next sub-phase
+
+1. ⚠️ **A CHOICE A COMPLETED QUEST LEAVES PERMANENTLY OPEN MUST NEVER CARRY A CLEARING EFFECT, ONLY
+   AN ADDITIVE ONE.** `GuildRank` is the right tool exactly once, at the top of a guild's rank
+   ladder where nothing above it can ever be cleared; anywhere a promotion can be reached by more
+   than one route, or revisited after a later promotion, `SetFlag` on the exact `GuildRules`-derived
+   string is the only effect that is safe to fire twice. The next rank-granting arc on a SECOND
+   guild-hub choice (42B's carry-forward already flagged the third-branch slot as reusable) inherits
+   this the moment it grants anything short of the ceiling from a node the player can walk back to.
+2. ⚠️ **A DERIVED-PROSE FLAG (`flag.iron_king_defeated`) STAYS READ-ONLY BY PUTTING THE BRANCH AT THE
+   NODE LEVEL, NOT THE EFFECT LEVEL.** There is no `DialogueEffect` that could safely touch a
+   main-story flag from guild content even if one wanted to, so the only place "vary by an external
+   flag without gating on it" can live is two node TEXTS reached by two mutually exclusive
+   `HasFlag`/`MissingFlag` choices that reconverge immediately. Any future arc that wants to
+   acknowledge an Act I/II main-story fact without spending it should reach for this shape rather than
+   inventing a new condition or effect for a flag that already has an owner.
+
+---
+
 ## 42E — knowledge is the hunter identity, and the ground was already waiting
 
 42E landed as Ash Hunters' join arc as well as its induction quest — nothing in the roadmap before it
@@ -474,6 +571,71 @@ quest-started or not.
    entire yard-and-regenerate cycle. **Grep the target cell's `Yard(...)` calls for one already shaped
    right before authoring a new one** — a levelled pad with nothing on it is not always a road (the
    42B trap); sometimes it is simply unclaimed.
+
+---
+
+## 42G — the seams were all already there
+
+42G is the sub-phase where the "cheap kind that already exists" question (42A's own carry-forward)
+paid off hardest: every noun the entry asked for — a lost tome, a ley site, the Ancient's knowledge —
+turned out to be something the repo already had, half-written into 42B's own flavour text or 35F's
+own dragon content, waiting for a quest to point at it. **Zero new scenes, zero new items, zero new
+spells, zero new flags, zero new C#.** The whole sub-phase is three `.tres` quests, two edited
+dialogue graphs and one `strings.csv` block.
+
+**The admission trial is Tam Quillfellow's own shop comment, read literally.** `EmbermarketScriptorium.
+tres` has carried this line since 38L: "The Treatise on Wardings sits behind Honored... a book the
+Veiled Archive would rather nobody had copied." Nothing before 42G ever spent it. `quest.veiled_
+archive.lost_tome` is that line turned into an errand, and Keeper Ysolde Marr's own 42B stranger
+greeting — "a person joins us by bringing us something we did not have" — is quoted almost verbatim
+in the offer node, because it already said exactly what the trial needed to say.
+
+**The ley-site survey is Ferris Vail's own 42B member line, and it named its own destinations.**
+"Two of these say the ley line under the market runs north. The third was written by somebody who
+walked it" was authored in 42B with no quest behind it. `quest.veiled_archive.ley_survey` is that
+walk: two Reach objectives at the Ember Crown and Frostfang waystones (39.5A travel nodes, already
+mapped, needing no new placement) which happen to sit at opposite ends of `RegionResource.
+WeavePotency` (1.0 and 0.5) — the "low/high-potency regions" Verify line is two existing field
+values on two existing `.tres` files, not new content.
+
+**The Ancient-knowledge lead adds no dragon content because 35F already built both outcomes.**
+`dialogue.ancient_dragon` teaches `spell.elder_word` whether the Ancient is spared (the favour,
+closed by `flag.ancient.taught`) or killed (the hoard `SpellTomeComponent`, gated on
+`flag.ancient_dragon_defeated` — raised by `LairSpawnComponent.DefeatFlagId` the instant it dies,
+independent of whether the tome is ever actually read). `quest.veiled_archive.ancient_lead`'s two
+report objectives read those same two flags as `RequiredFlagId`, unmodified — the
+`quest.ash_hunters.grimtusk` shape (41D: two Talk objectives on one dialogue, each behind a different
+flag, only one ever live) applied to content two guilds does not own. This is also what makes
+"duplicate spell reward" free: the Archive's own `LearnSpell` grant on rank one is a safety net for a
+player who never revisited the hoard tome, and a no-op for one who already knows the word from the
+Ancient directly — `SpellcastingComponent.Learn`'s existing idempotency, exercised, not extended.
+
+⚠️ **A REPORT OBJECTIVE ON THE SAME NPC WHO OFFERS THE QUEST NEEDS `SequentialObjectives`, EVEN WHEN
+NEITHER OBJECTIVE IS Kill.** 42E's soft-lock was Kill-plus-Sequential; this sub-phase's near-miss was
+the opposite shape. `lost_tome` and `ley_survey` both report to the same officer who hands them out
+(Ysolde Marr and Ferris Vail respectively), and a Talk objective completes on *any* end of its
+dialogue (the repo-wide rule, not new to 42G) — so an unordered report objective would have ticked
+the instant the *offering* conversation itself ended, crediting a report for work never done.
+`ancient_lead`'s two report objectives sit on a *different* NPC from the one who offers the quest
+(Ferris offers, Ysolde hears it), which is exactly why that one needed no ordering bool at all —
+matching `quest.ash_hunters.grimtusk`'s own report pair, which has the same property for the same
+reason. **The question worth asking before reaching for `SequentialObjectives` on a report objective
+is not "is there a Kill in this quest" but "is the report on the same dialogue as the offer."**
+
+### Two things worth carrying into the next sub-phase
+
+1. ⚠️ **BEFORE AUTHORING A NEW PLACE, ITEM OR SPELL FOR A GUILD ARC, GREP THE PRIOR SUB-PHASES' OWN
+   FLAVOUR TEXT FOR THE THING THE BRIEF IS ASKING FOR.** 42B's officer greetings and 38L's shop
+   comment both named exactly what 42G needed two phases early, in plain prose, because a writer who
+   already knew the guild's shape wrote lines that assumed the payoff existed. 42H's finale should
+   grep `dlg.archive_keeper.*`/`dlg.archive_reader.*` and this sub-phase's own new nodes before
+   inventing a location or an item — the seam is very often already sitting in `strings.csv`.
+2. ⚠️ **TWO EXISTING OUTCOME FLAGS FROM AN UNRELATED SYSTEM ARE A COMPLETE BRANCH, AND REUSING THEM
+   UNMODIFIED IS THE POINT.** `flag.ancient.taught` and `flag.ancient_dragon_defeated` were authored
+   for 35F's own dragon-favour content with no guild in mind; 42G read them as `RequiredFlagId` and
+   changed neither. 42H's truth-custody finale will want to know what the player ultimately DID with
+   `spell.elder_word` and the Ancient's fate — the answer is almost certainly already sitting in these
+   same two flags rather than a new one, exactly as this sub-phase's own reuse was.
 
 ---
 
@@ -574,6 +736,63 @@ sub-phase's own gap to hand forward.
    the effect then navigates unconditionally, so a refused `JoinGuild` (left member, `RejoinAllowed =
    false`) reached "you're in". Any `JoinGuild` choice with a `Goto` now needs `Condition = 16`
    (`GuildCanJoin`, same faction id); `--validate` enforces it.
+
+---
+
+## 42K — a Talk objective on the same conversation that starts it is the safe case, not the trap
+### Retrospective + traps
+
+42K is content on a hub 42B had already fully placed — three officers, one hidden hub, an empty
+`RequiredFlagId` and a comment naming exactly what would fill it — so the whole sub-phase was
+dialogue graphs, one quest and one generator parameter. Nothing new was invented; the question, as
+always, was which existing seam already did the job.
+
+⚠️ **CLAUDE.md'S OWN WARNING ("a Talk objective completes on ANY end of that dialogue") READS AS A
+BLANKET RULE AND ISN'T ONE.** The trap is a *second, unrelated* visit to the same NPC completing an
+objective nobody meant to satisfy yet. Here the objective's only job is "the order made contact",
+and the sole choice that can ever start `quest.emberbound.summons` is itself gated on
+`flag.iron_king_defeated`, so the quest cannot exist before the one conversation meant to close it —
+there is no earlier visit for the trap to fire against. `RequiredFlagId` is still the general answer
+whenever a Talk objective's target dialogue has OTHER business beside the one exchange that should
+complete it (`quest.hollowreach.barrels`'s `Obj_talk_wren` is exactly that case); it just wasn't
+needed here, and reaching for it anyway would have meant inventing a flag with one consumer.
+
+⚠️ **A RESERVED, EMPTY FIELD IS A HANDOFF NOTE, AND IT IS WORTH READING AS ONE.** 42B's own comment
+in `tools/gen_map_locations.py` above the Undercroft's `add(...)` call named the exact mechanism
+42K would need (`RequiredFlagId`) and left it unset rather than guessing at a flag nothing could yet
+write. The generator had no parameter for it at all — `RequiredFlagId = ""` was hard-coded into
+`tres_body`'s template string, the same way `RevealWithCell` was already threaded through as a real
+argument. One parameter (`required_flag`) and one format-string edit closed a gap that was open
+since 42B shipped, and the alternative (hand-editing the generated `.tres`) would have been silently
+overwritten the next time anyone ran the generator for an unrelated location — the file's own header
+says so in the file itself.
+
+⚠️ **THE RELIC-HANDLING CHOICE NEEDED A CONSEQUENCE THAT WASN'T AN ITEM TRANSFER.** There is no
+`DialogueEffect` that moves an item between an NPC and the player (only `RemoveItem` calls exist
+inside gameplay components — purses, crafting, contraband — none reachable from a `.tres`), and
+inventing one for a single narrative beat would have been a new mechanism for a choice invariant 2
+already has an answer for: a story flag. `flag.emberbound.relic_surrendered` /
+`flag.emberbound.relic_kept` record the PLAYER'S STANCE, not a change of custody — the prose is
+written so "surrender" reads as a spoken vow (Cass wards it "in his own time", not now), so nothing
+on screen contradicts the relic still sitting in the player's pack. 42L inherits the flags and owns
+whatever the custody question becomes.
+
+### Two things worth carrying into the next sub-phase
+
+1. ⚠️ **BOTH RELIC-HANDLING BRANCHES CONVERGE ON THE SAME MEMBERSHIP, AND THAT WAS A DELIBERATE
+   READ OF THE BRIEF.** "A relic-handling choice" was written as one of the things 42K authors, not
+   as a second gate on whether the order accepts the player at all — admission is `GuildRules`'
+   business (`JoinGuild`/`GuildCanJoin`, unchanged), and the choice's whole weight is which flag
+   42L finds waiting for it. **42L's "relic accepted / destroyed / instrumentalized" doctrine finale
+   should read `flag.emberbound.relic_surrendered`/`relic_kept` as its starting position, not
+   re-ask the question** — a player who already told the Hierarch what they'd do with it should not
+   be asked again from zero.
+2. ⚠️ **A GUILD WITH NO `RankPeerNpcId` DOESN'T NEED ONE INVENTED.** Emberbound shipped from 42B
+   with `RankPeerNpcId = ""`, and 42K left it empty — Bren (investigator) and Selane (doctrine) carry
+   the whole arc, and Cass Vollen's dialogue is untouched, still the 42B scaffold. **Not every
+   officer needs new content in the sub-phase that finally uses the hub** — a roster slot reserved
+   for a role the arc doesn't need yet is not a gap to fill on principle; 42L is free to give Cass a
+   voice when the relic's custody actually becomes his to speak about.
 
 ## Integration 1 checkpoint fixes
 

@@ -1,0 +1,63 @@
+[gd_resource type="Resource" script_class="QuestResource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+
+; The Archive's own reading of the Ancient (Phase 42G) — the arc that pays rank one and a recovered
+; spell. It adds no dragon content of its own: dialogue.ancient_dragon and the hoard SpellTomeComponent
+; (both Phase 35F) already teach spell.elder_word from BOTH honest outcomes — spared (the favour,
+; closed by flag.ancient.taught on its own farewell) and killed (flag.ancient_dragon_defeated, raised
+; by LairSpawnComponent.DefeatFlagId the instant it dies, whether or not the hoard tome is ever read).
+; This quest's job is to send a member after that knowledge and let the Archive credit either route.
+;
+; obj_report_taught / obj_report_defeated are the quest.ash_hunters.grimtusk shape exactly: two Talk
+; objectives on the SAME dialogue, each behind a different RequiredFlagId, so only one is ever live and
+; the other stays permanently inert rather than blocking completion (41D). No ForbiddenFlagId cross-gate
+; is needed because the two flags are already mutually exclusive in play — the Ancient cannot be both
+; alive-and-taught and dead.
+;
+; Not SequentialObjectives: both report objectives target dialogue.archive_keeper, a DIFFERENT NPC from
+; the one who offers this quest (dialogue.archive_reader), so there is no same-visit risk the way
+; lost_tome and ley_survey have — the same reason quest.ash_hunters.grimtusk's own report objectives
+; needed no ordering bool either. A player who already spared or killed the Ancient before this quest
+; was ever offered can report on the very next visit — quest.ancient.kin's "already done" shape, paid
+; from the Archive's side of the counter instead of the dragon's.
+[sub_resource type="Resource" id="Obj_reach_aerie"]
+script = ExtResource("2_obj")
+Type = 2
+TargetId = "location.frostfang.ancient_aerie"
+RequiredCount = 1
+Description = "quest.veiled_archive.ancient_lead.obj_reach"
+
+[sub_resource type="Resource" id="Obj_report_taught"]
+script = ExtResource("2_obj")
+Type = 3
+TargetId = "dialogue.archive_keeper"
+RequiredCount = 1
+Description = "quest.veiled_archive.ancient_lead.obj_report_taught"
+RequiredFlagId = "flag.ancient.taught"
+LocationId = "location.embermarket.annexe"
+
+[sub_resource type="Resource" id="Obj_report_defeated"]
+script = ExtResource("2_obj")
+Type = 3
+TargetId = "dialogue.archive_keeper"
+RequiredCount = 1
+Description = "quest.veiled_archive.ancient_lead.obj_report_defeated"
+RequiredFlagId = "flag.ancient_dragon_defeated"
+LocationId = "location.embermarket.annexe"
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.veiled_archive.ancient_lead"
+Title = "quest.veiled_archive.ancient_lead.title"
+Summary = "quest.veiled_archive.ancient_lead.summary"
+Objectives = Array[Resource]([SubResource("Obj_reach_aerie"), SubResource("Obj_report_taught"), SubResource("Obj_report_defeated")])
+XpReward = 150
+GoldReward = 60
+GoldItemId = "item.currency.gold"
+RewardItems = Array[Resource]([])
+FactionRewardId = "faction.veiled_archive"
+FactionRewardAmount = 15
+PrerequisiteQuestId = "quest.veiled_archive.ley_survey"
+IsMainQuest = false

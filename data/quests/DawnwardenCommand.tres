@@ -1,0 +1,63 @@
+[gd_resource type="Resource" script_class="QuestResource" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+[ext_resource type="Script" path="res://src/Quests/QuestItemReward.cs" id="3_reward"]
+
+; Phase 42D — the mid-rank command arc. Bram Corrow (dialogue.dawnwarden_partner) owns it, same as
+; the probation arc did (42C's header): the offer, the fork-free objectives and the rank-two grant
+; are all one conversation.
+;
+; ⚠️ ESCORT THEN DEFEND, SEQUENTIAL, AND THE ORDER IS THE ARGUMENT. A warrant-rider out of the Iron
+; Citadel wants the Wardens to hand over anyone who can place his patrol at Tarn's Landing the night
+; a granary burned - starting with Sella Ru, who saw it happen. Escorting her to the Watch alive and
+; talking (Obj 0, companion.dawnwarden_witness -> location.crossway.watch) is what lets Danhal refuse
+; him on the record instead of on principle; the reprisal patrol that follows is Obj 1
+; (location.wilds.north, reusing HoldTheNorthRoad's site - the road the warrant-rider's own escort
+; rides, not a new corridor).
+;
+; ⚠️ NEITHER OBJECTIVE TOUCHES flag.iron_king_defeated. dialogue.dawnwarden_partner reads it once, for
+; flavour only (a warrant against a King who is already dead reads differently than one against a
+; king still on his throne) - it gates nothing here and this quest sets nothing on it. 42D's Build
+; note is explicit that the dispute must never gate or consume the main-story flag.
+;
+; Reward is Warden's Aegis (item.armor.warden_aegis) - protection and resilience, not a relic - and
+; rank two is granted by Bram's own dialogue (DialogueEffect.GuildRank), not by this resource; a
+; quest never carries a second ledger for a fact GuildRules already owns.
+
+[sub_resource type="Resource" id="Obj_escort"]
+script = ExtResource("2_obj")
+Type = 4
+TargetId = "companion.dawnwarden_witness"
+RequiredCount = 1
+Description = "quest.dawnwardens.command.obj_escort"
+LocationId = "location.crossway.watch"
+
+[sub_resource type="Resource" id="Obj_defend"]
+script = ExtResource("2_obj")
+Type = 5
+TargetId = "location.wilds.north"
+RequiredCount = 60
+Description = "quest.dawnwardens.command.obj_defend"
+
+[sub_resource type="Resource" id="Reward_aegis"]
+script = ExtResource("3_reward")
+ItemId = "item.armor.warden_aegis"
+Quantity = 1
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.dawnwardens.command"
+Title = "quest.dawnwardens.command.title"
+Summary = "quest.dawnwardens.command.summary"
+Objectives = Array[Resource]([SubResource("Obj_escort"), SubResource("Obj_defend")])
+XpReward = 140
+GoldReward = 55
+GoldItemId = "item.currency.gold"
+RewardItems = Array[Resource]([SubResource("Reward_aegis")])
+FactionRewardId = "faction.villagers"
+FactionRewardAmount = 12
+TimeLimitSeconds = 0.0
+SequentialObjectives = true
+PrerequisiteQuestId = "quest.dawnwardens.probation"
+IsMainQuest = false

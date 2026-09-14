@@ -44,6 +44,24 @@ Goto = "root"
 script = ExtResource("3_choice")
 Text = "dlg.emberbound_seeker.c_end"
 
+; ── 42K: contact, off the stranger line ─────────────────────────────────────────────────────────
+; Gated on flag.iron_king_defeated alone (a legitimate Phase 28 event, never level) — the Seeker is
+; the order's investigator, so this door is his to open. StartQuest is idempotent-safe on a repeat
+; visit (QuestLogComponent.CanStart refuses a quest already in the log), so no extra guard is needed
+; against clicking it twice.
+[sub_resource type="Resource" id="ch_investigate"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_seeker.c_investigate"
+Condition = 5
+ConditionArg = "flag.iron_king_defeated"
+Effect = 1
+EffectArg = "quest.emberbound.summons"
+Goto = "investigate"
+
+[sub_resource type="Resource" id="ch_investigate_end"]
+script = ExtResource("3_choice")
+Text = "dlg.emberbound_seeker.c_investigate_end"
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
@@ -60,11 +78,17 @@ Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
 script = ExtResource("2_node")
 Id = "stranger"
 Text = "dlg.emberbound_seeker.stranger"
-Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+Choices = Array[Resource]([SubResource("ch_investigate"), SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_investigate"]
+script = ExtResource("2_node")
+Id = "investigate"
+Text = "dlg.emberbound_seeker.investigate"
+Choices = Array[Resource]([SubResource("ch_investigate_end")])
 
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.emberbound_seeker"
 SpeakerName = "dlg.emberbound_seeker.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_member"), SubResource("node_stranger"), SubResource("node_investigate")])

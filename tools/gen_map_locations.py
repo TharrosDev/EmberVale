@@ -44,10 +44,10 @@ L = []
 
 
 def add(cell_file, tail, category, anchor, name, shop="", service="", dialogue="",
-        travel="", reveal=False, desc="", name_key="", prop="", tier=None):
+        travel="", reveal=False, desc="", name_key="", prop="", tier=None, required_flag=""):
     L.append(dict(cell_file=cell_file, tail=tail, category=category, anchor=anchor, name=name,
                   shop=shop, service=service, dialogue=dialogue, travel=travel, reveal=reveal,
-                  desc=desc, name_key=name_key, prop=prop, tier=tier))
+                  desc=desc, name_key=name_key, prop=prop, tier=tier, required_flag=required_flag))
 
 
 TIER = ["Primary", "Secondary", "Detail"]
@@ -247,11 +247,14 @@ add("ember_crown/wilds_north", "wilds.lodge", "Camp", "Nav/DeadfallLodge", "The 
 add("ember_crown/embermarket", "embermarket.annexe", "Scriptorium", "Nav/ArchiveAnnexe", "The Annexe",
     dialogue="dialogue.archive_keeper")
 # ⚠️ THE ONE HUB THAT DOES NOT REVEAL WITH ITS CELL. A concealed order whose pin arrives with the
-# region is not concealed; this one is found by standing in it. 42K owns the initiation, and the
-# RequiredFlagId gate that goes with it — naming a flag here that nothing can set would hide the
-# hub from a player who has no way to reveal it.
+# region is not concealed; this one is found by standing in it. 42K's contact gate (flag.iron_king_
+# defeated, set by BossResource.DefeatFlagId on the Iron King's death — a legitimate Phase 23/28
+# event, never level) is also the RequiredFlagId here, so the pin cannot appear before the order
+# would even speak to the player, and quest.emberbound.summons naming this as its Talk objective's
+# LocationId reveals it the moment Bren Ilvo makes contact (MapService.OnQuestStarted) — canonical
+# on the map from that point on, since discovery is never revoked.
 add("ember_crown/emberdeep_mine", "emberdeep.undercroft", "Landmark", "Nav/UndercroftPedestal",
-    "The Undercroft", dialogue="dialogue.emberbound_hierarch")
+    "The Undercroft", dialogue="dialogue.emberbound_hierarch", required_flag="flag.iron_king_defeated")
 
 # ── Frostfang Reach ──────────────────────────────────────────────────────────────────────────
 # Settlement-tier coverage only. Frostfang's interiors are a Phase 44 world-layout question, and
@@ -333,7 +336,7 @@ def tres_body(item):
         'PropertyId = "{prop}"\n'
         'TravelNodeId = "{travel}"\n'
         "RevealWithCell = {reveal}\n"
-        'RequiredFlagId = ""\n'
+        'RequiredFlagId = "{required_flag}"\n'
     ).format(
         tail=item["tail"], name_key=key, desc_key=desc_key,
         cat=CATEGORY.index(item["category"]), cell=CELL_ID[item["cell_file"]],
@@ -341,7 +344,8 @@ def tres_body(item):
         prop=item["prop"], travel=item["travel"],
         tier_from_category="false" if item["tier"] else "true",
         tier=TIER.index(item["tier"]) if item["tier"] else 2,
-        reveal="true" if item["reveal"] else "false")
+        reveal="true" if item["reveal"] else "false",
+        required_flag=item["required_flag"])
 
 
 def build_tres():

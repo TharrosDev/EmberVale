@@ -31,6 +31,42 @@
 ; ⚠️ NEITHER BRANCH TOUCHES THE IRON KING. The tension is the Dawnwardens' own - civilians first or
 ; the order kept, Danhal's silent argument with the world - and 42D is the one that gets to spend the
 ; Iron King's flags on it.
+;
+; ── Phase 42D — the command arc and its payoff ─────────────────────────────────────────────────────
+;
+; ⚠️ THE WARRANT-RIDER IS FLAVOUR, NOT A GATE. ch_command_iron_alive / ch_command_iron_defeated read
+; flag.iron_king_defeated (Condition 5 HasFlag / 6 MissingFlag) purely to pick which of two identical-
+; shaped nodes narrates the dispute - both lead into the same command_offer_* text and the same two
+; mechanical choices beneath it. Nothing here ever SetFlag/ClearFlag on it: the Build note is explicit
+; that this dispute must never gate or consume the main-story flag, and reading it without ever
+; writing it is invariant 18's write-side rule applied to a flag family that ISN'T ours to own.
+;
+; ⚠️ THE ESCORT IS RECRUITED HERE, NOT OUT OF HER OWN CONVERSATION. Sella Ru (companion.dawnwarden_witness)
+; has no world body before ch_command_accept fires Effect 5 (RecruitCompanion) - dialogue.iron_client's
+; shape (42I), which itself copies Tessa's (41B). One choice, one effect, so starting the quest is a
+; second click on command_recruited (Effect 1 StartQuest, no Goto) - rescue_go/expedient_go's shape.
+;
+; ⚠️ RANK TWO USES SetFlag, NOT GuildRank, AND THAT IS DELIBERATE. ch_command_after
+; (Condition 3 QuestCompleted quest.dawnwardens.command) stays reachable forever once the command
+; quest is done - the same shape "member" already gives ch_probation_active's siblings - so a player
+; can revisit it AFTER the finale has already granted rank three. GuildRank ":2" would CLEAR rank
+; three on that revisit (it sets exactly the ranks up to its argument and clears anything above,
+; 42I's own doc comment on the effect); Effect 2 (SetFlag "guild.dawnwardens.rank2") only ever adds
+; the flag, so a late revisit is a no-op instead of a demotion. GuildRank is still the right tool at
+; ch_finale_done below, because 3 is this guild's declared ceiling (RankNameKeys.Count) and nothing
+; can ever be above it to clear.
+;
+; ⚠️ THE FINALE FORK IS quest.hollowreach.barrels's SHAPE A THIRD TIME IN ONE ARC. ch_finale_fork_service
+; / ch_finale_fork_authority each set one flag and gate on each other's absence (Condition 6,
+; MissingFlag) before quest.dawnwardens.finale exists, exactly as the probation fork does two nodes up.
+;
+; ⚠️ RANK THREE SITS OUTSIDE THE BRANCH; guild.dawnwardens.finale SITS INSIDE IT - probation's nesting
+; rule (42C's header) read the other way round, because this time the OUTER fact (rank three) does not
+; presuppose which side was taken and the INNER fact (which past-tense line plays, and the finale flag
+; that flag.dawnwardens.finale_service/_authority pays into it) does. ch_finale_done therefore carries
+; Effect 12 (GuildRank "faction.dawnwardens:3") unconditionally past QuestCompleted; the branch is
+; resolved only once more, at ch_claim_service/ch_claim_authority, each Effect 2 (SetFlag
+; "guild.dawnwardens.finale") landing on its own past-tense node.
 
 [sub_resource type="Resource" id="ch_member"]
 script = ExtResource("3_choice")
@@ -132,6 +168,135 @@ Effect = 2
 EffectArg = "guild.dawnwardens.rank1"
 Goto = "after_expedient"
 
+[sub_resource type="Resource" id="ch_command"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_command"
+Condition = 1
+ConditionArg = "quest.dawnwardens.command"
+Goto = "command"
+
+[sub_resource type="Resource" id="ch_command_active"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_command_active"
+Condition = 2
+ConditionArg = "quest.dawnwardens.command"
+Goto = "command_active"
+
+[sub_resource type="Resource" id="ch_command_after"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_command_after"
+Condition = 3
+ConditionArg = "quest.dawnwardens.command"
+Effect = 2
+EffectArg = "guild.dawnwardens.rank2"
+Goto = "command_after"
+
+[sub_resource type="Resource" id="ch_command_iron_alive"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_command_iron_alive"
+Condition = 6
+ConditionArg = "flag.iron_king_defeated"
+Goto = "command_offer_alive"
+
+[sub_resource type="Resource" id="ch_command_iron_defeated"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_command_iron_defeated"
+Condition = 5
+ConditionArg = "flag.iron_king_defeated"
+Goto = "command_offer_defeated"
+
+[sub_resource type="Resource" id="ch_command_accept"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_command_accept"
+Effect = 5
+EffectArg = "companion.dawnwarden_witness"
+Goto = "command_recruited"
+
+[sub_resource type="Resource" id="ch_command_decline"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_command_decline"
+
+[sub_resource type="Resource" id="ch_command_start"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_command_start"
+Effect = 1
+EffectArg = "quest.dawnwardens.command"
+
+[sub_resource type="Resource" id="ch_finale"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_finale"
+Condition = 1
+ConditionArg = "quest.dawnwardens.finale"
+Goto = "finale"
+
+[sub_resource type="Resource" id="ch_finale_active"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_finale_active"
+Condition = 2
+ConditionArg = "quest.dawnwardens.finale"
+Goto = "finale_active"
+
+[sub_resource type="Resource" id="ch_finale_done"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_finale_done"
+Condition = 3
+ConditionArg = "quest.dawnwardens.finale"
+Effect = 12
+EffectArg = "faction.dawnwardens:3"
+Goto = "finale_done"
+
+[sub_resource type="Resource" id="ch_finale_fork_service"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_finale_fork_service"
+Condition = 6
+ConditionArg = "flag.dawnwardens.finale_authority"
+Effect = 2
+EffectArg = "flag.dawnwardens.finale_service"
+Goto = "finale_service_go"
+
+[sub_resource type="Resource" id="ch_finale_fork_authority"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_finale_fork_authority"
+Condition = 6
+ConditionArg = "flag.dawnwardens.finale_service"
+Effect = 2
+EffectArg = "flag.dawnwardens.finale_authority"
+Goto = "finale_authority_go"
+
+[sub_resource type="Resource" id="ch_finale_decline"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_finale_decline"
+
+[sub_resource type="Resource" id="ch_finale_service_start"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_finale_service_start"
+Effect = 1
+EffectArg = "quest.dawnwardens.finale"
+
+[sub_resource type="Resource" id="ch_finale_authority_start"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_finale_authority_start"
+Effect = 1
+EffectArg = "quest.dawnwardens.finale"
+
+[sub_resource type="Resource" id="ch_claim_service"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_claim_service"
+Condition = 5
+ConditionArg = "flag.dawnwardens.finale_service"
+Effect = 2
+EffectArg = "guild.dawnwardens.finale"
+Goto = "finale_done_service"
+
+[sub_resource type="Resource" id="ch_claim_authority"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_partner.c_claim_authority"
+Condition = 5
+ConditionArg = "flag.dawnwardens.finale_authority"
+Effect = 2
+EffectArg = "guild.dawnwardens.finale"
+Goto = "finale_done_authority"
+
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
 Id = "root"
@@ -148,7 +313,7 @@ Choices = Array[Resource]([SubResource("ch_end")])
 script = ExtResource("2_node")
 Id = "member"
 Text = "dlg.dawnwarden_partner.member"
-Choices = Array[Resource]([SubResource("ch_probation"), SubResource("ch_probation_active"), SubResource("ch_after"), SubResource("ch_back"), SubResource("ch_end")])
+Choices = Array[Resource]([SubResource("ch_probation"), SubResource("ch_probation_active"), SubResource("ch_after"), SubResource("ch_command"), SubResource("ch_command_active"), SubResource("ch_command_after"), SubResource("ch_finale"), SubResource("ch_finale_active"), SubResource("ch_finale_done"), SubResource("ch_back"), SubResource("ch_end")])
 
 [sub_resource type="Resource" id="node_probation"]
 script = ExtResource("2_node")
@@ -192,9 +357,87 @@ Id = "after_expedient"
 Text = "dlg.dawnwarden_partner.after_expedient"
 Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
 
+[sub_resource type="Resource" id="node_command"]
+script = ExtResource("2_node")
+Id = "command"
+Text = "dlg.dawnwarden_partner.command"
+Choices = Array[Resource]([SubResource("ch_command_iron_alive"), SubResource("ch_command_iron_defeated")])
+
+[sub_resource type="Resource" id="node_command_offer_alive"]
+script = ExtResource("2_node")
+Id = "command_offer_alive"
+Text = "dlg.dawnwarden_partner.command_offer_alive"
+Choices = Array[Resource]([SubResource("ch_command_accept"), SubResource("ch_command_decline")])
+
+[sub_resource type="Resource" id="node_command_offer_defeated"]
+script = ExtResource("2_node")
+Id = "command_offer_defeated"
+Text = "dlg.dawnwarden_partner.command_offer_defeated"
+Choices = Array[Resource]([SubResource("ch_command_accept"), SubResource("ch_command_decline")])
+
+[sub_resource type="Resource" id="node_command_recruited"]
+script = ExtResource("2_node")
+Id = "command_recruited"
+Text = "dlg.dawnwarden_partner.command_recruited"
+Choices = Array[Resource]([SubResource("ch_command_start")])
+
+[sub_resource type="Resource" id="node_command_active"]
+script = ExtResource("2_node")
+Id = "command_active"
+Text = "dlg.dawnwarden_partner.command_active"
+Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_command_after"]
+script = ExtResource("2_node")
+Id = "command_after"
+Text = "dlg.dawnwarden_partner.command_after"
+Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_finale"]
+script = ExtResource("2_node")
+Id = "finale"
+Text = "dlg.dawnwarden_partner.finale"
+Choices = Array[Resource]([SubResource("ch_finale_fork_service"), SubResource("ch_finale_fork_authority"), SubResource("ch_finale_decline")])
+
+[sub_resource type="Resource" id="node_finale_service_go"]
+script = ExtResource("2_node")
+Id = "finale_service_go"
+Text = "dlg.dawnwarden_partner.finale_service_go"
+Choices = Array[Resource]([SubResource("ch_finale_service_start")])
+
+[sub_resource type="Resource" id="node_finale_authority_go"]
+script = ExtResource("2_node")
+Id = "finale_authority_go"
+Text = "dlg.dawnwarden_partner.finale_authority_go"
+Choices = Array[Resource]([SubResource("ch_finale_authority_start")])
+
+[sub_resource type="Resource" id="node_finale_active"]
+script = ExtResource("2_node")
+Id = "finale_active"
+Text = "dlg.dawnwarden_partner.finale_active"
+Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_finale_done"]
+script = ExtResource("2_node")
+Id = "finale_done"
+Text = "dlg.dawnwarden_partner.finale_done"
+Choices = Array[Resource]([SubResource("ch_claim_service"), SubResource("ch_claim_authority")])
+
+[sub_resource type="Resource" id="node_finale_done_service"]
+script = ExtResource("2_node")
+Id = "finale_done_service"
+Text = "dlg.dawnwarden_partner.finale_done_service"
+Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+
+[sub_resource type="Resource" id="node_finale_done_authority"]
+script = ExtResource("2_node")
+Id = "finale_done_authority"
+Text = "dlg.dawnwarden_partner.finale_done_authority"
+Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
+
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.dawnwarden_partner"
 SpeakerName = "dlg.dawnwarden_partner.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_stranger"), SubResource("node_member"), SubResource("node_probation"), SubResource("node_rescue_go"), SubResource("node_expedient_go"), SubResource("node_probation_active"), SubResource("node_after"), SubResource("node_after_rescue"), SubResource("node_after_expedient")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_stranger"), SubResource("node_member"), SubResource("node_probation"), SubResource("node_rescue_go"), SubResource("node_expedient_go"), SubResource("node_probation_active"), SubResource("node_after"), SubResource("node_after_rescue"), SubResource("node_after_expedient"), SubResource("node_command"), SubResource("node_command_offer_alive"), SubResource("node_command_offer_defeated"), SubResource("node_command_recruited"), SubResource("node_command_active"), SubResource("node_command_after"), SubResource("node_finale"), SubResource("node_finale_service_go"), SubResource("node_finale_authority_go"), SubResource("node_finale_active"), SubResource("node_finale_done"), SubResource("node_finale_done_service"), SubResource("node_finale_done_authority")])

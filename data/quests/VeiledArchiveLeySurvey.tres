@@ -1,0 +1,53 @@
+[gd_resource type="Resource" script_class="QuestResource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+
+; A member's first errand (Phase 42G), off Ferris Vail's own 42B member line: "Two of these say the
+; ley line under the market runs north. The third was written by somebody who walked it." This quest
+; is the walking. Both waystones are already-mapped travel nodes (39.5A) in regions on opposite ends
+; of RegionResource.WeavePotency (Ember Crown 1.0, Frostfang Reach 0.5, 29.5E) — reading the Weave at
+; both ends of the dial is the survey, and neither location needed authoring.
+;
+; ⚠️ SEQUENTIAL, FOR THE SAME REASON lost_tome NEEDED IT. Obj_report is Talk on dialogue.archive_reader
+; — the same NPC who offers this quest — so an unordered Obj_report would tick the moment the offer
+; conversation itself ends. Both Reach objectives stay unordered relative to each other in play (the
+; player may walk either waystone first); SequentialObjectives only forces "both before the report",
+; which array order alone cannot express without one of them gating the other.
+[sub_resource type="Resource" id="Obj_survey_high"]
+script = ExtResource("2_obj")
+Type = 2
+TargetId = "location.ember_crown.waystone"
+RequiredCount = 1
+Description = "quest.veiled_archive.ley_survey.obj_high"
+
+[sub_resource type="Resource" id="Obj_survey_low"]
+script = ExtResource("2_obj")
+Type = 2
+TargetId = "location.frostfang.waystone"
+RequiredCount = 1
+Description = "quest.veiled_archive.ley_survey.obj_low"
+
+[sub_resource type="Resource" id="Obj_report"]
+script = ExtResource("2_obj")
+Type = 3
+TargetId = "dialogue.archive_reader"
+RequiredCount = 1
+Description = "quest.veiled_archive.ley_survey.obj_report"
+LocationId = "location.embermarket.annexe"
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.veiled_archive.ley_survey"
+Title = "quest.veiled_archive.ley_survey.title"
+Summary = "quest.veiled_archive.ley_survey.summary"
+Objectives = Array[Resource]([SubResource("Obj_survey_high"), SubResource("Obj_survey_low"), SubResource("Obj_report")])
+XpReward = 100
+GoldReward = 40
+GoldItemId = "item.currency.gold"
+RewardItems = Array[Resource]([])
+FactionRewardId = "faction.veiled_archive"
+FactionRewardAmount = 10
+SequentialObjectives = true
+PrerequisiteQuestId = "quest.veiled_archive.lost_tome"
+IsMainQuest = false

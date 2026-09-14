@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="DialogueResource" format=3]
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+; Sella Ru (Phase 42D), the escortee of quest.dawnwardens.command. Copies dialogue.iron_client's
+; shape (42I) exactly, which itself copies dialogue.tessa (41B): the parting choice is gated
+; Condition = 3 (QuestCompleted) so it cannot be taken to strand her halfway, and carries
+; Effect = 6 (DismissCompanion) with no Goto — dismissing while the roster frees her body must not
+; then try to walk a Goto into a node on a session that has just ended.
+
+[sub_resource type="Resource" id="ch_hold"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_witness.c_hold"
+
+[sub_resource type="Resource" id="ch_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_witness.c_bye"
+
+[sub_resource type="Resource" id="ch_arrived"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_witness.c_part"
+Condition = 3
+ConditionArg = "quest.dawnwardens.command"
+Goto = "arrived"
+
+[sub_resource type="Resource" id="ch_part"]
+script = ExtResource("3_choice")
+Text = "dlg.dawnwarden_witness.c_part"
+Effect = 6
+EffectArg = "companion.dawnwarden_witness"
+
+[sub_resource type="Resource" id="node_root"]
+script = ExtResource("2_node")
+Id = "root"
+Text = "dlg.dawnwarden_witness.root"
+Choices = Array[Resource]([SubResource("ch_arrived"), SubResource("ch_hold"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_arrived"]
+script = ExtResource("2_node")
+Id = "arrived"
+Text = "dlg.dawnwarden_witness.arrived"
+Choices = Array[Resource]([SubResource("ch_part")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "dialogue.dawnwarden_witness"
+SpeakerName = "dlg.dawnwarden_witness.speaker"
+StartNodeId = "root"
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_arrived")])

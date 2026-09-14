@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EquippableItemResource" format=3 uid="uid://cmbrvlitemdawnbulwark"]
+
+[ext_resource type="Script" path="res://src/Items/EquippableItemResource.cs" id="1_eq"]
+
+; Phase 42D — the finale reward off quest.dawnwardens.finale, paid identically regardless of which
+; resolution was chosen (probation's rule, 42C: a second place rewards live is invariant 5 waiting to
+; happen — what differs is what Bram says, not what he hands over). An off-hand shield rather than a
+; second chest piece, so it stacks with Warden's Aegis instead of replacing it. Reuses
+; eqp_shield_round.glb, per RoundShield's own note that the socket existing is the point, not the mesh
+; being unique to one item.
+[resource]
+script = ExtResource("1_eq")
+Id = "item.armor.dawn_bulwark"
+DisplayName = "Dawn's Bulwark"
+Description = "The Serjeant's own shield, passed on rather than replaced. The paint is long gone; the boss is dented in a dozen places and has never once given."
+Type = 3
+Rarity = 3
+MaxStack = 1
+Weight = 5.0
+Value = 340
+WorldModelPath = "res://assets/models/equipment/eqp_shield_round.glb"
+Slot = 2
+BonusArmor = 18.0
+BonusMaxHealth = 30.0
+TradeTags = Array[String](["armor"])
