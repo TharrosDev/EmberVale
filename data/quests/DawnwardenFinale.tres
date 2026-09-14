@@ -1,0 +1,67 @@
+[gd_resource type="Resource" script_class="QuestResource" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/Quests/QuestResource.cs" id="1_quest"]
+[ext_resource type="Script" path="res://src/Quests/ObjectiveResource.cs" id="2_obj"]
+[ext_resource type="Script" path="res://src/Quests/QuestItemReward.cs" id="3_reward"]
+
+; Phase 42D — the payoff. The warrant-rider returns with a signed order: fold the Watch under the
+; Citadel's command, or be declared in default of it. Bram forces the choice before the quest exists,
+; quest.hollowreach.barrels's shape reused a third time in this one arc (42C's header already reused
+; it twice): ch_finale_fork_service / ch_finale_fork_authority in dialogue.dawnwarden_partner each set
+; ONE flag and gate on each other (Condition 6, MissingFlag), so a player who picks a side and walks
+; off without accepting still finds only one door open on return.
+;
+; ⚠️ TWO OBJECTIVES, MUTUALLY EXCLUSIVE BY RequiredFlagId, NOT SequentialObjectives - unlike
+; probation's Defend-then-branch shape, here exactly one objective is ever live at all, because the
+; fork already decided which. Obj_service (Defend, location.wilds.west - the corrie again, reusing
+; probation's rescue site: the same people, asked to be defended with steel this time rather than
+; walked home) pays flag.dawnwardens.finale_service. Obj_authority (Reach, location.crossway.watch -
+; hand the accused to the Citadel's man at the Wardens' own door) pays flag.dawnwardens.finale_authority.
+;
+; ⚠️ STILL NOTHING TOUCHES flag.iron_king_defeated, and this is the sub-phase's own Done-when: the
+; finale changes Dawnwarden presence and is independently inspectable, not gated on the main story or
+; feeding a flag back into it.
+;
+; Reward is identical either way (Dawn's Bulwark, item.armor.dawn_bulwark) - probation's rule again:
+; a second place rewards live is invariant 5. Rank three and guild.dawnwardens.finale are both granted
+; by dialogue.dawnwarden_partner (GuildRank on the outer QuestCompleted-gated choice, SetFlag on the
+; branch-gated inner ones - the same nesting rule 42C's header states: the condition the node TEXT
+; presupposes goes outermost, and only the branch text presupposes which side was taken).
+
+[sub_resource type="Resource" id="Obj_service"]
+script = ExtResource("2_obj")
+Type = 5
+TargetId = "location.wilds.west"
+RequiredCount = 60
+Description = "quest.dawnwardens.finale.obj_service"
+RequiredFlagId = "flag.dawnwardens.finale_service"
+
+[sub_resource type="Resource" id="Obj_authority"]
+script = ExtResource("2_obj")
+Type = 2
+TargetId = "location.crossway.watch"
+RequiredCount = 1
+Description = "quest.dawnwardens.finale.obj_authority"
+RequiredFlagId = "flag.dawnwardens.finale_authority"
+
+[sub_resource type="Resource" id="Reward_bulwark"]
+script = ExtResource("3_reward")
+ItemId = "item.armor.dawn_bulwark"
+Quantity = 1
+
+[resource]
+script = ExtResource("1_quest")
+Id = "quest.dawnwardens.finale"
+Title = "quest.dawnwardens.finale.title"
+Summary = "quest.dawnwardens.finale.summary"
+Objectives = Array[Resource]([SubResource("Obj_service"), SubResource("Obj_authority")])
+XpReward = 220
+GoldReward = 80
+GoldItemId = "item.currency.gold"
+RewardItems = Array[Resource]([SubResource("Reward_bulwark")])
+FactionRewardId = "faction.villagers"
+FactionRewardAmount = 15
+TimeLimitSeconds = 0.0
+SequentialObjectives = false
+PrerequisiteQuestId = "quest.dawnwardens.command"
+IsMainQuest = false

@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="EquippableItemResource" format=3 uid="uid://cmbrvlitemwardenaegis"]
+
+[ext_resource type="Script" path="res://src/Items/EquippableItemResource.cs" id="1_eq"]
+
+; Phase 42D — the mid-rank reward off quest.dawnwardens.command. Protection, plainly: armour and
+; health, not a school resistance and not a relic. DrakescaleMail's shape (35G) minus the frost
+; resist, because this is issued gear, not a trophy off a dead god — that distinction is the whole
+; point of the Build note "protection/resilience rewards distinct from divine relics". Reuses
+; eqp_armor_mail.glb; the mesh has never been exclusive to one item.
+[resource]
+script = ExtResource("1_eq")
+Id = "item.armor.warden_aegis"
+DisplayName = "Warden's Aegis"
+Description = "Watch-issue mail, oiled and re-riveted more times than it was ever built for. It is not handsome. It has kept every warden who wore it walking home."
+Type = 3
+Rarity = 2
+MaxStack = 1
+Weight = 8.0
+Value = 260
+WorldModelPath = "res://assets/models/equipment/eqp_armor_mail.glb"
+Slot = 4
+BonusArmor = 16.0
+BonusMaxHealth = 20.0
+TradeTags = Array[String](["armor"])
