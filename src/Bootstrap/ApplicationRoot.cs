@@ -135,6 +135,12 @@ public partial class ApplicationRoot : Node3D, IServiceScopeHost
             return true;
         }
 
+        if (HeadlessWorldMap.Requested())
+        {
+            HeadlessWorldMap.Run(tree);
+            return true;
+        }
+
         if (HeadlessState.Requested())
         {
             HeadlessState.Run(tree);

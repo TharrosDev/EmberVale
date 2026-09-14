@@ -78,11 +78,13 @@ public partial class MapService : Node, ISaveable
         ServiceScope.RegisterOwned(this, this);
         SaveManager.Instance?.Register(this);
         EventBus.Instance?.Subscribe<RegionCellLoadedEvent>(OnCellLoaded);
+        EventBus.Instance?.Subscribe<Quests.QuestStartedEvent>(OnQuestStarted);
     }
 
     public override void _ExitTree()
     {
         EventBus.Instance?.Unsubscribe<RegionCellLoadedEvent>(OnCellLoaded);
+        EventBus.Instance?.Unsubscribe<Quests.QuestStartedEvent>(OnQuestStarted);
         SaveManager.Instance?.Unregister(this);
     }
 
@@ -235,6 +237,27 @@ public partial class MapService : Node, ISaveable
         {
             Revision++;
             EventBus.Instance?.Publish(new LocationDiscoveredEvent(location));
+        }
+    }
+
+    /// <summary>
+    /// Being sent somewhere is being told where it is (2026-09 world rebuild): taking a quest reveals
+    /// every place its objectives name. Before this the only ways onto the map were walking up to a
+    /// place or having it arrive with the region, and a realm eight times the size made the second one
+    /// the only practical one.
+    /// </summary>
+    private void OnQuestStarted(Quests.QuestStartedEvent e)
+    {
+        foreach (Quests.ObjectiveResource objective in e.Quest.ObjectiveList())
+        {
+            foreach (string id in new[] { objective.LocationId, objective.TargetId })
+            {
+                if (!string.IsNullOrEmpty(id) && MapLocationDatabase.Get(id) is { } location &&
+                    (location.RequiredFlagId.Length == 0 || HasFlag(location.RequiredFlagId)))
+                {
+                    Reveal(location);
+                }
+            }
         }
     }
 
