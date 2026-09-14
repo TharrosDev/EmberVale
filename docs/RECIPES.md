@@ -570,9 +570,11 @@ Both scripts were written ad hoc and thrown away twice before being committed.
    it charges and `DialogueDatabase` who keeps it. Never copy a name or a price into the location.
 5. **Reuse an existing name key where the place already has one.** The five settlements with
    waystones use their `travel.*.name` key, so renaming the waystone renames the pin.
-6. `RevealWithCell = true` only for something visible from outside. ⚠️ **A region loads whole, so it
-   really means "known on entering the region"** — anything the player should *find* leaves it false
-   and is discovered by walking within 20 m.
+6. `RevealWithCell = true` only for a homeland capital or a place the realm's roads announce — it
+   means "known on entering the region". Everything else is discovered by `MapDiscoveryRules`: walking
+   within 20 m, or, for a Primary/Secondary tier, sighting its silhouette within 190/80 m with a clear
+   line over the ground. `RevealFlagId` reveals it from a story flag; `RequiredFlagId` still conceals it
+   (the Undercroft). A quest objective naming it reveals it when the quest starts.
 7. **Run it:** `python tools/gen_map_locations.py`, then `--check` to confirm it is idempotent.
 8. **Gate it:** `godot --headless --path . -- --validate` (both directions of the scene seam) and
    `godot --headless --path . --script res://tools/map_probe.gd` (a distinct, in-cell world position).

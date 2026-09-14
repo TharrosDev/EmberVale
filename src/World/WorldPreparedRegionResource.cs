@@ -29,6 +29,10 @@ public partial class WorldPreparedRegionResource : Resource
     [Export] public float[] Moistures { get; set; } = Array.Empty<float>();
     [Export] public PackedScene? Backdrop { get; set; }
 
+    /// <summary>Baked world positions of named places, keyed by <see cref="WorldPlaceIndex"/>: every
+    /// travel node's landing point and every map pin, measured on the cell's final ground.</summary>
+    [Export] public Godot.Collections.Dictionary<string, Vector3> Places { get; set; } = new();
+
     public bool IsValidFor(RegionResource region) =>
         Schema == CurrentSchema && RegionId == region.Id && Columns >= 2 && Rows >= 2 &&
         SourceSignature.Length == 64 && SampleStep > 0f && Heights.Length == Columns * Rows &&

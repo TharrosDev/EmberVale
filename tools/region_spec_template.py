@@ -351,12 +351,8 @@ def seams() -> list[Seam]:
     ]
 
 
-def build_template(legacy: dict[str, str]) -> tuple[str, list[str]]:
-    """The generator entry point. Register it in gen_regions.main() when the region is real.
-
-    ⚠️ `legacy` is the previous revision's sub-resources, used only when MIGRATING an existing region
-    whose interior circulation must survive verbatim. A new region passes it and ignores it.
-    """
+def build_template() -> tuple[str, list[str]]:
+    """The generator entry point. Register it in gen_regions.main() when the region is real."""
     spec = cells()
     link = seams()
     by_key = {c.key: c for c in spec}
@@ -370,7 +366,7 @@ def build_template(legacy: dict[str, str]) -> tuple[str, list[str]]:
         routed[seam.b].append(Route(local(by_key[seam.b], seam.at), seam.reach_b))
     issues += check_envelopes("Template", spec, routed)
 
-    return emit("template", HEADER, spec, link, legacy,
+    return emit("template", HEADER, spec, link,
                 ENVIRONMENT, BUDGET, RESOURCE, SCATTER, "TemperateLowland"), issues
 
 
@@ -391,7 +387,7 @@ if __name__ == "__main__":
     # The point is that the skeleton is EXERCISED — the four cells really do tile both row bands, the
     # two seams really are on the shared edges, every route point really is inside its envelope — so
     # this file cannot rot into an example that stopped working.
-    _text, _issues = build_template({})
+    _text, _issues = build_template()
     for _issue in _issues:
         print(f"LATTICE ERROR: {_issue}")
     print("self-check: FAILED" if _issues else

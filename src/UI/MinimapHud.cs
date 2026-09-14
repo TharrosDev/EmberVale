@@ -165,7 +165,10 @@ public sealed partial class MinimapHud : PanelContainer
 
         _land = land;
         _view.Land = _land;
-        _view.Roads = MapCartography.Roads(_map);
+        string regionId = ServiceLocator.Instance is { } streamers && streamers.TryGet(out RegionStreamer streamer)
+            ? streamer.ActiveRegionId : string.Empty;
+        _view.Relief = MapCartography.Relief(regionId) is { } relief ? (relief.Texture, relief.World) : null;
+        _view.Roads = MapCartography.Roads(regionId);
     }
 
     /// <summary>Distance filter then priority cap (§20) — the rule itself is the pure, tested

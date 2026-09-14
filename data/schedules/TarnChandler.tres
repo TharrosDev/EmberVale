@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://src/Npc/ScheduleResource.cs" id="1_sched"]
 [ext_resource type="Script" path="res://src/Npc/ScheduleEntry.cs" id="2_entry"]
 
-; Odger Vane, the chandler (Phase 38N2). Cell-local against Origin (-106, 0, -10); hours track
+; Odger Vane, the chandler (Phase 38N2). Cell-local against the NPC's own streamed cell; hours track
 ; shop.tarn.chandler (6:00-19:00) by hand.
 ;
 ; He opens two hours after Wenna and closes five hours later — the curer serves the boats, the chandler
@@ -13,25 +13,21 @@
 script = ExtResource("2_entry")
 StartHour = 6
 Activity = "Opening the chandlery"
-Destination = Vector3(9, 0, -11.5)
+Destination = Vector3(34, 0, -36.5)
 
 [sub_resource type="Resource" id="e_1"]
 script = ExtResource("2_entry")
 StartHour = 12
 Activity = "Hauling cordage out to dry"
-Destination = Vector3(13, 0, -10)
+Destination = Vector3(38, 0, -35)
 
 [sub_resource type="Resource" id="e_2"]
 script = ExtResource("2_entry")
 StartHour = 19
 Activity = "Roping down the tarpaulin"
-Destination = Vector3(9, 0, -11.5)
+Destination = Vector3(34, 0, -36.5)
 
 [resource]
 script = ExtResource("1_sched")
 Id = "schedule.tarn.chandler"
-; ⚠️ Origin moved with the cell in the 2026-08-29 geography overhaul. Destinations below are
-; CELL-LOCAL and did not change; only the cell's world Center did. Read the local point, never
-; the old world number.
-Origin = Vector3(-90, 0, -10)
 Entries = Array[Resource]([SubResource("e_0"), SubResource("e_1"), SubResource("e_2")])

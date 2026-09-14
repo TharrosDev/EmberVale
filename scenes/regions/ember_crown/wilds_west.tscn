@@ -90,6 +90,7 @@ emission_energy_multiplier = 0.45
 size = Vector3(0.55, 4.9, 0.55)
 
 [node name="WildsWestCell" type="Node3D"]
+metadata/content_offset = Vector2(-30, -32.5)
 
 [node name="Nav" type="NavigationRegion3D" parent="."]
 navigation_mesh = SubResource("NavMesh_ww")
@@ -98,7 +99,7 @@ navigation_mesh = SubResource("NavMesh_ww")
 script = ExtResource("1_navbaker")
 
 [node name="RockN" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, -3, 1.5, -7)
+transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, -33, 1.5, -39.5)
 
 [node name="RockNCol" type="StaticBody3D" parent="Nav/RockN"]
 
@@ -106,7 +107,7 @@ transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, -3, 1.5, -
 shape = SubResource("Shape_rock")
 
 [node name="RockS" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -12, 1.5, 8)
+transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -42, 1.5, -24.5)
 
 [node name="RockSCol" type="StaticBody3D" parent="Nav/RockS"]
 
@@ -114,7 +115,7 @@ transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -12, 1.5
 shape = SubResource("Shape_rock")
 
 [node name="Tent1" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(-0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, -0.342, -16, 0.9, -6)
+transform = Transform3D(-0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, -0.342, -46, 0.9, -38.5)
 
 [node name="Tent1Col" type="StaticBody3D" parent="Nav/Tent1"]
 
@@ -122,7 +123,7 @@ transform = Transform3D(-0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, -0.342, -16, 0.9
 shape = SubResource("Shape_tent")
 
 [node name="Tent2" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, -13, 0.9, 3)
+transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, -43, 0.9, -29.5)
 
 [node name="Tent2Col" type="StaticBody3D" parent="Nav/Tent2"]
 
@@ -130,7 +131,7 @@ transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, -13, 0.9
 shape = SubResource("Shape_tent")
 
 [node name="Campfire" parent="." instance=ExtResource("9_fire")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, -1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -43, 0, -33.5)
 
 [node name="FireLight" type="OmniLight3D" parent="Campfire"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
@@ -139,7 +140,7 @@ light_energy = 2.0
 omni_range = 7.0
 
 [node name="HidePickup" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 0, 1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -45, 0, -31.5)
 script = ExtResource("2_entity")
 DisplayName = "Goblin Hide"
 PersistentId = "ember_crown.wilds_west.camp.hide"
@@ -161,7 +162,7 @@ Item = ExtResource("4_hide")
 Quantity = 2
 
 [node name="GoldPickup" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.5, 0, -3)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -41.5, 0, -35.5)
 script = ExtResource("2_entity")
 DisplayName = "Gold Coins"
 PersistentId = "ember_crown.wilds_west.camp.gold"
@@ -183,7 +184,7 @@ Item = ExtResource("5_gold")
 Quantity = 15
 
 [node name="HerbPickup" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17, 0, -2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -47, 0, -34.5)
 script = ExtResource("2_entity")
 DisplayName = "Healing Herb"
 PersistentId = "ember_crown.wilds_west.camp.herb"
@@ -210,7 +211,7 @@ Quantity = 2
 ; --- reachable from every direction at once, which is not a camp — it is three props on a floor.
 
 [node name="RimNW" parent="Nav" instance=ExtResource("7_rocks")]
-transform = Transform3D(1.3023, 0, 1.0927, 0, 2, 0, -1.0927, 0, 1.3023, -20, 0, -13)
+transform = Transform3D(1.3023, 0, 1.0927, 0, 2, 0, -1.0927, 0, 1.3023, -50, 0, -45.5)
 
 [node name="Col" type="StaticBody3D" parent="Nav/RimNW"]
 
@@ -219,7 +220,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
 shape = SubResource("Shape_rock")
 
 [node name="RimN" parent="Nav" instance=ExtResource("7_rocks")]
-transform = Transform3D(-1.3856, 0, 0.8, 0, 1.9, 0, -0.8, 0, -1.3856, -14, 0, -14.5)
+transform = Transform3D(-1.3856, 0, 0.8, 0, 1.9, 0, -0.8, 0, -1.3856, -44, 0, -47)
 
 [node name="Col" type="StaticBody3D" parent="Nav/RimN"]
 
@@ -228,7 +229,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
 shape = SubResource("Shape_rock")
 
 [node name="RimNE" parent="Nav" instance=ExtResource("7_rocks")]
-transform = Transform3D(0.8, 0, -1.3856, 0, 1.8, 0, 1.3856, 0, 0.8, -13, 0, -15)
+transform = Transform3D(0.8, 0, -1.3856, 0, 1.8, 0, 1.3856, 0, 0.8, -43, 0, -47.5)
 
 [node name="Col" type="StaticBody3D" parent="Nav/RimNE"]
 
@@ -237,7 +238,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
 shape = SubResource("Shape_rock")
 
 [node name="RimW" parent="Nav" instance=ExtResource("7_rocks")]
-transform = Transform3D(0.3126, 0, 1.7727, 0, 2.2, 0, -1.7727, 0, 0.3126, -23.5, 0, -3)
+transform = Transform3D(0.3126, 0, 1.7727, 0, 2.2, 0, -1.7727, 0, 0.3126, -53.5, 0, -35.5)
 
 [node name="Col" type="StaticBody3D" parent="Nav/RimW"]
 
@@ -246,7 +247,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
 shape = SubResource("Shape_rock")
 
 [node name="RimSW" parent="Nav" instance=ExtResource("7_rocks")]
-transform = Transform3D(-1.5975, 0, -0.5814, 0, 2, 0, 0.5814, 0, -1.5975, -21, 0, 8)
+transform = Transform3D(-1.5975, 0, -0.5814, 0, 2, 0, 0.5814, 0, -1.5975, -51, 0, -24.5)
 
 [node name="Col" type="StaticBody3D" parent="Nav/RimSW"]
 
@@ -255,7 +256,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
 shape = SubResource("Shape_rock")
 
 [node name="RimS" parent="Nav" instance=ExtResource("7_rocks")]
-transform = Transform3D(1.5035, 0, 0.5472, 0, 1.9, 0, -0.5472, 0, 1.5035, -15, 0, 12.5)
+transform = Transform3D(1.5035, 0, 0.5472, 0, 1.9, 0, -0.5472, 0, 1.5035, -45, 0, -20)
 
 [node name="Col" type="StaticBody3D" parent="Nav/RimS"]
 
@@ -264,7 +265,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
 shape = SubResource("Shape_rock")
 
 [node name="RimSE" parent="Nav" instance=ExtResource("7_rocks")]
-transform = Transform3D(-0.5472, 0, -1.5035, 0, 1.8, 0, 1.5035, 0, -0.5472, -9, 0, 10)
+transform = Transform3D(-0.5472, 0, -1.5035, 0, 1.8, 0, 1.5035, 0, -0.5472, -39, 0, -22.5)
 
 [node name="Col" type="StaticBody3D" parent="Nav/RimSE"]
 
@@ -273,7 +274,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
 shape = SubResource("Shape_rock")
 
 [node name="ThroatN" parent="Nav" instance=ExtResource("7_rocks")]
-transform = Transform3D(0.75, 0, 1.299, 0, 2.4, 0, -1.299, 0, 0.75, -5, 0, -5)
+transform = Transform3D(0.75, 0, 1.299, 0, 2.4, 0, -1.299, 0, 0.75, -35, 0, -37.5)
 
 [node name="Col" type="StaticBody3D" parent="Nav/ThroatN"]
 
@@ -282,7 +283,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
 shape = SubResource("Shape_rock")
 
 [node name="ThroatS" parent="Nav" instance=ExtResource("7_rocks")]
-transform = Transform3D(-0.75, 0, -1.299, 0, 2.2, 0, 1.299, 0, -0.75, -5, 0, 5)
+transform = Transform3D(-0.75, 0, -1.299, 0, 2.2, 0, 1.299, 0, -0.75, -35, 0, -27.5)
 
 [node name="Col" type="StaticBody3D" parent="Nav/ThroatS"]
 
@@ -291,7 +292,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
 shape = SubResource("Shape_rock")
 
 [node name="WatchRock" parent="Nav" instance=ExtResource("7_rocks")]
-transform = Transform3D(1.9696, 0, 0.3473, 0, 3, 0, -0.3473, 0, 1.9696, 1, 0, -10)
+transform = Transform3D(1.9696, 0, 0.3473, 0, 3, 0, -0.3473, 0, 1.9696, -29, 0, -42.5)
 
 [node name="Col" type="StaticBody3D" parent="Nav/WatchRock"]
 
@@ -300,7 +301,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
 shape = SubResource("Shape_rock")
 
 [node name="ScreeE" parent="Nav" instance=ExtResource("7_rocks")]
-transform = Transform3D(-0.6, 0, 1.0392, 0, 1, 0, -1.0392, 0, -0.6, 18, 0, -6)
+transform = Transform3D(-0.6, 0, 1.0392, 0, 1, 0, -1.0392, 0, -0.6, -12, 0, -38.5)
 
 [node name="Col" type="StaticBody3D" parent="Nav/ScreeE"]
 
@@ -309,7 +310,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
 shape = SubResource("Shape_rock")
 
 [node name="ScreeSE" parent="Nav" instance=ExtResource("7_rocks")]
-transform = Transform3D(0.65, 0, -1.1258, 0, 1.1, 0, 1.1258, 0, 0.65, 20, 0, 12)
+transform = Transform3D(0.65, 0, -1.1258, 0, 1.1, 0, 1.1258, 0, 0.65, -10, 0, -20.5)
 
 [node name="Col" type="StaticBody3D" parent="Nav/ScreeSE"]
 
@@ -318,7 +319,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
 shape = SubResource("Shape_rock")
 
 [node name="RimWSW" parent="Nav" instance=ExtResource("7_rocks")]
-transform = Transform3D(0.5814, 0, -1.5975, 0, 2.0, 0, 1.5975, 0, 0.5814, -23, 0, 3)
+transform = Transform3D(0.5814, 0, -1.5975, 0, 2.0, 0, 1.5975, 0, 0.5814, -53, 0, -29.5)
 
 [node name="Col" type="StaticBody3D" parent="Nav/RimWSW"]
 
@@ -326,7 +327,7 @@ transform = Transform3D(0.5814, 0, -1.5975, 0, 2.0, 0, 1.5975, 0, 0.5814, -23, 0
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
 shape = SubResource("Shape_rock")
 [node name="Pine3" parent="Nav" instance=ExtResource("10_pine")]
-transform = Transform3D(0.342, 0, 0.9397, 0, 0.95, 0, -0.9397, 0, 0.342, 3, 0, 14)
+transform = Transform3D(0.342, 0, 0.9397, 0, 0.95, 0, -0.9397, 0, 0.342, -27, 0, -18.5)
 
 [node name="Col" type="StaticBody3D" parent="Nav/Pine3"]
 
@@ -335,7 +336,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 0)
 shape = SubResource("Shape_pine_trunk")
 
 [node name="Pine4" parent="Nav" instance=ExtResource("10_pine")]
-transform = Transform3D(-0.9848, 0, -0.1736, 0, 1.15, 0, 0.1736, 0, -0.9848, -2, 0, -16)
+transform = Transform3D(-0.9848, 0, -0.1736, 0, 1.15, 0, 0.1736, 0, -0.9848, -32, 0, -48.5)
 
 [node name="Col" type="StaticBody3D" parent="Nav/Pine4"]
 
@@ -344,7 +345,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 0)
 shape = SubResource("Shape_pine_trunk")
 
 [node name="Pine5" parent="Nav" instance=ExtResource("10_pine")]
-transform = Transform3D(0.866, 0, -0.5, 0, 1.05, 0, 0.5, 0, 0.866, 20, 0, -15)
+transform = Transform3D(0.866, 0, -0.5, 0, 1.05, 0, 0.5, 0, 0.866, -10, 0, -47.5)
 
 [node name="Col" type="StaticBody3D" parent="Nav/Pine5"]
 
@@ -353,7 +354,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 0)
 shape = SubResource("Shape_pine_trunk")
 
 [node name="Tent3" parent="Nav" instance=ExtResource("8_tent")]
-transform = Transform3D(0.866, 0, -0.5, 0, 1.0, 0, 0.5, 0, 0.866, -18, 0, 4)
+transform = Transform3D(0.866, 0, -0.5, 0, 1.0, 0, 0.5, 0, 0.866, -48, 0, -28.5)
 
 [node name="Tent3Col" type="StaticBody3D" parent="Nav/Tent3"]
 
@@ -374,7 +375,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.9, 0)
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, -0.9, 0)
 
 [node name="Pine1" parent="Nav" instance=ExtResource("10_pine")]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 8, 0, -12)
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -22, 0, -44.5)
 
 [node name="Col" type="StaticBody3D" parent="Nav/Pine1"]
 
@@ -383,7 +384,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 0)
 shape = SubResource("Shape_pine_trunk")
 
 [node name="Pine2" parent="Nav" instance=ExtResource("10_pine")]
-transform = Transform3D(-0.866, 0, -0.5, 0, 1, 0, 0.5, 0, -0.866, 14, 0, 9)
+transform = Transform3D(-0.866, 0, -0.5, 0, 1, 0, 0.5, 0, -0.866, -16, 0, -23.5)
 
 [node name="Col" type="StaticBody3D" parent="Nav/Pine2"]
 
@@ -411,6 +412,6 @@ shape = SubResource("Shape_pine_trunk")
 
 
 [node name="MapPin" type="Node3D" parent="."]
-position = Vector3(-15, 0, 0)
+position = Vector3(-45, 0, -32.5)
 script = ExtResource("maploc_39_5a")
 LocationId = "location.wilds.west"

@@ -7,25 +7,25 @@
 script = ExtResource("2_entry")
 StartHour = 6
 Activity = "Preparing the inn"
-Destination = Vector3(6, 0, 5)
+Destination = Vector3(31, 0, 22.5)
 
 [sub_resource type="Resource" id="e_bar"]
 script = ExtResource("2_entry")
 StartHour = 9
 Activity = "Tending the bar"
-Destination = Vector3(6, 0, 5)
+Destination = Vector3(31, 0, 22.5)
 
 [sub_resource type="Resource" id="e_evening"]
 script = ExtResource("2_entry")
 StartHour = 18
 Activity = "Serving the evening crowd"
-Destination = Vector3(5, 0, 6)
+Destination = Vector3(30, 0, 23.5)
 
 [sub_resource type="Resource" id="e_sleep"]
 script = ExtResource("2_entry")
 StartHour = 23
 Activity = "Asleep"
-Destination = Vector3(7, 0, 11)
+Destination = Vector3(32, 0, 28.5)
 
 [resource]
 script = ExtResource("1_sched")

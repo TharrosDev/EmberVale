@@ -16,11 +16,10 @@ endpoint from. It is impossible to author half of a seam in this file.
 The prose that used to live in the .tres headers lives in NOTES below and is emitted with the file,
 because the reason a cell is where it is has to survive the next person who wants to move it.
 
-⚠️ THE INTERIOR CIRCULATION OF EVERY EXISTING CELL IS NOT AUTHORED HERE. Paths and ground areas that
-predate this overhaul are lifted verbatim out of the previous revision's .tres (see LEGACY) so the
-2026-08-28 layout rebuild's work — the Coilyard, the Crookway, the Kingsway's S, Emberdeep's working
-loop, the Wilds North fork, Tarn's spit, Hollowreach's channels, the corrie throat, the arena's gate
-and breach — is preserved to the metre. What this file adds around them is geography and approach.
+⚠️ EVERY ROAD AND PAD IS SPEC DATA (2026-09 world rebuild). Interior streets and pads used to be
+lifted byte for byte out of git revision f5bde08, which pinned every settlement to the metre and made
+moving one a git archaeology exercise (plus a shallow-clone fallback that broke CI for three days).
+They are now named `Route`/`Yard` entries in the region specs, so a place moves with its numbers.
 """
 
 from __future__ import annotations
@@ -29,18 +28,13 @@ import argparse
 import difflib
 import re
 import subprocess
-from quality_common import legacy_run, legacy_check_output
 import sys
-from dataclasses import dataclass, field
+import math
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 REGIONS = ROOT / "data" / "regions"
-
-# The revision the untouched interior circulation is lifted from. Bumping this is a deliberate act:
-# it re-imports whatever that commit says the Coilyard and the Crookway are.
-LEGACY_REV = "f5bde08"
-
 
 # --------------------------------------------------------------------------------------------------
 # Spec types
@@ -82,6 +76,9 @@ class Route:
     b: tuple[float, float]
     width: float = 5.0
     shoulder: float = 2.0
+    # The sub-resource id. None takes the positional Path_<cell>_ap<n> id; a name is how an interior
+    # street keeps a stable, greppable identity (and how check_region_seams exempts a "breach").
+    name: str | None = None
 
 
 @dataclass(frozen=True)
@@ -94,7 +91,9 @@ class Yard:
     # WARNING: METRES ABOVE THE GENERATED GROUND UNDER THIS YARD'S OWN CENTRE, never an
     # absolute world Y. 0 means "level with the country here", which is what almost every
     # yard wants and what makes a settlement follow its hillside instead of stepping off it.
-    elevation: float = 0.0
+    elevation: float | None = 0.0
+    # The sub-resource id. None takes the positional Area_<cell>_y<n> id.
+    name: str | None = None
 
 
 @dataclass(frozen=True)
@@ -130,23 +129,22 @@ class Cell:
     routes: tuple[Route, ...] = ()
     yards: tuple[Yard, ...] = ()
     waters: tuple[Water, ...] = ()
-    legacy_paths: tuple[str, ...] = ()     # sub-resource ids lifted from LEGACY_REV
-    legacy_areas: tuple[str, ...] = ()
-    # WARNING: OFFSETS IN METRES from the generated ground under each lifted area's own
-    # centre, keyed by its sub-resource id. Absent means 0, which is what most pads want.
-    # These were absolute world Y before the generator landed and were migrated once by
-    # measuring the old field with `-- --worldgen`, rather than by a second implementation
-    # of the generator in Python that would have drifted from the real one within a week.
-    area_elevation: dict[str, float] = field(default_factory=dict)
-    # SurfaceBlend overrides for lifted areas, keyed the same way. A pad only levels ground in
-    # proportion to its blend, so a pad authored at 0.22 is a suggestion rather than a floor -
-    # fine on the near-flat field these were written against, useless once the realm has real
-    # relief. Area_wn_deadfall is the case that found it: the Deadfall Lodge is placed ON that
-    # pad by design and stood on 4.96 m of variation because the pad levelled almost nothing.
-    area_blend: dict[str, float] = field(default_factory=dict)
     scatter: str | None = None             # id of a shared scatter profile
     biome: str | None = None               # data/biomes/<name>.tres, overriding the region default
     new_scene: str | None = None           # body of a transitional cell scene to create
+    # ⚠️ WHERE THIS CELL'S AUTHORED CONTENT SITS IN THE WORLD (2026-09 world rebuild). Settlements were
+    # authored around their cell's own origin, so every place stood on a cell centre and the realm
+    # read as a lattice. `origin` is the world point the content frame is placed at; every local
+    # landform, route, yard, water body and seam reach point in this cell is shifted by
+    # origin - center, and tools/shift_cell_content.py moves the scene's nodes by the same amount.
+    # None keeps content centred (the right thing for an empty cell).
+    origin: tuple[float, float] | None = None
+
+    @property
+    def offset(self) -> tuple[float, float]:
+        if self.origin is None:
+            return (0.0, 0.0)
+        return (round(self.origin[0] - self.center[0], 3), round(self.origin[1] - self.center[1], 3))
 
     @property
     def left(self) -> float: return self.center[0] - self.size[0] / 2
@@ -172,6 +170,156 @@ class Seam:
 
 def local(cell: Cell, world: tuple[float, float]) -> tuple[float, float]:
     return (round(world[0] - cell.center[0], 3), round(world[1] - cell.center[1], 3))
+
+
+# --------------------------------------------------------------------------------------------------
+# World-space authoring (2026-09 world rebuild)
+# --------------------------------------------------------------------------------------------------
+#
+# ⚠️ A REALM IS DESIGNED IN WORLD SPACE AND STORED IN CELLS. A mountain range, a river valley and a
+# road between two towns do not know where the streaming lattice is, and authoring them cell by cell
+# is exactly how every road came to cross every seam at its midpoint. Author geography and roads as
+# world coordinates here; the generator assigns each landform to the cell that contains it and splits
+# each road at every edge it crosses, generating the seam points both cells derive from.
+
+def _shift(item, dx: float, dz: float):
+    if not (dx or dz):
+        return item
+    move = lambda p: (round(p[0] + dx, 3), round(p[1] + dz, 3))
+    if isinstance(item, Mound):
+        return replace(item, at=move(item.at))
+    if isinstance(item, Ridge):
+        return replace(item, a=move(item.a), b=move(item.b))
+    if isinstance(item, Route):
+        return replace(item, a=move(item.a), b=move(item.b))
+    if isinstance(item, (Yard, Water)):
+        return replace(item, at=move(item.at))
+    raise TypeError(item)
+
+
+def apply_origins(cells: list[Cell], seams: list[Seam]) -> tuple[list[Cell], list[Seam]]:
+    """Moves every cell's content frame to its `origin` (see Cell.origin)."""
+    by_key = {c.key: c for c in cells}
+    moved = []
+    for cell in cells:
+        dx, dz = cell.offset
+        moved.append(replace(
+            cell,
+            landforms=tuple(_shift(f, dx, dz) for f in cell.landforms),
+            routes=tuple(_shift(r, dx, dz) for r in cell.routes),
+            yards=tuple(_shift(y, dx, dz) for y in cell.yards),
+            waters=tuple(_shift(w, dx, dz) for w in cell.waters)))
+    shifted_seams = []
+    for seam in seams:
+        ax, az = by_key[seam.a].offset
+        bx, bz = by_key[seam.b].offset
+        shifted_seams.append(replace(
+            seam, reach_a=(seam.reach_a[0] + ax, seam.reach_a[1] + az),
+            reach_b=(seam.reach_b[0] + bx, seam.reach_b[1] + bz)))
+    return moved, shifted_seams
+
+
+def cell_containing(cells: list[Cell], x: float, z: float) -> Cell | None:
+    for cell in cells:
+        if cell.left - 1e-6 <= x <= cell.right + 1e-6 and cell.top - 1e-6 <= z <= cell.bottom + 1e-6:
+            return cell
+    return None
+
+
+def place_world(cells: list[Cell], items) -> list[Cell]:
+    """Adds world-space landforms, yards and waters to the cells that contain their centres."""
+    extra: dict[str, list] = {c.key: [] for c in cells}
+    issues = []
+    for item in items:
+        if isinstance(item, Ridge):
+            cx, cz = (item.a[0] + item.b[0]) / 2, (item.a[1] + item.b[1]) / 2
+        else:
+            cx, cz = item.at
+        cell = cell_containing(cells, cx, cz)
+        if cell is None:
+            raise ValueError(f"world item at ({cx}, {cz}) is outside the lattice: {item}")
+        extra[cell.key].append(_shift(item, -cell.center[0], -cell.center[1]))
+    out = []
+    for cell in cells:
+        forms = [i for i in extra[cell.key] if isinstance(i, (Mound, Ridge))]
+        yards = [i for i in extra[cell.key] if isinstance(i, Yard)]
+        waters = [i for i in extra[cell.key] if isinstance(i, Water)]
+        out.append(replace(cell, landforms=tuple(cell.landforms) + tuple(forms),
+                           yards=tuple(cell.yards) + tuple(yards),
+                           waters=tuple(cell.waters) + tuple(waters)))
+    return out
+
+
+@dataclass(frozen=True)
+class Road:
+    """A world-space road: a polyline the generator splits at every cell edge it crosses and into
+    pieces no longer than `step`, so each piece grades between its own ground rather than cutting a
+    straight trench across a hill."""
+    points: tuple[tuple[float, float], ...]
+    width: float = 5.0
+    shoulder: float = 2.0
+    step: float = 40.0
+
+
+def realize_roads(cells: list[Cell], roads: list[Road]) -> tuple[list[Cell], list[str]]:
+    """Appends each road's per-cell pieces to its cells. Returns the cells and any issues."""
+    xs = sorted({round(v, 3) for c in cells for v in (c.left, c.right)})
+    zs = sorted({round(v, 3) for c in cells for v in (c.top, c.bottom)})
+    pieces: dict[str, list[Route]] = {c.key: [] for c in cells}
+    issues: list[str] = []
+    for road in roads:
+        for (ax, az), (bx, bz) in zip(road.points, road.points[1:]):
+            ts = {0.0, 1.0}
+            if bx != ax:
+                ts |= {(x - ax) / (bx - ax) for x in xs if 0 < (x - ax) / (bx - ax) < 1}
+            if bz != az:
+                ts |= {(z - az) / (bz - az) for z in zs if 0 < (z - az) / (bz - az) < 1}
+            ordered = sorted(ts)
+            points = [(ax + (bx - ax) * t, az + (bz - az) * t) for t in ordered]
+            # Keep only the points where the road actually changes cell: the candidate breaks include
+            # every column edge of EVERY row, and a split at another row's edge would leave a piece
+            # end a hair from this cell's edge that the seam checker rightly calls an open road.
+            owners = [cell_containing(cells, (p[0] + q[0]) / 2, (p[1] + q[1]) / 2)
+                      for p, q in zip(points, points[1:])]
+            kept = [points[0]]
+            for i in range(1, len(points) - 1):
+                if owners[i - 1] is not owners[i]:
+                    kept.append(points[i])
+            kept.append(points[-1])
+            points = kept
+            for (px, pz), (qx, qz) in zip(points, points[1:]):
+                length = math.hypot(qx - px, qz - pz)
+                if length < 0.5:
+                    continue
+                mx, mz = (px + qx) / 2, (pz + qz) / 2
+                cell = cell_containing(cells, mx, mz)
+                if cell is None:
+                    issues.append(f"road piece ({px:.1f},{pz:.1f})->({qx:.1f},{qz:.1f}) leaves the lattice")
+                    continue
+                for corner_x in (cell.left, cell.right):
+                    for corner_z in (cell.top, cell.bottom):
+                        for ex, ez in ((px, pz), (qx, qz)):
+                            if math.hypot(ex - corner_x, ez - corner_z) < 3.0:
+                                issues.append(f"road crosses the lattice within 3 m of a cell corner at "
+                                              f"({corner_x}, {corner_z}); move a vertex")
+                parts = max(1, math.ceil(length / road.step))
+                cuts = [0.0]
+                for i in range(1, parts):
+                    cx, cz = px + (qx - px) * i / parts, pz + (qz - pz) * i / parts
+                    near_edge = min(abs(cx - cell.left), abs(cx - cell.right),
+                                    abs(cz - cell.top), abs(cz - cell.bottom)) < 1.5
+                    if not near_edge:
+                        cuts.append(i / parts)
+                cuts.append(1.0)
+                for s, e in zip(cuts, cuts[1:]):
+                    sx, sz = px + (qx - px) * s, pz + (qz - pz) * s
+                    ex, ez = px + (qx - px) * e, pz + (qz - pz) * e
+                    pieces[cell.key].append(Route(
+                        (round(sx - cell.center[0], 2), round(sz - cell.center[1], 2)),
+                        (round(ex - cell.center[0], 2), round(ez - cell.center[1], 2)),
+                        road.width, road.shoulder))
+    out = [replace(c, routes=tuple(c.routes) + tuple(pieces[c.key])) for c in cells]
+    return out, issues
 
 
 # --------------------------------------------------------------------------------------------------
@@ -233,77 +381,6 @@ def check_envelopes(name: str, cells: list[Cell], routed: dict[str, list[Route]]
 
 
 # --------------------------------------------------------------------------------------------------
-# Legacy import
-# --------------------------------------------------------------------------------------------------
-
-_BLOCK = re.compile(r'^\[sub_resource[^\]]*id="([^"]+)"\]\n(.*?)(?=^\[|\Z)', re.M | re.S)
-
-
-def _blocks(text: str) -> dict[str, str]:
-    return {m.group(1): m.group(2).rstrip() + "\n" for m in _BLOCK.finditer(text)}
-
-
-# ⚠️ THE KEYS THIS GENERATOR APPENDS TO A LIFTED AREA BLOCK, IN THE ORDER IT APPENDS THEM.
-# The emitter and the shallow-clone fallback below MUST agree on this list, which is why it is a
-# constant rather than a regex written out twice. When they disagreed, the fallback re-appended the
-# key it had forgotten to strip and every region came back drifted — a red required CI job for
-# three days that reproduced on no developer's machine, because a full clone never takes that path.
-APPENDED_AREA_KEYS = ("ElevationMode", "Elevation")
-
-
-def legacy_blocks(filename: str) -> dict[str, str]:
-    """The sub-resources this generator lifts verbatim out of LEGACY_REV.
-
-    ⚠️ CI CHECKS OUT ONE COMMIT. `actions/checkout` defaults to `fetch-depth: 1`, so
-    `git show f5bde08:...` exits 128 on a runner and takes the whole `generation` gate — and with it
-    every PR — down with it. It was doing so on `main` before this fallback existed, which reads as
-    a broken PR rather than a broken checkout.
-
-    So: try the pinned revision, fetch it once if it is simply not present, and otherwise fall back
-    to the COMMITTED `.tres`. That last step is honest rather than a shrug — these blocks are lifted
-    byte for byte, so on a healthy tree the fallback produces identical output, and `--check` keeps
-    catching drift in everything the spec actually computes.
-    """
-    path = f"data/regions/{filename}"
-
-    def show() -> str | None:
-        result = legacy_run(["git", "show", f"{LEGACY_REV}:{path}"],
-                                cwd=ROOT, capture_output=True, text=True, encoding="utf-8")
-        return result.stdout if result.returncode == 0 else None
-
-    text = show()
-    if text is None:
-        legacy_run(["git", "fetch", "--depth=1", "origin", LEGACY_REV],
-                       cwd=ROOT, capture_output=True, text=True)
-        text = show()
-        if text is not None:
-            print(f"  note: {filename} legacy blocks needed a fetch of {LEGACY_REV}")
-    if text is None:
-        # ⚠️ SAY SO. Which of the three sources supplied the lifted blocks is the single most useful
-        # fact when this generator disagrees with itself across machines, and it used to be silent —
-        # so a shallow CI clone and a full local clone could produce different files and the only
-        # symptom was an unexplained "would change" on a runner nobody could attach to.
-        print(f"  note: {filename} legacy blocks fell back to the committed .tres "
-              f"({LEGACY_REV} not reachable — expected on a shallow CI clone)")
-        # ⚠️ The committed file is the generator's OWN output, so every line this generator appends
-        # to a lifted area block is already in it. Left in, the fallback emits them twice and
-        # `--check` reports every region as drifted — a worse failure than the one it is recovering
-        # from, and the one that actually shipped: this stripped `Elevation` only, `ElevationMode`
-        # was added to the emitter later, and nothing tied the two together. APPENDED_AREA_KEYS is
-        # now that tie.
-        appended = "|".join(APPENDED_AREA_KEYS)
-        text = re.sub(rf"^(?:{appended}) = .*\n", "",
-                      (ROOT / path).read_text(encoding="utf-8"), flags=re.M)
-    return _blocks(text)
-
-
-def retype(block: str, script_id: str) -> str:
-    """Legacy blocks name their script by ext_resource id; the new files renumber them."""
-    return re.sub(r'^script = ExtResource\("[^"]+"\)$', f'script = ExtResource("{script_id}")',
-                  block, flags=re.M)
-
-
-# --------------------------------------------------------------------------------------------------
 # Emission
 # --------------------------------------------------------------------------------------------------
 
@@ -351,7 +428,7 @@ def wire_biomes(header: str, environment: str, cells: list[Cell], default: str) 
 
 
 def emit(region_key: str, header: str, cells: list[Cell], seams: list[Seam],
-         legacy: dict[str, str], environment: str, budget: str, resource: str,
+         environment: str, budget: str, resource: str,
          scatter_blocks: str, default_biome: str = "TemperateLowland") -> str:
     routed: dict[str, list[Route]] = {c.key: list(c.routes) for c in cells}
     by_key = {c.key: c for c in cells}
@@ -415,13 +492,13 @@ def emit(region_key: str, header: str, cells: list[Cell], seams: list[Seam],
             out.append("")
 
         path_ids: list[str] = []
-        for pid in cell.legacy_paths:
-            path_ids.append(pid)
-            out.append(f'[sub_resource type="Resource" id="{pid}"]')
-            out.append(retype(legacy[pid], "6_path").rstrip())
-            out.append("")
-        for i, route in enumerate(routed[cell.key]):
-            rid = f"Path_{cell.key}_ap{i}"
+        unnamed = 0
+        for route in routed[cell.key]:
+            if route.name:
+                rid = route.name
+            else:
+                rid = f"Path_{cell.key}_ap{unnamed}"
+                unnamed += 1
             path_ids.append(rid)
             out.append(f'[sub_resource type="Resource" id="{rid}"]')
             out.append('script = ExtResource("6_path")')
@@ -432,33 +509,16 @@ def emit(region_key: str, header: str, cells: list[Cell], seams: list[Seam],
             out.append("")
 
         area_ids: list[str] = []
-        for aid in cell.legacy_areas:
-            area_ids.append(aid)
-            body = retype(legacy[aid], "7_area").rstrip()
-            # WARNING: EVERY PAD IS RELATIVE NOW, AND THE ELEVATION IS AN OFFSET IN METRES.
-            # These numbers were authored as an absolute world Y against a ground field that
-            # was two octaves of noise and never a metre and a half from zero. The day the
-            # generator put real hillsides under the realm, every one of them became a step
-            # with a cliff on its uphill side. As an offset from the ground the generator
-            # puts underneath the pad, the authored intent survives re-tuning a region
-            # profile: "cut five metres into this knoll" stays five metres into the knoll
-            # wherever the knoll ends up, and no re-anchoring pass is ever needed again.
-            # ⚠️ ANYTHING APPENDED HERE MUST BE NAMED IN APPENDED_AREA_KEYS, or the shallow-clone
-            # fallback in legacy_blocks() will not strip it back off and every region will report
-            # as drifted on CI while passing on every full clone.
-            body += "\nElevationMode = 1"
-            if aid in cell.area_blend:
-                # Substituted in place rather than appended, so it needs no entry in that list.
-                body = re.sub(r"^SurfaceBlend = .*$",
-                              f"SurfaceBlend = {cell.area_blend[aid]}",
-                              body, count=1, flags=re.M)
-            if aid in cell.area_elevation:
-                body += f"\nElevation = {cell.area_elevation[aid]}"
-            out.append(f'[sub_resource type="Resource" id="{aid}"]')
-            out.append(body)
-            out.append("")
-        for i, yard in enumerate(cell.yards):
-            yid = f"Area_{cell.key}_y{i}"
+        unnamed = 0
+        for yard in cell.yards:
+            # ⚠️ AN ELEVATION IS METRES ABOVE THE GENERATED GROUND UNDER THE PAD'S OWN CENTRE, never a
+            # world Y (NOW.md invariant 23). Every pad is RelativeToBase; `elevation=None` omits the
+            # field, which the resource reads as 0.
+            if yard.name:
+                yid = yard.name
+            else:
+                yid = f"Area_{cell.key}_y{unnamed}"
+                unnamed += 1
             area_ids.append(yid)
             out.append(f'[sub_resource type="Resource" id="{yid}"]')
             out.append('script = ExtResource("7_area")')
@@ -466,8 +526,13 @@ def emit(region_key: str, header: str, cells: list[Cell], seams: list[Seam],
             out.append(f"Radius = Vector2({yard.ext[0]}, {yard.ext[1]})")
             out.append(f"Feather = {yard.feather}")
             out.append(f"SurfaceBlend = {yard.blend}")
-            out.append(f"Elevation = {yard.elevation}")
-            out.append("ElevationMode = 1")
+            if yard.name:
+                out.append("ElevationMode = 1")
+                if yard.elevation is not None:
+                    out.append(f"Elevation = {yard.elevation}")
+            else:
+                out.append(f"Elevation = {yard.elevation}")
+                out.append("ElevationMode = 1")
             out.append("")
 
         water_ids: list[str] = []
@@ -533,8 +598,57 @@ def emit(region_key: str, header: str, cells: list[Cell], seams: list[Seam],
         out.append("")
 
     cell_list = ", ".join(f'SubResource("Cell_{c.key}")' for c in cells)
-    out.append(resource.replace("@CELLS@", cell_list))
+    out.append(anchor_points(resource.replace("@CELLS@", cell_list), cells))
     return "\n".join(out).rstrip() + "\n"
+
+
+def _num(value: float) -> str:
+    value = round(value, 3)
+    return str(int(value)) if float(value).is_integer() else str(value)
+
+
+def anchor_points(text: str, cells: list[Cell]) -> str:
+    """Resolve region-level world points from the cells they belong to.
+
+    ⚠️ A REGION POINT IS AN OFFSET FROM A CELL, NEVER A WORLD LITERAL (2026-09 world rebuild). The
+    spawn, portal and safe-zone centre used to be typed as world Vector3s beside the cells, so moving
+    the town or the Crossway silently left the player spawning in the old place. Write them as
+      @CELL(key, dx, y, dz)@            -> Vector3(center.x + dx, y, center.z + dz)
+      @ORIGIN(key, dx, y, dz)@          -> the same, from the cell's content origin (Cell.origin)
+      @WORLD(x, y, z)@                  -> a world point the spec authors directly (world geometry)
+      @BOUNDS(margin, y, height)@       -> the lattice's AABB grown by `margin` on x/z
+    """
+    by_key = {c.key: c for c in cells}
+
+    def cell_point(match: re.Match) -> str:
+        key, dx, y, dz = [part.strip() for part in match.group(1).split(",")]
+        cell = by_key[key]
+        return (f"Vector3({_num(cell.center[0] + float(dx))}, {_num(float(y))}, "
+                f"{_num(cell.center[1] + float(dz))})")
+
+    def bounds(match: re.Match) -> str:
+        margin, y, height = (float(part) for part in match.group(1).split(","))
+        left = min(c.left for c in cells) - margin
+        top = min(c.top for c in cells) - margin
+        right = max(c.right for c in cells) + margin
+        bottom = max(c.bottom for c in cells) + margin
+        return (f"AABB({_num(left)}, {_num(y)}, {_num(top)}, {_num(right - left)}, "
+                f"{_num(height)}, {_num(bottom - top)})")
+
+    def origin_point(match: re.Match) -> str:
+        key, dx, y, dz = [part.strip() for part in match.group(1).split(",")]
+        cell = by_key[key]
+        ox, oz = cell.origin if cell.origin is not None else cell.center
+        return f"Vector3({_num(ox + float(dx))}, {_num(float(y))}, {_num(oz + float(dz))})"
+
+    def world_point(match: re.Match) -> str:
+        x, y, z = (float(part) for part in match.group(1).split(","))
+        return f"Vector3({_num(x)}, {_num(y)}, {_num(z)})"
+
+    text = re.sub(r"@ORIGIN\(([^)]*)\)@", origin_point, text)
+    text = re.sub(r"@WORLD\(([^)]*)\)@", world_point, text)
+    text = re.sub(r"@CELL\(([^)]*)\)@", cell_point, text)
+    return re.sub(r"@BOUNDS\(([^)]*)\)@", bounds, text)
 
 
 def write(path: Path, text: str, check: bool) -> bool:
@@ -558,44 +672,6 @@ def write(path: Path, text: str, check: bool) -> bool:
     return True
 
 
-def fallback_agrees(builder, filename: str, expected: str) -> bool:
-    """The shallow-clone fallback must produce byte-identical output to the pinned revision.
-
-    ⚠️ THIS IS THE GUARD FOR THE BUG THAT PUT IT HERE, AND IT HAS TO RUN ON A FULL CLONE.
-    `legacy_blocks` has two sources — `git show LEGACY_REV` on a normal checkout, and the committed
-    `.tres` with the appended keys stripped back off when that revision is unreachable. **Only the
-    second one runs on CI**, because `actions/checkout` clones at depth 1, and only the first one
-    runs anywhere a developer works. So the two drifted apart and nothing noticed for three days:
-    every local run took the good path and every CI run took the broken one, and the failure
-    reproduced on nobody's machine.
-
-    A machine that can reach the revision can compute BOTH, so it is the one that must compare them.
-    That inverts the problem: the divergence is caught on a developer's own full clone, before it
-    can reach the shallow one where it is undebuggable. Skipped when the revision is unreachable,
-    because there a fallback is all there is and there is nothing to compare it against.
-    """
-    if legacy_run(["git", "cat-file", "-e", LEGACY_REV],
-                  cwd=ROOT, capture_output=True, text=True).returncode != 0:
-        return True
-
-    stripped = "|".join(APPENDED_AREA_KEYS)
-    source = re.sub(rf"^(?:{stripped}) = .*\n", "",
-                    (REGIONS / filename).read_text(encoding="utf-8"), flags=re.M)
-    text, _ = builder(_blocks(source))
-    if text == expected:
-        return True
-
-    print(f"FALLBACK DRIFT: {filename} generates differently from the committed .tres than from "
-          f"{LEGACY_REV}, so CI's shallow clone would disagree with this machine.", file=sys.stderr)
-    print("  Every key the emitter APPENDS to a lifted area block must be in APPENDED_AREA_KEYS.",
-          file=sys.stderr)
-    for line in difflib.unified_diff(expected.splitlines(), text.splitlines(),
-                                     fromfile=f"{filename} (from {LEGACY_REV})",
-                                     tofile=f"{filename} (from the fallback)", lineterm="", n=1):
-        print(f"  {line}", file=sys.stderr)
-    return False
-
-
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true")
@@ -608,11 +684,9 @@ def main() -> int:
     issues: list[str] = []
     for builder, filename in ((build_ember, "EmberCrown.tres"),
                               (build_frostfang, "FrostfangReach.tres")):
-        text, problems = builder(legacy_blocks(filename))
+        text, problems = builder()
         issues += problems
         changed |= write(REGIONS / filename, text, args.check)
-        if args.check and not fallback_agrees(builder, filename, text):
-            changed = True
 
     if issues:
         for issue in issues:

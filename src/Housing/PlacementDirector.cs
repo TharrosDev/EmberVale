@@ -147,7 +147,7 @@ public partial class PlacementDirector : Node
         Outcome = PlacementCheck.Resolve(
             owned: holding != null,
             hasGround: hit != null,
-            distanceFromCenter: holding == null ? float.MaxValue : HorizontalDistance(point, holding.PlacementCenter),
+            distanceFromCenter: holding == null ? float.MaxValue : HorizontalDistance(point, holding.PlacementWorldCenter),
             radius: holding?.PlacementRadius ?? 0f,
             blocked: hit != null && IsBlocked(body, point));
 
@@ -182,7 +182,7 @@ public partial class PlacementDirector : Node
                 continue;
             }
 
-            float distance = HorizontalDistance(point, property.PlacementCenter);
+            float distance = HorizontalDistance(point, property.PlacementWorldCenter);
             if (distance < best)
             {
                 best = distance;

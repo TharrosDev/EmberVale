@@ -98,13 +98,21 @@ public partial class MapLocationResource : Resource
     [ExportGroup("Visibility")]
 
     /// <summary>
-    /// Reveal the moment the containing cell loads, rather than on approach.
-    ///
-    /// True for anything you can see from outside — a town, a keep, a tower on a hill. False for
-    /// anything you have to walk up to, which is what stops arriving in a city from dumping forty
-    /// pins on the map at once and deleting exploration.
+    /// Known the moment the player enters this location's REGION (2026-09 world rebuild: independent
+    /// of streaming, which it used to ride on). Reserve it for what every inhabitant of a homeland
+    /// already knows — its capital, its one road out. Everything else is discovered by seeing it
+    /// (<see cref="SightRadius"/>) or by being told about it (<see cref="RevealFlagId"/>).
     /// </summary>
     [Export] public bool RevealWithCell { get; set; }
+
+    /// <summary>How far away this place can be discovered, in metres. <c>0</c> takes the tier's
+    /// default (<see cref="MapDiscoveryRules.RadiusFor"/>); anything beyond walk-up range also needs
+    /// the terrain to allow a line of sight to it.</summary>
+    [Export] public float SightRadius { get; set; }
+
+    /// <summary>A story flag that REVEALS this location when set — the player was told where it is.
+    /// Empty for none. A flag that nothing sets simply never fires, which is safe.</summary>
+    [Export] public string RevealFlagId { get; set; } = string.Empty;
 
     /// <summary>A story flag that must be set before this location can be discovered at all, or
     /// empty for none. ⚠️ Story flags have no database (IDS.md), so a typo here is silent — the same

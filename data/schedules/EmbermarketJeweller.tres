@@ -5,7 +5,7 @@
 
 ; Nessa Brightcut (Phase 38L).
 ;
-; ⚠️ DESTINATIONS ARE CELL-LOCAL. Origin carries the Embermarket's Center (0, 0, 46), so these read
+; ⚠️ DESTINATIONS ARE CELL-LOCAL. they resolve against the NPC's own streamed cell, so these read
 ; straight out of embermarket.tscn (re-read from the the 2026-08-28 layout rebuild Coilyard rebuild — the stall rows are gone) without anyone doing the arithmetic by hand thirty times. A raw
 ; world destination copied from a cell .tscn lands a cell's width away and nothing reports it.
 ;
@@ -20,25 +20,21 @@
 script = ExtResource("2_entry")
 StartHour = 9
 Activity = "Laying out the cloth"
-Destination = Vector3(13.41, 0, -4.52)
+Destination = Vector3(-31.59, 0, -24.52)
 
 [sub_resource type="Resource" id="e_trade"]
 script = ExtResource("2_entry")
 StartHour = 10
 Activity = "Selling gemstones"
-Destination = Vector3(13.41, 0, -4.52)
+Destination = Vector3(-31.59, 0, -24.52)
 
 [sub_resource type="Resource" id="e_close"]
 script = ExtResource("2_entry")
 StartHour = 18
 Activity = "Emptying the glass"
-Destination = Vector3(13.95, 0, -7.57)
+Destination = Vector3(-31.05, 0, -27.57)
 
 [resource]
 script = ExtResource("1_sched")
 Id = "schedule.embermarket.jeweller"
-; ⚠️ Origin moved with the cell in the 2026-08-29 geography overhaul. Destinations below are
-; CELL-LOCAL and did not change; only the cell's world Center did. Read the local point, never
-; the old world number.
-Origin = Vector3(0, 0, 85)
 Entries = Array[Resource]([SubResource("e_setup"), SubResource("e_trade"), SubResource("e_close")])

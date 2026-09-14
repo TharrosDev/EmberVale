@@ -163,7 +163,7 @@ def bake() -> int:
     result = run_process(
         [str(engine), "--headless", "--path", str(ROOT), "--", "--world-bake",
          f"--world-bake-signature={signature}"],
-        timeout=1800, cwd=ROOT)
+        timeout=5400, cwd=ROOT)  # ~27 min for the 52-cell Ember Crown alone
     print(result.output, end="")
     if result.returncode != 0:
         return result.returncode

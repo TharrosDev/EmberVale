@@ -76,7 +76,7 @@ public static partial class HeadlessWorldBake
 
                     foreach (RegionCellResource? cell in region.Cells)
                     {
-                        if (cell == null || !await BakeCell(region, cell, preparedField))
+                        if (cell == null || !await BakeCell(region, cell, preparedField, prepared))
                         {
                             failures++;
                         }
@@ -191,7 +191,8 @@ public static partial class HeadlessWorldBake
         }
 
         private async System.Threading.Tasks.Task<bool> BakeCell(
-            RegionResource region, RegionCellResource cell, WorldHeightfield field)
+            RegionResource region, RegionCellResource cell, WorldHeightfield field,
+            WorldPreparedRegionResource prepared)
         {
             if (GD.Load<PackedScene>(cell.ScenePath) is not { } source ||
                 source.Instantiate() is not Node3D root)
@@ -220,6 +221,12 @@ public static partial class HeadlessWorldBake
             // in traversal probes, while CellNavBaker is explicitly suppressed to prevent a second bake.
             AddChild(root);
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            RecordPlaces(root, cell, prepared);
+            int batched = WorldArchitectureBatcher.Apply(root);
+            if (batched > 0)
+            {
+                Log.Info($"World bake: '{cell.Id}' merged {batched} static surface(s).");
+            }
             foreach (Node node in Descendants(root))
             {
                 if (node is NavigationRegion3D navigation && navigation.NavigationMesh != null)
@@ -253,6 +260,26 @@ public static partial class HeadlessWorldBake
             }
             Log.Info($"World bake: prepared cell '{cell.Id}'.");
             return true;
+        }
+
+        /// <summary>Writes every travel landing and map pin in this cell into the region's place index,
+        /// measured on the cell's conformed ground (the root sits at the origin, so a global position
+        /// plus the cell centre is the runtime world position).</summary>
+        private static void RecordPlaces(Node3D root, RegionCellResource cell, WorldPreparedRegionResource prepared)
+        {
+            foreach (Node node in Descendants(root))
+            {
+                if (node is TravelNodeComponent travel && !string.IsNullOrEmpty(travel.Id) &&
+                    travel.GetParent() is Node3D body)
+                {
+                    prepared.Places[WorldPlaceIndex.TravelKey(travel.Id)] =
+                        cell.Center + TravelNodeComponent.LandingFor(body, travel.LandingOffset);
+                }
+                else if (node is MapLocationComponent pin && !string.IsNullOrEmpty(pin.LocationId))
+                {
+                    prepared.Places[WorldPlaceIndex.LocationKey(pin.LocationId)] = cell.Center + pin.GlobalPosition;
+                }
+            }
         }
 
         private static WorldWaterResource? FirstWater(RegionResource region)

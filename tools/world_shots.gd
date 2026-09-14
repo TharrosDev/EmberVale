@@ -38,6 +38,7 @@ var _camera: Camera3D
 var _content_loader: Node
 var _signatures: Dictionary = {}
 var _capture_errors: Array[String] = []
+var _cell_rect := Rect2()
 
 
 func _initialize() -> void:
@@ -100,6 +101,20 @@ func _initialize() -> void:
 			if not streamer.call("IsPositionReady", centre, false) or streamer.call("HasFailedCells"):
 				_capture_errors.append("cell failed to activate for capture: %s" % authored_cell.get("Id"))
 				continue
+			# Route views look up to ~14 m past the seam, into neighbours (diagonal ones included) whose
+			# colliders activate on their own staged frames; wait for the ground beyond every edge too.
+			var bounds: AABB = region.get("Bounds")
+			var reach := 16.0
+			var half := Vector3(float(presentation.get("Width")) * 0.5 + reach, 0, float(presentation.get("Depth")) * 0.5 + reach)
+			for probe in [Vector3(half.x, 0, 0), Vector3(-half.x, 0, 0), Vector3(0, 0, half.z), Vector3(0, 0, -half.z),
+					half, -half, Vector3(half.x, 0, -half.z), Vector3(-half.x, 0, half.z)]:
+				var at: Vector3 = centre + probe
+				if at.x < bounds.position.x or at.z < bounds.position.z or at.x > bounds.end.x or at.z > bounds.end.z:
+					continue
+				var edge_frames := 0
+				while not streamer.call("IsPositionReady", at, false) and edge_frames < 240:
+					await process_frame
+					edge_frames += 1
 			await physics_frame
 			await physics_frame
 			await _render_cell([
@@ -125,6 +140,11 @@ func _initialize() -> void:
 ## The ground under a world X/Z, from the real terrain collider the streamer just built. Every
 ## camera in this harness used to assume y = 0 and would now be underground on half the realm.
 func _ground_at(x: float, z: float) -> float:
+	# A route view can look ~30 m past the seam into a neighbour the focus leaves without collision;
+	# sample the nearest ground inside the photographed cell instead (the camera still stands at x/z).
+	if _cell_rect.has_area():
+		x = clampf(x, _cell_rect.position.x, _cell_rect.end.x)
+		z = clampf(z, _cell_rect.position.y, _cell_rect.end.y)
 	var space := root.world_3d.direct_space_state
 	var query := PhysicsRayQueryParameters3D.create(Vector3(x, 400.0, z), Vector3(x, -200.0, z))
 	query.collide_with_areas = false
@@ -144,6 +164,7 @@ func _render_cell(cell: Array, region: Resource) -> void:
 	var centre: Vector3 = cell[1]
 	var size: Vector2 = cell[2]
 	var radius: float = max(size.x, size.y) * 0.5
+	_cell_rect = Rect2(Vector2(centre.x, centre.z) - size * 0.5, size)
 	var route_views := _route_views(cell_id, centre, size, region)
 	var landmark_view := _landmark_view(centre, radius)
 	# Per-axis placement keeps long rectangular cells from putting the camera beyond their narrow

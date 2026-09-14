@@ -494,7 +494,8 @@ public partial class MapScreen : UiPanel
         _view.Waypoint = _map?.Waypoint;
         _view.Regions = _map != null ? new List<MapMarker>(_map.RegionMarkers()) : new List<MapMarker>();
         _view.Land = BuildLand();
-        _view.Roads = MapCartography.Roads(_map);
+        _view.Relief = MapCartography.Relief(CurrentRegionId()) is { } relief ? (relief.Texture, relief.World) : null;
+        _view.Roads = MapCartography.Roads(CurrentRegionId());
         _view.QueueRedraw();
 
         RebuildBreadcrumb();

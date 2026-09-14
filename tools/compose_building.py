@@ -155,27 +155,27 @@ def compose(name, wide, deep, storeys, hollow=False, open_hall=False, *,
     for storey in range(storeys):
         y = storey * STOREY
         up = storey > 0
-        tag = "U" if up else "G"
+        tag = f"U{storey}" if storey > 1 else ("U" if up else "G")
         for i, x in enumerate(xs):
             # ⚠️ A hollow house gets a window on its FRONT as well. A solid one does not, and that is
             # not laziness: a background town house is seen from the street and its frontage is one
             # of thirty, while a house you live in is looked AT — a blank front elevation with a
             # single door reads as a shed, which is exactly the complaint 37E was opened on.
             if not open_hall:
-                front = "wall_window" if up else (
+                front = ("wall_window_thin" if wall_family == "stone" else "wall_window") if up else (
                     "wall_door" if i == door_index else
                     "wall_window" if hollow and i == len(xs) - 1 else "wall_plain")
                 if not ruined or (storey == 0 and i != len(xs) - 1):
-                    wall(f"{tag}Front{i}", front, x, y, half_z, 180, timber=up, storey=storey)
+                    wall(f"{tag}Front{i}", front, x, y, half_z, 180, timber=up and wall_family != "stone", storey=storey)
             back = "wall_window_thin" if (up and i == mid_x) else "wall_plain"
             if not ruined or i != 0:
-                wall(f"{tag}Back{i}", back, x, y, -half_z, 0, timber=up, storey=storey)
+                wall(f"{tag}Back{i}", back, x, y, -half_z, 0, timber=up and wall_family != "stone", storey=storey)
         for i, z in enumerate(zs):
             side = "wall_window" if i == mid_z else "wall_plain"
             if not ruined or i < len(zs) - 1:
-                wall(f"{tag}Left{i}", side, -half_x, y, z, 90, timber=up, storey=storey)
+                wall(f"{tag}Left{i}", side, -half_x, y, z, 90, timber=up and wall_family != "stone", storey=storey)
             if not ruined or i > 0:
-                wall(f"{tag}Right{i}", side, half_x, y, z, 270, timber=up, storey=storey)
+                wall(f"{tag}Right{i}", side, half_x, y, z, 270, timber=up and wall_family != "stone", storey=storey)
         # The open hall keeps ALL FOUR corner posts. They are what the roof reads as standing on,
         # and dropping the two on the open side leaves an eight-metre span floating in mid-air.
         for i, (cx, cz) in enumerate([(-half_x, -half_z), (half_x, -half_z),
@@ -364,7 +364,9 @@ if __name__ == "__main__":
     parser.add_argument("name")
     parser.add_argument("wide", type=int)
     parser.add_argument("deep", type=int)
-    parser.add_argument("storeys", type=int, choices=(1, 2))
+    # 3-6 storeys exist for stone towers and keeps (2026-09 world rebuild: the Iron Citadel). A plaster
+    # house over two storeys is not a thing this kit's proportions support; a stone tower is.
+    parser.add_argument("storeys", type=int, choices=(1, 2, 3, 4, 5, 6))
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--hollow", action="store_true")
     mode.add_argument("--open", action="store_true", dest="open_hall")

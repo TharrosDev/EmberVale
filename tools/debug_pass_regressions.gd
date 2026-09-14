@@ -130,8 +130,11 @@ func _case_spawn_has_collision_under_it() -> void:
 		"no world collision anywhere under %s — a new game would drop the player" % spawn)
 
 	# Every travel arrival point the player can land on, for the same reason.
-	_check("the portal column has ground in it",
-		_column_has_ground(region.PortalPoint if region.PortalPoint != Vector3.ZERO else spawn))
+	# ⚠️ Focus the streamer on the portal first (2026-09 world rebuild): collision exists only in the
+	# Near/Mid tiers, and the Crown Pass is six hundred metres from the spawn.
+	var portal: Vector3 = region.PortalPoint if region.PortalPoint != Vector3.ZERO else spawn
+	await _focus(streamer, portal)
+	_check("the portal column has ground in it", _column_has_ground(portal))
 
 	streamer.call("UnloadAll")
 	streamer.call("Configure", null)
@@ -149,6 +152,16 @@ func _has_ground(point: Vector3) -> bool:
 # Is there world collision anywhere in this point's column? An authored arrival point carries a
 # clearance rather than a world Y, so its exact height is not the question - whether the terrain
 # under it exists at all is.
+func _focus(streamer: Node3D, point: Vector3) -> void:
+	streamer.call("SetStreamingFocus", point)
+	var frames := 0
+	while frames < 1800 and not streamer.call("IsPositionReady", point, false):
+		await process_frame
+		frames += 1
+	for _f in 4:
+		await physics_frame
+
+
 func _column_has_ground(point: Vector3) -> bool:
 	var space := root.world_3d.direct_space_state
 	var query := PhysicsRayQueryParameters3D.create(
@@ -176,6 +189,7 @@ func _case_streamed_world_integrity() -> void:
 			await physics_frame
 		_check("%s spawn has runtime collision" % region.Id, _column_has_ground(region.SpawnPoint))
 		if region.PortalPoint != Vector3.ZERO:
+			await _focus(streamer, region.PortalPoint)
 			_check("%s portal has runtime collision" % region.Id, _column_has_ground(region.PortalPoint))
 		var invalid: Array[String] = []
 		var collision_shapes := 0

@@ -50,6 +50,7 @@ public partial class ScheduleComponent : EntityComponent
     private ScheduleResource? _schedule;
     private Node3D _body = null!;
     private Vector3 _target;
+    private Vector3 _cellOrigin;
     private string _activity = string.Empty;
     private double _panicTimer;
     private bool _talking;
@@ -65,6 +66,7 @@ public partial class ScheduleComponent : EntityComponent
     {
         _body = Entity!.Body;
         _schedule = ScheduleDatabase.Get(ScheduleId);
+        _cellOrigin = CellOriginOf(_body);
         _target = _body.GlobalPosition;
         Vector3 here = _body.GlobalPosition;
         _groundClearance = here.Y - WorldGround.HeightAt(here.X, here.Z);
@@ -137,9 +139,9 @@ public partial class ScheduleComponent : EntityComponent
         }
 
         // Through ScheduleResource.DestinationOf, never entry.Destination directly: a cell-local
-        // routine is only correct once its cell's Origin is added, and one caller that forgets walks
-        // a merchant out of the market and into the town square.
-        _target = _schedule.DestinationOf(entry);
+        // routine is only a place once its cell is added, and one caller that forgets walks a
+        // merchant out of the market and into the town square.
+        _target = ScheduleResource.DestinationOf(entry, _cellOrigin);
         SetActivity(entry.Activity);
     }
 
@@ -152,6 +154,21 @@ public partial class ScheduleComponent : EntityComponent
         }
 
         ApplyScheduleFor(e.Hour);
+    }
+
+    /// <summary>The world position of the streamed cell <paramref name="node"/> belongs to: the
+    /// ancestor the <see cref="RegionStreamer"/> parents directly. Zero outside a streamed region (a
+    /// cell instanced bare by a capture harness sits at the origin, so local is world there).</summary>
+    private static Vector3 CellOriginOf(Node node)
+    {
+        for (Node? current = node; current != null; current = current.GetParent())
+        {
+            if (current is Node3D cell && current.GetParent() is RegionStreamer)
+            {
+                return cell.GlobalPosition;
+            }
+        }
+        return Vector3.Zero;
     }
 
     // --- Reactions ----------------------------------------------------------

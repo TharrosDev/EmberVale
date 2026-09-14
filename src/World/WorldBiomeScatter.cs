@@ -38,6 +38,21 @@ public sealed partial class WorldBiomeScatter : Node3D
         }
     }
 
+    // ⚠️ WRITE THE WHOLE BUFFER, NEVER SetInstanceTransform. The offline bake runs headless, where
+    // the dummy renderer drops per-instance writes but keeps a buffer assigned whole; every baked
+    // scatter layer shipped with 0x0 transforms (and so no vegetation at all) until 2026-09-13.
+    private const int BufferStride = 16; // Transform3D rows (12) + colour (4)
+
+    private static void WriteInstance(float[] buffer, int index, Transform3D transform, Color color)
+    {
+        int o = index * BufferStride;
+        Basis b = transform.Basis;
+        buffer[o] = b.X.X; buffer[o + 1] = b.Y.X; buffer[o + 2] = b.Z.X; buffer[o + 3] = transform.Origin.X;
+        buffer[o + 4] = b.X.Y; buffer[o + 5] = b.Y.Y; buffer[o + 6] = b.Z.Y; buffer[o + 7] = transform.Origin.Y;
+        buffer[o + 8] = b.X.Z; buffer[o + 9] = b.Y.Z; buffer[o + 10] = b.Z.Z; buffer[o + 11] = transform.Origin.Z;
+        buffer[o + 12] = color.R; buffer[o + 13] = color.G; buffer[o + 14] = color.B; buffer[o + 15] = color.A;
+    }
+
     public static WorldBiomeScatter? Attach(
         Node3D cellRoot, WorldCellPresentationResource? presentation, WorldBiomeScatterResource? profile,
         WorldHeightfield? field, Vector3 worldOrigin)
@@ -177,13 +192,8 @@ public sealed partial class WorldBiomeScatter : Node3D
 
             Material? layerMaterial = Recolour(material, layer, surfaces, layer.ScenePath);
 
-            var multiMesh = new MultiMesh
-            {
-                TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
-                UseColors = true,
-                Mesh = mesh,
-                InstanceCount = placements.Count,
-            };
+            var transforms = new Transform3D[placements.Count];
+            var colors = new Color[placements.Count];
 
             for (int i = 0; i < placements.Count; i++)
             {
@@ -210,19 +220,14 @@ public sealed partial class WorldBiomeScatter : Node3D
                     }
                 }
                 float ground = field?.Height(worldOrigin.X + placement.X, worldOrigin.Z + placement.Z) ?? 0f;
-                multiMesh.SetInstanceTransform(i,
-                    new Transform3D(basis, new Vector3(placement.X, ground + 0.025f, placement.Z)));
-
                 float tint = 1f - (layer.TintVariation * 0.5f) +
                              (WorldSceneryMath.Unit(profile.Seed + 7301, i + (layerIndex * 521)) * layer.TintVariation);
-                multiMesh.SetInstanceColor(i, new Color(
-                    layer.Tint.R * tint, layer.Tint.G * tint, layer.Tint.B * tint, layer.Tint.A));
+                transforms[i] = new Transform3D(basis, new Vector3(placement.X, ground + 0.025f, placement.Z));
+                colors[i] = new Color(layer.Tint.R * tint, layer.Tint.G * tint, layer.Tint.B * tint, layer.Tint.A);
             }
 
-            scatter.AddChild(new MultiMeshInstance3D
+            AddTiled(scatter, $"Layer{layerIndex + 1}", mesh!, transforms, colors, new MultiMeshInstance3D
             {
-                Name = $"Layer{layerIndex + 1}",
-                Multimesh = multiMesh,
                 MaterialOverride = layerMaterial,
                 VisibilityRangeEnd = layer.VisibilityRangeEnd,
                 VisibilityRangeEndMargin = layer.VisibilityFadeMargin,
@@ -236,9 +241,7 @@ public sealed partial class WorldBiomeScatter : Node3D
 
             if (layer.HlodShape != 0)
             {
-                MultiMeshInstance3D proxy = BuildHlod(layer, mesh!, layerMaterial, placements, field, worldOrigin);
-                scatter.AddChild(proxy);
-                scatter.InstanceCount += proxy.Multimesh?.InstanceCount ?? 0;
+                scatter.InstanceCount += BuildHlod(scatter, $"HlodLayer{layerIndex + 1}", layer, mesh!, layerMaterial, placements, field, worldOrigin);
             }
         }
 
@@ -268,20 +271,15 @@ public sealed partial class WorldBiomeScatter : Node3D
     /// survives as a mass multiplier — a distant stand wants to be slightly larger than its members
     /// to hold the same silhouette at a quarter of the count.
     /// </summary>
-    private static MultiMeshInstance3D BuildHlod(
-        BiomeScatterLayerResource layer, Mesh mesh, Material? material,
+    private static int BuildHlod(
+        Node3D scatter, string name, BiomeScatterLayerResource layer, Mesh mesh, Material? material,
         IReadOnlyList<WorldScatterPlacement> placements, WorldHeightfield? field, Vector3 worldOrigin)
     {
         int reduction = Mathf.Max(2, layer.HlodReduction);
         int count = Mathf.CeilToInt(placements.Count / (float)reduction);
 
-        var multiMesh = new MultiMesh
-        {
-            TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
-            UseColors = true,
-            Mesh = mesh,
-            InstanceCount = count,
-        };
+        var transforms = new Transform3D[count];
+        var colors = new Color[count];
         for (int proxyIndex = 0; proxyIndex < count; proxyIndex++)
         {
             WorldScatterPlacement placement = placements[Mathf.Min(proxyIndex * reduction, placements.Count - 1)];
@@ -289,15 +287,12 @@ public sealed partial class WorldBiomeScatter : Node3D
             Vector3 mass = layer.HlodScale == Vector3.Zero ? Vector3.One : layer.HlodScale;
             var basis = new Basis(Vector3.Up, placement.Yaw).Scaled(mass * scale);
             float ground = field?.Height(worldOrigin.X + placement.X, worldOrigin.Z + placement.Z) ?? 0f;
-            multiMesh.SetInstanceTransform(proxyIndex, new Transform3D(
-                basis, new Vector3(placement.X, ground + 0.025f, placement.Z)));
-            multiMesh.SetInstanceColor(proxyIndex, layer.HlodColor);
+            transforms[proxyIndex] = new Transform3D(basis, new Vector3(placement.X, ground + 0.025f, placement.Z));
+            colors[proxyIndex] = layer.HlodColor;
         }
 
-        return new MultiMeshInstance3D
+        AddTiled(scatter, name, mesh, transforms, colors, new MultiMeshInstance3D
         {
-            Name = "HlodLayer",
-            Multimesh = multiMesh,
             MaterialOverride = material,
             VisibilityRangeBegin = layer.HlodRangeBegin,
             VisibilityRangeBeginMargin = layer.VisibilityFadeMargin,
@@ -305,7 +300,57 @@ public sealed partial class WorldBiomeScatter : Node3D
             VisibilityRangeEndMargin = layer.VisibilityFadeMargin,
             VisibilityRangeFadeMode = GeometryInstance3D.VisibilityRangeFadeModeEnum.Self,
             CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
-        };
+        });
+        return count;
+    }
+
+    // ⚠️ A VISIBILITY RANGE IS JUDGED PER NODE, NOT PER INSTANCE. One MultiMesh for a whole cell drew
+    // every tuft of a 200 m cell whenever the camera came within 62 m of the cell, which is 2.7 M
+    // triangles in one wilderness cell after the 2026-09 world rebuild made cells that large. Each
+    // layer is filed into square tiles, each its own node at its own centre, so the range culls by area.
+    private const float TileSize = 48f;
+
+    private static void AddTiled(
+        Node3D scatter, string name, Mesh mesh, Transform3D[] transforms, Color[] colors,
+        MultiMeshInstance3D settings)
+    {
+        var tiles = new Dictionary<(int, int), List<int>>();
+        for (int i = 0; i < transforms.Length; i++)
+        {
+            (int, int) key = (Mathf.FloorToInt(transforms[i].Origin.X / TileSize),
+                              Mathf.FloorToInt(transforms[i].Origin.Z / TileSize));
+            if (!tiles.TryGetValue(key, out List<int>? members))
+            {
+                tiles[key] = members = new List<int>();
+            }
+            members.Add(i);
+        }
+
+        foreach (((int tx, int tz), List<int> members) in tiles)
+        {
+            var origin = new Vector3((tx + 0.5f) * TileSize, 0f, (tz + 0.5f) * TileSize);
+            var buffer = new float[members.Count * BufferStride];
+            for (int n = 0; n < members.Count; n++)
+            {
+                Transform3D local = transforms[members[n]];
+                local.Origin -= origin;
+                WriteInstance(buffer, n, local, colors[members[n]]);
+            }
+
+            var instance = (MultiMeshInstance3D)settings.Duplicate();
+            instance.Name = $"{name}_{tx}_{tz}";
+            instance.Position = origin;
+            instance.Multimesh = new MultiMesh
+            {
+                TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
+                UseColors = true,
+                Mesh = mesh,
+                InstanceCount = members.Count,
+                Buffer = buffer,
+            };
+            scatter.AddChild(instance);
+        }
+        settings.Free();
     }
 
     private const string ScatterShaderPath = "res://assets/shaders/world/world_scatter.gdshader";

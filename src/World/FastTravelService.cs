@@ -46,11 +46,22 @@ public partial class FastTravelService : Node, ISaveable
         SaveManager.Instance?.Unregister(this);
     }
 
-    /// <summary>Records a newly-attuned node. No-op (returns false) if the id is empty or already known.</summary>
+    /// <summary>Records a newly-attuned node and returns true. Re-attuning a known node refreshes its
+    /// landing and returns false: a waystone that moved must not keep jumping the player to where it
+    /// stood when this save first met it.</summary>
     public bool Discover(string id, string label, string regionId, Vector3 position)
     {
-        if (string.IsNullOrEmpty(id) || _nodes.ContainsKey(id))
+        if (string.IsNullOrEmpty(id))
         {
+            return false;
+        }
+        if (_nodes.TryGetValue(id, out TravelNode known))
+        {
+            if (known.Position != position)
+            {
+                _nodes[id] = known with { Position = position };
+                Revision++;
+            }
             return false;
         }
 

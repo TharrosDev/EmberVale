@@ -27,5 +27,5 @@ ServiceId = ""
 DialogueId = ""
 PropertyId = ""
 TravelNodeId = ""
-RevealWithCell = true
+RevealWithCell = false
 RequiredFlagId = ""

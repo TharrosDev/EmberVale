@@ -45,13 +45,24 @@ public partial class PropertyResource : Resource
     [ExportGroup("Placement")]
 
     /// <summary>
-    /// Centre of the area the owner may place props in (Phase 37C), in <b>world</b> coordinates —
-    /// <c>PersistentSpawnDirector</c> parents what it spawns to the bootstrap root at the origin, so
-    /// its transforms are world-space and this must match. Remember a cell scene is authored at its
-    /// own origin and moved to the cell's <c>Center</c> by the streamer, so a point read off a
-    /// <c>.tscn</c> needs that centre added before it goes here.
+    /// The cell whose ground the yard belongs to (a <c>region.cell</c> id). ⚠️ <see cref="PlacementCenter"/>
+    /// is LOCAL to this cell (2026-09 world rebuild): the centre used to be a world literal, corrected
+    /// by hand three times as the homestead moved, and a move that forgot it stranded every placed prop.
+    /// </summary>
+    [Export] public string PlacementCellId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Centre of the area the owner may place props in (Phase 37C), in the <b>cell-local</b> metres of
+    /// <see cref="PlacementCellId"/> — read straight off the cell's <c>.tscn</c>. Consumers use
+    /// <see cref="PlacementWorldCenter"/>.
     /// </summary>
     [Export] public Vector3 PlacementCenter { get; set; } = Vector3.Zero;
+
+    /// <summary>The yard's world centre: its cell's <c>Center</c> plus the local offset. Zero offset
+    /// when the cell is unknown, which <c>--validate</c> refuses.</summary>
+    public Vector3 PlacementWorldCenter =>
+        (World.RegionDatabase.Cell(PlacementCellId)?.Center ?? Vector3.Zero) +
+        PlacementCenter;
 
     /// <summary>
     /// Horizontal radius of that area. <c>0</c> is a holding you may not build in at all — refusing

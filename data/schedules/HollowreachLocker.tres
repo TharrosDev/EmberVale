@@ -5,7 +5,7 @@
 
 ; Coyle Ferrin, the Longshore Locker (Phase 38O).
 ;
-; ⚠️ DESTINATIONS ARE CELL-LOCAL against Origin (-106, 0, 74), Hollowreach's Center.
+; ⚠️ DESTINATIONS ARE CELL-LOCAL against the NPC's own streamed cell, Hollowreach's Center.
 ;
 ; His shop never shuts (OpenHour == CloseHour == 0), so this routine has nothing to keep in step with
 ; and exists for a different reason: a merchant who is always open must not be a merchant who never
@@ -21,25 +21,21 @@
 script = ExtResource("2_entry")
 StartHour = 6
 Activity = "Setting out the pitches"
-Destination = Vector3(-7, 0, 4)
+Destination = Vector3(-47, 0, -6)
 
 [sub_resource type="Resource" id="e_1"]
 script = ExtResource("2_entry")
 StartHour = 11
 Activity = "Working the wharf"
-Destination = Vector3(-5, 0, -3)
+Destination = Vector3(-45, 0, -13)
 
 [sub_resource type="Resource" id="e_2"]
 script = ExtResource("2_entry")
 StartHour = 18
 Activity = "At the locker door"
-Destination = Vector3(-9, 0, 5)
+Destination = Vector3(-49, 0, -5)
 
 [resource]
 script = ExtResource("1_sched")
 Id = "schedule.hollowreach.locker"
-; ⚠️ Origin moved with the cell in the 2026-08-29 geography overhaul. Destinations below are
-; CELL-LOCAL and did not change; only the cell's world Center did. Read the local point, never
-; the old world number.
-Origin = Vector3(-95, 0, 85)
 Entries = Array[Resource]([SubResource("e_0"), SubResource("e_1"), SubResource("e_2")])

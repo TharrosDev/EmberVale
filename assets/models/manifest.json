@@ -327,6 +327,18 @@
       "status": "active"
     },
     {
+      "id": "bld_castle_fortress",
+      "path": "res://assets/models/architecture/bld_castle_fortress.glb",
+      "type": "ARCHITECTURE",
+      "rig": "none",
+      "anim": "none",
+      "bone_map": null,
+      "root_scale": 1.0,
+      "height_m": null,
+      "refs": 2,
+      "status": "active"
+    },
+    {
       "id": "bld_cottage",
       "path": "res://assets/models/architecture/bld_cottage.glb",
       "type": "ARCHITECTURE",
@@ -335,7 +347,7 @@
       "bone_map": null,
       "root_scale": 1.0,
       "height_m": 4.201,
-      "refs": 2,
+      "refs": 3,
       "status": "active"
     },
     {
@@ -347,7 +359,7 @@
       "bone_map": null,
       "root_scale": 1.0,
       "height_m": 7.5,
-      "refs": 4,
+      "refs": 6,
       "status": "active"
     },
     {
@@ -359,7 +371,7 @@
       "bone_map": null,
       "root_scale": 1.0,
       "height_m": 6.8,
-      "refs": 5,
+      "refs": 8,
       "status": "active"
     },
     {
@@ -1414,7 +1426,7 @@
       "anim": "none",
       "bone_map": null,
       "root_scale": 1.0,
-      "height_m": 2.0,
+      "height_m": 0.6,
       "refs": 1,
       "status": "active"
     },
@@ -1463,7 +1475,7 @@
       "bone_map": null,
       "root_scale": 1.0,
       "height_m": 3.36,
-      "refs": 4,
+      "refs": 6,
       "status": "active"
     },
     {
@@ -1475,7 +1487,7 @@
       "bone_map": null,
       "root_scale": 1.0,
       "height_m": 0.85,
-      "refs": 5,
+      "refs": 6,
       "status": "active"
     },
     {
@@ -1511,7 +1523,7 @@
       "bone_map": null,
       "root_scale": 1.0,
       "height_m": 0.85,
-      "refs": 5,
+      "refs": 6,
       "status": "active"
     },
     {
@@ -1559,7 +1571,7 @@
       "bone_map": null,
       "root_scale": 1.0,
       "height_m": 3.929,
-      "refs": 3,
+      "refs": 6,
       "status": "active"
     },
     {
@@ -1571,7 +1583,7 @@
       "bone_map": null,
       "root_scale": 1.0,
       "height_m": 1.297,
-      "refs": 8,
+      "refs": 11,
       "status": "active"
     },
     {
@@ -1631,7 +1643,7 @@
       "bone_map": null,
       "root_scale": 1.0,
       "height_m": 0.53,
-      "refs": 5,
+      "refs": 8,
       "status": "active"
     },
     {
@@ -1655,7 +1667,7 @@
       "bone_map": null,
       "root_scale": 1.0,
       "height_m": 1.6,
-      "refs": 5,
+      "refs": 10,
       "status": "active"
     },
     {
@@ -1751,7 +1763,7 @@
       "bone_map": null,
       "root_scale": 1.0,
       "height_m": 1.24,
-      "refs": 6,
+      "refs": 7,
       "status": "active"
     },
     {
@@ -1787,7 +1799,7 @@
       "bone_map": null,
       "root_scale": 1.0,
       "height_m": 1.2,
-      "refs": 6,
+      "refs": 7,
       "status": "active"
     },
     {
@@ -1847,7 +1859,7 @@
       "bone_map": null,
       "root_scale": 8.2,
       "height_m": 5.519,
-      "refs": 1,
+      "refs": 2,
       "status": "active"
     },
     {
@@ -1943,7 +1955,7 @@
       "bone_map": null,
       "root_scale": 1.0,
       "height_m": 0.9,
-      "refs": 4,
+      "refs": 6,
       "status": "active"
     },
     {
@@ -2063,7 +2075,7 @@
       "bone_map": null,
       "root_scale": 1.0,
       "height_m": 3.66,
-      "refs": 4,
+      "refs": 5,
       "status": "active"
     },
     {
@@ -2087,7 +2099,7 @@
       "bone_map": null,
       "root_scale": 1.0,
       "height_m": 2.6,
-      "refs": 1,
+      "refs": 2,
       "status": "active"
     },
     {
@@ -2243,7 +2255,7 @@
       "bone_map": null,
       "root_scale": 1.0,
       "height_m": 1.41,
-      "refs": 18,
+      "refs": 27,
       "status": "active"
     },
     {
@@ -2339,7 +2351,7 @@
       "bone_map": null,
       "root_scale": 1.0,
       "height_m": 3.13,
-      "refs": 6,
+      "refs": 18,
       "status": "active"
     },
     {
@@ -2351,7 +2363,7 @@
       "bone_map": null,
       "root_scale": 1.0,
       "height_m": 4.009,
-      "refs": 6,
+      "refs": 15,
       "status": "active"
     },
     {
@@ -2363,7 +2375,7 @@
       "bone_map": null,
       "root_scale": 1.0,
       "height_m": 0.45,
-      "refs": 5,
+      "refs": 6,
       "status": "active"
     },
     {
@@ -2483,7 +2495,7 @@
       "bone_map": null,
       "root_scale": 1.0,
       "height_m": 2.33,
-      "refs": 3,
+      "refs": 8,
       "status": "active"
     },
     {
@@ -2495,7 +2507,7 @@
       "bone_map": null,
       "root_scale": 4.88,
       "height_m": 1.2,
-      "refs": 3,
+      "refs": 5,
       "status": "active"
     },
     {
@@ -2555,7 +2567,7 @@
       "bone_map": null,
       "root_scale": 5.48,
       "height_m": 8.017,
-      "refs": 2,
+      "refs": 7,
       "status": "active"
     },
     {
@@ -2567,7 +2579,7 @@
       "bone_map": null,
       "root_scale": 1.0,
       "height_m": 3.01,
-      "refs": 10,
+      "refs": 11,
       "status": "active"
     },
     {
@@ -2591,7 +2603,7 @@
       "bone_map": null,
       "root_scale": 1.0,
       "height_m": 2.75,
-      "refs": 3,
+      "refs": 6,
       "status": "active"
     },
     {

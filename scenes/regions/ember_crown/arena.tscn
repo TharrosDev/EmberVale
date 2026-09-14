@@ -111,6 +111,7 @@ size = Vector3(2.26, 1.41, 1.84)
 ; ====================================================================================================
 
 [node name="ArenaCell" type="Node3D"]
+metadata/content_offset = Vector2(20, -10)
 
 [node name="Nav" type="NavigationRegion3D" parent="."]
 navigation_mesh = SubResource("NavMesh_ar")
@@ -119,7 +120,7 @@ navigation_mesh = SubResource("NavMesh_ar")
 script = ExtResource("1_navbaker")
 
 [node name="WallE" type="StaticBody3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 2, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 38, 2, -10)
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/WallE"]
 shape = SubResource("Shape_wall_x")
@@ -130,94 +131,94 @@ shape = SubResource("Shape_wall_x")
 ; cell's local (0, 18): the SOUTH edge, where a full-width 36 m collider stood. The arena's entrance
 ; faced the void and its seam faced a wall.
 [node name="WallW" type="StaticBody3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18, 2, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2, -10)
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/WallW"]
 shape = SubResource("Shape_wall_x")
 
 ; North: 24 m of wall from x = -18, then THE BREACH (x 6..12, collapsed into rubble), then 6 m more.
 [node name="WallN" type="StaticBody3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 2, -18)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 2, -28)
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/WallN"]
 shape = SubResource("Shape_wall_north_long")
 
 [node name="WallNE" type="StaticBody3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 2, -18)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35, 2, -28)
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/WallNE"]
 shape = SubResource("Shape_wall_north_short")
 
 ; South: two 14.4 m runs leaving a 7.2 m GATE at x -3.6..3.6, which is where the road lands.
 [node name="WallS" type="StaticBody3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10.8, 2, 18)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.2, 2, 8)
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/WallS"]
 shape = SubResource("Shape_wall_south_run")
 
 [node name="WallSE" type="StaticBody3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.8, 2, 18)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30.8, 2, 8)
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/WallSE"]
 shape = SubResource("Shape_wall_south_run")
 
 ; Three more stonework segments so the new WEST wall is visible as well as solid.
 [node name="RingW0" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -17.6, 0, -14.4)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 2.4, 0, -24.4)
 
 [node name="RingW1" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -17.6, 0, -7.2)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 2.4, 0, -17.2)
 
 [node name="RingW2" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -17.6, 0, 0)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 2.4, 0, -10)
 
 [node name="RingN0" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.4, 0, -17.6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.6, 0, -27.6)
 
 [node name="RingS0" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.4, 0, 17.6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.6, 0, 7.6)
 
 [node name="RingE0" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 17.6, 0, -14.4)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 37.6, 0, -24.4)
 
 [node name="RingN1" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.2, 0, -17.6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.8, 0, -27.6)
 
 [node name="RingS1" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.2, 0, 17.6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.8, 0, 7.6)
 
 [node name="RingE1" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 17.6, 0, -7.2)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 37.6, 0, -17.2)
 
 [node name="RingN2" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -17.6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, -27.6)
 
 [node name="RingS2" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.2, 0, 17.6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27.2, 0, 7.6)
 
 [node name="RingE2" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 17.6, 0, 0)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 37.6, 0, -10)
 
 [node name="RingN3" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, -17.6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35, 0, -27.6)
 
 [node name="RingS3" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.4, 0, 17.6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 34.4, 0, 7.6)
 
 [node name="RingE3" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 17.6, 0, 7.2)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 37.6, 0, -2.8)
 
 [node name="RingN4" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -17.6, 0, 14.4)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 2.4, 0, 4.4)
 
 [node name="RingS4" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -17.6, 0, 7.2)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 2.4, 0, -2.8)
 
 [node name="RingE4" parent="Nav" instance=ExtResource("4_wall")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 17.6, 0, 14.4)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 37.6, 0, 4.4)
 
 [node name="GatePillarN" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.6, 0, 17.6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.4, 0, 7.6)
 
 [node name="Model" parent="Nav/GatePillarN" instance=ExtResource("10_pillar")]
 
@@ -228,7 +229,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
 shape = SubResource("Shape_pillar")
 
 [node name="GatePillarS" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.6, 0, 17.6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24.6, 0, 7.6)
 
 [node name="Model" parent="Nav/GatePillarS" instance=ExtResource("10_pillar")]
 
@@ -239,7 +240,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
 shape = SubResource("Shape_pillar")
 
 [node name="TierN0" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 0, -21)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, -31)
 
 [node name="Model" parent="Nav/TierN0" instance=ExtResource("11_ruinwall")]
 
@@ -250,7 +251,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
 shape = SubResource("Shape_ruinwall")
 
 [node name="TierS0" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 0, -14)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -24)
 
 [node name="Model" parent="Nav/TierS0" instance=ExtResource("11_ruinwall")]
 
@@ -261,7 +262,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
 shape = SubResource("Shape_ruinwall")
 
 [node name="TierE0" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21, 0, -10)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 41, 0, -20)
 
 [node name="Model" parent="Nav/TierE0" instance=ExtResource("11_ruinwall")]
 
@@ -272,7 +273,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
 shape = SubResource("Shape_ruinwall")
 
 [node name="TierN1" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, -21)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, -31)
 
 [node name="Model" parent="Nav/TierN1" instance=ExtResource("11_ruinwall")]
 
@@ -283,7 +284,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
 shape = SubResource("Shape_ruinwall")
 
 [node name="TierS1" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 0, -4)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -14)
 
 [node name="Model" parent="Nav/TierS1" instance=ExtResource("11_ruinwall")]
 
@@ -294,7 +295,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
 shape = SubResource("Shape_ruinwall")
 
 [node name="TierE1" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21, 0, -6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 41, 0, -16)
 
 [node name="Model" parent="Nav/TierE1" instance=ExtResource("11_ruinwall")]
 
@@ -305,7 +306,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
 shape = SubResource("Shape_ruinwall")
 
 [node name="TierN2" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21, 0, 6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 41, 0, -4)
 
 [node name="Model" parent="Nav/TierN2" instance=ExtResource("11_ruinwall")]
 
@@ -316,7 +317,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
 shape = SubResource("Shape_ruinwall")
 
 [node name="TierS2" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21, 0, 3)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, -7)
 
 [node name="Model" parent="Nav/TierS2" instance=ExtResource("11_ruinwall")]
 
@@ -327,7 +328,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
 shape = SubResource("Shape_ruinwall")
 
 [node name="TierE2" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21, 0, -2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 41, 0, -12)
 
 [node name="Model" parent="Nav/TierE2" instance=ExtResource("11_ruinwall")]
 
@@ -338,7 +339,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
 shape = SubResource("Shape_ruinwall")
 
 [node name="TierN3" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21, 0, 10)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 41, 0, 0)
 
 [node name="Model" parent="Nav/TierN3" instance=ExtResource("11_ruinwall")]
 
@@ -349,7 +350,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
 shape = SubResource("Shape_ruinwall")
 
 [node name="TierS3" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 0, -21)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, -31)
 
 [node name="Model" parent="Nav/TierS3" instance=ExtResource("11_ruinwall")]
 
@@ -360,7 +361,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
 shape = SubResource("Shape_ruinwall")
 
 [node name="TierE3" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21, 0, 2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 41, 0, -8)
 
 [node name="Model" parent="Nav/TierE3" instance=ExtResource("11_ruinwall")]
 
@@ -371,7 +372,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
 shape = SubResource("Shape_ruinwall")
 
 [node name="Pillar0" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17, 0, -17)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, -27)
 
 [node name="Model" parent="Nav/Pillar0" instance=ExtResource("10_pillar")]
 
@@ -382,7 +383,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
 shape = SubResource("Shape_pillar")
 
 [node name="Pillar1" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17, 0, -17)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37, 0, -27)
 
 [node name="Model" parent="Nav/Pillar1" instance=ExtResource("10_pillar")]
 
@@ -393,7 +394,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
 shape = SubResource("Shape_pillar")
 
 [node name="Pillar2" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17, 0, 17)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37, 0, 7)
 
 [node name="Model" parent="Nav/Pillar2" instance=ExtResource("10_pillar")]
 
@@ -404,7 +405,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
 shape = SubResource("Shape_pillar")
 
 [node name="Pillar3" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17, 0, 17)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 7)
 
 [node name="Model" parent="Nav/Pillar3" instance=ExtResource("10_pillar")]
 
@@ -415,7 +416,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
 shape = SubResource("Shape_pillar")
 
 [node name="Pillar4" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0, -17.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, -27.5)
 
 [node name="Model" parent="Nav/Pillar4" instance=ExtResource("10_pillar")]
 
@@ -426,7 +427,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
 shape = SubResource("Shape_pillar")
 
 [node name="Pillar5" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, -17.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 0, -27.5)
 
 [node name="Model" parent="Nav/Pillar5" instance=ExtResource("10_pillar")]
 
@@ -437,7 +438,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
 shape = SubResource("Shape_pillar")
 
 [node name="Pillar6" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.5, 0, -9)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37.5, 0, -19)
 
 [node name="Model" parent="Nav/Pillar6" instance=ExtResource("10_pillar")]
 
@@ -448,7 +449,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
 shape = SubResource("Shape_pillar")
 
 [node name="Pillar7" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.5, 0, 3)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37.5, 0, -7)
 
 [node name="Model" parent="Nav/Pillar7" instance=ExtResource("10_pillar")]
 
@@ -459,7 +460,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
 shape = SubResource("Shape_pillar")
 
 [node name="Pillar8" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.5, 0, 13)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37.5, 0, 3)
 
 [node name="Model" parent="Nav/Pillar8" instance=ExtResource("10_pillar")]
 
@@ -470,7 +471,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
 shape = SubResource("Shape_pillar")
 
 [node name="Pillar9" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17.5, 0, -6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0, -16)
 
 [node name="Model" parent="Nav/Pillar9" instance=ExtResource("10_pillar")]
 
@@ -481,7 +482,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
 shape = SubResource("Shape_pillar")
 
 [node name="RimBrazier0" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, -16.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, -26.5)
 
 [node name="Model" parent="Nav/RimBrazier0" instance=ExtResource("5_brazier")]
 
@@ -492,7 +493,7 @@ light_energy = 2.6
 omni_range = 12.0
 
 [node name="RimBrazier1" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, -16)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 31, 0, -26)
 
 [node name="Model" parent="Nav/RimBrazier1" instance=ExtResource("5_brazier")]
 
@@ -503,7 +504,7 @@ light_energy = 2.6
 omni_range = 12.0
 
 [node name="RimBrazier3" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.5, 0, 9)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 36.5, 0, -1)
 
 [node name="Model" parent="Nav/RimBrazier3" instance=ExtResource("5_brazier")]
 
@@ -514,7 +515,7 @@ light_energy = 2.6
 omni_range = 12.0
 
 [node name="RimBrazier4" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16.5, 0, 6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 0, -4)
 
 [node name="Model" parent="Nav/RimBrazier4" instance=ExtResource("5_brazier")]
 
@@ -525,19 +526,19 @@ light_energy = 2.6
 omni_range = 12.0
 
 [node name="Banner0" parent="Nav" instance=ExtResource("12_banner")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, -16.9)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, -26.9)
 
 [node name="Banner2" parent="Nav" instance=ExtResource("12_banner")]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -11, 0, 16.9)
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 9, 0, 6.9)
 
 [node name="Banner3" parent="Nav" instance=ExtResource("12_banner")]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 12, 0, 16.9)
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 32, 0, 6.9)
 
 [node name="Banner5" parent="Nav" instance=ExtResource("12_banner")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 16.9, 0, 6)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 36.9, 0, -4)
 
 [node name="DeadPine0" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -25, 0, -24)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, -34)
 
 [node name="Model" parent="Nav/DeadPine0" instance=ExtResource("13_pine")]
 
@@ -548,7 +549,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 0)
 shape = SubResource("Shape_pine")
 
 [node name="DeadPine1" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24, 0, -26)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 44, 0, -36)
 
 [node name="Model" parent="Nav/DeadPine1" instance=ExtResource("13_pine")]
 
@@ -559,7 +560,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 0)
 shape = SubResource("Shape_pine")
 
 [node name="DeadPine2" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 26, 0, 12)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 46, 0, 2)
 
 [node name="Model" parent="Nav/DeadPine2" instance=ExtResource("13_pine")]
 
@@ -570,7 +571,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 0)
 shape = SubResource("Shape_pine")
 
 [node name="DeadPine3" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -24, 0, 25)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, 15)
 
 [node name="Model" parent="Nav/DeadPine3" instance=ExtResource("13_pine")]
 
@@ -581,7 +582,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 0)
 shape = SubResource("Shape_pine")
 
 [node name="DeadPine5" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -27, 0, -6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, -16)
 
 [node name="Model" parent="Nav/DeadPine5" instance=ExtResource("13_pine")]
 
@@ -592,7 +593,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 0)
 shape = SubResource("Shape_pine")
 
 [node name="Rubble0" type="Node3D" parent="Nav"]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 7, 0, -19)
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 27, 0, -29)
 
 [node name="Model" parent="Nav/Rubble0" instance=ExtResource("14_rocks")]
 
@@ -603,7 +604,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
 shape = SubResource("Shape_rocks")
 
 [node name="Rubble3" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.1736, 0, -0.9848, 0, 1, 0, 0.9848, 0, -0.1736, -20, 0, 11)
+transform = Transform3D(-0.1736, 0, -0.9848, 0, 1, 0, 0.9848, 0, -0.1736, 0, 0, 1)
 
 [node name="Model" parent="Nav/Rubble3" instance=ExtResource("14_rocks")]
 
@@ -614,7 +615,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
 shape = SubResource("Shape_rocks")
 
 [node name="Brazier" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 13)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24, 0, 3)
 script = ExtResource("2_entity")
 DisplayName = "Challenge Brazier"
 
@@ -649,6 +650,7 @@ SpawnOffset = Vector3(0, 0, -13)
 ; dropping an add on top of him or inside a wall.
 
 [node name="AddSpawns" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, -10)
 
 [node name="SpawnNE" type="Marker3D" parent="AddSpawns" groups=["boss_add_spawn"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 5)
@@ -665,6 +667,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0, -6)
 ; Ember vents: authored hidden and revealed as the fight escalates, so the arena itself reports the
 ; phase without a UI element. Two come up when he is wounded, two more when he is desperate.
 [node name="EmberVents" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, -10)
 
 [node name="VentA" type="OmniLight3D" parent="EmberVents"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0.6, 9)
@@ -727,13 +730,14 @@ Reveals = Array[NodePath]([NodePath("../EmberVents/VentC"), NodePath("../EmberVe
 ; ====================================================================================================
 
 [node name="MapPin" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, -10)
 script = ExtResource("maploc_39_5a")
 LocationId = "location.ember_crown.arena"
 
 ; Drakar's marker is set in the ring, framed by braziers and the ruin wall. It remains a shrine,
 ; not an arena mechanic: the component gives exactly one blessing and holds no local state.
 [node name="ShrineDrakar" type="Node3D" parent="Nav"]
-transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, -14, 0, -13)
+transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, 6, 0, -23)
 script = ExtResource("2_entity")
 
 [node name="Body" parent="Nav/ShrineDrakar" instance=ExtResource("shrine_body_41_5b")]
@@ -751,16 +755,16 @@ ShrineId = "shrine.drakar"
 ; Two seated-side spectators turn the ring into a lived-in place of trial without adding a second
 ; interactable or a new arena state. Their position frames Drakar's shrine in both eye-level shots.
 [node name="DrakarBenchW" parent="Nav" instance=ExtResource("shrine_bench_41_5b")]
-transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, -16.5, 0, -10)
+transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, 3.5, 0, -20)
 
 [node name="DrakarBenchE" parent="Nav" instance=ExtResource("shrine_bench_41_5b")]
-transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, -11, 0, -15.5)
+transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, 9, 0, -25.5)
 
 [node name="DrakarSpectatorW" parent="Nav" instance=ExtResource("shrine_spectator_41_5b")]
-transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, -16.9, 0, -10.4)
+transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, 3.1, 0, -20.4)
 
 [node name="DrakarSpectatorE" parent="Nav" instance=ExtResource("shrine_spectator_41_5b")]
-transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, -11.4, 0, -15.9)
+transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, 8.6, 0, -25.9)
 
 [node name="MapPin" type="Node3D" parent="Nav/ShrineDrakar"]
 script = ExtResource("maploc_39_5a")

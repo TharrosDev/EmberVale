@@ -5,10 +5,9 @@ using Xunit;
 namespace Embervale.Tests;
 
 /// <summary>
-/// Pins <see cref="ScheduleMath.Destination"/> (Phase 38L). Two claims, and the first matters more
-/// than the second: a zero origin must be exactly the pre-38L behaviour, because the nine routines
-/// authored before it were left untouched on the strength of that, and a silent shift in the town
-/// square's schedules would read as the NPCs being broken rather than as a new field.
+/// Pins <see cref="ScheduleMath.Destination"/>: a routine's destinations are CELL-LOCAL and become a
+/// place only once the world position of the NPC's own streamed cell is added (2026-09 world rebuild,
+/// which deleted the hand-copied per-file Origin that pinned 26 routines to where their cell had been).
 ///
 /// ⚠️ Tested through the pure helper rather than through <see cref="ScheduleResource"/>: a
 /// <c>Resource</c> is a native Godot object and constructing one in this project crashes the test host
@@ -17,23 +16,19 @@ namespace Embervale.Tests;
 public class ScheduleOriginTests
 {
     [Fact]
-    public void AZeroOriginLeavesADestinationExactlyWhereItWasAuthored()
+    public void ACellAtTheOriginLeavesADestinationExactlyWhereItWasAuthored()
     {
-        // schedule.vendor_goods' real first block, which must not move.
         Assert.Equal(new Vector3(6, 0, -18),
             ScheduleMath.Destination(new Vector3(6, 0, -18), Vector3.Zero));
     }
 
     [Fact]
-    public void ACellOriginMovesADestinationByExactlyThatCellsCentre()
+    public void ACellMovesADestinationByExactlyThatCellsCentre()
     {
-        // The Embermarket's actual numbers: the cell is authored at its own origin and streamed to
-        // Center (0, 0, 46), so StallW1 - read out of embermarket.tscn at local (-9, 0, -14) - is at
-        // world (-9, 0, 32). Getting this wrong walks a merchant into the town square.
-        Assert.Equal(new Vector3(-9, 0, 32),
-            ScheduleMath.Destination(new Vector3(-9, 0, -14), new Vector3(0, 0, 46)));
-        Assert.Equal(new Vector3(9, 0, 54),
-            ScheduleMath.Destination(new Vector3(9, 0, 8), new Vector3(0, 0, 46)));
+        // A merchant's stall read out of a cell .tscn at local (-9, 0, -14), in a cell streamed to
+        // (0, 0, 85). Getting this wrong walks a merchant into the town square.
+        Assert.Equal(new Vector3(-9, 0, 71),
+            ScheduleMath.Destination(new Vector3(-9, 0, -14), new Vector3(0, 0, 85)));
     }
 
     [Fact]

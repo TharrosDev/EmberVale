@@ -1535,7 +1535,6 @@ location.ember_crown.traveller.name,The Wandering Trader
 location.ember_crown.crafting.name,The Crafting Yard
 location.shrine.solaryn.name,Shrine of Solaryn
 location.embermarket.market.desc,"Rows of stalls under awnings, a plaza at the north end, and the realm's densest run of trades — twelve merchants between the aisles and the forecourt."
-location.embermarket.waystone.name,Embermarket Waystone
 location.embermarket.provisions.name,Corvin's Provisions
 location.embermarket.fishmonger.name,Hana's Slab
 location.embermarket.weaver.name,Sable's Loom
@@ -1581,12 +1580,18 @@ location.ashfall.homestead.desc,"A farmstead on the ash flats east of the city, 
 location.ashfall.bed.name,The Ashfall Bed
 location.shrine.veyra.name,Shrine of Veyra
 location.ember_crown.arena.name,The Ember Arena
-location.ember_crown.arena.desc,"A ring of tiered stone past the north gate, well outside the walls."
+location.ember_crown.arena.desc,"A ring of tiered stone at the far end of the realm, under the Emberspire."
 location.shrine.drakar.name,Shrine of Drakar
 location.wilds.north.name,The Northern Wilds
-location.wilds.north.desc,"Open country north of the city. Goblins range here."
+location.wilds.north.desc,"Forested upland west of the Kingsway. Goblins range here."
 location.wilds.west.name,The Western Wilds
-location.wilds.west.desc,"Broken ground west of the tarn."
+location.wilds.west.desc,"The corrie in the western ridge above the Tarn."
+location.ember_crown.southmarch_gate.name,The Southmarch Gate
+location.ember_crown.southmarch_gate.desc,"The broken border gate at the end of the old caravan road south."
+location.ember_crown.iron_citadel.name,The Iron Citadel
+location.ember_crown.iron_citadel.desc,"The Iron King's fortress on the spur above the capital, seen from every road into the Crown."
+location.ember_crown.ashen_breach.name,The Ashen Breach
+location.ember_crown.ashen_breach.desc,"A burnt cut through the eastern hills where the old road to the Ashen Wilds went."
 location.crossway.watch.name,The Wardens' Watch
 location.hollowreach.ledger.name,The Ledger House
 location.wilds.lodge.name,The Deadfall Lodge
@@ -1596,7 +1601,10 @@ location.frostfang.clan_hold.name,The Frostfang Clan Hold
 location.frostfang.clan_hold.desc,"Longhouses banked against the wind, and the clan that keeps them."
 location.frostfang.waystone.name,Clan Hold Waystone
 location.frostfang.glacier.name,The Glacier
-location.frostfang.glacier.desc,"Blue ice and meltwater, north of the hold."
+location.frostfang.glacier.desc,"Blue ice and meltwater in the pass north of the hold."
+location.frostfang.glacier_waystone.name,Glacier Pass Waystone
+location.frostfang.stormcrown.name,Stormcrown
+location.frostfang.stormcrown.desc,"A storm-blasted spire in the north-east high passes. The clans do not go there."
 location.frostfang.dragon_roost.name,The Dragon Roost
 location.frostfang.ash_roost.name,The Ash Roost
 location.frostfang.ancient_aerie.name,The Ancient Aerie

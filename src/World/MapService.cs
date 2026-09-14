@@ -45,9 +45,8 @@ public partial class MapService : Node, ISaveable
 {
     public string SaveId => "map";
 
-    /// <summary>How close the player must come for a location to reveal itself. Anything visible
-    /// from further off should author <see cref="MapLocationResource.RevealWithCell"/> instead.</summary>
-    public const float DiscoveryRadius = 20f;
+    /// <summary>Walk-up discovery radius; the tiered sight radii live in <see cref="MapDiscoveryRules"/>.</summary>
+    public const float DiscoveryRadius = MapDiscoveryRules.WalkUpRadius;
 
     private const float TickSeconds = 0.25f;
 
@@ -79,11 +78,13 @@ public partial class MapService : Node, ISaveable
         ServiceScope.RegisterOwned(this, this);
         SaveManager.Instance?.Register(this);
         EventBus.Instance?.Subscribe<RegionCellLoadedEvent>(OnCellLoaded);
+        EventBus.Instance?.Subscribe<Quests.QuestStartedEvent>(OnQuestStarted);
     }
 
     public override void _ExitTree()
     {
         EventBus.Instance?.Unsubscribe<RegionCellLoadedEvent>(OnCellLoaded);
+        EventBus.Instance?.Unsubscribe<Quests.QuestStartedEvent>(OnQuestStarted);
         SaveManager.Instance?.Unregister(this);
     }
 
@@ -94,7 +95,17 @@ public partial class MapService : Node, ISaveable
         {
             Revision++;
         }
+
+        // The region's common knowledge arrives with the region, loaded or not.
+        foreach (MapLocationResource location in MapLocationDatabase.All)
+        {
+            if (location.RevealWithCell && RegionOfCell(location.CellId)?.Id == regionId)
+            {
+                Reveal(location);
+            }
+        }
     }
+
 
     /// <summary>
     /// Records where a placed <see cref="MapLocationComponent"/> stands. Called once per marker as
@@ -119,6 +130,13 @@ public partial class MapService : Node, ISaveable
         if (_livePositions.TryGetValue(locationId, out Vector3 live))
         {
             return live;
+        }
+
+        // The bake's measurement before the save's memory: a saved position is where the pin stood
+        // when the save was written, and the world can have moved since (2026-09 world rebuild).
+        if (WorldPlaceIndex.Location(locationId) is { } baked)
+        {
+            return baked;
         }
 
         return _savedPositions.TryGetValue(locationId, out Vector3 saved) ? saved : null;
@@ -168,7 +186,7 @@ public partial class MapService : Node, ISaveable
         }
     }
 
-    /// <summary>Reveals a location if it is eligible and either reveals-with-cell or close enough.</summary>
+    /// <summary>Reveals a location the player has been told about, or can see from where they stand.</summary>
     private void TryDiscover(string id, Vector3? player)
     {
         if (_locations.Contains(id) || MapLocationDatabase.Get(id) is not { } location)
@@ -181,26 +199,65 @@ public partial class MapService : Node, ISaveable
             return;
         }
 
-        if (!location.RevealWithCell)
+        if ((location.RevealFlagId.Length > 0 && HasFlag(location.RevealFlagId)) ||
+            (location.RevealWithCell && _regions.Contains(RegionOfCell(location.CellId)?.Id ?? string.Empty)))
         {
-            if (player is not { } at || !_livePositions.TryGetValue(id, out Vector3 position))
-            {
-                return;
-            }
-
-            // Planar distance: a marker on an upper floor is not further away for being above you.
-            float dx = position.X - at.X;
-            float dz = position.Z - at.Z;
-            if ((dx * dx) + (dz * dz) > DiscoveryRadius * DiscoveryRadius)
-            {
-                return;
-            }
+            Reveal(location);
+            return;
         }
 
-        if (_locations.Add(id))
+        if (player is not { } at || !_livePositions.TryGetValue(id, out Vector3 position))
+        {
+            return;
+        }
+
+        // Planar distance: a marker on an upper floor is not further away for being above you.
+        float radius = MapDiscoveryRules.RadiusFor(location.EffectiveTier, location.SightRadius);
+        float dx = position.X - at.X;
+        float dz = position.Z - at.Z;
+        if ((dx * dx) + (dz * dz) > radius * radius)
+        {
+            return;
+        }
+
+        if (MapDiscoveryRules.NeedsLineOfSight(radius) && !MapDiscoveryRules.HasLineOfSight(
+                (at.X, at.Y + 1.7f, at.Z),
+                (position.X, position.Y + MapDiscoveryRules.SilhouetteHeight(location.EffectiveTier), position.Z),
+                WorldGround.HeightAt))
+        {
+            return;
+        }
+
+        Reveal(location);
+    }
+
+    private void Reveal(MapLocationResource location)
+    {
+        if (_locations.Add(location.Id))
         {
             Revision++;
             EventBus.Instance?.Publish(new LocationDiscoveredEvent(location));
+        }
+    }
+
+    /// <summary>
+    /// Being sent somewhere is being told where it is (2026-09 world rebuild): taking a quest reveals
+    /// every place its objectives name. Before this the only ways onto the map were walking up to a
+    /// place or having it arrive with the region, and a realm eight times the size made the second one
+    /// the only practical one.
+    /// </summary>
+    private void OnQuestStarted(Quests.QuestStartedEvent e)
+    {
+        foreach (Quests.ObjectiveResource objective in e.Quest.ObjectiveList())
+        {
+            foreach (string id in new[] { objective.LocationId, objective.TargetId })
+            {
+                if (!string.IsNullOrEmpty(id) && MapLocationDatabase.Get(id) is { } location &&
+                    (location.RequiredFlagId.Length == 0 || HasFlag(location.RequiredFlagId)))
+                {
+                    Reveal(location);
+                }
+            }
         }
     }
 

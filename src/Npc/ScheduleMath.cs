@@ -37,13 +37,9 @@ public static class ScheduleMath
     }
 
     /// <summary>
-    /// Where a routine block actually sends its NPC: the authored point plus the routine's origin
-    /// (Phase 38L). A <see cref="ScheduleEntry.Destination"/> is a raw <em>world</em> position, but a
-    /// region cell is authored at its own origin and moved to the cell's <c>Center</c> by the
-    /// streamer, so a point copied out of a cell's <c>.tscn</c> lands a cell's width away — the 37C
-    /// placement bug in a different hat, and silent. <see cref="ScheduleResource.Origin"/> carries the
-    /// cell offset; a zero origin is exactly the pre-38L behaviour, which is why the nine routines
-    /// authored before it needed no migration.
+    /// Where a routine block actually sends its NPC: the authored cell-local point plus the world
+    /// position of the cell the NPC belongs to. A region cell is authored at its own origin and moved
+    /// to its <c>Center</c> by the streamer, so the local point is only a place once the cell is added.
     ///
     /// <para>Godot-free by the same rule as everything else in this file: <c>Vector3</c> is a plain
     /// struct, so the test project can call this, while a <c>Resource</c> is a native object it

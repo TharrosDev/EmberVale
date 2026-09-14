@@ -73,6 +73,11 @@ public partial class MapView : Control
     /// place rather than markers floating on a void.</summary>
     public IReadOnlyList<MapLandTile> Land { get; set; } = Array.Empty<MapLandTile>();
 
+    /// <summary>The active region's shaded relief and the world rectangle it covers
+    /// (<see cref="MapCartography.Relief"/>). When present it IS the land layer, and the per-cell
+    /// fills and coastline — which drew the streaming lattice — are not drawn.</summary>
+    public (Texture2D Texture, Rect2 World)? Relief { get; set; }
+
     /// <summary>Roads and trails from the actual cell presentation data, never a second map-only
     /// approximation of the world.</summary>
     public IReadOnlyList<MapRoadSegment> Roads { get; set; } = Array.Empty<MapRoadSegment>();
@@ -298,10 +303,19 @@ public partial class MapView : Control
         {
             DrawTextureRect(material, new Rect2(Vector2.Zero, Size), true, new Color(0.72f, 0.67f, 0.58f, 0.72f));
         }
-        DrawLand();
-        DrawRoads();
-        DrawGraticule();
-        DrawCoastline();
+        if (Relief is { } relief)
+        {
+            DrawTextureRect(relief.Texture, ScreenRect(relief.World), false);
+            DrawRoads();
+            DrawGraticule();
+        }
+        else
+        {
+            DrawLand();
+            DrawRoads();
+            DrawGraticule();
+            DrawCoastline();
+        }
 
         // Region names sit under the markers, as a cartographer would letter a territory.
         if (!Compact)

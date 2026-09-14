@@ -100,7 +100,7 @@ func _run() -> void:
         if String(cell.get("Id")).ends_with("ashfall_homestead"):
             await visit(cell)
             var house: Node3D = null
-            var expected: Vector3 = cell.get("Center") + Vector3(9,0,-4)
+            var expected: Vector3 = content_origin(cell) + Vector3(9,0,-4)
             for candidate in streamer.find_children("House","Node3D",true,false):
                 if Vector2(candidate.global_position.x,candidate.global_position.z).distance_to(Vector2(expected.x,expected.z)) < .5:
                     house = candidate
@@ -120,10 +120,13 @@ func _run() -> void:
     # The other region exercises the existing climate/terrain/water data through the real streamer.
     region = load("res://data/regions/FrostfangReach.tres")
     streamer.call("Configure",region)
-    for cell in region.get("Cells"):
-        if String(cell.get("Id")).ends_with("clan_hold") or String(cell.get("Id")).ends_with("glacier") or String(cell.get("Id")).ends_with("ash_roost") or String(cell.get("Id")).ends_with("aerie_ascent"):
-            await visit(cell)
-            await capture(String(cell.get("Id")).replace(".","-"),12,"weather.rain")
+    # A fixed tour, glacier last: snow cover accumulates over simulated time, so lattice order would
+    # decide whether the glacier assertion sees an hour of snowfall or a minute of it.
+    for key in ["clan_hold", "ash_roost", "aerie_ascent", "glacier"]:
+        for cell in region.get("Cells"):
+            if String(cell.get("Id")).ends_with(key):
+                await visit(cell)
+                await capture(String(cell.get("Id")).replace(".","-"),12,"weather.rain")
     # Exercise the explicit dungeon contribution without inventing a second environment or altering content.
     var volume: Node3D = load("res://src/World/EnvironmentVolume.cs").new()
     volume.set("Profile",load("res://data/rendering/Dungeon.tres"))
@@ -146,8 +149,19 @@ func _run() -> void:
     print("Environment route: %d shots, %d failures. %s" % [rows.size(),failures.size(),output])
     quit(0 if failures.is_empty() else 1)
 
+# A cell's authored content frame in world space: Center plus the content offset recorded on the
+# scene root by tools/shift_cell_content.py (settlements no longer sit on cell centres).
+func content_origin(cell: Resource) -> Vector3:
+    var centre: Vector3 = cell.get("Center")
+    var state: SceneState = (load(String(cell.get("ScenePath"))) as PackedScene).get_state()
+    for i in state.get_node_property_count(0):
+        if state.get_node_property_name(0, i) == "metadata/content_offset":
+            var offset: Vector2 = state.get_node_property_value(0, i)
+            return centre + Vector3(offset.x, 0, offset.y)
+    return centre
+
 func visit(cell: Resource) -> void:
-    var p: Vector3 = cell.get("Center")
+    var p: Vector3 = content_origin(cell)
     var view_direction := Vector3.FORWARD
     # Use authored trail anchors instead of placing the camera four metres into a steep hillside.
     match String(cell.get("Id")):
