@@ -21,19 +21,19 @@
 script = ExtResource("2_entry")
 StartHour = 6
 Activity = "Setting out the pitches"
-Destination = Vector3(-7, 0, 4)
+Destination = Vector3(-47, 0, -6)
 
 [sub_resource type="Resource" id="e_1"]
 script = ExtResource("2_entry")
 StartHour = 11
 Activity = "Working the wharf"
-Destination = Vector3(-5, 0, -3)
+Destination = Vector3(-45, 0, -13)
 
 [sub_resource type="Resource" id="e_2"]
 script = ExtResource("2_entry")
 StartHour = 18
 Activity = "At the locker door"
-Destination = Vector3(-9, 0, 5)
+Destination = Vector3(-49, 0, -5)
 
 [resource]
 script = ExtResource("1_sched")

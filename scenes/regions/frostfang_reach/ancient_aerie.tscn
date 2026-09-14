@@ -37,12 +37,13 @@ radius = 0.75
 height = 4.0
 
 [node name="AncientAerieCell" instance=ExtResource("1_roost")]
+metadata/content_offset = Vector2(20, 20)
 
 ; Standing stones rather than crags - cover, but arranged, because something that thinks has lived
 ; here for eight hundred years. The 2026-08-28 layout rebuild arranged them into a CRESCENT open to the west rather than
 ; a ring: a perfect circle is a diagram, and it was also the same plan the other two roosts had.
 [node name="StoneN" parent="Nav" index="3" instance=ExtResource("10_rock")]
-transform = Transform3D(-1.5588, 0, -0.9, 0, 4.2, 0, 0.9, 0, -1.5588, 8, 0, -22)
+transform = Transform3D(-1.5588, 0, -0.9, 0, 4.2, 0, 0.9, 0, -1.5588, 28, 0, -2)
 
 [node name="StoneNCol" type="StaticBody3D" parent="Nav/StoneN"]
 
@@ -50,7 +51,7 @@ transform = Transform3D(-1.5588, 0, -0.9, 0, 4.2, 0, 0.9, 0, -1.5588, 8, 0, -22)
 shape = SubResource("Shape_rock")
 
 [node name="StoneE" parent="Nav" index="4" instance=ExtResource("10_rock")]
-transform = Transform3D(1.5588, 0, 0.9, 0, 4, 0, -0.9, 0, 1.5588, 18, 0, -12)
+transform = Transform3D(1.5588, 0, 0.9, 0, 4, 0, -0.9, 0, 1.5588, 38, 0, 8)
 
 [node name="StoneECol" type="StaticBody3D" parent="Nav/StoneE"]
 
@@ -58,7 +59,7 @@ transform = Transform3D(1.5588, 0, 0.9, 0, 4, 0, -0.9, 0, 1.5588, 18, 0, -12)
 shape = SubResource("Shape_rock")
 
 [node name="StoneW" parent="Nav" index="5" instance=ExtResource("10_rock")]
-transform = Transform3D(-0.6156, 0, 1.6914, 0, 4.4, 0, -1.6914, 0, -0.6156, -2, 0, -28)
+transform = Transform3D(-0.6156, 0, 1.6914, 0, 4.4, 0, -1.6914, 0, -0.6156, 18, 0, -8)
 
 [node name="StoneWCol" type="StaticBody3D" parent="Nav/StoneW"]
 
@@ -66,7 +67,7 @@ transform = Transform3D(-0.6156, 0, 1.6914, 0, 4.4, 0, -1.6914, 0, -0.6156, -2, 
 shape = SubResource("Shape_rock")
 
 [node name="GlacierNW" parent="Nav" index="6" instance=ExtResource("12_glacier")]
-transform = Transform3D(0.8313, 0, 0.4015, 0, 0.9232, 0, -0.4015, 0, 0.8313, -34, 0, -30)
+transform = Transform3D(0.8313, 0, 0.4015, 0, 0.9232, 0, -0.4015, 0, 0.8313, -14, 0, -10)
 
 [node name="Col" type="StaticBody3D" parent="Nav/GlacierNW"]
 
@@ -75,7 +76,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.745, 0)
 shape = SubResource("Shape_ice_GlacierNW")
 
 [node name="GlacierNE" parent="Nav" index="7" instance=ExtResource("12_ice_wall")]
-transform = Transform3D(-1.1472, 0, -0.4616, 0, 1.2365, 0, 0.4616, 0, -1.1472, 30, 0, -28)
+transform = Transform3D(-1.1472, 0, -0.4616, 0, 1.2365, 0, 0.4616, 0, -1.1472, 50, 0, -8)
 
 [node name="Col" type="StaticBody3D" parent="Nav/GlacierNE"]
 
@@ -87,21 +88,21 @@ shape = SubResource("Shape_ice_GlacierNE")
 ; turning north-west at (0, 6). They were six markers on a 28 m circle, which read as a ring around
 ; a centred nest - the third one in the region. Nothing stands inside the crescent itself.
 [node name="AvenueA" parent="Nav" instance=ExtResource("14_pillar")]
-transform = Transform3D(1.1818, 0, 0.2084, 0, 1.8, 0, -0.2084, 0, 1.1818, -5, 0, 30)
+transform = Transform3D(1.1818, 0, 0.2084, 0, 1.8, 0, -0.2084, 0, 1.1818, 15, 0, 50)
 [node name="Col" type="StaticBody3D" parent="Nav/AvenueA"]
 [node name="Shape" type="CollisionShape3D" parent="Nav/AvenueA/Col"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 shape = SubResource("Shape_pillar")
 
 [node name="AvenueC" parent="Nav" instance=ExtResource("14_pillar")]
-transform = Transform3D(1.0337, 0, -0.3762, 0, 1.55, 0, 0.3762, 0, 1.0337, -6, 0, 17)
+transform = Transform3D(1.0337, 0, -0.3762, 0, 1.55, 0, 0.3762, 0, 1.0337, 14, 0, 37)
 [node name="Col" type="StaticBody3D" parent="Nav/AvenueC"]
 [node name="Shape" type="CollisionShape3D" parent="Nav/AvenueC/Col"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 shape = SubResource("Shape_pillar")
 
 [node name="AvenueE" parent="Nav" instance=ExtResource("14_pillar")]
-transform = Transform3D(0.9397, 0, 0.342, 0, 1.6, 0, -0.342, 0, 0.9397, -7, 0, 3)
+transform = Transform3D(0.9397, 0, 0.342, 0, 1.6, 0, -0.342, 0, 0.9397, 13, 0, 23)
 [node name="Col" type="StaticBody3D" parent="Nav/AvenueE"]
 [node name="Shape" type="CollisionShape3D" parent="Nav/AvenueE/Col"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
@@ -118,7 +119,7 @@ shape = SubResource("Shape_pillar")
 ; --- second thing you see on arrival.
 
 [node name="AvenueG" parent="Nav" instance=ExtResource("14_pillar")]
-transform = Transform3D(0.165, 0, 0.9356, 0, 1.7, 0, -0.9356, 0, 0.165, -11, 0, -4)
+transform = Transform3D(0.165, 0, 0.9356, 0, 1.7, 0, -0.9356, 0, 0.165, 9, 0, 16)
 
 [node name="Col" type="StaticBody3D" parent="Nav/AvenueG"]
 
@@ -127,7 +128,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 shape = SubResource("Shape_pillar")
 
 [node name="StoneNW" parent="Nav" instance=ExtResource("10_rock")]
-transform = Transform3D(0.9, 0, 1.5588, 0, 4.1, 0, -1.5588, 0, 0.9, -14, 0, -26)
+transform = Transform3D(0.9, 0, 1.5588, 0, 4.1, 0, -1.5588, 0, 0.9, 6, 0, -6)
 
 [node name="Col" type="StaticBody3D" parent="Nav/StoneNW"]
 
@@ -135,7 +136,7 @@ transform = Transform3D(0.9, 0, 1.5588, 0, 4.1, 0, -1.5588, 0, 0.9, -14, 0, -26)
 shape = SubResource("Shape_rock")
 
 [node name="StoneWW" parent="Nav" instance=ExtResource("10_rock")]
-transform = Transform3D(-0.85, 0, -1.4722, 0, 3.6, 0, 1.4722, 0, -0.85, -20, 0, -18)
+transform = Transform3D(-0.85, 0, -1.4722, 0, 3.6, 0, 1.4722, 0, -0.85, 0, 0, 2)
 
 [node name="Col" type="StaticBody3D" parent="Nav/StoneWW"]
 
@@ -143,7 +144,7 @@ transform = Transform3D(-0.85, 0, -1.4722, 0, 3.6, 0, 1.4722, 0, -0.85, -20, 0, 
 shape = SubResource("Shape_rock")
 
 [node name="HoardStoneA" parent="Nav" instance=ExtResource("10_rock")]
-transform = Transform3D(-1.0285, 0, 1.2257, 0, 3.2, 0, -1.2257, 0, -1.0285, 16, 0, -16)
+transform = Transform3D(-1.0285, 0, 1.2257, 0, 3.2, 0, -1.2257, 0, -1.0285, 36, 0, 4)
 
 [node name="Col" type="StaticBody3D" parent="Nav/HoardStoneA"]
 
@@ -151,7 +152,7 @@ transform = Transform3D(-1.0285, 0, 1.2257, 0, 3.2, 0, -1.2257, 0, -1.0285, 16, 
 shape = SubResource("Shape_rock")
 
 [node name="GlacierE" parent="Nav" instance=ExtResource("12_ice_wall")]
-transform = Transform3D(-1.3607, 0, 0.9146, 0, 1.6396, 0, -0.9146, 0, -1.3607, 26, 0, -6)
+transform = Transform3D(-1.3607, 0, 0.9146, 0, 1.6396, 0, -0.9146, 0, -1.3607, 46, 0, 14)
 
 [node name="Col" type="StaticBody3D" parent="Nav/GlacierE"]
 
@@ -160,7 +161,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.200, 0)
 shape = SubResource("Shape_ice_GlacierE")
 
 [node name="GlacierW" parent="Nav" instance=ExtResource("12_glacier")]
-transform = Transform3D(0.5097, 0, -0.2445, 0, 0.5653, 0, 0.2445, 0, 0.5097, -30, 0, 6)
+transform = Transform3D(0.5097, 0, -0.2445, 0, 0.5653, 0, 0.2445, 0, 0.5097, -10, 0, 26)
 
 [node name="Col" type="StaticBody3D" parent="Nav/GlacierW"]
 
@@ -172,7 +173,7 @@ shape = SubResource("Shape_ice_GlacierW")
 ; that has been keeping it is dead — RequiredFlagId is raised by the lair below on the kill. That is
 ; the second route to spell.elder_word; the first is asking for it (dialogue.ancient_dragon).
 [node name="Hoard" type="Node3D" parent="." index="2"]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 12, 0, -12)
+transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 32, 0, 8)
 script = ExtResource("2_entity")
 DisplayName = "The Hoard"
 
@@ -199,6 +200,6 @@ TemplateId = "enemy.ancient_dragon"
 DefeatFlagId = "flag.ancient_dragon_defeated"
 
 [node name="MapPin" type="Node3D" parent="."]
-position = Vector3(-6, 0, -16)
+position = Vector3(14, 0, 4)
 script = ExtResource("maploc_39_5a")
 LocationId = "location.frostfang.ancient_aerie"

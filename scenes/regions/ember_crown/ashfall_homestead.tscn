@@ -179,6 +179,7 @@ size = Vector3(5.67, 1.2, 4.08)
 ; ====================================================================================================
 
 [node name="AshfallHomesteadCell" type="Node3D"]
+metadata/content_offset = Vector2(30, 20)
 
 [node name="Nav" type="NavigationRegion3D" parent="."]
 navigation_mesh = SubResource("NavMesh_home")
@@ -187,7 +188,7 @@ navigation_mesh = SubResource("NavMesh_home")
 script = ExtResource("navbaker_cleanup")
 
 [node name="House" parent="Nav" instance=ExtResource("7_house")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, -4)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 39, 0, 16)
 
 ; The visible roof has no physics collider. Shelter is a presentation volume, not new collision.
 [node name="InteriorEnvironment" type="Node3D" parent="Nav/House"]
@@ -204,13 +205,13 @@ Profile = ExtResource("interior_profile")
 ; know they are needed — or that they are enough — is to render from inside.
 
 [node name="HearthLight" type="OmniLight3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.4, 1.1, -6.3)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 41.4, 1.1, 13.7)
 light_color = Color(1, 0.72, 0.42, 1)
 light_energy = 2.4
 omni_range = 7.5
 
 [node name="RoomLight" type="OmniLight3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.4, 2.5, -4.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 39.4, 2.5, 15.5)
 light_color = Color(1, 0.87, 0.68, 1)
 light_energy = 2.2
 omni_range = 9
@@ -218,7 +219,7 @@ omni_range = 9
 ; --- interior: the hearth end ---------------------------------------------------------------------
 
 [node name="Cauldron" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, 11.4, 0, -6.5)
+transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, 41.4, 0, 13.5)
 
 [node name="Model" parent="Nav/Cauldron" instance=ExtResource("19_cauldron")]
 
@@ -229,7 +230,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
 shape = SubResource("Shape_cauldron")
 
 [node name="Bookcase" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 6.6, 0, -3.4)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 36.6, 0, 16.6)
 
 [node name="Model" parent="Nav/Bookcase" instance=ExtResource("17_bookcase")]
 
@@ -240,7 +241,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.27, 0)
 shape = SubResource("Shape_bookcase")
 
 [node name="Cabinet" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.9, 0, -7.4)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37.9, 0, 12.6)
 
 [node name="Model" parent="Nav/Cabinet" instance=ExtResource("18_cabinet")]
 
@@ -253,7 +254,7 @@ shape = SubResource("Shape_cabinet")
 ; --- interior: the sleeping nook --------------------------------------------------------------------
 
 [node name="Nightstand" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 6.6, 0, -5.6)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 36.6, 0, 14.4)
 
 [node name="Model" parent="Nav/Nightstand" instance=ExtResource("13_nightstand")]
 
@@ -263,7 +264,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.22, 0)
 ; --- interior: the table ----------------------------------------------------------------------------
 
 [node name="Table" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.6, 0, -4.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 39.6, 0, 15.8)
 
 [node name="Model" parent="Nav/Table" instance=ExtResource("14_table")]
 
@@ -277,12 +278,12 @@ shape = SubResource("Shape_table")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.8, 0.81, 0)
 
 [node name="ChairS" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.6, 0, -3)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 39.6, 0, 17)
 
 [node name="Model" parent="Nav/ChairS" instance=ExtResource("15_chair")]
 
 [node name="ChairN" type="Node3D" parent="Nav"]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 9.6, 0, -5.4)
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 39.6, 0, 14.6)
 
 [node name="Model" parent="Nav/ChairN" instance=ExtResource("16_stool")]
 
@@ -291,22 +292,22 @@ transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 9.6, 0, -5.4)
 ; a collider each would carve the room's navmesh into confetti for no gain.
 
 [node name="ShelfW" parent="Nav" instance=ExtResource("20_shelf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.15, 1.7, -2.4)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 36.15, 1.7, 17.6)
 
 [node name="ShelfArchE" parent="Nav" instance=ExtResource("21_shelf_arch")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.85, 1.9, -4.4)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 41.85, 1.9, 15.6)
 
 [node name="Chandelier" parent="Nav" instance=ExtResource("22_chandelier")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.4, 3.5, -4.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 39.4, 3.5, 15.5)
 
 [node name="LanternW" parent="Nav" instance=ExtResource("23_lantern")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.1, 2, -7.4)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 36.1, 2, 12.6)
 
 [node name="RopeCoil" parent="Nav" instance=ExtResource("26_rope")]
-transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, 11.4, 0, -2.2)
+transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, 41.4, 0, 17.8)
 
 [node name="CrateIn" parent="Nav" instance=ExtResource("27_crate_wood")]
-transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 6.6, 0, -1.8)
+transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 36.6, 0, 18.2)
 
 ; --- the workshop -----------------------------------------------------------------------------------
 ; Authored rather than left to 37C's kits, so the holding is a base of operations the moment it is
@@ -314,7 +315,7 @@ transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 6.6, 0, -1
 ; a kit and sets it down.
 
 [node name="Forge" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 14, 0, -9)
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 44, 0, 11)
 script = ExtResource("1_entity")
 DisplayName = "Homestead Forge"
 TemplateId = "station.forge"
@@ -332,7 +333,7 @@ script = ExtResource("31_station")
 Station = 1
 
 [node name="Workbench" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 14, 0, -5.5)
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 44, 0, 14.5)
 script = ExtResource("1_entity")
 DisplayName = "Homestead Workbench"
 TemplateId = "station.workbench"
@@ -350,7 +351,7 @@ script = ExtResource("31_station")
 Station = 2
 
 [node name="Alchemy" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 14, 0, -2)
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 44, 0, 18)
 script = ExtResource("1_entity")
 DisplayName = "Homestead Alchemy Table"
 TemplateId = "station.alchemy"
@@ -368,7 +369,7 @@ script = ExtResource("31_station")
 Station = 3
 
 [node name="TimberStack" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.1736, 0, 0.9848, 0, 1, 0, -0.9848, 0, -0.1736, 11, 0, -11)
+transform = Transform3D(-0.1736, 0, 0.9848, 0, 1, 0, -0.9848, 0, -0.1736, 41, 0, 9)
 
 [node name="Model" parent="Nav/TimberStack" instance=ExtResource("39_timber")]
 
@@ -381,7 +382,7 @@ shape = SubResource("Shape_timber")
 ; --- the grounds ------------------------------------------------------------------------------------
 
 [node name="Well" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, -13, 0, 6)
+transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 17, 0, 26)
 
 [node name="Model" parent="Nav/Well" instance=ExtResource("35_well")]
 
@@ -396,7 +397,7 @@ shape = SubResource("Shape_well")
 ; square, where its lamp is the silhouette; at 3 m it is a pillar and the lamp is out of frame. The
 ; .tscn cannot show you that.
 [node name="LampGate" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.5, 0, -8.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18.5, 0, 11.8)
 
 [node name="Model" parent="Nav/LampGate" instance=ExtResource("40_lamp")]
 
@@ -407,22 +408,22 @@ light_energy = 1.6
 omni_range = 9
 
 [node name="PathA" parent="Nav" instance=ExtResource("36_path")]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -11.6, 0.01, -9)
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 18.4, 0.01, 11)
 
 [node name="PathB" parent="Nav" instance=ExtResource("36_path")]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -9.6, 0.01, -7.6)
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 20.4, 0.01, 12.4)
 
 [node name="PathD" parent="Nav" instance=ExtResource("36_path")]
-transform = Transform3D(0.8192, 0, 0.5736, 0, 1, 0, -0.5736, 0, 0.8192, -5.6, 0.01, -4.8)
+transform = Transform3D(0.8192, 0, 0.5736, 0, 1, 0, -0.5736, 0, 0.8192, 24.4, 0.01, 15.2)
 
 [node name="PathE" parent="Nav" instance=ExtResource("36_path")]
-transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, -3.4, 0.01, -3.6)
+transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 26.6, 0.01, 16.4)
 
 [node name="PathG" parent="Nav" instance=ExtResource("36_path")]
-transform = Transform3D(0.9903, 0, 0.1392, 0, 1, 0, -0.1392, 0, 0.9903, 1.4, 0.01, -2.2)
+transform = Transform3D(0.9903, 0, 0.1392, 0, 1, 0, -0.1392, 0, 0.9903, 31.4, 0.01, 17.8)
 
 [node name="PathI" parent="Nav" instance=ExtResource("36_path")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 0.01, -1.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 36.5, 0.01, 18.5)
 
 ; --- planting ---------------------------------------------------------------------------------------
 ; ⚠️ Trees get a TRUNK collider, not a canopy one: an 8 m broadleaf boxed to its 3.2 m spread is an
@@ -430,7 +431,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 0.01, -1.5)
 ; cover, and a collider on each would fence the garden off from its own owner.
 
 [node name="TreeNW" type="Node3D" parent="Nav"]
-transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, -2, 0, -10)
+transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, 28, 0, 10)
 
 [node name="Model" parent="Nav/TreeNW" instance=ExtResource("33_tree")]
 
@@ -441,7 +442,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
 shape = SubResource("Shape_tree")
 
 [node name="TreeNE" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.766, 0, -0.6428, 0, 1, 0, 0.6428, 0, -0.766, 5, 0, -11.5)
+transform = Transform3D(-0.766, 0, -0.6428, 0, 1, 0, 0.6428, 0, -0.766, 35, 0, 8.5)
 
 [node name="Model" parent="Nav/TreeNE" instance=ExtResource("33_tree")]
 
@@ -452,7 +453,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
 shape = SubResource("Shape_tree")
 
 [node name="TreeS" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -15, 0, 9)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 15, 0, 29)
 
 [node name="Model" parent="Nav/TreeS" instance=ExtResource("33_tree")]
 
@@ -463,16 +464,16 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
 shape = SubResource("Shape_tree")
 
 [node name="BushA" parent="Nav" instance=ExtResource("34_bush")]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -6, 0, 0.5)
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 24, 0, 20.5)
 
 [node name="BushB" parent="Nav" instance=ExtResource("34_bush")]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 5, 0, -8.5)
+transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 35, 0, 11.5)
 
 [node name="BushC" parent="Nav" instance=ExtResource("34_bush")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 0, 2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 22)
 
 [node name="FenceS0" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.2, 0, 12)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 31.2, 0, 32)
 
 [node name="Model" parent="Nav/FenceS0" instance=ExtResource("32_fence")]
 
@@ -483,7 +484,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceS1" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.7, 0, 12)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 28.3, 0, 32)
 
 [node name="Model" parent="Nav/FenceS1" instance=ExtResource("32_fence")]
 
@@ -494,7 +495,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceS2" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.6, 0, 12)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25.4, 0, 32)
 
 [node name="Model" parent="Nav/FenceS2" instance=ExtResource("32_fence")]
 
@@ -505,7 +506,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceS3" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.5, 0, 12)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22.5, 0, 32)
 
 [node name="Model" parent="Nav/FenceS3" instance=ExtResource("32_fence")]
 
@@ -516,7 +517,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceS4" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10.4, 0, 12)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.6, 0, 32)
 
 [node name="Model" parent="Nav/FenceS4" instance=ExtResource("32_fence")]
 
@@ -527,7 +528,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceS5" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13.3, 0, 12)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.7, 0, 32)
 
 [node name="Model" parent="Nav/FenceS5" instance=ExtResource("32_fence")]
 
@@ -538,7 +539,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceE0" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 16, 0, -3.9)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 46, 0, 16.1)
 
 [node name="Model" parent="Nav/FenceE0" instance=ExtResource("32_fence")]
 
@@ -549,7 +550,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceE1" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 16, 0, -1)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 46, 0, 19)
 
 [node name="Model" parent="Nav/FenceE1" instance=ExtResource("32_fence")]
 
@@ -560,7 +561,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceE2" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 16, 0, 1.9)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 46, 0, 21.9)
 
 [node name="Model" parent="Nav/FenceE2" instance=ExtResource("32_fence")]
 
@@ -582,7 +583,7 @@ shape = SubResource("Shape_fence")
 ; something with a document on it, and lets the player see the house they are being sold.
 
 [node name="CottageDeed" type="Node3D" parent="."]
-transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, -9.6, 0, -5.4)
+transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, 20.4, 0, 14.6)
 script = ExtResource("1_entity")
 DisplayName = "Deed Post"
 
@@ -605,7 +606,7 @@ PropertyId = "property.ember_crown.cottage"
 ; capacity applied after the save manager's mid-load restore would silently eat the overflow.
 
 [node name="CottageChest" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.4, 0, -3.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 41.4, 0, 16.8)
 script = ExtResource("1_entity")
 DisplayName = "Storage Chest"
 PersistentId = "ember_crown.cottage_chest"
@@ -633,7 +634,7 @@ PropertyId = "property.ember_crown.cottage"
 ; restores through AddInstance and clamps to it).
 
 [node name="CottageStandW" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.6, 0, -2.6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 36.6, 0, 17.4)
 script = ExtResource("1_entity")
 DisplayName = "Display Stand"
 PersistentId = "ember_crown.cottage_trophy_a"
@@ -655,7 +656,7 @@ script = ExtResource("5_trophy")
 PropertyId = "property.ember_crown.cottage"
 
 [node name="CottageStandE" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.4, 0, -2.4)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 41.4, 0, 17.6)
 script = ExtResource("1_entity")
 DisplayName = "Display Stand"
 PersistentId = "ember_crown.cottage_trophy_b"
@@ -687,7 +688,7 @@ PropertyId = "property.ember_crown.cottage"
 ; who has not bought and in every settlement that is not this one.
 
 [node name="AshfallBed" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 6.9, 0, -6.9)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 36.9, 0, 13.1)
 script = ExtResource("1_entity")
 DisplayName = "Bed"
 
@@ -711,7 +712,7 @@ PropertyId = "property.ember_crown.cottage"
 ; version looked like a boundary because the coordinates said "boundary".
 
 [node name="FenceS6" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16.2, 0, 12)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.8, 0, 32)
 
 [node name="Model" parent="Nav/FenceS6" instance=ExtResource("32_fence")]
 
@@ -722,7 +723,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceS7" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -18, 0, 10.6)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 12, 0, 30.6)
 
 [node name="Model" parent="Nav/FenceS7" instance=ExtResource("32_fence")]
 
@@ -733,7 +734,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceS8" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -18, 0, 7.7)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 12, 0, 27.7)
 
 [node name="Model" parent="Nav/FenceS8" instance=ExtResource("32_fence")]
 
@@ -744,7 +745,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceS9" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -18, 0, 4.8)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 12, 0, 24.8)
 
 [node name="Model" parent="Nav/FenceS9" instance=ExtResource("32_fence")]
 
@@ -755,7 +756,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceSW0" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -18, 0, 1.9)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 12, 0, 21.9)
 
 [node name="Model" parent="Nav/FenceSW0" instance=ExtResource("32_fence")]
 
@@ -766,7 +767,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceSW1" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.2, 0, 3)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22.8, 0, 23)
 
 [node name="Model" parent="Nav/FenceSW1" instance=ExtResource("32_fence")]
 
@@ -777,7 +778,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceW0" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -18, 0, -1)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 12, 0, 19)
 
 [node name="Model" parent="Nav/FenceW0" instance=ExtResource("32_fence")]
 
@@ -788,7 +789,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceW1" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -18, 0, -3.9)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 12, 0, 16.1)
 
 [node name="Model" parent="Nav/FenceW1" instance=ExtResource("32_fence")]
 
@@ -799,7 +800,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceWN0" type="Node3D" parent="Nav"]
-transform = Transform3D(0.809, 0, -0.5878, 0, 1, 0, 0.5878, 0, 0.809, -9.9, 0, -11.8)
+transform = Transform3D(0.809, 0, -0.5878, 0, 1, 0, 0.5878, 0, 0.809, 20.1, 0, 8.2)
 
 [node name="Model" parent="Nav/FenceWN0" instance=ExtResource("32_fence")]
 
@@ -810,7 +811,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceWN1" type="Node3D" parent="Nav"]
-transform = Transform3D(0.809, 0, -0.5878, 0, 1, 0, 0.5878, 0, 0.809, -8.3, 0, -13)
+transform = Transform3D(0.809, 0, -0.5878, 0, 1, 0, 0.5878, 0, 0.809, 21.7, 0, 7)
 
 [node name="Model" parent="Nav/FenceWN1" instance=ExtResource("32_fence")]
 
@@ -821,7 +822,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceWN2" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, 3)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17, 0, 23)
 
 [node name="Model" parent="Nav/FenceWN2" instance=ExtResource("32_fence")]
 
@@ -832,7 +833,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceWN3" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10.1, 0, 3)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.9, 0, 23)
 
 [node name="Model" parent="Nav/FenceWN3" instance=ExtResource("32_fence")]
 
@@ -843,7 +844,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceN0" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, -14)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 23, 0, 6)
 
 [node name="Model" parent="Nav/FenceN0" instance=ExtResource("32_fence")]
 
@@ -854,7 +855,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceN1" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.1, 0, -14)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25.9, 0, 6)
 
 [node name="Model" parent="Nav/FenceN1" instance=ExtResource("32_fence")]
 
@@ -865,7 +866,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceN2" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.2, 0, -14)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 28.8, 0, 6)
 
 [node name="Model" parent="Nav/FenceN2" instance=ExtResource("32_fence")]
 
@@ -876,7 +877,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceN3" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.7, 0, -14)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 31.7, 0, 6)
 
 [node name="Model" parent="Nav/FenceN3" instance=ExtResource("32_fence")]
 
@@ -887,7 +888,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceN4" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.6, 0, -14)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 34.6, 0, 6)
 
 [node name="Model" parent="Nav/FenceN4" instance=ExtResource("32_fence")]
 
@@ -898,7 +899,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceN5" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.5, 0, -14)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37.5, 0, 6)
 
 [node name="Model" parent="Nav/FenceN5" instance=ExtResource("32_fence")]
 
@@ -909,7 +910,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceN6" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.4, 0, -14)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40.4, 0, 6)
 
 [node name="Model" parent="Nav/FenceN6" instance=ExtResource("32_fence")]
 
@@ -920,7 +921,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceN7" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.3, 0, -14)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 43.3, 0, 6)
 
 [node name="Model" parent="Nav/FenceN7" instance=ExtResource("32_fence")]
 
@@ -931,7 +932,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceN8" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.2, 0, -14)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 46.2, 0, 6)
 
 [node name="Model" parent="Nav/FenceN8" instance=ExtResource("32_fence")]
 
@@ -942,7 +943,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceN9" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 16, 0, -12.6)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 46, 0, 7.4)
 
 [node name="Model" parent="Nav/FenceN9" instance=ExtResource("32_fence")]
 
@@ -953,7 +954,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceN10" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 16, 0, -9.7)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 46, 0, 10.3)
 
 [node name="Model" parent="Nav/FenceN10" instance=ExtResource("32_fence")]
 
@@ -964,7 +965,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceN11" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 16, 0, -6.8)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 46, 0, 13.2)
 
 [node name="Model" parent="Nav/FenceN11" instance=ExtResource("32_fence")]
 
@@ -975,7 +976,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceE3" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.7071, 0, 0.7071, 0, 1, 0, -0.7071, 0, -0.7071, 15.3, 0, 4.7)
+transform = Transform3D(-0.7071, 0, 0.7071, 0, 1, 0, -0.7071, 0, -0.7071, 45.3, 0, 24.7)
 
 [node name="Model" parent="Nav/FenceE3" instance=ExtResource("32_fence")]
 
@@ -986,7 +987,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceE4" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.7071, 0, 0.7071, 0, 1, 0, -0.7071, 0, -0.7071, 13.2, 0, 6.8)
+transform = Transform3D(-0.7071, 0, 0.7071, 0, 1, 0, -0.7071, 0, -0.7071, 43.2, 0, 26.8)
 
 [node name="Model" parent="Nav/FenceE4" instance=ExtResource("32_fence")]
 
@@ -997,7 +998,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceE5" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.7071, 0, 0.7071, 0, 1, 0, -0.7071, 0, -0.7071, 11.1, 0, 8.9)
+transform = Transform3D(-0.7071, 0, 0.7071, 0, 1, 0, -0.7071, 0, -0.7071, 41.1, 0, 28.9)
 
 [node name="Model" parent="Nav/FenceE5" instance=ExtResource("32_fence")]
 
@@ -1008,7 +1009,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceE6" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.7071, 0, 0.7071, 0, 1, 0, -0.7071, 0, -0.7071, 9, 0, 11)
+transform = Transform3D(-0.7071, 0, 0.7071, 0, 1, 0, -0.7071, 0, -0.7071, 39, 0, 31)
 
 [node name="Model" parent="Nav/FenceE6" instance=ExtResource("32_fence")]
 
@@ -1019,7 +1020,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceE7" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 12)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37, 0, 32)
 
 [node name="Model" parent="Nav/FenceE7" instance=ExtResource("32_fence")]
 
@@ -1030,7 +1031,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceE8" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.1, 0, 12)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 34.1, 0, 32)
 
 [node name="Model" parent="Nav/FenceE8" instance=ExtResource("32_fence")]
 
@@ -1049,22 +1050,22 @@ shape = SubResource("Shape_fence")
 
 
 [node name="Bush0" parent="Nav" instance=ExtResource("34_bush")]
-transform = Transform3D(0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, 0.342, -15, 0, -5)
+transform = Transform3D(0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, 0.342, 15, 0, 15)
 
 [node name="Bush3" parent="Nav" instance=ExtResource("34_bush")]
-transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, -9, 0, 10)
+transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 21, 0, 30)
 
 [node name="Bush4" parent="Nav" instance=ExtResource("34_bush")]
-transform = Transform3D(0.5, 0, -0.866, 0, 1, 0, 0.866, 0, 0.5, 15, 0, -8)
+transform = Transform3D(0.5, 0, -0.866, 0, 1, 0, 0.866, 0, 0.5, 45, 0, 12)
 
 [node name="CrateYardA" parent="Nav" instance=ExtResource("27_crate_wood")]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 11.5, 0, -11.5)
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 41.5, 0, 8.5)
 
 [node name="RopeYard" parent="Nav" instance=ExtResource("26_rope")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, -7)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 0, 13)
 
 [node name="MapPin" type="Node3D" parent="."]
-position = Vector3(9, 0, -4)
+position = Vector3(39, 0, 16)
 script = ExtResource("maploc_39_5a")
 LocationId = "location.ashfall.homestead"
 
@@ -1079,7 +1080,7 @@ LocationId = "location.ashfall.cottage"
 ; Veyra's shrine stands by the homestead garden, close to the bed and working household rather than
 ; in untouched wilderness: mercy and growth should read as part of ordinary life.
 [node name="ShrineVeyra" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 4)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42, 0, 24)
 script = ExtResource("1_entity")
 
 [node name="Body" parent="Nav/ShrineVeyra" instance=ExtResource("shrine_body_41_5b")]

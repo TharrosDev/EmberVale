@@ -18,7 +18,7 @@
 ; Ember Crown and a snowline that can be reached is a snowline that will be.
 ;
 ; MasterSeed is shared with Frostfang ON PURPOSE. There is one world seed; the two realms occupy
-; disjoint x bands (Ember -190..140, Frostfang 260..600), so world coordinates already give them
+; disjoint bands (Ember x -520..520 z -720..440; Frostfang north of it — docs/WORLD_ATLAS.md), so world coordinates give them
 ; different ground. A second seed would say they are different worlds, and they are not.
 
 [resource]
@@ -26,11 +26,11 @@ script = ExtResource("1_generation")
 MasterSeed = 3800
 GeneratorVersion = 2
 BaseElevation = 0.0
-MacroScale = 300.0
-MacroRelief = 9.0
-MountainScale = 150.0
+MacroScale = 420.0
+MacroRelief = 12.0
+MountainScale = 220.0
 MountainPrevalence = 0.74
-MountainHeight = 22.0
+MountainHeight = 24.0
 ValleyStrength = 6.0
 ErosionStrength = 0.7
 LocalRelief = 1.4
@@ -39,7 +39,7 @@ RouteCalm = 45.0
 Temperature = 0.58
 Moisture = 0.44
 SnowLine = 90.0
-HydrologyCellSize = 10.0
-RiverThreshold = 60.0
+HydrologyCellSize = 12.0
+RiverThreshold = 420.0
 RiverWidth = 3.2
 RiverDepth = 1.6

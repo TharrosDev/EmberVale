@@ -210,6 +210,7 @@ height = 1.8
 size = Vector3(1.6, 1.1, 0.09)
 
 [node name="CrosswayPost" type="Node3D"]
+metadata/content_offset = Vector2(30, 5)
 
 [node name="Nav" type="NavigationRegion3D" parent="."]
 navigation_mesh = SubResource("NavMesh_crossway")
@@ -218,7 +219,7 @@ navigation_mesh = SubResource("NavMesh_crossway")
 script = ExtResource("1_navbaker")
 
 [node name="GateWest" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18, 0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 5)
 
 [node name="Model" parent="Nav/GateWest" instance=ExtResource("10_gate")]
 
@@ -229,7 +230,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.75, 0)
 shape = SubResource("Shape_gate")
 
 [node name="GateEast" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 26, 0, 5)
 
 [node name="Model" parent="Nav/GateEast" instance=ExtResource("10_gate")]
 
@@ -244,7 +245,7 @@ shape = SubResource("Shape_gate")
 ; by ~2 m where they meet, because two 15.93 m palisades butted exactly leave a seam the player can
 ; see daylight through and the navmesh will happily path an NPC into.
 [node name="GateFar" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19, 0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 49, 0, 5)
 
 [node name="Model" parent="Nav/GateFar" instance=ExtResource("10_gate")]
 
@@ -255,7 +256,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.76, 0)
 shape = SubResource("Shape_gate")
 
 [node name="TowerWest" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0, 1.8)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32.5, 0, 6.8)
 
 [node name="Model" parent="Nav/TowerWest" instance=ExtResource("11_tower")]
 
@@ -266,7 +267,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
 shape = SubResource("Shape_tower")
 
 [node name="TowerEast" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.5, 0, 1.8)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42.5, 0, 6.8)
 
 [node name="Model" parent="Nav/TowerEast" instance=ExtResource("11_tower")]
 
@@ -278,7 +279,7 @@ shape = SubResource("Shape_tower")
 
 ; The realm's banner on the gate — the only thing in the cell that says whose road this is.
 [node name="GateBanner" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, 2.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29, 0, 7.2)
 
 [node name="Model" parent="Nav/GateBanner" instance=ExtResource("26_banner")]
 
@@ -290,7 +291,7 @@ shape = SubResource("Shape_banner")
 
 ; --- The wardens' compound, west of the road ------------------------------------
 [node name="WardenPost" type="Node3D" parent="Nav"]
-transform = Transform3D(0.0872, 0, 0.9962, 0, 1, 0, -0.9962, 0, 0.0872, -18, 0, 20)
+transform = Transform3D(0.0872, 0, 0.9962, 0, 1, 0, -0.9962, 0, 0.0872, 12, 0, 25)
 
 [node name="Model" parent="Nav/WardenPost" instance=ExtResource("12_post")]
 
@@ -301,7 +302,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 shape = SubResource("Shape_post")
 
 [node name="Well" type="Node3D" parent="Nav"]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -12, 0, 11)
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 18, 0, 16)
 
 [node name="Model" parent="Nav/Well" instance=ExtResource("22_well")]
 
@@ -312,7 +313,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.37, 0)
 shape = SubResource("Shape_well")
 
 [node name="BenchA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, -14, 0, 9)
+transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 16, 0, 14)
 
 [node name="Model" parent="Nav/BenchA" instance=ExtResource("21_bench")]
 
@@ -323,7 +324,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
 shape = SubResource("Shape_bench")
 
 [node name="CartA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 0, 0, 6.5)
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 30, 0, 11.5)
 
 [node name="Model" parent="Nav/CartA" instance=ExtResource("15_cart")]
 
@@ -334,7 +335,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
 shape = SubResource("Shape_cart")
 
 [node name="CrateA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9659, 0, 0.2588, 0, 1, 0, -0.2588, 0, 0.9659, 11, 0, 5.5)
+transform = Transform3D(0.9659, 0, 0.2588, 0, 1, 0, -0.2588, 0, 0.9659, 41, 0, 10.5)
 
 [node name="Model" parent="Nav/CrateA" instance=ExtResource("16_crate")]
 
@@ -345,7 +346,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
 shape = SubResource("Shape_crate")
 
 [node name="BarrelA" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.5, 0, 12.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 43.5, 0, 17.5)
 
 [node name="Model" parent="Nav/BarrelA" instance=ExtResource("17_barrel")]
 
@@ -356,7 +357,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
 shape = SubResource("Shape_barrel")
 
 [node name="SacksA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, 0.342, 6.5, 0, 13.5)
+transform = Transform3D(0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, 0.342, 36.5, 0, 18.5)
 
 [node name="Model" parent="Nav/SacksA" instance=ExtResource("19_sacks")]
 
@@ -367,7 +368,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.22, 0)
 shape = SubResource("Shape_sacks")
 
 [node name="HayA" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, -0.342, 9, 0, 5.2)
+transform = Transform3D(-0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, -0.342, 39, 0, 10.2)
 
 [node name="Model" parent="Nav/HayA" instance=ExtResource("18_hay")]
 
@@ -378,7 +379,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
 shape = SubResource("Shape_hay")
 
 [node name="CaravanBoard" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 12, 0, 13.5)
+transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 42, 0, 18.5)
 script = ExtResource("2_entity")
 DisplayName = "The Caravan Board"
 
@@ -408,7 +409,7 @@ script = ExtResource("6_service")
 ServiceId = "service.crossway.contracts"
 
 [node name="YardFire" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 10)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 36, 0, 15)
 
 [node name="Model" parent="Nav/YardFire" instance=ExtResource("23_campfire")]
 
@@ -426,7 +427,7 @@ omni_range = 9.0
 ; Fence line closing the yard's east side so the caravan ground reads as enclosed rather than as
 ; clutter dropped on open dirt.
 [node name="FenceA" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 16, 0, 6)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 46, 0, 11)
 
 [node name="Model" parent="Nav/FenceA" instance=ExtResource("20_fence")]
 
@@ -437,7 +438,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceB" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 16, 0, 9)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 46, 0, 14)
 
 [node name="Model" parent="Nav/FenceB" instance=ExtResource("20_fence")]
 
@@ -448,7 +449,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceC" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 16, 0, 18)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 46, 0, 23)
 
 [node name="Model" parent="Nav/FenceC" instance=ExtResource("20_fence")]
 
@@ -460,7 +461,7 @@ shape = SubResource("Shape_fence")
 
 ; --- Braziers along the road ----------------------------------------------------
 [node name="BrazierSW" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0, 20)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19, 0, 25)
 
 [node name="Model" parent="Nav/BrazierSW" instance=ExtResource("14_brazier")]
 
@@ -482,7 +483,7 @@ light_energy = 1.5
 omni_range = 10.0
 
 [node name="BrazierSE" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.5, 0, 6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20.5, 0, 11)
 
 [node name="Model" parent="Nav/BrazierSE" instance=ExtResource("14_brazier")]
 
@@ -504,7 +505,7 @@ light_energy = 1.5
 omni_range = 10.0
 
 [node name="BrazierGate" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40, 0, 10)
 
 [node name="Model" parent="Nav/BrazierGate" instance=ExtResource("14_brazier")]
 
@@ -527,7 +528,7 @@ omni_range = 11.0
 
 ; --- The verges: dead pines and rock, closing both sides down to the road -------
 [node name="PineA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, -22, 0, 22)
+transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 8, 0, 27)
 
 [node name="Model" parent="Nav/PineA" instance=ExtResource("24_pine")]
 
@@ -538,7 +539,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
 shape = SubResource("Shape_pine")
 
 [node name="PineB" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 14, 0, 22)
+transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 44, 0, 27)
 
 [node name="Model" parent="Nav/PineB" instance=ExtResource("24_pine")]
 
@@ -549,7 +550,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
 shape = SubResource("Shape_pine")
 
 [node name="PineC" type="Node3D" parent="Nav"]
-transform = Transform3D(0.1736, 0, 0.9848, 0, 1, 0, -0.9848, 0, 0.1736, 22, 0, 17)
+transform = Transform3D(0.1736, 0, 0.9848, 0, 1, 0, -0.9848, 0, 0.1736, 52, 0, 22)
 
 [node name="Model" parent="Nav/PineC" instance=ExtResource("24_pine")]
 
@@ -560,7 +561,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
 shape = SubResource("Shape_pine")
 
 [node name="PineD" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, -0.766, 16, 0, -8)
+transform = Transform3D(-0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, -0.766, 46, 0, -3)
 
 [node name="Model" parent="Nav/PineD" instance=ExtResource("24_pine")]
 
@@ -571,7 +572,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
 shape = SubResource("Shape_pine")
 
 [node name="PineE" type="Node3D" parent="Nav"]
-transform = Transform3D(0.5, 0, -0.866, 0, 1, 0, 0.866, 0, 0.5, -20, 0, -10)
+transform = Transform3D(0.5, 0, -0.866, 0, 1, 0, 0.866, 0, 0.5, 10, 0, -5)
 
 [node name="Model" parent="Nav/PineE" instance=ExtResource("24_pine")]
 
@@ -582,7 +583,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
 shape = SubResource("Shape_pine")
 
 [node name="PineF" type="Node3D" parent="Nav"]
-transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, 7, 0, -20)
+transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, 37, 0, -15)
 
 [node name="Model" parent="Nav/PineF" instance=ExtResource("24_pine")]
 
@@ -593,7 +594,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
 shape = SubResource("Shape_pine")
 
 [node name="RocksA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.6428, 0, 0.766, 0, 1, 0, -0.766, 0, 0.6428, -24, 0, 4)
+transform = Transform3D(0.6428, 0, 0.766, 0, 1, 0, -0.766, 0, 0.6428, 6, 0, 9)
 
 [node name="Model" parent="Nav/RocksA" instance=ExtResource("25_rocks")]
 
@@ -604,7 +605,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
 shape = SubResource("Shape_rocks")
 
 [node name="RocksB" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, 26, 0, 19)
+transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, 56, 0, 24)
 
 [node name="Model" parent="Nav/RocksB" instance=ExtResource("25_rocks")]
 
@@ -615,7 +616,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
 shape = SubResource("Shape_rocks")
 
 [node name="RocksC" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9848, 0, 0.1736, 0, 1, 0, -0.1736, 0, -0.9848, -13, 0, -18)
+transform = Transform3D(-0.9848, 0, 0.1736, 0, 1, 0, -0.1736, 0, -0.9848, 17, 0, -13)
 
 [node name="Model" parent="Nav/RocksC" instance=ExtResource("25_rocks")]
 
@@ -629,7 +630,7 @@ shape = SubResource("Shape_rocks")
 ; --- through Loc.T, and Loc.T returns an unknown string unchanged, so a mistyped key renders as the
 ; --- key itself rather than failing.
 [node name="CrosswayWaystone" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.5, 0, 13)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21.5, 0, 18)
 script = ExtResource("2_entity")
 DisplayName = "Crossway Waystone"
 
@@ -656,7 +657,7 @@ RegionId = "region.ember_crown"
 ;
 ; They are NOT parented to Nav: only static geometry should carve the navmesh.
 [node name="RoadWarden" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -9, 0, 16)
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 21, 0, 21)
 script = ExtResource("2_entity")
 DisplayName = "Warden Sergeant Alric"
 TemplateId = "npc.road_warden"
@@ -686,7 +687,7 @@ ServiceId = "service.crossway.permit"
 [node name="Model" parent="RoadWarden" instance=ExtResource("30_guild_rep")]
 
 [node name="GateHand" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 7.5, 0, 3)
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 37.5, 0, 8)
 script = ExtResource("2_entity")
 DisplayName = "A Gate-Hand"
 TemplateId = "npc.gate_hand"
@@ -732,7 +733,7 @@ ServiceId = "service.crossway.bribe"
 ;
 ; They are NOT parented to Nav: only static geometry should carve the navmesh.
 [node name="SearchWarden" type="Node3D" parent="."]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -2, 0, 9.5)
+transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 28, 0, 14.5)
 script = ExtResource("2_entity")
 DisplayName = "Warden Deryn Colt"
 TemplateId = "npc.search_warden"
@@ -762,7 +763,7 @@ ServiceId = "service.crossway.search"
 [node name="Model" parent="SearchWarden" instance=ExtResource("30_guild_rep")]
 
 [node name="ImpoundClerk" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 13.5, 0, 9)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 43.5, 0, 14)
 script = ExtResource("2_entity")
 DisplayName = "The Impound Clerk"
 TemplateId = "npc.impound_clerk"
@@ -821,7 +822,7 @@ ServiceId = "service.crossway.impound"
 ; ⚠️ And the body faces +Z, not Godot's -Z: the identity transform pointed her at the board's back.
 ; The yaw below is the same basis CartA carries, and turns her west across the yard to the road.
 [node name="Mercenary" type="Node3D" parent="."]
-transform = Transform3D(-0.866, 0, -0.5, 0, 1, 0, 0.5, 0, -0.866, 10.5, 0, 13)
+transform = Transform3D(-0.866, 0, -0.5, 0, 1, 0, 0.5, 0, -0.866, 40.5, 0, 18)
 script = ExtResource("2_entity")
 DisplayName = "Wren Halloway"
 TemplateId = "npc.mercenary"
@@ -876,7 +877,7 @@ CompanionId = "companion.wren"
 
 
 [node name="MapPin" type="Node3D" parent="."]
-position = Vector3(-17, 0, 15)
+position = Vector3(13, 0, 20)
 script = ExtResource("maploc_39_5a")
 LocationId = "location.crossway.post"
 
@@ -911,7 +912,7 @@ LocationId = "location.crossway.mercenary"
 ; Tharos faces the wardens' compound and its queues: law has a place on the crossing, among the
 ; benches, gate papers and people it is meant to order.
 [node name="ShrineTharos" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, 6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 48, 0, 11)
 script = ExtResource("2_entity")
 
 [node name="Body" parent="Nav/ShrineTharos" instance=ExtResource("shrine_body_41_5b")]
@@ -937,10 +938,10 @@ LocationId = "location.shrine.tharos"
 ; ⚠️ Sited west of the well so the compound is still crossed on the way to the gate. The guild does
 ; not get its own approach; it gets the one the toll already built.
 [node name="WardensWatch" parent="Nav" instance=ExtResource("42b_bld_wardens_watch")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -19.5, 0, 6.5)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 10.5, 0, 11.5)
 
 [node name="DawnwardenCaptain" type="Node3D" parent="."]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -13.5, 0, 5.0)
+transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 16.5, 0, 10)
 script = ExtResource("2_entity")
 DisplayName = "Captain Aldric Fenn"
 TemplateId = "npc.dawnwarden_captain"
@@ -974,7 +975,7 @@ ScheduleId = "schedule.dawnwarden_captain"
 [node name="Model" parent="DawnwardenCaptain" instance=ExtResource("30_guild_rep")]
 
 [node name="DawnwardenArmourer" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -15.5, 0, 2.5)
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 14.5, 0, 7.5)
 script = ExtResource("2_entity")
 DisplayName = "Maera Colt"
 TemplateId = "npc.dawnwarden_armourer"
@@ -1004,7 +1005,7 @@ DialogueId = "dialogue.dawnwarden_armourer"
 [node name="Model" parent="DawnwardenArmourer" instance=ExtResource("32_townswoman")]
 
 [node name="DawnwardenSerjeant" type="Node3D" parent="."]
-transform = Transform3D(-0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, -0.9397, -11.5, 0, 3.5)
+transform = Transform3D(-0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, -0.9397, 18.5, 0, 8.5)
 script = ExtResource("2_entity")
 DisplayName = "Serjeant Rook Danhal"
 TemplateId = "npc.dawnwarden_serjeant"

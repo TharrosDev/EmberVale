@@ -64,6 +64,7 @@ agent_max_climb = 0.3
 agent_max_slope = 40.0
 
 [node name="WestDownsCell" type="Node3D"]
+metadata/content_offset = Vector2(-25, -15)
 
 [node name="Nav" type="NavigationRegion3D" parent="."]
 navigation_mesh = SubResource("NavMesh_west_downs")
@@ -72,7 +73,7 @@ navigation_mesh = SubResource("NavMesh_west_downs")
 script = ExtResource("1_navbaker")
 
 [node name="FoldWallN" type="Node3D" parent="Nav"]
-transform = Transform3D(0.739875, 0.0653668, -0.103983, -0.0647307, 0.747146, 0.0090973, 0.10438, 0, 0.742701, 8, 0, 16)
+transform = Transform3D(0.739875, 0.0653668, -0.103983, -0.0647307, 0.747146, 0.0090973, 0.10438, 0, 0.742701, -17, 0, 1)
 
 [node name="Model" parent="Nav/FoldWallN" instance=ExtResource("2_ruinwall")]
 
@@ -83,7 +84,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
 shape = SubResource("Shape_ruin")
 
 [node name="FoldWallE" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.0727691, -0.0731699, -0.692352, -0.00764834, 0.696165, -0.0727691, 0.696165, 0, -0.0731699, 12.5, 0, 19.5)
+transform = Transform3D(-0.0727691, -0.0731699, -0.692352, -0.00764834, 0.696165, -0.0727691, 0.696165, 0, -0.0731699, -12.5, 0, 4.5)
 
 [node name="Model" parent="Nav/FoldWallE" instance=ExtResource("2_ruinwall")]
 
@@ -94,7 +95,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
 shape = SubResource("Shape_ruin")
 
 [node name="BoundaryStone" type="Node3D" parent="Nav"]
-transform = Transform3D(0.66183, 0.202456, -0.57532, -0.152795, 0.876933, 0.132823, 0.590453, 0, 0.679239, 5, 0, 13)
+transform = Transform3D(0.66183, 0.202456, -0.57532, -0.152795, 0.876933, 0.132823, 0.590453, 0, 0.679239, -20, 0, -2)
 
 [node name="Model" parent="Nav/BoundaryStone" instance=ExtResource("3_waystone")]
 
@@ -105,7 +106,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
 shape = SubResource("Shape_waystone")
 
 [node name="FoldStoneA" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.751754, 0, 0.273616, 0, 0.8, -0, -0.273616, 0, -0.751754, 10, 0, 21.5)
+transform = Transform3D(-0.751754, 0, 0.273616, 0, 0.8, -0, -0.273616, 0, -0.751754, -15, 0, 6.5)
 
 [node name="Model" parent="Nav/FoldStoneA" instance=ExtResource("4_boulder")]
 
@@ -116,7 +117,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 shape = SubResource("Shape_boulder")
 
 [node name="FoldStoneB" type="Node3D" parent="Nav"]
-transform = Transform3D(0.498469, 0, -0.23244, -0, 0.55, 0, 0.23244, 0, 0.498469, 5.5, 0, 17.5)
+transform = Transform3D(0.498469, 0, -0.23244, -0, 0.55, 0, 0.23244, 0, 0.498469, -19.5, 0, 2.5)
 
 [node name="Model" parent="Nav/FoldStoneB" instance=ExtResource("4_boulder")]
 

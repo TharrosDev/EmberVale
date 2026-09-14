@@ -44,16 +44,22 @@ L = []
 
 
 def add(cell_file, tail, category, anchor, name, shop="", service="", dialogue="",
-        travel="", reveal=False, desc="", name_key="", prop=""):
+        travel="", reveal=False, desc="", name_key="", prop="", tier=None):
     L.append(dict(cell_file=cell_file, tail=tail, category=category, anchor=anchor, name=name,
                   shop=shop, service=service, dialogue=dialogue, travel=travel, reveal=reveal,
-                  desc=desc, name_key=name_key, prop=prop))
+                  desc=desc, name_key=name_key, prop=prop, tier=tier))
+
+
+TIER = ["Primary", "Secondary", "Detail"]
 
 
 # ── Ember Crown ──────────────────────────────────────────────────────────────────────────────
-# The capital. Every settlement reveals with its cell; ⚠️ a region loads WHOLE (invariant 1), so in
-# practice that means "known on entering the region" — which is the intent for the towns of a
-# homeland, and is why nothing below that a player must FIND uses reveal=True.
+# ⚠️ DISCOVERY (2026-09 world rebuild). reveal=True now means "known on entering the region", and it is
+# kept for what every inhabitant of a homeland knows: the capital (both of its districts) and the
+# Crossway, its one road out. Every other settlement, the mine, the arena and the wilds are found by
+# SEEING them (a settlement reveals across ~190 m of open country with a line of sight) or by being
+# sent there by a quest. The realm is eight times the area it was; pre-revealing it made the map a
+# list.
 add("ember_crown/town_hub", "ember_crown.town", "Capital", ".", "Ember Crown", reveal=True,
     desc="The seat of the realm. Its square holds the smith, the apothecary and the inn; the "
          "guild board stands at the south road.")
@@ -90,8 +96,8 @@ add("ember_crown/embermarket", "embermarket.market", "Town", ".", "", reveal=Tru
     name_key="travel.ember_crown.embermarket.name",
     desc="Rows of stalls under awnings, a plaza at the north end, and the realm's densest run of "
          "trades — twelve merchants between the aisles and the forecourt.")
-add("ember_crown/embermarket", "embermarket.waystone", "Waystone", "MarketWaystone", "Embermarket Waystone",
-    travel="travel.ember_crown.embermarket")
+# ⚠️ No Embermarket waystone (2026-09 world rebuild): the market is a district of the capital, 138 m from
+# the Crown Square's stone. The old stone still stands in the market; it is no longer a travel node.
 add("ember_crown/embermarket", "embermarket.provisions", "Provisioner", "MerchantCorvin", "Corvin's Provisions",
     shop="shop.embermarket.provisions", dialogue="dialogue.corvin")
 add("ember_crown/embermarket", "embermarket.fishmonger", "Provisioner", "MerchantHana", "Hana's Slab",
@@ -148,7 +154,7 @@ add("ember_crown/crossway_post", "crossway.mercenary", "Contracts", "Mercenary",
 add("ember_crown/crossway_post", "shrine.tharos", "Landmark", "Nav/ShrineTharos", "Shrine of Tharos")
 
 # The mine.
-add("ember_crown/emberdeep_mine", "emberdeep.mine", "Mine", ".", "", reveal=True,
+add("ember_crown/emberdeep_mine", "emberdeep.mine", "Mine", ".", "",
     name_key="travel.ember_crown.emberdeep_mine.name",
     desc="Ore out of the hill and food in at any price. The factor sells the realm's cheapest metal; "
          "the quartermaster pays its best coin for a full pack of provisions.")
@@ -160,7 +166,7 @@ add("ember_crown/emberdeep_mine", "emberdeep.quartermaster", "Provisioner", "Mar
     shop="shop.emberdeep.quartermaster", dialogue="dialogue.marta")
 
 # The lake landing.
-add("ember_crown/tarn_landing", "tarn.landing", "Village", ".", "", reveal=True,
+add("ember_crown/tarn_landing", "tarn.landing", "Village", ".", "",
     name_key="travel.ember_crown.tarn_landing.name",
     desc="A jetty, a smokehouse and a chandlery on the tarn's edge.")
 add("ember_crown/tarn_landing", "tarn.waystone", "Waystone", "LandingWaystone", "Landing Waystone",
@@ -172,7 +178,7 @@ add("ember_crown/tarn_landing", "tarn.chandler", "Outfitter", "Odger", "Odger's 
 add("ember_crown/tarn_landing", "shrine.elyndra", "Landmark", "Nav/ShrineElyndra", "Shrine of Elyndra")
 
 # The hollow.
-add("ember_crown/hollowreach", "hollowreach.reach", "Village", ".", "", reveal=True,
+add("ember_crown/hollowreach", "hollowreach.reach", "Village", ".", "",
     name_key="travel.ember_crown.hollowreach.name",
     desc="Boat-builders and salvagers in the low ground, and a bones table that will take your coin "
          "on a throw.")
@@ -186,7 +192,7 @@ add("ember_crown/hollowreach", "hollowreach.bones", "Arena", "Nav/BonesTable", "
     service="service.hollowreach.bones")
 
 # The homestead, the arena and the wilds.
-add("ember_crown/ashfall_homestead", "ashfall.homestead", "Camp", ".", "Ashfall Homestead", reveal=True,
+add("ember_crown/ashfall_homestead", "ashfall.homestead", "Camp", ".", "Ashfall Homestead",
     desc="A farmstead on the ash flats east of the city, with a bed for anyone caught out after dark.")
 add("ember_crown/ashfall_homestead", "ashfall.bed", "Inn", "AshfallBed", "The Ashfall Bed",
     service="service.ashfall.bed")
@@ -196,13 +202,27 @@ add("ember_crown/ashfall_homestead", "ashfall.bed", "Inn", "AshfallBed", "The As
 add("ember_crown/ashfall_homestead", "ashfall.cottage", "Home", "CottageDeed", "",
     name_key="property.cottage.name", prop="property.ember_crown.cottage")
 add("ember_crown/ashfall_homestead", "shrine.veyra", "Landmark", "Nav/ShrineVeyra", "Shrine of Veyra")
-add("ember_crown/arena", "ember_crown.arena", "Arena", ".", "The Ember Arena", reveal=True,
-    desc="A ring of tiered stone past the north gate, well outside the walls.")
+# The Iron King's ring is a boss territory, not a service counter: Primary, so it reads at realm zoom
+# once found, and found by being seen, not handed over on arrival.
+add("ember_crown/arena", "ember_crown.arena", "Arena", ".", "The Ember Arena", tier="Primary",
+    desc="A ring of tiered stone at the far end of the realm, under the Emberspire.")
 add("ember_crown/arena", "shrine.drakar", "Landmark", "Nav/ShrineDrakar", "Shrine of Drakar")
-add("ember_crown/wilds_north", "wilds.north", "Wilds", ".", "The Northern Wilds", reveal=True,
-    desc="Open country north of the city. Goblins range here.")
-add("ember_crown/wilds_west", "wilds.west", "Wilds", ".", "The Western Wilds", reveal=True,
-    desc="Broken ground west of the tarn.")
+add("ember_crown/wilds_north", "wilds.north", "Wilds", ".", "The Northern Wilds",
+    desc="Forested upland west of the Kingsway. Goblins range here.")
+add("ember_crown/wilds_west", "wilds.west", "Wilds", ".", "The Western Wilds",
+    desc="The corrie in the western ridge above the Tarn.")
+
+# ── The realm's edges (2026-09 world rebuild) ───────────────────────────────────────────────────
+# Where the Ember Crown's roads leave for realms Phase 44 has not built. A road that ends must pay for
+# the walk (WORLD_AUTHORING §2 path semantics); these are the two that end at a border, and they are
+# landmarks worth finding, not dead ends to hide.
+add("ember_crown/south_gate", "ember_crown.southmarch_gate", "Landmark", "Nav/Dx_SouthmarchTowerW",
+    "The Southmarch Gate", desc="The broken border gate at the end of the old caravan road south.")
+add("ember_crown/citadel", "ember_crown.iron_citadel", "Landmark", "Nav/Dx_Fortress",
+    "The Iron Citadel", tier="Primary",
+    desc="The Iron King's fortress on the spur above the capital, seen from every road into the Crown.")
+add("ember_crown/ashen_breach", "ember_crown.ashen_breach", "Landmark", "Nav/Dx_BreachPillar",
+    "The Ashen Breach", desc="A burnt cut through the eastern hills where the old road to the Ashen Wilds went.")
 
 # ── The five guild hubs (Phase 42B) ──────────────────────────────────────────────────────────
 # Each is the `HubLocationId` of a FactionResource with ranks, and `ContentValidator.ValidateGuildHubs`
@@ -232,30 +252,31 @@ add("frostfang_reach/clan_hold", "frostfang.clan_hold", "Town", ".", "The Frostf
     desc="Longhouses banked against the wind, and the clan that keeps them.")
 add("frostfang_reach/clan_hold", "frostfang.waystone", "Waystone", "Waystone", "Clan Hold Waystone",
     travel="travel.frostfang_reach.clan_hold")
-add("frostfang_reach/glacier", "frostfang.glacier", "Wilds", ".", "The Glacier", reveal=True,
-    desc="Blue ice and meltwater, north of the hold.")
+add("frostfang_reach/glacier", "frostfang.glacier", "Wilds", ".", "The Glacier",
+    desc="Blue ice and meltwater in the pass north of the hold.")
+add("frostfang_reach/glacier", "frostfang.glacier_waystone", "Waystone", "GlacierWaystone", "Glacier Pass Waystone",
+    travel="travel.frostfang_reach.glacier")
+add("frostfang_reach/stormfall", "frostfang.stormcrown", "Landmark", "Nav/Dx_StormcrownStoneA", "Stormcrown",
+    desc="A storm-blasted spire in the north-east high passes. The clans do not go there.")
 add("frostfang_reach/dragon_roost", "frostfang.dragon_roost", "Dungeon", ".", "The Dragon Roost")
 add("frostfang_reach/ash_roost", "frostfang.ash_roost", "Dungeon", ".", "The Ash Roost")
 add("frostfang_reach/ancient_aerie", "frostfang.ancient_aerie", "Dungeon", ".", "The Ancient Aerie")
 
 
-CELL_ID = {
-    "ember_crown/town_hub": "ember_crown.town_hub",
-    "ember_crown/embermarket": "ember_crown.embermarket",
-    "ember_crown/crossway_post": "ember_crown.crossway_post",
-    "ember_crown/emberdeep_mine": "ember_crown.emberdeep_mine",
-    "ember_crown/tarn_landing": "ember_crown.tarn_landing",
-    "ember_crown/hollowreach": "ember_crown.hollowreach",
-    "ember_crown/ashfall_homestead": "ember_crown.ashfall_homestead",
-    "ember_crown/arena": "ember_crown.arena",
-    "ember_crown/wilds_north": "ember_crown.wilds_north",
-    "ember_crown/wilds_west": "ember_crown.wilds_west",
-    "frostfang_reach/clan_hold": "frostfang_reach.clan_hold",
-    "frostfang_reach/glacier": "frostfang_reach.glacier",
-    "frostfang_reach/dragon_roost": "frostfang_reach.dragon_roost",
-    "frostfang_reach/ash_roost": "frostfang_reach.ash_roost",
-    "frostfang_reach/ancient_aerie": "frostfang_reach.ancient_aerie",
-}
+def _cell_ids():
+    """scene stem -> cell id, read from the region specs (2026-09 world rebuild: the hand list of
+    fifteen cells here went stale the day the realm grew to fifty-two)."""
+    sys.path.insert(0, os.path.join(ROOT, "tools"))
+    from region_spec_ember import cells as ember
+    from region_spec_frostfang import cells as frost
+    out = {}
+    for cell in list(ember()) + list(frost()):
+        stem = cell.scene.replace("res://scenes/regions/", "").replace(".tscn", "")
+        out[stem] = cell.cell_id
+    return out
+
+
+CELL_ID = _cell_ids()
 
 TRES_DIR = os.path.join(ROOT, "data", "map_locations")
 CSV = os.path.join(ROOT, "data", "locale", "strings.csv")
@@ -294,8 +315,8 @@ def tres_body(item):
         'NameKey = "{name_key}"\n'
         'DescriptionKey = "{desc_key}"\n'
         "Category = {cat}\n"
-        "TierFromCategory = true\n"
-        "Tier = 2\n"
+        "TierFromCategory = {tier_from_category}\n"
+        "Tier = {tier}\n"
         'CellId = "{cell}"\n'
         'ShopId = "{shop}"\n'
         'ServiceId = "{service}"\n'
@@ -309,6 +330,8 @@ def tres_body(item):
         cat=CATEGORY.index(item["category"]), cell=CELL_ID[item["cell_file"]],
         shop=item["shop"], service=item["service"], dialogue=item["dialogue"],
         prop=item["prop"], travel=item["travel"],
+        tier_from_category="false" if item["tier"] else "true",
+        tier=TIER.index(item["tier"]) if item["tier"] else 2,
         reveal="true" if item["reveal"] else "false")
 
 

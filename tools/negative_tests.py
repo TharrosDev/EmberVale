@@ -77,6 +77,18 @@ CASES = [
      [("data/shops/EmberCrownGoods.tres", "Cost = 1000", "Cost = 0")],
      "a free stake is not a sink"),
 
+    # 2026-09 world rebuild: routines and yards are cell-local, so a world coordinate left in one of
+    # them is a place a cell's width away. Both arms must still fire.
+    ("world.schedule_leaves_its_cell", "ValidateSchedulesStayInTheirCell",
+     [("data/schedules/Elder.tres",
+       "Destination = Vector3(12, 0, 3.5)", "Destination = Vector3(412, 0, 3.5)")],
+     "outside the cell's"),
+
+    ("world.property_placement_unknown_cell", "ValidatePlacementArea",
+     [("data/properties/EmberCrownCottage.tres",
+       'PlacementCellId = "ember_crown.ashfall_homestead"', 'PlacementCellId = "ember_crown.nowhere"')],
+     "PlacementCenter is cell-local"),
+
     ("shop.unknown_cell", "ValidateShopCell",
      [("data/shops/EmberdeepQuartermaster.tres",
        'CellId = "ember_crown.emberdeep_mine"', 'CellId = "ember_crown.nowhere"')],
@@ -197,43 +209,43 @@ CASES = [
     # briefly wrong, and it restores from its own byte snapshot either way.
     #
     # A road nobody can climb is emergent between the landform file and the route file and invisible
-    # in both, which is the entire reason ValidateRouteGrades exists: this raises the rise north out
-    # of the town square from three metres to sixty, under the Kingsway.
+    # in both, which is the entire reason ValidateRouteGrades exists: this lifts the Crown Square's own
+    # levelled core sixty metres, under every street that crosses it.
     ("world.route_grade_unwalkable", "ValidateRegions",
      [("data/regions/EmberCrown.tres",
-       """[sub_resource type="Resource" id="Land_town_hub_4"]
+       """[sub_resource type="Resource" id="Land_town_hub_0"]
 script = ExtResource("8_landform")
 Shape = 0
-Center = Vector2(-6, -46)
-Extent = Vector2(32, 17)
-Height = 3.0
-Falloff = 0.9""",
-       """[sub_resource type="Resource" id="Land_town_hub_4"]
+Center = Vector2(21.0, 1.5)
+Extent = Vector2(40, 36)
+Height = 0.0
+Falloff = 0.55""",
+       """[sub_resource type="Resource" id="Land_town_hub_0"]
 script = ExtResource("8_landform")
 Shape = 0
-Center = Vector2(-6, -46)
-Extent = Vector2(32, 17)
+Center = Vector2(21.0, 1.5)
+Extent = Vector2(40, 36)
 Height = 60.0
-Falloff = 0.9""")],
+Falloff = 0.55""")],
      "a walking player can hold"),
 
     # A landform whose falloff is outside (0, 1] produces a mask that is either a step or nothing,
     # and neither reads as a defect from the .tres.
     ("world.landform_falloff_invalid", "ValidateRegions",
      [("data/regions/EmberCrown.tres",
-       """[sub_resource type="Resource" id="Land_town_hub_4"]
+       """[sub_resource type="Resource" id="Land_town_hub_0"]
 script = ExtResource("8_landform")
 Shape = 0
-Center = Vector2(-6, -46)
-Extent = Vector2(32, 17)
-Height = 3.0
-Falloff = 0.9""",
-       """[sub_resource type="Resource" id="Land_town_hub_4"]
+Center = Vector2(21.0, 1.5)
+Extent = Vector2(40, 36)
+Height = 0.0
+Falloff = 0.55""",
+       """[sub_resource type="Resource" id="Land_town_hub_0"]
 script = ExtResource("8_landform")
 Shape = 0
-Center = Vector2(-6, -46)
-Extent = Vector2(32, 17)
-Height = 3.0
+Center = Vector2(21.0, 1.5)
+Extent = Vector2(40, 36)
+Height = 0.0
 Falloff = 1.8""")],
      "invalid authored landform"),
 

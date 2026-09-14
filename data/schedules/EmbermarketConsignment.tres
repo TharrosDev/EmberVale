@@ -24,19 +24,19 @@
 script = ExtResource("2_entry")
 StartHour = 9
 Activity = "Opening the ledger"
-Destination = Vector3(18.5, 0, -0.1)
+Destination = Vector3(-26.5, 0, -20.1)
 
 [sub_resource type="Resource" id="e_trade"]
 script = ExtResource("2_entry")
 StartHour = 10
 Activity = "Taking listings"
-Destination = Vector3(18.5, 0, -0.1)
+Destination = Vector3(-26.5, 0, -20.1)
 
 [sub_resource type="Resource" id="e_close"]
 script = ExtResource("2_entry")
 StartHour = 18
 Activity = "Locking the ledger away"
-Destination = Vector3(18.5, 0, -3.2)
+Destination = Vector3(-26.5, 0, -23.2)
 
 [resource]
 script = ExtResource("1_sched")

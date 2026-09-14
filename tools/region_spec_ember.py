@@ -3,14 +3,30 @@
 
 from __future__ import annotations
 
-from gen_regions import (Cell, Mound, Ridge, Route, Seam, Water, Yard, check_envelopes,
-                         check_seams, check_tiling, emit, local)
+from gen_regions import (Cell, Mound, Ridge, Road, Route, Water, Yard, apply_origins,
+                         check_envelopes, check_tiling, emit, place_world, realize_roads)
 
 # The lattice. Row bands run the full width of the region and are split into columns, which is what
 # makes a gap arithmetically impossible: a hole in the ground is a hole the player falls through and
 # it is not visible from any file.
-EXTENT_X = (-190.0, 140.0)
-ROWS = [(-310.0, -220.0), (-220.0, -130.0), (-130.0, -60.0), (-60.0, 40.0), (40.0, 130.0)]
+EXTENT_X = (-520.0, 520.0)
+_ROW_BREAKS = [-720.0, -610.0, -500.0, -350.0, -250.0, -95.0, 20.0, 160.0, 280.0, 440.0]
+ROWS = list(zip(_ROW_BREAKS, _ROW_BREAKS[1:]))
+# Interior column breaks per row. ⚠️ THEY ARE IRREGULAR ON PURPOSE and chosen AFTER the places:
+# every settlement, dungeon and landmark was put where the country wants it, and the breaks were then
+# moved until none of them sat near a cell centre or across a cell edge. A cell is a streaming
+# partition; tools/check_world_composition.py fails the region if the places start lining up with it.
+COLUMNS = {
+    0: [-290.0, -40.0, 190.0, 370.0],
+    1: [-290.0, -40.0, 120.0, 270.0, 420.0],
+    2: [-420.0, -170.0, 40.0, 280.0],
+    3: [-330.0, -150.0, 60.0, 280.0],
+    4: [-330.0, -150.0, 20.0, 200.0, 350.0],
+    5: [-400.0, -220.0, -90.0, 110.0, 300.0],
+    6: [-420.0, -230.0, -110.0, 80.0, 240.0, 390.0],
+    7: [-400.0, -240.0, -60.0, 140.0, 380.0],
+    8: [-400.0, -200.0, 0.0, 200.0, 380.0],
+}
 
 HEADER = '''[gd_resource type="Resource" script_class="RegionResource" load_steps=12 format=3 uid="uid://crgnembrcrown0"]
 
@@ -34,48 +50,34 @@ HEADER = '''[gd_resource type="Resource" script_class="RegionResource" load_step
 ; invariant 11) were all somebody doing that arithmetic in their head.
 ;
 ; ====================================================================================================
-; THE EMBER CROWN AFTER THE 2026-08-29 GEOGRAPHY OVERHAUL
+; THE EMBER CROWN AFTER THE 2026-09 WORLD REBUILD
 ; ====================================================================================================
 ;
-; WHAT CHANGED. The realm was ten cells packed edge to edge inside 210 x 250 metres, on flat 0.5 m
-; slabs, under a 4 cm decorative wobble that faded to exactly zero at every boundary. Walking it read
-; as cell -> POI -> cell -> POI: every location began the instant the last one ended, and the terrain
-; drew the lattice on the ground in relief rather than hiding it. It is now 330 x 440 metres of
-; CONTINUOUS ground — one region-wide heightfield with real elevation, real collision and real
-; navigation, no seam fade anywhere — and six of the sixteen cells are transitional country with a
-; road through them and almost nothing else in them, on purpose.
+; WHAT CHANGED. The realm was 330 x 440 m: every settlement sat on its own cell centre ninety metres
+; from the next, the capital was thirteen houses on a green, and the boss arena was a four-minute walk
+; from the inn. It is now 1040 x 1160 m, laid out geography first: the Crown Range walls the north
+; with one pass, and the Crossway holds the pass; the Emberwash comes off the range, runs down its
+; valley past the capital's west side under Kingsbridge and into the Tarn; the fens and Hollowreach
+; spread below the lake; Emberdeep is dug into the eastern hills; the farm belt and the ash flats run
+; south to the border hills. The capital stands where the roads meet, on the spur the Iron Citadel
+; crowns, and the arena is at the far end of the realm under the Emberspire, reached by the short
+; road across the frontier waste or the long one up from Emberdeep.
 ;
-; WHAT DID NOT CHANGE, AND THIS IS DELIBERATE. Every location's interior circulation is the 2026-08-28
-; layout rebuild's, lifted verbatim: the Kingsway's S, the Coilyard and the Crookway, the Crossway's
-; dog-leg, Emberdeep's working loop, the Wilds North fork, Tarn's spit and neck, Hollowreach's spine
-; between two flooded channels, the corrie throat, Ashfall's diagonal drive, the arena's south gate
-; and asymmetric breach. Those were good and they were never the problem. What is new is the ground
-; they stand on and the country between them.
+; CELLS ARE STREAMING PARTITIONS, NOT PLACES. Fifty-two of them in irregular rows and columns, chosen
+; after the places. Settlement content is placed at a world ORIGIN inside its cell (Cell.origin), the
+; realm's landforms and roads are authored as world geometry (geography() and roads() in the spec) and
+; split across whichever cells they cross. Interior circulation — the Crookway, the Coilyard, the
+; Kingsway's S, Emberdeep's working loop, Tarn's spit, Hollowreach's channels, the corrie, the arena's
+; gate and breach — is unchanged.
 ;
-; ⚠️ THE TOWN HUB DOES NOT MOVE, AND EVERY OTHER CELL MOVED AROUND IT. Its centre is still (0, 0, -10)
-; because SpawnPoint, SafeZoneCenter and five raw-world NPC schedules all read off it — keeping it
-; still turned a fourteen-file migration into a five-file one. It grew from 60 x 60 to 100 x 100
-; instead, which is the same trick applied to the whole realm: a location keeps its own coordinates
-; and gains outskirts.
+; DISTANCES, content origin to content origin (was -> is):
+;   Crown Square -> Embermarket      95 -> 138     Crown Square -> Tarn's Landing   90 -> 348
+;   Crown Square -> Emberdeep         95 -> 392     Crown Square -> Crossway         85 -> 547
+;   Embermarket -> Hollowreach        95 -> 396     Embermarket -> Ashfall           95 -> 371
+;   Crown Square -> arena            285 -> 614 (and further by either road)
 ;
-;   ROW z -310..-220   frontier_waste (x -190..10)          arena (x 10..140)
-;   ROW z -220..-130   north_moor (-190..-50)   wilds_north (-50..50)   ashen_reach (50..140)
-;   ROW z -130..-60    west_downs (-190..-50)   crossway_post (-50..50) mine_road (50..140)
-;   ROW z  -60..40     wilds_west (-190..-130)  tarn_landing (-130..-50)
-;                      TOWN_HUB (-50..50)       emberdeep_mine (50..140)
-;   ROW z   40..130    fen_edge (-190..-140)    hollowreach (-140..-50)
-;                      embermarket (-50..50)    ashfall_homestead (50..140)
-;
-; DISTANCES THE PLAYER ACTUALLY WALKS, centre to centre (was -> is):
-;   town -> market            56 -> 95      town -> mine        56 -> 95
-;   town -> Tarn's Landing    56 -> 90      town -> Crossway     56 -> 85
-;   market -> Ashfall         52 -> 95      market -> Hollowreach 52 -> 95
-;   town square -> arena     150 -> 285, through the gate, the wilds AND an empty frontier
-;
-; ⚠️ SIX CELLS EXIST TO CONTAIN NOTHING. west_downs, mine_road, north_moor, ashen_reach,
-; frontier_waste and fen_edge carry a road, weather, vegetation and landform and no gameplay beat at
-; all. Two of them are dead ends. That is the feature: a realm where every thirty metres has a
-; purpose is a realm that advertises on every step that it was designed. Do not fill them in.
+; ⚠️ MOST OF THE REALM CONTAINS NOTHING. Thirty-six of the fifty-two cells carry ground, weather,
+; ecology and at most a road. That is the feature. Do not fill them in.
 '''
 
 ENVIRONMENT = '''; ⚠️ Relief IS METRES NOW. It was 0.055 — five and a half centimetres of decorative wobble over a
@@ -128,24 +130,38 @@ BUDGET = '''; ⚠️ THE TERRAIN BUDGET WENT UP AND THE MESH BUDGET WENT DOWN, A
 ; DRAWS are down by three figures: 8,500 instances across roughly forty MultiMeshInstance3Ds is forty
 ; draw calls, and the 1,277 authored Node3Ds they replaced were 1,277. ⚠️ READ THE INSTANCE BUDGET AS
 ; A MEMORY LIMIT, NOT A DRAW LIMIT — raising it is nearly free and raising MaxDrawCalls is not.
+; ⚠️ 2400 -> 7000 PER CELL (2026-09 world rebuild): count is a DENSITY scaled by footprint, and cells
+; went from ~1 ha to up to ~4 ha. The density per hectare did not change; the cells did.
 [sub_resource type="Resource" id="Budget_ember_crown"]
 script = ExtResource("5_budget")
 MaxAuthoredNodesPerCell = 700
-MaxResidentAuthoredNodes = 4200
-MaxResidentRuntimeNodes = 9000
-MaxScatterInstancesPerCell = 2400
-MaxResidentScatterInstances = 30000
+MaxResidentAuthoredNodes = 12000
+MaxResidentRuntimeNodes = 24000
+MaxScatterInstancesPerCell = 7000
+MaxResidentScatterInstances = 240000
 MaxTerrainVerticesPerCell = 7000
-MaxResidentTerrainVertices = 60000
+MaxResidentTerrainVertices = 380000
 MaxDrawCalls = 1800
-MaxNodeCount = 14000
+MaxNodeCount = 40000
 MaxStaticMemoryMb = 2048.0
 MaxFrameMilliseconds = 16.67
 ConsecutiveSamplesBeforeWarning = 5
-BiomeCullDistance = 340.0
+BiomeCullDistance = 420.0
 VisibilityUpdateInterval = 0.25
 MaxConcurrentLoadRequests = 2
 MaxCellInstantiationsPerFrame = 1
+
+; ⚠️ STREAMING RADII FOR A KILOMETRE REALM (2026-09 world rebuild). The defaults (85/170/300/460)
+; were never authored because the old realm fit inside the backdrop radius from anywhere in it. This
+; one does not: the backdrop mesh leaves a hole over the whole lattice, so a cell that unloads is a
+; hole in the ground. BackdropDistance therefore covers the realm's diagonal and every cell stays
+; resident at least as terrain + HLOD + landmarks, which is also what lets the citadel and the
+; Emberspire be seen from the far side of the realm. Far is widened so settlements read as places,
+; not as terrain, from a village away.
+NearDistance = 95.0
+MidDistance = 190.0
+FarDistance = 420.0
+BackdropDistance = 1700.0
 
 '''
 
@@ -482,13 +498,13 @@ script = ExtResource("1_region")
 Id = "region.ember_crown"
 DisplayName = "The Ember Crown"
 Realm = 0
-SpawnPoint = @CELL(town_hub, 0, 1.2, 15)@
+SpawnPoint = @ORIGIN(town_hub, 0, 1.2, 15)@
 
 ; ⚠️ THE PORTAL MOVED WITH THE CROSSWAY, NOT WITH THE PLAYER. The gate cell went from (0, 0, -66) to
 ; (0, 0, -95) when the lattice grew, so the portal that stood at world z = -72 — cell-local z = -6,
 ; the gap between the two palisades — is world z = -101 now. Read the local offset, never the old
 ; world number: that is the 37C placement bug and it is completely silent.
-PortalPoint = @CELL(crossway_post, 0, 0, -6)@
+PortalPoint = @WORLD(-150, 0, -652)@
 Cells = Array[ExtResource("2_cell")]([@CELLS@])
 EnvironmentProfile = SubResource("Environment_ember_crown")
 GenerationProfile = ExtResource("13_generation")
@@ -497,8 +513,8 @@ PerformanceBudget = SubResource("Budget_ember_crown")
 ; The lattice is x -190..140, z -310..130. Bounds are that plus a margin, and the Y range is real
 ; now: the Emberdeep pit floor is 6 m down and the frontier ridges are 25 m up.
 Bounds = @BOUNDS(20, -80, 200)@
-SafeZoneCenter = @CELL(town_hub, 0, 0, 0)@
-SafeZoneRadius = 34.0
+SafeZoneCenter = @WORLD(20, 0, -40)@
+SafeZoneRadius = 120.0
 WeavePotency = 1.0
 DefaultWeatherId = "weather.cloudy"
 DayPhaseBias = 2
@@ -514,124 +530,354 @@ TollPassFlagId = "flag.crossway.pass"
 '''
 
 
+EMBER = "res://scenes/regions/ember_crown/"
+
+
+def empty(key, center, size, seed, scatter, biome=None, note="", resolution=None, tint=None, tint_strength=0.0):
+    """A transitional cell: ground, weather, ecology and whatever roads cross it — no gameplay beat."""
+    if resolution is None:
+        # ~2.8 m a vertex across open country, capped by the 7000-vertex terrain budget (res 82).
+        resolution = min(80, max(36, int(max(size) / 2.8)))
+    return Cell(key=key, cell_id=f"ember_crown.{key}", scene=f"{EMBER}{key}.tscn",
+                center=center, size=size, resolution=resolution, seed=seed, scatter=scatter,
+                biome=biome, note=note, tint=tint, tint_strength=tint_strength)
+
+
+def lattice() -> dict[tuple[int, int], tuple[tuple[float, float], tuple[float, float]]]:
+    """(row, column) -> (centre, size) for the whole realm."""
+    out = {}
+    for r, (top, bottom) in enumerate(ROWS):
+        xs = [EXTENT_X[0], *COLUMNS[r], EXTENT_X[1]]
+        for c in range(len(xs) - 1):
+            out[(r, c)] = (((xs[c] + xs[c + 1]) / 2, (top + bottom) / 2), (xs[c + 1] - xs[c], bottom - top))
+    return out
+
+
 def cells() -> list[Cell]:
+    L = lattice()
+
+    def at(r, c):
+        return {"center": L[(r, c)][0], "size": L[(r, c)][1]}
+
     return [
-        # ------------------------------------------------------------------ row z 40..130 (the south)
+        # ================================================================== row 0 — the Crown Range
+        empty("range_west", **at(0, 0), seed=301, scatter="Scatter_upland", biome="BurnedHeath", note="""
+            THE WESTERN CROWN RANGE. The realm's northern wall, fifty-five metres of ridge with no road
+            over it. It is what every northward view in the west of the realm ends on."""),
+        empty("crown_pass", **at(0, 1), seed=302, scatter="Scatter_waste", biome="BurnedHeath", note="""
+            THE CROWN PASS. The one saddle in the range. The road climbs out of the Crossway's mouth to
+            the portal on the saddle; the ridges stand either side of it. The only way north is here,
+            which is why the Crossway exists."""),
+        empty("range_mid", **at(0, 2), seed=303, scatter="Scatter_upland", biome="BurnedHeath", note="""
+            THE CENTRAL RANGE. Sixty metres of ridge behind the frontier heath. Empty high ground."""),
+        empty("range_east", **at(0, 3), seed=304, scatter="Scatter_waste", biome="BurnedHeath"),
+        empty("emberspire", **at(0, 4), seed=305, scatter="Scatter_waste", biome="BurnedHeath", note="""
+            THE EMBERSPIRE MASSIF. The highest ground in the realm, seventy-five metres, standing over
+            the Iron King's arena. Seen from the capital it is the north-east horizon."""),
+
+        # ================================================================== row 1 — the frontier
+        empty("pass_foot_west", **at(1, 0), seed=311, scatter="Scatter_wilds", biome="Woodland"),
         Cell(
-            key="fen_edge", cell_id="ember_crown.fen_edge",
-            scene="res://scenes/regions/ember_crown/fen_edge.tscn",
-            center=(-165.0, 85.0), size=(50.0, 90.0), resolution=28, seed=116,
-            scatter="Scatter_shore",
-            biome="Wetland",
+            key="crossway_post", cell_id="ember_crown.crossway_post",
+            scene=f"{EMBER}crossway_post.tscn", **at(1, 1), origin=(-135.0, -550.0),
+            resolution=80, seed=103, safe_radius=26.0, scatter="Scatter_upland",
             note="""
-            THE FEN EDGE — sodden dead ground west of the wharf, and one of the six cells that exist
-            to contain nothing. A causeway comes in over the wilds_west seam, crosses the marsh and
-            stops. There is no loot here, no encounter marker, no NPC and no map pin: it is the
-            far side of Hollowreach's water, seen from the far side of Hollowreach's water.
+            THE CROSSWAY POST — the toll gate at the mouth of the Crown Pass, the only road through the
+            range. Five hundred and fifty metres north of the capital up the Kingsway, with the pass
+            saddle and the portal a hundred metres further up the road behind it. The two spurs either
+            side of the palisade are the pass's own shoulders.
             """,
-            landforms=(
-                Mound(at=(0, 0), ext=(30, 42), h=-2.6, fall=0.9),
-                Mound(at=(-15, -30), ext=(19, 17), h=4.5, fall=0.9),
-                Ridge(a=(-24, 36), b=(24, 30), half=9, h=3.0, fall=0.85),
-            ),
-            routes=(Route((-2, -16), (-8, 8), 3.0, 2.5),),
-        ),
-        Cell(
-            key="hollowreach", cell_id="ember_crown.hollowreach",
-            scene="res://scenes/regions/ember_crown/hollowreach.tscn",
-            center=(-95.0, 85.0), size=(90.0, 90.0), resolution=60, seed=107,
-            tint=(0.38, 0.42, 0.38), tint_strength=0.12, scatter="Scatter_shore",
-            biome="Wetland",
-            note="""
-            HOLLOWREACH — the drowned district, and now actually drowned. The channels were two
-            translucent boxes laid on a flat floor; they are CUT into the ground: sheer little
-            retaining faces (Falloff 0.2 across a 7 m half-width is a 3:1 wall), 3.2 m of water in
-            them, and the spine standing 0.9 m proud between the two of them. The open water west is
-            4.5 m deep behind a drop-off steeper than 45 degrees, so a player cannot casually walk
-            out into it — there is no swimming in this game and there is now no need for an
-            invisible wall either, because the LAND says no. The whole district sits 1.2 m below the
-            country around it, so the approach from the market descends into it.
-            """,
-            # 42B: the Ledger House stands on this. Area_hollowreach_street is 8 m of road plus 2 m
-            # of shoulder in an 8 m deep pad — the pad is the street — so the counting house sits on
-            # a bench cut north of it, at the street's own 1.4 rather than at the district's 0.9:
-            # the point of the Syndicate's house is that it is the dry building above the channels.
             yards=(
-                    Yard((-9, 1), (5, 5), 1.5, 0.85, elevation=0.62, name="Area_hollowreach_hollow"),
-                    Yard((16, 12), (10, 4), 2.5, 0.72, elevation=1.16, name="Area_hollowreach_street"),
-                    Yard((-5, 1), (11, 7), 2.5, 0.78, elevation=0.61, name="Area_hollowreach_spine"),
-                    Yard(at=(20.0, 23.0), ext=(5.0, 5.0), feather=2.5, blend=0.8, elevation=1.17),),
-            landforms=(
-                # ⚠️ THE DISTRICT STANDS JUST ABOVE THE WATERLINE AND THE CHANNELS ARE CUT BELOW
-                # IT. It used to sit 1.2 m UNDER it, which meant every water surface had to stop
-                # exactly at its own carved edge or it flooded the streets — and a surface that
-                # stops at its own edge is a rectangle of water lying on the ground, which is
-                # the artefact this whole overhaul exists to remove. At +0.8 the declared bodies
-                # are drawn generously larger than the wet ground and their borders are buried in
-                # the banks, so what the player sees is the terrain's own contour.
-                Mound(at=(0, 0), ext=(48, 46), h=0.8, fall=0.8),
-                Mound(at=(34, -30), ext=(30, 24), h=5.0, fall=0.85),
-                Mound(at=(2, 34), ext=(34, 14), h=2.2, fall=0.9),
-                # The open water west, out past the cell edge and under the fen's eastern margin —
-                # which is how the fen reads as the far shore rather than the next room. A 0.6 m
-                # margin first so there is a wadeable rim, then the 4.5 m basin behind a 53 degree
-                # face nothing walks down.
-                Mound(at=(-46, 0), ext=(38, 50), h=-0.6, fall=0.25, flat=0.9),
-                Mound(at=(-46, 0), ext=(34, 46), h=-4.5, fall=0.10, flat=1.0),
-                # The two flooded streets, cut to the footprint of their declared water bodies. Falloff
-                # 0.2 across a 5 m half-width is a 3:1 retaining face: these are channels carved
-                # into a district, not decals laid on top of one.
-                Ridge(a=(-31, -10), b=(10, -10), half=5.5, h=-3.2, fall=0.2, flat=1.0),
-                Ridge(a=(-31, 13), b=(-2, 13), half=6.5, h=-3.2, fall=0.2, flat=1.0),
+                Yard((6, 9), (9, 5.5), 2.5, 0.82, elevation=0.0, name="Area_crossway_hold"),
+                Yard((-17, 13), (7, 6), 2.0, 0.68, elevation=0.0, name="Area_crossway_compound"),
+                Yard((7.5, 2), (5, 4), 1.5, 0.9, elevation=0.0, name="Area_crossway_gate"),
+                # 42B: the Wardens' Watch apron, south of the compound track (NOW.md invariant 21).
+                Yard(at=(-19.5, 6.5), ext=(6.0, 5.0), feather=2.5, blend=0.8, elevation=0.0),
             ),
             routes=(
-                    Route((26, 12), (6, 12), 8.0, 2.0, name="Path_hollowreach_east"),
-                    Route((6, 12), (6, 2), 8.0, 2.0, name="Path_hollowreach_turn"),
-                    Route((6, 1), (-7, 1), 12.0, 2.0, name="Path_hollowreach_spine"),
-                    Route((33, -14), (27, 12), 4.0, 2.0),),
-            # ⚠️ DRAWN LARGER THAN THE BASINS, ON PURPOSE. The surfaces used to be BoxMeshes hand-
-            # sized to sit INSIDE the carved ellipse so their straight edges would not lie on dry
-            # land, which left a rectangle of water short of its own shore. WorldCellWater takes the
-            # shoreline from the terrain instead, so a body that overhangs the bank renders nothing
-            # there and the coastline is the ground's own contour.
-            waters=(
-                Water(at=(-50, 0), ext=(42, 52), ident="OpenWater",
-                      shallow=(0.20, 0.31, 0.31), deep=(0.04, 0.11, 0.15), opaque=1.6),
-                Water(at=(-10, -10), ext=(26, 11), ident="ChannelNorth"),
-                Water(at=(-12, 13), ext=(24, 12), ident="ChannelSouth"),
+                Route((-6, 26), (-6, 14), 7.0, 2.0, name="Path_crossway_south"),
+                Route((-6, 14), (3, 9), 7.0, 2.0, name="Path_crossway_turn"),
+                Route((3, 9), (7.5, 0), 7.0, 2.0, name="Path_crossway_gate"),
+                Route((7.5, 0), (0, -8), 7.0, 2.0, name="Path_crossway_dogleg"),
+                Route((0, -8), (0, -26), 7.0, 2.0, name="Path_crossway_north"),
+                Route((-10, 14), (-20, 14), 4.0, 1.5, name="Path_crossway_compound"),
+                Route((6, 9), (18, 12), 4.5, 2.0),
+            ),
+            landforms=(
+                Mound(at=(0, 4), ext=(32, 26), h=0.0, fall=0.5, flat=0.9),
+                Ridge(a=(-50, -16), b=(-14, -19), half=10, h=9.0, fall=0.55),
+                Ridge(a=(14, -19), b=(50, -16), half=10, h=9.0, fall=0.55),
             ),
         ),
+        empty("frontier_waste", **at(1, 2), seed=115, scatter="Scatter_waste", biome="BurnedHeath", note="""
+            THE FRONTIER WASTE — burnt heath under the range, crossed by the frontier road from the
+            Crossway to the arena. The dangerous short way east. Nothing on it but the road and the
+            weather."""),
+        empty("ashen_reach", **at(1, 3), seed=114, scatter="Scatter_waste", biome="BurnedHeath",
+              tint=(0.42, 0.36, 0.31), tint_strength=0.18, note="""
+            THE ASHEN REACH — the frontier road's last stretch before the arena, under the massif."""),
         Cell(
-            key="embermarket", cell_id="ember_crown.embermarket",
-            scene="res://scenes/regions/ember_crown/embermarket.tscn",
-            center=(0.0, 85.0), size=(100.0, 90.0), resolution=64, seed=102,
-            safe_radius=32.0, scatter="Scatter_settled",
-            biome="Pasture",
+            key="arena", cell_id="ember_crown.arena", scene=f"{EMBER}arena.tscn", **at(1, 4),
+            origin=(365.0, -565.0), resolution=64, seed=110, tint=(0.36, 0.24, 0.20), tint_strength=0.16,
+            scatter="Scatter_waste", biome="BurnedHeath",
             note="""
-            THE EMBERMARKET — still the town's second district and still connected to it, but the two
-            no longer share a property line. Ninety-five metres of walled fields, a knoll and a
-            bending road now sit between the square and the market gate, so the settlement reads as
-            a place with districts rather than two squares glued together. The market keeps its exact
-            x alignment with the town hub, which is why the Kingsway and the Gate Lane still meet.
-            The Salt Steps became a real 0.45 m terrace instead of a 15 cm slab (0.5 m is
-            StepUp.MaxHeight, so anything taller is a wall), and the ground falls
-            away west toward Hollowreach and rises south into pasture.
+            THE EMBER ARENA — the Iron King's ring, at the far north-east of the realm under the
+            Emberspire. Six hundred metres from the capital as the crow flies and further by either
+            road: the frontier road across the waste from the Crossway, or the long east road up from
+            Emberdeep. The ring stands on its levelled shelf with the massif's crags behind it, and the
+            breach in the north wall is still the way down.
             """,
-            # The salt steps colonnade spreads 16 m and the south wall runs across the
-            # market slope; both came out over half a metre off their own ground.
-            # ⚠️ NO PAD UNDER THE SALT STEPS. Its colonnade straddles the market's own roads, and a
-            # yard there makes the ground range WORSE rather than better: the pad levels everything
-            # the road does not cover while the road holds its own grade, so the two meet in a step
-            # across the footprint. Road beats yard by design (NOW.md invariant 21) and this is what
-            # that rule looks like from the other side - a structure on a road wants moving, not
-            # levelling. Measured: 0.77 m without a pad, 0.77 m with one.
             yards=(
-                    Yard((7, 2), (11, 10), 3.0, 0.90, elevation=None, name="Area_market_yard"),
-                    Yard((16, 14), (5.5, 5), 1.5, 0.88, elevation=0.0, name="Area_market_terrace"),
-                    Yard((3, 16.5), (7, 4.5), 2.0, 0.60, elevation=None, name="Area_market_timber"),
-                    Yard((-11.5, 17), (4.5, 4), 1.5, 0.55, elevation=None, name="Area_market_sump"),
-                    Yard(at=(-2.0, 22.5), ext=(5.0, 5.0), feather=3.0, blend=0.9),
-                   Yard(at=(-2.5, 16.6), ext=(4.5, 5.6), feather=3.0, blend=0.9)),
+                Yard((0, -1), (15, 14), 1.5, 0.95, elevation=0.0, name="Area_arena_ring"),
+                Yard((9, -16), (4, 3), 2.0, 0.55, elevation=0.0, name="Area_arena_breach"),
+            ),
+            routes=(
+                Route((0, 18), (0, 9), 5.0, 1.5, name="Path_arena_gate"),
+                Route((9, -18), (7, -8), 4.0, 2.5, name="Path_arena_breach"),
+                Route((-40, 30), (-16, 27), 5.0, 2.5),
+                Route((-16, 27), (0, 18), 5.0, 2.0),
+            ),
+            landforms=(
+                Mound(at=(0, 0), ext=(32, 30), h=3.0, fall=0.35, flat=1.0),
+                Ridge(a=(30, -30), b=(58, 20), half=15, h=18.0, fall=0.5),
+                Mound(at=(6, -38), ext=(42, 17), h=-6.0, fall=0.6),
+            ),
+        ),
+        empty("range_foot_east", **at(1, 5), seed=316, scatter="Scatter_waste", biome="BurnedHeath"),
+
+        # ================================================================== row 2 — the northern uplands
+        empty("wildwood_west", **at(2, 0), seed=321, scatter="Scatter_wilds", biome="Woodland"),
+        Cell(
+            key="wilds_north", cell_id="ember_crown.wilds_north", scene=f"{EMBER}wilds_north.tscn",
+            **at(2, 1), origin=(-285.0, -390.0), resolution=80, seed=105,
+            scatter="Scatter_wilds", biome="Woodland",
+            note="""
+            THE NORTHERN WILDS — goblin country in the forested upland west of the Kingsway, and the
+            Ash Hunters' Deadfall Lodge in its hollow. A branch trail leaves the Kingsway below the
+            watch ridge; a second comes down from the Crossway, so the wilds are a loop rather than a
+            dead end. The fork, the bowl, the ruin in dead ground and Cairn Rise are unchanged.
+            """,
+            yards=(
+                Yard((0, -5), (7, 7), 3.5, 0.42, elevation=-0.3, name="Area_wilds_north_ruin"),
+                Yard((-17, 8), (6, 7), 4.0, 0.3, elevation=0.61, name="Area_wn_bowl"),
+                Yard((18, -12), (6, 7), 4.5, 0.9, elevation=-5.39, name="Area_wn_deadfall"),
+                Yard(at=(21.5, -15.0), ext=(5.5, 6.5), feather=3.0, blend=0.9, elevation=-5.39),
+            ),
+            routes=(
+                Route((0, 25), (0, 16), 5.0, 2.5, name="Path_wn_stem"),
+                Route((0, 16), (-11, 4), 4.0, 2.5, name="Path_wn_west_a"),
+                Route((-11, 4), (-12, -10), 4.0, 2.5, name="Path_wn_west_b"),
+                Route((-12, -10), (0, -25), 4.0, 2.5, name="Path_wn_west_c"),
+                Route((0, 16), (11, 6), 3.5, 2.0, name="Path_wn_east_a"),
+                Route((11, 6), (13, -6), 3.5, 2.0, name="Path_wn_east_b"),
+                Route((13, -6), (0, -25), 3.5, 2.0, name="Path_wn_east_c"),
+            ),
+            landforms=(
+                Mound(at=(-17, 8), ext=(15, 16), h=-3.5, fall=0.7),
+                Ridge(a=(10, -22), b=(30, -4), half=8, h=5.0, fall=0.5),
+                Mound(at=(0, -5), ext=(17, 17), h=-2.0, fall=0.65),
+                Mound(at=(24, 18), ext=(13, 13), h=7.0, fall=0.7),
+            ),
+        ),
+        empty("emberwash_head", **at(2, 2), seed=323, scatter="Scatter_wilds", biome="Woodland", note="""
+            THE EMBERWASH HEAD — where the river comes down off the range into its valley, beside the
+            Kingsway's climb to the Crossway."""),
+        empty("heath_south", **at(2, 3), seed=324, scatter="Scatter_upland", biome="BurnedHeath"),
+        empty("east_uplands", **at(2, 4), seed=325, scatter="Scatter_upland", biome="BurnedHeath", note="""
+            THE EAST UPLANDS — the long east road climbs through here from Emberdeep to the arena. The
+            safe long way north-east."""),
+
+        # ================================================================== row 3 — the watch ridge
+        empty("western_ridge", **at(3, 0), seed=331, scatter="Scatter_upland"),
+        empty("wildwood_edge", **at(3, 1), seed=332, scatter="Scatter_wilds", biome="Woodland"),
+        Cell(
+            key="north_moor", cell_id="ember_crown.north_moor", scene=f"{EMBER}north_moor.tscn",
+            **at(3, 2), origin=(-20.0, -310.0), resolution=60, seed=113, scatter="Scatter_upland",
+            note="""
+            THE NORTH MOOR — the watch ridge north of the capital. The old Kingsway watchtower stands
+            ruined on its crest: the first landmark on the road north, visible from the city's north
+            gate and from the Crossway, and the place from which the capital's citadel is seen whole.
+            """,
+        ),
+        empty("crown_fields_north", **at(3, 3), seed=334, scatter="Scatter_pasture", biome="Pasture"),
+        empty("ashen_breach", **at(3, 4), seed=335, scatter="Scatter_waste", biome="BurnedHeath",
+              tint=(0.40, 0.34, 0.30), tint_strength=0.16, note="""
+            THE ASHEN BREACH — a scorched cut through the eastern border hills where the old road to the
+            Ashen Wilds went. Reserved for Phase 44 (location.ashen.station lies beyond it); today the
+            track ends at the burnt gap looking out over dead country."""),
+
+        # ================================================================== row 4 — citadel row
+        Cell(
+            key="wilds_west", cell_id="ember_crown.wilds_west", scene=f"{EMBER}wilds_west.tscn",
+            **at(4, 0), origin=(-455.0, -205.0), resolution=64, seed=108,
+            scatter="Scatter_wilds", biome="Woodland",
+            note="""
+            THE WESTERN WILDS — the bandit corrie in the western ridge above the Tarn, reached by a
+            shore trail north from Tarn's Landing that fords the Emberwash. The corrie's four ridges,
+            its throat and its dished camp floor are unchanged.
+            """,
+            yards=(
+                Yard((-14, -1), (7, 8), 3.5, 0.38, elevation=0.0, name="Area_wilds_west_camp"),
+                Yard((10, -1), (9, 6), 4.0, 0.2, elevation=-2.33, name="Area_wilds_west_apron"),
+            ),
+            routes=(
+                Route((25, 0), (2, -1), 3.5, 2.5, name="Path_wilds_west_track"),
+                Route((2, -1), (-8, 0), 5.0, 1.5, name="Path_wilds_west_throat"),
+            ),
+            landforms=(
+                Ridge(a=(-26, -18), b=(-26, 15), half=10, h=14.0, fall=0.35),
+                Ridge(a=(-26, -18), b=(-6, -20), half=10, h=12.0, fall=0.35),
+                Ridge(a=(-26, 15), b=(-8, 16), half=10, h=12.0, fall=0.35),
+                Ridge(a=(-4, -18), b=(-4, -6), half=8, h=12.0, fall=0.4),
+                Ridge(a=(-4, 6), b=(-4, 15), half=8, h=12.0, fall=0.4),
+                Mound(at=(-14, -1), ext=(12, 13), h=-1.5, fall=0.5, flat=0.9),
+            ),
+        ),
+        empty("emberwash_valley", **at(4, 1), seed=342, scatter="Scatter_wilds", biome="Woodland"),
+        empty("kings_approach", **at(4, 2), seed=343, scatter="Scatter_pasture", biome="Pasture", note="""
+            THE KING'S APPROACH — the Kingsway leaves the capital's north gate and climbs toward the
+            watch ridge. Kingsbridge carries the west road over the Emberwash at its south-west corner."""),
+        Cell(
+            key="citadel", cell_id="ember_crown.citadel", scene=f"{EMBER}citadel.tscn",
+            **at(4, 3), origin=(100.0, -150.0), resolution=80, seed=344, scatter="Scatter_settled",
+            note="""
+            THE IRON CITADEL — the seat of the realm. The Iron King's keep on the spur above the capital:
+            the skyline every road in the Ember Crown is composed toward.
+            """,
+        ),
+        Cell(
+            key="mine_road", cell_id="ember_crown.mine_road", scene=f"{EMBER}mine_road.tscn",
+            **at(4, 4), resolution=60, seed=112, scatter="Scatter_upland",
+            note="""
+            THE MINE ROAD — hill country on the east road between the capital and Emberdeep, where the
+            long road to the arena branches north. A crossroads that is only a crossroads.
+            """,
+        ),
+        Cell(
+            key="emberdeep_mine", cell_id="ember_crown.emberdeep_mine", scene=f"{EMBER}emberdeep_mine.tscn",
+            **at(4, 5), origin=(405.0, -160.0), resolution=80, seed=104,
+            tint=(0.58, 0.45, 0.33), tint_strength=0.15, safe_radius=24.0, scatter="Scatter_upland",
+            surplus=("ore", "metal", "fuel"), demand=("food", "fish", "textile"), shocks=("ore", "food"),
+            biome="Excavated",
+            note="""
+            THE EMBERDEEP MINE — cut into the eastern hills four hundred metres from the capital along the
+            east road. The working loop (defile, Weighing Yard, haul road, the Cut, Pit Head, spoil
+            track) is unchanged and is still geography: the pit, the spoil bank and the hill it is dug
+            into. The long east road to the arena leaves from its north side.
+            """,
+            yards=(
+                Yard((-8, 9.5), (9, 9.5), 3.0, 0.92, elevation=0.0, name="Area_mine_yard"),
+                Yard((18, -9), (8, 9), 3.5, 0.88, elevation=0.0, name="Area_mine_pithead"),
+                Yard((-19, 15), (4, 5), 1.5, 0.6, elevation=0.0, name="Area_mine_rest"),
+            ),
+            routes=(
+                Route((-26, -2), (-14, -2), 6.0, 2.0, name="Path_mine_defile"),
+                Route((-4, 8), (8, -4), 6.0, 2.0, name="Path_mine_haul"),
+                Route((11, 17), (-1, 17), 5.0, 1.5, name="Path_mine_link"),
+                Route((0, 3), (18, -8), 6.0, 2.5),
+                Route((14, -6), (14, 19), 6.0, 2.0),
+                Route((-8, 6), (-6, -26), 4.5, 2.0),
+            ),
+            landforms=(
+                Ridge(a=(2, -42), b=(44, -34), half=26, h=16.0, fall=0.75),
+                Ridge(a=(-32, -14), b=(-8, -16), half=13, h=8.0, fall=0.7),
+                Ridge(a=(-36, -2), b=(-10, -2), half=5.5, h=-6.0, fall=0.3, flat=1.0),
+                Mound(at=(-8, 9.5), ext=(14, 14), h=0.0, fall=0.4, flat=1.0),
+                Mound(at=(21, -12), ext=(30, 30), h=2.0, fall=0.85),
+                Mound(at=(21, -12), ext=(13, 13.5), h=-3.5, fall=0.42, flat=1.0),
+                Ridge(a=(23, -2), b=(23, 24), half=7, h=6.0, fall=0.55),
+            ),
+        ),
+
+        # ================================================================== row 5 — the capital
+        empty("tarn_north", **at(5, 0), seed=351, scatter="Scatter_wilds", biome="Woodland"),
+        empty("tarn_road", **at(5, 1), seed=352, scatter="Scatter_pasture", biome="Pasture", note="""
+            THE TARN ROAD — the west road runs down the Emberwash from Kingsbridge to Tarn's Landing,
+            the river on the right hand and the lake opening ahead."""),
+        empty("bridgeward", **at(5, 2), seed=353, scatter="Scatter_settled", biome="Pasture", note="""
+            BRIDGEWARD — the capital's western outskirts between the city and Kingsbridge."""),
+        Cell(
+            key="town_hub", cell_id="ember_crown.town_hub", scene=f"{EMBER}town_hub.tscn",
+            **at(5, 3), origin=(35.0, -30.0), resolution=80, seed=101, scatter="Scatter_settled",
+            note="""
+            THE CROWN SQUARE — the capital's upper town: the square, the Ember Rest, the smithy, the
+            craft yard and the Long Green, under the citadel's spur. The Kingsway leaves its north side
+            for the Crossway, the west road for Kingsbridge and the Tarn, the east road for Emberdeep,
+            and the market lane runs down to the Embermarket.
+            """,
+            yards=(
+                Yard((-14, -2), (9, 10), 3.0, 0.85, elevation=None, name="Area_town_square"),
+                Yard((16, 1), (8, 8), 2.5, 0.78, elevation=None, name="Area_town_craft"),
+                Yard((6, -21), (11, 5), 3.0, 0.35, elevation=None, name="Area_town_green"),
+                Yard(at=(-20.0, 22.0), ext=(6.0, 6.0), feather=3.0, blend=0.9),
+                Yard(at=(25.0, 6.0), ext=(6.0, 7.0), feather=3.0, blend=0.9),
+                Yard(at=(-22.0, 11.1), ext=(4.5, 4.6), feather=3.0, blend=0.9),
+                # HouseSouthB, 1.42 m out across its footprint on the rebuilt ground.
+                Yard(at=(17.2, 27.2), ext=(2.7, 2.7), feather=2.5, blend=0.9),
+            ),
+            routes=(
+                Route((-11, 30), (1, 14), 4.5, 1.5, name="Path_town_kingsway_s"),
+                Route((1, 14), (2, -8), 5.0, 1.5, name="Path_town_kingsway_m"),
+                Route((2, -8), (-6, -30), 4.5, 1.5, name="Path_town_kingsway_n"),
+                Route((-30, -4), (-18, -4), 5.0, 2.0, name="Path_town_west"),
+                Route((30, -2), (18, -2), 5.0, 2.0, name="Path_town_east"),
+                Route((-4, -20), (16, -20), 3.5, 1.25, name="Path_town_green"),
+            ),
+            landforms=(
+                Mound(at=(-4, -6), ext=(40, 36), h=0.0, fall=0.55, flat=0.9),
+            ),
+        ),
+        empty("east_gate", **at(5, 4), seed=355, scatter="Scatter_settled", biome="Pasture", note="""
+            EASTGATE — the capital's working quarter along the east road."""),
+        empty("emberdeep_slopes", **at(5, 5), seed=356, scatter="Scatter_upland"),
+
+        # ================================================================== row 6 — lake and market
+        empty("tarn_west", **at(6, 0), seed=361, scatter="Scatter_shore", biome="Wetland"),
+        Cell(
+            key="tarn_landing", cell_id="ember_crown.tarn_landing", scene=f"{EMBER}tarn_landing.tscn",
+            **at(6, 1), origin=(-300.0, 65.0), resolution=80, seed=106, safe_radius=22.0,
+            scatter="Scatter_shore", surplus=("fish",), demand=("ore", "metal", "fuel"), shocks=("fish", "ore"),
+            biome="Wetland",
+            note="""
+            TARN'S LANDING — the fishing village on the Tarn's north-east shore, where the Emberwash
+            comes into the lake. The spit, the bay, the docks and the neck are unchanged; the bay is now
+            the corner of a real lake rather than a pond, and the shore trail north to the corrie starts
+            at the end of its shore road.
+            """,
+            yards=(
+                Yard((-7, 8), (8, 6), 2.5, 0.74, elevation=-0.31, name="Area_tarn_spit"),
+                Yard((11, -14), (7, 6), 2.0, 0.66, elevation=0.81, name="Area_tarn_yard"),
+            ),
+            routes=(
+                Route((26, -8), (6, -7), 6.0, 2.0, name="Path_tarn_road_east"),
+                Route((6, -3), (-26, -1), 7.0, 2.0, name="Path_tarn_road_shore"),
+                Route((-6, -2), (-6, 4), 6.0, 1.5, name="Path_tarn_neck"),
+            ),
+            landforms=(
+                Mound(at=(-16, 17), ext=(17, 15), h=-0.7, fall=0.7, flat=0.85),
+                Mound(at=(-21, 15), ext=(7, 15), h=-4.2, fall=0.2, flat=1.0),
+                Mound(at=(-7, 20), ext=(13, 9), h=-4.2, fall=0.2, flat=1.0),
+            ),
+        ),
+        empty("lakeshore_east", **at(6, 2), seed=363, scatter="Scatter_pasture", biome="Pasture"),
+        Cell(
+            key="embermarket", cell_id="ember_crown.embermarket", scene=f"{EMBER}embermarket.tscn",
+            **at(6, 3), origin=(-60.0, 70.0), resolution=80, seed=102, safe_radius=32.0,
+            scatter="Scatter_settled", biome="Pasture",
+            note="""
+            THE EMBERMARKET — the capital's lower town, below the Crown Square on the market lane and
+            beside the river road. Its south gate opens on the Hollowreach road and the caravan road to
+            the southern border. The Crookway, the Coilyard, the Salt Steps and the Gate Lane are
+            unchanged.
+            """,
+            yards=(
+                Yard((7, 2), (11, 10), 3.0, 0.9, elevation=None, name="Area_market_yard"),
+                Yard((16, 14), (5.5, 5), 1.5, 0.88, elevation=0.0, name="Area_market_terrace"),
+                Yard((3, 16.5), (7, 4.5), 2.0, 0.6, elevation=None, name="Area_market_timber"),
+                Yard((-11.5, 17), (4.5, 4), 1.5, 0.55, elevation=None, name="Area_market_sump"),
+                Yard(at=(-2.0, 22.5), ext=(5.0, 5.0), feather=3.0, blend=0.9),
+                Yard(at=(-2.5, 16.6), ext=(4.5, 5.6), feather=3.0, blend=0.9),
+            ),
             routes=(
                 Route((-11, -26), (-11, -13), 4.5, 1.0, name="Path_market_gate"),
                 Route((-11, -13), (2, -7.5), 5.0, 1.5, name="Path_market_crook"),
@@ -643,24 +889,35 @@ def cells() -> list[Cell]:
             landforms=(
                 Mound(at=(0, -4), ext=(36, 34), h=0.0, fall=0.5, flat=0.92),
                 Mound(at=(16, 14), ext=(9.5, 8.5), h=0.45, fall=0.35, flat=1.0),
-                Mound(at=(-10, 38), ext=(42, 18), h=4.0, fall=0.9),
-                Ridge(a=(44, -40), b=(40, 34), half=8, h=3.5, fall=0.85),
-                Mound(at=(-48, -2), ext=(22, 36), h=-3.5, fall=0.85),
             ),
         ),
+        empty("south_fields", **at(6, 4), seed=365, scatter="Scatter_pasture", biome="Pasture"),
+        empty("ashfall_lane", **at(6, 5), seed=366, scatter="Scatter_pasture", biome="Pasture"),
+        empty("eastern_downs", **at(6, 6), seed=367, scatter="Scatter_pasture", biome="Pasture"),
+
+        # ================================================================== row 7 — the southern country
+        empty("outflow", **at(7, 0), seed=371, scatter="Scatter_shore", biome="Wetland"),
+        empty("reach_road", **at(7, 1), seed=372, scatter="Scatter_shore", biome="Wetland"),
+        Cell(
+            key="west_downs", cell_id="ember_crown.west_downs", scene=f"{EMBER}west_downs.tscn",
+            **at(7, 2), origin=(-175.0, 205.0), resolution=60, seed=111, scatter="Scatter_pasture",
+            note="""
+            THE WEST DOWNS — rolling grazing between the market and the fens. A drovers' track leaves the
+            Hollowreach road and ends at a collapsed sheepfold on the highest ground. Nothing here.
+            """,
+            routes=(Route((40, 4), (14, 8), 3.0, 2.5),),
+        ),
+        empty("caravan_road", **at(7, 3), seed=374, scatter="Scatter_pasture", biome="Pasture", note="""
+            THE CARAVAN ROAD — the old trade road south toward the Sunspire border, through the realm's
+            farm belt."""),
         Cell(
             key="ashfall_homestead", cell_id="ember_crown.ashfall_homestead",
-            scene="res://scenes/regions/ember_crown/ashfall_homestead.tscn",
-            center=(95.0, 85.0), size=(90.0, 90.0), resolution=52, seed=109,
-            safe_radius=26.0, scatter="Scatter_pasture",
-            biome="Pasture",
+            scene=f"{EMBER}ashfall_homestead.tscn", **at(7, 4), origin=(290.0, 240.0), resolution=80,
+            seed=109, safe_radius=26.0, scatter="Scatter_pasture", biome="Pasture",
             note="""
-            THE ASHFALL HOMESTEAD — the player's holding, moved out of the market's back pocket. It
-            used to begin twenty-six metres from the last market stall; the plot's gate is now
-            ninety-five metres of pasture, field bank and hedge from it, up a lane that bends round a
-            hollow. The plot itself is a pad so the cottage stands level, and the boundary dissolves
-            into rough grazing rather than stopping at a floor edge. Nothing inside the hexagon moved.
-            ⚠️ PropertyResource.PlacementCenter moved with the cell: local (0, 5) is world (95, 0, 90).
+            THE ASHFALL HOMESTEAD — the player's holding, out on the ash flats south-east of the capital
+            at the end of the farm lane, nearly four hundred metres from the market gate. Nothing inside
+            the plot moved.
             """,
             yards=(
                 Yard((0, 5), (8, 7), 3.0, 0.58, elevation=None, name="Area_homestead_yard"),
@@ -676,487 +933,214 @@ def cells() -> list[Cell]:
             ),
             landforms=(
                 Mound(at=(0, 0), ext=(26, 24), h=0.0, fall=0.55, flat=0.85),
-                Mound(at=(-32, 26), ext=(21, 19), h=3.5, fall=0.95),
-                Mound(at=(30, 30), ext=(23, 21), h=-2.0, fall=0.95),
-                Ridge(a=(-40, 34), b=(40, 30), half=6, h=2.2, fall=0.8),
-                Mound(at=(38, -34), ext=(31, 23), h=7.0, fall=0.9),
             ),
         ),
+        empty("ash_flats", **at(7, 5), seed=376, scatter="Scatter_waste", biome="BurnedHeath"),
 
-        # ------------------------------------------------------------------ row z -60..40 (the town belt)
+        # ================================================================== row 8 — fens and border
         Cell(
-            key="wilds_west", cell_id="ember_crown.wilds_west",
-            scene="res://scenes/regions/ember_crown/wilds_west.tscn",
-            center=(-160.0, -10.0), size=(60.0, 100.0), resolution=40, seed=108,
-            scatter="Scatter_wilds",
-            biome="Woodland",
+            key="fen_edge", cell_id="ember_crown.fen_edge", scene=f"{EMBER}fen_edge.tscn",
+            **at(8, 0), origin=(-470.0, 370.0), resolution=48, seed=116,
+            scatter="Scatter_shore", biome="Wetland",
             note="""
-            THE WESTERN WILDS — the bandit corrie, and the corrie is LAND now. It was a horseshoe of
-            scaled prp_rock_cluster props standing on a floor; it is four ridge landforms 13-16 m
-            high with a Falloff of 0.35 (a 2:1 face, comfortably past the 45 degree floor limit, so
-            the walls are walls without a single collider) and a five-metre throat left between the
-            two east ridges. The camp floor is dished 1.5 m below the apron. The scramble over the
-            north lip survives as a narrow path that notches the ridge. Rock props still dress those
-            faces; they no longer ARE those faces.
+            THE FEN EDGE — the drowned margin west of Hollowreach where the Emberwash leaves the realm. A
+            causeway crosses the marsh and stops at two drowned pillars looking back at the wharf. No
+            loot, no encounter, no pin.
             """,
-            # Path_wilds_west_scramble is re-cut below. The layout rebuild's 10 m notch over the
-            # northern lip was a 47 degree climb once that lip became a twelve-metre ridge instead
-            # of a row of rocks; the same scramble over 23 m is 28 degrees, which is a scramble
-            # rather than a wall with a road painted on it.
-            yards=(
-                Yard((-14, -1), (7, 8), 3.5, 0.38, elevation=0.0, name="Area_wilds_west_camp"),
-                Yard((10, -1), (9, 6), 4.0, 0.20, elevation=-2.33, name="Area_wilds_west_apron"),
-            ),
-            landforms=(
-                Mound(at=(0, -42), ext=(38, 18), h=8.0, fall=0.85),
-                Mound(at=(0, 42), ext=(38, 18), h=6.0, fall=0.85),
-                Mound(at=(20, -2), ext=(24, 32), h=3.0, fall=0.95),
-                Ridge(a=(-26, -18), b=(-26, 15), half=10, h=14.0, fall=0.35),
-                Ridge(a=(-26, -18), b=(-6, -20), half=10, h=12.0, fall=0.35),
-                Ridge(a=(-26, 15), b=(-8, 16), half=10, h=12.0, fall=0.35),
-                Ridge(a=(-4, -18), b=(-4, -6), half=8, h=12.0, fall=0.4),
-                Ridge(a=(-4, 6), b=(-4, 15), half=8, h=12.0, fall=0.4),
-                Mound(at=(-14, -1), ext=(12, 13), h=-1.5, fall=0.5, flat=0.9),
-            ),
-            routes=(
-                    Route((25, 0), (2, -1), 3.5, 2.5, name="Path_wilds_west_track"),
-                    Route((2, -1), (-8, 0), 5.0, 1.5, name="Path_wilds_west_throat"),
-                    Route((4, -26), (-10, -8), 2.5, 1.5),
-                    Route((2, -1), (16, 12), 3.0, 2.0)),
+            routes=(Route((-2, -16), (-8, 8), 3.0, 2.5),),
         ),
         Cell(
-            key="tarn_landing", cell_id="ember_crown.tarn_landing",
-            scene="res://scenes/regions/ember_crown/tarn_landing.tscn",
-            center=(-90.0, -10.0), size=(80.0, 100.0), resolution=56, seed=106,
-            safe_radius=22.0, scatter="Scatter_shore",
-            surplus=("fish",), demand=("ore", "metal", "fuel"), shocks=("fish", "ore"),
-            biome="Wetland",
+            key="hollowreach", cell_id="ember_crown.hollowreach", scene=f"{EMBER}hollowreach.tscn",
+            **at(8, 1), origin=(-340.0, 350.0), resolution=80, seed=107,
+            tint=(0.38, 0.42, 0.38), tint_strength=0.12, scatter="Scatter_shore", biome="Wetland",
             note="""
-            TARN'S LANDING — the spit and the bay survive; the water stopped being a decal over flat
-            ground. The land DESCENDS to the shore: a wadeable shelf at -0.7 m runs out from the
-            beach, and beyond it the bed drops to -4.5 m over three and a half metres, which is a 53
-            degree face. CharacterBody3D's floor limit is 45, so the player slides off it rather than
-            strolling out across visually deep water — no swimming was added and no invisible wall
-            was needed. The spit stands 0.8 m proud, the docks reach out over the shelf, and the land
-            rises east toward the town road.
-            ⚠️ The tarn is a DECLARED WorldWaterResource (see waters= below), not a mesh in the .tscn.
-            Its SurfaceY is a real lake level rather than a clearance, WorldCellWater fades it out
-            where the ground rises through it, and declaring it is what puts the deep lobes under
-            WorldWater's non-swimming recovery contract.
+            HOLLOWREACH — the drowned district in the Emberwash fens below the Tarn, where the river
+            spreads out before it leaves the realm. The spine between two flooded channels, the open
+            water behind its drop-off and the dry Ledger House above them are unchanged; the district now
+            sits in a real delta with the old town's drowned towers standing in the water beyond it.
             """,
             yards=(
-                Yard((-7, 8), (8, 6), 2.5, 0.74, elevation=-0.31, name="Area_tarn_spit"),
-                Yard((11, -14), (7, 6), 2.0, 0.66, elevation=0.81, name="Area_tarn_yard"),
-            ),
-            landforms=(
-                Mound(at=(26, -6), ext=(23, 44), h=4.0, fall=0.9),
-                Mound(at=(6, -36), ext=(27, 17), h=3.0, fall=0.9),
-                Mound(at=(-2, 40), ext=(30, 14), h=2.0, fall=0.9),
-                # ⚠️ A SHORELINE IS WHERE THE LAND CROSSES THE WATER LEVEL, NOT WHERE THE WATER MESH
-                # ENDS. Two rounds of this cell were spent shrinking water boxes to fit carved
-                # basins, and both read as a rectangle of sea lying on flat ground — because the
-                # visible edge was still the mesh's own edge. WorldCellWater bakes the depth at every
-                # surface vertex and fades the water out where the ground crosses the waterline, so
-                # the declared body is deliberately LARGER than the wet ground and what the player
-                # sees is the terrain's own contour, which is a coastline.
-                #
-                # A low bank around the bay, so the land visibly falls toward the water.
-                Mound(at=(-14, 16), ext=(32, 30), h=2.2, fall=0.9),
-                # The wadeable shelf: 70 cm over a gentle slope. The player may paddle here, and it
-                # stops three metres short of the shore road at z = -2 — a basin that reaches the
-                # road floods the only way into the district.
-                Mound(at=(-16, 17), ext=(17, 15), h=-0.7, fall=0.7, flat=0.85),
-                # ...and the two deep lobes. Falloff 0.2 across a 7 m half-extent is past
-                # CharacterBody3D's 45 degree floor limit, so the player slides off the edge of the
-                # shelf instead of strolling out over four metres of open water. No swimming was
-                # added and no invisible wall was needed: the LAND says no.
-                Mound(at=(-21, 15), ext=(7, 15), h=-4.2, fall=0.2, flat=1.0),
-                Mound(at=(-7, 20), ext=(13, 9), h=-4.2, fall=0.2, flat=1.0),
+                Yard((-9, 1), (5, 5), 1.5, 0.85, elevation=0.62, name="Area_hollowreach_hollow"),
+                Yard((16, 12), (10, 4), 2.5, 0.72, elevation=1.16, name="Area_hollowreach_street"),
+                Yard((-5, 1), (11, 7), 2.5, 0.78, elevation=0.61, name="Area_hollowreach_spine"),
+                # 42B: the Ledger House bench, north of the street pad at the street's own offset.
+                Yard(at=(20.0, 23.0), ext=(5.0, 5.0), feather=2.5, blend=0.8, elevation=1.17),
             ),
             routes=(
-                    Route((26, -8), (6, -7), 6.0, 2.0, name="Path_tarn_road_east"),
-                    Route((6, -3), (-26, -1), 7.0, 2.0, name="Path_tarn_road_shore"),
-                    Route((-6, -2), (-6, 4), 6.0, 1.5, name="Path_tarn_neck"),
-                    Route((10, -8), (20, 18), 4.0, 2.0),),
-            # One body, not two. The old TarnSouth box lay entirely inside the main one and existed
-            # only to reach a lobe the big rectangle could not cover without spilling onto dry land;
-            # a terrain-derived shoreline makes both the split and the careful sizing unnecessary.
-            waters=(Water(at=(-14, 17), ext=(30, 27), ident="Tarn",
-                          shallow=(0.21, 0.33, 0.34), deep=(0.05, 0.13, 0.18), opaque=1.5),),
-        ),
-        Cell(
-            key="town_hub", cell_id="ember_crown.town_hub",
-            scene="res://scenes/regions/ember_crown/town_hub.tscn",
-            center=(0.0, -10.0), size=(100.0, 100.0), resolution=64, seed=101,
-            scatter="Scatter_settled",
-            note="""
-            THE TOWN HUB — the anchor, and the one centre in the realm that did not move. What moved
-            is its edge: 60 x 60 became 100 x 100, so the square, the two yards and the Long Green
-            now sit in the middle of twenty metres of thinning outskirts on every side instead of
-            ending at a floor edge. The settlement core is levelled to y = 0 by a pad, which is why
-            SpawnPoint (0, 1.2, 5) and every one of the five raw-world town schedules is still
-            correct to the centimetre. Around that pad the ground moves: a knoll south-west that the
-            market road bends round, a wooded bank north-east, a hollow east, and a rise north so the
-            walk to the Crossway gate is a climb.
-            """,
-            # Two houses on the town's own slope, 0.87 m and 0.75 m out across their
-            # footprints. The square, craft yard and green already have pads; these two sit
-            # outside all three.
-            yards=(
-                    Yard((-14, -2), (9, 10), 3.0, 0.85, elevation=None, name="Area_town_square"),
-                    Yard((16, 1), (8, 8), 2.5, 0.78, elevation=None, name="Area_town_craft"),
-                    Yard((6, -21), (11, 5), 3.0, 0.35, elevation=None, name="Area_town_green"),
-                    Yard(at=(-20.0, 22.0), ext=(6.0, 6.0), feather=3.0, blend=0.9),
-                   Yard(at=(25.0, 6.0), ext=(6.0, 7.0), feather=3.0, blend=0.9),
-                   Yard(at=(-22.0, 11.1), ext=(4.5, 4.6), feather=3.0, blend=0.9)),
-            routes=(
-                Route((-11, 30), (1, 14), 4.5, 1.5, name="Path_town_kingsway_s"),
-                Route((1, 14), (2, -8), 5.0, 1.5, name="Path_town_kingsway_m"),
-                Route((2, -8), (-6, -30), 4.5, 1.5, name="Path_town_kingsway_n"),
-                Route((-30, -4), (-18, -4), 5.0, 2.0, name="Path_town_west"),
-                Route((30, -2), (18, -2), 5.0, 2.0, name="Path_town_east"),
-                Route((-4, -20), (16, -20), 3.5, 1.25, name="Path_town_green"),
+                Route((26, 12), (6, 12), 8.0, 2.0, name="Path_hollowreach_east"),
+                Route((6, 12), (6, 2), 8.0, 2.0, name="Path_hollowreach_turn"),
+                Route((6, 1), (-7, 1), 12.0, 2.0, name="Path_hollowreach_spine"),
+                Route((33, -14), (27, 12), 4.0, 2.0),
             ),
             landforms=(
-                Mound(at=(-4, -6), ext=(40, 36), h=0.0, fall=0.55, flat=0.9),
-                Mound(at=(-40, 36), ext=(19, 17), h=5.5, fall=0.85),
-                Ridge(a=(16, -48), b=(48, -20), half=10, h=6.0, fall=0.8),
-                Mound(at=(44, 14), ext=(16, 14), h=-3.0, fall=0.9),
-                Mound(at=(-6, -46), ext=(32, 17), h=3.0, fall=0.9),
+                Mound(at=(0, 0), ext=(48, 46), h=0.8, fall=0.8),
+                Mound(at=(-46, 0), ext=(38, 50), h=-0.6, fall=0.25, flat=0.9),
+                Mound(at=(-46, 0), ext=(34, 46), h=-4.5, fall=0.10, flat=1.0),
+                Ridge(a=(-31, -10), b=(10, -10), half=5.5, h=-3.2, fall=0.2, flat=1.0),
+                Ridge(a=(-31, 13), b=(-2, 13), half=6.5, h=-3.2, fall=0.2, flat=1.0),
+            ),
+            waters=(
+                Water(at=(-50, 0), ext=(42, 52), ident="OpenWater",
+                      shallow=(0.20, 0.31, 0.31), deep=(0.04, 0.11, 0.15), opaque=1.6),
+                Water(at=(-10, -10), ext=(26, 11), ident="ChannelNorth"),
+                Water(at=(-12, 13), ext=(24, 12), ident="ChannelSouth"),
             ),
         ),
-        Cell(
-            key="emberdeep_mine", cell_id="ember_crown.emberdeep_mine",
-            scene="res://scenes/regions/ember_crown/emberdeep_mine.tscn",
-            center=(95.0, -10.0), size=(90.0, 100.0), resolution=64, seed=104,
-            tint=(0.58, 0.45, 0.33), tint_strength=0.15, safe_radius=24.0,
-            scatter="Scatter_upland",
-            surplus=("ore", "metal", "fuel"), demand=("food", "fish", "textile"),
-            shocks=("ore", "food"),
-            biome="Excavated",
-            note="""
-            THE EMBERDEEP MINE — the biggest single change in the realm, and the one the brief asked
-            for by name: the earth has been excavated instead of having mining props stood on it.
-            The working loop is unchanged (defile -> Weighing Yard -> haul road -> the Cut -> Pit
-            Head -> spoil track -> back to the yard) and every one of those is now geography:
-              the defile      a 6 m trench cut through a spur, walls at 3:1
-              the yard        a level bench at y = 0 with the hill standing over it
-              the Cut         the haul road grades from about +1 down to the pit floor over 18 m,
-                              which is a 21 degree descent — a road a cart could actually use
-              the Pit Head    a 3.5 m deep floor inside a raised 3 m rim - six and a half
-                              metres of relief whose inner faces are far past the walkable
-                              limit, so the pit is a pit and the Cut is the only graded way in
-              the spoil bank  a 6 m ridge of thrown waste along the east of the spoil track
-            The big hill sits on the EAST half of the north edge on purpose: the mine road out to the
-            Crossway runs up the west side of it, so leaving is a walk under the workings rather than
-            over them.
-            """,
-            yards=(
-                Yard((-8, 9.5), (9, 9.5), 3.0, 0.92, elevation=0.0, name="Area_mine_yard"),
-                Yard((18, -9), (8, 9), 3.5, 0.88, elevation=0.0, name="Area_mine_pithead"),
-                Yard((-19, 15), (4, 5), 1.5, 0.60, elevation=0.0, name="Area_mine_rest"),
-            ),
-            landforms=(
-                Ridge(a=(2, -42), b=(44, -34), half=26, h=16.0, fall=0.75),
-                Ridge(a=(-32, -14), b=(-8, -16), half=13, h=8.0, fall=0.7),
-                Ridge(a=(-36, -2), b=(-10, -2), half=5.5, h=-6.0, fall=0.3, flat=1.0),
-                Mound(at=(-8, 9.5), ext=(14, 14), h=0.0, fall=0.4, flat=1.0),
-                Mound(at=(21, -12), ext=(30, 30), h=2.0, fall=0.85),
-                Mound(at=(21, -12), ext=(13, 13.5), h=-3.5, fall=0.42, flat=1.0),
-                Ridge(a=(23, -2), b=(23, 24), half=7, h=6.0, fall=0.55),
-                Mound(at=(-40, -4), ext=(16, 28), h=-2.0, fall=0.9),
-                Mound(at=(6, 40), ext=(34, 16), h=2.5, fall=0.9),
-            ),
-            # The Cut, re-authored longer than the 12 m the layout rebuild gave it so the descent
-            # into the pit head is a 21 degree grade rather than a 45 degree one.
-            # The Cut, re-authored longer than the 12 m the layout rebuild gave it AND started
-            # further back up the haul road, so the descent to the pit floor is a 20 degree grade a
-            # cart could use rather than the 45 degree one a 12 m run produced.
-            # A spiral haul ramp round the pit ran straight into the spoil bank, which is where a
-            # spoil bank belongs. The pit is 3.5 m deep inside a 3 m rim instead of 6 inside 4:
-            # six and a half metres of relief with sheer inner walls still reads as an excavation
-            # from the yard, and the Cut is one 20 degree ramp again.
-            # ⚠️ THE CUT OVERLAPS THE HAUL ROAD RATHER THAN BUTTING ONTO IT. A segment's target is
-            # held constant past its own ends for as far as its width reaches, so two routes that
-            # meet at a corner with very different gradients blend into a kink a metre or two long —
-            # which is what ValidateRouteGrades kept calling at 48 degrees on a ramp whose average
-            # is 9. Starting the Cut back on the haul road makes the two nearly collinear over the
-            # overlap, so their targets agree where they are blended.
-            routes=(
-                    Route((-26, -2), (-14, -2), 6.0, 2.0, name="Path_mine_defile"),
-                    Route((-4, 8), (8, -4), 6.0, 2.0, name="Path_mine_haul"),
-                    Route((11, 17), (-1, 17), 5.0, 1.5, name="Path_mine_link"),
-                    Route((0, 3), (18, -8), 6.0, 2.5),
-                    Route((14, -6), (14, 19), 6.0, 2.0),
-                    Route((-8, 6), (-6, -26), 4.5, 2.0)),
-        ),
-
-        # ------------------------------------------------------------------ row z -130..-60
-        Cell(
-            key="west_downs", cell_id="ember_crown.west_downs",
-            scene="res://scenes/regions/ember_crown/west_downs.tscn",
-            center=(-120.0, -95.0), size=(140.0, 70.0), resolution=40, seed=111,
-            scatter="Scatter_pasture",
-            note="""
-            THE WEST DOWNS — a hundred and forty metres of empty rolling grazing between the tarn
-            country and the Crossway. A drovers' track comes off the warden compound, crosses two
-            rises and stops in the middle of a field. Nothing here. That is the point.
-            """,
-            landforms=(
-                Mound(at=(-30, -6), ext=(42, 28), h=8.0, fall=0.95),
-                Mound(at=(34, 10), ext=(36, 24), h=-3.0, fall=0.95),
-                Ridge(a=(-64, 20), b=(10, 26), half=13, h=5.0, fall=0.9),
-                Mound(at=(52, -20), ext=(29, 21), h=6.0, fall=0.9),
-            ),
-            routes=(Route((40, 4), (14, 8), 3.0, 2.5),),
-        ),
-        Cell(
-            key="crossway_post", cell_id="ember_crown.crossway_post",
-            scene="res://scenes/regions/ember_crown/crossway_post.tscn",
-            center=(0.0, -95.0), size=(100.0, 70.0), resolution=56, seed=103,
-            safe_radius=26.0, scatter="Scatter_upland",
-            note="""
-            THE CROSSWAY POST — the gate now stands where a gate would stand. Two nine-metre spurs
-            run in from the east and west edges and stop short of each other, and the palisade closes
-            the neck between them: the toll is charged at the one place in forty metres of ridge that
-            a road can get through, which is an argument the geography makes rather than the .tres.
-            North of the post the ground falls away toward the wilds, so the frontier is visibly
-            downhill of the last safe ground.
-            """,
-            # 42B: the Wardens' Watch stands on this. ⚠️ IT IS NOT INSIDE THE COMPOUND, AND IT
-            # CANNOT BE: Path_crossway_compound runs east-west along z = 14 with a 4 m road and a
-            # 1.5 m shoulder, so the compound pad IS the track for all but three metres of its
-            # depth. The keep went there first and the traversal probe found what that means — two
-            # authored routes with no navigation path through them. This apron sits south of the
-            # track, between it and the palisade, and is levelled to the compound's own 0.0.
-            yards=(
-                    Yard((6, 9), (9, 5.5), 2.5, 0.82, elevation=0.0, name="Area_crossway_hold"),
-                    Yard((-17, 13), (7, 6), 2.0, 0.68, elevation=0.0, name="Area_crossway_compound"),
-                    Yard((7.5, 2), (5, 4), 1.5, 0.90, elevation=0.0, name="Area_crossway_gate"),
-                    Yard(at=(-19.5, 6.5), ext=(6.0, 5.0), feather=2.5, blend=0.8, elevation=0.0),),
-            landforms=(
-                Mound(at=(0, 4), ext=(32, 26), h=0.0, fall=0.5, flat=0.9),
-                # THE NECK IS NORTH OF THE POST, NOT ACROSS IT. Drawn east-west through the
-                # compound the two spurs sat on the road out to the mine and on the drovers' track
-                # west, and ValidateRouteGrades reported a 68 degree climb on both. They close the
-                # NORTHERN road instead - which is the road the toll is charged on - and stop 14 m
-                # either side of it, so the gate fills a 28 m gap in 100 m of ridge.
-                Ridge(a=(-50, -16), b=(-14, -19), half=10, h=9.0, fall=0.55),
-                Ridge(a=(14, -19), b=(50, -16), half=10, h=9.0, fall=0.55),
-                Mound(at=(0, -32), ext=(30, 12), h=-2.0, fall=0.95),
-            ),
-            routes=(
-                    Route((-6, 26), (-6, 14), 7.0, 2.0, name="Path_crossway_south"),
-                    Route((-6, 14), (3, 9), 7.0, 2.0, name="Path_crossway_turn"),
-                    Route((3, 9), (7.5, 0), 7.0, 2.0, name="Path_crossway_gate"),
-                    Route((7.5, 0), (0, -8), 7.0, 2.0, name="Path_crossway_dogleg"),
-                    Route((0, -8), (0, -26), 7.0, 2.0, name="Path_crossway_north"),
-                    Route((-10, 14), (-20, 14), 4.0, 1.5, name="Path_crossway_compound"),
-                    Route((6, 9), (18, 12), 4.5, 2.0),),
-        ),
-        Cell(
-            key="mine_road", cell_id="ember_crown.mine_road",
-            scene="res://scenes/regions/ember_crown/mine_road.tscn",
-            center=(95.0, -95.0), size=(90.0, 70.0), resolution=36, seed=112,
-            scatter="Scatter_upland",
-            note="""
-            THE MINE ROAD — hill country and a three-way junction: the Crossway west, the Emberdeep
-            south, the burnt heath north. No buildings, no encounter marker, no pin. A crossroads
-            that is only a crossroads is what makes the two places it joins feel like they are in the
-            same country.
-            """,
-            landforms=(
-                Ridge(a=(-40, 20), b=(40, 10), half=17, h=8.0, fall=0.85),
-                Mound(at=(-10, -20), ext=(31, 21), h=5.0, fall=0.9),
-                Mound(at=(30, -8), ext=(21, 19), h=-3.0, fall=0.9),
-            ),
-            routes=(Route((-20, 12), (0, 18), 4.5, 2.0),
-                    Route((0, 18), (4, 0), 3.5, 2.0)),
-        ),
-
-        # ------------------------------------------------------------------ row z -220..-130
-        Cell(
-            key="north_moor", cell_id="ember_crown.north_moor",
-            scene="res://scenes/regions/ember_crown/north_moor.tscn",
-            center=(-120.0, -175.0), size=(140.0, 90.0), resolution=40, seed=113,
-            scatter="Scatter_wilds",
-            note="""
-            THE NORTH MOOR — high open ground west of the wilds road, with an eleven-metre swell in
-            the middle of it that hides everything behind it. A sheep track comes over from the
-            encounter bowl and dies. Empty on purpose.
-            """,
-            landforms=(
-                Mound(at=(-40, 0), ext=(48, 36), h=11.0, fall=0.95),
-                Mound(at=(30, -20), ext=(31, 25), h=-4.0, fall=0.9),
-                Ridge(a=(-70, 34), b=(60, 26), half=15, h=6.0, fall=0.9),
-                Mound(at=(56, 18), ext=(23, 21), h=7.0, fall=0.85),
-            ),
-            routes=(Route((44, 2), (20, 6), 2.5, 2.5),),
-        ),
-        Cell(
-            key="wilds_north", cell_id="ember_crown.wilds_north",
-            scene="res://scenes/regions/ember_crown/wilds_north.tscn",
-            center=(0.0, -175.0), size=(100.0, 90.0), resolution=48, seed=105,
-            scatter="Scatter_wilds",
-            biome="Woodland",
-            note="""
-            THE NORTHERN WILDS — the fork survives; what changed is that you can no longer see the
-            whole cell from the fork. The encounter bowl is a real 3.5 m hollow, the ruin sits two
-            metres DOWN in dead ground behind a scarp instead of twenty metres from everything, the
-            deadfall is under that scarp, and Cairn Rise is a seven-metre rise you can see the road
-            from. The cell doubled in area and none of the new ground has anything on it: the two
-            branches of the fork now run through quiet forest for thirty metres before they reach
-            anything authored.
-            """,
-            # ⚠️ The deadfall hollow was a 5.4 m cut, and the Deadfall Lodge stands on its
-            # LIP - 2.8 m from Path_wilds_north_ap2 as well, so a building pad there is
-            # cancelled by the road (road beats yard, deliberately). With real relief the
-            # hollow's own edge put 2.6 m of slope across the lodge's footprint. Two metres
-            # is still a deadfall and leaves the lodge somewhere to stand.
-            # ⚠️ The Deadfall Lodge is placed ON this pad by design ("the Ash Hunters' hub, on the
-            # deadfall pad under the scarp"), and the pad was authored at a blend of 0.22 — which
-            # levelled almost nothing, so the lodge stood on 4.96 m of variation and its lower storey
-            # disappeared into the hillside. A pad a building sits on has to actually be a floor.
-            # ⚠️ AND THE SUPPLEMENTARY PAD SHARES THE HOLLOW'S ELEVATION, WHICH IS THE WHOLE TRICK.
-            # Area_wn_deadfall reaches most of the lodge but not its eastern side. A yard added there
-            # at elevation 0 made things WORSE - 4.96 m became 5.68 - because two pads at different
-            # heights over one footprint meet in a step, and strongest-mask-wins picks a side. Giving
-            # this one the hollow's own offset makes the two agree instead of compete.
-            yards=(
-                    Yard((0, -5), (7, 7), 3.5, 0.42, elevation=-0.3, name="Area_wilds_north_ruin"),
-                    Yard((-17, 8), (6, 7), 4.0, 0.30, elevation=0.61, name="Area_wn_bowl"),
-                    Yard((18, -12), (6, 7), 4.5, 0.9, elevation=-5.39, name="Area_wn_deadfall"),
-                    Yard(at=(21.5, -15.0), ext=(5.5, 6.5), feather=3.0, blend=0.9,
-                        elevation=-5.39),),
-            routes=(
-                Route((0, 25), (0, 16), 5.0, 2.5, name="Path_wn_stem"),
-                Route((0, 16), (-11, 4), 4.0, 2.5, name="Path_wn_west_a"),
-                Route((-11, 4), (-12, -10), 4.0, 2.5, name="Path_wn_west_b"),
-                Route((-12, -10), (0, -25), 4.0, 2.5, name="Path_wn_west_c"),
-                Route((0, 16), (11, 6), 3.5, 2.0, name="Path_wn_east_a"),
-                Route((11, 6), (13, -6), 3.5, 2.0, name="Path_wn_east_b"),
-                Route((13, -6), (0, -25), 3.5, 2.0, name="Path_wn_east_c"),
-            ),
-            landforms=(
-                Mound(at=(0, -38), ext=(62, 27), h=9.0, fall=0.9),
-                Mound(at=(-17, 8), ext=(15, 16), h=-3.5, fall=0.7),
-                Ridge(a=(10, -22), b=(30, -4), half=8, h=5.0, fall=0.5),
-                Mound(at=(0, -5), ext=(17, 17), h=-2.0, fall=0.65),
-                Mound(at=(24, 18), ext=(13, 13), h=7.0, fall=0.7),
-                Mound(at=(-34, 26), ext=(21, 19), h=-2.0, fall=0.95),
-                Mound(at=(-40, -30), ext=(20, 18), h=6.0, fall=0.9),
-            ),
-        ),
-        Cell(
-            key="ashen_reach", cell_id="ember_crown.ashen_reach",
-            scene="res://scenes/regions/ember_crown/ashen_reach.tscn",
-            center=(95.0, -175.0), size=(90.0, 90.0), resolution=36, seed=114,
-            tint=(0.42, 0.36, 0.31), tint_strength=0.18, scatter="Scatter_waste",
-            biome="BurnedHeath",
-            note="""
-            THE ASHEN REACH — burnt heath under a long scarp, joining the mine road to the eastern
-            branch of the wilds fork. Stone, bracken and dead ground. Nothing to find.
-            """,
-            landforms=(
-                Ridge(a=(-40, -30), b=(40, -20), half=19, h=14.0, fall=0.7),
-                Mound(at=(-6, 16), ext=(31, 23), h=-3.0, fall=0.9),
-                Mound(at=(34, 8), ext=(21, 21), h=6.0, fall=0.85),
-            ),
-            routes=(Route((-4, 20), (-16, -2), 3.0, 2.0),),
-        ),
-
-        # ------------------------------------------------------------------ row z -310..-220 (frontier)
-        Cell(
-            key="frontier_waste", cell_id="ember_crown.frontier_waste",
-            scene="res://scenes/regions/ember_crown/frontier_waste.tscn",
-            center=(-90.0, -265.0), size=(200.0, 90.0), resolution=44, seed=115,
-            scatter="Scatter_waste",
-            biome="BurnedHeath",
-            note="""
-            THE FRONTIER WASTE — two hundred metres of nothing at the top of the realm, and the last
-            thing between the wilds and the arena. The road crosses one corner of it and leaves; the
-            other hundred and eighty metres are a ridge, two swells and a hollow that the player can
-            see from the road and has no reason to walk to. This is the cell that makes the arena
-            feel far away.
-            """,
-            landforms=(
-                Mound(at=(-60, 10), ext=(62, 36), h=14.0, fall=0.95),
-                Mound(at=(20, -16), ext=(52, 32), h=10.0, fall=0.9),
-                Ridge(a=(-96, -30), b=(96, -34), half=17, h=9.0, fall=0.85),
-                Mound(at=(60, 24), ext=(35, 23), h=-4.0, fall=0.9),
-            ),
-        ),
-        Cell(
-            key="arena", cell_id="ember_crown.arena",
-            scene="res://scenes/regions/ember_crown/arena.tscn",
-            center=(75.0, -265.0), size=(130.0, 90.0), resolution=48, seed=110,
-            tint=(0.36, 0.24, 0.20), tint_strength=0.16, scatter="Scatter_waste",
-            biome="BurnedHeath",
-            note="""
-            THE ARENA — a boss arena at the end of a road, which is what it always should have been.
-            It was sixty-five metres from the town square in one revision and directly behind the
-            wilds in the next; it is two hundred and eighty-five metres and four cells from the
-            square now, reached by a road that enters this cell at its far west edge and takes
-            sixty-five metres of climbing, bending approach to arrive at the south gate. The ring
-            stands on a levelled 3 m shelf, there are crags behind it to the east, and the ground
-            drops six metres beyond the breach in the north wall, so the second way out is a way DOWN.
-            The corrected south entrance and the asymmetric breach are unchanged.
-            """,
-            yards=(
-                Yard((0, -1), (15, 14), 1.5, 0.95, elevation=0.0, name="Area_arena_ring"),
-                Yard((9, -16), (4, 3), 2.0, 0.55, elevation=0.0, name="Area_arena_breach"),
-            ),
-            landforms=(
-                Mound(at=(0, 0), ext=(32, 30), h=3.0, fall=0.35, flat=1.0),
-                Mound(at=(-50, 4), ext=(32, 36), h=-3.0, fall=0.9),
-                Ridge(a=(30, -30), b=(58, 20), half=15, h=18.0, fall=0.5),
-                Mound(at=(6, -38), ext=(42, 17), h=-6.0, fall=0.6),
-            ),
-            routes=(
-                    Route((0, 18), (0, 9), 5.0, 1.5, name="Path_arena_gate"),
-                    Route((9, -18), (7, -8), 4.0, 2.5, name="Path_arena_breach"),
-                    Route((-40, 30), (-16, 27), 5.0, 2.5),
-                    Route((-16, 27), (0, 18), 5.0, 2.0)),
-        ),
+        empty("southern_fens", **at(8, 2), seed=383, scatter="Scatter_shore", biome="Wetland"),
+        empty("south_gate", **at(8, 3), seed=384, scatter="Scatter_pasture", biome="Pasture", note="""
+            THE SOUTHMARCH GATE — the caravan road ends at the realm's southern border, where the old
+            gate to the Sunspire road stands broken in its gap in the border hills. Reserved for
+            Phase 44; today the road's walk is paid for by the view south."""),
+        empty("border_hills", **at(8, 4), seed=385, scatter="Scatter_upland"),
+        empty("border_east", **at(8, 5), seed=386, scatter="Scatter_upland"),
     ]
 
 
-def seams() -> list[Seam]:
+# The realm's roads, authored as WORLD polylines (gen_regions.Road). Every vertex is a place a road
+# turns because the ground or a destination makes it turn. A road that starts or ends at a settlement
+# starts or ends at that settlement's own street end (content origin + the street's local endpoint),
+# which is how the old interior circulation joins the new country.
+def roads() -> list[Road]:
+    T = (35.0, -30.0)       # Crown Square content origin
+    M = (-60.0, 70.0)       # Embermarket
+    C = (-135.0, -550.0)    # Crossway
+    E = (405.0, -160.0)     # Emberdeep
+    Lt = (-300.0, 65.0)     # Tarn's Landing
+    H = (-340.0, 350.0)     # Hollowreach
+    A = (290.0, 240.0)      # Ashfall
+    Ww = (-455.0, -205.0)   # corrie
+    Wn = (-285.0, -390.0)   # northern wilds
+    Ar = (365.0, -565.0)    # arena
+    F = (-470.0, 370.0)     # fen edge
+    D = (-175.0, 205.0)     # west downs
+
+    def o(origin, local):
+        return (origin[0] + local[0], origin[1] + local[1])
+
     return [
-        Seam("town_hub", "embermarket", (-8, 40), (-11, 30), (-11, -26), 4.5, 2.0),
-        Seam("town_hub", "crossway_post", (-4, -60), (-6, -24), (-6, 18), 6.0, 2.5),
-        Seam("town_hub", "tarn_landing", (-50, -8), (-30, -4), (26, -8), 5.5, 2.0),
-        Seam("town_hub", "emberdeep_mine", (50, -14), (30, -2), (-26, -2), 5.5, 2.0),
-        Seam("embermarket", "hollowreach", (-50, 98), (-26, 12), (26, 12), 4.0, 2.0),
-        Seam("embermarket", "ashfall_homestead", (50, 88), (26, 3.5), (-26, 3.5), 5.0, 2.0),
-        Seam("tarn_landing", "wilds_west", (-130, -12), (-26, -1), (25, 0), 4.0, 2.0),
-        Seam("tarn_landing", "hollowreach", (-70, 40), (20, 18), (33, -14), 4.0, 2.0),
-        Seam("wilds_west", "fen_edge", (-165, 40), (16, 12), (-2, -16), 3.0, 2.5),
-        Seam("crossway_post", "west_downs", (-50, -86), (-20, 14), (40, 4), 4.0, 2.0),
-        Seam("crossway_post", "wilds_north", (-2, -130), (0, -26), (0, 25), 6.0, 2.5),
-        Seam("crossway_post", "mine_road", (50, -88), (18, 12), (-20, 12), 4.5, 2.0),
-        Seam("emberdeep_mine", "mine_road", (95, -60), (-6, -26), (0, 18), 4.5, 2.0),
-        Seam("mine_road", "ashen_reach", (95, -130), (4, 0), (-4, 20), 3.5, 2.0),
-        Seam("wilds_north", "north_moor", (-50, -168), (-17, 8), (44, 2), 2.5, 2.5),
-        Seam("wilds_north", "ashen_reach", (50, -182), (13, -6), (-16, -2), 3.0, 2.5),
-        Seam("wilds_north", "frontier_waste", (0, -220), (0, -25), (94, 30), 5.0, 2.5),
-        Seam("frontier_waste", "arena", (10, -240), (94, 30), (-40, 30), 5.0, 2.5),
+        # ---- primary: the Kingsway, capital north gate -> watch ridge -> Emberwash head -> Crossway -> pass
+        Road((o(T, (-6, -30)), (30, -104), (-8, -180), (-62, -262), (-98, -364), (-118, -436),
+              o(C, (-6, 26))), width=6.0, shoulder=2.5),
+        Road((o(C, (0, -26)), (-142, -618), (-150, -652)), width=6.0, shoulder=2.5),
+        # ---- primary: west road, capital -> Kingsbridge -> down the Emberwash -> Tarn's Landing
+        Road((o(T, (-30, -4)), (-62, -48), (-138, -76), (-205, -70), (-248, -12), o(Lt, (26, -8))),
+             width=5.5, shoulder=2.0),
+        # ---- primary: market lane, Crown Square -> Embermarket
+        Road((o(T, (-11, 30)), (4, 14), (-48, 30), o(M, (-11, -26))), width=4.5, shoulder=1.5),
+        # ---- primary: east road, capital -> Eastgate -> mine road -> Emberdeep
+        Road((o(T, (30, -2)), (142, -52), (232, -104), (318, -152), o(E, (-26, -2))), width=5.5, shoulder=2.0),
+        # ---- primary: Hollowreach road, market -> West Downs -> fens -> Hollowreach
+        Road((o(M, (-26, 12)), (-146, 132), (-208, 186), (-266, 262), (-292, 334), o(H, (26, 12))),
+             width=5.0, shoulder=2.0),
+        # ---- primary: farm lane, market -> southern fields -> Ashfall
+        Road((o(M, (26, 3.5)), (38, 112), (132, 172), (214, 226), o(A, (-26, 3.5))), width=5.0, shoulder=2.0),
+        # ---- primary: caravan road south to the Southmarch Gate (reserved border)
+        Road(((38, 112), (58, 218), (74, 322), (72, 402)), width=5.5, shoulder=2.0),
+        # ---- primary: the long east road, Emberdeep north -> uplands -> arena (safe, long)
+        Road((o(E, (-6, -26)), (392, -262), (384, -372), (352, -468), o(Ar, (-40, 30))), width=5.0, shoulder=2.0),
+        # ---- secondary: the frontier road across the waste, Crossway -> arena (short, dangerous)
+        Road((o(C, (18, 12)), (-44, -512), (68, -488), (182, -508), (262, -528), o(Ar, (-40, 30))),
+             width=4.0, shoulder=2.0),
+        # ---- secondary: lakeshore road, Tarn's Landing -> outflow -> Hollowreach
+        Road(((-318, 104), (-350, 176), (-352, 262), o(H, (33, -14))), width=4.0, shoulder=2.0),
+        # ---- secondary: wilds trail off the Kingsway below the watch ridge
+        Road(((-98, -364), (-172, -330), (-248, -356), o(Wn, (0, 25))), width=3.5, shoulder=2.0),
+        # ---- secondary: the Crossway's west track down into the wilds (the loop)
+        Road(((-129.5, -480), (-212, -474), o(Wn, (0, -25))), width=3.0, shoulder=2.0),
+        # ---- secondary: shore trail north to the corrie, fording the Emberwash
+        Road((o(Lt, (-26, -1)), (-362, 28), (-412, -44), (-438, -124), o(Ww, (25, 0))), width=3.0, shoulder=2.0),
+        # ---- secondary: the watch-ridge spur to the ruined tower
+        Road(((-62, -262), (-38, -290)), width=2.5, shoulder=1.5),
+        # ---- secondary: the citadel ramp, from the Kingsway up the spur
+        Road(((30, -104), (60, -118), (84, -138)), width=5.0, shoulder=2.0),
+        # ---- tertiary: drovers' track to the sheepfold
+        Road(((-146, 132), o(D, (40, 4))), width=3.0, shoulder=2.0),
+        # ---- tertiary: fen causeway toward the drowned pillars
+        Road(((-352, 262), (-420, 300), o(F, (-2, -16))), width=3.0, shoulder=2.0),
+        # ---- tertiary: the burnt track to the Ashen Breach (reserved), ending at the gap
+        Road(((392, -262), (452, -286), (496, -282)), width=3.0, shoulder=2.0),
     ]
+
+
+# The realm's macro geography, authored as WORLD landforms (see gen_regions.place_world).
+def geography() -> list:
+    valley = [(-112, -600), (-138, -470), (-160, -350), (-172, -230), (-198, -110), (-262, -40),
+              (-330, 30), (-362, 90)]
+    outflow = [(-392, 200), (-386, 270), (-414, 350), (-490, 420)]
+    forms = [
+        # The Crown Range: a wall across the north with one saddle, at the Crossway.
+        Ridge(a=(-560, -690), b=(-240, -700), half=70, h=52.0, fall=0.8),
+        Ridge(a=(-60, -706), b=(180, -690), half=70, h=58.0, fall=0.8),
+        Ridge(a=(200, -688), b=(520, -650), half=80, h=74.0, fall=0.8),
+        Mound(at=(-150, -700), ext=(70, 40), h=16.0, fall=0.9),
+        Ridge(a=(-280, -628), b=(-196, -612), half=26, h=28.0, fall=0.75),
+        Ridge(a=(-96, -612), b=(0, -636), half=26, h=30.0, fall=0.75),
+        # Frontier foothills and the north-west forest upland.
+        Mound(at=(90, -560), ext=(90, 45), h=12.0, fall=0.9),
+        Mound(at=(-440, -470), ext=(90, 70), h=16.0, fall=0.95),
+        Mound(at=(-330, -430), ext=(110, 60), h=9.0, fall=0.95),
+        # The watch ridge north of the capital; the Kingsway rounds its western tip.
+        Ridge(a=(-60, -318), b=(70, -296), half=32, h=15.0, fall=0.85),
+        # The western ridge behind the corrie.
+        Ridge(a=(-505, -420), b=(-495, -60), half=45, h=26.0, fall=0.85),
+        # The capital's citadel spur and the eastern hills around Emberdeep.
+        Mound(at=(112, -170), ext=(84, 66), h=16.0, fall=0.75),
+        # The citadel's court: the spur's crown levelled at the spur's own height (relative to the
+        # generated ground under it, so 14 of the spur's 16 m) for the keep, towers and halls. Its
+        # level core (72% of the extent) holds the curtain towers too: they stood on the falloff ring
+        # with up to 4 m of fall under them.
+        Mound(at=(106, -162), ext=(60, 54), h=14.0, fall=0.28, flat=1.0),
+        Mound(at=(470, -110), ext=(80, 110), h=22.0, fall=0.9),
+        Mound(at=(300, -262), ext=(80, 60), h=11.0, fall=0.9),
+        Mound(at=(440, -420), ext=(70, 80), h=14.0, fall=0.9),
+        # The Tarn: a wadeable shelf, then a deep basin behind a real drop (NOW.md invariant 24).
+        Mound(at=(-372, 132), ext=(96, 78), h=-0.7, fall=0.45, flat=0.85),
+        Mound(at=(-384, 138), ext=(74, 58), h=-5.0, fall=0.25, flat=1.0),
+        # The fens and the delta below the Tarn.
+        Mound(at=(-420, 372), ext=(110, 64), h=-2.4, fall=0.9),
+        # The southern farm belt and the ash flats.
+        Mound(at=(150, 300), ext=(130, 80), h=5.0, fall=0.95),
+        Mound(at=(360, 300), ext=(90, 70), h=-3.0, fall=0.95),
+        # The border hills, gapped at the Southmarch Gate and at the Ashen Breach.
+        Ridge(a=(-200, 432), b=(24, 428), half=28, h=14.0, fall=0.85),
+        Ridge(a=(122, 424), b=(520, 406), half=30, h=16.0, fall=0.85),
+        Ridge(a=(512, -600), b=(508, -330), half=28, h=26.0, fall=0.85),
+        Ridge(a=(508, -236), b=(512, 60), half=28, h=20.0, fall=0.85),
+    ]
+    for a, b in zip(valley, valley[1:]):
+        forms.append(Ridge(a=a, b=b, half=38, h=-6.0, fall=0.9))
+    for a, b in zip(outflow, outflow[1:]):
+        forms.append(Ridge(a=a, b=b, half=30, h=-4.0, fall=0.9))
+    forms.append(Water(at=(-384, 136), ext=(120, 100), ident="Tarn",
+                       shallow=(0.21, 0.33, 0.34), deep=(0.05, 0.13, 0.18), opaque=1.5))
+    return forms
+
+
+def district_terraces() -> list:
+    """The levelled strips the capital's frontages stand on (tools/district_layouts.py): a flat ridge
+    along each street, at the country's own height, so a terrace follows its lane instead of being an
+    axis-aligned pad dropped across it."""
+    import district_layouts
+    return [Ridge(a=a, b=b, half=half, h=0.0, fall=0.55, flat=0.95)
+            for a, b, half in district_layouts.TERRACES
+            if EXTENT_X[0] < a[0] < EXTENT_X[1] and ROWS[0][0] < a[1] < ROWS[-1][1]]
+
+
+def district_pads() -> list:
+    """Levelled pads for this realm's standalone structures (tools/district_layouts.py)."""
+    import district_layouts
+    return [Yard(at=(x, z), ext=(hx, hz), feather=2.5, blend=0.9)
+            for x, z, hx, hz in district_layouts.pads(district_layouts.ITEMS)
+            if EXTENT_X[0] < x < EXTENT_X[1] and ROWS[0][0] < z < ROWS[-1][1]]
 
 
 def build_ember() -> tuple[str, list[str]]:
     spec = cells()
-    by_key = {c.key: c for c in spec}
-    link = seams()
-
     issues = check_tiling("EmberCrown", spec, ROWS, EXTENT_X)
-    issues += check_seams("EmberCrown", by_key, link)
-
-    routed = {c.key: list(c.routes) for c in spec}
-    for seam in link:
-        routed[seam.a].append(Route(seam.reach_a, local(by_key[seam.a], seam.at)))
-        routed[seam.b].append(Route(local(by_key[seam.b], seam.at), seam.reach_b))
-    issues += check_envelopes("EmberCrown", spec, routed)
-
-    return emit("ember_crown", HEADER, spec, link,
-                ENVIRONMENT, BUDGET, RESOURCE, SCATTER, "TemperateLowland"), issues
+    spec, _ = apply_origins(spec, [])
+    spec = place_world(spec, geography() + district_terraces() + district_pads())
+    spec, road_issues = realize_roads(spec, roads())
+    issues += [f"EmberCrown: {issue}" for issue in road_issues]
+    issues += check_envelopes("EmberCrown", spec, {c.key: list(c.routes) for c in spec})
+    return emit("ember_crown", HEADER, spec, [], ENVIRONMENT, BUDGET, RESOURCE, SCATTER,
+                "TemperateLowland"), issues

@@ -29,7 +29,8 @@ import difflib
 import re
 import subprocess
 import sys
-from dataclasses import dataclass, field
+import math
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -131,6 +132,19 @@ class Cell:
     scatter: str | None = None             # id of a shared scatter profile
     biome: str | None = None               # data/biomes/<name>.tres, overriding the region default
     new_scene: str | None = None           # body of a transitional cell scene to create
+    # ⚠️ WHERE THIS CELL'S AUTHORED CONTENT SITS IN THE WORLD (2026-09 world rebuild). Settlements were
+    # authored around their cell's own origin, so every place stood on a cell centre and the realm
+    # read as a lattice. `origin` is the world point the content frame is placed at; every local
+    # landform, route, yard, water body and seam reach point in this cell is shifted by
+    # origin - center, and tools/shift_cell_content.py moves the scene's nodes by the same amount.
+    # None keeps content centred (the right thing for an empty cell).
+    origin: tuple[float, float] | None = None
+
+    @property
+    def offset(self) -> tuple[float, float]:
+        if self.origin is None:
+            return (0.0, 0.0)
+        return (round(self.origin[0] - self.center[0], 3), round(self.origin[1] - self.center[1], 3))
 
     @property
     def left(self) -> float: return self.center[0] - self.size[0] / 2
@@ -156,6 +170,156 @@ class Seam:
 
 def local(cell: Cell, world: tuple[float, float]) -> tuple[float, float]:
     return (round(world[0] - cell.center[0], 3), round(world[1] - cell.center[1], 3))
+
+
+# --------------------------------------------------------------------------------------------------
+# World-space authoring (2026-09 world rebuild)
+# --------------------------------------------------------------------------------------------------
+#
+# ⚠️ A REALM IS DESIGNED IN WORLD SPACE AND STORED IN CELLS. A mountain range, a river valley and a
+# road between two towns do not know where the streaming lattice is, and authoring them cell by cell
+# is exactly how every road came to cross every seam at its midpoint. Author geography and roads as
+# world coordinates here; the generator assigns each landform to the cell that contains it and splits
+# each road at every edge it crosses, generating the seam points both cells derive from.
+
+def _shift(item, dx: float, dz: float):
+    if not (dx or dz):
+        return item
+    move = lambda p: (round(p[0] + dx, 3), round(p[1] + dz, 3))
+    if isinstance(item, Mound):
+        return replace(item, at=move(item.at))
+    if isinstance(item, Ridge):
+        return replace(item, a=move(item.a), b=move(item.b))
+    if isinstance(item, Route):
+        return replace(item, a=move(item.a), b=move(item.b))
+    if isinstance(item, (Yard, Water)):
+        return replace(item, at=move(item.at))
+    raise TypeError(item)
+
+
+def apply_origins(cells: list[Cell], seams: list[Seam]) -> tuple[list[Cell], list[Seam]]:
+    """Moves every cell's content frame to its `origin` (see Cell.origin)."""
+    by_key = {c.key: c for c in cells}
+    moved = []
+    for cell in cells:
+        dx, dz = cell.offset
+        moved.append(replace(
+            cell,
+            landforms=tuple(_shift(f, dx, dz) for f in cell.landforms),
+            routes=tuple(_shift(r, dx, dz) for r in cell.routes),
+            yards=tuple(_shift(y, dx, dz) for y in cell.yards),
+            waters=tuple(_shift(w, dx, dz) for w in cell.waters)))
+    shifted_seams = []
+    for seam in seams:
+        ax, az = by_key[seam.a].offset
+        bx, bz = by_key[seam.b].offset
+        shifted_seams.append(replace(
+            seam, reach_a=(seam.reach_a[0] + ax, seam.reach_a[1] + az),
+            reach_b=(seam.reach_b[0] + bx, seam.reach_b[1] + bz)))
+    return moved, shifted_seams
+
+
+def cell_containing(cells: list[Cell], x: float, z: float) -> Cell | None:
+    for cell in cells:
+        if cell.left - 1e-6 <= x <= cell.right + 1e-6 and cell.top - 1e-6 <= z <= cell.bottom + 1e-6:
+            return cell
+    return None
+
+
+def place_world(cells: list[Cell], items) -> list[Cell]:
+    """Adds world-space landforms, yards and waters to the cells that contain their centres."""
+    extra: dict[str, list] = {c.key: [] for c in cells}
+    issues = []
+    for item in items:
+        if isinstance(item, Ridge):
+            cx, cz = (item.a[0] + item.b[0]) / 2, (item.a[1] + item.b[1]) / 2
+        else:
+            cx, cz = item.at
+        cell = cell_containing(cells, cx, cz)
+        if cell is None:
+            raise ValueError(f"world item at ({cx}, {cz}) is outside the lattice: {item}")
+        extra[cell.key].append(_shift(item, -cell.center[0], -cell.center[1]))
+    out = []
+    for cell in cells:
+        forms = [i for i in extra[cell.key] if isinstance(i, (Mound, Ridge))]
+        yards = [i for i in extra[cell.key] if isinstance(i, Yard)]
+        waters = [i for i in extra[cell.key] if isinstance(i, Water)]
+        out.append(replace(cell, landforms=tuple(cell.landforms) + tuple(forms),
+                           yards=tuple(cell.yards) + tuple(yards),
+                           waters=tuple(cell.waters) + tuple(waters)))
+    return out
+
+
+@dataclass(frozen=True)
+class Road:
+    """A world-space road: a polyline the generator splits at every cell edge it crosses and into
+    pieces no longer than `step`, so each piece grades between its own ground rather than cutting a
+    straight trench across a hill."""
+    points: tuple[tuple[float, float], ...]
+    width: float = 5.0
+    shoulder: float = 2.0
+    step: float = 40.0
+
+
+def realize_roads(cells: list[Cell], roads: list[Road]) -> tuple[list[Cell], list[str]]:
+    """Appends each road's per-cell pieces to its cells. Returns the cells and any issues."""
+    xs = sorted({round(v, 3) for c in cells for v in (c.left, c.right)})
+    zs = sorted({round(v, 3) for c in cells for v in (c.top, c.bottom)})
+    pieces: dict[str, list[Route]] = {c.key: [] for c in cells}
+    issues: list[str] = []
+    for road in roads:
+        for (ax, az), (bx, bz) in zip(road.points, road.points[1:]):
+            ts = {0.0, 1.0}
+            if bx != ax:
+                ts |= {(x - ax) / (bx - ax) for x in xs if 0 < (x - ax) / (bx - ax) < 1}
+            if bz != az:
+                ts |= {(z - az) / (bz - az) for z in zs if 0 < (z - az) / (bz - az) < 1}
+            ordered = sorted(ts)
+            points = [(ax + (bx - ax) * t, az + (bz - az) * t) for t in ordered]
+            # Keep only the points where the road actually changes cell: the candidate breaks include
+            # every column edge of EVERY row, and a split at another row's edge would leave a piece
+            # end a hair from this cell's edge that the seam checker rightly calls an open road.
+            owners = [cell_containing(cells, (p[0] + q[0]) / 2, (p[1] + q[1]) / 2)
+                      for p, q in zip(points, points[1:])]
+            kept = [points[0]]
+            for i in range(1, len(points) - 1):
+                if owners[i - 1] is not owners[i]:
+                    kept.append(points[i])
+            kept.append(points[-1])
+            points = kept
+            for (px, pz), (qx, qz) in zip(points, points[1:]):
+                length = math.hypot(qx - px, qz - pz)
+                if length < 0.5:
+                    continue
+                mx, mz = (px + qx) / 2, (pz + qz) / 2
+                cell = cell_containing(cells, mx, mz)
+                if cell is None:
+                    issues.append(f"road piece ({px:.1f},{pz:.1f})->({qx:.1f},{qz:.1f}) leaves the lattice")
+                    continue
+                for corner_x in (cell.left, cell.right):
+                    for corner_z in (cell.top, cell.bottom):
+                        for ex, ez in ((px, pz), (qx, qz)):
+                            if math.hypot(ex - corner_x, ez - corner_z) < 3.0:
+                                issues.append(f"road crosses the lattice within 3 m of a cell corner at "
+                                              f"({corner_x}, {corner_z}); move a vertex")
+                parts = max(1, math.ceil(length / road.step))
+                cuts = [0.0]
+                for i in range(1, parts):
+                    cx, cz = px + (qx - px) * i / parts, pz + (qz - pz) * i / parts
+                    near_edge = min(abs(cx - cell.left), abs(cx - cell.right),
+                                    abs(cz - cell.top), abs(cz - cell.bottom)) < 1.5
+                    if not near_edge:
+                        cuts.append(i / parts)
+                cuts.append(1.0)
+                for s, e in zip(cuts, cuts[1:]):
+                    sx, sz = px + (qx - px) * s, pz + (qz - pz) * s
+                    ex, ez = px + (qx - px) * e, pz + (qz - pz) * e
+                    pieces[cell.key].append(Route(
+                        (round(sx - cell.center[0], 2), round(sz - cell.center[1], 2)),
+                        (round(ex - cell.center[0], 2), round(ez - cell.center[1], 2)),
+                        road.width, road.shoulder))
+    out = [replace(c, routes=tuple(c.routes) + tuple(pieces[c.key])) for c in cells]
+    return out, issues
 
 
 # --------------------------------------------------------------------------------------------------
@@ -450,6 +614,8 @@ def anchor_points(text: str, cells: list[Cell]) -> str:
     spawn, portal and safe-zone centre used to be typed as world Vector3s beside the cells, so moving
     the town or the Crossway silently left the player spawning in the old place. Write them as
       @CELL(key, dx, y, dz)@            -> Vector3(center.x + dx, y, center.z + dz)
+      @ORIGIN(key, dx, y, dz)@          -> the same, from the cell's content origin (Cell.origin)
+      @WORLD(x, y, z)@                  -> a world point the spec authors directly (world geometry)
       @BOUNDS(margin, y, height)@       -> the lattice's AABB grown by `margin` on x/z
     """
     by_key = {c.key: c for c in cells}
@@ -469,6 +635,18 @@ def anchor_points(text: str, cells: list[Cell]) -> str:
         return (f"AABB({_num(left)}, {_num(y)}, {_num(top)}, {_num(right - left)}, "
                 f"{_num(height)}, {_num(bottom - top)})")
 
+    def origin_point(match: re.Match) -> str:
+        key, dx, y, dz = [part.strip() for part in match.group(1).split(",")]
+        cell = by_key[key]
+        ox, oz = cell.origin if cell.origin is not None else cell.center
+        return f"Vector3({_num(ox + float(dx))}, {_num(float(y))}, {_num(oz + float(dz))})"
+
+    def world_point(match: re.Match) -> str:
+        x, y, z = (float(part) for part in match.group(1).split(","))
+        return f"Vector3({_num(x)}, {_num(y)}, {_num(z)})"
+
+    text = re.sub(r"@ORIGIN\(([^)]*)\)@", origin_point, text)
+    text = re.sub(r"@WORLD\(([^)]*)\)@", world_point, text)
     text = re.sub(r"@CELL\(([^)]*)\)@", cell_point, text)
     return re.sub(r"@BOUNDS\(([^)]*)\)@", bounds, text)
 

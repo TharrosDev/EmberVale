@@ -15,24 +15,20 @@ extends SceneTree
 
 const REGION := "res://data/regions/EmberCrown.tres"
 
-# ⚠️ THESE ARE WORLD COORDINATES AND THE PROBE STREAMS THE REGION (the 2026-08-29 geography
-# overhaul). It used to instance embermarket.tscn on its own, which worked while every cell carried
-# its own 0.5 m box floor; the floors are gone and the ground is built by RegionStreamer from the
-# region heightfield, so a bare cell instance is a market suspended over nothing and the body fell
-# ninety-nine metres. The Embermarket's centre is (0, 0, 85), so cell-local (16, 14) is world
-# (16, 99) — read the local offset out of the .tres, never a remembered world number.
+# ⚠️ THESE ARE LOCAL TO THE EMBERMARKET'S CONTENT FRAME, NOT WORLD COORDINATES. The probe streams the
+# region (a bare cell instance is a market over nothing), and the 2026-09 world rebuild moved the
+# market half a kilometre and off its cell centre — so the start points are resolved at run time
+# from the region resource and the scene's recorded content offset, never typed as world numbers.
 #
-# The Salt Steps terrace is a 0.45 m landform now rather than a 15 cm slab. It is deliberately under
-# StepUp.MaxHeight (0.5 m, the navmesh's agent_max_climb): raised ground the player cannot step onto
-# is a wall, and this probe is the only thing that would notice.
+# The Salt Steps terrace is a 0.45 m landform. It is deliberately under StepUp.MaxHeight (0.5 m, the
+# navmesh's agent_max_climb): raised ground the player cannot step onto is a wall.
 
 # West of the terrace edge on the flat Timber Yard, walking EAST into it.
-const DAIS_START := Vector3(7.0, 0.2, 99.0)
+const DAIS_LOCAL := Vector3(7.0, 0.2, 14.0)
 
 # On the terrace, two metres west of the bell tower's collider, walking east into 11 m of stone. The
 # negative case: this must NOT be climbable, or the step-up has turned the realm into a staircase.
-# Its start y clears the 0.3 m terrace it stands on, unlike the positive case's.
-const TOWER_START := Vector3(12.0, 0.8, 99.0)
+const TOWER_LOCAL := Vector3(12.0, 0.8, 14.0)
 
 const CLIMB_EPSILON := 0.1  # comfortably above floor_snap_length, comfortably below the terrace
 const STEPS := 240          # 4 seconds at 60 Hz — far longer than either walk needs
@@ -59,8 +55,9 @@ func _initialize() -> void:
 	# ⚠️ BOTH DIRECTIONS OR IT PROVES NOTHING. A step-up that climbs everything passes the first case
 	# and turns every wall in the game into a staircase — which is the failure mode the third engine
 	# move exists to prevent, and the only one a positive-only harness would ship.
-	var climbed_dais := await _walk("the salt steps", DAIS_START, Vector3(1, 0, 0), true)
-	var climbed_tower := await _walk("the bell tower", TOWER_START, Vector3(1, 0, 0), false)
+	var market := _content_origin(REGION, "ember_crown.embermarket")
+	var climbed_dais := await _walk("the salt steps", market + DAIS_LOCAL, Vector3(1, 0, 0), true)
+	var climbed_tower := await _walk("the bell tower", market + TOWER_LOCAL, Vector3(1, 0, 0), false)
 
 	if climbed_dais and climbed_tower:
 		print("PASS: the body climbs the 0.45 m terrace and does not climb an 11 m tower")
@@ -129,3 +126,20 @@ func _walk(label: String, start: Vector3, direction: Vector3, expect_climb: bool
 		% [label, start, pos, rose, climbed, expect_climb, "ok" if ok else "WRONG"])
 	body.queue_free()
 	return ok
+
+
+# The world position of a cell's authored content frame: its Center plus the content offset
+# tools/shift_cell_content.py recorded on the scene root (2026-09 world rebuild, where settlements
+# stopped sitting on their cell centres).
+func _content_origin(region_path: String, cell_id: String) -> Vector3:
+	for cell in load(region_path).get("Cells"):
+		if String(cell.get("Id")) != cell_id:
+			continue
+		var centre: Vector3 = cell.get("Center")
+		var state: SceneState = (load(String(cell.get("ScenePath"))) as PackedScene).get_state()
+		for i in state.get_node_property_count(0):
+			if state.get_node_property_name(0, i) == "metadata/content_offset":
+				var offset: Vector2 = state.get_node_property_value(0, i)
+				return centre + Vector3(offset.x, 0, offset.y)
+		return centre
+	return Vector3.ZERO

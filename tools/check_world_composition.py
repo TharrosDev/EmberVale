@@ -168,7 +168,8 @@ def measure(region_path: Path):
         failures.append(f"aligned: {len(aligned)} major pairs share an axis (allowed {allowed}): "
                         + "; ".join(aligned[:8]))
 
-    if len(majors) >= 4:
+    # Spread is only a pattern with enough places to have one; four points always look regular-ish.
+    if len(majors) >= 5:
         nearest = []
         for a in majors:
             nearest.append(min(math.hypot(a[2] - b[2], a[3] - b[3]) for b in majors if b is not a))

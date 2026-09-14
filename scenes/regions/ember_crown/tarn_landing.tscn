@@ -175,6 +175,7 @@ height = 1.8
 ; terrain's levelling AND the scatter's clearance, instead of a slab that had to agree with three
 ; other files by hand.
 [node name="TarnLanding" type="Node3D"]
+metadata/content_offset = Vector2(25, -25)
 
 [node name="Nav" type="NavigationRegion3D" parent="."]
 navigation_mesh = SubResource("NavMesh_tarn")
@@ -183,7 +184,7 @@ navigation_mesh = SubResource("NavMesh_tarn")
 script = ExtResource("1_navbaker")
 
 [node name="DockComplex" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9848, 0, 0.1736, 0, 1, 0, -0.1736, 0, 0.9848, -6, 0, 17)
+transform = Transform3D(0.9848, 0, 0.1736, 0, 1, 0, -0.1736, 0, 0.9848, 19, 0, -8)
 
 [node name="Model" parent="Nav/DockComplex" instance=ExtResource("10_docks")]
 
@@ -209,18 +210,18 @@ shape = SubResource("Shape_dock_house")
 ; worth holding across both cells, because it is the one a re-authored bank cannot invalidate.
 ; ⚠️ MOVE THE WATER'S SurfaceY AND THESE TWO MUST MOVE WITH IT. Nothing links them.
 [node name="JettyNorth" type="Node3D" parent="Nav" groups=["terrain_absolute"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18, 0, 6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, -19)
 
 [node name="Model" parent="Nav/JettyNorth" instance=ExtResource("11_jetty")]
 
 [node name="JettySouth" type="Node3D" parent="Nav" groups=["terrain_absolute"]]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -1, 0, 16)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 0, -9)
 
 [node name="Model" parent="Nav/JettySouth" instance=ExtResource("11_jetty")]
 
 ; --- Wenna's curing sheds, south of the track ------------------------------------
 [node name="CuringHut" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.1736, 0, -0.9848, 0, 1, 0, 0.9848, 0, -0.1736, 1, 0, 7)
+transform = Transform3D(-0.1736, 0, -0.9848, 0, 1, 0, 0.9848, 0, -0.1736, 26, 0, -18)
 
 [node name="Model" parent="Nav/CuringHut" instance=ExtResource("12_hut")]
 
@@ -233,7 +234,7 @@ shape = SubResource("Shape_hut")
 ; The drying racks: a fence line is exactly what a rack of split fish looks like from ten feet, and it
 ; is already in the kit. Three of them make the row read as work rather than as a boundary.
 [node name="RackA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9962, 0, 0.0872, 0, 1, 0, -0.0872, 0, 0.9962, -11, 0, 8)
+transform = Transform3D(0.9962, 0, 0.0872, 0, 1, 0, -0.0872, 0, 0.9962, 14, 0, -17)
 
 [node name="Model" parent="Nav/RackA" instance=ExtResource("20_fence")]
 
@@ -244,7 +245,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="RackC" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9903, 0, 0.1392, 0, 1, 0, -0.1392, 0, 0.9903, -9, 0, 10)
+transform = Transform3D(0.9903, 0, 0.1392, 0, 1, 0, -0.1392, 0, 0.9903, 16, 0, -15)
 
 [node name="Model" parent="Nav/RackC" instance=ExtResource("20_fence")]
 
@@ -256,12 +257,12 @@ shape = SubResource("Shape_fence")
 
 ; --- Odger's chandlery, north of the track ---------------------------------------
 [node name="Chandlery" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9848, 0, -0.1736, 0, 1, 0, 0.1736, 0, -0.9848, 11, 0, -15)
+transform = Transform3D(-0.9848, 0, -0.1736, 0, 1, 0, 0.1736, 0, -0.9848, 36, 0, -40)
 
 [node name="Model" parent="Nav/Chandlery" instance=ExtResource("42_cottage_modular")]
 
 [node name="CartA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 13, 0, -10)
+transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 38, 0, -35)
 
 [node name="Model" parent="Nav/CartA" instance=ExtResource("21_cart")]
 
@@ -272,7 +273,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
 shape = SubResource("Shape_cart")
 
 [node name="BarrelA" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, -11)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 39, 0, -36)
 
 [node name="Model" parent="Nav/BarrelA" instance=ExtResource("17_barrel")]
 
@@ -283,7 +284,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
 shape = SubResource("Shape_barrel")
 
 [node name="BarrelC" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, 3)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, -22)
 
 [node name="Model" parent="Nav/BarrelC" instance=ExtResource("17_barrel")]
 
@@ -294,7 +295,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
 shape = SubResource("Shape_barrel")
 
 [node name="CrateA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9063, 0, 0.4226, 0, 1, 0, -0.4226, 0, 0.9063, 7, 0, -12)
+transform = Transform3D(0.9063, 0, 0.4226, 0, 1, 0, -0.4226, 0, 0.9063, 32, 0, -37)
 
 [node name="Model" parent="Nav/CrateA" instance=ExtResource("18_crate")]
 
@@ -305,7 +306,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
 shape = SubResource("Shape_crate")
 
 [node name="SacksA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, 0.342, -5, 0, 13)
+transform = Transform3D(0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, 0.342, 20, 0, -12)
 
 [node name="Model" parent="Nav/SacksA" instance=ExtResource("19_sacks")]
 
@@ -316,7 +317,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.22, 0)
 shape = SubResource("Shape_sacks")
 
 [node name="HayA" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, -0.342, 12, 0, -19)
+transform = Transform3D(-0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, -0.342, 37, 0, -44)
 
 [node name="Model" parent="Nav/HayA" instance=ExtResource("25_hay")]
 
@@ -327,7 +328,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
 shape = SubResource("Shape_hay")
 
 [node name="BenchA" type="Node3D" parent="Nav"]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -11, 0, 12)
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 14, 0, -13)
 
 [node name="Model" parent="Nav/BenchA" instance=ExtResource("22_bench")]
 
@@ -339,7 +340,7 @@ shape = SubResource("Shape_bench")
 
 ; The shore fire, between the two trades — the Landing's one gathering point.
 [node name="ShoreFire" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, 11)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17, 0, -14)
 
 [node name="Model" parent="Nav/ShoreFire" instance=ExtResource("16_campfire")]
 
@@ -355,7 +356,7 @@ light_energy = 1.6
 omni_range = 11.0
 
 [node name="BrazierJetty" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 0, 8.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, -16.5)
 
 [node name="Model" parent="Nav/BrazierJetty" instance=ExtResource("15_brazier")]
 
@@ -377,7 +378,7 @@ light_energy = 1.6
 omni_range = 11.0
 
 [node name="BrazierRoad" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, -5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27, 0, -30)
 
 [node name="Model" parent="Nav/BrazierRoad" instance=ExtResource("15_brazier")]
 
@@ -400,7 +401,7 @@ omni_range = 10.0
 
 ; --- The verges ------------------------------------------------------------------
 [node name="PineA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 22, 0, -20)
+transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 47, 0, -45)
 
 [node name="Model" parent="Nav/PineA" instance=ExtResource("24_pine")]
 
@@ -411,7 +412,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
 shape = SubResource("Shape_pine")
 
 [node name="PineB" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 24, 0, 4)
+transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 49, 0, -21)
 
 [node name="Model" parent="Nav/PineB" instance=ExtResource("24_pine")]
 
@@ -422,7 +423,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
 shape = SubResource("Shape_pine")
 
 [node name="PineC" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 18, 0, -2)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 43, 0, -27)
 
 [node name="Model" parent="Nav/PineC" instance=ExtResource("24_pine")]
 
@@ -433,7 +434,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
 shape = SubResource("Shape_pine")
 
 [node name="PineD" type="Node3D" parent="Nav"]
-transform = Transform3D(0.5, 0, -0.866, 0, 1, 0, 0.866, 0, 0.5, 26, 0, 12)
+transform = Transform3D(0.5, 0, -0.866, 0, 1, 0, 0.866, 0, 0.5, 51, 0, -13)
 
 [node name="Model" parent="Nav/PineD" instance=ExtResource("24_pine")]
 
@@ -444,7 +445,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
 shape = SubResource("Shape_pine")
 
 [node name="RocksA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.6428, 0, 0.766, 0, 1, 0, -0.766, 0, 0.6428, -20, 0, -14)
+transform = Transform3D(0.6428, 0, 0.766, 0, 1, 0, -0.766, 0, 0.6428, 5, 0, -39)
 
 [node name="Model" parent="Nav/RocksA" instance=ExtResource("23_rocks")]
 
@@ -455,7 +456,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
 shape = SubResource("Shape_rocks")
 
 [node name="RocksB" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, -24, 0, -20)
+transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, 1, 0, -45)
 
 [node name="Model" parent="Nav/RocksB" instance=ExtResource("23_rocks")]
 
@@ -466,7 +467,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
 shape = SubResource("Shape_rocks")
 
 [node name="RocksC" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9848, 0, 0.1736, 0, 1, 0, -0.1736, 0, -0.9848, 23, 0, 10)
+transform = Transform3D(-0.9848, 0, 0.1736, 0, 1, 0, -0.1736, 0, -0.9848, 48, 0, -15)
 
 [node name="Model" parent="Nav/RocksC" instance=ExtResource("23_rocks")]
 
@@ -478,7 +479,7 @@ shape = SubResource("Shape_rocks")
 
 ; --- The waystone. ⚠️ TravelName is a LOCALE KEY, not prose (38K).
 [node name="LandingWaystone" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, -12)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 41, 0, -37)
 script = ExtResource("2_entity")
 DisplayName = "Landing Waystone"
 
@@ -501,7 +502,7 @@ RegionId = "region.ember_crown"
 ; from the whole game in 38N2. One interactable each (a DialogueComponent), trade behind
 ; DialogueEffect.OpenShop (38E).
 [node name="Wenna" type="Node3D" parent="."]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -3.5, 0, 5.5)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 21.5, 0, -19.5)
 script = ExtResource("2_entity")
 DisplayName = "Wenna Tarn"
 TemplateId = "npc.wenna"
@@ -535,7 +536,7 @@ ScheduleId = "schedule.tarn.curer"
 [node name="Model" parent="Wenna" instance=ExtResource("30_wenna")]
 
 [node name="Odger" type="Node3D" parent="."]
-transform = Transform3D(-0.9848, 0, 0.1736, 0, 1, 0, -0.1736, 0, -0.9848, 9, 0, -11.5)
+transform = Transform3D(-0.9848, 0, 0.1736, 0, 1, 0, -0.1736, 0, -0.9848, 34, 0, -36.5)
 script = ExtResource("2_entity")
 DisplayName = "Odger Vane"
 TemplateId = "npc.odger"
@@ -574,7 +575,7 @@ ScheduleId = "schedule.tarn.chandler"
 ; --- the boats' gear where the boats land, and the east approach closed in.
 
 [node name="RackD" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9962, 0, -0.0872, 0, 1, 0, 0.0872, 0, 0.9962, -12, 0, 5)
+transform = Transform3D(0.9962, 0, -0.0872, 0, 1, 0, 0.0872, 0, 0.9962, 13, 0, -20)
 
 [node name="Model" parent="Nav/RackD" instance=ExtResource("20_fence")]
 
@@ -585,7 +586,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="RackF" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.0872, 0, 0.9962, 0, 1, 0, -0.9962, 0, -0.0872, -4, 0, 12)
+transform = Transform3D(-0.0872, 0, 0.9962, 0, 1, 0, -0.9962, 0, -0.0872, 21, 0, -13)
 
 [node name="Model" parent="Nav/RackF" instance=ExtResource("20_fence")]
 
@@ -596,7 +597,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="BarrelE" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 9)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25, 0, -16)
 
 [node name="Model" parent="Nav/BarrelE" instance=ExtResource("17_barrel")]
 
@@ -607,7 +608,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
 shape = SubResource("Shape_barrel")
 
 [node name="CrateC" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -1, 0, 3)
+transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 24, 0, -22)
 
 [node name="Model" parent="Nav/CrateC" instance=ExtResource("18_crate")]
 
@@ -618,7 +619,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
 shape = SubResource("Shape_crate")
 
 [node name="CrateD" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, -0.766, 17, 0, -13)
+transform = Transform3D(-0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, -0.766, 42, 0, -38)
 
 [node name="Model" parent="Nav/CrateD" instance=ExtResource("18_crate")]
 
@@ -629,7 +630,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
 shape = SubResource("Shape_crate")
 
 [node name="SacksB" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 6, 0, -16)
+transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 31, 0, -41)
 
 [node name="Model" parent="Nav/SacksB" instance=ExtResource("19_sacks")]
 
@@ -640,7 +641,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.22, 0)
 shape = SubResource("Shape_sacks")
 
 [node name="BenchB" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 4, 0, -8)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 29, 0, -33)
 
 [node name="Model" parent="Nav/BenchB" instance=ExtResource("22_bench")]
 
@@ -651,7 +652,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
 shape = SubResource("Shape_bench")
 
 [node name="PineF" type="Node3D" parent="Nav"]
-transform = Transform3D(0.5, 0, 0.866, 0, 1, 0, -0.866, 0, 0.5, 24, 0, -12)
+transform = Transform3D(0.5, 0, 0.866, 0, 1, 0, -0.866, 0, 0.5, 49, 0, -37)
 
 [node name="Model" parent="Nav/PineF" instance=ExtResource("24_pine")]
 
@@ -662,7 +663,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
 shape = SubResource("Shape_pine")
 
 [node name="PineG" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.5, 0, -0.866, 0, 1, 0, 0.866, 0, -0.5, 6, 0, 20)
+transform = Transform3D(-0.5, 0, -0.866, 0, 1, 0, 0.866, 0, -0.5, 31, 0, -5)
 
 [node name="Model" parent="Nav/PineG" instance=ExtResource("24_pine")]
 
@@ -673,7 +674,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
 shape = SubResource("Shape_pine")
 
 [node name="PineH" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.5, 0, 0.866, 0, 1, 0, -0.866, 0, -0.5, 16, 0, 22)
+transform = Transform3D(-0.5, 0, 0.866, 0, 1, 0, -0.866, 0, -0.5, 41, 0, -3)
 
 [node name="Model" parent="Nav/PineH" instance=ExtResource("24_pine")]
 
@@ -684,7 +685,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
 shape = SubResource("Shape_pine")
 
 [node name="RocksD" type="Node3D" parent="Nav"]
-transform = Transform3D(0.1736, 0, 0.9848, 0, 1, 0, -0.9848, 0, 0.1736, 2, 0, -20)
+transform = Transform3D(0.1736, 0, 0.9848, 0, 1, 0, -0.9848, 0, 0.1736, 27, 0, -45)
 
 [node name="Model" parent="Nav/RocksD" instance=ExtResource("23_rocks")]
 
@@ -695,7 +696,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
 shape = SubResource("Shape_rocks")
 
 [node name="RocksE" type="Node3D" parent="Nav"]
-transform = Transform3D(0.766, 0, -0.6428, 0, 1, 0, 0.6428, 0, 0.766, -2, 0, 22)
+transform = Transform3D(0.766, 0, -0.6428, 0, 1, 0, 0.6428, 0, 0.766, 23, 0, -3)
 
 [node name="Model" parent="Nav/RocksE" instance=ExtResource("23_rocks")]
 
@@ -706,7 +707,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
 shape = SubResource("Shape_rocks")
 
 [node name="RocksG" type="Node3D" parent="Nav"]
-transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, -10, 0, -16)
+transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, 15, 0, -41)
 
 [node name="Model" parent="Nav/RocksG" instance=ExtResource("23_rocks")]
 
@@ -737,7 +738,7 @@ shape = SubResource("Shape_rocks")
 
 
 [node name="MapPin" type="Node3D" parent="."]
-position = Vector3(-6, 0, 17)
+position = Vector3(19, 0, -8)
 script = ExtResource("maploc_39_5a")
 LocationId = "location.tarn.landing"
 
@@ -761,7 +762,7 @@ LocationId = "location.tarn.chandler"
 ; it 0.74 m under the declared surface with its map pin under the water too. The shoreline along
 ; this stretch runs at about z = 12 and drops fast: +0.53 at z = 11.5, -0.69 at z = 13.
 [node name="ShrineElyndra" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, 11.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, -13.5)
 script = ExtResource("2_entity")
 
 [node name="Body" parent="Nav/ShrineElyndra" instance=ExtResource("shrine_body_41_5b")]

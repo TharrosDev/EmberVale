@@ -54,6 +54,9 @@
 [ext_resource type="Script" path="res://src/Shrines/ShrineComponent.cs" id="shrine_41_5b"]
 [ext_resource type="PackedScene" path="res://scenes/props/bld_archive_annexe.tscn" id="42b_bld_archive_annexe"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/npc_townsman.glb" id="42b_npc_townsman"]
+[ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_shuttered.tscn" id="dx_cottage_shuttered"]
+[ext_resource type="PackedScene" path="res://assets/models/architecture/bld_house_b.glb" id="dx_house_b"]
+[ext_resource type="PackedScene" path="res://scenes/props/bld_townhouse_balcony.tscn" id="dx_townhouse_balcony"]
 
 ; THE EMBERMARKET — "the Coilyard" (the 2026-08-28 layout rebuild). The Ember Crown's trade district, one street
 ; south of the town square, and as of this phase a district you navigate rather than a street you walk
@@ -136,6 +139,9 @@
 ; values below are the QUANTISED ones, so the file now says what the bake does: agent_height and
 ; agent_radius CEIL to a voxel (cell_height / cell_size), agent_max_climb FLOORS to cell_height.
 ; ⚠️ They encode this grid — change cell_size or cell_height and recompute all three with it.
+[sub_resource type="BoxShape3D" id="DxShape_house_b"]
+size = Vector3(4.3, 6.8, 5.1)
+
 [sub_resource type="BoxMesh" id="BoxMesh_salt_steps"]
 size = Vector3(11, 0.3, 10)
 
@@ -337,6 +343,7 @@ size = Vector3(1.84, 2.63, 0.93)
 ; terrain's levelling AND the scatter's clearance, instead of a slab that had to agree with three
 ; other files by hand.
 [node name="EmbermarketCell" type="Node3D"]
+metadata/content_offset = Vector2(-45, -20)
 
 [node name="Nav" type="NavigationRegion3D" parent="."]
 navigation_mesh = SubResource("NavMesh_market")
@@ -345,18 +352,19 @@ navigation_mesh = SubResource("NavMesh_market")
 script = ExtResource("1_navbaker")
 
 [node name="SaltSteps" type="MeshInstance3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0.15, 14)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -29, 0.15, -6)
 mesh = SubResource("BoxMesh_salt_steps")
 surface_material_override/0 = SubResource("Mat_plaza")
 
 [node name="SaltStepsCol" type="StaticBody3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -45, 0, -20)
 
 [node name="Shape" type="CollisionShape3D" parent="Nav/SaltStepsCol"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0.15, 14)
 shape = SubResource("Shape_salt_steps")
 
 [node name="StallW1" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.1045, 0, -0.9945, 0, 1, 0, 0.9945, 0, -0.1045, -2, 0, -14)
+transform = Transform3D(-0.1045, 0, -0.9945, 0, 1, 0, 0.9945, 0, -0.1045, -47, 0, -34)
 
 [node name="Model" parent="Nav/StallW1" instance=ExtResource("17_stand_a")]
 
@@ -378,7 +386,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0)
 shape = SubResource("Shape_barrel")
 
 [node name="StallW2" type="Node3D" parent="Nav"]
-transform = Transform3D(0.2079, 0, -0.9781, 0, 1, 0, 0.9781, 0, 0.2079, 3, 0, -13)
+transform = Transform3D(0.2079, 0, -0.9781, 0, 1, 0, 0.9781, 0, 0.2079, -42, 0, -33)
 
 [node name="Model" parent="Nav/StallW2" instance=ExtResource("18_stand_b")]
 
@@ -414,7 +422,7 @@ shape = SubResource("Shape_barrel")
 ; either row, so the rows have a rhythm instead of a uniform height. The first draft of this pass put
 ; a camping tent here for variety and it read as exactly that — a camping tent, parked in a market.
 [node name="StallW3" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.1045, 0, 0.9945, 0, 1, 0, -0.9945, 0, -0.1045, 2.6, 0, -5.6)
+transform = Transform3D(-0.1045, 0, 0.9945, 0, 1, 0, -0.9945, 0, -0.1045, -42.4, 0, -25.6)
 
 [node name="Model" parent="Nav/StallW3" instance=ExtResource("55_stall_empty")]
 
@@ -455,7 +463,7 @@ shape = SubResource("Shape_hay")
 ; --- The east row: three stalls facing west, turned to face the aisle -----------------------------
 
 [node name="StallE1" type="Node3D" parent="Nav"]
-transform = Transform3D(0.1045, 0, 0.9945, 0, 1, 0, -0.9945, 0, 0.1045, 8.4, 0, -5.2)
+transform = Transform3D(0.1045, 0, 0.9945, 0, 1, 0, -0.9945, 0, 0.1045, -36.6, 0, -25.2)
 
 [node name="Model" parent="Nav/StallE1" instance=ExtResource("18_stand_b")]
 
@@ -488,7 +496,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.225, 0)
 shape = SubResource("Shape_sacks")
 
 [node name="StallE2" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9903, 0, 0.1392, 0, 1, 0, -0.1392, 0, 0.9903, -1.2, 0, 2.6)
+transform = Transform3D(0.9903, 0, 0.1392, 0, 1, 0, -0.1392, 0, 0.9903, -46.2, 0, -17.4)
 
 [node name="Model" parent="Nav/StallE2" instance=ExtResource("55_stall_empty")]
 
@@ -527,7 +535,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
 shape = SubResource("Shape_crate")
 
 [node name="StallE3" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9903, 0, -0.1392, 0, 1, 0, 0.1392, 0, 0.9903, -1.2, 0, 8)
+transform = Transform3D(0.9903, 0, -0.1392, 0, 1, 0, 0.1392, 0, 0.9903, -46.2, 0, -12)
 
 [node name="Model" parent="Nav/StallE3" instance=ExtResource("17_stand_a")]
 
@@ -570,7 +578,7 @@ shape = SubResource("Shape_hay")
 ; the first pass of this rebuild still had not closed.
 
 [node name="StallX1" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, -13.5, 0, -10.2)
+transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, -58.5, 0, -30.2)
 
 [node name="Model" parent="Nav/StallX1" instance=ExtResource("17_stand_a")]
 
@@ -592,7 +600,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0)
 shape = SubResource("Shape_barrel")
 
 [node name="StallX4" type="Node3D" parent="Nav"]
-transform = Transform3D(0.5, 0, -0.866, 0, 1, 0, 0.866, 0, 0.5, 4.5, 0, 16)
+transform = Transform3D(0.5, 0, -0.866, 0, 1, 0, 0.866, 0, 0.5, -40.5, 0, -4)
 
 [node name="Model" parent="Nav/StallX4" instance=ExtResource("17_stand_a")]
 
@@ -616,7 +624,7 @@ shape = SubResource("Shape_hay")
 ; --- The plaza, off the aisle to the west: a well, three benches around it, and a cook-fire ---------
 
 [node name="Well" type="Node3D" parent="Nav"]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 12.5, 0.3, 11.5)
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -32.5, 0.3, -8.5)
 
 [node name="Model" parent="Nav/Well" instance=ExtResource("24_well")]
 
@@ -627,7 +635,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.375, 0)
 shape = SubResource("Shape_well")
 
 [node name="BenchA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9659, 0, 0.2588, 0, 1, 0, -0.2588, 0, 0.9659, 13, 0.3, 16.5)
+transform = Transform3D(0.9659, 0, 0.2588, 0, 1, 0, -0.2588, 0, 0.9659, -32, 0.3, -3.5)
 
 [node name="Model" parent="Nav/BenchA" instance=ExtResource("23_bench")]
 
@@ -638,7 +646,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0)
 shape = SubResource("Shape_bench")
 
 [node name="BenchB" type="Node3D" parent="Nav"]
-transform = Transform3D(0.2588, 0, -0.9659, 0, 1, 0, 0.9659, 0, 0.2588, 19.5, 0.3, 11.5)
+transform = Transform3D(0.2588, 0, -0.9659, 0, 1, 0, 0.9659, 0, 0.2588, -25.5, 0.3, -8.5)
 
 [node name="Model" parent="Nav/BenchB" instance=ExtResource("23_bench")]
 
@@ -649,7 +657,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0)
 shape = SubResource("Shape_bench")
 
 [node name="BenchC" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.5, 0, -0.866, 0, 1, 0, 0.866, 0, -0.5, 19, 0.3, 17)
+transform = Transform3D(-0.5, 0, -0.866, 0, 1, 0, 0.866, 0, -0.5, -26, 0.3, -3)
 
 [node name="Model" parent="Nav/BenchC" instance=ExtResource("23_bench")]
 
@@ -660,7 +668,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0)
 shape = SubResource("Shape_bench")
 
 [node name="Cauldron" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -14, 0, 21)
+transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -59, 0, 1)
 
 [node name="Model" parent="Nav/Cauldron" instance=ExtResource("27_cauldron")]
 
@@ -703,7 +711,7 @@ Radius = 12.0
 ; --- field that simply runs out.
 
 [node name="BellTower" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 16.5, 0.3, 14)
+transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -28.5, 0.3, -6)
 
 [node name="Model" parent="Nav/BellTower" instance=ExtResource("25_belltower")]
 
@@ -717,7 +725,7 @@ shape = SubResource("Shape_belltower")
 ; to walk *under* reads as a plane with objects on it. Two post colliders, not one solid box.
 
 [node name="Gazebo" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9063, 0, 0.4226, 0, 1, 0, -0.4226, 0, 0.9063, 4, 0, 6.5)
+transform = Transform3D(0.9063, 0, 0.4226, 0, 1, 0, -0.4226, 0, 0.9063, -41, 0, -13.5)
 
 [node name="Model" parent="Nav/Gazebo" instance=ExtResource("26_gazebo")]
 
@@ -739,17 +747,17 @@ shape = SubResource("Shape_gazebo_post")
 ; --- telling the player this was a level rather than a town.
 
 [node name="HouseW1" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9945, 0, 0.1045, 0, 1, 0, -0.1045, 0, 0.9945, -19, 0, -21.5)
+transform = Transform3D(0.9945, 0, 0.1045, 0, 1, 0, -0.1045, 0, 0.9945, -64, 0, -41.5)
 
 [node name="Model" parent="Nav/HouseW1" instance=ExtResource("60_shop_awning")]
 
 [node name="HouseW2" type="Node3D" parent="Nav"]
-transform = Transform3D(0.0349, 0, 0.9994, 0, 1, 0, -0.9994, 0, 0.0349, -22.5, 0, -6)
+transform = Transform3D(0.0349, 0, 0.9994, 0, 1, 0, -0.9994, 0, 0.0349, -67.5, 0, -26)
 
 [node name="Model" parent="Nav/HouseW2" instance=ExtResource("62_cottage_shuttered")]
 
 [node name="HouseW3" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, -24.6, 0, -20.2)
+transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, -69.6, 0, -40.2)
 
 [node name="Model" parent="Nav/HouseW3" instance=ExtResource("33_cottage")]
 
@@ -760,17 +768,17 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.1, 0)
 shape = SubResource("Shape_cottage")
 
 [node name="HouseE1" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9945, 0, 0.1045, 0, 1, 0, -0.1045, 0, -0.9945, -5, 0, -21.5)
+transform = Transform3D(-0.9945, 0, 0.1045, 0, 1, 0, -0.1045, 0, -0.9945, -50, 0, -41.5)
 
 [node name="Model" parent="Nav/HouseE1" instance=ExtResource("61_townhouse_balcony")]
 
 [node name="HouseE2" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9994, 0, -0.0349, 0, 1, 0, 0.0349, 0, -0.9994, 1.5, 0, -21)
+transform = Transform3D(-0.9994, 0, -0.0349, 0, 1, 0, 0.0349, 0, -0.9994, -43.5, 0, -41)
 
 [node name="Model" parent="Nav/HouseE2" instance=ExtResource("54_cottage_modular")]
 
 [node name="HouseE3" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9781, 0, 0.2079, 0, 1, 0, -0.2079, 0, -0.9781, 8, 0, -21.5)
+transform = Transform3D(-0.9781, 0, 0.2079, 0, 1, 0, -0.2079, 0, -0.9781, -37, 0, -41.5)
 
 [node name="Model" parent="Nav/HouseE3" instance=ExtResource("33_cottage")]
 
@@ -786,7 +794,7 @@ shape = SubResource("Shape_cottage")
 ; --- either side of. Without the island there is no lane, only an open field with stalls in it.
 
 [node name="NorthWallD" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9994, 0, 0.0349, 0, 1, 0, -0.0349, 0, -0.9994, 15.0, 0, -21.0)
+transform = Transform3D(-0.9994, 0, 0.0349, 0, 1, 0, -0.0349, 0, -0.9994, -30, 0, -41)
 
 [node name="Model" parent="Nav/NorthWallD" instance=ExtResource("31_house_a")]
 
@@ -797,7 +805,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.75, 0)
 shape = SubResource("Shape_house_a")
 
 [node name="NorthWallE" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9659, 0, -0.2588, 0, 1, 0, 0.2588, 0, -0.9659, 21.5, 0, -20.5)
+transform = Transform3D(-0.9659, 0, -0.2588, 0, 1, 0, 0.2588, 0, -0.9659, -23.5, 0, -40.5)
 
 [node name="Model" parent="Nav/NorthWallE" instance=ExtResource("32_house_b")]
 
@@ -808,7 +816,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.4, 0)
 shape = SubResource("Shape_house_b")
 
 [node name="WestWallB" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.0349, 0, 0.9994, 0, 1, 0, -0.9994, 0, -0.0349, -22.5, 0, 2.5)
+transform = Transform3D(-0.0349, 0, 0.9994, 0, 1, 0, -0.9994, 0, -0.0349, -67.5, 0, -17.5)
 
 [node name="Model" parent="Nav/WestWallB" instance=ExtResource("32_house_b")]
 
@@ -819,7 +827,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.4, 0)
 shape = SubResource("Shape_house_b")
 
 [node name="WestWallC" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.6428, 0, 0.766, 0, 1, 0, -0.766, 0, -0.6428, -21.5, 0, 22.0)
+transform = Transform3D(-0.6428, 0, 0.766, 0, 1, 0, -0.766, 0, -0.6428, -66.5, 0, 2)
 
 [node name="Model" parent="Nav/WestWallC" instance=ExtResource("33_cottage")]
 
@@ -830,7 +838,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.1, 0)
 shape = SubResource("Shape_cottage")
 
 [node name="BlockNorth" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.1736, 0, 0.9848, 0, 1, 0, -0.9848, 0, -0.1736, -4.5, 0, -15.5)
+transform = Transform3D(-0.1736, 0, 0.9848, 0, 1, 0, -0.9848, 0, -0.1736, -49.5, 0, -35.5)
 
 [node name="Model" parent="Nav/BlockNorth" instance=ExtResource("31_house_a")]
 
@@ -841,7 +849,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.75, 0)
 shape = SubResource("Shape_house_a")
 
 [node name="BlockWest" type="Node3D" parent="Nav"]
-transform = Transform3D(0.0349, 0, 0.9994, 0, 1, 0, -0.9994, 0, 0.0349, -9.0, 0, 9.5)
+transform = Transform3D(0.0349, 0, 0.9994, 0, 1, 0, -0.9994, 0, 0.0349, -54, 0, -10.5)
 
 [node name="Model" parent="Nav/BlockWest" instance=ExtResource("32_house_b")]
 
@@ -852,7 +860,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.4, 0)
 shape = SubResource("Shape_house_b")
 
 [node name="EastWallB" type="Node3D" parent="Nav"]
-transform = Transform3D(0.0349, 0, -0.9994, 0, 1, 0, 0.9994, 0, 0.0349, 23.5, 0, 12.0)
+transform = Transform3D(0.0349, 0, -0.9994, 0, 1, 0, 0.9994, 0, 0.0349, -21.5, 0, -8)
 
 [node name="Model" parent="Nav/EastWallB" instance=ExtResource("31_house_a")]
 
@@ -863,7 +871,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.75, 0)
 shape = SubResource("Shape_house_a")
 
 [node name="SouthWallA" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9976, 0, -0.0698, 0, 1, 0, 0.0698, 0, -0.9976, -2.0, 0, 22.5)
+transform = Transform3D(-0.9976, 0, -0.0698, 0, 1, 0, 0.0698, 0, -0.9976, -47, 0, 2.5)
 
 [node name="Model" parent="Nav/SouthWallA" instance=ExtResource("32_house_b")]
 
@@ -874,7 +882,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.4, 0)
 shape = SubResource("Shape_house_b")
 
 [node name="SouthWallB" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9976, 0, 0.0698, 0, 1, 0, -0.0698, 0, -0.9976, 10.0, 0, 22.5)
+transform = Transform3D(-0.9976, 0, 0.0698, 0, 1, 0, -0.0698, 0, -0.9976, -35, 0, 2.5)
 
 [node name="Model" parent="Nav/SouthWallB" instance=ExtResource("33_cottage")]
 
@@ -885,19 +893,19 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.1, 0)
 shape = SubResource("Shape_cottage")
 
 [node name="BlockSouth" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.0349, 0, 0.9994, 0, 1, 0, -0.9994, 0, -0.0349, -9, 0, 1)
+transform = Transform3D(-0.0349, 0, 0.9994, 0, 1, 0, -0.9994, 0, -0.0349, -54, 0, -19)
 
 [node name="Model" parent="Nav/BlockSouth" instance=ExtResource("53_townhouse")]
 
 [node name="EastWallA" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.0349, 0, -0.9994, 0, 1, 0, 0.9994, 0, -0.0349, 23, 0, -12)
+transform = Transform3D(-0.0349, 0, -0.9994, 0, 1, 0, 0.9994, 0, -0.0349, -22, 0, -32)
 
 [node name="Model" parent="Nav/EastWallA" instance=ExtResource("54_cottage_modular")]
 
 ; --- Fences and planting, filling the gaps between buildings so the edges close ---------------------
 
 [node name="FenceW1" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -24, 0, -15.5)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -69, 0, -35.5)
 
 [node name="Model" parent="Nav/FenceW1" instance=ExtResource("28_fence")]
 
@@ -908,7 +916,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceW2" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -24, 0, -12.5)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -69, 0, -32.5)
 
 [node name="Model" parent="Nav/FenceW2" instance=ExtResource("28_fence")]
 
@@ -919,7 +927,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceE1" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24.5, 0, -2.5)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -20.5, 0, -22.5)
 
 [node name="Model" parent="Nav/FenceE1" instance=ExtResource("28_fence")]
 
@@ -930,7 +938,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="FenceE2" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24.5, 0, 18)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -20.5, 0, -2)
 
 [node name="Model" parent="Nav/FenceE2" instance=ExtResource("28_fence")]
 
@@ -941,7 +949,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("Shape_fence")
 
 [node name="TreeW1" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, -20.5, 0, 16.5)
+transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, -65.5, 0, -3.5)
 
 [node name="Model" parent="Nav/TreeW1" instance=ExtResource("29_tree")]
 
@@ -952,7 +960,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
 shape = SubResource("Shape_tree")
 
 [node name="TreeW2" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -8, 0, 20.5)
+transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -53, 0, 0.5)
 
 [node name="Model" parent="Nav/TreeW2" instance=ExtResource("29_tree")]
 
@@ -963,7 +971,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
 shape = SubResource("Shape_tree")
 
 [node name="TreeE1" type="Node3D" parent="Nav"]
-transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, 20, 0, -9.5)
+transform = Transform3D(0.766, 0, 0.6428, 0, 1, 0, -0.6428, 0, 0.766, -25, 0, -29.5)
 
 [node name="Model" parent="Nav/TreeE1" instance=ExtResource("29_tree")]
 
@@ -974,7 +982,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
 shape = SubResource("Shape_tree")
 
 [node name="TreeE2" type="Node3D" parent="Nav"]
-transform = Transform3D(0.5, 0, -0.866, 0, 1, 0, 0.866, 0, 0.5, 8.5, 0, 19.5)
+transform = Transform3D(0.5, 0, -0.866, 0, 1, 0, 0.866, 0, 0.5, -36.5, 0, -0.5)
 
 [node name="Model" parent="Nav/TreeE2" instance=ExtResource("29_tree")]
 
@@ -985,7 +993,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
 shape = SubResource("Shape_tree")
 
 [node name="BushA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.7071, 0, 0.7071, 0, 1, 0, -0.7071, 0, 0.7071, -16, 0, 12)
+transform = Transform3D(0.7071, 0, 0.7071, 0, 1, 0, -0.7071, 0, 0.7071, -61, 0, -8)
 
 [node name="Model" parent="Nav/BushA" instance=ExtResource("30_bush")]
 
@@ -996,7 +1004,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0)
 shape = SubResource("Shape_bush")
 
 [node name="BushC" type="Node3D" parent="Nav"]
-transform = Transform3D(0.6428, 0, -0.766, 0, 1, 0, 0.766, 0, 0.6428, 12, 0, -9.5)
+transform = Transform3D(0.6428, 0, -0.766, 0, 1, 0, 0.766, 0, 0.6428, -33, 0, -29.5)
 
 [node name="Model" parent="Nav/BushC" instance=ExtResource("30_bush")]
 
@@ -1007,7 +1015,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0)
 shape = SubResource("Shape_bush")
 
 [node name="BushD" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.5, 0, 0.866, 0, 1, 0, -0.866, 0, -0.5, 21, 0, 19.5)
+transform = Transform3D(-0.5, 0, 0.866, 0, 1, 0, -0.866, 0, -0.5, -24, 0, -0.5)
 
 [node name="Model" parent="Nav/BushD" instance=ExtResource("30_bush")]
 
@@ -1018,7 +1026,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0)
 shape = SubResource("Shape_bush")
 
 [node name="RocksW" type="Node3D" parent="Nav"]
-transform = Transform3D(0.4226, 0, 0.9063, 0, 1, 0, -0.9063, 0, 0.4226, -24, 0, 16.5)
+transform = Transform3D(0.4226, 0, 0.9063, 0, 1, 0, -0.9063, 0, 0.4226, -69, 0, -3.5)
 
 [node name="Model" parent="Nav/RocksW" instance=ExtResource("16_rocks")]
 
@@ -1029,7 +1037,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
 shape = SubResource("Shape_rocks")
 
 [node name="RocksE" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.5, 0, -0.866, 0, 1, 0, 0.866, 0, -0.5, 25, 0, -6.5)
+transform = Transform3D(-0.5, 0, -0.866, 0, 1, 0, 0.866, 0, -0.5, -20, 0, -26.5)
 
 [node name="Model" parent="Nav/RocksE" instance=ExtResource("16_rocks")]
 
@@ -1045,7 +1053,7 @@ shape = SubResource("Shape_rocks")
 ; --- is whether anything in it looks like it was placed by a person in a hurry.
 
 [node name="ClutterNW1" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 0.5, 0, -13.5)
+transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, -44.5, 0, -33.5)
 
 [node name="Model" parent="Nav/ClutterNW1" instance=ExtResource("20_barrel")]
 
@@ -1056,7 +1064,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0)
 shape = SubResource("Shape_barrel")
 
 [node name="ClutterNE1" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, 0.9397, 21.5, 0, -3.4)
+transform = Transform3D(0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, 0.9397, -23.5, 0, -23.4)
 
 [node name="Model" parent="Nav/ClutterNE1" instance=ExtResource("22_hay")]
 
@@ -1067,7 +1075,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
 shape = SubResource("Shape_hay")
 
 [node name="ClutterMW1" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, -0.342, -19.4, 0, -4.5)
+transform = Transform3D(-0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, -0.342, -64.4, 0, -24.5)
 
 [node name="Model" parent="Nav/ClutterMW1" instance=ExtResource("21_sacks")]
 
@@ -1078,7 +1086,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.225, 0)
 shape = SubResource("Shape_sacks")
 
 [node name="ClutterME1" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.1736, 0, -0.9848, 0, 1, 0, 0.9848, 0, -0.1736, 1.5, 0, 18.2)
+transform = Transform3D(-0.1736, 0, -0.9848, 0, 1, 0, 0.9848, 0, -0.1736, -43.5, 0, -1.8)
 
 [node name="Model" parent="Nav/ClutterME1" instance=ExtResource("20_barrel")]
 
@@ -1089,7 +1097,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0)
 shape = SubResource("Shape_barrel")
 
 [node name="ClutterS1" type="Node3D" parent="Nav"]
-transform = Transform3D(0.866, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866, -14.6, 0, 14)
+transform = Transform3D(0.866, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866, -59.6, 0, -6)
 
 [node name="Model" parent="Nav/ClutterS1" instance=ExtResource("11_crate")]
 
@@ -1100,7 +1108,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
 shape = SubResource("Shape_crate")
 
 [node name="CartE" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 24, 0, 6.5)
+transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -21, 0, -13.5)
 
 [node name="Model" parent="Nav/CartE" instance=ExtResource("19_cart")]
 
@@ -1116,7 +1124,7 @@ shape = SubResource("Shape_cart")
 ; --- identical lamps stop reading as six copies of one lamp.
 
 [node name="LampNW" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13.6, 0, -24)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -58.6, 0, -44)
 
 [node name="Model" parent="Nav/LampNW" instance=ExtResource("12_lamp")]
 
@@ -1133,7 +1141,7 @@ light_energy = 2.5
 omni_range = 9.0
 
 [node name="LampNE" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.4, 0, -24)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -53.4, 0, -44)
 
 [node name="Model" parent="Nav/LampNE" instance=ExtResource("12_lamp")]
 
@@ -1150,7 +1158,7 @@ light_energy = 2.5
 omni_range = 9.0
 
 [node name="LampMW" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, -13.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -53, 0, -33.5)
 
 [node name="Model" parent="Nav/LampMW" instance=ExtResource("12_lamp")]
 
@@ -1167,7 +1175,7 @@ light_energy = 2.5
 omni_range = 9.0
 
 [node name="LampME" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, -6.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -44, 0, -26.5)
 
 [node name="Model" parent="Nav/LampME" instance=ExtResource("12_lamp")]
 
@@ -1184,7 +1192,7 @@ light_energy = 2.5
 omni_range = 9.0
 
 [node name="LampSW" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21, 0, 6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -66, 0, -14)
 
 [node name="Model" parent="Nav/LampSW" instance=ExtResource("12_lamp")]
 
@@ -1201,7 +1209,7 @@ light_energy = 2.5
 omni_range = 9.0
 
 [node name="LampSE" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 9.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -35, 0, -10.5)
 
 [node name="Model" parent="Nav/LampSE" instance=ExtResource("12_lamp")]
 
@@ -1223,7 +1231,7 @@ omni_range = 9.0
 ; --- findable in a vista, never dominant in it.
 
 [node name="BrazierNW" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, -22)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -58, 0, -42)
 
 [node name="Model" parent="Nav/BrazierNW" instance=ExtResource("15_brazier")]
 
@@ -1262,7 +1270,7 @@ IntervalJitter = 0.6
 Radius = 11.0
 
 [node name="BrazierNE" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0, -22)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -54, 0, -42)
 
 [node name="Model" parent="Nav/BrazierNE" instance=ExtResource("15_brazier")]
 
@@ -1293,7 +1301,7 @@ process_material = SubResource("PPM_ember")
 draw_pass_1 = SubResource("Mesh_particle_ember")
 
 [node name="BrazierPlaza" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13.5, 0, 19)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -58.5, 0, -1)
 
 [node name="Model" parent="Nav/BrazierPlaza" instance=ExtResource("15_brazier")]
 
@@ -1338,17 +1346,17 @@ Radius = 11.0
 ; like a gate and behaved like fog. Both threshold banners are now at x = ±4.3, outside the 7 m aisle.
 
 [node name="BannerGateW" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9781, 0, 0.2079, 0, 1, 0, -0.2079, 0, 0.9781, -12.6, 0, -20)
+transform = Transform3D(0.9781, 0, 0.2079, 0, 1, 0, -0.2079, 0, 0.9781, -57.6, 0, -40)
 
 [node name="Model" parent="Nav/BannerGateW" instance=ExtResource("14_banner")]
 
 [node name="BannerGateE" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9781, 0, -0.2079, 0, 1, 0, 0.2079, 0, 0.9781, -9.4, 0, -20)
+transform = Transform3D(0.9781, 0, -0.2079, 0, 1, 0, 0.2079, 0, 0.9781, -54.4, 0, -40)
 
 [node name="Model" parent="Nav/BannerGateE" instance=ExtResource("14_banner")]
 
 [node name="BannerRowW" type="Node3D" parent="Nav"]
-transform = Transform3D(-0.9848, 0, -0.1736, 0, 1, 0, 0.1736, 0, -0.9848, 5, 0, -7.8)
+transform = Transform3D(-0.9848, 0, -0.1736, 0, 1, 0, 0.1736, 0, -0.9848, -40, 0, -27.8)
 
 [node name="Model" parent="Nav/BannerRowW" instance=ExtResource("14_banner")]
 
@@ -1373,7 +1381,7 @@ shape = SubResource("Shape_banner")
 ; waystone's authored English still renders, because Loc.T on a plain string returns it unchanged).
 
 [node name="MarketWaystone" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.5, 0, -6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -47.5, 0, -26)
 script = ExtResource("2_entity")
 DisplayName = "Embermarket Waystone"
 
@@ -1385,21 +1393,8 @@ DisplayName = "Embermarket Waystone"
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
 shape = SubResource("Shape_waystone")
 
-[node name="Travel" type="Node" parent="MarketWaystone"]
-script = ExtResource("3_travel")
-Id = "travel.ember_crown.embermarket"
-TravelName = "travel.ember_crown.embermarket.name"
-RegionId = "region.ember_crown"
-
-; --- The notice board: this district's one new interactable, and 38K's answer to a place with nothing
-; --- to say. Same shape as town_hub's GuildMarker (banner mesh + collider + DialogueComponent).
-; ⚠️ An entity gets ONE interactable — EntityNode.GetComponent<T> returns the first child match — so the
-; board carries a DialogueComponent and nothing else, forever.
-; ⚠️ No choice in dialogue.market_board carries an Effect. A notice board that started a quest would put
-; market gossip in the journal, which is the failure 38Q's brief already names.
-
 [node name="MarketNotice" type="Node3D" parent="."]
-transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, -8.2, 0, -17)
+transform = Transform3D(-0.342, 0, -0.9397, 0, 1, 0, 0.9397, 0, -0.342, -53.2, 0, -37)
 script = ExtResource("2_entity")
 DisplayName = "Embermarket Notice"
 
@@ -1435,7 +1430,7 @@ DialogueId = "dialogue.market_board"
 ; --- square one street north. See AmbientEmitterComponent's own note.
 
 [node name="AmbienceNorth" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 1.6, -8.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -48, 1.6, -28.5)
 script = ExtResource("7_ambient")
 CueId = "sfx.ambient.market"
 IntervalSeconds = 7.0
@@ -1443,7 +1438,7 @@ IntervalJitter = 0.55
 Radius = 24.0
 
 [node name="AmbienceSouth" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 1.6, 6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -32, 1.6, -14)
 script = ExtResource("7_ambient")
 CueId = "sfx.ambient.market"
 IntervalSeconds = 9.0
@@ -1488,7 +1483,7 @@ Radius = 24.0
 ; ====================================================================================================
 
 [node name="MerchantCorvin" type="Node3D" parent="."]
-transform = Transform3D(0.9945, 0, -0.1045, 0, 1, 0, 0.1045, 0, 0.9945, -3.2, 0, -12.8)
+transform = Transform3D(0.9945, 0, -0.1045, 0, 1, 0, 0.1045, 0, 0.9945, -48.2, 0, -32.8)
 script = ExtResource("2_entity")
 DisplayName = "Corvin, Provisioner"
 TemplateId = "npc.corvin"
@@ -1522,7 +1517,7 @@ ScheduleId = "schedule.embermarket.provisions"
 [node name="Model" parent="MerchantCorvin" instance=ExtResource("37_vendor_body")]
 
 [node name="MerchantHana" type="Node3D" parent="."]
-transform = Transform3D(0.9781, 0, 0.2079, 0, 1, 0, -0.2079, 0, 0.9781, 2, 0, -11.5)
+transform = Transform3D(0.9781, 0, 0.2079, 0, 1, 0, -0.2079, 0, 0.9781, -43, 0, -31.5)
 script = ExtResource("2_entity")
 DisplayName = "Hana Netmender"
 TemplateId = "npc.hana"
@@ -1558,7 +1553,7 @@ ScheduleId = "schedule.embermarket.fishmonger"
 [node name="Model" parent="MerchantHana" instance=ExtResource("41_woman_dress")]
 
 [node name="MerchantSable" type="Node3D" parent="."]
-transform = Transform3D(-0.9945, 0, -0.1045, 0, 1, 0, 0.1045, 0, -0.9945, 2.49, 0, -4.51)
+transform = Transform3D(-0.9945, 0, -0.1045, 0, 1, 0, 0.1045, 0, -0.9945, -42.51, 0, -24.51)
 script = ExtResource("2_entity")
 DisplayName = "Sable, Weaver"
 TemplateId = "npc.sable"
@@ -1592,7 +1587,7 @@ ScheduleId = "schedule.embermarket.weaver"
 [node name="Model" parent="MerchantSable" instance=ExtResource("35_townswoman")]
 
 [node name="MerchantTam" type="Node3D" parent="."]
-transform = Transform3D(-0.9945, 0, 0.1045, 0, 1, 0, -0.1045, 0, -0.9945, 8.51, 0, -4.11)
+transform = Transform3D(-0.9945, 0, 0.1045, 0, 1, 0, -0.1045, 0, -0.9945, -36.49, 0, -24.11)
 script = ExtResource("2_entity")
 DisplayName = "Tam Quillfellow"
 TemplateId = "npc.tam"
@@ -1626,7 +1621,7 @@ ScheduleId = "schedule.embermarket.scriptorium"
 [node name="Model" parent="MerchantTam" instance=ExtResource("40_merchant_m")]
 
 [node name="MerchantDunmore" type="Node3D" parent="."]
-transform = Transform3D(-0.1392, 0, 0.9903, 0, 1, 0, -0.9903, 0, -0.1392, -0.11, 0, 2.75)
+transform = Transform3D(-0.1392, 0, 0.9903, 0, 1, 0, -0.9903, 0, -0.1392, -45.11, 0, -17.25)
 script = ExtResource("2_entity")
 DisplayName = "Ash Dunmore, Collier"
 TemplateId = "npc.ash_dunmore"
@@ -1660,7 +1655,7 @@ ScheduleId = "schedule.embermarket.collier"
 [node name="Model" parent="MerchantDunmore" instance=ExtResource("36_hooded")]
 
 [node name="MerchantGilda" type="Node3D" parent="."]
-transform = Transform3D(0.1392, 0, 0.9903, 0, 1, 0, -0.9903, 0, 0.1392, -0.11, 0, 7.85)
+transform = Transform3D(0.1392, 0, 0.9903, 0, 1, 0, -0.9903, 0, 0.1392, -45.11, 0, -12.15)
 script = ExtResource("2_entity")
 DisplayName = "Gilda Ironmonger"
 TemplateId = "npc.gilda"
@@ -1694,7 +1689,7 @@ ScheduleId = "schedule.embermarket.ironmonger"
 [node name="Model" parent="MerchantGilda" instance=ExtResource("38_innkeeper")]
 
 [node name="MerchantPerrin" type="Node3D" parent="."]
-transform = Transform3D(0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, 0.9397, -13.12, 0, -11.23)
+transform = Transform3D(0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, 0.9397, -58.12, 0, -31.23)
 script = ExtResource("2_entity")
 DisplayName = "Perrin the Tanner"
 TemplateId = "npc.perrin"
@@ -1728,7 +1723,7 @@ ScheduleId = "schedule.embermarket.tannery"
 [node name="Model" parent="MerchantPerrin" instance=ExtResource("40_merchant_m")]
 
 [node name="MerchantNessa" type="Node3D" parent="."]
-transform = Transform3D(-0.9848, 0, -0.1736, 0, 1, 0, 0.1736, 0, -0.9848, 13.41, 0, -4.52)
+transform = Transform3D(-0.9848, 0, -0.1736, 0, 1, 0, 0.1736, 0, -0.9848, -31.59, 0, -24.52)
 script = ExtResource("2_entity")
 DisplayName = "Nessa Brightcut"
 TemplateId = "npc.nessa"
@@ -1762,7 +1757,7 @@ ScheduleId = "schedule.embermarket.jeweller"
 [node name="Model" parent="MerchantNessa" instance=ExtResource("39_guild_rep")]
 
 [node name="MerchantOdo" type="Node3D" parent="."]
-transform = Transform3D(0.6428, 0, 0.766, 0, 1, 0, -0.766, 0, 0.6428, 2.44, 0, 11.49)
+transform = Transform3D(0.6428, 0, 0.766, 0, 1, 0, -0.766, 0, 0.6428, -42.56, 0, -8.51)
 script = ExtResource("2_entity")
 DisplayName = "Odo Greenhand"
 TemplateId = "npc.odo"
@@ -1796,7 +1791,7 @@ ScheduleId = "schedule.embermarket.herbalist"
 [node name="Model" parent="MerchantOdo" instance=ExtResource("36_hooded")]
 
 [node name="MerchantHalvard" type="Node3D" parent="."]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 5.05, 0, 15.05)
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -39.95, 0, -4.95)
 script = ExtResource("2_entity")
 DisplayName = "Halvard, Joiner"
 TemplateId = "npc.halvard"
@@ -1830,7 +1825,7 @@ ScheduleId = "schedule.embermarket.joiner"
 [node name="Model" parent="MerchantHalvard" instance=ExtResource("37_vendor_body")]
 
 [node name="TraderSera" type="Node3D" parent="."]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 23.5, 0, 5.5)
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -21.5, 0, -14.5)
 script = ExtResource("2_entity")
 DisplayName = "Sera of the Long Road"
 TemplateId = "npc.sera"
@@ -1857,7 +1852,7 @@ ShopId = "shop.embermarket.caravan"
 [node name="Model" parent="TraderSera" instance=ExtResource("42_adventurer_f")]
 
 [node name="TraderQuill" type="Node3D" parent="."]
-transform = Transform3D(0.5, 0, 0.866, 0, 1, 0, -0.866, 0, 0.5, 15.5, 0, -6)
+transform = Transform3D(0.5, 0, 0.866, 0, 1, 0, -0.866, 0, 0.5, -29.5, 0, -26)
 script = ExtResource("2_entity")
 DisplayName = "Quill the Curioseller"
 TemplateId = "npc.quill"
@@ -1908,7 +1903,7 @@ ShopId = "shop.embermarket.curios"
 
 
 [node name="StallConsign" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 18.5, 0, -1.2)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -26.5, 0, -21.2)
 
 [node name="Model" parent="Nav/StallConsign" instance=ExtResource("55_stall_empty")]
 
@@ -1919,7 +1914,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.315, 0)
 shape = SubResource("Shape_stall_empty")
 
 [node name="CounterConsign" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 22, 0, -1.2)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -23, 0, -21.2)
 
 [node name="Model" parent="Nav/CounterConsign" instance=ExtResource("18_stand_b")]
 
@@ -1930,7 +1925,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.30, 0)
 shape = SubResource("Shape_stand_b")
 
 [node name="ConsignCrateA" type="Node3D" parent="Nav"]
-transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 19.8, 0, -2.6)
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, -25.2, 0, -22.6)
 
 [node name="Model" parent="Nav/ConsignCrateA" instance=ExtResource("11_crate")]
 
@@ -1941,7 +1936,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
 shape = SubResource("Shape_crate")
 
 [node name="ConsignBarrel" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.4, 0, -2.4)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -27.6, 0, -22.4)
 
 [node name="Model" parent="Nav/ConsignBarrel" instance=ExtResource("20_barrel")]
 
@@ -1959,7 +1954,7 @@ shape = SubResource("Shape_barrel")
 
 
 [node name="BenchConsign" type="Node3D" parent="Nav"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 20, 0, 1.2)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -25, 0, -18.8)
 
 [node name="Model" parent="Nav/BenchConsign" instance=ExtResource("23_bench")]
 
@@ -1970,7 +1965,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.425, 0)
 shape = SubResource("Shape_bench")
 
 [node name="LampConsign" type="Node3D" parent="Nav"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 23, 0, 0.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -22, 0, -19.5)
 
 [node name="Model" parent="Nav/LampConsign" instance=ExtResource("12_lamp")]
 
@@ -1981,7 +1976,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.80, 0)
 shape = SubResource("Shape_lamp")
 
 [node name="MerchantMirelle" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 18.5, 0, -0.1)
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -26.5, 0, -20.1)
 script = ExtResource("2_entity")
 DisplayName = "Mirelle Vantry"
 TemplateId = "npc.mirelle"
@@ -2019,7 +2014,7 @@ ScheduleId = "schedule.embermarket.consignment"
 ; be able to collect it, and the collect service is the one thing in the pair with no hours at all -
 ; which is what the card in her window says out loud.
 [node name="ClerkHalder" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 22, 0, -0.1)
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -23, 0, -20.1)
 script = ExtResource("2_entity")
 DisplayName = "Halder Vantry"
 TemplateId = "npc.halder"
@@ -2066,7 +2061,7 @@ ServiceId = "service.embermarket.collect"
 ; Apply node scale to a measured bounding box, or the number is fiction.
 
 [node name="BrightcutScales" type="Node3D" parent="."]
-transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 15, 0, -1)
+transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, -30, 0, -21)
 script = ExtResource("2_entity")
 DisplayName = "Brightcut's Scales"
 
@@ -2083,13 +2078,9 @@ script = ExtResource("56_service")
 ServiceId = "service.embermarket.appraisal"
 
 [node name="MapPin" type="Node3D" parent="."]
-position = Vector3(7, 0, 2)
+position = Vector3(-38, 0, -18)
 script = ExtResource("maploc_39_5a")
 LocationId = "location.embermarket.market"
-
-[node name="MapPin" type="Node3D" parent="MarketWaystone"]
-script = ExtResource("maploc_39_5a")
-LocationId = "location.embermarket.waystone"
 
 [node name="MapPin" type="Node3D" parent="MerchantCorvin"]
 script = ExtResource("maploc_39_5a")
@@ -2158,7 +2149,7 @@ LocationId = "location.embermarket.board"
 ; Nyth is kept beside the market's book and curiosity trade, where a discovered truth can become a
 ; useful thing and the surrounding stalls make the landmark part of the district's daily traffic.
 [node name="ShrineNyth" type="Node3D" parent="Nav"]
-transform = Transform3D(0.9659, 0, 0.2588, 0, 1, 0, -0.2588, 0, 0.9659, 17.5, 0, -7.5)
+transform = Transform3D(0.9659, 0, 0.2588, 0, 1, 0, -0.2588, 0, 0.9659, -27.5, 0, -27.5)
 script = ExtResource("2_entity")
 
 [node name="Body" parent="Nav/ShrineNyth" instance=ExtResource("shrine_body_41_5b")]
@@ -2183,10 +2174,10 @@ LocationId = "location.shrine.nyth"
 ; a reading room among the timber yards, not a hall. The Archive has no shopfront on purpose.
 ; ⚠️ Its great library is Sunspire's and is Phase 44's — see the 42B retrospective for the handoff.
 [node name="ArchiveAnnexe" parent="Nav" instance=ExtResource("42b_bld_archive_annexe")]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -2.5, 0, 16.5)
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -47.5, 0, -3.5)
 
 [node name="ArchiveKeeper" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.5, 0, 12.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -47.5, 0, -7.5)
 script = ExtResource("2_entity")
 DisplayName = "Keeper Ysolde Marr"
 TemplateId = "npc.archive_keeper"
@@ -2220,7 +2211,7 @@ ScheduleId = "schedule.archive_keeper"
 [node name="Model" parent="ArchiveKeeper" instance=ExtResource("41_woman_dress")]
 
 [node name="ArchiveSteward" type="Node3D" parent="."]
-transform = Transform3D(-0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, -0.342, -5.5, 0, 14)
+transform = Transform3D(-0.342, 0, 0.9397, 0, 1, 0, -0.9397, 0, -0.342, -50.5, 0, -6)
 script = ExtResource("2_entity")
 DisplayName = "Steward Coran Vey"
 TemplateId = "npc.archive_steward"
@@ -2250,7 +2241,7 @@ DialogueId = "dialogue.archive_steward"
 [node name="Model" parent="ArchiveSteward" instance=ExtResource("40_merchant_m")]
 
 [node name="ArchiveReader" type="Node3D" parent="."]
-transform = Transform3D(0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, 0.9397, 0.5, 0, 14.5)
+transform = Transform3D(0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, 0.9397, -44.5, 0, -5.5)
 script = ExtResource("2_entity")
 DisplayName = "Ferris Vail"
 TemplateId = "npc.archive_reader"
@@ -2282,3 +2273,20 @@ DialogueId = "dialogue.archive_reader"
 [node name="MapPin" type="Node3D" parent="Nav/ArchiveAnnexe"]
 script = ExtResource("maploc_39_5a")
 LocationId = "location.embermarket.annexe"
+
+[node name="Dx_LnW0" type="Node3D" parent="Nav"]
+transform = Transform3D(-0.9778, 0, 0.2096, 0, 1, 0, -0.2096, 0, -0.9778, 8.12, 0, -63.76)
+
+[node name="Model" parent="Nav/Dx_LnW0" instance=ExtResource("dx_house_b")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/Dx_LnW0"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Dx_LnW0/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.4, 0)
+shape = SubResource("DxShape_house_b")
+
+[node name="Dx_LnW1" parent="Nav" instance=ExtResource("dx_townhouse_balcony")]
+transform = Transform3D(-0.9449, 0, 0.3272, 0, 1, 0, -0.3272, 0, -0.9449, -7.47, 0, -60.01)
+
+[node name="Dx_LnW2" parent="Nav" instance=ExtResource("dx_cottage_shuttered")]
+transform = Transform3D(-0.9655, 0, 0.2605, 0, 1, 0, -0.2605, 0, -0.9655, -22.47, 0, -54.35)

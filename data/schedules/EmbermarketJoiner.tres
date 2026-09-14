@@ -20,19 +20,19 @@
 script = ExtResource("2_entry")
 StartHour = 6
 Activity = "Fanning out the planks"
-Destination = Vector3(5.05, 0, 15.05)
+Destination = Vector3(-39.95, 0, -4.95)
 
 [sub_resource type="Resource" id="e_trade"]
 script = ExtResource("2_entry")
 StartHour = 7
 Activity = "Selling timber"
-Destination = Vector3(5.05, 0, 15.05)
+Destination = Vector3(-39.95, 0, -4.95)
 
 [sub_resource type="Resource" id="e_close"]
 script = ExtResource("2_entry")
 StartHour = 18
 Activity = "Chaining the planks"
-Destination = Vector3(3.5, 0, 17.73)
+Destination = Vector3(-41.5, 0, -2.27)
 
 [resource]
 script = ExtResource("1_sched")
