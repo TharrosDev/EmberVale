@@ -229,8 +229,11 @@ def main(argv: list[str]) -> int:
     stale = 0
     for cell in all_cells:
         path = ROOT / cell.scene.replace("res://", "")
+        # Scenes are always LF on disk (.gitattributes: *.tscn text eol=lf) - a stray CRLF that
+        # sneaks in (a checkout quirk, an editor save) must never be "preserved" here, or this
+        # tool rewrites the *whole* file to CRLF on its next run and world_bake.py's source
+        # fingerprint goes stale on a clean checkout for no content reason.
         raw = io.open(path, encoding="utf-8", newline="").read()
-        nl = CRLF if CRLF in raw else LF
         current = raw.replace(CRLF, LF)
         items = grouped[cell.cell_id]
         if not items and "Dx_" not in current:
@@ -241,7 +244,7 @@ def main(argv: list[str]) -> int:
             if "--check" in argv:
                 print(f"out of date: {path.relative_to(ROOT)}")
             else:
-                io.open(path, "w", encoding="utf-8", newline="").write(new.replace(LF, nl))
+                io.open(path, "w", encoding="utf-8", newline="\n").write(new)
                 print(f"composed {len(items)} structure(s) into {path.relative_to(ROOT)}")
     return 1 if (issues or ("--check" in argv and stale)) else 0
 
