@@ -19,10 +19,11 @@
 ; regardless of how early the flag is set - the fight is still the fight.
 ;
 ; ⚠️ RANK ONE IS GRANTED ONLY ON COMPLETION, NOT ON THE FORK. The branch flag says which way the
-; player chose; the rank comes from ch_claim_rescue/ch_claim_expedient, each gated on Condition 3
-; (QuestCompleted) INSIDE the after-node the branch flag already picked - QuestCompleted is
-; therefore true by construction wherever those two choices can be reached, without a compound
-; condition existing anywhere. Neither branch pays a different reward (the quest's own
+; player chose, but it is set BEFORE the quest starts, so it must never gate anything that speaks of
+; the corrie in the past tense. The nesting is therefore QuestCompleted OUTSIDE, branch flag INSIDE:
+; member offers ch_after (Condition 3) into "after", and only there do ch_claim_rescue/ch_claim_expedient
+; (Condition 5, HasFlag) pick the branch, grant rank one and land on after_rescue/after_expedient, whose
+; past-tense lines are thus reachable only post-completion, with no compound condition anywhere. Neither branch pays a different reward (the quest's own
 ; FactionRewardId/Amount, faction.villagers, is one field) - Sedge's header already made that call
 ; for the same reason: a second place rewards live is invariant 5 waiting to happen. What differs is
 ; what Bram says, which is the consequence a player actually feels.
@@ -72,19 +73,12 @@ Condition = 2
 ConditionArg = "quest.dawnwardens.probation"
 Goto = "probation_active"
 
-[sub_resource type="Resource" id="ch_after_rescue"]
+[sub_resource type="Resource" id="ch_after"]
 script = ExtResource("3_choice")
-Text = "dlg.dawnwarden_partner.c_after_rescue"
-Condition = 5
-ConditionArg = "flag.dawnwardens.probation_rescue"
-Goto = "after_rescue"
-
-[sub_resource type="Resource" id="ch_after_expedient"]
-script = ExtResource("3_choice")
-Text = "dlg.dawnwarden_partner.c_after_expedient"
-Condition = 5
-ConditionArg = "flag.dawnwardens.probation_expedient"
-Goto = "after_expedient"
+Text = "dlg.dawnwarden_partner.c_after"
+Condition = 3
+ConditionArg = "quest.dawnwardens.probation"
+Goto = "after"
 
 [sub_resource type="Resource" id="ch_fork_rescue"]
 script = ExtResource("3_choice")
@@ -123,18 +117,20 @@ EffectArg = "quest.dawnwardens.probation"
 [sub_resource type="Resource" id="ch_claim_rescue"]
 script = ExtResource("3_choice")
 Text = "dlg.dawnwarden_partner.c_claim_rescue"
-Condition = 3
-ConditionArg = "quest.dawnwardens.probation"
+Condition = 5
+ConditionArg = "flag.dawnwardens.probation_rescue"
 Effect = 2
 EffectArg = "guild.dawnwardens.rank1"
+Goto = "after_rescue"
 
 [sub_resource type="Resource" id="ch_claim_expedient"]
 script = ExtResource("3_choice")
 Text = "dlg.dawnwarden_partner.c_claim_expedient"
-Condition = 3
-ConditionArg = "quest.dawnwardens.probation"
+Condition = 5
+ConditionArg = "flag.dawnwardens.probation_expedient"
 Effect = 2
 EffectArg = "guild.dawnwardens.rank1"
+Goto = "after_expedient"
 
 [sub_resource type="Resource" id="node_root"]
 script = ExtResource("2_node")
@@ -152,7 +148,7 @@ Choices = Array[Resource]([SubResource("ch_end")])
 script = ExtResource("2_node")
 Id = "member"
 Text = "dlg.dawnwarden_partner.member"
-Choices = Array[Resource]([SubResource("ch_probation"), SubResource("ch_probation_active"), SubResource("ch_after_rescue"), SubResource("ch_after_expedient"), SubResource("ch_back"), SubResource("ch_end")])
+Choices = Array[Resource]([SubResource("ch_probation"), SubResource("ch_probation_active"), SubResource("ch_after"), SubResource("ch_back"), SubResource("ch_end")])
 
 [sub_resource type="Resource" id="node_probation"]
 script = ExtResource("2_node")
@@ -178,21 +174,27 @@ Id = "probation_active"
 Text = "dlg.dawnwarden_partner.probation_active"
 Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
 
+[sub_resource type="Resource" id="node_after"]
+script = ExtResource("2_node")
+Id = "after"
+Text = "dlg.dawnwarden_partner.after"
+Choices = Array[Resource]([SubResource("ch_claim_rescue"), SubResource("ch_claim_expedient"), SubResource("ch_back"), SubResource("ch_end")])
+
 [sub_resource type="Resource" id="node_after_rescue"]
 script = ExtResource("2_node")
 Id = "after_rescue"
 Text = "dlg.dawnwarden_partner.after_rescue"
-Choices = Array[Resource]([SubResource("ch_claim_rescue"), SubResource("ch_back"), SubResource("ch_end")])
+Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
 
 [sub_resource type="Resource" id="node_after_expedient"]
 script = ExtResource("2_node")
 Id = "after_expedient"
 Text = "dlg.dawnwarden_partner.after_expedient"
-Choices = Array[Resource]([SubResource("ch_claim_expedient"), SubResource("ch_back"), SubResource("ch_end")])
+Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_end")])
 
 [resource]
 script = ExtResource("1_dlg")
 Id = "dialogue.dawnwarden_partner"
 SpeakerName = "dlg.dawnwarden_partner.speaker"
 StartNodeId = "root"
-Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_stranger"), SubResource("node_member"), SubResource("node_probation"), SubResource("node_rescue_go"), SubResource("node_expedient_go"), SubResource("node_probation_active"), SubResource("node_after_rescue"), SubResource("node_after_expedient")])
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_stranger"), SubResource("node_member"), SubResource("node_probation"), SubResource("node_rescue_go"), SubResource("node_expedient_go"), SubResource("node_probation_active"), SubResource("node_after"), SubResource("node_after_rescue"), SubResource("node_after_expedient")])
