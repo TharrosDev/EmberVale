@@ -135,6 +135,9 @@ public sealed class DialogueSession
                 return GuildMeets(arg, member: true);
             case DialogueCondition.GuildNotMember:
                 return GuildMeets(arg, member: false);
+            case DialogueCondition.GuildCanJoin:
+                return _flags != null && FactionDatabase.Get(arg) is { IsGuild: true } joinable &&
+                    GuildRules.CanJoin(GuildRules.Resolve(_flags.Has, joinable), joinable.RejoinAllowed);
             default:
                 return true;
         }

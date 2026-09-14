@@ -390,6 +390,7 @@ public class EnumStabilityTests
         // Phase 42B appended these two; every guild-officer .tres on disk stores them as 14 and 15.
         Assert.Equal(14, (int)DialogueCondition.GuildRankAtLeast);
         Assert.Equal(15, (int)DialogueCondition.GuildNotMember);
+        Assert.Equal(16, (int)DialogueCondition.GuildCanJoin);
     }
 
     [Fact]

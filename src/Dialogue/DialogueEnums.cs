@@ -183,4 +183,13 @@ public enum DialogueCondition
     /// re-offers the door; <c>GuildRules.CanJoin</c> remains the gate on whether it opens.
     /// </summary>
     GuildNotMember,
+
+    /// <summary>
+    /// Shown only while <c>GuildRules.CanJoin</c> would accept the player into the guild named by
+    /// <c>ConditionArg</c> (a bare faction id). A <see cref="DialogueEffect.JoinGuild"/> choice that
+    /// navigates to a "you're in" node must carry it: the effect refuses a left member of a guild with
+    /// <c>RejoinAllowed = false</c>, but <c>Goto</c> fires regardless, so without this gate the refused
+    /// player reads the success line with nothing granted. <c>--validate</c> enforces the pairing.
+    /// </summary>
+    GuildCanJoin,
 }

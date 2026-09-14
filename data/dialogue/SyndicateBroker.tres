@@ -50,10 +50,14 @@ Text = "dlg.syndicate_broker.c_end"
 ; console-driven refusal to take a left member back is never bypassed from dialogue), decline closes
 ; the conversation with nothing written. There is no separate "offered" flag: GuildNotMember (15)
 ; already re-opens this same door on the next visit, so nothing is lost by not recording the ask.
+; ch_join carries Condition = 16 (GuildCanJoin) because Goto fires even when JoinGuild refuses; a
+; player the guild will not take back must never reach joined_now (--validate enforces the pairing).
 [sub_resource type="Resource" id="ch_join"]
 script = ExtResource("3_choice")
 Text = "dlg.syndicate_broker.c_join"
 Goto = "joined_now"
+Condition = 16
+ConditionArg = "faction.iron_syndicate"
 Effect = 11
 EffectArg = "faction.iron_syndicate"
 
