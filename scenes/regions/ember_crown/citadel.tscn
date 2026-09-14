@@ -1,7 +1,6 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="1_navbaker"]
-[ext_resource type="PackedScene" path="res://assets/models/props/prp_well.glb" id="dx_well"]
 [ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_banner_guild.glb" id="dx_banner"]
 [ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="dx_brazier"]
