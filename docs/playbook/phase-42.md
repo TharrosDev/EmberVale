@@ -136,7 +136,7 @@
     handoff save/load and reward protection.
   - **Done when:** final rank or expulsion is economically/world visibly distinct and main-story safe.
 
-- [ ] **42K — Emberbound secret initiation** `[C]`
+- [x] **42K — Emberbound secret initiation** `[C]` ✅
   - **Goal:** introduce a hidden order studying Flamebearers and relic ethics.
   - **Build / Author:** gate contact on legitimate Phase 23/28 state, not level; discreet investigation
     and relic-handling choice using corruption/boss/relic flags; concealed location undiscovered until
@@ -144,6 +144,19 @@
   - **Verify:** before/after Iron King, every corruption tier, relic accepted/refused, hidden/revealed
     map, refusal policy and save across initiation.
   - **Done when:** initiation is distinct from public guilds and reveals no future twist prematurely.
+  - **Done:** Seeker Bren Ilvo's own stranger line gates on `flag.iron_king_defeated` alone (a
+    legitimate Phase 28 boss-defeat event, `BossResource.DefeatFlagId`, never level) and starts
+    `quest.emberbound.summons` — a single Talk objective that completes on the same visit that
+    creates it, which is what reveals the Undercroft's map pin (`MapService.OnQuestStarted` reading
+    the objective's `LocationId`, gated by the same `RequiredFlagId` 42B left named but empty).
+    Hierarch Selane Ott's initiation gates on that quest's completion and offers the relic-handling
+    fork — surrender (`flag.emberbound.relic_surrendered`) or keep (`flag.emberbound.relic_kept`),
+    both converging on `JoinGuild`+`GuildRank` rank one — plus a genuine third door,
+    `guild.emberbound.refused`, non-terminal by the engine's existing `GuildRules.CanJoin` default.
+    Zero new mechanism: `tools/gen_map_locations.py` grew one generator parameter
+    (`required_flag`) to thread `RequiredFlagId` through, and everything else is `.tres` +
+    `strings.csv` on top of `DialogueCondition`/`DialogueEffect` and `MapLocationResource` fields
+    42I and the 2026-09 rebuild already shipped. See the retrospective below.
 
 - [ ] **42L — Emberbound reckoning and payoff** `[C]`
   - **Goal:** resolve whether divine power is safeguarded, destroyed or instrumentalized.
@@ -574,6 +587,63 @@ sub-phase's own gap to hand forward.
    the effect then navigates unconditionally, so a refused `JoinGuild` (left member, `RejoinAllowed =
    false`) reached "you're in". Any `JoinGuild` choice with a `Goto` now needs `Condition = 16`
    (`GuildCanJoin`, same faction id); `--validate` enforces it.
+
+---
+
+## 42K — a Talk objective on the same conversation that starts it is the safe case, not the trap
+### Retrospective + traps
+
+42K is content on a hub 42B had already fully placed — three officers, one hidden hub, an empty
+`RequiredFlagId` and a comment naming exactly what would fill it — so the whole sub-phase was
+dialogue graphs, one quest and one generator parameter. Nothing new was invented; the question, as
+always, was which existing seam already did the job.
+
+⚠️ **CLAUDE.md'S OWN WARNING ("a Talk objective completes on ANY end of that dialogue") READS AS A
+BLANKET RULE AND ISN'T ONE.** The trap is a *second, unrelated* visit to the same NPC completing an
+objective nobody meant to satisfy yet. Here the objective's only job is "the order made contact",
+and the sole choice that can ever start `quest.emberbound.summons` is itself gated on
+`flag.iron_king_defeated`, so the quest cannot exist before the one conversation meant to close it —
+there is no earlier visit for the trap to fire against. `RequiredFlagId` is still the general answer
+whenever a Talk objective's target dialogue has OTHER business beside the one exchange that should
+complete it (`quest.hollowreach.barrels`'s `Obj_talk_wren` is exactly that case); it just wasn't
+needed here, and reaching for it anyway would have meant inventing a flag with one consumer.
+
+⚠️ **A RESERVED, EMPTY FIELD IS A HANDOFF NOTE, AND IT IS WORTH READING AS ONE.** 42B's own comment
+in `tools/gen_map_locations.py` above the Undercroft's `add(...)` call named the exact mechanism
+42K would need (`RequiredFlagId`) and left it unset rather than guessing at a flag nothing could yet
+write. The generator had no parameter for it at all — `RequiredFlagId = ""` was hard-coded into
+`tres_body`'s template string, the same way `RevealWithCell` was already threaded through as a real
+argument. One parameter (`required_flag`) and one format-string edit closed a gap that was open
+since 42B shipped, and the alternative (hand-editing the generated `.tres`) would have been silently
+overwritten the next time anyone ran the generator for an unrelated location — the file's own header
+says so in the file itself.
+
+⚠️ **THE RELIC-HANDLING CHOICE NEEDED A CONSEQUENCE THAT WASN'T AN ITEM TRANSFER.** There is no
+`DialogueEffect` that moves an item between an NPC and the player (only `RemoveItem` calls exist
+inside gameplay components — purses, crafting, contraband — none reachable from a `.tres`), and
+inventing one for a single narrative beat would have been a new mechanism for a choice invariant 2
+already has an answer for: a story flag. `flag.emberbound.relic_surrendered` /
+`flag.emberbound.relic_kept` record the PLAYER'S STANCE, not a change of custody — the prose is
+written so "surrender" reads as a spoken vow (Cass wards it "in his own time", not now), so nothing
+on screen contradicts the relic still sitting in the player's pack. 42L inherits the flags and owns
+whatever the custody question becomes.
+
+### Two things worth carrying into the next sub-phase
+
+1. ⚠️ **BOTH RELIC-HANDLING BRANCHES CONVERGE ON THE SAME MEMBERSHIP, AND THAT WAS A DELIBERATE
+   READ OF THE BRIEF.** "A relic-handling choice" was written as one of the things 42K authors, not
+   as a second gate on whether the order accepts the player at all — admission is `GuildRules`'
+   business (`JoinGuild`/`GuildCanJoin`, unchanged), and the choice's whole weight is which flag
+   42L finds waiting for it. **42L's "relic accepted / destroyed / instrumentalized" doctrine finale
+   should read `flag.emberbound.relic_surrendered`/`relic_kept` as its starting position, not
+   re-ask the question** — a player who already told the Hierarch what they'd do with it should not
+   be asked again from zero.
+2. ⚠️ **A GUILD WITH NO `RankPeerNpcId` DOESN'T NEED ONE INVENTED.** Emberbound shipped from 42B
+   with `RankPeerNpcId = ""`, and 42K left it empty — Bren (investigator) and Selane (doctrine) carry
+   the whole arc, and Cass Vollen's dialogue is untouched, still the 42B scaffold. **Not every
+   officer needs new content in the sub-phase that finally uses the hub** — a roster slot reserved
+   for a role the arc doesn't need yet is not a gap to fill on principle; 42L is free to give Cass a
+   voice when the relic's custody actually becomes his to speak about.
 
 ## Integration 1 checkpoint fixes
 

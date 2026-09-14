@@ -28,4 +28,4 @@ DialogueId = "dialogue.emberbound_hierarch"
 PropertyId = ""
 TravelNodeId = ""
 RevealWithCell = false
-RequiredFlagId = ""
+RequiredFlagId = "flag.iron_king_defeated"
