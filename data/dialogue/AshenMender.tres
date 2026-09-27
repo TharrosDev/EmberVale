@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="DialogueResource" format=3 uid="uid://c0mhr77ashenmend"]
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+[sub_resource type="Resource" id="ch_ash"]
+script = ExtResource("3_choice")
+Text = "dlg.ashen_mender.c_ash"
+Goto = "ash"
+
+[sub_resource type="Resource" id="ch_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.ashen_mender.c_bye"
+
+[sub_resource type="Resource" id="ch_ash_back"]
+script = ExtResource("3_choice")
+Text = "dlg.ashen_mender.c_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="node_root"]
+script = ExtResource("2_node")
+Id = "root"
+Text = "dlg.ashen_mender.root"
+Choices = Array[Resource]([SubResource("ch_ash"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_ash"]
+script = ExtResource("2_node")
+Id = "ash"
+Text = "dlg.ashen_mender.ash"
+Choices = Array[Resource]([SubResource("ch_ash_back")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "dialogue.ashen_mender"
+SpeakerName = "dlg.ashen_mender.speaker"
+StartNodeId = "root"
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_ash")])

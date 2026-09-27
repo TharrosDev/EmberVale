@@ -14,7 +14,7 @@ laid out: **geography first, civilisation second, routes third, places fourth, d
 | --- | --- | --- | --- | --- |
 | The Ember Crown | -520..520; -720..440 | built | 2026-09 world rebuild | Human heartland: the Crown Range, the Emberwash valley, the Tarn, farm belt and ash flats; the capital under the Iron Citadel. |
 | Frostfang Reach | -460..500; -2320..-1300 | built | 2026-09 world rebuild | Alpine clan country: the Stormbound Vale, one hold, three dragon territories, Stormcrown. |
-| The Ashen Wilds | 900..2100; -1100..300 | reserved | Phase 44F-44I | Cataclysm scar east beyond the Ashen Breach: plateaus, ravines, corrupted forest, the Beast Lord. |
+| The Ashen Wilds | 900..2100; -1100..300 | built | 2026-09 finish run | Cataclysm scar east beyond the Ashen Breach: plateaus, ravines, corrupted forest, the Beast Lord. |
 | The Sunspire Dominion | -800..800; 900..2300 | reserved | Phase 44J-44M | South beyond the Southmarch Gate: desert basins, jungle belt, the great libraries, the Crimson Prophet. |
 | The Pale Concord | -2600..-1500; -400..900 | hidden | Phase 44N-44Q | Found by story, never advertised. No neighbour, map, travel or search record may name it. |
 
@@ -27,7 +27,7 @@ portal's side of the realm and a direction in dialogue agree, and no two realms 
 | From | To | Near end | Far end |
 | --- | --- | --- | --- |
 | Ember Crown | Frostfang Reach | the Crown Pass portal on the saddle behind the Crossway (-150, -652) | the Stormbound Vale gap (-60, -1316) |
-| Ember Crown | Ashen Wilds (reserved) | the Ashen Breach, the burnt cut through the eastern border hills (500, -282) | Phase 44G |
+| Ember Crown | Ashen Wilds | the Ashen Breach, the burnt cut through the eastern border hills (492, -282); hidden until `flag.iron_king_defeated` | the Breach Scar mouth (928, -298) |
 | Ember Crown | Sunspire (reserved) | the Southmarch Gate, the broken border gate at the caravan road's end (72, 402) | Phase 44K |
 
 The Pale Concord has no crossing and must not gain one before its story reveal (44K/44O). The atlas
@@ -41,7 +41,7 @@ name.
 | `location.ember_crown.southmarch_gate` | Ember Crown | built | the Sunspire road's end (44K) |
 | `location.ember_crown.ashen_breach` | Ember Crown | built | the Ashen Wilds road's end (44G) |
 | `location.frostfang.stormcrown` | Frostfang Reach | built | Storm Tyrant territory (44E / 47E) |
-| `location.ashen.station` | Ashen Wilds | reserved | Ash Hunters' field station (42E, owned by 44H) |
+| `location.ashen.station` | Ashen Wilds | built | Ash Hunters' field station (42E, owned by 44H) |
 | `location.sunspire.library` | Sunspire | reserved | Veiled Archive great library (42G, owned by 44L) |
 
 ## 2. Scale: travel time, not metres

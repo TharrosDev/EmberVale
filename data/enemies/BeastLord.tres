@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" format=3 uid="uid://cmbrvlenmbeastlord"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+; The Beast Lord, the Fourth Flamebearer: "Accepted corruption. Became a monster." (docs/LORE.md)
+;
+; ⚠️ THE BODY IS A PLACEHOLDER. It is the dire wolf's adopted model at 2.2x through ModelScale, charred by
+; its EnemyVisualKit profile, so the fight is complete and playable now. When a generated boss body
+; lands, swap ModelPath and ModelScale and re-fit the capsule.
+;
+; No LootTablePath: like the Iron King, his reward is the relic his BossResource grants.
+
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.beast_lord"
+NameKey = "enemy.beast_lord.name"
+AttributesPath = "res://data/attributes/BeastLordAttributes.tres"
+WeaponPath = "res://data/weapons/BeastLordClaws.tres"
+LootTablePath = ""
+ModelPath = "res://assets/models/creatures/enm_dire_wolf.glb"
+ModelScale = 2.2
+PlaceholderTint = Color(0.2, 0.15, 0.14, 1)
+AiProfileId = "ai.boss"
+FactionId = "faction.beasts"
+KnownSpellIds = Array[String]([])
+BreathSpellId = ""
+DialogueId = ""
+CapsuleRadius = 1.1
+CapsuleHeight = 2.8
+IsBoss = true
+BossId = "boss.beast_lord"
+DirectionalMelee = false
+MaxPoise = 170.0
+Reaction = 4
+StaminaRegen = 18.0
+XpValue = 750

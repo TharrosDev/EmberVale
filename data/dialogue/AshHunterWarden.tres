@@ -1,0 +1,72 @@
+[gd_resource type="Resource" script_class="DialogueResource" format=3 uid="uid://c0mhr77ashwarden"]
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+[sub_resource type="Resource" id="ch_lord"]
+script = ExtResource("3_choice")
+Text = "dlg.ash_hunter_warden.c_lord"
+Goto = "lord"
+
+[sub_resource type="Resource" id="ch_station"]
+script = ExtResource("3_choice")
+Text = "dlg.ash_hunter_warden.c_station"
+Goto = "station"
+
+[sub_resource type="Resource" id="ch_done"]
+script = ExtResource("3_choice")
+Text = "dlg.ash_hunter_warden.c_done"
+Goto = "done"
+Condition = 5
+ConditionArg = "flag.beast_lord_defeated"
+
+[sub_resource type="Resource" id="ch_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.ash_hunter_warden.c_bye"
+
+[sub_resource type="Resource" id="ch_lord_back"]
+script = ExtResource("3_choice")
+Text = "dlg.ash_hunter_warden.c_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_station_back"]
+script = ExtResource("3_choice")
+Text = "dlg.ash_hunter_warden.c_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="ch_done_back"]
+script = ExtResource("3_choice")
+Text = "dlg.ash_hunter_warden.c_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="node_root"]
+script = ExtResource("2_node")
+Id = "root"
+Text = "dlg.ash_hunter_warden.root"
+Choices = Array[Resource]([SubResource("ch_lord"), SubResource("ch_station"), SubResource("ch_done"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_lord"]
+script = ExtResource("2_node")
+Id = "lord"
+Text = "dlg.ash_hunter_warden.lord"
+Choices = Array[Resource]([SubResource("ch_lord_back")])
+
+[sub_resource type="Resource" id="node_station"]
+script = ExtResource("2_node")
+Id = "station"
+Text = "dlg.ash_hunter_warden.station"
+Choices = Array[Resource]([SubResource("ch_station_back")])
+
+[sub_resource type="Resource" id="node_done"]
+script = ExtResource("2_node")
+Id = "done"
+Text = "dlg.ash_hunter_warden.done"
+Choices = Array[Resource]([SubResource("ch_done_back")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "dialogue.ash_hunter_warden"
+SpeakerName = "dlg.ash_hunter_warden.speaker"
+StartNodeId = "root"
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_lord"), SubResource("node_station"), SubResource("node_done")])

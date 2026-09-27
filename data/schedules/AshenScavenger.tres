@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="ScheduleResource" format=3 uid="uid://uashenscav01"]
+
+[ext_resource type="Script" path="res://src/Npc/ScheduleResource.cs" id="1_sched"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleEntry.cs" id="2_entry"]
+
+; Cell-local destinations in Last Hearth's cell frame; tools/shift_cell_content.py moves them
+; with the scene when the settlement's content origin changes.
+
+[sub_resource type="Resource" id="e_0"]
+script = ExtResource("2_entry")
+StartHour = 7
+Activity = "At his counter"
+Destination = Vector3(-33, 0, 31.5)
+
+[sub_resource type="Resource" id="e_1"]
+script = ExtResource("2_entry")
+StartHour = 21
+Activity = "Asleep"
+Destination = Vector3(-7, 0, 37)
+
+[resource]
+script = ExtResource("1_sched")
+Id = "schedule.ashen_scavenger"
+Entries = Array[Resource]([SubResource("e_0"), SubResource("e_1")])

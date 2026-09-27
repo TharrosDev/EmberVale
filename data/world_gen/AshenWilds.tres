@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="WorldGenerationProfileResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldGenerationProfileResource.cs" id="1_generation"]
+
+; THE ASHEN WILDS' GEOGRAPHY RECIPE.
+;
+; The same generator and master seed as the Ember Crown and Frostfang, and a third country. The Wilds
+; are the Cataclysm scar: RUGGED rather than mountainous (a middling MountainPrevalence and height, but
+; ErosionStrength well under the Crown's, because this ground has not had the time to be rounded off),
+; DRY (a very high RiverThreshold, so the drainage solve cuts almost nothing - there is no water in the
+; scar worth the name) and warm. SnowLine sits far above anything generated here.
+
+[resource]
+script = ExtResource("1_generation")
+MasterSeed = 3800
+GeneratorVersion = 2
+BaseElevation = 2.0
+MacroScale = 320.0
+MacroRelief = 10.0
+MountainScale = 180.0
+MountainPrevalence = 0.62
+MountainHeight = 20.0
+ValleyStrength = 7.0
+ErosionStrength = 0.35
+LocalRelief = 1.8
+DetailScale = 3.0
+RouteCalm = 55.0
+Temperature = 0.64
+Moisture = 0.18
+SnowLine = 120.0
+HydrologyCellSize = 12.0
+RiverThreshold = 900.0
+RiverWidth = 2.4
+RiverDepth = 1.0

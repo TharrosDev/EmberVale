@@ -5673,6 +5673,16 @@ public static class ContentValidator
 
         CollectSceneAuthoredFlags(written);
 
+        // Every boss's defeat flag is written by BossEncounterDirector on its death (the Ashen Wilds,
+        // 2026-09): the Iron King's constant above predates the other Flamebearers.
+        foreach (Enemies.BossResource boss in Enemies.BossDatabase.All)
+        {
+            if (!string.IsNullOrEmpty(boss.DefeatFlagId))
+            {
+                written.Add(boss.DefeatFlagId);
+            }
+        }
+
         foreach (DialogueResource dialogue in DialogueDatabase.All)
         {
             foreach (DialogueNode node in dialogue.NodeList())

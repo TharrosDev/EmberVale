@@ -39,7 +39,7 @@ def parser():
     p.add_argument("--base", help="include changes since this merge base as well as staged/unstaged/untracked")
     p.add_argument("--godot", type=Path)
     p.add_argument("--mode", choices=("fast", "engine", "visual", "performance", "full"), default="engine")
-    p.add_argument("--region", choices=("ember_crown", "frostfang_reach"))
+    p.add_argument("--region", choices=("ember_crown", "frostfang_reach", "ashen_wilds"))
     p.add_argument("--engine-tests", action="store_true", help="include native protocol integration tests")
     p.add_argument("--render", action="store_true", help="use a rendering display (required for screenshot evidence)")
     p.add_argument("--resolution", action="append", help="WIDTHxHEIGHT; repeat for a capture set")

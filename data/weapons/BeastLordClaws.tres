@@ -1,0 +1,80 @@
+[gd_resource type="Resource" script_class="WeaponResource" load_steps=4 format=3 uid="uid://cmbrvlbeastclaws"]
+
+[ext_resource type="Script" path="res://src/Combat/WeaponResource.cs" id="1_weapon"]
+[ext_resource type="Script" path="res://src/Combat/Actions/ActionDefinitionResource.cs" id="2_action"]
+
+; The Beast Lord's own chain, modelled on the Iron King's maul (data/weapons/IronKingMaul.tres) and
+; deliberately its opposite in rhythm. The King is slow and commits; the Lord is quick and closes.
+;
+;   1. A RAKE. Interruptible and short, the safe opener, the one to stagger.
+;   2. A LUNGE. Uninterruptible, and it WARPS three metres onto its target over the wind-up: stepping
+;      back does not leave its reach the way it leaves the maul's. The answer is sideways.
+
+[sub_resource type="Resource" id="Rake"]
+script = ExtResource("2_action")
+Id = "beastlord.rake"
+Kind = 0
+AnimationSlot = "attack"
+Duration = 1.1
+FallbackDuration = 1.1
+ActiveFrom = 0.34
+ActiveTo = 0.48
+CancelFrom = 0.5
+ComboFrom = 0.5
+ComboTo = 1.0
+NextActionId = "beastlord.lunge"
+Interruptible = true
+MoveScale = 0.35
+TurnDegreesPerSecond = 90.0
+StaminaCost = 16.0
+DamageScale = 1.0
+PoiseScale = 1.0
+HitStopScale = 1.0
+CameraImpulse = 0.25
+AiWeight = 1.0
+AiMaxRange = 3.0
+AiRecoverySeconds = 0.45
+
+[sub_resource type="Resource" id="Lunge"]
+script = ExtResource("2_action")
+Id = "beastlord.lunge"
+Kind = 1
+AnimationSlot = "attack"
+Duration = 1.7
+FallbackDuration = 1.7
+ActiveFrom = 0.55
+ActiveTo = 0.66
+CancelFrom = 0.8
+ComboFrom = 0.8
+ComboTo = 1.0
+NextActionId = ""
+Interruptible = false
+MoveScale = 0.0
+TurnDegreesPerSecond = 45.0
+RootMotion = 2
+MaxWarpDistance = 3.0
+MaxWarpDegrees = 35.0
+StaminaCost = 24.0
+DamageScale = 1.6
+PoiseScale = 1.5
+Knockback = 5.0
+HitStopScale = 1.5
+CameraImpulse = 0.7
+AiWeight = 0.8
+AiMaxRange = 4.2
+AiRecoverySeconds = 0.8
+
+[resource]
+script = ExtResource("1_weapon")
+DisplayName = "Beast Lord's Claws"
+DamageType = 0
+BaseDamage = 22.0
+PoiseDamage = 45.0
+StaminaCost = 16.0
+Attacks = Array[ExtResource("2_action")]([SubResource("Rake"), SubResource("Lunge")])
+WindupTime = 0.4
+ActiveTime = 0.16
+RecoveryTime = 0.5
+AttackSpeed = 0.85
+ComboLength = 2
+FinisherMultiplier = 1.5
