@@ -40,12 +40,22 @@ public partial class BossSummonComponent : InteractableComponent
     /// </summary>
     [Export] public string RequiredQuestId { get; set; } = "quest.warband.heart";
 
+    /// <summary>The boss archetype this brazier summons. Must build a <see cref="BossEntity"/>.</summary>
+    [Export] public string BossTemplateId { get; set; } = GameIds.Enemies.IronKing;
+
+    /// <summary>Story flag that marks this boss defeated — its <c>BossResource.DefeatFlagId</c>.</summary>
+    [Export] public string DefeatedFlagId { get; set; } = BossEncounterDirector.DefeatedFlag;
+
+    /// <summary>Locale keys for the ready and gated prompts.</summary>
+    [Export] public string PromptKey { get; set; } = "boss.challenge_prompt";
+    [Export] public string LockedPromptKey { get; set; } = "boss.challenge_locked";
+
     private BossEntity? _boss;
 
     public override string Prompt =>
         AlreadyDefeated() ? string.Empty
-        : GateMet() ? Loc.T("boss.challenge_prompt")
-        : Loc.T("boss.challenge_locked");
+        : GateMet() ? Loc.T(PromptKey)
+        : Loc.T(LockedPromptKey);
 
     public override bool Interact(IEntity instigator)
     {
@@ -66,7 +76,7 @@ public partial class BossSummonComponent : InteractableComponent
 
         if (Entity?.Body is not { } brazier || brazier.GetParent() is not Node arena)
         {
-            Log.Warn("BossSummonComponent: no arena parent to spawn the Iron King into.");
+            Log.Warn($"BossSummonComponent: no arena parent to spawn '{BossTemplateId}' into.");
             return false;
         }
 
@@ -75,9 +85,9 @@ public partial class BossSummonComponent : InteractableComponent
         // returns a plain EnemyEntity, and BossEncounterDirector and ArenaHookComponent both branch
         // on that type off EntityDiedEvent. He would die with no defeat beat, no reward and an arena
         // that never reset, in ways that look like anything but their cause.
-        if (EnemyTemplateRegistry.Create(GameIds.Enemies.IronKing, Vector3.Zero) is not BossEntity boss)
+        if (EnemyTemplateRegistry.Create(BossTemplateId, Vector3.Zero) is not BossEntity boss)
         {
-            Log.Error($"'{GameIds.Enemies.IronKing}' did not build a BossEntity; the brazier stays cold.");
+            Log.Error($"'{BossTemplateId}' did not build a BossEntity; the brazier stays cold.");
             return false;
         }
 
@@ -89,7 +99,7 @@ public partial class BossSummonComponent : InteractableComponent
         // The entrance beat: announce him as he rises rather than waiting for the first blow.
         // BeginEncounter is idempotent, so the controller's own first-damage call is a no-op after it.
         boss.GetComponent<BossController>()?.BeginEncounter();
-        Log.Info("The Iron King rises to meet your challenge.");
+        Log.Info($"'{BossTemplateId}' rises to meet your challenge.");
         return true;
     }
 
@@ -113,9 +123,9 @@ public partial class BossSummonComponent : InteractableComponent
             && log.IsCompleted(RequiredQuestId);
     }
 
-    private static bool AlreadyDefeated() =>
+    private bool AlreadyDefeated() =>
         ServiceLocator.Instance is { } sl
         && sl.TryGet(out PlayerCharacter player)
         && player.GetComponent<StoryFlagsComponent>() is { } flags
-        && flags.Has(BossEncounterDirector.DefeatedFlag);
+        && flags.Has(DefeatedFlagId);
 }
