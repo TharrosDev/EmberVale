@@ -160,6 +160,16 @@ public static class NpcVisualKit
         ["npc.clan_exile"] = P("clan_exile", Build.Slim,
             Chest("ShoulderCape"), Hips("Knife")),
 
+        // The Sunspire Dominion: Saffra Wells and the great library.
+        ["npc.sunspire_archivist"] = P("sunspire_archivist", Build.Slim,
+            Chest("ShoulderCape"), Hips("ScrollCase"), Hips("Ledger")),
+        ["npc.sunspire_caravan_master"] = P("sunspire_caravan_master", Build.Broad,
+            Chest("MerchantMantle"), Chest("Satchel"), Hips("CoinPouch")),
+        ["npc.sunspire_wellkeeper"] = P("sunspire_wellkeeper", Build.Standard,
+            Chest("WorkApron"), Hips("RopeCoil"), Hips("Keys")),
+        ["npc.sunspire_pilgrim"] = P("sunspire_pilgrim", Build.Slim,
+            Chest("OuterVest"), Hips("BeltPouches")),
+
         // Mine and Landing workers/traders.
         ["npc.bregan"] = P("mine_foreman", Build.Broad,
             Chest("WorkApron"), Hips("Hammer"), Hips("Keys")),

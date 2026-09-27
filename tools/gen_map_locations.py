@@ -274,6 +274,23 @@ add("frostfang_reach/dragon_roost", "frostfang.dragon_roost", "Dungeon", ".", "T
 add("frostfang_reach/ash_roost", "frostfang.ash_roost", "Dungeon", ".", "The Ash Roost")
 add("frostfang_reach/ancient_aerie", "frostfang.ancient_aerie", "Dungeon", ".", "The Ancient Aerie")
 
+# ── The Sunspire Dominion ────────────────────────────────────────────────────────────────────
+# The wells are what the caravan road announces; the library and the mission are found by seeing them
+# or by being sent there. location.sunspire.library is the atlas's reserved hook (Acts III and IV).
+add("sunspire/wells", "sunspire.wells", "Town", ".", "Saffra Wells", reveal=True,
+    desc="The caravan town at the oasis, the only sure water between the Southmarch Gate and the south.")
+add("sunspire/wells", "sunspire.waystone", "Waystone", "Waystone", "Saffra Wells Waystone",
+    travel="travel.sunspire.wells")
+add("sunspire/wells", "sunspire.caravanserai", "Inn", "CaravanseraiCot", "The Caravanserai",
+    service="service.sunspire.caravanserai")
+add("sunspire/library", "sunspire.library", "Landmark", "Nav/GreatLibrary", "The Great Library", tier="Secondary",
+    dialogue="dialogue.sunspire_archivist",
+    desc="The Veiled Archive's great library, the last reading hall of a city the sand took.")
+add("sunspire/temple", "sunspire.mission", "Arena", ".", "The Crimson Mission", tier="Primary",
+    desc="The Crimson Prophet's seat: a chapel of his worshippers and the walled sanctum where he preaches.")
+add("sunspire/caravan_gap", "sunspire.caravan_gap", "Gate", "Nav/GapCairn", "The Caravan Gap",
+    desc="The one gap in the northern escarpment, where the road from the Southmarch Gate comes in.")
+
 
 def _cell_ids():
     """scene stem -> cell id, read from the region specs (2026-09 world rebuild: the hand list of
@@ -281,8 +298,9 @@ def _cell_ids():
     sys.path.insert(0, os.path.join(ROOT, "tools"))
     from region_spec_ember import cells as ember
     from region_spec_frostfang import cells as frost
+    from region_spec_sunspire import cells as sun
     out = {}
-    for cell in list(ember()) + list(frost()):
+    for cell in list(ember()) + list(frost()) + list(sun()):
         stem = cell.scene.replace("res://scenes/regions/", "").replace(".tscn", "")
         out[stem] = cell.cell_id
     return out

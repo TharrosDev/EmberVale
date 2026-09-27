@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="WorldBiomeProfileResource" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldBiomeProfileResource.cs" id="1_biome"]
+[ext_resource type="Resource" path="res://data/terrain_layers/Sand.tres" id="2_sand"]
+[ext_resource type="Resource" path="res://data/terrain_layers/Gravel.tres" id="3_gravel"]
+[ext_resource type="Resource" path="res://data/terrain_layers/CliffRock.tres" id="4_cliffrock"]
+[ext_resource type="Resource" path="res://data/terrain_layers/Stone.tres" id="5_stone"]
+[ext_resource type="Resource" path="res://data/terrain_layers/PackedDirt.tres" id="6_packeddirt"]
+[ext_resource type="Resource" path="res://data/terrain_layers/WetShore.tres" id="7_wetshore"]
+
+; THE SUNSPIRE BASINS. Sand over a gravel pan, mesa walls in bedded cliff rock and bare stone caps.
+; None of the ten shipped biomes has loose sand as its ground, which is the one identity a desert
+; cannot fake with light alone; everything else here is an existing layer so the next arid place can
+; reuse it.
+[resource]
+script = ExtResource("1_biome")
+Id = "biome.desert"
+Ground = ExtResource("2_sand")
+Sparse = ExtResource("3_gravel")
+Rock = ExtResource("4_cliffrock")
+Cap = ExtResource("5_stone")
+Road = ExtResource("6_packeddirt")
+Shore = ExtResource("7_wetshore")
+SlopeBand = Vector2(0.3, 0.7)
+HeightBand = Vector2(16, 34)
+CapSlopeShed = 0.35
+SparseCoverage = 0.34
+MacroScale = 80.0
+MacroStrength = 0.24
+StrataScale = 3.2
+StrataStrength = 0.4

@@ -35,6 +35,10 @@ public partial class RegionTransitionComponent : InteractableComponent
     /// <see cref="RegionDatabase"/>.</summary>
     [Export] public string TargetRegionId { get; set; } = string.Empty;
 
+    /// <summary>The region this door stands in. It decides which toll is owed: a gate is charged only
+    /// on its own road (<see cref="RegionResource.TollFrom"/>). Empty = unknown, which fails closed.</summary>
+    [Export] public string SourceRegionId { get; set; } = string.Empty;
+
     /// <summary>Story flag the player must carry before this portal exists for them. Empty = always
     /// open (the default, so every other region link is unaffected).</summary>
     [Export] public string RequiredFlagId { get; set; } = string.Empty;
@@ -92,7 +96,8 @@ public partial class RegionTransitionComponent : InteractableComponent
             RegionResource? destination = RegionDatabase.Get(TargetRegionId);
             string where = destination?.DisplayName ?? "elsewhere";
 
-            if (destination == null || destination.TollGold <= 0)
+            int fee = destination?.TollFrom(RegionDatabase.Get(SourceRegionId)) ?? 0;
+            if (destination == null || fee <= 0)
             {
                 return Loc.TF("region.travel_prompt", where);
             }
@@ -107,14 +112,14 @@ public partial class RegionTransitionComponent : InteractableComponent
             return Economy.TollFee.Resolve(
                 hasPermit: flags?.Has(destination.TollPermitFlagId) ?? false,
                 hasPass: flags?.Has(destination.TollPassFlagId) ?? false,
-                fee: destination.TollGold,
+                fee: fee,
                 goldHeld: gold) switch
             {
                 Economy.TollOutcome.PermitHeld => Loc.TF("region.travel_prompt_permit", where),
                 Economy.TollOutcome.PassSpent => Loc.TF("region.travel_prompt_pass", where),
                 Economy.TollOutcome.CannotAfford =>
-                    Loc.TF("region.travel_prompt_short", where, destination.TollGold, gold),
-                _ => Loc.TF("region.travel_prompt_toll", where, destination.TollGold),
+                    Loc.TF("region.travel_prompt_short", where, fee, gold),
+                _ => Loc.TF("region.travel_prompt_toll", where, fee),
             };
         }
     }

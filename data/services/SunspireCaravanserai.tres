@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ServiceResource" format=3]
+
+[ext_resource type="Script" path="res://src/Economy/ServiceResource.cs" id="1_service"]
+
+; The caravanserai cots at Saffra Wells: the Dominion's inn, on the Ember Crown inn's terms (same Kind,
+; RestHour and price). No FactionId: the wells serve anyone with coin, which is the caravan trade.
+
+[resource]
+script = ExtResource("1_service")
+Id = "service.sunspire.caravanserai"
+NameKey = "service.sunspire.caravanserai.name"
+Kind = 2
+PriceGold = 10
+FactionId = ""
+UnlockFlagId = ""
+RestHour = 8
+XpReward = 0

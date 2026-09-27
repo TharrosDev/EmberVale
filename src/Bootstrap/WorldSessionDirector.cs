@@ -139,6 +139,24 @@ public sealed partial class WorldSessionDirector : Node
         WorldGround.OnGround(region.SpawnPoint, region.SpawnPoint.Y);
 
     /// <summary>
+    /// Where a traveller walking in from <paramref name="fromRegionId"/> lands: beside the destination's
+    /// own door back to that region when it authors one (<see cref="RegionResource.NeighbourPortalPoints"/>),
+    /// four metres from it towards the spawn so they do not re-enter the portal; otherwise the spawn.
+    /// </summary>
+    public static Vector3 RegionArrival(RegionResource region, string fromRegionId)
+    {
+        Vector3 door = region.OwnDoorTo(fromRegionId);
+        if (door == Vector3.Zero)
+        {
+            return RegionSpawn(region);
+        }
+
+        Vector3 inward = new Vector3(region.SpawnPoint.X - door.X, 0f, region.SpawnPoint.Z - door.Z);
+        Vector3 step = inward.LengthSquared() > 0.01f ? inward.Normalized() * 4f : new Vector3(0f, 0f, 4f);
+        return WorldGround.OnGround(door + step, region.SpawnPoint.Y);
+    }
+
+    /// <summary>
     /// ⚠️ <b>NEVER PUT THE PLAYER UNDER THE GROUND (the 2026-08-29 geography overhaul).</b> Every
     /// teleport in the game — a portal, a fast-travel jump, a save restore, the <c>region</c> dev
     /// command — writes an absolute Y that was safe for exactly as long as every cell floor's top
@@ -236,14 +254,15 @@ public sealed partial class WorldSessionDirector : Node
             return;
         }
 
-        if (!RegionSetup.PayToll(Session.Players.Player, destination))
+        string from = Session.CurrentRegionId;
+        if (!RegionSetup.PayToll(Session.Players.Player, destination, RegionDatabase.Get(from)))
         {
             return;
         }
 
         // A region spawn's Y is authored clearance, not world height. Convert it before opening
         // the shared load gate; fast-travel nodes below are already world-space transforms.
-        PerformRegionLoad(destination, RegionSpawn(destination), $"Entering {destination.DisplayName}...");
+        PerformRegionLoad(destination, RegionArrival(destination, from), $"Entering {destination.DisplayName}...");
     }
 
     /// <summary>

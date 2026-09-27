@@ -9,6 +9,15 @@
 
 ## Where we are
 
+- **Sunspire built (finish run, 2026-09-27).** `region.sunspire`: 20 cells (x -380..400, z 900..1790)
+  from `tools/region_spec_sunspire.py`, new `Desert` biome + `Sand` layer. Southmarch Gate (72, 402)
+  <-> the caravan gap (60, 916), gated by `flag.iron_king_defeated`; regions now carry per-neighbour
+  doors (`RegionResource.NeighbourPortalPoints`, arrival beside the door back) and a toll is only owed
+  on its own road (`TollFee.CrossingFee`). Saffra Wells (3 NPCs, caravanserai inn, waystone), the great
+  library `location.sunspire.library` (enterable; empty story anchors `PaleConcordPortalAnchor` /
+  `CelestialPortalAnchor` in `scenes/regions/sunspire/library.tscn`), and the Crimson Mission arena with
+  `boss.crimson_prophet` (placeholder cultist body at 1.35x).
+
 - **Integration 1 checkpoint (2026-09-14), `claude/integration-1`.** Merged `w1-fixes`, 42C
   (Dawnwardens recruitment/probation), 42E (Ash Hunters field induction) and 42I (Iron Syndicate
   contract rank), then rebaked the world. **42C/42E/42I ✅ CLOSED** — see playbook `phase-42.md` for

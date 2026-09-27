@@ -1,0 +1,52 @@
+[gd_resource type="Resource" script_class="DialogueResource" format=3]
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+[sub_resource type="Resource" id="ch_road"]
+script = ExtResource("3_choice")
+Text = "dlg.sunspire_caravan_master.c_road"
+Goto = "road"
+
+[sub_resource type="Resource" id="ch_road_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.sunspire_caravan_master.c_road_bye"
+
+[sub_resource type="Resource" id="ch_gate"]
+script = ExtResource("3_choice")
+Text = "dlg.sunspire_caravan_master.c_gate"
+Goto = "gate"
+
+[sub_resource type="Resource" id="ch_gate_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.sunspire_caravan_master.c_gate_bye"
+
+[sub_resource type="Resource" id="ch_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.sunspire_caravan_master.c_bye"
+
+[sub_resource type="Resource" id="node_root"]
+script = ExtResource("2_node")
+Id = "root"
+Text = "dlg.sunspire_caravan_master.root"
+Choices = Array[Resource]([SubResource("ch_road"), SubResource("ch_gate"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_road"]
+script = ExtResource("2_node")
+Id = "road"
+Text = "dlg.sunspire_caravan_master.road"
+Choices = Array[Resource]([SubResource("ch_road_bye")])
+
+[sub_resource type="Resource" id="node_gate"]
+script = ExtResource("2_node")
+Id = "gate"
+Text = "dlg.sunspire_caravan_master.gate"
+Choices = Array[Resource]([SubResource("ch_gate_bye")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "dialogue.sunspire_caravan_master"
+SpeakerName = "dlg.sunspire_caravan_master.speaker"
+StartNodeId = "root"
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_road"), SubResource("node_gate")])

@@ -49,4 +49,15 @@ public class TollFeeTests
         Assert.Equal(TollOutcome.CannotAfford, TollFee.Resolve(hasPermit: false, hasPass: false, fee: 40, goldHeld: 39));
         Assert.Equal(TollOutcome.CannotAfford, TollFee.Resolve(hasPermit: false, hasPass: false, fee: 40, goldHeld: 0));
     }
+
+    [Fact]
+    public void OnlyTheGateBothEndsDeclareIsTolled()
+    {
+        // Frostfang <-> Ember Crown: both sides name the Crossway permit, so the road is tolled.
+        Assert.Equal(25, TollFee.CrossingFee(25, "flag.crossway.permit", "flag.crossway.permit"));
+        // Sunspire -> Ember Crown: the Southmarch Gate has no wardens, so the Crossway price is not owed.
+        Assert.Equal(0, TollFee.CrossingFee(25, "flag.crossway.permit", ""));
+        // An unknown origin fails closed.
+        Assert.Equal(25, TollFee.CrossingFee(25, "flag.crossway.permit", null));
+    }
 }

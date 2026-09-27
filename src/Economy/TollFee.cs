@@ -61,4 +61,15 @@ public static class TollFee
 
         return ShopPricing.CanAfford(fee, goldHeld) ? TollOutcome.Charged : TollOutcome.CannotAfford;
     }
+
+    /// <summary>
+    /// The fee for one crossing <em>between two particular regions</em>. A toll is declared on the
+    /// destination, so a region with two roads in would charge its one gate's price on both; the
+    /// Crossway toll is on the road to Frostfang, not on the Southmarch Gate. A crossing is tolled
+    /// only when both ends name the same permit (the same gate, declared on both sides, the way the
+    /// Crossway is). An unknown origin (<c>null</c>) keeps the destination's fee, so the rule fails
+    /// closed rather than handing out free passage.
+    /// </summary>
+    public static int CrossingFee(int destinationFee, string destinationPermitFlag, string? originPermitFlag) =>
+        originPermitFlag == null || originPermitFlag == destinationPermitFlag ? destinationFee : 0;
 }

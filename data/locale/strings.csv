@@ -1621,6 +1621,16 @@ location.frostfang.stormcrown.desc,"A storm-blasted spire in the north-east high
 location.frostfang.dragon_roost.name,The Dragon Roost
 location.frostfang.ash_roost.name,The Ash Roost
 location.frostfang.ancient_aerie.name,The Ancient Aerie
+location.sunspire.wells.name,Saffra Wells
+location.sunspire.wells.desc,"The caravan town at the oasis, the only sure water between the Southmarch Gate and the south."
+location.sunspire.waystone.name,Saffra Wells Waystone
+location.sunspire.caravanserai.name,The Caravanserai
+location.sunspire.library.name,The Great Library
+location.sunspire.library.desc,"The Veiled Archive's great library, the last reading hall of a city the sand took."
+location.sunspire.mission.name,The Crimson Mission
+location.sunspire.mission.desc,"The Crimson Prophet's seat: a chapel of his worshippers and the walled sanctum where he preaches."
+location.sunspire.caravan_gap.name,The Caravan Gap
+location.sunspire.caravan_gap.desc,"The one gap in the northern escarpment, where the road from the Southmarch Gate comes in."
 # --- END generated map location names ---
 # --- Phase 41D: the branching barrels errand (quest.hollowreach.barrels) ---
 quest.hollowreach.barrels.title,"What the Post Took"
@@ -2099,3 +2109,47 @@ quest.veiled_archive.ancient_lead.summary,"The Ancient in the Frostfang aerie ho
 quest.veiled_archive.ancient_lead.obj_reach,"Go to the Ancient's aerie"
 quest.veiled_archive.ancient_lead.obj_report_taught,"Tell Keeper Ysolde Marr what the Ancient taught you"
 quest.veiled_archive.ancient_lead.obj_report_defeated,"Tell Keeper Ysolde Marr what the hoard kept"
+# Sunspire Dominion — the realm south of the Southmarch Gate: Saffra Wells, the great library, the Crimson Prophet.
+enemy.crimson_prophet.name,The Crimson Prophet
+enemy.crimson_prophet.lore,"The Fifth Flamebearer. He listened for the gods after they fell silent, and something answered. He became its voice, and built an empire of worshippers to carry what it said. He does not preach Morthul's word. He preaches in it."
+boss.crimson_prophet.challenge_prompt,"Kindle the altar fire and call the Prophet"
+boss.crimson_prophet.challenge_locked,"The altar fire will not take. The Prophet is not ready to hear you."
+dlg.crimson_prophet.absorb.speaker,"The Crimson Ember"
+dlg.crimson_prophet.absorb.offer,"Where the Prophet fell, his fire keeps speaking: a low, patient voice that knows your name and has been waiting to say it. The ember is yours to take. Will you absorb the flame?"
+dlg.crimson_prophet.absorb.c_absorb,"Absorb the flame."
+dlg.crimson_prophet.absorb.c_decline,"Let it burn out."
+dlg.crimson_prophet.absorb.absorbed,"The voice comes into you with the heat. For a moment you understand every sermon he ever gave, and for a moment you agree."
+dlg.crimson_prophet.absorb.declined,"You close your hand on nothing. The voice goes on a while without you, and then the sanctum is only a room full of smoke."
+dlg.crimson_prophet.absorb.c_absorbed_bye,"So be it."
+dlg.crimson_prophet.absorb.c_declined_bye,"Not his voice. Not mine."
+service.sunspire.caravanserai.name,"Caravanserai cot"
+dlg.sunspire_archivist.speaker,"Archivist Seren Adaru"
+dlg.sunspire_archivist.root,"""Mind the sand on the stair. It comes in on every boot and it has been coming in for four hundred years."" She does not look up from the page. ""This is the great library, or what the desert left of it. The Veiled Archive keeps it now."""
+dlg.sunspire_archivist.c_library,"What is this place?"
+dlg.sunspire_archivist.library,"""The last reading hall of the city that stood here before the Cataclysm. The rest of it is under your feet. The mesa kept the wind off this one hall, so it kept its books. Some of what we know about the Flamebearers, we know only because of that wind."""
+dlg.sunspire_archivist.c_library_bye,"I'll let you read."
+dlg.sunspire_archivist.c_prophet,"Tell me about the Crimson Prophet."
+dlg.sunspire_archivist.prophet,"""He was one of the seven, once. He read in this hall. Then he began to hear an answer when he prayed, and he stopped reading. His mission is south, past the red flats. His worshippers walk the pilgrim track every day."""
+dlg.sunspire_archivist.c_prophet_bye,"I'll see him for myself."
+dlg.sunspire_archivist.c_bye,"Farewell."
+dlg.sunspire_caravan_master.speaker,"Idrys Vane"
+dlg.sunspire_caravan_master.root,"""Caravan master, for what that's worth this season. The wells take anyone with coin, and the cots are ten a night. Don't drink from the oasis upstream of the cattle."""
+dlg.sunspire_caravan_master.c_road,"Where does the road go?"
+dlg.sunspire_caravan_master.road,"""West to the library, if you like old books and older sand. South to the Crimson Mission, if you like sermons. My caravans go neither way. We turn round here and go home."""
+dlg.sunspire_caravan_master.c_road_bye,"Good to know."
+dlg.sunspire_caravan_master.c_gate,"The Southmarch Gate was sealed."
+dlg.sunspire_caravan_master.gate,"""The Iron King sealed it. His wardens would not let a cart through in either direction. Now he's gone and the road's open, and I've got twenty years of trade to make up."""
+dlg.sunspire_caravan_master.c_gate_bye,"Then I'll leave you to it."
+dlg.sunspire_caravan_master.c_bye,"Safe roads."
+dlg.sunspire_wellkeeper.speaker,"Mother Oda Sarn"
+dlg.sunspire_wellkeeper.root,"""Water's free. Everything else at the wells costs something, but not the water. That's the oldest law in the Dominion and the Prophet's people can preach at me all they like."""
+dlg.sunspire_wellkeeper.c_wells,"Do the cultists come here?"
+dlg.sunspire_wellkeeper.wells,"""Every week, in their red, asking who will walk south with them. Some go. They come back quieter, when they come back. My grandson went at midsummer."""
+dlg.sunspire_wellkeeper.c_wells_bye,"I'm sorry."
+dlg.sunspire_wellkeeper.c_bye,"Thank you for the water."
+dlg.sunspire_pilgrim.speaker,"Tamsin Reed"
+dlg.sunspire_pilgrim.root,"""I walked the pilgrim track twice. I'm not walking it a third time. Don't tell the ones in red I said so."""
+dlg.sunspire_pilgrim.c_mission,"What happens at the mission?"
+dlg.sunspire_pilgrim.mission,"""He speaks from the sanctum with the altar fire behind him, and the fire speaks with him. Everyone hears their own name in it. The faithful stand at the walls. If you mean to go in there, go in armed, and do not light the altar unless you mean it."""
+dlg.sunspire_pilgrim.c_mission_bye,"I mean it."
+dlg.sunspire_pilgrim.c_bye,"Your secret is safe."

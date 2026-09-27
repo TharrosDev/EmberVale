@@ -679,11 +679,13 @@ def main() -> int:
 
     from region_spec_ember import build_ember          # noqa: E402
     from region_spec_frostfang import build_frostfang  # noqa: E402
+    from region_spec_sunspire import build_sunspire    # noqa: E402
 
     changed = False
     issues: list[str] = []
     for builder, filename in ((build_ember, "EmberCrown.tres"),
-                              (build_frostfang, "FrostfangReach.tres")):
+                              (build_frostfang, "FrostfangReach.tres"),
+                              (build_sunspire, "Sunspire.tres")):
         text, problems = builder()
         issues += problems
         changed |= write(REGIONS / filename, text, args.check)

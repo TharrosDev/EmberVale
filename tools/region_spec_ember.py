@@ -518,7 +518,11 @@ SafeZoneRadius = 120.0
 WeavePotency = 1.0
 DefaultWeatherId = "weather.cloudy"
 DayPhaseBias = 2
-Neighbours = Array[String](["region.frostfang_reach"])
+Neighbours = Array[String](["region.frostfang_reach", "region.sunspire"])
+; One door per neighbour (RegionResource.NeighbourPortalPoints): Zero keeps Frostfang's door on the
+; PortalPoint above and its arrival at the spawn; the Sunspire door stands in the Southmarch Gate
+; and a traveller coming home from the south lands beside it.
+NeighbourPortalPoints = Array[Vector3]([Vector3(0, 0, 0), @WORLD(72, 0, 402)@])
 
 ; The Crossway toll (Phase 38M). Authored on BOTH regions rather than on one, because there is one
 ; gate on one road and the wardens do not care which way a cart is pointing. 25 gold sits under
@@ -989,8 +993,8 @@ def cells() -> list[Cell]:
         empty("southern_fens", **at(8, 2), seed=383, scatter="Scatter_shore", biome="Wetland"),
         empty("south_gate", **at(8, 3), seed=384, scatter="Scatter_pasture", biome="Pasture", note="""
             THE SOUTHMARCH GATE — the caravan road ends at the realm's southern border, where the old
-            gate to the Sunspire road stands broken in its gap in the border hills. Reserved for
-            Phase 44; today the road's walk is paid for by the view south."""),
+            gate to the Sunspire road stands broken in its gap in the border hills. Its portal to the
+            Sunspire Dominion opens when the Iron King falls (NeighbourPortalPoints)."""),
         empty("border_hills", **at(8, 4), seed=385, scatter="Scatter_upland"),
         empty("border_east", **at(8, 5), seed=386, scatter="Scatter_upland"),
     ]

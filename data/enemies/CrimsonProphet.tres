@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" format=3 uid="uid://cmbrvlenmprophet"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+; The Crimson Prophet, fifth Flamebearer and the voice of Morthul (docs/LORE.md). A caster boss on the
+; shared pipeline (Phase 29.5's enemy casting + BossController); his fight is data/bosses/CrimsonProphet.tres.
+;
+; ⚠️ PLACEHOLDER BODY: the vendored cultist at 1.35x (ModelScale) until a bespoke model is generated.
+; His own worshippers wear the same robe, which is at least the right story. Capsule matches the scale.
+; No LootTablePath: the relic and the ember choice are the reward (BossResource).
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.crimson_prophet"
+NameKey = "enemy.crimson_prophet.name"
+AttributesPath = "res://data/attributes/CrimsonProphetAttributes.tres"
+WeaponPath = "res://data/weapons/SteelSword.tres"
+LootTablePath = ""
+ModelPath = "res://assets/models/creatures/enm_cultist.glb"
+ModelScale = 1.35
+PlaceholderTint = Color(0.55, 0.12, 0.12, 1)
+AiProfileId = "ai.prophet"
+FactionId = "faction.fallen"
+KnownSpellIds = Array[String](["spell.firebolt", "spell.wither"])
+BreathSpellId = ""
+DialogueId = ""
+CapsuleRadius = 0.55
+CapsuleHeight = 2.45
+IsBoss = true
+BossId = "boss.crimson_prophet"
+DirectionalMelee = false
+MaxPoise = 120.0
+Reaction = 4
+StaminaRegen = 14.0
+ManaRegen = 12.0
+XpValue = 650

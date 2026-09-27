@@ -102,6 +102,36 @@ public partial class RegionResource : Resource
     /// <summary>Ids of directly-reachable neighbouring regions (the map + fast-travel adjacency).</summary>
     [Export] public Godot.Collections.Array<string> Neighbours { get; set; } = new();
 
+    /// <summary>
+    /// Per-neighbour door positions, index-aligned with <see cref="Neighbours"/> (the Sunspire
+    /// crossing: the Ember Crown has two roads out now, and one <see cref="PortalPoint"/> would stack
+    /// both doors at the Crossway). A missing or <c>Vector3.Zero</c> entry keeps the old behaviour —
+    /// the door stands at <see cref="PortalPoint"/> and arrivals land at <see cref="SpawnPoint"/>. A
+    /// non-zero entry places that neighbour's door there <b>and</b> lands a traveller arriving from that
+    /// neighbour beside it, so walking back through a gate puts you at the gate.
+    /// </summary>
+    [Export] public Godot.Collections.Array<Vector3> NeighbourPortalPoints { get; set; } = new();
+
+    /// <summary>The authored door for <paramref name="neighbourId"/>, or <c>Vector3.Zero</c> if none.</summary>
+    public Vector3 OwnDoorTo(string neighbourId)
+    {
+        int index = Neighbours.IndexOf(neighbourId);
+        return index >= 0 && index < NeighbourPortalPoints.Count ? NeighbourPortalPoints[index] : Vector3.Zero;
+    }
+
+    /// <summary>Where this region's door to <paramref name="neighbourId"/> stands (see
+    /// <see cref="NeighbourPortalPoints"/>); <c>Vector3.Zero</c> means "the spawn fallback".</summary>
+    public Vector3 PortalPointFor(string neighbourId)
+    {
+        Vector3 own = OwnDoorTo(neighbourId);
+        return own != Vector3.Zero ? own : PortalPoint;
+    }
+
+    /// <summary>The toll owed for walking in from <paramref name="origin"/> (see
+    /// <see cref="Economy.TollFee.CrossingFee"/>): one gate is charged only on its own road.</summary>
+    public int TollFrom(RegionResource? origin) =>
+        Economy.TollFee.CrossingFee(TollGold, TollPermitFlagId, origin?.TollPermitFlagId);
+
     [ExportGroup("Toll")]
 
     /// <summary>

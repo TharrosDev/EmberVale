@@ -48,7 +48,7 @@ REALMS = [
           "reserved", "Phase 44F-44I",
           "Cataclysm scar east beyond the Ashen Breach: plateaus, ravines, corrupted forest, the Beast Lord."),
     Realm("sunspire", "The Sunspire Dominion", "region.sunspire", (-800.0, 900.0, 800.0, 2300.0),
-          "reserved", "Phase 44J-44M",
+          "built", "finish run (2026-09-27)",
           "South beyond the Southmarch Gate: desert basins, jungle belt, the great libraries, the Crimson Prophet."),
     Realm("pale_concord", "The Pale Concord", "region.pale_concord", (-2600.0, -400.0, -1500.0, 900.0),
           "hidden", "Phase 44N-44Q",
@@ -59,7 +59,7 @@ REALMS = [
 CROSSINGS = [
     ("ember_crown", "frostfang_reach", "the Crown Pass portal (-150, -652)", "the Stormbound Vale gap (-60, -1316)", "built"),
     ("ember_crown", "ashen_wilds", "the Ashen Breach (500, -282)", "reserved", "reserved"),
-    ("ember_crown", "sunspire", "the Southmarch Gate (72, 402)", "reserved", "reserved"),
+    ("ember_crown", "sunspire", "the Southmarch Gate (72, 402)", "the caravan gap (60, 916)", "built"),
 ]
 
 # Location hooks later phases depend on, and who owns them. A reserved id must NOT exist as a map
@@ -69,7 +69,7 @@ HOOKS = [
     ("location.ember_crown.ashen_breach", "ember_crown", "built", "the Ashen Wilds road's end (44G)"),
     ("location.frostfang.stormcrown", "frostfang_reach", "built", "Storm Tyrant territory (44E / 47E)"),
     ("location.ashen.station", "ashen_wilds", "reserved", "Ash Hunters' field station (42E, owned by 44H)"),
-    ("location.sunspire.library", "sunspire", "reserved", "Veiled Archive great library (42G, owned by 44L)"),
+    ("location.sunspire.library", "sunspire", "built", "Veiled Archive great library (42G, owned by 44L)"),
 ]
 
 # Travel-distance bands the built realms are laid out against (2026-09 world rebuild), in metres of
@@ -103,7 +103,9 @@ def check() -> list[str]:
 
     import region_spec_ember
     import region_spec_frostfang
-    for realm, spec in (("ember_crown", region_spec_ember), ("frostfang_reach", region_spec_frostfang)):
+    import region_spec_sunspire
+    for realm, spec in (("ember_crown", region_spec_ember), ("frostfang_reach", region_spec_frostfang),
+                        ("sunspire", region_spec_sunspire)):
         band = next(r.band for r in REALMS if r.key == realm)
         lattice = (spec.EXTENT_X[0], spec.ROWS[0][0], spec.EXTENT_X[1], spec.ROWS[-1][1])
         if not (band[0] <= lattice[0] and band[1] <= lattice[1] and lattice[2] <= band[2] and lattice[3] <= band[3]):

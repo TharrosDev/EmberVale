@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="AttributeSet" load_steps=2 format=3 uid="uid://cmbrvlprophetat"]
+
+[ext_resource type="Script" path="res://src/Stats/AttributeSet.cs" id="1_attrset"]
+
+; A second-act Flamebearer: tougher than the Iron King, softer in the body and dangerous at range.
+[resource]
+script = ExtResource("1_attrset")
+Health = 820.0
+Stamina = 140.0
+Mana = 260.0
+Strength = 14.0
+Dexterity = 12.0
+Intelligence = 26.0
+Vitality = 28.0
+Endurance = 16.0
+Armor = 10.0
+PhysicalPower = 16.0
+SpellPower = 24.0
+MoveSpeed = 3.6
+AttackSpeed = 0.8
+CritChance = 0.05
+CritDamage = 1.6
