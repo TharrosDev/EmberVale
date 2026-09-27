@@ -93,6 +93,11 @@ public partial class QuestResource : Resource
     /// <summary>Optional quest id that must be completed first; empty = always available.</summary>
     [Export] public string PrerequisiteQuestId { get; set; } = string.Empty;
 
+    /// <summary>Story flag that starts this quest by itself the moment it is set (and on load, for a
+    /// save that already holds it). How the main thread chains act to act with no quest giver: one
+    /// quest's <see cref="CompletionFlagId"/> or a boss's defeat flag is the next one's trigger.</summary>
+    [Export] public string AutoStartFlagId { get; set; } = string.Empty;
+
     /// <summary>
     /// Whether this quest belongs to the main thread (Phase 37.5E). Drives the journal's Main/Side
     /// split and the HUD tracker's priority colour.

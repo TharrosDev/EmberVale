@@ -149,6 +149,8 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
         EventBus.Instance?.Subscribe<Companions.CompanionDownedEvent>(OnCompanionDowned);
         EventBus.Instance?.Subscribe<Interaction.InteractionPerformedEvent>(OnInteracted);
         EventBus.Instance?.Subscribe<Enemies.EnemyStateChangedEvent>(OnEnemyStateChanged);
+        EventBus.Instance?.Subscribe<StoryFlagChangedEvent>(OnFlagChanged);
+        EventBus.Instance?.Subscribe<GameLoadedEvent>(OnGameLoaded);
         RegisterSaveable();
     }
 
@@ -160,7 +162,38 @@ public partial class QuestLogComponent : EntityComponent, ISaveable
         EventBus.Instance?.Unsubscribe<Companions.CompanionDownedEvent>(OnCompanionDowned);
         EventBus.Instance?.Unsubscribe<Interaction.InteractionPerformedEvent>(OnInteracted);
         EventBus.Instance?.Unsubscribe<Enemies.EnemyStateChangedEvent>(OnEnemyStateChanged);
+        EventBus.Instance?.Unsubscribe<StoryFlagChangedEvent>(OnFlagChanged);
+        EventBus.Instance?.Unsubscribe<GameLoadedEvent>(OnGameLoaded);
         SaveManager.Instance?.Unregister(this);
+    }
+
+    private void OnFlagChanged(StoryFlagChangedEvent e)
+    {
+        if (e.Value && ReferenceEquals(e.Owner, Entity))
+        {
+            AutoStart(e.Flag);
+        }
+    }
+
+    /// <summary>A save written before a chained quest existed, or across the frame its trigger was
+    /// set, still picks it up: every auto-start quest whose flag is held and is not in the log.</summary>
+    private void OnGameLoaded(GameLoadedEvent e) => AutoStart(null);
+
+    private void AutoStart(string? flag)
+    {
+        foreach (QuestResource quest in QuestDatabase.All)
+        {
+            if (string.IsNullOrEmpty(quest.AutoStartFlagId) || HasQuest(quest.Id) ||
+                (flag != null ? quest.AutoStartFlagId != flag : _flags?.Has(quest.AutoStartFlagId) != true))
+            {
+                continue;
+            }
+
+            if (StartQuest(quest))
+            {
+                Track(quest.Id);
+            }
+        }
     }
 
     public bool IsActive(string questId) =>

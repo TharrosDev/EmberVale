@@ -107,6 +107,7 @@ public static class EnemyVisualKit
             At("IronKingPlate", "Chest", 0.64f), At("IronKingCrown", "Head", 0.74f, z: 0.07f),
             At("IronKingChains", "Chest", 0.68f), At("IronKingBack", "Chest", 0.62f, y: 0.06f),
             At("IronKingWeapon", "Wrist.R", 0.78f, x: 0.08f, y: -0.42f, z: -0.48f)),
+
     };
 
     public static Profile? Resolve(string templateId) =>

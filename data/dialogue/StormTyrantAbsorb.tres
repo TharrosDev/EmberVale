@@ -1,0 +1,54 @@
+[gd_resource type="Resource" script_class="DialogueResource" format=3 uid="uid://cmbrvldlgstormabs"]
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+[sub_resource type="Resource" id="ch_absorb"]
+script = ExtResource("3_choice")
+Text = "dlg.stormtyrant.absorb.c_absorb"
+Goto = "absorbed"
+Condition = 6
+ConditionArg = "flag.storm_tyrant_absorbed"
+Effect = 4
+EffectArg = "25"
+
+[sub_resource type="Resource" id="ch_decline"]
+script = ExtResource("3_choice")
+Text = "dlg.stormtyrant.absorb.c_decline"
+Goto = "declined"
+
+[sub_resource type="Resource" id="ch_absorbed_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.stormtyrant.absorb.c_absorbed_bye"
+Effect = 2
+EffectArg = "flag.storm_tyrant_absorbed"
+
+[sub_resource type="Resource" id="ch_declined_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.stormtyrant.absorb.c_declined_bye"
+
+[sub_resource type="Resource" id="node_offer"]
+script = ExtResource("2_node")
+Id = "offer"
+Text = "dlg.stormtyrant.absorb.offer"
+Choices = Array[Resource]([SubResource("ch_absorb"), SubResource("ch_decline")])
+
+[sub_resource type="Resource" id="node_absorbed"]
+script = ExtResource("2_node")
+Id = "absorbed"
+Text = "dlg.stormtyrant.absorb.absorbed"
+Choices = Array[Resource]([SubResource("ch_absorbed_bye")])
+
+[sub_resource type="Resource" id="node_declined"]
+script = ExtResource("2_node")
+Id = "declined"
+Text = "dlg.stormtyrant.absorb.declined"
+Choices = Array[Resource]([SubResource("ch_declined_bye")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "dialogue.storm_tyrant_absorb"
+SpeakerName = "dlg.stormtyrant.absorb.speaker"
+StartNodeId = "offer"
+Nodes = Array[Resource]([SubResource("node_offer"), SubResource("node_absorbed"), SubResource("node_declined")])

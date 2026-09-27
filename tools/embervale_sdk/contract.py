@@ -21,6 +21,10 @@ def diagnostics_from_log(output: str, label: str) -> list[dict]:
         warning = re.search(r"^(?:WARNING:|\[WARN\]|.*\bwarning [A-Z]+\d+:)", line.strip())
         if not error and not warning:
             continue
+        # The editor-bound Godot-MCP addon logs its relay being down as ERROR on every editor
+        # launch; that is tooling state, not a project diagnostic.
+        if "[McpPlugin]" in line:
+            error = None
         if line in seen:
             seen[line]["count"] = seen[line].get("count", 1) + 1
             continue

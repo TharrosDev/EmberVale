@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" format=3 uid="uid://cmbrvlenstormty"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.storm_tyrant"
+NameKey = "enemy.storm_tyrant.name"
+AttributesPath = "res://data/attributes/StormTyrantAttributes.tres"
+WeaponPath = "res://data/weapons/StormTyrantAxe.tres"
+LootTablePath = ""
+ModelPath = "res://assets/models/creatures/boss_storm_tyrant.glb"
+PlaceholderTint = Color(0.35, 0.45, 0.6, 1)
+AiProfileId = "ai.boss"
+FactionId = "faction.fallen"
+KnownSpellIds = Array[String](["spell.ball_lightning"])
+BreathSpellId = ""
+DialogueId = ""
+CapsuleRadius = 0.7
+CapsuleHeight = 2.5
+IsBoss = true
+BossId = "boss.storm_tyrant"
+DirectionalMelee = false
+MaxPoise = 150.0
+Reaction = 4
+StaminaRegen = 16.0
+XpValue = 800

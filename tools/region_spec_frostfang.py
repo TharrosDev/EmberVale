@@ -352,6 +352,19 @@ EdgePadding = 1.0
 Layers = Array[ExtResource("10_layer")]([SubResource("Layer_high_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_shard"), SubResource("Layer_high_pine")])
 Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_aerie"), SubResource("Exclusion_aerie_hoard")])
 
+; The Storm Tyrant's duelling ground under the spire: bare, so the fight has no cover to hide in.
+[sub_resource type="Resource" id="Exclusion_stormcrown_arena"]
+script = ExtResource("11_exclusion")
+Center = Vector2(20, 45)
+Radius = 19.0
+
+[sub_resource type="Resource" id="Scatter_stormcrown"]
+script = ExtResource("9_scatter")
+Seed = 5210
+EdgePadding = 1.0
+Layers = Array[ExtResource("10_layer")]([SubResource("Layer_high_rock"), SubResource("Layer_frost_rock_b"), SubResource("Layer_ice_shard"), SubResource("Layer_high_pine")])
+Exclusions = Array[ExtResource("11_exclusion")]([SubResource("Exclusion_stormcrown_arena")])
+
 [sub_resource type="Resource" id="Scatter_snowfield"]
 script = ExtResource("9_scatter")
 Seed = 5206
@@ -439,6 +452,7 @@ EXCLUSION_OWNERS = {
     "Exclusion_ash_causeway": "ash_roost",
     "Exclusion_aerie": "ancient_aerie",
     "Exclusion_aerie_hoard": "ancient_aerie",
+    "Exclusion_stormcrown_arena": "stormcrown",
 }
 
 
@@ -493,10 +507,15 @@ def cells() -> list[Cell]:
             """,
         ),
         empty("stormfall", **at(0, 3), seed=404, scatter="Scatter_heights", biome="Snowfield"),
-        empty("stormcrown", **at(0, 4), seed=405, scatter="Scatter_heights", biome="Snowfield", note="""
-            STORMCROWN — the blasted spire in the north-east high passes, where the Storm Tyrant is
-            said to have gone. Reserved for Phase 44E / 47E: a track reaches the foot of the spire and
-            the view up it, and nothing else exists here yet."""),
+        Cell(
+            key="stormcrown", cell_id="frostfang_reach.stormcrown",
+            scene=f"{FROST}stormcrown.tscn", **at(0, 4), resolution=60, seed=405,
+            scatter="Scatter_stormcrown", biome="Snowfield",
+            note="""STORMCROWN — the blasted spire in the north-east high passes, where the Storm Tyrant
+            waits. The track ends at a levelled duelling ground under the spire (the finish run's
+            Act II beat); nothing else is built here.""",
+            yards=(Yard((20, 45), (15, 13), 4.0, 0.7, elevation=0.0, name="Area_stormcrown_arena"),),
+        ),
 
         # ================================================================== row 1 — the snow line
         Cell(
@@ -720,7 +739,8 @@ def roads() -> list[Road]:
         # ---- tertiary: the Ravenspur watch spur
         Road(((96, -1702), (150, -1672), (166, -1654)), width=2.5, shoulder=1.5),
         # ---- tertiary: Stormcrown track (reserved), from the glacier's east arm to the foot of the spire
-        Road((o(G, (6, -20)), (4, -2046), (64, -2118), (150, -2134), (240, -2172), (318, -2166)),
+        Road((o(G, (6, -20)), (4, -2046), (64, -2118), (150, -2134), (240, -2172), (318, -2166),
+              (400, -2176)),
              width=3.0, shoulder=2.0),
     ]
 

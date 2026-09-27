@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemResource" load_steps=2 format=3 uid="uid://cmbrvlitstormheart"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.relic.storm_heart"
+DisplayName = "Heart of the Storm Tyrant"
+Description = "A shard of divinity that will not hold still. Static crawls over your knuckles when you close your hand on it, and every thunderclap in the north seems to answer it."
+Type = 0
+Rarity = 4
+MaxStack = 1
+Weight = 1.0
+Value = 500
+TradeTags = Array[String](["relic"])

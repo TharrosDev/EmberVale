@@ -5669,9 +5669,19 @@ public static class ContentValidator
             Enemies.BossEncounterDirector.DefeatedFlag,
             Narrative.SliceDirector.CompletedFlag,
             Narrative.SliceDirector.AbsorbedFlag,
+            UI.EndingSequence.CompleteFlag,
         };
 
         CollectSceneAuthoredFlags(written);
+
+        // Every boss writes its own defeat flag through BossDefeat (36E), not only the Iron King.
+        foreach (Enemies.BossResource boss in Enemies.BossDatabase.All)
+        {
+            if (!string.IsNullOrEmpty(boss.DefeatFlagId))
+            {
+                written.Add(boss.DefeatFlagId);
+            }
+        }
 
         foreach (DialogueResource dialogue in DialogueDatabase.All)
         {
@@ -5731,6 +5741,11 @@ public static class ContentValidator
         // Every failure of that is silent, which is exactly what this rule family exists for.
         foreach (QuestResource quest in QuestDatabase.All)
         {
+            if (!string.IsNullOrEmpty(quest.AutoStartFlagId) && !written.Contains(quest.AutoStartFlagId))
+            {
+                issues.Add($"quest '{quest.Id}' auto-starts on flag '{quest.AutoStartFlagId}', which nothing ever sets");
+            }
+
             foreach (ObjectiveResource objective in quest.ObjectiveList())
             {
                 RequireWritten(objective.RequiredFlagId, "requires", quest.Id, written, issues);
