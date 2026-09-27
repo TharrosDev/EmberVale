@@ -96,8 +96,9 @@ internal static class RegionSetup
                 // branches produce a point whose height was only ever right because every cell floor
                 // was flat at y = 0 — the fallback literally subtracts the player's 1.2 m eye offset
                 // to get there. A door half-sunk in a hillside is not something anyone reviews.
-                Position = World.WorldGround.OnGround(region.PortalPoint != Vector3.Zero
-                    ? region.PortalPoint
+                // The Ashen Wilds (2026-09): each neighbour may have its own door (NeighbourPortalPoints).
+                Position = World.WorldGround.OnGround(region.PortalPointFor(neighbourId) is var door && door != Vector3.Zero
+                    ? door
                     : region.SpawnPoint + new Vector3(0f, -1.2f, -4f)),
             };
 
@@ -126,6 +127,7 @@ internal static class RegionSetup
             {
                 Name = "Transition",
                 TargetRegionId = neighbourId,
+                SourceRegionId = region.Id,
 
                 // The destination decides what unlocks it (33D), and as of 2026-08-28 NOTHING DOES:
                 // both regions author an empty UnlockFlagId, so every portal is open from the start.
@@ -156,9 +158,10 @@ internal static class RegionSetup
     /// the price and the shortfall, which is <c>ServiceComponent</c>'s rule that every refusal says
     /// itself where the player is already looking.
     /// </summary>
-    internal static bool PayToll(PlayerCharacter? player, RegionResource destination)
+    internal static bool PayToll(PlayerCharacter? player, RegionResource destination, string fromRegionId)
     {
-        if (destination.TollGold <= 0 || player == null)
+        int toll = destination.TollFrom(fromRegionId);
+        if (toll <= 0 || player == null)
         {
             return true;
         }
@@ -169,7 +172,7 @@ internal static class RegionSetup
         switch (Economy.TollFee.Resolve(
             hasPermit: flags?.Has(destination.TollPermitFlagId) ?? false,
             hasPass: flags?.Has(destination.TollPassFlagId) ?? false,
-            fee: destination.TollGold,
+            fee: toll,
             goldHeld: purse?.CountOf(GameIds.Currency.Gold) ?? 0))
         {
             case Economy.TollOutcome.PassSpent:
@@ -180,16 +183,16 @@ internal static class RegionSetup
             case Economy.TollOutcome.Charged:
                 // The RemoveItem is still its own condition: chained into the Resolve above, a purse
                 // that emptied between the prompt and the press would fall through to a free crossing.
-                if (purse?.RemoveItem(GameIds.Currency.Gold, destination.TollGold) != true)
+                if (purse?.RemoveItem(GameIds.Currency.Gold, toll) != true)
                 {
-                    Log.Warn($"Toll at '{destination.Id}' refused: {destination.TollGold} gold required.");
+                    Log.Warn($"Toll at '{destination.Id}' refused: {toll} gold required.");
                     return false;
                 }
 
                 return true;
 
             case Economy.TollOutcome.CannotAfford:
-                Log.Warn($"Toll at '{destination.Id}' refused: {destination.TollGold} gold required.");
+                Log.Warn($"Toll at '{destination.Id}' refused: {toll} gold required.");
                 return false;
 
             default:

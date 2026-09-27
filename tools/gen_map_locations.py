@@ -275,14 +275,30 @@ add("frostfang_reach/ash_roost", "frostfang.ash_roost", "Dungeon", ".", "The Ash
 add("frostfang_reach/ancient_aerie", "frostfang.ancient_aerie", "Dungeon", ".", "The Ancient Aerie")
 
 
+# ── The Ashen Wilds (2026-09 finish run) ─────────────────────────────────────────────────────
+# Last Hearth is what the realm's one road announces, so it arrives with the region; the station and
+# the Beast Lord's plateau are found by seeing them. location.ashen.station is the atlas's reserved hook.
+add("ashen_wilds/last_hearth", "ashen.last_hearth", "Village", ".", "Last Hearth", reveal=True,
+    desc="Survivors of the Breach, dug in by the scar road: two roofless houses, a tent line and one fire.")
+add("ashen_wilds/last_hearth", "ashen.waystone", "Waystone", "Waystone", "", name_key="travel.ashen_wilds.last_hearth.name",
+    travel="travel.ashen_wilds.last_hearth")
+add("ashen_wilds/last_hearth", "ashen.scavenger", "Merchant", "Scavenger", "Tobin's Salvage",
+    shop="shop.last_hearth.scavenger", dialogue="dialogue.ashen_scavenger")
+add("ashen_wilds/hunters_rise", "ashen.station", "Outpost", ".", "The Ash Hunters' Station",
+    dialogue="dialogue.ash_hunter_warden",
+    desc="The Ash Hunters' field station on the rise above the scar road, watching the plateau.")
+add("ashen_wilds/beast_lair", "ashen.beast_lair", "Arena", ".", "The Beast Lord's Plateau", tier="Primary",
+    desc="A levelled shelf under the northern wall where the Fourth Flamebearer holds his ground.")
+
 def _cell_ids():
     """scene stem -> cell id, read from the region specs (2026-09 world rebuild: the hand list of
     fifteen cells here went stale the day the realm grew to fifty-two)."""
     sys.path.insert(0, os.path.join(ROOT, "tools"))
     from region_spec_ember import cells as ember
     from region_spec_frostfang import cells as frost
+    from region_spec_ashen import cells as ashen
     out = {}
-    for cell in list(ember()) + list(frost()):
+    for cell in list(ember()) + list(frost()) + list(ashen()):
         stem = cell.scene.replace("res://scenes/regions/", "").replace(".tscn", "")
         out[stem] = cell.cell_id
     return out

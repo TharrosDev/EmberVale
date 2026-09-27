@@ -518,7 +518,13 @@ SafeZoneRadius = 120.0
 WeavePotency = 1.0
 DefaultWeatherId = "weather.cloudy"
 DayPhaseBias = 2
-Neighbours = Array[String](["region.frostfang_reach"])
+Neighbours = Array[String](["region.frostfang_reach", "region.ashen_wilds"])
+
+; One door per neighbour (the Ashen Wilds, 2026-09). Frostfang's stays at the Crown Pass (PortalPoint);
+; the Wilds' stands at the end of the burnt track in the Ashen Breach, and a traveller coming back
+; from the Wilds is put down there rather than in the capital.
+NeighbourPortalPoints = Array[Vector3]([Vector3(0, 0, 0), @WORLD(492, 0, -282)@])
+NeighbourArrivalPoints = Array[Vector3]([Vector3(0, 0, 0), @WORLD(484, 1.2, -283)@])
 
 ; The Crossway toll (Phase 38M). Authored on BOTH regions rather than on one, because there is one
 ; gate on one road and the wardens do not care which way a cart is pointing. 25 gold sits under
@@ -527,6 +533,8 @@ Neighbours = Array[String](["region.frostfang_reach"])
 TollGold = 25
 TollPermitFlagId = "flag.crossway.permit"
 TollPassFlagId = "flag.crossway.pass"
+; The Crossway wardens stand on the Frostfang road only; the Ashen Breach is not tolled.
+TollFromRegionIds = Array[String](["region.frostfang_reach"])
 '''
 
 

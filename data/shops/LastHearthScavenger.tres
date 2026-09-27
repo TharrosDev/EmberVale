@@ -1,0 +1,48 @@
+[gd_resource type="Resource" script_class="ShopResource" format=3]
+
+[ext_resource type="Script" path="res://src/Economy/ShopResource.cs" id="1_shop"]
+[ext_resource type="Script" path="res://src/Economy/ShopStockEntry.cs" id="2_entry"]
+
+; Tobin Rusk, Last Hearth's scavenger (the Ashen Wilds). The settlement's one counter, so he buys
+; everything (no AcceptedTags): a realm with no general buyer makes its own loot unsellable. What he
+; sells is what comes back over the Breach and out of the ruins. Dear to buy, mean to sell to: he is
+; the only trader for a day's walk and knows it.
+
+[sub_resource type="Resource" id="Stock_ration"]
+script = ExtResource("2_entry")
+ItemId = "item.food.field_ration"
+Quantity = 8
+
+[sub_resource type="Resource" id="Stock_potion"]
+script = ExtResource("2_entry")
+ItemId = "item.potion.health"
+Quantity = 5
+
+[sub_resource type="Resource" id="Stock_herb"]
+script = ExtResource("2_entry")
+ItemId = "item.material.healing_herb"
+Quantity = 6
+
+[sub_resource type="Resource" id="Stock_scrap"]
+script = ExtResource("2_entry")
+ItemId = "item.material.scrap"
+Quantity = 0
+
+[sub_resource type="Resource" id="Stock_leather"]
+script = ExtResource("2_entry")
+ItemId = "item.material.leather_strips"
+Quantity = 6
+
+[resource]
+script = ExtResource("1_shop")
+Id = "shop.last_hearth.scavenger"
+CellId = "ashen_wilds.last_hearth"
+NameKey = "shop.last_hearth.scavenger.name"
+FactionId = "faction.villagers"
+Stock = Array[Resource]([SubResource("Stock_ration"), SubResource("Stock_potion"), SubResource("Stock_herb"), SubResource("Stock_scrap"), SubResource("Stock_leather")])
+RestockDays = 2
+BuyMarkup = 1.7
+SellFraction = 0.35
+PurseGold = 180
+OpenHour = 7
+CloseHour = 21

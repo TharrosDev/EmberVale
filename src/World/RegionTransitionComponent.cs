@@ -39,6 +39,10 @@ public partial class RegionTransitionComponent : InteractableComponent
     /// open (the default, so every other region link is unaffected).</summary>
     [Export] public string RequiredFlagId { get; set; } = string.Empty;
 
+    /// <summary>The region this portal stands in, so the prompt quotes the toll the traveller from
+    /// here actually owes (<see cref="RegionResource.TollFrom"/>). Empty = any origin.</summary>
+    [Export] public string SourceRegionId { get; set; } = string.Empty;
+
     // Authored collision layers, remembered while hidden so revealing restores them exactly.
     private readonly Dictionary<CollisionObject3D, uint> _hiddenLayers = new();
     private bool _revealed = true;
@@ -92,7 +96,8 @@ public partial class RegionTransitionComponent : InteractableComponent
             RegionResource? destination = RegionDatabase.Get(TargetRegionId);
             string where = destination?.DisplayName ?? "elsewhere";
 
-            if (destination == null || destination.TollGold <= 0)
+            int toll = destination?.TollFrom(SourceRegionId) ?? 0;
+            if (destination == null || toll <= 0)
             {
                 return Loc.TF("region.travel_prompt", where);
             }
@@ -107,14 +112,14 @@ public partial class RegionTransitionComponent : InteractableComponent
             return Economy.TollFee.Resolve(
                 hasPermit: flags?.Has(destination.TollPermitFlagId) ?? false,
                 hasPass: flags?.Has(destination.TollPassFlagId) ?? false,
-                fee: destination.TollGold,
+                fee: toll,
                 goldHeld: gold) switch
             {
                 Economy.TollOutcome.PermitHeld => Loc.TF("region.travel_prompt_permit", where),
                 Economy.TollOutcome.PassSpent => Loc.TF("region.travel_prompt_pass", where),
                 Economy.TollOutcome.CannotAfford =>
-                    Loc.TF("region.travel_prompt_short", where, destination.TollGold, gold),
-                _ => Loc.TF("region.travel_prompt_toll", where, destination.TollGold),
+                    Loc.TF("region.travel_prompt_short", where, toll, gold),
+                _ => Loc.TF("region.travel_prompt_toll", where, toll),
             };
         }
     }

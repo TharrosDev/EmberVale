@@ -38,10 +38,41 @@ public partial class RegionResource : Resource
     /// would be the wardens charging for a door nobody uses.
     ///
     /// ⚠️ <b>One point per region, so a region with two neighbours would stack both portals on it.</b>
-    /// Two regions exist. When a third arrives this becomes a per-neighbour placement — and not
-    /// before, because the per-link table would be authored data with exactly one row in it today.
+    /// The third region (the Ashen Wilds) made that real: see <see cref="NeighbourPortalPoints"/>,
+    /// which places a door per neighbour and falls back to this point for any neighbour it leaves zero.
     /// </summary>
     [Export] public Vector3 PortalPoint { get; set; } = Vector3.Zero;
+
+    /// <summary>
+    /// Per-neighbour door placement, parallel to <see cref="Neighbours"/> (the Ashen Wilds, 2026-09).
+    /// Entry <c>i</c> is where the portal to <c>Neighbours[i]</c> stands in THIS region's world space;
+    /// a missing or zero entry falls back to <see cref="PortalPoint"/>, so a region with one crossing
+    /// authors nothing here.
+    /// </summary>
+    [Export] public Godot.Collections.Array<Vector3> NeighbourPortalPoints { get; set; } = new();
+
+    /// <summary>
+    /// Per-origin landing, parallel to <see cref="Neighbours"/>: where a traveller arriving FROM
+    /// <c>Neighbours[i]</c> is put down, so walking back through a border crossing lands at that
+    /// crossing rather than at the region's spawn. Y is clearance above the ground, like
+    /// <see cref="SpawnPoint"/>. A missing or zero entry lands at <see cref="SpawnPoint"/> (the
+    /// original behaviour).
+    /// </summary>
+    [Export] public Godot.Collections.Array<Vector3> NeighbourArrivalPoints { get; set; } = new();
+
+    /// <summary>Where the portal to <paramref name="neighbourId"/> stands (see
+    /// <see cref="NeighbourPortalPoints"/>); zero means "no authored point".</summary>
+    public Vector3 PortalPointFor(string neighbourId) => PerNeighbour(NeighbourPortalPoints, neighbourId, PortalPoint);
+
+    /// <summary>Where a traveller from <paramref name="fromRegionId"/> lands (see
+    /// <see cref="NeighbourArrivalPoints"/>).</summary>
+    public Vector3 ArrivalPointFrom(string fromRegionId) => PerNeighbour(NeighbourArrivalPoints, fromRegionId, SpawnPoint);
+
+    private Vector3 PerNeighbour(Godot.Collections.Array<Vector3> points, string neighbourId, Vector3 fallback)
+    {
+        int index = Neighbours.IndexOf(neighbourId);
+        return index >= 0 && index < points.Count && points[index] != Vector3.Zero ? points[index] : fallback;
+    }
 
     /// <summary>
     /// Story flag the player must carry before portals <em>into</em> this region appear (Phase 33D).
@@ -128,4 +159,15 @@ public partial class RegionResource : Resource
     /// after one bribe.
     /// </summary>
     [Export] public string TollPassFlagId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The regions whose travellers pay <see cref="TollGold"/> (the Ashen Wilds, 2026-09). Empty — the
+    /// default — charges arrivals from every direction, which was right while the Ember Crown had one
+    /// border. It has more than one now, and the Crossway wardens do not stand at the Ashen Breach.
+    /// </summary>
+    [Export] public Godot.Collections.Array<string> TollFromRegionIds { get; set; } = new();
+
+    /// <summary>The toll an arrival from <paramref name="fromRegionId"/> owes (0 = untolled road).</summary>
+    public int TollFrom(string fromRegionId) =>
+        TollGold > 0 && (TollFromRegionIds.Count == 0 || TollFromRegionIds.Contains(fromRegionId)) ? TollGold : 0;
 }

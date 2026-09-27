@@ -1,0 +1,142 @@
+[gd_resource type="Resource" script_class="BossResource" load_steps=9 format=3 uid="uid://cmbrvlbossbeastlord"]
+
+[ext_resource type="Script" path="res://src/Enemies/BossResource.cs" id="1_boss"]
+[ext_resource type="Script" path="res://src/Enemies/BossPhaseResource.cs" id="2_phase"]
+[ext_resource type="Script" path="res://src/Enemies/BossAddWaveResource.cs" id="3_wave"]
+[ext_resource type="Script" path="res://src/Combat/Actions/ActionDefinitionResource.cs" id="4_action"]
+
+; The Beast Lord's fight, modelled on data/bosses/IronKing.tres: three phases, add waves of existing
+; beast archetypes, and a phase three that fights differently rather than only faster.
+;
+; Phase two calls his pack: two dire wolves, once. Phase three the scar answers him: ash maws keep
+; coming out of the Wilds, capped at three alive. No enrage, like the King.
+
+[sub_resource type="Resource" id="Wave_pack"]
+script = ExtResource("3_wave")
+TemplateId = "enemy.dire_wolf"
+Count = 2
+RepeatSeconds = 0.0
+MaxAlive = 0
+HealthMultiplier = 1.0
+
+[sub_resource type="Resource" id="Wave_maws"]
+script = ExtResource("3_wave")
+TemplateId = "enemy.ash_maw"
+Count = 2
+RepeatSeconds = 20.0
+MaxAlive = 3
+HealthMultiplier = 1.0
+
+[sub_resource type="Resource" id="Phase_1"]
+script = ExtResource("2_phase")
+HealthFraction = 1.0
+AttackSpeedBonus = 0.0
+MoveSpeedBonus = 0.0
+GrantSpellIds = Array[String]([])
+AiProfileId = ""
+TelegraphColor = Color(0.85, 0.3, 0.55, 1)
+TelegraphEnergy = 2.5
+WindupPoiseMultiplier = 1.0
+AddWaves = Array[Resource]([])
+
+[sub_resource type="Resource" id="Phase_2"]
+script = ExtResource("2_phase")
+HealthFraction = 0.66
+AttackSpeedBonus = 0.2
+MoveSpeedBonus = 0.2
+GrantSpellIds = Array[String]([])
+AiProfileId = ""
+TelegraphColor = Color(0.85, 0.3, 0.55, 1)
+TelegraphEnergy = 3.5
+WindupPoiseMultiplier = 1.0
+AddWaves = Array[Resource]([SubResource("Wave_pack")])
+
+; ⚠️ PHASE THREE: THE RAKE IS GONE AND NOTHING IS SAFE TO BAIT. A frenzy of quick bites that cannot be
+; staggered, chaining into a savage leap that warps four metres. Where the Iron King's third phase
+; asks for spacing, this one asks for timing: the gap after the leap is the only window.
+[sub_resource type="Resource" id="P3_Frenzy"]
+script = ExtResource("4_action")
+Id = "beastlord.frenzy"
+Kind = 0
+AnimationSlot = "attack"
+Duration = 0.9
+FallbackDuration = 0.9
+ActiveFrom = 0.28
+ActiveTo = 0.42
+CancelFrom = 0.45
+ComboFrom = 0.45
+ComboTo = 1.0
+NextActionId = "beastlord.savage"
+Interruptible = false
+MoveScale = 0.5
+TurnDegreesPerSecond = 120.0
+StaminaCost = 14.0
+DamageScale = 0.9
+PoiseScale = 1.2
+HitStopScale = 1.1
+CameraImpulse = 0.3
+AiWeight = 1.0
+AiMinRange = 0.0
+AiMaxRange = 3.2
+AiRecoverySeconds = 0.3
+
+[sub_resource type="Resource" id="P3_Savage"]
+script = ExtResource("4_action")
+Id = "beastlord.savage"
+Kind = 1
+AnimationSlot = "attack"
+Duration = 1.9
+FallbackDuration = 1.9
+ActiveFrom = 0.6
+ActiveTo = 0.7
+CancelFrom = 0.85
+ComboFrom = 0.85
+ComboTo = 1.0
+NextActionId = ""
+Interruptible = false
+MoveScale = 0.0
+TurnDegreesPerSecond = 30.0
+StaminaCost = 26.0
+DamageScale = 1.9
+PoiseScale = 1.7
+Knockback = 7.0
+RootMotion = 2
+MaxWarpDistance = 4.0
+MaxWarpDegrees = 35.0
+HitStopScale = 1.7
+CameraImpulse = 0.9
+AiWeight = 0.8
+AiMinRange = 0.0
+AiMaxRange = 5.0
+AiRecoverySeconds = 1.0
+
+[sub_resource type="Resource" id="Phase_3"]
+script = ExtResource("2_phase")
+HealthFraction = 0.33
+AttackSpeedBonus = 0.35
+MoveSpeedBonus = 0.25
+GrantSpellIds = Array[String]([])
+AiProfileId = ""
+TelegraphColor = Color(0.9, 0.2, 0.45, 1)
+TelegraphEnergy = 5.5
+WindupPoiseMultiplier = 1.0
+Attacks = Array[ExtResource("4_action")]([SubResource("P3_Frenzy"), SubResource("P3_Savage")])
+AddWaves = Array[Resource]([SubResource("Wave_maws")])
+
+[resource]
+script = ExtResource("1_boss")
+Id = "boss.beast_lord"
+Phases = Array[Resource]([SubResource("Phase_1"), SubResource("Phase_2"), SubResource("Phase_3")])
+EnrageSeconds = 0.0
+EnrageAttackSpeedBonus = 0.5
+EnrageMoveSpeedBonus = 0.25
+EnrageSpellIds = Array[String]([])
+EnrageForcesFinalPhase = true
+IntroLockSeconds = 2.5
+DefeatSlowSeconds = 1.0
+DefeatTimeScale = 0.35
+DefeatMusicCue = "music.boss_defeat"
+RewardItemId = "item.relic.wild_heart"
+RewardQuantity = 1
+DefeatFlagId = "flag.beast_lord_defeated"
+DefeatDialogueId = "dialogue.beast_lord_absorb"

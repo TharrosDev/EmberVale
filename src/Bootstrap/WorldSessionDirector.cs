@@ -236,14 +236,16 @@ public sealed partial class WorldSessionDirector : Node
             return;
         }
 
-        if (!RegionSetup.PayToll(Session.Players.Player, destination))
+        if (!RegionSetup.PayToll(Session.Players.Player, destination, Session.CurrentRegionId))
         {
             return;
         }
 
         // A region spawn's Y is authored clearance, not world height. Convert it before opening
-        // the shared load gate; fast-travel nodes below are already world-space transforms.
-        PerformRegionLoad(destination, RegionSpawn(destination), $"Entering {destination.DisplayName}...");
+        // the shared load gate; fast-travel nodes below are already world-space transforms. A crossing
+        // may land the traveller at its own far end (RegionResource.NeighbourArrivalPoints).
+        Vector3 arrival = destination.ArrivalPointFrom(Session.CurrentRegionId);
+        PerformRegionLoad(destination, WorldGround.OnGround(arrival, arrival.Y), $"Entering {destination.DisplayName}...");
     }
 
     /// <summary>

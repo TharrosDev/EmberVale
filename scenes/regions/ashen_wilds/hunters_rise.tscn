@@ -1,0 +1,144 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://src/Entities/Entity.cs" id="1_entity"]
+[ext_resource type="Script" path="res://src/Factions/FactionComponent.cs" id="2_faction"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="3_dialogue"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleComponent.cs" id="4_schedule"]
+[ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="5_charanim"]
+[ext_resource type="Script" path="res://src/Animation/EquipmentPresentationComponent.cs" id="6_equipment"]
+[ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="7_navbaker"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_tent.glb" id="p_tent"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_campfire.glb" id="p_campfire"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="p_brazier"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_crate.glb" id="p_crate"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_watch_tower.glb" id="p_tower"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_guild_rep.glb" id="c_warden"]
+[ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
+
+; THE HUNTERS' RISE - the Ash Hunters' field station (location.ashen.station), on a low rise above the
+; scar road where the Hunters can watch both Last Hearth and the Beast Lord's plateau. A watch tower,
+; a tent line and a fire; Hask Morrow, the warden, keeps it. The road comes up from the south at
+; (0, 20) and leaves east at (20, 0); nothing stands within six metres of it.
+[sub_resource type="CapsuleShape3D" id="Shape_npc"]
+radius = 0.4
+height = 1.8
+
+[sub_resource type="CylinderShape3D" id="Shape_tent"]
+radius = 1.4
+height = 2.4
+
+[sub_resource type="CylinderShape3D" id="Shape_brazier"]
+radius = 0.5
+height = 1.2
+
+[sub_resource type="BoxShape3D" id="Shape_crate"]
+size = Vector3(1, 1, 1)
+
+[sub_resource type="BoxShape3D" id="Shape_tower"]
+size = Vector3(3, 9, 3)
+
+[sub_resource type="NavigationMesh" id="NavMesh_hunters_rise"]
+geometry_parsed_geometry_type = 1
+cell_size = 0.3
+cell_height = 0.3
+agent_height = 1.8
+agent_radius = 0.6
+agent_max_climb = 0.3
+agent_max_slope = 42.0
+
+[node name="HuntersRiseCell" type="Node3D"]
+metadata/content_offset = Vector2(35, 5)
+
+[node name="Nav" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("NavMesh_hunters_rise")
+
+[node name="NavBaker" type="Node" parent="Nav"]
+script = ExtResource("7_navbaker")
+
+[node name="Tower" type="Node3D" parent="Nav" groups=["world_landmark"]]
+transform = Transform3D(0.9659, 0, -0.2588, 0, 1, 0, 0.2588, 0, 0.9659, 25, 0, -1)
+
+[node name="Model" parent="Nav/Tower" instance=ExtResource("p_tower")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/Tower"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Tower/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.5, 0)
+shape = SubResource("Shape_tower")
+
+[node name="TentA" type="Node3D" parent="Nav"]
+transform = Transform3D(0.9848, 0, -0.1736, 0, 1, 0, 0.1736, 0, 0.9848, 41, 0, -4)
+
+[node name="Model" parent="Nav/TentA" instance=ExtResource("p_tent")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/TentA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/TentA/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+shape = SubResource("Shape_tent")
+
+[node name="TentB" type="Node3D" parent="Nav"]
+transform = Transform3D(0.9063, 0, 0.4226, 0, 1, 0, -0.4226, 0, 0.9063, 48, 0, -4)
+
+[node name="Model" parent="Nav/TentB" instance=ExtResource("p_tent")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/TentB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/TentB/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+shape = SubResource("Shape_tent")
+
+[node name="CrateA" type="Node3D" parent="Nav"]
+transform = Transform3D(0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, 0.9397, 30, 0, -5)
+
+[node name="Model" parent="Nav/CrateA" instance=ExtResource("p_crate")]
+
+[node name="Col" type="StaticBody3D" parent="Nav/CrateA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/CrateA/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("Shape_crate")
+
+[node name="StationFire" parent="." instance=ExtResource("p_campfire")]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 32, 0, 3)
+
+[node name="Light" type="OmniLight3D" parent="StationFire"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+light_color = Color(1, 0.6, 0.3, 1)
+light_energy = 1.8
+omni_range = 7.0
+
+[node name="Warden" type="Node3D" parent="."]
+transform = Transform3D(-0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, -0.9397, 31, 0, 0)
+script = ExtResource("1_entity")
+DisplayName = "Hask Morrow"
+TemplateId = "npc.ash_hunter_warden"
+
+[node name="Model" parent="Warden" instance=ExtResource("c_warden")]
+
+[node name="Animation" type="Node" parent="Warden"]
+script = ExtResource("5_charanim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="Warden"]
+script = ExtResource("6_equipment")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="Warden"]
+
+[node name="Shape" type="CollisionShape3D" parent="Warden/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="Warden"]
+script = ExtResource("2_faction")
+FactionId = "faction.ash_hunters"
+
+[node name="Dialogue" type="Node" parent="Warden"]
+script = ExtResource("3_dialogue")
+DialogueId = "dialogue.ash_hunter_warden"
+
+[node name="MapPin" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35, 0, 5)
+script = ExtResource("maploc_39_5a")
+LocationId = "location.ashen.station"

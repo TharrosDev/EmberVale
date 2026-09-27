@@ -45,7 +45,7 @@ REALMS = [
           "built", "2026-09 world rebuild",
           "Alpine clan country: the Stormbound Vale, one hold, three dragon territories, Stormcrown."),
     Realm("ashen_wilds", "The Ashen Wilds", "region.ashen_wilds", (900.0, -1100.0, 2100.0, 300.0),
-          "reserved", "Phase 44F-44I",
+          "built", "2026-09 finish run",
           "Cataclysm scar east beyond the Ashen Breach: plateaus, ravines, corrupted forest, the Beast Lord."),
     Realm("sunspire", "The Sunspire Dominion", "region.sunspire", (-800.0, 900.0, 800.0, 2300.0),
           "reserved", "Phase 44J-44M",
@@ -58,7 +58,7 @@ REALMS = [
 # Where one realm's road meets the next. Built ends are world points in their own region.
 CROSSINGS = [
     ("ember_crown", "frostfang_reach", "the Crown Pass portal (-150, -652)", "the Stormbound Vale gap (-60, -1316)", "built"),
-    ("ember_crown", "ashen_wilds", "the Ashen Breach (500, -282)", "reserved", "reserved"),
+    ("ember_crown", "ashen_wilds", "the Ashen Breach (500, -282)", "the Breach Scar mouth (928, -298)", "built"),
     ("ember_crown", "sunspire", "the Southmarch Gate (72, 402)", "reserved", "reserved"),
 ]
 
@@ -68,7 +68,7 @@ HOOKS = [
     ("location.ember_crown.southmarch_gate", "ember_crown", "built", "the Sunspire road's end (44K)"),
     ("location.ember_crown.ashen_breach", "ember_crown", "built", "the Ashen Wilds road's end (44G)"),
     ("location.frostfang.stormcrown", "frostfang_reach", "built", "Storm Tyrant territory (44E / 47E)"),
-    ("location.ashen.station", "ashen_wilds", "reserved", "Ash Hunters' field station (42E, owned by 44H)"),
+    ("location.ashen.station", "ashen_wilds", "built", "Ash Hunters' field station (42E, owned by 44H)"),
     ("location.sunspire.library", "sunspire", "reserved", "Veiled Archive great library (42G, owned by 44L)"),
 ]
 
@@ -103,7 +103,9 @@ def check() -> list[str]:
 
     import region_spec_ember
     import region_spec_frostfang
-    for realm, spec in (("ember_crown", region_spec_ember), ("frostfang_reach", region_spec_frostfang)):
+    import region_spec_ashen
+    for realm, spec in (("ember_crown", region_spec_ember), ("frostfang_reach", region_spec_frostfang),
+                        ("ashen_wilds", region_spec_ashen)):
         band = next(r.band for r in REALMS if r.key == realm)
         lattice = (spec.EXTENT_X[0], spec.ROWS[0][0], spec.EXTENT_X[1], spec.ROWS[-1][1])
         if not (band[0] <= lattice[0] and band[1] <= lattice[1] and lattice[2] <= band[2] and lattice[3] <= band[3]):

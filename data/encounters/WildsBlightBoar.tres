@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="EncounterResource" format=3 uid="uid://bencwildsboar1"]
+
+[ext_resource type="Script" path="res://src/World/EncounterResource.cs" id="1_encounter"]
+
+; The Ashen Wilds (2026-09). An existing archetype, scoped to the scar by RegionIds; the corruption is
+; the place's, not the creature's (docs/RECIPES.md, a new encounter).
+[resource]
+script = ExtResource("1_encounter")
+Id = "encounter.wilds_blight_boar"
+DisplayName = "Blighted Boar"
+EnemyTemplateId = "enemy.thornback_boar"
+MinCount = 1
+MaxCount = 1
+SelectionWeight = 0.5
+CorruptionChance = 0.5
+AtDawn = true
+AtDay = true
+AtDusk = true
+AtNight = false
+RegionIds = Array[String](["region.ashen_wilds"])

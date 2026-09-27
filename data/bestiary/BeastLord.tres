@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="BestiaryEntryResource" load_steps=2 format=3 uid="uid://cmbrvlbstbeastlord"]
+
+[ext_resource type="Script" path="res://src/Enemies/BestiaryEntryResource.cs" id="1_entry"]
+
+[resource]
+script = ExtResource("1_entry")
+Id = "enemy.beast_lord"
+NameKey = "enemy.beast_lord.name"
+LoreKey = "enemy.beast_lord.lore"
+Category = 6
+KillsToKnow = 1

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemResource" load_steps=2 format=3 uid="uid://cmbrvlitwildheart"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.relic.wild_heart"
+DisplayName = "Heart of the Beast Lord"
+Description = "A knot of ember wrapped in something that was once fur and is now mostly ash. It is warm, and it beats faster when you are angry."
+Type = 0
+Rarity = 4
+MaxStack = 1
+Weight = 1.0
+Value = 500
+TradeTags = Array[String](["relic"])

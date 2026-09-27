@@ -160,6 +160,16 @@ public static class NpcVisualKit
         ["npc.clan_exile"] = P("clan_exile", Build.Slim,
             Chest("ShoulderCape"), Hips("Knife")),
 
+        // The Ashen Wilds: Last Hearth's survivors and the Ash Hunters' warden.
+        ["npc.ashen_headwoman"] = P("ashen_headwoman", Build.Standard,
+            Chest("ShoulderCape"), Chest("OuterVest"), Hips("Keys")),
+        ["npc.ashen_scavenger"] = P("ashen_scavenger", Build.Slim,
+            Chest("Satchel"), Hips("RopeCoil"), Hips("Knife")),
+        ["npc.ashen_mender"] = P("ashen_mender", Build.Slim,
+            Chest("WorkApron"), Hips("BeltPouches")),
+        ["npc.ash_hunter_warden"] = P("ash_hunter_warden", Build.Broad,
+            Chest("GuildTabardAsh"), Chest("Quiver"), Hips("Knife")),
+
         // Mine and Landing workers/traders.
         ["npc.bregan"] = P("mine_foreman", Build.Broad,
             Chest("WorkApron"), Hips("Hammer"), Hips("Keys")),

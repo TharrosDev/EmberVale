@@ -192,6 +192,7 @@ public static class GameIds
     {
         public const string EmberCrown = "region.ember_crown";
         public const string FrostfangReach = "region.frostfang_reach";
+        public const string AshenWilds = "region.ashen_wilds";
     }
 
     /// <summary>Shrine blessings authored under <c>data/shrines/</c>. These six dead gods are a

@@ -103,6 +103,12 @@ public static class EnemyVisualKit
         ["enemy.ancient_dragon"] = PT("ancient_dragon", new Color("433a32"),
             At("AncientDragonCrown", "Head", 2.0f)),
 
+        // The Beast Lord (the Ashen Wilds): the dire wolf body at boss scale, charred and plated with
+        // the ash maw's carapace. A placeholder silhouette until a generated body lands.
+        ["enemy.beast_lord"] = PT("beast_lord", new Color("2e2220"),
+            At("DireWolfMane", "Torso", 1.15f), At("DireWolfFangs", "Head", 1.05f),
+            At("AshMawCarapace", "Torso", 0.95f)),
+
         ["enemy.iron_king"] = P("iron_king",
             At("IronKingPlate", "Chest", 0.64f), At("IronKingCrown", "Head", 0.74f, z: 0.07f),
             At("IronKingChains", "Chest", 0.68f), At("IronKingBack", "Chest", 0.62f, y: 0.06f),
