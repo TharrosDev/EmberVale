@@ -34,7 +34,8 @@ META = re.compile(r"^metadata/content_offset = Vector2\(([^,]+), ([^)]+)\)$", re
 def region_cells():
     from region_spec_ember import cells as ember
     from region_spec_frostfang import cells as frost
-    return list(ember()) + list(frost())
+    from region_spec_pale_concord import cells as pale
+    return list(ember()) + list(frost()) + list(pale())
 
 
 def fmt(value: float) -> str:

@@ -16,7 +16,7 @@ laid out: **geography first, civilisation second, routes third, places fourth, d
 | Frostfang Reach | -460..500; -2320..-1300 | built | 2026-09 world rebuild | Alpine clan country: the Stormbound Vale, one hold, three dragon territories, Stormcrown. |
 | The Ashen Wilds | 900..2100; -1100..300 | reserved | Phase 44F-44I | Cataclysm scar east beyond the Ashen Breach: plateaus, ravines, corrupted forest, the Beast Lord. |
 | The Sunspire Dominion | -800..800; 900..2300 | reserved | Phase 44J-44M | South beyond the Southmarch Gate: desert basins, jungle belt, the great libraries, the Crimson Prophet. |
-| The Pale Concord | -2600..-1500; -400..900 | hidden | Phase 44N-44Q | Found by story, never advertised. No neighbour, map, travel or search record may name it. |
+| The Pale Concord | -2600..-1500; -400..900 | hidden | finish run (built) | Found by story, never advertised: still fields, canals and a preserved city at dusk under the Hollow Queen. No text the player can read names it before the reveal flag. |
 
 World coordinates: x east, z south, north is −z. Regions are separate coordinate spaces loaded one at
 a time and joined by portals; the bands still place them geographically so that a road's heading, a
@@ -30,9 +30,13 @@ portal's side of the realm and a direction in dialogue agree, and no two realms 
 | Ember Crown | Ashen Wilds (reserved) | the Ashen Breach, the burnt cut through the eastern border hills (500, -282) | Phase 44G |
 | Ember Crown | Sunspire (reserved) | the Southmarch Gate, the broken border gate at the caravan road's end (72, 402) | Phase 44K |
 
-The Pale Concord has no crossing and must not gain one before its story reveal (44K/44O). The atlas
-gate scans regions, map locations, quests, dialogue, shops, services, scenes and the locale for its
-name.
+The Pale Concord has no crossing. Its only way in is the Sunspire library's story portal, which
+`RegionSetup` gates on the realm's `UnlockFlagId` (`flag.pale_concord_revealed`, set by
+`HiddenRealmReveal` once the Storm Tyrant, Beast Lord and Crimson Prophet have fallen); the way out is
+the realm's own portal at the landing. Ids (`region.pale_concord`, its flags and paths) may appear
+anywhere. The atlas gate forbids the realm's NAME in player-visible text: any locale value not keyed
+`pale.*` / `location.pale.*` (post-reveal text), and any map location not gated on the reveal flag
+(every location in the realm's cells must be). Dev entry: `region goto region.pale_concord`.
 
 ### Reserved location hooks
 

@@ -65,4 +65,9 @@ public partial class WorldEnvironmentProfileResource : Resource
     /// <summary>Multiplies fog density, weather included. Frostfang's air carries more water and
     /// more blown snow than the Ember Crown's; over about 2.5 the far cells stop being readable.</summary>
     [Export(PropertyHint.Range, "0.3,3,0.05")] public float HazeScale { get; set; } = 1f;
+
+    /// <summary>Presentation only: when 0 or more, the sky and sun are drawn at this hour whatever
+    /// the <see cref="WorldClock"/> says. The clock, schedules and weather keep running; only the
+    /// light holds still. -1 (default) follows the clock. The hidden realm pins its dusk here.</summary>
+    [Export(PropertyHint.Range, "-1,24,0.1")] public float FixedSkyHour { get; set; } = -1f;
 }

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="AIProfileResource" load_steps=2 format=3 uid="uid://cmbrvlaihqueen"]
+
+[ext_resource type="Script" path="res://src/Enemies/AIProfileResource.cs" id="1_profile"]
+
+; The Hollow Queen's opening stance: a caster who holds her distance and never flees (ai.caster
+; retreats at a third of its health; a Flamebearer does not). Phase three drops this for ai.boss.
+[resource]
+script = ExtResource("1_profile")
+Id = "ai.hollow_queen"
+VisionRange = 40.0
+FovDegrees = 140.0
+AlertRadius = 30.0
+AttackRange = 3.5
+StandoffRange = 11.0
+KiteDistance = 5.0
+PatrolRadius = 3.0
+RetreatHealthFraction = 0.0
+ActiveDistance = 90.0

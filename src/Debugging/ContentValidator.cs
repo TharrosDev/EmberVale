@@ -5669,9 +5669,19 @@ public static class ContentValidator
             Enemies.BossEncounterDirector.DefeatedFlag,
             Narrative.SliceDirector.CompletedFlag,
             Narrative.SliceDirector.AbsorbedFlag,
+            Narrative.HiddenRealmReveal.RevealedFlag,
         };
 
         CollectSceneAuthoredFlags(written);
+
+        // BossEncounterDirector sets every boss's authored DefeatFlagId on its first defeat.
+        foreach (BossResource boss in BossDatabase.All)
+        {
+            if (!string.IsNullOrEmpty(boss.DefeatFlagId))
+            {
+                written.Add(boss.DefeatFlagId);
+            }
+        }
 
         foreach (DialogueResource dialogue in DialogueDatabase.All)
         {

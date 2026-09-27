@@ -12,6 +12,7 @@ extends SceneTree
 const REGIONS := [
 	"res://data/regions/EmberCrown.tres",
 	"res://data/regions/FrostfangReach.tres",
+	"res://data/regions/PaleConcord.tres",
 ]
 ## The agent_max_climb every cell's NavigationMesh authors, so the probe steps exactly as high as
 ## the navmesh promises an NPC can.

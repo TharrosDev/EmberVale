@@ -47,8 +47,9 @@ script = ExtResource("1_navbaker")
 def main(argv: list[str]) -> int:
     from region_spec_ember import cells as ember
     from region_spec_frostfang import cells as frost
+    from region_spec_pale_concord import cells as pale
     missing = 0
-    for cell in list(ember()) + list(frost()):
+    for cell in list(ember()) + list(frost()) + list(pale()):
         path = ROOT / cell.scene.replace("res://", "")
         if path.exists():
             continue

@@ -1,0 +1,52 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_lamp_post.glb" id="prp_lamp_post"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_bench.glb" id="prp_bench"]
+[ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="s_navbaker"]
+[ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
+
+; THE STILL QUAY (hidden realm) — where the way from the Sunspire library lets out. Authored in the
+; content frame; tools/shift_cell_content.py moves it to the spec's origin. The door home is built by
+; RegionSetup at the region's PortalPoint (content (0, 26), the south end of the quay); the player
+; arrives at SpawnPoint (content (0, 10)). Lamps lit at an hour that never ends.
+
+[sub_resource type="NavigationMesh" id="NavMesh_landing"]
+geometry_parsed_geometry_type = 1
+cell_size = 0.4
+cell_height = 0.3
+agent_height = 1.8
+agent_radius = 0.8
+agent_max_climb = 0.3
+agent_max_slope = 40.0
+
+[node name="LandingCell" type="Node3D"]
+metadata/content_offset = Vector2(-45, 65)
+
+[node name="Nav" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("NavMesh_landing")
+
+[node name="NavBaker" type="Node" parent="Nav"]
+script = ExtResource("s_navbaker")
+
+[node name="QuayLamp0" parent="Nav" instance=ExtResource("prp_lamp_post")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -50, 0, 57)
+
+[node name="QuayLamp1" parent="Nav" instance=ExtResource("prp_lamp_post")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -40, 0, 57)
+
+[node name="QuayLamp2" parent="Nav" instance=ExtResource("prp_lamp_post")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -50, 0, 71)
+
+[node name="QuayLamp3" parent="Nav" instance=ExtResource("prp_lamp_post")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -40, 0, 71)
+
+[node name="QuayBenchW" parent="Nav" instance=ExtResource("prp_bench")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -52, 0, 64)
+
+[node name="QuayBenchE" parent="Nav" instance=ExtResource("prp_bench")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -38, 0, 64)
+
+[node name="MapPin" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -45, 0, 65)
+script = ExtResource("maploc_39_5a")
+LocationId = "location.pale.landing"

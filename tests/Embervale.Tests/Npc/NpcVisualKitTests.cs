@@ -22,6 +22,7 @@ public sealed class NpcVisualKitTests
         "npc.emberbound_warder", "npc.emberbound_seeker", "npc.clan_chief",
         "npc.clan_quartermaster", "npc.clan_beast_tamer", "npc.clan_hearthkeeper",
         "npc.clan_exile", "npc.bregan", "npc.marta", "npc.odger", "npc.wenna",
+        "npc.undying_steward", "npc.undying_lamplighter", "npc.undying_baker", "npc.undying_clockkeeper",
     };
 
     [Fact]

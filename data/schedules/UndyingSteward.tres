@@ -1,0 +1,43 @@
+[gd_resource type="Resource" script_class="ScheduleResource" format=3]
+
+[ext_resource type="Script" path="res://src/Npc/ScheduleResource.cs" id="1_sched"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleEntry.cs" id="2_entry"]
+
+; An undying resident's frozen routine: the same errands at the same hours every day,
+; kept for four hundred years. Cell-local (the city's content frame, shifted by
+; tools/shift_cell_content.py). The world clock runs; only they refuse to change.
+
+[sub_resource type="Resource" id="e_0"]
+script = ExtResource("2_entry")
+StartHour = 6
+Activity = "Reading the evening proclamation"
+Destination = Vector3(22, 0, -42)
+
+[sub_resource type="Resource" id="e_1"]
+script = ExtResource("2_entry")
+StartHour = 9
+Activity = "Inspecting the swept streets"
+Destination = Vector3(25, 0, -55)
+
+[sub_resource type="Resource" id="e_2"]
+script = ExtResource("2_entry")
+StartHour = 13
+Activity = "Reading the evening proclamation"
+Destination = Vector3(22, 0, -42)
+
+[sub_resource type="Resource" id="e_3"]
+script = ExtResource("2_entry")
+StartHour = 17
+Activity = "Standing at the south gate"
+Destination = Vector3(25, 0, -19)
+
+[sub_resource type="Resource" id="e_4"]
+script = ExtResource("2_entry")
+StartHour = 22
+Activity = "Reading the evening proclamation"
+Destination = Vector3(22, 0, -42)
+
+[resource]
+script = ExtResource("1_sched")
+Id = "schedule.undying_steward"
+Entries = Array[Resource]([SubResource("e_0"), SubResource("e_1"), SubResource("e_2"), SubResource("e_3"), SubResource("e_4")])

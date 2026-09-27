@@ -274,6 +274,18 @@ add("frostfang_reach/dragon_roost", "frostfang.dragon_roost", "Dungeon", ".", "T
 add("frostfang_reach/ash_roost", "frostfang.ash_roost", "Dungeon", ".", "The Ash Roost")
 add("frostfang_reach/ancient_aerie", "frostfang.ancient_aerie", "Dungeon", ".", "The Ancient Aerie")
 
+# ── The hidden realm (finish run) ────────────────────────────────────────────────────────────
+# ⚠️ SECRECY: every place here carries required_flag = the reveal flag, so no map, list or search
+# surfaces it before the story opens the realm (tools/world_atlas.py fails an ungated one). Its tails
+# are pale.* so their locale rows fall under the atlas gate's post-reveal prefix.
+PALE_REVEALED = "flag.pale_concord_revealed"
+add("pale_concord/landing", "pale.landing", "Gate", ".", "The Still Quay", reveal=True,
+    required_flag=PALE_REVEALED)
+add("pale_concord/city", "pale.city", "Town", ".", "Vesperhold", reveal=True, required_flag=PALE_REVEALED,
+    desc="The preserved city, kept in perfect repair at an evening that never ends.")
+add("pale_concord/palace", "pale.palace", "Arena", ".", "The Hollow Court", required_flag=PALE_REVEALED,
+    desc="The Hollow Queen's palace at the end of the processional way.")
+
 
 def _cell_ids():
     """scene stem -> cell id, read from the region specs (2026-09 world rebuild: the hand list of
@@ -281,8 +293,9 @@ def _cell_ids():
     sys.path.insert(0, os.path.join(ROOT, "tools"))
     from region_spec_ember import cells as ember
     from region_spec_frostfang import cells as frost
+    from region_spec_pale_concord import cells as pale
     out = {}
-    for cell in list(ember()) + list(frost()):
+    for cell in list(ember()) + list(frost()) + list(pale()):
         stem = cell.scene.replace("res://scenes/regions/", "").replace(".tscn", "")
         out[stem] = cell.cell_id
     return out

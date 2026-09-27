@@ -1,0 +1,272 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/props/bld_townhouse_balcony.tscn" id="bld_townhouse_balcony"]
+[ext_resource type="PackedScene" path="res://scenes/props/bld_townhouse_wide.tscn" id="bld_townhouse_wide"]
+[ext_resource type="PackedScene" path="res://scenes/props/bld_cottage_shuttered.tscn" id="bld_cottage_shuttered"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_watch_tower.glb" id="prp_watch_tower"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_well.glb" id="prp_well"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_market_stand.glb" id="prp_market_stand"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_lamp_post.glb" id="prp_lamp_post"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_bench.glb" id="prp_bench"]
+[ext_resource type="Script" path="res://src/Entities/Entity.cs" id="s_entity"]
+[ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="s_anim"]
+[ext_resource type="Script" path="res://src/Animation/EquipmentPresentationComponent.cs" id="s_equip"]
+[ext_resource type="Script" path="res://src/Factions/FactionComponent.cs" id="s_faction"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="s_dialogue"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleComponent.cs" id="s_schedule"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_woman_dress.glb" id="npc_woman_dress"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_townsman.glb" id="npc_townsman"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_townswoman.glb" id="npc_townswoman"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_merchant_m.glb" id="npc_merchant_m"]
+[ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="s_navbaker"]
+[ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
+
+; THE PRESERVED CITY (hidden realm) — Vesperhold. Every house is in perfect repair and nobody has
+; needed one in four hundred years. Its four residents are UNDYING, not undead: peaceful villagers who
+; keep the same hours every day (their schedules), and whose talk is the bargain. The Queen's hostile
+; servants are the realm's encounters and never spawn inside the city's safe radius.
+;
+; Authored in the content frame; tools/shift_cell_content.py moves it to the spec's origin.
+; Streets: south (0,22)->(0,0), north (0,0)->(0,-24), east lane (0,0)->(25,0); nothing within 4.5 m
+; of a centreline.
+
+[sub_resource type="NavigationMesh" id="NavMesh_city"]
+geometry_parsed_geometry_type = 1
+cell_size = 0.4
+cell_height = 0.3
+agent_height = 1.8
+agent_radius = 0.8
+agent_max_climb = 0.3
+agent_max_slope = 40.0
+
+[sub_resource type="BoxShape3D" id="Box_prp_watch_tower"]
+size = Vector3(3.0, 9.0, 3.0)
+
+[sub_resource type="BoxShape3D" id="Box_prp_well"]
+size = Vector3(2.2, 2.5, 2.2)
+
+[sub_resource type="BoxShape3D" id="Box_prp_market_stand"]
+size = Vector3(3.0, 2.6, 2.0)
+
+[sub_resource type="CapsuleShape3D" id="Shape_npc"]
+radius = 0.4
+height = 1.8
+
+[node name="CityCell" type="Node3D"]
+metadata/content_offset = Vector2(25, -37)
+
+[node name="Nav" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("NavMesh_city")
+
+[node name="NavBaker" type="Node" parent="Nav"]
+script = ExtResource("s_navbaker")
+
+[node name="HouseNW" parent="Nav" instance=ExtResource("bld_townhouse_balcony")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 14, 0, -48)
+
+[node name="HouseNE" parent="Nav" instance=ExtResource("bld_townhouse_wide")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 36, 0, -48)
+
+[node name="HouseSW" parent="Nav" instance=ExtResource("bld_townhouse_wide")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, -26)
+
+[node name="HouseSE" parent="Nav" instance=ExtResource("bld_townhouse_balcony")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 37, 0, -26)
+
+[node name="CottageW" parent="Nav" instance=ExtResource("bld_cottage_shuttered")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 3, 0, -39)
+
+[node name="ClockTower" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17, 0, -34)
+
+[node name="Model" parent="Nav/ClockTower" instance=ExtResource("prp_watch_tower")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/ClockTower"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/ClockTower/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.5, 0)
+shape = SubResource("Box_prp_watch_tower")
+
+[node name="Well" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32, 0, -30)
+
+[node name="Model" parent="Nav/Well" instance=ExtResource("prp_well")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/Well"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Well/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
+shape = SubResource("Box_prp_well")
+
+[node name="BakeryStall" type="Node3D" parent="Nav"]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 33, 0, -42)
+
+[node name="Model" parent="Nav/BakeryStall" instance=ExtResource("prp_market_stand")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/BakeryStall"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BakeryStall/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("Box_prp_market_stand")
+
+[node name="StreetLamp0" parent="Nav" instance=ExtResource("prp_lamp_post")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.5, 0, -21)
+
+[node name="StreetLamp1" parent="Nav" instance=ExtResource("prp_lamp_post")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30.5, 0, -21)
+
+[node name="StreetLamp2" parent="Nav" instance=ExtResource("prp_lamp_post")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.5, 0, -54)
+
+[node name="StreetLamp3" parent="Nav" instance=ExtResource("prp_lamp_post")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30.5, 0, -54)
+
+[node name="StreetLamp4" parent="Nav" instance=ExtResource("prp_lamp_post")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 39, 0, -32)
+
+[node name="StreetLamp5" parent="Nav" instance=ExtResource("prp_lamp_post")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 0, -42)
+
+[node name="PlazaBench" parent="Nav" instance=ExtResource("prp_bench")]
+transform = Transform3D(0.7071, 0, -0.7071, 0, 1, 0, 0.7071, 0, 0.7071, 19, 0, -43)
+
+[node name="Steward" type="Node3D" parent="."]
+transform = Transform3D(0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, 0.9397, 22, 0, -42)
+script = ExtResource("s_entity")
+DisplayName = "Steward Ismene Vael"
+TemplateId = "npc.undying_steward"
+
+[node name="Animation" type="Node" parent="Steward"]
+script = ExtResource("s_anim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="Steward"]
+script = ExtResource("s_equip")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="Steward"]
+
+[node name="Shape" type="CollisionShape3D" parent="Steward/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="Steward"]
+script = ExtResource("s_faction")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="Steward"]
+script = ExtResource("s_dialogue")
+DialogueId = "dialogue.undying_steward"
+
+[node name="Schedule" type="Node" parent="Steward"]
+script = ExtResource("s_schedule")
+ScheduleId = "schedule.undying_steward"
+
+[node name="Model" parent="Steward" instance=ExtResource("npc_woman_dress")]
+
+[node name="Lamplighter" type="Node3D" parent="."]
+transform = Transform3D(-0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, -0.9397, 28, 0, -25)
+script = ExtResource("s_entity")
+DisplayName = "Oswin the Lamplighter"
+TemplateId = "npc.undying_lamplighter"
+
+[node name="Animation" type="Node" parent="Lamplighter"]
+script = ExtResource("s_anim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="Lamplighter"]
+script = ExtResource("s_equip")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="Lamplighter"]
+
+[node name="Shape" type="CollisionShape3D" parent="Lamplighter/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="Lamplighter"]
+script = ExtResource("s_faction")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="Lamplighter"]
+script = ExtResource("s_dialogue")
+DialogueId = "dialogue.undying_lamplighter"
+
+[node name="Schedule" type="Node" parent="Lamplighter"]
+script = ExtResource("s_schedule")
+ScheduleId = "schedule.undying_lamplighter"
+
+[node name="Model" parent="Lamplighter" instance=ExtResource("npc_townsman")]
+
+[node name="Baker" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 33, 0, -39.5)
+script = ExtResource("s_entity")
+DisplayName = "Maren Loaf"
+TemplateId = "npc.undying_baker"
+
+[node name="Animation" type="Node" parent="Baker"]
+script = ExtResource("s_anim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="Baker"]
+script = ExtResource("s_equip")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="Baker"]
+
+[node name="Shape" type="CollisionShape3D" parent="Baker/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="Baker"]
+script = ExtResource("s_faction")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="Baker"]
+script = ExtResource("s_dialogue")
+DialogueId = "dialogue.undying_baker"
+
+[node name="Schedule" type="Node" parent="Baker"]
+script = ExtResource("s_schedule")
+ScheduleId = "schedule.undying_baker"
+
+[node name="Model" parent="Baker" instance=ExtResource("npc_townswoman")]
+
+[node name="Clockkeeper" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17, 0, -30.5)
+script = ExtResource("s_entity")
+DisplayName = "Old Corwen"
+TemplateId = "npc.undying_clockkeeper"
+
+[node name="Animation" type="Node" parent="Clockkeeper"]
+script = ExtResource("s_anim")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="Clockkeeper"]
+script = ExtResource("s_equip")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="Clockkeeper"]
+
+[node name="Shape" type="CollisionShape3D" parent="Clockkeeper/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="Clockkeeper"]
+script = ExtResource("s_faction")
+FactionId = "faction.villagers"
+
+[node name="Dialogue" type="Node" parent="Clockkeeper"]
+script = ExtResource("s_dialogue")
+DialogueId = "dialogue.undying_clockkeeper"
+
+[node name="Schedule" type="Node" parent="Clockkeeper"]
+script = ExtResource("s_schedule")
+ScheduleId = "schedule.undying_clockkeeper"
+
+[node name="Model" parent="Clockkeeper" instance=ExtResource("npc_merchant_m")]
+
+[node name="MapPin" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25, 0, -37)
+script = ExtResource("maploc_39_5a")
+LocationId = "location.pale.city"

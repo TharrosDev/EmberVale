@@ -16,6 +16,7 @@ no two realms can ever share ground.
 
 from __future__ import annotations
 
+import csv
 import re
 import sys
 from dataclasses import dataclass
@@ -51,9 +52,14 @@ REALMS = [
           "reserved", "Phase 44J-44M",
           "South beyond the Southmarch Gate: desert basins, jungle belt, the great libraries, the Crimson Prophet."),
     Realm("pale_concord", "The Pale Concord", "region.pale_concord", (-2600.0, -400.0, -1500.0, 900.0),
-          "hidden", "Phase 44N-44Q",
-          "Found by story, never advertised. No neighbour, map, travel or search record may name it."),
+          "hidden", "finish run (built)",
+          "Found by story, never advertised: still fields, canals and a preserved city at dusk under the Hollow Queen. "
+          "No text the player can read names it before the reveal flag."),
 ]
+
+# The hidden realm's secrecy contract (see check()).
+PALE_REVEAL_FLAG = "flag.pale_concord_revealed"
+PALE_KEY_PREFIXES = ("pale.", "location.pale.")
 
 # Where one realm's road meets the next. Built ends are world points in their own region.
 CROSSINGS = [
@@ -103,7 +109,9 @@ def check() -> list[str]:
 
     import region_spec_ember
     import region_spec_frostfang
-    for realm, spec in (("ember_crown", region_spec_ember), ("frostfang_reach", region_spec_frostfang)):
+    import region_spec_pale_concord
+    for realm, spec in (("ember_crown", region_spec_ember), ("frostfang_reach", region_spec_frostfang),
+                        ("pale_concord", region_spec_pale_concord)):
         band = next(r.band for r in REALMS if r.key == realm)
         lattice = (spec.EXTENT_X[0], spec.ROWS[0][0], spec.EXTENT_X[1], spec.ROWS[-1][1])
         if not (band[0] <= lattice[0] and band[1] <= lattice[1] and lattice[2] <= band[2] and lattice[3] <= band[3]):
@@ -118,16 +126,27 @@ def check() -> list[str]:
         if status == "reserved" and exists:
             issues.append(f"hook {hook} ({why}) is reserved for {realm} but already exists")
 
-    # ⚠️ PALE CONCORD SECRECY (Phase 44K/44O). Nothing the game loads may name it before its reveal.
+    # ⚠️ PALE CONCORD SECRECY (Phase 44K/44O; finish run). Ids are not leaks: region.pale_concord, its
+    # flags, scene paths and resource ids may appear anywhere (other realms' portals and quests need
+    # them). What must not name the realm before its reveal is PLAYER-VISIBLE TEXT:
+    #   * a locale VALUE, unless its key is post-reveal text (a PALE_KEY_PREFIXES key, shown only
+    #     inside the realm or after the reveal flag);
+    #   * a map location, unless it is gated on the reveal flag. Every location inside the realm's
+    #     cells must be gated, since discovery would otherwise list and search it.
     leak = re.compile(r"pale[ _]concord", re.I)
-    for folder in ("data/regions", "data/map_locations", "data/quests", "data/dialogue", "data/shops",
-                   "data/services", "scenes/regions"):
-        for path in (ROOT / folder).rglob("*.t*"):
-            if leak.search(path.read_text(encoding="utf-8-sig", errors="ignore")):
-                issues.append(f"Pale Concord leak: {path.relative_to(ROOT)}")
-    strings = (ROOT / "data" / "locale" / "strings.csv").read_text(encoding="utf-8-sig", errors="ignore")
-    if leak.search(strings):
-        issues.append("Pale Concord leak: data/locale/strings.csv")
+    strings: dict[str, str] = {}
+    for row in csv.reader((ROOT / "data" / "locale" / "strings.csv").read_text(
+            encoding="utf-8-sig", errors="ignore").splitlines()):
+        if len(row) >= 2 and row[0] and not row[0].startswith("#"):
+            strings[row[0]] = ",".join(row[1:])
+            if leak.search(strings[row[0]]) and not row[0].startswith(PALE_KEY_PREFIXES):
+                issues.append(f"Pale Concord leak: locale value of '{row[0]}' (key it under pale.*)")
+    for path in (ROOT / "data" / "map_locations").glob("*.tres"):
+        text = path.read_text(encoding="utf-8-sig", errors="ignore")
+        field = lambda name: (re.search(rf'^{name} = "([^"]*)"', text, re.M) or [None, ""])[1]
+        named = any(leak.search(strings.get(field(k), "")) for k in ("NameKey", "DescriptionKey"))
+        if (field("CellId").startswith("pale_concord.") or named) and field("RequiredFlagId") != PALE_REVEAL_FLAG:
+            issues.append(f"Pale Concord leak: {path.relative_to(ROOT)} is not gated on {PALE_REVEAL_FLAG}")
 
     doc = ROOT / "docs" / "WORLD_ATLAS.md"
     if not doc.exists() or table() not in doc.read_text(encoding="utf-8"):

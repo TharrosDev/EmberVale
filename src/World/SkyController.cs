@@ -146,7 +146,9 @@ public partial class SkyController : Node3D
         float snow = _precipitation * _cold;
         Wetness = Mathf.Lerp(Wetness, rain, EnvironmentMath.BlendWeight(dt, rain > Wetness ? 12f : 90f));
         SnowCover = Mathf.Lerp(SnowCover, snow, EnvironmentMath.BlendWeight(dt, snow > SnowCover ? 45f : 150f));
-        float hour = _clock?.TimeOfDay ?? 12f;
+        float hour = RegionAtmosphere is { FixedSkyHour: >= 0f } pinned
+            ? pinned.FixedSkyHour
+            : _clock?.TimeOfDay ?? 12f;
         EnvironmentKeyframeResource a = Cycle.Keys[^1], b = Cycle.Keys[0];
         for (int i = 0; i < Cycle.Keys.Count; i++)
         {
@@ -214,7 +216,7 @@ public partial class SkyController : Node3D
         RenderingServer.GlobalShaderParameterSet("world_wind", Wind);
         RenderingServer.GlobalShaderParameterSet("world_rain", rain);
         // Use the saved world clock, not shader TIME, so regression captures can freeze all motion.
-        RenderingServer.GlobalShaderParameterSet("world_visual_time", (((_clock?.Day ?? 0) * 24f) + hour) * (_clock?.DayLengthSeconds ?? 180f) / 24f);
+        RenderingServer.GlobalShaderParameterSet("world_visual_time", (((_clock?.Day ?? 0) * 24f) + (_clock?.TimeOfDay ?? 12f)) * (_clock?.DayLengthSeconds ?? 180f) / 24f);
         _initialized = true;
     }
 

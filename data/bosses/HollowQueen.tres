@@ -1,0 +1,83 @@
+[gd_resource type="Resource" script_class="BossResource" load_steps=4 format=3 uid="uid://cmbrvlbosshqueen"]
+
+[ext_resource type="Script" path="res://src/Enemies/BossResource.cs" id="1_boss"]
+[ext_resource type="Script" path="res://src/Enemies/BossPhaseResource.cs" id="2_phase"]
+[ext_resource type="Script" path="res://src/Enemies/BossAddWaveResource.cs" id="3_wave"]
+
+; The Hollow Queen's fight, modelled on data/bosses/IronKing.tres: 66% / 33% thresholds, add waves
+; from the second phase, and a third phase that fights differently rather than only faster.
+;
+; Phase 1 — the caster. She holds her distance (ai.hollow_queen) and withers.
+; Phase 2 — she commands the dead: two bone knights rise, and she learns to knit their bones.
+; Phase 3 — she stops keeping her distance. ai.boss (closes and never kites), a frost nova at arm's
+;           length, a siphon that feeds on you, and husks that keep coming, capped at three alive.
+;           The answer changes from chasing a caster down to surviving one who has come to you.
+[sub_resource type="Resource" id="Wave_knights"]
+script = ExtResource("3_wave")
+TemplateId = "enemy.bone_knight"
+Count = 2
+RepeatSeconds = 0.0
+MaxAlive = 0
+HealthMultiplier = 1.0
+
+[sub_resource type="Resource" id="Wave_husks"]
+script = ExtResource("3_wave")
+TemplateId = "enemy.hollow_husk"
+Count = 2
+RepeatSeconds = 20.0
+MaxAlive = 3
+HealthMultiplier = 1.0
+
+[sub_resource type="Resource" id="Phase_1"]
+script = ExtResource("2_phase")
+HealthFraction = 1.0
+AttackSpeedBonus = 0.0
+MoveSpeedBonus = 0.0
+GrantSpellIds = Array[String]([])
+AiProfileId = ""
+TelegraphColor = Color(0.62, 0.52, 0.95, 1)
+TelegraphEnergy = 2.5
+WindupPoiseMultiplier = 1.0
+AddWaves = Array[Resource]([])
+
+[sub_resource type="Resource" id="Phase_2"]
+script = ExtResource("2_phase")
+HealthFraction = 0.66
+AttackSpeedBonus = 0.15
+MoveSpeedBonus = 0.1
+GrantSpellIds = Array[String](["spell.knit_bone"])
+AiProfileId = ""
+TelegraphColor = Color(0.62, 0.52, 0.95, 1)
+TelegraphEnergy = 3.5
+WindupPoiseMultiplier = 1.0
+AddWaves = Array[Resource]([SubResource("Wave_knights")])
+
+[sub_resource type="Resource" id="Phase_3"]
+script = ExtResource("2_phase")
+HealthFraction = 0.33
+AttackSpeedBonus = 0.3
+MoveSpeedBonus = 0.25
+GrantSpellIds = Array[String](["spell.frost_nova", "spell.ember_siphon"])
+AiProfileId = "ai.boss"
+TelegraphColor = Color(0.8, 0.8, 1, 1)
+TelegraphEnergy = 5.5
+WindupPoiseMultiplier = 1.2
+AddWaves = Array[Resource]([SubResource("Wave_husks")])
+
+[resource]
+script = ExtResource("1_boss")
+Id = "boss.hollow_queen"
+Phases = Array[Resource]([SubResource("Phase_1"), SubResource("Phase_2"), SubResource("Phase_3")])
+EnrageSeconds = 0.0
+EnrageAttackSpeedBonus = 0.5
+EnrageMoveSpeedBonus = 0.25
+EnrageSpellIds = Array[String]([])
+EnrageForcesFinalPhase = true
+IntroLockSeconds = 2.5
+DefeatSlowSeconds = 1.0
+DefeatTimeScale = 0.35
+DefeatMusicCue = "music.boss_defeat"
+RewardItemId = "item.relic.hollow_heart"
+RewardQuantity = 1
+DefeatFlagId = "flag.hollow_queen_defeated"
+DefeatDialogueId = "dialogue.hollow_queen_absorb"

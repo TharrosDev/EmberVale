@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="AttributeSet" load_steps=2 format=3 uid="uid://cmbrvlhqueenat"]
+
+[ext_resource type="Script" path="res://src/Stats/AttributeSet.cs" id="1_attrset"]
+
+; A Flamebearer caster: the Iron King's health, a necromancer's mind, and little armour — the danger
+; is what she casts and what she raises, not what she can absorb.
+[resource]
+script = ExtResource("1_attrset")
+Health = 620.0
+Stamina = 120.0
+Mana = 320.0
+Strength = 10.0
+Dexterity = 10.0
+Intelligence = 28.0
+Vitality = 26.0
+Endurance = 14.0
+Armor = 8.0
+PhysicalPower = 12.0
+SpellPower = 30.0
+MoveSpeed = 3.6
+AttackSpeed = 0.8
+CritChance = 0.06
+CritDamage = 1.6

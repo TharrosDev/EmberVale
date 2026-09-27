@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" format=3 uid="uid://cmbrvlenmhqueen"]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+; The Hollow Queen, the Second Flamebearer (finish plan ID registry). A caster boss on the shared
+; pipeline; her fight lives in data/bosses/HollowQueen.tres. ⚠️ PLACEHOLDER BODY: the Hollow
+; necromancer's Meshy body at 1.3x (ModelScale) until her own model is generated; the capsule is
+; sized to the scaled body. No loot table: the boss reward loop grants her relic.
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.hollow_queen"
+NameKey = "enemy.hollow_queen.name"
+AttributesPath = "res://data/attributes/HollowQueenAttributes.tres"
+WeaponPath = "res://data/weapons/SpectralTouch.tres"
+LootTablePath = ""
+ModelPath = "res://assets/models/creatures/enm_hollow_necromancer.glb"
+ModelScale = 1.3
+PlaceholderTint = Color(0.62, 0.58, 0.68, 1)
+AiProfileId = "ai.hollow_queen"
+FactionId = "faction.hollow"
+KnownSpellIds = Array[String](["spell.wither"])
+BreathSpellId = ""
+DialogueId = ""
+CapsuleRadius = 0.55
+CapsuleHeight = 2.35
+IsBoss = true
+BossId = "boss.hollow_queen"
+DirectionalMelee = false
+MaxPoise = 120.0
+Reaction = 4
+StaminaRegen = 14.0
+ManaRegen = 9.0
+XpValue = 550
