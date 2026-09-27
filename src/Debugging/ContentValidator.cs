@@ -4266,6 +4266,20 @@ public static class ContentValidator
                 }
             }
 
+            if (region.NeighbourPortalPoints.Count > region.Neighbours.Count)
+            {
+                issues.Add($"region '{region.Id}' has {region.NeighbourPortalPoints.Count} neighbour portal points " +
+                           $"for {region.Neighbours.Count} neighbours — the arrays are index-aligned");
+            }
+
+            foreach (Vector3 door in region.NeighbourPortalPoints)
+            {
+                if (door != Vector3.Zero && !region.Bounds.HasPoint(new Vector3(door.X, region.Bounds.GetCenter().Y, door.Z)))
+                {
+                    issues.Add($"region '{region.Id}' neighbour portal point {door} is outside its bounds {region.Bounds}");
+                }
+            }
+
             // SpawnPoint is where every portal AND fast-travel node lands the player; outside the
             // region bounds drops them in the void (Phase 25.5F).
             if (!region.Bounds.HasPoint(region.SpawnPoint))
@@ -4770,6 +4784,13 @@ public static class ContentValidator
 
         Check("spawn point", region.SpawnPoint.X, region.SpawnPoint.Z);
         Check("portal point", region.PortalPoint.X, region.PortalPoint.Z);
+        foreach (Vector3 door in region.NeighbourPortalPoints)
+        {
+            if (door != Vector3.Zero)
+            {
+                Check("neighbour portal point", door.X, door.Z);
+            }
+        }
 
         foreach (RegionCellResource cell in region.Cells)
         {

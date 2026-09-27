@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="WorldTerrainLayerResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldTerrainLayerResource.cs" id="1_layer"]
+
+; Wind-laid sand (the Sunspire Dominion). Warm, pale and fine-grained, with low relief: dunes are
+; landforms, so the substance itself only needs to read as loose grains, not as shape.
+[resource]
+script = ExtResource("1_layer")
+Id = "terrain.sand"
+Low = Color(0.52, 0.42, 0.29, 1)
+High = Color(0.68, 0.57, 0.40, 1)
+Grain = 1.6
+Breakup = 0.35
+Relief = 0.18
+Roughness = 0.94
+Specular = 0.26

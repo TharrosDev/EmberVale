@@ -1,0 +1,157 @@
+[gd_resource type="Resource" script_class="BossResource" load_steps=9 format=3 uid="uid://cmbrvlbossprophet"]
+
+[ext_resource type="Script" path="res://src/Enemies/BossResource.cs" id="1_boss"]
+[ext_resource type="Script" path="res://src/Enemies/BossPhaseResource.cs" id="2_phase"]
+[ext_resource type="Script" path="res://src/Enemies/BossAddWaveResource.cs" id="3_wave"]
+[ext_resource type="Script" path="res://src/Combat/Actions/ActionDefinitionResource.cs" id="4_action"]
+
+; The Crimson Prophet's fight, modelled on data/bosses/IronKing.tres: three phases, add waves, and a
+; third phase that fights differently rather than faster.
+;
+;   phase 1  the sermon. He holds the middle of the sanctum at range (ai.prophet) and throws firebolts
+;            and wither; the answer is to close the distance.
+;   phase 2  the congregation. At two thirds his worshippers answer the call — cultists, repeating and
+;            capped at three alive — and he adds the flame lance.
+;   phase 3  the voice of Morthul. At a third he stops preaching: ai.boss, fireball, and two committed,
+;            uninterruptible blows. The zealots keep coming, cinder thralls join them once.
+;
+; No enrage, for the Iron King's reason: a Flamebearer is beaten at the player's pace.
+
+[sub_resource type="Resource" id="Wave_congregation"]
+script = ExtResource("3_wave")
+TemplateId = "enemy.cultist"
+Count = 2
+RepeatSeconds = 20.0
+MaxAlive = 3
+HealthMultiplier = 1.0
+
+[sub_resource type="Resource" id="Wave_zealots"]
+script = ExtResource("3_wave")
+TemplateId = "enemy.cultist"
+Count = 2
+RepeatSeconds = 16.0
+MaxAlive = 3
+HealthMultiplier = 1.15
+
+[sub_resource type="Resource" id="Wave_thralls"]
+script = ExtResource("3_wave")
+TemplateId = "enemy.cinder_thrall"
+Count = 2
+RepeatSeconds = 0.0
+MaxAlive = 0
+HealthMultiplier = 1.0
+
+[sub_resource type="Resource" id="Phase_1"]
+script = ExtResource("2_phase")
+HealthFraction = 1.0
+AttackSpeedBonus = 0.0
+MoveSpeedBonus = 0.0
+GrantSpellIds = Array[String]([])
+AiProfileId = ""
+TelegraphColor = Color(0.9, 0.08, 0.1, 1)
+TelegraphEnergy = 2.5
+WindupPoiseMultiplier = 1.2
+AddWaves = Array[Resource]([])
+
+[sub_resource type="Resource" id="Phase_2"]
+script = ExtResource("2_phase")
+HealthFraction = 0.66
+AttackSpeedBonus = 0.15
+MoveSpeedBonus = 0.1
+GrantSpellIds = Array[String](["spell.flame_lance"])
+AiProfileId = ""
+TelegraphColor = Color(0.9, 0.08, 0.1, 1)
+TelegraphEnergy = 3.5
+WindupPoiseMultiplier = 1.0
+AddWaves = Array[Resource]([SubResource("Wave_congregation")])
+
+[sub_resource type="Resource" id="P3_Judgement"]
+script = ExtResource("4_action")
+Id = "prophet.judgement"
+Kind = 1
+AnimationSlot = "attack"
+Duration = 1.6
+FallbackDuration = 1.6
+ActiveFrom = 0.5
+ActiveTo = 0.62
+CancelFrom = 0.78
+ComboFrom = 0.78
+ComboTo = 1.0
+NextActionId = "prophet.pyre"
+Interruptible = false
+MoveScale = 0.0
+TurnDegreesPerSecond = 45.0
+StaminaCost = 20.0
+DamageScale = 1.4
+PoiseScale = 1.3
+Knockback = 3.5
+RootMotion = 2
+MaxWarpDistance = 2.4
+MaxWarpDegrees = 45.0
+HitStopScale = 1.3
+CameraImpulse = 0.5
+AiWeight = 1.0
+AiMinRange = 0.0
+AiMaxRange = 3.2
+AiRecoverySeconds = 0.7
+
+[sub_resource type="Resource" id="P3_Pyre"]
+script = ExtResource("4_action")
+Id = "prophet.pyre"
+Kind = 1
+AnimationSlot = "attack"
+Duration = 2.0
+FallbackDuration = 2.0
+ActiveFrom = 0.6
+ActiveTo = 0.72
+CancelFrom = 0.86
+ComboFrom = 0.86
+ComboTo = 1.0
+NextActionId = ""
+Interruptible = false
+MoveScale = 0.0
+TurnDegreesPerSecond = 30.0
+StaminaCost = 24.0
+DamageScale = 1.7
+PoiseScale = 1.5
+Knockback = 5.5
+RootMotion = 2
+MaxWarpDistance = 1.8
+MaxWarpDegrees = 30.0
+HitStopScale = 1.5
+CameraImpulse = 0.7
+AiWeight = 0.7
+AiMinRange = 0.0
+AiMaxRange = 2.8
+AiRecoverySeconds = 0.9
+
+[sub_resource type="Resource" id="Phase_3"]
+script = ExtResource("2_phase")
+HealthFraction = 0.33
+AttackSpeedBonus = 0.3
+MoveSpeedBonus = 0.25
+GrantSpellIds = Array[String](["spell.fireball"])
+AiProfileId = "ai.boss"
+TelegraphColor = Color(1, 0.05, 0.05, 1)
+TelegraphEnergy = 5.5
+WindupPoiseMultiplier = 1.0
+Attacks = Array[ExtResource("4_action")]([SubResource("P3_Judgement"), SubResource("P3_Pyre")])
+AddWaves = Array[Resource]([SubResource("Wave_zealots"), SubResource("Wave_thralls")])
+
+[resource]
+script = ExtResource("1_boss")
+Id = "boss.crimson_prophet"
+Phases = Array[Resource]([SubResource("Phase_1"), SubResource("Phase_2"), SubResource("Phase_3")])
+EnrageSeconds = 0.0
+EnrageAttackSpeedBonus = 0.5
+EnrageMoveSpeedBonus = 0.25
+EnrageSpellIds = Array[String]([])
+EnrageForcesFinalPhase = true
+IntroLockSeconds = 2.5
+DefeatSlowSeconds = 1.0
+DefeatTimeScale = 0.35
+DefeatMusicCue = "music.boss_defeat"
+RewardItemId = "item.relic.crimson_heart"
+RewardQuantity = 1
+DefeatFlagId = "flag.crimson_prophet_defeated"
+DefeatDialogueId = "dialogue.crimson_prophet_absorb"

@@ -1,0 +1,358 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_arena_wall.glb" id="e1"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="e2"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_banner_guild.glb" id="e3"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="e4"]
+[ext_resource type="PackedScene" path="res://scenes/props/bld_mission_chapel.tscn" id="e5"]
+[ext_resource type="Script" path="res://src/Entities/Entity.cs" id="e6"]
+[ext_resource type="Script" path="res://src/Enemies/BossSummonComponent.cs" id="e7"]
+[ext_resource type="Script" path="res://src/Enemies/ArenaHookComponent.cs" id="e8"]
+[ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="e9"]
+[ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
+
+; THE CRIMSON MISSION (sunspire.temple) - the Crimson Prophet's seat and arena. Content frame,
+; moved to Cell.origin by tools/shift_cell_content.py.
+;
+; Modelled on scenes/regions/ember_crown/arena.tscn. The sanctum is a 28.8 m walled square with its
+; gate in the NORTH wall (x -7.2..7.2), where Path_temple_gate arrives. The brazier stands just inside
+; the gate and its SpawnOffset raises the Prophet at the sanctum's centre (0, 0, 0).
+;
+; WARNING LOAD-BEARING NODES (the Iron King's arena rule): Brazier/Summon (BossSummonComponent), AddSpawns/*
+; (group "boss_add_spawn"), CrimsonVents/* and Phase2Hook/Phase3Hook (ArenaHookComponent Reveals are
+; NodePaths to the vents - renaming a vent breaks the phase telegraph silently). The fighting floor
+; inside 10 m of the centre stays bare.
+
+[sub_resource type="NavigationMesh" id="NavMesh_temple"]
+geometry_parsed_geometry_type = 1
+cell_size = 0.4
+cell_height = 0.3
+agent_height = 1.8
+agent_radius = 0.8
+agent_max_climb = 0.3
+agent_max_slope = 40.0
+
+[sub_resource type="CapsuleShape3D" id="Shape_npc"]
+radius = 0.4
+height = 1.8
+
+[sub_resource type="CylinderShape3D" id="Shape_pillar"]
+radius = 0.5
+height = 3.1
+
+[sub_resource type="BoxShape3D" id="Shape_ruinwall"]
+size = Vector3(4, 4, 0.88)
+
+[sub_resource type="CylinderShape3D" id="Shape_brazier"]
+radius = 0.5
+height = 1.2
+
+[sub_resource type="BoxShape3D" id="Shape_wall_long"]
+size = Vector3(28.8, 4, 1)
+
+[sub_resource type="BoxShape3D" id="Shape_wall_side"]
+size = Vector3(1, 4, 28.8)
+
+[sub_resource type="BoxShape3D" id="Shape_wall_gate"]
+size = Vector3(7.2, 4, 1)
+
+[sub_resource type="BoxShape3D" id="Shape_brazier_box"]
+size = Vector3(1, 1.4, 1)
+
+[node name="TempleCell" type="Node3D"]
+metadata/content_offset = Vector2(45, -20)
+
+[node name="Nav" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("NavMesh_temple")
+
+[node name="NavBaker" type="Node" parent="Nav"]
+script = ExtResource("e9")
+
+[node name="WallS" type="StaticBody3D" parent="Nav"]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 45, 2, -5.6)
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/WallS"]
+shape = SubResource("Shape_wall_long")
+
+[node name="WallW" type="StaticBody3D" parent="Nav"]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 30.6, 2, -20)
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/WallW"]
+shape = SubResource("Shape_wall_side")
+
+[node name="WallE" type="StaticBody3D" parent="Nav"]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 59.4, 2, -20)
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/WallE"]
+shape = SubResource("Shape_wall_side")
+
+[node name="WallNW" type="StaticBody3D" parent="Nav"]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 34.2, 2, -34.4)
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/WallNW"]
+shape = SubResource("Shape_wall_gate")
+
+[node name="WallNE" type="StaticBody3D" parent="Nav"]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 55.8, 2, -34.4)
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/WallNE"]
+shape = SubResource("Shape_wall_gate")
+
+[node name="Ring0" parent="Nav" instance=ExtResource("e1")]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 34.2, 0, -6)
+
+[node name="Ring1" parent="Nav" instance=ExtResource("e1")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 31, 0, -30.8)
+
+[node name="Ring2" parent="Nav" instance=ExtResource("e1")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 59, 0, -30.8)
+
+[node name="Ring3" parent="Nav" instance=ExtResource("e1")]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 41.4, 0, -6)
+
+[node name="Ring4" parent="Nav" instance=ExtResource("e1")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 31, 0, -23.6)
+
+[node name="Ring5" parent="Nav" instance=ExtResource("e1")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 59, 0, -23.6)
+
+[node name="Ring6" parent="Nav" instance=ExtResource("e1")]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 48.6, 0, -6)
+
+[node name="Ring7" parent="Nav" instance=ExtResource("e1")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 31, 0, -16.4)
+
+[node name="Ring8" parent="Nav" instance=ExtResource("e1")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 59, 0, -16.4)
+
+[node name="Ring9" parent="Nav" instance=ExtResource("e1")]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 55.8, 0, -6)
+
+[node name="Ring10" parent="Nav" instance=ExtResource("e1")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 31, 0, -9.2)
+
+[node name="Ring11" parent="Nav" instance=ExtResource("e1")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 59, 0, -9.2)
+
+[node name="Ring12" parent="Nav" instance=ExtResource("e1")]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 34.2, 0, -34)
+
+[node name="Ring13" parent="Nav" instance=ExtResource("e1")]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 55.8, 0, -34)
+
+[node name="GatePillarW" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 37.4, 0, -34.4)
+
+[node name="Model" parent="Nav/GatePillarW" instance=ExtResource("e2")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/GatePillarW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/GatePillarW/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0)
+shape = SubResource("Shape_pillar")
+
+[node name="GatePillarE" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 52.6, 0, -34.4)
+
+[node name="Model" parent="Nav/GatePillarE" instance=ExtResource("e2")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/GatePillarE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/GatePillarE/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0)
+shape = SubResource("Shape_pillar")
+
+[node name="Banner0" parent="Nav" instance=ExtResource("e3")]
+transform = Transform3D(-1, 0, -0, 0, 1, 0, 0, 0, -1, 40, 0, -6.5)
+
+[node name="Banner1" parent="Nav" instance=ExtResource("e3")]
+transform = Transform3D(-1, 0, -0, 0, 1, 0, 0, 0, -1, 50, 0, -6.5)
+
+[node name="Banner2" parent="Nav" instance=ExtResource("e3")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 31.5, 0, -25)
+
+[node name="Banner3" parent="Nav" instance=ExtResource("e3")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 58.5, 0, -15)
+
+[node name="RimBrazier0" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 33, 0, -8)
+
+[node name="Model" parent="Nav/RimBrazier0" instance=ExtResource("e4")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RimBrazier0"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RimBrazier0/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_brazier")
+
+[node name="Light" type="OmniLight3D" parent="Nav/RimBrazier0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+light_color = Color(1, 0.3, 0.18, 1)
+light_energy = 2.4
+omni_range = 11.0
+
+[node name="RimBrazier1" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 57, 0, -8)
+
+[node name="Model" parent="Nav/RimBrazier1" instance=ExtResource("e4")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RimBrazier1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RimBrazier1/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_brazier")
+
+[node name="Light" type="OmniLight3D" parent="Nav/RimBrazier1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+light_color = Color(1, 0.3, 0.18, 1)
+light_energy = 2.4
+omni_range = 11.0
+
+[node name="RimBrazier2" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 33, 0, -31)
+
+[node name="Model" parent="Nav/RimBrazier2" instance=ExtResource("e4")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RimBrazier2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RimBrazier2/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_brazier")
+
+[node name="Light" type="OmniLight3D" parent="Nav/RimBrazier2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+light_color = Color(1, 0.3, 0.18, 1)
+light_energy = 2.4
+omni_range = 11.0
+
+[node name="RimBrazier3" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 57, 0, -31)
+
+[node name="Model" parent="Nav/RimBrazier3" instance=ExtResource("e4")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RimBrazier3"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RimBrazier3/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_brazier")
+
+[node name="Light" type="OmniLight3D" parent="Nav/RimBrazier3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+light_color = Color(1, 0.3, 0.18, 1)
+light_energy = 2.4
+omni_range = 11.0
+
+[node name="MissionChapel" parent="Nav" instance=ExtResource("e5")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 14, 0, -29)
+
+[node name="ChapelBrazierA" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 19, 0, -34)
+
+[node name="Model" parent="Nav/ChapelBrazierA" instance=ExtResource("e4")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/ChapelBrazierA"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/ChapelBrazierA/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_brazier")
+
+[node name="ChapelBrazierB" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 19, 0, -24)
+
+[node name="Model" parent="Nav/ChapelBrazierB" instance=ExtResource("e4")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/ChapelBrazierB"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/ChapelBrazierB/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_brazier")
+
+[node name="Brazier" type="Node3D" parent="."]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 45, 0, -29)
+script = ExtResource("e6")
+DisplayName = "Crimson Altar Fire"
+
+[node name="Model" parent="Brazier" instance=ExtResource("e4")]
+
+[node name="Collider" type="StaticBody3D" parent="Brazier"]
+
+[node name="Shape" type="CollisionShape3D" parent="Brazier/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("Shape_brazier_box")
+
+[node name="FireLight" type="OmniLight3D" parent="Brazier"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+light_color = Color(1, 0.2, 0.12, 1)
+light_energy = 2.2
+omni_range = 7.0
+
+; Brazier (0, 0, -9) plus (0, 0, 9) raises the Prophet at the sanctum's centre. Move one, move both.
+[node name="Summon" type="Node" parent="Brazier"]
+script = ExtResource("e7")
+SpawnOffset = Vector3(0, 0, 9)
+RequiredQuestId = ""
+BossTemplateId = "enemy.crimson_prophet"
+DefeatedFlagId = "flag.crimson_prophet_defeated"
+PromptKey = "boss.crimson_prophet.challenge_prompt"
+LockedPromptKey = "boss.crimson_prophet.challenge_locked"
+
+[node name="AddSpawns" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 0, -20)
+
+[node name="SpawnNE" type="Marker3D" parent="AddSpawns" groups=["boss_add_spawn"]]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 9, 0, -7)
+
+[node name="SpawnNW" type="Marker3D" parent="AddSpawns" groups=["boss_add_spawn"]]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, -9, 0, -7)
+
+[node name="SpawnSE" type="Marker3D" parent="AddSpawns" groups=["boss_add_spawn"]]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 9, 0, 8)
+
+[node name="SpawnSW" type="Marker3D" parent="AddSpawns" groups=["boss_add_spawn"]]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, -9, 0, 8)
+
+[node name="CrimsonVents" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 0, -20)
+
+[node name="VentA" type="OmniLight3D" parent="CrimsonVents"]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 10, 0.6, 0)
+visible = false
+light_color = Color(1, 0.12, 0.08, 1)
+light_energy = 2.4
+omni_range = 10.0
+
+[node name="VentB" type="OmniLight3D" parent="CrimsonVents"]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, -10, 0.6, 0)
+visible = false
+light_color = Color(1, 0.12, 0.08, 1)
+light_energy = 2.4
+omni_range = 10.0
+
+[node name="VentC" type="OmniLight3D" parent="CrimsonVents"]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 0, 0.6, 10)
+visible = false
+light_color = Color(1, 0.12, 0.08, 1)
+light_energy = 3.2
+omni_range = 10.0
+
+[node name="VentD" type="OmniLight3D" parent="CrimsonVents"]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 0, 0.6, -6)
+visible = false
+light_color = Color(1, 0.12, 0.08, 1)
+light_energy = 3.2
+omni_range = 10.0
+
+[node name="Phase2Hook" type="Node" parent="."]
+script = ExtResource("e8")
+ActivateAtPhase = 2
+Reveals = Array[NodePath]([NodePath("../CrimsonVents/VentA"), NodePath("../CrimsonVents/VentB")])
+
+[node name="Phase3Hook" type="Node" parent="."]
+script = ExtResource("e8")
+ActivateAtPhase = 3
+Reveals = Array[NodePath]([NodePath("../CrimsonVents/VentC"), NodePath("../CrimsonVents/VentD")])
+
+[node name="MapPin" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 0, -20)
+script = ExtResource("maploc_39_5a")
+LocationId = "location.sunspire.mission"

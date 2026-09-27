@@ -35,7 +35,8 @@ def region_cells():
     from region_spec_ember import cells as ember
     from region_spec_frostfang import cells as frost
     from region_spec_ashen import cells as ashen
-    return list(ember()) + list(frost()) + list(ashen())
+    from region_spec_sunspire import cells as sun
+    return list(ember()) + list(frost()) + list(ashen()) + list(sun())
 
 
 def fmt(value: float) -> str:

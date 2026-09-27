@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="WorldGenerationProfileResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldGenerationProfileResource.cs" id="1_generation"]
+
+; THE SUNSPIRE DOMINION'S GEOGRAPHY RECIPE.
+;
+; Arid basin-and-mesa country: broad dry basins, a few steep-sided uplands (mesas are authored as
+; landforms in the spec; the generator's mountains only have to supply the broken skyline), little
+; erosion softening, and almost no generated water — RiverThreshold is set high so the drainage solve
+; draws only the odd dry wash. The one wet place, the oasis belt, is authored water.
+;
+; MasterSeed is the shared world seed; the realm's own band gives it its own ground.
+
+[resource]
+script = ExtResource("1_generation")
+MasterSeed = 3800
+GeneratorVersion = 2
+BaseElevation = 2.0
+MacroScale = 360.0
+MacroRelief = 9.0
+MountainScale = 180.0
+MountainPrevalence = 0.66
+MountainHeight = 26.0
+ValleyStrength = 4.0
+ErosionStrength = 0.35
+LocalRelief = 1.6
+DetailScale = 2.5
+RouteCalm = 60.0
+Temperature = 0.92
+Moisture = 0.2
+SnowLine = 180.0
+HydrologyCellSize = 12.0
+RiverThreshold = 900.0
+RiverWidth = 2.4
+RiverDepth = 0.8

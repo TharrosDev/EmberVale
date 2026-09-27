@@ -42,6 +42,7 @@ REGIONS = {
     "ember_crown": "data/regions/EmberCrown.tres",
     "frostfang_reach": "data/regions/FrostfangReach.tres",
     "ashen_wilds": "data/regions/AshenWilds.tres",
+    "sunspire": "data/regions/Sunspire.tres",
 }
 
 @dataclass

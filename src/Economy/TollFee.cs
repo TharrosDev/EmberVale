@@ -61,4 +61,5 @@ public static class TollFee
 
         return ShopPricing.CanAfford(fee, goldHeld) ? TollOutcome.Charged : TollOutcome.CannotAfford;
     }
+
 }

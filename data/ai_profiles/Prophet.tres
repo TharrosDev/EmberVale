@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AIProfileResource" load_steps=2 format=3 uid="uid://cmbrvlaiprophet"]
+
+[ext_resource type="Script" path="res://src/Enemies/AIProfileResource.cs" id="1_profile"]
+
+; The Crimson Prophet's opening stance: a caster who holds the middle of his sanctum and preaches fire
+; at range (ai.caster's standoff), but never retreats — a boss that flees at a third of its health
+; hands the fight to the adds. Phase three swaps him to ai.boss and he comes to you.
+[resource]
+script = ExtResource("1_profile")
+Id = "ai.prophet"
+VisionRange = 40.0
+FovDegrees = 140.0
+AlertRadius = 30.0
+StandoffRange = 11.0
+KiteDistance = 5.0
+AttackRange = 3.0
+PatrolRadius = 3.0
+RetreatHealthFraction = 0.0
+ActiveDistance = 90.0

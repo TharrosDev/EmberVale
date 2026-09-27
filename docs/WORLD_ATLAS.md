@@ -15,7 +15,7 @@ laid out: **geography first, civilisation second, routes third, places fourth, d
 | The Ember Crown | -520..520; -720..440 | built | 2026-09 world rebuild | Human heartland: the Crown Range, the Emberwash valley, the Tarn, farm belt and ash flats; the capital under the Iron Citadel. |
 | Frostfang Reach | -460..500; -2320..-1300 | built | 2026-09 world rebuild | Alpine clan country: the Stormbound Vale, one hold, three dragon territories, Stormcrown. |
 | The Ashen Wilds | 900..2100; -1100..300 | built | 2026-09 finish run | Cataclysm scar east beyond the Ashen Breach: plateaus, ravines, corrupted forest, the Beast Lord. |
-| The Sunspire Dominion | -800..800; 900..2300 | reserved | Phase 44J-44M | South beyond the Southmarch Gate: desert basins, jungle belt, the great libraries, the Crimson Prophet. |
+| The Sunspire Dominion | -800..800; 900..2300 | built | finish run (2026-09-27) | South beyond the Southmarch Gate: desert basins, jungle belt, the great libraries, the Crimson Prophet. |
 | The Pale Concord | -2600..-1500; -400..900 | hidden | Phase 44N-44Q | Found by story, never advertised. No neighbour, map, travel or search record may name it. |
 
 World coordinates: x east, z south, north is −z. Regions are separate coordinate spaces loaded one at
@@ -28,7 +28,7 @@ portal's side of the realm and a direction in dialogue agree, and no two realms 
 | --- | --- | --- | --- |
 | Ember Crown | Frostfang Reach | the Crown Pass portal on the saddle behind the Crossway (-150, -652) | the Stormbound Vale gap (-60, -1316) |
 | Ember Crown | Ashen Wilds | the Ashen Breach, the burnt cut through the eastern border hills (492, -282); hidden until `flag.iron_king_defeated` | the Breach Scar mouth (928, -298) |
-| Ember Crown | Sunspire (reserved) | the Southmarch Gate, the broken border gate at the caravan road's end (72, 402) | Phase 44K |
+| Ember Crown | Sunspire | the Southmarch Gate, the broken border gate at the caravan road's end (72, 402), opened by `flag.iron_king_defeated` | the caravan gap in the northern escarpment (60, 916) |
 
 The Pale Concord has no crossing and must not gain one before its story reveal (44K/44O). The atlas
 gate scans regions, map locations, quests, dialogue, shops, services, scenes and the locale for its
@@ -42,7 +42,7 @@ name.
 | `location.ember_crown.ashen_breach` | Ember Crown | built | the Ashen Wilds road's end (44G) |
 | `location.frostfang.stormcrown` | Frostfang Reach | built | Storm Tyrant territory (44E / 47E) |
 | `location.ashen.station` | Ashen Wilds | built | Ash Hunters' field station (42E, owned by 44H) |
-| `location.sunspire.library` | Sunspire | reserved | Veiled Archive great library (42G, owned by 44L) |
+| `location.sunspire.library` | Sunspire | built | Veiled Archive great library; Act III/IV story hub (two portal anchors reserved in `scenes/regions/sunspire/library.tscn`) |
 
 ## 2. Scale: travel time, not metres
 
@@ -136,6 +136,23 @@ Stormcrown's foot. Twenty-seven of thirty-six cells are empty high country.
 **Routes.** Primary: the vale road, the glacier road to the aerie. Secondary: the west road over the
 roost col, the east road through the burnt col. Loop: roost road → hunters' ridge route → aerie →
 glacier road → hold. Tertiary: the hunters' path to the lodge, the Ravenspur spur, the Stormcrown track.
+
+## 4b. The Sunspire Dominion
+
+**Geography.** Twenty compact cells (x -380..400, z 900..1790) in the north-west of the band. The caravan
+road enters through a gap in the northern escarpment, crosses the dry basins between two mesas and
+drops into the jungle belt, a shallow trough where the water gathers. The library mesa walls the west;
+a lone butte stands in the sand sea; the realm reddens south to the Crimson Mission's rise.
+
+| Place | Why here |
+| --- | --- |
+| Saffra Wells (`location.sunspire.wells`) | the only reliable water between the Southmarch Gate and the south, where the road off the basins meets the oasis |
+| The great library (`location.sunspire.library`) | the last reading hall of the buried city, kept out of the sand by the library mesa's lee |
+| The Crimson Mission (`location.sunspire.mission`) | the Prophet's seat at the far end of the pilgrims' road; its walled sanctum is the arena |
+
+**Routes.** Primary: the caravan road (gap -> Saffra Wells), the library road, the mission road.
+Secondary: the pilgrim track from the library to the mission, which closes the realm's one loop.
+Fourteen of twenty cells are empty country.
 
 ## 5. Places, pins and discovery
 

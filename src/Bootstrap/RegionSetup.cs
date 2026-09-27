@@ -87,7 +87,8 @@ internal static class RegionSetup
             }
 
             // 38M2: a region can say where its doors stand. Empty means the original "a few metres in
-            // front of the spawn", which is still right for a region with no gate of its own.
+            // front of the spawn", which is still right for a region with no gate of its own. Sunspire:
+            // the point is per neighbour now (RegionResource.NeighbourPortalPoints).
             var portal = new Entity
             {
                 Name = $"Portal_{neighbourId}",

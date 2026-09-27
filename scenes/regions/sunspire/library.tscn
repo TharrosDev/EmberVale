@@ -1,0 +1,260 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/props/bld_great_library.tscn" id="e1"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_bookcase.gltf" id="e2"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_shelf_arch.gltf" id="e3"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_table_large.gltf" id="e4"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_book_stand.gltf" id="e5"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_candles.gltf" id="e6"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_chandelier.gltf" id="e7"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="e8"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_wall.glb" id="e9"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_tome_stand.glb" id="e10"]
+[ext_resource type="Script" path="res://src/Entities/Entity.cs" id="e11"]
+[ext_resource type="Script" path="res://src/Animation/CharacterAnimationComponent.cs" id="e12"]
+[ext_resource type="Script" path="res://src/Animation/EquipmentPresentationComponent.cs" id="e13"]
+[ext_resource type="Script" path="res://src/Factions/FactionComponent.cs" id="e14"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueComponent.cs" id="e15"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/npc_hooded.glb" id="e16"]
+[ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="e17"]
+[ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
+
+; THE GREAT LIBRARY (sunspire.library) - the Veiled Archive's great library, the Act III/IV story hub.
+; Authored in the cell's CONTENT frame and moved to Cell.origin by tools/shift_cell_content.py.
+;
+; WARNING THE FORECOURT IS RESERVED. PaleConcordPortalAnchor and CelestialPortalAnchor are EMPTY markers
+; where the main-line integrator places two story portals. Keep them, keep the court clear (the scatter
+; exclusion Exclusion_library_court covers it), and put nothing interactive between them.
+;
+; The hall is ENTERABLE (tools/compose_building.py great_library 3 5 2 --hollow --wall-family stone
+; --door-index 1): door on its south face, the Archivist inside at the reading desk.
+
+[sub_resource type="NavigationMesh" id="NavMesh_library"]
+geometry_parsed_geometry_type = 1
+cell_size = 0.4
+cell_height = 0.3
+agent_height = 1.8
+agent_radius = 0.8
+agent_max_climb = 0.3
+agent_max_slope = 40.0
+
+[sub_resource type="CapsuleShape3D" id="Shape_npc"]
+radius = 0.4
+height = 1.8
+
+[sub_resource type="CylinderShape3D" id="Shape_pillar"]
+radius = 0.5
+height = 3.1
+
+[sub_resource type="BoxShape3D" id="Shape_ruinwall"]
+size = Vector3(4, 4, 0.88)
+
+[sub_resource type="CylinderShape3D" id="Shape_brazier"]
+radius = 0.5
+height = 1.2
+
+[node name="LibraryCell" type="Node3D"]
+metadata/content_offset = Vector2(45, -50)
+
+[node name="Nav" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("NavMesh_library")
+
+[node name="NavBaker" type="Node" parent="Nav"]
+script = ExtResource("e17")
+
+[node name="GreatLibrary" parent="Nav" instance=ExtResource("e1")]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 45, 0, -56)
+
+[node name="ShelfW0" type="Node3D" parent="Nav/GreatLibrary"]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -2.55, 0, -3.6)
+
+[node name="Model" parent="Nav/GreatLibrary/ShelfW0" instance=ExtResource("e2")]
+
+[node name="ShelfE0" type="Node3D" parent="Nav/GreatLibrary"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 2.55, 0, -3.6)
+
+[node name="Model" parent="Nav/GreatLibrary/ShelfE0" instance=ExtResource("e2")]
+
+[node name="ShelfW1" type="Node3D" parent="Nav/GreatLibrary"]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -2.55, 0, -1.2)
+
+[node name="Model" parent="Nav/GreatLibrary/ShelfW1" instance=ExtResource("e2")]
+
+[node name="ShelfE1" type="Node3D" parent="Nav/GreatLibrary"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 2.55, 0, -1.2)
+
+[node name="Model" parent="Nav/GreatLibrary/ShelfE1" instance=ExtResource("e2")]
+
+[node name="ShelfW2" type="Node3D" parent="Nav/GreatLibrary"]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -2.55, 0, 1.2)
+
+[node name="Model" parent="Nav/GreatLibrary/ShelfW2" instance=ExtResource("e2")]
+
+[node name="ShelfE2" type="Node3D" parent="Nav/GreatLibrary"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 2.55, 0, 1.2)
+
+[node name="Model" parent="Nav/GreatLibrary/ShelfE2" instance=ExtResource("e2")]
+
+[node name="ShelfBack" type="Node3D" parent="Nav/GreatLibrary"]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 0, 0, -4.55)
+
+[node name="Model" parent="Nav/GreatLibrary/ShelfBack" instance=ExtResource("e3")]
+
+[node name="ReadingDesk" type="Node3D" parent="Nav/GreatLibrary"]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 0, 0, -1.6)
+
+[node name="Model" parent="Nav/GreatLibrary/ReadingDesk" instance=ExtResource("e4")]
+
+[node name="Lectern" type="Node3D" parent="Nav/GreatLibrary"]
+transform = Transform3D(-1, 0, -0, 0, 1, 0, 0, 0, -1, 0, 0, 1.6)
+
+[node name="Model" parent="Nav/GreatLibrary/Lectern" instance=ExtResource("e5")]
+
+[node name="Candles" type="Node3D" parent="Nav/GreatLibrary"]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 0.6, 0.8, -1.6)
+
+[node name="Model" parent="Nav/GreatLibrary/Candles" instance=ExtResource("e6")]
+
+[node name="Chandelier" type="Node3D" parent="Nav/GreatLibrary"]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 0, 4.6, 0)
+
+[node name="Model" parent="Nav/GreatLibrary/Chandelier" instance=ExtResource("e7")]
+
+[node name="HallLight" type="OmniLight3D" parent="Nav/GreatLibrary"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.6, -0.5)
+light_color = Color(1, 0.82, 0.55, 1)
+light_energy = 1.8
+omni_range = 9.0
+
+[node name="Pillar0" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 32, 0, -54)
+
+[node name="Model" parent="Nav/Pillar0" instance=ExtResource("e8")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/Pillar0"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Pillar0/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0)
+shape = SubResource("Shape_pillar")
+
+[node name="Pillar1" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 33, 0, -41)
+
+[node name="Model" parent="Nav/Pillar1" instance=ExtResource("e8")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/Pillar1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Pillar1/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0)
+shape = SubResource("Shape_pillar")
+
+[node name="Pillar2" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 58, 0, -55)
+
+[node name="Model" parent="Nav/Pillar2" instance=ExtResource("e8")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/Pillar2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Pillar2/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0)
+shape = SubResource("Shape_pillar")
+
+[node name="Pillar3" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 57, 0, -40)
+
+[node name="Model" parent="Nav/Pillar3" instance=ExtResource("e8")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/Pillar3"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Pillar3/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0)
+shape = SubResource("Shape_pillar")
+
+[node name="Pillar4" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 39, 0, -36)
+
+[node name="Model" parent="Nav/Pillar4" instance=ExtResource("e8")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/Pillar4"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Pillar4/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0)
+shape = SubResource("Shape_pillar")
+
+[node name="Pillar5" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 51, 0, -36)
+
+[node name="Model" parent="Nav/Pillar5" instance=ExtResource("e8")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/Pillar5"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Pillar5/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0)
+shape = SubResource("Shape_pillar")
+
+[node name="RuinWallW" type="Node3D" parent="Nav"]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 30, 0, -47)
+
+[node name="Model" parent="Nav/RuinWallW" instance=ExtResource("e9")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RuinWallW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RuinWallW/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
+shape = SubResource("Shape_ruinwall")
+
+[node name="RuinWallE" type="Node3D" parent="Nav"]
+transform = Transform3D(0.1736, 0, 0.9848, 0, 1, 0, -0.9848, 0, 0.1736, 60.5, 0, -48)
+
+[node name="Model" parent="Nav/RuinWallE" instance=ExtResource("e9")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RuinWallE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RuinWallE/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
+shape = SubResource("Shape_ruinwall")
+
+[node name="TomeStand" type="Node3D" parent="Nav"]
+transform = Transform3D(-1, 0, -0, 0, 1, 0, 0, 0, -1, 41, 0, -48.5)
+
+[node name="Model" parent="Nav/TomeStand" instance=ExtResource("e10")]
+
+[node name="PaleConcordPortalAnchor" type="Node3D" parent="."]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 37, 0, -42)
+
+[node name="CelestialPortalAnchor" type="Node3D" parent="."]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 53, 0, -42)
+
+[node name="Archivist" type="Node3D" parent="."]
+transform = Transform3D(1, 0, -0, 0, 1, 0, 0, 0, 1, 45, 0, -59.2)
+script = ExtResource("e11")
+DisplayName = "Archivist Seren Adaru"
+TemplateId = "npc.sunspire_archivist"
+
+[node name="Model" parent="Archivist" instance=ExtResource("e16")]
+
+[node name="Animation" type="Node" parent="Archivist"]
+script = ExtResource("e12")
+BodyMeshPath = "Model"
+
+[node name="EquipmentVisuals" type="Node" parent="Archivist"]
+script = ExtResource("e13")
+BodyMeshPath = "Model"
+
+[node name="Collider" type="StaticBody3D" parent="Archivist"]
+
+[node name="Shape" type="CollisionShape3D" parent="Archivist/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Shape_npc")
+
+[node name="Faction" type="Node" parent="Archivist"]
+script = ExtResource("e14")
+FactionId = "faction.veiled_archive"
+
+[node name="Dialogue" type="Node" parent="Archivist"]
+script = ExtResource("e15")
+DialogueId = "dialogue.sunspire_archivist"
+
+[node name="MapPin" type="Node3D" parent="Nav/GreatLibrary"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.sunspire.library"

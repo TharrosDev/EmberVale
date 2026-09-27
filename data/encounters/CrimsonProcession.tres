@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="EncounterResource" format=3]
+
+[ext_resource type="Script" path="res://src/World/EncounterResource.cs" id="1_encounter"]
+
+; The Sunspire Dominion's own roster, drawn from existing archetypes: the Prophet's worshippers, his
+; fire-taken thralls, and what nests in the buried city under the sand.
+[resource]
+script = ExtResource("1_encounter")
+Id = "encounter.crimson_procession"
+DisplayName = "Crimson Procession"
+EnemyTemplateId = "enemy.cultist"
+MinCount = 2
+MaxCount = 3
+SelectionWeight = 1.0
+CorruptionChance = 0.4
+RegionIds = Array[String](["region.sunspire"])
+AtDawn = true
+AtDay = true
+AtDusk = true
+AtNight = true

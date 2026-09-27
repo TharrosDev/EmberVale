@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="ScheduleResource" format=3]
+
+[ext_resource type="Script" path="res://src/Npc/ScheduleResource.cs" id="1_sched"]
+[ext_resource type="Script" path="res://src/Npc/ScheduleEntry.cs" id="2_entry"]
+
+; Saffra Wells (sunspire.wells), cell-local. tools/shift_cell_content.py moves these with the scene.
+[sub_resource type="Resource" id="e_0"]
+script = ExtResource("2_entry")
+StartHour = 5
+Activity = "Drawing water"
+Destination = Vector3(39, 0, -57)
+
+[sub_resource type="Resource" id="e_1"]
+script = ExtResource("2_entry")
+StartHour = 12
+Activity = "Resting in the shade"
+Destination = Vector3(42, 0, -51)
+
+[sub_resource type="Resource" id="e_2"]
+script = ExtResource("2_entry")
+StartHour = 17
+Activity = "Drawing water"
+Destination = Vector3(39, 0, -57)
+
+[sub_resource type="Resource" id="e_3"]
+script = ExtResource("2_entry")
+StartHour = 22
+Activity = "Asleep"
+Destination = Vector3(50, 0, -63)
+
+[resource]
+script = ExtResource("1_sched")
+Id = "schedule.sunspire_wellkeeper"
+Entries = Array[Resource]([SubResource("e_0"), SubResource("e_1"), SubResource("e_2"), SubResource("e_3")])
