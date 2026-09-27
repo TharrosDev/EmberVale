@@ -183,9 +183,10 @@ public partial class EncounterDirector : Node3D
     {
         var pool = new List<EncounterResource>();
         float total = 0f;
+        bool scoped = RegionDatabase.Get(regionId)?.ScopedContentOnly == true;
         foreach (EncounterResource e in EncounterDatabase.All)
         {
-            if (!e.AllowedIn(phase) || !e.AllowedIn(regionId))
+            if (!e.AllowedIn(phase) || !e.AllowedIn(regionId) || (scoped && e.RegionIds.Count == 0))
             {
                 continue;
             }

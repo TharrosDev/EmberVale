@@ -382,9 +382,10 @@ public partial class WorldEventDirector : Node3D, ISaveable
     {
         var pool = new List<WorldEventResource>();
         float total = 0f;
+        bool scoped = RegionDatabase.Get(regionId)?.ScopedContentOnly == true;
         foreach (WorldEventResource r in WorldEventDatabase.All)
         {
-            if (!r.AllowedIn(phase) || !r.AllowedIn(regionId) || OnCooldown(r.Id))
+            if (!r.AllowedIn(phase) || !r.AllowedIn(regionId) || OnCooldown(r.Id) || (scoped && r.RegionIds.Count == 0))
             {
                 continue;
             }

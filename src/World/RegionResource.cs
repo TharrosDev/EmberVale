@@ -133,6 +133,11 @@ public partial class RegionResource : Resource
     /// <summary>Ids of directly-reachable neighbouring regions (the map + fast-travel adjacency).</summary>
     [Export] public Godot.Collections.Array<string> Neighbours { get; set; } = new();
 
+    /// <summary>When true, only encounters and world events that name this region in their
+    /// <c>RegionIds</c> roll here; the realm-agnostic ones (goblins, wolves, bandits) stay out. For a
+    /// realm sealed off from the rest of the world.</summary>
+    [Export] public bool ScopedContentOnly { get; set; }
+
     [ExportGroup("Toll")]
 
     /// <summary>

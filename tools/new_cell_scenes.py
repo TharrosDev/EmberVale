@@ -49,8 +49,9 @@ def main(argv: list[str]) -> int:
     from region_spec_frostfang import cells as frost
     from region_spec_ashen import cells as ashen
     from region_spec_sunspire import cells as sun
+    from region_spec_pale_concord import cells as pale
     missing = 0
-    for cell in list(ember()) + list(frost()) + list(ashen()) + list(sun()):
+    for cell in list(ember()) + list(frost()) + list(ashen()) + list(sun()) + list(pale()):
         path = ROOT / cell.scene.replace("res://", "")
         if path.exists():
             continue

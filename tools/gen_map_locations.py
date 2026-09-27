@@ -307,6 +307,19 @@ add("ashen_wilds/hunters_rise", "ashen.station", "Outpost", ".", "The Ash Hunter
 add("ashen_wilds/beast_lair", "ashen.beast_lair", "Arena", ".", "The Beast Lord's Plateau", tier="Primary",
     desc="A levelled shelf under the northern wall where the Fourth Flamebearer holds his ground.")
 
+# ── The hidden realm (finish run) ────────────────────────────────────────────────────────────
+# ⚠️ SECRECY: every place here carries required_flag = the reveal flag, so no map, list or search
+# surfaces it before the story opens the realm (tools/world_atlas.py fails an ungated one). Its tails
+# are pale.* so their locale rows fall under the atlas gate's post-reveal prefix.
+PALE_REVEALED = "flag.pale_concord_revealed"
+add("pale_concord/landing", "pale.landing", "Gate", ".", "The Still Quay", reveal=True,
+    required_flag=PALE_REVEALED)
+add("pale_concord/city", "pale.city", "Town", ".", "Vesperhold", reveal=True, required_flag=PALE_REVEALED,
+    desc="The preserved city, kept in perfect repair at an evening that never ends.")
+add("pale_concord/palace", "pale.palace", "Arena", ".", "The Hollow Court", required_flag=PALE_REVEALED,
+    desc="The Hollow Queen's palace at the end of the processional way.")
+
+
 def _cell_ids():
     """scene stem -> cell id, read from the region specs (2026-09 world rebuild: the hand list of
     fifteen cells here went stale the day the realm grew to fifty-two)."""
@@ -315,8 +328,9 @@ def _cell_ids():
     from region_spec_frostfang import cells as frost
     from region_spec_ashen import cells as ashen
     from region_spec_sunspire import cells as sun
+    from region_spec_pale_concord import cells as pale
     out = {}
-    for cell in list(ember()) + list(frost()) + list(ashen()) + list(sun()):
+    for cell in list(ember()) + list(frost()) + list(ashen()) + list(sun()) + list(pale()):
         stem = cell.scene.replace("res://scenes/regions/", "").replace(".tscn", "")
         out[stem] = cell.cell_id
     return out

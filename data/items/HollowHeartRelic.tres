@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemResource" load_steps=2 format=3 uid="uid://cmbrvlithollowhrt"]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.relic.hollow_heart"
+DisplayName = "Heart of the Hollow Queen"
+Description = "A fragment of fallen divinity, cold as a closed tomb. It does not beat. It waits, the way everything she kept waited, and it would very much like to be kept."
+Type = 0
+Rarity = 4
+MaxStack = 1
+Weight = 1.0
+Value = 500
+TradeTags = Array[String](["relic"])

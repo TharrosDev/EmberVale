@@ -5691,6 +5691,7 @@ public static class ContentValidator
             Narrative.SliceDirector.CompletedFlag,
             Narrative.SliceDirector.AbsorbedFlag,
             UI.EndingSequence.CompleteFlag,
+            Narrative.HiddenRealmReveal.RevealedFlag,
         };
 
         CollectSceneAuthoredFlags(written);

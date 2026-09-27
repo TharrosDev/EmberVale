@@ -26,6 +26,7 @@ extends SceneTree
 const REGIONS := [
 	"res://data/regions/EmberCrown.tres",
 	"res://data/regions/FrostfangReach.tres",
+	"res://data/regions/PaleConcord.tres",
 ]
 
 # A collider at least this big on two horizontal axes is "building-sized": something the player will

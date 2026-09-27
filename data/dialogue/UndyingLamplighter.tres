@@ -1,0 +1,68 @@
+[gd_resource type="Resource" script_class="DialogueResource" format=3]
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+; An undying resident of the hidden realm. Condition 5/6 = HasFlag/MissingFlag on the
+; Queen's defeat: before it they speak of the bargain and the Court; after it, of release.
+; Every key is under pale. (post-reveal text; see tools/world_atlas.py).
+
+[sub_resource type="Resource" id="ch_bargain"]
+script = ExtResource("3_choice")
+Text = "pale.dlg.lamplighter.c_bargain"
+Goto = "bargain"
+
+[sub_resource type="Resource" id="ch_queen"]
+script = ExtResource("3_choice")
+Text = "pale.dlg.lamplighter.c_queen"
+Goto = "queen"
+Condition = 6
+ConditionArg = "flag.hollow_queen_defeated"
+
+[sub_resource type="Resource" id="ch_freed"]
+script = ExtResource("3_choice")
+Text = "pale.dlg.lamplighter.c_freed"
+Goto = "freed"
+Condition = 5
+ConditionArg = "flag.hollow_queen_defeated"
+
+[sub_resource type="Resource" id="ch_bye"]
+script = ExtResource("3_choice")
+Text = "pale.dlg.lamplighter.c_bye"
+
+[sub_resource type="Resource" id="ch_back"]
+script = ExtResource("3_choice")
+Text = "pale.dlg.lamplighter.c_back"
+Goto = "root"
+
+[sub_resource type="Resource" id="node_root"]
+script = ExtResource("2_node")
+Id = "root"
+Text = "pale.dlg.lamplighter.root"
+Choices = Array[Resource]([SubResource("ch_bargain"), SubResource("ch_queen"), SubResource("ch_freed"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_bargain"]
+script = ExtResource("2_node")
+Id = "bargain"
+Text = "pale.dlg.lamplighter.bargain"
+Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_queen"]
+script = ExtResource("2_node")
+Id = "queen"
+Text = "pale.dlg.lamplighter.queen"
+Choices = Array[Resource]([SubResource("ch_back"), SubResource("ch_bye")])
+
+[sub_resource type="Resource" id="node_freed"]
+script = ExtResource("2_node")
+Id = "freed"
+Text = "pale.dlg.lamplighter.freed"
+Choices = Array[Resource]([SubResource("ch_bye")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "dialogue.undying_lamplighter"
+SpeakerName = "pale.dlg.lamplighter.speaker"
+StartNodeId = "root"
+Nodes = Array[Resource]([SubResource("node_root"), SubResource("node_bargain"), SubResource("node_queen"), SubResource("node_freed")])

@@ -29,6 +29,16 @@
   library `location.sunspire.library` (enterable; empty story anchors `PaleConcordPortalAnchor` /
   `CelestialPortalAnchor` in `scenes/regions/sunspire/library.tscn`), and the Crimson Mission arena with
   `boss.crimson_prophet` (placeholder cultist body at 1.35x).
+- **Finish run: the hidden realm (`region.pale_concord`, 2026-09-27).** Twelve cells in its atlas
+  band (x -2360..-1760, z -160..640): the Still Quay landing, the preserved city Vesperhold with four
+  undying residents (frozen schedules; dialogue on the bargain, changing after the Queen falls), and
+  the Hollow Court with the Hollow Queen's brazier arena (`boss.hollow_queen`, three phases, bone
+  knight / husk waves, phase three switches to `ai.boss` + frost nova). Dusk is presentation only
+  (`WorldEnvironmentProfileResource.FixedSkyHour`); `RegionResource.ScopedContentOnly` keeps the
+  realm-agnostic encounters out. **Secrecy:** `UnlockFlagId = flag.pale_concord_revealed` gates the
+  Sunspire library portal in; `HiddenRealmReveal` sets it once the Storm Tyrant, Beast Lord and
+  Crimson Prophet are all defeated (also on load). The return portal targets `region.sunspire` once
+  that region exists (re-run `gen_regions.py`), else the Ember Crown. Placeholder bodies (no Meshy).
 
 - **Integration 1 checkpoint (2026-09-14), `claude/integration-1`.** Merged `w1-fixes`, 42C
   (Dawnwardens recruitment/probation), 42E (Ash Hunters field induction) and 42I (Iron Syndicate

@@ -124,6 +124,7 @@ public sealed partial class GameSession : Node3D, IServiceScopeHost
         AddChild(Opening);
         ServiceScope.RegisterOwned(Opening, Opening);
         AddChild(new SliceDirector { Name = "Slice" });
+        AddChild(new HiddenRealmReveal { Name = "HiddenRealmReveal" });
         AddChild(new ClosingSequence());
         AddChild(new EndingSequence { Name = "Ending" });
 

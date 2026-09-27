@@ -1,0 +1,199 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://src/Entities/Entity.cs" id="s_entity"]
+[ext_resource type="Script" path="res://src/Enemies/BossSummonComponent.cs" id="s_summon"]
+[ext_resource type="Script" path="res://src/Enemies/ArenaHookComponent.cs" id="s_hook"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="prp_brazier"]
+[ext_resource type="PackedScene" path="res://assets/models/architecture/bld_castle_fortress.glb" id="castle"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="prp_ruin_pillar"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_lamp_post.glb" id="prp_lamp_post"]
+[ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="s_navbaker"]
+[ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
+
+; THE HOLLOW COURT (hidden realm) — the Hollow Queen's palace and the ring in its forecourt.
+; Authored in the content frame; tools/shift_cell_content.py moves it to the spec's origin.
+;
+; ⚠️ LOAD-BEARING NODES, mirrored from scenes/regions/ember_crown/arena.tscn:
+;   Brazier/Summon     BossSummonComponent — the Queen rises at brazier + SpawnOffset, the ring centre
+;   AddSpawns/Spawn*   found by GROUP "boss_add_spawn"
+;   GraveLights/*      hidden OmniLights the phase hooks reveal; Phase2Hook/Phase3Hook reset on death
+; ⚠️ The ring (content (0, 10), 14 m) stays bare. The hall is a landmark hull, not an interior:
+; the Iron Citadel's fortress model at 0.55 scale (placeholder until the realm gets its own palace).
+
+[sub_resource type="NavigationMesh" id="NavMesh_palace"]
+geometry_parsed_geometry_type = 1
+cell_size = 0.4
+cell_height = 0.3
+agent_height = 1.8
+agent_radius = 0.8
+agent_max_climb = 0.3
+agent_max_slope = 40.0
+
+[sub_resource type="BoxShape3D" id="Shape_hall"]
+size = Vector3(30.4, 19.4, 28)
+
+[sub_resource type="BoxShape3D" id="Shape_brazier"]
+size = Vector3(1, 1.4, 1)
+
+[sub_resource type="BoxShape3D" id="Box_prp_ruin_pillar"]
+size = Vector3(1.2, 4.0, 1.2)
+
+[node name="PalaceCell" type="Node3D"]
+metadata/content_offset = Vector2(-35, 25)
+
+[node name="Nav" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("NavMesh_palace")
+
+[node name="NavBaker" type="Node" parent="Nav"]
+script = ExtResource("s_navbaker")
+
+[node name="Hall" type="Node3D" parent="Nav" groups=["world_landmark"]]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -35, 0, -5)
+
+[node name="Model" parent="Nav/Hall" instance=ExtResource("castle")]
+transform = Transform3D(0.55, 0, 0, 0, 0.55, 0, 0, 0, 0.55, 0, 0, 0)
+
+[node name="Collider" type="StaticBody3D" parent="Nav/Hall"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/Hall/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 9.7, 0)
+shape = SubResource("Shape_hall")
+
+[node name="RingPillar0" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -47, 0, 27)
+
+[node name="Model" parent="Nav/RingPillar0" instance=ExtResource("prp_ruin_pillar")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RingPillar0"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RingPillar0/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Box_prp_ruin_pillar")
+
+[node name="RingPillar1" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -23, 0, 27)
+
+[node name="Model" parent="Nav/RingPillar1" instance=ExtResource("prp_ruin_pillar")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RingPillar1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RingPillar1/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Box_prp_ruin_pillar")
+
+[node name="RingPillar2" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -47, 0, 45)
+
+[node name="Model" parent="Nav/RingPillar2" instance=ExtResource("prp_ruin_pillar")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RingPillar2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RingPillar2/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Box_prp_ruin_pillar")
+
+[node name="RingPillar3" type="Node3D" parent="Nav"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -23, 0, 45)
+
+[node name="Model" parent="Nav/RingPillar3" instance=ExtResource("prp_ruin_pillar")]
+
+[node name="Collider" type="StaticBody3D" parent="Nav/RingPillar3"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/RingPillar3/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Box_prp_ruin_pillar")
+
+[node name="GateLamp0" parent="Nav" instance=ExtResource("prp_lamp_post")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -41.5, 0, 55)
+
+[node name="GateLamp1" parent="Nav" instance=ExtResource("prp_lamp_post")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -28.5, 0, 55)
+
+[node name="Brazier" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -28.5, 0, 49)
+script = ExtResource("s_entity")
+DisplayName = "Pale Brazier"
+
+[node name="Collider" type="StaticBody3D" parent="Brazier"]
+
+[node name="Shape" type="CollisionShape3D" parent="Brazier/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("Shape_brazier")
+
+[node name="FireLight" type="OmniLight3D" parent="Brazier"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+light_color = Color(0.7, 0.66, 1, 1)
+light_energy = 2.0
+omni_range = 7.0
+
+[node name="Summon" type="Node" parent="Brazier"]
+script = ExtResource("s_summon")
+SpawnOffset = Vector3(-6.5, 0, -14)
+RequiredQuestId = ""
+BossTemplateId = "enemy.hollow_queen"
+DefeatedFlagId = "flag.hollow_queen_defeated"
+PromptKey = "pale.boss.challenge_prompt"
+LockedPromptKey = "pale.boss.challenge_locked"
+
+[node name="Model" parent="Brazier" instance=ExtResource("prp_brazier")]
+
+[node name="AddSpawns" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -35, 0, 35)
+
+[node name="SpawnNE" type="Marker3D" parent="AddSpawns" groups=["boss_add_spawn"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, -6)
+
+[node name="SpawnNW" type="Marker3D" parent="AddSpawns" groups=["boss_add_spawn"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, -6)
+
+[node name="SpawnSE" type="Marker3D" parent="AddSpawns" groups=["boss_add_spawn"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 7)
+
+[node name="SpawnSW" type="Marker3D" parent="AddSpawns" groups=["boss_add_spawn"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, 7)
+
+[node name="GraveLights" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -35, 0, 35)
+
+[node name="LightA" type="OmniLight3D" parent="GraveLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0.6, -8)
+visible = false
+light_color = Color(0.6, 0.55, 1, 1)
+light_energy = 2.4
+omni_range = 10.0
+
+[node name="LightB" type="OmniLight3D" parent="GraveLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0.6, -8)
+visible = false
+light_color = Color(0.6, 0.55, 1, 1)
+light_energy = 2.4
+omni_range = 10.0
+
+[node name="LightC" type="OmniLight3D" parent="GraveLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0.6, 8)
+visible = false
+light_color = Color(0.6, 0.55, 1, 1)
+light_energy = 3.2
+omni_range = 10.0
+
+[node name="LightD" type="OmniLight3D" parent="GraveLights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0.6, 8)
+visible = false
+light_color = Color(0.6, 0.55, 1, 1)
+light_energy = 3.2
+omni_range = 10.0
+
+[node name="Phase2Hook" type="Node" parent="."]
+script = ExtResource("s_hook")
+ActivateAtPhase = 2
+Reveals = Array[NodePath]([NodePath("../GraveLights/LightA"), NodePath("../GraveLights/LightB")])
+
+[node name="Phase3Hook" type="Node" parent="."]
+script = ExtResource("s_hook")
+ActivateAtPhase = 3
+Reveals = Array[NodePath]([NodePath("../GraveLights/LightC"), NodePath("../GraveLights/LightD")])
+
+[node name="MapPin" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -35, 0, 25)
+script = ExtResource("maploc_39_5a")
+LocationId = "location.pale.palace"

@@ -178,6 +178,15 @@ public static class NpcVisualKit
             Chest("WorkApron"), Hips("RopeCoil"), Hips("Keys")),
         ["npc.sunspire_pilgrim"] = P("sunspire_pilgrim", Build.Slim,
             Chest("OuterVest"), Hips("BeltPouches")),
+        // The hidden realm's undying residents: dressed for a day four hundred years ago.
+        ["npc.undying_steward"] = P("undying_steward", Build.Slim,
+            Chest("MerchantMantle"), Chest("ShoulderCape"), Hips("ScrollCase")),
+        ["npc.undying_lamplighter"] = P("undying_lamplighter", Build.Standard,
+            Chest("OuterVest"), Hips("Keys"), Hips("BeltPouches")),
+        ["npc.undying_baker"] = P("undying_baker", Build.Broad,
+            Chest("WorkApron"), Hips("BeltPouches")),
+        ["npc.undying_clockkeeper"] = P("undying_clockkeeper", Build.Slim,
+            Chest("OuterVest"), Hips("Ledger"), Hips("Keys")),
 
         // Mine and Landing workers/traders.
         ["npc.bregan"] = P("mine_foreman", Build.Broad,
