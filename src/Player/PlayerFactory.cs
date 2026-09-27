@@ -94,7 +94,7 @@ public static class PlayerFactory
             });
         }
 
-        AttributeSet attributes = GD.Load<AttributeSet>(PlayerAttributesPath) ?? AttributeSet.CreateDefault();
+        AttributeSet attributes = ResidentResources.Load<AttributeSet>(PlayerAttributesPath) ?? AttributeSet.CreateDefault();
         player.AddChild(new StatsComponent { Name = "Stats", Attributes = attributes, HealthRegen = 3f });
         player.AddChild(new LocomotionComponent { Name = "Locomotion" });
         player.AddChild(new FootstepComponent { Name = "Footsteps" });
@@ -140,7 +140,7 @@ public static class PlayerFactory
         });
         player.AddChild(hitbox);
 
-        WeaponResource? weapon = GD.Load<WeaponResource>(StartingWeaponPath);
+        WeaponResource? weapon = ResidentResources.Load<WeaponResource>(StartingWeaponPath);
         player.AddChild(new CharacterActionComponent
         {
             Name = "Weapon",

@@ -84,7 +84,7 @@ public static class AshenAcolyteFactory
             AvoidanceEnabled = false,
         });
 
-        AttributeSet attributes = GD.Load<AttributeSet>(AttributesPath) ?? AttributeSet.CreateDefault();
+        AttributeSet attributes = ResidentResources.Load<AttributeSet>(AttributesPath) ?? AttributeSet.CreateDefault();
         enemy.AddChild(new StatsComponent { Name = "Stats", Attributes = attributes, StaminaRegen = 10f, ManaRegen = 6f });
         enemy.AddChild(new CombatComponent { Name = "Combat", Team = HostileTeam, MaxPoise = 26f });
         enemy.AddChild(new LocomotionComponent { Name = "Locomotion" });

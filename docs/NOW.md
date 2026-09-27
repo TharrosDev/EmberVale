@@ -15,16 +15,25 @@
   the retrospectives; each landed its rank-one arc with zero new mechanism (dialogue conditions,
   quest chains and existing map locations only). Three checkpoint fixes on top: 42C's probation
   after-lines were reachable mid-quest (fixed by nesting `QuestCompleted` outside the branch flag,
-  not inside — the condition the node text presupposes goes outermost); 42I's `Goto` fired even when
-  `JoinGuild` refused a rejoin (`DialogueCondition.GuildCanJoin` (16) now required on it); and an
-  intermittent lifecycle FATAL. **Root cause:** the GC finalizer thread disposed the old session's
-  wrapper of a cached C# `Resource` (the progression curve) on the same frame the next session's
-  `Build()` re-`GD.Load`ed it — a race between `DestroySession` and `BeginSession`, not this
-  content. Fix: `BeginSession` now blocks on `GC.Collect`/`WaitForPendingFinalizers` after
-  `DestroySession`. ⚠️ **Not fully closed** — see the verification table: `--lifecycle` still failed
-  2 of 3 runs after the fix in this checkpoint's own gate pass, though a bisect in a detached
-  worktree found `main` and `w1-fixes` tip both 5/5 and `42i-iron-syndicate` tip 0/4, so the race is
-  real and content-adjacent, not yet fully eliminated.
+  not inside — the condition the node text presupposes goes outermost); and 42I's `Goto` fired even
+  when `JoinGuild` refused a rejoin (`DialogueCondition.GuildCanJoin` (16) now required on it).
+
+- **The lifecycle FATAL is closed (2026-09-25, `claude/lifecycle-finalizer-fix`).** `--lifecycle`
+  used to die intermittently with `gchandle.is_released()` at `mono_object_disposed_baseref`
+  (`csharp_script.cpp:1788`) from `GodotObject.Finalize`. **Root cause, read from the 4.7 engine
+  source and reproduced on demand:** a C# `Resource` loaded by path and held only by managed code
+  sits in Godot's `ResourceCache` behind a *weak* GC handle. Once the last managed holder goes, the
+  GC collects the wrapper but the native object stays cached until the finalizer thread runs. A
+  `GD.Load` of that path in the gap gets the same native object; `CSharpInstance::refcount_incremented`
+  finds the weak target dead, clears the handle and returns, and the finalizer then trips the crash
+  condition. A loop that loads an `AttributeSet`, drops it and calls `GC.Collect` crashed 3 of 3 runs
+  with exactly this signature, and 0 of 3 with the fix. Session factories (attributes, weapons,
+  curves, loot tables), `SkyController` and the map's prepared-region lookups all loaded that way,
+  which is why a content change could move the odds. **Fix at the load:** `ResidentResources.Load<T>`
+  holds every path-loaded project Resource for the process (the content databases already did this
+  for what they index), and `ResidentResourceTests` fails a bare `GD.Load` of a project Resource type.
+  The old `GC.Collect` in `BeginSession` is gone: it ran before the old session was even freed, so it
+  could never have closed the window.
 
 - **The 2026-09 world rebuild — implemented on `claude/world-rebuild` (2026-09-13).** A world layout
   rebuild, not a systems refactor: geography first, then settlements, routes, POIs. The Ember Crown is
@@ -40,7 +49,8 @@
   passes with Ember 18.7 ms mean / 30.3 ms worst / 1.11 M prims / 679 draws and Frostfang 11.4 / 15.4
   ms (`20260914T034533-2a843d1ade`) — the frame budget is a soft target; 48 journey viewpoints reviewed
   with `tools/journey_shots.gd`. **Open:** the world visual baseline predates the new lattice and needs
-  a reviewed re-baseline; `view-switch`/`ranged` probes print PASS and occasionally crash at exit.
+  a reviewed re-baseline. The `view-switch`/`ranged` exit crash did not reproduce on 2026-09-25:
+  3/3 clean headless on `main` before the lifecycle fix, 3/3 after, plus one rendered run each.
 
 - **Rendering/environment overhaul — implemented on `codex/rendering-environment-overhaul`,
   validation in progress (2026-09-08).** The existing SkyController now composes the authored day
@@ -50,7 +60,7 @@
   pass. Latest engine run: **33/33 gates pass**, `20260908T173028-c7c1906817`; rendered route:
   **21 captures, zero assertions**, `20260908T173727-bc1462f3b3`, including Ashfall's real interior
   and outside-doorway shelter recovery. Navigation edge-sync and rendered-exit ObjectDB warnings
-  remain. This is not production sign-off: full/negative and baseline visual gates remain pending,
+  remain, diagnosed (2026-09-25) and not fixed — see "Known warnings" below. This is not production sign-off: full/negative and baseline visual gates remain pending,
   broad hardware/per-effect profiling is incomplete, and wilderness geometry still needs visual
   review. Source models/rigs remain untouched. Integration was authorized by the maintainer after
   reviewing these results and remaining limitations.
@@ -289,9 +299,8 @@
   closed; 42G/H (Veiled Archive), 42J (Iron Syndicate finale) and 42K/L (Emberbound) have not started;
   42M is the five-guild integration pass that closes the whole layer. See `docs/playbook/phase-42.md`
   for each one's goal/build/verify.
-  ⚠️ Also open, from before this checkpoint: chase the `--lifecycle` finalizer-race intermittency
-  above to a durable fix (not just the mitigation), and give the 2026-09 world rebuild's visual
-  baseline a reviewed re-baseline.
+  ⚠️ Also open, from before this checkpoint: give the 2026-09 world rebuild's visual baseline a
+  reviewed re-baseline.
 
 Read [`docs/WORLD_AUTHORING.md`](WORLD_AUTHORING.md) before touching a cell. `data/regions/*.tres`
 is **generated** — edit `tools/region_spec_<region>.py` and run `python tools/gen_regions.py`.
@@ -424,6 +433,9 @@ it is fully closed — see the "Where we are" entry above and NEXT.
 32. ⚠️ **ONE ITEM HAS ONE MODEL, AND THE FIELD LIVES ON THE BASE `ItemResource`.** The hand, the
     ground and the trophy plinth all read `WorldModelPath`. Putting it on a subclass is how a potion
     on the floor became a glowing cube. Empty is legal and means the rarity-tinted primitive.
+33. ⚠️ **A PROJECT C# `Resource` LOADED BY PATH IS HELD FOR THE PROCESS.** Use
+    `ResidentResources.Load<T>`; a bare `GD.Load` lets the wrapper be collected while Godot still
+    caches the object, and reloading it is the finalizer FATAL. `ResidentResourceTests` fails it.
 
 ## Commands worth knowing
 

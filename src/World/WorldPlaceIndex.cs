@@ -1,3 +1,4 @@
+using Embervale.Core;
 using Godot;
 
 namespace Embervale.World;
@@ -66,7 +67,7 @@ public static class WorldPlaceIndex
     {
         string path = WorldBakePaths.Region(regionId);
         if (string.IsNullOrEmpty(regionId) || !ResourceLoader.Exists(path) ||
-            GD.Load<WorldPreparedRegionResource>(path) is not { } prepared)
+            ResidentResources.Load<WorldPreparedRegionResource>(path) is not { } prepared)
         {
             return null;
         }

@@ -1,3 +1,4 @@
+using Embervale.Core;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Entities;
@@ -51,7 +52,7 @@ public partial class ProgressionComponent : EntityComponent, ISaveable
     {
         if (Curve == null && !string.IsNullOrEmpty(CurvePath))
         {
-            Curve = GD.Load<ProgressionResource>(CurvePath);
+            Curve = ResidentResources.Load<ProgressionResource>(CurvePath);
             if (Curve == null)
             {
                 Log.Warn($"ProgressionComponent could not load curve '{CurvePath}'; using the default progression.");

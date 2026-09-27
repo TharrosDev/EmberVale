@@ -1,5 +1,6 @@
 using Embervale.Combat;
 using System.Collections.Generic;
+using Embervale.Core;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Core.Services;
@@ -105,7 +106,7 @@ public sealed partial class RegionStreamer : Node3D
         bool authoringGeneration = WorldGenerationDebug.Mode != WorldGenerationDebugMode.None;
         _preparedRegion = region == null || authoringGeneration
             ? null
-            : GD.Load<WorldPreparedRegionResource>(WorldBakePaths.Region(region.Id));
+            : ResidentResources.Load<WorldPreparedRegionResource>(WorldBakePaths.Region(region.Id));
         bool missingPrepared = region != null &&
                                !authoringGeneration &&
                                (_preparedRegion == null || !_preparedRegion.IsValidFor(region));

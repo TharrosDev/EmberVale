@@ -1,4 +1,5 @@
 using System;
+using Embervale.Core;
 using Embervale.Core.Diagnostics;
 using Embervale.World;
 using Godot;
@@ -218,7 +219,7 @@ public static class HeadlessWorldMap
     private static void DrawPlaces(Image image, RegionResource region, Aabb bounds)
     {
         string path = WorldBakePaths.Region(region.Id);
-        if (!ResourceLoader.Exists(path) || GD.Load<WorldPreparedRegionResource>(path) is not { } prepared)
+        if (!ResourceLoader.Exists(path) || ResidentResources.Load<WorldPreparedRegionResource>(path) is not { } prepared)
         {
             return;
         }

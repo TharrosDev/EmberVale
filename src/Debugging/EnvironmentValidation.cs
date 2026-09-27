@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Embervale.Core;
 using Embervale.World;
 using Godot;
 
@@ -10,7 +11,7 @@ public static class EnvironmentValidation
 {
     public static void Validate(List<string> issues)
     {
-        var cycle = GD.Load<EnvironmentCycleResource>("res://data/rendering/DayCycle.tres");
+        var cycle = ResidentResources.Load<EnvironmentCycleResource>("res://data/rendering/DayCycle.tres");
         if (cycle == null || cycle.Keys.Count < 2) { issues.Add("environment cycle requires at least two keys"); return; }
         float previous = -1f;
         foreach (var key in cycle.Keys)
@@ -33,7 +34,7 @@ public static class EnvironmentValidation
         Range(issues, "glow", cycle.GlowIntensity, 0, .5f);
         foreach (string name in new[] { "Low", "Medium", "High", "Ultra" })
         {
-            var q = GD.Load<RenderQualityResource>($"res://data/rendering/{name}.tres");
+            var q = ResidentResources.Load<RenderQualityResource>($"res://data/rendering/{name}.tres");
             if (q == null) { issues.Add($"missing render quality {name}"); continue; }
             Range(issues, $"{name} render scale", q.RenderScale, .5f, 1f);
             Range(issues, $"{name} mesh LOD", q.MeshLodThreshold, .5f, 4f);
@@ -46,7 +47,7 @@ public static class EnvironmentValidation
         }
         foreach (string name in new[] { "Interior", "Dungeon", "Underwater" })
         {
-            var profile = GD.Load<EnvironmentSpaceProfileResource>($"res://data/rendering/{name}.tres");
+            var profile = ResidentResources.Load<EnvironmentSpaceProfileResource>($"res://data/rendering/{name}.tres");
             if (profile == null) { issues.Add($"missing space profile {name}"); continue; }
             Range(issues, $"{name} ambient", profile.AmbientScale, 0.1f, 1);
             Range(issues, $"{name} fog", profile.FogScale, 0, 20);

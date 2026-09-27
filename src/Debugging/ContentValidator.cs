@@ -222,7 +222,7 @@ public static class ContentValidator
             }
 
             string path = $"{dir}/{file}";
-            if (GD.Load<WeaponResource>(path) is not { } weapon)
+            if (ResidentResources.Load<WeaponResource>(path) is not { } weapon)
             {
                 issues.Add($"weapon '{path}' failed to load as a WeaponResource.");
                 continue;
@@ -3155,7 +3155,7 @@ public static class ContentValidator
                 continue;
             }
 
-            var table = GD.Load<LootTable>($"{LootDirectory}/{name}");
+            var table = ResidentResources.Load<LootTable>($"{LootDirectory}/{name}");
             if (table == null)
             {
                 issues.Add($"loot table '{name}' failed to load");
@@ -4243,7 +4243,7 @@ public static class ContentValidator
             }
 
             WorldPreparedRegionResource? prepared =
-                GD.Load<WorldPreparedRegionResource>(WorldBakePaths.Region(region.Id));
+                ResidentResources.Load<WorldPreparedRegionResource>(WorldBakePaths.Region(region.Id));
             if (prepared == null || !prepared.IsValidFor(region))
             {
                 issues.Add($"region '{region.Id}' has no valid prepared runtime field at " +

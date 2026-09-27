@@ -71,8 +71,8 @@ public static class CompanionFactory
             AvoidanceEnabled = false,
         });
 
-        AttributeSet attributes = GD.Load<AttributeSet>(resource.AttributesPath)
-            ?? GD.Load<AttributeSet>(DefaultAttributesPath)
+        AttributeSet attributes = ResidentResources.Load<AttributeSet>(resource.AttributesPath)
+            ?? ResidentResources.Load<AttributeSet>(DefaultAttributesPath)
             ?? AttributeSet.CreateDefault();
         companion.AddChild(new StatsComponent
         {
@@ -101,11 +101,11 @@ public static class CompanionFactory
         });
         companion.AddChild(hitbox);
 
-        WeaponResource? weapon = GD.Load<WeaponResource>(resource.WeaponPath);
+        WeaponResource? weapon = ResidentResources.Load<WeaponResource>(resource.WeaponPath);
         if (weapon == null)
         {
             Log.Warn($"Companion '{resource.Id}' weapon '{resource.WeaponPath}' failed to load; using the default.");
-            weapon = GD.Load<WeaponResource>(DefaultWeaponPath);
+            weapon = ResidentResources.Load<WeaponResource>(DefaultWeaponPath);
         }
 
         companion.AddChild(new CharacterActionComponent { Name = "Weapon", Weapon = weapon, Hitbox = hitbox });

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Embervale.Core;
 using Embervale.Core.Diagnostics;
 using Embervale.Core.Events;
 using Embervale.Entities;
@@ -32,7 +33,7 @@ public partial class LootComponent : EntityComponent
     {
         if (Table == null && !string.IsNullOrEmpty(TablePath))
         {
-            Table = GD.Load<LootTable>(TablePath);
+            Table = ResidentResources.Load<LootTable>(TablePath);
             if (Table == null)
             {
                 Log.Warn($"LootComponent on '{Entity?.DisplayName}' could not load loot table '{TablePath}'; it will drop nothing.");

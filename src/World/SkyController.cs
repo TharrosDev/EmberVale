@@ -1,4 +1,5 @@
 using System;
+using Embervale.Core;
 using Embervale.Core.Events;
 using Embervale.Core.Services;
 using Embervale.Player;
@@ -47,9 +48,9 @@ public partial class SkyController : Node3D
 
     public override void _Ready()
     {
-        Cycle ??= GD.Load<EnvironmentCycleResource>("res://data/rendering/DayCycle.tres");
-        _interior = GD.Load<EnvironmentSpaceProfileResource>("res://data/rendering/Interior.tres");
-        _underwater = GD.Load<EnvironmentSpaceProfileResource>("res://data/rendering/Underwater.tres");
+        Cycle ??= ResidentResources.Load<EnvironmentCycleResource>("res://data/rendering/DayCycle.tres");
+        _interior = ResidentResources.Load<EnvironmentSpaceProfileResource>("res://data/rendering/Interior.tres");
+        _underwater = ResidentResources.Load<EnvironmentSpaceProfileResource>("res://data/rendering/Underwater.tres");
         ServiceScope.RegisterOwned(this, this);
         _moon = new DirectionalLight3D { Name = "Moon", ShadowEnabled = false };
         AddChild(_moon);
@@ -92,7 +93,7 @@ public partial class SkyController : Node3D
     public void ApplyQuality(int tier)
     {
         string name = new[] { "Low", "Medium", "High", "Ultra" }[Math.Clamp(tier, 0, 3)];
-        _quality = GD.Load<RenderQualityResource>($"res://data/rendering/{name}.tres");
+        _quality = ResidentResources.Load<RenderQualityResource>($"res://data/rendering/{name}.tres");
         if (_quality == null || Environment == null) return;
         RenderingServer.DirectionalShadowAtlasSetSize(_quality.ShadowAtlasSize, true);
         GetViewport().Scaling3DScale = _quality.RenderScale;

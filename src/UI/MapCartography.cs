@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Embervale.Core;
 using Embervale.World;
 using Godot;
 
@@ -63,7 +64,7 @@ public static class MapCartography
             return cached;
         }
         string path = WorldBakePaths.Region(regionId);
-        if (!ResourceLoader.Exists(path) || GD.Load<WorldPreparedRegionResource>(path) is not { } prepared ||
+        if (!ResourceLoader.Exists(path) || ResidentResources.Load<WorldPreparedRegionResource>(path) is not { } prepared ||
             prepared.Columns < ReliefStride * 2 || prepared.Rows < ReliefStride * 2)
         {
             return null;

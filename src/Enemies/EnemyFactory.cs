@@ -78,7 +78,7 @@ public static class EnemyFactory
             AvoidanceEnabled = false,
         });
 
-        AttributeSet attributes = GD.Load<AttributeSet>(AttributesPath) ?? AttributeSet.CreateDefault();
+        AttributeSet attributes = ResidentResources.Load<AttributeSet>(AttributesPath) ?? AttributeSet.CreateDefault();
         enemy.AddChild(new StatsComponent { Name = "Stats", Attributes = attributes, StaminaRegen = 12f });
         enemy.AddChild(new CombatComponent
         {
@@ -110,7 +110,7 @@ public static class EnemyFactory
         });
         enemy.AddChild(hitbox);
 
-        WeaponResource? weapon = GD.Load<WeaponResource>(WeaponPath);
+        WeaponResource? weapon = ResidentResources.Load<WeaponResource>(WeaponPath);
         enemy.AddChild(new CharacterActionComponent
         {
             Name = "Weapon",

@@ -1,5 +1,6 @@
 using Embervale.Combat.Actions;
 using Embervale.Combat;
+using Embervale.Core;
 using Embervale.Factions;
 using Embervale.Localization;
 using Embervale.Loot;
@@ -58,7 +59,7 @@ public static class EnemyArchetypeFactory
             AvoidanceEnabled = false,
         });
 
-        AttributeSet attributes = GD.Load<AttributeSet>(archetype.AttributesPath) ?? AttributeSet.CreateDefault();
+        AttributeSet attributes = ResidentResources.Load<AttributeSet>(archetype.AttributesPath) ?? AttributeSet.CreateDefault();
         enemy.AddChild(new StatsComponent
         {
             Name = "Stats",
@@ -99,7 +100,7 @@ public static class EnemyArchetypeFactory
         enemy.AddChild(new CharacterActionComponent
         {
             Name = "Weapon",
-            Weapon = GD.Load<WeaponResource>(archetype.WeaponPath),
+            Weapon = ResidentResources.Load<WeaponResource>(archetype.WeaponPath),
             Hitbox = hitbox,
         });
 

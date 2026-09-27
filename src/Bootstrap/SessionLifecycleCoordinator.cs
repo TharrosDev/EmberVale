@@ -191,16 +191,10 @@ public sealed partial class SessionLifecycleCoordinator : Node
         // A second session is never additive: whatever is live goes first.
         DestroySession();
 
-        // ⚠️ Drain the previous session's C# wrappers HERE, on the main thread, before Build loads
-        // anything. A cached C# Resource (ProgressionComponent's curve, say) whose last native ref
-        // was the old session's wrapper sits collectable-but-unfinalized; if Build's GD.Load
-        // re-references it while the GC finalizer thread is disposing that wrapper, Godot aborts with
-        // FATAL 'gchandle.is_released()' (csharp_script.cpp, mono_object_disposed_baseref). Blocking
-        // on the finalizers first means the load either finds a live wrapper or reloads a fresh one.
-        System.GC.Collect();
-        System.GC.WaitForPendingFinalizers();
-        System.GC.Collect();
-
+        // No GC drain here. The previous session's C# Resource wrappers used to be collectable while
+        // still in Godot's resource cache, and Build re-loading one was the lifecycle FATAL; that is
+        // closed at the load itself (ResidentResources), which a GC.Collect here could not do — the
+        // old session is only queued for free at this point, so its wrappers were not garbage yet.
         var session = new GameSession
         {
             Lifecycle = this,

@@ -556,6 +556,11 @@ Quick map (folder → what lives there; see `docs/ARCHITECTURE.md` for detail):
   (`y=1`, shapes centred at local origin); the player/enemy origins are at the
   feet (shapes offset to `y = height/2`). Match shapes to mesh accordingly.
 - **`GD.Load<T>` can return null** — always fall back.
+- ⚠️ **Load a project C# `Resource` by path with `ResidentResources.Load<T>`, never bare `GD.Load`.**
+  A wrapper nobody holds can be collected while the native object is still cached, and the next
+  load of that path is a `gchandle.is_released()` FATAL on the finalizer thread (the `--lifecycle`
+  intermittent, closed 2026-09-25). `ResidentResourceTests` enforces it; engine types (scenes,
+  textures, meshes) are exempt.
 - **A stagger cancels a wind-up, not a live blow (36C).** `MeleeWeaponComponent` drops the swing
   only while `Phase.Windup`; once the hitbox opens the attack is committed. `SpellcastingComponent`
   drops an active charge/channel the same way (which is also how a breath ends, since

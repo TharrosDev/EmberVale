@@ -177,7 +177,7 @@ public sealed partial class DeveloperToolsHost : Node
     {
         DespawnDummy();
 
-        AttributeSet attributes = GD.Load<AttributeSet>(DummyAttributesPath) ?? AttributeSet.CreateDefault();
+        AttributeSet attributes = ResidentResources.Load<AttributeSet>(DummyAttributesPath) ?? AttributeSet.CreateDefault();
 
         var dummy = new Entity
         {
