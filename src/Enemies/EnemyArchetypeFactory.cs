@@ -207,6 +207,7 @@ public static class EnemyArchetypeFactory
         {
             visual.Name = "Mesh";
             visual.RotateY(Mathf.Pi);
+            visual.Scale = Vector3.One * archetype.ModelScale;
             enemy.AddChild(visual);
             return;
         }

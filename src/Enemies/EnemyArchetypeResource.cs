@@ -32,6 +32,10 @@ public partial class EnemyArchetypeResource : Resource
     [Export] public string ModelPath { get; set; } = string.Empty;
 
     /// <summary>Capsule colour used for that fallback, so the four read apart before art lands.</summary>
+    /// <summary>Uniform scale on the authored model — lets a boss reuse a humanoid body at its own size.
+    /// Match <see cref="CapsuleHeight"/> to the scaled model.</summary>
+    [Export] public float ModelScale { get; set; } = 1f;
+
     [Export] public Color PlaceholderTint { get; set; } = new(0.45f, 0.45f, 0.48f);
 
     [ExportGroup("Behaviour")]
