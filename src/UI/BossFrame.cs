@@ -131,7 +131,7 @@ public partial class BossFrame : PanelContainer
         _pips.Visible = true;
         _phaseText.Visible = true;
         Visible = true;
-        ShowMessage(Loc.T("boss.intro"), 2500);
+        ShowMessage(Loc.TF("boss.intro", e.DisplayName), 2500);
     }
 
     private void OnPhase(BossPhaseChangedEvent e) => SetPhase(e.Phase);
@@ -144,7 +144,7 @@ public partial class BossFrame : PanelContainer
         }
 
         StandDown();
-        ShowMessage(Loc.T("boss.defeat"), 3000);
+        ShowMessage(Loc.TF("boss.defeat", _name.Text), 3000);
 
         if (_fade is not null)
         {
