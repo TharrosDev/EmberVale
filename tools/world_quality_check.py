@@ -44,6 +44,7 @@ REGIONS = {
     "ashen_wilds": "data/regions/AshenWilds.tres",
     "sunspire": "data/regions/Sunspire.tres",
     "pale_concord": "data/regions/PaleConcord.tres",
+    "celestial": "data/regions/CelestialRealm.tres",
 }
 
 @dataclass

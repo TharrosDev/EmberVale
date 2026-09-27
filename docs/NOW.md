@@ -39,6 +39,16 @@
   Sunspire library portal in; `HiddenRealmReveal` sets it once the Storm Tyrant, Beast Lord and
   Crimson Prophet are all defeated (also on load). The return portal targets `region.sunspire` once
   that region exists (re-run `gen_regions.py`), else the Ember Crown. Placeholder bodies (no Meshy).
+- **The Celestial Realm is built (finish run, Act IV).** `region.celestial`, nine cells in atlas band
+  x 2400..3200, z -2400..-1600 (`tools/region_spec_celestial.py`, biome `CelestialRuin`, ember-violet
+  light). Landing (spawn 2632, -1708) -> broken concourse -> the Knight's bridge over the void rift ->
+  the Knight's Gate (`boss.ashen_knight`, 3-phase duel, relic `item.relic.ashen_heart`,
+  `dialogue.ashen_knight_absorb`) -> the Ash Throne (`boss.morthul`, 4 phases, gated on
+  `flag.ashen_knight_defeated` via the brazier's `RequiredFlagId`). Temporary: the return portal
+  targets `region.ember_crown` and `UnlockFlagId` is empty until the main line adds `region.sunspire`
+  and a setter for `flag.celestial_gate_open`; `dialogue.ash_throne` is a placeholder for the ending
+  choice. Both bosses use placeholder bodies (bone knight x1.2, grave shade x2). `ArenaHookComponent`
+  now scopes its phase/death reactions to bosses under its own arena.
 
 - **Integration 1 checkpoint (2026-09-14), `claude/integration-1`.** Merged `w1-fixes`, 42C
   (Dawnwardens recruitment/probation), 42E (Ash Hunters field induction) and 42I (Iron Syndicate

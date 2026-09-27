@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/Items/ItemResource.cs" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+Id = "item.relic.ashen_heart"
+DisplayName = "Heart of the Ashen Knight"
+Description = "The ember of the Flamebearer who came closest. It burns grey rather than red, and it is heavier than it should be — as though it still carries the weight of the one blow he never struck."
+Type = 0
+Rarity = 4
+MaxStack = 1
+Weight = 1.0
+Value = 500
+TradeTags = Array[String](["relic"])

@@ -1643,6 +1643,12 @@ location.pale.city.name,Vesperhold
 location.pale.city.desc,"The preserved city, kept in perfect repair at an evening that never ends."
 location.pale.palace.name,The Hollow Court
 location.pale.palace.desc,"The Hollow Queen's palace at the end of the processional way."
+location.celestial.landing.name,The Landing
+location.celestial.landing.desc,"The one terrace at the realm's edge that still holds a whole floor. The way home stands behind it."
+location.celestial.knight_gate.name,The Knight's Gate
+location.celestial.knight_gate.desc,"The last gate before the throne, at the far end of the only bridge over the void."
+location.celestial.ash_throne.name,The Ash Throne
+location.celestial.ash_throne.desc,"The highest dais in the ruined heaven. Someone must always sit upon it."
 # --- END generated map location names ---
 # --- Phase 41D: the branching barrels errand (quest.hollowreach.barrels) ---
 quest.hollowreach.barrels.title,"What the Post Took"
@@ -2301,3 +2307,68 @@ pale.dlg.clockkeeper.c_queen,"Where is the Queen?"
 pale.dlg.clockkeeper.c_freed,"She is gone."
 pale.dlg.clockkeeper.c_back,"Tell me something else."
 pale.dlg.clockkeeper.c_bye,"Keep well."
+# Celestial Realm (the finish run, Act IV): the Ashen Knight, Morthul, the braziers and the throne placeholder.
+enemy.ashen_knight.name,The Ashen Knight
+enemy.ashen_knight.lore,"The Sixth Flamebearer, and the closest any of them came. He reached the Ash Throne, raised his blade over Morthul and did not bring it down. Whatever he saw in that moment, he has served the god of endings ever since, and he waits at the last gate for the one who might finish what he could not."
+enemy.morthul.name,"Morthul, the Ash King"
+enemy.morthul.lore,"The god of entropy, who looked at creation and judged that everything ends, even gods, and so everything should. He killed the six who stood against him and has sat in their ruined heaven ever since, while the world he broke goes on dying."
+celestial.ashen_knight.challenge_prompt,"Light the brazier and face the Ashen Knight"
+celestial.ashen_knight.challenge_locked,"The brazier will not take."
+celestial.morthul.challenge_prompt,"Light the last fire and challenge the Ash King"
+celestial.morthul.challenge_locked,"The fire will not wake while the Knight still holds the gate."
+dlg.ashenknight.absorb.speaker,The Ashen Knight
+dlg.ashenknight.absorb.last_words,"He goes down on one knee and plants the greatsword so he does not fall further. ""Good. Good. I was beginning to think there would never be anyone."""
+dlg.ashenknight.absorb.c_listen,"Why did you stop, at the throne?"
+dlg.ashenknight.absorb.last_words_2,"""Because I saw what sits in it. Not a god. A chair that must never be empty. I could kill him, or I could become him, and I could not choose. So I knelt. Choose better than I did, Seventh. Take my ember or leave it in the ash, but do not kneel."""
+dlg.ashenknight.absorb.c_go_on,"Rest, Knight."
+dlg.ashenknight.absorb.offer,"His ember gutters in the cracked breastplate, grey and heavy, the strongest fire of the six. It is yours to take. Will you absorb the flame?"
+dlg.ashenknight.absorb.c_absorb,Absorb the flame.
+dlg.ashenknight.absorb.c_decline,Leave it with him.
+dlg.ashenknight.absorb.absorbed,"His strength pours into you, disciplined and vast, and with it the memory of a blade held still above a throne. The bargain is struck."
+dlg.ashenknight.absorb.declined,"You leave the ember where it lies. It burns down slowly beside him, and for the first time since the Cataclysm the Ashen Knight is at rest."
+dlg.ashenknight.absorb.c_absorbed_bye,So be it.
+dlg.ashenknight.absorb.c_declined_bye,Farewell.
+dlg.ash_throne.speaker,The Ash Throne
+dlg.ash_throne.empty,The throne stands empty.
+dlg.ash_throne.c_leave,Leave.
+# --- Finish run: the main story (tools/gen_main_story.py) ---
+quest.main.gathering.title,"Gathering the Flame"
+quest.main.gathering.summary,"The Iron King was the first of the fallen, not the last. Three more Flamebearers hold the known realms: the Storm Tyrant in Frostfang's high passes, the Beast Lord somewhere in the Ashen Wilds beyond the Breach, and the Crimson Prophet who rules Sunspire from his temple. End them, and decide what to do with what burns inside each."
+quest.main.gathering.obj_storm,"Defeat the Storm Tyrant at the Stormcrown"
+quest.main.gathering.obj_beast,"Defeat the Beast Lord in the Ashen Wilds"
+quest.main.gathering.obj_prophet,"Defeat the Crimson Prophet in Sunspire"
+quest.main.hidden.title,"The Realm on No Map"
+quest.main.hidden.summary,"With three of the fallen gone, the embers you carry pull west, towards a place no map admits exists. The Archivist of the Sunspire library says a door beneath her stacks has begun to open. There were seven Flamebearers. You have only met five."
+quest.main.hidden.obj,"Find the Second Flamebearer and end her reign"
+quest.main.truth.title,"Truth of the Gods"
+quest.main.truth.summary,"Every fallen Flamebearer died saying the same thing in a different way: that you do not understand what you are for. The Archivist in the Sunspire library has kept the gods' own records. It is time to read them."
+quest.main.truth.obj,"Hear the truth from the Archivist in the Sunspire library"
+quest.main.celestial.title,"The Celestial War"
+quest.main.celestial.summary,"The way to the ruined Celestial Realm stands open in the library. Morthul waits on the Ash Throne, and between you and him stands the Sixth Flamebearer, the one who came closest."
+quest.main.celestial.obj_knight,"Defeat the Ashen Knight"
+quest.main.celestial.obj_morthul,"Confront Morthul at the Ash Throne"
+dlg.archivist.c_hidden,"Where do I go next?"
+dlg.archivist.hidden,"The fallen hold the realms you can find on a map. There were seven of you, and the Second hid her country from death itself. When the Tyrant, the Beast and the Prophet are gone, her door will stop hiding from you. It opens here, under my floor. I have been listening to it breathe for forty years."
+dlg.archivist.c_truth,"Tell me the truth. All of it."
+dlg.archivist.cataclysm,"Seven gods kept the world. Morthul was the one who kept its endings: death, rot, the last page. One day he decided the whole book was flawed and should be burned so it could be written again. The others refused. The war that followed broke the continents. Six gods died. He did not."
+dlg.archivist.c_more,"Go on."
+dlg.archivist.morthul,"Here is what the songs leave out. Morthul is not a tyrant who took a throne. He is what the throne makes of whoever sits on it. Something must hold the world's endings, or nothing ends at all and nothing can begin. He sat because someone had to. It hollowed him into the Ash King."
+dlg.archivist.throne,"The gods made seven Flamebearers to unseat him. Not one of them was ever told the rest: that when he falls, the throne will ask for you. The fallen all heard it, in the end. Some ran from it. Some said yes too early. You carry their fire. What you do with it at the top of the Celestial stair is the only choice that has ever mattered."
+dlg.archivist.c_open,"Open the way to the Celestial Realm."
+dlg.archivist.opened,"Then go. The stair is behind the last shelf; it has always been there, waiting for someone who knew what it was. Whatever you choose up there, Seventh, choose it awake."
+dlg.archivist.c_gate,"About the stair..."
+dlg.archivist.gate,"It is open. It will stay open. I am not going to talk you out of it, and I am not going to talk you into it."
+dlg.archivist.c_back,"Something else."
+dlg.throne.speaker,"The Ash Throne"
+dlg.throne.intro,"Morthul comes apart into ash, and the ash does not settle. It waits. The Ash Throne stands empty for the first time since the gods died, and you feel it the way you felt every ember you ever held: a question. Someone must always sit here."
+dlg.throne.c_refuse,"Refuse it. Give the fire back to the world."
+dlg.throne.c_sit,"Sit. Take the throne."
+dlg.throne.dawn,"If you refuse, the relics you carry spill their fire back into the land, and nothing holds the world's endings but the world itself. It will be slower. It will be free. It will be yours no longer. Is this your choice?"
+dlg.throne.c_dawn_yes,"Yes. Let the world keep its own endings."
+dlg.throne.embers,"If you sit, every ember you carry becomes a crown. You will end the dying because you order it to end, and nothing in Embervale will ever again be able to tell you no. Is this your choice?"
+dlg.throne.c_embers_yes,"Yes. The world will survive, because I will make it."
+dlg.throne.c_wait,"Wait. Not yet."
+dlg.throne.gate,"The Ash Throne. It is carved from something that was once alive, and it is never empty for long."
+dlg.throne.c_approach,"Approach the throne."
+dlg.throne.c_leave,"Step back. He still sits there."
+dlg.throne.c_later,"Not yet. I need a moment."

@@ -22,20 +22,20 @@ SET_FLAG = 2
 QUESTS = [
     ("MainGathering", "quest.main.gathering", "flag.iron_king_defeated", "", [
         ("enemy.storm_tyrant", "location.frostfang.stormcrown", "quest.main.gathering.obj_storm"),
-        ("enemy.beast_lord", "", "quest.main.gathering.obj_beast"),
-        ("enemy.crimson_prophet", "", "quest.main.gathering.obj_prophet"),
+        ("enemy.beast_lord", "location.ashen.beast_lair", "quest.main.gathering.obj_beast"),
+        ("enemy.crimson_prophet", "location.sunspire.mission", "quest.main.gathering.obj_prophet"),
     ]),
     ("MainHidden", "quest.main.hidden", "flag.pale_concord_revealed", "", [
-        ("enemy.hollow_queen", "", "quest.main.hidden.obj"),
+        ("enemy.hollow_queen", "location.pale.palace", "quest.main.hidden.obj"),
     ]),
     ("MainCelestial", "quest.main.celestial", "flag.celestial_gate_open", "", [
-        ("enemy.ashen_knight", "", "quest.main.celestial.obj_knight"),
-        ("enemy.morthul", "", "quest.main.celestial.obj_morthul"),
+        ("enemy.ashen_knight", "location.celestial.knight_gate", "quest.main.celestial.obj_knight"),
+        ("enemy.morthul", "location.celestial.ash_throne", "quest.main.celestial.obj_morthul"),
     ]),
 ]
 
 # Act III is a conversation, not a kill: a Talk objective on the Archivist's dialogue.
-TRUTH = ("MainTruth", "quest.main.truth", "flag.hollow_queen_defeated", "dialogue.archivist_truth")
+TRUTH = ("MainTruth", "quest.main.truth", "flag.hollow_queen_defeated", "dialogue.sunspire_archivist")
 
 
 def quest(file, qid, auto, completion, objectives, talk=None, sequential=False) -> str:
@@ -81,6 +81,9 @@ SequentialObjectives = {"true" if sequential else "false"}
 CompletionFlagId = "{completion}"
 AutoStartFlagId = "{auto}"
 IsMainQuest = true
+; One-shot bosses: each one's realm door or brazier is gated on this quest's own AutoStartFlagId,
+; so the quest is always active before its target can die.
+AllowsOneShotTarget = true
 '''
 
 
@@ -130,29 +133,42 @@ def c(text, goto="", cond=ALWAYS, carg="", eff=0, earg=""):
     return (text, goto, cond, carg, eff, earg)
 
 
-ARCHIVIST = dialogue("dialogue.archivist_truth", "dlg.archivist.speaker", "hub", [
-    ("hub", "dlg.archivist.hub", [
+# The Archivist is Sunspire's (Seren Adaru, 2026-09 Sunspire build); her library and Prophet topics are
+# kept and the Act II/III story branches hang off the same root.
+ARCHIVIST = dialogue("dialogue.sunspire_archivist", "dlg.sunspire_archivist.speaker", "root", [
+    ("root", "dlg.sunspire_archivist.root", [
         c("dlg.archivist.c_truth", "cataclysm", HAS_FLAG, "flag.hollow_queen_defeated"),
         c("dlg.archivist.c_gate", "gate", HAS_FLAG, "flag.celestial_gate_open"),
         c("dlg.archivist.c_hidden", "hidden", MISSING_FLAG, "flag.hollow_queen_defeated"),
-        c("dlg.archivist.c_bye"),
+        c("dlg.sunspire_archivist.c_library", "library"),
+        c("dlg.sunspire_archivist.c_prophet", "prophet", MISSING_FLAG, "flag.crimson_prophet_defeated"),
+        c("dlg.sunspire_archivist.c_bye"),
     ]),
-    ("hidden", "dlg.archivist.hidden", [c("dlg.archivist.c_back", "hub")]),
+    ("library", "dlg.sunspire_archivist.library", [c("dlg.sunspire_archivist.c_library_bye")]),
+    ("prophet", "dlg.sunspire_archivist.prophet", [c("dlg.sunspire_archivist.c_prophet_bye")]),
+    ("hidden", "dlg.archivist.hidden", [c("dlg.archivist.c_back", "root")]),
     ("cataclysm", "dlg.archivist.cataclysm", [c("dlg.archivist.c_more", "morthul")]),
     ("morthul", "dlg.archivist.morthul", [c("dlg.archivist.c_more", "throne")]),
     ("throne", "dlg.archivist.throne", [c("dlg.archivist.c_open", "opened", MISSING_FLAG,
                                           "flag.celestial_gate_open", SET_FLAG, "flag.celestial_gate_open"),
-                                        c("dlg.archivist.c_back", "hub")]),
-    ("opened", "dlg.archivist.opened", [c("dlg.archivist.c_bye")]),
-    ("gate", "dlg.archivist.gate", [c("dlg.archivist.c_back", "hub")]),
+                                        c("dlg.archivist.c_back", "root")]),
+    ("opened", "dlg.archivist.opened", [c("dlg.sunspire_archivist.c_bye")]),
+    ("gate", "dlg.archivist.gate", [c("dlg.archivist.c_back", "root")]),
 ])
 
 # The ending choice. Corruption decides which doors are open: under 40 only Dawnfire, 60 and over
 # only the throne, and the band between may choose (CorruptionTiers). Both paths confirm first.
-THRONE = dialogue("dialogue.ash_throne", "dlg.throne.speaker", "throne", [
+THRONE = dialogue("dialogue.ash_throne", "dlg.throne.speaker", "gate", [
+    # The throne is also a placed talkable (celestial/ash_throne.tscn), so the choice can be re-opened
+    # by a player who walked away; this first node holds it shut while Morthul still sits.
+    ("gate", "dlg.throne.gate", [
+        c("dlg.throne.c_approach", "throne", HAS_FLAG, "flag.morthul_defeated"),
+        c("dlg.throne.c_leave", "", MISSING_FLAG, "flag.morthul_defeated"),
+    ]),
     ("throne", "dlg.throne.intro", [
         c("dlg.throne.c_refuse", "dawn", CORRUPTION_BELOW, "60"),
         c("dlg.throne.c_sit", "embers", CORRUPTION_AT_LEAST, "40"),
+        c("dlg.throne.c_later"),
     ]),
     ("dawn", "dlg.throne.dawn", [
         c("dlg.throne.c_dawn_yes", "", MISSING_FLAG, "flag.ending_embers", SET_FLAG, "flag.ending_dawnfire"),
@@ -173,9 +189,9 @@ def main() -> None:
     file, qid, auto, talk = TRUTH
     (ROOT / "data/quests" / f"{file}.tres").write_text(
         quest(file, qid, auto, "", [], talk=talk), encoding="utf-8", newline="\n")
-    (ROOT / "data/dialogue/ArchivistTruth.tres").write_text(ARCHIVIST, encoding="utf-8", newline="\n")
+    (ROOT / "data/dialogue/SunspireArchivist.tres").write_text(ARCHIVIST, encoding="utf-8", newline="\n")
     (ROOT / "data/dialogue/AshThrone.tres").write_text(THRONE, encoding="utf-8", newline="\n")
-    print("wrote 4 main quests, dialogue.archivist_truth, dialogue.ash_throne")
+    print("wrote 4 main quests, dialogue.sunspire_archivist, dialogue.ash_throne")
 
 
 if __name__ == "__main__":

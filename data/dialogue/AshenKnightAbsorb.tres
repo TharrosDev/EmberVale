@@ -1,0 +1,80 @@
+[gd_resource type="Resource" script_class="DialogueResource" format=3]
+
+[ext_resource type="Script" path="res://src/Dialogue/DialogueResource.cs" id="1_dlg"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueNode.cs" id="2_node"]
+[ext_resource type="Script" path="res://src/Dialogue/DialogueChoice.cs" id="3_choice"]
+
+; The Ashen Knight's defeat (the finish run, Act IV). Modelled on dialogue.iron_king_absorb, with one
+; node in front of the offer: the rival's last words. He is the only Flamebearer who speaks after he
+; falls, because he is the only one who ever thought of the player as an equal.
+; Condition 6 = MissingFlag (the offer cannot be taken twice); Effect 4 = AddCorruption; Effect 2 = SetFlag.
+[sub_resource type="Resource" id="ch_listen"]
+script = ExtResource("3_choice")
+Text = "dlg.ashenknight.absorb.c_listen"
+Goto = "last_words_2"
+
+[sub_resource type="Resource" id="ch_go_on"]
+script = ExtResource("3_choice")
+Text = "dlg.ashenknight.absorb.c_go_on"
+Goto = "offer"
+
+[sub_resource type="Resource" id="ch_absorb"]
+script = ExtResource("3_choice")
+Text = "dlg.ashenknight.absorb.c_absorb"
+Goto = "absorbed"
+Condition = 6
+ConditionArg = "flag.ashen_knight_absorbed"
+Effect = 4
+EffectArg = "25"
+
+[sub_resource type="Resource" id="ch_decline"]
+script = ExtResource("3_choice")
+Text = "dlg.ashenknight.absorb.c_decline"
+Goto = "declined"
+
+[sub_resource type="Resource" id="ch_absorbed_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.ashenknight.absorb.c_absorbed_bye"
+Effect = 2
+EffectArg = "flag.ashen_knight_absorbed"
+
+[sub_resource type="Resource" id="ch_declined_bye"]
+script = ExtResource("3_choice")
+Text = "dlg.ashenknight.absorb.c_declined_bye"
+
+[sub_resource type="Resource" id="node_last_words"]
+script = ExtResource("2_node")
+Id = "last_words"
+Text = "dlg.ashenknight.absorb.last_words"
+Choices = Array[Resource]([SubResource("ch_listen")])
+
+[sub_resource type="Resource" id="node_last_words_2"]
+script = ExtResource("2_node")
+Id = "last_words_2"
+Text = "dlg.ashenknight.absorb.last_words_2"
+Choices = Array[Resource]([SubResource("ch_go_on")])
+
+[sub_resource type="Resource" id="node_offer"]
+script = ExtResource("2_node")
+Id = "offer"
+Text = "dlg.ashenknight.absorb.offer"
+Choices = Array[Resource]([SubResource("ch_absorb"), SubResource("ch_decline")])
+
+[sub_resource type="Resource" id="node_absorbed"]
+script = ExtResource("2_node")
+Id = "absorbed"
+Text = "dlg.ashenknight.absorb.absorbed"
+Choices = Array[Resource]([SubResource("ch_absorbed_bye")])
+
+[sub_resource type="Resource" id="node_declined"]
+script = ExtResource("2_node")
+Id = "declined"
+Text = "dlg.ashenknight.absorb.declined"
+Choices = Array[Resource]([SubResource("ch_declined_bye")])
+
+[resource]
+script = ExtResource("1_dlg")
+Id = "dialogue.ashen_knight_absorb"
+SpeakerName = "dlg.ashenknight.absorb.speaker"
+StartNodeId = "last_words"
+Nodes = Array[Resource]([SubResource("node_last_words"), SubResource("node_last_words_2"), SubResource("node_offer"), SubResource("node_absorbed"), SubResource("node_declined")])

@@ -319,6 +319,16 @@ add("pale_concord/city", "pale.city", "Town", ".", "Vesperhold", reveal=True, re
 add("pale_concord/palace", "pale.palace", "Arena", ".", "The Hollow Court", required_flag=PALE_REVEALED,
     desc="The Hollow Queen's palace at the end of the processional way.")
 
+# ── The Celestial Realm (the finish run, Act IV) ─────────────────────────────────────────────
+# Reached only by the story portal. The landing arrives with the region (it is where the player IS);
+# the gate and the throne are seen from it across the terraces, or walked into.
+add("celestial/landing", "celestial.landing", "Waypoint", "Nav/ArrivalPillarW", "The Landing", reveal=True,
+    desc="The one terrace at the realm's edge that still holds a whole floor. The way home stands behind it.")
+add("celestial/knight_gate", "celestial.knight_gate", "Arena", "GateCentre", "The Knight's Gate",
+    desc="The last gate before the throne, at the far end of the only bridge over the void.", tier="Primary")
+add("celestial/ash_throne", "celestial.ash_throne", "Landmark", "ThroneMark", "The Ash Throne",
+    desc="The highest dais in the ruined heaven. Someone must always sit upon it.", tier="Primary")
+
 
 def _cell_ids():
     """scene stem -> cell id, read from the region specs (2026-09 world rebuild: the hand list of
@@ -329,8 +339,9 @@ def _cell_ids():
     from region_spec_ashen import cells as ashen
     from region_spec_sunspire import cells as sun
     from region_spec_pale_concord import cells as pale
+    from region_spec_celestial import cells as celestial
     out = {}
-    for cell in list(ember()) + list(frost()) + list(ashen()) + list(sun()) + list(pale()):
+    for cell in list(ember()) + list(frost()) + list(ashen()) + list(sun()) + list(pale()) + list(celestial()):
         stem = cell.scene.replace("res://scenes/regions/", "").replace(".tscn", "")
         out[stem] = cell.cell_id
     return out

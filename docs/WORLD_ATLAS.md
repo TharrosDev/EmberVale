@@ -8,7 +8,7 @@ This page is the 2026-09 world rebuild's contract, and Phase 44A's atlas. It say
 is, how the realms connect, how far places are from each other and why, and how the built realms are
 laid out: **geography first, civilisation second, routes third, places fourth, detail last.**
 
-## 1. The five realms
+## 1. The five realms (and the Celestial Realm)
 
 | Realm | Band (x; z) | Status | Owner | Identity |
 | --- | --- | --- | --- | --- |
@@ -17,6 +17,7 @@ laid out: **geography first, civilisation second, routes third, places fourth, d
 | The Ashen Wilds | 900..2100; -1100..300 | built | 2026-09 finish run | Cataclysm scar east beyond the Ashen Breach: plateaus, ravines, corrupted forest, the Beast Lord. |
 | The Sunspire Dominion | -800..800; 900..2300 | built | finish run (2026-09-27) | South beyond the Southmarch Gate: desert basins, jungle belt, the great libraries, the Crimson Prophet. |
 | The Pale Concord | -2600..-1500; -400..900 | hidden | finish run (built) | Found by story, never advertised: still fields, canals and a preserved city at dusk under the Hollow Queen. No text the player can read names it before the reveal flag. |
+| The Celestial Realm | 2400..3200; -2400..-1600 | built | the finish run (Act IV) | The ruined realm of the dead gods: shattered terraces over a void rift, the Knight's gate, the Ash Throne. Reached only by the story portal. |
 
 World coordinates: x east, z south, north is −z. Regions are separate coordinate spaces loaded one at
 a time and joined by portals; the bands still place them geographically so that a road's heading, a

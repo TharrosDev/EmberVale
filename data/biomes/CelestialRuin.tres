@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="WorldBiomeProfileResource" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldBiomeProfileResource.cs" id="1_biome"]
+[ext_resource type="Resource" path="res://data/terrain_layers/Stone.tres" id="2_stone"]
+[ext_resource type="Resource" path="res://data/terrain_layers/Ash.tres" id="3_ash"]
+[ext_resource type="Resource" path="res://data/terrain_layers/CliffRock.tres" id="4_cliffrock"]
+[ext_resource type="Resource" path="res://data/terrain_layers/Scree.tres" id="5_scree"]
+[ext_resource type="Resource" path="res://data/terrain_layers/RoadStone.tres" id="6_roadstone"]
+
+; THE CELESTIAL REALM (the finish run). The ground of the dead gods is WORKED STONE, not soil: the
+; terraces were paved once, and what the Cataclysm left is dressed rock under a drift of ash, with
+; scree where the edges broke away into the void. The only region whose Ground slot is stone and
+; whose road is a paved way, which is what makes it read as built ground even between the ruins.
+; Built from existing layers so nothing here is a new substance.
+[resource]
+script = ExtResource("1_biome")
+Id = "biome.celestial_ruin"
+Ground = ExtResource("2_stone")
+Sparse = ExtResource("3_ash")
+Rock = ExtResource("4_cliffrock")
+Cap = ExtResource("5_scree")
+Road = ExtResource("6_roadstone")
+Shore = ExtResource("3_ash")
+SlopeBand = Vector2(0.28, 0.7)
+HeightBand = Vector2(24, 44)
+CapSlopeShed = 0.25
+SparseCoverage = 0.62
+MacroScale = 60.0
+MacroStrength = 0.28
+StrataScale = 2.5
+StrataStrength = 0.5

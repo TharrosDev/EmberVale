@@ -55,6 +55,10 @@ REALMS = [
           "hidden", "finish run (built)",
           "Found by story, never advertised: still fields, canals and a preserved city at dusk under the Hollow Queen. "
           "No text the player can read names it before the reveal flag."),
+    Realm("celestial", "The Celestial Realm", "region.celestial", (2400.0, -2400.0, 3200.0, -1600.0),
+          "built", "the finish run (Act IV)",
+          "The ruined realm of the dead gods: shattered terraces over a void rift, the Knight's gate, "
+          "the Ash Throne. Reached only by the story portal."),
 ]
 
 # The hidden realm's secrecy contract (see check()).
@@ -112,10 +116,12 @@ def check() -> list[str]:
     import region_spec_ashen
     import region_spec_sunspire
     import region_spec_pale_concord
+    import region_spec_celestial
     for realm, spec in (("ember_crown", region_spec_ember), ("frostfang_reach", region_spec_frostfang),
                         ("ashen_wilds", region_spec_ashen),
                         ("sunspire", region_spec_sunspire),
-                        ("pale_concord", region_spec_pale_concord)):
+                        ("pale_concord", region_spec_pale_concord),
+                        ("celestial", region_spec_celestial)):
         band = next(r.band for r in REALMS if r.key == realm)
         lattice = (spec.EXTENT_X[0], spec.ROWS[0][0], spec.EXTENT_X[1], spec.ROWS[-1][1])
         if not (band[0] <= lattice[0] and band[1] <= lattice[1] and lattice[2] <= band[2] and lattice[3] <= band[3]):

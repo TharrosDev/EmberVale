@@ -682,6 +682,7 @@ def main() -> int:
     from region_spec_ashen import build_ashen          # noqa: E402
     from region_spec_sunspire import build_sunspire    # noqa: E402
     from region_spec_pale_concord import build_pale_concord  # noqa: E402
+    from region_spec_celestial import build_celestial  # noqa: E402
 
     changed = False
     issues: list[str] = []
@@ -689,7 +690,8 @@ def main() -> int:
                               (build_frostfang, "FrostfangReach.tres"),
                               (build_ashen, "AshenWilds.tres"),
                               (build_sunspire, "Sunspire.tres"),
-                              (build_pale_concord, "PaleConcord.tres")):
+                              (build_pale_concord, "PaleConcord.tres"),
+                              (build_celestial, "CelestialRealm.tres")):
         text, problems = builder()
         issues += problems
         changed |= write(REGIONS / filename, text, args.check)

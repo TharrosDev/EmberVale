@@ -344,7 +344,13 @@ SafeZoneRadius = 45.0
 WeavePotency = 0.8
 DefaultWeatherId = "weather.clear"
 DayPhaseBias = 2
-Neighbours = Array[String](["region.ember_crown"])
+Neighbours = Array[String](["region.ember_crown", "region.pale_concord", "region.celestial"])
+
+; The two story doors stand in the library forecourt, on library.tscn's PaleConcordPortalAnchor and
+; CelestialPortalAnchor (cell centre (-295, 1520) + local (37|53, -42)). Each hides until its realm's
+; UnlockFlagId is set, and a traveller coming back through one lands in the forecourt beside it.
+NeighbourPortalPoints = Array[Vector3]([Vector3(0, 0, 0), @WORLD(-258, 0, 1478)@, @WORLD(-242, 0, 1478)@])
+NeighbourArrivalPoints = Array[Vector3]([Vector3(0, 0, 0), @WORLD(-258, 1.2, 1486)@, @WORLD(-242, 1.2, 1486)@])
 '''
 
 
