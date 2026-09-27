@@ -81,6 +81,12 @@ public partial class ApplicationRoot : Node3D, IServiceScopeHost
             return;
         }
 
+        if (HeadlessStory.Requested())
+        {
+            HeadlessStory.Run(this, Lifecycle);
+            return;
+        }
+
         Shell = new GameShellController { Name = "Shell", Lifecycle = Lifecycle };
         AddChild(Shell);
     }

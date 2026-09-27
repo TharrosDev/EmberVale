@@ -182,7 +182,7 @@ public static class HeadlessLifecycle
             $"{label}: {orphans - baselineOrphans} node(s) were left detached but not freed.");
     }
 
-    private static async Task<bool> WaitForPlaying(ApplicationRoot root)
+    internal static async Task<bool> WaitForPlaying(ApplicationRoot root)
     {
         for (int frame = 0; frame < LoadFrameBudget; frame++)
         {
@@ -197,7 +197,7 @@ public static class HeadlessLifecycle
         return false;
     }
 
-    private static async Task Frames(ApplicationRoot root, int count)
+    internal static async Task Frames(ApplicationRoot root, int count)
     {
         for (int i = 0; i < count; i++)
         {
