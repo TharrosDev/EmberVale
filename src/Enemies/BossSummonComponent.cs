@@ -40,6 +40,10 @@ public partial class BossSummonComponent : InteractableComponent
     /// </summary>
     [Export] public string RequiredQuestId { get; set; } = "quest.warband.heart";
 
+    /// <summary>Story flag that must be set before this challenge can be issued. Empty means ungated.
+    /// Checked alongside <see cref="RequiredQuestId"/>.</summary>
+    [Export] public string RequiredFlagId { get; set; } = string.Empty;
+
     /// <summary>The boss archetype this brazier summons. Must build a <see cref="BossEntity"/>.</summary>
     [Export] public string BossTemplateId { get; set; } = GameIds.Enemies.IronKing;
 
@@ -112,15 +116,21 @@ public partial class BossSummonComponent : InteractableComponent
     /// summoned into a half-built world.</summary>
     private bool GateMet()
     {
-        if (string.IsNullOrEmpty(RequiredQuestId))
+        if (string.IsNullOrEmpty(RequiredQuestId) && string.IsNullOrEmpty(RequiredFlagId))
         {
             return true;
         }
 
-        return ServiceLocator.Instance is { } sl
-            && sl.TryGet(out PlayerCharacter player)
-            && player.GetComponent<QuestLogComponent>() is { } log
-            && log.IsCompleted(RequiredQuestId);
+        if (ServiceLocator.Instance is not { } sl || !sl.TryGet(out PlayerCharacter player))
+        {
+            return false;
+        }
+
+        bool questMet = string.IsNullOrEmpty(RequiredQuestId)
+            || player.GetComponent<QuestLogComponent>()?.IsCompleted(RequiredQuestId) == true;
+        bool flagMet = string.IsNullOrEmpty(RequiredFlagId)
+            || player.GetComponent<StoryFlagsComponent>()?.Has(RequiredFlagId) == true;
+        return questMet && flagMet;
     }
 
     private bool AlreadyDefeated() =>
