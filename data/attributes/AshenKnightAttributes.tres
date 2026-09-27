@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="AttributeSet" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/Stats/AttributeSet.cs" id="1_attrset"]
+
+; The Ashen Knight (the finish run, Act IV). The strongest of the Flamebearers and a duelist: over
+; twice the Iron King's health, far more armour, and — the part that makes it a different fight —
+; he is FAST. MoveSpeed and AttackSpeed are both well over the King's, so the answer to him is not
+; spacing but reading and punishing, which is what a rival should ask of a player at the end.
+[resource]
+script = ExtResource("1_attrset")
+Health = 1500.0
+Stamina = 260.0
+Mana = 0.0
+Strength = 30.0
+Dexterity = 24.0
+Intelligence = 10.0
+Vitality = 40.0
+Endurance = 30.0
+Armor = 32.0
+PhysicalPower = 32.0
+SpellPower = 0.0
+MoveSpeed = 4.6
+AttackSpeed = 1.0
+CritChance = 0.1
+CritDamage = 1.7
+FireResist = 50.0
+NecroticResist = 40.0

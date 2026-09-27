@@ -1,0 +1,170 @@
+[gd_resource type="Resource" script_class="BossResource" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://src/Enemies/BossResource.cs" id="1_boss"]
+[ext_resource type="Script" path="res://src/Enemies/BossPhaseResource.cs" id="2_phase"]
+[ext_resource type="Script" path="res://src/Enemies/BossAddWaveResource.cs" id="3_wave"]
+[ext_resource type="Script" path="res://src/Combat/Actions/ActionDefinitionResource.cs" id="4_action"]
+
+; Morthul, the Ash King (the finish run, Act IV) — the strongest fight in the game. Four phases,
+; every one of them a different problem, and every spell and add archetype already exists.
+;
+;   phase 1  the god walks to you: rake and crush, Wither at range.
+;   phase 2  at 75% he stops walking. ai.caster: he holds a band and burns you with Flame Lance and
+;            Fireball while the first ashen wave (cinder thralls) comes up the dais.
+;   phase 3  at 50% he closes again, faster, drinking life back with Ember Siphon, and his
+;            cultists keep coming (capped at three alive, the Iron King's rule).
+;   phase 4  at 25%: entropy. A new move set (a sweeping unmaking and a slam that ends things), no
+;            safe blow in it, and Ash Maws from the void. A six-minute enrage forces this phase.
+;
+; No relic: nothing of Morthul is left to carry. The defeat conversation is dialogue.ash_throne —
+; the throne choice, which the main line owns (this realm ships its placeholder).
+[sub_resource type="Resource" id="Wave_thralls"]
+script = ExtResource("3_wave")
+TemplateId = "enemy.cinder_thrall"
+Count = 3
+RepeatSeconds = 0.0
+MaxAlive = 0
+HealthMultiplier = 1.2
+
+[sub_resource type="Resource" id="Wave_cultists"]
+script = ExtResource("3_wave")
+TemplateId = "enemy.cultist"
+Count = 2
+RepeatSeconds = 20.0
+MaxAlive = 3
+HealthMultiplier = 1.3
+
+[sub_resource type="Resource" id="Wave_maws"]
+script = ExtResource("3_wave")
+TemplateId = "enemy.ash_maw"
+Count = 2
+RepeatSeconds = 28.0
+MaxAlive = 2
+HealthMultiplier = 1.3
+
+[sub_resource type="Resource" id="Phase_1"]
+script = ExtResource("2_phase")
+HealthFraction = 1.0
+AttackSpeedBonus = 0.0
+MoveSpeedBonus = 0.0
+GrantSpellIds = Array[String]([])
+AiProfileId = ""
+TelegraphColor = Color(0.7, 0.35, 0.9, 1)
+TelegraphEnergy = 2.5
+WindupPoiseMultiplier = 1.0
+AddWaves = Array[Resource]([])
+
+[sub_resource type="Resource" id="Phase_2"]
+script = ExtResource("2_phase")
+HealthFraction = 0.75
+AttackSpeedBonus = 0.1
+MoveSpeedBonus = 0.0
+GrantSpellIds = Array[String](["spell.flame_lance", "spell.fireball"])
+AiProfileId = "ai.caster"
+TelegraphColor = Color(1, 0.35, 0.15, 1)
+TelegraphEnergy = 3.5
+WindupPoiseMultiplier = 0.9
+AddWaves = Array[Resource]([SubResource("Wave_thralls")])
+
+[sub_resource type="Resource" id="Phase_3"]
+script = ExtResource("2_phase")
+HealthFraction = 0.5
+AttackSpeedBonus = 0.3
+MoveSpeedBonus = 0.25
+GrantSpellIds = Array[String](["spell.ember_siphon"])
+AiProfileId = "ai.boss"
+TelegraphColor = Color(1, 0.25, 0.1, 1)
+TelegraphEnergy = 4.5
+WindupPoiseMultiplier = 0.75
+AddWaves = Array[Resource]([SubResource("Wave_cultists")])
+
+[sub_resource type="Resource" id="P4_Unmaking"]
+script = ExtResource("4_action")
+Id = "morthul.p4unmaking"
+Kind = 1
+AnimationSlot = "attack"
+Duration = 1.8
+FallbackDuration = 1.8
+ActiveFrom = 0.5
+ActiveTo = 0.7
+CancelFrom = 0.84
+ComboFrom = 0.84
+ComboTo = 1.0
+NextActionId = "morthul.p4end"
+Interruptible = false
+MoveScale = 0.1
+TurnDegreesPerSecond = 120.0
+StaminaCost = 24.0
+DamageScale = 1.5
+PoiseScale = 1.6
+Knockback = 6.0
+RootMotion = 2
+MaxWarpDistance = 2.5
+MaxWarpDegrees = 60.0
+HitStopScale = 1.5
+CameraImpulse = 0.8
+AiWeight = 1.0
+AiMinRange = 0.0
+AiMaxRange = 4.6
+AiRecoverySeconds = 0.6
+
+[sub_resource type="Resource" id="P4_End"]
+script = ExtResource("4_action")
+Id = "morthul.p4end"
+Kind = 1
+AnimationSlot = "attack"
+Duration = 2.4
+FallbackDuration = 2.4
+ActiveFrom = 0.64
+ActiveTo = 0.74
+CancelFrom = 0.88
+ComboFrom = 0.88
+ComboTo = 1.0
+NextActionId = ""
+Interruptible = false
+MoveScale = 0.0
+TurnDegreesPerSecond = 20.0
+StaminaCost = 30.0
+DamageScale = 2.1
+PoiseScale = 2.0
+Knockback = 8.0
+RootMotion = 2
+MaxWarpDistance = 3.0
+MaxWarpDegrees = 30.0
+HitStopScale = 1.8
+CameraImpulse = 1.0
+AiWeight = 0.7
+AiMinRange = 0.0
+AiMaxRange = 4.0
+AiRecoverySeconds = 1.0
+
+[sub_resource type="Resource" id="Phase_4"]
+script = ExtResource("2_phase")
+HealthFraction = 0.25
+AttackSpeedBonus = 0.45
+MoveSpeedBonus = 0.3
+GrantSpellIds = Array[String]([])
+AiProfileId = ""
+TelegraphColor = Color(0.85, 0.15, 0.3, 1)
+TelegraphEnergy = 6.5
+WindupPoiseMultiplier = 0.6
+Attacks = Array[ExtResource("4_action")]([SubResource("P4_Unmaking"), SubResource("P4_End")])
+AddWaves = Array[Resource]([SubResource("Wave_maws")])
+
+[resource]
+script = ExtResource("1_boss")
+Id = "boss.morthul"
+Phases = Array[Resource]([SubResource("Phase_1"), SubResource("Phase_2"), SubResource("Phase_3"), SubResource("Phase_4")])
+EnrageSeconds = 360.0
+EnrageAttackSpeedBonus = 0.4
+EnrageMoveSpeedBonus = 0.25
+EnrageSpellIds = Array[String](["spell.flame_lance"])
+EnrageForcesFinalPhase = true
+IntroLockSeconds = 3.5
+DefeatSlowSeconds = 2.0
+DefeatTimeScale = 0.25
+DefeatMusicCue = "music.boss_defeat"
+RewardItemId = ""
+RewardQuantity = 1
+DefeatFlagId = "flag.morthul_defeated"
+DefeatDialogueId = "dialogue.ash_throne"

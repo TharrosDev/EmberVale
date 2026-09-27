@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="AttributeSet" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/Stats/AttributeSet.cs" id="1_attrset"]
+
+; Morthul, the Ash King (the finish run, Act IV) — the god of entropy and the last fight in the game.
+; The largest health pool of any enemy, heavy armour and deep resistances, and a real spell school:
+; he casts through the ordinary spellcasting path (SpellPower, Mana, ManaRegen on the archetype).
+; He is slow on his feet and slow to swing; what makes him the hardest fight is that he stops being
+; a thing you can stand next to.
+[resource]
+script = ExtResource("1_attrset")
+Health = 3400.0
+Stamina = 280.0
+Mana = 700.0
+Strength = 36.0
+Dexterity = 10.0
+Intelligence = 50.0
+Vitality = 70.0
+Endurance = 34.0
+Armor = 40.0
+PhysicalPower = 36.0
+SpellPower = 50.0
+MoveSpeed = 3.6
+AttackSpeed = 0.65
+CritChance = 0.05
+CritDamage = 1.7
+FireResist = 60.0
+FrostResist = 40.0
+ArcaneResist = 50.0
+NecroticResist = 70.0

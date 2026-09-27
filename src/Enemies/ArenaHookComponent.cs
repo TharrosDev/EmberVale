@@ -41,15 +41,13 @@ public partial class ArenaHookComponent : Node
         EventBus.Instance?.Unsubscribe<EntityDiedEvent>(OnDied);
     }
 
-    // ponytail: both handlers react to ANY boss, not to the one fighting in this arena — unlike
-    // BossController.SpawnMarkers, which scopes its markers by ancestry so two loaded arenas cannot
-    // borrow each other's. Harmless today: this is the only ArenaHookComponent in the game and the
-    // lair bosses live in a different region, which is never streamed in alongside this one.
-    // Upgrade trigger: a second arena, or any boss that can be alive in the same region as one —
-    // then scope both handlers to bosses under this hook's own scene root.
+    // Both handlers react only to a boss standing under this hook's own parent (the arena's cell
+    // root, which is where BossSummonComponent spawns it) — the same ancestry scoping
+    // BossController.SpawnMarkers uses. The Celestial Realm streams two arenas side by side (the
+    // Knight's gate and the Ash Throne), so an unscoped hook would light one arena for the other's fight.
     private void OnPhaseChanged(BossPhaseChangedEvent e)
     {
-        if (e.Phase >= ActivateAtPhase)
+        if (e.Phase >= ActivateAtPhase && InThisArena(e.Boss))
         {
             SetRevealed(true);
         }
@@ -57,11 +55,14 @@ public partial class ArenaHookComponent : Node
 
     private void OnDied(EntityDiedEvent e)
     {
-        if (e.Entity is BossEntity)
+        if (e.Entity is BossEntity && InThisArena(e.Entity))
         {
             SetRevealed(false);
         }
     }
+
+    private bool InThisArena(object? boss) =>
+        boss is Node node && IsInstanceValid(node) && GetParent() is { } arena && arena.IsAncestorOf(node);
 
     private void SetRevealed(bool revealed)
     {

@@ -1,0 +1,102 @@
+[gd_resource type="Resource" script_class="WeaponResource" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/Combat/WeaponResource.cs" id="1_weapon"]
+[ext_resource type="Script" path="res://src/Combat/Actions/ActionDefinitionResource.cs" id="2_action"]
+
+; The Ashen Knight's greatsword (the finish run, Act IV). Modelled on the Iron King's maul chain and
+; built to be its opposite: where the King telegraphs one huge blow, the Knight chains three quick
+; ones. Cut -> cut -> thrust. The two cuts are interruptible (the punish window a duel needs); the
+; closing thrust is not, and it warps further than the King's slam, because a duelist closes.
+[sub_resource type="Resource" id="CutA"]
+script = ExtResource("2_action")
+Id = "ashenknight.cut_a"
+Kind = 0
+AnimationSlot = "attack"
+Duration = 0.9
+FallbackDuration = 0.9
+ActiveFrom = 0.32
+ActiveTo = 0.46
+CancelFrom = 0.5
+ComboFrom = 0.46
+ComboTo = 1.0
+NextActionId = "ashenknight.cut_b"
+Interruptible = true
+MoveScale = 0.4
+TurnDegreesPerSecond = 120.0
+StaminaCost = 14.0
+DamageScale = 0.9
+PoiseScale = 0.9
+HitStopScale = 1.0
+CameraImpulse = 0.25
+AiWeight = 1.0
+AiMaxRange = 3.0
+AiRecoverySeconds = 0.35
+
+[sub_resource type="Resource" id="CutB"]
+script = ExtResource("2_action")
+Id = "ashenknight.cut_b"
+Kind = 0
+AnimationSlot = "attack"
+Duration = 0.95
+FallbackDuration = 0.95
+ActiveFrom = 0.34
+ActiveTo = 0.48
+CancelFrom = 0.52
+ComboFrom = 0.48
+ComboTo = 1.0
+NextActionId = "ashenknight.thrust"
+Interruptible = true
+MoveScale = 0.4
+TurnDegreesPerSecond = 110.0
+StaminaCost = 14.0
+DamageScale = 1.0
+PoiseScale = 1.0
+HitStopScale = 1.0
+CameraImpulse = 0.3
+AiWeight = 0.8
+AiMaxRange = 3.0
+AiRecoverySeconds = 0.4
+
+[sub_resource type="Resource" id="Thrust"]
+script = ExtResource("2_action")
+Id = "ashenknight.thrust"
+Kind = 1
+AnimationSlot = "attack"
+Duration = 1.3
+FallbackDuration = 1.3
+ActiveFrom = 0.5
+ActiveTo = 0.6
+CancelFrom = 0.78
+ComboFrom = 0.78
+ComboTo = 1.0
+NextActionId = ""
+Interruptible = false
+MoveScale = 0.0
+TurnDegreesPerSecond = 45.0
+RootMotion = 2
+MaxWarpDistance = 2.6
+MaxWarpDegrees = 35.0
+StaminaCost = 22.0
+DamageScale = 1.5
+PoiseScale = 1.5
+Knockback = 5.0
+HitStopScale = 1.4
+CameraImpulse = 0.6
+AiWeight = 0.6
+AiMaxRange = 3.6
+AiRecoverySeconds = 0.7
+
+[resource]
+script = ExtResource("1_weapon")
+DisplayName = "Ashen Knight's Greatsword"
+DamageType = 0
+BaseDamage = 28.0
+PoiseDamage = 50.0
+StaminaCost = 16.0
+Attacks = Array[ExtResource("2_action")]([SubResource("CutA"), SubResource("CutB"), SubResource("Thrust")])
+WindupTime = 0.3
+ActiveTime = 0.14
+RecoveryTime = 0.4
+AttackSpeed = 1.0
+ComboLength = 3
+FinisherMultiplier = 1.5

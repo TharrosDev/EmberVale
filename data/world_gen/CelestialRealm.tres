@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="WorldGenerationProfileResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/World/WorldGenerationProfileResource.cs" id="1_generation"]
+
+; THE CELESTIAL REALM'S GEOGRAPHY RECIPE (the finish run).
+;
+; The shape of this realm is AUTHORED, not generated: shattered terraces, a void rift and the Ash
+; Throne's dais all live in tools/region_spec_celestial.py. The generator's job here is to stay out
+; of the way, so every macro term is low: almost no mountain (prevalence 0.9 means almost nothing
+; qualifies), gentle relief, and a long RouteCalm so the assault road reads as a paved way rather
+; than a track. Hydrology is effectively off (a very high RiverThreshold): there is no water in the
+; realm of the dead gods, and a generated pond in the void rift would be a defect.
+
+[resource]
+script = ExtResource("1_generation")
+MasterSeed = 4700
+GeneratorVersion = 2
+BaseElevation = 20.0
+MacroScale = 300.0
+MacroRelief = 4.0
+MountainScale = 200.0
+MountainPrevalence = 0.9
+MountainHeight = 6.0
+ValleyStrength = 2.0
+ErosionStrength = 0.3
+LocalRelief = 1.0
+DetailScale = 3.0
+RouteCalm = 60.0
+Temperature = 0.5
+Moisture = 0.08
+SnowLine = 180.0
+HydrologyCellSize = 16.0
+RiverThreshold = 200.0
+RiverWidth = 1.0
+RiverDepth = 0.4

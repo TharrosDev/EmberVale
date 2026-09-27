@@ -1,0 +1,75 @@
+[gd_resource type="Resource" script_class="WeaponResource" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/Combat/WeaponResource.cs" id="1_weapon"]
+[ext_resource type="Script" path="res://src/Combat/Actions/ActionDefinitionResource.cs" id="2_action"]
+
+; Morthul's melee (the finish run, Act IV): the grasp of entropy, necrotic, from a figure twice a
+; man's height. A reaching rake and a crushing downward blow. His spells carry the rest of the fight.
+[sub_resource type="Resource" id="Rake"]
+script = ExtResource("2_action")
+Id = "morthul.rake"
+Kind = 0
+AnimationSlot = "attack"
+Duration = 1.5
+FallbackDuration = 1.5
+ActiveFrom = 0.4
+ActiveTo = 0.55
+CancelFrom = 0.6
+ComboFrom = 0.55
+ComboTo = 1.0
+NextActionId = "morthul.crush"
+Interruptible = true
+MoveScale = 0.2
+TurnDegreesPerSecond = 55.0
+StaminaCost = 18.0
+DamageScale = 1.0
+PoiseScale = 1.0
+HitStopScale = 1.1
+CameraImpulse = 0.35
+AiWeight = 1.0
+AiMaxRange = 4.2
+AiRecoverySeconds = 0.6
+
+[sub_resource type="Resource" id="Crush"]
+script = ExtResource("2_action")
+Id = "morthul.crush"
+Kind = 1
+AnimationSlot = "attack"
+Duration = 2.2
+FallbackDuration = 2.2
+ActiveFrom = 0.6
+ActiveTo = 0.7
+CancelFrom = 0.86
+ComboFrom = 0.86
+ComboTo = 1.0
+NextActionId = ""
+Interruptible = false
+MoveScale = 0.0
+TurnDegreesPerSecond = 25.0
+RootMotion = 2
+MaxWarpDistance = 2.0
+MaxWarpDegrees = 30.0
+StaminaCost = 26.0
+DamageScale = 1.8
+PoiseScale = 1.7
+Knockback = 7.0
+HitStopScale = 1.6
+CameraImpulse = 0.9
+AiWeight = 0.7
+AiMaxRange = 3.8
+AiRecoverySeconds = 0.9
+
+[resource]
+script = ExtResource("1_weapon")
+DisplayName = "Grasp of the Ash King"
+DamageType = 6
+BaseDamage = 30.0
+PoiseDamage = 60.0
+StaminaCost = 20.0
+Attacks = Array[ExtResource("2_action")]([SubResource("Rake"), SubResource("Crush")])
+WindupTime = 0.55
+ActiveTime = 0.2
+RecoveryTime = 0.7
+AttackSpeed = 0.65
+ComboLength = 2
+FinisherMultiplier = 1.5

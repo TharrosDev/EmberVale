@@ -1,0 +1,132 @@
+[gd_resource type="Resource" script_class="BossResource" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/Enemies/BossResource.cs" id="1_boss"]
+[ext_resource type="Script" path="res://src/Enemies/BossPhaseResource.cs" id="2_phase"]
+[ext_resource type="Script" path="res://src/Combat/Actions/ActionDefinitionResource.cs" id="4_action"]
+
+; The Ashen Knight's fight (the finish run, Act IV). Modelled on data/bosses/IronKing.tres and harder
+; on every axis, and a DUEL: there are no adds at all. The Knight is the one Flamebearer who would
+; think it beneath him to need help.
+;
+;   phase 1  the fencer. Cut, cut, thrust off his greatsword; the cuts can be staggered.
+;   phase 2  at 66%: faster, and his wind-ups are harder to break (poise x0.7). The punish window
+;            is still there; it is shorter.
+;   phase 3  at 33%: HE STOPS FENCING. A new move set — a gap-closing lunge and a whirling cut, both
+;            uninterruptible — and nothing in it can be traded with. The answer becomes the dodge.
+;
+; A long enrage (4 minutes) forces phase three: a rival does not let you wait him out.
+
+[sub_resource type="Resource" id="Phase_1"]
+script = ExtResource("2_phase")
+HealthFraction = 1.0
+AttackSpeedBonus = 0.0
+MoveSpeedBonus = 0.0
+GrantSpellIds = Array[String]([])
+AiProfileId = ""
+TelegraphColor = Color(0.95, 0.55, 0.3, 1)
+TelegraphEnergy = 2.5
+WindupPoiseMultiplier = 1.0
+AddWaves = Array[Resource]([])
+
+[sub_resource type="Resource" id="Phase_2"]
+script = ExtResource("2_phase")
+HealthFraction = 0.66
+AttackSpeedBonus = 0.3
+MoveSpeedBonus = 0.2
+GrantSpellIds = Array[String]([])
+AiProfileId = ""
+TelegraphColor = Color(1, 0.45, 0.2, 1)
+TelegraphEnergy = 3.8
+WindupPoiseMultiplier = 0.7
+AddWaves = Array[Resource]([])
+
+[sub_resource type="Resource" id="P3_Lunge"]
+script = ExtResource("4_action")
+Id = "ashenknight.p3lunge"
+Kind = 1
+AnimationSlot = "attack"
+Duration = 1.2
+FallbackDuration = 1.2
+ActiveFrom = 0.45
+ActiveTo = 0.58
+CancelFrom = 0.7
+ComboFrom = 0.7
+ComboTo = 1.0
+NextActionId = "ashenknight.p3whirl"
+Interruptible = false
+MoveScale = 0.0
+TurnDegreesPerSecond = 60.0
+StaminaCost = 20.0
+DamageScale = 1.4
+PoiseScale = 1.4
+Knockback = 4.0
+RootMotion = 2
+MaxWarpDistance = 4.0
+MaxWarpDegrees = 45.0
+HitStopScale = 1.4
+CameraImpulse = 0.6
+AiWeight = 1.0
+AiMinRange = 0.0
+AiMaxRange = 5.5
+AiRecoverySeconds = 0.5
+
+[sub_resource type="Resource" id="P3_Whirl"]
+script = ExtResource("4_action")
+Id = "ashenknight.p3whirl"
+Kind = 1
+AnimationSlot = "attack"
+Duration = 1.6
+FallbackDuration = 1.6
+ActiveFrom = 0.5
+ActiveTo = 0.7
+CancelFrom = 0.84
+ComboFrom = 0.84
+ComboTo = 1.0
+NextActionId = ""
+Interruptible = false
+MoveScale = 0.1
+TurnDegreesPerSecond = 180.0
+StaminaCost = 24.0
+DamageScale = 1.6
+PoiseScale = 1.6
+Knockback = 6.0
+RootMotion = 2
+MaxWarpDistance = 1.5
+MaxWarpDegrees = 90.0
+HitStopScale = 1.5
+CameraImpulse = 0.75
+AiWeight = 0.8
+AiMinRange = 0.0
+AiMaxRange = 3.2
+AiRecoverySeconds = 0.8
+
+[sub_resource type="Resource" id="Phase_3"]
+script = ExtResource("2_phase")
+HealthFraction = 0.33
+AttackSpeedBonus = 0.4
+MoveSpeedBonus = 0.3
+GrantSpellIds = Array[String]([])
+AiProfileId = ""
+TelegraphColor = Color(1, 0.3, 0.1, 1)
+TelegraphEnergy = 6.0
+WindupPoiseMultiplier = 0.6
+Attacks = Array[ExtResource("4_action")]([SubResource("P3_Lunge"), SubResource("P3_Whirl")])
+AddWaves = Array[Resource]([])
+
+[resource]
+script = ExtResource("1_boss")
+Id = "boss.ashen_knight"
+Phases = Array[Resource]([SubResource("Phase_1"), SubResource("Phase_2"), SubResource("Phase_3")])
+EnrageSeconds = 240.0
+EnrageAttackSpeedBonus = 0.3
+EnrageMoveSpeedBonus = 0.2
+EnrageSpellIds = Array[String]([])
+EnrageForcesFinalPhase = true
+IntroLockSeconds = 3.0
+DefeatSlowSeconds = 1.4
+DefeatTimeScale = 0.3
+DefeatMusicCue = "music.boss_defeat"
+RewardItemId = "item.relic.ashen_heart"
+RewardQuantity = 1
+DefeatFlagId = "flag.ashen_knight_defeated"
+DefeatDialogueId = "dialogue.ashen_knight_absorb"

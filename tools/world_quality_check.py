@@ -41,6 +41,7 @@ ROOT = Path(__file__).resolve().parent.parent
 REGIONS = {
     "ember_crown": "data/regions/EmberCrown.tres",
     "frostfang_reach": "data/regions/FrostfangReach.tres",
+    "celestial": "data/regions/CelestialRealm.tres",
 }
 
 @dataclass

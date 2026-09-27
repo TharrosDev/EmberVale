@@ -274,6 +274,16 @@ add("frostfang_reach/dragon_roost", "frostfang.dragon_roost", "Dungeon", ".", "T
 add("frostfang_reach/ash_roost", "frostfang.ash_roost", "Dungeon", ".", "The Ash Roost")
 add("frostfang_reach/ancient_aerie", "frostfang.ancient_aerie", "Dungeon", ".", "The Ancient Aerie")
 
+# ── The Celestial Realm (the finish run, Act IV) ─────────────────────────────────────────────
+# Reached only by the story portal. The landing arrives with the region (it is where the player IS);
+# the gate and the throne are seen from it across the terraces, or walked into.
+add("celestial/landing", "celestial.landing", "Waypoint", "Nav/ArrivalPillarW", "The Landing", reveal=True,
+    desc="The one terrace at the realm's edge that still holds a whole floor. The way home stands behind it.")
+add("celestial/knight_gate", "celestial.knight_gate", "Arena", "GateCentre", "The Knight's Gate",
+    desc="The last gate before the throne, at the far end of the only bridge over the void.", tier="Primary")
+add("celestial/ash_throne", "celestial.ash_throne", "Landmark", "ThroneMark", "The Ash Throne",
+    desc="The highest dais in the ruined heaven. Someone must always sit upon it.", tier="Primary")
+
 
 def _cell_ids():
     """scene stem -> cell id, read from the region specs (2026-09 world rebuild: the hand list of
@@ -281,8 +291,9 @@ def _cell_ids():
     sys.path.insert(0, os.path.join(ROOT, "tools"))
     from region_spec_ember import cells as ember
     from region_spec_frostfang import cells as frost
+    from region_spec_celestial import cells as celestial
     out = {}
-    for cell in list(ember()) + list(frost()):
+    for cell in list(ember()) + list(frost()) + list(celestial()):
         stem = cell.scene.replace("res://scenes/regions/", "").replace(".tscn", "")
         out[stem] = cell.cell_id
     return out

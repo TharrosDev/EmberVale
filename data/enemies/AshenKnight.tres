@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" format=3]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+; The Ashen Knight — the Sixth Flamebearer, the closest to victory, now Morthul's sworn blade and the
+; player's rival (the finish run, Act IV). A fast heavy duelist: the fight lives in
+; data/bosses/AshenKnight.tres.
+;
+; ⚠️ PLACEHOLDER BODY. The model is the bone knight's armoured revenant at 1.2x, which is honest for
+; "a knight burned hollow by the ember he failed to use" and keeps the whole fight playable today.
+; A bespoke Meshy body replaces it by changing ModelPath/ModelScale/CapsuleHeight only.
+; No LootTablePath on purpose: his relic is the boss reward, not a loot roll.
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.ashen_knight"
+NameKey = "enemy.ashen_knight.name"
+AttributesPath = "res://data/attributes/AshenKnightAttributes.tres"
+WeaponPath = "res://data/weapons/AshenKnightBlade.tres"
+LootTablePath = ""
+ModelPath = "res://assets/models/creatures/enm_bone_knight.glb"
+ModelScale = 1.2
+PlaceholderTint = Color(0.3, 0.26, 0.24, 1)
+AiProfileId = "ai.boss"
+FactionId = "faction.fallen"
+KnownSpellIds = Array[String]([])
+CapsuleRadius = 0.55
+CapsuleHeight = 2.16
+IsBoss = true
+BossId = "boss.ashen_knight"
+MaxPoise = 180.0
+Reaction = 4
+StaminaRegen = 22.0
+XpValue = 1500

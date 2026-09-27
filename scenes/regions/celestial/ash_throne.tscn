@@ -1,0 +1,210 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="1_navbaker"]
+[ext_resource type="Script" path="res://src/Entities/Entity.cs" id="2_entity"]
+[ext_resource type="Script" path="res://src/Enemies/BossSummonComponent.cs" id="3_summon"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_wall.glb" id="4_wall"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="5_brazier"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_relic.glb" id="6_relic"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="7_pillar"]
+[ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
+
+; ====================================================================================================
+; THE ASH THRONE (the finish run, Act IV) — where Morthul is fought and the world's future is chosen.
+;
+; The highest dais in the realm (region_spec_celestial.py THRONE, levelled flat across 44 x 40 m),
+; centred at cell-local (-29, -37). The road from the Knight's gate arrives at the dais's south edge;
+; the throne stands at its north edge with its back to the void, flanked by its two fires.
+;
+;   Brazier/Summon  BossSummonComponent. ⚠️ GATED ON A FLAG, NOT A QUEST: RequiredQuestId is empty
+;                   and RequiredFlagId = flag.ashen_knight_defeated, so the Ash King cannot be
+;                   challenged until his Knight has fallen. Morthul rises at the dais centre:
+;                   brazier (-29, -21) plus SpawnOffset (0, 0, -16).
+;   AddSpawns/*     found by GROUP "boss_add_spawn" (BossController scopes them to this scene), for
+;                   his ashen waves — ringed round him, clear of him and of the throne.
+; The dais floor stays bare; the pillars and the throne are on its rim.
+; ====================================================================================================
+[sub_resource type="NavigationMesh" id="NavMesh_ash_throne"]
+geometry_parsed_geometry_type = 1
+cell_size = 0.4
+cell_height = 0.3
+agent_height = 1.8
+agent_radius = 0.8
+agent_max_climb = 0.3
+agent_max_slope = 40.0
+
+[sub_resource type="BoxShape3D" id="Shape_wall"]
+size = Vector3(4, 4, 0.88)
+
+[sub_resource type="BoxShape3D" id="Shape_pillar"]
+size = Vector3(1, 3.13, 1)
+
+[sub_resource type="BoxShape3D" id="Shape_brazier"]
+size = Vector3(1, 1.4, 1)
+
+[sub_resource type="BoxShape3D" id="Shape_relic"]
+size = Vector3(1.2, 1.2, 1.2)
+
+[node name="AshThroneCell" type="Node3D"]
+
+[node name="Nav" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("NavMesh_ash_throne")
+
+[node name="NavBaker" type="Node" parent="Nav"]
+script = ExtResource("1_navbaker")
+
+; The throne: a broken wall of the gods' hall at twice a man's reach, the ember relic at its foot.
+[node name="ThroneBack" parent="Nav" instance=ExtResource("4_wall")]
+transform = Transform3D(1.6, 0, 0, 0, 1.8, 0, 0, 0, 1.6, -29, 0, -56)
+
+[node name="Col" type="StaticBody3D" parent="Nav/ThroneBack"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/ThroneBack/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Shape_wall")
+
+[node name="ThroneSeat" parent="Nav" instance=ExtResource("6_relic")]
+transform = Transform3D(1.8, 0, 0, 0, 1.8, 0, 0, 0, 1.8, -29, 0, -53)
+
+[node name="Col" type="StaticBody3D" parent="Nav/ThroneSeat"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/ThroneSeat/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("Shape_relic")
+
+[node name="ThroneFireW" parent="Nav" instance=ExtResource("5_brazier")]
+transform = Transform3D(1.3, 0, 0, 0, 1.3, 0, 0, 0, 1.3, -36, 0, -52)
+
+[node name="Col" type="StaticBody3D" parent="Nav/ThroneFireW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/ThroneFireW/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("Shape_brazier")
+
+[node name="Light" type="OmniLight3D" parent="Nav/ThroneFireW"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, 0)
+light_color = Color(1, 0.42, 0.2, 1)
+light_energy = 2.6
+omni_range = 10.0
+
+[node name="ThroneFireE" parent="Nav" instance=ExtResource("5_brazier")]
+transform = Transform3D(1.3, 0, 0, 0, 1.3, 0, 0, 0, 1.3, -22, 0, -52)
+
+[node name="Col" type="StaticBody3D" parent="Nav/ThroneFireE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/ThroneFireE/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("Shape_brazier")
+
+[node name="Light" type="OmniLight3D" parent="Nav/ThroneFireE"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, 0)
+light_color = Color(1, 0.42, 0.2, 1)
+light_energy = 2.6
+omni_range = 10.0
+
+; The dais pillars — six survivors of a colonnade, uneven, on the rim.
+[node name="PillarW1" parent="Nav" instance=ExtResource("7_pillar")]
+transform = Transform3D(1.5, 0, 0, 0, 2, 0, 0, 0, 1.5, -48, 0, -44)
+
+[node name="Col" type="StaticBody3D" parent="Nav/PillarW1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PillarW1/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.56, 0)
+shape = SubResource("Shape_pillar")
+
+[node name="PillarW2" parent="Nav" instance=ExtResource("7_pillar")]
+transform = Transform3D(1.5, 0, 0, 0, 1.4, 0, 0, 0, 1.5, -49, 0, -28)
+
+[node name="Col" type="StaticBody3D" parent="Nav/PillarW2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PillarW2/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.56, 0)
+shape = SubResource("Shape_pillar")
+
+[node name="PillarE1" parent="Nav" instance=ExtResource("7_pillar")]
+transform = Transform3D(1.5, 0, 0, 0, 2, 0, 0, 0, 1.5, -10, 0, -45)
+
+[node name="Col" type="StaticBody3D" parent="Nav/PillarE1"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PillarE1/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.56, 0)
+shape = SubResource("Shape_pillar")
+
+[node name="PillarE2" parent="Nav" instance=ExtResource("7_pillar")]
+transform = Transform3D(1.5, 0, 0, 0, 1.2, 0, 0, 0, 1.5, -9, 0, -26)
+
+[node name="Col" type="StaticBody3D" parent="Nav/PillarE2"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PillarE2/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.56, 0)
+shape = SubResource("Shape_pillar")
+
+[node name="PillarSW" parent="Nav" instance=ExtResource("7_pillar")]
+transform = Transform3D(1.5, 0, 0, 0, 1.7, 0, 0, 0, 1.5, -35, 0, -18)
+
+[node name="Col" type="StaticBody3D" parent="Nav/PillarSW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PillarSW/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.56, 0)
+shape = SubResource("Shape_pillar")
+
+[node name="PillarSE" parent="Nav" instance=ExtResource("7_pillar")]
+transform = Transform3D(1.5, 0, 0, 0, 1.7, 0, 0, 0, 1.5, -23, 0, -18)
+
+[node name="Col" type="StaticBody3D" parent="Nav/PillarSE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/PillarSE/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.56, 0)
+shape = SubResource("Shape_pillar")
+
+[node name="Brazier" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -29, 0, -21)
+script = ExtResource("2_entity")
+DisplayName = "The Last Fire"
+
+[node name="Collider" type="StaticBody3D" parent="Brazier"]
+
+[node name="Shape" type="CollisionShape3D" parent="Brazier/Collider"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("Shape_brazier")
+
+[node name="FireLight" type="OmniLight3D" parent="Brazier"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+light_color = Color(0.9, 0.4, 0.55, 1)
+light_energy = 2.0
+omni_range = 7.0
+
+[node name="Summon" type="Node" parent="Brazier"]
+script = ExtResource("3_summon")
+SpawnOffset = Vector3(0, 0, -16)
+RequiredQuestId = ""
+RequiredFlagId = "flag.ashen_knight_defeated"
+BossTemplateId = "enemy.morthul"
+DefeatedFlagId = "flag.morthul_defeated"
+PromptKey = "celestial.morthul.challenge_prompt"
+LockedPromptKey = "celestial.morthul.challenge_locked"
+
+[node name="Model" parent="Brazier" instance=ExtResource("5_brazier")]
+
+[node name="AddSpawns" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -29, 0, -37)
+
+[node name="SpawnNE" type="Marker3D" parent="AddSpawns" groups=["boss_add_spawn"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, -6)
+
+[node name="SpawnNW" type="Marker3D" parent="AddSpawns" groups=["boss_add_spawn"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0, -7)
+
+[node name="SpawnSE" type="Marker3D" parent="AddSpawns" groups=["boss_add_spawn"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 9)
+
+[node name="SpawnSW" type="Marker3D" parent="AddSpawns" groups=["boss_add_spawn"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0, 8)
+
+; The map pin's anchor: the throne itself.
+[node name="ThroneMark" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -29, 0, -50)
+
+[node name="MapPin" type="Node3D" parent="ThroneMark"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.celestial.ash_throne"

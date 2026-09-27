@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="EnemyArchetypeResource" format=3]
+
+[ext_resource type="Script" path="res://src/Enemies/EnemyArchetypeResource.cs" id="1_archetype"]
+
+; Morthul, the Ash King — the god of entropy, and the final boss (the finish run, Act IV). Caster
+; and melee: he knows Wither from the first blow (which is what gives him a SpellcastingComponent),
+; and his phases in data/bosses/Morthul.tres grant the rest and switch him between closing and
+; standing off to cast.
+;
+; ⚠️ PLACEHOLDER BODY. The faceless shrouded shade at 2x — a towering hooded figure a little under
+; four metres tall — until a bespoke Meshy body replaces it (ModelPath/ModelScale/CapsuleHeight).
+[resource]
+script = ExtResource("1_archetype")
+Id = "enemy.morthul"
+NameKey = "enemy.morthul.name"
+AttributesPath = "res://data/attributes/MorthulAttributes.tres"
+WeaponPath = "res://data/weapons/MorthulGrasp.tres"
+LootTablePath = ""
+ModelPath = "res://assets/models/creatures/enm_grave_shade.glb"
+ModelScale = 2.0
+PlaceholderTint = Color(0.16, 0.12, 0.14, 1)
+AiProfileId = "ai.boss"
+FactionId = "faction.fallen"
+KnownSpellIds = Array[String](["spell.wither"])
+CapsuleRadius = 0.9
+CapsuleHeight = 3.4
+IsBoss = true
+BossId = "boss.morthul"
+MaxPoise = 320.0
+Reaction = 4
+StaminaRegen = 18.0
+ManaRegen = 18.0
+XpValue = 3000

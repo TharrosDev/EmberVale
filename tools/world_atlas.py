@@ -53,6 +53,10 @@ REALMS = [
     Realm("pale_concord", "The Pale Concord", "region.pale_concord", (-2600.0, -400.0, -1500.0, 900.0),
           "hidden", "Phase 44N-44Q",
           "Found by story, never advertised. No neighbour, map, travel or search record may name it."),
+    Realm("celestial", "The Celestial Realm", "region.celestial", (2400.0, -2400.0, 3200.0, -1600.0),
+          "built", "the finish run (Act IV)",
+          "The ruined realm of the dead gods: shattered terraces over a void rift, the Knight's gate, "
+          "the Ash Throne. Reached only by the story portal."),
 ]
 
 # Where one realm's road meets the next. Built ends are world points in their own region.
@@ -103,7 +107,9 @@ def check() -> list[str]:
 
     import region_spec_ember
     import region_spec_frostfang
-    for realm, spec in (("ember_crown", region_spec_ember), ("frostfang_reach", region_spec_frostfang)):
+    import region_spec_celestial
+    for realm, spec in (("ember_crown", region_spec_ember), ("frostfang_reach", region_spec_frostfang),
+                        ("celestial", region_spec_celestial)):
         band = next(r.band for r in REALMS if r.key == realm)
         lattice = (spec.EXTENT_X[0], spec.ROWS[0][0], spec.EXTENT_X[1], spec.ROWS[-1][1])
         if not (band[0] <= lattice[0] and band[1] <= lattice[1] and lattice[2] <= band[2] and lattice[3] <= band[3]):

@@ -1621,6 +1621,12 @@ location.frostfang.stormcrown.desc,"A storm-blasted spire in the north-east high
 location.frostfang.dragon_roost.name,The Dragon Roost
 location.frostfang.ash_roost.name,The Ash Roost
 location.frostfang.ancient_aerie.name,The Ancient Aerie
+location.celestial.landing.name,The Landing
+location.celestial.landing.desc,"The one terrace at the realm's edge that still holds a whole floor. The way home stands behind it."
+location.celestial.knight_gate.name,The Knight's Gate
+location.celestial.knight_gate.desc,"The last gate before the throne, at the far end of the only bridge over the void."
+location.celestial.ash_throne.name,The Ash Throne
+location.celestial.ash_throne.desc,"The highest dais in the ruined heaven. Someone must always sit upon it."
 # --- END generated map location names ---
 # --- Phase 41D: the branching barrels errand (quest.hollowreach.barrels) ---
 quest.hollowreach.barrels.title,"What the Post Took"
@@ -2099,3 +2105,27 @@ quest.veiled_archive.ancient_lead.summary,"The Ancient in the Frostfang aerie ho
 quest.veiled_archive.ancient_lead.obj_reach,"Go to the Ancient's aerie"
 quest.veiled_archive.ancient_lead.obj_report_taught,"Tell Keeper Ysolde Marr what the Ancient taught you"
 quest.veiled_archive.ancient_lead.obj_report_defeated,"Tell Keeper Ysolde Marr what the hoard kept"
+# Celestial Realm (the finish run, Act IV): the Ashen Knight, Morthul, the braziers and the throne placeholder.
+enemy.ashen_knight.name,The Ashen Knight
+enemy.ashen_knight.lore,"The Sixth Flamebearer, and the closest any of them came. He reached the Ash Throne, raised his blade over Morthul and did not bring it down. Whatever he saw in that moment, he has served the god of endings ever since, and he waits at the last gate for the one who might finish what he could not."
+enemy.morthul.name,"Morthul, the Ash King"
+enemy.morthul.lore,"The god of entropy, who looked at creation and judged that everything ends, even gods, and so everything should. He killed the six who stood against him and has sat in their ruined heaven ever since, while the world he broke goes on dying."
+celestial.ashen_knight.challenge_prompt,"Light the brazier and face the Ashen Knight"
+celestial.ashen_knight.challenge_locked,"The brazier will not take."
+celestial.morthul.challenge_prompt,"Light the last fire and challenge the Ash King"
+celestial.morthul.challenge_locked,"The fire will not wake while the Knight still holds the gate."
+dlg.ashenknight.absorb.speaker,The Ashen Knight
+dlg.ashenknight.absorb.last_words,"He goes down on one knee and plants the greatsword so he does not fall further. ""Good. Good. I was beginning to think there would never be anyone."""
+dlg.ashenknight.absorb.c_listen,"Why did you stop, at the throne?"
+dlg.ashenknight.absorb.last_words_2,"""Because I saw what sits in it. Not a god. A chair that must never be empty. I could kill him, or I could become him, and I could not choose. So I knelt. Choose better than I did, Seventh. Take my ember or leave it in the ash, but do not kneel."""
+dlg.ashenknight.absorb.c_go_on,"Rest, Knight."
+dlg.ashenknight.absorb.offer,"His ember gutters in the cracked breastplate, grey and heavy, the strongest fire of the six. It is yours to take. Will you absorb the flame?"
+dlg.ashenknight.absorb.c_absorb,Absorb the flame.
+dlg.ashenknight.absorb.c_decline,Leave it with him.
+dlg.ashenknight.absorb.absorbed,"His strength pours into you, disciplined and vast, and with it the memory of a blade held still above a throne. The bargain is struck."
+dlg.ashenknight.absorb.declined,"You leave the ember where it lies. It burns down slowly beside him, and for the first time since the Cataclysm the Ashen Knight is at rest."
+dlg.ashenknight.absorb.c_absorbed_bye,So be it.
+dlg.ashenknight.absorb.c_declined_bye,Farewell.
+dlg.ash_throne.speaker,The Ash Throne
+dlg.ash_throne.empty,The throne stands empty.
+dlg.ash_throne.c_leave,Leave.

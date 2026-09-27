@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="EncounterResource" format=3]
+
+[ext_resource type="Script" path="res://src/World/EncounterResource.cs" id="1_encounter"]
+
+; The Celestial Realm assault (the finish run, Act IV): Morthul's host on the road to the Ash Throne.
+[resource]
+script = ExtResource("1_encounter")
+Id = "encounter.celestial_revenants"
+DisplayName = "Revenant Knights"
+EnemyTemplateId = "enemy.bone_knight"
+MinCount = 2
+MaxCount = 3
+SelectionWeight = 0.9
+CorruptionChance = 0.6
+RegionIds = Array[String](["region.celestial"])
+AtDawn = true
+AtDay = true
+AtDusk = true
+AtNight = true

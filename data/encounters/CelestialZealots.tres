@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="EncounterResource" format=3]
+
+[ext_resource type="Script" path="res://src/World/EncounterResource.cs" id="1_encounter"]
+
+; The Celestial Realm assault (the finish run, Act IV): Morthul's host on the road to the Ash Throne.
+[resource]
+script = ExtResource("1_encounter")
+Id = "encounter.celestial_zealots"
+DisplayName = "Zealots of the Ash King"
+EnemyTemplateId = "enemy.cultist"
+MinCount = 3
+MaxCount = 4
+SelectionWeight = 1.0
+CorruptionChance = 0.4
+RegionIds = Array[String](["region.celestial"])
+AtDawn = true
+AtDay = true
+AtDusk = true
+AtNight = true

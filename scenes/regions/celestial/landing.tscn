@@ -1,0 +1,80 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://src/World/CellNavBaker.cs" id="1_navbaker"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_pillar.glb" id="2_pillar"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_ruin_wall.glb" id="3_wall"]
+[ext_resource type="PackedScene" path="res://assets/models/props/prp_brazier.glb" id="4_brazier"]
+[ext_resource type="Script" path="res://src/World/MapLocationComponent.cs" id="maploc_39_5a"]
+
+; THE LANDING (the finish run, Act IV) — where the Sunspire library's story gate lets the player out.
+;
+; The one terrace at the realm's south-west edge that still holds a whole floor (region_spec_celestial
+; LANDING, levelled flat), centred at cell-local (37, 58). The player arrives at local (37, 62)
+; (RegionResource.SpawnPoint) facing north up the assault road; the code-built return portal stands
+; behind them at local (37, 73) (PortalPoint). Two pillars of a fallen gatehouse frame the road out;
+; a cold brazier and a broken wall say someone held this landing once. Nothing here fights.
+[sub_resource type="NavigationMesh" id="NavMesh_landing"]
+geometry_parsed_geometry_type = 1
+cell_size = 0.4
+cell_height = 0.3
+agent_height = 1.8
+agent_radius = 0.8
+agent_max_climb = 0.3
+agent_max_slope = 40.0
+
+[sub_resource type="BoxShape3D" id="Shape_pillar"]
+size = Vector3(1, 3.13, 1)
+
+[sub_resource type="BoxShape3D" id="Shape_wall"]
+size = Vector3(4, 4, 0.88)
+
+[sub_resource type="BoxShape3D" id="Shape_brazier"]
+size = Vector3(1, 1.4, 1)
+
+[node name="LandingCell" type="Node3D"]
+
+[node name="Nav" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("NavMesh_landing")
+
+[node name="NavBaker" type="Node" parent="Nav"]
+script = ExtResource("1_navbaker")
+
+[node name="ArrivalPillarW" parent="Nav" instance=ExtResource("2_pillar")]
+transform = Transform3D(1.5, 0, 0, 0, 2, 0, 0, 0, 1.5, 31, 0, 50)
+
+[node name="Col" type="StaticBody3D" parent="Nav/ArrivalPillarW"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/ArrivalPillarW/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.56, 0)
+shape = SubResource("Shape_pillar")
+
+[node name="ArrivalPillarE" parent="Nav" instance=ExtResource("2_pillar")]
+transform = Transform3D(1.5, 0, 0, 0, 1.3, 0, 0, 0, 1.5, 45, 0, 49)
+
+[node name="Col" type="StaticBody3D" parent="Nav/ArrivalPillarE"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/ArrivalPillarE/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.56, 0)
+shape = SubResource("Shape_pillar")
+
+[node name="BrokenWall" parent="Nav" instance=ExtResource("3_wall")]
+transform = Transform3D(0.94, 0, 0.342, 0, 1, 0, -0.342, 0, 0.94, 20, 0, 66)
+
+[node name="Col" type="StaticBody3D" parent="Nav/BrokenWall"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/BrokenWall/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("Shape_wall")
+
+[node name="ColdBrazier" parent="Nav" instance=ExtResource("4_brazier")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 52, 0, 64)
+
+[node name="Col" type="StaticBody3D" parent="Nav/ColdBrazier"]
+
+[node name="Shape" type="CollisionShape3D" parent="Nav/ColdBrazier/Col"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("Shape_brazier")
+
+[node name="MapPin" type="Node3D" parent="Nav/ArrivalPillarW"]
+script = ExtResource("maploc_39_5a")
+LocationId = "location.celestial.landing"
