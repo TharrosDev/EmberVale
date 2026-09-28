@@ -5,7 +5,9 @@ namespace Embervale.Movement;
 /// itself is three engine moves in <see cref="LocomotionComponent"/>; this is the accept/revert rule.
 ///
 /// <b>Why this exists at all.</b> Godot's <c>CharacterBody3D</c> has no step offset — <c>MoveAndSlide</c>
-/// climbs nothing taller than <c>floor_snap_length</c> (0.1 m, and this project never raised it). Every
+/// has no way up a kerb at all; its <c>floor_snap_length</c> only ever pulls a body <em>down</em> (the
+/// motor raises it to <c>StepDownHeight</c> so descending steps is not a string of hops, which is the
+/// other half of this and does not climb anything). Every
 /// cell in the game is authored around that absence: <c>embermarket.tscn</c>'s header recorded a 0.3 m
 /// plaza dais being <em>deleted</em> over it, and every ground slab in the realm is a 5–6 cm decorative
 /// skin with no collider. So this is not a traversal flourish — it is what lets the world have raised
@@ -40,8 +42,8 @@ public static class StepUp
     /// authored one floored to a voxel, so it sits at or below this by design.</summary>
     public const float MaxHeight = 0.5f;
 
-    /// <summary>Below this a step is not worth taking — it is inside what <c>floor_snap_length</c>
-    /// already climbs, so committing to it is a visible twitch that buys nothing.</summary>
+    /// <summary>Below this a step is not worth taking — a capsule's rounded bottom
+    /// already slides over it, so committing to it is a visible twitch that buys nothing.</summary>
     public const float MinimumRise = 0.02f;
 
     /// <summary>
@@ -51,21 +53,37 @@ public static class StepUp
     /// how far it got along its intended direction. <b>Both are required and the second is the one a
     /// naive rule misses:</b> a body that rose without advancing is standing on the face of the kerb
     /// it failed to climb, and keeping that leaves it hovering.
+    ///
+    /// <paramref name="landingNormalY"/> is the up-component of the surface the final downward move
+    /// came to rest on (0 when it rested on nothing), and <paramref name="minFloorNormalY"/> the
+    /// cosine of the body's <c>floor_max_angle</c>.
+    ///
+    /// ⚠️ <b>THE LANDING MUST BE A FLOOR, OR STEP-UP IS A WAY UP EVERY CLIFF.</b> A slope steeper than
+    /// <c>floor_max_angle</c> is a wall to <c>MoveAndSlide</c>, so <c>IsOnWall</c> fires against it
+    /// exactly as it does against a kerb, and the three moves then lift the body half a metre up the
+    /// face and set it down on more of the same slope. Rise and advance both pass. Repeated every
+    /// frame, that walks a body up a 60° mountainside the terrain was authored to refuse — and
+    /// <c>WorldWater</c>'s whole contract is that steep banks are what say "not that way". A kerb's
+    /// top is flat; a cliff's "top" is more cliff.
     /// </summary>
-    public static bool Accept(float climbed, float advanced, float maxHeight)
+    public static bool Accept(
+        float climbed, float advanced, float maxHeight, float landingNormalY = 1f, float minFloorNormalY = 0f)
     {
         // ⚠️ 37F's invariant at the one door that matters here: accepting means leaving a
         // CharacterBody3D at a new POSITION, and that body keeps its state between frames. One
         // non-finite result puts it somewhere no later frame undoes, and the crash surfaces in
         // whatever moves it next rather than here.
-        if (!float.IsFinite(climbed) || !float.IsFinite(advanced) || !float.IsFinite(maxHeight))
+        if (!float.IsFinite(climbed) || !float.IsFinite(advanced) || !float.IsFinite(maxHeight) ||
+            !float.IsFinite(landingNormalY))
         {
             return false;
         }
 
         return climbed > MinimumRise
             && climbed <= maxHeight + Tolerance
-            && advanced > MinimumRise;
+            && advanced > MinimumRise
+            && landingNormalY > 0f
+            && landingNormalY >= minFloorNormalY;
     }
 
     /// <summary>Slack on the height ceiling: the engine resolves the climb, so the result lands within

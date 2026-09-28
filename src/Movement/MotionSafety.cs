@@ -30,4 +30,19 @@ public static class MotionSafety
     /// symptom the player can report, where a body flung to infinity simply disappears.
     /// </summary>
     public static Vector3 Sanitize(Vector3 v) => IsFinite(v) ? v : Vector3.Zero;
+
+    /// <summary>
+    /// Whether a body's <em>position</em> is somewhere it can still be: finite, and not below
+    /// <paramref name="worldFloorY"/>.
+    ///
+    /// ⚠️ <b>THE SAME PERSISTENCE ARGUMENT, ONE LEVEL UP.</b> A velocity guard stops a NaN before it
+    /// moves the body; this catches the body that is already somewhere impossible — a NaN written
+    /// straight into a transform by a teleport, or a body that slipped through a terrain seam and is
+    /// falling forever. Neither recovers on its own: the first poisons every query the body is part
+    /// of, the second accelerates until float precision turns its collisions into noise.
+    /// <c>WorldRecovery</c> answers deep water and pits for the player; nothing answered "below the
+    /// world" for anyone.
+    /// </summary>
+    public static bool IsInWorld(Vector3 position, float worldFloorY) =>
+        IsFinite(position) && position.Y >= worldFloorY;
 }
