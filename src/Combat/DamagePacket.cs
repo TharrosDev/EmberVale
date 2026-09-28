@@ -35,9 +35,16 @@ public readonly record struct DamagePacket(
     HitKind Kind = HitKind.Normal,
     float Charge = 0f);
 
-/// <summary>The outcome of resolving a <see cref="DamagePacket"/> against a defender.</summary>
+/// <summary>The outcome of resolving a <see cref="DamagePacket"/> against a defender.
+/// <paramref name="Parry"/> is <see cref="ParryGrade.None"/> unless the blow was parried;
+/// <paramref name="GuardBroken"/> is set when this blow broke the defender's guard;
+/// <paramref name="Opening"/> is <see cref="HitKind.Riposte"/> or <see cref="HitKind.Backstab"/> when the
+/// blow landed as a critical opening and <see cref="HitKind.Normal"/> otherwise.</summary>
 public readonly record struct DamageResult(
     float FinalAmount,
     bool IsCrit,
     bool IsBlocked,
-    DamageType Type);
+    DamageType Type,
+    ParryGrade Parry = ParryGrade.None,
+    bool GuardBroken = false,
+    HitKind Opening = HitKind.Normal);

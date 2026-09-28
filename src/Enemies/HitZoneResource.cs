@@ -20,6 +20,10 @@ public partial class HitZoneResource : Resource
     /// <summary>Incoming damage (and poise damage) is multiplied by this. 2 = a weak point.</summary>
     [Export] public float DamageMultiplier { get; set; } = 1f;
 
+    /// <summary>Extra poise-damage scale on top of <see cref="DamageMultiplier"/>. 1 = poise follows
+    /// damage; above 1 the zone is easy to unbalance (a wing joint), below 1 hard to (a horned brow).</summary>
+    [Export] public float PoiseMultiplier { get; set; } = 1f;
+
     /// <summary>Where the zone sits relative to the actor's origin (its feet), in metres. Negative Z
     /// is forward — the same glTF→Godot convention the factories' hitbox offsets use.</summary>
     [Export] public Vector3 Offset { get; set; } = Vector3.Zero;

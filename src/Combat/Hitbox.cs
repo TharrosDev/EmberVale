@@ -28,6 +28,7 @@ public partial class Hitbox : Area3D
     private CombatComponent? _ownerCombat;
     private DamagePacket _packet;
     private bool _active;
+    private readonly List<Hurtbox> _candidates = new();
 
     /// <summary>Which side this hitbox swings for, asked fresh each time.</summary>
     private int OwnerTeam => (_ownerCombat ??= _ownerEntity?.GetComponent<CombatComponent>())?.Team ?? 0;
@@ -73,6 +74,11 @@ public partial class Hitbox : Area3D
             return;
         }
 
+        // One hit per body per swing, delivered to the best zone this frame's overlap reached. On a
+        // multi-zone body the physics query returns hurtboxes in no useful order, so "first" used to
+        // decide whether a sword that clipped a dragon's head and its tail did double damage or half.
+        // Now the most vulnerable zone wins, every time.
+        _candidates.Clear();
         foreach (Area3D area in GetOverlappingAreas())
         {
             if (area is not Hurtbox hurtbox)
@@ -92,6 +98,21 @@ public partial class Hitbox : Area3D
                 continue;
             }
 
+            int same = hurtbox.OwnerEntity == null
+                ? -1
+                : _candidates.FindIndex(c => ReferenceEquals(c.OwnerEntity, hurtbox.OwnerEntity));
+            if (same < 0)
+            {
+                _candidates.Add(hurtbox);
+            }
+            else if (hurtbox.DamageMultiplier > _candidates[same].DamageMultiplier)
+            {
+                _candidates[same] = hurtbox;
+            }
+        }
+
+        foreach (Hurtbox hurtbox in _candidates)
+        {
             // Last, so an ally/self skip above never burns the owner's one hit for this swing.
             if (!_alreadyHit.TryHit(hurtbox.OwnerEntity, hurtbox))
             {
