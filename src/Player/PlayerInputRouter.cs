@@ -153,17 +153,24 @@ public partial class PlayerInputRouter : EntityComponent
 
         _lockOn?.FaceTarget();
 
-        // What the camera is FOR, derived from gameplay rather than set by it — so nothing can put
-        // the camera in a framing that disagrees with what the player is doing.
+        // What the camera is FOR, read off gameplay rather than set by it — the rig resolves the
+        // context itself, so nothing can put the camera in a framing that disagrees with what the
+        // player is doing. Speed is measured against sprint speed, which is what the sprint lean and
+        // the layers' Speed01 are.
         if (_rig != null)
         {
-            _rig.Context = CameraProfile.Resolve(
-                aiming: Godot.Input.IsActionPressed(GameInput.Cast) ||
+            Vector3 velocity = (_yaw as CharacterBody3D)?.Velocity ?? Vector3.Zero;
+            float sprintSpeed = _locomotion != null ? _locomotion.BaseSpeed * _locomotion.SprintMultiplier : 0f;
+            _rig.Feed(new CameraInputs(
+                Aiming: Godot.Input.IsActionPressed(GameInput.Cast) ||
                         _weapon is { Weapon.IsRanged: true, IsCommitted: true },
-                lockedOn: _lockOn?.Target != null,
-                inCombat: _combat is { IsBlocking: true } || _weapon is { IsCommitted: true },
-                sprinting: _locomotion is { IsGrounded: true } loco &&
-                           (loco.IsSprinting || _mount is { IsGalloping: true }));
+                LockedOn: _lockOn?.Target != null,
+                InCombat: _combat is { IsBlocking: true } || _weapon is { IsCommitted: true },
+                Mounted: _mount is { IsMounted: true },
+                Sprinting: _locomotion is { IsSprinting: true } || _mount is { IsGalloping: true },
+                Grounded: _locomotion?.IsGrounded ?? true,
+                Dodging: _dodge is { IsDodging: true },
+                Speed01: CameraRigMath.Speed01(new Vector2(velocity.X, velocity.Z).Length(), sprintSpeed)));
         }
 
         // A warping action closes on whatever the player has locked. With no lock there is no
