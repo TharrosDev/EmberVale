@@ -96,7 +96,8 @@ public static class PlayerFactory
 
         AttributeSet attributes = ResidentResources.Load<AttributeSet>(PlayerAttributesPath) ?? AttributeSet.CreateDefault();
         player.AddChild(new StatsComponent { Name = "Stats", Attributes = attributes, HealthRegen = 3f });
-        player.AddChild(new LocomotionComponent { Name = "Locomotion" });
+        // Stamina-paid sprint and fall damage are the player's costs; AI bodies share the motor without them.
+        player.AddChild(new LocomotionComponent { Name = "Locomotion", SprintCostsStamina = true, TakesFallDamage = true });
         player.AddChild(new FootstepComponent { Name = "Footsteps" });
         player.AddChild(new CombatComponent { Name = "Combat", Team = PlayerTeam });
         player.AddChild(new InventoryComponent { Name = "Inventory" });

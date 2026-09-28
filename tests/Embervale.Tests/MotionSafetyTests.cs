@@ -65,4 +65,27 @@ public class MotionSafetyTests
         Assert.True(MotionSafety.IsFinite(fast));
         Assert.Equal(fast, MotionSafety.Sanitize(fast));
     }
+
+    [Fact]
+    public void AnOrdinaryPositionIsInTheWorld()
+    {
+        Assert.True(MotionSafety.IsInWorld(new Vector3(310f, 42f, -655f), -500f));
+        Assert.True(MotionSafety.IsInWorld(new Vector3(0f, -30f, 0f), -500f)); // a deep trench is low, not lost
+    }
+
+    [Fact]
+    public void BelowTheWorldFloorIsLost()
+    {
+        Assert.False(MotionSafety.IsInWorld(new Vector3(0f, -501f, 0f), -500f));
+    }
+
+    [Theory]
+    [InlineData(float.NaN, 0f, 0f)]
+    [InlineData(0f, float.NaN, 0f)]
+    [InlineData(0f, 0f, float.PositiveInfinity)]
+    [InlineData(0f, float.NegativeInfinity, 0f)]
+    public void ANonFinitePositionIsNowhere(float x, float y, float z)
+    {
+        Assert.False(MotionSafety.IsInWorld(new Vector3(x, y, z), -500f));
+    }
 }

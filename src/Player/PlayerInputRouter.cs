@@ -109,10 +109,20 @@ public partial class PlayerInputRouter : EntityComponent
             _mount?.Toggle();
         }
 
+        // Walk is a gait on the motor, not a scale on the wish, so sprint can still override it and
+        // the stick's own magnitude still counts underneath it.
+        if (Godot.Input.IsActionJustPressed(GameInput.WalkToggle) && _locomotion != null)
+        {
+            _locomotion.Walking = !_locomotion.Walking;
+        }
+
+        // A press, not a hold: the motor buffers it (JumpAssist), so one pressed a moment before
+        // landing or during a roll still fires.
         bool jump = Godot.Input.IsActionJustPressed(GameInput.Jump);
 
-        // Held sprint is a request. On foot it is granted outright; mounted, the horse's own pool
-        // answers — Tick returns the input unchanged when not mounted, so there is no branch here.
+        // Held sprint is a request. On foot the motor answers it from the player's stamina; mounted,
+        // the horse's own pool answers first — Tick returns the input unchanged when not mounted, so
+        // there is no branch here.
         bool sprint = _mount?.Tick(delta, Godot.Input.IsActionPressed(GameInput.Sprint))
             ?? Godot.Input.IsActionPressed(GameInput.Sprint);
         _locomotion?.Move(delta, actionMove, sprint, jump);
@@ -151,7 +161,7 @@ public partial class PlayerInputRouter : EntityComponent
                         _weapon is { Weapon.IsRanged: true, IsCommitted: true },
                 lockedOn: _lockOn?.Target != null,
                 inCombat: _combat is { IsBlocking: true } || _weapon is { IsCommitted: true },
-                sprinting: sprint && _locomotion is { } loco && loco.IsGrounded);
+                sprinting: _locomotion is { IsSprinting: true, IsGrounded: true });
         }
 
         // A warping action closes on whatever the player has locked. With no lock there is no

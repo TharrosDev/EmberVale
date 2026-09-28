@@ -1,6 +1,7 @@
 using Embervale.Core.Diagnostics;
 using Embervale.Entities;
 using Embervale.Stats;
+using Embervale.World;
 using Godot;
 
 namespace Embervale.Movement;
@@ -14,6 +15,20 @@ namespace Embervale.Movement;
 /// Movement speed is sourced from the owner's <see cref="StatsComponent"/>
 /// (<see cref="StatType.MoveSpeed"/>) when present, so buffs/gear that modify the
 /// stat automatically affect movement — falling back to <see cref="BaseSpeed"/>.
+///
+/// <para>On top of that baseline (2026-09 traversal pass, Skyrim as the reference): three gaits
+/// (<see cref="Walking"/>, run, sprint), sprint paid for in stamina where
+/// <see cref="SprintCostsStamina"/>, coyote time and a jump buffer (<see cref="JumpAssist"/>), an uphill
+/// speed penalty and step-<em>down</em> snapping (<see cref="LocomotionRules"/>,
+/// <see cref="StepDownHeight"/>), a landing stumble after a long drop and fall damage where
+/// <see cref="TakesFallDamage"/> (<see cref="FallRules"/>), and a position guard that returns a body
+/// found below the world (<see cref="MotionSafety.IsInWorld"/>). The rules are pure and tested; this
+/// class only measures and applies.</para>
+///
+/// ⚠️ <b>EVERY WALKING ACTOR RUNS THROUGH THIS MOTOR</b> — the player, enemies, companions, and the
+/// player again while mounted. The costs a player should feel (stamina, fall damage) are therefore
+/// opt-in flags <c>PlayerFactory</c> sets, not defaults: an enemy that chases at a sprint would
+/// otherwise arrive with no stamina to block with, which is an AI rebalance nobody asked for.
 /// </summary>
 [GlobalClass]
 public partial class LocomotionComponent : EntityComponent
@@ -48,6 +63,75 @@ public partial class LocomotionComponent : EntityComponent
     [Export]
     public float SprintMultiplier { get; set; } = 1.6f;
 
+    /// <summary>Speed multiplier while <see cref="Walking"/> — Skyrim's caps-lock walk. Under half a
+    /// run, because a walk that is merely a slower run reads as a sluggish run rather than a gait.</summary>
+    [Export(PropertyHint.Range, "0.1,1,0.05")] public float WalkMultiplier { get; set; } = 0.45f;
+
+    /// <summary>Walk mode (a toggle for the player). Sprint overrides it — see
+    /// <see cref="LocomotionRules.GaitScale"/>.</summary>
+    public bool Walking { get; set; }
+
+    /// <summary>Whether sprinting spends the owner's <see cref="StatType.Stamina"/>. Off by default and
+    /// on for the player — see the class remarks for why AI bodies are exempt. Never while mounted:
+    /// the horse's own gallop pool answers then.</summary>
+    [Export] public bool SprintCostsStamina { get; set; }
+
+    /// <summary>Stamina per second spent while actually sprinting on the ground. 100 stamina is about
+    /// eight seconds of it — Skyrim's rhythm. Every tick is a spend, so <c>StaminaPacing</c>'s regen
+    /// pause holds for as long as the sprint does.</summary>
+    [Export] public float SprintStaminaPerSecond { get; set; } = 12f;
+
+    /// <summary>Stamina a winded body must recover (and let go of sprint) before sprinting again —
+    /// the hysteresis in <see cref="SprintStamina"/>.</summary>
+    [Export] public float SprintResumeStamina { get; set; } = 20f;
+
+    /// <summary>Seconds after leaving the ground in which a jump still fires (coyote time).</summary>
+    [Export(PropertyHint.Range, "0,0.3,0.01")] public float CoyoteTime { get; set; } = 0.12f;
+
+    /// <summary>Seconds a jump pressed early — before landing, or during a roll — stays queued.</summary>
+    [Export(PropertyHint.Range, "0,0.3,0.01")] public float JumpBuffer { get; set; } = 0.12f;
+
+    /// <summary>Speed lost walking straight up the steepest walkable ground (the body's
+    /// <c>floor_max_angle</c>), as a fraction; linear in the slope angle below that.</summary>
+    [Export(PropertyHint.Range, "0,0.9,0.05")] public float UphillPenalty { get; set; } = 0.3f;
+
+    /// <summary>How far a grounded body is pulled down to stay on the ground, in metres — written to
+    /// the body's <c>floor_snap_length</c> (never lowering one authored higher).
+    ///
+    /// ⚠️ The engine default is 0.1 m, which is under a single stair riser: a body walking DOWN steps
+    /// or running down a hill left the floor on every edge and fell the difference, so descending read
+    /// as a string of small hops — and each hop was a frame of air control rather than ground control.
+    /// Step-up fixed the climb and nothing fixed the way back. A jump is unaffected: the engine never
+    /// snaps a body that is moving upward.</summary>
+    [Export(PropertyHint.Range, "0,0.6,0.05")] public float StepDownHeight { get; set; } = 0.35f;
+
+    /// <summary>Drops shorter than this, in metres, land without a stumble. A jump off a wall is free;
+    /// a first-floor window is not.</summary>
+    [Export] public float HardLandingHeight { get; set; } = 2.5f;
+
+    /// <summary>How much each metre past <see cref="HardLandingHeight"/> lengthens the stumble, in seconds.</summary>
+    [Export] public float LandingRecoveryPerMetre { get; set; } = 0.05f;
+
+    /// <summary>The longest landing stumble, in seconds.</summary>
+    [Export] public float LandingRecoveryMax { get; set; } = 0.8f;
+
+    /// <summary>Speed multiplier on the landing frame of a stumble, easing back to 1.</summary>
+    [Export(PropertyHint.Range, "0,1,0.05")] public float LandingSlowdown { get; set; } = 0.35f;
+
+    /// <summary>Whether a long fall costs health. Off by default, on for the player.</summary>
+    [Export] public bool TakesFallDamage { get; set; }
+
+    /// <summary>The tallest free fall, in metres — about a two-storey roof.</summary>
+    [Export] public float SafeFallHeight { get; set; } = 7f;
+
+    /// <summary>The fall that costs all of max health, in metres. Linear between the two, so a
+    /// twelve-metre drop costs about a fifth of the bar.</summary>
+    [Export] public float LethalFallHeight { get; set; } = 30f;
+
+    /// <summary>World Y below which a body is lost rather than low — far under any authored ground.
+    /// See <see cref="MotionSafety.IsInWorld"/>.</summary>
+    [Export] public float WorldFloorY { get; set; } = -500f;
+
     /// <summary>Tallest step this body climbs, in metres (Phase 39C). Defaults to
     /// <see cref="StepUp.MaxHeight"/>, which is a ceiling over every cell's <c>agent_max_climb</c> — so
     /// every actor that walks can reach everywhere the navmesh paths one, and a little further (the bake
@@ -69,7 +153,25 @@ public partial class LocomotionComponent : EntityComponent
 
     private CharacterBody3D _body = null!;
     private StatsComponent? _stats;
+    private MountComponent? _mount;
     private float _gravity = 9.8f;
+
+    private JumpAssist.State _jump = JumpAssist.Fresh;
+    private bool _winded;
+
+    // Fall measurement. _lastEnd is where the previous Move left the body, so any gap at the start of
+    // the next one was made by something else — a teleport — and restarts the measurement.
+    private bool _hasHistory;
+    private Vector3 _lastEnd;
+    private Vector3? _lastFloor;
+    private bool _wasGrounded;
+    private float _fallPeakY;
+    private float _recoveryLeft;
+    private float _recoveryDuration;
+
+    /// <summary>Whether this body has already reported being somewhere impossible — once per body,
+    /// for the same reason as <see cref="_reportedBadVelocity"/>.</summary>
+    private bool _reportedBadPosition;
 
     /// <summary>Whether this body has already reported a poisoned velocity. One line per body, not one
     /// per frame — the failure repeats every physics tick and would otherwise bury the log it exists
@@ -84,6 +186,11 @@ public partial class LocomotionComponent : EntityComponent
     public bool IsGrounded => _body != null && _body.IsOnFloor();
 
     public bool IsDashing => _dashing;
+
+    /// <summary>Whether the body was granted a sprint on its last <see cref="Move"/> — not the same
+    /// as whether one was asked for, since a winded body is refused. The camera's sprint framing reads
+    /// this so it never shows a sprint the legs are not doing.</summary>
+    public bool IsSprinting { get; private set; }
 
     /// <summary>
     /// Ends a dash early.
@@ -123,17 +230,22 @@ public partial class LocomotionComponent : EntityComponent
 
         _body = body;
         _stats = Entity!.GetComponent<StatsComponent>();
+        _mount = Entity.GetComponent<MountComponent>();
         _gravity = ProjectSettings.GetSetting("physics/3d/default_gravity", 9.8f).AsSingle();
+        _body.FloorSnapLength = Mathf.Max(_body.FloorSnapLength, StepDownHeight);
     }
 
     /// <summary>
     /// Advances physics one step. <paramref name="wishDir"/> is a world-space
     /// direction on the horizontal plane (its Y is ignored); magnitude &gt; 1 is
-    /// clamped so diagonal input is not faster.
+    /// clamped so diagonal input is not faster, and under 1 is kept, so a half-pushed stick walks.
+    /// <paramref name="sprint"/> is a request (a winded body with <see cref="SprintCostsStamina"/> is
+    /// refused — read <see cref="IsSprinting"/> for the answer); <paramref name="jump"/> is a press on
+    /// this frame, which <see cref="JumpAssist"/> buffers and forgives off an edge.
     /// </summary>
     public void Move(double delta, Vector3 wishDir, bool sprint, bool jump)
     {
-        if (_body == null)
+        if (_body == null || !GuardPosition())
         {
             return;
         }
@@ -169,6 +281,10 @@ public partial class LocomotionComponent : EntityComponent
         // and it is what Stand already passes deliberately.
         wishDir = MotionSafety.Sanitize(wishDir);
 
+        bool grounded = _body.IsOnFloor();
+        (_jump, bool jumpNow) = JumpAssist.Step(
+            _jump, grounded && !Flying, jump, canJump: !_dashing && !Flying, dt, CoyoteTime, JumpBuffer);
+
         if (Flying)
         {
             // Servo toward the target altitude and clamp on arrival, so a hovering body holds still
@@ -177,13 +293,15 @@ public partial class LocomotionComponent : EntityComponent
             float gap = TargetAltitude - _body.GlobalPosition.Y;
             velocity.Y = Mathf.Abs(gap) < 0.05f ? 0f : Mathf.Sign(gap) * ClimbSpeed;
         }
-        else if (!_body.IsOnFloor())
+        else if (jumpNow)
+        {
+            // Replaces whatever gravity had built up, so a coyote jump taken a few frames into a fall
+            // is the same jump as one taken from the lip.
+            velocity.Y = JumpVelocity;
+        }
+        else if (!grounded)
         {
             velocity.Y -= _gravity * dt;
-        }
-        else if (jump && !_dashing)
-        {
-            velocity.Y = JumpVelocity;
         }
 
         // A dodge roll overrides input: fixed-velocity burst for its duration (gravity still applies).
@@ -192,8 +310,8 @@ public partial class LocomotionComponent : EntityComponent
             _dashTimer -= delta;
             velocity.X = _dashDir.X * _dashSpeed;
             velocity.Z = _dashDir.Z * _dashSpeed;
-            _body.Velocity = velocity;
-            _body.MoveAndSlide();
+            IsSprinting = false;
+            Slide(velocity, dt);
             if (_dashTimer <= 0d)
             {
                 _dashing = false;
@@ -208,7 +326,14 @@ public partial class LocomotionComponent : EntityComponent
             horizontal = horizontal.Normalized();
         }
 
-        float speed = CurrentSpeed() * (sprint ? SprintMultiplier : 1f);
+        bool moving = horizontal.LengthSquared() > 0.0001f;
+        IsSprinting = GrantSprint(sprint, moving && grounded, dt);
+
+        float speed = CurrentSpeed()
+            * LocomotionRules.GaitScale(IsSprinting, Walking, SprintMultiplier, WalkMultiplier)
+            * FallRules.RecoveryScale(_recoveryLeft, _recoveryDuration, LandingSlowdown)
+            * (grounded && moving ? UphillScale(horizontal) : 1f);
+        _recoveryLeft = Mathf.Max(0f, _recoveryLeft - dt);
 
         // ⚠️ THIS IS THE DOOR THE REPORTED CRASH CAME THROUGH, AND IT IS NOT OBVIOUS. `Stand` passes
         // Vector3.Zero, so the enemy's NaN could not have been the direction — but `Zero * NaN` is
@@ -222,18 +347,157 @@ public partial class LocomotionComponent : EntityComponent
         // letting go of the stick was a handbrake) and steered in mid-air exactly as well as on the
         // ground (so a jump could be turned into a different jump). Both read as weightless.
         bool wantsToMove = target.LengthSquared() > 0.0001f;
-        float rate = _body.IsOnFloor()
+        float rate = grounded
             ? (wantsToMove ? Acceleration : Friction)
             : Acceleration * AirControl;
 
         velocity.X = Mathf.MoveToward(velocity.X, target.X, rate * dt);
         velocity.Z = Mathf.MoveToward(velocity.Z, target.Z, rate * dt);
 
+        Slide(velocity, dt);
+    }
+
+    /// <summary>Steps, slides, and then reads what the slide did: every path through
+    /// <see cref="Move"/> ends here, so a roll climbs kerbs and lands falls exactly as a walk does.</summary>
+    private void Slide(Vector3 velocity, float dt)
+    {
+        // ⚠️ THE ROLL USED TO SKIP THIS AND STOP DEAD AT EVERY KERB. The dash branch returned before
+        // step-up ran, so a dodge into a 20 cm step was a dodge into a wall — the one moment the
+        // player most needs the ground to cooperate.
         TryStepUp(new Vector3(velocity.X, 0f, velocity.Z) * dt);
 
         _body.Velocity = velocity;
         _body.MoveAndSlide();
+        AfterSlide();
     }
+
+    /// <summary>
+    /// Runs before anything moves: is the body somewhere it can be, and did something else move it
+    /// since the last frame? Returns false when there is nowhere safe to put a lost body, in which
+    /// case the frame is skipped rather than simulated from an impossible position.
+    /// </summary>
+    private bool GuardPosition()
+    {
+        Vector3 here = _body.GlobalPosition;
+        if (!MotionSafety.IsInWorld(here, WorldFloorY))
+        {
+            // Logged once per body, like the velocity guard and for the same reason: the report is
+            // the evidence, and the failure repeats every tick.
+            if (!_reportedBadPosition)
+            {
+                _reportedBadPosition = true;
+                Log.Error(
+                    $"Locomotion: '{Entity?.DisplayName ?? _body.Name}' was at {here}, outside the world " +
+                    $"(non-finite, or below y={WorldFloorY}); " +
+                    (_lastFloor is { } at ? $"returning it to its last floor at {at}." : "it has never stood anywhere, so it is held.") +
+                    " A teleport that wrote a bad position, or a terrain seam, are the candidates.");
+            }
+
+            _body.Velocity = Vector3.Zero;
+            if (_lastFloor is not { } safe)
+            {
+                return false;
+            }
+
+            _body.GlobalPosition = safe;
+            here = safe;
+        }
+
+        // ⚠️ ANY JUMP BETWEEN FRAMES WAS A TELEPORT, AND A TELEPORT IS NOT A FALL. Nothing moves the
+        // body between the end of one Move and the start of the next except something that means to
+        // place it — world recovery, fast travel, a load, Blink, the guard above. Without this reset a
+        // player pulled out of a crevasse onto the lip would "land" from the peak of the fall that put
+        // them in it, and take the damage twice.
+        if (!_hasHistory || here.DistanceSquaredTo(_lastEnd) > TeleportDistance * TeleportDistance)
+        {
+            _hasHistory = true;
+            _fallPeakY = here.Y;
+            _lastFloor = here;
+            _recoveryLeft = 0f;
+        }
+
+        return true;
+    }
+
+    /// <summary>Tracks the fall and the last good floor from what <c>MoveAndSlide</c> just did.</summary>
+    private void AfterSlide()
+    {
+        Vector3 here = _body.GlobalPosition;
+        bool grounded = _body.IsOnFloor();
+
+        if (grounded && !_wasGrounded && !Flying)
+        {
+            Land(_fallPeakY - here.Y, here);
+        }
+
+        // A flier's altitude is its own choice, not a fall: the measurement starts where flight ends.
+        _fallPeakY = grounded || Flying ? here.Y : Mathf.Max(_fallPeakY, here.Y);
+        if (grounded && MotionSafety.IsInWorld(here, WorldFloorY))
+        {
+            _lastFloor = here;
+        }
+
+        _wasGrounded = grounded;
+        _lastEnd = here;
+    }
+
+    private void Land(float drop, Vector3 at)
+    {
+        // Deep water breaks a fall. The body stands on the basin floor (there is no swimming), so the
+        // depth is the surface above the feet.
+        float depth = WorldWater.SurfaceAt(at.X, at.Z) is float surface ? surface - at.Y : 0f;
+        float height = FallRules.Cushioned(drop, depth, WorldWater.WadeDepth);
+
+        _recoveryDuration = FallRules.RecoverySeconds(
+            height, HardLandingHeight, LandingRecoveryPerMetre, LandingRecoveryMax);
+        _recoveryLeft = _recoveryDuration;
+
+        if (TakesFallDamage && _stats != null)
+        {
+            // Straight to health, past armour, guard and i-frames, as StatusEffectsComponent's ticks
+            // go: a fall has no attacker to block and a roll does not make the ground softer.
+            float damage = FallRules.Damage(height, SafeFallHeight, LethalFallHeight, _stats.GetMax(StatType.Health));
+            if (damage > 0f)
+            {
+                _stats.ApplyDamage(damage);
+            }
+        }
+    }
+
+    /// <summary>Whether this frame's sprint request is granted, spending stamina when it is.</summary>
+    private bool GrantSprint(bool wanted, bool spending, float dt)
+    {
+        // Mounted, the horse's gallop pool has already answered (PlayerInputRouter asks it first).
+        if (!SprintCostsStamina || _stats == null || _mount is { IsMounted: true })
+        {
+            return wanted;
+        }
+
+        SprintStamina.Result result = SprintStamina.Step(
+            _winded, wanted, _stats.GetCurrent(StatType.Stamina), SprintResumeStamina);
+        _winded = result.Exhausted;
+
+        // Only moving on the ground costs anything: holding the key while standing, or while in the
+        // air, is a request, not a sprint.
+        if (result.Sprinting && spending && SprintStaminaPerSecond > 0f)
+        {
+            _stats.ModifyCurrent(StatType.Stamina, -SprintStaminaPerSecond * dt);
+        }
+
+        return result.Sprinting;
+    }
+
+    private float UphillScale(Vector3 horizontal)
+    {
+        Vector3 normal = _body.GetFloorNormal();
+        return LocomotionRules.UphillScale(
+            normal.X, normal.Y, normal.Z, horizontal.X, horizontal.Z, _body.FloorMaxAngle, UphillPenalty);
+    }
+
+    /// <summary>Displacement between frames, in metres, past which the body was placed rather than
+    /// moved. A motion warp — the only other thing that sweeps a body between Moves — is bounded well
+    /// under this per frame.</summary>
+    private const float TeleportDistance = 2f;
 
     /// <summary>
     /// Climbs a step the body is walking into (Phase 39C). Godot has no step offset, so the climb is
@@ -291,10 +555,19 @@ public partial class LocomotionComponent : EntityComponent
 
         _body.MoveAndCollide(Vector3.Up * StepHeight);
         _body.MoveAndCollide(forward);
-        _body.MoveAndCollide(Vector3.Down * StepHeight);
+        KinematicCollision3D? landing = _body.MoveAndCollide(Vector3.Down * StepHeight);
+
+        // What the down leg came to rest on: 0 when it rested on nothing, so a climb into thin air
+        // is refused (see StepUp.Accept for why the landing has to be a floor).
+        float landingNormalY = landing?.GetNormal().Y ?? 0f;
 
         Vector3 moved = _body.GlobalPosition - start.Origin;
-        if (!StepUp.Accept(moved.Y, new Vector2(moved.X, moved.Z).Dot(new Vector2(forward.X, forward.Z).Normalized()), StepHeight))
+        if (!StepUp.Accept(
+                moved.Y,
+                new Vector2(moved.X, moved.Z).Dot(new Vector2(forward.X, forward.Z).Normalized()),
+                StepHeight,
+                landingNormalY,
+                Mathf.Cos(_body.FloorMaxAngle)))
         {
             _body.GlobalTransform = start; // rolled back whole: a half-climbed body is worse than none
         }
